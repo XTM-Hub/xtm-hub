@@ -1,16 +1,19 @@
-import { OrganizationEditMutation } from '@/components/organization/organization.graphql';
 import { OrganizationForm } from '@/components/organization/OrganizationForm';
 import { organizationFormSchema } from '@/components/organization/OrganizationForm.schema';
+import { invalidateOrganizationQueries } from '@/components/organization/organization-query-invalidation';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
-import { organizationEditMutation } from '@generated/organizationEditMutation.graphql';
-import { organizationItem_fragment$data } from '@generated/organizationItem_fragment.graphql';
-import { useMutation } from 'react-relay';
+import { portalGraphqlClient } from '@/lib/graphql-client';
+import {
+  OrganizationItemFragment,
+  useOrganizationEditMutation,
+} from '@graphql/generated';
+import { useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 
 interface EditOrganizationProps {
-  organization: organizationItem_fragment$data;
+  organization: OrganizationItemFragment;
   open: boolean;
   setOpen: (open: boolean) => void;
 }
@@ -21,34 +24,38 @@ export const EditOrganization = ({
   setOpen,
 }: EditOrganizationProps) => {
   const t = useTranslate();
-  const [commitOrganizationEditionMutation] =
-    useMutation<organizationEditMutation>(OrganizationEditMutation);
-
-  const handleSubmit = (values: z.infer<typeof organizationFormSchema>) => {
-    commitOrganizationEditionMutation({
-      variables: {
-        id: organization.id,
-        input: {
-          ...values,
-        },
-      },
-
-      onCompleted: () => {
+  const queryClient = useQueryClient();
+  const { mutate: editOrganization, isPending } = useOrganizationEditMutation(
+    portalGraphqlClient,
+    {
+      onSuccess: async (_data, { input }) => {
         setOpen(false);
         showSnackbar({
           severity: 'success',
           title: t('Utils.Success'),
           description: t('OrganizationActions.OrganizationUpdated', {
-            name: values.name,
+            name: input.name,
           }),
         });
+        await invalidateOrganizationQueries(queryClient);
       },
-      onError: (error) => {
+      onError: (error: unknown) => {
+        const errorMessage =
+          error instanceof Error ? error.message : 'UNKNOWN_ERROR';
         showSnackbar({
           severity: 'error',
           title: t('Utils.Error'),
-          description: t(`Error.Server.${error.message}`),
+          description: t(`Error.Server.${errorMessage}`),
         });
+      },
+    }
+  );
+
+  const handleSubmit = (values: z.infer<typeof organizationFormSchema>) => {
+    editOrganization({
+      id: organization.id,
+      input: {
+        ...values,
       },
     });
   };
@@ -60,6 +67,7 @@ export const EditOrganization = ({
       <OrganizationForm
         organization={organization}
         handleSubmit={handleSubmit}
+        isSubmitting={isPending}
       />
     </SheetWithPreventingDialog>
   );

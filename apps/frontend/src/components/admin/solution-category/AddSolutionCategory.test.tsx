@@ -80,4 +80,22 @@ describe('AddSolutionCategory', () => {
       await screen.findByLabelText(/SolutionCategory.Form.Name/i)
     ).toBeInTheDocument();
   });
+
+  it('should close the sheet when the admin cancels the creation', async () => {
+    // Given
+    const { user } = testRender(<AddSolutionCategory />);
+    await user.click(
+      screen.getByRole('button', { name: 'SolutionCategory.Actions.Add' })
+    );
+
+    // When
+    await user.click(screen.getByRole('button', { name: 'Utils.Cancel' }));
+
+    // Then
+    await waitFor(() => {
+      expect(
+        screen.queryByLabelText('SolutionCategory.Form.Name')
+      ).not.toBeInTheDocument();
+    });
+  });
 });

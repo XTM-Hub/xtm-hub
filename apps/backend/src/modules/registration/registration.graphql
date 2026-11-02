@@ -25,21 +25,6 @@ type RegisteredPlatform implements Node {
   organization: Organization
 }
 
-type RegisteredPlatformEdge {
-  cursor: String!
-  node: RegisteredPlatform!
-}
-
-type RegisteredPlatformConnection {
-  totalCount: Int!
-  edges: [RegisteredPlatformEdge!]!
-  pageInfo: PageInfo!
-}
-
-enum RegisteredPlatformOrdering {
-  organization_name
-}
-
 input PlatformInput {
   id: ID!
   url: String!
@@ -189,14 +174,6 @@ type Query {
   registeredPlatform(input: RegisteredPlatformInput!): RegisteredPlatform @auth
   registeredPlatforms(input: RegisteredPlatformsInput!): [RegisteredPlatform!]!
     @auth
-  saasPlatforms(
-    first: Int!
-    after: ID
-    orderBy: RegisteredPlatformOrdering!
-    orderMode: OrderingMode!
-    searchTerm: String
-  ): RegisteredPlatformConnection!
-    @auth(portalCapa: [BYPASS, READ_SAAS_METRICS])
   platformAssociatedOrganization(
     platformId: String!
     tenantId: String

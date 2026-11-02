@@ -1,10 +1,8 @@
 'use client';
-import { OrganizationOrdering } from '@graphql/generated';
-
 import { CreateOrganization } from '@/components/organization/CreateOrganization';
 import { DeleteOrganization } from '@/components/organization/DeleteOrganization';
 import { EditOrganization } from '@/components/organization/EditOrganization';
-import { getOrganizations } from '@/components/organization/Organization.service';
+import { useOrganizations } from '@/components/organization/Organization.service';
 import { useOrganizationListLocalstorage } from '@/components/organization/organization-list-localstorage';
 import { IconActions, IconActionsItem } from '@/components/ui/IconActions';
 import {
@@ -15,7 +13,6 @@ import {
 import {
   handleSortingChange,
   mapToSortingTableValue,
-  transformSortingValueToParams,
 } from '@/components/ui/handle-sorting.utils';
 import { useDebouncedSearch } from '@/hooks/use-debounced-search';
 import { useTablePagination } from '@/hooks/use-table-pagination';
@@ -23,22 +20,26 @@ import { useTranslate } from '@/hooks/use-translate';
 import { getDataTableLabels } from '@/utils/design-system/data-table';
 import { Chip, SearchField } from '@filigran/design-system';
 import { MoreVertIcon } from '@filigran/icon';
-import { OrganizationsPaginationQuery$variables } from '@generated/OrganizationsPaginationQuery.graphql';
-import { organizationItem_fragment$data } from '@generated/organizationItem_fragment.graphql';
+import {
+  OrderingMode,
+  OrganizationItemFragment,
+  OrganizationOrdering,
+} from '@graphql/generated';
 import { ColumnDef } from '@tanstack/react-table';
 import { usePathname, useRouter } from 'next/navigation';
-import { Suspense, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+
 const OrganizationList = () => {
   const t = useTranslate();
   const router = useRouter();
   const pathname = usePathname();
   const [editOrganization, setEditOrganization] = useState<
-    organizationItem_fragment$data | undefined
+    OrganizationItemFragment | undefined
   >(undefined);
   const [deleteOrganization, setDeleteOrganization] = useState<
-    organizationItem_fragment$data | undefined
+    OrganizationItemFragment | undefined
   >(undefined);
-  const columns = useMemo<ColumnDef<organizationItem_fragment$data>[]>(
+  const columns = useMemo<ColumnDef<OrganizationItemFragment>[]>(
     () => [
       {
         accessorKey: 'name',
@@ -115,118 +116,129 @@ const OrganizationList = () => {
     resetAll,
   } = useOrganizationListLocalstorage(columns);
 
-  const { organizationsData, refetch } = getOrganizations({
-    count: pageSize,
-    orderMode,
-    orderBy,
-  });
-  const organizationDataTable = organizationsData.organizations.edges.map(
-    ({ node }) => node
-  ) as organizationItem_fragment$data[];
+  const [searchTerm, setSearchTerm] = useState('');
 
-  const handleRefetchData = (
-    args?: Partial<OrganizationsPaginationQuery$variables>
-  ) => {
-    const sorting = mapToSortingTableValue(orderBy, orderMode);
-    refetch({
+  const { pagination, setPagination, cursor, onPaginationChange } =
+    useTablePagination({
+      pageSize,
+      setPageSize,
+    });
+
+  const { organizations, totalCount, isLoading, isError, isPlaceholderData } =
+    useOrganizations({
       count: pagination.pageSize,
       cursor,
-      orderBy,
       orderMode,
-      searchTerm: undefined,
-      ...transformSortingValueToParams(sorting),
-      ...args,
+      orderBy,
+      searchTerm,
     });
-  };
 
-  const { pagination, cursor, onPaginationChange } = useTablePagination({
-    pageSize,
-    setPageSize,
-    onPaginationChange: (nextPagination, nextCursor) => {
-      handleRefetchData({ count: nextPagination.pageSize, cursor: nextCursor });
-    },
-  });
+  // Deleting the last row of the last page leaves it empty once the list is fetched again.
+  useEffect(() => {
+    if (
+      !isLoading &&
+      !isError &&
+      !isPlaceholderData &&
+      organizations.length === 0 &&
+      pagination.pageIndex > 0
+    ) {
+      setPagination((previousPagination) => ({
+        ...previousPagination,
+        pageIndex: previousPagination.pageIndex - 1,
+      }));
+    }
+  }, [
+    isLoading,
+    isError,
+    isPlaceholderData,
+    organizations.length,
+    pagination.pageIndex,
+    setPagination,
+  ]);
+
+  const resetToFirstPage = () =>
+    setPagination((previousPagination) => ({
+      ...previousPagination,
+      pageIndex: 0,
+    }));
 
   const onSortingChange = (updater: unknown) => {
-    handleSortingChange<OrganizationOrdering>({
+    handleSortingChange<OrganizationOrdering, OrderingMode>({
       updater,
       orderBy,
       orderMode,
       setOrderMode,
       setOrderBy,
       removeOrder,
-      handleRefetchData,
+      handleRefetchData: resetToFirstPage,
     });
   };
 
-  const handleInputChange = (inputValue: string) => {
-    handleRefetchData({ searchTerm: inputValue });
-  };
-
-  const searchHandlers = useDebouncedSearch({ apply: handleInputChange });
+  const searchHandlers = useDebouncedSearch({
+    apply: (term) => {
+      setSearchTerm(term);
+      resetToFirstPage();
+    },
+    appliedTerm: searchTerm,
+  });
 
   return (
     <>
-      <Suspense
-        fallback={
-          <DataTable
-            {...getDataTableLabels(t)}
-            data={[]}
-            columns={columns}
-            isLoading={true}
+      {isError && (
+        <div className="mb-2 text-sm text-feedback-error-primary">
+          {t('OrganizationActions.LoadOrganizationsError')}
+        </div>
+      )}
+      <DataTable
+        columns={columns}
+        data={organizations}
+        // Skeletons replace the previous rows while another page, sort or search loads.
+        isLoading={isLoading || isPlaceholderData}
+        toolbar={
+          <DataTableToolbar
+            search={
+              <SearchField
+                fullWidth
+                aria-label={t(
+                  'OrganizationActions.SearchOrganizationWithEmail'
+                )}
+                placeholder={t(
+                  'OrganizationActions.SearchOrganizationWithEmail'
+                )}
+                clearLabel={t('DesignSystem.SearchField.Clear')}
+                onChange={searchHandlers.onChange}
+                onClear={searchHandlers.onClear}
+              />
+            }
+            actions={
+              <>
+                <DataTableHeadBarOptions />
+                <CreateOrganization />
+              </>
+            }
           />
-        }>
-        <DataTable
-          columns={columns}
-          data={organizationDataTable}
-          toolbar={
-            <DataTableToolbar
-              search={
-                <SearchField
-                  fullWidth
-                  aria-label={t(
-                    'OrganizationActions.SearchOrganizationWithEmail'
-                  )}
-                  placeholder={t(
-                    'OrganizationActions.SearchOrganizationWithEmail'
-                  )}
-                  clearLabel={t('DesignSystem.SearchField.Clear')}
-                  onChange={searchHandlers.onChange}
-                  onClear={searchHandlers.onClear}
-                />
-              }
-              actions={
-                <>
-                  <DataTableHeadBarOptions />
-                  <CreateOrganization
-                    connectionId={organizationsData.organizations.__id}
-                  />
-                </>
-              }
-            />
-          }
-          onResetTable={resetAll}
-          tableOptions={{
-            onSortingChange: onSortingChange,
-            onPaginationChange: onPaginationChange,
-            manualSorting: true,
-            manualPagination: true,
-            onColumnOrderChange: setColumnOrder,
-            onColumnVisibilityChange: setColumnVisibility,
-            rowCount: organizationsData.organizations.totalCount,
-          }}
-          {...getDataTableLabels(t)}
-          tableState={{
-            sorting: mapToSortingTableValue(orderBy, orderMode),
-            pagination,
-            columnOrder,
-            columnVisibility,
-            columnPinning: {
-              right: ['actions'],
-            },
-          }}
-        />
-      </Suspense>
+        }
+        onResetTable={resetAll}
+        tableOptions={{
+          onSortingChange: onSortingChange,
+          onPaginationChange: onPaginationChange,
+          manualSorting: true,
+          manualPagination: true,
+          onColumnOrderChange: setColumnOrder,
+          onColumnVisibilityChange: setColumnVisibility,
+          rowCount: totalCount,
+        }}
+        {...getDataTableLabels(t)}
+        tableState={{
+          sorting: mapToSortingTableValue(orderBy, orderMode),
+          pagination,
+          columnOrder,
+          columnVisibility,
+          columnPinning: {
+            right: ['actions'],
+          },
+        }}
+      />
       {editOrganization && (
         <EditOrganization
           key={`edit-${editOrganization.id}`}
@@ -240,7 +252,6 @@ const OrganizationList = () => {
       {deleteOrganization && (
         <DeleteOrganization
           key={`delete-${deleteOrganization.id}`}
-          connectionId={organizationsData.organizations.__id}
           organization={deleteOrganization}
           open={!!deleteOrganization}
           setOpen={(open) =>

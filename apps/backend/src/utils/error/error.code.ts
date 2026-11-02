@@ -16,6 +16,7 @@ export enum ForbiddenErrorCode {
   CantAddDisabledUser = 'CANT_ADD_DISABLED_USER',
   CantRemoveYourselfFromOrgaError = 'CANT_REMOVE_YOURSELF_FROM_ORGA_ERROR',
   YouCanNotLogin = 'YOU_CAN_NOT_LOGIN',
+  InvalidPlatformToken = 'INVALID_PLATFORM_TOKEN',
   EmailNotVerified = 'EMAIL_NOT_VERIFIED',
   IdpSubjectNotProvided = 'IDP_SUBJECT_NOT_PROVIDED',
   IdpSubjectMismatch = 'IDP_SUBJECT_MISMATCH',

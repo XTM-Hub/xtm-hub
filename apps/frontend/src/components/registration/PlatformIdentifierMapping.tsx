@@ -8,6 +8,7 @@ import {
   PlatformContract,
   PlatformIdentifier,
   ServiceDefinitionIdentifier,
+  ServiceInstanceTag,
 } from '@graphql/generated';
 import openaevTextLogo from '@public/logo_openaev_text.png';
 import openaevTextDarkLogo from '@public/logo_openaev_text_dark.png';
@@ -20,12 +21,11 @@ import { JSX } from 'react';
 
 export interface PlatformMetadata {
   name: string;
-  logoUrl: string;
   lightTextLogo: StaticImageData;
   darkTextLogo: StaticImageData;
-  docUrl: string;
   Icon: ({ className }: { className: string }) => JSX.Element;
   iconClassName: string;
+  serviceInstanceTag: ServiceInstanceTag;
 }
 
 export const PlatformMetadataMapping: Record<
@@ -34,30 +34,27 @@ export const PlatformMetadataMapping: Record<
 > = {
   [PlatformIdentifier.Opencti]: {
     name: 'OpenCTI',
-    logoUrl: '/logo_opencti_dark.png',
     lightTextLogo: openctiTextLogo,
     darkTextLogo: openctiTextDarkLogo,
-    docUrl: 'https://docs.opencti.io/latest/administration/hub/',
     Icon: ({ className }) => <OpenCtiIconIcon className={className} />,
     iconClassName: 'text-filigran-brand-primary',
+    serviceInstanceTag: ServiceInstanceTag.OpenCti,
   },
   [PlatformIdentifier.Openaev]: {
     name: 'OpenAEV',
-    logoUrl: '/logo_openaev_dark.png',
     lightTextLogo: openaevTextLogo,
     darkTextLogo: openaevTextDarkLogo,
-    docUrl: 'https://docs.openaev.io/latest/administration/hub/',
     Icon: ({ className }) => <OpenAevIconIcon className={className} />,
     iconClassName: 'text-filigran-brand-primary',
+    serviceInstanceTag: ServiceInstanceTag.OpenAev,
   },
   [PlatformIdentifier.Xtmone]: {
     name: 'XTM One',
-    logoUrl: '/logo_xtmone_dark.png',
     lightTextLogo: xtmoneTextLogo,
     darkTextLogo: xtmoneTextDarkLogo,
-    docUrl: '',
     Icon: ({ className }) => <LogoXtmOneIcon className={className} />,
     iconClassName: 'text-filigran-ia-primary',
+    serviceInstanceTag: ServiceInstanceTag.XtmOne,
   },
 };
 

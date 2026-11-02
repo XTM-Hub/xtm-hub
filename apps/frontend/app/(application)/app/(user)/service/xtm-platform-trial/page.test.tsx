@@ -1,6 +1,8 @@
+import { XtmPlatformTrialStatusPanelState } from '@/components/service/trial-instances/xtm-platform-trial/request-panel/xtm-platform-trial-panel.utils';
 import Page, {
   generateMetadata,
 } from '@app/(application)/app/(user)/service/xtm-platform-trial/page';
+import { DeploymentRequestHubStatus } from '@graphql/generated';
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -52,6 +54,11 @@ vi.mock('@graphql/deployment/deployment.keys', () => ({
   },
 }));
 
+const buildBundle = (hubStatus: DeploymentRequestHubStatus) => ({
+  service_instance_id: 'bundle-instance-id',
+  hub_status: hubStatus,
+});
+
 describe('private xtm-platform-trial page', () => {
   beforeEach(() => {
     mockUseXtmPlatformBundleQuery.mockReset();
@@ -82,45 +89,73 @@ describe('private xtm-platform-trial page', () => {
   it('renders the private panel with the bundle forwarded when the bundle is not active (e.g. queued/pending/provisioning/cancelled/expired)', async () => {
     mockUseXtmPlatformBundleQuery.mockReturnValue({
       data: {
-        xtmPlatformBundle: {
-          service_instance_id: 'bundle-instance-id',
-          hub_status: 'pending',
-        },
+        xtmPlatformBundle: buildBundle(DeploymentRequestHubStatus.Pending),
       },
       isLoading: false,
     });
     mockUseXtmPlatformTrialPanelView.mockReturnValue({
       kind: 'status',
-      state: 'request-in-progress',
+      state: XtmPlatformTrialStatusPanelState.RequestInProgress,
       stepIndex: 0,
     });
 
     const element = await Page();
     render(element);
 
-    expect(screen.getByTestId('private-panel')).toHaveTextContent('pending');
+    expect(screen.getByTestId('private-panel')).toHaveTextContent(
+      DeploymentRequestHubStatus.Pending
+    );
     expect(screen.queryByTestId('bundle-dashboard')).not.toBeInTheDocument();
   });
 
-  it.each([
-    { view: { kind: 'personalSpace' }, xtmPlatformBundle: null },
-    { view: { kind: 'notAllowed' }, xtmPlatformBundle: null },
-    {
-      view: { kind: 'status', state: 'request-in-progress', stepIndex: 0 },
-      xtmPlatformBundle: {
-        service_instance_id: 'bundle-instance-id',
-        hub_status: 'pending',
+  it('should hide the limitations when the panel view is a cancelled status', async () => {
+    // Given
+    mockUseXtmPlatformBundleQuery.mockReturnValue({
+      data: {
+        xtmPlatformBundle: buildBundle(DeploymentRequestHubStatus.Cancelled),
       },
+      isLoading: false,
+    });
+    mockUseXtmPlatformTrialPanelView.mockReturnValue({
+      kind: 'status',
+      state: XtmPlatformTrialStatusPanelState.Cancelled,
+      stepIndex: undefined,
+    });
+
+    // When
+    const element = await Page();
+    render(element);
+
+    // Then
+    expect(
+      screen.queryByText('Service.Trials.XtmPlatform.Page.Limitations.Title')
+    ).not.toBeInTheDocument();
+  });
+
+  it.each([
+    {
+      hubStatus: DeploymentRequestHubStatus.Expired,
+      state: XtmPlatformTrialStatusPanelState.Expired,
+      expectedTitle: 'Service.Trials.XtmPlatform.Page.ExpiredTitle',
+    },
+    {
+      hubStatus: DeploymentRequestHubStatus.Cancelled,
+      state: XtmPlatformTrialStatusPanelState.Cancelled,
+      expectedTitle: 'Service.Trials.XtmPlatform.Page.Title',
     },
   ])(
-    'should hide the limitations when the panel view is $view.kind',
-    async ({ view, xtmPlatformBundle }) => {
+    'should render the $expectedTitle heading when the bundle is $hubStatus',
+    async ({ hubStatus, state, expectedTitle }) => {
       // Given
       mockUseXtmPlatformBundleQuery.mockReturnValue({
-        data: { xtmPlatformBundle },
+        data: { xtmPlatformBundle: buildBundle(hubStatus) },
         isLoading: false,
       });
-      mockUseXtmPlatformTrialPanelView.mockReturnValue(view);
+      mockUseXtmPlatformTrialPanelView.mockReturnValue({
+        kind: 'status',
+        state,
+        stepIndex: undefined,
+      });
 
       // When
       const element = await Page();
@@ -128,18 +163,15 @@ describe('private xtm-platform-trial page', () => {
 
       // Then
       expect(
-        screen.queryByText('Service.Trials.XtmPlatform.Page.Limitations.Title')
-      ).not.toBeInTheDocument();
+        screen.getByRole('heading', { level: 1, name: expectedTitle })
+      ).toBeInTheDocument();
     }
   );
 
   it('renders the bundle dashboard instead of the private panel when an active bundle exists', async () => {
     mockUseXtmPlatformBundleQuery.mockReturnValue({
       data: {
-        xtmPlatformBundle: {
-          service_instance_id: 'bundle-instance-id',
-          hub_status: 'active',
-        },
+        xtmPlatformBundle: buildBundle(DeploymentRequestHubStatus.Active),
       },
       isLoading: false,
     });

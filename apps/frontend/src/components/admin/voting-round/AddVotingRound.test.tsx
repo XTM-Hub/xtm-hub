@@ -117,4 +117,22 @@ describe('AddVotingRound', () => {
       screen.getByLabelText('VotingRound.Form.CopyFeaturesFrom')
     ).toBeInTheDocument();
   });
+
+  it('should close the sheet when the admin cancels the creation', async () => {
+    // Given
+    const { user } = testRender(<AddVotingRound copySources={[]} />);
+    await user.click(
+      screen.getByRole('button', { name: 'VotingRound.Actions.Add' })
+    );
+
+    // When
+    await user.click(screen.getByRole('button', { name: 'Utils.Cancel' }));
+
+    // Then
+    await waitFor(() =>
+      expect(
+        screen.queryByLabelText(/VotingRound.Form.Name/i)
+      ).not.toBeInTheDocument()
+    );
+  });
 });

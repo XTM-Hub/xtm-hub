@@ -1,12 +1,13 @@
 'use client';
 import { PublicDocumentListQuery } from '@/components/service/document/public-document.graphql';
 import PublicDocumentsList from '@/components/service/document/PublicDocumentsList';
+import { IntegrationListUrlFiltersSync } from '@/components/service/integrations/[serviceInstanceId]/IntegrationListUrlFiltersSync';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   LogicalFiltersParams,
   useLogicalFiltersFromStorage,
 } from '@/hooks/use-logical-filters-from-storage';
-import { useServiceListLocalStorage } from '@/hooks/use-service-list-local-storage';
+import { useServiceListStorage } from '@/hooks/use-service-list-storage';
 import { ServiceSlug } from '@/utils/shareable-resources/shareable-resources.types';
 import { useShareableResourceMapping } from '@/utils/shareable-resources/use-shareable-resource-mapping';
 import { publicDocumentsQuery } from '@generated/publicDocumentsQuery.graphql';
@@ -28,7 +29,7 @@ export const PublicDocumentListPageLoader = ({
   );
 
   const serviceInstanceSlug = serviceInstance.slug as ServiceSlug;
-  const { localStorageKey } = useShareableResourceMapping(serviceInstanceSlug);
+  const { storageKey } = useShareableResourceMapping(serviceInstanceSlug);
 
   const {
     pageSize,
@@ -43,29 +44,30 @@ export const PublicDocumentListPageLoader = ({
     solutionCategories,
     orderMode,
     orderBy,
-  } = useServiceListLocalStorage(localStorageKey);
-  const params: LogicalFiltersParams =
-    serviceInstanceSlug === ServiceSlug.OPEN_CTI_INTEGRATIONS
-      ? {
-          serviceInstanceSlug:
-            serviceInstanceSlug as ServiceSlug.OPEN_CTI_INTEGRATIONS,
-          labels,
-          deployable,
-          verified,
-          integrationTypes,
-          productVersions,
-          licenseTypes,
-          solutionCategories,
-        }
-      : {
-          serviceInstanceSlug: serviceInstanceSlug as
-            | ServiceSlug.OPEN_CTI_CUSTOM_DASHBOARDS
-            | ServiceSlug.OPEN_AEV_SCENARIOS
-            | ServiceSlug.OPEN_CTI_PLAYBOOKS
-            | ServiceSlug.OPEN_CTI_CUSTOM_VIEWS,
-          labels,
-          entityTypes,
-        };
+  } = useServiceListStorage(storageKey);
+  const isIntegrationsService =
+    serviceInstanceSlug === ServiceSlug.OPEN_CTI_INTEGRATIONS;
+  const params: LogicalFiltersParams = isIntegrationsService
+    ? {
+        serviceInstanceSlug:
+          serviceInstanceSlug as ServiceSlug.OPEN_CTI_INTEGRATIONS,
+        labels,
+        deployable,
+        verified,
+        integrationTypes,
+        productVersions,
+        licenseTypes,
+        solutionCategories,
+      }
+    : {
+        serviceInstanceSlug: serviceInstanceSlug as
+          | ServiceSlug.OPEN_CTI_CUSTOM_DASHBOARDS
+          | ServiceSlug.OPEN_AEV_SCENARIOS
+          | ServiceSlug.OPEN_CTI_PLAYBOOKS
+          | ServiceSlug.OPEN_CTI_CUSTOM_VIEWS,
+        labels,
+        entityTypes,
+      };
 
   const logicalFilters = useLogicalFiltersFromStorage(params);
 
@@ -101,6 +103,7 @@ export const PublicDocumentListPageLoader = ({
 
   return (
     <>
+      {isIntegrationsService && <IntegrationListUrlFiltersSync />}
       {queryRef ? (
         <PublicDocumentsList
           serviceInstance={serviceInstance}

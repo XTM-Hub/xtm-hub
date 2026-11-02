@@ -6,10 +6,16 @@ import { registeredPlatformByServiceInstanceId_fragment$data } from '@generated/
 import {
   CommercialModel,
   PortalCapability,
+  SaasPlatformMetricsPeriod,
+  SaasPlatformStorage,
   useRegisteredSaasPlatformDataQuery,
 } from '@graphql/generated';
 import { act, screen, within } from '@testing-library/react';
-import { notFound } from 'next/navigation';
+import {
+  notFound,
+  ReadonlyURLSearchParams,
+  useSearchParams,
+} from 'next/navigation';
 import { Suspense } from 'react';
 import { useLazyLoadQuery } from 'react-relay';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -37,7 +43,13 @@ const HOSTNAME = 'my-platform.filigran.io';
 
 const mockSaasPlatformDataQuery = ({
   isPending = false,
-}: { isPending?: boolean } = {}) =>
+  isPlaceholderData = false,
+  storage = null,
+}: {
+  isPending?: boolean;
+  isPlaceholderData?: boolean;
+  storage?: SaasPlatformStorage | null;
+} = {}) =>
   vi.mocked(useRegisteredSaasPlatformDataQuery).mockReturnValue({
     data: isPending
       ? undefined
@@ -50,9 +62,11 @@ const mockSaasPlatformDataQuery = ({
               end_date: null,
               region: null,
             },
+            storage,
           },
         },
     isPending,
+    isPlaceholderData,
   } as ReturnType<typeof useRegisteredSaasPlatformDataQuery>);
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
@@ -70,8 +84,9 @@ const renderOverview = async (
   capabilities: PortalCapability[] = [PortalCapability.ReadSaasMetrics]
 ) => {
   mockPlatformData = platform;
+  let rendered: ReturnType<typeof testRender> | undefined;
   await act(async () => {
-    testRender(
+    rendered = testRender(
       <Suspense>
         <RegisteredPlatformOverview
           params={Promise.resolve({
@@ -84,6 +99,7 @@ const renderOverview = async (
       }
     );
   });
+  return rendered!;
 };
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
@@ -134,6 +150,32 @@ describe('RegisteredPlatformOverview', () => {
     ).toBeInTheDocument();
   });
 
+  it.each`
+    description                                               | capabilities                          | search              | breadcrumbLink
+    ${'a user who can read saas metrics, from the CSM board'} | ${[PortalCapability.ReadSaasMetrics]} | ${'from=csm-board'} | ${'MenuLinks.CSMBoard'}
+    ${'a user who can read saas metrics, from elsewhere'}     | ${[PortalCapability.ReadSaasMetrics]} | ${''}               | ${'MenuLinks.Home'}
+    ${'a customer given a link from the CSM board'}           | ${[]}                                 | ${'from=csm-board'} | ${'MenuLinks.Home'}
+  `(
+    'should lead the breadcrumb back to $breadcrumbLink for $description',
+    async ({ capabilities, search, breadcrumbLink }) => {
+      // Given a platform page opened with a known origin
+      vi.mocked(useSearchParams).mockReturnValue(
+        new URLSearchParams(search) as ReadonlyURLSearchParams
+      );
+
+      // When the page is rendered
+      await renderOverview(basePlatform, capabilities);
+
+      // Then its breadcrumb leads back to where the user came from
+      const breadcrumb = screen
+        .getByRole('link', { name: breadcrumbLink })
+        .closest('nav') as HTMLElement;
+      expect(
+        within(breadcrumb).getByText(basePlatform.title)
+      ).toBeInTheDocument();
+    }
+  );
+
   it('should display the platform header and its information', async () => {
     // Given / When
     await renderOverview(basePlatform);
@@ -157,10 +199,44 @@ describe('RegisteredPlatformOverview', () => {
     // Then
     expect(useRegisteredSaasPlatformDataQuery).toHaveBeenLastCalledWith(
       expect.anything(),
-      { input: { service_instance_id: SERVICE_INSTANCE_ID } },
+      {
+        input: {
+          service_instance_id: SERVICE_INSTANCE_ID,
+          metrics_period: SaasPlatformMetricsPeriod.Last_90Days,
+        },
+      },
       expect.objectContaining({ enabled: true })
     );
     expect(screen.getByText(HOSTNAME)).toBeInTheDocument();
+  });
+
+  it('should display the platform metrics of a SaaS platform', async () => {
+    // Given
+    vi.mocked(useIsFeatureEnabled).mockReturnValue(true);
+
+    // When
+    await renderOverview(saasPlatform);
+
+    // Then
+    expect(
+      screen.getByRole('heading', { level: 2, name: 'Register.Metrics.Title' })
+    ).toBeInTheDocument();
+  });
+
+  it('should not display the platform metrics when the SaaS platform data is hidden', async () => {
+    // Given SAAS_METRICS is disabled
+    vi.mocked(useIsFeatureEnabled).mockReturnValue(false);
+
+    // When
+    await renderOverview(saasPlatform);
+
+    // Then
+    expect(
+      screen.queryByRole('heading', {
+        level: 2,
+        name: 'Register.Metrics.Title',
+      })
+    ).not.toBeInTheDocument();
   });
 
   it('should neither query nor display the SaaS subscription metadata when SAAS_METRICS is disabled', async () => {
@@ -259,5 +335,58 @@ describe('RegisteredPlatformOverview', () => {
       screen.getByText('Register.Metrics.Metadata.Hostname:').closest('section')
     ).toHaveAttribute('aria-busy', 'true');
     expect(screen.queryByText(HOSTNAME)).not.toBeInTheDocument();
+  });
+
+  it('should query the metrics of the period chosen in the period selector', async () => {
+    // Given
+    vi.mocked(useIsFeatureEnabled).mockReturnValue(true);
+    // The period selector is disabled while the metrics are unavailable.
+    mockSaasPlatformDataQuery({
+      storage: {
+        es_used_size: {
+          percent: 50,
+          used: 1_500_000_000,
+          limit: 3_000_000_000,
+          time: '2026-10-22T12:00:00.000Z',
+        },
+      },
+    });
+    const { user } = await renderOverview(saasPlatform);
+
+    // When
+    await user.click(
+      screen.getByRole('radio', {
+        name: `Register.Metrics.Period.${SaasPlatformMetricsPeriod.Last_30Days}`,
+      })
+    );
+
+    // Then
+    expect(useRegisteredSaasPlatformDataQuery).toHaveBeenLastCalledWith(
+      expect.anything(),
+      {
+        input: {
+          service_instance_id: SERVICE_INSTANCE_ID,
+          metrics_period: SaasPlatformMetricsPeriod.Last_30Days,
+        },
+      },
+      expect.objectContaining({ enabled: true })
+    );
+  });
+
+  it('should keep the SaaS subscription metadata and display the metrics as loading while another period loads', async () => {
+    // Given
+    vi.mocked(useIsFeatureEnabled).mockReturnValue(true);
+    mockSaasPlatformDataQuery({ isPlaceholderData: true });
+
+    // When
+    const { container } = await renderOverview(saasPlatform);
+
+    // Then the metadata stays on screen and only the metrics are busy
+    const metadataSection = screen
+      .getByText('Register.Metrics.Metadata.Hostname:')
+      .closest('section');
+    expect(metadataSection).not.toHaveAttribute('aria-busy', 'true');
+    expect(screen.getByText(HOSTNAME)).toBeInTheDocument();
+    expect(container.querySelectorAll('[aria-busy="true"]')).toHaveLength(1);
   });
 });

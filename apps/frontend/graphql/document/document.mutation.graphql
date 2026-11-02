@@ -1,0 +1,5 @@
+mutation IncrementShareNumberDocument($documentId: DocumentId!) {
+  incrementShareNumberDocument(documentId: $documentId) {
+    share_number
+  }
+}

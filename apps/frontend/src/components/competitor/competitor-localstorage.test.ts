@@ -1,4 +1,4 @@
-import { CompetitorOrdering } from '@graphql/generated';
+import { CompetitorOrdering, OrderingMode } from '@graphql/generated';
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 
@@ -46,7 +46,7 @@ describe('useCompetitorListLocalstorage', () => {
     // Given
     const { result } = renderHook(() => useCompetitorListLocalstorage());
     act(() => {
-      result.current.setOrderMode('desc');
+      result.current.setOrderMode(OrderingMode.Desc);
       result.current.setOrderBy(CompetitorOrdering.Name);
       result.current.setPageSize(CUSTOM_PAGE_SIZE);
     });
@@ -71,7 +71,7 @@ describe('useCompetitorListLocalstorage', () => {
     // Given
     const { result } = renderHook(() => useCompetitorListLocalstorage());
     act(() => {
-      result.current.setOrderMode('desc');
+      result.current.setOrderMode(OrderingMode.Desc);
       result.current.setOrderBy(CompetitorOrdering.Name);
       result.current.setPageSize(CUSTOM_PAGE_SIZE);
     });

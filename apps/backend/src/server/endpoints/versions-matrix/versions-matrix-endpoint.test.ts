@@ -29,8 +29,8 @@ vi.mock('../../../utils/app-logger.util', () => ({
   logApp: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
 
+import { buildETag } from '../shared/http-cache.util';
 import { VersionsMatrixEndpoint } from './versions-matrix-endpoint';
-import { buildVersionsMatrixETag } from './versions-matrix-endpoint.utils';
 
 const buildResponse = () => ({
   setHeader: vi.fn(),
@@ -112,7 +112,7 @@ describe('getMatrix', () => {
     });
     expect(res.setHeader).toHaveBeenCalledWith(
       'ETag',
-      buildVersionsMatrixETag(
+      buildETag(
         JSON.stringify({
           opencti_version: '7.260904.0',
           connector_mitre_version: '7.260809.0',
@@ -141,10 +141,7 @@ describe('getMatrix', () => {
     );
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.send).toHaveBeenCalledWith(expectedBody);
-    expect(res.setHeader).toHaveBeenCalledWith(
-      'ETag',
-      buildVersionsMatrixETag(expectedBody)
-    );
+    expect(res.setHeader).toHaveBeenCalledWith('ETag', buildETag(expectedBody));
   });
 
   it('returns the csv matrix when format=csv', async () => {
@@ -164,10 +161,7 @@ describe('getMatrix', () => {
     );
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.send).toHaveBeenCalledWith(expectedBody);
-    expect(res.setHeader).toHaveBeenCalledWith(
-      'ETag',
-      buildVersionsMatrixETag(expectedBody)
-    );
+    expect(res.setHeader).toHaveBeenCalledWith('ETag', buildETag(expectedBody));
   });
 
   it('returns 304 without a body when the client is up to date', async () => {

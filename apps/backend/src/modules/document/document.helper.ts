@@ -328,6 +328,22 @@ export const DocumentHelper = {
     );
   },
 
+  // Best effort: the data is already committed, so a storage failure is logged
+  // and leaves an orphan file instead of failing the caller.
+  deleteObsoleteFiles: async (minioNames: string[]) => {
+    await Promise.all(
+      minioNames.map(async (minioName) => {
+        try {
+          await MinIOClient.deleteFile(minioName);
+        } catch (error) {
+          logApp.error(`Unable to delete the obsolete file ${minioName}`, {
+            error,
+          });
+        }
+      })
+    );
+  },
+
   getDocumentName: (documentName: string) => {
     const splitName = documentName.split('.');
     const nameWithoutExtension = splitName[0];

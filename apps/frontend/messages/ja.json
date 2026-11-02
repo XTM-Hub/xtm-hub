@@ -25,13 +25,28 @@
     "Title": "利用可能な機能"
   },
   "CSMBoard": {
+    "Customer": "顧客",
     "Organization": "組織",
     "Administrators": "管理者",
     "Products": "製品",
-    "Link": "SaaS指標",
+    "ProductVersion": "バージョン: {version}",
+    "AllProducts": "すべての製品",
+    "Plan": "プラン",
+    "Health": "ヘルス",
+    "Healthy": "正常",
+    "HealthSla": "SLA {percent}",
+    "HealthDatabase": "データベース {percent}",
+    "HealthFileStorage": "ファイルストレージ {percent}",
+    "Database": "データベース",
+    "FileStorage": "ファイルストレージ",
+    "Availability": "可用性",
     "Version": "バージョン",
+    "ContractEnd": "契約終了日",
+    "EndsIn": "あと{days}日",
+    "ContractEnded": "終了",
+    "Link": "SaaS指標",
     "ViewMetrics": "メトリクスを見る",
-    "SearchOrganization": "組織検索",
+    "SearchPlatform": "プラットフォーム検索",
     "ClearSearch": "検索をクリア"
   },
   "CountryComboBox": {
@@ -754,6 +769,7 @@
   },
   "OrganizationActions": {
     "ErrorNameAlreadyExists": "組織 {name} は既に存在しています。",
+    "LoadOrganizationsError": "組織を読み込めませんでした。",
     "OrganizationCreated": "組織 {name} が作成されました",
     "OrganizationDeleted": "組織が削除された",
     "OrganizationUpdated": "組織 {name} が変更された",
@@ -983,6 +999,44 @@
       "PlatformVersion": "プラットフォームのバージョン"
     },
     "Metrics": {
+      "Title": "使用状況と健全性",
+      "StorageTitle": "ストレージ使用量",
+      "Unavailable": "現在、このメトリクスは利用できません",
+      "Period": {
+        "Label": "メトリクスの期間",
+        "last_30_days": "30日間",
+        "last_90_days": "90日間",
+        "last_180_days": "180日間",
+        "ComingSoon": "近日公開予定"
+      },
+      "Database": {
+        "Title": "データベース",
+        "Subtitle": "知識、関係性、履歴、ログ"
+      },
+      "FileStorage": {
+        "Title": "ファイルの保存",
+        "Subtitle": "インポートされたファイル、レポート、添付ファイル"
+      },
+      "SLA": {
+        "Title": "可用性 (SLA)",
+        "Subtitle": "ご契約どおり、暦月ごとに算出",
+        "MonthRange": "{start}～{end}",
+        "MonthToDate": "{month}（現在まで）",
+        "OnTarget": "{availability}（目標達成）",
+        "BelowTarget": "{availability}（目標未達）",
+        "NoData": "データなし",
+        "NotTrackedYet": "データなし · 指標はまだ測定されていません",
+        "Summary": {
+          "Title": "月次SLA・目標 {target}",
+          "CurrentMonth": "{month}・月初から現在まで",
+          "TargetAndMeasuredDays": "目標 {target}・{total}日中{measured}日測定済み"
+        },
+        "Legend": {
+          "Met": "目標達成",
+          "Missed": "目標未達",
+          "Unknown": "月の残り"
+        }
+      },
       "Metadata": {
         "Hostname": "ホスト名",
         "CopyHostname": "ホスト名をコピー",
@@ -991,7 +1045,14 @@
         "RegionalArea": "リージョン",
         "DaysLeft": "{days, plural, =1 {残り#日} other {残り#日}}",
         "Unavailable": "現在、この情報はご利用いただけません。"
-      }
+      },
+      "Capacity": {
+        "Within": "容量内",
+        "Approaching": "容量上限に接近",
+        "Over": "容量超過"
+      },
+      "MaxCapacity": "最大容量",
+      "UsedOfLimit": "<secondary>{limit} 中</secondary> <highlight>{used}</highlight>"
     },
     "Error": {
       "Capability": {
@@ -1199,6 +1260,10 @@
       "xtm-platform-roadmap": {
         "Name": "XTM Platform ロードマップ",
         "Description": "Filigran XTM Platform のロードマップを確認し、フォローしましょう。"
+      },
+      "xtmone-documentation": {
+        "Name": "XTM One ドキュメント",
+        "Description": "プラットフォームの仕組みを理解するための技術ドキュメントとユーザーガイド"
       }
     },
     "LibraryHero": {
@@ -1610,14 +1675,23 @@
         "Link": "もっと詳しく"
       },
       "XTMPlatform": {
-        "Title": "あなたの eXtended Threat Management (XTM) スイート",
-        "Description": "{platformName} は、Filigran のオープンソースの脅威インテリジェンス、高度な敵対者シミュレーション、戦略的サイバーリスク管理ソリューションの一部であり、組織が脅威をエンドツーエンドで予測・管理できるよう支援します。",
-        "OpenCTITagline": "収集、相関、活用",
-        "OpenCTIDescription": "実務者によって実務者のために構築されたオープンソースの脅威インテリジェンスプラットフォーム — データのサイロを打破し、脅威インテリジェンスを真に実行可能なものにします。",
-        "OpenAEVTagline": "優先順位付け、テスト、重要なものの修正",
-        "OpenAEVDescription": "Adversarial Exposure Validation (AEV) で脅威に積極的に対抗し、現実の攻撃シナリオをシミュレートしてセキュリティ防御を最適化します。",
-        "LogoAlt": "{name} ロゴ",
-        "IllustrationAlt": "無料トライアルサービスのイラスト"
+        "Title": "あなたの eXtended Threat Management (XTM) プラットフォーム",
+        "xtmone": {
+          "Intro": "XTM One は、Filigran のオープンソース XTM プラットフォームのエージェント型 AI 基盤です。XTM プラットフォームは脅威インテリジェンス、継続的なエクスポージャー検証、サイバーリスク低減を統合し、組織が脅威をエンドツーエンドで予測・管理できるよう支援します。",
+          "Tagline": "エージェント型脅威管理への道のりをシンプルに",
+          "Description": "XTM One は、XTM プラットフォーム全体でアシスト型およびエージェント型 AI をオーケストレーションし、脅威シグナルから検証済みのアクションまで、機械のスピードで CTEM プログラムを運用します。"
+        },
+        "opencti": {
+          "Intro": "OpenCTI は、Filigran のオープンソースの脅威インテリジェンス、高度な敵対者シミュレーション、戦略的サイバーリスク管理ソリューションの一部であり、組織が脅威をエンドツーエンドで予測・管理できるよう支援します。",
+          "Tagline": "収集、相関、活用",
+          "Description": "実務者によって実務者のために構築されたオープンソースの脅威インテリジェンスプラットフォーム — データのサイロを打破し、脅威インテリジェンスを真に実行可能なものにします。"
+        },
+        "openaev": {
+          "Intro": "OpenAEV は、Filigran のオープンソースの脅威インテリジェンス、高度な敵対者シミュレーション、戦略的サイバーリスク管理ソリューションの一部であり、組織が脅威をエンドツーエンドで予測・管理できるよう支援します。",
+          "Tagline": "優先順位付け、テスト、重要なものの修正",
+          "Description": "Adversarial Exposure Validation (AEV) で脅威に積極的に対抗し、現実の攻撃シナリオをシミュレートしてセキュリティ防御を最適化します。"
+        },
+        "IllustrationAlt": "{platformName} エコシステムのイラスト"
       },
       "XtmPlatform": {
         "NoTrial": {
@@ -1641,6 +1715,7 @@
           "Breadcrumb": "XTM Platform Trial",
           "Overline": "XTM Platform 無料トライアル",
           "Title": "30日間の無料トライアルを開始",
+          "ExpiredTitle": "XTM Platform トライアルが終了しました",
           "PitchTitle": "XTM Platform のすべてを体験する",
           "PitchDescription": "30日間、OpenCTI と OpenAEV の SaaS 版エンタープライズエディション、および XTM One のエージェンティックなオーケストレーション機能をご利用いただけます。脅威インテリジェンスを統合し、エージェンティックかつ継続的なエクスポージャー管理とサイバーリスク低減によって防御を検証しましょう。",
           "Products": {
@@ -1666,9 +1741,6 @@
             "NoSLA": "本トライアルに SLA は含まれません。クラウドプロバイダーの障害が発生した場合、復旧時間は保証されません。トライアル環境には重要なデータや代替できないデータを保存しないことを推奨します。"
           },
           "Form": {
-            "ProductsTitle": "このトライアルに含まれる製品",
-            "ProductsWarning": "トライアルバンドルは慎重にお選びください。",
-            "ProductsWarningDescription": "トライアルが開始されると、製品の追加や変更はできなくなり、また、同じ組織に対して追加のトライアルを申請することもできません。",
             "UseCaseFor": "{product} のユースケース",
             "Submit": "XTM Platform トライアルを申請"
           },
@@ -1689,8 +1761,6 @@
             "StartedOn": "開始日",
             "CancelledOn": "キャンセル日",
             "FinishedOn": "終了日",
-            "ProductsIncluded": "トライアルに含まれる製品",
-            "ProductsIncludedInRequest": "トライアル申請に含まれる製品",
             "CancelTrialRequest": "トライアル申請をキャンセル",
             "request-in-progress": {
               "Title": "ありがとうございます。リクエストを受け付けました。",
@@ -1960,7 +2030,7 @@
         "Eyebrow": "XTM Platform 無料トライアル",
         "Description": "XTM Platform のトライアル期間中、チームを簡単に管理し、共同作業を行いましょう。メンバーを招待し、役割と権限を割り当てて、全員がプラットフォームに適切なレベルでアクセスできるようにします。",
         "BackButton": "XTM Platform トライアルに戻る",
-        "BackToDashboardButton": "ダッシュボードに戻る",
+        "BackToDashboardButton": "戻る",
         "GroupAction": "グループアクション",
         "GroupActionDisabledTooltip": "グループアクションを適用するには、リストからユーザーを選択する必要があります",
         "BulkDeleteTooltip": "選択したユーザーを削除できます",
@@ -2413,6 +2483,9 @@
       "default": "デフォルト",
       "thread": "Thread"
     }
+  },
+  "TimeSeriesBarChart": {
+    "Peak": "ピーク"
   },
   "EditableText": {
     "DialogTitle": "コンテンツを編集",

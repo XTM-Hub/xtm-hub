@@ -1,4 +1,6 @@
-FROM mcr.microsoft.com/playwright:v1.64.0-noble
+FROM mcr.microsoft.com/playwright:v1.64.1-noble
+
+RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 

@@ -5,7 +5,6 @@ import {
   DocumentMetadataKeyCode,
   DocumentSourceType,
 } from '../../../__generated__/resolvers-types';
-import { withTransaction } from '../../../context/database.context';
 import { requestContext } from '../../../context/request.context';
 import {
   DocumentId,
@@ -14,17 +13,16 @@ import {
 import DocumentChildren from '../../../model/kanel/public/DocumentChildren';
 import { ServiceInstanceId } from '../../../model/kanel/public/ServiceInstance';
 import { restrictDocumentToUserOrganization } from '../../../security/restriction/document';
-import { MinIOClient } from '../../../thirdparty/minio/client';
 import { MinioFile } from '../../../thirdparty/minio/types';
-import { ErrorCode } from '../../../utils/error/error.code';
 import { DocumentApp } from '../document.app';
 import { Document } from '../document.helper';
 import { DOCUMENT_IMAGE_METADATA_KEYS, DocumentImage } from '../document.model';
-import { DocumentUploadsHelper, Upload } from '../document.uploads.helper';
 import {
   DocumentMetadataDomain,
   DocumentMetadataKeys,
 } from './document.metadata.domain';
+
+export type ExternalImageFile = Pick<DocumentModel, 'id' | 'minio_name'>;
 
 export const DocumentChildrenDomain = {
   insertChildRelationship: async ({
@@ -192,50 +190,41 @@ export const DocumentChildrenDomain = {
     return images;
   },
 
-  upsertExternalImage: async <T extends DocumentModel>(
-    doc: T,
-    externalImageUpload: Upload
-  ) => {
-    const { service_instance_id } = doc;
-    if (!service_instance_id) {
-      throw new Error(ErrorCode.ServiceInstanceNotFound);
-    }
+  loadExternalImageFiles: async (
+    parentDocumentId: DocumentId
+  ): Promise<ExternalImageFile[]> => {
+    return db<DocumentModel>('Document')
+      .join(
+        'Document_Children',
+        'Document.id',
+        'Document_Children.child_document_id'
+      )
+      .where('Document_Children.parent_document_id', parentDocumentId)
+      .andWhere('Document.type', '=', 'image')
+      .andWhere('Document.source_type', '=', DocumentSourceType.External)
+      .orderBy([
+        { column: 'Document.created_at', order: 'asc' },
+        { column: 'Document.id', order: 'asc' },
+      ])
+      .select('Document.id', 'Document.minio_name');
+  },
 
-    const [logoFile] = await DocumentUploadsHelper.processUploads(
-      externalImageUpload,
-      service_instance_id
-    );
-
-    const deletedDocuments = await withTransaction(async () => {
-      const deletedChildrenDocuments =
-        await DocumentChildrenDomain.deleteExternalImages(doc.id);
-
-      if (logoFile) {
-        await DocumentChildrenDomain.createImageDocuments(
-          doc.id,
-          service_instance_id,
-          [logoFile],
-          DocumentImageType.Logo,
-          DocumentSourceType.External
-        );
-      }
-
-      return deletedChildrenDocuments;
-    });
-    // Clean up MinIO files for deleted documents, need to be sure that we are finished with the logic
-    if (deletedDocuments.length > 0) {
-      await Promise.all(
-        deletedDocuments.map((doc) => {
-          return MinIOClient.deleteFile(doc.minio_name);
-        })
-      );
-    }
+  replaceImageFile: async (imageDocumentId: DocumentId, file: MinioFile) => {
+    await db<DocumentModel>('Document')
+      .where('id', '=', imageDocumentId)
+      .update({
+        file_name: file.fileName,
+        minio_name: file.minioName,
+        mime_type: file.mimeType,
+        updated_at: new Date(),
+      });
   },
 
   deleteExternalImages: async (
-    parentDocumentId: DocumentId
-  ): Promise<{ id: string; minio_name: string }[]> => {
-    return db('Document')
+    parentDocumentId: DocumentId,
+    excludeDocumentId?: DocumentId
+  ): Promise<ExternalImageFile[]> => {
+    return db<DocumentModel>('Document')
       .delete()
       .whereIn('id', function () {
         this.select('child_document_id')
@@ -244,6 +233,11 @@ export const DocumentChildrenDomain = {
       })
       .andWhere('Document.type', '=', 'image')
       .andWhere('Document.source_type', '=', DocumentSourceType.External)
+      .modify((qb) => {
+        if (excludeDocumentId) {
+          qb.andWhereNot('Document.id', excludeDocumentId);
+        }
+      })
       .returning(['id', 'minio_name']);
   },
 };

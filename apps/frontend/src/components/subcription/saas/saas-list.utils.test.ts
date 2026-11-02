@@ -1,11 +1,15 @@
 import { PlatformMetadataMapping } from '@/components/registration/PlatformIdentifierMapping';
 import {
+  getContractDaysLeft,
+  getHealthIssueRatio,
   getSaasPlatformMetadata,
-  getSaasPlatformProductName,
   getSaasPlatformServicePath,
+  getSaasProductName,
 } from '@/components/subcription/saas/saas-list.utils';
 import {
   PlatformIdentifier,
+  SaasPlatformHealthIssue,
+  SaasProduct,
   ServiceDefinitionIdentifier,
 } from '@graphql/generated';
 
@@ -42,41 +46,8 @@ describe('getSaasPlatformMetadata', () => {
   });
 });
 
-describe('getSaasPlatformProductName', () => {
-  it.each([
-    [ServiceDefinitionIdentifier.OpenctiRegistration, 'OpenCTI'],
-    [ServiceDefinitionIdentifier.OpenaevRegistration, 'OpenAEV'],
-    [ServiceDefinitionIdentifier.XtmoneRegistration, 'XTM One'],
-  ])(
-    'should return the product name of a %s platform',
-    (identifier, expected) => {
-      // Given a platform registered for a known product
-      // When its product name is resolved
-      const productName = getSaasPlatformProductName(identifier);
-
-      // Then the product name is returned
-      expect(productName).toBe(expected);
-    }
-  );
-
-  it.each([
-    [ServiceDefinitionIdentifier.Link],
-    [ServiceDefinitionIdentifier.OpenctiIntegrations],
-  ])(
-    'should return an empty product name for a %s identifier',
-    (identifier) => {
-      // Given an identifier that does not match any registered product
-      // When its product name is resolved
-      const productName = getSaasPlatformProductName(identifier);
-
-      // Then the product name is empty
-      expect(productName).toBe('');
-    }
-  );
-});
-
 describe('getSaasPlatformServicePath', () => {
-  it('should return the service page path of the platform service instance', () => {
+  it('should return the service page path of the platform service instance, opened from the CSM board', () => {
     // Given a saas platform registered on a service instance
     const platform = {
       identifier: ServiceDefinitionIdentifier.OpenctiRegistration,
@@ -87,9 +58,90 @@ describe('getSaasPlatformServicePath', () => {
     // When its service page path is built
     const path = getSaasPlatformServicePath(platform);
 
-    // Then it points to the service instance page of its product
+    // Then it points to the service instance page of its product, which leads back to the CSM board
     expect(path).toBe(
-      '/app/service/opencti_registration/U2VydmljZUluc3RhbmNlOjY5NzAwZWFlLTM2YWYtNDJmZi1hMThiLTljMzBkNGMzODU5Mg=='
+      '/app/service/opencti_registration/U2VydmljZUluc3RhbmNlOjY5NzAwZWFlLTM2YWYtNDJmZi1hMThiLTljMzBkNGMzODU5Mg==?from=csm-board'
     );
+  });
+});
+
+describe('getContractDaysLeft', () => {
+  const NOW = '2026-10-28T12:00:00.000Z';
+
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'], now: new Date(NOW) });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it.each`
+    description           | endDate                       | daysLeft
+    ${'ends in 90 days'}  | ${'2027-01-26T12:00:00.000Z'} | ${90}
+    ${'ends in 89 days'}  | ${'2027-01-25T12:00:00.000Z'} | ${89}
+    ${'ends later today'} | ${'2026-10-28T13:00:00.000Z'} | ${1}
+  `(
+    'should return $daysLeft days left for a contract that $description',
+    ({ endDate, daysLeft }) => {
+      // Given a contract end date
+      // When the days left are counted
+      const days = getContractDaysLeft(endDate);
+
+      // Then every started day counts
+      expect(days).toBe(daysLeft);
+    }
+  );
+});
+
+describe('getSaasProductName', () => {
+  it.each`
+    product             | name
+    ${SaasProduct.Octi} | ${'OpenCTI'}
+    ${SaasProduct.Oaev} | ${'OpenAEV'}
+    ${SaasProduct.One}  | ${'XTM One'}
+  `('should return $name for the $product product', ({ product, name }) => {
+    // Given a product of the SaaS Manager
+    // When its name is resolved
+    const productName = getSaasProductName(product);
+
+    // Then the full name of the product is returned
+    expect(productName).toBe(name);
+  });
+});
+
+describe('getHealthIssueRatio', () => {
+  const platform = {
+    sla_cmtd: 0.9971,
+    storage: {
+      es_used_size: { percent: 85 },
+      s3_used_size: { percent: 93 },
+    },
+  };
+
+  it.each`
+    issue                                   | ratio
+    ${SaasPlatformHealthIssue.Availability} | ${0.9971}
+    ${SaasPlatformHealthIssue.Database}     | ${0.85}
+    ${SaasPlatformHealthIssue.FileStorage}  | ${0.93}
+  `('should return $ratio for the $issue issue', ({ issue, ratio }) => {
+    // Given a platform the SaaS Manager measured
+    // When the measure behind one of its issues is read
+    const issueRatio = getHealthIssueRatio(platform, issue);
+
+    // Then it is a ratio, whatever unit the measure is sent in
+    expect(issueRatio).toBe(ratio);
+  });
+
+  it('should return null for the issue of a storage without usage', () => {
+    // Given a platform without any storage measure
+    // When the measure behind its database issue is read
+    const issueRatio = getHealthIssueRatio(
+      { sla_cmtd: null, storage: null },
+      SaasPlatformHealthIssue.Database
+    );
+
+    // Then there is none
+    expect(issueRatio).toBeNull();
   });
 });

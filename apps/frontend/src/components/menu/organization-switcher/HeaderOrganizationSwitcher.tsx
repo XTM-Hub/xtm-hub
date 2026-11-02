@@ -1,7 +1,9 @@
 'use client';
 
-import { PortalContext } from '@/components/me/AppPortalContext';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
+import { useMeOrganizations } from '@/hooks/use-me-organizations';
 import { useTranslate } from '@/hooks/use-translate';
+import { portalGraphqlClient } from '@/lib/graphql-client';
 import { APP_PATH } from '@/utils/path/constant';
 import {
   Select,
@@ -10,19 +12,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@filigran/design-system';
-import { OrganizationSwitcherMutation as OrganizationSwitcherMutationType } from '@generated/OrganizationSwitcherMutation.graphql';
-import { useContext, useMemo } from 'react';
-import { graphql, useMutation } from 'react-relay';
-
-export const organizationSwitcherMutation = graphql`
-  mutation OrganizationSwitcherMutation($organization_id: OrganizationId!) {
-    changeSelectedOrganization(organization_id: $organization_id) {
-      id
-      selected_organization_id
-      selected_org_capabilities
-    }
-  }
-`;
+import { useChangeSelectedOrganizationMutation } from '@graphql/generated';
+import { useMemo } from 'react';
 
 interface HeaderOrganizationSwitcherProps {
   fitContainer?: boolean;
@@ -31,45 +22,50 @@ interface HeaderOrganizationSwitcherProps {
 const HeaderOrganizationSwitcher = ({
   fitContainer = false,
 }: HeaderOrganizationSwitcherProps) => {
-  const { me } = useContext(PortalContext);
   const t = useTranslate();
+  const { data } = useMeOrganizations();
+  const me = data?.me;
 
-  const [commitOrganizationSwitcherMutation] =
-    useMutation<OrganizationSwitcherMutationType>(organizationSwitcherMutation);
+  const { mutate: changeSelectedOrganization } =
+    useChangeSelectedOrganizationMutation(portalGraphqlClient);
+
+  const organizationOptions = useMemo(
+    () =>
+      (me?.organizations ?? []).map((organization) => ({
+        value: organization.id,
+        label: organization.personal_space
+          ? t('OrganizationSwitcher.PersonalSpace')
+          : organization.name,
+      })),
+    [me?.organizations, t]
+  );
 
   if (!me) {
     return null;
   }
-
-  const parsedOrganizations = useMemo(() => {
-    return me.organizations.map((org) => ({
-      ...org,
-      name: org.personal_space
-        ? t('OrganizationSwitcher.PersonalSpace')
-        : org.name,
-    }));
-  }, [me.organizations, t]);
-
-  const organizationOptions = useMemo(() => {
-    return parsedOrganizations.map((organization) => ({
-      value: organization.id,
-      label: organization.name,
-    }));
-  }, [parsedOrganizations]);
 
   const handleOnValueChange = (organizationId: string) => {
     if (!organizationId || organizationId === me.selected_organization_id) {
       return;
     }
 
-    commitOrganizationSwitcherMutation({
-      variables: {
-        organization_id: organizationId,
-      },
-      onCompleted: () => {
-        window.location.href = `/${APP_PATH}`;
-      },
-    });
+    changeSelectedOrganization(
+      { organization_id: organizationId },
+      {
+        onSuccess: () => {
+          window.location.href = `/${APP_PATH}`;
+        },
+        onError: (error: unknown) => {
+          const errorMessage =
+            error instanceof Error ? error.message : 'UnknownError';
+          showSnackbar({
+            severity: 'error',
+            title: t('Utils.Error'),
+            description: <>{t(`Error.Server.${errorMessage}`)}</>,
+          });
+        },
+      }
+    );
   };
 
   return (

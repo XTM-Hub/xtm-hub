@@ -5,23 +5,30 @@ import {
   registeredPlatformByServiceInstanceIdFragment,
 } from '@/components/registration/register/register.graphql';
 import { PlatformInformation } from '@/components/service/registration/PlatformInformation';
+import { PlatformMetrics } from '@/components/service/registration/PlatformMetrics';
+import { getRegisteredPlatformBreadcrumbs } from '@/components/service/registration/registered-platform-overview.utils';
 import { RegisteredPlatformHeader } from '@/components/service/registration/RegisteredPlatformHeader';
 import { BreadcrumbNav } from '@/components/ui/BreadcrumbNav';
 import { useIsFeatureEnabled } from '@/hooks/use-is-feature-enabled';
 import { useUserHasPortalCapability } from '@/hooks/use-portal-capability';
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import { APP_PATH } from '@/utils/path/constant';
+import {
+  REGISTERED_PLATFORM_ORIGIN_CSM_BOARD,
+  REGISTERED_PLATFORM_ORIGIN_PARAM,
+} from '@/utils/path/constant';
 import { registeredPlatformByServiceInstanceId_fragment$key } from '@generated/registeredPlatformByServiceInstanceId_fragment.graphql';
 import { registeredPlatformByServiceInstanceIdQuery } from '@generated/registeredPlatformByServiceInstanceIdQuery.graphql';
 import {
   CommercialModel,
   FeatureFlag,
   PortalCapability,
+  SaasPlatformMetricsPeriod,
   useRegisteredSaasPlatformDataQuery,
 } from '@graphql/generated';
 import { productInformationKeys } from '@graphql/product-information/product-information.keys';
-import { notFound } from 'next/navigation';
-import { use } from 'react';
+import { keepPreviousData } from '@tanstack/react-query';
+import { notFound, useSearchParams } from 'next/navigation';
+import { use, useState } from 'react';
 import { useFragment, useLazyLoadQuery } from 'react-relay';
 
 // Matches the backend cache: a remount within a minute would only get the same answer back.
@@ -56,41 +63,52 @@ export const RegisteredPlatformOverview = ({
     PortalCapability.Bypass,
     PortalCapability.ReadSaasMetrics,
   ]);
+  const searchParams = useSearchParams();
+  // Only a user who can open the CSM board is led back to it.
+  const isFromCsmBoard =
+    canReadSaasMetrics &&
+    searchParams.get(REGISTERED_PLATFORM_ORIGIN_PARAM) ===
+      REGISTERED_PLATFORM_ORIGIN_CSM_BOARD;
   const isSaasMetricsEnabled = useIsFeatureEnabled(FeatureFlag.SaasMetrics);
   const isSaas = platform?.commercial_model === CommercialModel.Saas;
   const showSaasPlatformData =
     isSaasMetricsEnabled && isSaas && canReadSaasMetrics;
 
+  const [metricsPeriod, setMetricsPeriod] = useState<SaasPlatformMetricsPeriod>(
+    SaasPlatformMetricsPeriod.Last_90Days
+  );
   const saasPlatformDataVariables = {
-    input: { service_instance_id: decodedServiceInstanceId },
+    input: {
+      service_instance_id: decodedServiceInstanceId,
+      metrics_period: metricsPeriod,
+    },
   };
-  const { data: saasPlatformData, isPending: isSaasPlatformDataPending } =
-    useRegisteredSaasPlatformDataQuery(
-      portalGraphqlClient,
-      saasPlatformDataVariables,
-      {
-        queryKey: productInformationKeys.registeredSaasPlatformData(
-          saasPlatformDataVariables
-        ),
-        enabled: showSaasPlatformData,
-        staleTime: SAAS_PLATFORM_DATA_STALE_TIME,
-      }
-    );
+  const {
+    data: saasPlatformData,
+    isPending: isSaasPlatformDataPending,
+    isPlaceholderData: isPreviousMetricsPeriodData,
+  } = useRegisteredSaasPlatformDataQuery(
+    portalGraphqlClient,
+    saasPlatformDataVariables,
+    {
+      queryKey: productInformationKeys.registeredSaasPlatformData(
+        saasPlatformDataVariables
+      ),
+      enabled: showSaasPlatformData,
+      staleTime: SAAS_PLATFORM_DATA_STALE_TIME,
+      // The metadata does not depend on the period: keep it on screen while the metrics of another period load.
+      placeholderData: keepPreviousData,
+    }
+  );
 
   if (!queryData.registeredPlatform || !platform) {
     notFound();
   }
 
-  const breadcrumbs = [
-    {
-      label: 'MenuLinks.Home',
-      href: `/${APP_PATH}`,
-    },
-    {
-      label: platform.title,
-      original: true,
-    },
-  ];
+  const breadcrumbs = getRegisteredPlatformBreadcrumbs({
+    platformTitle: platform.title,
+    isFromCsmBoard,
+  });
 
   return (
     <>
@@ -98,6 +116,16 @@ export const RegisteredPlatformOverview = ({
       <RegisteredPlatformHeader
         registeredPlatform={queryData.registeredPlatform}
       />
+      {showSaasPlatformData && (
+        <PlatformMetrics
+          metrics={saasPlatformData?.registeredSaasPlatformData?.metrics}
+          storage={saasPlatformData?.registeredSaasPlatformData?.storage}
+          sla={saasPlatformData?.registeredSaasPlatformData?.sla}
+          isLoading={isSaasPlatformDataPending || isPreviousMetricsPeriodData}
+          period={metricsPeriod}
+          onPeriodChange={setMetricsPeriod}
+        />
+      )}
       <PlatformInformation
         registeredPlatform={queryData.registeredPlatform}
         showMetadata={showSaasPlatformData}

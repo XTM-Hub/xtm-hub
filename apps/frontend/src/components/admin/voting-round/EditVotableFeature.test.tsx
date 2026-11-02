@@ -1,14 +1,21 @@
 import EditVotableFeature from '@/components/admin/voting-round/EditVotableFeature';
+import { requestGraphqlWithUploads } from '@/lib/graphql-upload-client';
 import { mockGraphqlMutation } from '@/utils/test/msw/graphql-api';
 import { mswServer } from '@/utils/test/msw/server';
 import testRender from '@/utils/test/test-render';
 import {
   FiligranProduct,
   VotableFeatureDeleteMutation,
+  VotableFeatureUpdateDocument,
   VotableFeatureUpdateMutation,
 } from '@graphql/generated';
 import { mockVotableFeature } from '@graphql/mocks';
 import { screen, waitFor, within } from '@testing-library/react';
+
+vi.mock('@/lib/graphql-upload-client', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/graphql-upload-client')>()),
+  requestGraphqlWithUploads: vi.fn(),
+}));
 
 vi.mock('@/components/admin/use-case/use-use-cases', () => ({
   useUseCases: () => [
@@ -126,5 +133,50 @@ describe('EditVotableFeature', () => {
     await waitFor(() => {
       expect(onClose).toHaveBeenCalled();
     });
+  });
+
+  it('should send the uploaded illustration along with the updated feature', async () => {
+    // Given
+    const illustration = new File(['image'], 'illustration.png', {
+      type: 'image/png',
+    });
+    const response: VotableFeatureUpdateMutation = {
+      updateVotableFeature: mockVotableFeature({ id: feature.id }),
+    };
+    vi.mocked(requestGraphqlWithUploads).mockResolvedValue(response);
+    const { user } = renderEdit();
+    await user.upload(
+      screen.getByLabelText('VotingRound.Feature.Illustration', {
+        selector: 'input',
+      }),
+      illustration
+    );
+
+    // When
+    await user.click(screen.getByRole('button', { name: /Utils.Validate/i }));
+
+    // Then
+    await waitFor(() =>
+      expect(requestGraphqlWithUploads).toHaveBeenCalledWith(
+        VotableFeatureUpdateDocument,
+        expect.anything(),
+        expect.anything()
+      )
+    );
+    // toEqual finds any two files equal: the sent file is compared by identity.
+    const [, , uploads] = vi.mocked(requestGraphqlWithUploads).mock.lastCall!;
+    expect(uploads.document).toHaveLength(1);
+    expect((uploads.document as File[])[0]).toBe(illustration);
+  });
+
+  it('should notify the parent when the admin cancels the edition', async () => {
+    // Given
+    const { user, onClose } = renderEdit();
+
+    // When
+    await user.click(screen.getByRole('button', { name: 'Utils.Cancel' }));
+
+    // Then
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 });

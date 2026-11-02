@@ -1,11 +1,14 @@
-import { REGIONS_VALUES } from '@/components/service/trial-instances/form-constants';
+import {
+  REGIONS_VALUES,
+  USE_CASES_BY_PLATFORM_IDENTIFIER,
+} from '@/components/service/trial-instances/form-constants';
 import {
   XtmPlatformTrialForm,
   xtmPlatformTrialFormSchema,
 } from '@/components/service/trial-instances/xtm-platform-trial/request-form/XtmPlatformTrialForm';
 import testRender from '@/utils/test/test-render';
 import { PlatformIdentifier } from '@graphql/generated';
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
@@ -58,7 +61,10 @@ vi.mock('@filigran/design-system', async () => {
 });
 
 const EMPTY_SELECTS_SUBMISSION = {
-  use_cases_by_product: [{ platform_identifier: PlatformIdentifier.Opencti }],
+  use_cases_by_product: [
+    { platform_identifier: PlatformIdentifier.Opencti },
+    { platform_identifier: PlatformIdentifier.Openaev },
+  ],
 };
 
 const getSchemaErrorMessage = (fieldPath: string) => {
@@ -72,87 +78,44 @@ const getSchemaErrorMessage = (fieldPath: string) => {
 };
 
 describe('XtmPlatformTrialForm', () => {
-  it('renders the products warning', () => {
+  it('does not let the user pick the products of the trial', () => {
     testRender(<XtmPlatformTrialForm handleSubmit={vi.fn()} />);
 
     expect(
-      screen.getByText('Service.Trials.XtmPlatform.Page.Form.ProductsWarning')
-    ).toBeInTheDocument();
+      screen.queryByRole('checkbox', { name: /PlatformIdentifier\./ })
+    ).not.toBeInTheDocument();
   });
 
-  it('renders OpenCTI and OpenAEV checked and XTM One always checked and disabled', () => {
+  it('renders one use case field for OpenCTI then one for OpenAEV', () => {
     testRender(<XtmPlatformTrialForm handleSubmit={vi.fn()} />);
 
-    const openctiCheckbox = screen.getByRole('checkbox', {
-      name: 'PlatformIdentifier.opencti',
-    });
-    const openaevCheckbox = screen.getByRole('checkbox', {
-      name: 'PlatformIdentifier.openaev',
-    });
-    const xtmoneCheckbox = screen.getByRole('checkbox', {
-      name: 'PlatformIdentifier.xtmone',
-    });
-
-    expect(openctiCheckbox).toBeChecked();
-    expect(openaevCheckbox).toBeChecked();
-    expect(xtmoneCheckbox).toBeChecked();
-    expect(xtmoneCheckbox).toBeDisabled();
+    // Region, job title, activity sector, then the OpenCTI and OpenAEV use cases
+    const useCaseSelects = screen.getAllByRole('combobox').slice(3);
+    expect(
+      useCaseSelects.map((select) =>
+        within(select)
+          .getAllByRole('option')
+          .map((option) => option.getAttribute('value'))
+      )
+    ).toEqual([
+      USE_CASES_BY_PLATFORM_IDENTIFIER[PlatformIdentifier.Opencti],
+      USE_CASES_BY_PLATFORM_IDENTIFIER[PlatformIdentifier.Openaev],
+    ]);
   });
 
-  it('removes the use case field for a product when it is unchecked and re-adds it when checked again', async () => {
-    const { user } = testRender(
-      <XtmPlatformTrialForm handleSubmit={vi.fn()} />
-    );
-
-    expect(
-      screen.getAllByText('Service.Trials.XtmPlatform.Page.Form.UseCaseFor')
-    ).toHaveLength(2);
-
-    const openctiCheckbox = screen.getByRole('checkbox', {
-      name: 'PlatformIdentifier.opencti',
-    });
-    await user.click(openctiCheckbox);
-
-    expect(openctiCheckbox).not.toBeChecked();
-    expect(
-      screen.getAllByText('Service.Trials.XtmPlatform.Page.Form.UseCaseFor')
-    ).toHaveLength(1);
-
-    await user.click(openctiCheckbox);
-
-    expect(openctiCheckbox).toBeChecked();
-    expect(
-      screen.getAllByText('Service.Trials.XtmPlatform.Page.Form.UseCaseFor')
-    ).toHaveLength(2);
-  });
-
-  it('disables the submit button when no selectable product is checked', async () => {
-    const { user } = testRender(
-      <XtmPlatformTrialForm handleSubmit={vi.fn()} />
-    );
-
-    await user.click(
-      screen.getByRole('checkbox', { name: 'PlatformIdentifier.opencti' })
-    );
-    await user.click(
-      screen.getByRole('checkbox', { name: 'PlatformIdentifier.openaev' })
+  it('disables the submit button while the request is submitting', () => {
+    testRender(
+      <XtmPlatformTrialForm
+        handleSubmit={vi.fn()}
+        isSubmitting
+      />
     );
 
     expect(
       screen.getByRole('button', {
-        name: 'Service.Trials.XtmPlatform.Page.Form.Submit',
+        name: /^Service\.Trials\.XtmPlatform\.Page\.Form\.Submit/,
       })
     ).toBeDisabled();
-  });
-
-  it('keeps the submit button enabled when at least one selectable product is checked', () => {
-    testRender(<XtmPlatformTrialForm handleSubmit={vi.fn()} />);
-
-    expect(
-      screen.getByRole('button', {
-        name: 'Service.Trials.XtmPlatform.Page.Form.Submit',
-      })
-    ).toBeEnabled();
   });
 
   it('submits the expected values when the form is filled and submitted', async () => {
@@ -162,7 +125,7 @@ describe('XtmPlatformTrialForm', () => {
     );
 
     const selects = screen.getAllByRole('combobox');
-    // Region, job title, activity sector, then one use-case select per selectable product.
+    // Region, job title, activity sector, then the OpenCTI and OpenAEV use cases.
     const [
       regionSelect,
       jobTitleSelect,
@@ -201,6 +164,15 @@ describe('XtmPlatformTrialForm', () => {
     >;
     expect(submittedValues.acceptTerms).toBe(true);
     expect(submittedValues.region).toBe(REGIONS_VALUES[0]);
+    expect(submittedValues).not.toHaveProperty('products');
+    expect(
+      submittedValues.use_cases_by_product.map(
+        (entry) => entry.platform_identifier
+      )
+    ).toEqual([PlatformIdentifier.Opencti, PlatformIdentifier.Openaev]);
+    for (const entry of submittedValues.use_cases_by_product) {
+      expect(entry.use_case).toBeDefined();
+    }
   });
 
   it('marks the terms checkbox invalid when submitted without accepting the terms', async () => {
@@ -222,14 +194,17 @@ describe('XtmPlatformTrialForm', () => {
     );
   });
 
-  it.each([
-    'region',
-    'job_title',
-    'activity_sector',
-    'use_cases_by_product.0.use_case',
+  // Each field path comes with the position of its select: region, job title,
+  // activity sector, then the OpenCTI and OpenAEV use cases.
+  it.each<[string, number]>([
+    ['region', 0],
+    ['job_title', 1],
+    ['activity_sector', 2],
+    ['use_cases_by_product.0.use_case', 3],
+    ['use_cases_by_product.1.use_case', 4],
   ])(
     'should show the %s validation message when the form is submitted with the selects empty',
-    async (fieldPath) => {
+    async (fieldPath, selectIndex) => {
       // Given
       const expectedMessage = getSchemaErrorMessage(fieldPath);
       const { user } = testRender(
@@ -244,9 +219,13 @@ describe('XtmPlatformTrialForm', () => {
       );
 
       // Then
-      // Both use case selects show the same message, hence findAll.
+      // Both use case selects show the same message: only look inside the
+      // container of the field under test, which also holds its error.
+      const fieldContainer = screen
+        .getAllByRole('combobox')
+        [selectIndex]?.closest('div') as HTMLElement;
       expect(
-        (await screen.findAllByText(expectedMessage))[0]
+        await within(fieldContainer).findByText(expectedMessage)
       ).toBeInTheDocument();
     }
   );

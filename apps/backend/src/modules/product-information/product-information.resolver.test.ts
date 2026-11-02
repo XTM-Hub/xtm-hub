@@ -11,18 +11,32 @@ import {
 } from '../../../tests/tests.const';
 import {
   CommercialModel,
+  OrderingMode,
   PlatformContract,
   PlatformIdentifier,
+  RegisteredPlatform,
   SaasPlatformData,
+  SaasPlatformMetricsPeriod,
+  SaasPlatformOrdering,
+  SaasPlatformPage,
+  SaasPlatformResolvers,
+  SaasProduct,
 } from '../../__generated__/resolvers-types';
 import { requestContext } from '../../context/request.context';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
+import { PortalContext } from '../../model/portal-context';
 import { SaasManagerClient } from '../../thirdparty/saasmanager/client';
+import { isFeatureEnabled } from '../../utils/feature-flag.util';
 import { PlatformConfigurationDomain } from '../registration/platform-configuration/platform-configuration.domain';
 import { RegistrationDomain } from '../registration/registration.domain';
 import { ServiceInstanceDomain } from '../service/instance/service-instance.domain';
 import { ProductInformationApp } from './product-information.app';
 import productInformationResolver from './product-information.resolver';
+
+// isFeatureEnabled is mocked so that tests are deterministic and independent of the local `enabled_features` config.
+vi.mock('../../utils/feature-flag.util', () => ({
+  isFeatureEnabled: vi.fn(),
+}));
 
 describe('query.registeredSaasPlatformData', () => {
   it('should pass the service_instance_id to productInformationApp and return its data', async () => {
@@ -46,7 +60,12 @@ describe('query.registeredSaasPlatformData', () => {
     const result = await productInformationResolver.Query!
       .registeredSaasPlatformData!(
       {},
-      { input: { service_instance_id: serviceInstanceId } },
+      {
+        input: {
+          service_instance_id: serviceInstanceId,
+          metrics_period: SaasPlatformMetricsPeriod.Last_90Days,
+        },
+      },
       contextSimpleUserFiligran2,
       GRAPHQL_RESOLVE_INFO
     );
@@ -54,7 +73,10 @@ describe('query.registeredSaasPlatformData', () => {
     // Then
     expect(
       ProductInformationApp.loadRegisteredSaasPlatformData
-    ).toHaveBeenCalledWith(serviceInstanceId);
+    ).toHaveBeenCalledWith(
+      serviceInstanceId,
+      SaasPlatformMetricsPeriod.Last_90Days
+    );
     expect(result).toMatchObject(expectedData);
   });
 
@@ -69,7 +91,12 @@ describe('query.registeredSaasPlatformData', () => {
     const result = await productInformationResolver.Query!
       .registeredSaasPlatformData!(
       {},
-      { input: { service_instance_id: uuidv4() as ServiceInstanceId } },
+      {
+        input: {
+          service_instance_id: uuidv4() as ServiceInstanceId,
+          metrics_period: SaasPlatformMetricsPeriod.Last_90Days,
+        },
+      },
       contextSimpleUserFiligran2,
       GRAPHQL_RESOLVE_INFO
     );
@@ -91,6 +118,10 @@ describe('query.registeredSaasPlatformData', () => {
     let serviceInstanceId: ServiceInstanceId;
 
     beforeEach(async () => {
+      // The days asked to the SaaS Manager depend on the current date.
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime('2026-10-27T09:00:00.000Z');
+      vi.mocked(isFeatureEnabled).mockReturnValue(true);
       requestContext.set(requestContextRegistererUserSecondOrga);
       platformId = uuidv4();
       serviceInstanceId = await RegistrationDomain.registerNewPlatform({
@@ -112,6 +143,7 @@ describe('query.registeredSaasPlatformData', () => {
     });
 
     afterEach(async () => {
+      vi.useRealTimers();
       await PlatformConfigurationDomain.deleteConfigurationBy({
         service_instance_id: serviceInstanceId,
       });
@@ -135,7 +167,12 @@ describe('query.registeredSaasPlatformData', () => {
       const result = await productInformationResolver.Query!
         .registeredSaasPlatformData!(
         {},
-        { input: { service_instance_id: serviceInstanceId } },
+        {
+          input: {
+            service_instance_id: serviceInstanceId,
+            metrics_period: SaasPlatformMetricsPeriod.Last_90Days,
+          },
+        },
         contextRegistererUserSecondOrga,
         GRAPHQL_RESOLVE_INFO
       );
@@ -144,6 +181,7 @@ describe('query.registeredSaasPlatformData', () => {
       expect(result).toMatchObject({ metadata });
       expect(callSpy).toHaveBeenCalledExactlyOnceWith({
         platform_id: platformId,
+        include_metrics: 95,
       });
     });
 
@@ -156,7 +194,12 @@ describe('query.registeredSaasPlatformData', () => {
       const result = await productInformationResolver.Query!
         .registeredSaasPlatformData!(
         {},
-        { input: { service_instance_id: serviceInstanceId } },
+        {
+          input: {
+            service_instance_id: serviceInstanceId,
+            metrics_period: SaasPlatformMetricsPeriod.Last_90Days,
+          },
+        },
         contextSimpleUserFiligran2,
         GRAPHQL_RESOLVE_INFO
       );
@@ -165,5 +208,102 @@ describe('query.registeredSaasPlatformData', () => {
       expect(result).toBeNull();
       expect(callSpy).not.toHaveBeenCalled();
     });
+  });
+});
+
+describe('query.saasManagerPlatforms', () => {
+  const args = {
+    page: 2,
+    pageSize: 25,
+    orderBy: SaasPlatformOrdering.CustomerName,
+    orderMode: OrderingMode.Asc,
+    searchTerm: 'filigran',
+  };
+
+  it('should pass the pagination args to productInformationApp and return its page', async () => {
+    // Given
+    const expectedPage: SaasPlatformPage = {
+      totalCount: 26,
+      platforms: [
+        {
+          id: uuidv4(),
+          status: 'active',
+          product: SaasProduct.Octi,
+          metadata: { hostname: 'my-platform.example.com' },
+        },
+      ],
+    };
+    const loadSpy = vi
+      .spyOn(ProductInformationApp, 'loadSaasManagerPlatforms')
+      .mockResolvedValue(expectedPage);
+
+    // When
+    const result = await productInformationResolver.Query!
+      .saasManagerPlatforms!(
+      {},
+      args,
+      contextSimpleUserFiligran2,
+      GRAPHQL_RESOLVE_INFO
+    );
+
+    // Then
+    expect(loadSpy).toHaveBeenCalledExactlyOnceWith(args);
+    expect(result).toEqual(expectedPage);
+  });
+
+  it('should return null when productInformationApp cannot load the platforms', async () => {
+    // Given
+    vi.spyOn(
+      ProductInformationApp,
+      'loadSaasManagerPlatforms'
+    ).mockResolvedValue(null);
+
+    // When
+    const result = await productInformationResolver.Query!
+      .saasManagerPlatforms!(
+      {},
+      args,
+      contextSimpleUserFiligran2,
+      GRAPHQL_RESOLVE_INFO
+    );
+
+    // Then
+    expect(result).toBeNull();
+  });
+});
+
+describe('saasPlatform.registered_platform', () => {
+  it('should load the registered platform of the SaaS Manager platform id through the dataloader', async () => {
+    // Given
+    const platformId = uuidv4();
+    const registeredPlatform = {
+      id: uuidv4(),
+      service_instance_id: uuidv4() as ServiceInstanceId,
+    } as RegisteredPlatform;
+    const load = vi.fn().mockResolvedValue(registeredPlatform);
+    const context = {
+      ...contextSimpleUserFiligran2,
+      dataLoaders: {
+        ...contextSimpleUserFiligran2.dataLoaders,
+        registration: {
+          ...contextSimpleUserFiligran2.dataLoaders.registration,
+          saasRegisteredPlatformByPlatformIdLoader: { load },
+        },
+      },
+    } as unknown as PortalContext;
+
+    // When
+    const result = await (
+      productInformationResolver.SaasPlatform as SaasPlatformResolvers
+    ).registered_platform!(
+      { id: platformId, metadata: {} },
+      {},
+      context,
+      GRAPHQL_RESOLVE_INFO
+    );
+
+    // Then
+    expect(load).toHaveBeenCalledExactlyOnceWith(platformId);
+    expect(result).toBe(registeredPlatform);
   });
 });

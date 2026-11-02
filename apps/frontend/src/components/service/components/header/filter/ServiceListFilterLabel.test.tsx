@@ -1,9 +1,7 @@
 import { ServiceListFilterLabel } from '@/components/service/components/header/filter/ServiceListFilterLabel';
-import { AppServiceListLocalStorageKeyContext } from '@/components/service/components/ServiceListLocalStorageKeyContext';
-import {
-  ServiceListLocalStorageKey,
-  useServiceListLocalStorage,
-} from '@/hooks/use-service-list-local-storage';
+import { AppServiceListStorageKeyContext } from '@/components/service/components/ServiceListStorageKeyContext';
+import { useServiceListStorage } from '@/hooks/use-service-list-storage';
+import { ServiceListStorageKey } from '@/utils/filters-storage.utils';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 import testRender, { testRenderHook } from '@/utils/test/test-render';
 import {
@@ -18,7 +16,7 @@ const FIRST_USE_CASE_ID = 'use-case-1';
 const FIRST_USE_CASE_NAME = 'Threat hunting';
 const SECOND_USE_CASE_ID = 'use-case-2';
 const SECOND_USE_CASE_NAME = 'Incident response';
-const LOCAL_STORAGE_KEY = ServiceListLocalStorageKey.OpenCTIIntegrationFeeds;
+const STORAGE_KEY = ServiceListStorageKey.OpenCTIIntegrationFeeds;
 const DOCUMENT_TYPE = ShareableResourceType.OPENCTI_INTEGRATION;
 
 const graphqlMocks = vi.hoisted(() => ({
@@ -32,17 +30,17 @@ vi.mock('@graphql/generated', async (importOriginal) => ({
 
 const renderFilter = () =>
   testRender(
-    <AppServiceListLocalStorageKeyContext localStorageKey={LOCAL_STORAGE_KEY}>
+    <AppServiceListStorageKeyContext storageKey={STORAGE_KEY}>
       <ServiceListFilterLabel type={DOCUMENT_TYPE} />
-    </AppServiceListLocalStorageKeyContext>
+    </AppServiceListStorageKeyContext>
   );
 
 const renderStoredFilters = () =>
-  testRenderHook(() => useServiceListLocalStorage(LOCAL_STORAGE_KEY));
+  testRenderHook(() => useServiceListStorage(STORAGE_KEY));
 
 describe('ServiceListFilterLabel', () => {
   beforeEach(() => {
-    localStorage.clear();
+    sessionStorage.clear();
     graphqlMocks.useUseCasesListQuery.mockReturnValue({
       data: {
         useCases: mockUseCaseConnection({

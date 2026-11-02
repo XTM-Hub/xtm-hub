@@ -19,10 +19,8 @@ import graphqlUploadExpress from 'graphql-upload/graphqlUploadExpress.mjs';
 import { printSchema } from 'graphql/utilities/index.js';
 import { createServer } from 'http';
 import fs from 'node:fs';
-import { v4 as uuidv4 } from 'uuid';
 import { dbMigration } from '../knexfile';
 import portalConfig from './config';
-import { requestContext } from './context/request.context';
 import { initCronJobs, stopCronJobs } from './crons';
 import { PortalContext } from './model/portal-context';
 import { UserLoadUserBy } from './model/user';
@@ -50,6 +48,7 @@ import {
 import createSchema from './server/graphql-schema';
 import platformInit, { minioInit } from './server/initialize';
 import { seedDevelopmentConnectors } from './server/initialize.helper';
+import { requestContextMiddleware } from './server/request-context.middleware';
 import { ReadOnlySessionStore } from './server/session/read-only-session.store';
 import { getSessionStoreInstance } from './session-store-manager';
 import { initShutdown, registerShutdownHook } from './shutdown';
@@ -106,6 +105,10 @@ const PORTAL_CORS_OPTIONS: cors.CorsOptions = {
 };
 
 const app = express();
+app.set('trust proxy', portalConfig.trust_proxy);
+logApp.info('[TRUST-PROXY] Express trust proxy set', {
+  trustProxy: portalConfig.trust_proxy,
+});
 const SESSION_MAX_AGE = 24 * 60 * 60 * 1000; // 1 day
 const sessionStore = getSessionStoreInstance();
 const sessionOptions: SessionOptions = {
@@ -273,25 +276,7 @@ if (
   fs.writeFileSync('../frontend/schema.graphql', printedSchema);
 }
 
-app.use(function (req, res, next) {
-  const forwardedFor = req.headers['x-forwarded-for'];
-  const forwardedForIp = Array.isArray(forwardedFor)
-    ? forwardedFor[0]
-    : forwardedFor?.split(',')[0]?.trim();
-  requestContext.run(
-    {
-      user: req.session.user,
-      correlationId: uuidv4(),
-      userAgent: req.headers['user-agent'],
-      ip: forwardedForIp || req.ip,
-      referer: req.headers.referer,
-      organizationId: req.session.user?.selected_organization_id,
-    },
-    () => {
-      next();
-    }
-  );
-});
+app.use(requestContextMiddleware);
 
 // The ApolloServer constructor requires two parameters: your schema
 // definition and your set of resolvers.

@@ -13,10 +13,8 @@ import {
   PlatformInput,
   PlatformRegistrationConnectivityStatus,
   PlatformRegistrationStatus,
-  QuerySaasPlatformsArgs,
   RefreshUserPlatformTokenResponse,
   RegisteredPlatform,
-  RegisteredPlatformConnection,
   RegisteredPlatformsInput,
   RegisterPlatformInput,
   ServiceDefinitionIdentifier,
@@ -209,11 +207,6 @@ export const RegistrationApp = {
 
     return platforms.map(mapDomainRegisteredPlatformToGraphQL);
   },
-
-  loadSaasPlatforms: async (
-    opts: QuerySaasPlatformsArgs
-  ): Promise<RegisteredPlatformConnection> =>
-    RegistrationDomain.loadSaasPlatforms(opts),
 
   /**
    * @deprecated This function is only used by openCTIPlatformRegistrationStatus, which is deprecated.

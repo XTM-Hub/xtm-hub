@@ -3,15 +3,16 @@ import { PlatformMetadataMapping } from '@/components/registration/PlatformIdent
 import { Register } from '@/components/registration/register';
 import * as SnackbarStore from '@/components/ui/snackbar/snackbar-store';
 import testRender from '@/utils/test/test-render';
-import { organizationListUserOrganizationsQuery$data } from '@generated/organizationListUserOrganizationsQuery.graphql';
 import { registerIsPlatformRegisteredFragment$data } from '@generated/registerIsPlatformRegisteredFragment.graphql';
 import { registerIsPlatformRegisteredQuery } from '@generated/registerIsPlatformRegisteredQuery.graphql';
 import { PlatformInput } from '@generated/registerPlatformMutation.graphql';
 import {
   PlatformIdentifier,
   PlatformRegistrationStatus,
+  UserOrganizationsQuery,
 } from '@graphql/generated';
 import { screen, waitFor } from '@testing-library/react';
+import { Suspense } from 'react';
 import { PreloadedQuery } from 'react-relay';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -24,7 +25,9 @@ const testState = vi.hoisted(() => ({
   userOrganizations: [
     { id: 'org-1', name: 'Org One', personal_space: false },
     { id: 'org-2', name: 'Org Two', personal_space: true },
-  ] as organizationListUserOrganizationsQuery$data['userOrganizations'],
+  ] as UserOrganizationsQuery['userOrganizations'],
+  fetchUserOrganizations: null as
+    (() => Promise<UserOrganizationsQuery>) | null,
   mutationMode: 'success' as 'success' | 'missing-capability' | 'error',
   token: 'a-token',
   errorMessage: 'SOME_ERROR',
@@ -35,9 +38,6 @@ vi.mock('react-relay', async (importOriginal) => ({
   ...(await importOriginal<typeof import('react-relay')>()),
   usePreloadedQuery: () => ({
     isPlatformRegistered: testState.isPlatformRegistered,
-  }),
-  useLazyLoadQuery: () => ({
-    userOrganizations: testState.userOrganizations,
   }),
   useFragment: (_doc: unknown, ref: unknown) => ref,
   useMutation: () => [
@@ -60,6 +60,19 @@ vi.mock('react-relay', async (importOriginal) => ({
     {},
   ],
 }));
+
+// The component suspends on the real query key, with a fetch the tests control.
+vi.mock('@graphql/generated', async (importOriginal) => {
+  const { mockGeneratedQueryHooks } =
+    await import('@/utils/test/mock-generated-query');
+  return mockGeneratedQueryHooks(importOriginal, {
+    useUserOrganizationsQuery: Object.assign(vi.fn(), {
+      fetcher: () => () =>
+        testState.fetchUserOrganizations?.() ??
+        Promise.resolve({ userOrganizations: testState.userOrganizations }),
+    }),
+  });
+});
 
 vi.mock('@/components/Loader', () => ({
   default: () => <div data-testid="loader" />,
@@ -86,7 +99,7 @@ vi.mock('@/components/registration/register/OrganizationForm', () => ({
     cancel,
     confirm,
   }: {
-    userOrganizationsQueryData: organizationListUserOrganizationsQuery$data;
+    userOrganizationsQueryData: UserOrganizationsQuery;
     cancel: () => void;
     confirm: (organizationId: string) => void;
   }) => (
@@ -106,7 +119,9 @@ const mockPlatform: PlatformInput = {
   url: `${PLATFORM_ORIGIN}/dashboard`,
 };
 
-const renderRegister = (
+const USER_ORGANIZATIONS_LOADING = 'user-organizations-loading';
+
+const renderRegisterSuspended = (
   identifier: PlatformIdentifier = PlatformIdentifier.Opencti,
   state?: string,
   platformOrigin: string = PLATFORM_ORIGIN
@@ -117,14 +132,29 @@ const renderRegister = (
         identifier,
         displayedIdentifier: PlatformMetadataMapping[identifier].name,
       }}>
-      <Register
-        queryRef={mockQueryRef}
-        platform={mockPlatform}
-        platformOrigin={platformOrigin}
-        state={state}
-      />
+      <Suspense fallback={<div data-testid={USER_ORGANIZATIONS_LOADING} />}>
+        <Register
+          queryRef={mockQueryRef}
+          platform={mockPlatform}
+          platformOrigin={platformOrigin}
+          state={state}
+        />
+      </Suspense>
     </RegistrationContext.Provider>
   );
+
+// The component suspends until the user organizations are loaded.
+const renderRegister = async (
+  ...args: Parameters<typeof renderRegisterSuspended>
+) => {
+  const rendered = renderRegisterSuspended(...args);
+  await waitFor(() =>
+    expect(
+      screen.queryByTestId(USER_ORGANIZATIONS_LOADING)
+    ).not.toBeInTheDocument()
+  );
+  return rendered;
+};
 
 describe('Register', () => {
   beforeEach(() => {
@@ -141,27 +171,28 @@ describe('Register', () => {
     testState.token = 'a-token';
     testState.errorMessage = 'SOME_ERROR';
     testState.lastRegisterVariables = null;
+    testState.fetchUserOrganizations = null;
     vi.spyOn(SnackbarStore, 'showSnackbar').mockImplementation(() => undefined);
   });
 
-  it('renders the organization form when the platform was never registered', () => {
+  it('renders the organization form when the platform was never registered', async () => {
     testState.isPlatformRegistered = {
       status: PlatformRegistrationStatus.NeverRegistered,
       platformTitle: null,
       organization: null,
     } as registerIsPlatformRegisteredFragment$data;
-    renderRegister();
+    await renderRegister();
     expect(screen.getByTestId('organization-form')).toBeInTheDocument();
     expect(screen.getByText('2')).toBeInTheDocument();
   });
 
-  it('renders the organization form when the platform is unregistered with two or fewer organizations', () => {
+  it('renders the organization form when the platform is unregistered with two or fewer organizations', async () => {
     testState.isPlatformRegistered = {
       status: PlatformRegistrationStatus.Unregistered,
       platformTitle: null,
       organization: null,
     } as registerIsPlatformRegisteredFragment$data;
-    renderRegister();
+    await renderRegister();
     expect(screen.getByTestId('organization-form')).toBeInTheDocument();
   });
 
@@ -176,7 +207,7 @@ describe('Register', () => {
       value: { postMessage },
       writable: true,
     });
-    const { user } = renderRegister();
+    const { user } = await renderRegister();
     await user.click(screen.getByRole('button', { name: 'mock-cancel' }));
     expect(postMessage).toHaveBeenCalledWith(
       { action: 'cancel' },
@@ -200,7 +231,7 @@ describe('Register', () => {
       value: { postMessage },
       writable: true,
     });
-    const { user } = renderRegister(
+    const { user } = await renderRegister(
       PlatformIdentifier.Opencti,
       undefined,
       OTHER_ORIGIN
@@ -230,7 +261,7 @@ describe('Register', () => {
       { id: 'org-2', name: 'Org Two', personal_space: false },
       { id: 'org-3', name: 'Org Three', personal_space: true },
     ];
-    const { user } = renderRegister();
+    const { user } = await renderRegister();
     expect(
       screen.getByText('Register.TooManyOrganizations.Title')
     ).toBeInTheDocument();
@@ -266,7 +297,7 @@ describe('Register', () => {
       value: { postMessage },
       writable: true,
     });
-    const { user } = renderRegister();
+    const { user } = await renderRegister();
 
     await user.click(screen.getByRole('button', { name: 'mock-confirm' }));
 
@@ -289,7 +320,7 @@ describe('Register', () => {
       value: { postMessage },
       writable: true,
     });
-    renderRegister();
+    await renderRegister();
 
     await waitFor(() => {
       expect(testState.lastRegisterVariables).toEqual({
@@ -319,7 +350,7 @@ describe('Register', () => {
     } as registerIsPlatformRegisteredFragment$data;
     testState.mutationMode = 'error';
     testState.errorMessage = 'SOME_ERROR';
-    const { user } = renderRegister();
+    const { user } = await renderRegister();
 
     await user.click(screen.getByRole('button', { name: 'mock-confirm' }));
 
@@ -342,7 +373,7 @@ describe('Register', () => {
       organization: null,
     } as registerIsPlatformRegisteredFragment$data;
     testState.mutationMode = 'missing-capability';
-    const { user } = renderRegister();
+    const { user } = await renderRegister();
 
     await user.click(screen.getByRole('button', { name: 'mock-confirm' }));
 
@@ -370,7 +401,7 @@ describe('Register', () => {
       value: { postMessage },
       writable: true,
     });
-    const { user } = renderRegister();
+    const { user } = await renderRegister();
 
     await user.click(screen.getByRole('button', { name: 'mock-confirm' }));
     await waitFor(() => {
@@ -384,14 +415,35 @@ describe('Register', () => {
     );
   });
 
-  it('renders a loader as a fallback for any other status', () => {
+  it('renders a loader as a fallback for any other status', async () => {
     testState.isPlatformRegistered = {
       status: PlatformRegistrationStatus.Registered,
       platformTitle: null,
       organization: null,
     } as registerIsPlatformRegisteredFragment$data;
-    renderRegister();
+    await renderRegister();
     expect(screen.getByTestId('loader')).toBeInTheDocument();
+  });
+
+  it('should stay suspended until the user organizations are loaded', async () => {
+    // Given
+    let resolveUserOrganizations: (data: UserOrganizationsQuery) => void = () =>
+      undefined;
+    testState.fetchUserOrganizations = () =>
+      new Promise((resolve) => {
+        resolveUserOrganizations = resolve;
+      });
+    renderRegisterSuspended();
+    expect(screen.getByTestId(USER_ORGANIZATIONS_LOADING)).toBeInTheDocument();
+    expect(screen.queryByTestId('organization-form')).not.toBeInTheDocument();
+
+    // When
+    resolveUserOrganizations({
+      userOrganizations: testState.userOrganizations,
+    });
+
+    // Then
+    expect(await screen.findByTestId('organization-form')).toBeInTheDocument();
   });
 
   describe('state echo', () => {
@@ -411,7 +463,7 @@ describe('Register', () => {
         value: { postMessage },
         writable: true,
       });
-      const { user } = renderRegister(PlatformIdentifier.Xtmone, 's-1');
+      const { user } = await renderRegister(PlatformIdentifier.Xtmone, 's-1');
 
       // When
       await user.click(screen.getByRole('button', { name: 'mock-confirm' }));
@@ -432,7 +484,7 @@ describe('Register', () => {
         value: { postMessage },
         writable: true,
       });
-      const { user } = renderRegister(PlatformIdentifier.Xtmone, 's-1');
+      const { user } = await renderRegister(PlatformIdentifier.Xtmone, 's-1');
 
       // When
       await user.click(screen.getByRole('button', { name: 'mock-cancel' }));
@@ -451,7 +503,7 @@ describe('Register', () => {
         value: { postMessage },
         writable: true,
       });
-      const { user } = renderRegister(PlatformIdentifier.Opencti, 's-1');
+      const { user } = await renderRegister(PlatformIdentifier.Opencti, 's-1');
 
       // When
       await user.click(screen.getByRole('button', { name: 'mock-confirm' }));

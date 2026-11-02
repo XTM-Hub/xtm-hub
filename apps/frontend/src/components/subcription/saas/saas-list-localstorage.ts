@@ -1,4 +1,4 @@
-import { OrderingMode, RegisteredPlatformOrdering } from '@graphql/generated';
+import { OrderingMode, SaasPlatformOrdering } from '@graphql/generated';
 import { useEffect } from 'react';
 import { useLocalStorage } from 'usehooks-ts';
 
@@ -7,21 +7,26 @@ import { isValueInEnum } from '@/utils/is-value-in-enum';
 export const useSaasListLocalstorage = () => {
   const [orderMode, setOrderMode, removeOrderMode] =
     useLocalStorage<OrderingMode>('orderModeSaasList', OrderingMode.Asc);
-  const [orderBy, setOrderBy, removeOrderBy] =
-    useLocalStorage<RegisteredPlatformOrdering>(
+  const [storedOrderBy, setOrderBy, removeOrderBy] =
+    useLocalStorage<SaasPlatformOrdering>(
       'orderBySaasList',
-      RegisteredPlatformOrdering.OrganizationName
+      SaasPlatformOrdering.CustomerName
     );
   const [pageSize, setPageSize, removePageSize] = useLocalStorage(
     'countSaasList',
     50
   );
 
+  // A field an older list ordered by is no ordering anymore: it is replaced before any query is built with it.
+  const orderBy = isValueInEnum(storedOrderBy, SaasPlatformOrdering)
+    ? storedOrderBy
+    : SaasPlatformOrdering.CustomerName;
+
   useEffect(() => {
-    if (!isValueInEnum(orderBy, RegisteredPlatformOrdering)) {
-      setOrderBy(RegisteredPlatformOrdering.OrganizationName);
+    if (orderBy !== storedOrderBy) {
+      setOrderBy(orderBy);
     }
-  }, [orderBy, setOrderBy]);
+  }, [orderBy, storedOrderBy, setOrderBy]);
 
   const resetAll = () => {
     removeOrderBy();

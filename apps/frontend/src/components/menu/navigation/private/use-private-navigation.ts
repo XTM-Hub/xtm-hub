@@ -309,7 +309,6 @@ export const usePrivateNavigation = (): NavigationConfig => {
           },
         ]
       : [];
-  // XTM One has no Hub detail page: a click leads to the instance itself.
   const xtmoneMyProductLinks: SectionLink[] =
     xtmoneRegisteredPlatforms.length > 0
       ? [
@@ -318,8 +317,7 @@ export const usePrivateNavigation = (): NavigationConfig => {
             badge: `${xtmoneRegisteredPlatforms.length}`,
             subLinks: xtmoneRegisteredPlatforms.map((platform) => ({
               label: platform.title,
-              href: platform.url,
-              external: true,
+              href: `/${APP_PATH}/service/xtmone_registration/${platform.serviceInstanceId}`,
               tooltip: platform.url,
             })),
           },
@@ -383,7 +381,7 @@ export const usePrivateNavigation = (): NavigationConfig => {
       key: 'xtm-one',
       label: 'XTM One',
       icon: LogoXtmOneIcon,
-      pathPrefix: `/${locale}/cybersecurity-solutions/xtm-one`,
+      pathPrefix: `/${APP_PATH}/service/xtmone`,
       links: [
         ...xtmoneMyProductLinks,
         {

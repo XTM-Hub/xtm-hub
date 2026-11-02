@@ -20,11 +20,6 @@ export const registeredPlatformDetailPath = ({
     return XTM_PLATFORM_TRIAL_PATH;
   }
 
-  // XTM One has no detail page on the Hub: its instance is reached directly.
-  if (identifier === ServiceDefinitionIdentifier.XtmoneRegistration) {
-    return undefined;
-  }
-
   return serviceInstanceId
     ? `/${APP_PATH}/service/${identifier}/${serviceInstanceId}`
     : undefined;

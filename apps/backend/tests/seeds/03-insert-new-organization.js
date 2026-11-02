@@ -77,7 +77,7 @@ export async function seed(knex) {
         organization_id: '154006e2-f24b-42da-b39c-e0fb17bead00',
       },
     ])
-    .onConflict('id')
+    .onConflict(['user_id', 'organization_id'])
     .ignore();
 
   const userAdminOrganizations = await knex('User_Organization')
@@ -88,7 +88,7 @@ export async function seed(knex) {
       },
     ])
     .returning('id')
-    .onConflict('id')
+    .onConflict(['user_id', 'organization_id'])
     .ignore();
 
   const userRegistererOrganizations = await knex('User_Organization')
@@ -99,7 +99,7 @@ export async function seed(knex) {
       },
     ])
     .returning('id')
-    .onConflict('id')
+    .onConflict(['user_id', 'organization_id'])
     .ignore();
 
   for (const userOrg of userAdminOrganizations) {

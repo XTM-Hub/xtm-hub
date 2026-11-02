@@ -24,6 +24,22 @@ describe('XtmPlatformTrialRequestPage', () => {
     expect(screen.getByTestId('panel')).toBeInTheDocument();
   });
 
+  it('renders the given title instead of the default one', () => {
+    render(
+      <XtmPlatformTrialRequestPage
+        panel={<div>Panel</div>}
+        title="Custom title"
+      />
+    );
+
+    expect(
+      screen.getByRole('heading', { name: 'Custom title' })
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText('Service.Trials.XtmPlatform.Page.Title')
+    ).not.toBeInTheDocument();
+  });
+
   it('does not render the limitations section by default', () => {
     render(<XtmPlatformTrialRequestPage panel={<div>Panel</div>} />);
 

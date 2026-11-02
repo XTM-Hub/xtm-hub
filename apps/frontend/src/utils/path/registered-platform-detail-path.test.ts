@@ -22,6 +22,21 @@ describe('registeredPlatformDetailPath', () => {
     expect(path).toBe(XTM_PLATFORM_TRIAL_PATH);
   });
 
+  it('should return the XTM Platform trial path when an XTM One platform is a bundle product', () => {
+    // Given
+    const input = {
+      identifier: ServiceDefinitionIdentifier.XtmoneRegistration,
+      deploymentRequest: { parent_id: BUNDLE_DEPLOYMENT_REQUEST_ID },
+      serviceInstanceId: SERVICE_INSTANCE_ID,
+    };
+
+    // When
+    const path = registeredPlatformDetailPath(input);
+
+    // Then
+    expect(path).toBe(XTM_PLATFORM_TRIAL_PATH);
+  });
+
   it.each([
     {
       description: 'an OpenCTI platform without deployment request',
@@ -34,6 +49,12 @@ describe('registeredPlatformDetailPath', () => {
       identifier: ServiceDefinitionIdentifier.OpenaevRegistration,
       deploymentRequest: { parent_id: null },
       expectedPath: `/app/service/openaev_registration/${SERVICE_INSTANCE_ID}`,
+    },
+    {
+      description: 'an XTM One platform without deployment request',
+      identifier: ServiceDefinitionIdentifier.XtmoneRegistration,
+      deploymentRequest: null,
+      expectedPath: `/app/service/xtmone_registration/${SERVICE_INSTANCE_ID}`,
     },
   ])(
     'should return the service instance page when the platform is $description',
@@ -52,21 +73,6 @@ describe('registeredPlatformDetailPath', () => {
       expect(path).toBe(expectedPath);
     }
   );
-
-  it('should return undefined for an XTM One platform, which has no detail page', () => {
-    // Given
-    const input = {
-      identifier: ServiceDefinitionIdentifier.XtmoneRegistration,
-      deploymentRequest: null,
-      serviceInstanceId: SERVICE_INSTANCE_ID,
-    };
-
-    // When
-    const path = registeredPlatformDetailPath(input);
-
-    // Then
-    expect(path).toBeUndefined();
-  });
 
   it('should return undefined when the platform is not a bundle product and has no service instance', () => {
     // Given

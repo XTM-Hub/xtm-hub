@@ -25,7 +25,7 @@ export const RequiredPlatformVersions: RequiredPlatformVersionsConfig = {
   },
   NewsFeedSupport: {
     [PlatformIdentifier.Opencti]: '7.260527.0', // OpenCTI 7.260527.0 is the first version to support news feed
-    [PlatformIdentifier.Openaev]: null,
+    [PlatformIdentifier.Openaev]: '1.0.0', // Placeholder until the first OpenAEV version that reads news feed items is released
     [PlatformIdentifier.Xtmone]: null,
   },
 };

@@ -18,13 +18,11 @@ const ADD_ORGANIZATION_LABEL = 'UserForm.AddOrganization';
 const FIRST_NAME_LABEL = 'UserForm.FirstName';
 const LAST_NAME_LABEL = 'UserForm.LastName';
 const MUTATION_NAME = 'AdminUserUpdateFormMutation';
-const ORGANIZATIONS_QUERY_NAME = 'organizationSelectQuery';
 const MANAGE_ACCESS_OPTION = 'MANAGE ACCESS';
 const MANAGE_SUBSCRIPTION_OPTION = 'MANAGE SUBSCRIPTION';
 const SERVER_ERROR = 'UNKNOWN_ERROR';
 const NEW_FIRST_NAME = 'Augusta';
 const NEW_LAST_NAME = 'King';
-const QUEUED_RESPONSES_COUNT = 10;
 
 const PERSONAL_SPACE = {
   id: 'org-personal',
@@ -97,29 +95,26 @@ beforeEach(async () => {
   ({ AppSnackbars } = await import('@/components/ui/snackbar/AppSnackbars'));
 });
 
-// The organization list is fetched through Relay. Only the organizations query
-// is answered, so the mutation stays pending until the test settles it.
-const createEnvironment = () => {
-  const environment = createMockEnvironment();
-  for (let request = 0; request < QUEUED_RESPONSES_COUNT; request += 1) {
-    environment.mock.queueOperationResolver((operation) =>
-      operation.request.node.params.name === ORGANIZATIONS_QUERY_NAME
-        ? MockPayloadGenerator.generate(operation, {
-            Query: () => ({
-              organizations: {
-                totalCount: 2,
-                edges: [
-                  { node: ACME_ORGANIZATION },
-                  { node: GLOBEX_ORGANIZATION },
-                ],
-              },
-            }),
-          })
-        : null
-    );
-  }
-  return environment;
-};
+// The organization list query answers the same organizations for every search.
+vi.mock('@graphql/generated', async (importOriginal) => {
+  const { mockGeneratedQueryHooks } =
+    await import('@/utils/test/mock-generated-query');
+  return mockGeneratedQueryHooks(importOriginal, {
+    useOrganizationsListQuery: () => ({
+      data: {
+        organizations: {
+          totalCount: 2,
+          edges: [{ node: ACME_ORGANIZATION }, { node: GLOBEX_ORGANIZATION }],
+        },
+      },
+      isLoading: false,
+      isError: false,
+    }),
+  });
+});
+
+// The mutation stays pending until the test settles it.
+const createEnvironment = () => createMockEnvironment();
 
 const renderForm = ({
   user = USER,

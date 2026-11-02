@@ -1,9 +1,9 @@
 'use client';
-import { updateShareNumber } from '@/components/ui/share-link/ShareLinkActions';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
-import usePublicPath from '@/hooks/use-public-path';
 import { useTranslate } from '@/hooks/use-translate';
+import { portalGraphqlClient } from '@/lib/graphql-client';
 import { ShareIcon } from '@filigran/icon';
+import { useIncrementShareNumberDocumentMutation } from '@graphql/generated';
 
 import {
   IconButton,
@@ -13,7 +13,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@filigran/design-system';
-import { graphql, useMutation } from 'react-relay';
 import { useCopyToClipboard } from 'usehooks-ts';
 
 export interface ShareLinkButtonProps {
@@ -21,62 +20,31 @@ export interface ShareLinkButtonProps {
   documentId?: string;
   tooltipText?: string;
   size?: IconButtonProps['size'];
+  onShare?: () => void;
 }
 
-export const shareLinkMutation = graphql`
-  mutation ShareLinkButtonMutation($documentId: DocumentId!) {
-    incrementShareNumberDocument(documentId: $documentId) {
-      share_number
-    }
-  }
-`;
-
 export const ShareLinkButton = (props: ShareLinkButtonProps) => {
-  const isPublicPath = usePublicPath();
-  return isPublicPath ? (
-    <ShareLinkServerAction {...props} />
-  ) : (
-    <ShareLinkClientButton {...props} />
-  );
-};
+  const { documentId, onShare, ...buttonProps } = props;
+  const { mutate: incrementShareNumber } =
+    useIncrementShareNumberDocumentMutation(portalGraphqlClient, {
+      onSuccess: () => onShare?.(),
+    });
 
-export const ShareLinkClientButton = (props: ShareLinkButtonProps) => {
-  const [commitMutation] = useMutation(shareLinkMutation);
-
-  const { documentId, ..._ } = props;
   return (
     <ShareLinkCommonButton
-      {...props}
+      {...buttonProps}
       onClickAction={() => {
         if (!documentId) return;
-        commitMutation({
-          variables: {
-            documentId,
-          },
-        });
+        incrementShareNumber({ documentId });
       }}
     />
   );
 };
 
-export const ShareLinkServerAction = (props: ShareLinkButtonProps) => {
-  const { documentId, ..._ } = props;
-  return (
-    <ShareLinkCommonButton
-      {...props}
-      onClickAction={() => {
-        if (!documentId) return;
-        updateShareNumber({
-          variables: {
-            documentId,
-          },
-        });
-      }}
-    />
-  );
-};
-
-type ShareLinkCommonProps = ShareLinkButtonProps & {
+type ShareLinkCommonProps = Omit<
+  ShareLinkButtonProps,
+  'documentId' | 'onShare'
+> & {
   onClickAction: () => void;
 };
 export const ShareLinkCommonButton = ({

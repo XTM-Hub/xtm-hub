@@ -1,6 +1,6 @@
 import { ServiceListDisplayMode } from '@/components/service/components/header/ServiceListHeader';
 import PublicDocumentsList from '@/components/service/document/PublicDocumentsList';
-import { ServiceListLocalStorageKey } from '@/hooks/use-service-list-local-storage';
+import { ServiceListStorageKey } from '@/utils/filters-storage.utils';
 import { buildSignupRedirect, decodeSafeRedirect } from '@/utils/redirect';
 import testRender from '@/utils/test/test-render';
 import { publicDocumentsQuery } from '@generated/publicDocumentsQuery.graphql';
@@ -61,7 +61,7 @@ const testState = vi.hoisted(() => ({
   useRefetchableFragment: vi.fn(),
   readInlineData: vi.fn(),
   useShareableResourceMapping: vi.fn(),
-  useServiceListLocalStorage: vi.fn(),
+  useServiceListStorage: vi.fn(),
   useLogicalFiltersFromStorage: vi.fn(),
   useDocumentFacetsQuery: vi.fn(),
   useScrollPosition: vi.fn(),
@@ -81,11 +81,11 @@ vi.mock('@/utils/shareable-resources/use-shareable-resource-mapping', () => ({
   useShareableResourceMapping: testState.useShareableResourceMapping,
 }));
 
-vi.mock('@/hooks/use-service-list-local-storage', async (importOriginal) => ({
+vi.mock('@/hooks/use-service-list-storage', async (importOriginal) => ({
   ...(await importOriginal<
-    typeof import('@/hooks/use-service-list-local-storage')
+    typeof import('@/hooks/use-service-list-storage')
   >()),
-  useServiceListLocalStorage: testState.useServiceListLocalStorage,
+  useServiceListStorage: testState.useServiceListStorage,
 }));
 
 vi.mock('@/hooks/use-logical-filters-from-storage', async (importOriginal) => ({
@@ -151,9 +151,9 @@ describe('PublicDocumentsList', () => {
     );
   };
 
-  // Base return value of `useServiceListLocalStorage`; individual tests spread this and
+  // Base return value of `useServiceListStorage`; individual tests spread this and
   // override the one field (search, a filter, or the sort) whose change should reset pagination.
-  const baseLocalStorageState = () => ({
+  const baseStorageState = () => ({
     search: 'initial-search',
     setSearch: testState.setSearch,
     pageSize: 10,
@@ -182,12 +182,10 @@ describe('PublicDocumentsList', () => {
     testState.restore.mockReset();
 
     testState.useShareableResourceMapping.mockReturnValue({
-      localStorageKey: ServiceListLocalStorageKey.OpenCTIIntegrationFeeds,
+      storageKey: ServiceListStorageKey.OpenCTIIntegrationFeeds,
       filters: {},
     });
-    testState.useServiceListLocalStorage.mockReturnValue(
-      baseLocalStorageState()
-    );
+    testState.useServiceListStorage.mockReturnValue(baseStorageState());
     testState.useLogicalFiltersFromStorage.mockReturnValue(undefined);
     testState.useDocumentFacetsQuery.mockReturnValue({ data: EMPTY_FACETS });
     testState.useScrollPosition.mockReturnValue({
@@ -256,7 +254,7 @@ describe('PublicDocumentsList', () => {
   it('should render documents and facet filters when the facet query returns counts', () => {
     // Given
     testState.useShareableResourceMapping.mockReturnValue({
-      localStorageKey: ServiceListLocalStorageKey.OpenCTIIntegrationFeeds,
+      storageKey: ServiceListStorageKey.OpenCTIIntegrationFeeds,
       filters: {
         integrationType: {
           title: 'Service.OpenctiIntegrations.Filter.Type.Label',
@@ -390,8 +388,8 @@ describe('PublicDocumentsList', () => {
     expectPaginationRange(container, 11, 20, LARGE_TOTAL_COUNT);
 
     // When
-    testState.useServiceListLocalStorage.mockReturnValue({
-      ...baseLocalStorageState(),
+    testState.useServiceListStorage.mockReturnValue({
+      ...baseStorageState(),
       search: 'narrow-search',
     });
     testState.useRefetchableFragment.mockReturnValue(
@@ -419,8 +417,8 @@ describe('PublicDocumentsList', () => {
     expectPaginationRange(container, 11, 20, LARGE_TOTAL_COUNT);
 
     // When
-    testState.useServiceListLocalStorage.mockReturnValue({
-      ...baseLocalStorageState(),
+    testState.useServiceListStorage.mockReturnValue({
+      ...baseStorageState(),
       labels: { 'label-1': true },
     });
     testState.useRefetchableFragment.mockReturnValue(
@@ -448,8 +446,8 @@ describe('PublicDocumentsList', () => {
     expectPaginationRange(container, 11, 20, LARGE_TOTAL_COUNT);
 
     // When
-    testState.useServiceListLocalStorage.mockReturnValue({
-      ...baseLocalStorageState(),
+    testState.useServiceListStorage.mockReturnValue({
+      ...baseStorageState(),
       orderBy: DocumentOrdering.CreatedAt,
       orderMode: OrderingMode.Desc,
     });

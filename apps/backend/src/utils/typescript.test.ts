@@ -1,5 +1,26 @@
 import { describe, expect, it } from 'vitest';
-import { applyUpdate, mapWithConcurrency } from './typescript';
+import { applyUpdate, isRecord, mapWithConcurrency } from './typescript';
+
+describe('isRecord', () => {
+  it.each`
+    case                 | input
+    ${'an empty object'} | ${{}}
+    ${'an object'}       | ${{ key: 'value' }}
+  `('should return true for $case', ({ input }) => {
+    expect(isRecord(input)).toBe(true);
+  });
+
+  it.each`
+    case           | input
+    ${'null'}      | ${null}
+    ${'undefined'} | ${undefined}
+    ${'an array'}  | ${[{ key: 'value' }]}
+    ${'a string'}  | ${'value'}
+    ${'a number'}  | ${1}
+  `('should return false for $case', ({ input }) => {
+    expect(isRecord(input)).toBe(false);
+  });
+});
 
 describe('mapWithConcurrency', () => {
   it('returns an empty array when given an empty list', async () => {

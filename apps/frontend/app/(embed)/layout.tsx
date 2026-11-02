@@ -6,6 +6,7 @@ import '@styles/globals.css';
 import { serverMutateGraphQL } from '@/relay/server-portal-api-fetch';
 
 import { SharedContent } from '@/components/layout/SharedContent';
+import { ReactQueryProvider } from '@/components/ReactQueryProvider';
 import { ErrorPage } from '@/components/ui/ErrorPage';
 import { RelayProvider } from '@/relay/relay-provider';
 import { loadMeUser } from '@/utils/load-me-user';
@@ -73,17 +74,19 @@ const RootLayout = async ({ children }: RootLayoutProps) => {
 
   return (
     <RelayProvider>
-      <PageLoader>
-        <div className="flex flex-col items-center justify-center min-h-[calc(100dvh-var(--cookie-banner-height,0px))]">
-          <div className="w-1/3">
-            <LogoXTMDark className="pb-6" />
+      <ReactQueryProvider>
+        <PageLoader>
+          <div className="flex flex-col items-center justify-center min-h-[calc(100dvh-var(--cookie-banner-height,0px))]">
+            <div className="w-1/3">
+              <LogoXTMDark className="pb-6" />
 
-            <SharedContent className="flex flex-col bg-gradient-default px-3 pt-3 sm:px-6 sm:p-6">
-              {children}
-            </SharedContent>
+              <SharedContent className="flex flex-col bg-gradient-default px-3 pt-3 sm:px-6 sm:p-6">
+                {children}
+              </SharedContent>
+            </div>
           </div>
-        </div>
-      </PageLoader>
+        </PageLoader>
+      </ReactQueryProvider>
     </RelayProvider>
   );
 };

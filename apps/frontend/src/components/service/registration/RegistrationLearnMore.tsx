@@ -1,12 +1,48 @@
 'use server';
+import { PlatformMetadataMapping } from '@/components/registration/PlatformIdentifierMapping';
 import PublicServiceInstanceCard from '@/components/service/PublicServiceInstanceCard';
 import { getTranslate } from '@/hooks/get-translate';
 import { cn } from '@/lib/utils';
 import { fetchServiceInstanceLinksByTags } from '@/utils/seo-service-instance/utils/seo-service-instance.server.utils';
 import { seoServiceInstanceToInstanceCardData } from '@/utils/services';
-import { ServiceInstanceTag } from '@graphql/generated';
-import Image from 'next/image';
+import { Icon, Paper, Text } from '@filigran/design-system';
+import { PlatformIdentifier, ServiceInstanceTag } from '@graphql/generated';
+import openaevEcosystem from '@public/openaev_ecosystem.png';
+import openctiEcosystem from '@public/opencti_ecosystem.png';
+import xtmoneEcosystem from '@public/xtmone_ecosystem.png';
+import Image, { StaticImageData } from 'next/image';
 import React from 'react';
+
+interface PlatformLearnMoreConfig {
+  ecosystemImage: StaticImageData;
+  hasEcosystemBackground: boolean;
+}
+
+const LEARN_MORE_CONFIG: Record<PlatformIdentifier, PlatformLearnMoreConfig> = {
+  [PlatformIdentifier.Xtmone]: {
+    ecosystemImage: xtmoneEcosystem,
+    hasEcosystemBackground: true,
+  },
+  [PlatformIdentifier.Opencti]: {
+    ecosystemImage: openctiEcosystem,
+    hasEcosystemBackground: false,
+  },
+  [PlatformIdentifier.Openaev]: {
+    ecosystemImage: openaevEcosystem,
+    hasEcosystemBackground: false,
+  },
+};
+
+const platformTextKey = (
+  platformIdentifier: PlatformIdentifier,
+  text: 'Intro' | 'Tagline' | 'Description'
+) => `Service.Trials.XTMPlatform.${platformIdentifier}.${text}`;
+
+const XTM_PRODUCTS = [
+  PlatformIdentifier.Xtmone,
+  PlatformIdentifier.Opencti,
+  PlatformIdentifier.Openaev,
+];
 
 const Section = ({
   children,
@@ -21,93 +57,98 @@ const Section = ({
 );
 
 interface RegistrationLearnMoreProps {
-  serviceInstanceTag: ServiceInstanceTag;
+  platformIdentifier: PlatformIdentifier;
 }
 
 export const RegistrationLearnMore = async ({
-  serviceInstanceTag,
+  platformIdentifier,
 }: RegistrationLearnMoreProps) => {
+  const { ecosystemImage, hasEcosystemBackground } =
+    LEARN_MORE_CONFIG[platformIdentifier];
+  const { name: platformName, serviceInstanceTag } =
+    PlatformMetadataMapping[platformIdentifier];
   const services = await fetchServiceInstanceLinksByTags([
     ServiceInstanceTag.Trial,
     serviceInstanceTag,
   ]);
   const t = await getTranslate();
-  const platformName =
-    serviceInstanceTag === ServiceInstanceTag.OpenCti ? 'OpenCTI' : 'OpenAEV';
 
   return (
     <>
       <Section className="bg-filigran-brand-primary-transparency-10 px-6">
         <div className="text-center w-[70%] m-auto">
-          <h2 className="text-filigran-brand-primary text-2xl mb-4">
+          <Text
+            as="h2"
+            variant="title-lg"
+            className="text-filigran-brand-primary mb-4">
             {t('Service.Trials.XTMPlatform.Title')}
-          </h2>
-          <p>{t('Service.Trials.XTMPlatform.Description', { platformName })}</p>
+          </Text>
+          <Text variant="content-base">
+            {t(platformTextKey(platformIdentifier, 'Intro'))}
+          </Text>
         </div>
         <div className="flex flex-col lg:flex-row gap-6">
           <div className="flex flex-col gap-2 basis-full">
-            <div className="rounded p-6 basis-full layer-1 bg-elevation-default">
-              <h3 className="mb-3 flex gap-2">
-                <Image
-                  width="25"
-                  height="25"
-                  src="/logo_opencti_dark.png"
-                  alt={t('Service.Trials.XTMPlatform.LogoAlt', {
-                    name: t('PlatformIdentifier.opencti'),
-                  })}
-                />
-                {t('PlatformIdentifier.opencti')}
-              </h3>
-              <p className="mb-2">
-                <strong>
-                  {t('Service.Trials.XTMPlatform.OpenCTITagline')}
-                </strong>
-              </p>
-              <p>{t('Service.Trials.XTMPlatform.OpenCTIDescription')}</p>
-            </div>
-            <div className="rounded p-6 basis-full layer-1 bg-elevation-default">
-              <h3 className="mb-3 flex gap-2">
-                <Image
-                  width="25"
-                  height="25"
-                  src="/logo_openaev_dark.png"
-                  alt={t('Service.Trials.XTMPlatform.LogoAlt', {
-                    name: t('PlatformIdentifier.openaev'),
-                  })}
-                />
-                {t('PlatformIdentifier.openaev')}
-              </h3>
-              <p className="mb-2">
-                <strong>
-                  {t('Service.Trials.XTMPlatform.OpenAEVTagline')}
-                </strong>
-              </p>
-              <p>{t('Service.Trials.XTMPlatform.OpenAEVDescription')}</p>
-            </div>
+            {XTM_PRODUCTS.map((product) => {
+              const {
+                name,
+                Icon: PlatformIcon,
+                iconClassName,
+              } = PlatformMetadataMapping[product];
+              return (
+                <Paper
+                  key={product}
+                  className="flex flex-col gap-2 basis-full">
+                  <Text
+                    as="h3"
+                    variant="title-xs"
+                    className="flex items-center gap-2">
+                    <PlatformIcon className={cn('size-6', iconClassName)} />
+                    {name}
+                  </Text>
+                  <Text variant="content-base-bold">
+                    {t(platformTextKey(product, 'Tagline'))}
+                  </Text>
+                  <Text variant="content-base">
+                    {t(platformTextKey(product, 'Description'))}
+                  </Text>
+                </Paper>
+              );
+            })}
           </div>
-          <div className="basis-full m-auto">
+          <div
+            className={cn(
+              'relative basis-full m-auto',
+              hasEcosystemBackground &&
+                '@container w-full overflow-hidden rounded-sm bg-linear-to-br/srgb from-[#071729] from-30% to-[#286489] p-6'
+            )}>
+            {hasEcosystemBackground && (
+              <Icon
+                name="custom/filigran"
+                // Placed in image widths from the image corner: the circle (20/24 of the icon box) starts at the top of the Remediation box of xtmone_ecosystem.png. Re-measure if the image changes.
+                className="absolute top-[calc(1.5rem+0.2cqw)] left-[calc(1.5rem+48.8cqw)] size-[86.4cqw] -rotate-[23.57deg] text-(--white-1000) opacity-5"
+              />
+            )}
             <Image
-              width="1232"
-              height="692"
-              src={
-                serviceInstanceTag === ServiceInstanceTag.OpenCti
-                  ? `/opencti_ecosystem.png`
-                  : '/openaev_ecosystem.png'
-              }
+              src={ecosystemImage}
+              sizes="(min-width: 1024px) 50vw, 100vw"
               loading="lazy"
-              alt={t('Service.Trials.XTMPlatform.IllustrationAlt')}
-              className="rounded w-full"
+              alt={t('Service.Trials.XTMPlatform.IllustrationAlt', {
+                platformName,
+              })}
+              className="relative rounded w-full"
             />
           </div>
         </div>
       </Section>
       <Section>
-        <div className="flex flex-col lg:flex-row items-center gap-6">
-          <div className="basis-full flex justify-between gap-4 max-sm:flex-col">
+        <div className="@container flex flex-col lg:flex-row lg:items-center gap-6">
+          <div
+            // Cards up to 232px each, sharing the half row left by the text (half of gap-6 = 0.75rem).
+            className="grid gap-4 sm:grid-flow-col sm:auto-cols-[minmax(0,232px)] lg:max-w-[calc(50cqw-0.75rem)]">
             {services.map((service) => (
               <PublicServiceInstanceCard
                 key={service.id}
-                className="basis-full max-w-[50%] max-sm:max-w-none"
                 serviceInstance={seoServiceInstanceToInstanceCardData(
                   service,
                   t
@@ -115,14 +156,21 @@ export const RegistrationLearnMore = async ({
               />
             ))}
           </div>
-          <div className="order-first text-sm lg:order-last basis-full">
-            <h2 className="text-filigran-brand-primary text-2xl mb-4">
+          <div className="order-first lg:order-last basis-full lg:max-w-[calc(50cqw-0.75rem)]">
+            <Text
+              as="h2"
+              variant="title-lg"
+              className="text-filigran-brand-primary mb-4">
               {t('Service.Trials.QuickStart.Title')}
-            </h2>
-            <p className="mb-4">
+            </Text>
+            <Text
+              variant="content-base"
+              className="mb-4">
               {t('Service.Trials.QuickStart.Subtitle', { platformName })}
-            </p>
-            <p>{t('Service.Trials.QuickStart.Description')}</p>
+            </Text>
+            <Text variant="content-base">
+              {t('Service.Trials.QuickStart.Description')}
+            </Text>
           </div>
         </div>
       </Section>
