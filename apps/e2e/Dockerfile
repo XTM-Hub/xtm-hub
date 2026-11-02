@@ -1,4 +1,5 @@
-FROM mcr.microsoft.com/playwright:v1.64.1-noble
+# Pinned by digest: the tag is republished with the latest Node.js LTS, and Node 25+ no longer bundles Corepack
+FROM mcr.microsoft.com/playwright:v1.64.1-noble@sha256:47b510dd9230bf0b9bfc9b20102241e577ea7a99334ab4c3ca19f19770e9b8ea
 
 RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*
 

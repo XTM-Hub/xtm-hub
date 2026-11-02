@@ -245,9 +245,9 @@ export const DeploymentHelper = {
 
   validateUseCasesByProduct: (
     input: CreateDeploymentRequestInput,
-    uniqueProducts: PlatformIdentifier[]
+    products: PlatformIdentifier[]
   ): void => {
-    const productsRequiringUseCase = uniqueProducts.filter(
+    const productsRequiringUseCase = products.filter(
       (platformIdentifier) => platformIdentifier !== PlatformIdentifier.Xtmone
     );
     const everyProductHasUseCase = productsRequiringUseCase.every(
@@ -260,7 +260,7 @@ export const DeploymentHelper = {
       input.use_cases_by_product?.every(
         (entry) =>
           entry.platform_identifier !== PlatformIdentifier.Xtmone &&
-          uniqueProducts.includes(entry.platform_identifier)
+          products.includes(entry.platform_identifier)
       ) ?? true;
     const targetedProducts =
       input.use_cases_by_product?.map((entry) => entry.platform_identifier) ??
