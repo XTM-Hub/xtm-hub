@@ -43,6 +43,7 @@ import { requestContext } from '../../context/request.context';
 import DeploymentRequest, {
   DeploymentRequestId,
 } from '../../model/kanel/public/DeploymentRequest';
+import PlatformConfiguration from '../../model/kanel/public/PlatformConfiguration';
 import ServiceInstance, {
   ServiceInstanceId,
 } from '../../model/kanel/public/ServiceInstance';
@@ -71,6 +72,7 @@ import { TelemetryEventType } from '../telemetry/telemetry.types';
 import { PlatformConfigurationDomain } from './platform-configuration/platform-configuration.domain';
 import { RegistrationApp } from './registration.app';
 import { RegistrationDomain } from './registration.domain';
+import { OPENAEV_DEFAULT_TENANT_ID } from './registration.helper';
 
 describe('registration app', () => {
   afterAll(async () => {
@@ -510,10 +512,12 @@ describe('registration app', () => {
         const telemetrySpy = vi
           .spyOn(TelemetryApp, 'sendTelemetryEvent')
           .mockResolvedValue();
+        // Each product registers its own platform_id: one platform_id cannot be registered as two products.
+        const productPlatform = { ...platform, id: uuidv4() };
 
         await RegistrationApp.registerPlatform({
           organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
-          platform,
+          platform: productPlatform,
           identifier: platformName,
         });
 
@@ -526,7 +530,7 @@ describe('registration app', () => {
           user_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.ID,
           platform_contract: 'EE',
           platform_version: '1.0.0',
-          platform_id: platform.id,
+          platform_id: productPlatform.id,
           platform_url: platform.url,
           target_product: telemetryProduct,
           organization_type: 'Professional',
@@ -546,9 +550,11 @@ describe('registration app', () => {
 
       const tenantId = uuidv4();
       const tenantName = 'My OpenAEV tenant';
+      // An OpenAEV platform_id of its own: the shared one is already registered as OpenCTI.
+      const openaevPlatform = { ...platform, id: uuidv4() };
       await RegistrationApp.registerPlatform({
         organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
-        platform: { ...platform, tenantId, tenantName },
+        platform: { ...openaevPlatform, tenantId, tenantName },
         identifier: PlatformIdentifier.Openaev,
       });
 
@@ -561,7 +567,7 @@ describe('registration app', () => {
         user_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.ID,
         platform_contract: 'EE',
         platform_version: '1.0.0',
-        platform_id: platform.id,
+        platform_id: openaevPlatform.id,
         platform_url: platform.url,
         target_product: TelemetryTargetProduct.OPEN_AEV,
         organization_type: 'Professional',
@@ -896,6 +902,261 @@ describe('registration app', () => {
           tenant_id: tenantId,
           status: PlatformConfigurationStatus.Active,
         });
+      });
+    });
+  });
+
+  describe('registerPlatform, one owner per platform', () => {
+    const registerOpencti = (platformId: string, tenantId?: string) =>
+      RegistrationApp.registerPlatform({
+        organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        platform: {
+          id: platformId,
+          title: 'My OpenCTI platform',
+          url: 'http://example.com',
+          contract: PlatformContract.Ee,
+          version: '6.8.0',
+          ...(tenantId ? { tenantId, tenantName: 'Injected tenant' } : {}),
+        },
+        identifier: PlatformIdentifier.Opencti,
+      });
+
+    beforeEach(() => {
+      requestContext.set(requestContextRegistererUserSecondOrga);
+    });
+
+    it('should refuse a tenantId for an OpenCTI registration', async () => {
+      // When
+      const call = registerOpencti(uuidv4(), uuidv4());
+
+      // Then
+      await expect(call).rejects.toThrow(
+        BadRequestErrorCode.TenantIdNotSupported
+      );
+    });
+
+    it('should not create a second registration of an OpenCTI platform_id when a made-up tenantId is sent', async () => {
+      // Given
+      const platformId = uuidv4();
+      await registerOpencti(platformId);
+      const injectedTenantId = uuidv4();
+
+      // When
+      const call = registerOpencti(platformId, injectedTenantId);
+
+      // Then
+      await expect(call).rejects.toThrow(
+        BadRequestErrorCode.TenantIdNotSupported
+      );
+      const injectedConfig =
+        await PlatformConfigurationDomain.loadConfigurationByPlatform(
+          platformId,
+          { tenantId: injectedTenantId }
+        );
+      expect(injectedConfig).toBeUndefined();
+    });
+
+    it('should refuse to register an existing platform_id as another product', async () => {
+      // Given
+      const platformId = uuidv4();
+      await registerOpencti(platformId);
+
+      // When
+      const call = RegistrationApp.registerPlatform({
+        organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        platform: {
+          id: platformId,
+          title: 'My OpenAEV platform',
+          url: 'http://example.com',
+          contract: PlatformContract.Ee,
+          version: '2.4.0',
+          tenantId: uuidv4(),
+          tenantName: 'Injected tenant',
+        },
+        identifier: PlatformIdentifier.Openaev,
+      });
+
+      // Then
+      await expect(call).rejects.toThrow(ErrorCode.InvalidPlatformIdentifier);
+    });
+
+    describe('legacy OpenAEV registration', () => {
+      const openaevPlatform = {
+        title: 'My OpenAEV platform',
+        url: 'http://example.com',
+        contract: PlatformContract.Ee,
+      };
+      let platformId: string;
+      let legacyConfig: PlatformConfiguration | undefined;
+
+      const registerOpenaevTenant = (tenantId: string) =>
+        RegistrationApp.registerPlatform({
+          organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+          platform: {
+            ...openaevPlatform,
+            id: platformId,
+            version: '2.4.0',
+            tenantId,
+            tenantName: 'My OpenAEV tenant',
+          },
+          identifier: PlatformIdentifier.Openaev,
+        });
+
+      beforeEach(async () => {
+        // Given an OpenAEV platform registered before it used tenants
+        platformId = uuidv4();
+        await RegistrationApp.registerPlatform({
+          organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+          platform: { ...openaevPlatform, id: platformId, version: '2.3.9' },
+          identifier: PlatformIdentifier.Openaev,
+        });
+        legacyConfig =
+          await PlatformConfigurationDomain.loadConfigurationByPlatform(
+            platformId
+          );
+      });
+
+      it('should move the legacy registration to the default tenant instead of creating a second registration', async () => {
+        // When
+        await registerOpenaevTenant(OPENAEV_DEFAULT_TENANT_ID);
+
+        // Then
+        const tenantConfig =
+          await PlatformConfigurationDomain.loadConfigurationByPlatform(
+            platformId,
+            { tenantId: OPENAEV_DEFAULT_TENANT_ID }
+          );
+        expect(tenantConfig?.service_instance_id).toBe(
+          legacyConfig?.service_instance_id
+        );
+      });
+
+      it('should give another tenant its own registration and keep the legacy one for the default tenant', async () => {
+        // Given
+        const tenantId = uuidv4();
+
+        // When
+        await registerOpenaevTenant(tenantId);
+
+        // Then
+        const tenantConfig =
+          await PlatformConfigurationDomain.loadConfigurationByPlatform(
+            platformId,
+            { tenantId }
+          );
+        expect(tenantConfig?.service_instance_id).not.toBe(
+          legacyConfig?.service_instance_id
+        );
+        const legacyConfigAfter =
+          await PlatformConfigurationDomain.loadConfigurationByPlatform(
+            platformId,
+            { tenant_id: null }
+          );
+        expect(legacyConfigAfter).toMatchObject({
+          tenant_id: null,
+          status: PlatformConfigurationStatus.Active,
+        });
+      });
+
+      it.each`
+        description             | getTenantId                        | expectedStatus
+        ${'the default tenant'} | ${() => OPENAEV_DEFAULT_TENANT_ID} | ${PlatformRegistrationStatus.Registered}
+        ${'another tenant'}     | ${() => uuidv4()}                  | ${PlatformRegistrationStatus.NeverRegistered}
+      `(
+        'should return $expectedStatus from isPlatformRegistered for $description',
+        async ({
+          getTenantId,
+          expectedStatus,
+        }: {
+          getTenantId: () => string;
+          expectedStatus: PlatformRegistrationStatus;
+        }) => {
+          // When
+          const result = await RegistrationApp.isPlatformRegistered({
+            platformId,
+            tenantId: getTenantId(),
+          });
+
+          // Then
+          expect(result).toMatchObject({ status: expectedStatus });
+        }
+      );
+
+      it('should return the organization of the legacy registration to the default tenant', async () => {
+        // When
+        const organization =
+          await RegistrationApp.loadPlatformAssociatedOrganization(
+            platformId,
+            OPENAEV_DEFAULT_TENANT_ID
+          );
+
+        // Then
+        expect(organization?.id).toBe(
+          TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID
+        );
+      });
+
+      it('should not return the organization of the legacy registration to another tenant', async () => {
+        // When
+        const organization =
+          await RegistrationApp.loadPlatformAssociatedOrganization(
+            platformId,
+            uuidv4()
+          );
+
+        // Then
+        expect(organization).toBeNull();
+      });
+
+      it('should let the default tenant unregister the legacy registration', async () => {
+        // When
+        await RegistrationApp.unregisterPlatform({
+          platformId,
+          identifier: PlatformIdentifier.Openaev,
+          tenantId: OPENAEV_DEFAULT_TENANT_ID,
+        });
+
+        // Then
+        const legacyConfigAfter =
+          await PlatformConfigurationDomain.loadConfigurationByPlatform(
+            platformId,
+            { tenant_id: null }
+          );
+        expect(legacyConfigAfter?.status).toBe(
+          PlatformConfigurationStatus.Inactive
+        );
+      });
+
+      it('should not let another tenant unregister the legacy registration', async () => {
+        // When
+        await RegistrationApp.unregisterPlatform({
+          platformId,
+          identifier: PlatformIdentifier.Openaev,
+          tenantId: uuidv4(),
+        });
+
+        // Then
+        const legacyConfigAfter =
+          await PlatformConfigurationDomain.loadConfigurationByPlatform(
+            platformId,
+            { tenant_id: null }
+          );
+        expect(legacyConfigAfter?.status).toBe(
+          PlatformConfigurationStatus.Active
+        );
+      });
+
+      it('should let the default tenant check whether it can unregister the legacy registration', async () => {
+        // When
+        const result = await RegistrationApp.canUnregisterPlatform({
+          platformId,
+          tenantId: OPENAEV_DEFAULT_TENANT_ID,
+        });
+
+        // Then
+        expect(result.organizationId).toBe(
+          TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID
+        );
       });
     });
   });

@@ -71,6 +71,7 @@ export enum BadRequestErrorCode {
   MissingAutoRegisterPlatformArgument = 'MISSING_AUTO_REGISTER_PLATFORM_ARGUMENT',
   DocumentFileMissing = 'DOCUMENT_FILE_MISSING',
   TenantIdMandatory = 'TENANT_ID_MANDATORY',
+  TenantIdNotSupported = 'TENANT_ID_NOT_SUPPORTED',
   NewsFeedItemMissingTitle = 'NEWS_FEED_ITEM_MISSING_TITLE',
   InvalidManifestVersionFormat = 'INVALID_MANIFEST_VERSION_FORMAT',
   ConnectorVersionAlreadyExists = 'CONNECTOR_VERSION_ALREADY_EXISTS',
