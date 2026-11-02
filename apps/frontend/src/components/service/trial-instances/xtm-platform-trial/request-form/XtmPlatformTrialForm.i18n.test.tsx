@@ -77,3 +77,34 @@ describe('XtmPlatformTrialForm terms agreement', () => {
     }
   );
 });
+
+describe('XtmPlatformTrialForm empty select errors', () => {
+  // In Japanese the error repeats the placeholder: only match the message
+  // shown under the field.
+  it.each(LOCALES)(
+    'localizes the empty select errors in %s',
+    async (locale, messages) => {
+      // Given
+      const { user } = renderForm(locale, messages);
+      const errors = messages.Service.Trials.Form.Error;
+
+      // When
+      await user.click(
+        screen.getByRole('button', {
+          name: messages.Service.Trials.XtmPlatform.Page.Form.Submit,
+        })
+      );
+
+      // Then
+      expect(
+        await screen.findByText(errors.Region, { selector: 'p' })
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText(errors.JobTitle, { selector: 'p' })
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText(errors.ActivitySector, { selector: 'p' })
+      ).toBeInTheDocument();
+    }
+  );
+});
