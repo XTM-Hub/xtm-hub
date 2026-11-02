@@ -34,9 +34,15 @@ import { z } from 'zod';
 
 const buildXtmPlatformTrialFormSchema = (t: (key: string) => string) =>
   z.object({
-    region: z.enum(REGIONS_VALUES),
-    job_title: z.enum(DeploymentRequestJobTitle),
-    activity_sector: z.enum(DeploymentRequestActivitySector),
+    region: z.enum(REGIONS_VALUES, {
+      error: t('Service.Trials.Form.Error.Region'),
+    }),
+    job_title: z.enum(DeploymentRequestJobTitle, {
+      error: t('Service.Trials.Form.Error.JobTitle'),
+    }),
+    activity_sector: z.enum(DeploymentRequestActivitySector, {
+      error: t('Service.Trials.Form.Error.ActivitySector'),
+    }),
     use_cases_by_product: z.array(
       z.object({
         platform_identifier: z.enum(PlatformIdentifier),

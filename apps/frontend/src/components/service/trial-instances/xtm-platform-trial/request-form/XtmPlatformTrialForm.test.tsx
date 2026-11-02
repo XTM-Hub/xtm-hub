@@ -60,23 +60,6 @@ vi.mock('@filigran/design-system', async () => {
   };
 });
 
-const EMPTY_SELECTS_SUBMISSION = {
-  use_cases_by_product: [
-    { platform_identifier: PlatformIdentifier.Opencti },
-    { platform_identifier: PlatformIdentifier.Openaev },
-  ],
-};
-
-const getSchemaErrorMessage = (fieldPath: string) => {
-  const message = xtmPlatformTrialFormSchema
-    .safeParse(EMPTY_SELECTS_SUBMISSION)
-    .error?.issues.find((issue) => issue.path.join('.') === fieldPath)?.message;
-  if (!message) {
-    throw new Error(`The schema raises no issue at ${fieldPath}`);
-  }
-  return message;
-};
-
 describe('XtmPlatformTrialForm', () => {
   it('does not let the user pick the products of the trial', () => {
     testRender(<XtmPlatformTrialForm handleSubmit={vi.fn()} />);
@@ -194,19 +177,36 @@ describe('XtmPlatformTrialForm', () => {
     );
   });
 
-  // Each field path comes with the position of its select: region, job title,
-  // activity sector, then the OpenCTI and OpenAEV use cases.
-  it.each<[string, number]>([
-    ['region', 0],
-    ['job_title', 1],
-    ['activity_sector', 2],
-    ['use_cases_by_product.0.use_case', 3],
-    ['use_cases_by_product.1.use_case', 4],
+  it('should not submit when the form is submitted empty', async () => {
+    // Given
+    const handleSubmit = vi.fn();
+    const { user } = testRender(
+      <XtmPlatformTrialForm handleSubmit={handleSubmit} />
+    );
+
+    // When
+    await user.click(
+      screen.getByRole('button', {
+        name: 'Service.Trials.XtmPlatform.Page.Form.Submit',
+      })
+    );
+
+    // Then
+    expect(handleSubmit).not.toHaveBeenCalled();
+  });
+
+  // Each field path comes with the position of its select (region, job title,
+  // activity sector, then the OpenCTI and OpenAEV use cases) and its message.
+  it.each<[string, number, string]>([
+    ['region', 0, 'Service.Trials.Form.Error.Region'],
+    ['job_title', 1, 'Service.Trials.Form.Error.JobTitle'],
+    ['activity_sector', 2, 'Service.Trials.Form.Error.ActivitySector'],
+    ['use_cases_by_product.0.use_case', 3, 'Service.Trials.Form.Error.UseCase'],
+    ['use_cases_by_product.1.use_case', 4, 'Service.Trials.Form.Error.UseCase'],
   ])(
-    'should show the %s validation message when the form is submitted with the selects empty',
-    async (fieldPath, selectIndex) => {
+    'should show the %s validation message when the form is submitted empty',
+    async (_fieldPath, selectIndex, expectedMessage) => {
       // Given
-      const expectedMessage = getSchemaErrorMessage(fieldPath);
       const { user } = testRender(
         <XtmPlatformTrialForm handleSubmit={vi.fn()} />
       );

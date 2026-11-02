@@ -1824,7 +1824,10 @@
         "UseCasePlaceholder": "Sélectionnez votre cas d'utilisation",
         "Error": {
           "AcceptTerms": "Veuillez accepter les conditions d'essai pour continuer",
-          "UseCase": "Veuillez sélectionner un cas d'utilisation"
+          "UseCase": "Veuillez sélectionner un cas d'utilisation",
+          "Region": "Veuillez sélectionner une région",
+          "JobTitle": "Veuillez sélectionner votre poste",
+          "ActivitySector": "Veuillez sélectionner votre secteur d'activité"
         },
         "TermsAgreement": "Je reconnais avoir lu, compris et accepté les conditions d'essai du <mssa>MSSA</mssa> et les <aiterms>conditions d'utilisation de l'IA</aiterms>",
         "FormRequested": "Vous avez demandé un essai gratuit. Vous recevrez un e-mail dès que la plateforme sera prête !"

@@ -1824,7 +1824,10 @@
         "UseCasePlaceholder": "Select your use case",
         "Error": {
           "AcceptTerms": "Please accept the trial terms to continue",
-          "UseCase": "Please select a use case"
+          "UseCase": "Please select a use case",
+          "Region": "Please select a region",
+          "JobTitle": "Please select your job title",
+          "ActivitySector": "Please select your activity sector"
         },
         "TermsAgreement": "I acknowledge that I have read, understood and agree to the <mssa>MSSA</mssa> trial terms and the <aiterms>AI terms</aiterms>",
         "FormRequested": "You have requested a free trial. You will receive an email as soon as the platform is ready!"
