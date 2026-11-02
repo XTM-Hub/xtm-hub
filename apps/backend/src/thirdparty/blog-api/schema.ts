@@ -26,6 +26,8 @@ export const buildBlogFeedItemSchema = (product: string) =>
       .object({
         url: z.url({ protocol: /^https$/ }),
         alt: z.string().nullish(),
+        // The resized version of the image: an absent or null thumbnail means the full image is used
+        thumbnail: z.object({ url: z.url({ protocol: /^https$/ }) }).nullish(),
       })
       .nullable(),
     products: z

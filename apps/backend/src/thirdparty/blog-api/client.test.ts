@@ -45,6 +45,11 @@ const SAMPLE_FEED = {
         width: 1400,
         height: 732,
         alt: 'Featured image for the OpenCTI and Google SecOps SOAR integration blog post',
+        thumbnail: {
+          url: 'https://filigran.io/api/feeds/blog/thumbnail/614?v=1787561132754',
+          width: 600,
+          height: 314,
+        },
       },
       authors: [
         {
@@ -238,6 +243,9 @@ describe('blogApiClient.fetchBlogFeed', () => {
         image: {
           url: 'https://filigran.io/api/media/file/OpenCTI-Google-SecOps-SOAR-g8yndc1YgMOyEesxSUvmDErGO555iH.png',
           alt: 'Featured image for the OpenCTI and Google SecOps SOAR integration blog post',
+          thumbnail: {
+            url: 'https://filigran.io/api/feeds/blog/thumbnail/614?v=1787561132754',
+          },
         },
         authors: [{ name: 'Romain Guignard' }],
         categories: [
@@ -270,6 +278,25 @@ describe('blogApiClient.fetchBlogFeed', () => {
       // Then
       expect(items[0]).toMatchObject({ id: 'post-614', image: null });
     });
+
+    it.each([
+      ['absent', undefined],
+      ['null', null],
+    ])(
+      'should accept an image whose thumbnail is %s',
+      async (_label, thumbnail) => {
+        // Given
+        const { thumbnail: _ignored, ...image } = SAMPLE_ITEM.image;
+        stubFeed(makeFeed([makeItem({ image: { ...image, thumbnail } })]));
+
+        // When
+        const items = await fetchBlogFeed();
+
+        // Then
+        expect(items[0].image?.url).toBe(SAMPLE_ITEM.image.url);
+        expect(items[0].image?.thumbnail ?? undefined).toBeUndefined();
+      }
+    );
 
     it.each([
       ['an unsafe value', 'https://evil.test/a?b=c#d'],
@@ -614,6 +641,37 @@ describe('blogApiClient.fetchBlogFeed', () => {
         { image: { url: 'javascript:alert(1)' } },
       ],
       ['an image with a relative url', { image: { url: '/api/media/a.png' } }],
+      [
+        'an image with a thumbnail without url',
+        { image: { url: SAMPLE_ITEM.image.url, thumbnail: { width: 600 } } },
+      ],
+      [
+        'an image with an http thumbnail url',
+        {
+          image: {
+            url: SAMPLE_ITEM.image.url,
+            thumbnail: { url: 'http://filigran.io/a.png' },
+          },
+        },
+      ],
+      [
+        'an image with a javascript thumbnail url',
+        {
+          image: {
+            url: SAMPLE_ITEM.image.url,
+            thumbnail: { url: 'javascript:alert(1)' },
+          },
+        },
+      ],
+      [
+        'an image with a relative thumbnail url',
+        {
+          image: {
+            url: SAMPLE_ITEM.image.url,
+            thumbnail: { url: '/api/feeds/blog/thumbnail/614' },
+          },
+        },
+      ],
       ['a missing products list', { products: undefined }],
       ['products without the requested one', { products: ['openaev'] }],
       ['empty products', { products: [] }],
