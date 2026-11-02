@@ -3,7 +3,7 @@
 import { LearnMoreBannerLink } from '@/components/service/trial-instances/banner/LearnMoreBannerLink';
 import { XtmPlatformTrialBannerState } from '@/components/service/trial-instances/banner/xtm-platform-trial/xtm-platform-trial-banner.utils';
 import { useTranslate } from '@/hooks/use-translate';
-import { Alert, Chip } from '@filigran/design-system';
+import { Banner } from '@filigran/design-system';
 import { usePathname } from 'next/navigation';
 
 const TRIAL_PAGE_SLUG = '/xtm-platform-trial';
@@ -39,23 +39,20 @@ export const XtmPlatformTrialBanner = ({
   const showDaysLeft = state !== 'no-trial' && daysLeft != null;
 
   return (
-    <Alert
-      severity="info"
-      title={t(TITLE_KEYS[state])}
+    <Banner
+      variant={state === 'ending' ? 'warning' : 'default'}
       action={
-        showLearnMore || showDaysLeft ? (
-          <>
-            {showLearnMore && <LearnMoreBannerLink href={learnMoreHref} />}
-            {showDaysLeft && (
-              <Chip
-                label={t('Service.Trials.XtmPlatform.DaysLeft', {
-                  days: daysLeft,
-                })}
-              />
-            )}
-          </>
-        ) : undefined
-      }
-    />
+        showLearnMore ? <LearnMoreBannerLink href={learnMoreHref} /> : undefined
+      }>
+      {t(TITLE_KEYS[state])}
+      {showDaysLeft && (
+        <>
+          {' '}
+          <strong>
+            {t('Service.Trials.XtmPlatform.DaysLeft', { days: daysLeft })}
+          </strong>
+        </>
+      )}
+    </Banner>
   );
 };

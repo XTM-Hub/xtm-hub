@@ -2283,6 +2283,7 @@
     "Capability": "Capability"
   },
   "Utils": {
+    "ApplicationMessages": "Application messages",
     "Cancel": "Cancel",
     "Clear": "Clear",
     "Close": "Close",

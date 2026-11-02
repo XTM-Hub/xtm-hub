@@ -2,7 +2,7 @@
 
 import { SettingsContext } from '@/components/settings/EnvPortalContext';
 import { useTranslate } from '@/hooks/use-translate';
-import { Alert } from '@filigran/design-system';
+import { Banner } from '@filigran/design-system';
 import Link from 'next/link';
 import { useContext } from 'react';
 
@@ -13,21 +13,12 @@ export const TestEnvBanner = () => {
   return (
     settings?.environment &&
     settings.environment !== 'production' && (
-      <Alert
-        severity="warning"
-        title={
-          <>
-            {t('TestEnvBanner', {
-              environnement: settings?.environment,
-            })}
-            <Link
-              href="https://hub.filigran.io/"
-              className="ml-1 underline">
-              {t('GoToProd')}
-            </Link>
-          </>
-        }
-      />
+      <Banner variant="error">
+        {t('TestEnvBanner', {
+          environnement: settings?.environment,
+        })}{' '}
+        <Link href="https://hub.filigran.io/">{t('GoToProd')}</Link>
+      </Banner>
     )
   );
 };

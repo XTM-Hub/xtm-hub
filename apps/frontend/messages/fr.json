@@ -2283,6 +2283,7 @@
     "Capability": "Capacité"
   },
   "Utils": {
+    "ApplicationMessages": "Messages de l'application",
     "Cancel": "Annuler",
     "Clear": "Effacer",
     "Close": "Fermer",

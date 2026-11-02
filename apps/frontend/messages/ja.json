@@ -2283,6 +2283,7 @@
     "Capability": "能力"
   },
   "Utils": {
+    "ApplicationMessages": "アプリケーションのメッセージ",
     "Cancel": "キャンセル",
     "Clear": "クリア",
     "Close": "閉じる",

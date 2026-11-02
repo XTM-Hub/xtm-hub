@@ -1,6 +1,6 @@
 import { XtmPlatformTrialBanner } from '@/components/service/trial-instances/banner/xtm-platform-trial/XtmPlatformTrialBanner';
 import testRender from '@/utils/test/test-render';
-import { screen, within } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import { usePathname } from 'next/navigation';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -26,20 +26,21 @@ describe('XtmPlatformTrialBanner', () => {
   });
 
   it.each`
-    state         | text
-    ${'no-trial'} | ${NO_TRIAL_TEXT}
-    ${'active'}   | ${ACTIVE_TEXT}
-    ${'ending'}   | ${ENDING_TEXT}
+    state         | text             | variant
+    ${'no-trial'} | ${NO_TRIAL_TEXT} | ${'default'}
+    ${'active'}   | ${ACTIVE_TEXT}   | ${'default'}
+    ${'ending'}   | ${ENDING_TEXT}   | ${'warning'}
   `(
-    'should render the $state copy as an in-page alert when the state is $state',
-    ({ state, text }) => {
+    'should render the $state copy in the $variant banner when the state is $state',
+    ({ state, text, variant }) => {
       // Given
-      const { container } = testRender(
-        <XtmPlatformTrialBanner state={state} />
-      );
+      testRender(<XtmPlatformTrialBanner state={state} />);
 
       // Then
-      expect(within(container).getByRole('status')).toHaveTextContent(text);
+      expect(screen.getByText(text).closest('[data-variant]')).toHaveAttribute(
+        'data-variant',
+        variant
+      );
     }
   );
 
@@ -100,7 +101,7 @@ describe('XtmPlatformTrialBanner', () => {
   );
 
   it.each(['active', 'ending'] as const)(
-    'should render the days-left chip when the state is %s',
+    'should render the days left when the state is %s',
     (state) => {
       // Given
       testRender(
@@ -111,7 +112,53 @@ describe('XtmPlatformTrialBanner', () => {
       );
 
       // Then
-      expect(screen.getByRole('status')).toHaveTextContent(DAYS_LEFT);
+      expect(screen.getByText(DAYS_LEFT)).toBeInTheDocument();
+    }
+  );
+
+  it('should render no learn more link when there is no trial and no link to follow', () => {
+    // Given
+    testRender(<XtmPlatformTrialBanner state="no-trial" />);
+
+    // Then
+    expect(screen.queryByRole('link', { name: LEARN_MORE })).toBeNull();
+  });
+
+  it.each(['active', 'ending'] as const)(
+    'should render no learn more link when the state is %s',
+    (state) => {
+      // Given
+      testRender(
+        <XtmPlatformTrialBanner
+          state={state}
+          daysLeft={DAYS_LEFT_COUNT}
+          learnMoreHref={LEARN_MORE_HREF}
+        />
+      );
+
+      // Then
+      expect(screen.queryByRole('link', { name: LEARN_MORE })).toBeNull();
+    }
+  );
+
+  it.each`
+    state         | daysLeft
+    ${'no-trial'} | ${DAYS_LEFT_COUNT}
+    ${'active'}   | ${null}
+    ${'ending'}   | ${null}
+  `(
+    'should render no days left when the state is $state and the days left are $daysLeft',
+    ({ state, daysLeft }) => {
+      // Given
+      testRender(
+        <XtmPlatformTrialBanner
+          state={state}
+          daysLeft={daysLeft}
+        />
+      );
+
+      // Then
+      expect(screen.queryByText(DAYS_LEFT)).toBeNull();
     }
   );
 });

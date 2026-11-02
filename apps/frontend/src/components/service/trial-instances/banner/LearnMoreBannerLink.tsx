@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslate } from '@/hooks/use-translate';
-import { Button } from '@filigran/design-system';
+import { BannerAction } from '@filigran/design-system';
 import Link from 'next/link';
 import { ComponentProps } from 'react';
 
@@ -11,11 +11,8 @@ export const LearnMoreBannerLink = (props: LearnMoreBannerLinkProps) => {
   const t = useTranslate();
 
   return (
-    <Button
-      asChild
-      priority="secondary"
-      size="sm">
+    <BannerAction asChild>
       <Link {...props}>{t('Service.Trials.LearnMore.Link')}</Link>
-    </Button>
+    </BannerAction>
   );
 };

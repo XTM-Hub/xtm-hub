@@ -59,6 +59,9 @@ const FEEDBACK_SUBMIT = 'Service.Trials.XtmPlatform.Feedback.Submit';
 const FEEDBACK_CLOSE = 'Close';
 const JUSTIFICATION_TEXT = 'Deployment took too long';
 const USER_WITHOUT_FEEDBACK = { has_replied_satisfaction: null };
+const USER_WITH_FEEDBACK = {
+  has_replied_satisfaction: HasRepliedSatisfaction.Yes,
+};
 const DEPLOYMENT_REQUEST_ID = 'deployment-request-id';
 
 const mockActiveTrialWithDaysLeft = (
@@ -132,6 +135,85 @@ describe('PrivateXtmPlatformTrialBanner', () => {
         name: FEEDBACK_QUESTION,
       })
     ).toBeInTheDocument();
+  });
+
+  it('should render the ending banner in warning with the days left when 7 days or less are left', () => {
+    // Given
+    mockActiveTrialWithDaysLeft(5);
+
+    // When
+    const { getByText } = testRender(<PrivateXtmPlatformTrialBanner />, {
+      me: USER_WITH_FEEDBACK,
+    });
+
+    // Then
+    expect(
+      getByText('Service.Trials.XtmPlatform.Ending.Text').closest(
+        '[data-variant]'
+      )
+    ).toHaveAttribute('data-variant', 'warning');
+    expect(
+      getByText('Service.Trials.XtmPlatform.DaysLeft')
+    ).toBeInTheDocument();
+  });
+
+  it('should render the no-trial banner with a learn more link to the trial page when the organization has no trial', () => {
+    // Given
+    graphqlMocks.usePlatformTrialStatusQuery.mockReturnValue({
+      data: {
+        platformTrialStatus: {
+          isBlacklisted: false,
+          hub_status: null,
+          end_date: null,
+        },
+      },
+      isLoading: false,
+      isPending: false,
+    });
+
+    // When
+    const { getByText, getByRole } = testRender(
+      <PrivateXtmPlatformTrialBanner />
+    );
+
+    // Then
+    expect(
+      getByText('Service.Trials.XtmPlatform.NoTrial.Text').closest(
+        '[data-variant]'
+      )
+    ).toHaveAttribute('data-variant', 'default');
+    expect(
+      getByRole('link', { name: 'Service.Trials.LearnMore.Link' })
+    ).toHaveAttribute(
+      'href',
+      'http://localhost:3002/app/service/xtm-platform-trial'
+    );
+  });
+
+  it.each([
+    DeploymentRequestHubStatus.Expired,
+    DeploymentRequestHubStatus.Cancelled,
+  ])('should render nothing when the trial is %s', (hubStatus) => {
+    // Given
+    graphqlMocks.usePlatformTrialStatusQuery.mockReturnValue({
+      data: {
+        platformTrialStatus: {
+          isBlacklisted: false,
+          hub_status: hubStatus,
+          end_date: new Date(
+            Date.now() + 20 * 24 * 60 * 60 * 1000
+          ).toISOString(),
+        },
+      },
+      isLoading: false,
+      isPending: false,
+    });
+
+    // When
+    const { container } = testRender(<PrivateXtmPlatformTrialBanner />);
+
+    // Then
+    expect(container).toBeEmptyDOMElement();
   });
 
   it('should render nothing when the organization is blacklisted', () => {
