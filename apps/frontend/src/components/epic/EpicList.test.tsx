@@ -18,7 +18,7 @@ import {
 } from '@graphql/generated';
 import { screen } from '@testing-library/react';
 import { ComponentProps } from 'react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { mockUseServiceCapability, mockUseServiceCapabilityWithSubscriptionId } =
   vi.hoisted(() => ({
@@ -135,6 +135,10 @@ describe('EpicList', () => {
     });
     mockUseAdminByPass.mockReturnValue(false);
     mockCurrentRound(null);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('should hide draft timeline when user cannot update or delete epics', () => {
@@ -271,6 +275,10 @@ describe('EpicList', () => {
 
   it('should show finished timeline when user enables finished epics display', async () => {
     // Given
+    // Only Date is faked: finished epics show for 3 months after their last
+    // update, but user-event still needs the real timers.
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime('2026-09-01T00:00:00.000Z');
     const epics = [
       makeEpic({
         id: 'finished-epic',
