@@ -13,7 +13,7 @@ const RoleList = () => {
 
   return (
     <>
-      <h1>{t('MenuLinks.Roles')}</h1>
+      <h1 className="sr-only">{t('MenuLinks.Roles')}</h1>
       <Tabs defaultValue="capabilities">
         <TabsList>
           <TabsTrigger value="capabilities">
