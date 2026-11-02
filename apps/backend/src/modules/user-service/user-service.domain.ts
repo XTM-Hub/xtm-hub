@@ -23,7 +23,7 @@ import {
   UserServiceCapabilityInitializer,
 } from '../../model/kanel/public/UserServiceCapability';
 import { isUserAdminPlatform } from '../../security/access';
-import { restrictSubscriptionToUserOrganization } from '../../security/restriction/user-service';
+import { restrictUserServiceToUserOrganization } from '../../security/restriction/user-service';
 import { buildServiceLink, sendMail } from '../../server/mail-service';
 import { ServiceIdentifierToMailTemplate } from '../../server/mail-template/mail';
 import {
@@ -322,7 +322,7 @@ export const UserServiceDomain = {
     id: UserServiceId
   ): Promise<SubscriptionModel | undefined> => {
     return db<DBSubscriptionModel>('User_Service')
-      .tap(restrictSubscriptionToUserOrganization)
+      .tap(restrictUserServiceToUserOrganization)
       .where('User_Service.id', id)
       .leftJoin(
         'Subscription',
@@ -514,7 +514,7 @@ export const UserServiceDomain = {
       ]);
 
     if (!isUserAdminPlatform(user)) {
-      userServiceQuery.tap(restrictSubscriptionToUserOrganization);
+      userServiceQuery.tap(restrictUserServiceToUserOrganization);
     }
 
     return paginate<UserService, UserServiceConnection>(
