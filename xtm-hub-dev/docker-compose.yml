@@ -26,19 +26,23 @@ services:
       - pgadmin-data:/var/lib/pgadmin
 
   portal-minio:
-    image: "pgsty/silo:RELEASE.2026-09-03T13-18-01Z"
+    image: "rustfs/rustfs:1.0.4"
     environment:
-      MINIO_ROOT_USER: portal
-      MINIO_ROOT_PASSWORD: changeme
+      RUSTFS_ACCESS_KEY: portal
+      RUSTFS_SECRET_KEY: changeme
+      RUSTFS_CONSOLE_ENABLE: "true"
+      RUSTFS_CONSOLE_ADDRESS: ":8902"
+      RUSTFS_OBS_LOG_DIRECTORY: "" # logs to stdout instead of /logs
+      RUSTFS_CHECK_UPDATE: "false" # no call to version.rustfs.com at each start
     ports:
       - "9002:9000"
       - "8902:8902"
     volumes:
-      - "minio:/data/minio"
-    command: 'minio server /data/minio --console-address ":8902"'
+      # New volume: the `minio` volume written by Silo is owned by root, and RustFS (uid 10001) cannot start on it
+      - "rustfsdata:/data"
     restart: always
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
+      test: ["CMD", "curl", "-f", "http://localhost:9000/health/ready"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -89,7 +93,7 @@ volumes:
     driver: local
   pgadmin-data:
     driver: local
-  minio:
+  rustfsdata:
     driver: local
   elasticsearch-data:
     driver: local

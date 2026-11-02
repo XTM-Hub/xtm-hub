@@ -32,7 +32,7 @@
     "client_secret": "long_secret-here",
     "redirect_uris": ["http://localhost:3002/auth/oidc/callback"]
   },
-  "minio": {
+  "s3": {
     "bucketName": "xtmhubbucket",
     "region": "us-east-1",
     "endpoint": "localhost",

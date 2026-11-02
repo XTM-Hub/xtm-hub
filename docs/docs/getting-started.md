@@ -53,7 +53,7 @@ Create a local configuration file at `apps/backend/config/local.json`:
     "logout_callback_url": ["http://localhost:3002/oidc/callback"],
     "response_types": ["code"]
   },
-  "minio": {
+  "s3": {
     "bucketName": "xtmhubbucket",
     "region": "us-east-1",
     "endpoint": "localhost",
@@ -85,6 +85,12 @@ Create a local configuration file at `apps/backend/config/local.json`:
 
 > **Note**: For OIDC authentication, you'll need to configure your own identity provider or use a local development setup.
 
+> **Note**: Since XTM Hub 3.26XXXX.0, the object storage settings are the `s3` section (`S3_*` environment variables).
+> They were named `minio` (`MINIO_*`) before; the backend reads the former names too, with a warning at startup. For
+> each setting, the source of highest priority that sets either name decides
+> (environment variables over `local.json`), and `s3` wins when a same source sets both. An empty environment variable
+> counts as unset, as for every setting.
+
 ### 4. Start development environment
 
 The development environment requires **three separate terminals**, all from the repository root.
@@ -97,7 +103,9 @@ docker compose -f ./xtm-hub-dev/docker-compose.yml up
 
 This starts:
 - **PostgreSQL** on port `5434`
-- **Silo** (S3 object storage, MinIO fork) on port `9002` (console on `8902`)
+- **RustFS** (S3 object storage) on port `9002` (console on `8902`). Since XTM Hub 3.26XXXX.0 it replaces Silo and
+  keeps its data in the `rustfsdata` volume: files stored by Silo, in the `xtm-hub-dev_minio` volume, are not carried
+  over. Remove that volume with `docker volume rm xtm-hub-dev_minio` once you no longer need them
 - **PgAdmin** on port `8888`
 - **Elasticsearch** on port `9204`
 - **Kibana** on port `5603`
@@ -125,7 +133,7 @@ Once everything is running:
 
 - **Frontend**: http://localhost:3002
 - **API**: http://localhost:4002
-- **Silo Console**: http://localhost:8902
+- **RustFS Console**: http://localhost:8902/rustfs/console/
 - **PgAdmin**: http://localhost:8888 (portal@filigran.io / portal-password)
 - **Kibana**: http://localhost:5603
 - **Mailpit**: http://localhost:8025
@@ -241,7 +249,7 @@ yarn test:e2e
 1. **Port conflicts**: Ensure ports 3002, 4002, 5434, 5603, 8025, 8888, 9002, 8902, 9204, 1025 are available
 2. **Docker issues**: Verify the Docker daemon is running and `docker compose` is available
 3. **Yarn version mismatch**: Always run `corepack enable` first; the global/npm Yarn will not work
-4. **Silo (S3) credentials**: Ensure `accessKeyId` and `secretAccessKey` in `local.json` match `docker-compose.yml`
+4. **RustFS (S3) credentials**: Ensure `accessKeyId` and `secretAccessKey` in `local.json` match `docker-compose.yml`
 
 ### Reset development environment
 

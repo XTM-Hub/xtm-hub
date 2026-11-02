@@ -15,6 +15,15 @@
     "clientId": "OIDC_CLIENT_ID",
     "clientSecret": "OIDC_CLIENT_SECRET"
   },
+  "s3": {
+    "bucketName": "S3_BUCKET_NAME",
+    "region": "S3_REGION",
+    "endpoint": "S3_ENDPOINT",
+    "port": "S3_PORT",
+    "accessKeyId": "S3_ACCESS_KEY",
+    "secretAccessKey": "S3_SECRET_KEY",
+    "useSsl": "S3_USE_SSL"
+  },
   "minio": {
     "bucketName": "MINIO_BUCKET_NAME",
     "region": "MINIO_REGION",

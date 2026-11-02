@@ -1,6 +1,8 @@
+// Run from apps/backend with tsx (it imports TypeScript): npx tsx src/scripts/clean-up-old-images-integrations.js
 import { DeleteObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import config from 'config';
 import Knex from 'knex';
+import { getStorageConfig } from '../thirdparty/minio/storage-config';
 
 const knex = Knex({
   client: 'pg',
@@ -18,14 +20,14 @@ const knex = Knex({
 });
 
 const s3Client = new S3Client({
-  region: config.get('minio.region'),
+  region: getStorageConfig('region'),
   endpoint:
-    config.get('minio.endpoint') === 's3.amazonaws.com'
+    getStorageConfig('endpoint') === 's3.amazonaws.com'
       ? undefined
-      : `${config.get('minio.useSsl') === 'true' ? 'https' : 'http'}://${config.get('minio.endpoint')}:${config.get('minio.port')}`,
+      : `${getStorageConfig('useSsl') === 'true' ? 'https' : 'http'}://${getStorageConfig('endpoint')}:${getStorageConfig('port')}`,
   credentials: {
-    accessKeyId: config.get('minio.accessKeyId'),
-    secretAccessKey: config.get('minio.secretAccessKey'),
+    accessKeyId: getStorageConfig('accessKeyId'),
+    secretAccessKey: getStorageConfig('secretAccessKey'),
   },
   forcePathStyle: true,
 });
@@ -67,7 +69,7 @@ async function run() {
     for (const child of childrenDocuments) {
       await s3Client.send(
         new DeleteObjectCommand({
-          Bucket: config.get('minio.bucketName'),
+          Bucket: getStorageConfig('bucketName'),
           Key: child.minio_name,
         })
       );

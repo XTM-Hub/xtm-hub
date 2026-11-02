@@ -19,6 +19,7 @@ import {
   SYSTEM_USER_UUID,
 } from '../portal.const';
 import { MinIOClient } from '../thirdparty/minio/client';
+import { storageConfigDeprecations } from '../thirdparty/minio/storage-config';
 import { logApp } from '../utils/app-logger.util';
 import {
   ensureCapabilityExists,
@@ -145,7 +146,28 @@ const platformInit = async () => {
   await initializeDevUsers();
 };
 
+const logStorageConfigDeprecations = () => {
+  const { used, ignored, shadowed } = storageConfigDeprecations();
+  if (used.length > 0) {
+    logApp.warn('[S3] The minio configuration is deprecated, rename it to s3', {
+      keys: used,
+    });
+  }
+  if (ignored.length > 0) {
+    logApp.warn('[S3] Former minio configuration ignored, the s3 name is set', {
+      keys: ignored,
+    });
+  }
+  if (shadowed.length > 0) {
+    logApp.warn(
+      '[S3] s3 configuration ignored, a minio name of higher priority is set',
+      { keys: shadowed }
+    );
+  }
+};
+
 export const minioInit = async () => {
+  logStorageConfigDeprecations();
   await MinIOClient.initializeBucket();
 };
 

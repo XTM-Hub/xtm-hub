@@ -52,12 +52,12 @@ services:
       - ADMIN_EMAIL=admin@filigran.io
       - ADMIN_PASSWORD=admin
       - NODE_ENV=development
-      - MINIO_BUCKET_NAME=xtmhubbucket
-      - MINIO_ENDPOINT=portal-minio
-      - MINIO_PORT=9000
-      - MINIO_ACCESS_KEY=portal
-      - MINIO_SECRET_KEY=changeme
-      - MINIO_USE_SSL=false
+      - S3_BUCKET_NAME=xtmhubbucket
+      - S3_ENDPOINT=portal-minio
+      - S3_PORT=9000
+      - S3_ACCESS_KEY=portal
+      - S3_SECRET_KEY=changeme
+      - S3_USE_SSL=false
       - PORTAL_COOKIE_NAME=cloud-portal
       - PORTAL_COOKIE_SECRET=XR4MFizbXn09doSZ
     volumes:
@@ -91,6 +91,7 @@ services:
       - ADMIN_EMAIL=admin@filigran.io
       - ADMIN_PASSWORD=admin
       - DATA_SEEDING=true
+      # Former names on purpose: the e2e tests also cover their alias
       - MINIO_BUCKET_NAME=xtmhubbucket
       - MINIO_ENDPOINT=portal-minio
       - MINIO_PORT=9000
@@ -155,13 +156,18 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-    image: "pgsty/silo:RELEASE.2026-09-03T13-18-01Z"
+    image: "rustfs/rustfs:1.0.4"
     environment:
-      MINIO_ROOT_USER: portal
-      MINIO_ROOT_PASSWORD: changeme
-    command: "minio server /data/minio"
+      RUSTFS_ACCESS_KEY: portal
+      RUSTFS_SECRET_KEY: changeme
+      RUSTFS_OBS_LOG_DIRECTORY: "" # logs to stdout instead of /logs
+      RUSTFS_CHECK_UPDATE: "false" # no call to version.rustfs.com at each start
+    volumes:
+      # Named volume: the anonymous /data volume of a previous Silo container is owned by root, and RustFS
+      # (uid 10001) cannot start on it. Not `rustfsdata`: this file shares the dev compose project name
+      - "rustfs-ci-data:/data"
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
+      test: ["CMD", "curl", "-f", "http://localhost:9000/health/ready"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -191,3 +197,7 @@ services:
       - MIGRATIONS_PATH=./migrations
       - SEEDS_PATH=./seeds
       - SESSION_STORE_TYPE=memory
+
+volumes:
+  rustfs-ci-data:
+    driver: local
