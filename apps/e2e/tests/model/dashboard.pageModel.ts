@@ -72,7 +72,7 @@ export default class DashboardPage {
       .fill(shortDescription);
     await this.page.getByPlaceholder('1.0.0').fill(version);
     await this.page
-      .getByRole('textbox', { name: 'This is a paragraph to' })
+      .getByPlaceholder('This is a paragraph to')
       .fill(description);
     await this.page.getByLabel('Publish').click();
     await this.uploadJsonDocument(jsonFilePath);
