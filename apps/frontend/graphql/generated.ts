@@ -3014,7 +3014,6 @@ export type SubscriptionModel = Node & {
   organization_id: Scalars['OrganizationId']['output'];
   service_instance: ServiceInstance;
   service_instance_id: Scalars['ServiceInstanceId']['output'];
-  service_url: Scalars['String']['output'];
   start_date: Maybe<Scalars['Date']['output']>;
   subscription_capability: Maybe<Array<Maybe<SubscriptionCapability>>>;
   user_service: Array<Maybe<UserService>>;

@@ -3007,7 +3007,6 @@ export type SubscriptionModel = Node & {
   organization_id: Scalars['OrganizationId']['output'];
   service_instance: ServiceInstance;
   service_instance_id: Scalars['ServiceInstanceId']['output'];
-  service_url: Scalars['String']['output'];
   start_date?: Maybe<Scalars['Date']['output']>;
   subscription_capability?: Maybe<Array<Maybe<SubscriptionCapability>>>;
   user_service: Array<Maybe<UserService>>;
@@ -5406,7 +5405,6 @@ export type SubscriptionModelResolvers<ContextType = PortalContext, ParentType e
   organization_id?: Resolver<ResolversTypes['OrganizationId'], ParentType, ContextType>;
   service_instance?: Resolver<ResolversTypes['ServiceInstance'], ParentType, ContextType>;
   service_instance_id?: Resolver<ResolversTypes['ServiceInstanceId'], ParentType, ContextType>;
-  service_url?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   start_date?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
   subscription_capability?: Resolver<Maybe<Array<Maybe<ResolversTypes['SubscriptionCapability']>>>, ParentType, ContextType>;
   user_service?: Resolver<Array<Maybe<ResolversTypes['UserService']>>, ParentType, ContextType>;
