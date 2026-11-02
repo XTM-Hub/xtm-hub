@@ -18,18 +18,14 @@ jobs:
   deploy-feature-branch:
     runs-on: ubuntu-26.04
     steps:
-      # awxkit overrides argparse's private `_parse_known_args` with the pre-3.12.7 signature, so it crashes
-      # on newer Pythons (the ubuntu-26.04 system Python is 3.14). Keep Python on 3.11 until awxkit is fixed.
-      - name: Setup Python
-        uses: actions/setup-python@v7
+      - name: Checkout AWX action
+        uses: actions/checkout@v6
         with:
-          python-version: "3.11.15"
-      - name: Install AWX cli
-        run: pip install awxkit
+          sparse-checkout: .github/actions/awx-launch
       - name: Deploy feature environment
-        run: |
-          awx --conf.host https://awx.filigran.io \
-            --conf.token ${{ secrets.AWX_TOKEN }} \
-            -f human job_templates launch 'Delete XTM Hub feature branch for testing' \
-            --inventory eu-west-staging \
-            --extra_vars "{\"env\":\"Development\",\"xtmhub_version\":\"${{ inputs.pr_number }}\"}"
+        uses: ./.github/actions/awx-launch
+        with:
+          template: Delete XTM Hub feature branch for testing
+          inventory: eu-west-staging
+          extra-vars: '{"env":"Development","xtmhub_version":"${{ inputs.pr_number }}"}'
+          token: ${{ secrets.AWX_TOKEN }}
