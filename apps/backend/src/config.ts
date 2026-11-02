@@ -24,6 +24,9 @@ interface PortalConfig {
     pending_user_digest: boolean;
     public_roadmap_monthly_reminder: boolean;
   };
+  registration: {
+    omitted_tenant_silence_hours: number;
+  };
   auth0_sync: {
     enabled: boolean;
     max_users_per_run: number;
@@ -84,6 +87,10 @@ const portalConfig: PortalConfig = {
     public_roadmap_monthly_reminder:
       config.get<boolean>('enabled_emails.public_roadmap_monthly_reminder') ??
       false,
+  },
+  registration: {
+    omitted_tenant_silence_hours:
+      config.get<number>('registration.omitted_tenant_silence_hours') ?? 3,
   },
   auth0_sync: {
     enabled: config.get<boolean>('auth0_sync.enabled') ?? false,
