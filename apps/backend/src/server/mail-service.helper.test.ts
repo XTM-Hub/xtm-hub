@@ -248,7 +248,10 @@ describe('renderEmail', () => {
       expect(html.replace(/\s+/g, ' ')).toContain(
         'Thank you for requesting an <strong>XTM Platform Free Trial</strong>, we’re on it!'
       );
-      expect(html).toContain(bundleProductNames);
+      expect(html.replace(/\s+/g, ' ')).toContain(
+        'The XTM Platform includes access to <strong>OpenCTI, OpenAEV, and XTM One</strong>.'
+      );
+      expect(html).not.toContain('chosen');
       expect(html).not.toContain('full capacity');
     });
 
