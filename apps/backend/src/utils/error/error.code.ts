@@ -78,7 +78,6 @@ export enum BadRequestErrorCode {
   ShortDescriptionTooLong = 'SHORT_DESCRIPTION_TOO_LONG',
   ContactTooLong = 'CONTACT_TOO_LONG',
   MixedLtsManifestFragments = 'MIXED_LTS_MANIFEST_FRAGMENTS',
-  InvalidProductsForDeploymentType = 'INVALID_PRODUCTS_FOR_DEPLOYMENT_TYPE',
   InvalidUseCasesForProducts = 'INVALID_USE_CASES_FOR_PRODUCTS',
   SolutionCategoriesRequired = 'SOLUTION_CATEGORIES_REQUIRED',
   XtmOneRoleRequired = 'XTM_ONE_ROLE_REQUIRED',

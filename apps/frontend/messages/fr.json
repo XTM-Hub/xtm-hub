@@ -381,7 +381,6 @@
       "INVALID_PLATFORM_ID": "Une erreur inconnue s'est produite",
       "INVALID_PLATFORM_IDENTIFIER": "L'identifiant de la plateforme n'est pas valide",
       "INVALID_PLATFORM_VERSION": "Version de plateforme non valide",
-      "INVALID_PRODUCTS_FOR_DEPLOYMENT_TYPE": "Les produits sélectionnés ne sont pas valides pour ce type de déploiement",
       "INVALID_SSO_GROUP_ROLE_PORTAL": "Groupe SSO ou rôle invalide",
       "INVALID_ROLE_PORTAL": "Rôle invalide",
       "IS_PLATFORM_REGISTERED_UNKNOWN_ERROR": "Une erreur inconnue s'est produite lors de la connexion avec le produit",

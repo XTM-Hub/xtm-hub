@@ -57,10 +57,10 @@ settings {
 docs {
   Ensure cookie is defined in environment
 
-  Creates an XTM Platform bundle trial: one bundle deployment request plus one child trial per product.
+  Creates an XTM Platform bundle trial: one bundle deployment request plus one child trial for each of XTM One, OpenCTI and OpenAEV.
 
-  input.products: list of PlatformIdentifier (opencti, openaev, xtmone) — must include xtmone plus at least one other product
-  input.use_cases_by_product: one use case per non-xtmone product
+  input.products: deprecated and ignored — the server always embarks xtmone, opencti and openaev
+  input.use_cases_by_product: exactly one use case for opencti and one for openaev (none for xtmone)
   input.region: DeploymentRequestPlatformRegion (eu_west, us_east, apac_au, apac_sg)
   input.source: DeploymentRequestSource (xtmhub, opencti_demo, openaev_demo)
 }
