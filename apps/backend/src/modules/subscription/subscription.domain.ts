@@ -15,7 +15,7 @@ import SubscriptionCapability, {
   SubscriptionCapabilityId,
 } from '../../model/kanel/public/SubscriptionCapability';
 import UserService from '../../model/kanel/public/UserService';
-import { restrictSubscriptionToUserOrganization } from '../../security/restriction/user-service';
+import { restrictUserServiceToUserOrganization } from '../../security/restriction/user-service';
 import { UnknownErrorCode } from '../../utils/error/error.code';
 import { formatRawObject } from '../../utils/query-raw.util';
 
@@ -84,7 +84,7 @@ export const SubscriptionDomain = {
     }
 
     return db<UserService>('User_Service')
-      .tap(restrictSubscriptionToUserOrganization)
+      .tap(restrictUserServiceToUserOrganization)
       .whereIn('User_Service.subscription_id', ids)
       .select('User_Service.*');
   },
