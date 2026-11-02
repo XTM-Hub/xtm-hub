@@ -95,7 +95,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@electric-sql/pglite": "0.5.11",
+    "@electric-sql/pglite": "0.5.13",
     "@eslint/js": "catalog:",
     "@graphql-codegen/cli": "catalog:",
     "@graphql-codegen/typescript": "catalog:",
@@ -106,8 +106,8 @@
     "@types/node": "catalog:",
     "@types/nodemailer": "8.0.2",
     "@types/passport": "1.0.17",
-    "@typescript-eslint/eslint-plugin": "8.72.0",
-    "@typescript-eslint/parser": "8.72.0",
+    "@typescript-eslint/eslint-plugin": "8.72.1",
+    "@typescript-eslint/parser": "8.72.1",
     "@vitest/coverage-v8": "catalog:",
     "chokidar": "5.0.0",
     "concurrently": "catalog:",
