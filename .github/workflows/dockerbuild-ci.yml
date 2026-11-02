@@ -623,37 +623,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
-      # awxkit overrides argparse's private `_parse_known_args` with the pre-3.12.7 signature, so it crashes
-      # on newer Pythons (the ubuntu-26.04 system Python is 3.14). Keep Python on 3.11 until awxkit is fixed.
-      - name: Setup Python
-        uses: actions/setup-python@v7
-        with:
-          python-version: "3.11.15"
-      - name: Install AWX cli
-        run: pip install awxkit
-
-      - name: Prepare deployment metadata
-        if: contains(github.ref, 'refs/tags/')
-        id: deployment_metadata
-        run: |
-          NOW=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-          TAG_NAME="${GITHUB_REF_NAME}"
-          VERSION=$(echo "${GITHUB_REF_NAME}" | sed 's/^v//')
-          DEPLOYMENT_KEY="${{ github.repository }}:production:${TAG_NAME}"
-          echo "started_at=$NOW" >> "$GITHUB_OUTPUT"
-          echo "tag_name=$TAG_NAME" >> "$GITHUB_OUTPUT"
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "deployment_key=$DEPLOYMENT_KEY" >> "$GITHUB_OUTPUT"
-
       - name: Deploy
-        uses: ./.github/actions/retry-with-backoff
+        uses: ./.github/actions/awx-launch
         with:
-          command: |
-            awx --conf.host https://awx.filigran.io \
-              --conf.token ${{ secrets.AWX_TOKEN }} \
-              -f human job_templates launch 'Deploy XTM Hub feature branch for testing' \
-              --inventory eu-west-staging \
-              --extra_vars "{\"env\":\"Development\",\"xtmhub_version\":\"pr-${{ github.event.number }}\",\"xtmhub_node_env\":\"development\"}"
+          template: Deploy XTM Hub feature branch for testing
+          inventory: eu-west-staging
+          extra-vars: '{"env":"Development","xtmhub_version":"pr-${{ github.event.number }}","xtmhub_node_env":"development"}'
+          token: ${{ secrets.AWX_TOKEN }}
 
   build-images-prod:
     needs:
@@ -746,14 +722,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
-      # awxkit overrides argparse's private `_parse_known_args` with the pre-3.12.7 signature, so it crashes
-      # on newer Pythons (the ubuntu-26.04 system Python is 3.14). Keep Python on 3.11 until awxkit is fixed.
-      - name: Setup Python
-        uses: actions/setup-python@v7
-        with:
-          python-version: "3.11.15"
-      - name: Install AWX cli
-        run: pip install awxkit
+      - name: Prepare deployment metadata
+        if: contains(github.ref, 'refs/tags/')
+        id: deployment_metadata
+        run: |
+          NOW=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          TAG_NAME="${GITHUB_REF_NAME}"
+          VERSION=$(echo "${GITHUB_REF_NAME}" | sed 's/^v//')
+          DEPLOYMENT_KEY="${{ github.repository }}:production:${TAG_NAME}"
+          echo "started_at=$NOW" >> "$GITHUB_OUTPUT"
+          echo "tag_name=$TAG_NAME" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "deployment_key=$DEPLOYMENT_KEY" >> "$GITHUB_OUTPUT"
 
       - name: Store deployment started event
         if: contains(github.ref, 'refs/tags/')
@@ -788,15 +768,12 @@ jobs:
       - name: Deploy on Production
         id: awx_production_deploy
         if: contains(github.ref, 'refs/tags/')
-        uses: ./.github/actions/retry-with-backoff
+        uses: ./.github/actions/awx-launch
         with:
-          command: |
-            export VERSION=$(echo "${GITHUB_REF_NAME}" | sed 's/^v//')
-            awx --conf.host https://awx.filigran.io \
-              --conf.token ${{ secrets.AWX_TOKEN }} \
-              -f human job_templates launch 'Deploy XTM Hub' \
-              --inventory eu-west-production \
-              --extra_vars "{\"env\":\"Production\",\"xtmhub_version\":\"$VERSION\"}"
+          template: Deploy XTM Hub
+          inventory: eu-west-production
+          extra-vars: '{"env":"Production","xtmhub_version":"${{ steps.deployment_metadata.outputs.version }}"}'
+          token: ${{ secrets.AWX_TOKEN }}
 
       - name: Send n8n Webhook Notification
         if: contains(github.ref, 'refs/tags/')
@@ -884,25 +861,21 @@ jobs:
 
       - name: Deploy on Development
         if: github.ref == 'refs/heads/main'
-        uses: ./.github/actions/retry-with-backoff
+        uses: ./.github/actions/awx-launch
         with:
-          command: |
-            awx --conf.host https://awx.filigran.io \
-              --conf.token ${{ secrets.AWX_TOKEN }} \
-              -f human job_templates launch 'Deploy XTM Hub' \
-              --inventory eu-west-staging \
-              --extra_vars '{"env":"Development"}'
+          template: Deploy XTM Hub
+          inventory: eu-west-staging
+          extra-vars: '{"env":"Development"}'
+          token: ${{ secrets.AWX_TOKEN }}
 
       - name: Deploy on Prerelease
         if: github.ref == 'refs/heads/main'
-        uses: ./.github/actions/retry-with-backoff
+        uses: ./.github/actions/awx-launch
         with:
-          command: |
-            awx --conf.host https://awx.filigran.io \
-              --conf.token ${{ secrets.AWX_TOKEN }} \
-              -f human job_templates launch 'Deploy XTM Hub' \
-              --inventory eu-west-staging \
-              --extra_vars '{"env":"Prerelease"}'
+          template: Deploy XTM Hub
+          inventory: eu-west-staging
+          extra-vars: '{"env":"Prerelease"}'
+          token: ${{ secrets.AWX_TOKEN }}
 
   # Notifies the team channel when CI fails on a protected branch (main/development)
   # or in the merge queue. Regular PR-branch CI failures are intentionally excluded,

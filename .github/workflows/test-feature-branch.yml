@@ -23,18 +23,15 @@ jobs:
   deploy-feature-branch:
     runs-on: ubuntu-26.04
     steps:
+      # Sparse checkout keeps the root files, so .nvmrc is there too.
+      - name: Checkout AWX action
+        uses: actions/checkout@v6
+        with:
+          sparse-checkout: .github/actions/awx-launch
       - name: Setup Node Js
         uses: actions/setup-node@v6
         with:
-          node-version: "24.22.2"
-      # awxkit overrides argparse's private `_parse_known_args` with the pre-3.12.7 signature, so it crashes
-      # on newer Pythons (the ubuntu-26.04 system Python is 3.14). Keep Python on 3.11 until awxkit is fixed.
-      - name: Setup Python
-        uses: actions/setup-python@v7
-        with:
-          python-version: "3.11.15"
-      - name: Install AWX cli
-        run: pip install awxkit
+          node-version-file: .nvmrc
       - name: Define NODE_ENV based on branch name
         run: |
           if [[ ${{ github.ref }} =~ refs/hotfix/.* ]]; then
@@ -43,9 +40,9 @@ jobs:
               echo "NODE_ENV=development" >> "$GITHUB_ENV"
           fi
       - name: Deploy feature environment
-        run: |
-          awx --conf.host https://awx.filigran.io \
-            --conf.token ${{ secrets.AWX_TOKEN }} \
-            -f human job_templates launch 'Deploy XTM Hub feature branch for testing' \
-            --inventory eu-west-staging \
-            --extra_vars "{\"env\":\"Development\",\"xtmhub_version\":\"${{ inputs.pr_number }}\",\"xtmhub_node_env\":\"${{ env.NODE_ENV }}\"}"
+        uses: ./.github/actions/awx-launch
+        with:
+          template: Deploy XTM Hub feature branch for testing
+          inventory: eu-west-staging
+          extra-vars: '{"env":"Development","xtmhub_version":"${{ inputs.pr_number }}","xtmhub_node_env":"${{ env.NODE_ENV }}"}'
+          token: ${{ secrets.AWX_TOKEN }}
