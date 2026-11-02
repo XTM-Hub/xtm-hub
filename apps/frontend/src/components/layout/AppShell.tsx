@@ -1,6 +1,5 @@
 import { AppFooter } from '@/components/AppFooter';
 import { SharedContent } from '@/components/layout/SharedContent';
-import { getTranslate } from '@/hooks/get-translate';
 import { BannerStack } from '@filigran/design-system';
 import { ReactNode } from 'react';
 
@@ -12,23 +11,17 @@ interface AppShellProps {
   children: ReactNode;
 }
 
-export const AppShell = async ({
+export const AppShell = ({
   banners,
   menu,
   headerContent,
   contentClassName,
   children,
 }: AppShellProps) => {
-  const t = await getTranslate();
-
   return (
     <div className="flex flex-col w-full h-[calc(100dvh-var(--cookie-banner-height,0px))] min-h-0">
       {/* Hidden while every banner renders nothing: no empty landmark. */}
-      <BannerStack
-        aria-label={t('Utils.ApplicationMessages')}
-        className="shrink-0 empty:hidden">
-        {banners}
-      </BannerStack>
+      <BannerStack className="shrink-0 empty:hidden">{banners}</BannerStack>
       <div className="flex flex-row grow min-h-0">
         {menu}
         <div className="flex flex-col w-full h-full min-h-0 min-w-0">
