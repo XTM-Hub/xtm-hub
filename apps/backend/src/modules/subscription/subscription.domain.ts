@@ -3,6 +3,7 @@ import {
   SubscriptionConnection,
   SubscriptionOrdering,
 } from '../../__generated__/resolvers-types';
+import { requestContext } from '../../context/request.context';
 import { OrganizationId } from '../../model/kanel/public/Organization';
 import ServiceCapability from '../../model/kanel/public/ServiceCapability';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
@@ -15,6 +16,8 @@ import SubscriptionCapability, {
   SubscriptionCapabilityId,
 } from '../../model/kanel/public/SubscriptionCapability';
 import UserService from '../../model/kanel/public/UserService';
+import { isUserAdminPlatform } from '../../security/access';
+import { restrictSubscriptionToUserOrganization } from '../../security/restriction/subscription';
 import { restrictUserServiceToUserOrganization } from '../../security/restriction/user-service';
 import { UnknownErrorCode } from '../../utils/error/error.code';
 import { formatRawObject } from '../../utils/query-raw.util';
@@ -177,7 +180,13 @@ export const SubscriptionDomain = {
   loadSubscriptionWithOrganizationAndCapabilitiesBy: async (
     field: SubscriptionMutator
   ) => {
-    return db<Subscription>('Subscription')
+    const user = requestContext.requireUser();
+    const query = db<Subscription>('Subscription');
+    if (!isUserAdminPlatform(user)) {
+      query.tap(restrictSubscriptionToUserOrganization);
+    }
+
+    return query
       .where(field)
       .leftJoin(
         'Organization',
@@ -281,7 +290,11 @@ const buildLoadSubscriptionsQuery = ({
   shouldJoinOrganization: boolean;
   shouldJoinServiceInstanceAndDefinition: boolean;
 }) => {
+  const user = requestContext.requireUser();
   const queryContext = db<Subscription>('Subscription');
+  if (!isUserAdminPlatform(user)) {
+    queryContext.tap(restrictSubscriptionToUserOrganization);
+  }
 
   if (shouldJoinOrganization) {
     queryContext.leftJoin(

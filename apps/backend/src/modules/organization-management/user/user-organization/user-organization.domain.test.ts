@@ -4,11 +4,16 @@ import { TestHelper } from '../../../../../tests/helper/test.helper';
 import {
   // eslint-disable-next-line no-restricted-imports
   requestContextAdminUser,
+  requestContextSimpleUserSecondOrga,
   SERVICES,
   TEST_ORGANIZATIONS,
+  TEST_SUBSCRIPTIONS,
 } from '../../../../../tests/tests.const';
 import { requestContext } from '../../../../context/request.context';
-import { ForbiddenErrorCode } from '../../../../utils/error/error.code';
+import {
+  ForbiddenErrorCode,
+  NotFoundErrorCode,
+} from '../../../../utils/error/error.code';
 import { UserOrganizationPendingDomain } from '../user-pending/user-organization-pending.domain';
 import { UserProvisioningDomain } from '../user-provisioning/user-provisioning.domain';
 import { UserOrganizationDomain } from './user-organization.domain';
@@ -435,14 +440,6 @@ describe('userOrganizationDomain', () => {
     });
 
     it('should throw a NotFoundError when no organization matches the user email domain', async () => {
-      const organization = await TestHelper.organization.create({
-        personal_space: false,
-        domains: [`link-subscription-${uuidv4()}.io`],
-      });
-      const subscription = await TestHelper.subscription.create({
-        organization_id: organization.id,
-        service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
-      });
       const user = await UserProvisioningDomain.createUser(
         { email: `orphan-${uuidv4()}@unmatched-domain.io` },
         { sendWelcomeEmail: false }
@@ -450,31 +447,40 @@ describe('userOrganizationDomain', () => {
 
       const call = UserOrganizationDomain.linkUserToSubscriptionOrganization(
         user,
-        subscription.id
+        TEST_SUBSCRIPTIONS.FILIGRAN_COMMUNITY.ID
       );
 
-      await expect(call).rejects.toThrow();
+      await expect(call).rejects.toThrow(NotFoundErrorCode.UserNotFound);
+    });
+
+    it('should throw a NotFoundError when the subscription is not in the selected organization', async () => {
+      requestContext.set(requestContextSimpleUserSecondOrga);
+      const user = await UserProvisioningDomain.createUser(
+        { email: `invisible-${uuidv4()}@unmatched-domain.io` },
+        { sendWelcomeEmail: false }
+      );
+
+      const call = UserOrganizationDomain.linkUserToSubscriptionOrganization(
+        user,
+        TEST_SUBSCRIPTIONS.FILIGRAN_COMMUNITY.ID
+      );
+
+      await expect(call).rejects.toThrow(
+        NotFoundErrorCode.SubscriptionNotFound
+      );
     });
 
     it('should throw a ForbiddenAccess error when the user email domain matches a different organization than the subscription', async () => {
-      const subscriptionOrganization = await TestHelper.organization.create({
-        personal_space: false,
-        domains: [`link-subscription-${uuidv4()}.io`],
-      });
-      const subscription = await TestHelper.subscription.create({
-        organization_id: subscriptionOrganization.id,
-        service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
-      });
       const user = await UserProvisioningDomain.createUser(
         {
-          email: `mismatched-${uuidv4()}@${TEST_ORGANIZATIONS.FILIGRAN.DOMAINS.FIRST}`,
+          email: `mismatched-${uuidv4()}@${TEST_ORGANIZATIONS.SECOND_ORGANIZATION.DOMAINS.FIRST.NAME}`,
         },
         { sendWelcomeEmail: false }
       );
 
       const call = UserOrganizationDomain.linkUserToSubscriptionOrganization(
         user,
-        subscription.id
+        TEST_SUBSCRIPTIONS.FILIGRAN_COMMUNITY.ID
       );
 
       await expect(call).rejects.toThrow(

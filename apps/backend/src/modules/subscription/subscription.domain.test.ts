@@ -3,14 +3,21 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { TestHelper } from '../../../tests/helper/test.helper';
 import {
   requestContextAdminSecondOrga,
+  // eslint-disable-next-line no-restricted-imports
+  requestContextAdminUser,
+  requestContextSimpleUserSecondOrga,
   SERVICES,
   TEST_ORGANIZATIONS,
+  TEST_SUBSCRIPTIONS,
 } from '../../../tests/tests.const';
 import { requestContext } from '../../context/request.context';
 import { OrganizationId } from '../../model/kanel/public/Organization';
 import { ServiceCapabilityId } from '../../model/kanel/public/ServiceCapability';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
-import { SubscriptionId } from '../../model/kanel/public/Subscription';
+import {
+  SubscriptionId,
+  SubscriptionMutator,
+} from '../../model/kanel/public/Subscription';
 import { SubscriptionCapabilityId } from '../../model/kanel/public/SubscriptionCapability';
 import { UserServiceId } from '../../model/kanel/public/UserService';
 import { SubscriptionCapabilityDomain } from '../security-management/subscription-capability/subscription-capability.domain';
@@ -581,5 +588,81 @@ describe('subscription domain', () => {
         TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID
       );
     });
+  });
+
+  describe('loadSubscriptionWithOrganizationAndCapabilitiesBy', () => {
+    const filigranSubscriptionId = TEST_SUBSCRIPTIONS.FILIGRAN_COMMUNITY.ID;
+    let secondOrganizationSubscriptionId: SubscriptionId;
+
+    const loadSubscription = (id: SubscriptionId) =>
+      SubscriptionDomain.loadSubscriptionWithOrganizationAndCapabilitiesBy({
+        'Subscription.id': id,
+      } as SubscriptionMutator);
+
+    beforeEach(async () => {
+      requestContext.set(requestContextSimpleUserSecondOrga);
+      secondOrganizationSubscriptionId = uuidv4() as SubscriptionId;
+      await SubscriptionDomain.createSubscription({
+        id: secondOrganizationSubscriptionId,
+        organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        service_instance_id: serviceInstanceId,
+        start_date: new Date(),
+        end_date: null,
+      });
+    });
+
+    it('should return the subscription of the selected organization for a user without BYPASS', async () => {
+      // When
+      const result = await loadSubscription(secondOrganizationSubscriptionId);
+
+      // Then
+      expect(result).toMatchObject([
+        {
+          id: secondOrganizationSubscriptionId,
+          organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+          organization: { id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID },
+        },
+      ]);
+    });
+
+    it('should return an empty result when the subscription is not in the selected organization for a user without BYPASS', async () => {
+      // When
+      const result = await loadSubscription(filigranSubscriptionId);
+
+      // Then
+      expect(result).toEqual([]);
+    });
+
+    it.each([
+      {
+        organization: 'FILIGRAN',
+        organizationId: TEST_ORGANIZATIONS.FILIGRAN.ID,
+        getSubscriptionId: () => filigranSubscriptionId,
+      },
+      {
+        organization: 'SECOND_ORGANIZATION',
+        organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        getSubscriptionId: () => secondOrganizationSubscriptionId,
+      },
+    ])(
+      'should return the $organization subscription for a user with BYPASS',
+      async ({ organizationId, getSubscriptionId }) => {
+        // Given
+        requestContext.set(requestContextAdminUser);
+        const subscriptionId = getSubscriptionId();
+
+        // When
+        const result = await loadSubscription(subscriptionId);
+
+        // Then
+        expect(result).toMatchObject([
+          {
+            id: subscriptionId,
+            organization_id: organizationId,
+            organization: { id: organizationId },
+          },
+        ]);
+      }
+    );
   });
 });
