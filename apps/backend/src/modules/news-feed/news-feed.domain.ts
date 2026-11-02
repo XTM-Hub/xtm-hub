@@ -62,7 +62,11 @@ const buildBlogpostMetadata = (
       NewsFeedItemMetadataKey.Description,
       post.summary?.trim() ? post.summary : undefined,
     ],
-    [NewsFeedItemMetadataKey.ImageUrl, post.image?.url],
+    // The thumbnail is the lighter image to display, the full image is the fallback
+    [
+      NewsFeedItemMetadataKey.ImageUrl,
+      post.image?.thumbnail?.url ?? post.image?.url,
+    ],
     [NewsFeedItemMetadataKey.ImageAlt, post.image ? post.image.alt : undefined],
     [
       NewsFeedItemMetadataKey.AuthorNames,

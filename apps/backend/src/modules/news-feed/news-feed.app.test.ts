@@ -1730,6 +1730,9 @@ describe('newsFeedApp', () => {
       image: {
         url: `https://filigran.io/api/media/file/blog-post-${number}.png`,
         alt: `Image of the blog post ${number}`,
+        thumbnail: {
+          url: `https://filigran.io/api/feeds/blog/thumbnail/${number}?v=1787561132754`,
+        },
       },
       authors: [{ name: 'Romain Guignard' }],
       categories: [
@@ -1863,11 +1866,33 @@ describe('newsFeedApp', () => {
         ),
         [NewsFeedItemMetadataKey.Description]: 'Summary of the blog post 1',
         [NewsFeedItemMetadataKey.ImageUrl]:
-          'https://filigran.io/api/media/file/blog-post-1.png',
+          'https://filigran.io/api/feeds/blog/thumbnail/1?v=1787561132754',
         [NewsFeedItemMetadataKey.ImageAlt]: 'Image of the blog post 1',
         [NewsFeedItemMetadataKey.AuthorNames]: '["Romain Guignard"]',
         [NewsFeedItemMetadataKey.ReadMinutes]: '7',
         [NewsFeedItemMetadataKey.BlogPostSlug]: 'blog-post-1',
+      });
+    });
+
+    it('should use the image url when the post has no thumbnail', async () => {
+      // Given
+      mockFeed([
+        buildPost(1, {
+          image: {
+            url: 'https://filigran.io/api/media/file/blog-post-1.png',
+            alt: 'Image of the blog post 1',
+          },
+        }),
+      ]);
+
+      // When
+      await NewsFeedApp.syncBlogposts();
+
+      // Then
+      const item = await loadBlogpostItem('blog-post-1');
+      expect(await loadMetadataValues(item!.id)).toMatchObject({
+        [NewsFeedItemMetadataKey.ImageUrl]:
+          'https://filigran.io/api/media/file/blog-post-1.png',
       });
     });
 
