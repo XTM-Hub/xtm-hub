@@ -484,7 +484,7 @@ type PlatformDeploymentRequest {
 }
 
 input CreateDeploymentRequestInput {
-  products: [PlatformIdentifier!]!
+  products: [PlatformIdentifier!] @deprecated(reason: "Ignored: every XTM Platform trial includes XTM One, OpenCTI and OpenAEV")
   use_cases_by_product: [ProductUseCaseInput!]
   region: DeploymentRequestPlatformRegion!
   job_title: DeploymentRequestJobTitle

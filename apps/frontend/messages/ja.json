@@ -381,7 +381,6 @@
       "INVALID_PLATFORM_ID": "不明なエラーが発生した",
       "INVALID_PLATFORM_IDENTIFIER": "プラットフォーム識別子が無効",
       "INVALID_PLATFORM_VERSION": "プラットフォームのバージョンが無効です",
-      "INVALID_PRODUCTS_FOR_DEPLOYMENT_TYPE": "選択された製品はこの展開タイプには無効です",
       "INVALID_SSO_GROUP_ROLE_PORTAL": "SSOグループまたはロールが無効です",
       "INVALID_ROLE_PORTAL": "ロールが無効です",
       "IS_PLATFORM_REGISTERED_UNKNOWN_ERROR": "製品の接続中に不明なエラーが発生しました",

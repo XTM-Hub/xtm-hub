@@ -197,8 +197,11 @@ export const TEST_DEPLOYMENT = {
       platform_identifier: PlatformIdentifier.Opencti,
       use_case: DeploymentRequestUseCase.ThreatHunting,
     },
+    {
+      platform_identifier: PlatformIdentifier.Openaev,
+      use_case: DeploymentRequestUseCase.OaevPurpleTeam,
+    },
   ],
-  products: [PlatformIdentifier.Xtmone, PlatformIdentifier.Opencti],
   region: DeploymentRequestPlatformRegion.UsEast,
   source: DeploymentRequestSource.Xtmhub,
 };
