@@ -7,21 +7,7 @@ import type { GraphQLSchema } from 'graphql';
 import { Server } from 'http';
 import { Context, errorLoggingPlugin } from './apollo-plugins/log';
 import { operationMetricsPlugin } from './apollo-plugins/metrics';
-
-// Linear on purpose: the message can echo a client-controlled literal, so a regex here would be a ReDoS vector
-const removeSuggestionHint = (message: string) => {
-  if (!message.endsWith('?')) {
-    return message;
-  }
-  const hintStart = message.lastIndexOf('Did you mean');
-  if (
-    hintStart === -1 ||
-    message.indexOf('?', hintStart) !== message.length - 1
-  ) {
-    return message;
-  }
-  return message.slice(0, hintStart).trimEnd();
-};
+import { removeSuggestionHint } from './schema-details';
 
 interface CreateApolloServerOptions {
   schema: GraphQLSchema;

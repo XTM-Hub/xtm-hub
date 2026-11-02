@@ -43,6 +43,7 @@ import createSchema from './server/graphql-schema';
 import platformInit, { minioInit } from './server/initialize';
 import { seedDevelopmentConnectors } from './server/initialize.helper';
 import { requestContextMiddleware } from './server/request-context.middleware';
+import { createSseSchemaDetailsOptions } from './server/schema-details';
 import { ReadOnlySessionStore } from './server/session/read-only-session.store';
 import { getSessionStoreInstance } from './session-store-manager';
 import { initShutdown, registerShutdownHook } from './shutdown';
@@ -324,8 +325,12 @@ const middlewareExpress = expressMiddleware(server, {
     return portalContext;
   },
 });
+const sseSchemaDetailsOptions = createSseSchemaDetailsOptions(
+  portalConfig.local_dev
+);
 const handler = createHandler({
   schema,
+  ...sseSchemaDetailsOptions,
   context: async (_req) => {
     const session = await new Promise((resolve) => {
       sessionMiddleware(_req.raw, {} as express.Response, () =>
@@ -351,10 +356,11 @@ const handler = createHandler({
       subscription: msg.operationName ?? 'Unknown',
     });
   },
-  onNext: async (_ctx, req) => {
+  onNext: async (ctx, req, result) => {
     sseMessageCounter.inc({
       subscription: req.context.res.req.body?.operationName ?? 'Unknown',
     });
+    return sseSchemaDetailsOptions.onNext?.(ctx, req, result);
   },
 });
 
