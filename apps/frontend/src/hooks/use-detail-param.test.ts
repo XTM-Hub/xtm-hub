@@ -1,17 +1,15 @@
 import { renderHook } from '@testing-library/react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useDetailParam } from './use-detail-param';
 
 describe('useDetailParam', () => {
-  const replace = vi.fn();
+  const replaceState = vi.spyOn(window.history, 'replaceState');
 
   beforeEach(() => {
     vi.clearAllMocks();
+    replaceState.mockImplementation(() => {});
     vi.mocked(usePathname).mockReturnValue('/roadmap');
-    vi.mocked(useRouter).mockReturnValue({
-      replace,
-    } as unknown as ReturnType<typeof useRouter>);
   });
 
   const mockSearchParams = (query: string) =>
@@ -45,9 +43,11 @@ describe('useDetailParam', () => {
     const { result } = renderHook(() => useDetailParam('epicId', 'epic-1'));
     result.current.open();
 
-    expect(replace).toHaveBeenCalledWith('/roadmap?tab=roadmap&epicId=epic-1', {
-      scroll: false,
-    });
+    expect(replaceState).toHaveBeenCalledWith(
+      null,
+      '',
+      '/roadmap?tab=roadmap&epicId=epic-1'
+    );
   });
 
   it('removes only its param on close, keeping the query string', () => {
@@ -56,9 +56,7 @@ describe('useDetailParam', () => {
     const { result } = renderHook(() => useDetailParam('epicId', 'epic-1'));
     result.current.close();
 
-    expect(replace).toHaveBeenCalledWith('/roadmap?tab=roadmap', {
-      scroll: false,
-    });
+    expect(replaceState).toHaveBeenCalledWith(null, '', '/roadmap?tab=roadmap');
   });
 
   it('drops the query string entirely when closing the last param', () => {
@@ -67,6 +65,6 @@ describe('useDetailParam', () => {
     const { result } = renderHook(() => useDetailParam('epicId', 'epic-1'));
     result.current.close();
 
-    expect(replace).toHaveBeenCalledWith('/roadmap', { scroll: false });
+    expect(replaceState).toHaveBeenCalledWith(null, '', '/roadmap');
   });
 });

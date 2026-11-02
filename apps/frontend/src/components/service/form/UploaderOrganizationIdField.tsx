@@ -1,5 +1,5 @@
-import { PortalContext } from '@/components/me/AppPortalContext';
 import { useFormField } from '@/components/ui/form';
+import { useMeOrganizations } from '@/hooks/use-me-organizations';
 import { useTranslate } from '@/hooks/use-translate';
 import {
   Select,
@@ -11,7 +11,6 @@ import {
   SelectValue,
 } from '@filigran/design-system';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { useContext } from 'react';
 import { ControllerRenderProps, FieldValues } from 'react-hook-form';
 
 interface ServiceFormUploaderOrganizationIdFieldProps {
@@ -28,7 +27,8 @@ export const ServiceFormUploaderOrganizationIdField = ({
   disabled,
 }: ServiceFormUploaderOrganizationIdFieldProps) => {
   const t = useTranslate();
-  const { me } = useContext(PortalContext);
+  const { data } = useMeOrganizations();
+  const me = data?.me;
   const { error } = useFormField();
 
   return (
@@ -51,7 +51,7 @@ export const ServiceFormUploaderOrganizationIdField = ({
           />
         </SelectTrigger>
         <SelectContent className="layer-1">
-          {me?.organizations.map((node) => {
+          {me?.organizations?.map((node) => {
             return (
               <SelectItem
                 key={node?.id}

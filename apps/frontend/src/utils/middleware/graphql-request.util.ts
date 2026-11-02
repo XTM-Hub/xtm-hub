@@ -6,6 +6,7 @@ export const SERVER_HTTP_API =
   process.env.SERVER_HTTP_API ?? 'http://localhost:4002';
 const MANIFEST_PATH = /^\/[^/]+\/[^/]+\/[^/]+\/manifests(?:\/|$)/;
 const VERSIONS_MATRIX_PATH = /^\/[^/]+\/versions-matrix(?:\/|$)/;
+const NEWS_FEED_REDIRECT_PATH = /^\/redirect\/news-feed\/[^/]+\/?$/;
 
 export const manageRequest = async (request: NextRequest) => {
   const { pathname, search } = request.nextUrl;
@@ -42,6 +43,12 @@ export const manageRequest = async (request: NextRequest) => {
     );
   }
   if (VERSIONS_MATRIX_PATH.test(pathname)) {
+    return NextResponse.rewrite(
+      new URL(SERVER_HTTP_API + pathname + search, request.url)
+    );
+  }
+  // Public route, answered by the backend with a 302 (relayed untouched, no login, no session)
+  if (NEWS_FEED_REDIRECT_PATH.test(pathname)) {
     return NextResponse.rewrite(
       new URL(SERVER_HTTP_API + pathname + search, request.url)
     );

@@ -1,0 +1,117 @@
+import { ServiceListDisplayMode } from '@/components/service/components/header/ServiceListHeader';
+import { useServiceListStorage } from '@/hooks/use-service-list-storage';
+import { ServiceListStorageKey } from '@/utils/filters-storage.utils';
+import { DocumentOrdering, OrderingMode } from '@graphql/generated';
+import { renderHook } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const testState = vi.hoisted(() => ({
+  usePublicPath: vi.fn(),
+  useLocalStorage: vi.fn(),
+  useSessionStorage: vi.fn(),
+  removeFns: [] as Array<() => void>,
+}));
+
+vi.mock('@/hooks/use-public-path', () => ({
+  default: testState.usePublicPath,
+}));
+
+vi.mock('usehooks-ts', () => ({
+  useLocalStorage: testState.useLocalStorage,
+  useSessionStorage: testState.useSessionStorage,
+}));
+
+const mockStorageHook = (_key: string, defaultValue: unknown) => {
+  const remove = vi.fn();
+  testState.removeFns.push(remove);
+  return [defaultValue, vi.fn(), remove];
+};
+
+describe('useServiceListStorage', () => {
+  beforeEach(() => {
+    testState.removeFns = [];
+    testState.usePublicPath.mockReturnValue(false);
+    testState.useLocalStorage.mockImplementation(mockStorageHook);
+    testState.useSessionStorage.mockImplementation(mockStorageHook);
+  });
+
+  it.each`
+    isPublicPath | expectedPrefix
+    ${true}      | ${'Public'}
+    ${false}     | ${'Private'}
+  `(
+    'uses "$expectedPrefix" storage prefix when public path is $isPublicPath',
+    ({ isPublicPath, expectedPrefix }) => {
+      testState.usePublicPath.mockReturnValue(isPublicPath);
+
+      renderHook(() =>
+        useServiceListStorage(ServiceListStorageKey.OpenCTICustomViews)
+      );
+
+      expect(testState.useSessionStorage).toHaveBeenCalledWith(
+        `search${expectedPrefix}OpenCTICustomViewsList`,
+        ''
+      );
+      expect(testState.useLocalStorage).toHaveBeenCalledWith(
+        `displayMode${expectedPrefix}OpenCTICustomViewsList`,
+        ServiceListDisplayMode.Tab
+      );
+    }
+  );
+
+  it.each`
+    serviceKey                                       | expectedDefaultOrderBy
+    ${ServiceListStorageKey.OpenCTIIntegrationFeeds} | ${DocumentOrdering.Name}
+    ${ServiceListStorageKey.OpenCTICustomDashboards} | ${DocumentOrdering.CreatedAt}
+  `(
+    'uses $expectedDefaultOrderBy as default orderBy for $serviceKey',
+    ({ serviceKey, expectedDefaultOrderBy }) => {
+      renderHook(() => useServiceListStorage(serviceKey));
+
+      expect(testState.useLocalStorage).toHaveBeenCalledWith(
+        expect.stringContaining('orderByPrivate'),
+        expectedDefaultOrderBy
+      );
+    }
+  );
+
+  it('uses pageSize as the single source of truth for the page size', () => {
+    renderHook(() =>
+      useServiceListStorage(ServiceListStorageKey.OpenAEVScenarios)
+    );
+
+    expect(testState.useLocalStorage).toHaveBeenCalledWith(
+      'pageSizePrivateOpenAEVScenariosList',
+      50
+    );
+    expect(testState.useLocalStorage).not.toHaveBeenCalledWith(
+      expect.stringMatching(/^count/),
+      expect.anything()
+    );
+  });
+
+  it('exposes expected default values', () => {
+    const { result } = renderHook(() =>
+      useServiceListStorage(ServiceListStorageKey.OpenAEVScenarios)
+    );
+
+    expect(result.current.search).toBe('');
+    expect(result.current.pageSize).toBe(50);
+    expect(result.current.orderMode).toBe(OrderingMode.Asc);
+    expect(result.current.displayMode).toBe(ServiceListDisplayMode.Tab);
+    expect(result.current.labels).toEqual({});
+  });
+
+  it('resetAll calls every storage remover', () => {
+    const { result } = renderHook(() =>
+      useServiceListStorage(ServiceListStorageKey.OpenCTIPlaybooks)
+    );
+
+    result.current.resetAll();
+
+    expect(testState.removeFns).toHaveLength(13);
+    for (const remove of testState.removeFns) {
+      expect(remove).toHaveBeenCalledOnce();
+    }
+  });
+});

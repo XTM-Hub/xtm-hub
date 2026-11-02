@@ -5,10 +5,10 @@ import {
   PUBLIC_CYBERSECURITY_SOLUTIONS_PATH,
 } from '@/utils/path/constant';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
-import { seoServiceInstanceFragment$data } from '@generated/seoServiceInstanceFragment.graphql';
 import { serviceList_fragment$data } from '@generated/serviceList_fragment.graphql';
 import {
   PlatformIdentifier,
+  SeoServiceInstanceItemFragment,
   ServiceDefinitionIdentifier,
 } from '@graphql/generated';
 
@@ -42,7 +42,7 @@ const buildDocumentUrl = (
 };
 
 const computeUrl = (
-  instance: serviceList_fragment$data | seoServiceInstanceFragment$data,
+  instance: serviceList_fragment$data | SeoServiceInstanceItemFragment,
   seo?: boolean
 ) => {
   const instanceLink = instance.links?.[0]?.url;
@@ -82,7 +82,7 @@ export const localizedCardDescription = (
 };
 
 export const seoServiceInstanceToInstanceCardData = (
-  instance: seoServiceInstanceFragment$data,
+  instance: SeoServiceInstanceItemFragment,
   t: ReturnType<typeof useTranslate>
 ): ServiceInstanceCardData => {
   return {

@@ -49,6 +49,17 @@ export class UnauthenticatedError extends Error {
   }
 }
 
+/** Keeps the API's `extensions.code`, when it sends one, beside its message. */
+export class GraphqlRequestError extends Error {
+  readonly code?: string;
+
+  constructor(message: string, code?: string) {
+    super(message);
+    this.name = 'GraphqlRequestError';
+    this.code = code;
+  }
+}
+
 export type GraphqlErrorLike = {
   message: string;
   extensions?: { code?: string };
@@ -56,7 +67,7 @@ export type GraphqlErrorLike = {
 
 /**
  * Throws UnauthenticatedError on an UNAUTHENTICATED error code, otherwise
- * throws an Error with the first error's message.
+ * throws a GraphqlRequestError with the first error's message and code.
  */
 export function throwOnGraphqlErrors(errors?: GraphqlErrorLike[]): void {
   if (!Array.isArray(errors) || errors.length === 0) return;
@@ -68,7 +79,11 @@ export function throwOnGraphqlErrors(errors?: GraphqlErrorLike[]): void {
     throw new UnauthenticatedError();
   }
 
-  throw new Error(errors[0]?.message ?? 'GraphQL request failed');
+  const [firstError] = errors;
+  throw new GraphqlRequestError(
+    firstError?.message ?? 'GraphQL request failed',
+    firstError?.extensions?.code
+  );
 }
 
 export function prepareUri(uri: string | undefined): string {
@@ -78,25 +93,27 @@ export function prepareUri(uri: string | undefined): string {
   return 'http://localhost:4002/';
 }
 
-/**
- * Forces `no-store` in development so devs always see fresh data, and strips
- * `next.revalidate` from `options` when that happens (Next.js throws if both
- * `cache: 'no-store'` and `next.revalidate` are set).
- */
-export function resolveActiveCacheConfig(
-  cacheConfig: RequestCache | undefined,
-  options: { next?: { revalidate?: number | false; tags?: string[] } }
-): RequestCache | undefined {
-  const activeCacheConfig = isDevelopment() ? 'no-store' : cacheConfig;
+type FetchCacheOptions = {
+  cache?: RequestCache;
+  next?: { revalidate?: number | false; tags?: string[] };
+};
 
-  if (
-    activeCacheConfig === 'no-store' &&
-    options.next?.revalidate !== undefined
-  ) {
-    delete options.next.revalidate;
+/**
+ * Returns a copy of `options` with `no-store` forced in development so devs
+ * always see fresh data, and without `next.revalidate` when the cache ends up
+ * as `no-store` (Next.js throws if both are set). `options` is left untouched.
+ */
+export function resolveActiveCacheConfig<TOptions extends FetchCacheOptions>(
+  options: TOptions
+): TOptions {
+  const cache = isDevelopment() ? 'no-store' : options.cache;
+
+  if (cache !== 'no-store' || options.next?.revalidate === undefined) {
+    return { ...options, cache };
   }
 
-  return activeCacheConfig;
+  const { revalidate: _revalidate, ...next } = options.next;
+  return { ...options, cache, next };
 }
 
 export function extractOperationType(query: string): string {

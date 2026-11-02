@@ -10,16 +10,17 @@ import express from 'express';
 
 import config from 'config';
 import promBundle from 'express-prom-bundle';
-import expressSession, { SessionData } from 'express-session/index.js';
+import expressSession, {
+  SessionData,
+  SessionOptions,
+} from 'express-session/index.js';
 import { createHandler } from 'graphql-sse/lib/use/express';
 import graphqlUploadExpress from 'graphql-upload/graphqlUploadExpress.mjs';
 import { printSchema } from 'graphql/utilities/index.js';
 import { createServer } from 'http';
 import fs from 'node:fs';
-import { v4 as uuidv4 } from 'uuid';
 import { dbMigration } from '../knexfile';
 import portalConfig from './config';
-import { requestContext } from './context/request.context';
 import { initCronJobs, stopCronJobs } from './crons';
 import { PortalContext } from './model/portal-context';
 import { UserLoadUserBy } from './model/user';
@@ -40,10 +41,15 @@ import {
   sseMessageCounter,
   sseSubscriptionCounter,
 } from './server/apollo-plugins/metrics';
-import { registerEndpoints } from './server/endpoints';
+import {
+  registerEndpoints,
+  registerReadOnlySessionEndpoints,
+} from './server/endpoints';
 import createSchema from './server/graphql-schema';
 import platformInit, { minioInit } from './server/initialize';
 import { seedDevelopmentConnectors } from './server/initialize.helper';
+import { requestContextMiddleware } from './server/request-context.middleware';
+import { ReadOnlySessionStore } from './server/session/read-only-session.store';
 import { getSessionStoreInstance } from './session-store-manager';
 import { initShutdown, registerShutdownHook } from './shutdown';
 import { runESMigrations } from './thirdparty/elasticsearch/migrate';
@@ -99,10 +105,15 @@ const PORTAL_CORS_OPTIONS: cors.CorsOptions = {
 };
 
 const app = express();
+app.set('trust proxy', portalConfig.trust_proxy);
+logApp.info('[TRUST-PROXY] Express trust proxy set', {
+  trustProxy: portalConfig.trust_proxy,
+});
 const SESSION_MAX_AGE = 24 * 60 * 60 * 1000; // 1 day
-const sessionMiddleware = expressSession({
+const sessionStore = getSessionStoreInstance();
+const sessionOptions: SessionOptions = {
   name: portalCookieName,
-  store: getSessionStoreInstance(),
+  store: sessionStore,
   secret: portalCookieSecret,
   saveUninitialized: false,
   proxy: true,
@@ -114,12 +125,27 @@ const sessionMiddleware = expressSession({
     secure: portalConfig.environment !== 'development',
     maxAge: SESSION_MAX_AGE,
   },
+};
+const sessionMiddleware = expressSession(sessionOptions);
+// For the public routes that must not write to the session (no save, no touch): they only read an existing one
+const readOnlySessionMiddleware = expressSession({
+  ...sessionOptions,
+  store: new ReadOnlySessionStore(sessionStore),
 });
 // Default express.json() limit (100kb) is too small for GraphQL mutations
 // carrying an inline base64 payload (e.g. a single connector logo ingested
 // via ingestManifestFragments - some logos alone are several MB), so it is
 // raised here for the whole API.
 app.use(express.json({ limit: '7mb' }));
+// Prometheus metrics. Before the session middleware, so that the routes registered before it are measured too
+const metricsMiddleware = promBundle({
+  customLabels: {
+    app: 'xtm-hub-api',
+  },
+});
+app.use(metricsMiddleware);
+// Before the session middleware, which would renew the session of a logged in user on every request
+registerReadOnlySessionEndpoints(app, readOnlySessionMiddleware);
 app.use(sessionMiddleware);
 // Force maxAge on every request so that sessions created before the maxAge
 // configuration (stored with originalMaxAge: null / expires: null) also
@@ -134,14 +160,6 @@ app.use((req, _res, next) => {
   }
   next();
 });
-
-// Prometheus metrics
-const metricsMiddleware = promBundle({
-  customLabels: {
-    app: 'xtm-hub-api',
-  },
-});
-app.use(metricsMiddleware);
 
 /*
 Encountered an unexpected behavior within the express-session middleware.
@@ -258,25 +276,7 @@ if (
   fs.writeFileSync('../frontend/schema.graphql', printedSchema);
 }
 
-app.use(function (req, res, next) {
-  const forwardedFor = req.headers['x-forwarded-for'];
-  const forwardedForIp = Array.isArray(forwardedFor)
-    ? forwardedFor[0]
-    : forwardedFor?.split(',')[0]?.trim();
-  requestContext.run(
-    {
-      user: req.session.user,
-      correlationId: uuidv4(),
-      userAgent: req.headers['user-agent'],
-      ip: forwardedForIp || req.ip,
-      referer: req.headers.referer,
-      organizationId: req.session.user?.selected_organization_id,
-    },
-    () => {
-      next();
-    }
-  );
-});
+app.use(requestContextMiddleware);
 
 // The ApolloServer constructor requires two parameters: your schema
 // definition and your set of resolvers.
@@ -332,6 +332,8 @@ declare module 'express-session' {
   interface SessionData {
     user: UserLoadUserBy;
     referer: string;
+    // Auth0 account refused for an unverified email, used to resend the email
+    unverifiedIdpSubject: string;
   }
 }
 

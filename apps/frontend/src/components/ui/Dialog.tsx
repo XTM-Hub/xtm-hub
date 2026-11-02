@@ -20,6 +20,7 @@ interface DialogInformativeProps {
   children: ReactNode;
   variant?: 'default' | 'secondary';
   buttonText?: string;
+  isButtonDisabled?: boolean;
   showFooter?: boolean;
 }
 
@@ -32,6 +33,7 @@ export const DialogInformative = ({
   children,
   variant = 'secondary',
   buttonText = 'Utils.Close',
+  isButtonDisabled = false,
   showFooter = true,
 }: DialogInformativeProps) => {
   const t = useTranslate();
@@ -62,6 +64,7 @@ export const DialogInformative = ({
                 className="mt-2 hover:cursor-pointer"
                 type="button"
                 priority={priority}
+                disabled={isButtonDisabled}
                 onClick={onButtonClick ?? onClose}>
                 {t(buttonText)}
               </Button>

@@ -844,10 +844,12 @@ jobs:
               ref: pr.head.sha
             });
 
-            // Filter out this workflow and check if all other checks have completed
+            // Filter out this workflow and the advisory platform e2e tests (rolling OpenCTI / OpenAEV images),
+            // and check if all other checks have completed
             const relevantChecks = checkRuns.check_runs.filter(check =>
               !check.name.includes('PR and Issue Status Management') &&
-              !check.name.includes('manage-pr-and-issues')
+              !check.name.includes('manage-pr-and-issues') &&
+              !check.name.startsWith('run-e2e-platform-tests')
             );
 
             const allChecksCompleted = relevantChecks.length > 0 &&

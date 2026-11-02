@@ -1,17 +1,9 @@
-import {
-  PlatformIdentifier,
-  ServiceDefinitionIdentifier,
-} from '@graphql/generated';
+import { PlatformIdentifier } from '@graphql/generated';
 import { render } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { mockServerFetchGraphQL, mockXtmRoadmap } = vi.hoisted(() => ({
-  mockServerFetchGraphQL: vi.fn(),
+const { mockXtmRoadmap } = vi.hoisted(() => ({
   mockXtmRoadmap: vi.fn(),
-}));
-
-vi.mock('@/relay/server-portal-api-fetch', () => ({
-  serverFetchGraphQL: mockServerFetchGraphQL,
 }));
 
 vi.mock('@/components/homepage/roadmap/XtmRoadmap', () => ({
@@ -22,24 +14,18 @@ import PrivateHomepageRoadmapSection from './PrivateHomepageRoadmapSection';
 
 describe('PrivateHomepageRoadmapSection', () => {
   beforeEach(() => {
-    mockServerFetchGraphQL.mockReset();
     mockXtmRoadmap.mockReset();
     mockXtmRoadmap.mockReturnValue(<div data-testid="xtm-roadmap" />);
   });
 
-  it('passes OCTI product filter when only OCTI is active', async () => {
-    mockServerFetchGraphQL.mockResolvedValue({
-      data: {
-        serviceInstances: {
-          edges: [{ node: { id: 'roadmap-1' } }],
-        },
-      },
-    });
+  it('passes OCTI product filter when only OCTI is active', () => {
+    const serviceInstanceId = 'roadmap-1';
 
     render(
-      await PrivateHomepageRoadmapSection({
-        platformIdentifiers: [PlatformIdentifier.Opencti],
-      })
+      <PrivateHomepageRoadmapSection
+        serviceInstanceId={serviceInstanceId}
+        platformIdentifiers={[PlatformIdentifier.Opencti]}
+      />
     );
 
     expect(mockXtmRoadmap).toHaveBeenCalledWith(
@@ -52,19 +38,14 @@ describe('PrivateHomepageRoadmapSection', () => {
     );
   });
 
-  it('passes OAEV product filter when only OAEV is active', async () => {
-    mockServerFetchGraphQL.mockResolvedValue({
-      data: {
-        serviceInstances: {
-          edges: [{ node: { id: 'roadmap-2' } }],
-        },
-      },
-    });
+  it('passes OAEV product filter when only OAEV is active', () => {
+    const serviceInstanceId = 'roadmap-2';
 
     render(
-      await PrivateHomepageRoadmapSection({
-        platformIdentifiers: [PlatformIdentifier.Openaev],
-      })
+      <PrivateHomepageRoadmapSection
+        serviceInstanceId={serviceInstanceId}
+        platformIdentifiers={[PlatformIdentifier.Openaev]}
+      />
     );
 
     expect(mockXtmRoadmap).toHaveBeenCalledWith(
@@ -77,22 +58,17 @@ describe('PrivateHomepageRoadmapSection', () => {
     );
   });
 
-  it('uses full roadmap when both platforms are active', async () => {
-    mockServerFetchGraphQL.mockResolvedValue({
-      data: {
-        serviceInstances: {
-          edges: [{ node: { id: 'roadmap-3' } }],
-        },
-      },
-    });
+  it('uses full roadmap when both platforms are active', () => {
+    const serviceInstanceId = 'roadmap-3';
 
     render(
-      await PrivateHomepageRoadmapSection({
-        platformIdentifiers: [
+      <PrivateHomepageRoadmapSection
+        serviceInstanceId={serviceInstanceId}
+        platformIdentifiers={[
           PlatformIdentifier.Opencti,
           PlatformIdentifier.Openaev,
-        ],
-      })
+        ]}
+      />
     );
 
     expect(mockXtmRoadmap).toHaveBeenCalledWith(
@@ -104,19 +80,14 @@ describe('PrivateHomepageRoadmapSection', () => {
     );
   });
 
-  it('uses full roadmap when no active platform is registered', async () => {
-    mockServerFetchGraphQL.mockResolvedValue({
-      data: {
-        serviceInstances: {
-          edges: [{ node: { id: 'roadmap-0' } }],
-        },
-      },
-    });
+  it('uses full roadmap when no active platform is registered', () => {
+    const serviceInstanceId = 'roadmap-0';
 
     render(
-      await PrivateHomepageRoadmapSection({
-        platformIdentifiers: [],
-      })
+      <PrivateHomepageRoadmapSection
+        serviceInstanceId={serviceInstanceId}
+        platformIdentifiers={[]}
+      />
     );
 
     expect(mockXtmRoadmap).toHaveBeenCalledWith(
@@ -128,47 +99,13 @@ describe('PrivateHomepageRoadmapSection', () => {
     );
   });
 
-  it('returns null when no roadmap service instance exists', async () => {
-    mockServerFetchGraphQL.mockResolvedValue({
-      data: {
-        serviceInstances: {
-          edges: [],
-        },
-      },
-    });
-
-    const result = await PrivateHomepageRoadmapSection({
+  it('returns null when no roadmap service instance exists', () => {
+    const result = PrivateHomepageRoadmapSection({
+      serviceInstanceId: undefined,
       platformIdentifiers: [],
     });
 
     expect(result).toBeNull();
     expect(mockXtmRoadmap).not.toHaveBeenCalled();
-  });
-
-  it('queries roadmap service instances by identifier', async () => {
-    mockServerFetchGraphQL.mockResolvedValue({
-      data: {
-        serviceInstances: {
-          edges: [{ node: { id: 'roadmap-4' } }],
-        },
-      },
-    });
-
-    await PrivateHomepageRoadmapSection({
-      platformIdentifiers: [],
-    });
-
-    expect(mockServerFetchGraphQL).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({
-        count: 1,
-        filters: [
-          {
-            key: 'service_definition_identifier',
-            value: [ServiceDefinitionIdentifier.XtmPlatformRoadmap],
-          },
-        ],
-      })
-    );
   });
 });

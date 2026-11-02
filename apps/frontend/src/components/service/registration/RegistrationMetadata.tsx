@@ -1,10 +1,8 @@
 'use client';
 
-import { registeredPlatformByServiceInstanceIdFragment } from '@/components/registration/register/register.graphql';
 import { Skeleton } from '@/components/ui/skeleton';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
-import { portalGraphqlClient } from '@/lib/graphql-client';
 import { computePeriodProgress, useDateFormatter } from '@/utils/date';
 import {
   Icon,
@@ -15,25 +13,18 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@filigran/design-system';
-import { registeredPlatformByServiceInstanceId_fragment$key } from '@generated/registeredPlatformByServiceInstanceId_fragment.graphql';
-import {
-  CommercialModel,
-  useRegisteredSaasPlatformMetadataQuery,
-} from '@graphql/generated';
-import { registrationKeys } from '@graphql/registration/registration.keys';
+import { SaasPlatformMetadata } from '@graphql/generated';
 import { useId } from 'react';
-import { useFragment } from 'react-relay';
 import { useCopyToClipboard } from 'usehooks-ts';
 
-// Matches the backend cache: a remount within a minute would only get the same answer back.
-const SAAS_PLATFORM_METADATA_STALE_TIME = 60_000;
-
 interface RegistrationMetadataProps {
-  registeredPlatform: registeredPlatformByServiceInstanceId_fragment$key;
+  metadata?: SaasPlatformMetadata | null;
+  isLoading: boolean;
 }
 
 export const RegistrationMetadata = ({
-  registeredPlatform,
+  metadata,
+  isLoading,
 }: RegistrationMetadataProps) => {
   const t = useTranslate();
   const formatDate = useDateFormatter();
@@ -41,33 +32,9 @@ export const RegistrationMetadata = ({
   const daysLeftId = useId();
   const [, copy] = useCopyToClipboard();
 
-  const platform =
-    useFragment<registeredPlatformByServiceInstanceId_fragment$key>(
-      registeredPlatformByServiceInstanceIdFragment,
-      registeredPlatform
-    );
-  const isSaas = platform.commercial_model === CommercialModel.Saas;
-
-  const variables = {
-    input: { service_instance_id: platform.service_instance_id },
-  };
-  const { data, isPending } = useRegisteredSaasPlatformMetadataQuery(
-    portalGraphqlClient,
-    variables,
-    {
-      queryKey: registrationKeys.registeredSaasPlatformMetadata(variables),
-      enabled: isSaas,
-      staleTime: SAAS_PLATFORM_METADATA_STALE_TIME,
-    }
-  );
-  const metadata = data?.registeredSaasPlatformMetadata;
   const hostname = metadata?.hostname;
 
-  if (!isSaas) {
-    return null;
-  }
-
-  if (isPending) {
+  if (isLoading) {
     return <RegistrationMetadataSkeleton />;
   }
 
@@ -140,7 +107,7 @@ export const RegistrationMetadata = ({
               {t('Register.Metrics.Metadata.Contract')}:
             </span>
             {contractPeriod
-              ? `${formatDate(metadata?.start_date)} → ${formatDate(metadata?.end_date)}`
+              ? `${formatDate(metadata?.start_date, 'DATE_MEDIUM')} → ${formatDate(metadata?.end_date, 'DATE_MEDIUM')}`
               : t('Register.Metrics.Metadata.Unavailable')}
           </span>
           {contractPeriod && (

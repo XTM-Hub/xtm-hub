@@ -11,6 +11,7 @@ import { requestContext } from '../../../context/request.context';
 import type { DocumentId } from '../../../model/kanel/public/Document';
 import { SYSTEM_USER_CONTEXT } from '../../../portal.const';
 import { minioInit } from '../../../server/initialize';
+import * as FeatureFlagUtil from '../../../utils/feature-flag.util';
 import { ManifestRebuildQueueStatus } from '../manifest/manifest.consts';
 import { ManifestHelper } from '../manifest/manifest.helper';
 import { ManifestFragmentApp } from './manifest-fragment.app';
@@ -30,6 +31,10 @@ describe('manifestFragmentApp', () => {
       },
     ],
   };
+
+  beforeEach(() => {
+    vi.spyOn(FeatureFlagUtil, 'isFeatureEnabled').mockReturnValue(true);
+  });
 
   afterEach(async () => {
     if (createdDocumentIds.length > 0) {
@@ -104,6 +109,38 @@ describe('manifestFragmentApp', () => {
         slug: 'misp-unauthorized',
       });
       expect(createdDocument).toBeUndefined();
+    });
+  });
+
+  describe('while decoupled connectors are disabled', () => {
+    beforeEach(() => {
+      requestContext.set({ user: manifestIngestionUser });
+      vi.spyOn(FeatureFlagUtil, 'isFeatureEnabled').mockReturnValue(false);
+      vi.spyOn(ManifestHelper, 'scheduleDebouncedRebuild').mockResolvedValue(
+        undefined
+      );
+    });
+
+    it('should store nothing and schedule no rebuild', async () => {
+      // Given
+      await TestHelper.manifest.create({
+        product: PlatformIdentifier.Opencti,
+        version: '7.260507.0',
+        version_padded: '007.260507.000',
+      });
+      const args = buildArgs({ slug: 'misp-disabled' });
+
+      // When
+      await ManifestFragmentApp.ingestManifestFragments(args);
+
+      // Then
+      const createdDocument = await TestHelper.document.load({
+        slug: 'misp-disabled',
+      });
+      expect(createdDocument).toBeUndefined();
+      const queuedRows = await TestHelper.manifestRebuildQueue.loadAll({});
+      expect(queuedRows).toHaveLength(0);
+      expect(ManifestHelper.scheduleDebouncedRebuild).not.toHaveBeenCalled();
     });
   });
 

@@ -25,21 +25,6 @@ type RegisteredPlatform implements Node {
   organization: Organization
 }
 
-type RegisteredPlatformEdge {
-  cursor: String!
-  node: RegisteredPlatform!
-}
-
-type RegisteredPlatformConnection {
-  totalCount: Int!
-  edges: [RegisteredPlatformEdge!]!
-  pageInfo: PageInfo!
-}
-
-enum RegisteredPlatformOrdering {
-  organization_name
-}
-
 input PlatformInput {
   id: ID!
   url: String!
@@ -174,14 +159,6 @@ input RegisteredPlatformInput {
   service_instance_id: ServiceInstanceId!
 }
 
-type SaasPlatformMetadata {
-  hostname: String
-  plan: String
-  start_date: Date
-  end_date: Date
-  region: String
-}
-
 input AutoRegisterPlatformInput {
   platform: PlatformInput!
   existing_users_count: Int
@@ -195,19 +172,8 @@ type Query {
     input: CanUnregisterPlatformInput!
   ): CanUnregisterResponse! @auth
   registeredPlatform(input: RegisteredPlatformInput!): RegisteredPlatform @auth
-  registeredSaasPlatformMetadata(
-    input: RegisteredPlatformInput!
-  ): SaasPlatformMetadata @auth
   registeredPlatforms(input: RegisteredPlatformsInput!): [RegisteredPlatform!]!
     @auth
-  saasPlatforms(
-    first: Int!
-    after: ID
-    orderBy: RegisteredPlatformOrdering!
-    orderMode: OrderingMode!
-    searchTerm: String
-  ): RegisteredPlatformConnection!
-    @auth(portalCapa: [BYPASS, READ_SAAS_METRICS])
   platformAssociatedOrganization(
     platformId: String!
     tenantId: String

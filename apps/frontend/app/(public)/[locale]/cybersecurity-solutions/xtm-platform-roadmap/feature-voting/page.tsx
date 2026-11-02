@@ -1,34 +1,24 @@
-import { FeatureVotingList } from '@/components/feature-voting/FeatureVotingList';
+import { PrefetchedFeatureVotingList } from '@/components/feature-voting/PrefetchedFeatureVotingList';
 import { getFeatureVotingPrivatePath } from '@/components/feature-voting/feature-voting-path';
 import type { PublicLocale } from '@/i18n/config';
-import { serverFetchGraphQL } from '@/relay/server-portal-api-fetch';
 import { buildSeoPageMetadata, getBaseUrl } from '@/utils/generate-metadata';
 import { loadCurrentUser } from '@/utils/load-me-user';
 import {
   PUBLIC_CYBERSECURITY_SOLUTIONS_PATH,
   XTM_PLATFORM_ROADMAP_SLUG,
 } from '@/utils/path/constant';
-import { seoServiceInstanceFragment$data } from '@generated/seoServiceInstanceFragment.graphql';
-import SeoServiceInstanceQuery, {
-  seoServiceInstanceQuery,
-} from '@generated/seoServiceInstanceQuery.graphql';
+import { fetchSeoServiceInstanceBySlug } from '@/utils/seo-service-instance/utils/seo-service-instance.server.utils';
 import { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { cache } from 'react';
 
 const ROADMAP_PATH = `/${PUBLIC_CYBERSECURITY_SOLUTIONS_PATH}/${XTM_PLATFORM_ROADMAP_SLUG}`;
 
 /** The voting round belongs to the roadmap service instance behind that slug. */
-const getRoadmapServiceInstance = cache(async () => {
-  const serviceResponse = await serverFetchGraphQL<seoServiceInstanceQuery>(
-    SeoServiceInstanceQuery,
-    { slug: XTM_PLATFORM_ROADMAP_SLUG },
-    { cache: undefined, next: { revalidate: 3600 } }
-  );
-  return serviceResponse.data
-    .seoServiceInstance as unknown as seoServiceInstanceFragment$data;
-});
+const getRoadmapServiceInstance = cache(() =>
+  fetchSeoServiceInstanceBySlug(XTM_PLATFORM_ROADMAP_SLUG)
+);
 
 export async function generateMetadata({
   params,
@@ -57,15 +47,22 @@ const Page = async ({
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const serviceInstance = await getRoadmapServiceInstance();
+  // Independent lookups: loadCurrentUser resolves to null on failure, so it is
+  // harmless to call it even when the service instance turns out to be missing.
+  const [serviceInstance, user] = await Promise.all([
+    getRoadmapServiceInstance(),
+    loadCurrentUser(),
+  ]);
+  if (!serviceInstance) {
+    notFound();
+  }
 
-  const user = await loadCurrentUser();
   if (user) {
     redirect(getFeatureVotingPrivatePath(serviceInstance.id));
   }
 
   return (
-    <FeatureVotingList
+    <PrefetchedFeatureVotingList
       serviceInstanceId={serviceInstance.id}
       roadmapHref={`/${locale}${ROADMAP_PATH}`}
     />

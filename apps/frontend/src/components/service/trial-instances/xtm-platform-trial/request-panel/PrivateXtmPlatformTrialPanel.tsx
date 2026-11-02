@@ -2,6 +2,7 @@
 
 import { PortalContext } from '@/components/me/AppPortalContext';
 import { invalidatePrivateNavigationQueries } from '@/components/menu/navigation/private/private-navigation-query-invalidation';
+import { XTM_PLATFORM_TRIAL_PRODUCTS } from '@/components/service/trial-instances/form-constants';
 import { ReachSalesButton } from '@/components/service/trial-instances/reach-sales/ReachSalesButton';
 import {
   XtmPlatformTrialForm,
@@ -47,35 +48,29 @@ export const PrivateXtmPlatformTrialPanel = ({
   const [isCancelSheetOpen, setIsCancelSheetOpen] = useState(false);
 
   const queryClient = useQueryClient();
-  const { mutate } = useCreateDeploymentRequestMutation(portalGraphqlClient, {
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: xtmPlatformBundleKeys.all(),
-      });
-      invalidatePrivateNavigationQueries(queryClient);
-      showSnackbar({
-        severity: 'success',
-        title: t('Utils.Success'),
-        description: t('Service.Trials.Form.FormRequested'),
-      });
-    },
-  });
+  const { mutate, isPending } = useCreateDeploymentRequestMutation(
+    portalGraphqlClient,
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries({
+          queryKey: xtmPlatformBundleKeys.all(),
+        });
+        invalidatePrivateNavigationQueries(queryClient);
+        showSnackbar({
+          severity: 'success',
+          title: t('Utils.Success'),
+          description: t('Service.Trials.Form.FormRequested'),
+        });
+      },
+    }
+  );
 
   const handleSubmit = (values: z.infer<typeof xtmPlatformTrialFormSchema>) => {
-    const { acceptTerms: _, use_cases_by_product, ...rest } = values;
+    const { acceptTerms: _, ...rest } = values;
     mutate({
       input: {
         ...rest,
-        use_cases_by_product: use_cases_by_product.flatMap((entry) =>
-          entry.use_case
-            ? [
-                {
-                  platform_identifier: entry.platform_identifier,
-                  use_case: entry.use_case,
-                },
-              ]
-            : []
-        ),
+        products: XTM_PLATFORM_TRIAL_PRODUCTS,
         source: DeploymentRequestSource.Xtmhub,
       },
     });
@@ -117,10 +112,6 @@ export const PrivateXtmPlatformTrialPanel = ({
           },
         ];
 
-    const products = (bundle.children ?? []).flatMap((child) =>
-      child.platform_identifier ? [child.platform_identifier] : []
-    );
-
     const actions = isInProgress ? (
       <Button
         variant="destructive"
@@ -138,7 +129,6 @@ export const PrivateXtmPlatformTrialPanel = ({
           state={state}
           requesterEmail={bundle.requester_email ?? ''}
           dateRows={dateRows}
-          products={products}
           stepIndex={stepIndex}
           actions={actions}
         />
@@ -153,5 +143,10 @@ export const PrivateXtmPlatformTrialPanel = ({
     );
   }
 
-  return <XtmPlatformTrialForm handleSubmit={handleSubmit} />;
+  return (
+    <XtmPlatformTrialForm
+      handleSubmit={handleSubmit}
+      isSubmitting={isPending}
+    />
+  );
 };

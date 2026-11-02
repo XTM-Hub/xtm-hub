@@ -1,5 +1,39 @@
 import { Page } from '@playwright/test';
-import { selectSolutionCategories, selectUseCase } from './common';
+import {
+  selectSolutionCategories,
+  selectUseCase,
+  waitForDrawerToClose,
+} from './common';
+
+// Integrations a real OpenCTI can deploy in one click, with the exports it accepts to import.
+export const DEPLOYABLE_INTEGRATIONS = {
+  csv: {
+    menuItem: 'CSV Feeds',
+    publishCheckbox: 'Is the CSV Feed published?',
+    path: './tests/tests_files/assets/octi_csv_feed_deployable.json',
+    feedName: 'E2E deployed CSV feed',
+  },
+  taxii: {
+    menuItem: 'TAXII Feeds',
+    publishCheckbox: 'Is the TAXII Feed published?',
+    path: './tests/tests_files/assets/octi_taxii_feed_deployable.json',
+    feedName: 'E2E deployed TAXII feed',
+  },
+  // An RSS Feed form starts published.
+  rss: {
+    menuItem: 'RSS Feeds',
+    publishCheckbox: null,
+    path: './tests/tests_files/assets/octi_rss_feed_deployable.json',
+    feedName: 'E2E deployed RSS feed',
+  },
+  stream: {
+    menuItem: 'OpenCTI Streams',
+    publishCheckbox: 'Is the Stream published?',
+    path: './tests/tests_files/assets/octi_stream_deployable.json',
+    feedName: 'E2E deployed stream',
+  },
+} as const;
+export type DeployableIntegrationKind = keyof typeof DEPLOYABLE_INTEGRATIONS;
 
 const TEST_JSON_FILE = {
   path: './tests/tests_files/assets/octi_csv_feed.json',
@@ -212,6 +246,45 @@ export default class IntegrationPage {
     await selectSolutionCategories(this.page);
     await this.page.getByRole('radio', { name: 'Commercial' }).click();
     await this.page.getByRole('button', { name: 'Validate' }).click();
+  }
+
+  // A free integration: a Commercial one can only be deployed on an Enterprise Edition platform.
+  async addDeployableIntegration(
+    kind: DeployableIntegrationKind,
+    {
+      name,
+      shortDescription,
+      description,
+    }: { name: string; shortDescription: string; description: string }
+  ) {
+    const integration = DEPLOYABLE_INTEGRATIONS[kind];
+    await this.page
+      .getByRole('button', { name: 'Add new Integration' })
+      .click();
+    await this.page
+      .getByRole('menuitem', { name: integration.menuItem })
+      .click();
+    await this.page
+      .getByRole('textbox', { name: 'Name', exact: true })
+      .fill(name);
+    await this.page
+      .getByRole('textbox', { name: 'Short Description' })
+      .fill(shortDescription);
+    await this.page
+      .getByRole('textbox', { name: 'This is a paragraph to' })
+      .fill(description);
+    if (integration.publishCheckbox) {
+      await this.page
+        .getByRole('checkbox', { name: integration.publishCheckbox })
+        .click();
+    }
+    await this.uploadJsonDocument(integration.path);
+    await this.uploadImageDocument(TEST_IMAGE_FILE.path);
+    await selectUseCase(this.page);
+    await selectSolutionCategories(this.page);
+    await this.page.getByRole('radio', { name: 'Free' }).click();
+    await this.page.getByRole('button', { name: 'Validate' }).click();
+    await waitForDrawerToClose(this.page);
   }
 
   async navigateToIntegration(shortDescription: string) {

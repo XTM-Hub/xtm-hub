@@ -1,8 +1,10 @@
 import { ServiceListDisplayMode } from '@/components/service/components/header/ServiceListHeader';
 import testRender from '@/utils/test/test-render';
 import { publicDocumentListItemFragment$data } from '@generated/publicDocumentListItemFragment.graphql';
-import { seoServiceInstanceFragment$data } from '@generated/seoServiceInstanceFragment.graphql';
-import { IntegrationType } from '@graphql/generated';
+import {
+  IntegrationType,
+  SeoServiceInstanceItemFragment,
+} from '@graphql/generated';
 import { screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { PublicShareableResourceList } from './PublicShareableResourceList';
@@ -22,7 +24,7 @@ describe('PublicShareableResourceList', () => {
     testRender(
       <PublicShareableResourceList
         documents={[]}
-        serviceInstance={serviceInstance as seoServiceInstanceFragment$data}
+        serviceInstance={serviceInstance as SeoServiceInstanceItemFragment}
         baseUrl="https://xtm.local"
         displayMode={ServiceListDisplayMode.Tab}
       />
@@ -52,7 +54,7 @@ describe('PublicShareableResourceList', () => {
     testRender(
       <PublicShareableResourceList
         documents={documents as publicDocumentListItemFragment$data[]}
-        serviceInstance={serviceInstance as seoServiceInstanceFragment$data}
+        serviceInstance={serviceInstance as SeoServiceInstanceItemFragment}
         baseUrl="https://xtm.local"
         displayMode={ServiceListDisplayMode.Tab}
       />

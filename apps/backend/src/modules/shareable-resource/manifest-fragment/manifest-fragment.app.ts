@@ -1,4 +1,5 @@
 import {
+  FeatureFlag,
   ManifestType,
   PlatformIdentifier,
   PortalCapability,
@@ -8,6 +9,7 @@ import { requestContext } from '../../../context/request.context';
 import { securityGuard } from '../../../security/guard';
 import { logApp } from '../../../utils/app-logger.util';
 import { getErrorMessage } from '../../../utils/error/error-guard.util';
+import { isFeatureEnabled } from '../../../utils/feature-flag.util';
 import { ManifestKey } from '../manifest/manifest.consts';
 import { ManifestDomain } from '../manifest/manifest.domain';
 import { ManifestHelper } from '../manifest/manifest.helper';
@@ -22,6 +24,14 @@ export const ManifestFragmentApp = {
     await securityGuard.assertUserPortalCapabilities(user, [
       PortalCapability.ManageManifestIngestions,
     ]);
+
+    if (!isFeatureEnabled(FeatureFlag.DecouplingConnectors)) {
+      logApp.info(
+        '[MANIFEST] Manifest fragments not ingested: decoupled connectors are disabled',
+        { count: manifestFragments.length }
+      );
+      return;
+    }
 
     if (manifestFragments.length === 0) {
       return;

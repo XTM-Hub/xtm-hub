@@ -8,14 +8,14 @@ import { useTranslate } from '@/hooks/use-translate';
 import { getDataTableLabels } from '@/utils/design-system/data-table';
 import { PUBLIC_CYBERSECURITY_SOLUTIONS_PATH } from '@/utils/path/constant';
 import { publicDocumentListItemFragment$data } from '@generated/publicDocumentListItemFragment.graphql';
-import { seoServiceInstanceFragment$data } from '@generated/seoServiceInstanceFragment.graphql';
+import { SeoServiceInstanceItemFragment } from '@graphql/generated';
 import { useLocale } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useMemo } from 'react';
 
 interface PublicShareableDocumentListProps {
   documents: publicDocumentListItemFragment$data[];
-  serviceInstance: seoServiceInstanceFragment$data;
+  serviceInstance: SeoServiceInstanceItemFragment;
   baseUrl: string;
   displayMode: ServiceListDisplayMode;
 }

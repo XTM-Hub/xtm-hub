@@ -13,20 +13,23 @@ import {
   ComboboxLabel,
   Input,
 } from '@filigran/design-system';
-import { organizationItem_fragment$data } from '@generated/organizationItem_fragment.graphql';
+import { OrganizationItemFragment } from '@graphql/generated';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { KeyboardEvent, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
 interface OrganizationFormSheetProps {
-  organization?: organizationItem_fragment$data;
+  organization?: OrganizationItemFragment;
   handleSubmit: (values: z.infer<typeof organizationFormSchema>) => void;
+  /** Disables Validate while the submitted values are being saved. */
+  isSubmitting?: boolean;
 }
 
 export const OrganizationForm = ({
   organization,
   handleSubmit,
+  isSubmitting = false,
 }: OrganizationFormSheetProps) => {
   const { handleCloseSheet, setIsDirty } = useDialogContext();
 
@@ -36,7 +39,7 @@ export const OrganizationForm = ({
     resolver: zodResolver(organizationFormSchema),
     defaultValues: {
       name: organization?.name ?? '',
-      domains: (organization?.domains as string[]) ?? [],
+      domains: organization?.domains ?? [],
     },
   });
   setIsDirty(form.formState.isDirty);
@@ -155,7 +158,7 @@ export const OrganizationForm = ({
             {t('Utils.Cancel')}
           </Button>
           <Button
-            disabled={!form.formState.isDirty}
+            disabled={!form.formState.isDirty || isSubmitting}
             type="submit">
             {t('Utils.Validate')}
           </Button>

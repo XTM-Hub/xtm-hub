@@ -3,12 +3,12 @@ import { AutoForm } from '@/components/ui/auto-form';
 import { FormControl, FormItem, FormMessage } from '@/components/ui/form';
 import { useTranslate } from '@/hooks/use-translate';
 import { Button, Radio, RadioGroup } from '@filigran/design-system';
-import { organizationListUserOrganizationsQuery$data } from '@generated/organizationListUserOrganizationsQuery.graphql';
+import { UserOrganizationsQuery } from '@graphql/generated';
 import { useContext } from 'react';
 import { z } from 'zod';
 
 interface RegisterOrganizationFormProps {
-  userOrganizationsQueryData: organizationListUserOrganizationsQuery$data;
+  userOrganizationsQueryData: UserOrganizationsQuery;
   defaultPlatformName: string;
   cancel: () => void;
   confirm: (organizationId: string, platformName: string) => void;

@@ -24,3 +24,15 @@ export const USE_CASES_BY_PLATFORM_IDENTIFIER: Record<
   ),
   [PlatformIdentifier.Xtmone]: [],
 };
+
+export const XTM_PLATFORM_TRIAL_PRODUCTS = [
+  PlatformIdentifier.Xtmone,
+  PlatformIdentifier.Opencti,
+  PlatformIdentifier.Openaev,
+];
+
+// XTM One is part of every trial but has no use case to collect
+export const PRODUCTS_WITH_USE_CASE = XTM_PLATFORM_TRIAL_PRODUCTS.filter(
+  (platformIdentifier) =>
+    USE_CASES_BY_PLATFORM_IDENTIFIER[platformIdentifier].length > 0
+);

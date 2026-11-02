@@ -3,10 +3,12 @@ import config from 'config';
 import { logApp } from '../../utils/app-logger.util';
 import { chunk } from '../../utils/utils';
 import {
+  AUTH0_DATABASE_SUBJECT_PREFIX,
   EMAILS_PER_LOOKUP,
   USERS_LIST_PAGE_SIZE,
   buildEmailsQuery,
   buildUserMetadataUpdate,
+  getPrimaryIdentity,
   groupAccountsByEmail,
   withRateLimitRetry,
 } from './auth0.util';
@@ -112,6 +114,22 @@ export const auth0ClientImplementation: Auth0Client = {
     }
 
     return groupAccountsByEmail(accounts);
+  },
+  sendVerificationEmail: async (userId: string): Promise<void> => {
+    if (userId.startsWith(AUTH0_DATABASE_SUBJECT_PREFIX)) {
+      await managementClient.jobs.verificationEmail.create({ user_id: userId });
+      return;
+    }
+    // Auth0 only verifies a social, enterprise or passwordless account through
+    // its primary identity.
+    const user = await managementClient.users.get(userId, {
+      fields: 'identities',
+      include_fields: true,
+    });
+    await managementClient.jobs.verificationEmail.create({
+      user_id: userId,
+      identity: getPrimaryIdentity(user),
+    });
   },
   resetPassword: async (email: string): Promise<void> => {
     await authenticationClient.database.changePassword({

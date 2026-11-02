@@ -1,4 +1,4 @@
-import { OrderingMode, RegisteredPlatformOrdering } from '@graphql/generated';
+import { OrderingMode, SaasPlatformOrdering } from '@graphql/generated';
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 
@@ -25,7 +25,7 @@ describe('useSaasListLocalstorage', () => {
     // Then
     expect(result.current).toMatchObject({
       orderMode: OrderingMode.Asc,
-      orderBy: RegisteredPlatformOrdering.OrganizationName,
+      orderBy: SaasPlatformOrdering.CustomerName,
       pageSize: DEFAULT_PAGE_SIZE,
     });
   });
@@ -38,11 +38,29 @@ describe('useSaasListLocalstorage', () => {
     const { result } = renderHook(() => useSaasListLocalstorage());
 
     // Then
-    expect(result.current.orderBy).toBe(
-      RegisteredPlatformOrdering.OrganizationName
+    expect(result.current.orderBy).toBe(SaasPlatformOrdering.CustomerName);
+    expect(readStored(ORDER_BY_KEY)).toBe(SaasPlatformOrdering.CustomerName);
+  });
+
+  it('should never expose the field an older list ordered by, not even on the first render', () => {
+    // Given
+    window.localStorage.setItem(
+      ORDER_BY_KEY,
+      JSON.stringify('organization_name')
     );
-    expect(readStored(ORDER_BY_KEY)).toBe(
-      RegisteredPlatformOrdering.OrganizationName
+    const renderedOrderBys: string[] = [];
+
+    // When
+    renderHook(() => {
+      const preferences = useSaasListLocalstorage();
+      renderedOrderBys.push(preferences.orderBy);
+      return preferences;
+    });
+
+    // Then
+    expect(renderedOrderBys).not.toHaveLength(0);
+    expect(new Set(renderedOrderBys)).toEqual(
+      new Set([SaasPlatformOrdering.CustomerName])
     );
   });
 
@@ -62,7 +80,7 @@ describe('useSaasListLocalstorage', () => {
     // Then
     expect(result.current).toMatchObject({
       orderMode: OrderingMode.Asc,
-      orderBy: RegisteredPlatformOrdering.OrganizationName,
+      orderBy: SaasPlatformOrdering.CustomerName,
       pageSize: CUSTOM_PAGE_SIZE,
     });
     expect(readStored(ORDER_MODE_KEY)).toBeNull();
@@ -86,7 +104,7 @@ describe('useSaasListLocalstorage', () => {
     // Then
     expect(result.current).toMatchObject({
       orderMode: OrderingMode.Asc,
-      orderBy: RegisteredPlatformOrdering.OrganizationName,
+      orderBy: SaasPlatformOrdering.CustomerName,
       pageSize: DEFAULT_PAGE_SIZE,
     });
     expect(readStored(ORDER_MODE_KEY)).toBeNull();

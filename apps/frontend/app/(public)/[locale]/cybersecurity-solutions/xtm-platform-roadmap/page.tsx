@@ -1,32 +1,30 @@
 import { BreadcrumbNav } from '@/components/ui/BreadcrumbNav';
 import type { PublicLocale } from '@/i18n/config';
 import { RelayProvider } from '@/relay/relay-provider';
-import { serverFetchGraphQL } from '@/relay/server-portal-api-fetch';
-import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '@/utils/constant';
 import {
   buildFiligranOrganizationJsonLd,
   buildSeoPageMetadata,
   getBaseUrl,
   stringifyJsonLd,
 } from '@/utils/generate-metadata';
-import { PUBLIC_CYBERSECURITY_SOLUTIONS_PATH } from '@/utils/path/constant';
-import { seoServiceInstanceFragment$data } from '@generated/seoServiceInstanceFragment.graphql';
-import SeoServiceInstanceQuery, {
-  seoServiceInstanceQuery,
-} from '@generated/seoServiceInstanceQuery.graphql';
+import {
+  PUBLIC_CYBERSECURITY_SOLUTIONS_PATH,
+  XTM_PLATFORM_ROADMAP_SLUG,
+} from '@/utils/path/constant';
+import { fetchSeoServiceInstanceBySlug } from '@/utils/seo-service-instance/utils/seo-service-instance.server.utils';
 import { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { notFound } from 'next/navigation';
 import { cache } from 'react';
 import { PublicEpicListPageLoader } from './public-epic-list-page-loader';
 
 const getPageData = cache(async () => {
-  const serviceResponse = await serverFetchGraphQL<seoServiceInstanceQuery>(
-    SeoServiceInstanceQuery,
-    { slug: 'xtm-platform-roadmap' },
-    { cache: undefined, next: { revalidate: PUBLIC_PAGE_REVALIDATE_SECONDS } }
+  const serviceInstance = await fetchSeoServiceInstanceBySlug(
+    XTM_PLATFORM_ROADMAP_SLUG
   );
-  const serviceInstance = serviceResponse.data
-    .seoServiceInstance as unknown as seoServiceInstanceFragment$data;
+  if (!serviceInstance) {
+    notFound();
+  }
   const baseUrl = await getBaseUrl();
   return { baseUrl, serviceInstance };
 });

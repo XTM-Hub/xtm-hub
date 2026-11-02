@@ -37,7 +37,7 @@ export const RegisterStateMissingCapability = ({
 
   return (
     <RegistrationLayout cancel={cancel}>
-      <h1>
+      <h1 className="title-sm">
         {t(`Register.Error.Capability.Title`, {
           capability: capability?.replaceAll('_', ' ') ?? '',
         })}

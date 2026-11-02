@@ -5,7 +5,7 @@ import { mswServer } from '@/utils/test/msw/server';
 import testRender from '@/utils/test/test-render';
 import { UseCaseDeleteMutation, UseCaseEditMutation } from '@graphql/generated';
 import { mockUseCase } from '@graphql/mocks';
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import { graphql, HttpResponse } from 'msw';
 import { useState } from 'react';
 
@@ -19,6 +19,10 @@ vi.mock('@/components/ui/snackbar/snackbar-store', () => ({
 
 const GQL_OPERATION_USE_CASE_EDIT = 'UseCaseEdit';
 const GQL_OPERATION_USE_CASE_DELETE = 'UseCaseDelete';
+
+const SERVER_ERROR = 'USE_CASE_NOT_FOUND';
+
+type User = ReturnType<typeof testRender>['user'];
 
 const useCase: UseCaseFormModel = {
   id: 'use-case-id',
@@ -188,4 +192,76 @@ describe('EditUseCase', () => {
       expect(onClose).toHaveBeenCalledTimes(1);
     });
   });
+
+  it('should call onClose when the admin cancels the edition', async () => {
+    // Given
+    const onClose = vi.fn();
+    const { user } = testRender(
+      <EditUseCase
+        open={true}
+        onClose={onClose}
+        useCase={useCase}
+      />
+    );
+
+    // When
+    await user.click(screen.getByRole('button', { name: 'Utils.Cancel' }));
+
+    // Then
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    {
+      action: 'edition',
+      operation: GQL_OPERATION_USE_CASE_EDIT,
+      perform: async (user: User) => {
+        await user.type(screen.getByLabelText(/UseCaseForm.Name/i), ' v2');
+        await user.click(
+          screen.getByRole('button', { name: /Utils.Validate/i })
+        );
+      },
+    },
+    {
+      action: 'deletion',
+      operation: GQL_OPERATION_USE_CASE_DELETE,
+      perform: async (user: User) => {
+        await user.click(
+          screen.getByRole('button', { name: 'MenuActions.Delete' })
+        );
+        const dialog = await screen.findByRole('alertdialog');
+        await user.click(
+          within(dialog).getByRole('button', { name: 'MenuActions.Delete' })
+        );
+      },
+    },
+  ])(
+    'should report an error when the $action is rejected',
+    async ({ operation, perform }) => {
+      // Given
+      mswServer.use(
+        mockGraphqlMutation({
+          queryName: operation,
+          errors: [{ message: SERVER_ERROR }],
+        })
+      );
+      const { user } = testRender(
+        <EditUseCase
+          open={true}
+          onClose={vi.fn()}
+          useCase={useCase}
+        />
+      );
+
+      // When
+      await perform(user);
+
+      // Then
+      await waitFor(() =>
+        expect(mocks.showSnackbar).toHaveBeenCalledWith(
+          expect.objectContaining({ severity: 'error', title: 'Utils.Error' })
+        )
+      );
+    }
+  );
 });

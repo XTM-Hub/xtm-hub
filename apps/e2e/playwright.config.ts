@@ -1,5 +1,4 @@
 import { defineConfig, devices } from '@playwright/test';
-import notificationWebhook from './tests/webhooks/notification-webhook';
 
 /**
  * Read environment variables from file.
@@ -46,15 +45,6 @@ export default defineConfig({
       {
         name: `XTM Hub e2e Report`,
         outputFile: './test-results/report.html',
-        onEnd: async (reportData) => {
-          // teams integration with webhook
-          const e2eFailed =
-            reportData.summary.failed.value > 0 ||
-            reportData.summary.flaky.value > 0;
-          if (!!process.env.GITHUB_PR_NUMBER && e2eFailed) {
-            await notificationWebhook(reportData);
-          }
-        },
       },
     ],
   ],
@@ -89,11 +79,25 @@ export default defineConfig({
     },
     {
       name: 'chromium',
+      testIgnore: /platforms\//,
       use: {
         ...devices['Desktop Chrome'],
       },
       dependencies: ['setup'],
     },
+    // Against a real OpenCTI or OpenAEV, see xtm-hub-dev/docker-compose-ci-{opencti,openaev}.yml: each project runs
+    // the specs of its folder in tests/platforms/.
+    ...(['opencti', 'openaev'] as const).map((platform) => ({
+      name: platform,
+      testMatch: new RegExp(`platforms/${platform}/.*\\.spec\\.ts`),
+      use: {
+        ...devices['Desktop Chrome'],
+        // The platforms only allow plain-http requests on port 80 in their CSP, and the CI Hub runs on
+        // http://frontend:3000: without this, OpenCTI cannot check that XTM Hub is reachable and hides its
+        // Connect button. In production the Hub is on https, which their CSP allows.
+        bypassCSP: true,
+      },
+    })),
   ],
 
   /* Run your local dev server before starting the tests */

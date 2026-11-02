@@ -5,7 +5,7 @@ import { CookieConsentProvider } from '@/components/cookie-consent/CookieConsent
 import { CookieSettingsLink } from '@/components/cookie-consent/CookieSettingsLink';
 import testRender from '@/utils/test/test-render';
 import { screen } from '@testing-library/react';
-import { usePathname } from 'next/navigation';
+import { useSelectedLayoutSegment } from 'next/navigation';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const NOW = new Date('2026-06-16T00:00:00.000Z');
@@ -22,8 +22,8 @@ const clearAllCookies = () => {
     });
 };
 
-const renderCookieConsent = (pathname: string) => {
-  vi.mocked(usePathname).mockReturnValue(pathname);
+const renderCookieConsent = (segment: string) => {
+  vi.mocked(useSelectedLayoutSegment).mockReturnValue(segment);
   return testRender(
     <CookieConsentProvider initialConsent={null}>
       <CookieConsent />
@@ -46,39 +46,32 @@ describe('CookieConsent', () => {
   });
 
   it.each`
-    pathname
-    ${'/app'}
-    ${'/'}
-    ${'/not-embed'}
+    segment
+    ${'(application)'}
+    ${'(public)'}
+    ${'login'}
   `(
-    'should display the consent banner when the path is "$pathname"',
-    ({ pathname }) => {
+    'should display the consent banner when the layout segment is "$segment"',
+    ({ segment }) => {
       // Given / When
-      renderCookieConsent(pathname);
+      renderCookieConsent(segment);
 
       // Then
       expect(screen.getByRole('region', { name: 'Title' })).toBeInTheDocument();
     }
   );
 
-  it.each`
-    pathname
-    ${'/embed'}
-    ${'/embed/widget/123'}
-  `(
-    'should not display anything when the path is the embed path "$pathname"',
-    ({ pathname }) => {
-      // Given / When
-      renderCookieConsent(pathname);
+  it('should not display anything when the layout segment is "(embed)"', () => {
+    // Given / When
+    renderCookieConsent('(embed)');
 
-      // Then
-      expect(screen.queryByRole('region')).not.toBeInTheDocument();
-    }
-  );
+    // Then
+    expect(screen.queryByRole('region')).not.toBeInTheDocument();
+  });
 
   it('should open the preferences dialog when the user clicks the cookie settings button', async () => {
     // Given
-    const { user } = renderCookieConsent('/app');
+    const { user } = renderCookieConsent('(application)');
 
     // When
     await user.click(screen.getByRole('button', { name: 'CookieSettings' }));
@@ -89,7 +82,7 @@ describe('CookieConsent', () => {
 
   it('should close the preferences dialog without saving when the user dismisses it', async () => {
     // Given
-    const { user } = renderCookieConsent('/app');
+    const { user } = renderCookieConsent('(application)');
     await user.click(screen.getByRole('button', { name: 'CookieSettings' }));
 
     // When
@@ -104,7 +97,7 @@ describe('CookieConsent', () => {
     // Given a returning user who granted everything and reopens the settings
     document.cookie = `${GA_COOKIE}=1; path=/`;
     document.cookie = `${HUBSPOT_COOKIE}=1; path=/`;
-    vi.mocked(usePathname).mockReturnValue('/app');
+    vi.mocked(useSelectedLayoutSegment).mockReturnValue('(application)');
     const { user } = testRender(
       <CookieConsentProvider
         initialConsent={{

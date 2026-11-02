@@ -32,7 +32,7 @@ export const UnregisterMissingCapability = ({
 
   return (
     <RegistrationLayout cancel={cancel}>
-      <h1>
+      <h1 className="title-sm">
         {t(`Unregister.Error.Capability.Title`, {
           capability: capability?.replaceAll('_', ' ') ?? '',
         })}

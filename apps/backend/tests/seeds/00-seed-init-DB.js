@@ -53,6 +53,8 @@ export async function seed(knex) {
         organization_id: filigranAdminUserId,
       },
     ])
+    .onConflict(['user_id', 'organization_id'])
+    .ignore()
     .returning('id');
 
   for (const userOrg of adminUserOrganizations) {
@@ -102,6 +104,8 @@ export async function seed(knex) {
         organization_id: filigranAccessSubscriptionUserId,
       },
     ])
+    .onConflict(['user_id', 'organization_id'])
+    .ignore()
     .returning(['id', 'user_id', 'organization_id']);
 
   for (const userOrg of accessSubscriptionUserOrganizations) {

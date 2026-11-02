@@ -15,6 +15,7 @@ import type { ObjectUseCaseObjectId } from '../../../model/kanel/public/ObjectUs
 import { MinIOClient } from '../../../thirdparty/minio/client';
 import { logApp } from '../../../utils/app-logger.util';
 import { BadRequestErrorCode } from '../../../utils/error/error.code';
+import * as FeatureFlagUtil from '../../../utils/feature-flag.util';
 import { DocumentChildrenDomain } from '../../document/domain/document.children.domain';
 import { DocumentDomain } from '../../document/domain/document.domain';
 import {
@@ -107,6 +108,7 @@ const createConnectorWithFragment = async ({
 
 describe('manifestApp', () => {
   beforeEach(() => {
+    vi.spyOn(FeatureFlagUtil, 'isFeatureEnabled').mockReturnValue(true);
     vi.spyOn(ManifestHelper, 'uploadManifest').mockResolvedValue(undefined);
   });
 
@@ -525,6 +527,28 @@ describe('manifestApp', () => {
       expect(enqueueImmediateRebuildSpy).toHaveBeenCalledWith(expectedKey);
     });
 
+    it('should neither queue nor enqueue when decoupled connectors are disabled', async () => {
+      // Given
+      vi.spyOn(FeatureFlagUtil, 'isFeatureEnabled').mockReturnValue(false);
+      const insertIfNotPendingSpy = vi
+        .spyOn(ManifestDomain, 'insertIfNotPending')
+        .mockResolvedValue(undefined);
+      const enqueueImmediateRebuildSpy = vi
+        .spyOn(ManifestHelper, 'enqueueImmediateRebuild')
+        .mockResolvedValue(undefined);
+
+      // When
+      await ManifestApp.requestManifestGeneration({
+        product: PlatformIdentifier.Opencti,
+        version: '6.4.0',
+        type: ManifestType.Connector,
+      });
+
+      // Then
+      expect(insertIfNotPendingSpy).not.toHaveBeenCalled();
+      expect(enqueueImmediateRebuildSpy).not.toHaveBeenCalled();
+    });
+
     it.each`
       version
       ${'not-a-version'}
@@ -571,6 +595,23 @@ describe('manifestApp', () => {
 
     it('does not call generateManifest when the queue is empty', async () => {
       await ManifestApp.processManifestQueue();
+      expect(ManifestApp.generateManifest).not.toHaveBeenCalled();
+    });
+
+    it('does not call generateManifest when decoupled connectors are disabled', async () => {
+      // Given
+      vi.spyOn(FeatureFlagUtil, 'isFeatureEnabled').mockReturnValue(false);
+      await TestHelper.manifestRebuildQueue.create({
+        product: PlatformIdentifier.Opencti,
+        version: '6.4.0',
+        type: ManifestType.Connector,
+        status: ManifestRebuildQueueStatus.Pending,
+      });
+
+      // When
+      await ManifestApp.processManifestQueue();
+
+      // Then
       expect(ManifestApp.generateManifest).not.toHaveBeenCalled();
     });
 

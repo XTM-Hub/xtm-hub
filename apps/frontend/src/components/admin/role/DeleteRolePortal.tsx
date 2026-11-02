@@ -60,7 +60,11 @@ const DeleteRolePortal = ({
       title={t('RoleListPage.DeleteRoleDialog.Title')}
       confirmLabel={t('Utils.Delete')}
       destructive
-      onConfirm={() => deleteRolePortal({ name: rolePortal })}
+      onConfirm={(event) => {
+        // Keep the dialog open until the deletion succeeds: onSuccess closes it.
+        event.preventDefault();
+        deleteRolePortal({ name: rolePortal });
+      }}
       confirmDisabled={isPending}>
       {t('RoleListPage.DeleteRoleDialog.Text', { rolePortal })}
     </ConfirmDialog>

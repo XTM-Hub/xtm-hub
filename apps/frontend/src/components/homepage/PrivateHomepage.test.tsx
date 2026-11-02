@@ -91,6 +91,8 @@ vi.mock(
 
 import { PrivateHomepage } from './PrivateHomepage';
 
+const ROADMAP_SERVICE_INSTANCE_ID = 'roadmap-1';
+
 const mockRegisteredPlatformsResponses = (registeredPlatforms: unknown[]) => {
   mockRegisteredPlatformsFetcher.mockReturnValue(() =>
     Promise.resolve({
@@ -145,7 +147,7 @@ describe('PrivateHomepage', () => {
     render(element);
 
     expect(mockRegisteredPlatformsFetcher).toHaveBeenCalledTimes(2);
-    expect(mockServiceInstancesFetcher).not.toHaveBeenCalled();
+    expect(mockServiceInstancesFetcher).toHaveBeenCalledTimes(1);
     expect(mockMeFirstNameFetcher).toHaveBeenCalled();
     expect(mockXtmPlatform).not.toHaveBeenCalled();
 
@@ -221,7 +223,7 @@ describe('PrivateHomepage', () => {
     render(element);
 
     expect(mockRegisteredPlatformsFetcher).toHaveBeenCalledTimes(2);
-    expect(mockServiceInstancesFetcher).not.toHaveBeenCalled();
+    expect(mockServiceInstancesFetcher).toHaveBeenCalledTimes(1);
     expect(mockMeFirstNameFetcher).toHaveBeenCalled();
     expect(mockXtmPlatform).not.toHaveBeenCalled();
 
@@ -269,7 +271,7 @@ describe('PrivateHomepage', () => {
     render(element);
 
     expect(mockRegisteredPlatformsFetcher).toHaveBeenCalledTimes(2);
-    expect(mockServiceInstancesFetcher).not.toHaveBeenCalled();
+    expect(mockServiceInstancesFetcher).toHaveBeenCalledTimes(1);
     expect(mockMeFirstNameFetcher).toHaveBeenCalled();
     expect(mockXtmPlatform).toHaveBeenCalledWith(
       expect.objectContaining({ welcomeName: undefined }),
@@ -328,5 +330,50 @@ describe('PrivateHomepage', () => {
       undefined
     );
     expect(screen.getByTestId('private-homepage-roadmap-section')).toBeTruthy();
+  });
+
+  it('should query only the roadmap service instance along with the other homepage data', async () => {
+    // Given
+    mockRegisteredPlatformsResponses([]);
+
+    // When
+    await PrivateHomepage();
+
+    // Then
+    expect(mockServiceInstancesFetcher.mock.calls[0]?.[1]).toEqual({
+      count: 1,
+      orderBy: 'name',
+      orderMode: 'asc',
+      filters: [
+        {
+          key: 'service_definition_identifier',
+          value: [ServiceDefinitionIdentifier.XtmPlatformRoadmap],
+        },
+      ],
+      searchTerm: null,
+    });
+  });
+
+  it('should pass the roadmap service instance id to the roadmap section', async () => {
+    // Given
+    mockRegisteredPlatformsResponses([]);
+    mockServiceInstancesFetcher.mockReturnValue(() =>
+      Promise.resolve({
+        serviceInstances: {
+          edges: [{ node: { id: ROADMAP_SERVICE_INSTANCE_ID } }],
+        },
+      })
+    );
+
+    // When
+    render(await PrivateHomepage());
+
+    // Then
+    expect(mockPrivateHomepageRoadmapSection).toHaveBeenCalledWith(
+      expect.objectContaining({
+        serviceInstanceId: ROADMAP_SERVICE_INSTANCE_ID,
+      }),
+      undefined
+    );
   });
 });

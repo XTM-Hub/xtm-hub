@@ -40,6 +40,7 @@ import { OrganizationId } from '../../../model/kanel/public/Organization';
 import { UserId } from '../../../model/kanel/public/User';
 import { PortalContext } from '../../../model/portal-context';
 import { UserLoadUserBy } from '../../../model/user';
+import { PLATFORM_IDP_GROUP } from '../../../portal.const';
 import { auth0ClientMock } from '../../../thirdparty/auth0/mock';
 import { ErrorCode } from '../../../utils/error/error.code';
 import { loginFromProvider } from '../../security-management/authentication/auth-user';
@@ -67,10 +68,12 @@ describe('user query resolver', () => {
       });
       const email = `testPending${uuidv4()}@second-orga.com`;
       const pendingUser = await loginFromProvider({
+        idp_subject: `auth0|${uuidv4()}`,
         email: email,
         first_name: 'test',
         last_name: 'pending',
         roles: [],
+        groups: [],
       });
 
       const options = {
@@ -101,16 +104,20 @@ describe('user query resolver', () => {
         },
       };
       const pendingUserSecondOrga = await loginFromProvider({
+        idp_subject: `auth0|${uuidv4()}`,
         email: `testPending${uuidv4()}@second-orga.com`,
         first_name: 'secondOrga',
         last_name: 'pending',
         roles: [],
+        groups: [],
       });
       const pendingUserFiligran = await loginFromProvider({
+        idp_subject: `auth0|${uuidv4()}`,
         email: `testPending${uuidv4()}@filigran.io`,
         first_name: 'filigran',
         last_name: 'pending',
         roles: [],
+        groups: [PLATFORM_IDP_GROUP],
       });
 
       const options = {
@@ -155,16 +162,20 @@ describe('user query resolver', () => {
         },
       };
       const pendingUserSecondOrga = await loginFromProvider({
+        idp_subject: `auth0|${uuidv4()}`,
         email: `testPending${uuidv4()}@second-orga.com`,
         first_name: 'secondOrga',
         last_name: 'pending',
         roles: [],
+        groups: [],
       });
       const pendingUserFiligran = await loginFromProvider({
+        idp_subject: `auth0|${uuidv4()}`,
         email: `testPending${uuidv4()}@filigran.io`,
         first_name: 'filigran',
         last_name: 'pending',
         roles: [],
+        groups: [PLATFORM_IDP_GROUP],
       });
 
       const options = {
@@ -205,11 +216,7 @@ describe('user mutation resolver', () => {
         password: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.PASSWORD,
       },
       {
-        req: {
-          session: {
-            user: {},
-          },
-        },
+        req: TestHelper.session.buildRequest(),
         res: {
           cookie: vi.fn(),
         },
@@ -705,10 +712,12 @@ describe('user mutation resolver', () => {
         user: testContext.user,
       });
       const pendingUser = await loginFromProvider({
+        idp_subject: `auth0|${uuidv4()}`,
         email: `testPending${uuidv4()}@second-orga.com`,
         first_name: 'test',
         last_name: 'pending',
         roles: [],
+        groups: [],
       });
 
       await usersResolver.Mutation!.editUserCapabilities!(
@@ -949,10 +958,12 @@ describe('user mutation resolver', () => {
       });
       const email = `testPending${uuidv4()}@second-orga.com`;
       const pendingUser = await loginFromProvider({
+        idp_subject: `auth0|${uuidv4()}`,
         email: email,
         first_name: 'testToRemove',
         last_name: 'pending',
         roles: [],
+        groups: [],
       });
 
       const organizationId = TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID;
@@ -990,10 +1001,12 @@ describe('user mutation resolver', () => {
       });
       const email = `testPending${uuidv4()}@second-orga.com`;
       const pendingUser = await loginFromProvider({
+        idp_subject: `auth0|${uuidv4()}`,
         email: email,
         first_name: 'testToRemove',
         last_name: 'pending',
         roles: [],
+        groups: [],
       });
       const organizationId = TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID;
       const subscriptionSpy = new SubscriptionSpy();
@@ -1028,10 +1041,12 @@ describe('user mutation resolver', () => {
     it('should remove pending users from organization', async () => {
       const email = `testPending${uuidv4()}@second-orga.com`;
       const pendingUser = await loginFromProvider({
+        idp_subject: `auth0|${uuidv4()}`,
         email: email,
         first_name: 'testToRemove',
         last_name: 'pending',
         roles: [],
+        groups: [],
       });
 
       const testContext = {
@@ -1071,10 +1086,12 @@ describe('user mutation resolver', () => {
     it('should dispatch event when pending users are removed from organization', async () => {
       const email = `testPending${uuidv4()}@second-orga.com`;
       const pendingUser = await loginFromProvider({
+        idp_subject: `auth0|${uuidv4()}`,
         email: email,
         first_name: 'testToRemove',
         last_name: 'pending',
         roles: [],
+        groups: [],
       });
 
       const testContext = {
@@ -1211,7 +1228,7 @@ describe('user subscription resolver', () => {
 
   const subscribeAs = async (
     userId: UserId,
-    subscription: 'User' | 'AdminUser' | 'UserPending',
+    subscription: 'User' | 'AdminUser' | 'UserPending' | 'MeUser',
     args: { organizationId?: OrganizationId },
     fields: string[]
   ) => {
@@ -1426,5 +1443,47 @@ describe('user subscription resolver', () => {
     expect(await spy.waitForEvents(1)).toMatchObject([
       { edit: { id: memberId } },
     ]);
+  });
+
+  it('should reject the MeUser subscription when the caller is not authenticated', async () => {
+    // Given
+    const spy = new SubscriptionSpy();
+    spies.push(spy);
+
+    // When
+    const call = spy.spy(usersResolver.Subscription!.MeUser, {}, {}, ['edit']);
+
+    // Then
+    await expect(call).rejects.toThrow(
+      'Not authorized: You are not authenticated'
+    );
+  });
+
+  it('should send a MeUser event only to the subscriber it concerns', async () => {
+    // Given
+    const organizationId = await createOrganization();
+    const memberId = await createMember(organizationId, []);
+    const otherMemberId = await createMember(organizationId, []);
+    const spy = await subscribeAs(memberId, 'MeUser', {}, ['edit']);
+    const otherSpy = await subscribeAs(otherMemberId, 'MeUser', {}, ['edit']);
+    const adminId = await createMember(organizationId, [
+      OrganizationCapability.AdministrateOrganization,
+    ]);
+    requestContext.set({
+      user: (await UserDomain.loadUserBy({ 'User.id': adminId }))!,
+    });
+
+    // When
+    await UserHelper.updateUserOrgCapabilitiesAndDispatch({
+      user_id: memberId,
+      organization_id: organizationId,
+      orgCapabilities: [],
+    });
+
+    // Then
+    expect(await spy.waitForEvents(1)).toMatchObject([
+      { MeUser: { edit: { id: memberId } } },
+    ]);
+    await otherSpy.expectNoEvents();
   });
 });

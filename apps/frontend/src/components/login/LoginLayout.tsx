@@ -23,7 +23,9 @@ export const LoginLayout = ({}) => {
 
   useEffect(() => {
     if (!localProvider) {
-      const target = redirect ? `/sign-up?redirect=${redirect}` : '/sign-up';
+      const target = redirect
+        ? `/sign-up?redirect=${encodeURIComponent(redirect)}`
+        : '/sign-up';
       router.replace(target);
     }
   }, [localProvider, redirect, router]);

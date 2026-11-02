@@ -18,9 +18,27 @@ export default class XTMPlatformRoadmapPage {
     return this.openForm();
   }
 
+  // Not Escape: right after opening, the dialog only listens for it once Radix
+  // makes it the top layer, so the success snackbar of a fresh epic can take it
   async closeEpicDetail() {
-    await this.page.keyboard.press('Escape');
+    const detail = await this.openForm();
+    await detail.getByRole('button', { name: 'Close', exact: true }).click();
     await this.waitForFormToClose();
+  }
+
+  // The page scrolls inside the app shell's <main>, not the window
+  private getScrollContainer() {
+    return this.page.locator('main');
+  }
+
+  async scrollToBottom() {
+    await this.getScrollContainer().evaluate((main) =>
+      main.scrollTo({ top: main.scrollHeight })
+    );
+  }
+
+  getScrollOffset() {
+    return this.getScrollContainer().evaluate((main) => main.scrollTop);
   }
 
   // Scoped to the field: the Slack link and search fields have their own Clear

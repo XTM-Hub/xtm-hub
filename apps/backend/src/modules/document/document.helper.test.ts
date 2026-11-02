@@ -435,6 +435,47 @@ describe('documentHelper', () => {
     });
   });
 
+  describe('deleteObsoleteFiles', () => {
+    it('should delete every given file', async () => {
+      // Given
+      vi.spyOn(MinIOClient, 'deleteFile').mockResolvedValue(undefined);
+
+      // When
+      await DocumentHelper.deleteObsoleteFiles(['file-1', 'file-2']);
+
+      // Then
+      expect(MinIOClient.deleteFile).toHaveBeenCalledTimes(2);
+      expect(MinIOClient.deleteFile).toHaveBeenCalledWith('file-1');
+      expect(MinIOClient.deleteFile).toHaveBeenCalledWith('file-2');
+    });
+
+    it('should not call the storage when there is no file', async () => {
+      // Given
+      vi.spyOn(MinIOClient, 'deleteFile').mockResolvedValue(undefined);
+
+      // When
+      await DocumentHelper.deleteObsoleteFiles([]);
+
+      // Then
+      expect(MinIOClient.deleteFile).not.toHaveBeenCalled();
+    });
+
+    it('should not throw and still delete the other files when one deletion fails', async () => {
+      // Given
+      vi.spyOn(MinIOClient, 'deleteFile')
+        .mockRejectedValueOnce(new Error('storage down'))
+        .mockResolvedValue(undefined);
+
+      // When
+      await expect(
+        DocumentHelper.deleteObsoleteFiles(['file-1', 'file-2'])
+      ).resolves.toBeUndefined();
+
+      // Then
+      expect(MinIOClient.deleteFile).toHaveBeenCalledTimes(2);
+    });
+  });
+
   describe('assertDocumentFileIsNotMissing', () => {
     it.each`
       title                                      | hasDocument | integrationType

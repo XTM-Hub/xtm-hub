@@ -50,6 +50,16 @@ describe('newsFeedDomain', () => {
       );
     });
 
+    it('should return only the scenario news feed type when the platform is OpenAEV', () => {
+      // When
+      const result = NewsFeedDomain.loadAvailableNewsFeedTypes(
+        PlatformIdentifier.Openaev
+      );
+
+      // Then
+      expect(result).toEqual([NewsFeedItemType.ResourceScenario]);
+    });
+
     it('should return empty array for a platform with no configured news feed types', () => {
       const result = NewsFeedDomain.loadAvailableNewsFeedTypes(
         'UnknownIdentifier' as PlatformIdentifier
@@ -375,6 +385,34 @@ describe('newsFeedDomain', () => {
       expect(
         metadata.some((m) => m.key === NewsFeedItemMetadataKey.DocumentId)
       ).toBe(false);
+    });
+
+    it('should exclude the blog_post_slug metadata, which only serves the redirect', async () => {
+      // Given
+      const item = await TestHelper.newsFeed.createItem({
+        type: NewsFeedItemType.BlogPost,
+        title: 'Blog post',
+      });
+      await TestHelper.newsFeed.createMetadata({
+        news_feed_item_id: item.id,
+        key: NewsFeedItemMetadataKey.UrlPath,
+        value: `redirect/news-feed/${item.id}`,
+      });
+      await TestHelper.newsFeed.createMetadata({
+        news_feed_item_id: item.id,
+        key: NewsFeedItemMetadataKey.BlogPostSlug,
+        value: 'threat-report-2026',
+      });
+
+      // When
+      const metadata = await NewsFeedDomain.loadMetadataByNewsFeedItemIds([
+        item.id,
+      ]);
+
+      // Then
+      expect(metadata.map((m) => m.key)).toEqual([
+        NewsFeedItemMetadataKey.UrlPath,
+      ]);
     });
 
     it('should return the metadata for multiple news feed items in a single call', async () => {

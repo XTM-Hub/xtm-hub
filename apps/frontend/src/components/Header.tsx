@@ -18,6 +18,7 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
+import { clearFiltersStorage } from '@/utils/filters-storage.utils';
 import { APP_PATH } from '@/utils/path/constant';
 
 import { useTranslate } from '@/hooks/use-translate';
@@ -25,8 +26,7 @@ import { MenuIcon } from '@filigran/icon';
 import Link from 'next/link';
 
 import { OrganizationCapability } from '@graphql/generated';
-import { useQueryClient } from '@tanstack/react-query';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useCallback, useContext, useEffect, useState } from 'react';
 import { useMutation } from 'react-relay';
 
@@ -39,9 +39,7 @@ const HeaderComponent = ({ displayLogo }: HeaderComponentProps) => {
   const { me, hasOrganizationCapability } = useContext(PortalContext);
   const [open, setOpen] = useState(false);
   const currentPath = usePathname();
-  const router = useRouter();
   const t = useTranslate();
-  const queryClient = useQueryClient();
   const [commitLogoutMutation] = useMutation(LogoutMutation);
 
   // Legitimate effect: close the menu on route change.
@@ -57,20 +55,15 @@ const HeaderComponent = ({ displayLogo }: HeaderComponentProps) => {
   const handleLogout = useCallback(() => {
     commitLogoutMutation({
       variables: {},
-      updater: (store) => {
-        store.invalidateStore();
-      },
       onCompleted() {
-        // Logout/login navigate client-side (no full page reload), so the
-        // React Query cache would otherwise survive a user switch in the
-        // same browser tab and could serve stale, user-scoped data (e.g.
-        // service capabilities) to whoever logs in next.
-        queryClient.clear();
-        router.push('/');
-        router.refresh();
+        clearFiltersStorage();
+        // A full page load drops the react-query cache and the Relay store, so no
+        // user-scoped data outlives the session, and no mounted query refetches
+        // without it, which would redirect to the login page.
+        window.location.href = '/';
       },
     });
-  }, [commitLogoutMutation, queryClient, router]);
+  }, [commitLogoutMutation]);
 
   const headerContent = (
     <>

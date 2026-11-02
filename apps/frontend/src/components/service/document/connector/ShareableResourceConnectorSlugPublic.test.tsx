@@ -5,7 +5,7 @@ import {
   ServiceSlug,
 } from '@/utils/shareable-resources/shareable-resources.types';
 import testRender from '@/utils/test/test-render';
-import { seoServiceInstanceFragment$data } from '@generated/seoServiceInstanceFragment.graphql';
+import { mockSeoServiceInstance } from '@graphql/mocks';
 import { screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -33,10 +33,10 @@ const buildConnector = (
     ...overrides,
   }) as unknown as PublicDocumentDetailsData & ConnectorFields;
 
-const SERVICE_INSTANCE = {
+const SERVICE_INSTANCE = mockSeoServiceInstance({
   id: 'service-instance-1',
   slug: ServiceSlug.OPEN_CTI_INTEGRATIONS,
-} as unknown as seoServiceInstanceFragment$data;
+});
 
 const renderConnector = async (
   documentData: ReturnType<typeof buildConnector>

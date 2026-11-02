@@ -17,7 +17,9 @@ export const UnregisterPlatformNotRegistered = ({
 
   return (
     <RegistrationLayout>
-      <h1>{t(`Unregister.Error.PlatformNotRegistered.Title`)}</h1>
+      <h1 className="title-sm">
+        {t(`Unregister.Error.PlatformNotRegistered.Title`)}
+      </h1>
       <p>{t(`Unregister.Error.PlatformNotRegistered.Description`)}</p>
     </RegistrationLayout>
   );

@@ -26,7 +26,11 @@ export const PageLoader = () => {
     );
   }
 
-  const { platform_id: platformId, tenant_id: tenantId } = useDecodedQuery();
+  const {
+    platform_id: platformId,
+    tenant_id: tenantId,
+    state,
+  } = useDecodedQuery();
 
   const [queryRef, loadQuery] =
     useQueryLoader<registerCanUnregisterPlatformQuery>(
@@ -43,6 +47,7 @@ export const PageLoader = () => {
         queryRef={queryRef}
         platformId={platformId}
         tenantId={tenantId}
+        state={state ?? undefined}
       />
     </RegistrationContextProvider>
   ) : (

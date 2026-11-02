@@ -67,10 +67,11 @@ export async function fetchAllDocuments(
 
 /**
  * Fetches only the `slug`/`created_at`/`updated_at` of every public document
- * of a service instance, for sitemap generation. Reuses `fetchAllDocuments`'s
- * cache tag so a document create/update/delete invalidates both at once.
+ * of a service instance, for sitemap generation and `isPublicDocumentSlug`.
+ * Reuses `fetchAllDocuments`'s cache tag so a document create/update/delete
+ * invalidates both at once.
  */
-export async function fetchDocumentSlugsForSitemap(
+export async function fetchPublicDocumentSlugs(
   serviceInstanceSlug: ServiceSlug
 ): Promise<PublicDocumentSitemapItem[]> {
   if (!Object.values(ServiceSlug).includes(serviceInstanceSlug)) {
@@ -92,6 +93,26 @@ export async function fetchDocumentSlugsForSitemap(
   );
 
   return data.publicDocumentSlugsByServiceSlug;
+}
+
+/**
+ * Whether `docSlug` is a public document of the `serviceInstanceSlug` service,
+ * checked against the cached slug list so a guessed slug 404s on the frontend
+ * instead of erroring on the backend. A document created in the UI shows up at
+ * once (its cache tag is invalidated); one ingested by the backend (connector
+ * manifests) within the 1h revalidate.
+ */
+export async function isPublicDocumentSlug(
+  serviceInstanceSlug: string,
+  docSlug: string
+): Promise<boolean> {
+  if (!Object.values<string>(ServiceSlug).includes(serviceInstanceSlug)) {
+    return false;
+  }
+  const documents = await fetchPublicDocumentSlugs(
+    serviceInstanceSlug as ServiceSlug
+  );
+  return documents.some((document) => document.slug === docSlug);
 }
 
 /** Fetches a single public document by slug; same caching as `fetchAllDocuments`. */

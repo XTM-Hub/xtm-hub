@@ -6,6 +6,7 @@ import type {
   CustomApolloError,
   ErrorLogLevel,
 } from '../../utils/error/error.type';
+import { redactGraphQLRequest } from '../../utils/redact-secrets.util';
 
 export interface Context extends BaseContext {
   user: UserLoadUserBy;
@@ -18,13 +19,17 @@ export const errorLoggingPlugin = (): ApolloServerPlugin<Context> => ({
   async requestDidStart(requestContext) {
     const { request, contextValue } = requestContext;
     const { user, serviceId, req } = contextValue ?? {};
+    const { query, variables } = redactGraphQLRequest({
+      query: request.query,
+      variables: req?.body?.variables,
+    });
 
     logApp.info(
       'GraphQL request received',
       {
         operationName: request.operationName,
-        query: request.query,
-        variables: req?.body?.variables,
+        query,
+        variables,
         user,
         serviceId,
       },
@@ -49,7 +54,7 @@ export const errorLoggingPlugin = (): ApolloServerPlugin<Context> => ({
               user: contextValue?.user,
               serviceId: contextValue?.serviceId,
               codeStack: error.originalError?.stack,
-              variables: contextValue?.req?.body?.variables,
+              variables,
             },
             AppLogsCategory.GRAPHQL
           );

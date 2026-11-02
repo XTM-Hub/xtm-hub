@@ -11,8 +11,18 @@ input OneClickDeployInput {
   platform_service_instance_id: ID!
 }
 
+# Best-effort analytics from the query string of a news feed link to a resource
+input NewsFeedRedirectInput {
+  service_identifier: ServiceDefinitionIdentifier!
+  resource_id: DocumentId
+  platform_id: String
+  platform_identifier: PlatformIdentifier
+  utm_content: NewsFeedUtmContent
+}
+
 type SendTelemetryMutation {
   oneClickDeploy(input: OneClickDeployInput!): TelemetryResponse
+  newsFeedRedirect(input: NewsFeedRedirectInput!): TelemetryResponse
 }
 
 extend type Mutation {

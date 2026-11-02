@@ -6,6 +6,7 @@ import { describe, expect, expectTypeOf, it, vi } from 'vitest';
 const LABEL = 'Country';
 const PLACEHOLDER = 'Pick a country';
 const ERROR_MESSAGE = 'Country is required';
+const INPUT_CLASS_NAME = 'content-compact';
 
 interface CountryOption {
   id: string;
@@ -256,6 +257,25 @@ describe('AppCombobox', () => {
     const field = screen.getByRole('combobox', { name: LABEL });
     expect(field).not.toHaveAttribute('aria-describedby');
     expect(field).toBeValid();
+  });
+
+  it('should style the input with the given class when inputClassName is set', () => {
+    // Given / When
+    testRender(
+      <AppCombobox
+        label={LABEL}
+        options={OPTIONS}
+        value={null}
+        onValueChange={vi.fn()}
+        getOptionLabel={getOptionLabel}
+        inputClassName={INPUT_CLASS_NAME}
+      />
+    );
+
+    // Then
+    expect(screen.getByRole('combobox', { name: LABEL })).toHaveClass(
+      INPUT_CLASS_NAME
+    );
   });
 
   it.each<[string | undefined, string, string]>([

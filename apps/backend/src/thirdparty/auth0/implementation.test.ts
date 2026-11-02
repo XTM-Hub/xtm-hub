@@ -5,8 +5,10 @@ import { buildEmailsQuery } from './auth0.util';
 
 const mocks = vi.hoisted(() => ({
   list: vi.fn(),
+  get: vi.fn(),
   listUsersByEmail: vi.fn(),
   update: vi.fn(),
+  createVerificationEmail: vi.fn(),
 }));
 
 vi.mock('auth0', async (importOriginal) => {
@@ -17,8 +19,12 @@ vi.mock('auth0', async (importOriginal) => {
       return {
         users: {
           list: mocks.list,
+          get: mocks.get,
           listUsersByEmail: mocks.listUsersByEmail,
           update: mocks.update,
+        },
+        jobs: {
+          verificationEmail: { create: mocks.createVerificationEmail },
         },
       };
     }),
@@ -282,4 +288,76 @@ describe('auth0ClientImplementation.updateUserRBACInstance', () => {
     expect(mocks.listUsersByEmail).not.toHaveBeenCalled();
     expect(mocks.update).not.toHaveBeenCalled();
   });
+});
+
+describe('auth0ClientImplementation.sendVerificationEmail', () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+
+  it('should ask Auth0 to send the verification email to the given account', async () => {
+    // Given
+    const userId = 'auth0|unverified-user';
+
+    // When
+    await auth0ClientImplementation.sendVerificationEmail(userId);
+
+    // Then
+    expect(mocks.createVerificationEmail).toHaveBeenCalledExactlyOnceWith({
+      user_id: userId,
+    });
+    expect(mocks.get).not.toHaveBeenCalled();
+  });
+
+  it('should send the verification email to the primary identity of an enterprise account', async () => {
+    // Given
+    const userId = 'waad|Filigran|f2417205-ab34-414a-bce5-7da0fed1eeca';
+    mocks.get.mockResolvedValue({
+      identities: [
+        {
+          user_id: 'Filigran|f2417205-ab34-414a-bce5-7da0fed1eeca',
+          provider: 'waad',
+          connection: 'Filigran',
+        },
+        { user_id: 'linked-user', provider: 'auth0', connection: 'database' },
+      ],
+    });
+
+    // When
+    await auth0ClientImplementation.sendVerificationEmail(userId);
+
+    // Then
+    expect(mocks.get).toHaveBeenCalledExactlyOnceWith(userId, {
+      fields: 'identities',
+      include_fields: true,
+    });
+    expect(mocks.createVerificationEmail).toHaveBeenCalledExactlyOnceWith({
+      user_id: userId,
+      identity: {
+        user_id: 'Filigran|f2417205-ab34-414a-bce5-7da0fed1eeca',
+        provider: 'waad',
+      },
+    });
+  });
+
+  it.each([
+    ['no identities', {}],
+    ['an empty list of identities', { identities: [] }],
+  ])(
+    'should not send the verification email when the account has %s',
+    async (_description, user) => {
+      // Given
+      mocks.get.mockResolvedValue(user);
+
+      // When
+      const result =
+        auth0ClientImplementation.sendVerificationEmail('google-oauth2|1234');
+
+      // Then
+      await expect(result).rejects.toThrow(
+        'AUTH0_USER_IDENTITY_NOT_FOUND_ERROR'
+      );
+      expect(mocks.createVerificationEmail).not.toHaveBeenCalled();
+    }
+  );
 });

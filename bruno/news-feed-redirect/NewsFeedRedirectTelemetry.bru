@@ -1,0 +1,53 @@
+meta {
+  name: News feed redirect telemetry
+  type: graphql
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/graphql-api
+  body: graphql
+  auth: none
+}
+
+headers {
+  Cookie: {{cookie}}
+}
+
+body:graphql {
+  mutation NewsFeedRedirect($input: NewsFeedRedirectInput!) {
+    sendTelemetryEvent {
+      newsFeedRedirect(input: $input) {
+        message
+        result
+      }
+    }
+  }
+
+}
+
+body:graphql:vars {
+  {
+    "input": {
+      "service_identifier": "opencti_custom_dashboards",
+      "resource_id": "",
+      "platform_id": "",
+      "platform_identifier": "opencti",
+      "utm_content": "custom_dashboard"
+    }
+  }
+}
+
+docs {
+  Ensure cookie is set
+
+  Emits one news_feed_redirect telemetry event for a redirect to a resource that comes from a news feed.
+  Used by the frontend resource redirect route when utm_medium=newsfeed.
+
+  Fill variables:
+  service_identifier: ServiceDefinitionIdentifier of the redirect route (opencti_custom_dashboards, ...)
+  resource_id: document_id of the link (global id or raw id)
+  platform_id: UUID of the platform the click comes from (invalid values are dropped)
+  platform_identifier: opencti/openaev/xtmone (utm_source of the link)
+  utm_content: custom_dashboard/custom_view/integration/playbook/other
+}

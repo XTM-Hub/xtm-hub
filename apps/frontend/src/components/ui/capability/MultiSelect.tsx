@@ -5,7 +5,10 @@ import { toComboboxOptionIds } from '@/utils/design-system/combobox';
 import { useMemo } from 'react';
 
 interface CapabilityMultiSelectProps {
+  /** Visible label. Without it the field shows only its placeholder. */
   label?: string;
+  /** Accessible name of a field that has no visible label, defaults to the placeholder. */
+  accessibleName?: string;
   value: string[];
   onChange: (value: string[]) => void;
   error?: string;
@@ -15,6 +18,7 @@ interface CapabilityMultiSelectProps {
 
 export const CapabilityMultiSelect = ({
   label,
+  accessibleName,
   value,
   onChange,
   error,
@@ -38,7 +42,7 @@ export const CapabilityMultiSelect = ({
   return (
     <AppCombobox
       multiple
-      label={label || placeholder}
+      label={label || accessibleName || placeholder}
       labelPosition={label ? 'top' : 'none'}
       placeholder={placeholder}
       error={error}

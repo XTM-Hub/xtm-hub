@@ -24,7 +24,10 @@ import {
   NO_ROLE_VALUE,
   RoleFormField,
 } from './manage-trial.const';
-import { isServiceGroupName } from './manage-trial.utils';
+import {
+  isServiceGroupName,
+  removeUsersFromBundleCache,
+} from './manage-trial.utils';
 import { RoleSelect } from './RoleSelect';
 
 interface ManageTrialTableProps {
@@ -90,11 +93,7 @@ export const ManageTrialTable = ({
         queryClient.setQueryData<BundleUserServiceGroupsQuery>(
           bundleUserServiceGroupsKeys.list(variables),
           (previous) =>
-            previous && {
-              bundleUserServiceGroups: previous.bundleUserServiceGroups.filter(
-                (row) => !mutationVariables.userIds.includes(row.user.id)
-              ),
-            }
+            removeUsersFromBundleCache(previous, mutationVariables.userIds)
         );
         showSnackbar({ severity: 'success', title: t('Utils.Success') });
         setDeletingUserId(undefined);

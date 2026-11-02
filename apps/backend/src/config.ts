@@ -3,6 +3,7 @@ import config from 'config';
 import {
   DevUser,
   parseAndValidateDevUsers,
+  resolveTrustProxy,
 } from './utils/config-validation.util';
 
 interface PortalConfig {
@@ -23,14 +24,14 @@ interface PortalConfig {
     pending_user_digest: boolean;
     public_roadmap_monthly_reminder: boolean;
   };
-  saas_manager: {
-    enabled: boolean;
-  };
   auth0_sync: {
     enabled: boolean;
     max_users_per_run: number;
     concurrency: number;
     deadline_minutes: number;
+  };
+  user_management: {
+    enforce_idp_subject: boolean;
   };
   elasticsearch: {
     protocol: string;
@@ -51,6 +52,7 @@ interface PortalConfig {
     name: string;
     secret: string;
   };
+  trust_proxy: number | false;
   environment: string;
   enabled_features: string[];
   dev_users?: DevUser[];
@@ -83,14 +85,15 @@ const portalConfig: PortalConfig = {
       config.get<boolean>('enabled_emails.public_roadmap_monthly_reminder') ??
       false,
   },
-  saas_manager: {
-    enabled: config.get<boolean>('saas_manager.enabled') ?? false,
-  },
   auth0_sync: {
     enabled: config.get<boolean>('auth0_sync.enabled') ?? false,
     max_users_per_run: config.get<number>('auth0_sync.max_users_per_run'),
     concurrency: config.get<number>('auth0_sync.concurrency'),
     deadline_minutes: config.get<number>('auth0_sync.deadline_minutes'),
+  },
+  user_management: {
+    enforce_idp_subject:
+      config.get<boolean>('user_management.enforce_idp_subject') ?? false,
   },
   elasticsearch: {
     protocol: config.get<string | null>('elasticsearch.protocol') ?? 'https',
@@ -115,6 +118,10 @@ const portalConfig: PortalConfig = {
     name: config.get<string>('session.name'),
     secret: config.get<string>('session.secret'),
   },
+  trust_proxy: resolveTrustProxy(
+    config.get<unknown>('trust_proxy'),
+    process.env.LOCAL_DEV === 'true'
+  ),
   environment: config.get<string>('environment'),
   enabled_features: config.get<string[]>('enabled_features') ?? [],
   dev_users: parseAndValidateDevUsers(),

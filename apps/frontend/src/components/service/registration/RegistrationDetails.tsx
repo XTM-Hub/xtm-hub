@@ -78,7 +78,7 @@ export const RegistrationDetails = ({
               </span>
               {platform.subscription?.start_date &&
               platform.subscription.end_date
-                ? formatDate(platform.subscription.start_date)
+                ? formatDate(platform.subscription.start_date, 'DATE_MEDIUM')
                 : '-'}
             </li>
             <li>
@@ -86,7 +86,7 @@ export const RegistrationDetails = ({
                 {t('Register.Details.EndDate')}:
               </span>
               {platform.subscription?.end_date
-                ? formatDate(platform.subscription?.end_date)
+                ? formatDate(platform.subscription?.end_date, 'DATE_MEDIUM')
                 : '-'}
             </li>
           </>
@@ -97,7 +97,7 @@ export const RegistrationDetails = ({
                 {t('Register.Details.ConnectedOn')}:
               </span>
               {platform.subscription?.start_date
-                ? formatDate(platform.subscription.start_date)
+                ? formatDate(platform.subscription.start_date, 'DATE_MEDIUM')
                 : '-'}
             </li>
           </>
@@ -149,7 +149,7 @@ export const RegistrationDetails = ({
                 {t('Register.Details.LastConnectionCheck')}:
               </span>
               {platform.last_connectivity_check
-                ? formatDate(platform.last_connectivity_check)
+                ? formatDate(platform.last_connectivity_check, 'DATE_MEDIUM')
                 : '-'}
             </li>
           </>

@@ -16,6 +16,10 @@ export const auth0ClientMock: Auth0Client = {
     return Promise.resolve();
   },
 
+  sendVerificationEmail(userId: string): Promise<void> {
+    return Promise.resolve();
+  },
+
   updateUserRBACInstance(
     email: string,
     userRBACInstance: Auth0UpdateUserRBACInstance,

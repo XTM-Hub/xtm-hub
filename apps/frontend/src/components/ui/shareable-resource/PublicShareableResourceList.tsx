@@ -2,11 +2,11 @@ import { ServiceListDisplayMode } from '@/components/service/components/header/S
 import { PublicShareableDocumentList } from '@/components/ui/shareable-resource/PublicShareableDocumentList';
 import { useTranslate } from '@/hooks/use-translate';
 import { publicDocumentListItemFragment$data } from '@generated/publicDocumentListItemFragment.graphql';
-import { seoServiceInstanceFragment$data } from '@generated/seoServiceInstanceFragment.graphql';
+import { SeoServiceInstanceItemFragment } from '@graphql/generated';
 
 interface PublicShareableResourceListProps {
   documents: publicDocumentListItemFragment$data[];
-  serviceInstance: seoServiceInstanceFragment$data;
+  serviceInstance: SeoServiceInstanceItemFragment;
   baseUrl: string;
   displayMode: ServiceListDisplayMode;
 }

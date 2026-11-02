@@ -18,3 +18,15 @@ query MeOrganizationDomains {
     }
   }
 }
+
+query MeOrganizations {
+  me {
+    id
+    selected_organization_id
+    organizations {
+      id
+      name
+      personal_space
+    }
+  }
+}

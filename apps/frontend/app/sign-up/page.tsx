@@ -1,6 +1,7 @@
 import '@/components/signup/SignUp.css';
 import '@styles/globals.css';
 
+import { ReactQueryProvider } from '@/components/ReactQueryProvider';
 import SignUp from '@/components/signup/SignUp';
 import { getAuthenticatedGraphqlClient } from '@/lib/graphql-client';
 import { UnauthenticatedError } from '@/lib/graphql-fetch.utils';
@@ -48,7 +49,11 @@ const Page = async ({ searchParams }: PageProps) => {
 
   const showLocalLogin = await hasLocalProvider();
 
-  return <SignUp showLocalLogin={showLocalLogin} />;
+  return (
+    <ReactQueryProvider>
+      <SignUp showLocalLogin={showLocalLogin} />
+    </ReactQueryProvider>
+  );
 };
 
 export default Page;

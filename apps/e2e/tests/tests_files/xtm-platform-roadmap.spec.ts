@@ -184,6 +184,54 @@ test.describe('XTM Platform Roadmap', () => {
     });
   });
 
+  test('Should keep the scroll position when opening and closing an epic detail', async ({
+    page,
+  }) => {
+    // Zero-padded so the title sort keeps the last epic at the bottom
+    const epicTitles = Array.from(
+      { length: 12 },
+      (_, index) => `Scrollable epic ${String(index + 1).padStart(2, '0')}`
+    );
+    for (const title of epicTitles) {
+      await addEpic({
+        title,
+        // Must not contain the title: opening the detail matches it by substring
+        short_description: 'Short description of a scroll test epic',
+        description: `Full description of ${title}`,
+        products: ['opencti'],
+        active: true,
+        timeline: 'next',
+        uploader_id: ADMIN_USER.ID,
+      });
+    }
+    const lastEpicTitle = epicTitles.at(-1)!;
+
+    await loginPage.navigateToAndLogin();
+    await xtmPlatformRoadmapPage.navigateToService();
+    const lastEpic = page.getByText(lastEpicTitle, { exact: true });
+    await expect(lastEpic).toBeVisible();
+
+    await xtmPlatformRoadmapPage.scrollToBottom();
+    await expect(lastEpic).toBeInViewport();
+    const scrollOffset = await xtmPlatformRoadmapPage.getScrollOffset();
+    expect(scrollOffset).toBeGreaterThan(0);
+
+    await test.step('Opening the detail keeps the scroll position', async () => {
+      const detail = await xtmPlatformRoadmapPage.openEpicDetail(lastEpicTitle);
+      await expect(
+        detail.getByText(`Full description of ${lastEpicTitle}`)
+      ).toBeVisible();
+      await expect(page).toHaveURL(/epicId=/);
+      expect(await xtmPlatformRoadmapPage.getScrollOffset()).toBe(scrollOffset);
+    });
+
+    await test.step('Closing the detail keeps the scroll position', async () => {
+      await xtmPlatformRoadmapPage.closeEpicDetail();
+      await expect(page).not.toHaveURL(/epicId=/);
+      expect(await xtmPlatformRoadmapPage.getScrollOffset()).toBe(scrollOffset);
+    });
+  });
+
   test('Should allow users that are not connected to view the xtm platform roadmap', async ({
     page,
   }) => {
@@ -264,21 +312,21 @@ test.describe('XTM Platform Roadmap', () => {
     });
 
     await test.step('It should display details', async () => {
-      await page.getByText('Title3').click();
+      const detail = await xtmPlatformRoadmapPage.openEpicDetail('Title3');
       await expect(
-        page.getByText('Short description for another epic', { exact: true })
+        detail.getByText('Short description for another epic', { exact: true })
       ).toBeVisible();
       await expect(
-        page.getByText('This is a second epic', { exact: true })
+        detail.getByText('This is a second epic', { exact: true })
       ).toBeVisible();
       await expect(
-        page.getByText('Problem of the second epic', { exact: true })
+        detail.getByText('Problem of the second epic', { exact: true })
       ).toBeVisible();
       await expect(
-        page.getByText('Solution of the second epic', { exact: true })
+        detail.getByText('Solution of the second epic', { exact: true })
       ).toBeVisible();
       await expect(
-        page.getByText('Value of the second epic', { exact: true })
+        detail.getByText('Value of the second epic', { exact: true })
       ).toBeVisible();
     });
   }

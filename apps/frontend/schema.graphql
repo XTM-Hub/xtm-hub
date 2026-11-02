@@ -127,13 +127,13 @@ type Query {
   usersWithCapabilitiesInOrganization(input: UsersWithCapabilitiesInOrganizationInput!): [OrganizationMemberContact!]!
   users(first: Int!, after: ID, orderBy: UserOrdering!, orderMode: OrderingMode!, searchTerm: String, filters: [Filter!]): UserConnection!
   pendingUsers(first: Int!, after: ID, orderBy: UserOrdering!, orderMode: OrderingMode!, searchTerm: String, filters: [Filter!]): UserConnection!
+  registeredSaasPlatformData(input: RegisteredSaasPlatformDataInput!): SaasPlatformData
+  saasManagerPlatforms(page: Int!, pageSize: Int!, orderBy: SaasPlatformOrdering!, orderMode: OrderingMode!, searchTerm: String, product: SaasProduct): SaasPlatformPage
   openCTIPlatformRegistrationStatus(input: OpenCTIPlatformRegistrationStatusInput!): OpenCTIPlatformRegistrationStatusResponse! @deprecated(reason: "Use `refreshPlatformRegistrationConnectivityStatus` instead. This field is no longer used in the OpenCTI platform due to refactoring and the addition of a version value in the endpoint.")
   isPlatformRegistered(input: IsPlatformRegisteredInput!): IsPlatformRegisteredResponse!
   canUnregisterPlatform(input: CanUnregisterPlatformInput!): CanUnregisterResponse!
   registeredPlatform(input: RegisteredPlatformInput!): RegisteredPlatform
-  registeredSaasPlatformMetadata(input: RegisteredPlatformInput!): SaasPlatformMetadata
   registeredPlatforms(input: RegisteredPlatformsInput!): [RegisteredPlatform!]!
-  saasPlatforms(first: Int!, after: ID, orderBy: RegisteredPlatformOrdering!, orderMode: OrderingMode!, searchTerm: String): RegisteredPlatformConnection!
   platformAssociatedOrganization(platformId: String!, tenantId: String): Organization
   rolePortals: [RolePortal!]!
   ssoGroupRolePortals: [SSOGroupRolePortal!]!
@@ -985,11 +985,28 @@ enum NewsFeedItemType {
   RESOURCE_PLAYBOOK
   RESOURCE_CUSTOM_VIEW
   RESOURCE_INTEGRATION
+  RESOURCE_SCENARIO
+  BLOG_POST
+}
+
+enum NewsFeedUtmMedium {
+  newsfeed
+}
+
+enum NewsFeedUtmContent {
+  blog_posts
+  custom_dashboard
+  custom_view
+  integration
+  playbook
+  scenario
+  other
 }
 
 enum NewsFeedItemMetadataKey {
   url_path
   document_id
+  blog_post_slug
 }
 
 type NewsFeedItemMetadata {
@@ -1222,6 +1239,132 @@ type Subscription {
   ServiceInstance: ServiceInstanceSubscription
 }
 
+type SaasPlatformData {
+  metadata: SaasPlatformMetadata!
+  metrics: SaasPlatformMetrics
+  storage: SaasPlatformStorage
+  sla: SaasPlatformSla
+}
+
+type SaasPlatformSla {
+  target: Float!
+  months: [SaasPlatformMonthlySla!]!
+}
+
+type SaasPlatformMonthlySla {
+  month: Date!
+  availability: Float
+  days: [SaasPlatformDailySla!]!
+}
+
+type SaasPlatformDailySla {
+  day: Date!
+  availability: Float
+}
+
+type SaasPlatformMetadata {
+  hostname: String
+  plan: String
+  start_date: Date
+  end_date: Date
+  region: String
+}
+
+type SaasPlatformMetrics {
+  start: Date!
+  end: Date!
+  resolution: SaasPlatformResolution!
+  series: [SaasPlatformMetricSeries!]!
+}
+
+type SaasPlatformMetricSeries {
+  metric_type: MetricType!
+  points: [SaasPlatformMetricPoint!]!
+}
+
+type SaasPlatformMetricPoint {
+  timestamp: Date!
+  value: Float
+}
+
+type SaasPlatformStorage {
+  es_used_size: SaasPlatformStorageUsage
+  s3_used_size: SaasPlatformStorageUsage
+}
+
+type SaasPlatformStorageUsage {
+  percent: Float
+  used: Float
+  limit: Float
+}
+
+enum MetricType {
+  sla_availability
+  sla_response_time
+  es_used_size
+  s3_used_size
+}
+
+enum SaasPlatformResolution {
+  hour
+  day
+}
+
+enum SaasPlatformMetricsPeriod {
+  last_30_days
+  last_90_days
+  last_180_days
+}
+
+type SaasPlatform {
+  id: String!
+  status: String
+  product: SaasProduct
+  customer: String
+  commercial_model: String
+  sla_cmtd: Float
+  metadata: SaasPlatformMetadata!
+  storage: SaasPlatformStorage
+  health_issues: [SaasPlatformHealthIssue!]
+  contract_status: SaasPlatformContractStatus
+  registered_platform: RegisteredPlatform
+}
+
+enum SaasPlatformHealthIssue {
+  availability
+  database
+  file_storage
+}
+
+enum SaasPlatformContractStatus {
+  active
+  ending_soon
+  ended
+}
+
+type SaasPlatformPage {
+  totalCount: Int!
+  platforms: [SaasPlatform!]!
+}
+
+enum SaasPlatformOrdering {
+  customer__name
+  product
+  plan
+  end_date
+}
+
+enum SaasProduct {
+  OCTI
+  OAEV
+  ONE
+}
+
+input RegisteredSaasPlatformDataInput {
+  service_instance_id: ServiceInstanceId!
+  metrics_period: SaasPlatformMetricsPeriod!
+}
+
 enum PlatformConfigurationStatus {
   active
   inactive
@@ -1266,21 +1409,6 @@ type RegisteredPlatform implements Node {
   subscription: SubscriptionModel
   myGroups: [ServiceGroup!]
   organization: Organization
-}
-
-type RegisteredPlatformEdge {
-  cursor: String!
-  node: RegisteredPlatform!
-}
-
-type RegisteredPlatformConnection {
-  totalCount: Int!
-  edges: [RegisteredPlatformEdge!]!
-  pageInfo: PageInfo!
-}
-
-enum RegisteredPlatformOrdering {
-  organization_name
 }
 
 input PlatformInput {
@@ -1415,14 +1543,6 @@ input RegisteredPlatformsInput {
 
 input RegisteredPlatformInput {
   service_instance_id: ServiceInstanceId!
-}
-
-type SaasPlatformMetadata {
-  hostname: String
-  plan: String
-  start_date: Date
-  end_date: Date
-  region: String
 }
 
 input AutoRegisterPlatformInput {
@@ -2186,8 +2306,17 @@ input OneClickDeployInput {
   platform_service_instance_id: ID!
 }
 
+input NewsFeedRedirectInput {
+  service_identifier: ServiceDefinitionIdentifier!
+  resource_id: DocumentId
+  platform_id: String
+  platform_identifier: PlatformIdentifier
+  utm_content: NewsFeedUtmContent
+}
+
 type SendTelemetryMutation {
   oneClickDeploy(input: OneClickDeployInput!): TelemetryResponse
+  newsFeedRedirect(input: NewsFeedRedirectInput!): TelemetryResponse
 }
 
 """A Relay global ID for UseCase, extracted to a branded UseCaseId string"""

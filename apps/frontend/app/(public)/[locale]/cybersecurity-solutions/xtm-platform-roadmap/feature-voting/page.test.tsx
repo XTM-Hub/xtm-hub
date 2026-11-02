@@ -1,21 +1,24 @@
 import { loadCurrentUser } from '@/utils/load-me-user';
+import { fetchSeoServiceInstanceBySlug } from '@/utils/seo-service-instance/utils/seo-service-instance.server.utils';
 import Page from '@app/(public)/[locale]/cybersecurity-solutions/xtm-platform-roadmap/feature-voting/page';
 import { render, screen } from '@testing-library/react';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const APP_FEATURE_VOTING_HREF =
   '/app/service/xtm_platform_roadmap/instance-1/feature-voting';
+const NOT_FOUND_SENTINEL = new Error('NEXT_NOT_FOUND');
 
 vi.mock('@/utils/load-me-user', () => ({
   loadCurrentUser: vi.fn(),
 }));
 
-vi.mock('@/relay/server-portal-api-fetch', () => ({
-  serverFetchGraphQL: vi.fn(async () => ({
-    data: { seoServiceInstance: { id: 'instance-1' } },
-  })),
-}));
+vi.mock(
+  '@/utils/seo-service-instance/utils/seo-service-instance.server.utils',
+  () => ({
+    fetchSeoServiceInstanceBySlug: vi.fn(async () => ({ id: 'instance-1' })),
+  })
+);
 
 vi.mock('next-intl/server', () => ({
   getTranslations: async () => Object.assign((key: string) => key, {}),
@@ -29,8 +32,8 @@ vi.mock('@/utils/generate-metadata', () => ({
   getBaseUrl: vi.fn(async () => 'https://hub.filigran.io'),
 }));
 
-vi.mock('@/components/feature-voting/FeatureVotingList', () => ({
-  FeatureVotingList: () => <div data-testid="feature-voting-list" />,
+vi.mock('@/components/feature-voting/PrefetchedFeatureVotingList', () => ({
+  PrefetchedFeatureVotingList: () => <div data-testid="feature-voting-list" />,
 }));
 
 describe('public feature-voting page', () => {
@@ -57,5 +60,20 @@ describe('public feature-voting page', () => {
 
     expect(screen.getByTestId('feature-voting-list')).toBeInTheDocument();
     expect(redirect).not.toHaveBeenCalled();
+  });
+
+  it('should render the not found page when the roadmap service instance does not exist', async () => {
+    // Given
+    vi.mocked(fetchSeoServiceInstanceBySlug).mockResolvedValueOnce(null);
+    // Next.js' notFound never returns: it throws to interrupt the render.
+    vi.mocked(notFound).mockImplementationOnce(() => {
+      throw NOT_FOUND_SENTINEL;
+    });
+
+    // When
+    const result = Page({ params: Promise.resolve({ locale: 'en' }) });
+
+    // Then
+    await expect(result).rejects.toBe(NOT_FOUND_SENTINEL);
   });
 });

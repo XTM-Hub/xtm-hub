@@ -10,7 +10,11 @@ import {
   toError,
 } from '../../../utils/error/error-guard.util';
 import { setCookieError } from '../../../utils/set-cookies.util';
-import { AUTHENTICATED_HOME, resolveSafeRedirect } from './auth-redirect.util';
+import {
+  AUTHENTICATED_HOME,
+  buildSignInErrorRedirect,
+  resolveSafeRedirect,
+} from './auth-redirect.util';
 import { authenticateUser, isSessionUserActive } from './auth-user';
 import { initProviders } from './provider/providers';
 
@@ -85,19 +89,29 @@ export const initAuthPlatform = async (app: Express) => {
         res.redirect('/');
         return;
       }
-      let referer = req.session.referer;
+      const referer = req.session.referer;
       try {
         requestContext.set(SYSTEM_USER_CONTEXT);
         const user: UserInfo = await new Promise((resolve, reject) => {
           passport.authenticate(
             provider,
             {},
-            (err: Error, user: UserInfo | false | null) => {
-              if (!user) {
-                logApp.error(err, {}, AppLogsCategory.LOGIN_PROVIDER);
+            (
+              err: Error | null,
+              user: UserInfo | false | null,
+              info: unknown
+            ) => {
+              if (err) {
+                reject(err);
+              } else if (!user) {
+                // A failure reported by the IdP (e.g. access denied) carries
+                // no error, only its reason in `info`.
+                logApp.warn(
+                  'Authentication failed at the identity provider',
+                  { info },
+                  AppLogsCategory.LOGIN_PROVIDER
+                );
                 reject(new Error('User not provided'));
-              } else if (err) {
-                reject(err || new Error('Invalid authentication'));
               } else {
                 resolve(user);
               }
@@ -105,20 +119,28 @@ export const initAuthPlatform = async (app: Express) => {
           )(req, res, next);
         });
 
+        // Signing in regenerates the session: `referer` was read beforehand.
         const logged = await authenticateUser(req, res, user);
-        res.redirect(logged ? (referer ?? AUTHENTICATED_HOME) : '/');
+        if (!logged) {
+          logApp.warn(
+            'Signed-in user is missing or disabled',
+            { provider },
+            AppLogsCategory.LOGIN_PROVIDER
+          );
+        }
+        res.redirect(
+          logged
+            ? (referer ?? AUTHENTICATED_HOME)
+            : buildSignInErrorRedirect(undefined, referer)
+        );
       } catch (err) {
         const normalizedError = toError(err);
         logApp.error(normalizedError, { provider });
-        if (normalizedError.message === 'User not provided' && referer) {
-          referer = `${referer}${referer.includes('?') ? '&' : '?'}error=not-provided`;
-        }
-
         setCookieError(
           res,
           'Invalid authentication, please ask your administrator'
         );
-        res.redirect(referer ?? '/');
+        res.redirect(buildSignInErrorRedirect(normalizedError, referer));
       }
     }
   );

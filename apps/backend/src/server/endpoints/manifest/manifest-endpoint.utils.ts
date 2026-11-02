@@ -15,8 +15,6 @@ const MANIFEST_NAME_PATTERN = new RegExp(
   'i'
 );
 
-export const buildManifestETag = (name: string): string => `"${name}"`;
-
 export const isIntegrationType = (value: unknown): value is ManifestType =>
   typeof value === 'string' &&
   (Object.values(ManifestType) as string[]).includes(value);

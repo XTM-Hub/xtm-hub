@@ -5,11 +5,8 @@ import { IntegrationDeployableFilter } from './IntegrationDeployableFilter';
 
 const setDeployableMock = vi.fn();
 
-vi.mock('@/hooks/use-service-list-local-storage', () => ({
-  ServiceListLocalStorageKey: {
-    OpenCTIIntegrationFeeds: 'feeds',
-  },
-  useServiceListLocalStorage: () => ({
+vi.mock('@/hooks/use-service-list-storage', () => ({
+  useServiceListStorage: () => ({
     deployable: {},
     setDeployable: setDeployableMock,
     removeDeployable: vi.fn(),

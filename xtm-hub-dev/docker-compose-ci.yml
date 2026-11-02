@@ -142,7 +142,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "curl --silent --fail localhost:9200/_cluster/health?wait_for_status=yellow&timeout=5s || exit 1",
+          "curl --silent --fail 'localhost:9200/_cluster/health?wait_for_status=yellow&timeout=5s' || exit 1",
         ]
       interval: 10s
       timeout: 5s
@@ -188,10 +188,6 @@ services:
       - POSTGRES_DB=test_database
       - POSTGRES_PASSWORD=portal-password
       - DATABASE_PORT=5432
-      - TEAMS_WEBHOOK_E2E=${TEAMS_WEBHOOK_E2E}
       - MIGRATIONS_PATH=./migrations
       - SEEDS_PATH=./seeds
-      - GITHUB_PR_NUMBER=${GITHUB_PR_NUMBER}
-      - GITHUB_PR_TITLE=${GITHUB_PR_TITLE}
-      - GITHUB_RUN_ID=${GITHUB_RUN_ID}
       - SESSION_STORE_TYPE=memory

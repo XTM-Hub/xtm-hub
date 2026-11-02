@@ -33,10 +33,11 @@ describe('EpicItem', () => {
     userCanUpdate: false,
   };
 
-  const mockReplace = vi.fn();
+  const mockReplaceState = vi.spyOn(window.history, 'replaceState');
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockReplaceState.mockImplementation(() => {});
     useEpicListContextMock.mockReturnValue({
       connectionID: 'connection-id-1',
       filterByProduct: vi.fn(),
@@ -49,7 +50,7 @@ describe('EpicItem', () => {
       back: vi.fn(),
       forward: vi.fn(),
       refresh: vi.fn(),
-      replace: mockReplace,
+      replace: vi.fn(),
       prefetch: vi.fn(),
     });
 
@@ -86,10 +87,12 @@ describe('EpicItem', () => {
     await user.click(within(card).getByText(epic.title));
 
     // Then
-    expect(mockReplace).toHaveBeenCalledOnce();
-    expect(mockReplace).toHaveBeenCalledWith('/epics?epicId=epic-1', {
-      scroll: false,
-    });
+    expect(mockReplaceState).toHaveBeenCalledOnce();
+    expect(mockReplaceState).toHaveBeenCalledWith(
+      null,
+      '',
+      '/epics?epicId=epic-1'
+    );
   });
 
   it('closes detail dialog when dialog emits close event', async () => {
@@ -111,7 +114,7 @@ describe('EpicItem', () => {
     await user.click(screen.getByRole('button', { name: 'Close' }));
 
     // Then
-    expect(mockReplace).toHaveBeenCalledOnce();
-    expect(mockReplace).toHaveBeenCalledWith('/epics', { scroll: false });
+    expect(mockReplaceState).toHaveBeenCalledOnce();
+    expect(mockReplaceState).toHaveBeenCalledWith(null, '', '/epics');
   });
 });

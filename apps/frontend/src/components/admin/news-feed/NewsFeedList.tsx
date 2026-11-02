@@ -32,7 +32,10 @@ const getUrlPath = (item: NewsFeedItemRowFragment): string | undefined =>
   item.metadata.find((m) => m.key === NewsFeedItemMetadataKey.UrlPath)?.value ??
   undefined;
 
-const NEWS_FEED_TYPE_TO_SERVICE_SLUG: Record<NewsFeedItemType, ServiceSlug> = {
+// A type that does not point to a resource of a library (e.g. a blog post) has no service slug
+const NEWS_FEED_TYPE_TO_SERVICE_SLUG: Partial<
+  Record<NewsFeedItemType, ServiceSlug>
+> = {
   [NewsFeedItemType.ResourceCustomDashboard]:
     ServiceSlug.OPEN_CTI_CUSTOM_DASHBOARDS,
   [NewsFeedItemType.ResourcePlaybook]: ServiceSlug.OPEN_CTI_PLAYBOOKS,
@@ -108,6 +111,10 @@ const NewsFeedList = () => {
         header: t('NewsFeedAdminPage.Library'),
         cell: ({ row }) => {
           const slug = NEWS_FEED_TYPE_TO_SERVICE_SLUG[row.original.type];
+          if (!slug) {
+            // Explicit placeholder: an empty cell reads as missing data, not as "not applicable"
+            return <span>—</span>;
+          }
           return <span>{localizedCardName({ slug, name: slug }, t)}</span>;
         },
       },

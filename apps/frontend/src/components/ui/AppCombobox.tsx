@@ -46,6 +46,7 @@ type AppComboboxBaseProps<T> = Omit<
   /** Puts the field in error and shows the message below it. */
   error?: string;
   placeholder?: string;
+  inputClassName?: string;
   onBlur?: ComboboxInputProps['onBlur'];
   emptyMessage?: ReactNode;
   /**
@@ -65,6 +66,7 @@ export const AppCombobox = <T,>({
   required,
   error,
   placeholder,
+  inputClassName,
   onBlur,
   emptyMessage,
   contentClassName = 'layer-1',
@@ -96,6 +98,7 @@ export const AppCombobox = <T,>({
           />
         )}
         <ComboboxInput
+          className={inputClassName}
           aria-label={hasVisibleLabel ? undefined : label}
           // The input links the helper text but never marks itself invalid.
           aria-invalid={error ? true : undefined}

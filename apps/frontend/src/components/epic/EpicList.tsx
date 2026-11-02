@@ -26,10 +26,10 @@ import {
   TooltipTrigger,
 } from '@filigran/design-system';
 import { epic_fragment$data } from '@generated/epic_fragment.graphql';
-import { seoServiceInstanceFragment$data } from '@generated/seoServiceInstanceFragment.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 import {
   OrganizationCapability,
+  SeoServiceInstanceItemFragment,
   ServiceRestriction,
   Timeline,
 } from '@graphql/generated';
@@ -39,14 +39,14 @@ import { useCallback, useContext, useMemo, useState } from 'react';
 interface EpicListProps {
   epics: epic_fragment$data[];
   serviceInstance:
-    serviceInstance_fragment$data | seoServiceInstanceFragment$data;
+    serviceInstance_fragment$data | SeoServiceInstanceItemFragment;
   selectedProducts?: EpicFilterType;
   onFilterChange: (filter: EpicFilterType) => void;
   onSearch: (searchTerm: string) => void;
 }
 
 const isServiceInstanceWithCapabilities = (
-  instance: serviceInstance_fragment$data | seoServiceInstanceFragment$data
+  instance: serviceInstance_fragment$data | SeoServiceInstanceItemFragment
 ): instance is serviceInstance_fragment$data => 'capabilities' in instance;
 
 export const EpicList = ({

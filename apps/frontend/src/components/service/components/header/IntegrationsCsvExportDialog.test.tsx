@@ -34,17 +34,14 @@ const { storageMock } = vi.hoisted(() => ({
   },
 }));
 
-vi.mock(
-  '@/components/service/components/ServiceListLocalStorageKeyContext',
-  () => ({
-    useServiceListLocalStorageKeyContext: () => ({
-      localStorageKey: 'OpenCTIIntegrationFeeds',
-    }),
-  })
-);
+vi.mock('@/components/service/components/ServiceListStorageKeyContext', () => ({
+  useServiceListStorageKeyContext: () => ({
+    storageKey: 'OpenCTIIntegrationFeeds',
+  }),
+}));
 
-vi.mock('@/hooks/use-service-list-local-storage', () => ({
-  useServiceListLocalStorage: () => storageMock,
+vi.mock('@/hooks/use-service-list-storage', () => ({
+  useServiceListStorage: () => storageMock,
 }));
 
 vi.mock('@/components/admin/use-case/use-use-cases', () => ({
@@ -256,6 +253,63 @@ describe('IntegrationsCsvExportDialog', () => {
 
     // Then
     expect(setOpen).toHaveBeenCalledWith(false);
+  });
+
+  it('should close the dialog when the user presses Escape', async () => {
+    // Given
+    const setOpen = vi.fn();
+    const { user } = testRender(
+      <IntegrationsCsvExportDialog
+        open={true}
+        setOpen={setOpen}
+        serviceInstanceId="service-1"
+        type={ShareableResourceType.OPENCTI_INTEGRATION}
+      />
+    );
+
+    // When
+    await user.keyboard('{Escape}');
+
+    // Then
+    expect(setOpen).toHaveBeenCalledWith(false);
+  });
+
+  it("should pre-fill the filters from the list's current filters again when the dialog is reopened", () => {
+    // Given
+    const { rerender } = testRender(
+      <IntegrationsCsvExportDialog
+        open={true}
+        setOpen={vi.fn()}
+        serviceInstanceId="service-1"
+        type={ShareableResourceType.OPENCTI_INTEGRATION}
+      />
+    );
+    rerender(
+      <IntegrationsCsvExportDialog
+        open={false}
+        setOpen={vi.fn()}
+        serviceInstanceId="service-1"
+        type={ShareableResourceType.OPENCTI_INTEGRATION}
+      />
+    );
+    storageMock.verified = { true: [] };
+
+    // When
+    rerender(
+      <IntegrationsCsvExportDialog
+        open={true}
+        setOpen={vi.fn()}
+        serviceInstanceId="service-1"
+        type={ShareableResourceType.OPENCTI_INTEGRATION}
+      />
+    );
+
+    // Then
+    expect(
+      within(
+        screen.getByTestId('integrations-csv-export-filter-verified')
+      ).getByText('Service.OpenctiIntegrations.Filter.Verified.Verified')
+    ).toBeInTheDocument();
   });
 
   it("pre-fills the verified filter from the list's current filter", () => {

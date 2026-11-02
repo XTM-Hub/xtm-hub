@@ -13,6 +13,11 @@ export interface UserInfo {
   disabled?: boolean;
 }
 
+export interface ProviderUserInfo extends UserInfo {
+  idp_subject: string;
+  groups: string[];
+}
+
 export interface UserWithOrganizations extends User {
   organizations: Organization[];
   selected_org_capabilities: OrganizationCapability[];

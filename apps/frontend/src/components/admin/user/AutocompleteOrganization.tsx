@@ -1,4 +1,4 @@
-import { getOrganizations } from '@/components/organization/Organization.service';
+import { useOrganizations } from '@/components/organization/Organization.service';
 import { AppCombobox } from '@/components/ui/AppCombobox';
 import { useTranslate } from '@/hooks/use-translate';
 import { useState } from 'react';
@@ -21,22 +21,24 @@ export const AutocompleteOrganization = ({
   onValueChange,
 }: AutocompleteOrganizationProps) => {
   const t = useTranslate();
-  const { organizationsData, refetch } = getOrganizations();
   const [inputValue, setInputValue] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const { organizations, isLoading, isError, isPlaceholderData } =
+    useOrganizations({ searchTerm });
 
   const isOrganizationAlreadySelected = (id: string) => {
     return selectedOrganizationCapabilities.find(
       ({ organization_id }) => organization_id === id
     );
   };
-  const filteredOrganization = organizationsData.organizations.edges
-    .map(({ node }) => node)
-    .filter(({ id }) => !isOrganizationAlreadySelected(id));
+  const filteredOrganization = organizations.filter(
+    ({ id }) => !isOrganizationAlreadySelected(id)
+  );
 
   const handleOnValueChange = (
     value: UserOrganizationFormProps | undefined
   ) => {
-    refetch({ searchTerm: '' });
+    setSearchTerm('');
     return onValueChange(value);
   };
 
@@ -45,7 +47,7 @@ export const AutocompleteOrganization = ({
   const handleBlur = () => {
     if (!inputValue) return;
     setInputValue('');
-    refetch({ searchTerm: '' });
+    setSearchTerm('');
   };
 
   const label = t('UserForm.AddOrganization');
@@ -58,6 +60,10 @@ export const AutocompleteOrganization = ({
       placeholder={label}
       onBlur={handleBlur}
       options={filteredOrganization}
+      loading={isLoading || isPlaceholderData}
+      error={
+        isError ? t('OrganizationActions.LoadOrganizationsError') : undefined
+      }
       value={null}
       onValueChange={(next) => handleOnValueChange(next ?? undefined)}
       inputValue={inputValue}
@@ -69,7 +75,7 @@ export const AutocompleteOrganization = ({
           return;
         }
         setInputValue(next);
-        refetch({ searchTerm: next });
+        setSearchTerm(next);
       }}
       getOptionLabel={(organization) => organization.name}
       isOptionEqualToValue={(a, b) => a.id === b.id}

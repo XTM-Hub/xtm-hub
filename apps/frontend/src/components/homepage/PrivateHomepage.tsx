@@ -11,8 +11,13 @@ import { BreadcrumbNav } from '@/components/ui/BreadcrumbNav';
 import { getAuthenticatedGraphqlClient } from '@/lib/graphql-client';
 import { APP_PATH } from '@/utils/path/constant';
 import {
+  OrderingMode,
+  ServiceDefinitionIdentifier,
+  ServiceInstanceFilterKey,
+  ServiceInstanceOrdering,
   useMeFirstNameQuery,
   useRegisteredPlatformsQuery,
+  useServiceInstancesListQuery,
 } from '@graphql/generated';
 
 const breadcrumbValue = [
@@ -25,26 +30,42 @@ const breadcrumbValue = [
 export const PrivateHomepage = async () => {
   const authenticatedClient = await getAuthenticatedGraphqlClient();
 
-  const [registeredPlatformsData, deployedPlatformsData, meData] =
-    await Promise.all([
-      useRegisteredPlatformsQuery.fetcher(authenticatedClient, {
-        input: {
-          identifier: null,
-          onlyActive: true,
-          onlyTrial: null,
-          hasDeployedResources: null,
+  const [
+    registeredPlatformsData,
+    deployedPlatformsData,
+    meData,
+    roadmapServiceInstancesData,
+  ] = await Promise.all([
+    useRegisteredPlatformsQuery.fetcher(authenticatedClient, {
+      input: {
+        identifier: null,
+        onlyActive: true,
+        onlyTrial: null,
+        hasDeployedResources: null,
+      },
+    })(),
+    useRegisteredPlatformsQuery.fetcher(authenticatedClient, {
+      input: {
+        identifier: null,
+        onlyActive: true,
+        onlyTrial: null,
+        hasDeployedResources: true,
+      },
+    })(),
+    useMeFirstNameQuery.fetcher(authenticatedClient, {})(),
+    useServiceInstancesListQuery.fetcher(authenticatedClient, {
+      count: 1,
+      orderBy: ServiceInstanceOrdering.Name,
+      orderMode: OrderingMode.Asc,
+      filters: [
+        {
+          key: ServiceInstanceFilterKey.ServiceDefinitionIdentifier,
+          value: [ServiceDefinitionIdentifier.XtmPlatformRoadmap],
         },
-      })(),
-      useRegisteredPlatformsQuery.fetcher(authenticatedClient, {
-        input: {
-          identifier: null,
-          onlyActive: true,
-          onlyTrial: null,
-          hasDeployedResources: true,
-        },
-      })(),
-      useMeFirstNameQuery.fetcher(authenticatedClient, {})(),
-    ]);
+      ],
+      searchTerm: null,
+    })(),
+  ]);
 
   const platformIdentifiers =
     buildDistinctPlatformIdentifiersFromServiceDefinition(
@@ -76,6 +97,9 @@ export const PrivateHomepage = async () => {
         )}
         <PrivateHomepageRoadmapSection
           platformIdentifiers={platformIdentifiers}
+          serviceInstanceId={
+            roadmapServiceInstancesData.serviceInstances.edges[0]?.node?.id
+          }
         />
         <NewestResources
           platformIdentifiers={platformIdentifiers}

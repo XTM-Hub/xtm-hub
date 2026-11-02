@@ -125,6 +125,7 @@ const ConnectProductFromHubModal = ({
       onButtonClick={canManageOrganization ? undefined : handleReachAdmin}
       variant={'default'}
       buttonText={'Register.ConnectFromHub.ReachAdmin'}
+      isButtonDisabled={!mainRecipientEmail}
       title={canManageOrganization ? allowedMessageTitle : deniedMessage}
       description={
         canManageOrganization

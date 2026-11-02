@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { db } from '../../knexfile';
 import {
+  NewsFeedItemMetadataKey,
   NewsFeedItemType,
   PlatformIdentifier,
 } from '../../src/__generated__/resolvers-types';
@@ -32,6 +33,16 @@ export const TestNewsfeedHelper = {
         })
         .returning('*');
       return item!;
+    },
+    createMetadata: async (data: {
+      news_feed_item_id: NewsFeedItemId;
+      key: NewsFeedItemMetadataKey;
+      value: string | null;
+    }): Promise<NewsFeedItemMetadata> => {
+      const [metadata] = await db('NewsFeedItemMetadata')
+        .insert(data)
+        .returning<NewsFeedItemMetadata[]>('*');
+      return metadata!;
     },
     loadItems: async (
       field: NewsFeedItemMutator = {}

@@ -25,13 +25,28 @@
     "Title": "Capacités disponibles"
   },
   "CSMBoard": {
+    "Customer": "Client",
     "Organization": "Organisation",
     "Administrators": "Administrateurs",
     "Products": "Produits",
-    "Link": "Métriques SaaS",
+    "ProductVersion": "Version : {version}",
+    "AllProducts": "Tous les produits",
+    "Plan": "Offre",
+    "Health": "Santé",
+    "Healthy": "Sain",
+    "HealthSla": "SLA {percent}",
+    "HealthDatabase": "Base de données {percent}",
+    "HealthFileStorage": "Stockage de fichiers {percent}",
+    "Database": "Base de données",
+    "FileStorage": "Stockage de fichiers",
+    "Availability": "Disponibilité",
     "Version": "Version",
+    "ContractEnd": "Fin du contrat",
+    "EndsIn": "dans {days} j",
+    "ContractEnded": "Terminé",
+    "Link": "Métriques SaaS",
     "ViewMetrics": "Voir les métriques",
-    "SearchOrganization": "Rechercher une organisation",
+    "SearchPlatform": "Rechercher une plateforme",
     "ClearSearch": "Effacer la recherche"
   },
   "CountryComboBox": {
@@ -600,6 +615,7 @@
     "DontHaveAccount": "Vous n'avez pas de compte Filigran ?",
     "Email": "Email",
     "Login": "Connexion",
+    "Logo": "Logo XTM Hub",
     "Logout": "Déconnexion",
     "Password": "Mot de passe",
     "SignIn": "S'inscrire",
@@ -615,7 +631,31 @@
     "LoginWithLocal": "Se connecter en local",
     "MadeBy": "Réalisé par",
     "WelcomeTitle": "Bienvenue sur XTM Hub",
-    "WelcomeSubtitle": "Développez et faites évoluer votre XTM Platform"
+    "WelcomeSubtitle": "Développez et faites évoluer votre XTM Platform",
+    "EmailNotVerifiedError": {
+      "Title": "Adresse email non vérifiée",
+      "Description": "Veuillez vérifier votre adresse email à l’aide du lien que nous vous avons envoyé, puis reconnectez-vous."
+    },
+    "ResendVerificationEmail": {
+      "Button": "Renvoyer l’email de vérification",
+      "Sent": "Email envoyé",
+      "Success": {
+        "Title": "Email de vérification envoyé",
+        "Description": "Consultez votre boîte de réception et vos spams."
+      },
+      "TooManyRequests": {
+        "Title": "Trop de demandes",
+        "Description": "Veuillez patienter quelques minutes avant d’en demander un nouveau."
+      },
+      "NoPendingVerification": {
+        "Title": "Impossible de renvoyer l’email de vérification",
+        "Description": "Veuillez vous reconnecter pour en recevoir un nouveau. Si le problème persiste, contactez-nous pour obtenir de l’aide."
+      },
+      "Failed": {
+        "Title": "Impossible d’envoyer l’email de vérification",
+        "Description": "Une erreur est survenue. Veuillez réessayer plus tard."
+      }
+    }
   },
   "MenuActions": {
     "Continue": "Continuer",
@@ -730,6 +770,7 @@
   },
   "OrganizationActions": {
     "ErrorNameAlreadyExists": "L'organisation {name} existe déjà.",
+    "LoadOrganizationsError": "Les organisations n'ont pas pu être chargées.",
     "OrganizationCreated": "L'organisation {name} a été créée",
     "OrganizationDeleted": "L'organisation a été supprimée",
     "OrganizationUpdated": "L'organisation {name} a été modifiée",
@@ -959,6 +1000,44 @@
       "PlatformVersion": "Version de la plateforme"
     },
     "Metrics": {
+      "Title": "Utilisation et santé",
+      "StorageTitle": "Utilisation de l'espace de stockage",
+      "Unavailable": "Ces indicateurs ne sont actuellement pas disponibles",
+      "Period": {
+        "Label": "Période des indicateurs",
+        "last_30_days": "30 jours",
+        "last_90_days": "90 jours",
+        "last_180_days": "180 jours",
+        "ComingSoon": "À venir"
+      },
+      "Database": {
+        "Title": "Base de données",
+        "Subtitle": "Connaissances, relations, historique et journaux"
+      },
+      "FileStorage": {
+        "Title": "Stockage de fichiers",
+        "Subtitle": "Fichiers importés, rapports et pièces jointes"
+      },
+      "SLA": {
+        "Title": "Disponibilité (SLA)",
+        "Subtitle": "Calculée par mois calendaire, comme dans votre contrat",
+        "MonthRange": "{start} – {end}",
+        "MonthToDate": "{month} (en cours)",
+        "OnTarget": "{availability} · Dans l'objectif",
+        "BelowTarget": "{availability} · Sous l'objectif",
+        "NoData": "Aucune donnée",
+        "NotTrackedYet": "Aucune donnée · Ces indicateurs n'avaient pas encore été mesurés",
+        "Summary": {
+          "Title": "SLA mensuel · objectif {target}",
+          "CurrentMonth": "{month} · mois en cours",
+          "TargetAndMeasuredDays": "Objectif {target} · {measured} jours mesurés sur {total}"
+        },
+        "Legend": {
+          "Met": "Dans l'objectif",
+          "Missed": "Sous l'objectif",
+          "Unknown": "Reste du mois"
+        }
+      },
       "Metadata": {
         "Hostname": "Nom d'hôte",
         "CopyHostname": "Copier le nom d'hôte",
@@ -967,7 +1046,14 @@
         "RegionalArea": "Zone régionale",
         "DaysLeft": "{days, plural, =1 {# jour restant} other {# jours restants}}",
         "Unavailable": "Les informations sont actuellement indisponibles."
-      }
+      },
+      "Capacity": {
+        "Within": "Capacité suffisante",
+        "Approaching": "Capacité bientôt atteinte",
+        "Over": "Capacité dépassée"
+      },
+      "MaxCapacity": "Capacité maximale",
+      "UsedOfLimit": "<highlight>{used}</highlight> <secondary>sur {limit}</secondary>"
     },
     "Error": {
       "Capability": {
@@ -1175,6 +1261,10 @@
       "xtm-platform-roadmap": {
         "Name": "Roadmap XTM Platform",
         "Description": "Explorez et suivez la roadmap XTM Platform de Filigran."
+      },
+      "xtmone-documentation": {
+        "Name": "Documentation XTM One",
+        "Description": "Documentation technique et guides utilisateur pour vous aider à comprendre le fonctionnement de la plateforme"
       }
     },
     "LibraryHero": {
@@ -1586,14 +1676,23 @@
         "Link": "En savoir plus"
       },
       "XTMPlatform": {
-        "Title": "Votre produit eXtended Threat Management (XTM)",
-        "Description": "{platformName} fait partie de la solution open-source de threat intelligence, de simulation avancée d'adversaires et de gestion stratégique des cyber-risques de Filigran, conçue pour aider votre organisation à anticiper et gérer les menaces de bout en bout.",
-        "OpenCTITagline": "Collecter, corréler et exploiter",
-        "OpenCTIDescription": "Un produit de threat intelligence open-source construit par des praticiens pour des praticiens — pour briser les silos de données et rendre la threat intelligence réellement actionnable.",
-        "OpenAEVTagline": "Prioriser, tester et corriger ce qui compte",
-        "OpenAEVDescription": "Défendez-vous proactivement contre les menaces avec l'Adversarial Exposure Validation (AEV), en simulant des scénarios d'attaque réels pour optimiser vos défenses.",
-        "LogoAlt": "Logo {name}",
-        "IllustrationAlt": "Illustration du service d'essai gratuit"
+        "Title": "Votre plateforme eXtended Threat Management (XTM)",
+        "xtmone": {
+          "Intro": "XTM One est le socle d'IA agentique de la plateforme XTM open-source de Filigran, qui unifie la threat intelligence, la validation continue de l'exposition et la réduction des cyber-risques afin que votre organisation puisse anticiper et gérer les menaces de bout en bout.",
+          "Tagline": "Simplifiez votre chemin vers la gestion agentique des menaces",
+          "Description": "XTM One orchestre l'IA assistive et agentique sur l'ensemble de la plateforme XTM pour piloter votre programme CTEM, du signal de menace à l'action validée, à la vitesse de la machine."
+        },
+        "opencti": {
+          "Intro": "OpenCTI fait partie de la solution open-source de threat intelligence, de simulation avancée d'adversaires et de gestion stratégique des cyber-risques de Filigran, conçue pour aider votre organisation à anticiper et gérer les menaces de bout en bout.",
+          "Tagline": "Collecter, corréler et exploiter",
+          "Description": "Un produit de threat intelligence open-source construit par des praticiens pour des praticiens — pour briser les silos de données et rendre la threat intelligence réellement actionnable."
+        },
+        "openaev": {
+          "Intro": "OpenAEV fait partie de la solution open-source de threat intelligence, de simulation avancée d'adversaires et de gestion stratégique des cyber-risques de Filigran, conçue pour aider votre organisation à anticiper et gérer les menaces de bout en bout.",
+          "Tagline": "Prioriser, tester et corriger ce qui compte",
+          "Description": "Défendez-vous proactivement contre les menaces avec l'Adversarial Exposure Validation (AEV), en simulant des scénarios d'attaque réels pour optimiser vos défenses."
+        },
+        "IllustrationAlt": "Illustration de l'écosystème {platformName}"
       },
       "XtmPlatform": {
         "NoTrial": {
@@ -1617,6 +1716,7 @@
           "Breadcrumb": "XTM Platform Trial",
           "Overline": "Essai gratuit XTM Platform",
           "Title": "Démarrez votre essai gratuit de 30 jours",
+          "ExpiredTitle": "Vous avez terminé votre essai XTM Platform",
           "PitchTitle": "Découvrez l'expérience XTM Platform complète",
           "PitchDescription": "Profitez de 30 jours pour explorer les éditions entreprise en SaaS d'OpenCTI et OpenAEV, ainsi que les capacités d'orchestration agentique de XTM One. Unifiez votre threat intelligence et validez vos défenses grâce à une gestion continue et agentique de l'exposition et à la réduction du risque cyber.",
           "Products": {
@@ -1642,9 +1742,6 @@
             "NoSLA": "Notez que cet essai n'inclut aucun SLA. En cas de panne du fournisseur cloud, le délai de rétablissement n'est pas garanti. Nous vous recommandons de ne pas stocker de données critiques ou irremplaçables dans votre environnement d'essai."
           },
           "Form": {
-            "ProductsTitle": "Produits inclus dans cet essai",
-            "ProductsWarning": "Choisissez soigneusement votre offre d'essai.",
-            "ProductsWarningDescription": "Une fois votre période d'essai lancée, il n'est plus possible d'ajouter ou de modifier des produits, et aucune autre période d'essai ne peut être demandée pour la même organisation.",
             "UseCaseFor": "Cas d'usage {product}",
             "Submit": "Demander l'essai XTM Platform"
           },
@@ -1665,8 +1762,6 @@
             "StartedOn": "Démarré le",
             "CancelledOn": "Annulé le",
             "FinishedOn": "Terminé le",
-            "ProductsIncluded": "Produits inclus dans votre essai",
-            "ProductsIncludedInRequest": "Produits inclus dans votre demande d'essai",
             "CancelTrialRequest": "Annuler la demande d'essai",
             "request-in-progress": {
               "Title": "Merci ! Nous avons bien reçu votre demande.",
@@ -1936,7 +2031,7 @@
         "Eyebrow": "Essai gratuit XTM Platform",
         "Description": "Gérez facilement votre équipe et collaborez tout au long de votre essai XTM Platform. Invitez des membres, attribuez des rôles et des permissions, et assurez à chacun le bon niveau d'accès à la plateforme.",
         "BackButton": "Retour à l'essai XTM Platform",
-        "BackToDashboardButton": "Retour au tableau de bord",
+        "BackToDashboardButton": "Retour",
         "GroupAction": "Action groupée",
         "GroupActionDisabledTooltip": "Vous devez sélectionner des utilisateurs dans la liste pour appliquer une action groupée",
         "BulkDeleteTooltip": "Vous pouvez supprimer les utilisateurs sélectionnés",
@@ -2389,6 +2484,9 @@
       "default": "Par défaut",
       "thread": "Thread"
     }
+  },
+  "TimeSeriesBarChart": {
+    "Peak": "Pic"
   },
   "EditableText": {
     "DialogTitle": "Modifier le contenu",

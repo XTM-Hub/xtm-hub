@@ -46,6 +46,7 @@ vi.mock('next/navigation', async (importOriginal) => ({
   useRouter: vi.fn(),
   useParams: vi.fn(),
   useSearchParams: vi.fn(),
+  useSelectedLayoutSegment: vi.fn(),
   redirect: vi.fn(),
   notFound: vi.fn(),
 }));
@@ -59,16 +60,32 @@ vi.mock('next/headers', async (importOriginal) => ({
   headers: vi.fn(async () => new Headers()),
 }));
 
-vi.mock('next-intl', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('next-intl')>()),
-  useTranslations: vi.fn(() =>
-    Object.assign((key: string) => key, {
-      has: () => false,
-      rich: (key: string) => key,
-    })
-  ),
-  useLocale: vi.fn(() => 'en'),
-}));
+// vi.mock factories are hoisted above the imports, hence the dynamic import.
+vi.mock('next-intl', async (importOriginal) => {
+  const { mockTranslations } = await import('@/utils/test/mock-translations');
+  return {
+    ...(await importOriginal<typeof import('next-intl')>()),
+    useTranslations: vi.fn(() => mockTranslations()),
+    useLocale: vi.fn(() => 'en'),
+  };
+});
+
+// jsdom is a browser, so the real getQueryClient would share one client, and
+// its cache, across every test: hand each call a fresh one that never retries,
+// like the client testRender provides.
+vi.mock('@/lib/query-client', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/query-client')>();
+  return {
+    ...actual,
+    getQueryClient: () => {
+      const client = actual.createQueryClient();
+      client.setDefaultOptions({
+        queries: { ...client.getDefaultOptions().queries, retry: false },
+      });
+      return client;
+    },
+  };
+});
 
 const relayRegistryMocks = vi.hoisted(() => ({
   getClientEnvironment: vi.fn(),

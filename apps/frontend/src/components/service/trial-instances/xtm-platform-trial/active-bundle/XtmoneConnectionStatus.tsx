@@ -81,7 +81,9 @@ export const XtmoneConnectionStatus = ({
   const unavailable = !hasUrl || isError || !data;
 
   return (
-    <div className="flex flex-col divide-y divide-[var(--border-elevation-subtle)] overflow-hidden rounded border border-elevation-subtle">
+    <div
+      aria-busy={isLoading}
+      className="flex flex-col divide-y divide-[var(--border-elevation-subtle)] overflow-hidden rounded border border-elevation-subtle">
       <StatusRow
         label={`${t('XtmPlatformTrial.Products.Connection', {
           productName: PlatformMetadataMapping[PlatformIdentifier.Opencti].name,

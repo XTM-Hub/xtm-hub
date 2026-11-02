@@ -118,12 +118,24 @@ Existing Relay pages: see
 [`graphql.md`](graphql.md#relay-conventions-existing-pages-only) for the file convention
 and regeneration command.
 
-Server-side fetches go through `src/relay/server-portal-api-fetch.ts`, which forwards Next.js cookies.
+Server-side fetches:
+
+- Public operations use `serverGraphqlFetch` (`src/lib/server-graphql-fetch.ts`). It sends no cookie and honours the
+  Next.js data cache (`cache`, `next.revalidate`), so the cached response is shared by every visitor.
+- Operations behind `@auth` use `getAuthenticatedGraphqlClient()` (`src/lib/graphql-client.ts`). It forwards the
+  visitor's cookies and bypasses the data cache, so a response that belongs to one user is never cached.
+- Wrap the call in `redirectToSignupOnUnauthenticated` (`src/lib/server-unauthenticated-redirect.ts`) to send an
+  anonymous visitor to the signup page instead of throwing.
+- When a server component fetches a query that a client component also reads through a react-query hook, prefetch
+  and hydrate it, never pass it as props: see [`graphql.md`](graphql.md#server-rendering).
+- Existing Relay pages still go through `src/relay/server-portal-api-fetch.ts`, which forwards cookies and redirects on
+  its own.
 
 ## Logging
 
-`console.log` is not acceptable in new application code (ESLint enforces `no-console` repo-wide, `warn`/`error`
-excepted). The one existing exception is intentional dev-only GraphQL operation tracing — `src/lib/graphql-client.ts`,
+`console.log` is not acceptable in new application code (ESLint enforces `no-console` repo-wide). ESLint lets
+`warn`/`error` through, but that is no permission: as `AGENTS.md` says, they stay in scripts and launch code outside
+the running app. The one existing exception is intentional dev-only GraphQL operation tracing — `src/lib/graphql-client.ts`,
 `src/lib/server-graphql-fetch.ts`, and `src/relay/environment/fetch-fn.ts` each log the operation name and variables
 behind an `isDevelopment()` guard with an explicit `// eslint-disable-next-line no-console`. Do not remove these
 without being asked, and do not add a new one outside that same guarded, narrowly-scoped pattern.

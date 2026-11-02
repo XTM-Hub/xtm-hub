@@ -8,7 +8,7 @@ import { EpicListContext } from '@/hooks/use-epic-list-context';
 import { epic_fragment$data } from '@generated/epic_fragment.graphql';
 import { epicsList_epics$key } from '@generated/epicsList_epics.graphql';
 import { epicsQuery } from '@generated/epicsQuery.graphql';
-import { seoServiceInstanceFragment$data } from '@generated/seoServiceInstanceFragment.graphql';
+import { SeoServiceInstanceItemFragment } from '@graphql/generated';
 import {
   PreloadedQuery,
   usePreloadedQuery,
@@ -16,7 +16,7 @@ import {
 } from 'react-relay';
 
 interface PublicEpicListProps {
-  serviceInstance: seoServiceInstanceFragment$data;
+  serviceInstance: SeoServiceInstanceItemFragment;
   queryRef: PreloadedQuery<epicsQuery>;
 }
 

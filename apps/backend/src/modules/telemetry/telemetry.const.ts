@@ -27,6 +27,10 @@ export enum TelemetryTargetProduct {
   XTM_ONE = 'xtmone',
 }
 
+export enum TelemetryNewsFeedItemType {
+  BLOG_POST = 'blog-post',
+}
+
 export enum TelemetryOrganizationType {
   PERSONAL = 'Personal',
   PROFESSIONAL = 'Professional',

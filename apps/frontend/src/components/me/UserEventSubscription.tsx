@@ -2,6 +2,7 @@
 
 import { LogoutMutation } from '@/components/logout.graphql';
 import { useTranslate } from '@/hooks/use-translate';
+import { clearFiltersStorage } from '@/utils/filters-storage.utils';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { GraphQLSubscriptionConfig } from 'relay-runtime';
@@ -22,6 +23,7 @@ const UserEventSubscription = () => {
   const router = useRouter();
 
   const logout = () => {
+    clearFiltersStorage();
     commitLogoutMutation({
       variables: {},
       updater: (store) => {

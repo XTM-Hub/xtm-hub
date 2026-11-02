@@ -3,6 +3,7 @@ import {
   buildCookieHeader,
   extractOperationName,
   extractOperationType,
+  GraphqlRequestError,
   prepareUri,
   resolveActiveCacheConfig,
   scrubSensitiveVariables,
@@ -172,6 +173,26 @@ describe('throwOnGraphqlErrors', () => {
     ).toThrow('Boom');
   });
 
+  it('keeps the code of the first error on the thrown error', () => {
+    expect(() =>
+      throwOnGraphqlErrors([
+        { message: 'SERVICE_NOT_FOUND', extensions: { code: 'NOT_FOUND' } },
+        { message: 'Second', extensions: { code: 'BAD_REQUEST' } },
+      ])
+    ).toThrow(
+      expect.objectContaining({
+        message: 'SERVICE_NOT_FOUND',
+        code: 'NOT_FOUND',
+      })
+    );
+  });
+
+  it('throws a GraphqlRequestError when no error is UNAUTHENTICATED', () => {
+    expect(() => throwOnGraphqlErrors([{ message: 'Boom' }])).toThrow(
+      GraphqlRequestError
+    );
+  });
+
   it('falls back to a generic message when the first error has no message', () => {
     // Simulates a malformed server response where `message` is absent despite the type.
     expect(() =>
@@ -215,35 +236,49 @@ describe('extractOperationName', () => {
 describe('resolveActiveCacheConfig', () => {
   it('forces no-store in development regardless of the requested cache config', () => {
     isDevelopment.mockReturnValue(true);
-    expect(resolveActiveCacheConfig('force-cache', {})).toBe('no-store');
-  });
-
-  it('strips options.next.revalidate when forced to no-store in development', () => {
-    isDevelopment.mockReturnValue(true);
-    const options = { next: { revalidate: 3600 } };
-    resolveActiveCacheConfig('force-cache', options);
-    expect(options.next.revalidate).toBeUndefined();
+    expect(resolveActiveCacheConfig({ cache: 'force-cache' })).toEqual({
+      cache: 'no-store',
+    });
   });
 
   it.each([
+    ['3600', 3600],
     ['false', false],
     ['0', 0],
   ])(
-    'strips options.next.revalidate when it is %s (falsy but defined)',
+    'strips next.revalidate when it is %s and development forces no-store',
     (_desc, revalidate) => {
       isDevelopment.mockReturnValue(true);
-      const options = { next: { revalidate } };
-      resolveActiveCacheConfig('force-cache', options);
-      expect(options.next.revalidate).toBeUndefined();
+      const options = {
+        cache: 'force-cache' as const,
+        next: { revalidate, tags: ['tag'] },
+      };
+      expect(resolveActiveCacheConfig(options)).toEqual({
+        cache: 'no-store',
+        next: { tags: ['tag'] },
+      });
     }
   );
 
+  it('leaves the given options untouched', () => {
+    isDevelopment.mockReturnValue(true);
+    const options = {
+      cache: 'force-cache' as const,
+      next: { revalidate: 3600 },
+    };
+    resolveActiveCacheConfig(options);
+    expect(options).toEqual({
+      cache: 'force-cache',
+      next: { revalidate: 3600 },
+    });
+  });
+
   it('returns the requested cache config unchanged outside development', () => {
     isDevelopment.mockReturnValue(false);
-    const options = { next: { revalidate: 3600 } };
-    expect(resolveActiveCacheConfig('force-cache', options)).toBe(
-      'force-cache'
-    );
-    expect(options.next.revalidate).toBe(3600);
+    const options = {
+      cache: 'force-cache' as const,
+      next: { revalidate: 3600 },
+    };
+    expect(resolveActiveCacheConfig(options)).toEqual(options);
   });
 });

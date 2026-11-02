@@ -1,6 +1,5 @@
 'use client';
 import { ReachSalesDialogForm } from '@/components/service/trial-instances/reach-sales/ReachSalesDialogForm';
-import { DialogInformative } from '@/components/ui/Dialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
@@ -19,14 +18,17 @@ export const ReachSalesButton = ({ variant }: ReachSalesButtonProps) => {
   const t = useTranslate();
   const [isConfirmationDialogOpen, setIsConfirmationDialogOpen] =
     useState(false);
-  const [isInformationDialogOpen, setIsInformationDialogOpen] = useState(false);
 
   const { mutate: reachSales, isPending: isInFlight } = useReachSalesMutation(
     portalGraphqlClient,
     {
       onSuccess: () => {
+        showSnackbar({
+          severity: 'success',
+          title: t('Service.Trials.ReachOutToSalesSuccessTitle'),
+          description: t('Service.Trials.ReachOutToSalesSuccessMessage'),
+        });
         setIsConfirmationDialogOpen(false);
-        setIsInformationDialogOpen(true);
       },
       onError: (error: unknown) => {
         const errorMessage =
@@ -88,12 +90,6 @@ export const ReachSalesButton = ({ variant }: ReachSalesButtonProps) => {
         setIsDialogOpen={setIsConfirmationDialogOpen}
         onSubmit={(message) => handleReachSales(message)}
       />
-      <DialogInformative
-        isOpen={isInformationDialogOpen}
-        onClose={() => setIsInformationDialogOpen(false)}
-        title={t('Service.Trials.ReachOutToSalesSuccessTitle')}>
-        {t('Service.Trials.ReachOutToSalesSuccessMessage')}
-      </DialogInformative>
     </>
   );
 };

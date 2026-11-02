@@ -316,6 +316,33 @@ describe('newsFeedApp', () => {
       }
     });
 
+    it('should not return blog_post_slug metadata key in consumed response', async () => {
+      const item = await TestHelper.newsFeed.createItem({
+        type: NewsFeedItemType.BlogPost,
+        title: 'Blog post',
+      });
+      await TestHelper.newsFeed.createMetadata({
+        news_feed_item_id: item.id,
+        key: NewsFeedItemMetadataKey.UrlPath,
+        value: `redirect/news-feed/${item.id}`,
+      });
+      await TestHelper.newsFeed.createMetadata({
+        news_feed_item_id: item.id,
+        key: NewsFeedItemMetadataKey.BlogPostSlug,
+        value: 'threat-report-2026',
+      });
+      await NewsFeedDomain.provisionNewsFeedItem(item.id, [platformId]);
+
+      const result = await NewsFeedApp.consumeProvisionedNewsFeedItems({
+        platformId,
+        token,
+      });
+
+      expect(result.news_feed_items[0]?.metadata.map((m) => m.key)).toEqual([
+        NewsFeedItemMetadataKey.UrlPath,
+      ]);
+    });
+
     it('should use the consuming platform as utm_source of the url_path', async () => {
       const document = await TestHelper.document.create({
         name: 'Cross Platform Dashboard',
@@ -434,6 +461,45 @@ describe('newsFeedApp', () => {
         expect(provisioned.map((p) => p.platform_id)).toEqual(
           expect.arrayContaining([firstPlatformId, secondPlatformId])
         );
+      });
+
+      it('should provision the news feed item to the OpenAEV platforms only when the document is a scenario', async () => {
+        // Given
+        const openAEVPlatformId = uuidv4();
+        const openAEVServiceInstance = await TestHelper.serviceInstance.create({
+          service_definition_id: SERVICES.DEFINITIONS.OPENAEV_REGISTRATION.ID,
+        });
+        createdServiceInstanceIds.push(openAEVServiceInstance.id);
+        await TestHelper.platformConfiguration.create({
+          service_instance_id: openAEVServiceInstance.id,
+          platform_id: openAEVPlatformId,
+          platform_version: '2.4.0',
+        });
+        await createOpenCTIPlatformForOrganization(
+          uuidv4(),
+          TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID
+        );
+
+        // When
+        await NewsFeedApp.createResourceNewsFeedItem({
+          document,
+          serviceDefinitionIdentifier:
+            ServiceDefinitionIdentifier.OpenaevScenarios,
+        });
+
+        // Then
+        const newsFeedItem = await TestHelper.newsFeed.loadFirstItem();
+        expect(newsFeedItem).toMatchObject({
+          type: NewsFeedItemType.ResourceScenario,
+          platform_identifier: PlatformIdentifier.Openaev,
+          title: document.name,
+        });
+        const provisioned = await TestHelper.newsFeed.loadProvisioned({
+          news_feed_item_id: newsFeedItem!.id,
+        });
+        expect(provisioned.map((p) => p.platform_id)).toEqual([
+          openAEVPlatformId,
+        ]);
       });
 
       it('should create the news feed item but no provisioned records when no platforms are registered', async () => {
@@ -889,6 +955,68 @@ describe('newsFeedApp', () => {
       });
     });
 
+    describe('deleteResourceNewsFeed', () => {
+      it.each`
+        serviceDefinitionIdentifier                            | type                                        | platformIdentifier
+        ${ServiceDefinitionIdentifier.OpenaevScenarios}        | ${NewsFeedItemType.ResourceScenario}        | ${PlatformIdentifier.Openaev}
+        ${ServiceDefinitionIdentifier.OpenctiCustomDashboards} | ${NewsFeedItemType.ResourceCustomDashboard} | ${PlatformIdentifier.Opencti}
+      `(
+        'should mark the $type news feed item as deleted when the document has one',
+        async ({
+          serviceDefinitionIdentifier,
+          type,
+          platformIdentifier,
+        }: {
+          serviceDefinitionIdentifier: ServiceDefinitionIdentifier;
+          type: NewsFeedItemType;
+          platformIdentifier: PlatformIdentifier;
+        }) => {
+          // Given
+          const item = await NewsFeedDomain.createResourceNewsFeedItem({
+            document,
+            serviceDefinitionIdentifier,
+            type,
+            platformIdentifier,
+            tags: [],
+          });
+
+          // When
+          await NewsFeedApp.deleteResourceNewsFeed({
+            documentId: document.id,
+          });
+
+          // Then
+          const deletedItem = await TestHelper.newsFeed.loadFirstItem({
+            id: item.id,
+          });
+          expect(deletedItem?.is_deleted).toBe(true);
+        }
+      );
+
+      it('should log the failure instead of throwing when the deletion fails', async () => {
+        // Given
+        const error = new Error('delete-failed');
+        vi.spyOn(
+          NewsFeedDomain,
+          'loadNewsFeedItemByDocumentId'
+        ).mockRejectedValue(error);
+        const logErrorSpy = vi.spyOn(logApp, 'error').mockImplementation(() => {
+          return;
+        });
+
+        // When
+        await NewsFeedApp.deleteResourceNewsFeed({
+          documentId: document.id,
+        });
+
+        // Then
+        expect(logErrorSpy).toHaveBeenCalledWith(
+          'Unable to delete news feed item',
+          { error, documentId: document.id }
+        );
+      });
+    });
+
     describe('upsertResourceNewsFeed', () => {
       it('should do nothing when the service definition is not configured', async () => {
         // Given
@@ -981,7 +1109,7 @@ describe('newsFeedApp', () => {
         expect(createResourceNewsFeedItemSpy).not.toHaveBeenCalled();
       });
 
-      it('should do nothing when updated document is inactive', async () => {
+      it('should do nothing when updated document stays inactive', async () => {
         // Given
         vi.spyOn(NewsFeedHelper, 'getNewsFeedConfiguration').mockReturnValue({
           newsFeedType: NewsFeedItemType.ResourceCustomDashboard,
@@ -993,10 +1121,13 @@ describe('newsFeedApp', () => {
         const updateResourceNewsFeedItemSpy = vi
           .spyOn(NewsFeedApp, 'updateResourceNewsFeedItem')
           .mockResolvedValue();
+        const deleteResourceNewsFeedSpy = vi
+          .spyOn(NewsFeedApp, 'deleteResourceNewsFeed')
+          .mockResolvedValue();
 
         // When
         await NewsFeedApp.upsertResourceNewsFeed({
-          documentBeforeUpdate: { ...document, active: true },
+          documentBeforeUpdate: { ...document, active: false },
           updatedDocument: { ...document, active: false },
           serviceDefinitionIdentifier:
             ServiceDefinitionIdentifier.OpenctiCustomDashboards,
@@ -1004,6 +1135,36 @@ describe('newsFeedApp', () => {
 
         // Then
         expect(createResourceNewsFeedItemSpy).not.toHaveBeenCalled();
+        expect(updateResourceNewsFeedItemSpy).not.toHaveBeenCalled();
+        expect(deleteResourceNewsFeedSpy).not.toHaveBeenCalled();
+      });
+
+      it('should delete the news feed item when the document is unpublished', async () => {
+        // Given
+        vi.spyOn(NewsFeedHelper, 'getNewsFeedConfiguration').mockReturnValue({
+          newsFeedType: NewsFeedItemType.ResourceScenario,
+          platformIdentifier: PlatformIdentifier.Openaev,
+        });
+        const updateResourceNewsFeedItemSpy = vi
+          .spyOn(NewsFeedApp, 'updateResourceNewsFeedItem')
+          .mockResolvedValue();
+        const deleteResourceNewsFeedSpy = vi
+          .spyOn(NewsFeedApp, 'deleteResourceNewsFeed')
+          .mockResolvedValue();
+
+        // When
+        await NewsFeedApp.upsertResourceNewsFeed({
+          documentBeforeUpdate: { ...document, active: true },
+          updatedDocument: { ...document, active: false },
+          serviceDefinitionIdentifier:
+            ServiceDefinitionIdentifier.OpenaevScenarios,
+        });
+
+        // Then
+        expect(deleteResourceNewsFeedSpy).toHaveBeenCalledOnce();
+        expect(deleteResourceNewsFeedSpy).toHaveBeenCalledWith({
+          documentId: document.id,
+        });
         expect(updateResourceNewsFeedItemSpy).not.toHaveBeenCalled();
       });
 
@@ -1256,6 +1417,132 @@ describe('newsFeedApp', () => {
       });
       expect(provisioned).toHaveLength(1);
       expect(provisioned[0]?.platform_id).toBe(otherOrganizationPlatformId);
+    });
+  });
+  describe('resolveExternalRedirect', () => {
+    const BLOG_POST_SLUG = 'threat-report-2026';
+    const BLOG_POST_URL = `https://filigran.io/blog/${BLOG_POST_SLUG}`;
+    const PLATFORM_ID = '9b0c7a3e-1111-4a9e-8d6f-0d4f5a7c9e10';
+
+    const createBlogPostItem = async ({
+      slug,
+      isDeleted = false,
+      type = NewsFeedItemType.BlogPost,
+    }: {
+      slug?: string;
+      isDeleted?: boolean;
+      type?: NewsFeedItemType;
+    } = {}) => {
+      const item = await TestHelper.newsFeed.createItem({
+        type,
+        title: 'Blog post',
+        is_deleted: isDeleted,
+      });
+      if (slug !== undefined) {
+        await TestHelper.newsFeed.createMetadata({
+          news_feed_item_id: item.id,
+          key: NewsFeedItemMetadataKey.BlogPostSlug,
+          value: slug,
+        });
+      }
+      return item;
+    };
+
+    afterEach(async () => {
+      await TestHelper.newsFeed.deleteItem();
+    });
+
+    it('should resolve the filigran.io destination of a blog post item', async () => {
+      // Given
+      const item = await createBlogPostItem({ slug: BLOG_POST_SLUG });
+
+      // When
+      const result = await NewsFeedApp.resolveExternalRedirect({
+        newsFeedItemId: item.id,
+        query: {},
+      });
+
+      // Then
+      expect(result).toEqual({
+        newsFeedItemId: item.id,
+        newsFeedItemType: NewsFeedItemType.BlogPost,
+        host: 'filigran.io',
+        url: BLOG_POST_URL,
+      });
+    });
+
+    it('should forward the utm parameters only, never platform_id nor any other parameter', async () => {
+      // Given
+      const item = await createBlogPostItem({ slug: BLOG_POST_SLUG });
+
+      // When
+      const result = await NewsFeedApp.resolveExternalRedirect({
+        newsFeedItemId: item.id,
+        query: {
+          utm_source: 'opencti',
+          utm_medium: 'newsfeed',
+          utm_campaign: 'blog_posts',
+          utm_content: 'blog_posts',
+          platform_id: PLATFORM_ID,
+          next: 'https://evil.example',
+        },
+      });
+
+      // Then
+      expect(result?.url).toBe(
+        `${BLOG_POST_URL}?utm_source=opencti&utm_medium=newsfeed&utm_campaign=blog_posts&utm_content=blog_posts`
+      );
+    });
+
+    it.each([
+      ['a malformed id', 'not-a-uuid'],
+      ['an id with a path', '../../etc/passwd'],
+      ['an unknown item', '3f8d0c1e-2b7a-4d65-8e19-5a4c6b7d8e90'],
+    ])('should not resolve %s', async (_description, newsFeedItemId) => {
+      // When
+      const result = await NewsFeedApp.resolveExternalRedirect({
+        newsFeedItemId,
+        query: {},
+      });
+
+      // Then
+      expect(result).toBeUndefined();
+    });
+
+    // The unsafe slugs are exhaustively covered by the redirect helper tests
+    it.each([
+      [
+        'a deleted item',
+        () => createBlogPostItem({ slug: BLOG_POST_SLUG, isDeleted: true }),
+      ],
+      [
+        'an item whose type has no destination builder',
+        () =>
+          createBlogPostItem({
+            slug: BLOG_POST_SLUG,
+            type: NewsFeedItemType.ResourcePlaybook,
+          }),
+      ],
+      [
+        'an item without the blog_post_slug metadata',
+        () => createBlogPostItem(),
+      ],
+      [
+        'an item with an unsafe blog_post_slug',
+        () => createBlogPostItem({ slug: 'a/b' }),
+      ],
+    ])('should not resolve %s', async (_description, createItem) => {
+      // Given
+      const item = await createItem();
+
+      // When
+      const result = await NewsFeedApp.resolveExternalRedirect({
+        newsFeedItemId: item.id,
+        query: {},
+      });
+
+      // Then
+      expect(result).toBeUndefined();
     });
   });
 });

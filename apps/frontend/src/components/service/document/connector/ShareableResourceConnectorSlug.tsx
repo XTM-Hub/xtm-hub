@@ -4,6 +4,7 @@ import {
   BreadcrumbNav,
   BreadcrumbNavLink,
 } from '@/components/ui/BreadcrumbNav';
+import { useDocumentCounter } from '@/hooks/use-document-counter';
 import { useTranslate } from '@/hooks/use-translate';
 
 import { PlatformMetadataMapping } from '@/components/registration/PlatformIdentifierMapping';
@@ -55,6 +56,9 @@ const ShareableResourceConnectorSlug = ({
   const manifest_url = documentData.source_code
     ? `${documentData.source_code}/__metadata__/connector_manifest.json`
     : '';
+
+  const { count: shareNumber, increment: incrementShareNumber } =
+    useDocumentCounter(documentData.id, documentData.share_number);
 
   const carouselImages = filterDocumentImages(documentData);
   const logo = findDocumentLogo(documentData);
@@ -108,6 +112,7 @@ const ShareableResourceConnectorSlug = ({
             <div className="ml-auto flex gap-2">
               <ShareLinkButton
                 documentId={documentData.id}
+                onShare={incrementShareNumber}
                 url={shareUrl}
               />
               <ServiceManageSheet
@@ -169,7 +174,11 @@ const ShareableResourceConnectorSlug = ({
           }
         />
         <ShareableResourceConnectorPrivateDetails
-          connectorDetails={{ ...documentData, name: documentData.name ?? '' }}
+          connectorDetails={{
+            ...documentData,
+            name: documentData.name ?? '',
+            share_number: shareNumber,
+          }}
           filigranWebsiteUtm={getResourcePageFiligranWebsiteUtm(
             serviceInstance.service_definition?.identifier
           )}

@@ -110,6 +110,16 @@ export const ConnectorForm = ({
     [me, document]
   );
 
+  const formSchema = useMemo(
+    () =>
+      document?.manager_supported
+        ? connectorSchema
+        : connectorSchema.extend({
+            minimum_deployable_version: z.string().nullish(),
+          }),
+    [document?.manager_supported]
+  );
+
   const {
     active,
     short_description,
@@ -173,7 +183,7 @@ export const ConnectorForm = ({
           onSubmit(values as ConnectorFormValues);
         }}
         values={values}
-        formSchema={connectorSchema}
+        formSchema={formSchema}
         fieldConfig={{
           description,
           use_cases,

@@ -1,8 +1,8 @@
-import { getOrganizations } from '@/components/organization/Organization.service';
+import { useOrganizations } from '@/components/organization/Organization.service';
 import { AppCombobox } from '@/components/ui/AppCombobox';
 import { useKeepSelectedOptions } from '@/hooks/use-keep-selected-options';
 import { useTranslate } from '@/hooks/use-translate';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 
 interface OrganizationFilterOption {
   id: string;
@@ -22,7 +22,13 @@ export const UserOrganizationFilter = ({
   onChange,
 }: UserOrganizationFilterProps) => {
   const t = useTranslate();
-  const { organizationsData, refetch } = getOrganizations();
+  const [searchTerm, setSearchTerm] = useState('');
+  const {
+    organizations: searchedOrganizations,
+    isLoading,
+    isError,
+    isPlaceholderData,
+  } = useOrganizations({ searchTerm });
 
   const organizations = useMemo<OrganizationFilterOption[]>(
     () => [
@@ -31,11 +37,9 @@ export const UserOrganizationFilter = ({
         name: t('UserActions.AllOrganizations'),
         personal_space: false,
       },
-      ...organizationsData.organizations.edges
-        .map(({ node }) => node)
-        .filter(({ personal_space }) => !personal_space),
+      ...searchedOrganizations.filter(({ personal_space }) => !personal_space),
     ],
-    [organizationsData, t]
+    [searchedOrganizations, t]
   );
   const keptOrganizations = useKeepSelectedOptions({
     options: organizations,
@@ -49,7 +53,7 @@ export const UserOrganizationFilter = ({
   const handleOnValueChange = (
     organization: OrganizationFilterOption | undefined
   ) => {
-    refetch({ searchTerm: '' });
+    setSearchTerm('');
     onChange(organization?.id || undefined);
   };
 
@@ -61,10 +65,14 @@ export const UserOrganizationFilter = ({
       labelPosition="none"
       placeholder={label}
       options={keptOrganizations}
+      loading={isLoading || isPlaceholderData}
+      error={
+        isError ? t('OrganizationActions.LoadOrganizationsError') : undefined
+      }
       value={selectedOrganization ?? null}
       onValueChange={(next) => handleOnValueChange(next ?? undefined)}
-      onInputChange={(searchTerm, { cause }) => {
-        if (cause === 'type') refetch({ searchTerm });
+      onInputChange={(text, { cause }) => {
+        if (cause === 'type') setSearchTerm(text);
       }}
       getOptionLabel={(organization) => organization.name}
       isOptionEqualToValue={(a, b) => a.id === b.id}

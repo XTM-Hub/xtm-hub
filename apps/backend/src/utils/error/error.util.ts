@@ -147,7 +147,7 @@ export const NotFoundError: ErrorBuilder = (
   information?: ErrorInformation,
   data?: Record<string, unknown>
 ): CustomApolloError => {
-  return errorUtil(
+  const error = errorUtil(
     ErrorType.NotFound,
     message || 'Resource not found',
     {
@@ -157,4 +157,6 @@ export const NotFoundError: ErrorBuilder = (
     },
     information
   );
+  error.extensions = { code: ErrorType.NotFound };
+  return error;
 };

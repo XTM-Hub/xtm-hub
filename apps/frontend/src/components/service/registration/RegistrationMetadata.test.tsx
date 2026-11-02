@@ -1,12 +1,6 @@
 import { RegistrationMetadata } from '@/components/service/registration/RegistrationMetadata';
-import { basePlatform } from '@/components/service/registration/registered-platform.fixtures';
 import testRender from '@/utils/test/test-render';
-import { registeredPlatformByServiceInstanceId_fragment$data } from '@generated/registeredPlatformByServiceInstanceId_fragment.graphql';
-import {
-  CommercialModel,
-  RegisteredSaasPlatformMetadataQuery,
-  useRegisteredSaasPlatformMetadataQuery,
-} from '@graphql/generated';
+import { SaasPlatformMetadata } from '@graphql/generated';
 import { screen, waitFor, within } from '@testing-library/react';
 import { useTranslations } from 'next-intl';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -19,21 +13,6 @@ vi.mock('@/components/ui/snackbar/snackbar-store', () => ({
   showSnackbar: showSnackbarMock,
 }));
 
-let mockPlatformData: registeredPlatformByServiceInstanceId_fragment$data;
-
-vi.mock('react-relay', async (importOriginal) => ({
-  ...(await importOriginal()),
-  useFragment: () => mockPlatformData,
-}));
-
-vi.mock('@graphql/generated', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@graphql/generated')>();
-  const useRegisteredSaasPlatformMetadataQuery = Object.assign(vi.fn(), {
-    getKey: actual.useRegisteredSaasPlatformMetadataQuery.getKey,
-  });
-  return { ...actual, useRegisteredSaasPlatformMetadataQuery };
-});
-
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
 const HOSTNAME = 'my-platform.filigran.io';
@@ -42,20 +21,11 @@ const REGION = 'eu-west';
 const START_DATE = '2026-01-01T12:00:00.000Z';
 const END_DATE = '2026-01-11T12:00:00.000Z';
 const NOW = '2026-01-04T12:00:00.000Z';
-const FORMATTED_CONTRACT = '1/1/2026 → 1/11/2026';
+const FORMATTED_CONTRACT = 'Jan 1, 2026 → Jan 11, 2026';
 const DAYS_LEFT = 7;
 const ELAPSED_PERCENT = 30;
 
-const saasPlatform: registeredPlatformByServiceInstanceId_fragment$data = {
-  ...basePlatform,
-  commercial_model: CommercialModel.Saas,
-};
-
-type Metadata = NonNullable<
-  RegisteredSaasPlatformMetadataQuery['registeredSaasPlatformMetadata']
->;
-
-const fullMetadata: Metadata = {
+const fullMetadata: SaasPlatformMetadata = {
   hostname: HOSTNAME,
   plan: PLAN,
   start_date: START_DATE,
@@ -63,7 +33,7 @@ const fullMetadata: Metadata = {
   region: REGION,
 };
 
-const emptyMetadata: Metadata = {
+const emptyMetadata: SaasPlatformMetadata = {
   hostname: null,
   plan: null,
   start_date: null,
@@ -71,24 +41,19 @@ const emptyMetadata: Metadata = {
   region: null,
 };
 
-const mockMetadataQuery = ({
+const renderMetadata = ({
   metadata = fullMetadata,
-  isPending = false,
+  isLoading = false,
 }: {
-  metadata?: Metadata | null;
-  isPending?: boolean;
+  metadata?: SaasPlatformMetadata | null;
+  isLoading?: boolean;
 } = {}) =>
-  vi.mocked(useRegisteredSaasPlatformMetadataQuery).mockReturnValue({
-    data: isPending ? undefined : { registeredSaasPlatformMetadata: metadata },
-    isPending,
-  } as ReturnType<typeof useRegisteredSaasPlatformMetadataQuery>);
-
-const renderMetadata = (
-  platform: registeredPlatformByServiceInstanceId_fragment$data = saasPlatform
-) => {
-  mockPlatformData = platform;
-  return testRender(<RegistrationMetadata registeredPlatform={platform} />);
-};
+  testRender(
+    <RegistrationMetadata
+      metadata={metadata}
+      isLoading={isLoading}
+    />
+  );
 
 const COPY_HOSTNAME_LABEL = 'Register.Metrics.Metadata.CopyHostname';
 
@@ -106,7 +71,6 @@ describe('RegistrationMetadata', () => {
     ) => (values ? `${key}:${JSON.stringify(values)}` : key)) as ReturnType<
       typeof useTranslations
     >);
-    mockMetadataQuery();
     showSnackbarMock.mockClear();
   });
 
@@ -115,50 +79,7 @@ describe('RegistrationMetadata', () => {
     vi.restoreAllMocks();
   });
 
-  describe('when the platform is not a SaaS one', () => {
-    it.each([[CommercialModel.Other], [null]])(
-      'should render nothing when the commercial model is %s',
-      (commercialModel) => {
-        // Given / When
-        const { container } = renderMetadata({
-          ...saasPlatform,
-          commercial_model: commercialModel,
-        });
-
-        // Then
-        expect(container).toBeEmptyDOMElement();
-      }
-    );
-
-    it('should not query the SaaS Manager metadata', () => {
-      // Given / When
-      renderMetadata({
-        ...saasPlatform,
-        commercial_model: CommercialModel.Other,
-      });
-
-      // Then
-      expect(useRegisteredSaasPlatformMetadataQuery).toHaveBeenCalledWith(
-        expect.anything(),
-        { input: { service_instance_id: saasPlatform.service_instance_id } },
-        expect.objectContaining({ enabled: false })
-      );
-    });
-  });
-
-  describe('when the platform is a SaaS one', () => {
-    it('should query the SaaS Manager metadata of the platform', () => {
-      // Given / When
-      renderMetadata();
-
-      // Then
-      expect(useRegisteredSaasPlatformMetadataQuery).toHaveBeenCalledWith(
-        expect.anything(),
-        { input: { service_instance_id: saasPlatform.service_instance_id } },
-        expect.objectContaining({ enabled: true })
-      );
-    });
-
+  describe('metadata display', () => {
     it.each`
       labelKey
       ${'Register.Metrics.Metadata.Hostname'}
@@ -168,11 +89,8 @@ describe('RegistrationMetadata', () => {
     `(
       'should keep the $labelKey row in place while the metadata is loading',
       ({ labelKey }) => {
-        // Given
-        mockMetadataQuery({ isPending: true });
-
-        // When
-        renderMetadata();
+        // Given / When
+        renderMetadata({ isLoading: true });
 
         // Then
         expect(getRow(labelKey).closest('section')).toHaveAttribute(
@@ -183,11 +101,8 @@ describe('RegistrationMetadata', () => {
     );
 
     it('should not display any value while the metadata is loading', () => {
-      // Given
-      mockMetadataQuery({ isPending: true });
-
-      // When
-      renderMetadata();
+      // Given / When
+      renderMetadata({ isLoading: true });
 
       // Then
       expect(
@@ -254,11 +169,8 @@ describe('RegistrationMetadata', () => {
     );
 
     it('should not offer to copy the hostname when it is unavailable', () => {
-      // Given
-      mockMetadataQuery({ metadata: { ...fullMetadata, hostname: null } });
-
-      // When
-      renderMetadata();
+      // Given / When
+      renderMetadata({ metadata: { ...fullMetadata, hostname: null } });
 
       // Then
       expect(
@@ -298,11 +210,8 @@ describe('RegistrationMetadata', () => {
     `(
       'should display the unavailable message in the $labelKey row when the field is missing',
       ({ labelKey }) => {
-        // Given
-        mockMetadataQuery({ metadata: emptyMetadata });
-
-        // When
-        renderMetadata();
+        // Given / When
+        renderMetadata({ metadata: emptyMetadata });
 
         // Then
         expect(
@@ -314,11 +223,8 @@ describe('RegistrationMetadata', () => {
     );
 
     it('should display the unavailable message in every row when the SaaS Manager returns no metadata', () => {
-      // Given
-      mockMetadataQuery({ metadata: null });
-
-      // When
-      renderMetadata();
+      // Given / When
+      renderMetadata({ metadata: null });
 
       // Then
       expect(
@@ -334,11 +240,8 @@ describe('RegistrationMetadata', () => {
     `(
       'should not show the contract progress when $description',
       ({ metadata }) => {
-        // Given
-        mockMetadataQuery({ metadata });
-
-        // When
-        renderMetadata();
+        // Given / When
+        renderMetadata({ metadata });
 
         // Then
         expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();

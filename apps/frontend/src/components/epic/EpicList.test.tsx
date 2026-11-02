@@ -5,7 +5,6 @@ import { mockGraphqlQuery } from '@/utils/test/msw/graphql-api';
 import { mswServer } from '@/utils/test/msw/server';
 import testRender from '@/utils/test/test-render';
 import { epic_fragment$data } from '@generated/epic_fragment.graphql';
-import { seoServiceInstanceFragment$data } from '@generated/seoServiceInstanceFragment.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 import {
   CurrentVotingRoundCalloutQuery,
@@ -13,6 +12,7 @@ import {
   EpicType,
   FiligranProduct,
   OrganizationCapability,
+  SeoServiceInstanceItemFragment,
   ServiceRestriction,
   Timeline,
 } from '@graphql/generated';
@@ -98,7 +98,7 @@ const serviceInstance = {
 } as serviceInstance_fragment$data;
 const seoServiceInstance = {
   id: SERVICE_INSTANCE_ID,
-} as seoServiceInstanceFragment$data;
+} as SeoServiceInstanceItemFragment;
 
 const renderEpicList = (
   propsOverrides: Partial<ComponentProps<typeof EpicList>> = {},

@@ -53,9 +53,11 @@ const DeleteSsoGroupRolePortal = ({
       title={t('RoleListPage.DeleteDialog.Title')}
       confirmLabel={t('Utils.Delete')}
       destructive
-      onConfirm={() =>
-        deleteSsoGroupRolePortal({ input: { ssoGroup, rolePortal } })
-      }
+      onConfirm={(event) => {
+        // Keep the dialog open until the deletion succeeds: onSuccess closes it.
+        event.preventDefault();
+        deleteSsoGroupRolePortal({ input: { ssoGroup, rolePortal } });
+      }}
       confirmDisabled={isPending}>
       {t('RoleListPage.DeleteDialog.Text', { ssoGroup, rolePortal })}
     </ConfirmDialog>

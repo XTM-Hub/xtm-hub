@@ -105,3 +105,17 @@ export const groupAccountsByEmail = (
   }
   return byEmail;
 };
+
+// Subject prefix of Auth0's email/password (database) connection
+export const AUTH0_DATABASE_SUBJECT_PREFIX = 'auth0|';
+
+// Auth0 lists the primary identity first.
+export const getPrimaryIdentity = (
+  user: Management.GetUserResponseContent
+): Management.Identity => {
+  const primary = user.identities?.[0];
+  if (primary?.user_id === undefined || !primary.provider) {
+    throw new Error('AUTH0_USER_IDENTITY_NOT_FOUND_ERROR');
+  }
+  return { user_id: String(primary.user_id), provider: primary.provider };
+};

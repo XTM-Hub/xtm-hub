@@ -10,6 +10,7 @@ import { meContext_fragment$data } from '@generated/meContext_fragment.graphql';
 import {
   OrderingMode,
   OrganizationCapability,
+  PlatformIdentifier,
   PortalCapability,
   ServiceDefinitionIdentifier,
   ServiceInstanceFilterKey,
@@ -39,6 +40,7 @@ const graphqlMocks = vi.hoisted(() => ({
 }));
 
 const XTM_ONE_LIVE_DEMO_URL = 'https://demo.xtmone.io/login';
+const XTM_ONE_DOCUMENTATION_URL = 'https://docs.xtmone.io/';
 
 vi.mock('@graphql/generated', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@graphql/generated')>();
@@ -241,6 +243,32 @@ describe('usePrivateNavigation', () => {
       label: 'LiveDemo',
       external: true,
     });
+  });
+
+  it('should return an external Documentation link to the XTM One documentation after the Live Demo link when building the XTM One section', () => {
+    // Given / When
+    const { result } = renderUsePrivateNavigation({
+      selectedOrganizationId: 'org-1',
+    });
+
+    // Then
+    const xtmOneSection = getSection(result.current.sections, 'xtm-one');
+    expect(xtmOneSection?.links[1]).toEqual({
+      href: XTM_ONE_DOCUMENTATION_URL,
+      label: 'Documentation',
+      external: true,
+    });
+  });
+
+  it('should scope the XTM One section to the XTM One Hub service pages', () => {
+    // Given / When
+    const { result } = renderUsePrivateNavigation({
+      selectedOrganizationId: 'org-1',
+    });
+
+    // Then
+    const xtmOneSection = getSection(result.current.sections, 'xtm-one');
+    expect(xtmOneSection?.pathPrefix).toBe(`/${APP_PATH}/service/xtmone`);
   });
 
   it('hides the xtm-platform-trial bottom link when organization is blacklisted', () => {
@@ -515,6 +543,40 @@ describe('usePrivateNavigation', () => {
           label: 'OpenAEV Production Platform',
           href: '/app/service/openaev_registration/openaev-service-instance-id',
           tooltip: 'https://openaev.example.com',
+        },
+      ],
+    });
+  });
+
+  it('links XTM One registered platforms to their Hub details page', () => {
+    vi.mocked(
+      getPrivateNavigationRegisteredPlatformsByIdentifier
+    ).mockImplementation((_queryData, platformIdentifier) =>
+      platformIdentifier === PlatformIdentifier.Xtmone
+        ? [
+            {
+              serviceInstanceId: 'xtmone-service-instance-id',
+              title: 'XTM One Production Platform',
+              url: 'https://xtmone.example.com',
+            },
+          ]
+        : []
+    );
+
+    const { result } = renderUsePrivateNavigation({
+      selectedOrganizationId: 'org-1',
+    });
+
+    const xtmOneSection = getSection(result.current.sections, 'xtm-one');
+
+    expect(xtmOneSection?.links[0]).toEqual({
+      label: 'MyProduct',
+      badge: '1',
+      subLinks: [
+        {
+          label: 'XTM One Production Platform',
+          href: '/app/service/xtmone_registration/xtmone-service-instance-id',
+          tooltip: 'https://xtmone.example.com',
         },
       ],
     });

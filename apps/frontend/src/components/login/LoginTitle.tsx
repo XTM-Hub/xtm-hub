@@ -6,7 +6,10 @@ const LoginTitleForm = ({}) => {
   const t = useTranslate();
   return (
     <>
-      <LogoXTMDark />
+      <LogoXTMDark
+        role="img"
+        aria-label={t('LoginPage.Logo')}
+      />
       <h1 className="sr-only">{t('LoginPage.Title')}</h1>
     </>
   );

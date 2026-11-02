@@ -9,17 +9,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const pushMock = vi.fn();
 
-vi.mock(
-  '@/components/service/components/ServiceListLocalStorageKeyContext',
-  () => ({
-    useServiceListLocalStorageKeyContext: () => ({
-      localStorageKey: 'OpenCTIIntegrationFeeds',
-    }),
-  })
-);
+vi.mock('@/components/service/components/ServiceListStorageKeyContext', () => ({
+  useServiceListStorageKeyContext: () => ({
+    storageKey: 'OpenCTIIntegrationFeeds',
+  }),
+}));
 
-vi.mock('@/hooks/use-service-list-local-storage', () => ({
-  useServiceListLocalStorage: () => ({
+vi.mock('@/hooks/use-service-list-storage', () => ({
+  useServiceListStorage: () => ({
     integrationTypes: {},
     licenseTypes: {},
     solutionCategories: {},

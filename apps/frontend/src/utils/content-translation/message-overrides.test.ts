@@ -73,6 +73,17 @@ describe('applyMessageOverrides', () => {
     // Then
     expect(merged).toEqual(makeMessages());
   });
+
+  it('should return the committed messages as they are when there is no override', () => {
+    // Given
+    const messages = makeMessages();
+
+    // When
+    const merged = applyMessageOverrides(messages, []);
+
+    // Then
+    expect(merged).toBe(messages);
+  });
 });
 
 describe('getMessage', () => {

@@ -55,8 +55,6 @@ export async function networkFetch({
     headers.cookie = cookieHeader;
   }
 
-  const activeCacheConfig = resolveActiveCacheConfig(cacheConfig, options);
-
   const resp = await fetch(apiUri, {
     method: 'POST',
     credentials: 'same-origin',
@@ -66,8 +64,7 @@ export async function networkFetch({
       variables,
       operationName: request.name,
     }),
-    ...options,
-    cache: activeCacheConfig,
+    ...resolveActiveCacheConfig({ ...options, cache: cacheConfig }),
   });
   const json = await resp.json();
   throwOnGraphqlErrors(json.errors);

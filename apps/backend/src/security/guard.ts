@@ -63,10 +63,11 @@ export const securityGuard = {
     user: UserLoadUserBy,
     serviceDefinition: { identifier: ServiceDefinitionIdentifier }
   ) => {
-    // Verify it's an OpenCTI or OpenAEV platform
+    // Verify it's an OpenCTI, OpenAEV or XTM One platform
     const allowedIdentifiers = [
       ServiceDefinitionIdentifier.OpenctiRegistration,
       ServiceDefinitionIdentifier.OpenaevRegistration,
+      ServiceDefinitionIdentifier.XtmoneRegistration,
     ];
 
     if (!allowedIdentifiers.includes(serviceDefinition.identifier)) {

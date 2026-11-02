@@ -2,13 +2,13 @@
 
 import { CookieConsentBanner } from '@/components/cookie-consent/CookieConsentBanner';
 import { CookieConsentPreferences } from '@/components/cookie-consent/CookieConsentPreferences';
-import { usePathname } from 'next/navigation';
+import { useSelectedLayoutSegment } from 'next/navigation';
 
-const EMBED_PATH_PREFIXES = ['/embed'];
+const EMBED_SEGMENT = '(embed)';
 
 export const CookieConsent = () => {
-  const pathname = usePathname();
-  if (EMBED_PATH_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
+  const segment = useSelectedLayoutSegment();
+  if (segment === EMBED_SEGMENT) {
     return null;
   }
   return (

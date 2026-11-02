@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 import { logApp } from '../../../utils/app-logger.util';
-import { resolveSafeRedirect } from './auth-redirect.util';
+import { ForbiddenErrorCode } from '../../../utils/error/error.code';
+import {
+  buildSignInErrorRedirect,
+  resolveSafeRedirect,
+} from './auth-redirect.util';
 
 vi.spyOn(logApp, 'warn').mockImplementation(() => {});
 vi.spyOn(logApp, 'error').mockImplementation(() => {});
@@ -48,5 +52,37 @@ describe('resolveSafeRedirect', () => {
     `('should return undefined for $description', ({ redirect }) => {
       expect(resolveSafeRedirect(redirect)).toBeUndefined();
     });
+  });
+});
+
+describe('buildSignInErrorRedirect', () => {
+  it.each([
+    [
+      'an unverified email',
+      new Error(ForbiddenErrorCode.EmailNotVerified),
+      '/sign-up?error=email-not-verified',
+    ],
+    ['any other error', new Error('boom'), '/sign-up?error=login-failed'],
+    ['no error', undefined, '/sign-up?error=login-failed'],
+  ])(
+    'should send %s to the sign-up page with its reason',
+    (_description, error, expected) => {
+      // When
+      const redirect = buildSignInErrorRedirect(error, undefined);
+
+      // Then
+      expect(redirect).toBe(expected);
+    }
+  );
+
+  it('should keep the referer as a base64 redirect for the next attempt', () => {
+    // Given
+    const referer = '/app';
+
+    // When
+    const redirect = buildSignInErrorRedirect(new Error('boom'), referer);
+
+    // Then
+    expect(redirect).toBe('/sign-up?error=login-failed&redirect=L2FwcA%3D%3D');
   });
 });

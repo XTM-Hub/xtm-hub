@@ -1,0 +1,64 @@
+name: 'Vitest pull request report'
+description: >
+  Turns the Vitest JSON reports of every shard into one report focused on the pull request (totals, failed tests, tests
+  of the changed test files), writes it to the job summary and keeps one pull request comment up to date with it.
+  Needs a checkout with the parent commit (fetch-depth 2) and `pull-requests: write` to comment. Comments with the
+  workflow's own token, so only a comment authored by github-actions[bot] is ever updated.
+inputs:
+  id:
+    description: 'Identifier of the suite, used for the artifact pattern and to find the comment to update.'
+    required: true
+  title:
+    description: 'Title of the report.'
+    required: true
+  app-dir:
+    description: 'Workspace the tests belong to, relative to the repository root (e.g. apps/frontend).'
+    required: true
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Node.js
+      uses: actions/setup-node@v6
+      with:
+        node-version-file: .nvmrc
+
+    - name: Download test reports
+      uses: actions/download-artifact@v5
+      with:
+        pattern: vitest-${{ inputs.id }}-report-shard-*
+        path: ${{ runner.temp }}/vitest-${{ inputs.id }}-reports
+        merge-multiple: true
+
+    - name: Build test report
+      shell: bash
+      env:
+        REPORT_ID: ${{ inputs.id }}
+        REPORT_TITLE: ${{ inputs.title }}
+        APP_DIR: ${{ inputs.app-dir }}
+        REPORTS_DIR: ${{ runner.temp }}/vitest-${{ inputs.id }}-reports
+        COMMENT_FILE: ${{ runner.temp }}/vitest-${{ inputs.id }}-comment.md
+      run: |
+        node "${GITHUB_ACTION_PATH}/report.mjs" --id "$REPORT_ID" --title "$REPORT_TITLE" \
+          --app-dir "$APP_DIR" --reports "$REPORTS_DIR" --base HEAD^1 \
+          --summary-file "$GITHUB_STEP_SUMMARY" --comment-file "$COMMENT_FILE" \
+          --max-failures 20 --max-length 60000
+
+    - name: Comment on the pull request
+      if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        MARKER: '<!-- vitest-report:${{ inputs.id }} -->'
+        COMMENT_AUTHOR: 'github-actions[bot]'
+        COMMENT_FILE: ${{ runner.temp }}/vitest-${{ inputs.id }}-comment.md
+      run: |
+        comment_ids=$(gh api --paginate "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" \
+          | jq -r --arg marker "$MARKER" --arg author "$COMMENT_AUTHOR" \
+            '.[] | select(.user.login == $author and (.body | startswith($marker))) | .id')
+        comment_id=${comment_ids%%$'\n'*}
+        if [ -n "$comment_id" ]; then
+          gh api --method PATCH "repos/${GITHUB_REPOSITORY}/issues/comments/${comment_id}" -F "body=@${COMMENT_FILE}" > /dev/null
+        else
+          gh api --method POST "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" -F "body=@${COMMENT_FILE}" > /dev/null
+        fi

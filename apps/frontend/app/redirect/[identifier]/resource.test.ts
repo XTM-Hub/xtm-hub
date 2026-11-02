@@ -1,6 +1,9 @@
-import { serverMutateGraphQL } from '@/relay/server-portal-api-fetch';
+import { getAuthenticatedGraphqlClient } from '@/lib/graphql-client';
+import { UnauthenticatedError } from '@/lib/graphql-fetch.utils';
 import { loadMeUser } from '@/utils/load-me-user';
+import { buildSignupRedirect } from '@/utils/redirect';
 import { ServiceDefinitionIdentifier } from '@graphql/generated';
+import { redirect } from 'next/navigation';
 import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { redirectToResource } from './resource';
@@ -9,12 +12,26 @@ import {
   loadPlatformOrganizationId,
   loadServiceInstances,
 } from './utils/load';
+import { trackNewsFeedRedirect } from './utils/news-feed-telemetry';
 
-vi.mock('../../../src/relay/server-portal-api-fetch', () => ({
-  serverMutateGraphQL: vi.fn(),
-}));
+const changeSelectedOrganizationFetcher = vi.fn();
+
 vi.mock('./utils/load');
+vi.mock('./utils/news-feed-telemetry');
 vi.mock('../../../src/utils/load-me-user');
+vi.mock('../../../src/lib/graphql-client', () => ({
+  getAuthenticatedGraphqlClient: vi.fn(),
+}));
+vi.mock('@graphql/generated', async (importOriginal) => {
+  const original = await importOriginal<typeof import('@graphql/generated')>();
+  return {
+    ...original,
+    useChangeSelectedOrganizationMutation: {
+      fetcher: (...args: unknown[]) =>
+        changeSelectedOrganizationFetcher(...args),
+    },
+  };
+});
 
 const BASE_URL = 'http://localhost:3002';
 const IDENTIFIER = ServiceDefinitionIdentifier.OpenaevScenarios;
@@ -44,6 +61,12 @@ describe('redirectToResource', () => {
     vi.mocked(loadServiceInstances).mockResolvedValue(
       [] as LoadServiceInstancesResult
     );
+    vi.mocked(getAuthenticatedGraphqlClient).mockResolvedValue(
+      {} as Awaited<ReturnType<typeof getAuthenticatedGraphqlClient>>
+    );
+    changeSelectedOrganizationFetcher.mockReturnValue(() =>
+      Promise.resolve({ changeSelectedOrganization: null })
+    );
   });
 
   it('redirects to login when the user is not authenticated', async () => {
@@ -61,7 +84,7 @@ describe('redirectToResource', () => {
     // Then
     expect(response.headers.get('location')).toBe(expectedLocation);
     expect(loadPlatformOrganizationId).not.toHaveBeenCalled();
-    expect(serverMutateGraphQL).not.toHaveBeenCalled();
+    expect(changeSelectedOrganizationFetcher).not.toHaveBeenCalled();
     expect(loadServiceInstances).not.toHaveBeenCalled();
   });
 
@@ -91,9 +114,10 @@ describe('redirectToResource', () => {
         expectedPlatformId,
         expectedTenantId
       );
-      expect(serverMutateGraphQL).toHaveBeenCalledWith(expect.anything(), {
-        organization_id: 'organization-from-platform',
-      });
+      expect(changeSelectedOrganizationFetcher).toHaveBeenCalledWith(
+        expect.anything(),
+        { organization_id: 'organization-from-platform' }
+      );
     }
   );
 
@@ -110,9 +134,33 @@ describe('redirectToResource', () => {
     );
 
     // Then
-    expect(serverMutateGraphQL).toHaveBeenCalledWith(expect.anything(), {
-      organization_id: defaultUser.selected_organization_id,
+    expect(changeSelectedOrganizationFetcher).toHaveBeenCalledWith(
+      expect.anything(),
+      { organization_id: defaultUser.selected_organization_id }
+    );
+  });
+
+  it('should send the visitor to the signup page when the organization switch is unauthenticated', async () => {
+    // Given
+    const redirectSentinel = new Error('NEXT_REDIRECT');
+    // Next.js' redirect never returns: it throws to interrupt the render.
+    vi.mocked(redirect).mockImplementation(() => {
+      throw redirectSentinel;
     });
+    changeSelectedOrganizationFetcher.mockReturnValue(() =>
+      Promise.reject(new UnauthenticatedError())
+    );
+
+    // When
+    const response = redirectToResource(
+      { identifier: IDENTIFIER },
+      makeRequest()
+    );
+
+    // Then
+    await expect(response).rejects.toBe(redirectSentinel);
+    expect(redirect).toHaveBeenCalledWith(buildSignupRedirect(null));
+    expect(loadServiceInstances).not.toHaveBeenCalled();
   });
 
   it('returns 400 for an invalid identifier', async () => {
@@ -133,7 +181,7 @@ describe('redirectToResource', () => {
     // Then
     expect(response.status).toBe(400);
     expect(await response.text()).toBe('Invalid identifier');
-    expect(serverMutateGraphQL).toHaveBeenCalledOnce();
+    expect(changeSelectedOrganizationFetcher).toHaveBeenCalledOnce();
     expect(loadServiceInstances).not.toHaveBeenCalled();
 
     consoleErrorSpy.mockRestore();
@@ -272,5 +320,100 @@ describe('redirectToResource', () => {
     expect(response.headers.get('location')).toBe(
       `${BASE_URL}/app/service/${IDENTIFIER}/${encodeURIComponent(INSTANCE_ID_WITH_SPECIAL_CHARS)}/${encodeURIComponent(DOCUMENT_ID_WITH_SPECIAL_CHARS)}`
     );
+  });
+});
+
+// What is tracked, and how failures are handled, is covered by utils/news-feed-telemetry.test.ts
+describe('redirectToResource news feed telemetry', () => {
+  const INSTANCE_ID = 'instance-1';
+  const DOCUMENT_ID = 'document-1';
+  const NEWS_FEED_QUERY = `utm_source=opencti&utm_medium=newsfeed&utm_campaign=hub_resources&utm_content=custom_dashboard&document_id=${DOCUMENT_ID}&platform_id=platform-1`;
+  const EXPECTED_LOCATION = `${BASE_URL}/app/service/${IDENTIFIER}/${INSTANCE_ID}/${DOCUMENT_ID}?utm_source=opencti&utm_medium=newsfeed&utm_campaign=hub_resources&utm_content=custom_dashboard`;
+
+  const makeNewsFeedRequest = () =>
+    makeRequest(`/redirect/${IDENTIFIER}?${NEWS_FEED_QUERY}`);
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(loadBaseUrlFront).mockResolvedValue(BASE_URL);
+    vi.mocked(loadMeUser).mockResolvedValue(defaultUser);
+    vi.mocked(loadPlatformOrganizationId).mockResolvedValue(undefined);
+    vi.mocked(loadServiceInstances).mockResolvedValue([
+      {
+        id: INSTANCE_ID,
+        service_definition: { identifier: IDENTIFIER },
+      },
+    ] as LoadServiceInstancesResult);
+    vi.mocked(getAuthenticatedGraphqlClient).mockResolvedValue(
+      {} as Awaited<ReturnType<typeof getAuthenticatedGraphqlClient>>
+    );
+    changeSelectedOrganizationFetcher.mockReturnValue(() =>
+      Promise.resolve({ changeSelectedOrganization: null })
+    );
+  });
+
+  it('should track the news feed redirect once when the user is sent to the resource page', async () => {
+    // Given
+    const request = makeNewsFeedRequest();
+
+    // When
+    const response = await redirectToResource(
+      { identifier: IDENTIFIER },
+      request
+    );
+
+    // Then
+    expect(response.headers.get('location')).toBe(EXPECTED_LOCATION);
+    expect(trackNewsFeedRedirect).toHaveBeenCalledOnce();
+    expect(trackNewsFeedRedirect).toHaveBeenCalledWith(IDENTIFIER, request);
+  });
+
+  it('should track nothing when the user is sent to the login page', async () => {
+    // Given
+    vi.mocked(loadMeUser).mockResolvedValue(null);
+    const request = makeNewsFeedRequest();
+
+    // When
+    const response = await redirectToResource(
+      { identifier: IDENTIFIER },
+      request
+    );
+
+    // Then
+    expect(response.headers.get('location')).toContain(`${BASE_URL}/login`);
+    expect(trackNewsFeedRedirect).not.toHaveBeenCalled();
+  });
+
+  it('should track nothing when the identifier is invalid', async () => {
+    // Given
+    const request = makeNewsFeedRequest();
+
+    // When
+    const response = await redirectToResource(
+      { identifier: 'invalid-identifier' },
+      request
+    );
+
+    // Then
+    expect(response.status).toBe(400);
+    expect(trackNewsFeedRedirect).not.toHaveBeenCalled();
+  });
+
+  it('should track nothing when the service has no instance', async () => {
+    // Given
+    vi.mocked(loadServiceInstances).mockResolvedValue(
+      [] as LoadServiceInstancesResult
+    );
+    const request = makeNewsFeedRequest();
+
+    // When
+    const response = await redirectToResource(
+      { identifier: IDENTIFIER },
+      request
+    );
+
+    // Then
+    expect(response.headers.get('location')).toBe(`${BASE_URL}/app`);
+    expect(trackNewsFeedRedirect).not.toHaveBeenCalled();
   });
 });

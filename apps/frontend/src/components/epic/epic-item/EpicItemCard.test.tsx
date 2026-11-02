@@ -27,10 +27,11 @@ describe('EpicItemCard', () => {
     expected_value: 'expected value',
   } as epic_fragment$data;
 
-  const mockReplace = vi.fn();
+  const mockReplaceState = vi.spyOn(window.history, 'replaceState');
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockReplaceState.mockImplementation(() => {});
     useEpicListContextMock.mockReturnValue({
       connectionID: 'connection-id-1',
       filterByProduct: vi.fn(),
@@ -43,7 +44,7 @@ describe('EpicItemCard', () => {
       back: vi.fn(),
       forward: vi.fn(),
       refresh: vi.fn(),
-      replace: mockReplace,
+      replace: vi.fn(),
       prefetch: vi.fn(),
     });
 
@@ -91,10 +92,12 @@ describe('EpicItemCard', () => {
     await user.click(screen.getByText(epic.title));
 
     // Then
-    expect(mockReplace).toHaveBeenCalledOnce();
-    expect(mockReplace).toHaveBeenCalledWith('/epics?epicId=epic-1', {
-      scroll: false,
-    });
+    expect(mockReplaceState).toHaveBeenCalledOnce();
+    expect(mockReplaceState).toHaveBeenCalledWith(
+      null,
+      '',
+      '/epics?epicId=epic-1'
+    );
   });
 
   it('does not update URL when clicking in admin menu area', async () => {
@@ -114,6 +117,6 @@ describe('EpicItemCard', () => {
     await user.click(screen.getByRole('button', { name: 'Utils.OpenMenu' }));
 
     // Then
-    expect(mockReplace).not.toHaveBeenCalled();
+    expect(mockReplaceState).not.toHaveBeenCalled();
   });
 });

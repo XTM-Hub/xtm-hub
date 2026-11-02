@@ -15,6 +15,7 @@ import manageProductVersionResolver from '../modules/manage-product-version/mana
 import newsFeedResolver from '../modules/news-feed/news-feed.resolver';
 import organizationResolver from '../modules/organization-management/organization/organization.resolver';
 import userResolver from '../modules/organization-management/user/user.resolver';
+import productInformationResolver from '../modules/product-information/product-information.resolver';
 import registrationResolver from '../modules/registration/registration.resolver';
 import rolePortalResolver from '../modules/role-portal/role-portal.resolver';
 import serviceCapabilityResolver from '../modules/security-management/service-capability/service-capability.resolver';
@@ -74,6 +75,7 @@ const resolvers = mergeResolvers([
   openAEVScenariosResolver,
   openCTIPlaybooksResolver,
   registrationResolver,
+  productInformationResolver,
   telemetryResolver,
   deploymentResolver,
   ingestManifestResolver,

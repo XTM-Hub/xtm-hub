@@ -8,7 +8,6 @@ import {
 import { OrganizationId } from '../../../model/kanel/public/Organization';
 import { UserId } from '../../../model/kanel/public/User';
 import { dispatch, listen } from '../../../pub';
-import { hubspotReachOutSalesHook } from '../../../thirdparty/hubspot/hubspot';
 import { logApp } from '../../../utils/app-logger.util';
 import { getErrorMessage } from '../../../utils/error/error-guard.util';
 
@@ -18,11 +17,19 @@ import { PortalContext } from '../../../model/portal-context';
 import { securityGuard } from '../../../security/guard';
 import { ErrorCode, UnknownErrorCode } from '../../../utils/error/error.code';
 import { mapToGraphQLError } from '../../../utils/error/error.mapping';
-import { ForbiddenAccess } from '../../../utils/error/error.util';
+import {
+  ForbiddenAccess,
+  UnauthenticatedAccess,
+} from '../../../utils/error/error.util';
 import { createRelayIdScalar } from '../../../utils/scalar.util';
 import { extractId } from '../../../utils/utils';
 import { AuthHelper } from '../../security-management/capability/auth.helper';
+import {
+  extractPlatformId,
+  extractPlatformToken,
+} from '../../security-management/token/platform-token.util';
 import { UserAdminApp } from './user-admin/user.admin.app';
+import { UserContactApp } from './user-contact/user-contact.app';
 import { UserDomain } from './user-domain/user.domain';
 import { UserOrganizationApp } from './user-organization/user-organization.app';
 import { UserOrganizationPendingDomain } from './user-pending/user-organization-pending.domain';
@@ -338,16 +345,28 @@ const resolvers: Resolvers = {
       portalContext
     ) => {
       try {
-        const platformToken = portalContext.req.header(
-          'XTM-Hub-Platform-Token'
-        );
+        const platformToken = extractPlatformToken(portalContext.req);
 
-        await hubspotReachOutSalesHook({
+        if (portalContext.user) {
+          await UserContactApp.contactSales({
+            message: message ?? undefined,
+            platformToken: platformToken ?? undefined,
+            platformId: platformId ?? undefined,
+            platformIdentifier: platformIdentifier ?? undefined,
+            deploymentRequestType: deploymentRequestType ?? undefined,
+          });
+          return { success: true };
+        }
+
+        // Without a Hub session, only a platform calling with its own id and token can send a message.
+        const headerPlatformId = extractPlatformId(portalContext.req);
+        if (!platformToken || !headerPlatformId) {
+          throw new Error(ErrorCode.InvalidPlatformToken);
+        }
+        await UserContactApp.contactSalesFromPlatform({
           message: message ?? undefined,
+          platformId: headerPlatformId,
           platformToken,
-          platformId: platformId ?? undefined,
-          platformIdentifier: platformIdentifier ?? undefined,
-          deploymentRequestType: deploymentRequestType ?? undefined,
         });
         return { success: true };
       } catch (error) {
@@ -384,7 +403,15 @@ const resolvers: Resolvers = {
       resolve: (payload: { User: UserSubscription }) => payload.User,
     },
     MeUser: {
-      subscribe: (_, __, context, info) => listen(context, ['MeUser'], info),
+      subscribe: (_, __, context, info) => {
+        // @auth only wraps resolve, which runs after the SSE filter
+        if (!context.user) {
+          throw UnauthenticatedAccess(
+            'Not authorized: You are not authenticated'
+          );
+        }
+        return listen(context, ['MeUser'], info);
+      },
     },
     UserPending: {
       subscribe: async (_, args, context, info) => {

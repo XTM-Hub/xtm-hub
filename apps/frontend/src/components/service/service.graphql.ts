@@ -133,11 +133,3 @@ export const serviceInstanceForSubscriptionsFragment = graphql`
     }
   }
 `;
-
-export const ServiceLinksByTagsQuery = graphql`
-  query serviceLinksByTagsQuery($tags: [ServiceInstanceTag!]!) {
-    serviceInstanceLinksByTags(tags: $tags) {
-      ...seoServiceInstanceFragment
-    }
-  }
-`;

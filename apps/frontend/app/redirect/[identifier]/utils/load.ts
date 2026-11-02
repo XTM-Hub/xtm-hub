@@ -1,18 +1,14 @@
+import { getAuthenticatedGraphqlClient } from '@/lib/graphql-client';
+import { redirectToSignupOnUnauthenticated } from '@/lib/server-unauthenticated-redirect';
 import serverPortalApiFetch from '@/relay/server-portal-api-fetch';
 import { SettingsResponse } from '@/utils/settings.service';
-import PlatformAssociatedOrganizationQueryGraphql, {
-  platformAssociatedOrganizationQuery,
-  platformAssociatedOrganizationQuery$data,
-} from '@generated/platformAssociatedOrganizationQuery.graphql';
-import ServiceInstancesListQueryGraphql, {
-  serviceInstancesListQuery,
-  serviceInstancesListQuery$data,
-} from '@generated/serviceInstancesListQuery.graphql';
 import SettingsQuery, { settingsQuery } from '@generated/settingsQuery.graphql';
 import {
   OrderingMode,
   ServiceInstanceFilterKey,
   ServiceInstanceOrdering,
+  usePlatformAssociatedOrganizationQuery,
+  useServiceInstancesListQuery,
 } from '@graphql/generated';
 
 export const loadBaseUrlFront = async () => {
@@ -22,9 +18,7 @@ export const loadBaseUrlFront = async () => {
   >(SettingsQuery)) as SettingsResponse;
   return settingsResponse.data.settings.base_url_front;
 };
-interface PlatformAssociatedOrganizationResponse {
-  data: platformAssociatedOrganizationQuery$data;
-}
+
 export const loadPlatformOrganizationId = async (
   platformId?: string | null,
   tenantId?: string | null
@@ -34,41 +28,37 @@ export const loadPlatformOrganizationId = async (
   }
 
   try {
-    const associatedOrganization = (await serverPortalApiFetch<
-      typeof PlatformAssociatedOrganizationQueryGraphql,
-      platformAssociatedOrganizationQuery
-    >(PlatformAssociatedOrganizationQueryGraphql, {
+    const client = await getAuthenticatedGraphqlClient();
+    const data = await usePlatformAssociatedOrganizationQuery.fetcher(client, {
       platformId,
-      tenantId,
-    })) as PlatformAssociatedOrganizationResponse;
+      tenantId: tenantId ?? null,
+    })();
 
-    return associatedOrganization.data.platformAssociatedOrganization?.id;
-  } catch (_) {}
+    return data.platformAssociatedOrganization?.id;
+  } catch {
+    // Expected when the platform is unknown or not shared with the user:
+    // the redirect falls back to the selected organization.
+  }
 };
 
-interface ServiceInstancesListResponse {
-  data: serviceInstancesListQuery$data;
-}
-
 export const loadServiceInstances = async (identifier: string) => {
-  const response = (await serverPortalApiFetch<
-    typeof ServiceInstancesListQueryGraphql,
-    serviceInstancesListQuery
-  >(ServiceInstancesListQueryGraphql, {
-    count: 50,
-    orderBy: ServiceInstanceOrdering.Ordering,
-    orderMode: OrderingMode.Asc,
-    filters: [
-      {
-        key: ServiceInstanceFilterKey.ServiceDefinitionIdentifier,
-        value: [identifier],
-      },
-    ],
-  })) as ServiceInstancesListResponse;
+  const data = await redirectToSignupOnUnauthenticated(async () => {
+    const client = await getAuthenticatedGraphqlClient();
+    return useServiceInstancesListQuery.fetcher(client, {
+      count: 50,
+      orderBy: ServiceInstanceOrdering.Ordering,
+      orderMode: OrderingMode.Asc,
+      filters: [
+        {
+          key: ServiceInstanceFilterKey.ServiceDefinitionIdentifier,
+          value: [identifier],
+        },
+      ],
+      searchTerm: null,
+    })();
+  });
 
-  return (
-    response.data.serviceInstances?.edges
-      .map((edge) => edge?.node)
-      .filter((node) => node != null) ?? []
-  );
+  return data.serviceInstances.edges
+    .map((edge) => edge.node)
+    .filter((node) => node != null);
 };

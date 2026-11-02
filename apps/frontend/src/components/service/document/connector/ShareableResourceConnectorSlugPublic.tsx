@@ -18,14 +18,14 @@ import {
   MotionPlayIcon,
   ThreatActorGroupIcon,
 } from '@filigran/icon';
-import { seoServiceInstanceFragment$data } from '@generated/seoServiceInstanceFragment.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
+import { SeoServiceInstanceItemFragment } from '@graphql/generated';
 import Image from 'next/image';
 
 interface ShareableResourceConnectorSlugPublicProps {
   documentData: PublicDocumentDetailsData & ConnectorFields;
   serviceInstance:
-    seoServiceInstanceFragment$data | serviceInstance_fragment$data;
+    SeoServiceInstanceItemFragment | serviceInstance_fragment$data;
   pageUrl: string;
 }
 

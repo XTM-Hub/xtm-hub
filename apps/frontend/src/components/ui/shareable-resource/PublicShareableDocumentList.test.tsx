@@ -1,7 +1,7 @@
 import { ServiceListDisplayMode } from '@/components/service/components/header/ServiceListHeader';
 import testRender from '@/utils/test/test-render';
 import { publicDocumentListItemFragment$data } from '@generated/publicDocumentListItemFragment.graphql';
-import { seoServiceInstanceFragment$data } from '@generated/seoServiceInstanceFragment.graphql';
+import { SeoServiceInstanceItemFragment } from '@graphql/generated';
 import { screen, within } from '@testing-library/react';
 import { useRouter } from 'next/navigation';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -38,7 +38,7 @@ describe('PublicShareableDocumentList', () => {
   const serviceInstance = {
     id: ServiceId,
     slug: ServiceSlug,
-  } as seoServiceInstanceFragment$data;
+  } as SeoServiceInstanceItemFragment;
 
   const documents = [
     {

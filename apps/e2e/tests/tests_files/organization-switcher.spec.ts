@@ -1,6 +1,7 @@
 import { expect, test } from '../fixtures/baseFixtures';
 import IntegrationPage from '../model/integration.pageModel';
 import LoginPage from '../model/login.pageModel';
+import OrganizationSwitcherPage from '../model/organization-switcher.pageModel';
 import RegisterPage from '../model/register.pageModel';
 import { v4 as uuidv4 } from 'uuid';
 import { insertDeploymentRequest } from '../db-utils/deployment.helper';
@@ -10,11 +11,13 @@ test.describe('Organization switcher', async () => {
   let loginPage: LoginPage;
   let integrationPage: IntegrationPage;
   let registerPage: RegisterPage;
+  let organizationSwitcherPage: OrganizationSwitcherPage;
 
   test.beforeEach(async ({ page }) => {
     loginPage = new LoginPage(page);
     integrationPage = new IntegrationPage(page);
     registerPage = new RegisterPage(page);
+    organizationSwitcherPage = new OrganizationSwitcherPage(page);
   });
 
   test('Should see registered platforms, subscriptions and trials', async ({
@@ -56,10 +59,7 @@ test.describe('Organization switcher', async () => {
 
     // When User switch on personal space
     await test.step("Should not see his organization's items but personal ones", async () => {
-      await page
-        .getByRole('combobox', { name: 'Select an organization' })
-        .click();
-      await page.getByText('Personal space').click();
+      await organizationSwitcherPage.switchTo('Personal space');
       // Then he should not see his subscriptions, registrations and trials
       await page.getByRole('button', { name: 'OpenCTI' }).click();
       await expect(
@@ -71,10 +71,7 @@ test.describe('Organization switcher', async () => {
 
     // WHen User comes back to organization
     await test.step("Should see his organization's items", async () => {
-      await page
-        .getByRole('combobox', { name: 'Select an organization' })
-        .click();
-      await page.getByText('Filigran', { exact: true }).click();
+      await organizationSwitcherPage.switchTo('Filigran');
       // Then he should see again its subscriptions, registrations and trials
       await page.getByRole('button', { name: 'OpenCTI' }).click();
       await page.getByRole('button', { name: 'My products' }).click();

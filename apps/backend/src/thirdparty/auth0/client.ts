@@ -20,6 +20,7 @@ export interface Auth0UpdateUserRBACInstance {
 export interface Auth0Client {
   updateUser(user: Auth0UpdateUser): Promise<void>;
   resetPassword(email: string): Promise<void>;
+  sendVerificationEmail(userId: string): Promise<void>;
   updateUserRBACInstance(
     email: string,
     userRBACInstance: Auth0UpdateUserRBACInstance,

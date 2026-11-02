@@ -91,3 +91,26 @@ export const deriveXtmPlatformTrialPanelView = ({
   }
   return { kind: 'form' };
 };
+
+export interface XtmPlatformTrialRequestPageLayout {
+  showLimitations: boolean;
+  showExpiredTitle: boolean;
+}
+
+/**
+ * Derives what the request page shows around the panel: the limitations only
+ * while the trial can still be requested or is on its way, and the expired
+ * title once the trial has expired.
+ */
+export const deriveXtmPlatformTrialRequestPageLayout = (
+  view: XtmPlatformTrialPanelView
+): XtmPlatformTrialRequestPageLayout => {
+  const statusPanelState = view.kind === 'status' ? view.state : undefined;
+  return {
+    showLimitations:
+      view.kind === 'form' ||
+      statusPanelState === XtmPlatformTrialStatusPanelState.RequestInProgress,
+    showExpiredTitle:
+      statusPanelState === XtmPlatformTrialStatusPanelState.Expired,
+  };
+};

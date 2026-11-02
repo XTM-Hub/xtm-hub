@@ -6,11 +6,8 @@ import { IntegrationLicenseTypeFilter } from './IntegrationLicenseTypeFilter';
 
 const setLicenseTypesMock = vi.fn();
 
-vi.mock('@/hooks/use-service-list-local-storage', () => ({
-  ServiceListLocalStorageKey: {
-    OpenCTIIntegrationFeeds: 'feeds',
-  },
-  useServiceListLocalStorage: () => ({
+vi.mock('@/hooks/use-service-list-storage', () => ({
+  useServiceListStorage: () => ({
     licenseTypes: {},
     setLicenseTypes: setLicenseTypesMock,
     removeLicenseTypes: vi.fn(),

@@ -252,6 +252,14 @@ export const usePrivateNavigation = (): NavigationConfig => {
       ),
     [registeredPlatformsQueryData]
   );
+  const xtmoneRegisteredPlatforms = useMemo(
+    () =>
+      getPrivateNavigationRegisteredPlatformsByIdentifier(
+        registeredPlatformsQueryData,
+        PlatformIdentifier.Xtmone
+      ),
+    [registeredPlatformsQueryData]
+  );
   const canShowXtmPlatformTrialLink =
     !platformTrialStatusData?.platformTrialStatus.isBlacklisted;
   const buildServiceLink = (
@@ -296,6 +304,20 @@ export const usePrivateNavigation = (): NavigationConfig => {
             subLinks: openaevRegisteredPlatforms.map((platform) => ({
               label: platform.title,
               href: `/${APP_PATH}/service/openaev_registration/${platform.serviceInstanceId}`,
+              tooltip: platform.url,
+            })),
+          },
+        ]
+      : [];
+  const xtmoneMyProductLinks: SectionLink[] =
+    xtmoneRegisteredPlatforms.length > 0
+      ? [
+          {
+            label: getMyProductLabel(xtmoneRegisteredPlatforms.length),
+            badge: `${xtmoneRegisteredPlatforms.length}`,
+            subLinks: xtmoneRegisteredPlatforms.map((platform) => ({
+              label: platform.title,
+              href: `/${APP_PATH}/service/xtmone_registration/${platform.serviceInstanceId}`,
               tooltip: platform.url,
             })),
           },
@@ -359,11 +381,17 @@ export const usePrivateNavigation = (): NavigationConfig => {
       key: 'xtm-one',
       label: 'XTM One',
       icon: LogoXtmOneIcon,
-      pathPrefix: `/${locale}/cybersecurity-solutions/xtm-one`,
+      pathPrefix: `/${APP_PATH}/service/xtmone`,
       links: [
+        ...xtmoneMyProductLinks,
         {
           href: 'https://demo.xtmone.io/login',
           label: tMenu('LiveDemo'),
+          external: true,
+        },
+        {
+          href: 'https://docs.xtmone.io/',
+          label: tMenu('Documentation'),
           external: true,
         },
         {

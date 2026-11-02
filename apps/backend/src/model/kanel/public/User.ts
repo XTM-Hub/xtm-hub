@@ -42,6 +42,8 @@ export default interface User {
   invitation_date: Date | null;
 
   has_replied_satisfaction: HasRepliedSatisfaction | null;
+
+  idp_subject: string | null;
 }
 
 /** Represents the initializer for the table public.User */
@@ -80,6 +82,8 @@ export interface UserInitializer {
   invitation_date?: Date | null;
 
   has_replied_satisfaction?: HasRepliedSatisfaction | null;
+
+  idp_subject?: string | null;
 }
 
 /** Represents the mutator for the table public.User */
@@ -117,4 +121,6 @@ export interface UserMutator {
   invitation_date?: Date | null;
 
   has_replied_satisfaction?: HasRepliedSatisfaction | null;
+
+  idp_subject?: string | null;
 }

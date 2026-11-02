@@ -22,4 +22,12 @@ export default class NavigationMenu {
     const section = await this.expandSection(sectionName);
     return section.getByRole('link', { name: linkName });
   }
+
+  async openMyProduct(sectionName: string, productTitle: string) {
+    const section = await this.expandSection(sectionName);
+    await section.getByRole('button', { name: 'My product' }).click();
+    await section
+      .getByRole('link', { name: productTitle, exact: true })
+      .click();
+  }
 }

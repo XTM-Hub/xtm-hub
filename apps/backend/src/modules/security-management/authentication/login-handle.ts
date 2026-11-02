@@ -1,10 +1,10 @@
-import { UserInfo } from '../../../model/user';
+import { ProviderUserInfo } from '../../../model/user';
 import { AppLogsCategory, logApp } from '../../../utils/app-logger.util';
 import { ErrorType } from '../../../utils/error/error.type';
 import { loginFromProvider } from './auth-user';
 
 export const providerLoginHandler = async (
-  userInfo: UserInfo,
+  userInfo: ProviderUserInfo,
   done: (error: Error | null, user?: Express.User | false | null) => void
 ) => {
   await loginFromProvider(userInfo)

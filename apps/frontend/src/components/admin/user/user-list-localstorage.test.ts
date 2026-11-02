@@ -13,10 +13,13 @@ const ORGANIZATION_ID = 'organization-id';
 
 const getStoredValue = (key: string) =>
   JSON.parse(window.localStorage.getItem(key) ?? 'null');
+const getSessionStoredValue = (key: string) =>
+  JSON.parse(window.sessionStorage.getItem(key) ?? 'null');
 
 describe('useUserListLocalstorage', () => {
   beforeEach(() => {
     window.localStorage.clear();
+    window.sessionStorage.clear();
   });
 
   it('should expose the default list settings when nothing is stored', () => {
@@ -78,7 +81,9 @@ describe('useUserListLocalstorage', () => {
     expect(getStoredValue(ORDER_MODE_KEY)).toBe('desc');
     expect(getStoredValue(COLUMN_ORDER_KEY)).toEqual(['email', 'country']);
     expect(getStoredValue(COLUMN_VISIBILITY_KEY)).toEqual({ country: false });
-    expect(getStoredValue(ORGANIZATION_FILTER_KEY)).toBe(ORGANIZATION_ID);
+    expect(getSessionStoredValue(ORGANIZATION_FILTER_KEY)).toBe(
+      ORGANIZATION_ID
+    );
   });
 
   it('should restore every default value and clear the storage when resetAll is called', () => {
@@ -109,7 +114,7 @@ describe('useUserListLocalstorage', () => {
     expect(window.localStorage.getItem(ORDER_MODE_KEY)).toBeNull();
     expect(window.localStorage.getItem(COLUMN_ORDER_KEY)).toBeNull();
     expect(window.localStorage.getItem(COLUMN_VISIBILITY_KEY)).toBeNull();
-    expect(window.localStorage.getItem(ORGANIZATION_FILTER_KEY)).toBeNull();
+    expect(window.sessionStorage.getItem(ORGANIZATION_FILTER_KEY)).toBeNull();
   });
 
   it('should only restore the default ordering when removeOrder is called', () => {
@@ -134,6 +139,8 @@ describe('useUserListLocalstorage', () => {
     });
     expect(window.localStorage.getItem(ORDER_BY_KEY)).toBeNull();
     expect(window.localStorage.getItem(ORDER_MODE_KEY)).toBeNull();
-    expect(getStoredValue(ORGANIZATION_FILTER_KEY)).toBe(ORGANIZATION_ID);
+    expect(getSessionStoredValue(ORGANIZATION_FILTER_KEY)).toBe(
+      ORGANIZATION_ID
+    );
   });
 });

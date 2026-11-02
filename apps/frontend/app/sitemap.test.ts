@@ -6,7 +6,7 @@ import sitemap from './sitemap';
 const sitemapMocks = vi.hoisted(() => ({
   serverFetchGraphQLMock: vi.fn(),
   fetchSeoServiceInstancesMock: vi.fn(),
-  fetchDocumentSlugsForSitemapMock: vi.fn(),
+  fetchPublicDocumentSlugsMock: vi.fn(),
 }));
 
 vi.mock('@/relay/server-portal-api-fetch', () => ({
@@ -23,7 +23,7 @@ vi.mock(
 vi.mock(
   '@/utils/shareable-resources/utils/shareable-resources.server.utils',
   () => ({
-    fetchDocumentSlugsForSitemap: sitemapMocks.fetchDocumentSlugsForSitemapMock,
+    fetchPublicDocumentSlugs: sitemapMocks.fetchPublicDocumentSlugsMock,
   })
 );
 
@@ -34,7 +34,7 @@ describe('sitemap', () => {
     sitemapMocks.serverFetchGraphQLMock.mockResolvedValue({
       data: { settings: { base_url_front: BASE_URL } },
     });
-    sitemapMocks.fetchDocumentSlugsForSitemapMock.mockResolvedValue([]);
+    sitemapMocks.fetchPublicDocumentSlugsMock.mockResolvedValue([]);
   });
 
   it('should exclude service instances redirecting to an external link from the sitemap', async () => {

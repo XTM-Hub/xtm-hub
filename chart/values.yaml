@@ -30,7 +30,8 @@ xtmhub:
     livenessProbe: {}
     elasticsearchCAFromSecret:
       enabled: true
-      CASecretName: "elasticsearch-es-http-ca-internal"
+      CASecretName: "elasticsearch-es-http-certs-public"
+      CASecretKey: "ca.crt"
   front:
     repository: "portal-front-prod"
     replicas: 1
@@ -146,7 +147,6 @@ elasticsearch:
       cpu: "256m"
     limits:
       memory: 4Gi
-  plugin_prometheus_enabled: true
   reindexRemote:
     enabled: false
     serviceName: opensearch-cluster-master
@@ -159,10 +159,12 @@ elasticsearch:
   ingress:
     enabled: false
     host: localhost
+    whitelistSourceRange: "149.88.28.168/32,10.0.0.0/8"
     annotations: {}
 kibana:
   enabled: true
   priorityClassName: ""
   ingress:
     enabled: true
+    whitelistSourceRange: "149.88.28.168/32,10.0.0.0/8"
     annotations: {}

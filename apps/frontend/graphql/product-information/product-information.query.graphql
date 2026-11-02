@@ -1,0 +1,46 @@
+query RegisteredSaasPlatformData($input: RegisteredSaasPlatformDataInput!) {
+  registeredSaasPlatformData(input: $input) {
+    metadata {
+      hostname
+      plan
+      start_date
+      end_date
+      region
+    }
+    metrics {
+      start
+      end
+      resolution
+      series {
+        metric_type
+        points {
+          timestamp
+          value
+        }
+      }
+    }
+    storage {
+      es_used_size {
+        percent
+        used
+        limit
+      }
+      s3_used_size {
+        percent
+        used
+        limit
+      }
+    }
+    sla {
+      target
+      months {
+        month
+        availability
+        days {
+          day
+          availability
+        }
+      }
+    }
+  }
+}

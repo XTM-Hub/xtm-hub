@@ -15,7 +15,10 @@ import NewsFeedItem, {
 } from '../../model/kanel/public/NewsFeedItem';
 import NewsFeedItemMetadata from '../../model/kanel/public/NewsFeedItemMetadata';
 import { ErrorCode } from '../../utils/error/error.code';
-import { newsFeedConfigurationMapping } from './news-feed.model';
+import {
+  NEWS_FEED_INTERNAL_METADATA_KEYS,
+  newsFeedConfigurationMapping,
+} from './news-feed.model';
 
 export interface NewsFeedItemWithMetadata extends NewsFeedItem {
   metadata: NewsFeedItemMetadata[];
@@ -148,8 +151,23 @@ export const NewsFeedDomain = {
   ): Promise<NewsFeedItemMetadata[]> => {
     return db<NewsFeedItemMetadata[]>('NewsFeedItemMetadata')
       .whereIn('news_feed_item_id', newsFeedItemIds)
-      .whereNot('key', NewsFeedItemMetadataKey.DocumentId)
+      .whereNotIn('key', NEWS_FEED_INTERNAL_METADATA_KEYS)
       .select('*');
+  },
+
+  loadNewsFeedItemWithMetadataById: async (
+    id: NewsFeedItemId
+  ): Promise<NewsFeedItemWithMetadata | undefined> => {
+    const newsFeedItem = await db<NewsFeedItem>('NewsFeedItem')
+      .where({ id })
+      .first();
+    if (!newsFeedItem) {
+      return undefined;
+    }
+    const metadata = await db<NewsFeedItemMetadata[]>('NewsFeedItemMetadata')
+      .where('news_feed_item_id', id)
+      .select('*');
+    return { ...newsFeedItem, metadata };
   },
 
   loadNewsFeedItemByDocumentId: async (

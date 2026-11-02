@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { proxy } from '../proxy';
+import { config, proxy } from '../proxy';
 
 const proxyMocks = vi.hoisted(() => ({
   manageRequestMock: vi.fn(),
@@ -68,5 +68,12 @@ describe('proxy', () => {
     await proxy(request, {} as never);
 
     expect(proxyMocks.intlMiddlewareMock).toHaveBeenCalledOnce();
+  });
+
+  it('should run on the public news feed redirect route, and only on it among the redirect routes', () => {
+    expect(config.matcher).toContain('/redirect/news-feed/:itemId');
+    expect(
+      config.matcher.filter((path) => path.startsWith('/redirect'))
+    ).toEqual(['/redirect/news-feed/:itemId']);
   });
 });

@@ -1,27 +1,29 @@
-import { serverMutateGraphQL } from '@/relay/server-portal-api-fetch';
+import { getAuthenticatedGraphqlClient } from '@/lib/graphql-client';
+import { redirectToSignupOnUnauthenticated } from '@/lib/server-unauthenticated-redirect';
 import { isValueInEnum } from '@/utils/is-value-in-enum';
 import { loadMeUser } from '@/utils/load-me-user';
 import { APP_PATH } from '@/utils/path/constant';
 import { encodeRedirectValue } from '@/utils/redirect';
-import OrganizationSwitcherMutation, {
-  OrganizationSwitcherMutation as OrganizationSwitcherMutationType,
-} from '@generated/OrganizationSwitcherMutation.graphql';
-import { ServiceDefinitionIdentifier } from '@graphql/generated';
+import {
+  ServiceDefinitionIdentifier,
+  useChangeSelectedOrganizationMutation,
+} from '@graphql/generated';
 import { NextRequest, NextResponse } from 'next/server';
 import {
   loadBaseUrlFront,
   loadPlatformOrganizationId,
   loadServiceInstances,
 } from './utils/load';
+import { trackNewsFeedRedirect } from './utils/news-feed-telemetry';
 import { getLoginRedirectionURL } from './utils/url';
 
 async function switchOrganization(organization_id: string) {
-  await serverMutateGraphQL<OrganizationSwitcherMutationType>(
-    OrganizationSwitcherMutation,
-    {
+  await redirectToSignupOnUnauthenticated(async () => {
+    const client = await getAuthenticatedGraphqlClient();
+    return useChangeSelectedOrganizationMutation.fetcher(client, {
       organization_id,
-    }
-  );
+    })();
+  });
 }
 export const redirectToResource = async (
   params: { identifier: string },
@@ -85,6 +87,9 @@ export const redirectToResource = async (
   if (!serviceInstances[0]) {
     return NextResponse.redirect(new URL(`/${APP_PATH}`, baseUrlFront));
   }
+
+  // Final redirect to the resource page: the only place where a news feed click is counted
+  trackNewsFeedRedirect(identifier, request);
 
   const targetPath = `/${APP_PATH}/service/${identifier}/${encodeRedirectValue(serviceInstances[0].id)}${document_id ? `/${encodeRedirectValue(document_id)}` : ''}${queryString ? `?${queryString}` : ''}`;
   return NextResponse.redirect(new URL(targetPath, baseUrlFront));
