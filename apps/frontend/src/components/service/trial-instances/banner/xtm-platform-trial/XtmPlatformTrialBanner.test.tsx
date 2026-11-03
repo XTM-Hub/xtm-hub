@@ -11,10 +11,13 @@ const DAYS_LEFT = 'Service.Trials.XtmPlatform.DaysLeft';
 const LEARN_MORE = 'Service.Trials.LearnMore.Link';
 const LEARN_MORE_HREF = '/app/service/xtm-platform-trial';
 const DAYS_LEFT_COUNT = 12;
+const CLOSE = 'Utils.Close';
+const TEXT_BY_STATE = { 'no-trial': NO_TRIAL_TEXT, active: ACTIVE_TEXT };
 
 describe('XtmPlatformTrialBanner', () => {
   afterEach(() => {
     vi.mocked(usePathname).mockReset();
+    window.localStorage.clear();
   });
 
   it('should render nothing when the state is none', () => {
@@ -44,22 +47,83 @@ describe('XtmPlatformTrialBanner', () => {
     }
   );
 
-  it.each(['no-trial', 'active', 'ending'] as const)(
-    'should render no close button when the state is %s',
+  it.each(['no-trial', 'active'] as const)(
+    'should render a close button when the state is %s',
     (state) => {
       // Given
       testRender(
         <XtmPlatformTrialBanner
           state={state}
           daysLeft={DAYS_LEFT_COUNT}
-          learnMoreHref={LEARN_MORE_HREF}
         />
       );
 
       // Then
-      expect(screen.queryByRole('button')).toBeNull();
+      expect(screen.getByRole('button', { name: CLOSE })).toBeInTheDocument();
     }
   );
+
+  it('should render no close button in the last days of the trial', () => {
+    // Given
+    testRender(
+      <XtmPlatformTrialBanner
+        state="ending"
+        daysLeft={DAYS_LEFT_COUNT}
+      />
+    );
+
+    // Then
+    expect(screen.queryByRole('button', { name: CLOSE })).toBeNull();
+  });
+
+  it.each(['no-trial', 'active'] as const)(
+    'should stay hidden once closed when the state is %s',
+    async (state) => {
+      // Given
+      const { user, unmount } = testRender(
+        <XtmPlatformTrialBanner state={state} />
+      );
+
+      // When
+      await user.click(screen.getByRole('button', { name: CLOSE }));
+      unmount();
+      testRender(<XtmPlatformTrialBanner state={state} />);
+
+      // Then
+      expect(screen.queryByText(TEXT_BY_STATE[state])).toBeNull();
+    }
+  );
+
+  it('should show the last days banner even after the active one was closed', async () => {
+    // Given
+    const { user, unmount } = testRender(
+      <XtmPlatformTrialBanner state="active" />
+    );
+    await user.click(screen.getByRole('button', { name: CLOSE }));
+    unmount();
+
+    // When
+    testRender(<XtmPlatformTrialBanner state="ending" />);
+
+    // Then
+    expect(screen.getByText(ENDING_TEXT)).toBeInTheDocument();
+  });
+
+  it('should move the focus to the page content once closed', async () => {
+    // Given
+    const { user } = testRender(
+      <>
+        <XtmPlatformTrialBanner state="no-trial" />
+        <main>content</main>
+      </>
+    );
+
+    // When
+    await user.click(screen.getByRole('button', { name: CLOSE }));
+
+    // Then
+    expect(screen.getByRole('main')).toHaveFocus();
+  });
 
   it('should render the learn more link to the trial page when there is no trial', () => {
     // Given

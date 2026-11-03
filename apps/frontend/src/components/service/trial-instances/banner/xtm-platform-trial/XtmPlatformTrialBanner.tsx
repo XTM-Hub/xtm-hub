@@ -1,6 +1,7 @@
 'use client';
 
 import { LearnMoreBannerLink } from '@/components/service/trial-instances/banner/LearnMoreBannerLink';
+import { useXtmPlatformTrialBannerDismissed } from '@/components/service/trial-instances/banner/xtm-platform-trial/useXtmPlatformTrialBannerDismissed';
 import { XtmPlatformTrialBannerState } from '@/components/service/trial-instances/banner/xtm-platform-trial/xtm-platform-trial-banner.utils';
 import { useTranslate } from '@/hooks/use-translate';
 import { Banner } from '@filigran/design-system';
@@ -26,9 +27,10 @@ export const XtmPlatformTrialBanner = ({
   learnMoreHref,
 }: XtmPlatformTrialBannerProps) => {
   const t = useTranslate();
+  const { dismissed, dismiss } = useXtmPlatformTrialBannerDismissed(state);
   const pathname = usePathname();
 
-  if (state === 'none') {
+  if (state === 'none' || dismissed) {
     return null;
   }
 
@@ -37,13 +39,25 @@ export const XtmPlatformTrialBanner = ({
   const showLearnMore =
     state === 'no-trial' && !!learnMoreHref && !isOnLearnMorePage;
   const showDaysLeft = state !== 'no-trial' && daysLeft != null;
+  const isDismissable = state !== 'ending';
+
+  const handleDismiss = () => {
+    dismiss();
+    // The close button unmounts with the banner: hand the focus to the page
+    // content rather than dropping it on the body (Banner RULE-04).
+    const main = document.querySelector('main');
+    main?.setAttribute('tabindex', '-1');
+    main?.focus();
+  };
 
   return (
     <Banner
       variant={state === 'ending' ? 'warning' : 'default'}
       action={
         showLearnMore ? <LearnMoreBannerLink href={learnMoreHref} /> : undefined
-      }>
+      }
+      onDismiss={isDismissable ? handleDismiss : undefined}
+      dismissLabel={t('Utils.Close')}>
       {t(TITLE_KEYS[state])}
       {showDaysLeft && (
         <>
