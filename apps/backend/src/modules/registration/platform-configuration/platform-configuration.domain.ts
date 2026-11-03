@@ -15,6 +15,7 @@ import { UserId } from '../../../model/kanel/public/User';
 import { logApp } from '../../../utils/app-logger.util';
 import { ErrorCode } from '../../../utils/error/error.code';
 import { formatRawObject } from '../../../utils/query-raw.util';
+import { isUuid } from '../../../utils/uuid.util';
 import type { PlatformConfigurationInput } from '../registration.domain';
 import { platformIdentifierMappedByServiceDefinitionIdentifier } from '../registration.mapping';
 
@@ -67,6 +68,19 @@ const resolvePlatformFromJoinedRow = (
     platformIdentifier,
   };
 };
+
+const areCredentialsUuids = ({
+  platform_id,
+  token,
+  tenant_id,
+}: {
+  platform_id: string;
+  token: string;
+  tenant_id?: string;
+}): boolean =>
+  isUuid(platform_id) &&
+  isUuid(token) &&
+  (tenant_id === undefined || isUuid(tenant_id));
 
 const buildJoinedConfigurationQuery = () =>
   db<PlatformConfiguration>('PlatformConfiguration')
@@ -142,6 +156,10 @@ export const PlatformConfigurationDomain = {
     tenant_id?: string;
     withoutTenantId?: boolean;
   }): Promise<PlatformConfiguration | undefined> => {
+    if (!areCredentialsUuids({ platform_id, token, tenant_id })) {
+      return undefined;
+    }
+
     const qb = db<PlatformConfiguration>('PlatformConfiguration')
       .where('platform_id', '=', platform_id)
       .where('token', '=', token);
@@ -249,6 +267,10 @@ export const PlatformConfigurationDomain = {
     tenant_id?: string;
     withoutTenantId?: boolean;
   }): Promise<FullPlatformConfiguration | undefined> => {
+    if (!areCredentialsUuids({ platform_id, token, tenant_id })) {
+      return undefined;
+    }
+
     const qb = buildJoinedConfigurationQuery()
       .where('PlatformConfiguration.platform_id', '=', platform_id)
       .where('PlatformConfiguration.token', '=', token);

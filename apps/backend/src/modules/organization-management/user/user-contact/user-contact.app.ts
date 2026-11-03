@@ -1,4 +1,3 @@
-import { validate as isUuid } from 'uuid';
 import {
   DeploymentRequestDeploymentType,
   PlatformConfigurationStatus,
@@ -149,10 +148,6 @@ const loadPlatformContact = async ({
     return buildTrialContact(trialRequest, message);
   }
 
-  // A registration is keyed by UUID columns: any other value is refused here, before the database rejects it.
-  if (!isUuid(platformId) || !isUuid(platformToken)) {
-    throw new Error(ErrorCode.InvalidPlatformToken);
-  }
   const registration =
     await PlatformConfigurationDomain.loadResolvedConfigurationByPlatformAndToken(
       { platform_id: platformId, token: platformToken }

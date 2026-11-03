@@ -655,6 +655,42 @@ describe('registration connectivity app', () => {
         other: PlatformContract.Ce,
       });
     });
+
+    it('should not attach a non-UUID tenant id to a legacy platform that upgrades to a version that requires one', async () => {
+      // Given
+      const platformId = uuidv4();
+      const token = await RegistrationApp.registerPlatform({
+        organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        platform: {
+          id: platformId,
+          url: 'http://example.com',
+          contract: PlatformContract.Ee,
+          title: 'Fake title',
+          version: '1.0.0',
+        },
+        identifier: PlatformIdentifier.Openaev,
+      });
+
+      // When
+      await RegistrationConnectivityApp.refreshPlatformRegistrationConnectivityStatusSingleTenant(
+        {
+          platformId,
+          token,
+          platformVersion: '2.4.0',
+          url: 'http://example.com/tenantId',
+          tenantId: 'not-a-uuid',
+          tenantName: 'My tenant',
+          platformIdentifier: PlatformIdentifier.Openaev,
+        }
+      );
+
+      // Then
+      const config =
+        await PlatformConfigurationDomain.loadConfigurationByPlatform(
+          platformId
+        );
+      expect(config).toMatchObject({ tenant_id: null, tenant_name: null });
+    });
   });
 
   describe('refreshPlatformRegistrationConnectivityStatusAllTenants', () => {
