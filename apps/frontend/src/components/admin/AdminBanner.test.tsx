@@ -12,7 +12,7 @@ const ADMIN_USER = { capabilities: [{ name: PortalCapability.Bypass }] };
 const STANDARD_USER = { capabilities: [] };
 
 describe('AdminBanner', () => {
-  it('should warn that admin mode is active when an administrator browses the admin area', () => {
+  it('should warn in a warning banner that admin mode is active when an administrator browses the admin area', () => {
     // Given
     vi.mocked(usePathname).mockReturnValue(ADMIN_PATH);
 
@@ -20,7 +20,9 @@ describe('AdminBanner', () => {
     testRender(<AdminBanner />, { me: ADMIN_USER });
 
     // Then
-    expect(screen.getByText(ADMIN_BANNER_TEXT)).toBeInTheDocument();
+    expect(
+      screen.getByText(ADMIN_BANNER_TEXT).closest('[data-variant]')
+    ).toHaveAttribute('data-variant', 'warning');
   });
 
   it.each([

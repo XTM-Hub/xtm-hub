@@ -1,5 +1,6 @@
 import { AppFooter } from '@/components/AppFooter';
 import { SharedContent } from '@/components/layout/SharedContent';
+import { BannerStack } from '@filigran/design-system';
 import { ReactNode } from 'react';
 
 interface AppShellProps {
@@ -19,7 +20,8 @@ export const AppShell = ({
 }: AppShellProps) => {
   return (
     <div className="flex flex-col w-full h-[calc(100dvh-var(--cookie-banner-height,0px))] min-h-0">
-      {banners}
+      {/* Hidden while every banner renders nothing: no empty landmark. */}
+      <BannerStack className="shrink-0 empty:hidden">{banners}</BannerStack>
       <div className="flex flex-row grow min-h-0">
         {menu}
         <div className="flex flex-col w-full h-full min-h-0 min-w-0">
