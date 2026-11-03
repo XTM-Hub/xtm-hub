@@ -13,6 +13,7 @@ import {
 } from '../../../modules/security-management/token/platform-token.util';
 import { PLATFORM_USER_EMAIL, PLATFORM_USER_UUID } from '../../../portal.const';
 import { ErrorCode } from '../../../utils/error/error.code';
+import { ForbiddenAccess } from '../../../utils/error/error.util';
 
 export {
   extractPlatformId,
@@ -25,12 +26,22 @@ export {
 } from '../../../modules/security-management/token/platform-token.util';
 export const PLATFORM_TOKEN_DIRECTIVE_NAME = 'platform_token';
 
+const buildInvalidPlatformTokenError = () => {
+  const error = ForbiddenAccess(
+    'Invalid platform token provided',
+    undefined,
+    'warn'
+  );
+  error.extensions = { code: ErrorCode.InvalidPlatformToken };
+  return error;
+};
+
 const loadOrganizationFromPlatformIdAndTokenHeaders = async (
   req: express.Request
 ) => {
   const extractedAuth = validateExistsPlatformAndToken(req);
   if (!extractedAuth) {
-    throw new Error('Invalid platform token provided');
+    throw buildInvalidPlatformTokenError();
   }
   const { token, platform_id } = extractedAuth;
 
@@ -59,7 +70,7 @@ const loadOrganizationFromPlatformIdAndTokenHeaders = async (
     });
   }
 
-  throw new Error('Invalid token provided');
+  throw buildInvalidPlatformTokenError();
 };
 
 type ResolverArgumentValue =
@@ -85,7 +96,7 @@ export const createPlatformTokenResolver = (
       portalContext.req
     );
     if (!organization) {
-      throw ErrorCode.OrganizationNotFound;
+      throw new Error(ErrorCode.OrganizationNotFound);
     }
 
     const platformUser: UserLoadUserBy = {
