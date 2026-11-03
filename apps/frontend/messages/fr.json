@@ -688,7 +688,6 @@
     "Home": "Accueil",
     "Profile": "Profil",
     "Security": "Sécurité",
-    "Service": "Service",
     "Settings": "Paramètres",
     "SettingsLabel": "Menu des paramètres",
     "Users": "Utilisateurs",
@@ -705,7 +704,8 @@
     "Services": "Services",
     "SettingsAccess": "Accès",
     "SettingsCommunity": "Communauté",
-    "SettingsManagement": "Gestion"
+    "SettingsManagement": "Gestion",
+    "ServiceCatalog": "Catalogue de services"
   },
   "NewsFeedAdminPage": {
     "Title": "Titre",

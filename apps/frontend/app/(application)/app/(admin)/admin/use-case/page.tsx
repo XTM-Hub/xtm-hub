@@ -1,32 +1,10 @@
-'use client';
-import UseCases from '@/components/admin/use-case/UseCases';
-import GuardCapacityComponent from '@/components/AdminGuard';
-import { BreadcrumbNav } from '@/components/ui/BreadcrumbNav';
-import { useTranslate } from '@/hooks/use-translate';
+import {
+  getServiceCatalogTabPath,
+  ServiceCatalogTab,
+} from '@/components/admin/service-catalog/service-catalog.utils';
+import { redirect } from 'next/navigation';
 
-export const dynamic = 'force-dynamic';
+const Page = () =>
+  redirect(getServiceCatalogTabPath(ServiceCatalogTab.UseCases));
 
-const breadcrumbValue = [
-  {
-    label: 'MenuLinks.Settings',
-  },
-  {
-    label: 'MenuLinks.UseCases',
-  },
-];
-
-// Component
-const Page = () => {
-  const t = useTranslate();
-
-  return (
-    <GuardCapacityComponent displayError>
-      <BreadcrumbNav value={breadcrumbValue} />
-      <h1 className="sr-only">{t('MenuLinks.UseCases')}</h1>
-      <UseCases />
-    </GuardCapacityComponent>
-  );
-};
-
-// Component export
 export default Page;

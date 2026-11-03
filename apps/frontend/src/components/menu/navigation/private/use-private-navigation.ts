@@ -16,7 +16,11 @@ import {
 } from '@/components/menu/navigation/shared/navigation.type';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import { APP_PATH, XTM_PLATFORM_TRIAL_PATH } from '@/utils/path/constant';
+import {
+  ADMIN_SERVICE_CATALOG_PATH,
+  APP_PATH,
+  XTM_PLATFORM_TRIAL_PATH,
+} from '@/utils/path/constant';
 import {
   DiamondOutlinedIcon,
   HomeIcon,
@@ -161,13 +165,8 @@ export const usePrivateNavigation = (): NavigationConfig => {
       restriction: [PortalCapability.ReadSaasMetrics],
     },
     {
-      href: `/${APP_PATH}/admin/service`,
-      label: tMenuLinks('Services'),
-      group: managementGroupLabel,
-    },
-    {
-      href: `/${APP_PATH}/admin/solution-category`,
-      label: tMenuLinks('SolutionCategories'),
+      href: ADMIN_SERVICE_CATALOG_PATH,
+      label: tMenuLinks('ServiceCatalog'),
       group: managementGroupLabel,
     },
     {
@@ -175,11 +174,6 @@ export const usePrivateNavigation = (): NavigationConfig => {
       label: tMenuLinks('Trials'),
       group: managementGroupLabel,
       restriction: [PortalCapability.ReadTrials],
-    },
-    {
-      href: `/${APP_PATH}/admin/use-case`,
-      label: tMenuLinks('UseCases'),
-      group: managementGroupLabel,
     },
   ];
   const settingsLinks = settingsLinksConfig

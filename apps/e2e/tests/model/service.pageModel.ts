@@ -25,7 +25,7 @@ export default class ServicePage {
       .getByRole('button', { name: 'Settings', exact: true })
       .click();
     await this.page
-      .getByRole('link', { name: 'Services', exact: true })
+      .getByRole('link', { name: 'Service catalog', exact: true })
       .click();
     await this.page.getByText('Name', { exact: true }).click();
   }
