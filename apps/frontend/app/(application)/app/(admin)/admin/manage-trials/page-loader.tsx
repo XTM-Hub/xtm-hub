@@ -7,7 +7,7 @@ const breadcrumbValue = [
     label: 'MenuLinks.Settings',
   },
   {
-    label: 'MenuLinks.ManageTrials',
+    label: 'MenuLinks.Trials',
   },
 ];
 
@@ -16,7 +16,7 @@ const PageLoader = () => {
   return (
     <>
       <BreadcrumbNav value={breadcrumbValue} />
-      <h1 className="sr-only">{t('MenuLinks.ManageTrials')}</h1>
+      <h1 className="sr-only">{t('MenuLinks.Trials')}</h1>
       <TrialsList />
     </>
   );

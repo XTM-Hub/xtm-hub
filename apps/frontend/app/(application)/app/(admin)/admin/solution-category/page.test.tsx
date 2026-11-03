@@ -57,7 +57,7 @@ describe('Admin solution categories page', () => {
 
     // Then
     expect(
-      screen.getByRole('heading', { name: 'MenuLinks.SolutionCategory' })
+      screen.getByRole('heading', { name: 'MenuLinks.SolutionCategories' })
     ).toBeInTheDocument();
     expect(
       screen.getByRole('row', { name: new RegExp(FORMATTED_CATEGORY_NAME) })

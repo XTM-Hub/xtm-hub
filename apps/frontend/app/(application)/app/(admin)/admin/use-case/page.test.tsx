@@ -49,7 +49,7 @@ describe('Admin use cases page', () => {
 
     // Then
     expect(
-      screen.getByRole('heading', { name: 'MenuLinks.UseCase' })
+      screen.getByRole('heading', { name: 'MenuLinks.UseCases' })
     ).toBeInTheDocument();
     expect(
       screen.getByRole('row', { name: new RegExp(USE_CASE_NAME) })

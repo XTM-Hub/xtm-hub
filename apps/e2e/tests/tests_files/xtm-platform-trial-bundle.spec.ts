@@ -70,9 +70,7 @@ test.describe('XTM Platform bundle trial', () => {
 
     await test.step('The platform team sees the bundle and its products', async () => {
       await trialPage.navigateToManageTrials();
-      await expect(
-        page.getByRole('heading', { name: 'Manage trials' })
-      ).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Trials' })).toBeVisible();
 
       // The waiting tab only lists queued bundles, a pending one is running
       await expect(page.getByRole('tab', { name: 'Waiting' })).toBeVisible();
