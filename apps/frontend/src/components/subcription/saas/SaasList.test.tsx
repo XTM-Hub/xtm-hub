@@ -1,4 +1,9 @@
 import { SaasList } from '@/components/subcription/saas/SaasList';
+import {
+  getSaasListTourSteps,
+  HIGHLIGHTED_ROW_COUNT,
+} from '@/components/subcription/saas/tour/saas-list-tour';
+import type { useTranslate } from '@/hooks/use-translate';
 import testRender from '@/utils/test/test-render';
 import {
   OrderingMode,
@@ -128,6 +133,26 @@ const getAdministratorsCell = () => {
     .getAllByRole('row')
     .filter((row) => within(row).queryAllByRole('cell').length > 0);
   return within(firstRow).getAllByRole('cell')[administratorsColumnIndex];
+};
+
+const getColumnHeader = (columnId: string) =>
+  document.querySelector(`th[data-column-id="${columnId}"]`);
+
+const hideColumn = async (
+  user: ReturnType<typeof testRender>['user'],
+  columnId: string
+) => {
+  await user.click(
+    within(getColumnHeader(columnId) as HTMLElement).getByRole('button', {
+      name: 'DesignSystem.DataTable.ColumnOptions',
+    })
+  );
+  await user.click(
+    await screen.findByRole('menuitem', {
+      name: 'DesignSystem.DataTable.HideColumn',
+    })
+  );
+  await waitFor(() => expect(getColumnHeader(columnId)).toBeNull());
 };
 
 describe('SaasList', () => {
@@ -640,5 +665,180 @@ describe('SaasList', () => {
 
     // Then the saas platforms are fetched without search term
     expect(lastQueryVariables()).toMatchObject({ searchTerm: null });
+  });
+
+  it('should start the tour on its first step when the user opens the documentation', async () => {
+    // Given the list of saas platforms
+    const { user } = renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
+
+    // When the user opens the documentation
+    await user.click(
+      screen.getByRole('button', { name: 'CSMBoard.Tour.Documentation' })
+    );
+
+    // Then the tour shows its first step
+    expect(await screen.findByText('CSMBoard.Tour.Table')).toBeVisible();
+  });
+
+  it('should translate the navigation controls of the tour', async () => {
+    // Given the list of saas platforms
+    const { user } = renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
+
+    // When the user opens the documentation
+    await user.click(
+      screen.getByRole('button', { name: 'CSMBoard.Tour.Documentation' })
+    );
+
+    // Then the previous, next and step buttons of the tour are labelled in the user's language
+    expect(
+      await screen.findByRole('button', { name: 'CSMBoard.Tour.PreviousStep' })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'CSMBoard.Tour.NextStep' })
+    ).toBeInTheDocument();
+    expect(
+      screen.getAllByRole('button', { name: 'CSMBoard.Tour.GoToStep' })
+    ).toHaveLength(
+      getSaasListTourSteps(
+        ((key: string) => key) as unknown as ReturnType<typeof useTranslate>
+      ).length
+    );
+    expect(
+      screen.queryByRole('button', { name: /^Go to/ })
+    ).not.toBeInTheDocument();
+  });
+
+  it.each([
+    [
+      'the columns of the Hub',
+      3,
+      'CSMBoard.Tour.HubColumns',
+      [SaasPlatformOrdering.Product, SaasPlatformOrdering.Plan],
+    ],
+    [
+      'the columns with more information on hover',
+      4,
+      'CSMBoard.Tour.HoverDetails',
+      [SaasPlatformOrdering.Plan, 'link'],
+    ],
+  ])(
+    'should dim the columns in between on the step about %s',
+    async (_, nextStepCount, stepContent, dimmedColumnIds) => {
+      // Given the tour opened on the list of saas platforms
+      mockSaasPlatforms([buildSaasPlatform()]);
+      const { user, container } = renderWithCapabilities([
+        PortalCapability.ReadSaasMetrics,
+      ]);
+      await user.click(
+        screen.getByRole('button', { name: 'CSMBoard.Tour.Documentation' })
+      );
+
+      // When the user goes to the step
+      for (let step = 0; step < nextStepCount; step++) {
+        await user.click(
+          screen.getByRole('button', { name: 'CSMBoard.Tour.NextStep' })
+        );
+      }
+      await screen.findByText(stepContent);
+
+      // Then the header and cell of each column in between are dimmed
+      const list = container.querySelector('[data-tour="saas-list"]');
+      expect(list).toHaveClass(
+        ...dimmedColumnIds.map(
+          (columnId) => `[&_[data-column-id=${columnId}]]:opacity-30`
+        )
+      );
+      expect(
+        list?.querySelectorAll(
+          dimmedColumnIds
+            .map((columnId) => `[data-column-id="${columnId}"]`)
+            .join(', ')
+        )
+      ).toHaveLength(dimmedColumnIds.length * 2);
+    }
+  );
+
+  it('should end the tour on the full documentation of the metrics', async () => {
+    // Given the tour opened on the list of saas platforms
+    mockSaasPlatforms([buildSaasPlatform()]);
+    const { user } = renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
+    await user.click(
+      screen.getByRole('button', { name: 'CSMBoard.Tour.Documentation' })
+    );
+
+    // When the user goes to the last step
+    const stepCount = getSaasListTourSteps(
+      ((key: string) => key) as unknown as ReturnType<typeof useTranslate>
+    ).length;
+    for (let step = 1; step < stepCount; step++) {
+      await user.click(
+        screen.getByRole('button', { name: 'CSMBoard.Tour.NextStep' })
+      );
+    }
+
+    // Then the tour points to the full documentation
+    expect(
+      await screen.findByText('CSMBoard.Tour.FullDocumentation')
+    ).toBeVisible();
+  });
+
+  it('should show the hidden columns the tour points at when the user opens the documentation', async () => {
+    // Given a list whose customer column is hidden
+    mockSaasPlatforms([buildSaasPlatform()]);
+    const { user } = renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
+    await hideColumn(user, SaasPlatformOrdering.CustomerName);
+
+    // When the user opens the documentation
+    await user.click(
+      screen.getByRole('button', { name: 'CSMBoard.Tour.Documentation' })
+    );
+
+    // Then the customer column is shown
+    expect(getColumnHeader(SaasPlatformOrdering.CustomerName)).toBeVisible();
+  });
+
+  it('should hide again the columns the user had hidden when the tour closes', async () => {
+    // Given the tour opened on a list whose customer column is hidden, which the tour shows
+    mockSaasPlatforms([buildSaasPlatform()]);
+    const { user } = renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
+    await hideColumn(user, SaasPlatformOrdering.CustomerName);
+    await user.click(
+      screen.getByRole('button', { name: 'CSMBoard.Tour.Documentation' })
+    );
+    expect(getColumnHeader(SaasPlatformOrdering.CustomerName)).toBeVisible();
+
+    // When the user closes the tour
+    await user.click(
+      await screen.findByRole('button', { name: 'CSMBoard.Tour.Close' })
+    );
+
+    // Then the customer column is hidden again
+    await waitFor(() =>
+      expect(getColumnHeader(SaasPlatformOrdering.CustomerName)).toBeNull()
+    );
+  });
+
+  it('should find every element the tour points at in the list', () => {
+    // Given a list with as many saas platforms as the tour highlights rows
+    mockSaasPlatforms(
+      Array.from({ length: HIGHLIGHTED_ROW_COUNT }, (_, index) =>
+        buildSaasPlatform({ id: `platform-${index}` })
+      )
+    );
+    renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
+
+    // When the tour looks for the elements of its steps
+    const steps = getSaasListTourSteps(
+      ((key: string) => key) as unknown as ReturnType<typeof useTranslate>
+    );
+    const selectors = steps.flatMap((step) => [
+      step.selector as string,
+      ...(step.highlightedSelectors ?? []),
+    ]);
+
+    // Then each of them is in the list
+    expect(
+      selectors.filter((selector) => !document.querySelector(selector))
+    ).toEqual([]);
   });
 });

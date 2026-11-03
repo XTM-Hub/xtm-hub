@@ -2,6 +2,7 @@ export {
   DataTable,
   DataTableHeadBarOptions,
   DataTableToolbar,
+  useDataTable,
   type DataTableLabels,
   type DataTableProps,
   type DataTableToolbarProps,

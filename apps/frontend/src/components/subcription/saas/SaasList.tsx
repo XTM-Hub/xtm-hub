@@ -10,6 +10,15 @@ import { SaasStorageUsage } from '@/components/subcription/saas/datatable/SaasSt
 import { useSaasListLocalstorage } from '@/components/subcription/saas/saas-list-localstorage';
 import { SaasProductFilter } from '@/components/subcription/saas/SaasProductFilter';
 import {
+  SAAS_LIST_TOUR_TARGET,
+  saasListTourTarget,
+} from '@/components/subcription/saas/tour/saas-list-tour';
+import {
+  SaasListTourArea,
+  SaasListTourButton,
+  SaasListTourProvider,
+} from '@/components/subcription/saas/tour/SaasListTour';
+import {
   DataTable,
   DataTableHeadBarOptions,
   DataTableToolbar,
@@ -340,60 +349,79 @@ export const SaasList = () => {
   };
 
   return (
-    // One provider for every tooltip of the table, rather than one per cell.
-    <TooltipProvider>
-      {/* null when the SaaS Manager cannot be reached */}
-      {(isError || data?.saasManagerPlatforms === null) && (
-        <div className="mb-2 text-sm text-feedback-error-primary">
-          {t('Utils.Error')}
-        </div>
-      )}
-      <DataTable
-        columns={columns}
-        data={saasPlatforms}
-        isLoading={isLoading}
-        {...getDataTableLabels(t)}
-        onResetTable={resetAll}
-        tableOptions={{
-          onSortingChange,
-          onPaginationChange,
-          manualSorting: true,
-          manualPagination: true,
-          rowCount: data?.saasManagerPlatforms?.totalCount ?? 0,
-        }}
-        tableState={{
-          sorting: mapToSortingTableValue(orderBy, orderMode),
-          pagination,
-        }}
-        toolbar={
-          <DataTableToolbar
-            search={
-              <>
-                <label
-                  htmlFor="saas-platforms-search"
-                  className="sr-only">
-                  {t('CSMBoard.SearchPlatform')}
-                </label>
-                <SearchField
-                  id="saas-platforms-search"
-                  fullWidth
-                  placeholder={t('CSMBoard.SearchPlatform')}
-                  clearLabel={t('CSMBoard.ClearSearch')}
-                  onChange={onSearchChange}
-                  onClear={onSearchClear}
-                />
-              </>
-            }
-            filters={
-              <SaasProductFilter
-                selectedProduct={product}
-                onProductChange={onProductChange}
+    <SaasListTourProvider>
+      {/* One provider for every tooltip of the table, rather than one per cell. */}
+      <TooltipProvider>
+        <SaasListTourArea>
+          {/* null when the SaaS Manager cannot be reached */}
+          {(isError || data?.saasManagerPlatforms === null) && (
+            <div className="mb-2 text-sm text-feedback-error-primary">
+              {t('Utils.Error')}
+            </div>
+          )}
+          <DataTable
+            columns={columns}
+            data={saasPlatforms}
+            isLoading={isLoading}
+            {...getDataTableLabels(t)}
+            onResetTable={resetAll}
+            tableOptions={{
+              onSortingChange,
+              onPaginationChange,
+              manualSorting: true,
+              manualPagination: true,
+              rowCount: data?.saasManagerPlatforms?.totalCount ?? 0,
+            }}
+            tableState={{
+              sorting: mapToSortingTableValue(orderBy, orderMode),
+              pagination,
+            }}
+            toolbar={
+              <DataTableToolbar
+                search={
+                  <div {...saasListTourTarget(SAAS_LIST_TOUR_TARGET.Search)}>
+                    <label
+                      htmlFor="saas-platforms-search"
+                      className="sr-only">
+                      {t('CSMBoard.SearchPlatform')}
+                    </label>
+                    <SearchField
+                      id="saas-platforms-search"
+                      fullWidth
+                      placeholder={t('CSMBoard.SearchPlatform')}
+                      clearLabel={t('CSMBoard.ClearSearch')}
+                      onChange={onSearchChange}
+                      onClear={onSearchClear}
+                    />
+                  </div>
+                }
+                filters={
+                  <div
+                    {...saasListTourTarget(
+                      SAAS_LIST_TOUR_TARGET.ProductFilter
+                    )}>
+                    <SaasProductFilter
+                      selectedProduct={product}
+                      onProductChange={onProductChange}
+                    />
+                  </div>
+                }
+                actions={
+                  <>
+                    <SaasListTourButton />
+                    <div
+                      {...saasListTourTarget(
+                        SAAS_LIST_TOUR_TARGET.TableOptions
+                      )}>
+                      <DataTableHeadBarOptions />
+                    </div>
+                  </>
+                }
               />
             }
-            actions={<DataTableHeadBarOptions />}
           />
-        }
-      />
-    </TooltipProvider>
+        </SaasListTourArea>
+      </TooltipProvider>
+    </SaasListTourProvider>
   );
 };
