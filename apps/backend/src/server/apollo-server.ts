@@ -1,13 +1,43 @@
 import { ApolloServer } from '@apollo/server';
-import { unwrapResolverError } from '@apollo/server/errors';
+import {
+  ApolloServerErrorCode,
+  unwrapResolverError,
+} from '@apollo/server/errors';
 import { ApolloServerPluginLandingPageDisabled } from '@apollo/server/plugin/disabled';
 import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer';
 import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin/landingPage/default';
-import type { GraphQLSchema } from 'graphql';
+import { isInstance as isCustomApolloError } from 'apollo-errors';
+import type { GraphQLFormattedError, GraphQLSchema } from 'graphql';
 import { Server } from 'http';
+import { ErrorCode, UnknownErrorCode } from '../utils/error/error.code';
 import { Context, errorLoggingPlugin } from './apollo-plugins/log';
 import { operationMetricsPlugin } from './apollo-plugins/metrics';
 import { removeSuggestionHint } from './schema-details';
+
+const REQUEST_ERROR_CODES = new Set<string>(
+  Object.values(ApolloServerErrorCode).filter(
+    (code) => code !== ApolloServerErrorCode.INTERNAL_SERVER_ERROR
+  )
+);
+const CLIENT_ERROR_MESSAGES = new Set<string>([
+  ...Object.values(ErrorCode),
+  ...Object.values(UnknownErrorCode),
+]);
+
+const isClientSafeError = (
+  formattedError: GraphQLFormattedError,
+  originalError: unknown
+) => {
+  if (!formattedError.path) {
+    const code = formattedError.extensions?.code;
+    return typeof code === 'string' && REQUEST_ERROR_CODES.has(code);
+  }
+  return (
+    isCustomApolloError(originalError) ||
+    (originalError instanceof Error &&
+      CLIENT_ERROR_MESSAGES.has(originalError.message))
+  );
+};
 
 interface CreateApolloServerOptions {
   schema: GraphQLSchema;
@@ -27,11 +57,22 @@ export const createApolloServer = ({
     introspection: exposeSchemaDetails,
     includeStacktraceInErrorResponses: exposeSchemaDetails,
     formatError: (formattedError, error) => {
+      const originalError = unwrapResolverError(error);
+      if (
+        !exposeSchemaDetails &&
+        !isClientSafeError(formattedError, originalError)
+      ) {
+        return {
+          message: UnknownErrorCode.UnknownError,
+          locations: formattedError.locations,
+          path: formattedError.path,
+          extensions: { code: UnknownErrorCode.UnknownError },
+        };
+      }
       const message = exposeSchemaDetails
         ? formattedError.message
         : removeSuggestionHint(formattedError.message);
       // Otherwise Apollo overrides extensions code with INTERNAL_SERVER_ERROR
-      const originalError = unwrapResolverError(error);
       const code = (originalError as { extensions?: { code?: string } } | null)
         ?.extensions?.code;
       if (code) {
