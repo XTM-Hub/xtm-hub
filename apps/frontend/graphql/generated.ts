@@ -1075,7 +1075,6 @@ export type Mutation = {
   addSSOGroupRolePortal: SsoGroupRolePortal;
   addServicePicture: Maybe<ServiceInstance>;
   addSolutionCategory: SolutionCategory;
-  addSubscription: Maybe<ServiceInstance>;
   addSubscriptionCapability: Array<SubscriptionModel>;
   addUseCase: UseCase;
   addUser: Maybe<User>;
@@ -1199,11 +1198,6 @@ export type MutationAddServicePictureArgs = {
 
 export type MutationAddSolutionCategoryArgs = {
   input: AddSolutionCategoryInput;
-};
-
-
-export type MutationAddSubscriptionArgs = {
-  service_instance_id: InputMaybe<Scalars['ServiceInstanceId']['input']>;
 };
 
 
