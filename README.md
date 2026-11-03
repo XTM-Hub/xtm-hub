@@ -38,7 +38,7 @@ XTM Hub brings together, in a single place, everything you need to get the most 
 
 ### Try, connect and manage your products
 
-- **Free trials** — spin up an OpenCTI or OpenAEV trial in a few clicks.
+- **XTM Platform Trial** — request a 30-day trial of XTM One, OpenCTI and OpenAEV together in a few clicks.
 - **Product connection** — connect your OpenCTI and OpenAEV products to your organization to unlock Hub services and deploy resources directly from the Hub.
 - **Organization management** — invite members, manage roles and capabilities, and control who can access what.
 
