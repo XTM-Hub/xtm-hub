@@ -11,7 +11,7 @@ import UserService, {
   UserServiceId,
 } from '../../../model/kanel/public/UserService';
 import { UserLoadUserBy } from '../../../model/user';
-import { restrictSubscriptionToUserOrganization } from '../../../security/restriction/user-service';
+import { restrictUserServiceToUserOrganization } from '../../../security/restriction/user-service';
 import { addPrefixToObject } from '../../../utils/typescript';
 
 export const ServiceCapabilityDomain = {
@@ -110,7 +110,7 @@ export const ServiceCapabilityDomain = {
   getManageAccessLeft: async (userServiceId: UserServiceId) => {
     const userService = await db<UserService>('User_Service')
       .select('subscription_id')
-      .tap(restrictSubscriptionToUserOrganization)
+      .tap(restrictUserServiceToUserOrganization)
       .where('User_Service.id', userServiceId)
       .first();
 
@@ -118,7 +118,7 @@ export const ServiceCapabilityDomain = {
       return false;
     }
     const result = await db<UserService>('User_Service')
-      .tap(restrictSubscriptionToUserOrganization)
+      .tap(restrictUserServiceToUserOrganization)
       .leftJoin(
         'UserService_Capability',
         'User_Service.id',

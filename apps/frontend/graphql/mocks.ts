@@ -2226,7 +2226,6 @@ export const mockSubscriptionModel = (overrides?: Partial<SubscriptionModel>, _r
         organization_id: overrides && overrides.hasOwnProperty('organization_id') ? overrides.organization_id! : 'deleniti',
         service_instance: overrides && overrides.hasOwnProperty('service_instance') ? overrides.service_instance! : relationshipsToOmit.has('ServiceInstance') ? {} as ServiceInstance : mockServiceInstance({}, relationshipsToOmit),
         service_instance_id: overrides && overrides.hasOwnProperty('service_instance_id') ? overrides.service_instance_id! : 'suasoria',
-        service_url: overrides && overrides.hasOwnProperty('service_url') ? overrides.service_url! : 'circumvenio',
         start_date: overrides && overrides.hasOwnProperty('start_date') ? overrides.start_date! : '2021-06-19T18:40:30.137Z',
         subscription_capability: overrides && overrides.hasOwnProperty('subscription_capability') ? overrides.subscription_capability! : [relationshipsToOmit.has('SubscriptionCapability') ? {} as SubscriptionCapability : mockSubscriptionCapability({}, relationshipsToOmit)],
         user_service: overrides && overrides.hasOwnProperty('user_service') ? overrides.user_service! : [relationshipsToOmit.has('UserService') ? {} as UserService : mockUserService({}, relationshipsToOmit)],

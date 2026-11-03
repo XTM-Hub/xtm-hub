@@ -2,13 +2,21 @@ import { toGlobalId } from 'graphql-relay/node/node.js';
 import { v4 as uuidv4 } from 'uuid';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { TestHelper } from '../../../tests/helper/test.helper';
-import { SERVICES, TEST_ORGANIZATIONS } from '../../../tests/tests.const';
+import {
+  // eslint-disable-next-line no-restricted-imports
+  requestContextAdminUser,
+  requestContextSimpleUserSecondOrga,
+  SERVICES,
+  TEST_ORGANIZATIONS,
+  TEST_SUBSCRIPTIONS,
+} from '../../../tests/tests.const';
 import {
   OrderingMode,
   ServiceInstanceTag,
   SubscriptionFilterKey,
   SubscriptionOrdering,
 } from '../../__generated__/resolvers-types';
+import { requestContext } from '../../context/request.context';
 import { OrganizationId } from '../../model/kanel/public/Organization';
 import { ServiceCapabilityId } from '../../model/kanel/public/ServiceCapability';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
@@ -324,7 +332,8 @@ describe('subscription app', () => {
       ).toEqual([serviceBId, serviceAId]);
     });
 
-    it('should search subscriptions by related organization name', async () => {
+    it('should search subscriptions by related organization name for a user with BYPASS', async () => {
+      requestContext.set(requestContextAdminUser);
       const serviceId = uuidv4() as ServiceInstanceId;
       await TestHelper.serviceInstance.create({
         id: serviceId,
@@ -400,6 +409,120 @@ describe('subscription app', () => {
       expect(Number(result.totalCount)).toBe(1);
       expect(result.edges).toHaveLength(1);
       expect(result.edges[0].node.id).toBe(openCtiSubscriptionId);
+    });
+
+    describe('selected organization scope', () => {
+      const filigranSubscription = TEST_SUBSCRIPTIONS.FILIGRAN_COMMUNITY;
+      let serviceId: ServiceInstanceId;
+      let secondOrganizationSubscriptionId: SubscriptionId;
+
+      beforeEach(async () => {
+        requestContext.set(requestContextSimpleUserSecondOrga);
+        serviceId = uuidv4() as ServiceInstanceId;
+        secondOrganizationSubscriptionId = uuidv4() as SubscriptionId;
+        await TestHelper.serviceInstance.create({
+          id: serviceId,
+          name: 'organization-restriction-service',
+        });
+        await createSubscription({
+          id: secondOrganizationSubscriptionId,
+          organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+          serviceInstanceId: serviceId,
+          startDate: new Date('2026-04-01'),
+        });
+      });
+
+      it('should only return subscriptions of the selected organization for a user without BYPASS', async () => {
+        // When
+        const result = await subscriptionApp.loadSubscriptions({
+          first: 1000,
+          orderBy: SubscriptionOrdering.StartDate,
+          orderMode: OrderingMode.Asc,
+        });
+
+        // Then
+        const nodes = result.edges.map(({ node }) => node);
+        expect(new Set(nodes.map((node) => node.organization_id))).toEqual(
+          new Set([TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID])
+        );
+        expect(Number(result.totalCount)).toBe(nodes.length);
+        expect(nodes).toContainEqual(
+          expect.objectContaining({
+            id: secondOrganizationSubscriptionId,
+            organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+          })
+        );
+      });
+
+      it.each([
+        {
+          label: 'an organization_id filter',
+          options: {
+            filters: [
+              {
+                key: SubscriptionFilterKey.OrganizationId,
+                value: [
+                  toGlobalId('Organization', TEST_ORGANIZATIONS.FILIGRAN.ID),
+                ],
+              },
+            ],
+          },
+        },
+        {
+          label: 'a search term',
+          options: { searchTerm: TEST_ORGANIZATIONS.FILIGRAN.NAME },
+        },
+      ])(
+        'should only return the selected organization subscriptions with $label for a user without BYPASS',
+        async ({ options }) => {
+          // When
+          const result = await subscriptionApp.loadSubscriptions({
+            first: 1000,
+            orderBy: SubscriptionOrdering.OrganizationName,
+            orderMode: OrderingMode.Asc,
+            ...options,
+            filters: [
+              ...serviceInstanceFilters([
+                filigranSubscription.SERVICE_INSTANCE_ID,
+              ]),
+              ...(options.filters ?? []),
+            ],
+          });
+
+          // Then
+          expect(Number(result.totalCount)).toBe(0);
+          expect(result.edges).toEqual([]);
+        }
+      );
+
+      it('should return the subscriptions of all organizations for a user with BYPASS', async () => {
+        // Given
+        requestContext.set(requestContextAdminUser);
+
+        // When
+        const result = await subscriptionApp.loadSubscriptions({
+          first: 10,
+          orderBy: SubscriptionOrdering.OrganizationName,
+          orderMode: OrderingMode.Asc,
+          filters: serviceInstanceFilters([
+            filigranSubscription.SERVICE_INSTANCE_ID,
+            serviceId,
+          ]),
+        });
+
+        // Then
+        expect(Number(result.totalCount)).toBe(2);
+        expect(result.edges.map(({ node }) => node)).toMatchObject([
+          {
+            id: filigranSubscription.ID,
+            organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+          },
+          {
+            id: secondOrganizationSubscriptionId,
+            organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+          },
+        ]);
+      });
     });
   });
 
