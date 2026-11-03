@@ -112,59 +112,74 @@ export const usePrivateNavigation = (): NavigationConfig => {
     ) ||
       hasOrganizationCapability(OrganizationCapability.ManageAccess));
   const isBypass = hasCapability?.(PortalCapability.Bypass) ?? false;
+  const accessGroupLabel = tMenuLinks('SettingsAccess');
+  const communityGroupLabel = tMenuLinks('SettingsCommunity');
+  const managementGroupLabel = tMenuLinks('SettingsManagement');
   const settingsLinksConfig: SettingsLinkConfig[] = [
     {
-      href: `/${APP_PATH}/admin/parameters`,
-      label: tMenuLinks('Parameter'),
+      href: `/${APP_PATH}/admin/organizations`,
+      label: tMenuLinks('Organizations'),
+      group: accessGroupLabel,
     },
     {
-      href: `/${APP_PATH}/admin/user`,
-      label: tMenuLinks('Security'),
+      href: `/${APP_PATH}/admin/parameters`,
+      label: tMenuLinks('Parameters'),
+      group: accessGroupLabel,
     },
     {
       href: `/${APP_PATH}/admin/roles`,
       label: tMenuLinks('Roles'),
+      group: accessGroupLabel,
       restriction: [PortalCapability.Bypass],
     },
     {
-      href: `/${APP_PATH}/admin/use-case`,
-      label: tMenuLinks('UseCase'),
-    },
-    {
-      href: `/${APP_PATH}/admin/solution-category`,
-      label: tMenuLinks('SolutionCategory'),
+      href: `/${APP_PATH}/admin/user`,
+      label: tMenuLinks('Security'),
+      group: accessGroupLabel,
     },
     {
       href: `/${APP_PATH}/admin/voting-rounds`,
       label: tMenuLinks('VotingRound'),
-    },
-    {
-      href: `/${APP_PATH}/admin/organizations`,
-      label: tMenuLinks('Organization'),
-    },
-    {
-      href: `/${APP_PATH}/admin/service`,
-      label: tMenuLinks('Service'),
-    },
-    {
-      href: `/${APP_PATH}/admin/manage-trials`,
-      label: tMenuLinks('ManageTrials'),
-      restriction: [PortalCapability.ReadTrials],
-    },
-    {
-      href: `/${APP_PATH}/admin/csm-board`,
-      label: tMenuLinks('CSMBoard'),
-      restriction: [PortalCapability.ReadSaasMetrics],
-    },
-    {
-      href: `/${APP_PATH}/admin/competitors`,
-      label: tMenuLinks('Competitor'),
-      restriction: [PortalCapability.ModifyCompetitors],
+      group: communityGroupLabel,
     },
     {
       href: `/${APP_PATH}/admin/news-feed`,
       label: tMenuLinks('NewsFeed'),
+      group: communityGroupLabel,
       restriction: [PortalCapability.Bypass],
+    },
+    {
+      href: `/${APP_PATH}/admin/competitors`,
+      label: tMenuLinks('Competitors'),
+      group: managementGroupLabel,
+      restriction: [PortalCapability.ModifyCompetitors],
+    },
+    {
+      href: `/${APP_PATH}/admin/csm-board`,
+      label: tMenuLinks('CSMBoard'),
+      group: managementGroupLabel,
+      restriction: [PortalCapability.ReadSaasMetrics],
+    },
+    {
+      href: `/${APP_PATH}/admin/service`,
+      label: tMenuLinks('Services'),
+      group: managementGroupLabel,
+    },
+    {
+      href: `/${APP_PATH}/admin/solution-category`,
+      label: tMenuLinks('SolutionCategories'),
+      group: managementGroupLabel,
+    },
+    {
+      href: `/${APP_PATH}/admin/manage-trials`,
+      label: tMenuLinks('Trials'),
+      group: managementGroupLabel,
+      restriction: [PortalCapability.ReadTrials],
+    },
+    {
+      href: `/${APP_PATH}/admin/use-case`,
+      label: tMenuLinks('UseCases'),
+      group: managementGroupLabel,
     },
   ];
   const settingsLinks = settingsLinksConfig

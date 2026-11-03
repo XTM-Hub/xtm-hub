@@ -1,6 +1,8 @@
 import {
   NAVIGATION_ACTIVE_CLASSES,
   NAVIGATION_HOVER_CLASSES,
+  NAVIGATION_SUBMENU_ACTIVE_CLASSES,
+  NAVIGATION_SUBMENU_HOVER_CLASSES,
 } from '@/components/menu/navigation/shared/navigation-styles';
 import {
   SectionLink,
@@ -83,7 +85,9 @@ export const PublicSubLink = ({
         className
       ),
     }),
-    isActive ? NAVIGATION_ACTIVE_CLASSES : !!href && NAVIGATION_HOVER_CLASSES
+    isActive
+      ? NAVIGATION_SUBMENU_ACTIVE_CLASSES
+      : !!href && NAVIGATION_SUBMENU_HOVER_CLASSES
   );
 
   const content = (

@@ -9,7 +9,7 @@ export default class OrganizationPage {
       .getByRole('button', { name: 'Settings', exact: true })
       .click();
     const organizationLink = this.page.getByRole('link', {
-      name: 'Organization',
+      name: 'Organizations',
     });
     await expect(organizationLink).toBeVisible();
     await organizationLink.click();

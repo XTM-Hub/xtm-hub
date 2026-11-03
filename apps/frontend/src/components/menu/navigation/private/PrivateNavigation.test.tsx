@@ -211,8 +211,46 @@ describe('PrivateNavigation component — open={true}', () => {
 
     await expandSection(user, 'Settings');
 
-    expect(screen.getByText('Parameter')).toBeInTheDocument();
+    expect(screen.getByText('Parameters')).toBeInTheDocument();
     expect(screen.getByText('Security')).toBeInTheDocument();
+  });
+
+  it('renders each settings group title above its links', async () => {
+    const user = userEvent.setup();
+    testRender(<PrivateNavigation open={true} />, {
+      me: { capabilities: [{ name: PortalCapability.Bypass } as never] },
+    });
+
+    await expandSection(user, 'Settings');
+
+    const accessLinks = screen.getByRole('list', { name: 'SettingsAccess' });
+    const managementLinks = screen.getByRole('list', {
+      name: 'SettingsManagement',
+    });
+    expect(screen.getByText('SettingsAccess')).toBeInTheDocument();
+    expect(
+      within(accessLinks).getByRole('link', { name: 'Security' })
+    ).toHaveAttribute('href', `/${APP_PATH}/admin/user`);
+    expect(
+      within(managementLinks).getByRole('link', { name: 'Trials' })
+    ).toHaveAttribute('href', `/${APP_PATH}/admin/manage-trials`);
+  });
+
+  it('renders only the Management group to a user who can read trials', async () => {
+    const user = userEvent.setup();
+    testRender(<PrivateNavigation open={true} />, {
+      me: { capabilities: [{ name: PortalCapability.ReadTrials } as never] },
+    });
+
+    await expandSection(user, 'Settings');
+
+    expect(
+      within(
+        screen.getByRole('list', { name: 'SettingsManagement' })
+      ).getByRole('link', { name: 'Trials' })
+    ).toBeInTheDocument();
+    expect(screen.queryByText('SettingsAccess')).not.toBeInTheDocument();
+    expect(screen.queryByText('SettingsCommunity')).not.toBeInTheDocument();
   });
 
   it('renders XTM Platform as a link, not as an accordion trigger', () => {
@@ -344,13 +382,13 @@ describe('PrivateNavigation component — open={false}', () => {
     await user.hover(settingsButton);
 
     await waitFor(() => {
-      expect(screen.getByText('Parameter')).toBeInTheDocument();
+      expect(screen.getByText('Parameters')).toBeInTheDocument();
     });
 
     await user.unhover(settingsButton);
 
     await waitFor(() => {
-      expect(screen.queryByText('Parameter')).not.toBeInTheDocument();
+      expect(screen.queryByText('Parameters')).not.toBeInTheDocument();
     });
   });
 
