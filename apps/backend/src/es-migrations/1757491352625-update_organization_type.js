@@ -1,10 +1,11 @@
 'use strict';
 
 import { esDbClient } from '../thirdparty/elasticsearch/client.js';
+import { withIndexPrefix } from '../thirdparty/elasticsearch/index-prefix.js';
 
 export const up = async function (next) {
   await esDbClient.updateByQuery({
-    index: 'telemetry_v1',
+    index: withIndexPrefix('telemetry_v1'),
     body: {
       script: {
         source: `
@@ -26,7 +27,7 @@ export const up = async function (next) {
 
 export const down = async function (next) {
   await esDbClient.updateByQuery({
-    index: 'telemetry_v1',
+    index: withIndexPrefix('telemetry_v1'),
     body: {
       script: {
         source: `

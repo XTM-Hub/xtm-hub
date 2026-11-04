@@ -6,6 +6,7 @@ import { TelemetrySource } from '../modules/telemetry/telemetry.const';
 import { TelemetryEventType } from '../modules/telemetry/telemetry.types';
 import { ADMIN_UUID } from '../portal.const';
 import { esDbClient } from '../thirdparty/elasticsearch/client';
+import { withIndexPrefix } from '../thirdparty/elasticsearch/index-prefix';
 
 export const up = async function (next: () => void) {
   const database = knex(baseConfig);
@@ -15,7 +16,7 @@ export const up = async function (next: () => void) {
     .select('*');
   if (organizations.length > 0) {
     const events = organizations.flatMap((orga) => [
-      { index: { _index: 'telemetry_v1' } },
+      { index: { _index: withIndexPrefix('telemetry_v1') } },
       {
         '@timestamp': new Date(2025, 0, 1),
         event_type: TelemetryEventType.CREATE_ORGANIZATION,
@@ -36,7 +37,7 @@ export const up = async function (next: () => void) {
 
 export const down = async function (next: () => void) {
   await esDbClient.deleteByQuery({
-    index: 'telemetry_v1',
+    index: withIndexPrefix('telemetry_v1'),
     query: {
       term: {
         event_type: 'create_organization',

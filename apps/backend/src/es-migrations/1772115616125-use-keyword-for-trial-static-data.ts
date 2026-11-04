@@ -1,6 +1,7 @@
 'use strict';
 
 import { esDbClient } from '../thirdparty/elasticsearch/client.js';
+import { withIndexPrefix } from '../thirdparty/elasticsearch/index-prefix.js';
 import { logApp } from '../utils/app-logger.util';
 
 const useCaseMapping: Record<string, string> = {
@@ -89,7 +90,7 @@ async function applyMapping(
   for (const [from, to] of Object.entries(mapping)) {
     try {
       await esDbClient.updateByQuery({
-        index: 'telemetry_v1',
+        index: withIndexPrefix('telemetry_v1'),
         refresh: true,
         conflicts: 'proceed',
         script: {
