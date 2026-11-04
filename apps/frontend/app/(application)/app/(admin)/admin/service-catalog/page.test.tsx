@@ -13,7 +13,7 @@ import {
   mockUseCaseConnection,
   mockUseCaseEdge,
 } from '@graphql/mocks';
-import { screen } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import Page from './page';
@@ -104,6 +104,25 @@ describe('Admin service catalog page', () => {
       screen.getByRole('tab', { name: 'MenuLinks.Services', selected: true })
     ).toBeInTheDocument();
     expect(screen.getByText('AdminServiceList')).toBeInTheDocument();
+  });
+
+  it('should show the settings breadcrumb like the other settings pages', () => {
+    // Given
+    openTab(null);
+
+    // When
+    testRender(<Page />, { me: ADMIN_USER });
+
+    // Then
+    const breadcrumb = screen.getByRole('navigation', {
+      name: 'DesignSystem.Breadcrumbs.Label',
+    });
+    expect(
+      within(breadcrumb).getByText('MenuLinks.Settings')
+    ).toBeInTheDocument();
+    expect(
+      within(breadcrumb).getByText('MenuLinks.ServiceCatalog')
+    ).toBeInTheDocument();
   });
 
   it.each`
