@@ -1,15 +1,13 @@
 import config from 'config';
 import { discovery, fetchUserInfo, type ClientMetadata } from 'openid-client';
-import {
-  Strategy as OpenIDStrategy,
-  type StrategyOptionsWithRequest,
-} from 'openid-client/passport';
+import { type StrategyOptionsWithRequest } from 'openid-client/passport';
 import { PassportStatic } from 'passport';
 import { AppLogsCategory, logApp } from '../../../../utils/app-logger.util';
 import { ForbiddenErrorCode } from '../../../../utils/error/error.code';
 import { RolePortalDomain } from '../../../role-portal/role-portal.domain';
 import { providerLoginHandler } from '../login-handle';
 import { extractRole } from '../mapping-roles';
+import { OIDCStrategy } from './oidc-strategy';
 
 export const addOIDCStrategy = async (
   passport: PassportStatic
@@ -46,7 +44,7 @@ export const addOIDCStrategy = async (
       callbackURL: redirectUri,
     };
 
-    const openIDStrategy = new OpenIDStrategy(
+    const openIDStrategy = new OIDCStrategy(
       options,
       async (req, tokens, done) => {
         const userinfo = await fetchUserInfo(
@@ -104,7 +102,7 @@ export const addOIDCStrategy = async (
           },
           done
         );
-        logApp.info('[OPENID] Successfully logged', { userinfo });
+        logApp.info('[OPENID] Successfully logged', { sub });
 
         done(null, tokens.claims());
       }
