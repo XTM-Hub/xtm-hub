@@ -13,7 +13,7 @@ const baseBreadcrumbValue = [
     label: 'MenuLinks.Settings',
   },
   {
-    label: 'MenuLinks.Organizations',
+    label: 'MenuLinks.Organization',
     href: `/${APP_PATH}/admin/organizations`,
   },
 ];

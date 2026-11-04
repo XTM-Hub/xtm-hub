@@ -122,7 +122,7 @@ export const usePrivateNavigation = (): NavigationConfig => {
   const settingsLinksConfig: SettingsLinkConfig[] = [
     {
       href: `/${APP_PATH}/admin/organizations`,
-      label: tMenuLinks('Organizations'),
+      label: tMenuLinks('Organization'),
       group: accessGroupLabel,
     },
     {

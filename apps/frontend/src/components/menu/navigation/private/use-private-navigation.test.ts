@@ -324,7 +324,7 @@ describe('usePrivateNavigation', () => {
 
   it.each`
     capabilities                                                                                           | expectedSettingsLabels
-    ${[PortalCapability.Bypass]}                                                                           | ${['Organizations', 'Parameters', 'Roles', 'Security', 'VotingRound', 'NewsFeed', 'Competitors', 'CSMBoard', 'ServiceCatalog', 'Trials']}
+    ${[PortalCapability.Bypass]}                                                                           | ${['Organization', 'Parameters', 'Roles', 'Security', 'VotingRound', 'NewsFeed', 'Competitors', 'CSMBoard', 'ServiceCatalog', 'Trials']}
     ${[PortalCapability.ReadTrials]}                                                                       | ${['Trials']}
     ${[PortalCapability.ReadSaasMetrics]}                                                                  | ${['CSMBoard']}
     ${[PortalCapability.ModifyCompetitors]}                                                                | ${['Competitors']}
@@ -365,7 +365,7 @@ describe('usePrivateNavigation', () => {
     expect(
       settingsFooterSection?.links.map(({ label, group }) => [group, label])
     ).toEqual([
-      ['SettingsAccess', 'Organizations'],
+      ['SettingsAccess', 'Organization'],
       ['SettingsAccess', 'Parameters'],
       ['SettingsAccess', 'Roles'],
       ['SettingsAccess', 'Security'],
