@@ -39,6 +39,7 @@
     "port": "ELASTIC_PORT",
     "username": "ELASTIC_USER",
     "password": "ELASTIC_PASSWORD",
+    "index_prefix": "ELASTIC_INDEX_PREFIX",
     "tls": {
       "ca_path": "ELASTIC__TLS__CA_PATH",
       "reject_unauthorized": {

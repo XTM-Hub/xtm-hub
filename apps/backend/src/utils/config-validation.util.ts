@@ -220,5 +220,28 @@ export const resolveTrustProxy = (
   localDev: boolean
 ): number | false => (localDev ? false : parseTrustProxy(configured));
 
+// Elasticsearch index name rules: lowercase, no leading '-', '_', '+' or '.',
+// none of \ / * ? " < > | , # : or spaces
+const ES_INDEX_PREFIX_PATTERN = /^[a-z0-9][a-z0-9._-]*$/;
+
+/**
+ * Parses the Elasticsearch index prefix (ELASTIC_INDEX_PREFIX). Unset or empty
+ * means no prefix, which keeps the names of existing installations.
+ *
+ * An invalid value fails the boot: falling back to no prefix would make the
+ * instance write into the indices of an unprefixed instance of the same cluster.
+ */
+export const parseEsIndexPrefix = (value: unknown): string => {
+  if (value === undefined || value === null || value === '') {
+    return '';
+  }
+  if (typeof value !== 'string' || !ES_INDEX_PREFIX_PATTERN.test(value)) {
+    throw new Error(
+      `[ELASTICSEARCH] Invalid elasticsearch.index_prefix configuration (ELASTIC_INDEX_PREFIX): expected lowercase letters, digits, '.', '_' or '-', starting with a letter or a digit, got ${JSON.stringify(value)}`
+    );
+  }
+  return value;
+};
+
 // Export schemas for potential reuse
 export { DevUserOrganizationSchema, DevUsersArraySchema, DevUserSchema };

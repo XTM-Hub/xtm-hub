@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { logApp } from './app-logger.util';
 import {
+  parseEsIndexPrefix,
   parseTrustProxy,
   resolveTrustProxy,
   validateDevUser,
@@ -140,5 +141,69 @@ describe('resolveTrustProxy', () => {
 
     // Then
     expect(result).toBe(2);
+  });
+});
+
+describe('parseEsIndexPrefix', () => {
+  it.each([
+    ['undefined', undefined],
+    ['null', null],
+    ['an empty string, as an unset env var', ''],
+  ])('should return no prefix when given %s', (_description, value) => {
+    // Given
+    // value comes from the dataset
+
+    // When
+    const result = parseEsIndexPrefix(value);
+
+    // Then
+    expect(result).toBe('');
+  });
+
+  it.each([
+    ['lowercase letters', 'hub'],
+    ['letters and digits', 'hub2'],
+    ['a leading digit', '2hub'],
+    ['an inner underscore', 'xtm_hub'],
+    ['an inner dash', 'xtm-hub'],
+    ['an inner dot', 'xtm.hub'],
+  ])('should keep the prefix when given %s', (_description, value) => {
+    // Given
+    // value comes from the dataset
+
+    // When
+    const result = parseEsIndexPrefix(value);
+
+    // Then
+    expect(result).toBe(value);
+  });
+
+  it.each([
+    ['uppercase letters', 'Hub'],
+    ['a leading underscore', '_hub'],
+    ['a leading dash', '-hub'],
+    ['a leading plus', '+hub'],
+    ['a leading dot', '.hub'],
+    ['a space', 'xtm hub'],
+    ['a padded value', ' hub'],
+    ['a wildcard', 'hub*'],
+    ['a comma', 'hub,other'],
+    ['a slash', 'hub/other'],
+    ['a colon', 'hub:other'],
+    ['a hash', 'hub#'],
+    ['a number', 1],
+    ['a boolean', true],
+    ['an array', ['hub']],
+  ])('should throw an explicit error when given %s', (_description, value) => {
+    // Given
+    // value comes from the dataset
+
+    // When
+    const parse = () => parseEsIndexPrefix(value);
+
+    // Then
+    expect(parse).toThrow(
+      `[ELASTICSEARCH] Invalid elasticsearch.index_prefix configuration (ELASTIC_INDEX_PREFIX): expected lowercase letters, digits, '.', '_' or '-', starting with a letter or a digit, got ${JSON.stringify(value)}`
+    );
   });
 });

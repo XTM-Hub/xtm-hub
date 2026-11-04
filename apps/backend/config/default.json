@@ -88,6 +88,7 @@
     "port": 9204,
     "username": null,
     "password": null,
+    "index_prefix": "",
     "tls": {
       "ca_path": null,
       "reject_unauthorized": true
