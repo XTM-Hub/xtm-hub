@@ -1,4 +1,5 @@
 'use client';
+import GuardCapacityComponent from '@/components/AdminGuard';
 import AdminServiceTab, {
   ADMIN_SERVICE_TAB_SERVICE_DEFINITION_IDENTIFIERS,
 } from '@/components/service/AdminServiceTab';
@@ -23,7 +24,7 @@ const breadcrumbValue = [
   },
 ];
 
-const Page = () => {
+const AdminServiceContent = () => {
   const t = useTranslate();
 
   const queryData = useLazyLoadQuery<serviceQuery>(ServiceListQuery, {
@@ -55,6 +56,14 @@ const Page = () => {
         refetch={refetch}
       />
     </>
+  );
+};
+
+const Page = () => {
+  return (
+    <GuardCapacityComponent displayError>
+      <AdminServiceContent />
+    </GuardCapacityComponent>
   );
 };
 

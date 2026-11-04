@@ -41,21 +41,15 @@ input UpdateSubscriptionInput {
 }
 
 type Mutation {
-  addSubscription(service_instance_id: ServiceInstanceId): ServiceInstance
-    @auth(orgaCapa: [ADMINISTRATE_ORGANIZATION, MANAGE_SUBSCRIPTION])
   createSubscriptions(input: CreateSubscriptionsInput!): [SubscriptionModel!]!
     @auth(portalCapa: [BYPASS])
   updateSubscription(
     subscription_id: SubscriptionId!
     input: UpdateSubscriptionInput!
-  ): SubscriptionModel
-    @auth(orgaCapa: [ADMINISTRATE_ORGANIZATION, MANAGE_SUBSCRIPTION])
-    @service_capa(requires: [MANAGE_ACCESS])
+  ): SubscriptionModel @auth(portalCapa: [BYPASS])
   deleteSubscriptions(
     subscription_ids: [SubscriptionId!]!
-  ): [SubscriptionModel!]!
-    @auth(orgaCapa: [ADMINISTRATE_ORGANIZATION, MANAGE_SUBSCRIPTION])
-    @service_capa(requires: [MANAGE_ACCESS])
+  ): [SubscriptionModel!]! @auth(portalCapa: [BYPASS])
 }
 
 type SubscriptionConnection {

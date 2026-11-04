@@ -234,7 +234,6 @@ type Mutation {
   addSolutionCategory(input: AddSolutionCategoryInput!): SolutionCategory!
   editSolutionCategory(id: ID!, input: EditSolutionCategoryInput!): SolutionCategory!
   deleteSolutionCategory(id: ID!): SolutionCategory!
-  addSubscription(service_instance_id: ServiceInstanceId): ServiceInstance
   createSubscriptions(input: CreateSubscriptionsInput!): [SubscriptionModel!]!
   updateSubscription(subscription_id: SubscriptionId!, input: UpdateSubscriptionInput!): SubscriptionModel
   deleteSubscriptions(subscription_ids: [SubscriptionId!]!): [SubscriptionModel!]!

@@ -1068,7 +1068,6 @@ export type Mutation = {
   addSSOGroupRolePortal: SsoGroupRolePortal;
   addServicePicture?: Maybe<ServiceInstance>;
   addSolutionCategory: SolutionCategory;
-  addSubscription?: Maybe<ServiceInstance>;
   addSubscriptionCapability: Array<SubscriptionModel>;
   addUseCase: UseCase;
   addUser?: Maybe<User>;
@@ -1192,11 +1191,6 @@ export type MutationAddServicePictureArgs = {
 
 export type MutationAddSolutionCategoryArgs = {
   input: AddSolutionCategoryInput;
-};
-
-
-export type MutationAddSubscriptionArgs = {
-  service_instance_id?: InputMaybe<Scalars['ServiceInstanceId']['input']>;
 };
 
 
@@ -4608,7 +4602,6 @@ export type MutationResolvers<ContextType = PortalContext, ParentType extends Re
   addSSOGroupRolePortal?: Resolver<ResolversTypes['SSOGroupRolePortal'], ParentType, ContextType, RequireFields<MutationAddSsoGroupRolePortalArgs, 'input'>>;
   addServicePicture?: Resolver<Maybe<ResolversTypes['ServiceInstance']>, ParentType, ContextType, RequireFields<MutationAddServicePictureArgs, 'isLogo' | 'serviceInstanceId'>>;
   addSolutionCategory?: Resolver<ResolversTypes['SolutionCategory'], ParentType, ContextType, RequireFields<MutationAddSolutionCategoryArgs, 'input'>>;
-  addSubscription?: Resolver<Maybe<ResolversTypes['ServiceInstance']>, ParentType, ContextType, Partial<MutationAddSubscriptionArgs>>;
   addSubscriptionCapability?: Resolver<Array<ResolversTypes['SubscriptionModel']>, ParentType, ContextType, RequireFields<MutationAddSubscriptionCapabilityArgs, 'input'>>;
   addUseCase?: Resolver<ResolversTypes['UseCase'], ParentType, ContextType, RequireFields<MutationAddUseCaseArgs, 'input'>>;
   addUser?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType, RequireFields<MutationAddUserArgs, 'input'>>;
