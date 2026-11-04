@@ -45,6 +45,7 @@
     "EndsIn": "in {days} d",
     "ContractEnded": "Ended",
     "Link": "SaaS metrics",
+    "AskCustomer": "Ask your customer to connect their product",
     "ViewMetrics": "View metrics",
     "SearchPlatform": "Search platform",
     "ClearSearch": "Clear search",

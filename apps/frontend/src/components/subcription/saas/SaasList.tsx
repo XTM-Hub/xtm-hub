@@ -62,52 +62,6 @@ export const SaasList = () => {
     PortalCapability.ReadSaasMetrics,
   ]);
 
-  const {
-    pageSize,
-    setPageSize,
-    orderBy,
-    setOrderBy,
-    orderMode,
-    setOrderMode,
-    resetAll,
-    removeOrder,
-  } = useSaasListLocalstorage();
-  const [searchTerm, setSearchTerm] = useState<string | null>(null);
-  const [product, setProduct] = useState<SaasProduct | null>(null);
-  const { pagination, setPagination, onPaginationChange } = useTablePagination({
-    pageSize,
-    setPageSize,
-  });
-
-  const variables = useMemo<SaasManagerPlatformsListQueryVariables>(
-    () => ({
-      // The SaaS Manager counts its pages from 1
-      page: pagination.pageIndex + 1,
-      pageSize: pagination.pageSize,
-      orderBy,
-      orderMode,
-      searchTerm,
-      product,
-    }),
-    [
-      pagination.pageIndex,
-      pagination.pageSize,
-      orderBy,
-      orderMode,
-      searchTerm,
-      product,
-    ]
-  );
-
-  const { data, isLoading, isError } = useSaasManagerPlatformsListQuery(
-    portalGraphqlClient,
-    variables,
-    {
-      queryKey: saasPlatformsKeys.list(variables),
-      enabled: !!canReadSaasMetrics,
-    }
-  );
-
   const columns: ColumnDef<SaasPlatformRowFragment>[] = [
     {
       id: SaasPlatformOrdering.CustomerName,
@@ -205,7 +159,11 @@ export const SaasList = () => {
           registeredPlatform.identifier ===
             ServiceDefinitionIdentifier.XtmoneRegistration
         ) {
-          return null;
+          return (
+            <div className="text-default-secondary">
+              <TruncatedText text={t('CSMBoard.AskCustomer')} />
+            </div>
+          );
         }
         return <SaasPlatformLink registeredPlatform={registeredPlatform} />;
       },
@@ -303,6 +261,58 @@ export const SaasList = () => {
     },
   ];
 
+  const {
+    pageSize,
+    setPageSize,
+    orderBy,
+    setOrderBy,
+    orderMode,
+    setOrderMode,
+    columnOrder,
+    setColumnOrder,
+    columnVisibility,
+    setColumnVisibility,
+    columnSizing,
+    setColumnSizing,
+    resetAll,
+    removeOrder,
+  } = useSaasListLocalstorage(columns);
+  const [searchTerm, setSearchTerm] = useState<string | null>(null);
+  const [product, setProduct] = useState<SaasProduct | null>(null);
+  const { pagination, setPagination, onPaginationChange } = useTablePagination({
+    pageSize,
+    setPageSize,
+  });
+
+  const variables = useMemo<SaasManagerPlatformsListQueryVariables>(
+    () => ({
+      // The SaaS Manager counts its pages from 1
+      page: pagination.pageIndex + 1,
+      pageSize: pagination.pageSize,
+      orderBy,
+      orderMode,
+      searchTerm,
+      product,
+    }),
+    [
+      pagination.pageIndex,
+      pagination.pageSize,
+      orderBy,
+      orderMode,
+      searchTerm,
+      product,
+    ]
+  );
+
+  const { data, isLoading, isError } = useSaasManagerPlatformsListQuery(
+    portalGraphqlClient,
+    variables,
+    {
+      queryKey: saasPlatformsKeys.list(variables),
+      enabled: !!canReadSaasMetrics,
+    }
+  );
+
   const saasPlatforms = useMemo<SaasPlatformRowFragment[]>(
     () => data?.saasManagerPlatforms?.platforms ?? [],
     [data]
@@ -371,10 +381,16 @@ export const SaasList = () => {
               manualSorting: true,
               manualPagination: true,
               rowCount: data?.saasManagerPlatforms?.totalCount ?? 0,
+              onColumnOrderChange: setColumnOrder,
+              onColumnVisibilityChange: setColumnVisibility,
+              onColumnSizingChange: setColumnSizing,
             }}
             tableState={{
               sorting: mapToSortingTableValue(orderBy, orderMode),
               pagination,
+              columnOrder,
+              columnVisibility,
+              columnSizing,
             }}
             toolbar={
               <DataTableToolbar
