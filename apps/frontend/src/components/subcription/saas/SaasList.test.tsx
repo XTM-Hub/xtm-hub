@@ -782,6 +782,22 @@ describe('SaasList', () => {
     ).toBeVisible();
   });
 
+  it('should keep a column hidden when the user comes back to the list', async () => {
+    // Given a user who hid the customer column
+    mockSaasPlatforms([buildSaasPlatform()]);
+    const { user, unmount } = renderWithCapabilities([
+      PortalCapability.ReadSaasMetrics,
+    ]);
+    await hideColumn(user, SaasPlatformOrdering.CustomerName);
+    unmount();
+
+    // When the list is rendered again
+    renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
+
+    // Then the customer column is still hidden
+    expect(getColumnHeader(SaasPlatformOrdering.CustomerName)).toBeNull();
+  });
+
   it('should show the hidden columns the tour points at when the user opens the documentation', async () => {
     // Given a list whose customer column is hidden
     mockSaasPlatforms([buildSaasPlatform()]);

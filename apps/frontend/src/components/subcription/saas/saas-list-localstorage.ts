@@ -1,10 +1,15 @@
 import { OrderingMode, SaasPlatformOrdering } from '@graphql/generated';
+import {
+  ColumnDef,
+  ColumnSizingState,
+  VisibilityState,
+} from '@tanstack/react-table';
 import { useEffect } from 'react';
 import { useLocalStorage } from 'usehooks-ts';
 
 import { isValueInEnum } from '@/utils/is-value-in-enum';
 
-export const useSaasListLocalstorage = () => {
+export const useSaasListLocalstorage = <TData>(columns: ColumnDef<TData>[]) => {
   const [orderMode, setOrderMode, removeOrderMode] =
     useLocalStorage<OrderingMode>('orderModeSaasList', OrderingMode.Asc);
   const [storedOrderBy, setOrderBy, removeOrderBy] =
@@ -16,6 +21,14 @@ export const useSaasListLocalstorage = () => {
     'countSaasList',
     50
   );
+  const [columnOrder, setColumnOrder, removeColumnOrder] = useLocalStorage(
+    'columnOrderingSaasList',
+    columns.flatMap((column) => (column.id ? [column.id] : []))
+  );
+  const [columnVisibility, setColumnVisibility, removeColumnVisibility] =
+    useLocalStorage<VisibilityState>('columnVisibilitySaasList', {});
+  const [columnSizing, setColumnSizing, removeColumnSizing] =
+    useLocalStorage<ColumnSizingState>('columnSizingSaasList', {});
 
   // A field an older list ordered by is no ordering anymore: it is replaced before any query is built with it.
   const orderBy = isValueInEnum(storedOrderBy, SaasPlatformOrdering)
@@ -32,6 +45,9 @@ export const useSaasListLocalstorage = () => {
     removeOrderBy();
     removeOrderMode();
     removePageSize();
+    removeColumnOrder();
+    removeColumnVisibility();
+    removeColumnSizing();
   };
 
   const removeOrder = () => {
@@ -46,6 +62,12 @@ export const useSaasListLocalstorage = () => {
     setOrderMode,
     pageSize,
     setPageSize,
+    columnOrder,
+    setColumnOrder,
+    columnVisibility,
+    setColumnVisibility,
+    columnSizing,
+    setColumnSizing,
     resetAll,
     removeOrder,
   };
