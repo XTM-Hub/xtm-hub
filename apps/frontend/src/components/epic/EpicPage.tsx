@@ -7,6 +7,7 @@ import { portalGraphqlClient } from '@/lib/graphql-client';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 import {
   EpicFieldsFragment,
+  EpicsQuery,
   SeoServiceInstanceItemFragment,
   useEpicsQuery,
 } from '@graphql/generated';
@@ -31,20 +32,32 @@ export const EpicPage = ({ serviceInstance }: EpicPageProps) => {
     [searchTerm]
   );
 
+  // The last list loaded, kept on screen when a search fails: its query has no
+  // data of its own, and the placeholder only lasts while it loads.
+  const [loadedData, setLoadedData] = useState<EpicsQuery>();
+
   const { data } = useEpicsQuery(portalGraphqlClient, variables, {
     queryKey: epicKeys.list(variables),
     // A search keeps the current epics on screen until its results arrive.
     placeholderData: keepPreviousData,
-    // Like Relay, a failed load reaches the error page; a failed refetch keeps the epics shown.
-    throwOnError: (_error, query) => query.state.data === undefined,
+    // Like Relay, a failed first load reaches the error page; once a list has
+    // loaded, a failed refetch or search keeps it shown.
+    throwOnError: (_error, query) =>
+      query.state.data === undefined && loadedData === undefined,
   });
 
+  if (data && data !== loadedData) {
+    setLoadedData(data);
+  }
+
+  const shownData = data ?? loadedData;
+
   const epics = useMemo<EpicFieldsFragment[]>(
-    () => data?.epics?.edges.map(({ node }) => node) ?? [],
-    [data]
+    () => shownData?.epics?.edges.map(({ node }) => node) ?? [],
+    [shownData]
   );
 
-  if (!data) {
+  if (!shownData) {
     return <EpicListSkeleton />;
   }
 
