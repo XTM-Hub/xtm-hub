@@ -1,17 +1,23 @@
 import { EpicItemDetailed } from '@/components/epic/epic-item/EpicItemDetailed';
 import { DEFAULT_EPIC_SLACK_LINK } from '@/components/epic/epic-slack-links';
 import testRender from '@/utils/test/test-render';
-import { epic_fragment$data } from '@generated/epic_fragment.graphql';
-import { EditionType, EpicType, FiligranProduct } from '@graphql/generated';
+import {
+  EditionType,
+  EpicFieldsFragment,
+  EpicType,
+  FiligranProduct,
+  Timeline,
+} from '@graphql/generated';
+import { mockEpic } from '@graphql/mocks';
 import { screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 describe('EpicItemDetailed', () => {
   const epic = (
     slackLink: string | null,
-    overrides: Partial<epic_fragment$data> = {}
+    overrides: Partial<EpicFieldsFragment> = {}
   ) =>
-    ({
+    mockEpic({
       id: 'epic-1',
       title: 'Roadmap epic',
       epic_type: EpicType.Other,
@@ -24,9 +30,9 @@ describe('EpicItemDetailed', () => {
       proposed_solution: 'the solution',
       expected_value: 'the value',
       active: true,
-      timeline: 'now',
+      timeline: Timeline.Now,
       ...overrides,
-    }) as epic_fragment$data;
+    });
 
   const defaultProps = {
     epic: epic(null),

@@ -1,18 +1,13 @@
 import { EpicAdminMenu } from '@/components/epic/epic-item/EpicAdminMenu';
 import testRender from '@/utils/test/test-render';
-import { epic_fragment$data } from '@generated/epic_fragment.graphql';
+import { mockEpic } from '@graphql/mocks';
 import { screen } from '@testing-library/react';
-import { createMockEnvironment } from 'relay-test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const useEpicListContextMock = vi.fn();
 const useEpicFilterMock = vi.fn();
 
 vi.mock('@/hooks/use-epic-filter', () => ({
   useEpicFilter: () => useEpicFilterMock(),
-}));
-vi.mock('@/hooks/use-epic-list-context', () => ({
-  useEpicListContext: () => useEpicListContextMock(),
 }));
 vi.mock('@/components/epic/EpicForm', async () => {
   const actual = await vi.importActual('@/components/epic/EpicForm');
@@ -24,18 +19,14 @@ vi.mock('@/components/epic/EpicForm', async () => {
   };
 });
 describe('EpicAdminMenu', () => {
-  const epic = {
+  const epic = mockEpic({
     id: 'epic-1',
     title: 'Roadmap epic',
     active: true,
-  } as epic_fragment$data;
+  });
 
   beforeEach(() => {
     vi.clearAllMocks();
-    useEpicListContextMock.mockReturnValue({
-      connectionID: 'connection-id-1',
-      filterByProduct: vi.fn(),
-    });
     useEpicFilterMock.mockReturnValue({
       setSelectedProducts: vi.fn(),
     });
@@ -51,14 +42,12 @@ describe('EpicAdminMenu', () => {
     'renders menu trigger according to permissions (delete=$userCanDelete, update=$userCanUpdate)',
     ({ userCanDelete, userCanUpdate, shouldRender }) => {
       // Given
-      const environment = createMockEnvironment();
       const { queryByRole } = testRender(
         <EpicAdminMenu
           epic={epic}
           userCanDelete={userCanDelete}
           userCanUpdate={userCanUpdate}
-        />,
-        { relayConfig: environment }
+        />
       );
 
       // When
@@ -75,15 +64,12 @@ describe('EpicAdminMenu', () => {
 
   it('renders draft badge when epic is inactive', () => {
     // Given
-    const environment = createMockEnvironment();
-
     testRender(
       <EpicAdminMenu
         epic={{ ...epic, active: false }}
         userCanDelete={false}
         userCanUpdate={false}
-      />,
-      { relayConfig: environment }
+      />
     );
 
     // Then
@@ -92,15 +78,12 @@ describe('EpicAdminMenu', () => {
 
   it('opens update sheet when clicking on update action', async () => {
     // Given
-    const environment = createMockEnvironment();
-
     const { user } = testRender(
       <EpicAdminMenu
         epic={epic}
         userCanDelete={false}
         userCanUpdate={true}
-      />,
-      { relayConfig: environment }
+      />
     );
 
     // When

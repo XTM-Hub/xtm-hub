@@ -1,6 +1,6 @@
+import { EpicPage } from '@/components/epic/EpicPage';
 import { BreadcrumbNav } from '@/components/ui/BreadcrumbNav';
 import type { PublicLocale } from '@/i18n/config';
-import { RelayProvider } from '@/relay/relay-provider';
 import {
   buildFiligranOrganizationJsonLd,
   buildSeoPageMetadata,
@@ -16,7 +16,6 @@ import { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { cache } from 'react';
-import { PublicEpicListPageLoader } from './public-epic-list-page-loader';
 
 const getPageData = cache(async () => {
   const serviceInstance = await fetchSeoServiceInstanceBySlug(
@@ -104,9 +103,7 @@ const Page = async ({
         dangerouslySetInnerHTML={{ __html: stringifyJsonLd(jsonLd) }}
       />
       <BreadcrumbNav value={breadcrumbs} />
-      <RelayProvider>
-        <PublicEpicListPageLoader serviceInstance={serviceInstance} />
-      </RelayProvider>
+      <EpicPage serviceInstance={serviceInstance} />
     </>
   );
 };

@@ -1,14 +1,13 @@
 import { EpicList } from '@/components/epic/EpicList';
-import { EpicListContext } from '@/hooks/use-epic-list-context';
 import { APP_PATH } from '@/utils/path/constant';
 import { mockGraphqlQuery } from '@/utils/test/msw/graphql-api';
 import { mswServer } from '@/utils/test/msw/server';
 import testRender from '@/utils/test/test-render';
-import { epic_fragment$data } from '@generated/epic_fragment.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 import {
   CurrentVotingRoundCalloutQuery,
   EditionType,
+  EpicFieldsFragment,
   EpicType,
   FiligranProduct,
   OrganizationCapability,
@@ -16,6 +15,7 @@ import {
   ServiceRestriction,
   Timeline,
 } from '@graphql/generated';
+import { mockEpic } from '@graphql/mocks';
 import { screen } from '@testing-library/react';
 import { ComponentProps } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -54,7 +54,6 @@ vi.mock('usehooks-ts', async (importOriginal) => {
 });
 
 const GQL_OPERATION_CALLOUT = 'CurrentVotingRoundCallout';
-const CONNECTION_ID = 'connection-id-1';
 const SERVICE_INSTANCE_ID = 'service-instance-1';
 const SUBSCRIPTION_ID = 'subscription-id-1';
 const NOW_EPIC_TITLE = 'Now epic';
@@ -73,24 +72,26 @@ const mockCurrentRound = (
   );
 
 const makeEpic = (
-  overrides: Partial<epic_fragment$data> = {}
-): epic_fragment$data => ({
-  id: 'epic-id',
-  short_description: 'short description',
-  description: 'description',
-  problem_to_solve: 'problem to solve',
-  proposed_solution: 'proposed solution',
-  expected_value: 'expected value',
-  title: NOW_EPIC_TITLE,
-  timeline: Timeline.Now,
-  edition_type: EditionType.CommunityEdition,
-  products: [FiligranProduct.Opencti],
-  active: true,
-  epic_type: EpicType.Other,
-  created_at: '2026-01-01T00:00:00.000Z',
-  updated_at: '2026-01-01T00:00:00.000Z',
-  ...overrides,
-});
+  overrides: Partial<EpicFieldsFragment> = {}
+): EpicFieldsFragment =>
+  mockEpic({
+    id: 'epic-id',
+    short_description: 'short description',
+    description: 'description',
+    problem_to_solve: 'problem to solve',
+    proposed_solution: 'proposed solution',
+    expected_value: 'expected value',
+    title: NOW_EPIC_TITLE,
+    timeline: Timeline.Now,
+    edition_type: EditionType.CommunityEdition,
+    products: [FiligranProduct.Opencti],
+    slack_link: null,
+    active: true,
+    epic_type: EpicType.Other,
+    created_at: '2026-01-01T00:00:00.000Z',
+    updated_at: '2026-01-01T00:00:00.000Z',
+    ...overrides,
+  });
 
 const serviceInstance = {
   id: SERVICE_INSTANCE_ID,
@@ -114,12 +115,10 @@ const renderEpicList = (
 
   return {
     ...testRender(
-      <EpicListContext.Provider value={{ connectionID: CONNECTION_ID }}>
-        <EpicList
-          {...defaultProps}
-          {...propsOverrides}
-        />
-      </EpicListContext.Provider>,
+      <EpicList
+        {...defaultProps}
+        {...propsOverrides}
+      />,
       { me: { selected_org_capabilities: organizationCapabilities } }
     ),
     props: { ...defaultProps, ...propsOverrides },
@@ -260,12 +259,10 @@ describe('EpicList', () => {
 
     // When
     rerender(
-      <EpicListContext.Provider value={{ connectionID: CONNECTION_ID }}>
-        <EpicList
-          {...props}
-          selectedProducts={[FiligranProduct.Openaev]}
-        />
-      </EpicListContext.Provider>
+      <EpicList
+        {...props}
+        selectedProducts={[FiligranProduct.Openaev]}
+      />
     );
 
     // Then
