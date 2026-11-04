@@ -152,6 +152,7 @@ describe('userServiceDomain', () => {
 
     beforeEach(() => {
       vi.spyOn(mailService, 'sendMail').mockResolvedValue(undefined);
+      requestContext.set(requestContextAdminSecondOrga);
     });
 
     const getSubscription = async () => {

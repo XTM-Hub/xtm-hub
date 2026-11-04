@@ -10,20 +10,20 @@ jobs:
   delete-feature-env:
     runs-on: ubuntu-26.04
     timeout-minutes: 10
+    permissions:
+      contents: read
     steps:
-      # awxkit overrides argparse's private `_parse_known_args` with the pre-3.12.7 signature, so it crashes
-      # on newer Pythons (the ubuntu-26.04 system Python is 3.14). Keep Python on 3.11 until awxkit is fixed.
-      - name: Setup Python
-        uses: actions/setup-python@v7
+      # The merge ref of a closed pull request can be gone, so take the action from the default branch.
+      - name: Checkout AWX action
+        uses: actions/checkout@v6
         with:
-          python-version: "3.11.15"
-      - name: Install AWX cli
-        run: pip install awxkit
+          ref: ${{ github.event.repository.default_branch }}
+          sparse-checkout: .github/actions/awx-launch
 
       - name: Delete
-        run: |
-          awx --conf.host https://awx.filigran.io \
-            --conf.token ${{ secrets.AWX_TOKEN }} \
-            -f human job_templates launch 'Delete XTM Hub feature branch for testing' \
-            --inventory eu-west-staging \
-            --extra_vars "{\"env\":\"Development\",\"xtmhub_version\":\"pr-${{ github.event.pull_request.number }}\"}"
+        uses: ./.github/actions/awx-launch
+        with:
+          template: Delete XTM Hub feature branch for testing
+          inventory: eu-west-staging
+          extra-vars: '{"env":"Development","xtmhub_version":"pr-${{ github.event.pull_request.number }}"}'
+          token: ${{ secrets.AWX_TOKEN }}

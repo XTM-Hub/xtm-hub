@@ -12,4 +12,14 @@ describe('PublicXtmPlatformTrialBanner', () => {
       getByText('Service.Trials.XtmPlatform.NoTrial.Text')
     ).toBeInTheDocument();
   });
+
+  it('should link learn more to the public trial page of the current locale', () => {
+    // Given
+    const { getByRole } = testRender(<PublicXtmPlatformTrialBanner />);
+
+    // Then
+    expect(
+      getByRole('link', { name: 'Service.Trials.LearnMore.Link' })
+    ).toHaveAttribute('href', '/en/cybersecurity-solutions/xtm-platform-trial');
+  });
 });

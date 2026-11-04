@@ -302,6 +302,9 @@ export const UserOrganizationDomain = {
           'Subscription.id': subscriptionId,
         } as SubscriptionMutator
       );
+    if (!subscription) {
+      throw NotFoundError(NotFoundErrorCode.SubscriptionNotFound);
+    }
     const [organization] = await OrganizationDomain.loadOrganizationsFromEmail(
       user.email
     );

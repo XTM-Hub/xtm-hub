@@ -1,5 +1,6 @@
 {
   "environment": "development",
+  "enabled_features": ["SAAS_METRICS"],
   "port": 4001,
   "admin": {
     "email": "admin@filigran.io",
@@ -20,7 +21,6 @@
     "pending_user_digest": false,
     "public_roadmap_monthly_reminder": false
   },
-  "enabled_features": [],
   "auth0": {
     "domain": "filigran.eu.auth0.com",
     "clientId": "changeme",

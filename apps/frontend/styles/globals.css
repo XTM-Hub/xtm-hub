@@ -45,6 +45,9 @@ body[data-theme='Dark'] {
 @source '../../../node_modules/@filigran/design-system/dist/**/*.mjs';
 
 @variant dark (.dark &);
+/* The design system's own light variant (its src/tokens/index.css): its components
+   style light mode with `light:` classes, e.g. Banner's warning ink and Alert's wash */
+@custom-variant light (&:is(.light *), &:is(.light));
 @variant mobile (@media screen and (max-width: 40rem));
 
 @layer base {

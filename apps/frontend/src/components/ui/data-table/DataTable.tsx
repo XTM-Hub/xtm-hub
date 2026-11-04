@@ -148,6 +148,9 @@ const useDataTableContext = <TData,>(): DataTableContextValue<TData> => {
   return context;
 };
 
+// For the parts a page renders inside the table, such as its toolbar actions, that act on the table.
+const useDataTable = <TData,>() => useDataTableContext<TData>().table;
+
 const getTransformString = ({ x, y }: Transform) => `translate(${x}px, ${y}px)`;
 
 const SelectAllHeader = <TData,>({ table }: HeaderContext<TData, unknown>) => {
@@ -257,7 +260,7 @@ const DataTableHeadBarOptions = () => {
   const { pageIndex, pageSize } = table.getState().pagination;
   const rowCount = table.getRowCount();
   return (
-    <div className="inline-flex h-9 shrink-0 items-center rounded-sm border border-elevation-default">
+    <div className="inline-flex h-9 shrink-0 items-center rounded-sm border border-filigran-brand-primary-transparency-55">
       <IconButton
         priority="tertiary"
         onClick={() => table.previousPage()}
@@ -438,6 +441,7 @@ const DataTableHeaderCell = <TData, TValue>({
     <th
       ref={setNodeRef}
       colSpan={header.colSpan}
+      data-column-id={header.column.id}
       style={style}
       className={cn(
         'relative group whitespace-nowrap truncate px-4 h-12 text-left align-middle bg-elevation-highlight content-compact-bold text-default-primary transition-transform duration-200 ease-in-out [&:has([role=checkbox])]:pr-0',
@@ -504,6 +508,7 @@ const DataTableCell = <TData,>({ cell }: { cell: Cell<TData, unknown> }) => {
   return (
     <td
       ref={setNodeRef}
+      data-column-id={cell.column.id}
       style={{
         maxWidth: cell.column.getSize(),
         width: cell.column.getSize(),
@@ -786,4 +791,4 @@ const DataTable = <TData extends { id: string }, TValue>({
   );
 };
 
-export { DataTable, DataTableHeadBarOptions, DataTableToolbar };
+export { DataTable, DataTableHeadBarOptions, DataTableToolbar, useDataTable };

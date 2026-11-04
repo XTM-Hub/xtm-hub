@@ -50,6 +50,7 @@ import { serviceInstanceForSubscriptions_fragment$data } from '@generated/servic
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 import { subscriptionByIdQuery } from '@generated/subscriptionByIdQuery.graphql';
 import { userServiceFromSubscriptionQuery } from '@generated/userServiceFromSubscriptionQuery.graphql';
+import { notFound } from 'next/navigation';
 
 interface SubscriptionSlugProps {
   queryRef: PreloadedQuery<userServiceFromSubscriptionQuery>;
@@ -90,6 +91,10 @@ const SubscriptionSlug = ({
     SubscriptionById,
     queryRefSubscription
   );
+  if (!queryDataSubscription.subscriptionById) {
+    notFound();
+  }
+
   let breadcrumbValue: BreadcrumbNavLink[];
   if (serviceInstance) {
     breadcrumbValue = [
@@ -109,12 +114,12 @@ const SubscriptionSlug = ({
       { label: 'MenuLinks.Settings' },
       { label: 'MenuLinks.ServiceCatalog', href: ADMIN_SERVICE_CATALOG_PATH },
       {
-        label: queryDataSubscription.subscriptionById!.service_instance!.name,
-        href: `/${APP_PATH}/admin/service/${queryDataSubscription.subscriptionById?.service_instance?.id}`,
+        label: queryDataSubscription.subscriptionById.service_instance.name,
+        href: `/${APP_PATH}/admin/service/${queryDataSubscription.subscriptionById.service_instance.id}`,
         original: true,
       },
       {
-        label: queryDataSubscription.subscriptionById!.organization.name,
+        label: queryDataSubscription.subscriptionById.organization.name,
         original: true,
       },
     ];

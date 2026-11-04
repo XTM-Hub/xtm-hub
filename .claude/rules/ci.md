@@ -92,9 +92,8 @@ Removing `skip-feature-env` from an open pull request triggers a redeploy throug
 
 ## Node and Yarn in CI
 
-- Always resolve Node from `.nvmrc` (`actions/setup-node` with `node-version-file: .nvmrc`) in any job that checks
-  out the repository. `test-feature-branch.yml` hardcodes the version because it has no checkout step — if you add
-  one, switch it to `node-version-file` at the same time.
+- Always resolve Node from `.nvmrc` (`actions/setup-node` with `node-version-file: .nvmrc`). A sparse checkout keeps
+  the root files, so `.nvmrc` is there even when a job only checks out one action.
 - Always `corepack enable` and let Yarn resolve from the `packageManager` field in the root `package.json`. Do not
   pass an explicit version to `corepack prepare`; a pinned version silently diverges from `packageManager`.
 - **Do not set `cache: yarn` on `actions/setup-node`.** That option shells out to the runner's preinstalled global
@@ -126,3 +125,8 @@ sync with `apps/backend/config/default.json` when changing either side.
 ## Deployment
 
 The Helm chart is in `chart/`. Frontend containers listen on **3000** internally even though dev runs on 3002.
+
+Every AWX job template (deploys, feature environments, anonymized data restore) is launched through the composite
+action `.github/actions/awx-launch`, which calls the AWX REST API with `curl` and `jq` from the runner image. Do not
+bring back awxkit: it has had no PyPI release since 2024 and breaks on current Python. A job without a full checkout
+needs a sparse checkout of `.github/actions/awx-launch` first. The action does not wait for the AWX job to finish.

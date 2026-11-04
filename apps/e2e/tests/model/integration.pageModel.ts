@@ -96,7 +96,7 @@ export default class IntegrationPage {
       .getByRole('textbox', { name: 'Short Description' })
       .fill(shortDescription);
     await this.page
-      .getByRole('textbox', { name: 'This is a paragraph to' })
+      .getByPlaceholder('This is a paragraph to')
       .fill(description);
     await this.page
       .getByRole('checkbox', { name: 'Is the TAXII Feed published?' })
@@ -128,7 +128,7 @@ export default class IntegrationPage {
       .getByRole('textbox', { name: 'Short Description' })
       .fill(shortDescription);
     await this.page
-      .getByRole('textbox', { name: 'This is a paragraph to' })
+      .getByPlaceholder('This is a paragraph to')
       .fill(description);
     await this.uploadJsonDocument(TEST_JSON_FILE.path);
     await this.uploadImageDocument(TEST_IMAGE_FILE.path);
@@ -158,7 +158,7 @@ export default class IntegrationPage {
       .getByRole('textbox', { name: 'Short Description' })
       .fill(shortDescription);
     await this.page
-      .getByRole('textbox', { name: 'This is a paragraph to' })
+      .getByPlaceholder('This is a paragraph to')
       .fill(description);
     await this.page
       .getByRole('checkbox', { name: 'Is the Stream published?' })
@@ -190,7 +190,7 @@ export default class IntegrationPage {
       .getByRole('textbox', { name: 'Short Description' })
       .fill(shortDescription);
     await this.page
-      .getByRole('textbox', { name: 'This is a paragraph to' })
+      .getByPlaceholder('This is a paragraph to')
       .fill(description);
     await this.page
       .getByRole('checkbox', { name: 'Is the CSV Feed published?' })
@@ -225,7 +225,7 @@ export default class IntegrationPage {
       .getByRole('textbox', { name: 'Short Description' })
       .fill(shortDescription);
     await this.page
-      .getByRole('textbox', { name: 'This is a paragraph to' })
+      .getByPlaceholder('This is a paragraph to')
       .fill(description);
     await this.page
       .getByRole('checkbox', {
@@ -271,7 +271,7 @@ export default class IntegrationPage {
       .getByRole('textbox', { name: 'Short Description' })
       .fill(shortDescription);
     await this.page
-      .getByRole('textbox', { name: 'This is a paragraph to' })
+      .getByPlaceholder('This is a paragraph to')
       .fill(description);
     if (integration.publishCheckbox) {
       await this.page

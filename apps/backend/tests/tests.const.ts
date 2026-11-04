@@ -15,6 +15,7 @@ import { OrganizationId } from '../src/model/kanel/public/Organization';
 import { ServiceCapabilityId } from '../src/model/kanel/public/ServiceCapability';
 import { ServiceDefinitionId } from '../src/model/kanel/public/ServiceDefinition';
 import { ServiceInstanceId } from '../src/model/kanel/public/ServiceInstance';
+import { SubscriptionId } from '../src/model/kanel/public/Subscription';
 import { UseCaseId } from '../src/model/kanel/public/UseCase';
 import { UserId } from '../src/model/kanel/public/User';
 import { PortalContext } from '../src/model/portal-context';
@@ -140,6 +141,17 @@ export const SERVICES = {
     EPIC: {
       ID: '3260f536-49b8-4c6f-8e87-61c8be1ae103' as ServiceInstanceId,
     },
+  },
+};
+
+// Seeded in tests/seeds/02-insert-services-community.js on a ServiceInstance no
+// other fixture uses.
+export const TEST_SUBSCRIPTIONS = {
+  FILIGRAN_COMMUNITY: {
+    ID: '7f17820c-3a36-4023-ae3c-e2c15613b518' as SubscriptionId,
+    ORGANIZATION_ID: TEST_ORGANIZATIONS.FILIGRAN.ID,
+    SERVICE_INSTANCE_ID:
+      'b382537e-1cfd-4316-bd1d-ec83f4e1ef54' as ServiceInstanceId,
   },
 };
 
