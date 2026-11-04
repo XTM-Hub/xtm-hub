@@ -54,7 +54,8 @@ const readPendingRequests = (session: SessionRecord, keys: SessionKeys) => {
 };
 
 // Moves the request in the openid-client slot to the pending ones, so the slot
-// is free for another request. Only the most recent `limit` are kept.
+// is free for another request. Only the most recent `limit` are kept, even when
+// the slot is empty: a refused callback may have set its request aside already.
 const setAsideCurrentRequest = (
   session: SessionRecord,
   keys: SessionKeys,
@@ -62,13 +63,15 @@ const setAsideCurrentRequest = (
 ) => {
   const current = session[keys.current];
   session[keys.current] = undefined;
-  if (!isAuthorizationRequestState(current)) {
-    return;
-  }
-  const pending = readPendingRequests(session, keys).filter(
-    (request) => request.state !== current.state
-  );
-  session[keys.pending] = [...pending, current].slice(-limit);
+  const pending = readPendingRequests(session, keys);
+  session[keys.pending] = (
+    isAuthorizationRequestState(current)
+      ? [
+          ...pending.filter((request) => request.state !== current.state),
+          current,
+        ]
+      : pending
+  ).slice(-limit);
 };
 
 // Puts the request the callback `state` belongs to in the openid-client slot.

@@ -205,6 +205,23 @@ describe('oidc strategy', () => {
     }
   });
 
+  it('should keep the pending limit when refused callbacks alternate with sign-ins', async () => {
+    // Given
+    const cycles = MAX_PENDING_AUTHORIZATION_REQUESTS * 3;
+
+    // When
+    for (let i = 0; i < cycles; i++) {
+      await startSignIn();
+      await completeSignIn('unknown-state');
+    }
+
+    // Then
+    // The limit, plus the latest request set aside by the last refused callback.
+    expect(session[`${ISSUER_HOST}:pending`]).toHaveLength(
+      MAX_PENDING_AUTHORIZATION_REQUESTS + 1
+    );
+  });
+
   it('should complete a sign-in started before requests carried a state', async () => {
     // Given
     session[ISSUER_HOST] = { code_verifier: LEGACY_CODE_VERIFIER };
