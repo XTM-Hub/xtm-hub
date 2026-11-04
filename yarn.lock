@@ -2311,10 +2311,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@electric-sql/pglite@npm:0.5.13":
-  version: 0.5.13
-  resolution: "@electric-sql/pglite@npm:0.5.13"
-  checksum: 10/da0478546ccbfa9753a06d5622d723597e78a7446bcb67761558f2cb5e318cb25bda03b6edfe4d214cd3f7617d45880fb6303499b9e78431dffeeff749beef98
+"@electric-sql/pglite@npm:0.5.14":
+  version: 0.5.14
+  resolution: "@electric-sql/pglite@npm:0.5.14"
+  checksum: 10/fa0646bbcdf7e2a86ae2978cbfa941a781aae56728c35ebb9512f1bf563caf600a80d93a976d85212ec70e77cd8bbbbc08ce7a86b7e96c05117aa9ada53b9c90
   languageName: node
   linkType: hard
 
@@ -9295,7 +9295,7 @@ __metadata:
     "@aws-sdk/client-s3": "npm:3.1145.0"
     "@aws-sdk/lib-storage": "npm:3.1145.0"
     "@elastic/elasticsearch": "npm:8.19.2"
-    "@electric-sql/pglite": "npm:0.5.13"
+    "@electric-sql/pglite": "npm:0.5.14"
     "@eslint/js": "catalog:"
     "@graphql-codegen/cli": "catalog:"
     "@graphql-codegen/plugin-helpers": "npm:5.1.1"
