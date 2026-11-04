@@ -35,7 +35,8 @@ export const EpicPage = ({ serviceInstance }: EpicPageProps) => {
     queryKey: epicKeys.list(variables),
     // A search keeps the current epics on screen until its results arrive.
     placeholderData: keepPreviousData,
-    // Like Relay, a failed load reaches the error page; a failed refetch keeps the epics shown.
+    // Like Relay, a failed load or search reaches the error page; a failed
+    // background refetch of a list already loaded keeps it shown.
     throwOnError: (_error, query) => query.state.data === undefined,
   });
 
