@@ -205,7 +205,11 @@ export const SaasList = () => {
           registeredPlatform.identifier ===
             ServiceDefinitionIdentifier.XtmoneRegistration
         ) {
-          return null;
+          return (
+            <div className="text-default-secondary">
+              <TruncatedText text={t('CSMBoard.AskCustomer')} />
+            </div>
+          );
         }
         return <SaasPlatformLink registeredPlatform={registeredPlatform} />;
       },
