@@ -6,13 +6,20 @@ import {
   setAnalyticsUserProperties,
   trackEvent,
 } from '@/lib/analytics/analytics.client';
+import {
+  EVENT_WINDOW_MS,
+  MAX_EVENTS_PER_WINDOW,
+  MAX_PARAM_VALUE_LENGTH,
+  MAX_PARAM_VALUE_LENGTHS,
+  REDACTED_VALUE,
+} from '@/lib/analytics/analytics.consts';
 import { type AnalyticsPageContext } from '@/lib/analytics/analytics.types';
 import {
   readGtagCommands,
   readTrackedEvents,
   resetAnalyticsEnvironment,
 } from '@/utils/test/analytics';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const MEASUREMENT_ID = 'G-TEST';
 const GA_DISABLE_KEY = `ga-disable-${MEASUREMENT_ID}` as const;
@@ -51,8 +58,18 @@ const startAnalytics = () => {
   releaseAnalyticsEvents();
 };
 
+const trackBadgeClicks = (count: number) => {
+  for (let index = 0; index < count; index += 1) {
+    trackEvent('ee_badge_click', badgeParams);
+  }
+};
+
 beforeEach(() => {
   resetAnalyticsEnvironment();
+});
+
+afterEach(() => {
+  vi.useRealTimers();
 });
 
 describe('trackEvent', () => {
@@ -75,6 +92,92 @@ describe('trackEvent', () => {
     // Then
     expect(readTrackedEvents('ee_badge_click')).toEqual([]);
   });
+
+  it('should send a page view when the flood cap is reached', () => {
+    // Given
+    startAnalytics();
+    trackBadgeClicks(MAX_EVENTS_PER_WINDOW);
+
+    // When
+    trackEvent('page_view', pageViewParams);
+
+    // Then
+    expect(readTrackedEvents('page_view')).toHaveLength(1);
+  });
+
+  it.each([
+    ['drop', EVENT_WINDOW_MS - 1, 0],
+    ['accept', EVENT_WINDOW_MS, 1],
+  ])(
+    'should %s the next event when %s ms have passed since the flood cap was reached',
+    (_outcome, elapsedMs, acceptedCount) => {
+      // Given
+      vi.useFakeTimers();
+      startAnalytics();
+      trackBadgeClicks(MAX_EVENTS_PER_WINDOW);
+      vi.advanceTimersByTime(elapsedMs);
+
+      // When
+      trackEvent('ee_badge_click', badgeParams);
+
+      // Then
+      expect(readTrackedEvents('ee_badge_click')).toHaveLength(
+        MAX_EVENTS_PER_WINDOW + acceptedCount
+      );
+    }
+  );
+
+  it.each([
+    [
+      'page_location',
+      MAX_PARAM_VALUE_LENGTHS.page_location,
+      `${ORIGIN}/${'a'.repeat(2000)}`,
+    ],
+    [
+      'page_referrer',
+      MAX_PARAM_VALUE_LENGTHS.page_referrer,
+      `${ORIGIN}/${'a'.repeat(2000)}`,
+    ],
+    ['page_title', MAX_PARAM_VALUE_LENGTHS.page_title, 'a'.repeat(2000)],
+    ['page_template', MAX_PARAM_VALUE_LENGTH, 'a'.repeat(2000)],
+  ])(
+    'should cut %s at %s characters when it is longer',
+    (key, maxLength, value) => {
+      // Given
+      startAnalytics();
+
+      // When
+      trackEvent('page_view', { ...pageViewParams, [key]: value });
+
+      // Then
+      expect(readTrackedEvents('page_view')).toEqual([
+        expect.objectContaining({ [key]: value.slice(0, maxLength) }),
+      ]);
+    }
+  );
+
+  it.each([
+    ['jane.doe@acme.com', REDACTED_VALUE],
+    ['Contact jane.doe@acme.com for access', REDACTED_VALUE],
+    [RESOURCE_TITLE, RESOURCE_TITLE],
+  ])(
+    'should send %s as %s when it is a parameter value',
+    (resourceTitle, sentValue) => {
+      // Given
+      startAnalytics();
+
+      // When
+      trackEvent('ee_badge_click', {
+        ...badgeParams,
+        resource_title: resourceTitle,
+      });
+
+      // Then
+      expect(readTrackedEvents('ee_badge_click')).toEqual([
+        expect.objectContaining({ resource_title: sentValue }),
+      ]);
+    }
+  );
 });
 
 describe('releaseAnalyticsEvents', () => {
