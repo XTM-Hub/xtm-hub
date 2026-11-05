@@ -19,7 +19,7 @@ const VALID_VARIABLES_INPUT = {
 
 const MUTATION_WITH_INPUT_VARIABLE = `
   mutation ($input: AutoRegisterPlatformInput) {
-    autoRegisterPlatform(input: $input)
+    autoRegisterPlatform(input: $input) { success }
   }
 `;
 
@@ -28,18 +28,21 @@ const SCHEMA_PROBES = [
     name: 'unknown field',
     query: 'mutation { autoRegisterPlatfrm }',
     variables: undefined,
+    code: 'GRAPHQL_VALIDATION_FAILED',
   },
   {
     name: 'unknown argument',
-    query: `mutation { autoRegisterPlatform(inptu: ${AUTO_REGISTER_PLATFORM_INPUT}) }`,
+    query: `mutation { autoRegisterPlatform(inptu: ${AUTO_REGISTER_PLATFORM_INPUT}) { success } }`,
     variables: undefined,
+    code: 'GRAPHQL_VALIDATION_FAILED',
   },
   {
     name: 'unknown enum value in the document',
     query: `mutation { autoRegisterPlatform(input: {
       platform: { id: "p1", url: "https://platform.test", title: "Platform", contract: EEE }
-    }) }`,
+    }) { success } }`,
     variables: undefined,
+    code: 'GRAPHQL_VALIDATION_FAILED',
   },
   {
     name: 'unknown enum value in the variables',
@@ -49,11 +52,13 @@ const SCHEMA_PROBES = [
         platform: { ...VALID_VARIABLES_INPUT.platform, contract: 'EEE' },
       },
     },
+    code: 'BAD_USER_INPUT',
   },
   {
     name: 'unknown field in a variable input object',
     query: MUTATION_WITH_INPUT_VARIABLE,
     variables: { input: { ...VALID_VARIABLES_INPUT, existing_users_cnt: 1 } },
+    code: 'BAD_USER_INPUT',
   },
 ];
 
@@ -87,14 +92,14 @@ describe('createApolloServer', () => {
 
     it.each(SCHEMA_PROBES)(
       'should not suggest schema names when the request has an $name',
-      async ({ query, variables }) => {
+      async ({ query, variables, code }) => {
         // Given a probe that makes graphql-js suggest a schema name
 
         // When
         const result = await execute(server, query, variables);
 
         // Then
-        expect(result.errors?.length).toBeGreaterThan(0);
+        expect(result.errors?.[0].extensions?.code).toBe(code);
         expect(JSON.stringify(result)).not.toContain(DID_YOU_MEAN);
       }
     );
@@ -155,13 +160,14 @@ describe('createApolloServer', () => {
 
     it.each(SCHEMA_PROBES)(
       'should suggest schema names when the request has an $name',
-      async ({ query, variables }) => {
+      async ({ query, variables, code }) => {
         // Given a probe that makes graphql-js suggest a schema name
 
         // When
         const result = await execute(server, query, variables);
 
         // Then
+        expect(result.errors?.[0].extensions?.code).toBe(code);
         expect(JSON.stringify(result)).toContain(DID_YOU_MEAN);
       }
     );
