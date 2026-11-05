@@ -288,6 +288,15 @@ export const DocumentApp = {
       throw new Error(ErrorCode.DocumentNotFound);
     }
 
+    // Not atomic with the update below: two editors saving at once can skip
+    // the rule. Accepted, editors are few and the status shows in the list.
+    if (input.status) {
+      DocumentHelper.assertStatusTransition(
+        documentBeforeUpdate.status,
+        input.status
+      );
+    }
+
     const documentType =
       DocumentHelper.retrieveDocumentTypeFromServiceDefinition(
         serviceDefinition.identifier as ManageableServiceDefinitionIdentifier

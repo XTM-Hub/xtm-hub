@@ -965,6 +965,86 @@ describe('documentApp', () => {
       });
     });
 
+    describe('status transitions', () => {
+      const METADATA = [
+        { key: DocumentMetadataKeyCode.ProductVersion, value: '1.0.0' },
+      ];
+
+      const createDocumentWithStatus = (status: DocumentStatus, slug: string) =>
+        DocumentApp.createDocument({
+          input: { ...documentData, status, slug },
+          metadata: METADATA,
+          serviceInstanceId: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
+          sourceDocument: mockUpload,
+        });
+
+      const updateDocumentStatus = (id: DocumentId, status: DocumentStatus) =>
+        DocumentApp.updateDocument({
+          parentDocumentId: id,
+          serviceInstanceId: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
+          metadata: METADATA,
+          input: { status },
+          existingImageIds: [],
+        });
+
+      beforeEach(() => {
+        vi.spyOn(NewsFeedApp, 'upsertResourceNewsFeed').mockResolvedValue();
+      });
+
+      it.each`
+        from                           | to
+        ${DocumentStatus.Draft}        | ${DocumentStatus.InValidation}
+        ${DocumentStatus.Draft}        | ${DocumentStatus.Published}
+        ${DocumentStatus.InValidation} | ${DocumentStatus.Published}
+        ${DocumentStatus.Published}    | ${DocumentStatus.Draft}
+      `(
+        'should save the new status when the document goes from $from to $to',
+        async ({ from, to }: { from: DocumentStatus; to: DocumentStatus }) => {
+          // Given
+          const document = await createDocumentWithStatus(
+            from,
+            `status-transition-${from}-to-${to}`
+          );
+
+          // When
+          await updateDocumentStatus(document.id, to);
+
+          // Then
+          const savedDocument = await TestHelper.document.load({
+            id: document.id,
+          });
+          expect(savedDocument?.status).toBe(to);
+        }
+      );
+
+      it.each`
+        from                           | to
+        ${DocumentStatus.InValidation} | ${DocumentStatus.Draft}
+        ${DocumentStatus.Published}    | ${DocumentStatus.InValidation}
+      `(
+        'should keep the status and throw when the document goes from $from to $to',
+        async ({ from, to }: { from: DocumentStatus; to: DocumentStatus }) => {
+          // Given
+          const document = await createDocumentWithStatus(
+            from,
+            `status-transition-${from}-to-${to}`
+          );
+
+          // When
+          const update = updateDocumentStatus(document.id, to);
+
+          // Then
+          await expect(update).rejects.toThrow(
+            ErrorCode.InvalidDocumentStatusTransition
+          );
+          const savedDocument = await TestHelper.document.load({
+            id: document.id,
+          });
+          expect(savedDocument?.status).toBe(from);
+        }
+      );
+    });
+
     it('should delegate news feed synchronization to NewsFeedApp.upsertResourceNewsFeed', async () => {
       // Given
       const upsertResourceNewsFeedSpy = vi
