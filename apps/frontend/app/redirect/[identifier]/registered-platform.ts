@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   loadBaseUrlFront,
   loadPlatformOrganizationId,
-  loadRegisteredPlatformRedirectTargets,
+  loadRegisteredPlatformRedirectTarget,
 } from './utils/load';
 import { switchOrganization } from './utils/switch-organization';
 import { getLoginRedirectionURL } from './utils/url';
@@ -40,11 +40,10 @@ export const redirectToRegisteredPlatform = async (
     await switchOrganization(organizationId);
   }
 
-  const platforms = await loadRegisteredPlatformRedirectTargets(identifier);
-  const platform = platforms.find(
-    (registeredPlatform) =>
-      registeredPlatform.platform_id === platformId &&
-      (!tenantId || registeredPlatform.tenant_id === tenantId)
+  const platform = await loadRegisteredPlatformRedirectTarget(
+    identifier,
+    platformId,
+    tenantId
   );
   const detailPath =
     platform &&

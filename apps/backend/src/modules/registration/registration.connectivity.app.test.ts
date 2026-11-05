@@ -15,8 +15,8 @@ import {
   TEST_ORGANIZATIONS,
 } from '../../../tests/tests.const';
 import {
-  NewsFeedItemType,
   CommercialModel,
+  NewsFeedItemType,
   PlatformConfigurationStatus,
   PlatformContract,
   PlatformIdentifier,

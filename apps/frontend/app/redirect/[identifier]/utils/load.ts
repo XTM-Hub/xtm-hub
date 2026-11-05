@@ -9,7 +9,7 @@ import {
   ServiceInstanceFilterKey,
   ServiceInstanceOrdering,
   usePlatformAssociatedOrganizationQuery,
-  useRegisteredPlatformRedirectTargetsQuery,
+  useRegisteredPlatformRedirectTargetQuery,
   useServiceInstancesListQuery,
 } from '@graphql/generated';
 
@@ -65,21 +65,18 @@ export const loadServiceInstances = async (identifier: string) => {
     .filter((node) => node != null);
 };
 
-// Registered platforms of the selected organization for one product, to find the one behind a platform id.
-export const loadRegisteredPlatformRedirectTargets = async (
-  identifier: PlatformIdentifier
+// Registration of one platform tenant in the selected organization, or null when the user cannot see it.
+export const loadRegisteredPlatformRedirectTarget = async (
+  identifier: PlatformIdentifier,
+  platformId: string,
+  tenantId: string | null
 ) => {
   const data = await redirectToSignupOnUnauthenticated(async () => {
     const client = await getAuthenticatedGraphqlClient();
-    return useRegisteredPlatformRedirectTargetsQuery.fetcher(client, {
-      input: {
-        identifier,
-        onlyActive: null,
-        onlyTrial: null,
-        hasDeployedResources: null,
-      },
+    return useRegisteredPlatformRedirectTargetQuery.fetcher(client, {
+      input: { identifier, platformId, tenantId },
     })();
   });
 
-  return data.registeredPlatforms;
+  return data.registeredPlatformByPlatformId;
 };
