@@ -1,7 +1,13 @@
 import {
+  EMAIL_PATTERN,
+  EVENT_WINDOW_MS,
   GA_COOKIE_EXPIRES_SECONDS,
   GA_DEFAULT_CONSENT,
   INTERNAL_TRAFFIC_TYPE,
+  MAX_EVENTS_PER_WINDOW,
+  MAX_PARAM_VALUE_LENGTH,
+  MAX_PARAM_VALUE_LENGTHS,
+  REDACTED_VALUE,
 } from '@/lib/analytics/analytics.consts';
 import {
   type AnalyticsEventName,
@@ -15,20 +21,59 @@ type AnalyticsParams = Record<string, string | null | undefined>;
 let configuredMeasurementId: string | null = null;
 let enabledMeasurementId: string | null = null;
 let pageContext: AnalyticsPageContext | null = null;
+let recentEventTimestamps: number[] = [];
 let heldEvents: [AnalyticsEventName, AnalyticsParams][] | null = null;
 
 export const resetAnalyticsState = (): void => {
   configuredMeasurementId = null;
   enabledMeasurementId = null;
   pageContext = null;
+  recentEventTimestamps = [];
   heldEvents = null;
 };
 
 const getEnabledGtag = (): Window['gtag'] =>
   enabledMeasurementId ? window.gtag : undefined;
 
+const sanitizeValue = (key: string, value: string): string =>
+  EMAIL_PATTERN.test(value)
+    ? REDACTED_VALUE
+    : value.slice(0, MAX_PARAM_VALUE_LENGTHS[key] ?? MAX_PARAM_VALUE_LENGTH);
+
+const sanitizeParams = (
+  params: AnalyticsParams
+): Record<string, string | null> =>
+  Object.fromEntries(
+    Object.entries(params)
+      .filter(
+        (entry): entry is [string, string | null] => entry[1] !== undefined
+      )
+      .map(([key, value]) => [
+        key,
+        value === null ? null : sanitizeValue(key, value),
+      ])
+  );
+
+const acceptsEvent = (name: AnalyticsEventName, now: number): boolean => {
+  if (name === 'page_view') {
+    return true;
+  }
+  recentEventTimestamps = recentEventTimestamps.filter(
+    (timestamp) => now - timestamp < EVENT_WINDOW_MS
+  );
+  if (recentEventTimestamps.length >= MAX_EVENTS_PER_WINDOW) {
+    return false;
+  }
+  recentEventTimestamps.push(now);
+  return true;
+};
+
 const sendEvent = (name: AnalyticsEventName, params: AnalyticsParams): void => {
-  getEnabledGtag()?.('event', name, params);
+  const gtag = getEnabledGtag();
+  if (!gtag || !acceptsEvent(name, Date.now())) {
+    return;
+  }
+  gtag('event', name, sanitizeParams(params));
 };
 
 export const initializeAnalytics = (measurementId: string): void => {
@@ -70,7 +115,7 @@ export const setAnalyticsPageContext = (
   context: AnalyticsPageContext
 ): void => {
   pageContext = context;
-  getEnabledGtag()?.('set', context);
+  getEnabledGtag()?.('set', sanitizeParams({ ...context }));
 };
 
 export const trackEvent = <Name extends AnalyticsEventName>(

@@ -15,6 +15,18 @@ export const GA_COOKIE_EXPIRES_SECONDS = 34_128_000;
 
 export const USER_PROPERTIES_WAIT_MS = 2_000;
 
+export const MAX_PARAM_VALUE_LENGTH = 100;
+
+export const MAX_PARAM_VALUE_LENGTHS: Record<string, number> = {
+  page_location: 1000,
+  page_referrer: 420,
+  page_title: 300,
+};
+
+export const MAX_EVENTS_PER_WINDOW = 100;
+
+export const EVENT_WINDOW_MS = 60_000;
+
 export const REDACTED_VALUE = '[redacted]';
 
 export const EMAIL_PATTERN = /[^\s@]+@[^\s@]+\.[a-z]{2,}/i;
