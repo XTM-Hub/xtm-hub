@@ -343,6 +343,56 @@ describe('newsFeedApp', () => {
       ]);
     });
 
+    it('should return the blog post display metadata keys in consumed response', async () => {
+      const item = await TestHelper.newsFeed.createItem({
+        type: NewsFeedItemType.BlogPost,
+        title: 'Blog post',
+      });
+      const displayMetadata = [
+        {
+          key: NewsFeedItemMetadataKey.Description,
+          value: 'How the integration works',
+        },
+        {
+          key: NewsFeedItemMetadataKey.ImageUrl,
+          value: 'https://filigran.io/image.png',
+        },
+        { key: NewsFeedItemMetadataKey.ImageAlt, value: 'Featured image' },
+        {
+          key: NewsFeedItemMetadataKey.AuthorNames,
+          value: '["Romain Guignard"]',
+        },
+        { key: NewsFeedItemMetadataKey.ReadMinutes, value: '7' },
+      ];
+      for (const metadata of displayMetadata) {
+        await TestHelper.newsFeed.createMetadata({
+          news_feed_item_id: item.id,
+          ...metadata,
+        });
+      }
+      await TestHelper.newsFeed.createMetadata({
+        news_feed_item_id: item.id,
+        key: NewsFeedItemMetadataKey.BlogPostSlug,
+        value: 'threat-report-2026',
+      });
+      await NewsFeedDomain.provisionNewsFeedItem(item.id, [platformId]);
+
+      const result = await NewsFeedApp.consumeProvisionedNewsFeedItems({
+        platformId,
+        token,
+      });
+
+      expect(result.news_feed_items).toHaveLength(1);
+      expect(result.news_feed_items[0]?.metadata).toHaveLength(
+        displayMetadata.length
+      );
+      expect(result.news_feed_items[0]?.metadata).toEqual(
+        expect.arrayContaining(
+          displayMetadata.map((metadata) => expect.objectContaining(metadata))
+        )
+      );
+    });
+
     it('should use the consuming platform as utm_source of the url_path', async () => {
       const document = await TestHelper.document.create({
         name: 'Cross Platform Dashboard',

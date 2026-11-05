@@ -415,6 +415,52 @@ describe('newsFeedDomain', () => {
       ]);
     });
 
+    it('should return the blog post display metadata and exclude the blog_post_slug', async () => {
+      // Given
+      const item = await TestHelper.newsFeed.createItem({
+        type: NewsFeedItemType.BlogPost,
+        title: 'Blog post',
+      });
+      const displayMetadata = {
+        [NewsFeedItemMetadataKey.UrlPath]: `redirect/news-feed/${item.id}`,
+        [NewsFeedItemMetadataKey.Description]: 'How the integration works',
+        [NewsFeedItemMetadataKey.ImageUrl]: 'https://filigran.io/image.png',
+        [NewsFeedItemMetadataKey.ImageAlt]: 'Featured image',
+        [NewsFeedItemMetadataKey.AuthorNames]: '["Romain Guignard"]',
+        [NewsFeedItemMetadataKey.ReadMinutes]: '7',
+      };
+      for (const [key, value] of Object.entries(displayMetadata)) {
+        await TestHelper.newsFeed.createMetadata({
+          news_feed_item_id: item.id,
+          key: key as NewsFeedItemMetadataKey,
+          value,
+        });
+      }
+      await TestHelper.newsFeed.createMetadata({
+        news_feed_item_id: item.id,
+        key: NewsFeedItemMetadataKey.BlogPostSlug,
+        value: 'threat-report-2026',
+      });
+
+      // When
+      const metadata = await NewsFeedDomain.loadMetadataByNewsFeedItemIds([
+        item.id,
+      ]);
+
+      // Then
+      expect(metadata).toHaveLength(Object.keys(displayMetadata).length);
+      expect(metadata).toEqual(
+        expect.arrayContaining(
+          Object.entries(displayMetadata).map(([key, value]) =>
+            expect.objectContaining({ key, value })
+          )
+        )
+      );
+      expect(metadata.map((m) => m.key)).not.toContain(
+        NewsFeedItemMetadataKey.BlogPostSlug
+      );
+    });
+
     it('should return the metadata for multiple news feed items in a single call', async () => {
       // Given
       const first = await createDocumentWithNewsFeedItem();
