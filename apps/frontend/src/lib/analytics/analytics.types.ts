@@ -23,6 +23,16 @@ export interface AnalyticsPageContext {
   content_group: AnalyticsPageType;
 }
 
+type YesNo = 'Yes' | 'No';
+
+export interface AnalyticsUserProperties {
+  auth_state: 'Signed in' | 'Signed out';
+  is_internal: YesNo | null;
+  organization_type: 'Personal space' | 'Organization' | null;
+  is_platform_admin: YesNo | null;
+  organization_role: 'Administrator' | 'Member' | null;
+}
+
 export interface AnalyticsEvents {
   page_view: AnalyticsPageContext & AnalyticsPage;
   ee_badge_click: {

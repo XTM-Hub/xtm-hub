@@ -4,6 +4,7 @@ import AnalyticsTracker from '@/components/analytics/AnalyticsTracker';
 import { ConsentGate } from '@/components/cookie-consent/ConsentGate';
 import { EMBED_SEGMENT } from '@/components/cookie-consent/cookie-consent.consts';
 import Hubspot from '@/components/external/Hubspot';
+import { ReactQueryProvider } from '@/components/ReactQueryProvider';
 import { GA_CONSENT_SERVICE_ID } from '@/lib/analytics/analytics.consts';
 import { useSelectedLayoutSegment } from 'next/navigation';
 
@@ -17,7 +18,9 @@ export const ManagedScripts = ({ gaMeasurementId }: ManagedScriptsProps) => {
     <>
       {gaMeasurementId && !isEmbedded && (
         <ConsentGate service={GA_CONSENT_SERVICE_ID}>
-          <AnalyticsTracker measurementId={gaMeasurementId} />
+          <ReactQueryProvider>
+            <AnalyticsTracker measurementId={gaMeasurementId} />
+          </ReactQueryProvider>
         </ConsentGate>
       )}
       <ConsentGate service="hubspot">

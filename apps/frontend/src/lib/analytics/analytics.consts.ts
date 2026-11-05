@@ -13,6 +13,8 @@ export const GA_DEFAULT_CONSENT = {
 
 export const GA_COOKIE_EXPIRES_SECONDS = 34_128_000;
 
+export const USER_PROPERTIES_WAIT_MS = 2_000;
+
 export const REDACTED_VALUE = '[redacted]';
 
 export const EMAIL_PATTERN = /[^\s@]+@[^\s@]+\.[a-z]{2,}/i;
@@ -37,3 +39,7 @@ export const KNOWN_REFERRER_DOMAINS = [
 ];
 
 export const GOOGLE_REFERRER_HOST_PATTERN = /(^|\.)google(\.[a-z]{2,3}){1,2}$/;
+
+export const INTERNAL_TRAFFIC_TYPE = 'internal';
+
+export const INTERNAL_EMAIL_DOMAIN = 'filigran.io';
