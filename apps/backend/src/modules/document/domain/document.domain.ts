@@ -38,8 +38,8 @@ import {
 } from '../../../portal.const';
 import {
   restrictDocumentToAccessibleServiceInstance,
-  restrictDocumentToActive,
   restrictDocumentToPublicServiceInstance,
+  restrictDocumentToPublished,
   restrictDocumentToUserOrganization,
 } from '../../../security/restriction/document';
 import { restrictServiceInstanceToPublic } from '../../../security/restriction/service-instance';
@@ -52,7 +52,7 @@ import {
   TAG_LATEST_LTS,
 } from '../../shareable-resource/manifest-fragment/manifest-fragment.helper';
 import { DocumentListOptions } from '../document.model';
-import { isUserRestrictedToActiveDocument } from '../document.security';
+import { isUserRestrictedToPublishedDocument } from '../document.security';
 import {
   DocumentMetadataDomain,
   DocumentMetadataKeys,
@@ -352,14 +352,14 @@ export const DocumentDomain = {
       .orderBy('Document.active', 'asc');
 
     if (
-      opts.activeOnly ||
+      opts.publishedOnly ||
       (field['Document.service_instance_id'] &&
-        (await isUserRestrictedToActiveDocument(
+        (await isUserRestrictedToPublishedDocument(
           user,
           field['Document.service_instance_id'] as ServiceInstanceId
         )))
     ) {
-      loadDocumentQuery.tap(restrictDocumentToActive);
+      loadDocumentQuery.tap(restrictDocumentToPublished);
     }
 
     if (opts.parentsOnly) {

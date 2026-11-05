@@ -237,9 +237,9 @@ describe('document domain', () => {
     });
 
     it.each`
-      description                          | options                 | expectedNames                                                  | expectedTotal
-      ${'drops the draft when activeOnly'} | ${{ activeOnly: true }} | ${['a-active', 'b-active', 'y-active', 'z-active']}            | ${4}
-      ${'keeps the draft otherwise'}       | ${{}}                   | ${['m-draft', 'a-active', 'b-active', 'y-active', 'z-active']} | ${5}
+      description                             | options                    | expectedNames                                                  | expectedTotal
+      ${'drops the draft when publishedOnly'} | ${{ publishedOnly: true }} | ${['a-active', 'b-active', 'y-active', 'z-active']}            | ${4}
+      ${'keeps the draft otherwise'}          | ${{}}                      | ${['m-draft', 'a-active', 'b-active', 'y-active', 'z-active']} | ${5}
     `(
       'should $description',
       async ({

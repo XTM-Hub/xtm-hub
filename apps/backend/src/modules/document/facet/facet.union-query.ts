@@ -142,13 +142,13 @@ const sortFacetRows = (rows: FacetRow[]): FacetRow[] =>
 export const loadFacetsInSingleQuery = async (
   groups: FacetGroup[],
   input: LoadDocumentFacetInput,
-  restrictToActive: boolean
+  restrictToPublished: boolean
 ): Promise<Record<FacetField, FacetBucket[]>> => {
   const ctes: Array<{ name: string; query: Knex.QueryBuilder }> = [];
   const branches: Knex.QueryBuilder[] = [];
 
   const baseScopeCteName = 'facet_base_scope';
-  const baseScopeQuery = buildFacetBaseScopeQuery(input, restrictToActive);
+  const baseScopeQuery = buildFacetBaseScopeQuery(input, restrictToPublished);
   await applySearch('Document', baseScopeQuery, input.searchTerm ?? undefined);
   ctes.push({ name: baseScopeCteName, query: baseScopeQuery });
 

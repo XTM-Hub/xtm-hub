@@ -3,23 +3,26 @@ import {
   LoadDocumentFacetInput,
 } from '../../../__generated__/resolvers-types';
 import { requestContext } from '../../../context/request.context';
-import { isUserRestrictedToActiveDocument } from '../document.security';
+import { isUserRestrictedToPublishedDocument } from '../document.security';
 import { groupFacetsBySignature } from './facet.grouping.utils';
 import { loadFacetsInSingleQuery } from './facet.union-query';
 
 export const FacetDomain = {
   loadDocumentFacets: async (input: LoadDocumentFacetInput): Promise<Facet> => {
     const user = requestContext.get()?.user;
-    const restrictToActive =
+    const restrictToPublished =
       input.restrictToActiveDocuments === true ||
       !user ||
-      (await isUserRestrictedToActiveDocument(user, input.serviceInstanceId));
+      (await isUserRestrictedToPublishedDocument(
+        user,
+        input.serviceInstanceId
+      ));
 
     const groups = groupFacetsBySignature(input.logicalFilters);
     const byField = await loadFacetsInSingleQuery(
       groups,
       input,
-      restrictToActive
+      restrictToPublished
     );
 
     return {

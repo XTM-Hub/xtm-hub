@@ -28,7 +28,7 @@ import { solutionCategoryDomain } from '../../solution-category/solution-categor
 import { objectUseCaseDomain } from '../../use-case/object-use-case/object-use-case.domain';
 import { useCaseDomain } from '../../use-case/use-case.domain';
 import { DocumentApp } from '../document.app';
-import { isUserRestrictedToActiveDocument } from '../document.security';
+import { isUserRestrictedToPublishedDocument } from '../document.security';
 import { FacetDomain } from './facet.domain';
 import {
   groupFacetsBySignature,
@@ -506,7 +506,7 @@ describe('facet.domain', () => {
     const buildNaiveScopedQuery = async (
       input: LoadDocumentFacetInput,
       filterKey: FilterKey,
-      restrictToActive: boolean
+      restrictToPublished: boolean
     ): Promise<{ scoped: Knex.QueryBuilder<Document> }> => {
       const scoped = buildScopedDocumentIdsQuery(
         {
@@ -516,7 +516,7 @@ describe('facet.domain', () => {
             filterKey
           ),
         },
-        restrictToActive
+        restrictToPublished
       );
       await applySearch('Document', scoped, input.searchTerm ?? undefined);
       return { scoped };
@@ -524,7 +524,7 @@ describe('facet.domain', () => {
 
     const loadDocumentFacetsNaive = async (
       input: LoadDocumentFacetInput,
-      restrictToActive: boolean
+      restrictToPublished: boolean
     ) => {
       const [
         integrationType,
@@ -539,7 +539,7 @@ describe('facet.domain', () => {
         buildNaiveScopedQuery(
           input,
           FilterKey.IntegrationType,
-          restrictToActive
+          restrictToPublished
         ).then(({ scoped }) =>
           loadMetadataFacetBucketsGrouped(scoped, [
             DocumentMetadataKeyCode.IntegrationType,
@@ -548,7 +548,7 @@ describe('facet.domain', () => {
         buildNaiveScopedQuery(
           input,
           FilterKey.LicenseType,
-          restrictToActive
+          restrictToPublished
         ).then(({ scoped }) =>
           loadMetadataFacetBucketsGrouped(scoped, [
             DocumentMetadataKeyCode.LicenseType,
@@ -557,22 +557,25 @@ describe('facet.domain', () => {
         buildNaiveScopedQuery(
           input,
           FilterKey.ManagerSupported,
-          restrictToActive
+          restrictToPublished
         ).then(({ scoped }) =>
           loadMetadataFacetBucketsGrouped(scoped, [
             DocumentMetadataKeyCode.ManagerSupported,
           ]).then((byKey) => byKey[DocumentMetadataKeyCode.ManagerSupported])
         ),
-        buildNaiveScopedQuery(input, FilterKey.Verified, restrictToActive).then(
-          ({ scoped }) =>
-            loadMetadataFacetBucketsGrouped(scoped, [
-              DocumentMetadataKeyCode.Verified,
-            ]).then((byKey) => byKey[DocumentMetadataKeyCode.Verified])
+        buildNaiveScopedQuery(
+          input,
+          FilterKey.Verified,
+          restrictToPublished
+        ).then(({ scoped }) =>
+          loadMetadataFacetBucketsGrouped(scoped, [
+            DocumentMetadataKeyCode.Verified,
+          ]).then((byKey) => byKey[DocumentMetadataKeyCode.Verified])
         ),
         buildNaiveScopedQuery(
           input,
           FilterKey.ProductVersion,
-          restrictToActive
+          restrictToPublished
         ).then(({ scoped }) =>
           loadMetadataFacetBucketsGrouped(scoped, [
             DocumentMetadataKeyCode.ProductVersion,
@@ -581,15 +584,15 @@ describe('facet.domain', () => {
         buildNaiveScopedQuery(
           input,
           FilterKey.SolutionCategory,
-          restrictToActive
+          restrictToPublished
         ).then(({ scoped }) => loadSolutionCategoryFacetBuckets(scoped)),
-        buildNaiveScopedQuery(input, FilterKey.Label, restrictToActive).then(
+        buildNaiveScopedQuery(input, FilterKey.Label, restrictToPublished).then(
           ({ scoped }) => loadUseCaseFacetBuckets(scoped)
         ),
         buildNaiveScopedQuery(
           input,
           FilterKey.EntityType,
-          restrictToActive
+          restrictToPublished
         ).then(({ scoped }) => loadEntityTypeFacetBuckets(scoped)),
       ]);
 
@@ -606,17 +609,20 @@ describe('facet.domain', () => {
     };
 
     const expectParity = async (input: LoadDocumentFacetInput) => {
-      // Given — restrictToActive computed exactly like the domain does
+      // Given — restrictToPublished computed exactly like the domain does
       const user = requestContext.get()?.user;
-      const restrictToActive =
+      const restrictToPublished =
         input.restrictToActiveDocuments === true ||
         !user ||
-        (await isUserRestrictedToActiveDocument(user, input.serviceInstanceId));
+        (await isUserRestrictedToPublishedDocument(
+          user,
+          input.serviceInstanceId
+        ));
 
       // When
       const [actual, expected] = await Promise.all([
         FacetDomain.loadDocumentFacets(input),
-        loadDocumentFacetsNaive(input, restrictToActive),
+        loadDocumentFacetsNaive(input, restrictToPublished),
       ]);
 
       // Then

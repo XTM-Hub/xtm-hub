@@ -247,7 +247,7 @@ describe('integrationCsvExportEndpoint.exportCsv', () => {
     );
 
     expect(loadDocumentsMock).toHaveBeenCalledWith(
-      expect.objectContaining({ activeOnly: true }),
+      expect.objectContaining({ publishedOnly: true }),
       expect.anything()
     );
   });

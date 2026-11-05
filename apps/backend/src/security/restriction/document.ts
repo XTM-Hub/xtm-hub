@@ -3,7 +3,7 @@ import { dbRaw, KnexQueryBuilder } from '../../../knexfile';
 import { requestContext } from '../../context/request.context';
 import { applyServiceInstanceVisibility } from './service-instance';
 
-export const restrictDocumentToActive = (qb: KnexQueryBuilder) => {
+export const restrictDocumentToPublished = (qb: KnexQueryBuilder) => {
   return qb.where('Document.active', '=', 'true');
 };
 
