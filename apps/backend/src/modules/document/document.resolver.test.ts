@@ -171,7 +171,6 @@ describe('delete document GraphQL mutation', () => {
       {
         documentId: docId,
         service_instance_id: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
-        forceDelete: false,
       },
       contextSimpleUserFiligran2,
       GRAPHQL_RESOLVE_INFO
@@ -179,8 +178,7 @@ describe('delete document GraphQL mutation', () => {
 
     expect(DocumentApp.deleteDocument).toHaveBeenCalledWith(
       docId,
-      SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
-      false
+      SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID
     );
     expect(result).toEqual(expected);
   });
@@ -195,7 +193,6 @@ describe('delete document GraphQL mutation', () => {
       {
         documentId: uuidv4() as DocumentId,
         service_instance_id: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
-        forceDelete: false,
       },
       contextSimpleUserFiligran2,
       GRAPHQL_RESOLVE_INFO

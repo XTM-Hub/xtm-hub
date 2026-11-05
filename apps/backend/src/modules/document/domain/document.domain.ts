@@ -164,14 +164,6 @@ export const DocumentDomain = {
     });
   },
 
-  deactivateDocuments: async (documentIds: DocumentId[]) => {
-    const user = requestContext.requireUser();
-
-    await db<Document>('Document')
-      .whereIn('id', documentIds)
-      .update({ active: false, remover_id: user.id });
-  },
-
   createDocument: async <
     T extends DocumentModel,
     TUseCase extends UseCaseValue = UseCaseId,

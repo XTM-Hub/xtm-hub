@@ -91,38 +91,6 @@ describe('document domain', () => {
     await TestHelper.document.delete({});
   });
 
-  describe('deactivateDocuments', () => {
-    let createdDocument: Document;
-    beforeEach(async () => {
-      createdDocument = await TestHelper.document.createWholeDocument({});
-    });
-
-    it('should do nothing when the document ids is an empty array', async () => {
-      await DocumentDomain.deactivateDocuments([]);
-
-      const document = await TestHelper.document.load({
-        id: createdDocument.id,
-      });
-
-      expect(document).toMatchObject({
-        active: true,
-      });
-    });
-
-    it('should deactivate document and set remover id', async () => {
-      await DocumentDomain.deactivateDocuments([createdDocument.id]);
-
-      const document = await TestHelper.document.load({
-        id: createdDocument.id,
-      });
-
-      expect(document).toMatchObject({
-        active: false,
-        remover_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID,
-      });
-    });
-  });
-
   describe('reassignUserDocumentsToSystemUser', () => {
     it('should reassign every user reference of the documents to the system user', async () => {
       const userId = TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID;

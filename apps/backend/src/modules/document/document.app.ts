@@ -604,8 +604,7 @@ export const DocumentApp = {
 
   deleteDocument: async <T extends DocumentModel>(
     documentId: DocumentId,
-    serviceInstanceId: ServiceInstanceId,
-    hardDelete: boolean
+    serviceInstanceId: ServiceInstanceId
   ): Promise<T> => {
     const documentFromDb = await DocumentDomain.loadDocumentBy({
       id: documentId,
@@ -617,38 +616,30 @@ export const DocumentApp = {
     }
 
     const childIds = await DocumentChildrenDomain.loadChildrenIds(documentId);
-    if (hardDelete) {
-      // Get all minio_name before their deletion
-      const childrenDocumentFromDB = (
-        await Promise.all(
-          childIds.map((id) => DocumentDomain.loadDocumentBy({ id }))
-        )
-      ).filter(
-        (childDocument): childDocument is DocumentModel =>
-          childDocument !== undefined
-      );
-      await withTransaction(async () => {
-        await DocumentChildrenDomain.deleteChildrenByParent(documentId);
+    // Get all minio_name before their deletion
+    const childrenDocumentFromDB = (
+      await Promise.all(
+        childIds.map((id) => DocumentDomain.loadDocumentBy({ id }))
+      )
+    ).filter(
+      (childDocument): childDocument is DocumentModel =>
+        childDocument !== undefined
+    );
+    await withTransaction(async () => {
+      await DocumentChildrenDomain.deleteChildrenByParent(documentId);
 
-        await DocumentDomain.deleteDocuments([...childIds, documentId]);
+      await DocumentDomain.deleteDocuments([...childIds, documentId]);
 
-        // Use Cases
-        await objectUseCaseDomain.deleteObjectUseCaseBy({
-          object_id: toObjectUseCaseObjectId(documentId),
-        });
+      // Use Cases
+      await objectUseCaseDomain.deleteObjectUseCaseBy({
+        object_id: toObjectUseCaseObjectId(documentId),
       });
-      void NewsFeedApp.deleteResourceNewsFeed({ documentId });
-      await DocumentHelper.deleteFileFromMinIO(
-        childrenDocumentFromDB,
-        documentFromDb
-      );
-      return documentFromDb as T;
-    }
-
-    // Soft delete => desactivate the document
-    await DocumentDomain.deactivateDocuments([documentId, ...childIds]);
+    });
     void NewsFeedApp.deleteResourceNewsFeed({ documentId });
-
+    await DocumentHelper.deleteFileFromMinIO(
+      childrenDocumentFromDB,
+      documentFromDb
+    );
     return documentFromDb as T;
   },
 

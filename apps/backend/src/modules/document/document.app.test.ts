@@ -1005,38 +1005,30 @@ describe('documentApp', () => {
   });
 
   describe('deleteDocument', () => {
-    it.each`
-      hardDelete | description
-      ${true}    | ${'hard deleted'}
-      ${false}   | ${'soft deleted'}
-    `(
-      'should delegate the news feed item deletion to NewsFeedApp.deleteResourceNewsFeed when the document is $description',
-      async ({ hardDelete }: { hardDelete: boolean }) => {
-        // Given
-        const deleteResourceNewsFeedSpy = vi
-          .spyOn(NewsFeedApp, 'deleteResourceNewsFeed')
-          .mockResolvedValue();
-        const document = await TestHelper.document.create({
-          name: 'document to delete',
-          service_instance_id: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
-        });
+    it('should delegate the news feed item deletion to NewsFeedApp.deleteResourceNewsFeed', async () => {
+      // Given
+      const deleteResourceNewsFeedSpy = vi
+        .spyOn(NewsFeedApp, 'deleteResourceNewsFeed')
+        .mockResolvedValue();
+      const document = await TestHelper.document.create({
+        name: 'document to delete',
+        service_instance_id: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
+      });
 
-        // When
-        await DocumentApp.deleteDocument(
-          document.id,
-          SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
-          hardDelete
-        );
+      // When
+      await DocumentApp.deleteDocument(
+        document.id,
+        SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID
+      );
 
-        // Then
-        expect(deleteResourceNewsFeedSpy).toHaveBeenCalledOnce();
-        expect(deleteResourceNewsFeedSpy).toHaveBeenCalledWith({
-          documentId: document.id,
-        });
-      }
-    );
+      // Then
+      expect(deleteResourceNewsFeedSpy).toHaveBeenCalledOnce();
+      expect(deleteResourceNewsFeedSpy).toHaveBeenCalledWith({
+        documentId: document.id,
+      });
+    });
 
-    it('should delegate the news feed item deletion when the file cleanup fails after a hard delete', async () => {
+    it('should delegate the news feed item deletion when the file cleanup fails', async () => {
       // Given
       const deleteResourceNewsFeedSpy = vi
         .spyOn(NewsFeedApp, 'deleteResourceNewsFeed')
@@ -1054,8 +1046,7 @@ describe('documentApp', () => {
       await expect(
         DocumentApp.deleteDocument(
           document.id,
-          SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
-          true
+          SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID
         )
       ).rejects.toThrow('cleanup-failed');
 

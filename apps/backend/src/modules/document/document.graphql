@@ -187,6 +187,7 @@ type Mutation {
     documentId: DocumentId!
     service_instance_id: ServiceInstanceId!
     forceDelete: Boolean
+      @deprecated(reason: "Ignored, documents are always deleted")
   ): Document! @auth @service_capa(requires: [DELETE])
   incrementShareNumberDocument(documentId: DocumentId!): Document!
 }

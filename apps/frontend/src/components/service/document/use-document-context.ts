@@ -167,7 +167,6 @@ export function useDocumentContext({
         documentId: document.id,
         serviceInstanceId: serviceInstance.id,
         connections: connectionId ? [connectionId] : [],
-        forceDelete: true,
       },
       onCompleted() {
         if (serviceInstance.slug) {
