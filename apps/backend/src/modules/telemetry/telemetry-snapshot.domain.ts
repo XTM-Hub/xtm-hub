@@ -1,5 +1,6 @@
 import { database } from '../../../knexfile';
 import {
+  DocumentStatus,
   PlatformIdentifier,
   ServiceDefinitionIdentifier,
 } from '../../__generated__/resolvers-types';
@@ -194,10 +195,10 @@ export const GAUGES: GaugeDefinition[] = [
   {
     name: 'xtm_hub_shared_resources_by_type',
     description:
-      'Active, non-decommissioned library documents broken down by type (dashboards, CSV feeds, scenarios, ...)',
+      'Published, non-decommissioned library documents broken down by type (dashboards, CSV feeds, scenarios, ...)',
     collect: async () => {
       const rows = (await database('Document')
-        .where({ active: true, is_decommissioned: false })
+        .where({ status: DocumentStatus.Published, is_decommissioned: false })
         .select('type')
         .groupBy('type')
         .count({ value: '*' })) as unknown as Array<GroupedRow<'type'>>;

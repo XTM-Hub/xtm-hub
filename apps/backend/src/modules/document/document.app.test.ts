@@ -20,6 +20,7 @@ import {
   DocumentImageType,
   DocumentMetadataKeyCode,
   DocumentSourceType,
+  DocumentStatus,
   FiligranProduct,
   IntegrationType,
   PlatformIdentifier,
@@ -96,7 +97,7 @@ describe('documentApp', () => {
     uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID,
     name: 'name',
     description: 'description',
-    active: true,
+    status: DocumentStatus.Published,
     use_cases: [],
     solution_categories: [],
   };
@@ -106,7 +107,7 @@ describe('documentApp', () => {
     uploader_id: documentData.uploader_id,
     name: documentData.name,
     description: documentData.description,
-    active: documentData.active,
+    status: documentData.status,
   };
 
   const integrationMetadata = [
@@ -199,7 +200,7 @@ describe('documentApp', () => {
         uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID,
         name: 'created name',
         description: 'created description',
-        active: false,
+        status: DocumentStatus.Draft,
         license_type: 'Commercial',
       };
 
@@ -226,7 +227,7 @@ describe('documentApp', () => {
       expect(result.uploader_id).toBe(input.uploader_id);
       expect(result.name).toBe(input.name);
       expect(result.description).toBe(input.description);
-      expect(result.active).toBe(input.active);
+      expect(result.status).toBe(input.status);
       expect(result.license_type).toBe(input.license_type);
       expect(result.integration_type).toBe(
         IntegrationType.ThirdPartyIntegration
@@ -239,7 +240,7 @@ describe('documentApp', () => {
         uploader_id: input.uploader_id,
         name: input.name,
         description: input.description,
-        active: input.active,
+        status: input.status,
       });
       expect(licenseTypeFromDb).toBe(input.license_type);
     });
@@ -367,7 +368,11 @@ describe('documentApp', () => {
 
       // When
       const result = await DocumentApp.createDocument({
-        input: { ...documentData, active: true, slug: 'news-feed-active-slug' },
+        input: {
+          ...documentData,
+          status: DocumentStatus.Published,
+          slug: 'news-feed-active-slug',
+        },
         metadata: [
           { key: DocumentMetadataKeyCode.ProductVersion, value: '1.0.0' },
         ],
@@ -381,7 +386,7 @@ describe('documentApp', () => {
         documentBeforeUpdate: undefined,
         updatedDocument: expect.objectContaining({
           id: result!.id,
-          active: true,
+          status: DocumentStatus.Published,
         }),
         serviceDefinitionIdentifier:
           ServiceDefinitionIdentifier.OpenctiCustomDashboards,
@@ -509,7 +514,7 @@ describe('documentApp', () => {
         uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID,
         name: 'updated name',
         description: 'updated description',
-        active: false,
+        status: DocumentStatus.Draft,
         license_type: 'Commercial',
       };
 
@@ -543,7 +548,7 @@ describe('documentApp', () => {
       expect(result.uploader_id).toBe(input.uploader_id);
       expect(result.name).toBe(input.name);
       expect(result.description).toBe(input.description);
-      expect(result.active).toBe(input.active);
+      expect(result.status).toBe(input.status);
       expect(result.license_type).toBe(input.license_type);
       expect(result.product_version).toBe('1.1.0');
 
@@ -552,7 +557,7 @@ describe('documentApp', () => {
         uploader_id: input.uploader_id,
         name: input.name,
         description: input.description,
-        active: input.active,
+        status: input.status,
       });
 
       expect(licenseTypeFromDb).toBe(input.license_type);
@@ -967,7 +972,11 @@ describe('documentApp', () => {
         .mockResolvedValue();
 
       const inactiveDoc = await DocumentApp.createDocument({
-        input: { ...documentData, active: false, slug: 'inactive-to-active' },
+        input: {
+          ...documentData,
+          status: DocumentStatus.Draft,
+          slug: 'inactive-to-active',
+        },
         metadata: [
           { key: DocumentMetadataKeyCode.ProductVersion, value: '1.0.0' },
         ],
@@ -983,7 +992,7 @@ describe('documentApp', () => {
         metadata: [
           { key: DocumentMetadataKeyCode.ProductVersion, value: '1.0.0' },
         ],
-        input: { active: true },
+        input: { status: DocumentStatus.Published },
         existingImageIds: [],
       });
 
@@ -992,11 +1001,11 @@ describe('documentApp', () => {
       expect(upsertResourceNewsFeedSpy).toHaveBeenCalledWith({
         documentBeforeUpdate: expect.objectContaining({
           id: inactiveDoc!.id,
-          active: false,
+          status: DocumentStatus.Draft,
         }),
         updatedDocument: expect.objectContaining({
           id: updatedDocument.id,
-          active: true,
+          status: DocumentStatus.Published,
         }),
         serviceDefinitionIdentifier:
           ServiceDefinitionIdentifier.OpenctiCustomDashboards,
@@ -1067,7 +1076,7 @@ describe('documentApp', () => {
           description: 'description',
           short_description: 'short_description',
           slug: 'slug',
-          active: true,
+          status: DocumentStatus.Published,
         },
         metadata: [
           { key: DocumentMetadataKeyCode.ProductVersion, value: '1.2.3' },
@@ -1124,7 +1133,7 @@ describe('documentApp', () => {
           description: 'description',
           short_description: 'short_description',
           slug: 'slug',
-          active: true,
+          status: DocumentStatus.Published,
         },
         metadata: [
           { key: DocumentMetadataKeyCode.ProductVersion, value: '1.2.3' },
@@ -1381,7 +1390,7 @@ describe('documentApp', () => {
           description: 'description',
           service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
           type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
-          active: true,
+          status: DocumentStatus.Published,
         },
         []
       );
@@ -1401,7 +1410,7 @@ describe('documentApp', () => {
           description: 'description',
           service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
           type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
-          active: true,
+          status: DocumentStatus.Published,
           use_cases: [
             TEST_USE_CASES.DETECTION.NAME,
             TEST_USE_CASES.RESPONSE.NAME,
@@ -1431,7 +1440,7 @@ describe('documentApp', () => {
           description: 'description',
           service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
           type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
-          active: true,
+          status: DocumentStatus.Published,
           use_cases: ['detection'],
         },
         []
@@ -1968,7 +1977,7 @@ describe('documentApp', () => {
           description: 'description',
           service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
           type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
-          active: true,
+          status: DocumentStatus.Published,
         },
         []
       );
@@ -1978,7 +1987,7 @@ describe('documentApp', () => {
           description: 'description',
           service_instance_id: SERVICES.INSTANCES.OPENAEV_SCENARIOS.ID,
           type: OPENAEV_SCENARIO_DOCUMENT_TYPE,
-          active: true,
+          status: DocumentStatus.Published,
         },
         []
       );
@@ -2011,7 +2020,7 @@ describe('documentApp', () => {
           description: 'description',
           service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
           type: 'service_picture',
-          active: true,
+          status: DocumentStatus.Published,
         },
         []
       );

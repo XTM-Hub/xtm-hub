@@ -12,6 +12,7 @@ import {
 import {
   DocumentMetadataKeyCode,
   DocumentOrdering,
+  DocumentStatus,
   FilterKey,
   LoadDocumentFacetInput,
   LogicalOperator,
@@ -96,21 +97,21 @@ describe('facet.domain', () => {
       name: `facet-connector-true-${uuidv4()}`,
       slug: `facet-connector-true-${uuidv4()}`,
       type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
-      active: true,
+      status: DocumentStatus.Published,
       service_instance_id: serviceInstance.id,
     });
     const csvTrueDocument = await TestHelper.document.create({
       name: `facet-csv-true-${uuidv4()}`,
       slug: `facet-csv-true-${uuidv4()}`,
       type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
-      active: true,
+      status: DocumentStatus.Published,
       service_instance_id: serviceInstance.id,
     });
     const connectorFalseDocument = await TestHelper.document.create({
       name: `facet-connector-false-${uuidv4()}`,
       slug: `facet-connector-false-${uuidv4()}`,
       type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
-      active: true,
+      status: DocumentStatus.Published,
       service_instance_id: serviceInstance.id,
     });
     createdDocumentIds.push(
@@ -261,14 +262,14 @@ describe('facet.domain', () => {
       name: MULTI_WORD_DOCUMENT_NAME,
       slug: `facet-multi-word-${uuidv4()}`,
       type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
-      active: true,
+      status: DocumentStatus.Published,
       service_instance_id: serviceInstance.id,
     });
     const otherDocument = await TestHelper.document.create({
       name: OTHER_MULTI_WORD_DOCUMENT_NAME,
       slug: `facet-other-multi-word-${uuidv4()}`,
       type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
-      active: true,
+      status: DocumentStatus.Published,
       service_instance_id: serviceInstance.id,
     });
     await Promise.all([
@@ -343,21 +344,21 @@ describe('facet.domain', () => {
           name: `facet-parity-a-${uuidv4()}`,
           slug: `facet-parity-a-${uuidv4()}`,
           type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
-          active: true,
+          status: DocumentStatus.Published,
           service_instance_id: privateServiceInstance.id,
         });
         const activeUnverified = await TestHelper.document.create({
           name: `facet-parity-b-${uuidv4()}`,
           slug: `facet-parity-b-${uuidv4()}`,
           type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
-          active: true,
+          status: DocumentStatus.Published,
           service_instance_id: privateServiceInstance.id,
         });
         const inactiveVerified = await TestHelper.document.create({
           name: `facet-parity-c-${uuidv4()}`,
           slug: `facet-parity-c-${uuidv4()}`,
           type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
-          active: false,
+          status: DocumentStatus.Draft,
           service_instance_id: privateServiceInstance.id,
         });
         createdDocumentIds.push(
@@ -445,17 +446,28 @@ describe('facet.domain', () => {
           name: `facet-parity-restrict-a-${uuidv4()}`,
           slug: `facet-parity-restrict-a-${uuidv4()}`,
           type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
-          active: true,
+          status: DocumentStatus.Published,
           service_instance_id: privateServiceInstance.id,
         });
         const inactiveVerified = await TestHelper.document.create({
           name: `facet-parity-restrict-b-${uuidv4()}`,
           slug: `facet-parity-restrict-b-${uuidv4()}`,
           type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
-          active: false,
+          status: DocumentStatus.Draft,
           service_instance_id: privateServiceInstance.id,
         });
-        createdDocumentIds.push(activeVerified.id, inactiveVerified.id);
+        const inValidationVerified = await TestHelper.document.create({
+          name: `facet-parity-restrict-c-${uuidv4()}`,
+          slug: `facet-parity-restrict-c-${uuidv4()}`,
+          type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+          status: DocumentStatus.InValidation,
+          service_instance_id: privateServiceInstance.id,
+        });
+        createdDocumentIds.push(
+          activeVerified.id,
+          inactiveVerified.id,
+          inValidationVerified.id
+        );
 
         await Promise.all([
           TestHelper.documentMetadata.create({
@@ -465,6 +477,11 @@ describe('facet.domain', () => {
           }),
           TestHelper.documentMetadata.create({
             document_id: inactiveVerified.id,
+            key: DocumentMetadataKeyCode.Verified,
+            value: VERIFIED_TRUE_VALUE,
+          }),
+          TestHelper.documentMetadata.create({
+            document_id: inValidationVerified.id,
             key: DocumentMetadataKeyCode.Verified,
             value: VERIFIED_TRUE_VALUE,
           }),
@@ -648,14 +665,14 @@ describe('facet.domain', () => {
         name: `facet-batching-doc-a-${uuidv4()}`,
         slug: NON_FACET_SLUG_FILTER_VALUE,
         type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
-        active: true,
+        status: DocumentStatus.Published,
         service_instance_id: serviceInstanceId,
       });
       const docB = await TestHelper.document.create({
         name: `facet-batching-doc-b-${uuidv4()}`,
         slug: `facet-batching-doc-b-${uuidv4()}`,
         type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
-        active: true,
+        status: DocumentStatus.Published,
         service_instance_id: serviceInstanceId,
       });
       docAId = docA.id;

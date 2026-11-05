@@ -13,6 +13,7 @@ import { TestHelper } from '../../../tests/helper/test.helper';
 import { TEST_ORGANIZATIONS } from '../../../tests/tests.const';
 import {
   DocumentMetadataKeyCode,
+  DocumentStatus,
   IntegrationType,
   ServiceDefinitionIdentifier,
 } from '../../__generated__/resolvers-types';
@@ -78,7 +79,7 @@ describe('documentHelper', () => {
           description: 'description',
           short_description: 'short_description',
           slug: 'slug',
-          active: true,
+          status: DocumentStatus.Published,
         },
         metadata: [
           {
@@ -368,7 +369,7 @@ describe('documentHelper', () => {
           description: 'description',
           short_description: 'short_description',
           slug,
-          active: true,
+          status: DocumentStatus.Published,
           type: OPENCTI_CUSTOM_DASHBOARD_DOCUMENT_TYPE,
         },
         []

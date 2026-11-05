@@ -5,6 +5,7 @@ import { TEST_USE_CASES } from '../../../../tests/tests.const';
 import {
   DocumentImageType,
   DocumentMetadataKeyCode,
+  DocumentStatus,
   IntegrationType,
   ManifestType,
   PlatformIdentifier,
@@ -45,7 +46,7 @@ const LTS_KEY: ManifestKey = {
 
 const createConnectorDocument = async (tags: string[]): Promise<Document> => {
   const doc = await TestHelper.document.create({
-    active: true,
+    status: DocumentStatus.Published,
     is_decommissioned: false,
     tags: [...tags, TAG_DECOUPLING],
   });
@@ -63,7 +64,7 @@ const createConnectorWithFragment = async ({
   minimumDeployableVersionPadded,
   tags = [],
   version = '7.260309.0',
-  active = true,
+  status = DocumentStatus.Published,
   isDecommissioned = false,
 }: {
   manifestFragmentId: string;
@@ -71,11 +72,11 @@ const createConnectorWithFragment = async ({
   minimumDeployableVersionPadded?: string;
   tags?: string[];
   version?: string;
-  active?: boolean;
+  status?: DocumentStatus;
   isDecommissioned?: boolean;
 }): Promise<Document> => {
   const doc = await TestHelper.document.create({
-    active,
+    status,
     is_decommissioned: isDecommissioned,
     tags: tags.length > 0 ? [...tags, TAG_DECOUPLING] : [],
     version,
@@ -166,27 +167,30 @@ describe('manifestApp', () => {
         expect(links[0]!.document_id).toBe(expected.id);
       });
 
-      it('excludes inactive connectors', async () => {
-        const doc = await TestHelper.document.create({
-          active: false,
-          is_decommissioned: false,
-          tags: [TAG_LATEST, TAG_DECOUPLING],
-        });
-        await TestHelper.documentMetadata.create({
-          document_id: doc.id,
-          key: DocumentMetadataKeyCode.IntegrationType as unknown as DocumentMetadataKey,
-          value: IntegrationType.Connector,
-        });
+      it.each([DocumentStatus.Draft, DocumentStatus.InValidation])(
+        'excludes the connectors whose status is %s',
+        async (status) => {
+          const doc = await TestHelper.document.create({
+            status,
+            is_decommissioned: false,
+            tags: [TAG_LATEST, TAG_DECOUPLING],
+          });
+          await TestHelper.documentMetadata.create({
+            document_id: doc.id,
+            key: DocumentMetadataKeyCode.IntegrationType as unknown as DocumentMetadataKey,
+            value: IntegrationType.Connector,
+          });
 
-        await ManifestApp.generateManifest(MANIFEST_KEY);
+          await ManifestApp.generateManifest(MANIFEST_KEY);
 
-        const links = await TestHelper.manifestDocument.loadAll({});
-        expect(links).toHaveLength(0);
-      });
+          const links = await TestHelper.manifestDocument.loadAll({});
+          expect(links).toHaveLength(0);
+        }
+      );
 
       it('excludes decommissioned connectors', async () => {
         const doc = await TestHelper.document.create({
-          active: true,
+          status: DocumentStatus.Published,
           is_decommissioned: true,
           tags: [TAG_LATEST, TAG_DECOUPLING],
         });

@@ -19,7 +19,8 @@ interface Integration implements Node & Document {
   short_description: String
   description: String
   file_name: String @auth
-  active: Boolean!
+  active: Boolean @deprecated(reason: "Use status")
+  status: DocumentStatus!
   created_at: Date!
   updated_at: Date
   updater_id: String @auth
@@ -55,7 +56,8 @@ type IntegrationHack implements Node & Document & Integration {
   short_description: String
   description: String
   file_name: String @auth
-  active: Boolean!
+  active: Boolean @deprecated(reason: "Use status")
+  status: DocumentStatus!
   created_at: Date!
   updated_at: Date
   updater_id: String @auth
@@ -90,7 +92,8 @@ type CsvFeed implements Node & Document & Integration {
   short_description: String
   description: String
   file_name: String @auth
-  active: Boolean!
+  active: Boolean @deprecated(reason: "Use status")
+  status: DocumentStatus!
   created_at: Date!
   updated_at: Date
   updater_id: String @auth
@@ -126,7 +129,8 @@ type Connector implements Node & Document & Integration {
   short_description: String
   description: String
   file_name: String @auth
-  active: Boolean!
+  active: Boolean @deprecated(reason: "Use status")
+  status: DocumentStatus!
   created_at: Date!
   updated_at: Date
   updater_id: String @auth
@@ -170,7 +174,8 @@ type TaxiiFeed implements Node & Document & Integration {
   short_description: String
   description: String
   file_name: String @auth
-  active: Boolean!
+  active: Boolean @deprecated(reason: "Use status")
+  status: DocumentStatus!
   created_at: Date!
   updated_at: Date
   updater_id: String @auth
@@ -205,7 +210,8 @@ type RssFeed implements Node & Document & Integration {
   short_description: String
   description: String
   file_name: String @auth
-  active: Boolean!
+  active: Boolean @deprecated(reason: "Use status")
+  status: DocumentStatus!
   created_at: Date!
   updated_at: Date
   updater_id: String @auth
@@ -241,7 +247,8 @@ type Stream implements Node & Document & Integration {
   short_description: String
   description: String
   file_name: String @auth
-  active: Boolean!
+  active: Boolean @deprecated(reason: "Use status")
+  status: DocumentStatus!
   created_at: Date!
   updated_at: Date
   updater_id: String @auth
@@ -277,7 +284,8 @@ type ThirdPartyIntegration implements Node & Document & Integration {
   short_description: String
   description: String
   file_name: String @auth
-  active: Boolean!
+  active: Boolean @deprecated(reason: "Use status")
+  status: DocumentStatus!
   created_at: Date!
   updated_at: Date
   updater_id: String @auth

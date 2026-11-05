@@ -3,6 +3,7 @@ import { db, dbRaw, paginate } from '../../../../knexfile';
 import {
   DocumentConnection,
   DocumentMetadataKeyCode,
+  DocumentStatus,
   FeatureFlag,
   IntegrationType,
   Organization,
@@ -181,7 +182,7 @@ export const DocumentDomain = {
           'solution_categories',
           ...metadataKeys,
         ]),
-        active: documentData.active ?? true,
+        status: documentData.status ?? DocumentStatus.Published,
         uploader_id,
         uploader_organization_id: user.selected_organization_id,
       })
@@ -349,7 +350,8 @@ export const DocumentDomain = {
       .tap(restrictDocumentToAccessibleServiceInstance)
       .where(field)
       .modify(applyDecouplingRestriction(field['Document.type'] as string))
-      .orderBy('Document.active', 'asc');
+      // draft, in_validation, published: the status names sort in that order
+      .orderBy('Document.status', 'asc');
 
     if (
       opts.publishedOnly ||
@@ -404,7 +406,7 @@ export const DocumentDomain = {
     const document = await db<Document>('Document')
       .select('Document.*')
       .where('Document.slug', '=', slug)
-      .where('Document.active', '=', true)
+      .where('Document.status', '=', DocumentStatus.Published)
       .where('Document.type', '=', type)
       .modify(applyDecouplingRestriction(type))
       .tap(restrictDocumentToPublicServiceInstance)
@@ -481,7 +483,7 @@ export const DocumentDomain = {
       })
       .where('ServiceInstance.slug', '=', serviceSlug)
       .tap(restrictServiceInstanceToPublic)
-      .where('Document.active', '=', true)
+      .where('Document.status', '=', DocumentStatus.Published)
       .where('Document.type', '=', type)
       .modify(applyDecouplingRestriction(type))
       .modify((qb) => {
@@ -635,7 +637,7 @@ export const DocumentDomain = {
   ): Promise<Document[]> => {
     const documents = await db<Document>('Document')
       .select('Document.*')
-      .where('Document.active', true)
+      .where('Document.status', DocumentStatus.Published)
       .whereNotExists(function () {
         this.select(dbRaw('1'))
           .from('Document_Children')
@@ -728,7 +730,7 @@ export const DocumentDomain = {
       .where('dm_type.key', DocumentMetadataKeyCode.IntegrationType)
       .andWhere('dm_type.value', IntegrationType.Connector)
       .whereIn('Document.slug', slugs)
-      .where('Document.active', true)
+      .where('Document.status', DocumentStatus.Published)
       .where('Document.is_decommissioned', false)
       .select('Document.*')
       .groupBy('Document.id', 'Document.slug')
@@ -746,7 +748,7 @@ export const DocumentDomain = {
 
   /**
    * Returns the distinct slugs of the connectors currently known as "latest"
-   * for the given product version's track, i.e. active, non-decommissioned
+   * for the given product version's track, i.e. published, non-decommissioned
    * decoupled connector documents tagged TAG_LATEST (or TAG_LATEST_LTS for an
    * LTS version) + TAG_DECOUPLING.
    */
@@ -756,7 +758,7 @@ export const DocumentDomain = {
     const rows: Pick<DocumentModel, 'slug'>[] = await db<DocumentModel>(
       'Document'
     )
-      .where('Document.active', true)
+      .where('Document.status', DocumentStatus.Published)
       .where('Document.is_decommissioned', false)
       .whereRaw(`"Document"."tags" @> ARRAY[?, ?]::text[]`, [
         tag,

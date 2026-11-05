@@ -239,7 +239,7 @@ describe('integrationCsvExportEndpoint.exportCsv', () => {
     expect(csv.trim().split('\r\n')).toHaveLength(1);
   });
 
-  it('only loads active documents so drafts are never exported', async () => {
+  it('only loads published documents so drafts are never exported', async () => {
     const res = buildResponse();
     await IntegrationCsvExportEndpoint.exportCsv(
       buildRequest(VALID_PARAMS),

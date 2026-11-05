@@ -1,5 +1,6 @@
 import {
   DocumentMetadataKeyCode,
+  DocumentStatus,
   FeatureFlag,
   IntegrationType,
   ManifestType,
@@ -68,7 +69,11 @@ const fetchConnectors = async (
     DocumentMetadataKeyCode.IntegrationType,
     IntegrationType.Connector,
     INTEGRATION_CONNECTOR_V2_METADATA_KEYS as DocumentMetadataKeyCode[],
-    { active: true, is_decommissioned: false, tags: [tag, TAG_DECOUPLING] }
+    {
+      status: DocumentStatus.Published,
+      is_decommissioned: false,
+      tags: [tag, TAG_DECOUPLING],
+    }
   )) as ConnectorV2[];
   logApp.info(
     `Found ${connectors.length} connector(s) v2 with tag "${tag}" for version ${version}`
