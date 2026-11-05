@@ -166,7 +166,8 @@ export const NewsFeedApp = {
     return {
       news_feed_items: newsFeedItems,
       available_news_feed_types: NewsFeedDomain.loadAvailableNewsFeedTypes(
-        resolvedConfiguration.platformIdentifier
+        resolvedConfiguration.platformIdentifier,
+        resolvedConfiguration.platformConfiguration.platform_version
       ),
     };
   },
