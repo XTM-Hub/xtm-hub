@@ -192,10 +192,6 @@ type Mutation {
 }
 
 type Query {
-  documentExists(
-    documentName: String
-    service_instance_id: ServiceInstanceId!
-  ): Boolean @auth @service_capa(requires: [UPLOAD])
   publicDocuments(
     slug: String!
     first: Int!

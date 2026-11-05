@@ -1999,7 +1999,6 @@ export type Query = {
   deploymentRequestsAvailable: Array<DeploymentAvailability>;
   deploymentRequestsList: DeploymentRequestConnection;
   document?: Maybe<Document>;
-  documentExists?: Maybe<Scalars['Boolean']['output']>;
   documentFacets?: Maybe<Facet>;
   documents: DocumentConnection;
   epics?: Maybe<EpicConnection>;
@@ -2118,12 +2117,6 @@ export type QueryDeploymentRequestsListArgs = {
 export type QueryDocumentArgs = {
   documentId: Scalars['DocumentId']['input'];
   serviceInstanceId: Scalars['ServiceInstanceId']['input'];
-};
-
-
-export type QueryDocumentExistsArgs = {
-  documentName?: InputMaybe<Scalars['String']['input']>;
-  service_instance_id: Scalars['ServiceInstanceId']['input'];
 };
 
 
@@ -4929,7 +4922,6 @@ export type QueryResolvers<ContextType = PortalContext, ParentType extends Resol
   deploymentRequestsAvailable?: Resolver<Array<ResolversTypes['DeploymentAvailability']>, ParentType, ContextType>;
   deploymentRequestsList?: Resolver<ResolversTypes['DeploymentRequestConnection'], ParentType, ContextType, RequireFields<QueryDeploymentRequestsListArgs, 'first' | 'orderBy' | 'orderMode'>>;
   document?: Resolver<Maybe<ResolversTypes['Document']>, ParentType, ContextType, RequireFields<QueryDocumentArgs, 'documentId' | 'serviceInstanceId'>>;
-  documentExists?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType, RequireFields<QueryDocumentExistsArgs, 'service_instance_id'>>;
   documentFacets?: Resolver<Maybe<ResolversTypes['Facet']>, ParentType, ContextType, RequireFields<QueryDocumentFacetsArgs, 'input'>>;
   documents?: Resolver<ResolversTypes['DocumentConnection'], ParentType, ContextType, RequireFields<QueryDocumentsArgs, 'first' | 'orderBy' | 'orderMode' | 'serviceInstanceId'>>;
   epics?: Resolver<Maybe<ResolversTypes['EpicConnection']>, ParentType, ContextType, RequireFields<QueryEpicsArgs, 'first' | 'orderBy' | 'orderMode'>>;

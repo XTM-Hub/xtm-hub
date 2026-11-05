@@ -498,28 +498,6 @@ describe('document field resolvers', () => {
   });
 });
 
-describe('document exists GraphQL query', () => {
-  it('should delegate to checkDocumentExists and return result', async () => {
-    vi.spyOn(DocumentHelper, 'checkDocumentExists').mockResolvedValue(false);
-
-    const result = await documentResolver.Query!.documentExists!(
-      {},
-      {
-        documentName: 'test.md',
-        service_instance_id: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
-      },
-      contextSimpleUserFiligran2,
-      GRAPHQL_RESOLVE_INFO
-    );
-
-    expect(DocumentHelper.checkDocumentExists).toHaveBeenCalledWith(
-      'test.md',
-      SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID
-    );
-    expect(result).toBe(false);
-  });
-});
-
 describe('public documents GraphQL query', () => {
   it('should delegate to DocumentApp.loadPublicDocuments and return result', async () => {
     const expected = [] as unknown as Awaited<

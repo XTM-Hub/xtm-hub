@@ -361,18 +361,6 @@ export const DocumentHelper = {
       .replace(/^-|-$/g, '');
   },
 
-  checkDocumentExists: async (
-    documentName: string,
-    serviceInstanceId: ServiceInstanceId
-  ) => {
-    const document = await DocumentDomain.loadDocumentBy({
-      file_name: DocumentHelper.normalizeDocumentName(documentName),
-      active: true,
-      service_instance_id: serviceInstanceId,
-    });
-    return !!document;
-  },
-
   uploadNewFile: async (
     document: Upload,
     serviceInstanceId: ServiceInstanceId

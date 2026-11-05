@@ -2006,7 +2006,6 @@ export type Query = {
   deploymentRequestsAvailable: Array<DeploymentAvailability>;
   deploymentRequestsList: DeploymentRequestConnection;
   document: Maybe<Document>;
-  documentExists: Maybe<Scalars['Boolean']['output']>;
   documentFacets: Maybe<Facet>;
   documents: DocumentConnection;
   epics: Maybe<EpicConnection>;
@@ -2125,12 +2124,6 @@ export type QueryDeploymentRequestsListArgs = {
 export type QueryDocumentArgs = {
   documentId: Scalars['DocumentId']['input'];
   serviceInstanceId: Scalars['ServiceInstanceId']['input'];
-};
-
-
-export type QueryDocumentExistsArgs = {
-  documentName: InputMaybe<Scalars['String']['input']>;
-  service_instance_id: Scalars['ServiceInstanceId']['input'];
 };
 
 

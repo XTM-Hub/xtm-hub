@@ -220,16 +220,6 @@ const resolvers: Resolvers = {
     },
   },
   Query: {
-    documentExists: async (_, input) => {
-      try {
-        return await DocumentHelper.checkDocumentExists(
-          input.documentName ?? '',
-          input.service_instance_id
-        );
-      } catch (error) {
-        throw mapToGraphQLError(error);
-      }
-    },
     publicDocuments: async (_, input) => {
       try {
         return await DocumentApp.loadPublicDocuments(input);

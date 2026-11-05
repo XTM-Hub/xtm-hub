@@ -69,18 +69,6 @@ export const DocumentDeleteMutation = graphql`
   }
 `;
 
-export const DocumentExistsQuery = graphql`
-  query documentExistsQuery(
-    $documentName: String
-    $serviceInstanceId: ServiceInstanceId!
-  ) {
-    documentExists(
-      documentName: $documentName
-      service_instance_id: $serviceInstanceId
-    )
-  }
-`;
-
 export const documentItem = graphql`
   fragment documentItem_fragment on Document @inline {
     __typename
