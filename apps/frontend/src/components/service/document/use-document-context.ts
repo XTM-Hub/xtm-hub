@@ -28,6 +28,8 @@ import {
   docIsExistingFile,
   isFile,
   splitExistingAndNewImages,
+  toDocumentStatus,
+  toStatusUpdate,
 } from '@/utils/documents';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 import { documentCreateMutation } from '@generated/documentCreateMutation.graphql';
@@ -92,7 +94,7 @@ export function useDocumentContext({
     onSuccess: (serviceName: string) => void,
     onError: (error: Error) => void
   ) => {
-    const input = omit(
+    const { active, ...input } = omit(
       {
         ...pick(values as DocumentFormValues, documentBaseKeys),
         uploader_id: values?.uploader_id ?? '',
@@ -111,7 +113,7 @@ export function useDocumentContext({
       variables: {
         input: {
           ...input,
-          active: input.active ?? false,
+          status: toDocumentStatus(active),
           use_cases: input.use_cases ?? [],
           solution_categories: input.solution_categories ?? [],
         },
@@ -186,7 +188,7 @@ export function useDocumentContext({
     onSuccess: (serviceName: string) => void,
     onError: (error: Error) => void
   ) => {
-    const input = omit(
+    const { active, ...input } = omit(
       {
         ...pick(values as DocumentFormValues, documentBaseKeys),
         uploader_id: values?.uploader_id ?? '',
@@ -205,7 +207,10 @@ export function useDocumentContext({
 
     updateMutation({
       variables: {
-        input,
+        input: {
+          ...input,
+          ...toStatusUpdate(active, resource.status),
+        },
         serviceInstanceId: serviceInstance.id,
         sourceDocument: sourceDocument.map(() => ({})),
         images: newImages.map(() => ({})),

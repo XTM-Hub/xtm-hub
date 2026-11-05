@@ -9,6 +9,7 @@ import { AutoForm } from '@/components/ui/auto-form';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import {
   fileListCheck,
+  isDocumentPublished,
   optionalFileListCheck,
   transformToFileList,
 } from '@/utils/documents';
@@ -83,6 +84,7 @@ export const OpenctiPlaybookForm = ({
     () =>
       ({
         ...document,
+        active: document ? isDocumentPublished(document.status) : undefined,
         description: document?.description ?? descriptionValue,
         images: transformToFileList(DocumentImageType.Image, document),
         logo: transformToFileList(DocumentImageType.Logo, document),

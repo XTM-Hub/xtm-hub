@@ -3,7 +3,7 @@ fragment HomepageDocument on Document {
   name
   short_description
   type
-  active
+  status
   slug
   service_instance_id
   children_documents {

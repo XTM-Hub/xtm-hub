@@ -21,7 +21,7 @@ export const publicDocumentListItem = graphql`
       last_name
       picture
     }
-    active
+    status
     type
 
     ... on Integration {
@@ -68,7 +68,7 @@ export const publicDocumentBySlugItem = graphql`
       last_name
       picture
     }
-    active
+    status
     type
     uploader_organization {
       id

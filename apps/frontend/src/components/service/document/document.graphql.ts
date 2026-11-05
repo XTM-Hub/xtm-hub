@@ -79,7 +79,7 @@ export const documentItem = graphql`
     description
     download_number
     share_number
-    active
+    status
     updated_at
     use_cases {
       id
@@ -105,7 +105,7 @@ export const documentItem = graphql`
       name
       description
       download_number
-      active
+      status
       source_type
       image_type
     }
@@ -201,7 +201,7 @@ export const documentsFragment = graphql`
       edges {
         node {
           id
-          active
+          status
           ...documentItem_fragment
         }
       }

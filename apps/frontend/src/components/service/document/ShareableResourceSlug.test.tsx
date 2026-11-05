@@ -40,26 +40,26 @@ describe('Component: ShareableResourceSlug - OneClickDeploy Logic', () => {
   } as unknown as serviceInstance_fragment$data;
 
   it.each`
-    shouldShowOneClickComponent | documentType                  | documentActive | integrationType
-    ${true}                     | ${'opencti_custom_dashboard'} | ${true}        | ${false}
-    ${false}                    | ${'opencti_custom_dashboard'} | ${false}       | ${false}
-    ${true}                     | ${'opencti_integration'}      | ${true}        | ${IntegrationType.CsvFeed}
-    ${true}                     | ${'opencti_integration'}      | ${true}        | ${IntegrationType.TaxiiFeed}
-    ${true}                     | ${'opencti_integration'}      | ${true}        | ${IntegrationType.Stream}
-    ${false}                    | ${'opencti_integration'}      | ${true}        | ${IntegrationType.ThirdPartyIntegration}
-    ${false}                    | ${'opencti_integration'}      | ${false}       | ${IntegrationType.CsvFeed}
-    ${true}                     | ${'openaev_scenario'}         | ${true}        | ${false}
-    ${false}                    | ${'openaev_scenario'}         | ${false}       | ${false}
+    shouldShowOneClickComponent | documentType                  | documentStatus | integrationType
+    ${true}                     | ${'opencti_custom_dashboard'} | ${'published'} | ${false}
+    ${false}                    | ${'opencti_custom_dashboard'} | ${'draft'}     | ${false}
+    ${true}                     | ${'opencti_integration'}      | ${'published'} | ${IntegrationType.CsvFeed}
+    ${true}                     | ${'opencti_integration'}      | ${'published'} | ${IntegrationType.TaxiiFeed}
+    ${true}                     | ${'opencti_integration'}      | ${'published'} | ${IntegrationType.Stream}
+    ${false}                    | ${'opencti_integration'}      | ${'published'} | ${IntegrationType.ThirdPartyIntegration}
+    ${false}                    | ${'opencti_integration'}      | ${'draft'}     | ${IntegrationType.CsvFeed}
+    ${true}                     | ${'openaev_scenario'}         | ${'published'} | ${false}
+    ${false}                    | ${'openaev_scenario'}         | ${'draft'}     | ${false}
   `(
-    'should show OneClickDeploy=$shouldShowOneClickComponent when document is $documentType is $documentActive and integration type is $integrationType',
+    'should show OneClickDeploy=$shouldShowOneClickComponent when document is $documentType with status $documentStatus and integration type is $integrationType',
     ({
       shouldShowOneClickComponent,
       documentType,
-      documentActive,
+      documentStatus,
       integrationType,
     }) => {
       const testDocumentData = {
-        active: documentActive,
+        status: documentStatus,
         description: 'description',
         download_number: 1,
         name: 'Test Document',
@@ -92,14 +92,17 @@ describe('Component: ShareableResourceSlug - Download', () => {
     id: 'service-instance-1',
   } as unknown as serviceInstance_fragment$data;
 
-  const renderSlug = (documentType: string, documentActive: boolean) =>
+  const renderSlug = (
+    documentType: string,
+    documentStatus: 'published' | 'draft'
+  ) =>
     testRender(
       <ShareableResourceSlug
         breadcrumbValue={[]}
         documentData={
           {
             id: 'document-1',
-            active: documentActive,
+            status: documentStatus,
             description: 'description',
             download_number: 1,
             name: 'Test Document',
@@ -112,15 +115,15 @@ describe('Component: ShareableResourceSlug - Download', () => {
     );
 
   it.each`
-    deployable | documentType                  | documentActive | accessibleName
-    ${false}   | ${'opencti_custom_dashboard'} | ${false}       | ${'Utils.Download'}
-    ${true}    | ${'opencti_custom_dashboard'} | ${true}        | ${'Service.ShareableResources.Download'}
+    deployable | documentType                  | documentStatus | accessibleName
+    ${false}   | ${'opencti_custom_dashboard'} | ${'draft'}     | ${'Utils.Download'}
+    ${true}    | ${'opencti_custom_dashboard'} | ${'published'} | ${'Service.ShareableResources.Download'}
   `(
     'should render the download action as a link to the document file when the resource deployable=$deployable',
-    ({ documentType, documentActive, accessibleName }) => {
+    ({ documentType, documentStatus, accessibleName }) => {
       // Given a downloadable resource
       // When the resource page is rendered
-      renderSlug(documentType, documentActive);
+      renderSlug(documentType, documentStatus);
 
       // Then the download action is a plain link to the backend file route
       expect(
@@ -133,14 +136,14 @@ describe('Component: ShareableResourceSlug - Download', () => {
   );
 
   it.each`
-    deployable | documentType                  | documentActive | accessibleName
-    ${false}   | ${'opencti_custom_dashboard'} | ${false}       | ${'Utils.Download'}
-    ${true}    | ${'opencti_custom_dashboard'} | ${true}        | ${'Service.ShareableResources.Download'}
+    deployable | documentType                  | documentStatus | accessibleName
+    ${false}   | ${'opencti_custom_dashboard'} | ${'draft'}     | ${'Utils.Download'}
+    ${true}    | ${'opencti_custom_dashboard'} | ${'published'} | ${'Service.ShareableResources.Download'}
   `(
     'should increment the download count by one when the download link is clicked and the resource deployable=$deployable',
-    async ({ documentType, documentActive, accessibleName }) => {
+    async ({ documentType, documentStatus, accessibleName }) => {
       // Given a downloadable resource downloaded once
-      renderSlug(documentType, documentActive);
+      renderSlug(documentType, documentStatus);
       const downloadLink = screen.getByRole('link', { name: accessibleName });
       // Keep jsdom from attempting the file navigation
       downloadLink.addEventListener('click', (event) => event.preventDefault());
@@ -330,7 +333,7 @@ describe('Component: ShareableResourceSlug - Download count refresh', () => {
   const buildDocument = (id: string, downloadNumber: number) =>
     ({
       id,
-      active: false,
+      status: 'draft',
       description: 'description',
       download_number: downloadNumber,
       name: 'Test Document',

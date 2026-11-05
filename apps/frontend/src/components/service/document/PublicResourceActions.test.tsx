@@ -38,7 +38,7 @@ const buildDocumentData = (
   ({
     __typename: 'CustomDashboard',
     id: DOCUMENT_ID,
-    active: true,
+    status: 'published',
     type: ShareableResourceType.OPENCTI_CUSTOM_DASHBOARD,
     ...overrides,
   }) as publicDocumentBySlugItemFragment$data;
@@ -117,9 +117,9 @@ describe('PublicResourceActions', () => {
     }
   );
 
-  it('should show a text download button and no deploy button when the resource is inactive', () => {
+  it('should show a text download button and no deploy button when the resource is a draft', () => {
     // Given
-    const documentData = buildDocumentData({ active: false });
+    const documentData = buildDocumentData({ status: 'draft' });
 
     // When
     renderActions(documentData, ServiceSlug.OPEN_CTI_CUSTOM_DASHBOARDS);
