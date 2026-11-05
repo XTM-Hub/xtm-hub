@@ -77,5 +77,6 @@ export const config = {
     '/:product/:version/:integrationType/manifests/:path*',
     '/:product/versions-matrix',
     '/redirect/news-feed/:itemId',
+    '/webhooks/news-feed/blogposts',
   ],
 };

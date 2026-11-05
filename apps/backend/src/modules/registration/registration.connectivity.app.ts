@@ -14,6 +14,7 @@ import { logApp } from '../../utils/app-logger.util';
 import { BadRequestErrorCode, ErrorCode } from '../../utils/error/error.code';
 import { RequiredPlatformVersions } from '../../utils/required-platform-version';
 import { doesVersionSatisfy, isValidVersion } from '../../utils/versioning';
+import { NewsFeedApp } from '../news-feed/news-feed.app';
 import {
   PlatformConfigurationDomain,
   PlatformUrlSchema,
@@ -110,12 +111,14 @@ const saveConfig = async ({
   platform_url,
   tenant_name,
   platform_contract,
+  platform_identifier,
 }: {
   platformConfiguration: PlatformConfiguration;
   platform_version: string;
   platform_url?: string;
   tenant_name?: string;
   platform_contract?: PlatformContract;
+  platform_identifier?: PlatformIdentifier;
 }): Promise<void> => {
   const acceptedUrl =
     platform_url && isValidPlatformUrl(platform_url) ? platform_url : undefined;
@@ -157,6 +160,19 @@ const saveConfig = async ({
         tenant_id: platformConfiguration.tenant_id,
         previous_contract: platformConfiguration.platform_contract,
         platform_contract,
+      });
+    }
+    if (
+      platformConfiguration.status === PlatformConfigurationStatus.Active &&
+      platformConfiguration.platform_version !== platform_version
+    ) {
+      // Fire and forget: it never throws and must not delay the refresh
+      void NewsFeedApp.backfillBlogpostsOnVersionChange({
+        serviceInstanceId: platformConfiguration.service_instance_id,
+        platformId: platformConfiguration.platform_id,
+        platformIdentifier: platform_identifier,
+        previousVersion: platformConfiguration.platform_version,
+        newVersion: platform_version,
       });
     }
     return;
@@ -234,6 +250,7 @@ const refreshConnectivityStatus = async ({
     platform_url: url,
     tenant_name,
     platform_contract,
+    platform_identifier,
   });
 
   return {
