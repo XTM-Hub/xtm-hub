@@ -5,9 +5,11 @@ import { SettingsResponse } from '@/utils/settings.service';
 import SettingsQuery, { settingsQuery } from '@generated/settingsQuery.graphql';
 import {
   OrderingMode,
+  PlatformIdentifier,
   ServiceInstanceFilterKey,
   ServiceInstanceOrdering,
   usePlatformAssociatedOrganizationQuery,
+  useRegisteredPlatformRedirectTargetsQuery,
   useServiceInstancesListQuery,
 } from '@graphql/generated';
 
@@ -61,4 +63,23 @@ export const loadServiceInstances = async (identifier: string) => {
   return data.serviceInstances.edges
     .map((edge) => edge.node)
     .filter((node) => node != null);
+};
+
+// Registered platforms of the selected organization for one product, to find the one behind a platform id.
+export const loadRegisteredPlatformRedirectTargets = async (
+  identifier: PlatformIdentifier
+) => {
+  const data = await redirectToSignupOnUnauthenticated(async () => {
+    const client = await getAuthenticatedGraphqlClient();
+    return useRegisteredPlatformRedirectTargetsQuery.fetcher(client, {
+      input: {
+        identifier,
+        onlyActive: null,
+        onlyTrial: null,
+        hasDeployedResources: null,
+      },
+    })();
+  });
+
+  return data.registeredPlatforms;
 };

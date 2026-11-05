@@ -1523,11 +1523,13 @@ input RefreshPlatformRegistrationConnectivityStatusAllTenantsInput {
 
 type RefreshPlatformRegistrationConnectivityStatusResponse {
   status: PlatformRegistrationConnectivityStatus!
+  commercialModel: CommercialModel
 }
 
 type TenantStatus {
   tenantId: String!
   status: PlatformRegistrationConnectivityStatus!
+  commercialModel: CommercialModel
 }
 
 type RefreshPlatformRegistrationConnectivityStatusAllTenantsResponse {
