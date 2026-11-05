@@ -1,8 +1,3 @@
-import { ApolloServer } from '@apollo/server';
-import { unwrapResolverError } from '@apollo/server/errors';
-import { ApolloServerPluginLandingPageDisabled } from '@apollo/server/plugin/disabled';
-import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer';
-import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin/landingPage/default';
 import { expressMiddleware } from '@as-integrations/express5';
 import pkg from 'body-parser';
 import cors from 'cors';
@@ -34,13 +29,12 @@ import { initAuthPlatform } from './modules/security-management/authentication/a
 import { ServiceInstanceDataLoader } from './modules/service/instance/service-instance.dataloader';
 import { SubscriptionDataLoader } from './modules/subscription/subscription.dataloader';
 import { TelemetrySnapshotApp } from './modules/telemetry/telemetry-snapshot.app';
-import { errorLoggingPlugin } from './server/apollo-plugins/log';
 import {
-  operationMetricsPlugin,
   sseActiveConnectionsGauge,
   sseMessageCounter,
   sseSubscriptionCounter,
 } from './server/apollo-plugins/metrics';
+import { createApolloServer } from './server/apollo-server';
 import {
   registerEndpoints,
   registerReadOnlySessionEndpoints,
@@ -49,6 +43,7 @@ import createSchema from './server/graphql-schema';
 import platformInit, { minioInit } from './server/initialize';
 import { seedDevelopmentConnectors } from './server/initialize.helper';
 import { requestContextMiddleware } from './server/request-context.middleware';
+import { createSseSchemaDetailsOptions } from './server/schema-details';
 import { ReadOnlySessionStore } from './server/session/read-only-session.store';
 import { getSessionStoreInstance } from './session-store-manager';
 import { initShutdown, registerShutdownHook } from './shutdown';
@@ -278,48 +273,10 @@ if (
 
 app.use(requestContextMiddleware);
 
-// The ApolloServer constructor requires two parameters: your schema
-// definition and your set of resolvers.
-// const drainPlugin = {
-//     async serverWillStart() {
-//         return Promise.resolve({
-//             async drainServer() {
-//                 await serverCleanup.dispose();
-//             },
-//         });
-//     },
-// }
-const server = new ApolloServer<PortalContext>({
+const server = createApolloServer({
   schema,
-  csrfPrevention: true,
-  formatError: (formattedError, error) => {
-    // Otherwise Apollo overrides extensions code with INTERNAL_SERVER_ERROR
-    const originalError = unwrapResolverError(error);
-    const code = (originalError as { extensions?: { code?: string } } | null)
-      ?.extensions?.code;
-    if (code) {
-      return {
-        ...formattedError,
-        extensions: { ...formattedError.extensions, code },
-      };
-    }
-    return formattedError;
-  },
-  plugins: [
-    ApolloServerPluginDrainHttpServer({ httpServer }),
-    ...(process.env.NODE_ENV !== 'production'
-      ? [
-          ApolloServerPluginLandingPageLocalDefault({
-            includeCookies: true,
-            variables: {},
-          }),
-        ]
-      : [ApolloServerPluginLandingPageDisabled()]),
-
-    errorLoggingPlugin(),
-    operationMetricsPlugin,
-  ],
-  introspection: process.env.NODE_ENV !== 'production', // Disable introspection in production env
+  httpServer,
+  exposeSchemaDetails: portalConfig.local_dev,
 });
 
 // Note you must call `start()` on the `ApolloServer`
@@ -368,8 +325,12 @@ const middlewareExpress = expressMiddleware(server, {
     return portalContext;
   },
 });
+const sseSchemaDetailsOptions = createSseSchemaDetailsOptions(
+  portalConfig.local_dev
+);
 const handler = createHandler({
   schema,
+  ...sseSchemaDetailsOptions,
   context: async (_req) => {
     const session = await new Promise((resolve) => {
       sessionMiddleware(_req.raw, {} as express.Response, () =>
@@ -395,10 +356,11 @@ const handler = createHandler({
       subscription: msg.operationName ?? 'Unknown',
     });
   },
-  onNext: async (_ctx, req) => {
+  onNext: async (ctx, req, result) => {
     sseMessageCounter.inc({
       subscription: req.context.res.req.body?.operationName ?? 'Unknown',
     });
+    return sseSchemaDetailsOptions.onNext?.(ctx, req, result);
   },
 });
 
