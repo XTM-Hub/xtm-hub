@@ -57,6 +57,13 @@
     "client_id": "SAAS_MANAGER_CLIENT_ID",
     "client_secret": "SAAS_MANAGER_CLIENT_SECRET"
   },
+  "blog_api": {
+    "base_url": "BLOG_API_BASE_URL",
+    "timeout_ms": {
+      "__name": "BLOG_API_TIMEOUT_MS",
+      "__format": "json"
+    }
+  },
   "system_token_hash": "SYSTEM_TOKEN_HASH",
   "system_token_salt": "SYSTEM_TOKEN_SALT",
   "session": {

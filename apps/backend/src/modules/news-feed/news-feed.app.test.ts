@@ -1543,7 +1543,7 @@ describe('newsFeedApp', () => {
   });
   describe('resolveExternalRedirect', () => {
     const BLOG_POST_SLUG = 'threat-report-2026';
-    const BLOG_POST_URL = `https://filigran.io/blog/${BLOG_POST_SLUG}`;
+    const BLOG_POST_URL = `${config.get<string>('blog_api.base_url')}/blog/${BLOG_POST_SLUG}`;
     const PLATFORM_ID = '9b0c7a3e-1111-4a9e-8d6f-0d4f5a7c9e10';
 
     const createBlogPostItem = async ({
@@ -1574,7 +1574,7 @@ describe('newsFeedApp', () => {
       await TestHelper.newsFeed.deleteItem();
     });
 
-    it('should resolve the filigran.io destination of a blog post item', async () => {
+    it('should resolve the blog destination of a blog post item', async () => {
       // Given
       const item = await createBlogPostItem({ slug: BLOG_POST_SLUG });
 
@@ -1588,7 +1588,7 @@ describe('newsFeedApp', () => {
       expect(result).toEqual({
         newsFeedItemId: item.id,
         newsFeedItemType: NewsFeedItemType.BlogPost,
-        host: 'filigran.io',
+        host: new URL(config.get<string>('blog_api.base_url')).hostname,
         url: BLOG_POST_URL,
       });
     });
