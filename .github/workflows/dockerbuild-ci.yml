@@ -610,8 +610,8 @@ jobs:
           title: Backend unit and integration tests
           app-dir: apps/backend
 
-  # Codecov's coverage of each app on pull requests: fails when Codecov fails the changed lines of an app, warns when an
-  # app is under 80% overall, and adds it at the top of the app's test report comment, hence the run-*-unit-tests
+  # Codecov's coverage of each app on pull requests: fails when Codecov fails the changed lines of an app or when an app
+  # is under 80% overall, and adds it at the top of the app's test report comment, hence the run-*-unit-tests
   # needs. Skipped, so passing, when the shards did not run.
   coverage:
     name: Coverage

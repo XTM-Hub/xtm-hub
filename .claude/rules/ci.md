@@ -86,8 +86,9 @@ Codecov checks on the pull request head (15 minutes at most), then:
 - writes each app's coverage at the point the pull request branched from `main` against its head, and Codecov's
   changed-lines verdict, at the top of the app's Vitest report comment, between `<!-- coverage:start -->` and
   `<!-- coverage:end -->` (the Codecov component id is the report `id`);
-- warns, without failing, when an app (`apps/frontend/`, `apps/backend/`) is under 80% overall;
-- fails when Codecov fails the changed lines of an app.
+- fails when Codecov fails the changed lines of an app;
+- fails when an app (`apps/frontend/`, `apps/backend/`) is under 80% overall at the pull request head, or when Codecov
+  has no total for it.
 
 "Coverage" blocks a merge only as a required check of the `main` branch protection. It is skipped, so passing, on a
 pull request that does not run the shards and in the merge queue. A pull request that only changes test files shows

@@ -2,8 +2,8 @@ name: 'Coverage'
 description: >
   Pull requests only. Waits for Codecov's `codecov/patch/<component>` check of each app on the pull request head, writes
   Codecov's coverage of the app (the point the pull request branched from main against its head, and the
-  changed-lines verdict) at the top of the app's Vitest pull request comment, warns when an app is below the target
-  overall, and fails when Codecov fails the changed lines of an app. Codecov is the source of truth: nothing is
+  changed-lines verdict) at the top of the app's Vitest pull request comment, and fails when Codecov fails the changed
+  lines of an app or when an app's head is below the target overall. Codecov is the source of truth: nothing is
   recomputed. Run it after `vitest-pr-report`, whose comment it edits. Needs `checks: read` and
   `pull-requests: write`. Comments with the workflow's own token, so only a comment authored by github-actions[bot] is
   ever updated.
@@ -14,7 +14,7 @@ inputs:
       (e.g. "frontend Frontend apps/frontend").
     required: true
   target:
-    description: 'Coverage, in percent, under which an app raises a warning overall.'
+    description: 'Coverage, in percent, under which an app fails overall.'
     required: false
     default: '80'
   wait-minutes:
@@ -46,7 +46,7 @@ runs:
         # Codecov compares the pull request head with the point it branched from main, not with the tip of main.
         merge_base=$(gh api "repos/${GITHUB_REPOSITORY}/compare/${BASE_SHA}...${HEAD_SHA}" --jq '.merge_base_commit.sha')
         columns="| \`main\` (\`${merge_base:0:7}\`) | This pull request (\`${HEAD_SHA:0:7}\`) | Change | Changed lines |"
-        note="_From [Codecov](https://app.codecov.io/gh/${GITHUB_REPOSITORY}/pull/${PR_NUMBER}): the pull request fails when less than ${TARGET}% of the changed lines are covered; under ${TARGET}% overall (⚠️) only warns._"
+        note="_From [Codecov](https://app.codecov.io/gh/${GITHUB_REPOSITORY}/pull/${PR_NUMBER}): the pull request fails when less than ${TARGET}% of the changed lines are covered, or when the app is under ${TARGET}% overall (❌)._"
 
         patch_check() {
           gh api "repos/${GITHUB_REPOSITORY}/commits/${HEAD_SHA}/check-runs?check_name=codecov/patch/$1" \
@@ -60,7 +60,7 @@ runs:
           awk -v coverage="$1" -v target="$TARGET" 'BEGIN { exit !(coverage < target) }'
         }
         format() {
-          if [ -z "$1" ]; then echo "—"; elif below_target "$1"; then echo "⚠️ $1%"; else echo "$1%"; fi
+          if [ -z "$1" ]; then echo "—"; elif below_target "$1"; then echo "❌ $1%"; else echo "$1%"; fi
         }
         # Replaces the coverage block of the app's Vitest comment, or adds it under the comment's title.
         comment_coverage() {
@@ -115,11 +115,15 @@ runs:
             change=$(awk -v base="$base" -v head="$head" 'BEGIN { printf "%+.2f", head - base }')
           fi
           if [ -z "$head" ]; then
-            echo "::warning title=${name} coverage::Could not read the ${name} coverage from Codecov."
+            echo "::error title=${name} coverage::Could not read the ${name} coverage from Codecov."
+            failed=1
           elif below_target "$head"; then
-            echo "::warning title=${name} coverage::${name} coverage is ${head}%, below ${TARGET}%."
+            echo "::error title=${name} coverage::${name} coverage is ${head}%, below ${TARGET}%."
+            failed=1
           fi
-          cells="$(format "$base") | $(format "$head") | ${change} | ${patch} |"
+          base_cell="—"
+          [ -z "$base" ] || base_cell="${base}%"
+          cells="${base_cell} | $(format "$head") | ${change} | ${patch} |"
           summary_rows+=("| ${name} | ${cells}")
 
           # A pull request from a fork gets a read-only token: the job summary is the report there.
