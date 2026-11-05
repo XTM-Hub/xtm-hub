@@ -1,5 +1,6 @@
 'use client';
 
+import AnalyticsClickCapture from '@/components/analytics/AnalyticsClickCapture';
 import GoogleAnalytics from '@/components/external/GoogleAnalytics';
 import {
   initializeAnalytics,
@@ -85,7 +86,12 @@ const AnalyticsTracker = ({ measurementId }: AnalyticsTrackerProps) => {
     trackEvent('page_view', { ...context, ...page });
   }, [pathname, page]);
 
-  return <GoogleAnalytics measurementId={measurementId} />;
+  return (
+    <>
+      <GoogleAnalytics measurementId={measurementId} />
+      <AnalyticsClickCapture pageType={page.page_type} />
+    </>
+  );
 };
 
 export default AnalyticsTracker;

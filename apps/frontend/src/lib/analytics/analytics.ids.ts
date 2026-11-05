@@ -1,3 +1,5 @@
+import { ANALYTICS_ELEMENT_IDS } from '@/lib/analytics/analytics.registry';
+
 const ANALYTICS_DOMAINS = {
   account: 'Account',
   admin: 'Admin',
@@ -19,7 +21,7 @@ const ANALYTICS_DOMAINS = {
 
 export type AnalyticsDomainPrefix = keyof typeof ANALYTICS_DOMAINS;
 
-type AnalyticsDomain = (typeof ANALYTICS_DOMAINS)[AnalyticsDomainPrefix];
+export type AnalyticsDomain = (typeof ANALYTICS_DOMAINS)[AnalyticsDomainPrefix];
 
 const ANALYTICS_VERBS = [
   'open',
@@ -60,6 +62,12 @@ const CLICK_ACTION_PATTERN = /^click\b/i;
 export interface AnalyticsElementDefinition {
   action: string;
 }
+
+export type AnalyticsElementId = keyof typeof ANALYTICS_ELEMENT_IDS;
+
+export const isAnalyticsElementId = (
+  value: string
+): value is AnalyticsElementId => Object.hasOwn(ANALYTICS_ELEMENT_IDS, value);
 
 const isAnalyticsDomainPrefix = (
   value: string
