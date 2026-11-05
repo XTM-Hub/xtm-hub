@@ -4,16 +4,16 @@ import { PlatformMetadataMapping } from '@/components/registration/PlatformIdent
 import { DisabledActionTooltip } from '@/components/ui/DisabledActionTooltip';
 import { ShareLinkButton } from '@/components/ui/share-link/ShareLinkButton';
 import { useTranslate } from '@/hooks/use-translate';
-import { isValueInEnum } from '@/utils/is-value-in-enum';
 import { getPlatformIdentifier } from '@/utils/platform';
-import { buildSignupRedirect } from '@/utils/redirect';
+import {
+  buildPublicCounterpartTarget,
+  buildSignupRedirect,
+} from '@/utils/redirect';
 import {
   isConnectorResource,
   PublicDocumentDetailsData,
-  ServiceSlug,
 } from '@/utils/shareable-resources/shareable-resources.types';
 import {
-  getServiceInfo,
   isResourceDeployable,
   isResourceDownloadable,
 } from '@/utils/shareable-resources/utils/shareable-resources.client.utils';
@@ -27,29 +27,25 @@ import {
 } from '@filigran/design-system';
 import { DownloadIcon } from '@filigran/icon';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 interface PublicResourceActionsProps {
   documentData: PublicDocumentDetailsData;
-  serviceInstance: { id: string; slug: string | null | undefined };
   pageUrl: string;
   shareTooltipText?: string;
 }
 
 export const PublicResourceActions = ({
   documentData,
-  serviceInstance,
   pageUrl,
   shareTooltipText,
 }: PublicResourceActionsProps) => {
   const t = useTranslate();
 
-  const privateResourceLink = isValueInEnum(serviceInstance.slug, ServiceSlug)
-    ? getServiceInfo(
-        { id: serviceInstance.id, slug: serviceInstance.slug },
-        documentData.id
-      )?.link
-    : undefined;
-  const signupHref = buildSignupRedirect(privateResourceLink);
+  const pathname = usePathname();
+  const signupHref = buildSignupRedirect(
+    pathname ? buildPublicCounterpartTarget(pathname) : undefined
+  );
 
   const isConnector = isConnectorResource(documentData);
   const showDeploy = isResourceDeployable(documentData);
