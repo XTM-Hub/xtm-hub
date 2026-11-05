@@ -13,3 +13,8 @@ export const resetAnalyticsEnvironment = (): void => {
 
 export const readGtagCommands = (): unknown[][] =>
   (window.dataLayer ?? []).map((entry) => Array.from(entry));
+
+export const readTrackedEvents = (name: string): unknown[] =>
+  readGtagCommands()
+    .filter(([command, eventName]) => command === 'event' && eventName === name)
+    .map(([, , params]) => params);
