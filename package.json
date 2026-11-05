@@ -18,17 +18,9 @@
     "lint-staged": "lint-staged"
   },
   "devDependencies": {
-    "eslint": "catalog:",
-    "eslint-config-prettier": "catalog:",
+    "@types/node": "catalog:",
     "husky": "catalog:",
     "lint-staged": "catalog:",
-    "prettier": "catalog:",
-    "typescript": "catalog:"
-  },
-  "dependencies": {
-    "@types/node": "catalog:",
-    "eslint-plugin-unicorn": "64.0.0",
-    "tsx": "catalog:",
     "typescript": "catalog:"
   },
   "tsConfig": "tsconfig.json",
