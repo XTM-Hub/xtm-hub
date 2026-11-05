@@ -1,18 +1,55 @@
 import {
   initializeAnalytics,
   revokeAnalyticsConsent,
+  trackEvent,
 } from '@/lib/analytics/analytics.client';
 import {
   readGtagCommands,
+  readTrackedEvents,
   resetAnalyticsEnvironment,
 } from '@/utils/test/analytics';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 const MEASUREMENT_ID = 'G-TEST';
 const GA_DISABLE_KEY = `ga-disable-${MEASUREMENT_ID}` as const;
+const RESOURCE_ID = 'resource-id';
+const RESOURCE_TITLE = 'Ransomware playbook';
+const RESOURCE_TYPE = 'opencti_playbook';
+
+const badgeParams = {
+  resource_id: RESOURCE_ID,
+  resource_title: RESOURCE_TITLE,
+  resource_type: RESOURCE_TYPE,
+};
+
+const startAnalytics = () => {
+  initializeAnalytics(MEASUREMENT_ID);
+};
 
 beforeEach(() => {
   resetAnalyticsEnvironment();
+});
+
+describe('trackEvent', () => {
+  it('should send nothing when analytics was never initialized', () => {
+    // Given / When
+    trackEvent('ee_badge_click', badgeParams);
+
+    // Then
+    expect(window.dataLayer).toBeUndefined();
+  });
+
+  it('should send nothing when analytics consent was withdrawn', () => {
+    // Given
+    startAnalytics();
+    revokeAnalyticsConsent();
+
+    // When
+    trackEvent('ee_badge_click', badgeParams);
+
+    // Then
+    expect(readTrackedEvents('ee_badge_click')).toEqual([]);
+  });
 });
 
 describe('initializeAnalytics', () => {

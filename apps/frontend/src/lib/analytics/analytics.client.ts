@@ -2,6 +2,10 @@ import {
   GA_COOKIE_EXPIRES_SECONDS,
   GA_DEFAULT_CONSENT,
 } from '@/lib/analytics/analytics.consts';
+import {
+  type AnalyticsEventName,
+  type AnalyticsEvents,
+} from '@/lib/analytics/analytics.types';
 
 let configuredMeasurementId: string | null = null;
 let enabledMeasurementId: string | null = null;
@@ -10,6 +14,9 @@ export const resetAnalyticsState = (): void => {
   configuredMeasurementId = null;
   enabledMeasurementId = null;
 };
+
+const getEnabledGtag = (): Window['gtag'] =>
+  enabledMeasurementId ? window.gtag : undefined;
 
 export const initializeAnalytics = (measurementId: string): void => {
   window.dataLayer ??= [];
@@ -42,4 +49,11 @@ export const revokeAnalyticsConsent = (): void => {
   window.gtag?.('consent', 'update', { analytics_storage: 'denied' });
   window[`ga-disable-${enabledMeasurementId}`] = true;
   enabledMeasurementId = null;
+};
+
+export const trackEvent = <Name extends AnalyticsEventName>(
+  name: Name,
+  params: AnalyticsEvents[Name]
+): void => {
+  getEnabledGtag()?.('event', name, params);
 };
