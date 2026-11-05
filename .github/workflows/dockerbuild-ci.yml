@@ -611,13 +611,15 @@ jobs:
           app-dir: apps/backend
 
   # Codecov's coverage of each app on pull requests: fails when Codecov fails the changed lines of an app, warns when an
-  # app is under 80% overall, and keeps one pull request comment with both. Skipped, so passing, when the shards did
-  # not run.
+  # app is under 80% overall, and adds it at the top of the app's test report comment, hence the run-*-unit-tests
+  # needs. Skipped, so passing, when the shards did not run.
   coverage:
     name: Coverage
     needs:
       - run-front-unit-tests-shards
       - run-api-unit-tests-shards
+      - run-front-unit-tests
+      - run-api-unit-tests
     if: |
       always() &&
       github.event_name == 'pull_request' &&

@@ -30,8 +30,8 @@ flowchart LR
   D --> H[run-e2e-tests]
   E --> I[run-front-unit-tests]
   F --> J[run-api-unit-tests]
-  E --> V[coverage<br/>pull requests]
-  F --> V
+  I --> V[coverage<br/>pull requests]
+  J --> V
   B --> K[build-images-prod]
   H --> K
   I --> K
@@ -79,11 +79,13 @@ the flag `frontend-shard-N` / `backend-shard-N`, and `codecov.yml` waits for all
 number of shard uploads) before reporting. Its components post one check per app on the lines a pull request
 changes, `codecov/patch/frontend` and `codecov/patch/backend`, with an 80% target.
 
-On pull requests, once both shard jobs succeed, the `coverage` job ("Coverage") calls the composite action
-`.github/actions/coverage`. It waits for both Codecov checks on the pull request head (15 minutes at most), then:
+On pull requests, once both shard jobs succeed and `run-front-unit-tests` / `run-api-unit-tests` have posted their
+test reports, the `coverage` job ("Coverage") calls the composite action `.github/actions/coverage`. It waits for both
+Codecov checks on the pull request head (15 minutes at most), then:
 
-- keeps one pull request comment up to date, marked `<!-- coverage-report -->`, with each app's coverage at the point
-  the pull request branched from `main` against its head, and Codecov's changed-lines verdict;
+- writes each app's coverage at the point the pull request branched from `main` against its head, and Codecov's
+  changed-lines verdict, at the top of the app's Vitest report comment, between `<!-- coverage:start -->` and
+  `<!-- coverage:end -->` (the Codecov component id is the report `id`);
 - warns, without failing, when an app (`apps/frontend/`, `apps/backend/`) is under 80% overall;
 - fails when Codecov fails the changed lines of an app.
 
