@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 
+import type { estypes } from '@elastic/elasticsearch';
 import { MigrationSet } from 'migrate';
 import type ElasticSearchService from './client';
 import type { createEsStateStorage as CreateEsStateStorage } from './migration-store';
@@ -24,6 +25,20 @@ vi.mock('config', async (importOriginal) => {
 
 const MIGRATION_TITLE = '1234567890-create-users.js';
 const MIGRATION_TIMESTAMP = 1234567890;
+
+const CREATED_RESPONSE: estypes.WriteResponseBase = {
+  _id: MIGRATION_TITLE,
+  _index: 'migrations',
+  _version: 1,
+  result: 'created',
+  _shards: { total: 1, successful: 1, failed: 0 },
+  _seq_no: 0,
+  _primary_term: 1,
+};
+const DELETED_RESPONSE: estypes.WriteResponseBase = {
+  ...CREATED_RESPONSE,
+  result: 'deleted',
+};
 
 const emptyState = {
   lastRun: null,
@@ -75,7 +90,7 @@ describe.each([
       // Given
       const indexSpy = vi
         .spyOn(esService, 'index')
-        .mockResolvedValue({} as never);
+        .mockResolvedValue(CREATED_RESPONSE);
       const storage = createEsStateStorage(esService, emptyState);
 
       // When
@@ -95,7 +110,7 @@ describe.each([
       // Given
       const deleteSpy = vi
         .spyOn(esService, 'delete')
-        .mockResolvedValue({} as never);
+        .mockResolvedValue(DELETED_RESPONSE);
       const storage = createEsStateStorage(esService, {
         lastRun: MIGRATION_TITLE,
         migrations: [
@@ -121,7 +136,7 @@ describe.each([
       // Given
       const createSpy = vi
         .spyOn(esService, 'create')
-        .mockResolvedValue({} as never);
+        .mockResolvedValue(CREATED_RESPONSE);
       const storage = createEsStateStorage(esService, emptyState);
 
       // When
@@ -137,7 +152,7 @@ describe.each([
       // Given
       const deleteSpy = vi
         .spyOn(esService, 'delete')
-        .mockResolvedValue({} as never);
+        .mockResolvedValue(DELETED_RESPONSE);
       const storage = createEsStateStorage(esService, emptyState);
 
       // When
