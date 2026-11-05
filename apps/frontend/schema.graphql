@@ -132,6 +132,7 @@ type Query {
   isPlatformRegistered(input: IsPlatformRegisteredInput!): IsPlatformRegisteredResponse!
   canUnregisterPlatform(input: CanUnregisterPlatformInput!): CanUnregisterResponse!
   registeredPlatform(input: RegisteredPlatformInput!): RegisteredPlatform
+  registeredPlatformByPlatformId(input: RegisteredPlatformByPlatformIdInput!): RegisteredPlatform
   registeredPlatforms(input: RegisteredPlatformsInput!): [RegisteredPlatform!]!
   platformAssociatedOrganization(platformId: String!, tenantId: String): Organization
   rolePortals: [RolePortal!]!
@@ -1559,6 +1560,12 @@ input RegisteredPlatformsInput {
 
 input RegisteredPlatformInput {
   service_instance_id: ServiceInstanceId!
+}
+
+input RegisteredPlatformByPlatformIdInput {
+  identifier: PlatformIdentifier!
+  platformId: String!
+  tenantId: String
 }
 
 input AutoRegisterPlatformInput {

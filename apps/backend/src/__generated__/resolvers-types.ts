@@ -2047,6 +2047,7 @@ export type Query = {
   publicDocuments: DocumentConnection;
   publicDocumentsByServiceSlug: Array<Document>;
   registeredPlatform?: Maybe<RegisteredPlatform>;
+  registeredPlatformByPlatformId?: Maybe<RegisteredPlatform>;
   registeredPlatforms: Array<RegisteredPlatform>;
   /**
    * Returns at most the 5 latest registered versions for the given product,
@@ -2275,6 +2276,11 @@ export type QueryRegisteredPlatformArgs = {
 };
 
 
+export type QueryRegisteredPlatformByPlatformIdArgs = {
+  input: RegisteredPlatformByPlatformIdInput;
+};
+
+
 export type QueryRegisteredPlatformsArgs = {
   input: RegisteredPlatformsInput;
 };
@@ -2496,6 +2502,12 @@ export type RegisteredPlatform = Node & {
   title: Scalars['String']['output'];
   url: Scalars['String']['output'];
   version?: Maybe<Scalars['String']['output']>;
+};
+
+export type RegisteredPlatformByPlatformIdInput = {
+  identifier: PlatformIdentifier;
+  platformId: Scalars['String']['input'];
+  tenantId?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type RegisteredPlatformInput = {
@@ -3769,6 +3781,7 @@ export type ResolversTypes = ResolversObject<{
   RefreshUserPlatformTokenResponse: ResolverTypeWrapper<RefreshUserPlatformTokenResponse>;
   RegisterPlatformInput: RegisterPlatformInput;
   RegisteredPlatform: ResolverTypeWrapper<RegisteredPlatform>;
+  RegisteredPlatformByPlatformIdInput: RegisteredPlatformByPlatformIdInput;
   RegisteredPlatformInput: RegisteredPlatformInput;
   RegisteredPlatformsInput: RegisteredPlatformsInput;
   RegisteredProductVersion: ResolverTypeWrapper<RegisteredProductVersion>;
@@ -4026,6 +4039,7 @@ export type ResolversParentTypes = ResolversObject<{
   RefreshUserPlatformTokenResponse: RefreshUserPlatformTokenResponse;
   RegisterPlatformInput: RegisterPlatformInput;
   RegisteredPlatform: RegisteredPlatform;
+  RegisteredPlatformByPlatformIdInput: RegisteredPlatformByPlatformIdInput;
   RegisteredPlatformInput: RegisteredPlatformInput;
   RegisteredPlatformsInput: RegisteredPlatformsInput;
   RegisteredProductVersion: RegisteredProductVersion;
@@ -4993,6 +5007,7 @@ export type QueryResolvers<ContextType = PortalContext, ParentType extends Resol
   publicDocuments?: Resolver<ResolversTypes['DocumentConnection'], ParentType, ContextType, RequireFields<QueryPublicDocumentsArgs, 'first' | 'orderBy' | 'orderMode' | 'serviceInstanceId' | 'slug'>>;
   publicDocumentsByServiceSlug?: Resolver<Array<ResolversTypes['Document']>, ParentType, ContextType, RequireFields<QueryPublicDocumentsByServiceSlugArgs, 'serviceInstanceSlug'>>;
   registeredPlatform?: Resolver<Maybe<ResolversTypes['RegisteredPlatform']>, ParentType, ContextType, RequireFields<QueryRegisteredPlatformArgs, 'input'>>;
+  registeredPlatformByPlatformId?: Resolver<Maybe<ResolversTypes['RegisteredPlatform']>, ParentType, ContextType, RequireFields<QueryRegisteredPlatformByPlatformIdArgs, 'input'>>;
   registeredPlatforms?: Resolver<Array<ResolversTypes['RegisteredPlatform']>, ParentType, ContextType, RequireFields<QueryRegisteredPlatformsArgs, 'input'>>;
   registeredProductVersions?: Resolver<Array<ResolversTypes['RegisteredProductVersion']>, ParentType, ContextType, RequireFields<QueryRegisteredProductVersionsArgs, 'product'>>;
   registeredSaasPlatformData?: Resolver<Maybe<ResolversTypes['SaasPlatformData']>, ParentType, ContextType, RequireFields<QueryRegisteredSaasPlatformDataArgs, 'input'>>;

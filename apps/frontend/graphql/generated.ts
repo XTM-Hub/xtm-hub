@@ -2054,6 +2054,7 @@ export type Query = {
   publicDocuments: DocumentConnection;
   publicDocumentsByServiceSlug: Array<Document>;
   registeredPlatform: Maybe<RegisteredPlatform>;
+  registeredPlatformByPlatformId: Maybe<RegisteredPlatform>;
   registeredPlatforms: Array<RegisteredPlatform>;
   /**
    * Returns at most the 5 latest registered versions for the given product,
@@ -2282,6 +2283,11 @@ export type QueryRegisteredPlatformArgs = {
 };
 
 
+export type QueryRegisteredPlatformByPlatformIdArgs = {
+  input: RegisteredPlatformByPlatformIdInput;
+};
+
+
 export type QueryRegisteredPlatformsArgs = {
   input: RegisteredPlatformsInput;
 };
@@ -2503,6 +2509,12 @@ export type RegisteredPlatform = Node & {
   title: Scalars['String']['output'];
   url: Scalars['String']['output'];
   version: Maybe<Scalars['String']['output']>;
+};
+
+export type RegisteredPlatformByPlatformIdInput = {
+  identifier: PlatformIdentifier;
+  platformId: Scalars['String']['input'];
+  tenantId: InputMaybe<Scalars['String']['input']>;
 };
 
 export type RegisteredPlatformInput = {
@@ -3953,12 +3965,12 @@ export type PlatformAssociatedOrganizationQueryVariables = Exact<{
 
 export type PlatformAssociatedOrganizationQuery = { __typename?: 'Query', platformAssociatedOrganization: { __typename?: 'Organization', id: string } | null };
 
-export type RegisteredPlatformRedirectTargetsQueryVariables = Exact<{
-  input: RegisteredPlatformsInput;
+export type RegisteredPlatformRedirectTargetQueryVariables = Exact<{
+  input: RegisteredPlatformByPlatformIdInput;
 }>;
 
 
-export type RegisteredPlatformRedirectTargetsQuery = { __typename?: 'Query', registeredPlatforms: Array<{ __typename?: 'RegisteredPlatform', service_instance_id: any, platform_id: string, tenant_id: string | null, identifier: ServiceDefinitionIdentifier, deployment_request: { __typename?: 'DeploymentRequest', parent_id: any | null } | null }> };
+export type RegisteredPlatformRedirectTargetQuery = { __typename?: 'Query', registeredPlatformByPlatformId: { __typename?: 'RegisteredPlatform', service_instance_id: any, identifier: ServiceDefinitionIdentifier, deployment_request: { __typename?: 'DeploymentRequest', parent_id: any | null } | null } | null };
 
 export type AddRolePortalMutationVariables = Exact<{
   input: AddRolePortalInput;
@@ -7086,12 +7098,10 @@ useInfinitePlatformAssociatedOrganizationQuery.getKey = (variables: PlatformAsso
 useInfinitePlatformAssociatedOrganizationQuery.getRootKey = () => ['PlatformAssociatedOrganization.infinite'] as const;
 usePlatformAssociatedOrganizationQuery.fetcher = (client: GraphQLClient, variables: PlatformAssociatedOrganizationQueryVariables, headers?: RequestInit['headers']) => fetcher<PlatformAssociatedOrganizationQuery, PlatformAssociatedOrganizationQueryVariables>(client, PlatformAssociatedOrganizationDocument, variables, headers);
 
-export const RegisteredPlatformRedirectTargetsDocument = `
-    query RegisteredPlatformRedirectTargets($input: RegisteredPlatformsInput!) {
-  registeredPlatforms(input: $input) {
+export const RegisteredPlatformRedirectTargetDocument = `
+    query RegisteredPlatformRedirectTarget($input: RegisteredPlatformByPlatformIdInput!) {
+  registeredPlatformByPlatformId(input: $input) {
     service_instance_id
-    platform_id
-    tenant_id
     identifier
     deployment_request {
       parent_id
@@ -7100,50 +7110,50 @@ export const RegisteredPlatformRedirectTargetsDocument = `
 }
     `;
 
-export const useRegisteredPlatformRedirectTargetsQuery = <
-      TData = RegisteredPlatformRedirectTargetsQuery,
+export const useRegisteredPlatformRedirectTargetQuery = <
+      TData = RegisteredPlatformRedirectTargetQuery,
       TError = unknown
     >(
       client: GraphQLClient,
-      variables: RegisteredPlatformRedirectTargetsQueryVariables,
-      options?: Omit<UseQueryOptions<RegisteredPlatformRedirectTargetsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<RegisteredPlatformRedirectTargetsQuery, TError, TData>['queryKey'] },
+      variables: RegisteredPlatformRedirectTargetQueryVariables,
+      options?: Omit<UseQueryOptions<RegisteredPlatformRedirectTargetQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<RegisteredPlatformRedirectTargetQuery, TError, TData>['queryKey'] },
       headers?: RequestInit['headers']
     ) => {
     
-    return useQuery<RegisteredPlatformRedirectTargetsQuery, TError, TData>(
+    return useQuery<RegisteredPlatformRedirectTargetQuery, TError, TData>(
       {
-    queryKey: ['RegisteredPlatformRedirectTargets', variables],
-    queryFn: fetcher<RegisteredPlatformRedirectTargetsQuery, RegisteredPlatformRedirectTargetsQueryVariables>(client, RegisteredPlatformRedirectTargetsDocument, variables, headers),
+    queryKey: ['RegisteredPlatformRedirectTarget', variables],
+    queryFn: fetcher<RegisteredPlatformRedirectTargetQuery, RegisteredPlatformRedirectTargetQueryVariables>(client, RegisteredPlatformRedirectTargetDocument, variables, headers),
     ...options
   }
     )};
 
-useRegisteredPlatformRedirectTargetsQuery.getKey = (variables: RegisteredPlatformRedirectTargetsQueryVariables) => ['RegisteredPlatformRedirectTargets', variables];
-useRegisteredPlatformRedirectTargetsQuery.getRootKey = () => ['RegisteredPlatformRedirectTargets'] as const;
-export const useInfiniteRegisteredPlatformRedirectTargetsQuery = <
-      TData = InfiniteData<RegisteredPlatformRedirectTargetsQuery>,
+useRegisteredPlatformRedirectTargetQuery.getKey = (variables: RegisteredPlatformRedirectTargetQueryVariables) => ['RegisteredPlatformRedirectTarget', variables];
+useRegisteredPlatformRedirectTargetQuery.getRootKey = () => ['RegisteredPlatformRedirectTarget'] as const;
+export const useInfiniteRegisteredPlatformRedirectTargetQuery = <
+      TData = InfiniteData<RegisteredPlatformRedirectTargetQuery>,
       TError = unknown
     >(
       client: GraphQLClient,
-      variables: RegisteredPlatformRedirectTargetsQueryVariables,
-      options: Omit<UseInfiniteQueryOptions<RegisteredPlatformRedirectTargetsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<RegisteredPlatformRedirectTargetsQuery, TError, TData>['queryKey'] },
+      variables: RegisteredPlatformRedirectTargetQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<RegisteredPlatformRedirectTargetQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<RegisteredPlatformRedirectTargetQuery, TError, TData>['queryKey'] },
       headers?: RequestInit['headers']
     ) => {
     
-    return useInfiniteQuery<RegisteredPlatformRedirectTargetsQuery, TError, TData>(
+    return useInfiniteQuery<RegisteredPlatformRedirectTargetQuery, TError, TData>(
       (() => {
     const { queryKey: optionsQueryKey, ...restOptions } = options;
     return {
-      queryKey: optionsQueryKey ?? ['RegisteredPlatformRedirectTargets.infinite', variables],
-      queryFn: (metaData) => fetcher<RegisteredPlatformRedirectTargetsQuery, RegisteredPlatformRedirectTargetsQueryVariables>(client, RegisteredPlatformRedirectTargetsDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      queryKey: optionsQueryKey ?? ['RegisteredPlatformRedirectTarget.infinite', variables],
+      queryFn: (metaData) => fetcher<RegisteredPlatformRedirectTargetQuery, RegisteredPlatformRedirectTargetQueryVariables>(client, RegisteredPlatformRedirectTargetDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
       ...restOptions
     }
   })()
     )};
 
-useInfiniteRegisteredPlatformRedirectTargetsQuery.getKey = (variables: RegisteredPlatformRedirectTargetsQueryVariables) => ['RegisteredPlatformRedirectTargets.infinite', variables];
-useInfiniteRegisteredPlatformRedirectTargetsQuery.getRootKey = () => ['RegisteredPlatformRedirectTargets.infinite'] as const;
-useRegisteredPlatformRedirectTargetsQuery.fetcher = (client: GraphQLClient, variables: RegisteredPlatformRedirectTargetsQueryVariables, headers?: RequestInit['headers']) => fetcher<RegisteredPlatformRedirectTargetsQuery, RegisteredPlatformRedirectTargetsQueryVariables>(client, RegisteredPlatformRedirectTargetsDocument, variables, headers);
+useInfiniteRegisteredPlatformRedirectTargetQuery.getKey = (variables: RegisteredPlatformRedirectTargetQueryVariables) => ['RegisteredPlatformRedirectTarget.infinite', variables];
+useInfiniteRegisteredPlatformRedirectTargetQuery.getRootKey = () => ['RegisteredPlatformRedirectTarget.infinite'] as const;
+useRegisteredPlatformRedirectTargetQuery.fetcher = (client: GraphQLClient, variables: RegisteredPlatformRedirectTargetQueryVariables, headers?: RequestInit['headers']) => fetcher<RegisteredPlatformRedirectTargetQuery, RegisteredPlatformRedirectTargetQueryVariables>(client, RegisteredPlatformRedirectTargetDocument, variables, headers);
 
 export const AddRolePortalDocument = `
     mutation AddRolePortal($input: AddRolePortalInput!) {
