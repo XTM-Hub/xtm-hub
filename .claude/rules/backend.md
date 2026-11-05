@@ -5,7 +5,7 @@ paths:
 
 # Backend Instructions (`apps/backend`)
 
-Express 5 + Apollo Server + GraphQL + Knex + PostgreSQL + Elasticsearch + Silo (S3). Dev port **4002**.
+Express 5 + Apollo Server + GraphQL + Knex + PostgreSQL + Elasticsearch + RustFS (S3). Dev port **4002**.
 
 ## Commands
 
@@ -24,7 +24,7 @@ Run from `apps/backend` (or `yarn workspace @xtm-hub/backend <script>`).
 
 Prefer the narrowest command that covers your change. Use `yarn test:ci` before opening a pull request.
 
-Tests need PostgreSQL and Silo (S3) running (`docker compose -f xtm-hub-dev/docker-compose.yml up`). Vitest runs with
+Tests need PostgreSQL and RustFS (S3) running (`docker compose -f xtm-hub-dev/docker-compose.yml up`). Vitest runs with
 `fileParallelism: false` and hits a real `test_database` when `VITEST_MODE=true`.
 
 ## Layout
@@ -108,9 +108,13 @@ own a column of that name, so the change stays table-local in practice.
 `node-config` reads `config/*.json` (`default`, `development`, `production`, `staging`, `local`). Environment
 variables map through `config/custom-environment-variables.json`:
 `DATABASE_HOST`, `DATABASE_PORT`, `DATABASE_USER`, `DATABASE_PASSWORD`, `DATABASE_BASE`, `ADMIN_EMAIL`,
-`ADMIN_PASSWORD`, `MINIO_ENDPOINT`, `MINIO_PORT`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `MINIO_BUCKET_NAME`,
-`MINIO_USE_SSL`, `ELASTIC_HOST`, `ELASTIC_PORT`, `NODE_ENV`, `VITEST_MODE`, `DATA_SEEDING`, `SESSION_STORE_TYPE`,
+`ADMIN_PASSWORD`, `S3_ENDPOINT`, `S3_PORT`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `S3_BUCKET_NAME`, `S3_REGION`,
+`S3_USE_SSL`, `ELASTIC_HOST`, `ELASTIC_PORT`, `NODE_ENV`, `VITEST_MODE`, `DATA_SEEDING`, `SESSION_STORE_TYPE`,
 `BASE_URL_FRONT`.
+
+The object storage settings (`s3` section) also accept their former `minio` names and `MINIO_*` variables: read
+them with `getStorageConfig` from `src/thirdparty/minio/storage-config.ts`, never `config.get('s3.…')`. Migrations are
+the exception: they are append-only and keep what they read when they were written.
 
 Never read `process.env` directly in application code — go through `src/config.ts`.
 

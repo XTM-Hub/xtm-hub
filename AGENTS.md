@@ -5,7 +5,7 @@ community engagement hub. Full-stack TypeScript monorepo on Yarn workspaces.
 
 | Workspace | Path | Stack | Dev port |
 | --- | --- | --- | --- |
-| `@xtm-hub/backend` | `apps/backend` | Express 5, Apollo Server, GraphQL, Knex, PostgreSQL, Elasticsearch, Silo (S3) | 4002 |
+| `@xtm-hub/backend` | `apps/backend` | Express 5, Apollo Server, GraphQL, Knex, PostgreSQL, Elasticsearch, RustFS (S3) | 4002 |
 | `@xtm-hub/frontend` | `apps/frontend` | Next.js 16 (App Router + Turbopack), React 19, `@tanstack/react-query` (mandatory for new data fetching) + Relay (existing pages, being phased out), TailwindCSS 4, `@filigran/design-system` | 3002 |
 | `@xtm-hub/test_e2e` | `apps/e2e` | Playwright | — |
 
@@ -23,7 +23,7 @@ Pin shared dependency versions in its `catalog` block and reference them as `"ca
 ## Development
 
 ```bash
-docker compose -f xtm-hub-dev/docker-compose.yml up   # PostgreSQL, Silo (S3), Elasticsearch, Kibana, PgAdmin, Mailpit
+docker compose -f xtm-hub-dev/docker-compose.yml up   # PostgreSQL, RustFS (S3), Elasticsearch, Kibana, PgAdmin, Mailpit
 yarn dev:api                                          # backend on :4002
 yarn dev:front                                        # frontend on :3002, API first
 ```
@@ -37,7 +37,7 @@ yarn workspace @xtm-hub/backend  test:ci   # check-ts + lint + tests
 yarn workspace @xtm-hub/frontend test:ci   # lint + tests
 ```
 
-Backend tests need PostgreSQL and Silo (S3) running, target `test_database` via `VITEST_MODE=true` and run with
+Backend tests need PostgreSQL and RustFS (S3) running, target `test_database` via `VITEST_MODE=true` and run with
 `fileParallelism: false`. E2E tests need the frontend and backend already running. Add no tooling that does not
 already exist. The `typescript-eslint` version warning is non-blocking.
 

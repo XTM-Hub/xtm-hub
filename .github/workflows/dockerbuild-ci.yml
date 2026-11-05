@@ -251,7 +251,7 @@ jobs:
           echo "=== PostgreSQL Logs ==="
           docker compose -f ./xtm-hub-dev/docker-compose-ci.yml logs --tail=100 portal-postgres || echo "Could not collect portal-postgres logs"
           echo ""
-          echo "=== Silo (S3) Logs ==="
+          echo "=== RustFS (S3) Logs ==="
           docker compose -f ./xtm-hub-dev/docker-compose-ci.yml logs --tail=100 portal-minio || echo "Could not collect portal-minio logs"
           echo ""
           echo "=== E2E Tests Logs ==="
@@ -497,7 +497,7 @@ jobs:
         if: failure()
         run: |
           mkdir -p logs
-          for service in ${{ matrix.platform }} backend frontend e2e; do
+          for service in ${{ matrix.platform }} backend frontend e2e portal-minio; do
             docker compose $COMPOSE_FILES logs $service > logs/$service.log 2>&1 || true
           done
           docker compose $COMPOSE_FILES ps -a > logs/containers.txt 2>&1 || true

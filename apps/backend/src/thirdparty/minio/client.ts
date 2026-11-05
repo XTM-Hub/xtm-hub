@@ -6,7 +6,6 @@ import {
   S3Client,
 } from '@aws-sdk/client-s3';
 import { Upload as S3Upload } from '@aws-sdk/lib-storage';
-import config from 'config';
 import Stream from 'node:stream';
 import { requestContext } from '../../context/request.context';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
@@ -14,6 +13,7 @@ import { DocumentHelper } from '../../modules/document/document.helper';
 import { Upload } from '../../modules/document/document.uploads.helper';
 import { logApp } from '../../utils/app-logger.util';
 import { getErrorMessage, toError } from '../../utils/error/error-guard.util';
+import { getStorageConfig } from './storage-config';
 import {
   isObjectNotFoundError,
   StorageUnavailableError,
@@ -22,21 +22,21 @@ import { MinioFile, UploadedFile } from './types';
 
 const getEndpoint = () => {
   // If using AWS S3, unset the endpoint to let the library choose the best endpoint
-  if (config.get('minio.endpoint') === 's3.amazonaws.com') {
+  if (getStorageConfig('endpoint') === 's3.amazonaws.com') {
     return undefined;
   }
-  return `${config.get('minio.useSsl') === 'true' ? 'https' : 'http'}://${config.get('minio.endpoint')}:${config.get('minio.port')}`;
+  return `${getStorageConfig('useSsl') === 'true' ? 'https' : 'http'}://${getStorageConfig('endpoint')}:${getStorageConfig('port')}`;
 };
 
 const s3Client = new S3Client({
-  region: config.get('minio.region'),
+  region: getStorageConfig('region'),
   endpoint: getEndpoint(),
   forcePathStyle: true,
   credentials: {
-    accessKeyId: config.get('minio.accessKeyId'),
-    secretAccessKey: config.get('minio.secretAccessKey'),
+    accessKeyId: getStorageConfig('accessKeyId'),
+    secretAccessKey: getStorageConfig('secretAccessKey'),
   },
-  tls: config.get('minio.useSsl') === 'true' ? true : false,
+  tls: getStorageConfig('useSsl') === 'true' ? true : false,
 });
 
 export const MinIOClient = {
@@ -44,7 +44,7 @@ export const MinIOClient = {
     try {
       // Try to access to the bucket
       await s3Client.send(
-        new HeadBucketCommand({ Bucket: config.get('minio.bucketName') })
+        new HeadBucketCommand({ Bucket: getStorageConfig('bucketName') })
       );
       return true;
     } catch (err) {
@@ -53,7 +53,7 @@ export const MinIOClient = {
 
       logApp.error(toError(err));
       await s3Client.send(
-        new CreateBucketCommand({ Bucket: config.get('minio.bucketName') })
+        new CreateBucketCommand({ Bucket: getStorageConfig('bucketName') })
       );
       return true;
     }
@@ -126,7 +126,7 @@ export const MinIOClient = {
         : undefined;
 
     const fileParams = {
-      Bucket: config.get<string>('minio.bucketName'),
+      Bucket: getStorageConfig<string>('bucketName'),
       Key: DocumentHelper.getDocumentName(file.filename),
       // Need to pass jsonContent because a stream can't be read twice
       Body: jsonContent ? JSON.stringify(jsonContent) : stream,
@@ -147,7 +147,7 @@ export const MinIOClient = {
     fileName: string
   ): Promise<string> => {
     const fileParams = {
-      Bucket: config.get<string>('minio.bucketName'),
+      Bucket: getStorageConfig<string>('bucketName'),
       Key: key,
       Body: file.createReadStream(),
       Metadata: {
@@ -166,7 +166,7 @@ export const MinIOClient = {
     try {
       const object = await s3Client.send(
         new s3.GetObjectCommand({
-          Bucket: config.get('minio.bucketName'),
+          Bucket: getStorageConfig('bucketName'),
           Key: minioName,
         })
       );
@@ -191,7 +191,7 @@ export const MinIOClient = {
 
   deleteFile: async (minioName: string) => {
     const deleteCommand = new DeleteObjectCommand({
-      Bucket: config.get('minio.bucketName'),
+      Bucket: getStorageConfig('bucketName'),
       Key: minioName,
     });
     await s3Client.send(deleteCommand);

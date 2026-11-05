@@ -22,6 +22,7 @@ vi.mock('config', async (importOriginal) => {
     default: {
       get: vi.fn(mod.default.get.bind(mod.default)),
       has: mod.default.has.bind(mod.default),
+      util: mod.default.util,
     },
   };
 });
