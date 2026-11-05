@@ -987,7 +987,9 @@ export enum LicenseType {
 export type LoadDocumentFacetInput = {
   documentType?: InputMaybe<Scalars['String']['input']>;
   logicalFilters?: InputMaybe<LogicalFilterInput>;
+  /** @deprecated Use restrictToPublishedDocuments */
   restrictToActiveDocuments?: InputMaybe<Scalars['Boolean']['input']>;
+  restrictToPublishedDocuments?: InputMaybe<Scalars['Boolean']['input']>;
   searchTerm?: InputMaybe<Scalars['String']['input']>;
   serviceInstanceId: Scalars['ServiceInstanceId']['input'];
 };

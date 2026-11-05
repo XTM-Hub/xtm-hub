@@ -133,7 +133,7 @@ const ShareableResourceServiceList = ({
     documentType: type,
     search,
     serviceInstanceSlug,
-    restrictToActiveDocuments: false,
+    restrictToPublishedDocuments: false,
     labels,
     entityTypes,
     deployable,
