@@ -3808,6 +3808,11 @@ export type MeOrganizationsQueryVariables = Exact<{ [key: string]: never; }>;
 
 export type MeOrganizationsQuery = { __typename?: 'Query', me: { __typename?: 'User', id: string, selected_organization_id: any | null, organizations: Array<{ __typename?: 'Organization', id: string, name: string, personal_space: boolean }> | null } | null };
 
+export type MeAnalyticsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type MeAnalyticsQuery = { __typename?: 'Query', me: { __typename?: 'User', email: string, selected_organization_id: any | null, selected_org_capabilities: Array<OrganizationCapability> | null, organizations: Array<{ __typename?: 'Organization', id: string, personal_space: boolean }> | null, capabilities: Array<{ __typename?: 'Capability', name: PortalCapability }> | null } | null };
+
 export type NewsFeedDeleteItemMutationVariables = Exact<{
   id: Scalars['NewsFeedItemId']['input'];
 }>;
@@ -6313,6 +6318,68 @@ export const useInfiniteMeOrganizationsQuery = <
 useInfiniteMeOrganizationsQuery.getKey = (variables?: MeOrganizationsQueryVariables) => variables === undefined ? ['MeOrganizations.infinite'] : ['MeOrganizations.infinite', variables];
 useInfiniteMeOrganizationsQuery.getRootKey = () => ['MeOrganizations.infinite'] as const;
 useMeOrganizationsQuery.fetcher = (client: GraphQLClient, variables?: MeOrganizationsQueryVariables, headers?: RequestInit['headers']) => fetcher<MeOrganizationsQuery, MeOrganizationsQueryVariables>(client, MeOrganizationsDocument, variables, headers);
+
+export const MeAnalyticsDocument = `
+    query MeAnalytics {
+  me {
+    email
+    selected_organization_id
+    organizations {
+      id
+      personal_space
+    }
+    capabilities {
+      name
+    }
+    selected_org_capabilities
+  }
+}
+    `;
+
+export const useMeAnalyticsQuery = <
+      TData = MeAnalyticsQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables?: MeAnalyticsQueryVariables,
+      options?: Omit<UseQueryOptions<MeAnalyticsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<MeAnalyticsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<MeAnalyticsQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['MeAnalytics'] : ['MeAnalytics', variables],
+    queryFn: fetcher<MeAnalyticsQuery, MeAnalyticsQueryVariables>(client, MeAnalyticsDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useMeAnalyticsQuery.getKey = (variables?: MeAnalyticsQueryVariables) => variables === undefined ? ['MeAnalytics'] : ['MeAnalytics', variables];
+useMeAnalyticsQuery.getRootKey = () => ['MeAnalytics'] as const;
+export const useInfiniteMeAnalyticsQuery = <
+      TData = InfiniteData<MeAnalyticsQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: MeAnalyticsQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<MeAnalyticsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<MeAnalyticsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<MeAnalyticsQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['MeAnalytics.infinite'] : ['MeAnalytics.infinite', variables],
+      queryFn: (metaData) => fetcher<MeAnalyticsQuery, MeAnalyticsQueryVariables>(client, MeAnalyticsDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteMeAnalyticsQuery.getKey = (variables?: MeAnalyticsQueryVariables) => variables === undefined ? ['MeAnalytics.infinite'] : ['MeAnalytics.infinite', variables];
+useInfiniteMeAnalyticsQuery.getRootKey = () => ['MeAnalytics.infinite'] as const;
+useMeAnalyticsQuery.fetcher = (client: GraphQLClient, variables?: MeAnalyticsQueryVariables, headers?: RequestInit['headers']) => fetcher<MeAnalyticsQuery, MeAnalyticsQueryVariables>(client, MeAnalyticsDocument, variables, headers);
 
 export const NewsFeedDeleteItemDocument = `
     mutation NewsFeedDeleteItem($id: NewsFeedItemId!) {
