@@ -13,11 +13,15 @@ import {
   CookieConsentProvider,
   useConsent,
 } from '@/components/cookie-consent/CookieConsentProvider';
+import { initializeAnalytics } from '@/lib/analytics/analytics.client';
+import { resetAnalyticsEnvironment } from '@/utils/test/analytics';
 import testRender from '@/utils/test/test-render';
-import { screen } from '@testing-library/react';
+import { act, renderHook, screen } from '@testing-library/react';
+import { type ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const NOW = new Date('2026-06-16T00:00:00.000Z');
+const MEASUREMENT_ID = 'G-TEST';
 const GA_SERVICE = 'google-analytics';
 const HUBSPOT_SERVICE = 'hubspot';
 const GA_COOKIE = '_ga';
@@ -110,6 +114,14 @@ describe('CookieConsentProvider', () => {
       // Then
       expect(getBanner()).toBeInTheDocument();
     });
+
+    it('should keep the gated services closed when the stored consent has an outdated version', () => {
+      // Given / When
+      renderConsent(outdatedConsent(allGranted));
+
+      // Then
+      expect(screen.queryByText(GATED_CONTENT)).not.toBeInTheDocument();
+    });
   });
 
   describe('accepting and rejecting', () => {
@@ -169,6 +181,38 @@ describe('CookieConsentProvider', () => {
       // Then
       expect(document.cookie).toContain(`${GA_COOKIE}=1`);
     });
+  });
+
+  describe('withdrawing analytics consent', () => {
+    const consentWrapper = ({ children }: { children: ReactNode }) => (
+      <CookieConsentProvider initialConsent={makeStoredConsent(allGranted)}>
+        {children}
+      </CookieConsentProvider>
+    );
+
+    beforeEach(() => {
+      resetAnalyticsEnvironment();
+      initializeAnalytics(MEASUREMENT_ID);
+    });
+
+    it.each([
+      ['disable', { [GA_SERVICE]: false, [HUBSPOT_SERVICE]: true }, true],
+      ['keep', { [GA_SERVICE]: true, [HUBSPOT_SERVICE]: false }, false],
+    ])(
+      'should %s the measurement when the saved consent is %j',
+      (_outcome, services, isDisabled) => {
+        // Given
+        const { result } = renderHook(() => useConsent(), {
+          wrapper: consentWrapper,
+        });
+
+        // When
+        act(() => result.current.save(services));
+
+        // Then
+        expect(window[`ga-disable-${MEASUREMENT_ID}`]).toBe(isDisabled);
+      }
+    );
   });
 
   describe('useConsent', () => {

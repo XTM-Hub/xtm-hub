@@ -1,10 +1,9 @@
 'use client';
 
+import { EMBED_SEGMENT } from '@/components/cookie-consent/cookie-consent.consts';
 import { CookieConsentBanner } from '@/components/cookie-consent/CookieConsentBanner';
 import { CookieConsentPreferences } from '@/components/cookie-consent/CookieConsentPreferences';
 import { useSelectedLayoutSegment } from 'next/navigation';
-
-const EMBED_SEGMENT = '(embed)';
 
 export const CookieConsent = () => {
   const segment = useSelectedLayoutSegment();

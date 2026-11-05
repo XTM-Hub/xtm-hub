@@ -15,6 +15,7 @@ import * as React from 'react';
 // Component interface
 interface AppProps {
   children: React.ReactNode;
+  gaMeasurementId?: string;
 }
 
 const THEME_SWITCHABLE_PATHS = [`/${APP_PATH}`];
@@ -26,7 +27,7 @@ const isThemeSwitchablePath = (pathname: string) => {
 };
 
 // Component
-const AppContext = ({ children }: AppProps) => {
+const AppContext = ({ children, gaMeasurementId }: AppProps) => {
   const locale = useLocale();
   const pathname = usePathname();
   const t = useTranslate();
@@ -62,7 +63,7 @@ const AppContext = ({ children }: AppProps) => {
           enableSystem
           disableTransitionOnChange>
           <AppSnackbars>{children}</AppSnackbars>
-          <ManagedScripts />
+          <ManagedScripts gaMeasurementId={gaMeasurementId} />
           <CookieConsent />
         </ThemeProvider>
       </body>
