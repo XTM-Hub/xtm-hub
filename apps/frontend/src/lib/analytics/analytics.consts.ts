@@ -55,3 +55,35 @@ export const GOOGLE_REFERRER_HOST_PATTERN = /(^|\.)google(\.[a-z]{2,3}){1,2}$/;
 export const INTERNAL_TRAFFIC_TYPE = 'internal';
 
 export const INTERNAL_EMAIL_DOMAIN = 'filigran.io';
+
+export const ANALYTICS_ID_ATTRIBUTE = 'data-analytics-id';
+
+export const INTERACTIVE_SELECTOR = [
+  'a[href]',
+  'button',
+  '[role="button"]',
+  '[role="link"]',
+  '[role="menuitem"]',
+  '[role="menuitemcheckbox"]',
+  '[role="menuitemradio"]',
+  '[role="tab"]',
+  '[role="switch"]',
+  '[role="checkbox"]',
+  '[role="option"]',
+  'input',
+  'label',
+  'select',
+  'textarea',
+  `[${ANALYTICS_ID_ATTRIBUTE}]`,
+].join(', ');
+
+export const SELECTION_CONTROL_SELECTOR =
+  '[role="option"], [role="checkbox"], [role="menuitemcheckbox"], [role="menuitemradio"], input[type="checkbox"]';
+
+export const SELECTION_CONTAINER_SELECTOR =
+  '[role="listbox"], [role="menu"], [role="combobox"]';
+
+export const DISABLED_SELECTOR =
+  ':disabled, [data-disabled]:not([data-disabled="false"])';
+
+export const INHERITED_DISABLED_SELECTOR = '[aria-disabled="true"]';
