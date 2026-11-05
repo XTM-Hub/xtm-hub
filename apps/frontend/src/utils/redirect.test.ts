@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   buildLoginRedirect,
   buildOidcRedirect,
+  buildPublicCounterpartTarget,
   decodeSafeRedirect,
   encodeRedirectValue,
   isSafeRedirect,
@@ -48,6 +49,24 @@ describe('encodeRedirectValue', () => {
     const value = 'abc+def/ghi==';
     const query = `service_instance_id=${encodeRedirectValue(value)}`;
     expect(new URLSearchParams(query).get('service_instance_id')).toBe(value);
+  });
+});
+
+describe('buildPublicCounterpartTarget', () => {
+  it('should point to /redirect/public with the public path percent-encoded', () => {
+    // Given
+    const pathname = '/en/cybersecurity-solutions/lib/c++ &co';
+
+    // When
+    const result = buildPublicCounterpartTarget(pathname);
+
+    // Then
+    expect(result).toBe(
+      '/redirect/public?path=%2Fen%2Fcybersecurity-solutions%2Flib%2Fc%2B%2B%20%26co'
+    );
+    expect(new URLSearchParams(result.split('?')[1]).get('path')).toBe(
+      pathname
+    );
   });
 });
 

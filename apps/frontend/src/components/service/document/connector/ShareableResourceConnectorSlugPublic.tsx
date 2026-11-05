@@ -92,7 +92,6 @@ const ShareableResourceConnectorSlugPublic = async ({
 
             <PublicResourceActions
               documentData={documentData}
-              serviceInstance={serviceInstance}
               pageUrl={pageUrl}
               shareTooltipText="Service.OpenctiIntegrations.Actions.Share"
             />

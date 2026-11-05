@@ -8,16 +8,16 @@ import { useTranslate } from '@/hooks/use-translate';
 import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { type AnalyticsDeployEligibility } from '@/lib/analytics/analytics.types';
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import { isValueInEnum } from '@/utils/is-value-in-enum';
 import { getPlatformIdentifier } from '@/utils/platform';
-import { buildSignupRedirect } from '@/utils/redirect';
+import {
+  buildPublicCounterpartTarget,
+  buildSignupRedirect,
+} from '@/utils/redirect';
 import {
   isConnectorResource,
   PublicDocumentByServiceSlugItem,
-  ServiceSlug,
 } from '@/utils/shareable-resources/shareable-resources.types';
 import {
-  getServiceInfo,
   isResourceDeployable,
   isResourceDownloadable,
 } from '@/utils/shareable-resources/utils/shareable-resources.client.utils';
@@ -33,6 +33,7 @@ import { DownloadIcon } from '@filigran/icon';
 import { useMeAnalyticsQuery } from '@graphql/generated';
 import { meAnalyticsKeys } from '@graphql/me/me.keys';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 const resolvePublicDeployEligibility = ({
   isDeployAvailable,
@@ -49,14 +50,12 @@ const resolvePublicDeployEligibility = ({
 
 interface PublicResourceActionsProps {
   documentData: PublicDocumentByServiceSlugItem;
-  serviceInstance: { id: string; slug: string | null | undefined };
   pageUrl: string;
   shareTooltipText?: string;
 }
 
 export const PublicResourceActions = ({
   documentData,
-  serviceInstance,
   pageUrl,
   shareTooltipText,
 }: PublicResourceActionsProps) => {
@@ -67,13 +66,10 @@ export const PublicResourceActions = ({
     { queryKey: meAnalyticsKeys.detail(), enabled: false }
   );
 
-  const privateResourceLink = isValueInEnum(serviceInstance.slug, ServiceSlug)
-    ? getServiceInfo(
-        { id: serviceInstance.id, slug: serviceInstance.slug },
-        documentData.id
-      )?.link
-    : undefined;
-  const signupHref = buildSignupRedirect(privateResourceLink);
+  const pathname = usePathname();
+  const signupHref = buildSignupRedirect(
+    pathname ? buildPublicCounterpartTarget(pathname) : undefined
+  );
 
   const isConnector = isConnectorResource(documentData);
   const showDeploy = isResourceDeployable(documentData);
