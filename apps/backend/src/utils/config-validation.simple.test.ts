@@ -144,6 +144,8 @@ describe('resolveTrustProxy', () => {
   });
 });
 
+const LONGEST_ES_INDEX_PREFIX = 'h'.repeat(100);
+
 describe('parseEsIndexPrefix', () => {
   it.each([
     ['undefined', undefined],
@@ -164,9 +166,9 @@ describe('parseEsIndexPrefix', () => {
     ['lowercase letters', 'hub'],
     ['letters and digits', 'hub2'],
     ['a leading digit', '2hub'],
-    ['an inner underscore', 'xtm_hub'],
     ['an inner dash', 'xtm-hub'],
     ['an inner dot', 'xtm.hub'],
+    ['100 characters', LONGEST_ES_INDEX_PREFIX],
   ])('should keep the prefix when given %s', (_description, value) => {
     // Given
     // value comes from the dataset
@@ -181,6 +183,16 @@ describe('parseEsIndexPrefix', () => {
   it.each([
     ['uppercase letters', 'Hub'],
     ['a leading underscore', '_hub'],
+    ['an inner underscore', 'xtm_hub'],
+    [
+      'a prefix whose template pattern overlaps the unprefixed one',
+      'telemetry_v2',
+    ],
+    [
+      "a prefix whose template pattern overlaps the one of prefix 'hub'",
+      'hub_telemetry_v2',
+    ],
+    ['101 characters', `${LONGEST_ES_INDEX_PREFIX}h`],
     ['a leading dash', '-hub'],
     ['a leading plus', '+hub'],
     ['a leading dot', '.hub'],
@@ -203,7 +215,7 @@ describe('parseEsIndexPrefix', () => {
 
     // Then
     expect(parse).toThrow(
-      `[ELASTICSEARCH] Invalid elasticsearch.index_prefix configuration (ELASTIC_INDEX_PREFIX): expected lowercase letters, digits, '.', '_' or '-', starting with a letter or a digit, got ${JSON.stringify(value)}`
+      `[ELASTICSEARCH] Invalid elasticsearch.index_prefix configuration (ELASTIC_INDEX_PREFIX): expected at most 100 lowercase letters, digits, '.' or '-', starting with a letter or a digit, got ${JSON.stringify(value)}`
     );
   });
 });
