@@ -610,6 +610,38 @@ jobs:
           title: Backend unit and integration tests
           app-dir: apps/backend
 
+  # Codecov's coverage of each app on pull requests: fails when Codecov fails the changed lines of an app, warns when an
+  # app is under 80% overall, and keeps one pull request comment with both. Skipped, so passing, when the shards did
+  # not run.
+  coverage:
+    name: Coverage
+    needs:
+      - run-front-unit-tests-shards
+      - run-api-unit-tests-shards
+    if: |
+      always() &&
+      github.event_name == 'pull_request' &&
+      needs.run-front-unit-tests-shards.result == 'success' &&
+      needs.run-api-unit-tests-shards.result == 'success'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      checks: read
+      pull-requests: write
+    steps:
+      - name: Checkout the coverage action
+        uses: actions/checkout@v6
+        with:
+          sparse-checkout: .github/actions/coverage
+
+      - name: Check and comment the coverage
+        uses: ./.github/actions/coverage
+        with:
+          apps: |
+            frontend Frontend apps/frontend
+            backend Backend apps/backend
+
   deploy-feature-branch:
     needs: build-images-tests
     runs-on: ubuntu-26.04

@@ -1,0 +1,124 @@
+name: 'Coverage'
+description: >
+  Pull requests only. Waits for Codecov's `codecov/patch/<component>` check of each app on the pull request head, keeps
+  one pull request comment up to date with Codecov's coverage of each app (the point the pull request branched from
+  main against its head, and the changed-lines verdict), warns when an app is below the target overall, and fails when
+  Codecov fails the changed lines of an app. Codecov is the source of truth: nothing is recomputed. Needs
+  `checks: read` and `pull-requests: write`. Comments with the workflow's own token, so only a comment authored by
+  github-actions[bot] is ever updated.
+inputs:
+  apps:
+    description: 'One app per line: Codecov component id, name and workspace (e.g. "frontend Frontend apps/frontend").'
+    required: true
+  target:
+    description: 'Coverage, in percent, under which an app raises a warning overall.'
+    required: false
+    default: '80'
+  wait-minutes:
+    description: 'How long to wait for the Codecov checks before failing.'
+    required: false
+    default: '15'
+runs:
+  using: 'composite'
+  steps:
+    - name: Check and comment the coverage
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        APPS: ${{ inputs.apps }}
+        TARGET: ${{ inputs.target }}
+        WAIT_MINUTES: ${{ inputs.wait-minutes }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        # Codecov reports on the pull request head commit, not on the merge commit GitHub checks out.
+        HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        CAN_COMMENT: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+        MARKER: '<!-- coverage-report -->'
+        COMMENT_AUTHOR: 'github-actions[bot]'
+        COMMENT_FILE: ${{ runner.temp }}/coverage-report.md
+      run: |
+        codecov_api="https://api.codecov.io/api/v2/github/${GITHUB_REPOSITORY%%/*}/repos/${GITHUB_REPOSITORY#*/}"
+        # Codecov compares the pull request head with the point it branched from main, not with the tip of main.
+        merge_base=$(gh api "repos/${GITHUB_REPOSITORY}/compare/${BASE_SHA}...${HEAD_SHA}" --jq '.merge_base_commit.sha')
+
+        patch_check() {
+          gh api "repos/${GITHUB_REPOSITORY}/commits/${HEAD_SHA}/check-runs?check_name=codecov/patch/$1" \
+            --jq '[.check_runs[] | select(.app.slug == "codecov" and .status == "completed")][0] // empty' || true
+        }
+        total() {
+          curl -sS --fail --retry 3 --max-time 60 "${codecov_api}/totals/?sha=$1&path=${2//\//%2F}%2F" \
+            | jq -r '.totals.coverage // empty' || true
+        }
+        below_target() {
+          awk -v coverage="$1" -v target="$TARGET" 'BEGIN { exit !(coverage < target) }'
+        }
+        format() {
+          if [ -z "$1" ]; then echo "—"; elif below_target "$1"; then echo "⚠️ $1%"; else echo "$1%"; fi
+        }
+
+        deadline=$(( $(date +%s) + WAIT_MINUTES * 60 ))
+        failed=0
+        rows=()
+        while read -r component name dir; do
+          [ -n "$component" ] || continue
+          until check=$(patch_check "$component") && [ -n "$check" ]; do
+            if [ "$(date +%s)" -ge "$deadline" ]; then
+              echo "::error::Codecov did not report codecov/patch/${component} within ${WAIT_MINUTES} minutes."
+              exit 1
+            fi
+            echo "Waiting for Codecov to report codecov/patch/${component}..."
+            sleep 15
+          done
+          conclusion=$(jq -r '.conclusion' <<<"$check")
+          title=$(jq -r '.output.title' <<<"$check")
+          url=$(jq -r '.html_url' <<<"$check")
+          if [ "$conclusion" = "success" ]; then
+            patch="✅ [${title}](${url})"
+          else
+            patch="❌ [${title}](${url})"
+            echo "::error title=${name} changed lines::Codecov codecov/patch/${component}: ${title}"
+            failed=1
+          fi
+
+          base=$(total "$merge_base" "$dir")
+          head=$(total "$HEAD_SHA" "$dir")
+          change="—"
+          if [ -n "$base" ] && [ -n "$head" ]; then
+            change=$(awk -v base="$base" -v head="$head" 'BEGIN { printf "%+.2f", head - base }')
+          fi
+          if [ -z "$head" ]; then
+            echo "::warning title=${name} coverage::Could not read the ${name} coverage from Codecov."
+          elif below_target "$head"; then
+            echo "::warning title=${name} coverage::${name} coverage is ${head}%, below ${TARGET}%."
+          fi
+          rows+=("| ${name} | $(format "$base") | $(format "$head") | ${change} | ${patch} |")
+        done <<<"$APPS"
+
+        {
+          echo "$MARKER"
+          echo "### Coverage"
+          echo
+          echo "| App | \`main\` (\`${merge_base:0:7}\`) | This pull request (\`${HEAD_SHA:0:7}\`) | Change | Changed lines |"
+          echo "| --- | --- | --- | --- | --- |"
+          printf '%s\n' "${rows[@]}"
+          echo
+          echo "Numbers from [Codecov](https://app.codecov.io/gh/${GITHUB_REPOSITORY}/pull/${PR_NUMBER})." \
+            "The pull request fails when Codecov finds less than ${TARGET}% of an app's changed lines covered;" \
+            "an app under ${TARGET}% overall (⚠️) only raises a warning."
+        } > "$COMMENT_FILE"
+        cat "$COMMENT_FILE" >> "$GITHUB_STEP_SUMMARY"
+
+        # A pull request from a fork gets a read-only token: the job summary is the report there.
+        if [ "$CAN_COMMENT" = "true" ]; then
+          comment_ids=$(gh api --paginate "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" \
+            | jq -r --arg marker "$MARKER" --arg author "$COMMENT_AUTHOR" \
+              '.[] | select(.user.login == $author and (.body | startswith($marker))) | .id')
+          comment_id=${comment_ids%%$'\n'*}
+          if [ -n "$comment_id" ]; then
+            gh api --method PATCH "repos/${GITHUB_REPOSITORY}/issues/comments/${comment_id}" -F "body=@${COMMENT_FILE}" > /dev/null
+          else
+            gh api --method POST "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" -F "body=@${COMMENT_FILE}" > /dev/null
+          fi
+        fi
+
+        exit "$failed"

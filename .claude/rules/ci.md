@@ -30,6 +30,8 @@ flowchart LR
   D --> H[run-e2e-tests]
   E --> I[run-front-unit-tests]
   F --> J[run-api-unit-tests]
+  E --> V[coverage<br/>pull requests]
+  F --> V
   B --> K[build-images-prod]
   H --> K
   I --> K
@@ -69,6 +71,25 @@ report never turns the gate red, the shards carry the real result.
 
 The logic is in `.github/actions/vitest-pr-report/report-lib.mjs`, covered by
 `.github/actions/vitest-pr-report/report.test.mjs` (Node's built-in runner, run by the `backend` leg of `run-lint`). Run it with `node --test .github/actions/vitest-pr-report/report.test.mjs` after changing the script.
+
+## Coverage
+
+Codecov is the source of truth for coverage; the CI never recomputes it. Each Vitest shard uploads its coverage with
+the flag `frontend-shard-N` / `backend-shard-N`, and `codecov.yml` waits for all of them (`after_n_builds`, the total
+number of shard uploads) before reporting. Its components post one check per app on the lines a pull request
+changes, `codecov/patch/frontend` and `codecov/patch/backend`, with an 80% target.
+
+On pull requests, once both shard jobs succeed, the `coverage` job ("Coverage") calls the composite action
+`.github/actions/coverage`. It waits for both Codecov checks on the pull request head (15 minutes at most), then:
+
+- keeps one pull request comment up to date, marked `<!-- coverage-report -->`, with each app's coverage at the point
+  the pull request branched from `main` against its head, and Codecov's changed-lines verdict;
+- warns, without failing, when an app (`apps/frontend/`, `apps/backend/`) is under 80% overall;
+- fails when Codecov fails the changed lines of an app.
+
+"Coverage" blocks a merge only as a required check of the `main` branch protection. It is skipped, so passing, on a
+pull request that does not run the shards and in the merge queue. A pull request that only changes test files shows
+"Coverage not affected" on the changed lines (test files are not measured) and its effect in the whole-app change.
 
 Before the Docker builds, migrations and seeds are copied into the e2e workspace:
 
