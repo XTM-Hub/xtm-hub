@@ -44,3 +44,39 @@ describe('manageRequest news feed redirect', () => {
     expect(response).toBeUndefined();
   });
 });
+
+describe('manageRequest news feed blogpost sync webhook', () => {
+  it.each([
+    ['/webhooks/news-feed/blogposts'],
+    ['/webhooks/news-feed/blogposts/'],
+    ['/webhooks/news-feed/blogposts?ignored=1'],
+  ])(
+    'should rewrite %s to the API with its path and query',
+    async (pathAndQuery: string) => {
+      // Given a webhook call of the blogpost sync
+
+      // When
+      const response = await manage(pathAndQuery);
+
+      // Then
+      expect(response?.headers.get('x-middleware-rewrite')).toBe(
+        `${SERVER_HTTP_API}${pathAndQuery}`
+      );
+    }
+  );
+
+  it.each([
+    ['/webhooks/news-feed'],
+    ['/webhooks/news-feed/blogposts/extra'],
+    ['/webhooks/news-feed/other'],
+    ['/app/webhooks/news-feed/blogposts'],
+  ])('should leave %s to the app routes', async (pathAndQuery: string) => {
+    // Given a request that is not the blogpost sync webhook
+
+    // When
+    const response = await manage(pathAndQuery);
+
+    // Then
+    expect(response).toBeUndefined();
+  });
+});
