@@ -57,6 +57,14 @@ export const INTERNAL_TRAFFIC_TYPE = 'internal';
 export const INTERNAL_EMAIL_DOMAIN = 'filigran.io';
 
 export const ANALYTICS_ID_ATTRIBUTE = 'data-analytics-id';
+export const ANALYTICS_SECTION_ATTRIBUTE = 'data-analytics-section';
+export const ANALYTICS_RESOURCE_ID_ATTRIBUTE = 'data-analytics-resource-id';
+export const ANALYTICS_RESOURCE_NAME_ATTRIBUTE = 'data-analytics-resource-name';
+export const ANALYTICS_LIBRARY_ATTRIBUTE = 'data-analytics-library';
+export const ANALYTICS_USE_CASES_ATTRIBUTE = 'data-analytics-use-cases';
+export const ANALYTICS_EPIC_NAME_ATTRIBUTE = 'data-analytics-epic-name';
+export const ANALYTICS_FEATURE_NAME_ATTRIBUTE = 'data-analytics-feature-name';
+export const ANALYTICS_PRODUCT_ATTRIBUTE = 'data-analytics-product';
 
 export const INTERACTIVE_SELECTOR = [
   'a[href]',
@@ -82,6 +90,11 @@ export const SELECTION_CONTROL_SELECTOR =
 
 export const SELECTION_CONTAINER_SELECTOR =
   '[role="listbox"], [role="menu"], [role="combobox"]';
+
+export const POPPER_CONTENT_WRAPPER_SELECTOR =
+  '[data-radix-popper-content-wrapper]';
+
+export const PORTAL_CONTENT_SELECTOR = `${POPPER_CONTENT_WRAPPER_SELECTOR}, [role="dialog"], [role="alertdialog"], [role="menu"]`;
 
 export const DISABLED_SELECTOR =
   ':disabled, [data-disabled]:not([data-disabled="false"])';

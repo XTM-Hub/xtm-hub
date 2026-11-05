@@ -61,7 +61,7 @@ const RELAY_GLOBAL_ID_PATTERN =
 
 const BASE64_PATTERN = /^[A-Za-z0-9+/]+={0,2}$/;
 
-const toAnalyticsResourceId = (id: string): string => {
+export const toAnalyticsResourceId = (id: string): string => {
   if (!BASE64_PATTERN.test(id)) {
     return id;
   }
