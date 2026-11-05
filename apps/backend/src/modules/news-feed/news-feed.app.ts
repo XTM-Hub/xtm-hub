@@ -7,8 +7,10 @@ import {
   PlatformIdentifier,
   ServiceDefinitionIdentifier,
 } from '../../__generated__/resolvers-types';
+import { withTransaction } from '../../context/database.context';
 import Document, { DocumentId } from '../../model/kanel/public/Document';
 import { NewsFeedItemId } from '../../model/kanel/public/NewsFeedItem';
+import { BlogApiClient } from '../../thirdparty/blog-api/client';
 import { logApp } from '../../utils/app-logger.util';
 import { ErrorCode } from '../../utils/error/error.code';
 import {
@@ -26,10 +28,12 @@ import {
 } from './news-feed-redirect.helper';
 import { NewsFeedDomain } from './news-feed.domain';
 import {
+  doesPlatformSupportBlogpostNewsFeed,
   doesPlatformSupportNewsFeed,
   NewsFeedHelper,
 } from './news-feed.helper';
 import {
+  blogpostProductMapping,
   NEWS_FEED_INTERNAL_METADATA_KEYS,
   newsFeedConfigurationMapping,
 } from './news-feed.model';
@@ -64,6 +68,49 @@ const provisionNewsFeedItemForAllSupportedPlatforms = async ({
   );
   await NewsFeedDomain.provisionNewsFeedItem(newsFeedItemId, platformIds);
 };
+
+// Same as provisionNewsFeedItemForAllSupportedPlatforms for several items, with the platforms filtered by the given
+// predicate instead of the news feed version gate. Returns the number of platforms the items are provisioned to.
+const provisionNewsFeedItemsForPlatformsMatching = async ({
+  newsFeedItemIds,
+  platformIdentifier,
+  isPlatformSupported,
+}: {
+  newsFeedItemIds: NewsFeedItemId[];
+  platformIdentifier: PlatformIdentifier;
+  isPlatformSupported: (platform: {
+    platform_id: string;
+    platform_version: string | null;
+  }) => boolean;
+}): Promise<number> => {
+  if (newsFeedItemIds.length === 0) {
+    return 0;
+  }
+
+  const registeredPlatforms =
+    await RegistrationDomain.loadAllActiveRegisteredPlatformsByPlatformIdentifier(
+      platformIdentifier
+    );
+  const platformIds = [
+    ...new Set(
+      registeredPlatforms
+        .filter(isPlatformSupported)
+        .map((platform) => platform.platform_id)
+    ),
+  ];
+  for (const newsFeedItemId of newsFeedItemIds) {
+    await NewsFeedDomain.provisionNewsFeedItem(newsFeedItemId, platformIds);
+  }
+  return platformIds.length;
+};
+
+export interface BlogpostSyncResult {
+  created: number;
+  // Includes the items that come back after having been dropped
+  updated: number;
+  dropped: number;
+  provisionedPlatforms: number;
+}
 
 export interface NewsFeedExternalRedirect {
   newsFeedItemId: NewsFeedItemId;
@@ -113,6 +160,70 @@ export const NewsFeedApp = {
         ? NewsFeedRedirectHelper.appendUtmParams(destination.url, query)
         : destination.url,
     };
+  },
+
+  // Fetches the blog API first, outside any transaction: nothing is applied unless the whole response is valid.
+  // Then reconciles and provisions in a single transaction, so any failure rolls everything back, provisioning included.
+  syncBlogposts: async (): Promise<BlogpostSyncResult> => {
+    const limit = NewsFeedHelper.getBlogpostLimit();
+    const feeds = await Promise.all(
+      Object.entries(blogpostProductMapping).map(
+        async ([product, platformIdentifier]) => ({
+          platformIdentifier,
+          posts: await BlogApiClient.fetchBlogFeed({ product, limit }),
+        })
+      )
+    );
+
+    const result = await withTransaction(async () => {
+      const total: BlogpostSyncResult = {
+        created: 0,
+        updated: 0,
+        dropped: 0,
+        provisionedPlatforms: 0,
+      };
+
+      for (const { platformIdentifier, posts } of feeds) {
+        // Safeguard: an empty answer must not empty the news feed
+        if (
+          posts.length === 0 &&
+          (await NewsFeedDomain.countActiveBlogpostItems(platformIdentifier)) >
+            0
+        ) {
+          throw new Error(ErrorCode.NewsFeedBlogpostEmptyFeed);
+        }
+
+        const { created, updated, dropped, restored } =
+          await NewsFeedDomain.reconcileBlogposts({
+            platformIdentifier,
+            posts,
+          });
+
+        // The dropped items are provisioned too, so that the platforms delete them
+        const provisionedPlatforms =
+          await provisionNewsFeedItemsForPlatformsMatching({
+            newsFeedItemIds: [
+              ...new Set([...created, ...updated, ...restored, ...dropped]),
+            ],
+            platformIdentifier,
+            isPlatformSupported: (platform) =>
+              doesPlatformSupportBlogpostNewsFeed(
+                platformIdentifier,
+                platform.platform_version
+              ),
+          });
+
+        total.created += created.length;
+        total.updated += updated.length + restored.length;
+        total.dropped += dropped.length;
+        total.provisionedPlatforms += provisionedPlatforms;
+      }
+
+      return total;
+    });
+
+    logApp.info('Synchronized blog posts', { ...result });
+    return result;
   },
 
   consumeProvisionedNewsFeedItems: async ({
