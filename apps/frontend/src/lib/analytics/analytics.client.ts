@@ -5,6 +5,7 @@ import {
 import {
   type AnalyticsEventName,
   type AnalyticsEvents,
+  type AnalyticsPageContext,
 } from '@/lib/analytics/analytics.types';
 
 let configuredMeasurementId: string | null = null;
@@ -49,6 +50,12 @@ export const revokeAnalyticsConsent = (): void => {
   window.gtag?.('consent', 'update', { analytics_storage: 'denied' });
   window[`ga-disable-${enabledMeasurementId}`] = true;
   enabledMeasurementId = null;
+};
+
+export const setAnalyticsPageContext = (
+  context: AnalyticsPageContext
+): void => {
+  getEnabledGtag()?.('set', context);
 };
 
 export const trackEvent = <Name extends AnalyticsEventName>(
