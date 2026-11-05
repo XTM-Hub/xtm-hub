@@ -2,6 +2,7 @@ import { PlatformIdentifier } from '@graphql/generated';
 import { NextRequest } from 'next/server';
 import { redirectToFreeTrial } from './free-trial';
 import { redirectToHandlePendingUser } from './handle-pending-user';
+import { redirectToRegisteredPlatform } from './registered-platform';
 import { redirectToRegistration } from './registration';
 import { redirectToResource } from './resource';
 import { redirectToTransferPersoSpace } from './transfer-perso-space';
@@ -54,6 +55,8 @@ export async function GET(
         'unregister',
         PlatformIdentifier.Xtmone
       );
+    case 'openaev-registration':
+      return redirectToRegisteredPlatform(request, PlatformIdentifier.Openaev);
     case 'transfer-personal-space':
       return redirectToTransferPersoSpace(request);
     case 'handle-pending-user':

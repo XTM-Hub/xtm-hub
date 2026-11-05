@@ -1589,6 +1589,7 @@ export const mockRefreshPlatformRegistrationConnectivityStatusResponse = (overri
     relationshipsToOmit.add('RefreshPlatformRegistrationConnectivityStatusResponse');
     return {
         __typename: 'RefreshPlatformRegistrationConnectivityStatusResponse',
+        commercialModel: overrides && overrides.hasOwnProperty('commercialModel') ? overrides.commercialModel! : CommercialModel.Other,
         status: overrides && overrides.hasOwnProperty('status') ? overrides.status! : PlatformRegistrationConnectivityStatus.Active,
     };
 };
@@ -2316,6 +2317,7 @@ export const mockTenantStatus = (overrides?: Partial<TenantStatus>, _relationshi
     relationshipsToOmit.add('TenantStatus');
     return {
         __typename: 'TenantStatus',
+        commercialModel: overrides && overrides.hasOwnProperty('commercialModel') ? overrides.commercialModel! : CommercialModel.Other,
         status: overrides && overrides.hasOwnProperty('status') ? overrides.status! : PlatformRegistrationConnectivityStatus.Active,
         tenantId: overrides && overrides.hasOwnProperty('tenantId') ? overrides.tenantId! : 'volubilis',
     };

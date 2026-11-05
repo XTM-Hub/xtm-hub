@@ -20,3 +20,15 @@ query PlatformAssociatedOrganization($platformId: String!, $tenantId: String) {
     id
   }
 }
+
+query RegisteredPlatformRedirectTargets($input: RegisteredPlatformsInput!) {
+  registeredPlatforms(input: $input) {
+    service_instance_id
+    platform_id
+    tenant_id
+    identifier
+    deployment_request {
+      parent_id
+    }
+  }
+}
