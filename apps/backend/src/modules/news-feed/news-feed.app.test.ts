@@ -298,27 +298,34 @@ describe('newsFeedApp', () => {
         await cleanupCreatedServiceInstances();
       });
 
-      it('should not list BLOG_POST for a supported version while the gate is disabled', async () => {
-        // Given
-        const gatedPlatformId = uuidv4();
-        const gatedToken = uuidv4();
-        await createOpenCTIPlatformForOrganization(
-          gatedPlatformId,
-          TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
-          { token: gatedToken, platform_version: '99.0.0' }
-        );
+      it.each`
+        description                 | version         | expected
+        ${'below the shipped gate'} | ${'7.261104.0'} | ${false}
+        ${'at the shipped gate'}    | ${'7.261105.0'} | ${true}
+      `(
+        'should list BLOG_POST with the shipped gate only when the OpenCTI version is $description ($version): $expected',
+        async ({ version, expected }) => {
+          // Given the shipped required version, left untouched
+          const gatedPlatformId = uuidv4();
+          const gatedToken = uuidv4();
+          await createOpenCTIPlatformForOrganization(
+            gatedPlatformId,
+            TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+            { token: gatedToken, platform_version: version }
+          );
 
-        // When
-        const result = await NewsFeedApp.consumeProvisionedNewsFeedItems({
-          platformId: gatedPlatformId,
-          token: gatedToken,
-        });
+          // When
+          const result = await NewsFeedApp.consumeProvisionedNewsFeedItems({
+            platformId: gatedPlatformId,
+            token: gatedToken,
+          });
 
-        // Then
-        expect(result.available_news_feed_types).not.toContain(
-          NewsFeedItemType.BlogPost
-        );
-      });
+          // Then
+          expect(
+            result.available_news_feed_types.includes(NewsFeedItemType.BlogPost)
+          ).toBe(expected);
+        }
+      );
 
       it.each`
         description  | version                      | expected
@@ -2571,15 +2578,42 @@ describe('newsFeedApp', () => {
         }
       );
 
-      it('should not provision anything while the gate is disabled', async () => {
-        // Given
+      it('should provision the blogposts of an OpenCTI already on the shipped gate version, and nothing below it', async () => {
+        // Given the shipped required version, left untouched
+        const blogposts = await createBlogposts(2);
+        const previousVersionPlatformId = uuidv4();
+        const releaseVersionPlatformId = uuidv4();
+
+        // When
+        await NewsFeedApp.backfillBlogpostsForPlatform({
+          platformId: previousVersionPlatformId,
+          platformIdentifier: PlatformIdentifier.Opencti,
+          platformVersion: '7.261104.0',
+        });
+        await NewsFeedApp.backfillBlogpostsForPlatform({
+          platformId: releaseVersionPlatformId,
+          platformIdentifier: PlatformIdentifier.Opencti,
+          platformVersion: '7.261105.0',
+        });
+
+        // Then
+        expect(await loadProvisionedItemIds(previousVersionPlatformId)).toEqual(
+          []
+        );
+        expect(await loadProvisionedItemIds(releaseVersionPlatformId)).toEqual(
+          blogposts.map(({ id }) => id).sort()
+        );
+      });
+
+      it('should not provision anything to an OpenAEV platform, whose gate is disabled', async () => {
+        // Given the shipped required version, left untouched
         await createBlogposts(2);
         const platformId = uuidv4();
 
         // When
         await NewsFeedApp.backfillBlogpostsForPlatform({
           platformId,
-          platformIdentifier: PlatformIdentifier.Opencti,
+          platformIdentifier: PlatformIdentifier.Openaev,
           platformVersion: '99.0.0',
         });
 
