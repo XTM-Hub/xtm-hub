@@ -26,8 +26,6 @@ export type PublicDocumentSitemapItem = {
 export type PublicDocumentData =
   PublicDocumentListItemFragment | PublicDocumentByServiceSlugItem;
 
-export type PublicDocumentDetailsData = PublicDocumentByServiceSlugItem;
-
 /**
  * Fields only present on `Document`s implementing the `Integration`
  * GraphQL interface. Used to narrow a document union via `isIntegrationItem`.

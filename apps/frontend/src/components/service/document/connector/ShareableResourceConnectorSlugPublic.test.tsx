@@ -1,7 +1,7 @@
 import ShareableResourceConnectorSlugPublic from '@/components/service/document/connector/ShareableResourceConnectorSlugPublic';
 import {
   ConnectorFields,
-  PublicDocumentDetailsData,
+  PublicDocumentByServiceSlugItem,
   ServiceSlug,
 } from '@/utils/shareable-resources/shareable-resources.types';
 import testRender from '@/utils/test/test-render';
@@ -20,7 +20,7 @@ const SUPPORTED_BY_COMMUNITY =
 
 const buildConnector = (
   overrides: Partial<ConnectorFields> = {}
-): PublicDocumentDetailsData & ConnectorFields =>
+): PublicDocumentByServiceSlugItem & ConnectorFields =>
   ({
     __typename: 'Connector',
     id: 'connector-1',
@@ -31,7 +31,7 @@ const buildConnector = (
     children_documents: [],
     use_cases: [],
     ...overrides,
-  }) as unknown as PublicDocumentDetailsData & ConnectorFields;
+  }) as unknown as PublicDocumentByServiceSlugItem & ConnectorFields;
 
 const SERVICE_INSTANCE = mockSeoServiceInstance({
   id: 'service-instance-1',
