@@ -3,6 +3,7 @@ import {
   XtmPlatformTrialPanelView,
   XtmPlatformTrialStatusPanelState,
 } from '@/components/service/trial-instances/xtm-platform-trial/request-panel/xtm-platform-trial-panel.utils';
+import { readTrackedEvents, startAnalytics } from '@/utils/test/analytics';
 import testRender from '@/utils/test/test-render';
 import { xtmPlatformBundleKeys } from '@graphql/deployment/deployment.keys';
 import {
@@ -15,7 +16,15 @@ import {
 import { QueryClient } from '@tanstack/react-query';
 import { screen } from '@testing-library/react';
 import { ReactNode } from 'react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  afterEach,
+  assert,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
 
 const graphqlMocks = vi.hoisted(() => ({
   useCreateDeploymentRequestMutation: vi.fn(),
@@ -209,6 +218,55 @@ describe('PrivateXtmPlatformTrialPanel', () => {
     expect(queryMocks.invalidatePrivateNavigationQueries).toHaveBeenCalledWith(
       expect.any(QueryClient)
     );
+  });
+
+  describe('lead', () => {
+    beforeEach(() => {
+      startAnalytics();
+    });
+
+    it('should send a trial request lead when the request succeeds', () => {
+      // Given
+      testRender(
+        <PrivateXtmPlatformTrialPanel
+          bundle={null}
+          view={formView}
+        />
+      );
+      const [, options] =
+        graphqlMocks.useCreateDeploymentRequestMutation.mock.calls[0];
+
+      // When
+      options.onSuccess();
+
+      // Then
+      expect(readTrackedEvents('generate_lead')).toEqual([
+        { lead_source: 'Trial request' },
+      ]);
+    });
+
+    it('should not send a lead when the request is submitted but has not succeeded', () => {
+      // Given
+      testRender(
+        <PrivateXtmPlatformTrialPanel
+          bundle={null}
+          view={formView}
+        />
+      );
+      assert(capturedHandleSubmit);
+
+      // When
+      capturedHandleSubmit({
+        region: 'eu',
+        job_title: 'CISO',
+        activity_sector: 'IT',
+        acceptTerms: true,
+        use_cases_by_product: [],
+      });
+
+      // Then
+      expect(readTrackedEvents('generate_lead')).toEqual([]);
+    });
   });
 
   it('renders the personal space message when the view is personalSpace', () => {
