@@ -241,20 +241,26 @@ describe('createApolloServer', () => {
       await Promise.all([hiddenServer.stop(), exposedServer.stop()]);
     });
 
-    it('should hide an unexpected error from the client when the schema details are hidden', async () => {
-      // Given / When
-      const result = await execute(hiddenServer, '{ databaseError }');
+    it.each([
+      { exposure: 'hidden', server: hiddenServer },
+      { exposure: 'exposed', server: exposedServer },
+    ])(
+      'should hide an unexpected error from the client when the schema details are $exposure',
+      async ({ server }) => {
+        // Given / When
+        const result = await execute(server, '{ databaseError }');
 
-      // Then
-      expect(result.errors).toEqual([
-        {
-          message: UnknownErrorCode.UnknownError,
-          locations: [{ line: 1, column: 3 }],
-          path: ['databaseError'],
-          extensions: { code: UnknownErrorCode.UnknownError },
-        },
-      ]);
-    });
+        // Then
+        expect(result.errors).toEqual([
+          {
+            message: UnknownErrorCode.UnknownError,
+            locations: [{ line: 1, column: 3 }],
+            path: ['databaseError'],
+            extensions: { code: UnknownErrorCode.UnknownError },
+          },
+        ]);
+      }
+    );
 
     it.each([
       {
@@ -282,16 +288,5 @@ describe('createApolloServer', () => {
         expect(result.errors?.[0]).toMatchObject({ message });
       }
     );
-
-    it('should send an unexpected error to the client when the schema details are exposed', async () => {
-      // Given / When
-      const result = await execute(exposedServer, '{ databaseError }');
-
-      // Then
-      expect(result.errors?.[0]).toMatchObject({
-        message: DATABASE_ERROR_MESSAGE,
-        path: ['databaseError'],
-      });
-    });
   });
 });

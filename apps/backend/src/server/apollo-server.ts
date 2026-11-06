@@ -58,10 +58,7 @@ export const createApolloServer = ({
     includeStacktraceInErrorResponses: exposeSchemaDetails,
     formatError: (formattedError, error) => {
       const originalError = unwrapResolverError(error);
-      if (
-        !exposeSchemaDetails &&
-        !isClientSafeError(formattedError, originalError)
-      ) {
+      if (!isClientSafeError(formattedError, originalError)) {
         return {
           message: UnknownErrorCode.UnknownError,
           locations: formattedError.locations,
