@@ -142,7 +142,7 @@ const PublicDocumentsList = ({
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
   }
 
-  const { data } = usePublicDocumentsQuery(
+  const { data, isLoading } = usePublicDocumentsQuery(
     portalGraphqlClient,
     {
       slug: serviceInstance.slug ?? '',
@@ -169,7 +169,7 @@ const PublicDocumentsList = ({
   const headerRef = useRef<HTMLDivElement>(null);
   useStickyHeaderOffset(headerRef);
 
-  if (!data) {
+  if (isLoading) {
     return <Skeleton className="w-full inset-1/2" />;
   }
 
@@ -199,7 +199,7 @@ const PublicDocumentsList = ({
           }
           paginationControls={
             <PaginationControls
-              totalCount={data.publicDocuments.totalCount}
+              totalCount={data?.publicDocuments.totalCount ?? 0}
               pageSize={pageSize}
               pageIndex={pagination.pageIndex}
               onPaginationChange={onPaginationChange}

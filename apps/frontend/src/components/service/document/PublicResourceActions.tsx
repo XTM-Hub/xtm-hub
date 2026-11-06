@@ -9,7 +9,7 @@ import { getPlatformIdentifier } from '@/utils/platform';
 import { buildSignupRedirect } from '@/utils/redirect';
 import {
   isConnectorResource,
-  PublicDocumentDetailsData,
+  PublicDocumentByServiceSlugItem,
   ServiceSlug,
 } from '@/utils/shareable-resources/shareable-resources.types';
 import {
@@ -29,7 +29,7 @@ import { DownloadIcon } from '@filigran/icon';
 import Link from 'next/link';
 
 interface PublicResourceActionsProps {
-  documentData: PublicDocumentDetailsData;
+  documentData: PublicDocumentByServiceSlugItem;
   serviceInstance: { id: string; slug: string | null | undefined };
   pageUrl: string;
   shareTooltipText?: string;

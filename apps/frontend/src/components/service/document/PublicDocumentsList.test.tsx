@@ -329,7 +329,10 @@ describe('PublicDocumentsList', () => {
   it('should render a skeleton instead of the list while the first page is loading', () => {
     // Given
     mockEmptyFacetQuery();
-    testState.usePublicDocumentsQuery.mockReturnValue({ data: undefined });
+    testState.usePublicDocumentsQuery.mockReturnValue({
+      data: undefined,
+      isLoading: true,
+    });
 
     // When
     testRender(buildElement());
@@ -339,6 +342,24 @@ describe('PublicDocumentsList', () => {
     expect(
       screen.queryByRole('button', { name: FILTERS_BUTTON_LABEL })
     ).not.toBeInTheDocument();
+  });
+
+  it('should render the list with no documents instead of a skeleton when the query is not loading and returned no data', () => {
+    // Given
+    mockEmptyFacetQuery();
+    testState.usePublicDocumentsQuery.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+    });
+
+    // When
+    testRender(buildElement());
+
+    // Then
+    expect(
+      screen.getByRole('button', { name: FILTERS_BUTTON_LABEL })
+    ).toBeInTheDocument();
+    expect(screen.getByText('Utils.DocumentNotFound')).toBeInTheDocument();
   });
 
   it('should query the next page with an encoded cursor when pagination moves to the next page', async () => {
