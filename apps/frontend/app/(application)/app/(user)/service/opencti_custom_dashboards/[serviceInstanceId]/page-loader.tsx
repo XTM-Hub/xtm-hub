@@ -1,10 +1,8 @@
 'use client';
 
 import ShareableResourceServiceList from '@/components/service/components/ShareableResourceServiceList';
-import { Skeleton } from '@/components/ui/skeleton';
 import { useLogicalFiltersFromStorage } from '@/hooks/use-logical-filters-from-storage';
 import { useServiceListStorage } from '@/hooks/use-service-list-storage';
-import { useShareableResourceQueryLoader } from '@/hooks/use-shareable-resource-query-loader';
 import { ServiceListStorageKey } from '@/utils/filters-storage.utils';
 import {
   ServiceSlug,
@@ -17,38 +15,24 @@ interface PageLoaderProps {
 }
 
 const PageLoader = ({ serviceInstance }: PageLoaderProps) => {
-  const { pageSize, search, setSearch, labels, orderMode, orderBy } =
-    useServiceListStorage(ServiceListStorageKey.OpenCTICustomDashboards);
+  const { search, setSearch, labels } = useServiceListStorage(
+    ServiceListStorageKey.OpenCTICustomDashboards
+  );
 
   const logicalFilters = useLogicalFiltersFromStorage({
     serviceInstanceSlug: ServiceSlug.OPEN_CTI_CUSTOM_DASHBOARDS,
     labels,
   });
 
-  const { queryRef } = useShareableResourceQueryLoader({
-    pageSize,
-    orderBy,
-    orderMode,
-    serviceInstanceId: serviceInstance.id,
-    searchTerm: search,
-    logicalFilters,
-  });
-
   return (
-    <>
-      {queryRef ? (
-        <ShareableResourceServiceList
-          serviceInstance={serviceInstance}
-          queryRef={queryRef}
-          search={search}
-          onSearchChange={setSearch}
-          type={ShareableResourceType.OPENCTI_CUSTOM_DASHBOARD}
-          storageKey={ServiceListStorageKey.OpenCTICustomDashboards}
-        />
-      ) : (
-        <Skeleton className="w-full inset-1/2" />
-      )}
-    </>
+    <ShareableResourceServiceList
+      serviceInstance={serviceInstance}
+      logicalFilters={logicalFilters}
+      search={search}
+      onSearchChange={setSearch}
+      type={ShareableResourceType.OPENCTI_CUSTOM_DASHBOARD}
+      storageKey={ServiceListStorageKey.OpenCTICustomDashboards}
+    />
   );
 };
 

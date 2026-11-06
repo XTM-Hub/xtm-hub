@@ -1,44 +1,31 @@
-import { useActiveAndDraftSplit } from '@/components/service/components/service-list-utils';
+import { splitActiveAndDraft } from '@/components/service/components/service-list-utils';
 import { AppServiceContext } from '@/components/service/components/ServiceContext';
 import ServiceList from '@/components/service/components/ServiceList';
 import { AppServiceListStorageKeyContext } from '@/components/service/components/ServiceListStorageKeyContext';
-import {
-  documentItem,
-  documentsFragment,
-  DocumentsListQuery,
-} from '@/components/service/document/document.graphql';
+import { ServiceLoadError } from '@/components/service/components/ServiceLoadError';
 import { useDocumentContext } from '@/components/service/document/use-document-context';
 import { PaginationControls } from '@/components/ui/pagination/PaginationControls';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useDocumentFacetCounts } from '@/hooks/use-document-facet-counts';
+import { LogicalFilters } from '@/hooks/use-logical-filters-from-storage';
 import { useServiceListStorage } from '@/hooks/use-service-list-storage';
 import { useTablePagination } from '@/hooks/use-table-pagination';
-import { toDocumentItem } from '@/utils/documents';
+import { useTranslate } from '@/hooks/use-translate';
+import { portalGraphqlClient } from '@/lib/graphql-client';
 import { ServiceListStorageKey } from '@/utils/filters-storage.utils';
 import {
   SHAREABLE_RESOURCE_SERVICE_SLUG_MAPPING,
   ShareableResourceType,
 } from '@/utils/shareable-resources/shareable-resources.types';
 import { useShareableResourceMapping } from '@/utils/shareable-resources/use-shareable-resource-mapping';
-import {
-  documentItem_fragment$data,
-  documentItem_fragment$key,
-} from '@generated/documentItem_fragment.graphql';
-import { documentsList$key } from '@generated/documentsList.graphql';
-import {
-  documentsQuery,
-  documentsQuery$variables,
-} from '@generated/documentsQuery.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
-import { useEffect, useMemo } from 'react';
-import {
-  PreloadedQuery,
-  usePreloadedQuery,
-  useRefetchableFragment,
-} from 'react-relay';
+import { LogicalFilterInput, useDocumentsListQuery } from '@graphql/generated';
+import { keepPreviousData } from '@tanstack/react-query';
+import { useMemo, useState } from 'react';
 
 export interface ShareableResourceServiceListProps {
-  queryRef: PreloadedQuery<documentsQuery>;
   serviceInstance: serviceInstance_fragment$data;
+  logicalFilters: LogicalFilters;
   search: string;
   onSearchChange: (v: string) => void;
   type: ShareableResourceType;
@@ -50,44 +37,20 @@ export interface ShareableResourceServiceListProps {
  * dashboards, custom views, OpenAEV scenarios, OpenCTI playbooks): loading the documents
  * connection, splitting active/draft documents, wiring the document CRUD context, and
  * rendering the paginated `ServiceList`. Resource-specific filters are passed in via
- * `additionalFilters`.
+ * `logicalFilters`.
  */
 const ShareableResourceServiceList = ({
-  queryRef,
   serviceInstance,
+  logicalFilters,
   search,
   onSearchChange,
   type,
   storageKey,
 }: ShareableResourceServiceListProps) => {
-  const queryData = usePreloadedQuery<documentsQuery>(
-    DocumentsListQuery,
-    queryRef
-  );
-
-  const [data, refetch] = useRefetchableFragment<
-    documentsQuery,
-    documentsList$key
-  >(documentsFragment, queryData);
-
-  const [relayActive, relayDraft] = useActiveAndDraftSplit<
-    documentItem_fragment$data,
-    documentItem_fragment$key
-  >(data?.documents.edges, documentItem);
-  const active = useMemo(
-    () => relayActive.map((item) => toDocumentItem(item)),
-    [relayActive]
-  );
-  const draft = useMemo(
-    () => relayDraft.map((item) => toDocumentItem(item)),
-    [relayDraft]
-  );
-
-  const connectionId = data?.documents.__id;
+  const t = useTranslate();
 
   const context = useDocumentContext({
     serviceInstance,
-    connectionId,
     type,
   });
 
@@ -106,22 +69,12 @@ const ShareableResourceServiceList = ({
     orderMode,
   } = useServiceListStorage(storageKey);
 
-  const { pagination, setPagination, onPaginationChange } = useTablePagination({
-    pageSize,
-    setPageSize,
-    onPaginationChange: (nextPagination, nextCursor) => {
-      refetch({
-        count: nextPagination.pageSize,
-        cursor: nextCursor,
-      } satisfies Partial<documentsQuery$variables>);
-    },
-  });
+  const { pagination, setPagination, cursor, onPaginationChange } =
+    useTablePagination({ pageSize, setPageSize });
 
-  // Reset the page on search/filter/sort change so it stays in sync with the refetched data.
-  useEffect(() => {
-    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-  }, [
-    setPagination,
+  // Reset the page on search/filter/sort change. Done while rendering, not in an
+  // effect, so the stale cursor of the previous page is never sent with the new filters.
+  const filtersSignature = JSON.stringify([
     search,
     labels,
     entityTypes,
@@ -134,6 +87,35 @@ const ShareableResourceServiceList = ({
     orderBy,
     orderMode,
   ]);
+  const [appliedFiltersSignature, setAppliedFiltersSignature] =
+    useState(filtersSignature);
+  if (appliedFiltersSignature !== filtersSignature) {
+    setAppliedFiltersSignature(filtersSignature);
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  }
+
+  const { data, isLoading, isError, refetch } = useDocumentsListQuery(
+    portalGraphqlClient,
+    {
+      count: pagination.pageSize,
+      cursor,
+      orderBy,
+      orderMode,
+      serviceInstanceId: serviceInstance.id,
+      searchTerm: search,
+      parentsOnly: null,
+      logicalFilters: logicalFilters as LogicalFilterInput,
+    },
+    { placeholderData: keepPreviousData }
+  );
+
+  const [active, draft] = useMemo(
+    () =>
+      splitActiveAndDraft(
+        (data?.documents.edges ?? []).map(({ node }) => node)
+      ),
+    [data]
+  );
 
   const serviceInstanceSlug = SHAREABLE_RESOURCE_SERVICE_SLUG_MAPPING[type];
 
@@ -158,6 +140,20 @@ const ShareableResourceServiceList = ({
     facetCounts
   );
 
+  // A failed background refetch keeps the page already on screen.
+  if (isError && !data) {
+    return (
+      <ServiceLoadError
+        message={t('Service.List.LoadError')}
+        onRetry={() => void refetch()}
+      />
+    );
+  }
+
+  if (isLoading || !data) {
+    return <Skeleton className="w-full inset-1/2" />;
+  }
+
   return (
     <AppServiceContext {...context}>
       <AppServiceListStorageKeyContext storageKey={storageKey}>
@@ -167,7 +163,6 @@ const ShareableResourceServiceList = ({
           search={search}
           onSearchChange={onSearchChange}
           additionalFilters={filters}
-          connectionId={connectionId}
           paginationControls={
             <PaginationControls
               totalCount={data.documents.totalCount}

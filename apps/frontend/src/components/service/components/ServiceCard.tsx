@@ -34,14 +34,12 @@ interface ServiceCardProps {
   detailUrl: string;
   shareLinkUrl: string;
   requiredProductVersion?: string;
-  connectionId?: string;
 }
 
 const ServiceCard = ({
   document,
   detailUrl,
   shareLinkUrl,
-  connectionId,
 }: ServiceCardProps) => {
   const t = useTranslate();
   const router = useRouter();
@@ -52,7 +50,6 @@ const ServiceCard = ({
     useServiceContext();
   const context = useDocumentContext({
     serviceInstance,
-    connectionId,
     type: document.type as ShareableResourceType,
   });
 
