@@ -1,6 +1,10 @@
 import { PublicDocumentData } from '@/utils/shareable-resources/shareable-resources.types';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { DocumentImageType, DocumentStatus } from '@graphql/generated';
+import type { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
+import {
+  DocumentImageType,
+  DocumentItemFragment,
+  DocumentStatus,
+} from '@graphql/generated';
 
 export const isDocumentPublished = (status?: string | null): boolean =>
   status === DocumentStatus.Published;
@@ -61,7 +65,7 @@ export const splitExistingAndNewImages = (
 
 export const transformToFileList = (
   filteredImageType: DocumentImageType,
-  document?: documentItem_fragment$data
+  document?: DocumentItemFragment
 ): FileList => {
   return (document?.children_documents ?? []).filter(
     (doc) => doc.image_type === filteredImageType
@@ -69,7 +73,7 @@ export const transformToFileList = (
 };
 
 export const filterDocumentImages = (
-  document?: documentItem_fragment$data | PublicDocumentData
+  document?: DocumentItemFragment | PublicDocumentData
 ) => {
   return (document?.children_documents ?? []).filter(
     (doc) => doc.image_type === DocumentImageType.Image
@@ -77,9 +81,32 @@ export const filterDocumentImages = (
 };
 
 export const findDocumentLogo = (
-  document?: documentItem_fragment$data | PublicDocumentData
+  document?: DocumentItemFragment | PublicDocumentData
 ) => {
   return (document?.children_documents ?? []).find(
     (doc) => doc.image_type === DocumentImageType.Logo
   );
 };
+
+/**
+ * TEMPORARY Relay boundary, removed with the runtime phase of #3523.
+ *
+ * The documents UI is typed on the codegen `DocumentItemFragment`, while the
+ * Slug pages and `ShareableResourceServiceList` still read their data through
+ * Relay's `documentItem_fragment`. Both select exactly the same fields, so the
+ * runtime shape is identical; only the generated types differ (Relay emits one
+ * flat type with optional subtype fields and string-literal enums, codegen
+ * emits a union discriminated on `__typename`). This is the single place where
+ * Relay data crosses into the codegen type: do not add another.
+ */
+export function toDocumentItem(
+  data: documentItem_fragment$data
+): DocumentItemFragment;
+export function toDocumentItem(
+  data: documentItem_fragment$data | null | undefined
+): DocumentItemFragment | undefined;
+export function toDocumentItem(
+  data: documentItem_fragment$data | null | undefined
+): DocumentItemFragment | undefined {
+  return data as unknown as DocumentItemFragment | undefined;
+}

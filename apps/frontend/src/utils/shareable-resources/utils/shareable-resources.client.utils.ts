@@ -11,9 +11,14 @@ import {
   ServiceInfo,
   ServiceSlug,
   ShareableResourceType,
+  SolutionCategoryFields,
 } from '@/utils/shareable-resources/shareable-resources.types';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { DocumentMetadataKeyCode, IntegrationType } from '@graphql/generated';
+import {
+  DocumentItemFragment,
+  DocumentMetadataKeyCode,
+  IntegrationType,
+  LicenseType,
+} from '@graphql/generated';
 
 export function getServiceInfo(
   serviceInstance: { id: string; slug: ServiceSlug },
@@ -34,15 +39,9 @@ export function getServiceInfo(
 /**
  * Maps each metadata field to its real value type so `docHasMetadata` can
  * narrow correctly instead of defaulting to `unknown`.
- *
- * `integration_type`/`license_type` are widened to `string`/`string | null`
- * instead of the `IntegrationType`/`LicenseType` enums: Relay generates its
- * own local literal-union type per fragment for these fields, and
- * intersecting it with the schema enum collapses to `never`. Cast to the
- * enum at call sites that need it.
  */
 type DocumentMetadataValueType = {
-  integration_type: string;
+  integration_type: IntegrationType;
   product_version: string | null;
   manager_supported: boolean;
   verified: boolean;
@@ -53,8 +52,8 @@ type DocumentMetadataValueType = {
   datasheet_url: string | null;
   blogpost_url: string | null;
   demo_url: string | null;
-  license_type: string | null;
-  solution_categories: ReadonlyArray<{ id: string; name: string }> | null;
+  license_type: LicenseType | null;
+  solution_categories: Array<SolutionCategoryFields> | null;
   container_image: string | null;
   source_code: string | null;
   subscription_link: string | null;
@@ -82,14 +81,14 @@ export const docHasMetadata = <
  * `getEntityTypes`/`ShareableResourceEntityTypes`.
  */
 export const getDocumentEntityTypes = (
-  document: documentItem_fragment$data | PublicDocumentData
+  document: DocumentItemFragment | PublicDocumentData
 ): readonly string[] | null =>
   docHasMetadata(document, DocumentMetadataKeyCode.EntityTypes)
     ? document.entity_types
     : null;
 
 export const isResourceDownloadable = (
-  document: documentItem_fragment$data | PublicDocumentData
+  document: DocumentItemFragment | PublicDocumentData
 ): boolean => {
   return (
     !hasProperty<typeof document, 'integration_type', IntegrationType>(
@@ -107,7 +106,7 @@ const DEPLOYABLE_RESOURCE_TYPES: string[] = [
 ];
 
 export const isResourceDeployable = (
-  document: documentItem_fragment$data | PublicDocumentData
+  document: DocumentItemFragment | PublicDocumentData
 ): boolean => {
   if (!isDocumentPublished(document.status)) {
     return false;
