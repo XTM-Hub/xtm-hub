@@ -1,5 +1,6 @@
 import {
   type FILTER_NAME_LABELS,
+  type METRICS_PERIOD_LABELS,
   type ORDER_BY_LABELS,
   type ORDER_MODE_LABELS,
   type PRODUCT_LABELS,
@@ -14,7 +15,10 @@ import {
   type SHAREABLE_RESOURCE_PRODUCT_MAPPING,
   type ShareableResourceType,
 } from '@/utils/shareable-resources/shareable-resources.types';
-import { type PlatformIdentifier } from '@graphql/generated';
+import {
+  type PlatformIdentifier,
+  type SaasPlatformMetricsPeriod,
+} from '@graphql/generated';
 
 export type AnalyticsPageType =
   | 'Home'
@@ -49,7 +53,11 @@ type AnalyticsLibrary =
 type AnalyticsProduct =
   (typeof SHAREABLE_RESOURCE_PRODUCT_MAPPING)[ShareableResourceType];
 
-type AnalyticsPlatformProduct = (typeof PRODUCT_LABELS)[PlatformIdentifier];
+export type AnalyticsPlatformProduct =
+  (typeof PRODUCT_LABELS)[PlatformIdentifier];
+
+type AnalyticsMetricsPeriod =
+  (typeof METRICS_PERIOD_LABELS)[SaasPlatformMetricsPeriod];
 
 export interface AnalyticsResource {
   id: string;
@@ -115,7 +123,8 @@ export interface AnalyticsUserProperties {
 }
 
 export interface AnalyticsEvents {
-  page_view: AnalyticsPageContext & AnalyticsPage;
+  page_view: AnalyticsPageContext &
+    AnalyticsPage & { product?: AnalyticsPlatformProduct };
   ui_click: {
     element_id: AnalyticsElementId;
     domain?: AnalyticsDomain;
@@ -168,6 +177,10 @@ export interface AnalyticsEvents {
   sign_up: { method: 'HubSpot form' };
   feature_vote: { feature_name: string };
   view_trial: { trial_state: AnalyticsTrialState };
+  view_platform_metrics: {
+    product: AnalyticsPlatformProduct;
+    period: AnalyticsMetricsPeriod;
+  };
 }
 
 export type AnalyticsEventName = keyof AnalyticsEvents;

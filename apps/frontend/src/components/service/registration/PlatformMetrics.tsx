@@ -10,15 +10,23 @@ import { StorageUsageChart } from '@/components/service/registration/StorageUsag
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTranslate } from '@/hooks/use-translate';
+import { trackEvent } from '@/lib/analytics/analytics.client';
+import {
+  METRICS_PERIOD_LABELS,
+  PRODUCT_LABELS,
+} from '@/lib/analytics/analytics.consts';
 import {
   MetricType,
+  PlatformIdentifier,
   SaasPlatformMetrics,
   SaasPlatformMetricsPeriod,
   SaasPlatformSla,
   SaasPlatformStorage,
 } from '@graphql/generated';
+import { useEffect, useRef } from 'react';
 
 interface PlatformMetricsProps {
+  platformIdentifier: PlatformIdentifier;
   metrics?: SaasPlatformMetrics | null;
   storage?: SaasPlatformStorage | null;
   // Null without any SLA to show: the section is left out.
@@ -29,6 +37,7 @@ interface PlatformMetricsProps {
 }
 
 export const PlatformMetrics = ({
+  platformIdentifier,
   metrics,
   storage,
   sla,
@@ -37,6 +46,19 @@ export const PlatformMetrics = ({
   onPeriodChange,
 }: PlatformMetricsProps) => {
   const t = useTranslate();
+  const isViewTracked = useRef(false);
+
+  useEffect(() => {
+    if (isViewTracked.current) {
+      return;
+    }
+    isViewTracked.current = true;
+    trackEvent('view_platform_metrics', {
+      product: PRODUCT_LABELS[platformIdentifier],
+      period: METRICS_PERIOD_LABELS[period],
+    });
+  }, [platformIdentifier, period]);
+
   // Another period would not bring the metrics back: the storage does not depend on it.
   const isUnavailable = !isLoading && !metrics && !storage;
   const databaseUsage = findDatabaseUsage(metrics, storage);
