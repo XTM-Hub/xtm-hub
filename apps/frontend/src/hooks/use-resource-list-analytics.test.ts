@@ -62,6 +62,26 @@ describe('useResourceListAnalytics', () => {
     expect(readTrackedEvents('view_item_list')).toHaveLength(1);
   });
 
+  it('should send nothing while the results are not the ones of the current list, then send the list once they are', () => {
+    // Given
+    const { rerender } = renderHook(
+      (params: HookParams) => useResourceListAnalytics(params),
+      { initialProps: makeParams({ enabled: false, resources: [] }) }
+    );
+
+    // When
+    rerender(makeParams({ enabled: false, resources: [] }));
+
+    // Then
+    expect(readTrackedEvents('view_item_list')).toHaveLength(0);
+
+    // When
+    rerender(makeParams({ enabled: true }));
+
+    // Then
+    expect(readTrackedEvents('view_item_list')).toHaveLength(1);
+  });
+
   it('should send the trimmed term when the search changes', () => {
     // Given
     const { rerender } = renderListAnalytics();

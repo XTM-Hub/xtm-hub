@@ -1,7 +1,9 @@
 import { ServiceListDisplayMode } from '@/components/service/components/header/ServiceListHeader';
 import testRender from '@/utils/test/test-render';
-import { publicDocumentListItemFragment$data } from '@generated/publicDocumentListItemFragment.graphql';
-import { SeoServiceInstanceItemFragment } from '@graphql/generated';
+import {
+  PublicDocumentListItemFragment,
+  SeoServiceInstanceItemFragment,
+} from '@graphql/generated';
 import { screen, within } from '@testing-library/react';
 import { useRouter } from 'next/navigation';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -57,7 +59,7 @@ describe('PublicShareableDocumentList', () => {
       short_description: SecondDocumentDescription,
       use_cases: [],
     },
-  ] as publicDocumentListItemFragment$data[];
+  ] as PublicDocumentListItemFragment[];
 
   it('renders one public card per document with expected public URLs in tab mode', () => {
     // Given / When

@@ -1,3 +1,4 @@
+import PublicDocumentsList from '@/components/service/document/PublicDocumentsList';
 import {
   getHeroSectionLibraryProps,
   HeroSectionLibrary,
@@ -5,7 +6,6 @@ import {
 import { BreadcrumbNav } from '@/components/ui/BreadcrumbNav';
 import { getTranslate } from '@/hooks/get-translate';
 import type { PublicLocale } from '@/i18n/config';
-import { RelayProvider } from '@/relay/relay-provider';
 import { formatPersonNames } from '@/utils/format/name';
 import {
   buildFiligranOrganizationJsonLd,
@@ -25,7 +25,6 @@ import { Metadata } from 'next';
 import { setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { cache } from 'react';
-import { PublicDocumentListPageLoader } from './public-document-list-page-loader';
 
 /**
  * Fetch the data for the page with caching to avoid multiple requests
@@ -188,12 +187,10 @@ const Page = async ({
 
       <HeroSectionLibrary {...heroSectionProps} />
 
-      <RelayProvider>
-        <PublicDocumentListPageLoader
-          baseUrl={baseUrl}
-          serviceInstance={serviceInstance}
-        />
-      </RelayProvider>
+      <PublicDocumentsList
+        baseUrl={baseUrl}
+        serviceInstance={serviceInstance}
+      />
     </>
   );
 };

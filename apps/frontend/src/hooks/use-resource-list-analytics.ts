@@ -12,6 +12,8 @@ import { useEffect, useRef } from 'react';
 interface UseResourceListAnalyticsParams extends ResourceListResults {
   resourceType: ShareableResourceType;
   variables: Pick<documentsQuery$variables, 'searchTerm' | 'logicalFilters'>;
+  /** False while the results are not the ones of the current search and filters (loading, stale placeholder). */
+  enabled?: boolean;
 }
 
 export const useResourceListAnalytics = ({
@@ -19,6 +21,7 @@ export const useResourceListAnalytics = ({
   variables,
   totalCount,
   resources,
+  enabled = true,
 }: UseResourceListAnalyticsParams) => {
   const isAnalyticsEnabled = useAnalyticsEnabled();
   const previousSnapshot = useRef<ResourceListSnapshot | null>(null);
@@ -28,6 +31,9 @@ export const useResourceListAnalytics = ({
   useEffect(() => {
     if (!isAnalyticsEnabled) {
       previousSnapshot.current = null;
+      return;
+    }
+    if (!enabled) {
       return;
     }
     const snapshot = { resourceType, searchTerm, filters };
@@ -45,6 +51,7 @@ export const useResourceListAnalytics = ({
     }
   }, [
     isAnalyticsEnabled,
+    enabled,
     resourceType,
     searchTerm,
     filters,
