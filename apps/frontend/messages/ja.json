@@ -50,7 +50,7 @@
     "SearchPlatform": "プラットフォーム検索",
     "ClearSearch": "検索をクリア",
     "Tour": {
-      "Documentation": "ドキュメント",
+      "GuidedTour": "ガイド付きツアー",
       "Close": "ツアーを閉じる",
       "PreviousStep": "前のステップへ移動",
       "NextStep": "次のステップへ移動",

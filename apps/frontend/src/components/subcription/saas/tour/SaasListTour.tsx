@@ -194,7 +194,7 @@ export const SaasListTourButton = () => {
         />
       }
       onClick={startTour}>
-      {t('CSMBoard.Tour.Documentation')}
+      {t('CSMBoard.Tour.GuidedTour')}
     </Button>
   );
 };
