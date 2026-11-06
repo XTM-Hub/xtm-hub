@@ -1554,6 +1554,8 @@
     "GoTo": "Aller au service",
     "GoToAdminLabel": "Administrer",
     "List": {
+      "LoadError": "Les documents n'ont pas pu être chargés.",
+      "Retry": "Réessayer",
       "ViewTab": "Sélectionner l'affichage par onglets",
       "ViewList": "Sélectionner l'affichage sous forme de liste",
       "Filters": "Filtres",
