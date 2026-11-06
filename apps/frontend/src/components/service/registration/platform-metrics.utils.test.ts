@@ -65,11 +65,11 @@ describe('findDatabaseUsage', () => {
   const esSeries = { metric_type: MetricType.EsUsedSize, points: esPoints };
 
   it.each`
-    case                                            | databaseMetrics                              | storage                                                         | expected
-    ${'Elasticsearch when its usage is sent'}       | ${databaseMetrics(esSeries, postgresSeries)} | ${{ es_used_size: esUsage, postgres_used_size: postgresUsage }} | ${{ points: esPoints, storage: esUsage }}
-    ${'Elasticsearch when only its series is sent'} | ${databaseMetrics(esSeries, postgresSeries)} | ${null}                                                         | ${{ points: esPoints, storage: undefined }}
-    ${'PostgreSQL without Elasticsearch'}           | ${databaseMetrics(postgresSeries)}           | ${{ es_used_size: null, postgres_used_size: postgresUsage }}    | ${{ points: postgresPoints, storage: postgresUsage }}
-    ${'no usage without any database measure'}      | ${null}                                      | ${null}                                                         | ${{ points: [], storage: undefined }}
+    case                                         | databaseMetrics                              | storage                                                         | expected
+    ${'PostgreSQL when its usage is sent'}       | ${databaseMetrics(esSeries, postgresSeries)} | ${{ es_used_size: esUsage, postgres_used_size: postgresUsage }} | ${{ points: postgresPoints, storage: postgresUsage }}
+    ${'PostgreSQL when only its series is sent'} | ${databaseMetrics(esSeries, postgresSeries)} | ${null}                                                         | ${{ points: postgresPoints, storage: undefined }}
+    ${'Elasticsearch without PostgreSQL'}        | ${databaseMetrics(esSeries)}                 | ${{ es_used_size: esUsage, postgres_used_size: null }}          | ${{ points: esPoints, storage: esUsage }}
+    ${'no usage without any database measure'}   | ${null}                                      | ${null}                                                         | ${{ points: [], storage: undefined }}
   `(
     'should return the usage of $case',
     ({

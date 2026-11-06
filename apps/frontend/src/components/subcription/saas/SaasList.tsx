@@ -47,7 +47,7 @@ import {
   SaasPlatformHealthIssue,
   SaasPlatformOrdering,
   type SaasPlatformRowFragment,
-  type SaasProduct,
+  SaasProduct,
   ServiceDefinitionIdentifier,
   useSaasManagerPlatformsListQuery,
 } from '@graphql/generated';
@@ -165,8 +165,7 @@ export const SaasList = () => {
           return (
             <Link
               href={
-                registeredPlatform?.identifier ===
-                ServiceDefinitionIdentifier.OpenaevRegistration
+                row.original.product === SaasProduct.Oaev
                   ? 'https://docs.hub.filigran.io/latest/user/openaev-connection/'
                   : 'https://docs.hub.filigran.io/latest/user/opencti-connection/'
               }

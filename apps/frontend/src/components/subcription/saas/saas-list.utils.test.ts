@@ -114,8 +114,8 @@ describe('getSaasProductName', () => {
 describe('getDatabaseUsagePercent', () => {
   it.each`
     case                                            | storage                                                                   | percent
-    ${'the Elasticsearch usage when it is sent'}    | ${{ es_used_size: { percent: 85 }, postgres_used_size: { percent: 12 } }} | ${85}
-    ${'the PostgreSQL usage without Elasticsearch'} | ${{ es_used_size: null, postgres_used_size: { percent: 12 } }}            | ${12}
+    ${'the PostgreSQL usage when it is sent'}       | ${{ es_used_size: { percent: 85 }, postgres_used_size: { percent: 12 } }} | ${12}
+    ${'the Elasticsearch usage without PostgreSQL'} | ${{ es_used_size: { percent: 85 }, postgres_used_size: null }}            | ${85}
     ${'nothing without any database usage'}         | ${null}                                                                   | ${undefined}
   `('should return $case', ({ storage, percent }) => {
     // Given the storage the SaaS Manager measured for a platform

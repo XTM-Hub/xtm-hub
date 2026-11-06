@@ -39,11 +39,11 @@ export const SAAS_PRODUCTS = [
 export const getSaasProductName = (product: SaasProduct): string =>
   PRODUCT_NAME_BY_SAAS_PRODUCT[product];
 
-// A platform without Elasticsearch stores its data in PostgreSQL only, as the backend rates its database.
+// A platform with PostgreSQL stores its data there and only indexes it in Elasticsearch; one without stores it in Elasticsearch, as the backend rates its database.
 export const getDatabaseUsagePercent = (
   storage: SaasPlatformRowFragment['storage']
 ): number | null | undefined =>
-  (storage?.es_used_size ?? storage?.postgres_used_size)?.percent;
+  (storage?.postgres_used_size ?? storage?.es_used_size)?.percent;
 
 // The measure behind a health issue of a platform, as a ratio (1 is 100 %): the storages are sent as percentages.
 export const getHealthIssueRatio = (

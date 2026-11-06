@@ -1214,7 +1214,8 @@ describe('product information helper', () => {
     it.each`
       case                                                     | storage                                                                     | health_issues
       ${'the PostgreSQL usage when Elasticsearch is not sent'} | ${{ postgres_used_size: storageUsage(95) }}                                 | ${[SaasPlatformHealthIssue.Database]}
-      ${'the Elasticsearch usage over the PostgreSQL one'}     | ${{ es_used_size: storageUsage(10), postgres_used_size: storageUsage(95) }} | ${[]}
+      ${'the Elasticsearch usage when PostgreSQL is not sent'} | ${{ es_used_size: storageUsage(95) }}                                       | ${[SaasPlatformHealthIssue.Database]}
+      ${'the PostgreSQL usage over the Elasticsearch one'}     | ${{ es_used_size: storageUsage(95), postgres_used_size: storageUsage(10) }} | ${[]}
     `(
       'should rate the database with $case',
       async ({ storage, health_issues }) => {

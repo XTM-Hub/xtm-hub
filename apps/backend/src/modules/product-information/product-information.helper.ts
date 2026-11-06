@@ -321,11 +321,11 @@ const isSlaMissed = (availability: number): boolean =>
   Math.round(availability * SAAS_PLATFORM_SLA_RATIO_SCALE) <
   Math.round(SAAS_PLATFORM_SLA_TARGET * SAAS_PLATFORM_SLA_RATIO_SCALE);
 
-// A platform without Elasticsearch stores its data in PostgreSQL only.
+// A platform with PostgreSQL stores its data there and only indexes it in Elasticsearch; one without stores it in Elasticsearch.
 const getDatabaseUsage = (
   storage: SaasPlatformStorage | null
 ): SaasPlatformStorageUsage | null =>
-  storage?.es_used_size ?? storage?.postgres_used_size ?? null;
+  storage?.postgres_used_size ?? storage?.es_used_size ?? null;
 
 const isStorageUsageHigh = (percent: number): boolean =>
   percent > SAAS_PLATFORM_STORAGE_USAGE_HIGH_PERCENT;
