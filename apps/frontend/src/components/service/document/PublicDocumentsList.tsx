@@ -178,7 +178,11 @@ const PublicDocumentsList = ({
 
   useResourceListAnalytics({
     resourceType,
-    variables: { searchTerm: search, logicalFilters },
+    variables: {
+      searchTerm: search,
+      logicalFilters:
+        (logicalFilters as LogicalFilterInput | undefined) ?? null,
+    },
     totalCount: data?.publicDocuments.totalCount ?? 0,
     resources: documents,
     enabled: !!data && !isPlaceholderData,

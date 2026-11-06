@@ -135,7 +135,10 @@ const ShareableResourceServiceList = ({
 
   useResourceListAnalytics({
     resourceType: type,
-    variables: { searchTerm: search, logicalFilters },
+    variables: {
+      searchTerm: search,
+      logicalFilters: logicalFilters as LogicalFilterInput,
+    },
     totalCount: data?.documents.totalCount ?? 0,
     resources: visibleResources,
     enabled: !!data && !isPlaceholderData,
