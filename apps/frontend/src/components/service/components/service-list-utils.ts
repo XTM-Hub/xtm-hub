@@ -11,7 +11,7 @@ export const splitPublishedAndOthers = <TDocument extends { status: string }>(
   documents.filter(({ status }) => !isDocumentPublished(status)),
 ];
 
-export function useActiveAndDraftSplit<
+export function usePublishedAndDraftSplit<
   TFragmentData extends { status: string },
   TFragmentKey extends KeyType<TFragmentData>,
 >(
