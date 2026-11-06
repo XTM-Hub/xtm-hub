@@ -291,6 +291,8 @@ declare module 'express-session' {
     referer: string;
     // Auth0 account refused for an unverified email, used to resend the email
     unverifiedIdpSubject: string;
+    // A failed sign-in was started again, which happens once only
+    signInRestarted: boolean;
   }
 }
 
