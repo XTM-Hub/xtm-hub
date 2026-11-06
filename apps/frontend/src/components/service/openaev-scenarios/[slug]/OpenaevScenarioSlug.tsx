@@ -8,6 +8,7 @@ import {
   DocumentsItemQuery,
 } from '@/components/service/document/document.graphql';
 import { useDocumentContext } from '@/components/service/document/use-document-context';
+import { toDocumentItem } from '@/utils/documents';
 import { APP_PATH } from '@/utils/path/constant';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 import { documentItem_fragment$key } from '@generated/documentItem_fragment.graphql';
@@ -26,9 +27,8 @@ const OpenaevScenarioSlug = ({
 }: OpenAEVScenarioSlugProps) => {
   const data = usePreloadedQuery<documentQuery>(DocumentsItemQuery, queryRef);
 
-  const documentData = readInlineData<documentItem_fragment$key>(
-    documentItem,
-    data.document
+  const documentData = toDocumentItem(
+    readInlineData<documentItem_fragment$key>(documentItem, data.document)
   );
 
   const breadcrumbValue = [

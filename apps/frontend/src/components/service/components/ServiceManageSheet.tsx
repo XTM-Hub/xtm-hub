@@ -1,6 +1,5 @@
 'use client';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { ServiceRestriction } from '@graphql/generated';
+import { DocumentItemFragment, ServiceRestriction } from '@graphql/generated';
 
 import { useServiceContext } from '@/components/service/components/ServiceContext';
 import { ServiceFormValues } from '@/components/service/components/subscribable-services.types';
@@ -15,7 +14,7 @@ import { Button } from '@filigran/design-system';
 import { useState } from 'react';
 
 interface ServiceManageSheetProps {
-  document?: documentItem_fragment$data;
+  document?: DocumentItemFragment;
   variant?: 'menu' | 'button';
   open?: boolean;
   setOpen?: (open: boolean) => void;

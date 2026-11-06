@@ -6,7 +6,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { useTranslate } from '@/hooks/use-translate';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
+import { DocumentItemFragment } from '@graphql/generated';
 import { ControllerRenderProps, FieldValues } from 'react-hook-form';
 
 export interface ServiceFormReplaceFileTexts {
@@ -18,7 +18,7 @@ export interface ServiceFormReplaceFileTexts {
 interface ServiceFormReplaceFileFieldProps {
   field: ControllerRenderProps<FieldValues, string>;
   setIsDirty: (isDirty: boolean) => void;
-  document?: documentItem_fragment$data;
+  document?: DocumentItemFragment;
   texts: ServiceFormReplaceFileTexts;
   accept: string;
 }

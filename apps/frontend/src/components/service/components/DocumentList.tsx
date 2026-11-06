@@ -10,17 +10,17 @@ import {
   APP_PATH,
   PUBLIC_CYBERSECURITY_SOLUTIONS_PATH,
 } from '@/utils/path/constant';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { useContext, useMemo } from 'react';
 
 import { DataTable } from '@/components/ui/data-table';
 import useScrollPosition from '@/hooks/use-scroll-position';
 import { useTranslate } from '@/hooks/use-translate';
 import { getDataTableLabels } from '@/utils/design-system/data-table';
+import { DocumentItemFragment } from '@graphql/generated';
 import { useRouter } from 'next/navigation';
 
 interface DocumentListProps {
-  documents: documentItem_fragment$data[];
+  documents: DocumentItemFragment[];
   displayMode: ServiceListDisplayMode;
   connectionId?: string;
 }

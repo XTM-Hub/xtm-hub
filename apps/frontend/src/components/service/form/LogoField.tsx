@@ -19,13 +19,12 @@ import {
 import { EntityTypeOrFiligranLogo } from '@/utils/shareable-resources/entity-type';
 import { FileSelect, IconButton } from '@filigran/design-system';
 import { DeleteIcon } from '@filigran/icon';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { DocumentSourceType } from '@graphql/generated';
+import { DocumentItemFragment, DocumentSourceType } from '@graphql/generated';
 import { ControllerRenderProps, FieldValues, useWatch } from 'react-hook-form';
 
 interface ServiceFormLogoFieldProps {
   field: ControllerRenderProps<FieldValues, string>;
-  document?: documentItem_fragment$data;
+  document?: DocumentItemFragment;
 }
 
 export const ServiceFormLogoField = ({

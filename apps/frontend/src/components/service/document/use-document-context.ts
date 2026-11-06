@@ -34,10 +34,10 @@ import {
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 import { documentCreateMutation } from '@generated/documentCreateMutation.graphql';
 import { documentDeleteMutation } from '@generated/documentDeleteMutation.graphql';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { documentUpdateMutation } from '@generated/documentUpdateMutation.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 import {
+  DocumentItemFragment,
   DocumentMetadataKeyCode,
   IntegrationType,
   LicenseType,
@@ -161,7 +161,7 @@ export function useDocumentContext({
   );
 
   const handleDeleteSheet = async (
-    document: documentItem_fragment$data,
+    document: DocumentItemFragment,
     onCompleted: () => void
   ) => {
     deleteMutation({
@@ -184,7 +184,7 @@ export function useDocumentContext({
 
   const handleUpdateSheet = async (
     values: ServiceFormValues,
-    resource: documentItem_fragment$data,
+    resource: DocumentItemFragment,
     onSuccess: (serviceName: string) => void,
     onError: (error: Error) => void
   ) => {
