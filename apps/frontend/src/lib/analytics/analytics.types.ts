@@ -1,7 +1,9 @@
 import {
   type FILTER_NAME_LABELS,
+  type METRICS_PERIOD_LABELS,
   type ORDER_BY_LABELS,
   type ORDER_MODE_LABELS,
+  type PRODUCT_LABELS,
 } from '@/lib/analytics/analytics.consts';
 import {
   type AnalyticsDomain,
@@ -13,6 +15,10 @@ import {
   type SHAREABLE_RESOURCE_PRODUCT_MAPPING,
   type ShareableResourceType,
 } from '@/utils/shareable-resources/shareable-resources.types';
+import {
+  type PlatformIdentifier,
+  type SaasPlatformMetricsPeriod,
+} from '@graphql/generated';
 
 export type AnalyticsPageType =
   | 'Home'
@@ -46,6 +52,12 @@ type AnalyticsLibrary =
 
 type AnalyticsProduct =
   (typeof SHAREABLE_RESOURCE_PRODUCT_MAPPING)[ShareableResourceType];
+
+export type AnalyticsPlatformProduct =
+  (typeof PRODUCT_LABELS)[PlatformIdentifier];
+
+type AnalyticsMetricsPeriod =
+  (typeof METRICS_PERIOD_LABELS)[SaasPlatformMetricsPeriod];
 
 export interface AnalyticsResource {
   id: string;
@@ -91,6 +103,17 @@ export type AnalyticsDeployEligibility =
   | 'Enterprise Edition required'
   | 'Resource not deployable';
 
+export type AnalyticsTrialState =
+  | 'Personal space'
+  | 'Not allowed'
+  | 'Request form'
+  | 'Pending'
+  | 'Provisioning'
+  | 'Active'
+  | 'Cancelled'
+  | 'Expired'
+  | 'Failed';
+
 export interface AnalyticsUserProperties {
   auth_state: 'Signed in' | 'Signed out';
   is_internal: YesNo | null;
@@ -100,7 +123,8 @@ export interface AnalyticsUserProperties {
 }
 
 export interface AnalyticsEvents {
-  page_view: AnalyticsPageContext & AnalyticsPage;
+  page_view: AnalyticsPageContext &
+    AnalyticsPage & { product?: AnalyticsPlatformProduct };
   ui_click: {
     element_id: AnalyticsElementId;
     domain?: AnalyticsDomain;
@@ -143,6 +167,19 @@ export interface AnalyticsEvents {
   sort_change: AnalyticsLibraryParams & {
     order_by: AnalyticsOrderBy;
     order_mode: AnalyticsOrderMode;
+  };
+  generate_lead:
+    | { lead_source: 'Trial request' | 'Sales contact' }
+    | {
+        lead_source: 'Enterprise Edition contact';
+        product: AnalyticsPlatformProduct;
+      };
+  sign_up: { method: 'HubSpot form' };
+  feature_vote: { feature_name: string };
+  view_trial: { trial_state: AnalyticsTrialState };
+  view_platform_metrics: {
+    product: AnalyticsPlatformProduct;
+    period: AnalyticsMetricsPeriod;
   };
 }
 

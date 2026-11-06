@@ -210,6 +210,21 @@ describe('AnalyticsTracker', () => {
     ]);
   });
 
+  it('should send the platform product with the page view when a platform details page opens', () => {
+    // Given
+    navigateTo(`/app/service/xtmone_registration/${SERVICE_INSTANCE_ID}`, {
+      serviceInstanceId: SERVICE_INSTANCE_ID,
+    });
+
+    // When
+    renderTracker();
+
+    // Then
+    expect(readTrackedEvents('page_view')).toEqual([
+      expect.objectContaining({ product: 'XTM One' }),
+    ]);
+  });
+
   it('should send the previous page location as the referrer when the visitor navigates', () => {
     // Given
     navigateTo(PUBLIC_PATHNAME, { locale: 'en', slug: 'opencti-playbooks' });

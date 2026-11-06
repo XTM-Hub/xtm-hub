@@ -52,7 +52,7 @@ export const FeatureVoteCard = ({
       footer={
         <div data-no-open-detail>
           <FeatureVoteButton
-            featureId={feature.id}
+            feature={feature}
             serviceInstanceId={serviceInstanceId}
             hasMyVote={feature.has_my_vote}
             isAuthenticated={isAuthenticated}

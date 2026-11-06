@@ -12,6 +12,7 @@ import {
 import { USER_PROPERTIES_WAIT_MS } from '@/lib/analytics/analytics.consts';
 import {
   resolveAnalyticsPage,
+  resolveAnalyticsPageProduct,
   toAnalyticsPageLocation,
   toAnalyticsReferrer,
 } from '@/lib/analytics/analytics.page';
@@ -83,7 +84,11 @@ const AnalyticsTracker = ({ measurementId }: AnalyticsTrackerProps) => {
     };
     trackedPageLocation.current = pageLocation;
     setAnalyticsPageContext(context);
-    trackEvent('page_view', { ...context, ...page });
+    trackEvent('page_view', {
+      ...context,
+      ...page,
+      product: resolveAnalyticsPageProduct(page.page_template),
+    });
   }, [pathname, page]);
 
   return (

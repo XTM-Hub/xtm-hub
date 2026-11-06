@@ -1,4 +1,5 @@
 import SignUp from '@/components/signup/SignUp';
+import { readTrackedEvents, startAnalytics } from '@/utils/test/analytics';
 import testRender from '@/utils/test/test-render';
 import { fireEvent, screen } from '@testing-library/react';
 import { useSearchParams } from 'next/navigation';
@@ -33,7 +34,12 @@ const REDIRECT_PARAM = '/app/service/opencti?tab=1';
 
 type HubspotWindow = Window & {
   hbspt?: {
-    forms: { create: (options: { target: string }) => void };
+    forms: {
+      create: (options: {
+        target: string;
+        onFormSubmitted: () => void;
+      }) => void;
+    };
   };
 };
 
@@ -77,6 +83,21 @@ const whenHubspotScriptLoads = () => {
 describe('SignUp', () => {
   afterEach(() => {
     delete (window as HubspotWindow).hbspt;
+  });
+
+  it('should send a sign up when HubSpot reports the form as submitted', () => {
+    // Given
+    startAnalytics();
+    (window as HubspotWindow).hbspt = {
+      forms: { create: ({ onFormSubmitted }) => onFormSubmitted() },
+    };
+    testRender(<SignUp />);
+
+    // When
+    whenHubspotScriptLoads();
+
+    // Then
+    expect(readTrackedEvents('sign_up')).toEqual([{ method: 'HubSpot form' }]);
   });
 
   it('should present the sign up page to a new visitor', () => {

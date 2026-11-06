@@ -8,7 +8,10 @@ export interface ServiceXTMOneRegistrationPageProps {
 const Page = ({ params }: ServiceXTMOneRegistrationPageProps) => {
   return (
     <>
-      <RegisteredPlatformOverview params={params} />
+      <RegisteredPlatformOverview
+        params={params}
+        platformIdentifier={PlatformIdentifier.Xtmone}
+      />
       <RegistrationLearnMore platformIdentifier={PlatformIdentifier.Xtmone} />
     </>
   );

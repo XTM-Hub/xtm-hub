@@ -8,7 +8,10 @@ export interface ServiceOpenCTIRegistrationPageProps {
 const Page = ({ params }: ServiceOpenCTIRegistrationPageProps) => {
   return (
     <>
-      <RegisteredPlatformOverview params={params} />
+      <RegisteredPlatformOverview
+        params={params}
+        platformIdentifier={PlatformIdentifier.Opencti}
+      />
       <RegistrationLearnMore platformIdentifier={PlatformIdentifier.Opencti} />
     </>
   );

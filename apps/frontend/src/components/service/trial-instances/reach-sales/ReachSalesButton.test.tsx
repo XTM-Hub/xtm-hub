@@ -1,4 +1,6 @@
 import { ReachSalesButton } from '@/components/service/trial-instances/reach-sales/ReachSalesButton';
+import { readTrackedEvents, startAnalytics } from '@/utils/test/analytics';
+import { mockGraphqlMutation } from '@/utils/test/msw/graphql-api';
 import { mswServer } from '@/utils/test/msw/server';
 import testRender from '@/utils/test/test-render';
 import {
@@ -8,7 +10,7 @@ import {
 } from '@graphql/generated';
 import { screen, waitFor, within } from '@testing-library/react';
 import { graphql, HttpResponse } from 'msw';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const showSnackbarMock = vi.hoisted(() => vi.fn());
 
@@ -92,6 +94,48 @@ describe('ReachSalesButton', () => {
     // Then
     await waitFor(() => {
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('lead', () => {
+    beforeEach(() => {
+      startAnalytics();
+    });
+
+    it('should send a sales contact lead when the request is sent', async () => {
+      // Given
+      mockReachSales();
+
+      // When
+      await renderAndSubmitReachSalesForm();
+
+      // Then
+      await waitFor(() => {
+        expect(readTrackedEvents('generate_lead')).toEqual([
+          { lead_source: 'Sales contact' },
+        ]);
+      });
+    });
+
+    it('should not send a lead when the server rejects the request', async () => {
+      // Given
+      mswServer.use(
+        mockGraphqlMutation({
+          queryName: GQL_OPERATION_REACH_SALES,
+          errors: [{ message: 'UNKNOWN_ERROR' }],
+        })
+      );
+
+      // When
+      await renderAndSubmitReachSalesForm();
+
+      // Then
+      await waitFor(() => {
+        expect(showSnackbarMock).toHaveBeenCalledWith(
+          expect.objectContaining({ severity: 'error' })
+        );
+      });
+      expect(readTrackedEvents('generate_lead')).toEqual([]);
     });
   });
 });
