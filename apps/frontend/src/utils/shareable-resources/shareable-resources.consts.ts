@@ -1,5 +1,5 @@
 import { ServiceSlug } from '@/utils/shareable-resources/shareable-resources.types';
-import { IntegrationType } from '@graphql/generated';
+import { DocumentOrdering, IntegrationType } from '@graphql/generated';
 
 export const OPENCTI_INTEGRATION_URL_CONFIGS: Partial<
   Record<IntegrationType, string>
@@ -50,3 +50,12 @@ export const localeMap: Record<ServiceSlug, string> = {
   [ServiceSlug.OPEN_AEV_SCENARIOS]: 'OpenAEVScenario',
   [ServiceSlug.OPEN_CTI_PLAYBOOKS]: 'OpenCTIPlaybook',
 };
+
+export const SORTABLE_DOCUMENT_ORDERINGS = [
+  DocumentOrdering.Name,
+  DocumentOrdering.CreatedAt,
+  DocumentOrdering.UpdatedAt,
+] as const;
+
+export type SortableDocumentOrdering =
+  (typeof SORTABLE_DOCUMENT_ORDERINGS)[number];

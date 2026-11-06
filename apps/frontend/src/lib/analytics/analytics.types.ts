@@ -1,8 +1,13 @@
-import { type FILTER_NAME_LABELS } from '@/lib/analytics/analytics.consts';
+import {
+  type FILTER_NAME_LABELS,
+  type ORDER_BY_LABELS,
+  type ORDER_MODE_LABELS,
+} from '@/lib/analytics/analytics.consts';
 import {
   type AnalyticsDomain,
   type AnalyticsElementId,
 } from '@/lib/analytics/analytics.ids';
+import { type SortableDocumentOrdering } from '@/utils/shareable-resources/shareable-resources.consts';
 import {
   type SHAREABLE_RESOURCE_LIBRARY_MAPPING,
   type SHAREABLE_RESOURCE_PRODUCT_MAPPING,
@@ -73,6 +78,11 @@ export interface AnalyticsListResults extends AnalyticsLibraryParams {
 type AnalyticsFilterName =
   (typeof FILTER_NAME_LABELS)[keyof typeof FILTER_NAME_LABELS];
 
+type AnalyticsOrderBy = (typeof ORDER_BY_LABELS)[SortableDocumentOrdering];
+
+type AnalyticsOrderMode =
+  (typeof ORDER_MODE_LABELS)[keyof typeof ORDER_MODE_LABELS];
+
 export type AnalyticsDeployEligibility =
   | 'Signed out'
   | 'Can deploy'
@@ -129,6 +139,10 @@ export interface AnalyticsEvents {
     filter_name: AnalyticsFilterName;
     filter_value: string;
     filter_action: 'Add' | 'Remove';
+  };
+  sort_change: AnalyticsLibraryParams & {
+    order_by: AnalyticsOrderBy;
+    order_mode: AnalyticsOrderMode;
   };
 }
 
