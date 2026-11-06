@@ -4,7 +4,7 @@ import {
   ShareableResourceType,
 } from '@/utils/shareable-resources/shareable-resources.types';
 import testRender from '@/utils/test/test-render';
-import { publicDocumentBySlugItemFragment$data } from '@generated/publicDocumentBySlugItemFragment.graphql';
+import { PublicDocumentByServiceSlugItemFragment } from '@graphql/generated';
 import { screen } from '@testing-library/react';
 import { useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
@@ -33,18 +33,18 @@ const signupHrefFor = (slug: ServiceSlug) =>
   )}`;
 
 const buildDocumentData = (
-  overrides: Partial<publicDocumentBySlugItemFragment$data> = {}
-): publicDocumentBySlugItemFragment$data =>
+  overrides: Partial<PublicDocumentByServiceSlugItemFragment> = {}
+): PublicDocumentByServiceSlugItemFragment =>
   ({
     __typename: 'CustomDashboard',
     id: DOCUMENT_ID,
     active: true,
     type: ShareableResourceType.OPENCTI_CUSTOM_DASHBOARD,
     ...overrides,
-  }) as publicDocumentBySlugItemFragment$data;
+  }) as PublicDocumentByServiceSlugItemFragment;
 
 const renderActions = (
-  documentData: publicDocumentBySlugItemFragment$data,
+  documentData: PublicDocumentByServiceSlugItemFragment,
   slug: ServiceSlug
 ) =>
   testRender(
