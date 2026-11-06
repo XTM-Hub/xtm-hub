@@ -95,6 +95,17 @@ export type AnalyticsDeployEligibility =
   | 'Enterprise Edition required'
   | 'Resource not deployable';
 
+export type AnalyticsTrialState =
+  | 'Personal space'
+  | 'Not allowed'
+  | 'Request form'
+  | 'Pending'
+  | 'Provisioning'
+  | 'Active'
+  | 'Cancelled'
+  | 'Expired'
+  | 'Failed';
+
 export interface AnalyticsUserProperties {
   auth_state: 'Signed in' | 'Signed out';
   is_internal: YesNo | null;
@@ -156,6 +167,7 @@ export interface AnalyticsEvents {
       };
   sign_up: { method: 'HubSpot form' };
   feature_vote: { feature_name: string };
+  view_trial: { trial_state: AnalyticsTrialState };
 }
 
 export type AnalyticsEventName = keyof AnalyticsEvents;
