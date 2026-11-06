@@ -1881,6 +1881,7 @@ export const mockSaasPlatformStorage = (overrides?: Partial<SaasPlatformStorage>
     return {
         __typename: 'SaasPlatformStorage',
         es_used_size: overrides && overrides.hasOwnProperty('es_used_size') ? overrides.es_used_size! : relationshipsToOmit.has('SaasPlatformStorageUsage') ? {} as SaasPlatformStorageUsage : mockSaasPlatformStorageUsage({}, relationshipsToOmit),
+        postgres_used_size: overrides && overrides.hasOwnProperty('postgres_used_size') ? overrides.postgres_used_size! : relationshipsToOmit.has('SaasPlatformStorageUsage') ? {} as SaasPlatformStorageUsage : mockSaasPlatformStorageUsage({}, relationshipsToOmit),
         s3_used_size: overrides && overrides.hasOwnProperty('s3_used_size') ? overrides.s3_used_size! : relationshipsToOmit.has('SaasPlatformStorageUsage') ? {} as SaasPlatformStorageUsage : mockSaasPlatformStorageUsage({}, relationshipsToOmit),
     };
 };

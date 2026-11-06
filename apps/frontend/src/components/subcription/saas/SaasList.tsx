@@ -8,6 +8,7 @@ import { SaasPlatformLink } from '@/components/subcription/saas/datatable/SaasPl
 import { SaasProductChip } from '@/components/subcription/saas/datatable/SaasProductChip';
 import { SaasStorageUsage } from '@/components/subcription/saas/datatable/SaasStorageUsage';
 import { useSaasListLocalstorage } from '@/components/subcription/saas/saas-list-localstorage';
+import { getDatabaseUsagePercent } from '@/components/subcription/saas/saas-list.utils';
 import { SaasProductFilter } from '@/components/subcription/saas/SaasProductFilter';
 import {
   SAAS_LIST_TOUR_TARGET,
@@ -190,7 +191,7 @@ export const SaasList = () => {
       enableSorting: false,
       cell: ({ row }) => (
         <SaasStorageUsage
-          percent={row.original.storage?.es_used_size?.percent}
+          percent={getDatabaseUsagePercent(row.original.storage)}
           label={t('CSMBoard.Database')}
           isHigh={
             !!row.original.health_issues?.includes(

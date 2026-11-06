@@ -1,8 +1,12 @@
-import { findMetricPoints } from '@/components/service/registration/platform-metrics.utils';
+import {
+  findDatabaseUsage,
+  findMetricPoints,
+} from '@/components/service/registration/platform-metrics.utils';
 import {
   MetricType,
   SaasPlatformMetrics,
   SaasPlatformResolution,
+  SaasPlatformStorage,
 } from '@graphql/generated';
 import { describe, expect, it } from 'vitest';
 
@@ -39,6 +43,50 @@ describe('findMetricPoints', () => {
       expect(findMetricPoints(missingMetrics, MetricType.S3UsedSize)).toEqual(
         []
       );
+    }
+  );
+});
+
+describe('findDatabaseUsage', () => {
+  const esPoints = [{ timestamp: '2026-09-22T09:00:00.000Z', value: 3_000 }];
+  const postgresPoints = [
+    { timestamp: '2026-09-22T09:00:00.000Z', value: 4_000 },
+  ];
+  const esUsage = { percent: 30, used: 3_000, limit: 10_000 };
+  const postgresUsage = { percent: 40, used: 4_000, limit: 10_000 };
+  const databaseMetrics = (...series: SaasPlatformMetrics['series']) => ({
+    ...metrics,
+    series,
+  });
+  const postgresSeries = {
+    metric_type: MetricType.PostgresUsedSize,
+    points: postgresPoints,
+  };
+  const esSeries = { metric_type: MetricType.EsUsedSize, points: esPoints };
+
+  it.each`
+    case                                            | databaseMetrics                              | storage                                                         | expected
+    ${'Elasticsearch when its usage is sent'}       | ${databaseMetrics(esSeries, postgresSeries)} | ${{ es_used_size: esUsage, postgres_used_size: postgresUsage }} | ${{ points: esPoints, storage: esUsage }}
+    ${'Elasticsearch when only its series is sent'} | ${databaseMetrics(esSeries, postgresSeries)} | ${null}                                                         | ${{ points: esPoints, storage: undefined }}
+    ${'PostgreSQL without Elasticsearch'}           | ${databaseMetrics(postgresSeries)}           | ${{ es_used_size: null, postgres_used_size: postgresUsage }}    | ${{ points: postgresPoints, storage: postgresUsage }}
+    ${'no usage without any database measure'}      | ${null}                                      | ${null}                                                         | ${{ points: [], storage: undefined }}
+  `(
+    'should return the usage of $case',
+    ({
+      databaseMetrics: sentMetrics,
+      storage,
+      expected,
+    }: {
+      databaseMetrics: SaasPlatformMetrics | null;
+      storage: SaasPlatformStorage | null;
+      expected: ReturnType<typeof findDatabaseUsage>;
+    }) => {
+      // Given the measures the SaaS Manager sent for a platform
+      // When the usage of its database is looked up
+      const usage = findDatabaseUsage(sentMetrics, storage);
+
+      // Then it comes from the database the platform runs on
+      expect(usage).toEqual(expected);
     }
   );
 });

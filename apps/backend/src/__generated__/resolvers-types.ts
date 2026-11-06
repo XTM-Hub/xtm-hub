@@ -1054,6 +1054,7 @@ export type MergeEvent = Node & {
 
 export enum MetricType {
   EsUsedSize = 'es_used_size',
+  PostgresUsedSize = 'postgres_used_size',
   S3UsedSize = 's3_used_size',
   SlaAvailability = 'sla_availability',
   SlaResponseTime = 'sla_response_time'
@@ -2670,6 +2671,7 @@ export type SaasPlatformSla = {
 export type SaasPlatformStorage = {
   __typename?: 'SaasPlatformStorage';
   es_used_size?: Maybe<SaasPlatformStorageUsage>;
+  postgres_used_size?: Maybe<SaasPlatformStorageUsage>;
   s3_used_size?: Maybe<SaasPlatformStorageUsage>;
 };
 
@@ -5154,6 +5156,7 @@ export type SaasPlatformSlaResolvers<ContextType = PortalContext, ParentType ext
 
 export type SaasPlatformStorageResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['SaasPlatformStorage'] = ResolversParentTypes['SaasPlatformStorage']> = ResolversObject<{
   es_used_size?: Resolver<Maybe<ResolversTypes['SaasPlatformStorageUsage']>, ParentType, ContextType>;
+  postgres_used_size?: Resolver<Maybe<ResolversTypes['SaasPlatformStorageUsage']>, ParentType, ContextType>;
   s3_used_size?: Resolver<Maybe<ResolversTypes['SaasPlatformStorageUsage']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
