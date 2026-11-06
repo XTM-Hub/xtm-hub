@@ -176,7 +176,10 @@ query LastDeployedOverviewQuery(
   }
 }
 
-query DocumentExists($documentName: String, $serviceInstanceId: ServiceInstanceId!) {
+query DocumentExists(
+  $documentName: String
+  $serviceInstanceId: ServiceInstanceId!
+) {
   documentExists(
     documentName: $documentName
     service_instance_id: $serviceInstanceId
