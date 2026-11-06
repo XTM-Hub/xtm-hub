@@ -16,6 +16,7 @@ import useServiceCapability, {
   useServiceCapabilityWithSubscriptionId,
 } from '@/hooks/use-service-capability';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { cn } from '@/lib/utils';
 import { APP_PATH } from '@/utils/path/constant';
 import {
@@ -149,6 +150,7 @@ export const EpicList = ({
               asChild
               priority="secondary">
               <Link
+                {...analyticsId('subscription_access_open')}
                 href={`/${APP_PATH}/manage/service/${serviceInstance.id}/subscription/${subscriptionId}`}>
                 {t('Service.Capabilities.ManageAccessName')}
               </Link>
