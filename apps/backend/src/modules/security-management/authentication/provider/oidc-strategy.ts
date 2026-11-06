@@ -7,15 +7,17 @@ import {
   type VerifyFunctionWithRequest,
 } from 'openid-client/passport';
 import type passport from 'passport';
+import { z } from 'zod';
 
 // What openid-client keeps in the session between the authorization request
-// and its callback.
-interface AuthorizationRequestState {
-  code_verifier: string;
-  state: string;
-  nonce?: string;
-  max_age?: number;
-}
+// and its callback. Only a request with a `state` can be told apart from the
+// others; the fields not listed (`nonce`, `max_age`) are kept as they are.
+const authorizationRequestSchema = z.looseObject({
+  code_verifier: z.string(),
+  state: z.string(),
+});
+
+type AuthorizationRequestState = z.infer<typeof authorizationRequestSchema>;
 
 interface SessionKeys {
   // The slot openid-client reads and writes.
@@ -35,16 +37,10 @@ export const UNVERIFIABLE_AUTHORIZATION_REQUEST =
 // click or a few tabs, bounded so the session cannot grow without limit.
 export const MAX_PENDING_AUTHORIZATION_REQUESTS = 5;
 
-// Only a request with a `state` can be told apart from the others.
 const isAuthorizationRequestState = (
   value: unknown
 ): value is AuthorizationRequestState =>
-  typeof value === 'object' &&
-  value !== null &&
-  'code_verifier' in value &&
-  typeof value.code_verifier === 'string' &&
-  'state' in value &&
-  typeof value.state === 'string';
+  authorizationRequestSchema.safeParse(value).success;
 
 const readPendingRequests = (session: SessionRecord, keys: SessionKeys) => {
   const pending = session[keys.pending];
