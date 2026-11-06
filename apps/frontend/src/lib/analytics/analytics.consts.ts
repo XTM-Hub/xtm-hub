@@ -27,6 +27,17 @@ export const MAX_ITEMS_PER_EVENT = 25;
 
 export const MIN_TRACKED_SEARCH_TERM_LENGTH = 3;
 
+export const FILTER_NAME_LABELS = {
+  label: 'Use case',
+  entity_type: 'Entity type',
+  integration_type: 'Integration type',
+  solution_category: 'Solution category',
+  license_type: 'License type',
+  product_version: 'OpenCTI compatibility version',
+  manager_supported: 'Deployment type',
+  verified: 'Status',
+} as const;
+
 export const MAX_EVENTS_PER_WINDOW = 100;
 
 export const EVENT_WINDOW_MS = 60_000;

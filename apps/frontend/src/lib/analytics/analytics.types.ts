@@ -1,3 +1,4 @@
+import { type FILTER_NAME_LABELS } from '@/lib/analytics/analytics.consts';
 import {
   type AnalyticsDomain,
   type AnalyticsElementId,
@@ -69,6 +70,9 @@ export interface AnalyticsListResults extends AnalyticsLibraryParams {
   has_results: YesNo;
 }
 
+type AnalyticsFilterName =
+  (typeof FILTER_NAME_LABELS)[keyof typeof FILTER_NAME_LABELS];
+
 export type AnalyticsDeployEligibility =
   | 'Signed out'
   | 'Can deploy'
@@ -120,6 +124,11 @@ export interface AnalyticsEvents {
   };
   search: AnalyticsListResults & {
     search_term: string;
+  };
+  filter_apply: AnalyticsLibraryParams & {
+    filter_name: AnalyticsFilterName;
+    filter_value: string;
+    filter_action: 'Add' | 'Remove';
   };
 }
 
