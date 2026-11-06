@@ -11,6 +11,7 @@ import { DisabledActionTooltip } from '@/components/ui/DisabledActionTooltip';
 import { useBuildCompatibilityTranslationKey } from '@/hooks/use-build-compatibility-translation-key';
 import { useRegisteredPlatforms } from '@/hooks/use-registered-platforms';
 import { useTranslate } from '@/hooks/use-translate';
+import { portalGraphqlClient } from '@/lib/graphql-client';
 import { isProduction } from '@/lib/utils';
 import {
   getPlatformIdentifier,
@@ -22,10 +23,11 @@ import {
   ShareableResourceType,
 } from '@/utils/shareable-resources/shareable-resources.types';
 import { Button, Dialog, DialogContent } from '@filigran/design-system';
-import { OneClickDeployMutation as OneClickDeployMutationType } from '@generated/OneClickDeployMutation.graphql';
-import { DocumentItemFragment } from '@graphql/generated';
+import {
+  DocumentItemFragment,
+  useOneClickDeployMutation,
+} from '@graphql/generated';
 import { useCallback, useMemo, useState } from 'react';
-import { graphql, useMutation } from 'react-relay';
 
 interface OneClickDeployProps {
   documentData: DocumentItemFragment;
@@ -42,20 +44,8 @@ const OneClickDeploy = ({
     onlyActive: true,
   });
 
-  const SendOneClickDeployTelemetryMutation = graphql`
-    mutation OneClickDeployMutation($input: OneClickDeployInput!) {
-      sendTelemetryEvent {
-        oneClickDeploy(input: $input) {
-          result
-          message
-        }
-      }
-    }
-  `;
-
-  const [sendOneClickDeployEvent] = useMutation<OneClickDeployMutationType>(
-    SendOneClickDeployTelemetryMutation
-  );
+  const { mutate: sendOneClickDeployEvent } =
+    useOneClickDeployMutation(portalGraphqlClient);
 
   const [isOpen, setIsOpen] = useState(false);
   const [isEeSheetOpen, setIsEeSheetOpen] = useState(false);
@@ -87,14 +77,12 @@ const OneClickDeploy = ({
       );
       if (platform) {
         sendOneClickDeployEvent({
-          variables: {
-            input: {
-              platform_identifier: platformIdentifier,
-              service_instance_id: documentData.service_instance!.id,
-              resource_id: documentData.id,
-              resource_title: documentData.name ?? '',
-              platform_service_instance_id: platform!.id,
-            },
+          input: {
+            platform_identifier: platformIdentifier,
+            service_instance_id: documentData.service_instance!.id,
+            resource_id: documentData.id,
+            resource_title: documentData.name ?? '',
+            platform_service_instance_id: platform!.id,
           },
         });
       }

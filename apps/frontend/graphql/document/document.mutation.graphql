@@ -3,3 +3,70 @@ mutation IncrementShareNumberDocument($documentId: DocumentId!) {
     share_number
   }
 }
+
+mutation DocumentCreate(
+  $input: CreateDocumentInput!
+  $metadata: [DocumentMetadata!]!
+  $serviceInstanceId: ServiceInstanceId!
+  $sourceDocument: Upload
+  $logo: Upload
+  $images: [Upload!]
+) {
+  createDocument(
+    input: $input
+    metadata: $metadata
+    serviceInstanceId: $serviceInstanceId
+    sourceDocument: $sourceDocument
+    logo: $logo
+    images: $images
+  ) {
+    ...DocumentItem
+  }
+}
+
+mutation DocumentUpdate(
+  $documentId: DocumentId!
+  $input: UpdateDocumentInput!
+  $metadata: [DocumentMetadata!]!
+  $serviceInstanceId: ServiceInstanceId!
+  $sourceDocument: Upload
+  $logo: Upload
+  $images: [Upload!]
+  $existingImageIds: [DocumentId!]
+) {
+  updateDocument(
+    documentId: $documentId
+    input: $input
+    metadata: $metadata
+    serviceInstanceId: $serviceInstanceId
+    sourceDocument: $sourceDocument
+    logo: $logo
+    images: $images
+    existingImageIds: $existingImageIds
+  ) {
+    ...DocumentItem
+  }
+}
+
+mutation DocumentDelete(
+  $documentId: DocumentId!
+  $serviceInstanceId: ServiceInstanceId!
+  $forceDelete: Boolean
+) {
+  deleteDocument(
+    documentId: $documentId
+    service_instance_id: $serviceInstanceId
+    forceDelete: $forceDelete
+  ) {
+    id
+  }
+}
+
+mutation OneClickDeploy($input: OneClickDeployInput!) {
+  sendTelemetryEvent {
+    oneClickDeploy(input: $input) {
+      result
+      message
+    }
+  }
+}

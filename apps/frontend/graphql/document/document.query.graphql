@@ -175,3 +175,48 @@ query LastDeployedOverviewQuery(
     }
   }
 }
+
+query DocumentExists($documentName: String, $serviceInstanceId: ServiceInstanceId!) {
+  documentExists(
+    documentName: $documentName
+    service_instance_id: $serviceInstanceId
+  )
+}
+
+query DocumentsList(
+  $count: Int!
+  $cursor: ID
+  $orderBy: DocumentOrdering!
+  $orderMode: OrderingMode!
+  $logicalFilters: LogicalFilterInput
+  $searchTerm: String
+  $serviceInstanceId: ServiceInstanceId!
+  $parentsOnly: Boolean
+) {
+  documents(
+    first: $count
+    after: $cursor
+    orderBy: $orderBy
+    orderMode: $orderMode
+    searchTerm: $searchTerm
+    logicalFilters: $logicalFilters
+    serviceInstanceId: $serviceInstanceId
+    parentsOnly: $parentsOnly
+  ) {
+    totalCount
+    edges {
+      node {
+        ...DocumentItem
+      }
+    }
+  }
+}
+
+query DocumentDetail(
+  $documentId: DocumentId!
+  $serviceInstanceId: ServiceInstanceId!
+) {
+  document(documentId: $documentId, serviceInstanceId: $serviceInstanceId) {
+    ...DocumentItem
+  }
+}
