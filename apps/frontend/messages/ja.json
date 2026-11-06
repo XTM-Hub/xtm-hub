@@ -414,7 +414,7 @@
       "MISSING_CAPABILITY_ON_SERVICE": "パーミッションが見つからない",
       "MISSING_METADATA_MAPPING": "メタデータのマッピングの欠落",
       "MISSING_START_OR_END_DATE": "不明なエラーが発生",
-      "INVALID_USE_CASES_FOR_PRODUCTS": "ユースケースが申請された製品と一致しません",
+      "INVALID_USE_CASES_FOR_PRODUCTS": "ユースケースがトライアルの製品と一致しません",
       "MIXED_LTS_MANIFEST_FRAGMENTS": "バッチ内でLTSと非LTSのフラグメントを混在させることはできません",
       "NEWS_FEED_ITEM_MISSING_TITLE": "ニュースフィードにタイトルがありません",
       "NEWS_FEED_ITEM_NOT_FOUND": "ニュースフィード項目が見つかりません",
