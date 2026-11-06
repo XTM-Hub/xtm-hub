@@ -30,6 +30,11 @@ query RegisteredSaasPlatformData($input: RegisteredSaasPlatformDataInput!) {
         used
         limit
       }
+      postgres_used_size {
+        percent
+        used
+        limit
+      }
     }
     sla {
       target

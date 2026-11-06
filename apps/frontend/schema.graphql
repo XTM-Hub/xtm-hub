@@ -1294,6 +1294,7 @@ type SaasPlatformMetricPoint {
 type SaasPlatformStorage {
   es_used_size: SaasPlatformStorageUsage
   s3_used_size: SaasPlatformStorageUsage
+  postgres_used_size: SaasPlatformStorageUsage
 }
 
 type SaasPlatformStorageUsage {
@@ -1307,6 +1308,7 @@ enum MetricType {
   sla_response_time
   es_used_size
   s3_used_size
+  postgres_used_size
 }
 
 enum SaasPlatformResolution {

@@ -14,6 +14,9 @@ fragment SaasPlatformRow on SaasPlatform {
     s3_used_size {
       percent
     }
+    postgres_used_size {
+      percent
+    }
   }
   health_issues
   contract_status
