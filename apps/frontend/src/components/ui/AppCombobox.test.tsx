@@ -27,6 +27,7 @@ describe('AppCombobox', () => {
     const onValueChange = vi.fn();
     const { user } = testRender(
       <AppCombobox
+        formField
         label={LABEL}
         options={OPTIONS}
         value={null}
@@ -52,6 +53,7 @@ describe('AppCombobox', () => {
     const onValueChange = vi.fn();
     const { user } = testRender(
       <AppCombobox
+        formField
         multiple
         label={LABEL}
         options={OPTIONS}
@@ -77,6 +79,7 @@ describe('AppCombobox', () => {
     // Given / When
     testRender(
       <AppCombobox
+        formField
         multiple
         label={LABEL}
         options={OPTIONS}
@@ -96,6 +99,7 @@ describe('AppCombobox', () => {
     // Given / When
     testRender(
       <AppCombobox
+        formField
         multiple
         label={LABEL}
         options={OPTIONS}
@@ -124,6 +128,7 @@ describe('AppCombobox', () => {
     // Given
     const { user } = testRender(
       <AppCombobox
+        formField
         label={LABEL}
         options={[]}
         loading
@@ -144,6 +149,7 @@ describe('AppCombobox', () => {
     // Given
     const { user } = testRender(
       <AppCombobox
+        formField
         label={LABEL}
         options={OPTIONS}
         value={null}
@@ -163,6 +169,7 @@ describe('AppCombobox', () => {
     // Given
     const { user } = testRender(
       <AppCombobox
+        formField
         label={LABEL}
         required
         placeholder={PLACEHOLDER}
@@ -187,6 +194,7 @@ describe('AppCombobox', () => {
     // Given / When
     testRender(
       <AppCombobox
+        formField
         label={LABEL}
         labelPosition="none"
         options={OPTIONS}
@@ -206,6 +214,7 @@ describe('AppCombobox', () => {
     const onValueChange = vi.fn();
     const { user } = testRender(
       <AppCombobox
+        formField
         label={LABEL}
         options={OPTIONS}
         value={FRANCE}
@@ -226,6 +235,7 @@ describe('AppCombobox', () => {
     // Given / When
     testRender(
       <AppCombobox
+        formField
         label={LABEL}
         error={ERROR_MESSAGE}
         options={OPTIONS}
@@ -245,6 +255,7 @@ describe('AppCombobox', () => {
     // Given / When
     testRender(
       <AppCombobox
+        formField
         label={LABEL}
         options={OPTIONS}
         value={null}
@@ -263,6 +274,7 @@ describe('AppCombobox', () => {
     // Given / When
     testRender(
       <AppCombobox
+        formField
         label={LABEL}
         options={OPTIONS}
         value={null}
@@ -287,6 +299,7 @@ describe('AppCombobox', () => {
       // Given
       const { user } = testRender(
         <AppCombobox
+          formField
           label={LABEL}
           options={OPTIONS}
           value={null}

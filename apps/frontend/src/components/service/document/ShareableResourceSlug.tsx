@@ -5,6 +5,11 @@ import {
   BreadcrumbNavLink,
 } from '@/components/ui/BreadcrumbNav';
 import { useTranslate } from '@/hooks/use-translate';
+import {
+  analyticsResource,
+  toAnalyticsResourceData,
+} from '@/lib/analytics/analytics.context';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { DownloadIcon } from '@filigran/icon';
 
 import { DeployableResourceViewTracker } from '@/components/service/document/DeployableResourceViewTracker';
@@ -81,8 +86,12 @@ const ShareableResourceSlug = ({
     return findDocumentLogo(documentData);
   }, [documentData]);
 
+  const resource = toAnalyticsResourceData(documentData);
+
   return (
-    <>
+    <div
+      className="contents"
+      {...analyticsResource(resource)}>
       <BreadcrumbNav value={breadcrumbValue} />
       {shouldShowOneClickDeployComponent ? (
         <DeployableResourceViewTracker resource={documentData} />
@@ -116,6 +125,7 @@ const ShareableResourceSlug = ({
             <h1 className="whitespace-nowrap mb-2">{documentData.name}</h1>
             <div className="flex gap-2 ml-auto">
               <ShareLinkButton
+                analyticsId="resource_share"
                 documentId={documentData.id}
                 onShare={incrementShareNumber}
                 url={`${settings!.base_url_front}/${PUBLIC_CYBERSECURITY_SOLUTIONS_PATH}/${documentData?.service_instance?.slug}/${documentData?.slug}`}
@@ -137,6 +147,7 @@ const ShareableResourceSlug = ({
                             )}
                             icon={<DownloadIcon className="h-4 w-4" />}>
                             <a
+                              {...analyticsId('resource_download')}
                               href={downloadUrl}
                               onClick={incrementDownloadNumber}
                             />
@@ -156,6 +167,7 @@ const ShareableResourceSlug = ({
                   {isResourceDownloadable(documentData) && (
                     <Button asChild>
                       <a
+                        {...analyticsId('resource_download')}
                         href={downloadUrl}
                         onClick={incrementDownloadNumber}>
                         {t('Utils.Download')}
@@ -179,6 +191,7 @@ const ShareableResourceSlug = ({
       </div>
       <ShareableResourceCarousel
         serviceInstance={serviceInstance}
+        resource={resource}
         images={carouselImages}
       />
       {children}
@@ -201,7 +214,7 @@ const ShareableResourceSlug = ({
           />
         )}
       </div>
-    </>
+    </div>
   );
 };
 

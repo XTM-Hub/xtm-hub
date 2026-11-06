@@ -17,6 +17,7 @@ import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useKeepSelectedOptions } from '@/hooks/use-keep-selected-options';
 import { useTranslate } from '@/hooks/use-translate';
 import { useUsersList } from '@/hooks/use-users-list';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { toComboboxOptionIds } from '@/utils/design-system/combobox';
 import {
   Button,
@@ -301,6 +302,7 @@ export const UserServiceForm = ({
               name="email"
               render={({ field, fieldState }) => (
                 <AppCombobox
+                  formField
                   multiple
                   label={t('InviteUserServiceForm.Email')}
                   placeholder={t('Service.Management.Email')}
@@ -376,12 +378,14 @@ export const UserServiceForm = ({
 
         <SheetFooter className="pt-2">
           <Button
+            {...analyticsId('subscription_user_cancel')}
             priority="secondary"
             type="button"
             onClick={(e) => handleCloseSheet(e)}>
             {t('Utils.Cancel')}
           </Button>
           <Button
+            {...analyticsId('subscription_user_submit')}
             type="submit"
             loading={isEditInFlight || isCreateInFlight}>
             {t('Utils.Validate')}

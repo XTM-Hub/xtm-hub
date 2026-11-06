@@ -4,6 +4,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { Button } from '@filigran/design-system';
 import { RemoveUserFromOrgaMutation } from '@generated/RemoveUserFromOrgaMutation.graphql';
 import { UserList_fragment$data } from '@generated/UserList_fragment.graphql';
@@ -65,13 +66,15 @@ export const RemoveUserFromOrga = ({ user }: RemoveUserFromOrgaProps) => {
   const trigger = (
     <Button
       variant="destructive"
-      priority="secondary">
+      priority="secondary"
+      {...analyticsId('organization_member_remove')}>
       {t('MenuActions.Remove')}
     </Button>
   );
 
   return (
     <ConfirmDialog
+      confirmAnalyticsId="organization_member_removal_confirm"
       title={t('UserActions.RemoveUser')}
       confirmLabel={t('MenuActions.Remove')}
       destructive

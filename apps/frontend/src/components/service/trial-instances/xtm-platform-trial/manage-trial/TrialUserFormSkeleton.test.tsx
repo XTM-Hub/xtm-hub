@@ -63,6 +63,7 @@ const Wrapper = ({
       mixedRoleDefaults={mixedRoleDefaults}
       onCancel={onCancel}
       isPending={isPending}
+      submitAnalyticsId="trial_user_addition_confirm"
     />
   );
 };

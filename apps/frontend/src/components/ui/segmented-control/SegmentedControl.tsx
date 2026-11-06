@@ -1,5 +1,9 @@
 'use client';
 
+import {
+  analyticsId,
+  type AnalyticsElementId,
+} from '@/lib/analytics/analytics.ids';
 import { cn } from '@/lib/utils';
 import {
   Tooltip,
@@ -22,6 +26,7 @@ export interface SegmentedControlProps<T extends string> {
   // Fires only when another item is picked, never for the selected one.
   onValueChange: (value: T) => void;
   'aria-label': string;
+  analyticsId: AnalyticsElementId;
   size?: 'sm' | 'md';
   disabled?: boolean;
   className?: string;
@@ -77,6 +82,7 @@ export const SegmentedControl = <T extends string>({
   value,
   onValueChange,
   'aria-label': ariaLabel,
+  analyticsId: elementId,
   size = 'md',
   disabled = false,
   className,
@@ -132,6 +138,7 @@ export const SegmentedControl = <T extends string>({
             ref={(element) => {
               itemRefs.current[index] = element;
             }}
+            {...analyticsId(elementId)}
             type="button"
             role="radio"
             aria-checked={isSelected}

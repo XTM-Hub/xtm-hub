@@ -1,4 +1,8 @@
 'use client';
+import {
+  type AnalyticsElementId,
+  analyticsId,
+} from '@/lib/analytics/analytics.ids';
 import { cn } from '@/lib/utils';
 import {
   Button,
@@ -26,6 +30,7 @@ interface IconActionsProps {
   children: ReactNode;
   icon: ReactNode;
   'aria-label': string;
+  analyticsId: AnalyticsElementId;
   size?: IconButtonProps['size'];
   className?: string;
 }
@@ -37,7 +42,9 @@ interface IconActionContextProps {
 type IconActionsButtonProps = Omit<
   ButtonHTMLAttributes<HTMLButtonElement>,
   'color'
->;
+> & {
+  analyticsId: AnalyticsElementId;
+};
 
 export const IconActionContext = createContext<IconActionContextProps>({
   setMenuOpen: () => {},
@@ -46,6 +53,7 @@ export const IconActions = ({
   children,
   icon,
   'aria-label': ariaLabel,
+  analyticsId: elementId,
   size,
   className,
 }: IconActionsProps) => {
@@ -57,6 +65,7 @@ export const IconActions = ({
       onOpenChange={setMenuOpen}>
       <MenuTrigger asChild>
         <IconButton
+          {...analyticsId(elementId)}
           priority="tertiary"
           size={size}
           className={className}
@@ -78,10 +87,12 @@ export const IconActions = ({
 export const IconActionsButton = ({
   children,
   className,
+  analyticsId: elementId,
   ...props
 }: IconActionsButtonProps) => {
   return (
     <Button
+      {...analyticsId(elementId)}
       priority="tertiary"
       className={cn('w-full justify-start normal-case', className)}
       onClick={(e) => e.stopPropagation()}
@@ -93,16 +104,19 @@ export const IconActionsButton = ({
 
 type IconActionsLinkProps = ComponentProps<typeof Link> & {
   className?: string;
+  analyticsId: AnalyticsElementId;
 };
 export const IconActionsLink = ({
   children,
   className,
+  analyticsId: elementId,
   ...props
 }: IconActionsLinkProps) => {
   return (
     <MenuItem asChild>
       <Link
         {...props}
+        {...analyticsId(elementId)}
         className={className}>
         {children}
       </Link>

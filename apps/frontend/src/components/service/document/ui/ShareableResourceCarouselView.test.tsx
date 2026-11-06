@@ -1,3 +1,4 @@
+import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 import testRender from '@/utils/test/test-render';
 import { screen, within } from '@testing-library/react';
 import useEmblaCarousel from 'embla-carousel-react';
@@ -19,6 +20,11 @@ const IMAGES = [
 const SERVICE_INSTANCE = {
   id: SERVICE_INSTANCE_ID,
 } as unknown as CarouselViewProps['serviceInstance'];
+const RESOURCE = {
+  id: 'resource-id',
+  name: 'Resource name',
+  type: ShareableResourceType.OPENCTI_INTEGRATION,
+};
 const PREVIOUS_KEY = 'DesignSystem.Carousel.Previous';
 const NEXT_KEY = 'DesignSystem.Carousel.Next';
 const GO_TO_SLIDE_KEY = 'DesignSystem.Carousel.GoToSlide';
@@ -29,6 +35,7 @@ const renderView = (images: CarouselViewProps['images']) =>
     <ShareableResourceCarousel
       images={images}
       serviceInstance={SERVICE_INSTANCE}
+      resource={RESOURCE}
     />
   );
 

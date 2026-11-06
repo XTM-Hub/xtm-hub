@@ -24,6 +24,7 @@ import { Separator } from '@/components/ui/separator';
 import { SheetFooter } from '@/components/ui/sheet';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { toComboboxOptionIds } from '@/utils/design-system/combobox';
 import {
   Button,
@@ -137,6 +138,7 @@ const EpicFieldLabel = ({
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
+              {/* eslint-disable-next-line no-restricted-syntax -- only opens a tooltip, not an action worth tracking */}
               <button
                 type="button"
                 aria-label={t(infoKey)}
@@ -270,6 +272,7 @@ const EpicForm = ({
             name="products"
             render={({ field, fieldState }) => (
               <AppCombobox
+                formField
                 multiple
                 label={t('Epic.Form.FiligranProduct')}
                 required
@@ -289,6 +292,7 @@ const EpicForm = ({
             name="timeline"
             render={({ field, fieldState }) => (
               <SelectField
+                formField
                 label={t('Epic.Form.Timeline')}
                 required
                 placeholder={t('Epic.Form.TimelineOption.now')}
@@ -450,12 +454,15 @@ const EpicForm = ({
           />
           <div className="flex gap-2">
             <Button
+              {...analyticsId('roadmap_epic_form_cancel')}
               priority="secondary"
               type="button"
               onClick={handleCloseSheet}>
               {t('Utils.Cancel')}
             </Button>
-            <Button type="submit">
+            <Button
+              {...analyticsId('roadmap_epic_form_submit')}
+              type="submit">
               {t(
                 epic
                   ? 'Epic.EpicActions.UpdateEpicButton'

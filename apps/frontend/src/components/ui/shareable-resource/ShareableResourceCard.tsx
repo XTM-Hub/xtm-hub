@@ -5,6 +5,11 @@ import { ShareableResourceCardFooterVersion } from '@/components/ui/shareable-re
 import { ShareableResourceCardHeader } from '@/components/ui/shareable-resource/card-design/ShareableResourceCardHeader';
 import useScrollPosition from '@/hooks/use-scroll-position';
 import {
+  analyticsResource,
+  toAnalyticsResourceData,
+} from '@/lib/analytics/analytics.context';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
+import {
   PublicDocumentData,
   ShareableResourceType,
 } from '@/utils/shareable-resources/shareable-resources.types';
@@ -59,8 +64,10 @@ const ShareableResourceCard = ({
       as="li"
       elevation={1}
       padding={0}
+      {...analyticsResource(toAnalyticsResourceData(document))}
       className="overflow-hidden flex flex-col relative aria-disabled:opacity-60 hover:bg-elevation-hover h-[310px]">
       <Link
+        {...analyticsId('resource_open')}
         className="flex flex-col flex-1 min-h-0 overflow-hidden gap-6 p-6"
         onClick={handleClick}
         href={detailUrl}

@@ -23,6 +23,7 @@ export const PlatformMetricsPeriodSelector = ({
   return (
     <SegmentedControl
       aria-label={t('Register.Metrics.Period.Label')}
+      analyticsId="platform_metrics_period_select"
       items={PERIODS.map((option) => {
         const isComingSoon = COMING_SOON_PERIODS.has(option);
         return {

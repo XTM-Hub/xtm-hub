@@ -2,6 +2,10 @@
 
 import { useTranslate } from '@/hooks/use-translate';
 import {
+  analyticsId,
+  type AnalyticsFieldProps,
+} from '@/lib/analytics/analytics.ids';
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -29,7 +33,9 @@ type RoleSelectName =
   | { label: string; 'aria-label'?: never }
   | { label?: never; 'aria-label': string };
 
-type RoleSelectProps = RoleSelectBaseProps & RoleSelectName;
+type RoleSelectProps = RoleSelectBaseProps &
+  RoleSelectName &
+  AnalyticsFieldProps;
 
 export const RoleSelect = ({
   value,
@@ -42,6 +48,7 @@ export const RoleSelect = ({
   placeholder,
   disabled,
   triggerClassName,
+  analyticsId: elementId,
 }: RoleSelectProps) => {
   const t = useTranslate();
   return (
@@ -52,6 +59,7 @@ export const RoleSelect = ({
         disabled={disabled}>
         {label && <SelectLabel>{label}</SelectLabel>}
         <SelectTrigger
+          {...(elementId && analyticsId(elementId))}
           aria-label={ariaLabel}
           className={triggerClassName}>
           <SelectValue placeholder={placeholder} />

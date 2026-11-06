@@ -60,6 +60,7 @@ export const DeleteUser = ({
 
   return blockedReasonKey ? (
     <DialogInformative
+      analyticsId="admin_user_deletion_notice_close"
       isOpen={true}
       onClose={() => {
         setBlockedReasonKey(null);
@@ -71,6 +72,7 @@ export const DeleteUser = ({
     </DialogInformative>
   ) : (
     <ConfirmDialog
+      confirmAnalyticsId="admin_user_deletion_confirm"
       confirmLabel={t('Utils.Delete')}
       destructive
       title={t('UserActions.DeleteUser')}
