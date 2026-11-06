@@ -1550,6 +1550,8 @@
     "GoTo": "サービスページへ",
     "GoToAdminLabel": "管理する",
     "List": {
+      "LoadError": "ドキュメントを読み込めませんでした。",
+      "Retry": "再試行",
       "ViewTab": "タブ表示を選択",
       "ViewList": "リスト表示を選択",
       "Filters": "フィルター",

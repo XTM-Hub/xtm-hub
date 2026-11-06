@@ -11,7 +11,7 @@ import { filterDocumentImages, findDocumentLogo } from '@/utils/documents';
 import { getResourcePageFiligranWebsiteUtm } from '@/utils/filigran-website-utm';
 import {
   ConnectorFields,
-  PublicDocumentDetailsData,
+  PublicDocumentByServiceSlugItem,
 } from '@/utils/shareable-resources/shareable-resources.types';
 import {
   LogoFiligranIcon,
@@ -23,7 +23,7 @@ import { SeoServiceInstanceItemFragment } from '@graphql/generated';
 import Image from 'next/image';
 
 interface ShareableResourceConnectorSlugPublicProps {
-  documentData: PublicDocumentDetailsData & ConnectorFields;
+  documentData: PublicDocumentByServiceSlugItem & ConnectorFields;
   serviceInstance:
     SeoServiceInstanceItemFragment | serviceInstance_fragment$data;
   pageUrl: string;

@@ -4,18 +4,14 @@ import { useState } from 'react';
 import { Carousel, CarouselItem } from '@/components/ui/carousel';
 import { useTranslate } from '@/hooks/use-translate';
 import { cn } from '@/lib/utils';
-import { PublicDocumentData } from '@/utils/shareable-resources/shareable-resources.types';
 import { Dialog, DialogContent } from '@filigran/design-system';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 import { SeoServiceInstanceItemFragment } from '@graphql/generated';
 import Image from 'next/image';
 
 // Component interface
 interface ShareableResourceCarouselProps {
-  images?:
-    | documentItem_fragment$data['children_documents']
-    | PublicDocumentData['children_documents'];
+  images?: ReadonlyArray<{ readonly id: string } | null> | null;
   serviceInstance:
     SeoServiceInstanceItemFragment | serviceInstance_fragment$data;
   className?: string;
