@@ -1,4 +1,5 @@
 import {
+  DocumentStatus,
   IntegrationType,
   Resolvers,
   ServiceInstance as ServiceInstanceModel,
@@ -26,6 +27,9 @@ import { DocumentApp } from './document.app';
 import { subscriptionByServiceInstanceLoaderKey } from './document.dataloader';
 import { DocumentHelper } from './document.helper';
 import { DocumentDomain } from './domain/document.domain';
+
+const isPublished = ({ status }: { status: DocumentStatus }) =>
+  status === DocumentStatus.Published;
 
 const resolvers: Resolvers = {
   DocumentId: createRelayIdScalar<DocumentId>('Document'),
@@ -65,15 +69,11 @@ const resolvers: Resolvers = {
         throw mapToGraphQLError(error, UnknownErrorCode.DocumentUpdateError);
       }
     },
-    deleteDocument: async (
-      _,
-      { documentId, forceDelete, service_instance_id }
-    ) => {
+    deleteDocument: async (_, { documentId, service_instance_id }) => {
       try {
         return await DocumentApp.deleteDocument(
           documentId,
-          service_instance_id,
-          forceDelete ?? false
+          service_instance_id
         );
       } catch (error) {
         throw mapToGraphQLError(error, UnknownErrorCode.DeleteDocumentError);
@@ -133,7 +133,11 @@ const resolvers: Resolvers = {
       }
     },
   },
+  ShareableResource: {
+    active: isPublished,
+  },
   Document: {
+    active: isPublished,
     async __resolveType(document, context) {
       const TYPE_MAPPINGS = {
         [OPENCTI_CUSTOM_DASHBOARD_DOCUMENT_TYPE]: 'CustomDashboard',
@@ -220,16 +224,6 @@ const resolvers: Resolvers = {
     },
   },
   Query: {
-    documentExists: async (_, input) => {
-      try {
-        return await DocumentHelper.checkDocumentExists(
-          input.documentName ?? '',
-          input.service_instance_id
-        );
-      } catch (error) {
-        throw mapToGraphQLError(error);
-      }
-    },
     publicDocuments: async (_, input) => {
       try {
         return await DocumentApp.loadPublicDocuments(input);

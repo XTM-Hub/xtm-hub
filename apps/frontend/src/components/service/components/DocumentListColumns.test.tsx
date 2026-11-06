@@ -1,6 +1,10 @@
 import { DocumentOverrides } from '@/utils/test/document-overrides';
 import testRender from '@/utils/test/test-render';
-import { DocumentItemFragment, IntegrationType } from '@graphql/generated';
+import {
+  DocumentItemFragment,
+  DocumentStatus,
+  IntegrationType,
+} from '@graphql/generated';
 import {
   flexRender,
   getCoreRowModel,
@@ -17,7 +21,7 @@ const buildDocument = (overrides: DocumentOverrides): DocumentItemFragment =>
     __typename: 'CsvFeed',
     id: 'document-1',
     type: 'OPENCTI_INTEGRATION',
-    active: true,
+    status: DocumentStatus.Published,
     name: null,
     slug: null,
     description: null,

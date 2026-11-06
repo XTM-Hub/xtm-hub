@@ -25,7 +25,7 @@ const buildConnector = (
     __typename: 'Connector',
     id: 'connector-1',
     name: 'Connector Name',
-    active: true,
+    status: 'published',
     verified: false,
     manager_supported: false,
     children_documents: [],

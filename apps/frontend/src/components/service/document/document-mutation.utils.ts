@@ -2,6 +2,7 @@ import type { ServiceFormValues } from '@/components/service/components/subscrib
 import type { GraphqlUploads } from '@/lib/graphql-upload-client';
 import { omit } from '@/lib/omit';
 import { pick } from '@/lib/pick';
+import { toDocumentStatus, toStatusUpdate } from '@/utils/documents';
 import type {
   CreateDocumentInput,
   DocumentMetadata,
@@ -39,7 +40,7 @@ const documentFileKeys: Array<keyof DocumentFormValues> = [
 export const toCreateDocumentInput = (
   values: DocumentFormValues
 ): CreateDocumentInput => {
-  const input = omit(
+  const { active, ...input } = omit(
     {
       ...pick(values, documentBaseKeys),
       uploader_id: values.uploader_id ?? '',
@@ -49,7 +50,7 @@ export const toCreateDocumentInput = (
 
   return {
     ...input,
-    active: input.active ?? false,
+    status: toDocumentStatus(active),
     use_cases: input.use_cases ?? [],
     solution_categories: input.solution_categories ?? [],
     entity_types: input.entity_types ?? null,
@@ -64,15 +65,22 @@ export const toCreateDocumentInput = (
  * cast: it is the only way to keep those fields out of the request.
  */
 export const toUpdateDocumentInput = (
-  values: DocumentFormValues
-): UpdateDocumentInput =>
-  omit(
+  values: DocumentFormValues,
+  currentStatus: string
+): UpdateDocumentInput => {
+  const { active, ...input } = omit(
     {
       ...pick(values, documentBaseKeys),
       uploader_id: values.uploader_id ?? '',
     },
     ['slug']
-  ) as UpdateDocumentInput;
+  );
+
+  return {
+    ...input,
+    ...toStatusUpdate(active, currentStatus),
+  } as UpdateDocumentInput;
+};
 
 /** Every form value that is neither a document column nor a file is metadata. */
 export const toDocumentMetadata = (

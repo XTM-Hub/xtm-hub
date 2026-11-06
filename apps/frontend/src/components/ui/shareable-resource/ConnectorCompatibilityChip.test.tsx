@@ -37,7 +37,7 @@ const UNKNOWN_COMPATIBILITY = {
 
 const CONNECTOR = {
   id: 'doc-1',
-  active: true,
+  status: 'published',
   product_version: PRODUCT_VERSION,
   manager_supported: true,
   integration_type: IntegrationType.Connector,

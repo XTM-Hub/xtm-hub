@@ -1,5 +1,24 @@
 import { PublicDocumentData } from '@/utils/shareable-resources/shareable-resources.types';
-import { DocumentImageType, DocumentItemFragment } from '@graphql/generated';
+import {
+  DocumentImageType,
+  DocumentItemFragment,
+  DocumentStatus,
+} from '@graphql/generated';
+
+export const isDocumentPublished = (status?: string | null): boolean =>
+  status === DocumentStatus.Published;
+
+export const toDocumentStatus = (published?: boolean | null): DocumentStatus =>
+  published ? DocumentStatus.Published : DocumentStatus.Draft;
+
+// Only a change of publication sends a status, so saving an in validation resource never asks for an invalid transition
+export const toStatusUpdate = (
+  published: boolean | undefined,
+  currentStatus: string
+): { status?: DocumentStatus } =>
+  published === undefined || published === isDocumentPublished(currentStatus)
+    ? {}
+    : { status: toDocumentStatus(published) };
 
 export interface ExistingFile {
   file_name: string;

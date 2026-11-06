@@ -2,13 +2,17 @@ import {
   DocumentImageType,
   DocumentItemFragment,
   DocumentSourceType,
+  DocumentStatus,
 } from '@graphql/generated';
 import {
   docIsExistingFile,
   filterDocumentImages,
   findDocumentLogo,
   FormImagesValues,
+  isDocumentPublished,
   splitExistingAndNewImages,
+  toDocumentStatus,
+  toStatusUpdate,
   transformToFileList,
 } from './documents';
 
@@ -19,7 +23,7 @@ const NEW_FILE_PREVIEW = 'data:image/png;base64,AAAA';
 const CREATED_AT = '2025-01-01T00:00:00.000Z';
 
 const makeChild = (id: string, imageType: DocumentImageType) => ({
-  active: true,
+  status: 'published',
   created_at: CREATED_AT,
   description: null,
   download_number: null,
@@ -34,7 +38,7 @@ const makeDocument = (
   children: DocumentItemFragment['children_documents']
 ): DocumentItemFragment => ({
   __typename: 'DefaultDocument',
-  active: true,
+  status: DocumentStatus.Published,
   children_documents: children,
   created_at: CREATED_AT,
   description: null,
@@ -69,6 +73,70 @@ const makeNewImage = () =>
   });
 
 describe('Documents utils', () => {
+  describe('isDocumentPublished', () => {
+    it.each([
+      [DocumentStatus.Published, true],
+      [DocumentStatus.InValidation, false],
+      [DocumentStatus.Draft, false],
+      [undefined, false],
+      [null, false],
+    ])(
+      'should tell whether the document is published when its status is %s',
+      (status, expected) => {
+        // Given a document status
+
+        // When
+        const result = isDocumentPublished(status);
+
+        // Then
+        expect(result).toBe(expected);
+      }
+    );
+  });
+
+  describe('toDocumentStatus', () => {
+    it.each([
+      [true, DocumentStatus.Published],
+      [false, DocumentStatus.Draft],
+      [undefined, DocumentStatus.Draft],
+      [null, DocumentStatus.Draft],
+    ])(
+      'should return the matching status when the publication switch is %s',
+      (published, expected) => {
+        // Given the value of the publication switch
+
+        // When
+        const result = toDocumentStatus(published);
+
+        // Then
+        expect(result).toBe(expected);
+      }
+    );
+  });
+
+  describe('toStatusUpdate', () => {
+    it.each([
+      [false, DocumentStatus.Published, { status: DocumentStatus.Draft }],
+      [true, DocumentStatus.Draft, { status: DocumentStatus.Published }],
+      [true, DocumentStatus.InValidation, { status: DocumentStatus.Published }],
+      [true, DocumentStatus.Published, {}],
+      [false, DocumentStatus.Draft, {}],
+      [false, DocumentStatus.InValidation, {}],
+      [undefined, DocumentStatus.Draft, {}],
+    ])(
+      'should return the status update when the switch is %s and the document is %s',
+      (published, currentStatus, expected) => {
+        // Given the switch value and the status saved on the document
+
+        // When
+        const result = toStatusUpdate(published, currentStatus);
+
+        // Then
+        expect(result).toEqual(expected);
+      }
+    );
+  });
+
   describe('filterDocumentImages', () => {
     it.each`
       title                                      | children                      | expected

@@ -32,8 +32,8 @@ const testState = vi.hoisted(() => ({
   serviceListProps: vi.fn(),
 }));
 
-const buildDocument = (id: string, active: boolean) =>
-  ({ id, active }) as DocumentItemFragment;
+const buildDocument = (id: string, status: string) =>
+  ({ id, status }) as DocumentItemFragment;
 
 const withDocuments = (
   totalCount: number,
@@ -241,8 +241,8 @@ describe('ShareableResourceServiceList', () => {
     // Given
     testState.useDocumentsListQuery.mockReturnValue(
       withDocuments(2, [
-        buildDocument(DRAFT_DOCUMENT_ID, false),
-        buildDocument(ACTIVE_DOCUMENT_ID, true),
+        buildDocument(DRAFT_DOCUMENT_ID, 'draft'),
+        buildDocument(ACTIVE_DOCUMENT_ID, 'published'),
       ])
     );
 

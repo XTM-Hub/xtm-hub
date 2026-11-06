@@ -1,4 +1,4 @@
-import { splitActiveAndDraft } from '@/components/service/components/service-list-utils';
+import { splitPublishedAndOthers } from '@/components/service/components/service-list-utils';
 import { AppServiceContext } from '@/components/service/components/ServiceContext';
 import ServiceList from '@/components/service/components/ServiceList';
 import { AppServiceListStorageKeyContext } from '@/components/service/components/ServiceListStorageKeyContext';
@@ -35,7 +35,7 @@ export interface ShareableResourceServiceListProps {
 /**
  * Mutualizes the behaviour shared by every shareable-resource list (integrations, custom
  * dashboards, custom views, OpenAEV scenarios, OpenCTI playbooks): loading the documents
- * connection, splitting active/draft documents, wiring the document CRUD context, and
+ * connection, splitting published/draft documents, wiring the document CRUD context, and
  * rendering the paginated `ServiceList`. Resource-specific filters are passed in via
  * `logicalFilters`.
  */
@@ -111,7 +111,7 @@ const ShareableResourceServiceList = ({
 
   const [active, draft] = useMemo(
     () =>
-      splitActiveAndDraft(
+      splitPublishedAndOthers(
         (data?.documents.edges ?? []).map(({ node }) => node)
       ),
     [data]
@@ -124,7 +124,7 @@ const ShareableResourceServiceList = ({
     documentType: type,
     search,
     serviceInstanceSlug,
-    restrictToActiveDocuments: false,
+    restrictToPublishedDocuments: false,
     labels,
     entityTypes,
     deployable,

@@ -1,3 +1,4 @@
+import { isDocumentPublished } from '@/utils/documents';
 import { hasProperty } from '@/utils/has-property';
 import { encodeRedirectValue } from '@/utils/redirect';
 import {
@@ -107,7 +108,7 @@ const DEPLOYABLE_RESOURCE_TYPES: string[] = [
 export const isResourceDeployable = (
   document: DocumentItemFragment | PublicDocumentData
 ): boolean => {
-  if (!document.active) {
+  if (!isDocumentPublished(document.status)) {
     return false;
   }
 

@@ -132,7 +132,7 @@ export const IntegrationCsvExportEndpoint = {
           orderBy: DocumentOrdering.Name,
           orderMode: OrderingMode.Asc,
           parentsOnly: true,
-          activeOnly: true,
+          publishedOnly: true,
           logicalFilters,
         },
         INTEGRATION_CSV_EXPORT_METADATA_KEYS

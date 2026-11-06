@@ -1,38 +1,35 @@
-import { splitActiveAndDraft } from '@/components/service/components/service-list-utils';
+import { describe, expect, it } from 'vitest';
+import { splitPublishedAndOthers } from './service-list-utils';
 
-const ACTIVE_ONE = { id: 'a1', active: true };
-const ACTIVE_TWO = { id: 'a2', active: true };
-const DRAFT_ONE = { id: 'd1', active: false };
-const DRAFT_TWO = { id: 'd2', active: false };
+interface Item {
+  id: string;
+  status: string;
+}
 
-describe('splitActiveAndDraft', () => {
-  it('should keep the order of the documents inside each group', () => {
-    // Given
-    const documents = [ACTIVE_ONE, DRAFT_ONE, ACTIVE_TWO, DRAFT_TWO];
+const PUBLISHED_ITEM: Item = { id: 'published', status: 'published' };
+const DRAFT_ITEM: Item = { id: 'draft', status: 'draft' };
+const IN_VALIDATION_ITEM: Item = {
+  id: 'in-validation',
+  status: 'in_validation',
+};
 
-    // When
-    const [active, draft] = splitActiveAndDraft(documents);
-
-    // Then
-    expect(active).toEqual([ACTIVE_ONE, ACTIVE_TWO]);
-    expect(draft).toEqual([DRAFT_ONE, DRAFT_TWO]);
-  });
-
-  it('should return two empty groups when there is no document', () => {
-    expect(splitActiveAndDraft([])).toEqual([[], []]);
-  });
-
+describe('splitPublishedAndOthers', () => {
   it.each`
-    description           | documents       | expectedActive  | expectedDraft
-    ${'only active ones'} | ${[ACTIVE_ONE]} | ${[ACTIVE_ONE]} | ${[]}
-    ${'only draft ones'}  | ${[DRAFT_ONE]}  | ${[]}           | ${[DRAFT_ONE]}
+    description                            | items                                               | expected
+    ${'there are no documents'}            | ${[]}                                               | ${[[], []]}
+    ${'every document is published'}       | ${[PUBLISHED_ITEM]}                                 | ${[[PUBLISHED_ITEM], []]}
+    ${'no document is published'}          | ${[DRAFT_ITEM, IN_VALIDATION_ITEM]}                 | ${[[], [DRAFT_ITEM, IN_VALIDATION_ITEM]]}
+    ${'documents have different statuses'} | ${[DRAFT_ITEM, PUBLISHED_ITEM, IN_VALIDATION_ITEM]} | ${[[PUBLISHED_ITEM], [DRAFT_ITEM, IN_VALIDATION_ITEM]]}
   `(
-    'should handle a list with $description',
-    ({ documents, expectedActive, expectedDraft }) => {
-      expect(splitActiveAndDraft(documents)).toEqual([
-        expectedActive,
-        expectedDraft,
-      ]);
+    'should put the published documents first and the others second when $description',
+    ({ items, expected }: { items: Item[]; expected: [Item[], Item[]] }) => {
+      // Given a list of documents
+
+      // When
+      const result = splitPublishedAndOthers(items);
+
+      // Then
+      expect(result).toEqual(expected);
     }
   );
 });

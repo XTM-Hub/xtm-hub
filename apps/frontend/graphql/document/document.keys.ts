@@ -2,7 +2,6 @@ import {
   DocumentDetailQueryVariables,
   DocumentsListQueryVariables,
   useDocumentDetailQuery,
-  useDocumentExistsQuery,
   useDocumentsListQuery,
   useMostDeployedDocumentsQueryQuery,
   usePublicDocumentsQuery,
@@ -19,7 +18,6 @@ export const documentKeys = {
   detailAll: useDocumentDetailQuery.getRootKey,
   detail: (variables: DocumentDetailQueryVariables) =>
     useDocumentDetailQuery.getKey(variables),
-  existsAll: useDocumentExistsQuery.getRootKey,
 };
 
 export const publicDocumentKeys = {

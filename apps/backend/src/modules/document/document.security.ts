@@ -10,7 +10,7 @@ import { UserServiceCapabilityHelper } from '../security-management/user-service
 import { ServiceInstanceDomain } from '../service/instance/service-instance.domain';
 import { MANAGEABLE_SERVICE_DEFINITION_IDENTIFIERS } from './document.helper';
 
-export const isUserRestrictedToActiveDocument = async (
+export const isUserRestrictedToPublishedDocument = async (
   user: UserLoadUserBy,
   serviceInstanceId: ServiceInstanceId
 ) => {

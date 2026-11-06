@@ -2,7 +2,11 @@ import {
   ServiceSlug,
   ShareableResourceType,
 } from '@/utils/shareable-resources/shareable-resources.types';
-import { DocumentItemFragment, IntegrationType } from '@graphql/generated';
+import {
+  DocumentItemFragment,
+  DocumentStatus,
+  IntegrationType,
+} from '@graphql/generated';
 import { describe, expect, it } from 'vitest';
 import {
   getServiceInfo,
@@ -12,14 +16,14 @@ import {
 type DeployableCase = {
   expected: boolean;
   type: ShareableResourceType;
-  active: boolean;
+  status: DocumentStatus;
   integrationType?: IntegrationType;
   typename?: string;
 };
 
 const buildDocumentData = ({
   type,
-  active,
+  status,
   integrationType,
   typename = 'Document',
 }: Omit<DeployableCase, 'expected'>): DocumentItemFragment =>
@@ -27,7 +31,7 @@ const buildDocumentData = ({
     __typename: typename,
     id: 'doc-1',
     type,
-    active,
+    status,
     integration_type: integrationType,
   }) as DocumentItemFragment;
 
@@ -36,96 +40,101 @@ describe('isResourceDeployable', () => {
     {
       expected: true,
       type: ShareableResourceType.OPENCTI_CUSTOM_DASHBOARD,
-      active: true,
+      status: 'published',
     },
     {
       expected: true,
       type: ShareableResourceType.OPENCTI_CUSTOM_VIEW,
-      active: true,
+      status: 'published',
     },
     {
       expected: true,
       type: ShareableResourceType.OPENAEV_SCENARIO,
-      active: true,
+      status: 'published',
     },
     {
       expected: true,
       type: ShareableResourceType.OPENCTI_PLAYBOOK,
-      active: true,
+      status: 'published',
     },
     {
       expected: false,
       type: ShareableResourceType.OPENCTI_CUSTOM_DASHBOARD,
-      active: false,
+      status: 'draft',
+    },
+    {
+      expected: false,
+      type: ShareableResourceType.OPENCTI_CUSTOM_DASHBOARD,
+      status: 'in_validation',
     },
     {
       expected: false,
       type: ShareableResourceType.OPENAEV_SCENARIO,
-      active: false,
+      status: 'draft',
     },
     {
       expected: true,
       type: ShareableResourceType.OPENCTI_INTEGRATION,
-      active: true,
+      status: DocumentStatus.Published,
       integrationType: IntegrationType.CsvFeed,
     },
     {
       expected: true,
       type: ShareableResourceType.OPENCTI_INTEGRATION,
-      active: true,
+      status: DocumentStatus.Published,
       integrationType: IntegrationType.TaxiiFeed,
     },
     {
       expected: true,
       type: ShareableResourceType.OPENCTI_INTEGRATION,
-      active: true,
+      status: DocumentStatus.Published,
       integrationType: IntegrationType.RssFeed,
     },
     {
       expected: true,
       type: ShareableResourceType.OPENCTI_INTEGRATION,
-      active: true,
+      status: DocumentStatus.Published,
       integrationType: IntegrationType.Stream,
     },
     {
       expected: false,
       type: ShareableResourceType.OPENCTI_INTEGRATION,
-      active: true,
+      status: DocumentStatus.Published,
       integrationType: IntegrationType.ThirdPartyIntegration,
     },
     {
       expected: false,
       type: ShareableResourceType.OPENCTI_INTEGRATION,
-      active: true,
+      status: DocumentStatus.Published,
       integrationType: IntegrationType.Connector,
     },
     {
       expected: false,
       type: ShareableResourceType.OPENCTI_INTEGRATION,
-      active: false,
+      status: DocumentStatus.Draft,
       integrationType: IntegrationType.CsvFeed,
     },
     {
       expected: true,
       type: ShareableResourceType.OPENCTI_INTEGRATION,
-      active: true,
+      status: DocumentStatus.Published,
       integrationType: IntegrationType.Connector,
       typename: 'Connector',
     },
     {
       expected: false,
       type: ShareableResourceType.OPENCTI_INTEGRATION,
-      active: false,
+      status: DocumentStatus.Draft,
       integrationType: IntegrationType.Connector,
       typename: 'Connector',
     },
   ])(
-    'should return $expected when type is $type, active is $active, integration type is $integrationType and typename is $typename',
-    ({ expected, type, active, integrationType, typename }) => {
+    'should return $expected when type is $type, status is $status, integration type is $integrationType and typename is $typename',
+    ({ expected, type, status, integrationType, typename }) => {
       // Given
       const document = buildDocumentData({
         type,
-        active,
+        status,
         integrationType,
         typename,
       });

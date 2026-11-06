@@ -98,7 +98,7 @@ const PublicDocumentsList = ({
     documentType: SERVICE_SLUG_SHAREABLE_RESOURCE_MAPPING[serviceInstanceSlug],
     search,
     serviceInstanceSlug,
-    restrictToActiveDocuments: true,
+    restrictToPublishedDocuments: true,
     labels,
     entityTypes,
     deployable,
@@ -195,7 +195,7 @@ const PublicDocumentsList = ({
       );
     }
     if (isLoading) {
-      return <Skeleton className="h-64 w-full" />;
+      return <Skeleton className="h-64 w-full layer-1 bg-elevation-default" />;
     }
     return (
       <PublicShareableResourceList

@@ -118,7 +118,6 @@ const storeIllustration = async (
       description: 'Votable feature illustration',
       file_name: file.fileName,
       minio_name: file.minioName,
-      active: true,
       mime_type: file.mimeType,
       type: 'image',
       source_type: 'internal',

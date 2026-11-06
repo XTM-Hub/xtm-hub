@@ -7,7 +7,8 @@ type CustomView implements Document & Node {
   short_description: String
   description: String
   file_name: String! @auth
-  active: Boolean!
+  active: Boolean @deprecated(reason: "Use status")
+  status: DocumentStatus!
   created_at: Date!
   updated_at: Date
   updater_id: String @auth

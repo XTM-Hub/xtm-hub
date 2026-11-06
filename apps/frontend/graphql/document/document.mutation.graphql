@@ -51,12 +51,10 @@ mutation DocumentUpdate(
 mutation DocumentDelete(
   $documentId: DocumentId!
   $serviceInstanceId: ServiceInstanceId!
-  $forceDelete: Boolean
 ) {
   deleteDocument(
     documentId: $documentId
     service_instance_id: $serviceInstanceId
-    forceDelete: $forceDelete
   ) {
     id
   }

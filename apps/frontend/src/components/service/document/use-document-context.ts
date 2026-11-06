@@ -150,7 +150,6 @@ export function useDocumentContext({
       {
         documentId: document.id,
         serviceInstanceId: serviceInstance.id,
-        forceDelete: true,
       },
       {
         onSuccess: () => {
@@ -191,7 +190,10 @@ export function useDocumentContext({
     updateMutation(
       {
         variables: {
-          input: toUpdateDocumentInput(values as DocumentFormValues),
+          input: toUpdateDocumentInput(
+            values as DocumentFormValues,
+            resource.status
+          ),
           serviceInstanceId: serviceInstance.id,
           sourceDocument: null,
           images: null,

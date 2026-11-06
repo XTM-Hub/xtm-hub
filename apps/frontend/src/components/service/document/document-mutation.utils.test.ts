@@ -5,7 +5,7 @@ import {
   toDocumentUploads,
   toUpdateDocumentInput,
 } from '@/components/service/document/document-mutation.utils';
-import { DocumentMetadataKeyCode } from '@graphql/generated';
+import { DocumentMetadataKeyCode, DocumentStatus } from '@graphql/generated';
 
 const buildValues = (
   overrides: Record<string, unknown> = {}
@@ -41,7 +41,7 @@ describe('toCreateDocumentInput', () => {
       solution_categories: [],
       entity_types: null,
       license_type: null,
-      active: true,
+      status: DocumentStatus.Published,
     });
   });
 
@@ -57,7 +57,7 @@ describe('toCreateDocumentInput', () => {
 
     // Then
     expect(input).toMatchObject({
-      active: false,
+      status: DocumentStatus.Draft,
       use_cases: [],
       solution_categories: [],
       uploader_id: '',
@@ -67,13 +67,38 @@ describe('toCreateDocumentInput', () => {
 
 describe('toUpdateDocumentInput', () => {
   it('should leave out the slug, which is never updated', () => {
-    expect(toUpdateDocumentInput(buildValues())).not.toHaveProperty('slug');
+    expect(
+      toUpdateDocumentInput(buildValues(), 'published')
+    ).not.toHaveProperty('slug');
   });
+
+  it.each`
+    active   | currentStatus      | expectedStatus
+    ${false} | ${'published'}     | ${DocumentStatus.Draft}
+    ${true}  | ${'draft'}         | ${DocumentStatus.Published}
+    ${true}  | ${'in_validation'} | ${DocumentStatus.Published}
+    ${true}  | ${'published'}     | ${undefined}
+    ${false} | ${'draft'}         | ${undefined}
+    ${false} | ${'in_validation'} | ${undefined}
+  `(
+    'should send the status $expectedStatus when the switch is $active and the document is $currentStatus',
+    ({ active, currentStatus, expectedStatus }) => {
+      // When
+      const input = toUpdateDocumentInput(
+        buildValues({ active }),
+        currentStatus
+      );
+
+      // Then
+      expect(input.status).toBe(expectedStatus);
+      expect(input).not.toHaveProperty('active');
+    }
+  );
 
   it('should send nothing for the fields the form does not carry', () => {
     // When
     const serialized = JSON.parse(
-      JSON.stringify(toUpdateDocumentInput(buildValues()))
+      JSON.stringify(toUpdateDocumentInput(buildValues(), 'published'))
     );
 
     // Then
@@ -84,7 +109,6 @@ describe('toUpdateDocumentInput', () => {
       short_description: 'short',
       description: 'long',
       use_cases: ['use-case-1'],
-      active: true,
     });
   });
 });

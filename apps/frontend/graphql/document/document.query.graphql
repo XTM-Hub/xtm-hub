@@ -9,7 +9,7 @@ fragment DocumentItem on Document {
   description
   download_number
   share_number
-  active
+  status
   updated_at
   use_cases {
     id
@@ -35,7 +35,7 @@ fragment DocumentItem on Document {
     name
     description
     download_number
-    active
+    status
     source_type
     image_type
   }
@@ -117,7 +117,7 @@ fragment HomepageDocument on Document {
   name
   short_description
   type
-  active
+  status
   slug
   service_instance_id
   children_documents {
@@ -174,16 +174,6 @@ query LastDeployedOverviewQuery(
       }
     }
   }
-}
-
-query DocumentExists(
-  $documentName: String
-  $serviceInstanceId: ServiceInstanceId!
-) {
-  documentExists(
-    documentName: $documentName
-    service_instance_id: $serviceInstanceId
-  )
 }
 
 query DocumentsList(

@@ -92,7 +92,6 @@ type Query {
   serviceGroups(serviceInstanceId: ServiceInstanceId!): [ServiceGroup!]!
   bundleUserServiceGroups(serviceInstanceId: ServiceInstanceId!): [BundleUserServiceGroup!]!
   bundleProducts(serviceInstanceId: ServiceInstanceId!): [PlatformIdentifier!]!
-  documentExists(documentName: String, service_instance_id: ServiceInstanceId!): Boolean
   publicDocuments(slug: String!, first: Int!, after: ID, orderBy: DocumentOrdering!, orderMode: OrderingMode!, searchTerm: String, logicalFilters: LogicalFilterInput, serviceInstanceId: ServiceInstanceId!): DocumentConnection!
   publicDocumentsByServiceSlug(serviceInstanceSlug: String!): [Document!]!
   publicDocumentSlugsByServiceSlug(serviceInstanceSlug: String!): [PublicDocumentSlugInfo!]!
@@ -175,7 +174,7 @@ type Mutation {
   updateBundleUserGroups(serviceInstanceId: ServiceInstanceId!, input: UpdateBundleUserGroupsInput!): [BundleUserServiceGroup!]!
   createDocument(input: CreateDocumentInput!, metadata: [DocumentMetadata!]!, serviceInstanceId: ServiceInstanceId!, sourceDocument: Upload, logo: Upload, images: [Upload!]): Document!
   updateDocument(documentId: DocumentId!, input: UpdateDocumentInput!, metadata: [DocumentMetadata!]!, serviceInstanceId: ServiceInstanceId!, sourceDocument: Upload, logo: Upload, images: [Upload!], existingImageIds: [DocumentId!]): Document!
-  deleteDocument(documentId: DocumentId!, service_instance_id: ServiceInstanceId!, forceDelete: Boolean): Document!
+  deleteDocument(documentId: DocumentId!, service_instance_id: ServiceInstanceId!, forceDelete: Boolean @deprecated(reason: "Ignored, documents are always deleted")): Document!
   incrementShareNumberDocument(documentId: DocumentId!): Document!
   voteForFeature(feature_id: VotableFeatureId!): [VotableFeature!]!
   createVotingRound(input: CreateVotingRoundInput!): VotingRound!
@@ -675,6 +674,12 @@ enum DocumentImageType {
   image
 }
 
+enum DocumentStatus {
+  draft
+  in_validation
+  published
+}
+
 enum LicenseType {
   Commercial
   Free
@@ -717,7 +722,8 @@ type ShareableResource {
   name: String
   description: String
   download_number: Int
-  active: Boolean!
+  active: Boolean @deprecated(reason: "Use status")
+  status: DocumentStatus!
   source_type: DocumentSourceType!
   image_type: DocumentImageType
 }
@@ -750,7 +756,8 @@ type DefaultDocument implements Node & Document {
   short_description: String
   description: String
   file_name: String
-  active: Boolean!
+  active: Boolean @deprecated(reason: "Use status")
+  status: DocumentStatus!
   created_at: Date!
   updated_at: Date
   updater_id: String
@@ -773,7 +780,8 @@ interface Document implements Node {
   short_description: String
   description: String
   file_name: String
-  active: Boolean!
+  active: Boolean @deprecated(reason: "Use status")
+  status: DocumentStatus!
   created_at: Date!
   updated_at: Date
   updater_id: String
@@ -797,7 +805,7 @@ input CreateDocumentInput {
   slug: String!
   short_description: String!
   description: String!
-  active: Boolean!
+  status: DocumentStatus!
   use_cases: [UseCaseId!]!
   solution_categories: [SolutionCategoryId!]!
   license_type: LicenseType
@@ -809,7 +817,7 @@ input UpdateDocumentInput {
   name: String
   short_description: String
   description: String
-  active: Boolean
+  status: DocumentStatus
   use_cases: [UseCaseId!]
   solution_categories: [SolutionCategoryId!]
   license_type: LicenseType
@@ -860,7 +868,8 @@ input LoadDocumentFacetInput {
   searchTerm: String
   documentType: String
   logicalFilters: LogicalFilterInput
-  restrictToActiveDocuments: Boolean
+  restrictToActiveDocuments: Boolean @deprecated(reason: "Use restrictToPublishedDocuments")
+  restrictToPublishedDocuments: Boolean
 }
 
 """
@@ -1846,7 +1855,8 @@ type OpenAEVScenario implements Document & Node {
   short_description: String
   description: String
   file_name: String!
-  active: Boolean!
+  active: Boolean @deprecated(reason: "Use status")
+  status: DocumentStatus!
   created_at: Date!
   updated_at: Date
   updater_id: String
@@ -1870,7 +1880,8 @@ type CustomDashboard implements Document & Node {
   short_description: String
   description: String
   file_name: String!
-  active: Boolean!
+  active: Boolean @deprecated(reason: "Use status")
+  status: DocumentStatus!
   created_at: Date!
   updated_at: Date
   updater_id: String
@@ -1894,7 +1905,8 @@ type CustomView implements Document & Node {
   short_description: String
   description: String
   file_name: String!
-  active: Boolean!
+  active: Boolean @deprecated(reason: "Use status")
+  status: DocumentStatus!
   created_at: Date!
   updated_at: Date
   updater_id: String
@@ -1928,7 +1940,8 @@ interface Integration implements Node & Document {
   short_description: String
   description: String
   file_name: String
-  active: Boolean!
+  active: Boolean @deprecated(reason: "Use status")
+  status: DocumentStatus!
   created_at: Date!
   updated_at: Date
   updater_id: String
@@ -1958,7 +1971,8 @@ type IntegrationHack implements Node & Document & Integration {
   short_description: String
   description: String
   file_name: String
-  active: Boolean!
+  active: Boolean @deprecated(reason: "Use status")
+  status: DocumentStatus!
   created_at: Date!
   updated_at: Date
   updater_id: String
@@ -1988,7 +2002,8 @@ type CsvFeed implements Node & Document & Integration {
   short_description: String
   description: String
   file_name: String
-  active: Boolean!
+  active: Boolean @deprecated(reason: "Use status")
+  status: DocumentStatus!
   created_at: Date!
   updated_at: Date
   updater_id: String
@@ -2019,7 +2034,8 @@ type Connector implements Node & Document & Integration {
   short_description: String
   description: String
   file_name: String
-  active: Boolean!
+  active: Boolean @deprecated(reason: "Use status")
+  status: DocumentStatus!
   created_at: Date!
   updated_at: Date
   updater_id: String
@@ -2058,7 +2074,8 @@ type TaxiiFeed implements Node & Document & Integration {
   short_description: String
   description: String
   file_name: String
-  active: Boolean!
+  active: Boolean @deprecated(reason: "Use status")
+  status: DocumentStatus!
   created_at: Date!
   updated_at: Date
   updater_id: String
@@ -2089,7 +2106,8 @@ type RssFeed implements Node & Document & Integration {
   short_description: String
   description: String
   file_name: String
-  active: Boolean!
+  active: Boolean @deprecated(reason: "Use status")
+  status: DocumentStatus!
   created_at: Date!
   updated_at: Date
   updater_id: String
@@ -2120,7 +2138,8 @@ type Stream implements Node & Document & Integration {
   short_description: String
   description: String
   file_name: String
-  active: Boolean!
+  active: Boolean @deprecated(reason: "Use status")
+  status: DocumentStatus!
   created_at: Date!
   updated_at: Date
   updater_id: String
@@ -2151,7 +2170,8 @@ type ThirdPartyIntegration implements Node & Document & Integration {
   short_description: String
   description: String
   file_name: String
-  active: Boolean!
+  active: Boolean @deprecated(reason: "Use status")
+  status: DocumentStatus!
   created_at: Date!
   updated_at: Date
   updater_id: String
@@ -2184,7 +2204,8 @@ type OpenCTIPlaybook implements Document & Node {
   short_description: String
   description: String
   file_name: String!
-  active: Boolean!
+  active: Boolean @deprecated(reason: "Use status")
+  status: DocumentStatus!
   created_at: Date!
   updated_at: Date
   updater_id: String

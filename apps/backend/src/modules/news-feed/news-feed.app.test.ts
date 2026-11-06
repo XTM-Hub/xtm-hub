@@ -16,6 +16,7 @@ import {
   TEST_ORGANIZATIONS,
 } from '../../../tests/tests.const';
 import {
+  DocumentStatus,
   IntegrationType,
   NewsFeedItemMetadataKey,
   NewsFeedItemType,
@@ -1171,7 +1172,7 @@ describe('newsFeedApp', () => {
         // When
         await NewsFeedApp.upsertResourceNewsFeed({
           documentBeforeUpdate: undefined,
-          updatedDocument: { ...document, active: true },
+          updatedDocument: { ...document, status: DocumentStatus.Published },
           serviceDefinitionIdentifier:
             ServiceDefinitionIdentifier.OpenctiIntegrations,
         });
@@ -1181,7 +1182,7 @@ describe('newsFeedApp', () => {
         expect(updateResourceNewsFeedItemSpy).not.toHaveBeenCalled();
       });
 
-      it('should create a news feed item when document is created as active', async () => {
+      it('should create a news feed item when document is created as published', async () => {
         // Given
         vi.spyOn(NewsFeedHelper, 'getNewsFeedConfiguration').mockReturnValue({
           newsFeedType: NewsFeedItemType.ResourceCustomDashboard,
@@ -1194,7 +1195,10 @@ describe('newsFeedApp', () => {
           .spyOn(NewsFeedApp, 'updateResourceNewsFeedItem')
           .mockResolvedValue();
 
-        const updatedDocument = { ...document, active: true };
+        const updatedDocument = {
+          ...document,
+          status: DocumentStatus.Published,
+        };
 
         // When
         await NewsFeedApp.upsertResourceNewsFeed({
@@ -1214,7 +1218,7 @@ describe('newsFeedApp', () => {
         expect(updateResourceNewsFeedItemSpy).not.toHaveBeenCalled();
       });
 
-      it('should update the existing news feed item when document stays active', async () => {
+      it('should update the existing news feed item when document stays published', async () => {
         // Given
         vi.spyOn(NewsFeedHelper, 'getNewsFeedConfiguration').mockReturnValue({
           newsFeedType: NewsFeedItemType.ResourceCustomDashboard,
@@ -1227,11 +1231,17 @@ describe('newsFeedApp', () => {
           .spyOn(NewsFeedApp, 'updateResourceNewsFeedItem')
           .mockResolvedValue();
 
-        const updatedDocument = { ...document, active: true };
+        const updatedDocument = {
+          ...document,
+          status: DocumentStatus.Published,
+        };
 
         // When
         await NewsFeedApp.upsertResourceNewsFeed({
-          documentBeforeUpdate: { ...document, active: true },
+          documentBeforeUpdate: {
+            ...document,
+            status: DocumentStatus.Published,
+          },
           updatedDocument,
           serviceDefinitionIdentifier:
             ServiceDefinitionIdentifier.OpenctiCustomDashboards,
@@ -1265,8 +1275,8 @@ describe('newsFeedApp', () => {
 
         // When
         await NewsFeedApp.upsertResourceNewsFeed({
-          documentBeforeUpdate: { ...document, active: false },
-          updatedDocument: { ...document, active: false },
+          documentBeforeUpdate: { ...document, status: DocumentStatus.Draft },
+          updatedDocument: { ...document, status: DocumentStatus.Draft },
           serviceDefinitionIdentifier:
             ServiceDefinitionIdentifier.OpenctiCustomDashboards,
         });
@@ -1292,8 +1302,11 @@ describe('newsFeedApp', () => {
 
         // When
         await NewsFeedApp.upsertResourceNewsFeed({
-          documentBeforeUpdate: { ...document, active: true },
-          updatedDocument: { ...document, active: false },
+          documentBeforeUpdate: {
+            ...document,
+            status: DocumentStatus.Published,
+          },
+          updatedDocument: { ...document, status: DocumentStatus.Draft },
           serviceDefinitionIdentifier:
             ServiceDefinitionIdentifier.OpenaevScenarios,
         });
@@ -1304,6 +1317,80 @@ describe('newsFeedApp', () => {
           documentId: document.id,
         });
         expect(updateResourceNewsFeedItemSpy).not.toHaveBeenCalled();
+      });
+
+      it.each([
+        [undefined, DocumentStatus.InValidation],
+        [DocumentStatus.Draft, DocumentStatus.InValidation],
+        [DocumentStatus.InValidation, DocumentStatus.InValidation],
+      ])(
+        'should not touch the news feed when the document status goes from %s to %s',
+        async (statusBeforeUpdate, statusAfterUpdate) => {
+          // Given
+          vi.spyOn(NewsFeedHelper, 'getNewsFeedConfiguration').mockReturnValue({
+            newsFeedType: NewsFeedItemType.ResourceCustomDashboard,
+            platformIdentifier: PlatformIdentifier.Opencti,
+          });
+          const createResourceNewsFeedItemSpy = vi
+            .spyOn(NewsFeedApp, 'createResourceNewsFeedItem')
+            .mockResolvedValue();
+          const updateResourceNewsFeedItemSpy = vi
+            .spyOn(NewsFeedApp, 'updateResourceNewsFeedItem')
+            .mockResolvedValue();
+          const deleteResourceNewsFeedSpy = vi
+            .spyOn(NewsFeedApp, 'deleteResourceNewsFeed')
+            .mockResolvedValue();
+
+          // When
+          await NewsFeedApp.upsertResourceNewsFeed({
+            documentBeforeUpdate: statusBeforeUpdate && {
+              ...document,
+              status: statusBeforeUpdate,
+            },
+            updatedDocument: { ...document, status: statusAfterUpdate },
+            serviceDefinitionIdentifier:
+              ServiceDefinitionIdentifier.OpenctiCustomDashboards,
+          });
+
+          // Then
+          expect(createResourceNewsFeedItemSpy).not.toHaveBeenCalled();
+          expect(updateResourceNewsFeedItemSpy).not.toHaveBeenCalled();
+          expect(deleteResourceNewsFeedSpy).not.toHaveBeenCalled();
+        }
+      );
+
+      it('should create a news feed item when the document goes from in validation to published', async () => {
+        // Given
+        vi.spyOn(NewsFeedHelper, 'getNewsFeedConfiguration').mockReturnValue({
+          newsFeedType: NewsFeedItemType.ResourceCustomDashboard,
+          platformIdentifier: PlatformIdentifier.Opencti,
+        });
+        const createResourceNewsFeedItemSpy = vi
+          .spyOn(NewsFeedApp, 'createResourceNewsFeedItem')
+          .mockResolvedValue();
+        const updatedDocument = {
+          ...document,
+          status: DocumentStatus.Published,
+        };
+
+        // When
+        await NewsFeedApp.upsertResourceNewsFeed({
+          documentBeforeUpdate: {
+            ...document,
+            status: DocumentStatus.InValidation,
+          },
+          updatedDocument,
+          serviceDefinitionIdentifier:
+            ServiceDefinitionIdentifier.OpenctiCustomDashboards,
+        });
+
+        // Then
+        expect(createResourceNewsFeedItemSpy).toHaveBeenCalledOnce();
+        expect(createResourceNewsFeedItemSpy).toHaveBeenCalledWith({
+          document: updatedDocument,
+          serviceDefinitionIdentifier:
+            ServiceDefinitionIdentifier.OpenctiCustomDashboards,
+        });
       });
 
       it('should log creation failure message when create branch fails during creation flow', async () => {
@@ -1323,7 +1410,7 @@ describe('newsFeedApp', () => {
         // When
         await NewsFeedApp.upsertResourceNewsFeed({
           documentBeforeUpdate: undefined,
-          updatedDocument: { ...document, active: true },
+          updatedDocument: { ...document, status: DocumentStatus.Published },
           serviceDefinitionIdentifier:
             ServiceDefinitionIdentifier.OpenctiCustomDashboards,
         });
@@ -1355,8 +1442,11 @@ describe('newsFeedApp', () => {
 
         // When
         await NewsFeedApp.upsertResourceNewsFeed({
-          documentBeforeUpdate: { ...document, active: true },
-          updatedDocument: { ...document, active: true },
+          documentBeforeUpdate: {
+            ...document,
+            status: DocumentStatus.Published,
+          },
+          updatedDocument: { ...document, status: DocumentStatus.Published },
           serviceDefinitionIdentifier:
             ServiceDefinitionIdentifier.OpenctiCustomDashboards,
         });

@@ -13,6 +13,7 @@ import {
   DocumentCreateDocument,
   DocumentDeleteDocument,
   DocumentItemFragment,
+  DocumentStatus,
   DocumentUpdateDocument,
 } from '@graphql/generated';
 import { waitFor } from '@testing-library/react';
@@ -73,6 +74,8 @@ const buildValues = (overrides: Record<string, unknown> = {}) =>
     ...overrides,
   }) as ServiceFormValues;
 
+const sentInput = () => mocks.request.mock.calls[0]?.[0].variables.input;
+
 const renderContext = () =>
   testRenderHook(() =>
     useDocumentContext({
@@ -91,6 +94,30 @@ describe('useDocumentContext', () => {
   });
 
   describe('handleAddSheet', () => {
+    it.each([
+      [true, DocumentStatus.Published],
+      [false, DocumentStatus.Draft],
+      [undefined, DocumentStatus.Draft],
+    ])(
+      'should send the matching status when the user creates a resource with the switch at %s',
+      async (active, expectedStatus) => {
+        // Given
+        const context = renderContext();
+
+        // When
+        await context.current.handleAddSheet(
+          buildValues({ active }),
+          vi.fn(),
+          vi.fn()
+        );
+
+        // Then
+        await waitFor(() => expect(mocks.request).toHaveBeenCalled());
+        expect(sentInput().status).toBe(expectedStatus);
+        expect(sentInput()).not.toHaveProperty('active');
+      }
+    );
+
     it('should send a plain request, without any upload, when the form carries no file', async () => {
       // Given
       const context = renderContext();
@@ -179,6 +206,49 @@ describe('useDocumentContext', () => {
   });
 
   describe('handleUpdateSheet', () => {
+    it.each`
+      active   | currentStatus      | expectedStatus
+      ${false} | ${'published'}     | ${DocumentStatus.Draft}
+      ${true}  | ${'draft'}         | ${DocumentStatus.Published}
+      ${true}  | ${'in_validation'} | ${DocumentStatus.Published}
+      ${true}  | ${'published'}     | ${undefined}
+      ${false} | ${'draft'}         | ${undefined}
+      ${false} | ${'in_validation'} | ${undefined}
+    `(
+      'should send the status $expectedStatus when the switch is $active and the resource is $currentStatus',
+      async ({
+        active,
+        currentStatus,
+        expectedStatus,
+      }: {
+        active: boolean;
+        currentStatus: string;
+        expectedStatus?: DocumentStatus;
+      }) => {
+        // Given
+        mocks.request.mockResolvedValue({
+          updateDocument: { id: DOCUMENT_ID },
+        });
+        const context = renderContext();
+
+        // When
+        await context.current.handleUpdateSheet(
+          buildValues({ active }),
+          {
+            ...existingDocument,
+            status: currentStatus,
+          } as DocumentItemFragment,
+          vi.fn(),
+          vi.fn()
+        );
+
+        // Then
+        await waitFor(() => expect(mocks.request).toHaveBeenCalled());
+        expect(sentInput().status).toBe(expectedStatus);
+        expect(sentInput()).not.toHaveProperty('active');
+      }
+    );
+
     it('should upload only the new files and keep the existing images by id', async () => {
       // Given
       const newImage = buildFile('new.png');
@@ -270,7 +340,6 @@ describe('useDocumentContext', () => {
           variables: {
             documentId: DOCUMENT_ID,
             serviceInstanceId: SERVICE_INSTANCE_ID,
-            forceDelete: true,
           },
         })
       );

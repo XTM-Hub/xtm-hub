@@ -24,7 +24,7 @@ describe('ShareableResourceCardFooterVersion', () => {
         document={
           {
             id: 'doc-1',
-            active: true,
+            status: 'published',
             product_version: PRODUCT_VERSION,
             integration_type: IntegrationType.Connector,
           } as DocumentItemFragment

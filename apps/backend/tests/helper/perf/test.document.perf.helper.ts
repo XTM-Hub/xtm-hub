@@ -1,5 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
-import { DocumentMetadataKeyCode } from '../../../src/__generated__/resolvers-types';
+import {
+  DocumentMetadataKeyCode,
+  DocumentStatus,
+} from '../../../src/__generated__/resolvers-types';
 import { DocumentId } from '../../../src/model/kanel/public/Document';
 import type { DocumentMetadataKey } from '../../../src/model/kanel/public/DocumentMetadata';
 import { ServiceInstanceId } from '../../../src/model/kanel/public/ServiceInstance';
@@ -68,7 +71,7 @@ export async function seedDocuments(
         TestDocumentHelper.document.create({
           type: documentType,
           service_instance_id: serviceInstanceId,
-          active: true,
+          status: DocumentStatus.Published,
           slug: `${runPrefix}-${groupTag}-${i}`,
           name: `${namePrefix}-${i}`,
           description: `Performance test document group=${groupTag}`,
@@ -191,7 +194,7 @@ export async function seedDocuments(
         TestDocumentHelper.document.create({
           type: 'image',
           service_instance_id: serviceInstanceId,
-          active: true,
+          status: DocumentStatus.Published,
           slug: `${runPrefix}-${groupTag}-img-${parentDoc.id.slice(0, 8)}`,
           name: `img-${parentDoc.id.slice(0, 8)}`,
           mime_type: 'image/png',

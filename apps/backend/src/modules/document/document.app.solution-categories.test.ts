@@ -4,6 +4,7 @@ import { TestHelper } from '../../../tests/helper/test.helper';
 import { SERVICES, TEST_ORGANIZATIONS } from '../../../tests/tests.const';
 import {
   DocumentMetadataKeyCode,
+  DocumentStatus,
   FiligranProduct,
   IntegrationType,
   LicenseType,
@@ -47,7 +48,7 @@ const documentData = {
   uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID,
   name: 'name',
   description: 'description',
-  active: true,
+  status: DocumentStatus.Published,
   use_cases: [],
 };
 

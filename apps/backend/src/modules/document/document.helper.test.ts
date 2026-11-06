@@ -13,6 +13,7 @@ import { TestHelper } from '../../../tests/helper/test.helper';
 import { TEST_ORGANIZATIONS } from '../../../tests/tests.const';
 import {
   DocumentMetadataKeyCode,
+  DocumentStatus,
   IntegrationType,
   ServiceDefinitionIdentifier,
 } from '../../__generated__/resolvers-types';
@@ -78,7 +79,7 @@ describe('documentHelper', () => {
           description: 'description',
           short_description: 'short_description',
           slug: 'slug',
-          active: true,
+          status: DocumentStatus.Published,
         },
         metadata: [
           {
@@ -264,6 +265,49 @@ describe('documentHelper', () => {
     );
   });
 
+  describe('assertStatusTransition', () => {
+    it.each`
+      from                           | to
+      ${DocumentStatus.Draft}        | ${DocumentStatus.InValidation}
+      ${DocumentStatus.Draft}        | ${DocumentStatus.Published}
+      ${DocumentStatus.InValidation} | ${DocumentStatus.Published}
+      ${DocumentStatus.Published}    | ${DocumentStatus.Draft}
+      ${DocumentStatus.Draft}        | ${DocumentStatus.Draft}
+      ${DocumentStatus.InValidation} | ${DocumentStatus.InValidation}
+      ${DocumentStatus.Published}    | ${DocumentStatus.Published}
+    `(
+      'should accept the transition when the status goes from $from to $to',
+      ({ from, to }: { from: DocumentStatus; to: DocumentStatus }) => {
+        // Given a document in the "from" status
+
+        // When
+        const transition = () =>
+          DocumentHelper.assertStatusTransition(from, to);
+
+        // Then
+        expect(transition).not.toThrow();
+      }
+    );
+
+    it.each`
+      from                           | to
+      ${DocumentStatus.InValidation} | ${DocumentStatus.Draft}
+      ${DocumentStatus.Published}    | ${DocumentStatus.InValidation}
+    `(
+      'should reject the transition when the status goes from $from to $to',
+      ({ from, to }: { from: DocumentStatus; to: DocumentStatus }) => {
+        // Given a document in the "from" status
+
+        // When
+        const transition = () =>
+          DocumentHelper.assertStatusTransition(from, to);
+
+        // Then
+        expect(transition).toThrow(ErrorCode.InvalidDocumentStatusTransition);
+      }
+    );
+  });
+
   describe('assertMetadataIsNotMissing', () => {
     it('should throw error when metadata mapping is missing', () => {
       expect(() =>
@@ -368,7 +412,7 @@ describe('documentHelper', () => {
           description: 'description',
           short_description: 'short_description',
           slug,
-          active: true,
+          status: DocumentStatus.Published,
           type: OPENCTI_CUSTOM_DASHBOARD_DOCUMENT_TYPE,
         },
         []

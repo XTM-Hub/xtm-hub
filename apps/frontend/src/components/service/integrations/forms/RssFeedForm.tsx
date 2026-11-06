@@ -9,6 +9,7 @@ import { AutoForm } from '@/components/ui/auto-form';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import {
   fileListCheck,
+  isDocumentPublished,
   optionalFileListCheck,
   transformToFileList,
 } from '@/utils/documents';
@@ -90,7 +91,7 @@ export const RssFeedForm = ({ handleSubmit, document }: RssFeedFormProps) => {
             ? me?.selected_organization_id
             : document?.uploader_organization?.id) ?? '',
         integration_type: IntegrationType.RssFeed,
-        active: document?.active ?? true,
+        active: document ? isDocumentPublished(document.status) : true,
       }) as RssFeedFormValues,
     [me, document, isCreation, integration]
   );

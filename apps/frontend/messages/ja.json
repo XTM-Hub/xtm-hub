@@ -396,6 +396,7 @@
       "INTEGRATION_TYPE_NOT_RECOGNIZED": "このタイプの統合は認識されない",
       "INVALID_ACTION_SIZE": "不明なエラーが発生した",
       "INVALID_CONTENT_TRANSLATION_KEY": "無効なコンテンツキーです",
+      "INVALID_DOCUMENT_STATUS_TRANSITION": "このリソースではこのステータスの変更は許可されていません",
       "INVALID_EMAIL": "電子メールは有効な形式でなければなりません。",
       "INVALID_IMAGE_URL": "画像のURLが不正",
       "INVALID_MANIFEST_VERSION_FORMAT": "マニフェストのバージョン形式が無効です",
