@@ -1,4 +1,5 @@
 import ShareableResourceSlug from '@/components/service/document/ShareableResourceSlug';
+import { readTrackedEvents, startAnalytics } from '@/utils/test/analytics';
 import { mswServer } from '@/utils/test/msw/server';
 import testRender from '@/utils/test/test-render';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
@@ -427,4 +428,45 @@ describe('Component: ShareableResourceSlug - Download count refresh', () => {
     // Then
     expect(getDownloadCount()).toHaveTextContent(/^1$/);
   });
+});
+
+describe('Component: ShareableResourceSlug - Resource view', () => {
+  const serviceInstance = {
+    id: 'service-instance-1',
+  } as unknown as serviceInstance_fragment$data;
+
+  const buildDocument = (active: boolean) =>
+    ({
+      id: 'document-1',
+      active,
+      name: 'Test Document',
+      type: 'opencti_custom_dashboard',
+    }) as unknown as documentItem_fragment$data;
+
+  beforeEach(() => {
+    startAnalytics();
+  });
+
+  it.each([
+    ['No platform connected', 'an active custom dashboard', true],
+    ['Resource not deployable', 'an inactive custom dashboard', false],
+  ])(
+    'should send %s as the deploy eligibility when the page shows %s',
+    (expected, _context, active) => {
+      // Given / When
+      testRender(
+        <ShareableResourceSlug
+          breadcrumbValue={[]}
+          documentData={buildDocument(active)}
+          serviceInstance={serviceInstance}
+        />,
+        { settings: mockSettings }
+      );
+
+      // Then
+      expect(readTrackedEvents('view_item')).toEqual([
+        expect.objectContaining({ deploy_eligibility: expected }),
+      ]);
+    }
+  );
 });

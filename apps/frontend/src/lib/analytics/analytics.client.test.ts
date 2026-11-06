@@ -9,11 +9,16 @@ import {
 import {
   EVENT_WINDOW_MS,
   MAX_EVENTS_PER_WINDOW,
+  MAX_ITEMS_PER_EVENT,
   MAX_PARAM_VALUE_LENGTH,
   MAX_PARAM_VALUE_LENGTHS,
   REDACTED_VALUE,
 } from '@/lib/analytics/analytics.consts';
-import { type AnalyticsPageContext } from '@/lib/analytics/analytics.types';
+import {
+  type AnalyticsEvents,
+  type AnalyticsItem,
+  type AnalyticsPageContext,
+} from '@/lib/analytics/analytics.types';
 import {
   readGtagCommands,
   readTrackedEvents,
@@ -32,6 +37,22 @@ const badgeParams = {
   resource_id: RESOURCE_ID,
   resource_title: RESOURCE_TITLE,
   resource_type: RESOURCE_TYPE,
+};
+
+const item: AnalyticsItem = {
+  item_id: RESOURCE_ID,
+  item_name: RESOURCE_TITLE,
+  item_category: 'Playbooks',
+  item_brand: 'OpenCTI',
+  index: 0,
+};
+
+const viewItemParams: AnalyticsEvents['view_item'] = {
+  resource_id: RESOURCE_ID,
+  resource_name: RESOURCE_TITLE,
+  library: 'Playbooks',
+  product: 'OpenCTI',
+  items: [item],
 };
 
 const makePageContext = (
@@ -178,6 +199,49 @@ describe('trackEvent', () => {
       ]);
     }
   );
+
+  it.each([
+    ['jane.doe@acme.com', REDACTED_VALUE],
+    ['a'.repeat(2000), 'a'.repeat(MAX_PARAM_VALUE_LENGTH)],
+  ])(
+    'should send the item name %s as %s when it is inside the items',
+    (itemName, sentItemName) => {
+      // Given
+      startAnalytics();
+
+      // When
+      trackEvent('view_item', {
+        ...viewItemParams,
+        items: [{ ...item, item_name: itemName }],
+      });
+
+      // Then
+      expect(readTrackedEvents('view_item')).toEqual([
+        expect.objectContaining({
+          items: [expect.objectContaining({ item_name: sentItemName })],
+        }),
+      ]);
+    }
+  );
+
+  it('should send only the first items when more items than the cap are tracked', () => {
+    // Given
+    startAnalytics();
+    const items = Array.from(
+      { length: MAX_ITEMS_PER_EVENT + 1 },
+      (_value, index) => ({ ...item, index })
+    );
+
+    // When
+    trackEvent('view_item', { ...viewItemParams, items });
+
+    // Then
+    expect(readTrackedEvents('view_item')).toEqual([
+      expect.objectContaining({
+        items: items.slice(0, MAX_ITEMS_PER_EVENT),
+      }),
+    ]);
+  });
 });
 
 describe('releaseAnalyticsEvents', () => {

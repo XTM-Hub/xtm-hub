@@ -3,12 +3,23 @@ import {
   ServiceSlug,
   ShareableResourceType,
 } from '@/utils/shareable-resources/shareable-resources.types';
+import { readTrackedEvents, startAnalytics } from '@/utils/test/analytics';
 import testRender from '@/utils/test/test-render';
 import { publicDocumentBySlugItemFragment$data } from '@generated/publicDocumentBySlugItemFragment.graphql';
 import { screen } from '@testing-library/react';
 import { useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const mocks = vi.hoisted(() => ({ useMeAnalyticsQuery: vi.fn() }));
+
+vi.mock('@graphql/generated', async (importOriginal) => {
+  const { mockGeneratedQueryHooks } =
+    await import('@/utils/test/mock-generated-query');
+  return mockGeneratedQueryHooks(importOriginal, {
+    useMeAnalyticsQuery: mocks.useMeAnalyticsQuery,
+  });
+});
 
 const DOCUMENT_ID = 'doc-1';
 const SERVICE_INSTANCE_ID = 'service-instance-1';
@@ -24,6 +35,20 @@ const UNSUPPORTED_CONNECTOR_OVERRIDES = {
   integration_type: 'connector',
   manager_supported: false,
 } as const;
+
+const SIGNED_OUT_VISITOR = { data: { me: null }, isPending: false };
+const SIGNED_IN_VISITOR = {
+  data: {
+    me: {
+      email: 'jane@acme.com',
+      selected_organization_id: null,
+      organizations: [],
+      capabilities: [],
+      selected_org_capabilities: [],
+    },
+  },
+  isPending: false,
+};
 
 const signupHrefFor = (slug: ServiceSlug) =>
   `/sign-up?redirect=${encodeURIComponent(
@@ -57,6 +82,10 @@ const renderActions = (
 
 describe('PublicResourceActions', () => {
   beforeEach(() => {
+    mocks.useMeAnalyticsQuery.mockReturnValue({
+      data: undefined,
+      isPending: true,
+    });
     vi.mocked(usePathname).mockReturnValue(
       '/en/cybersecurity-solutions/lib/doc'
     );
@@ -203,5 +232,64 @@ describe('PublicResourceActions', () => {
     expect(query.get('service_instance_id')).toBe(
       SERVICE_INSTANCE_ID_WITH_PLUS
     );
+  });
+
+  describe('resource view', () => {
+    beforeEach(() => {
+      startAnalytics();
+    });
+
+    it('should not send the resource view when the visitor is not known yet', () => {
+      // Given / When
+      renderActions(
+        buildDocumentData(),
+        ServiceSlug.OPEN_CTI_CUSTOM_DASHBOARDS
+      );
+
+      // Then
+      expect(readTrackedEvents('view_item')).toEqual([]);
+    });
+
+    it.each([
+      ['Signed out', 'a deployable resource', {}],
+      [
+        'Resource not deployable',
+        'a connector without manager support',
+        UNSUPPORTED_CONNECTOR_OVERRIDES,
+      ],
+    ])(
+      'should send %s as the deploy eligibility when a signed-out visitor views %s',
+      (expected, _context, overrides) => {
+        // Given
+        mocks.useMeAnalyticsQuery.mockReturnValue(SIGNED_OUT_VISITOR);
+
+        // When
+        renderActions(
+          buildDocumentData(overrides),
+          ServiceSlug.OPEN_CTI_CUSTOM_DASHBOARDS
+        );
+
+        // Then
+        expect(readTrackedEvents('view_item')).toEqual([
+          expect.objectContaining({ deploy_eligibility: expected }),
+        ]);
+      }
+    );
+
+    it('should send no deploy eligibility when a signed-in visitor views the resource', () => {
+      // Given
+      mocks.useMeAnalyticsQuery.mockReturnValue(SIGNED_IN_VISITOR);
+
+      // When
+      renderActions(
+        buildDocumentData(),
+        ServiceSlug.OPEN_CTI_CUSTOM_DASHBOARDS
+      );
+
+      // Then
+      expect(readTrackedEvents('view_item')).toEqual([
+        expect.not.objectContaining({ deploy_eligibility: expect.anything() }),
+      ]);
+    });
   });
 });

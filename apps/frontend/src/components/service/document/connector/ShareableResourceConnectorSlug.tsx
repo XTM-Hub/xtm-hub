@@ -10,7 +10,9 @@ import { useTranslate } from '@/hooks/use-translate';
 import { PlatformMetadataMapping } from '@/components/registration/PlatformIdentifierMapping';
 import { ServiceManageSheet } from '@/components/service/components/ServiceManageSheet';
 import { ShareableResourceConnectorPrivateDetails } from '@/components/service/document/connector/ShareableResourceConnectorPrivateDetails';
+import { DeployableResourceViewTracker } from '@/components/service/document/DeployableResourceViewTracker';
 import OneClickDeploy from '@/components/service/document/one-click-deploy/OneClickDeploy';
+import { ResourceViewTracker } from '@/components/service/document/ResourceViewTracker';
 import ShareableResourceDescription from '@/components/service/document/ShareableResourceDescription';
 import ShareableResourceCarousel from '@/components/service/document/ui/ShareableResourceCarouselView';
 import BadgeOverflowCounter, {
@@ -66,6 +68,17 @@ const ShareableResourceConnectorSlug = ({
   return (
     <>
       <BreadcrumbNav value={breadcrumbValue} />
+      {canClickOnDeployButton ? (
+        <DeployableResourceViewTracker
+          resource={documentData}
+          requiredProductVersion={documentData.minimum_deployable_version}
+        />
+      ) : (
+        <ResourceViewTracker
+          resource={documentData}
+          deployEligibility="Resource not deployable"
+        />
+      )}
       <div className="flex gap-2 flex-col md:flex-row">
         {!!logo && (
           <div className="w-24 shrink-0 rounded overflow-hidden">
