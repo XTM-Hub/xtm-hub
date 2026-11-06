@@ -154,6 +154,7 @@ export interface AnalyticsEvents {
         lead_source: 'Enterprise Edition contact';
         product: AnalyticsPlatformProduct;
       };
+  sign_up: { method: 'HubSpot form' };
 }
 
 export type AnalyticsEventName = keyof AnalyticsEvents;

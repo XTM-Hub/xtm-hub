@@ -132,20 +132,20 @@ describe('trackEvent', () => {
     expect(readTrackedEvents('page_view')).toHaveLength(1);
   });
 
-  it.each<TrackedEvent>([['generate_lead', { lead_source: 'Sales contact' }]])(
-    'should send %s when the flood cap is reached',
-    (name, params) => {
-      // Given
-      startAnalytics();
-      trackBadgeClicks(MAX_EVENTS_PER_WINDOW);
+  it.each<TrackedEvent>([
+    ['generate_lead', { lead_source: 'Sales contact' }],
+    ['sign_up', { method: 'HubSpot form' }],
+  ])('should send %s when the flood cap is reached', (name, params) => {
+    // Given
+    startAnalytics();
+    trackBadgeClicks(MAX_EVENTS_PER_WINDOW);
 
-      // When
-      trackEvent(name, params);
+    // When
+    trackEvent(name, params);
 
-      // Then
-      expect(readTrackedEvents(name)).toHaveLength(1);
-    }
-  );
+    // Then
+    expect(readTrackedEvents(name)).toHaveLength(1);
+  });
 
   it.each([
     ['drop', EVENT_WINDOW_MS - 1, 0],
