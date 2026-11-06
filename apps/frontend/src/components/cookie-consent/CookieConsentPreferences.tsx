@@ -17,6 +17,7 @@ import {
 } from '@/components/cookie-consent/cookie-consent.utils';
 import { useConsent } from '@/components/cookie-consent/CookieConsentProvider';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import {
   Button,
   Dialog,
@@ -85,6 +86,7 @@ export const CookieConsentPreferences = () => {
               <span className="body-compact">
                 {t('PreferenceForAllServices')}
               </span>
+              {/* eslint-disable-next-line no-restricted-syntax -- form field sent by its tagged submit button */}
               <Switch
                 checked={allGranted}
                 onCheckedChange={setAll}
@@ -109,6 +111,7 @@ export const CookieConsentPreferences = () => {
                         </span>
                         {services.length > 0 ? (
                           <Button
+                            {...analyticsId('consent_category_services_toggle')}
                             priority="tertiary"
                             onClick={() => toggleDrawer(category)}
                             className="h-auto justify-start p-0 underline body-compact">
@@ -116,6 +119,7 @@ export const CookieConsentPreferences = () => {
                           </Button>
                         ) : null}
                       </div>
+                      {/* eslint-disable-next-line no-restricted-syntax -- form field sent by its tagged submit button */}
                       <Switch
                         checked={isCategoryAllowed(draft, category)}
                         disabled={required}
@@ -139,6 +143,9 @@ export const CookieConsentPreferences = () => {
                               <div className="flex gap-3">
                                 {service.readMoreUrl ? (
                                   <a
+                                    {...analyticsId(
+                                      'consent_service_details_open'
+                                    )}
                                     href={service.readMoreUrl}
                                     target="_blank"
                                     rel="noreferrer"
@@ -148,6 +155,9 @@ export const CookieConsentPreferences = () => {
                                 ) : null}
                                 {service.officialWebsiteUrl ? (
                                   <a
+                                    {...analyticsId(
+                                      'consent_service_website_open'
+                                    )}
                                     href={service.officialWebsiteUrl}
                                     target="_blank"
                                     rel="noreferrer"
@@ -157,6 +167,7 @@ export const CookieConsentPreferences = () => {
                                 ) : null}
                               </div>
                             </div>
+                            {/* eslint-disable-next-line no-restricted-syntax -- form field sent by its tagged submit button */}
                             <Switch
                               checked={draft[service.id] === true}
                               disabled={required}
@@ -175,7 +186,11 @@ export const CookieConsentPreferences = () => {
         </DialogBody>
 
         <DialogFooter>
-          <Button onClick={() => save(draft)}>{t('Save')}</Button>
+          <Button
+            {...analyticsId('consent_preferences_submit')}
+            onClick={() => save(draft)}>
+            {t('Save')}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

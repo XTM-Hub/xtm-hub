@@ -21,6 +21,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import { analyticsProduct } from '@/lib/analytics/analytics.context';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { cn } from '@/lib/utils';
 import { buttonVariants, IconButton } from '@filigran/design-system';
 import Link from 'next/link';
@@ -32,10 +34,9 @@ const SectionLinksList = ({ links }: { links: SectionLink[] }) => (
   <ul className="space-y-1">
     {links.map((link) => {
       const nestedLinks = link.subLinks ?? [];
-      const hasNestedLinks = nestedLinks.length > 0;
       const key = `${link.label}-${link.href ?? `group-${nestedLinks.length}`}`;
 
-      if (!hasNestedLinks) {
+      if (!link.subLinks) {
         return (
           <li key={key}>
             <PublicSubLink {...link} />
@@ -53,6 +54,7 @@ const SectionLinksList = ({ links }: { links: SectionLink[] }) => (
               className="border-none pl-0"
               value={`${key}-accordion`}>
               <AccordionTrigger
+                {...analyticsId(link.analyticsId)}
                 className={cn(
                   'h-9 py-1 pl-6 content-compact text-default-secondary cursor-pointer hover:bg-elevation-hover',
                   NAVIGATION_HOVER_CLASSES
@@ -103,6 +105,7 @@ export const LinkedSection = ({
     : currentPath.startsWith(section.pathPrefix);
   return (
     <Link
+      {...analyticsId(section.analyticsId)}
       href={section.href ?? section.pathPrefix}
       className={cn(
         buttonVariants({ priority: 'tertiary' }),
@@ -139,6 +142,8 @@ export const ClosedSection = ({ section }: { section: SectionConfig }) => {
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}>
         <IconButton
+          {...analyticsId(section.analyticsId)}
+          {...(section.product && analyticsProduct(section.product))}
           priority="tertiary"
           className={cn(
             'h-9 w-full justify-start rounded-none pl-5 cursor-pointer',
@@ -170,9 +175,12 @@ export const OpenedSection = ({ section }: { section: SectionConfig }) => {
   const Icon = section.icon;
   return (
     <AccordionItem
+      {...(section.product && analyticsProduct(section.product))}
       className="border-none"
       value={section.key}>
-      <AccordionTrigger className="h-9 pl-5 py-1 cursor-pointer hover:bg-elevation-hover font-normal hover:shadow-[inset_2px_0px]">
+      <AccordionTrigger
+        {...analyticsId(section.analyticsId)}
+        className="h-9 pl-5 py-1 cursor-pointer hover:bg-elevation-hover font-normal hover:shadow-[inset_2px_0px]">
         <MenuItemIcon icon={Icon} />
         <span className="flex-1 px-2 text-left text-default-primary text-sm content-base truncate">
           {section.label}
