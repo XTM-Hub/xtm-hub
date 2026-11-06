@@ -14,6 +14,7 @@ import Organization from '../../model/kanel/public/Organization';
 import { UserId } from '../../model/kanel/public/User';
 import { UserLoadUserBy } from '../../model/user';
 import { esDbClient } from '../../thirdparty/elasticsearch/client';
+import { withIndexPrefix } from '../../thirdparty/elasticsearch/index-prefix';
 import { PgBossProducer } from '../../thirdparty/pgboss/producer';
 import { TELEMETRY_QUEUES } from '../../thirdparty/pgboss/telemetry.jobs';
 import { logApp } from '../../utils/app-logger.util';
@@ -30,7 +31,7 @@ import {
   TelemetryEventType,
 } from './telemetry.types';
 
-const TELEMETRY_INDEX = 'telemetry';
+const TELEMETRY_INDEX = withIndexPrefix('telemetry');
 
 // The platform id is a UUID. It comes from the query string, so anything else is dropped
 const PLATFORM_ID_SCHEMA = z.uuid();

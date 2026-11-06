@@ -27,6 +27,9 @@ onto a data-only change.
 - Find the closest existing migration to your change (mapping update, bulk
   document edit, or Postgres backfill are the common shapes) and mirror its
   structure rather than inventing a new one.
+- Wrap every index, alias, template and pattern name in `withIndexPrefix('<name>')`, imported from
+  `thirdparty/elasticsearch/index-prefix` like the client, never a literal — see
+  [`backend.md`](../../rules/backend.md#elasticsearch-index-names).
 - For mapping changes: keep the property list cumulative in a
   `const ... as const` (needed for the `MappingProperty` union), copied from
   the latest existing migration, then add your new field(s) on top. `down`

@@ -103,14 +103,22 @@ This bites hardest when a migration moves existing text out of a searchable colu
 visible in the UI and silently stops matching any search. Adding a name to `searchAttributes` only affects tables that
 own a column of that name, so the change stays table-local in practice.
 
+## Elasticsearch index names
+
+Every name the backend gives Elasticsearch — index, alias, index template, index pattern — goes through
+`withIndexPrefix('<name>')` from `src/thirdparty/elasticsearch/index-prefix.ts`, never a literal. Application code
+resolves it once at module level (`TELEMETRY_INDEX` in `telemetry.app.ts`); ES migrations wrap each name in place.
+`ELASTIC_INDEX_PREFIX` lets several instances share one cluster: a literal name escapes the prefix and reads or writes
+the indices of another instance. Without a prefix the names are unchanged.
+
 ## Configuration
 
 `node-config` reads `config/*.json` (`default`, `development`, `production`, `staging`, `local`). Environment
 variables map through `config/custom-environment-variables.json`:
 `DATABASE_HOST`, `DATABASE_PORT`, `DATABASE_USER`, `DATABASE_PASSWORD`, `DATABASE_BASE`, `ADMIN_EMAIL`,
 `ADMIN_PASSWORD`, `MINIO_ENDPOINT`, `MINIO_PORT`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `MINIO_BUCKET_NAME`,
-`MINIO_USE_SSL`, `ELASTIC_HOST`, `ELASTIC_PORT`, `NODE_ENV`, `VITEST_MODE`, `DATA_SEEDING`, `SESSION_STORE_TYPE`,
-`BASE_URL_FRONT`.
+`MINIO_USE_SSL`, `ELASTIC_HOST`, `ELASTIC_PORT`, `ELASTIC_INDEX_PREFIX`, `NODE_ENV`, `VITEST_MODE`, `DATA_SEEDING`,
+`SESSION_STORE_TYPE`, `BASE_URL_FRONT`.
 
 Never read `process.env` directly in application code — go through `src/config.ts`.
 
