@@ -44,7 +44,7 @@ import { PortalContext } from '@/components/me/AppPortalContext';
 import ServiceSlugHeader from '@/components/service/[slug]/ServiceSlugHeader';
 import { SubscriptionSlugAddCapabilities } from '@/components/subcription/[slug]/SubscriptionSlugAddCapabilities';
 import { useAdminByPass } from '@/hooks/use-portal-capability';
-import { APP_PATH } from '@/utils/path/constant';
+import { ADMIN_SERVICE_CATALOG_PATH, APP_PATH } from '@/utils/path/constant';
 import { Button } from '@filigran/design-system';
 import { serviceInstanceForSubscriptions_fragment$data } from '@generated/serviceInstanceForSubscriptions_fragment.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
@@ -112,7 +112,7 @@ const SubscriptionSlug = ({
     breadcrumbValue = [
       { label: 'MenuLinks.Home', href: `/${APP_PATH}` },
       { label: 'MenuLinks.Settings' },
-      { label: 'MenuLinks.Service', href: `/${APP_PATH}/admin/service` },
+      { label: 'MenuLinks.ServiceCatalog', href: ADMIN_SERVICE_CATALOG_PATH },
       {
         label: queryDataSubscription.subscriptionById.service_instance.name,
         href: `/${APP_PATH}/admin/service/${queryDataSubscription.subscriptionById.service_instance.id}`,

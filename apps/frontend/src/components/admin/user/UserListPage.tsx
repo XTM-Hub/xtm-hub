@@ -71,9 +71,9 @@ const UserListPage = ({ organization }: UserListPageProps) => {
 
   return (
     <UserListContext.Provider value={{ connectionID, setConnectionId }}>
-      <h1>{t('UserListPage.Title')}</h1>
+      {!isAdminPath && <h1>{t('UserListPage.Title')}</h1>}
       {isAdminPath ? (
-        <div className="mt-4">
+        <div>
           <UserList organization={organization} />
         </div>
       ) : (
