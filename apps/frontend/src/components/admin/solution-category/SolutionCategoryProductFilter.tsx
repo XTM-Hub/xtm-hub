@@ -1,4 +1,5 @@
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import {
   Select,
   SelectContent,
@@ -26,6 +27,7 @@ const SolutionCategoryProductFilter = ({
         )
       }>
       <SelectTrigger
+        {...analyticsId('admin_solution_category_products_open')}
         aria-label={t('SolutionCategory.ListPage.Product')}
         className="w-full">
         <SelectValue placeholder={t('SolutionCategory.ListPage.Product')} />

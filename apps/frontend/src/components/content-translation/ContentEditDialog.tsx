@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useContentTranslationApi } from '@/hooks/use-content-translation-api';
 import { Locale, locales } from '@/i18n/config';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { getStaticTranslationValue } from '@/utils/content-translation/get-static-translation-value';
 import {
   Button,
@@ -138,7 +139,8 @@ export const ContentEditDialog = ({
                   {locales.map((locale) => (
                     <TabsTrigger
                       key={locale}
-                      value={locale}>
+                      value={locale}
+                      {...analyticsId('admin_translation_locale_select')}>
                       {locale.toUpperCase()}
                     </TabsTrigger>
                   ))}
@@ -180,13 +182,15 @@ export const ContentEditDialog = ({
                 <DialogClose asChild>
                   <Button
                     type="button"
-                    priority="secondary">
+                    priority="secondary"
+                    {...analyticsId('admin_translation_edit_cancel')}>
                     {tCommon('Utils.Cancel')}
                   </Button>
                 </DialogClose>
                 <Button
                   type="submit"
-                  disabled={isSaving || isLoadingValues}>
+                  disabled={isSaving || isLoadingValues}
+                  {...analyticsId('admin_translation_value_submit')}>
                   {tCommon('EditableText.SaveDraft')}
                 </Button>
               </DialogFooter>

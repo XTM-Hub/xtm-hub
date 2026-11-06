@@ -3,6 +3,7 @@ import { TrialsTabQuotasPlatform } from '@/components/trials/tab/quotas/TrialsTa
 import TrialsTab from '@/components/trials/tab/TrialsTab';
 import { TrialsTabType } from '@/components/trials/trials.const';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import {
   Tabs,
   TabsContent,
@@ -28,11 +29,14 @@ const TrialsList = () => {
         {Object.values(TrialsTabType).map((type) => (
           <TabsTrigger
             key={type}
-            value={type}>
+            value={type}
+            {...analyticsId('admin_trial_status_select')}>
             {t(TAB_TITLES[type])}
           </TabsTrigger>
         ))}
-        <TabsTrigger value={QUOTAS_TAB}>
+        <TabsTrigger
+          value={QUOTAS_TAB}
+          {...analyticsId('admin_trial_quotas_open')}>
           {t('TrialsDashboard.TabTitle.Quotas')}
         </TabsTrigger>
       </TabsList>
