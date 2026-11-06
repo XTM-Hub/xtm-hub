@@ -102,6 +102,15 @@ vi.mock('@/lib/graphql-client', () => ({
   portalGraphqlClient: { _mock: 'portalGraphqlClient' },
 }));
 
+vi.mock(
+  '@/components/service/integrations/[serviceInstanceId]/IntegrationListUrlFiltersSync',
+  () => ({
+    IntegrationListUrlFiltersSync: () => (
+      <div data-testid="integration-url-filters-sync" />
+    ),
+  })
+);
+
 vi.mock('@/hooks/use-scroll-position', () => ({
   default: testState.useScrollPosition,
 }));
@@ -326,7 +335,7 @@ describe('PublicDocumentsList', () => {
     ).toBeInTheDocument();
   });
 
-  it('should render a skeleton instead of the list while the first page is loading', () => {
+  it('should keep the header mounted and show a skeleton instead of the list while the first page is loading', () => {
     // Given
     mockEmptyFacetQuery();
     testState.usePublicDocumentsQuery.mockReturnValue({
@@ -340,8 +349,103 @@ describe('PublicDocumentsList', () => {
     // Then
     expect(screen.queryByText(DOCUMENT_NAME_ONE)).not.toBeInTheDocument();
     expect(
-      screen.queryByRole('button', { name: FILTERS_BUTTON_LABEL })
+      screen.queryByText('Utils.DocumentNotFound')
     ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: FILTERS_BUTTON_LABEL })
+    ).toBeInTheDocument();
+  });
+
+  it('should mount the URL filters sync of the integrations page while the first page is loading', () => {
+    // Given
+    mockEmptyFacetQuery();
+    testState.usePublicDocumentsQuery.mockReturnValue({
+      data: undefined,
+      isLoading: true,
+    });
+
+    // When
+    testRender(
+      <PublicDocumentsList
+        serviceInstance={
+          {
+            id: SERVICE_INSTANCE_ID,
+            slug: OPENCTI_INTEGRATIONS_SLUG,
+          } as Partial<SeoServiceInstanceItemFragment> as SeoServiceInstanceItemFragment
+        }
+        baseUrl={BASE_URL}
+      />
+    );
+
+    // Then
+    expect(
+      screen.getByTestId('integration-url-filters-sync')
+    ).toBeInTheDocument();
+  });
+
+  it('should restore the scroll position once the first page has loaded, not while the skeleton is displayed', () => {
+    // Given
+    mockEmptyFacetQuery();
+    testState.usePublicDocumentsQuery.mockReturnValue({
+      data: undefined,
+      isLoading: true,
+    });
+    const { rerender } = testRender(buildElement());
+    expect(testState.restore).not.toHaveBeenCalled();
+
+    // When
+    testState.usePublicDocumentsQuery.mockReturnValue({
+      ...withPublicDocuments(FILTERED_TOTAL_COUNT),
+      isLoading: false,
+    });
+    rerender(buildElement());
+
+    // Then
+    expect(testState.restore).toHaveBeenCalledOnce();
+  });
+
+  it('should show an error with a retry action instead of an empty list when the query failed', async () => {
+    // Given
+    mockEmptyFacetQuery();
+    const refetch = vi.fn();
+    testState.usePublicDocumentsQuery.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+      refetch,
+    });
+    const { user } = testRender(buildElement());
+
+    // When
+    await user.click(
+      screen.getByRole('button', { name: 'Service.List.Retry' })
+    );
+
+    // Then
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Service.List.LoadError'
+    );
+    expect(
+      screen.queryByText('Utils.DocumentNotFound')
+    ).not.toBeInTheDocument();
+    expect(refetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('should keep the documents on screen when a background refetch failed', () => {
+    // Given
+    mockEmptyFacetQuery();
+    testState.usePublicDocumentsQuery.mockReturnValue({
+      data: withPublicDocuments(FILTERED_TOTAL_COUNT).data,
+      isLoading: false,
+      isError: true,
+      refetch: vi.fn(),
+    });
+
+    // When
+    testRender(buildElement());
+
+    // Then
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
   it('should render the list with no documents instead of a skeleton when the query is not loading and returned no data', () => {

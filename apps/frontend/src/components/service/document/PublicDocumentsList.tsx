@@ -17,6 +17,7 @@ import useScrollPosition from '@/hooks/use-scroll-position';
 import { useServiceListStorage } from '@/hooks/use-service-list-storage';
 import { useStickyHeaderOffset } from '@/hooks/use-sticky-header-offset';
 import { useTablePagination } from '@/hooks/use-table-pagination';
+import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { APP_PATH } from '@/utils/path/constant';
 import { encodeRedirectValue } from '@/utils/redirect';
@@ -25,6 +26,7 @@ import {
   ServiceSlug,
 } from '@/utils/shareable-resources/shareable-resources.types';
 import { useShareableResourceMapping } from '@/utils/shareable-resources/use-shareable-resource-mapping';
+import { Button } from '@filigran/design-system';
 import {
   LogicalFilterInput,
   PublicDocumentListItemFragment,
@@ -43,6 +45,7 @@ const PublicDocumentsList = ({
   serviceInstance,
   baseUrl,
 }: PublicDocumentsListProps) => {
+  const t = useTranslate();
   const serviceInstanceSlug = serviceInstance.slug as ServiceSlug;
   const { storageKey } = useShareableResourceMapping(serviceInstanceSlug);
 
@@ -113,10 +116,6 @@ const PublicDocumentsList = ({
 
   const { restore } = useScrollPosition();
 
-  useLayoutEffect(() => {
-    restore();
-  }, [restore]);
-
   const { pagination, setPagination, cursor, onPaginationChange } =
     useTablePagination({ pageSize, setPageSize });
 
@@ -142,7 +141,7 @@ const PublicDocumentsList = ({
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
   }
 
-  const { data, isLoading } = usePublicDocumentsQuery(
+  const { data, isLoading, isError, refetch } = usePublicDocumentsQuery(
     portalGraphqlClient,
     {
       slug: serviceInstance.slug ?? '',
@@ -158,6 +157,13 @@ const PublicDocumentsList = ({
     { placeholderData: keepPreviousData }
   );
 
+  // Wait for the first page: the skeleton is shorter than the list, so restoring
+  // earlier would clamp the saved position.
+  useLayoutEffect(() => {
+    if (isLoading) return;
+    restore();
+  }, [restore, isLoading]);
+
   const documents = useMemo(
     () =>
       (data?.publicDocuments.edges ?? []).map(
@@ -169,9 +175,37 @@ const PublicDocumentsList = ({
   const headerRef = useRef<HTMLDivElement>(null);
   useStickyHeaderOffset(headerRef);
 
-  if (isLoading) {
-    return <Skeleton className="w-full inset-1/2" />;
-  }
+  // The header stays mounted while the first page loads: `useStickyHeaderOffset`
+  // measures it once, on mount, and the URL filters sync must run before the
+  // first page is fetched with the wrong filters.
+  const renderList = () => {
+    // A failed background refetch keeps the page already on screen.
+    if (isError && !data) {
+      return (
+        <div
+          role="alert"
+          className="my-4 flex flex-col items-center gap-3 text-center">
+          <p>{t('Service.List.LoadError')}</p>
+          <Button
+            priority="secondary"
+            onClick={() => void refetch()}>
+            {t('Service.List.Retry')}
+          </Button>
+        </div>
+      );
+    }
+    if (isLoading) {
+      return <Skeleton className="h-64 w-full" />;
+    }
+    return (
+      <PublicShareableResourceList
+        displayMode={selectedDisplayMode}
+        documents={documents}
+        serviceInstance={serviceInstance}
+        baseUrl={baseUrl}
+      />
+    );
+  };
 
   return (
     <AppServiceListStorageKeyContext storageKey={storageKey}>
@@ -198,26 +232,21 @@ const PublicDocumentsList = ({
             ) : undefined
           }
           paginationControls={
-            <PaginationControls
-              totalCount={data?.publicDocuments.totalCount ?? 0}
-              pageSize={pageSize}
-              pageIndex={pagination.pageIndex}
-              onPaginationChange={onPaginationChange}
-              onSetPageSize={setPageSize}
-            />
+            data ? (
+              <PaginationControls
+                totalCount={data.publicDocuments.totalCount}
+                pageSize={pageSize}
+                pageIndex={pagination.pageIndex}
+                onPaginationChange={onPaginationChange}
+                onSetPageSize={setPageSize}
+              />
+            ) : undefined
           }
         />
       </div>
       <div className="flex flex-row">
         <FilterSidebar filters={filters} />
-        <div className="grow shrink min-w-0 px-3 pb-3">
-          <PublicShareableResourceList
-            displayMode={selectedDisplayMode}
-            documents={documents}
-            serviceInstance={serviceInstance}
-            baseUrl={baseUrl}
-          />
-        </div>
+        <div className="grow shrink min-w-0 px-3 pb-3">{renderList()}</div>
       </div>
     </AppServiceListStorageKeyContext>
   );
