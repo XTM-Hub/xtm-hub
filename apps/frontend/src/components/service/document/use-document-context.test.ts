@@ -1,98 +1,208 @@
-import { CustomDashboardFormValues } from '@/components/service/custom-dashboards/[serviceInstanceId]/CustomDashboardForm';
-import { buildDocument } from '@/components/service/form/ServiceForm.test-utils';
+import { ServiceFormValues } from '@/components/service/components/subscribable-services.types';
+import {
+  invalidateDocumentQueries,
+  invalidateDocumentQueriesAfterDelete,
+} from '@/components/service/document/document-query-invalidation';
+import { useDocumentContext } from '@/components/service/document/use-document-context';
+import { requestGraphqlWithUploads } from '@/lib/graphql-upload-client';
+import revalidateDocumentSlugsAction from '@/utils/actions/revalidate-document-slugs.actions';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
+import { testRenderHook } from '@/utils/test/test-render';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
-import { DocumentStatus } from '@graphql/generated';
-import { renderHook } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
-import { useDocumentContext } from './use-document-context';
+import {
+  DocumentCreateDocument,
+  DocumentDeleteDocument,
+  DocumentItemFragment,
+  DocumentStatus,
+  DocumentUpdateDocument,
+} from '@graphql/generated';
+import { waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { mutations } = vi.hoisted(() => ({
-  mutations: {
-    documentCreateMutation: vi.fn(),
-    documentUpdateMutation: vi.fn(),
-  } as Record<string, ReturnType<typeof vi.fn>>,
+const SERVICE_INSTANCE_ID = 'service-instance-1';
+const SERVICE_INSTANCE_SLUG = 'opencti-custom-dashboards';
+const DOCUMENT_ID = 'document-1';
+const DOCUMENT_SLUG = 'document-slug';
+
+const mocks = vi.hoisted(() => ({
+  request: vi.fn(),
 }));
 
-vi.mock('react-relay', () => ({
-  useMutation: (mutation: { params: { name: string } }) => [
-    mutations[mutation.params.name] ?? vi.fn(),
-    false,
-  ],
+vi.mock('@/lib/graphql-client', () => ({
+  portalGraphqlClient: { request: mocks.request },
 }));
 
-vi.mock('@/hooks/use-translate', () => ({
-  useTranslate: () => (key: string) => key,
+vi.mock('@/lib/graphql-upload-client', () => ({
+  requestGraphqlWithUploads: vi.fn(),
 }));
 
 vi.mock('@/utils/actions/revalidate-document-slugs.actions', () => ({
   default: vi.fn(),
 }));
 
-const SERVICE_INSTANCE = {
-  id: 'service-instance-1',
-  slug: null,
+vi.mock('@/components/service/document/document-query-invalidation', () => ({
+  invalidateDocumentQueries: vi.fn(),
+  invalidateDocumentQueriesAfterDelete: vi.fn(),
+}));
+
+const serviceInstance = {
+  id: SERVICE_INSTANCE_ID,
+  slug: SERVICE_INSTANCE_SLUG,
 } as serviceInstance_fragment$data;
 
-const buildValues = (overrides: Partial<CustomDashboardFormValues> = {}) =>
+const existingDocument = {
+  id: DOCUMENT_ID,
+  slug: DOCUMENT_SLUG,
+} as DocumentItemFragment;
+
+const buildFile = (name: string) => new File(['content'], name);
+
+// A FileList is only ever read through Array.from, so an array stands in for it.
+const toFileList = (files: File[]) => files as unknown as FileList;
+
+const buildValues = (overrides: Record<string, unknown> = {}) =>
   ({
-    name: 'Resource',
-    slug: 'resource',
-    short_description: 'Short description',
-    description: 'Description',
-    uploader_id: 'uploader-1',
-    uploader_organization_id: 'organization-1',
-    use_cases: [],
-    document: [],
-    logo: [],
-    images: [],
+    name: 'My dashboard',
+    slug: 'my-dashboard',
+    uploader_id: 'user-1',
+    uploader_organization_id: 'org-1',
+    short_description: 'short',
+    description: 'long',
+    product_version: '6.0.0',
+    use_cases: ['use-case-1'],
+    active: true,
     ...overrides,
-  }) as unknown as CustomDashboardFormValues;
+  }) as ServiceFormValues;
 
 const renderContext = () =>
-  renderHook(() =>
+  testRenderHook(() =>
     useDocumentContext({
-      serviceInstance: SERVICE_INSTANCE,
+      serviceInstance,
       type: ShareableResourceType.OPENCTI_CUSTOM_DASHBOARD,
     })
-  ).result.current;
+  ).result;
 
-const sentInput = (mutation: ReturnType<typeof vi.fn>) =>
-  mutation.mock.calls[0]?.[0].variables.input;
+const sentInput = () => mocks.request.mock.calls[0][0].variables.input;
 
 describe('useDocumentContext', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.request.mockResolvedValue({ createDocument: { id: DOCUMENT_ID } });
+    vi.mocked(requestGraphqlWithUploads).mockResolvedValue({
+      createDocument: { id: DOCUMENT_ID },
+    });
+  });
+
   describe('handleAddSheet', () => {
     it.each([
       [true, DocumentStatus.Published],
       [false, DocumentStatus.Draft],
       [undefined, DocumentStatus.Draft],
     ])(
-      'should send the matching status when the user creates a resource with the switch at %s',
+      'should send the matching status, and no active field, when the user creates a resource with the switch at %s',
       async (active, expectedStatus) => {
         // Given
-        const { handleAddSheet } = renderContext();
+        const context = renderContext();
 
         // When
-        await handleAddSheet(buildValues({ active }), vi.fn(), vi.fn());
+        await context.current.handleAddSheet(
+          buildValues({ active }),
+          vi.fn(),
+          vi.fn()
+        );
 
         // Then
-        expect(sentInput(mutations.documentCreateMutation).status).toBe(
-          expectedStatus
-        );
+        await waitFor(() => expect(mocks.request).toHaveBeenCalled());
+        const input = sentInput();
+        expect(input.status).toBe(expectedStatus);
+        expect(input).not.toHaveProperty('active');
       }
     );
 
-    it('should not send the active form field when the user creates a resource', async () => {
+    it('should send a plain request, without any upload, when the form carries no file', async () => {
       // Given
-      const { handleAddSheet } = renderContext();
+      const context = renderContext();
+      const onSuccess = vi.fn();
 
       // When
-      await handleAddSheet(buildValues({ active: true }), vi.fn(), vi.fn());
+      await context.current.handleAddSheet(buildValues(), onSuccess, vi.fn());
 
       // Then
-      expect(sentInput(mutations.documentCreateMutation)).not.toHaveProperty(
-        'active'
+      await waitFor(() =>
+        expect(onSuccess).toHaveBeenCalledWith('My dashboard')
       );
+      expect(requestGraphqlWithUploads).not.toHaveBeenCalled();
+      expect(mocks.request).toHaveBeenCalledWith(
+        expect.objectContaining({
+          document: DocumentCreateDocument,
+          variables: expect.objectContaining({
+            serviceInstanceId: SERVICE_INSTANCE_ID,
+            sourceDocument: null,
+            logo: null,
+            images: null,
+          }),
+        })
+      );
+    });
+
+    it('should upload the files through the multipart client, each one under its own variable', async () => {
+      // Given
+      const sourceDocument = buildFile('dashboard.json');
+      const logo = buildFile('logo.png');
+      const images = [buildFile('a.png'), buildFile('b.png')];
+      const context = renderContext();
+      const onSuccess = vi.fn();
+
+      // When
+      await context.current.handleAddSheet(
+        buildValues({
+          document: toFileList([sourceDocument]),
+          logo: toFileList([logo]),
+          images: toFileList(images),
+        }),
+        onSuccess,
+        vi.fn()
+      );
+
+      // Then
+      await waitFor(() => expect(onSuccess).toHaveBeenCalled());
+      expect(mocks.request).not.toHaveBeenCalled();
+      expect(requestGraphqlWithUploads).toHaveBeenCalledWith(
+        DocumentCreateDocument,
+        expect.objectContaining({ serviceInstanceId: SERVICE_INSTANCE_ID }),
+        { sourceDocument, logo, images }
+      );
+    });
+
+    it('should invalidate the document queries and revalidate the public slugs once created', async () => {
+      // Given
+      const context = renderContext();
+      const onSuccess = vi.fn();
+
+      // When
+      await context.current.handleAddSheet(buildValues(), onSuccess, vi.fn());
+
+      // Then
+      await waitFor(() => expect(onSuccess).toHaveBeenCalled());
+      expect(invalidateDocumentQueries).toHaveBeenCalledOnce();
+      expect(revalidateDocumentSlugsAction).toHaveBeenCalledWith(
+        SERVICE_INSTANCE_SLUG
+      );
+    });
+
+    it('should report the failure and invalidate nothing when the creation fails', async () => {
+      // Given
+      const error = new Error('DOCUMENT_CREATION_FAILED');
+      mocks.request.mockRejectedValue(error);
+      const context = renderContext();
+      const onError = vi.fn();
+
+      // When
+      await context.current.handleAddSheet(buildValues(), vi.fn(), onError);
+
+      // Then
+      await waitFor(() => expect(onError).toHaveBeenCalledWith(error));
+      expect(invalidateDocumentQueries).not.toHaveBeenCalled();
     });
   });
 
@@ -113,42 +223,130 @@ describe('useDocumentContext', () => {
         expectedStatus,
       }: {
         active: boolean;
-        currentStatus: 'published' | 'draft' | 'in_validation';
+        currentStatus: string;
         expectedStatus?: DocumentStatus;
       }) => {
         // Given
-        const { handleUpdateSheet } = renderContext();
+        mocks.request.mockResolvedValue({
+          updateDocument: { id: DOCUMENT_ID },
+        });
+        const context = renderContext();
 
         // When
-        await handleUpdateSheet(
+        await context.current.handleUpdateSheet(
           buildValues({ active }),
-          buildDocument({ status: currentStatus }),
+          { ...existingDocument, status: currentStatus } as DocumentItemFragment,
           vi.fn(),
           vi.fn()
         );
 
         // Then
-        expect(sentInput(mutations.documentUpdateMutation).status).toBe(
-          expectedStatus
-        );
+        await waitFor(() => expect(mocks.request).toHaveBeenCalled());
+        const input = sentInput();
+        expect(input.status).toBe(expectedStatus);
+        expect(input).not.toHaveProperty('active');
       }
     );
 
-    it('should not send the active form field when the user updates a resource', async () => {
+    it('should upload only the new files and keep the existing images by id', async () => {
       // Given
-      const { handleUpdateSheet } = renderContext();
+      const newImage = buildFile('new.png');
+      const newLogo = buildFile('new-logo.png');
+      const existingImage = { id: 'image-1', file_name: 'old.png' };
+      mocks.request.mockResolvedValue({ updateDocument: { id: DOCUMENT_ID } });
+      vi.mocked(requestGraphqlWithUploads).mockResolvedValue({
+        updateDocument: { id: DOCUMENT_ID },
+      });
+      const context = renderContext();
+      const onSuccess = vi.fn();
 
       // When
-      await handleUpdateSheet(
-        buildValues({ active: false }),
-        buildDocument({ status: 'published' }),
-        vi.fn(),
+      await context.current.handleUpdateSheet(
+        buildValues({
+          images: [existingImage, newImage] as unknown as FileList,
+          logo: toFileList([newLogo]),
+        }),
+        existingDocument,
+        onSuccess,
         vi.fn()
       );
 
       // Then
-      expect(sentInput(mutations.documentUpdateMutation)).not.toHaveProperty(
-        'active'
+      await waitFor(() =>
+        expect(onSuccess).toHaveBeenCalledWith('My dashboard')
+      );
+      expect(requestGraphqlWithUploads).toHaveBeenCalledWith(
+        DocumentUpdateDocument,
+        expect.objectContaining({
+          documentId: DOCUMENT_ID,
+          serviceInstanceId: SERVICE_INSTANCE_ID,
+          existingImageIds: ['image-1'],
+        }),
+        { logo: newLogo, images: [newImage] }
+      );
+      expect(invalidateDocumentQueries).toHaveBeenCalledOnce();
+      expect(revalidateDocumentSlugsAction).toHaveBeenCalledWith(
+        SERVICE_INSTANCE_SLUG,
+        DOCUMENT_SLUG
+      );
+    });
+
+    it('should keep the existing logo by id when it is not replaced', async () => {
+      // Given
+      mocks.request.mockResolvedValue({ updateDocument: { id: DOCUMENT_ID } });
+      const existingLogo = { id: 'logo-1', file_name: 'logo.png' };
+      const context = renderContext();
+      const onSuccess = vi.fn();
+
+      // When
+      await context.current.handleUpdateSheet(
+        buildValues({ logo: [existingLogo] as unknown as FileList }),
+        existingDocument,
+        onSuccess,
+        vi.fn()
+      );
+
+      // Then
+      await waitFor(() => expect(onSuccess).toHaveBeenCalled());
+      expect(requestGraphqlWithUploads).not.toHaveBeenCalled();
+      expect(mocks.request).toHaveBeenCalledWith(
+        expect.objectContaining({
+          document: DocumentUpdateDocument,
+          variables: expect.objectContaining({
+            logo: null,
+            existingImageIds: ['logo-1'],
+          }),
+        })
+      );
+    });
+  });
+
+  describe('handleDeleteSheet', () => {
+    it('should delete the document, then refresh the lists without refetching its detail', async () => {
+      // Given
+      mocks.request.mockResolvedValue({ deleteDocument: { id: DOCUMENT_ID } });
+      const context = renderContext();
+      const onCompleted = vi.fn();
+
+      // When
+      await context.current.handleDeleteSheet(existingDocument, onCompleted);
+
+      // Then
+      await waitFor(() => expect(onCompleted).toHaveBeenCalled());
+      expect(mocks.request).toHaveBeenCalledWith(
+        expect.objectContaining({
+          document: DocumentDeleteDocument,
+          variables: {
+            documentId: DOCUMENT_ID,
+            serviceInstanceId: SERVICE_INSTANCE_ID,
+          },
+        })
+      );
+      expect(invalidateDocumentQueriesAfterDelete).toHaveBeenCalledOnce();
+      expect(invalidateDocumentQueries).not.toHaveBeenCalled();
+      expect(revalidateDocumentSlugsAction).toHaveBeenCalledWith(
+        SERVICE_INSTANCE_SLUG,
+        DOCUMENT_SLUG
       );
     });
   });

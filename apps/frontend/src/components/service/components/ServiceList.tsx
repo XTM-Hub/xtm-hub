@@ -33,7 +33,6 @@ export interface ServiceListProps {
   search: string;
   onSearchChange: (v: string) => void;
   additionalFilters: ServiceListFilterMap;
-  connectionId?: string;
   paginationControls?: React.ReactNode;
 }
 
@@ -43,7 +42,6 @@ const ServiceList = ({
   search,
   onSearchChange,
   additionalFilters,
-  connectionId,
   paginationControls,
 }: ServiceListProps) => {
   const t = useTranslate();
@@ -110,7 +108,6 @@ const ServiceList = ({
               <DocumentList
                 documents={draft}
                 displayMode={selectedDisplayMode}
-                connectionId={connectionId}
               />
               {active.length > 0 && (
                 <div className="title-xs">{t(`${translationKey}.Active`)}:</div>
@@ -121,7 +118,6 @@ const ServiceList = ({
             <DocumentList
               documents={active}
               displayMode={selectedDisplayMode}
-              connectionId={connectionId}
             />
           )}
         </div>

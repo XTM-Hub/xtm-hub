@@ -35,7 +35,6 @@ const DeleteShareableResourceSlug = ({
 
   const context = useDocumentContext({
     serviceInstance: serviceContext.serviceInstance,
-    connectionId: '',
     type: ShareableResourceType.OPENCTI_INTEGRATION,
   });
   const userCanDelete = useServiceCapability(

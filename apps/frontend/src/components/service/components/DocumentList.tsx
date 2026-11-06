@@ -22,14 +22,9 @@ import { useRouter } from 'next/navigation';
 interface DocumentListProps {
   documents: DocumentItemFragment[];
   displayMode: ServiceListDisplayMode;
-  connectionId?: string;
 }
 
-const DocumentList = ({
-  documents,
-  displayMode,
-  connectionId,
-}: DocumentListProps) => {
+const DocumentList = ({ documents, displayMode }: DocumentListProps) => {
   const { settings } = useContext(SettingsContext);
   const { serviceInstance } = useServiceContext();
   const t = useTranslate();
@@ -58,7 +53,6 @@ const DocumentList = ({
             <ServiceCard
               key={document.id}
               document={document}
-              connectionId={connectionId}
               detailUrl={`/${APP_PATH}/service/${serviceInstance.service_definition?.identifier}/${serviceInstance.id}/${document.id}`}
               shareLinkUrl={`${settings!.base_url_front}/${PUBLIC_CYBERSECURITY_SOLUTIONS_PATH}/${serviceInstance.slug}/${document.slug}`}
             />

@@ -31,6 +31,8 @@ type IntegrationFiltersParams = {
 export type LogicalFiltersParams =
   SimpleFiltersParams | IntegrationFiltersParams;
 
+export type LogicalFilters = ReturnType<typeof useLogicalFiltersFromStorage>;
+
 export const useLogicalFiltersFromStorage = (params: LogicalFiltersParams) => {
   const { serviceInstanceSlug, labels } = params;
   const entityTypes = 'entityTypes' in params ? params.entityTypes : undefined;
