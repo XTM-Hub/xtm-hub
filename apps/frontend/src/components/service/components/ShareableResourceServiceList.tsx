@@ -10,6 +10,7 @@ import {
 import { useDocumentContext } from '@/components/service/document/use-document-context';
 import { PaginationControls } from '@/components/ui/pagination/PaginationControls';
 import { useDocumentFacetCounts } from '@/hooks/use-document-facet-counts';
+import { useResourceListAnalytics } from '@/hooks/use-resource-list-analytics';
 import { useServiceListStorage } from '@/hooks/use-service-list-storage';
 import { useTablePagination } from '@/hooks/use-table-pagination';
 import { ServiceListStorageKey } from '@/utils/filters-storage.utils';
@@ -75,6 +76,13 @@ const ShareableResourceServiceList = ({
   >(data?.documents.edges, documentItem);
 
   const connectionId = data?.documents.__id;
+
+  useResourceListAnalytics({
+    resourceType: type,
+    variables: queryRef.variables,
+    totalCount: data.documents.totalCount,
+    resources: active,
+  });
 
   const context = useDocumentContext({
     serviceInstance,

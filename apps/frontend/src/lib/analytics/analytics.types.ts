@@ -64,6 +64,11 @@ interface AnalyticsResourceParams extends AnalyticsLibraryParams {
   resource_name: string;
 }
 
+export interface AnalyticsListResults extends AnalyticsLibraryParams {
+  result_count: number;
+  has_results: YesNo;
+}
+
 export type AnalyticsDeployEligibility =
   | 'Signed out'
   | 'Can deploy'
@@ -108,6 +113,13 @@ export interface AnalyticsEvents {
   };
   view_item_use_case: AnalyticsResourceParams & {
     use_case: string;
+  };
+  view_item_list: AnalyticsListResults & {
+    item_list_name: AnalyticsLibrary;
+    items: AnalyticsItem[];
+  };
+  search: AnalyticsListResults & {
+    search_term: string;
   };
 }
 

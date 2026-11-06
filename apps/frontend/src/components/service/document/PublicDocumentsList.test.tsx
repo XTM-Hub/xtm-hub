@@ -133,7 +133,7 @@ describe('PublicDocumentsList', () => {
     id: SERVICE_INSTANCE_ID,
     slug: SERVICE_INSTANCE_SLUG,
   } as Partial<SeoServiceInstanceItemFragment>;
-  const queryRef = {} as PreloadedQuery<publicDocumentsQuery>;
+  const queryRef = { variables: {} } as PreloadedQuery<publicDocumentsQuery>;
 
   const buildElement = () => (
     <PublicDocumentsList

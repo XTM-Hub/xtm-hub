@@ -9,6 +9,7 @@ import {
 import { PaginationControls } from '@/components/ui/pagination/PaginationControls';
 import { PublicShareableResourceList } from '@/components/ui/shareable-resource/PublicShareableResourceList';
 import { useDocumentFacetCounts } from '@/hooks/use-document-facet-counts';
+import { useResourceListAnalytics } from '@/hooks/use-resource-list-analytics';
 import useScrollPosition from '@/hooks/use-scroll-position';
 import { useServiceListStorage } from '@/hooks/use-service-list-storage';
 import { useStickyHeaderOffset } from '@/hooks/use-sticky-header-offset';
@@ -56,6 +57,8 @@ const PublicDocumentsList = ({
   >(publicDocumentListGraphql, queryData);
 
   const serviceInstanceSlug = serviceInstance.slug as ServiceSlug;
+  const resourceType =
+    SERVICE_SLUG_SHAREABLE_RESOURCE_MAPPING[serviceInstanceSlug];
   const { storageKey } = useShareableResourceMapping(serviceInstanceSlug);
 
   const {
@@ -79,7 +82,7 @@ const PublicDocumentsList = ({
 
   const facetCounts = useDocumentFacetCounts({
     serviceInstanceId: serviceInstance.id,
-    documentType: SERVICE_SLUG_SHAREABLE_RESOURCE_MAPPING[serviceInstanceSlug],
+    documentType: resourceType,
     search,
     serviceInstanceSlug,
     restrictToActiveDocuments: true,
@@ -103,6 +106,13 @@ const PublicDocumentsList = ({
       )
       .filter((l) => !!l);
   }, [data.publicDocuments]);
+
+  useResourceListAnalytics({
+    resourceType,
+    variables: queryRef.variables,
+    totalCount: data.publicDocuments.totalCount,
+    resources: documents,
+  });
 
   const { filters } = useShareableResourceMapping(
     serviceInstanceSlug,
@@ -164,9 +174,7 @@ const PublicDocumentsList = ({
                 serviceInstanceId={serviceInstance.id}
                 isAuthenticated={false}
                 loginRedirectPath={`/${APP_PATH}/service/opencti_integrations/${encodeRedirectValue(serviceInstance.id)}`}
-                type={
-                  SERVICE_SLUG_SHAREABLE_RESOURCE_MAPPING[serviceInstanceSlug]
-                }
+                type={resourceType}
               />
             ) : undefined
           }
