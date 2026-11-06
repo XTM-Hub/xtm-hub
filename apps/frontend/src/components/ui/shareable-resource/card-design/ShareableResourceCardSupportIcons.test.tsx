@@ -18,16 +18,18 @@ vi.mock('@filigran/design-system', async (importOriginal) => ({
 
 describe('ShareableResourceCardSupportIcons', () => {
   const baseDocument = {
-    active: true,
+    status: 'published',
     manager_supported: false,
     verified: false,
     integration_type: IntegrationType.Connector,
   };
 
   it.each`
-    description                             | documentOverrides                                | expectedIconCount | expectedLabel
-    ${'connector with deployable+verified'} | ${{ manager_supported: true, verified: true }}   | ${2}              | ${'Service.ShareableResources.Details.SupportedByFiligran'}
-    ${'connector not verified'}             | ${{ manager_supported: false, verified: false }} | ${1}              | ${'Service.ShareableResources.Details.SupportedByCommunity'}
+    description                                           | documentOverrides                                                       | expectedIconCount | expectedLabel
+    ${'connector with deployable+verified'}               | ${{ manager_supported: true, verified: true }}                          | ${2}              | ${'Service.ShareableResources.Details.SupportedByFiligran'}
+    ${'connector not verified'}                           | ${{ manager_supported: false, verified: false }}                        | ${1}              | ${'Service.ShareableResources.Details.SupportedByCommunity'}
+    ${'draft connector with deployable+verified'}         | ${{ status: 'draft', manager_supported: true, verified: true }}         | ${1}              | ${'Service.ShareableResources.Details.SupportedByCommunity'}
+    ${'in validation connector with deployable+verified'} | ${{ status: 'in_validation', manager_supported: true, verified: true }} | ${1}              | ${'Service.ShareableResources.Details.SupportedByCommunity'}
   `(
     'renders expected icons for $description',
     ({

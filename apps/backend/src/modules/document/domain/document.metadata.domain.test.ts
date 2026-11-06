@@ -4,6 +4,7 @@ import { TestHelper } from '../../../../tests/helper/test.helper';
 import { TEST_ORGANIZATIONS } from '../../../../tests/tests.const';
 import {
   DocumentMetadataKeyCode,
+  DocumentStatus,
   IntegrationType,
 } from '../../../__generated__/resolvers-types';
 import { DocumentId } from '../../../model/kanel/public/Document';
@@ -52,7 +53,7 @@ describe('documentMetadataDomain', () => {
           description: 'description',
           short_description: 'short_description',
           slug: 'my-csv-feed',
-          active: true,
+          status: DocumentStatus.Published,
         },
         metadata: [
           {
@@ -84,7 +85,7 @@ describe('documentMetadataDomain', () => {
           description: 'description',
           short_description: 'short_description',
           slug: 'my-csv-feed',
-          active: true,
+          status: DocumentStatus.Published,
         },
         metadata: [
           {
@@ -125,7 +126,7 @@ describe('documentMetadataDomain', () => {
           description: 'description',
           short_description: 'short_description',
           slug: 'my-taxii-feed',
-          active: true,
+          status: DocumentStatus.Published,
         },
         metadata: [
           {
@@ -163,7 +164,7 @@ describe('documentMetadataDomain', () => {
           description: 'description',
           short_description: 'short_description',
           slug: 'first-csv-feed',
-          active: true,
+          status: DocumentStatus.Published,
         },
         metadata: [
           {
@@ -186,7 +187,7 @@ describe('documentMetadataDomain', () => {
           description: 'description',
           short_description: 'short_description',
           slug: 'second-csv-feed',
-          active: true,
+          status: DocumentStatus.Published,
         },
         metadata: [
           {

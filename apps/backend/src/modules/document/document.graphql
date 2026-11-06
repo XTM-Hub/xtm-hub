@@ -10,6 +10,12 @@ enum DocumentImageType {
   image
 }
 
+enum DocumentStatus {
+  draft
+  in_validation
+  published
+}
+
 enum LicenseType {
   Commercial
   Free
@@ -52,7 +58,8 @@ type ShareableResource {
   name: String
   description: String
   download_number: Int
-  active: Boolean!
+  active: Boolean @deprecated(reason: "Use status")
+  status: DocumentStatus!
   source_type: DocumentSourceType!
   image_type: DocumentImageType
 }
@@ -85,7 +92,8 @@ type DefaultDocument implements Node & Document {
   short_description: String
   description: String
   file_name: String @auth
-  active: Boolean!
+  active: Boolean @deprecated(reason: "Use status")
+  status: DocumentStatus!
   created_at: Date!
   updated_at: Date
   updater_id: String @auth
@@ -108,7 +116,8 @@ interface Document implements Node {
   short_description: String
   description: String
   file_name: String @auth
-  active: Boolean!
+  active: Boolean @deprecated(reason: "Use status")
+  status: DocumentStatus!
   created_at: Date!
   updated_at: Date
   updater_id: String @auth
@@ -132,7 +141,7 @@ input CreateDocumentInput {
   slug: String!
   short_description: String!
   description: String!
-  active: Boolean!
+  status: DocumentStatus!
   use_cases: [UseCaseId!]!
   solution_categories: [SolutionCategoryId!]!
   license_type: LicenseType
@@ -144,7 +153,7 @@ input UpdateDocumentInput {
   name: String
   short_description: String
   description: String
-  active: Boolean
+  status: DocumentStatus
   use_cases: [UseCaseId!]
   solution_categories: [SolutionCategoryId!]
   license_type: LicenseType
@@ -187,15 +196,12 @@ type Mutation {
     documentId: DocumentId!
     service_instance_id: ServiceInstanceId!
     forceDelete: Boolean
+      @deprecated(reason: "Ignored, documents are always deleted")
   ): Document! @auth @service_capa(requires: [DELETE])
   incrementShareNumberDocument(documentId: DocumentId!): Document!
 }
 
 type Query {
-  documentExists(
-    documentName: String
-    service_instance_id: ServiceInstanceId!
-  ): Boolean @auth @service_capa(requires: [UPLOAD])
   publicDocuments(
     slug: String!
     first: Int!

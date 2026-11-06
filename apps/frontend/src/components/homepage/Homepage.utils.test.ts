@@ -241,7 +241,7 @@ describe('findLogoUrl', () => {
         id: 'res-1',
         name: 'Resource',
         type: 'opencti_custom_dashboard',
-        active: true,
+        status: 'published',
         slug: 'resource-slug',
         short_description: null,
         service_instance_id,

@@ -12,14 +12,14 @@ import {
 type DeployableCase = {
   expected: boolean;
   type: ShareableResourceType;
-  active: boolean;
+  status: documentItem_fragment$data['status'];
   integrationType?: documentItem_fragment$data['integration_type'];
   typename?: string;
 };
 
 const buildDocumentData = ({
   type,
-  active,
+  status,
   integrationType,
   typename = 'Document',
 }: Omit<DeployableCase, 'expected'>): documentItem_fragment$data =>
@@ -27,7 +27,7 @@ const buildDocumentData = ({
     __typename: typename,
     id: 'doc-1',
     type,
-    active,
+    status,
     integration_type: integrationType,
   }) as documentItem_fragment$data;
 
@@ -36,96 +36,101 @@ describe('isResourceDeployable', () => {
     {
       expected: true,
       type: ShareableResourceType.OPENCTI_CUSTOM_DASHBOARD,
-      active: true,
+      status: 'published',
     },
     {
       expected: true,
       type: ShareableResourceType.OPENCTI_CUSTOM_VIEW,
-      active: true,
+      status: 'published',
     },
     {
       expected: true,
       type: ShareableResourceType.OPENAEV_SCENARIO,
-      active: true,
+      status: 'published',
     },
     {
       expected: true,
       type: ShareableResourceType.OPENCTI_PLAYBOOK,
-      active: true,
+      status: 'published',
     },
     {
       expected: false,
       type: ShareableResourceType.OPENCTI_CUSTOM_DASHBOARD,
-      active: false,
+      status: 'draft',
+    },
+    {
+      expected: false,
+      type: ShareableResourceType.OPENCTI_CUSTOM_DASHBOARD,
+      status: 'in_validation',
     },
     {
       expected: false,
       type: ShareableResourceType.OPENAEV_SCENARIO,
-      active: false,
+      status: 'draft',
     },
     {
       expected: true,
       type: ShareableResourceType.OPENCTI_INTEGRATION,
-      active: true,
+      status: 'published',
       integrationType: 'csv_feed',
     },
     {
       expected: true,
       type: ShareableResourceType.OPENCTI_INTEGRATION,
-      active: true,
+      status: 'published',
       integrationType: 'taxii_feed',
     },
     {
       expected: true,
       type: ShareableResourceType.OPENCTI_INTEGRATION,
-      active: true,
+      status: 'published',
       integrationType: 'rss_feed',
     },
     {
       expected: true,
       type: ShareableResourceType.OPENCTI_INTEGRATION,
-      active: true,
+      status: 'published',
       integrationType: 'stream',
     },
     {
       expected: false,
       type: ShareableResourceType.OPENCTI_INTEGRATION,
-      active: true,
+      status: 'published',
       integrationType: 'third_party_integration',
     },
     {
       expected: false,
       type: ShareableResourceType.OPENCTI_INTEGRATION,
-      active: true,
+      status: 'published',
       integrationType: 'connector',
     },
     {
       expected: false,
       type: ShareableResourceType.OPENCTI_INTEGRATION,
-      active: false,
+      status: 'draft',
       integrationType: 'csv_feed',
     },
     {
       expected: true,
       type: ShareableResourceType.OPENCTI_INTEGRATION,
-      active: true,
+      status: 'published',
       integrationType: 'connector',
       typename: 'Connector',
     },
     {
       expected: false,
       type: ShareableResourceType.OPENCTI_INTEGRATION,
-      active: false,
+      status: 'draft',
       integrationType: 'connector',
       typename: 'Connector',
     },
   ])(
-    'should return $expected when type is $type, active is $active, integration type is $integrationType and typename is $typename',
-    ({ expected, type, active, integrationType, typename }) => {
+    'should return $expected when type is $type, status is $status, integration type is $integrationType and typename is $typename',
+    ({ expected, type, status, integrationType, typename }) => {
       // Given
       const document = buildDocumentData({
         type,
-        active,
+        status,
         integrationType,
         typename,
       });

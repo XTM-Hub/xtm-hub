@@ -3,6 +3,7 @@ import { TestHelper } from '../../../../tests/helper/test.helper';
 import {
   DocumentMetadataKeyCode,
   DocumentSourceType,
+  DocumentStatus,
   LicenseType,
   ManifestType,
   PortalCapability,
@@ -122,6 +123,20 @@ describe('manifestFragmentDomain', () => {
   };
 
   describe('ingestManifestFragment', () => {
+    it('should create the connector as published when it ingests a connector fragment', async () => {
+      // Given
+      const slug = 'misp-published';
+      const fragment = buildManifestFragment(ManifestType.Connector, { slug });
+
+      // When
+      await ManifestFragmentDomain.ingestManifestFragment(fragment);
+
+      // Then
+      const createdDocument = await TestHelper.document.load({ slug });
+      _createdDocumentIds.push(createdDocument!.id);
+      expect(createdDocument?.status).toBe(DocumentStatus.Published);
+    });
+
     it('accepts a fragment when integration_type is connector', async () => {
       // Given
       const slug = 'misp-integration';

@@ -1,6 +1,7 @@
 import { findLogoUrl } from '@/components/homepage/Homepage.utils';
 import HomepageResourceCard from '@/components/homepage/resources/HomepageResourceCard';
 import { PublicLocale } from '@/i18n/config';
+import { isDocumentPublished } from '@/utils/documents';
 import { PUBLIC_CYBERSECURITY_SOLUTIONS_PATH } from '@/utils/path/constant';
 import {
   SHAREABLE_RESOURCE_LIBRARY_MAPPING,
@@ -60,7 +61,7 @@ const HomepageResourceList = ({
             Boolean(resource.manager_supported);
 
           const active =
-            resource.active &&
+            isDocumentPublished(resource.status) &&
             resource.type !== ShareableResourceType.OPENCTI_INTEGRATION;
 
           return (

@@ -43,7 +43,7 @@ describe('RssFeedForm', () => {
     // Given
     const { user, handleSubmit } = renderServiceForm(
       RssFeedForm,
-      buildIntegrationDocument({ active: false })
+      buildIntegrationDocument({ status: 'draft' })
     );
 
     // When

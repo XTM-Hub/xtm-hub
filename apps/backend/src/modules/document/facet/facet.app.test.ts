@@ -66,13 +66,16 @@ describe('facet.app', () => {
     expect(FacetDomain.loadDocumentFacets).toHaveBeenCalledWith(input);
   });
 
-  it('should forward restrictToActiveDocuments to FacetDomain', async () => {
+  it.each([
+    'restrictToActiveDocuments',
+    'restrictToPublishedDocuments',
+  ] as const)('should forward %s to FacetDomain', async (field) => {
     const input: LoadDocumentFacetInput = {
       serviceInstanceId: 'service-instance-id' as ServiceInstanceId,
       documentType: 'opencti_custom_dashboard',
       searchTerm: null,
       logicalFilters: null,
-      restrictToActiveDocuments: true,
+      [field]: true,
     };
     vi.spyOn(FacetDomain, 'loadDocumentFacets').mockResolvedValue({
       integration_type: [],
@@ -90,7 +93,7 @@ describe('facet.app', () => {
 
     // Then — the domain must receive the flag, not a rebuilt object without it
     expect(FacetDomain.loadDocumentFacets).toHaveBeenCalledWith(
-      expect.objectContaining({ restrictToActiveDocuments: true })
+      expect.objectContaining({ [field]: true })
     );
   });
 });

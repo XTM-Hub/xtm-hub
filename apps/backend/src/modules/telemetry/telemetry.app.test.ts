@@ -40,6 +40,7 @@ import {
 } from '../../../tests/tests.const';
 import {
   DocumentMetadataKeyCode,
+  DocumentStatus,
   IntegrationType,
   NewsFeedItemType,
   NewsFeedRedirectInput,
@@ -154,7 +155,7 @@ describe('telemetryApp', () => {
           description: 'description',
           short_description: 'short_description',
           slug: 'slug',
-          active: true,
+          status: DocumentStatus.Published,
         },
         metadata: [
           {
@@ -251,7 +252,7 @@ describe('telemetryApp', () => {
           description: 'description',
           short_description: 'short_description',
           slug: 'slug',
-          active: true,
+          status: DocumentStatus.Published,
         },
         metadata: [
           {
@@ -336,7 +337,7 @@ describe('telemetryApp', () => {
           description: 'description',
           short_description: 'short_description',
           slug: 'slug',
-          active: true,
+          status: DocumentStatus.Published,
         },
         metadata: [
           {

@@ -396,6 +396,7 @@
       "INTEGRATION_TYPE_NOT_RECOGNIZED": "This type of integration is not recognized",
       "INVALID_ACTION_SIZE": "An unknown error occurred",
       "INVALID_CONTENT_TRANSLATION_KEY": "Invalid content key",
+      "INVALID_DOCUMENT_STATUS_TRANSITION": "This status change is not allowed for this resource",
       "INVALID_EMAIL": "The email should be in valid format.",
       "INVALID_IMAGE_URL": "The image URL is not valid",
       "INVALID_MANIFEST_VERSION_FORMAT": "The manifest version format is invalid",

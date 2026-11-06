@@ -3,7 +3,7 @@ export async function seed(knex) {
   // /opencti/:version/versions-matrix endpoint locally against a variety of
   // OpenCTI compatibility scenarios: always compatible, incompatible with
   // the latest registered OpenCTI version, and "fallback" (the connector's
-  // latest release is incompatible but an older, still-active release is).
+  // latest release is incompatible but an older, still-published release is).
   const BYPASS_USER_ID = 'ba091095-418f-4b4f-b150-6c9295e232c3';
 
   const integrationFeedsService = await knex('ServiceInstance')
@@ -26,7 +26,7 @@ export async function seed(knex) {
         service_instance_id: serviceInstanceId,
         description:
           'Import malware and botnet C2 indicators from Abuse.ch feeds.',
-        active: true,
+        status: 'published',
         created_at: '2025-09-04 08:01:55.737+00',
         remover_id: null,
         name: 'AbuseCh',
@@ -45,7 +45,7 @@ export async function seed(knex) {
         service_instance_id: serviceInstanceId,
         description:
           'Import pulses, indicators, and observables from AlienVault OTX.',
-        active: true,
+        status: 'published',
         created_at: '2025-09-04 08:01:55.748+00',
         remover_id: null,
         name: 'AlienVaultOTX',
@@ -63,7 +63,7 @@ export async function seed(knex) {
         uploader_id: BYPASS_USER_ID,
         service_instance_id: serviceInstanceId,
         description: 'Import ANSSI CERT-FR advisories and alerts into OpenCTI.',
-        active: true,
+        status: 'published',
         created_at: '2025-09-04 08:01:55.837+00',
         remover_id: null,
         name: 'Anssi',
@@ -82,7 +82,7 @@ export async function seed(knex) {
         service_instance_id: serviceInstanceId,
         description:
           'Import CISA Known Exploited Vulnerabilities catalog into OpenCTI.',
-        active: true,
+        status: 'published',
         created_at: '2025-09-04 08:01:55.827+00',
         remover_id: null,
         name: 'CisaKev',
@@ -96,7 +96,7 @@ export async function seed(knex) {
         tags: ['decoupling', 'latest'],
       },
       // Two versions of the same connector: the older one has no "latest"
-      // tag but stays active, so a caller requesting an OpenCTI version
+      // tag but stays published, so a caller requesting an OpenCTI version
       // incompatible with the latest Crowdstrike release still gets a
       // compatible (older) result instead of an error.
       {
@@ -105,7 +105,7 @@ export async function seed(knex) {
         service_instance_id: serviceInstanceId,
         description:
           'Import threat intelligence, indicators, and detections from Crowdstrike Falcon.',
-        active: true,
+        status: 'published',
         created_at: '2025-09-04 08:01:55.673+00',
         remover_id: null,
         name: 'Crowdstrike',
@@ -124,7 +124,7 @@ export async function seed(knex) {
         service_instance_id: serviceInstanceId,
         description:
           'Import threat intelligence, indicators, and detections from Crowdstrike Falcon.',
-        active: true,
+        status: 'published',
         created_at: '2025-09-04 08:01:55.860+00',
         remover_id: null,
         name: 'Crowdstrike',
@@ -142,7 +142,7 @@ export async function seed(knex) {
         uploader_id: BYPASS_USER_ID,
         service_instance_id: serviceInstanceId,
         description: 'Import tracked C2 panels from Cybercrime Tracker.',
-        active: true,
+        status: 'published',
         created_at: '2025-09-04 08:01:55.847+00',
         remover_id: null,
         name: 'CybercrimeTracker',
@@ -160,7 +160,7 @@ export async function seed(knex) {
         service_instance_id: serviceInstanceId,
         description:
           'Import Google Threat Intelligence indicators and reports.',
-        active: true,
+        status: 'published',
         created_at: '2025-09-04 08:01:55.895+00',
         remover_id: null,
         name: 'GoogleTi',
@@ -179,7 +179,7 @@ export async function seed(knex) {
         service_instance_id: serviceInstanceId,
         description:
           'Enrich IP observables with GreyNoise internet scanning context.',
-        active: true,
+        status: 'published',
         created_at: '2025-09-04 08:01:55.798+00',
         remover_id: null,
         name: 'GreyNoise',
@@ -198,7 +198,7 @@ export async function seed(knex) {
         service_instance_id: serviceInstanceId,
         description:
           'Enrich observables using IBM X-Force Exchange threat data.',
-        active: true,
+        status: 'published',
         created_at: '2025-09-04 08:01:55.887+00',
         remover_id: null,
         name: 'IbmXForce',
@@ -216,7 +216,7 @@ export async function seed(knex) {
         uploader_id: BYPASS_USER_ID,
         service_instance_id: serviceInstanceId,
         description: 'Import malware samples metadata from MalwareBazaar.',
-        active: true,
+        status: 'published',
         created_at: '2025-09-04 08:01:55.866+00',
         remover_id: null,
         name: 'MalwareBazaar',
@@ -235,7 +235,7 @@ export async function seed(knex) {
         service_instance_id: serviceInstanceId,
         description:
           'Import Mandiant Advantage threat intelligence indicators and reports.',
-        active: true,
+        status: 'published',
         created_at: '2025-09-04 08:01:55.816+00',
         remover_id: null,
         name: 'Mandiant',
@@ -254,7 +254,7 @@ export async function seed(knex) {
         service_instance_id: serviceInstanceId,
         description:
           'Import Microsoft Defender Threat Intelligence indicators.',
-        active: true,
+        status: 'published',
         created_at: '2025-09-04 08:01:55.902+00',
         remover_id: null,
         name: 'MicrosoftDefenderTi',
@@ -273,7 +273,7 @@ export async function seed(knex) {
         service_instance_id: serviceInstanceId,
         description:
           'Import threat intelligence events, indicators, and observables from MISP instances.',
-        active: true,
+        status: 'published',
         created_at: '2025-09-04 08:01:55.713+00',
         remover_id: null,
         name: 'MISP',
@@ -292,7 +292,7 @@ export async function seed(knex) {
         service_instance_id: serviceInstanceId,
         description:
           'Import MITRE ATT&CK tactics, techniques, and mitigations into OpenCTI.',
-        active: true,
+        status: 'published',
         created_at: '2025-09-04 08:01:55.727+00',
         remover_id: null,
         name: 'MitreAttack',
@@ -311,7 +311,7 @@ export async function seed(knex) {
         service_instance_id: serviceInstanceId,
         description:
           'Import threat intelligence risk lists and analyst notes from Recorded Future.',
-        active: true,
+        status: 'published',
         created_at: '2025-09-04 08:01:55.772+00',
         remover_id: null,
         name: 'RecordedFuture',
@@ -330,7 +330,7 @@ export async function seed(knex) {
         service_instance_id: serviceInstanceId,
         description:
           'Import Sekoia.io Intelligence Center indicators and objects.',
-        active: true,
+        status: 'published',
         created_at: '2025-09-04 08:01:55.909+00',
         remover_id: null,
         name: 'Sekoia',
@@ -349,7 +349,7 @@ export async function seed(knex) {
         service_instance_id: serviceInstanceId,
         description:
           'Enrich IP addresses and infrastructure with Shodan scan data.',
-        active: true,
+        status: 'published',
         created_at: '2025-09-04 08:01:55.783+00',
         remover_id: null,
         name: 'Shodan',
@@ -367,7 +367,7 @@ export async function seed(knex) {
         uploader_id: BYPASS_USER_ID,
         service_instance_id: serviceInstanceId,
         description: 'Import IOC feeds from abuse.ch ThreatFox platform.',
-        active: true,
+        status: 'published',
         created_at: '2025-09-04 08:01:55.856+00',
         remover_id: null,
         name: 'ThreatFox',
@@ -384,7 +384,7 @@ export async function seed(knex) {
         uploader_id: BYPASS_USER_ID,
         service_instance_id: serviceInstanceId,
         description: 'Import malicious URLs from abuse.ch URLhaus.',
-        active: true,
+        status: 'published',
         created_at: '2025-09-04 08:01:55.879+00',
         remover_id: null,
         name: 'Urlhaus',
@@ -402,7 +402,7 @@ export async function seed(knex) {
         service_instance_id: serviceInstanceId,
         description:
           'Enrich observables with VirusTotal reputation and analysis data.',
-        active: true,
+        status: 'published',
         created_at: '2025-09-04 08:01:55.760+00',
         remover_id: null,
         name: 'VirusTotal',

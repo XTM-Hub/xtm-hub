@@ -2,6 +2,7 @@ import config from 'config';
 import { z } from 'zod';
 import {
   ConsumeProvisionedNewsFeedItemsResponse,
+  DocumentStatus,
   NewsFeedItemMetadataKey,
   NewsFeedItemType,
   PlatformIdentifier,
@@ -467,8 +468,8 @@ export const NewsFeedApp = {
       return;
     }
 
-    if (!updatedDocument.active) {
-      if (documentBeforeUpdate?.active) {
+    if (updatedDocument.status !== DocumentStatus.Published) {
+      if (documentBeforeUpdate?.status === DocumentStatus.Published) {
         await NewsFeedApp.deleteResourceNewsFeed({
           documentId: updatedDocument.id,
         });
@@ -477,7 +478,7 @@ export const NewsFeedApp = {
     }
 
     const shouldCreateNewsFeedItem =
-      !documentBeforeUpdate || !documentBeforeUpdate.active;
+      documentBeforeUpdate?.status !== DocumentStatus.Published;
     if (shouldCreateNewsFeedItem) {
       await NewsFeedApp.createResourceNewsFeedItem({
         document: updatedDocument,

@@ -3,6 +3,7 @@
 
 import type { UserId } from './User';
 import type { ServiceInstanceId } from './ServiceInstance';
+import type { DocumentStatus } from '../../../__generated__/resolvers-types';
 
 /** Identifier type for public.Document */
 export type DocumentId = string & { __brand: 'public.Document' };
@@ -20,8 +21,6 @@ export default interface Document {
   file_name: string | null;
 
   minio_name: string | null;
-
-  active: boolean;
 
   created_at: Date;
 
@@ -50,6 +49,8 @@ export default interface Document {
   version: string | null;
 
   tags: string[];
+
+  status: DocumentStatus;
 }
 
 /** Represents the initializer for the table public.Document */
@@ -66,9 +67,6 @@ export interface DocumentInitializer {
   file_name?: string | null;
 
   minio_name?: string | null;
-
-  /** Default value: true */
-  active?: boolean;
 
   /** Default value: CURRENT_TIMESTAMP */
   created_at?: Date;
@@ -101,6 +99,8 @@ export interface DocumentInitializer {
 
   /** Default value: '{}'::text[] */
   tags?: string[];
+
+  status?: DocumentStatus;
 }
 
 /** Represents the mutator for the table public.Document */
@@ -116,8 +116,6 @@ export interface DocumentMutator {
   file_name?: string | null;
 
   minio_name?: string | null;
-
-  active?: boolean;
 
   created_at?: Date;
 
@@ -146,4 +144,6 @@ export interface DocumentMutator {
   version?: string | null;
 
   tags?: string[];
+
+  status?: DocumentStatus;
 }

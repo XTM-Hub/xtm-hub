@@ -8,7 +8,7 @@ import {
 import type Document from '../../../model/kanel/public/Document';
 import {
   restrictDocumentToAccessibleServiceInstance,
-  restrictDocumentToActive,
+  restrictDocumentToPublished,
 } from '../../../security/restriction/document';
 import {
   applyDecouplingRestriction,
@@ -35,13 +35,13 @@ type BaseScopeInput = Pick<
 const applyBaseDocumentScopeRestrictions = <T extends object>(
   query: Knex.QueryBuilder<T>,
   { serviceInstanceId, documentType }: BaseScopeInput,
-  restrictToActive: boolean
+  restrictToPublished: boolean
 ) => {
   query
     .tap(restrictDocumentToAccessibleServiceInstance)
     .modify((builder) => {
-      if (restrictToActive) {
-        restrictDocumentToActive(builder);
+      if (restrictToPublished) {
+        restrictDocumentToPublished(builder);
       }
     })
     .where('Document.service_instance_id', '=', serviceInstanceId)
@@ -63,13 +63,13 @@ const applyBaseDocumentScopeRestrictions = <T extends object>(
 
 export const buildScopedDocumentIdsQuery = (
   { serviceInstanceId, documentType, logicalFilters }: LoadDocumentFacetInput,
-  restrictToActive: boolean
+  restrictToPublished: boolean
 ) => {
   const query = db<Document>('Document').select('Document.id');
   applyBaseDocumentScopeRestrictions(
     query,
     { serviceInstanceId, documentType },
-    restrictToActive
+    restrictToPublished
   );
   query.groupBy('Document.id');
 
@@ -79,10 +79,10 @@ export const buildScopedDocumentIdsQuery = (
 
 export const buildFacetBaseScopeQuery = (
   input: BaseScopeInput,
-  restrictToActive: boolean
+  restrictToPublished: boolean
 ) => {
   const query = db<Document>('Document').select('Document.*');
-  applyBaseDocumentScopeRestrictions(query, input, restrictToActive);
+  applyBaseDocumentScopeRestrictions(query, input, restrictToPublished);
   query.groupBy('Document.id');
   return query;
 };
