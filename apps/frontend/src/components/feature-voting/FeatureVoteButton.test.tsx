@@ -1,12 +1,15 @@
 import { FeatureVoteButton } from '@/components/feature-voting/FeatureVoteButton';
+import { readTrackedEvents, startAnalytics } from '@/utils/test/analytics';
 import { mockGraphqlMutation } from '@/utils/test/msw/graphql-api';
 import { mswServer } from '@/utils/test/msw/server';
 import testRender from '@/utils/test/test-render';
 import { FeatureVoteMutation } from '@graphql/generated';
 import { screen } from '@testing-library/react';
+import { graphql, HttpResponse } from 'msw';
 import { usePathname, useRouter } from 'next/navigation';
 
 const GQL_OPERATION_FEATURE_VOTE = 'FeatureVote';
+const FEATURE = { id: 'feature-1', title: 'AI-powered report triage' };
 const PRIVATE_FEATURE_VOTING_PATH =
   '/app/service/xtm_platform_roadmap/instance-1/feature-voting?voteFeatureId=feature-1';
 
@@ -32,6 +35,22 @@ const mockVoteError = (message: string) =>
     })
   );
 
+const mockVoteSuccessOnRelease = () => {
+  const release = Promise.withResolvers<void>();
+  mswServer.use(
+    graphql.mutation<FeatureVoteMutation>(
+      GQL_OPERATION_FEATURE_VOTE,
+      async () => {
+        await release.promise;
+        return HttpResponse.json({
+          data: { voteForFeature: { id: FEATURE.id, has_my_vote: true } },
+        });
+      }
+    )
+  );
+  return release.resolve;
+};
+
 describe('FeatureVoteButton', () => {
   const push = vi.fn();
 
@@ -55,7 +74,7 @@ describe('FeatureVoteButton', () => {
     );
     const { user } = testRender(
       <FeatureVoteButton
-        featureId="feature-1"
+        feature={FEATURE}
         serviceInstanceId="instance-1"
         hasMyVote={false}
         isAuthenticated={false}
@@ -83,7 +102,7 @@ describe('FeatureVoteButton', () => {
     );
     const { user } = testRender(
       <FeatureVoteButton
-        featureId="feature-1"
+        feature={FEATURE}
         serviceInstanceId="instance-1"
         hasMyVote={false}
         isAuthenticated
@@ -108,7 +127,7 @@ describe('FeatureVoteButton', () => {
     mockVoteSuccess();
     const { user } = testRender(
       <FeatureVoteButton
-        featureId="feature-1"
+        feature={FEATURE}
         serviceInstanceId="instance-1"
         hasMyVote={false}
         isAuthenticated
@@ -140,7 +159,7 @@ describe('FeatureVoteButton', () => {
     mockVoteError('VOTING_ROUND_NOT_OPEN');
     const { user } = testRender(
       <FeatureVoteButton
-        featureId="feature-1"
+        feature={FEATURE}
         serviceInstanceId="instance-1"
         hasMyVote={false}
         isAuthenticated
@@ -167,7 +186,7 @@ describe('FeatureVoteButton', () => {
     );
     testRender(
       <FeatureVoteButton
-        featureId="feature-1"
+        feature={FEATURE}
         serviceInstanceId="instance-1"
         hasMyVote
         isAuthenticated
@@ -181,5 +200,62 @@ describe('FeatureVoteButton', () => {
     expect(
       screen.queryByRole('button', { name: 'FeatureVoting.Vote' })
     ).not.toBeInTheDocument();
+  });
+
+  it('should not send a feature vote when the vote is rejected', async () => {
+    // Given
+    startAnalytics();
+    vi.mocked(usePathname).mockReturnValue(
+      '/app/service/xtm_platform_roadmap/instance-1/feature-voting'
+    );
+    mockVoteError('VOTING_ROUND_NOT_OPEN');
+    const { user } = testRender(
+      <FeatureVoteButton
+        feature={FEATURE}
+        serviceInstanceId="instance-1"
+        hasMyVote={false}
+        isAuthenticated
+      />
+    );
+
+    // When
+    await user.click(
+      screen.getByRole('button', { name: 'FeatureVoting.Vote' })
+    );
+
+    // Then
+    await vi.waitFor(() => expect(showSnackbarMock).toHaveBeenCalled());
+    expect(readTrackedEvents('feature_vote')).toEqual([]);
+  });
+
+  it('should send the feature vote when the button is gone before the vote is recorded', async () => {
+    // Given
+    startAnalytics();
+    vi.mocked(usePathname).mockReturnValue(
+      '/app/service/xtm_platform_roadmap/instance-1/feature-voting'
+    );
+    const releaseVote = mockVoteSuccessOnRelease();
+    const { user, unmount } = testRender(
+      <FeatureVoteButton
+        feature={FEATURE}
+        serviceInstanceId="instance-1"
+        hasMyVote={false}
+        isAuthenticated
+      />
+    );
+    await user.click(
+      screen.getByRole('button', { name: 'FeatureVoting.Vote' })
+    );
+    unmount();
+
+    // When
+    releaseVote();
+
+    // Then
+    await vi.waitFor(() =>
+      expect(readTrackedEvents('feature_vote')).toEqual([
+        { feature_name: FEATURE.title },
+      ])
+    );
   });
 });

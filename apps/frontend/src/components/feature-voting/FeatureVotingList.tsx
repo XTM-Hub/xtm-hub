@@ -32,7 +32,7 @@ export const FeatureVotingList = ({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { mutate: commitVote } = useFeatureVote();
+  const { vote } = useFeatureVote();
   const lastAutoVotedFeatureId = useRef<string | null>(null);
 
   const variables = useMemo(
@@ -66,7 +66,7 @@ export const FeatureVotingList = ({
 
     const feature = round.features.find((f) => f.id === voteFeatureId);
     if (feature && !feature.has_my_vote) {
-      commitVote({ feature_id: voteFeatureId });
+      vote(feature);
     }
 
     const params = new URLSearchParams(searchParams.toString());
@@ -75,7 +75,7 @@ export const FeatureVotingList = ({
     router.replace(queryString ? `${pathname}?${queryString}` : pathname, {
       scroll: false,
     });
-  }, [searchParams, isAuthenticated, round, commitVote, router, pathname]);
+  }, [searchParams, isAuthenticated, round, vote, router, pathname]);
 
   const sections = useMemo(() => {
     const features: VotableFeaturePublicFragment[] = round?.features ?? [];

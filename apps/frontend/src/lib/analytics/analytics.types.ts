@@ -155,6 +155,7 @@ export interface AnalyticsEvents {
         product: AnalyticsPlatformProduct;
       };
   sign_up: { method: 'HubSpot form' };
+  feature_vote: { feature_name: string };
 }
 
 export type AnalyticsEventName = keyof AnalyticsEvents;
