@@ -1,4 +1,8 @@
-import { PortalCapability, ServiceRestriction } from '@graphql/generated';
+import {
+  DocumentItemFragment,
+  PortalCapability,
+  ServiceRestriction,
+} from '@graphql/generated';
 
 import DocumentList from '@/components/service/components/DocumentList';
 import { FilterSidebar } from '@/components/service/components/header/filter/FilterSidebar';
@@ -21,16 +25,14 @@ import { useServiceListStorage } from '@/hooks/use-service-list-storage';
 import { useStickyHeaderOffset } from '@/hooks/use-sticky-header-offset';
 import { useTranslate } from '@/hooks/use-translate';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { useLayoutEffect, useRef } from 'react';
 
 export interface ServiceListProps {
-  active: documentItem_fragment$data[];
-  draft: documentItem_fragment$data[];
+  active: DocumentItemFragment[];
+  draft: DocumentItemFragment[];
   search: string;
   onSearchChange: (v: string) => void;
   additionalFilters: ServiceListFilterMap;
-  connectionId?: string;
   paginationControls?: React.ReactNode;
 }
 
@@ -40,7 +42,6 @@ const ServiceList = ({
   search,
   onSearchChange,
   additionalFilters,
-  connectionId,
   paginationControls,
 }: ServiceListProps) => {
   const t = useTranslate();
@@ -106,7 +107,6 @@ const ServiceList = ({
               <DocumentList
                 documents={draft}
                 displayMode={selectedDisplayMode}
-                connectionId={connectionId}
               />
               {active.length > 0 && (
                 <div className="title-xs">{t(`${translationKey}.Active`)}:</div>
@@ -117,7 +117,6 @@ const ServiceList = ({
             <DocumentList
               documents={active}
               displayMode={selectedDisplayMode}
-              connectionId={connectionId}
             />
           )}
         </div>

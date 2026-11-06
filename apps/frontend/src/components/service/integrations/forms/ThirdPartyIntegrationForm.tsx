@@ -10,9 +10,10 @@ import {
   optionalFileListCheck,
   transformToFileList,
 } from '@/utils/documents';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
+import { isThirdPartyIntegrationResource } from '@/utils/shareable-resources/shareable-resources.types';
 import {
   DocumentImageType,
+  DocumentItemFragment,
   DocumentMetadataKeyCode,
   IntegrationType,
 } from '@graphql/generated';
@@ -54,7 +55,7 @@ export type ThirdPartyIntegrationFormValues = z.infer<
 
 interface ThirdPartyIntegrationFormProps {
   handleSubmit: (values: ThirdPartyIntegrationFormValues) => void;
-  document: documentItem_fragment$data | undefined;
+  document: DocumentItemFragment | undefined;
 }
 
 export const ThirdPartyIntegrationForm = ({
@@ -82,6 +83,11 @@ export const ThirdPartyIntegrationForm = ({
     }
   };
 
+  const thirdParty =
+    document && isThirdPartyIntegrationResource(document)
+      ? document
+      : undefined;
+
   const values = useMemo(
     () =>
       ({
@@ -90,21 +96,21 @@ export const ThirdPartyIntegrationForm = ({
         images: transformToFileList(DocumentImageType.Image, document),
         logo: transformToFileList(DocumentImageType.Logo, document),
         use_cases: document?.use_cases?.map((useCase) => useCase.id),
-        solution_categories: document?.solution_categories?.map(
+        solution_categories: thirdParty?.solution_categories?.map(
           (category) => category.id
         ),
-        license_type: document?.license_type ?? undefined,
+        license_type: thirdParty?.license_type ?? undefined,
         uploader_id: document?.uploader?.id ?? me!.id,
         uploader_organization_id:
           (isCreation
             ? me?.selected_organization_id
             : document?.uploader_organization?.id) ?? '',
         integration_type: IntegrationType.ThirdPartyIntegration,
-        github_url: document?.github_url,
-        product_version: document?.product_version,
-        vendor_url: document?.vendor_url,
+        github_url: thirdParty?.github_url,
+        product_version: thirdParty?.product_version,
+        vendor_url: thirdParty?.vendor_url,
       }) as ThirdPartyIntegrationFormValues,
-    [me, document, isCreation]
+    [me, document, isCreation, thirdParty]
   );
   const formSchema = useMemo(() => {
     const extendedSchema = document

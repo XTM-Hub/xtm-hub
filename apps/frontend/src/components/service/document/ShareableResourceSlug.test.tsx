@@ -1,10 +1,10 @@
 import ShareableResourceSlug from '@/components/service/document/ShareableResourceSlug';
 import { mswServer } from '@/utils/test/msw/server';
 import testRender from '@/utils/test/test-render';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 import { settingsContext_fragment$data } from '@generated/settingsContext_fragment.graphql';
 import {
+  DocumentItemFragment,
   IncrementShareNumberDocumentMutation,
   IntegrationType,
 } from '@graphql/generated';
@@ -65,7 +65,7 @@ describe('Component: ShareableResourceSlug - OneClickDeploy Logic', () => {
         name: 'Test Document',
         type: documentType,
         integration_type: integrationType,
-      } as unknown as documentItem_fragment$data;
+      } as unknown as DocumentItemFragment;
 
       testRender(
         <ShareableResourceSlug
@@ -107,7 +107,7 @@ describe('Component: ShareableResourceSlug - Download', () => {
             download_number: 1,
             name: 'Test Document',
             type: documentType,
-          } as unknown as documentItem_fragment$data
+          } as unknown as DocumentItemFragment
         }
         serviceInstance={serviceInstance}
       />,
@@ -185,7 +185,7 @@ describe('Component: ShareableResourceSlug - Share', () => {
             name: 'Test Document',
             share_number: 1,
             type: 'opencti_custom_dashboard',
-          } as unknown as documentItem_fragment$data
+          } as unknown as DocumentItemFragment
         }
         serviceInstance={
           {
@@ -220,9 +220,9 @@ describe('Component: ShareableResourceSlug - Share count refresh', () => {
       name: 'Test Document',
       share_number: shareNumber,
       type: 'opencti_custom_dashboard',
-    }) as unknown as documentItem_fragment$data;
+    }) as unknown as DocumentItemFragment;
 
-  const renderSlugElement = (documentData: documentItem_fragment$data) => (
+  const renderSlugElement = (documentData: DocumentItemFragment) => (
     <ShareableResourceSlug
       breadcrumbValue={[]}
       documentData={documentData}
@@ -338,9 +338,9 @@ describe('Component: ShareableResourceSlug - Download count refresh', () => {
       download_number: downloadNumber,
       name: 'Test Document',
       type: 'opencti_custom_dashboard',
-    }) as unknown as documentItem_fragment$data;
+    }) as unknown as DocumentItemFragment;
 
-  const renderSlugElement = (documentData: documentItem_fragment$data) => (
+  const renderSlugElement = (documentData: DocumentItemFragment) => (
     <ShareableResourceSlug
       breadcrumbValue={[]}
       documentData={documentData}

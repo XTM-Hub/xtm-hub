@@ -1,9 +1,12 @@
 import ShareableResourceConnectorSlug from '@/components/service/document/connector/ShareableResourceConnectorSlug';
+import { ConnectorFields } from '@/utils/shareable-resources/shareable-resources.types';
 import { mswServer } from '@/utils/test/msw/server';
 import testRender from '@/utils/test/test-render';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
-import { IncrementShareNumberDocumentMutation } from '@graphql/generated';
+import {
+  DocumentItemFragment,
+  IncrementShareNumberDocumentMutation,
+} from '@graphql/generated';
 import { mockDefaultDocument } from '@graphql/mocks';
 import { screen, waitFor } from '@testing-library/react';
 import { graphql, HttpResponse } from 'msw';
@@ -30,9 +33,11 @@ const buildConnector = (id: string, shareNumber: number) =>
     verified: false,
     children_documents: [],
     use_cases: [],
-  }) as unknown as documentItem_fragment$data;
+  }) as unknown as ConnectorItem;
 
-const renderSlugElement = (documentData: documentItem_fragment$data) => (
+type ConnectorItem = DocumentItemFragment & ConnectorFields;
+
+const renderSlugElement = (documentData: ConnectorItem) => (
   <ShareableResourceConnectorSlug
     breadcrumbValue={[]}
     documentData={documentData}

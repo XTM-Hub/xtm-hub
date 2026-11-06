@@ -3,11 +3,14 @@ import {
   ServiceContextProps,
 } from '@/components/service/components/ServiceContext';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
+import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
+import { DocumentOverrides } from '@/utils/test/document-overrides';
 import testRender from '@/utils/test/test-render';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import {
   DocumentImageType,
+  DocumentItemFragment,
   DocumentSourceType,
+  DocumentStatus,
   FiligranProduct,
   IntegrationType,
   LicenseType,
@@ -87,37 +90,44 @@ const buildImage = (id: string, fileName: string) => ({
 export const KEPT_IMAGE = buildImage('image-kept', 'kept.png');
 export const DELETED_IMAGE = buildImage('image-deleted', 'deleted.png');
 
+/**
+ * One permissive fixture serves every service form: the overrides add the
+ * subtype fields (`entity_types`, `license_type`, `manager_supported`, ...) a
+ * given test needs, so the merged object is cast to the discriminated union.
+ */
 export const buildDocument = (
-  overrides: Partial<documentItem_fragment$data> = {}
-): documentItem_fragment$data => ({
-  __typename: 'Document',
-  id: 'document-1',
-  type: 'document',
-  name: DOCUMENT_NAME,
-  slug: DOCUMENT_SLUG,
-  short_description: DOCUMENT_SHORT_DESCRIPTION,
-  description: DOCUMENT_DESCRIPTION,
-  product_version: DOCUMENT_PRODUCT_VERSION,
-  status: 'published',
-  file_name: null,
-  created_at: '2026-01-15T10:00:00',
-  updated_at: null,
-  download_number: 0,
-  share_number: 0,
-  service_instance: { id: 'service-instance-1', slug: null },
-  subscription: null,
-  children_documents: [DELETED_IMAGE, KEPT_IMAGE],
-  uploader: UPLOADER,
-  uploader_organization: DOCUMENT_ORGANIZATION,
-  use_cases: [USE_CASE],
-  ' $fragmentType': 'documentItem_fragment',
-  ...overrides,
-});
+  overrides: DocumentOverrides = {}
+): DocumentItemFragment =>
+  ({
+    __typename: 'CustomDashboard',
+    id: 'document-1',
+    type: 'document',
+    name: DOCUMENT_NAME,
+    slug: DOCUMENT_SLUG,
+    short_description: DOCUMENT_SHORT_DESCRIPTION,
+    description: DOCUMENT_DESCRIPTION,
+    product_version: DOCUMENT_PRODUCT_VERSION,
+    status: DocumentStatus.Published,
+    file_name: null,
+    created_at: '2026-01-15T10:00:00',
+    updated_at: null,
+    download_number: 0,
+    share_number: 0,
+    service_instance: { id: 'service-instance-1', slug: null },
+    subscription: null,
+    children_documents: [DELETED_IMAGE, KEPT_IMAGE],
+    uploader: UPLOADER,
+    uploader_organization: DOCUMENT_ORGANIZATION,
+    use_cases: [USE_CASE],
+    ...overrides,
+  }) as DocumentItemFragment;
 
 export const buildIntegrationDocument = (
-  overrides: Partial<documentItem_fragment$data> = {}
-): documentItem_fragment$data =>
+  overrides: DocumentOverrides = {}
+): DocumentItemFragment =>
   buildDocument({
+    __typename: 'CsvFeed',
+    type: ShareableResourceType.OPENCTI_INTEGRATION,
     solution_categories: [SOLUTION_CATEGORY],
     license_type: LicenseType.Commercial,
     ...overrides,
@@ -159,7 +169,7 @@ export const buildServiceContext = (
   }) as ServiceContextProps;
 
 type ServiceFormComponent<Values> = ComponentType<{
-  document: documentItem_fragment$data | undefined;
+  document: DocumentItemFragment | undefined;
   handleSubmit: (values: Values) => void;
 }>;
 
@@ -177,7 +187,7 @@ const createUsersEnvironment = () => {
 
 export const renderServiceForm = <Values,>(
   Form: ServiceFormComponent<Values>,
-  document?: documentItem_fragment$data
+  document?: DocumentItemFragment
 ) => {
   const handleSubmit = vi.fn();
   vi.mocked(useUseCasesListQuery).mockReturnValue({
@@ -337,7 +347,7 @@ export const defineSlugGenerationTests = <Values,>({
 interface ReplaceFileConfirmationTestOptions<Values> {
   Form: ServiceFormComponent<Values>;
   fileField: ServiceFormFileField;
-  buildEditedDocument: () => documentItem_fragment$data;
+  buildEditedDocument: () => DocumentItemFragment;
 }
 
 export const defineReplaceFileConfirmationTest = <Values,>({
@@ -364,7 +374,7 @@ export const defineReplaceFileConfirmationTest = <Values,>({
 interface EditedServiceFormTestsOptions<
   Values,
 > extends ServiceFormTestTarget<Values> {
-  buildEditedDocument: () => documentItem_fragment$data;
+  buildEditedDocument: () => DocumentItemFragment;
 }
 
 export const defineSlugKeptOnEditTest = <Values,>({

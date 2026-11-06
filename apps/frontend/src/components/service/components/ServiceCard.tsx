@@ -21,24 +21,25 @@ import {
   ShareableResourceType,
 } from '@/utils/shareable-resources/shareable-resources.types';
 import { MoreVertIcon } from '@filigran/icon';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { IntegrationType, ServiceRestriction } from '@graphql/generated';
+import {
+  DocumentItemFragment,
+  IntegrationType,
+  ServiceRestriction,
+} from '@graphql/generated';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 interface ServiceCardProps {
-  document: documentItem_fragment$data;
+  document: DocumentItemFragment;
   detailUrl: string;
   shareLinkUrl: string;
   requiredProductVersion?: string;
-  connectionId?: string;
 }
 
 const ServiceCard = ({
   document,
   detailUrl,
   shareLinkUrl,
-  connectionId,
 }: ServiceCardProps) => {
   const t = useTranslate();
   const router = useRouter();
@@ -49,7 +50,6 @@ const ServiceCard = ({
     useServiceContext();
   const context = useDocumentContext({
     serviceInstance,
-    connectionId,
     type: document.type as ShareableResourceType,
   });
 

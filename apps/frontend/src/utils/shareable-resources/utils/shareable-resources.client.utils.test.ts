@@ -2,7 +2,11 @@ import {
   ServiceSlug,
   ShareableResourceType,
 } from '@/utils/shareable-resources/shareable-resources.types';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
+import {
+  DocumentItemFragment,
+  DocumentStatus,
+  IntegrationType,
+} from '@graphql/generated';
 import { describe, expect, it } from 'vitest';
 import {
   getServiceInfo,
@@ -12,8 +16,8 @@ import {
 type DeployableCase = {
   expected: boolean;
   type: ShareableResourceType;
-  status: documentItem_fragment$data['status'];
-  integrationType?: documentItem_fragment$data['integration_type'];
+  status: DocumentStatus;
+  integrationType?: IntegrationType;
   typename?: string;
 };
 
@@ -22,14 +26,14 @@ const buildDocumentData = ({
   status,
   integrationType,
   typename = 'Document',
-}: Omit<DeployableCase, 'expected'>): documentItem_fragment$data =>
+}: Omit<DeployableCase, 'expected'>): DocumentItemFragment =>
   ({
     __typename: typename,
     id: 'doc-1',
     type,
     status,
     integration_type: integrationType,
-  }) as documentItem_fragment$data;
+  }) as DocumentItemFragment;
 
 describe('isResourceDeployable', () => {
   it.each<DeployableCase>([
@@ -71,57 +75,57 @@ describe('isResourceDeployable', () => {
     {
       expected: true,
       type: ShareableResourceType.OPENCTI_INTEGRATION,
-      status: 'published',
-      integrationType: 'csv_feed',
+      status: DocumentStatus.Published,
+      integrationType: IntegrationType.CsvFeed,
     },
     {
       expected: true,
       type: ShareableResourceType.OPENCTI_INTEGRATION,
-      status: 'published',
-      integrationType: 'taxii_feed',
+      status: DocumentStatus.Published,
+      integrationType: IntegrationType.TaxiiFeed,
     },
     {
       expected: true,
       type: ShareableResourceType.OPENCTI_INTEGRATION,
-      status: 'published',
-      integrationType: 'rss_feed',
+      status: DocumentStatus.Published,
+      integrationType: IntegrationType.RssFeed,
     },
     {
       expected: true,
       type: ShareableResourceType.OPENCTI_INTEGRATION,
-      status: 'published',
-      integrationType: 'stream',
+      status: DocumentStatus.Published,
+      integrationType: IntegrationType.Stream,
     },
     {
       expected: false,
       type: ShareableResourceType.OPENCTI_INTEGRATION,
-      status: 'published',
-      integrationType: 'third_party_integration',
+      status: DocumentStatus.Published,
+      integrationType: IntegrationType.ThirdPartyIntegration,
     },
     {
       expected: false,
       type: ShareableResourceType.OPENCTI_INTEGRATION,
-      status: 'published',
-      integrationType: 'connector',
+      status: DocumentStatus.Published,
+      integrationType: IntegrationType.Connector,
     },
     {
       expected: false,
       type: ShareableResourceType.OPENCTI_INTEGRATION,
-      status: 'draft',
-      integrationType: 'csv_feed',
+      status: DocumentStatus.Draft,
+      integrationType: IntegrationType.CsvFeed,
     },
     {
       expected: true,
       type: ShareableResourceType.OPENCTI_INTEGRATION,
-      status: 'published',
-      integrationType: 'connector',
+      status: DocumentStatus.Published,
+      integrationType: IntegrationType.Connector,
       typename: 'Connector',
     },
     {
       expected: false,
       type: ShareableResourceType.OPENCTI_INTEGRATION,
-      status: 'draft',
-      integrationType: 'connector',
+      status: DocumentStatus.Draft,
+      integrationType: IntegrationType.Connector,
       typename: 'Connector',
     },
   ])(

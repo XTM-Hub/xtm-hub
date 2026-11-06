@@ -1,7 +1,6 @@
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import testRender from '@/utils/test/test-render';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { IntegrationType } from '@graphql/generated';
+import { DocumentItemFragment, IntegrationType } from '@graphql/generated';
 import { screen, waitFor, within } from '@testing-library/react';
 import { useRouter } from 'next/navigation';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -77,10 +76,7 @@ describe('DocumentList', () => {
     });
     mocks.revalidatePathActions.mockResolvedValue(undefined);
     mocks.handleDeleteSheet.mockImplementation(
-      (
-        _document: documentItem_fragment$data,
-        onDeleteCompleted: () => void
-      ) => {
+      (_document: DocumentItemFragment, onDeleteCompleted: () => void) => {
         onDeleteCompleted();
       }
     );
@@ -105,7 +101,7 @@ describe('DocumentList', () => {
         short_description: SecondDocumentDescription,
         use_cases: [],
       },
-    ] as documentItem_fragment$data[];
+    ] as DocumentItemFragment[];
 
     // When
     testRender(
@@ -145,7 +141,7 @@ describe('DocumentList', () => {
         short_description: FirstDocumentDescription,
         use_cases: [],
       },
-    ] as documentItem_fragment$data[];
+    ] as DocumentItemFragment[];
     const { user } = testRender(
       <DocumentList
         documents={documents}
@@ -177,7 +173,7 @@ describe('DocumentList', () => {
         short_description: FirstDocumentDescription,
         use_cases: [],
       },
-    ] as documentItem_fragment$data[];
+    ] as DocumentItemFragment[];
     const { user } = testRender(
       <DocumentList
         documents={documents}
@@ -208,7 +204,7 @@ describe('DocumentList', () => {
         short_description: FirstDocumentDescription,
         use_cases: [],
       },
-    ] as documentItem_fragment$data[];
+    ] as DocumentItemFragment[];
     const { user } = testRender(
       <DocumentList
         documents={documents}

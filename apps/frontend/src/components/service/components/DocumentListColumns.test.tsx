@@ -1,6 +1,10 @@
+import { DocumentOverrides } from '@/utils/test/document-overrides';
 import testRender from '@/utils/test/test-render';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { IntegrationType } from '@graphql/generated';
+import {
+  DocumentItemFragment,
+  DocumentStatus,
+  IntegrationType,
+} from '@graphql/generated';
 import {
   flexRender,
   getCoreRowModel,
@@ -12,31 +16,29 @@ import { buildDocumentListColumns } from './DocumentListColumns';
 const t = (key: string) => key;
 const COMPATIBILITY_LABEL = 'Service.List.Tab.Compatibility';
 
-const buildDocument = (
-  overrides: Partial<documentItem_fragment$data>
-): documentItem_fragment$data => ({
-  ' $fragmentType': 'documentItem_fragment',
-  __typename: 'Document',
-  id: 'document-1',
-  type: 'OPENCTI_INTEGRATION',
-  status: 'published',
-  name: null,
-  slug: null,
-  description: null,
-  short_description: null,
-  file_name: null,
-  created_at: null,
-  updated_at: null,
-  download_number: null,
-  share_number: null,
-  children_documents: null,
-  service_instance: null,
-  subscription: null,
-  uploader: null,
-  uploader_organization: null,
-  use_cases: null,
-  ...overrides,
-});
+const buildDocument = (overrides: DocumentOverrides): DocumentItemFragment =>
+  ({
+    __typename: 'CsvFeed',
+    id: 'document-1',
+    type: 'OPENCTI_INTEGRATION',
+    status: DocumentStatus.Published,
+    name: null,
+    slug: null,
+    description: null,
+    short_description: null,
+    file_name: null,
+    created_at: null,
+    updated_at: null,
+    download_number: null,
+    share_number: null,
+    children_documents: null,
+    service_instance: null,
+    subscription: null,
+    uploader: null,
+    uploader_organization: null,
+    use_cases: null,
+    ...overrides,
+  }) as DocumentItemFragment;
 
 const CONNECTOR = buildDocument({
   integration_type: IntegrationType.Connector,
@@ -48,7 +50,7 @@ const CSV_FEED = buildDocument({
   product_version: '6.1.0',
 });
 
-const useDocumentListTable = (documents: documentItem_fragment$data[]) =>
+const useDocumentListTable = (documents: DocumentItemFragment[]) =>
   useReactTable({
     columns: buildDocumentListColumns({
       documents,
@@ -64,7 +66,7 @@ const ColumnCell = ({
   document,
 }: {
   columnId: string;
-  document: documentItem_fragment$data;
+  document: DocumentItemFragment;
 }) => {
   const table = useDocumentListTable([CONNECTOR, CSV_FEED]);
   const cell = table
@@ -87,7 +89,7 @@ const ColumnHeader = ({ columnId }: { columnId: string }) => {
   return flexRender(header.column.columnDef.header, header.getContext());
 };
 
-const renderCell = (columnId: string, document: documentItem_fragment$data) =>
+const renderCell = (columnId: string, document: DocumentItemFragment) =>
   testRender(
     <ColumnCell
       columnId={columnId}

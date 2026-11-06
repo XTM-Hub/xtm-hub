@@ -24,6 +24,7 @@ import { getResourcePageFiligranWebsiteUtm } from '@/utils/filigran-website-utm'
 import { PUBLIC_CYBERSECURITY_SOLUTIONS_PATH } from '@/utils/path/constant';
 import { EntityTypeOrFiligranLogo } from '@/utils/shareable-resources/entity-type';
 import {
+  getDocumentEntityTypes,
   isResourceDeployable,
   isResourceDownloadable,
 } from '@/utils/shareable-resources/utils/shareable-resources.client.utils';
@@ -35,13 +36,13 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@filigran/design-system';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
+import { DocumentItemFragment } from '@graphql/generated';
 import Image from 'next/image';
 
 // Component interface
 interface ShareableResourceSlugProps {
-  documentData: documentItem_fragment$data;
+  documentData: DocumentItemFragment;
   serviceInstance: serviceInstance_fragment$data;
   breadcrumbValue: BreadcrumbNavLink[];
   children?: ReactNode;
@@ -97,7 +98,9 @@ const ShareableResourceSlug = ({
         ) : (
           <div className="w-24 p-3 shrink-0 flex items-center justify-center">
             <EntityTypeOrFiligranLogo
-              entityTypes={getEntityTypes(documentData)}
+              entityTypes={getEntityTypes({
+                entity_types: getDocumentEntityTypes(documentData),
+              })}
             />
           </div>
         )}
