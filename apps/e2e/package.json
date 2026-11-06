@@ -16,7 +16,6 @@
   "dependencies": {
     "knex": "catalog:",
     "pg": "catalog:",
-    "react": "catalog:",
     "uuid": "catalog:"
   },
   "devDependencies": {

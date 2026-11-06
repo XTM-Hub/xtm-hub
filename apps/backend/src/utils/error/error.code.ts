@@ -48,6 +48,7 @@ export enum ForbiddenErrorCode {
   CopyFeaturesFromAnotherRoadmap = 'COPY_FEATURES_FROM_ANOTHER_ROADMAP',
   OpenVotingRoundWithoutActiveFeature = 'OPEN_VOTING_ROUND_WITHOUT_ACTIVE_FEATURE',
   RolePortalProtected = 'ROLE_PORTAL_PROTECTED',
+  CantDeleteBlogpostNewsFeedItem = 'CANT_DELETE_BLOGPOST_NEWS_FEED_ITEM',
 }
 
 export enum BadRequestErrorCode {
@@ -70,6 +71,7 @@ export enum BadRequestErrorCode {
   IntegrationTypeNotRecognized = 'INTEGRATION_TYPE_NOT_RECOGNIZED',
   MissingAutoRegisterPlatformArgument = 'MISSING_AUTO_REGISTER_PLATFORM_ARGUMENT',
   DocumentFileMissing = 'DOCUMENT_FILE_MISSING',
+  NewsFeedBlogpostEmptyFeed = 'NEWS_FEED_BLOGPOST_EMPTY_FEED',
   TenantIdMandatory = 'TENANT_ID_MANDATORY',
   TenantIdNotSupported = 'TENANT_ID_NOT_SUPPORTED',
   NewsFeedItemMissingTitle = 'NEWS_FEED_ITEM_MISSING_TITLE',

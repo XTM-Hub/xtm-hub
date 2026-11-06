@@ -7,8 +7,11 @@ import {
   PlatformIdentifier,
   ServiceDefinitionIdentifier,
 } from '../../__generated__/resolvers-types';
+import { withTransaction } from '../../context/database.context';
 import Document, { DocumentId } from '../../model/kanel/public/Document';
 import { NewsFeedItemId } from '../../model/kanel/public/NewsFeedItem';
+import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
+import { BlogApiClient } from '../../thirdparty/blog-api/client';
 import { logApp } from '../../utils/app-logger.util';
 import { ErrorCode } from '../../utils/error/error.code';
 import {
@@ -18,6 +21,8 @@ import {
 } from '../common/interval.helper';
 import { PlatformConfigurationDomain } from '../registration/platform-configuration/platform-configuration.domain';
 import { RegistrationDomain } from '../registration/registration.domain';
+import { platformIdentifierMappedByServiceDefinitionIdentifier } from '../registration/registration.mapping';
+import { ServiceDefinitionDomain } from '../service/definition/service-definition.domain';
 import { useCaseDomain } from '../use-case/use-case.domain';
 import {
   buildNewsFeedDestination,
@@ -26,10 +31,12 @@ import {
 } from './news-feed-redirect.helper';
 import { NewsFeedDomain } from './news-feed.domain';
 import {
+  doesPlatformSupportBlogpostNewsFeed,
   doesPlatformSupportNewsFeed,
   NewsFeedHelper,
 } from './news-feed.helper';
 import {
+  blogpostProductMapping,
   NEWS_FEED_INTERNAL_METADATA_KEYS,
   newsFeedConfigurationMapping,
 } from './news-feed.model';
@@ -63,6 +70,63 @@ const provisionNewsFeedItemForAllSupportedPlatforms = async ({
     platformIdentifier
   );
   await NewsFeedDomain.provisionNewsFeedItem(newsFeedItemId, platformIds);
+};
+
+// Same as provisionNewsFeedItemForAllSupportedPlatforms for several items, with the platforms filtered by the given
+// predicate instead of the news feed version gate. Returns the number of platforms the items are provisioned to.
+const provisionNewsFeedItemsForPlatformsMatching = async ({
+  newsFeedItemIds,
+  platformIdentifier,
+  isPlatformSupported,
+}: {
+  newsFeedItemIds: NewsFeedItemId[];
+  platformIdentifier: PlatformIdentifier;
+  isPlatformSupported: (platform: {
+    platform_id: string;
+    platform_version: string | null;
+  }) => boolean;
+}): Promise<number> => {
+  if (newsFeedItemIds.length === 0) {
+    return 0;
+  }
+
+  const registeredPlatforms =
+    await RegistrationDomain.loadAllActiveRegisteredPlatformsByPlatformIdentifier(
+      platformIdentifier
+    );
+  const platformIds = [
+    ...new Set(
+      registeredPlatforms
+        .filter(isPlatformSupported)
+        .map((platform) => platform.platform_id)
+    ),
+  ];
+  for (const newsFeedItemId of newsFeedItemIds) {
+    await NewsFeedDomain.provisionNewsFeedItem(newsFeedItemId, platformIds);
+  }
+  return platformIds.length;
+};
+
+export interface BlogpostSyncResult {
+  created: number;
+  // Includes the items that come back after having been dropped
+  updated: number;
+  dropped: number;
+  provisionedPlatforms: number;
+}
+
+const resolvePlatformIdentifier = async (
+  serviceInstanceId: ServiceInstanceId
+): Promise<PlatformIdentifier | undefined> => {
+  const serviceDefinition =
+    await ServiceDefinitionDomain.loadServiceDefinitionByServiceInstance(
+      serviceInstanceId
+    );
+  return serviceDefinition
+    ? platformIdentifierMappedByServiceDefinitionIdentifier[
+        serviceDefinition.identifier
+      ]
+    : undefined;
 };
 
 export interface NewsFeedExternalRedirect {
@@ -113,6 +177,70 @@ export const NewsFeedApp = {
         ? NewsFeedRedirectHelper.appendUtmParams(destination.url, query)
         : destination.url,
     };
+  },
+
+  // Fetches the blog API first, outside any transaction: nothing is applied unless the whole response is valid.
+  // Then reconciles and provisions in a single transaction, so any failure rolls everything back, provisioning included.
+  syncBlogposts: async (): Promise<BlogpostSyncResult> => {
+    const limit = NewsFeedHelper.getBlogpostLimit();
+    const feeds = await Promise.all(
+      Object.entries(blogpostProductMapping).map(
+        async ([product, platformIdentifier]) => ({
+          platformIdentifier,
+          posts: await BlogApiClient.fetchBlogFeed({ product, limit }),
+        })
+      )
+    );
+
+    const result = await withTransaction(async () => {
+      const total: BlogpostSyncResult = {
+        created: 0,
+        updated: 0,
+        dropped: 0,
+        provisionedPlatforms: 0,
+      };
+
+      for (const { platformIdentifier, posts } of feeds) {
+        // Safeguard: an empty answer must not empty the news feed
+        if (
+          posts.length === 0 &&
+          (await NewsFeedDomain.countActiveBlogpostItems(platformIdentifier)) >
+            0
+        ) {
+          throw new Error(ErrorCode.NewsFeedBlogpostEmptyFeed);
+        }
+
+        const { created, updated, dropped, restored } =
+          await NewsFeedDomain.reconcileBlogposts({
+            platformIdentifier,
+            posts,
+          });
+
+        // The dropped items are provisioned too, so that the platforms delete them
+        const provisionedPlatforms =
+          await provisionNewsFeedItemsForPlatformsMatching({
+            newsFeedItemIds: [
+              ...new Set([...created, ...updated, ...restored, ...dropped]),
+            ],
+            platformIdentifier,
+            isPlatformSupported: (platform) =>
+              doesPlatformSupportBlogpostNewsFeed(
+                platformIdentifier,
+                platform.platform_version
+              ),
+          });
+
+        total.created += created.length;
+        total.updated += updated.length + restored.length;
+        total.dropped += dropped.length;
+        total.provisionedPlatforms += provisionedPlatforms;
+      }
+
+      return total;
+    });
+
+    logApp.info('Synchronized blog posts', { ...result });
+    return result;
   },
 
   consumeProvisionedNewsFeedItems: async ({
@@ -166,9 +294,90 @@ export const NewsFeedApp = {
     return {
       news_feed_items: newsFeedItems,
       available_news_feed_types: NewsFeedDomain.loadAvailableNewsFeedTypes(
-        resolvedConfiguration.platformIdentifier
+        resolvedConfiguration.platformIdentifier,
+        resolvedConfiguration.platformConfiguration.platform_version
       ),
     };
+  },
+
+  // Gives a platform the latest blogpost items of its product, without waiting for the next post. It never throws:
+  // it runs after the registration or the version change is committed and must not break it.
+  backfillBlogpostsForPlatform: async ({
+    platformId,
+    platformIdentifier,
+    platformVersion,
+  }: {
+    platformId: string;
+    platformIdentifier: PlatformIdentifier;
+    platformVersion?: string | null;
+  }): Promise<void> => {
+    try {
+      const isBlogpostProduct = Object.values(blogpostProductMapping).includes(
+        platformIdentifier
+      );
+      if (
+        !isBlogpostProduct ||
+        !doesPlatformSupportBlogpostNewsFeed(
+          platformIdentifier,
+          platformVersion
+        )
+      ) {
+        return;
+      }
+
+      await NewsFeedDomain.provisionLatestBlogpostsToPlatform({
+        platformId,
+        platformIdentifier,
+        limit: NewsFeedHelper.getBlogpostLimit(),
+      });
+    } catch (error) {
+      logApp.error('Unable to backfill blogpost news feed items', {
+        error,
+        platformId,
+        platformIdentifier,
+      });
+    }
+  },
+
+  // Backfills only when the platform goes from a version that does not support blogpost items to one that does:
+  // neither a downgrade nor a change between two supporting versions. The identifier is resolved from the service
+  // definition of the platform when the caller does not know it. It never throws.
+  backfillBlogpostsOnVersionChange: async ({
+    serviceInstanceId,
+    platformId,
+    platformIdentifier,
+    previousVersion,
+    newVersion,
+  }: {
+    serviceInstanceId: ServiceInstanceId;
+    platformId: string;
+    platformIdentifier?: PlatformIdentifier;
+    previousVersion?: string | null;
+    newVersion: string;
+  }): Promise<void> => {
+    try {
+      const resolvedIdentifier =
+        platformIdentifier ??
+        (await resolvePlatformIdentifier(serviceInstanceId));
+      if (
+        !resolvedIdentifier ||
+        doesPlatformSupportBlogpostNewsFeed(resolvedIdentifier, previousVersion)
+      ) {
+        return;
+      }
+
+      await NewsFeedApp.backfillBlogpostsForPlatform({
+        platformId,
+        platformIdentifier: resolvedIdentifier,
+        platformVersion: newVersion,
+      });
+    } catch (error) {
+      logApp.error('Unable to backfill blogpost news feed items', {
+        error,
+        platformId,
+        serviceInstanceId,
+      });
+    }
   },
 
   createResourceNewsFeedItem: async ({
@@ -318,6 +527,14 @@ export const NewsFeedApp = {
   }: {
     newsFeedItemId: string;
   }): Promise<void> => {
+    // Blog items are owned by the blogpost synchronization: only it can drop them
+    const existingItemType = await NewsFeedDomain.loadNewsFeedItemTypeById(
+      newsFeedItemId as NewsFeedItemId
+    );
+    if (existingItemType === NewsFeedItemType.BlogPost) {
+      throw new Error(ErrorCode.CantDeleteBlogpostNewsFeedItem);
+    }
+
     const newsFeedItem = await NewsFeedDomain.markNewsFeedItemAsDeleted(
       newsFeedItemId as NewsFeedItemId
     );

@@ -11,7 +11,13 @@ import { useDateFormatter } from '@/utils/date';
 import { getDataTableLabels } from '@/utils/design-system/data-table';
 import { localizedCardName } from '@/utils/services';
 import { ServiceSlug } from '@/utils/shareable-resources/shareable-resources.types';
-import { Chip } from '@filigran/design-system';
+import {
+  Chip,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@filigran/design-system';
 import { MoreVertIcon } from '@filigran/icon';
 import {
   NewsFeedItemMetadataKey,
@@ -24,7 +30,7 @@ import { newsFeedKeys } from '@graphql/news-feed/news-feed.keys';
 import { keepPreviousData, useQueryClient } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
 import { useRouter } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 
 const DEFAULT_PAGE_SIZE = 25;
 
@@ -32,7 +38,7 @@ const getUrlPath = (item: NewsFeedItemRowFragment): string | undefined =>
   item.metadata.find((m) => m.key === NewsFeedItemMetadataKey.UrlPath)?.value ??
   undefined;
 
-// A type that does not point to a resource of a library (e.g. a blog post) has no service slug
+// A blog post has no library of its own, so it is labelled before this lookup
 const NEWS_FEED_TYPE_TO_SERVICE_SLUG: Partial<
   Record<NewsFeedItemType, ServiceSlug>
 > = {
@@ -41,6 +47,42 @@ const NEWS_FEED_TYPE_TO_SERVICE_SLUG: Partial<
   [NewsFeedItemType.ResourcePlaybook]: ServiceSlug.OPEN_CTI_PLAYBOOKS,
   [NewsFeedItemType.ResourceCustomView]: ServiceSlug.OPEN_CTI_CUSTOM_VIEWS,
   [NewsFeedItemType.ResourceIntegration]: ServiceSlug.OPEN_CTI_INTEGRATIONS,
+  [NewsFeedItemType.ResourceScenario]: ServiceSlug.OPEN_AEV_SCENARIOS,
+};
+
+// Not `disabled`: Radix skips disabled items in arrow-key navigation, so keyboard users would
+// never reach the reason. The item stays focusable, opens the tooltip on focus, announces the
+// reason as its description and ignores selection.
+const BlogpostDeleteItem = ({
+  label,
+  reason,
+}: {
+  label: string;
+  reason: string;
+}) => {
+  const reasonId = useId();
+
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <IconActionsItem
+            aria-disabled="true"
+            aria-describedby={reasonId}
+            className="cursor-not-allowed opacity-50"
+            onSelect={(event) => event.preventDefault()}>
+            {label}
+          </IconActionsItem>
+        </TooltipTrigger>
+        <TooltipContent>{reason}</TooltipContent>
+      </Tooltip>
+      <span
+        id={reasonId}
+        className="sr-only">
+        {reason}
+      </span>
+    </TooltipProvider>
+  );
 };
 
 const NewsFeedList = () => {
@@ -110,6 +152,9 @@ const NewsFeedList = () => {
         id: 'library',
         header: t('NewsFeedAdminPage.Library'),
         cell: ({ row }) => {
+          if (row.original.type === NewsFeedItemType.BlogPost) {
+            return <span>{t('NewsFeedAdminPage.Blogpost')}</span>;
+          }
           const slug = NEWS_FEED_TYPE_TO_SERVICE_SLUG[row.original.type];
           if (!slug) {
             // Explicit placeholder: an empty cell reads as missing data, not as "not applicable"
@@ -165,9 +210,18 @@ const NewsFeedList = () => {
               <IconActions
                 aria-label={t('Utils.OpenMenu')}
                 icon={<MoreVertIcon className="h-4 w-4 text-icon-highlight" />}>
-                <IconActionsItem onClick={() => setDeleteTarget(row.original)}>
-                  {t('NewsFeedAdminPage.Delete')}
-                </IconActionsItem>
+                {row.original.type === NewsFeedItemType.BlogPost ? (
+                  // Live blog items are managed by the synchronization only
+                  <BlogpostDeleteItem
+                    label={t('NewsFeedAdminPage.Delete')}
+                    reason={t('NewsFeedAdminPage.DeleteBlogpostDisabled')}
+                  />
+                ) : (
+                  <IconActionsItem
+                    onClick={() => setDeleteTarget(row.original)}>
+                    {t('NewsFeedAdminPage.Delete')}
+                  </IconActionsItem>
+                )}
               </IconActions>
             </div>
           ),

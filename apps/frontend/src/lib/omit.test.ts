@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { omit } from './omit';
 
 const NAME = 'Filigran';
@@ -80,5 +80,23 @@ describe('omit', () => {
 
     // Then
     expect(result.file).toBe(file);
+  });
+});
+
+describe('omit without a File implementation', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('should still remove the listed keys when the runtime has no File', () => {
+    // Given a runtime such as Node without a native File
+    vi.stubGlobal('File', undefined);
+    const input = { owner: { name: NAME, secret: SECRET } };
+
+    // When
+    const result = omit(input, ['secret'], true);
+
+    // Then
+    expect(result).toEqual({ owner: { name: NAME } });
   });
 });
