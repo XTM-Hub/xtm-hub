@@ -1,4 +1,8 @@
-import { resetAnalyticsState } from '@/lib/analytics/analytics.client';
+import {
+  initializeAnalytics,
+  releaseAnalyticsEvents,
+  resetAnalyticsState,
+} from '@/lib/analytics/analytics.client';
 
 export const resetAnalyticsEnvironment = (): void => {
   delete window.dataLayer;
@@ -18,3 +22,9 @@ export const readTrackedEvents = (name: string): unknown[] =>
   readGtagCommands()
     .filter(([command, eventName]) => command === 'event' && eventName === name)
     .map(([, , params]) => params);
+
+export const startAnalytics = (): void => {
+  resetAnalyticsEnvironment();
+  initializeAnalytics('G-TEST');
+  releaseAnalyticsEvents();
+};

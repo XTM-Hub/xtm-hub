@@ -84,7 +84,7 @@ describe('ShareableResourceServiceList', () => {
     id: SERVICE_INSTANCE_ID,
     capabilities: [],
   } as serviceInstance_fragment$data;
-  const queryRef = {} as PreloadedQuery<documentsQuery>;
+  const queryRef = { variables: {} } as PreloadedQuery<documentsQuery>;
 
   const buildElement = (search: string) => (
     <ShareableResourceServiceList

@@ -1,4 +1,6 @@
 import ShareableResourceConnectorSlug from '@/components/service/document/connector/ShareableResourceConnectorSlug';
+import { useRegisteredPlatforms } from '@/hooks/use-registered-platforms';
+import { readTrackedEvents, startAnalytics } from '@/utils/test/analytics';
 import { mswServer } from '@/utils/test/msw/server';
 import testRender from '@/utils/test/test-render';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
@@ -131,4 +133,49 @@ describe('ShareableResourceConnectorSlug - Share count refresh', () => {
     // Then
     expect(getShareCount()).toHaveTextContent(/^1$/);
   });
+});
+
+describe('ShareableResourceConnectorSlug - Resource view', () => {
+  beforeEach(() => {
+    startAnalytics();
+    vi.mocked(useRegisteredPlatforms).mockReturnValue({
+      platforms: [
+        {
+          id: 'platform-id',
+          title: 'Production OpenCTI',
+          url: 'https://opencti.acme.com',
+          version: '6.4.0',
+          contract: 'EE',
+          ' $fragmentType': 'useRegisteredPlatformsFragment',
+        },
+      ],
+    });
+  });
+
+  it.each([
+    ['Resource not deployable', 'the connector has no manager support', false],
+    [
+      'Platform version too old',
+      'the manager supported connector needs a newer platform',
+      true,
+    ],
+  ])(
+    'should send %s as the deploy eligibility when %s',
+    (expected, _context, managerSupported) => {
+      // Given
+      const connector = {
+        ...buildConnector('connector-1', 0),
+        manager_supported: managerSupported,
+        minimum_deployable_version: '6.5.0',
+      };
+
+      // When
+      testRender(renderSlugElement(connector));
+
+      // Then
+      expect(readTrackedEvents('view_item')).toEqual([
+        expect.objectContaining({ deploy_eligibility: expected }),
+      ]);
+    }
+  );
 });

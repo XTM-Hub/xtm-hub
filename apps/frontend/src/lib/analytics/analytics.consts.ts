@@ -1,3 +1,6 @@
+import { type SortableDocumentOrdering } from '@/utils/shareable-resources/shareable-resources.consts';
+import { DocumentOrdering, OrderingMode } from '@graphql/generated';
+
 export const GA_MEASUREMENT_ID = 'G-9FC0TL0TH3';
 
 export const GA_PRODUCTION_HOST = 'hub.filigran.io';
@@ -22,6 +25,32 @@ export const MAX_PARAM_VALUE_LENGTHS: Record<string, number> = {
   page_referrer: 420,
   page_title: 300,
 };
+
+export const MAX_ITEMS_PER_EVENT = 25;
+
+export const MIN_TRACKED_SEARCH_TERM_LENGTH = 3;
+
+export const FILTER_NAME_LABELS = {
+  label: 'Use case',
+  entity_type: 'Entity type',
+  integration_type: 'Integration type',
+  solution_category: 'Solution category',
+  license_type: 'License type',
+  product_version: 'OpenCTI compatibility version',
+  manager_supported: 'Deployment type',
+  verified: 'Status',
+} as const;
+
+export const ORDER_BY_LABELS = {
+  [DocumentOrdering.Name]: 'Name',
+  [DocumentOrdering.CreatedAt]: 'Creation date',
+  [DocumentOrdering.UpdatedAt]: 'Update date',
+} as const satisfies Record<SortableDocumentOrdering, string>;
+
+export const ORDER_MODE_LABELS = {
+  [OrderingMode.Asc]: 'Ascending',
+  [OrderingMode.Desc]: 'Descending',
+} as const satisfies Record<OrderingMode, string>;
 
 export const MAX_EVENTS_PER_WINDOW = 100;
 
