@@ -10,6 +10,7 @@ import {
   ORDER_BY_LABELS,
   ORDER_MODE_LABELS,
 } from '@/lib/analytics/analytics.consts';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { toAnalyticsLibraryParams } from '@/lib/analytics/analytics.resource';
 import { cn } from '@/lib/utils';
 import {
@@ -171,6 +172,7 @@ export const ServiceListHeader = ({
             )}
             <div className="p-2 border hover:cursor-pointer flex items-center align-middle gap-2">
               <button
+                {...analyticsId('resource_card_view_select')}
                 type="button"
                 onClick={() =>
                   handleDisplayModeChange(ServiceListDisplayMode.Tab)
@@ -192,6 +194,7 @@ export const ServiceListHeader = ({
                 className="h-5"
               />
               <button
+                {...analyticsId('resource_table_view_select')}
                 type="button"
                 onClick={() =>
                   handleDisplayModeChange(ServiceListDisplayMode.List)

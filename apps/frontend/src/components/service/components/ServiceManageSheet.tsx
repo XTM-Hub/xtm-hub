@@ -9,6 +9,11 @@ import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDi
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import useServiceCapability from '@/hooks/use-service-capability';
 import { useTranslate } from '@/hooks/use-translate';
+import {
+  analyticsResource,
+  toAnalyticsResourceData,
+} from '@/lib/analytics/analytics.context';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import revalidatePathActions from '@/utils/actions/revalidate-path.actions';
 import { PUBLIC_CYBERSECURITY_SOLUTIONS_PATH } from '@/utils/path/constant';
 import { Button } from '@filigran/design-system';
@@ -95,20 +100,26 @@ export const ServiceManageSheet = ({
             setOpen={setOpenSheet}
             trigger={
               variant === 'button' ? (
-                <Button priority="secondary">{t('Utils.Update')}</Button>
+                <Button
+                  {...analyticsId('resource_edit')}
+                  priority="secondary">
+                  {t('Utils.Update')}
+                </Button>
               ) : undefined
             }
             title={t(`${translationKey}.UpdateService`, {
               name: document.name ?? '',
             })}>
-            {
+            <div
+              className="contents"
+              {...analyticsResource(toAnalyticsResourceData(document))}>
               <ServiceForm
                 document={document}
                 handleSubmit={(values: ServiceFormValues) =>
                   handleUpdateSheet(values, document, onUpdateSuccess, onError)
                 }
               />
-            }
+            </div>
           </SheetWithPreventingDialog>
         )}
       </>
@@ -124,7 +135,9 @@ export const ServiceManageSheet = ({
           setOpen={setOpenSheet}
           trigger={
             variant === 'button' ? (
-              <Button>{t(`${translationKey}.AddService`)}</Button>
+              <Button {...analyticsId('resource_create')}>
+                {t(`${translationKey}.AddService`)}
+              </Button>
             ) : undefined
           }
           title={t(`${translationKey}.AddService`)}>
