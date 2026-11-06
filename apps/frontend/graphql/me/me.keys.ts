@@ -1,7 +1,12 @@
 import {
+  useMeAnalyticsQuery,
   useMeOrganizationDomainsQuery,
   useMeOrganizationsQuery,
 } from '@graphql/generated';
+
+export const meAnalyticsKeys = {
+  detail: () => useMeAnalyticsQuery.getKey(),
+};
 
 export const meOrganizationDomainsKeys = {
   all: useMeOrganizationDomainsQuery.getRootKey,
