@@ -1,5 +1,5 @@
 import { useServiceContext } from '@/components/service/components/ServiceContext';
-import { ServiceRestriction } from '@graphql/generated';
+import { DocumentItemFragment, ServiceRestriction } from '@graphql/generated';
 
 import {
   APP_PATH,
@@ -19,11 +19,10 @@ import {
   isIntegrationItem,
   ShareableResourceType,
 } from '@/utils/shareable-resources/shareable-resources.types';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { useRouter } from 'next/navigation';
 
 interface DeleteShareableResourceSlugProps {
-  document: documentItem_fragment$data;
+  document: DocumentItemFragment;
 }
 
 const DeleteShareableResourceSlug = ({

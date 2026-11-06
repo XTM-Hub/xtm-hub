@@ -21,13 +21,16 @@ import {
   ShareableResourceType,
 } from '@/utils/shareable-resources/shareable-resources.types';
 import { MoreVertIcon } from '@filigran/icon';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { IntegrationType, ServiceRestriction } from '@graphql/generated';
+import {
+  DocumentItemFragment,
+  IntegrationType,
+  ServiceRestriction,
+} from '@graphql/generated';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 interface ServiceCardProps {
-  document: documentItem_fragment$data;
+  document: DocumentItemFragment;
   detailUrl: string;
   shareLinkUrl: string;
   requiredProductVersion?: string;

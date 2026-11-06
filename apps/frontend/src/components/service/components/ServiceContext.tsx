@@ -3,9 +3,8 @@ import {
   ServiceFormValues,
 } from '@/components/service/components/subscribable-services.types';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
-import { IntegrationType } from '@graphql/generated';
+import { DocumentItemFragment, IntegrationType } from '@graphql/generated';
 import React, { createContext, useContext } from 'react';
 
 export interface ServiceContextProps {
@@ -18,12 +17,12 @@ export interface ServiceContextProps {
   ) => Promise<void>;
   handleUpdateSheet: (
     values: ServiceFormValues,
-    resource: documentItem_fragment$data,
+    resource: DocumentItemFragment,
     onSuccess: (serviceName: string) => void,
     onError: (error: Error) => void
   ) => Promise<void>;
   handleDeleteSheet: (
-    document: documentItem_fragment$data,
+    document: DocumentItemFragment,
     onCompleted: () => void
   ) => Promise<void>;
   ServiceForm: ServiceForm;

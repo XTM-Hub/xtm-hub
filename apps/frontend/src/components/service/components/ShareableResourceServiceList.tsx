@@ -12,6 +12,7 @@ import { PaginationControls } from '@/components/ui/pagination/PaginationControl
 import { useDocumentFacetCounts } from '@/hooks/use-document-facet-counts';
 import { useServiceListStorage } from '@/hooks/use-service-list-storage';
 import { useTablePagination } from '@/hooks/use-table-pagination';
+import { toDocumentItem } from '@/utils/documents';
 import { ServiceListStorageKey } from '@/utils/filters-storage.utils';
 import {
   SHAREABLE_RESOURCE_SERVICE_SLUG_MAPPING,
@@ -28,7 +29,7 @@ import {
   documentsQuery$variables,
 } from '@generated/documentsQuery.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import {
   PreloadedQuery,
   usePreloadedQuery,
@@ -69,10 +70,18 @@ const ShareableResourceServiceList = ({
     documentsList$key
   >(documentsFragment, queryData);
 
-  const [active, draft] = useActiveAndDraftSplit<
+  const [relayActive, relayDraft] = useActiveAndDraftSplit<
     documentItem_fragment$data,
     documentItem_fragment$key
   >(data?.documents.edges, documentItem);
+  const active = useMemo(
+    () => relayActive.map((item) => toDocumentItem(item)),
+    [relayActive]
+  );
+  const draft = useMemo(
+    () => relayDraft.map((item) => toDocumentItem(item)),
+    [relayDraft]
+  );
 
   const connectionId = data?.documents.__id;
 

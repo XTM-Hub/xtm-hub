@@ -12,8 +12,12 @@ import {
   optionalFileListCheck,
   transformToFileList,
 } from '@/utils/documents';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { DocumentImageType, IntegrationType } from '@graphql/generated';
+import { isIntegrationItem } from '@/utils/shareable-resources/shareable-resources.types';
+import {
+  DocumentImageType,
+  DocumentItemFragment,
+  IntegrationType,
+} from '@graphql/generated';
 import { useContext, useMemo } from 'react';
 import slugify from 'slugify';
 import { z } from 'zod';
@@ -41,7 +45,7 @@ export type RssFeedFormValues = z.infer<typeof rssFeedFormSchema>;
 
 interface RssFeedFormProps {
   handleSubmit: (values: RssFeedFormValues) => void;
-  document: documentItem_fragment$data | undefined;
+  document: DocumentItemFragment | undefined;
 }
 
 export const RssFeedForm = ({ handleSubmit, document }: RssFeedFormProps) => {
@@ -66,6 +70,9 @@ export const RssFeedForm = ({ handleSubmit, document }: RssFeedFormProps) => {
     }
   };
 
+  const integration =
+    document && isIntegrationItem(document) ? document : undefined;
+
   const values = useMemo(
     () =>
       ({
@@ -73,10 +80,10 @@ export const RssFeedForm = ({ handleSubmit, document }: RssFeedFormProps) => {
         images: transformToFileList(DocumentImageType.Image, document),
         logo: transformToFileList(DocumentImageType.Logo, document),
         use_cases: document?.use_cases?.map((useCase) => useCase.id),
-        solution_categories: document?.solution_categories?.map(
+        solution_categories: integration?.solution_categories?.map(
           (category) => category.id
         ),
-        license_type: document?.license_type ?? undefined,
+        license_type: integration?.license_type ?? undefined,
         uploader_id: document?.uploader?.id ?? me!.id,
         uploader_organization_id:
           (isCreation
@@ -85,7 +92,7 @@ export const RssFeedForm = ({ handleSubmit, document }: RssFeedFormProps) => {
         integration_type: IntegrationType.RssFeed,
         active: document?.active ?? true,
       }) as RssFeedFormValues,
-    [me, document, isCreation]
+    [me, document, isCreation, integration]
   );
   const formSchema = useMemo(
     () =>

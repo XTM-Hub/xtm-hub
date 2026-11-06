@@ -12,8 +12,7 @@ import {
   optionalFileListCheck,
   transformToFileList,
 } from '@/utils/documents';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { DocumentImageType } from '@graphql/generated';
+import { DocumentImageType, DocumentItemFragment } from '@graphql/generated';
 import { useContext, useMemo } from 'react';
 import slugify from 'slugify';
 import { z } from 'zod';
@@ -51,7 +50,7 @@ export type OpenAEVScenarioFormValues = z.infer<
 
 export interface OpenAEVScenarioFormProps {
   handleSubmit: (values: OpenAEVScenarioFormValues) => void;
-  document?: documentItem_fragment$data;
+  document?: DocumentItemFragment;
 }
 
 export const OpenaevScenarioForm = ({

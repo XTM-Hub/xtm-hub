@@ -12,8 +12,7 @@ import {
   optionalFileListCheck,
   transformToFileList,
 } from '@/utils/documents';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { DocumentImageType } from '@graphql/generated';
+import { DocumentImageType, DocumentItemFragment } from '@graphql/generated';
 import { useContext, useMemo } from 'react';
 import slugify from 'slugify';
 import { z } from 'zod';
@@ -38,7 +37,7 @@ const customDashboardSchema = z.object({
 export type CustomDashboardFormValues = z.infer<typeof customDashboardSchema>;
 
 interface CustomDashboardFormProps {
-  document: documentItem_fragment$data | undefined;
+  document: DocumentItemFragment | undefined;
   handleSubmit: (values: CustomDashboardFormValues) => void;
 }
 

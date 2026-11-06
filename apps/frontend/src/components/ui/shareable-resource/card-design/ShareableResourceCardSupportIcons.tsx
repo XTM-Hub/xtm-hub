@@ -1,11 +1,13 @@
 import { ResourceStatusIcons } from '@/components/ui/ResourceStatusIcons';
 import { PublicDocumentData } from '@/utils/shareable-resources/shareable-resources.types';
 import { docHasMetadata } from '@/utils/shareable-resources/utils/shareable-resources.client.utils';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { DocumentMetadataKeyCode } from '@graphql/generated';
+import {
+  DocumentItemFragment,
+  DocumentMetadataKeyCode,
+} from '@graphql/generated';
 
 interface ShareableResourceCardSupportIconsProps {
-  document: documentItem_fragment$data | PublicDocumentData;
+  document: DocumentItemFragment | PublicDocumentData;
 }
 
 export const ShareableResourceCardSupportIcons = ({

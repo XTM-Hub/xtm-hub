@@ -4,6 +4,7 @@ import ShareableResourceConnectorSlug from '@/components/service/document/connec
 import DeleteShareableResourceSlug from '@/components/service/document/DeleteShareableResourceSlug';
 import ShareableResourceSlug from '@/components/service/document/ShareableResourceSlug';
 import { SettingsContext } from '@/components/settings/EnvPortalContext';
+import { toDocumentItem } from '@/utils/documents';
 import {
   APP_PATH,
   PUBLIC_CYBERSECURITY_SOLUTIONS_PATH,
@@ -12,6 +13,7 @@ import {
   isConnectorResource,
   ShareableResourceType,
 } from '@/utils/shareable-resources/shareable-resources.types';
+import { docHasMetadata } from '@/utils/shareable-resources/utils/shareable-resources.client.utils';
 import { IntegrationType } from '@graphql/generated';
 
 import {
@@ -39,9 +41,8 @@ const IntegrationSlug = ({
   const data = usePreloadedQuery<documentQuery>(DocumentsItemQuery, queryRef);
   const { settings } = useContext(SettingsContext);
 
-  const documentData = readInlineData<documentItem_fragment$key>(
-    documentItem,
-    data.document
+  const documentData = toDocumentItem(
+    readInlineData<documentItem_fragment$key>(documentItem, data.document)
   );
 
   const breadcrumbValue = [
@@ -65,12 +66,14 @@ const IntegrationSlug = ({
     type: ShareableResourceType.OPENCTI_INTEGRATION,
   });
 
+  const integrationType =
+    documentData && docHasMetadata(documentData, 'integration_type')
+      ? documentData.integration_type
+      : undefined;
+
   useEffect(() => {
-    setIntegrationType(
-      (documentData?.integration_type as IntegrationType) ??
-        IntegrationType.CsvFeed
-    );
-  }, [setIntegrationType, documentData?.integration_type]);
+    setIntegrationType(integrationType ?? IntegrationType.CsvFeed);
+  }, [setIntegrationType, integrationType]);
 
   const shareUrl = `${settings!.base_url_front}/${PUBLIC_CYBERSECURITY_SOLUTIONS_PATH}/${documentData?.service_instance?.slug}/${documentData?.slug}`;
 

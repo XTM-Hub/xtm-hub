@@ -6,10 +6,10 @@ import {
   isIntegrationItem,
   PublicDocumentData,
 } from '@/utils/shareable-resources/shareable-resources.types';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
+import { DocumentItemFragment } from '@graphql/generated';
 
 interface ShareableResourceCardTagsProps {
-  document: documentItem_fragment$data | PublicDocumentData;
+  document: DocumentItemFragment | PublicDocumentData;
 }
 
 export const ShareableResourceCardTags = ({
