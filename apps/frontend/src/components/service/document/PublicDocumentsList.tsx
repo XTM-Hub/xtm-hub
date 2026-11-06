@@ -195,7 +195,7 @@ const PublicDocumentsList = ({
       );
     }
     if (isLoading) {
-      return <Skeleton className="h-64 w-full" />;
+      return <Skeleton className="h-64 w-full layer-1 bg-elevation-default" />;
     }
     return (
       <PublicShareableResourceList
