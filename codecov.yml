@@ -1,3 +1,9 @@
+codecov:
+  notify:
+    # 8 frontend + 8 backend shard uploads (see run-*-unit-tests-shards in dockerbuild-ci.yml). Waiting for all of
+    # them keeps a partial upload from posting a failing patch status. Keep in sync with the shard matrices.
+    after_n_builds: 16
+
 coverage:
   status:
     project:
@@ -6,6 +12,25 @@ coverage:
     patch:
       default:
         informational: true
+
+# The lines a pull request changes must be at least 80% covered, checked separately for each app. The coverage gate
+# of dockerbuild-ci.yml fails the pull request when Codecov fails codecov/patch/frontend or codecov/patch/backend.
+component_management:
+  individual_components:
+    - component_id: frontend
+      name: frontend
+      paths:
+        - apps/frontend/**
+      statuses:
+        - type: patch
+          target: 80%
+    - component_id: backend
+      name: backend
+      paths:
+        - apps/backend/**
+      statuses:
+        - type: patch
+          target: 80%
 
 comment:
   layout: "reach,diff,flags,files,footer"

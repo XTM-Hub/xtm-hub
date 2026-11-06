@@ -1085,6 +1085,7 @@ export type MergeEvent = Node & {
 
 export enum MetricType {
   EsUsedSize = 'es_used_size',
+  PostgresUsedSize = 'postgres_used_size',
   S3UsedSize = 's3_used_size',
   SlaAvailability = 'sla_availability',
   SlaResponseTime = 'sla_response_time'
@@ -2700,6 +2701,7 @@ export type SaasPlatformSla = {
 export type SaasPlatformStorage = {
   __typename?: 'SaasPlatformStorage';
   es_used_size: Maybe<SaasPlatformStorageUsage>;
+  postgres_used_size: Maybe<SaasPlatformStorageUsage>;
   s3_used_size: Maybe<SaasPlatformStorageUsage>;
 };
 
@@ -3927,7 +3929,7 @@ export type RegisteredSaasPlatformDataQueryVariables = Exact<{
 }>;
 
 
-export type RegisteredSaasPlatformDataQuery = { __typename?: 'Query', registeredSaasPlatformData: { __typename?: 'SaasPlatformData', metadata: { __typename?: 'SaasPlatformMetadata', hostname: string | null, plan: string | null, start_date: any | null, end_date: any | null, region: string | null }, metrics: { __typename?: 'SaasPlatformMetrics', start: any, end: any, resolution: SaasPlatformResolution, series: Array<{ __typename?: 'SaasPlatformMetricSeries', metric_type: MetricType, points: Array<{ __typename?: 'SaasPlatformMetricPoint', timestamp: any, value: number | null }> }> } | null, storage: { __typename?: 'SaasPlatformStorage', es_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null, used: number | null, limit: number | null } | null, s3_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null, used: number | null, limit: number | null } | null } | null, sla: { __typename?: 'SaasPlatformSla', target: number, months: Array<{ __typename?: 'SaasPlatformMonthlySla', month: any, availability: number | null, days: Array<{ __typename?: 'SaasPlatformDailySla', day: any, availability: number | null }> }> } | null } | null };
+export type RegisteredSaasPlatformDataQuery = { __typename?: 'Query', registeredSaasPlatformData: { __typename?: 'SaasPlatformData', metadata: { __typename?: 'SaasPlatformMetadata', hostname: string | null, plan: string | null, start_date: any | null, end_date: any | null, region: string | null }, metrics: { __typename?: 'SaasPlatformMetrics', start: any, end: any, resolution: SaasPlatformResolution, series: Array<{ __typename?: 'SaasPlatformMetricSeries', metric_type: MetricType, points: Array<{ __typename?: 'SaasPlatformMetricPoint', timestamp: any, value: number | null }> }> } | null, storage: { __typename?: 'SaasPlatformStorage', es_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null, used: number | null, limit: number | null } | null, s3_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null, used: number | null, limit: number | null } | null, postgres_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null, used: number | null, limit: number | null } | null } | null, sla: { __typename?: 'SaasPlatformSla', target: number, months: Array<{ __typename?: 'SaasPlatformMonthlySla', month: any, availability: number | null, days: Array<{ __typename?: 'SaasPlatformDailySla', day: any, availability: number | null }> }> } | null } | null };
 
 export type RegisteredPlatformsListQueryVariables = Exact<{
   input: RegisteredPlatformsInput;
@@ -4006,7 +4008,7 @@ export type SsoGroupRolePortalsQueryVariables = Exact<{ [key: string]: never; }>
 
 export type SsoGroupRolePortalsQuery = { __typename?: 'Query', ssoGroupRolePortals: Array<{ __typename?: 'SSOGroupRolePortal', ssoGroup: string, rolePortal: { __typename?: 'RolePortal', id: string, name: string } }> };
 
-export type SaasPlatformRowFragment = { __typename?: 'SaasPlatform', id: string, product: SaasProduct | null, customer: string | null, sla_cmtd: number | null, health_issues: Array<SaasPlatformHealthIssue> | null, contract_status: SaasPlatformContractStatus | null, metadata: { __typename?: 'SaasPlatformMetadata', plan: string | null, end_date: any | null }, storage: { __typename?: 'SaasPlatformStorage', es_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null } | null, s3_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null } | null } | null, registered_platform: { __typename?: 'RegisteredPlatform', id: string, service_instance_id: any, identifier: ServiceDefinitionIdentifier, version: string | null, organization: { __typename?: 'Organization', id: string, name: string, administrator_emails: Array<string> | null } | null } | null };
+export type SaasPlatformRowFragment = { __typename?: 'SaasPlatform', id: string, product: SaasProduct | null, customer: string | null, sla_cmtd: number | null, health_issues: Array<SaasPlatformHealthIssue> | null, contract_status: SaasPlatformContractStatus | null, metadata: { __typename?: 'SaasPlatformMetadata', plan: string | null, end_date: any | null }, storage: { __typename?: 'SaasPlatformStorage', es_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null } | null, s3_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null } | null, postgres_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null } | null } | null, registered_platform: { __typename?: 'RegisteredPlatform', id: string, service_instance_id: any, identifier: ServiceDefinitionIdentifier, version: string | null, organization: { __typename?: 'Organization', id: string, name: string, administrator_emails: Array<string> | null } | null } | null };
 
 export type SaasManagerPlatformsListQueryVariables = Exact<{
   page: Scalars['Int']['input'];
@@ -4018,7 +4020,7 @@ export type SaasManagerPlatformsListQueryVariables = Exact<{
 }>;
 
 
-export type SaasManagerPlatformsListQuery = { __typename?: 'Query', saasManagerPlatforms: { __typename?: 'SaasPlatformPage', totalCount: number, platforms: Array<{ __typename?: 'SaasPlatform', id: string, product: SaasProduct | null, customer: string | null, sla_cmtd: number | null, health_issues: Array<SaasPlatformHealthIssue> | null, contract_status: SaasPlatformContractStatus | null, metadata: { __typename?: 'SaasPlatformMetadata', plan: string | null, end_date: any | null }, storage: { __typename?: 'SaasPlatformStorage', es_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null } | null, s3_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null } | null } | null, registered_platform: { __typename?: 'RegisteredPlatform', id: string, service_instance_id: any, identifier: ServiceDefinitionIdentifier, version: string | null, organization: { __typename?: 'Organization', id: string, name: string, administrator_emails: Array<string> | null } | null } | null }> } | null };
+export type SaasManagerPlatformsListQuery = { __typename?: 'Query', saasManagerPlatforms: { __typename?: 'SaasPlatformPage', totalCount: number, platforms: Array<{ __typename?: 'SaasPlatform', id: string, product: SaasProduct | null, customer: string | null, sla_cmtd: number | null, health_issues: Array<SaasPlatformHealthIssue> | null, contract_status: SaasPlatformContractStatus | null, metadata: { __typename?: 'SaasPlatformMetadata', plan: string | null, end_date: any | null }, storage: { __typename?: 'SaasPlatformStorage', es_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null } | null, s3_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null } | null, postgres_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null } | null } | null, registered_platform: { __typename?: 'RegisteredPlatform', id: string, service_instance_id: any, identifier: ServiceDefinitionIdentifier, version: string | null, organization: { __typename?: 'Organization', id: string, name: string, administrator_emails: Array<string> | null } | null } | null }> } | null };
 
 export type AddUsersToBundleGroupsMutationVariables = Exact<{
   serviceInstanceId: Scalars['ServiceInstanceId']['input'];
@@ -4631,6 +4633,9 @@ export const SaasPlatformRowFragmentDoc = `
       percent
     }
     s3_used_size {
+      percent
+    }
+    postgres_used_size {
       percent
     }
   }
@@ -6817,6 +6822,11 @@ export const RegisteredSaasPlatformDataDocument = `
         limit
       }
       s3_used_size {
+        percent
+        used
+        limit
+      }
+      postgres_used_size {
         percent
         used
         limit
