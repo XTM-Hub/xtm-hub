@@ -413,7 +413,7 @@
       "MISSING_CAPABILITY_ON_SERVICE": "Permissions manquantes",
       "MISSING_METADATA_MAPPING": "Correspondance des métadonnées manquante",
       "MISSING_START_OR_END_DATE": "Une erreur inconnue s'est produite",
-      "INVALID_USE_CASES_FOR_PRODUCTS": "Les cas d'usage ne correspondent pas aux produits demandés",
+      "INVALID_USE_CASES_FOR_PRODUCTS": "Les cas d'usage ne correspondent pas aux produits de l'essai",
       "MIXED_LTS_MANIFEST_FRAGMENTS": "Un lot ne peut pas mélanger des fragments LTS et non-LTS",
       "NEWS_FEED_ITEM_MISSING_TITLE": "Le titre de l'article du fil d'actualité est manquant",
       "NEWS_FEED_ITEM_NOT_FOUND": "L'article du fil d'actualité n'a pas été trouvé",

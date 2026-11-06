@@ -413,7 +413,7 @@
       "MISSING_CAPABILITY_ON_SERVICE": "Missing permissions",
       "MISSING_METADATA_MAPPING": "Missing metadata mapping",
       "MISSING_START_OR_END_DATE": "An unknown error occurred",
-      "INVALID_USE_CASES_FOR_PRODUCTS": "Use cases do not match the requested products",
+      "INVALID_USE_CASES_FOR_PRODUCTS": "Use cases do not match the trial products",
       "MIXED_LTS_MANIFEST_FRAGMENTS": "A batch cannot mix LTS and non-LTS fragments",
       "NEWS_FEED_ITEM_MISSING_TITLE": "News feed item is missing title",
       "NEWS_FEED_ITEM_NOT_FOUND": "News feed item not found",
