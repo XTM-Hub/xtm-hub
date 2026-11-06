@@ -1,4 +1,5 @@
 import {
+  CommercialModel,
   PlatformConfigurationStatus,
   PlatformContract,
   PlatformIdentifier,
@@ -23,8 +24,13 @@ import { RegistrationHelper } from './registration.helper';
 
 const HOUR_IN_MS = 60 * 60 * 1000;
 
-interface RefreshOutcome {
+interface RefreshResult {
   status: PlatformRegistrationConnectivityStatus;
+  // Null when no registration matches the platform id and token.
+  commercialModel: CommercialModel | null;
+}
+
+interface RefreshOutcome extends RefreshResult {
   // True when the platform id and token matched a registration.
   isTokenValid: boolean;
 }
@@ -240,6 +246,7 @@ const refreshConnectivityStatus = async ({
         platform_identifier,
         platform_version,
       }),
+      commercialModel: null,
       isTokenValid: false,
     };
   }
@@ -258,6 +265,7 @@ const refreshConnectivityStatus = async ({
       platformConfiguration.status === PlatformConfigurationStatus.Active
         ? PlatformRegistrationConnectivityStatus.Active
         : PlatformRegistrationConnectivityStatus.Inactive,
+    commercialModel: platformConfiguration.commercial_model,
     isTokenValid: true,
   };
 };
@@ -265,21 +273,21 @@ const refreshConnectivityStatus = async ({
 export const RegistrationConnectivityApp = {
   refreshPlatformRegistrationConnectivityStatus: async (
     input: RefreshPlatformRegistrationConnectivityStatusInput
-  ): Promise<{ status: PlatformRegistrationConnectivityStatus }> => {
-    const { status } = await refreshConnectivityStatus({
+  ): Promise<RefreshResult> => {
+    const { status, commercialModel } = await refreshConnectivityStatus({
       platform_identifier: input.platformIdentifier ?? undefined,
       platform_version: input.platformVersion,
       platform_id: input.platformId,
       token: input.token,
       platform_contract: input.platformContract ?? undefined,
     });
-    return { status };
+    return { status, commercialModel };
   },
 
   refreshPlatformRegistrationConnectivityStatusSingleTenant: async (
     input: RefreshPlatformRegistrationConnectivityStatusSingleTenantInput
-  ): Promise<{ status: PlatformRegistrationConnectivityStatus }> => {
-    const { status } = await refreshConnectivityStatus({
+  ): Promise<RefreshResult> => {
+    const { status, commercialModel } = await refreshConnectivityStatus({
       platform_identifier: input.platformIdentifier,
       platform_version: input.platformVersion,
       platform_id: input.platformId,
@@ -289,7 +297,7 @@ export const RegistrationConnectivityApp = {
       tenant_name: input.tenantName,
       platform_contract: input.platformContract ?? undefined,
     });
-    return { status };
+    return { status, commercialModel };
   },
 
   refreshPlatformRegistrationConnectivityStatusAllTenants: async (
@@ -313,7 +321,11 @@ export const RegistrationConnectivityApp = {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const tenant = input.tenants[index]!;
       if (result.status === 'fulfilled') {
-        return { tenantId: tenant.tenantId, status: result.value.status };
+        return {
+          tenantId: tenant.tenantId,
+          status: result.value.status,
+          commercialModel: result.value.commercialModel,
+        };
       }
       logApp.error(
         `Failed to refresh connectivity status for tenant ${tenant.tenantId}`,
@@ -322,6 +334,7 @@ export const RegistrationConnectivityApp = {
       return {
         tenantId: tenant.tenantId,
         status: PlatformRegistrationConnectivityStatus.Inactive,
+        commercialModel: null,
       };
     });
 
