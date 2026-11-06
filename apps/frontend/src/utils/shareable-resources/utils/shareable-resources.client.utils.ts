@@ -1,34 +1,12 @@
 import { hasProperty } from '@/utils/has-property';
-import { encodeRedirectValue } from '@/utils/redirect';
-import {
-  OPENCTI_INTEGRATION_URL_CONFIGS,
-  serviceConfigMap,
-} from '@/utils/shareable-resources/shareable-resources.consts';
+import { OPENCTI_INTEGRATION_URL_CONFIGS } from '@/utils/shareable-resources/shareable-resources.consts';
 import {
   isConnectorResource,
   PublicDocumentData,
-  ServiceInfo,
-  ServiceSlug,
   ShareableResourceType,
 } from '@/utils/shareable-resources/shareable-resources.types';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { DocumentMetadataKeyCode, IntegrationType } from '@graphql/generated';
-
-export function getServiceInfo(
-  serviceInstance: { id: string; slug: ServiceSlug },
-  documentId: string
-): ServiceInfo | undefined {
-  const config = serviceConfigMap[serviceInstance.slug];
-
-  if (!config) {
-    return undefined;
-  }
-
-  return {
-    link: `/redirect/${config.redirectPath}?service_instance_id=${encodeRedirectValue(serviceInstance.id)}&document_id=${encodeRedirectValue(documentId)}`,
-    description: config.description,
-  };
-}
 
 /**
  * Maps each metadata field to its real value type so `docHasMetadata` can

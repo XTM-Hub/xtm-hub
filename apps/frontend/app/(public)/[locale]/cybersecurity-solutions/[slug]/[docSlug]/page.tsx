@@ -277,7 +277,6 @@ const Page = async ({
             <RelayProvider>
               <PublicResourceActions
                 documentData={document}
-                serviceInstance={serviceInstance}
                 pageUrl={pageUrl}
                 shareTooltipText={`Service.${localeMap[serviceInstance.slug as ServiceSlug]}.Actions.Share`}
               />

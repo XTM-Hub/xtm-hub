@@ -1,8 +1,5 @@
 import { PublicResourceActions } from '@/components/service/document/PublicResourceActions';
-import {
-  ServiceSlug,
-  ShareableResourceType,
-} from '@/utils/shareable-resources/shareable-resources.types';
+import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 import testRender from '@/utils/test/test-render';
 import { publicDocumentBySlugItemFragment$data } from '@generated/publicDocumentBySlugItemFragment.graphql';
 import { screen } from '@testing-library/react';
@@ -11,7 +8,7 @@ import { usePathname } from 'next/navigation';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const DOCUMENT_ID = 'doc-1';
-const SERVICE_INSTANCE_ID = 'service-instance-1';
+const PUBLIC_PATHNAME = '/en/cybersecurity-solutions/lib/doc';
 const PAGE_URL = 'https://hub.test/cybersecurity-solutions/lib/doc';
 const DEPLOY_KEY = 'Service.ShareableResources.Deploy.DeployPlatform';
 const DOWNLOAD_ICON_KEY = 'Service.ShareableResources.Download';
@@ -25,11 +22,9 @@ const UNSUPPORTED_CONNECTOR_OVERRIDES = {
   manager_supported: false,
 } as const;
 
-const signupHrefFor = (slug: ServiceSlug) =>
+const signupHrefFor = (pathname: string) =>
   `/sign-up?redirect=${encodeURIComponent(
-    btoa(
-      `/redirect/${slug.replaceAll('-', '_')}?service_instance_id=${SERVICE_INSTANCE_ID}&document_id=${DOCUMENT_ID}`
-    )
+    btoa(`/redirect/public?path=${encodeURIComponent(pathname)}`)
   )}`;
 
 const buildDocumentData = (
@@ -43,23 +38,17 @@ const buildDocumentData = (
     ...overrides,
   }) as publicDocumentBySlugItemFragment$data;
 
-const renderActions = (
-  documentData: publicDocumentBySlugItemFragment$data,
-  slug: ServiceSlug
-) =>
+const renderActions = (documentData: publicDocumentBySlugItemFragment$data) =>
   testRender(
     <PublicResourceActions
       documentData={documentData}
-      serviceInstance={{ id: SERVICE_INSTANCE_ID, slug }}
       pageUrl={PAGE_URL}
     />
   );
 
 describe('PublicResourceActions', () => {
   beforeEach(() => {
-    vi.mocked(usePathname).mockReturnValue(
-      '/en/cybersecurity-solutions/lib/doc'
-    );
+    vi.mocked(usePathname).mockReturnValue(PUBLIC_PATHNAME);
     vi.mocked(useTranslations).mockReturnValue(
       Object.assign(
         (key: string, values?: { platformName?: string }) =>
@@ -73,7 +62,6 @@ describe('PublicResourceActions', () => {
     {
       resource: 'custom dashboard',
       overrides: {},
-      slug: ServiceSlug.OPEN_CTI_CUSTOM_DASHBOARDS,
       platformName: 'OpenCTI',
     },
     {
@@ -82,7 +70,6 @@ describe('PublicResourceActions', () => {
         __typename: 'OpenaevScenario',
         type: ShareableResourceType.OPENAEV_SCENARIO,
       },
-      slug: ServiceSlug.OPEN_AEV_SCENARIOS,
       platformName: 'OpenAEV',
     },
     {
@@ -93,18 +80,17 @@ describe('PublicResourceActions', () => {
         integration_type: 'connector' as const,
         manager_supported: true,
       },
-      slug: ServiceSlug.OPEN_CTI_INTEGRATIONS,
       platformName: 'OpenCTI',
     },
   ])(
     'should link deploy and download icon to the sign-up page when the resource is a $resource',
-    ({ overrides, slug, platformName }) => {
+    ({ overrides, platformName }) => {
       // Given
       const documentData = buildDocumentData(overrides);
-      const expectedHref = signupHrefFor(slug);
+      const expectedHref = signupHrefFor(PUBLIC_PATHNAME);
 
       // When
-      renderActions(documentData, slug);
+      renderActions(documentData);
 
       // Then
       expect(
@@ -122,12 +108,12 @@ describe('PublicResourceActions', () => {
     const documentData = buildDocumentData({ active: false });
 
     // When
-    renderActions(documentData, ServiceSlug.OPEN_CTI_CUSTOM_DASHBOARDS);
+    renderActions(documentData);
 
     // Then
     expect(screen.getByText(DOWNLOAD_TEXT_KEY).closest('a')).toHaveAttribute(
       'href',
-      signupHrefFor(ServiceSlug.OPEN_CTI_CUSTOM_DASHBOARDS)
+      signupHrefFor(PUBLIC_PATHNAME)
     );
     expect(screen.queryByText(`${DEPLOY_KEY}:OpenCTI`)).not.toBeInTheDocument();
   });
@@ -137,7 +123,7 @@ describe('PublicResourceActions', () => {
     const documentData = buildDocumentData(UNSUPPORTED_CONNECTOR_OVERRIDES);
 
     // When
-    renderActions(documentData, ServiceSlug.OPEN_CTI_INTEGRATIONS);
+    renderActions(documentData);
 
     // Then
     expect(
@@ -149,10 +135,7 @@ describe('PublicResourceActions', () => {
   it('should explain why deploy is unavailable when the keyboard reaches the disabled deploy button of a connector without manager support', async () => {
     // Given
     const documentData = buildDocumentData(UNSUPPORTED_CONNECTOR_OVERRIDES);
-    const { user } = renderActions(
-      documentData,
-      ServiceSlug.OPEN_CTI_INTEGRATIONS
-    );
+    const { user } = renderActions(documentData);
 
     // When
     // Share and download come before deploy in the tab order.
@@ -166,42 +149,26 @@ describe('PublicResourceActions', () => {
     ).toBeInTheDocument();
   });
 
-  it('should percent-encode a service instance id containing + so it survives the signup redirect round-trip', () => {
+  it('should percent-encode the public path so it survives the signup redirect round-trip', () => {
     // Given
-    // Relay global IDs are base64 and can contain `+`; an unescaped `+` in a
-    // query value would otherwise be silently read back as a space.
-    const SERVICE_INSTANCE_ID_WITH_PLUS = 'U2VydmljZUluc3RhbmNlOnh4eHg/+/+PT0=';
+    const pathnameWithSpecialChars = '/en/cybersecurity-solutions/lib/c++&co';
+    vi.mocked(usePathname).mockReturnValue(pathnameWithSpecialChars);
     const documentData = buildDocumentData();
 
     // When
-    testRender(
-      <PublicResourceActions
-        documentData={documentData}
-        serviceInstance={{
-          id: SERVICE_INSTANCE_ID_WITH_PLUS,
-          slug: ServiceSlug.OPEN_CTI_CUSTOM_DASHBOARDS,
-        }}
-        pageUrl={PAGE_URL}
-      />
-    );
+    renderActions(documentData);
 
     // Then
-    const expectedHref = `/sign-up?redirect=${encodeURIComponent(
-      btoa(
-        `/redirect/opencti_custom_dashboards?service_instance_id=${encodeURIComponent(SERVICE_INSTANCE_ID_WITH_PLUS)}&document_id=${DOCUMENT_ID}`
-      )
-    )}`;
-    const href = screen
-      .getByRole('link', { name: DOWNLOAD_ICON_KEY })
-      .getAttribute('href')!;
-    expect(href).toBe(expectedHref);
+    const href =
+      screen
+        .getByRole('link', { name: DOWNLOAD_ICON_KEY })
+        .getAttribute('href') ?? '';
+    expect(href).toBe(signupHrefFor(pathnameWithSpecialChars));
 
-    const decodedPathname = atob(
-      decodeURIComponent(href.split('?redirect=')[1])
+    const redirectTarget = atob(
+      new URLSearchParams(href.split('?')[1]).get('redirect') ?? ''
     );
-    const query = new URLSearchParams(decodedPathname.split('?')[1]);
-    expect(query.get('service_instance_id')).toBe(
-      SERVICE_INSTANCE_ID_WITH_PLUS
-    );
+    const query = new URLSearchParams(redirectTarget.split('?')[1]);
+    expect(query.get('path')).toBe(pathnameWithSpecialChars);
   });
 });

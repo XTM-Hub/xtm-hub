@@ -71,7 +71,6 @@ export enum ShareableResourceType {
   OPENCTI_PLAYBOOK = 'opencti_playbook',
 }
 
-export type ServiceInfo = { link: string; description: string };
 export enum ServiceSlug {
   OPEN_CTI_INTEGRATIONS = 'opencti-integrations',
   OPEN_CTI_CUSTOM_DASHBOARDS = 'opencti-custom-dashboards',
