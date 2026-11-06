@@ -1,7 +1,6 @@
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 import testRender from '@/utils/test/test-render';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { IntegrationType } from '@graphql/generated';
+import { DocumentItemFragment, IntegrationType } from '@graphql/generated';
 import { screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { ShareableResourceTypeChip } from './ShareableResourceTypeChip';
@@ -9,7 +8,7 @@ import { ShareableResourceTypeChip } from './ShareableResourceTypeChip';
 const renderChip = (document: Record<string, unknown>) =>
   testRender(
     <ShareableResourceTypeChip
-      document={document as unknown as documentItem_fragment$data}
+      document={document as unknown as DocumentItemFragment}
     />
   );
 

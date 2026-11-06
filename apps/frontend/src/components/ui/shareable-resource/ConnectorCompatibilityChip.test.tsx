@@ -1,6 +1,5 @@
 import testRender from '@/utils/test/test-render';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { IntegrationType } from '@graphql/generated';
+import { DocumentItemFragment, IntegrationType } from '@graphql/generated';
 import { screen } from '@testing-library/react';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
@@ -45,12 +44,12 @@ const CONNECTOR = {
 };
 
 const renderChip = (
-  overrides: Partial<documentItem_fragment$data> = {},
+  overrides: Partial<DocumentItemFragment> = {},
   publicPath = false
 ) =>
   testRender(
     <ConnectorCompatibilityChip
-      document={{ ...CONNECTOR, ...overrides } as documentItem_fragment$data}
+      document={{ ...CONNECTOR, ...overrides } as DocumentItemFragment}
       publicPath={publicPath}
     />
   );

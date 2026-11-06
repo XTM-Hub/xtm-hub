@@ -65,6 +65,7 @@ const fillThirdPartyCreationFields = async (user: ServiceFormUser) => {
 
 const buildThirdPartyIntegration = () =>
   buildIntegrationDocument({
+    __typename: 'ThirdPartyIntegration',
     vendor_url: VENDOR_URL,
     github_url: GITHUB_URL,
   });

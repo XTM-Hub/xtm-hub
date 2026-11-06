@@ -1,6 +1,5 @@
 import testRender from '@/utils/test/test-render';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { IntegrationType } from '@graphql/generated';
+import { DocumentItemFragment, IntegrationType } from '@graphql/generated';
 import { screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { ShareableResourceCardFooterVersion } from './ShareableResourceCardFooterVersions';
@@ -28,7 +27,7 @@ describe('ShareableResourceCardFooterVersion', () => {
             active: true,
             product_version: PRODUCT_VERSION,
             integration_type: IntegrationType.Connector,
-          } as documentItem_fragment$data
+          } as DocumentItemFragment
         }
         shareLinkUrl="https://share"
         extraContent={<span>{EXTRA_CONTENT}</span>}

@@ -1,5 +1,8 @@
-import type { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { DocumentImageType, DocumentSourceType } from '@graphql/generated';
+import {
+  DocumentImageType,
+  DocumentItemFragment,
+  DocumentSourceType,
+} from '@graphql/generated';
 import {
   docIsExistingFile,
   filterDocumentImages,
@@ -28,9 +31,9 @@ const makeChild = (id: string, imageType: DocumentImageType) => ({
 });
 
 const makeDocument = (
-  children: documentItem_fragment$data['children_documents']
-): documentItem_fragment$data => ({
-  __typename: 'Document',
+  children: DocumentItemFragment['children_documents']
+): DocumentItemFragment => ({
+  __typename: 'DefaultDocument',
   active: true,
   children_documents: children,
   created_at: CREATED_AT,
@@ -49,7 +52,6 @@ const makeDocument = (
   uploader: null,
   uploader_organization: null,
   use_cases: null,
-  ' $fragmentType': 'documentItem_fragment',
 });
 
 const LOGO = makeChild('logo-id', DocumentImageType.Logo);

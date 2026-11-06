@@ -1,5 +1,5 @@
 import testRender from '@/utils/test/test-render';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
+import { DocumentItemFragment } from '@graphql/generated';
 import { screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { ShareableResourceCardImage } from './ShareableResourceCardImage';
@@ -24,7 +24,7 @@ describe('ShareableResourceCardImage', () => {
 
     testRender(
       <ShareableResourceCardImage
-        document={{ name: 'My resource' } as documentItem_fragment$data}
+        document={{ name: 'My resource' } as DocumentItemFragment}
         serviceInstanceId="service-1"
       />
     );
@@ -40,7 +40,7 @@ describe('ShareableResourceCardImage', () => {
 
     testRender(
       <ShareableResourceCardImage
-        document={{ name: 'My resource' } as documentItem_fragment$data}
+        document={{ name: 'My resource' } as DocumentItemFragment}
         serviceInstanceId="service-1"
       />
     );
