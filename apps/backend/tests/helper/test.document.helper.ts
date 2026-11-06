@@ -3,6 +3,7 @@ import { db } from '../../knexfile';
 import {
   DocumentMetadataKeyCode,
   DocumentMetadata as DocumentMetadataResolverType,
+  DocumentStatus,
   IntegrationType,
 } from '../../src/__generated__/resolvers-types';
 
@@ -48,7 +49,7 @@ export const TestDocumentHelper = {
       description: null,
       file_name: null,
       minio_name: null,
-      active: true,
+      status: DocumentStatus.Published,
       created_at: new Date('2024-01-01T00:00:00Z'),
       remover_id: null,
       mime_type: null,
@@ -71,7 +72,7 @@ export const TestDocumentHelper = {
       description = 'description',
       short_description = 'short_description',
       slug = 'slug',
-      active = true,
+      status = DocumentStatus.Published,
       uploader_id = TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
       metadata = [
         {
@@ -87,7 +88,7 @@ export const TestDocumentHelper = {
       description?: string;
       short_description?: string;
       slug?: string;
-      active?: boolean;
+      status?: DocumentStatus;
       uploader_id?: UserId;
       metadata?: DocumentMetadataResolverType[];
       serviceInstanceId?: ServiceInstanceId;
@@ -99,7 +100,7 @@ export const TestDocumentHelper = {
           description,
           short_description,
           slug,
-          active,
+          status,
           uploader_id,
           use_cases: [],
           solution_categories: [],

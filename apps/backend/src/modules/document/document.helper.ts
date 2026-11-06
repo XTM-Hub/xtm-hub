@@ -1,6 +1,7 @@
 import {
   DocumentMetadataKeyCode,
   DocumentMetadata as DocumentMetadataResolverType,
+  DocumentStatus,
   IntegrationType,
   PlatformIdentifier,
   ServiceDefinitionIdentifier,
@@ -177,7 +178,22 @@ const DocumentMetadataMappedByServiceIdentifier: Record<
     OPENCTI_PLAYBOOK_METADATA,
 };
 
+const ALLOWED_STATUS_TRANSITIONS: Record<DocumentStatus, DocumentStatus[]> = {
+  [DocumentStatus.Draft]: [
+    DocumentStatus.InValidation,
+    DocumentStatus.Published,
+  ],
+  [DocumentStatus.InValidation]: [DocumentStatus.Published],
+  [DocumentStatus.Published]: [DocumentStatus.Draft],
+};
+
 export const DocumentHelper = {
+  assertStatusTransition: (from: DocumentStatus, to: DocumentStatus) => {
+    if (from !== to && !ALLOWED_STATUS_TRANSITIONS[from].includes(to)) {
+      throw new Error(ErrorCode.InvalidDocumentStatusTransition);
+    }
+  },
+
   buildCompleteMetadataFromDocumentFile: ({
     sourceDocumentFile,
     metadata,
@@ -359,18 +375,6 @@ export const DocumentHelper = {
       .replace(/[^a-z0-9\-_.]/g, '-')
       .replace(/-+/g, '-')
       .replace(/^-|-$/g, '');
-  },
-
-  checkDocumentExists: async (
-    documentName: string,
-    serviceInstanceId: ServiceInstanceId
-  ) => {
-    const document = await DocumentDomain.loadDocumentBy({
-      file_name: DocumentHelper.normalizeDocumentName(documentName),
-      active: true,
-      service_instance_id: serviceInstanceId,
-    });
-    return !!document;
   },
 
   uploadNewFile: async (

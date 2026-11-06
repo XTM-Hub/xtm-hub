@@ -43,6 +43,9 @@ const COLUMN_ENUM_MAP = {
   SolutionCategory: {
     product: 'FiligranProduct',
   },
+  Document: {
+    status: 'DocumentStatus',
+  },
   ServiceInstance: {
     creation_status: 'ServiceInstanceCreationStatus',
     join_type: 'ServiceInstanceJoinType',

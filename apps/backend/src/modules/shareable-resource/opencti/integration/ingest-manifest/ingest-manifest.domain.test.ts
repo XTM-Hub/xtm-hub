@@ -4,6 +4,7 @@ import {
   TEST_ORGANIZATIONS,
   TEST_USE_CASES,
 } from '../../../../../../tests/tests.const';
+import { DocumentStatus } from '../../../../../__generated__/resolvers-types';
 import { requestContext } from '../../../../../context/request.context';
 import {
   SYSTEM_USER_CONTEXT,
@@ -57,7 +58,7 @@ describe('upsertConnectors', () => {
         result.forEach((doc) => {
           expect(doc.type).toBe('opencti_integration');
           expect(doc.source_type).toBe('external');
-          expect(doc.active).toBe(true);
+          expect(doc.status).toBe(DocumentStatus.Published);
         });
       });
 

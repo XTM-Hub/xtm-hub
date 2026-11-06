@@ -15,6 +15,7 @@ import {
   DeploymentRequestSource,
   DeploymentRequestUseCase,
   DocumentMetadataKeyCode,
+  DocumentStatus,
   HasRepliedSatisfaction,
   IntegrationType,
   NewsFeedItemType,
@@ -88,7 +89,7 @@ const createIntegrationDocument = async (
 ): Promise<Document> => {
   const document = await TestHelper.document.create({
     name: `telemetry-helper-${uuidv4()}`,
-    active: true,
+    status: DocumentStatus.Published,
     service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
   });
   createdDocumentIds.push(document.id);
@@ -489,15 +490,16 @@ describe('telemetryHelper', () => {
     });
 
     it.each([
-      { active: true, expectedStatus: 'published' },
-      { active: false, expectedStatus: 'draft' },
+      { status: DocumentStatus.Published, expectedStatus: 'published' },
+      { status: DocumentStatus.InValidation, expectedStatus: 'in_validation' },
+      { status: DocumentStatus.Draft, expectedStatus: 'draft' },
     ])(
-      'should set the status to $expectedStatus when the document active flag is $active',
-      async ({ active, expectedStatus }) => {
+      'should set the status to $expectedStatus when the document status is $status',
+      async ({ status, expectedStatus }) => {
         // Given
         const document = TestHelper.document.build({
           id: RESOURCE_ID as DocumentId,
-          active,
+          status,
           service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
         });
 

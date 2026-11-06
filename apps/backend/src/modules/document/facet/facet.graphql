@@ -20,6 +20,8 @@ input LoadDocumentFacetInput {
   documentType: String
   logicalFilters: LogicalFilterInput
   restrictToActiveDocuments: Boolean
+    @deprecated(reason: "Use restrictToPublishedDocuments")
+  restrictToPublishedDocuments: Boolean
 }
 
 type Query {

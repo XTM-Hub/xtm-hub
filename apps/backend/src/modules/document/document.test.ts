@@ -1,6 +1,5 @@
 import { Readable } from 'stream';
 import {
-  afterAll,
   afterEach,
   beforeAll,
   beforeEach,
@@ -17,13 +16,9 @@ import {
   SERVICES,
   TEST_ORGANIZATIONS,
 } from '../../../tests/tests.const';
-import {
-  IntegrationType,
-  ServiceDefinitionIdentifier,
-} from '../../__generated__/resolvers-types';
+import { IntegrationType } from '../../__generated__/resolvers-types';
 import { requestContext } from '../../context/request.context';
 import { DocumentId } from '../../model/kanel/public/Document';
-import { OrganizationId } from '../../model/kanel/public/Organization';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { PortalContext } from '../../model/portal-context';
 import { MinIOClient } from '../../thirdparty/minio/client';
@@ -86,39 +81,6 @@ describe('should call S3 to send file', () => {
   });
 });
 
-describe('should modify document', () => {
-  beforeAll(async () => {
-    await DocumentApp.createDocumentWithChildrenAndMetadata(
-      {
-        id: 'bc348e84-3635-46de-9b56-38db09c35f4d' as DocumentId,
-        uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
-        description: 'description',
-        minio_name: 'minioName',
-        file_name: 'filename',
-        uploader_organization_id:
-          'ba091095-418f-4b4f-b150-6c9295e232c4' as OrganizationId,
-        service_instance_id: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
-        type: ServiceDefinitionIdentifier.OpenctiCustomDashboards,
-      },
-      []
-    );
-  });
-  afterAll(async () => {
-    await TestHelper.document.delete({});
-  });
-
-  it('should delete document', async () => {
-    await TestHelper.document.delete({
-      id: 'bc348e84-3635-46de-9b56-38db09c35f4d' as DocumentId,
-    });
-    const result = await DocumentHelper.checkDocumentExists(
-      'filename',
-      'c6343882-f609-4a3f-abe0-a34f8cb11302' as ServiceInstanceId
-    );
-    expect(result).toBe(false);
-  });
-});
-
 describe('getFileName', () => {
   it('should set the correct fileName', () => {
     vi.spyOn(Date, 'now').mockReturnValue(
@@ -134,42 +96,6 @@ describe('should normalize filename', () => {
     const result = DocumentHelper.normalizeDocumentName('Naîà-méE&mo!');
     expect(result).toStrictEqual('naia-mee-mo');
   });
-});
-
-describe('should check if file already exists', () => {
-  beforeAll(async () => {
-    await DocumentApp.createDocumentWithChildrenAndMetadata(
-      {
-        uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
-        description: 'description',
-        minio_name: 'minioName',
-        file_name: 'filename',
-        service_instance_id: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
-        type: 'opencti_custom_dashboard',
-      },
-      []
-    );
-  });
-
-  afterAll(async () => {
-    await TestHelper.document.delete({});
-  });
-
-  it.each`
-    expected | fileName      | title               | serviceInstanceId
-    ${true}  | ${'filename'} | ${'Already exists'} | ${SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID}
-    ${false} | ${'test'}     | ${'Does not exist'} | ${SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID}
-    ${false} | ${'test'}     | ${'Does not exist'} | ${SERVICES.INSTANCES.OPENAEV_SCENARIOS.ID}
-  `(
-    'should return $expected if filename $title',
-    async ({ expected, fileName, serviceInstanceId }) => {
-      const result = await DocumentHelper.checkDocumentExists(
-        fileName,
-        serviceInstanceId
-      );
-      expect(result).toEqual(expected);
-    }
-  );
 });
 
 describe('documents loading', () => {

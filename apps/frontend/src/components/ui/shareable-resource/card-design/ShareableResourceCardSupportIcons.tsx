@@ -1,4 +1,5 @@
 import { ResourceStatusIcons } from '@/components/ui/ResourceStatusIcons';
+import { isDocumentPublished } from '@/utils/documents';
 import { PublicDocumentData } from '@/utils/shareable-resources/shareable-resources.types';
 import { docHasMetadata } from '@/utils/shareable-resources/utils/shareable-resources.client.utils';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
@@ -12,12 +13,12 @@ export const ShareableResourceCardSupportIcons = ({
   document,
 }: ShareableResourceCardSupportIconsProps) => {
   const deployable =
-    document.active &&
+    isDocumentPublished(document.status) &&
     docHasMetadata(document, DocumentMetadataKeyCode.ManagerSupported) &&
     !!document.manager_supported;
 
   const verified =
-    document.active &&
+    isDocumentPublished(document.status) &&
     docHasMetadata(document, DocumentMetadataKeyCode.Verified) &&
     !!document.verified;
 

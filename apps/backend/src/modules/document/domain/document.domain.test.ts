@@ -14,6 +14,7 @@ import {
   DocumentConnection,
   DocumentMetadataKeyCode,
   DocumentOrdering,
+  DocumentStatus,
   FilterKey,
   Integration,
   IntegrationType,
@@ -91,38 +92,6 @@ describe('document domain', () => {
     await TestHelper.document.delete({});
   });
 
-  describe('deactivateDocuments', () => {
-    let createdDocument: Document;
-    beforeEach(async () => {
-      createdDocument = await TestHelper.document.createWholeDocument({});
-    });
-
-    it('should do nothing when the document ids is an empty array', async () => {
-      await DocumentDomain.deactivateDocuments([]);
-
-      const document = await TestHelper.document.load({
-        id: createdDocument.id,
-      });
-
-      expect(document).toMatchObject({
-        active: true,
-      });
-    });
-
-    it('should deactivate document and set remover id', async () => {
-      await DocumentDomain.deactivateDocuments([createdDocument.id]);
-
-      const document = await TestHelper.document.load({
-        id: createdDocument.id,
-      });
-
-      expect(document).toMatchObject({
-        active: false,
-        remover_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID,
-      });
-    });
-  });
-
   describe('reassignUserDocumentsToSystemUser', () => {
     it('should reassign every user reference of the documents to the system user', async () => {
       const userId = TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID;
@@ -187,8 +156,9 @@ describe('document domain', () => {
   });
 
   describe('loadParentDocumentsByServiceInstance with draft documents', () => {
-    const PAGE_SIZE = 2;
+    const PAGE_SIZE = 3;
     const DRAFT_NAME = 'm-draft';
+    const IN_VALIDATION_NAME = 'n-in-validation';
     const ACTIVE_NAMES = ['a-active', 'b-active', 'y-active', 'z-active'];
 
     beforeEach(async () => {
@@ -200,9 +170,17 @@ describe('document domain', () => {
         await TestHelper.document.createWholeDocument({
           name,
           slug: name,
-          active: name !== DRAFT_NAME,
+          status:
+            name === DRAFT_NAME
+              ? DocumentStatus.Draft
+              : DocumentStatus.Published,
         });
       }
+      await TestHelper.document.createWholeDocument({
+        name: IN_VALIDATION_NAME,
+        slug: IN_VALIDATION_NAME,
+        status: DocumentStatus.InValidation,
+      });
       requestContext.set(requestContextAdminUser);
     });
 
@@ -242,10 +220,10 @@ describe('document domain', () => {
 
     it.each`
       orderMode            | expectedNames
-      ${OrderingMode.Asc}  | ${['m-draft', 'a-active', 'b-active', 'y-active', 'z-active']}
-      ${OrderingMode.Desc} | ${['m-draft', 'z-active', 'y-active', 'b-active', 'a-active']}
+      ${OrderingMode.Asc}  | ${['m-draft', 'n-in-validation', 'a-active', 'b-active', 'y-active', 'z-active']}
+      ${OrderingMode.Desc} | ${['m-draft', 'n-in-validation', 'z-active', 'y-active', 'b-active', 'a-active']}
     `(
-      'should put the draft first, then follow the requested $orderMode order',
+      'should put the draft and in validation documents first, then follow the requested $orderMode order',
       async ({
         orderMode,
         expectedNames,
@@ -261,17 +239,21 @@ describe('document domain', () => {
 
     it('should page through every document exactly once with the draft first', async () => {
       const pages = await Promise.all(
-        [0, 1, 2].map((pageIndex) => loadPage(pageIndex, OrderingMode.Asc))
+        [0, 1].map((pageIndex) => loadPage(pageIndex, OrderingMode.Asc))
       );
 
-      expect(pages.flatMap(namesOf)).toEqual([DRAFT_NAME, ...ACTIVE_NAMES]);
-      pages.forEach((page) => expect(Number(page.totalCount)).toBe(5));
+      expect(pages.flatMap(namesOf)).toEqual([
+        DRAFT_NAME,
+        IN_VALIDATION_NAME,
+        ...ACTIVE_NAMES,
+      ]);
+      pages.forEach((page) => expect(Number(page.totalCount)).toBe(6));
     });
 
     it.each`
-      description                          | options                 | expectedNames                                                  | expectedTotal
-      ${'drops the draft when activeOnly'} | ${{ activeOnly: true }} | ${['a-active', 'b-active', 'y-active', 'z-active']}            | ${4}
-      ${'keeps the draft otherwise'}       | ${{}}                   | ${['m-draft', 'a-active', 'b-active', 'y-active', 'z-active']} | ${5}
+      description                                                         | options                    | expectedNames                                                                     | expectedTotal
+      ${'drops the draft and in validation documents when publishedOnly'} | ${{ publishedOnly: true }} | ${['a-active', 'b-active', 'y-active', 'z-active']}                               | ${4}
+      ${'keeps the draft and in validation documents otherwise'}          | ${{}}                      | ${['m-draft', 'n-in-validation', 'a-active', 'b-active', 'y-active', 'z-active']} | ${6}
     `(
       'should $description',
       async ({
@@ -291,9 +273,9 @@ describe('document domain', () => {
     );
 
     it.each`
-      description                                               | serviceCapabilities            | expectedNames                                                  | expectedTotal
-      ${'hide the draft from a user without upload capability'} | ${[]}                          | ${['a-active', 'b-active', 'y-active', 'z-active']}            | ${4}
-      ${'return the draft to a user with upload capability'}    | ${[ServiceRestriction.Upload]} | ${['m-draft', 'a-active', 'b-active', 'y-active', 'z-active']} | ${5}
+      description                                                                           | serviceCapabilities            | expectedNames                                                                     | expectedTotal
+      ${'hide the draft and in validation documents from a user without upload capability'} | ${[]}                          | ${['a-active', 'b-active', 'y-active', 'z-active']}                               | ${4}
+      ${'return the draft and in validation documents to a user with upload capability'}    | ${[ServiceRestriction.Upload]} | ${['m-draft', 'n-in-validation', 'a-active', 'b-active', 'y-active', 'z-active']} | ${6}
     `(
       'should $description',
       async ({
@@ -580,7 +562,7 @@ describe('document domain', () => {
           type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
           service_instance_id: INTEGRATION_SERVICE_INSTANCE_ID,
           slug: `decoupling-connector-${connectorSlugCounter}`,
-          active: true,
+          status: DocumentStatus.Published,
           tags,
         });
         await TestHelper.documentMetadata.create({
@@ -707,7 +689,7 @@ describe('document domain', () => {
           name,
           type: OPENCTI_CUSTOM_VIEW_DOCUMENT_TYPE,
           service_instance_id: CUSTOM_VIEW_SERVICE_INSTANCE_ID,
-          active: true,
+          status: DocumentStatus.Published,
         });
         await TestHelper.documentMetadata.create({
           document_id: document.id,
@@ -790,10 +772,11 @@ describe('document domain', () => {
 
   describe('createDocument', () => {
     it.each`
-      typeOfDocument      | overwriteField                                                   | expected
-      ${'minimal fields'} | ${{}}                                                            | ${{}}
-      ${'uploader id'}    | ${{ uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID }} | ${{ uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID }}
-      ${'inactive'}       | ${{ active: false }}                                             | ${{ active: false }}
+      typeOfDocument            | overwriteField                                                   | expected
+      ${'minimal fields'}       | ${{}}                                                            | ${{}}
+      ${'uploader id'}          | ${{ uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID }} | ${{ uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID }}
+      ${'draft status'}         | ${{ status: DocumentStatus.Draft }}                              | ${{ status: DocumentStatus.Draft }}
+      ${'in validation status'} | ${{ status: DocumentStatus.InValidation }}                       | ${{ status: DocumentStatus.InValidation }}
     `(
       'it should create a document with $typeOfDocument',
       async ({ typeOfDocument, overwriteField, expected }) => {
@@ -818,7 +801,7 @@ describe('document domain', () => {
           slug: docData.slug,
           uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID,
           uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
-          active: true,
+          status: DocumentStatus.Published,
         };
 
         const expectedDocument = {
@@ -843,7 +826,7 @@ describe('document domain', () => {
         slug: 'doc-meta2',
         uploader_id: ADMIN_UUID,
         uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
-        active: true,
+        status: DocumentStatus.Published,
       });
 
       await TestHelper.documentMetadata.create({
@@ -886,21 +869,21 @@ describe('document domain', () => {
         slug: 'doc-one',
         uploader_id: ADMIN_UUID,
         uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
-        active: true,
+        status: DocumentStatus.Published,
       });
       doc2 = await TestHelper.document.create({
         name: 'Doc Two',
         slug: 'doc-two',
         uploader_id: ADMIN_UUID,
         uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
-        active: true,
+        status: DocumentStatus.Published,
       });
       doc3 = await TestHelper.document.create({
         name: 'Doc Three',
         slug: 'doc-three',
         uploader_id: ADMIN_UUID,
         uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
-        active: true,
+        status: DocumentStatus.Published,
       });
 
       await TestHelper.documentMetadata.create({
@@ -978,7 +961,7 @@ describe('document domain', () => {
         slug: 'doc-meta2',
         uploader_id: ADMIN_UUID,
         uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
-        active: true,
+        status: DocumentStatus.Published,
       });
 
       const uploader = await DocumentDomain.loadUploader(inserted.id);
@@ -1025,6 +1008,7 @@ describe('document domain', () => {
     let parentDoc: Document;
     let childDoc: Document;
     let inactiveDoc: Document;
+    let inValidationDoc: Document;
     let otherServiceDoc: Document;
 
     beforeEach(async () => {
@@ -1039,7 +1023,7 @@ describe('document domain', () => {
         uploader_id: ADMIN_UUID,
         uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
         service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
-        active: true,
+        status: DocumentStatus.Published,
         created_at: new Date('2023-01-01T10:00:00Z'),
         updated_at: new Date('2023-01-02T10:00:00Z'),
       });
@@ -1050,7 +1034,7 @@ describe('document domain', () => {
         uploader_id: ADMIN_UUID,
         uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
         service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
-        active: true,
+        status: DocumentStatus.Published,
         created_at: new Date('2023-01-01T11:00:00Z'),
         updated_at: new Date('2023-01-02T11:00:00Z'),
       });
@@ -1066,9 +1050,21 @@ describe('document domain', () => {
         uploader_id: ADMIN_UUID,
         uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
         service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
-        active: false,
+        status: DocumentStatus.Draft,
         created_at: new Date('2023-01-01T12:00:00Z'),
         updated_at: new Date('2023-01-02T12:00:00Z'),
+      });
+
+      inValidationDoc = await TestHelper.document.create({
+        name: 'In validation SEO Doc',
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        slug: 'in-validation-seo',
+        uploader_id: ADMIN_UUID,
+        uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+        service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
+        status: DocumentStatus.InValidation,
+        created_at: new Date('2023-01-01T12:30:00Z'),
+        updated_at: new Date('2023-01-02T12:30:00Z'),
       });
 
       otherServiceDoc = await TestHelper.document.create({
@@ -1078,7 +1074,7 @@ describe('document domain', () => {
         uploader_id: ADMIN_UUID,
         uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
         service_instance_id: SERVICES.INSTANCES.EPIC.ID,
-        active: true,
+        status: DocumentStatus.Published,
         created_at: new Date('2023-01-01T13:00:00Z'),
         updated_at: new Date('2023-01-02T13:00:00Z'),
       });
@@ -1099,10 +1095,23 @@ describe('document domain', () => {
       expect(docs).toHaveLength(1);
       expect(docs[0]).toMatchObject({
         id: parentDoc.id,
-        active: true,
+        status: DocumentStatus.Published,
         type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
         service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
       });
+    });
+
+    it('should not return in validation documents when loading the SEO documents', async () => {
+      // Given a published parent and an in validation document of the same service
+
+      // When
+      const docs = await DocumentDomain.loadSeoDocumentsByServiceSlug(
+        OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        TEST_SERVICE_SLUG
+      );
+
+      // Then
+      expect(docs.map((d: Document) => d.id)).not.toContain(inValidationDoc.id);
     });
 
     it('should not return child, inactive, or other-service documents', async () => {
@@ -1125,7 +1134,7 @@ describe('document domain', () => {
         uploader_id: ADMIN_UUID,
         uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
         service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
-        active: true,
+        status: DocumentStatus.Published,
         created_at: new Date('2023-01-01T14:00:00Z'),
         updated_at: new Date('2023-01-03T10:00:00Z'),
       });
@@ -1166,6 +1175,7 @@ describe('document domain', () => {
     let parentDoc: Document;
     let childDoc: Document;
     let inactiveDoc: Document;
+    let inValidationDoc: Document;
     let otherServiceDoc: Document;
 
     beforeEach(async () => {
@@ -1180,7 +1190,7 @@ describe('document domain', () => {
         uploader_id: ADMIN_UUID,
         uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
         service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
-        active: true,
+        status: DocumentStatus.Published,
         created_at: new Date('2023-01-01T10:00:00Z'),
         updated_at: new Date('2023-01-02T10:00:00Z'),
       });
@@ -1191,7 +1201,7 @@ describe('document domain', () => {
         uploader_id: ADMIN_UUID,
         uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
         service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
-        active: true,
+        status: DocumentStatus.Published,
         created_at: new Date('2023-01-01T11:00:00Z'),
         updated_at: new Date('2023-01-02T11:00:00Z'),
       });
@@ -1207,9 +1217,21 @@ describe('document domain', () => {
         uploader_id: ADMIN_UUID,
         uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
         service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
-        active: false,
+        status: DocumentStatus.Draft,
         created_at: new Date('2023-01-01T12:00:00Z'),
         updated_at: new Date('2023-01-02T12:00:00Z'),
+      });
+
+      inValidationDoc = await TestHelper.document.create({
+        name: 'In validation SEO Doc',
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        slug: 'in-validation-seo',
+        uploader_id: ADMIN_UUID,
+        uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+        service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
+        status: DocumentStatus.InValidation,
+        created_at: new Date('2023-01-01T12:30:00Z'),
+        updated_at: new Date('2023-01-02T12:30:00Z'),
       });
 
       otherServiceDoc = await TestHelper.document.create({
@@ -1219,7 +1241,7 @@ describe('document domain', () => {
         uploader_id: ADMIN_UUID,
         uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
         service_instance_id: SERVICES.INSTANCES.EPIC.ID,
-        active: true,
+        status: DocumentStatus.Published,
         created_at: new Date('2023-01-01T13:00:00Z'),
         updated_at: new Date('2023-01-02T13:00:00Z'),
       });
@@ -1243,6 +1265,19 @@ describe('document domain', () => {
         created_at: parentDoc.created_at,
         updated_at: parentDoc.updated_at,
       });
+    });
+
+    it('should not return in validation documents when loading the SEO slugs', async () => {
+      // Given a published parent and an in validation document of the same service
+
+      // When
+      const docs = await DocumentDomain.loadSeoDocumentSlugsByServiceSlug(
+        OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        TEST_SERVICE_SLUG
+      );
+
+      // Then
+      expect(docs.map(({ slug }) => slug)).not.toContain(inValidationDoc.slug);
     });
 
     it('should not return child, inactive, or other-service documents', async () => {
@@ -1343,10 +1378,11 @@ describe('document domain', () => {
 
     describe('when documentFilters are provided', () => {
       it.each`
-        description                             | filters                        | expectedCount
-        ${'active: true — matches'}             | ${{ active: true }}            | ${1}
-        ${'active: false — excludes'}           | ${{ active: false }}           | ${0}
-        ${'is_decommissioned: true — excludes'} | ${{ is_decommissioned: true }} | ${0}
+        description                             | filters                                    | expectedCount
+        ${'status: published — matches'}        | ${{ status: DocumentStatus.Published }}    | ${1}
+        ${'status: draft — excludes'}           | ${{ status: DocumentStatus.Draft }}        | ${0}
+        ${'status: in_validation — excludes'}   | ${{ status: DocumentStatus.InValidation }} | ${0}
+        ${'is_decommissioned: true — excludes'} | ${{ is_decommissioned: true }}             | ${0}
       `(
         'should apply scalar filter: $description',
         async ({
@@ -1392,36 +1428,37 @@ describe('document domain', () => {
       });
 
       it.each`
-        doc1Tags          | doc1Active | filterTags    | filterActive | expectedCount | description
-        ${['latest']}     | ${true}    | ${['latest']} | ${true}      | ${1}          | ${'tag matches, active matches'}
-        ${['latest']}     | ${false}   | ${['latest']} | ${true}      | ${0}          | ${'tag matches, active does not match'}
-        ${['latest_lts']} | ${true}    | ${['latest']} | ${true}      | ${0}          | ${'tag does not match, active matches'}
-        ${['latest_lts']} | ${false}   | ${['latest']} | ${true}      | ${0}          | ${'nothing matches'}
+        doc1Tags          | doc1Status                     | filterTags    | filterStatus                | expectedCount | description
+        ${['latest']}     | ${DocumentStatus.Published}    | ${['latest']} | ${DocumentStatus.Published} | ${1}          | ${'tag matches, status matches'}
+        ${['latest']}     | ${DocumentStatus.Draft}        | ${['latest']} | ${DocumentStatus.Published} | ${0}          | ${'tag matches, status does not match'}
+        ${['latest_lts']} | ${DocumentStatus.Published}    | ${['latest']} | ${DocumentStatus.Published} | ${0}          | ${'tag does not match, status matches'}
+        ${['latest']}     | ${DocumentStatus.InValidation} | ${['latest']} | ${DocumentStatus.Published} | ${0}          | ${'tag matches, status in validation does not match'}
+        ${['latest_lts']} | ${DocumentStatus.Draft}        | ${['latest']} | ${DocumentStatus.Published} | ${0}          | ${'nothing matches'}
       `(
         'should combine tag and scalar filters: $description',
         async ({
           doc1Tags,
-          doc1Active,
+          doc1Status,
           filterTags,
-          filterActive,
+          filterStatus,
           expectedCount,
         }: {
           doc1Tags: string[];
-          doc1Active: boolean;
+          doc1Status: DocumentStatus;
           filterTags: string[];
-          filterActive: boolean;
+          filterStatus: DocumentStatus;
           expectedCount: number;
         }) => {
           await TestHelper.document.update(
             { id: doc1.id },
-            { tags: doc1Tags, active: doc1Active }
+            { tags: doc1Tags, status: doc1Status }
           );
 
           const docs = await DocumentDomain.loadDocumentsByMetadata(
             TEST_KEY,
             TEST_VALUE,
             [],
-            { active: filterActive, tags: filterTags }
+            { status: filterStatus, tags: filterTags }
           );
           expect(docs).toHaveLength(expectedCount);
         }
@@ -1456,16 +1493,18 @@ describe('document domain', () => {
 
     it('should filter by multiple fields', async () => {
       // Given
-      const doc = await TestHelper.document.create({ active: true });
+      const doc = await TestHelper.document.create({
+        status: DocumentStatus.Published,
+      });
 
       // When
       const resultFound = await DocumentDomain.loadDocumentBy({
         id: doc.id,
-        active: true,
+        status: DocumentStatus.Published,
       });
       const resultNotFound = await DocumentDomain.loadDocumentBy({
         id: doc.id,
-        active: false,
+        status: DocumentStatus.Draft,
       });
 
       // Then
@@ -1490,7 +1529,7 @@ describe('document domain', () => {
         uploader_id: ADMIN_UUID,
         uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
         service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
-        active: true,
+        status: DocumentStatus.Published,
         created_at: new Date('2024-01-01T10:00:00Z'),
       });
       const newerDoc = await TestHelper.document.create({
@@ -1500,7 +1539,7 @@ describe('document domain', () => {
         uploader_id: ADMIN_UUID,
         uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
         service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
-        active: true,
+        status: DocumentStatus.Published,
         created_at: new Date('2025-01-01T10:00:00Z'),
       });
 
@@ -1521,7 +1560,7 @@ describe('document domain', () => {
         uploader_id: ADMIN_UUID,
         uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
         service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
-        active: true,
+        status: DocumentStatus.Published,
       });
       await TestHelper.document.create({
         name: 'Inactive document',
@@ -1530,7 +1569,7 @@ describe('document domain', () => {
         uploader_id: ADMIN_UUID,
         uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
         service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
-        active: false,
+        status: DocumentStatus.Draft,
       });
 
       // When
@@ -1539,6 +1578,34 @@ describe('document domain', () => {
       // Then
       expect(result).toHaveLength(1);
       expect(result[0]?.id).toBe(activeDoc.id);
+    });
+
+    it('should not return in validation documents when loading the newest documents', async () => {
+      // Given
+      const publishedDoc = await TestHelper.document.create({
+        name: 'Published document',
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        slug: 'published-document',
+        uploader_id: ADMIN_UUID,
+        uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+        service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
+        status: DocumentStatus.Published,
+      });
+      await TestHelper.document.create({
+        name: 'In validation document',
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        slug: 'in-validation-document',
+        uploader_id: ADMIN_UUID,
+        uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+        service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
+        status: DocumentStatus.InValidation,
+      });
+
+      // When
+      const result = await DocumentDomain.loadNewestDocuments(10);
+
+      // Then
+      expect(result.map(({ id }) => id)).toEqual([publishedDoc.id]);
     });
 
     it('should filter documents by documentTypes', async () => {
@@ -1550,7 +1617,7 @@ describe('document domain', () => {
         uploader_id: ADMIN_UUID,
         uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
         service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
-        active: true,
+        status: DocumentStatus.Published,
       });
       await TestHelper.document.create({
         name: 'Scenario document',
@@ -1559,7 +1626,7 @@ describe('document domain', () => {
         uploader_id: ADMIN_UUID,
         uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
         service_instance_id: SERVICES.INSTANCES.OPENAEV_SCENARIOS.ID,
-        active: true,
+        status: DocumentStatus.Published,
       });
 
       // When
@@ -1583,7 +1650,7 @@ describe('document domain', () => {
         uploader_id: ADMIN_UUID,
         uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
         service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
-        active: true,
+        status: DocumentStatus.Published,
       });
       await TestHelper.document.create({
         name: 'Service logo',
@@ -1592,7 +1659,7 @@ describe('document domain', () => {
         uploader_id: ADMIN_UUID,
         uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
         service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
-        active: true,
+        status: DocumentStatus.Published,
       });
 
       // When
@@ -1616,7 +1683,7 @@ describe('document domain', () => {
         uploader_id: ADMIN_UUID,
         uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
         service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
-        active: true,
+        status: DocumentStatus.Published,
         tags: [],
       });
       await TestHelper.document.create({
@@ -1626,7 +1693,7 @@ describe('document domain', () => {
         uploader_id: ADMIN_UUID,
         uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
         service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
-        active: true,
+        status: DocumentStatus.Published,
         tags: ['decoupling'],
       });
 
@@ -1663,14 +1730,14 @@ describe('document domain', () => {
       docWithThreatHunting = await TestHelper.document.create({
         slug: 'doc-alpha-uc-search',
         name: 'doc-alpha-uc-search',
-        active: true,
+        status: DocumentStatus.Published,
         uploader_id: ADMIN_UUID,
         uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
       });
       docWithIncidentResponse = await TestHelper.document.create({
         slug: 'doc-beta-uc-search',
         name: 'doc-beta-uc-search',
-        active: true,
+        status: DocumentStatus.Published,
         uploader_id: ADMIN_UUID,
         uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
       });
@@ -1746,14 +1813,14 @@ describe('document domain', () => {
       document = await TestHelper.document.create({
         slug: 'google-safe-browsing-search',
         name: MULTI_WORD_DOCUMENT_NAME,
-        active: true,
+        status: DocumentStatus.Published,
         uploader_id: ADMIN_UUID,
         uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
       });
       await TestHelper.document.create({
         slug: 'google-cloud-storage-search',
         name: OTHER_MULTI_WORD_DOCUMENT_NAME,
-        active: true,
+        status: DocumentStatus.Published,
         uploader_id: ADMIN_UUID,
         uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
       });
@@ -1802,7 +1869,7 @@ describe('document domain', () => {
       slug,
       version,
       minimumDeployableVersionPadded,
-      active = true,
+      status = DocumentStatus.Published,
       isDecommissioned = false,
       integrationType = IntegrationType.Connector,
     }: {
@@ -1810,12 +1877,12 @@ describe('document domain', () => {
       slug: string;
       version: string;
       minimumDeployableVersionPadded?: string;
-      active?: boolean;
+      status?: DocumentStatus;
       isDecommissioned?: boolean;
       integrationType?: IntegrationType;
     }) => {
       const doc = await TestHelper.document.create({
-        active,
+        status,
         is_decommissioned: isDecommissioned,
         slug,
         version,
@@ -1917,21 +1984,24 @@ describe('document domain', () => {
       expect(result).toHaveLength(0);
     });
 
-    it('excludes inactive connectors', async () => {
-      await createConnector({
-        manifestFragmentId: 'fragment-a',
-        slug: 'connector-a',
-        version: '7.260309.0',
-        active: false,
-      });
+    it.each([DocumentStatus.Draft, DocumentStatus.InValidation])(
+      'excludes the connectors whose status is %s',
+      async (status) => {
+        await createConnector({
+          manifestFragmentId: 'fragment-a',
+          slug: 'connector-a',
+          version: '7.260309.0',
+          status,
+        });
 
-      const result = await DocumentDomain.loadBestCompatibleConnectorsBySlugs(
-        ['connector-a'],
-        '7.260309.0'
-      );
+        const result = await DocumentDomain.loadBestCompatibleConnectorsBySlugs(
+          ['connector-a'],
+          '7.260309.0'
+        );
 
-      expect(result).toHaveLength(0);
-    });
+        expect(result).toHaveLength(0);
+      }
+    );
 
     it('excludes decommissioned connectors', async () => {
       await createConnector({
@@ -2181,20 +2251,20 @@ describe('document domain', () => {
     const createConnector = async ({
       slug,
       version,
-      active = true,
+      status = DocumentStatus.Published,
       isDecommissioned = false,
       integrationType = IntegrationType.Connector,
       tags = [TAG_LATEST, TAG_DECOUPLING],
     }: {
       slug: string;
       version: string;
-      active?: boolean;
+      status?: DocumentStatus;
       isDecommissioned?: boolean;
       integrationType?: IntegrationType;
       tags?: string[];
     }) => {
       const doc = await TestHelper.document.create({
-        active,
+        status,
         is_decommissioned: isDecommissioned,
         slug,
         version,
@@ -2261,18 +2331,21 @@ describe('document domain', () => {
       expect(result).toEqual(['connector-a']);
     });
 
-    it('excludes inactive connectors', async () => {
-      await createConnector({
-        slug: 'connector-a',
-        version: REQUESTED_PADDED_VERSION,
-        active: false,
-      });
+    it.each([DocumentStatus.Draft, DocumentStatus.InValidation])(
+      'excludes the connectors whose status is %s',
+      async (status) => {
+        await createConnector({
+          slug: 'connector-a',
+          version: REQUESTED_PADDED_VERSION,
+          status,
+        });
 
-      const result =
-        await DocumentDomain.loadDistinctConnectorSlugs(REQUESTED_VERSION);
+        const result =
+          await DocumentDomain.loadDistinctConnectorSlugs(REQUESTED_VERSION);
 
-      expect(result).toHaveLength(0);
-    });
+        expect(result).toHaveLength(0);
+      }
+    );
 
     it('excludes decommissioned connectors', async () => {
       await createConnector({
@@ -2459,7 +2532,7 @@ describe('document domain', () => {
         slug: `doc-${uuidv4()}`,
         uploader_id: ADMIN_UUID,
         service_instance_id: serviceInstanceId,
-        active: true,
+        status: DocumentStatus.Published,
       });
 
     beforeAll(async () => {
@@ -2545,7 +2618,7 @@ describe('document domain', () => {
         type: OPENCTI_CUSTOM_VIEW_DOCUMENT_TYPE,
         slug: `orphan-${uuidv4()}`,
         uploader_id: ADMIN_UUID,
-        active: true,
+        status: DocumentStatus.Published,
       });
 
       const ids = (await DocumentDomain.loadNewestDocuments(50)).map(
@@ -2598,7 +2671,7 @@ describe('document domain', () => {
         uploader_id: ADMIN_UUID,
         uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
         service_instance_id: INTEGRATION_SERVICE_INSTANCE_ID,
-        active: true,
+        status: DocumentStatus.Published,
         tags: [],
       };
 
