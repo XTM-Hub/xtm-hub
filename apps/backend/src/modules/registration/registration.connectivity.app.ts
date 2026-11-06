@@ -13,6 +13,7 @@ import PlatformConfiguration from '../../model/kanel/public/PlatformConfiguratio
 import { logApp } from '../../utils/app-logger.util';
 import { BadRequestErrorCode, ErrorCode } from '../../utils/error/error.code';
 import { RequiredPlatformVersions } from '../../utils/required-platform-version';
+import { isUuid } from '../../utils/uuid.util';
 import { doesVersionSatisfy, isValidVersion } from '../../utils/versioning';
 import { NewsFeedApp } from '../news-feed/news-feed.app';
 import {
@@ -45,6 +46,10 @@ const handleTenantUpgrade = async ({
   tenant_id: string;
   tenant_name: string;
 }): Promise<PlatformConfiguration | null> => {
+  if (!isUuid(tenant_id)) {
+    return null;
+  }
+
   const resolvedConfigWithoutTenant =
     await PlatformConfigurationDomain.loadResolvedConfigurationByPlatformAndToken(
       {

@@ -14,10 +14,19 @@ import {
   PLATFORM_ID_HEADER,
   PLATFORM_TOKEN_HEADER,
 } from '../../../modules/security-management/token/platform-token.util';
+import { ErrorCode } from '../../../utils/error/error.code';
+import { ErrorType } from '../../../utils/error/error.type';
 import { createPlatformTokenResolver } from './platform-token-validator';
 
 const platformId = uuidv4();
 const platformToken = uuidv4();
+
+const INVALID_PLATFORM_TOKEN_ERROR = {
+  name: ErrorType.ForbiddenAccess,
+  message: 'Invalid platform token provided',
+  _logLevel: 'warn',
+  extensions: { code: ErrorCode.InvalidPlatformToken },
+};
 
 const validHeaders = {
   [PLATFORM_TOKEN_HEADER]: platformToken,
@@ -57,8 +66,8 @@ describe('createPlatformTokenResolver', () => {
       const resolver = createPlatformTokenResolver(vi.fn());
       const context = makePortalContext({ [PLATFORM_ID_HEADER]: platformId });
 
-      await expect(runResolver(resolver, context)).rejects.toThrow(
-        'Invalid platform token provided'
+      await expect(runResolver(resolver, context)).rejects.toMatchObject(
+        INVALID_PLATFORM_TOKEN_ERROR
       );
     });
 
@@ -68,8 +77,8 @@ describe('createPlatformTokenResolver', () => {
         [PLATFORM_TOKEN_HEADER]: platformToken,
       });
 
-      await expect(runResolver(resolver, context)).rejects.toThrow(
-        'Invalid platform token provided'
+      await expect(runResolver(resolver, context)).rejects.toMatchObject(
+        INVALID_PLATFORM_TOKEN_ERROR
       );
     });
 
@@ -146,9 +155,33 @@ describe('createPlatformTokenResolver', () => {
       const resolver = createPlatformTokenResolver(vi.fn());
       const context = makePortalContext(validHeaders);
 
-      await expect(runResolver(resolver, context)).rejects.toThrow(
-        'Invalid token provided'
+      await expect(runResolver(resolver, context)).rejects.toMatchObject(
+        INVALID_PLATFORM_TOKEN_ERROR
       );
+    });
+
+    it('should throw an organization not found error when the deployment request organization no longer exists', async () => {
+      // Given
+      vi.spyOn(
+        DeploymentRequestDomain,
+        'loadDeploymentRequestBy'
+      ).mockResolvedValue({
+        platform_id: platformId,
+        organization_requester_id: uuidv4(),
+      } as unknown as DeploymentRequest);
+      vi.spyOn(OrganizationDomain, 'loadOrganizationBy').mockResolvedValue(
+        undefined
+      );
+      const resolver = createPlatformTokenResolver(vi.fn());
+      const context = makePortalContext(validHeaders);
+
+      // When
+      const call = runResolver(resolver, context);
+
+      // Then
+      await expect(call).rejects.toMatchObject({
+        message: ErrorCode.OrganizationNotFound,
+      });
     });
   });
 });

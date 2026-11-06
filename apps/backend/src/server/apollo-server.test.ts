@@ -1,5 +1,8 @@
 import { ApolloServer } from '@apollo/server';
+import { makeExecutableSchema } from '@graphql-tools/schema';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { ErrorCode, UnknownErrorCode } from '../utils/error/error.code';
+import { ForbiddenAccess } from '../utils/error/error.util';
 import { Context } from './apollo-plugins/log';
 import { createApolloServer } from './apollo-server';
 import createSchema from './graphql-schema';
@@ -63,6 +66,34 @@ const SCHEMA_PROBES = [
 ];
 
 const INTROSPECTION_QUERY = '{ __schema { queryType { name } } }';
+
+const DATABASE_ERROR_MESSAGE = 'invalid input syntax for type uuid: "x"';
+const CUSTOM_APOLLO_ERROR_MESSAGE = 'Invalid platform token provided';
+
+const FAILING_SCHEMA = makeExecutableSchema({
+  typeDefs: `type Query {
+    databaseError: Boolean
+    errorCode: Boolean
+    unknownErrorCode: Boolean
+    customApolloError: Boolean
+  }`,
+  resolvers: {
+    Query: {
+      databaseError: () => {
+        throw new Error(DATABASE_ERROR_MESSAGE);
+      },
+      errorCode: () => {
+        throw new Error(ErrorCode.InvalidPlatformToken);
+      },
+      unknownErrorCode: () => {
+        throw new Error(UnknownErrorCode.EditOrganizationError);
+      },
+      customApolloError: () => {
+        throw ForbiddenAccess(CUSTOM_APOLLO_ERROR_MESSAGE);
+      },
+    },
+  },
+});
 
 const execute = async (
   server: ApolloServer<Context>,
@@ -190,5 +221,72 @@ describe('createApolloServer', () => {
       // Then
       expect(result.errors?.[0].extensions).toHaveProperty('stacktrace');
     });
+  });
+
+  describe('when a resolver fails', () => {
+    const hiddenServer = createApolloServer({
+      schema: FAILING_SCHEMA,
+      exposeSchemaDetails: false,
+    });
+    const exposedServer = createApolloServer({
+      schema: FAILING_SCHEMA,
+      exposeSchemaDetails: true,
+    });
+
+    beforeAll(async () => {
+      await Promise.all([hiddenServer.start(), exposedServer.start()]);
+    });
+
+    afterAll(async () => {
+      await Promise.all([hiddenServer.stop(), exposedServer.stop()]);
+    });
+
+    it.each([
+      { exposure: 'hidden', server: hiddenServer },
+      { exposure: 'exposed', server: exposedServer },
+    ])(
+      'should hide an unexpected error from the client when the schema details are $exposure',
+      async ({ server }) => {
+        // Given / When
+        const result = await execute(server, '{ databaseError }');
+
+        // Then
+        expect(result.errors).toEqual([
+          {
+            message: UnknownErrorCode.UnknownError,
+            locations: [{ line: 1, column: 3 }],
+            path: ['databaseError'],
+            extensions: { code: UnknownErrorCode.UnknownError },
+          },
+        ]);
+      }
+    );
+
+    it.each([
+      {
+        name: 'an error code',
+        field: 'errorCode',
+        message: ErrorCode.InvalidPlatformToken,
+      },
+      {
+        name: 'an unknown error code',
+        field: 'unknownErrorCode',
+        message: UnknownErrorCode.EditOrganizationError,
+      },
+      {
+        name: 'an apollo-errors error',
+        field: 'customApolloError',
+        message: CUSTOM_APOLLO_ERROR_MESSAGE,
+      },
+    ])(
+      'should send its message to the client when a resolver throws $name',
+      async ({ field, message }) => {
+        // Given / When
+        const result = await execute(hiddenServer, `{ ${field} }`);
+
+        // Then
+        expect(result.errors?.[0]).toMatchObject({ message });
+      }
+    );
   });
 });

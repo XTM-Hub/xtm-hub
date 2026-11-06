@@ -15,6 +15,29 @@ import { ServiceInstanceId } from '../../../model/kanel/public/ServiceInstance';
 import { UserId } from '../../../model/kanel/public/User';
 import { PlatformConfigurationDomain } from './platform-configuration.domain';
 
+const NON_UUID_CREDENTIALS = [
+  {
+    name: 'a platform id "x"',
+    credentials: { platform_id: 'x', token: uuidv4() },
+  },
+  {
+    name: 'a token "not-a-uuid"',
+    credentials: { platform_id: uuidv4(), token: 'not-a-uuid' },
+  },
+  {
+    name: 'an empty platform id',
+    credentials: { platform_id: '', token: uuidv4() },
+  },
+  {
+    name: 'a tenant id "not-a-uuid"',
+    credentials: {
+      platform_id: uuidv4(),
+      token: uuidv4(),
+      tenant_id: 'not-a-uuid',
+    },
+  },
+];
+
 describe('platformConfigurationDomain', () => {
   describe('isPlatformConfigurationValid', () => {
     it('returns true for valid platform configuration', async () => {
@@ -215,6 +238,33 @@ describe('platformConfigurationDomain', () => {
         platform_id: platformId,
         token,
       });
+    });
+
+    it.each(NON_UUID_CREDENTIALS)(
+      'should return undefined when given $name',
+      async ({ credentials }) => {
+        // When
+        const call =
+          PlatformConfigurationDomain.loadConfigurationByPlatformAndToken(
+            credentials
+          );
+
+        // Then
+        await expect(call).resolves.toBeUndefined();
+      }
+    );
+
+    it('should return undefined when the tenant id is empty, even for a matching platform and token', async () => {
+      // When
+      const call =
+        PlatformConfigurationDomain.loadConfigurationByPlatformAndToken({
+          platform_id: platformId,
+          token,
+          tenant_id: '',
+        });
+
+      // Then
+      await expect(call).resolves.toBeUndefined();
     });
   });
 
@@ -500,5 +550,19 @@ describe('platformConfigurationDomain', () => {
       expect(resolvedMatching?.platformConfiguration.tenant_id).toBe(tenantId);
       expect(resolvedMismatch).toBeUndefined();
     });
+
+    it.each(NON_UUID_CREDENTIALS)(
+      'should return undefined when given $name',
+      async ({ credentials }) => {
+        // When
+        const call =
+          PlatformConfigurationDomain.loadResolvedConfigurationByPlatformAndToken(
+            credentials
+          );
+
+        // Then
+        await expect(call).resolves.toBeUndefined();
+      }
+    );
   });
 });
