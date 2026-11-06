@@ -113,6 +113,7 @@ export const IntegrationProductVersionFilter = ({
 
   return (
     <AppCombobox<ProductVersionOption>
+      analyticsId="resource_product_versions_open"
       label={label}
       labelPosition="none"
       placeholder={placeholder}

@@ -6,6 +6,7 @@ import { useFormField } from '@/components/ui/form';
 import { SelectField } from '@/components/ui/SelectField';
 import { SheetFooter } from '@/components/ui/sheet';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { Button } from '@filigran/design-system';
 import { CompetitorRowFragment, CompetitorTier } from '@graphql/generated';
 import { ControllerRenderProps, FieldValues } from 'react-hook-form';
@@ -41,6 +42,7 @@ const TierField = ({
 
   return (
     <SelectField
+      formField
       label={t('CompetitorForm.Tier')}
       required
       placeholder={t('CompetitorForm.Tier')}
@@ -100,10 +102,13 @@ const CompetitorForm = ({
           <Button
             priority="secondary"
             type="button"
+            {...analyticsId('admin_form_cancel')}
             onClick={onClose}>
             {t('Utils.Cancel')}
           </Button>
-          <Button type="submit">
+          <Button
+            type="submit"
+            {...analyticsId('admin_competitor_form_submit')}>
             {isCreation
               ? t('CompetitorForm.AddButton')
               : t('CompetitorForm.EditButton')}

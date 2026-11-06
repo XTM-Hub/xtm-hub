@@ -2,6 +2,7 @@ import { DeleteEpicMutation } from '@/components/epic/epic.graphql';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsEpic } from '@/lib/analytics/analytics.context';
 import { epic_fragment$data } from '@generated/epic_fragment.graphql';
 import { epicDeleteMutation } from '@generated/epicDeleteMutation.graphql';
 import { useMutation } from 'react-relay';
@@ -43,6 +44,8 @@ export const DeleteEpic = ({
   };
   return (
     <ConfirmDialog
+      analyticsContext={analyticsEpic(epic.title)}
+      confirmAnalyticsId="roadmap_epic_deletion_confirm"
       confirmLabel={t('Utils.Delete')}
       destructive
       title={t('Epic.EpicActions.DeleteEpic', { epicName: epic.title })}

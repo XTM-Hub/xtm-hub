@@ -20,6 +20,7 @@ export const EpicItemCard = ({
 
   return (
     <DetailCard
+      analyticsId="roadmap_epic_open"
       onOpenDetail={openDetail}
       title={epic.title}
       description={epic.short_description}

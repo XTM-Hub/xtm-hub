@@ -1,4 +1,5 @@
 import EeLearnMoreSheet from '@/components/service/document/one-click-deploy/EeLearnMoreSheet';
+import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 import { readTrackedEvents, startAnalytics } from '@/utils/test/analytics';
 import testRender from '@/utils/test/test-render';
 import { PlatformIdentifier } from '@graphql/generated';
@@ -17,6 +18,11 @@ vi.mock('@graphql/generated', async (importOriginal) => ({
 
 const MESSAGE_LABEL =
   'Service.ShareableResources.Deploy.EELearnMore.InterestedTitle';
+const RESOURCE = {
+  id: 'resource-id',
+  name: 'Resource name',
+  type: ShareableResourceType.OPENAEV_SCENARIO,
+};
 const SEND_LABEL = 'Service.ShareableResources.Deploy.EELearnMore.SendButton';
 
 const renderSheet = () =>
@@ -25,6 +31,7 @@ const renderSheet = () =>
       open
       setOpen={vi.fn()}
       platformIdentifier={PlatformIdentifier.Openaev}
+      resource={RESOURCE}
     />
   );
 

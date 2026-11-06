@@ -27,6 +27,7 @@ import {
 import { useDebouncedSearch } from '@/hooks/use-debounced-search';
 import { useTablePagination } from '@/hooks/use-table-pagination';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { getDataTableLabels } from '@/utils/design-system/data-table';
 import { IconButton, SearchField } from '@filigran/design-system';
 import { CheckIcon, CloseIcon } from '@filigran/icon';
@@ -207,6 +208,7 @@ const PendingUserList = ({ organization }: PendingUserListProps) => {
                 variant="destructive"
                 priority="tertiary"
                 className="border"
+                {...analyticsId('organization_join_request_delete')}
                 aria-label={t('PendingUserListPage.Reject')}
                 icon={<CloseIcon className="h-4 w-4" />}
                 onClick={() => openRejectDialog(row.original)}
@@ -214,6 +216,7 @@ const PendingUserList = ({ organization }: PendingUserListProps) => {
               <IconButton
                 priority="tertiary"
                 className="border"
+                {...analyticsId('organization_join_request_confirm')}
                 aria-label={t('PendingUserListPage.Approve')}
                 icon={<CheckIcon className="h-4 w-4" />}
                 onClick={() => openApproveDialog(row.original)}
@@ -299,6 +302,7 @@ const PendingUserList = ({ organization }: PendingUserListProps) => {
             actions: ({ selectionState }) => (
               <>
                 <ConfirmDialog
+                  confirmAnalyticsId="organization_join_requests_rejection_confirm"
                   title={t('PendingUserListPage.WarningUsersRejection.Title')}
                   confirmLabel={t(
                     'PendingUserListPage.WarningUsersRejection.Confirm'
@@ -308,6 +312,7 @@ const PendingUserList = ({ organization }: PendingUserListProps) => {
                       variant="destructive"
                       priority="tertiary"
                       className="border"
+                      {...analyticsId('organization_join_requests_delete')}
                       aria-label={t('PendingUserListPage.Reject')}
                       icon={<CloseIcon className="h-4 w-4" />}
                     />
@@ -316,6 +321,7 @@ const PendingUserList = ({ organization }: PendingUserListProps) => {
                   {t('PendingUserListPage.WarningUsersRejection.Description')}
                 </ConfirmDialog>
                 <ConfirmDialog
+                  confirmAnalyticsId="organization_join_requests_approval_confirm"
                   title={t('PendingUserListPage.WarningUsersAccept.Title')}
                   confirmLabel={t(
                     'PendingUserListPage.WarningUsersAccept.Confirm'
@@ -324,6 +330,7 @@ const PendingUserList = ({ organization }: PendingUserListProps) => {
                     <IconButton
                       priority="tertiary"
                       className="border"
+                      {...analyticsId('organization_join_requests_confirm')}
                       aria-label={t('PendingUserListPage.Approve')}
                       icon={<CheckIcon className="h-4 w-4" />}
                     />

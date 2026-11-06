@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 
 const METRICS_DOCUMENTATION_URL =
   'https://app.notion.com/p/filigran/Handle-metrics-in-XTM-Hub-4098fce17f2a80319c0cc375ad654e10';
@@ -11,6 +12,7 @@ export const SaasListTourDocumentation = () => {
   return t.rich('CSMBoard.Tour.FullDocumentation', {
     link: (chunks) => (
       <a
+        {...analyticsId('admin_saas_metrics_documentation_open')}
         href={METRICS_DOCUMENTATION_URL}
         target="_blank"
         rel="noopener noreferrer"

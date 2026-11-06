@@ -6,6 +6,8 @@ import {
   ServiceDefinitionIdentifierToPlatformIdentifier,
 } from '@/components/registration/PlatformIdentifierMapping';
 import { UseTranslationsProps } from '@/i18n/config';
+import { analyticsProduct } from '@/lib/analytics/analytics.context';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { registeredPlatformDetailPath } from '@/utils/path/registered-platform-detail-path';
 import { Chip, IconButton } from '@filigran/design-system';
 import { LinkIcon, TextSnippetIcon } from '@filigran/icon';
@@ -33,7 +35,9 @@ export const ConnectedProductItem = ({
   });
 
   return (
-    <div className="hover:cursor-default flex min-h-12 w-full items-center gap-3">
+    <div
+      {...(platformIdentifier && analyticsProduct(platformIdentifier))}
+      className="hover:cursor-default flex min-h-12 w-full items-center gap-3">
       <div className="flex min-w-0 flex-1 items-center gap-2">
         {platformMeta?.Icon && (
           <platformMeta.Icon className="h-6 w-6 shrink-0" />
@@ -59,7 +63,10 @@ export const ConnectedProductItem = ({
             aria-label={t('Header.ConnectedProducts.Details')}
             icon={<TextSnippetIcon className="h-4 w-4 shrink-0" />}
             asChild>
-            <Link href={detailPath} />
+            <Link
+              {...analyticsId('platform_details_open')}
+              href={detailPath}
+            />
           </IconButton>
         )}
         {platform.url && (
@@ -73,6 +80,7 @@ export const ConnectedProductItem = ({
             icon={<LinkIcon className="h-4 w-4 shrink-0" />}
             asChild>
             <Link
+              {...analyticsId('platform_instance_open')}
               href={platform.url}
               target="_blank"
               rel="noopener noreferrer"

@@ -22,6 +22,7 @@ import { BundleCancelSheet } from '@/components/service/trial-instances/xtm-plat
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { trackEvent } from '@/lib/analytics/analytics.client';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { Button } from '@filigran/design-system';
 import { xtmPlatformBundleKeys } from '@graphql/deployment/deployment.keys';
@@ -116,6 +117,7 @@ export const PrivateXtmPlatformTrialPanel = ({
 
     const actions = isInProgress ? (
       <Button
+        {...analyticsId('trial_cancellation_open')}
         variant="destructive"
         priority="secondary"
         onClick={() => setIsCancelSheetOpen(true)}>

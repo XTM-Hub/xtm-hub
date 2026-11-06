@@ -3,6 +3,7 @@
 import { Skeleton } from '@/components/ui/skeleton';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { computePeriodProgress, useDateFormatter } from '@/utils/date';
 import {
   Icon,
@@ -73,6 +74,7 @@ export const RegistrationMetadata = ({
               <Tooltip delayDuration={50}>
                 <TooltipTrigger asChild>
                   <IconButton
+                    {...analyticsId('platform_hostname_copy')}
                     priority="tertiary"
                     size="sm"
                     className="ml-1"

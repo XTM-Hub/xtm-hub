@@ -3,6 +3,10 @@
 import { AppCombobox } from '@/components/ui/AppCombobox';
 import { Form, FormField } from '@/components/ui/form';
 import { useTranslate } from '@/hooks/use-translate';
+import {
+  type AnalyticsElementId,
+  analyticsId,
+} from '@/lib/analytics/analytics.ids';
 import { toComboboxOptionIds } from '@/utils/design-system/combobox';
 import { Button } from '@filigran/design-system';
 import { PlatformIdentifier } from '@graphql/generated';
@@ -33,6 +37,7 @@ interface TrialUserFormSkeletonProps {
   mixedRoleDefaults?: Partial<Record<PlatformIdentifier, MixedRoleDefault>>;
   onCancel: () => void;
   isPending: boolean;
+  submitAnalyticsId: AnalyticsElementId;
 }
 
 export const TrialUserFormSkeleton = ({
@@ -49,6 +54,7 @@ export const TrialUserFormSkeleton = ({
   mixedRoleDefaults,
   onCancel,
   isPending,
+  submitAnalyticsId,
 }: TrialUserFormSkeletonProps) => {
   const t = useTranslate();
   const userIds = useWatch({ control: form.control, name: 'userIds' });
@@ -80,6 +86,7 @@ export const TrialUserFormSkeleton = ({
           render={({ field, fieldState }) => (
             <div className="flex flex-col gap-2">
               <AppCombobox
+                formField
                 multiple
                 label={pickerLabel || pickerPlaceholder}
                 labelPosition={pickerLabel ? 'top' : 'none'}
@@ -121,12 +128,14 @@ export const TrialUserFormSkeleton = ({
 
         <div className="flex justify-end gap-2">
           <Button
+            {...analyticsId('trial_user_form_cancel')}
             priority="secondary"
             type="button"
             onClick={onCancel}>
             {t('Utils.Cancel')}
           </Button>
           <Button
+            {...analyticsId(submitAnalyticsId)}
             type="submit"
             disabled={
               userIds.length === 0 || isPending || hasUnresolvedMixedRole

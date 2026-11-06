@@ -1,3 +1,7 @@
+import {
+  analyticsId,
+  type AnalyticsFieldProps,
+} from '@/lib/analytics/analytics.ids';
 import { cn } from '@/lib/utils';
 import {
   Select,
@@ -16,7 +20,7 @@ export interface SelectFieldOption {
   label: ReactNode;
 }
 
-export interface SelectFieldProps extends Pick<
+interface SelectFieldBaseProps extends Pick<
   SelectProps,
   'value' | 'defaultValue' | 'onValueChange' | 'disabled'
 > {
@@ -35,6 +39,8 @@ export interface SelectFieldProps extends Pick<
   contentClassName?: string;
 }
 
+export type SelectFieldProps = SelectFieldBaseProps & AnalyticsFieldProps;
+
 export const SelectField = ({
   label,
   required,
@@ -43,6 +49,8 @@ export const SelectField = ({
   error,
   triggerClassName,
   contentClassName = 'layer-1',
+  analyticsId: elementId,
+  formField: _formField,
   ...selectProps
 }: SelectFieldProps) => (
   // The root renders no element: this div keeps its parts together inside a
@@ -52,7 +60,9 @@ export const SelectField = ({
       {...selectProps}
       error={Boolean(error)}>
       <SelectLabel required={required}>{label}</SelectLabel>
-      <SelectTrigger className={cn('w-full', triggerClassName)}>
+      <SelectTrigger
+        {...(elementId && analyticsId(elementId))}
+        className={cn('w-full', triggerClassName)}>
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
       <SelectContent className={contentClassName}>

@@ -20,6 +20,11 @@ import BadgeOverflowCounter, {
 } from '@/components/ui/BadgeOverflowCounter';
 import { DisabledActionTooltip } from '@/components/ui/DisabledActionTooltip';
 import { ShareLinkButton } from '@/components/ui/share-link/ShareLinkButton';
+import {
+  analyticsResource,
+  toAnalyticsResourceData,
+} from '@/lib/analytics/analytics.context';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { cn } from '@/lib/utils';
 import { filterDocumentImages, findDocumentLogo } from '@/utils/documents';
 import { getResourcePageFiligranWebsiteUtm } from '@/utils/filigran-website-utm';
@@ -65,8 +70,12 @@ const ShareableResourceConnectorSlug = ({
   const carouselImages = filterDocumentImages(documentData);
   const logo = findDocumentLogo(documentData);
 
+  const resource = toAnalyticsResourceData(documentData);
+
   return (
-    <>
+    <div
+      className="contents"
+      {...analyticsResource(resource)}>
       <BreadcrumbNav value={breadcrumbValue} />
       {canClickOnDeployButton ? (
         <DeployableResourceViewTracker
@@ -124,6 +133,7 @@ const ShareableResourceConnectorSlug = ({
 
             <div className="ml-auto flex gap-2">
               <ShareLinkButton
+                analyticsId="resource_share"
                 documentId={documentData.id}
                 onShare={incrementShareNumber}
                 url={shareUrl}
@@ -163,6 +173,7 @@ const ShareableResourceConnectorSlug = ({
       </div>
       <ShareableResourceCarousel
         serviceInstance={serviceInstance}
+        resource={resource}
         images={carouselImages}
         className="mt-4"
       />
@@ -171,6 +182,7 @@ const ShareableResourceConnectorSlug = ({
           <InfoIcon className="shrink-0 h-4 w-4 mr-1 text-icon-info" />
           {t('Service.Connectors.ImproveIntegrationPrefix')}
           <Link
+            {...analyticsId('resource_repository_open')}
             href={manifest_url}
             target="_blank"
             className="underline">
@@ -197,7 +209,7 @@ const ShareableResourceConnectorSlug = ({
           )}
         />
       </div>
-    </>
+    </div>
   );
 };
 

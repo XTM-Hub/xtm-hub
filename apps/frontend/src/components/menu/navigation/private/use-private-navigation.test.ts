@@ -181,6 +181,7 @@ describe('usePrivateNavigation', () => {
     expect(result.current.bottomLinks).toEqual([
       {
         key: 'filigran-academy',
+        analyticsId: 'nav_academy_open',
         href: 'https://academy.filigran.io/',
         icon: expect.any(Function),
         label: 'FiligranAcademy',
@@ -188,6 +189,7 @@ describe('usePrivateNavigation', () => {
       },
       {
         key: 'filigran-blog',
+        analyticsId: 'nav_blog_open',
         href: 'https://filigran.io/blog?utm_source=xtm_hub&utm_medium=referral&utm_campaign=sidebar&utm_content=blog',
         icon: expect.any(Function),
         label: 'Blog',
@@ -195,6 +197,7 @@ describe('usePrivateNavigation', () => {
       },
       {
         key: 'slack',
+        analyticsId: 'nav_slack_join',
         href: 'https://filigran-community.slack.com',
         icon: expect.any(Function),
         label: 'Slack',
@@ -202,6 +205,7 @@ describe('usePrivateNavigation', () => {
       },
       {
         key: 'xtm-platform-trial',
+        analyticsId: 'nav_trial_open',
         href: `/${APP_PATH}/service/xtm-platform-trial`,
         icon: expect.any(Function),
         label: 'XTMPlatformTrial',
@@ -242,6 +246,7 @@ describe('usePrivateNavigation', () => {
       href: XTM_ONE_LIVE_DEMO_URL,
       label: 'LiveDemo',
       external: true,
+      analyticsId: 'nav_live_demo_open',
     });
   });
 
@@ -257,6 +262,7 @@ describe('usePrivateNavigation', () => {
       href: XTM_ONE_DOCUMENTATION_URL,
       label: 'Documentation',
       external: true,
+      analyticsId: 'nav_documentation_open',
     });
   });
 
@@ -364,6 +370,7 @@ describe('usePrivateNavigation', () => {
 
     expect(result.current.bottomLinks).toContainEqual({
       key: 'xtm-platform-roadmap',
+      analyticsId: 'nav_roadmap_open',
       href: roadmapHref,
       icon: expect.any(Function),
       label: 'XTMRoadmap',
@@ -387,6 +394,7 @@ describe('usePrivateNavigation', () => {
     expect(result.current.bottomLinks).toEqual([
       {
         key: 'filigran-academy',
+        analyticsId: 'nav_academy_open',
         href: 'https://academy.filigran.io/',
         icon: expect.any(Function),
         label: 'FiligranAcademy',
@@ -394,6 +402,7 @@ describe('usePrivateNavigation', () => {
       },
       {
         key: 'filigran-blog',
+        analyticsId: 'nav_blog_open',
         href: 'https://filigran.io/blog?utm_source=xtm_hub&utm_medium=referral&utm_campaign=sidebar&utm_content=blog',
         icon: expect.any(Function),
         label: 'Blog',
@@ -401,6 +410,7 @@ describe('usePrivateNavigation', () => {
       },
       {
         key: 'slack',
+        analyticsId: 'nav_slack_join',
         href: 'https://filigran-community.slack.com',
         icon: expect.any(Function),
         label: 'Slack',
@@ -408,6 +418,7 @@ describe('usePrivateNavigation', () => {
       },
       {
         key: 'xtm-platform-trial',
+        analyticsId: 'nav_trial_open',
         href: `/${APP_PATH}/service/xtm-platform-trial`,
         icon: expect.any(Function),
         label: 'XTMPlatformTrial',
@@ -526,10 +537,12 @@ describe('usePrivateNavigation', () => {
     expect(openctiSection?.links[0]).toEqual({
       label: 'MyProduct',
       badge: '1',
+      analyticsId: 'nav_my_products_section_toggle',
       subLinks: [
         {
           label: 'OpenCTI Production Platform',
           href: '/app/service/opencti_registration/opencti-service-instance-id',
+          analyticsId: 'nav_connected_platform_open',
           tooltip: 'https://opencti.example.com',
         },
       ],
@@ -538,10 +551,12 @@ describe('usePrivateNavigation', () => {
     expect(openaevSection?.links[0]).toEqual({
       label: 'MyProduct',
       badge: '1',
+      analyticsId: 'nav_my_products_section_toggle',
       subLinks: [
         {
           label: 'OpenAEV Production Platform',
           href: '/app/service/openaev_registration/openaev-service-instance-id',
+          analyticsId: 'nav_connected_platform_open',
           tooltip: 'https://openaev.example.com',
         },
       ],
@@ -572,10 +587,12 @@ describe('usePrivateNavigation', () => {
     expect(xtmOneSection?.links[0]).toEqual({
       label: 'MyProduct',
       badge: '1',
+      analyticsId: 'nav_my_products_section_toggle',
       subLinks: [
         {
           label: 'XTM One Production Platform',
           href: '/app/service/xtmone_registration/xtmone-service-instance-id',
+          analyticsId: 'nav_connected_platform_open',
           tooltip: 'https://xtmone.example.com',
         },
       ],

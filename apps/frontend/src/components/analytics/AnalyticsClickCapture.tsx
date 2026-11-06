@@ -2,6 +2,7 @@
 
 import {
   buildClickParams,
+  buildSelectItemParams,
   findTrackedElement,
 } from '@/lib/analytics/analytics.click';
 import { trackEvent } from '@/lib/analytics/analytics.client';
@@ -22,8 +23,13 @@ const AnalyticsClickCapture = ({ pageType }: AnalyticsClickCaptureProps) => {
   useEffect(() => {
     const onClick = (event: MouseEvent) => {
       const tracked = findTrackedElement(event.target);
-      if (tracked) {
-        trackEvent('ui_click', buildClickParams(tracked, pageTypeRef.current));
+      if (!tracked) {
+        return;
+      }
+      trackEvent('ui_click', buildClickParams(tracked, pageTypeRef.current));
+      const selectItem = buildSelectItemParams(tracked, pageTypeRef.current);
+      if (selectItem) {
+        trackEvent('select_item', selectItem);
       }
     };
 

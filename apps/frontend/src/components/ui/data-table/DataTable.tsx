@@ -1,6 +1,11 @@
 'use client';
 
 import { Skeleton } from '@/components/ui/skeleton';
+import { type AnalyticsContextAttributes } from '@/lib/analytics/analytics.context';
+import {
+  analyticsId,
+  type AnalyticsElementId,
+} from '@/lib/analytics/analytics.ids';
 import { cn } from '@/lib/utils';
 import {
   DndContext,
@@ -107,6 +112,8 @@ export interface DataTableProps<
   tableState?: Partial<TableState>;
   tableOptions?: Partial<TableOptions<TData>>;
   onClickRow?: (row: Row<TData>) => void;
+  getRowAnalyticsId?: (row: Row<TData>) => AnalyticsElementId | undefined;
+  getRowAnalyticsResource?: (row: Row<TData>) => AnalyticsContextAttributes;
   isLoading?: boolean;
   onResetTable?: () => void;
   selectionOptions?: DataTableSelectionOptions;
@@ -162,6 +169,7 @@ const SelectAllHeader = <TData,>({ table }: HeaderContext<TData, unknown>) => {
       : false;
   return (
     <Checkbox
+      {...analyticsId('list_all_rows_selection_toggle')}
       checked={checked}
       onCheckedChange={() => selectionHandlers.toggleSelectAll()}
       aria-label={labels.selectAllLabel}
@@ -173,6 +181,7 @@ const SelectRowCell = <TData,>({ row }: CellContext<TData, unknown>) => {
   const { labels, selectionHandlers } = useDataTableContext<TData>();
   return (
     <Checkbox
+      {...analyticsId('list_row_selection_toggle')}
       checked={selectionHandlers.isRowSelected(row)}
       onClick={(event) => event.stopPropagation()}
       onCheckedChange={() => selectionHandlers.toggleRow(row)}
@@ -203,6 +212,7 @@ const DataTableMenu = () => {
     <Menu>
       <MenuTrigger asChild>
         <IconButton
+          {...analyticsId('list_settings_open')}
           priority="tertiary"
           aria-label={labels.manageColumnsLabel}
           icon={
@@ -216,11 +226,15 @@ const DataTableMenu = () => {
       <MenuContent
         align="end"
         className="layer-1">
-        <MenuItem onClick={onClickResetTable}>
+        <MenuItem
+          {...analyticsId('list_default_layout_select')}
+          onClick={onClickResetTable}>
           {labels.resetTableLabel}
         </MenuItem>
         <MenuSub>
-          <MenuSubTrigger>{labels.columnsLabel}</MenuSubTrigger>
+          <MenuSubTrigger {...analyticsId('list_columns_open')}>
+            {labels.columnsLabel}
+          </MenuSubTrigger>
           <MenuSubContent className="layer-1">
             {table
               .getAllColumns()
@@ -228,6 +242,7 @@ const DataTableMenu = () => {
               .map((column) => (
                 <MenuItem
                   key={column.id}
+                  {...analyticsId('list_column_toggle')}
                   selected={column.getIsVisible()}
                   onSelect={() =>
                     column.toggleVisibility(!column.getIsVisible())
@@ -238,10 +253,13 @@ const DataTableMenu = () => {
           </MenuSubContent>
         </MenuSub>
         <MenuSub>
-          <MenuSubTrigger>{labels.rowsPerPageLabel}</MenuSubTrigger>
+          <MenuSubTrigger {...analyticsId('list_page_sizes_open')}>
+            {labels.rowsPerPageLabel}
+          </MenuSubTrigger>
           <MenuSubContent className="layer-1">
             {PAGE_SIZES.map((size) => (
               <MenuItem
+                {...analyticsId('list_page_size_select')}
                 key={size}
                 selected={size === table.getState().pagination.pageSize}
                 onSelect={() => table.setPageSize(size)}>
@@ -262,6 +280,7 @@ const DataTableHeadBarOptions = () => {
   return (
     <div className="inline-flex h-9 shrink-0 items-center rounded-sm border border-filigran-brand-primary-transparency-55">
       <IconButton
+        {...analyticsId('list_previous_page_open')}
         priority="tertiary"
         onClick={() => table.previousPage()}
         disabled={!table.getCanPreviousPage()}
@@ -282,6 +301,7 @@ const DataTableHeadBarOptions = () => {
         / {rowCount}
       </div>
       <IconButton
+        {...analyticsId('list_next_page_open')}
         priority="tertiary"
         onClick={() => table.nextPage()}
         disabled={!table.getCanNextPage()}
@@ -362,6 +382,7 @@ const DataTableColumnMenu = <TData, TValue>({
     <Menu>
       <MenuTrigger asChild>
         <IconButton
+          {...analyticsId('list_column_options_open')}
           priority="tertiary"
           size="sm"
           aria-label={labels.columnOptionsLabel}
@@ -379,6 +400,7 @@ const DataTableColumnMenu = <TData, TValue>({
         {canSort && (
           <>
             <MenuItem
+              {...analyticsId('list_column_ascending_sort_select')}
               onClick={() => column.toggleSorting(false)}
               startIcon={
                 <Icon
@@ -389,6 +411,7 @@ const DataTableColumnMenu = <TData, TValue>({
               {labels.sortAscendingLabel}
             </MenuItem>
             <MenuItem
+              {...analyticsId('list_column_descending_sort_select')}
               onClick={() => column.toggleSorting(true)}
               startIcon={
                 <Icon
@@ -403,6 +426,7 @@ const DataTableColumnMenu = <TData, TValue>({
         {canSort && canHide && <MenuSeparator />}
         {canHide && (
           <MenuItem
+            {...analyticsId('list_column_toggle')}
             onClick={() => column.toggleVisibility(false)}
             startIcon={
               <Icon
@@ -448,6 +472,7 @@ const DataTableHeaderCell = <TData, TValue>({
         isDragging && 'z-10 opacity-80'
       )}>
       {!header.column.getIsPinned() && (
+        // eslint-disable-next-line no-restricted-syntax -- drag handle to reorder columns, a drag target and not a click
         <button
           type="button"
           className={cn(
@@ -465,6 +490,8 @@ const DataTableHeaderCell = <TData, TValue>({
       <div className="flex items-center justify-between">
         {header.isPlaceholder ? null : (
           <span
+            {...(header.column.getCanSort() &&
+              analyticsId('list_column_sort_toggle'))}
             className={cn(
               'flex items-center',
               header.column.getCanSort() && 'cursor-pointer select-none'
@@ -566,6 +593,7 @@ const SelectionBar = ({
           {labels.selectedCountLabel(selectedCount)}
         </span>
         <IconButton
+          {...analyticsId('list_selection_cancel')}
           priority="tertiary"
           size="sm"
           onClick={selectionHandlers.clearSelection}
@@ -594,6 +622,8 @@ const DataTable = <TData extends { id: string }, TValue>({
   tableOptions,
   toolbar,
   onClickRow,
+  getRowAnalyticsId,
+  getRowAnalyticsResource,
   isLoading = false,
   onResetTable,
   selectionOptions,
@@ -753,9 +783,14 @@ const DataTable = <TData extends { id: string }, TValue>({
                 ) : (
                   table.getRowModel().rows.map((row) => {
                     const canSelect = row.getCanSelect();
+                    const rowAnalyticsId = canSelect
+                      ? getRowAnalyticsId?.(row)
+                      : undefined;
                     return (
                       <tr
                         key={row.id}
+                        {...(rowAnalyticsId && analyticsId(rowAnalyticsId))}
+                        {...getRowAnalyticsResource?.(row)}
                         className={cn(
                           'border-b border-elevation-subtle transition-colors last:border-b-0',
                           canSelect

@@ -2,6 +2,7 @@ import AddUseCase from '@/components/admin/use-case/AddUseCase';
 import EditUseCase from '@/components/admin/use-case/EditUseCase';
 import { DataTable, DataTableToolbar } from '@/components/ui/data-table';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { getDataTableLabels } from '@/utils/design-system/data-table';
 import {
@@ -114,6 +115,7 @@ const UseCases = () => {
           enableColumnPinning: false,
           enableHiding: false,
         }}
+        getRowAnalyticsId={() => 'admin_use_case_edit'}
         onClickRow={({ original }) => setUseCaseEdit(original)}
         toolbar={
           <DataTableToolbar
@@ -126,6 +128,7 @@ const UseCases = () => {
                   )
                 }>
                 <SelectTrigger
+                  {...analyticsId('admin_use_case_products_open')}
                   aria-label={t('UseCaseListPage.Product')}
                   className="w-full">
                   <SelectValue placeholder={t('UseCaseListPage.Product')} />

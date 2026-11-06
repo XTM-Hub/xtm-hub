@@ -26,6 +26,7 @@ export const TranslatableEnumSelectField = <T extends FieldValues>({
   const t = useTranslate();
   return (
     <SelectField
+      formField
       label={label}
       required
       placeholder={placeholder}

@@ -47,6 +47,7 @@ export const DeleteOrganization = ({
 
   return (
     <ConfirmDialog
+      confirmAnalyticsId="admin_organization_deletion_confirm"
       confirmLabel={t('Utils.Delete')}
       destructive
       title={t('OrganizationForm.DeleteOrganization')}

@@ -1,4 +1,9 @@
 import { useTranslate } from '@/hooks/use-translate';
+import { type AnalyticsContextAttributes } from '@/lib/analytics/analytics.context';
+import {
+  analyticsId,
+  type AnalyticsElementId,
+} from '@/lib/analytics/analytics.ids';
 import {
   Button,
   Dialog,
@@ -25,6 +30,7 @@ export interface ConfirmDialogProps {
   confirmLabel: string;
   /** Closes the dialog after it runs, unless it calls `event.preventDefault()`. */
   onConfirm: (event: MouseEvent<HTMLButtonElement>) => void;
+  confirmAnalyticsId: AnalyticsElementId;
   destructive?: boolean;
   confirmDisabled?: boolean;
   /** Without Cancel, the corner close icon is the way out. */
@@ -32,6 +38,7 @@ export interface ConfirmDialogProps {
   /** Defaults to the translated Cancel, which edit mode marks as editable copy. */
   cancelLabel?: string;
   className?: string;
+  analyticsContext?: AnalyticsContextAttributes;
 }
 
 export const ConfirmDialog = ({
@@ -43,11 +50,13 @@ export const ConfirmDialog = ({
   children,
   confirmLabel,
   onConfirm,
+  confirmAnalyticsId,
   destructive = false,
   confirmDisabled = false,
   hideCancelButton = false,
   cancelLabel,
   className,
+  analyticsContext,
 }: ConfirmDialogProps) => {
   const t = useTranslate();
 
@@ -57,6 +66,7 @@ export const ConfirmDialog = ({
       onOpenChange={onOpenChange}>
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent
+        {...analyticsContext}
         role="alertdialog"
         onInteractOutside={(e) => e.preventDefault()}
         hideCloseButton={!hideCancelButton}
@@ -68,13 +78,16 @@ export const ConfirmDialog = ({
         <DialogFooter>
           {!hideCancelButton && (
             <DialogClose asChild>
-              <Button priority="secondary">
+              <Button
+                priority="secondary"
+                {...analyticsId('common_confirmation_cancel')}>
                 {cancelLabel ?? t('Utils.Cancel')}
               </Button>
             </DialogClose>
           )}
           <DialogClose asChild>
             <Button
+              {...analyticsId(confirmAnalyticsId)}
               variant={destructive ? 'destructive' : 'default'}
               disabled={confirmDisabled}
               onClick={onConfirm}>

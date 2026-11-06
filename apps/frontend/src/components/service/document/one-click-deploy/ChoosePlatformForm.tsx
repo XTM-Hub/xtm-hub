@@ -1,6 +1,7 @@
 import { AutoForm } from '@/components/ui/auto-form';
 import { FormControl, FormItem, FormMessage } from '@/components/ui/form';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { isEeCapableContract } from '@/utils/platform';
 import { SHAREABLE_RESOURCE_TYPE_NAME_MAPPING } from '@/utils/shareable-resources/shareable-resources.types';
 import { doesVersionSatisfy } from '@/utils/versioning';
@@ -135,6 +136,7 @@ const ChoosePlatformForm = ({
         }}>
         <div className="flex justify-end gap-2">
           <Button
+            {...analyticsId('resource_deploy_cancel')}
             type="button"
             priority="secondary"
             onClick={() => {
@@ -143,7 +145,11 @@ const ChoosePlatformForm = ({
             {t('Utils.Cancel')}
           </Button>
 
-          <Button type="submit">{t('Utils.Continue')}</Button>
+          <Button
+            {...analyticsId('resource_deploy_confirm')}
+            type="submit">
+            {t('Utils.Continue')}
+          </Button>
         </div>
       </AutoForm>
     </div>

@@ -2,6 +2,7 @@
 
 import { AutoForm } from '@/components/ui/auto-form';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { Button } from '@filigran/design-system';
 import { z } from 'zod';
 
@@ -40,7 +41,11 @@ const ConnectFromHubForm = ({ onSubmit }: ConnectFromHubFormProps) => {
         },
       }}>
       <div className="flex justify-end">
-        <Button type="submit">{t('Utils.Continue')}</Button>
+        <Button
+          {...analyticsId('platform_connection_confirm')}
+          type="submit">
+          {t('Utils.Continue')}
+        </Button>
       </div>
     </AutoForm>
   );

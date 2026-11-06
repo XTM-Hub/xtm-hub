@@ -6,6 +6,7 @@ import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useEditMode } from '@/context/edit-mode-context';
 import { useContentTranslationDrafts } from '@/hooks/use-content-translation-drafts';
 import { useExitEditMode } from '@/hooks/use-exit-edit-mode';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { cn } from '@/lib/utils';
 import { Button } from '@filigran/design-system';
 import { EditIcon } from '@filigran/icon';
@@ -71,6 +72,7 @@ export const EditionModeBanner = () => {
       <Button
         priority="secondary"
         aria-pressed={showEditableAreas}
+        {...analyticsId('admin_translation_areas_toggle')}
         className={cn(
           showEditableAreas ? SOLID_BUTTON_CLASSES : OUTLINE_BUTTON_CLASSES
         )}
@@ -86,6 +88,7 @@ export const EditionModeBanner = () => {
           <Button
             disabled={isPending}
             className={SOLID_BUTTON_CLASSES}
+            {...analyticsId('admin_translation_drafts_submit')}
             onClick={() => setConfirmedAction('publish')}>
             {t('EditableText.Publish')}
           </Button>
@@ -93,6 +96,7 @@ export const EditionModeBanner = () => {
             priority="secondary"
             disabled={isPending}
             className={OUTLINE_BUTTON_CLASSES}
+            {...analyticsId('admin_translation_drafts_delete')}
             onClick={() => setConfirmedAction('discard')}>
             {t('EditableText.Discard')}
           </Button>
@@ -101,12 +105,14 @@ export const EditionModeBanner = () => {
       <Button
         priority="tertiary"
         disabled={isExiting}
+        {...analyticsId('admin_translation_mode_close')}
         className="h-auto p-0 normal-case text-sm text-negative-primary underline underline-offset-2"
         onClick={exitEditMode}>
         {t('EditableText.EditionBannerExit')}
       </Button>
 
       <ConfirmDialog
+        confirmAnalyticsId="common_translation_publication_confirm"
         open={confirmedAction === 'publish'}
         onOpenChange={closeConfirmation}
         title={t('EditableText.PublishConfirmTitle', {
@@ -119,6 +125,7 @@ export const EditionModeBanner = () => {
         className="z-[110]"
       />
       <ConfirmDialog
+        confirmAnalyticsId="common_translation_drafts_deletion_confirm"
         open={confirmedAction === 'discard'}
         onOpenChange={closeConfirmation}
         title={t('EditableText.DiscardConfirmTitle', {

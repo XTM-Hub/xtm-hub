@@ -15,6 +15,8 @@ const buildResourceCard = (
   descriptionKey:
     'Service.TrialGuide.Opencti.ResourceCards.Documentation.Description',
   url: 'https://docs.opencti.io/',
+  analyticsId: 'trial_guide_documentation_open',
+  linkType: 'Documentation',
   ...overrides,
 });
 

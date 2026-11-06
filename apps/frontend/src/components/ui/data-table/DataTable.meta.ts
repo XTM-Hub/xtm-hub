@@ -27,6 +27,10 @@ export const DataTableMeta: ComponentMeta = {
       'Partial<TableOptions<TData>> (optional) - TanStack options spread last (manualPagination, rowCount, onPaginationChange, enableRowSelection...).',
     onClickRow:
       '(row: Row<TData>) => void (optional) - called on a click on a row that can be selected; adds the pointer cursor.',
+    getRowAnalyticsId:
+      '(row: Row<TData>) => AnalyticsElementId | undefined (optional) - the analytics id of a row that can be selected, so a click on it is tracked; undefined leaves the row untracked.',
+    getRowAnalyticsResource:
+      '(row: Row<TData>) => ReturnType<typeof analyticsResource> (optional) - the resource context spread on a row that can be selected.',
     isLoading:
       'boolean (optional, default false) - renders 30 Skeleton rows instead of the data.',
     onResetTable:

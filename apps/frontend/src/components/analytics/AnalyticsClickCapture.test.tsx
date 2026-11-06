@@ -7,10 +7,12 @@ import { ANALYTICS_ID_ATTRIBUTE } from '@/lib/analytics/analytics.consts';
 import {
   analyticsEpic,
   analyticsFeature,
+  analyticsLinkType,
   analyticsProduct,
   analyticsResource,
   analyticsSection,
 } from '@/lib/analytics/analytics.context';
+import { type AnalyticsPageType } from '@/lib/analytics/analytics.types';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 import {
   readTrackedEvents,
@@ -35,6 +37,7 @@ vi.mock('@/lib/analytics/analytics.registry', () => ({
 }));
 
 const PAGE_TYPE = 'Home';
+const LIBRARY_PAGE_TYPE = 'Library';
 const TARGET = 'Target';
 const UNKNOWN_ID = 'resource_unknown_open';
 const RESOURCES_DOMAIN = 'Resources';
@@ -51,6 +54,7 @@ const PORTAL_CONTENT_ID = 'portal-content';
 const PORTAL_TRIGGER_ID = 'portal-trigger';
 const SUBMENU_ID = 'submenu';
 const DIALOG_TITLE_ID = 'dialog-title';
+const GUIDE_LINK_TYPE = 'Guide';
 
 const downloadClick = {
   element_id: ELEMENTS.download.id,
@@ -67,10 +71,13 @@ const playbook = analyticsResource({
   type: ShareableResourceType.OPENCTI_PLAYBOOK,
 });
 
-const renderWithCapture = (content: ReactNode) =>
+const renderWithCapture = (
+  content: ReactNode,
+  pageType: AnalyticsPageType = PAGE_TYPE
+) =>
   testRender(
     <>
-      <AnalyticsClickCapture pageType={PAGE_TYPE} />
+      <AnalyticsClickCapture pageType={pageType} />
       {content}
     </>
   );
@@ -294,7 +301,9 @@ describe('AnalyticsClickCapture', () => {
               type: ShareableResourceType.OPENCTI_PLAYBOOK,
               useCases: [{ name: USE_CASE }],
             })}>
-            <div {...analyticsSection(SECTION)}>
+            <div
+              {...analyticsSection(SECTION)}
+              {...analyticsLinkType(GUIDE_LINK_TYPE)}>
               <button {...tagged(ELEMENTS.share.id)}>{TARGET}</button>
             </div>
           </div>
@@ -320,6 +329,7 @@ describe('AnalyticsClickCapture', () => {
         section: SECTION,
         epic_name: EPIC_NAME,
         feature_name: FEATURE_NAME,
+        link_type: GUIDE_LINK_TYPE,
       },
     ]);
   });
@@ -496,5 +506,58 @@ describe('AnalyticsClickCapture', () => {
 
     // Then
     expect(readTrackedEvents('ui_click')).toEqual([downloadClick]);
+  });
+
+  it.each([
+    [LIBRARY, LIBRARY_PAGE_TYPE],
+    [PAGE_TYPE, PAGE_TYPE],
+  ] as const)(
+    'should send select_item listed as %s when a resource is opened on a %s page',
+    (itemListName, pageType) => {
+      // Given
+      renderWithCapture(
+        <div {...playbook}>
+          <a
+            href="#resource"
+            {...tagged(ELEMENTS.open.id)}>
+            {TARGET}
+          </a>
+        </div>,
+        pageType
+      );
+
+      // When
+      fireEvent.click(screen.getByText(TARGET));
+
+      // Then
+      expect(readTrackedEvents('select_item')).toEqual([
+        {
+          item_list_name: itemListName,
+          items: [
+            {
+              item_id: RESOURCE_UUID,
+              item_name: RESOURCE_NAME,
+              item_category: LIBRARY,
+              item_brand: OPENCTI,
+            },
+          ],
+        },
+      ]);
+    }
+  );
+
+  it('should send no select_item when another element of a resource is clicked', () => {
+    // Given
+    renderWithCapture(
+      <div {...playbook}>
+        <button {...tagged(ELEMENTS.share.id)}>{TARGET}</button>
+      </div>
+    );
+
+    // When
+    fireEvent.click(screen.getByText(TARGET));
+
+    // Then
+    expect(readTrackedEvents('select_item')).toEqual([]);
   });
 });

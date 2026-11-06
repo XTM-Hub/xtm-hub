@@ -25,6 +25,7 @@ export const ServiceFormEntityTypesField = ({
 
   return (
     <AppCombobox
+      formField
       multiple
       label={t('Service.Form.EntityTypesLabel')}
       required

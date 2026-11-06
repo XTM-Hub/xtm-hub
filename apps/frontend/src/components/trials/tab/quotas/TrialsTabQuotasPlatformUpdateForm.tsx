@@ -5,6 +5,7 @@ import { SheetFooter } from '@/components/ui/sheet';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { isEmpty } from '@/lib/utils';
 import { Button, Input } from '@filigran/design-system';
@@ -114,10 +115,12 @@ export const TrialsTabQuotasPlatformUpdateForm = ({
               <Button
                 priority="secondary"
                 type="button"
+                {...analyticsId('admin_form_cancel')}
                 onClick={(e) => handleCloseSheet(e)}>
                 {t('Utils.Cancel')}
               </Button>
               <ConfirmDialog
+                confirmAnalyticsId="admin_trial_quota_confirm"
                 title={t(
                   'TrialsDashboard.UpdateQuotasForm.AlertDialog.ConfirmTitle',
                   {
@@ -128,7 +131,8 @@ export const TrialsTabQuotasPlatformUpdateForm = ({
                 trigger={
                   <Button
                     disabled={!form.formState.isValid}
-                    type="submit">
+                    type="submit"
+                    {...analyticsId('admin_trial_quota_submit')}>
                     {t('Utils.Validate')}
                   </Button>
                 }

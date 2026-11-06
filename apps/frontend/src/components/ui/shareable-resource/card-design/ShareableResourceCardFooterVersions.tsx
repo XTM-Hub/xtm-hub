@@ -29,6 +29,7 @@ export const ShareableResourceCardFooterVersion = ({
       </div>
       <div className="flex flex-row shrink-0 gap-1">
         <ShareLinkButton
+          analyticsId="resource_share"
           documentId={document.id}
           url={shareLinkUrl}
           size="sm"

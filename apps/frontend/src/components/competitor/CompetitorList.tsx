@@ -29,6 +29,7 @@ import {
   handleSortingChange,
   mapToSortingTableValue,
 } from '@/components/ui/handle-sorting.utils';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { Button, IconButton } from '@filigran/design-system';
 
 const CompetitorList = () => {
@@ -140,6 +141,7 @@ const CompetitorList = () => {
           <div className="flex items-center justify-end gap-2">
             <IconButton
               priority="tertiary"
+              {...analyticsId('admin_competitor_edit')}
               aria-label={t('CompetitorListPage.Edit')}
               icon={<EditIcon className="h-4 w-4" />}
               onClick={(e) => {
@@ -149,6 +151,7 @@ const CompetitorList = () => {
               }}
             />
             <ConfirmDialog
+              confirmAnalyticsId="admin_competitor_deletion_confirm"
               title={t('CompetitorListPage.DeleteDialog.Title')}
               confirmLabel={t('CompetitorListPage.Delete')}
               destructive
@@ -156,6 +159,7 @@ const CompetitorList = () => {
                 <IconButton
                   variant="destructive"
                   priority="tertiary"
+                  {...analyticsId('admin_competitor_delete')}
                   aria-label={t('CompetitorListPage.Delete')}
                   icon={<DeleteIcon className="h-4 w-4" />}
                 />
@@ -212,7 +216,9 @@ const CompetitorList = () => {
         toolbar={
           <div className="flex w-full items-center justify-end gap-2">
             <DataTableHeadBarOptions />
-            <Button onClick={() => setOpenAdd(true)}>
+            <Button
+              {...analyticsId('admin_competitor_create')}
+              onClick={() => setOpenAdd(true)}>
               {t('CompetitorListPage.AddCompetitor')}
             </Button>
           </div>

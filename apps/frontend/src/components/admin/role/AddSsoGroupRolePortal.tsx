@@ -2,6 +2,7 @@ import SsoGroupRolePortalForm from '@/components/admin/role/SsoGroupRolePortalFo
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 
 import { Button } from '@filigran/design-system';
@@ -46,7 +47,11 @@ const AddSsoGroupRolePortal = () => {
       title={t('RoleListPage.AddMapping')}
       setOpen={setOpenSheet}
       open={openSheet}
-      trigger={<Button>{t('RoleListPage.AddMapping')}</Button>}>
+      trigger={
+        <Button {...analyticsId('admin_sso_group_mapping_create')}>
+          {t('RoleListPage.AddMapping')}
+        </Button>
+      }>
       <SsoGroupRolePortalForm
         handleSubmit={(input) => addSsoGroupRolePortal({ input })}
       />

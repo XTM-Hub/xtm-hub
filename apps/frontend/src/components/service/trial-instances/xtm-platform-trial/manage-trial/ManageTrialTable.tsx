@@ -4,6 +4,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { DataTable, SelectionState } from '@/components/ui/data-table';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { getDataTableLabels } from '@/utils/design-system/data-table';
 import { IconButton } from '@filigran/design-system';
@@ -205,6 +206,7 @@ export const ManageTrialTable = ({
             header: title,
             cell: ({ row }) => (
               <RoleSelect
+                analyticsId="trial_user_roles_open"
                 aria-label={title}
                 value={row.original[accessorKey]}
                 onValueChange={(value) => {
@@ -235,12 +237,14 @@ export const ManageTrialTable = ({
         cell: ({ row }) => (
           <div className="flex items-center justify-end">
             <ConfirmDialog
+              confirmAnalyticsId="trial_user_removal_confirm"
               title={t('Service.Bundle.ManageTrial.Table.DeleteDialog.Title')}
               confirmLabel={t('Utils.Delete')}
               destructive
               confirmDisabled={deletingUserId === row.original.id}
               trigger={
                 <IconButton
+                  {...analyticsId('trial_user_delete')}
                   type="button"
                   priority="tertiary"
                   aria-label={t('Utils.Delete')}

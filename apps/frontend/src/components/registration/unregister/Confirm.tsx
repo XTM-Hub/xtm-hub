@@ -20,7 +20,9 @@ export const UnregisterConfirm = ({
   return (
     <RegistrationLayout
       confirm={confirm}
-      cancel={cancel}>
+      confirmAnalyticsId="platform_disconnection_confirm"
+      cancel={cancel}
+      cancelAnalyticsId="platform_disconnection_cancel">
       <h1 className="title-sm">
         {t(`Unregister.Confirm.Title`, {
           platformIdentifier: displayedIdentifier,

@@ -1,6 +1,8 @@
 'use client';
 
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsLinkType } from '@/lib/analytics/analytics.context';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { XTM_PLATFORM_TRIAL_GUIDE_PATH } from '@/utils/path/constant';
 import { Button, Card, CardContent } from '@filigran/design-system';
 import Link from 'next/link';
@@ -26,7 +28,10 @@ export const BundleGuideCard = () => {
             priority="secondary"
             className="self-start"
             asChild>
-            <Link href={XTM_PLATFORM_TRIAL_GUIDE_PATH}>
+            <Link
+              {...analyticsId('trial_guide_open')}
+              {...analyticsLinkType('Guide')}
+              href={XTM_PLATFORM_TRIAL_GUIDE_PATH}>
               {tGuide('SeeMore')}
             </Link>
           </Button>

@@ -3,6 +3,7 @@
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { Button } from '@filigran/design-system';
 import {
@@ -53,12 +54,14 @@ export const VotingRoundStatusActions = ({
   if (status === VotingRoundStatus.Open) {
     return (
       <ConfirmDialog
+        confirmAnalyticsId="admin_voting_round_closure_confirm"
         title={t('VotingRound.Actions.Close')}
         confirmLabel={t('VotingRound.Actions.Close')}
         trigger={
           <Button
             priority="secondary"
-            disabled={isPending}>
+            disabled={isPending}
+            {...analyticsId('admin_voting_round_close')}>
             {t('VotingRound.Actions.Close')}
           </Button>
         }
@@ -70,10 +73,13 @@ export const VotingRoundStatusActions = ({
 
   return (
     <ConfirmDialog
+      confirmAnalyticsId="admin_voting_round_opening_confirm"
       title={t('VotingRound.Actions.Open')}
       confirmLabel={t('VotingRound.Actions.Open')}
       trigger={
-        <Button disabled={isPending || !hasFeatures}>
+        <Button
+          disabled={isPending || !hasFeatures}
+          {...analyticsId('admin_voting_round_open')}>
           {t('VotingRound.Actions.Open')}
         </Button>
       }

@@ -83,6 +83,7 @@ describe('ManageTrialHeader', () => {
         selectedUsers={[]}
         onUsersRemoved={vi.fn()}
         backHref="/app/admin/manage-trials"
+        backAnalyticsId="admin_trial_dashboard_open"
         backLabelKey="Service.Bundle.ManageTrial.BackToDashboardButton"
       />
     );

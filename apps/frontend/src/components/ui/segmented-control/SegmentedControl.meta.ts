@@ -17,9 +17,9 @@ export const SegmentedControlMeta: ComponentMeta = {
   ],
   sizes: ['sm', 'md'],
   examples: [
-    '<SegmentedControl aria-label="Period" items={[{ value: "7", label: "7 days" }, { value: "30", label: "30 days" }]} value={period} onValueChange={setPeriod} />',
-    '<SegmentedControl aria-label="Period" items={items} value={period} onValueChange={setPeriod} size="sm" />',
-    '<SegmentedControl aria-label="Period" items={[{ value: "30", label: "30 days" }, { value: "180", label: "180 days", disabled: true, tooltip: "Coming soon" }]} value={period} onValueChange={setPeriod} />',
+    '<SegmentedControl aria-label="Period" analyticsId="platform_metrics_period_select" items={[{ value: "7", label: "7 days" }, { value: "30", label: "30 days" }]} value={period} onValueChange={setPeriod} />',
+    '<SegmentedControl aria-label="Period" analyticsId="platform_metrics_period_select" items={items} value={period} onValueChange={setPeriod} size="sm" />',
+    '<SegmentedControl aria-label="Period" analyticsId="platform_metrics_period_select" items={[{ value: "30", label: "30 days" }, { value: "180", label: "180 days", disabled: true, tooltip: "Coming soon" }]} value={period} onValueChange={setPeriod} />',
   ],
   props: {
     items:
@@ -28,6 +28,8 @@ export const SegmentedControlMeta: ComponentMeta = {
     onValueChange:
       '(value: T) => void (required) - fires when another segment is clicked or reached with the keyboard, never for the selected one.',
     'aria-label': 'string (required) - accessible name of the group.',
+    analyticsId:
+      'AnalyticsElementId (required) - the analytics id of every item.',
     size: "'sm' | 'md' (optional) - 24px or 36px tall, md by default.",
     disabled:
       'boolean (optional) - disables every segment: no click, no tab stop, no value change. False by default.',

@@ -9,6 +9,8 @@ import { XtmoneStatusState } from '@/components/service/trial-instances/xtm-plat
 import { XtmoneConnectionStatus } from '@/components/service/trial-instances/xtm-platform-trial/active-bundle/XtmoneConnectionStatus';
 import { Separator } from '@/components/ui/separator';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsProduct } from '@/lib/analytics/analytics.context';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { useDateFormatter } from '@/utils/date';
 import { toExternalHref } from '@/utils/external-url';
 import {
@@ -84,6 +86,7 @@ export const BundleProductCard = ({
         />
         {canManage && (
           <IconButton
+            {...analyticsId('trial_product_name_edit')}
             priority="tertiary"
             size="sm"
             className="shrink-0 rounded border border-elevation-default text-default-primary"
@@ -98,6 +101,7 @@ export const BundleProductCard = ({
 
   return (
     <Card
+      {...analyticsProduct(product.platform_identifier)}
       padding={16}
       className="h-full">
       <CardContent
@@ -177,10 +181,12 @@ export const BundleProductCard = ({
           {isXtmone ? (
             canAccess && accessHref ? (
               <Link
+                {...analyticsId('trial_platform_open')}
                 href={accessHref}
                 target="_blank"
                 rel="noopener noreferrer">
                 <Button
+                  {...analyticsId('trial_platform_open')}
                   variant="ia"
                   priority="secondary"
                   tabIndex={-1}>
@@ -196,6 +202,7 @@ export const BundleProductCard = ({
               disabled={!canAccess}>
               {canAccess && accessHref ? (
                 <Link
+                  {...analyticsId('trial_platform_open')}
                   href={accessHref}
                   target="_blank"
                   rel="noopener noreferrer">

@@ -4,6 +4,8 @@ import { LastDeployedOverview } from '@/components/homepage/last-deployed-resour
 import BadgeOverflowCounter from '@/components/ui/BadgeOverflowCounter';
 import { UserDisplay } from '@/components/ui/UserDisplay';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsResource } from '@/lib/analytics/analytics.context';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { useDateFormatter } from '@/utils/date';
 import { ResourceTypeIcon } from '@/utils/shareable-resources/resource-type-icon';
 import {
@@ -45,6 +47,13 @@ const LastDeployedResourceRow = ({
 
   return (
     <Link
+      {...analyticsId('resource_open')}
+      {...analyticsResource({
+        id: document.id,
+        name: document.name ?? '',
+        type: resourceType,
+        useCases: document.use_cases,
+      })}
       href={url}
       prefetch={false}
       className="group contents">

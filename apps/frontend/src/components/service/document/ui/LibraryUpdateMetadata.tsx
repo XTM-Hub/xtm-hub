@@ -6,6 +6,7 @@ import { AutoForm } from '@/components/ui/auto-form';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { Locale, locales } from '@/i18n/config';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import {
   Button,
@@ -179,6 +180,7 @@ export const LibraryUpdateMetadata = () => {
       portalCapabilityRestriction={[PortalCapability.ModifyServiceMetadata]}>
       <>
         <Button
+          {...analyticsId('resource_library_metadata_edit')}
           priority="tertiary"
           startIcon={<EditIcon className="h-4 w-4" />}
           onClick={() => setIsOpen(true)}>
@@ -198,12 +200,17 @@ export const LibraryUpdateMetadata = () => {
                 onSubmit={handleSubmit}>
                 <DialogFooter>
                   <Button
+                    {...analyticsId('resource_library_metadata_cancel')}
                     priority="secondary"
                     type="button"
                     onClick={() => setIsOpen(false)}>
                     {t('Utils.Cancel')}
                   </Button>
-                  <Button type="submit">{t('Utils.Validate')}</Button>
+                  <Button
+                    {...analyticsId('resource_library_metadata_submit')}
+                    type="submit">
+                    {t('Utils.Validate')}
+                  </Button>
                 </DialogFooter>
               </AutoForm>
             </DialogBody>

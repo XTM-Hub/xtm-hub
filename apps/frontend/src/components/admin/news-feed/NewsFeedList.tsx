@@ -6,6 +6,7 @@ import { IconActions, IconActionsItem } from '@/components/ui/IconActions';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTablePagination } from '@/hooks/use-table-pagination';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { useDateFormatter } from '@/utils/date';
 import { getDataTableLabels } from '@/utils/design-system/data-table';
@@ -67,6 +68,7 @@ const BlogpostDeleteItem = ({
       <Tooltip>
         <TooltipTrigger asChild>
           <IconActionsItem
+            {...analyticsId('admin_news_feed_item_delete')}
             aria-disabled="true"
             aria-describedby={reasonId}
             className="cursor-not-allowed opacity-50"
@@ -204,10 +206,12 @@ const NewsFeedList = () => {
         enableResizing: false,
         cell: ({ row }) =>
           row.original.is_deleted ? null : (
+            // eslint-disable-next-line no-restricted-syntax -- container whose children carry the IDs
             <div
               className="flex items-center justify-end"
               onClick={(e) => e.stopPropagation()}>
               <IconActions
+                analyticsId="list_row_actions_open"
                 aria-label={t('Utils.OpenMenu')}
                 icon={<MoreVertIcon className="h-4 w-4 text-icon-highlight" />}>
                 {row.original.type === NewsFeedItemType.BlogPost ? (
@@ -218,6 +222,7 @@ const NewsFeedList = () => {
                   />
                 ) : (
                   <IconActionsItem
+                    {...analyticsId('admin_news_feed_item_delete')}
                     onClick={() => setDeleteTarget(row.original)}>
                     {t('NewsFeedAdminPage.Delete')}
                   </IconActionsItem>
@@ -242,6 +247,9 @@ const NewsFeedList = () => {
           rowCount: data?.newsFeedItems.totalCount ?? 0,
         }}
         tableState={{ pagination, columnPinning: { right: ['actions'] } }}
+        getRowAnalyticsId={({ original }) =>
+          getUrlPath(original) ? 'admin_news_feed_item_open' : undefined
+        }
         onClickRow={(row) => {
           const urlPath = getUrlPath(row.original);
           if (urlPath) {
@@ -251,6 +259,7 @@ const NewsFeedList = () => {
       />
       {deleteTarget && (
         <ConfirmDialog
+          confirmAnalyticsId="admin_news_feed_item_deletion_confirm"
           open={!!deleteTarget}
           onOpenChange={(open) => !open && setDeleteTarget(undefined)}
           title={t('NewsFeedAdminPage.DeleteDialog.Title')}

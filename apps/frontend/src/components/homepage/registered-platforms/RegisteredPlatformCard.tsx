@@ -6,6 +6,8 @@ import {
   PlatformMetadataMapping,
 } from '@/components/registration/PlatformIdentifierMapping';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsProduct } from '@/lib/analytics/analytics.context';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { cn } from '@/lib/utils';
 import { useDateFormatter } from '@/utils/date';
 import {
@@ -130,6 +132,8 @@ const RegisteredPlatformCard = ({ platform }: RegisteredPlatformCardProps) => {
 
   return platform.href ? (
     <Link
+      {...analyticsId('home_platform_open')}
+      {...analyticsProduct(platform.platformIdentifier)}
       href={platform.href}
       prefetch={false}
       className="block rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus">

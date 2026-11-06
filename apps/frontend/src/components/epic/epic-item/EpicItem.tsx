@@ -2,6 +2,7 @@
 import { EpicItemCard } from '@/components/epic/epic-item/EpicItemCard';
 import { EpicItemDetailed } from '@/components/epic/epic-item/EpicItemDetailed';
 import { useDetailParam } from '@/hooks/use-detail-param';
+import { analyticsEpic } from '@/lib/analytics/analytics.context';
 import { Dialog, DialogContent } from '@filigran/design-system';
 import { epic_fragment$data } from '@generated/epic_fragment.graphql';
 
@@ -19,7 +20,9 @@ export const EpicItem = ({
   const { isOpen, close } = useDetailParam('epicId', epic.id);
 
   return (
-    <li className="h-full">
+    <li
+      {...analyticsEpic(epic.title)}
+      className="h-full">
       <EpicItemCard
         epic={epic}
         userCanDelete={userCanDelete}

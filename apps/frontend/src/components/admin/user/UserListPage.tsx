@@ -8,6 +8,7 @@ import { PortalContext } from '@/components/me/AppPortalContext';
 import { notificationPendingUserQueryFilters } from '@/components/notification/NotificationButton';
 import useAdminPath from '@/hooks/use-admin-path';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import {
   Tabs,
   TabsContent,
@@ -79,12 +80,15 @@ const UserListPage = ({ organization }: UserListPageProps) => {
       ) : (
         <Tabs defaultValue={selectedTab}>
           <TabsList>
-            <TabsTrigger value="users">
+            <TabsTrigger
+              value="users"
+              {...analyticsId('organization_members_select')}>
               {t('UserListPage.TabTitle')}
             </TabsTrigger>
             <TabsTrigger
               value="pendingUsers"
-              disabled={!nbPendingUsers}>
+              disabled={!nbPendingUsers}
+              {...analyticsId('organization_join_requests_select')}>
               {t('PendingUserListPage.TabTitle', {
                 usersCount: nbPendingUsers,
               })}

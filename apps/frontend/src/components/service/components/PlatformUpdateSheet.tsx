@@ -8,6 +8,7 @@ import { SheetFooter } from '@/components/ui/sheet';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { Button, Input } from '@filigran/design-system';
 import { ServiceDefinitionIdentifier } from '@generated/serviceInstance_fragment.graphql';
 import { serviceUpdatePlatformServiceMetadataMutation } from '@generated/serviceUpdatePlatformServiceMetadataMutation.graphql';
@@ -123,12 +124,14 @@ export const PlatformUpdateSheet = ({
 
           <SheetFooter>
             <Button
+              {...analyticsId('platform_name_cancel')}
               type="button"
               priority="secondary"
               onClick={() => setOpen(false)}>
               {t('Utils.Cancel')}
             </Button>
             <Button
+              {...analyticsId('platform_name_submit')}
               type="submit"
               disabled={form.formState.isSubmitting}>
               {form.formState.isSubmitting

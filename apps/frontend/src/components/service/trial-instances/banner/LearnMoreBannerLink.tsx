@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { BannerAction } from '@filigran/design-system';
 import Link from 'next/link';
 import { ComponentProps } from 'react';
@@ -12,7 +13,11 @@ export const LearnMoreBannerLink = (props: LearnMoreBannerLinkProps) => {
 
   return (
     <BannerAction asChild>
-      <Link {...props}>{t('Service.Trials.LearnMore.Link')}</Link>
+      <Link
+        {...props}
+        {...analyticsId('trial_details_open')}>
+        {t('Service.Trials.LearnMore.Link')}
+      </Link>
     </BannerAction>
   );
 };

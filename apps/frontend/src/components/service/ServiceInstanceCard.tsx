@@ -2,6 +2,7 @@
 
 import { ResolvedServiceInstanceLink } from '@/components/service/service-instance-link.util';
 import useScrollPosition from '@/hooks/use-scroll-position';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { cn } from '@/lib/utils';
 import { ArrowOutwardIcon, LogoFiligranIcon } from '@filigran/icon';
 import Image from 'next/image';
@@ -75,6 +76,7 @@ const ServiceInstanceCard = ({
               <h2>{serviceInstance.name}</h2>
             ) : (
               <Link
+                {...analyticsId('resource_library_open')}
                 href={href}
                 prefetch={false}
                 target={target}
