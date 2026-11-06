@@ -1,3 +1,117 @@
+fragment DocumentItem on Document {
+  __typename
+  id
+  type
+  file_name
+  created_at
+  name
+  short_description
+  description
+  download_number
+  share_number
+  active
+  updated_at
+  use_cases {
+    id
+    name
+    color
+  }
+  uploader {
+    id
+    email
+    first_name
+    last_name
+    picture
+  }
+  uploader_organization {
+    id
+    name
+    personal_space
+  }
+  children_documents {
+    id
+    file_name
+    created_at
+    name
+    description
+    download_number
+    active
+    source_type
+    image_type
+  }
+  slug
+  service_instance {
+    id
+    slug
+  }
+  subscription {
+    id
+  }
+
+  ... on CustomDashboard {
+    product_version
+  }
+
+  ... on Integration {
+    integration_type
+    datasheet_url
+    blogpost_url
+    demo_url
+    solution_categories {
+      id
+      name
+    }
+    license_type
+  }
+
+  ... on CsvFeed {
+    feed_url
+  }
+
+  ... on TaxiiFeed {
+    feed_url
+  }
+
+  ... on RssFeed {
+    feed_url
+  }
+
+  ... on Stream {
+    feed_url
+  }
+
+  ... on ThirdPartyIntegration {
+    product_version
+    vendor_url
+    github_url
+  }
+
+  ... on Connector {
+    product_version
+    container_image
+    verified
+    source_code
+    subscription_link
+    manager_supported
+    playbook_supported
+    minimum_deployable_version
+    contact
+  }
+
+  ... on OpenAEVScenario {
+    product_version
+  }
+
+  ... on OpenCTIPlaybook {
+    product_version
+  }
+
+  ... on CustomView {
+    product_version
+    entity_types
+  }
+}
+
 fragment HomepageDocument on Document {
   id
   name
