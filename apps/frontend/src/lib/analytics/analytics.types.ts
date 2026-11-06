@@ -1,3 +1,8 @@
+import {
+  type AnalyticsDomain,
+  type AnalyticsElementId,
+} from '@/lib/analytics/analytics.ids';
+
 export type AnalyticsPageType =
   | 'Home'
   | 'Library'
@@ -35,6 +40,20 @@ export interface AnalyticsUserProperties {
 
 export interface AnalyticsEvents {
   page_view: AnalyticsPageContext & AnalyticsPage;
+  ui_click: {
+    element_id: AnalyticsElementId;
+    domain?: AnalyticsDomain;
+    action: string;
+    page_type: AnalyticsPageType;
+    resource_id?: string;
+    resource_name?: string;
+    library?: string;
+    use_cases?: string;
+    product?: string;
+    section?: string;
+    epic_name?: string;
+    feature_name?: string;
+  };
   ee_badge_click: {
     resource_id: string;
     resource_title: string;

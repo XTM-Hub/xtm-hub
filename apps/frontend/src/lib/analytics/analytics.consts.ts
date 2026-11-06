@@ -55,3 +55,48 @@ export const GOOGLE_REFERRER_HOST_PATTERN = /(^|\.)google(\.[a-z]{2,3}){1,2}$/;
 export const INTERNAL_TRAFFIC_TYPE = 'internal';
 
 export const INTERNAL_EMAIL_DOMAIN = 'filigran.io';
+
+export const ANALYTICS_ID_ATTRIBUTE = 'data-analytics-id';
+export const ANALYTICS_SECTION_ATTRIBUTE = 'data-analytics-section';
+export const ANALYTICS_RESOURCE_ID_ATTRIBUTE = 'data-analytics-resource-id';
+export const ANALYTICS_RESOURCE_NAME_ATTRIBUTE = 'data-analytics-resource-name';
+export const ANALYTICS_LIBRARY_ATTRIBUTE = 'data-analytics-library';
+export const ANALYTICS_USE_CASES_ATTRIBUTE = 'data-analytics-use-cases';
+export const ANALYTICS_EPIC_NAME_ATTRIBUTE = 'data-analytics-epic-name';
+export const ANALYTICS_FEATURE_NAME_ATTRIBUTE = 'data-analytics-feature-name';
+export const ANALYTICS_PRODUCT_ATTRIBUTE = 'data-analytics-product';
+
+export const INTERACTIVE_SELECTOR = [
+  'a[href]',
+  'button',
+  '[role="button"]',
+  '[role="link"]',
+  '[role="menuitem"]',
+  '[role="menuitemcheckbox"]',
+  '[role="menuitemradio"]',
+  '[role="tab"]',
+  '[role="switch"]',
+  '[role="checkbox"]',
+  '[role="option"]',
+  'input',
+  'label',
+  'select',
+  'textarea',
+  `[${ANALYTICS_ID_ATTRIBUTE}]`,
+].join(', ');
+
+export const SELECTION_CONTROL_SELECTOR =
+  '[role="option"], [role="checkbox"], [role="menuitemcheckbox"], [role="menuitemradio"], input[type="checkbox"]';
+
+export const SELECTION_CONTAINER_SELECTOR =
+  '[role="listbox"], [role="menu"], [role="combobox"]';
+
+export const POPPER_CONTENT_WRAPPER_SELECTOR =
+  '[data-radix-popper-content-wrapper]';
+
+export const PORTAL_CONTENT_SELECTOR = `${POPPER_CONTENT_WRAPPER_SELECTOR}, [role="dialog"], [role="alertdialog"], [role="menu"]`;
+
+export const DISABLED_SELECTOR =
+  ':disabled, [data-disabled]:not([data-disabled="false"])';
+
+export const INHERITED_DISABLED_SELECTOR = '[aria-disabled="true"]';
