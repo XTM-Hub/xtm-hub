@@ -50,7 +50,7 @@
     "SearchPlatform": "Search platform",
     "ClearSearch": "Clear search",
     "Tour": {
-      "Documentation": "Documentation",
+      "GuidedTour": "Guided tour",
       "Close": "Close the tour",
       "PreviousStep": "Go to previous step",
       "NextStep": "Go to next step",

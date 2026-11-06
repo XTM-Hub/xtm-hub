@@ -516,6 +516,33 @@ describe('SaasList', () => {
   });
 
   it.each([
+    [
+      SaasProduct.Oaev,
+      'https://docs.hub.filigran.io/latest/user/openaev-connection/',
+    ],
+    [
+      SaasProduct.Octi,
+      'https://docs.hub.filigran.io/latest/user/opencti-connection/',
+    ],
+  ])(
+    'should link a %s saas platform that is not registered in the Hub to its connection documentation',
+    (product, documentationUrl) => {
+      // Given a saas platform of that product the Hub does not know
+      mockSaasPlatforms([
+        buildSaasPlatform({ product, registered_platform: null }),
+      ]);
+
+      // When the list is rendered
+      renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
+
+      // Then its row links to the connection documentation of its product
+      expect(
+        screen.getByRole('link', { name: 'CSMBoard.AskCustomer' })
+      ).toHaveAttribute('href', documentationUrl);
+    }
+  );
+
+  it.each([
     ['CSMBoard.Organization'],
     ['CSMBoard.Administrators'],
     ['CSMBoard.Health'],
@@ -673,7 +700,7 @@ describe('SaasList', () => {
 
     // When the user opens the documentation
     await user.click(
-      screen.getByRole('button', { name: 'CSMBoard.Tour.Documentation' })
+      screen.getByRole('button', { name: 'CSMBoard.Tour.GuidedTour' })
     );
 
     // Then the tour shows its first step
@@ -686,7 +713,7 @@ describe('SaasList', () => {
 
     // When the user opens the documentation
     await user.click(
-      screen.getByRole('button', { name: 'CSMBoard.Tour.Documentation' })
+      screen.getByRole('button', { name: 'CSMBoard.Tour.GuidedTour' })
     );
 
     // Then the previous, next and step buttons of the tour are labelled in the user's language
@@ -730,7 +757,7 @@ describe('SaasList', () => {
         PortalCapability.ReadSaasMetrics,
       ]);
       await user.click(
-        screen.getByRole('button', { name: 'CSMBoard.Tour.Documentation' })
+        screen.getByRole('button', { name: 'CSMBoard.Tour.GuidedTour' })
       );
 
       // When the user goes to the step
@@ -763,7 +790,7 @@ describe('SaasList', () => {
     mockSaasPlatforms([buildSaasPlatform()]);
     const { user } = renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
     await user.click(
-      screen.getByRole('button', { name: 'CSMBoard.Tour.Documentation' })
+      screen.getByRole('button', { name: 'CSMBoard.Tour.GuidedTour' })
     );
 
     // When the user goes to the last step
@@ -806,7 +833,7 @@ describe('SaasList', () => {
 
     // When the user opens the documentation
     await user.click(
-      screen.getByRole('button', { name: 'CSMBoard.Tour.Documentation' })
+      screen.getByRole('button', { name: 'CSMBoard.Tour.GuidedTour' })
     );
 
     // Then the customer column is shown
@@ -819,7 +846,7 @@ describe('SaasList', () => {
     const { user } = renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
     await hideColumn(user, SaasPlatformOrdering.CustomerName);
     await user.click(
-      screen.getByRole('button', { name: 'CSMBoard.Tour.Documentation' })
+      screen.getByRole('button', { name: 'CSMBoard.Tour.GuidedTour' })
     );
     expect(getColumnHeader(SaasPlatformOrdering.CustomerName)).toBeVisible();
 

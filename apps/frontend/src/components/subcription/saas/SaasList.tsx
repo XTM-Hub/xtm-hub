@@ -10,6 +10,8 @@ import { SaasStorageUsage } from '@/components/subcription/saas/datatable/SaasSt
 import { useSaasListLocalstorage } from '@/components/subcription/saas/saas-list-localstorage';
 import { getDatabaseUsagePercent } from '@/components/subcription/saas/saas-list.utils';
 import { SaasProductFilter } from '@/components/subcription/saas/SaasProductFilter';
+import Link from 'next/link';
+
 import {
   SAAS_LIST_TOUR_TARGET,
   saasListTourTarget,
@@ -45,7 +47,7 @@ import {
   SaasPlatformHealthIssue,
   SaasPlatformOrdering,
   type SaasPlatformRowFragment,
-  type SaasProduct,
+  SaasProduct,
   ServiceDefinitionIdentifier,
   useSaasManagerPlatformsListQuery,
 } from '@graphql/generated';
@@ -161,9 +163,17 @@ export const SaasList = () => {
             ServiceDefinitionIdentifier.XtmoneRegistration
         ) {
           return (
-            <div className="text-default-secondary">
+            <Link
+              href={
+                row.original.product === SaasProduct.Oaev
+                  ? 'https://docs.hub.filigran.io/latest/user/openaev-connection/'
+                  : 'https://docs.hub.filigran.io/latest/user/opencti-connection/'
+              }
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-filigran-brand-primary underline">
               <TruncatedText text={t('CSMBoard.AskCustomer')} />
-            </div>
+            </Link>
           );
         }
         return <SaasPlatformLink registeredPlatform={registeredPlatform} />;

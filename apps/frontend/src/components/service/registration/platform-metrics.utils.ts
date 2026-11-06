@@ -13,7 +13,7 @@ export const findMetricPoints = (
   metrics?.series.find((series) => series.metric_type === metricType)?.points ??
   [];
 
-// A platform without Elasticsearch stores its data in PostgreSQL only, as the backend rates its database.
+// A platform with PostgreSQL stores its data there and only indexes it in Elasticsearch; one without stores it in Elasticsearch, as the backend rates its database.
 export const findDatabaseUsage = (
   metrics: SaasPlatformMetrics | null | undefined,
   storage: SaasPlatformStorage | null | undefined
@@ -21,12 +21,12 @@ export const findDatabaseUsage = (
   points: SaasPlatformMetricPoint[];
   storage: SaasPlatformStorageUsage | null | undefined;
 } => {
-  const esPoints = findMetricPoints(metrics, MetricType.EsUsedSize);
-  if (storage?.es_used_size || esPoints.length > 0) {
-    return { points: esPoints, storage: storage?.es_used_size };
+  const postgresPoints = findMetricPoints(metrics, MetricType.PostgresUsedSize);
+  if (storage?.postgres_used_size || postgresPoints.length > 0) {
+    return { points: postgresPoints, storage: storage?.postgres_used_size };
   }
   return {
-    points: findMetricPoints(metrics, MetricType.PostgresUsedSize),
-    storage: storage?.postgres_used_size,
+    points: findMetricPoints(metrics, MetricType.EsUsedSize),
+    storage: storage?.es_used_size,
   };
 };
