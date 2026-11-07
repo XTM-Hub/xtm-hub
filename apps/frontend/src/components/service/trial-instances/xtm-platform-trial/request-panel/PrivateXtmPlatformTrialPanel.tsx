@@ -2,7 +2,6 @@
 
 import { PortalContext } from '@/components/me/AppPortalContext';
 import { invalidatePrivateNavigationQueries } from '@/components/menu/navigation/private/private-navigation-query-invalidation';
-import { XTM_PLATFORM_TRIAL_PRODUCTS } from '@/components/service/trial-instances/form-constants';
 import { ReachSalesButton } from '@/components/service/trial-instances/reach-sales/ReachSalesButton';
 import {
   XtmPlatformTrialForm,
@@ -70,7 +69,6 @@ export const PrivateXtmPlatformTrialPanel = ({
     mutate({
       input: {
         ...rest,
-        products: XTM_PLATFORM_TRIAL_PRODUCTS,
         source: DeploymentRequestSource.Xtmhub,
       },
     });

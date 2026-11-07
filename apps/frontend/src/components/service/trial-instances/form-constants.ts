@@ -25,7 +25,7 @@ export const USE_CASES_BY_PLATFORM_IDENTIFIER: Record<
   [PlatformIdentifier.Xtmone]: [],
 };
 
-export const XTM_PLATFORM_TRIAL_PRODUCTS = [
+const XTM_PLATFORM_TRIAL_PRODUCTS = [
   PlatformIdentifier.Xtmone,
   PlatformIdentifier.Opencti,
   PlatformIdentifier.Openaev,
