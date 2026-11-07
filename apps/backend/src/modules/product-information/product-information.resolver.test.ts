@@ -1,3 +1,4 @@
+import { ApolloServer } from '@apollo/server';
 import { v4 as uuidv4 } from 'uuid';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -25,6 +26,7 @@ import {
 import { requestContext } from '../../context/request.context';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { PortalContext } from '../../model/portal-context';
+import createSchema from '../../server/graphql-schema';
 import { SaasManagerClient } from '../../thirdparty/saasmanager/client';
 import { isFeatureEnabled } from '../../utils/feature-flag.util';
 import { PlatformConfigurationDomain } from '../registration/platform-configuration/platform-configuration.domain';
@@ -207,6 +209,76 @@ describe('query.registeredSaasPlatformData', () => {
       // Then
       expect(result).toBeNull();
       expect(callSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('through the schema', () => {
+    const REGISTERED_SAAS_PLATFORM_DATA_QUERY = `
+      query ($input: RegisteredSaasPlatformDataInput!) {
+        registeredSaasPlatformData(input: $input) {
+          metadata { hostname }
+        }
+      }
+    `;
+    const HOSTNAME = 'my-platform.example.com';
+
+    const server = new ApolloServer<Partial<PortalContext>>({
+      schema: createSchema(),
+    });
+
+    const executeQuery = async (contextValue: Partial<PortalContext>) => {
+      const response = await server.executeOperation(
+        {
+          query: REGISTERED_SAAS_PLATFORM_DATA_QUERY,
+          variables: {
+            input: {
+              service_instance_id: uuidv4(),
+              metrics_period: SaasPlatformMetricsPeriod.Last_90Days,
+            },
+          },
+        },
+        { contextValue }
+      );
+      if (response.body.kind !== 'single') {
+        throw new Error('Expected a single GraphQL response');
+      }
+      return response.body.singleResult;
+    };
+
+    beforeEach(() => {
+      vi.spyOn(
+        ProductInformationApp,
+        'loadRegisteredSaasPlatformData'
+      ).mockResolvedValue({ metadata: { hostname: HOSTNAME } });
+    });
+
+    it('should return the data to a user without the BYPASS or READ_SAAS_METRICS capability', async () => {
+      // Given a user who holds neither capability; the secure resolver loads its capabilities onto the user
+      const contextValue = {
+        ...contextRegistererUserSecondOrga,
+        user: { ...contextRegistererUserSecondOrga.user },
+      };
+
+      // When
+      const result = await executeQuery(contextValue);
+
+      // Then
+      expect(result.errors).toBeUndefined();
+      expect(result.data).toEqual({
+        registeredSaasPlatformData: { metadata: { hostname: HOSTNAME } },
+      });
+    });
+
+    it('should refuse an unauthenticated user', async () => {
+      // Given / When
+      const result = await executeQuery({});
+
+      // Then
+      expect(result.errors).toHaveLength(1);
+      expect(result.data).toEqual({ registeredSaasPlatformData: null });
+      expect(
+        ProductInformationApp.loadRegisteredSaasPlatformData
+      ).not.toHaveBeenCalled();
     });
   });
 });
