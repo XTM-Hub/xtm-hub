@@ -2,15 +2,14 @@ import { EpicFormSheet } from '@/components/epic/EpicFormSheet';
 import { DeleteEpic } from '@/components/epic/epic-item/DeleteEpic';
 import { IconActions, IconActionsItem } from '@/components/ui/IconActions';
 import { ShareLinkButton } from '@/components/ui/share-link/ShareLinkButton';
-import { useEpicListContext } from '@/hooks/use-epic-list-context';
 import { useTranslate } from '@/hooks/use-translate';
 import { Chip } from '@filigran/design-system';
 import { MoreVertIcon } from '@filigran/icon';
-import { epic_fragment$data } from '@generated/epic_fragment.graphql';
+import { EpicFieldsFragment } from '@graphql/generated';
 import { useState } from 'react';
 
 interface EpicAdminMenuProps {
-  epic: epic_fragment$data;
+  epic: EpicFieldsFragment;
   userCanDelete?: boolean;
   userCanUpdate?: boolean;
 }
@@ -21,12 +20,10 @@ export const EpicAdminMenu = ({
 }: EpicAdminMenuProps) => {
   const t = useTranslate();
 
-  const { connectionID } = useEpicListContext();
-
-  const [deleteEpic, setDeleteEpic] = useState<epic_fragment$data | undefined>(
+  const [deleteEpic, setDeleteEpic] = useState<EpicFieldsFragment | undefined>(
     undefined
   );
-  const [updateEpic, setUpdateEpic] = useState<epic_fragment$data | undefined>(
+  const [updateEpic, setUpdateEpic] = useState<EpicFieldsFragment | undefined>(
     undefined
   );
 
@@ -74,7 +71,6 @@ export const EpicAdminMenu = ({
       {deleteEpic && (
         <DeleteEpic
           key={`delete-${deleteEpic.id}`}
-          connectionId={connectionID}
           epic={deleteEpic}
           open={!!deleteEpic}
           setOpen={(open) => setDeleteEpic(open ? deleteEpic : undefined)}

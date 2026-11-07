@@ -4348,10 +4348,44 @@ export type VotingRoundRankingQueryVariables = Exact<{
 
 export type VotingRoundRankingQuery = { __typename?: 'Query', votingRoundResults: { __typename?: 'VotingRoundResults', total_voters: number, round: { __typename?: 'VotingRound', id: string, name: string, status: VotingRoundStatus }, results: Array<{ __typename?: 'VotableFeatureResult', vote_count: number, feature: { __typename?: 'VotableFeature', id: string, voting_round_id: any, title: string, short_description: string, description: string, product: FiligranProduct, illustration_document_id: any | null, position: number, active: boolean, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> } }> } };
 
+export type EpicCreateMutationVariables = Exact<{
+  input: CreateEpicInput;
+}>;
+
+
+export type EpicCreateMutation = { __typename?: 'Mutation', createEpic: { __typename?: 'Epic', id: string, short_description: string, description: string, problem_to_solve: string, proposed_solution: string, expected_value: string, title: string, timeline: Timeline, edition_type: EditionType, products: Array<FiligranProduct>, slack_link: string | null, active: boolean, epic_type: EpicType, created_at: any, updated_at: any | null } };
+
+export type EpicUpdateMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+  input: UpdateEpicInput;
+}>;
+
+
+export type EpicUpdateMutation = { __typename?: 'Mutation', updateEpic: { __typename?: 'Epic', id: string, short_description: string, description: string, problem_to_solve: string, proposed_solution: string, expected_value: string, title: string, timeline: Timeline, edition_type: EditionType, products: Array<FiligranProduct>, slack_link: string | null, active: boolean, epic_type: EpicType, created_at: any, updated_at: any | null } };
+
+export type EpicDeleteMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type EpicDeleteMutation = { __typename?: 'Mutation', deleteEpic: { __typename?: 'Epic', id: string } | null };
+
+export type EpicFieldsFragment = { __typename?: 'Epic', id: string, short_description: string, description: string, problem_to_solve: string, proposed_solution: string, expected_value: string, title: string, timeline: Timeline, edition_type: EditionType, products: Array<FiligranProduct>, slack_link: string | null, active: boolean, epic_type: EpicType, created_at: any, updated_at: any | null };
+
 export type EpicCountPerTimelineQueryQueryVariables = Exact<{ [key: string]: never; }>;
 
 
 export type EpicCountPerTimelineQueryQuery = { __typename?: 'Query', countEpicsPerTimeline: Array<{ __typename?: 'EpicCountPerTimeline', timeline: Timeline, count: number }> };
+
+export type EpicsQueryVariables = Exact<{
+  count: Scalars['Int']['input'];
+  orderBy: EpicOrdering;
+  orderMode: OrderingMode;
+  searchTerm: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type EpicsQuery = { __typename?: 'Query', epics: { __typename?: 'EpicConnection', totalCount: number, edges: Array<{ __typename?: 'EpicEdge', node: { __typename?: 'Epic', id: string, short_description: string, description: string, problem_to_solve: string, proposed_solution: string, expected_value: string, title: string, timeline: Timeline, edition_type: EditionType, products: Array<FiligranProduct>, slack_link: string | null, active: boolean, epic_type: EpicType, created_at: any, updated_at: any | null } }> } | null };
 
 
 export const CompetitorRowFragmentDoc = `
@@ -4724,6 +4758,25 @@ export const VotingRoundRowFragmentDoc = `
   opened_at
   closed_at
   created_at
+}
+    `;
+export const EpicFieldsFragmentDoc = `
+    fragment EpicFields on Epic {
+  id
+  short_description
+  description
+  problem_to_solve
+  proposed_solution
+  expected_value
+  title
+  timeline
+  edition_type
+  products
+  slack_link
+  active
+  epic_type
+  created_at
+  updated_at
 }
     `;
 export const CompetitorAddDocument = `
@@ -9155,6 +9208,93 @@ useInfiniteVotingRoundRankingQuery.getKey = (variables: VotingRoundRankingQueryV
 useInfiniteVotingRoundRankingQuery.getRootKey = () => ['VotingRoundRanking.infinite'] as const;
 useVotingRoundRankingQuery.fetcher = (client: GraphQLClient, variables: VotingRoundRankingQueryVariables, headers?: RequestInit['headers']) => fetcher<VotingRoundRankingQuery, VotingRoundRankingQueryVariables>(client, VotingRoundRankingDocument, variables, headers);
 
+export const EpicCreateDocument = `
+    mutation EpicCreate($input: CreateEpicInput!) {
+  createEpic(input: $input) {
+    ...EpicFields
+  }
+}
+    ${EpicFieldsFragmentDoc}`;
+
+export const useEpicCreateMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<EpicCreateMutation, TError, EpicCreateMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<EpicCreateMutation, TError, EpicCreateMutationVariables, TContext>(
+      {
+    mutationKey: ['EpicCreate'],
+    mutationFn: (variables?: EpicCreateMutationVariables) => fetcher<EpicCreateMutation, EpicCreateMutationVariables>(client, EpicCreateDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useEpicCreateMutation.getKey = () => ['EpicCreate'];
+useEpicCreateMutation.getRootKey = () => ['EpicCreate'] as const;
+useEpicCreateMutation.fetcher = (client: GraphQLClient, variables: EpicCreateMutationVariables, headers?: RequestInit['headers']) => fetcher<EpicCreateMutation, EpicCreateMutationVariables>(client, EpicCreateDocument, variables, headers);
+
+export const EpicUpdateDocument = `
+    mutation EpicUpdate($id: ID!, $input: UpdateEpicInput!) {
+  updateEpic(id: $id, input: $input) {
+    ...EpicFields
+  }
+}
+    ${EpicFieldsFragmentDoc}`;
+
+export const useEpicUpdateMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<EpicUpdateMutation, TError, EpicUpdateMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<EpicUpdateMutation, TError, EpicUpdateMutationVariables, TContext>(
+      {
+    mutationKey: ['EpicUpdate'],
+    mutationFn: (variables?: EpicUpdateMutationVariables) => fetcher<EpicUpdateMutation, EpicUpdateMutationVariables>(client, EpicUpdateDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useEpicUpdateMutation.getKey = () => ['EpicUpdate'];
+useEpicUpdateMutation.getRootKey = () => ['EpicUpdate'] as const;
+useEpicUpdateMutation.fetcher = (client: GraphQLClient, variables: EpicUpdateMutationVariables, headers?: RequestInit['headers']) => fetcher<EpicUpdateMutation, EpicUpdateMutationVariables>(client, EpicUpdateDocument, variables, headers);
+
+export const EpicDeleteDocument = `
+    mutation EpicDelete($id: ID!) {
+  deleteEpic(id: $id) {
+    id
+  }
+}
+    `;
+
+export const useEpicDeleteMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<EpicDeleteMutation, TError, EpicDeleteMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<EpicDeleteMutation, TError, EpicDeleteMutationVariables, TContext>(
+      {
+    mutationKey: ['EpicDelete'],
+    mutationFn: (variables?: EpicDeleteMutationVariables) => fetcher<EpicDeleteMutation, EpicDeleteMutationVariables>(client, EpicDeleteDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useEpicDeleteMutation.getKey = () => ['EpicDelete'];
+useEpicDeleteMutation.getRootKey = () => ['EpicDelete'] as const;
+useEpicDeleteMutation.fetcher = (client: GraphQLClient, variables: EpicDeleteMutationVariables, headers?: RequestInit['headers']) => fetcher<EpicDeleteMutation, EpicDeleteMutationVariables>(client, EpicDeleteDocument, variables, headers);
+
 export const EpicCountPerTimelineQueryDocument = `
     query EpicCountPerTimelineQuery {
   countEpicsPerTimeline {
@@ -9208,3 +9348,66 @@ export const useInfiniteEpicCountPerTimelineQueryQuery = <
 useInfiniteEpicCountPerTimelineQueryQuery.getKey = (variables?: EpicCountPerTimelineQueryQueryVariables) => variables === undefined ? ['EpicCountPerTimelineQuery.infinite'] : ['EpicCountPerTimelineQuery.infinite', variables];
 useInfiniteEpicCountPerTimelineQueryQuery.getRootKey = () => ['EpicCountPerTimelineQuery.infinite'] as const;
 useEpicCountPerTimelineQueryQuery.fetcher = (client: GraphQLClient, variables?: EpicCountPerTimelineQueryQueryVariables, headers?: RequestInit['headers']) => fetcher<EpicCountPerTimelineQueryQuery, EpicCountPerTimelineQueryQueryVariables>(client, EpicCountPerTimelineQueryDocument, variables, headers);
+
+export const EpicsDocument = `
+    query Epics($count: Int!, $orderBy: EpicOrdering!, $orderMode: OrderingMode!, $searchTerm: String) {
+  epics(
+    first: $count
+    orderBy: $orderBy
+    orderMode: $orderMode
+    searchTerm: $searchTerm
+  ) {
+    totalCount
+    edges {
+      node {
+        ...EpicFields
+      }
+    }
+  }
+}
+    ${EpicFieldsFragmentDoc}`;
+
+export const useEpicsQuery = <
+      TData = EpicsQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: EpicsQueryVariables,
+      options?: Omit<UseQueryOptions<EpicsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<EpicsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<EpicsQuery, TError, TData>(
+      {
+    queryKey: ['Epics', variables],
+    queryFn: fetcher<EpicsQuery, EpicsQueryVariables>(client, EpicsDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useEpicsQuery.getKey = (variables: EpicsQueryVariables) => ['Epics', variables];
+useEpicsQuery.getRootKey = () => ['Epics'] as const;
+export const useInfiniteEpicsQuery = <
+      TData = InfiniteData<EpicsQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: EpicsQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<EpicsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<EpicsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<EpicsQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['Epics.infinite', variables],
+      queryFn: (metaData) => fetcher<EpicsQuery, EpicsQueryVariables>(client, EpicsDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteEpicsQuery.getKey = (variables: EpicsQueryVariables) => ['Epics.infinite', variables];
+useInfiniteEpicsQuery.getRootKey = () => ['Epics.infinite'] as const;
+useEpicsQuery.fetcher = (client: GraphQLClient, variables: EpicsQueryVariables, headers?: RequestInit['headers']) => fetcher<EpicsQuery, EpicsQueryVariables>(client, EpicsDocument, variables, headers);

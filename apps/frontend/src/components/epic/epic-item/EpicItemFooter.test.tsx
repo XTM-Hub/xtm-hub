@@ -1,18 +1,18 @@
 import { EpicItemFooter } from '@/components/epic/epic-item/EpicItemFooter';
 import testRender from '@/utils/test/test-render';
-import { epic_fragment$data } from '@generated/epic_fragment.graphql';
 import { EditionType, EpicType, FiligranProduct } from '@graphql/generated';
+import { mockEpic } from '@graphql/mocks';
 import { screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
 describe('EpicItemFooter', () => {
-  const epic = {
+  const epic = mockEpic({
     id: 'epic-1',
     title: 'Roadmap epic',
     epic_type: EpicType.Other,
     edition_type: EditionType.CommunityEdition,
     products: [FiligranProduct.Opencti],
-  } as epic_fragment$data;
+  });
 
   const defaultProps = {
     epic,

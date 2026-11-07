@@ -89,6 +89,8 @@ export const ProvidersWrapper = ({
 
 interface TestRenderOptions {
   relayConfig?: RelayMockEnvironment;
+  /** The react-query client to render with, to seed or inspect its cache. */
+  queryClient?: QueryClient;
   me?: Partial<meContext_fragment$data> | null;
   settings?: Partial<settingsContext_fragment$data> | null;
 }
@@ -125,10 +127,10 @@ const createTestQueryClient = () =>
   });
 
 export const TestWrapper = ({ options, children }: TestWrapperProps) => {
-  const { relayConfig, me, settings } = options ?? {};
+  const { relayConfig, me, settings, queryClient } = options ?? {};
 
   return (
-    <QueryClientProvider client={createTestQueryClient()}>
+    <QueryClientProvider client={queryClient ?? createTestQueryClient()}>
       <ProvidersWrapper
         relayConfig={relayConfig}
         me={generateMockUser(me)}
