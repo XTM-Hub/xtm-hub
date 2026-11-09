@@ -1,3 +1,4 @@
+import { ANALYTICS_ID_ATTRIBUTE } from '@/lib/analytics/analytics.consts';
 import { ANALYTICS_ELEMENT_IDS } from '@/lib/analytics/analytics.registry';
 
 const ANALYTICS_DOMAINS = {
@@ -64,6 +65,14 @@ export interface AnalyticsElementDefinition {
 }
 
 export type AnalyticsElementId = keyof typeof ANALYTICS_ELEMENT_IDS;
+
+export const analyticsId = (id: AnalyticsElementId) => ({
+  [ANALYTICS_ID_ATTRIBUTE]: id,
+});
+
+export type AnalyticsFieldProps =
+  | { analyticsId: AnalyticsElementId; formField?: never }
+  | { analyticsId?: never; formField: true };
 
 export const isAnalyticsElementId = (
   value: string
