@@ -1,4 +1,5 @@
 import { ApolloServerPlugin } from '@apollo/server';
+import { Kind, OperationDefinitionNode } from 'graphql';
 import client, { Counter, Gauge, Histogram } from 'prom-client';
 
 export const registry = client.register;
@@ -40,6 +41,18 @@ export const sseActiveConnectionsGauge = new Gauge({
   labelNames: ['subscription'],
 });
 
+const MULTIPLE_ROOT_FIELDS_LABEL = 'multiple';
+
+// The schema bounds root field names, unlike the operation name the client sends: an unchecked name would add new
+// time series to the registry on every request. An alias keeps the real field name.
+export const getRootFieldLabel = (operation: OperationDefinitionNode) => {
+  const [selection, ...otherSelections] = operation.selectionSet.selections;
+  if (selection?.kind !== Kind.FIELD || otherSelections.length > 0) {
+    return MULTIPLE_ROOT_FIELDS_LABEL;
+  }
+  return selection.name.value;
+};
+
 export const operationMetricsPlugin: ApolloServerPlugin = {
   async requestDidStart() {
     let endTimer: (() => void) | null = null;
@@ -56,29 +69,17 @@ export const operationMetricsPlugin: ApolloServerPlugin = {
     } as const;
 
     return {
-      async didResolveOperation({
-        request,
-        document,
-        operationName: operationNameFromParameters,
-      }) {
-        const { operationName: operationNameFromRequest } = request;
-        const operationName =
-          operationNameFromRequest ?? operationNameFromParameters;
-        if (!operationName) return;
+      async didResolveOperation({ operation }) {
+        if (!operation) return;
+        const { operation: operationKind } = operation;
+        if (operationKind !== 'query' && operationKind !== 'mutation') return;
 
-        for (const def of document.definitions) {
-          if (def.kind === 'OperationDefinition') {
-            const operation = def.operation as keyof typeof operationMapping;
-            if (operationMapping[operation]) {
-              const operationType = operationMapping[operation](operationName);
-              endTimer = graphqlOperationDuration.startTimer({
-                operation: operationType,
-                name: operationName,
-              });
-              break;
-            }
-          }
-        }
+        const name = getRootFieldLabel(operation);
+        const operationType = operationMapping[operationKind](name);
+        endTimer = graphqlOperationDuration.startTimer({
+          operation: operationType,
+          name,
+        });
       },
 
       async willSendResponse() {

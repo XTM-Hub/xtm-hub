@@ -1,0 +1,107 @@
+import { ApolloServer } from '@apollo/server';
+import { makeExecutableSchema } from '@graphql-tools/schema';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import {
+  graphqlMutationCounter,
+  graphqlOperationDuration,
+  graphqlQueryCounter,
+  operationMetricsPlugin,
+  registry,
+} from './metrics';
+
+const TEST_SCHEMA = makeExecutableSchema({
+  typeDefs: `
+    type Query {
+      currentVotingRound(id: ID): String
+      otherField: String
+    }
+    type Mutation {
+      vote(id: ID): Boolean
+    }
+  `,
+  resolvers: {
+    Query: { currentVotingRound: () => 'round', otherField: () => 'other' },
+    Mutation: { vote: () => true },
+  },
+});
+
+describe('operationMetricsPlugin', () => {
+  let server: ApolloServer;
+
+  beforeAll(async () => {
+    server = new ApolloServer({
+      schema: TEST_SCHEMA,
+      plugins: [operationMetricsPlugin],
+    });
+    await server.start();
+  });
+
+  beforeEach(() => {
+    graphqlQueryCounter.reset();
+    graphqlMutationCounter.reset();
+    graphqlOperationDuration.reset();
+  });
+
+  afterAll(async () => {
+    await server.stop();
+  });
+
+  it('should never use an operation name made up by the client as a label', async () => {
+    // When
+    await server.executeOperation({
+      query: 'query MadeUpName123 { __typename }',
+      operationName: 'MadeUpName123',
+    });
+
+    // Then
+    const metrics = await registry.metrics();
+    expect(metrics).not.toContain('MadeUpName123');
+    expect(metrics).toContain('graphql_query_total{query="__typename"} 1');
+  });
+
+  it.each([
+    {
+      description: 'any operation name',
+      query: 'query AnyName { currentVotingRound(id: "1") }',
+      expectedLabel: 'currentVotingRound',
+    },
+    {
+      description: 'an alias',
+      query: 'query AnyName { renamed: currentVotingRound(id: "1") }',
+      expectedLabel: 'currentVotingRound',
+    },
+    {
+      description: 'several root fields',
+      query: 'query AnyName { currentVotingRound(id: "1") otherField }',
+      expectedLabel: 'multiple',
+    },
+  ])(
+    'should count a query with $description under $expectedLabel',
+    async ({ query, expectedLabel }) => {
+      // When
+      await server.executeOperation({ query });
+
+      // Then
+      const metrics = await registry.metrics();
+      expect(metrics).toContain(
+        `graphql_query_total{query="${expectedLabel}"} 1`
+      );
+      expect(metrics).not.toContain('AnyName');
+    }
+  );
+
+  it('should count a mutation under its root field', async () => {
+    // When
+    await server.executeOperation({
+      query: 'mutation MadeUpVote { vote(id: "1") }',
+    });
+
+    // Then
+    const metrics = await registry.metrics();
+    expect(metrics).toContain('graphql_mutation_total{mutation="vote"} 1');
+    expect(metrics).toContain(
+      'graphql_operation_duration_seconds_count{operation="mutation",name="vote"} 1'
+    );
+    expect(metrics).not.toContain('MadeUpVote');
+  });
+});
