@@ -23,6 +23,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import { analyticsProduct } from '@/lib/analytics/analytics.context';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { cn } from '@/lib/utils';
 import { buttonVariants, IconButton, Text } from '@filigran/design-system';
 import Link from 'next/link';
@@ -55,7 +57,7 @@ const SectionLinkItem = ({ link }: { link: SectionLink }) => {
   const nestedLinks = link.subLinks ?? [];
   const key = getSectionLinkKey(link);
 
-  if (nestedLinks.length === 0) {
+  if (!link.subLinks) {
     return (
       <li>
         <PublicSubLink {...link} />
@@ -73,6 +75,7 @@ const SectionLinkItem = ({ link }: { link: SectionLink }) => {
           className="border-none pl-0"
           value={`${key}-accordion`}>
           <AccordionTrigger
+            {...analyticsId(link.analyticsId)}
             className={cn(
               'h-9 py-1 pl-6 content-compact text-default-secondary cursor-pointer',
               NAVIGATION_SUBMENU_HOVER_CLASSES
@@ -153,6 +156,7 @@ export const LinkedSection = ({
     : currentPath.startsWith(section.pathPrefix);
   return (
     <Link
+      {...analyticsId(section.analyticsId)}
       href={section.href ?? section.pathPrefix}
       className={cn(
         buttonVariants({ priority: 'tertiary' }),
@@ -189,6 +193,8 @@ export const ClosedSection = ({ section }: { section: SectionConfig }) => {
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}>
         <IconButton
+          {...analyticsId(section.analyticsId)}
+          {...(section.product && analyticsProduct(section.product))}
           priority="tertiary"
           className={cn(
             'h-9 w-full justify-start rounded-none pl-5 cursor-pointer',
@@ -221,9 +227,11 @@ export const OpenedSection = ({ section }: { section: SectionConfig }) => {
   const currentPath = usePathname();
   return (
     <AccordionItem
+      {...(section.product && analyticsProduct(section.product))}
       className="border-none"
       value={section.key}>
       <AccordionTrigger
+        {...analyticsId(section.analyticsId)}
         className={cn(
           'h-9 pl-5 py-1 cursor-pointer hover:bg-elevation-hover font-normal hover:shadow-[inset_2px_0px]',
           currentPath.startsWith(section.pathPrefix) &&

@@ -5,6 +5,7 @@ import { NAVIGATION_ACTIVE_CLASSES } from '@/components/menu/navigation/shared/n
 import { useEditMode } from '@/context/edit-mode-context';
 import { useContentEditModeToggle } from '@/hooks/use-content-edit-mode-toggle';
 import { useExitEditMode } from '@/hooks/use-exit-edit-mode';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { cn } from '@/lib/utils';
 import { Button } from '@filigran/design-system';
 import { LanguageIcon } from '@filigran/icon';
@@ -33,6 +34,7 @@ export const EditTranslationsButton = ({
   return (
     <div className="shrink-0">
       <Button
+        {...analyticsId('admin_translation_mode_toggle')}
         priority="tertiary"
         disabled={isPending || isExiting}
         className={cn(
