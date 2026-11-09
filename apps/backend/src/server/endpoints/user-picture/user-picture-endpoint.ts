@@ -5,6 +5,7 @@ import { Readable } from 'stream';
 import { UserDomain } from '../../../modules/organization-management/user/user-domain/user.domain';
 import { MinIOClient } from '../../../thirdparty/minio/client';
 import { logApp } from '../../../utils/app-logger.util';
+import { setStoredFileSecurityHeaders } from '../shared/stored-file.util';
 
 const USER_PICTURE_RATE_WINDOW_MS = 60 * 1000;
 const USER_PICTURE_RATE_MAX = 300;
@@ -44,6 +45,7 @@ export const getUserPicture = async (
       'Cache-Control',
       `public, max-age=${USER_PICTURE_CACHE_MAX_AGE_SECONDS}, immutable`
     );
+    setStoredFileSecurityHeaders(res);
 
     stream.on('error', (error) => {
       logApp.error('Error while streaming user picture', { error });

@@ -17,6 +17,7 @@ import {
   CacheControl,
   respondNotModifiedIfFresh,
 } from '../shared/http-cache.util';
+import { setStoredFileSecurityHeaders } from '../shared/stored-file.util';
 
 export const documentVisualizeEndpoint = (app: Application) => {
   app.get(
@@ -65,6 +66,7 @@ export const documentVisualizeEndpoint = (app: Application) => {
           'Content-Disposition',
           `inline; filename="${document.file_name ?? 'document'}"`
         );
+        setStoredFileSecurityHeaders(res);
 
         stream.pipe(res);
       } catch (error) {
@@ -160,6 +162,7 @@ export const documentVisualizeEndpoint = (app: Application) => {
           'Content-Disposition',
           `inline; filename="${document.file_name ?? 'document'}"`
         );
+        setStoredFileSecurityHeaders(res);
 
         stream.pipe(res);
       } catch (error) {

@@ -24,6 +24,7 @@ vi.mock('../../../utils/app-logger.util', () => ({
 }));
 
 import { buildETag } from '../shared/http-cache.util';
+import { STORED_FILE_CONTENT_SECURITY_POLICY } from '../shared/stored-file.util';
 import { documentVisualizeEndpoint } from './document-visualize-endpoint';
 
 type Handler = (req: Request, res: Response) => Promise<unknown>;
@@ -105,6 +106,27 @@ describe('documentVisualizeEndpoint images route', () => {
       'public, no-cache'
     );
     expect(downloadFileMock).toHaveBeenCalledWith('minio-name');
+  });
+
+  it('should serve the image with a sandboxing Content-Security-Policy', async () => {
+    // Given
+    loadDocumentByMock.mockResolvedValue({
+      ...image,
+      mime_type: 'image/svg+xml',
+      file_name: 'logo.svg',
+    });
+    const res = buildResponse();
+
+    // When
+    await getImageHandler()(buildRequest(), res);
+
+    // Then
+    expect(res.setHeader).toHaveBeenCalledWith(
+      'Content-Security-Policy',
+      STORED_FILE_CONTENT_SECURITY_POLICY
+    );
+    expect(STORED_FILE_CONTENT_SECURITY_POLICY).toContain('sandbox');
+    expect(STORED_FILE_CONTENT_SECURITY_POLICY).toContain("default-src 'none'");
   });
 
   it('should answer 304 without downloading the file when the client copy is fresh', async () => {

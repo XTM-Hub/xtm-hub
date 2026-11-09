@@ -44,6 +44,7 @@ import platformInit, { minioInit } from './server/initialize';
 import { seedDevelopmentConnectors } from './server/initialize.helper';
 import { requestContextMiddleware } from './server/request-context.middleware';
 import { createSseSchemaDetailsOptions } from './server/schema-details';
+import { securityHeadersMiddleware } from './server/security-headers.middleware';
 import { ReadOnlySessionStore } from './server/session/read-only-session.store';
 import { getSessionStoreInstance } from './session-store-manager';
 import { initShutdown, registerShutdownHook } from './shutdown';
@@ -127,6 +128,7 @@ const readOnlySessionMiddleware = expressSession({
   ...sessionOptions,
   store: new ReadOnlySessionStore(sessionStore),
 });
+app.use(securityHeadersMiddleware);
 // Default express.json() limit (100kb) is too small for GraphQL mutations
 // carrying an inline base64 payload (e.g. a single connector logo ingested
 // via ingestManifestFragments - some logos alone are several MB), so it is
