@@ -3,7 +3,6 @@ import PublicDocumentsList from '@/components/service/document/PublicDocumentsLi
 import { ServiceListStorageKey } from '@/utils/filters-storage.utils';
 import { buildSignupRedirect, decodeSafeRedirect } from '@/utils/redirect';
 import testRender from '@/utils/test/test-render';
-import { publicDocumentsQuery } from '@generated/publicDocumentsQuery.graphql';
 import {
   DocumentOrdering,
   OrderingMode,
@@ -13,7 +12,6 @@ import { screen } from '@testing-library/react';
 import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 import { useRouter } from 'next/navigation';
 import React from 'react';
-import { PreloadedQuery } from 'react-relay';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const BASE_URL = 'https://xtm.local';
@@ -57,25 +55,21 @@ const expectPaginationRange = (
 };
 
 const testState = vi.hoisted(() => ({
-  usePreloadedQuery: vi.fn(),
-  useRefetchableFragment: vi.fn(),
-  readInlineData: vi.fn(),
+  usePublicDocumentsQuery: vi.fn(),
   useShareableResourceMapping: vi.fn(),
   useServiceListStorage: vi.fn(),
   useLogicalFiltersFromStorage: vi.fn(),
   useDocumentFacetsQuery: vi.fn(),
   useScrollPosition: vi.fn(),
-  refetch: vi.fn(),
   setSearch: vi.fn(),
   setPageSize: vi.fn(),
   setDisplayMode: vi.fn(),
   restore: vi.fn(),
 }));
 
-const withPublicDocuments = (totalCount: number) => [
-  { publicDocuments: { totalCount, edges: [] } },
-  testState.refetch,
-];
+const withPublicDocuments = (totalCount: number) => ({
+  data: { publicDocuments: { totalCount, edges: [] } },
+});
 
 vi.mock('@/utils/shareable-resources/use-shareable-resource-mapping', () => ({
   useShareableResourceMapping: testState.useShareableResourceMapping,
@@ -100,12 +94,22 @@ vi.mock('@graphql/generated', async (importOriginal) => {
   return {
     ...actual,
     useDocumentFacetsQuery: testState.useDocumentFacetsQuery,
+    usePublicDocumentsQuery: testState.usePublicDocumentsQuery,
   };
 });
 
 vi.mock('@/lib/graphql-client', () => ({
   portalGraphqlClient: { _mock: 'portalGraphqlClient' },
 }));
+
+vi.mock(
+  '@/components/service/integrations/[serviceInstanceId]/IntegrationListUrlFiltersSync',
+  () => ({
+    IntegrationListUrlFiltersSync: () => (
+      <div data-testid="integration-url-filters-sync" />
+    ),
+  })
+);
 
 vi.mock('@/hooks/use-scroll-position', () => ({
   default: testState.useScrollPosition,
@@ -117,27 +121,14 @@ vi.mock('usehooks-ts', async (importOriginal) => ({
     Object.assign((value: string) => callback(value), { cancel: () => {} }),
 }));
 
-vi.mock('react-relay', async (importOriginal) => {
-  const original = await importOriginal<typeof import('react-relay')>();
-  return {
-    ...original,
-    usePreloadedQuery: testState.usePreloadedQuery,
-    useRefetchableFragment: testState.useRefetchableFragment,
-    readInlineData: testState.readInlineData,
-    useMutation: () => [vi.fn(), false],
-  };
-});
-
 describe('PublicDocumentsList', () => {
   const serviceInstance = {
     id: SERVICE_INSTANCE_ID,
     slug: SERVICE_INSTANCE_SLUG,
   } as Partial<SeoServiceInstanceItemFragment>;
-  const queryRef = { variables: {} } as PreloadedQuery<publicDocumentsQuery>;
 
   const buildElement = () => (
     <PublicDocumentsList
-      queryRef={queryRef}
       serviceInstance={serviceInstance}
       baseUrl={BASE_URL}
     />
@@ -175,7 +166,7 @@ describe('PublicDocumentsList', () => {
   });
 
   beforeEach(() => {
-    testState.refetch.mockReset();
+    testState.usePublicDocumentsQuery.mockReset();
     testState.setSearch.mockReset();
     testState.setPageSize.mockReset();
     testState.setDisplayMode.mockReset();
@@ -192,10 +183,8 @@ describe('PublicDocumentsList', () => {
       restore: testState.restore,
     });
 
-    testState.usePreloadedQuery.mockReset();
-    testState.usePreloadedQuery.mockReturnValue({});
-    testState.useRefetchableFragment.mockReturnValue([
-      {
+    testState.usePublicDocumentsQuery.mockReturnValue({
+      data: {
         publicDocuments: {
           totalCount: 30,
           edges: [
@@ -222,11 +211,7 @@ describe('PublicDocumentsList', () => {
           ],
         },
       },
-      testState.refetch,
-    ]);
-    testState.readInlineData.mockImplementation(
-      (_fragment: unknown, node: unknown) => node
-    );
+    });
   });
 
   const mockFacetQuery = () => {
@@ -273,7 +258,6 @@ describe('PublicDocumentsList', () => {
     mockFacetQuery();
     testRender(
       <PublicDocumentsList
-        queryRef={queryRef}
         serviceInstance={serviceInstance}
         baseUrl={BASE_URL}
       />
@@ -299,7 +283,6 @@ describe('PublicDocumentsList', () => {
     // When
     testRender(
       <PublicDocumentsList
-        queryRef={queryRef}
         serviceInstance={serviceInstance}
         baseUrl={BASE_URL}
       />
@@ -316,7 +299,6 @@ describe('PublicDocumentsList', () => {
     mockEmptyFacetQuery();
     const { user } = testRender(
       <PublicDocumentsList
-        queryRef={queryRef}
         serviceInstance={serviceInstance}
         baseUrl={BASE_URL}
       />
@@ -353,12 +335,142 @@ describe('PublicDocumentsList', () => {
     ).toBeInTheDocument();
   });
 
-  it('should refetch with an encoded cursor when pagination moves to the next page', async () => {
+  it('should keep the header mounted and show a skeleton instead of the list while the first page is loading', () => {
+    // Given
+    mockEmptyFacetQuery();
+    testState.usePublicDocumentsQuery.mockReturnValue({
+      data: undefined,
+      isLoading: true,
+    });
+
+    // When
+    testRender(buildElement());
+
+    // Then
+    expect(screen.queryByText(DOCUMENT_NAME_ONE)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Utils.DocumentNotFound')
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: FILTERS_BUTTON_LABEL })
+    ).toBeInTheDocument();
+  });
+
+  it('should mount the URL filters sync of the integrations page while the first page is loading', () => {
+    // Given
+    mockEmptyFacetQuery();
+    testState.usePublicDocumentsQuery.mockReturnValue({
+      data: undefined,
+      isLoading: true,
+    });
+
+    // When
+    testRender(
+      <PublicDocumentsList
+        serviceInstance={
+          {
+            id: SERVICE_INSTANCE_ID,
+            slug: OPENCTI_INTEGRATIONS_SLUG,
+          } as Partial<SeoServiceInstanceItemFragment> as SeoServiceInstanceItemFragment
+        }
+        baseUrl={BASE_URL}
+      />
+    );
+
+    // Then
+    expect(
+      screen.getByTestId('integration-url-filters-sync')
+    ).toBeInTheDocument();
+  });
+
+  it('should restore the scroll position once the first page has loaded, not while the skeleton is displayed', () => {
+    // Given
+    mockEmptyFacetQuery();
+    testState.usePublicDocumentsQuery.mockReturnValue({
+      data: undefined,
+      isLoading: true,
+    });
+    const { rerender } = testRender(buildElement());
+    expect(testState.restore).not.toHaveBeenCalled();
+
+    // When
+    testState.usePublicDocumentsQuery.mockReturnValue({
+      ...withPublicDocuments(FILTERED_TOTAL_COUNT),
+      isLoading: false,
+    });
+    rerender(buildElement());
+
+    // Then
+    expect(testState.restore).toHaveBeenCalledOnce();
+  });
+
+  it('should show an error with a retry action instead of an empty list when the query failed', async () => {
+    // Given
+    mockEmptyFacetQuery();
+    const refetch = vi.fn();
+    testState.usePublicDocumentsQuery.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+      refetch,
+    });
+    const { user } = testRender(buildElement());
+
+    // When
+    await user.click(
+      screen.getByRole('button', { name: 'Service.List.Retry' })
+    );
+
+    // Then
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Service.List.LoadError'
+    );
+    expect(
+      screen.queryByText('Utils.DocumentNotFound')
+    ).not.toBeInTheDocument();
+    expect(refetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('should keep the documents on screen when a background refetch failed', () => {
+    // Given
+    mockEmptyFacetQuery();
+    testState.usePublicDocumentsQuery.mockReturnValue({
+      data: withPublicDocuments(FILTERED_TOTAL_COUNT).data,
+      isLoading: false,
+      isError: true,
+      refetch: vi.fn(),
+    });
+
+    // When
+    testRender(buildElement());
+
+    // Then
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it('should render the list with no documents instead of a skeleton when the query is not loading and returned no data', () => {
+    // Given
+    mockEmptyFacetQuery();
+    testState.usePublicDocumentsQuery.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+    });
+
+    // When
+    testRender(buildElement());
+
+    // Then
+    expect(
+      screen.getByRole('button', { name: FILTERS_BUTTON_LABEL })
+    ).toBeInTheDocument();
+    expect(screen.getByText('Utils.DocumentNotFound')).toBeInTheDocument();
+  });
+
+  it('should query the next page with an encoded cursor when pagination moves to the next page', async () => {
     // Given
     mockEmptyFacetQuery();
     const { user } = testRender(
       <PublicDocumentsList
-        queryRef={queryRef}
         serviceInstance={serviceInstance}
         baseUrl={BASE_URL}
       />
@@ -370,17 +482,22 @@ describe('PublicDocumentsList', () => {
     );
 
     // Then
-    expect(testState.refetch).toHaveBeenCalled();
-    expect(testState.refetch.mock.calls[0]?.[0]).toEqual({
-      count: 10,
-      cursor: btoa('10'),
-    });
+    expect(testState.usePublicDocumentsQuery).toHaveBeenLastCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        slug: SERVICE_INSTANCE_SLUG,
+        serviceInstanceId: SERVICE_INSTANCE_ID,
+        count: 10,
+        cursor: btoa('10'),
+      }),
+      expect.anything()
+    );
   });
 
   it('should reset the displayed page to the first one when the search term changes after paginating', async () => {
     // Given
     mockEmptyFacetQuery();
-    testState.useRefetchableFragment.mockReturnValue(
+    testState.usePublicDocumentsQuery.mockReturnValue(
       withPublicDocuments(LARGE_TOTAL_COUNT)
     );
     const { user, rerender, container } = testRender(buildElement());
@@ -392,7 +509,7 @@ describe('PublicDocumentsList', () => {
       ...baseStorageState(),
       search: 'narrow-search',
     });
-    testState.useRefetchableFragment.mockReturnValue(
+    testState.usePublicDocumentsQuery.mockReturnValue(
       withPublicDocuments(FILTERED_TOTAL_COUNT)
     );
     rerender(buildElement());
@@ -409,7 +526,7 @@ describe('PublicDocumentsList', () => {
   it('should reset the displayed page to the first one when a filter changes after paginating', async () => {
     // Given
     mockEmptyFacetQuery();
-    testState.useRefetchableFragment.mockReturnValue(
+    testState.usePublicDocumentsQuery.mockReturnValue(
       withPublicDocuments(LARGE_TOTAL_COUNT)
     );
     const { user, rerender, container } = testRender(buildElement());
@@ -421,7 +538,7 @@ describe('PublicDocumentsList', () => {
       ...baseStorageState(),
       labels: { 'label-1': true },
     });
-    testState.useRefetchableFragment.mockReturnValue(
+    testState.usePublicDocumentsQuery.mockReturnValue(
       withPublicDocuments(FILTERED_TOTAL_COUNT)
     );
     rerender(buildElement());
@@ -438,7 +555,7 @@ describe('PublicDocumentsList', () => {
   it('should reset the displayed page to the first one when the sort order changes after paginating', async () => {
     // Given
     mockEmptyFacetQuery();
-    testState.useRefetchableFragment.mockReturnValue(
+    testState.usePublicDocumentsQuery.mockReturnValue(
       withPublicDocuments(LARGE_TOTAL_COUNT)
     );
     const { user, rerender, container } = testRender(buildElement());
@@ -451,7 +568,7 @@ describe('PublicDocumentsList', () => {
       orderBy: DocumentOrdering.CreatedAt,
       orderMode: OrderingMode.Desc,
     });
-    testState.useRefetchableFragment.mockReturnValue(
+    testState.usePublicDocumentsQuery.mockReturnValue(
       withPublicDocuments(FILTERED_TOTAL_COUNT)
     );
     rerender(buildElement());
@@ -478,7 +595,6 @@ describe('PublicDocumentsList', () => {
     } as Partial<SeoServiceInstanceItemFragment>;
     const { user } = testRender(
       <PublicDocumentsList
-        queryRef={queryRef}
         serviceInstance={integrationsServiceInstance}
         baseUrl={BASE_URL}
       />
@@ -505,7 +621,6 @@ describe('PublicDocumentsList', () => {
     mockEmptyFacetQuery();
     testRender(
       <PublicDocumentsList
-        queryRef={queryRef}
         serviceInstance={serviceInstance}
         baseUrl={BASE_URL}
       />
@@ -533,7 +648,6 @@ describe('PublicDocumentsList', () => {
     } as Partial<SeoServiceInstanceItemFragment>;
     const { user } = testRender(
       <PublicDocumentsList
-        queryRef={queryRef}
         serviceInstance={integrationsServiceInstance}
         baseUrl={BASE_URL}
       />

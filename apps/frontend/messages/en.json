@@ -1554,6 +1554,8 @@
     "GoTo": "Go to service page",
     "GoToAdminLabel": "Manage",
     "List": {
+      "LoadError": "The documents could not be loaded.",
+      "Retry": "Retry",
       "ViewTab": "Select tab view",
       "ViewList": "Select list view",
       "Filters": "Filters",
