@@ -8,3 +8,25 @@ If you want to manually upgrade/downgrade elastic search:
 
 - run `yarn esmigrate:up` to run all migration files
 - run `yarn esmigrate:down` to remove the last migration (it will remove only this one)
+
+## Elasticsearch client
+
+The backend ships the Elasticsearch 8.x and 9.x clients (`@elastic/elasticsearch` and its alias
+`@elastic/elasticsearch-v9`): one client major cannot serve both server majors. `esDbClient.init()` picks one at
+startup, before the migrations, from `elasticsearch.engine_client` (`ELASTIC_ENGINE_CLIENT`):
+
+- `auto` (default): a `GET /` on the server decides. Elasticsearch 9 and later get the 9.x client, other versions
+  the 8.x client, with a deprecation warning;
+- `elasticsearch8` or `elasticsearch9`: that client, without reading the server.
+
+OpenSearch is not supported: the backend refuses to start on it. Any detection failure stops the startup too.
+
+## Elasticsearch tests
+
+`*.es.test.ts` files run against a real Elasticsearch and are skipped everywhere else. Run them with
+`ELASTIC_HOST`/`ELASTIC_PORT` pointing at the server, and `ES_TESTS_EXPECTED_CLIENT` set to the client it must
+get to also check the detection:
+
+- `VITEST_MODE=true yarn test:es`
+
+The "Elasticsearch tests" CI job runs them once per supported Elasticsearch major.
