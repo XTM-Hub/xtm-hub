@@ -1,3 +1,4 @@
+import { createHash } from 'crypto';
 import { createWriteStream } from 'fs';
 import { join } from 'path';
 import { Readable } from 'stream';
@@ -67,4 +68,12 @@ export const streamToBase64 = (stream: Readable): Promise<string> => {
       .once('end', () => resolve(Buffer.concat(chunks).toString('base64')))
       .once('error', reject);
   });
+};
+
+export const streamToSha256 = async (stream: Readable): Promise<string> => {
+  const hash = createHash('sha256');
+  for await (const chunk of stream) {
+    hash.update(chunk);
+  }
+  return hash.digest('hex');
 };

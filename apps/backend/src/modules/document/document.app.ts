@@ -523,7 +523,8 @@ export const DocumentApp = {
 
   /**
    * Replaces the external image of `doc` and returns the storage names of the
-   * files it made obsolete. It does not delete them: the caller must do so
+   * files it made obsolete. The image keeps its id; its file is only replaced
+   * when the content changed. It does not delete them: the caller must do so
    * once its outermost transaction is committed, so a rollback keeps them.
    */
   replaceExternalImage: async <T extends DocumentModel>(
@@ -533,6 +534,35 @@ export const DocumentApp = {
     const { service_instance_id } = doc;
     if (!service_instance_id) {
       throw new Error(ErrorCode.ServiceInstanceNotFound);
+    }
+
+    // Keep the id of the existing external image: its URL is public, indexed
+    // by search engines and shared in link previews, so it must stay valid.
+    const [existingImage] = await DocumentChildrenDomain.loadExternalImageFiles(
+      doc.id
+    );
+
+    // An unchanged image keeps its record and its file as they are: nothing is
+    // uploaded again and its storage name does not change.
+    if (
+      existingImage &&
+      (await DocumentUploadsHelper.hasSameContent(
+        externalImageUpload,
+        existingImage
+      ))
+    ) {
+      const deletedDuplicates =
+        await DocumentChildrenDomain.deleteExternalImages(
+          doc.id,
+          existingImage.id
+        );
+      return [
+        ...new Set(
+          toMinioNames(deletedDuplicates).filter(
+            (minioName) => minioName !== existingImage.minio_name
+          )
+        ),
+      ];
     }
 
     const [logoFile] = await DocumentUploadsHelper.processUploads(
@@ -548,10 +578,6 @@ export const DocumentApp = {
         return toMinioNames(deleted);
       }
 
-      // Keep the id of the existing external image: its URL is public, indexed
-      // by search engines and shared in link previews, so it must stay valid.
-      const [existingImage] =
-        await DocumentChildrenDomain.loadExternalImageFiles(doc.id);
       if (!existingImage) {
         await DocumentChildrenDomain.createImageDocuments(
           doc.id,

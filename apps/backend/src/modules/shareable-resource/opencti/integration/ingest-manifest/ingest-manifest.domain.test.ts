@@ -275,6 +275,48 @@ describe('upsertConnectors', () => {
     });
   });
 
+  describe('logo re-ingestion', () => {
+    const baseManifest = sampleExtractedManifest[0] as ManifestInformation;
+
+    const ingestLogo = async (slug: string, logo: string) => {
+      const [doc] = await IngestManifestDomain.upsertConnectors([
+        { ...baseManifest, slug, name: slug, logo },
+      ]);
+      return DocumentChildrenDomain.loadExternalImageFiles(doc!.id);
+    };
+
+    it('should keep the logo record and its file when the logo is unchanged', async () => {
+      // Given
+      const logo = 'data:image/png;base64,dW5jaGFuZ2VkLWxvZ28=';
+      const [firstImage] = await ingestLogo('unchanged-logo', logo);
+
+      // When
+      const images = await ingestLogo('unchanged-logo', logo);
+
+      // Then
+      expect(images).toEqual([firstImage]);
+    });
+
+    it('should replace the logo file in place, keeping its id, when the logo changes', async () => {
+      // Given
+      const [firstImage] = await ingestLogo(
+        'changed-logo',
+        'data:image/png;base64,Zmlyc3QtbG9nbw=='
+      );
+
+      // When
+      const images = await ingestLogo(
+        'changed-logo',
+        'data:image/png;base64,c2Vjb25kLWxvZ28='
+      );
+
+      // Then
+      expect(images).toHaveLength(1);
+      expect(images[0]!.id).toBe(firstImage!.id);
+      expect(images[0]!.minio_name).not.toBe(firstImage!.minio_name);
+    });
+  });
+
   describe('use case linking', () => {
     it('should not create an unknown use case referenced by the manifest', async () => {
       const baseManifest = sampleExtractedManifest[0] as ManifestInformation;

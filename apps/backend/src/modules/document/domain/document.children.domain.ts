@@ -22,7 +22,10 @@ import {
   DocumentMetadataKeys,
 } from './document.metadata.domain';
 
-export type ExternalImageFile = Pick<DocumentModel, 'id' | 'minio_name'>;
+export type ExternalImageFile = Pick<
+  DocumentModel,
+  'id' | 'minio_name' | 'mime_type'
+>;
 
 export const DocumentChildrenDomain = {
   insertChildRelationship: async ({
@@ -206,7 +209,7 @@ export const DocumentChildrenDomain = {
         { column: 'Document.created_at', order: 'asc' },
         { column: 'Document.id', order: 'asc' },
       ])
-      .select('Document.id', 'Document.minio_name');
+      .select('Document.id', 'Document.minio_name', 'Document.mime_type');
   },
 
   replaceImageFile: async (imageDocumentId: DocumentId, file: MinioFile) => {
@@ -238,6 +241,6 @@ export const DocumentChildrenDomain = {
           qb.andWhereNot('Document.id', excludeDocumentId);
         }
       })
-      .returning(['id', 'minio_name']);
+      .returning(['id', 'minio_name', 'mime_type']);
   },
 };
