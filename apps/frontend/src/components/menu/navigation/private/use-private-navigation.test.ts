@@ -324,12 +324,12 @@ describe('usePrivateNavigation', () => {
 
   it.each`
     capabilities                                                                                           | expectedSettingsLabels
-    ${[PortalCapability.Bypass]}                                                                           | ${['Parameter', 'Security', 'Roles', 'UseCase', 'SolutionCategory', 'VotingRound', 'Organization', 'Service', 'ManageTrials', 'CSMBoard', 'Competitor', 'NewsFeed']}
-    ${[PortalCapability.ReadTrials]}                                                                       | ${['ManageTrials']}
+    ${[PortalCapability.Bypass]}                                                                           | ${['Organization', 'Parameters', 'Roles', 'Security', 'VotingRound', 'NewsFeed', 'Competitors', 'CSMBoard', 'ServiceCatalog', 'Trials']}
+    ${[PortalCapability.ReadTrials]}                                                                       | ${['Trials']}
     ${[PortalCapability.ReadSaasMetrics]}                                                                  | ${['CSMBoard']}
-    ${[PortalCapability.ModifyCompetitors]}                                                                | ${['Competitor']}
-    ${[PortalCapability.ReadTrials, PortalCapability.ModifyCompetitors]}                                   | ${['ManageTrials', 'Competitor']}
-    ${[PortalCapability.ReadTrials, PortalCapability.ReadSaasMetrics, PortalCapability.ModifyCompetitors]} | ${['ManageTrials', 'CSMBoard', 'Competitor']}
+    ${[PortalCapability.ModifyCompetitors]}                                                                | ${['Competitors']}
+    ${[PortalCapability.ReadTrials, PortalCapability.ModifyCompetitors]}                                   | ${['Competitors', 'Trials']}
+    ${[PortalCapability.ReadTrials, PortalCapability.ReadSaasMetrics, PortalCapability.ModifyCompetitors]} | ${['Competitors', 'CSMBoard', 'Trials']}
   `(
     'filters settings links according to portal capabilities $capabilities',
     ({ capabilities, expectedSettingsLabels }) => {
@@ -350,6 +350,33 @@ describe('usePrivateNavigation', () => {
       );
     }
   );
+
+  it('groups settings links under Access, Community and Management', () => {
+    const { result } = renderUsePrivateNavigation({
+      selectedOrganizationId: 'org-1',
+      capabilities: [PortalCapability.Bypass],
+    });
+
+    const settingsFooterSection = getFooterSection(
+      result.current.footerSections,
+      'settings'
+    );
+
+    expect(
+      settingsFooterSection?.links.map(({ label, group }) => [group, label])
+    ).toEqual([
+      ['SettingsAccess', 'Organization'],
+      ['SettingsAccess', 'Parameters'],
+      ['SettingsAccess', 'Roles'],
+      ['SettingsAccess', 'Security'],
+      ['SettingsCommunity', 'VotingRound'],
+      ['SettingsCommunity', 'NewsFeed'],
+      ['SettingsManagement', 'Competitors'],
+      ['SettingsManagement', 'CSMBoard'],
+      ['SettingsManagement', 'ServiceCatalog'],
+      ['SettingsManagement', 'Trials'],
+    ]);
+  });
 
   it('renders roadmap bottom link when roadmap service href exists', () => {
     const roadmapHref = '/app/service/xtm-platform-map';

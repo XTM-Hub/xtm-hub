@@ -1,6 +1,8 @@
 import {
   NAVIGATION_ACTIVE_CLASSES,
   NAVIGATION_HOVER_CLASSES,
+  NAVIGATION_SECTION_ACTIVE_CLASSES,
+  NAVIGATION_SUBMENU_HOVER_CLASSES,
 } from '@/components/menu/navigation/shared/navigation-styles';
 import type {
   SectionConfig,
@@ -22,70 +24,118 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
-import { buttonVariants, IconButton } from '@filigran/design-system';
+import { buttonVariants, IconButton, Text } from '@filigran/design-system';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import { useDebounceValue } from 'usehooks-ts';
 
+interface SectionLinksGroup {
+  label?: string;
+  links: SectionLink[];
+}
+
+const groupSectionLinks = (links: SectionLink[]): SectionLinksGroup[] => {
+  const groups: SectionLinksGroup[] = [];
+  for (const link of links) {
+    const lastGroup = groups.at(-1);
+    if (lastGroup && lastGroup.label === link.group) {
+      lastGroup.links.push(link);
+    } else {
+      groups.push({ label: link.group, links: [link] });
+    }
+  }
+  return groups;
+};
+
+const getSectionLinkKey = (link: SectionLink) =>
+  `${link.label}-${link.href ?? `group-${link.subLinks?.length ?? 0}`}`;
+
+const SectionLinkItem = ({ link }: { link: SectionLink }) => {
+  const nestedLinks = link.subLinks ?? [];
+  const key = getSectionLinkKey(link);
+
+  if (nestedLinks.length === 0) {
+    return (
+      <li>
+        <PublicSubLink {...link} />
+      </li>
+    );
+  }
+
+  return (
+    <li>
+      <Accordion
+        type="single"
+        collapsible
+        className="w-full">
+        <AccordionItem
+          className="border-none pl-0"
+          value={`${key}-accordion`}>
+          <AccordionTrigger
+            className={cn(
+              'h-9 py-1 pl-6 content-compact text-default-secondary cursor-pointer',
+              NAVIGATION_SUBMENU_HOVER_CLASSES
+            )}>
+            <span className="flex flex-1 items-center justify-between gap-1 truncate pr-1">
+              <span className="truncate">{link.label}</span>
+              {link.badge && (
+                <span
+                  aria-hidden={true}
+                  className="inline-flex min-w-4 items-center justify-center rounded-full border border-[var(--border-elevation-subtle)]/70 bg-elevation-highlight px-1.5 py-0.5 text-[10px] font-medium leading-none text-default-secondary">
+                  {link.badge}
+                </span>
+              )}
+            </span>
+          </AccordionTrigger>
+          <AccordionContent className="pb-0 pt-0">
+            <ul className="p-0">
+              {nestedLinks.map((subLink) => {
+                const subKey = `${subLink.label}-${subLink.href ?? 'sub-link'}`;
+
+                return (
+                  <li key={subKey}>
+                    <PublicSubLink {...subLink} />
+                  </li>
+                );
+              })}
+            </ul>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
+    </li>
+  );
+};
+
 const SectionLinksList = ({ links }: { links: SectionLink[] }) => (
   <ul className="space-y-1">
-    {links.map((link) => {
-      const nestedLinks = link.subLinks ?? [];
-      const hasNestedLinks = nestedLinks.length > 0;
-      const key = `${link.label}-${link.href ?? `group-${nestedLinks.length}`}`;
-
-      if (!hasNestedLinks) {
-        return (
-          <li key={key}>
-            <PublicSubLink {...link} />
-          </li>
-        );
-      }
-
-      return (
-        <li key={key}>
-          <Accordion
-            type="single"
-            collapsible
-            className="w-full">
-            <AccordionItem
-              className="border-none pl-0"
-              value={`${key}-accordion`}>
-              <AccordionTrigger
-                className={cn(
-                  'h-9 py-1 pl-6 content-compact text-default-secondary cursor-pointer hover:bg-elevation-hover',
-                  NAVIGATION_HOVER_CLASSES
-                )}>
-                <span className="flex flex-1 items-center justify-between gap-1 truncate pr-1">
-                  <span className="truncate">{link.label}</span>
-                  {link.badge && (
-                    <span
-                      aria-hidden={true}
-                      className="inline-flex min-w-4 items-center justify-center rounded-full border border-[var(--border-elevation-subtle)]/70 bg-elevation-highlight px-1.5 py-0.5 text-[10px] font-medium leading-none text-default-secondary">
-                      {link.badge}
-                    </span>
-                  )}
-                </span>
-              </AccordionTrigger>
-              <AccordionContent className="pb-0 pt-0">
-                <ul className="p-0">
-                  {nestedLinks.map((subLink) => {
-                    const subKey = `${subLink.label}-${subLink.href ?? 'sub-link'}`;
-
-                    return (
-                      <li key={subKey}>
-                        <PublicSubLink {...subLink} />
-                      </li>
-                    );
-                  })}
-                </ul>
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
+    {groupSectionLinks(links).map((group) =>
+      group.label ? (
+        <li key={group.label}>
+          <Text
+            as="span"
+            variant="content-caption"
+            className="flex h-8 items-end pb-1 pl-4 pr-2 text-default-secondary">
+            {group.label}
+          </Text>
+          <ul aria-label={group.label}>
+            {group.links.map((link) => (
+              <SectionLinkItem
+                key={getSectionLinkKey(link)}
+                link={link}
+              />
+            ))}
+          </ul>
         </li>
-      );
-    })}
+      ) : (
+        group.links.map((link) => (
+          <SectionLinkItem
+            key={getSectionLinkKey(link)}
+            link={link}
+          />
+        ))
+      )
+    )}
   </ul>
 );
 
@@ -143,7 +193,7 @@ export const ClosedSection = ({ section }: { section: SectionConfig }) => {
           className={cn(
             'h-9 w-full justify-start rounded-none pl-5 cursor-pointer',
             currentPath.startsWith(section.pathPrefix)
-              ? 'bg-filigran-brand-primary-transparency-10 shadow-[inset_2px_0px] shadow-filigran-brand-primary'
+              ? NAVIGATION_SECTION_ACTIVE_CLASSES
               : NAVIGATION_HOVER_CLASSES
           )}
           aria-label={section.label}
@@ -168,18 +218,24 @@ export const ClosedSection = ({ section }: { section: SectionConfig }) => {
 
 export const OpenedSection = ({ section }: { section: SectionConfig }) => {
   const Icon = section.icon;
+  const currentPath = usePathname();
   return (
     <AccordionItem
       className="border-none"
       value={section.key}>
-      <AccordionTrigger className="h-9 pl-5 py-1 cursor-pointer hover:bg-elevation-hover font-normal hover:shadow-[inset_2px_0px]">
+      <AccordionTrigger
+        className={cn(
+          'h-9 pl-5 py-1 cursor-pointer hover:bg-elevation-hover font-normal hover:shadow-[inset_2px_0px]',
+          currentPath.startsWith(section.pathPrefix) &&
+            NAVIGATION_SECTION_ACTIVE_CLASSES
+        )}>
         <MenuItemIcon icon={Icon} />
         <span className="flex-1 px-2 text-left text-default-primary text-sm content-base truncate">
           {section.label}
         </span>
       </AccordionTrigger>
       {section.links.length > 0 && (
-        <AccordionContent>
+        <AccordionContent className="bg-elevation-default">
           <SectionLinksList links={section.links} />
         </AccordionContent>
       )}
