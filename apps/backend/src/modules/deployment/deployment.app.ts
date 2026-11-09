@@ -86,7 +86,7 @@ import {
 
 export const XTM_PLATFORM_BUNDLE_SERVICE_INSTANCE_NAME = 'XTM Platform Bundle';
 
-// Every XTM Platform trial embarks these products, whatever the input says
+// Every XTM Platform trial embarks these products
 const XTM_PLATFORM_BUNDLE_PRODUCTS = [
   PlatformIdentifier.Xtmone,
   PlatformIdentifier.Opencti,

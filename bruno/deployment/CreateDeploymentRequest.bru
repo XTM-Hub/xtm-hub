@@ -36,7 +36,6 @@ body:graphql {
 body:graphql:vars {
   {
     "input": {
-      "products": ["xtmone", "opencti", "openaev"],
       "region": "eu_west",
       "job_title": "ciso_cso_cio",
       "activity_sector": "computer_network_security",
@@ -59,7 +58,6 @@ docs {
 
   Creates an XTM Platform bundle trial: one bundle deployment request plus one child trial for each of XTM One, OpenCTI and OpenAEV.
 
-  input.products: deprecated and ignored — the server always embarks xtmone, opencti and openaev
   input.use_cases_by_product: exactly one use case for opencti and one for openaev (none for xtmone)
   input.region: DeploymentRequestPlatformRegion (eu_west, us_east, apac_au, apac_sg)
   input.source: DeploymentRequestSource (xtmhub, opencti_demo, openaev_demo)
