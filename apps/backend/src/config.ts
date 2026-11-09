@@ -57,6 +57,10 @@ interface PortalConfig {
     name: string;
     secret: string;
   };
+  marketing_token: {
+    hash: string;
+    salt: string;
+  };
   trust_proxy: number | false;
   local_dev: boolean;
   environment: string;
@@ -132,6 +136,10 @@ const portalConfig: PortalConfig = {
   session: {
     name: config.get<string>('session.name'),
     secret: config.get<string>('session.secret'),
+  },
+  marketing_token: {
+    hash: config.get<string>('marketing_token.hash'),
+    salt: config.get<string>('marketing_token.salt'),
   },
   local_dev: localDev,
   trust_proxy: resolveTrustProxy(config.get<unknown>('trust_proxy'), localDev),
