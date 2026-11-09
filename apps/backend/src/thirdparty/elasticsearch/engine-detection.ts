@@ -50,8 +50,9 @@ export interface EngineConnection {
 //     still names OpenSearch;
 //   - Elastic Serverless gets the newest client: its version number is not
 //     meaningful, Elastic recommends recognizing it by `build_flavor`;
-//   - Elasticsearch 9 and later get the 9.x client. Every other answer,
-//     Elasticsearch 8, 7 or an unreadable version, keeps the 8.x client.
+//   - Elasticsearch 9 and later get the 9.x client, earlier versions the 8.x
+//     client. An answer without a readable version is refused: it is no known
+//     engine, and ELASTIC_ENGINE_CLIENT can still force a client.
 export const decideEngineClient = (info: EngineInfo): EngineClient => {
   if (
     info.version?.distribution === 'opensearch' ||
@@ -63,6 +64,11 @@ export const decideEngineClient = (info: EngineInfo): EngineClient => {
     return 'elasticsearch9';
   }
   const major = Number.parseInt(info.version?.number ?? '', 10);
+  if (Number.isNaN(major)) {
+    throw new Error(
+      `[ELASTICSEARCH] Search engine answered GET / without a readable version (${JSON.stringify(info.version?.number ?? null)}): set ELASTIC_ENGINE_CLIENT to elasticsearch8 or elasticsearch9 to force a client`
+    );
+  }
   return major >= 9 ? 'elasticsearch9' : 'elasticsearch8';
 };
 
@@ -128,6 +134,8 @@ export const probeEngine = (
     request.on('timeout', () => {
       request.destroy(new Error(`No answer after ${connection.timeout} ms`));
     });
+    // Also fires when the body is cut or stalls after the headers, so the probe
+    // never hangs (covered by the tests)
     request.on('error', (cause) => {
       reject(
         new Error(`[ELASTICSEARCH] Search engine seems down on ${url.origin}`, {

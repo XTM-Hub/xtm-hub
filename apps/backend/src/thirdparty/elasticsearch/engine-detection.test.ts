@@ -46,12 +46,6 @@ describe('decideEngineClient', () => {
       makeEngineInfo({ number: '8.11.0', build_flavor: 'serverless' }),
       'elasticsearch9',
     ],
-    [
-      'an unreadable version',
-      makeEngineInfo({ number: 'abc' }),
-      'elasticsearch8',
-    ],
-    ['no version', {}, 'elasticsearch8'],
   ])(
     'should select the right client when the engine is %s',
     (_description, info, expected) => {
@@ -91,6 +85,27 @@ describe('decideEngineClient', () => {
     // Then
     expect(decide).toThrow(OPENSEARCH_NOT_SUPPORTED_MESSAGE);
   });
+
+  it.each([
+    ['an unreadable version', makeEngineInfo({ number: 'abc' }), '"abc"'],
+    ['an empty version', makeEngineInfo({ number: '' }), '""'],
+    ['no version number', makeEngineInfo({}), 'null'],
+    ['no version at all', {}, 'null'],
+  ])(
+    'should refuse the engine when it answers with %s',
+    (_description, info, shownVersion) => {
+      // Given
+      // info comes from the dataset
+
+      // When
+      const decide = () => decideEngineClient(info);
+
+      // Then
+      expect(decide).toThrow(
+        `[ELASTICSEARCH] Search engine answered GET / without a readable version (${shownVersion}): set ELASTIC_ENGINE_CLIENT to elasticsearch8 or elasticsearch9 to force a client`
+      );
+    }
+  );
 });
 
 describe('resolveEngineClient', () => {
@@ -218,6 +233,45 @@ describe('probeEngine', () => {
     // Then
     await expect(probe).rejects.toThrow(
       `[ELASTICSEARCH] Search engine answered GET / on ${url} with an unreadable response`
+    );
+  });
+
+  it('should fail when the engine closes the connection mid-body', async () => {
+    // Given
+    const url = await startEngine((_request, response) => {
+      response.writeHead(200, {
+        'content-type': 'application/json',
+        'content-length': '1000',
+      });
+      response.write('{"version":');
+      response.socket?.destroy();
+    });
+
+    // When
+    const probe = probeEngine(connectionTo(url));
+
+    // Then
+    await expect(probe).rejects.toThrow(
+      `[ELASTICSEARCH] Search engine seems down on ${url}`
+    );
+  });
+
+  it('should fail when the engine stalls in the middle of the body', async () => {
+    // Given
+    const url = await startEngine((_request, response) => {
+      response.writeHead(200, {
+        'content-type': 'application/json',
+        'content-length': '1000',
+      });
+      response.write('{"version":');
+    });
+
+    // When
+    const probe = probeEngine(connectionTo(url));
+
+    // Then
+    await expect(probe).rejects.toThrow(
+      `[ELASTICSEARCH] Search engine seems down on ${url}`
     );
   });
 
