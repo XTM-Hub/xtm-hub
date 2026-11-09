@@ -54,6 +54,7 @@ export const AutocompleteOrganization = ({
 
   return (
     <AppCombobox<UserOrganizationFormProps>
+      formField
       className="w-[180px]"
       label={label}
       labelPosition="none"

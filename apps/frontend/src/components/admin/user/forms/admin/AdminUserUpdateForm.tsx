@@ -12,6 +12,7 @@ import { SheetFooter } from '@/components/ui/sheet';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { cn, isEmpty } from '@/lib/utils';
 import { Button, IconButton, Input } from '@filigran/design-system';
 import { DeleteIcon } from '@filigran/icon';
@@ -212,6 +213,7 @@ export const AdminUserUpdateForm = ({
                       <IconButton
                         type="button"
                         priority="tertiary"
+                        {...analyticsId('admin_user_organization_remove')}
                         aria-label={t('MenuActions.Remove')}
                         icon={<DeleteIcon className="h-4 w-4" />}
                         onClick={() => remove(index)}
@@ -228,18 +230,21 @@ export const AdminUserUpdateForm = ({
           {user.disabled ? (
             <Button
               priority="secondary"
+              {...analyticsId('admin_user_status_toggle')}
               onClick={() => disableUser({ disabled: false })}>
               {t('UserActions.Enable')}
             </Button>
           ) : (
             <ConfirmDialog
+              confirmAnalyticsId="admin_user_deactivation_confirm"
               title={t('MenuActions.Disable')}
               confirmLabel={t('MenuActions.Disable')}
               destructive
               trigger={
                 <Button
                   variant="destructive"
-                  priority="secondary">
+                  priority="secondary"
+                  {...analyticsId('admin_user_status_toggle')}>
                   {t('UserActions.Disable')}
                 </Button>
               }
@@ -253,12 +258,14 @@ export const AdminUserUpdateForm = ({
             <Button
               priority="secondary"
               type="button"
+              {...analyticsId('admin_form_cancel')}
               onClick={(e) => handleCloseSheet(e)}>
               {t('Utils.Cancel')}
             </Button>
             <Button
               disabled={!form.formState.isValid}
-              type="submit">
+              type="submit"
+              {...analyticsId('admin_user_submit')}>
               {t('Utils.Validate')}
             </Button>
           </div>

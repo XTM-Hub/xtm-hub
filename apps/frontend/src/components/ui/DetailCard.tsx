@@ -1,9 +1,14 @@
 'use client';
 
-import { MouseEvent, ReactNode, useCallback } from 'react';
+import {
+  type AnalyticsElementId,
+  analyticsId,
+} from '@/lib/analytics/analytics.ids';
+import { MouseEvent, ReactNode, useCallback, useRef } from 'react';
 
 interface DetailCardProps {
   onOpenDetail: () => void;
+  analyticsId: AnalyticsElementId;
   title: string;
   description: string;
   media?: ReactNode;
@@ -13,30 +18,30 @@ interface DetailCardProps {
 
 export const DetailCard = ({
   onOpenDetail,
+  analyticsId: elementId,
   title,
   description,
   media,
   extra,
   footer,
 }: DetailCardProps) => {
-  const handleCardClick = useCallback(
-    (event: MouseEvent<HTMLDivElement>) => {
-      const { currentTarget, target } = event;
-      if (!(target instanceof Element)) {
-        return;
-      }
-      if (!currentTarget.contains(target)) {
-        return;
-      }
-      if (target.closest('[data-no-open-detail]')) {
-        return;
-      }
-      onOpenDetail();
-    },
-    [onOpenDetail]
-  );
+  const titleRef = useRef<HTMLButtonElement>(null);
+  const handleCardClick = useCallback((event: MouseEvent<HTMLDivElement>) => {
+    const { currentTarget, target } = event;
+    if (!(target instanceof Element)) {
+      return;
+    }
+    if (!currentTarget.contains(target)) {
+      return;
+    }
+    if (target.closest('[data-no-open-detail]')) {
+      return;
+    }
+    titleRef.current?.click();
+  }, []);
 
   return (
+    // eslint-disable-next-line no-restricted-syntax -- forwards its click to the tagged title button
     <div
       onClick={handleCardClick}
       className="group flex h-full flex-col overflow-hidden rounded layer-1 bg-elevation-default hover:cursor-pointer">
@@ -45,6 +50,8 @@ export const DetailCard = ({
         <div className="flex flex-col gap-3">
           <h2 className="text-base font-semibold line-clamp-2">
             <button
+              {...analyticsId(elementId)}
+              ref={titleRef}
               type="button"
               data-no-open-detail
               onClick={() => onOpenDetail()}

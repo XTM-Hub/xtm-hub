@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/data-table';
 import { IconActions, IconActionsItem } from '@/components/ui/IconActions';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { getDataTableLabels } from '@/utils/design-system/data-table';
 import { APP_PATH } from '@/utils/path/constant';
@@ -85,13 +86,17 @@ const VotingRounds = () => {
       header: '',
       enableSorting: false,
       cell: ({ row }) => (
+        // eslint-disable-next-line no-restricted-syntax -- container whose children carry the IDs
         <div
           className="flex items-center justify-end"
           onClick={(event) => event.stopPropagation()}>
           <IconActions
+            analyticsId="list_row_actions_open"
             aria-label={t('Utils.OpenMenu')}
             icon={<MoreVertIcon className="h-4 w-4 text-icon-highlight" />}>
-            <IconActionsItem onClick={() => setRoundToEdit(row.original)}>
+            <IconActionsItem
+              {...analyticsId('admin_voting_round_edit')}
+              onClick={() => setRoundToEdit(row.original)}>
               {t('VotingRound.Actions.Edit')}
             </IconActionsItem>
           </IconActions>
@@ -108,6 +113,7 @@ const VotingRounds = () => {
         isLoading={isLoading}
         {...getDataTableLabels(t)}
         tableState={{ columnPinning: { right: ['actions'] } }}
+        getRowAnalyticsId={() => 'admin_voting_round_details_open'}
         onClickRow={({ original }) =>
           router.push(`/${APP_PATH}/admin/voting-rounds/${original.id}`)
         }

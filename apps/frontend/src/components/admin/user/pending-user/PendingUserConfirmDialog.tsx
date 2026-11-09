@@ -21,13 +21,18 @@ export const PendingUserConfirmDialog = ({
     return null;
   }
 
-  const i18nKey =
-    pendingUserDialog.action === 'approve'
-      ? 'PendingUserListPage.WarningUserAccept'
-      : 'PendingUserListPage.WarningUserRejection';
+  const isApproval = pendingUserDialog.action === 'approve';
+  const i18nKey = isApproval
+    ? 'PendingUserListPage.WarningUserAccept'
+    : 'PendingUserListPage.WarningUserRejection';
 
   return (
     <ConfirmDialog
+      confirmAnalyticsId={
+        isApproval
+          ? 'organization_join_request_approval_confirm'
+          : 'organization_join_request_rejection_confirm'
+      }
       open={!!pendingUserDialog}
       onOpenChange={onOpenChange}
       title={t(`${i18nKey}.Title`)}

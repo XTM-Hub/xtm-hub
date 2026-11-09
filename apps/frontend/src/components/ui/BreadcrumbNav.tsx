@@ -1,7 +1,9 @@
 'use client';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { Breadcrumbs, BreadcrumbsItem } from '@filigran/design-system';
 import Link from 'next/link';
+import { type ComponentProps } from 'react';
 
 interface BreadcrumbProps {
   value: BreadcrumbNavLink[];
@@ -13,6 +15,13 @@ export interface BreadcrumbNavLink {
   original?: boolean;
   fallback?: string;
 }
+
+const BreadcrumbLink = (props: ComponentProps<typeof Link>) => (
+  <Link
+    {...props}
+    {...analyticsId('nav_breadcrumb_open')}
+  />
+);
 
 export const BreadcrumbNav = ({ value }: BreadcrumbProps) => {
   const t = useTranslate();
@@ -37,7 +46,7 @@ export const BreadcrumbNav = ({ value }: BreadcrumbProps) => {
   return (
     <Breadcrumbs
       items={items}
-      linkComponent={Link}
+      linkComponent={BreadcrumbLink}
       label={t('DesignSystem.Breadcrumbs.Label')}
       className="pb-2 sm:pb-4"
     />

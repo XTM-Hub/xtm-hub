@@ -17,6 +17,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { cn } from '@/lib/utils';
 import { clearFiltersStorage } from '@/utils/filters-storage.utils';
 import { APP_PATH } from '@/utils/path/constant';
@@ -86,6 +87,7 @@ const HeaderComponent = ({ displayLogo }: HeaderComponentProps) => {
         {canManageUser && <NotificationButton />}
         <div className="mobile:hidden flex items-center">
           <IconActions
+            analyticsId="nav_user_menu_open"
             aria-label={t('MenuUser.ToggleUser')}
             icon={
               <div className="my-auto size-6">
@@ -93,9 +95,15 @@ const HeaderComponent = ({ displayLogo }: HeaderComponentProps) => {
               </div>
             }>
             <IconActionsItem asChild>
-              <Link href={`/${APP_PATH}/profile`}>{t('MenuUser.Profile')}</Link>
+              <Link
+                {...analyticsId('account_profile_open')}
+                href={`/${APP_PATH}/profile`}>
+                {t('MenuUser.Profile')}
+              </Link>
             </IconActionsItem>
-            <IconActionsItem onClick={handleLogout}>
+            <IconActionsItem
+              {...analyticsId('account_session_close')}
+              onClick={handleLogout}>
               {t('LoginPage.Logout')}
             </IconActionsItem>
           </IconActions>
@@ -104,7 +112,7 @@ const HeaderComponent = ({ displayLogo }: HeaderComponentProps) => {
           <Sheet
             open={open}
             onOpenChange={setOpen}>
-            <SheetTrigger>
+            <SheetTrigger {...analyticsId('nav_mobile_menu_open')}>
               <span className="sr-only">
                 {open ? t('Header.CloseMenu') : t('Header.OpenMenu')}
               </span>
@@ -135,12 +143,15 @@ const HeaderComponent = ({ displayLogo }: HeaderComponentProps) => {
                   </div>
                 </div>
                 <div className="mt-auto pt-4 pb-6 flex flex-col text-center">
-                  <Link href={`/${APP_PATH}/profile`}>
+                  <Link
+                    {...analyticsId('account_profile_open')}
+                    href={`/${APP_PATH}/profile`}>
                     <div className="w-full p-2 hover:bg-elevation-hover rounded">
                       {t('MenuUser.Profile')}
                     </div>
                   </Link>
                   <div
+                    {...analyticsId('account_session_close')}
                     className="p-2 hover:bg-elevation-hover rounded cursor-pointer"
                     onClick={handleLogout}>
                     {t('LoginPage.Logout')}

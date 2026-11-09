@@ -34,6 +34,7 @@ import { useAdminByPass } from '@/hooks/use-portal-capability';
 import { useTablePagination } from '@/hooks/use-table-pagination';
 import { useTranslate } from '@/hooks/use-translate';
 import { useUsersList } from '@/hooks/use-users-list';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { useDateFormatter } from '@/utils/date';
 import { getDataTableLabels } from '@/utils/design-system/data-table';
@@ -453,6 +454,7 @@ const UserList = ({ organization }: UserListProps) => {
                 if (!canResendInvite(row.original.status)) return null;
                 return (
                   <Button
+                    {...analyticsId('organization_member_invite')}
                     disabled={isResendingInvite}
                     onClick={(event) =>
                       handleResendInvite(event, row.original)
@@ -476,16 +478,19 @@ const UserList = ({ organization }: UserListProps) => {
                 const canDelete = canDeleteUserRow(row.original.id, me?.id);
                 const showResendInvite = canResendInvite(row.original.status);
                 return (
+                  // eslint-disable-next-line no-restricted-syntax -- container whose children carry the IDs
                   <div
                     className="flex items-center justify-end"
                     onClick={(event) => event.stopPropagation()}>
                     <IconActions
+                      analyticsId="list_row_actions_open"
                       aria-label={t('Utils.OpenMenu')}
                       icon={
                         <MoreVertIcon className="h-4 w-4 text-icon-highlight" />
                       }>
                       {showResendInvite && (
                         <IconActionsItem
+                          {...analyticsId('admin_user_invite')}
                           disabled={isResendingInvite}
                           onClick={(event) =>
                             handleResendInvite(event, row.original)
@@ -494,6 +499,7 @@ const UserList = ({ organization }: UserListProps) => {
                         </IconActionsItem>
                       )}
                       <IconActionsItem
+                        {...analyticsId('admin_user_delete')}
                         disabled={!canDelete}
                         onClick={() => setUserToDelete(row.original)}>
                         {t('Utils.Delete')}
@@ -609,6 +615,9 @@ const UserList = ({ organization }: UserListProps) => {
           rowCount: data.users.totalCount,
           enableRowSelection: (row) => row.original.id !== me!.id,
         }}
+        getRowAnalyticsId={() =>
+          isAdminPath ? 'admin_user_edit' : 'organization_member_edit'
+        }
         onClickRow={(row) => setUserEdit(row.original)}
         toolbar={
           <DataTableToolbar

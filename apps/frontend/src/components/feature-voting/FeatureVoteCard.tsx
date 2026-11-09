@@ -22,6 +22,7 @@ export const FeatureVoteCard = ({
 
   return (
     <DetailCard
+      analyticsId="roadmap_feature_open"
       onOpenDetail={openDetail}
       title={feature.title}
       description={feature.short_description}

@@ -3,6 +3,7 @@ import { FiligranProductMapping } from '@/components/epic/epic-item/FiligranProd
 import { FILIGRAN_PRODUCTS_ORDER } from '@/components/epic/filigran-products';
 import { AppCombobox } from '@/components/ui/AppCombobox';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { toComboboxOptionIds } from '@/utils/design-system/combobox';
 import { SearchField, Switch } from '@filigran/design-system';
 import { FiligranProduct } from '@graphql/generated';
@@ -57,6 +58,7 @@ export const EpicFilter = ({
 
       <div className="max-w-full sm:max-w-[100%]">
         <AppCombobox
+          analyticsId="roadmap_products_open"
           multiple
           label={t('Epic.FilterByProduct')}
           labelPosition="none"
@@ -71,6 +73,7 @@ export const EpicFilter = ({
       </div>
       <div className="ml-auto">
         <Switch
+          {...analyticsId('roadmap_delivered_epics_toggle')}
           label={t('Epic.ShowFinished')}
           checked={showFinished}
           onCheckedChange={onShowFinishedChange}

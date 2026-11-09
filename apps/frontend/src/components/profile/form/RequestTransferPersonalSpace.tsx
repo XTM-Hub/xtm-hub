@@ -6,6 +6,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Separator } from '@/components/ui/separator';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import {
   Button,
   Card,
@@ -87,6 +88,7 @@ export const RequestTransferPersonalSpace = () => {
             }}>
             <div className="mt-6 flex justify-end">
               <Button
+                {...analyticsId('account_personal_space_submit')}
                 variant="destructive"
                 aria-label={t('ProfilePage.PersonalSpace.TransferPersoSpace')}>
                 {t('ProfilePage.PersonalSpace.Transfer')}
@@ -96,6 +98,7 @@ export const RequestTransferPersonalSpace = () => {
         </CardContent>
       </Card>
       <ConfirmDialog
+        confirmAnalyticsId="account_personal_space_transfer_confirm"
         open={isDialogOpen}
         title={t('DialogActions.ContinueTitle')}
         confirmLabel={t('MenuActions.Continue')}

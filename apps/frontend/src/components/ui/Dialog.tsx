@@ -1,5 +1,9 @@
 import { useTranslate } from '@/hooks/use-translate';
 import {
+  type AnalyticsElementId,
+  analyticsId,
+} from '@/lib/analytics/analytics.ids';
+import {
   Button,
   Dialog,
   DialogBody,
@@ -15,6 +19,7 @@ interface DialogInformativeProps {
   isOpen: boolean;
   onClose: () => void;
   onButtonClick?: () => void;
+  analyticsId: AnalyticsElementId;
   title: string;
   description?: string;
   children: ReactNode;
@@ -28,6 +33,7 @@ export const DialogInformative = ({
   isOpen,
   onClose,
   onButtonClick,
+  analyticsId: elementId,
   title,
   description,
   children,
@@ -61,6 +67,7 @@ export const DialogInformative = ({
           <DialogFooter>
             <DialogClose asChild>
               <Button
+                {...analyticsId(elementId)}
                 className="mt-2 hover:cursor-pointer"
                 type="button"
                 priority={priority}

@@ -3,6 +3,7 @@ import { TrialsTabType } from '@/components/trials/trials.const';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { xtmPlatformTrialManageUsersFromDashboardPath } from '@/utils/path/constant';
 import {
@@ -97,6 +98,7 @@ export const TrialsRowActions = ({
     <>
       {isCancellable && (
         <ConfirmDialog
+          confirmAnalyticsId="admin_trial_cancellation_confirm"
           title={t('Service.Trials.Cancellation.Confirmation.Title')}
           confirmLabel={t('MenuActions.Delete')}
           trigger={
@@ -104,6 +106,7 @@ export const TrialsRowActions = ({
               variant="destructive"
               priority="tertiary"
               className="border m-1"
+              {...analyticsId('admin_trial_request_cancel')}
               aria-label={t('TrialsDashboard.Actions.CancelBundle')}
               icon={<CloseIcon className="h-4 w-4" />}
             />
@@ -122,6 +125,7 @@ export const TrialsRowActions = ({
                 <IconButton
                   priority="tertiary"
                   className="border m-1"
+                  {...analyticsId('admin_trial_queue_top_select')}
                   aria-label={t('TrialsDashboard.Actions.MoveToTop')}
                   icon={<ArrowShapeUpStackIcon className="h-4 w-4" />}
                   onClick={() =>
@@ -145,6 +149,7 @@ export const TrialsRowActions = ({
                 <IconButton
                   priority="tertiary"
                   className="border m-1"
+                  {...analyticsId('admin_trial_queue_up_select')}
                   aria-label={t('TrialsDashboard.Actions.MoveUp')}
                   icon={<ArrowShapeUpIcon className="h-4 w-4" />}
                   onClick={() =>
@@ -178,6 +183,7 @@ export const TrialsRowActions = ({
                   href={xtmPlatformTrialManageUsersFromDashboardPath(
                     request.service_instance_id
                   )}
+                  {...analyticsId('admin_trial_users_open')}
                 />
               </IconButton>
             </TooltipTrigger>

@@ -14,6 +14,7 @@ const AutoFormSwitch = ({
     <FormItem>
       <div className="flex items-center gap-3">
         <FormControl>
+          {/* eslint-disable-next-line no-restricted-syntax -- form field sent by its tagged submit button */}
           <Switch
             checked={field.value}
             onCheckedChange={field.onChange}

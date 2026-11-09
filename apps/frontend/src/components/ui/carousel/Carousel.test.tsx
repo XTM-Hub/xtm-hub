@@ -34,6 +34,11 @@ const ITEM_CLASSES = [
 ];
 const CALLER_ITEM_CLASS = 'cursor-pointer';
 const START_INDEX = 2;
+const ANALYTICS_IDS = {
+  previousAnalyticsId: 'resource_previous_screenshot_open',
+  nextAnalyticsId: 'resource_next_screenshot_open',
+  slideAnalyticsId: 'resource_screenshot_select',
+} as const;
 
 const fakeState = {
   snaps: [0, 0, 0],
@@ -64,7 +69,9 @@ const emit = (event: string) => {
 
 const renderCarousel = (props: Partial<CarouselProps> = {}) =>
   testRender(
-    <Carousel {...props}>
+    <Carousel
+      {...ANALYTICS_IDS}
+      {...props}>
       <CarouselItem>{FIRST_SLIDE}</CarouselItem>
       <CarouselItem>{SECOND_SLIDE}</CarouselItem>
       <CarouselItem>{THIRD_SLIDE}</CarouselItem>
@@ -362,6 +369,7 @@ describe('Carousel', () => {
     // When
     testRender(
       <Carousel
+        {...ANALYTICS_IDS}
         ref={rootRef}
         className={CALLER_HEIGHT_CLASS}>
         <CarouselItem
