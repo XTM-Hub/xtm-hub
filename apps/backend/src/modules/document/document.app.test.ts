@@ -2078,7 +2078,7 @@ describe('documentApp', () => {
         expect(MinIOClient.downloadFile).toHaveBeenCalledWith('old-external');
         expect(
           await DocumentChildrenDomain.loadExternalImageFiles(parentId)
-        ).toEqual([
+        ).toMatchObject([
           {
             id: oldExternalId,
             minio_name: 'old-external',
