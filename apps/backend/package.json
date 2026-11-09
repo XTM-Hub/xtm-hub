@@ -37,6 +37,7 @@
     "format": "prettier --write .",
     "test": "VITEST_MODE=true && vitest run",
     "test:perf": "RUN_PERF_TESTS=true vitest run **/*.perf.test.ts",
+    "test:es": "RUN_ES_TESTS=true vitest run **/*.es.test.ts",
     "test:coverage": "yarn test --coverage",
     "test:ci": "yarn check-ts && yarn lint && yarn test --coverage --coverage.clean=false",
     "seed:make:test": "VITEST_MODE=true && yarn knex:run seed:make",
