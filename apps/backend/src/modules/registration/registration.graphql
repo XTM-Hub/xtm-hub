@@ -133,11 +133,13 @@ input RefreshPlatformRegistrationConnectivityStatusAllTenantsInput {
 
 type RefreshPlatformRegistrationConnectivityStatusResponse {
   status: PlatformRegistrationConnectivityStatus!
+  commercialModel: CommercialModel
 }
 
 type TenantStatus {
   tenantId: String!
   status: PlatformRegistrationConnectivityStatus!
+  commercialModel: CommercialModel
 }
 
 type RefreshPlatformRegistrationConnectivityStatusAllTenantsResponse {
@@ -159,6 +161,12 @@ input RegisteredPlatformInput {
   service_instance_id: ServiceInstanceId!
 }
 
+input RegisteredPlatformByPlatformIdInput {
+  identifier: PlatformIdentifier!
+  platformId: String!
+  tenantId: String
+}
+
 input AutoRegisterPlatformInput {
   platform: PlatformInput!
   existing_users_count: Int
@@ -172,6 +180,9 @@ type Query {
     input: CanUnregisterPlatformInput!
   ): CanUnregisterResponse! @auth
   registeredPlatform(input: RegisteredPlatformInput!): RegisteredPlatform @auth
+  registeredPlatformByPlatformId(
+    input: RegisteredPlatformByPlatformIdInput!
+  ): RegisteredPlatform @auth
   registeredPlatforms(input: RegisteredPlatformsInput!): [RegisteredPlatform!]!
     @auth
   platformAssociatedOrganization(
