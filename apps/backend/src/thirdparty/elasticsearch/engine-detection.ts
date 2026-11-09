@@ -20,6 +20,11 @@ export const ENGINE_CLIENT_SETTINGS: readonly EngineClientSetting[] = [
 export const OPENSEARCH_NOT_SUPPORTED_MESSAGE =
   '[ELASTICSEARCH] OpenSearch is not supported';
 
+const SUPPORTED_MAJORS = new Map<number, EngineClient>([
+  [8, 'elasticsearch8'],
+  [9, 'elasticsearch9'],
+]);
+
 // Same as the default request timeout of the Elastic clients
 export const ENGINE_PROBE_TIMEOUT_MS = 30_000;
 
@@ -50,9 +55,10 @@ export interface EngineConnection {
 //     still names OpenSearch;
 //   - Elastic Serverless gets the newest client: its version number is not
 //     meaningful, Elastic recommends recognizing it by `build_flavor`;
-//   - Elasticsearch 9 and later get the 9.x client, earlier versions the 8.x
-//     client. An answer without a readable version is refused: it is no known
-//     engine, and ELASTIC_ENGINE_CLIENT can still force a client.
+//   - Elasticsearch 8 gets the 8.x client, Elasticsearch 9 the 9.x client.
+//     Any other major, and an answer without a readable version, is refused:
+//     the hub is not tested on it. ELASTIC_ENGINE_CLIENT can still force a
+//     client, at the operator's own risk.
 export const decideEngineClient = (info: EngineInfo): EngineClient => {
   if (
     info.version?.distribution === 'opensearch' ||
@@ -69,7 +75,13 @@ export const decideEngineClient = (info: EngineInfo): EngineClient => {
       `[ELASTICSEARCH] Search engine answered GET / without a readable version (${JSON.stringify(info.version?.number ?? null)}): set ELASTIC_ENGINE_CLIENT to elasticsearch8 or elasticsearch9 to force a client`
     );
   }
-  return major >= 9 ? 'elasticsearch9' : 'elasticsearch8';
+  const client = SUPPORTED_MAJORS.get(major);
+  if (!client) {
+    throw new Error(
+      `[ELASTICSEARCH] Elasticsearch ${info.version?.number} is not supported: the hub supports Elasticsearch 8 and 9`
+    );
+  }
+  return client;
 };
 
 const authorizationHeader = (

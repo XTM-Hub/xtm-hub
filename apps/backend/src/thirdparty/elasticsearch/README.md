@@ -15,8 +15,8 @@ The backend ships the Elasticsearch 8.x and 9.x clients (`@elastic/elasticsearch
 `@elastic/elasticsearch-v9`): one client major cannot serve both server majors. `esDbClient.init()` picks one at
 startup, before the migrations, from `elasticsearch.engine_client` (`ELASTIC_ENGINE_CLIENT`):
 
-- `auto` (default): a `GET /` on the server decides. Elasticsearch 9 and later get the 9.x client, other versions
-  the 8.x client, with a deprecation warning;
+- `auto` (default): a `GET /` on the server decides. Elasticsearch 8 gets the 8.x client, with a deprecation
+  warning, Elasticsearch 9 the 9.x client. Any other version is refused;
 - `elasticsearch8` or `elasticsearch9`: that client, without reading the server.
 
 OpenSearch is not supported: the backend refuses to start on it. Any detection failure stops the startup too.

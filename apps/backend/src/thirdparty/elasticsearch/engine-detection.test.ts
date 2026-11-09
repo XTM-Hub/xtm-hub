@@ -22,11 +22,6 @@ const makeEngineInfo = (version: EngineInfo['version']): EngineInfo => ({
 describe('decideEngineClient', () => {
   it.each([
     [
-      'Elasticsearch 7',
-      makeEngineInfo({ number: '7.17.29' }),
-      'elasticsearch8',
-    ],
-    [
       'Elasticsearch 8',
       makeEngineInfo({ number: ES8_VERSION }),
       'elasticsearch8',
@@ -34,11 +29,6 @@ describe('decideEngineClient', () => {
     [
       'Elasticsearch 9',
       makeEngineInfo({ number: ES9_VERSION }),
-      'elasticsearch9',
-    ],
-    [
-      'Elasticsearch 10',
-      makeEngineInfo({ number: '10.0.0' }),
       'elasticsearch9',
     ],
     [
@@ -84,6 +74,22 @@ describe('decideEngineClient', () => {
 
     // Then
     expect(decide).toThrow(OPENSEARCH_NOT_SUPPORTED_MESSAGE);
+  });
+
+  it.each([
+    ['Elasticsearch 7', '7.17.29'],
+    ['Elasticsearch 10', '10.0.0'],
+  ])('should refuse the engine when it is %s', (_description, version) => {
+    // Given
+    const info = makeEngineInfo({ number: version });
+
+    // When
+    const decide = () => decideEngineClient(info);
+
+    // Then
+    expect(decide).toThrow(
+      `[ELASTICSEARCH] Elasticsearch ${version} is not supported: the hub supports Elasticsearch 8 and 9`
+    );
   });
 
   it.each([
