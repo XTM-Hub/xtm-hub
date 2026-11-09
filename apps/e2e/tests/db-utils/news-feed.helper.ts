@@ -17,7 +17,8 @@ export const loadServiceInstanceGlobalIdByDefinitionIdentifier = async (
 };
 
 export const addBlogPostNewsFeedItem = async (
-  slug: string
+  slug: string,
+  { isDeleted = false }: { isDeleted?: boolean } = {}
 ): Promise<string> => {
   const id = uuidv4();
   await db('NewsFeedItem').insert({
@@ -25,6 +26,7 @@ export const addBlogPostNewsFeedItem = async (
     type: 'BLOG_POST',
     title: 'e2e blog post',
     platform_identifier: 'opencti',
+    is_deleted: isDeleted,
   });
   await db('NewsFeedItemMetadata').insert({
     news_feed_item_id: id,
