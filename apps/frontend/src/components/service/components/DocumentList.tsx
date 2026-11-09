@@ -7,6 +7,10 @@ import ServiceCard from '@/components/service/components/ServiceCard';
 import { useServiceContext } from '@/components/service/components/ServiceContext';
 import { SettingsContext } from '@/components/settings/EnvPortalContext';
 import {
+  analyticsResource,
+  toAnalyticsResourceData,
+} from '@/lib/analytics/analytics.context';
+import {
   APP_PATH,
   PUBLIC_CYBERSECURITY_SOLUTIONS_PATH,
 } from '@/utils/path/constant';
@@ -70,6 +74,10 @@ const DocumentList = ({
           columns={tableColumns}
           data={documents}
           toolbar={<></>}
+          getRowAnalyticsId={() => 'resource_open'}
+          getRowAnalyticsResource={({ original }) =>
+            analyticsResource(toAnalyticsResourceData(original))
+          }
           onClickRow={(row) => {
             save();
             router.push(

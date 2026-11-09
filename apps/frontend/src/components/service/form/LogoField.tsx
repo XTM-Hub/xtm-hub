@@ -5,6 +5,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { fileToBase64 } from '@/lib/utils';
 import {
   getFileSelectLabels,
@@ -59,6 +60,7 @@ export const ServiceFormLogoField = ({
                 {(logo as ExistingFile)?.file_name ?? (logo as NewFile)?.name}
               </div>
               <IconButton
+                {...analyticsId('resource_logo_remove')}
                 disabled={logo.source_type === DocumentSourceType.External}
                 variant="destructive"
                 priority="secondary"

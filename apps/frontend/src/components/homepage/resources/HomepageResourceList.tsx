@@ -1,6 +1,10 @@
 import { findLogoUrl } from '@/components/homepage/Homepage.utils';
 import HomepageResourceCard from '@/components/homepage/resources/HomepageResourceCard';
 import { PublicLocale } from '@/i18n/config';
+import {
+  analyticsResource,
+  toAnalyticsResourceData,
+} from '@/lib/analytics/analytics.context';
 import { isDocumentPublished } from '@/utils/documents';
 import { PUBLIC_CYBERSECURITY_SOLUTIONS_PATH } from '@/utils/path/constant';
 import {
@@ -65,7 +69,9 @@ const HomepageResourceList = ({
             resource.type !== ShareableResourceType.OPENCTI_INTEGRATION;
 
           return (
-            <li key={resource.id}>
+            <li
+              key={resource.id}
+              {...analyticsResource(toAnalyticsResourceData(resource))}>
               <HomepageResourceCard
                 key={resource.id}
                 name={resource.name ?? ''}

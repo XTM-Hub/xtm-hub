@@ -1,13 +1,18 @@
 'use client';
 
 import { invalidatePrivateNavigationQueries } from '@/components/menu/navigation/private/private-navigation-query-invalidation';
-import { translateServiceDefinitionIdentifier } from '@/components/registration/PlatformIdentifierMapping';
+import {
+  ServiceDefinitionIdentifierToPlatformIdentifier,
+  translateServiceDefinitionIdentifier,
+} from '@/components/registration/PlatformIdentifierMapping';
 import { UpdatePlatformServiceMetadata } from '@/components/service/service.graphql';
 import { Form, FormField } from '@/components/ui/form';
 import { SheetFooter } from '@/components/ui/sheet';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsProduct } from '@/lib/analytics/analytics.context';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { Button, Input } from '@filigran/design-system';
 import { ServiceDefinitionIdentifier } from '@generated/serviceInstance_fragment.graphql';
 import { serviceUpdatePlatformServiceMetadataMutation } from '@generated/serviceUpdatePlatformServiceMetadataMutation.graphql';
@@ -42,6 +47,10 @@ export const PlatformUpdateSheet = ({
 }: PlatformUpdateSheetProps) => {
   const t = useTranslate();
   const queryClient = useQueryClient();
+  const platformIdentifier =
+    ServiceDefinitionIdentifierToPlatformIdentifier[
+      serviceDefinitionIdentifier
+    ];
 
   const [updatePlatformMetadata] =
     useMutation<serviceUpdatePlatformServiceMetadataMutation>(
@@ -97,6 +106,9 @@ export const PlatformUpdateSheet = ({
     <SheetWithPreventingDialog
       open={open}
       setOpen={setOpen}
+      analyticsContext={
+        platformIdentifier && analyticsProduct(platformIdentifier)
+      }
       title={t('Platform.UpdateMetadata', { platformName: getPlatformName() })}>
       <Form {...form}>
         <form
@@ -123,12 +135,14 @@ export const PlatformUpdateSheet = ({
 
           <SheetFooter>
             <Button
+              {...analyticsId('platform_name_cancel')}
               type="button"
               priority="secondary"
               onClick={() => setOpen(false)}>
               {t('Utils.Cancel')}
             </Button>
             <Button
+              {...analyticsId('platform_name_submit')}
               type="submit"
               disabled={form.formState.isSubmitting}>
               {form.formState.isSubmitting
