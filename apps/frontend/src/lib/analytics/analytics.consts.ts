@@ -4,6 +4,7 @@ import {
   DocumentOrdering,
   OrderingMode,
   PlatformIdentifier,
+  SaasPlatformMetricsPeriod,
 } from '@graphql/generated';
 
 export const GA_MEASUREMENT_ID = 'G-9FC0TL0TH3';
@@ -62,6 +63,12 @@ export const PRODUCT_LABELS = {
   [PlatformIdentifier.Opencti]: 'OpenCTI',
   [PlatformIdentifier.Xtmone]: 'XTM One',
 } as const satisfies Record<PlatformIdentifier, string>;
+
+export const METRICS_PERIOD_LABELS = {
+  [SaasPlatformMetricsPeriod.Last_30Days]: 'Last 30 days',
+  [SaasPlatformMetricsPeriod.Last_90Days]: 'Last 90 days',
+  [SaasPlatformMetricsPeriod.Last_180Days]: 'Last 180 days',
+} as const satisfies Record<SaasPlatformMetricsPeriod, string>;
 
 export const MAX_EVENTS_PER_WINDOW = 100;
 

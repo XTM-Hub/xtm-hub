@@ -4,14 +4,18 @@ import {
   KEPT_QUERY_PARAM_PATTERN,
   KNOWN_REFERRER_DOMAINS,
   OTHER_REFERRER,
+  PRODUCT_LABELS,
   REDACTED_VALUE,
   URL_PATTERN,
 } from '@/lib/analytics/analytics.consts';
 import {
   type AnalyticsPage,
   type AnalyticsPageType,
+  type AnalyticsPlatformProduct,
 } from '@/lib/analytics/analytics.types';
+import { isValueInEnum } from '@/utils/is-value-in-enum';
 import { APP_PATH } from '@/utils/path/constant';
+import { PlatformIdentifier } from '@graphql/generated';
 
 type AnalyticsRouteParams = Record<string, string | string[] | undefined>;
 
@@ -20,6 +24,9 @@ const UUID_SEGMENT_PATTERN =
 
 const RESOURCE_SERVICES =
   'openaev_scenarios|opencti_custom_dashboards|opencti_custom_views|opencti_integrations|opencti_playbooks';
+
+const PLATFORM_DETAILS_PATTERN =
+  /^\/app\/service\/(opencti|openaev|xtmone)_registration\/\[serviceInstanceId\]$/;
 
 const PAGE_TYPE_RULES: ReadonlyArray<[RegExp, AnalyticsPageType]> = [
   [/^\/(\[locale\])?$/, 'Home'],
@@ -35,10 +42,7 @@ const PAGE_TYPE_RULES: ReadonlyArray<[RegExp, AnalyticsPageType]> = [
   [/^\/\[locale\]\/cybersecurity-solutions\/xtm-platform-trial(\/|$)/, 'Trial'],
   [/^\/app\/service\/xtm-platform-trial-guide(\/|$)/, 'Trial guide'],
   [/^\/app\/service\/xtm-platform-trial(\/|$)/, 'Trial'],
-  [
-    /^\/app\/service\/(opencti|openaev|xtmone)_registration\/\[serviceInstanceId\]$/,
-    'Platform details',
-  ],
+  [PLATFORM_DETAILS_PATTERN, 'Platform details'],
   [/^\/\[locale\]\/cybersecurity-solutions\/\[slug\]$/, 'Library'],
   [
     /^\/\[locale\]\/cybersecurity-solutions\/\[slug\]\/\[docSlug\]$/,
@@ -183,4 +187,13 @@ export const resolveAnalyticsPage = (
       'Other',
     page_template: pageTemplate,
   };
+};
+
+export const resolveAnalyticsPageProduct = (
+  pageTemplate: string
+): AnalyticsPlatformProduct | undefined => {
+  const platformIdentifier = pageTemplate.match(PLATFORM_DETAILS_PATTERN)?.[1];
+  return isValueInEnum(platformIdentifier, PlatformIdentifier)
+    ? PRODUCT_LABELS[platformIdentifier]
+    : undefined;
 };
