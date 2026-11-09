@@ -1,3 +1,4 @@
+import { readTrackedEvents, startAnalytics } from '@/utils/test/analytics';
 import testRender from '@/utils/test/test-render';
 import { screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
@@ -52,5 +53,29 @@ describe('IntegrationVerifiedFilter', () => {
         name: 'Service.OpenctiIntegrations.Filter.Verified.Placeholder',
       })
     ).not.toBeInTheDocument();
+  });
+
+  it('should send the English label of the support level when it is checked', async () => {
+    // Given
+    startAnalytics();
+    const { user } = testRender(<IntegrationVerifiedFilter />);
+
+    // When
+    await user.click(
+      screen.getByRole('checkbox', {
+        name: 'Service.OpenctiIntegrations.Filter.Verified.Verified',
+      })
+    );
+
+    // Then
+    expect(readTrackedEvents('filter_apply')).toEqual([
+      {
+        filter_name: 'Status',
+        filter_value: 'Supported by Filigran',
+        filter_action: 'Add',
+        library: 'Integrations',
+        product: 'OpenCTI',
+      },
+    ]);
   });
 });

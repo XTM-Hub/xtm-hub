@@ -1,11 +1,22 @@
 import { ServiceListFacetCounts } from '@/components/service/components/header/filter/service-list-facet-counts';
+import { ServiceListFilterKey } from '@/components/service/components/header/ServiceListHeader';
 import { availableIntegrationTypes } from '@/components/service/integrations/Integration.utils';
 import { LogicalMultiSelectFormField } from '@/components/ui/shareable-resource/logical-multi-select/LogicalMultiSelectFormField';
 import { useServiceListStorage } from '@/hooks/use-service-list-storage';
 import { useTranslate } from '@/hooks/use-translate';
 import { ServiceListStorageKey } from '@/utils/filters-storage.utils';
+import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 import { IntegrationType } from '@graphql/generated';
 import { useMemo } from 'react';
+
+const ANALYTICS_INTEGRATION_TYPE_LABELS: Record<IntegrationType, string> = {
+  [IntegrationType.Connector]: 'Connectors',
+  [IntegrationType.CsvFeed]: 'CSV Feeds',
+  [IntegrationType.RssFeed]: 'RSS Feeds',
+  [IntegrationType.Stream]: 'OpenCTI Streams',
+  [IntegrationType.TaxiiFeed]: 'TAXII Feeds',
+  [IntegrationType.ThirdPartyIntegration]: 'Third party integrations',
+};
 
 interface IntegrationTypeFilterProps {
   facetCounts?: ServiceListFacetCounts['integrationType'];
@@ -45,6 +56,11 @@ export const IntegrationTypeFilter = ({
       initialValue={integrationTypes}
       noResultString={t('Utils.NotFound')}
       onValueChange={setIntegrationTypes}
+      analyticsFilter={{
+        filterKey: ServiceListFilterKey.IntegrationType,
+        resourceType: ShareableResourceType.OPENCTI_INTEGRATION,
+        valueLabels: ANALYTICS_INTEGRATION_TYPE_LABELS,
+      }}
       optionLabel={t('Service.OpenctiIntegrations.Filter.Type.Label')}
       facetCounts={facetCounts}
     />
