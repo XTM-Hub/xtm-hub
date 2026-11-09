@@ -70,10 +70,12 @@ export const streamToBase64 = (stream: Readable): Promise<string> => {
   });
 };
 
-export const streamToSha256 = async (stream: Readable): Promise<string> => {
-  const hash = createHash('sha256');
-  for await (const chunk of stream) {
-    hash.update(chunk);
-  }
-  return hash.digest('hex');
+export const streamToSha256 = (stream: Readable): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const hash = createHash('sha256');
+    stream
+      .on('data', (chunk: Buffer) => hash.update(chunk))
+      .once('end', () => resolve(hash.digest('hex')))
+      .once('error', reject);
+  });
 };

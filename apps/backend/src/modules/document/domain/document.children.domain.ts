@@ -226,7 +226,7 @@ export const DocumentChildrenDomain = {
   deleteExternalImages: async (
     parentDocumentId: DocumentId,
     excludeDocumentId?: DocumentId
-  ): Promise<ExternalImageFile[]> => {
+  ): Promise<Pick<DocumentModel, 'id' | 'minio_name'>[]> => {
     return db<DocumentModel>('Document')
       .delete()
       .whereIn('id', function () {
@@ -241,6 +241,6 @@ export const DocumentChildrenDomain = {
           qb.andWhereNot('Document.id', excludeDocumentId);
         }
       })
-      .returning(['id', 'minio_name', 'mime_type']);
+      .returning(['id', 'minio_name']);
   },
 };

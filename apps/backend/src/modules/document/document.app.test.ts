@@ -37,6 +37,7 @@ import ServiceInstance, {
 } from '../../model/kanel/public/ServiceInstance';
 import { ADMIN_UUID } from '../../portal.const';
 import { MinIOClient } from '../../thirdparty/minio/client';
+import { StorageUnavailableError } from '../../thirdparty/minio/storage-error';
 import { ErrorCode } from '../../utils/error/error.code';
 import { NewsFeedApp } from '../news-feed/news-feed.app';
 import { RegistrationApp } from '../registration/registration.app';
@@ -2040,24 +2041,29 @@ describe('documentApp', () => {
       ).toMatchObject([{ id: otherChildId, minio_name: 'other-minio' }]);
     });
 
-    describe('when the stored file has the same content', () => {
-      const uploadWithContent = (content: string, mimetype = 'image/png') => {
-        const file: FileUpload = {
-          filename: 'new-image.png',
-          mimetype,
-          encoding: '7bit',
-          createReadStream: () => Readable.from([Buffer.from(content)]),
-        };
-        return { file, promise: Promise.resolve(file) };
+    const uploadWithContent = (content: string, mimetype = 'image/png') => {
+      const file: FileUpload = {
+        filename: 'new-image.png',
+        mimetype,
+        encoding: '7bit',
+        createReadStream: () => Readable.from([Buffer.from(content)]),
       };
+      return { file, promise: Promise.resolve(file) };
+    };
 
-      beforeEach(() => {
-        vi.spyOn(MinIOClient, 'downloadFile').mockImplementation(
-          async () =>
-            Readable.from([Buffer.from('same-logo')]) as unknown as Awaited<
-              ReturnType<typeof MinIOClient.downloadFile>
-            >
+    const toStoredContent = (stream: Readable) =>
+      stream as unknown as Awaited<ReturnType<typeof MinIOClient.downloadFile>>;
+
+    const mockStoredContent = (content: string) =>
+      vi
+        .spyOn(MinIOClient, 'downloadFile')
+        .mockImplementation(async () =>
+          toStoredContent(Readable.from([Buffer.from(content)]))
         );
+
+    describe('when the stored file has the same content', () => {
+      beforeEach(() => {
+        mockStoredContent('same-logo');
       });
 
       it('should keep the external image and its file as they are, without uploading it again', async () => {
@@ -2101,7 +2107,24 @@ describe('documentApp', () => {
         expect(obsoleteMinioNames).toEqual(['duplicate-external']);
       });
 
-      it('should replace the file in place when the mime type changed', async () => {
+      it('should never return the kept file when a duplicate points to it', async () => {
+        // Given
+        await insertImage(DocumentSourceType.External, 'old-external');
+
+        // When
+        const obsoleteMinioNames = await DocumentApp.replaceExternalImage(
+          await loadParent(),
+          uploadWithContent('same-logo')
+        );
+
+        // Then
+        expect(
+          await DocumentChildrenDomain.loadExternalImageFiles(parentId)
+        ).toMatchObject([{ id: oldExternalId, minio_name: 'old-external' }]);
+        expect(obsoleteMinioNames).toEqual([]);
+      });
+
+      it('should replace the file in place, without reading the stored file, when the mime type changed', async () => {
         // When
         const obsoleteMinioNames = await DocumentApp.replaceExternalImage(
           await loadParent(),
@@ -2109,6 +2132,7 @@ describe('documentApp', () => {
         );
 
         // Then
+        expect(MinIOClient.downloadFile).not.toHaveBeenCalled();
         expect(
           await DocumentChildrenDomain.loadExternalImageFiles(parentId)
         ).toMatchObject([{ id: oldExternalId, minio_name: 'new-minio' }]);
@@ -2118,20 +2142,12 @@ describe('documentApp', () => {
 
     it('should replace the file in place when the content changed', async () => {
       // Given
-      vi.spyOn(MinIOClient, 'downloadFile').mockResolvedValue(
-        Readable.from([Buffer.from('old-logo')]) as unknown as Awaited<
-          ReturnType<typeof MinIOClient.downloadFile>
-        >
-      );
-      const file: FileUpload = {
-        ...mockFileUpload,
-        createReadStream: () => Readable.from([Buffer.from('new-logo')]),
-      };
+      mockStoredContent('old-logo');
 
       // When
       const obsoleteMinioNames = await DocumentApp.replaceExternalImage(
         await loadParent(),
-        { file, promise: Promise.resolve(file) }
+        uploadWithContent('new-logo')
       );
 
       // Then
@@ -2139,6 +2155,76 @@ describe('documentApp', () => {
         await DocumentChildrenDomain.loadExternalImageFiles(parentId)
       ).toMatchObject([{ id: oldExternalId, minio_name: 'new-minio' }]);
       expect(obsoleteMinioNames).toEqual(['old-external']);
+    });
+
+    it.each([
+      {
+        case: 'is missing from storage',
+        mockDownload: () =>
+          vi.spyOn(MinIOClient, 'downloadFile').mockResolvedValue(null),
+      },
+      {
+        case: 'cannot be retrieved',
+        mockDownload: () =>
+          vi
+            .spyOn(MinIOClient, 'downloadFile')
+            .mockRejectedValue(
+              new StorageUnavailableError('Cannot retrieve old-external')
+            ),
+      },
+      {
+        case: 'breaks while being read',
+        mockDownload: () =>
+          vi.spyOn(MinIOClient, 'downloadFile').mockImplementation(async () =>
+            toStoredContent(
+              new Readable({
+                read() {
+                  this.emit('error', new Error('stream broke'));
+                },
+              })
+            )
+          ),
+      },
+    ])(
+      'should upload the logo again when the stored file $case',
+      async ({ mockDownload }) => {
+        // Given
+        mockDownload();
+
+        // When
+        const obsoleteMinioNames = await DocumentApp.replaceExternalImage(
+          await loadParent(),
+          uploadWithContent('same-logo')
+        );
+
+        // Then
+        expect(DocumentUploadsHelper.processUploads).toHaveBeenCalled();
+        expect(
+          await DocumentChildrenDomain.loadExternalImageFiles(parentId)
+        ).toMatchObject([{ id: oldExternalId, minio_name: 'new-minio' }]);
+        expect(obsoleteMinioNames).toEqual(['old-external']);
+      }
+    );
+
+    it('should upload the logo again, without reading storage, when the stored image has no file', async () => {
+      // Given
+      await TestHelper.document.update(
+        { id: oldExternalId },
+        { minio_name: null }
+      );
+
+      // When
+      const obsoleteMinioNames = await DocumentApp.replaceExternalImage(
+        await loadParent(),
+        uploadWithContent('same-logo')
+      );
+
+      // Then
+      expect(MinIOClient.downloadFile).not.toHaveBeenCalled();
+      expect(
+        await DocumentChildrenDomain.loadExternalImageFiles(parentId)
+      ).toMatchObject([{ id: oldExternalId, minio_name: 'new-minio' }]);
+      expect(obsoleteMinioNames).toEqual([]);
     });
 
     it('should throw when the document has no service instance', async () => {

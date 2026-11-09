@@ -1,3 +1,4 @@
+import { Readable } from 'stream';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { TestHelper } from '../../../../../../tests/helper/test.helper';
 import {
@@ -11,6 +12,8 @@ import {
   SYSTEM_USER_UUID,
 } from '../../../../../portal.const';
 import { minioInit } from '../../../../../server/initialize';
+import { MinIOClient } from '../../../../../thirdparty/minio/client';
+import { streamToBase64 } from '../../../../../utils/process-upload-file';
 import { DocumentChildrenDomain } from '../../../../document/domain/document.children.domain';
 import { useCaseDomain } from '../../../../use-case/use-case.domain';
 import {
@@ -285,6 +288,11 @@ describe('upsertConnectors', () => {
       return DocumentChildrenDomain.loadExternalImageFiles(doc!.id);
     };
 
+    const readStoredFile = async (minioName: string | null) => {
+      const content = await MinIOClient.downloadFile(minioName!);
+      return content ? streamToBase64(content as Readable) : null;
+    };
+
     it('should keep the logo record and its file when the logo is unchanged', async () => {
       // Given
       const logo = 'data:image/png;base64,dW5jaGFuZ2VkLWxvZ28=';
@@ -295,6 +303,9 @@ describe('upsertConnectors', () => {
 
       // Then
       expect(images).toEqual([firstImage]);
+      expect(await readStoredFile(firstImage!.minio_name)).toBe(
+        'dW5jaGFuZ2VkLWxvZ28='
+      );
     });
 
     it('should replace the logo file in place, keeping its id, when the logo changes', async () => {
@@ -314,6 +325,10 @@ describe('upsertConnectors', () => {
       expect(images).toHaveLength(1);
       expect(images[0]!.id).toBe(firstImage!.id);
       expect(images[0]!.minio_name).not.toBe(firstImage!.minio_name);
+      expect(await readStoredFile(images[0]!.minio_name)).toBe(
+        'c2Vjb25kLWxvZ28='
+      );
+      expect(await readStoredFile(firstImage!.minio_name)).toBeNull();
     });
   });
 

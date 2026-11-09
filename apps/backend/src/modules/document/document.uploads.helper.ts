@@ -3,6 +3,8 @@ import { Readable } from 'stream';
 import DocumentModel from '../../model/kanel/public/Document';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { MinIOClient } from '../../thirdparty/minio/client';
+import { logApp } from '../../utils/app-logger.util';
+import { toError } from '../../utils/error/error-guard.util';
 import { streamToSha256 } from '../../utils/process-upload-file';
 
 export interface Upload {
@@ -34,8 +36,9 @@ export const DocumentUploadsHelper = {
 
   /**
    * Whether `upload` holds the same file as the stored one: same mime type and
-   * same content, compared by SHA-256. A stored file missing from storage never
-   * matches, so the caller uploads it again.
+   * same content, compared by SHA-256. A stored file missing from storage or
+   * that cannot be read never matches, so the caller uploads it again: this
+   * comparison only saves an upload and must never fail the caller.
    */
   hasSameContent: async (
     upload: Upload,
@@ -47,13 +50,21 @@ export const DocumentUploadsHelper = {
       return false;
     }
 
-    const storedContent = await MinIOClient.downloadFile(minio_name);
-    if (!storedContent) {
+    try {
+      const storedContent = await MinIOClient.downloadFile(minio_name);
+      if (!storedContent) {
+        return false;
+      }
+
+      const storedHash = await streamToSha256(storedContent as Readable);
+      const uploadHash = await streamToSha256(file.createReadStream());
+      return storedHash === uploadHash;
+    } catch (error) {
+      logApp.warn('[FILE STORAGE] Cannot compare with the stored file', {
+        key: minio_name,
+        error: toError(error),
+      });
       return false;
     }
-
-    const storedHash = await streamToSha256(storedContent as Readable);
-    const uploadHash = await streamToSha256(file.createReadStream());
-    return storedHash === uploadHash;
   },
 };
