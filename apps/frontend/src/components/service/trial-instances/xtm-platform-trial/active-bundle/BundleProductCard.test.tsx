@@ -1,3 +1,5 @@
+import AnalyticsClickCapture from '@/components/analytics/AnalyticsClickCapture';
+import { readTrackedEvents, startAnalytics } from '@/utils/test/analytics';
 import testRender from '@/utils/test/test-render';
 import {
   ServiceGroupName,
@@ -8,6 +10,9 @@ import { screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { BundleProductCard } from './BundleProductCard';
 import { XtmoneStatusState } from './useXtmoneIntegrationStatus';
+
+const PAGE_TYPE = 'Trial';
+const OPENCTI_PRODUCT = 'OpenCTI';
 
 const buildProduct = ({
   platformIdentifier = 'opencti',
@@ -234,5 +239,38 @@ describe('BundleProductCard', () => {
     expect(
       screen.getByLabelText('XtmPlatformTrial.Products.EditName')
     ).toBeInTheDocument();
+  });
+
+  it('should send the product of the card when the rename sheet of a trial product is cancelled', async () => {
+    // Given
+    startAnalytics();
+    const { user } = testRender(
+      <>
+        <AnalyticsClickCapture pageType={PAGE_TYPE} />
+        <BundleProductCard
+          product={buildProduct()}
+          xtmoneStatus={emptyXtmoneStatus}
+          canManage={true}
+        />
+      </>
+    );
+    await user.click(
+      screen.getByLabelText('XtmPlatformTrial.Products.EditName')
+    );
+
+    // When
+    await user.click(screen.getByRole('button', { name: 'Utils.Cancel' }));
+
+    // Then
+    expect(readTrackedEvents('ui_click')).toEqual([
+      expect.objectContaining({
+        element_id: 'trial_product_name_edit',
+        product: OPENCTI_PRODUCT,
+      }),
+      expect.objectContaining({
+        element_id: 'platform_name_cancel',
+        product: OPENCTI_PRODUCT,
+      }),
+    ]);
   });
 });
