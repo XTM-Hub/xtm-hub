@@ -297,11 +297,6 @@ describe('PrivateXtmPlatformTrialPanel', () => {
         region: 'eu',
         job_title: 'CISO',
         activity_sector: 'IT',
-        products: [
-          PlatformIdentifier.Xtmone,
-          PlatformIdentifier.Opencti,
-          PlatformIdentifier.Openaev,
-        ],
         use_cases_by_product: [
           {
             platform_identifier: PlatformIdentifier.Opencti,

@@ -366,43 +366,6 @@ describe('deployment app', () => {
       });
 
       it.each([
-        ['without products', undefined],
-        [
-          'with a subset of products',
-          [PlatformIdentifier.Xtmone, PlatformIdentifier.Opencti],
-        ],
-        [
-          'with duplicated products',
-          [
-            PlatformIdentifier.Opencti,
-            PlatformIdentifier.Opencti,
-            PlatformIdentifier.Xtmone,
-          ],
-        ],
-      ])(
-        'should ignore the requested products and create exactly the 3 XTM Platform children %s',
-        async (_, products) => {
-          // When
-          const bundle = await DeploymentApp.createDeploymentRequest({
-            ...TEST_DEPLOYMENT,
-            products,
-          });
-
-          // Then
-          const children = await TestHelper.deploymentRequest.loadMany({
-            parent_id: bundle.id as DeploymentRequestId,
-          });
-          expect(
-            children.map((child) => child.platform_identifier).sort()
-          ).toEqual([
-            PlatformIdentifier.Openaev,
-            PlatformIdentifier.Opencti,
-            PlatformIdentifier.Xtmone,
-          ]);
-        }
-      );
-
-      it.each([
         [DeploymentRequestHubStatus.Cancelled],
         [DeploymentRequestHubStatus.Expired],
       ])(
