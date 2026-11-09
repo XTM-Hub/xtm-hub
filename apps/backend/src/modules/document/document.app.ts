@@ -44,10 +44,7 @@ import {
 } from './document.helper';
 import { DocumentListOptions } from './document.model';
 import { DocumentUploadsHelper, Upload } from './document.uploads.helper';
-import {
-  DocumentChildrenDomain,
-  ExternalImageFile,
-} from './domain/document.children.domain';
+import { DocumentChildrenDomain } from './domain/document.children.domain';
 import { DocumentData, DocumentDomain } from './domain/document.domain';
 import {
   DocumentMetadataDomain,
@@ -76,28 +73,18 @@ const toMinioNames = (images: Pick<DocumentModel, 'minio_name'>[]): string[] =>
   images.flatMap(({ minio_name }) => (minio_name ? [minio_name] : []));
 
 /**
- * Deletes the external images of `parentId` other than `image` and returns the
- * storage names left unreferenced: the file `image` was loaded with and those
- * of the deleted images, never `minioName`, the file `image` references now,
- * even if one of them pointed to the same object.
+ * Storage names of `images` that nothing references any more: all of them
+ * except `currentMinioName`, the file the kept image points to now, even if
+ * one of the others pointed to the same object.
  */
-const keepOnlyExternalImage = async (
-  parentId: DocumentId,
-  image: ExternalImageFile,
-  minioName: string | null
-): Promise<string[]> => {
-  const duplicates = await DocumentChildrenDomain.deleteExternalImages(
-    parentId,
-    image.id
-  );
-  return [
-    ...new Set(
-      toMinioNames([image, ...duplicates]).filter(
-        (obsoleteName) => obsoleteName !== minioName
-      )
-    ),
-  ];
-};
+const toObsoleteMinioNames = (
+  images: Pick<DocumentModel, 'minio_name'>[],
+  currentMinioName: string | null
+): string[] => [
+  ...new Set(
+    toMinioNames(images).filter((minioName) => minioName !== currentMinioName)
+  ),
+];
 
 export const DocumentApp = {
   createDocument: async ({
@@ -575,9 +562,16 @@ export const DocumentApp = {
         existingImage
       ))
     ) {
-      return withTransaction(() =>
-        keepOnlyExternalImage(doc.id, existingImage, existingImage.minio_name)
-      );
+      return withTransaction(async () => {
+        const duplicates = await DocumentChildrenDomain.deleteExternalImages(
+          doc.id,
+          existingImage.id
+        );
+        return toObsoleteMinioNames(
+          [existingImage, ...duplicates],
+          existingImage.minio_name
+        );
+      });
     }
 
     const [logoFile] = await DocumentUploadsHelper.processUploads(
@@ -605,7 +599,14 @@ export const DocumentApp = {
       }
 
       await DocumentChildrenDomain.replaceImageFile(existingImage.id, logoFile);
-      return keepOnlyExternalImage(doc.id, existingImage, logoFile.minioName);
+      const duplicates = await DocumentChildrenDomain.deleteExternalImages(
+        doc.id,
+        existingImage.id
+      );
+      return toObsoleteMinioNames(
+        [existingImage, ...duplicates],
+        logoFile.minioName
+      );
     });
 
     return [...new Set(obsoleteMinioNames)];
