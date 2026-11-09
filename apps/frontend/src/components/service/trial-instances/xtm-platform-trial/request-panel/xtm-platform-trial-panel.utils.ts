@@ -1,3 +1,4 @@
+import { type AnalyticsTrialState } from '@/lib/analytics/analytics.types';
 import { DeploymentRequestHubStatus } from '@graphql/generated';
 
 export enum XtmPlatformTrialStatusPanelState {
@@ -113,4 +114,34 @@ export const deriveXtmPlatformTrialRequestPageLayout = (
     showExpiredTitle:
       statusPanelState === XtmPlatformTrialStatusPanelState.Expired,
   };
+};
+
+const MESSAGE_VIEW_TRIAL_STATES = {
+  personalSpace: 'Personal space',
+  notAllowed: 'Not allowed',
+} as const satisfies Partial<
+  Record<XtmPlatformTrialPanelView['kind'], AnalyticsTrialState>
+>;
+
+const HUB_STATUS_TRIAL_STATES = {
+  [DeploymentRequestHubStatus.Queued]: 'Pending',
+  [DeploymentRequestHubStatus.Pending]: 'Pending',
+  [DeploymentRequestHubStatus.Provisioning]: 'Provisioning',
+  [DeploymentRequestHubStatus.Active]: 'Active',
+  [DeploymentRequestHubStatus.Cancelled]: 'Cancelled',
+  [DeploymentRequestHubStatus.Expired]: 'Expired',
+  [DeploymentRequestHubStatus.Failed]: 'Failed',
+} as const satisfies Record<DeploymentRequestHubStatus, AnalyticsTrialState>;
+
+export const toAnalyticsTrialState = (
+  view: XtmPlatformTrialPanelView,
+  hubStatus: DeploymentRequestHubStatus | null | undefined
+): AnalyticsTrialState => {
+  if (
+    hubStatus !== DeploymentRequestHubStatus.Active &&
+    (view.kind === 'personalSpace' || view.kind === 'notAllowed')
+  ) {
+    return MESSAGE_VIEW_TRIAL_STATES[view.kind];
+  }
+  return hubStatus ? HUB_STATUS_TRIAL_STATES[hubStatus] : 'Request form';
 };

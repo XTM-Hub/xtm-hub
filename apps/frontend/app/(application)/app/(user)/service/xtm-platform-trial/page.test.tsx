@@ -1,9 +1,15 @@
 import { XtmPlatformTrialStatusPanelState } from '@/components/service/trial-instances/xtm-platform-trial/request-panel/xtm-platform-trial-panel.utils';
+import { revokeAnalyticsConsent } from '@/lib/analytics/analytics.client';
+import {
+  readTrackedEvents,
+  resetAnalyticsEnvironment,
+  startAnalytics,
+} from '@/utils/test/analytics';
 import Page, {
   generateMetadata,
 } from '@app/(application)/app/(user)/service/xtm-platform-trial/page';
 import { DeploymentRequestHubStatus } from '@graphql/generated';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock(
@@ -200,6 +206,109 @@ describe('private xtm-platform-trial page', () => {
     expect(
       screen.queryByText('Service.Trials.XtmPlatform.Page.Breadcrumb')
     ).not.toBeInTheDocument();
+  });
+
+  it('should send the trial state once when the trial has loaded', async () => {
+    // Given
+    startAnalytics();
+    mockUseXtmPlatformBundleQuery.mockReturnValue({
+      data: undefined,
+      isLoading: true,
+    });
+    const { rerender } = render(await Page());
+    mockUseXtmPlatformBundleQuery.mockReturnValue({
+      data: {
+        xtmPlatformBundle: buildBundle(DeploymentRequestHubStatus.Pending),
+      },
+      isLoading: false,
+    });
+    mockUseXtmPlatformTrialPanelView.mockReturnValue({
+      kind: 'status',
+      state: XtmPlatformTrialStatusPanelState.RequestInProgress,
+      stepIndex: 0,
+    });
+    rerender(await Page());
+    mockUseXtmPlatformBundleQuery.mockReturnValue({
+      data: {
+        xtmPlatformBundle: buildBundle(DeploymentRequestHubStatus.Cancelled),
+      },
+      isLoading: false,
+    });
+
+    // When
+    rerender(await Page());
+
+    // Then
+    expect(readTrackedEvents('view_trial')).toEqual([
+      { trial_state: 'Pending' },
+    ]);
+  });
+
+  it('should not send the trial state when the trial could not be loaded', async () => {
+    // Given
+    startAnalytics();
+    mockUseXtmPlatformBundleQuery.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+    });
+
+    // When
+    render(await Page());
+
+    // Then
+    expect(readTrackedEvents('view_trial')).toEqual([]);
+  });
+
+  it('should send the displayed trial state when analytics is enabled after the trial has loaded', async () => {
+    // Given
+    resetAnalyticsEnvironment();
+    mockUseXtmPlatformBundleQuery.mockReturnValue({
+      data: {
+        xtmPlatformBundle: buildBundle(DeploymentRequestHubStatus.Pending),
+      },
+      isLoading: false,
+    });
+    mockUseXtmPlatformTrialPanelView.mockReturnValue({
+      kind: 'status',
+      state: XtmPlatformTrialStatusPanelState.RequestInProgress,
+      stepIndex: 0,
+    });
+    render(await Page());
+
+    // When
+    act(() => startAnalytics());
+
+    // Then
+    expect(readTrackedEvents('view_trial')).toEqual([
+      { trial_state: 'Pending' },
+    ]);
+  });
+
+  it('should send the trial state again when analytics is enabled again after it was withdrawn', async () => {
+    // Given
+    startAnalytics();
+    mockUseXtmPlatformBundleQuery.mockReturnValue({
+      data: {
+        xtmPlatformBundle: buildBundle(DeploymentRequestHubStatus.Pending),
+      },
+      isLoading: false,
+    });
+    mockUseXtmPlatformTrialPanelView.mockReturnValue({
+      kind: 'status',
+      state: XtmPlatformTrialStatusPanelState.RequestInProgress,
+      stepIndex: 0,
+    });
+    render(await Page());
+    act(() => revokeAnalyticsConsent());
+
+    // When
+    act(() => startAnalytics());
+
+    // Then
+    expect(readTrackedEvents('view_trial')).toEqual([
+      { trial_state: 'Pending' },
+    ]);
   });
 
   it('uses the same browser tab title as the public trial page', async () => {
