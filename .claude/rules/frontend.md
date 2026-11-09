@@ -155,6 +155,37 @@ a passive page/RSC route or a side-effecting endpoint before deciding on `prefet
 All user-facing strings go through `next-intl`. Add the key to every locale file under `messages/` (`en.json` is the
 source of truth) — never hardcode copy in a component. `yarn i18n:check` verifies parity.
 
+## Analytics (GA4)
+
+The code lives in `src/lib/analytics/`; GA only loads on `hub.filigran.io`, after cookie consent.
+
+- **Every clickable element declares an ID** from the typed registry `src/lib/analytics/analytics.registry.ts`:
+  spread `analyticsId('<key>')` (from `@/lib/analytics/analytics.ids`) on a DOM or design-system element, or pass an
+  `analyticsId` / `*AnalyticsId` prop to an app component. Never a raw `data-analytics-id` string. `yarn lint` fails
+  on an untagged clickable element (`no-restricted-syntax` in `eslint.config.mjs`), except an `asChild` trigger (its
+  child carries the ID) and a static `disabled` one. An `eslint-disable-next-line no-restricted-syntax -- <reason>` is
+  only for an element that is not a user action (drag handle, tooltip trigger, form field sent by its tagged submit
+  button, container whose children carry the IDs).
+  Lint cannot see an element built from a config object (navigation links): type its `analyticsId` field as required.
+  A select or combobox shared between forms and standalone use (`SelectField`, `AppCombobox`, `RoleSelect`) takes
+  `AnalyticsFieldProps`: `analyticsId` when it acts on its own, `formField` inside a form.
+  A component rebuilt under `src/components/ui/` ([`design-system.md`](design-system.md)) takes a registry-typed
+  `analyticsId` prop: the one app dependency it may have, removed if the component goes upstream.
+- **Naming**: `<domain>_<object>_<verb>` in snake_case, domain and verb from the closed lists in `analytics.ids.ts`.
+  The object is left out when it is the domain itself (`resource_download`); a `_signup` suffix marks the variant
+  shown to signed-out visitors that leads to sign-up. A select trigger only opens its choices, so its key ends in
+  `_open` (`list_page_sizes_open`); the options are not tracked. The action label is imperative, sentence case,
+  unique, and never starts with "Click". The registry validator test checks the key format, both closed lists, unique
+  labels and the "Click" ban; the rest is on review.
+- **Never rename or remove an existing ID, nor change its action label, unless explicitly asked**: GA dashboards and
+  history are keyed on them. A new element gets a new key.
+- **Click context** comes from the nearest annotated container (`analyticsResource`, `analyticsSection`,
+  `analyticsEpic`, `analyticsFeature`, `analyticsProduct`, `analyticsLinkType` in `analytics.context.ts`). A dialog
+  or menu opened without an `aria-controls` trigger carries the annotation on its own content.
+- **Outcome events** (`generate_lead`, `sign_up`, `feature_vote`…) go through `trackEvent` from the success
+  callback of the request, never from the click; `ui_click` only measures button usage. The one exception is
+  `select_item`, sent by the click engine with the `resource_open` key: keep that key on resource cards.
+
 ## Tests
 
 See [`testing.md`](testing.md) for structure, mocking policy and the frontend-specific
