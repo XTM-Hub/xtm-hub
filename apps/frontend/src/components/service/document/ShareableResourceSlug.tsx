@@ -7,7 +7,9 @@ import {
 import { useTranslate } from '@/hooks/use-translate';
 import { DownloadIcon } from '@filigran/icon';
 
+import { DeployableResourceViewTracker } from '@/components/service/document/DeployableResourceViewTracker';
 import OneClickDeploy from '@/components/service/document/one-click-deploy/OneClickDeploy';
+import { ResourceViewTracker } from '@/components/service/document/ResourceViewTracker';
 import ShareableResourceDetails from '@/components/service/document/ShareableResouceDetails';
 import ShareableResourceDescription from '@/components/service/document/ShareableResourceDescription';
 import ShareableResourceCarousel from '@/components/service/document/ui/ShareableResourceCarouselView';
@@ -82,6 +84,14 @@ const ShareableResourceSlug = ({
   return (
     <>
       <BreadcrumbNav value={breadcrumbValue} />
+      {shouldShowOneClickDeployComponent ? (
+        <DeployableResourceViewTracker resource={documentData} />
+      ) : (
+        <ResourceViewTracker
+          resource={documentData}
+          deployEligibility="Resource not deployable"
+        />
+      )}
       <div className="flex gap-2 pb-4 flex-col md:flex-row">
         {logo ? (
           <div className="w-24 shrink-0 rounded overflow-hidden">

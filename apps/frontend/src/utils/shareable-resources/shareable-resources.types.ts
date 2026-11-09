@@ -91,27 +91,21 @@ export const SHAREABLE_RESOURCE_TYPE_NAME_MAPPING: Record<
   [ShareableResourceType.OPENCTI_PLAYBOOK]: 'Playbook OpenCTI',
 };
 
-export const SHAREABLE_RESOURCE_PRODUCT_MAPPING: Record<
-  ShareableResourceType,
-  string
-> = {
+export const SHAREABLE_RESOURCE_PRODUCT_MAPPING = {
   [ShareableResourceType.OPENAEV_SCENARIO]: 'OpenAEV',
   [ShareableResourceType.OPENCTI_INTEGRATION]: 'OpenCTI',
   [ShareableResourceType.OPENCTI_CUSTOM_DASHBOARD]: 'OpenCTI',
   [ShareableResourceType.OPENCTI_CUSTOM_VIEW]: 'OpenCTI',
   [ShareableResourceType.OPENCTI_PLAYBOOK]: 'OpenCTI',
-};
+} as const satisfies Record<ShareableResourceType, string>;
 
-export const SHAREABLE_RESOURCE_LIBRARY_MAPPING: Record<
-  ShareableResourceType,
-  string
-> = {
+export const SHAREABLE_RESOURCE_LIBRARY_MAPPING = {
   [ShareableResourceType.OPENAEV_SCENARIO]: 'Scenarios',
   [ShareableResourceType.OPENCTI_INTEGRATION]: 'Integrations',
   [ShareableResourceType.OPENCTI_CUSTOM_DASHBOARD]: 'Custom Dashboards',
   [ShareableResourceType.OPENCTI_CUSTOM_VIEW]: 'Custom Views',
   [ShareableResourceType.OPENCTI_PLAYBOOK]: 'Playbooks',
-};
+} as const satisfies Record<ShareableResourceType, string>;
 
 export const SHAREABLE_RESOURCE_SERVICE_DEFINITION_IDENTIFIER_MAPPING: Record<
   ShareableResourceType,
