@@ -63,9 +63,9 @@ describe('newsFeedDomain', () => {
 
     it.each`
       description                 | version         | expected
-      ${'below the shipped gate'} | ${'7.261104.0'} | ${false}
-      ${'at the shipped gate'}    | ${'7.261105.0'} | ${true}
-      ${'above the shipped gate'} | ${'7.261106.0'} | ${true}
+      ${'below the shipped gate'} | ${'7.261105.0'} | ${false}
+      ${'at the shipped gate'}    | ${'7.261106.0'} | ${true}
+      ${'above the shipped gate'} | ${'7.261107.0'} | ${true}
     `(
       'should list the blogpost type for OpenCTI $description ($version): $expected',
       ({ version, expected }) => {

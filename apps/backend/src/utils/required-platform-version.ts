@@ -30,10 +30,10 @@ export const RequiredPlatformVersions: RequiredPlatformVersionsConfig = {
     [PlatformIdentifier.Openaev]: '1.0.0', // Placeholder until the first OpenAEV version that reads news feed items is released
     [PlatformIdentifier.Xtmone]: null,
   },
-  // OpenCTI 7.261105.0 is the first version to render blogpost items. OpenAEV and XTM One stay null (disabled)
+  // OpenCTI 7.261106.0 is the first version to render blogpost items. OpenAEV and XTM One stay null (disabled)
   // until they ship blogpost support.
   NewsFeedBlogpostSupport: {
-    [PlatformIdentifier.Opencti]: '7.261105.0',
+    [PlatformIdentifier.Opencti]: '7.261106.0',
     [PlatformIdentifier.Openaev]: null,
     [PlatformIdentifier.Xtmone]: null,
   },

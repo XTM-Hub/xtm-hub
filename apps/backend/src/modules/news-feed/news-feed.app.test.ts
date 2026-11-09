@@ -300,8 +300,8 @@ describe('newsFeedApp', () => {
 
       it.each`
         description                 | version         | expected
-        ${'below the shipped gate'} | ${'7.261104.0'} | ${false}
-        ${'at the shipped gate'}    | ${'7.261105.0'} | ${true}
+        ${'below the shipped gate'} | ${'7.261105.0'} | ${false}
+        ${'at the shipped gate'}    | ${'7.261106.0'} | ${true}
       `(
         'should list BLOG_POST with the shipped gate only when the OpenCTI version is $description ($version): $expected',
         async ({ version, expected }) => {
@@ -2588,12 +2588,12 @@ describe('newsFeedApp', () => {
         await NewsFeedApp.backfillBlogpostsForPlatform({
           platformId: previousVersionPlatformId,
           platformIdentifier: PlatformIdentifier.Opencti,
-          platformVersion: '7.261104.0',
+          platformVersion: '7.261105.0',
         });
         await NewsFeedApp.backfillBlogpostsForPlatform({
           platformId: releaseVersionPlatformId,
           platformIdentifier: PlatformIdentifier.Opencti,
-          platformVersion: '7.261105.0',
+          platformVersion: '7.261106.0',
         });
 
         // Then

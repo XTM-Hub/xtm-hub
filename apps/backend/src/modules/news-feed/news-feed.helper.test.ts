@@ -92,10 +92,10 @@ describe('news-feed.helper', () => {
         originalBlogpostSupport;
     });
 
-    it('is enabled from OpenCTI 7.261105.0 and disabled for the other platforms in the shipped configuration', () => {
+    it('is enabled from OpenCTI 7.261106.0 and disabled for the other platforms in the shipped configuration', () => {
       // Given the shipped configuration
       expect(RequiredPlatformVersions.NewsFeedBlogpostSupport).toEqual({
-        [PlatformIdentifier.Opencti]: '7.261105.0',
+        [PlatformIdentifier.Opencti]: '7.261106.0',
         [PlatformIdentifier.Openaev]: null,
         [PlatformIdentifier.Xtmone]: null,
       });
@@ -104,13 +104,13 @@ describe('news-feed.helper', () => {
       expect(
         doesPlatformSupportBlogpostNewsFeed(
           PlatformIdentifier.Opencti,
-          '7.261105.0'
+          '7.261106.0'
         )
       ).toBe(true);
       expect(
         doesPlatformSupportBlogpostNewsFeed(
           PlatformIdentifier.Opencti,
-          '7.261104.0'
+          '7.261105.0'
         )
       ).toBe(false);
       // And the other platforms never get blogposts, whatever their version
