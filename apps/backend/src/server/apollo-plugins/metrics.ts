@@ -1,5 +1,10 @@
 import { ApolloServerPlugin } from '@apollo/server';
-import { Kind, OperationDefinitionNode } from 'graphql';
+import {
+  ExecutionArgs,
+  getOperationAST,
+  Kind,
+  OperationDefinitionNode,
+} from 'graphql';
 import client, { Counter, Gauge, Histogram } from 'prom-client';
 
 export const registry = client.register;
@@ -51,6 +56,32 @@ export const getRootFieldLabel = (operation: OperationDefinitionNode) => {
     return MULTIPLE_ROOT_FIELDS_LABEL;
   }
   return selection.name.value;
+};
+
+// Keyed on the per-request context, so the gauge goes down under the label it went up with
+const sseOperationLabels = new WeakMap<object, string>();
+
+// onOperation runs after validation, unlike onSubscribe, which gets the raw request
+export const sseOperationMetrics = {
+  onOperation(context: object, { document, operationName }: ExecutionArgs) {
+    const operation = getOperationAST(document, operationName);
+    if (!operation) return;
+    const subscription = getRootFieldLabel(operation);
+    sseOperationLabels.set(context, subscription);
+    sseSubscriptionCounter.inc({ subscription });
+    sseActiveConnectionsGauge.inc({ subscription });
+  },
+  onNext(context: object) {
+    const subscription = sseOperationLabels.get(context);
+    if (!subscription) return;
+    sseMessageCounter.inc({ subscription });
+  },
+  onComplete(context: object) {
+    const subscription = sseOperationLabels.get(context);
+    if (!subscription) return;
+    sseActiveConnectionsGauge.dec({ subscription });
+    sseOperationLabels.delete(context);
+  },
 };
 
 export const operationMetricsPlugin: ApolloServerPlugin = {
