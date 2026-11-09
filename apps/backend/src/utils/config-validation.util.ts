@@ -1,4 +1,10 @@
 import { z } from 'zod';
+import {
+  ENGINE_CLIENT_AUTO,
+  ENGINE_CLIENT_SETTINGS,
+  EngineClientSetting,
+  OPENSEARCH_NOT_SUPPORTED_MESSAGE,
+} from '../thirdparty/elasticsearch/engine-detection';
 import { logApp } from './app-logger.util';
 
 // Zod schema for DevUser organization
@@ -248,6 +254,26 @@ export const parseEsIndexPrefix = (value: unknown): string => {
     );
   }
   return value;
+};
+
+/**
+ * Parses the Elasticsearch client setting (ELASTIC_ENGINE_CLIENT). Unset or
+ * empty means `auto`: the client is detected from the server at startup.
+ */
+export const parseEsEngineClient = (value: unknown): EngineClientSetting => {
+  if (value === undefined || value === null || value === '') {
+    return ENGINE_CLIENT_AUTO;
+  }
+  if (value === 'opensearch') {
+    throw new Error(OPENSEARCH_NOT_SUPPORTED_MESSAGE);
+  }
+  const setting = ENGINE_CLIENT_SETTINGS.find((allowed) => allowed === value);
+  if (!setting) {
+    throw new Error(
+      `[ELASTICSEARCH] Invalid elasticsearch.engine_client configuration (ELASTIC_ENGINE_CLIENT): expected one of ${ENGINE_CLIENT_SETTINGS.join(', ')}, got ${JSON.stringify(value)}`
+    );
+  }
+  return setting;
 };
 
 // Export schemas for potential reuse

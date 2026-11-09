@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { logApp } from './app-logger.util';
 import {
+  parseEsEngineClient,
   parseEsIndexPrefix,
   parseTrustProxy,
   resolveTrustProxy,
@@ -216,6 +217,59 @@ describe('parseEsIndexPrefix', () => {
     // Then
     expect(parse).toThrow(
       `[ELASTICSEARCH] Invalid elasticsearch.index_prefix configuration (ELASTIC_INDEX_PREFIX): expected at most 100 lowercase letters, digits, '.' or '-', starting with a letter or a digit, got ${JSON.stringify(value)}`
+    );
+  });
+});
+
+describe('parseEsEngineClient', () => {
+  it.each([
+    ['undefined', undefined, 'auto'],
+    ['null', null, 'auto'],
+    ['an empty string, as an unset env var', '', 'auto'],
+    ['auto', 'auto', 'auto'],
+    ['elasticsearch8', 'elasticsearch8', 'elasticsearch8'],
+    ['elasticsearch9', 'elasticsearch9', 'elasticsearch9'],
+  ])(
+    'should return the client setting when given %s',
+    (_description, value, expected) => {
+      // Given
+      // value comes from the dataset
+
+      // When
+      const result = parseEsEngineClient(value);
+
+      // Then
+      expect(result).toBe(expected);
+    }
+  );
+
+  it('should refuse OpenSearch as not supported', () => {
+    // Given
+    const value = 'opensearch';
+
+    // When
+    const parse = () => parseEsEngineClient(value);
+
+    // Then
+    expect(parse).toThrow('[ELASTICSEARCH] OpenSearch is not supported');
+  });
+
+  it.each([
+    ['an unknown client', 'elasticsearch7'],
+    ['an uppercase value', 'Elasticsearch9'],
+    ['a padded value', ' auto'],
+    ['a number', 9],
+    ['a boolean', true],
+  ])('should throw an explicit error when given %s', (_description, value) => {
+    // Given
+    // value comes from the dataset
+
+    // When
+    const parse = () => parseEsEngineClient(value);
+
+    // Then
+    expect(parse).toThrow(
+      `[ELASTICSEARCH] Invalid elasticsearch.engine_client configuration (ELASTIC_ENGINE_CLIENT): expected one of auto, elasticsearch8, elasticsearch9, got ${JSON.stringify(value)}`
     );
   });
 });

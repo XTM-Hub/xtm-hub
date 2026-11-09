@@ -44,6 +44,7 @@ import {
 } from './server/session/session.middleware';
 import { getSessionStoreInstance } from './session-store-manager';
 import { initShutdown, registerShutdownHook } from './shutdown';
+import { esDbClient } from './thirdparty/elasticsearch/client';
 import { runESMigrations } from './thirdparty/elasticsearch/migrate';
 import { PgBossApp } from './thirdparty/pgboss/pgboss';
 import { logApp } from './utils/app-logger.util';
@@ -359,6 +360,7 @@ if (!process.env.VITEST_MODE || process.env.START_DEV_SERVER) {
   // Ensure migrate the schema
   await dbMigration.migrate();
 
+  await esDbClient.init();
   await runESMigrations();
 
   await platformInit();

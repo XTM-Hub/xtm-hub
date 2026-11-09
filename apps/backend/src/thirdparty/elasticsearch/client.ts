@@ -1,42 +1,121 @@
 import { Client, ClientOptions, estypes } from '@elastic/elasticsearch';
+import { Client as ClientV9 } from '@elastic/elasticsearch-v9';
 
 import fs from 'fs';
 import portalConfig from '../../config';
 import { logApp } from '../../utils/app-logger.util';
+import {
+  ENGINE_PROBE_TIMEOUT_MS,
+  EngineClient,
+  EngineDecision,
+  probeEngine,
+  resolveEngineClient,
+} from './engine-detection';
+
+declare global {
+  // The client chosen by ElasticSearchService.init(). ES migrations are bundled
+  // apart from the server in production (builder/prod/prod.js), each with its
+  // own copy of this module: they read the choice from here.
+  var xtmHubEngineClient: EngineClient | undefined;
+}
+
+const endpoint = () =>
+  `${portalConfig.elasticsearch.protocol}://${portalConfig.elasticsearch.host}:${portalConfig.elasticsearch.port}`;
+
+const readCa = () => {
+  const ca_path = portalConfig.elasticsearch.tls.ca_path;
+  return ca_path ? fs.readFileSync(ca_path) : undefined;
+};
+
+const createClient = (engineClient: EngineClient): Client => {
+  // Only the options both client majors share: their full ClientOptions types
+  // come from two incompatible transports
+  const config: Pick<ClientOptions, 'node' | 'auth' | 'tls'> = {
+    node: endpoint(),
+  };
+
+  if (
+    portalConfig.elasticsearch.username &&
+    portalConfig.elasticsearch.password
+  ) {
+    config.auth = {
+      username: portalConfig.elasticsearch.username,
+      password: portalConfig.elasticsearch.password,
+    };
+  }
+  config.tls = {
+    ca: readCa(),
+    rejectUnauthorized: portalConfig.elasticsearch.tls.reject_unauthorized,
+  };
+  // The 9.x client goes through the 8.x types: both majors expose the same API
+  // and response envelope for every call the hub makes
+  return engineClient === 'elasticsearch9'
+    ? (new ClientV9(config) as unknown as Client)
+    : new Client(config);
+};
+
+const logEngineDecision = (decision: EngineDecision) => {
+  if (decision.source === 'configuration') {
+    logApp.info(
+      `[ELASTICSEARCH] Search engine client ${decision.client} selected, forced by elasticsearch.engine_client`
+    );
+    return;
+  }
+  logApp.info(
+    `[ELASTICSEARCH] Search engine client ${decision.client} selected, detected from Elasticsearch ${decision.version ?? 'unknown'}`
+  );
+  if (decision.client === 'elasticsearch8') {
+    logApp.warn(
+      '[ELASTICSEARCH] Elasticsearch versions older than 9 are deprecated and their support will be removed in a future release: upgrade the cluster to Elasticsearch 9'
+    );
+  }
+};
 
 class ElasticSearchService {
-  private elasticsearchClient: Client;
+  private elasticsearchClient: Client | undefined;
 
-  constructor() {
-    const config: ClientOptions = {
-      node: `${portalConfig.elasticsearch.protocol}://${portalConfig.elasticsearch.host}:${portalConfig.elasticsearch.port}`,
-    };
+  // Chooses the client of the engine's major (engine-detection.ts): must run
+  // once at startup, before any other call
+  async init(): Promise<EngineDecision> {
+    const decision = await resolveEngineClient(
+      portalConfig.elasticsearch.engine_client,
+      () =>
+        probeEngine({
+          url: endpoint(),
+          username: portalConfig.elasticsearch.username,
+          password: portalConfig.elasticsearch.password,
+          ca: readCa(),
+          rejectUnauthorized:
+            portalConfig.elasticsearch.tls.reject_unauthorized,
+          timeout: ENGINE_PROBE_TIMEOUT_MS,
+        })
+    );
+    globalThis.xtmHubEngineClient = decision.client;
+    this.elasticsearchClient = createClient(decision.client);
+    logEngineDecision(decision);
+    return decision;
+  }
 
-    if (
-      portalConfig.elasticsearch.username &&
-      portalConfig.elasticsearch.password
-    ) {
-      config.auth = {
-        username: portalConfig.elasticsearch.username,
-        password: portalConfig.elasticsearch.password,
-      };
+  private get client(): Client {
+    if (!this.elasticsearchClient) {
+      if (!globalThis.xtmHubEngineClient) {
+        throw new Error(
+          '[ELASTICSEARCH] Client used before ElasticSearchService.init()'
+        );
+      }
+      this.elasticsearchClient = createClient(globalThis.xtmHubEngineClient);
     }
-    const ca_path = portalConfig.elasticsearch.tls.ca_path;
-    config.tls = {
-      ca: ca_path ? fs.readFileSync(ca_path) : undefined,
-      rejectUnauthorized: portalConfig.elasticsearch.tls.reject_unauthorized,
-    };
-    this.elasticsearchClient = new Client(config);
+    return this.elasticsearchClient;
   }
 
   getIndices() {
-    return this.elasticsearchClient.indices;
+    return this.client.indices;
   }
   async search<T = unknown>(
     params: estypes.SearchRequest
   ): Promise<estypes.SearchResponse<T>> {
     try {
-      return this.elasticsearchClient.search<T>(params);
+      return this.client.search<T>(params);
     } catch (error) {
       logApp.error('ES search error', { error });
       throw error;
@@ -70,7 +149,7 @@ class ElasticSearchService {
     params: estypes.CreateRequest
   ): Promise<estypes.CreateResponse> {
     try {
-      return this.elasticsearchClient.create<T>(params);
+      return this.client.create<T>(params);
     } catch (error) {
       logApp.error('ES create error', { error });
       throw error;
@@ -81,7 +160,7 @@ class ElasticSearchService {
     params: estypes.IndexRequest
   ): Promise<estypes.IndexResponse> {
     try {
-      return this.elasticsearchClient.index<T>(params);
+      return this.client.index<T>(params);
     } catch (error) {
       logApp.error('ES index error', { error });
       throw error;
@@ -90,7 +169,7 @@ class ElasticSearchService {
 
   async delete(params: estypes.DeleteRequest): Promise<estypes.DeleteResponse> {
     try {
-      return this.elasticsearchClient.delete(params);
+      return this.client.delete(params);
     } catch (error) {
       logApp.error('ES delete error', { error });
       throw error;
@@ -100,7 +179,7 @@ class ElasticSearchService {
     params: estypes.UpdateByQueryRequest
   ): Promise<estypes.UpdateByQueryResponse> {
     try {
-      return this.elasticsearchClient.updateByQuery(params);
+      return this.client.updateByQuery(params);
     } catch (error) {
       logApp.error('ES updateByQuery error', { error });
       throw error;
@@ -108,7 +187,7 @@ class ElasticSearchService {
   }
   async bulk(params: estypes.BulkRequest): Promise<estypes.BulkResponse> {
     try {
-      return this.elasticsearchClient.bulk(params);
+      return this.client.bulk(params);
     } catch (error) {
       logApp.error('ES bulk error', { error });
       throw error;
@@ -119,7 +198,7 @@ class ElasticSearchService {
     params: estypes.DeleteByQueryRequest
   ): Promise<estypes.DeleteByQueryResponse> {
     try {
-      return this.elasticsearchClient.deleteByQuery(params);
+      return this.client.deleteByQuery(params);
     } catch (error) {
       logApp.error('ES deleteByQuery error', { error });
       throw error;
@@ -128,7 +207,7 @@ class ElasticSearchService {
 
   async count(params: estypes.CountRequest): Promise<number> {
     try {
-      const result = await this.elasticsearchClient.count(params);
+      const result = await this.client.count(params);
       return result.count;
     } catch (error) {
       logApp.error('ES count error', { error });

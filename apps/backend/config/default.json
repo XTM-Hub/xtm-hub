@@ -89,6 +89,7 @@
     "username": null,
     "password": null,
     "index_prefix": "",
+    "engine_client": "auto",
     "tls": {
       "ca_path": null,
       "reject_unauthorized": true

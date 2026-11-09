@@ -1,8 +1,10 @@
 // https://github.com/node-config/node-config
 import config from 'config';
+import { EngineClientSetting } from './thirdparty/elasticsearch/engine-detection';
 import {
   DevUser,
   parseAndValidateDevUsers,
+  parseEsEngineClient,
   parseEsIndexPrefix,
   resolveTrustProxy,
 } from './utils/config-validation.util';
@@ -44,6 +46,7 @@ interface PortalConfig {
     username: string | null;
     password: string | null;
     index_prefix: string;
+    engine_client: EngineClientSetting;
     tls: {
       ca_path: string | null;
       reject_unauthorized: boolean;
@@ -115,6 +118,9 @@ const portalConfig: PortalConfig = {
     password: config.get<string | null>('elasticsearch.password'),
     index_prefix: parseEsIndexPrefix(
       config.get<unknown>('elasticsearch.index_prefix')
+    ),
+    engine_client: parseEsEngineClient(
+      config.get<unknown>('elasticsearch.engine_client')
     ),
     tls: {
       ca_path: config.get<string | null>('elasticsearch.tls.ca_path'),
