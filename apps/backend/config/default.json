@@ -100,6 +100,8 @@
   "hubspot_use_queue_processing": true,
   "mail_use_queue_processing": true,
   "hubspot_webhook_url": "changeMe",
+  "teams_notification_webhook_url": "",
+  "teams_notification_webhook_token": "",
   "saas_manager": {
     "url": "https://saasmanager.staging.filigran.io",
     "client_id": null,
