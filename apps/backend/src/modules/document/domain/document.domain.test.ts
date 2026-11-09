@@ -24,6 +24,7 @@ import {
   ServiceRestriction,
 } from '../../../__generated__/resolvers-types';
 import type { DocumentMetadataKey } from '../../../model/kanel/public/DocumentMetadata';
+import { PgBossProducer } from '../../../thirdparty/pgboss/producer';
 import {
   ManifestFragmentHelper,
   TAG_DECOUPLING,
@@ -162,6 +163,7 @@ describe('document domain', () => {
     const ACTIVE_NAMES = ['a-active', 'b-active', 'y-active', 'z-active'];
 
     beforeEach(async () => {
+      vi.spyOn(PgBossProducer, 'send').mockResolvedValue('job-id');
       await TestHelper.document.delete({
         type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
       });

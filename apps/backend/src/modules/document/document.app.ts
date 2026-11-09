@@ -4,6 +4,7 @@ import {
   DocumentMetadataKeyCode,
   DocumentMetadata as DocumentMetadataResolverType,
   DocumentSourceType,
+  DocumentStatus,
   FiligranProduct,
   MutationUpdateDocumentArgs as MutationUpdateDocumentArgsResolverType,
   PlatformIdentifier,
@@ -224,6 +225,10 @@ export const DocumentApp = {
             solution_category_id: solutionCategoryId,
           }))
         );
+      }
+
+      if (document.status === DocumentStatus.InValidation) {
+        await DocumentHelper.notifyInValidation(document, serviceDefinition);
       }
 
       return document;
@@ -467,6 +472,13 @@ export const DocumentApp = {
           [logoFile],
           DocumentImageType.Logo
         );
+      }
+
+      if (
+        documentBeforeUpdate.status !== DocumentStatus.InValidation &&
+        doc.status === DocumentStatus.InValidation
+      ) {
+        await DocumentHelper.notifyInValidation(doc, serviceDefinition);
       }
 
       return doc;
