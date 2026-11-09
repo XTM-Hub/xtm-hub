@@ -1,10 +1,12 @@
 import { RegisteredPlatformOverview } from '@/components/service/registration/RegisteredPlatformOverview';
 import { basePlatform } from '@/components/service/registration/registered-platform.fixtures';
 import { useIsFeatureEnabled } from '@/hooks/use-is-feature-enabled';
+import { readTrackedEvents, startAnalytics } from '@/utils/test/analytics';
 import testRender from '@/utils/test/test-render';
 import { registeredPlatformByServiceInstanceId_fragment$data } from '@generated/registeredPlatformByServiceInstanceId_fragment.graphql';
 import {
   CommercialModel,
+  PlatformIdentifier,
   PortalCapability,
   SaasPlatformMetricsPeriod,
   SaasPlatformStorage,
@@ -92,6 +94,7 @@ const renderOverview = async (
           params={Promise.resolve({
             serviceInstanceId: encodeURIComponent(SERVICE_INSTANCE_ID),
           })}
+          platformIdentifier={PlatformIdentifier.Opencti}
         />
       </Suspense>,
       {
@@ -221,6 +224,20 @@ describe('RegisteredPlatformOverview', () => {
     expect(
       screen.getByRole('heading', { level: 2, name: 'Register.Metrics.Title' })
     ).toBeInTheDocument();
+  });
+
+  it('should send the metrics view of the platform product when a SaaS platform shows its metrics', async () => {
+    // Given
+    startAnalytics();
+    vi.mocked(useIsFeatureEnabled).mockReturnValue(true);
+
+    // When
+    await renderOverview(saasPlatform);
+
+    // Then
+    expect(readTrackedEvents('view_platform_metrics')).toEqual([
+      { product: 'OpenCTI', period: 'Last 90 days' },
+    ]);
   });
 
   it('should not display the platform metrics when the SaaS platform data is hidden', async () => {

@@ -1,5 +1,6 @@
 import {
   resolveAnalyticsPage,
+  resolveAnalyticsPageProduct,
   toAnalyticsPageLocation,
   toAnalyticsReferrer,
 } from '@/lib/analytics/analytics.page';
@@ -119,6 +120,31 @@ describe('resolveAnalyticsPage', () => {
       });
     }
   );
+});
+
+describe('resolveAnalyticsPageProduct', () => {
+  it.each([
+    ['OpenCTI', '/app/service/opencti_registration/[serviceInstanceId]'],
+    ['OpenAEV', '/app/service/openaev_registration/[serviceInstanceId]'],
+    ['XTM One', '/app/service/xtmone_registration/[serviceInstanceId]'],
+  ])(
+    'should resolve the product %s when the page template is %s',
+    (product, pageTemplate) => {
+      // Given / When
+      const pageProduct = resolveAnalyticsPageProduct(pageTemplate);
+
+      // Then
+      expect(pageProduct).toBe(product);
+    }
+  );
+
+  it('should resolve no product when the page is not a platform details page', () => {
+    // Given / When
+    const pageProduct = resolveAnalyticsPageProduct(PRIVATE_RESOURCE_TEMPLATE);
+
+    // Then
+    expect(pageProduct).toBeUndefined();
+  });
 });
 
 describe('toAnalyticsPageLocation', () => {

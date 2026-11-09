@@ -7,6 +7,7 @@ import {
   ANALYTICS_RESOURCE_NAME_ATTRIBUTE,
   ANALYTICS_SECTION_ATTRIBUTE,
   ANALYTICS_USE_CASES_ATTRIBUTE,
+  PRODUCT_LABELS,
 } from '@/lib/analytics/analytics.consts';
 import { toAnalyticsResourceId } from '@/lib/analytics/analytics.page';
 import {
@@ -14,13 +15,7 @@ import {
   toAnalyticsUseCases,
 } from '@/lib/analytics/analytics.resource';
 import { type ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
-import { PlatformIdentifier } from '@graphql/generated';
-
-const PRODUCT_LABELS = {
-  [PlatformIdentifier.Openaev]: 'OpenAEV',
-  [PlatformIdentifier.Opencti]: 'OpenCTI',
-  [PlatformIdentifier.Xtmone]: 'XTM One',
-} as const satisfies Record<PlatformIdentifier, string>;
+import { type PlatformIdentifier } from '@graphql/generated';
 
 export const analyticsResource = ({
   id,
