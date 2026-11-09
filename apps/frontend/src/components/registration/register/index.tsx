@@ -233,8 +233,11 @@ export const Register = ({
       return renderer();
     }
 
+    // The owner organization is only known to its members: anyone else picks one of their own organizations.
+    const isOwnedByUserOrganization = !!isPlatformRegistered.organization;
     const shouldRegisterOnSameOrganization =
       isPlatformRegistered.status === PlatformRegistrationStatus.Unregistered &&
+      isOwnedByUserOrganization &&
       userOrganizationsQueryData.userOrganizations.length > 2;
     if (shouldRegisterOnSameOrganization) {
       return (
@@ -250,7 +253,8 @@ export const Register = ({
     if (
       isPlatformRegistered.status ===
         PlatformRegistrationStatus.NeverRegistered ||
-      isPlatformRegistered.status === PlatformRegistrationStatus.Unregistered
+      isPlatformRegistered.status === PlatformRegistrationStatus.Unregistered ||
+      !isOwnedByUserOrganization
     ) {
       return (
         <RegisterOrganizationForm

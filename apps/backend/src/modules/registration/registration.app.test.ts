@@ -17,6 +17,7 @@ import {
   // eslint-disable-next-line no-restricted-imports
   requestContextAdminUser,
   requestContextRegistererUserSecondOrga,
+  requestContextSimpleUserFiligran2,
   requestContextSimpleUserSecondOrga,
   SERVICES,
   TEST_ORGANIZATIONS,
@@ -286,6 +287,7 @@ describe('registration app', () => {
         organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
         service_instance_id: serviceInstanceId,
       });
+      requestContext.set(requestContextSimpleUserSecondOrga);
 
       const result = await RegistrationApp.isPlatformRegistered({
         platformId,
@@ -320,6 +322,7 @@ describe('registration app', () => {
         organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
         service_instance_id: serviceInstanceId,
       });
+      requestContext.set(requestContextSimpleUserSecondOrga);
 
       const result = await RegistrationApp.isPlatformRegistered({
         platformId,
@@ -332,6 +335,44 @@ describe('registration app', () => {
       );
       expect(result.platformTitle).toBe(platformTitle);
     });
+
+    it.each`
+      description                       | status
+      ${'registered'}                   | ${PlatformConfigurationStatus.Active}
+      ${'registered then unregistered'} | ${PlatformConfigurationStatus.Inactive}
+    `(
+      'should return only the status of a platform $description by another organization',
+      async ({ status }: { status: PlatformConfigurationStatus }) => {
+        // Given — a platform owned by the second organization, asked by a user outside it
+        const platformId = uuidv4();
+        const serviceInstanceId = uuidv4() as ServiceInstanceId;
+        await TestHelper.serviceInstance.create({
+          id: serviceInstanceId,
+          name: 'test',
+        });
+        await TestHelper.platformConfiguration.create({
+          service_instance_id: serviceInstanceId,
+          platform_id: platformId,
+          platform_title: 'Platform title',
+          status,
+        });
+        await TestHelper.subscription.create({
+          id: uuidv4() as SubscriptionId,
+          organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+          service_instance_id: serviceInstanceId,
+        });
+        requestContext.set(requestContextSimpleUserFiligran2);
+
+        // When
+        const result = await RegistrationApp.isPlatformRegistered({
+          platformId,
+        });
+
+        // Then
+        expect(result.organization).toBeUndefined();
+        expect(result.platformTitle).toBeUndefined();
+      }
+    );
 
     describe('with tenantId', () => {
       let platformId: string;

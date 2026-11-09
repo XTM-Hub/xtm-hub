@@ -508,11 +508,24 @@ export const RegistrationApp = {
       throw new Error(ErrorCode.SubscriptionNotFound);
     }
 
+    const status =
+      platformConfiguration.status === PlatformConfigurationStatus.Active
+        ? PlatformRegistrationStatus.Registered
+        : PlatformRegistrationStatus.Unregistered;
+
+    // Anyone signed in may ask about a platform_id: only the owner organization's members learn who owns it.
+    const user = requestContext.requireUser();
+    const [userOrganization] =
+      await UserOrganizationDomain.loadUserOrganization({
+        user_id: user.id,
+        organization_id: subscription.organization_id,
+      });
+    if (!userOrganization) {
+      return { status };
+    }
+
     return {
-      status:
-        platformConfiguration.status === PlatformConfigurationStatus.Active
-          ? PlatformRegistrationStatus.Registered
-          : PlatformRegistrationStatus.Unregistered,
+      status,
       organization: { id: subscription.organization_id },
       platformTitle: platformConfiguration.platform_title,
     };
