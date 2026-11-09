@@ -32,6 +32,7 @@ const ORIGIN = 'https://hub.filigran.io';
 const RESOURCE_ID = 'resource-id';
 const RESOURCE_TITLE = 'Ransomware playbook';
 const RESOURCE_TYPE = 'opencti_playbook';
+const RESULT_COUNT = 42;
 
 const badgeParams = {
   resource_id: RESOURCE_ID,
@@ -240,6 +241,25 @@ describe('trackEvent', () => {
       expect.objectContaining({
         items: items.slice(0, MAX_ITEMS_PER_EVENT),
       }),
+    ]);
+  });
+
+  it('should send a number parameter as a number when it is tracked', () => {
+    // Given
+    startAnalytics();
+
+    // When
+    trackEvent('search', {
+      library: 'Playbooks',
+      product: 'OpenCTI',
+      search_term: RESOURCE_TITLE,
+      result_count: RESULT_COUNT,
+      has_results: 'Yes',
+    });
+
+    // Then
+    expect(readTrackedEvents('search')).toEqual([
+      expect.objectContaining({ result_count: RESULT_COUNT }),
     ]);
   });
 });
