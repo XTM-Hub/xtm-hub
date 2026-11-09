@@ -23,6 +23,8 @@ export const MAX_PARAM_VALUE_LENGTHS: Record<string, number> = {
   page_title: 300,
 };
 
+export const MAX_ITEMS_PER_EVENT = 25;
+
 export const MAX_EVENTS_PER_WINDOW = 100;
 
 export const EVENT_WINDOW_MS = 60_000;

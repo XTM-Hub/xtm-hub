@@ -5,6 +5,7 @@ import {
   GA_DEFAULT_CONSENT,
   INTERNAL_TRAFFIC_TYPE,
   MAX_EVENTS_PER_WINDOW,
+  MAX_ITEMS_PER_EVENT,
   MAX_PARAM_VALUE_LENGTH,
   MAX_PARAM_VALUE_LENGTHS,
   REDACTED_VALUE,
@@ -12,17 +13,23 @@ import {
 import {
   type AnalyticsEventName,
   type AnalyticsEvents,
+  type AnalyticsItem,
   type AnalyticsPageContext,
   type AnalyticsUserProperties,
 } from '@/lib/analytics/analytics.types';
 
-type AnalyticsParams = Record<string, string | null | undefined>;
+type AnalyticsValue = string | number | null | readonly AnalyticsItem[];
+
+type AnalyticsParams = Record<string, AnalyticsValue | undefined>;
+
+type SentItem = Record<string, string | number>;
 
 let configuredMeasurementId: string | null = null;
 let enabledMeasurementId: string | null = null;
 let pageContext: AnalyticsPageContext | null = null;
 let recentEventTimestamps: number[] = [];
 let heldEvents: [AnalyticsEventName, AnalyticsParams][] | null = null;
+const enabledListeners = new Set<() => void>();
 
 export const resetAnalyticsState = (): void => {
   configuredMeasurementId = null;
@@ -30,6 +37,21 @@ export const resetAnalyticsState = (): void => {
   pageContext = null;
   recentEventTimestamps = [];
   heldEvents = null;
+};
+
+export const isAnalyticsEnabled = (): boolean => enabledMeasurementId !== null;
+
+export const subscribeAnalyticsEnabled = (
+  listener: () => void
+): (() => void) => {
+  enabledListeners.add(listener);
+  return () => {
+    enabledListeners.delete(listener);
+  };
+};
+
+const notifyAnalyticsEnabled = (): void => {
+  enabledListeners.forEach((listener) => listener());
 };
 
 const getEnabledGtag = (): Window['gtag'] =>
@@ -40,18 +62,36 @@ const sanitizeValue = (key: string, value: string): string =>
     ? REDACTED_VALUE
     : value.slice(0, MAX_PARAM_VALUE_LENGTHS[key] ?? MAX_PARAM_VALUE_LENGTH);
 
+const sanitizeItem = (item: AnalyticsItem): SentItem =>
+  Object.fromEntries(
+    Object.entries(item).map(([key, value]) => [
+      key,
+      typeof value === 'string' ? sanitizeValue(key, value) : value,
+    ])
+  );
+
+const sanitizeParam = (
+  key: string,
+  value: AnalyticsValue
+): string | number | null | SentItem[] => {
+  if (typeof value === 'string') {
+    return sanitizeValue(key, value);
+  }
+  if (typeof value === 'number' || value === null) {
+    return value;
+  }
+  return value.slice(0, MAX_ITEMS_PER_EVENT).map(sanitizeItem);
+};
+
 const sanitizeParams = (
   params: AnalyticsParams
-): Record<string, string | null> =>
+): Record<string, string | number | null | SentItem[]> =>
   Object.fromEntries(
     Object.entries(params)
       .filter(
-        (entry): entry is [string, string | null] => entry[1] !== undefined
+        (entry): entry is [string, AnalyticsValue] => entry[1] !== undefined
       )
-      .map(([key, value]) => [
-        key,
-        value === null ? null : sanitizeValue(key, value),
-      ])
+      .map(([key, value]) => [key, sanitizeParam(key, value)])
   );
 
 const acceptsEvent = (name: AnalyticsEventName, now: number): boolean => {
@@ -85,6 +125,7 @@ export const initializeAnalytics = (measurementId: string): void => {
   window[`ga-disable-${measurementId}`] = false;
   enabledMeasurementId = measurementId;
   heldEvents ??= [];
+  notifyAnalyticsEnabled();
   if (configuredMeasurementId === measurementId) {
     window.gtag('consent', 'update', { analytics_storage: 'granted' });
     return;
@@ -109,6 +150,7 @@ export const revokeAnalyticsConsent = (): void => {
   window[`ga-disable-${enabledMeasurementId}`] = true;
   enabledMeasurementId = null;
   heldEvents = null;
+  notifyAnalyticsEnabled();
 };
 
 export const setAnalyticsPageContext = (

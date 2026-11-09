@@ -1,9 +1,12 @@
 'use client';
 
 import { PlatformMetadataMapping } from '@/components/registration/PlatformIdentifierMapping';
+import { ResourceViewTracker } from '@/components/service/document/ResourceViewTracker';
 import { DisabledActionTooltip } from '@/components/ui/DisabledActionTooltip';
 import { ShareLinkButton } from '@/components/ui/share-link/ShareLinkButton';
 import { useTranslate } from '@/hooks/use-translate';
+import { type AnalyticsDeployEligibility } from '@/lib/analytics/analytics.types';
+import { portalGraphqlClient } from '@/lib/graphql-client';
 import { isValueInEnum } from '@/utils/is-value-in-enum';
 import { getPlatformIdentifier } from '@/utils/platform';
 import { buildSignupRedirect } from '@/utils/redirect';
@@ -26,7 +29,22 @@ import {
   TooltipTrigger,
 } from '@filigran/design-system';
 import { DownloadIcon } from '@filigran/icon';
+import { useMeAnalyticsQuery } from '@graphql/generated';
+import { meAnalyticsKeys } from '@graphql/me/me.keys';
 import Link from 'next/link';
+
+const resolvePublicDeployEligibility = ({
+  isDeployAvailable,
+  isSignedOut,
+}: {
+  isDeployAvailable: boolean;
+  isSignedOut: boolean;
+}): AnalyticsDeployEligibility | undefined => {
+  if (!isDeployAvailable) {
+    return 'Resource not deployable';
+  }
+  return isSignedOut ? 'Signed out' : undefined;
+};
 
 interface PublicResourceActionsProps {
   documentData: PublicDocumentDetailsData;
@@ -42,6 +60,11 @@ export const PublicResourceActions = ({
   shareTooltipText,
 }: PublicResourceActionsProps) => {
   const t = useTranslate();
+  const { data: meData, isPending: isMePending } = useMeAnalyticsQuery(
+    portalGraphqlClient,
+    undefined,
+    { queryKey: meAnalyticsKeys.detail(), enabled: false }
+  );
 
   const privateResourceLink = isValueInEnum(serviceInstance.slug, ServiceSlug)
     ? getServiceInfo(
@@ -54,6 +77,7 @@ export const PublicResourceActions = ({
   const isConnector = isConnectorResource(documentData);
   const showDeploy = isResourceDeployable(documentData);
   const canDeploy = !isConnector || documentData.manager_supported;
+  const isDeployAvailable = showDeploy && canDeploy;
   const deployLabel = t('Service.ShareableResources.Deploy.DeployPlatform', {
     platformName:
       PlatformMetadataMapping[getPlatformIdentifier(documentData.type)].name,
@@ -61,6 +85,15 @@ export const PublicResourceActions = ({
 
   return (
     <div className="flex items-center gap-2 ml-auto">
+      {!isMePending && (
+        <ResourceViewTracker
+          resource={documentData}
+          deployEligibility={resolvePublicDeployEligibility({
+            isDeployAvailable,
+            isSignedOut: meData?.me === null,
+          })}
+        />
+      )}
       <ShareLinkButton
         documentId={documentData.id}
         url={pageUrl}

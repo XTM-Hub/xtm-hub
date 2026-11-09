@@ -1,10 +1,12 @@
 import ShareableResourceSlug from '@/components/service/document/ShareableResourceSlug';
+import { readTrackedEvents, startAnalytics } from '@/utils/test/analytics';
 import { mswServer } from '@/utils/test/msw/server';
 import testRender from '@/utils/test/test-render';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 import { settingsContext_fragment$data } from '@generated/settingsContext_fragment.graphql';
 import {
+  DocumentStatus,
   IncrementShareNumberDocumentMutation,
   IntegrationType,
 } from '@graphql/generated';
@@ -430,4 +432,53 @@ describe('Component: ShareableResourceSlug - Download count refresh', () => {
     // Then
     expect(getDownloadCount()).toHaveTextContent(/^1$/);
   });
+});
+
+describe('Component: ShareableResourceSlug - Resource view', () => {
+  const serviceInstance = {
+    id: 'service-instance-1',
+  } as unknown as serviceInstance_fragment$data;
+
+  const buildDocument = (status: DocumentStatus) =>
+    ({
+      id: 'document-1',
+      status,
+      name: 'Test Document',
+      type: 'opencti_custom_dashboard',
+    }) as unknown as documentItem_fragment$data;
+
+  beforeEach(() => {
+    startAnalytics();
+  });
+
+  it.each([
+    [
+      'No platform connected',
+      'a published custom dashboard',
+      DocumentStatus.Published,
+    ],
+    [
+      'Resource not deployable',
+      'a draft custom dashboard',
+      DocumentStatus.Draft,
+    ],
+  ])(
+    'should send %s as the deploy eligibility when the page shows %s',
+    (expected, _context, status) => {
+      // Given / When
+      testRender(
+        <ShareableResourceSlug
+          breadcrumbValue={[]}
+          documentData={buildDocument(status)}
+          serviceInstance={serviceInstance}
+        />,
+        { settings: mockSettings }
+      );
+
+      // Then
+      expect(readTrackedEvents('view_item')).toEqual([
+        expect.objectContaining({ deploy_eligibility: expected }),
+      ]);
+    }
+  );
 });
