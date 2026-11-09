@@ -9,6 +9,7 @@ import {
   MAX_PARAM_VALUE_LENGTH,
   MAX_PARAM_VALUE_LENGTHS,
   REDACTED_VALUE,
+  UNLIMITED_EVENT_NAMES,
 } from '@/lib/analytics/analytics.consts';
 import {
   type AnalyticsEventName,
@@ -95,7 +96,7 @@ const sanitizeParams = (
   );
 
 const acceptsEvent = (name: AnalyticsEventName, now: number): boolean => {
-  if (name === 'page_view') {
+  if (UNLIMITED_EVENT_NAMES.has(name)) {
     return true;
   }
   recentEventTimestamps = recentEventTimestamps.filter(

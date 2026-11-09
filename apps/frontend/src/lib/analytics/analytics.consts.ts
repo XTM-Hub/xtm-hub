@@ -1,5 +1,10 @@
+import { type AnalyticsEventName } from '@/lib/analytics/analytics.types';
 import { type SortableDocumentOrdering } from '@/utils/shareable-resources/shareable-resources.consts';
-import { DocumentOrdering, OrderingMode } from '@graphql/generated';
+import {
+  DocumentOrdering,
+  OrderingMode,
+  PlatformIdentifier,
+} from '@graphql/generated';
 
 export const GA_MEASUREMENT_ID = 'G-9FC0TL0TH3';
 
@@ -52,7 +57,18 @@ export const ORDER_MODE_LABELS = {
   [OrderingMode.Desc]: 'Descending',
 } as const satisfies Record<OrderingMode, string>;
 
+export const PRODUCT_LABELS = {
+  [PlatformIdentifier.Openaev]: 'OpenAEV',
+  [PlatformIdentifier.Opencti]: 'OpenCTI',
+  [PlatformIdentifier.Xtmone]: 'XTM One',
+} as const satisfies Record<PlatformIdentifier, string>;
+
 export const MAX_EVENTS_PER_WINDOW = 100;
+
+export const UNLIMITED_EVENT_NAMES: ReadonlySet<AnalyticsEventName> = new Set([
+  'page_view',
+  'generate_lead',
+]);
 
 export const EVENT_WINDOW_MS = 60_000;
 

@@ -2,6 +2,7 @@ import {
   type FILTER_NAME_LABELS,
   type ORDER_BY_LABELS,
   type ORDER_MODE_LABELS,
+  type PRODUCT_LABELS,
 } from '@/lib/analytics/analytics.consts';
 import {
   type AnalyticsDomain,
@@ -13,6 +14,7 @@ import {
   type SHAREABLE_RESOURCE_PRODUCT_MAPPING,
   type ShareableResourceType,
 } from '@/utils/shareable-resources/shareable-resources.types';
+import { type PlatformIdentifier } from '@graphql/generated';
 
 export type AnalyticsPageType =
   | 'Home'
@@ -46,6 +48,8 @@ type AnalyticsLibrary =
 
 type AnalyticsProduct =
   (typeof SHAREABLE_RESOURCE_PRODUCT_MAPPING)[ShareableResourceType];
+
+type AnalyticsPlatformProduct = (typeof PRODUCT_LABELS)[PlatformIdentifier];
 
 export interface AnalyticsResource {
   id: string;
@@ -144,6 +148,12 @@ export interface AnalyticsEvents {
     order_by: AnalyticsOrderBy;
     order_mode: AnalyticsOrderMode;
   };
+  generate_lead:
+    | { lead_source: 'Trial request' | 'Sales contact' }
+    | {
+        lead_source: 'Enterprise Edition contact';
+        product: AnalyticsPlatformProduct;
+      };
 }
 
 export type AnalyticsEventName = keyof AnalyticsEvents;

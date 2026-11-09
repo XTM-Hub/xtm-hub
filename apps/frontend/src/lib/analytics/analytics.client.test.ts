@@ -15,6 +15,7 @@ import {
   REDACTED_VALUE,
 } from '@/lib/analytics/analytics.consts';
 import {
+  type AnalyticsEventName,
   type AnalyticsEvents,
   type AnalyticsItem,
   type AnalyticsPageContext,
@@ -33,6 +34,10 @@ const RESOURCE_ID = 'resource-id';
 const RESOURCE_TITLE = 'Ransomware playbook';
 const RESOURCE_TYPE = 'opencti_playbook';
 const RESULT_COUNT = 42;
+
+type TrackedEvent = {
+  [Name in AnalyticsEventName]: [Name, AnalyticsEvents[Name]];
+}[AnalyticsEventName];
 
 const badgeParams = {
   resource_id: RESOURCE_ID,
@@ -126,6 +131,21 @@ describe('trackEvent', () => {
     // Then
     expect(readTrackedEvents('page_view')).toHaveLength(1);
   });
+
+  it.each<TrackedEvent>([['generate_lead', { lead_source: 'Sales contact' }]])(
+    'should send %s when the flood cap is reached',
+    (name, params) => {
+      // Given
+      startAnalytics();
+      trackBadgeClicks(MAX_EVENTS_PER_WINDOW);
+
+      // When
+      trackEvent(name, params);
+
+      // Then
+      expect(readTrackedEvents(name)).toHaveLength(1);
+    }
+  );
 
   it.each([
     ['drop', EVENT_WINDOW_MS - 1, 0],
