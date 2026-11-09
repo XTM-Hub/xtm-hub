@@ -28,21 +28,34 @@ describe('GET /redirect/[identifier]', () => {
     vi.clearAllMocks();
   });
 
-  it('should redirect to the OpenAEV registered platform', async () => {
-    // Given
-    vi.mocked(redirectToRegisteredPlatform).mockResolvedValue(
-      REDIRECT_RESPONSE
-    );
+  it.each`
+    identifier                | platformIdentifier
+    ${'opencti-registration'} | ${PlatformIdentifier.Opencti}
+    ${'openaev-registration'} | ${PlatformIdentifier.Openaev}
+  `(
+    'should redirect $identifier to the $platformIdentifier registered platform',
+    async ({
+      identifier,
+      platformIdentifier,
+    }: {
+      identifier: string;
+      platformIdentifier: PlatformIdentifier;
+    }) => {
+      // Given
+      vi.mocked(redirectToRegisteredPlatform).mockResolvedValue(
+        REDIRECT_RESPONSE
+      );
 
-    // When
-    const { request, response } = callRoute('openaev-registration');
+      // When
+      const { request, response } = callRoute(identifier);
 
-    // Then
-    await expect(response).resolves.toBe(REDIRECT_RESPONSE);
-    expect(redirectToRegisteredPlatform).toHaveBeenCalledWith(
-      request,
-      PlatformIdentifier.Openaev
-    );
-    expect(redirectToResource).not.toHaveBeenCalled();
-  });
+      // Then
+      await expect(response).resolves.toBe(REDIRECT_RESPONSE);
+      expect(redirectToRegisteredPlatform).toHaveBeenCalledWith(
+        request,
+        platformIdentifier
+      );
+      expect(redirectToResource).not.toHaveBeenCalled();
+    }
+  );
 });
