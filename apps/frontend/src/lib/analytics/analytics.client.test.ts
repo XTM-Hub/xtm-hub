@@ -122,6 +122,25 @@ describe('trackEvent', () => {
     expect(readTrackedEvents('view_item_use_case')).toEqual([]);
   });
 
+  it('should address the event to the initialized measurement only when it is sent', () => {
+    // Given
+    startAnalytics();
+
+    // When
+    trackEvent('view_item_use_case', useCaseParams);
+
+    // Then
+    expect(
+      readGtagCommands().filter(([command]) => command === 'event')
+    ).toEqual([
+      [
+        'event',
+        'view_item_use_case',
+        expect.objectContaining({ send_to: MEASUREMENT_ID }),
+      ],
+    ]);
+  });
+
   it('should send a page view when the flood cap is reached', () => {
     // Given
     startAnalytics();
