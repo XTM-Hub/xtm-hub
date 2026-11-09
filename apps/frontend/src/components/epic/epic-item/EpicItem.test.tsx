@@ -1,20 +1,13 @@
 import { EpicItem } from '@/components/epic/epic-item/EpicItem';
 import testRender from '@/utils/test/test-render';
-import { epic_fragment$data } from '@generated/epic_fragment.graphql';
 import { EditionType, EpicType, FiligranProduct } from '@graphql/generated';
+import { mockEpic } from '@graphql/mocks';
 import { screen, within } from '@testing-library/react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { createMockEnvironment } from 'relay-test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const useEpicListContextMock = vi.fn();
-
-vi.mock('@/hooks/use-epic-list-context', () => ({
-  useEpicListContext: () => useEpicListContextMock(),
-}));
-
 describe('EpicItem', () => {
-  const epic = {
+  const epic = mockEpic({
     id: 'epic-1',
     title: 'Roadmap epic',
     epic_type: EpicType.Other,
@@ -25,7 +18,7 @@ describe('EpicItem', () => {
     problem_to_solve: 'problem to solve',
     proposed_solution: 'proposed solution',
     expected_value: 'expected value',
-  } as epic_fragment$data;
+  });
 
   const defaultProps = {
     epic,
@@ -38,10 +31,6 @@ describe('EpicItem', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockReplaceState.mockImplementation(() => {});
-    useEpicListContextMock.mockReturnValue({
-      connectionID: 'connection-id-1',
-      filterByProduct: vi.fn(),
-    });
 
     vi.mocked(usePathname).mockReturnValue('/epics');
 
@@ -62,12 +51,8 @@ describe('EpicItem', () => {
 
   it('renders card and passes expected props', () => {
     // Given
-    const environment = createMockEnvironment();
-
     // When
-    const { queryByText } = testRender(<EpicItem {...defaultProps} />, {
-      relayConfig: environment,
-    });
+    const { queryByText } = testRender(<EpicItem {...defaultProps} />);
 
     // Then
     expect(queryByText(epic.title)).toBeInTheDocument();
@@ -77,10 +62,7 @@ describe('EpicItem', () => {
 
   it('opens detail dialog when card asks to open it', async () => {
     // Given
-    const environment = createMockEnvironment();
-    const { user } = testRender(<EpicItem {...defaultProps} />, {
-      relayConfig: environment,
-    });
+    const { user } = testRender(<EpicItem {...defaultProps} />);
 
     // When
     const card = screen.getByRole('listitem');
@@ -102,10 +84,7 @@ describe('EpicItem', () => {
       toString: vi.fn().mockReturnValue('epicId=epic-1'),
     } as unknown as ReturnType<typeof useSearchParams>);
 
-    const environment = createMockEnvironment();
-    const { user } = testRender(<EpicItem {...defaultProps} />, {
-      relayConfig: environment,
-    });
+    const { user } = testRender(<EpicItem {...defaultProps} />);
 
     const dialog = screen.getByRole('dialog');
     expect(within(dialog).getByText(epic.description)).toBeInTheDocument();

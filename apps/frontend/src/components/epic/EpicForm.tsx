@@ -38,9 +38,9 @@ import {
   TooltipTrigger,
 } from '@filigran/design-system';
 import { InfoIcon } from '@filigran/icon';
-import { epic_fragment$data } from '@generated/epic_fragment.graphql';
 import {
   EditionType,
+  EpicFieldsFragment,
   EpicType,
   FiligranProduct,
   Timeline,
@@ -211,9 +211,11 @@ const EpicTextareaField = ({
 const EpicForm = ({
   epic,
   handleSubmit,
+  isSubmitting = false,
 }: {
-  epic?: epic_fragment$data;
+  epic?: EpicFieldsFragment;
   handleSubmit: (values: EpicFormValues) => void;
+  isSubmitting?: boolean;
 }) => {
   const t = useTranslate();
   const { handleCloseSheet } = useDialogContext();
@@ -455,7 +457,9 @@ const EpicForm = ({
               onClick={handleCloseSheet}>
               {t('Utils.Cancel')}
             </Button>
-            <Button type="submit">
+            <Button
+              type="submit"
+              loading={isSubmitting}>
               {t(
                 epic
                   ? 'Epic.EpicActions.UpdateEpicButton'
