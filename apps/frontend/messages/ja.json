@@ -1404,6 +1404,7 @@
         },
         "Verified": {
           "Label": "ステータス",
+          "Tooltip": "コネクタにのみ適用されるフィルター",
           "Placeholder": "ステータス...",
           "Verified": "Filigranの提供による",
           "Unverified": "コミュニティの提供による"

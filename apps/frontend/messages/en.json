@@ -1404,6 +1404,7 @@
         },
         "Verified": {
           "Label": "Status",
+          "Tooltip": "Filter applicable to connectors only",
           "Placeholder": "Status...",
           "Verified": "Supported by Filigran",
           "Unverified": "Supported by Community"

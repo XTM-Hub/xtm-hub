@@ -96,6 +96,7 @@ export const useShareableResourceMapping = (
       },
       [ServiceListFilterKey.Verified]: {
         title: t('Service.OpenctiIntegrations.Filter.Verified.Label'),
+        tooltip: t('Service.OpenctiIntegrations.Filter.Verified.Tooltip'),
         node: <IntegrationVerifiedFilter facetCounts={facetCounts?.verified} />,
       },
 

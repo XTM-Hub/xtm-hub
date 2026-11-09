@@ -9,11 +9,61 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { analyticsId } from '@/lib/analytics/analytics.ids';
-import { useMemo } from 'react';
+import {
+  Icon,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@filigran/design-system';
+import { ReactNode, useMemo } from 'react';
 
 interface ServiceListFilterSectionProps {
   filters: ServiceListFilterMap;
 }
+
+interface FilterTitleProps {
+  title: ReactNode;
+  tooltip?: string;
+}
+
+const FilterTitle = ({ title, tooltip }: FilterTitleProps) => (
+  <span className="flex items-center gap-1">
+    {title}
+    {tooltip && (
+      <>
+        <Icon
+          name="info"
+          size={16}
+          className="shrink-0 text-default-secondary"
+        />
+        <span className="sr-only">{tooltip}</span>
+      </>
+    )}
+  </span>
+);
+
+interface FilterTooltipProps {
+  tooltip?: string;
+  children: ReactNode;
+}
+
+const FilterTooltip = ({ tooltip, children }: FilterTooltipProps) => {
+  if (!tooltip) {
+    return children;
+  }
+
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div>{children}</div>
+        </TooltipTrigger>
+        <TooltipContent>{tooltip}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+};
 
 export const ServiceListFilterSection = ({
   filters,
@@ -30,7 +80,14 @@ export const ServiceListFilterSection = ({
             key={filterKey}
             className="w-full border-b border-elevation-subtle p-2 last:border-b-0">
             {filter.title && (
-              <div className="content-compact-medium pb-1">{filter.title}</div>
+              <FilterTooltip tooltip={filter.tooltip}>
+                <div className="content-compact-medium pb-1">
+                  <FilterTitle
+                    title={filter.title}
+                    tooltip={filter.tooltip}
+                  />
+                </div>
+              </FilterTooltip>
             )}
             {filter.node}
           </div>
@@ -46,11 +103,16 @@ export const ServiceListFilterSection = ({
           <AccordionItem
             value={filterKey}
             className="border-0">
-            <AccordionTrigger
-              {...analyticsId('resource_filter_section_toggle')}
-              className="p-2 hover:cursor-pointer content-compact-medium">
-              {filter.title ?? filterKey}
-            </AccordionTrigger>
+            <FilterTooltip tooltip={filter.tooltip}>
+              <AccordionTrigger
+                {...analyticsId('resource_filter_section_toggle')}
+                className="p-2 hover:cursor-pointer content-compact-medium">
+                <FilterTitle
+                  title={filter.title ?? filterKey}
+                  tooltip={filter.tooltip}
+                />
+              </AccordionTrigger>
+            </FilterTooltip>
             {/* pr-2 matches the trigger's 8px right padding so each count
                 badge lines up with the accordion chevron above it. */}
             <AccordionContent className="pb-2 pt-0 pr-2">

@@ -21,6 +21,15 @@ describe('ServiceListFilterSection', () => {
     },
   };
 
+  const tooltip = 'filter-tooltip';
+  const filtersWithTooltip = {
+    [ServiceListFilterKey.Verified]: {
+      title: firstTitle,
+      tooltip,
+      node: <div>{firstContent}</div>,
+    },
+  };
+
   const inlineFilter = {
     [ServiceListFilterKey.ProductVersion]: {
       title: firstTitle,
@@ -123,5 +132,68 @@ describe('ServiceListFilterSection', () => {
     expect(
       screen.queryByRole('button', { name: firstTitle })
     ).not.toBeInTheDocument();
+  });
+
+  it('should explain a filter with its tooltip when the user hovers its section', async () => {
+    // Given
+    const { user } = testRender(
+      <ServiceListFilterSection filters={filtersWithTooltip} />
+    );
+
+    // When
+    await user.hover(
+      screen.getByRole('button', { name: /first-filter-title/ })
+    );
+
+    // Then
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(tooltip);
+  });
+
+  it('should explain a filter with its tooltip when the user reaches its section with the keyboard', async () => {
+    // Given
+    const { user } = testRender(
+      <ServiceListFilterSection filters={filtersWithTooltip} />
+    );
+
+    // When
+    await user.tab();
+
+    // Then
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(tooltip);
+  });
+
+  it('should keep the section open while its tooltip is shown', async () => {
+    // Given
+    const { user } = testRender(
+      <ServiceListFilterSection filters={filtersWithTooltip} />
+    );
+    const sectionButton = screen.getByRole('button', {
+      name: /first-filter-title/,
+    });
+
+    // When
+    await user.hover(sectionButton);
+    await screen.findByRole('tooltip');
+
+    // Then
+    expect(sectionButton).toHaveAttribute('aria-expanded', 'true');
+    expect(sectionButton).toHaveAttribute('data-state', 'open');
+  });
+
+  it('should still collapse a section that has a tooltip', async () => {
+    // Given
+    const { user } = testRender(
+      <ServiceListFilterSection filters={filtersWithTooltip} />
+    );
+    const sectionButton = screen.getByRole('button', {
+      name: /first-filter-title/,
+    });
+
+    // When
+    await user.click(sectionButton);
+
+    // Then
+    expect(sectionButton).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByText(firstContent)).not.toBeInTheDocument();
   });
 });
