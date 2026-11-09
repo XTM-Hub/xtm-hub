@@ -1,12 +1,13 @@
 import knex from 'knex';
 import { baseConfig } from '../../knexconfig.js';
 import { esDbClient } from '../thirdparty/elasticsearch/client';
+import { withIndexPrefix } from '../thirdparty/elasticsearch/index-prefix';
 
 export const up = async function (next: () => void) {
   const database = knex(baseConfig);
 
   const result = await esDbClient.search({
-    index: 'telemetry_v1',
+    index: withIndexPrefix('telemetry_v1'),
     size: 0,
     query: {
       terms: { event_type: ['share', 'download'] },
@@ -34,7 +35,7 @@ export const up = async function (next: () => void) {
   if (docs.length > 0) {
     const updatePromises = docs.map((doc) =>
       esDbClient.updateByQuery({
-        index: 'telemetry_v1',
+        index: withIndexPrefix('telemetry_v1'),
         query: {
           bool: {
             must: [
@@ -62,7 +63,7 @@ export const down = async function (next: () => void) {
   const database = knex(baseConfig);
 
   const result = await esDbClient.search({
-    index: 'telemetry_v1',
+    index: withIndexPrefix('telemetry_v1'),
     size: 0,
     query: {
       terms: { event_type: ['share', 'download'] },
@@ -90,7 +91,7 @@ export const down = async function (next: () => void) {
   if (docs.length > 0) {
     const updatePromises = docs.map((doc) =>
       esDbClient.updateByQuery({
-        index: 'telemetry_v1',
+        index: withIndexPrefix('telemetry_v1'),
         query: {
           bool: {
             must: [

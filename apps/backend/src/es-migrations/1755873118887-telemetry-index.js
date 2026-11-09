@@ -1,13 +1,14 @@
 'use strict';
 
 import { esDbClient } from '../thirdparty/elasticsearch/client.ts';
+import { withIndexPrefix } from '../thirdparty/elasticsearch/index-prefix.ts';
 
 export const up = async function (next) {
   try {
     // 1. Create index template
     await esDbClient.getIndices().putIndexTemplate({
-      name: 'telemetry-template',
-      index_patterns: ['telemetry_v*'], // Will match telemetry_v1, telemetry_v2, etc.
+      name: withIndexPrefix('telemetry-template'),
+      index_patterns: [withIndexPrefix('telemetry_v*')], // Will match telemetry_v1, telemetry_v2, etc., after the index prefix
       template: {
         mappings: {
           properties: {
@@ -60,7 +61,7 @@ export const up = async function (next) {
           },
         },
         aliases: {
-          telemetry: {},
+          [withIndexPrefix('telemetry')]: {},
         },
       },
       priority: 100,
@@ -73,7 +74,7 @@ export const up = async function (next) {
 
     // 2. Create the first index (telemetry_v1)
     await esDbClient.getIndices().create({
-      index: 'telemetry_v1',
+      index: withIndexPrefix('telemetry_v1'),
       // Settings and mappings will come from the template
     });
 
@@ -87,13 +88,13 @@ export const down = async function (next) {
   try {
     // Delete the index (this will also remove the alias)
     await esDbClient.getIndices().delete({
-      index: 'telemetry_v1',
+      index: withIndexPrefix('telemetry_v1'),
       ignore_unavailable: true,
     });
 
     // Delete the template
     await esDbClient.getIndices().deleteIndexTemplate({
-      name: 'telemetry-template',
+      name: withIndexPrefix('telemetry-template'),
     });
 
     next();

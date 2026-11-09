@@ -48,6 +48,7 @@ import {
 import { formatName } from '../../utils/format';
 import { isValidVersion } from '../../utils/versioning';
 import { DeploymentRequestDomain } from '../deployment/deployment.domain';
+import { NewsFeedApp } from '../news-feed/news-feed.app';
 import { OrganizationDomain } from '../organization-management/organization/organization.domain';
 import { UserDomain } from '../organization-management/user/user-domain/user.domain';
 import { UserOrganizationDomain } from '../organization-management/user/user-organization/user-organization.domain';
@@ -339,6 +340,13 @@ export const RegistrationApp = {
         configuration,
         platformIdentifier: identifier,
       });
+    });
+
+    // Fire and forget: it never throws and must not delay nor break the registration
+    void NewsFeedApp.backfillBlogpostsForPlatform({
+      platformId: platform.id,
+      platformIdentifier: identifier,
+      platformVersion: platform.version,
     });
 
     await enqueueCommercialModelRefresh({
@@ -638,6 +646,13 @@ export const RegistrationApp = {
           error,
         });
       }
+    });
+
+    // After the commit, fire and forget: it never throws and must not delay nor break the registration
+    void NewsFeedApp.backfillBlogpostsForPlatform({
+      platformId: input.platform.id,
+      platformIdentifier,
+      platformVersion: input.platform.version,
     });
   },
 };

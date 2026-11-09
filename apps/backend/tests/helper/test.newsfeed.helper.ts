@@ -61,12 +61,26 @@ export const TestNewsfeedHelper = {
         .where(field)
         .first();
     },
+    loadMetadata: async (field: {
+      news_feed_item_id?: NewsFeedItemId;
+      key?: NewsFeedItemMetadataKey;
+      value?: string | null;
+    }): Promise<NewsFeedItemMetadata[]> => {
+      return db<NewsFeedItemMetadata[]>('NewsFeedItemMetadata')
+        .where(field)
+        .select('*');
+    },
     loadProvisioned: async (
       field: ProvisionedNewsFeedItemMutator
     ): Promise<ProvisionedNewsFeedItem[]> => {
       return db<ProvisionedNewsFeedItem[]>('ProvisionedNewsFeedItem')
         .where(field)
         .select('*');
+    },
+    deleteProvisioned: async (field: ProvisionedNewsFeedItemMutator = {}) => {
+      await db<ProvisionedNewsFeedItem>('ProvisionedNewsFeedItem')
+        .where(field)
+        .del();
     },
     deleteItem: async (field: NewsFeedItemMutator = {}) => {
       await db<NewsFeedItem>('NewsFeedItem').where(field).del();

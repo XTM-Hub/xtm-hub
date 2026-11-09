@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest';
+import config from 'config';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   IntegrationType,
   NewsFeedItemType,
@@ -7,7 +8,9 @@ import {
   ServiceDefinitionIdentifier,
 } from '../../__generated__/resolvers-types';
 import Document from '../../model/kanel/public/Document';
+import { RequiredPlatformVersions } from '../../utils/required-platform-version';
 import {
+  doesPlatformSupportBlogpostNewsFeed,
   doesPlatformSupportNewsFeed,
   NewsFeedHelper,
 } from './news-feed.helper';
@@ -17,7 +20,20 @@ import {
   newsFeedUtmContentMapping,
 } from './news-feed.model';
 
+vi.mock('config', async (importOriginal) => {
+  const mod = await importOriginal<{ default: typeof config }>();
+  return {
+    default: {
+      get: vi.fn(mod.default.get.bind(mod.default)),
+      has: mod.default.has.bind(mod.default),
+    },
+  };
+});
+
+const mockConfigGet = vi.mocked(config.get);
+
 const NEWS_FEED_ITEM_ID = '4f1c0d52-8b6e-4c43-9f0e-6d2a1b7c3e55';
+const BLOGPOST_REQUIRED_VERSION = '7.260901.0';
 
 describe('news-feed.helper', () => {
   describe('doesPlatformSupportNewsFeed', () => {
@@ -52,10 +68,117 @@ describe('news-feed.helper', () => {
       ).toBe(false);
     });
 
-    it('returns true when no minimum is configured for the identifier', () => {
+    it('returns false when news feed is disabled (null required version) for the identifier', () => {
       expect(
-        doesPlatformSupportNewsFeed(PlatformIdentifier.Xtmone, '1.0.0')
-      ).toBe(true);
+        doesPlatformSupportNewsFeed(PlatformIdentifier.Xtmone, '99.0.0')
+      ).toBe(false);
+    });
+  });
+
+  describe('doesPlatformSupportBlogpostNewsFeed', () => {
+    const originalBlogpostSupport =
+      RequiredPlatformVersions.NewsFeedBlogpostSupport;
+
+    const replaceRequiredVersion = (requiredVersion: string | null) => {
+      RequiredPlatformVersions.NewsFeedBlogpostSupport = {
+        [PlatformIdentifier.Opencti]: requiredVersion,
+        [PlatformIdentifier.Openaev]: null,
+        [PlatformIdentifier.Xtmone]: null,
+      };
+    };
+
+    afterEach(() => {
+      RequiredPlatformVersions.NewsFeedBlogpostSupport =
+        originalBlogpostSupport;
+    });
+
+    it('is disabled for every platform and version until a required version is set', () => {
+      // Given the shipped configuration
+      const identifiers = Object.values(PlatformIdentifier);
+
+      // Then
+      expect(
+        identifiers.map((identifier) => [
+          identifier,
+          RequiredPlatformVersions.NewsFeedBlogpostSupport[identifier],
+        ])
+      ).toEqual(identifiers.map((identifier) => [identifier, null]));
+      identifiers.forEach((identifier) => {
+        expect(doesPlatformSupportBlogpostNewsFeed(identifier, '99.0.0')).toBe(
+          false
+        );
+      });
+    });
+
+    it.each`
+      description              | requiredVersion              | version                      | expected
+      ${'null required'}       | ${null}                      | ${'8.0.0'}                   | ${false}
+      ${'below'}               | ${BLOGPOST_REQUIRED_VERSION} | ${'7.260831.0'}              | ${false}
+      ${'equal'}               | ${BLOGPOST_REQUIRED_VERSION} | ${BLOGPOST_REQUIRED_VERSION} | ${true}
+      ${'above'}               | ${BLOGPOST_REQUIRED_VERSION} | ${'7.260902.0'}              | ${true}
+      ${'above (next major)'}  | ${BLOGPOST_REQUIRED_VERSION} | ${'8.0.0'}                   | ${true}
+      ${'invalid'}             | ${BLOGPOST_REQUIRED_VERSION} | ${'not-a-version'}           | ${false}
+      ${'missing (null)'}      | ${BLOGPOST_REQUIRED_VERSION} | ${null}                      | ${false}
+      ${'missing (undefined)'} | ${BLOGPOST_REQUIRED_VERSION} | ${undefined}                 | ${false}
+    `(
+      'returns $expected for OpenCTI when the version is $description',
+      ({ requiredVersion, version, expected }) => {
+        replaceRequiredVersion(requiredVersion);
+
+        expect(
+          doesPlatformSupportBlogpostNewsFeed(
+            PlatformIdentifier.Opencti,
+            version
+          )
+        ).toBe(expected);
+      }
+    );
+
+    it('returns false for a platform without a required version even when the version is valid', () => {
+      replaceRequiredVersion(BLOGPOST_REQUIRED_VERSION);
+
+      expect(
+        doesPlatformSupportBlogpostNewsFeed(
+          PlatformIdentifier.Openaev,
+          '99.0.0'
+        )
+      ).toBe(false);
+    });
+  });
+
+  describe('getBlogpostLimit', () => {
+    afterEach(() => {
+      mockConfigGet.mockReset();
+    });
+
+    it('returns the default limit of 6', () => {
+      expect(NewsFeedHelper.getBlogpostLimit()).toBe(6);
+    });
+
+    it('returns the configured limit', () => {
+      mockConfigGet.mockImplementation((key: string) =>
+        key === 'news_feed.blogpost_limit' ? 3 : undefined
+      );
+
+      expect(NewsFeedHelper.getBlogpostLimit()).toBe(3);
+    });
+
+    it.each`
+      description         | value
+      ${'a string'}       | ${'6'}
+      ${'zero'}           | ${0}
+      ${'negative'}       | ${-1}
+      ${'not an integer'} | ${2.5}
+      ${'not finite'}     | ${Infinity}
+      ${'missing'}        | ${undefined}
+    `('throws when the configured limit is $description', ({ value }) => {
+      mockConfigGet.mockImplementation((key: string) =>
+        key === 'news_feed.blogpost_limit' ? value : undefined
+      );
+
+      expect(() => NewsFeedHelper.getBlogpostLimit()).toThrow(
+        /Invalid config "news_feed.blogpost_limit"/
+      );
     });
   });
 

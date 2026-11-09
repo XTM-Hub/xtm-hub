@@ -220,5 +220,35 @@ export const resolveTrustProxy = (
   localDev: boolean
 ): number | false => (localDev ? false : parseTrustProxy(configured));
 
+// Elasticsearch index name rules: lowercase, no leading '-', '_', '+' or '.',
+// none of \ / * ? " < > | , # : or spaces. '_' is also refused, as it separates
+// the prefix from the name: with it, a prefix such as 'hub_telemetry_v2' would
+// make its index template pattern overlap the one of prefix 'hub', which
+// Elasticsearch rejects. The length cap keeps every prefixed name well under
+// the 255 bytes limit of an index name, for the names to come as well.
+const ES_INDEX_PREFIX_MAX_LENGTH = 100;
+const ES_INDEX_PREFIX_PATTERN = new RegExp(
+  `^[a-z0-9][a-z0-9.-]{0,${ES_INDEX_PREFIX_MAX_LENGTH - 1}}$`
+);
+
+/**
+ * Parses the Elasticsearch index prefix (ELASTIC_INDEX_PREFIX). Unset or empty
+ * means no prefix, which keeps the names of existing installations.
+ *
+ * An invalid value fails the boot: falling back to no prefix would make the
+ * instance write into the indices of an unprefixed instance of the same cluster.
+ */
+export const parseEsIndexPrefix = (value: unknown): string => {
+  if (value === undefined || value === null || value === '') {
+    return '';
+  }
+  if (typeof value !== 'string' || !ES_INDEX_PREFIX_PATTERN.test(value)) {
+    throw new Error(
+      `[ELASTICSEARCH] Invalid elasticsearch.index_prefix configuration (ELASTIC_INDEX_PREFIX): expected at most ${ES_INDEX_PREFIX_MAX_LENGTH} lowercase letters, digits, '.' or '-', starting with a letter or a digit, got ${JSON.stringify(value)}`
+    );
+  }
+  return value;
+};
+
 // Export schemas for potential reuse
 export { DevUserOrganizationSchema, DevUsersArraySchema, DevUserSchema };

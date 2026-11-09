@@ -1,6 +1,7 @@
 import { PlatformMetadataMapping } from '@/components/registration/PlatformIdentifierMapping';
 import {
   getContractDaysLeft,
+  getDatabaseUsagePercent,
   getHealthIssueRatio,
   getSaasPlatformMetadata,
   getSaasPlatformServicePath,
@@ -107,6 +108,22 @@ describe('getSaasProductName', () => {
 
     // Then the full name of the product is returned
     expect(productName).toBe(name);
+  });
+});
+
+describe('getDatabaseUsagePercent', () => {
+  it.each`
+    case                                            | storage                                                                   | percent
+    ${'the PostgreSQL usage when it is sent'}       | ${{ es_used_size: { percent: 85 }, postgres_used_size: { percent: 12 } }} | ${12}
+    ${'the Elasticsearch usage without PostgreSQL'} | ${{ es_used_size: { percent: 85 }, postgres_used_size: null }}            | ${85}
+    ${'nothing without any database usage'}         | ${null}                                                                   | ${undefined}
+  `('should return $case', ({ storage, percent }) => {
+    // Given the storage the SaaS Manager measured for a platform
+    // When the usage of its database is read
+    const usagePercent = getDatabaseUsagePercent(storage);
+
+    // Then it comes from the database the platform runs on
+    expect(usagePercent).toBe(percent);
   });
 });
 

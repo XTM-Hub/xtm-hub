@@ -286,6 +286,7 @@ const parseSaasPlatformStorage = (
   return {
     es_used_size: parseStorageUsage(storage.es_used_size),
     s3_used_size: parseStorageUsage(storage.s3_used_size),
+    postgres_used_size: parseStorageUsage(storage.postgres_used_size),
   };
 };
 
@@ -320,6 +321,12 @@ const isSlaMissed = (availability: number): boolean =>
   Math.round(availability * SAAS_PLATFORM_SLA_RATIO_SCALE) <
   Math.round(SAAS_PLATFORM_SLA_TARGET * SAAS_PLATFORM_SLA_RATIO_SCALE);
 
+// A platform with PostgreSQL stores its data there and only indexes it in Elasticsearch; one without stores it in Elasticsearch.
+const getDatabaseUsage = (
+  storage: SaasPlatformStorage | null
+): SaasPlatformStorageUsage | null =>
+  storage?.postgres_used_size ?? storage?.es_used_size ?? null;
+
 const isStorageUsageHigh = (percent: number): boolean =>
   percent > SAAS_PLATFORM_STORAGE_USAGE_HIGH_PERCENT;
 
@@ -340,7 +347,7 @@ const parseSaasPlatformHealthIssues = (
     },
     {
       issue: SaasPlatformHealthIssue.Database,
-      value: storage?.es_used_size?.percent,
+      value: getDatabaseUsage(storage)?.percent,
       hasIssue: isStorageUsageHigh,
     },
     {
@@ -410,7 +417,11 @@ const parseSaasPlatform = (
   const slaPercent = toFiniteNumber(platform.sla_cmtd);
   const availability = slaPercent === null ? null : percentToRatio(slaPercent);
   const storage = parseSaasPlatformStorage(platform.storage);
-  for (const usage of [storage?.es_used_size, storage?.s3_used_size]) {
+  for (const usage of [
+    storage?.es_used_size,
+    storage?.s3_used_size,
+    storage?.postgres_used_size,
+  ]) {
     if (usage && (usage.limit ?? 0) <= 0) {
       usage.percent = null;
     }

@@ -271,7 +271,7 @@ export const TelemetryHelper = {
       service_type: await buildServiceTypeEvent(document.id),
       resource_id: document.id,
       resource_title: document.name ?? '',
-      status: document.active ? 'published' : 'draft',
+      status: document.status,
     };
   },
 

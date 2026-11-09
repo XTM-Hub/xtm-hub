@@ -19,8 +19,8 @@ vi.mock('openid-client', () => ({
   fetchUserInfo: mocks.fetchUserInfo,
 }));
 
-vi.mock('openid-client/passport', () => ({
-  Strategy: vi.fn(function (_options: unknown, verify: VerifyCallback) {
+vi.mock('./oidc-strategy', () => ({
+  OIDCStrategy: vi.fn(function (_options: unknown, verify: VerifyCallback) {
     mocks.verify = verify;
   }),
 }));

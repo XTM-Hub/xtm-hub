@@ -21,8 +21,12 @@ vi.mock('../../../context/request.context', () => ({
   requestContext: { set: vi.fn(), get: vi.fn() },
 }));
 
+import { logApp } from '../../../utils/app-logger.util';
 import { ForbiddenErrorCode } from '../../../utils/error/error.code';
 import { initAuthPlatform } from './auth-platform';
+import { UNVERIFIABLE_AUTHORIZATION_REQUEST } from './provider/oidc-strategy';
+
+const SESSION_ID = 'session-id';
 
 type RouteHandler = (
   req: Request,
@@ -76,12 +80,18 @@ const buildRequest = (
     redirect?: unknown;
     provider?: string;
     referer?: string;
+    signInRestarted?: boolean;
   } = {}
 ) =>
   ({
     params: { provider: overrides.provider ?? 'oidc' },
     query: 'redirect' in overrides ? { redirect: overrides.redirect } : {},
-    session: { user: overrides.user, referer: overrides.referer },
+    sessionID: SESSION_ID,
+    session: {
+      user: overrides.user,
+      referer: overrides.referer,
+      signInRestarted: overrides.signInRestarted,
+    },
   }) as unknown as Request;
 
 const buildResponse = () =>
@@ -225,6 +235,22 @@ describe('initAuthPlatform', () => {
       expect(req.session.referer).toBeUndefined();
     });
 
+    it('should log the start of the sign-in without the session id', async () => {
+      // Given
+      const info = vi.spyOn(logApp, 'info');
+
+      // When
+      await app.handler(buildRequest(), buildResponse(), vi.fn());
+
+      // Then
+      expect(info).toHaveBeenCalledWith(
+        'Sign-in started',
+        { provider: 'oidc', session: expect.any(String) },
+        expect.anything()
+      );
+      expect(JSON.stringify(info.mock.calls)).not.toContain(SESSION_ID);
+    });
+
     it('should redirect to root when the provider is missing', async () => {
       const req = buildRequest({ provider: '' });
       const res = buildResponse();
@@ -282,6 +308,80 @@ describe('initAuthPlatform', () => {
         expect(res.redirect).toHaveBeenCalledWith(expected);
       }
     );
+
+    describe('when the code exchange cannot be verified', () => {
+      const exchangeError = Object.assign(
+        new Error('server responded with an error in the response body'),
+        {
+          error: 'invalid_grant',
+          error_description: 'Failed to verify code verifier',
+          status: 403,
+        }
+      );
+
+      it.each([
+        ['the token endpoint rejects the code', [exchangeError, undefined]],
+        [
+          'the authorization request is not in the session',
+          [null, false, { message: UNVERIFIABLE_AUTHORIZATION_REQUEST }],
+        ],
+      ] as [string, PassportOutcome][])(
+        'should start the sign-in again when %s',
+        async (_description, outcome) => {
+          // Given
+          givenPassportOutcome(...outcome);
+          const req = buildRequest({ referer: '/app' });
+          const res = buildResponse();
+
+          // When
+          await app.callbackHandler(req, res, vi.fn());
+
+          // Then
+          expect(res.redirect).toHaveBeenCalledWith(
+            '/auth/oidc?redirect=L2FwcA%3D%3D'
+          );
+          expect(req.session.signInRestarted).toBe(true);
+        }
+      );
+
+      it('should send the user to the sign-up page when the restarted sign-in fails too', async () => {
+        // Given
+        givenPassportOutcome(exchangeError, undefined);
+        const req = buildRequest({ signInRestarted: true });
+        const res = buildResponse();
+
+        // When
+        await app.callbackHandler(req, res, vi.fn());
+
+        // Then
+        expect(res.redirect).toHaveBeenCalledWith(
+          '/sign-up?error=login-failed'
+        );
+        expect(req.session.signInRestarted).toBeUndefined();
+      });
+
+      it('should log the reason the token endpoint gives', async () => {
+        // Given
+        givenPassportOutcome(exchangeError, undefined);
+        const error = vi.spyOn(logApp, 'error');
+
+        // When
+        await app.callbackHandler(
+          buildRequest({ signInRestarted: true }),
+          buildResponse(),
+          vi.fn()
+        );
+
+        // Then
+        expect(error).toHaveBeenCalledWith(exchangeError, {
+          provider: 'oidc',
+          session: expect.any(String),
+          error: 'invalid_grant',
+          error_description: 'Failed to verify code verifier',
+          status: 403,
+        });
+      });
+    });
 
     it('should keep the referer for the next attempt when the sign-in fails', async () => {
       // Given

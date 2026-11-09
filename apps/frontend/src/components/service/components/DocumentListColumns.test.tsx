@@ -19,7 +19,7 @@ const buildDocument = (
   __typename: 'Document',
   id: 'document-1',
   type: 'OPENCTI_INTEGRATION',
-  active: true,
+  status: 'published',
   name: null,
   slug: null,
   description: null,

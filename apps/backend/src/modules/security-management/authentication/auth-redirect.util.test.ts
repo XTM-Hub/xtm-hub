@@ -3,6 +3,7 @@ import { logApp } from '../../../utils/app-logger.util';
 import { ForbiddenErrorCode } from '../../../utils/error/error.code';
 import {
   buildSignInErrorRedirect,
+  buildSignInRestartRedirect,
   resolveSafeRedirect,
 } from './auth-redirect.util';
 
@@ -85,4 +86,20 @@ describe('buildSignInErrorRedirect', () => {
     // Then
     expect(redirect).toBe('/sign-up?error=login-failed&redirect=L2FwcA%3D%3D');
   });
+});
+
+describe('buildSignInRestartRedirect', () => {
+  it.each([
+    ['without a referer', undefined, '/auth/oidc'],
+    ['with the referer', '/app', '/auth/oidc?redirect=L2FwcA%3D%3D'],
+  ])(
+    'should start the sign-in with the provider again %s',
+    (_description, referer, expected) => {
+      // When
+      const redirect = buildSignInRestartRedirect('oidc', referer);
+
+      // Then
+      expect(redirect).toBe(expected);
+    }
+  );
 });

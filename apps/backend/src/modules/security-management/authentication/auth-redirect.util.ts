@@ -25,6 +25,24 @@ export const buildSignInErrorRedirect = (
 };
 
 /**
+ * Starts the sign-in with the provider again, keeping `redirect` (base64, as
+ * the frontend encodes it) so the user still lands where they were going.
+ */
+export const buildSignInRestartRedirect = (
+  provider: string,
+  referer: string | undefined
+): string => {
+  const path = `/auth/${encodeURIComponent(provider)}`;
+  if (!referer) {
+    return path;
+  }
+  const params = new URLSearchParams({
+    redirect: Buffer.from(referer).toString('base64'),
+  });
+  return `${path}?${params.toString()}`;
+};
+
+/**
  * Express exposes a repeated query param (?redirect=a&redirect=b) as an array
  * and bracket syntax as an object, so anything but a plain string is discarded.
  */

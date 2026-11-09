@@ -8,6 +8,7 @@ export const FacetApp = {
     logicalFilters,
     documentType,
     restrictToActiveDocuments,
+    restrictToPublishedDocuments,
   }: LoadDocumentFacetInput) => {
     return FacetDomain.loadDocumentFacets({
       serviceInstanceId,
@@ -15,6 +16,7 @@ export const FacetApp = {
       searchTerm,
       logicalFilters,
       restrictToActiveDocuments,
+      restrictToPublishedDocuments,
     });
   },
 };

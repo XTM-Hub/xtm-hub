@@ -9,6 +9,7 @@ import {
 } from '../modules/telemetry/telemetry.const';
 import { TelemetryEventType } from '../modules/telemetry/telemetry.types';
 import { esDbClient } from '../thirdparty/elasticsearch/client';
+import { withIndexPrefix } from '../thirdparty/elasticsearch/index-prefix';
 
 interface TermsBucket {
   key: string;
@@ -30,7 +31,7 @@ async function buildDocumentList(
   event_type: 'download' | 'share'
 ) {
   const result = await esDbClient.search({
-    index: 'telemetry_v1',
+    index: withIndexPrefix('telemetry_v1'),
     size: 0,
     query: {
       term: {
@@ -76,7 +77,7 @@ async function buildDocumentList(
     > = [];
     for (let i = 0; i < newEventsCount; i++) {
       events.push(
-        { index: { _index: 'telemetry_v1' } },
+        { index: { _index: withIndexPrefix('telemetry_v1') } },
         {
           '@timestamp': event_timestamp,
           event_type:
@@ -127,7 +128,7 @@ export const up = async function (next: () => void) {
 
 export const down = async function (next: () => void) {
   await esDbClient.deleteByQuery({
-    index: 'telemetry_v1',
+    index: withIndexPrefix('telemetry_v1'),
     query: {
       bool: {
         must: [

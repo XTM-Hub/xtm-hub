@@ -57,27 +57,13 @@ export const DocumentDeleteMutation = graphql`
     $documentId: DocumentId!
     $connections: [ID!]!
     $serviceInstanceId: ServiceInstanceId!
-    $forceDelete: Boolean
   ) {
     deleteDocument(
       documentId: $documentId
       service_instance_id: $serviceInstanceId
-      forceDelete: $forceDelete
     ) {
       id @deleteEdge(connections: $connections)
     }
-  }
-`;
-
-export const DocumentExistsQuery = graphql`
-  query documentExistsQuery(
-    $documentName: String
-    $serviceInstanceId: ServiceInstanceId!
-  ) {
-    documentExists(
-      documentName: $documentName
-      service_instance_id: $serviceInstanceId
-    )
   }
 `;
 
@@ -93,7 +79,7 @@ export const documentItem = graphql`
     description
     download_number
     share_number
-    active
+    status
     updated_at
     use_cases {
       id
@@ -119,7 +105,7 @@ export const documentItem = graphql`
       name
       description
       download_number
-      active
+      status
       source_type
       image_type
     }
@@ -215,7 +201,7 @@ export const documentsFragment = graphql`
       edges {
         node {
           id
-          active
+          status
           ...documentItem_fragment
         }
       }

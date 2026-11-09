@@ -39,6 +39,7 @@
     "port": "ELASTIC_PORT",
     "username": "ELASTIC_USER",
     "password": "ELASTIC_PASSWORD",
+    "index_prefix": "ELASTIC_INDEX_PREFIX",
     "tls": {
       "ca_path": "ELASTIC__TLS__CA_PATH",
       "reject_unauthorized": {
@@ -56,6 +57,13 @@
   "saas_manager": {
     "client_id": "SAAS_MANAGER_CLIENT_ID",
     "client_secret": "SAAS_MANAGER_CLIENT_SECRET"
+  },
+  "blog_api": {
+    "base_url": "BLOG_API_BASE_URL",
+    "timeout_ms": {
+      "__name": "BLOG_API_TIMEOUT_MS",
+      "__format": "json"
+    }
   },
   "system_token_hash": "SYSTEM_TOKEN_HASH",
   "system_token_salt": "SYSTEM_TOKEN_SALT",

@@ -1,6 +1,6 @@
 import { toGlobalId } from 'graphql-relay/node/node.js';
 import { v4 as uuidv4 } from 'uuid';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { TestHelper } from '../../../tests/helper/test.helper';
 import {
   NewsFeedItemMetadataKey,
@@ -12,6 +12,7 @@ import { NewsFeedItemId } from '../../model/kanel/public/NewsFeedItem';
 import { NewsFeedItemMetadataKey as NewsFeedItemMetadataKeyModel } from '../../model/kanel/public/NewsFeedItemMetadata';
 import { ProvisionedNewsFeedItemPlatformId } from '../../model/kanel/public/ProvisionedNewsFeedItem';
 import { BadRequestErrorCode } from '../../utils/error/error.code';
+import { RequiredPlatformVersions } from '../../utils/required-platform-version';
 import { NewsFeedDomain } from './news-feed.domain';
 
 describe('newsFeedDomain', () => {
@@ -58,6 +59,82 @@ describe('newsFeedDomain', () => {
 
       // Then
       expect(result).toEqual([NewsFeedItemType.ResourceScenario]);
+    });
+
+    it('should not list the blogpost type while the blogpost gate is disabled', () => {
+      // When
+      const result = NewsFeedDomain.loadAvailableNewsFeedTypes(
+        PlatformIdentifier.Opencti,
+        '99.0.0'
+      );
+
+      // Then
+      expect(result).not.toContain(NewsFeedItemType.BlogPost);
+    });
+
+    describe('with a blogpost required version', () => {
+      const BLOGPOST_REQUIRED_VERSION = '7.260901.0';
+      const originalBlogpostSupport =
+        RequiredPlatformVersions.NewsFeedBlogpostSupport;
+
+      const setRequiredVersion = (requiredVersion: string | null) => {
+        RequiredPlatformVersions.NewsFeedBlogpostSupport = {
+          [PlatformIdentifier.Opencti]: requiredVersion,
+          [PlatformIdentifier.Openaev]: requiredVersion,
+          [PlatformIdentifier.Xtmone]: null,
+        };
+      };
+
+      afterEach(() => {
+        RequiredPlatformVersions.NewsFeedBlogpostSupport =
+          originalBlogpostSupport;
+      });
+
+      it.each`
+        description         | requiredVersion              | version                      | expected
+        ${'null required'}  | ${null}                      | ${'8.0.0'}                   | ${false}
+        ${'below'}          | ${BLOGPOST_REQUIRED_VERSION} | ${'7.260831.0'}              | ${false}
+        ${'equal'}          | ${BLOGPOST_REQUIRED_VERSION} | ${BLOGPOST_REQUIRED_VERSION} | ${true}
+        ${'above'}          | ${BLOGPOST_REQUIRED_VERSION} | ${'7.260902.0'}              | ${true}
+        ${'invalid'}        | ${BLOGPOST_REQUIRED_VERSION} | ${'not-a-version'}           | ${false}
+        ${'missing (null)'} | ${BLOGPOST_REQUIRED_VERSION} | ${null}                      | ${false}
+        ${'missing'}        | ${BLOGPOST_REQUIRED_VERSION} | ${undefined}                 | ${false}
+      `(
+        'should list the blogpost type for OpenCTI only when the version is $description ($expected)',
+        ({ requiredVersion, version, expected }) => {
+          // Given
+          setRequiredVersion(requiredVersion);
+
+          // When
+          const result = NewsFeedDomain.loadAvailableNewsFeedTypes(
+            PlatformIdentifier.Opencti,
+            version
+          );
+
+          // Then
+          expect(result.includes(NewsFeedItemType.BlogPost)).toBe(expected);
+          expect(result).toEqual(
+            expect.arrayContaining([
+              NewsFeedItemType.ResourceCustomDashboard,
+              NewsFeedItemType.ResourcePlaybook,
+            ])
+          );
+        }
+      );
+
+      it('should not list the blogpost type for a platform that is not mapped to a blog product', () => {
+        // Given
+        setRequiredVersion(BLOGPOST_REQUIRED_VERSION);
+
+        // When
+        const result = NewsFeedDomain.loadAvailableNewsFeedTypes(
+          PlatformIdentifier.Openaev,
+          '99.0.0'
+        );
+
+        // Then
+        expect(result).toEqual([NewsFeedItemType.ResourceScenario]);
+      });
     });
 
     it('should return empty array for a platform with no configured news feed types', () => {
@@ -316,6 +393,35 @@ describe('newsFeedDomain', () => {
     });
   });
 
+  describe('loadNewsFeedItemTypeById', () => {
+    it.each([NewsFeedItemType.BlogPost, NewsFeedItemType.ResourcePlaybook])(
+      'should return the type %s of the item',
+      async (type) => {
+        // Given
+        const item = await TestHelper.newsFeed.createItem({
+          type,
+          title: `item-of-type-${type}`,
+        });
+
+        // When
+        const result = await NewsFeedDomain.loadNewsFeedItemTypeById(item.id);
+
+        // Then
+        expect(result).toBe(type);
+      }
+    );
+
+    it('should return undefined when the item does not exist', async () => {
+      // When
+      const result = await NewsFeedDomain.loadNewsFeedItemTypeById(
+        uuidv4() as NewsFeedItemId
+      );
+
+      // Then
+      expect(result).toBeUndefined();
+    });
+  });
+
   describe('loadNewsFeedItemByDocumentId', () => {
     it('should return undefined when no metadata matches the document id', async () => {
       const result =
@@ -413,6 +519,52 @@ describe('newsFeedDomain', () => {
       expect(metadata.map((m) => m.key)).toEqual([
         NewsFeedItemMetadataKey.UrlPath,
       ]);
+    });
+
+    it('should return the blog post display metadata and exclude the blog_post_slug', async () => {
+      // Given
+      const item = await TestHelper.newsFeed.createItem({
+        type: NewsFeedItemType.BlogPost,
+        title: 'Blog post',
+      });
+      const displayMetadata = {
+        [NewsFeedItemMetadataKey.UrlPath]: `redirect/news-feed/${item.id}`,
+        [NewsFeedItemMetadataKey.Description]: 'How the integration works',
+        [NewsFeedItemMetadataKey.ImageUrl]: 'https://filigran.io/image.png',
+        [NewsFeedItemMetadataKey.ImageAlt]: 'Featured image',
+        [NewsFeedItemMetadataKey.AuthorNames]: '["Romain Guignard"]',
+        [NewsFeedItemMetadataKey.ReadMinutes]: '7',
+      };
+      for (const [key, value] of Object.entries(displayMetadata)) {
+        await TestHelper.newsFeed.createMetadata({
+          news_feed_item_id: item.id,
+          key: key as NewsFeedItemMetadataKey,
+          value,
+        });
+      }
+      await TestHelper.newsFeed.createMetadata({
+        news_feed_item_id: item.id,
+        key: NewsFeedItemMetadataKey.BlogPostSlug,
+        value: 'threat-report-2026',
+      });
+
+      // When
+      const metadata = await NewsFeedDomain.loadMetadataByNewsFeedItemIds([
+        item.id,
+      ]);
+
+      // Then
+      expect(metadata).toHaveLength(Object.keys(displayMetadata).length);
+      expect(metadata).toEqual(
+        expect.arrayContaining(
+          Object.entries(displayMetadata).map(([key, value]) =>
+            expect.objectContaining({ key, value })
+          )
+        )
+      );
+      expect(metadata.map((m) => m.key)).not.toContain(
+        NewsFeedItemMetadataKey.BlogPostSlug
+      );
     });
 
     it('should return the metadata for multiple news feed items in a single call', async () => {
@@ -760,6 +912,113 @@ describe('newsFeedDomain', () => {
     });
   });
 
+  describe('provisionLatestBlogpostsToPlatform', () => {
+    const platformId = uuidv4();
+
+    const createBlogpost = (
+      daysAgo: number,
+      overrides: Parameters<typeof TestHelper.newsFeed.createItem>[0] = {}
+    ) =>
+      TestHelper.newsFeed.createItem({
+        title: `Blogpost ${daysAgo} days ago`,
+        type: NewsFeedItemType.BlogPost,
+        platform_identifier: PlatformIdentifier.Opencti,
+        creation_date: new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000),
+        ...overrides,
+      });
+
+    it('should provision only the newest active blogposts up to the limit', async () => {
+      // Given
+      const newest = await createBlogpost(1);
+      const second = await createBlogpost(2);
+      await createBlogpost(3);
+
+      // When
+      const provisionedIds =
+        await NewsFeedDomain.provisionLatestBlogpostsToPlatform({
+          platformId,
+          platformIdentifier: PlatformIdentifier.Opencti,
+          limit: 2,
+        });
+
+      // Then
+      expect(provisionedIds).toEqual([newest.id, second.id]);
+      const provisioned = await TestHelper.newsFeed.loadProvisioned({
+        platform_id: platformId,
+      });
+      expect(provisioned.map((row) => row.news_feed_item_id).sort()).toEqual(
+        [newest.id, second.id].sort()
+      );
+    });
+
+    it('should skip deleted blogposts, other types and other products', async () => {
+      // Given
+      const active = await createBlogpost(5);
+      await createBlogpost(1, { is_deleted: true });
+      await createBlogpost(2, {
+        type: NewsFeedItemType.ResourceCustomDashboard,
+      });
+      await createBlogpost(3, {
+        platform_identifier: PlatformIdentifier.Openaev,
+      });
+
+      // When
+      const provisionedIds =
+        await NewsFeedDomain.provisionLatestBlogpostsToPlatform({
+          platformId,
+          platformIdentifier: PlatformIdentifier.Opencti,
+          limit: 6,
+        });
+
+      // Then
+      expect(provisionedIds).toEqual([active.id]);
+      const provisioned = await TestHelper.newsFeed.loadProvisioned({
+        platform_id: platformId,
+      });
+      expect(provisioned).toMatchObject([
+        { news_feed_item_id: active.id, platform_id: platformId },
+      ]);
+    });
+
+    it('should provision nothing when the product has no blogpost', async () => {
+      // When
+      const provisionedIds =
+        await NewsFeedDomain.provisionLatestBlogpostsToPlatform({
+          platformId,
+          platformIdentifier: PlatformIdentifier.Opencti,
+          limit: 6,
+        });
+
+      // Then
+      expect(provisionedIds).toEqual([]);
+      expect(
+        await TestHelper.newsFeed.loadProvisioned({ platform_id: platformId })
+      ).toHaveLength(0);
+    });
+
+    it('should be idempotent when called twice for the same platform', async () => {
+      // Given
+      const blogpost = await createBlogpost(1);
+      const input = {
+        platformId,
+        platformIdentifier: PlatformIdentifier.Opencti,
+        limit: 6,
+      };
+      await NewsFeedDomain.provisionLatestBlogpostsToPlatform(input);
+
+      // When
+      await NewsFeedDomain.provisionLatestBlogpostsToPlatform(input);
+
+      // Then
+      const provisioned = await TestHelper.newsFeed.loadProvisioned({
+        platform_id: platformId,
+      });
+      expect(provisioned).toMatchObject([
+        { news_feed_item_id: blogpost.id, platform_id: platformId },
+      ]);
+    });
+  });
+
   describe('deleteNewsFeedItemsOlderThan', () => {
     const REFERENCE_NOW = new Date();
 
@@ -804,6 +1063,78 @@ describe('newsFeedDomain', () => {
         expect(remaining === undefined).toBe(shouldBeDeleted);
       }
     );
+
+    describe('blog posts', () => {
+      const createExpiredBlogPost = (isDeleted: boolean) =>
+        TestHelper.newsFeed.createItem({
+          type: NewsFeedItemType.BlogPost,
+          platform_identifier: PlatformIdentifier.Opencti,
+          title: 'expired-blog-post',
+          creation_date: monthsAgo(24),
+          is_deleted: isDeleted,
+        });
+
+      it('should keep an expired blog post that is not deleted', async () => {
+        // Given
+        const liveBlogPost = await createExpiredBlogPost(false);
+        const expiredResource = await createItemWithAge(24);
+
+        // When
+        const deletedCount = await NewsFeedDomain.deleteNewsFeedItemsOlderThan(
+          monthsAgo(6)
+        );
+
+        // Then
+        expect(deletedCount).toBe(1);
+        expect(
+          await TestHelper.newsFeed.loadFirstItem({ id: liveBlogPost.id })
+        ).toMatchObject({ id: liveBlogPost.id, is_deleted: false });
+        expect(
+          await TestHelper.newsFeed.loadFirstItem({ id: expiredResource.id })
+        ).toBeUndefined();
+      });
+
+      it('should delete an expired blog post that is already deleted', async () => {
+        // Given
+        const deletedBlogPost = await createExpiredBlogPost(true);
+
+        // When
+        const deletedCount = await NewsFeedDomain.deleteNewsFeedItemsOlderThan(
+          monthsAgo(6)
+        );
+
+        // Then
+        expect(deletedCount).toBe(1);
+        expect(
+          await TestHelper.newsFeed.loadFirstItem({ id: deletedBlogPost.id })
+        ).toBeUndefined();
+      });
+
+      it('should keep an expired deleted blog post while a platform has not consumed its deletion', async () => {
+        // Given
+        const deletedBlogPost = await createExpiredBlogPost(true);
+        const platformId = uuidv4();
+        await NewsFeedDomain.provisionNewsFeedItem(deletedBlogPost.id, [
+          platformId,
+        ]);
+
+        // When
+        const deletedCount = await NewsFeedDomain.deleteNewsFeedItemsOlderThan(
+          monthsAgo(6)
+        );
+
+        // Then
+        expect(deletedCount).toBe(0);
+        expect(
+          await TestHelper.newsFeed.loadFirstItem({ id: deletedBlogPost.id })
+        ).toMatchObject({ id: deletedBlogPost.id, is_deleted: true });
+        expect(
+          await TestHelper.newsFeed.loadProvisioned({
+            news_feed_item_id: deletedBlogPost.id,
+          })
+        ).toHaveLength(1);
+      });
+    });
 
     it('should return the count of deleted items', async () => {
       // Given

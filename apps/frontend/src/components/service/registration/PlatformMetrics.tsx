@@ -1,6 +1,9 @@
 'use client';
 
-import { findMetricPoints } from '@/components/service/registration/platform-metrics.utils';
+import {
+  findDatabaseUsage,
+  findMetricPoints,
+} from '@/components/service/registration/platform-metrics.utils';
 import { PlatformMetricsPeriodSelector } from '@/components/service/registration/PlatformMetricsPeriodSelector';
 import { SlaAvailabilityChart } from '@/components/service/registration/SlaAvailabilityChart';
 import { StorageUsageChart } from '@/components/service/registration/StorageUsageChart';
@@ -36,6 +39,7 @@ export const PlatformMetrics = ({
   const t = useTranslate();
   // Another period would not bring the metrics back: the storage does not depend on it.
   const isUnavailable = !isLoading && !metrics && !storage;
+  const databaseUsage = findDatabaseUsage(metrics, storage);
 
   return (
     <div className="mt-3 layer-2 bg-filigran-brand-primary-transparency-10 p-6">
@@ -63,8 +67,8 @@ export const PlatformMetrics = ({
             <h3 className="title-xs">{t('Register.Metrics.StorageTitle')}</h3>
             <div className="grid w-full grid-cols-2 gap-4">
               <StorageUsageChart
-                points={findMetricPoints(metrics, MetricType.EsUsedSize)}
-                storage={storage?.es_used_size}
+                points={databaseUsage.points}
+                storage={databaseUsage.storage}
                 graphType={'Database'}
                 color="var(--color-filigran-brand-primary)"
               />

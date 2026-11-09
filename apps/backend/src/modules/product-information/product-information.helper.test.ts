@@ -488,6 +488,37 @@ describe('product information helper', () => {
         ]);
       });
 
+      it('should keep the PostgreSQL usage series of a platform without Elasticsearch', async () => {
+        // Given
+        mockSaasManagerBody({
+          ...fullMetadata,
+          metrics: {
+            ...metrics,
+            series: [
+              {
+                metric_type: 'postgres_used_size',
+                points: metrics.series[0].points,
+              },
+            ],
+          },
+        });
+
+        // When
+        const data = await ProductInformationHelper.fetchSaasPlatformData(
+          serviceInstanceId,
+          platformId,
+          metricsPeriod
+        );
+
+        // Then
+        expect(data?.metrics?.series).toEqual([
+          {
+            metric_type: 'postgres_used_size',
+            points: parsedMetrics.series[0].points,
+          },
+        ]);
+      });
+
       it('should drop the points without a valid time and return a null value when it is not a number', async () => {
         // Given
         mockSaasManagerBody({
@@ -716,6 +747,11 @@ describe('product information helper', () => {
           used: 0,
           limit: 0,
         },
+        postgres_used_size: {
+          percent: 1,
+          used: 1,
+          limit: 100,
+        },
       };
       const parsedStorage = {
         ...storage,
@@ -926,6 +962,7 @@ describe('product information helper', () => {
       storage: {
         es_used_size: { percent: 12.5, used: 1073741824, limit: 8589934592 },
         s3_used_size: { percent: null, used: 0, limit: 0 },
+        postgres_used_size: { percent: 1, used: 1, limit: 100 },
       },
       health_issues: [SaasPlatformHealthIssue.Availability],
       contract_status: SaasPlatformContractStatus.EndingSoon,
@@ -1163,6 +1200,28 @@ describe('product information helper', () => {
               },
             },
           ])
+        );
+
+        // When
+        const result =
+          await ProductInformationHelper.fetchSaasPlatforms(request);
+
+        // Then
+        expect(result?.platforms[0]?.health_issues).toEqual(health_issues);
+      }
+    );
+
+    it.each`
+      case                                                     | storage                                                                     | health_issues
+      ${'the PostgreSQL usage when Elasticsearch is not sent'} | ${{ postgres_used_size: storageUsage(95) }}                                 | ${[SaasPlatformHealthIssue.Database]}
+      ${'the Elasticsearch usage when PostgreSQL is not sent'} | ${{ es_used_size: storageUsage(95) }}                                       | ${[SaasPlatformHealthIssue.Database]}
+      ${'the PostgreSQL usage over the Elasticsearch one'}     | ${{ es_used_size: storageUsage(95), postgres_used_size: storageUsage(10) }} | ${[]}
+    `(
+      'should rate the database with $case',
+      async ({ storage, health_issues }) => {
+        // Given
+        mockSaasManagerBody(
+          page([{ id: platform.id, sla_cmtd: 99.99, storage }])
         );
 
         // When

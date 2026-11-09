@@ -1,6 +1,7 @@
 'use strict';
 
 import { esDbClient } from '../thirdparty/elasticsearch/client.js';
+import { withIndexPrefix } from '../thirdparty/elasticsearch/index-prefix.js';
 
 const FULL_TEMPLATE_PROPERTIES = {
   event_type: { type: 'keyword' },
@@ -46,7 +47,7 @@ const NEW_PROPERTIES = {
 } as const;
 
 const TEMPLATE_CONFIG = {
-  aliases: { telemetry: {} },
+  aliases: { [withIndexPrefix('telemetry')]: {} },
   priority: 100,
   version: 1,
   _meta: {
@@ -57,8 +58,8 @@ const TEMPLATE_CONFIG = {
 
 export const up = async function (next: () => void) {
   await esDbClient.getIndices().putIndexTemplate({
-    name: 'telemetry-template',
-    index_patterns: ['telemetry_v*'],
+    name: withIndexPrefix('telemetry-template'),
+    index_patterns: [withIndexPrefix('telemetry_v*')],
     template: {
       mappings: {
         properties: {
@@ -74,7 +75,7 @@ export const up = async function (next: () => void) {
   });
 
   await esDbClient.getIndices().putMapping({
-    index: 'telemetry_v1',
+    index: withIndexPrefix('telemetry_v1'),
     body: {
       properties: NEW_PROPERTIES,
     },
@@ -85,8 +86,8 @@ export const up = async function (next: () => void) {
 
 export const down = async function (next: () => void) {
   await esDbClient.getIndices().putIndexTemplate({
-    name: 'telemetry-template',
-    index_patterns: ['telemetry_v*'],
+    name: withIndexPrefix('telemetry-template'),
+    index_patterns: [withIndexPrefix('telemetry_v*')],
     template: {
       mappings: {
         properties: FULL_TEMPLATE_PROPERTIES,

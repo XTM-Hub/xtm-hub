@@ -1,10 +1,11 @@
 import { Knex } from 'knex';
 import { dbRaw, KnexQueryBuilder } from '../../../knexfile';
+import { DocumentStatus } from '../../__generated__/resolvers-types';
 import { requestContext } from '../../context/request.context';
 import { applyServiceInstanceVisibility } from './service-instance';
 
-export const restrictDocumentToActive = (qb: KnexQueryBuilder) => {
-  return qb.where('Document.active', '=', 'true');
+export const restrictDocumentToPublished = (qb: KnexQueryBuilder) => {
+  return qb.where('Document.status', '=', DocumentStatus.Published);
 };
 
 export const restrictDocumentToUserOrganization = (qb: KnexQueryBuilder) => {

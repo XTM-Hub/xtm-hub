@@ -3,6 +3,7 @@ import config from 'config';
 import {
   DevUser,
   parseAndValidateDevUsers,
+  parseEsIndexPrefix,
   resolveTrustProxy,
 } from './utils/config-validation.util';
 
@@ -42,6 +43,7 @@ interface PortalConfig {
     port: number;
     username: string | null;
     password: string | null;
+    index_prefix: string;
     tls: {
       ca_path: string | null;
       reject_unauthorized: boolean;
@@ -56,10 +58,13 @@ interface PortalConfig {
     secret: string;
   };
   trust_proxy: number | false;
+  local_dev: boolean;
   environment: string;
   enabled_features: string[];
   dev_users?: DevUser[];
 }
+
+const localDev = process.env.LOCAL_DEV === 'true';
 
 const portalConfig: PortalConfig = {
   port: config.get<number>('port'),
@@ -108,6 +113,9 @@ const portalConfig: PortalConfig = {
     port: config.get<number>('elasticsearch.port'),
     username: config.get<string | null>('elasticsearch.username'),
     password: config.get<string | null>('elasticsearch.password'),
+    index_prefix: parseEsIndexPrefix(
+      config.get<unknown>('elasticsearch.index_prefix')
+    ),
     tls: {
       ca_path: config.get<string | null>('elasticsearch.tls.ca_path'),
       reject_unauthorized: config.get<boolean>(
@@ -125,10 +133,8 @@ const portalConfig: PortalConfig = {
     name: config.get<string>('session.name'),
     secret: config.get<string>('session.secret'),
   },
-  trust_proxy: resolveTrustProxy(
-    config.get<unknown>('trust_proxy'),
-    process.env.LOCAL_DEV === 'true'
-  ),
+  local_dev: localDev,
+  trust_proxy: resolveTrustProxy(config.get<unknown>('trust_proxy'), localDev),
   environment: config.get<string>('environment'),
   enabled_features: config.get<string[]>('enabled_features') ?? [],
   dev_users: parseAndValidateDevUsers(),

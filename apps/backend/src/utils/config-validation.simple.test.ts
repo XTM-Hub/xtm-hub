@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { logApp } from './app-logger.util';
 import {
+  parseEsIndexPrefix,
   parseTrustProxy,
   resolveTrustProxy,
   validateDevUser,
@@ -140,5 +141,81 @@ describe('resolveTrustProxy', () => {
 
     // Then
     expect(result).toBe(2);
+  });
+});
+
+const LONGEST_ES_INDEX_PREFIX = 'h'.repeat(100);
+
+describe('parseEsIndexPrefix', () => {
+  it.each([
+    ['undefined', undefined],
+    ['null', null],
+    ['an empty string, as an unset env var', ''],
+  ])('should return no prefix when given %s', (_description, value) => {
+    // Given
+    // value comes from the dataset
+
+    // When
+    const result = parseEsIndexPrefix(value);
+
+    // Then
+    expect(result).toBe('');
+  });
+
+  it.each([
+    ['lowercase letters', 'hub'],
+    ['letters and digits', 'hub2'],
+    ['a leading digit', '2hub'],
+    ['an inner dash', 'xtm-hub'],
+    ['an inner dot', 'xtm.hub'],
+    ['100 characters', LONGEST_ES_INDEX_PREFIX],
+  ])('should keep the prefix when given %s', (_description, value) => {
+    // Given
+    // value comes from the dataset
+
+    // When
+    const result = parseEsIndexPrefix(value);
+
+    // Then
+    expect(result).toBe(value);
+  });
+
+  it.each([
+    ['uppercase letters', 'Hub'],
+    ['a leading underscore', '_hub'],
+    ['an inner underscore', 'xtm_hub'],
+    [
+      'a prefix whose template pattern overlaps the unprefixed one',
+      'telemetry_v2',
+    ],
+    [
+      "a prefix whose template pattern overlaps the one of prefix 'hub'",
+      'hub_telemetry_v2',
+    ],
+    ['101 characters', `${LONGEST_ES_INDEX_PREFIX}h`],
+    ['a leading dash', '-hub'],
+    ['a leading plus', '+hub'],
+    ['a leading dot', '.hub'],
+    ['a space', 'xtm hub'],
+    ['a padded value', ' hub'],
+    ['a wildcard', 'hub*'],
+    ['a comma', 'hub,other'],
+    ['a slash', 'hub/other'],
+    ['a colon', 'hub:other'],
+    ['a hash', 'hub#'],
+    ['a number', 1],
+    ['a boolean', true],
+    ['an array', ['hub']],
+  ])('should throw an explicit error when given %s', (_description, value) => {
+    // Given
+    // value comes from the dataset
+
+    // When
+    const parse = () => parseEsIndexPrefix(value);
+
+    // Then
+    expect(parse).toThrow(
+      `[ELASTICSEARCH] Invalid elasticsearch.index_prefix configuration (ELASTIC_INDEX_PREFIX): expected at most 100 lowercase letters, digits, '.' or '-', starting with a letter or a digit, got ${JSON.stringify(value)}`
+    );
   });
 });

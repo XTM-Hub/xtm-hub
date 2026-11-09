@@ -24,7 +24,7 @@ fragment PublicDocumentByServiceSlugItem on Document {
     last_name
     picture
   }
-  active
+  status
   type
   uploader_organization {
     id
