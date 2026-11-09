@@ -44,17 +44,47 @@ describe('robots', () => {
     expect(asArray(rule.disallow)).toContain('/');
   });
 
-  it('should keep the existing allow rules unchanged when the domain is production', async () => {
+  it('should allow only the site root itself, not every path, when the domain is production', async () => {
+    givenHost(PRODUCTION_DOMAIN);
+
+    const rule = await getSingleRule();
+
+    expect(asArray(rule.allow)).toContain('/$');
+    expect(asArray(rule.allow)).not.toContain('/');
+  });
+
+  it.each([
+    ['/seo_default.png'],
+    ['/opengraph-image.png'],
+    ['/xtm_roadmap_space.png'],
+    ['/favicon.svg'],
+  ])(
+    'should allow the static file %s used by public pages when the domain is production',
+    async (path) => {
+      givenHost(PRODUCTION_DOMAIN);
+
+      const rule = await getSingleRule();
+
+      expect(asArray(rule.allow)).toContain(path);
+    }
+  );
+
+  it('should keep the expected allow rules when the domain is production', async () => {
     givenHost(PRODUCTION_DOMAIN);
 
     const rule = await getSingleRule();
 
     expect(asArray(rule.allow)).toEqual([
+      '/$',
       '/sitemap.xml',
       '/login',
       '/favicon.ico',
+      '/favicon.svg',
       '/apple-icon.png',
       '/favicon-*.png',
+      '/seo_default.png',
+      '/opengraph-image.png',
+      '/xtm_roadmap_space.png',
       '/_next/static/',
       '/_next/image',
       '/_next/data/',

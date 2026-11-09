@@ -25,11 +25,18 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
           userAgent: '*',
           disallow: ['/', ...nullDocumentSlugDisallowRules],
           allow: [
+            // `$` lets crawlers follow the root redirect to the default locale; longer than `/`, so it wins.
+            '/$',
             '/sitemap.xml',
             '/login',
             '/favicon.ico',
+            '/favicon.svg',
             '/apple-icon.png',
             '/favicon-*.png',
+            // Root-level images that public pages reference by URL (og:image, JSON-LD, plain <img>).
+            '/seo_default.png',
+            '/opengraph-image.png',
+            '/xtm_roadmap_space.png',
             '/_next/static/',
             '/_next/image',
             '/_next/data/',
