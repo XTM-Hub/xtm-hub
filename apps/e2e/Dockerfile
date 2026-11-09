@@ -1,4 +1,5 @@
-# Pinned by digest: the tag is republished with the latest Node.js LTS, and Node 25+ no longer bundles Corepack
+# Pinned by digest: the tag is republished with the latest Node.js LTS, and Node 25+ no longer bundles Corepack.
+# Newer tags ship Node 26 only, so this image can lag behind @playwright/test: its browser is installed below
 FROM mcr.microsoft.com/playwright:v1.64.1-noble@sha256:47b510dd9230bf0b9bfc9b20102241e577ea7a99334ab4c3ca19f19770e9b8ea
 
 RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*
@@ -14,6 +15,10 @@ COPY apps/frontend/package.json ./apps/frontend/package.json
 # Install all dependencies at the workspace level
 RUN corepack enable && \
     yarn install --immutable
+
+# Install the Chromium build the installed @playwright/test expects, whatever the base image ships
+RUN yarn workspace @xtm-hub/test_e2e playwright install --with-deps --only-shell chromium && \
+    rm -rf /var/lib/apt/lists/*
 
 # Copy e2e test files
 COPY ./apps/e2e/playwright.config.ts ./apps/e2e/
