@@ -50,9 +50,47 @@ describe('DocumentDetailLoader', () => {
     // Then
     expect(mocks.useDocumentDetailQuery).toHaveBeenCalledWith(
       expect.anything(),
-      { documentId: DOCUMENT_ID, serviceInstanceId: SERVICE_INSTANCE_ID }
+      { documentId: DOCUMENT_ID, serviceInstanceId: SERVICE_INSTANCE_ID },
+      expect.anything()
     );
   });
+
+  it('should tell the document was not found when the API throws it, without an error to retry', () => {
+    // Given
+    mocks.useDocumentDetailQuery.mockReturnValue({
+      data: undefined,
+      isError: true,
+      error: new Error('DOCUMENT_NOT_FOUND'),
+      refetch: mocks.refetch,
+    });
+
+    // When
+    renderLoader();
+
+    // Then
+    expect(screen.getByRole('heading')).toHaveTextContent(
+      'Utils.DocumentNotFound'
+    );
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it.each`
+    description                                | error                              | failureCount | expected
+    ${'a missing document'}                    | ${new Error('DOCUMENT_NOT_FOUND')} | ${0}         | ${false}
+    ${'an unexpected failure, the first time'} | ${new Error('boom')}               | ${0}         | ${true}
+    ${'an unexpected failure, once exhausted'} | ${new Error('boom')}               | ${3}         | ${false}
+  `(
+    'should decide whether to retry $description',
+    ({ error, failureCount, expected }) => {
+      // Given
+      mocks.useDocumentDetailQuery.mockReturnValue({ data: undefined });
+      renderLoader();
+      const { retry } = mocks.useDocumentDetailQuery.mock.calls[0][2];
+
+      // When / Then
+      expect(retry(failureCount, error)).toBe(expected);
+    }
+  );
 
   it('should show the loader while the document is loading', () => {
     // Given

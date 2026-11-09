@@ -4,11 +4,18 @@ import Loader from '@/components/Loader';
 import { ServiceLoadError } from '@/components/service/components/ServiceLoadError';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
+import { retryUnlessUnauthenticated } from '@/lib/query-client';
 import {
   DocumentItemFragment,
   useDocumentDetailQuery,
 } from '@graphql/generated';
 import { ReactNode } from 'react';
+
+// What the API throws, as the message of the error, for a document it does not know.
+const DOCUMENT_NOT_FOUND_ERROR = 'DOCUMENT_NOT_FOUND';
+
+const isDocumentNotFound = (error: unknown) =>
+  error instanceof Error && error.message === DOCUMENT_NOT_FOUND_ERROR;
 
 interface DocumentDetailLoaderProps {
   documentId: string;
@@ -27,10 +34,21 @@ const DocumentDetailLoader = ({
   children,
 }: DocumentDetailLoaderProps) => {
   const t = useTranslate();
-  const { data, isError, refetch } = useDocumentDetailQuery(
+  const { data, error, isError, refetch } = useDocumentDetailQuery(
     portalGraphqlClient,
-    { documentId, serviceInstanceId }
+    { documentId, serviceInstanceId },
+    {
+      // Asking again cannot make a missing document appear, it only keeps the
+      // loader on screen through every retry.
+      retry: (failureCount, queryError) =>
+        !isDocumentNotFound(queryError) &&
+        retryUnlessUnauthenticated(failureCount, queryError),
+    }
   );
+
+  if (isDocumentNotFound(error) && !data) {
+    return <h1>{t('Utils.DocumentNotFound')}</h1>;
+  }
 
   // A failed background refetch keeps the page already on screen.
   if (isError && !data) {

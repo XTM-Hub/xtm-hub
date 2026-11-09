@@ -1,11 +1,17 @@
 import {
   DocumentFormValues,
+  sendDocumentMutation,
   toCreateDocumentInput,
   toDocumentMetadata,
   toDocumentUploads,
   toUpdateDocumentInput,
 } from '@/components/service/document/document-mutation.utils';
+import { requestGraphqlWithUploads } from '@/lib/graphql-upload-client';
 import { DocumentMetadataKeyCode, DocumentStatus } from '@graphql/generated';
+
+vi.mock('@/lib/graphql-upload-client', () => ({
+  requestGraphqlWithUploads: vi.fn(),
+}));
 
 const buildValues = (
   overrides: Record<string, unknown> = {}
@@ -67,7 +73,9 @@ describe('toCreateDocumentInput', () => {
 
 describe('toUpdateDocumentInput', () => {
   it('should leave out the slug, which is never updated', () => {
-    expect(toUpdateDocumentInput(buildValues(), 'draft')).not.toHaveProperty('slug');
+    expect(toUpdateDocumentInput(buildValues(), 'draft')).not.toHaveProperty(
+      'slug'
+    );
   });
 
   it('should send nothing for the fields the form does not carry', () => {
@@ -100,7 +108,10 @@ describe('toUpdateDocumentInput', () => {
     'should send the status $expectedStatus when the switch is $active and the resource is $currentStatus',
     ({ active, currentStatus, expectedStatus }) => {
       // When
-      const input = toUpdateDocumentInput(buildValues({ active }), currentStatus);
+      const input = toUpdateDocumentInput(
+        buildValues({ active }),
+        currentStatus
+      );
 
       // Then
       expect(input.status).toBe(expectedStatus);
@@ -152,5 +163,58 @@ describe('toDocumentUploads', () => {
 
   it('should leave out the variables with nothing to send', () => {
     expect(toDocumentUploads({ images: [] })).toEqual({});
+  });
+});
+
+describe('sendDocumentMutation', () => {
+  const QUERY = 'mutation DocumentCreate { createDocument { id } }';
+  const variables = { name: 'My dashboard' };
+
+  beforeEach(() => {
+    vi.mocked(requestGraphqlWithUploads).mockReset();
+  });
+
+  it('should send the plain request when no file is carried', async () => {
+    // Given
+    const sendPlain = vi
+      .fn()
+      .mockResolvedValue({ createDocument: { id: '1' } });
+
+    // When
+    const result = await sendDocumentMutation(
+      QUERY,
+      { variables, uploads: {} },
+      sendPlain
+    );
+
+    // Then
+    expect(result).toEqual({ createDocument: { id: '1' } });
+    expect(sendPlain).toHaveBeenCalledOnce();
+    expect(requestGraphqlWithUploads).not.toHaveBeenCalled();
+  });
+
+  it('should send a multipart request, and not the plain one, when a file is carried', async () => {
+    // Given
+    const sendPlain = vi.fn();
+    const uploads = { logo: buildFile('logo.png') };
+    vi.mocked(requestGraphqlWithUploads).mockResolvedValue({
+      createDocument: { id: '2' },
+    });
+
+    // When
+    const result = await sendDocumentMutation(
+      QUERY,
+      { variables, uploads },
+      sendPlain
+    );
+
+    // Then
+    expect(result).toEqual({ createDocument: { id: '2' } });
+    expect(requestGraphqlWithUploads).toHaveBeenCalledWith(
+      QUERY,
+      variables,
+      uploads
+    );
+    expect(sendPlain).not.toHaveBeenCalled();
   });
 });

@@ -6,19 +6,6 @@ import { RequestParameters, UploadableMap, Variables } from 'relay-runtime';
 
 const FILE_PREFIX_SEPARATOR = 'prefix-';
 
-export const splitFileListToUploadableMap = (files: {
-  [key: string]: FileList | (File | null)[];
-}): UploadableMap => {
-  const acc: UploadableMap = {};
-  Object.entries(files).forEach(([key, fileList]) => {
-    Array.from(fileList).forEach((file) => {
-      if (!file) return;
-      acc[`${key}${FILE_PREFIX_SEPARATOR}${file.name}`] = file;
-    });
-  });
-  return acc;
-};
-
 export const fileListToUploadableMap = (
   files: FileList | (File | null)[]
 ): UploadableMap =>

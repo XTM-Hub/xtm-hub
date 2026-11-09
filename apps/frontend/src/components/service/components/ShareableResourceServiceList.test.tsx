@@ -60,7 +60,14 @@ const EMPTY_SELECTION = {};
 
 const LOGICAL_FILTERS: LogicalFilters = {
   operator: LogicalOperator.And,
-  children: [{ leaf: { key: FilterKey.Label, value: ['label-1'] } }],
+  leaf: null,
+  children: [
+    {
+      operator: null,
+      children: null,
+      leaf: { key: FilterKey.Label, value: ['label-1'] },
+    },
+  ],
 };
 
 const baseStorageState = () => ({
@@ -217,6 +224,36 @@ describe('ShareableResourceServiceList', () => {
 
     // Then
     expect(container.textContent).toBe(`1 - 4 / ${FILTERED_TOTAL_COUNT}`);
+  });
+
+  it('should step back to the new last page when the page the user is on no longer exists', async () => {
+    // Given
+    const { user, rerender, container } = renderList('');
+    await goToSecondPage(user);
+    expect(container.textContent).toBe(`51 - 100 / ${LARGE_TOTAL_COUNT}`);
+
+    // When the last document of that page is deleted and the list refetches
+    testState.useDocumentsListQuery.mockReturnValue(withDocuments(PAGE_SIZE));
+    rerender(buildElement(''));
+
+    // Then
+    expect(container.textContent).toBe(`1 - ${PAGE_SIZE} / ${PAGE_SIZE}`);
+  });
+
+  it('should not step back while the page shown is a placeholder of the previous one', async () => {
+    // Given
+    const { user, rerender } = renderList('');
+    await goToSecondPage(user);
+
+    // When
+    testState.useDocumentsListQuery.mockReturnValue({
+      ...withDocuments(PAGE_SIZE),
+      isPlaceholderData: true,
+    });
+    rerender(buildElement(''));
+
+    // Then
+    expect(lastQueryVariables().cursor).toBe(toCursor(PAGE_SIZE, 1));
   });
 
   it('should query the first page of the service instance with the search, the sort and the filters', () => {

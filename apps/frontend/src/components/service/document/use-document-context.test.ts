@@ -4,6 +4,7 @@ import {
   invalidateDocumentQueriesAfterDelete,
 } from '@/components/service/document/document-query-invalidation';
 import { useDocumentContext } from '@/components/service/document/use-document-context';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { requestGraphqlWithUploads } from '@/lib/graphql-upload-client';
 import revalidateDocumentSlugsAction from '@/utils/actions/revalidate-document-slugs.actions';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
@@ -34,6 +35,10 @@ vi.mock('@/lib/graphql-client', () => ({
 
 vi.mock('@/lib/graphql-upload-client', () => ({
   requestGraphqlWithUploads: vi.fn(),
+}));
+
+vi.mock('@/components/ui/snackbar/snackbar-store', () => ({
+  showSnackbar: vi.fn(),
 }));
 
 vi.mock('@/utils/actions/revalidate-document-slugs.actions', () => ({
@@ -235,7 +240,10 @@ describe('useDocumentContext', () => {
         // When
         await context.current.handleUpdateSheet(
           buildValues({ active }),
-          { ...existingDocument, status: currentStatus } as DocumentItemFragment,
+          {
+            ...existingDocument,
+            status: currentStatus,
+          } as DocumentItemFragment,
           vi.fn(),
           vi.fn()
         );
@@ -321,8 +329,33 @@ describe('useDocumentContext', () => {
     });
   });
 
+  describe('handleUpdateSheet failure', () => {
+    it('should report the failure and invalidate nothing when the update fails', async () => {
+      // Given
+      const error = new Error('DOCUMENT_UPDATE_FAILED');
+      mocks.request.mockRejectedValue(error);
+      const context = renderContext();
+      const onError = vi.fn();
+      const onSuccess = vi.fn();
+
+      // When
+      await context.current.handleUpdateSheet(
+        buildValues(),
+        existingDocument,
+        onSuccess,
+        onError
+      );
+
+      // Then
+      await waitFor(() => expect(onError).toHaveBeenCalledWith(error));
+      expect(onSuccess).not.toHaveBeenCalled();
+      expect(invalidateDocumentQueries).not.toHaveBeenCalled();
+      expect(revalidateDocumentSlugsAction).not.toHaveBeenCalled();
+    });
+  });
+
   describe('handleDeleteSheet', () => {
-    it('should delete the document, then refresh the lists without refetching its detail', async () => {
+    it('should delete the document, then refresh the lists and drop the detail of the deleted one', async () => {
       // Given
       mocks.request.mockResolvedValue({ deleteDocument: { id: DOCUMENT_ID } });
       const context = renderContext();
@@ -343,11 +376,35 @@ describe('useDocumentContext', () => {
         })
       );
       expect(invalidateDocumentQueriesAfterDelete).toHaveBeenCalledOnce();
+      expect(invalidateDocumentQueriesAfterDelete).toHaveBeenCalledWith(
+        expect.anything(),
+        { documentId: DOCUMENT_ID, serviceInstanceId: SERVICE_INSTANCE_ID }
+      );
       expect(invalidateDocumentQueries).not.toHaveBeenCalled();
       expect(revalidateDocumentSlugsAction).toHaveBeenCalledWith(
         SERVICE_INSTANCE_SLUG,
         DOCUMENT_SLUG
       );
+    });
+
+    it('should tell the user and leave everything as it was when the deletion fails', async () => {
+      // Given
+      mocks.request.mockRejectedValue(new Error('DOCUMENT_DELETE_FAILED'));
+      const context = renderContext();
+      const onCompleted = vi.fn();
+
+      // When
+      await context.current.handleDeleteSheet(existingDocument, onCompleted);
+
+      // Then
+      await waitFor(() =>
+        expect(showSnackbar).toHaveBeenCalledWith(
+          expect.objectContaining({ severity: 'error' })
+        )
+      );
+      expect(onCompleted).not.toHaveBeenCalled();
+      expect(invalidateDocumentQueriesAfterDelete).not.toHaveBeenCalled();
+      expect(revalidateDocumentSlugsAction).not.toHaveBeenCalled();
     });
   });
 });

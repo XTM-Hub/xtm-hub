@@ -21,11 +21,7 @@ import {
 } from '@/utils/shareable-resources/shareable-resources.types';
 import { useShareableResourceMapping } from '@/utils/shareable-resources/use-shareable-resource-mapping';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
-import {
-  LogicalFilterInput,
-  ServiceRestriction,
-  useDocumentsListQuery,
-} from '@graphql/generated';
+import { ServiceRestriction, useDocumentsListQuery } from '@graphql/generated';
 import { keepPreviousData } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 
@@ -111,10 +107,20 @@ const ShareableResourceServiceList = ({
         serviceInstanceId: serviceInstance.id,
         searchTerm: search,
         parentsOnly: null,
-        logicalFilters: logicalFilters as LogicalFilterInput,
+        logicalFilters,
       },
       { placeholderData: keepPreviousData }
     );
+
+  // Deleting the last document of the last page refetches that page empty. Step
+  // back to the new last one, the same way as a filter change resets the page.
+  const lastPageIndex = Math.max(
+    0,
+    Math.ceil((data?.documents.totalCount ?? 0) / pagination.pageSize) - 1
+  );
+  if (data && !isPlaceholderData && pagination.pageIndex > lastPageIndex) {
+    setPagination((prev) => ({ ...prev, pageIndex: lastPageIndex }));
+  }
 
   const [published, draft] = useMemo(
     () =>
@@ -137,7 +143,7 @@ const ShareableResourceServiceList = ({
     resourceType: type,
     variables: {
       searchTerm: search,
-      logicalFilters: logicalFilters as LogicalFilterInput,
+      logicalFilters,
     },
     totalCount: data?.documents.totalCount ?? 0,
     resources: visibleResources,

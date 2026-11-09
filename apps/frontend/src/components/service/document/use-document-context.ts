@@ -7,6 +7,8 @@ import { CustomDashboardForm } from '@/components/service/custom-dashboards/[ser
 import { CustomViewForm } from '@/components/service/custom-views/[serviceInstanceId]/CustomViewForm';
 import {
   DocumentFormValues,
+  DocumentMutationPayload,
+  sendDocumentMutation,
   toCreateDocumentInput,
   toDocumentMetadata,
   toDocumentUploads,
@@ -27,10 +29,6 @@ import { OpenctiPlaybookForm } from '@/components/service/opencti-playbooks/[ser
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import {
-  GraphqlUploads,
-  requestGraphqlWithUploads,
-} from '@/lib/graphql-upload-client';
 import revalidateDocumentSlugsAction from '@/utils/actions/revalidate-document-slugs.actions';
 import {
   docIsExistingFile,
@@ -41,11 +39,9 @@ import { ShareableResourceType } from '@/utils/shareable-resources/shareable-res
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 import {
   DocumentCreateDocument,
-  DocumentCreateMutation,
   DocumentCreateMutationVariables,
   DocumentItemFragment,
   DocumentUpdateDocument,
-  DocumentUpdateMutation,
   DocumentUpdateMutationVariables,
   IntegrationType,
   useDocumentCreateMutation,
@@ -60,11 +56,6 @@ interface UseDocumentContextProps {
   type: ShareableResourceType;
 }
 
-interface DocumentMutationPayload<TVariables> {
-  variables: TVariables;
-  uploads: GraphqlUploads;
-}
-
 export function useDocumentContext({
   serviceInstance,
   type,
@@ -75,20 +66,18 @@ export function useDocumentContext({
   const t = useTranslate();
   const queryClient = useQueryClient();
 
-  // graphql-request serialises every variable as JSON, so a request carrying a
-  // file goes through the multipart client, and one without keeps the plain
-  // generated fetcher.
   const { mutate: createMutation, isPending: isCreateInFlight } = useMutation({
-    mutationFn: ({
-      variables,
-      uploads,
-    }: DocumentMutationPayload<DocumentCreateMutationVariables>) =>
-      Object.keys(uploads).length === 0
-        ? useDocumentCreateMutation.fetcher(portalGraphqlClient, variables)()
-        : requestGraphqlWithUploads<
-            DocumentCreateMutation,
-            DocumentCreateMutationVariables
-          >(DocumentCreateDocument, variables, uploads),
+    mutationFn: (
+      payload: DocumentMutationPayload<DocumentCreateMutationVariables>
+    ) =>
+      sendDocumentMutation(
+        DocumentCreateDocument,
+        payload,
+        useDocumentCreateMutation.fetcher(
+          portalGraphqlClient,
+          payload.variables
+        )
+      ),
     onSuccess: () => invalidateDocumentQueries(queryClient),
   });
 
@@ -97,7 +86,8 @@ export function useDocumentContext({
     onSuccess: (serviceName: string) => void,
     onError: (error: Error) => void
   ) => {
-    const input = toCreateDocumentInput(values as DocumentFormValues);
+    const formValues = values as DocumentFormValues;
+    const input = toCreateDocumentInput(formValues);
     const [sourceDocument] = Array.from(values?.document ?? []);
     const [logo] = Array.from(values?.logo ?? []);
     const images = Array.from(values?.images ?? []);
@@ -106,7 +96,7 @@ export function useDocumentContext({
       {
         variables: {
           input,
-          metadata: toDocumentMetadata(values as DocumentFormValues),
+          metadata: toDocumentMetadata(formValues),
           serviceInstanceId: serviceInstance.id,
           sourceDocument: null,
           logo: null,
@@ -139,7 +129,19 @@ export function useDocumentContext({
 
   const { mutate: deleteMutation } = useDocumentDeleteMutation(
     portalGraphqlClient,
-    { onSuccess: () => invalidateDocumentQueriesAfterDelete(queryClient) }
+    {
+      onSuccess: (_, { documentId, serviceInstanceId }) =>
+        invalidateDocumentQueriesAfterDelete(queryClient, {
+          documentId,
+          serviceInstanceId,
+        }),
+      onError: () =>
+        showSnackbar({
+          severity: 'error',
+          title: t('Utils.Error'),
+          description: t('Error.AnErrorOccured'),
+        }),
+    }
   );
 
   const handleDeleteSheet = async (
@@ -163,16 +165,17 @@ export function useDocumentContext({
   };
 
   const { mutate: updateMutation, isPending: isUpdateInFlight } = useMutation({
-    mutationFn: ({
-      variables,
-      uploads,
-    }: DocumentMutationPayload<DocumentUpdateMutationVariables>) =>
-      Object.keys(uploads).length === 0
-        ? useDocumentUpdateMutation.fetcher(portalGraphqlClient, variables)()
-        : requestGraphqlWithUploads<
-            DocumentUpdateMutation,
-            DocumentUpdateMutationVariables
-          >(DocumentUpdateDocument, variables, uploads),
+    mutationFn: (
+      payload: DocumentMutationPayload<DocumentUpdateMutationVariables>
+    ) =>
+      sendDocumentMutation(
+        DocumentUpdateDocument,
+        payload,
+        useDocumentUpdateMutation.fetcher(
+          portalGraphqlClient,
+          payload.variables
+        )
+      ),
     onSuccess: () => invalidateDocumentQueries(queryClient),
   });
 
@@ -182,6 +185,7 @@ export function useDocumentContext({
     onSuccess: (serviceName: string) => void,
     onError: (error: Error) => void
   ) => {
+    const formValues = values as DocumentFormValues;
     const [sourceDocument] = Array.from(values?.document ?? []);
     const images = Array.from(values?.images ?? []);
     const [existingImageIds, newImages] = splitExistingAndNewImages(images);
@@ -190,16 +194,13 @@ export function useDocumentContext({
     updateMutation(
       {
         variables: {
-          input: toUpdateDocumentInput(
-            values as DocumentFormValues,
-            resource.status
-          ),
+          input: toUpdateDocumentInput(formValues, resource.status),
           serviceInstanceId: serviceInstance.id,
           sourceDocument: null,
           images: null,
           logo: null,
           documentId: resource.id,
-          metadata: toDocumentMetadata(values as DocumentFormValues),
+          metadata: toDocumentMetadata(formValues),
           existingImageIds: [
             ...existingImageIds,
             ...(docIsExistingFile(logo) ? [logo.id] : []),

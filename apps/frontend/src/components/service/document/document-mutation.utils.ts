@@ -1,5 +1,8 @@
 import type { ServiceFormValues } from '@/components/service/components/subscribable-services.types';
-import type { GraphqlUploads } from '@/lib/graphql-upload-client';
+import {
+  type GraphqlUploads,
+  requestGraphqlWithUploads,
+} from '@/lib/graphql-upload-client';
 import { omit } from '@/lib/omit';
 import { pick } from '@/lib/pick';
 import { toDocumentStatus, toStatusUpdate } from '@/utils/documents';
@@ -62,7 +65,8 @@ export const toCreateDocumentInput = (
  * The API reads an omitted field as "leave it untouched" and `null` as "clear
  * it" (`use_cases`, for instance), so a field the form does not carry has to
  * stay omitted. Codegen types every optional field as required, hence the
- * cast: it is the only way to keep those fields out of the request.
+ * cast. The input is checked against `Partial<UpdateDocumentInput>` first, so
+ * a field the schema renames or retypes still fails to compile here.
  */
 export const toUpdateDocumentInput = (
   values: DocumentFormValues,
@@ -76,10 +80,12 @@ export const toUpdateDocumentInput = (
     ['slug']
   );
 
-  return {
+  const update = {
     ...input,
     ...toStatusUpdate(active, currentStatus),
-  } as UpdateDocumentInput;
+  } satisfies Partial<UpdateDocumentInput>;
+
+  return update as UpdateDocumentInput;
 };
 
 /** Every form value that is neither a document column nor a file is metadata. */
@@ -116,3 +122,29 @@ export const toDocumentUploads = ({
   ...(logo ? { logo } : {}),
   ...(images.length > 0 ? { images } : {}),
 });
+
+export interface DocumentMutationPayload<TVariables> {
+  variables: TVariables;
+  uploads: GraphqlUploads;
+}
+
+/**
+ * graphql-request serialises every variable as JSON, so a request carrying a
+ * file goes through the multipart client, and one without keeps the plain
+ * generated fetcher.
+ */
+export const sendDocumentMutation = <
+  TData,
+  TVariables extends Record<string, unknown>,
+>(
+  document: string,
+  { variables, uploads }: DocumentMutationPayload<TVariables>,
+  sendPlain: () => Promise<TData>
+): Promise<TData> =>
+  Object.keys(uploads).length === 0
+    ? sendPlain()
+    : requestGraphqlWithUploads<TData, TVariables>(
+        document,
+        variables,
+        uploads
+      );
