@@ -3,8 +3,10 @@ import { PortalCapability } from '../../../__generated__/resolvers-types';
 import { requestContext } from '../../../context/request.context';
 import type { PortalContext } from '../../../model/portal-context';
 import type { UserLoadUserBy } from '../../../model/user';
+import { hashPassword } from '../../../utils/hash-password.util';
 import {
   createSystemTokenResolver,
+  isSystemTokenHashUsable,
   SYSTEM_TOKEN_HEADER,
   validateSystemToken,
 } from './system-token.validator';
@@ -65,6 +67,41 @@ describe('system Token Validation', () => {
         'Invalid system token attempt'
       );
     });
+  });
+
+  describe('isSystemTokenHashUsable', () => {
+    const repositoryDefault = hashPassword('changeMe');
+    const configured = hashPassword('a-configured-secret-token');
+
+    it.each`
+      environment      | description                 | configuration        | expected
+      ${'production'}  | ${'the repository default'} | ${repositoryDefault} | ${false}
+      ${'staging'}     | ${'the repository default'} | ${repositoryDefault} | ${false}
+      ${'development'} | ${'the repository default'} | ${repositoryDefault} | ${true}
+      ${'production'}  | ${'a configured hash'}      | ${configured}        | ${true}
+      ${'staging'}     | ${'a configured hash'}      | ${configured}        | ${true}
+    `(
+      'should return $expected in $environment with $description',
+      ({
+        environment,
+        configuration,
+        expected,
+      }: {
+        environment: string;
+        configuration: { hash: string; salt: string };
+        expected: boolean;
+      }) => {
+        // When
+        const result = isSystemTokenHashUsable({
+          environment,
+          hash: configuration.hash,
+          salt: configuration.salt,
+        });
+
+        // Then
+        expect(result).toBe(expected);
+      }
+    );
   });
 
   describe('createSystemTokenResolver', () => {
