@@ -35,6 +35,7 @@ import { TruncatedText } from '@/components/ui/truncated-text';
 import { useUserHasPortalCapability } from '@/hooks/use-portal-capability';
 import { useTablePagination } from '@/hooks/use-table-pagination';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { cn } from '@/lib/utils';
 import { DEBOUNCE_TIME } from '@/utils/constant';
@@ -164,6 +165,7 @@ export const SaasList = () => {
         ) {
           return (
             <Link
+              {...analyticsId('admin_saas_connection_documentation_open')}
               href={
                 row.original.product === SaasProduct.Oaev
                   ? 'https://docs.hub.filigran.io/latest/user/openaev-connection/'
