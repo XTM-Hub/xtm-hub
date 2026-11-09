@@ -374,6 +374,40 @@ describe('registration app', () => {
       }
     );
 
+    it('should return the owner organization of a platform to a bypass user outside it', async () => {
+      // Given — a platform owned by the second organization, asked by a bypass user outside it
+      const platformId = uuidv4();
+      const serviceInstanceId = uuidv4() as ServiceInstanceId;
+      await TestHelper.serviceInstance.create({
+        id: serviceInstanceId,
+        name: 'test',
+      });
+      await TestHelper.platformConfiguration.create({
+        service_instance_id: serviceInstanceId,
+        platform_id: platformId,
+        platform_title: 'Platform title',
+        status: PlatformConfigurationStatus.Active,
+      });
+      await TestHelper.subscription.create({
+        id: uuidv4() as SubscriptionId,
+        organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        service_instance_id: serviceInstanceId,
+      });
+      requestContext.set(requestContextAdminUser);
+
+      // When
+      const result = await RegistrationApp.isPlatformRegistered({
+        platformId,
+      });
+
+      // Then
+      expect(result.status).toBe(PlatformRegistrationStatus.Registered);
+      expect(result.organization).toEqual({
+        id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+      });
+      expect(result.platformTitle).toBe('Platform title');
+    });
+
     describe('with tenantId', () => {
       let platformId: string;
       let tenantId: string;

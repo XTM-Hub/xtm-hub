@@ -514,14 +514,18 @@ export const RegistrationApp = {
         : PlatformRegistrationStatus.Unregistered;
 
     // Anyone signed in may ask about a platform_id: only the owner organization's members learn who owns it.
+    // Bypass users learn it too: they pass every organization guard, so registering on another organization
+    // would move the platform there instead of refreshing it in its owner organization.
     const user = requestContext.requireUser();
-    const [userOrganization] =
-      await UserOrganizationDomain.loadUserOrganization({
-        user_id: user.id,
-        organization_id: subscription.organization_id,
-      });
-    if (!userOrganization) {
-      return { status };
+    if (!AuthHelper.userHasBypassCapability(user)) {
+      const [userOrganization] =
+        await UserOrganizationDomain.loadUserOrganization({
+          user_id: user.id,
+          organization_id: subscription.organization_id,
+        });
+      if (!userOrganization) {
+        return { status };
+      }
     }
 
     return {
