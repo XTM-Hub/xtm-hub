@@ -104,6 +104,16 @@ export const probeEngine = (
       },
       (response) => {
         const chunks: Buffer[] = [];
+        // A connection cut once body data arrived fails the response only,
+        // not the request
+        response.on('error', (cause) => {
+          reject(
+            new Error(
+              `[ELASTICSEARCH] Search engine seems down on ${url.origin}`,
+              { cause }
+            )
+          );
+        });
         response.on('data', (chunk: Buffer) => chunks.push(chunk));
         response.on('end', () => {
           const status = response.statusCode ?? 0;
@@ -134,8 +144,6 @@ export const probeEngine = (
     request.on('timeout', () => {
       request.destroy(new Error(`No answer after ${connection.timeout} ms`));
     });
-    // Also fires when the body is cut or stalls after the headers, so the probe
-    // never hangs (covered by the tests)
     request.on('error', (cause) => {
       reject(
         new Error(`[ELASTICSEARCH] Search engine seems down on ${url.origin}`, {

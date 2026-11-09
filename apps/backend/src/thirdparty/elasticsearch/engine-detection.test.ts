@@ -236,15 +236,15 @@ describe('probeEngine', () => {
     );
   });
 
-  it('should fail when the engine closes the connection mid-body', async () => {
+  it('should fail when the engine closes the connection after part of the body', async () => {
     // Given
     const url = await startEngine((_request, response) => {
       response.writeHead(200, {
         'content-type': 'application/json',
         'content-length': '1000',
       });
-      response.write('{"version":');
-      response.socket?.destroy();
+      // Cut only once the partial body is flushed, for the client to get it
+      response.write('{"version":', () => response.socket?.destroy());
     });
 
     // When
