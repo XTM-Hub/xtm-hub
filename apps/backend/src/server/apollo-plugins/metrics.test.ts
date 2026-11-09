@@ -130,6 +130,29 @@ describe('operationMetricsPlugin', () => {
       query: 'query AnyName { currentVotingRound(id: "1") otherField }',
       expectedLabel: 'multiple',
     },
+    {
+      description: 'a root field in a named fragment',
+      query:
+        'query AnyName { ...AnyNameFields } fragment AnyNameFields on Query { currentVotingRound(id: "1") }',
+      expectedLabel: 'currentVotingRound',
+    },
+    {
+      description: 'a root field in an inline fragment',
+      query: 'query AnyName { ... on Query { currentVotingRound(id: "1") } }',
+      expectedLabel: 'currentVotingRound',
+    },
+    {
+      description: 'the same root field selected directly and in a fragment',
+      query:
+        'query AnyName { currentVotingRound(id: "1") ...AnyNameFields } fragment AnyNameFields on Query { currentVotingRound(id: "1") }',
+      expectedLabel: 'currentVotingRound',
+    },
+    {
+      description: 'several root fields in a fragment',
+      query:
+        'query AnyName { ...AnyNameFields } fragment AnyNameFields on Query { currentVotingRound(id: "1") otherField }',
+      expectedLabel: 'multiple',
+    },
   ])(
     'should count a query with $description under $expectedLabel',
     async ({ query, expectedLabel }) => {
@@ -144,6 +167,20 @@ describe('operationMetricsPlugin', () => {
       expect(metrics).not.toContain('AnyName');
     }
   );
+
+  it('should count a query sent without an operation name', async () => {
+    // When
+    await server.executeOperation({ query: '{ currentVotingRound(id: "1") }' });
+
+    // Then
+    const metrics = await registry.metrics();
+    expect(metrics).toContain(
+      'graphql_query_total{query="currentVotingRound"} 1'
+    );
+    expect(metrics).toContain(
+      'graphql_operation_duration_seconds_count{operation="query",name="currentVotingRound"} 1'
+    );
+  });
 
   it('should count a mutation under its root field', async () => {
     // When

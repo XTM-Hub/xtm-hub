@@ -1,9 +1,12 @@
 import { ApolloServerPlugin } from '@apollo/server';
 import {
+  DocumentNode,
   ExecutionArgs,
+  FragmentDefinitionNode,
   getOperationAST,
   Kind,
   OperationDefinitionNode,
+  SelectionSetNode,
 } from 'graphql';
 import client, { Counter, Gauge, Histogram } from 'prom-client';
 
@@ -48,14 +51,58 @@ export const sseActiveConnectionsGauge = new Gauge({
 
 const MULTIPLE_ROOT_FIELDS_LABEL = 'multiple';
 
+const collectFieldNames = (
+  selectionSet: SelectionSetNode,
+  fragments: Map<string, FragmentDefinitionNode>,
+  visitedFragments: Set<string>,
+  fieldNames: Set<string>
+) => {
+  for (const selection of selectionSet.selections) {
+    if (selection.kind === Kind.FIELD) {
+      fieldNames.add(selection.name.value);
+    } else if (selection.kind === Kind.INLINE_FRAGMENT) {
+      collectFieldNames(
+        selection.selectionSet,
+        fragments,
+        visitedFragments,
+        fieldNames
+      );
+    } else {
+      const fragmentName = selection.name.value;
+      const fragment = fragments.get(fragmentName);
+      if (!fragment || visitedFragments.has(fragmentName)) continue;
+      visitedFragments.add(fragmentName);
+      collectFieldNames(
+        fragment.selectionSet,
+        fragments,
+        visitedFragments,
+        fieldNames
+      );
+    }
+  }
+};
+
 // The schema bounds root field names, unlike the operation name the client sends: an unchecked name would add new
-// time series to the registry on every request. An alias keeps the real field name.
-export const getRootFieldLabel = (operation: OperationDefinitionNode) => {
-  const [selection, ...otherSelections] = operation.selectionSet.selections;
-  if (selection?.kind !== Kind.FIELD || otherSelections.length > 0) {
+// time series to the registry on every request. An alias keeps the real field name; a fragment counts by its fields.
+export const getRootFieldLabel = (
+  document: DocumentNode,
+  operation: OperationDefinitionNode
+) => {
+  const fragments = new Map(
+    document.definitions
+      .filter(
+        (definition): definition is FragmentDefinitionNode =>
+          definition.kind === Kind.FRAGMENT_DEFINITION
+      )
+      .map((fragment) => [fragment.name.value, fragment])
+  );
+  const fieldNames = new Set<string>();
+  collectFieldNames(operation.selectionSet, fragments, new Set(), fieldNames);
+  const [fieldName, ...otherFieldNames] = fieldNames;
+  if (!fieldName || otherFieldNames.length > 0) {
     return MULTIPLE_ROOT_FIELDS_LABEL;
   }
-  return selection.name.value;
+  return fieldName;
 };
 
 // Keyed on the per-request context, so the gauge goes down under the label it went up with
@@ -66,7 +113,7 @@ export const sseOperationMetrics = {
   onOperation(context: object, { document, operationName }: ExecutionArgs) {
     const operation = getOperationAST(document, operationName);
     if (!operation) return;
-    const subscription = getRootFieldLabel(operation);
+    const subscription = getRootFieldLabel(document, operation);
     sseOperationLabels.set(context, subscription);
     sseSubscriptionCounter.inc({ subscription });
     sseActiveConnectionsGauge.inc({ subscription });
@@ -100,12 +147,12 @@ export const operationMetricsPlugin: ApolloServerPlugin = {
     } as const;
 
     return {
-      async didResolveOperation({ operation }) {
+      async didResolveOperation({ document, operation }) {
         if (!operation) return;
         const { operation: operationKind } = operation;
         if (operationKind !== 'query' && operationKind !== 'mutation') return;
 
-        const name = getRootFieldLabel(operation);
+        const name = getRootFieldLabel(document, operation);
         const operationType = operationMapping[operationKind](name);
         endTimer = graphqlOperationDuration.startTimer({
           operation: operationType,
