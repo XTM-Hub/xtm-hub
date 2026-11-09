@@ -131,7 +131,9 @@ export const Unregister = ({
   if (!isAllowed) {
     if (!isInOrganization) {
       return (
-        <RegistrationLayout cancel={cancel}>
+        <RegistrationLayout
+          cancel={cancel}
+          cancelAnalyticsId="platform_disconnection_cancel">
           <h1 className="title-sm">
             {t(`Unregister.Error.NotInOrganization.Title`)}
           </h1>

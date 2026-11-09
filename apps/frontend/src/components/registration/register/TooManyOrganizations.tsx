@@ -18,7 +18,9 @@ export const RegisterStateTooManyOrganizations = ({
   return (
     <RegistrationLayout
       cancel={cancel}
-      confirm={confirm}>
+      cancelAnalyticsId="platform_registration_cancel"
+      confirm={confirm}
+      confirmAnalyticsId="platform_reconnection_confirm">
       <h1 className="title-sm">{t(`Register.TooManyOrganizations.Title`)}</h1>
       <p>
         {t(`Register.TooManyOrganizations.Description1`, {

@@ -5,6 +5,7 @@ import { AutoForm } from '@/components/ui/auto-form';
 import { CountryCombobox } from '@/components/ui/country/Combobox';
 import { useFormField } from '@/components/ui/form';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import {
   Button,
   Card,
@@ -88,6 +89,7 @@ export const ProfileFormEdit = ({ onSubmit }: ProfileFormEditProps) => {
           }}>
           <div className="flex justify-end">
             <Button
+              {...analyticsId('account_profile_submit')}
               type="submit"
               aria-label={t('ProfilePage.UpdateProfile')}>
               {t('Utils.Update')}

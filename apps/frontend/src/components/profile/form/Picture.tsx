@@ -3,6 +3,7 @@
 import { PortalContext } from '@/components/me/AppPortalContext';
 import { Avatar } from '@/components/ui/avatar';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import {
   Button,
   Card,
@@ -63,6 +64,7 @@ export const ProfileFormPicture = ({ onSubmit }: ProfileFormPictureProps) => {
           onChange={handleFileChange}
         />
         <div
+          {...analyticsId('account_picture_select')}
           className="size-24 cursor-pointer"
           onClick={() => inputRef.current?.click()}>
           <Avatar src={preview || me?.picture || undefined} />
@@ -70,6 +72,7 @@ export const ProfileFormPicture = ({ onSubmit }: ProfileFormPictureProps) => {
       </CardContent>
       <CardFooter>
         <Button
+          {...analyticsId('account_picture_select')}
           priority="tertiary"
           aria-label={t('Utils.Edit')}
           className="ml-2"
@@ -78,6 +81,7 @@ export const ProfileFormPicture = ({ onSubmit }: ProfileFormPictureProps) => {
           {t('Utils.Edit')}
         </Button>
         <Button
+          {...analyticsId('account_picture_upload')}
           aria-label={t('ProfilePage.UpdatePicture')}
           onClick={handleSubmit}>
           {t('Utils.Update')}

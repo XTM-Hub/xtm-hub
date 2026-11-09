@@ -5,6 +5,7 @@ import { PlatformUpdateSheet } from '@/components/service/components/PlatformUpd
 import { UnregisterButton } from '@/components/service/registration/UnregisterButton';
 import { TrialsManageUsersDialog } from '@/components/service/trial-instances/manage-users/TrialsManageUsersDialog';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { Button } from '@filigran/design-system';
 import { registeredPlatformByServiceInstanceId_fragment$data } from '@generated/registeredPlatformByServiceInstanceId_fragment.graphql';
 import {
@@ -66,6 +67,7 @@ export const ConnectedProductButtons = ({
         {displayAccessPlatformButton && (
           <Button asChild>
             <Link
+              {...analyticsId('platform_instance_open')}
               target="_blank"
               rel="noopener noreferrer"
               href={platform.url}>
@@ -91,6 +93,7 @@ export const ConnectedProductButtons = ({
           )}
         {displayUpdatePlatform && (
           <Button
+            {...analyticsId('platform_name_edit')}
             priority="secondary"
             onClick={() => setOpenPlatformSheet(true)}>
             {t('Platform.Update')}

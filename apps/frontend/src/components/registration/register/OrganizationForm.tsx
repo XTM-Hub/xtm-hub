@@ -2,6 +2,7 @@ import { RegistrationContext } from '@/components/registration/Context';
 import { AutoForm } from '@/components/ui/auto-form';
 import { FormControl, FormItem, FormMessage } from '@/components/ui/form';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { Button, Radio, RadioGroup } from '@filigran/design-system';
 import { UserOrganizationsQuery } from '@graphql/generated';
 import { useContext } from 'react';
@@ -108,6 +109,7 @@ export const RegisterOrganizationForm = ({
           }}>
           <div className="flex justify-end gap-2">
             <Button
+              {...analyticsId('platform_registration_cancel')}
               priority="secondary"
               type="button"
               onClick={() => {
@@ -116,7 +118,11 @@ export const RegisterOrganizationForm = ({
               {t('Utils.Cancel')}
             </Button>
 
-            <Button type="submit">{t('Register.Confirm')}</Button>
+            <Button
+              {...analyticsId('platform_registration_submit')}
+              type="submit">
+              {t('Register.Confirm')}
+            </Button>
           </div>
         </AutoForm>
       </div>
