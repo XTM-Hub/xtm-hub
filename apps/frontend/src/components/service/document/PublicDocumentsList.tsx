@@ -165,6 +165,7 @@ const PublicDocumentsList = ({
         <ServiceListHeader
           search={search}
           onSearchChange={setSearch}
+          resourceType={resourceType}
           className="mb-3"
           onDisplayModeChange={setDisplayMode}
           filters={filters}

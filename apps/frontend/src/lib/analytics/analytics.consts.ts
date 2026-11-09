@@ -1,3 +1,6 @@
+import { type SortableDocumentOrdering } from '@/utils/shareable-resources/shareable-resources.consts';
+import { DocumentOrdering, OrderingMode } from '@graphql/generated';
+
 export const GA_MEASUREMENT_ID = 'G-9FC0TL0TH3';
 
 export const GA_PRODUCTION_HOST = 'hub.filigran.io';
@@ -37,6 +40,17 @@ export const FILTER_NAME_LABELS = {
   manager_supported: 'Deployment type',
   verified: 'Status',
 } as const;
+
+export const ORDER_BY_LABELS = {
+  [DocumentOrdering.Name]: 'Name',
+  [DocumentOrdering.CreatedAt]: 'Creation date',
+  [DocumentOrdering.UpdatedAt]: 'Update date',
+} as const satisfies Record<SortableDocumentOrdering, string>;
+
+export const ORDER_MODE_LABELS = {
+  [OrderingMode.Asc]: 'Ascending',
+  [OrderingMode.Desc]: 'Descending',
+} as const satisfies Record<OrderingMode, string>;
 
 export const MAX_EVENTS_PER_WINDOW = 100;
 
