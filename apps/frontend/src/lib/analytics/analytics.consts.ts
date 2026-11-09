@@ -68,6 +68,7 @@ export const MAX_EVENTS_PER_WINDOW = 100;
 export const UNLIMITED_EVENT_NAMES: ReadonlySet<AnalyticsEventName> = new Set([
   'page_view',
   'generate_lead',
+  'sign_up',
 ]);
 
 export const EVENT_WINDOW_MS = 60_000;
