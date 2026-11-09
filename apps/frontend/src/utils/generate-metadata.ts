@@ -11,6 +11,10 @@ const LOCALE_TAG_MAP: Record<PublicLocale, string> = {
   ja: 'ja_JP',
 };
 
+// Served from `app/apple-icon.png` and allowed in `robots.ts`: the square Filigran mark filigran.io uses as its own logo.
+const FILIGRAN_LOGO_PATH = '/apple-icon.png';
+const FILIGRAN_LOGO_SIZE = 180;
+
 export const buildFiligranOrganizationJsonLd = (baseUrl: string) =>
   ({
     '@type': 'Organization',
@@ -18,7 +22,9 @@ export const buildFiligranOrganizationJsonLd = (baseUrl: string) =>
     url: 'https://filigran.io',
     logo: {
       '@type': 'ImageObject',
-      url: `${baseUrl}/images/filigran-logo.png`,
+      url: `${baseUrl}${FILIGRAN_LOGO_PATH}`,
+      width: FILIGRAN_LOGO_SIZE,
+      height: FILIGRAN_LOGO_SIZE,
     },
   }) as const;
 

@@ -1,9 +1,35 @@
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   buildAlternates,
+  buildFiligranOrganizationJsonLd,
   buildSeoPageMetadata,
   stringifyJsonLd,
 } from './generate-metadata';
+
+describe('buildFiligranOrganizationJsonLd', () => {
+  it('points the logo to the 180px Filigran icon served at the site root', () => {
+    const organization = buildFiligranOrganizationJsonLd(
+      'https://hub.filigran.io'
+    );
+
+    expect(organization.logo).toEqual({
+      '@type': 'ImageObject',
+      url: 'https://hub.filigran.io/apple-icon.png',
+      width: 180,
+      height: 180,
+    });
+  });
+
+  it('points the logo to a file the app actually serves', () => {
+    const { pathname } = new URL(
+      buildFiligranOrganizationJsonLd('https://hub.filigran.io').logo.url
+    );
+
+    expect(existsSync(join(__dirname, '../../app', pathname))).toBe(true);
+  });
+});
 
 describe('stringifyJsonLd', () => {
   it.each`
