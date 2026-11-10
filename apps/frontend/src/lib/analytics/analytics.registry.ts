@@ -363,6 +363,7 @@ export const ANALYTICS_ELEMENT_IDS = {
     action: 'Confirm resource file replacement',
   },
   resource_file_replacement_open: { action: 'Replace resource file' },
+  resource_filter_info_open: { action: 'Show filter information' },
   resource_filter_section_toggle: {
     action: 'Expand or collapse filter section',
   },

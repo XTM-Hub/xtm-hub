@@ -1404,7 +1404,7 @@
         },
         "Verified": {
           "Label": "Status",
-          "Tooltip": "Filter applicable to connectors only",
+          "Description": "Filter applicable to connectors only",
           "Placeholder": "Status...",
           "Verified": "Supported by Filigran",
           "Unverified": "Supported by Community"
@@ -1560,6 +1560,7 @@
       "ViewTab": "Select tab view",
       "ViewList": "Select list view",
       "Filters": "Filters",
+      "FilterInformation": "About this filter",
       "Tab": {
         "Name": "Name",
         "Description": "Description",
