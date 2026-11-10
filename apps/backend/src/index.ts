@@ -25,11 +25,7 @@ import { initAuthPlatform } from './modules/security-management/authentication/a
 import { ServiceInstanceDataLoader } from './modules/service/instance/service-instance.dataloader';
 import { SubscriptionDataLoader } from './modules/subscription/subscription.dataloader';
 import { TelemetrySnapshotApp } from './modules/telemetry/telemetry-snapshot.app';
-import {
-  sseActiveConnectionsGauge,
-  sseMessageCounter,
-  sseSubscriptionCounter,
-} from './server/apollo-plugins/metrics';
+import { sseOperationMetrics } from './server/apollo-plugins/metrics';
 import { createApolloServer } from './server/apollo-server';
 import {
   registerEndpoints,
@@ -326,24 +322,15 @@ const handler = createHandler({
     return { user, req: _req };
   },
 
-  onComplete: async (_ctx, msg) => {
-    sseActiveConnectionsGauge.dec({
-      subscription: msg.context.res.req.body?.operationName ?? 'Unknown',
-    });
-  },
-  onSubscribe: async (_ctx, msg) => {
-    sseActiveConnectionsGauge.inc({
-      subscription: msg.operationName ?? 'Unknown',
-    });
-    sseSubscriptionCounter.inc({
-      subscription: msg.operationName ?? 'Unknown',
-    });
+  onOperation: (ctx, _req, args) => {
+    sseOperationMetrics.onOperation(ctx, args);
   },
   onNext: async (ctx, req, result) => {
-    sseMessageCounter.inc({
-      subscription: req.context.res.req.body?.operationName ?? 'Unknown',
-    });
+    sseOperationMetrics.onNext(ctx);
     return sseSchemaDetailsOptions.onNext?.(ctx, req, result);
+  },
+  onComplete: (ctx) => {
+    sseOperationMetrics.onComplete(ctx);
   },
 });
 
