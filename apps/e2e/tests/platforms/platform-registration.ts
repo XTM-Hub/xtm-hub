@@ -1,6 +1,10 @@
 import { Page } from '@playwright/test';
 import { expect, test } from '../fixtures/baseFixtures';
-import { getLastConnectivityCheck } from '../db-utils/platform-configuration.helper';
+import {
+  getLastConnectivityCheck,
+  getServiceInstanceGlobalId,
+  setCommercialModel,
+} from '../db-utils/platform-configuration.helper';
 import { waitForReactIdle } from '../model/common';
 import { HomePage } from '../model/home.pageModel';
 import LoginPage from '../model/login.pageModel';
@@ -136,6 +140,39 @@ export const describePlatformRegistration = (platform: XtmPlatform) => {
             .toBeGreaterThan(previousCheck ?? 0);
         });
       }
+    });
+
+    test('should open its page in XTM Hub from its SaaS metrics', async () => {
+      // TODO: enable for OpenCTI once its rolling image ships "See my OpenCTI metrics" (OpenCTI #19678).
+      test.fixme(
+        platform.name === 'OpenCTI',
+        'The OpenCTI rolling image does not show its SaaS metrics yet: OpenCTI #19678 is not merged'
+      );
+      await platformPage.connectToXtmHub(displayedName);
+      const platformUrl = getPlatformUrl(platform);
+
+      await test.step(`if SaaS and connected, display redirection on ${platform.name}`, async () => {
+        // The platform learns its commercial model from its next connectivity check: the Filigran Experience runs one
+        // each time it opens, alongside the query it renders from, so the metrics may only show from the next visit.
+        await expect(async () => {
+          await setCommercialModel(platformUrl, 'SAAS');
+          await platformPage.navigateToExperience();
+          await expect(platformPage.getSeeMetricsLink()).toBeVisible({
+            timeout: 5_000,
+          });
+        }).toPass({ timeout: 45_000 });
+      });
+
+      await test.step(`${platform.seeMetricsLinkName} opens the platform page in XTM Hub`, async () => {
+        const serviceInstanceGlobalId =
+          await getServiceInstanceGlobalId(platformUrl);
+        const xtmHubTab = await platformPage.openSeeMetricsTab();
+        await expect(xtmHubTab).toHaveURL(
+          new RegExp(
+            `/app/service/${platform.registrationServiceIdentifier}/${encodeURIComponent(serviceInstanceGlobalId)}$`
+          )
+        );
+      });
     });
   });
 };

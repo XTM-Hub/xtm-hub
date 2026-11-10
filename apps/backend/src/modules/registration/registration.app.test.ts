@@ -1583,6 +1583,42 @@ describe('registration app', () => {
       // Then
       expect(platform).toBeNull();
     });
+
+    it('should return the registration of an OpenCTI platform, which has no tenant', async () => {
+      // Given
+      const openctiPlatformId = uuidv4();
+      await RegistrationDomain.registerNewPlatform({
+        organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        serviceDefinitionId: SERVICES.DEFINITIONS.OPENCTI_REGISTRATION.ID,
+        configuration: {
+          registerer_id:
+            TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.ID,
+          platform_id: openctiPlatformId,
+          platform_url: 'http://example.com',
+          platform_title: 'My OpenCTI platform',
+          platform_contract: PlatformContract.Ee,
+          platform_version: '7.260527.0',
+          token: uuidv4(),
+        },
+        platformIdentifier: PlatformIdentifier.Opencti,
+      });
+
+      // When
+      const platform = await RegistrationApp.loadRegisteredPlatformByPlatformId(
+        {
+          identifier: PlatformIdentifier.Opencti,
+          platformId: openctiPlatformId,
+          tenantId: null,
+        }
+      );
+
+      // Then
+      expect(platform).toMatchObject({
+        identifier: ServiceDefinitionIdentifier.OpenctiRegistration,
+        platform_id: openctiPlatformId,
+        tenant_id: null,
+      });
+    });
   });
 
   describe('unregisterPlatform', () => {
