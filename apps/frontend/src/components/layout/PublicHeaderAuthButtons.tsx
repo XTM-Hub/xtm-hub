@@ -1,8 +1,12 @@
 'use client';
 
 import { useTranslate } from '@/hooks/use-translate';
-import { PUBLIC_FEATURE_VOTING_PATH } from '@/utils/path/constant';
-import { buildOidcRedirect, buildSignupRedirect } from '@/utils/redirect';
+import { publicLocales } from '@/i18n/config';
+import {
+  buildOidcRedirect,
+  buildPrivateCounterpartTarget,
+  buildSignupRedirect,
+} from '@/utils/redirect';
 
 import { Button } from '@filigran/design-system';
 import Link from 'next/link';
@@ -11,9 +15,11 @@ import { usePathname } from 'next/navigation';
 export const PublicHeaderAuthButtons = () => {
   const t = useTranslate();
   const pathname = usePathname();
-  const redirectTarget = pathname?.endsWith(PUBLIC_FEATURE_VOTING_PATH)
-    ? pathname
-    : undefined;
+  const isHomepage = publicLocales.some((locale) => pathname === `/${locale}`);
+  const redirectTarget =
+    pathname && !isHomepage
+      ? buildPrivateCounterpartTarget(pathname)
+      : undefined;
 
   return (
     <>
