@@ -3,6 +3,17 @@ import promBundle from 'express-prom-bundle';
 import { register, Registry } from 'prom-client';
 
 export const UNMATCHED_PATH_LABEL = 'unmatched';
+export const OTHER_METHOD_LABEL = 'other';
+// Node accepts about 34 methods (PROPFIND, MKCOL, PURGE...): only these get their own label
+const LABELLED_METHODS = new Set([
+  'GET',
+  'POST',
+  'PUT',
+  'PATCH',
+  'DELETE',
+  'OPTIONS',
+  'HEAD',
+]);
 
 interface HttpMetricsMiddlewareOptions {
   // Paths mounted with app.use: their requests match no route, so they are labelled by mount path
@@ -40,6 +51,11 @@ export const createHttpMetricsMiddleware = ({
     includeMethod: true,
     includePath: true,
     normalizePath: createMetricsPathNormalizer(mountPaths),
+    transformLabels: (labels, req) => {
+      labels.method = LABELLED_METHODS.has(req.method)
+        ? req.method
+        : OTHER_METHOD_LABEL;
+    },
     customLabels: {
       app: 'xtm-hub-api',
     },

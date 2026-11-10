@@ -5,6 +5,7 @@ import { Registry } from 'prom-client';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   createHttpMetricsMiddleware,
+  OTHER_METHOD_LABEL,
   UNMATCHED_PATH_LABEL,
 } from './http-metrics.middleware';
 
@@ -12,6 +13,7 @@ const ROUTE_PATTERN = '/document/visualize/:serviceInstanceId/:filename';
 const MOUNT_PATH = '/graphql-api';
 const MADE_UP_ID = 'made-up-service-instance-id';
 const MADE_UP_FILENAME = 'made-up-file.pdf';
+const EXOTIC_METHOD = 'PROPFIND';
 
 const startServer = async () => {
   const app = express();
@@ -32,13 +34,16 @@ const startServer = async () => {
   return server;
 };
 
-const getPathLabels = async (baseUrl: string) => {
+const getLabels = async (baseUrl: string, labelName: 'path' | 'method') => {
   const metrics = await (await fetch(`${baseUrl}/metrics`)).text();
   const labels = [
     ...metrics.matchAll(
-      /^http_request_duration_seconds_count\{[^}]*path="([^"]*)"/gm
+      new RegExp(
+        `^http_request_duration_seconds_count\\{[^}]*${labelName}="([^"]*)"`,
+        'gm'
+      )
     ),
-  ].map(([, path]) => path);
+  ].map(([, value]) => value);
   return { metrics, labels };
 };
 
@@ -79,7 +84,7 @@ describe('createHttpMetricsMiddleware', () => {
       await fetch(`${baseUrl}${requestPath}`);
 
       // Then the only path label is the fixed one
-      const { labels } = await getPathLabels(baseUrl);
+      const { labels } = await getLabels(baseUrl, 'path');
       expect(labels).toEqual([expectedLabel]);
     }
   );
@@ -94,7 +99,17 @@ describe('createHttpMetricsMiddleware', () => {
     await fetch(`${baseUrl}/GRAPHQL-API/${MADE_UP_ID}`);
 
     // Then none of these values appears in the metrics
-    const { metrics } = await getPathLabels(baseUrl);
+    const { metrics } = await getLabels(baseUrl, 'path');
     expect(metrics).not.toMatch(/made-up|GRAPHQL-API/);
+  });
+
+  it('should label the request with other when the method is not a common one', async () => {
+    // Given a server measured by the HTTP metrics middleware
+    // When a client calls an unknown path with an exotic method
+    await fetch(`${baseUrl}/${MADE_UP_ID}`, { method: EXOTIC_METHOD });
+
+    // Then the only method label is the fixed one, never the method sent
+    const { labels } = await getLabels(baseUrl, 'method');
+    expect(labels).toEqual([OTHER_METHOD_LABEL]);
   });
 });
