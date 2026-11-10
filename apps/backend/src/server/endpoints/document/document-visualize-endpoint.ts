@@ -138,6 +138,10 @@ export const documentVisualizeEndpoint = (app: Application) => {
           return res.status(404).json({ message: 'Invalid document' });
         }
 
+        // Set before the freshness check: a 304 must carry it too, or a copy cached
+        // without it keeps being served unsandboxed
+        setStoredFileSecurityHeaders(res);
+
         // The URL of an image stays the same when its file is replaced (e.g. a
         // connector logo), so clients must revalidate instead of caching blindly.
         // The MinIO name changes with every upload, which makes it a reliable ETag.
@@ -162,7 +166,6 @@ export const documentVisualizeEndpoint = (app: Application) => {
           'Content-Disposition',
           `inline; filename="${document.file_name ?? 'document'}"`
         );
-        setStoredFileSecurityHeaders(res);
 
         stream.pipe(res);
       } catch (error) {

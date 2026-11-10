@@ -149,6 +149,10 @@ describe('documentVisualizeEndpoint images route', () => {
     expect(res.status).toHaveBeenCalledWith(304);
     expect(res.end).toHaveBeenCalled();
     expect(downloadFileMock).not.toHaveBeenCalled();
+    expect(res.setHeader).toHaveBeenCalledWith(
+      'Content-Security-Policy',
+      "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox"
+    );
   });
 });
 
