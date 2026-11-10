@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { PortalCapability } from '../../../__generated__/resolvers-types';
 import { requestContext } from '../../../context/request.context';
 import type { PortalContext } from '../../../model/portal-context';
@@ -78,6 +78,7 @@ describe('system Token Validation', () => {
       ${'production'}  | ${'the repository default'} | ${repositoryDefault} | ${false}
       ${'staging'}     | ${'the repository default'} | ${repositoryDefault} | ${false}
       ${'development'} | ${'the repository default'} | ${repositoryDefault} | ${true}
+      ${'development'} | ${'a configured hash'}      | ${configured}        | ${true}
       ${'production'}  | ${'a configured hash'}      | ${configured}        | ${true}
       ${'staging'}     | ${'a configured hash'}      | ${configured}        | ${true}
     `(
@@ -102,6 +103,55 @@ describe('system Token Validation', () => {
         expect(result).toBe(expected);
       }
     );
+  });
+
+  describe('outside development with the repository default hash', () => {
+    const REPOSITORY_DEFAULT_SYSTEM_TOKEN = 'changeMe';
+
+    // The usability of the hash is computed once, when the module loads:
+    // load a fresh copy of the validator with a production configuration.
+    const loadValidatorInProduction = async () => {
+      vi.resetModules();
+      vi.doMock('../../../config', async (importOriginal) => {
+        const actual = await importOriginal<typeof import('../../../config')>();
+        return {
+          default: { ...actual.default, environment: 'production' },
+        };
+      });
+      const { logApp } = await import('../../../utils/app-logger.util');
+      const logErrorSpy = vi
+        .spyOn(logApp, 'error')
+        .mockImplementation(() => undefined);
+      const validator = await import('./system-token.validator');
+      return { validator, logErrorSpy };
+    };
+
+    afterEach(() => {
+      vi.doUnmock('../../../config');
+      vi.resetModules();
+      vi.restoreAllMocks();
+    });
+
+    it('should refuse the repository default token', async () => {
+      // Given
+      const { validator } = await loadValidatorInProduction();
+
+      // When
+      const result = validator.isValidSystemToken(
+        REPOSITORY_DEFAULT_SYSTEM_TOKEN
+      );
+
+      // Then
+      expect(result).toBe(false);
+    });
+
+    it('should log an error at startup', async () => {
+      // When
+      const { logErrorSpy } = await loadValidatorInProduction();
+
+      // Then
+      expect(logErrorSpy).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('createSystemTokenResolver', () => {
