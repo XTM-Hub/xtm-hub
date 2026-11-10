@@ -17,6 +17,7 @@ import {
   CacheControl,
   respondNotModifiedIfFresh,
 } from '../shared/http-cache.util';
+import { setStoredFileSecurityHeaders } from '../shared/stored-file.util';
 
 export const documentVisualizeEndpoint = (app: Application) => {
   app.get(
@@ -65,6 +66,7 @@ export const documentVisualizeEndpoint = (app: Application) => {
           'Content-Disposition',
           `inline; filename="${document.file_name ?? 'document'}"`
         );
+        setStoredFileSecurityHeaders(res);
 
         stream.pipe(res);
       } catch (error) {
@@ -135,6 +137,10 @@ export const documentVisualizeEndpoint = (app: Application) => {
           logApp.error(`Invalid document - Missing name for ${documentId}`);
           return res.status(404).json({ message: 'Invalid document' });
         }
+
+        // Set before the freshness check: a 304 must carry it too, or a copy cached
+        // without it keeps being served unsandboxed
+        setStoredFileSecurityHeaders(res);
 
         // The URL of an image stays the same when its file is replaced (e.g. a
         // connector logo), so clients must revalidate instead of caching blindly.
