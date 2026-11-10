@@ -125,9 +125,11 @@ export function extractOperationType(query: string): string {
   );
 }
 
+/** The operation's name, or undefined for an anonymous operation or a document that starts otherwise. */
+export function findOperationName(query: string): string | undefined {
+  return query.trim().match(/^(?:query|mutation|subscription)\s+(\w+)/)?.[1];
+}
+
 export function extractOperationName(query: string): string {
-  return (
-    query.trim().match(/^(?:query|mutation|subscription)\s+(\w+)/)?.[1] ??
-    'Anonymous'
-  );
+  return findOperationName(query) ?? 'Anonymous';
 }

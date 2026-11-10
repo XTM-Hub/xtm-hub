@@ -1,0 +1,11 @@
+mutation FrontendErrorLog(
+  $message: String!
+  $codeStack: String
+  $componentStack: String
+) {
+  frontendErrorLog(
+    message: $message
+    codeStack: $codeStack
+    componentStack: $componentStack
+  )
+}

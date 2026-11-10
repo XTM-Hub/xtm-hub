@@ -3871,6 +3871,15 @@ export type CurrentVotingRoundCalloutQueryVariables = Exact<{
 
 export type CurrentVotingRoundCalloutQuery = { __typename?: 'Query', currentVotingRound: { __typename?: 'VotingRound', id: string, name: string, description: string | null, theme: VotingRoundTheme } | null };
 
+export type FrontendErrorLogMutationVariables = Exact<{
+  message: Scalars['String']['input'];
+  codeStack: InputMaybe<Scalars['String']['input']>;
+  componentStack: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type FrontendErrorLogMutation = { __typename?: 'Mutation', frontendErrorLog: boolean | null };
+
 export type IntegrationProductVersionFilterQueryVariables = Exact<{
   product: PlatformIdentifier;
   search: InputMaybe<Scalars['String']['input']>;
@@ -6352,6 +6361,37 @@ export const useInfiniteCurrentVotingRoundCalloutQuery = <
 useInfiniteCurrentVotingRoundCalloutQuery.getKey = (variables: CurrentVotingRoundCalloutQueryVariables) => ['CurrentVotingRoundCallout.infinite', variables];
 useInfiniteCurrentVotingRoundCalloutQuery.getRootKey = () => ['CurrentVotingRoundCallout.infinite'] as const;
 useCurrentVotingRoundCalloutQuery.fetcher = (client: GraphQLClient, variables: CurrentVotingRoundCalloutQueryVariables, headers?: RequestInit['headers']) => fetcher<CurrentVotingRoundCalloutQuery, CurrentVotingRoundCalloutQueryVariables>(client, CurrentVotingRoundCalloutDocument, variables, headers);
+
+export const FrontendErrorLogDocument = `
+    mutation FrontendErrorLog($message: String!, $codeStack: String, $componentStack: String) {
+  frontendErrorLog(
+    message: $message
+    codeStack: $codeStack
+    componentStack: $componentStack
+  )
+}
+    `;
+
+export const useFrontendErrorLogMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<FrontendErrorLogMutation, TError, FrontendErrorLogMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<FrontendErrorLogMutation, TError, FrontendErrorLogMutationVariables, TContext>(
+      {
+    mutationKey: ['FrontendErrorLog'],
+    mutationFn: (variables?: FrontendErrorLogMutationVariables) => fetcher<FrontendErrorLogMutation, FrontendErrorLogMutationVariables>(client, FrontendErrorLogDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useFrontendErrorLogMutation.getKey = () => ['FrontendErrorLog'];
+useFrontendErrorLogMutation.getRootKey = () => ['FrontendErrorLog'] as const;
+useFrontendErrorLogMutation.fetcher = (client: GraphQLClient, variables: FrontendErrorLogMutationVariables, headers?: RequestInit['headers']) => fetcher<FrontendErrorLogMutation, FrontendErrorLogMutationVariables>(client, FrontendErrorLogDocument, variables, headers);
 
 export const IntegrationProductVersionFilterDocument = `
     query IntegrationProductVersionFilter($product: PlatformIdentifier!, $search: String) {
