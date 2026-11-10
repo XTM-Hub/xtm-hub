@@ -74,6 +74,26 @@ describe('DocumentDetailLoader', () => {
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
+  it('should tell the document was not found when a background refetch finds it deleted', () => {
+    // Given
+    mocks.useDocumentDetailQuery.mockReturnValue({
+      data: {
+        document: { id: DOCUMENT_ID, name: 'My document' },
+      },
+      isError: true,
+      error: new Error('DOCUMENT_NOT_FOUND'),
+    });
+
+    // When
+    renderLoader();
+
+    // Then
+    expect(screen.getByRole('heading')).toHaveTextContent(
+      'Utils.DocumentNotFound'
+    );
+    expect(screen.queryByTestId('detail')).not.toBeInTheDocument();
+  });
+
   it.each`
     description                                | error                              | failureCount | expected
     ${'a missing document'}                    | ${new Error('DOCUMENT_NOT_FOUND')} | ${0}         | ${false}

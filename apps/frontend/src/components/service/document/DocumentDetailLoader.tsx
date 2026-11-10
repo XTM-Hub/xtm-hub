@@ -46,7 +46,9 @@ const DocumentDetailLoader = ({
     }
   );
 
-  if (isDocumentNotFound(error) && !data) {
+  // Even with a cached document: a failed background refetch keeps the previous
+  // `data`, and a document deleted elsewhere must not stay on screen with its actions.
+  if (isDocumentNotFound(error)) {
     return <h1>{t('Utils.DocumentNotFound')}</h1>;
   }
 

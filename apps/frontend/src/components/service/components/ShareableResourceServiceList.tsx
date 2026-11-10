@@ -96,7 +96,7 @@ const ShareableResourceServiceList = ({
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
   }
 
-  const { data, isLoading, isError, isPlaceholderData, refetch } =
+  const { data, isLoading, isError, isFetching, isPlaceholderData, refetch } =
     useDocumentsListQuery(
       portalGraphqlClient,
       {
@@ -114,11 +114,19 @@ const ShareableResourceServiceList = ({
 
   // Deleting the last document of the last page refetches that page empty. Step
   // back to the new last one, the same way as a filter change resets the page.
+  // Only once the page has settled: an invalidated page that was cached while
+  // inactive is served stale while it refetches, and its count is out of date.
   const lastPageIndex = Math.max(
     0,
     Math.ceil((data?.documents.totalCount ?? 0) / pagination.pageSize) - 1
   );
-  if (data && !isPlaceholderData && pagination.pageIndex > lastPageIndex) {
+  if (
+    data &&
+    !isPlaceholderData &&
+    !isFetching &&
+    !isError &&
+    pagination.pageIndex > lastPageIndex
+  ) {
     setPagination((prev) => ({ ...prev, pageIndex: lastPageIndex }));
   }
 

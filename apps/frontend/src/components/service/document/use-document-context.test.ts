@@ -407,4 +407,92 @@ describe('useDocumentContext', () => {
       expect(revalidateDocumentSlugsAction).not.toHaveBeenCalled();
     });
   });
+
+  describe('when the page is left before the request settles', () => {
+    const renderUnmountableContext = () =>
+      testRenderHook(() =>
+        useDocumentContext({
+          serviceInstance,
+          type: ShareableResourceType.OPENCTI_CUSTOM_DASHBOARD,
+        })
+      );
+
+    // Resolves the pending request once the page is gone.
+    const leaveThenSettle = async (
+      start: (
+        context: ReturnType<typeof renderUnmountableContext>['result']
+      ) => void,
+      response: unknown
+    ) => {
+      let settle: (value: unknown) => void = () => {};
+      mocks.request.mockReturnValue(
+        new Promise((resolve) => {
+          settle = resolve;
+        })
+      );
+      const { result, unmount } = renderUnmountableContext();
+      start(result);
+      await waitFor(() => expect(mocks.request).toHaveBeenCalled());
+
+      unmount();
+      settle(response);
+    };
+
+    it('should still revalidate the public slugs of a creation', async () => {
+      // When
+      await leaveThenSettle(
+        (context) =>
+          void context.current.handleAddSheet(buildValues(), vi.fn(), vi.fn()),
+        { createDocument: { id: DOCUMENT_ID } }
+      );
+
+      // Then
+      await waitFor(() =>
+        expect(revalidateDocumentSlugsAction).toHaveBeenCalledWith(
+          SERVICE_INSTANCE_SLUG
+        )
+      );
+    });
+
+    it('should still revalidate the public slugs of an update', async () => {
+      // When
+      await leaveThenSettle(
+        (context) =>
+          void context.current.handleUpdateSheet(
+            buildValues(),
+            existingDocument,
+            vi.fn(),
+            vi.fn()
+          ),
+        { updateDocument: { id: DOCUMENT_ID } }
+      );
+
+      // Then
+      await waitFor(() =>
+        expect(revalidateDocumentSlugsAction).toHaveBeenCalledWith(
+          SERVICE_INSTANCE_SLUG,
+          DOCUMENT_SLUG
+        )
+      );
+      expect(invalidateDocumentQueries).toHaveBeenCalledOnce();
+    });
+
+    it('should still revalidate the public slugs of a deletion', async () => {
+      // When
+      await leaveThenSettle(
+        (context) =>
+          void context.current.handleDeleteSheet(existingDocument, vi.fn()),
+        { deleteDocument: { id: DOCUMENT_ID } }
+      );
+
+      // Then
+      await waitFor(() =>
+        expect(revalidateDocumentSlugsAction).toHaveBeenCalledWith(
+          SERVICE_INSTANCE_SLUG,
+          DOCUMENT_SLUG
+        )
+      );
+      expect(invalidateDocumentQueriesAfterDelete).toHaveBeenCalledOnce();
+    });
+  });
 });

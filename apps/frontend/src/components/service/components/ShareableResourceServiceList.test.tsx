@@ -256,6 +256,32 @@ describe('ShareableResourceServiceList', () => {
     expect(lastQueryVariables().cursor).toBe(toCursor(PAGE_SIZE, 1));
   });
 
+  it('should not step back while the cached page shown is still refetching', async () => {
+    // Given
+    const { user, rerender } = renderList('');
+    await goToSecondPage(user);
+
+    // When the page was cached while inactive, with a count that is now out of date
+    testState.useDocumentsListQuery.mockReturnValue({
+      ...withDocuments(PAGE_SIZE),
+      isFetching: true,
+    });
+    rerender(buildElement(''));
+
+    // Then
+    expect(lastQueryVariables().cursor).toBe(toCursor(PAGE_SIZE, 1));
+
+    // When the refetch settles with the real count
+    testState.useDocumentsListQuery.mockReturnValue({
+      ...withDocuments(LARGE_TOTAL_COUNT),
+      isFetching: false,
+    });
+    rerender(buildElement(''));
+
+    // Then
+    expect(lastQueryVariables().cursor).toBe(toCursor(PAGE_SIZE, 1));
+  });
+
   it('should query the first page of the service instance with the search, the sort and the filters', () => {
     // When
     renderList('my-search');

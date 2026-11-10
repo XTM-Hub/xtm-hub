@@ -40,6 +40,7 @@ import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragme
 import {
   DocumentCreateDocument,
   DocumentCreateMutationVariables,
+  DocumentDeleteMutationVariables,
   DocumentItemFragment,
   DocumentUpdateDocument,
   DocumentUpdateMutationVariables,
@@ -78,7 +79,14 @@ export function useDocumentContext({
           payload.variables
         )
       ),
-    onSuccess: () => invalidateDocumentQueries(queryClient),
+    // Runs even when the page that started the creation is already left: the
+    // `mutate` callbacks below do not, and the public cache would stay stale.
+    onSuccess: (response) => {
+      invalidateDocumentQueries(queryClient);
+      if (response.createDocument && serviceInstance.slug) {
+        revalidateDocumentSlugsAction(serviceInstance.slug);
+      }
+    },
   });
 
   const handleAddSheet = async (
@@ -115,9 +123,6 @@ export function useDocumentContext({
             return;
           }
 
-          if (serviceInstance.slug) {
-            revalidateDocumentSlugsAction(serviceInstance.slug);
-          }
           onSuccess(input.name);
         },
         onError: (error) => {
@@ -127,22 +132,34 @@ export function useDocumentContext({
     );
   };
 
-  const { mutate: deleteMutation } = useDocumentDeleteMutation(
-    portalGraphqlClient,
-    {
-      onSuccess: (_, { documentId, serviceInstanceId }) =>
-        invalidateDocumentQueriesAfterDelete(queryClient, {
-          documentId,
-          serviceInstanceId,
-        }),
-      onError: () =>
-        showSnackbar({
-          severity: 'error',
-          title: t('Utils.Error'),
-          description: t('Error.AnErrorOccured'),
-        }),
-    }
-  );
+  const { mutate: deleteMutation } = useMutation({
+    mutationFn: ({
+      documentId,
+      serviceInstanceId,
+    }: DocumentDeleteMutationVariables & {
+      documentSlug: DocumentItemFragment['slug'];
+    }) =>
+      useDocumentDeleteMutation.fetcher(portalGraphqlClient, {
+        documentId,
+        serviceInstanceId,
+      })(),
+    // Runs even when the page that started the deletion is already left.
+    onSuccess: (_, { documentId, serviceInstanceId, documentSlug }) => {
+      invalidateDocumentQueriesAfterDelete(queryClient, {
+        documentId,
+        serviceInstanceId,
+      });
+      if (serviceInstance.slug) {
+        revalidateDocumentSlugsAction(serviceInstance.slug, documentSlug);
+      }
+    },
+    onError: () =>
+      showSnackbar({
+        severity: 'error',
+        title: t('Utils.Error'),
+        description: t('Error.AnErrorOccured'),
+      }),
+  });
 
   const handleDeleteSheet = async (
     document: DocumentItemFragment,
@@ -152,21 +169,17 @@ export function useDocumentContext({
       {
         documentId: document.id,
         serviceInstanceId: serviceInstance.id,
+        documentSlug: document.slug,
       },
-      {
-        onSuccess: () => {
-          if (serviceInstance.slug) {
-            revalidateDocumentSlugsAction(serviceInstance.slug, document.slug);
-          }
-          onCompleted();
-        },
-      }
+      { onSuccess: onCompleted }
     );
   };
 
   const { mutate: updateMutation, isPending: isUpdateInFlight } = useMutation({
     mutationFn: (
-      payload: DocumentMutationPayload<DocumentUpdateMutationVariables>
+      payload: DocumentMutationPayload<DocumentUpdateMutationVariables> & {
+        documentSlug: DocumentItemFragment['slug'];
+      }
     ) =>
       sendDocumentMutation(
         DocumentUpdateDocument,
@@ -176,7 +189,13 @@ export function useDocumentContext({
           payload.variables
         )
       ),
-    onSuccess: () => invalidateDocumentQueries(queryClient),
+    // Runs even when the page that started the update is already left.
+    onSuccess: (_, { documentSlug }) => {
+      invalidateDocumentQueries(queryClient);
+      if (serviceInstance.slug) {
+        revalidateDocumentSlugsAction(serviceInstance.slug, documentSlug);
+      }
+    },
   });
 
   const handleUpdateSheet = async (
@@ -211,14 +230,10 @@ export function useDocumentContext({
           logo: isFile(logo) ? logo : undefined,
           images: newImages,
         }),
+        documentSlug: resource.slug,
       },
       {
-        onSuccess: () => {
-          if (serviceInstance.slug) {
-            revalidateDocumentSlugsAction(serviceInstance.slug, resource.slug);
-          }
-          onSuccess(values.name);
-        },
+        onSuccess: () => onSuccess(values.name),
         onError: (error) => {
           onError(error);
         },
