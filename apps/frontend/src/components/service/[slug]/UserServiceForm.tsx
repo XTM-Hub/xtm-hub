@@ -1,7 +1,7 @@
 import { UserFragment } from '@/components/admin/user/UserList';
 import { AppCombobox } from '@/components/ui/AppCombobox';
 import { DEBOUNCE_TIME } from '@/utils/constant';
-import { ServiceRestriction } from '@graphql/generated';
+import { ServiceRestriction, SubscriptionByIdQuery } from '@graphql/generated';
 import { useContext, useEffect, useMemo } from 'react';
 
 import { useUserListLocalstorage } from '@/components/admin/user/user-list-localstorage';
@@ -27,7 +27,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@filigran/design-system';
-import { subscriptionByIdQuery$data } from '@generated/subscriptionByIdQuery.graphql';
 import { UserList_fragment$key } from '@generated/UserList_fragment.graphql';
 import { userServiceCreateMutation } from '@generated/userServiceCreateMutation.graphql';
 import { userServiceEditMutation } from '@generated/userServiceEditMutation.graphql';
@@ -41,7 +40,7 @@ import { z } from 'zod';
 interface UserServiceFormProps {
   connectionId: string;
   userService?: userServices_fragment$data;
-  subscription: subscriptionByIdQuery$data;
+  subscription: SubscriptionByIdQuery;
 }
 
 const getUserOptionValue = ({ value }: { value: string }) => value;
