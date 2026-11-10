@@ -18,7 +18,7 @@
     "Capabilities": {
       "ADMINISTRATE_ORGANIZATION": "組織内のすべての権限を付与する",
       "MANAGE_ACCESS": "この組織に他のユーザーを招待できる",
-      "MANAGE_PLATFORM_REGISTRATION": "製品の接続と切断、およびトライアルの開始・キャンセル・管理を行う機能",
+      "MANAGE_PLATFORM_REGISTRATION": "製品の接続・切断、およびトライアルの開始、キャンセル、管理を行う機能。SaaS顧客の場合は、製品の指標を確認できる機能。",
       "MANAGE_SUBSCRIPTION": "組織を管理し、サービスに登録する機能"
     },
     "Description": "Filigran のユーザーに特定の機能を追加できる",
@@ -1028,6 +1028,14 @@
       "PlatformVersion": "プラットフォームのバージョン"
     },
     "Metrics": {
+      "AccessRequest": {
+        "Title": "SaaSメトリクスへのアクセスをリクエスト",
+        "Description": "SaaSメトリクスには、このプラットフォームのストレージ、可用性、サブスクリプションが表示されます。表示するには「Manage platform registration」権限が必要です。",
+        "AdministratorList": "組織の管理者がこの権限を付与できます：",
+        "SeeDocumentation": "ドキュメントを見る",
+        "EmailSubject": "{platform}のSaaSメトリクスへのアクセス",
+        "EmailBody": "こんにちは。\n\n{platform}のSaaSメトリクスを確認できるよう、「Manage platform registration」権限を付与していただけますか？\n\nよろしくお願いいたします。"
+      },
       "Title": "使用状況と健全性",
       "StorageTitle": "ストレージ使用量",
       "Unavailable": "現在、このメトリクスは利用できません",

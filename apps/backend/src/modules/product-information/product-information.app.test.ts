@@ -348,6 +348,31 @@ describe('product information app', () => {
       expect(callSpy).not.toHaveBeenCalled();
     });
 
+    it.each([['ADMINISTRATE_ORGANIZATION'], ['MANAGE_PLATFORM_REGISTRATION']])(
+      'should return null without asking the SaaS Manager when the user has %s only in another organization',
+      async (organizationCapability) => {
+        // Given
+        const callSpy = mockSaasManagerFullMetadata();
+        requestContext.set({
+          ...requestContextSimpleUserFiligran2,
+          user: {
+            ...requestContextSimpleUserFiligran2.user,
+            selected_org_capabilities: [organizationCapability],
+          },
+        });
+
+        // When
+        const data = await ProductInformationApp.loadRegisteredSaasPlatformData(
+          serviceInstanceId,
+          metricsPeriod
+        );
+
+        // Then
+        expect(data).toBeNull();
+        expect(callSpy).not.toHaveBeenCalled();
+      }
+    );
+
     it.each([
       ['READ_SAAS_METRICS', CAPABILITY_READ_SAAS_METRICS],
       ['BYPASS', CAPABILITY_BYPASS],
