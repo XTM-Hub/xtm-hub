@@ -9,6 +9,7 @@ import {
   SelectionSetNode,
 } from 'graphql';
 import client, { Counter, Gauge, Histogram } from 'prom-client';
+import { AppLogsCategory, logApp } from '../../utils/app-logger.util';
 
 export const registry = client.register;
 
@@ -50,6 +51,14 @@ export const sseActiveConnectionsGauge = new Gauge({
 });
 
 const MULTIPLE_ROOT_FIELDS_LABEL = 'multiple';
+const ROOT_FIELD_COMBINATION_SEPARATOR = '+';
+
+// Root fields the frontend groups in one request, sorted, so each call keeps its own series. Joining any combination
+// would let a client create series without limit; a combination missing here is counted as multiple.
+const KNOWN_ROOT_FIELD_COMBINATIONS = new Set([
+  'contentTranslationDrafts+contentTranslations',
+  'currentVotingRound+me',
+]);
 
 const collectFieldNames = (
   selectionSet: SelectionSetNode,
@@ -99,10 +108,21 @@ export const getRootFieldLabel = (
   const fieldNames = new Set<string>();
   collectFieldNames(operation.selectionSet, fragments, new Set(), fieldNames);
   const [fieldName, ...otherFieldNames] = fieldNames;
-  if (!fieldName || otherFieldNames.length > 0) {
-    return MULTIPLE_ROOT_FIELDS_LABEL;
+  if (fieldName && otherFieldNames.length === 0) {
+    return fieldName;
   }
-  return fieldName;
+  const sortedFieldNames = [...fieldNames].sort();
+  const combination = sortedFieldNames.join(ROOT_FIELD_COMBINATION_SEPARATOR);
+  if (KNOWN_ROOT_FIELD_COMBINATIONS.has(combination)) {
+    return combination;
+  }
+  // The metric cannot hold the combination, the log tells which one to add to the list
+  logApp.warn(
+    'GraphQL operation counted as multiple',
+    { rootFields: sortedFieldNames },
+    AppLogsCategory.GRAPHQL
+  );
+  return MULTIPLE_ROOT_FIELDS_LABEL;
 };
 
 // Keyed on the per-request context, so the gauge goes down under the label it went up with

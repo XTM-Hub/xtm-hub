@@ -1,7 +1,17 @@
 import { ApolloServer } from '@apollo/server';
 import { makeExecutableSchema } from '@graphql-tools/schema';
 import { createHandler } from 'graphql-sse';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
+import { AppLogsCategory, logApp } from '../../utils/app-logger.util';
 import {
   graphqlMutationCounter,
   graphqlOperationDuration,
@@ -19,6 +29,9 @@ const TEST_SCHEMA = makeExecutableSchema({
     type Query {
       currentVotingRound(id: ID): String
       otherField: String
+      me: String
+      contentTranslations: String
+      contentTranslationDrafts: String
     }
     type Mutation {
       vote(id: ID): Boolean
@@ -153,6 +166,21 @@ describe('operationMetricsPlugin', () => {
         'query AnyName { ...AnyNameFields } fragment AnyNameFields on Query { currentVotingRound(id: "1") otherField }',
       expectedLabel: 'multiple',
     },
+    {
+      description: 'a known combination of root fields',
+      query: 'query AnyName { me currentVotingRound(id: "1") }',
+      expectedLabel: 'currentVotingRound+me',
+    },
+    {
+      description: 'a known combination of root fields in another order',
+      query: 'query AnyName { contentTranslations contentTranslationDrafts }',
+      expectedLabel: 'contentTranslationDrafts+contentTranslations',
+    },
+    {
+      description: 'a known combination of root fields with one more field',
+      query: 'query AnyName { me currentVotingRound(id: "1") otherField }',
+      expectedLabel: 'multiple',
+    },
   ])(
     'should count a query with $description under $expectedLabel',
     async ({ query, expectedLabel }) => {
@@ -167,6 +195,53 @@ describe('operationMetricsPlugin', () => {
       expect(metrics).not.toContain('AnyName');
     }
   );
+
+  describe('when an operation is counted as multiple', () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('should log its root fields', async () => {
+      // Given
+      const warnSpy = vi.spyOn(logApp, 'warn').mockImplementation(() => {});
+
+      // When
+      await server.executeOperation({
+        query: 'query AnyName { otherField me }',
+      });
+
+      // Then
+      expect(warnSpy).toHaveBeenCalledWith(
+        'GraphQL operation counted as multiple',
+        { rootFields: ['me', 'otherField'] },
+        AppLogsCategory.GRAPHQL
+      );
+    });
+
+    it.each([
+      {
+        description: 'a single root field',
+        query: 'query AnyName { currentVotingRound(id: "1") }',
+      },
+      {
+        description: 'a known combination of root fields',
+        query: 'query AnyName { me currentVotingRound(id: "1") }',
+      },
+    ])('should not log a query with $description', async ({ query }) => {
+      // Given
+      const warnSpy = vi.spyOn(logApp, 'warn').mockImplementation(() => {});
+
+      // When
+      await server.executeOperation({ query });
+
+      // Then
+      expect(warnSpy).not.toHaveBeenCalledWith(
+        'GraphQL operation counted as multiple',
+        expect.anything(),
+        expect.anything()
+      );
+    });
+  });
 
   it('should count a query sent without an operation name', async () => {
     // When
