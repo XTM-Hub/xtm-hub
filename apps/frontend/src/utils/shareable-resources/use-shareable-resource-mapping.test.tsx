@@ -71,8 +71,8 @@ describe('useShareableResourceMapping', () => {
     const { filters } = renderMapping(ServiceSlug.OPEN_CTI_INTEGRATIONS);
 
     // Then
-    expect(filters[ServiceListFilterKey.Verified]?.tooltip).toBe(
-      'Service.OpenctiIntegrations.Filter.Verified.Tooltip'
+    expect(filters[ServiceListFilterKey.Verified]?.description).toBe(
+      'Service.OpenctiIntegrations.Filter.Verified.Description'
     );
   });
 

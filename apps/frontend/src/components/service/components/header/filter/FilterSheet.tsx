@@ -38,7 +38,10 @@ export const FilterSheet = ({ filters }: FilterSheetProps) => {
         <SheetHeader className="bg-gradient-default">
           <SheetTitle>{t('Service.List.Filters')}</SheetTitle>
         </SheetHeader>
-        <ServiceListFilterSection filters={filters} />
+        <ServiceListFilterSection
+          filters={filters}
+          descriptionDisplay="text"
+        />
       </SheetContent>
     </Sheet>
   );

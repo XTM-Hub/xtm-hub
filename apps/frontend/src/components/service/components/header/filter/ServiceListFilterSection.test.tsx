@@ -21,11 +21,11 @@ describe('ServiceListFilterSection', () => {
     },
   };
 
-  const tooltip = 'filter-tooltip';
-  const filtersWithTooltip = {
+  const description = 'filter-description';
+  const filtersWithDescription = {
     [ServiceListFilterKey.Verified]: {
       title: firstTitle,
-      tooltip,
+      description,
       node: <div>{firstContent}</div>,
     },
   };
@@ -37,6 +37,15 @@ describe('ServiceListFilterSection', () => {
       noAccordion: true,
     },
   };
+
+  const inlineFilterWithDescription = {
+    [ServiceListFilterKey.ProductVersion]: {
+      ...inlineFilter[ServiceListFilterKey.ProductVersion],
+      description,
+    },
+  };
+
+  const infoButtonName = 'Service.List.FilterInformation';
 
   it('should expand the first filter section by default', () => {
     // Given
@@ -134,60 +143,73 @@ describe('ServiceListFilterSection', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('should explain a filter with its tooltip when the user hovers its section', async () => {
+  it('should put the info button beside the section header, outside its button and heading', () => {
     // Given
-    const { user } = testRender(
-      <ServiceListFilterSection filters={filtersWithTooltip} />
-    );
-
     // When
-    await user.hover(
-      screen.getByRole('button', { name: /first-filter-title/ })
-    );
+    testRender(<ServiceListFilterSection filters={filtersWithDescription} />);
 
     // Then
-    expect(await screen.findByRole('tooltip')).toHaveTextContent(tooltip);
+    const infoButton = screen.getByRole('button', { name: infoButtonName });
+    expect(
+      screen.getByRole('button', { name: firstTitle })
+    ).not.toContainElement(infoButton);
+    expect(screen.getByRole('heading', { level: 3 })).not.toContainElement(
+      infoButton
+    );
   });
 
-  it('should explain a filter with its tooltip when the user reaches its section with the keyboard', async () => {
+  it('should show the description when the user hovers the info button', async () => {
     // Given
     const { user } = testRender(
-      <ServiceListFilterSection filters={filtersWithTooltip} />
+      <ServiceListFilterSection filters={filtersWithDescription} />
+    );
+    const infoButton = screen.getByRole('button', { name: infoButtonName });
+
+    // When
+    await user.hover(infoButton);
+
+    // Then
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(description);
+    expect(infoButton).toHaveAccessibleDescription(description);
+  });
+
+  it('should show the description when the user reaches the info button with the keyboard', async () => {
+    // Given
+    const { user } = testRender(
+      <ServiceListFilterSection filters={filtersWithDescription} />
     );
 
     // When
     await user.tab();
+    await user.tab();
 
     // Then
-    expect(await screen.findByRole('tooltip')).toHaveTextContent(tooltip);
+    expect(screen.getByRole('button', { name: infoButtonName })).toHaveFocus();
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(description);
   });
 
-  it('should keep the section open while its tooltip is shown', async () => {
+  it('should keep the section open when the user clicks the info button', async () => {
     // Given
     const { user } = testRender(
-      <ServiceListFilterSection filters={filtersWithTooltip} />
+      <ServiceListFilterSection filters={filtersWithDescription} />
     );
-    const sectionButton = screen.getByRole('button', {
-      name: /first-filter-title/,
-    });
 
     // When
-    await user.hover(sectionButton);
-    await screen.findByRole('tooltip');
+    await user.click(screen.getByRole('button', { name: infoButtonName }));
 
     // Then
-    expect(sectionButton).toHaveAttribute('aria-expanded', 'true');
-    expect(sectionButton).toHaveAttribute('data-state', 'open');
+    expect(screen.getByRole('button', { name: firstTitle })).toHaveAttribute(
+      'aria-expanded',
+      'true'
+    );
   });
 
-  it('should still collapse a section that has a tooltip', async () => {
+  it('should still collapse a section that has a description', async () => {
     // Given
     const { user } = testRender(
-      <ServiceListFilterSection filters={filtersWithTooltip} />
+      <ServiceListFilterSection filters={filtersWithDescription} />
     );
-    const sectionButton = screen.getByRole('button', {
-      name: /first-filter-title/,
-    });
+    const sectionButton = screen.getByRole('button', { name: firstTitle });
 
     // When
     await user.click(sectionButton);
@@ -195,5 +217,49 @@ describe('ServiceListFilterSection', () => {
     // Then
     expect(sectionButton).toHaveAttribute('aria-expanded', 'false');
     expect(screen.queryByText(firstContent)).not.toBeInTheDocument();
+  });
+
+  it('should show the info button of an inline filter', () => {
+    // Given
+    // When
+    testRender(
+      <ServiceListFilterSection filters={inlineFilterWithDescription} />
+    );
+
+    // Then
+    expect(
+      screen.getByRole('button', { name: infoButtonName })
+    ).toBeInTheDocument();
+  });
+
+  it('should show the description as text instead of an info button when asked to', () => {
+    // Given
+    // When
+    testRender(
+      <ServiceListFilterSection
+        filters={filtersWithDescription}
+        descriptionDisplay="text"
+      />
+    );
+
+    // Then
+    expect(screen.getByText(description)).toBeVisible();
+    expect(
+      screen.queryByRole('button', { name: infoButtonName })
+    ).not.toBeInTheDocument();
+  });
+
+  it('should show the description of an inline filter as text when asked to', () => {
+    // Given
+    // When
+    testRender(
+      <ServiceListFilterSection
+        filters={inlineFilterWithDescription}
+        descriptionDisplay="text"
+      />
+    );
+
+    // Then
+    expect(screen.getByText(description)).toBeVisible();
   });
 });
