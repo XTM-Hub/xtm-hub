@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   buildLoginRedirect,
   buildOidcRedirect,
-  buildPublicCounterpartTarget,
+  buildPrivateCounterpartTarget,
   decodeSafeRedirect,
   encodeRedirectValue,
   isSafeRedirect,
@@ -52,17 +52,17 @@ describe('encodeRedirectValue', () => {
   });
 });
 
-describe('buildPublicCounterpartTarget', () => {
-  it('should point to /redirect/public with the public path percent-encoded', () => {
+describe('buildPrivateCounterpartTarget', () => {
+  it('should point to /redirect/private-counterpart with the public path percent-encoded', () => {
     // Given
     const pathname = '/en/cybersecurity-solutions/lib/c++ &co';
 
     // When
-    const result = buildPublicCounterpartTarget(pathname);
+    const result = buildPrivateCounterpartTarget(pathname);
 
     // Then
     expect(result).toBe(
-      '/redirect/public?path=%2Fen%2Fcybersecurity-solutions%2Flib%2Fc%2B%2B%20%26co'
+      '/redirect/private-counterpart?path=%2Fen%2Fcybersecurity-solutions%2Flib%2Fc%2B%2B%20%26co'
     );
     expect(new URLSearchParams(result.split('?')[1]).get('path')).toBe(
       pathname

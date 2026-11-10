@@ -4,7 +4,7 @@ import { useTranslate } from '@/hooks/use-translate';
 import { publicLocales } from '@/i18n/config';
 import {
   buildOidcRedirect,
-  buildPublicCounterpartTarget,
+  buildPrivateCounterpartTarget,
   buildSignupRedirect,
 } from '@/utils/redirect';
 
@@ -18,7 +18,7 @@ export const PublicHeaderAuthButtons = () => {
   const isHomepage = publicLocales.some((locale) => pathname === `/${locale}`);
   const redirectTarget =
     pathname && !isHomepage
-      ? buildPublicCounterpartTarget(pathname)
+      ? buildPrivateCounterpartTarget(pathname)
       : undefined;
 
   return (

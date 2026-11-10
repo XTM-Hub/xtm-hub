@@ -1,14 +1,14 @@
 import { PlatformIdentifier } from '@graphql/generated';
 import { NextRequest, NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { redirectFromPublic } from './public';
+import { redirectToPrivateCounterpart } from './private-counterpart';
 import { redirectToRegisteredPlatform } from './registered-platform';
 import { redirectToResource } from './resource';
 import { GET } from './route';
 
 vi.mock('./free-trial');
 vi.mock('./handle-pending-user');
-vi.mock('./public');
+vi.mock('./private-counterpart');
 vi.mock('./registered-platform');
 vi.mock('./registration');
 vi.mock('./resource');
@@ -30,7 +30,9 @@ const callRoute = (identifier: string, search = '') => {
 describe('GET /redirect/[identifier]', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(redirectFromPublic).mockResolvedValue(REDIRECT_RESPONSE);
+    vi.mocked(redirectToPrivateCounterpart).mockResolvedValue(
+      REDIRECT_RESPONSE
+    );
     vi.mocked(redirectToResource).mockResolvedValue(REDIRECT_RESPONSE);
   });
 
@@ -65,16 +67,16 @@ describe('GET /redirect/[identifier]', () => {
     }
   );
 
-  it('should hand /redirect/public to the public page redirection', async () => {
+  it('should hand /redirect/private-counterpart to the private counterpart redirection', async () => {
     // When
     const { request, response } = callRoute(
-      'public',
+      'private-counterpart',
       '?path=%2Fen%2Fcybersecurity-solutions'
     );
 
     // Then
     await expect(response).resolves.toBe(REDIRECT_RESPONSE);
-    expect(redirectFromPublic).toHaveBeenCalledWith(request);
+    expect(redirectToPrivateCounterpart).toHaveBeenCalledWith(request);
     expect(redirectToResource).not.toHaveBeenCalled();
   });
 
@@ -91,6 +93,6 @@ describe('GET /redirect/[identifier]', () => {
       { identifier: 'opencti_integrations' },
       request
     );
-    expect(redirectFromPublic).not.toHaveBeenCalled();
+    expect(redirectToPrivateCounterpart).not.toHaveBeenCalled();
   });
 });

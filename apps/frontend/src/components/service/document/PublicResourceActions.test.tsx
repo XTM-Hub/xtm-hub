@@ -50,7 +50,7 @@ const SIGNED_IN_VISITOR = {
 
 const signupHrefFor = (pathname: string) =>
   `/sign-up?redirect=${encodeURIComponent(
-    btoa(`/redirect/public?path=${encodeURIComponent(pathname)}`)
+    btoa(`/redirect/private-counterpart?path=${encodeURIComponent(pathname)}`)
   )}`;
 
 const buildDocumentData = (
