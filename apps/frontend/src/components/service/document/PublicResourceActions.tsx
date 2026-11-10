@@ -10,7 +10,7 @@ import { type AnalyticsDeployEligibility } from '@/lib/analytics/analytics.types
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { getPlatformIdentifier } from '@/utils/platform';
 import {
-  buildPublicCounterpartTarget,
+  buildPrivateCounterpartTarget,
   buildSignupRedirect,
 } from '@/utils/redirect';
 import {
@@ -68,7 +68,7 @@ export const PublicResourceActions = ({
 
   const pathname = usePathname();
   const signupHref = buildSignupRedirect(
-    pathname ? buildPublicCounterpartTarget(pathname) : undefined
+    pathname ? buildPrivateCounterpartTarget(pathname) : undefined
   );
 
   const isConnector = isConnectorResource(documentData);

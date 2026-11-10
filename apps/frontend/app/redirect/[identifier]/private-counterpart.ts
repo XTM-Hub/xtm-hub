@@ -8,7 +8,7 @@ import { loadBaseUrlFront } from './utils/load';
  * After sign-in, sends the user from a public page to its private counterpart,
  * or to the app home when it has none or cannot be resolved.
  */
-export const redirectFromPublic = async (request: NextRequest) => {
+export const redirectToPrivateCounterpart = async (request: NextRequest) => {
   const baseUrlFront = await loadBaseUrlFront();
   const appHome = `/${APP_PATH}`;
   const path = request.nextUrl.searchParams.get('path');

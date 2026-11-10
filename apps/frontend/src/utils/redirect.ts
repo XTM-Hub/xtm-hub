@@ -42,11 +42,11 @@ export const buildSignupRedirect = (
 ): string => buildAuthRedirect('/sign-up', pathname);
 
 /**
- * Post-sign-in target for a public page: `/redirect/public` resolves it to the
+ * Post-sign-in target for a public page: `/redirect/private-counterpart` resolves it to the
  * page's private counterpart (see `resolvePrivatePath`).
  */
-export const buildPublicCounterpartTarget = (pathname: string): string =>
-  `/redirect/public?path=${encodeURIComponent(pathname)}`;
+export const buildPrivateCounterpartTarget = (pathname: string): string =>
+  `/redirect/private-counterpart?path=${encodeURIComponent(pathname)}`;
 
 export const buildOidcRedirect = (
   pathname: string | null | undefined

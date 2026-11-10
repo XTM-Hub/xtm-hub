@@ -2,9 +2,11 @@ import { getFeatureVotingPrivatePath } from '@/components/feature-voting/feature
 import { publicLocales } from '@/i18n/config';
 import {
   APP_PATH,
+  FEATURE_VOTING_SEGMENT,
   PUBLIC_CYBERSECURITY_SOLUTIONS_PATH,
   XTM_PLATFORM_ROADMAP_SLUG,
   XTM_PLATFORM_TRIAL_PATH,
+  XTM_PLATFORM_TRIAL_SLUG,
 } from '@/utils/path/constant';
 import { encodeRedirectValue } from '@/utils/redirect';
 import { fetchSeoServiceInstances } from '@/utils/seo-service-instance/utils/seo-service-instance.server.utils';
@@ -13,9 +15,6 @@ import {
   fetchSingleDocument,
   isPublicDocumentSlug,
 } from '@/utils/shareable-resources/utils/shareable-resources.server.utils';
-
-const XTM_PLATFORM_TRIAL_SLUG = 'xtm-platform-trial';
-const FEATURE_VOTING_SEGMENT = 'feature-voting';
 
 const isPublicLocale = (value: string | undefined): boolean =>
   publicLocales.some((locale) => locale === value);

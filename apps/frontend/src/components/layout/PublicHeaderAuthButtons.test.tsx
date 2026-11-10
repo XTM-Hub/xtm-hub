@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const encodedCounterpartTarget = (pathname: string) =>
   encodeURIComponent(
-    btoa(`/redirect/public?path=${encodeURIComponent(pathname)}`)
+    btoa(`/redirect/private-counterpart?path=${encodeURIComponent(pathname)}`)
   );
 
 describe('PublicHeaderAuthButtons', () => {

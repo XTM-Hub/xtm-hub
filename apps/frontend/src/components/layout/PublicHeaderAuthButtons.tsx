@@ -5,7 +5,7 @@ import { publicLocales } from '@/i18n/config';
 import { analyticsId } from '@/lib/analytics/analytics.ids';
 import {
   buildOidcRedirect,
-  buildPublicCounterpartTarget,
+  buildPrivateCounterpartTarget,
   buildSignupRedirect,
 } from '@/utils/redirect';
 
@@ -19,7 +19,7 @@ export const PublicHeaderAuthButtons = () => {
   const isHomepage = publicLocales.some((locale) => pathname === `/${locale}`);
   const redirectTarget =
     pathname && !isHomepage
-      ? buildPublicCounterpartTarget(pathname)
+      ? buildPrivateCounterpartTarget(pathname)
       : undefined;
 
   return (

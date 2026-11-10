@@ -1,7 +1,7 @@
 import { resolvePrivatePath } from '@/utils/path/public-to-private';
 import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { redirectFromPublic } from './public';
+import { redirectToPrivateCounterpart } from './private-counterpart';
 import { loadBaseUrlFront } from './utils/load';
 
 vi.mock('./utils/load');
@@ -17,11 +17,11 @@ const PRIVATE_PATH = '/app/service/opencti_integrations/integrations-id';
 const makeRequest = (path?: string) =>
   new NextRequest(
     path === undefined
-      ? `${BASE_URL}/redirect/public`
-      : `${BASE_URL}/redirect/public?path=${encodeURIComponent(path)}`
+      ? `${BASE_URL}/redirect/private-counterpart`
+      : `${BASE_URL}/redirect/private-counterpart?path=${encodeURIComponent(path)}`
   );
 
-describe('redirectFromPublic', () => {
+describe('redirectToPrivateCounterpart', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(loadBaseUrlFront).mockResolvedValue(BASE_URL);
@@ -30,7 +30,9 @@ describe('redirectFromPublic', () => {
 
   it('should redirect to the private counterpart of the public page', async () => {
     // When
-    const response = await redirectFromPublic(makeRequest(PUBLIC_PATH));
+    const response = await redirectToPrivateCounterpart(
+      makeRequest(PUBLIC_PATH)
+    );
 
     // Then
     expect(resolvePrivatePath).toHaveBeenCalledWith(PUBLIC_PATH);
@@ -43,7 +45,7 @@ describe('redirectFromPublic', () => {
     vi.mocked(resolvePrivatePath).mockResolvedValue(null);
 
     // When
-    const response = await redirectFromPublic(
+    const response = await redirectToPrivateCounterpart(
       makeRequest('/en/cybersecurity-solutions')
     );
 
@@ -56,7 +58,9 @@ describe('redirectFromPublic', () => {
     vi.mocked(resolvePrivatePath).mockRejectedValue(new Error('API down'));
 
     // When
-    const response = await redirectFromPublic(makeRequest(PUBLIC_PATH));
+    const response = await redirectToPrivateCounterpart(
+      makeRequest(PUBLIC_PATH)
+    );
 
     // Then
     expect(response.headers.get('location')).toBe(APP_HOME);
@@ -72,7 +76,7 @@ describe('redirectFromPublic', () => {
     'should redirect to the app home without resolving when the path is $reason',
     async ({ path }) => {
       // When
-      const response = await redirectFromPublic(makeRequest(path));
+      const response = await redirectToPrivateCounterpart(makeRequest(path));
 
       // Then
       expect(resolvePrivatePath).not.toHaveBeenCalled();
