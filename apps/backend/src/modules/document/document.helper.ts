@@ -18,18 +18,12 @@ import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { UseCaseId } from '../../model/kanel/public/UseCase';
 import { MinIOClient } from '../../thirdparty/minio/client';
 import { MinioFile } from '../../thirdparty/minio/types';
-import { PgBossProducer } from '../../thirdparty/pgboss/producer';
 import type { TeamsNotificationPayloadMap } from '../../thirdparty/pgboss/teams-notification.jobs';
-import {
-  TEAMS_NOTIFICATION_QUEUES,
-  type TeamsNotificationJobData,
-} from '../../thirdparty/pgboss/teams-notification.jobs';
 import { logApp } from '../../utils/app-logger.util';
 import { ErrorCode, UnknownErrorCode } from '../../utils/error/error.code';
 import { OptionalMetadata } from '../../utils/metadata';
 import { WithUseCases } from '../../utils/types';
 import { isValidUrl } from '../../utils/utils';
-import { UserDomain } from '../organization-management/user/user-domain/user.domain';
 import {
   OPENAEV_SCENARIO_DOCUMENT_TYPE,
   OPENAEV_SCENARIO_METADATA,
@@ -67,7 +61,6 @@ import { DocumentApp } from './document.app';
 import { DOCUMENT_IMAGE_METADATA_KEYS } from './document.model';
 import { Upload } from './document.uploads.helper';
 import { DocumentDomain } from './domain/document.domain';
-import { DocumentMetadataDomain } from './domain/document.metadata.domain';
 
 export const BOOLEAN_METADATA = [
   DocumentMetadataKeyCode.Verified,
@@ -235,37 +228,6 @@ export const DocumentHelper = {
       author_email: authorEmail,
     },
   }),
-
-  notifyInValidation: async (
-    document: DocumentModel,
-    serviceDefinition: ServiceDefinition
-  ) => {
-    const author = document.uploader_id
-      ? await UserDomain.loadSimpleUserBy({ id: document.uploader_id })
-      : undefined;
-    const integrationType =
-      document.type === OPENCTI_INTEGRATION_DOCUMENT_TYPE
-        ? await DocumentMetadataDomain.loadMetadataValueByKey(
-            document.id,
-            DocumentMetadataKeyCode.IntegrationType
-          )
-        : null;
-
-    await PgBossProducer.send<
-      TeamsNotificationJobData<'resource_in_validation'>
-    >(TEAMS_NOTIFICATION_QUEUES.SEND, {
-      event: 'resource_in_validation',
-      payload: DocumentHelper.buildInValidationPayload({
-        document,
-        serviceDefinition,
-        integrationType:
-          integrationType && isIntegrationType(integrationType)
-            ? integrationType
-            : null,
-        authorEmail: author?.email ?? null,
-      }),
-    });
-  },
 
   buildCompleteMetadataFromDocumentFile: ({
     sourceDocumentFile,

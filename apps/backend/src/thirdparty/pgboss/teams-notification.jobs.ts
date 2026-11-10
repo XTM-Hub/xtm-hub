@@ -1,7 +1,9 @@
+import type { DocumentStatus } from '../../__generated__/resolvers-types';
+
 export interface TeamsResourceItem {
   name: string | null;
   type: string | null;
-  status: string;
+  status: DocumentStatus;
   short_description: string | null;
   link: string;
   author_email: string | null;
