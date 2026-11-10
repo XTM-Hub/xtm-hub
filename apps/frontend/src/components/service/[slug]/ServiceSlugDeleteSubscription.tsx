@@ -1,15 +1,18 @@
-import { SubscriptionDeleteMutation } from '@/components/subcription/subscription.graphql';
+import { invalidateSubscriptionQueries } from '@/components/subcription/subscription.invalidation';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
-import { subscriptionDeleteMutation } from '@generated/subscriptionDeleteMutation.graphql';
-import { subscription_fragment$data } from '@generated/subscription_fragment.graphql';
+import { portalGraphqlClient } from '@/lib/graphql-client';
+import {
+  SubscriptionItemFragment,
+  useDeleteSubscriptionsMutation,
+} from '@graphql/generated';
+import { subscriptionKeys } from '@graphql/subscription/subscription.keys';
+import { useQueryClient } from '@tanstack/react-query';
 import { FunctionComponent } from 'react';
-import { useMutation } from 'react-relay';
 
 interface ServiceSlugDeleteSubscriptionProps {
-  subscriptions: subscription_fragment$data[];
-  subscriptionConnectionId: string;
+  subscriptions: SubscriptionItemFragment[];
   open: boolean;
   setOpen: (open: boolean) => void;
   onDeleted: () => void;
@@ -17,20 +20,19 @@ interface ServiceSlugDeleteSubscriptionProps {
 
 export const ServiceSlugDeleteSubscription: FunctionComponent<
   ServiceSlugDeleteSubscriptionProps
-> = ({ subscriptions, subscriptionConnectionId, open, setOpen, onDeleted }) => {
-  const [commitDeleteSubscription] = useMutation<subscriptionDeleteMutation>(
-    SubscriptionDeleteMutation
-  );
-
+> = ({ subscriptions, open, setOpen, onDeleted }) => {
+  const queryClient = useQueryClient();
   const t = useTranslate();
 
-  const onDeleteSubscription = () => {
-    commitDeleteSubscription({
-      variables: {
-        subscription_ids: subscriptions.map((subscription) => subscription.id),
-        connections: [subscriptionConnectionId],
-      },
-      onCompleted: () => {
+  const { mutate: deleteSubscriptions, isPending } =
+    useDeleteSubscriptionsMutation(portalGraphqlClient, {
+      onSuccess: async (_data, { subscription_ids }) => {
+        subscription_ids.forEach((subscriptionId: string) =>
+          queryClient.removeQueries({
+            queryKey: subscriptionKeys.byId({ subscriptionId }),
+          })
+        );
+        await invalidateSubscriptionQueries(queryClient);
         setOpen(false);
         onDeleted();
         const organizations = subscriptions
@@ -48,13 +50,21 @@ export const ServiceSlugDeleteSubscription: FunctionComponent<
           }),
         });
       },
-      onError: (error) => {
+      onError: (error: unknown) => {
+        setOpen(false);
+        const errorMessage =
+          error instanceof Error ? error.message : 'UNKNOWN_ERROR';
         showSnackbar({
           severity: 'error',
           title: t('Utils.Error'),
-          description: <>{t(`Error.Server.${error.message}`)}</>,
+          description: <>{t(`Error.Server.${errorMessage}`)}</>,
         });
       },
+    });
+
+  const onDeleteSubscription = () => {
+    deleteSubscriptions({
+      subscription_ids: subscriptions.map((subscription) => subscription.id),
     });
   };
 
@@ -67,7 +77,12 @@ export const ServiceSlugDeleteSubscription: FunctionComponent<
       destructive
       open={open}
       onOpenChange={setOpen}
-      onConfirm={onDeleteSubscription}>
+      confirmDisabled={isPending}
+      onConfirm={(event) => {
+        // Closing unmounts the dialog: the callbacks close it once the deletion settles.
+        event.preventDefault();
+        onDeleteSubscription();
+      }}>
       {subscriptions && subscriptions.length > 1
         ? t('Service.Management.AreYouSureRemoveOrganizationsAccess', {
             count: subscriptions.length,

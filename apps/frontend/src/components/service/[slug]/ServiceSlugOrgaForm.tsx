@@ -2,21 +2,23 @@ import {
   useOrganizations,
   useUnsubscribedOrganizations,
 } from '@/components/organization/Organization.service';
-import {
-  AddSubscriptionInServiceMutation,
-  UpdateSubscriptionInServiceMutation,
-} from '@/components/subcription/subscription.graphql';
+import { invalidateSubscriptionQueries } from '@/components/subcription/subscription.invalidation';
 import { AppCombobox } from '@/components/ui/AppCombobox';
 import { SheetFooter } from '@/components/ui/sheet';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
+import { portalGraphqlClient } from '@/lib/graphql-client';
 import {
   fromDatePickerChange,
   getDatePickerLabels,
   toDatePickerValue,
 } from '@/utils/design-system/date-picker';
-import { subscription_fragment$data } from '@generated/subscription_fragment.graphql';
-import { subscriptionInServiceCreateMutation } from '@generated/subscriptionInServiceCreateMutation.graphql';
+import {
+  SubscriptionItemFragment,
+  useCreateSubscriptionsMutation,
+  useUpdateSubscriptionMutation,
+} from '@graphql/generated';
+import { useQueryClient } from '@tanstack/react-query';
 import { useSubscriptionDefaultValues } from './use-subscription-default-values';
 
 import { Form, FormField, FormLabel } from '@/components/ui/form';
@@ -27,20 +29,17 @@ import { DEBOUNCE_TIME } from '@/utils/constant';
 import { toComboboxOptionIds } from '@/utils/design-system/combobox';
 import { Button, Checkbox, DatePicker } from '@filigran/design-system';
 import { serviceInstanceForSubscriptions_fragment$data } from '@generated/serviceInstanceForSubscriptions_fragment.graphql';
-import { subscriptionInServiceUpdateMutation } from '@generated/subscriptionInServiceUpdateMutation.graphql';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useLocale } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
-import { useMutation } from 'react-relay';
 import { useDebounceCallback } from 'usehooks-ts';
 import { z } from 'zod';
 
 interface ServiceSlugAddOrgaFormSheetProps {
   serviceInstance: serviceInstanceForSubscriptions_fragment$data;
-  subscriptions: subscription_fragment$data[];
-  subscriptionToEdit?: subscription_fragment$data;
-  subscriptionConnectionId: string;
+  subscriptions: SubscriptionItemFragment[];
+  subscriptionToEdit?: SubscriptionItemFragment;
 }
 
 const formSchema = z.object({
@@ -58,7 +57,6 @@ export const ServiceSlugOrgaForm = ({
   serviceInstance,
   subscriptions,
   subscriptionToEdit,
-  subscriptionConnectionId,
 }: ServiceSlugAddOrgaFormSheetProps) => {
   const { handleCloseSheet, setIsDirty, setOpenSheet } = useDialogContext();
   const t = useTranslate();
@@ -77,15 +75,6 @@ export const ServiceSlugOrgaForm = ({
     subscriptions,
     subscriptionToEdit
   );
-
-  const [commitSubscriptionCreateMutation] =
-    useMutation<subscriptionInServiceCreateMutation>(
-      AddSubscriptionInServiceMutation
-    );
-  const [commitSubscriptionUpdateMutation] =
-    useMutation<subscriptionInServiceUpdateMutation>(
-      UpdateSubscriptionInServiceMutation
-    );
 
   const defaultValues = useSubscriptionDefaultValues(subscriptionToEdit);
 
@@ -117,83 +106,79 @@ export const ServiceSlugOrgaForm = ({
     [keptOrganizations]
   );
 
+  const queryClient = useQueryClient();
+
+  const getSelectedOrganizationNames = (organizationIds: string[]) =>
+    organizationIds
+      .map(
+        (organizationId) =>
+          keptOrganizations.find(({ id }) => id === organizationId)?.name
+      )
+      .filter((name): name is string => Boolean(name))
+      .join(', ');
+
+  const onSubscriptionSaved = async (organizationName: string) => {
+    await invalidateSubscriptionQueries(queryClient);
+    showSnackbar({
+      severity: 'success',
+      title: t('Utils.Success'),
+      description: t('ServiceActions.OrganizationAdded', {
+        name: organizationName,
+        serviceName: serviceInstance.name,
+      }),
+    });
+    setOpenSheet(false);
+  };
+
+  const onSubscriptionError = (error: unknown) => {
+    const errorMessage =
+      error instanceof Error ? error.message : 'UNKNOWN_ERROR';
+    showSnackbar({
+      severity: 'error',
+      title: t('Utils.Error'),
+      description: <>{t(`Error.Server.${errorMessage}`)}</>,
+    });
+  };
+
+  const { mutate: createSubscriptions, isPending: isCreating } =
+    useCreateSubscriptionsMutation(portalGraphqlClient, {
+      onSuccess: (_data, { input }) =>
+        onSubscriptionSaved(
+          getSelectedOrganizationNames(input.organization_id)
+        ),
+      onError: onSubscriptionError,
+    });
+  const { mutate: updateSubscription, isPending: isUpdating } =
+    useUpdateSubscriptionMutation(portalGraphqlClient, {
+      onSuccess: () =>
+        onSubscriptionSaved(subscriptionToEdit?.organization.name ?? ''),
+      onError: onSubscriptionError,
+    });
+
   useEffect(() => {
     setIsDirty(form.formState.isDirty);
   }, [form.formState.isDirty, setIsDirty]);
 
   const onSubmit = (inputValue: z.infer<typeof formSchema>) => {
-    const selectedOrganizationName =
-      inputValue.organization_id
-        .map(
-          (organizationId) =>
-            keptOrganizations.find(({ id }) => id === organizationId)?.name
-        )
-        .filter((name): name is string => Boolean(name))
-        .join(', ') ||
-      subscriptionToEdit?.organization.name ||
-      '';
-
-    const input = {
-      service_instance_id: serviceInstance.id,
-      organization_id: inputValue.organization_id,
-      capability_ids: inputValue.capability_ids,
-      start_date: inputValue.start_date,
-      end_date: inputValue.end_date,
-    };
     if (subscriptionToEdit) {
-      commitSubscriptionUpdateMutation({
-        variables: {
-          subscription_id: subscriptionToEdit.id,
-          input: {
-            capability_ids: inputValue.capability_ids,
-            start_date: inputValue.start_date,
-            end_date: inputValue.end_date,
-          },
-        },
-        onCompleted: (_response) => {
-          showSnackbar({
-            severity: 'success',
-            title: t('Utils.Success'),
-            description: t('ServiceActions.OrganizationAdded', {
-              name: selectedOrganizationName,
-              serviceName: serviceInstance.name,
-            }),
-          });
-          setOpenSheet(false);
-        },
-        onError: (error: Error) => {
-          showSnackbar({
-            severity: 'error',
-            title: t('Utils.Error'),
-            description: <>{t(`Error.Server.${error.message}`)}</>,
-          });
+      updateSubscription({
+        subscription_id: subscriptionToEdit.id,
+        input: {
+          capability_ids: inputValue.capability_ids,
+          start_date: inputValue.start_date,
+          end_date: inputValue.end_date,
         },
       });
 
       return;
     }
-    commitSubscriptionCreateMutation({
-      variables: {
-        input,
-        connections: [subscriptionConnectionId],
-      },
-      onCompleted: (_response) => {
-        showSnackbar({
-          severity: 'success',
-          title: t('Utils.Success'),
-          description: t('ServiceActions.OrganizationAdded', {
-            name: selectedOrganizationName,
-            serviceName: serviceInstance.name,
-          }),
-        });
-        setOpenSheet(false);
-      },
-      onError: (error: Error) => {
-        showSnackbar({
-          severity: 'error',
-          title: t('Utils.Error'),
-          description: <>{t(`Error.Server.${error.message}`)}</>,
-        });
+    createSubscriptions({
+      input: {
+        service_instance_id: serviceInstance.id,
+        organization_id: inputValue.organization_id,
+        capability_ids: inputValue.capability_ids,
+        start_date: inputValue.start_date,
+        end_date: inputValue.end_date,
       },
     });
   };
@@ -318,7 +303,7 @@ export const ServiceSlugOrgaForm = ({
             </Button>
             <Button
               {...analyticsId('admin_subscription_submit')}
-              disabled={!form.formState.isValid}
+              disabled={!form.formState.isValid || isCreating || isUpdating}
               type="submit">
               {t('Utils.Validate')}
             </Button>
