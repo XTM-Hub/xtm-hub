@@ -1,13 +1,8 @@
-import { getAuthenticatedGraphqlClient } from '@/lib/graphql-client';
-import { redirectToSignupOnUnauthenticated } from '@/lib/server-unauthenticated-redirect';
 import { isValueInEnum } from '@/utils/is-value-in-enum';
 import { loadMeUser } from '@/utils/load-me-user';
 import { APP_PATH } from '@/utils/path/constant';
 import { encodeRedirectValue } from '@/utils/redirect';
-import {
-  ServiceDefinitionIdentifier,
-  useChangeSelectedOrganizationMutation,
-} from '@graphql/generated';
+import { ServiceDefinitionIdentifier } from '@graphql/generated';
 import { NextRequest, NextResponse } from 'next/server';
 import {
   loadBaseUrlFront,
@@ -15,16 +10,9 @@ import {
   loadServiceInstances,
 } from './utils/load';
 import { trackNewsFeedRedirect } from './utils/news-feed-telemetry';
+import { switchOrganization } from './utils/switch-organization';
 import { getLoginRedirectionURL } from './utils/url';
 
-async function switchOrganization(organization_id: string) {
-  await redirectToSignupOnUnauthenticated(async () => {
-    const client = await getAuthenticatedGraphqlClient();
-    return useChangeSelectedOrganizationMutation.fetcher(client, {
-      organization_id,
-    })();
-  });
-}
 export const redirectToResource = async (
   params: { identifier: string },
   request: NextRequest

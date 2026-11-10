@@ -1,4 +1,5 @@
 import { FeatureVotingItem } from '@/components/feature-voting/FeatureVotingItem';
+import { readTrackedEvents, startAnalytics } from '@/utils/test/analytics';
 import { mockGraphqlMutation } from '@/utils/test/msw/graphql-api';
 import { mswServer } from '@/utils/test/msw/server';
 import testRender from '@/utils/test/test-render';
@@ -149,4 +150,35 @@ describe('FeatureVotingItem', () => {
 
     expect(replaceState).toHaveBeenCalledWith(null, '', '/en/feature-voting');
   });
+
+  it.each([
+    ['card', null],
+    ['detail', feature.id],
+  ])(
+    'should send the feature title when the vote from the %s is recorded',
+    async (_source, selectedFeatureId) => {
+      // Given
+      startAnalytics();
+      mockSearchParams(selectedFeatureId);
+      const { user } = testRender(
+        <FeatureVotingItem
+          feature={feature}
+          serviceInstanceId="instance-1"
+          isAuthenticated
+        />
+      );
+
+      // When
+      await user.click(
+        screen.getByRole('button', { name: 'FeatureVoting.Vote' })
+      );
+
+      // Then
+      await vi.waitFor(() =>
+        expect(readTrackedEvents('feature_vote')).toEqual([
+          { feature_name: feature.title },
+        ])
+      );
+    }
+  );
 });

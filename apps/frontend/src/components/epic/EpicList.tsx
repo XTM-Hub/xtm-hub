@@ -25,9 +25,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@filigran/design-system';
-import { epic_fragment$data } from '@generated/epic_fragment.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 import {
+  EpicFieldsFragment,
   OrganizationCapability,
   SeoServiceInstanceItemFragment,
   ServiceRestriction,
@@ -37,7 +37,7 @@ import Link from 'next/link';
 import { useCallback, useContext, useMemo, useState } from 'react';
 
 interface EpicListProps {
-  epics: epic_fragment$data[];
+  epics: EpicFieldsFragment[];
   serviceInstance:
     serviceInstance_fragment$data | SeoServiceInstanceItemFragment;
   selectedProducts?: EpicFilterType;

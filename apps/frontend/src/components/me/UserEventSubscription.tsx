@@ -2,6 +2,7 @@
 
 import { LogoutMutation } from '@/components/logout.graphql';
 import { useTranslate } from '@/hooks/use-translate';
+import { refreshAnalyticsUser } from '@/lib/analytics/analytics.user';
 import { clearFiltersStorage } from '@/utils/filters-storage.utils';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -30,8 +31,10 @@ const UserEventSubscription = () => {
         store.invalidateStore();
       },
       onCompleted() {
-        router.push('/?error=account-deleted');
-        router.refresh();
+        refreshAnalyticsUser().then(() => {
+          router.push('/?error=account-deleted');
+          router.refresh();
+        });
       },
     });
   };

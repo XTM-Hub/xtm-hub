@@ -11,7 +11,7 @@ import { DisabledActionTooltip } from '@/components/ui/DisabledActionTooltip';
 import { useBuildCompatibilityTranslationKey } from '@/hooks/use-build-compatibility-translation-key';
 import { useRegisteredPlatforms } from '@/hooks/use-registered-platforms';
 import { useTranslate } from '@/hooks/use-translate';
-import { isProduction } from '@/lib/utils';
+import { trackEvent } from '@/lib/analytics/analytics.client';
 import {
   getPlatformIdentifier,
   isEeCapableContract,
@@ -114,13 +114,11 @@ const OneClickDeploy = ({
   }
 
   const openEeSheet = useCallback(() => {
-    if (isProduction() && typeof window.gtag === 'function') {
-      window.gtag('event', 'ee_badge_click', {
-        resource_id: documentData.id,
-        resource_title: documentData.name ?? '',
-        resource_type: documentData.type,
-      });
-    }
+    trackEvent('ee_badge_click', {
+      resource_id: documentData.id,
+      resource_title: documentData.name ?? '',
+      resource_type: documentData.type,
+    });
     setIsEeSheetOpen(true);
   }, [documentData.id, documentData.name, documentData.type]);
 

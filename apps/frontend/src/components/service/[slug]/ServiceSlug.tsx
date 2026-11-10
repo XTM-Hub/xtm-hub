@@ -25,7 +25,7 @@ import useAdminPath from '@/hooks/use-admin-path';
 import { useDebouncedSearch } from '@/hooks/use-debounced-search';
 import { useTranslate } from '@/hooks/use-translate';
 import { getDataTableLabels } from '@/utils/design-system/data-table';
-import { APP_PATH } from '@/utils/path/constant';
+import { ADMIN_SERVICE_CATALOG_PATH, APP_PATH } from '@/utils/path/constant';
 import { Button, SearchField, Switch } from '@filigran/design-system';
 import { AddIcon, DeleteIcon, MoreVertIcon } from '@filigran/icon';
 import { serviceInstanceByIdQuery } from '@generated/serviceInstanceByIdQuery.graphql';
@@ -104,7 +104,10 @@ const ServiceSlug = ({
       ? [
           { label: 'MenuLinks.Home', href: `/${APP_PATH}` },
           { label: 'MenuLinks.Settings' },
-          { label: 'MenuLinks.Service', href: `/${APP_PATH}/admin/service` },
+          {
+            label: 'MenuLinks.ServiceCatalog',
+            href: ADMIN_SERVICE_CATALOG_PATH,
+          },
         ]
       : [{ label: 'MenuLinks.Home', href: `/${APP_PATH}` }]),
     {

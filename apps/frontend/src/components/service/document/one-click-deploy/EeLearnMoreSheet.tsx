@@ -10,6 +10,8 @@ import {
 } from '@/components/ui/sheet';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
+import { trackEvent } from '@/lib/analytics/analytics.client';
+import { PRODUCT_LABELS } from '@/lib/analytics/analytics.consts';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import {
   FiligranWebsiteUtmCampaign,
@@ -77,6 +79,10 @@ const EeLearnMoreSheet = ({
         });
       },
       onSuccess: () => {
+        trackEvent('generate_lead', {
+          lead_source: 'Enterprise Edition contact',
+          product: PRODUCT_LABELS[platformIdentifier],
+        });
         showSnackbar({
           severity: 'success',
           title: t('Service.Trials.ReachOutToSalesSuccessTitle'),

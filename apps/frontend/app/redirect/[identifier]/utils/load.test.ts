@@ -2,13 +2,19 @@ import { UnauthenticatedError } from '@/lib/graphql-fetch.utils';
 import { buildSignupRedirect } from '@/utils/redirect';
 import {
   PlatformAssociatedOrganizationDocument,
+  PlatformIdentifier,
+  RegisteredPlatformRedirectTargetDocument,
   ServiceDefinitionIdentifier,
   ServiceInstancesListDocument,
 } from '@graphql/generated';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { loadPlatformOrganizationId, loadServiceInstances } from './load';
+import {
+  loadPlatformOrganizationId,
+  loadRegisteredPlatformRedirectTarget,
+  loadServiceInstances,
+} from './load';
 
 const { request } = vi.hoisted(() => ({ request: vi.fn() }));
 
@@ -147,6 +153,94 @@ describe('loadServiceInstances', () => {
     // When
     const result = loadServiceInstances(
       ServiceDefinitionIdentifier.OpenaevScenarios
+    );
+
+    // Then
+    await expect(result).rejects.toBe(REDIRECT_SENTINEL);
+    expect(redirect).toHaveBeenCalledWith(
+      buildSignupRedirect(REDIRECT_PATHNAME)
+    );
+  });
+});
+
+describe('loadRegisteredPlatformRedirectTarget', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it.each`
+    description                  | tenantId
+    ${'of the requested tenant'} | ${TENANT_ID}
+    ${'without tenant'}          | ${null}
+  `(
+    'should query the registration $description',
+    async ({ tenantId }: { tenantId: string | null }) => {
+      // Given
+      request.mockResolvedValue({ registeredPlatformByPlatformId: null });
+
+      // When
+      await loadRegisteredPlatformRedirectTarget(
+        PlatformIdentifier.Openaev,
+        PLATFORM_ID,
+        tenantId
+      );
+
+      // Then
+      expect(request).toHaveBeenCalledWith(
+        expect.objectContaining({
+          document: RegisteredPlatformRedirectTargetDocument,
+          variables: {
+            input: {
+              identifier: PlatformIdentifier.Openaev,
+              platformId: PLATFORM_ID,
+              tenantId,
+            },
+          },
+        })
+      );
+    }
+  );
+
+  it.each`
+    description                                     | registeredPlatform
+    ${'the registered platform'}                    | ${{ service_instance_id: 'instance-1', identifier: ServiceDefinitionIdentifier.OpenaevRegistration, deployment_request: null }}
+    ${'null when the user cannot see the platform'} | ${null}
+  `(
+    'should return $description',
+    async ({ registeredPlatform }: { registeredPlatform: unknown }) => {
+      // Given
+      request.mockResolvedValue({
+        registeredPlatformByPlatformId: registeredPlatform,
+      });
+
+      // When
+      const result = await loadRegisteredPlatformRedirectTarget(
+        PlatformIdentifier.Openaev,
+        PLATFORM_ID,
+        TENANT_ID
+      );
+
+      // Then
+      expect(result).toEqual(registeredPlatform);
+    }
+  );
+
+  it('should redirect to the signup page when the visitor is not authenticated', async () => {
+    // Given
+    request.mockRejectedValue(new UnauthenticatedError());
+    vi.mocked(headers).mockResolvedValue(
+      new Headers({ 'x-pathname': REDIRECT_PATHNAME })
+    );
+    // Next.js' redirect never returns: it throws to interrupt the request.
+    vi.mocked(redirect).mockImplementationOnce(() => {
+      throw REDIRECT_SENTINEL;
+    });
+
+    // When
+    const result = loadRegisteredPlatformRedirectTarget(
+      PlatformIdentifier.Openaev,
+      PLATFORM_ID,
+      TENANT_ID
     );
 
     // Then

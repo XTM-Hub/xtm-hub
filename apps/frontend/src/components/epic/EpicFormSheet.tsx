@@ -1,27 +1,50 @@
 'use client';
-import {
-  CreateEpicMutation,
-  UpdateEpicMutation,
-} from '@/components/epic/epic.graphql';
 import EpicForm, { epicFormSchema } from '@/components/epic/EpicForm';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useEpicFilter } from '@/hooks/use-epic-filter';
-import { useEpicListContext } from '@/hooks/use-epic-list-context';
 import { useTranslate } from '@/hooks/use-translate';
+import { portalGraphqlClient } from '@/lib/graphql-client';
+import { updateInQueryCache } from '@/utils/query-cache';
 import { Button } from '@filigran/design-system';
 import { AddIcon } from '@filigran/icon';
-import { epic_fragment$data } from '@generated/epic_fragment.graphql';
+import {
+  CreateEpicInput,
+  EpicFieldsFragment,
+  EpicsQuery,
+  UpdateEpicInput,
+  useEpicCreateMutation,
+  useEpicUpdateMutation,
+} from '@graphql/generated';
+import { epicKeys } from '@graphql/xtm-platform-roadmap/epic.keys';
+import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { useMutation } from 'react-relay';
 import { z } from 'zod';
 
 interface EpicFormSheetProps {
-  epic?: epic_fragment$data;
+  epic?: EpicFieldsFragment;
   open?: boolean;
   setOpen?: (open: boolean) => void;
   triggerElement?: React.ReactNode;
 }
+
+type EpicFormValues = z.infer<typeof epicFormSchema>;
+
+// The generated inputs require these keys and the form always fills them, so
+// the `null` fallbacks never reach the API. They would not all be harmless:
+// on update, a `null` slack_link clears the link.
+const toEpicInput = (values: EpicFormValues) => ({
+  ...values,
+  active: values.active ?? null,
+  is_integration: values.is_integration ?? null,
+  slack_link: values.slack_link ?? null,
+});
+
+const toCreateEpicInput = (values: EpicFormValues): CreateEpicInput =>
+  toEpicInput(values);
+
+const toUpdateEpicInput = (values: EpicFormValues): UpdateEpicInput =>
+  toEpicInput(values);
 
 export const EpicFormSheet = ({
   epic,
@@ -30,65 +53,65 @@ export const EpicFormSheet = ({
   triggerElement,
 }: EpicFormSheetProps) => {
   const t = useTranslate();
+  const queryClient = useQueryClient();
   const [internalOpenSheet, setInternalOpenSheet] = useState(false);
 
-  const [commitEpicMutation] = useMutation(CreateEpicMutation);
-  const [updateEpicMutation] = useMutation(UpdateEpicMutation);
-  const { connectionID } = useEpicListContext();
   const { setSelectedProducts } = useEpicFilter();
   const openSheet =
     externalOpen !== undefined ? externalOpen : internalOpenSheet;
   const setOpenSheet =
     externalSetOpen !== undefined ? externalSetOpen : setInternalOpenSheet;
 
-  const createEpic = (inputValues: z.infer<typeof epicFormSchema>) => {
-    commitEpicMutation({
-      variables: {
-        input: { ...inputValues },
-        connections: [connectionID],
-      },
-      onCompleted: () => {
-        setOpenSheet(false);
-        setSelectedProducts(inputValues.products);
-        showSnackbar({
-          severity: 'success',
-          title: t('Utils.Success'),
-          description: t('Utils.Success'),
-        });
-      },
-      onError: (error) => {
-        showSnackbar({
-          severity: 'error',
-          title: t('Utils.Error'),
-          description: t(`Error.Server.${error.message}`),
-        });
-      },
+  const showSuccess = () =>
+    showSnackbar({
+      severity: 'success',
+      title: t('Utils.Success'),
+      description: t('Utils.Success'),
+    });
+
+  const showError = (error: unknown) => {
+    const errorMessage =
+      error instanceof Error ? error.message : 'UNKNOWN_ERROR';
+    showSnackbar({
+      severity: 'error',
+      title: t('Utils.Error'),
+      description: t(`Error.Server.${errorMessage}`),
     });
   };
-  const updateEpic = (inputValues: z.infer<typeof epicFormSchema>) => {
-    updateEpicMutation({
-      variables: {
-        id: epic!.id,
-        input: { ...inputValues },
-      },
-      onCompleted: () => {
+
+  const { mutate: commitCreateEpic, isPending: isCreating } =
+    useEpicCreateMutation(portalGraphqlClient, {
+      onSuccess: async (_data, { input }) => {
         setOpenSheet(false);
-        showSnackbar({
-          severity: 'success',
-          title: t('Utils.Success'),
-          description: t('Utils.Success'),
-        });
+        setSelectedProducts(input.products);
+        showSuccess();
+        await queryClient.invalidateQueries({ queryKey: epicKeys.all() });
       },
-      onError: (error) => {
-        showSnackbar({
-          severity: 'error',
-          title: t('Utils.Error'),
-          description: t(`Error.Server.${error.message}`),
-        });
-      },
+      onError: showError,
     });
+
+  const { mutate: commitUpdateEpic, isPending: isUpdating } =
+    useEpicUpdateMutation(portalGraphqlClient, {
+      onSuccess: async ({ updateEpic }) => {
+        setOpenSheet(false);
+        showSuccess();
+        // Shows the change at once; the refetch then applies the title order and the search.
+        queryClient.setQueriesData<EpicsQuery>(
+          { queryKey: epicKeys.all() },
+          updateInQueryCache('epics', updateEpic)
+        );
+        await queryClient.invalidateQueries({ queryKey: epicKeys.all() });
+      },
+      onError: showError,
+    });
+
+  const createEpic = (inputValues: EpicFormValues) => {
+    commitCreateEpic({ input: toCreateEpicInput(inputValues) });
   };
-  const handleSubmit = (values: z.infer<typeof epicFormSchema>) => {
+  const updateEpic = (inputValues: EpicFormValues) => {
+    commitUpdateEpic({ id: epic!.id, input: toUpdateEpicInput(inputValues) });
+  };
+  const handleSubmit = (values: EpicFormValues) => {
     if (!epic) {
       createEpic(values);
     } else {
@@ -118,6 +141,7 @@ export const EpicFormSheet = ({
       <EpicForm
         epic={epic}
         handleSubmit={handleSubmit}
+        isSubmitting={isCreating || isUpdating}
       />
     </SheetWithPreventingDialog>
   );

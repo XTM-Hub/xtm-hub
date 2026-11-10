@@ -91,7 +91,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@electric-sql/pglite": "0.5.14",
+    "@electric-sql/pglite": "0.5.15",
     "@eslint/js": "catalog:",
     "@graphql-codegen/cli": "catalog:",
     "@graphql-codegen/typescript": "catalog:",

@@ -55,7 +55,7 @@ export const FeatureVoteDetail = ({
           )}
         </div>
         <FeatureVoteButton
-          featureId={feature.id}
+          feature={feature}
           serviceInstanceId={serviceInstanceId}
           hasMyVote={feature.has_my_vote}
           isAuthenticated={isAuthenticated}

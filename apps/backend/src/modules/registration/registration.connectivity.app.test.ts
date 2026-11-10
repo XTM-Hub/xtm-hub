@@ -15,6 +15,7 @@ import {
   TEST_ORGANIZATIONS,
 } from '../../../tests/tests.const';
 import {
+  CommercialModel,
   NewsFeedItemType,
   PlatformConfigurationStatus,
   PlatformContract,
@@ -218,6 +219,66 @@ describe('registration connectivity app', () => {
       expect(result.status).toBe(PlatformRegistrationConnectivityStatus.Active);
     });
 
+    it('should return the stored commercial model when the platform is registered', async () => {
+      // Given
+      const platformId = uuidv4();
+      const token = await RegistrationApp.registerPlatform({
+        organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        platform: {
+          id: platformId,
+          url: 'http://example.com',
+          contract: PlatformContract.Ee,
+          title: 'Fake title',
+          version: '6.7.18',
+        },
+        identifier: PlatformIdentifier.Opencti,
+      });
+      const config =
+        await PlatformConfigurationDomain.loadConfigurationByPlatform(
+          platformId
+        );
+      await PlatformConfigurationDomain.updateConfiguration(
+        config!.service_instance_id,
+        { commercial_model: CommercialModel.Saas }
+      );
+
+      // When
+      const result =
+        await RegistrationConnectivityApp.refreshPlatformRegistrationConnectivityStatus(
+          {
+            platformId,
+            token,
+            platformVersion: '6.7.18',
+            platformIdentifier: PlatformIdentifier.Opencti,
+          }
+        );
+
+      // Then
+      expect(result).toEqual({
+        status: PlatformRegistrationConnectivityStatus.Active,
+        commercialModel: CommercialModel.Saas,
+      });
+    });
+
+    it('should return no commercial model when the platform is not registered', async () => {
+      // When
+      const result =
+        await RegistrationConnectivityApp.refreshPlatformRegistrationConnectivityStatus(
+          {
+            platformId: uuidv4(),
+            token: uuidv4(),
+            platformVersion: '7.0.0',
+            platformIdentifier: PlatformIdentifier.Opencti,
+          }
+        );
+
+      // Then
+      expect(result).toEqual({
+        status: PlatformRegistrationConnectivityStatus.NotFound,
+        commercialModel: null,
+      });
+    });
+
     it('should return active when platform is registered and update version', async () => {
       const platformId = uuidv4();
       const token = await RegistrationApp.registerPlatform({
@@ -344,6 +405,57 @@ describe('registration connectivity app', () => {
         );
 
       expect(result.status).toBe(PlatformRegistrationConnectivityStatus.Active);
+    });
+
+    it('should return the stored commercial model of the refreshed tenant', async () => {
+      // Given
+      const platformId = uuidv4();
+      const tenantId = uuidv4();
+      const token = await registerOpenaevTenant(platformId, tenantId);
+      const config = await loadTenantConfiguration(platformId, tenantId);
+      await PlatformConfigurationDomain.updateConfiguration(
+        config!.service_instance_id,
+        { commercial_model: CommercialModel.Saas }
+      );
+
+      // When
+      const result =
+        await RegistrationConnectivityApp.refreshPlatformRegistrationConnectivityStatusSingleTenant(
+          {
+            platformId,
+            token,
+            platformVersion: '2.4.0',
+            url: `http://example.com/${tenantId}`,
+            tenantId,
+            tenantName: `Tenant ${tenantId}`,
+            platformIdentifier: PlatformIdentifier.Openaev,
+          }
+        );
+
+      // Then
+      expect(result).toEqual({
+        status: PlatformRegistrationConnectivityStatus.Active,
+        commercialModel: CommercialModel.Saas,
+      });
+    });
+
+    it('should return no commercial model when the tenant is not registered', async () => {
+      // When
+      const result =
+        await RegistrationConnectivityApp.refreshPlatformRegistrationConnectivityStatusSingleTenant(
+          {
+            platformId: uuidv4(),
+            token: uuidv4(),
+            platformVersion: '2.4.0',
+            url: 'http://example.com/tenant',
+            tenantId: uuidv4(),
+            tenantName: 'My tenant',
+            platformIdentifier: PlatformIdentifier.Openaev,
+          }
+        );
+
+      // Then
+      expect(result.commercialModel).toBeNull();
     });
 
     it('should update the url in the configuration when url changes', async () => {
@@ -717,6 +829,7 @@ describe('registration connectivity app', () => {
       expect(result.statuses[0]).toEqual({
         tenantId,
         status: PlatformRegistrationConnectivityStatus.Inactive,
+        commercialModel: null,
       });
     });
 
@@ -784,10 +897,12 @@ describe('registration connectivity app', () => {
           {
             tenantId: tenantId1,
             status: PlatformRegistrationConnectivityStatus.Active,
+            commercialModel: CommercialModel.Other,
           },
           {
             tenantId: tenantId2,
             status: PlatformRegistrationConnectivityStatus.Active,
+            commercialModel: CommercialModel.Other,
           },
         ])
       );
@@ -830,8 +945,51 @@ describe('registration connectivity app', () => {
 
       expect(result.statuses).toHaveLength(1);
       expect(result.statuses).toEqual([
-        { tenantId, status: PlatformRegistrationConnectivityStatus.NotFound },
+        {
+          tenantId,
+          status: PlatformRegistrationConnectivityStatus.NotFound,
+          commercialModel: null,
+        },
       ]);
+    });
+
+    it('should return the stored commercial model of each refreshed tenant', async () => {
+      // Given
+      const platformId = uuidv4();
+      const saasTenantId = uuidv4();
+      const otherTenantId = uuidv4();
+      const saasToken = await registerOpenaevTenant(platformId, saasTenantId);
+      const otherToken = await registerOpenaevTenant(platformId, otherTenantId);
+      const saasConfig = await loadTenantConfiguration(
+        platformId,
+        saasTenantId
+      );
+      await PlatformConfigurationDomain.updateConfiguration(
+        saasConfig!.service_instance_id,
+        { commercial_model: CommercialModel.Saas }
+      );
+
+      // When
+      const result = await refreshAllTenants(platformId, [
+        { tenantId: saasTenantId, token: saasToken },
+        { tenantId: otherTenantId, token: otherToken },
+      ]);
+
+      // Then
+      expect(result.statuses).toEqual(
+        expect.arrayContaining([
+          {
+            tenantId: saasTenantId,
+            status: PlatformRegistrationConnectivityStatus.Active,
+            commercialModel: CommercialModel.Saas,
+          },
+          {
+            tenantId: otherTenantId,
+            status: PlatformRegistrationConnectivityStatus.Active,
+            commercialModel: CommercialModel.Other,
+          },
+        ])
+      );
     });
 
     it('should return empty statuses when no tenants are provided', async () => {
@@ -894,10 +1052,15 @@ describe('registration connectivity app', () => {
       expect(result.statuses).toHaveLength(2);
       expect(result.statuses).toEqual(
         expect.arrayContaining([
-          { tenantId, status: PlatformRegistrationConnectivityStatus.Active },
+          {
+            tenantId,
+            status: PlatformRegistrationConnectivityStatus.Active,
+            commercialModel: CommercialModel.Other,
+          },
           {
             tenantId: failingTenantId,
             status: PlatformRegistrationConnectivityStatus.NotFound,
+            commercialModel: null,
           },
         ])
       );
@@ -958,6 +1121,7 @@ describe('registration connectivity app', () => {
       expect(result.statuses[0]).toEqual({
         tenantId: tenantId1,
         status: PlatformRegistrationConnectivityStatus.Active,
+        commercialModel: CommercialModel.Other,
       });
 
       const staleConfig =
@@ -1058,6 +1222,7 @@ describe('registration connectivity app', () => {
           {
             tenantId: omittedTenantId,
             status: PlatformRegistrationConnectivityStatus.Inactive,
+            commercialModel: CommercialModel.Other,
           },
         ])
       );

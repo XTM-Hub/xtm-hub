@@ -6,11 +6,11 @@ import {
 import { MarkdownRenderer } from '@/components/ui/markdown-renderer';
 import { Separator } from '@/components/ui/separator';
 import { useTranslate } from '@/hooks/use-translate';
-import { epic_fragment$data } from '@generated/epic_fragment.graphql';
+import { EpicFieldsFragment } from '@graphql/generated';
 import Link from 'next/link';
 
 interface EpicItemDetailedProps {
-  epic: epic_fragment$data;
+  epic: EpicFieldsFragment;
 }
 
 export const EpicItemDetailed = ({ epic }: EpicItemDetailedProps) => {

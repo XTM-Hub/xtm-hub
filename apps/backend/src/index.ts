@@ -5,10 +5,7 @@ import express from 'express';
 
 import config from 'config';
 import promBundle from 'express-prom-bundle';
-import expressSession, {
-  SessionData,
-  SessionOptions,
-} from 'express-session/index.js';
+import { SessionData } from 'express-session/index.js';
 import { createHandler } from 'graphql-sse/lib/use/express';
 import graphqlUploadExpress from 'graphql-upload/graphqlUploadExpress.mjs';
 import { printSchema } from 'graphql/utilities/index.js';
@@ -40,7 +37,10 @@ import platformInit, { minioInit } from './server/initialize';
 import { seedDevelopmentConnectors } from './server/initialize.helper';
 import { requestContextMiddleware } from './server/request-context.middleware';
 import { createSseSchemaDetailsOptions } from './server/schema-details';
-import { ReadOnlySessionStore } from './server/session/read-only-session.store';
+import {
+  createSessionMiddlewares,
+  SESSION_MAX_AGE,
+} from './server/session/session.middleware';
 import { getSessionStoreInstance } from './session-store-manager';
 import { initShutdown, registerShutdownHook } from './shutdown';
 import { runESMigrations } from './thirdparty/elasticsearch/migrate';
@@ -100,29 +100,12 @@ app.set('trust proxy', portalConfig.trust_proxy);
 logApp.info('[TRUST-PROXY] Express trust proxy set', {
   trustProxy: portalConfig.trust_proxy,
 });
-const SESSION_MAX_AGE = 24 * 60 * 60 * 1000; // 1 day
-const sessionStore = getSessionStoreInstance();
-const sessionOptions: SessionOptions = {
-  name: portalCookieName,
-  store: sessionStore,
-  secret: portalCookieSecret,
-  saveUninitialized: false,
-  proxy: true,
-  rolling: false,
-  resave: false,
-  cookie: {
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: portalConfig.environment !== 'development',
-    maxAge: SESSION_MAX_AGE,
-  },
-};
-const sessionMiddleware = expressSession(sessionOptions);
-// For the public routes that must not write to the session (no save, no touch): they only read an existing one
-const readOnlySessionMiddleware = expressSession({
-  ...sessionOptions,
-  store: new ReadOnlySessionStore(sessionStore),
-});
+const { sessionMiddleware, readOnlySessionMiddleware } =
+  createSessionMiddlewares({
+    name: portalCookieName,
+    secret: portalCookieSecret,
+    store: getSessionStoreInstance(),
+  });
 // Default express.json() limit (100kb) is too small for GraphQL mutations
 // carrying an inline base64 payload (e.g. a single connector logo ingested
 // via ingestManifestFragments - some logos alone are several MB), so it is

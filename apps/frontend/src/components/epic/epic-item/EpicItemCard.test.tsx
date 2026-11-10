@@ -1,20 +1,13 @@
 import { EpicItemCard } from '@/components/epic/epic-item/EpicItemCard';
 import testRender from '@/utils/test/test-render';
-import { epic_fragment$data } from '@generated/epic_fragment.graphql';
 import { EditionType, EpicType, FiligranProduct } from '@graphql/generated';
+import { mockEpic } from '@graphql/mocks';
 import { screen } from '@testing-library/react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { createMockEnvironment } from 'relay-test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const useEpicListContextMock = vi.fn();
-
-vi.mock('@/hooks/use-epic-list-context', () => ({
-  useEpicListContext: () => useEpicListContextMock(),
-}));
-
 describe('EpicItemCard', () => {
-  const epic = {
+  const epic = mockEpic({
     id: 'epic-1',
     title: 'Roadmap epic',
     epic_type: EpicType.Other,
@@ -25,17 +18,13 @@ describe('EpicItemCard', () => {
     problem_to_solve: 'problem to solve',
     proposed_solution: 'proposed solution',
     expected_value: 'expected value',
-  } as epic_fragment$data;
+  });
 
   const mockReplaceState = vi.spyOn(window.history, 'replaceState');
 
   beforeEach(() => {
     vi.clearAllMocks();
     mockReplaceState.mockImplementation(() => {});
-    useEpicListContextMock.mockReturnValue({
-      connectionID: 'connection-id-1',
-      filterByProduct: vi.fn(),
-    });
 
     vi.mocked(usePathname).mockReturnValue('/epics');
 
@@ -56,16 +45,13 @@ describe('EpicItemCard', () => {
 
   it('renders card content and child components', () => {
     // Given
-    const environment = createMockEnvironment();
-
     // When
     testRender(
       <EpicItemCard
         epic={epic}
         userCanDelete={false}
         userCanUpdate={false}
-      />,
-      { relayConfig: environment }
+      />
     );
 
     // Then
@@ -77,15 +63,12 @@ describe('EpicItemCard', () => {
 
   it('opens details by updating URL when clicking outside admin menu area', async () => {
     // Given
-    const environment = createMockEnvironment();
-
     const { user } = testRender(
       <EpicItemCard
         epic={epic}
         userCanDelete={false}
         userCanUpdate={false}
-      />,
-      { relayConfig: environment }
+      />
     );
 
     // When
@@ -102,15 +85,12 @@ describe('EpicItemCard', () => {
 
   it('does not update URL when clicking in admin menu area', async () => {
     // Given
-    const environment = createMockEnvironment();
-
     const { user } = testRender(
       <EpicItemCard
         epic={epic}
         userCanDelete={true}
         userCanUpdate={true}
-      />,
-      { relayConfig: environment }
+      />
     );
 
     // When

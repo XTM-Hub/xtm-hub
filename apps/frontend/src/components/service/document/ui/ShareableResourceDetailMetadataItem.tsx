@@ -34,7 +34,9 @@ export const ShareableResourceDetailMetadataItem = ({
       return null;
     }
 
-    const value = documentData[metadataKey] as string;
+    const value = (documentData as Record<string, unknown>)[
+      metadataKey
+    ] as string;
 
     const mapping: Record<Variant, ReactNode> = {
       link: (

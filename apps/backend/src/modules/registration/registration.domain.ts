@@ -170,6 +170,39 @@ export const RegistrationDomain = {
     );
   },
 
+  // Active registration of one platform tenant in the selected organization; a null tenant matches only a
+  // registration without tenant.
+  loadRegisteredPlatformByPlatformId: async ({
+    platformIdentifier,
+    platformId,
+    tenantId,
+  }: {
+    platformIdentifier: PlatformIdentifier;
+    platformId: string;
+    tenantId: string | null;
+  }): Promise<DomainRegisteredPlatform | undefined> => {
+    const query = getRegisteredPlatformsDataQuery()
+      .where(
+        'ServiceDefinition.identifier',
+        '=',
+        serviceDefinitionIdentifierMappedByPlatformIdentifier[
+          platformIdentifier
+        ]
+      )
+      .where('PlatformConfiguration.platform_id', '=', platformId)
+      .where(
+        'PlatformConfiguration.status',
+        '=',
+        PlatformConfigurationStatus.Active
+      );
+    if (tenantId) {
+      query.where('PlatformConfiguration.tenant_id', '=', tenantId);
+    } else {
+      query.whereNull('PlatformConfiguration.tenant_id');
+    }
+    return query.first();
+  },
+
   loadRegisteredPlatformsByServiceInstanceIds: async (
     serviceInstanceIds: readonly ServiceInstanceId[]
   ): Promise<DomainRegisteredPlatform[]> => {
