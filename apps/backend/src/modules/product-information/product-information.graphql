@@ -152,7 +152,11 @@ input RegisteredSaasPlatformDataInput {
 type Query {
   registeredSaasPlatformData(
     input: RegisteredSaasPlatformDataInput!
-  ): SaasPlatformData @auth(portalCapa: [BYPASS, READ_SAAS_METRICS])
+  ): SaasPlatformData
+    @auth(
+      portalCapa: [BYPASS, READ_SAAS_METRICS]
+      orgaCapa: [ADMINISTRATE_ORGANIZATION, MANAGE_PLATFORM_REGISTRATION]
+    )
   # The platforms the SaaS Manager knows, paged, searched, filtered and ordered by it; null when it cannot be reached.
   saasManagerPlatforms(
     # From 1.
