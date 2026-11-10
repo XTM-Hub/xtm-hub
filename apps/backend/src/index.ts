@@ -4,7 +4,6 @@ import cors from 'cors';
 import express from 'express';
 
 import config from 'config';
-import promBundle from 'express-prom-bundle';
 import { SessionData } from 'express-session/index.js';
 import { createHandler } from 'graphql-sse/lib/use/express';
 import graphqlUploadExpress from 'graphql-upload/graphqlUploadExpress.mjs';
@@ -37,6 +36,7 @@ import {
   registerReadOnlySessionEndpoints,
 } from './server/endpoints';
 import createSchema from './server/graphql-schema';
+import { createHttpMetricsMiddleware } from './server/http-metrics.middleware';
 import platformInit, { minioInit } from './server/initialize';
 import { seedDevelopmentConnectors } from './server/initialize.helper';
 import { requestContextMiddleware } from './server/request-context.middleware';
@@ -116,10 +116,8 @@ const { sessionMiddleware, readOnlySessionMiddleware } =
 // raised here for the whole API.
 app.use(express.json({ limit: '7mb' }));
 // Prometheus metrics. Before the session middleware, so that the routes registered before it are measured too
-const metricsMiddleware = promBundle({
-  customLabels: {
-    app: 'xtm-hub-api',
-  },
+const metricsMiddleware = createHttpMetricsMiddleware({
+  mountPaths: [PORTAL_GRAPHQL_PATH, PORTAL_WEBSOCKET_PATH],
 });
 app.use(metricsMiddleware);
 // Before the session middleware, which would renew the session of a logged in user on every request
