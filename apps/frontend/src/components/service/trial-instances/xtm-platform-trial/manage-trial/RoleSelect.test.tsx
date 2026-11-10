@@ -19,6 +19,7 @@ describe('RoleSelect', () => {
     // Given / When
     testRender(
       <RoleSelect
+        formField
         value={ServiceGroupName.Reader}
         onValueChange={vi.fn()}
         roles={roles}
@@ -38,6 +39,7 @@ describe('RoleSelect', () => {
   it('lists every provided role as a selectable option', async () => {
     const { user } = testRender(
       <RoleSelect
+        formField
         value={ServiceGroupName.Reader}
         onValueChange={vi.fn()}
         roles={roles}
@@ -60,6 +62,7 @@ describe('RoleSelect', () => {
   it('offers a "No access" option when the platform is optional', async () => {
     const { user } = testRender(
       <RoleSelect
+        formField
         value=""
         onValueChange={vi.fn()}
         roles={roles}
@@ -80,6 +83,7 @@ describe('RoleSelect', () => {
   it('does not offer a "No access" option when the platform is mandatory', async () => {
     const { user } = testRender(
       <RoleSelect
+        formField
         value={ServiceGroupName.Admin}
         onValueChange={vi.fn()}
         roles={roles}
@@ -101,6 +105,7 @@ describe('RoleSelect', () => {
     const onValueChange = vi.fn();
     const { user } = testRender(
       <RoleSelect
+        formField
         value=""
         onValueChange={onValueChange}
         roles={roles}
@@ -123,6 +128,7 @@ describe('RoleSelect', () => {
     const onValueChange = vi.fn();
     const { user } = testRender(
       <RoleSelect
+        formField
         value={ServiceGroupName.Admin}
         onValueChange={onValueChange}
         roles={roles}

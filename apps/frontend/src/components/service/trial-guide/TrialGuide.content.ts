@@ -1,3 +1,5 @@
+import { type AnalyticsElementId } from '@/lib/analytics/analytics.ids';
+import { type AnalyticsLinkType } from '@/lib/analytics/analytics.types';
 import {
   DescriptionOutlinedIcon,
   GroupIcon,
@@ -13,6 +15,8 @@ export interface TrialGuideResourceCardContent {
   titleKey: string;
   descriptionKey: string;
   url: string;
+  analyticsId: AnalyticsElementId;
+  linkType: AnalyticsLinkType;
 }
 
 export interface TrialGuideChecklistItem {
@@ -36,6 +40,8 @@ export const TRIAL_GUIDE_CONTENT: Record<
     resourceCards: [
       {
         id: 'documentation',
+        analyticsId: 'trial_guide_documentation_open',
+        linkType: 'Documentation',
         Icon: DescriptionOutlinedIcon,
         titleKey:
           'Service.TrialGuide.Opencti.ResourceCards.Documentation.Title',
@@ -45,6 +51,8 @@ export const TRIAL_GUIDE_CONTENT: Record<
       },
       {
         id: 'academy',
+        analyticsId: 'trial_guide_academy_open',
+        linkType: 'Academy',
         Icon: SchoolIcon,
         titleKey: 'Service.TrialGuide.Opencti.ResourceCards.Academy.Title',
         descriptionKey:
@@ -53,6 +61,8 @@ export const TRIAL_GUIDE_CONTENT: Record<
       },
       {
         id: 'community',
+        analyticsId: 'trial_guide_community_join',
+        linkType: 'Community',
         Icon: GroupIcon,
         titleKey: 'Service.TrialGuide.Opencti.ResourceCards.Community.Title',
         descriptionKey:
@@ -61,6 +71,8 @@ export const TRIAL_GUIDE_CONTENT: Record<
       },
       {
         id: 'release-notes',
+        analyticsId: 'trial_guide_release_notes_open',
+        linkType: 'Release notes',
         Icon: InfoIcon,
         titleKey: 'Service.TrialGuide.Opencti.ResourceCards.ReleaseNotes.Title',
         descriptionKey:
@@ -156,6 +168,8 @@ export const TRIAL_GUIDE_CONTENT: Record<
     resourceCards: [
       {
         id: 'documentation',
+        analyticsId: 'trial_guide_documentation_open',
+        linkType: 'Documentation',
         Icon: DescriptionOutlinedIcon,
         titleKey:
           'Service.TrialGuide.Openaev.ResourceCards.Documentation.Title',
@@ -165,6 +179,8 @@ export const TRIAL_GUIDE_CONTENT: Record<
       },
       {
         id: 'academy',
+        analyticsId: 'trial_guide_academy_open',
+        linkType: 'Academy',
         Icon: SchoolIcon,
         titleKey: 'Service.TrialGuide.Openaev.ResourceCards.Academy.Title',
         descriptionKey:
@@ -173,6 +189,8 @@ export const TRIAL_GUIDE_CONTENT: Record<
       },
       {
         id: 'community',
+        analyticsId: 'trial_guide_community_join',
+        linkType: 'Community',
         Icon: GroupIcon,
         titleKey: 'Service.TrialGuide.Openaev.ResourceCards.Community.Title',
         descriptionKey:
@@ -181,6 +199,8 @@ export const TRIAL_GUIDE_CONTENT: Record<
       },
       {
         id: 'release-notes',
+        analyticsId: 'trial_guide_release_notes_open',
+        linkType: 'Release notes',
         Icon: InfoIcon,
         titleKey: 'Service.TrialGuide.Openaev.ResourceCards.ReleaseNotes.Title',
         descriptionKey:
@@ -282,6 +302,8 @@ export const TRIAL_GUIDE_CONTENT: Record<
     resourceCards: [
       {
         id: 'documentation',
+        analyticsId: 'trial_guide_documentation_open',
+        linkType: 'Documentation',
         Icon: DescriptionOutlinedIcon,
         titleKey: 'Service.TrialGuide.Xtmone.ResourceCards.Documentation.Title',
         descriptionKey:
@@ -290,6 +312,8 @@ export const TRIAL_GUIDE_CONTENT: Record<
       },
       {
         id: 'community',
+        analyticsId: 'trial_guide_community_join',
+        linkType: 'Community',
         Icon: GroupIcon,
         titleKey: 'Service.TrialGuide.Xtmone.ResourceCards.Community.Title',
         descriptionKey:

@@ -123,6 +123,7 @@ export const Profile = () => {
         <RequestTransferPersonalSpace />
       </section>
       <ConfirmDialog
+        confirmAnalyticsId="account_profile_update_confirm"
         open={isDialogOpen}
         title={t('DialogActions.ContinueTitle')}
         confirmLabel={t('MenuActions.Continue')}

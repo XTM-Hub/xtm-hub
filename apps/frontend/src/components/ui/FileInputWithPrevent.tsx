@@ -2,6 +2,10 @@
 
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useTranslate } from '@/hooks/use-translate';
+import {
+  analyticsId,
+  type AnalyticsElementId,
+} from '@/lib/analytics/analytics.ids';
 import { Button } from '@filigran/design-system';
 import { MouseEvent, useRef, useState } from 'react';
 
@@ -9,6 +13,8 @@ const FileInputWithPrevent = ({
   texts,
   allowedTypes,
   field,
+  analyticsId: elementId,
+  confirmAnalyticsId,
 }: {
   texts?: {
     selectFile: string;
@@ -21,6 +27,8 @@ const FileInputWithPrevent = ({
     name: string;
     value?: FileList;
   };
+  analyticsId: AnalyticsElementId;
+  confirmAnalyticsId: AnalyticsElementId;
 }) => {
   const t = useTranslate();
   const [isOpen, setIsOpen] = useState(false);
@@ -45,11 +53,18 @@ const FileInputWithPrevent = ({
       <ConfirmDialog
         open={isOpen}
         onOpenChange={setIsOpen}
-        trigger={<Button type="button">{texts?.selectFile}</Button>}
+        trigger={
+          <Button
+            {...analyticsId(elementId)}
+            type="button">
+            {texts?.selectFile}
+          </Button>
+        }
         title={texts?.dialogTitle ?? ''}
         description={texts?.dialogDescription}
         confirmLabel={t('Utils.Continue')}
         onConfirm={openFileDialog}
+        confirmAnalyticsId={confirmAnalyticsId}
       />
 
       <input

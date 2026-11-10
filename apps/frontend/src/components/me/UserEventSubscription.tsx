@@ -55,6 +55,7 @@ const UserEventSubscription = () => {
   useSubscription(subscriptionConfig);
   return (
     <ConfirmDialog
+      confirmAnalyticsId="account_change_notice_close"
       open={isOpen}
       onOpenChange={setIsOpen}
       title={t('UpdateUserDialog.TextUpdatedUserTitle')}

@@ -30,6 +30,7 @@ const ResourceMarkdownRenderer = ({
     <MarkdownRenderer
       source={source}
       className={className}
+      linkAnalyticsId="resource_description_link_open"
       transformLinkHref={transformLinkHref}
     />
   );

@@ -18,10 +18,15 @@ export const resetAnalyticsEnvironment = (): void => {
 export const readGtagCommands = (): unknown[][] =>
   (window.dataLayer ?? []).map((entry) => Array.from(entry));
 
+const isEventParams = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
 export const readTrackedEvents = (name: string): unknown[] =>
   readGtagCommands()
     .filter(([command, eventName]) => command === 'event' && eventName === name)
-    .map(([, , params]) => params);
+    .map(([, , params]) => params)
+    .filter(isEventParams)
+    .map(({ send_to: _sendTo, ...eventParams }) => eventParams);
 
 export const startAnalytics = (): void => {
   resetAnalyticsEnvironment();

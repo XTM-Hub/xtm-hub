@@ -16,6 +16,8 @@ const TOTAL_COUNT = 42;
 const SEARCH_TERM = 'phishing';
 const OTHER_SEARCH_TERM = 'ransomware';
 const SHORT_SEARCH_TERM = 'ab';
+const INDICATOR_SEARCH_TERM = 'phishing 8.8.8.8';
+const MASKED_SEARCH_TERM = 'phishing [ip]';
 const FILTERS = '{"labels":["use-case-1"]}';
 
 const RESULTS = {
@@ -118,9 +120,13 @@ describe('resolveResourceListEvents', () => {
     expect(events).toEqual({});
   });
 
-  it.each(['abc', SEARCH_TERM])(
-    'should send the search of %s when the term changes on the same list',
-    (searchTerm) => {
+  it.each([
+    ['abc', 'abc'],
+    [SEARCH_TERM, SEARCH_TERM],
+    [INDICATOR_SEARCH_TERM, MASKED_SEARCH_TERM],
+  ])(
+    'should send the search of %s as %s when the term changes on the same list',
+    (searchTerm, sentSearchTerm) => {
       // Given
       const previous = makeSnapshot({ searchTerm: SHORT_SEARCH_TERM });
 
@@ -135,7 +141,7 @@ describe('resolveResourceListEvents', () => {
       expect(search).toEqual({
         library: LIBRARY,
         product: PRODUCT,
-        search_term: searchTerm,
+        search_term: sentSearchTerm,
         result_count: TOTAL_COUNT,
         has_results: 'Yes',
       });

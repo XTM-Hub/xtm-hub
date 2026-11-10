@@ -61,6 +61,7 @@ const AutoFormEnum = ({
           <SelectLabel required={isRequired}>
             {fieldConfigItem?.label || label}
           </SelectLabel>
+          {/* eslint-disable-next-line no-restricted-syntax -- form field sent by its tagged submit button */}
           <SelectTrigger
             className={cn(
               'w-full',

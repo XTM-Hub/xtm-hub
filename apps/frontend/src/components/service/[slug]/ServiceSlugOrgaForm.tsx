@@ -22,6 +22,7 @@ import { useSubscriptionDefaultValues } from './use-subscription-default-values'
 import { Form, FormField, FormLabel } from '@/components/ui/form';
 import { useKeepSelectedOptions } from '@/hooks/use-keep-selected-options';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { DEBOUNCE_TIME } from '@/utils/constant';
 import { toComboboxOptionIds } from '@/utils/design-system/combobox';
 import { Button, Checkbox, DatePicker } from '@filigran/design-system';
@@ -214,6 +215,7 @@ export const ServiceSlugOrgaForm = ({
               name="organization_id"
               render={({ field, fieldState }) => (
                 <AppCombobox
+                  formField
                   multiple
                   label={t('OrganizationInServiceAction.Organization')}
                   placeholder={t(
@@ -308,12 +310,14 @@ export const ServiceSlugOrgaForm = ({
 
           <SheetFooter className="pt-2">
             <Button
+              {...analyticsId('admin_form_cancel')}
               priority="secondary"
               type="button"
               onClick={(e) => handleCloseSheet(e)}>
               {t('Utils.Cancel')}
             </Button>
             <Button
+              {...analyticsId('admin_subscription_submit')}
               disabled={!form.formState.isValid}
               type="submit">
               {t('Utils.Validate')}

@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { APP_PATH } from '@/utils/path/constant';
 import { Button } from '@filigran/design-system';
 import {
@@ -130,6 +131,7 @@ const PendingUserNotifications = ({
       onOpenChange={setOpenPopover}>
       <PopoverTrigger asChild>
         <Button
+          {...analyticsId('notification_panel_open')}
           priority="tertiary"
           className="w-9 px-0 relative">
           <NotificationsIcon className="h-4 w-4" />
@@ -152,6 +154,7 @@ const PendingUserNotifications = ({
             <div key={user.id}>
               <Separator />
               <Link
+                {...analyticsId('notification_pending_user_open')}
                 href={`/${APP_PATH}/manage/user?pendingUsers`}
                 onClick={() => setOpenPopover(false)}
                 className="flex items-center my-2 px-4">

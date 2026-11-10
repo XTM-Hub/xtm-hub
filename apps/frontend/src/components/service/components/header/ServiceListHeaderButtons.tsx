@@ -7,6 +7,7 @@ import useServiceCapability, {
   useServiceCapabilityWithSubscriptionId,
 } from '@/hooks/use-service-capability';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { APP_PATH } from '@/utils/path/constant';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 import { Button } from '@filigran/design-system';
@@ -49,6 +50,7 @@ const ServiceListHeaderButtons = ({}) => {
           priority="secondary"
           asChild>
           <Link
+            {...analyticsId('subscription_access_open')}
             href={`/${APP_PATH}/manage/service/${serviceInstance.id}/subscription/${subscriptionId}`}
             prefetch={false}>
             {t('Service.Capabilities.ManageAccessName')}
@@ -65,7 +67,9 @@ const ServiceListHeaderButtons = ({}) => {
               }}
             />
           ) : (
-            <Button onClick={() => setOpenSheet(true)}>
+            <Button
+              {...analyticsId('resource_create')}
+              onClick={() => setOpenSheet(true)}>
               {t(`${translationKey}.AddService`)}
             </Button>
           )}

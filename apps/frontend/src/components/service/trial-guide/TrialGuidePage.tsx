@@ -7,6 +7,8 @@ import { TrialGuideResourceCard } from '@/components/service/trial-guide/TrialGu
 import { SlackSupportButton } from '@/components/service/trial-instances/SlackSupport';
 import { BreadcrumbNav } from '@/components/ui/BreadcrumbNav';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsProduct } from '@/lib/analytics/analytics.context';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { cn } from '@/lib/utils';
 import { APP_PATH } from '@/utils/path/constant';
 import {
@@ -86,6 +88,8 @@ export const TrialGuidePage = () => {
             const isXtmOne = platformIdentifier === PlatformIdentifier.Xtmone;
             return (
               <TabsTrigger
+                {...analyticsId('trial_guide_product_select')}
+                {...analyticsProduct(platformIdentifier)}
                 key={platformIdentifier}
                 value={platformIdentifier}
                 icon={
@@ -109,6 +113,7 @@ export const TrialGuidePage = () => {
             TRIAL_GUIDE_CONTENT[platformIdentifier];
           return (
             <TabsContent
+              {...analyticsProduct(platformIdentifier)}
               key={platformIdentifier}
               value={platformIdentifier}>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-3">

@@ -1,10 +1,20 @@
 import { SheetFooter } from '@/components/ui/sheet';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { useTranslate } from '@/hooks/use-translate';
+import {
+  type AnalyticsElementId,
+  analyticsId,
+} from '@/lib/analytics/analytics.ids';
 import { Button } from '@filigran/design-system';
 import { useEffect } from 'react';
 
-const RoleSheetFormFooter = ({ isDirty }: { isDirty: boolean }) => {
+const RoleSheetFormFooter = ({
+  isDirty,
+  submitAnalyticsId,
+}: {
+  isDirty: boolean;
+  submitAnalyticsId: AnalyticsElementId;
+}) => {
   const t = useTranslate();
   const { handleCloseSheet, setIsDirty } = useDialogContext();
 
@@ -21,10 +31,15 @@ const RoleSheetFormFooter = ({ isDirty }: { isDirty: boolean }) => {
         <Button
           type="button"
           priority="secondary"
+          {...analyticsId('admin_form_cancel')}
           onClick={(e) => handleCloseSheet(e)}>
           {t('Utils.Cancel')}
         </Button>
-        <Button type="submit">{t('Utils.Validate')}</Button>
+        <Button
+          {...analyticsId(submitAnalyticsId)}
+          type="submit">
+          {t('Utils.Validate')}
+        </Button>
       </div>
     </SheetFooter>
   );

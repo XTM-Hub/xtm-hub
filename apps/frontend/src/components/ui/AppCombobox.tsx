@@ -1,5 +1,9 @@
 import { useTranslate } from '@/hooks/use-translate';
 import {
+  analyticsId,
+  type AnalyticsFieldProps,
+} from '@/lib/analytics/analytics.ids';
+import {
   Combobox,
   ComboboxChangeMeta,
   ComboboxChips,
@@ -58,7 +62,8 @@ type AppComboboxBaseProps<T> = Omit<
 };
 
 export type AppComboboxProps<T> = AppComboboxBaseProps<T> &
-  (AppComboboxSingleProps<T> | AppComboboxMultipleProps<T>);
+  (AppComboboxSingleProps<T> | AppComboboxMultipleProps<T>) &
+  AnalyticsFieldProps;
 
 export const AppCombobox = <T,>({
   label,
@@ -74,6 +79,8 @@ export const AppCombobox = <T,>({
   multiple,
   value,
   onValueChange,
+  analyticsId: elementId,
+  formField: _formField,
   ...comboboxProps
 }: AppComboboxProps<T>) => {
   const t = useTranslate();
@@ -98,6 +105,7 @@ export const AppCombobox = <T,>({
           />
         )}
         <ComboboxInput
+          {...(elementId && analyticsId(elementId))}
           className={inputClassName}
           aria-label={hasVisibleLabel ? undefined : label}
           // The input links the helper text but never marks itself invalid.
@@ -109,6 +117,7 @@ export const AppCombobox = <T,>({
         <ComboboxControls>
           <ComboboxClear aria-label={t('Utils.Clear')} />
           <ComboboxTrigger
+            {...(elementId && analyticsId(elementId))}
             aria-label={t('DesignSystem.Combobox.ToggleOptions')}
           />
         </ComboboxControls>

@@ -1,6 +1,10 @@
 'use client';
 
 import { Separator } from '@/components/ui/separator';
+import {
+  analyticsId,
+  type AnalyticsElementId,
+} from '@/lib/analytics/analytics.ids';
 import { cn } from '@/lib/utils';
 import { Text } from '@filigran/design-system';
 import MDEditor from '@uiw/react-md-editor';
@@ -14,6 +18,7 @@ import rehypeSanitize, {
 export interface MarkdownRendererProps {
   source: string;
   className?: string;
+  linkAnalyticsId: AnalyticsElementId;
   // Rewrites the href of every link written in the markdown
   transformLinkHref?: (href: string) => string;
 }
@@ -113,7 +118,6 @@ const MARKDOWN_COMPONENTS: MarkdownComponents = {
       {children}
     </Text>
   ),
-  a: MarkdownLink,
   ul: ({ node: _node, className, ...props }: ElementProps<'ul'>) => (
     <ul
       className={cn('flex list-disc flex-col gap-1 pl-6', className)}
@@ -208,23 +212,22 @@ const MARKDOWN_COMPONENTS: MarkdownComponents = {
 const MarkdownRenderer = ({
   source,
   className,
+  linkAnalyticsId,
   transformLinkHref,
 }: MarkdownRendererProps) => {
   // A new link component on every render would remount each link
   const components = useMemo<MarkdownComponents>(
-    () =>
-      transformLinkHref
-        ? {
-            ...MARKDOWN_COMPONENTS,
-            a: ({ href, ...props }: ElementProps<'a'>) => (
-              <MarkdownLink
-                {...props}
-                href={href ? transformLinkHref(href) : href}
-              />
-            ),
-          }
-        : MARKDOWN_COMPONENTS,
-    [transformLinkHref]
+    () => ({
+      ...MARKDOWN_COMPONENTS,
+      a: ({ href, ...props }: ElementProps<'a'>) => (
+        <MarkdownLink
+          {...props}
+          {...analyticsId(linkAnalyticsId)}
+          href={href && transformLinkHref ? transformLinkHref(href) : href}
+        />
+      ),
+    }),
+    [linkAnalyticsId, transformLinkHref]
   );
 
   return (

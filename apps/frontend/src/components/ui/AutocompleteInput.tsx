@@ -126,6 +126,7 @@ export const AutocompleteInput = ({
           aria-label={listLabel}
           className="absolute z-50 mt-1 max-h-60 w-full overflow-y-auto rounded border layer-3 bg-elevation-default py-1 drop-shadow-xs">
           {visibleOptions.map((option, index) => (
+            // eslint-disable-next-line no-restricted-syntax -- listbox option, options are not tracked
             <li
               key={option.value}
               id={optionId(index)}

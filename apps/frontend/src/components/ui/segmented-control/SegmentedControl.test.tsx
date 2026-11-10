@@ -9,6 +9,7 @@ import {
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
 const LABEL = 'Period';
+const ANALYTICS_ID = 'platform_metrics_period_select';
 
 const items: SegmentedControlItem<string>[] = [
   { value: 'week', label: '7 days' },
@@ -24,6 +25,7 @@ const renderSegmentedControl = (
   testRender(
     <SegmentedControl
       aria-label={LABEL}
+      analyticsId={ANALYTICS_ID}
       items={items}
       value={value}
       onValueChange={onValueChange}
@@ -203,6 +205,7 @@ describe('SegmentedControl', () => {
       testRender(
         <SegmentedControl
           aria-label={LABEL}
+          analyticsId={ANALYTICS_ID}
           items={itemsWithDisabled}
           value={value}
           onValueChange={onValueChange}
@@ -343,6 +346,7 @@ describe('SegmentedControl', () => {
       testRender(
         <SegmentedControl
           aria-label={LABEL}
+          analyticsId={ANALYTICS_ID}
           items={[
             { value: 'week', label: '7 days' },
             { value: 'month', label: '30 days', disabled: true },

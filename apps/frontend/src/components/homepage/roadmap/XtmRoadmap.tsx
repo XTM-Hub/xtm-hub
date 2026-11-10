@@ -6,6 +6,7 @@ import type { HomepageRoadmapTitleProduct } from '@/components/homepage/Homepage
 import { CountBadge } from '@/components/ui/CountBadge';
 import { getTranslate } from '@/hooks/get-translate';
 import { PublicLocale } from '@/i18n/config';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { serverGraphqlFetch } from '@/lib/server-graphql-fetch';
 import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '@/utils/constant';
 import { PUBLIC_CYBERSECURITY_SOLUTIONS_PATH } from '@/utils/path/constant';
@@ -79,6 +80,7 @@ const XtmRoadmap = async ({
             priority="secondary"
             className="border-elevation-default">
             <Link
+              {...analyticsId('home_roadmap_open')}
               href={seeMoreHref ?? defaultSeeMoreHref}
               prefetch={false}>
               {t('SeeMore')}

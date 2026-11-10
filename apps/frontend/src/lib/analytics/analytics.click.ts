@@ -3,9 +3,12 @@ import {
   ANALYTICS_FEATURE_NAME_ATTRIBUTE,
   ANALYTICS_ID_ATTRIBUTE,
   ANALYTICS_LIBRARY_ATTRIBUTE,
+  ANALYTICS_LINK_TYPE_ATTRIBUTE,
+  ANALYTICS_LINK_TYPES,
   ANALYTICS_PRODUCT_ATTRIBUTE,
   ANALYTICS_RESOURCE_ID_ATTRIBUTE,
   ANALYTICS_RESOURCE_NAME_ATTRIBUTE,
+  ANALYTICS_RESOURCE_TYPE_ATTRIBUTE,
   ANALYTICS_SECTION_ATTRIBUTE,
   ANALYTICS_USE_CASES_ATTRIBUTE,
   DISABLED_SELECTOR,
@@ -23,10 +26,14 @@ import {
   isAnalyticsElementId,
 } from '@/lib/analytics/analytics.ids';
 import { ANALYTICS_ELEMENT_IDS } from '@/lib/analytics/analytics.registry';
+import { toAnalyticsItem } from '@/lib/analytics/analytics.resource';
 import {
   type AnalyticsEvents,
+  type AnalyticsLinkType,
   type AnalyticsPageType,
 } from '@/lib/analytics/analytics.types';
+import { isValueInEnum } from '@/utils/is-value-in-enum';
+import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 
 const readAttribute = (
   element: Element | null,
@@ -82,6 +89,11 @@ const readClosestAttribute = (
 ): string | undefined =>
   readAttribute(findContext(chain, `[${attribute}]`), attribute);
 
+const isAnalyticsLinkType = (
+  value: string | undefined
+): value is AnalyticsLinkType =>
+  ANALYTICS_LINK_TYPES.some((type) => type === value);
+
 const isSelectionControl = (element: Element): boolean =>
   element.matches(SELECTION_CONTROL_SELECTOR) &&
   !!element.closest(SELECTION_CONTAINER_SELECTOR);
@@ -115,6 +127,7 @@ export const buildClickParams = (
     ANALYTICS_ELEMENT_IDS[elementId];
   const chain = getContextChain(element);
   const resource = findContext(chain, `[${ANALYTICS_RESOURCE_ID_ATTRIBUTE}]`);
+  const linkType = readClosestAttribute(chain, ANALYTICS_LINK_TYPE_ATTRIBUTE);
   return {
     element_id: elementId,
     domain: getAnalyticsDomain(elementId),
@@ -128,5 +141,32 @@ export const buildClickParams = (
     section: readClosestAttribute(chain, ANALYTICS_SECTION_ATTRIBUTE),
     epic_name: readClosestAttribute(chain, ANALYTICS_EPIC_NAME_ATTRIBUTE),
     feature_name: readClosestAttribute(chain, ANALYTICS_FEATURE_NAME_ATTRIBUTE),
+    link_type: isAnalyticsLinkType(linkType) ? linkType : undefined,
+  };
+};
+
+export const buildSelectItemParams = (
+  { element, elementId }: TrackedElement,
+  pageType: AnalyticsPageType
+): AnalyticsEvents['select_item'] | null => {
+  if (elementId !== 'resource_open') {
+    return null;
+  }
+  const resource = findContext(
+    getContextChain(element),
+    `[${ANALYTICS_RESOURCE_ID_ATTRIBUTE}]`
+  );
+  const id = readAttribute(resource, ANALYTICS_RESOURCE_ID_ATTRIBUTE);
+  const type = readAttribute(resource, ANALYTICS_RESOURCE_TYPE_ATTRIBUTE);
+  if (!id || !isValueInEnum(type, ShareableResourceType)) {
+    return null;
+  }
+  const item = toAnalyticsItem(
+    { id, name: readAttribute(resource, ANALYTICS_RESOURCE_NAME_ATTRIBUTE) },
+    type
+  );
+  return {
+    item_list_name: pageType === 'Library' ? item.item_category : pageType,
+    items: [item],
   };
 };

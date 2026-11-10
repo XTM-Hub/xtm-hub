@@ -1,4 +1,5 @@
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { cn } from '@/lib/utils';
 import { Button } from '@filigran/design-system';
 import { LeftPanelCloseIcon, LeftPanelOpenIcon } from '@filigran/icon';
@@ -16,6 +17,7 @@ export const CollapseMenuButton = ({
   return (
     <div className="shrink-0 pb-2">
       <Button
+        {...analyticsId('nav_side_menu_toggle')}
         priority="tertiary"
         aria-label={t('App.CollapseSidebar')}
         className="h-9 px-3 w-full justify-start rounded-none text-default-primary"

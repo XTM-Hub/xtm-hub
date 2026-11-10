@@ -120,6 +120,7 @@ const ConnectProductFromHubModal = ({
 
   return (
     <DialogInformative
+      analyticsId="platform_admin_contact"
       isOpen={isOpen}
       onClose={handleClose}
       onButtonClick={canManageOrganization ? undefined : handleReachAdmin}

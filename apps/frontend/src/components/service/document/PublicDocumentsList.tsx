@@ -19,6 +19,7 @@ import { useServiceListStorage } from '@/hooks/use-service-list-storage';
 import { useStickyHeaderOffset } from '@/hooks/use-sticky-header-offset';
 import { useTablePagination } from '@/hooks/use-table-pagination';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { APP_PATH } from '@/utils/path/constant';
 import { encodeRedirectValue } from '@/utils/redirect';
@@ -199,6 +200,7 @@ const PublicDocumentsList = ({
           className="my-4 flex flex-col items-center gap-3 text-center">
           <p>{t('Service.List.LoadError')}</p>
           <Button
+            {...analyticsId('resource_list_refresh')}
             priority="secondary"
             onClick={() => void refetch()}>
             {t('Service.List.Retry')}

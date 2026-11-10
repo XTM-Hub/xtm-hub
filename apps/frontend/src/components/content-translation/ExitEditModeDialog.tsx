@@ -4,6 +4,7 @@ import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useEditMode } from '@/context/edit-mode-context';
 import { useContentEditModeToggle } from '@/hooks/use-content-edit-mode-toggle';
 import { useContentTranslationDrafts } from '@/hooks/use-content-translation-drafts';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import {
   Button,
   Dialog,
@@ -62,6 +63,7 @@ export const ExitEditModeDialog = ({
           <Button
             priority="tertiary"
             disabled={isBusy}
+            {...analyticsId('admin_translation_exit_keep_confirm')}
             onClick={() => exitAfter(keepDrafts)}>
             {t('EditableText.KeepDraftsAndExit')}
           </Button>
@@ -69,11 +71,13 @@ export const ExitEditModeDialog = ({
             variant="destructive"
             priority="secondary"
             disabled={isBusy}
+            {...analyticsId('admin_translation_exit_discard_confirm')}
             onClick={() => exitAfter(discardDrafts)}>
             {t('EditableText.DiscardAndExit')}
           </Button>
           <Button
             disabled={isBusy}
+            {...analyticsId('admin_translation_exit_publish_confirm')}
             onClick={() => exitAfter(publishDrafts)}>
             {t('EditableText.PublishAndExit')}
           </Button>

@@ -1,4 +1,5 @@
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { IconButton } from '@filigran/design-system';
 import { ArrowNextIcon, ArrowPreviousIcon } from '@filigran/icon';
 import { PaginationState } from '@tanstack/react-table';
@@ -50,6 +51,7 @@ export const PaginationArrowButtons = ({
   return (
     <>
       <IconButton
+        {...analyticsId('list_previous_page_open')}
         priority="tertiary"
         className="h-9 w-9 rounded-none"
         onClick={() => previousPage()}
@@ -69,6 +71,7 @@ export const PaginationArrowButtons = ({
         {totalCount}
       </div>
       <IconButton
+        {...analyticsId('list_next_page_open')}
         priority="tertiary"
         className="h-9 w-9 rounded-none"
         onClick={() => nextPage()}

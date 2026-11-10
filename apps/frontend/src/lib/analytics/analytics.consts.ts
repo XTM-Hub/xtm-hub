@@ -86,6 +86,44 @@ export const EMAIL_PATTERN = /[^\s@]+@[^\s@]+\.[a-z]{2,}/i;
 
 export const URL_PATTERN = /^[a-z][a-z\d+.-]*:\/\//i;
 
+const IPV4 = String.raw`\d{1,3}(?:\.\d{1,3}){3}`;
+
+export const SEARCH_TERM_TOKEN_CORE_PATTERN =
+  /^[("'<[{]*(.*?)[)"'>\]},;:.!?]*$/;
+
+export const SEARCH_TERM_MASKS: readonly {
+  pattern: RegExp;
+  placeholder: string;
+}[] = [
+  { pattern: URL_PATTERN, placeholder: '[url]' },
+  {
+    pattern: new RegExp(String.raw`^${IPV4}(?:\/\d{1,2}|:\d{1,5})?$`),
+    placeholder: '[ip]',
+  },
+  {
+    pattern: new RegExp(
+      String.raw`^(?=.*[\da-f])(?:[\da-f]{0,4}:){2,7}(?:[\da-f]{0,4}|${IPV4})(?:\/\d{1,3}|\]:\d{1,5})?$`,
+      'i'
+    ),
+    placeholder: '[ip]',
+  },
+  {
+    pattern: /^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i,
+    placeholder: '[uuid]',
+  },
+  {
+    pattern: /^(?:[\da-f]{32}|[\da-f]{40}|[\da-f]{64}|[\da-f]{128})$/i,
+    placeholder: '[hash]',
+  },
+  { pattern: /^\d{6,}$/, placeholder: '[number]' },
+  {
+    pattern:
+      /^(?:[a-z\d](?:[a-z\d-]{0,61}[a-z\d])?\.)+[a-z]{2,24}\.?(?::\d{1,5})?(?:[/?#]\S*)?$/i,
+    placeholder: '[domain]',
+  },
+  { pattern: /^(?=.*\d)[\w+/.-]{24,}={0,2}$/, placeholder: '[token]' },
+];
+
 export const KEPT_QUERY_PARAM_PATTERN = /^(utm_.+|gclid)$/;
 
 export const OTHER_REFERRER = 'Other';
@@ -113,11 +151,22 @@ export const ANALYTICS_ID_ATTRIBUTE = 'data-analytics-id';
 export const ANALYTICS_SECTION_ATTRIBUTE = 'data-analytics-section';
 export const ANALYTICS_RESOURCE_ID_ATTRIBUTE = 'data-analytics-resource-id';
 export const ANALYTICS_RESOURCE_NAME_ATTRIBUTE = 'data-analytics-resource-name';
+export const ANALYTICS_RESOURCE_TYPE_ATTRIBUTE = 'data-analytics-resource-type';
 export const ANALYTICS_LIBRARY_ATTRIBUTE = 'data-analytics-library';
 export const ANALYTICS_USE_CASES_ATTRIBUTE = 'data-analytics-use-cases';
 export const ANALYTICS_EPIC_NAME_ATTRIBUTE = 'data-analytics-epic-name';
 export const ANALYTICS_FEATURE_NAME_ATTRIBUTE = 'data-analytics-feature-name';
 export const ANALYTICS_PRODUCT_ATTRIBUTE = 'data-analytics-product';
+export const ANALYTICS_LINK_TYPE_ATTRIBUTE = 'data-analytics-link-type';
+
+export const ANALYTICS_LINK_TYPES = [
+  'Guide',
+  'Academy',
+  'Documentation',
+  'Community',
+  'Release notes',
+  'Support',
+] as const;
 
 export const INTERACTIVE_SELECTOR = [
   'a[href]',

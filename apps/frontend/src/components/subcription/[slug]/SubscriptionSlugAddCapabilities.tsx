@@ -2,6 +2,7 @@ import { UserServicesAddCapabilitiesMutation } from '@/components/service/user_s
 import { BadgeOverflow } from '@/components/ui/BadgeOverflowCounter';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import {
   Button,
   Checkbox,
@@ -124,11 +125,13 @@ export const SubscriptionSlugAddCapabilities = ({
 
         <DialogFooter>
           <Button
+            {...analyticsId('subscription_bulk_capabilities_cancel')}
             priority="tertiary"
             onClick={() => resetAndClose()}>
             {t('Utils.Cancel')}
           </Button>
           <Button
+            {...analyticsId('subscription_bulk_capabilities_submit')}
             disabled={selectedCapabilityIds.size === 0}
             onClick={handleSubmit}>
             {t('Utils.Validate')}
