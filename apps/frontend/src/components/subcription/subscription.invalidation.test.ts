@@ -7,6 +7,7 @@ import {
   useSubscriptionsListQuery,
 } from '@graphql/generated';
 import { organizationSubscribedServicesKeys } from '@graphql/organization-subscribed-services/organization-subscribed-services.keys';
+import { serviceUserCapabilitiesKeys } from '@graphql/service-instances/service-instances.keys';
 import { subscriptionKeys } from '@graphql/subscription/subscription.keys';
 import { QueryClient } from '@tanstack/react-query';
 import { describe, expect, it, vi } from 'vitest';
@@ -17,6 +18,7 @@ describe('invalidateSubscriptionQueries', () => {
     ${subscriptionKeys.all()}                   | ${'the subscriptions of a service'}
     ${subscriptionKeys.allById()}               | ${'the subscription detail'}
     ${organizationSubscribedServicesKeys.all()} | ${'the subscribed services of an organization'}
+    ${serviceUserCapabilitiesKeys.all()}        | ${'the capabilities of the user on a service'}
   `('should invalidate $description', async ({ key }) => {
     // Given
     const queryClient = new QueryClient();
@@ -52,6 +54,7 @@ describe('invalidateSubscriptionQueries', () => {
         filters: null,
         searchTerm: null,
       }),
+      serviceUserCapabilitiesKeys.byService('service-1'),
     ];
     const unrelatedKey = ['UnrelatedQuery', { id: 'other' }];
     [...generatedKeys, unrelatedKey].forEach((key) =>

@@ -8,3 +8,9 @@ export const serviceInstancesKeys = {
   list: (variables: ServiceInstancesListQueryVariables) =>
     useServiceInstancesListQuery.getKey(variables),
 };
+
+export const serviceUserCapabilitiesKeys = {
+  all: () => ['service-user-capabilities'] as const,
+  byService: (serviceInstanceId?: string) =>
+    ['service-user-capabilities', serviceInstanceId] as const,
+};

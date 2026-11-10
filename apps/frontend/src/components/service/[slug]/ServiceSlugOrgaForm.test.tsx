@@ -13,6 +13,7 @@ import {
   SubscriptionItemFragment,
 } from '@graphql/generated';
 import { organizationSubscribedServicesKeys } from '@graphql/organization-subscribed-services/organization-subscribed-services.keys';
+import { serviceUserCapabilitiesKeys } from '@graphql/service-instances/service-instances.keys';
 import { subscriptionKeys } from '@graphql/subscription/subscription.keys';
 import { QueryClient } from '@tanstack/react-query';
 import { screen, waitFor } from '@testing-library/react';
@@ -152,6 +153,7 @@ const shouldHandleSubmissionOutcomes = ({
     ${subscriptionKeys.all()}                   | ${'the subscriptions of the service'}
     ${subscriptionKeys.allById()}               | ${'the subscription detail'}
     ${organizationSubscribedServicesKeys.all()} | ${'the subscribed services of the organization'}
+    ${serviceUserCapabilitiesKeys.all()}        | ${'the capabilities of the user on a service'}
   `('should invalidate $description when it succeeds', async ({ key }) => {
     // Given
     mockMutationHook(hook, 'success');
