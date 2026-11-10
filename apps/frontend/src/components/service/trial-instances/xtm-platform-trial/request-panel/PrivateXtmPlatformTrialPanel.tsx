@@ -20,6 +20,7 @@ import {
 import { BundleCancelSheet } from '@/components/service/trial-instances/xtm-platform-trial/shared/BundleCancelSheet';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
+import { trackEvent } from '@/lib/analytics/analytics.client';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { Button } from '@filigran/design-system';
 import { xtmPlatformBundleKeys } from '@graphql/deployment/deployment.keys';
@@ -51,6 +52,7 @@ export const PrivateXtmPlatformTrialPanel = ({
     portalGraphqlClient,
     {
       onSuccess: () => {
+        trackEvent('generate_lead', { lead_source: 'Trial request' });
         queryClient.invalidateQueries({
           queryKey: xtmPlatformBundleKeys.all(),
         });

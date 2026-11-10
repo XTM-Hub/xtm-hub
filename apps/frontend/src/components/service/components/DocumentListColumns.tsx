@@ -12,15 +12,18 @@ import { ShareableResourceTypeChip } from '@/components/ui/shareable-resource/Sh
 import { ShareableResourceCardSupportIcons } from '@/components/ui/shareable-resource/card-design/ShareableResourceCardSupportIcons';
 import { UseTranslationsProps } from '@/i18n/config';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { publicDocumentListItemFragment$data } from '@generated/publicDocumentListItemFragment.graphql';
-import { IntegrationType } from '@graphql/generated';
+import {
+  IntegrationType,
+  PublicDocumentListItemFragment,
+} from '@graphql/generated';
 import { ColumnDef } from '@tanstack/react-table';
 import { ReactNode } from 'react';
 
 type DocumentListItem =
-  documentItem_fragment$data | publicDocumentListItemFragment$data;
+  documentItem_fragment$data | PublicDocumentListItemFragment;
 
 const isConnector = (document: DocumentListItem) =>
+  'integration_type' in document &&
   document.integration_type === IntegrationType.Connector;
 
 export const buildDocumentListColumns = <T extends DocumentListItem>(params: {

@@ -1,3 +1,41 @@
+fragment PublicDocumentListItem on Document {
+  __typename
+  id
+  name
+  short_description
+  slug
+  children_documents {
+    id
+    image_type
+  }
+  use_cases {
+    id
+    name
+    color
+  }
+  uploader {
+    first_name
+    last_name
+    picture
+  }
+  status
+  type
+
+  ... on Integration {
+    integration_type
+  }
+
+  ... on Connector {
+    product_version
+    verified
+    manager_supported
+  }
+
+  ... on CustomView {
+    entity_types
+  }
+}
+
 fragment PublicDocumentByServiceSlugItem on Document {
   __typename
   id
@@ -20,6 +58,7 @@ fragment PublicDocumentByServiceSlugItem on Document {
     color
   }
   uploader {
+    id
     first_name
     last_name
     picture
@@ -103,5 +142,43 @@ query PublicDocumentsByServiceSlugSitemapQuery($serviceInstanceSlug: String!) {
     slug
     created_at
     updated_at
+  }
+}
+
+query PublicDocuments(
+  $slug: String!
+  $count: Int!
+  $cursor: ID
+  $orderBy: DocumentOrdering!
+  $orderMode: OrderingMode!
+  $logicalFilters: LogicalFilterInput
+  $searchTerm: String
+  $serviceInstanceId: ServiceInstanceId!
+) {
+  publicDocuments(
+    slug: $slug
+    first: $count
+    after: $cursor
+    orderBy: $orderBy
+    orderMode: $orderMode
+    logicalFilters: $logicalFilters
+    searchTerm: $searchTerm
+    serviceInstanceId: $serviceInstanceId
+  ) {
+    totalCount
+    edges {
+      node {
+        ...PublicDocumentListItem
+      }
+    }
+  }
+}
+
+query PublicDocumentBySlug(
+  $serviceInstanceId: ServiceInstanceId!
+  $slug: String!
+) {
+  publicDocumentBySlug(serviceInstanceId: $serviceInstanceId, slug: $slug) {
+    ...PublicDocumentByServiceSlugItem
   }
 }

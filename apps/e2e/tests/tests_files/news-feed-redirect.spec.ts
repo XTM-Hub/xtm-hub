@@ -48,6 +48,22 @@ test.describe('News feed redirect', () => {
     expect(response.headers()['set-cookie']).toBeUndefined();
   });
 
+  test('should redirect the link of a deleted news feed blog post to the Hub root', async () => {
+    newsFeedItemId = await addBlogPostNewsFeedItem(BLOG_POST_SLUG, {
+      isDeleted: true,
+    });
+
+    const response = await newsFeedRedirectPage.requestExternalRedirect(
+      newsFeedItemId,
+      `utm_source=opencti&utm_medium=newsfeed&utm_campaign=blog_posts&utm_content=blog_posts&platform_id=${PLATFORM_ID}`
+    );
+
+    // Same answer as every other failure, the Hub root, with no trace of the destination
+    expect(response.status()).toBe(302);
+    expect(response.headers()['location']).toBe('/');
+    expect(response.headers()['cache-control']).toBe('no-store');
+  });
+
   test('should redirect a news feed resource link to the resource service when the user is logged in', async ({
     page,
   }) => {

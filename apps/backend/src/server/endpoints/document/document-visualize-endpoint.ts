@@ -126,7 +126,7 @@ export const documentVisualizeEndpoint = (app: Application) => {
         });
 
         if (!document?.mime_type?.startsWith('image/')) {
-          logApp.error(
+          logApp.warn(
             `Document not found. Required documentId: ${documentId}`,
             { path: req.originalUrl, user_agent: req.get('user-agent') }
           );

@@ -1,3 +1,4 @@
+import { readTrackedEvents, startAnalytics } from '@/utils/test/analytics';
 import testRender from '@/utils/test/test-render';
 import { screen } from '@testing-library/react';
 import { useTranslations } from 'next-intl';
@@ -7,6 +8,7 @@ import { IntegrationProductVersionFilter } from './IntegrationProductVersionFilt
 const LABEL = 'Service.OpenctiIntegrations.Filter.ProductVersion.Label';
 const PLACEHOLDER =
   'Service.OpenctiIntegrations.Filter.ProductVersion.Placeholder';
+const PICKED_VERSION = '6.6.0';
 const REGISTERED_TOOLTIP =
   'Service.OpenctiIntegrations.Filter.ProductVersion.RegisteredTooltip';
 
@@ -155,5 +157,26 @@ describe('IntegrationProductVersionFilter', () => {
       'opencti',
       expect.objectContaining({ registeredVersions: [] })
     );
+  });
+
+  it('should send the picked version when the user picks one', async () => {
+    // Given
+    startAnalytics();
+    const { user } = testRender(<IntegrationProductVersionFilter />);
+
+    // When
+    await user.click(screen.getByRole('combobox', { name: LABEL }));
+    await user.click(screen.getByText(PICKED_VERSION));
+
+    // Then
+    expect(readTrackedEvents('filter_apply')).toEqual([
+      {
+        filter_name: 'OpenCTI compatibility version',
+        filter_value: PICKED_VERSION,
+        filter_action: 'Add',
+        library: 'Integrations',
+        product: 'OpenCTI',
+      },
+    ]);
   });
 });

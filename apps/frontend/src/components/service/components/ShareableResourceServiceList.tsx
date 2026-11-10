@@ -10,6 +10,8 @@ import {
 import { useDocumentContext } from '@/components/service/document/use-document-context';
 import { PaginationControls } from '@/components/ui/pagination/PaginationControls';
 import { useDocumentFacetCounts } from '@/hooks/use-document-facet-counts';
+import { useResourceListAnalytics } from '@/hooks/use-resource-list-analytics';
+import useServiceCapability from '@/hooks/use-service-capability';
 import { useServiceListStorage } from '@/hooks/use-service-list-storage';
 import { useTablePagination } from '@/hooks/use-table-pagination';
 import { ServiceListStorageKey } from '@/utils/filters-storage.utils';
@@ -28,7 +30,8 @@ import {
   documentsQuery$variables,
 } from '@generated/documentsQuery.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
-import { useEffect } from 'react';
+import { ServiceRestriction } from '@graphql/generated';
+import { useEffect, useMemo } from 'react';
 import {
   PreloadedQuery,
   usePreloadedQuery,
@@ -75,6 +78,22 @@ const ShareableResourceServiceList = ({
   >(data?.documents.edges, documentItem);
 
   const connectionId = data?.documents.__id;
+
+  const canSeeDrafts = useServiceCapability(
+    ServiceRestriction.Upload,
+    serviceInstance
+  );
+  const visibleResources = useMemo(
+    () => (canSeeDrafts ? [...draft, ...active] : active),
+    [canSeeDrafts, draft, active]
+  );
+
+  useResourceListAnalytics({
+    resourceType: type,
+    variables: queryRef.variables,
+    totalCount: data.documents.totalCount,
+    resources: visibleResources,
+  });
 
   const context = useDocumentContext({
     serviceInstance,

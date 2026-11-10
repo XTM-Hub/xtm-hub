@@ -1,14 +1,21 @@
 import { PlatformMetrics } from '@/components/service/registration/PlatformMetrics';
+import { revokeAnalyticsConsent } from '@/lib/analytics/analytics.client';
+import {
+  readTrackedEvents,
+  resetAnalyticsEnvironment,
+  startAnalytics,
+} from '@/utils/test/analytics';
 import testRender from '@/utils/test/test-render';
 import {
   MetricType,
+  PlatformIdentifier,
   SaasPlatformMetrics,
   SaasPlatformMetricsPeriod,
   SaasPlatformResolution,
   SaasPlatformSla,
   SaasPlatformStorage,
 } from '@graphql/generated';
-import { screen } from '@testing-library/react';
+import { act, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
@@ -73,6 +80,7 @@ describe('PlatformMetrics', () => {
     // Given / When
     testRender(
       <PlatformMetrics
+        platformIdentifier={PlatformIdentifier.Opencti}
         metrics={metrics}
         storage={storage}
         isLoading={false}
@@ -97,6 +105,7 @@ describe('PlatformMetrics', () => {
     // Given / When
     testRender(
       <PlatformMetrics
+        platformIdentifier={PlatformIdentifier.Opencti}
         metrics={metrics}
         isLoading={false}
         period={SaasPlatformMetricsPeriod.Last_90Days}
@@ -130,6 +139,7 @@ describe('PlatformMetrics', () => {
       // Given / When
       testRender(
         <PlatformMetrics
+          platformIdentifier={PlatformIdentifier.Opencti}
           metrics={displayedMetrics}
           isLoading={isLoading}
           period={SaasPlatformMetricsPeriod.Last_30Days}
@@ -150,6 +160,7 @@ describe('PlatformMetrics', () => {
     // Given / When
     const { container } = testRender(
       <PlatformMetrics
+        platformIdentifier={PlatformIdentifier.Opencti}
         metrics={undefined}
         isLoading
         period={SaasPlatformMetricsPeriod.Last_90Days}
@@ -168,6 +179,7 @@ describe('PlatformMetrics', () => {
     // Given / When
     testRender(
       <PlatformMetrics
+        platformIdentifier={PlatformIdentifier.Opencti}
         metrics={null}
         storage={storage}
         isLoading={false}
@@ -190,6 +202,7 @@ describe('PlatformMetrics', () => {
     // Given / When
     testRender(
       <PlatformMetrics
+        platformIdentifier={PlatformIdentifier.Opencti}
         metrics={metrics}
         storage={storage}
         sla={sla}
@@ -213,6 +226,7 @@ describe('PlatformMetrics', () => {
       // Given / When
       testRender(
         <PlatformMetrics
+          platformIdentifier={PlatformIdentifier.Opencti}
           metrics={metrics}
           storage={storage}
           sla={unknownSla}
@@ -236,6 +250,7 @@ describe('PlatformMetrics', () => {
       // Given / When
       const { container } = testRender(
         <PlatformMetrics
+          platformIdentifier={PlatformIdentifier.Opencti}
           metrics={unavailableMetrics}
           isLoading={false}
           period={SaasPlatformMetricsPeriod.Last_90Days}
@@ -267,6 +282,7 @@ describe('PlatformMetrics', () => {
       // Given / When
       testRender(
         <PlatformMetrics
+          platformIdentifier={PlatformIdentifier.Opencti}
           metrics={metricsData}
           storage={storageData}
           isLoading={isLoading}
@@ -281,4 +297,79 @@ describe('PlatformMetrics', () => {
       });
     }
   );
+
+  it('should send the metrics view once when another period is chosen', () => {
+    // Given
+    startAnalytics();
+    const { rerender } = testRender(
+      <PlatformMetrics
+        platformIdentifier={PlatformIdentifier.Opencti}
+        metrics={metrics}
+        storage={storage}
+        isLoading={false}
+        period={SaasPlatformMetricsPeriod.Last_90Days}
+        onPeriodChange={vi.fn()}
+      />
+    );
+
+    // When
+    rerender(
+      <PlatformMetrics
+        platformIdentifier={PlatformIdentifier.Opencti}
+        metrics={metrics}
+        storage={storage}
+        isLoading={false}
+        period={SaasPlatformMetricsPeriod.Last_30Days}
+        onPeriodChange={vi.fn()}
+      />
+    );
+
+    // Then
+    expect(readTrackedEvents('view_platform_metrics')).toHaveLength(1);
+  });
+
+  it('should send the metrics view of the displayed platform and period when analytics is enabled after the metrics were displayed', () => {
+    // Given
+    resetAnalyticsEnvironment();
+    testRender(
+      <PlatformMetrics
+        platformIdentifier={PlatformIdentifier.Opencti}
+        metrics={metrics}
+        storage={storage}
+        isLoading={false}
+        period={SaasPlatformMetricsPeriod.Last_90Days}
+        onPeriodChange={vi.fn()}
+      />
+    );
+
+    // When
+    act(() => startAnalytics());
+
+    // Then
+    expect(readTrackedEvents('view_platform_metrics')).toEqual([
+      { product: 'OpenCTI', period: 'Last 90 days' },
+    ]);
+  });
+
+  it('should send the metrics view again when analytics is enabled again after it was withdrawn', () => {
+    // Given
+    startAnalytics();
+    testRender(
+      <PlatformMetrics
+        platformIdentifier={PlatformIdentifier.Opencti}
+        metrics={metrics}
+        storage={storage}
+        isLoading={false}
+        period={SaasPlatformMetricsPeriod.Last_90Days}
+        onPeriodChange={vi.fn()}
+      />
+    );
+    act(() => revokeAnalyticsConsent());
+
+    // When
+    act(() => startAnalytics());
+
+    // Then
+    expect(readTrackedEvents('view_platform_metrics')).toHaveLength(1);
+  });
 });

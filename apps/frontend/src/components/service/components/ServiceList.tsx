@@ -80,6 +80,7 @@ const ServiceList = ({
         <ServiceListHeader
           search={search}
           onSearchChange={onSearchChange}
+          resourceType={type}
           actions={<ServiceListHeaderButtons />}
           exportAction={
             type === ShareableResourceType.OPENCTI_INTEGRATION && (

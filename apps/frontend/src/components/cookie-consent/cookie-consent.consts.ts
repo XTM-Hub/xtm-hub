@@ -2,6 +2,7 @@ import {
   type ConsentCategory,
   type ConsentRegistry,
 } from '@/components/cookie-consent/cookie-consent.types';
+import { GA_CONSENT_SERVICE_ID } from '@/lib/analytics/analytics.consts';
 import {
   FiligranWebsiteUtmCampaign,
   withFiligranWebsiteUtm,
@@ -23,6 +24,8 @@ export const CONSENT_CATEGORIES: readonly ConsentCategory[] = [
 ];
 
 export const CONSENT_COOKIE_NAME = 'xtmhub_consent';
+
+export const EMBED_SEGMENT = '(embed)';
 
 export const CONSENT_VERSION = 1;
 
@@ -52,7 +55,7 @@ export const CONSENT_REGISTRY: ConsentRegistry = {
     required: false,
     services: [
       {
-        id: 'google-analytics',
+        id: GA_CONSENT_SERVICE_ID,
         name: 'Google Analytics (GA4)',
         cookies: [
           '_ga',

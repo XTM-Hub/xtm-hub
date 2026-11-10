@@ -1,3 +1,4 @@
+import { readTrackedEvents, startAnalytics } from '@/utils/test/analytics';
 import testRender from '@/utils/test/test-render';
 import { screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
@@ -54,5 +55,29 @@ describe('IntegrationDeployableFilter', () => {
         name: 'Service.OpenctiIntegrations.Filter.ManagerSupported.Placeholder',
       })
     ).not.toBeInTheDocument();
+  });
+
+  it('should send the English label of the deployment type when it is checked', async () => {
+    // Given
+    startAnalytics();
+    const { user } = testRender(<IntegrationDeployableFilter />);
+
+    // When
+    await user.click(
+      screen.getByRole('checkbox', {
+        name: 'Service.OpenctiIntegrations.Filter.ManagerSupported.AutomaticDeploy',
+      })
+    );
+
+    // Then
+    expect(readTrackedEvents('filter_apply')).toEqual([
+      {
+        filter_name: 'Deployment type',
+        filter_value: 'Automatic deploy',
+        filter_action: 'Add',
+        library: 'Integrations',
+        product: 'OpenCTI',
+      },
+    ]);
   });
 });

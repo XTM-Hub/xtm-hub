@@ -30,3 +30,18 @@ query MeOrganizations {
     }
   }
 }
+
+query MeAnalytics {
+  me {
+    email
+    selected_organization_id
+    organizations {
+      id
+      personal_space
+    }
+    capabilities {
+      name
+    }
+    selected_org_capabilities
+  }
+}

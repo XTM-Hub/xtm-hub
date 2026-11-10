@@ -3,10 +3,10 @@ import { EpicItemCard } from '@/components/epic/epic-item/EpicItemCard';
 import { EpicItemDetailed } from '@/components/epic/epic-item/EpicItemDetailed';
 import { useDetailParam } from '@/hooks/use-detail-param';
 import { Dialog, DialogContent } from '@filigran/design-system';
-import { epic_fragment$data } from '@generated/epic_fragment.graphql';
+import { EpicFieldsFragment } from '@graphql/generated';
 
 interface EpicItemProps {
-  epic: epic_fragment$data;
+  epic: EpicFieldsFragment;
   userCanUpdate: boolean;
   userCanDelete: boolean;
 }

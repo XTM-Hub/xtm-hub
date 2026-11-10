@@ -17,7 +17,7 @@ import { FiligranWebsiteUtm } from '@/utils/filigran-website-utm';
 import { platformIdentifierMappedByShareableResourceType } from '@/utils/services';
 import {
   isIntegrationItem,
-  PublicDocumentDetailsData,
+  PublicDocumentByServiceSlugItem,
   ShareableResourceType,
 } from '@/utils/shareable-resources/shareable-resources.types';
 import {
@@ -29,7 +29,7 @@ import { documentItem_fragment$data } from '@generated/documentItem_fragment.gra
 import { DocumentMetadataKeyCode, IntegrationType } from '@graphql/generated';
 
 interface ShareableResourceDetailsProps {
-  documentData: documentItem_fragment$data | PublicDocumentDetailsData;
+  documentData: documentItem_fragment$data | PublicDocumentByServiceSlugItem;
   downloadNumber?: number | null;
   shareNumber?: number | null;
   filigranWebsiteUtm?: FiligranWebsiteUtm;

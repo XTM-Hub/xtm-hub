@@ -2,6 +2,7 @@
 import { ReachSalesDialogForm } from '@/components/service/trial-instances/reach-sales/ReachSalesDialogForm';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
+import { trackEvent } from '@/lib/analytics/analytics.client';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { Button } from '@filigran/design-system';
 import {
@@ -23,6 +24,7 @@ export const ReachSalesButton = ({ variant }: ReachSalesButtonProps) => {
     portalGraphqlClient,
     {
       onSuccess: () => {
+        trackEvent('generate_lead', { lead_source: 'Sales contact' });
         showSnackbar({
           severity: 'success',
           title: t('Service.Trials.ReachOutToSalesSuccessTitle'),

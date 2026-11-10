@@ -1,6 +1,7 @@
 import {
   deriveXtmPlatformTrialPanelView,
   deriveXtmPlatformTrialRequestPageLayout,
+  toAnalyticsTrialState,
   XtmPlatformTrialPanelView,
   XtmPlatformTrialRequestPageLayout,
   XtmPlatformTrialStatusPanelState,
@@ -185,6 +186,89 @@ describe('deriveXtmPlatformTrialRequestPageLayout', () => {
 
       // Then
       expect(layout).toEqual(expectedLayout);
+    }
+  );
+});
+
+describe('toAnalyticsTrialState', () => {
+  const PERSONAL_SPACE = { isPersonalSpace: true, isAllowed: true };
+  const ALLOWED_USER = { isPersonalSpace: false, isAllowed: true };
+  const NOT_ALLOWED_USER = { isPersonalSpace: false, isAllowed: false };
+
+  it.each([
+    [
+      'Personal space',
+      'the organization is a personal space',
+      PERSONAL_SPACE,
+      null,
+    ],
+    ['Not allowed', 'the user cannot request a trial', NOT_ALLOWED_USER, null],
+    [
+      'Not allowed',
+      'the user cannot request a trial even though a bundle is pending',
+      NOT_ALLOWED_USER,
+      DeploymentRequestHubStatus.Pending,
+    ],
+    ['Request form', 'the user can request a trial', ALLOWED_USER, null],
+    [
+      'Pending',
+      'the bundle is queued',
+      ALLOWED_USER,
+      DeploymentRequestHubStatus.Queued,
+    ],
+    [
+      'Pending',
+      'the bundle is pending',
+      ALLOWED_USER,
+      DeploymentRequestHubStatus.Pending,
+    ],
+    [
+      'Provisioning',
+      'the bundle is provisioning',
+      ALLOWED_USER,
+      DeploymentRequestHubStatus.Provisioning,
+    ],
+    [
+      'Active',
+      'the bundle is active',
+      ALLOWED_USER,
+      DeploymentRequestHubStatus.Active,
+    ],
+    [
+      'Active',
+      'the bundle is active even though the user cannot request a trial',
+      NOT_ALLOWED_USER,
+      DeploymentRequestHubStatus.Active,
+    ],
+    [
+      'Cancelled',
+      'the bundle is cancelled',
+      ALLOWED_USER,
+      DeploymentRequestHubStatus.Cancelled,
+    ],
+    [
+      'Expired',
+      'the bundle has expired',
+      ALLOWED_USER,
+      DeploymentRequestHubStatus.Expired,
+    ],
+    [
+      'Failed',
+      'the bundle has failed',
+      ALLOWED_USER,
+      DeploymentRequestHubStatus.Failed,
+    ],
+  ])(
+    'should name the trial state %s when %s',
+    (expected, _context, user, hubStatus) => {
+      // Given
+      const view = deriveXtmPlatformTrialPanelView({ ...user, hubStatus });
+
+      // When
+      const trialState = toAnalyticsTrialState(view, hubStatus);
+
+      // Then
+      expect(trialState).toBe(expected);
     }
   );
 });

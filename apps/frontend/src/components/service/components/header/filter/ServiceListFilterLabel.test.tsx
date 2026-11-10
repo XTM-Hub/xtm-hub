@@ -3,6 +3,7 @@ import { AppServiceListStorageKeyContext } from '@/components/service/components
 import { useServiceListStorage } from '@/hooks/use-service-list-storage';
 import { ServiceListStorageKey } from '@/utils/filters-storage.utils';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
+import { readTrackedEvents, startAnalytics } from '@/utils/test/analytics';
 import testRender, { testRenderHook } from '@/utils/test/test-render';
 import {
   mockUseCase,
@@ -112,5 +113,27 @@ describe('ServiceListFilterLabel', () => {
     expect(renderStoredFilters().result.current.labels).toEqual({
       [FIRST_USE_CASE_ID]: [],
     });
+  });
+
+  it('should send the name of the use case with the library when the user checks it', async () => {
+    // Given
+    startAnalytics();
+    const { user } = renderFilter();
+
+    // When
+    await user.click(
+      screen.getByRole('checkbox', { name: FIRST_USE_CASE_NAME })
+    );
+
+    // Then
+    expect(readTrackedEvents('filter_apply')).toEqual([
+      {
+        filter_name: 'Use case',
+        filter_value: FIRST_USE_CASE_NAME,
+        filter_action: 'Add',
+        library: 'Integrations',
+        product: 'OpenCTI',
+      },
+    ]);
   });
 });

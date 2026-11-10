@@ -1,9 +1,14 @@
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
+import { trackEvent } from '@/lib/analytics/analytics.client';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { featureVotingKeys } from '@graphql/feature-voting/feature-voting.keys';
-import { useFeatureVoteMutation } from '@graphql/generated';
+import {
+  useFeatureVoteMutation,
+  VotableFeaturePublicFragment,
+} from '@graphql/generated';
 import { useQueryClient } from '@tanstack/react-query';
+import { useCallback } from 'react';
 
 /**
  * Casts a vote for a feature. Shared by the manual vote click on the private
@@ -14,27 +19,40 @@ export const useFeatureVote = () => {
   const t = useTranslate();
   const queryClient = useQueryClient();
 
-  return useFeatureVoteMutation(portalGraphqlClient, {
-    onSuccess: () => {
-      // A vote moves the one vote allowed per product, so the whole round has
-      // to be refetched for the previously voted feature to lose its badge.
-      queryClient.invalidateQueries({
-        queryKey: featureVotingKeys.currentAll(),
-      });
-      showSnackbar({
-        severity: 'success',
-        title: t('FeatureVoting.VoteRecordedTitle'),
-        description: t('FeatureVoting.VoteRecordedDescription'),
-      });
-    },
-    onError: (error: unknown) => {
-      const errorMessage =
-        error instanceof Error ? error.message : 'UnknownError';
-      showSnackbar({
-        severity: 'error',
-        title: t('Utils.Error'),
-        description: <>{t(`Error.Server.${errorMessage}`)}</>,
-      });
-    },
-  });
+  const { mutateAsync, isPending } = useFeatureVoteMutation(
+    portalGraphqlClient,
+    {
+      onSuccess: () => {
+        // A vote moves the one vote allowed per product, so the whole round has
+        // to be refetched for the previously voted feature to lose its badge.
+        queryClient.invalidateQueries({
+          queryKey: featureVotingKeys.currentAll(),
+        });
+        showSnackbar({
+          severity: 'success',
+          title: t('FeatureVoting.VoteRecordedTitle'),
+          description: t('FeatureVoting.VoteRecordedDescription'),
+        });
+      },
+      onError: (error: unknown) => {
+        const errorMessage =
+          error instanceof Error ? error.message : 'UnknownError';
+        showSnackbar({
+          severity: 'error',
+          title: t('Utils.Error'),
+          description: <>{t(`Error.Server.${errorMessage}`)}</>,
+        });
+      },
+    }
+  );
+
+  const vote = useCallback(
+    ({ id, title }: Pick<VotableFeaturePublicFragment, 'id' | 'title'>) =>
+      mutateAsync({ feature_id: id })
+        .then(() => trackEvent('feature_vote', { feature_name: title }))
+        .catch(() => undefined),
+    [mutateAsync]
+  );
+
+  return { vote, isPending };
 };

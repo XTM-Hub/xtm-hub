@@ -13,6 +13,7 @@ export type SectionSubLink = BaseSectionLink;
 
 export interface SectionLink extends BaseSectionLink {
   subLinks?: SectionSubLink[];
+  group?: string;
 }
 
 export interface BottomLink {
