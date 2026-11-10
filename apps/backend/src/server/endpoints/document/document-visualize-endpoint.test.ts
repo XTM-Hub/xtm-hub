@@ -16,6 +16,9 @@ vi.mock('../../../modules/service/instance/service-instance.domain', () => ({
     loadServiceDefinitionByServiceInstance: loadServiceDefinitionMock,
   },
 }));
+vi.mock('../../../context/request.context', () => ({
+  requestContext: { update: vi.fn() },
+}));
 vi.mock('../../../thirdparty/minio/client', () => ({
   MinIOClient: { downloadFile: downloadFileMock },
 }));
@@ -36,6 +39,15 @@ const getImageHandler = (): Handler => {
     ([path]) => path === '/document/images/:serviceInstanceId/:documentId'
   );
   return imagesRoute![2] as Handler;
+};
+
+const getVisualizeHandler = (): Handler => {
+  const get = vi.fn();
+  documentVisualizeEndpoint({ get } as unknown as Application);
+  const visualizeRoute = get.mock.calls.find(
+    ([path]) => path === '/document/visualize/:serviceInstanceId/:filename'
+  );
+  return visualizeRoute![2] as Handler;
 };
 
 const buildRequest = (fresh = false) =>
@@ -137,5 +149,39 @@ describe('documentVisualizeEndpoint images route', () => {
     expect(res.status).toHaveBeenCalledWith(304);
     expect(res.end).toHaveBeenCalled();
     expect(downloadFileMock).not.toHaveBeenCalled();
+  });
+});
+
+describe('documentVisualizeEndpoint visualize route', () => {
+  const STORED_FILE_CSP =
+    "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox";
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    loadDocumentByMock.mockResolvedValue({
+      id: 'document',
+      mime_type: 'image/svg+xml',
+      file_name: 'logo.svg',
+      minio_name: 'minio-name',
+    });
+    downloadFileMock.mockResolvedValue(Readable.from(['image-content']));
+  });
+
+  it('should serve the file with a sandboxing Content-Security-Policy', async () => {
+    // Given
+    const req = {
+      params: { serviceInstanceId: 'service-instance', filename: 'document' },
+      session: { user: { id: 'user-1' } },
+    } as unknown as Request;
+    const res = buildResponse();
+
+    // When
+    await getVisualizeHandler()(req, res);
+
+    // Then
+    expect(res.setHeader).toHaveBeenCalledWith(
+      'Content-Security-Policy',
+      STORED_FILE_CSP
+    );
   });
 });

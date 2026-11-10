@@ -8,3 +8,9 @@ export const STORED_FILE_CONTENT_SECURITY_POLICY =
 export const setStoredFileSecurityHeaders = (res: Response) => {
   res.setHeader('Content-Security-Policy', STORED_FILE_CONTENT_SECURITY_POLICY);
 };
+
+// A route that serves pictures only sends an image type: any other declared type goes out as a plain binary
+export const toStoredImageContentType = (mimeType: string | undefined) =>
+  mimeType?.toLowerCase().startsWith('image/')
+    ? mimeType
+    : 'application/octet-stream';
