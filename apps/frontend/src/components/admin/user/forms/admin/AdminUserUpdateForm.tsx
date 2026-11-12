@@ -4,6 +4,8 @@ import {
 } from '@/components/admin/user/AutocompleteOrganization';
 import { CapabilityDescription } from '@/components/admin/user/CapabilityDescription';
 import { userEditAdminFormSchema } from '@/components/admin/user/forms/user-form.schema';
+import { useRefreshUsersList } from '@/components/admin/user/use-refresh-users-list';
+import { UsersListUser } from '@/components/admin/user/user-list.types';
 import { SettingsContext } from '@/components/settings/EnvPortalContext';
 import { CapabilityMultiSelect } from '@/components/ui/capability/MultiSelect';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
@@ -17,7 +19,6 @@ import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { cn, isEmpty } from '@/lib/utils';
 import { Button, IconButton, Input } from '@filigran/design-system';
 import { DeleteIcon } from '@filigran/icon';
-import { UserList_fragment$data } from '@generated/UserList_fragment.graphql';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useContext, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
@@ -25,7 +26,7 @@ import { graphql, useMutation } from 'react-relay';
 import { z } from 'zod';
 
 interface AdminUserUpdateFormProps {
-  user: UserList_fragment$data;
+  user: UsersListUser;
   callback: () => void;
 }
 
@@ -95,6 +96,7 @@ export const AdminUserUpdateForm = ({
   setIsDirty(!isEmpty(form.formState.dirtyFields));
 
   const [updateUserMutation] = useMutation(AdminUserUpdateFormMutation);
+  const refreshUsersList = useRefreshUsersList();
 
   const updateUser = ({
     password,
@@ -110,6 +112,7 @@ export const AdminUserUpdateForm = ({
         id: user.id,
       },
       onCompleted: () => {
+        refreshUsersList();
         showSnackbar({
           severity: 'success',
           title: t('Utils.Success'),
@@ -135,6 +138,7 @@ export const AdminUserUpdateForm = ({
         id: user.id,
       },
       onCompleted: () => {
+        refreshUsersList();
         showSnackbar({
           severity: 'success',
           title: t('Utils.Success'),

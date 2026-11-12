@@ -1,6 +1,6 @@
-import { getUserListContext } from '@/components/admin/user/UserListPage';
 import { UserAdminForm } from '@/components/admin/user/forms/admin/UserAdminForm';
 import { userAdminFormSchema } from '@/components/admin/user/forms/user-form.schema';
+import { useRefreshUsersList } from '@/components/admin/user/use-refresh-users-list';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
@@ -30,7 +30,7 @@ export const AdminAddUser = () => {
   const [commitUserMutation] =
     useMutation<AdminAddUserMutationType>(AdminAddUserMutation);
 
-  const { connectionID } = getUserListContext();
+  const refreshUsersList = useRefreshUsersList();
 
   const handleSubmit = (values: z.infer<typeof userAdminFormSchema>) => {
     commitUserMutation({
@@ -38,9 +38,11 @@ export const AdminAddUser = () => {
         input: {
           ...values,
         },
-        connections: [connectionID],
+        // The users list is a react-query query: it is refreshed on completion.
+        connections: [],
       },
       onCompleted: () => {
+        refreshUsersList();
         setOpenSheet(false);
         showSnackbar({
           severity: 'success',

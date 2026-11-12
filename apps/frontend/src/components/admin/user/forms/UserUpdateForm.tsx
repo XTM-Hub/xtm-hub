@@ -1,8 +1,9 @@
 import { CapabilityDescription } from '@/components/admin/user/CapabilityDescription';
 import { userEditFormSchema } from '@/components/admin/user/forms/user-form.schema';
 import { RemoveUserFromOrga } from '@/components/admin/user/RemoveUserFromOrga';
+import { useRefreshUsersList } from '@/components/admin/user/use-refresh-users-list';
+import { UsersListUser } from '@/components/admin/user/user-list.types';
 import { UserSlugEditMutation } from '@/components/admin/user/user.graphql';
-import { getUserListContext } from '@/components/admin/user/UserListPage';
 import { PortalContext } from '@/components/me/AppPortalContext';
 import { CapabilityMultiSelect } from '@/components/ui/capability/MultiSelect';
 import { Form, FormField } from '@/components/ui/form';
@@ -14,7 +15,6 @@ import { useTranslate } from '@/hooks/use-translate';
 import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { isEmpty } from '@/lib/utils';
 import { Button } from '@filigran/design-system';
-import { UserList_fragment$data } from '@generated/UserList_fragment.graphql';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useContext } from 'react';
 import { useForm } from 'react-hook-form';
@@ -22,7 +22,7 @@ import { useMutation } from 'react-relay';
 import { z } from 'zod';
 
 interface UserUpdateFormProps {
-  user: UserList_fragment$data;
+  user: UsersListUser;
   callback: () => void;
 }
 
@@ -49,7 +49,7 @@ export const UserUpdateForm = ({ user, callback }: UserUpdateFormProps) => {
 
   const [updateUserMutation] = useMutation(UserSlugEditMutation);
 
-  const { connectionID } = getUserListContext();
+  const refreshUsersList = useRefreshUsersList();
   const updateUser = (values: z.infer<typeof userEditFormSchema>) => {
     const variables = isAdminPath
       ? values
@@ -60,9 +60,11 @@ export const UserUpdateForm = ({ user, callback }: UserUpdateFormProps) => {
           ...variables,
         },
         id: user.id,
-        userListConnections: [connectionID ?? ''],
+        // The users list is a react-query query: it is refreshed on completion.
+        userListConnections: [],
       },
       onCompleted: () => {
+        refreshUsersList();
         showSnackbar({
           severity: 'success',
           title: t('Utils.Success'),

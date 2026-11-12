@@ -1,4 +1,5 @@
-import { getUserListContext } from '@/components/admin/user/UserListPage';
+import { useRefreshUsersList } from '@/components/admin/user/use-refresh-users-list';
+import { UsersListUser } from '@/components/admin/user/user-list.types';
 import { PortalContext } from '@/components/me/AppPortalContext';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
@@ -7,12 +8,11 @@ import { useTranslate } from '@/hooks/use-translate';
 import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { Button } from '@filigran/design-system';
 import { RemoveUserFromOrgaMutation } from '@generated/RemoveUserFromOrgaMutation.graphql';
-import { UserList_fragment$data } from '@generated/UserList_fragment.graphql';
 import { useContext } from 'react';
 import { graphql, useMutation } from 'react-relay';
 
 interface RemoveUserFromOrgaProps {
-  user: UserList_fragment$data;
+  user: UsersListUser;
 }
 
 const removeUser = graphql`
@@ -33,7 +33,7 @@ const removeUser = graphql`
 
 export const RemoveUserFromOrga = ({ user }: RemoveUserFromOrgaProps) => {
   const { me } = useContext(PortalContext);
-  const { connectionID } = getUserListContext();
+  const refreshUsersList = useRefreshUsersList();
   const { setOpenSheet } = useDialogContext();
   const t = useTranslate();
   const [removeUserMutation] =
@@ -43,9 +43,11 @@ export const RemoveUserFromOrga = ({ user }: RemoveUserFromOrgaProps) => {
       variables: {
         user_id,
         organization_id: me!.selected_organization_id,
-        connections: [connectionID ?? ''],
+        // The users list is a react-query query: it is refreshed on completion.
+        connections: [],
       },
       onCompleted: () => {
+        refreshUsersList();
         setOpenSheet(false);
         showSnackbar({
           severity: 'success',

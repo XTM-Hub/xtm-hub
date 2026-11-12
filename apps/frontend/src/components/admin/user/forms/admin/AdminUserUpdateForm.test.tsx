@@ -1,5 +1,5 @@
+import { UsersListUser } from '@/components/admin/user/user-list.types';
 import testRender from '@/utils/test/test-render';
-import { UserList_fragment$data } from '@generated/UserList_fragment.graphql';
 import { OrganizationCapability } from '@graphql/generated';
 import { act, screen, within } from '@testing-library/react';
 import { createMockEnvironment, MockPayloadGenerator } from 'relay-test-utils';
@@ -42,10 +42,7 @@ const GLOBEX_ORGANIZATION = {
   domains: [],
 };
 
-const buildUser = (
-  overrides: Partial<UserList_fragment$data> = {}
-): UserList_fragment$data => ({
-  ' $fragmentType': 'UserList_fragment',
+const buildUser = (overrides: Partial<UsersListUser> = {}): UsersListUser => ({
   id: 'user-ada',
   email: 'ada.lovelace@filigran.io',
   first_name: 'Ada',
@@ -95,6 +92,14 @@ beforeEach(async () => {
   ({ AppSnackbars } = await import('@/components/ui/snackbar/AppSnackbars'));
 });
 
+const mocks = vi.hoisted(() => ({
+  refreshUsersList: vi.fn(),
+}));
+
+vi.mock('@/components/admin/user/use-refresh-users-list', () => ({
+  useRefreshUsersList: () => mocks.refreshUsersList,
+}));
+
 // The organization list query answers the same organizations for every search.
 vi.mock('@graphql/generated', async (importOriginal) => {
   const { mockGeneratedQueryHooks } =
@@ -121,7 +126,7 @@ const renderForm = ({
   callback = vi.fn(),
   setOpen = vi.fn(),
 }: {
-  user?: UserList_fragment$data;
+  user?: UsersListUser;
   callback?: () => void;
   setOpen?: () => void;
 } = {}) => {
@@ -403,5 +408,51 @@ describe('AdminUserUpdateForm', () => {
       })
     ).toBeInTheDocument();
     expect(setOpen).not.toHaveBeenCalled();
+  });
+
+  describe('users list refresh', () => {
+    beforeEach(() => {
+      mocks.refreshUsersList.mockClear();
+    });
+
+    it('should reload the users list when the update is accepted', async () => {
+      // Given
+      const { user, environment } = renderForm();
+      await user.click(screen.getByRole('button', { name: 'Utils.Validate' }));
+
+      // When
+      await resolveMutation(environment);
+
+      // Then
+      expect(mocks.refreshUsersList).toHaveBeenCalledOnce();
+    });
+
+    it('should reload the users list when the status change is accepted', async () => {
+      // Given
+      const { user, environment } = renderForm({
+        user: buildUser({ disabled: true }),
+      });
+      await user.click(
+        screen.getByRole('button', { name: 'UserActions.Enable' })
+      );
+
+      // When
+      await resolveMutation(environment);
+
+      // Then
+      expect(mocks.refreshUsersList).toHaveBeenCalledOnce();
+    });
+
+    it('should leave the users list as is when the update is refused', async () => {
+      // Given
+      const { user, environment } = renderForm();
+      await user.click(screen.getByRole('button', { name: 'Utils.Validate' }));
+
+      // When
+      await rejectMutation(environment);
+
+      // Then
+      expect(mocks.refreshUsersList).not.toHaveBeenCalled();
+    });
   });
 });
