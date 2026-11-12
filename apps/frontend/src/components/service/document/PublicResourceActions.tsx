@@ -1,15 +1,19 @@
 'use client';
 
 import { PlatformMetadataMapping } from '@/components/registration/PlatformIdentifierMapping';
+import { ResourceViewTracker } from '@/components/service/document/ResourceViewTracker';
 import { DisabledActionTooltip } from '@/components/ui/DisabledActionTooltip';
 import { ShareLinkButton } from '@/components/ui/share-link/ShareLinkButton';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
+import { type AnalyticsDeployEligibility } from '@/lib/analytics/analytics.types';
+import { portalGraphqlClient } from '@/lib/graphql-client';
 import { isValueInEnum } from '@/utils/is-value-in-enum';
 import { getPlatformIdentifier } from '@/utils/platform';
 import { buildSignupRedirect } from '@/utils/redirect';
 import {
   isConnectorResource,
-  PublicDocumentDetailsData,
+  PublicDocumentByServiceSlugItem,
   ServiceSlug,
 } from '@/utils/shareable-resources/shareable-resources.types';
 import {
@@ -26,10 +30,25 @@ import {
   TooltipTrigger,
 } from '@filigran/design-system';
 import { DownloadIcon } from '@filigran/icon';
+import { useMeAnalyticsQuery } from '@graphql/generated';
+import { meAnalyticsKeys } from '@graphql/me/me.keys';
 import Link from 'next/link';
 
+const resolvePublicDeployEligibility = ({
+  isDeployAvailable,
+  isSignedOut,
+}: {
+  isDeployAvailable: boolean;
+  isSignedOut: boolean;
+}): AnalyticsDeployEligibility | undefined => {
+  if (!isDeployAvailable) {
+    return 'Resource not deployable';
+  }
+  return isSignedOut ? 'Signed out' : undefined;
+};
+
 interface PublicResourceActionsProps {
-  documentData: PublicDocumentDetailsData;
+  documentData: PublicDocumentByServiceSlugItem;
   serviceInstance: { id: string; slug: string | null | undefined };
   pageUrl: string;
   shareTooltipText?: string;
@@ -42,6 +61,11 @@ export const PublicResourceActions = ({
   shareTooltipText,
 }: PublicResourceActionsProps) => {
   const t = useTranslate();
+  const { data: meData, isPending: isMePending } = useMeAnalyticsQuery(
+    portalGraphqlClient,
+    undefined,
+    { queryKey: meAnalyticsKeys.detail(), enabled: false }
+  );
 
   const privateResourceLink = isValueInEnum(serviceInstance.slug, ServiceSlug)
     ? getServiceInfo(
@@ -54,6 +78,7 @@ export const PublicResourceActions = ({
   const isConnector = isConnectorResource(documentData);
   const showDeploy = isResourceDeployable(documentData);
   const canDeploy = !isConnector || documentData.manager_supported;
+  const isDeployAvailable = showDeploy && canDeploy;
   const deployLabel = t('Service.ShareableResources.Deploy.DeployPlatform', {
     platformName:
       PlatformMetadataMapping[getPlatformIdentifier(documentData.type)].name,
@@ -61,7 +86,17 @@ export const PublicResourceActions = ({
 
   return (
     <div className="flex items-center gap-2 ml-auto">
+      {!isMePending && (
+        <ResourceViewTracker
+          resource={documentData}
+          deployEligibility={resolvePublicDeployEligibility({
+            isDeployAvailable,
+            isSignedOut: meData?.me === null,
+          })}
+        />
+      )}
       <ShareLinkButton
+        analyticsId="resource_share"
         documentId={documentData.id}
         url={pageUrl}
         tooltipText={shareTooltipText}
@@ -79,7 +114,10 @@ export const PublicResourceActions = ({
                   className="z-[2]"
                   aria-label={t('Service.ShareableResources.Download')}
                   icon={<DownloadIcon className="h-4 w-4" />}>
-                  <Link href={signupHref} />
+                  <Link
+                    {...analyticsId('resource_download_signup')}
+                    href={signupHref}
+                  />
                 </IconButton>
               </TooltipTrigger>
               <TooltipContent>
@@ -91,7 +129,11 @@ export const PublicResourceActions = ({
           <Button
             asChild
             className="whitespace-nowrap">
-            <Link href={signupHref}>{t('PublicResourcePage.Download')}</Link>
+            <Link
+              {...analyticsId('resource_download_signup')}
+              href={signupHref}>
+              {t('PublicResourcePage.Download')}
+            </Link>
           </Button>
         ))}
       {showDeploy &&
@@ -99,7 +141,11 @@ export const PublicResourceActions = ({
           <Button
             asChild
             className="whitespace-nowrap">
-            <Link href={signupHref}>{deployLabel}</Link>
+            <Link
+              {...analyticsId('resource_deploy_signup')}
+              href={signupHref}>
+              {deployLabel}
+            </Link>
           </Button>
         ) : (
           <DisabledActionTooltip

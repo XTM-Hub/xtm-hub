@@ -30,6 +30,7 @@ export const CountryCombobox = ({
 
   return (
     <AppCombobox<CountryOption>
+      formField
       label={label}
       placeholder={t('CountryComboBox.Placeholder')}
       error={error}

@@ -6,6 +6,7 @@ import ConnectProductFromHubModal, {
   ConnectProductOrigin,
 } from '@/components/registration/registerFromHub/ConnectProductFromHubModal';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import {
   Button,
   Menu,
@@ -37,6 +38,7 @@ export const ConnectedProductsDropdown = () => {
         onOpenChange={setOpen}>
         <MenuTrigger asChild>
           <Button
+            {...analyticsId('platform_connected_products_open')}
             priority="tertiary"
             className="font-medium"
             endIcon={
@@ -55,6 +57,7 @@ export const ConnectedProductsDropdown = () => {
               <div className="max-h-[70vh] overflow-y-auto overflow-x-hidden">
                 {connectedPlatforms.map((platform, index) => (
                   <div key={platform.id}>
+                    {/* eslint-disable-next-line no-restricted-syntax -- the two links inside the row carry the analytics ids */}
                     <MenuItem>
                       <ConnectedProductItem
                         platform={platform}
@@ -69,6 +72,7 @@ export const ConnectedProductsDropdown = () => {
             </>
           )}
           <MenuItem
+            {...analyticsId('platform_connection_open')}
             startIcon={<AddIcon className="h-4 w-4" />}
             onSelect={() => setIsConnectModalOpen(true)}>
             {t('Header.ConnectedProducts.ConnectProduct')}

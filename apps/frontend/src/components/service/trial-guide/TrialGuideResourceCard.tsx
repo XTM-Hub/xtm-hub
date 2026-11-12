@@ -1,5 +1,7 @@
 import { TrialGuideResourceCardContent } from '@/components/service/trial-guide/TrialGuide.content';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsLinkType } from '@/lib/analytics/analytics.context';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { Button, Card, CardContent } from '@filigran/design-system';
 import { OpenInNewIcon } from '@filigran/icon';
 import Link from 'next/link';
@@ -10,7 +12,14 @@ interface ResourceCardProps {
 
 export const TrialGuideResourceCard = ({ resourceCard }: ResourceCardProps) => {
   const t = useTranslate();
-  const { Icon, titleKey, descriptionKey, url } = resourceCard;
+  const {
+    Icon,
+    titleKey,
+    descriptionKey,
+    url,
+    analyticsId: elementId,
+    linkType,
+  } = resourceCard;
 
   return (
     <Card
@@ -30,6 +39,8 @@ export const TrialGuideResourceCard = ({ resourceCard }: ResourceCardProps) => {
               asChild
               priority="tertiary">
               <Link
+                {...analyticsId(elementId)}
+                {...analyticsLinkType(linkType)}
                 href={url}
                 target="_blank"
                 rel="noopener noreferrer">

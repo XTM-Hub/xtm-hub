@@ -1,12 +1,6 @@
 import { RequestParameters, UploadableMap } from 'relay-runtime';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import {
-  fetchFormData,
-  fileListToUploadableMap,
-  splitFileListToUploadableMap,
-} from './fetch-form-data';
-
-const FILE_PREFIX_SEPARATOR = 'prefix-';
+import { fetchFormData, fileListToUploadableMap } from './fetch-form-data';
 
 describe('fetchFormData', () => {
   const fileA = { name: 'a.txt' };
@@ -175,22 +169,6 @@ describe('fetchFormData', () => {
         expect(formDataEntries['1']).toBe(fileB);
         expect(formDataEntries['2']).toBe(fileC);
         expect(formDataEntries['3']).toBe(fileD);
-      });
-    });
-  });
-
-  describe('splitFileListToUploadableMap', () => {
-    it('should map files to keys with prefix separator', () => {
-      const fileA = { name: 'a.txt' };
-      const fileB = { name: 'b.txt' };
-      const files = {
-        document: [fileA],
-        logo: [fileB],
-      } as unknown as Parameters<typeof splitFileListToUploadableMap>[0];
-      const result = splitFileListToUploadableMap(files);
-      expect(result).toEqual({
-        [`document${FILE_PREFIX_SEPARATOR}a.txt`]: fileA,
-        [`logo${FILE_PREFIX_SEPARATOR}b.txt`]: fileB,
       });
     });
   });

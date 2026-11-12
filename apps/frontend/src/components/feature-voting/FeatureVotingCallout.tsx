@@ -3,6 +3,7 @@
 import { getFeatureVotingTheme } from '@/components/feature-voting/feature-voting-theme';
 import usePublicPath from '@/hooks/use-public-path';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import {
   APP_PATH,
@@ -78,7 +79,11 @@ export const FeatureVotingCallout = ({
         asChild
         variant="highlight"
         priority="secondary">
-        <Link href={href}>{t('FeatureVoting.CalloutButton')}</Link>
+        <Link
+          {...analyticsId('roadmap_feature_voting_open')}
+          href={href}>
+          {t('FeatureVoting.CalloutButton')}
+        </Link>
       </Button>
     </div>
   );

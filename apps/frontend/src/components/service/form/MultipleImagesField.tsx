@@ -5,6 +5,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { fileToBase64 } from '@/lib/utils';
 import { docIsExistingFile, ExistingFile, NewFile } from '@/utils/documents';
 import {
@@ -15,8 +16,7 @@ import {
   TooltipTrigger,
 } from '@filigran/design-system';
 import { AddIcon, DeleteIcon, ReplayIcon } from '@filigran/icon';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { DocumentSourceType } from '@graphql/generated';
+import { DocumentItemFragment, DocumentSourceType } from '@graphql/generated';
 import { ChangeEvent, useRef } from 'react';
 import { ControllerRenderProps, FieldValues } from 'react-hook-form';
 
@@ -26,7 +26,7 @@ export type ServiceFormMultipleImagesFieldImages = (ExistingFile | NewFile) & {
 
 interface ServiceFormMultipleImagesFieldProps {
   field: ControllerRenderProps<FieldValues, string>;
-  document?: documentItem_fragment$data;
+  document?: DocumentItemFragment;
   images: Array<ServiceFormMultipleImagesFieldImages>;
   setImages: (images: Array<ServiceFormMultipleImagesFieldImages>) => void;
   imagesToDelete: string[];
@@ -52,6 +52,7 @@ export const ServiceFormMultipleImagesField = ({
         <FormLabel className="flex items-center h-6">
           {t('Service.Form.ImageLabel')}
           <IconButton
+            {...analyticsId('resource_image_upload')}
             priority="tertiary"
             aria-label={t('Service.Form.AddImage')}
             icon={<AddIcon className="size-3" />}
@@ -119,6 +120,7 @@ export const ServiceFormMultipleImagesField = ({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <IconButton
+                        {...analyticsId('resource_image_removal_cancel')}
                         priority="secondary"
                         className="absolute right-2 top-2"
                         type="button"
@@ -148,6 +150,7 @@ export const ServiceFormMultipleImagesField = ({
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <IconButton
+                          {...analyticsId('resource_image_remove')}
                           disabled={
                             doc.source_type === DocumentSourceType.External
                           }

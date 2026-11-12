@@ -1,5 +1,8 @@
+import config from 'config';
+import { toGlobalId } from 'graphql-relay/node/node.js';
 import { FileUpload } from 'graphql-upload/processRequest.mjs';
 import { v4 as uuidv4 } from 'uuid';
+import type { MockInstance } from 'vitest';
 import {
   afterAll,
   afterEach,
@@ -34,8 +37,11 @@ import ServiceDefinition from '../../model/kanel/public/ServiceDefinition';
 import ServiceInstance, {
   ServiceInstanceId,
 } from '../../model/kanel/public/ServiceInstance';
+import { UserId } from '../../model/kanel/public/User';
 import { ADMIN_UUID } from '../../portal.const';
 import { MinIOClient } from '../../thirdparty/minio/client';
+import { PgBossProducer } from '../../thirdparty/pgboss/producer';
+import { TEAMS_NOTIFICATION_QUEUES } from '../../thirdparty/pgboss/teams-notification.jobs';
 import { ErrorCode } from '../../utils/error/error.code';
 import { NewsFeedApp } from '../news-feed/news-feed.app';
 import { RegistrationApp } from '../registration/registration.app';
@@ -989,6 +995,7 @@ describe('documentApp', () => {
 
       beforeEach(() => {
         vi.spyOn(NewsFeedApp, 'upsertResourceNewsFeed').mockResolvedValue();
+        vi.spyOn(PgBossProducer, 'send').mockResolvedValue('job-id');
       });
 
       it.each`
@@ -1043,6 +1050,216 @@ describe('documentApp', () => {
           expect(savedDocument?.status).toBe(from);
         }
       );
+    });
+
+    describe('teams notification', () => {
+      const METADATA = [
+        { key: DocumentMetadataKeyCode.ProductVersion, value: '1.0.0' },
+      ];
+      const AUTHOR = TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2;
+      const OTHER_AUTHOR = TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS;
+
+      let sendSpy: MockInstance;
+      let customDashboardsLibrary: string;
+      let integrationsLibrary: string;
+
+      beforeAll(async () => {
+        const [customDashboards, integrations] = await Promise.all([
+          ServiceDefinitionDomain.loadServiceDefinitionByServiceInstance(
+            SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID
+          ),
+          ServiceDefinitionDomain.loadServiceDefinitionByServiceInstance(
+            SERVICES.INSTANCES.INTEGRATIONS.ID
+          ),
+        ]);
+        customDashboardsLibrary = customDashboards!.name;
+        integrationsLibrary = integrations!.name;
+      });
+
+      const teamsNotificationCalls = () =>
+        sendSpy.mock.calls.filter(
+          ([queueName]) => queueName === TEAMS_NOTIFICATION_QUEUES.SEND
+        );
+
+      const createDashboard = (status: DocumentStatus, slug: string) =>
+        DocumentApp.createDocument({
+          input: { ...documentData, status, slug },
+          metadata: METADATA,
+          serviceInstanceId: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
+          sourceDocument: mockUpload,
+        });
+
+      const updateDashboard = (
+        id: DocumentId,
+        input: { status: DocumentStatus; uploader_id?: UserId }
+      ) =>
+        DocumentApp.updateDocument({
+          parentDocumentId: id,
+          serviceInstanceId: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
+          metadata: METADATA,
+          input,
+          existingImageIds: [],
+        });
+
+      beforeEach(() => {
+        vi.spyOn(NewsFeedApp, 'upsertResourceNewsFeed').mockResolvedValue();
+        sendSpy = vi.spyOn(PgBossProducer, 'send').mockResolvedValue('job-id');
+      });
+
+      it('should enqueue one teams notification with the resource payload when a document is created in validation', async () => {
+        // Given
+        const input = {
+          ...documentData,
+          status: DocumentStatus.InValidation,
+          slug: 'teams-notification-create',
+        };
+
+        // When
+        const document = await DocumentApp.createDocument({
+          input,
+          metadata: METADATA,
+          serviceInstanceId: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
+          sourceDocument: mockUpload,
+        });
+
+        // Then
+        expect(teamsNotificationCalls()).toHaveLength(1);
+        expect(teamsNotificationCalls()[0]).toEqual([
+          TEAMS_NOTIFICATION_QUEUES.SEND,
+          {
+            event: 'resource_in_validation',
+            payload: {
+              library: customDashboardsLibrary,
+              resource: {
+                name: documentData.name,
+                type: null,
+                status: DocumentStatus.InValidation,
+                short_description: documentData.short_description,
+                link: `${config.get<string>('base_url_front')}/redirect/${ServiceDefinitionIdentifier.OpenctiCustomDashboards}?document_id=${toGlobalId('Document', document.id)}`,
+                author_email: AUTHOR.EMAIL,
+              },
+            },
+          },
+        ]);
+      });
+
+      it('should label the resource with its integration type when an integration is created in validation', async () => {
+        // When
+        await DocumentApp.createDocument({
+          input: {
+            ...documentData,
+            status: DocumentStatus.InValidation,
+            slug: 'teams-notification-integration',
+          },
+          metadata: integrationMetadata,
+          serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
+          sourceDocument: mockUpload,
+        });
+
+        // Then
+        expect(teamsNotificationCalls()).toHaveLength(1);
+        expect(teamsNotificationCalls()[0][1]).toMatchObject({
+          event: 'resource_in_validation',
+          payload: {
+            library: integrationsLibrary,
+            resource: { type: 'Third party integration' },
+          },
+        });
+      });
+
+      it('should enqueue a new teams notification when a published document goes back to draft then in validation', async () => {
+        // Given
+        const document = await createDashboard(
+          DocumentStatus.Published,
+          'teams-notification-reentry'
+        );
+        await updateDashboard(document.id, { status: DocumentStatus.Draft });
+        sendSpy.mockClear();
+
+        // When
+        await updateDashboard(document.id, {
+          status: DocumentStatus.InValidation,
+        });
+
+        // Then
+        expect(teamsNotificationCalls()).toHaveLength(1);
+      });
+
+      it.each([[DocumentStatus.Draft], [DocumentStatus.Published]])(
+        'should not enqueue any teams notification when a document is created as %s',
+        async (status) => {
+          // When
+          await createDashboard(status, `teams-notification-create-${status}`);
+
+          // Then
+          expect(teamsNotificationCalls()).toHaveLength(0);
+        }
+      );
+
+      it('should send the email of the uploader saved by the update as author', async () => {
+        // Given
+        const document = await createDashboard(
+          DocumentStatus.Draft,
+          'teams-notification-author'
+        );
+
+        // When
+        await updateDashboard(document.id, {
+          status: DocumentStatus.InValidation,
+          uploader_id: OTHER_AUTHOR.ID,
+        });
+
+        // Then
+        expect(teamsNotificationCalls()[0][1]).toMatchObject({
+          payload: { resource: { author_email: OTHER_AUTHOR.EMAIL } },
+        });
+      });
+
+      it.each`
+        from                           | to                             | notifications
+        ${DocumentStatus.Draft}        | ${DocumentStatus.InValidation} | ${1}
+        ${DocumentStatus.InValidation} | ${DocumentStatus.InValidation} | ${0}
+        ${DocumentStatus.InValidation} | ${DocumentStatus.Published}    | ${0}
+        ${DocumentStatus.Published}    | ${DocumentStatus.Draft}        | ${0}
+        ${DocumentStatus.Draft}        | ${DocumentStatus.Published}    | ${0}
+      `(
+        'should enqueue $notifications teams notification when the document goes from $from to $to',
+        async ({
+          from,
+          to,
+          notifications,
+        }: {
+          from: DocumentStatus;
+          to: DocumentStatus;
+          notifications: number;
+        }) => {
+          // Given
+          const document = await createDashboard(
+            from,
+            `teams-notification-${from}-to-${to}`
+          );
+          sendSpy.mockClear();
+
+          // When
+          await updateDashboard(document.id, { status: to });
+
+          // Then
+          expect(teamsNotificationCalls()).toHaveLength(notifications);
+        }
+      );
+
+      it('should not save the document when the teams notification cannot be enqueued', async () => {
+        // Given
+        sendSpy.mockRejectedValue(new Error('enqueue failed'));
+        const slug = 'teams-notification-enqueue-failure';
+
+        // When
+        const creation = createDashboard(DocumentStatus.InValidation, slug);
+
+        // Then
+        await expect(creation).rejects.toThrow('enqueue failed');
+        expect(await TestHelper.document.load({ slug })).toBeUndefined();
+      });
     });
 
     it('should delegate news feed synchronization to NewsFeedApp.upsertResourceNewsFeed', async () => {

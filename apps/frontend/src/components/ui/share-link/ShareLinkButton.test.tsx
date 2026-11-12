@@ -34,6 +34,7 @@ vi.mock('usehooks-ts', async (importOriginal) => {
 });
 
 const SHAREABLE_URL = 'https://hub.test/share';
+const ANALYTICS_ID = 'resource_share';
 const DOCUMENT_ID = 'document-1';
 const COPY_ERROR_MESSAGE = 'Clipboard denied';
 const GQL_OPERATION_INCREMENT_SHARE_NUMBER = 'IncrementShareNumberDocument';
@@ -76,6 +77,7 @@ describe('ShareLinkButton', () => {
       const { user, container } = testRender(
         <ShareLinkButton
           url={SHAREABLE_URL}
+          analyticsId={ANALYTICS_ID}
           documentId={documentId}
         />
       );
@@ -109,6 +111,7 @@ describe('ShareLinkButton', () => {
     const { user, container } = testRender(
       <ShareLinkButton
         url={SHAREABLE_URL}
+        analyticsId={ANALYTICS_ID}
         documentId={DOCUMENT_ID}
         onShare={onShare}
       />
@@ -130,6 +133,7 @@ describe('ShareLinkButton', () => {
     const { user, container } = testRender(
       <ShareLinkButton
         url={SHAREABLE_URL}
+        analyticsId={ANALYTICS_ID}
         documentId={DOCUMENT_ID}
         onShare={onShare}
       />
@@ -159,6 +163,7 @@ describe('ShareLinkButton', () => {
     const { user, container } = testRender(
       <ShareLinkButton
         url={SHAREABLE_URL}
+        analyticsId={ANALYTICS_ID}
         documentId={DOCUMENT_ID}
       />
     );

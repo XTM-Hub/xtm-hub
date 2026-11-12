@@ -3,6 +3,7 @@ import {
   getSaasPlatformServicePath,
 } from '@/components/subcription/saas/saas-list.utils';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { cn } from '@/lib/utils';
 import { ServiceDefinitionIdentifier } from '@graphql/generated';
 import Link from 'next/link';
@@ -28,6 +29,7 @@ export const SaasPlatformLink = ({
         />
       )}
       <Link
+        {...analyticsId('admin_saas_platform_metrics_open')}
         href={getSaasPlatformServicePath(registeredPlatform)}
         className="truncate text-filigran-brand-primary underline">
         {t('CSMBoard.ViewMetrics')}

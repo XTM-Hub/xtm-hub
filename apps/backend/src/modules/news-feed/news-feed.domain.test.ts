@@ -61,10 +61,29 @@ describe('newsFeedDomain', () => {
       expect(result).toEqual([NewsFeedItemType.ResourceScenario]);
     });
 
-    it('should not list the blogpost type while the blogpost gate is disabled', () => {
+    it.each`
+      description                 | version         | expected
+      ${'below the shipped gate'} | ${'7.261105.0'} | ${false}
+      ${'at the shipped gate'}    | ${'7.261106.0'} | ${true}
+      ${'above the shipped gate'} | ${'7.261107.0'} | ${true}
+    `(
+      'should list the blogpost type for OpenCTI $description ($version): $expected',
+      ({ version, expected }) => {
+        // When
+        const result = NewsFeedDomain.loadAvailableNewsFeedTypes(
+          PlatformIdentifier.Opencti,
+          version
+        );
+
+        // Then
+        expect(result.includes(NewsFeedItemType.BlogPost)).toBe(expected);
+      }
+    );
+
+    it('should not list the blogpost type for OpenAEV, whose gate is disabled', () => {
       // When
       const result = NewsFeedDomain.loadAvailableNewsFeedTypes(
-        PlatformIdentifier.Opencti,
+        PlatformIdentifier.Openaev,
         '99.0.0'
       );
 

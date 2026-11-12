@@ -3,10 +3,11 @@ import { CookieConsentProvider } from '@/components/cookie-consent/CookieConsent
 import { ManagedScripts } from '@/components/cookie-consent/ManagedScripts';
 import testRender from '@/utils/test/test-render';
 import { screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { useSelectedLayoutSegment } from 'next/navigation';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// The external scripts load third-party code: stub them at that boundary.
-vi.mock('@/components/external/GoogleAnalytics', () => ({
+// Google Analytics and HubSpot load third-party code: stub them at that boundary.
+vi.mock('@/components/analytics/AnalyticsTracker', () => ({
   default: () => <div data-testid="google-analytics-script" />,
 }));
 vi.mock('@/components/external/Hubspot', () => ({
@@ -14,8 +15,14 @@ vi.mock('@/components/external/Hubspot', () => ({
 }));
 
 const NOW = new Date('2026-06-16T00:00:00.000Z');
+const MEASUREMENT_ID = 'G-TEST';
 
-const renderManagedScripts = (services: Record<string, boolean>) =>
+const renderManagedScripts = (
+  services: Record<string, boolean>,
+  { gaMeasurementId }: { gaMeasurementId?: string } = {
+    gaMeasurementId: MEASUREMENT_ID,
+  }
+) =>
   testRender(
     <CookieConsentProvider
       initialConsent={{
@@ -23,11 +30,20 @@ const renderManagedScripts = (services: Record<string, boolean>) =>
         timestamp: NOW.toISOString(),
         services,
       }}>
-      <ManagedScripts />
+      <ManagedScripts gaMeasurementId={gaMeasurementId} />
     </CookieConsentProvider>
   );
 
 describe('ManagedScripts', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(NOW);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it.each`
     services                                         | gaLoaded | hubspotLoaded
     ${{ 'google-analytics': false, hubspot: false }} | ${false} | ${false}
@@ -45,4 +61,26 @@ describe('ManagedScripts', () => {
       expect(!!screen.queryByTestId('hubspot-script')).toBe(hubspotLoaded);
     }
   );
+
+  it('should not load Google Analytics when the page is embedded', () => {
+    // Given
+    vi.mocked(useSelectedLayoutSegment).mockReturnValue('(embed)');
+
+    // When
+    renderManagedScripts({ 'google-analytics': true, hubspot: false });
+
+    // Then
+    expect(screen.queryByTestId('google-analytics-script')).toBeNull();
+  });
+
+  it('should not load Google Analytics when no measurement id is configured', () => {
+    // Given / When
+    renderManagedScripts(
+      { 'google-analytics': true, hubspot: false },
+      { gaMeasurementId: undefined }
+    );
+
+    // Then
+    expect(screen.queryByTestId('google-analytics-script')).toBeNull();
+  });
 });

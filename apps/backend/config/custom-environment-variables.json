@@ -54,6 +54,8 @@
   "telemetry_tags": "TELEMETRY_TAGS",
   "hubspot_use_queue_processing": "HUBSPOT_USE_QUEUE_PROCESSING",
   "hubspot_webhook_url": "HUBSPOT_WEBHOOK_URL",
+  "teams_notification_webhook_url": "TEAMS_NOTIFICATION_WEBHOOK_URL",
+  "teams_notification_webhook_token": "TEAMS_NOTIFICATION_WEBHOOK_TOKEN",
   "saas_manager": {
     "client_id": "SAAS_MANAGER_CLIENT_ID",
     "client_secret": "SAAS_MANAGER_CLIENT_SECRET"

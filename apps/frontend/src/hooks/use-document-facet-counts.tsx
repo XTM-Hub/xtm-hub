@@ -3,7 +3,7 @@ import { LogicalMultiSelectSelection } from '@/components/ui/shareable-resource/
 import { useLogicalFiltersFromStorage } from '@/hooks/use-logical-filters-from-storage';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { ServiceSlug } from '@/utils/shareable-resources/shareable-resources.types';
-import { LogicalFilterInput, useDocumentFacetsQuery } from '@graphql/generated';
+import { useDocumentFacetsQuery } from '@graphql/generated';
 import { keepPreviousData } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
@@ -68,7 +68,7 @@ export const useDocumentFacetCounts = ({
         serviceInstanceId,
         documentType,
         searchTerm: search,
-        logicalFilters: logicalFilters as LogicalFilterInput,
+        logicalFilters,
         // Required by the generated type until the deprecated field is removed
         restrictToActiveDocuments: null,
         restrictToPublishedDocuments,

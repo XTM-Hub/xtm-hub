@@ -21,6 +21,7 @@ import { registeredPlatformByServiceInstanceIdQuery } from '@generated/registere
 import {
   CommercialModel,
   FeatureFlag,
+  PlatformIdentifier,
   PortalCapability,
   SaasPlatformMetricsPeriod,
   useRegisteredSaasPlatformDataQuery,
@@ -36,10 +37,12 @@ const SAAS_PLATFORM_DATA_STALE_TIME = 60_000;
 
 interface RegisteredPlatformOverviewProps {
   params: Promise<{ serviceInstanceId: string }>;
+  platformIdentifier: PlatformIdentifier;
 }
 
 export const RegisteredPlatformOverview = ({
   params,
+  platformIdentifier,
 }: RegisteredPlatformOverviewProps) => {
   const { serviceInstanceId } = use(params);
   const decodedServiceInstanceId = decodeURIComponent(serviceInstanceId);
@@ -118,6 +121,7 @@ export const RegisteredPlatformOverview = ({
       />
       {showSaasPlatformData && (
         <PlatformMetrics
+          platformIdentifier={platformIdentifier}
           metrics={saasPlatformData?.registeredSaasPlatformData?.metrics}
           storage={saasPlatformData?.registeredSaasPlatformData?.storage}
           sla={saasPlatformData?.registeredSaasPlatformData?.sla}

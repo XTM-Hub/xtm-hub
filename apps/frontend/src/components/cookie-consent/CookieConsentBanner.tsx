@@ -3,6 +3,7 @@
 import { useConsent } from '@/components/cookie-consent/CookieConsentProvider';
 import { COPILOT_SCRIPT_ID } from '@/components/external/Copilot';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { Button } from '@filigran/design-system';
 import { useEffect, useRef } from 'react';
 
@@ -91,13 +92,19 @@ export const CookieConsentBanner = () => {
           <p className="content-base">{t('BannerText')}</p>
         </div>
         <div className="flex flex-col gap-2 sm:shrink-0 sm:flex-row">
-          <Button onClick={acceptAll}>{t('AcceptAll')}</Button>
           <Button
+            {...analyticsId('consent_all_cookies_confirm')}
+            onClick={acceptAll}>
+            {t('AcceptAll')}
+          </Button>
+          <Button
+            {...analyticsId('consent_all_cookies_cancel')}
             priority="secondary"
             onClick={rejectAll}>
             {t('RejectAll')}
           </Button>
           <Button
+            {...analyticsId('consent_preferences_open')}
             priority="tertiary"
             onClick={openPreferences}>
             {t('CookieSettings')}

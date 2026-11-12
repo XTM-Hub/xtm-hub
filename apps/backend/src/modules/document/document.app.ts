@@ -4,6 +4,7 @@ import {
   DocumentMetadataKeyCode,
   DocumentMetadata as DocumentMetadataResolverType,
   DocumentSourceType,
+  DocumentStatus,
   FiligranProduct,
   MutationUpdateDocumentArgs as MutationUpdateDocumentArgsResolverType,
   PlatformIdentifier,
@@ -21,12 +22,22 @@ import { ObjectUseCaseObjectId } from '../../model/kanel/public/ObjectUseCase';
 import ServiceDefinition from '../../model/kanel/public/ServiceDefinition';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { SolutionCategoryId } from '../../model/kanel/public/SolutionCategory';
+import { PgBossProducer } from '../../thirdparty/pgboss/producer';
+import {
+  TEAMS_NOTIFICATION_QUEUES,
+  type TeamsNotificationJobData,
+} from '../../thirdparty/pgboss/teams-notification.jobs';
 import { logApp } from '../../utils/app-logger.util';
 import { ErrorCode, UnknownErrorCode } from '../../utils/error/error.code';
 import { ForbiddenAccess } from '../../utils/error/error.util';
 import { NewsFeedApp } from '../news-feed/news-feed.app';
+import { UserDomain } from '../organization-management/user/user-domain/user.domain';
 import { RegistrationApp } from '../registration/registration.app';
 import { ServiceDefinitionDomain } from '../service/definition/service-definition.domain';
+import {
+  isIntegrationType,
+  OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+} from '../shareable-resource/opencti/integration/integration.model';
 import { objectSolutionCategoryDomain } from '../solution-category/object-solution-category/object-solution-category.domain';
 import { solutionCategoryApp } from '../solution-category/solution-category.app';
 import { TelemetryApp } from '../telemetry/telemetry.app';
@@ -74,6 +85,38 @@ const setDocumentMetadataValue = (
 
 const toMinioNames = (images: ExternalImageFile[]): string[] =>
   images.flatMap(({ minio_name }) => (minio_name ? [minio_name] : []));
+
+const notifyInValidation = async (
+  document: DocumentModel,
+  serviceDefinition: ServiceDefinition
+) => {
+  const author = document.uploader_id
+    ? await UserDomain.loadSimpleUserBy({ id: document.uploader_id })
+    : undefined;
+  const integrationType =
+    document.type === OPENCTI_INTEGRATION_DOCUMENT_TYPE
+      ? await DocumentMetadataDomain.loadMetadataValueByKey(
+          document.id,
+          DocumentMetadataKeyCode.IntegrationType
+        )
+      : null;
+
+  await PgBossProducer.send<TeamsNotificationJobData<'resource_in_validation'>>(
+    TEAMS_NOTIFICATION_QUEUES.SEND,
+    {
+      event: 'resource_in_validation',
+      payload: DocumentHelper.buildInValidationPayload({
+        document,
+        serviceDefinition,
+        integrationType:
+          integrationType && isIntegrationType(integrationType)
+            ? integrationType
+            : null,
+        authorEmail: author?.email ?? null,
+      }),
+    }
+  );
+};
 
 export const DocumentApp = {
   createDocument: async ({
@@ -224,6 +267,10 @@ export const DocumentApp = {
             solution_category_id: solutionCategoryId,
           }))
         );
+      }
+
+      if (document.status === DocumentStatus.InValidation) {
+        await notifyInValidation(document, serviceDefinition);
       }
 
       return document;
@@ -467,6 +514,13 @@ export const DocumentApp = {
           [logoFile],
           DocumentImageType.Logo
         );
+      }
+
+      if (
+        documentBeforeUpdate.status !== DocumentStatus.InValidation &&
+        doc.status === DocumentStatus.InValidation
+      ) {
+        await notifyInValidation(doc, serviceDefinition);
       }
 
       return doc;

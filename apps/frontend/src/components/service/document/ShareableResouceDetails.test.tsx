@@ -1,13 +1,16 @@
 import ShareableResourceDetails from '@/components/service/document/ShareableResouceDetails';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 import testRender from '@/utils/test/test-render';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { IntegrationType } from '@graphql/generated';
+import {
+  DocumentItemFragment,
+  IntegrationType,
+  LicenseType,
+} from '@graphql/generated';
 import { screen } from '@testing-library/react';
 
 const buildDocumentData = (
-  overrides: Partial<documentItem_fragment$data> = {}
-): documentItem_fragment$data =>
+  overrides: Partial<DocumentItemFragment> = {}
+): DocumentItemFragment =>
   ({
     id: 'doc-1',
     type: ShareableResourceType.OPENCTI_INTEGRATION,
@@ -33,7 +36,7 @@ const buildDocumentData = (
       },
     ],
     ...overrides,
-  }) as unknown as documentItem_fragment$data;
+  }) as unknown as DocumentItemFragment;
 
 const DOCUMENT_SHARE_NUMBER = 3;
 const LIVE_SHARE_NUMBER = 7;
@@ -83,7 +86,7 @@ describe('ShareableResourceDetails', () => {
     testRender(
       <ShareableResourceDetails
         documentData={buildDocumentData({
-          license_type: 'Commercial',
+          license_type: LicenseType.Commercial,
         })}
       />
     );

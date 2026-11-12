@@ -2,6 +2,7 @@
 
 import { useConsent } from '@/components/cookie-consent/CookieConsentProvider';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { cn } from '@/lib/utils';
 
 // A native button rather than the design-system Button: it opens a dialog but
@@ -13,6 +14,7 @@ export const CookieSettingsLink = ({ className }: { className?: string }) => {
 
   return (
     <button
+      {...analyticsId('footer_cookie_settings_open')}
       type="button"
       onClick={openPreferences}
       className={cn('cursor-pointer', className)}>

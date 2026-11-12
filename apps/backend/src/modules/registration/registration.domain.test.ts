@@ -415,6 +415,141 @@ describe('registration domain', () => {
     );
   });
 
+  describe('loadRegisteredPlatformByPlatformId', () => {
+    // PlatformConfiguration.tenant_id is a uuid column
+    const firstTenantId = uuidv4();
+    const secondTenantId = uuidv4();
+    const unknownTenantId = uuidv4();
+
+    const registerOpenaevPlatform = (tenantId?: string) =>
+      RegistrationDomain.registerNewPlatform({
+        organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        serviceDefinitionId: SERVICES.DEFINITIONS.OPENAEV_REGISTRATION.ID,
+        configuration: {
+          registerer_id:
+            TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.ID,
+          platform_id: platformId,
+          ...(tenantId ? { tenant_id: tenantId } : {}),
+          platform_url: platformUrl,
+          platform_title: 'My OpenAEV platform',
+          platform_contract: platformContract,
+          platform_version: '2.4.0',
+          token: uuidv4(),
+          last_connectivity_check: new Date(),
+        },
+        platformIdentifier: PlatformIdentifier.Openaev,
+      });
+
+    beforeEach(() => {
+      requestContext.set(requestContextRegistererUserSecondOrga);
+    });
+
+    afterEach(async () => {
+      await PlatformConfigurationDomain.deleteConfigurationBy({});
+      await ServiceInstanceDomain.deleteServiceInstanceBy({});
+    });
+
+    it('should return the registration of the requested tenant', async () => {
+      // Given
+      await registerOpenaevPlatform(firstTenantId);
+      const tenantServiceInstanceId =
+        await registerOpenaevPlatform(secondTenantId);
+
+      // When
+      const platform =
+        await RegistrationDomain.loadRegisteredPlatformByPlatformId({
+          platformIdentifier: PlatformIdentifier.Openaev,
+          platformId,
+          tenantId: secondTenantId,
+        });
+
+      // Then
+      expect(platform?.id).toBe(tenantServiceInstanceId);
+    });
+
+    it('should return only the tenant-less registration when no tenant is given', async () => {
+      // Given
+      await registerOpenaevPlatform(firstTenantId);
+      const legacyServiceInstanceId = await registerOpenaevPlatform();
+
+      // When
+      const platform =
+        await RegistrationDomain.loadRegisteredPlatformByPlatformId({
+          platformIdentifier: PlatformIdentifier.Openaev,
+          platformId,
+          tenantId: null,
+        });
+
+      // Then
+      expect(platform?.id).toBe(legacyServiceInstanceId);
+    });
+
+    it.each`
+      description                                         | platformIdentifier            | tenantId
+      ${'the tenant has no registration'}                 | ${PlatformIdentifier.Openaev} | ${unknownTenantId}
+      ${'the platform is registered for another product'} | ${PlatformIdentifier.Opencti} | ${firstTenantId}
+    `(
+      'should return nothing when $description',
+      async ({
+        platformIdentifier,
+        tenantId,
+      }: {
+        platformIdentifier: PlatformIdentifier;
+        tenantId: string;
+      }) => {
+        // Given
+        await registerOpenaevPlatform(firstTenantId);
+
+        // When
+        const platform =
+          await RegistrationDomain.loadRegisteredPlatformByPlatformId({
+            platformIdentifier,
+            platformId,
+            tenantId,
+          });
+
+        // Then
+        expect(platform).toBeUndefined();
+      }
+    );
+
+    it('should return nothing when the registration is inactive', async () => {
+      // Given
+      const serviceInstanceId = await registerOpenaevPlatform(firstTenantId);
+      await PlatformConfigurationDomain.updateConfiguration(serviceInstanceId, {
+        status: PlatformConfigurationStatus.Inactive,
+      });
+
+      // When
+      const platform =
+        await RegistrationDomain.loadRegisteredPlatformByPlatformId({
+          platformIdentifier: PlatformIdentifier.Openaev,
+          platformId,
+          tenantId: firstTenantId,
+        });
+
+      // Then
+      expect(platform).toBeUndefined();
+    });
+
+    it('should return nothing when the platform is outside the selected organization', async () => {
+      // Given
+      await registerOpenaevPlatform(firstTenantId);
+      requestContext.set(requestContextSimpleUserFiligran2);
+
+      // When
+      const platform =
+        await RegistrationDomain.loadRegisteredPlatformByPlatformId({
+          platformIdentifier: PlatformIdentifier.Openaev,
+          platformId,
+          tenantId: firstTenantId,
+        });
+
+      // Then
+      expect(platform).toBeUndefined();
+    });
+  });
+
   describe('loadRegisteredPlatformsByServiceInstanceIds', () => {
     const openAEVPlatformId = uuidv4();
     const openAEVPlatformTitle = 'My OpenAEV platform';

@@ -3,6 +3,8 @@
 import EmailNotVerifiedNotice from '@/components/signup/EmailNotVerifiedNotice';
 import SignUpErrorSnackbar from '@/components/signup/SignUpErrorSnackbar';
 import { useTranslate } from '@/hooks/use-translate';
+import { trackEvent } from '@/lib/analytics/analytics.client';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import FiligranLogo from '@public/filigran_logo.svg';
 import FiligranLogoDark from '@public/filigran_logo_dark.svg';
 import SchemeXtmHub from '@public/scheme_xtm_hub_account_creation.svg';
@@ -39,6 +41,7 @@ const SignUp = ({ showLocalLogin = false }: { showLocalLogin?: boolean }) => {
               formId: string;
               region: string;
               target: string;
+              onFormSubmitted: () => void;
             }) => void;
           };
         };
@@ -49,6 +52,8 @@ const SignUp = ({ showLocalLogin = false }: { showLocalLogin?: boolean }) => {
           formId: HUBSPOT_FORM_ID,
           region: HUBSPOT_REGION,
           target: '#hubspot-form',
+          onFormSubmitted: () =>
+            trackEvent('sign_up', { method: 'HubSpot form' }),
         });
       }
     };
@@ -105,6 +110,7 @@ const SignUp = ({ showLocalLogin = false }: { showLocalLogin?: boolean }) => {
           <p className="text-sm leading-6 text-default-primary flex items-center gap-2">
             {t('AlreadyHaveAccount')}
             <Link
+              {...analyticsId('account_login_open')}
               href={oidcHref}
               prefetch={false}
               className="text-filigran-brand-primary font-bold underline">
@@ -113,6 +119,7 @@ const SignUp = ({ showLocalLogin = false }: { showLocalLogin?: boolean }) => {
           </p>
           {showLocalLogin && (
             <Link
+              {...analyticsId('account_local_login_open')}
               href={loginHref}
               className="text-filigran-brand-primary underline">
               {t('LoginWithLocal')}

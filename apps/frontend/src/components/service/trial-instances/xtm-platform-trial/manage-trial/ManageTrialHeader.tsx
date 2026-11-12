@@ -4,6 +4,10 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { DisabledActionTooltip } from '@/components/ui/DisabledActionTooltip';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
+import {
+  analyticsId,
+  type AnalyticsElementId,
+} from '@/lib/analytics/analytics.ids';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { XTM_PLATFORM_TRIAL_PATH } from '@/utils/path/constant';
 import {
@@ -42,6 +46,7 @@ interface ManageTrialHeaderProps {
   onUsersRemoved: () => void;
   backHref?: string;
   backLabelKey?: string;
+  backAnalyticsId?: AnalyticsElementId;
 }
 
 export const ManageTrialHeader = ({
@@ -51,6 +56,7 @@ export const ManageTrialHeader = ({
   onUsersRemoved,
   backHref = XTM_PLATFORM_TRIAL_PATH,
   backLabelKey = 'Service.Bundle.ManageTrial.BackButton',
+  backAnalyticsId = 'trial_overview_open',
 }: ManageTrialHeaderProps) => {
   const t = useTranslate();
   const queryClient = useQueryClient();
@@ -103,7 +109,9 @@ export const ManageTrialHeader = ({
           priority="secondary"
           className="gap-2 border-elevation-default"
           asChild>
-          <Link href={backHref}>
+          <Link
+            {...analyticsId(backAnalyticsId)}
+            href={backHref}>
             <ArrowUpwardIcon className="h-3 w-3 -rotate-90" />
             {t(backLabelKey)}
           </Link>
@@ -113,6 +121,7 @@ export const ManageTrialHeader = ({
             <TooltipProvider>
               <Tooltip>
                 <ConfirmDialog
+                  confirmAnalyticsId="trial_users_removal_confirm"
                   title={t('Service.Bundle.ManageTrial.BulkDeleteDialog.Title')}
                   confirmLabel={t('Utils.Delete')}
                   destructive
@@ -120,6 +129,7 @@ export const ManageTrialHeader = ({
                   trigger={
                     <TooltipTrigger asChild>
                       <IconButton
+                        {...analyticsId('trial_users_delete')}
                         type="button"
                         priority="tertiary"
                         aria-label={t('Utils.Delete')}
@@ -162,13 +172,16 @@ export const ManageTrialHeader = ({
             </DisabledActionTooltip>
           ) : (
             <Button
+              {...analyticsId('trial_users_edit')}
               priority="secondary"
               className="border-elevation-default"
               onClick={() => setIsEditUsersDialogOpen(true)}>
               {t('Service.Bundle.ManageTrial.GroupAction')}
             </Button>
           )}
-          <Button onClick={() => setIsAddUserDialogOpen(true)}>
+          <Button
+            {...analyticsId('trial_user_create')}
+            onClick={() => setIsAddUserDialogOpen(true)}>
             {t('Service.Bundle.ManageTrial.AddTrialUser')}
           </Button>
         </div>

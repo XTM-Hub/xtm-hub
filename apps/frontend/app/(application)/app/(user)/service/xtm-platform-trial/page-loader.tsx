@@ -3,10 +3,15 @@
 import { XtmPlatformActiveBundlePage as XtmPlatformTrialBundlePage } from '@/components/service/trial-instances/xtm-platform-trial/active-bundle/XtmPlatformActiveBundlePage';
 import { PrivateXtmPlatformTrialPanel } from '@/components/service/trial-instances/xtm-platform-trial/request-panel/PrivateXtmPlatformTrialPanel';
 import { useXtmPlatformTrialPanelView } from '@/components/service/trial-instances/xtm-platform-trial/request-panel/useXtmPlatformTrialPanelView';
-import { deriveXtmPlatformTrialRequestPageLayout } from '@/components/service/trial-instances/xtm-platform-trial/request-panel/xtm-platform-trial-panel.utils';
+import {
+  deriveXtmPlatformTrialRequestPageLayout,
+  toAnalyticsTrialState,
+} from '@/components/service/trial-instances/xtm-platform-trial/request-panel/xtm-platform-trial-panel.utils';
 import { XtmPlatformTrialRequestPage } from '@/components/service/trial-instances/xtm-platform-trial/XtmPlatformTrialRequestPage';
 import { BreadcrumbNav } from '@/components/ui/BreadcrumbNav';
+import { useAnalyticsEnabled } from '@/hooks/use-analytics-enabled';
 import { useTranslate } from '@/hooks/use-translate';
+import { trackEvent } from '@/lib/analytics/analytics.client';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { APP_PATH } from '@/utils/path/constant';
 import { xtmPlatformBundleKeys } from '@graphql/deployment/deployment.keys';
@@ -14,6 +19,7 @@ import {
   DeploymentRequestHubStatus,
   useXtmPlatformBundleQuery,
 } from '@graphql/generated';
+import { useEffect, useRef } from 'react';
 
 const breadcrumbs = [
   {
@@ -38,6 +44,21 @@ const PageLoader = () => {
   const bundle = data?.xtmPlatformBundle ?? null;
 
   const view = useXtmPlatformTrialPanelView(bundle);
+  const trialState = toAnalyticsTrialState(view, bundle?.hub_status);
+  const isAnalyticsEnabled = useAnalyticsEnabled();
+  const isTrialViewTracked = useRef(false);
+
+  useEffect(() => {
+    if (!isAnalyticsEnabled) {
+      isTrialViewTracked.current = false;
+      return;
+    }
+    if (!data || isTrialViewTracked.current) {
+      return;
+    }
+    isTrialViewTracked.current = true;
+    trackEvent('view_trial', { trial_state: trialState });
+  }, [isAnalyticsEnabled, data, trialState]);
 
   if (isLoading) {
     return null;

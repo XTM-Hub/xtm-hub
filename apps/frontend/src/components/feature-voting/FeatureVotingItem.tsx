@@ -3,6 +3,7 @@
 import { FeatureVoteCard } from '@/components/feature-voting/FeatureVoteCard';
 import { FeatureVoteDetail } from '@/components/feature-voting/FeatureVoteDetail';
 import { useDetailParam } from '@/hooks/use-detail-param';
+import { analyticsFeature } from '@/lib/analytics/analytics.context';
 import { Dialog, DialogContent } from '@filigran/design-system';
 import { VotableFeaturePublicFragment } from '@graphql/generated';
 
@@ -20,7 +21,9 @@ export const FeatureVotingItem = ({
   const { isOpen, close } = useDetailParam('featureId', feature.id);
 
   return (
-    <li className="h-full">
+    <li
+      {...analyticsFeature(feature.title)}
+      className="h-full">
       <FeatureVoteCard
         feature={feature}
         serviceInstanceId={serviceInstanceId}

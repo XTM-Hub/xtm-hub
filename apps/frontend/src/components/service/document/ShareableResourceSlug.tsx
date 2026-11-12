@@ -5,9 +5,16 @@ import {
   BreadcrumbNavLink,
 } from '@/components/ui/BreadcrumbNav';
 import { useTranslate } from '@/hooks/use-translate';
+import {
+  analyticsResource,
+  toAnalyticsResourceData,
+} from '@/lib/analytics/analytics.context';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { DownloadIcon } from '@filigran/icon';
 
+import { DeployableResourceViewTracker } from '@/components/service/document/DeployableResourceViewTracker';
 import OneClickDeploy from '@/components/service/document/one-click-deploy/OneClickDeploy';
+import { ResourceViewTracker } from '@/components/service/document/ResourceViewTracker';
 import ShareableResourceDetails from '@/components/service/document/ShareableResouceDetails';
 import ShareableResourceDescription from '@/components/service/document/ShareableResourceDescription';
 import ShareableResourceCarousel from '@/components/service/document/ui/ShareableResourceCarouselView';
@@ -24,6 +31,7 @@ import { getResourcePageFiligranWebsiteUtm } from '@/utils/filigran-website-utm'
 import { PUBLIC_CYBERSECURITY_SOLUTIONS_PATH } from '@/utils/path/constant';
 import { EntityTypeOrFiligranLogo } from '@/utils/shareable-resources/entity-type';
 import {
+  getDocumentEntityTypes,
   isResourceDeployable,
   isResourceDownloadable,
 } from '@/utils/shareable-resources/utils/shareable-resources.client.utils';
@@ -35,13 +43,13 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@filigran/design-system';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
+import { DocumentItemFragment } from '@graphql/generated';
 import Image from 'next/image';
 
 // Component interface
 interface ShareableResourceSlugProps {
-  documentData: documentItem_fragment$data;
+  documentData: DocumentItemFragment;
   serviceInstance: serviceInstance_fragment$data;
   breadcrumbValue: BreadcrumbNavLink[];
   children?: ReactNode;
@@ -79,9 +87,21 @@ const ShareableResourceSlug = ({
     return findDocumentLogo(documentData);
   }, [documentData]);
 
+  const resource = toAnalyticsResourceData(documentData);
+
   return (
-    <>
+    <div
+      className="contents"
+      {...analyticsResource(resource)}>
       <BreadcrumbNav value={breadcrumbValue} />
+      {shouldShowOneClickDeployComponent ? (
+        <DeployableResourceViewTracker resource={documentData} />
+      ) : (
+        <ResourceViewTracker
+          resource={documentData}
+          deployEligibility="Resource not deployable"
+        />
+      )}
       <div className="flex gap-2 pb-4 flex-col md:flex-row">
         {logo ? (
           <div className="w-24 shrink-0 rounded overflow-hidden">
@@ -97,7 +117,9 @@ const ShareableResourceSlug = ({
         ) : (
           <div className="w-24 p-3 shrink-0 flex items-center justify-center">
             <EntityTypeOrFiligranLogo
-              entityTypes={getEntityTypes(documentData)}
+              entityTypes={getEntityTypes({
+                entity_types: getDocumentEntityTypes(documentData),
+              })}
             />
           </div>
         )}
@@ -106,6 +128,7 @@ const ShareableResourceSlug = ({
             <h1 className="whitespace-nowrap mb-2">{documentData.name}</h1>
             <div className="flex gap-2 ml-auto">
               <ShareLinkButton
+                analyticsId="resource_share"
                 documentId={documentData.id}
                 onShare={incrementShareNumber}
                 url={`${settings!.base_url_front}/${PUBLIC_CYBERSECURITY_SOLUTIONS_PATH}/${documentData?.service_instance?.slug}/${documentData?.slug}`}
@@ -127,6 +150,7 @@ const ShareableResourceSlug = ({
                             )}
                             icon={<DownloadIcon className="h-4 w-4" />}>
                             <a
+                              {...analyticsId('resource_download')}
                               href={downloadUrl}
                               onClick={incrementDownloadNumber}
                             />
@@ -146,6 +170,7 @@ const ShareableResourceSlug = ({
                   {isResourceDownloadable(documentData) && (
                     <Button asChild>
                       <a
+                        {...analyticsId('resource_download')}
                         href={downloadUrl}
                         onClick={incrementDownloadNumber}>
                         {t('Utils.Download')}
@@ -169,6 +194,7 @@ const ShareableResourceSlug = ({
       </div>
       <ShareableResourceCarousel
         serviceInstance={serviceInstance}
+        resource={resource}
         images={carouselImages}
       />
       {children}
@@ -191,7 +217,7 @@ const ShareableResourceSlug = ({
           />
         )}
       </div>
-    </>
+    </div>
   );
 };
 

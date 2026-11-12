@@ -5,16 +5,22 @@ import { ShareLinkButton } from '@/components/ui/share-link/ShareLinkButton';
 import ShareableResourceCard from '@/components/ui/shareable-resource/ShareableResourceCard';
 import useScrollPosition from '@/hooks/use-scroll-position';
 import { useTranslate } from '@/hooks/use-translate';
+import {
+  analyticsResource,
+  toAnalyticsResourceData,
+} from '@/lib/analytics/analytics.context';
 import { getDataTableLabels } from '@/utils/design-system/data-table';
 import { PUBLIC_CYBERSECURITY_SOLUTIONS_PATH } from '@/utils/path/constant';
-import { publicDocumentListItemFragment$data } from '@generated/publicDocumentListItemFragment.graphql';
-import { SeoServiceInstanceItemFragment } from '@graphql/generated';
+import {
+  PublicDocumentListItemFragment,
+  SeoServiceInstanceItemFragment,
+} from '@graphql/generated';
 import { useLocale } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useMemo } from 'react';
 
 interface PublicShareableDocumentListProps {
-  documents: publicDocumentListItemFragment$data[];
+  documents: PublicDocumentListItemFragment[];
   serviceInstance: SeoServiceInstanceItemFragment;
   baseUrl: string;
   displayMode: ServiceListDisplayMode;
@@ -38,8 +44,10 @@ export const PublicShareableDocumentList = ({
         t,
         publicPath: true,
         renderActions: (document) => (
+          // eslint-disable-next-line no-restricted-syntax -- container whose children carry the IDs
           <div onClick={(event) => event.stopPropagation()}>
             <ShareLinkButton
+              analyticsId="resource_share"
               documentId={document.id}
               url={`${baseUrl}/${PUBLIC_CYBERSECURITY_SOLUTIONS_PATH}/${serviceInstance.slug}/${document.slug}`}
               size="sm"
@@ -74,6 +82,10 @@ export const PublicShareableDocumentList = ({
           columns={tableColumns}
           data={documents}
           toolbar={<></>}
+          getRowAnalyticsId={() => 'resource_open'}
+          getRowAnalyticsResource={({ original }) =>
+            analyticsResource(toAnalyticsResourceData(original))
+          }
           onClickRow={(row) => {
             save();
             router.push(

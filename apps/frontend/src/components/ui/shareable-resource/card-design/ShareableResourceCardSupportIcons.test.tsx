@@ -1,6 +1,5 @@
 import testRender from '@/utils/test/test-render';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { IntegrationType } from '@graphql/generated';
+import { DocumentItemFragment, IntegrationType } from '@graphql/generated';
 import { screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
@@ -37,7 +36,7 @@ describe('ShareableResourceCardSupportIcons', () => {
       expectedIconCount,
       expectedLabel,
     }: {
-      documentOverrides: Partial<documentItem_fragment$data>;
+      documentOverrides: Partial<DocumentItemFragment>;
       expectedIconCount: number;
       expectedLabel: string;
     }) => {
@@ -47,7 +46,7 @@ describe('ShareableResourceCardSupportIcons', () => {
             {
               ...baseDocument,
               ...documentOverrides,
-            } as documentItem_fragment$data
+            } as DocumentItemFragment
           }
         />
       );

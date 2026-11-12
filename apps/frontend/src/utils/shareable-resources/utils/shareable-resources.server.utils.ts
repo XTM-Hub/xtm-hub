@@ -1,14 +1,14 @@
 import { serverGraphqlFetch } from '@/lib/server-graphql-fetch';
-import { serverFetchGraphQL } from '@/relay/server-portal-api-fetch';
 import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '@/utils/constant';
 import type {
   PublicDocumentByServiceSlugItem,
   PublicDocumentSitemapItem,
 } from '@/utils/shareable-resources/shareable-resources.types';
 import { ServiceSlug } from '@/utils/shareable-resources/shareable-resources.types';
-import type { publicDocumentBySlugItemFragment$data } from '@generated/publicDocumentBySlugItemFragment.graphql';
-import publicDocumentBySlugQueryGraphql from '@generated/publicDocumentBySlugQuery.graphql';
 import {
+  PublicDocumentBySlugDocument,
+  PublicDocumentBySlugQuery,
+  PublicDocumentBySlugQueryVariables,
   PublicDocumentsByServiceSlugQueryDocument,
   PublicDocumentsByServiceSlugQueryQuery,
   PublicDocumentsByServiceSlugQueryQueryVariables,
@@ -120,9 +120,12 @@ export async function fetchSingleDocument(
   serviceInstanceId: string,
   serviceInstanceSlug: string,
   slug: string
-): Promise<publicDocumentBySlugItemFragment$data | null> {
-  const response = await serverFetchGraphQL(
-    publicDocumentBySlugQueryGraphql,
+): Promise<PublicDocumentByServiceSlugItem | null> {
+  const data = await serverGraphqlFetch<
+    PublicDocumentBySlugQuery,
+    PublicDocumentBySlugQueryVariables
+  >(
+    PublicDocumentBySlugDocument,
     { slug, serviceInstanceId },
     {
       cache: 'force-cache',
@@ -132,8 +135,5 @@ export async function fetchSingleDocument(
       },
     }
   );
-  const safeData = response.data as Record<string, unknown>;
-  return safeData[
-    'publicDocumentBySlug'
-  ] as publicDocumentBySlugItemFragment$data | null;
+  return data.publicDocumentBySlug;
 }

@@ -1,19 +1,29 @@
+import { type AnalyticsElementId } from '@/lib/analytics/analytics.ids';
+import { type PlatformIdentifier } from '@graphql/generated';
 import { ElementType } from 'react';
 
 interface BaseSectionLink {
-  href?: string;
   label: string;
   external?: boolean;
   highlight?: boolean;
   badge?: string;
   tooltip?: string;
+  group?: string;
 }
 
-export type SectionSubLink = BaseSectionLink;
+export type SectionSubLink = BaseSectionLink &
+  (
+    | { href: string; analyticsId: AnalyticsElementId }
+    | { href?: undefined; analyticsId?: undefined }
+  );
 
-export interface SectionLink extends BaseSectionLink {
-  subLinks?: SectionSubLink[];
-}
+export type SectionLink =
+  | (SectionSubLink & { subLinks?: undefined })
+  | (BaseSectionLink & {
+      href?: undefined;
+      analyticsId: AnalyticsElementId;
+      subLinks: SectionSubLink[];
+    });
 
 export interface BottomLink {
   key: string;
@@ -22,6 +32,7 @@ export interface BottomLink {
   label: string;
   external?: boolean;
   highlight?: boolean;
+  analyticsId: AnalyticsElementId;
 }
 
 export interface SectionConfig {
@@ -31,6 +42,8 @@ export interface SectionConfig {
   pathPrefix: string;
   links: SectionLink[];
   href?: string;
+  analyticsId: AnalyticsElementId;
+  product?: PlatformIdentifier;
 }
 
 export interface NavigationConfig {

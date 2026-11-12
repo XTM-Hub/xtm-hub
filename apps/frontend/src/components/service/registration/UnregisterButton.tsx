@@ -7,6 +7,7 @@ import { UnregisterPlatform } from '@/components/registration/register/register.
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { Button } from '@filigran/design-system';
 import { registeredPlatformByServiceInstanceId_fragment$data } from '@generated/registeredPlatformByServiceInstanceId_fragment.graphql';
 import { registerUnregisterPlatformMutation } from '@generated/registerUnregisterPlatformMutation.graphql';
@@ -81,11 +82,16 @@ export const UnregisterButton = ({ platform }: UnregisterButtonProps) => {
           OrganizationCapability.ManagePlatformRegistration,
         ]}>
         <ConfirmDialog
+          confirmAnalyticsId="platform_disconnection_confirm"
           destructive
           title={t('Unregister.Confirm.Description')}
           onConfirm={unregisterPlatform}
           trigger={
-            <Button variant="destructive">{t('Unregister.Unregister')}</Button>
+            <Button
+              {...analyticsId('platform_connection_delete')}
+              variant="destructive">
+              {t('Unregister.Unregister')}
+            </Button>
           }
           confirmLabel={t('Utils.Continue')}>
           <p>

@@ -13,8 +13,8 @@ import {
   optionalFileListCheck,
   transformToFileList,
 } from '@/utils/documents';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { DocumentImageType } from '@graphql/generated';
+import { getDocumentEntityTypes } from '@/utils/shareable-resources/utils/shareable-resources.client.utils';
+import { DocumentImageType, DocumentItemFragment } from '@graphql/generated';
 import { useContext, useMemo } from 'react';
 import slugify from 'slugify';
 import { z } from 'zod';
@@ -40,7 +40,7 @@ export type CustomViewFormValues = z.infer<typeof customViewFormSchema>;
 
 export interface CustomViewFormProps {
   handleSubmit: (values: CustomViewFormValues) => void;
-  document?: documentItem_fragment$data;
+  document?: DocumentItemFragment;
 }
 
 export const CustomViewForm = ({
@@ -75,7 +75,7 @@ export const CustomViewForm = ({
         images: transformToFileList(DocumentImageType.Image, document),
         logo: transformToFileList(DocumentImageType.Logo, document),
         use_cases: document?.use_cases?.map((useCase) => useCase.id),
-        entity_types: document?.entity_types ?? [],
+        entity_types: (document && getDocumentEntityTypes(document)) ?? [],
         uploader_id: document?.uploader?.id ?? me?.id,
         uploader_organization_id:
           (isCreation

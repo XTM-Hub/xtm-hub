@@ -70,7 +70,7 @@
     "express-prom-bundle": "8.0.0",
     "express-rate-limit": "8.6.2",
     "express-session": "1.19.0",
-    "glob": "13.0.6",
+    "glob": "13.0.7",
     "graphql": "catalog:",
     "graphql-relay": "0.10.2",
     "graphql-sse": "catalog:",
@@ -91,7 +91,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@electric-sql/pglite": "0.5.14",
+    "@electric-sql/pglite": "0.5.15",
     "@eslint/js": "catalog:",
     "@graphql-codegen/cli": "catalog:",
     "@graphql-codegen/typescript": "catalog:",

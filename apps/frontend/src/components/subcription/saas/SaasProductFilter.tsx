@@ -3,6 +3,7 @@ import {
   SAAS_PRODUCTS,
 } from '@/components/subcription/saas/saas-list.utils';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { isValueInEnum } from '@/utils/is-value-in-enum';
 import {
   Select,
@@ -32,6 +33,7 @@ export const SaasProductFilter = ({
         onProductChange(isValueInEnum(value, SaasProduct) ? value : null)
       }>
       <SelectTrigger
+        {...analyticsId('admin_saas_products_open')}
         aria-label={t('CSMBoard.Products')}
         className="w-full">
         <SelectValue />

@@ -34,6 +34,8 @@ jobs:
     runs-on: ubuntu-26.04
     outputs:
       code: ${{ steps.filter.outputs.code }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+      backend: ${{ steps.filter.outputs.backend }}
     steps:
       - uses: actions/checkout@v6
       - uses: dorny/paths-filter@v4
@@ -47,6 +49,10 @@ jobs:
               - "xtm-hub-dev/docker-compose-ci*.yml"
               - "package.json"
               - "yarn.lock"
+            frontend:
+              - "apps/frontend/**"
+            backend:
+              - "apps/backend/**"
 
   run-lint:
     name: Check quality ${{ matrix.label }}
@@ -612,10 +618,12 @@ jobs:
 
   # Codecov's coverage of each app on pull requests: fails when Codecov fails the changed lines of an app or when an app
   # is under 80% overall, and adds it at the top of the app's test report comment, hence the run-*-unit-tests
-  # needs. Skipped, so passing, when the shards did not run.
+  # needs. Only checks the apps the pull request changes: Codecov can leave the check of an untouched app in progress
+  # for good. Skipped, so passing, when the shards did not run or when neither app changed.
   coverage:
     name: Coverage
     needs:
+      - detect-changes
       - run-front-unit-tests-shards
       - run-api-unit-tests-shards
       - run-front-unit-tests
@@ -624,7 +632,8 @@ jobs:
       always() &&
       github.event_name == 'pull_request' &&
       needs.run-front-unit-tests-shards.result == 'success' &&
-      needs.run-api-unit-tests-shards.result == 'success'
+      needs.run-api-unit-tests-shards.result == 'success' &&
+      (needs.detect-changes.outputs.frontend == 'true' || needs.detect-changes.outputs.backend == 'true')
     runs-on: ubuntu-26.04
     timeout-minutes: 20
     permissions:
@@ -641,8 +650,8 @@ jobs:
         uses: ./.github/actions/coverage
         with:
           apps: |
-            frontend Frontend apps/frontend
-            backend Backend apps/backend
+            ${{ needs.detect-changes.outputs.frontend == 'true' && 'frontend Frontend apps/frontend' || '' }}
+            ${{ needs.detect-changes.outputs.backend == 'true' && 'backend Backend apps/backend' || '' }}
 
   deploy-feature-branch:
     needs: build-images-tests

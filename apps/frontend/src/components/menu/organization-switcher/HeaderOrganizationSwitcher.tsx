@@ -3,6 +3,7 @@
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useMeOrganizations } from '@/hooks/use-me-organizations';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { APP_PATH } from '@/utils/path/constant';
 import {
@@ -78,6 +79,7 @@ const HeaderOrganizationSwitcher = ({
           value={me.selected_organization_id}
           onValueChange={handleOnValueChange}>
           <SelectTrigger
+            {...analyticsId('organization_workspaces_open')}
             aria-label={t('OrganizationSwitcher.SelectOrganization')}
             className="w-full">
             <SelectValue />

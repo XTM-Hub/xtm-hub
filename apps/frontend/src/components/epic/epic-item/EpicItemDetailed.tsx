@@ -6,11 +6,13 @@ import {
 import { MarkdownRenderer } from '@/components/ui/markdown-renderer';
 import { Separator } from '@/components/ui/separator';
 import { useTranslate } from '@/hooks/use-translate';
-import { epic_fragment$data } from '@generated/epic_fragment.graphql';
+import { analyticsEpic } from '@/lib/analytics/analytics.context';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
+import { EpicFieldsFragment } from '@graphql/generated';
 import Link from 'next/link';
 
 interface EpicItemDetailedProps {
-  epic: epic_fragment$data;
+  epic: EpicFieldsFragment;
 }
 
 export const EpicItemDetailed = ({ epic }: EpicItemDetailedProps) => {
@@ -26,16 +28,26 @@ export const EpicItemDetailed = ({ epic }: EpicItemDetailedProps) => {
   ].filter(({ source }) => source);
 
   return (
-    <div className="flex h-full min-h-0 flex-1 flex-col">
+    <div
+      {...analyticsEpic(epic.title)}
+      className="flex h-full min-h-0 flex-1 flex-col">
       <h2 className="pr-8">{epic.title}</h2>
       <p className="text-default-secondary text-sm">{epic.short_description}</p>
       <Separator className="my-4" />
       <div className="min-h-0 flex-1 overflow-y-auto">
-        {epic.description && <MarkdownRenderer source={epic.description} />}
+        {epic.description && (
+          <MarkdownRenderer
+            source={epic.description}
+            linkAnalyticsId="roadmap_description_link_open"
+          />
+        )}
         {sections.map(({ labelKey, source }) => (
           <section key={labelKey}>
             <h3 className="mt-4 mb-2 text-lg font-semibold">{t(labelKey)}</h3>
-            <MarkdownRenderer source={source} />
+            <MarkdownRenderer
+              source={source}
+              linkAnalyticsId="roadmap_description_link_open"
+            />
           </section>
         ))}
       </div>
@@ -44,6 +56,7 @@ export const EpicItemDetailed = ({ epic }: EpicItemDetailedProps) => {
         <EpicItemFooter epic={epic}>
           <div className="ml-auto flex min-h-9 flex-wrap items-center gap-1">
             <Link
+              {...analyticsId('roadmap_epic_slack_join')}
               href={slackLink}
               target="_blank"
               rel="noopener noreferrer">

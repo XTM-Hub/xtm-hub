@@ -11,11 +11,11 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@filigran/design-system';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
+import { DocumentItemFragment } from '@graphql/generated';
 
 interface UserDisplayProps {
   uploader:
-    | documentItem_fragment$data['uploader']
+    | DocumentItemFragment['uploader']
     | PublicDocumentData['uploader']
     | null
     | undefined;

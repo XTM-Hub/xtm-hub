@@ -2,8 +2,10 @@ import AppContext from '@/components/AppContext';
 import { CookieConsentProvider } from '@/components/cookie-consent/CookieConsentProvider';
 import { readServerConsent } from '@/components/cookie-consent/cookie-consent.server';
 import I18nContext from '@/i18n/i18n-context';
+import { getProductionGaMeasurementId } from '@/lib/analytics/analytics.measurement';
 import { getMetadataBase } from '@/utils/metadata';
 import { Metadata } from 'next';
+import { headers } from 'next/headers';
 import * as React from 'react';
 
 export const generateMetadata = async (): Promise<Metadata> => {
@@ -20,10 +22,13 @@ interface RootLayoutProps {
 
 const RootLayout = async ({ children }: RootLayoutProps) => {
   const initialConsent = await readServerConsent();
+  const host = (await headers()).get('host');
   return (
     <I18nContext>
       <CookieConsentProvider initialConsent={initialConsent}>
-        <AppContext>{children}</AppContext>
+        <AppContext gaMeasurementId={getProductionGaMeasurementId(host)}>
+          {children}
+        </AppContext>
       </CookieConsentProvider>
     </I18nContext>
   );

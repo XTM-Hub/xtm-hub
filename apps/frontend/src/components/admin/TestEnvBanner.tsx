@@ -2,6 +2,7 @@
 
 import { SettingsContext } from '@/components/settings/EnvPortalContext';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { Banner } from '@filigran/design-system';
 import Link from 'next/link';
 import { useContext } from 'react';
@@ -17,7 +18,11 @@ export const TestEnvBanner = () => {
         {t('TestEnvBanner', {
           environnement: settings?.environment,
         })}{' '}
-        <Link href="https://hub.filigran.io/">{t('GoToProd')}</Link>
+        <Link
+          href="https://hub.filigran.io/"
+          {...analyticsId('nav_production_open')}>
+          {t('GoToProd')}
+        </Link>
       </Banner>
     )
   );

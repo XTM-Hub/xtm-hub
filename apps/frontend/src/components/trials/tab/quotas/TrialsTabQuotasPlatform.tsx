@@ -76,6 +76,9 @@ export const TrialsTabQuotasPlatform = () => {
         {...getDataTableLabels(t)}
         columns={columns}
         data={dataTableData}
+        getRowAnalyticsId={() =>
+          userHasModifyTrialQuotaCapa ? 'admin_trial_quota_edit' : undefined
+        }
         onClickRow={(row) => setQuotaEdit(row.original)}
       />
       {quotaEdit && userHasModifyTrialQuotaCapa && (

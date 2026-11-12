@@ -16,6 +16,7 @@ import useServiceCapability, {
   useServiceCapabilityWithSubscriptionId,
 } from '@/hooks/use-service-capability';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { cn } from '@/lib/utils';
 import { APP_PATH } from '@/utils/path/constant';
 import {
@@ -25,9 +26,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@filigran/design-system';
-import { epic_fragment$data } from '@generated/epic_fragment.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 import {
+  EpicFieldsFragment,
   OrganizationCapability,
   SeoServiceInstanceItemFragment,
   ServiceRestriction,
@@ -37,7 +38,7 @@ import Link from 'next/link';
 import { useCallback, useContext, useMemo, useState } from 'react';
 
 interface EpicListProps {
-  epics: epic_fragment$data[];
+  epics: EpicFieldsFragment[];
   serviceInstance:
     serviceInstance_fragment$data | SeoServiceInstanceItemFragment;
   selectedProducts?: EpicFilterType;
@@ -149,6 +150,7 @@ export const EpicList = ({
               asChild
               priority="secondary">
               <Link
+                {...analyticsId('subscription_access_open')}
                 href={`/${APP_PATH}/manage/service/${serviceInstance.id}/subscription/${subscriptionId}`}>
                 {t('Service.Capabilities.ManageAccessName')}
               </Link>

@@ -6,11 +6,13 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@filigran/design-system';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { publicDocumentListItemFragment$data } from '@generated/publicDocumentListItemFragment.graphql';
+import {
+  DocumentItemFragment,
+  PublicDocumentListItemFragment,
+} from '@graphql/generated';
 
 interface DocumentNameCellProps {
-  document: documentItem_fragment$data | publicDocumentListItemFragment$data;
+  document: DocumentItemFragment | PublicDocumentListItemFragment;
 }
 
 export const DocumentNameCell = ({ document }: DocumentNameCellProps) => (
@@ -18,7 +20,7 @@ export const DocumentNameCell = ({ document }: DocumentNameCellProps) => (
 );
 
 interface DocumentShortDescriptionCellProps {
-  document: documentItem_fragment$data | publicDocumentListItemFragment$data;
+  document: DocumentItemFragment | PublicDocumentListItemFragment;
 }
 
 export const DocumentShortDescriptionCell = ({

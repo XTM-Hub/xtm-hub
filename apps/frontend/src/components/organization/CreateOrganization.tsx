@@ -3,6 +3,7 @@ import { organizationFormSchema } from '@/components/organization/OrganizationFo
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { Button } from '@filigran/design-system';
 import { useOrganizationCreateMutation } from '@graphql/generated';
@@ -58,7 +59,9 @@ export const CreateOrganization = () => {
       open={openSheet}
       setOpen={setOpenSheet}
       trigger={
-        <Button className="truncate inline-block ">
+        <Button
+          {...analyticsId('admin_organization_create')}
+          className="truncate inline-block ">
           {t('OrganizationForm.CreateOrganization')}
         </Button>
       }

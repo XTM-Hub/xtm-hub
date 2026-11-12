@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useServiceListStorage } from '@/hooks/use-service-list-storage';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { toComboboxOptionIds } from '@/utils/design-system/combobox';
 import {
   Button,
@@ -87,6 +88,7 @@ const IntegrationsCsvExportFilterField = ({
   );
   return (
     <AppCombobox
+      formField
       multiple
       className="min-w-0 max-w-md"
       label={label}
@@ -397,6 +399,7 @@ export const IntegrationsCsvExportDialog = ({
             }}>
             <DialogFooter>
               <Button
+                {...analyticsId('resource_csv_export_cancel')}
                 type="button"
                 priority="tertiary"
                 disabled={isExporting}
@@ -404,6 +407,7 @@ export const IntegrationsCsvExportDialog = ({
                 {t('Utils.Cancel')}
               </Button>
               <Button
+                {...analyticsId('resource_integrations_export')}
                 type="submit"
                 disabled={isExporting}>
                 {t('Service.CsvExport.ExportButton')}

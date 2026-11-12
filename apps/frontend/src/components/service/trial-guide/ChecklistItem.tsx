@@ -1,5 +1,7 @@
 import { TrialGuideChecklistItem } from '@/components/service/trial-guide/TrialGuide.content';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsLinkType } from '@/lib/analytics/analytics.context';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import Link from 'next/link';
 import { ReactNode } from 'react';
 
@@ -27,6 +29,8 @@ export const ChecklistItem = ({ index, item }: ChecklistItemProps) => {
           {t.rich(descriptionKey, { strong: renderStrong })}{' '}
           {readMoreUrl && (
             <Link
+              {...analyticsId('trial_guide_step_documentation_open')}
+              {...analyticsLinkType('Documentation')}
               className="text-filigran-brand-primary hover:underline"
               href={readMoreUrl}
               target="_blank"

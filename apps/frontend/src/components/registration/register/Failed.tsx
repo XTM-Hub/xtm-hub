@@ -8,7 +8,9 @@ interface RegisterStateFailedProps {
 export const RegisterStateFailed = ({ cancel }: RegisterStateFailedProps) => {
   const t = useTranslate();
   return (
-    <RegistrationLayout cancel={cancel}>
+    <RegistrationLayout
+      cancel={cancel}
+      cancelAnalyticsId="platform_registration_cancel">
       <h1 className="title-sm">{t(`Register.Failed.Title`)}</h1>
       <p>{t(`Register.Failed.Description`)}</p>
     </RegistrationLayout>

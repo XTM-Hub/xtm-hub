@@ -8,6 +8,7 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { IconButton } from '@filigran/design-system';
 import { Funnel } from 'lucide-react';
 
@@ -22,6 +23,7 @@ export const FilterSheet = ({ filters }: FilterSheetProps) => {
     <Sheet>
       <SheetTrigger asChild>
         <IconButton
+          {...analyticsId('resource_filters_open')}
           priority="secondary"
           className="sm:hidden [-webkit-tap-highlight-color:transparent]"
           aria-label={t('Service.List.Filters')}

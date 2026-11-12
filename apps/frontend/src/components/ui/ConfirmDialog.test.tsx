@@ -12,6 +12,7 @@ const TITLE = 'Delete the item';
 const DESCRIPTION = 'This cannot be undone.';
 const CONFIRM_LABEL = 'Delete';
 const BODY = 'The item will be removed.';
+const CONFIRM_ANALYTICS_ID = 'resource_deletion_confirm';
 
 interface RenderConfirmDialogOptions {
   onConfirm?: (e: MouseEvent<HTMLButtonElement>) => void;
@@ -28,6 +29,7 @@ const renderConfirmDialog = ({
 }: RenderConfirmDialogOptions = {}) =>
   testRender(
     <ConfirmDialog
+      confirmAnalyticsId={CONFIRM_ANALYTICS_ID}
       trigger={<button type="button">{TRIGGER_LABEL}</button>}
       title={TITLE}
       description={description}
@@ -63,6 +65,7 @@ describe('ConfirmDialog', () => {
     testRender(
       <ConfirmDialog
         open
+        confirmAnalyticsId={CONFIRM_ANALYTICS_ID}
         title={TITLE}
         confirmLabel={CONFIRM_LABEL}
         onConfirm={vi.fn()}
@@ -208,6 +211,7 @@ describe('ConfirmDialog', () => {
     testRender(
       <ConfirmDialog
         open
+        confirmAnalyticsId={CONFIRM_ANALYTICS_ID}
         title={TITLE}
         confirmLabel={CONFIRM_LABEL}
         cancelLabel="Keep"

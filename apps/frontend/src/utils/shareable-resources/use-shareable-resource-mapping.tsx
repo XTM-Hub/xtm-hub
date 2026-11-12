@@ -60,7 +60,12 @@ export const useShareableResourceMapping = (
 
   const entityTypeFilter = {
     title: t('GenericActions.FilterEntityTypesLabel'),
-    node: <ServiceListFilterEntityType facetCounts={facetCounts?.entityType} />,
+    node: (
+      <ServiceListFilterEntityType
+        type={typeFeed[slug]}
+        facetCounts={facetCounts?.entityType}
+      />
+    ),
   };
 
   const filtersMap: Record<ServiceSlug, ServiceListFilterMap> = {

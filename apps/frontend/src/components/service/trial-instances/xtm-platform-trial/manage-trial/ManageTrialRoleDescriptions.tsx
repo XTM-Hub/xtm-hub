@@ -7,6 +7,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { cn } from '@/lib/utils';
 import { InfoIcon } from '@filigran/icon';
 import { PlatformIdentifier } from '@graphql/generated';
@@ -42,6 +43,7 @@ export const ManageTrialRoleDescriptions = ({
                 'border-b border-[var(--border-elevation-default-layer-3)]'
             )}>
             <AccordionTrigger
+              {...analyticsId('trial_role_descriptions_toggle')}
               className={cn(
                 'pr-0 cursor-pointer data-[state=open]:border-b-0',
                 !stacked && 'border-b border-elevation-default'

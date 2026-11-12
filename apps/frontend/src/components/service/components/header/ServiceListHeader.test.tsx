@@ -4,6 +4,8 @@ import {
 } from '@/components/service/components/header/ServiceListHeader';
 import { AppServiceListStorageKeyContext } from '@/components/service/components/ServiceListStorageKeyContext';
 import { ServiceListStorageKey } from '@/utils/filters-storage.utils';
+import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
+import { readTrackedEvents, startAnalytics } from '@/utils/test/analytics';
 import testRender from '@/utils/test/test-render';
 import { DocumentOrdering, OrderingMode } from '@graphql/generated';
 import { screen } from '@testing-library/react';
@@ -53,6 +55,7 @@ const renderHeader = (
       <ServiceListHeader
         search=""
         onSearchChange={vi.fn()}
+        resourceType={ShareableResourceType.OPENCTI_INTEGRATION}
         {...props}
       />
     </AppServiceListStorageKeyContext>
@@ -198,5 +201,61 @@ describe('ServiceListHeader', () => {
     expect(
       screen.queryByRole('button', { name: FILTERS_BUTTON_LABEL })
     ).not.toBeInTheDocument();
+  });
+
+  it.each([
+    [OrderingMode.Asc, 'Descending'],
+    [OrderingMode.Desc, 'Ascending'],
+  ])(
+    'should send the new sort of the list when the %s order is toggled',
+    async (orderMode, expectedOrderMode) => {
+      // Given
+      startAnalytics();
+      testState.useServiceListStorage.mockReturnValue({
+        ...buildStorageState(),
+        orderMode,
+      });
+      const { user } = renderHeader();
+
+      // When
+      await user.click(
+        screen.getByRole('button', { name: `SortControls.SortBy ${orderMode}` })
+      );
+
+      // Then
+      expect(readTrackedEvents('sort_change')).toEqual([
+        {
+          order_by: 'Name',
+          order_mode: expectedOrderMode,
+          library: 'Integrations',
+          product: 'OpenCTI',
+        },
+      ]);
+    }
+  );
+
+  it('should send the picked order when the user picks another one', async () => {
+    // Given
+    startAnalytics();
+    testState.useServiceListStorage.mockReturnValue(buildStorageState());
+    const { user } = renderHeader();
+
+    // When
+    await user.click(
+      screen.getByRole('combobox', { name: 'SortControls.SortBy' })
+    );
+    await user.click(
+      screen.getByRole('option', {
+        name: `DocumentOrdering.${DocumentOrdering.UpdatedAt}`,
+      })
+    );
+
+    // Then
+    expect(readTrackedEvents('sort_change')).toEqual([
+      expect.objectContaining({
+        order_by: 'Update date',
+        order_mode: 'Ascending',
+      }),
+    ]);
   });
 });

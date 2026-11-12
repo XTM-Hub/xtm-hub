@@ -5,10 +5,22 @@ import { SortControls } from '@/components/ui/SortControls';
 import { useDebouncedSearch } from '@/hooks/use-debounced-search';
 import { useServiceListStorage } from '@/hooks/use-service-list-storage';
 import { useTranslate } from '@/hooks/use-translate';
+import { trackEvent } from '@/lib/analytics/analytics.client';
+import {
+  ORDER_BY_LABELS,
+  ORDER_MODE_LABELS,
+} from '@/lib/analytics/analytics.consts';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
+import { toAnalyticsLibraryParams } from '@/lib/analytics/analytics.resource';
 import { cn } from '@/lib/utils';
+import {
+  SORTABLE_DOCUMENT_ORDERINGS,
+  type SortableDocumentOrdering,
+} from '@/utils/shareable-resources/shareable-resources.consts';
+import { type ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 import { SearchField } from '@filigran/design-system';
 import { CalendarViewMonthIcon, ListViewIcon } from '@filigran/icon';
-import { DocumentOrdering } from '@graphql/generated';
+import { type OrderingMode } from '@graphql/generated';
 import React from 'react';
 
 export enum ServiceListFilterKey {
@@ -40,6 +52,7 @@ export enum ServiceListDisplayMode {
 interface ServiceListHeaderProps {
   search: string;
   onSearchChange: (v: string) => void;
+  resourceType: ShareableResourceType;
   paginationControls?: React.ReactNode;
   actions?: React.ReactNode;
   exportAction?: React.ReactNode;
@@ -51,6 +64,7 @@ interface ServiceListHeaderProps {
 export const ServiceListHeader = ({
   search,
   onSearchChange,
+  resourceType,
   paginationControls,
   actions,
   exportAction,
@@ -74,14 +88,36 @@ export const ServiceListHeader = ({
     onDisplayModeChange?.(mode);
   };
 
-  const sortOptions = [
-    DocumentOrdering.Name,
-    DocumentOrdering.CreatedAt,
-    DocumentOrdering.UpdatedAt,
-  ].map((value) => ({
+  const sortOptions = SORTABLE_DOCUMENT_ORDERINGS.map((value) => ({
     value,
     label: t(`DocumentOrdering.${value}`),
   }));
+
+  const trackSortChange = (
+    nextOrderBy: SortableDocumentOrdering,
+    nextOrderMode: OrderingMode
+  ) =>
+    trackEvent('sort_change', {
+      ...toAnalyticsLibraryParams(resourceType),
+      order_by: ORDER_BY_LABELS[nextOrderBy],
+      order_mode: ORDER_MODE_LABELS[nextOrderMode],
+    });
+
+  const handleOrderByChange = (value: string) => {
+    const nextOrderBy = SORTABLE_DOCUMENT_ORDERINGS.find(
+      (ordering) => ordering === value
+    );
+    if (!nextOrderBy) {
+      return;
+    }
+    trackSortChange(nextOrderBy, orderMode);
+    setOrderBy(nextOrderBy);
+  };
+
+  const handleOrderModeChange = (nextOrderMode: OrderingMode) => {
+    trackSortChange(orderBy, nextOrderMode);
+    setOrderMode(nextOrderMode);
+  };
 
   const searchHandlers = useDebouncedSearch({
     apply: onSearchChange,
@@ -103,8 +139,8 @@ export const ServiceListHeader = ({
   const sortControls = (
     <SortControls
       orderByOptions={sortOptions}
-      onOrderByChange={(value) => setOrderBy(value as DocumentOrdering)}
-      onOrderModeChange={setOrderMode}
+      onOrderByChange={handleOrderByChange}
+      onOrderModeChange={handleOrderModeChange}
       selectedOrderMode={orderMode}
       selectedOrderBy={orderBy}
       className="ml-2"
@@ -136,6 +172,7 @@ export const ServiceListHeader = ({
             )}
             <div className="p-2 border hover:cursor-pointer flex items-center align-middle gap-2">
               <button
+                {...analyticsId('resource_card_view_select')}
                 type="button"
                 onClick={() =>
                   handleDisplayModeChange(ServiceListDisplayMode.Tab)
@@ -157,6 +194,7 @@ export const ServiceListHeader = ({
                 className="h-5"
               />
               <button
+                {...analyticsId('resource_table_view_select')}
                 type="button"
                 onClick={() =>
                   handleDisplayModeChange(ServiceListDisplayMode.List)

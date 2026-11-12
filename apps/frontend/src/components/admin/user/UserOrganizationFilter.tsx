@@ -61,6 +61,7 @@ export const UserOrganizationFilter = ({
 
   return (
     <AppCombobox<OrganizationFilterOption>
+      analyticsId="admin_user_organizations_open"
       label={label}
       labelPosition="none"
       placeholder={label}

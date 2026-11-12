@@ -44,7 +44,8 @@ import { PortalContext } from '@/components/me/AppPortalContext';
 import ServiceSlugHeader from '@/components/service/[slug]/ServiceSlugHeader';
 import { SubscriptionSlugAddCapabilities } from '@/components/subcription/[slug]/SubscriptionSlugAddCapabilities';
 import { useAdminByPass } from '@/hooks/use-portal-capability';
-import { APP_PATH } from '@/utils/path/constant';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
+import { ADMIN_SERVICE_CATALOG_PATH, APP_PATH } from '@/utils/path/constant';
 import { Button } from '@filigran/design-system';
 import { serviceInstanceForSubscriptions_fragment$data } from '@generated/serviceInstanceForSubscriptions_fragment.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
@@ -112,7 +113,7 @@ const SubscriptionSlug = ({
     breadcrumbValue = [
       { label: 'MenuLinks.Home', href: `/${APP_PATH}` },
       { label: 'MenuLinks.Settings' },
-      { label: 'MenuLinks.Service', href: `/${APP_PATH}/admin/service` },
+      { label: 'MenuLinks.ServiceCatalog', href: ADMIN_SERVICE_CATALOG_PATH },
       {
         label: queryDataSubscription.subscriptionById.service_instance.name,
         href: `/${APP_PATH}/admin/service/${queryDataSubscription.subscriptionById.service_instance.id}`,
@@ -261,15 +262,18 @@ const SubscriptionSlug = ({
             <div className="flex items-center justify-end">
               {canManageUserServices && (
                 <IconActions
+                  analyticsId="list_row_actions_open"
                   aria-label={t('Utils.OpenMenu')}
                   icon={
                     <MoreVertIcon className="h-4 w-4 text-icon-highlight" />
                   }>
                   <IconActionsItem
+                    {...analyticsId('subscription_user_access_edit')}
                     onClick={() => setEditUserService(row.original)}>
                     {t('Utils.Update')}
                   </IconActionsItem>
                   <IconActionsItem
+                    {...analyticsId('subscription_user_access_remove')}
                     onClick={() => setDeleteUserServices([row.original])}>
                     {t('Utils.Delete')}
                   </IconActionsItem>
@@ -336,6 +340,7 @@ const SubscriptionSlug = ({
                   actions: () => (
                     <>
                       <Button
+                        {...analyticsId('subscription_bulk_capabilities_open')}
                         priority="tertiary"
                         startIcon={<AddIcon className="h-4 w-4" />}
                         onClick={() => setOpenAddCapabilities(true)}>
@@ -344,6 +349,7 @@ const SubscriptionSlug = ({
                         )}
                       </Button>
                       <Button
+                        {...analyticsId('subscription_selected_access_remove')}
                         variant="destructive"
                         priority="tertiary"
                         startIcon={<DeleteIcon className="h-4 w-4" />}

@@ -1,4 +1,5 @@
 import { FeatureVotingList } from '@/components/feature-voting/FeatureVotingList';
+import { readTrackedEvents, startAnalytics } from '@/utils/test/analytics';
 import {
   mockGraphqlMutation,
   mockGraphqlQuery,
@@ -234,6 +235,30 @@ describe('FeatureVotingList', () => {
       expect(replace).toHaveBeenCalledWith('/en/feature-voting', {
         scroll: false,
       });
+    });
+
+    it('should send the feature title when the vote carried in the URL is recorded', async () => {
+      // Given
+      startAnalytics();
+      mockSearchParams(openctiFeature.id);
+      mockRound(
+        mockVotingRound({
+          id: 'round-1',
+          description: 'Tell us what matters to you',
+          features: [openctiFeature, openaevFeature],
+        })
+      );
+      mockVoteSuccess(openctiFeature.id);
+
+      // When
+      renderList();
+
+      // Then
+      await vi.waitFor(() =>
+        expect(readTrackedEvents('feature_vote')).toEqual([
+          { feature_name: openctiFeature.title },
+        ])
+      );
     });
 
     it('should not vote again when the feature already has my vote, but still strip the URL', async () => {

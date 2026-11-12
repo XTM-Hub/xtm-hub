@@ -9,6 +9,7 @@ import {
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { requestGraphqlWithUploads } from '@/lib/graphql-upload-client';
 import { Button } from '@filigran/design-system';
@@ -95,7 +96,11 @@ const AddVotableFeature = ({
       title={t('VotingRound.Feature.Actions.Add')}
       setOpen={setOpenSheet}
       open={openSheet}
-      trigger={<Button>{t('VotingRound.Feature.Actions.Add')}</Button>}>
+      trigger={
+        <Button {...analyticsId('admin_votable_feature_create')}>
+          {t('VotingRound.Feature.Actions.Add')}
+        </Button>
+      }>
       <VotableFeatureForm
         serviceInstanceId={serviceInstanceId}
         onClose={() => setOpenSheet(false)}

@@ -10,7 +10,9 @@ import { useTranslate } from '@/hooks/use-translate';
 import { PlatformMetadataMapping } from '@/components/registration/PlatformIdentifierMapping';
 import { ServiceManageSheet } from '@/components/service/components/ServiceManageSheet';
 import { ShareableResourceConnectorPrivateDetails } from '@/components/service/document/connector/ShareableResourceConnectorPrivateDetails';
+import { DeployableResourceViewTracker } from '@/components/service/document/DeployableResourceViewTracker';
 import OneClickDeploy from '@/components/service/document/one-click-deploy/OneClickDeploy';
+import { ResourceViewTracker } from '@/components/service/document/ResourceViewTracker';
 import ShareableResourceDescription from '@/components/service/document/ShareableResourceDescription';
 import ShareableResourceCarousel from '@/components/service/document/ui/ShareableResourceCarouselView';
 import BadgeOverflowCounter, {
@@ -18,10 +20,16 @@ import BadgeOverflowCounter, {
 } from '@/components/ui/BadgeOverflowCounter';
 import { DisabledActionTooltip } from '@/components/ui/DisabledActionTooltip';
 import { ShareLinkButton } from '@/components/ui/share-link/ShareLinkButton';
+import {
+  analyticsResource,
+  toAnalyticsResourceData,
+} from '@/lib/analytics/analytics.context';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { cn } from '@/lib/utils';
 import { filterDocumentImages, findDocumentLogo } from '@/utils/documents';
 import { getResourcePageFiligranWebsiteUtm } from '@/utils/filigran-website-utm';
 import { getPlatformIdentifier } from '@/utils/platform';
+import { ConnectorFields } from '@/utils/shareable-resources/shareable-resources.types';
 import { Button } from '@filigran/design-system';
 import {
   InfoIcon,
@@ -29,14 +37,14 @@ import {
   MotionPlayIcon,
   ThreatActorGroupIcon,
 } from '@filigran/icon';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
+import { DocumentItemFragment } from '@graphql/generated';
 import Image from 'next/image';
 import Link from 'next/link';
 
 // Component interface
 interface ShareableResourceConnectorSlugProps {
-  documentData: documentItem_fragment$data;
+  documentData: DocumentItemFragment & ConnectorFields;
   serviceInstance: serviceInstance_fragment$data;
   breadcrumbValue: BreadcrumbNavLink[];
   shareUrl: string;
@@ -63,9 +71,24 @@ const ShareableResourceConnectorSlug = ({
   const carouselImages = filterDocumentImages(documentData);
   const logo = findDocumentLogo(documentData);
 
+  const resource = toAnalyticsResourceData(documentData);
+
   return (
-    <>
+    <div
+      className="contents"
+      {...analyticsResource(resource)}>
       <BreadcrumbNav value={breadcrumbValue} />
+      {canClickOnDeployButton ? (
+        <DeployableResourceViewTracker
+          resource={documentData}
+          requiredProductVersion={documentData.minimum_deployable_version}
+        />
+      ) : (
+        <ResourceViewTracker
+          resource={documentData}
+          deployEligibility="Resource not deployable"
+        />
+      )}
       <div className="flex gap-2 flex-col md:flex-row">
         {!!logo && (
           <div className="w-24 shrink-0 rounded overflow-hidden">
@@ -111,6 +134,7 @@ const ShareableResourceConnectorSlug = ({
 
             <div className="ml-auto flex gap-2">
               <ShareLinkButton
+                analyticsId="resource_share"
                 documentId={documentData.id}
                 onShare={incrementShareNumber}
                 url={shareUrl}
@@ -150,6 +174,7 @@ const ShareableResourceConnectorSlug = ({
       </div>
       <ShareableResourceCarousel
         serviceInstance={serviceInstance}
+        resource={resource}
         images={carouselImages}
         className="mt-4"
       />
@@ -158,6 +183,7 @@ const ShareableResourceConnectorSlug = ({
           <InfoIcon className="shrink-0 h-4 w-4 mr-1 text-icon-info" />
           {t('Service.Connectors.ImproveIntegrationPrefix')}
           <Link
+            {...analyticsId('resource_repository_open')}
             href={manifest_url}
             target="_blank"
             className="underline">
@@ -184,7 +210,7 @@ const ShareableResourceConnectorSlug = ({
           )}
         />
       </div>
-    </>
+    </div>
   );
 };
 

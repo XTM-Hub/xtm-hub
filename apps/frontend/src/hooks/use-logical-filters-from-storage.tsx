@@ -3,6 +3,7 @@ import { ServiceSlug } from '@/utils/shareable-resources/shareable-resources.typ
 import {
   DocumentMetadataKeyCode,
   FilterKey,
+  LogicalFilterInput,
   LogicalOperator,
 } from '@graphql/generated';
 import { useMemo } from 'react';
@@ -31,7 +32,23 @@ type IntegrationFiltersParams = {
 export type LogicalFiltersParams =
   SimpleFiltersParams | IntegrationFiltersParams;
 
-export const useLogicalFiltersFromStorage = (params: LogicalFiltersParams) => {
+export type LogicalFilters = LogicalFilterInput;
+
+/**
+ * The tree as this hook builds it: a node carries only the keys it uses.
+ * Codegen's `avoidOptionals` types every key of `LogicalFilterInput` as
+ * required (nullable), which the API does not demand, so the tree is checked
+ * against this shape and cast once, on the way out.
+ */
+interface LogicalFilterNode {
+  operator?: LogicalOperator;
+  leaf?: { key: FilterKey; value: string[] };
+  children?: LogicalFilterNode[];
+}
+
+export const useLogicalFiltersFromStorage = (
+  params: LogicalFiltersParams
+): LogicalFilters => {
   const { serviceInstanceSlug, labels } = params;
   const entityTypes = 'entityTypes' in params ? params.entityTypes : undefined;
   const deployable = 'deployable' in params ? params.deployable : undefined;
@@ -47,68 +64,68 @@ export const useLogicalFiltersFromStorage = (params: LogicalFiltersParams) => {
     'solutionCategories' in params ? params.solutionCategories : undefined;
 
   return useMemo(() => {
-    if (serviceInstanceSlug === ServiceSlug.OPEN_CTI_INTEGRATIONS) {
-      return {
-        operator: LogicalOperator.And,
-        children: [
-          { leaf: { key: FilterKey.Label, value: Object.keys(labels) } },
-          {
-            leaf: {
-              key: FilterKey.ManagerSupported,
-              value: Object.keys(deployable!),
-            },
-          },
-          {
-            leaf: {
-              key: FilterKey.Verified,
-              value: Object.keys(verified!),
-            },
-          },
-          {
-            leaf: {
-              key: FilterKey.IntegrationType,
-              value: Object.keys(integrationTypes!),
-            },
-          },
-          {
-            leaf: {
-              key: FilterKey.ProductVersion,
-              value: Object.keys(productVersions!),
-            },
-          },
-          {
-            leaf: {
-              key: FilterKey.SolutionCategory,
-              value: Object.keys(solutionCategories ?? {}),
-            },
-          },
-          {
-            leaf: {
-              key: FilterKey.LicenseType,
-              value: Object.keys(licenseTypes ?? {}),
-            },
-          },
-        ],
-      };
-    }
-    return {
-      operator: LogicalOperator.And,
-      children: [
-        {
-          leaf: { key: FilterKey.Label, value: Object.keys(labels) },
-        },
-        ...(entityTypes
-          ? [
+    const tree: LogicalFilterNode =
+      serviceInstanceSlug === ServiceSlug.OPEN_CTI_INTEGRATIONS
+        ? {
+            operator: LogicalOperator.And,
+            children: [
+              { leaf: { key: FilterKey.Label, value: Object.keys(labels) } },
               {
                 leaf: {
-                  key: FilterKey.EntityType,
-                  value: Object.keys(entityTypes),
+                  key: FilterKey.ManagerSupported,
+                  value: Object.keys(deployable!),
                 },
               },
-            ]
-          : []),
-      ],
-    };
+              {
+                leaf: {
+                  key: FilterKey.Verified,
+                  value: Object.keys(verified!),
+                },
+              },
+              {
+                leaf: {
+                  key: FilterKey.IntegrationType,
+                  value: Object.keys(integrationTypes!),
+                },
+              },
+              {
+                leaf: {
+                  key: FilterKey.ProductVersion,
+                  value: Object.keys(productVersions!),
+                },
+              },
+              {
+                leaf: {
+                  key: FilterKey.SolutionCategory,
+                  value: Object.keys(solutionCategories ?? {}),
+                },
+              },
+              {
+                leaf: {
+                  key: FilterKey.LicenseType,
+                  value: Object.keys(licenseTypes ?? {}),
+                },
+              },
+            ],
+          }
+        : {
+            operator: LogicalOperator.And,
+            children: [
+              { leaf: { key: FilterKey.Label, value: Object.keys(labels) } },
+              ...(entityTypes
+                ? [
+                    {
+                      leaf: {
+                        key: FilterKey.EntityType,
+                        value: Object.keys(entityTypes),
+                      },
+                    },
+                  ]
+                : []),
+            ],
+          };
+
+    return tree as LogicalFilterInput;
   }, [
     serviceInstanceSlug,
     labels,

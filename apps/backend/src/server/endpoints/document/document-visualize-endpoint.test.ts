@@ -16,6 +16,9 @@ vi.mock('../../../modules/service/instance/service-instance.domain', () => ({
     loadServiceDefinitionByServiceInstance: loadServiceDefinitionMock,
   },
 }));
+vi.mock('../../../context/request.context', () => ({
+  requestContext: { update: vi.fn() },
+}));
 vi.mock('../../../thirdparty/minio/client', () => ({
   MinIOClient: { downloadFile: downloadFileMock },
 }));
@@ -24,6 +27,7 @@ vi.mock('../../../utils/app-logger.util', () => ({
 }));
 
 import { buildETag } from '../shared/http-cache.util';
+import { STORED_FILE_CONTENT_SECURITY_POLICY } from '../shared/stored-file.util';
 import { documentVisualizeEndpoint } from './document-visualize-endpoint';
 
 type Handler = (req: Request, res: Response) => Promise<unknown>;
@@ -35,6 +39,15 @@ const getImageHandler = (): Handler => {
     ([path]) => path === '/document/images/:serviceInstanceId/:documentId'
   );
   return imagesRoute![2] as Handler;
+};
+
+const getVisualizeHandler = (): Handler => {
+  const get = vi.fn();
+  documentVisualizeEndpoint({ get } as unknown as Application);
+  const visualizeRoute = get.mock.calls.find(
+    ([path]) => path === '/document/visualize/:serviceInstanceId/:filename'
+  );
+  return visualizeRoute![2] as Handler;
 };
 
 const buildRequest = (fresh = false) =>
@@ -107,6 +120,27 @@ describe('documentVisualizeEndpoint images route', () => {
     expect(downloadFileMock).toHaveBeenCalledWith('minio-name');
   });
 
+  it('should serve the image with a sandboxing Content-Security-Policy', async () => {
+    // Given
+    loadDocumentByMock.mockResolvedValue({
+      ...image,
+      mime_type: 'image/svg+xml',
+      file_name: 'logo.svg',
+    });
+    const res = buildResponse();
+
+    // When
+    await getImageHandler()(buildRequest(), res);
+
+    // Then
+    expect(res.setHeader).toHaveBeenCalledWith(
+      'Content-Security-Policy',
+      STORED_FILE_CONTENT_SECURITY_POLICY
+    );
+    expect(STORED_FILE_CONTENT_SECURITY_POLICY).toContain('sandbox');
+    expect(STORED_FILE_CONTENT_SECURITY_POLICY).toContain("default-src 'none'");
+  });
+
   it('should answer 304 without downloading the file when the client copy is fresh', async () => {
     const res = buildResponse();
 
@@ -115,5 +149,43 @@ describe('documentVisualizeEndpoint images route', () => {
     expect(res.status).toHaveBeenCalledWith(304);
     expect(res.end).toHaveBeenCalled();
     expect(downloadFileMock).not.toHaveBeenCalled();
+    expect(res.setHeader).toHaveBeenCalledWith(
+      'Content-Security-Policy',
+      "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox"
+    );
+  });
+});
+
+describe('documentVisualizeEndpoint visualize route', () => {
+  const STORED_FILE_CSP =
+    "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox";
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    loadDocumentByMock.mockResolvedValue({
+      id: 'document',
+      mime_type: 'image/svg+xml',
+      file_name: 'logo.svg',
+      minio_name: 'minio-name',
+    });
+    downloadFileMock.mockResolvedValue(Readable.from(['image-content']));
+  });
+
+  it('should serve the file with a sandboxing Content-Security-Policy', async () => {
+    // Given
+    const req = {
+      params: { serviceInstanceId: 'service-instance', filename: 'document' },
+      session: { user: { id: 'user-1' } },
+    } as unknown as Request;
+    const res = buildResponse();
+
+    // When
+    await getVisualizeHandler()(req, res);
+
+    // Then
+    expect(res.setHeader).toHaveBeenCalledWith(
+      'Content-Security-Policy',
+      STORED_FILE_CSP
+    );
   });
 });

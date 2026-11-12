@@ -14,7 +14,7 @@ describe('Admin parameters page', () => {
 
     // Then
     expect(
-      screen.getByRole('heading', { name: 'MenuLinks.Parameter' })
+      screen.getByRole('heading', { name: 'MenuLinks.Parameters' })
     ).toBeInTheDocument();
   });
 

@@ -48,6 +48,7 @@ const DeleteSsoGroupRolePortal = ({
 
   return (
     <ConfirmDialog
+      confirmAnalyticsId="admin_sso_group_deletion_confirm"
       open={open}
       onOpenChange={onOpenChange}
       title={t('RoleListPage.DeleteDialog.Title')}

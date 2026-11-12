@@ -51,6 +51,7 @@ export const DeleteUserService = ({
 
   return (
     <ConfirmDialog
+      confirmAnalyticsId="subscription_user_access_removal_confirm"
       key={`delete-${userServices.map((userService) => userService.id).join('-')}`}
       title={t('Service.Management.RemoveAccess')}
       confirmLabel={t('Service.Management.RemoveAccess')}

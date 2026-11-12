@@ -5,6 +5,7 @@ import { Form, FormField } from '@/components/ui/form';
 import { SheetFooter } from '@/components/ui/sheet';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { isEmpty } from '@/lib/utils';
 import { Button, Input } from '@filigran/design-system';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -71,12 +72,14 @@ export const UserForm = ({ handleSubmit, validationSchema }: UserFormProps) => {
           <Button
             priority="secondary"
             type="button"
+            {...analyticsId('organization_form_cancel')}
             onClick={(e) => handleCloseSheet(e)}>
             {t('Utils.Cancel')}
           </Button>
           <Button
             disabled={!form.formState.isDirty}
-            type="submit">
+            type="submit"
+            {...analyticsId('organization_member_submit')}>
             {t('Utils.Validate')}
           </Button>
         </SheetFooter>

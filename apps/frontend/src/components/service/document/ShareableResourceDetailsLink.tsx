@@ -1,3 +1,4 @@
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import {
   FiligranWebsiteUtm,
   withFiligranWebsiteUtm,
@@ -31,6 +32,7 @@ export const ShareableResourceDetailsLink = ({
             priority="tertiary"
             asChild>
             <Link
+              {...analyticsId('resource_external_link_open')}
               href={
                 filigranWebsiteUtm
                   ? withFiligranWebsiteUtm(url, filigranWebsiteUtm)
