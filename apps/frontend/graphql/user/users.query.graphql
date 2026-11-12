@@ -21,3 +21,31 @@ query Users(
     }
   }
 }
+
+query PendingUsers(
+  $first: Int!
+  $after: ID
+  $orderBy: UserOrdering!
+  $orderMode: OrderingMode!
+  $filters: [Filter!]
+  $searchTerm: String
+) {
+  pendingUsers(
+    first: $first
+    after: $after
+    orderBy: $orderBy
+    orderMode: $orderMode
+    filters: $filters
+    searchTerm: $searchTerm
+  ) {
+    totalCount
+    edges {
+      node {
+        id
+        email
+        first_name
+        last_name
+      }
+    }
+  }
+}
