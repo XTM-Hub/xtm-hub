@@ -58,7 +58,7 @@ describe('DetailCard', () => {
     expect(onOpenDetail).not.toHaveBeenCalled();
   });
 
-  it('should focus the title button, the card control carrying the focus ring, on Tab', async () => {
+  it('should focus the title button on Tab', async () => {
     // Given
     const { user } = renderCard(vi.fn());
 
@@ -87,11 +87,11 @@ describe('DetailCard', () => {
   // a ring on the title alone.
   it('should key the focus ring of the card root on the title button and not ring the title itself', () => {
     // Given
-    renderCard(vi.fn());
+    const { container } = renderCard(vi.fn());
 
     // When
     const title = screen.getByRole('button', { name: TITLE });
-    const card = title.closest('.group');
+    const card = container.firstElementChild;
 
     // Then
     expect(title).toHaveAttribute('data-detail-title');
@@ -99,6 +99,6 @@ describe('DetailCard', () => {
       'has-[[data-detail-title]:focus-visible]:ring-2',
       'has-[[data-detail-title]:focus-visible]:ring-focus'
     );
-    expect(title).not.toHaveClass('focus-visible:ring-2');
+    expect(title.className).not.toMatch(/\bring/);
   });
 });
