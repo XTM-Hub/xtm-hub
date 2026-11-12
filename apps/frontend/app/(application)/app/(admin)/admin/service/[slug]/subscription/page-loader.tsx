@@ -3,9 +3,7 @@
 import Loader from '@/components/Loader';
 import { UserServiceFromSubscription } from '@/components/service/user_service.graphql';
 import SubscriptionSlug from '@/components/subcription/[slug]/SubscriptionSlug';
-import { SubscriptionById } from '@/components/subcription/subscription.graphql';
 import useMountingLoader from '@/hooks/use-mounting-loader';
-import { subscriptionByIdQuery } from '@generated/subscriptionByIdQuery.graphql';
 import { userServiceFromSubscriptionQuery } from '@generated/userServiceFromSubscriptionQuery.graphql';
 import { useQueryLoader } from 'react-relay';
 import { useLocalStorage } from 'usehooks-ts';
@@ -31,18 +29,12 @@ const PageLoader = ({ id }: PreloaderProps) => {
     orderMode,
   });
 
-  const [queryRefSubscription, loadQuerySubscription] =
-    useQueryLoader<subscriptionByIdQuery>(SubscriptionById);
-  useMountingLoader(loadQuerySubscription, {
-    subscriptionId: id,
-  });
-
   return (
     <>
-      {queryRef && queryRefSubscription ? (
+      {queryRef ? (
         <SubscriptionSlug
           queryRef={queryRef}
-          queryRefSubscription={queryRefSubscription}
+          subscriptionId={id}
         />
       ) : (
         <Loader />
