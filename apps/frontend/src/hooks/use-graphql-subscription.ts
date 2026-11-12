@@ -109,6 +109,7 @@ export const useGraphqlSubscription = <
           }
         },
         error: handleError,
+        // Required by Sink; nothing to do when the API ends the subscription.
         complete: () => {},
       }
     );

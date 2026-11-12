@@ -161,6 +161,23 @@ describe('useGraphqlSubscription', () => {
       expect(onNext).toHaveBeenCalledWith(DATA);
     });
 
+    it.each([{}, { data: null }])(
+      'should ignore an event without data or errors: %o',
+      (event) => {
+        // Given
+        const onNext = vi.fn();
+        const onError = vi.fn();
+        renderSubscription({ variables: VARIABLES, onNext, onError });
+
+        // When
+        lastSubscription().sink.next(event as ExecutionResult<TestData>);
+
+        // Then
+        expect(onNext).not.toHaveBeenCalled();
+        expect(onError).not.toHaveBeenCalled();
+      }
+    );
+
     it('should subscribe with the operation name extracted from the document and the variables', () => {
       // Given / When
       renderSubscription({ variables: VARIABLES, onNext: vi.fn() });
@@ -252,20 +269,21 @@ describe('useGraphqlSubscription', () => {
 
     it('should keep the subscription open when onNext throws', () => {
       // Given
-      renderSubscription({
-        variables: VARIABLES,
-        onNext: () => {
-          throw new Error(ON_NEXT_EXCEPTION_MESSAGE);
-        },
-        onError: vi.fn(),
+      const onNext = vi.fn(() => {
+        throw new Error(ON_NEXT_EXCEPTION_MESSAGE);
       });
+      renderSubscription({ variables: VARIABLES, onNext, onError: vi.fn() });
+      const sink = lastSubscription().sink;
 
       // When
-      const deliverEvent = () => lastSubscription().sink.next({ data: DATA });
+      const deliverEvent = () => sink.next({ data: DATA });
 
       // Then
       // graphql-sse ends a subscription whose sink throws.
       expect(deliverEvent).not.toThrow();
+      deliverEvent();
+      expect(onNext).toHaveBeenCalledTimes(2);
+      expect(activeSubscriptions()).toHaveLength(1);
     });
   });
 
