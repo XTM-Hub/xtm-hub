@@ -7,7 +7,6 @@ import {
   PortalCapability,
   ServiceRestriction,
 } from '@graphql/generated';
-import { createMockEnvironment } from 'relay-test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const DASHBOARDS_TRANSLATION_KEY = 'Service.OpenctiCustomDashboards';
@@ -108,7 +107,6 @@ describe('ServiceListHeaderButtons', () => {
       shouldRender,
     }) => {
       // Given
-      const environment = createMockEnvironment();
       mockUseServiceContext.mockReturnValue(
         buildServiceContext({
           serviceInstance: {
@@ -120,7 +118,6 @@ describe('ServiceListHeaderButtons', () => {
 
       // When
       const { queryByRole } = testRender(<ServiceListHeaderButtons />, {
-        relayConfig: environment,
         me: {
           capabilities: portalCapabilities,
           selected_org_capabilities: organizationCapabilities,
@@ -146,14 +143,10 @@ describe('ServiceListHeaderButtons', () => {
   );
 
   it('does not render update actions when user cannot upload', () => {
-    // Given
-    const environment = createMockEnvironment();
-
-    // When
+    // Given / When
     const { queryByRole, queryByText, queryByTestId } = testRender(
       <ServiceListHeaderButtons />,
       {
-        relayConfig: environment,
         me: {
           capabilities: [],
         },
