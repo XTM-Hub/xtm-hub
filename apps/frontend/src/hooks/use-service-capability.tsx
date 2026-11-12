@@ -5,7 +5,6 @@ import {
   ServiceRestriction,
   useServiceUserCapabilitiesQuery,
 } from '@graphql/generated';
-import { serviceUserCapabilitiesKeys } from '@graphql/service-instances/service-instances.keys';
 import { useMemo } from 'react';
 
 const ServiceUserCapabilitiesStaleTime = 10 * 60 * 1000; // Cache: 10mns
@@ -27,7 +26,6 @@ const useServiceCapabilityData = (
     },
     {
       enabled: !!serviceInstance?.id,
-      queryKey: serviceUserCapabilitiesKeys.byService(serviceInstance?.id),
       staleTime: ServiceUserCapabilitiesStaleTime,
     }
   );

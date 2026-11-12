@@ -187,6 +187,21 @@ const shouldHandleSubmissionOutcomes = ({
     );
   });
 
+  it('should keep the sheet open and stay silent until the queries are refreshed when it succeeds', async () => {
+    // Given
+    mockMutationHook(hook, 'success');
+    const { user, setOpen, invalidateQueries } = renderForm(subscriptionToEdit);
+    invalidateQueries.mockReturnValue(new Promise(() => undefined));
+
+    // When
+    await perform(user);
+
+    // Then
+    await waitFor(() => expect(invalidateQueries).toHaveBeenCalled());
+    expect(setOpen).not.toHaveBeenCalled();
+    expect(SnackbarStore.showSnackbar).not.toHaveBeenCalled();
+  });
+
   it('should show the server error and invalidate nothing when it fails', async () => {
     // Given
     mockMutationHook(hook, 'error', {

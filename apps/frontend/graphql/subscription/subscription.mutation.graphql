@@ -1,6 +1,6 @@
 mutation CreateSubscriptions($input: CreateSubscriptionsInput!) {
   createSubscriptions(input: $input) {
-    ...SubscriptionItem
+    id
   }
 }
 
@@ -9,7 +9,7 @@ mutation UpdateSubscription(
   $input: UpdateSubscriptionInput!
 ) {
   updateSubscription(subscription_id: $subscription_id, input: $input) {
-    ...SubscriptionItem
+    id
   }
 }
 
@@ -21,6 +21,6 @@ mutation DeleteSubscriptions($subscription_ids: [SubscriptionId!]!) {
 
 mutation AddSubscriptionCapability($input: AddSubscriptionCapabilityInput!) {
   addSubscriptionCapability(input: $input) {
-    ...SubscriptionItem
+    id
   }
 }

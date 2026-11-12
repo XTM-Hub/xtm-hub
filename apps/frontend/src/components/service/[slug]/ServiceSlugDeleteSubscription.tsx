@@ -76,7 +76,9 @@ export const ServiceSlugDeleteSubscription: FunctionComponent<
       confirmLabel={t('Service.Management.RemoveAccess')}
       destructive
       open={open}
-      onOpenChange={setOpen}
+      onOpenChange={(value) => {
+        if (!isPending) setOpen(value);
+      }}
       confirmDisabled={isPending}
       onConfirm={(event) => {
         // Closing unmounts the dialog: the callbacks close it once the deletion settles.

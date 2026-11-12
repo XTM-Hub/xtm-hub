@@ -1,6 +1,8 @@
 import {
   type ServiceInstancesListQueryVariables,
+  type ServiceUserCapabilitiesQueryVariables,
   useServiceInstancesListQuery,
+  useServiceUserCapabilitiesQuery,
 } from '@graphql/generated';
 
 export const serviceInstancesKeys = {
@@ -10,7 +12,7 @@ export const serviceInstancesKeys = {
 };
 
 export const serviceUserCapabilitiesKeys = {
-  all: () => ['service-user-capabilities'] as const,
-  byService: (serviceInstanceId?: string) =>
-    ['service-user-capabilities', serviceInstanceId] as const,
+  all: useServiceUserCapabilitiesQuery.getRootKey,
+  byService: (variables: ServiceUserCapabilitiesQueryVariables) =>
+    useServiceUserCapabilitiesQuery.getKey(variables),
 };

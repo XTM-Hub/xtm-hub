@@ -4229,7 +4229,7 @@ export type CreateSubscriptionsMutationVariables = Exact<{
 }>;
 
 
-export type CreateSubscriptionsMutation = { __typename?: 'Mutation', createSubscriptions: Array<{ __typename?: 'SubscriptionModel', id: string, start_date: any | null, end_date: any | null, organization: { __typename?: 'Organization', name: string, id: string, personal_space: boolean }, subscription_capability: Array<{ __typename?: 'SubscriptionCapability', id: string, service_capability: { __typename?: 'ServiceCapability', id: string, description: string | null, name: string | null } | null } | null> | null, service_instance: { __typename?: 'ServiceInstance', id: string, name: string } }> };
+export type CreateSubscriptionsMutation = { __typename?: 'Mutation', createSubscriptions: Array<{ __typename?: 'SubscriptionModel', id: string }> };
 
 export type UpdateSubscriptionMutationVariables = Exact<{
   subscription_id: Scalars['SubscriptionId']['input'];
@@ -4237,7 +4237,7 @@ export type UpdateSubscriptionMutationVariables = Exact<{
 }>;
 
 
-export type UpdateSubscriptionMutation = { __typename?: 'Mutation', updateSubscription: { __typename?: 'SubscriptionModel', id: string, start_date: any | null, end_date: any | null, organization: { __typename?: 'Organization', name: string, id: string, personal_space: boolean }, subscription_capability: Array<{ __typename?: 'SubscriptionCapability', id: string, service_capability: { __typename?: 'ServiceCapability', id: string, description: string | null, name: string | null } | null } | null> | null, service_instance: { __typename?: 'ServiceInstance', id: string, name: string } } | null };
+export type UpdateSubscriptionMutation = { __typename?: 'Mutation', updateSubscription: { __typename?: 'SubscriptionModel', id: string } | null };
 
 export type DeleteSubscriptionsMutationVariables = Exact<{
   subscription_ids: Array<Scalars['SubscriptionId']['input']> | Scalars['SubscriptionId']['input'];
@@ -4251,7 +4251,7 @@ export type AddSubscriptionCapabilityMutationVariables = Exact<{
 }>;
 
 
-export type AddSubscriptionCapabilityMutation = { __typename?: 'Mutation', addSubscriptionCapability: Array<{ __typename?: 'SubscriptionModel', id: string, start_date: any | null, end_date: any | null, organization: { __typename?: 'Organization', name: string, id: string, personal_space: boolean }, subscription_capability: Array<{ __typename?: 'SubscriptionCapability', id: string, service_capability: { __typename?: 'ServiceCapability', id: string, description: string | null, name: string | null } | null } | null> | null, service_instance: { __typename?: 'ServiceInstance', id: string, name: string } }> };
+export type AddSubscriptionCapabilityMutation = { __typename?: 'Mutation', addSubscriptionCapability: Array<{ __typename?: 'SubscriptionModel', id: string }> };
 
 export type SubscriptionItemFragment = { __typename?: 'SubscriptionModel', id: string, start_date: any | null, end_date: any | null, organization: { __typename?: 'Organization', name: string, id: string, personal_space: boolean }, subscription_capability: Array<{ __typename?: 'SubscriptionCapability', id: string, service_capability: { __typename?: 'ServiceCapability', id: string, description: string | null, name: string | null } | null } | null> | null, service_instance: { __typename?: 'ServiceInstance', id: string, name: string } };
 
@@ -8685,10 +8685,10 @@ useSolutionCategoriesListQuery.fetcher = (client: GraphQLClient, variables: Solu
 export const CreateSubscriptionsDocument = `
     mutation CreateSubscriptions($input: CreateSubscriptionsInput!) {
   createSubscriptions(input: $input) {
-    ...SubscriptionItem
+    id
   }
 }
-    ${SubscriptionItemFragmentDoc}`;
+    `;
 
 export const useCreateSubscriptionsMutation = <
       TError = unknown,
@@ -8714,10 +8714,10 @@ useCreateSubscriptionsMutation.fetcher = (client: GraphQLClient, variables: Crea
 export const UpdateSubscriptionDocument = `
     mutation UpdateSubscription($subscription_id: SubscriptionId!, $input: UpdateSubscriptionInput!) {
   updateSubscription(subscription_id: $subscription_id, input: $input) {
-    ...SubscriptionItem
+    id
   }
 }
-    ${SubscriptionItemFragmentDoc}`;
+    `;
 
 export const useUpdateSubscriptionMutation = <
       TError = unknown,
@@ -8772,10 +8772,10 @@ useDeleteSubscriptionsMutation.fetcher = (client: GraphQLClient, variables: Dele
 export const AddSubscriptionCapabilityDocument = `
     mutation AddSubscriptionCapability($input: AddSubscriptionCapabilityInput!) {
   addSubscriptionCapability(input: $input) {
-    ...SubscriptionItem
+    id
   }
 }
-    ${SubscriptionItemFragmentDoc}`;
+    `;
 
 export const useAddSubscriptionCapabilityMutation = <
       TError = unknown,

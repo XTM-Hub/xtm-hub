@@ -11,6 +11,7 @@ import { serviceUserCapabilitiesKeys } from '@graphql/service-instances/service-
 import { subscriptionKeys } from '@graphql/subscription/subscription.keys';
 import { QueryClient } from '@tanstack/react-query';
 import { screen, waitFor } from '@testing-library/react';
+import type { UserEvent } from '@testing-library/user-event';
 import { useTranslations } from 'next-intl';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -125,17 +126,34 @@ describe('ServiceSlugDeleteSubscription', () => {
     );
   });
 
-  it('should show the server error and invalidate nothing when the deletion fails', async () => {
+  it('should keep the dialog open and stay silent until the queries are refreshed when the deletion succeeds', async () => {
     // Given
-    mockMutationHook(mocks.useDeleteSubscriptionsMutation, 'error', {
-      error: new Error('SUBSCRIPTION_NOT_FOUND'),
-    });
-    const { user, invalidateQueries, onDeleted } = renderDialog();
+    mockMutationHook(mocks.useDeleteSubscriptionsMutation, 'success');
+    const { user, setOpen, onDeleted, invalidateQueries } = renderDialog();
+    invalidateQueries.mockReturnValue(new Promise(() => undefined));
 
     // When
     await confirm(user);
 
     // Then
+    await waitFor(() => expect(invalidateQueries).toHaveBeenCalled());
+    expect(setOpen).not.toHaveBeenCalled();
+    expect(onDeleted).not.toHaveBeenCalled();
+    expect(SnackbarStore.showSnackbar).not.toHaveBeenCalled();
+  });
+
+  it('should show the server error and invalidate nothing when the deletion fails', async () => {
+    // Given
+    mockMutationHook(mocks.useDeleteSubscriptionsMutation, 'error', {
+      error: new Error('SUBSCRIPTION_NOT_FOUND'),
+    });
+    const { user, invalidateQueries, onDeleted, setOpen } = renderDialog();
+
+    // When
+    await confirm(user);
+
+    // Then
+    await waitFor(() => expect(setOpen).toHaveBeenCalledWith(false));
     await waitFor(() =>
       expect(SnackbarStore.showSnackbar).toHaveBeenCalledWith({
         severity: 'error',
@@ -196,6 +214,54 @@ describe('ServiceSlugDeleteSubscription', () => {
 
     // Then
     expect(screen.getByRole('button', { name: CONFIRM_LABEL })).toBeDisabled();
+  });
+
+  it('should keep the dialog open after the confirmation until the deletion settles', async () => {
+    // Given
+    mocks.useDeleteSubscriptionsMutation.mockReturnValue({
+      mutate: vi.fn(),
+      isPending: false,
+    });
+    const { user, setOpen } = renderDialog();
+
+    // When
+    await confirm(user);
+
+    // Then
+    expect(setOpen).not.toHaveBeenCalled();
+  });
+
+  it.each`
+    description            | dismiss
+    ${'Cancel is clicked'} | ${(user: UserEvent) => user.click(screen.getByRole('button', { name: 'Utils.Cancel' }))}
+    ${'Escape is pressed'} | ${(user: UserEvent) => user.keyboard('{Escape}')}
+  `(
+    'should not close the dialog while the deletion is in progress when $description',
+    async ({ dismiss }) => {
+      // Given
+      mockMutationHook(mocks.useDeleteSubscriptionsMutation, 'success', {
+        isPending: true,
+      });
+      const { user, setOpen } = renderDialog();
+
+      // When
+      await dismiss(user);
+
+      // Then
+      expect(setOpen).not.toHaveBeenCalled();
+    }
+  );
+
+  it('should close the dialog when Cancel is clicked and no deletion is in progress', async () => {
+    // Given
+    mockMutationHook(mocks.useDeleteSubscriptionsMutation, 'success');
+    const { user, setOpen } = renderDialog();
+
+    // When
+    await user.click(screen.getByRole('button', { name: 'Utils.Cancel' }));
+
+    // Then
+    expect(setOpen).toHaveBeenCalledWith(false);
   });
 
   it('should remove every deleted detail from the cache and name every organization in the snackbar when several subscriptions are deleted', async () => {

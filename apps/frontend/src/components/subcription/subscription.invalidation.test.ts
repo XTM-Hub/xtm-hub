@@ -3,6 +3,7 @@ import {
   OrderingMode,
   SubscriptionOrdering,
   useOrganizationSubscribedServicesListQuery,
+  useServiceUserCapabilitiesQuery,
   useSubscriptionByIdQuery,
   useSubscriptionsListQuery,
 } from '@graphql/generated';
@@ -54,7 +55,9 @@ describe('invalidateSubscriptionQueries', () => {
         filters: null,
         searchTerm: null,
       }),
-      serviceUserCapabilitiesKeys.byService('service-1'),
+      useServiceUserCapabilitiesQuery.getKey({
+        service_instance_id: 'service-1',
+      }),
     ];
     const unrelatedKey = ['UnrelatedQuery', { id: 'other' }];
     [...generatedKeys, unrelatedKey].forEach((key) =>

@@ -123,6 +123,21 @@ describe('ServiceSlugAddCapabilities', () => {
     expect(setOpen).toHaveBeenCalledWith(false);
   });
 
+  it('should keep the dialog open until the queries are refreshed when the capabilities are added', async () => {
+    // Given
+    mockMutationHook(mocks.useAddSubscriptionCapabilityMutation, 'success');
+    const { user, setOpen, onCompleted, invalidateQueries } = renderDialog();
+    invalidateQueries.mockReturnValue(new Promise(() => undefined));
+
+    // When
+    await validateWithCapability(user);
+
+    // Then
+    await waitFor(() => expect(invalidateQueries).toHaveBeenCalled());
+    expect(setOpen).not.toHaveBeenCalled();
+    expect(onCompleted).not.toHaveBeenCalled();
+  });
+
   it('should show the server error and invalidate nothing when adding the capabilities fails', async () => {
     // Given
     mockMutationHook(mocks.useAddSubscriptionCapabilityMutation, 'error', {
