@@ -4514,6 +4514,30 @@ export type PendingUsersBulkRemoveMutationVariables = Exact<{
 
 export type PendingUsersBulkRemoveMutation = { __typename?: 'Mutation', bulkRemovePendingUserFromOrganization: { __typename?: 'Success', success: boolean } | null };
 
+export type UserCapabilitiesEditMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+  input: EditUserCapabilitiesInput;
+}>;
+
+
+export type UserCapabilitiesEditMutation = { __typename?: 'Mutation', editUserCapabilities: { __typename?: 'User', id: string } };
+
+export type UserAdminEditMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+  input: AdminEditUserInput;
+}>;
+
+
+export type UserAdminEditMutation = { __typename?: 'Mutation', adminEditUser: { __typename?: 'User', id: string } };
+
+export type UserOrganizationRemoveMutationVariables = Exact<{
+  user_id: Scalars['UserId']['input'];
+  organization_id: Scalars['OrganizationId']['input'];
+}>;
+
+
+export type UserOrganizationRemoveMutation = { __typename?: 'Mutation', removeUserFromOrganization: { __typename?: 'User', id: string } | null };
+
 export type PendingUserEventsSubscriptionVariables = Exact<{
   organizationId: Scalars['ID']['input'];
 }>;
@@ -10087,6 +10111,93 @@ export const usePendingUsersBulkRemoveMutation = <
 usePendingUsersBulkRemoveMutation.getKey = () => ['PendingUsersBulkRemove'];
 usePendingUsersBulkRemoveMutation.getRootKey = () => ['PendingUsersBulkRemove'] as const;
 usePendingUsersBulkRemoveMutation.fetcher = (client: GraphQLClient, variables?: PendingUsersBulkRemoveMutationVariables, headers?: RequestInit['headers']) => fetcher<PendingUsersBulkRemoveMutation, PendingUsersBulkRemoveMutationVariables>(client, PendingUsersBulkRemoveDocument, variables, headers);
+
+export const UserCapabilitiesEditDocument = `
+    mutation UserCapabilitiesEdit($id: ID!, $input: EditUserCapabilitiesInput!) {
+  editUserCapabilities(id: $id, input: $input) {
+    id
+  }
+}
+    `;
+
+export const useUserCapabilitiesEditMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<UserCapabilitiesEditMutation, TError, UserCapabilitiesEditMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<UserCapabilitiesEditMutation, TError, UserCapabilitiesEditMutationVariables, TContext>(
+      {
+    mutationKey: ['UserCapabilitiesEdit'],
+    mutationFn: (variables?: UserCapabilitiesEditMutationVariables) => fetcher<UserCapabilitiesEditMutation, UserCapabilitiesEditMutationVariables>(client, UserCapabilitiesEditDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useUserCapabilitiesEditMutation.getKey = () => ['UserCapabilitiesEdit'];
+useUserCapabilitiesEditMutation.getRootKey = () => ['UserCapabilitiesEdit'] as const;
+useUserCapabilitiesEditMutation.fetcher = (client: GraphQLClient, variables: UserCapabilitiesEditMutationVariables, headers?: RequestInit['headers']) => fetcher<UserCapabilitiesEditMutation, UserCapabilitiesEditMutationVariables>(client, UserCapabilitiesEditDocument, variables, headers);
+
+export const UserAdminEditDocument = `
+    mutation UserAdminEdit($id: ID!, $input: AdminEditUserInput!) {
+  adminEditUser(id: $id, input: $input) {
+    id
+  }
+}
+    `;
+
+export const useUserAdminEditMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<UserAdminEditMutation, TError, UserAdminEditMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<UserAdminEditMutation, TError, UserAdminEditMutationVariables, TContext>(
+      {
+    mutationKey: ['UserAdminEdit'],
+    mutationFn: (variables?: UserAdminEditMutationVariables) => fetcher<UserAdminEditMutation, UserAdminEditMutationVariables>(client, UserAdminEditDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useUserAdminEditMutation.getKey = () => ['UserAdminEdit'];
+useUserAdminEditMutation.getRootKey = () => ['UserAdminEdit'] as const;
+useUserAdminEditMutation.fetcher = (client: GraphQLClient, variables: UserAdminEditMutationVariables, headers?: RequestInit['headers']) => fetcher<UserAdminEditMutation, UserAdminEditMutationVariables>(client, UserAdminEditDocument, variables, headers);
+
+export const UserOrganizationRemoveDocument = `
+    mutation UserOrganizationRemove($user_id: UserId!, $organization_id: OrganizationId!) {
+  removeUserFromOrganization(user_id: $user_id, organization_id: $organization_id) {
+    id
+  }
+}
+    `;
+
+export const useUserOrganizationRemoveMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<UserOrganizationRemoveMutation, TError, UserOrganizationRemoveMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<UserOrganizationRemoveMutation, TError, UserOrganizationRemoveMutationVariables, TContext>(
+      {
+    mutationKey: ['UserOrganizationRemove'],
+    mutationFn: (variables?: UserOrganizationRemoveMutationVariables) => fetcher<UserOrganizationRemoveMutation, UserOrganizationRemoveMutationVariables>(client, UserOrganizationRemoveDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useUserOrganizationRemoveMutation.getKey = () => ['UserOrganizationRemove'];
+useUserOrganizationRemoveMutation.getRootKey = () => ['UserOrganizationRemove'] as const;
+useUserOrganizationRemoveMutation.fetcher = (client: GraphQLClient, variables: UserOrganizationRemoveMutationVariables, headers?: RequestInit['headers']) => fetcher<UserOrganizationRemoveMutation, UserOrganizationRemoveMutationVariables>(client, UserOrganizationRemoveDocument, variables, headers);
 
 export const PendingUserEventsDocument = `
     subscription PendingUserEvents($organizationId: ID!) {

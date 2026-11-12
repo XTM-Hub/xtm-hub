@@ -1,42 +1,34 @@
 import { UserForm } from '@/components/admin/user/forms/UserForm';
 import { userFormSchema } from '@/components/admin/user/forms/user-form.schema';
 import { useRefreshUsersList } from '@/components/admin/user/use-refresh-users-list';
-import { UserListCreateMutation } from '@/components/admin/user/user.graphql';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { analyticsId } from '@/lib/analytics/analytics.ids';
+import { portalGraphqlClient } from '@/lib/graphql-client';
 import { Button } from '@filigran/design-system';
-import { userListCreateMutation } from '@generated/userListCreateMutation.graphql';
+import { useUserResendInviteMutation } from '@graphql/generated';
 import { useState } from 'react';
-import { useMutation } from 'react-relay';
 import { z } from 'zod';
 
 export const AddUser = () => {
   const t = useTranslate();
   const [openSheet, setOpenSheet] = useState(false);
 
-  const [commitUserMutation] = useMutation<userListCreateMutation>(
-    UserListCreateMutation
-  );
-
   const refreshUsersList = useRefreshUsersList();
-  const handleSubmit = (values: z.infer<typeof userFormSchema>) => {
-    commitUserMutation({
-      variables: {
-        input: {
-          ...values,
-        },
-        // The users list is a react-query query: it is refreshed on completion.
-        connections: [],
-      },
-      onCompleted: () => {
+  // The resend operation makes the same addUser call as a creation.
+  const { mutate: createUser } = useUserResendInviteMutation<Error>(
+    portalGraphqlClient,
+    {
+      // On the hook, not on mutate: like Relay, the outcome is handled even if
+      // the form is gone by then.
+      onSuccess: (_data, { input }) => {
         refreshUsersList();
         setOpenSheet(false);
         showSnackbar({
           severity: 'success',
           title: t('Utils.Success'),
-          description: t('UserActions.UserCreated', { email: values.email }),
+          description: t('UserActions.UserCreated', { email: input.email }),
         });
       },
       onError: (error) => {
@@ -45,6 +37,15 @@ export const AddUser = () => {
           title: t('Utils.Error'),
           description: t(`Error.Server.${error.message}`),
         });
+      },
+    }
+  );
+
+  const handleSubmit = (values: z.infer<typeof userFormSchema>) => {
+    createUser({
+      input: {
+        ...values,
+        password: values.password ?? null,
       },
     });
   };

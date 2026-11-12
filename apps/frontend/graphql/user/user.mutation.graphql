@@ -83,3 +83,27 @@ mutation PendingUsersBulkRemove(
     success
   }
 }
+
+mutation UserCapabilitiesEdit($id: ID!, $input: EditUserCapabilitiesInput!) {
+  editUserCapabilities(id: $id, input: $input) {
+    id
+  }
+}
+
+mutation UserAdminEdit($id: ID!, $input: AdminEditUserInput!) {
+  adminEditUser(id: $id, input: $input) {
+    id
+  }
+}
+
+mutation UserOrganizationRemove(
+  $user_id: UserId!
+  $organization_id: OrganizationId!
+) {
+  removeUserFromOrganization(
+    user_id: $user_id
+    organization_id: $organization_id
+  ) {
+    id
+  }
+}

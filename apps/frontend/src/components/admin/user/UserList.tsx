@@ -63,31 +63,6 @@ import {
   useMemo,
   useState,
 } from 'react';
-import { graphql } from 'react-relay';
-
-// Still spread by the Relay user mutations until they move to react-query.
-export const UserFragment = graphql`
-  fragment UserList_fragment on User @inline {
-    id
-    email
-    last_name
-    first_name
-    disabled
-    last_login
-    country
-    status
-    invitation_date
-    organization_capabilities {
-      id
-      organization {
-        id
-        name
-        personal_space
-      }
-      capabilities
-    }
-  }
-`;
 
 interface UserListProps {
   organization?: string;

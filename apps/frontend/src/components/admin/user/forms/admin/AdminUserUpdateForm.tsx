@@ -16,27 +16,20 @@ import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { analyticsId } from '@/lib/analytics/analytics.ids';
+import { portalGraphqlClient } from '@/lib/graphql-client';
 import { cn, isEmpty } from '@/lib/utils';
 import { Button, IconButton, Input } from '@filigran/design-system';
 import { DeleteIcon } from '@filigran/icon';
+import { useUserAdminEditMutation } from '@graphql/generated';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useContext, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
-import { graphql, useMutation } from 'react-relay';
 import { z } from 'zod';
 
 interface AdminUserUpdateFormProps {
   user: UsersListUser;
   callback: () => void;
 }
-
-export const AdminUserUpdateFormMutation = graphql`
-  mutation AdminUserUpdateFormMutation($id: ID!, $input: AdminEditUserInput!) {
-    adminEditUser(id: $id, input: $input) {
-      ...UserList_fragment
-    }
-  }
-`;
 
 export const AdminUserUpdateForm = ({
   user,
@@ -95,63 +88,62 @@ export const AdminUserUpdateForm = ({
   // Some issue with addUser, the formState isDirty without any modification, so for now we check if dirtyFields get any key
   setIsDirty(!isEmpty(form.formState.dirtyFields));
 
-  const [updateUserMutation] = useMutation(AdminUserUpdateFormMutation);
   const refreshUsersList = useRefreshUsersList();
+  // One mutation for the update and the status change, as before: both report
+  // the same way.
+  const { mutate: updateUserMutation } = useUserAdminEditMutation<Error>(
+    portalGraphqlClient,
+    {
+      // On the hook, not on mutate: like Relay, the outcome is handled even if
+      // the form is gone by then.
+      onSuccess: () => {
+        refreshUsersList();
+        showSnackbar({
+          severity: 'success',
+          title: t('Utils.Success'),
+          description: t('UserActions.UserUpdated', { email: user.email }),
+        });
+        callback();
+      },
+      onError: (error) => {
+        showSnackbar({
+          severity: 'error',
+          title: t('Utils.Error'),
+          description: t(`Error.Server.${error.message}`),
+        });
+      },
+    }
+  );
 
+  // The API handles a null field like a field left out, as Relay sent them.
   const updateUser = ({
     password,
     ...values
   }: z.infer<typeof userEditAdminFormSchema>) => {
     updateUserMutation({
-      variables: {
-        input: {
-          ...values,
-          // An empty password keeps the current one, so it is not sent at all.
-          ...(password ? { password } : {}),
-        },
-        id: user.id,
-      },
-      onCompleted: () => {
-        refreshUsersList();
-        showSnackbar({
-          severity: 'success',
-          title: t('Utils.Success'),
-          description: t('UserActions.UserUpdated', { email: user.email }),
-        });
-        callback();
-      },
-      onError: (error) => {
-        showSnackbar({
-          severity: 'error',
-          title: t('Utils.Error'),
-          description: t(`Error.Server.${error.message}`),
-        });
+      id: user.id,
+      input: {
+        first_name: values.first_name ?? null,
+        last_name: values.last_name ?? null,
+        organization_capabilities: values.organization_capabilities,
+        // An empty password keeps the current one.
+        password: password || null,
+        disabled: null,
+        email: null,
       },
     });
   };
 
-  const disableUser = (values: { disabled: boolean }) => {
-    const input = values;
+  const disableUser = ({ disabled }: { disabled: boolean }) => {
     updateUserMutation({
-      variables: {
-        input,
-        id: user.id,
-      },
-      onCompleted: () => {
-        refreshUsersList();
-        showSnackbar({
-          severity: 'success',
-          title: t('Utils.Success'),
-          description: t('UserActions.UserUpdated', { email: user.email }),
-        });
-        callback();
-      },
-      onError: (error) => {
-        showSnackbar({
-          severity: 'error',
-          title: t('Utils.Error'),
-          description: t(`Error.Server.${error.message}`),
-        });
+      id: user.id,
+      input: {
+        disabled,
+        first_name: null,
+        last_name: null,
+        organization_capabilities: null,
+        password: null,
+        email: null,
       },
     });
   };
