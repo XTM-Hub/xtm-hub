@@ -1,8 +1,8 @@
 import {
+  PendingUser,
   PendingUserAction,
   PendingUserDialogState,
 } from '@/components/admin/user/pending-user/pending-user-list.types';
-import { UserList_fragment$data } from '@generated/UserList_fragment.graphql';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -21,7 +21,7 @@ interface ResolvedPendingUserDialogState {
 
 const resolvePendingUserDialogState = (
   searchParams: URLSearchParams,
-  userData: UserList_fragment$data[]
+  userData: PendingUser[]
 ): ResolvedPendingUserDialogState => {
   const action = parsePendingUserAction(
     searchParams.get(PENDING_USER_ACTION_PARAM)
@@ -40,9 +40,10 @@ const resolvePendingUserDialogState = (
 };
 
 interface UsePendingUserDialogParams {
-  userData: UserList_fragment$data[];
-  approveUser: (user: UserList_fragment$data) => void;
-  rejectUser: (user: UserList_fragment$data) => void;
+  /** The pending users on screen, undefined until they are first loaded. */
+  userData: PendingUser[] | undefined;
+  approveUser: (user: PendingUser) => void;
+  rejectUser: (user: PendingUser) => void;
 }
 
 export const usePendingUserDialog = ({
@@ -55,32 +56,39 @@ export const usePendingUserDialog = ({
   const router = useRouter();
 
   const [pendingUserDialog, setPendingUserDialog] =
-    useState<PendingUserDialogState | null>(
-      () => resolvePendingUserDialogState(searchParams, userData).dialog
-    );
-
+    useState<PendingUserDialogState | null>(null);
   const [alreadyProcessedDialogOpen, setAlreadyProcessedDialogOpen] =
-    useState<boolean>(
-      () =>
-        resolvePendingUserDialogState(searchParams, userData).alreadyProcessed
+    useState<boolean>(false);
+  const [isUrlResolved, setIsUrlResolved] = useState(false);
+
+  // The URL is resolved once, as soon as the pending users are loaded: before
+  // that, a user named in the URL would wrongly look already processed.
+  if (!isUrlResolved && userData) {
+    const { dialog, alreadyProcessed } = resolvePendingUserDialogState(
+      searchParams,
+      userData
     );
+    setIsUrlResolved(true);
+    setPendingUserDialog(dialog);
+    setAlreadyProcessedDialogOpen(alreadyProcessed);
+  }
 
   const openPendingUserDialog = useCallback(
-    (action: PendingUserAction, user: UserList_fragment$data) => {
+    (action: PendingUserAction, user: PendingUser) => {
       setPendingUserDialog({ action, user });
     },
     []
   );
 
   const openApproveDialog = useCallback(
-    (user: UserList_fragment$data) => {
+    (user: PendingUser) => {
       openPendingUserDialog('approve', user);
     },
     [openPendingUserDialog]
   );
 
   const openRejectDialog = useCallback(
-    (user: UserList_fragment$data) => {
+    (user: PendingUser) => {
       openPendingUserDialog('deny', user);
     },
     [openPendingUserDialog]
@@ -112,6 +120,9 @@ export const usePendingUserDialog = ({
   }, [approveUser, pendingUserDialog, rejectUser]);
 
   useEffect(() => {
+    if (!isUrlResolved) {
+      return;
+    }
     if (
       !searchParams.has(PENDING_USER_ACTION_PARAM) &&
       !searchParams.has(PENDING_USER_ID_PARAM)
@@ -124,7 +135,7 @@ export const usePendingUserDialog = ({
     nextSearchParams.delete(PENDING_USER_ID_PARAM);
     const nextSearch = nextSearchParams.toString();
     router.replace(nextSearch ? `${pathname}?${nextSearch}` : pathname);
-  }, [pathname, router, searchParams]);
+  }, [isUrlResolved, pathname, router, searchParams]);
 
   return {
     pendingUserDialog,

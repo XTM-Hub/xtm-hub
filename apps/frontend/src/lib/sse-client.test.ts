@@ -1,5 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+// The setup file replaces it for every other test.
+vi.unmock('@/lib/sse-client');
+
 vi.mock('graphql-sse', () => ({
   createClient: vi.fn(() => ({ subscribe: vi.fn(), dispose: vi.fn() })),
 }));

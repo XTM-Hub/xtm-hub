@@ -1,15 +1,10 @@
-import { UserFragment } from '@/components/admin/user/UserList';
 import { AddUser } from '@/components/admin/user/forms/AddUser';
 import { PendingUserAlreadyProcessedDialog } from '@/components/admin/user/pending-user/PendingUserAlreadyProcessedDialog';
 import { PendingUserConfirmDialog } from '@/components/admin/user/pending-user/PendingUserConfirmDialog';
 import { useUserListLocalstorage } from '@/components/admin/user/pending-user/pending-user-list-localstorage';
+import { PendingUser } from '@/components/admin/user/pending-user/pending-user-list.types';
 import { usePendingUserActions } from '@/components/admin/user/pending-user/use-pending-user-actions';
 import { usePendingUserDialog } from '@/components/admin/user/pending-user/use-pending-user-dialog';
-import {
-  UserPendingListFragment,
-  UserPendingListQuery,
-  UserPendingListSubscription,
-} from '@/components/admin/user/user.graphql';
 import { PortalContext } from '@/components/me/AppPortalContext';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import {
@@ -22,25 +17,26 @@ import {
 import {
   handleSortingChange,
   mapToSortingTableValue,
-  transformSortingValueToParams,
 } from '@/components/ui/handle-sorting.utils';
 import { useDebouncedSearch } from '@/hooks/use-debounced-search';
+import { useGraphqlSubscription } from '@/hooks/use-graphql-subscription';
 import { useTablePagination } from '@/hooks/use-table-pagination';
 import { useTranslate } from '@/hooks/use-translate';
 import { analyticsId } from '@/lib/analytics/analytics.ids';
+import { portalGraphqlClient } from '@/lib/graphql-client';
 import { getDataTableLabels } from '@/utils/design-system/data-table';
 import { IconButton, SearchField } from '@filigran/design-system';
 import { CheckIcon, CloseIcon } from '@filigran/icon';
 import {
-  UserList_fragment$data,
-  UserList_fragment$key,
-} from '@generated/UserList_fragment.graphql';
-import {
-  userPendingListQuery,
-  userPendingListQuery$variables,
-} from '@generated/userPendingListQuery.graphql';
-import { userPendingList_users$key } from '@generated/userPendingList_users.graphql';
-import { FilterKey } from '@graphql/generated';
+  FilterKey,
+  PendingUserEventsDocument,
+  PendingUserEventsSubscription,
+  PendingUserEventsSubscriptionVariables,
+  PendingUsersQueryVariables,
+  usePendingUsersQuery,
+} from '@graphql/generated';
+import { pendingUsersKeys } from '@graphql/user/users.keys';
+import { keepPreviousData, useQueryClient } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
 import {
   ReactNode,
@@ -50,12 +46,6 @@ import {
   useMemo,
   useState,
 } from 'react';
-import {
-  readInlineData,
-  useLazyLoadQuery,
-  useRefetchableFragment,
-  useSubscription,
-} from 'react-relay';
 
 const renderStrong = (chunks: ReactNode) => <strong>{chunks}</strong>;
 
@@ -89,29 +79,40 @@ const PendingUserList = ({ organization }: PendingUserListProps) => {
     organization,
   });
 
-  const queryData = useLazyLoadQuery<userPendingListQuery>(
-    UserPendingListQuery,
-    {
-      count: pageSize,
-      orderMode: orderMode,
-      orderBy: orderBy,
-      searchTerm: filter.search,
+  const { pagination, setPagination, cursor, onPaginationChange } =
+    useTablePagination({
+      pageSize,
+      setPageSize,
+    });
+
+  const variables = useMemo<PendingUsersQueryVariables>(
+    () => ({
+      first: pagination.pageSize,
+      after: cursor,
+      orderBy,
+      orderMode,
+      searchTerm: filter.search ?? null,
       filters: filter.organization
         ? [{ key: FilterKey.OrganizationId, value: [filter.organization] }]
-        : undefined,
+        : null,
+    }),
+    [pagination.pageSize, cursor, orderBy, orderMode, filter]
+  );
+
+  const { data, isLoading } = usePendingUsersQuery(
+    portalGraphqlClient,
+    variables,
+    {
+      // A page, sort or search change keeps the current rows until its results arrive.
+      placeholderData: keepPreviousData,
+      // Like Relay, a failed load reaches the error page; a failed background
+      // refetch keeps the rows shown.
+      throwOnError: (_error, query) => query.state.data === undefined,
     }
   );
 
-  const [data, refetch] = useRefetchableFragment<
-    userPendingListQuery,
-    userPendingList_users$key
-  >(UserPendingListFragment, queryData);
-
-  const userData = useMemo<UserList_fragment$data[]>(
-    () =>
-      data.pendingUsers.edges.map(({ node }) =>
-        readInlineData<UserList_fragment$key>(UserFragment, node)
-      ),
+  const userData = useMemo<PendingUser[] | undefined>(
+    () => data?.pendingUsers.edges.map(({ node }) => node),
     [data]
   );
 
@@ -122,22 +123,31 @@ const PendingUserList = ({ organization }: PendingUserListProps) => {
   });
   const { clearSelection } = useRowSelection(selection, setSelection);
 
+  const queryClient = useQueryClient();
+  // Only the list on screen, as the Relay refetch did: the bell and the tab
+  // counter keep their own pending users query.
   const refreshPendingUsers = useCallback(() => {
-    refetch({}, { fetchPolicy: 'network-only' });
-  }, [refetch]);
+    void queryClient.invalidateQueries({
+      queryKey: pendingUsersKeys.list(variables),
+      exact: true,
+    });
+  }, [queryClient, variables]);
 
-  const connectionID = data?.pendingUsers?.__id;
-  const pendingUserListSubscriptionConfig = useMemo(
-    () => ({
-      variables: {
-        connections: [connectionID],
-        organizationId: organization,
+  useGraphqlSubscription<
+    PendingUserEventsSubscription,
+    PendingUserEventsSubscriptionVariables
+  >(
+    PendingUserEventsDocument,
+    { organizationId: organization },
+    {
+      onNext: ({ UserPending }) => {
+        // invalidate is left to the bell, as before.
+        if (UserPending?.delete) {
+          refreshPendingUsers();
+        }
       },
-      subscription: UserPendingListSubscription,
-    }),
-    [connectionID, organization]
+    }
   );
-  useSubscription(pendingUserListSubscriptionConfig);
 
   const handleBulkMutationCompletion = useCallback(() => {
     clearSelection();
@@ -167,7 +177,7 @@ const PendingUserList = ({ organization }: PendingUserListProps) => {
     rejectUser,
   });
 
-  const columns: ColumnDef<UserList_fragment$data>[] = useMemo(
+  const columns: ColumnDef<PendingUser>[] = useMemo(
     () => [
       {
         accessorKey: 'email',
@@ -236,28 +246,6 @@ const PendingUserList = ({ organization }: PendingUserListProps) => {
     }
   }, [columnOrder.length, columns, setColumnOrder]);
 
-  const { pagination, cursor, onPaginationChange } = useTablePagination({
-    pageSize,
-    setPageSize,
-    onPaginationChange: (nextPagination, nextCursor) => {
-      handleRefetchData({ count: nextPagination.pageSize, cursor: nextCursor });
-    },
-  });
-
-  const handleRefetchData = (
-    args?: Partial<userPendingListQuery$variables>
-  ) => {
-    const sorting = mapToSortingTableValue(orderBy, orderMode);
-    refetch({
-      count: pagination.pageSize,
-      cursor,
-      orderBy,
-      orderMode,
-      ...transformSortingValueToParams(sorting),
-      ...args,
-    });
-  };
-
   const onSortingChange = (updater: unknown) => {
     handleSortingChange({
       updater,
@@ -266,19 +254,13 @@ const PendingUserList = ({ organization }: PendingUserListProps) => {
       setOrderMode,
       orderBy,
       orderMode,
-      handleRefetchData,
+      handleRefetchData: () => undefined,
     });
   };
 
   const handleInputChange = (inputValue: string) => {
-    setFilter((prevFilter) => {
-      const updatedFilter = {
-        ...prevFilter,
-        search: inputValue,
-      };
-      refetch({ searchTerm: updatedFilter.search });
-      return updatedFilter;
-    });
+    setFilter((prevFilter) => ({ ...prevFilter, search: inputValue }));
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
   };
 
   const searchHandlers = useDebouncedSearch({
@@ -290,7 +272,8 @@ const PendingUserList = ({ organization }: PendingUserListProps) => {
     <>
       <DataTable
         columns={columns}
-        data={userData}
+        data={userData ?? []}
+        isLoading={isLoading}
         {...getDataTableLabels(t)}
         onResetTable={resetAll}
         selectionOptions={{
@@ -354,7 +337,7 @@ const PendingUserList = ({ organization }: PendingUserListProps) => {
           onColumnVisibilityChange: setColumnVisibility,
           manualSorting: true,
           manualPagination: true,
-          rowCount: data.pendingUsers.totalCount,
+          rowCount: data?.pendingUsers.totalCount ?? 0,
           enableRowSelection: (row) => row.original.id !== me!.id,
         }}
         toolbar={
