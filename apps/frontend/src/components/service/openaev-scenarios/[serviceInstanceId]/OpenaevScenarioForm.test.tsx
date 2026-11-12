@@ -55,7 +55,7 @@ describe('OpenaevScenarioForm', () => {
     );
 
     // When
-    await user.click(screen.getByRole('button', { name: CANCEL_LABEL }));
+    await user.click(screen.getByRole('button', { name: 'Utils.Close' }));
 
     // Then
     expect(

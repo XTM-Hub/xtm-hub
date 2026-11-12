@@ -75,7 +75,6 @@ const buildValues = (overrides: Record<string, unknown> = {}) =>
     description: 'long',
     product_version: '6.0.0',
     use_cases: ['use-case-1'],
-    active: true,
     ...overrides,
   }) as ServiceFormValues;
 
@@ -100,27 +99,25 @@ describe('useDocumentContext', () => {
 
   describe('handleAddSheet', () => {
     it.each([
-      [true, DocumentStatus.Published],
-      [false, DocumentStatus.Draft],
+      [DocumentStatus.Draft, DocumentStatus.Draft],
+      [DocumentStatus.InValidation, DocumentStatus.InValidation],
       [undefined, DocumentStatus.Draft],
     ])(
-      'should send the matching status, and no active field, when the user creates a resource with the switch at %s',
-      async (active, expectedStatus) => {
+      'should create the resource as %s when the form requests %s',
+      async (requestedStatus, expectedStatus) => {
         // Given
         const context = renderContext();
 
         // When
         await context.current.handleAddSheet(
-          buildValues({ active }),
+          buildValues({ status: requestedStatus }),
           vi.fn(),
           vi.fn()
         );
 
         // Then
         await waitFor(() => expect(mocks.request).toHaveBeenCalled());
-        const input = sentInput();
-        expect(input.status).toBe(expectedStatus);
-        expect(input).not.toHaveProperty('active');
+        expect(sentInput().status).toBe(expectedStatus);
       }
     );
 
@@ -213,22 +210,17 @@ describe('useDocumentContext', () => {
 
   describe('handleUpdateSheet', () => {
     it.each`
-      active   | currentStatus      | expectedStatus
-      ${false} | ${'published'}     | ${DocumentStatus.Draft}
-      ${true}  | ${'draft'}         | ${DocumentStatus.Published}
-      ${true}  | ${'in_validation'} | ${DocumentStatus.Published}
-      ${true}  | ${'published'}     | ${undefined}
-      ${false} | ${'draft'}         | ${undefined}
-      ${false} | ${'in_validation'} | ${undefined}
+      requestedStatus                | expectedStatus
+      ${DocumentStatus.InValidation} | ${DocumentStatus.InValidation}
+      ${DocumentStatus.Published}    | ${DocumentStatus.Published}
+      ${undefined}                   | ${undefined}
     `(
-      'should send the status $expectedStatus when the switch is $active and the resource is $currentStatus',
+      'should send the status $expectedStatus when the form requests $requestedStatus',
       async ({
-        active,
-        currentStatus,
+        requestedStatus,
         expectedStatus,
       }: {
-        active: boolean;
-        currentStatus: string;
+        requestedStatus?: DocumentStatus;
         expectedStatus?: DocumentStatus;
       }) => {
         // Given
@@ -239,20 +231,15 @@ describe('useDocumentContext', () => {
 
         // When
         await context.current.handleUpdateSheet(
-          buildValues({ active }),
-          {
-            ...existingDocument,
-            status: currentStatus,
-          } as DocumentItemFragment,
+          buildValues({ status: requestedStatus }),
+          existingDocument as DocumentItemFragment,
           vi.fn(),
           vi.fn()
         );
 
         // Then
         await waitFor(() => expect(mocks.request).toHaveBeenCalled());
-        const input = sentInput();
-        expect(input.status).toBe(expectedStatus);
-        expect(input).not.toHaveProperty('active');
+        expect(sentInput().status).toBe(expectedStatus);
       }
     );
 

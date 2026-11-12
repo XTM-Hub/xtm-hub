@@ -6,14 +6,16 @@ import {
 } from '@/components/service/form/UseDocumentFileField';
 import { useServiceFormFields } from '@/components/service/form/UseServiceFormFields';
 import { AutoForm } from '@/components/ui/auto-form';
-import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import {
   fileListCheck,
-  isDocumentPublished,
   optionalFileListCheck,
   transformToFileList,
 } from '@/utils/documents';
-import { DocumentImageType, DocumentItemFragment } from '@graphql/generated';
+import {
+  DocumentImageType,
+  DocumentItemFragment,
+  DocumentStatus,
+} from '@graphql/generated';
 import { useContext, useMemo } from 'react';
 import slugify from 'slugify';
 import { z } from 'zod';
@@ -33,6 +35,7 @@ export const descriptionValue =
 const openCTIPlaybookFormSchema = z.object({
   name: z.string().min(1, 'Required'),
   slug: z.string().min(1, 'Required'),
+  status: z.enum(DocumentStatus).optional(),
   uploader_id: z.string().optional(),
   short_description: z.string().min(1, 'Required').max(250),
   description: z.string().min(1, 'Required'),
@@ -41,7 +44,6 @@ const openCTIPlaybookFormSchema = z.object({
   }),
   uploader_organization_id: z.string().min(1, 'Required'),
   use_cases: z.array(z.string()).min(1, 'Required'),
-  active: z.boolean().optional(),
   document: z.custom<FileList>(fileListCheck),
   logo: z.custom<FileList>(optionalFileListCheck).optional(),
   images: z.custom<FileList>(optionalFileListCheck),
@@ -62,7 +64,6 @@ export const OpenctiPlaybookForm = ({
   const { me } = useContext(PortalContext);
 
   const isCreation = !document;
-  const { handleCloseSheet } = useDialogContext();
   const onSubmit = (values: OpenCTIPlaybookFormValues) => {
     if (isCreation) {
       handleSubmit({ ...values, images: images as unknown as FileList });
@@ -83,7 +84,6 @@ export const OpenctiPlaybookForm = ({
     () =>
       ({
         ...document,
-        active: document ? isDocumentPublished(document.status) : undefined,
         description: document?.description ?? descriptionValue,
         images: transformToFileList(DocumentImageType.Image, document),
         logo: transformToFileList(DocumentImageType.Logo, document),
@@ -108,7 +108,6 @@ export const OpenctiPlaybookForm = ({
   );
 
   const {
-    active,
     slug,
     name,
     short_description,
@@ -121,6 +120,7 @@ export const OpenctiPlaybookForm = ({
     images,
     imagesToDelete,
     logo,
+    status,
   } = useServiceFormFields({
     documentType: 'Playbook',
     platform: 'OpenCTI',
@@ -155,13 +155,13 @@ export const OpenctiPlaybookForm = ({
         document: documentField,
         logo,
         images: imagesField,
-        active,
+        status,
         short_description,
         slug,
         name,
         product_version,
       }}>
-      <ServiceFormSheetFooter handleCloseSheet={handleCloseSheet} />
+      <ServiceFormSheetFooter status={document?.status} />
     </AutoForm>
   );
 };
