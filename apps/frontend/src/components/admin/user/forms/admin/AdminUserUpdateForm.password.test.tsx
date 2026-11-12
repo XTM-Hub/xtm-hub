@@ -1,6 +1,6 @@
 import { AdminUserUpdateForm } from '@/components/admin/user/forms/admin/AdminUserUpdateForm';
+import { UsersListUser } from '@/components/admin/user/user-list.types';
 import testRender from '@/utils/test/test-render';
-import { UserList_fragment$data } from '@generated/UserList_fragment.graphql';
 import { screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -67,7 +67,7 @@ const USER = {
       },
     },
   ],
-} as unknown as UserList_fragment$data;
+} as unknown as UsersListUser;
 
 const EXPECTED_ORGANIZATION_CAPABILITIES = [
   { organization_id: ORGANIZATION_ID, capabilities: ['MANAGE_ACCESS'] },

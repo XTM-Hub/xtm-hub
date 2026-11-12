@@ -4521,6 +4521,18 @@ export type PendingUserEventsSubscriptionVariables = Exact<{
 
 export type PendingUserEventsSubscription = { __typename?: 'Subscription', UserPending: { __typename?: 'UserPendingSubscription', delete: { __typename?: 'User', id: string } | null, invalidate: { __typename?: 'OrganizationRef', id: string } | null } | null };
 
+export type OrganizationUserEventsSubscriptionVariables = Exact<{
+  organizationId: Scalars['ID']['input'];
+}>;
+
+
+export type OrganizationUserEventsSubscription = { __typename?: 'Subscription', User: { __typename?: 'UserSubscription', add: { __typename?: 'User', id: string } | null } | null };
+
+export type AdminUserEventsSubscriptionVariables = Exact<{ [key: string]: never; }>;
+
+
+export type AdminUserEventsSubscription = { __typename?: 'Subscription', AdminUser: { __typename?: 'UserSubscription', add: { __typename?: 'User', id: string } | null } | null };
+
 export type UsersWithCapabilitiesInOrganizationQueryVariables = Exact<{
   input: UsersWithCapabilitiesInOrganizationInput;
 }>;
@@ -4550,6 +4562,18 @@ export type PendingUsersQueryVariables = Exact<{
 
 
 export type PendingUsersQuery = { __typename?: 'Query', pendingUsers: { __typename?: 'UserConnection', totalCount: number, edges: Array<{ __typename?: 'UserEdge', node: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null } }> } };
+
+export type UsersListQueryVariables = Exact<{
+  first: Scalars['Int']['input'];
+  after: InputMaybe<Scalars['ID']['input']>;
+  orderBy: UserOrdering;
+  orderMode: OrderingMode;
+  filters: InputMaybe<Array<Filter> | Filter>;
+  searchTerm: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type UsersListQuery = { __typename?: 'Query', users: { __typename?: 'UserConnection', totalCount: number, edges: Array<{ __typename?: 'UserEdge', node: { __typename?: 'User', id: string, email: string, last_name: string | null, first_name: string | null, disabled: boolean | null, last_login: any | null, country: string | null, status: UserAccountStatus | null, invitation_date: any | null, organization_capabilities: Array<{ __typename?: 'OrganizationCapabilities', id: string, capabilities: Array<OrganizationCapability> | null, organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } }> | null } }> } };
 
 export type VotingRoundCreateMutationVariables = Exact<{
   input: CreateVotingRoundInput;
@@ -10076,6 +10100,24 @@ export const PendingUserEventsDocument = `
   }
 }
     `;
+export const OrganizationUserEventsDocument = `
+    subscription OrganizationUserEvents($organizationId: ID!) {
+  User(organizationId: $organizationId) {
+    add {
+      id
+    }
+  }
+}
+    `;
+export const AdminUserEventsDocument = `
+    subscription AdminUserEvents {
+  AdminUser {
+    add {
+      id
+    }
+  }
+}
+    `;
 export const UsersWithCapabilitiesInOrganizationDocument = `
     query UsersWithCapabilitiesInOrganization($input: UsersWithCapabilitiesInOrganizationInput!) {
   usersWithCapabilitiesInOrganization(input: $input) {
@@ -10264,6 +10306,88 @@ export const useInfinitePendingUsersQuery = <
 useInfinitePendingUsersQuery.getKey = (variables: PendingUsersQueryVariables) => ['PendingUsers.infinite', variables];
 useInfinitePendingUsersQuery.getRootKey = () => ['PendingUsers.infinite'] as const;
 usePendingUsersQuery.fetcher = (client: GraphQLClient, variables: PendingUsersQueryVariables, headers?: RequestInit['headers']) => fetcher<PendingUsersQuery, PendingUsersQueryVariables>(client, PendingUsersDocument, variables, headers);
+
+export const UsersListDocument = `
+    query UsersList($first: Int!, $after: ID, $orderBy: UserOrdering!, $orderMode: OrderingMode!, $filters: [Filter!], $searchTerm: String) {
+  users(
+    first: $first
+    after: $after
+    orderBy: $orderBy
+    orderMode: $orderMode
+    filters: $filters
+    searchTerm: $searchTerm
+  ) {
+    totalCount
+    edges {
+      node {
+        id
+        email
+        last_name
+        first_name
+        disabled
+        last_login
+        country
+        status
+        invitation_date
+        organization_capabilities {
+          id
+          organization {
+            id
+            name
+            personal_space
+          }
+          capabilities
+        }
+      }
+    }
+  }
+}
+    `;
+
+export const useUsersListQuery = <
+      TData = UsersListQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: UsersListQueryVariables,
+      options?: Omit<UseQueryOptions<UsersListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<UsersListQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<UsersListQuery, TError, TData>(
+      {
+    queryKey: ['UsersList', variables],
+    queryFn: fetcher<UsersListQuery, UsersListQueryVariables>(client, UsersListDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useUsersListQuery.getKey = (variables: UsersListQueryVariables) => ['UsersList', variables];
+useUsersListQuery.getRootKey = () => ['UsersList'] as const;
+export const useInfiniteUsersListQuery = <
+      TData = InfiniteData<UsersListQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: UsersListQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<UsersListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<UsersListQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<UsersListQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['UsersList.infinite', variables],
+      queryFn: (metaData) => fetcher<UsersListQuery, UsersListQueryVariables>(client, UsersListDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteUsersListQuery.getKey = (variables: UsersListQueryVariables) => ['UsersList.infinite', variables];
+useInfiniteUsersListQuery.getRootKey = () => ['UsersList.infinite'] as const;
+useUsersListQuery.fetcher = (client: GraphQLClient, variables: UsersListQueryVariables, headers?: RequestInit['headers']) => fetcher<UsersListQuery, UsersListQueryVariables>(client, UsersListDocument, variables, headers);
 
 export const VotingRoundCreateDocument = `
     mutation VotingRoundCreate($input: CreateVotingRoundInput!) {

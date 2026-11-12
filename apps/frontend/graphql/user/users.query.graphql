@@ -49,3 +49,45 @@ query PendingUsers(
     }
   }
 }
+
+query UsersList(
+  $first: Int!
+  $after: ID
+  $orderBy: UserOrdering!
+  $orderMode: OrderingMode!
+  $filters: [Filter!]
+  $searchTerm: String
+) {
+  users(
+    first: $first
+    after: $after
+    orderBy: $orderBy
+    orderMode: $orderMode
+    filters: $filters
+    searchTerm: $searchTerm
+  ) {
+    totalCount
+    edges {
+      node {
+        id
+        email
+        last_name
+        first_name
+        disabled
+        last_login
+        country
+        status
+        invitation_date
+        organization_capabilities {
+          id
+          organization {
+            id
+            name
+            personal_space
+          }
+          capabilities
+        }
+      }
+    }
+  }
+}

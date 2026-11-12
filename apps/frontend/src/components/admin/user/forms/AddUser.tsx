@@ -1,6 +1,6 @@
-import { getUserListContext } from '@/components/admin/user/UserListPage';
 import { UserForm } from '@/components/admin/user/forms/UserForm';
 import { userFormSchema } from '@/components/admin/user/forms/user-form.schema';
+import { useRefreshUsersList } from '@/components/admin/user/use-refresh-users-list';
 import { UserListCreateMutation } from '@/components/admin/user/user.graphql';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
@@ -20,16 +20,18 @@ export const AddUser = () => {
     UserListCreateMutation
   );
 
-  const { connectionID } = getUserListContext();
+  const refreshUsersList = useRefreshUsersList();
   const handleSubmit = (values: z.infer<typeof userFormSchema>) => {
     commitUserMutation({
       variables: {
         input: {
           ...values,
         },
-        connections: [connectionID],
+        // The users list is a react-query query: it is refreshed on completion.
+        connections: [],
       },
       onCompleted: () => {
+        refreshUsersList();
         setOpenSheet(false);
         showSnackbar({
           severity: 'success',

@@ -4,13 +4,13 @@ import { AddUser } from '@/components/admin/user/forms/AddUser';
 import { AdminAddUser } from '@/components/admin/user/forms/admin/AdminAddUser';
 import { EditUser } from '@/components/admin/user/forms/UserUpdate';
 import { useUserListLocalstorage } from '@/components/admin/user/user-list-localstorage';
+import { UsersListUser } from '@/components/admin/user/user-list.types';
 import {
   canResendInvite,
   getOrganizationCapabilities,
   toAdminResendInviteInput,
   toResendInviteInput,
 } from '@/components/admin/user/user-list.utils';
-import { getUserListContext } from '@/components/admin/user/UserListPage';
 import { UserOrganizationFilter } from '@/components/admin/user/UserOrganizationFilter';
 import { PortalContext } from '@/components/me/AppPortalContext';
 import BadgeOverflowCounter, {
@@ -24,16 +24,15 @@ import {
 import {
   handleSortingChange,
   mapToSortingTableValue,
-  transformSortingValueToParams,
 } from '@/components/ui/handle-sorting.utils';
 import { IconActions, IconActionsItem } from '@/components/ui/IconActions';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import useAdminPath from '@/hooks/use-admin-path';
 import { useDebouncedSearch } from '@/hooks/use-debounced-search';
+import { useGraphqlSubscription } from '@/hooks/use-graphql-subscription';
 import { useAdminByPass } from '@/hooks/use-portal-capability';
 import { useTablePagination } from '@/hooks/use-table-pagination';
 import { useTranslate } from '@/hooks/use-translate';
-import { useUsersList } from '@/hooks/use-users-list';
 import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { useDateFormatter } from '@/utils/date';
@@ -41,15 +40,20 @@ import { getDataTableLabels } from '@/utils/design-system/data-table';
 import { Button, Chip, SearchField } from '@filigran/design-system';
 import { MoreVertIcon } from '@filigran/icon';
 import {
-  UserList_fragment$data,
-  UserList_fragment$key,
-} from '@generated/UserList_fragment.graphql';
-import { UserListQuery$variables } from '@generated/UserListQuery.graphql';
-import {
+  AdminUserEventsDocument,
+  AdminUserEventsSubscription,
+  FilterKey,
+  OrganizationUserEventsDocument,
+  OrganizationUserEventsSubscription,
+  OrganizationUserEventsSubscriptionVariables,
   UserAccountStatus,
+  UsersListQueryVariables,
   useUserAdminResendInviteMutation,
   useUserResendInviteMutation,
+  useUsersListQuery,
 } from '@graphql/generated';
+import { usersListKeys } from '@graphql/user/users.keys';
+import { keepPreviousData, useQueryClient } from '@tanstack/react-query';
 import { ColumnDef, Row } from '@tanstack/react-table';
 import {
   SyntheticEvent,
@@ -59,44 +63,9 @@ import {
   useMemo,
   useState,
 } from 'react';
-import { graphql, readInlineData, useSubscription } from 'react-relay';
+import { graphql } from 'react-relay';
 
-// Configuration or Preloader Query
-export const UserListQuery = graphql`
-  query UserListQuery(
-    $count: Int!
-    $cursor: ID
-    $orderBy: UserOrdering!
-    $orderMode: OrderingMode!
-    $filters: [Filter!]
-    $searchTerm: String
-  ) {
-    ...UserList_users
-  }
-`;
-
-export const userListFragment = graphql`
-  fragment UserList_users on Query
-  @refetchable(queryName: "UsersPaginationQuery") {
-    users(
-      first: $count
-      after: $cursor
-      orderBy: $orderBy
-      orderMode: $orderMode
-      searchTerm: $searchTerm
-      filters: $filters
-    ) {
-      __id
-      totalCount
-      edges {
-        node {
-          ...UserList_fragment
-        }
-      }
-    }
-  }
-`;
-
+// Still spread by the Relay user mutations until they move to react-query.
 export const UserFragment = graphql`
   fragment UserList_fragment on User @inline {
     id
@@ -150,12 +119,12 @@ const UserList = ({ organization }: UserListProps) => {
   const hasActionsColumn = isAdminPath && canDeleteUser;
   const hasResendButtonColumn = !isAdminPath;
   const { me } = useContext(PortalContext);
-  const [userEdit, setUserEdit] = useState<UserList_fragment$data | undefined>(
+  const [userEdit, setUserEdit] = useState<UsersListUser | undefined>(
     undefined
   );
-  const [userToDelete, setUserToDelete] = useState<
-    UserList_fragment$data | undefined
-  >(undefined);
+  const [userToDelete, setUserToDelete] = useState<UsersListUser | undefined>(
+    undefined
+  );
 
   const [filter, setFilter] = useState<{
     search?: string;
@@ -165,13 +134,52 @@ const UserList = ({ organization }: UserListProps) => {
     organization: isAdminPath ? organizationFilter : organization,
   });
 
-  const { data, refetch } = useUsersList({
-    pageSize,
-    orderMode,
-    orderBy,
-    filter,
-    fetchPolicy: 'store-and-network',
-  });
+  const { pagination, cursor, setPagination, onPaginationChange } =
+    useTablePagination({
+      pageSize,
+      setPageSize,
+    });
+
+  const variables = useMemo<UsersListQueryVariables>(
+    () => ({
+      first: pagination.pageSize,
+      after: cursor,
+      orderBy,
+      orderMode,
+      searchTerm: filter.search ?? null,
+      filters: filter.organization
+        ? [{ key: FilterKey.OrganizationId, value: [filter.organization] }]
+        : null,
+    }),
+    [pagination.pageSize, cursor, orderBy, orderMode, filter]
+  );
+
+  const { data, isLoading } = useUsersListQuery(
+    portalGraphqlClient,
+    variables,
+    {
+      // A page, sort, search or filter change keeps the current rows until
+      // its results arrive.
+      placeholderData: keepPreviousData,
+      // Like Relay, a failed load reaches the error page; a failed background
+      // refetch keeps the rows shown.
+      throwOnError: (_error, query) => query.state.data === undefined,
+      // Always stale, as the Relay store-and-network policy: showing the list
+      // again (the tabs unmount it), or a search, filter, sort, page size or
+      // page already in the cache, reloads it. Coming back to the browser tab
+      // does not, as with Relay.
+      staleTime: 0,
+      refetchOnWindowFocus: false,
+    }
+  );
+
+  const queryClient = useQueryClient();
+  const refreshUsers = useCallback(() => {
+    void queryClient.invalidateQueries({
+      queryKey: usersListKeys.list(variables),
+      exact: true,
+    });
+  }, [queryClient, variables]);
 
   const resendInviteMutationOptions = {
     onSuccess: () => {
@@ -180,7 +188,7 @@ const UserList = ({ organization }: UserListProps) => {
         title: t('Utils.Success'),
         description: t('UserListPage.ResendInviteSuccess'),
       });
-      refetch({}, { fetchPolicy: 'network-only' });
+      refreshUsers();
     },
     onError: (error: unknown) => {
       const errorMessage =
@@ -204,7 +212,7 @@ const UserList = ({ organization }: UserListProps) => {
     );
   const isResendingInvite = isResendInvitePending || isAdminResendInvitePending;
   const handleResendInvite = useCallback(
-    (event: SyntheticEvent, user: UserList_fragment$data) => {
+    (event: SyntheticEvent, user: UsersListUser) => {
       event.stopPropagation();
       if (isAdminPath) {
         adminResendInvite({ input: toAdminResendInviteInput(user) });
@@ -217,58 +225,36 @@ const UserList = ({ organization }: UserListProps) => {
     [adminResendInvite, isAdminPath, me?.selected_organization_id, resendInvite]
   );
 
-  const connectionID = data?.users?.__id;
-  const { setConnectionId } = getUserListContext();
-  setConnectionId(connectionID);
-
-  const userListSubscription = graphql`
-    subscription UserListSubscription(
-      $connections: [ID!]!
-      $organizationId: ID!
-    ) {
-      User(organizationId: $organizationId) {
-        add @appendNode(connections: $connections, edgeTypeName: "UserEdge") {
-          ...UserList_fragment
+  // A new user reloads the list on screen, in place of the Relay @appendNode.
+  useGraphqlSubscription<
+    OrganizationUserEventsSubscription,
+    OrganizationUserEventsSubscriptionVariables
+  >(
+    OrganizationUserEventsDocument,
+    { organizationId: organization ?? '' },
+    {
+      enabled: !isAdminPath && !!organization,
+      onNext: ({ User }) => {
+        if (User?.add) {
+          refreshUsers();
         }
-      }
+      },
     }
-  `;
-
-  const adminUserListSubscription = graphql`
-    subscription UserListAdminSubscription($connections: [ID!]!) {
-      AdminUser {
-        add @appendNode(connections: $connections, edgeTypeName: "UserEdge") {
-          ...UserList_fragment
-        }
-      }
-    }
-  `;
-
-  const userListSubscriptionConfig = useMemo(
-    () =>
-      isAdminPath
-        ? {
-            variables: { connections: [connectionID] },
-            subscription: adminUserListSubscription,
-          }
-        : {
-            variables: {
-              connections: [connectionID],
-              organizationId: organization,
-            },
-            subscription: userListSubscription,
-          },
-    [
-      adminUserListSubscription,
-      connectionID,
-      isAdminPath,
-      organization,
-      userListSubscription,
-    ]
   );
-  useSubscription(userListSubscriptionConfig);
+  useGraphqlSubscription<AdminUserEventsSubscription>(
+    AdminUserEventsDocument,
+    {},
+    {
+      enabled: isAdminPath,
+      onNext: ({ AdminUser }) => {
+        if (AdminUser?.add) {
+          refreshUsers();
+        }
+      },
+    }
+  );
 
-  const columns: ColumnDef<UserList_fragment$data>[] = useMemo(
+  const columns: ColumnDef<UsersListUser>[] = useMemo(
     () => [
       {
         accessorKey: 'email',
@@ -301,7 +287,7 @@ const UserList = ({ organization }: UserListProps) => {
               id: 'organizations',
               header: t('UserListPage.Organizations'),
               enableSorting: false,
-              cell: ({ row }: { row: Row<UserList_fragment$data> }) => {
+              cell: ({ row }: { row: Row<UsersListUser> }) => {
                 return (
                   <div className="flex gap-1">
                     {row.original.organization_capabilities?.map(
@@ -331,7 +317,7 @@ const UserList = ({ organization }: UserListProps) => {
                   original: { disabled },
                 },
               }: {
-                row: { original: UserList_fragment$data };
+                row: { original: UsersListUser };
               }) => {
                 return (
                   <div className="flex gap-1">
@@ -347,11 +333,7 @@ const UserList = ({ organization }: UserListProps) => {
               accessorKey: 'last_login',
               id: 'last_login',
               header: t('UserListPage.LastLogin'),
-              cell: ({
-                row,
-              }: {
-                row: { original: UserList_fragment$data };
-              }) => {
+              cell: ({ row }: { row: { original: UsersListUser } }) => {
                 return (
                   <span className="truncate">
                     {row.original.last_login
@@ -367,11 +349,7 @@ const UserList = ({ organization }: UserListProps) => {
               accessorKey: 'capability',
               id: 'capability',
               header: t('UserListPage.Capability'),
-              cell: ({
-                row,
-              }: {
-                row: { original: UserList_fragment$data };
-              }) => {
+              cell: ({ row }: { row: { original: UsersListUser } }) => {
                 // As non-admin path, we should return only one organization
                 if (row.original.organization_capabilities) {
                   const capabilities = getOrganizationCapabilities(
@@ -400,7 +378,7 @@ const UserList = ({ organization }: UserListProps) => {
             original: { status },
           },
         }: {
-          row: { original: UserList_fragment$data };
+          row: { original: UsersListUser };
         }) => {
           if (
             status === UserAccountStatus.Waiting ||
@@ -428,7 +406,7 @@ const UserList = ({ organization }: UserListProps) => {
         accessorKey: 'invitation_date',
         id: 'invitation_date',
         header: t('UserListPage.InvitationDate'),
-        cell: ({ row }: { row: { original: UserList_fragment$data } }) => {
+        cell: ({ row }: { row: { original: UsersListUser } }) => {
           return (
             <span className="truncate">
               {row.original.invitation_date
@@ -446,11 +424,7 @@ const UserList = ({ organization }: UserListProps) => {
               enableSorting: false,
               enableResizing: false,
               header: t('UserListPage.Action'),
-              cell: ({
-                row,
-              }: {
-                row: { original: UserList_fragment$data };
-              }) => {
+              cell: ({ row }: { row: { original: UsersListUser } }) => {
                 if (!canResendInvite(row.original.status)) return null;
                 return (
                   <Button
@@ -474,7 +448,7 @@ const UserList = ({ organization }: UserListProps) => {
               enableHiding: false,
               enableSorting: false,
               enableResizing: false,
-              cell: ({ row }: { row: Row<UserList_fragment$data> }) => {
+              cell: ({ row }: { row: Row<UsersListUser> }) => {
                 const canDelete = canDeleteUserRow(row.original.id, me?.id);
                 const showResendInvite = canResendInvite(row.original.status);
                 return (
@@ -532,33 +506,10 @@ const UserList = ({ organization }: UserListProps) => {
     }
   }, [columnOrder.length, columns, setColumnOrder]);
 
-  const userData = data.users.edges.map(({ node }) =>
-    readInlineData<UserList_fragment$key>(UserFragment, node)
+  const userData = useMemo<UsersListUser[]>(
+    () => data?.users.edges.map(({ node }) => node) ?? [],
+    [data]
   );
-
-  const handleRefetchData = (args?: Partial<UserListQuery$variables>) => {
-    const sorting = mapToSortingTableValue(orderBy, orderMode);
-    refetch({
-      count: pagination.pageSize,
-      cursor,
-      orderBy,
-      orderMode,
-      ...transformSortingValueToParams(sorting),
-      ...args,
-    });
-  };
-
-  const { pagination, cursor, setPagination, onPaginationChange } =
-    useTablePagination({
-      pageSize,
-      setPageSize,
-      onPaginationChange: (nextPagination, nextCursor) => {
-        handleRefetchData({
-          count: nextPagination.pageSize,
-          cursor: nextCursor,
-        });
-      },
-    });
 
   const onSortingChange = (updater: unknown) => {
     handleSortingChange({
@@ -568,14 +519,13 @@ const UserList = ({ organization }: UserListProps) => {
       setOrderMode,
       orderBy,
       orderMode,
-      handleRefetchData,
+      handleRefetchData: () => undefined,
     });
   };
 
   const handleInputChange = (inputValue: string) => {
     setFilter((prevFilter) => ({ ...prevFilter, search: inputValue }));
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-    handleRefetchData({ searchTerm: inputValue, cursor: btoa(String(0)) });
   };
 
   const handleOrganizationChange = (organizationId: string | undefined) => {
@@ -585,12 +535,6 @@ const UserList = ({ organization }: UserListProps) => {
       organization: organizationId,
     }));
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-    handleRefetchData({
-      filters: organizationId
-        ? [{ key: 'organization_id', value: [organizationId] }]
-        : undefined,
-      cursor: btoa(String(0)),
-    });
   };
 
   const searchHandlers = useDebouncedSearch({
@@ -603,6 +547,7 @@ const UserList = ({ organization }: UserListProps) => {
       <DataTable
         columns={columns}
         data={userData}
+        isLoading={isLoading}
         {...getDataTableLabels(t)}
         onResetTable={resetAll}
         tableOptions={{
@@ -612,7 +557,7 @@ const UserList = ({ organization }: UserListProps) => {
           onColumnVisibilityChange: setColumnVisibility,
           manualSorting: true,
           manualPagination: true,
-          rowCount: data.users.totalCount,
+          rowCount: data?.users.totalCount ?? 0,
           enableRowSelection: (row) => row.original.id !== me!.id,
         }}
         getRowAnalyticsId={() =>
@@ -657,7 +602,7 @@ const UserList = ({ organization }: UserListProps) => {
           },
         }}
       />
-      {data.users.totalCount === 0 && (
+      {data?.users.totalCount === 0 && (
         <p className="mt-4 text-center text-sm text-default-secondary">
           {t('UserListPage.NoUsers')}
         </p>
@@ -674,7 +619,7 @@ const UserList = ({ organization }: UserListProps) => {
         <DeleteUser
           key={userToDelete.id}
           user={userToDelete}
-          onUserDeleted={() => refetch({}, { fetchPolicy: 'network-only' })}
+          onUserDeleted={refreshUsers}
           open={!!userToDelete}
           setOpen={(open) => {
             if (!open) {

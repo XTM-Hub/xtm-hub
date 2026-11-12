@@ -13,36 +13,16 @@ import {
   TabsTrigger,
 } from '@filigran/design-system';
 import { useSearchParams } from 'next/navigation';
-import { createContext, useContext, useState } from 'react';
+import { useContext } from 'react';
 
 interface UserListPageProps {
   organization?: string;
 }
 
-interface UserListConnectionContextType {
-  connectionID: string;
-  setConnectionId: (id: string) => void;
-}
-
-// Custom hook to use the ConnectionContext
-export const getUserListContext = (): UserListConnectionContextType => {
-  const context = useContext(UserListContext);
-  if (!context) {
-    throw new Error('useConnection must be used within a ConnectionProvider');
-  }
-  return context;
-};
-
-const UserListContext = createContext<
-  UserListConnectionContextType | undefined
->(undefined);
-
 const UserListPage = ({ organization }: UserListPageProps) => {
   const t = useTranslate();
   const isAdminPath = useAdminPath();
   const { me } = useContext(PortalContext);
-
-  const [connectionID, setConnectionId] = useState<string>('');
 
   const searchParams = useSearchParams();
   const hasPendingActionParams =
@@ -66,7 +46,7 @@ const UserListPage = ({ organization }: UserListPageProps) => {
   const nbPendingUsers = data?.pendingUsers.totalCount ?? 0;
 
   return (
-    <UserListContext.Provider value={{ connectionID, setConnectionId }}>
+    <>
       {!isAdminPath && <h1>{t('UserListPage.Title')}</h1>}
       {isAdminPath ? (
         <div>
@@ -101,7 +81,7 @@ const UserListPage = ({ organization }: UserListPageProps) => {
           </TabsContent>
         </Tabs>
       )}
-    </UserListContext.Provider>
+    </>
   );
 };
 // Component export

@@ -8,3 +8,19 @@ subscription PendingUserEvents($organizationId: ID!) {
     }
   }
 }
+
+subscription OrganizationUserEvents($organizationId: ID!) {
+  User(organizationId: $organizationId) {
+    add {
+      id
+    }
+  }
+}
+
+subscription AdminUserEvents {
+  AdminUser {
+    add {
+      id
+    }
+  }
+}
