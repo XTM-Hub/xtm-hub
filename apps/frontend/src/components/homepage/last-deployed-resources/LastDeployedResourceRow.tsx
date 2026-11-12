@@ -52,6 +52,7 @@ const LastDeployedResourceRow = ({
         id: document.id,
         name: document.name ?? '',
         type: resourceType,
+        status: document.status,
         useCases: document.use_cases,
       })}
       href={url}
