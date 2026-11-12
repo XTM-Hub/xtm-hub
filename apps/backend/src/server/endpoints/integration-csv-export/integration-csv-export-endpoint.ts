@@ -19,7 +19,7 @@ import { TelemetryApp } from '../../../modules/telemetry/telemetry.app';
 import { TelemetryHelper } from '../../../modules/telemetry/telemetry.helper';
 import { MARKETING_USER_CONTEXT } from '../../../portal.const';
 import {
-  isValidSystemToken,
+  isValidMarketingToken,
   SYSTEM_TOKEN_HEADER,
 } from '../../../security/directive-graphql/validator/system-token.validator';
 import { logApp } from '../../../utils/app-logger.util';
@@ -69,11 +69,11 @@ const sendTelemetry = async (
 export const IntegrationCsvExportEndpoint = {
   exportCsv: async (req: Request, res: Response): Promise<void> => {
     const sessionUser = req.session.user;
-    // Marketing tooling (e.g. HubSpot) has no session: a valid system token exports as the capability-less
-    // marketing user, never as the system user.
+    // Marketing tooling (e.g. HubSpot) has no session: a valid marketing token, the system token by default, exports
+    // as the capability-less marketing user, never as the system user.
     const user =
       sessionUser ??
-      (isValidSystemToken(req.header(SYSTEM_TOKEN_HEADER) ?? null)
+      (isValidMarketingToken(req.header(SYSTEM_TOKEN_HEADER) ?? null)
         ? MARKETING_USER_CONTEXT.user
         : undefined);
     if (!user) {
