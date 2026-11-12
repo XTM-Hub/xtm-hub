@@ -1,4 +1,5 @@
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { SHAREABLE_RESOURCE_TYPE_NAME_MAPPING } from '@/utils/shareable-resources/shareable-resources.types';
 import { Button, DialogTitle } from '@filigran/design-system';
 import { useRegisteredPlatformsFragment$data } from '@generated/useRegisteredPlatformsFragment.graphql';
@@ -39,6 +40,7 @@ const OnePlatformDisplay = ({
       </div>
       <div className="flex justify-end gap-2">
         <Button
+          {...analyticsId('resource_deploy_cancel')}
           priority="secondary"
           type="button"
           onClick={() => {
@@ -48,6 +50,7 @@ const OnePlatformDisplay = ({
         </Button>
 
         <Button
+          {...analyticsId('resource_deploy_confirm')}
           onClick={() => {
             setIsOpen(false);
             oneClickDeploy(platforms[0]?.url ?? '');

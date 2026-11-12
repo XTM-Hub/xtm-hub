@@ -39,7 +39,8 @@ flowchart LR
   K --> L[deploy · AWX]
 ```
 
-- **detect-changes** gates the pipeline on a `code` path filter (the same paths as the `push` filter).
+- **detect-changes** gates the pipeline on a `code` path filter (the same paths as the `push` filter). Its
+  `frontend` and `backend` outputs (`apps/frontend/**`, `apps/backend/**`) choose the apps the `coverage` job checks.
 - **run-lint** is a matrix over `apps/backend`, `apps/frontend`, `apps/e2e`.
 - **build-images-tests** builds `portal-front`, `portal-api`, `portal-e2e-tests`, `portal-front-test`,
   `portal-api-test` in parallel.
@@ -80,8 +81,10 @@ number of shard uploads) before reporting. Its components post one check per app
 changes, `codecov/patch/frontend` and `codecov/patch/backend`, with an 80% target.
 
 On pull requests, once both shard jobs succeed and `run-front-unit-tests` / `run-api-unit-tests` have posted their
-test reports, the `coverage` job ("Coverage") calls the composite action `.github/actions/coverage`. It waits for both
-Codecov checks on the pull request head (15 minutes at most), then:
+test reports, the `coverage` job ("Coverage") calls the composite action `.github/actions/coverage` for each app the
+pull request changes (the `frontend` and `backend` outputs of `detect-changes`). Codecov can leave the check of an
+untouched app in progress for good, so that app is not checked. For each changed app, the job waits for the Codecov
+check on the pull request head (15 minutes at most), then:
 
 - writes each app's coverage at the point the pull request branched from `main` against its head, and Codecov's
   changed-lines verdict, at the top of the app's Vitest report comment, between `<!-- coverage:start -->` and
@@ -91,8 +94,9 @@ Codecov checks on the pull request head (15 minutes at most), then:
   has no total for it.
 
 "Coverage" blocks a merge only as a required check of the `main` branch protection. It is skipped, so passing, on a
-pull request that does not run the shards and in the merge queue. A pull request that only changes test files shows
-"Coverage not affected" on the changed lines (test files are not measured) and its effect in the whole-app change.
+pull request that does not run the shards or changes neither app, and in the merge queue. A pull request that only
+changes test files shows "Coverage not affected" on the changed lines (test files are not measured) and its effect in
+the whole-app change.
 
 Before the Docker builds, migrations and seeds are copied into the e2e workspace:
 

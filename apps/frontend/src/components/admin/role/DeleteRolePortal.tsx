@@ -55,6 +55,7 @@ const DeleteRolePortal = ({
 
   return (
     <ConfirmDialog
+      confirmAnalyticsId="admin_role_deletion_confirm"
       open={open}
       onOpenChange={onOpenChange}
       title={t('RoleListPage.DeleteRoleDialog.Title')}

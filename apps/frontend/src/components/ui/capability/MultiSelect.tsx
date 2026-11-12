@@ -41,6 +41,7 @@ export const CapabilityMultiSelect = ({
 
   return (
     <AppCombobox
+      formField
       multiple
       label={label || accessibleName || placeholder}
       labelPosition={label ? 'top' : 'none'}

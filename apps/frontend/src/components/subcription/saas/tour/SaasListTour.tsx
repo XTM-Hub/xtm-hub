@@ -9,6 +9,10 @@ import {
 } from '@/components/subcription/saas/tour/saas-list-tour';
 import { useDataTable } from '@/components/ui/data-table';
 import { useTranslate } from '@/hooks/use-translate';
+import {
+  type AnalyticsElementId,
+  analyticsId,
+} from '@/lib/analytics/analytics.ids';
 import { cn } from '@/lib/utils';
 import { Button, Icon } from '@filigran/design-system';
 import {
@@ -18,7 +22,13 @@ import {
   useTour,
 } from '@reactour/tour';
 import type { Table } from '@tanstack/react-table';
-import { type ReactNode, useEffect, useMemo, useRef } from 'react';
+import {
+  type ComponentProps,
+  type ReactNode,
+  useEffect,
+  useMemo,
+  useRef,
+} from 'react';
 
 // The tour renders its own popover: it takes the design system's tokens so it follows the theme.
 const TOUR_STYLES: ProviderProps['styles'] = {
@@ -49,6 +59,7 @@ type TourNavigationButtonProps = Parameters<
 >[0] & {
   kind: 'prev' | 'next';
   label: string;
+  analyticsId: AnalyticsElementId;
 };
 
 // Reactour labels its previous and next buttons in English, with no option to change it: the tour renders its own,
@@ -56,6 +67,7 @@ type TourNavigationButtonProps = Parameters<
 const TourNavigationButton = ({
   kind,
   label,
+  analyticsId: elementId,
   currentStep,
   stepsLength,
   setCurrentStep,
@@ -72,6 +84,7 @@ const TourNavigationButton = ({
 
   return (
     <button
+      {...analyticsId(elementId)}
       type="button"
       aria-label={label}
       disabled={isDisabled}
@@ -89,6 +102,17 @@ const TourNavigationButton = ({
   );
 };
 
+const TourCloseButton = (props: ComponentProps<typeof components.Close>) => (
+  <components.Close
+    {...props}
+    {...analyticsId('admin_saas_tour_close')}
+  />
+);
+
+const TOUR_COMPONENTS: ProviderProps['components'] = {
+  Close: TourCloseButton,
+};
+
 export const SaasListTourProvider = ({ children }: { children: ReactNode }) => {
   const t = useTranslate();
   const steps = useMemo(
@@ -104,10 +128,12 @@ export const SaasListTourProvider = ({ children }: { children: ReactNode }) => {
     <TourProvider
       steps={steps}
       styles={TOUR_STYLES}
+      components={TOUR_COMPONENTS}
       prevButton={(props) => (
         <TourNavigationButton
           {...props}
           kind="prev"
+          analyticsId="admin_saas_tour_previous_step_open"
           label={t('CSMBoard.Tour.PreviousStep')}
         />
       )}
@@ -115,6 +141,7 @@ export const SaasListTourProvider = ({ children }: { children: ReactNode }) => {
         <TourNavigationButton
           {...props}
           kind="next"
+          analyticsId="admin_saas_tour_next_step_open"
           label={t('CSMBoard.Tour.NextStep')}
         />
       )}
@@ -185,6 +212,7 @@ export const SaasListTourButton = () => {
 
   return (
     <Button
+      {...analyticsId('admin_saas_tour_open')}
       {...saasListTourTarget(SAAS_LIST_TOUR_TARGET.Documentation)}
       priority="secondary"
       startIcon={

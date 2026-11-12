@@ -55,6 +55,7 @@ export const TrialUserRolePanelFields = ({
               return (
                 <FormItem className="gap-3 md:flex-1">
                   <RoleSelect
+                    formField
                     label={title}
                     value={value ?? ''}
                     onValueChange={(value) => {

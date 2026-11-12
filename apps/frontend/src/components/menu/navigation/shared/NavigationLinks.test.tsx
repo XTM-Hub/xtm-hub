@@ -9,6 +9,7 @@ import { usePathname } from 'next/navigation';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const LINK_HREF = '/en/link';
+const ANALYTICS_ID = 'nav_blog_open';
 const LABEL = 'Tableaux de bord personnalisés';
 const TestIcon = () => <svg />;
 
@@ -53,6 +54,7 @@ describe('PublicSubLink', () => {
       <PublicSubLink
         href="/en/highlighted"
         label="Highlighted"
+        analyticsId={ANALYTICS_ID}
         highlight
       />
     );
@@ -72,6 +74,7 @@ describe('PublicSubLink', () => {
         <PublicSubLink
           href={LINK_HREF}
           label={LABEL}
+          analyticsId={ANALYTICS_ID}
         />
       );
       mockLabelWidth(TRUNCATED_LABEL_WIDTH);
@@ -92,6 +95,7 @@ describe('PublicSubLink', () => {
         <PublicSubLink
           href={LINK_HREF}
           label={LABEL}
+          analyticsId={ANALYTICS_ID}
         />
       );
       mockLabelWidth(FITTING_LABEL_WIDTH);
@@ -116,6 +120,7 @@ describe('NavigationLinkMenu', () => {
           href={LINK_HREF}
           icon={TestIcon}
           text={LABEL}
+          analyticsId={ANALYTICS_ID}
         />
       );
       mockLabelWidth(TRUNCATED_LABEL_WIDTH);
@@ -138,6 +143,7 @@ describe('NavigationLinkMenu', () => {
           href={LINK_HREF}
           icon={TestIcon}
           text={LABEL}
+          analyticsId={ANALYTICS_ID}
         />
       );
       mockLabelWidth(TRUNCATED_LABEL_WIDTH);

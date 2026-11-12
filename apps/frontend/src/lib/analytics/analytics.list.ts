@@ -3,6 +3,7 @@ import {
   toAnalyticsItem,
   toAnalyticsLibraryParams,
 } from '@/lib/analytics/analytics.resource';
+import { maskSearchTerm } from '@/lib/analytics/analytics.search-term';
 import {
   type AnalyticsEvents,
   type AnalyticsListResults,
@@ -63,7 +64,10 @@ export const resolveResourceListEvents = (
   return isNewSearch
     ? {
         viewItemList,
-        search: { ...listResults, search_term: current.searchTerm },
+        search: {
+          ...listResults,
+          search_term: maskSearchTerm(current.searchTerm),
+        },
       }
     : { viewItemList };
 };

@@ -11,7 +11,11 @@ import { DisabledActionTooltip } from '@/components/ui/DisabledActionTooltip';
 import { useBuildCompatibilityTranslationKey } from '@/hooks/use-build-compatibility-translation-key';
 import { useRegisteredPlatforms } from '@/hooks/use-registered-platforms';
 import { useTranslate } from '@/hooks/use-translate';
-import { trackEvent } from '@/lib/analytics/analytics.client';
+import {
+  analyticsResource,
+  toAnalyticsResourceData,
+} from '@/lib/analytics/analytics.context';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import {
   getPlatformIdentifier,
@@ -106,15 +110,6 @@ const OneClickDeploy = ({
     setShouldOpenTab(false);
   }
 
-  const openEeSheet = useCallback(() => {
-    trackEvent('ee_badge_click', {
-      resource_id: documentData.id,
-      resource_title: documentData.name ?? '',
-      resource_type: documentData.type,
-    });
-    setIsEeSheetOpen(true);
-  }, [documentData.id, documentData.name, documentData.type]);
-
   const alertContent = useMemo(() => {
     if (platforms.length === 1) {
       return (
@@ -169,6 +164,7 @@ const OneClickDeploy = ({
   }
   const button = (
     <Button
+      {...analyticsId('resource_deploy')}
       disabled={isDeploymentDisabled || eeBlocked}
       onClick={() => setIsOpen(true)}>
       {t('Service.ShareableResources.Deploy.DeployPlatform', {
@@ -182,7 +178,7 @@ const OneClickDeploy = ({
     <div className="relative inline-flex items-center mr-6">
       {button}
       <div className="absolute inset-y-0 right-0 flex items-center translate-x-1/2 z-10">
-        <EeBadge onClick={openEeSheet} />
+        <EeBadge onClick={() => setIsEeSheetOpen(true)} />
       </div>
     </div>
   ) : (
@@ -201,6 +197,8 @@ const OneClickDeploy = ({
     buttonWithBadge
   );
 
+  const resource = toAnalyticsResourceData(documentData);
+
   return (
     <>
       {container}
@@ -208,6 +206,7 @@ const OneClickDeploy = ({
         open={isOpen}
         onOpenChange={setIsOpen}>
         <DialogContent
+          {...analyticsResource(resource)}
           size="lg"
           role="alertdialog"
           onInteractOutside={(e) => e.preventDefault()}
@@ -219,6 +218,7 @@ const OneClickDeploy = ({
         open={isEeSheetOpen}
         setOpen={setIsEeSheetOpen}
         platformIdentifier={platformIdentifier}
+        resource={resource}
       />
     </>
   );

@@ -97,6 +97,7 @@ const SelectUsersFormField = ({
 
   return (
     <AppCombobox<UserOption>
+      formField
       label={label}
       placeholder={t('InviteUserServiceForm.Email')}
       error={error}

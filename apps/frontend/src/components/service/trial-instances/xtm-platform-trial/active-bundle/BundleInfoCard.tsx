@@ -3,6 +3,7 @@
 import { CONTRACT_LABEL_BY_CONTRACT } from '@/components/registration/PlatformIdentifierMapping';
 import { BundleCancelSheet } from '@/components/service/trial-instances/xtm-platform-trial/shared/BundleCancelSheet';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { daysUntil, useDateFormatter } from '@/utils/date';
 import { xtmPlatformTrialManageUsersPath } from '@/utils/path/constant';
 import { Button, Card, CardContent, Chip } from '@filigran/design-system';
@@ -84,6 +85,7 @@ export const BundleInfoCard = ({ bundle, canManage }: BundleInfoCardProps) => {
         {canManage && (
           <div className="flex flex-wrap items-center justify-end gap-2 mt-auto">
             <Button
+              {...analyticsId('trial_cancellation_open')}
               variant="destructive"
               priority="secondary"
               onClick={() => setOpenCancel(true)}>
@@ -91,6 +93,7 @@ export const BundleInfoCard = ({ bundle, canManage }: BundleInfoCardProps) => {
             </Button>
             <Button asChild>
               <Link
+                {...analyticsId('trial_users_open')}
                 href={xtmPlatformTrialManageUsersPath(
                   bundle.service_instance_id
                 )}>

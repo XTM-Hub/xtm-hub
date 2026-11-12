@@ -8,6 +8,7 @@ import { AutoForm } from '@/components/ui/auto-form';
 import { FormControl, FormItem, FormMessage } from '@/components/ui/form';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { APP_PATH } from '@/utils/path/constant';
 import {
@@ -199,6 +200,7 @@ export const PrivateXtmPlatformTrialBanner = () => {
               {({ isValid }) => (
                 <DialogFooter>
                   <Button
+                    {...analyticsId('trial_feedback_submit')}
                     type="submit"
                     disabled={!isValid}>
                     {t('Service.Trials.XtmPlatform.Feedback.Submit')}

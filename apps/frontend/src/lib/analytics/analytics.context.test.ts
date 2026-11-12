@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 
 const RESOURCE_UUID = '3f2a1b4c-5d6e-4f70-8a9b-0c1d2e3f4a5b';
 const RESOURCE_NAME = 'Ransomware playbook';
+const UNKNOWN_RESOURCE_TYPE = 'unknown_resource';
 
 describe('analyticsResource', () => {
   it.each([
@@ -30,4 +31,16 @@ describe('analyticsResource', () => {
       expect(attributes[ANALYTICS_USE_CASES_ATTRIBUTE]).toBe(expected);
     }
   );
+
+  it('should return no attributes when the resource type is unknown', () => {
+    // Given / When
+    const attributes = analyticsResource({
+      id: RESOURCE_UUID,
+      name: RESOURCE_NAME,
+      type: UNKNOWN_RESOURCE_TYPE,
+    });
+
+    // Then
+    expect(attributes).toEqual({});
+  });
 });

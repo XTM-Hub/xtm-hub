@@ -55,6 +55,8 @@ export async function GET(
         'unregister',
         PlatformIdentifier.Xtmone
       );
+    case 'opencti-registration':
+      return redirectToRegisteredPlatform(request, PlatformIdentifier.Opencti);
     case 'openaev-registration':
       return redirectToRegisteredPlatform(request, PlatformIdentifier.Openaev);
     case 'transfer-personal-space':

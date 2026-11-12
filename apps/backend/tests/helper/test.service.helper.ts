@@ -40,6 +40,14 @@ import { SERVICES } from '../tests.const';
 
 export const TestServiceHelper = {
   serviceDefinition: {
+    build: (overrides: Partial<ServiceDefinition> = {}): ServiceDefinition => ({
+      id: 'service-definition-1' as ServiceDefinitionId,
+      name: 'OpenCTI Integrations Library',
+      description: null,
+      public: null,
+      identifier: ServiceDefinitionIdentifier.OpenctiIntegrations,
+      ...overrides,
+    }),
     load: async (
       field: ServiceDefinitionMutator
     ): Promise<ServiceDefinition | undefined> => {

@@ -1,4 +1,5 @@
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { cn } from '@/lib/utils';
 import {
   IconButton,
@@ -38,7 +39,9 @@ export const SortControls = ({
       <Select
         onValueChange={onOrderByChange}
         defaultValue={selectedOrderBy}>
-        <SelectTrigger aria-label={t('SortControls.SortBy')}>
+        <SelectTrigger
+          {...analyticsId('list_sort_field_select')}
+          aria-label={t('SortControls.SortBy')}>
           <SelectValue placeholder={t('SortControls.SortBy')} />
         </SelectTrigger>
         <SelectContent className="layer-1">
@@ -52,6 +55,7 @@ export const SortControls = ({
         </SelectContent>
       </Select>
       <IconButton
+        {...analyticsId('list_sort_order_toggle')}
         className="flex-none basis-9"
         priority="tertiary"
         aria-label={`${t('SortControls.SortBy')} ${selectedOrderMode}`}

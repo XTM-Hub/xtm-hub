@@ -39,6 +39,7 @@ export const ServiceFormReplaceFileField = ({
         })}
       </FormLabel>
       <FormControl>
+        {/* eslint-disable-next-line no-restricted-syntax -- container whose children carry the IDs */}
         <div onClick={() => setIsDirty(true)}>
           <FileInputWithPrevent
             field={field}
@@ -48,6 +49,8 @@ export const ServiceFormReplaceFileField = ({
               dialogDescription: t(texts.updateFileDescription),
             }}
             allowedTypes={accept}
+            analyticsId="resource_file_replacement_open"
+            confirmAnalyticsId="resource_file_replacement_confirm"
           />
         </div>
       </FormControl>

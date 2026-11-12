@@ -9,6 +9,7 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { MenuIcon } from '@filigran/icon';
 import Logo from '@public/logo.svg';
 import { usePathname } from 'next/navigation';
@@ -32,7 +33,7 @@ export const PublicMobileMenuButton = ({
     <Sheet
       open={open}
       onOpenChange={setOpen}>
-      <SheetTrigger>
+      <SheetTrigger {...analyticsId('nav_mobile_menu_open')}>
         <span className="sr-only">{t('Header.OpenMenu')}</span>
         <MenuIcon
           aria-hidden={true}
@@ -53,6 +54,7 @@ export const PublicMobileMenuButton = ({
             <SheetTitle>{t('Header.BrandName')}</SheetTitle>
           </div>
         </SheetHeader>
+        {/* eslint-disable-next-line no-restricted-syntax -- container whose children carry the IDs */}
         <div
           onClick={(e) => {
             if ((e.target as HTMLElement).closest('a')) {

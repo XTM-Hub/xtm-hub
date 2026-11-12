@@ -4,6 +4,7 @@ import { userAdminFormSchema } from '@/components/admin/user/forms/user-form.sch
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { Button } from '@filigran/design-system';
 import { AdminAddUserMutation as AdminAddUserMutationType } from '@generated/AdminAddUserMutation.graphql';
 import { useState } from 'react';
@@ -62,7 +63,11 @@ export const AdminAddUser = () => {
       title={t('UserActions.AddUser')}
       setOpen={setOpenSheet}
       open={openSheet}
-      trigger={<Button>{t('UserActions.AddUser')}</Button>}>
+      trigger={
+        <Button {...analyticsId('admin_user_create')}>
+          {t('UserActions.AddUser')}
+        </Button>
+      }>
       <UserAdminForm handleSubmit={handleSubmit} />
     </SheetWithPreventingDialog>
   );

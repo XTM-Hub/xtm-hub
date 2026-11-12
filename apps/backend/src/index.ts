@@ -4,11 +4,7 @@ import cors from 'cors';
 import express from 'express';
 
 import config from 'config';
-import promBundle from 'express-prom-bundle';
-import expressSession, {
-  SessionData,
-  SessionOptions,
-} from 'express-session/index.js';
+import { SessionData } from 'express-session/index.js';
 import { createHandler } from 'graphql-sse/lib/use/express';
 import graphqlUploadExpress from 'graphql-upload/graphqlUploadExpress.mjs';
 import { printSchema } from 'graphql/utilities/index.js';
@@ -29,22 +25,23 @@ import { initAuthPlatform } from './modules/security-management/authentication/a
 import { ServiceInstanceDataLoader } from './modules/service/instance/service-instance.dataloader';
 import { SubscriptionDataLoader } from './modules/subscription/subscription.dataloader';
 import { TelemetrySnapshotApp } from './modules/telemetry/telemetry-snapshot.app';
-import {
-  sseActiveConnectionsGauge,
-  sseMessageCounter,
-  sseSubscriptionCounter,
-} from './server/apollo-plugins/metrics';
+import { sseOperationMetrics } from './server/apollo-plugins/metrics';
 import { createApolloServer } from './server/apollo-server';
 import {
   registerEndpoints,
   registerReadOnlySessionEndpoints,
 } from './server/endpoints';
 import createSchema from './server/graphql-schema';
+import { createHttpMetricsMiddleware } from './server/http-metrics.middleware';
 import platformInit, { minioInit } from './server/initialize';
 import { seedDevelopmentConnectors } from './server/initialize.helper';
 import { requestContextMiddleware } from './server/request-context.middleware';
 import { createSseSchemaDetailsOptions } from './server/schema-details';
-import { ReadOnlySessionStore } from './server/session/read-only-session.store';
+import { securityHeadersMiddleware } from './server/security-headers.middleware';
+import {
+  createSessionMiddlewares,
+  SESSION_MAX_AGE,
+} from './server/session/session.middleware';
 import { getSessionStoreInstance } from './session-store-manager';
 import { initShutdown, registerShutdownHook } from './shutdown';
 import { runESMigrations } from './thirdparty/elasticsearch/migrate';
@@ -104,39 +101,21 @@ app.set('trust proxy', portalConfig.trust_proxy);
 logApp.info('[TRUST-PROXY] Express trust proxy set', {
   trustProxy: portalConfig.trust_proxy,
 });
-const SESSION_MAX_AGE = 24 * 60 * 60 * 1000; // 1 day
-const sessionStore = getSessionStoreInstance();
-const sessionOptions: SessionOptions = {
-  name: portalCookieName,
-  store: sessionStore,
-  secret: portalCookieSecret,
-  saveUninitialized: false,
-  proxy: true,
-  rolling: false,
-  resave: false,
-  cookie: {
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: portalConfig.environment !== 'development',
-    maxAge: SESSION_MAX_AGE,
-  },
-};
-const sessionMiddleware = expressSession(sessionOptions);
-// For the public routes that must not write to the session (no save, no touch): they only read an existing one
-const readOnlySessionMiddleware = expressSession({
-  ...sessionOptions,
-  store: new ReadOnlySessionStore(sessionStore),
-});
+const { sessionMiddleware, readOnlySessionMiddleware } =
+  createSessionMiddlewares({
+    name: portalCookieName,
+    secret: portalCookieSecret,
+    store: getSessionStoreInstance(),
+  });
+app.use(securityHeadersMiddleware);
 // Default express.json() limit (100kb) is too small for GraphQL mutations
 // carrying an inline base64 payload (e.g. a single connector logo ingested
 // via ingestManifestFragments - some logos alone are several MB), so it is
 // raised here for the whole API.
 app.use(express.json({ limit: '7mb' }));
 // Prometheus metrics. Before the session middleware, so that the routes registered before it are measured too
-const metricsMiddleware = promBundle({
-  customLabels: {
-    app: 'xtm-hub-api',
-  },
+const metricsMiddleware = createHttpMetricsMiddleware({
+  mountPaths: [PORTAL_GRAPHQL_PATH, PORTAL_WEBSOCKET_PATH],
 });
 app.use(metricsMiddleware);
 // Before the session middleware, which would renew the session of a logged in user on every request
@@ -345,24 +324,15 @@ const handler = createHandler({
     return { user, req: _req };
   },
 
-  onComplete: async (_ctx, msg) => {
-    sseActiveConnectionsGauge.dec({
-      subscription: msg.context.res.req.body?.operationName ?? 'Unknown',
-    });
-  },
-  onSubscribe: async (_ctx, msg) => {
-    sseActiveConnectionsGauge.inc({
-      subscription: msg.operationName ?? 'Unknown',
-    });
-    sseSubscriptionCounter.inc({
-      subscription: msg.operationName ?? 'Unknown',
-    });
+  onOperation: (ctx, _req, args) => {
+    sseOperationMetrics.onOperation(ctx, args);
   },
   onNext: async (ctx, req, result) => {
-    sseMessageCounter.inc({
-      subscription: req.context.res.req.body?.operationName ?? 'Unknown',
-    });
+    sseOperationMetrics.onNext(ctx);
     return sseSchemaDetailsOptions.onNext?.(ctx, req, result);
+  },
+  onComplete: (ctx) => {
+    sseOperationMetrics.onComplete(ctx);
   },
 });
 

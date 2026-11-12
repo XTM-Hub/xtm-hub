@@ -2,6 +2,7 @@ import DeleteSsoGroupRolePortal from '@/components/admin/role/DeleteSsoGroupRole
 import EditSsoGroupRolePortal from '@/components/admin/role/EditSsoGroupRolePortal';
 import { IconActions, IconActionsItem } from '@/components/ui/IconActions';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { MoreVertIcon } from '@filigran/icon';
 import { useState } from 'react';
 
@@ -21,12 +22,17 @@ const SsoGroupRolePortalActions = ({
   return (
     <>
       <IconActions
+        analyticsId="list_row_actions_open"
         aria-label={t('Utils.OpenMenu')}
         icon={<MoreVertIcon className="h-4 w-4 text-icon-highlight" />}>
-        <IconActionsItem onClick={() => setOpenEdit(true)}>
+        <IconActionsItem
+          {...analyticsId('admin_sso_group_mapping_edit')}
+          onClick={() => setOpenEdit(true)}>
           {t('Utils.Update')}
         </IconActionsItem>
-        <IconActionsItem onClick={() => setOpenDelete(true)}>
+        <IconActionsItem
+          {...analyticsId('admin_sso_group_mapping_delete')}
+          onClick={() => setOpenDelete(true)}>
           {t('Utils.Delete')}
         </IconActionsItem>
       </IconActions>

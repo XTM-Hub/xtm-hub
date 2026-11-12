@@ -1,6 +1,7 @@
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsEpic } from '@/lib/analytics/analytics.context';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { removeFromQueryCache } from '@/utils/query-cache';
 import {
@@ -47,6 +48,8 @@ export const DeleteEpic = ({ epic, open, setOpen }: DeleteEpicProps) => {
 
   return (
     <ConfirmDialog
+      analyticsContext={analyticsEpic(epic.title)}
+      confirmAnalyticsId="roadmap_epic_deletion_confirm"
       confirmLabel={t('Utils.Delete')}
       destructive
       title={t('Epic.EpicActions.DeleteEpic', { epicName: epic.title })}

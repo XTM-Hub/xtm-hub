@@ -20,7 +20,7 @@ export const toAnalyticsLibraryParams = (
 export const toAnalyticsItem = (
   { id, name }: AnalyticsResource,
   resourceType: ShareableResourceType,
-  index: number
+  index?: number
 ): AnalyticsItem => {
   const { library, product } = toAnalyticsLibraryParams(resourceType);
   return {
@@ -28,7 +28,7 @@ export const toAnalyticsItem = (
     item_name: name ?? '',
     item_category: library,
     item_brand: product,
-    index,
+    ...(index === undefined ? {} : { index }),
   };
 };
 

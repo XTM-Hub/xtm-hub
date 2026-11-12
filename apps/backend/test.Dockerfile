@@ -18,6 +18,8 @@ RUN corepack enable && \
 FROM base AS builder
 WORKDIR /app
 COPY apps/backend/. ./apps/backend/
+# The metrics tests check the GraphQL operations the frontend sends
+COPY apps/frontend/graphql/. ./apps/frontend/graphql/
 COPY .yarnrc.yml package.json yarn.lock ./
 RUN corepack enable
 

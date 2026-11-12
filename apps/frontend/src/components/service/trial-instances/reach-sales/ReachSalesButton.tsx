@@ -3,6 +3,7 @@ import { ReachSalesDialogForm } from '@/components/service/trial-instances/reach
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { trackEvent } from '@/lib/analytics/analytics.client';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { Button } from '@filigran/design-system';
 import {
@@ -55,6 +56,7 @@ export const ReachSalesButton = ({ variant }: ReachSalesButtonProps) => {
     if ('gradient' === variant) {
       return (
         <Button
+          {...analyticsId('trial_sales_contact')}
           variant="highlight"
           priority="secondary"
           onClick={() => setIsConfirmationDialogOpen(true)}
@@ -67,6 +69,7 @@ export const ReachSalesButton = ({ variant }: ReachSalesButtonProps) => {
     if ('secondary' === variant) {
       return (
         <Button
+          {...analyticsId('trial_sales_contact')}
           onClick={() => setIsConfirmationDialogOpen(true)}
           priority="secondary"
           disabled={isInFlight}>
@@ -77,6 +80,7 @@ export const ReachSalesButton = ({ variant }: ReachSalesButtonProps) => {
 
     return (
       <Button
+        {...analyticsId('trial_sales_contact')}
         onClick={() => setIsConfirmationDialogOpen(true)}
         disabled={isInFlight}>
         {t('Service.Trials.ReachOutToSales')}

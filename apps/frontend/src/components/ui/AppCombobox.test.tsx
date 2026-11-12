@@ -1,4 +1,6 @@
+import AnalyticsClickCapture from '@/components/analytics/AnalyticsClickCapture';
 import { AppCombobox } from '@/components/ui/AppCombobox';
+import { readTrackedEvents, startAnalytics } from '@/utils/test/analytics';
 import testRender from '@/utils/test/test-render';
 import { screen } from '@testing-library/react';
 import { describe, expect, expectTypeOf, it, vi } from 'vitest';
@@ -7,6 +9,8 @@ const LABEL = 'Country';
 const PLACEHOLDER = 'Pick a country';
 const ERROR_MESSAGE = 'Country is required';
 const INPUT_CLASS_NAME = 'content-compact';
+const ELEMENT_ID = 'resource_product_versions_open';
+const PAGE_TYPE = 'Library';
 
 interface CountryOption {
   id: string;
@@ -27,6 +31,7 @@ describe('AppCombobox', () => {
     const onValueChange = vi.fn();
     const { user } = testRender(
       <AppCombobox
+        formField
         label={LABEL}
         options={OPTIONS}
         value={null}
@@ -52,6 +57,7 @@ describe('AppCombobox', () => {
     const onValueChange = vi.fn();
     const { user } = testRender(
       <AppCombobox
+        formField
         multiple
         label={LABEL}
         options={OPTIONS}
@@ -77,6 +83,7 @@ describe('AppCombobox', () => {
     // Given / When
     testRender(
       <AppCombobox
+        formField
         multiple
         label={LABEL}
         options={OPTIONS}
@@ -96,6 +103,7 @@ describe('AppCombobox', () => {
     // Given / When
     testRender(
       <AppCombobox
+        formField
         multiple
         label={LABEL}
         options={OPTIONS}
@@ -124,6 +132,7 @@ describe('AppCombobox', () => {
     // Given
     const { user } = testRender(
       <AppCombobox
+        formField
         label={LABEL}
         options={[]}
         loading
@@ -144,6 +153,7 @@ describe('AppCombobox', () => {
     // Given
     const { user } = testRender(
       <AppCombobox
+        formField
         label={LABEL}
         options={OPTIONS}
         value={null}
@@ -163,6 +173,7 @@ describe('AppCombobox', () => {
     // Given
     const { user } = testRender(
       <AppCombobox
+        formField
         label={LABEL}
         required
         placeholder={PLACEHOLDER}
@@ -187,6 +198,7 @@ describe('AppCombobox', () => {
     // Given / When
     testRender(
       <AppCombobox
+        formField
         label={LABEL}
         labelPosition="none"
         options={OPTIONS}
@@ -206,6 +218,7 @@ describe('AppCombobox', () => {
     const onValueChange = vi.fn();
     const { user } = testRender(
       <AppCombobox
+        formField
         label={LABEL}
         options={OPTIONS}
         value={FRANCE}
@@ -226,6 +239,7 @@ describe('AppCombobox', () => {
     // Given / When
     testRender(
       <AppCombobox
+        formField
         label={LABEL}
         error={ERROR_MESSAGE}
         options={OPTIONS}
@@ -245,6 +259,7 @@ describe('AppCombobox', () => {
     // Given / When
     testRender(
       <AppCombobox
+        formField
         label={LABEL}
         options={OPTIONS}
         value={null}
@@ -263,6 +278,7 @@ describe('AppCombobox', () => {
     // Given / When
     testRender(
       <AppCombobox
+        formField
         label={LABEL}
         options={OPTIONS}
         value={null}
@@ -278,6 +294,32 @@ describe('AppCombobox', () => {
     );
   });
 
+  it('should send a ui_click with the field ID when the input of a standalone field is clicked', async () => {
+    // Given
+    startAnalytics();
+    const { user } = testRender(
+      <>
+        <AnalyticsClickCapture pageType={PAGE_TYPE} />
+        <AppCombobox
+          analyticsId={ELEMENT_ID}
+          label={LABEL}
+          options={OPTIONS}
+          value={null}
+          onValueChange={vi.fn()}
+          getOptionLabel={getOptionLabel}
+        />
+      </>
+    );
+
+    // When
+    await user.click(screen.getByRole('combobox', { name: LABEL }));
+
+    // Then
+    expect(readTrackedEvents('ui_click')).toEqual([
+      expect.objectContaining({ element_id: ELEMENT_ID }),
+    ]);
+  });
+
   it.each<[string | undefined, string, string]>([
     [undefined, 'layer-1', 'layer-0'],
     ['layer-0', 'layer-0', 'layer-1'],
@@ -287,6 +329,7 @@ describe('AppCombobox', () => {
       // Given
       const { user } = testRender(
         <AppCombobox
+          formField
           label={LABEL}
           options={OPTIONS}
           value={null}

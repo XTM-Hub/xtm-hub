@@ -25,6 +25,7 @@ import {
 import { useContext, useState } from 'react';
 
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import {
   isIntegrationItem,
   ShareableResourceType,
@@ -87,22 +88,27 @@ export const DocumentActionsCell = ({ document }: DocumentActionsCellProps) => {
   }
 
   return (
+    // eslint-disable-next-line no-restricted-syntax -- container whose children carry the IDs
     <div
       className="flex items-center gap-1"
       onClick={(event) => event.stopPropagation()}>
       <ShareLinkButton
+        analyticsId="resource_share"
         documentId={document.id}
         url={`${settings!.base_url_front}/${PUBLIC_CYBERSECURITY_SOLUTIONS_PATH}/${serviceInstance.slug}/${document.slug}`}
         size="sm"
       />
       {(userCanDelete || userCanUpdate) && (
         <IconActions
+          analyticsId="resource_actions_open"
           size="sm"
           className="z-[2]"
           aria-label={t('Utils.OpenMenu')}
           icon={<MoreVertIcon className="h-4 w-4 text-icon-highlight" />}>
           {userCanUpdate && (
-            <IconActionsItem onClick={() => onClickOnUpdate()}>
+            <IconActionsItem
+              {...analyticsId('resource_edit')}
+              onClick={() => onClickOnUpdate()}>
               {t('MenuActions.Update')}
             </IconActionsItem>
           )}

@@ -11,8 +11,8 @@ export const CarouselMeta: ComponentMeta = {
   variants: ['default'],
   sizes: [],
   examples: [
-    '<Carousel className="h-[35vh]">{images.map((image) => <CarouselItem key={image.id}><Image fill src={image.src} alt={image.alt} /></CarouselItem>)}</Carousel>',
-    '<Carousel opts={{ startIndex: 2 }} previousLabel={t("DesignSystem.Carousel.Previous")} nextLabel={t("DesignSystem.Carousel.Next")} slideLabel={(slide) => t("DesignSystem.Carousel.GoToSlide", { slide })}><CarouselItem>…</CarouselItem><CarouselItem>…</CarouselItem><CarouselItem>…</CarouselItem></Carousel>',
+    '<Carousel className="h-[35vh]" previousAnalyticsId="resource_previous_screenshot_open" nextAnalyticsId="resource_next_screenshot_open" slideAnalyticsId="resource_screenshot_select">{images.map((image) => <CarouselItem key={image.id}><Image fill src={image.src} alt={image.alt} /></CarouselItem>)}</Carousel>',
+    '<Carousel opts={{ startIndex: 2 }} previousAnalyticsId="resource_previous_screenshot_open" nextAnalyticsId="resource_next_screenshot_open" slideAnalyticsId="resource_screenshot_select" previousLabel={t("DesignSystem.Carousel.Previous")} nextLabel={t("DesignSystem.Carousel.Next")} slideLabel={(slide) => t("DesignSystem.Carousel.GoToSlide", { slide })}><CarouselItem>…</CarouselItem><CarouselItem>…</CarouselItem><CarouselItem>…</CarouselItem></Carousel>',
   ],
   props: {
     opts: "Omit<EmblaOptionsType, 'axis'> (optional, on Carousel) - Embla options, merged over the default { loop: true }; the axis is always horizontal (startIndex sets the first slide shown).",
@@ -22,6 +22,12 @@ export const CarouselMeta: ComponentMeta = {
       "string (optional, default 'Next slide', on Carousel) - the accessible name of the next button; pass a translation.",
     slideLabel:
       '(slide: number) => string (optional, default (slide) => `Go to slide ${slide}`, on Carousel) - the accessible name of each dot, from its 1-based slide number; pass a translation.',
+    previousAnalyticsId:
+      'AnalyticsElementId (on Carousel) - the analytics id of the previous button.',
+    nextAnalyticsId:
+      'AnalyticsElementId (on Carousel) - the analytics id of the next button.',
+    slideAnalyticsId:
+      'AnalyticsElementId (on Carousel) - the analytics id of every dot.',
     children:
       'ReactNode (on Carousel) - the CarouselItem slides, each one full width.',
     className:

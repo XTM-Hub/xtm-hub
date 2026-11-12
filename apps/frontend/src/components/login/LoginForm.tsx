@@ -5,6 +5,7 @@ import { Form, FormField } from '@/components/ui/form';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import useDecodedQuery from '@/hooks/use-decoded-query';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { refreshAnalyticsUser } from '@/lib/analytics/analytics.user';
 import { decodeSafeRedirect } from '@/utils/redirect';
 import { Button, Input } from '@filigran/design-system';
@@ -84,6 +85,7 @@ const LoginForm = () => {
             )}
           />
           <Button
+            {...analyticsId('account_login_submit')}
             className="w-full"
             type="submit">
             {t('LoginPage.SignIn')}

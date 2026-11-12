@@ -45,6 +45,7 @@ export const ServiceFormUploaderOrganizationIdField = ({
         <SelectLabel>
           {t('OrganizationInServiceAction.Organization')}
         </SelectLabel>
+        {/* eslint-disable-next-line no-restricted-syntax -- form field sent by its tagged submit button */}
         <SelectTrigger className="w-full">
           <SelectValue
             placeholder={t('OrganizationInServiceAction.SelectOrganization')}

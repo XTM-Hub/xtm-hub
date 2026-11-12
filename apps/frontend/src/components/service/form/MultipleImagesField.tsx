@@ -5,6 +5,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { fileToBase64 } from '@/lib/utils';
 import { docIsExistingFile, ExistingFile, NewFile } from '@/utils/documents';
 import {
@@ -51,6 +52,7 @@ export const ServiceFormMultipleImagesField = ({
         <FormLabel className="flex items-center h-6">
           {t('Service.Form.ImageLabel')}
           <IconButton
+            {...analyticsId('resource_image_upload')}
             priority="tertiary"
             aria-label={t('Service.Form.AddImage')}
             icon={<AddIcon className="size-3" />}
@@ -118,6 +120,7 @@ export const ServiceFormMultipleImagesField = ({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <IconButton
+                        {...analyticsId('resource_image_removal_cancel')}
                         priority="secondary"
                         className="absolute right-2 top-2"
                         type="button"
@@ -147,6 +150,7 @@ export const ServiceFormMultipleImagesField = ({
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <IconButton
+                          {...analyticsId('resource_image_remove')}
                           disabled={
                             doc.source_type === DocumentSourceType.External
                           }

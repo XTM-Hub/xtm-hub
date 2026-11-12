@@ -45,6 +45,7 @@ const RolePortalField = ({
 
   return (
     <AppCombobox<RolePortalOption>
+      formField
       label={t('RoleListPage.Role')}
       required
       placeholder={t('RoleListPage.Role')}
@@ -89,7 +90,12 @@ const SsoGroupRolePortalForm = ({
           fieldType: RolePortalField,
         },
       }}>
-      {({ isDirty }) => <RoleSheetFormFooter isDirty={isDirty} />}
+      {({ isDirty }) => (
+        <RoleSheetFormFooter
+          isDirty={isDirty}
+          submitAnalyticsId="admin_sso_group_mapping_submit"
+        />
+      )}
     </AutoForm>
   );
 };

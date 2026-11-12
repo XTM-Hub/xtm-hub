@@ -13,6 +13,10 @@ export interface XtmPlatform {
   disconnectButtonName: string;
   connectedToast: string;
   disconnectedToast: string;
+  // On the Filigran Experience, only once XTM Hub answered a connectivity check with the SaaS commercial model.
+  seeMetricsLinkName: string;
+  // Of the platform's registration page in XTM Hub: /app/service/<identifier>/<service instance>.
+  registrationServiceIdentifier: string;
   // The call the Filigran Experience page makes to the platform when it opens, to check its connectivity with XTM Hub.
   isConnectivityCheckRequest: (request: Request) => boolean;
 }
@@ -26,6 +30,8 @@ export const OPENCTI: XtmPlatform = {
   disconnectButtonName: 'Disconnect from XTM Hub',
   connectedToast: 'Your OpenCTI product is successfully connected',
   disconnectedToast: 'Your OpenCTI product is successfully disconnected',
+  seeMetricsLinkName: 'See my OpenCTI metrics',
+  registrationServiceIdentifier: 'opencti_registration',
   isConnectivityCheckRequest: (request) =>
     request.method() === 'POST' &&
     request.url().endsWith('/graphql') &&
@@ -46,6 +52,8 @@ export const OPENAEV: XtmPlatform = {
   disconnectButtonName: 'Disconnect XTM Hub',
   connectedToast: 'Your OpenAEV platform is successfully connected',
   disconnectedToast: 'Your OpenAEV platform is successfully disconnected',
+  seeMetricsLinkName: 'See my OpenAEV metrics',
+  registrationServiceIdentifier: 'openaev_registration',
   isConnectivityCheckRequest: (request) =>
     request.method() === 'POST' &&
     request.url().endsWith('/xtmhub/refresh-connectivity'),
@@ -130,5 +138,20 @@ export default class XtmPlatformPage {
 
   openDisconnectionTab() {
     return this.openXtmHubTab(this.platform.disconnectButtonName);
+  }
+
+  getSeeMetricsLink() {
+    return this.getXtmHubCard().getByRole('link', {
+      name: this.platform.seeMetricsLinkName,
+    });
+  }
+
+  // Opens the platform's page in XTM Hub from its SaaS metrics, in a new tab.
+  async openSeeMetricsTab() {
+    const xtmHubTabPromise = this.page.context().waitForEvent('page');
+    await this.getSeeMetricsLink().click();
+    const xtmHubTab = await xtmHubTabPromise;
+    await xtmHubTab.waitForLoadState();
+    return xtmHubTab;
   }
 }

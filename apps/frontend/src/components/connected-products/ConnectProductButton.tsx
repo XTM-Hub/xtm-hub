@@ -7,6 +7,7 @@ import ConnectProductFromHubModal, {
   ConnectProductOrigin,
 } from '@/components/registration/registerFromHub/ConnectProductFromHubModal';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { Button } from '@filigran/design-system';
 
 export const ConnectProductButton = () => {
@@ -17,6 +18,7 @@ export const ConnectProductButton = () => {
   return (
     <>
       <Button
+        {...analyticsId('platform_connection_open')}
         priority="primary"
         endIcon={<AddIcon className="h-3 w-3" />}
         onClick={() => {

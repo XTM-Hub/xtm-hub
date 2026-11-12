@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { SheetFooter } from '@/components/ui/sheet';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { cn, isEmpty } from '@/lib/utils';
 import { Button, IconButton, Input } from '@filigran/design-system';
 import { DeleteIcon } from '@filigran/icon';
@@ -165,6 +166,7 @@ export const UserAdminForm = ({ handleSubmit }: UserAdminFormProps) => {
                       <IconButton
                         type="button"
                         priority="tertiary"
+                        {...analyticsId('admin_user_organization_remove')}
                         aria-label={t('MenuActions.Remove')}
                         icon={<DeleteIcon className="h-4 w-4" />}
                         onClick={() => remove(index)}
@@ -181,12 +183,14 @@ export const UserAdminForm = ({ handleSubmit }: UserAdminFormProps) => {
           <Button
             priority="secondary"
             type="button"
+            {...analyticsId('admin_form_cancel')}
             onClick={(e) => handleCloseSheet(e)}>
             {t('Utils.Cancel')}
           </Button>
           <Button
             disabled={!form.formState.isDirty}
-            type="submit">
+            type="submit"
+            {...analyticsId('admin_user_submit')}>
             {t('Utils.Validate')}
           </Button>
         </SheetFooter>

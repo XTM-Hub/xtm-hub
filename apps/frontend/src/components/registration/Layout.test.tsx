@@ -1,25 +1,42 @@
 import { RegistrationContext } from '@/components/registration/Context';
 import { RegistrationLayout } from '@/components/registration/Layout';
 import { PlatformMetadataMapping } from '@/components/registration/PlatformIdentifierMapping';
+import { type AnalyticsElementId } from '@/lib/analytics/analytics.ids';
 import testRender from '@/utils/test/test-render';
 import { PlatformIdentifier } from '@graphql/generated';
 import { screen } from '@testing-library/react';
+import { type ComponentProps } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
-const renderLayout = (
-  props: { cancel?: () => void; confirm?: () => void } = {}
-) =>
-  testRender(
+const CANCEL_ANALYTICS_ID: AnalyticsElementId = 'platform_registration_cancel';
+const CONFIRM_ANALYTICS_ID: AnalyticsElementId =
+  'platform_reconnection_confirm';
+
+const renderLayout = ({
+  cancel,
+  confirm,
+}: { cancel?: () => void; confirm?: () => void } = {}) => {
+  const children = <p>child content</p>;
+  const cancelAction = { cancelAnalyticsId: CANCEL_ANALYTICS_ID };
+  const confirmAction = { confirmAnalyticsId: CONFIRM_ANALYTICS_ID };
+  const props: ComponentProps<typeof RegistrationLayout> =
+    cancel && confirm
+      ? { children, cancel, ...cancelAction, confirm, ...confirmAction }
+      : cancel
+        ? { children, cancel, ...cancelAction }
+        : confirm
+          ? { children, confirm, ...confirmAction }
+          : { children };
+  return testRender(
     <RegistrationContext.Provider
       value={{
         displayedIdentifier:
           PlatformMetadataMapping[PlatformIdentifier.Opencti].name,
       }}>
-      <RegistrationLayout {...props}>
-        <p>child content</p>
-      </RegistrationLayout>
+      <RegistrationLayout {...props} />
     </RegistrationContext.Provider>
   );
+};
 
 describe('RegistrationLayout', () => {
   it('renders children', () => {

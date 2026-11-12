@@ -1,5 +1,6 @@
 import useDecodedQuery from '@/hooks/use-decoded-query';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import Link from 'next/link';
 
 const LoginMessage = () => {
@@ -13,6 +14,7 @@ const LoginMessage = () => {
     <div className="layer-1 bg-elevation-default border border-elevation-subtle rounded w-full p-6 text-sm text-center">
       {t('LoginPage.DontHaveAccount')}{' '}
       <Link
+        {...analyticsId('account_signup_open')}
         className="text-filigran-brand-primary"
         href={signUpHref}>
         {t('LoginPage.SignUp')}

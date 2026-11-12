@@ -8,6 +8,10 @@ import BadgeOverflowCounter, {
 } from '@/components/ui/BadgeOverflowCounter';
 import { BreadcrumbNav } from '@/components/ui/BreadcrumbNav';
 import type { PublicLocale } from '@/i18n/config';
+import {
+  analyticsResource,
+  toAnalyticsResourceData,
+} from '@/lib/analytics/analytics.context';
 import { RelayProvider } from '@/relay/relay-provider';
 import { filterDocumentImages, findDocumentLogo } from '@/utils/documents';
 import { getResourcePageFiligranWebsiteUtm } from '@/utils/filigran-website-utm';
@@ -247,8 +251,12 @@ const Page = async ({
 
   const carouselImages = filterDocumentImages(document);
 
+  const resource = toAnalyticsResourceData(document);
+
   return (
-    <>
+    <div
+      className="contents"
+      {...analyticsResource(resource)}>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: stringifyJsonLd(jsonLd) }}
@@ -295,6 +303,7 @@ const Page = async ({
       {mainChild && (
         <ShareableResourceCarousel
           serviceInstance={serviceInstance}
+          resource={resource}
           images={carouselImages}
         />
       )}
@@ -324,7 +333,7 @@ const Page = async ({
           />
         )}
       </div>
-    </>
+    </div>
   );
 };
 

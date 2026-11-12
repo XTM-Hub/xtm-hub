@@ -140,6 +140,7 @@ export const SelectWithEditableField = ({
           onValueChange={handleSelectChange}
           error={Boolean(error)}>
           <SelectLabel required={required}>{labels.label}</SelectLabel>
+          {/* eslint-disable-next-line no-restricted-syntax -- form field sent by its tagged submit button */}
           <SelectTrigger className={cn('w-full', layerClassName)}>
             <SelectValue placeholder={labels.placeholder}>
               {selectedLabel}

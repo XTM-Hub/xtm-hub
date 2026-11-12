@@ -205,6 +205,7 @@ describe('AnalyticsTracker', () => {
           ...pageContext,
           page_type: 'Library',
           page_template: LIST_TEMPLATE,
+          send_to: MEASUREMENT_ID,
         },
       ],
     ]);

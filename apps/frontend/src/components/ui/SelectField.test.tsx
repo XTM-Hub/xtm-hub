@@ -16,6 +16,7 @@ describe('SelectField', () => {
     // Given / When
     testRender(
       <SelectField
+        formField
         label={LABEL}
         required
         options={OPTIONS}
@@ -33,6 +34,7 @@ describe('SelectField', () => {
     // Given / When
     testRender(
       <SelectField
+        formField
         label={LABEL}
         options={OPTIONS}
         value={undefined}
@@ -48,6 +50,7 @@ describe('SelectField', () => {
     // Given / When
     testRender(
       <SelectField
+        formField
         label={LABEL}
         placeholder={PLACEHOLDER}
         options={OPTIONS}
@@ -66,6 +69,7 @@ describe('SelectField', () => {
     // Given
     const { user } = testRender(
       <SelectField
+        formField
         label={LABEL}
         options={OPTIONS}
         value={undefined}
@@ -87,6 +91,7 @@ describe('SelectField', () => {
     const onValueChange = vi.fn();
     const { user } = testRender(
       <SelectField
+        formField
         label={LABEL}
         options={OPTIONS}
         value={undefined}
@@ -106,6 +111,7 @@ describe('SelectField', () => {
     // Given / When
     testRender(
       <SelectField
+        formField
         label={LABEL}
         options={OPTIONS}
         value={undefined}
@@ -125,6 +131,7 @@ describe('SelectField', () => {
     // Given / When
     testRender(
       <SelectField
+        formField
         label={LABEL}
         options={OPTIONS}
         value={undefined}
@@ -143,6 +150,7 @@ describe('SelectField', () => {
     // Given
     const { user } = testRender(
       <SelectField
+        formField
         label={LABEL}
         options={OPTIONS}
         value={undefined}
@@ -168,6 +176,7 @@ describe('SelectField', () => {
       // Given
       const { user } = testRender(
         <SelectField
+          formField
           label={LABEL}
           options={OPTIONS}
           value={undefined}

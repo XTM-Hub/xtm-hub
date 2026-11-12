@@ -1,4 +1,5 @@
 'use client';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { cn } from '@/lib/utils';
 import { toExternalHref } from '@/utils/external-url';
 
@@ -25,6 +26,7 @@ export const TrialsExternalLink = ({
       href={href}
       target="_blank"
       rel="noopener noreferrer"
+      {...analyticsId('admin_trial_platform_open')}
       className={cn('underline', className)}
       onClick={(event) => event.stopPropagation()}>
       {trimmedUrl}

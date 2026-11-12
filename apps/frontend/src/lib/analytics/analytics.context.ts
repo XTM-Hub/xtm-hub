@@ -2,9 +2,11 @@ import {
   ANALYTICS_EPIC_NAME_ATTRIBUTE,
   ANALYTICS_FEATURE_NAME_ATTRIBUTE,
   ANALYTICS_LIBRARY_ATTRIBUTE,
+  ANALYTICS_LINK_TYPE_ATTRIBUTE,
   ANALYTICS_PRODUCT_ATTRIBUTE,
   ANALYTICS_RESOURCE_ID_ATTRIBUTE,
   ANALYTICS_RESOURCE_NAME_ATTRIBUTE,
+  ANALYTICS_RESOURCE_TYPE_ATTRIBUTE,
   ANALYTICS_SECTION_ATTRIBUTE,
   ANALYTICS_USE_CASES_ATTRIBUTE,
   PRODUCT_LABELS,
@@ -14,24 +16,48 @@ import {
   toAnalyticsLibraryParams,
   toAnalyticsUseCases,
 } from '@/lib/analytics/analytics.resource';
-import { type ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
+import { type AnalyticsLinkType } from '@/lib/analytics/analytics.types';
+import { isValueInEnum } from '@/utils/is-value-in-enum';
+import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 import { type PlatformIdentifier } from '@graphql/generated';
+
+export interface AnalyticsResourceData {
+  id: string;
+  name: string;
+  type: string;
+  useCases?: ReadonlyArray<{ name: string }> | null;
+}
+
+interface AnalyticsResourceDocument {
+  id: string;
+  name?: string | null;
+  type: string;
+  use_cases?: ReadonlyArray<{ name: string }> | null;
+}
+
+export const toAnalyticsResourceData = (
+  document: AnalyticsResourceDocument
+): AnalyticsResourceData => ({
+  id: document.id,
+  name: document.name ?? '',
+  type: document.type,
+  useCases: document.use_cases,
+});
 
 export const analyticsResource = ({
   id,
   name,
   type,
   useCases,
-}: {
-  id: string;
-  name: string;
-  type: ShareableResourceType;
-  useCases?: ReadonlyArray<{ name: string }> | null;
-}) => {
+}: AnalyticsResourceData) => {
+  if (!isValueInEnum(type, ShareableResourceType)) {
+    return {};
+  }
   const { library, product } = toAnalyticsLibraryParams(type);
   return {
     [ANALYTICS_RESOURCE_ID_ATTRIBUTE]: toAnalyticsResourceId(id),
     [ANALYTICS_RESOURCE_NAME_ATTRIBUTE]: name,
+    [ANALYTICS_RESOURCE_TYPE_ATTRIBUTE]: type,
     [ANALYTICS_LIBRARY_ATTRIBUTE]: library,
     [ANALYTICS_USE_CASES_ATTRIBUTE]: toAnalyticsUseCases(useCases),
     [ANALYTICS_PRODUCT_ATTRIBUTE]: product,
@@ -53,3 +79,16 @@ export const analyticsFeature = (name: string) => ({
 export const analyticsProduct = (product: PlatformIdentifier) => ({
   [ANALYTICS_PRODUCT_ATTRIBUTE]: PRODUCT_LABELS[product],
 });
+
+export const analyticsLinkType = (type: AnalyticsLinkType) => ({
+  [ANALYTICS_LINK_TYPE_ATTRIBUTE]: type,
+});
+
+export type AnalyticsContextAttributes = ReturnType<
+  | typeof analyticsResource
+  | typeof analyticsSection
+  | typeof analyticsEpic
+  | typeof analyticsFeature
+  | typeof analyticsProduct
+  | typeof analyticsLinkType
+>;
