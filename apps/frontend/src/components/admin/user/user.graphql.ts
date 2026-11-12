@@ -38,19 +38,6 @@ export const userMeSubscription = graphql`
   }
 `;
 
-export const ListUsersWithCapabilitiesInOrganizationQuery = graphql`
-  query userWithCapabilitiesInOrganizationQuery(
-    $input: UsersWithCapabilitiesInOrganizationInput!
-  ) {
-    usersWithCapabilitiesInOrganization(input: $input) {
-      id
-      email
-      first_name
-      last_name
-    }
-  }
-`;
-
 export const UserPendingListQuery = graphql`
   query userPendingListQuery(
     $count: Int!
