@@ -75,29 +75,35 @@ The logic is in `.github/actions/vitest-pr-report/report-lib.mjs`, covered by
 
 ## Coverage
 
-Codecov is the source of truth for coverage; the CI never recomputes it. Each Vitest shard uploads its coverage with
-the flag `frontend-shard-N` / `backend-shard-N`, and `codecov.yml` waits for all of them (`after_n_builds`, the total
-number of shard uploads) before reporting. Its components report one verdict per app on the lines a pull request
-changes, `codecov/patch/frontend` and `codecov/patch/backend`, with an 80% target. Codecov posts it as a check run
-or, on some commits, as a commit status: the `coverage` job reads either.
+The `coverage` job ("Coverage") checks the pull request coverage from the Vitest reports themselves, with the same
+rules as `codecov.yml`: one check per app (`apps/frontend/**`, `apps/backend/**`) and an 80% target, on the lines the
+pull request changes and on the whole app. Each Vitest shard of a pull request uploads its Istanbul report
+(`coverage-final.json`) as the `coverage-frontend-shard-N` / `coverage-backend-shard-N` artifact. The files measured
+are the ones each app's `vitest.config.ts` includes in its coverage.
 
 On pull requests, once both shard jobs succeed and `run-front-unit-tests` / `run-api-unit-tests` have posted their
-test reports, the `coverage` job ("Coverage") calls the composite action `.github/actions/coverage` for each app the
-pull request changes (the `frontend` and `backend` outputs of `detect-changes`). Codecov can leave the check of an
-untouched app in progress for good, so that app is not checked. For each changed app, the job waits for the Codecov
-verdict on the pull request head (15 minutes at most), then:
+test reports, the job checks out the merge commit the shards tested (`fetch-depth: 2`) and calls the composite action
+`.github/actions/coverage` for each app the pull request changes (the `frontend` and `backend` outputs of
+`detect-changes`). For each app, it merges the shards (adding up the hit counts) and counts lines like the "% Lines"
+column of Vitest: a line is coverable when a statement starts on it, covered when one of them ran. Then it:
 
-- writes each app's coverage at the point the pull request branched from `main` against its head, and Codecov's
-  changed-lines verdict, at the top of the app's Vitest report comment, between `<!-- coverage:start -->` and
-  `<!-- coverage:end -->` (the Codecov component id is the report `id`);
-- fails when Codecov fails the changed lines of an app;
-- fails when an app (`apps/frontend/`, `apps/backend/`) is under 80% overall at the pull request head, or when Codecov
-  has no total for it.
+- writes the app's coverage and the coverage of its changed lines (the merge commit against its first parent), with
+  the changed lines left uncovered, at the top of the app's Vitest report comment, between `<!-- coverage:start -->`
+  and `<!-- coverage:end -->` (the app id is the report `id`);
+- fails when less than 80% of the coverable changed lines of an app are covered. A change without any coverable line
+  (test files, types, assets) passes;
+- fails when an app is under 80% overall, or when no coverage report of the app was found.
+
+The logic is in `.github/actions/coverage/coverage-lib.mjs`, covered by `.github/actions/coverage/coverage.test.mjs`
+(Node's built-in runner, run by the `backend` leg of `run-lint`). Run it with
+`node --test .github/actions/coverage/coverage.test.mjs` after changing the script.
 
 "Coverage" blocks a merge only as a required check of the `main` branch protection. It is skipped, so passing, on a
-pull request that does not run the shards or changes neither app, and in the merge queue. A pull request that only
-changes test files shows "Coverage not affected" on the changed lines (test files are not measured) and its effect in
-the whole-app change.
+pull request that does not run the shards or changes neither app, and in the merge queue.
+
+The shards still upload their coverage to Codecov (flags `frontend-shard-N` / `backend-shard-N`, all of them awaited
+through `after_n_builds` in `codecov.yml`) for its pull request comment and its `codecov/patch/*` checks. Those are
+informational: no job waits for Codecov.
 
 Before the Docker builds, migrations and seeds are copied into the e2e workspace:
 

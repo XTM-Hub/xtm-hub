@@ -13,8 +13,9 @@ coverage:
       default:
         informational: true
 
-# The lines a pull request changes must be at least 80% covered, checked separately for each app. The coverage gate
-# of dockerbuild-ci.yml fails the pull request when Codecov fails codecov/patch/frontend or codecov/patch/backend.
+# The lines a pull request changes must be at least 80% covered, checked separately for each app. Informational: the
+# coverage job of dockerbuild-ci.yml checks the same rules from the Vitest reports and is the one that fails the
+# pull request. Keep both in sync.
 component_management:
   individual_components:
     - component_id: frontend
