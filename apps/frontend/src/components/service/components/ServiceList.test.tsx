@@ -108,12 +108,12 @@ describe('ServiceList', () => {
     });
   });
 
-  it('renders hero and draft section for updatable services', () => {
-    const active = [
+  it('renders hero and the draft, in validation and published sections for updatable services', () => {
+    const published = [
       {
-        id: 'active-1',
-        slug: 'active-doc',
-        name: 'Active document',
+        id: 'published-1',
+        slug: 'published-doc',
+        name: 'Published document',
         type: 'opencti_integration',
         integration_type: IntegrationType.CsvFeed,
         short_description: 'Active description',
@@ -131,10 +131,22 @@ describe('ServiceList', () => {
       },
     ] as Partial<DocumentItemFragment>[];
 
+    const inValidation = [
+      {
+        id: 'in-validation-1',
+        slug: 'in-validation-doc',
+        name: 'In validation document',
+        type: 'opencti_integration',
+        short_description: 'In validation description',
+        use_cases: [],
+      },
+    ] as Partial<DocumentItemFragment>[];
+
     testRender(
       <ServiceList
-        active={active}
+        published={published}
         draft={draft}
+        inValidation={inValidation}
         search=""
         onSearchChange={vi.fn()}
         additionalFilters={{}}
@@ -143,21 +155,29 @@ describe('ServiceList', () => {
 
     expect(screen.getByText('Service.LibraryHero.Eyebrow')).toBeInTheDocument();
     expect(screen.getByText('My Service')).toBeInTheDocument();
-    expect(
-      screen.getByText('Service.Connector.NonActive:')
-    ).toBeInTheDocument();
-    expect(screen.getByText('Service.Connector.Active:')).toBeInTheDocument();
+    const titles = [
+      'DocumentStatus.Draft:',
+      'DocumentStatus.InValidation:',
+      'DocumentStatus.Published:',
+    ].map((title) => screen.getByText(title));
+    titles.slice(1).forEach((title, index) => {
+      expect(
+        titles[index].compareDocumentPosition(title) &
+          Node.DOCUMENT_POSITION_FOLLOWING
+      ).toBeTruthy();
+    });
     expect(screen.getByText('Draft document')).toBeInTheDocument();
+    expect(screen.getByText('In validation document')).toBeInTheDocument();
     expect(testState.restore).toHaveBeenCalledOnce();
   });
 
-  it('does not render draft section when user cannot upload', () => {
+  it('does not render the draft and in validation sections when user cannot upload', () => {
     testState.useServiceCapability.mockReturnValue(false);
-    const active = [
+    const published = [
       {
-        id: 'active-1',
-        slug: 'active-doc',
-        name: 'Active document',
+        id: 'published-1',
+        slug: 'published-doc',
+        name: 'Published document',
         type: 'opencti_integration',
         integration_type: IntegrationType.CsvFeed,
         short_description: 'Active description',
@@ -175,24 +195,38 @@ describe('ServiceList', () => {
       },
     ] as Partial<DocumentItemFragment>[];
 
+    const inValidation = [
+      {
+        id: 'in-validation-1',
+        slug: 'in-validation-doc',
+        name: 'In validation document',
+        type: 'opencti_integration',
+        short_description: 'In validation description',
+        use_cases: [],
+      },
+    ] as Partial<DocumentItemFragment>[];
+
     testRender(
       <ServiceList
-        active={active}
+        published={published}
         draft={draft}
+        inValidation={inValidation}
         search=""
         onSearchChange={vi.fn()}
         additionalFilters={{}}
       />
     );
 
-    expect(screen.queryByText('Service.Connector.NonActive:')).toBeNull();
+    expect(screen.queryByText('DocumentStatus.Draft:')).toBeNull();
     expect(screen.queryByText('Draft document')).toBeNull();
+    expect(screen.queryByText('DocumentStatus.InValidation:')).toBeNull();
+    expect(screen.queryByText('In validation document')).toBeNull();
   });
 
-  it('should render every active resource in a single list when they have different types', () => {
-    const active = [
+  it('should render every published resource in a single list when they have different types', () => {
+    const published = [
       {
-        id: 'active-1',
+        id: 'published-1',
         slug: 'connector-doc',
         name: 'Connector document',
         type: 'opencti_integration',
@@ -201,7 +235,7 @@ describe('ServiceList', () => {
         use_cases: [],
       },
       {
-        id: 'active-2',
+        id: 'published-2',
         slug: 'dashboard-doc',
         name: 'Dashboard document',
         type: 'opencti_custom_dashboard',
@@ -212,8 +246,9 @@ describe('ServiceList', () => {
 
     testRender(
       <ServiceList
-        active={active}
+        published={published}
         draft={[]}
+        inValidation={[]}
         search=""
         onSearchChange={vi.fn()}
         additionalFilters={{}}
@@ -228,8 +263,9 @@ describe('ServiceList', () => {
   it('forwards display mode changes to local storage setter via header actions', async () => {
     const { user } = testRender(
       <ServiceList
-        active={[]}
+        published={[]}
         draft={[]}
+        inValidation={[]}
         search=""
         onSearchChange={vi.fn()}
         additionalFilters={{}}
@@ -249,8 +285,9 @@ describe('ServiceList', () => {
     // Given
     const { user } = testRender(
       <ServiceList
-        active={[]}
+        published={[]}
         draft={[]}
+        inValidation={[]}
         search=""
         onSearchChange={vi.fn()}
         additionalFilters={{}}

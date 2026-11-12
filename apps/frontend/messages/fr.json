@@ -14,6 +14,11 @@
     "Enabled": "Activé",
     "Published": "Publié"
   },
+  "DocumentStatus": {
+    "Draft": "Brouillon",
+    "InValidation": "En validation",
+    "Published": "Publié"
+  },
   "CapabilityDescription": {
     "Capabilities": {
       "ADMINISTRATE_ORGANIZATION": "Possibilité d'effectuer toutes les actions au sein d'une organisation",
@@ -1428,10 +1433,8 @@
         "Share": "Partager le flux CSV",
         "Updated": "{name} a été modifié"
       },
-      "Active": "Publié",
       "AddService": "Ajouter un flux CSV",
       "DeleteService": "Supprimer le flux CSV {name}",
-      "NonActive": "Brouillon",
       "SureDeleteService": "Êtes-vous sûr de vouloir supprimer le flux CSV {name} ?",
       "UpdateService": "Modifier le flux CSV {name}"
     },
@@ -1442,10 +1445,8 @@
         "Share": "Partager le flux RSS",
         "Updated": "{name} a été modifié"
       },
-      "Active": "Publié",
       "AddService": "Ajouter un flux RSS",
       "DeleteService": "Supprimer le flux RSS {name}",
-      "NonActive": "Brouillon",
       "SureDeleteService": "Êtes-vous sûr de vouloir supprimer le flux RSS {name} ?",
       "UpdateService": "Modifier le flux RSS {name}"
     },
@@ -1456,10 +1457,8 @@
         "Share": "Partager le flux TAXII",
         "Updated": "Le flux TAXII {name} a été modifié avec succès"
       },
-      "Active": "Publié",
       "AddService": "Ajouter un nouveau flux TAXII",
       "DeleteService": "Supprimer le flux TAXII {name}",
-      "NonActive": "Brouillon",
       "SureDeleteService": "Êtes-vous sûr de vouloir supprimer le flux TAXII {name} ?",
       "UpdateService": "Mettre à jour le flux TAXII {name}"
     },
@@ -1470,10 +1469,8 @@
         "Share": "Partager le connecteur",
         "Updated": "Le connecteur {name} a été modifié avec succès"
       },
-      "Active": "Publié",
       "AddService": "Ajouter un nouveau connecteur",
       "DeleteService": "Supprimer le connecteur {name}",
-      "NonActive": "Brouillon",
       "SureDeleteService": "Êtes-vous sûr de vouloir supprimer le connecteur {name} ?",
       "UpdateService": "Mettre à jour le connecteur {name}"
     },
@@ -1484,10 +1481,8 @@
         "Share": "Partager le stream",
         "Updated": "Le stream {name} a été modifié avec succès"
       },
-      "Active": "Publié",
       "AddService": "Ajouter un nouveau stream",
       "DeleteService": "Supprimer le stream {name}",
-      "NonActive": "Brouillon",
       "SureDeleteService": "Êtes-vous sûr de vouloir supprimer le stream {name} ?",
       "UpdateService": "Mettre à jour le stream {name}"
     },
@@ -1498,10 +1493,8 @@
         "Share": "Partager l'intégration tierce",
         "Updated": "L'intégration tierce {name} a été modifiée avec succès"
       },
-      "Active": "Publié",
       "AddService": "Ajouter une nouvelle intégration tierce",
       "DeleteService": "Supprimer l'intégration tierce {name}",
-      "NonActive": "Brouillon",
       "SureDeleteService": "Êtes-vous sûr de vouloir supprimer l'intégration tierce {name} ?",
       "UpdateService": "Mettre à jour l'intégration tierce {name}"
     },
@@ -1512,10 +1505,8 @@
         "Share": "Partager le tableau de bord personnalisé",
         "Updated": "Le tableau de bord personnalisé {name} a été modifié avec succès"
       },
-      "Active": "Publié",
       "AddService": "Ajouter un nouveau tableau de bord",
       "DeleteService": "Supprimer le tableau de bord personnalisé {name}",
-      "NonActive": "Brouillon",
       "SureDeleteService": "Êtes-vous sûr de vouloir supprimer le tableau de bord {name} ?",
       "UpdateService": "Mettre à jour le tableau de bord"
     },
@@ -1535,9 +1526,7 @@
       "AddService": "Ajouter un nouveau scénario",
       "UpdateService": "Mettre à jour le scénario {name}",
       "DeleteService": "Supprimer le scénario {name}",
-      "SureDeleteService": "Êtes-vous sûr de vouloir supprimer le scénario {name} ?",
-      "NonActive": "Brouillon",
-      "Active": "Publié"
+      "SureDeleteService": "Êtes-vous sûr de vouloir supprimer le scénario {name} ?"
     },
     "OpenCTIPlaybook": {
       "Actions": {
@@ -1549,9 +1538,7 @@
       "AddService": "Ajouter un nouveau playbook",
       "UpdateService": "Mettre à jour le playbook {name}",
       "DeleteService": "Supprimer le playbook {name}",
-      "SureDeleteService": "Êtes-vous sûr de vouloir supprimer le playbook {name} ?",
-      "NonActive": "Brouillon",
-      "Active": "Publié"
+      "SureDeleteService": "Êtes-vous sûr de vouloir supprimer le playbook {name} ?"
     },
     "Description": "Description",
     "GoTo": "Aller au service",
@@ -2053,9 +2040,7 @@
       "AddService": "Ajouter une nouvelle vue personnalisée",
       "UpdateService": "Mettre à jour la vue personnalisée {name}",
       "DeleteService": "Supprimer la vue personnalisée {name}",
-      "SureDeleteService": "Êtes-vous sûr de vouloir supprimer la vue personnalisée {name} ?",
-      "NonActive": "Brouillon",
-      "Active": "Publié"
+      "SureDeleteService": "Êtes-vous sûr de vouloir supprimer la vue personnalisée {name} ?"
     },
     "Bundle": {
       "ManageTrial": {
