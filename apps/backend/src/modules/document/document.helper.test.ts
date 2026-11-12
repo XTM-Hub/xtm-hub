@@ -460,6 +460,69 @@ describe('documentHelper', () => {
     );
   });
 
+  describe('buildNotPublishedPayload', () => {
+    const DRAFT_ID = '5a9b1f0e-2d6c-4b8e-9f3a-7c1d2e4f6a8b' as DocumentId;
+    const IN_VALIDATION_ID =
+      '8c2d4e6f-1a3b-4c5d-8e7f-9a0b1c2d3e4f' as DocumentId;
+    const SERVICE_DEFINITION = TestHelper.serviceDefinition.build();
+    const linkOf = (id: DocumentId) =>
+      `${config.get<string>('base_url_front')}/redirect/${SERVICE_DEFINITION.identifier}?document_id=${toGlobalId('Document', id)}`;
+
+    it('should build one resource per document with its own status, type label, link and author', () => {
+      // Given a draft integration and an in validation custom dashboard of the same library
+      const draft = TestHelper.document.build({
+        id: DRAFT_ID,
+        name: 'Draft feed',
+        short_description: 'Draft description',
+        status: DocumentStatus.Draft,
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+      });
+      const inValidation = TestHelper.document.build({
+        id: IN_VALIDATION_ID,
+        name: 'Dashboard in validation',
+        short_description: null,
+        status: DocumentStatus.InValidation,
+        type: OPENCTI_CUSTOM_DASHBOARD_DOCUMENT_TYPE,
+      });
+
+      // When
+      const payload = DocumentHelper.buildNotPublishedPayload({
+        serviceDefinition: SERVICE_DEFINITION,
+        resources: [
+          {
+            document: draft,
+            integrationType: IntegrationType.CsvFeed,
+            authorEmail: 'author@filigran.io',
+          },
+          { document: inValidation, integrationType: null, authorEmail: null },
+        ],
+      });
+
+      // Then
+      expect(payload).toEqual({
+        library: SERVICE_DEFINITION.name,
+        resources: [
+          {
+            name: 'Draft feed',
+            type: 'CSV Feed',
+            status: 'draft',
+            short_description: 'Draft description',
+            link: linkOf(DRAFT_ID),
+            author_email: 'author@filigran.io',
+          },
+          {
+            name: 'Dashboard in validation',
+            type: null,
+            status: 'in_validation',
+            short_description: null,
+            link: linkOf(IN_VALIDATION_ID),
+            author_email: null,
+          },
+        ],
+      });
+    });
+  });
+
   describe('assertMetadataIsNotMissing', () => {
     it('should throw error when metadata mapping is missing', () => {
       expect(() =>

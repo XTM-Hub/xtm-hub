@@ -25,6 +25,9 @@ interface PortalConfig {
     pending_user_digest: boolean;
     public_roadmap_monthly_reminder: boolean;
   };
+  enabled_teams_notifications: {
+    resource_not_published_reminder: boolean;
+  };
   registration: {
     omitted_tenant_silence_hours: number;
   };
@@ -92,6 +95,12 @@ const portalConfig: PortalConfig = {
     public_roadmap_monthly_reminder:
       config.get<boolean>('enabled_emails.public_roadmap_monthly_reminder') ??
       false,
+  },
+  enabled_teams_notifications: {
+    resource_not_published_reminder:
+      config.get<boolean>(
+        'enabled_teams_notifications.resource_not_published_reminder'
+      ) ?? false,
   },
   registration: {
     omitted_tenant_silence_hours:

@@ -133,6 +133,52 @@ describe('users domain', () => {
     });
   });
 
+  describe('loadEmailsByIds', () => {
+    let insertedUsers: User[] = [];
+
+    afterEach(async () => {
+      for (const { id } of insertedUsers) {
+        await UserDomain.deleteUserBy({ id });
+      }
+      insertedUsers = [];
+    });
+
+    it('should return the id and the email of the requested users only', async () => {
+      // Given two requested users and one other user
+      const [first, second, other] = await Promise.all(
+        ['first', 'second', 'other'].map((label) =>
+          TestHelper.user.insert({
+            email: `emails-${label}-${uuidv4()}@filigran.io`,
+          })
+        )
+      );
+      insertedUsers.push(first!, second!, other!);
+
+      // When
+      const result = await UserDomain.loadEmailsByIds([first!.id, second!.id]);
+
+      // Then
+      expect(result).toHaveLength(2);
+      expect(result).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ id: first!.id, email: first!.email }),
+          expect.objectContaining({ id: second!.id, email: second!.email }),
+        ])
+      );
+      expect(Object.keys(result[0]!)).not.toContain('password');
+    });
+
+    it('should return nothing when no id is requested', async () => {
+      // Given no requested id
+
+      // When
+      const result = await UserDomain.loadEmailsByIds([]);
+
+      // Then
+      expect(result).toEqual([]);
+    });
+  });
+
   describe('loadUsersToSyncAccountStatus', () => {
     let insertedUsers: User[] = [];
 

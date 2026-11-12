@@ -58,6 +58,12 @@ export const UserDomain = {
     return db<User[]>('User').whereIn('id', userIds);
   },
 
+  loadEmailsByIds: async (
+    userIds: UserId[]
+  ): Promise<Pick<User, 'id' | 'email'>[]> => {
+    return db<User>('User').whereIn('id', userIds).select('id', 'email');
+  },
+
   insertUser: async (initializer: UserInitializer): Promise<User> => {
     const [insertedUser] = await db<User>('User')
       .insert(initializer)

@@ -203,6 +203,12 @@ const INTEGRATION_TYPE_LABELS: Record<IntegrationType, string> = {
   [IntegrationType.ThirdPartyIntegration]: 'Third party integration',
 };
 
+export interface NotPublishedResourceInput {
+  document: DocumentModel;
+  integrationType: IntegrationType | null;
+  authorEmail: string | null;
+}
+
 const buildResourceItem = ({
   document,
   status,
@@ -260,6 +266,25 @@ export const DocumentHelper = {
       integrationType,
       authorEmail,
     }),
+  }),
+
+  buildNotPublishedPayload: ({
+    serviceDefinition,
+    resources,
+  }: {
+    serviceDefinition: Pick<ServiceDefinition, 'name' | 'identifier'>;
+    resources: NotPublishedResourceInput[];
+  }): TeamsNotificationPayloadMap['resource_not_published'] => ({
+    library: serviceDefinition.name,
+    resources: resources.map(({ document, integrationType, authorEmail }) =>
+      buildResourceItem({
+        document,
+        status: document.status,
+        serviceDefinition,
+        integrationType,
+        authorEmail,
+      })
+    ),
   }),
 
   buildCompleteMetadataFromDocumentFile: ({
