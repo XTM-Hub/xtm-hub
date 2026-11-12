@@ -23,3 +23,63 @@ mutation UserAdminResendInvite($input: AdminAddUserInput!) {
     id
   }
 }
+
+mutation PendingUserAccept(
+  $user_id: UserId!
+  $organization_id: OrganizationId!
+) {
+  acceptPendingUserInOrganization(
+    user_id: $user_id
+    organization_id: $organization_id
+  ) {
+    id
+  }
+}
+
+mutation PendingUserRemove(
+  $user_id: UserId!
+  $organization_id: OrganizationId!
+) {
+  removePendingUserFromOrganization(
+    user_id: $user_id
+    organization_id: $organization_id
+  ) {
+    id
+  }
+}
+
+mutation PendingUsersBulkAccept(
+  $ids: [UserId!]
+  $searchTerm: String
+  $filters: [Filter!]
+  $excludedIds: [UserId!]
+) {
+  bulkAcceptPendingUserInOrganization(
+    input: {
+      ids: $ids
+      searchTerm: $searchTerm
+      filters: $filters
+      excludedIds: $excludedIds
+    }
+  ) {
+    success
+  }
+}
+
+mutation PendingUsersBulkRemove(
+  $ids: [UserId!]
+  $searchTerm: String
+  $filters: [Filter!]
+  $excludedIds: [UserId!]
+) {
+  bulkRemovePendingUserFromOrganization(
+    input: {
+      ids: $ids
+      searchTerm: $searchTerm
+      filters: $filters
+      excludedIds: $excludedIds
+    }
+  ) {
+    success
+  }
+}
