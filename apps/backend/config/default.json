@@ -90,6 +90,7 @@
     "password": null,
     "index_prefix": "",
     "engine_client": "auto",
+    "request_timeout": 600000,
     "tls": {
       "ca_path": null,
       "reject_unauthorized": true

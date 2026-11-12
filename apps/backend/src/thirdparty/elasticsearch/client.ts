@@ -30,8 +30,14 @@ const readCa = () => {
 const createClient = (engineClient: EngineClient): Client => {
   // Only the options both client majors share: their full ClientOptions types
   // come from two incompatible transports
-  const config: Pick<ClientOptions, 'node' | 'auth' | 'tls'> = {
+  const config: Pick<
+    ClientOptions,
+    'node' | 'auth' | 'tls' | 'requestTimeout'
+  > = {
     node: endpoint(),
+    // The 9.x client has no default: without it a stalled engine would
+    // hang every call
+    requestTimeout: portalConfig.elasticsearch.request_timeout,
   };
 
   if (

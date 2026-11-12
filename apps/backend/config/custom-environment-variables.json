@@ -41,6 +41,7 @@
     "password": "ELASTIC_PASSWORD",
     "index_prefix": "ELASTIC_INDEX_PREFIX",
     "engine_client": "ELASTIC_ENGINE_CLIENT",
+    "request_timeout": "ELASTIC_REQUEST_TIMEOUT",
     "tls": {
       "ca_path": "ELASTIC__TLS__CA_PATH",
       "reject_unauthorized": {

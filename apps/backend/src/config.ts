@@ -6,6 +6,7 @@ import {
   parseAndValidateDevUsers,
   parseEsEngineClient,
   parseEsIndexPrefix,
+  parseEsRequestTimeout,
   resolveTrustProxy,
 } from './utils/config-validation.util';
 
@@ -47,6 +48,7 @@ interface PortalConfig {
     password: string | null;
     index_prefix: string;
     engine_client: EngineClientSetting;
+    request_timeout: number;
     tls: {
       ca_path: string | null;
       reject_unauthorized: boolean;
@@ -121,6 +123,9 @@ const portalConfig: PortalConfig = {
     ),
     engine_client: parseEsEngineClient(
       config.get<unknown>('elasticsearch.engine_client')
+    ),
+    request_timeout: parseEsRequestTimeout(
+      config.get<unknown>('elasticsearch.request_timeout')
     ),
     tls: {
       ca_path: config.get<string | null>('elasticsearch.tls.ca_path'),

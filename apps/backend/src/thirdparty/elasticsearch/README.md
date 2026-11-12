@@ -21,6 +21,9 @@ startup, before the migrations, from `elasticsearch.engine_client` (`ELASTIC_ENG
 
 OpenSearch is not supported: the backend refuses to start on it. Any detection failure stops the startup too.
 
+Both clients get the request timeout of `elasticsearch.request_timeout` (`ELASTIC_REQUEST_TIMEOUT`, in milliseconds,
+10 minutes by default): the 9.x client has no default and would otherwise wait forever on a stalled server.
+
 ## Elasticsearch tests
 
 `*.es.test.ts` files run against a real Elasticsearch and are skipped everywhere else. Run them with

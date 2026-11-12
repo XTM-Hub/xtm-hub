@@ -18,10 +18,10 @@ interface SeenRequest {
 }
 
 // A fake Elasticsearch on a free local port: it answers GET / with the given
-// version and any other call with a body fitting count and search, and
-// records what it receives.
+// version and any other call with a body fitting count and search (or never,
+// when stalled), and records what it receives.
 // The Elastic clients only talk to a server announcing the Elasticsearch product.
-const startEngine = async (version: string) => {
+const startEngine = async (version: string, stalled = false) => {
   const seen: SeenRequest[] = [];
   const server = http.createServer((request, response) => {
     seen.push({
@@ -30,6 +30,9 @@ const startEngine = async (version: string) => {
       accept: request.headers.accept,
       authorization: request.headers.authorization,
     });
+    if (stalled && request.url !== '/') {
+      return;
+    }
     response.setHeader('content-type', 'application/json');
     response.setHeader('x-elastic-product', 'Elasticsearch');
     const body =
@@ -54,6 +57,7 @@ const ENGINE_USERNAME = 'elastic';
 const ENGINE_PASSWORD = 'changeme';
 
 const DOCUMENT = { name: 'first' };
+const SHORT_REQUEST_TIMEOUT_MS = 200;
 
 // One call per method of the service, each reaching the engine once
 const SERVICE_CALLS: [
@@ -105,9 +109,10 @@ describe('elasticSearchService engine client', () => {
 
   const useEngine = async (
     version: string,
-    engineClient: EngineClientSetting
+    engineClient: EngineClientSetting,
+    stalled = false
   ) => {
-    engine = await startEngine(version);
+    engine = await startEngine(version, stalled);
     portalConfig.elasticsearch.protocol = 'http';
     portalConfig.elasticsearch.host = '127.0.0.1';
     portalConfig.elasticsearch.port = engine.port;
@@ -126,6 +131,7 @@ describe('elasticSearchService engine client', () => {
     globalThis.xtmHubEngineClient = undefined;
     const server = engine?.server;
     if (server) {
+      server.closeAllConnections();
       await new Promise((resolve) => server.close(resolve));
     }
     engine = undefined;
@@ -242,6 +248,23 @@ describe('elasticSearchService engine client', () => {
       expect(seen.map((request) => request.accept)).toEqual([
         expect.stringContaining('compatible-with=9'),
       ]);
+    }
+  );
+
+  it.each(['elasticsearch8' as const, 'elasticsearch9' as const])(
+    'should give up on a call after the configured request timeout with the %s client',
+    async (engineClient) => {
+      // Given: an engine that never answers
+      await useEngine(ES9_VERSION, engineClient, true);
+      portalConfig.elasticsearch.request_timeout = SHORT_REQUEST_TIMEOUT_MS;
+      const service = new ElasticSearchService();
+      await service.init();
+
+      // When
+      const count = service.count({ index: TEST_INDEX });
+
+      // Then
+      await expect(count).rejects.toMatchObject({ name: 'TimeoutError' });
     }
   );
 

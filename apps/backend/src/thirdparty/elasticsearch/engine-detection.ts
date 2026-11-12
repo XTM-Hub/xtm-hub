@@ -25,7 +25,7 @@ const SUPPORTED_MAJORS = new Map<number, EngineClient>([
   [9, 'elasticsearch9'],
 ]);
 
-// Same as the default request timeout of the Elastic clients
+// How long the version probe at startup waits for the engine
 export const ENGINE_PROBE_TIMEOUT_MS = 30_000;
 
 export interface EngineInfo {
