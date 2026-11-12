@@ -102,17 +102,6 @@ vi.mock('@/components/ui/snackbar/snackbar-store', () => ({
   showSnackbar: mocks.showSnackbar,
 }));
 
-vi.mock('react-relay', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('react-relay')>();
-  return {
-    ...actual,
-    graphql: (
-      strings: TemplateStringsArray,
-      ..._values: ReadonlyArray<unknown>
-    ) => strings.join(''),
-  };
-});
-
 vi.mock('@graphql/generated', async (importOriginal) => {
   const { mockGeneratedQueryHooks } =
     await import('@/utils/test/mock-generated-query');

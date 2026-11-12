@@ -1,19 +1,20 @@
 import { RemoveUserFromOrga } from '@/components/admin/user/RemoveUserFromOrga';
 import { UsersListUser } from '@/components/admin/user/user-list.types';
+import * as SnackbarStore from '@/components/ui/snackbar/snackbar-store';
+import { mockMutationHook } from '@/utils/test/mock-mutation-hook';
+import {
+  mockTranslations,
+  translateWithValues,
+} from '@/utils/test/mock-translations';
 import testRender from '@/utils/test/test-render';
-import { act, screen } from '@testing-library/react';
-import type { ReactNode } from 'react';
+import { screen, waitFor, within } from '@testing-library/react';
+import { useTranslations } from 'next-intl';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-type MutationConfig = {
-  variables: Record<string, unknown>;
-  onCompleted: () => void;
-  onError: (error: Error) => void;
-};
 
 // The organization selected by the user testRender provides.
 const SELECTED_ORGANIZATION_ID = 'org-test-456';
-const CONFIRM_REMOVAL = 'confirm-MenuActions.Remove';
+const REMOVE_LABEL = 'MenuActions.Remove';
+const SERVER_ERROR_CODE = 'UNKNOWN_ERROR';
 
 const MEMBER: UsersListUser = {
   id: 'member-id',
@@ -29,13 +30,14 @@ const MEMBER: UsersListUser = {
 };
 
 const mocks = vi.hoisted(() => ({
-  commit: vi.fn(),
+  useUserOrganizationRemoveMutation: vi.fn(),
   refreshUsersList: vi.fn(),
+  setOpenSheet: vi.fn(),
 }));
 
-vi.mock('react-relay', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('react-relay')>()),
-  useMutation: () => [mocks.commit, false],
+vi.mock('@graphql/generated', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@graphql/generated')>()),
+  useUserOrganizationRemoveMutation: mocks.useUserOrganizationRemoveMutation,
 }));
 
 vi.mock('@/components/admin/user/use-refresh-users-list', () => ({
@@ -43,64 +45,125 @@ vi.mock('@/components/admin/user/use-refresh-users-list', () => ({
 }));
 
 vi.mock('@/components/ui/SheetWithPreventingDialog', () => ({
-  useDialogContext: () => ({ setOpenSheet: vi.fn() }),
+  useDialogContext: () => ({ setOpenSheet: mocks.setOpenSheet }),
 }));
-
-vi.mock('@/components/ui/ConfirmDialog', () => ({
-  ConfirmDialog: ({
-    confirmLabel,
-    onConfirm,
-  }: {
-    confirmLabel: string;
-    onConfirm: () => void;
-    children: ReactNode;
-  }) => <button onClick={onConfirm}>{`confirm-${confirmLabel}`}</button>,
-}));
-
-const lastMutationConfig = () =>
-  mocks.commit.mock.lastCall?.[0] as MutationConfig;
 
 const confirmRemoval = async () => {
-  const { user } = testRender(<RemoveUserFromOrga user={MEMBER} />);
-  await user.click(screen.getByRole('button', { name: CONFIRM_REMOVAL }));
+  const rendered = testRender(<RemoveUserFromOrga user={MEMBER} />);
+  await rendered.user.click(screen.getByRole('button', { name: REMOVE_LABEL }));
+  await rendered.user.click(
+    within(screen.getByRole('alertdialog')).getByRole('button', {
+      name: REMOVE_LABEL,
+    })
+  );
+  return rendered;
 };
 
 describe('RemoveUserFromOrga', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.spyOn(SnackbarStore, 'showSnackbar').mockImplementation(() => undefined);
+    vi.mocked(useTranslations).mockReturnValue(
+      mockTranslations({ translate: translateWithValues })
+    );
   });
 
-  it('should remove the member from the selected organization without any Relay connection to update', async () => {
+  it('should remove the member from the selected organization', async () => {
+    // Given
+    const mutate = mockMutationHook(
+      mocks.useUserOrganizationRemoveMutation,
+      'success'
+    );
+
     // When
     await confirmRemoval();
 
     // Then
-    expect(lastMutationConfig().variables).toEqual({
+    expect(mutate).toHaveBeenCalledExactlyOnceWith({
       user_id: MEMBER.id,
       organization_id: SELECTED_ORGANIZATION_ID,
-      connections: [],
     });
   });
 
   it('should reload the users list when the member is removed', async () => {
     // Given
-    await confirmRemoval();
+    mockMutationHook(mocks.useUserOrganizationRemoveMutation, 'success');
 
     // When
-    act(() => lastMutationConfig().onCompleted());
+    await confirmRemoval();
 
     // Then
-    expect(mocks.refreshUsersList).toHaveBeenCalledOnce();
+    await waitFor(() => expect(mocks.refreshUsersList).toHaveBeenCalledOnce());
+  });
+
+  it('should confirm the removal with the email of the member and close the sheet when the member is removed', async () => {
+    // Given
+    mockMutationHook(mocks.useUserOrganizationRemoveMutation, 'success');
+
+    // When
+    await confirmRemoval();
+
+    // Then
+    await waitFor(() =>
+      expect(SnackbarStore.showSnackbar).toHaveBeenCalledExactlyOnceWith({
+        severity: 'success',
+        title: 'Utils.Success',
+        description: translateWithValues('UserActions.UserRemoved', {
+          email: MEMBER.email,
+        }),
+      })
+    );
+    expect(mocks.setOpenSheet).toHaveBeenCalledExactlyOnceWith(false);
   });
 
   it('should leave the users list as is when the removal fails', async () => {
     // Given
-    await confirmRemoval();
+    mockMutationHook(mocks.useUserOrganizationRemoveMutation, 'error', {
+      error: new Error(SERVER_ERROR_CODE),
+    });
 
     // When
-    act(() => lastMutationConfig().onError(new Error('UNKNOWN_ERROR')));
+    await confirmRemoval();
 
     // Then
+    await waitFor(() => expect(SnackbarStore.showSnackbar).toHaveBeenCalled());
     expect(mocks.refreshUsersList).not.toHaveBeenCalled();
+  });
+
+  it('should show the server error and keep the sheet open when the removal fails', async () => {
+    // Given
+    mockMutationHook(mocks.useUserOrganizationRemoveMutation, 'error', {
+      error: new Error(SERVER_ERROR_CODE),
+    });
+
+    // When
+    await confirmRemoval();
+
+    // Then
+    await waitFor(() =>
+      expect(SnackbarStore.showSnackbar).toHaveBeenCalledExactlyOnceWith({
+        severity: 'error',
+        title: 'Utils.Error',
+        description: `Error.Server.${SERVER_ERROR_CODE}`,
+      })
+    );
+    expect(mocks.setOpenSheet).not.toHaveBeenCalled();
+  });
+
+  it('should give the outcome callbacks to the mutation hook', () => {
+    // Given
+    mockMutationHook(mocks.useUserOrganizationRemoveMutation, 'success');
+
+    // When
+    testRender(<RemoveUserFromOrga user={MEMBER} />);
+
+    // Then
+    expect(mocks.useUserOrganizationRemoveMutation).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        onSuccess: expect.any(Function),
+        onError: expect.any(Function),
+      })
+    );
   });
 });

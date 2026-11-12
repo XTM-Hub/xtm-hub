@@ -1,14 +1,17 @@
 import { AdminUserUpdateForm } from '@/components/admin/user/forms/admin/AdminUserUpdateForm';
 import { UsersListUser } from '@/components/admin/user/user-list.types';
+import { mockMutationHook } from '@/utils/test/mock-mutation-hook';
 import testRender from '@/utils/test/test-render';
 import { screen, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 
-const updateUserMutationMock = vi.hoisted(() => vi.fn());
+const mocks = vi.hoisted(() => ({
+  useUserAdminEditMutation: vi.fn(),
+}));
 
-vi.mock('react-relay', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('react-relay')>()),
-  useMutation: () => [updateUserMutationMock, {}],
+vi.mock('@graphql/generated', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@graphql/generated')>()),
+  useUserAdminEditMutation: mocks.useUserAdminEditMutation,
 }));
 
 vi.mock('@/components/ui/SheetWithPreventingDialog', () => ({
@@ -88,15 +91,20 @@ const submit = async (user: ReturnType<typeof renderForm>['user']) => {
   });
   await waitFor(() => expect(validateButton).toBeEnabled());
   await user.click(validateButton);
-  await waitFor(() => expect(updateUserMutationMock).toHaveBeenCalledTimes(1));
+  await waitFor(() => expect(updateUserMutation).toHaveBeenCalledTimes(1));
 };
 
-const getSubmittedVariables = () =>
-  updateUserMutationMock.mock.calls[0][0].variables;
+// The spy of the edit mutation, called with the variables the form sends.
+let updateUserMutation: Mock;
+
+const getSubmittedVariables = () => updateUserMutation.mock.calls[0][0];
 
 describe('AdminUserUpdateForm', () => {
   beforeEach(() => {
-    updateUserMutationMock.mockReset();
+    updateUserMutation = mockMutationHook(
+      mocks.useUserAdminEditMutation,
+      'success'
+    );
   });
 
   it.each`
@@ -141,11 +149,13 @@ describe('AdminUserUpdateForm', () => {
         last_name: 'Doe',
         password: NEW_PASSWORD,
         organization_capabilities: EXPECTED_ORGANIZATION_CAPABILITIES,
+        disabled: null,
+        email: null,
       },
     });
   });
 
-  it('should not send any password when the field is left empty', async () => {
+  it('should leave the current password unchanged when the field is left empty', async () => {
     // Given
     const { user } = renderForm();
 
@@ -155,13 +165,14 @@ describe('AdminUserUpdateForm', () => {
     await user.type(firstNameInput, NEW_FIRST_NAME);
     await submit(user);
 
-    // Then
-    const { input } = getSubmittedVariables();
-    expect(input).not.toHaveProperty('password');
-    expect(input).toEqual({
+    // Then the API keeps the current password when it is null
+    expect(getSubmittedVariables().input).toEqual({
       first_name: NEW_FIRST_NAME,
       last_name: 'Doe',
+      password: null,
       organization_capabilities: EXPECTED_ORGANIZATION_CAPABILITIES,
+      disabled: null,
+      email: null,
     });
   });
 });
