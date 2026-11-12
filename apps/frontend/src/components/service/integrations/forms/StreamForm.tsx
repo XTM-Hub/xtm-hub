@@ -6,10 +6,8 @@ import {
 } from '@/components/service/form/UseDocumentFileField';
 import { useServiceFormFields } from '@/components/service/form/UseServiceFormFields';
 import { AutoForm } from '@/components/ui/auto-form';
-import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import {
   fileListCheck,
-  isDocumentPublished,
   optionalFileListCheck,
   transformToFileList,
 } from '@/utils/documents';
@@ -17,6 +15,7 @@ import { isIntegrationItem } from '@/utils/shareable-resources/shareable-resourc
 import {
   DocumentImageType,
   DocumentItemFragment,
+  DocumentStatus,
   IntegrationType,
 } from '@graphql/generated';
 import { useContext, useMemo } from 'react';
@@ -26,6 +25,7 @@ import { z } from 'zod';
 const streamFormSchema = z.object({
   name: z.string().min(1, 'Required'),
   slug: z.string().min(1, 'Required'),
+  status: z.enum(DocumentStatus).optional(),
   uploader_id: z.string().optional(),
   short_description: z.string().min(1, 'Required').max(250),
   description: z.string().min(1, 'Required'),
@@ -34,7 +34,6 @@ const streamFormSchema = z.object({
   use_cases: z.array(z.string()).min(1, 'Required'),
   solution_categories: z.array(z.string()).min(1, 'Required'),
   license_type: z.enum(['Free', 'Commercial']).optional(),
-  active: z.boolean().optional(),
   datasheet_url: z.url().or(z.literal('')).nullish(),
   blogpost_url: z.url().or(z.literal('')).nullish(),
   demo_url: z.url().or(z.literal('')).nullish(),
@@ -51,7 +50,6 @@ interface StreamFormProps {
 
 export const StreamForm = ({ handleSubmit, document }: StreamFormProps) => {
   const { me } = useContext(PortalContext);
-  const { handleCloseSheet } = useDialogContext();
 
   const isCreation = !document;
 
@@ -78,7 +76,6 @@ export const StreamForm = ({ handleSubmit, document }: StreamFormProps) => {
     () =>
       ({
         ...document,
-        active: document ? isDocumentPublished(document.status) : undefined,
         images: transformToFileList(DocumentImageType.Image, document),
         logo: transformToFileList(DocumentImageType.Logo, document),
         use_cases: document?.use_cases?.map((label) => label.id),
@@ -107,7 +104,6 @@ export const StreamForm = ({ handleSubmit, document }: StreamFormProps) => {
   );
 
   const {
-    active,
     slug,
     name,
     short_description,
@@ -125,6 +121,7 @@ export const StreamForm = ({ handleSubmit, document }: StreamFormProps) => {
     images,
     imagesToDelete,
     logo,
+    status,
   } = useServiceFormFields({
     documentType: 'Stream',
     platform: 'OpenCTI',
@@ -165,7 +162,7 @@ export const StreamForm = ({ handleSubmit, document }: StreamFormProps) => {
           document: documentField,
           logo,
           images: imagesField,
-          active,
+          status,
           short_description,
           slug,
           name,
@@ -174,7 +171,7 @@ export const StreamForm = ({ handleSubmit, document }: StreamFormProps) => {
           blogpost_url,
           demo_url,
         }}>
-        <ServiceFormSheetFooter handleCloseSheet={handleCloseSheet} />
+        <ServiceFormSheetFooter status={document?.status} />
       </AutoForm>
     </>
   );

@@ -22,6 +22,7 @@ import {
   NEW_SLUG,
   PRODUCT_VERSION_LABEL,
   renderServiceForm,
+  REQUEST_VALIDATION_LABEL,
   ServiceFormResource,
   ServiceFormUser,
   SOLUTION_CATEGORY,
@@ -33,7 +34,11 @@ import {
   ThirdPartyIntegrationForm,
   ThirdPartyIntegrationFormValues,
 } from '@/components/service/integrations/forms/ThirdPartyIntegrationForm';
-import { IntegrationType, LicenseType } from '@graphql/generated';
+import {
+  DocumentStatus,
+  IntegrationType,
+  LicenseType,
+} from '@graphql/generated';
 import { screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -91,7 +96,9 @@ describe('ThirdPartyIntegrationForm', () => {
     );
 
     // When
-    await user.click(screen.getByRole('button', { name: VALIDATE_LABEL }));
+    await user.click(
+      screen.getByRole('button', { name: REQUEST_VALIDATION_LABEL })
+    );
 
     // Then
     await waitFor(() =>
@@ -106,6 +113,7 @@ describe('ThirdPartyIntegrationForm', () => {
         use_cases: [USE_CASE.id],
         solution_categories: [SOLUTION_CATEGORY.id],
         vendor_url: NEW_VENDOR_URL,
+        status: DocumentStatus.InValidation,
         logo: [],
         images: [image],
       } satisfies ExpectedValues)
@@ -118,7 +126,9 @@ describe('ThirdPartyIntegrationForm', () => {
     await fillThirdPartyCreationFields(user);
 
     // When
-    await user.click(screen.getByRole('button', { name: VALIDATE_LABEL }));
+    await user.click(
+      screen.getByRole('button', { name: REQUEST_VALIDATION_LABEL })
+    );
 
     // Then
     await waitFor(() =>
@@ -155,7 +165,7 @@ describe('ThirdPartyIntegrationForm', () => {
         vendor_url: VENDOR_URL,
         github_url: GITHUB_URL,
         product_version: DOCUMENT_PRODUCT_VERSION,
-        active: true,
+        status: DocumentStatus.Published,
         logo: [],
         images: [DELETED_IMAGE, KEPT_IMAGE],
       } satisfies ExpectedValues)

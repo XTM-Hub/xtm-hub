@@ -5,7 +5,7 @@ import { useServiceFormFields } from './UseServiceFormFields';
 
 vi.mock('../../ui/SheetWithPreventingDialog', () => ({
   useDialogContext: () => ({
-    setIsDirty: vi.fn(),
+    setUploadsDirty: vi.fn(),
   }),
 }));
 

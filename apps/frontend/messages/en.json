@@ -1347,7 +1347,6 @@
       "PlaybookSupportedLabel": "Playbook supported",
       "ProductVersionLabel": "{platform} compatibility version",
       "ProductVersionPlaceholder": "1.0.0",
-      "PublishedPlaceholder": "Is the {documentType} published?",
       "LicenseTypeLabel": "License type",
       "Restore": "Restore",
       "SelectImage": "Select image(s)",
@@ -1368,7 +1367,11 @@
       "VendorUrlLabel": "Vendor link (url)",
       "VerifiedLabel": "Verified",
       "EntityTypesLabel": "Entity types",
-      "EntityTypesPlaceholder": "Add entity types"
+      "EntityTypesPlaceholder": "Add entity types",
+      "SaveAsDraft": "Save as draft",
+      "RequestValidation": "Request validation",
+      "Save": "Save",
+      "Publish": "Publish"
     },
     "OpenctiIntegrations": {
       "Actions": {

@@ -1347,7 +1347,6 @@
       "PlaybookSupportedLabel": "対応プレイブック",
       "ProductVersionLabel": "{platform} 互換バージョン",
       "ProductVersionPlaceholder": "1.0.0",
-      "PublishedPlaceholder": "{documentType} は公開されていますか？",
       "LicenseTypeLabel": "ライセンスの種類",
       "Restore": "リストア",
       "SelectImage": "画像を選択",
@@ -1368,7 +1367,11 @@
       "VendorUrlLabel": "ベンダーリンク (url)",
       "VerifiedLabel": "検証済み",
       "EntityTypesLabel": "エンティティタイプ",
-      "EntityTypesPlaceholder": "エンティティタイプを追加"
+      "EntityTypesPlaceholder": "エンティティタイプを追加",
+      "SaveAsDraft": "ドラフトとして保存",
+      "RequestValidation": "検証をリクエスト",
+      "Save": "保存",
+      "Publish": "公開"
     },
     "OpenctiIntegrations": {
       "Actions": {

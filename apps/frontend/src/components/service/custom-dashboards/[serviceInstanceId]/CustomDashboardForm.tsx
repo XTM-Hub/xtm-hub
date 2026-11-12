@@ -6,14 +6,16 @@ import {
 } from '@/components/service/form/UseDocumentFileField';
 import { useServiceFormFields } from '@/components/service/form/UseServiceFormFields';
 import { AutoForm } from '@/components/ui/auto-form';
-import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import {
   fileListCheck,
-  isDocumentPublished,
   optionalFileListCheck,
   transformToFileList,
 } from '@/utils/documents';
-import { DocumentImageType, DocumentItemFragment } from '@graphql/generated';
+import {
+  DocumentImageType,
+  DocumentItemFragment,
+  DocumentStatus,
+} from '@graphql/generated';
 import { useContext, useMemo } from 'react';
 import slugify from 'slugify';
 import { z } from 'zod';
@@ -21,6 +23,7 @@ import { z } from 'zod';
 const customDashboardSchema = z.object({
   name: z.string().min(1, 'Required'),
   slug: z.string().min(1, 'Required'),
+  status: z.enum(DocumentStatus).optional(),
   uploader_id: z.string().optional(),
   short_description: z.string().max(255).min(1, 'Required'),
   description: z.string().min(1, 'Required'),
@@ -29,7 +32,6 @@ const customDashboardSchema = z.object({
   }),
   uploader_organization_id: z.string().min(1, 'Required'),
   use_cases: z.array(z.string()).min(1, 'Required'),
-  active: z.boolean().optional(),
   document: z.custom<FileList>(fileListCheck),
   logo: z.custom<FileList>(optionalFileListCheck).optional(),
   images: z.custom<FileList>(optionalFileListCheck),
@@ -46,8 +48,6 @@ export const CustomDashboardForm = ({
   document,
   handleSubmit,
 }: CustomDashboardFormProps) => {
-  const { handleCloseSheet } = useDialogContext();
-
   const { me } = useContext(PortalContext);
 
   const isCreation = !document;
@@ -71,7 +71,6 @@ export const CustomDashboardForm = ({
     () =>
       ({
         ...document,
-        active: document ? isDocumentPublished(document.status) : undefined,
         images: transformToFileList(DocumentImageType.Image, document),
         logo: transformToFileList(DocumentImageType.Logo, document),
         use_cases: document?.use_cases?.map((useCase) => useCase.id),
@@ -95,7 +94,6 @@ export const CustomDashboardForm = ({
   );
 
   const {
-    active,
     name,
     short_description,
     slug,
@@ -108,6 +106,7 @@ export const CustomDashboardForm = ({
     images,
     imagesToDelete,
     logo,
+    status,
   } = useServiceFormFields({
     documentType: 'Custom Dashboard',
     platform: 'OpenCTI',
@@ -142,13 +141,13 @@ export const CustomDashboardForm = ({
         document: documentField,
         logo,
         images: imagesField,
-        active,
+        status,
         short_description,
         slug,
         name,
         product_version,
       }}>
-      <ServiceFormSheetFooter handleCloseSheet={handleCloseSheet} />
+      <ServiceFormSheetFooter status={document?.status} />
     </AutoForm>
   );
 };
