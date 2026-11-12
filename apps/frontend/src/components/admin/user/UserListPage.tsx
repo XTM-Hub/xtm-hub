@@ -1,11 +1,8 @@
 import PendingUserList from '@/components/admin/user/pending-user/PendingUserList';
-import {
-  UserPendingListFragment,
-  UserPendingListQuery,
-} from '@/components/admin/user/user.graphql';
 import UserList from '@/components/admin/user/UserList';
+import Loader from '@/components/Loader';
 import { PortalContext } from '@/components/me/AppPortalContext';
-import { notificationPendingUserQueryFilters } from '@/components/notification/NotificationButton';
+import { useNotificationPendingUsers } from '@/components/notification/use-notification-pending-users';
 import useAdminPath from '@/hooks/use-admin-path';
 import { useTranslate } from '@/hooks/use-translate';
 import { analyticsId } from '@/lib/analytics/analytics.ids';
@@ -15,11 +12,8 @@ import {
   TabsList,
   TabsTrigger,
 } from '@filigran/design-system';
-import { userPendingList_users$key } from '@generated/userPendingList_users.graphql';
-import { userPendingListQuery } from '@generated/userPendingListQuery.graphql';
 import { useSearchParams } from 'next/navigation';
 import { createContext, useContext, useState } from 'react';
-import { useLazyLoadQuery, useRefetchableFragment } from 'react-relay';
 
 interface UserListPageProps {
   organization?: string;
@@ -58,17 +52,18 @@ const UserListPage = ({ organization }: UserListPageProps) => {
       ? 'pendingUsers'
       : 'users';
 
-  const queryData = useLazyLoadQuery<userPendingListQuery>(
-    UserPendingListQuery,
-    notificationPendingUserQueryFilters(me!.selected_organization_id)
-  );
+  // Shared with the bell. The admin path shows no pending users tab.
+  const { data } = useNotificationPendingUsers(me!.selected_organization_id, {
+    enabled: !isAdminPath,
+  });
 
-  const [data] = useRefetchableFragment<
-    userPendingListQuery,
-    userPendingList_users$key
-  >(UserPendingListFragment, queryData);
+  // The page waits for the pending users count, as it did when the Relay
+  // query suspended it.
+  if (!isAdminPath && !data) {
+    return <Loader />;
+  }
 
-  const nbPendingUsers = data.pendingUsers.totalCount;
+  const nbPendingUsers = data?.pendingUsers.totalCount ?? 0;
 
   return (
     <UserListContext.Provider value={{ connectionID, setConnectionId }}>
