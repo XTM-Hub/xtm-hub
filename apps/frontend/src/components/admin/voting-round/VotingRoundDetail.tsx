@@ -140,6 +140,7 @@ export const VotingRoundDetail = ({ roundId }: { roundId: string }) => {
               }
             />
           }
+          getRowAnalyticsId={() => 'admin_votable_feature_edit'}
           onClickRow={({ original }) =>
             setFeatureToEdit({
               id: original.id,

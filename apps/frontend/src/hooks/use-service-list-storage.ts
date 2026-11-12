@@ -9,6 +9,7 @@ import {
   ServiceListStorageKey,
   ServiceListStorageName,
 } from '@/utils/filters-storage.utils';
+import { type SortableDocumentOrdering } from '@/utils/shareable-resources/shareable-resources.consts';
 import { DocumentOrdering, OrderingMode } from '@graphql/generated';
 import { useCallback } from 'react';
 import { useLocalStorage, useSessionStorage } from 'usehooks-ts';
@@ -122,7 +123,10 @@ export const useServiceListStorage = (serviceName: ServiceListStorageKey) => {
       : DocumentOrdering.CreatedAt;
 
   const [orderBy, setOrderBy, removeOrderBy] =
-    useLocalStorage<DocumentOrdering>(buildKey('orderBy'), defaultOrderBy);
+    useLocalStorage<SortableDocumentOrdering>(
+      buildKey('orderBy'),
+      defaultOrderBy
+    );
 
   const [orderMode, setOrderMode, removeOrderMode] =
     useLocalStorage<OrderingMode>(buildKey('orderMode'), OrderingMode.Asc);

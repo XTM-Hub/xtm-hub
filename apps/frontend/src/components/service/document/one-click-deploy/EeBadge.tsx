@@ -1,4 +1,5 @@
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { cn } from '@/lib/utils';
 import {
   Tooltip,
@@ -61,6 +62,7 @@ const EeBadge = ({ onClick }: EeBadgeProps) => {
         <TooltipTrigger asChild>
           <button
             type="button"
+            {...analyticsId('ee_panel_open')}
             onClick={onClick}
             className={cn('group cursor-pointer rounded-xs p-px', EE_GRADIENT)}>
             <EeBadgeVisual interactive={true} />

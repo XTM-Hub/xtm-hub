@@ -1,8 +1,12 @@
+import { ServiceListFilterKey } from '@/components/service/components/header/ServiceListHeader';
 import { AppCombobox } from '@/components/ui/AppCombobox';
 import { useRegisteredProductVersions } from '@/hooks/use-registered-product-versions';
 import { useServiceListStorage } from '@/hooks/use-service-list-storage';
 import { useTranslate } from '@/hooks/use-translate';
+import { trackEvent } from '@/lib/analytics/analytics.client';
+import { buildFilterApplyEvents } from '@/utils/analytics/filter-analytics.utils';
 import { ServiceListStorageKey } from '@/utils/filters-storage.utils';
+import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 import {
   Tooltip,
   TooltipContent,
@@ -65,7 +69,16 @@ export const IntegrationProductVersionFilter = ({
 
   const handleValueChange = (option: ProductVersionOption | undefined) => {
     setSearch('');
-    setProductVersions(option ? { [option.value]: [] } : {});
+    const nextProductVersions = option ? { [option.value]: [] } : {};
+    buildFilterApplyEvents(
+      {
+        filterKey: ServiceListFilterKey.ProductVersion,
+        resourceType: ShareableResourceType.OPENCTI_INTEGRATION,
+      },
+      productVersions,
+      nextProductVersions
+    ).forEach((event) => trackEvent('filter_apply', event));
+    setProductVersions(nextProductVersions);
   };
 
   const renderItemAdornment = (option: ProductVersionOption) => {
@@ -100,6 +113,7 @@ export const IntegrationProductVersionFilter = ({
 
   return (
     <AppCombobox<ProductVersionOption>
+      analyticsId="resource_product_versions_open"
       label={label}
       labelPosition="none"
       placeholder={placeholder}

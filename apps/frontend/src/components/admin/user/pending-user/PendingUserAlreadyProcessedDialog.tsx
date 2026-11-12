@@ -14,6 +14,7 @@ export const PendingUserAlreadyProcessedDialog = ({
 
   return (
     <ConfirmDialog
+      confirmAnalyticsId="organization_join_request_notice_close"
       open={isOpen}
       onOpenChange={onOpenChange}
       hideCancelButton

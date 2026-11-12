@@ -6,12 +6,16 @@ import BadgeOverflowCounter, {
   BadgeOverflow,
 } from '@/components/ui/BadgeOverflowCounter';
 import { getTranslate } from '@/hooks/get-translate';
+import {
+  analyticsResource,
+  toAnalyticsResourceData,
+} from '@/lib/analytics/analytics.context';
 import { cn } from '@/lib/utils';
 import { filterDocumentImages, findDocumentLogo } from '@/utils/documents';
 import { getResourcePageFiligranWebsiteUtm } from '@/utils/filigran-website-utm';
 import {
   ConnectorFields,
-  PublicDocumentDetailsData,
+  PublicDocumentByServiceSlugItem,
 } from '@/utils/shareable-resources/shareable-resources.types';
 import {
   LogoFiligranIcon,
@@ -23,7 +27,7 @@ import { SeoServiceInstanceItemFragment } from '@graphql/generated';
 import Image from 'next/image';
 
 interface ShareableResourceConnectorSlugPublicProps {
-  documentData: PublicDocumentDetailsData & ConnectorFields;
+  documentData: PublicDocumentByServiceSlugItem & ConnectorFields;
   serviceInstance:
     SeoServiceInstanceItemFragment | serviceInstance_fragment$data;
   pageUrl: string;
@@ -38,8 +42,12 @@ const ShareableResourceConnectorSlugPublic = async ({
   const logo = findDocumentLogo(documentData);
   const carouselImages = filterDocumentImages(documentData);
 
+  const resource = toAnalyticsResourceData(documentData);
+
   return (
-    <>
+    <div
+      className="contents"
+      {...analyticsResource(resource)}>
       <div className="flex gap-2 pb-4 flex-col md:flex-row">
         {!!logo && (
           <div className="w-24 shrink-0 rounded overflow-hidden">
@@ -101,6 +109,7 @@ const ShareableResourceConnectorSlugPublic = async ({
 
       <ShareableResourceCarousel
         serviceInstance={serviceInstance}
+        resource={resource}
         images={carouselImages}
       />
 
@@ -129,7 +138,7 @@ const ShareableResourceConnectorSlugPublic = async ({
           )}
         />
       </div>
-    </>
+    </div>
   );
 };
 

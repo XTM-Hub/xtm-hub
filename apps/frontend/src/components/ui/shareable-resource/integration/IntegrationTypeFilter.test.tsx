@@ -1,3 +1,4 @@
+import { readTrackedEvents, startAnalytics } from '@/utils/test/analytics';
 import testRender from '@/utils/test/test-render';
 import { IntegrationType } from '@graphql/generated';
 import { screen, within } from '@testing-library/react';
@@ -67,5 +68,29 @@ describe('IntegrationTypeFilter', () => {
         name: 'Service.OpenctiIntegrations.Filter.Type.Placeholder',
       })
     ).not.toBeInTheDocument();
+  });
+
+  it('should send the English label of the integration type when it is checked', async () => {
+    // Given
+    startAnalytics();
+    const { user } = testRender(<IntegrationTypeFilter />);
+
+    // When
+    await user.click(
+      screen.getByRole('checkbox', {
+        name: `Service.OpenctiIntegrations.Type.${IntegrationType.Connector}`,
+      })
+    );
+
+    // Then
+    expect(readTrackedEvents('filter_apply')).toEqual([
+      {
+        filter_name: 'Integration type',
+        filter_value: 'Connectors',
+        filter_action: 'Add',
+        library: 'Integrations',
+        product: 'OpenCTI',
+      },
+    ]);
   });
 });

@@ -5,14 +5,22 @@ import { ShareableResourceCardFooterVersion } from '@/components/ui/shareable-re
 import { ShareableResourceCardHeader } from '@/components/ui/shareable-resource/card-design/ShareableResourceCardHeader';
 import useScrollPosition from '@/hooks/use-scroll-position';
 import {
+  analyticsResource,
+  toAnalyticsResourceData,
+} from '@/lib/analytics/analytics.context';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
+import {
   PublicDocumentData,
   ShareableResourceType,
 } from '@/utils/shareable-resources/shareable-resources.types';
 import { docHasMetadata } from '@/utils/shareable-resources/utils/shareable-resources.client.utils';
 import { Paper } from '@filigran/design-system';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { ServiceDefinitionIdentifier } from '@generated/serviceList_fragment.graphql';
-import { DocumentMetadataKeyCode, IntegrationType } from '@graphql/generated';
+import {
+  DocumentItemFragment,
+  DocumentMetadataKeyCode,
+  IntegrationType,
+} from '@graphql/generated';
 import Link from 'next/link';
 import { ReactNode } from 'react';
 
@@ -23,7 +31,7 @@ interface ShareableServiceInstance {
   } | null;
 }
 interface ShareableResourceCardProps {
-  document: documentItem_fragment$data | PublicDocumentData;
+  document: DocumentItemFragment | PublicDocumentData;
   detailUrl: string;
   shareLinkUrl: string;
   extraContent?: ReactNode;
@@ -59,8 +67,10 @@ const ShareableResourceCard = ({
       as="li"
       elevation={1}
       padding={0}
+      {...analyticsResource(toAnalyticsResourceData(document))}
       className="overflow-hidden flex flex-col relative aria-disabled:opacity-60 hover:bg-elevation-hover h-[310px]">
       <Link
+        {...analyticsId('resource_open')}
         className="flex flex-col flex-1 min-h-0 overflow-hidden gap-6 p-6"
         onClick={handleClick}
         href={detailUrl}

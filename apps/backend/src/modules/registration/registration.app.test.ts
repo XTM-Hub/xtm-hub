@@ -1577,6 +1577,125 @@ describe('registration app', () => {
     );
   });
 
+  describe('loadRegisteredPlatformByPlatformId', () => {
+    let platformId: string;
+
+    beforeEach(async () => {
+      // Given an OpenAEV platform registered before it used tenants
+      requestContext.set(requestContextRegistererUserSecondOrga);
+      platformId = uuidv4();
+      await RegistrationDomain.registerNewPlatform({
+        organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        serviceDefinitionId: SERVICES.DEFINITIONS.OPENAEV_REGISTRATION.ID,
+        configuration: {
+          registerer_id:
+            TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.ID,
+          platform_id: platformId,
+          platform_url: 'http://example.com',
+          platform_title: 'My OpenAEV platform',
+          platform_contract: PlatformContract.Ee,
+          platform_version: '2.3.9',
+          token: uuidv4(),
+        },
+        platformIdentifier: PlatformIdentifier.Openaev,
+      });
+    });
+
+    it('should return the legacy registration to the default tenant', async () => {
+      // When
+      const platform = await RegistrationApp.loadRegisteredPlatformByPlatformId(
+        {
+          identifier: PlatformIdentifier.Openaev,
+          platformId,
+          tenantId: OPENAEV_DEFAULT_TENANT_ID,
+        }
+      );
+
+      // Then
+      expect(platform).toMatchObject({
+        platform_id: platformId,
+        tenant_id: null,
+      });
+    });
+
+    // Without the check, PostgreSQL rejects the value of a uuid column
+    it.each`
+      description          | platformId      | tenantId
+      ${'the platform id'} | ${'not-a-uuid'} | ${null}
+      ${'the tenant id'}   | ${uuidv4()}     | ${'not-a-uuid'}
+    `(
+      'should return nothing when $description is not a UUID',
+      async ({
+        platformId,
+        tenantId,
+      }: {
+        platformId: string;
+        tenantId: string | null;
+      }) => {
+        // When
+        const platform =
+          await RegistrationApp.loadRegisteredPlatformByPlatformId({
+            identifier: PlatformIdentifier.Openaev,
+            platformId,
+            tenantId,
+          });
+
+        // Then
+        expect(platform).toBeNull();
+      }
+    );
+
+    it('should not return the legacy registration to another tenant', async () => {
+      // When
+      const platform = await RegistrationApp.loadRegisteredPlatformByPlatformId(
+        {
+          identifier: PlatformIdentifier.Openaev,
+          platformId,
+          tenantId: uuidv4(),
+        }
+      );
+
+      // Then
+      expect(platform).toBeNull();
+    });
+
+    it('should return the registration of an OpenCTI platform, which has no tenant', async () => {
+      // Given
+      const openctiPlatformId = uuidv4();
+      await RegistrationDomain.registerNewPlatform({
+        organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        serviceDefinitionId: SERVICES.DEFINITIONS.OPENCTI_REGISTRATION.ID,
+        configuration: {
+          registerer_id:
+            TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.ID,
+          platform_id: openctiPlatformId,
+          platform_url: 'http://example.com',
+          platform_title: 'My OpenCTI platform',
+          platform_contract: PlatformContract.Ee,
+          platform_version: '7.260527.0',
+          token: uuidv4(),
+        },
+        platformIdentifier: PlatformIdentifier.Opencti,
+      });
+
+      // When
+      const platform = await RegistrationApp.loadRegisteredPlatformByPlatformId(
+        {
+          identifier: PlatformIdentifier.Opencti,
+          platformId: openctiPlatformId,
+          tenantId: null,
+        }
+      );
+
+      // Then
+      expect(platform).toMatchObject({
+        identifier: ServiceDefinitionIdentifier.OpenctiRegistration,
+        platform_id: openctiPlatformId,
+        tenant_id: null,
+      });
+    });
+  });
+
   describe('unregisterPlatform', () => {
     let platformId: string;
     let platform: PlatformInput;

@@ -3,10 +3,10 @@ import { EpicItemFooter } from '@/components/epic/epic-item/EpicItemFooter';
 import { DetailCard } from '@/components/ui/DetailCard';
 import { Separator } from '@/components/ui/separator';
 import { useDetailParam } from '@/hooks/use-detail-param';
-import { epic_fragment$data } from '@generated/epic_fragment.graphql';
+import { EpicFieldsFragment } from '@graphql/generated';
 
 interface EpicItemCardProps {
-  epic: epic_fragment$data;
+  epic: EpicFieldsFragment;
   userCanDelete: boolean;
   userCanUpdate: boolean;
 }
@@ -20,6 +20,7 @@ export const EpicItemCard = ({
 
   return (
     <DetailCard
+      analyticsId="roadmap_epic_open"
       onOpenDetail={openDetail}
       title={epic.title}
       description={epic.short_description}

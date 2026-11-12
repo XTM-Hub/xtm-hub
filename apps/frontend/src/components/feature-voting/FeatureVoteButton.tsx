@@ -4,14 +4,16 @@ import { getFeatureVotingPrivatePath } from '@/components/feature-voting/feature
 import { useFeatureVote } from '@/hooks/use-feature-vote';
 import usePublicPath from '@/hooks/use-public-path';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { buildSignupRedirect } from '@/utils/redirect';
 import { CheckCircleIcon } from '@filigran/icon';
 
 import { Button } from '@filigran/design-system';
+import { VotableFeaturePublicFragment } from '@graphql/generated';
 import { useRouter } from 'next/navigation';
 
 interface FeatureVoteButtonProps {
-  featureId: string;
+  feature: Pick<VotableFeaturePublicFragment, 'id' | 'title'>;
   serviceInstanceId: string;
   hasMyVote: boolean;
   isAuthenticated: boolean;
@@ -19,7 +21,7 @@ interface FeatureVoteButtonProps {
 }
 
 export const FeatureVoteButton = ({
-  featureId,
+  feature,
   serviceInstanceId,
   hasMyVote,
   isAuthenticated,
@@ -28,7 +30,7 @@ export const FeatureVoteButton = ({
   const t = useTranslate();
   const router = useRouter();
   const isPublicPath = usePublicPath();
-  const { mutate: commitVote, isPending } = useFeatureVote();
+  const { vote, isPending } = useFeatureVote();
 
   const handleVote = () => {
     // Voting only ever happens on the private page: a visitor on the public
@@ -37,16 +39,16 @@ export const FeatureVoteButton = ({
     if (!isAuthenticated) {
       router.push(
         buildSignupRedirect(
-          getFeatureVotingPrivatePath(serviceInstanceId, featureId)
+          getFeatureVotingPrivatePath(serviceInstanceId, feature.id)
         )
       );
       return;
     }
     if (isPublicPath) {
-      router.push(getFeatureVotingPrivatePath(serviceInstanceId, featureId));
+      router.push(getFeatureVotingPrivatePath(serviceInstanceId, feature.id));
       return;
     }
-    commitVote({ feature_id: featureId });
+    vote(feature);
   };
 
   if (hasMyVote) {
@@ -63,6 +65,9 @@ export const FeatureVoteButton = ({
 
   return (
     <Button
+      {...analyticsId(
+        isAuthenticated ? 'roadmap_feature_vote' : 'roadmap_feature_vote_signup'
+      )}
       className={className}
       onClick={handleVote}
       disabled={isPending}>

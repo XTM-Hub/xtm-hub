@@ -5,6 +5,7 @@ import { UserListCreateMutation } from '@/components/admin/user/user.graphql';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { Button } from '@filigran/design-system';
 import { userListCreateMutation } from '@generated/userListCreateMutation.graphql';
 import { useState } from 'react';
@@ -51,7 +52,11 @@ export const AddUser = () => {
       title={t('UserActions.AddUser')}
       setOpen={setOpenSheet}
       open={openSheet}
-      trigger={<Button>{t('UserActions.AddUser')}</Button>}>
+      trigger={
+        <Button {...analyticsId('organization_member_create')}>
+          {t('UserActions.AddUser')}
+        </Button>
+      }>
       <UserForm
         handleSubmit={handleSubmit}
         validationSchema={userFormSchema}

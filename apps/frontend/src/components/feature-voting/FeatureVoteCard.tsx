@@ -22,6 +22,7 @@ export const FeatureVoteCard = ({
 
   return (
     <DetailCard
+      analyticsId="roadmap_feature_open"
       onOpenDetail={openDetail}
       title={feature.title}
       description={feature.short_description}
@@ -52,7 +53,7 @@ export const FeatureVoteCard = ({
       footer={
         <div data-no-open-detail>
           <FeatureVoteButton
-            featureId={feature.id}
+            feature={feature}
             serviceInstanceId={serviceInstanceId}
             hasMyVote={feature.has_my_vote}
             isAuthenticated={isAuthenticated}

@@ -13,6 +13,7 @@ import MarkdownInput from '@/components/ui/MarkdownInput';
 import { SelectField } from '@/components/ui/SelectField';
 import { SheetFooter } from '@/components/ui/sheet';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import {
   fromFileSelectValue,
   getFileSelectLabels,
@@ -133,6 +134,7 @@ const VotableFeatureForm = ({
           name="product"
           render={({ field, fieldState }) => (
             <SelectField
+              formField
               label={t('VotingRound.Feature.Product')}
               options={VOTING_PRODUCTS.map((product) => ({
                 value: product,
@@ -206,6 +208,9 @@ const VotableFeatureForm = ({
                       variant="destructive"
                       priority="secondary"
                       type="button"
+                      {...analyticsId(
+                        'admin_votable_feature_illustration_remove'
+                      )}
                       aria-label={t('VotingRound.Feature.RemoveIllustration')}
                       className="m-2"
                       icon={<DeleteIcon className="size-4" />}
@@ -254,6 +259,7 @@ const VotableFeatureForm = ({
           control={form.control}
           name="active"
           render={({ field }) => (
+            // eslint-disable-next-line no-restricted-syntax -- form field sent by its tagged submit button
             <Switch
               label={t('VotingRound.Feature.Active')}
               checked={field.value}
@@ -264,13 +270,15 @@ const VotableFeatureForm = ({
         <SheetFooter className={feature ? 'sm:justify-between pb-0' : 'pt-2'}>
           {feature && (
             <ConfirmDialog
+              confirmAnalyticsId="admin_votable_feature_deletion_confirm"
               title={t('MenuActions.Delete')}
               confirmLabel={t('MenuActions.Delete')}
               destructive
               trigger={
                 <Button
                   variant="destructive"
-                  priority="secondary">
+                  priority="secondary"
+                  {...analyticsId('admin_votable_feature_delete')}>
                   {t('MenuActions.Delete')}
                 </Button>
               }
@@ -282,12 +290,14 @@ const VotableFeatureForm = ({
             <Button
               priority="secondary"
               type="button"
+              {...analyticsId('admin_form_cancel')}
               onClick={onClose}>
               {t('Utils.Cancel')}
             </Button>
             <Button
               disabled={!form.formState.isDirty}
-              type="submit">
+              type="submit"
+              {...analyticsId('admin_votable_feature_submit')}>
               {t('Utils.Validate')}
             </Button>
           </div>

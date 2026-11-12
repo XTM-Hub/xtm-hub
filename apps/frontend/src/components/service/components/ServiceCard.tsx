@@ -11,6 +11,7 @@ import ShareableResourceCard from '@/components/ui/shareable-resource/ShareableR
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import useServiceCapability from '@/hooks/use-service-capability';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import revalidatePathActions from '@/utils/actions/revalidate-path.actions';
 import {
   APP_PATH,
@@ -21,24 +22,25 @@ import {
   ShareableResourceType,
 } from '@/utils/shareable-resources/shareable-resources.types';
 import { MoreVertIcon } from '@filigran/icon';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { IntegrationType, ServiceRestriction } from '@graphql/generated';
+import {
+  DocumentItemFragment,
+  IntegrationType,
+  ServiceRestriction,
+} from '@graphql/generated';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 interface ServiceCardProps {
-  document: documentItem_fragment$data;
+  document: DocumentItemFragment;
   detailUrl: string;
   shareLinkUrl: string;
   requiredProductVersion?: string;
-  connectionId?: string;
 }
 
 const ServiceCard = ({
   document,
   detailUrl,
   shareLinkUrl,
-  connectionId,
 }: ServiceCardProps) => {
   const t = useTranslate();
   const router = useRouter();
@@ -49,7 +51,6 @@ const ServiceCard = ({
     useServiceContext();
   const context = useDocumentContext({
     serviceInstance,
-    connectionId,
     type: document.type as ShareableResourceType,
   });
 
@@ -101,12 +102,15 @@ const ServiceCard = ({
         <>
           {(userCanDelete || userCanUpdate) && (
             <IconActions
+              analyticsId="resource_actions_open"
               size="sm"
               className="z-[2]"
               aria-label={t('Utils.OpenMenu')}
               icon={<MoreVertIcon className="h-4 w-4 text-icon-highlight" />}>
               {userCanUpdate && (
-                <IconActionsItem onClick={() => onClickOnUpdate()}>
+                <IconActionsItem
+                  {...analyticsId('resource_edit')}
+                  onClick={() => onClickOnUpdate()}>
                   {t('MenuActions.Update')}
                 </IconActionsItem>
               )}

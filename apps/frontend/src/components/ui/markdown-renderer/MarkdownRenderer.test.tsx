@@ -1,3 +1,4 @@
+import { ANALYTICS_ID_ATTRIBUTE } from '@/lib/analytics/analytics.consts';
 import testRender from '@/utils/test/test-render';
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
@@ -10,6 +11,7 @@ const DELETED_TEXT = 'outdated';
 const LINK_TEXT = 'Filigran';
 const LINK_HREF = 'https://filigran.io/';
 const LINK_SUFFIX = '?ref=hub';
+const LINK_ANALYTICS_ID = 'roadmap_description_link_open';
 const LOGO_ALT = 'Filigran logo';
 const PARAGRAPH_CLASS = 'text-content-base';
 const LINK_CLASS = 'text-content-base-link';
@@ -50,7 +52,12 @@ describe('MarkdownRenderer', () => {
       const source = `${marker} ${HEADING_TEXT}`;
 
       // When
-      testRender(<MarkdownRenderer source={source} />);
+      testRender(
+        <MarkdownRenderer
+          source={source}
+          linkAnalyticsId={LINK_ANALYTICS_ID}
+        />
+      );
 
       // Then
       const heading = screen.getByRole('heading', { level });
@@ -65,7 +72,12 @@ describe('MarkdownRenderer', () => {
     const source = `${PARAGRAPH_TEXT} with **${STRONG_TEXT}** and [${LINK_TEXT}](${LINK_HREF}).`;
 
     // When
-    testRender(<MarkdownRenderer source={source} />);
+    testRender(
+      <MarkdownRenderer
+        source={source}
+        linkAnalyticsId={LINK_ANALYTICS_ID}
+      />
+    );
 
     // Then
     expect(screen.getByText(STRONG_TEXT).tagName).toBe('STRONG');
@@ -86,6 +98,7 @@ describe('MarkdownRenderer', () => {
     testRender(
       <MarkdownRenderer
         source={source}
+        linkAnalyticsId={LINK_ANALYTICS_ID}
         transformLinkHref={transformLinkHref}
       />
     );
@@ -96,12 +109,36 @@ describe('MarkdownRenderer', () => {
     expect(link).toHaveClass(LINK_CLASS);
   });
 
+  it('should carry the link analytics ID on the anchor when the source holds a link', () => {
+    // Given
+    const source = `[${LINK_TEXT}](${LINK_HREF})`;
+
+    // When
+    testRender(
+      <MarkdownRenderer
+        source={source}
+        linkAnalyticsId={LINK_ANALYTICS_ID}
+      />
+    );
+
+    // Then
+    expect(screen.getByRole('link', { name: LINK_TEXT })).toHaveAttribute(
+      ANALYTICS_ID_ATTRIBUTE,
+      LINK_ANALYTICS_ID
+    );
+  });
+
   it('should render a del when the source holds a GFM strikethrough', () => {
     // Given
     const source = `~~${DELETED_TEXT}~~`;
 
     // When
-    testRender(<MarkdownRenderer source={source} />);
+    testRender(
+      <MarkdownRenderer
+        source={source}
+        linkAnalyticsId={LINK_ANALYTICS_ID}
+      />
+    );
 
     // Then
     expect(screen.getByText(DELETED_TEXT).tagName).toBe('DEL');
@@ -117,7 +154,12 @@ describe('MarkdownRenderer', () => {
       const source = `${marker} ${FIRST_ITEM}\n${marker} ${SECOND_ITEM}`;
 
       // When
-      testRender(<MarkdownRenderer source={source} />);
+      testRender(
+        <MarkdownRenderer
+          source={source}
+          linkAnalyticsId={LINK_ANALYTICS_ID}
+        />
+      );
 
       // Then
       const list = screen.getByRole('list');
@@ -135,7 +177,12 @@ describe('MarkdownRenderer', () => {
     const source = `- [x] ${FIRST_ITEM}\n- [ ] ${SECOND_ITEM}`;
 
     // When
-    testRender(<MarkdownRenderer source={source} />);
+    testRender(
+      <MarkdownRenderer
+        source={source}
+        linkAnalyticsId={LINK_ANALYTICS_ID}
+      />
+    );
 
     // Then
     const [done, todo] = screen.getAllByRole('checkbox');
@@ -151,7 +198,12 @@ describe('MarkdownRenderer', () => {
     const source = `Run \`${INLINE_CODE}\`.\n\n\`\`\`js\n${BLOCK_CODE}\n\`\`\``;
 
     // When
-    const { container } = testRender(<MarkdownRenderer source={source} />);
+    const { container } = testRender(
+      <MarkdownRenderer
+        source={source}
+        linkAnalyticsId={LINK_ANALYTICS_ID}
+      />
+    );
 
     // Then
     const inlineCode = screen.getByText(INLINE_CODE);
@@ -167,7 +219,12 @@ describe('MarkdownRenderer', () => {
     const source = `\`\`\`\n${BLOCK_CODE}\n\`\`\``;
 
     // When
-    const { container } = testRender(<MarkdownRenderer source={source} />);
+    const { container } = testRender(
+      <MarkdownRenderer
+        source={source}
+        linkAnalyticsId={LINK_ANALYTICS_ID}
+      />
+    );
 
     // Then
     const pre = container.querySelector('pre');
@@ -180,7 +237,12 @@ describe('MarkdownRenderer', () => {
     const source = `> ${QUOTE_TEXT}`;
 
     // When
-    testRender(<MarkdownRenderer source={source} />);
+    testRender(
+      <MarkdownRenderer
+        source={source}
+        linkAnalyticsId={LINK_ANALYTICS_ID}
+      />
+    );
 
     // Then
     expect(screen.getByText(QUOTE_TEXT).closest('blockquote')).toHaveClass(
@@ -193,7 +255,12 @@ describe('MarkdownRenderer', () => {
     const source = `${TEXT_BEFORE}\n\n---\n\n${TEXT_AFTER}`;
 
     // When
-    testRender(<MarkdownRenderer source={source} />);
+    testRender(
+      <MarkdownRenderer
+        source={source}
+        linkAnalyticsId={LINK_ANALYTICS_ID}
+      />
+    );
 
     // Then
     expect(screen.getByRole('separator')).toBeInTheDocument();
@@ -204,7 +271,12 @@ describe('MarkdownRenderer', () => {
     const source = `| ${HEADER_CELL} |\n| --- |\n| ${BODY_CELL} |`;
 
     // When
-    testRender(<MarkdownRenderer source={source} />);
+    testRender(
+      <MarkdownRenderer
+        source={source}
+        linkAnalyticsId={LINK_ANALYTICS_ID}
+      />
+    );
 
     // Then
     const table = screen.getByRole('table');
@@ -221,7 +293,12 @@ describe('MarkdownRenderer', () => {
     const source = `## ${HEADING_TEXT}`;
 
     // When
-    testRender(<MarkdownRenderer source={source} />);
+    testRender(
+      <MarkdownRenderer
+        source={source}
+        linkAnalyticsId={LINK_ANALYTICS_ID}
+      />
+    );
 
     // Then
     const heading = screen.getByRole('heading', { level: 2 });
@@ -235,7 +312,12 @@ describe('MarkdownRenderer', () => {
     const source = `## [![${LOGO_ALT}](logo.png)](${LINK_HREF})`;
 
     // When
-    testRender(<MarkdownRenderer source={source} />);
+    testRender(
+      <MarkdownRenderer
+        source={source}
+        linkAnalyticsId={LINK_ANALYTICS_ID}
+      />
+    );
 
     // Then
     const heading = screen.getByRole('heading', { level: 2 });
@@ -249,7 +331,12 @@ describe('MarkdownRenderer', () => {
     const source = `${TEXT_BEFORE}\n\n<script>alert(1)</script>\n\n${TEXT_AFTER}`;
 
     // When
-    const { container } = testRender(<MarkdownRenderer source={source} />);
+    const { container } = testRender(
+      <MarkdownRenderer
+        source={source}
+        linkAnalyticsId={LINK_ANALYTICS_ID}
+      />
+    );
 
     // Then
     expect(container.querySelector('script')).not.toBeInTheDocument();
@@ -262,7 +349,12 @@ describe('MarkdownRenderer', () => {
     const source = `${TEXT_BEFORE} <img src="${IMAGE_SRC}" alt="" onerror="alert(1)"> ${TEXT_AFTER}`;
 
     // When
-    const { container } = testRender(<MarkdownRenderer source={source} />);
+    const { container } = testRender(
+      <MarkdownRenderer
+        source={source}
+        linkAnalyticsId={LINK_ANALYTICS_ID}
+      />
+    );
 
     // Then
     const image = container.querySelector('img');
@@ -276,7 +368,12 @@ describe('MarkdownRenderer', () => {
     const source = `\`${INLINE_CODE}\`<!--rehype:className=language-x ${SMUGGLED_CLASSES.join(' ')}-->\n\n\`\`\`ts\n${BLOCK_CODE}\n\`\`\``;
 
     // When
-    const { container } = testRender(<MarkdownRenderer source={source} />);
+    const { container } = testRender(
+      <MarkdownRenderer
+        source={source}
+        linkAnalyticsId={LINK_ANALYTICS_ID}
+      />
+    );
 
     // Then
     const inlineCode = screen.getByText(INLINE_CODE);
@@ -292,7 +389,12 @@ describe('MarkdownRenderer', () => {
     const source = `${TEXT_BEFORE} <span style="color: red">${STYLED_TEXT}</span> ${TEXT_AFTER}`;
 
     // When
-    const { container } = testRender(<MarkdownRenderer source={source} />);
+    const { container } = testRender(
+      <MarkdownRenderer
+        source={source}
+        linkAnalyticsId={LINK_ANALYTICS_ID}
+      />
+    );
 
     // Then
     expect(container.querySelector('[style]')).not.toBeInTheDocument();
@@ -306,7 +408,12 @@ describe('MarkdownRenderer', () => {
     const source = `${TEXT_BEFORE} [${UNSAFE_LINK_TEXT}](javascript:alert(1)) ${TEXT_AFTER}`;
 
     // When
-    const { container } = testRender(<MarkdownRenderer source={source} />);
+    const { container } = testRender(
+      <MarkdownRenderer
+        source={source}
+        linkAnalyticsId={LINK_ANALYTICS_ID}
+      />
+    );
 
     // Then
     expect(container.querySelector('[href^="javascript:"]')).toBeNull();
@@ -324,6 +431,7 @@ describe('MarkdownRenderer', () => {
     const { container } = testRender(
       <MarkdownRenderer
         source={source}
+        linkAnalyticsId={LINK_ANALYTICS_ID}
         className={`${CALLER_PADDING_CLASS} ${CALLER_GAP_CLASS}`}
       />
     );
@@ -344,7 +452,12 @@ describe('MarkdownRenderer', () => {
     const source = '';
 
     // When
-    const { container } = testRender(<MarkdownRenderer source={source} />);
+    const { container } = testRender(
+      <MarkdownRenderer
+        source={source}
+        linkAnalyticsId={LINK_ANALYTICS_ID}
+      />
+    );
 
     // Then
     expect(container.firstElementChild).toBeEmptyDOMElement();

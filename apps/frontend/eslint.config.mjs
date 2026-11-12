@@ -17,6 +17,26 @@ const filigranUiImportPattern = {
   message: 'Import from `@filigran/design-system` or `@/components/ui/`.',
 };
 
+const deepRelativeImportRestriction = {
+  selector: 'ImportDeclaration[source.value=/^(\\.\\.\\/){2,}/]',
+  message: "Avoid deep relative imports. Use '@/...'.",
+};
+
+const clickableComponentNamePattern =
+  '/^(?:button|Button|IconButton|MenuItem|MenuSubTrigger|TabsTrigger|NavbarItem|NavbarSubmenuItem|ButtonGroupItem|IconActionsItem|Link|SheetTrigger|Switch|AccordionTrigger|SelectTrigger|ComboboxTrigger|MenuTrigger|PopoverTrigger|DialogTrigger|DialogClose)$/';
+
+const untaggedClickableRestriction = {
+  selector: [
+    'JSXOpeningElement',
+    `:matches([name.name=${clickableComponentNamePattern}], [name.name='a']:has(> JSXAttribute[name.name='href']), [name.name=/^[a-z]/]:has(> JSXAttribute[name.name='onClick']), :has(> JSXAttribute[name.name='role']:matches([value.value=/^(?:button|link|menuitem|tab)$/], [value.expression.value=/^(?:button|link|menuitem|tab)$/])))`,
+    ':not(:has(> JSXAttribute[name.name=/^(?:analyticsId|\\w+AnalyticsId|asChild)$/]))',
+    ":not(:has(> JSXAttribute[name.name='disabled']:matches(:not([value]), [value.expression.value=true])))",
+    ":not(:has(> JSXSpreadAttribute:matches([argument.callee.name='analyticsId'], [argument.left.callee.name='analyticsId'], [argument.right.callee.name='analyticsId'], [argument.consequent.callee.name='analyticsId'], [argument.alternate.callee.name='analyticsId'])))",
+  ].join(''),
+  message:
+    "Spread analyticsId() from '@/lib/analytics/analytics.ids' on this clickable element, or pass it an analyticsId prop.",
+};
+
 const getStringLiteralValue = (node) => {
   if (node?.type === 'Literal' && typeof node.value === 'string') {
     return node.value;
@@ -413,10 +433,8 @@ const eslintConfig = [
       ],
       'no-restricted-syntax': [
         'error',
-        {
-          selector: 'ImportDeclaration[source.value=/^(\\.\\.\\/){2,}/]',
-          message: "Avoid deep relative imports. Use '@/...'.",
-        },
+        deepRelativeImportRestriction,
+        untaggedClickableRestriction,
       ],
       'no-restricted-imports': [
         'error',
@@ -529,6 +547,7 @@ const eslintConfig = [
       'xtm-hub-test-rules': localTestRulesPlugin,
     },
     rules: {
+      'no-restricted-syntax': ['error', deepRelativeImportRestriction],
       'xtm-hub-test-rules/no-remock-shared-globals': 'error',
     },
   },

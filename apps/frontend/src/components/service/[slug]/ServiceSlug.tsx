@@ -24,8 +24,9 @@ import {
 import useAdminPath from '@/hooks/use-admin-path';
 import { useDebouncedSearch } from '@/hooks/use-debounced-search';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { getDataTableLabels } from '@/utils/design-system/data-table';
-import { APP_PATH } from '@/utils/path/constant';
+import { ADMIN_SERVICE_CATALOG_PATH, APP_PATH } from '@/utils/path/constant';
 import { Button, SearchField, Switch } from '@filigran/design-system';
 import { AddIcon, DeleteIcon, MoreVertIcon } from '@filigran/icon';
 import { serviceInstanceByIdQuery } from '@generated/serviceInstanceByIdQuery.graphql';
@@ -104,7 +105,10 @@ const ServiceSlug = ({
       ? [
           { label: 'MenuLinks.Home', href: `/${APP_PATH}` },
           { label: 'MenuLinks.Settings' },
-          { label: 'MenuLinks.Service', href: `/${APP_PATH}/admin/service` },
+          {
+            label: 'MenuLinks.ServiceCatalog',
+            href: ADMIN_SERVICE_CATALOG_PATH,
+          },
         ]
       : [{ label: 'MenuLinks.Home', href: `/${APP_PATH}` }]),
     {
@@ -149,13 +153,16 @@ const ServiceSlug = ({
         return (
           <div className="flex items-center justify-end">
             <IconActions
+              analyticsId="list_row_actions_open"
               aria-label={t('Utils.OpenMenu')}
               icon={<MoreVertIcon className="h-4 w-4 text-icon-highlight" />}>
               <IconActionsLink
+                analyticsId="admin_subscription_users_open"
                 href={`/${APP_PATH}/admin/service/${row.id}/subscription`}>
                 {t('Service.Management.ManageUsers')}
               </IconActionsLink>
               <IconActionsItem
+                {...analyticsId('admin_subscription_edit')}
                 onClick={() => {
                   setUpdateSubscription(row.original);
                   setOpenEdit(true);
@@ -163,6 +170,7 @@ const ServiceSlug = ({
                 {t('Utils.Edit')}
               </IconActionsItem>
               <IconActionsItem
+                {...analyticsId('admin_subscription_delete')}
                 onClick={() => setDeleteSubscriptions([row.original])}>
                 {t('Utils.Delete')}
               </IconActionsItem>
@@ -205,6 +213,7 @@ const ServiceSlug = ({
       }
       extraControls={
         <Switch
+          {...analyticsId('admin_subscription_personal_spaces_toggle')}
           label={t('Service.Management.ShowPersonalSpaces')}
           checked={shouldDisplayPersonalSpaces}
           onCheckedChange={(value) => setShouldDisplayPersonalSpaces(value)}
@@ -282,6 +291,7 @@ const ServiceSlug = ({
                 actions: () => (
                   <>
                     <Button
+                      {...analyticsId('admin_subscription_capability_create')}
                       priority="tertiary"
                       startIcon={<AddIcon className="h-4 w-4" />}
                       onClick={() => setOpenAddCapabilities(true)}>
@@ -290,6 +300,7 @@ const ServiceSlug = ({
                       )}
                     </Button>
                     <Button
+                      {...analyticsId('admin_subscriptions_delete')}
                       variant="destructive"
                       priority="tertiary"
                       startIcon={<DeleteIcon className="h-4 w-4" />}

@@ -107,6 +107,7 @@ const ClientSection = ({ params, fromDashboard }: ClientSectionProps) => {
           {...(fromDashboard && {
             backHref: ADMIN_MANAGE_TRIALS_PATH,
             backLabelKey: 'Service.Bundle.ManageTrial.BackToDashboardButton',
+            backAnalyticsId: 'admin_trial_dashboard_open',
           })}
         />
         <ManageTrialRoleDescriptions products={products} />

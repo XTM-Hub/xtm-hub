@@ -10,6 +10,14 @@ import {
 } from '@/components/ui/sheet';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
+import { trackEvent } from '@/lib/analytics/analytics.client';
+import { PRODUCT_LABELS } from '@/lib/analytics/analytics.consts';
+import {
+  analyticsProduct,
+  analyticsResource,
+  type AnalyticsResourceData,
+} from '@/lib/analytics/analytics.context';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import {
   FiligranWebsiteUtmCampaign,
@@ -30,6 +38,7 @@ interface EeLearnMoreSheetProps {
   open: boolean;
   setOpen: (open: boolean) => void;
   platformIdentifier: PlatformIdentifier;
+  resource: AnalyticsResourceData;
 }
 
 const EE_OPENCTI_LEARN_MORE_URL = withFiligranWebsiteUtm(
@@ -48,6 +57,7 @@ const EeLearnMoreSheet = ({
   open,
   setOpen,
   platformIdentifier,
+  resource,
 }: EeLearnMoreSheetProps) => {
   const t = useTranslate();
   const defaultMessage = t(
@@ -77,6 +87,10 @@ const EeLearnMoreSheet = ({
         });
       },
       onSuccess: () => {
+        trackEvent('generate_lead', {
+          lead_source: 'Enterprise Edition contact',
+          product: PRODUCT_LABELS[platformIdentifier],
+        });
         showSnackbar({
           severity: 'success',
           title: t('Service.Trials.ReachOutToSalesSuccessTitle'),
@@ -105,6 +119,8 @@ const EeLearnMoreSheet = ({
       open={open}
       onOpenChange={setOpen}>
       <SheetContent
+        {...analyticsResource(resource)}
+        {...analyticsProduct(platformIdentifier)}
         side="right"
         closeLabel={t('Utils.Close')}>
         <SheetHeader>
@@ -148,6 +164,7 @@ const EeLearnMoreSheet = ({
                 )}
               </p>
               <Link
+                {...analyticsId('ee_details_open')}
                 target="_blank"
                 rel="noopener noreferrer"
                 href={EE_OPENCTI_LEARN_MORE_URL}
@@ -187,6 +204,7 @@ const EeLearnMoreSheet = ({
                   />
                   <div className="flex justify-end">
                     <Button
+                      {...analyticsId('ee_contact_submit')}
                       type="submit"
                       disabled={isInFlight || !message?.trim()}>
                       {t(

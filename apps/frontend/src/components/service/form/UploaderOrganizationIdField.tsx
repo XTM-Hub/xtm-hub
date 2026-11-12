@@ -10,13 +10,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@filigran/design-system';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
+import { DocumentItemFragment } from '@graphql/generated';
 import { ControllerRenderProps, FieldValues } from 'react-hook-form';
 
 interface ServiceFormUploaderOrganizationIdFieldProps {
   field: ControllerRenderProps<FieldValues, string>;
   isCreation: boolean;
-  document?: documentItem_fragment$data;
+  document?: DocumentItemFragment;
   disabled?: boolean;
 }
 
@@ -45,6 +45,7 @@ export const ServiceFormUploaderOrganizationIdField = ({
         <SelectLabel>
           {t('OrganizationInServiceAction.Organization')}
         </SelectLabel>
+        {/* eslint-disable-next-line no-restricted-syntax -- form field sent by its tagged submit button */}
         <SelectTrigger className="w-full">
           <SelectValue
             placeholder={t('OrganizationInServiceAction.SelectOrganization')}

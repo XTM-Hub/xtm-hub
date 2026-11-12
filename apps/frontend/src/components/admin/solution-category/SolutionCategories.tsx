@@ -163,6 +163,7 @@ const SolutionCategories = () => {
           sorting: mapToSortingTableValue(orderBy, orderMode),
           pagination,
         }}
+        getRowAnalyticsId={() => 'admin_solution_category_edit'}
         onClickRow={({ original }) => setSolutionCategoryEdit(original)}
         toolbar={
           <DataTableToolbar

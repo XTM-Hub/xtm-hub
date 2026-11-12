@@ -1,3 +1,8 @@
+import { trackEvent } from '@/lib/analytics/analytics.client';
+import {
+  type AnalyticsFilter,
+  buildFilterApplyEvents,
+} from '@/utils/analytics/filter-analytics.utils';
 import { Checkbox } from '@filigran/design-system';
 import * as React from 'react';
 import { useMemo } from 'react';
@@ -48,6 +53,7 @@ interface MultiSelectFormFieldProps<
   onValueChange: (value: Selection) => void;
   optionLabel: string;
   facetCounts?: Record<string, number>;
+  analyticsFilter?: AnalyticsFilter;
 }
 
 const LogicalMultiSelectFormField = React.forwardRef<
@@ -65,6 +71,7 @@ const LogicalMultiSelectFormField = React.forwardRef<
       optionLabel,
       noResultString = 'No results found',
       facetCounts,
+      analyticsFilter,
       ...props
     },
     ref
@@ -93,6 +100,25 @@ const LogicalMultiSelectFormField = React.forwardRef<
       }
       return res;
     }, [options, keyValue, keyLabel, keyChildren]);
+
+    const changeSelection = (newSelection: Selection) => {
+      if (analyticsFilter) {
+        buildFilterApplyEvents(
+          {
+            ...analyticsFilter,
+            valueLabels:
+              analyticsFilter.valueLabels ??
+              Object.fromEntries(
+                flatOptions.map(({ value, label }) => [value, label])
+              ),
+          },
+          selectedValues,
+          newSelection
+        ).forEach((event) => trackEvent('filter_apply', event));
+      }
+      setSelectedValues(newSelection);
+      onValueChange(newSelection);
+    };
 
     const getChildIdsForParent = (parentValue: string): string[] => {
       const parent = options.find((o) => String(o[keyValue]) === parentValue);
@@ -164,8 +190,7 @@ const LogicalMultiSelectFormField = React.forwardRef<
           }
         }
       }
-      setSelectedValues(newSelection);
-      onValueChange(newSelection);
+      changeSelection(newSelection);
     };
 
     const toggleParent = (parentValue: string) => {
@@ -189,8 +214,7 @@ const LogicalMultiSelectFormField = React.forwardRef<
         }
       }
 
-      setSelectedValues(newSelection);
-      onValueChange(newSelection);
+      changeSelection(newSelection);
     };
 
     return (

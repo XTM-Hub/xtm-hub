@@ -3,6 +3,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Form, FormField } from '@/components/ui/form';
 import { SheetFooter } from '@/components/ui/sheet';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { toComboboxOptionIds } from '@/utils/design-system/combobox';
 import { Button, Input } from '@filigran/design-system';
 import { FiligranProduct } from '@graphql/generated';
@@ -76,6 +77,7 @@ const SolutionCategoryForm = ({
           name="product"
           render={({ field, fieldState }) => (
             <AppCombobox
+              formField
               multiple
               label={t('SolutionCategory.Form.Product')}
               placeholder={t('SolutionCategory.Form.Product')}
@@ -91,13 +93,15 @@ const SolutionCategoryForm = ({
           className={solutionCategory ? 'sm:justify-between pb-0' : 'pt-2'}>
           {solutionCategory && (
             <ConfirmDialog
+              confirmAnalyticsId="admin_solution_category_deletion_confirm"
               title={t('MenuActions.Delete')}
               confirmLabel={t('MenuActions.Delete')}
               destructive
               trigger={
                 <Button
                   variant="destructive"
-                  priority="secondary">
+                  priority="secondary"
+                  {...analyticsId('admin_solution_category_delete')}>
                   {t('MenuActions.Delete')}
                 </Button>
               }
@@ -111,12 +115,14 @@ const SolutionCategoryForm = ({
             <Button
               priority="secondary"
               type="button"
+              {...analyticsId('admin_form_cancel')}
               onClick={onClose}>
               {t('Utils.Cancel')}
             </Button>
             <Button
               disabled={!form.formState.isDirty}
-              type="submit">
+              type="submit"
+              {...analyticsId('admin_solution_category_submit')}>
               {t('Utils.Validate')}
             </Button>
           </div>

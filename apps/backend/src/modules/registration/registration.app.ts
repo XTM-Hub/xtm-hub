@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from 'uuid';
+import { validate as isUuid, v4 as uuidv4 } from 'uuid';
 import {
   AutoRegisterPlatformInput,
   CanUnregisterPlatformInput,
@@ -15,6 +15,7 @@ import {
   PlatformRegistrationStatus,
   RefreshUserPlatformTokenResponse,
   RegisteredPlatform,
+  RegisteredPlatformByPlatformIdInput,
   RegisteredPlatformsInput,
   RegisterPlatformInput,
   ServiceDefinitionIdentifier,
@@ -214,6 +215,31 @@ export const RegistrationApp = {
   ): Promise<RegisteredPlatform | null> => {
     const [platform] =
       await RegistrationDomain.loadRegisteredPlatform(serviceInstanceId);
+
+    return platform ? mapDomainRegisteredPlatformToGraphQL(platform) : null;
+  },
+
+  // Same tenant fallback as loadRegistration: the OpenAEV default tenant finds the legacy tenant-less registration.
+  loadRegisteredPlatformByPlatformId: async ({
+    identifier,
+    platformId,
+    tenantId,
+  }: RegisteredPlatformByPlatformIdInput): Promise<RegisteredPlatform | null> => {
+    // The ids come from a redirect URL and are uuid columns: anything else matches no registration.
+    if (!isUuid(platformId) || (tenantId && !isUuid(tenantId))) {
+      return null;
+    }
+    const loadForTenant = (lookupTenantId: string | null) =>
+      RegistrationDomain.loadRegisteredPlatformByPlatformId({
+        platformIdentifier: identifier,
+        platformId,
+        tenantId: lookupTenantId,
+      });
+    const platform =
+      (await loadForTenant(tenantId ?? null)) ??
+      (RegistrationHelper.inheritsLegacyRegistration(tenantId)
+        ? await loadForTenant(null)
+        : null);
 
     return platform ? mapDomainRegisteredPlatformToGraphQL(platform) : null;
   },

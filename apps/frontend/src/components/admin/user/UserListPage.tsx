@@ -8,6 +8,7 @@ import { PortalContext } from '@/components/me/AppPortalContext';
 import { notificationPendingUserQueryFilters } from '@/components/notification/NotificationButton';
 import useAdminPath from '@/hooks/use-admin-path';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import {
   Tabs,
   TabsContent,
@@ -71,20 +72,23 @@ const UserListPage = ({ organization }: UserListPageProps) => {
 
   return (
     <UserListContext.Provider value={{ connectionID, setConnectionId }}>
-      <h1>{t('UserListPage.Title')}</h1>
+      {!isAdminPath && <h1>{t('UserListPage.Title')}</h1>}
       {isAdminPath ? (
-        <div className="mt-4">
+        <div>
           <UserList organization={organization} />
         </div>
       ) : (
         <Tabs defaultValue={selectedTab}>
           <TabsList>
-            <TabsTrigger value="users">
+            <TabsTrigger
+              value="users"
+              {...analyticsId('organization_members_select')}>
               {t('UserListPage.TabTitle')}
             </TabsTrigger>
             <TabsTrigger
               value="pendingUsers"
-              disabled={!nbPendingUsers}>
+              disabled={!nbPendingUsers}
+              {...analyticsId('organization_join_requests_select')}>
               {t('PendingUserListPage.TabTitle', {
                 usersCount: nbPendingUsers,
               })}

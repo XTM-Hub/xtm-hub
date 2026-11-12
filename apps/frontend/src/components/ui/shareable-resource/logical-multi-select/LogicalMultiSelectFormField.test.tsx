@@ -1,3 +1,6 @@
+import { ServiceListFilterKey } from '@/components/service/components/header/ServiceListHeader';
+import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
+import { readTrackedEvents, startAnalytics } from '@/utils/test/analytics';
 import testRender from '@/utils/test/test-render';
 import { screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
@@ -5,6 +8,9 @@ import {
   isLogicalMultiSelectSelection,
   LogicalMultiSelectFormField,
 } from './LogicalMultiSelectFormField';
+
+const OPTION_LABEL = 'Threat hunting';
+const OPTION_VALUE = 'use-case-id';
 
 describe('LogicalMultiSelectFormField', () => {
   it('validates selection objects', () => {
@@ -83,5 +89,31 @@ describe('LogicalMultiSelectFormField', () => {
     );
 
     expect(screen.getByText('0')).toBeInTheDocument();
+  });
+
+  it('should send the label of the option when the analytics filter gives no value labels', async () => {
+    // Given
+    startAnalytics();
+    const { user } = testRender(
+      <LogicalMultiSelectFormField
+        options={[{ label: OPTION_LABEL, value: OPTION_VALUE }]}
+        initialValue={{}}
+        noResultString="no-result"
+        optionLabel="label"
+        onValueChange={vi.fn()}
+        analyticsFilter={{
+          filterKey: ServiceListFilterKey.Label,
+          resourceType: ShareableResourceType.OPENCTI_PLAYBOOK,
+        }}
+      />
+    );
+
+    // When
+    await user.click(screen.getByRole('checkbox', { name: OPTION_LABEL }));
+
+    // Then
+    expect(readTrackedEvents('filter_apply')).toEqual([
+      expect.objectContaining({ filter_value: OPTION_LABEL }),
+    ]);
   });
 });

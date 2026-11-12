@@ -1,11 +1,14 @@
 import {
   NAVIGATION_ACTIVE_CLASSES,
   NAVIGATION_HOVER_CLASSES,
+  NAVIGATION_SUBMENU_ACTIVE_CLASSES,
+  NAVIGATION_SUBMENU_HOVER_CLASSES,
 } from '@/components/menu/navigation/shared/navigation-styles';
+import { SectionSubLink } from '@/components/menu/navigation/shared/navigation.type';
 import {
-  SectionLink,
-  SectionSubLink,
-} from '@/components/menu/navigation/shared/navigation.type';
+  type AnalyticsElementId,
+  analyticsId,
+} from '@/lib/analytics/analytics.ids';
 import { cn } from '@/lib/utils';
 import { isTruncated } from '@/utils/is-truncated';
 import {
@@ -67,8 +70,9 @@ export const PublicSubLink = ({
   highlight,
   badge,
   tooltip,
+  analyticsId: elementId,
   className,
-}: (SectionLink | SectionSubLink) & {
+}: SectionSubLink & {
   className?: string;
 }) => {
   const currentPath = usePathname();
@@ -83,7 +87,9 @@ export const PublicSubLink = ({
         className
       ),
     }),
-    isActive ? NAVIGATION_ACTIVE_CLASSES : !!href && NAVIGATION_HOVER_CLASSES
+    isActive
+      ? NAVIGATION_SUBMENU_ACTIVE_CLASSES
+      : !!href && NAVIGATION_SUBMENU_HOVER_CLASSES
   );
 
   const content = (
@@ -115,6 +121,7 @@ export const PublicSubLink = ({
       description={tooltip}>
       {href ? (
         <Link
+          {...analyticsId(elementId)}
           href={href}
           target={external ? '_blank' : undefined}
           rel={external ? 'noopener noreferrer' : undefined}
@@ -145,6 +152,7 @@ interface NavigationLinkMenuProps {
   text: string;
   external?: boolean;
   highlight?: boolean;
+  analyticsId: AnalyticsElementId;
 }
 
 export const NavigationLinkMenu = ({
@@ -154,6 +162,7 @@ export const NavigationLinkMenu = ({
   open,
   external,
   highlight,
+  analyticsId: elementId,
 }: NavigationLinkMenuProps) => {
   const currentPath = usePathname();
   const labelRef = useRef<HTMLSpanElement>(null);
@@ -162,11 +171,13 @@ export const NavigationLinkMenu = ({
   if (highlight) {
     return (
       <Link
+        {...analyticsId(elementId)}
         href={href}
         target={external ? '_blank' : undefined}
         rel={external ? 'noopener noreferrer' : undefined}
         className="block">
         <Button
+          {...analyticsId(elementId)}
           variant="highlight"
           priority="secondary"
           tabIndex={-1}
@@ -187,6 +198,7 @@ export const NavigationLinkMenu = ({
 
   const link = (
     <Link
+      {...analyticsId(elementId)}
       href={href}
       target={external ? '_blank' : undefined}
       rel={external ? 'noopener noreferrer' : undefined}

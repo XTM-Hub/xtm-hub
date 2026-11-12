@@ -6,10 +6,18 @@ import {
 import { CustomDashboardForm } from '@/components/service/custom-dashboards/[serviceInstanceId]/CustomDashboardForm';
 import { CustomViewForm } from '@/components/service/custom-views/[serviceInstanceId]/CustomViewForm';
 import {
-  DocumentCreateMutation,
-  DocumentDeleteMutation,
-  DocumentUpdateMutation,
-} from '@/components/service/document/document.graphql';
+  DocumentFormValues,
+  DocumentMutationPayload,
+  sendDocumentMutation,
+  toCreateDocumentInput,
+  toDocumentMetadata,
+  toDocumentUploads,
+  toUpdateDocumentInput,
+} from '@/components/service/document/document-mutation.utils';
+import {
+  invalidateDocumentQueries,
+  invalidateDocumentQueriesAfterDelete,
+} from '@/components/service/document/document-query-invalidation';
 import { ConnectorForm } from '@/components/service/integrations/forms/ConnectorForm';
 import { CsvFeedForm } from '@/components/service/integrations/forms/CsvFeedForm';
 import { RssFeedForm } from '@/components/service/integrations/forms/RssFeedForm';
@@ -20,228 +28,217 @@ import { OpenaevScenarioForm } from '@/components/service/openaev-scenarios/[ser
 import { OpenctiPlaybookForm } from '@/components/service/opencti-playbooks/[serviceInstanceId]/OpenctiPlaybookForm';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
-import { omit } from '@/lib/omit';
-import { pick } from '@/lib/pick';
-import { splitFileListToUploadableMap } from '@/relay/environment/fetch-form-data';
+import { portalGraphqlClient } from '@/lib/graphql-client';
 import revalidateDocumentSlugsAction from '@/utils/actions/revalidate-document-slugs.actions';
 import {
   docIsExistingFile,
   isFile,
   splitExistingAndNewImages,
-  toDocumentStatus,
-  toStatusUpdate,
 } from '@/utils/documents';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
-import { documentCreateMutation } from '@generated/documentCreateMutation.graphql';
-import { documentDeleteMutation } from '@generated/documentDeleteMutation.graphql';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { documentUpdateMutation } from '@generated/documentUpdateMutation.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 import {
-  DocumentMetadataKeyCode,
+  DocumentCreateDocument,
+  DocumentCreateMutationVariables,
+  DocumentDeleteMutationVariables,
+  DocumentItemFragment,
+  DocumentUpdateDocument,
+  DocumentUpdateMutationVariables,
   IntegrationType,
-  LicenseType,
+  useDocumentCreateMutation,
+  useDocumentDeleteMutation,
+  useDocumentUpdateMutation,
 } from '@graphql/generated';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
-import { useMutation } from 'react-relay';
-
-type DocumentFormValues = ServiceFormValues & {
-  entity_types?: string[] | null;
-  license_type?: LicenseType | null;
-  solution_categories?: string[] | null;
-};
-
-const documentBaseKeys: Array<keyof DocumentFormValues> = [
-  'name',
-  'slug',
-  'uploader_id',
-  'uploader_organization_id',
-  'short_description',
-  'description',
-  'use_cases',
-  'solution_categories',
-  'license_type',
-  'entity_types',
-  'active',
-];
-
-const documentFileKeys: Array<keyof DocumentFormValues> = [
-  'document',
-  'logo',
-  'images',
-];
 
 interface UseDocumentContextProps {
   serviceInstance: serviceInstance_fragment$data;
-  connectionId?: string;
   type: ShareableResourceType;
 }
 
 export function useDocumentContext({
   serviceInstance,
-  connectionId,
   type,
 }: UseDocumentContextProps): ServiceContextProps {
   const [integrationType, setIntegrationType] = useState<IntegrationType>(
     IntegrationType.CsvFeed
   );
   const t = useTranslate();
-  const [createMutation, isCreateInFlight] =
-    useMutation<documentCreateMutation>(DocumentCreateMutation);
+  const queryClient = useQueryClient();
+
+  const { mutate: createMutation, isPending: isCreateInFlight } = useMutation({
+    mutationFn: (
+      payload: DocumentMutationPayload<DocumentCreateMutationVariables>
+    ) =>
+      sendDocumentMutation(
+        DocumentCreateDocument,
+        payload,
+        useDocumentCreateMutation.fetcher(
+          portalGraphqlClient,
+          payload.variables
+        )
+      ),
+    // Runs even when the page that started the creation is already left: the
+    // `mutate` callbacks below do not, and the public cache would stay stale.
+    onSuccess: (response) => {
+      invalidateDocumentQueries(queryClient);
+      if (response.createDocument && serviceInstance.slug) {
+        revalidateDocumentSlugsAction(serviceInstance.slug);
+      }
+    },
+  });
 
   const handleAddSheet = async (
     values: ServiceFormValues,
     onSuccess: (serviceName: string) => void,
     onError: (error: Error) => void
   ) => {
-    const { active, ...input } = omit(
-      {
-        ...pick(values as DocumentFormValues, documentBaseKeys),
-        uploader_id: values?.uploader_id ?? '',
-      },
-      ['uploader_organization_id']
-    );
-    const metadata = omit(values as DocumentFormValues, [
-      ...documentBaseKeys,
-      ...documentFileKeys,
-    ]);
-    const sourceDocument = Array.from(values?.document ?? []).slice(0, 1);
-    const logo = Array.from(values?.logo ?? []).slice(0, 1);
+    const formValues = values as DocumentFormValues;
+    const input = toCreateDocumentInput(formValues);
+    const [sourceDocument] = Array.from(values?.document ?? []);
+    const [logo] = Array.from(values?.logo ?? []);
     const images = Array.from(values?.images ?? []);
 
-    createMutation({
-      variables: {
-        input: {
-          ...input,
-          status: toDocumentStatus(active),
-          use_cases: input.use_cases ?? [],
-          solution_categories: input.solution_categories ?? [],
+    createMutation(
+      {
+        variables: {
+          input,
+          metadata: toDocumentMetadata(formValues),
+          serviceInstanceId: serviceInstance.id,
+          sourceDocument: null,
+          logo: null,
+          images: null,
         },
-        metadata: Object.keys(metadata)
-          .map((key) => ({
-            key: key as DocumentMetadataKeyCode,
-            value: metadata[key as keyof typeof metadata],
-          }))
-          .filter(({ value }) => Boolean(value)),
-        serviceInstanceId: serviceInstance.id,
-        connections: connectionId ? [connectionId] : [],
-        sourceDocument: sourceDocument.map(() => ({})),
-        logo: logo.map(() => ({})),
-        images: images.map(() => ({})),
+        uploads: toDocumentUploads({ sourceDocument, logo, images }),
       },
-      uploadables: splitFileListToUploadableMap({
-        sourceDocument,
-        logo,
-        images,
-      }),
+      {
+        onSuccess: (response) => {
+          if (!response.createDocument) {
+            showSnackbar({
+              severity: 'error',
+              title: t('Utils.Error'),
+              description: t('Error.AnErrorOccured'),
+            });
+            return;
+          }
 
-      onCompleted: (response) => {
-        if (!response.createDocument) {
-          showSnackbar({
-            severity: 'error',
-            title: t('Utils.Error'),
-            description: t('Error.AnErrorOccured'),
-          });
-          return;
-        }
-
-        if (serviceInstance.slug) {
-          revalidateDocumentSlugsAction(serviceInstance.slug);
-        }
-        onSuccess(input.name);
-      },
-      onError: (error) => {
-        onError(error);
-      },
-    });
+          onSuccess(input.name);
+        },
+        onError: (error) => {
+          onError(error);
+        },
+      }
+    );
   };
 
-  const [deleteMutation] = useMutation<documentDeleteMutation>(
-    DocumentDeleteMutation
-  );
+  const { mutate: deleteMutation } = useMutation({
+    mutationFn: ({
+      documentId,
+      serviceInstanceId,
+    }: DocumentDeleteMutationVariables & {
+      documentSlug: DocumentItemFragment['slug'];
+    }) =>
+      useDocumentDeleteMutation.fetcher(portalGraphqlClient, {
+        documentId,
+        serviceInstanceId,
+      })(),
+    // Runs even when the page that started the deletion is already left.
+    onSuccess: (_, { documentId, serviceInstanceId, documentSlug }) => {
+      invalidateDocumentQueriesAfterDelete(queryClient, {
+        documentId,
+        serviceInstanceId,
+      });
+      if (serviceInstance.slug) {
+        revalidateDocumentSlugsAction(serviceInstance.slug, documentSlug);
+      }
+    },
+    onError: () =>
+      showSnackbar({
+        severity: 'error',
+        title: t('Utils.Error'),
+        description: t('Error.AnErrorOccured'),
+      }),
+  });
 
   const handleDeleteSheet = async (
-    document: documentItem_fragment$data,
+    document: DocumentItemFragment,
     onCompleted: () => void
   ) => {
-    deleteMutation({
-      variables: {
+    deleteMutation(
+      {
         documentId: document.id,
         serviceInstanceId: serviceInstance.id,
-        connections: connectionId ? [connectionId] : [],
+        documentSlug: document.slug,
       },
-      onCompleted() {
-        if (serviceInstance.slug) {
-          revalidateDocumentSlugsAction(serviceInstance.slug, document.slug);
-        }
-        onCompleted();
-      },
-    });
+      { onSuccess: onCompleted }
+    );
   };
 
-  const [updateMutation, isUpdateInFlight] =
-    useMutation<documentUpdateMutation>(DocumentUpdateMutation);
+  const { mutate: updateMutation, isPending: isUpdateInFlight } = useMutation({
+    mutationFn: (
+      payload: DocumentMutationPayload<DocumentUpdateMutationVariables> & {
+        documentSlug: DocumentItemFragment['slug'];
+      }
+    ) =>
+      sendDocumentMutation(
+        DocumentUpdateDocument,
+        payload,
+        useDocumentUpdateMutation.fetcher(
+          portalGraphqlClient,
+          payload.variables
+        )
+      ),
+    // Runs even when the page that started the update is already left.
+    onSuccess: (_, { documentSlug }) => {
+      invalidateDocumentQueries(queryClient);
+      if (serviceInstance.slug) {
+        revalidateDocumentSlugsAction(serviceInstance.slug, documentSlug);
+      }
+    },
+  });
 
   const handleUpdateSheet = async (
     values: ServiceFormValues,
-    resource: documentItem_fragment$data,
+    resource: DocumentItemFragment,
     onSuccess: (serviceName: string) => void,
     onError: (error: Error) => void
   ) => {
-    const { active, ...input } = omit(
-      {
-        ...pick(values as DocumentFormValues, documentBaseKeys),
-        uploader_id: values?.uploader_id ?? '',
-      },
-      ['slug']
-    );
-
-    const metadata = omit(values as DocumentFormValues, [
-      ...documentBaseKeys,
-      ...documentFileKeys,
-    ]);
-    const sourceDocument = Array.from(values?.document ?? []).slice(0, 1);
+    const formValues = values as DocumentFormValues;
+    const [sourceDocument] = Array.from(values?.document ?? []);
     const images = Array.from(values?.images ?? []);
     const [existingImageIds, newImages] = splitExistingAndNewImages(images);
-    const logo = Array.from(values?.logo ?? []).slice(0, 1);
+    const [logo] = Array.from(values?.logo ?? []);
 
-    updateMutation({
-      variables: {
-        input: {
-          ...input,
-          ...toStatusUpdate(active, resource.status),
+    updateMutation(
+      {
+        variables: {
+          input: toUpdateDocumentInput(formValues, resource.status),
+          serviceInstanceId: serviceInstance.id,
+          sourceDocument: null,
+          images: null,
+          logo: null,
+          documentId: resource.id,
+          metadata: toDocumentMetadata(formValues),
+          existingImageIds: [
+            ...existingImageIds,
+            ...(docIsExistingFile(logo) ? [logo.id] : []),
+          ],
         },
-        serviceInstanceId: serviceInstance.id,
-        sourceDocument: sourceDocument.map(() => ({})),
-        images: newImages.map(() => ({})),
-        ...(isFile(logo[0]) ? { logo: logo.map(() => ({})) } : {}),
-        documentId: resource.id,
-        metadata: Object.keys(metadata)
-          .map((key) => ({
-            key: key as DocumentMetadataKeyCode,
-            value: metadata[key as keyof typeof metadata],
-          }))
-          .filter(({ value }) => Boolean(value)),
-        existingImageIds: [
-          ...existingImageIds,
-          ...(docIsExistingFile(logo[0]) ? [logo[0].id] : []),
-        ],
+        uploads: toDocumentUploads({
+          sourceDocument,
+          logo: isFile(logo) ? logo : undefined,
+          images: newImages,
+        }),
+        documentSlug: resource.slug,
       },
-      uploadables: splitFileListToUploadableMap({
-        sourceDocument,
-        images: newImages,
-        ...(isFile(logo[0]) ? { logo } : {}),
-      }),
-      onCompleted: () => {
-        if (serviceInstance.slug) {
-          revalidateDocumentSlugsAction(serviceInstance.slug, resource.slug);
-        }
-        onSuccess(values.name);
-      },
-      onError: (error) => {
-        onError(error);
-      },
-    });
+      {
+        onSuccess: () => onSuccess(values.name),
+        onError: (error) => {
+          onError(error);
+        },
+      }
+    );
   };
 
   const form = useMemo(() => {

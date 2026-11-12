@@ -1,6 +1,7 @@
 import { UserServiceForm } from '@/components/service/[slug]/UserServiceForm';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { Button } from '@filigran/design-system';
 import { subscriptionByIdQuery$data } from '@generated/subscriptionByIdQuery.graphql';
 import { userServices_fragment$data } from '@generated/userServices_fragment.graphql';
@@ -42,7 +43,9 @@ export const SubscriptionSlugUserService: FunctionComponent<
         event.preventDefault();
       }}
       trigger={
-        <Button>{t('Service.Management.InviteUser.TitleInviteUser')}</Button>
+        <Button {...analyticsId('subscription_user_invite')}>
+          {t('Service.Management.InviteUser.TitleInviteUser')}
+        </Button>
       }
       title={t('InviteUserServiceForm.Title', {
         serviceName: subscription.subscriptionById!.service_instance!.name,

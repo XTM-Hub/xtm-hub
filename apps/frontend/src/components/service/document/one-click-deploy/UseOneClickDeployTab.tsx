@@ -7,12 +7,15 @@ import {
   isConnectorResource,
   ShareableResourceType,
 } from '@/utils/shareable-resources/shareable-resources.types';
-import { docHasMetadata } from '@/utils/shareable-resources/utils/shareable-resources.client.utils';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
+import {
+  docHasMetadata,
+  getDocumentEntityTypes,
+} from '@/utils/shareable-resources/utils/shareable-resources.client.utils';
 import {
   registerRefreshUserPlatformTokenMutation,
   registerRefreshUserPlatformTokenMutation$data,
 } from '@generated/registerRefreshUserPlatformTokenMutation.graphql';
+import { DocumentItemFragment } from '@graphql/generated';
 import { useMutation } from 'react-relay';
 
 const OPENCTI_URL_CONFIGS = {
@@ -24,7 +27,7 @@ const OPENCTI_URL_CONFIGS = {
 
 interface Props {
   platformBasePath: string;
-  documentData: documentItem_fragment$data;
+  documentData: DocumentItemFragment;
 }
 
 interface Return {
@@ -32,7 +35,7 @@ interface Return {
 }
 
 function computeDeployUrl(
-  documentData: documentItem_fragment$data,
+  documentData: DocumentItemFragment,
   platformBasePath: string
 ): string {
   const { id, service_instance, type } = documentData;
@@ -58,7 +61,7 @@ function computeDeployUrl(
   const baseUrl = `${platformBasePath}/dashboard/xtm-hub/${urlKey}/${service_instance?.id}/${id}`;
 
   if (type === ShareableResourceType.OPENCTI_CUSTOM_VIEW) {
-    const entityTypes = documentData.entity_types ?? [];
+    const entityTypes = getDocumentEntityTypes(documentData) ?? [];
     if (entityTypes.length > 0) {
       const queryString = entityTypes
         .map(

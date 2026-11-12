@@ -149,6 +149,7 @@ export const AddTrialUserForm = ({
   return (
     <TrialUserFormSkeleton
       form={form}
+      submitAnalyticsId="trial_user_addition_confirm"
       onSubmit={onSubmit}
       usersOptions={usersOptions}
       onUsersInputChange={onUsersInputChange}

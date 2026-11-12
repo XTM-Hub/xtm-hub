@@ -1,9 +1,14 @@
 import ShareableResourceConnectorSlug from '@/components/service/document/connector/ShareableResourceConnectorSlug';
+import { useRegisteredPlatforms } from '@/hooks/use-registered-platforms';
+import { ConnectorFields } from '@/utils/shareable-resources/shareable-resources.types';
+import { readTrackedEvents, startAnalytics } from '@/utils/test/analytics';
 import { mswServer } from '@/utils/test/msw/server';
 import testRender from '@/utils/test/test-render';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
-import { IncrementShareNumberDocumentMutation } from '@graphql/generated';
+import {
+  DocumentItemFragment,
+  IncrementShareNumberDocumentMutation,
+} from '@graphql/generated';
 import { mockDefaultDocument } from '@graphql/mocks';
 import { screen, waitFor } from '@testing-library/react';
 import { graphql, HttpResponse } from 'msw';
@@ -30,9 +35,11 @@ const buildConnector = (id: string, shareNumber: number) =>
     verified: false,
     children_documents: [],
     use_cases: [],
-  }) as unknown as documentItem_fragment$data;
+  }) as unknown as ConnectorItem;
 
-const renderSlugElement = (documentData: documentItem_fragment$data) => (
+type ConnectorItem = DocumentItemFragment & ConnectorFields;
+
+const renderSlugElement = (documentData: ConnectorItem) => (
   <ShareableResourceConnectorSlug
     breadcrumbValue={[]}
     documentData={documentData}
@@ -131,4 +138,49 @@ describe('ShareableResourceConnectorSlug - Share count refresh', () => {
     // Then
     expect(getShareCount()).toHaveTextContent(/^1$/);
   });
+});
+
+describe('ShareableResourceConnectorSlug - Resource view', () => {
+  beforeEach(() => {
+    startAnalytics();
+    vi.mocked(useRegisteredPlatforms).mockReturnValue({
+      platforms: [
+        {
+          id: 'platform-id',
+          title: 'Production OpenCTI',
+          url: 'https://opencti.acme.com',
+          version: '6.4.0',
+          contract: 'EE',
+          ' $fragmentType': 'useRegisteredPlatformsFragment',
+        },
+      ],
+    });
+  });
+
+  it.each([
+    ['Resource not deployable', 'the connector has no manager support', false],
+    [
+      'Platform version too old',
+      'the manager supported connector needs a newer platform',
+      true,
+    ],
+  ])(
+    'should send %s as the deploy eligibility when %s',
+    (expected, _context, managerSupported) => {
+      // Given
+      const connector = {
+        ...buildConnector('connector-1', 0),
+        manager_supported: managerSupported,
+        minimum_deployable_version: '6.5.0',
+      };
+
+      // When
+      testRender(renderSlugElement(connector));
+
+      // Then
+      expect(readTrackedEvents('view_item')).toEqual([
+        expect.objectContaining({ deploy_eligibility: expected }),
+      ]);
+    }
+  );
 });

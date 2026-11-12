@@ -81,6 +81,7 @@ export const SharedNavigation = ({
               text={link.label}
               external={link.external}
               highlight={link.highlight}
+              analyticsId={link.analyticsId}
             />
           </li>
         ))}

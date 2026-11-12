@@ -1,3 +1,5 @@
+import config from 'config';
+import { toGlobalId } from 'graphql-relay/node/node.js';
 import {
   DocumentMetadataKeyCode,
   DocumentMetadata as DocumentMetadataResolverType,
@@ -11,10 +13,12 @@ import {
   DocumentId,
   default as DocumentModel,
 } from '../../model/kanel/public/Document';
+import ServiceDefinition from '../../model/kanel/public/ServiceDefinition';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { UseCaseId } from '../../model/kanel/public/UseCase';
 import { MinIOClient } from '../../thirdparty/minio/client';
 import { MinioFile } from '../../thirdparty/minio/types';
+import type { TeamsNotificationPayloadMap } from '../../thirdparty/pgboss/teams-notification.jobs';
 import { logApp } from '../../utils/app-logger.util';
 import { ErrorCode, UnknownErrorCode } from '../../utils/error/error.code';
 import { OptionalMetadata } from '../../utils/metadata';
@@ -187,12 +191,43 @@ const ALLOWED_STATUS_TRANSITIONS: Record<DocumentStatus, DocumentStatus[]> = {
   [DocumentStatus.Published]: [DocumentStatus.Draft],
 };
 
+const INTEGRATION_TYPE_LABELS: Record<IntegrationType, string> = {
+  [IntegrationType.Connector]: 'Connector',
+  [IntegrationType.CsvFeed]: 'CSV Feed',
+  [IntegrationType.RssFeed]: 'RSS Feed',
+  [IntegrationType.Stream]: 'Stream',
+  [IntegrationType.TaxiiFeed]: 'TAXII Feed',
+  [IntegrationType.ThirdPartyIntegration]: 'Third party integration',
+};
+
 export const DocumentHelper = {
   assertStatusTransition: (from: DocumentStatus, to: DocumentStatus) => {
     if (from !== to && !ALLOWED_STATUS_TRANSITIONS[from].includes(to)) {
       throw new Error(ErrorCode.InvalidDocumentStatusTransition);
     }
   },
+
+  buildInValidationPayload: ({
+    document,
+    serviceDefinition,
+    integrationType,
+    authorEmail,
+  }: {
+    document: DocumentModel;
+    serviceDefinition: Pick<ServiceDefinition, 'name' | 'identifier'>;
+    integrationType: IntegrationType | null;
+    authorEmail: string | null;
+  }): TeamsNotificationPayloadMap['resource_in_validation'] => ({
+    library: serviceDefinition.name,
+    resource: {
+      name: document.name,
+      type: integrationType ? INTEGRATION_TYPE_LABELS[integrationType] : null,
+      status: DocumentStatus.InValidation,
+      short_description: document.short_description,
+      link: `${config.get<string>('base_url_front')}/redirect/${serviceDefinition.identifier}?document_id=${toGlobalId('Document', document.id)}`,
+      author_email: authorEmail,
+    },
+  }),
 
   buildCompleteMetadataFromDocumentFile: ({
     sourceDocumentFile,

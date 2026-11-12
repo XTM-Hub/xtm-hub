@@ -2,6 +2,7 @@
 
 import { CookieSettingsLink } from '@/components/cookie-consent/CookieSettingsLink';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { cn } from '@/lib/utils';
 import {
   FiligranWebsiteUtmCampaign,
@@ -53,6 +54,7 @@ export const AppFooter = ({ className }: AppFooterProps) => {
       <div className="items-center justify-between flex flex-col md:flex-row w-full px-4 py-2 gap-4 text-center">
         <span className="text-content-compact-link">
           <Link
+            {...analyticsId('footer_copyright_open')}
             href={FOOTER_LINKS.copyright}
             target="_blank"
             rel="noopener noreferrer"
@@ -66,6 +68,7 @@ export const AppFooter = ({ className }: AppFooterProps) => {
         <ul className="flex flex-col md:flex-row gap-4 text-content-compact-link">
           <li>
             <Link
+              {...analyticsId('footer_filigran_website_open')}
               target="_blank"
               rel="noopener noreferrer"
               href={FOOTER_LINKS.filigranWebsite}
@@ -75,6 +78,7 @@ export const AppFooter = ({ className }: AppFooterProps) => {
           </li>
           <li>
             <Link
+              {...analyticsId('footer_documentation_open')}
               target="_blank"
               rel="noopener noreferrer"
               href="https://docs.hub.filigran.io/latest/"
@@ -84,6 +88,7 @@ export const AppFooter = ({ className }: AppFooterProps) => {
           </li>
           <li>
             <Link
+              {...analyticsId('footer_privacy_policy_open')}
               target="_blank"
               rel="noopener noreferrer"
               href={FOOTER_LINKS.privacyPolicy}
@@ -96,6 +101,7 @@ export const AppFooter = ({ className }: AppFooterProps) => {
           </li>
           <li>
             <Link
+              {...analyticsId('footer_terms_of_service_open')}
               target="_blank"
               rel="noopener noreferrer"
               href={FOOTER_LINKS.termsOfService}
@@ -105,6 +111,7 @@ export const AppFooter = ({ className }: AppFooterProps) => {
           </li>
           <li>
             <Link
+              {...analyticsId('footer_licenses_open')}
               target="_blank"
               rel="noopener noreferrer"
               href={FOOTER_LINKS.licenses}

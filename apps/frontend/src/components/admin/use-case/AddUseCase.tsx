@@ -2,6 +2,7 @@ import UseCaseForm from '@/components/admin/use-case/UseCaseForm';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { prependToQueryCache } from '@/utils/query-cache';
 import { Button } from '@filigran/design-system';
@@ -49,7 +50,11 @@ const AddUseCase = () => {
       title={t('UseCaseActions.AddUseCase')}
       setOpen={setOpenSheet}
       open={openSheet}
-      trigger={<Button>{t('UseCaseActions.AddUseCase')}</Button>}>
+      trigger={
+        <Button {...analyticsId('admin_use_case_create')}>
+          {t('UseCaseActions.AddUseCase')}
+        </Button>
+      }>
       <UseCaseForm
         onClose={() => setOpenSheet(false)}
         handleSubmit={(input) => createUseCase({ input })}

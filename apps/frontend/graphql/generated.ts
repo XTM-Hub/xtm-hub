@@ -2054,6 +2054,7 @@ export type Query = {
   publicDocuments: DocumentConnection;
   publicDocumentsByServiceSlug: Array<Document>;
   registeredPlatform: Maybe<RegisteredPlatform>;
+  registeredPlatformByPlatformId: Maybe<RegisteredPlatform>;
   registeredPlatforms: Array<RegisteredPlatform>;
   /**
    * Returns at most the 5 latest registered versions for the given product,
@@ -2282,6 +2283,11 @@ export type QueryRegisteredPlatformArgs = {
 };
 
 
+export type QueryRegisteredPlatformByPlatformIdArgs = {
+  input: RegisteredPlatformByPlatformIdInput;
+};
+
+
 export type QueryRegisteredPlatformsArgs = {
   input: RegisteredPlatformsInput;
 };
@@ -2457,6 +2463,7 @@ export type RefreshPlatformRegistrationConnectivityStatusInput = {
 
 export type RefreshPlatformRegistrationConnectivityStatusResponse = {
   __typename?: 'RefreshPlatformRegistrationConnectivityStatusResponse';
+  commercialModel: Maybe<CommercialModel>;
   status: PlatformRegistrationConnectivityStatus;
 };
 
@@ -2502,6 +2509,12 @@ export type RegisteredPlatform = Node & {
   title: Scalars['String']['output'];
   url: Scalars['String']['output'];
   version: Maybe<Scalars['String']['output']>;
+};
+
+export type RegisteredPlatformByPlatformIdInput = {
+  identifier: PlatformIdentifier;
+  platformId: Scalars['String']['input'];
+  tenantId: InputMaybe<Scalars['String']['input']>;
 };
 
 export type RegisteredPlatformInput = {
@@ -3109,6 +3122,7 @@ export type TenantDetails = {
 
 export type TenantStatus = {
   __typename?: 'TenantStatus';
+  commercialModel: Maybe<CommercialModel>;
   status: PlatformRegistrationConnectivityStatus;
   tenantId: Scalars['String']['output'];
 };
@@ -3696,6 +3710,73 @@ export type IncrementShareNumberDocumentMutationVariables = Exact<{
 
 export type IncrementShareNumberDocumentMutation = { __typename?: 'Mutation', incrementShareNumberDocument: { __typename?: 'Connector', share_number: number | null } | { __typename?: 'CsvFeed', share_number: number | null } | { __typename?: 'CustomDashboard', share_number: number | null } | { __typename?: 'CustomView', share_number: number | null } | { __typename?: 'DefaultDocument', share_number: number | null } | { __typename?: 'IntegrationHack', share_number: number | null } | { __typename?: 'OpenAEVScenario', share_number: number | null } | { __typename?: 'OpenCTIPlaybook', share_number: number | null } | { __typename?: 'RssFeed', share_number: number | null } | { __typename?: 'Stream', share_number: number | null } | { __typename?: 'TaxiiFeed', share_number: number | null } | { __typename?: 'ThirdPartyIntegration', share_number: number | null } };
 
+export type DocumentCreateMutationVariables = Exact<{
+  input: CreateDocumentInput;
+  metadata: Array<DocumentMetadata> | DocumentMetadata;
+  serviceInstanceId: Scalars['ServiceInstanceId']['input'];
+  sourceDocument: InputMaybe<Scalars['Upload']['input']>;
+  logo: InputMaybe<Scalars['Upload']['input']>;
+  images: InputMaybe<Array<Scalars['Upload']['input']> | Scalars['Upload']['input']>;
+}>;
+
+
+export type DocumentCreateMutation = { __typename?: 'Mutation', createDocument: { __typename: 'Connector', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, product_version: string | null, container_image: string | null, verified: boolean, source_code: string | null, subscription_link: string | null, manager_supported: boolean, playbook_supported: boolean, minimum_deployable_version: string | null, contact: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'CsvFeed', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'CustomDashboard', product_version: string | null, id: string, type: string, file_name: string, created_at: any, name: string, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'CustomView', product_version: string | null, entity_types: Array<string> | null, id: string, type: string, file_name: string, created_at: any, name: string, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'DefaultDocument', id: string, type: string, file_name: string | null, created_at: any, name: string | null, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'IntegrationHack', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'OpenAEVScenario', product_version: string | null, id: string, type: string, file_name: string, created_at: any, name: string, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'OpenCTIPlaybook', product_version: string | null, id: string, type: string, file_name: string, created_at: any, name: string, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'RssFeed', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'Stream', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'TaxiiFeed', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'ThirdPartyIntegration', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, product_version: string | null, vendor_url: string, github_url: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } };
+
+export type DocumentUpdateMutationVariables = Exact<{
+  documentId: Scalars['DocumentId']['input'];
+  input: UpdateDocumentInput;
+  metadata: Array<DocumentMetadata> | DocumentMetadata;
+  serviceInstanceId: Scalars['ServiceInstanceId']['input'];
+  sourceDocument: InputMaybe<Scalars['Upload']['input']>;
+  logo: InputMaybe<Scalars['Upload']['input']>;
+  images: InputMaybe<Array<Scalars['Upload']['input']> | Scalars['Upload']['input']>;
+  existingImageIds: InputMaybe<Array<Scalars['DocumentId']['input']> | Scalars['DocumentId']['input']>;
+}>;
+
+
+export type DocumentUpdateMutation = { __typename?: 'Mutation', updateDocument: { __typename: 'Connector', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, product_version: string | null, container_image: string | null, verified: boolean, source_code: string | null, subscription_link: string | null, manager_supported: boolean, playbook_supported: boolean, minimum_deployable_version: string | null, contact: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'CsvFeed', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'CustomDashboard', product_version: string | null, id: string, type: string, file_name: string, created_at: any, name: string, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'CustomView', product_version: string | null, entity_types: Array<string> | null, id: string, type: string, file_name: string, created_at: any, name: string, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'DefaultDocument', id: string, type: string, file_name: string | null, created_at: any, name: string | null, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'IntegrationHack', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'OpenAEVScenario', product_version: string | null, id: string, type: string, file_name: string, created_at: any, name: string, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'OpenCTIPlaybook', product_version: string | null, id: string, type: string, file_name: string, created_at: any, name: string, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'RssFeed', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'Stream', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'TaxiiFeed', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'ThirdPartyIntegration', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, product_version: string | null, vendor_url: string, github_url: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } };
+
+export type DocumentDeleteMutationVariables = Exact<{
+  documentId: Scalars['DocumentId']['input'];
+  serviceInstanceId: Scalars['ServiceInstanceId']['input'];
+}>;
+
+
+export type DocumentDeleteMutation = { __typename?: 'Mutation', deleteDocument: { __typename?: 'Connector', id: string } | { __typename?: 'CsvFeed', id: string } | { __typename?: 'CustomDashboard', id: string } | { __typename?: 'CustomView', id: string } | { __typename?: 'DefaultDocument', id: string } | { __typename?: 'IntegrationHack', id: string } | { __typename?: 'OpenAEVScenario', id: string } | { __typename?: 'OpenCTIPlaybook', id: string } | { __typename?: 'RssFeed', id: string } | { __typename?: 'Stream', id: string } | { __typename?: 'TaxiiFeed', id: string } | { __typename?: 'ThirdPartyIntegration', id: string } };
+
+export type OneClickDeployMutationVariables = Exact<{
+  input: OneClickDeployInput;
+}>;
+
+
+export type OneClickDeployMutation = { __typename?: 'Mutation', sendTelemetryEvent: { __typename?: 'SendTelemetryMutation', oneClickDeploy: { __typename?: 'TelemetryResponse', result: boolean, message: string | null } | null } | null };
+
+type DocumentItem_Connector_Fragment = { __typename: 'Connector', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, product_version: string | null, container_image: string | null, verified: boolean, source_code: string | null, subscription_link: string | null, manager_supported: boolean, playbook_supported: boolean, minimum_deployable_version: string | null, contact: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null };
+
+type DocumentItem_CsvFeed_Fragment = { __typename: 'CsvFeed', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null };
+
+type DocumentItem_CustomDashboard_Fragment = { __typename: 'CustomDashboard', product_version: string | null, id: string, type: string, file_name: string, created_at: any, name: string, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null };
+
+type DocumentItem_CustomView_Fragment = { __typename: 'CustomView', product_version: string | null, entity_types: Array<string> | null, id: string, type: string, file_name: string, created_at: any, name: string, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null };
+
+type DocumentItem_DefaultDocument_Fragment = { __typename: 'DefaultDocument', id: string, type: string, file_name: string | null, created_at: any, name: string | null, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null };
+
+type DocumentItem_IntegrationHack_Fragment = { __typename: 'IntegrationHack', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null };
+
+type DocumentItem_OpenAevScenario_Fragment = { __typename: 'OpenAEVScenario', product_version: string | null, id: string, type: string, file_name: string, created_at: any, name: string, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null };
+
+type DocumentItem_OpenCtiPlaybook_Fragment = { __typename: 'OpenCTIPlaybook', product_version: string | null, id: string, type: string, file_name: string, created_at: any, name: string, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null };
+
+type DocumentItem_RssFeed_Fragment = { __typename: 'RssFeed', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null };
+
+type DocumentItem_Stream_Fragment = { __typename: 'Stream', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null };
+
+type DocumentItem_TaxiiFeed_Fragment = { __typename: 'TaxiiFeed', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null };
+
+type DocumentItem_ThirdPartyIntegration_Fragment = { __typename: 'ThirdPartyIntegration', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, product_version: string | null, vendor_url: string, github_url: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null };
+
+export type DocumentItemFragment = DocumentItem_Connector_Fragment | DocumentItem_CsvFeed_Fragment | DocumentItem_CustomDashboard_Fragment | DocumentItem_CustomView_Fragment | DocumentItem_DefaultDocument_Fragment | DocumentItem_IntegrationHack_Fragment | DocumentItem_OpenAevScenario_Fragment | DocumentItem_OpenCtiPlaybook_Fragment | DocumentItem_RssFeed_Fragment | DocumentItem_Stream_Fragment | DocumentItem_TaxiiFeed_Fragment | DocumentItem_ThirdPartyIntegration_Fragment;
+
 type HomepageDocument_Connector_Fragment = { __typename?: 'Connector', verified: boolean, manager_supported: boolean, id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null };
 
 type HomepageDocument_CsvFeed_Fragment = { __typename?: 'CsvFeed', id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null };
@@ -3746,29 +3827,77 @@ export type LastDeployedOverviewQueryQueryVariables = Exact<{
 
 export type LastDeployedOverviewQueryQuery = { __typename?: 'Query', lastDeployedOverview: { __typename?: 'LastDeployedOverview', resources: Array<{ __typename?: 'DeployedResource', deployedAt: any, document: { __typename?: 'Connector', verified: boolean, manager_supported: boolean, id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'CsvFeed', id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'CustomDashboard', id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'CustomView', id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'DefaultDocument', id: string, name: string | null, short_description: string | null, type: string, status: DocumentStatus, slug: string | null, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'IntegrationHack', id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'OpenAEVScenario', id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'OpenCTIPlaybook', id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'RssFeed', id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'Stream', id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'TaxiiFeed', id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'ThirdPartyIntegration', id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null }, deployedBy: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, email: string, picture: string | null } | null }> } };
 
-type PublicDocumentByServiceSlugItem_Connector_Fragment = { __typename: 'Connector', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, product_version: string | null, container_image: string | null, verified: boolean, source_code: string | null, subscription_link: string | null, manager_supported: boolean, playbook_supported: boolean, minimum_deployable_version: string | null, contact: string | null, id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null };
+export type DocumentsListQueryVariables = Exact<{
+  count: Scalars['Int']['input'];
+  cursor: InputMaybe<Scalars['ID']['input']>;
+  orderBy: DocumentOrdering;
+  orderMode: OrderingMode;
+  logicalFilters: InputMaybe<LogicalFilterInput>;
+  searchTerm: InputMaybe<Scalars['String']['input']>;
+  serviceInstanceId: Scalars['ServiceInstanceId']['input'];
+  parentsOnly: InputMaybe<Scalars['Boolean']['input']>;
+}>;
 
-type PublicDocumentByServiceSlugItem_CsvFeed_Fragment = { __typename: 'CsvFeed', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null };
 
-type PublicDocumentByServiceSlugItem_CustomDashboard_Fragment = { __typename: 'CustomDashboard', product_version: string | null, id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null };
+export type DocumentsListQuery = { __typename?: 'Query', documents: { __typename?: 'DocumentConnection', totalCount: number, edges: Array<{ __typename?: 'DocumentEdge', node: { __typename: 'Connector', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, product_version: string | null, container_image: string | null, verified: boolean, source_code: string | null, subscription_link: string | null, manager_supported: boolean, playbook_supported: boolean, minimum_deployable_version: string | null, contact: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'CsvFeed', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'CustomDashboard', product_version: string | null, id: string, type: string, file_name: string, created_at: any, name: string, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'CustomView', product_version: string | null, entity_types: Array<string> | null, id: string, type: string, file_name: string, created_at: any, name: string, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'DefaultDocument', id: string, type: string, file_name: string | null, created_at: any, name: string | null, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'IntegrationHack', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'OpenAEVScenario', product_version: string | null, id: string, type: string, file_name: string, created_at: any, name: string, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'OpenCTIPlaybook', product_version: string | null, id: string, type: string, file_name: string, created_at: any, name: string, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'RssFeed', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'Stream', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'TaxiiFeed', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'ThirdPartyIntegration', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, product_version: string | null, vendor_url: string, github_url: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } }> } };
 
-type PublicDocumentByServiceSlugItem_CustomView_Fragment = { __typename: 'CustomView', product_version: string | null, entity_types: Array<string> | null, id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null };
+export type DocumentDetailQueryVariables = Exact<{
+  documentId: Scalars['DocumentId']['input'];
+  serviceInstanceId: Scalars['ServiceInstanceId']['input'];
+}>;
 
-type PublicDocumentByServiceSlugItem_DefaultDocument_Fragment = { __typename: 'DefaultDocument', id: string, name: string | null, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null };
 
-type PublicDocumentByServiceSlugItem_IntegrationHack_Fragment = { __typename: 'IntegrationHack', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null };
+export type DocumentDetailQuery = { __typename?: 'Query', document: { __typename: 'Connector', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, product_version: string | null, container_image: string | null, verified: boolean, source_code: string | null, subscription_link: string | null, manager_supported: boolean, playbook_supported: boolean, minimum_deployable_version: string | null, contact: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'CsvFeed', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'CustomDashboard', product_version: string | null, id: string, type: string, file_name: string, created_at: any, name: string, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'CustomView', product_version: string | null, entity_types: Array<string> | null, id: string, type: string, file_name: string, created_at: any, name: string, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'DefaultDocument', id: string, type: string, file_name: string | null, created_at: any, name: string | null, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'IntegrationHack', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'OpenAEVScenario', product_version: string | null, id: string, type: string, file_name: string, created_at: any, name: string, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'OpenCTIPlaybook', product_version: string | null, id: string, type: string, file_name: string, created_at: any, name: string, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'RssFeed', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'Stream', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'TaxiiFeed', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'ThirdPartyIntegration', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, product_version: string | null, vendor_url: string, github_url: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | null };
 
-type PublicDocumentByServiceSlugItem_OpenAevScenario_Fragment = { __typename: 'OpenAEVScenario', product_version: string | null, id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null };
+type PublicDocumentListItem_Connector_Fragment = { __typename: 'Connector', integration_type: IntegrationType, product_version: string | null, verified: boolean, manager_supported: boolean, id: string, name: string, short_description: string | null, slug: string, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null };
 
-type PublicDocumentByServiceSlugItem_OpenCtiPlaybook_Fragment = { __typename: 'OpenCTIPlaybook', id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null };
+type PublicDocumentListItem_CsvFeed_Fragment = { __typename: 'CsvFeed', integration_type: IntegrationType, id: string, name: string, short_description: string | null, slug: string, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null };
 
-type PublicDocumentByServiceSlugItem_RssFeed_Fragment = { __typename: 'RssFeed', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null };
+type PublicDocumentListItem_CustomDashboard_Fragment = { __typename: 'CustomDashboard', id: string, name: string, short_description: string | null, slug: string, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null };
 
-type PublicDocumentByServiceSlugItem_Stream_Fragment = { __typename: 'Stream', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null };
+type PublicDocumentListItem_CustomView_Fragment = { __typename: 'CustomView', entity_types: Array<string> | null, id: string, name: string, short_description: string | null, slug: string, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null };
 
-type PublicDocumentByServiceSlugItem_TaxiiFeed_Fragment = { __typename: 'TaxiiFeed', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null };
+type PublicDocumentListItem_DefaultDocument_Fragment = { __typename: 'DefaultDocument', id: string, name: string | null, short_description: string | null, slug: string | null, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null };
 
-type PublicDocumentByServiceSlugItem_ThirdPartyIntegration_Fragment = { __typename: 'ThirdPartyIntegration', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, product_version: string | null, vendor_url: string, github_url: string | null, id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null };
+type PublicDocumentListItem_IntegrationHack_Fragment = { __typename: 'IntegrationHack', integration_type: IntegrationType, id: string, name: string, short_description: string | null, slug: string, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null };
+
+type PublicDocumentListItem_OpenAevScenario_Fragment = { __typename: 'OpenAEVScenario', id: string, name: string, short_description: string | null, slug: string, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null };
+
+type PublicDocumentListItem_OpenCtiPlaybook_Fragment = { __typename: 'OpenCTIPlaybook', id: string, name: string, short_description: string | null, slug: string, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null };
+
+type PublicDocumentListItem_RssFeed_Fragment = { __typename: 'RssFeed', integration_type: IntegrationType, id: string, name: string, short_description: string | null, slug: string, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null };
+
+type PublicDocumentListItem_Stream_Fragment = { __typename: 'Stream', integration_type: IntegrationType, id: string, name: string, short_description: string | null, slug: string, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null };
+
+type PublicDocumentListItem_TaxiiFeed_Fragment = { __typename: 'TaxiiFeed', integration_type: IntegrationType, id: string, name: string, short_description: string | null, slug: string, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null };
+
+type PublicDocumentListItem_ThirdPartyIntegration_Fragment = { __typename: 'ThirdPartyIntegration', integration_type: IntegrationType, id: string, name: string, short_description: string | null, slug: string, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null };
+
+export type PublicDocumentListItemFragment = PublicDocumentListItem_Connector_Fragment | PublicDocumentListItem_CsvFeed_Fragment | PublicDocumentListItem_CustomDashboard_Fragment | PublicDocumentListItem_CustomView_Fragment | PublicDocumentListItem_DefaultDocument_Fragment | PublicDocumentListItem_IntegrationHack_Fragment | PublicDocumentListItem_OpenAevScenario_Fragment | PublicDocumentListItem_OpenCtiPlaybook_Fragment | PublicDocumentListItem_RssFeed_Fragment | PublicDocumentListItem_Stream_Fragment | PublicDocumentListItem_TaxiiFeed_Fragment | PublicDocumentListItem_ThirdPartyIntegration_Fragment;
+
+type PublicDocumentByServiceSlugItem_Connector_Fragment = { __typename: 'Connector', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, product_version: string | null, container_image: string | null, verified: boolean, source_code: string | null, subscription_link: string | null, manager_supported: boolean, playbook_supported: boolean, minimum_deployable_version: string | null, contact: string | null, id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null };
+
+type PublicDocumentByServiceSlugItem_CsvFeed_Fragment = { __typename: 'CsvFeed', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null };
+
+type PublicDocumentByServiceSlugItem_CustomDashboard_Fragment = { __typename: 'CustomDashboard', product_version: string | null, id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null };
+
+type PublicDocumentByServiceSlugItem_CustomView_Fragment = { __typename: 'CustomView', product_version: string | null, entity_types: Array<string> | null, id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null };
+
+type PublicDocumentByServiceSlugItem_DefaultDocument_Fragment = { __typename: 'DefaultDocument', id: string, name: string | null, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null };
+
+type PublicDocumentByServiceSlugItem_IntegrationHack_Fragment = { __typename: 'IntegrationHack', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null };
+
+type PublicDocumentByServiceSlugItem_OpenAevScenario_Fragment = { __typename: 'OpenAEVScenario', product_version: string | null, id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null };
+
+type PublicDocumentByServiceSlugItem_OpenCtiPlaybook_Fragment = { __typename: 'OpenCTIPlaybook', id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null };
+
+type PublicDocumentByServiceSlugItem_RssFeed_Fragment = { __typename: 'RssFeed', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null };
+
+type PublicDocumentByServiceSlugItem_Stream_Fragment = { __typename: 'Stream', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null };
+
+type PublicDocumentByServiceSlugItem_TaxiiFeed_Fragment = { __typename: 'TaxiiFeed', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null };
+
+type PublicDocumentByServiceSlugItem_ThirdPartyIntegration_Fragment = { __typename: 'ThirdPartyIntegration', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, product_version: string | null, vendor_url: string, github_url: string | null, id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null };
 
 export type PublicDocumentByServiceSlugItemFragment = PublicDocumentByServiceSlugItem_Connector_Fragment | PublicDocumentByServiceSlugItem_CsvFeed_Fragment | PublicDocumentByServiceSlugItem_CustomDashboard_Fragment | PublicDocumentByServiceSlugItem_CustomView_Fragment | PublicDocumentByServiceSlugItem_DefaultDocument_Fragment | PublicDocumentByServiceSlugItem_IntegrationHack_Fragment | PublicDocumentByServiceSlugItem_OpenAevScenario_Fragment | PublicDocumentByServiceSlugItem_OpenCtiPlaybook_Fragment | PublicDocumentByServiceSlugItem_RssFeed_Fragment | PublicDocumentByServiceSlugItem_Stream_Fragment | PublicDocumentByServiceSlugItem_TaxiiFeed_Fragment | PublicDocumentByServiceSlugItem_ThirdPartyIntegration_Fragment;
 
@@ -3777,7 +3906,7 @@ export type PublicDocumentsByServiceSlugQueryQueryVariables = Exact<{
 }>;
 
 
-export type PublicDocumentsByServiceSlugQueryQuery = { __typename?: 'Query', publicDocumentsByServiceSlug: Array<{ __typename: 'Connector', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, product_version: string | null, container_image: string | null, verified: boolean, source_code: string | null, subscription_link: string | null, manager_supported: boolean, playbook_supported: boolean, minimum_deployable_version: string | null, contact: string | null, id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | { __typename: 'CsvFeed', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | { __typename: 'CustomDashboard', product_version: string | null, id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | { __typename: 'CustomView', product_version: string | null, entity_types: Array<string> | null, id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | { __typename: 'DefaultDocument', id: string, name: string | null, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | { __typename: 'IntegrationHack', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | { __typename: 'OpenAEVScenario', product_version: string | null, id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | { __typename: 'OpenCTIPlaybook', id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | { __typename: 'RssFeed', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | { __typename: 'Stream', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | { __typename: 'TaxiiFeed', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | { __typename: 'ThirdPartyIntegration', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, product_version: string | null, vendor_url: string, github_url: string | null, id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null }> };
+export type PublicDocumentsByServiceSlugQueryQuery = { __typename?: 'Query', publicDocumentsByServiceSlug: Array<{ __typename: 'Connector', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, product_version: string | null, container_image: string | null, verified: boolean, source_code: string | null, subscription_link: string | null, manager_supported: boolean, playbook_supported: boolean, minimum_deployable_version: string | null, contact: string | null, id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | { __typename: 'CsvFeed', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | { __typename: 'CustomDashboard', product_version: string | null, id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | { __typename: 'CustomView', product_version: string | null, entity_types: Array<string> | null, id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | { __typename: 'DefaultDocument', id: string, name: string | null, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | { __typename: 'IntegrationHack', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | { __typename: 'OpenAEVScenario', product_version: string | null, id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | { __typename: 'OpenCTIPlaybook', id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | { __typename: 'RssFeed', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | { __typename: 'Stream', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | { __typename: 'TaxiiFeed', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | { __typename: 'ThirdPartyIntegration', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, product_version: string | null, vendor_url: string, github_url: string | null, id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null }> };
 
 export type PublicDocumentsByServiceSlugSitemapQueryQueryVariables = Exact<{
   serviceInstanceSlug: Scalars['String']['input'];
@@ -3785,6 +3914,28 @@ export type PublicDocumentsByServiceSlugSitemapQueryQueryVariables = Exact<{
 
 
 export type PublicDocumentsByServiceSlugSitemapQueryQuery = { __typename?: 'Query', publicDocumentSlugsByServiceSlug: Array<{ __typename?: 'PublicDocumentSlugInfo', slug: string | null, created_at: any, updated_at: any | null }> };
+
+export type PublicDocumentsQueryVariables = Exact<{
+  slug: Scalars['String']['input'];
+  count: Scalars['Int']['input'];
+  cursor: InputMaybe<Scalars['ID']['input']>;
+  orderBy: DocumentOrdering;
+  orderMode: OrderingMode;
+  logicalFilters: InputMaybe<LogicalFilterInput>;
+  searchTerm: InputMaybe<Scalars['String']['input']>;
+  serviceInstanceId: Scalars['ServiceInstanceId']['input'];
+}>;
+
+
+export type PublicDocumentsQuery = { __typename?: 'Query', publicDocuments: { __typename?: 'DocumentConnection', totalCount: number, edges: Array<{ __typename?: 'DocumentEdge', node: { __typename: 'Connector', integration_type: IntegrationType, product_version: string | null, verified: boolean, manager_supported: boolean, id: string, name: string, short_description: string | null, slug: string, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null } | { __typename: 'CsvFeed', integration_type: IntegrationType, id: string, name: string, short_description: string | null, slug: string, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null } | { __typename: 'CustomDashboard', id: string, name: string, short_description: string | null, slug: string, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null } | { __typename: 'CustomView', entity_types: Array<string> | null, id: string, name: string, short_description: string | null, slug: string, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null } | { __typename: 'DefaultDocument', id: string, name: string | null, short_description: string | null, slug: string | null, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null } | { __typename: 'IntegrationHack', integration_type: IntegrationType, id: string, name: string, short_description: string | null, slug: string, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null } | { __typename: 'OpenAEVScenario', id: string, name: string, short_description: string | null, slug: string, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null } | { __typename: 'OpenCTIPlaybook', id: string, name: string, short_description: string | null, slug: string, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null } | { __typename: 'RssFeed', integration_type: IntegrationType, id: string, name: string, short_description: string | null, slug: string, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null } | { __typename: 'Stream', integration_type: IntegrationType, id: string, name: string, short_description: string | null, slug: string, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null } | { __typename: 'TaxiiFeed', integration_type: IntegrationType, id: string, name: string, short_description: string | null, slug: string, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null } | { __typename: 'ThirdPartyIntegration', integration_type: IntegrationType, id: string, name: string, short_description: string | null, slug: string, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null } }> } };
+
+export type PublicDocumentBySlugQueryVariables = Exact<{
+  serviceInstanceId: Scalars['ServiceInstanceId']['input'];
+  slug: Scalars['String']['input'];
+}>;
+
+
+export type PublicDocumentBySlugQuery = { __typename?: 'Query', publicDocumentBySlug: { __typename: 'Connector', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, product_version: string | null, container_image: string | null, verified: boolean, source_code: string | null, subscription_link: string | null, manager_supported: boolean, playbook_supported: boolean, minimum_deployable_version: string | null, contact: string | null, id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | { __typename: 'CsvFeed', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | { __typename: 'CustomDashboard', product_version: string | null, id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | { __typename: 'CustomView', product_version: string | null, entity_types: Array<string> | null, id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | { __typename: 'DefaultDocument', id: string, name: string | null, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | { __typename: 'IntegrationHack', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | { __typename: 'OpenAEVScenario', product_version: string | null, id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | { __typename: 'OpenCTIPlaybook', id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | { __typename: 'RssFeed', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | { __typename: 'Stream', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | { __typename: 'TaxiiFeed', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | { __typename: 'ThirdPartyIntegration', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, product_version: string | null, vendor_url: string, github_url: string | null, id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | null };
 
 export type FeatureVoteMutationVariables = Exact<{
   feature_id: Scalars['VotableFeatureId']['input'];
@@ -3836,6 +3987,11 @@ export type MeOrganizationsQueryVariables = Exact<{ [key: string]: never; }>;
 
 
 export type MeOrganizationsQuery = { __typename?: 'Query', me: { __typename?: 'User', id: string, selected_organization_id: any | null, organizations: Array<{ __typename?: 'Organization', id: string, name: string, personal_space: boolean }> | null } | null };
+
+export type MeAnalyticsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type MeAnalyticsQuery = { __typename?: 'Query', me: { __typename?: 'User', email: string, selected_organization_id: any | null, selected_org_capabilities: Array<OrganizationCapability> | null, organizations: Array<{ __typename?: 'Organization', id: string, personal_space: boolean }> | null, capabilities: Array<{ __typename?: 'Capability', name: PortalCapability }> | null } | null };
 
 export type NewsFeedDeleteItemMutationVariables = Exact<{
   id: Scalars['NewsFeedItemId']['input'];
@@ -3950,6 +4106,13 @@ export type PlatformAssociatedOrganizationQueryVariables = Exact<{
 
 
 export type PlatformAssociatedOrganizationQuery = { __typename?: 'Query', platformAssociatedOrganization: { __typename?: 'Organization', id: string } | null };
+
+export type RegisteredPlatformRedirectTargetQueryVariables = Exact<{
+  input: RegisteredPlatformByPlatformIdInput;
+}>;
+
+
+export type RegisteredPlatformRedirectTargetQuery = { __typename?: 'Query', registeredPlatformByPlatformId: { __typename?: 'RegisteredPlatform', service_instance_id: any, identifier: ServiceDefinitionIdentifier, deployment_request: { __typename?: 'DeploymentRequest', parent_id: any | null } | null } | null };
 
 export type AddRolePortalMutationVariables = Exact<{
   input: AddRolePortalInput;
@@ -4346,10 +4509,44 @@ export type VotingRoundRankingQueryVariables = Exact<{
 
 export type VotingRoundRankingQuery = { __typename?: 'Query', votingRoundResults: { __typename?: 'VotingRoundResults', total_voters: number, round: { __typename?: 'VotingRound', id: string, name: string, status: VotingRoundStatus }, results: Array<{ __typename?: 'VotableFeatureResult', vote_count: number, feature: { __typename?: 'VotableFeature', id: string, voting_round_id: any, title: string, short_description: string, description: string, product: FiligranProduct, illustration_document_id: any | null, position: number, active: boolean, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> } }> } };
 
+export type EpicCreateMutationVariables = Exact<{
+  input: CreateEpicInput;
+}>;
+
+
+export type EpicCreateMutation = { __typename?: 'Mutation', createEpic: { __typename?: 'Epic', id: string, short_description: string, description: string, problem_to_solve: string, proposed_solution: string, expected_value: string, title: string, timeline: Timeline, edition_type: EditionType, products: Array<FiligranProduct>, slack_link: string | null, active: boolean, epic_type: EpicType, created_at: any, updated_at: any | null } };
+
+export type EpicUpdateMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+  input: UpdateEpicInput;
+}>;
+
+
+export type EpicUpdateMutation = { __typename?: 'Mutation', updateEpic: { __typename?: 'Epic', id: string, short_description: string, description: string, problem_to_solve: string, proposed_solution: string, expected_value: string, title: string, timeline: Timeline, edition_type: EditionType, products: Array<FiligranProduct>, slack_link: string | null, active: boolean, epic_type: EpicType, created_at: any, updated_at: any | null } };
+
+export type EpicDeleteMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type EpicDeleteMutation = { __typename?: 'Mutation', deleteEpic: { __typename?: 'Epic', id: string } | null };
+
+export type EpicFieldsFragment = { __typename?: 'Epic', id: string, short_description: string, description: string, problem_to_solve: string, proposed_solution: string, expected_value: string, title: string, timeline: Timeline, edition_type: EditionType, products: Array<FiligranProduct>, slack_link: string | null, active: boolean, epic_type: EpicType, created_at: any, updated_at: any | null };
+
 export type EpicCountPerTimelineQueryQueryVariables = Exact<{ [key: string]: never; }>;
 
 
 export type EpicCountPerTimelineQueryQuery = { __typename?: 'Query', countEpicsPerTimeline: Array<{ __typename?: 'EpicCountPerTimeline', timeline: Timeline, count: number }> };
+
+export type EpicsQueryVariables = Exact<{
+  count: Scalars['Int']['input'];
+  orderBy: EpicOrdering;
+  orderMode: OrderingMode;
+  searchTerm: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type EpicsQuery = { __typename?: 'Query', epics: { __typename?: 'EpicConnection', totalCount: number, edges: Array<{ __typename?: 'EpicEdge', node: { __typename?: 'Epic', id: string, short_description: string, description: string, problem_to_solve: string, proposed_solution: string, expected_value: string, title: string, timeline: Timeline, edition_type: EditionType, products: Array<FiligranProduct>, slack_link: string | null, active: boolean, epic_type: EpicType, created_at: any, updated_at: any | null } }> } | null };
 
 
 export const CompetitorRowFragmentDoc = `
@@ -4452,6 +4649,110 @@ export const XtmoneIntegrationStatusFragmentDoc = `
   last_checked_at
 }
     ${XtmoneIntegrationStatusEntryFragmentDoc}`;
+export const DocumentItemFragmentDoc = `
+    fragment DocumentItem on Document {
+  __typename
+  id
+  type
+  file_name
+  created_at
+  name
+  short_description
+  description
+  download_number
+  share_number
+  status
+  updated_at
+  use_cases {
+    id
+    name
+    color
+  }
+  uploader {
+    id
+    email
+    first_name
+    last_name
+    picture
+  }
+  uploader_organization {
+    id
+    name
+    personal_space
+  }
+  children_documents {
+    id
+    file_name
+    created_at
+    name
+    description
+    download_number
+    status
+    source_type
+    image_type
+  }
+  slug
+  service_instance {
+    id
+    slug
+  }
+  subscription {
+    id
+  }
+  ... on CustomDashboard {
+    product_version
+  }
+  ... on Integration {
+    integration_type
+    datasheet_url
+    blogpost_url
+    demo_url
+    solution_categories {
+      id
+      name
+    }
+    license_type
+  }
+  ... on CsvFeed {
+    feed_url
+  }
+  ... on TaxiiFeed {
+    feed_url
+  }
+  ... on RssFeed {
+    feed_url
+  }
+  ... on Stream {
+    feed_url
+  }
+  ... on ThirdPartyIntegration {
+    product_version
+    vendor_url
+    github_url
+  }
+  ... on Connector {
+    product_version
+    container_image
+    verified
+    source_code
+    subscription_link
+    manager_supported
+    playbook_supported
+    minimum_deployable_version
+    contact
+  }
+  ... on OpenAEVScenario {
+    product_version
+  }
+  ... on OpenCTIPlaybook {
+    product_version
+  }
+  ... on CustomView {
+    product_version
+    entity_types
+  }
+}
+    `;
 export const HomepageDocumentFragmentDoc = `
     fragment HomepageDocument on Document {
   id
@@ -4472,6 +4773,42 @@ export const HomepageDocumentFragmentDoc = `
   ... on Connector {
     verified
     manager_supported
+  }
+}
+    `;
+export const PublicDocumentListItemFragmentDoc = `
+    fragment PublicDocumentListItem on Document {
+  __typename
+  id
+  name
+  short_description
+  slug
+  children_documents {
+    id
+    image_type
+  }
+  use_cases {
+    id
+    name
+    color
+  }
+  uploader {
+    first_name
+    last_name
+    picture
+  }
+  status
+  type
+  ... on Integration {
+    integration_type
+  }
+  ... on Connector {
+    product_version
+    verified
+    manager_supported
+  }
+  ... on CustomView {
+    entity_types
   }
 }
     `;
@@ -4498,6 +4835,7 @@ export const PublicDocumentByServiceSlugItemFragmentDoc = `
     color
   }
   uploader {
+    id
     first_name
     last_name
     picture
@@ -4722,6 +5060,25 @@ export const VotingRoundRowFragmentDoc = `
   opened_at
   closed_at
   created_at
+}
+    `;
+export const EpicFieldsFragmentDoc = `
+    fragment EpicFields on Epic {
+  id
+  short_description
+  description
+  problem_to_solve
+  proposed_solution
+  expected_value
+  title
+  timeline
+  edition_type
+  products
+  slack_link
+  active
+  epic_type
+  created_at
+  updated_at
 }
     `;
 export const CompetitorAddDocument = `
@@ -5642,6 +5999,141 @@ useIncrementShareNumberDocumentMutation.getKey = () => ['IncrementShareNumberDoc
 useIncrementShareNumberDocumentMutation.getRootKey = () => ['IncrementShareNumberDocument'] as const;
 useIncrementShareNumberDocumentMutation.fetcher = (client: GraphQLClient, variables: IncrementShareNumberDocumentMutationVariables, headers?: RequestInit['headers']) => fetcher<IncrementShareNumberDocumentMutation, IncrementShareNumberDocumentMutationVariables>(client, IncrementShareNumberDocumentDocument, variables, headers);
 
+export const DocumentCreateDocument = `
+    mutation DocumentCreate($input: CreateDocumentInput!, $metadata: [DocumentMetadata!]!, $serviceInstanceId: ServiceInstanceId!, $sourceDocument: Upload, $logo: Upload, $images: [Upload!]) {
+  createDocument(
+    input: $input
+    metadata: $metadata
+    serviceInstanceId: $serviceInstanceId
+    sourceDocument: $sourceDocument
+    logo: $logo
+    images: $images
+  ) {
+    ...DocumentItem
+  }
+}
+    ${DocumentItemFragmentDoc}`;
+
+export const useDocumentCreateMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<DocumentCreateMutation, TError, DocumentCreateMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<DocumentCreateMutation, TError, DocumentCreateMutationVariables, TContext>(
+      {
+    mutationKey: ['DocumentCreate'],
+    mutationFn: (variables?: DocumentCreateMutationVariables) => fetcher<DocumentCreateMutation, DocumentCreateMutationVariables>(client, DocumentCreateDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useDocumentCreateMutation.getKey = () => ['DocumentCreate'];
+useDocumentCreateMutation.getRootKey = () => ['DocumentCreate'] as const;
+useDocumentCreateMutation.fetcher = (client: GraphQLClient, variables: DocumentCreateMutationVariables, headers?: RequestInit['headers']) => fetcher<DocumentCreateMutation, DocumentCreateMutationVariables>(client, DocumentCreateDocument, variables, headers);
+
+export const DocumentUpdateDocument = `
+    mutation DocumentUpdate($documentId: DocumentId!, $input: UpdateDocumentInput!, $metadata: [DocumentMetadata!]!, $serviceInstanceId: ServiceInstanceId!, $sourceDocument: Upload, $logo: Upload, $images: [Upload!], $existingImageIds: [DocumentId!]) {
+  updateDocument(
+    documentId: $documentId
+    input: $input
+    metadata: $metadata
+    serviceInstanceId: $serviceInstanceId
+    sourceDocument: $sourceDocument
+    logo: $logo
+    images: $images
+    existingImageIds: $existingImageIds
+  ) {
+    ...DocumentItem
+  }
+}
+    ${DocumentItemFragmentDoc}`;
+
+export const useDocumentUpdateMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<DocumentUpdateMutation, TError, DocumentUpdateMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<DocumentUpdateMutation, TError, DocumentUpdateMutationVariables, TContext>(
+      {
+    mutationKey: ['DocumentUpdate'],
+    mutationFn: (variables?: DocumentUpdateMutationVariables) => fetcher<DocumentUpdateMutation, DocumentUpdateMutationVariables>(client, DocumentUpdateDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useDocumentUpdateMutation.getKey = () => ['DocumentUpdate'];
+useDocumentUpdateMutation.getRootKey = () => ['DocumentUpdate'] as const;
+useDocumentUpdateMutation.fetcher = (client: GraphQLClient, variables: DocumentUpdateMutationVariables, headers?: RequestInit['headers']) => fetcher<DocumentUpdateMutation, DocumentUpdateMutationVariables>(client, DocumentUpdateDocument, variables, headers);
+
+export const DocumentDeleteDocument = `
+    mutation DocumentDelete($documentId: DocumentId!, $serviceInstanceId: ServiceInstanceId!) {
+  deleteDocument(documentId: $documentId, service_instance_id: $serviceInstanceId) {
+    id
+  }
+}
+    `;
+
+export const useDocumentDeleteMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<DocumentDeleteMutation, TError, DocumentDeleteMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<DocumentDeleteMutation, TError, DocumentDeleteMutationVariables, TContext>(
+      {
+    mutationKey: ['DocumentDelete'],
+    mutationFn: (variables?: DocumentDeleteMutationVariables) => fetcher<DocumentDeleteMutation, DocumentDeleteMutationVariables>(client, DocumentDeleteDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useDocumentDeleteMutation.getKey = () => ['DocumentDelete'];
+useDocumentDeleteMutation.getRootKey = () => ['DocumentDelete'] as const;
+useDocumentDeleteMutation.fetcher = (client: GraphQLClient, variables: DocumentDeleteMutationVariables, headers?: RequestInit['headers']) => fetcher<DocumentDeleteMutation, DocumentDeleteMutationVariables>(client, DocumentDeleteDocument, variables, headers);
+
+export const OneClickDeployDocument = `
+    mutation OneClickDeploy($input: OneClickDeployInput!) {
+  sendTelemetryEvent {
+    oneClickDeploy(input: $input) {
+      result
+      message
+    }
+  }
+}
+    `;
+
+export const useOneClickDeployMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<OneClickDeployMutation, TError, OneClickDeployMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<OneClickDeployMutation, TError, OneClickDeployMutationVariables, TContext>(
+      {
+    mutationKey: ['OneClickDeploy'],
+    mutationFn: (variables?: OneClickDeployMutationVariables) => fetcher<OneClickDeployMutation, OneClickDeployMutationVariables>(client, OneClickDeployDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useOneClickDeployMutation.getKey = () => ['OneClickDeploy'];
+useOneClickDeployMutation.getRootKey = () => ['OneClickDeploy'] as const;
+useOneClickDeployMutation.fetcher = (client: GraphQLClient, variables: OneClickDeployMutationVariables, headers?: RequestInit['headers']) => fetcher<OneClickDeployMutation, OneClickDeployMutationVariables>(client, OneClickDeployDocument, variables, headers);
+
 export const MostDeployedDocumentsQueryDocument = `
     query MostDeployedDocumentsQuery($limit: Int!, $platformIdentifiers: [PlatformIdentifier!]) {
   mostDeployedDocuments(limit: $limit, platformIdentifiers: $platformIdentifiers) {
@@ -5813,6 +6305,126 @@ useInfiniteLastDeployedOverviewQueryQuery.getKey = (variables: LastDeployedOverv
 useInfiniteLastDeployedOverviewQueryQuery.getRootKey = () => ['LastDeployedOverviewQuery.infinite'] as const;
 useLastDeployedOverviewQueryQuery.fetcher = (client: GraphQLClient, variables: LastDeployedOverviewQueryQueryVariables, headers?: RequestInit['headers']) => fetcher<LastDeployedOverviewQueryQuery, LastDeployedOverviewQueryQueryVariables>(client, LastDeployedOverviewQueryDocument, variables, headers);
 
+export const DocumentsListDocument = `
+    query DocumentsList($count: Int!, $cursor: ID, $orderBy: DocumentOrdering!, $orderMode: OrderingMode!, $logicalFilters: LogicalFilterInput, $searchTerm: String, $serviceInstanceId: ServiceInstanceId!, $parentsOnly: Boolean) {
+  documents(
+    first: $count
+    after: $cursor
+    orderBy: $orderBy
+    orderMode: $orderMode
+    searchTerm: $searchTerm
+    logicalFilters: $logicalFilters
+    serviceInstanceId: $serviceInstanceId
+    parentsOnly: $parentsOnly
+  ) {
+    totalCount
+    edges {
+      node {
+        ...DocumentItem
+      }
+    }
+  }
+}
+    ${DocumentItemFragmentDoc}`;
+
+export const useDocumentsListQuery = <
+      TData = DocumentsListQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: DocumentsListQueryVariables,
+      options?: Omit<UseQueryOptions<DocumentsListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<DocumentsListQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<DocumentsListQuery, TError, TData>(
+      {
+    queryKey: ['DocumentsList', variables],
+    queryFn: fetcher<DocumentsListQuery, DocumentsListQueryVariables>(client, DocumentsListDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useDocumentsListQuery.getKey = (variables: DocumentsListQueryVariables) => ['DocumentsList', variables];
+useDocumentsListQuery.getRootKey = () => ['DocumentsList'] as const;
+export const useInfiniteDocumentsListQuery = <
+      TData = InfiniteData<DocumentsListQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: DocumentsListQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<DocumentsListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<DocumentsListQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<DocumentsListQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['DocumentsList.infinite', variables],
+      queryFn: (metaData) => fetcher<DocumentsListQuery, DocumentsListQueryVariables>(client, DocumentsListDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteDocumentsListQuery.getKey = (variables: DocumentsListQueryVariables) => ['DocumentsList.infinite', variables];
+useInfiniteDocumentsListQuery.getRootKey = () => ['DocumentsList.infinite'] as const;
+useDocumentsListQuery.fetcher = (client: GraphQLClient, variables: DocumentsListQueryVariables, headers?: RequestInit['headers']) => fetcher<DocumentsListQuery, DocumentsListQueryVariables>(client, DocumentsListDocument, variables, headers);
+
+export const DocumentDetailDocument = `
+    query DocumentDetail($documentId: DocumentId!, $serviceInstanceId: ServiceInstanceId!) {
+  document(documentId: $documentId, serviceInstanceId: $serviceInstanceId) {
+    ...DocumentItem
+  }
+}
+    ${DocumentItemFragmentDoc}`;
+
+export const useDocumentDetailQuery = <
+      TData = DocumentDetailQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: DocumentDetailQueryVariables,
+      options?: Omit<UseQueryOptions<DocumentDetailQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<DocumentDetailQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<DocumentDetailQuery, TError, TData>(
+      {
+    queryKey: ['DocumentDetail', variables],
+    queryFn: fetcher<DocumentDetailQuery, DocumentDetailQueryVariables>(client, DocumentDetailDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useDocumentDetailQuery.getKey = (variables: DocumentDetailQueryVariables) => ['DocumentDetail', variables];
+useDocumentDetailQuery.getRootKey = () => ['DocumentDetail'] as const;
+export const useInfiniteDocumentDetailQuery = <
+      TData = InfiniteData<DocumentDetailQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: DocumentDetailQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<DocumentDetailQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<DocumentDetailQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<DocumentDetailQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['DocumentDetail.infinite', variables],
+      queryFn: (metaData) => fetcher<DocumentDetailQuery, DocumentDetailQueryVariables>(client, DocumentDetailDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteDocumentDetailQuery.getKey = (variables: DocumentDetailQueryVariables) => ['DocumentDetail.infinite', variables];
+useInfiniteDocumentDetailQuery.getRootKey = () => ['DocumentDetail.infinite'] as const;
+useDocumentDetailQuery.fetcher = (client: GraphQLClient, variables: DocumentDetailQueryVariables, headers?: RequestInit['headers']) => fetcher<DocumentDetailQuery, DocumentDetailQueryVariables>(client, DocumentDetailDocument, variables, headers);
+
 export const PublicDocumentsByServiceSlugQueryDocument = `
     query PublicDocumentsByServiceSlugQuery($serviceInstanceSlug: String!) {
   publicDocumentsByServiceSlug(serviceInstanceSlug: $serviceInstanceSlug) {
@@ -5920,6 +6532,126 @@ export const useInfinitePublicDocumentsByServiceSlugSitemapQueryQuery = <
 useInfinitePublicDocumentsByServiceSlugSitemapQueryQuery.getKey = (variables: PublicDocumentsByServiceSlugSitemapQueryQueryVariables) => ['PublicDocumentsByServiceSlugSitemapQuery.infinite', variables];
 useInfinitePublicDocumentsByServiceSlugSitemapQueryQuery.getRootKey = () => ['PublicDocumentsByServiceSlugSitemapQuery.infinite'] as const;
 usePublicDocumentsByServiceSlugSitemapQueryQuery.fetcher = (client: GraphQLClient, variables: PublicDocumentsByServiceSlugSitemapQueryQueryVariables, headers?: RequestInit['headers']) => fetcher<PublicDocumentsByServiceSlugSitemapQueryQuery, PublicDocumentsByServiceSlugSitemapQueryQueryVariables>(client, PublicDocumentsByServiceSlugSitemapQueryDocument, variables, headers);
+
+export const PublicDocumentsDocument = `
+    query PublicDocuments($slug: String!, $count: Int!, $cursor: ID, $orderBy: DocumentOrdering!, $orderMode: OrderingMode!, $logicalFilters: LogicalFilterInput, $searchTerm: String, $serviceInstanceId: ServiceInstanceId!) {
+  publicDocuments(
+    slug: $slug
+    first: $count
+    after: $cursor
+    orderBy: $orderBy
+    orderMode: $orderMode
+    logicalFilters: $logicalFilters
+    searchTerm: $searchTerm
+    serviceInstanceId: $serviceInstanceId
+  ) {
+    totalCount
+    edges {
+      node {
+        ...PublicDocumentListItem
+      }
+    }
+  }
+}
+    ${PublicDocumentListItemFragmentDoc}`;
+
+export const usePublicDocumentsQuery = <
+      TData = PublicDocumentsQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: PublicDocumentsQueryVariables,
+      options?: Omit<UseQueryOptions<PublicDocumentsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<PublicDocumentsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<PublicDocumentsQuery, TError, TData>(
+      {
+    queryKey: ['PublicDocuments', variables],
+    queryFn: fetcher<PublicDocumentsQuery, PublicDocumentsQueryVariables>(client, PublicDocumentsDocument, variables, headers),
+    ...options
+  }
+    )};
+
+usePublicDocumentsQuery.getKey = (variables: PublicDocumentsQueryVariables) => ['PublicDocuments', variables];
+usePublicDocumentsQuery.getRootKey = () => ['PublicDocuments'] as const;
+export const useInfinitePublicDocumentsQuery = <
+      TData = InfiniteData<PublicDocumentsQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: PublicDocumentsQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<PublicDocumentsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<PublicDocumentsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<PublicDocumentsQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['PublicDocuments.infinite', variables],
+      queryFn: (metaData) => fetcher<PublicDocumentsQuery, PublicDocumentsQueryVariables>(client, PublicDocumentsDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfinitePublicDocumentsQuery.getKey = (variables: PublicDocumentsQueryVariables) => ['PublicDocuments.infinite', variables];
+useInfinitePublicDocumentsQuery.getRootKey = () => ['PublicDocuments.infinite'] as const;
+usePublicDocumentsQuery.fetcher = (client: GraphQLClient, variables: PublicDocumentsQueryVariables, headers?: RequestInit['headers']) => fetcher<PublicDocumentsQuery, PublicDocumentsQueryVariables>(client, PublicDocumentsDocument, variables, headers);
+
+export const PublicDocumentBySlugDocument = `
+    query PublicDocumentBySlug($serviceInstanceId: ServiceInstanceId!, $slug: String!) {
+  publicDocumentBySlug(serviceInstanceId: $serviceInstanceId, slug: $slug) {
+    ...PublicDocumentByServiceSlugItem
+  }
+}
+    ${PublicDocumentByServiceSlugItemFragmentDoc}`;
+
+export const usePublicDocumentBySlugQuery = <
+      TData = PublicDocumentBySlugQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: PublicDocumentBySlugQueryVariables,
+      options?: Omit<UseQueryOptions<PublicDocumentBySlugQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<PublicDocumentBySlugQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<PublicDocumentBySlugQuery, TError, TData>(
+      {
+    queryKey: ['PublicDocumentBySlug', variables],
+    queryFn: fetcher<PublicDocumentBySlugQuery, PublicDocumentBySlugQueryVariables>(client, PublicDocumentBySlugDocument, variables, headers),
+    ...options
+  }
+    )};
+
+usePublicDocumentBySlugQuery.getKey = (variables: PublicDocumentBySlugQueryVariables) => ['PublicDocumentBySlug', variables];
+usePublicDocumentBySlugQuery.getRootKey = () => ['PublicDocumentBySlug'] as const;
+export const useInfinitePublicDocumentBySlugQuery = <
+      TData = InfiniteData<PublicDocumentBySlugQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: PublicDocumentBySlugQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<PublicDocumentBySlugQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<PublicDocumentBySlugQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<PublicDocumentBySlugQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['PublicDocumentBySlug.infinite', variables],
+      queryFn: (metaData) => fetcher<PublicDocumentBySlugQuery, PublicDocumentBySlugQueryVariables>(client, PublicDocumentBySlugDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfinitePublicDocumentBySlugQuery.getKey = (variables: PublicDocumentBySlugQueryVariables) => ['PublicDocumentBySlug.infinite', variables];
+useInfinitePublicDocumentBySlugQuery.getRootKey = () => ['PublicDocumentBySlug.infinite'] as const;
+usePublicDocumentBySlugQuery.fetcher = (client: GraphQLClient, variables: PublicDocumentBySlugQueryVariables, headers?: RequestInit['headers']) => fetcher<PublicDocumentBySlugQuery, PublicDocumentBySlugQueryVariables>(client, PublicDocumentBySlugDocument, variables, headers);
 
 export const FeatureVoteDocument = `
     mutation FeatureVote($feature_id: VotableFeatureId!) {
@@ -6342,6 +7074,68 @@ export const useInfiniteMeOrganizationsQuery = <
 useInfiniteMeOrganizationsQuery.getKey = (variables?: MeOrganizationsQueryVariables) => variables === undefined ? ['MeOrganizations.infinite'] : ['MeOrganizations.infinite', variables];
 useInfiniteMeOrganizationsQuery.getRootKey = () => ['MeOrganizations.infinite'] as const;
 useMeOrganizationsQuery.fetcher = (client: GraphQLClient, variables?: MeOrganizationsQueryVariables, headers?: RequestInit['headers']) => fetcher<MeOrganizationsQuery, MeOrganizationsQueryVariables>(client, MeOrganizationsDocument, variables, headers);
+
+export const MeAnalyticsDocument = `
+    query MeAnalytics {
+  me {
+    email
+    selected_organization_id
+    organizations {
+      id
+      personal_space
+    }
+    capabilities {
+      name
+    }
+    selected_org_capabilities
+  }
+}
+    `;
+
+export const useMeAnalyticsQuery = <
+      TData = MeAnalyticsQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables?: MeAnalyticsQueryVariables,
+      options?: Omit<UseQueryOptions<MeAnalyticsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<MeAnalyticsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<MeAnalyticsQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['MeAnalytics'] : ['MeAnalytics', variables],
+    queryFn: fetcher<MeAnalyticsQuery, MeAnalyticsQueryVariables>(client, MeAnalyticsDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useMeAnalyticsQuery.getKey = (variables?: MeAnalyticsQueryVariables) => variables === undefined ? ['MeAnalytics'] : ['MeAnalytics', variables];
+useMeAnalyticsQuery.getRootKey = () => ['MeAnalytics'] as const;
+export const useInfiniteMeAnalyticsQuery = <
+      TData = InfiniteData<MeAnalyticsQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: MeAnalyticsQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<MeAnalyticsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<MeAnalyticsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<MeAnalyticsQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['MeAnalytics.infinite'] : ['MeAnalytics.infinite', variables],
+      queryFn: (metaData) => fetcher<MeAnalyticsQuery, MeAnalyticsQueryVariables>(client, MeAnalyticsDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteMeAnalyticsQuery.getKey = (variables?: MeAnalyticsQueryVariables) => variables === undefined ? ['MeAnalytics.infinite'] : ['MeAnalytics.infinite', variables];
+useInfiniteMeAnalyticsQuery.getRootKey = () => ['MeAnalytics.infinite'] as const;
+useMeAnalyticsQuery.fetcher = (client: GraphQLClient, variables?: MeAnalyticsQueryVariables, headers?: RequestInit['headers']) => fetcher<MeAnalyticsQuery, MeAnalyticsQueryVariables>(client, MeAnalyticsDocument, variables, headers);
 
 export const NewsFeedDeleteItemDocument = `
     mutation NewsFeedDeleteItem($id: NewsFeedItemId!) {
@@ -7076,6 +7870,63 @@ export const useInfinitePlatformAssociatedOrganizationQuery = <
 useInfinitePlatformAssociatedOrganizationQuery.getKey = (variables: PlatformAssociatedOrganizationQueryVariables) => ['PlatformAssociatedOrganization.infinite', variables];
 useInfinitePlatformAssociatedOrganizationQuery.getRootKey = () => ['PlatformAssociatedOrganization.infinite'] as const;
 usePlatformAssociatedOrganizationQuery.fetcher = (client: GraphQLClient, variables: PlatformAssociatedOrganizationQueryVariables, headers?: RequestInit['headers']) => fetcher<PlatformAssociatedOrganizationQuery, PlatformAssociatedOrganizationQueryVariables>(client, PlatformAssociatedOrganizationDocument, variables, headers);
+
+export const RegisteredPlatformRedirectTargetDocument = `
+    query RegisteredPlatformRedirectTarget($input: RegisteredPlatformByPlatformIdInput!) {
+  registeredPlatformByPlatformId(input: $input) {
+    service_instance_id
+    identifier
+    deployment_request {
+      parent_id
+    }
+  }
+}
+    `;
+
+export const useRegisteredPlatformRedirectTargetQuery = <
+      TData = RegisteredPlatformRedirectTargetQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: RegisteredPlatformRedirectTargetQueryVariables,
+      options?: Omit<UseQueryOptions<RegisteredPlatformRedirectTargetQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<RegisteredPlatformRedirectTargetQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<RegisteredPlatformRedirectTargetQuery, TError, TData>(
+      {
+    queryKey: ['RegisteredPlatformRedirectTarget', variables],
+    queryFn: fetcher<RegisteredPlatformRedirectTargetQuery, RegisteredPlatformRedirectTargetQueryVariables>(client, RegisteredPlatformRedirectTargetDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useRegisteredPlatformRedirectTargetQuery.getKey = (variables: RegisteredPlatformRedirectTargetQueryVariables) => ['RegisteredPlatformRedirectTarget', variables];
+useRegisteredPlatformRedirectTargetQuery.getRootKey = () => ['RegisteredPlatformRedirectTarget'] as const;
+export const useInfiniteRegisteredPlatformRedirectTargetQuery = <
+      TData = InfiniteData<RegisteredPlatformRedirectTargetQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: RegisteredPlatformRedirectTargetQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<RegisteredPlatformRedirectTargetQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<RegisteredPlatformRedirectTargetQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<RegisteredPlatformRedirectTargetQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['RegisteredPlatformRedirectTarget.infinite', variables],
+      queryFn: (metaData) => fetcher<RegisteredPlatformRedirectTargetQuery, RegisteredPlatformRedirectTargetQueryVariables>(client, RegisteredPlatformRedirectTargetDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteRegisteredPlatformRedirectTargetQuery.getKey = (variables: RegisteredPlatformRedirectTargetQueryVariables) => ['RegisteredPlatformRedirectTarget.infinite', variables];
+useInfiniteRegisteredPlatformRedirectTargetQuery.getRootKey = () => ['RegisteredPlatformRedirectTarget.infinite'] as const;
+useRegisteredPlatformRedirectTargetQuery.fetcher = (client: GraphQLClient, variables: RegisteredPlatformRedirectTargetQueryVariables, headers?: RequestInit['headers']) => fetcher<RegisteredPlatformRedirectTargetQuery, RegisteredPlatformRedirectTargetQueryVariables>(client, RegisteredPlatformRedirectTargetDocument, variables, headers);
 
 export const AddRolePortalDocument = `
     mutation AddRolePortal($input: AddRolePortalInput!) {
@@ -9153,6 +10004,93 @@ useInfiniteVotingRoundRankingQuery.getKey = (variables: VotingRoundRankingQueryV
 useInfiniteVotingRoundRankingQuery.getRootKey = () => ['VotingRoundRanking.infinite'] as const;
 useVotingRoundRankingQuery.fetcher = (client: GraphQLClient, variables: VotingRoundRankingQueryVariables, headers?: RequestInit['headers']) => fetcher<VotingRoundRankingQuery, VotingRoundRankingQueryVariables>(client, VotingRoundRankingDocument, variables, headers);
 
+export const EpicCreateDocument = `
+    mutation EpicCreate($input: CreateEpicInput!) {
+  createEpic(input: $input) {
+    ...EpicFields
+  }
+}
+    ${EpicFieldsFragmentDoc}`;
+
+export const useEpicCreateMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<EpicCreateMutation, TError, EpicCreateMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<EpicCreateMutation, TError, EpicCreateMutationVariables, TContext>(
+      {
+    mutationKey: ['EpicCreate'],
+    mutationFn: (variables?: EpicCreateMutationVariables) => fetcher<EpicCreateMutation, EpicCreateMutationVariables>(client, EpicCreateDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useEpicCreateMutation.getKey = () => ['EpicCreate'];
+useEpicCreateMutation.getRootKey = () => ['EpicCreate'] as const;
+useEpicCreateMutation.fetcher = (client: GraphQLClient, variables: EpicCreateMutationVariables, headers?: RequestInit['headers']) => fetcher<EpicCreateMutation, EpicCreateMutationVariables>(client, EpicCreateDocument, variables, headers);
+
+export const EpicUpdateDocument = `
+    mutation EpicUpdate($id: ID!, $input: UpdateEpicInput!) {
+  updateEpic(id: $id, input: $input) {
+    ...EpicFields
+  }
+}
+    ${EpicFieldsFragmentDoc}`;
+
+export const useEpicUpdateMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<EpicUpdateMutation, TError, EpicUpdateMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<EpicUpdateMutation, TError, EpicUpdateMutationVariables, TContext>(
+      {
+    mutationKey: ['EpicUpdate'],
+    mutationFn: (variables?: EpicUpdateMutationVariables) => fetcher<EpicUpdateMutation, EpicUpdateMutationVariables>(client, EpicUpdateDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useEpicUpdateMutation.getKey = () => ['EpicUpdate'];
+useEpicUpdateMutation.getRootKey = () => ['EpicUpdate'] as const;
+useEpicUpdateMutation.fetcher = (client: GraphQLClient, variables: EpicUpdateMutationVariables, headers?: RequestInit['headers']) => fetcher<EpicUpdateMutation, EpicUpdateMutationVariables>(client, EpicUpdateDocument, variables, headers);
+
+export const EpicDeleteDocument = `
+    mutation EpicDelete($id: ID!) {
+  deleteEpic(id: $id) {
+    id
+  }
+}
+    `;
+
+export const useEpicDeleteMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<EpicDeleteMutation, TError, EpicDeleteMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<EpicDeleteMutation, TError, EpicDeleteMutationVariables, TContext>(
+      {
+    mutationKey: ['EpicDelete'],
+    mutationFn: (variables?: EpicDeleteMutationVariables) => fetcher<EpicDeleteMutation, EpicDeleteMutationVariables>(client, EpicDeleteDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useEpicDeleteMutation.getKey = () => ['EpicDelete'];
+useEpicDeleteMutation.getRootKey = () => ['EpicDelete'] as const;
+useEpicDeleteMutation.fetcher = (client: GraphQLClient, variables: EpicDeleteMutationVariables, headers?: RequestInit['headers']) => fetcher<EpicDeleteMutation, EpicDeleteMutationVariables>(client, EpicDeleteDocument, variables, headers);
+
 export const EpicCountPerTimelineQueryDocument = `
     query EpicCountPerTimelineQuery {
   countEpicsPerTimeline {
@@ -9206,3 +10144,66 @@ export const useInfiniteEpicCountPerTimelineQueryQuery = <
 useInfiniteEpicCountPerTimelineQueryQuery.getKey = (variables?: EpicCountPerTimelineQueryQueryVariables) => variables === undefined ? ['EpicCountPerTimelineQuery.infinite'] : ['EpicCountPerTimelineQuery.infinite', variables];
 useInfiniteEpicCountPerTimelineQueryQuery.getRootKey = () => ['EpicCountPerTimelineQuery.infinite'] as const;
 useEpicCountPerTimelineQueryQuery.fetcher = (client: GraphQLClient, variables?: EpicCountPerTimelineQueryQueryVariables, headers?: RequestInit['headers']) => fetcher<EpicCountPerTimelineQueryQuery, EpicCountPerTimelineQueryQueryVariables>(client, EpicCountPerTimelineQueryDocument, variables, headers);
+
+export const EpicsDocument = `
+    query Epics($count: Int!, $orderBy: EpicOrdering!, $orderMode: OrderingMode!, $searchTerm: String) {
+  epics(
+    first: $count
+    orderBy: $orderBy
+    orderMode: $orderMode
+    searchTerm: $searchTerm
+  ) {
+    totalCount
+    edges {
+      node {
+        ...EpicFields
+      }
+    }
+  }
+}
+    ${EpicFieldsFragmentDoc}`;
+
+export const useEpicsQuery = <
+      TData = EpicsQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: EpicsQueryVariables,
+      options?: Omit<UseQueryOptions<EpicsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<EpicsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<EpicsQuery, TError, TData>(
+      {
+    queryKey: ['Epics', variables],
+    queryFn: fetcher<EpicsQuery, EpicsQueryVariables>(client, EpicsDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useEpicsQuery.getKey = (variables: EpicsQueryVariables) => ['Epics', variables];
+useEpicsQuery.getRootKey = () => ['Epics'] as const;
+export const useInfiniteEpicsQuery = <
+      TData = InfiniteData<EpicsQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: EpicsQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<EpicsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<EpicsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<EpicsQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['Epics.infinite', variables],
+      queryFn: (metaData) => fetcher<EpicsQuery, EpicsQueryVariables>(client, EpicsDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteEpicsQuery.getKey = (variables: EpicsQueryVariables) => ['Epics.infinite', variables];
+useInfiniteEpicsQuery.getRootKey = () => ['Epics.infinite'] as const;
+useEpicsQuery.fetcher = (client: GraphQLClient, variables: EpicsQueryVariables, headers?: RequestInit['headers']) => fetcher<EpicsQuery, EpicsQueryVariables>(client, EpicsDocument, variables, headers);

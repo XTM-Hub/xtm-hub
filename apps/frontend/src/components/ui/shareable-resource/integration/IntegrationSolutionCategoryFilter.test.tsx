@@ -1,3 +1,4 @@
+import { readTrackedEvents, startAnalytics } from '@/utils/test/analytics';
 import testRender from '@/utils/test/test-render';
 import { screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
@@ -5,8 +6,12 @@ import { IntegrationSolutionCategoryFilter } from './IntegrationSolutionCategory
 
 const setSolutionCategoriesMock = vi.fn();
 
+const { CATEGORY_NAME } = vi.hoisted(() => ({
+  CATEGORY_NAME: 'Threat Intelligence',
+}));
+
 vi.mock('@/components/service/form/UseSolutionCategories', () => ({
-  useSolutionCategories: () => [{ id: 'cat-1', name: 'Threat Intelligence' }],
+  useSolutionCategories: () => [{ id: 'cat-1', name: CATEGORY_NAME }],
 }));
 
 vi.mock('@/components/service/components/ServiceListStorageKeyContext', () => ({
@@ -53,5 +58,25 @@ describe('IntegrationSolutionCategoryFilter', () => {
         name: 'Service.OpenctiIntegrations.Filter.SolutionCategory.Placeholder',
       })
     ).not.toBeInTheDocument();
+  });
+
+  it('should send the name of the solution category when it is checked', async () => {
+    // Given
+    startAnalytics();
+    const { user } = testRender(<IntegrationSolutionCategoryFilter />);
+
+    // When
+    await user.click(screen.getByRole('checkbox', { name: CATEGORY_NAME }));
+
+    // Then
+    expect(readTrackedEvents('filter_apply')).toEqual([
+      {
+        filter_name: 'Solution category',
+        filter_value: CATEGORY_NAME,
+        filter_action: 'Add',
+        library: 'Integrations',
+        product: 'OpenCTI',
+      },
+    ]);
   });
 });

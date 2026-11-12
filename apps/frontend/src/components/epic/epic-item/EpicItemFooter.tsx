@@ -2,12 +2,11 @@ import { EditionTypeMapping } from '@/components/epic/epic-item/EditionTypeMappi
 import { FiligranProductMapping } from '@/components/epic/epic-item/FiligranProductMapping';
 import { sortFiligranProducts } from '@/components/epic/filigran-products';
 import { Chip } from '@filigran/design-system';
-import { epic_fragment$data } from '@generated/epic_fragment.graphql';
-import { EditionType, EpicType } from '@graphql/generated';
+import { EditionType, EpicFieldsFragment, EpicType } from '@graphql/generated';
 import { ReactNode } from 'react';
 
 interface EpicItemFooterProps {
-  epic: epic_fragment$data;
+  epic: EpicFieldsFragment;
   children?: ReactNode;
 }
 export const EpicItemFooter = ({ epic, children }: EpicItemFooterProps) => {

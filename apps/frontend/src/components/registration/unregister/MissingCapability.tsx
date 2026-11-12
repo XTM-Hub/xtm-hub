@@ -31,7 +31,9 @@ export const UnregisterMissingCapability = ({
     );
 
   return (
-    <RegistrationLayout cancel={cancel}>
+    <RegistrationLayout
+      cancel={cancel}
+      cancelAnalyticsId="platform_disconnection_cancel">
       <h1 className="title-sm">
         {t(`Unregister.Error.Capability.Title`, {
           capability: capability?.replaceAll('_', ' ') ?? '',

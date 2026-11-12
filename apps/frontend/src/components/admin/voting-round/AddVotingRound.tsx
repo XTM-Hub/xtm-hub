@@ -6,6 +6,7 @@ import VotingRoundForm, {
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { Button } from '@filigran/design-system';
 import { useVotingRoundCreateMutation } from '@graphql/generated';
@@ -61,7 +62,11 @@ const AddVotingRound = ({
       title={t('VotingRound.Actions.Add')}
       setOpen={setOpenSheet}
       open={openSheet}
-      trigger={<Button>{t('VotingRound.Actions.Add')}</Button>}>
+      trigger={
+        <Button {...analyticsId('admin_voting_round_create')}>
+          {t('VotingRound.Actions.Add')}
+        </Button>
+      }>
       <VotingRoundForm
         copySources={copySources}
         serviceInstances={serviceInstances}

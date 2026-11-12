@@ -4,6 +4,7 @@ import SolutionCategoryForm, {
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { prependToQueryCache } from '@/utils/query-cache';
 import { Button } from '@filigran/design-system';
@@ -62,7 +63,11 @@ const AddSolutionCategory = () => {
       title={t('SolutionCategory.Actions.Add')}
       setOpen={setOpenSheet}
       open={openSheet}
-      trigger={<Button>{t('SolutionCategory.Actions.Add')}</Button>}>
+      trigger={
+        <Button {...analyticsId('admin_solution_category_create')}>
+          {t('SolutionCategory.Actions.Add')}
+        </Button>
+      }>
       <SolutionCategoryForm
         onClose={() => setOpenSheet(false)}
         handleSubmit={onSubmit}

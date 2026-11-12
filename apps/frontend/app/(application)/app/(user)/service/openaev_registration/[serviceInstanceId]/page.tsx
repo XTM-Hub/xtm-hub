@@ -8,7 +8,10 @@ export interface ServiceOpenAEVRegistrationPageProps {
 const Page = ({ params }: ServiceOpenAEVRegistrationPageProps) => {
   return (
     <>
-      <RegisteredPlatformOverview params={params} />
+      <RegisteredPlatformOverview
+        params={params}
+        platformIdentifier={PlatformIdentifier.Openaev}
+      />
       <RegistrationLearnMore platformIdentifier={PlatformIdentifier.Openaev} />
     </>
   );

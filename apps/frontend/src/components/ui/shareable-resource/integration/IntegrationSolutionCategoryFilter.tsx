@@ -1,9 +1,11 @@
 import { ServiceListFacetCounts } from '@/components/service/components/header/filter/service-list-facet-counts';
+import { ServiceListFilterKey } from '@/components/service/components/header/ServiceListHeader';
 import { useServiceListStorageKeyContext } from '@/components/service/components/ServiceListStorageKeyContext';
 import { useSolutionCategories } from '@/components/service/form/UseSolutionCategories';
 import { LogicalMultiSelectFormField } from '@/components/ui/shareable-resource/logical-multi-select/LogicalMultiSelectFormField';
 import { useServiceListStorage } from '@/hooks/use-service-list-storage';
 import { useTranslate } from '@/hooks/use-translate';
+import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 import { FiligranProduct } from '@graphql/generated';
 import { useMemo } from 'react';
 
@@ -35,6 +37,10 @@ export const IntegrationSolutionCategoryFilter = ({
       initialValue={solutionCategories}
       noResultString={t('Utils.NotFound')}
       onValueChange={setSolutionCategories}
+      analyticsFilter={{
+        filterKey: ServiceListFilterKey.SolutionCategory,
+        resourceType: ShareableResourceType.OPENCTI_INTEGRATION,
+      }}
       optionLabel={t(
         'Service.OpenctiIntegrations.Filter.SolutionCategory.Label'
       )}

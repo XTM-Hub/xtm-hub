@@ -50,6 +50,7 @@ already exist. The `typescript-eslint` version warning is non-blocking.
   `apps/backend/src/model/kanel/`.
 - **Never hardcode versions in documentation** — reference `.nvmrc`, `packageManager` or the `catalog` block.
 - **Frontend UI** follows [`design-system.md`](.claude/rules/design-system.md).
+- **Frontend analytics IDs** follow [`frontend.md`](.claude/rules/frontend.md#analytics-ga4).
 - **After any GraphQL change** (backend schema, Relay template or `apps/frontend/graphql/**` operation), regenerate
   and commit the derived files: what to run depends on what changed, see [`graphql.md`](.claude/rules/graphql.md).
 - **Before frontend `check-ts` on a fresh checkout**, run `yarn workspace @xtm-hub/frontend next typegen`, or you

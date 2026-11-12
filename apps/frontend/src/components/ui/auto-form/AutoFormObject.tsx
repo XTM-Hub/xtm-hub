@@ -5,6 +5,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { FormField } from '@/components/ui/form';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { useFormContext } from 'react-hook-form';
 import * as z from 'zod';
 import { DEFAULT_ZOD_HANDLERS, INPUT_COMPONENTS } from './config';
@@ -101,7 +102,9 @@ const AutoFormObject = ({
             <AccordionItem
               value={name}
               key={key}>
-              <AccordionTrigger>{itemName}</AccordionTrigger>
+              <AccordionTrigger {...analyticsId('common_form_section_toggle')}>
+                {itemName}
+              </AccordionTrigger>
               <AccordionContent className="p-2">
                 <AutoFormObject
                   schema={item as unknown as z.ZodObject}

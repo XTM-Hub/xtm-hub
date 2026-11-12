@@ -59,7 +59,9 @@ test.describe('Service Management', () => {
       await servicePage.editUsersRightsForService(
         TEST_SUBSCRIPTION.userInOrgaEmail
       );
-      await expect(page.getByText(GENERIC_CAPABILITY.access)).toBeVisible();
+      await expect(
+        page.getByRole('main').getByText(GENERIC_CAPABILITY.access)
+      ).toBeVisible();
     });
 
     await test.step('Add user that is not in organization', async () => {

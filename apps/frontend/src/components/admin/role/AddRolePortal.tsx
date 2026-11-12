@@ -2,6 +2,7 @@ import RolePortalForm from '@/components/admin/role/RolePortalForm';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { Button } from '@filigran/design-system';
 
@@ -46,7 +47,11 @@ const AddRolePortal = () => {
       title={t('RoleListPage.AddRole')}
       setOpen={setOpenSheet}
       open={openSheet}
-      trigger={<Button>{t('RoleListPage.AddRole')}</Button>}>
+      trigger={
+        <Button {...analyticsId('admin_role_create')}>
+          {t('RoleListPage.AddRole')}
+        </Button>
+      }>
       <RolePortalForm handleSubmit={(input) => addRolePortal({ input })} />
     </SheetWithPreventingDialog>
   );

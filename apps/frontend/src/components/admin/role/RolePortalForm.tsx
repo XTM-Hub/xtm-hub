@@ -43,6 +43,7 @@ const CapabilitiesField = ({
 
   return (
     <AppCombobox
+      formField
       multiple
       label={t('RoleListPage.Capabilities')}
       placeholder={t('RoleListPage.Capabilities')}
@@ -79,7 +80,12 @@ const RolePortalForm = ({
           fieldType: CapabilitiesField,
         },
       }}>
-      {({ isDirty }) => <RoleSheetFormFooter isDirty={isDirty} />}
+      {({ isDirty }) => (
+        <RoleSheetFormFooter
+          isDirty={isDirty}
+          submitAnalyticsId="admin_role_submit"
+        />
+      )}
     </AutoForm>
   );
 };

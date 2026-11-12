@@ -15,6 +15,7 @@ import {
 import { SelectField } from '@/components/ui/SelectField';
 import { TranslatableEnumSelectField } from '@/components/ui/TranslatableEnumSelectField';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import {
   FiligranWebsiteUtmCampaign,
   withFiligranWebsiteUtm,
@@ -74,6 +75,7 @@ export const XtmPlatformTrialForm = ({
 
   const renderMssaLink = (chunks: ReactNode) => (
     <Link
+      {...analyticsId('trial_mssa_open')}
       target="_blank"
       rel="noopener noreferrer"
       className="underline text-filigran-brand-primary"
@@ -86,6 +88,7 @@ export const XtmPlatformTrialForm = ({
   );
   const renderAiTermsLink = (chunks: ReactNode) => (
     <Link
+      {...analyticsId('trial_ai_terms_open')}
       target="_blank"
       rel="noopener noreferrer"
       className="underline text-filigran-brand-primary"
@@ -130,6 +133,7 @@ export const XtmPlatformTrialForm = ({
             name="region"
             render={({ field, fieldState }) => (
               <SelectField
+                formField
                 label={t('Service.Trials.Form.Region')}
                 required
                 placeholder={t('Service.Trials.Form.RegionPlaceholder')}
@@ -223,6 +227,7 @@ export const XtmPlatformTrialForm = ({
 
           <div className="flex justify-end">
             <Button
+              {...analyticsId('trial_request_submit')}
               type="submit"
               loading={isSubmitting}>
               {t('Service.Trials.XtmPlatform.Page.Form.Submit')}

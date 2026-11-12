@@ -2,15 +2,15 @@ import { EpicFormSheet } from '@/components/epic/EpicFormSheet';
 import { DeleteEpic } from '@/components/epic/epic-item/DeleteEpic';
 import { IconActions, IconActionsItem } from '@/components/ui/IconActions';
 import { ShareLinkButton } from '@/components/ui/share-link/ShareLinkButton';
-import { useEpicListContext } from '@/hooks/use-epic-list-context';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { Chip } from '@filigran/design-system';
 import { MoreVertIcon } from '@filigran/icon';
-import { epic_fragment$data } from '@generated/epic_fragment.graphql';
+import { EpicFieldsFragment } from '@graphql/generated';
 import { useState } from 'react';
 
 interface EpicAdminMenuProps {
-  epic: epic_fragment$data;
+  epic: EpicFieldsFragment;
   userCanDelete?: boolean;
   userCanUpdate?: boolean;
 }
@@ -21,12 +21,10 @@ export const EpicAdminMenu = ({
 }: EpicAdminMenuProps) => {
   const t = useTranslate();
 
-  const { connectionID } = useEpicListContext();
-
-  const [deleteEpic, setDeleteEpic] = useState<epic_fragment$data | undefined>(
+  const [deleteEpic, setDeleteEpic] = useState<EpicFieldsFragment | undefined>(
     undefined
   );
-  const [updateEpic, setUpdateEpic] = useState<epic_fragment$data | undefined>(
+  const [updateEpic, setUpdateEpic] = useState<EpicFieldsFragment | undefined>(
     undefined
   );
 
@@ -39,6 +37,7 @@ export const EpicAdminMenu = ({
 
   return (
     <>
+      {/* eslint-disable-next-line no-restricted-syntax -- container whose children carry the IDs */}
       <div
         data-no-open-detail
         className="ml-auto flex h-9 shrink-0 items-center justify-end"
@@ -53,18 +52,26 @@ export const EpicAdminMenu = ({
             className="mr-2"
           />
         )}
-        <ShareLinkButton url={shareableUrl} />
+        <ShareLinkButton
+          analyticsId="roadmap_epic_share"
+          url={shareableUrl}
+        />
         {(userCanDelete || userCanUpdate) && (
           <IconActions
+            analyticsId="roadmap_epic_actions_open"
             aria-label={t('Utils.OpenMenu')}
             icon={<MoreVertIcon className="h-4 w-4 text-icon-highlight" />}>
             {userCanUpdate && (
-              <IconActionsItem onClick={() => setUpdateEpic(epic)}>
+              <IconActionsItem
+                {...analyticsId('roadmap_epic_edit')}
+                onClick={() => setUpdateEpic(epic)}>
                 {t('Utils.Update')}
               </IconActionsItem>
             )}
             {userCanDelete && (
-              <IconActionsItem onClick={() => setDeleteEpic(epic)}>
+              <IconActionsItem
+                {...analyticsId('roadmap_epic_delete')}
+                onClick={() => setDeleteEpic(epic)}>
                 {t('Utils.Delete')}
               </IconActionsItem>
             )}
@@ -74,7 +81,6 @@ export const EpicAdminMenu = ({
       {deleteEpic && (
         <DeleteEpic
           key={`delete-${deleteEpic.id}`}
-          connectionId={connectionID}
           epic={deleteEpic}
           open={!!deleteEpic}
           setOpen={(open) => setDeleteEpic(open ? deleteEpic : undefined)}
