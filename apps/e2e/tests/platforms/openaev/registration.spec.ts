@@ -31,7 +31,7 @@ test.describe('OpenAEV one-click deploy', () => {
     await test.step('publish a scenario in XTM Hub', async () => {
       await new HomePage(page).navigateTo();
       await scenarioPage.navigateToScenarioService();
-      await scenarioPage.addScenario(SCENARIO);
+      await scenarioPage.addScenario({ ...SCENARIO, publish: true });
     });
 
     await test.step('deploy it in OpenAEV', async () => {
