@@ -6,6 +6,7 @@ import {
   ANALYTICS_PRODUCT_ATTRIBUTE,
   ANALYTICS_RESOURCE_ID_ATTRIBUTE,
   ANALYTICS_RESOURCE_NAME_ATTRIBUTE,
+  ANALYTICS_RESOURCE_STATUS_ATTRIBUTE,
   ANALYTICS_RESOURCE_TYPE_ATTRIBUTE,
   ANALYTICS_SECTION_ATTRIBUTE,
   ANALYTICS_USE_CASES_ATTRIBUTE,
@@ -25,6 +26,7 @@ export interface AnalyticsResourceData {
   id: string;
   name: string;
   type: string;
+  status: string;
   useCases?: ReadonlyArray<{ name: string }> | null;
 }
 
@@ -32,6 +34,7 @@ interface AnalyticsResourceDocument {
   id: string;
   name?: string | null;
   type: string;
+  status: string;
   use_cases?: ReadonlyArray<{ name: string }> | null;
 }
 
@@ -41,6 +44,7 @@ export const toAnalyticsResourceData = (
   id: document.id,
   name: document.name ?? '',
   type: document.type,
+  status: document.status,
   useCases: document.use_cases,
 });
 
@@ -48,6 +52,7 @@ export const analyticsResource = ({
   id,
   name,
   type,
+  status,
   useCases,
 }: AnalyticsResourceData) => {
   if (!isValueInEnum(type, ShareableResourceType)) {
@@ -58,6 +63,7 @@ export const analyticsResource = ({
     [ANALYTICS_RESOURCE_ID_ATTRIBUTE]: toAnalyticsResourceId(id),
     [ANALYTICS_RESOURCE_NAME_ATTRIBUTE]: name,
     [ANALYTICS_RESOURCE_TYPE_ATTRIBUTE]: type,
+    [ANALYTICS_RESOURCE_STATUS_ATTRIBUTE]: status,
     [ANALYTICS_LIBRARY_ATTRIBUTE]: library,
     [ANALYTICS_USE_CASES_ATTRIBUTE]: toAnalyticsUseCases(useCases),
     [ANALYTICS_PRODUCT_ATTRIBUTE]: product,
