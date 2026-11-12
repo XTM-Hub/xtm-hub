@@ -640,6 +640,7 @@ jobs:
       contents: read
       checks: read
       pull-requests: write
+      statuses: read
     steps:
       - name: Checkout the coverage action
         uses: actions/checkout@v6

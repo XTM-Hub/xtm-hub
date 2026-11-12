@@ -1,10 +1,10 @@
 name: 'Coverage'
 description: >
-  Pull requests only. Waits for Codecov's `codecov/patch/<component>` check of each app on the pull request head, writes
-  Codecov's coverage of the app (the point the pull request branched from main against its head, and the
-  changed-lines verdict) at the top of the app's Vitest pull request comment, and fails when Codecov fails the changed
-  lines of an app or when an app's head is below the target overall. Codecov is the source of truth: nothing is
-  recomputed. Run it after `vitest-pr-report`, whose comment it edits. Needs `checks: read` and
+  Pull requests only. Waits for Codecov's `codecov/patch/<component>` check run or commit status of each app on the pull
+  request head, writes Codecov's coverage of the app (the point the pull request branched from main against its head,
+  and the changed-lines verdict) at the top of the app's Vitest pull request comment, and fails when Codecov fails the
+  changed lines of an app or when an app's head is below the target overall. Codecov is the source of truth: nothing is
+  recomputed. Run it after `vitest-pr-report`, whose comment it edits. Needs `checks: read`, `statuses: read` and
   `pull-requests: write`. Comments with the workflow's own token, so only a comment authored by github-actions[bot] is
   ever updated.
 inputs:
@@ -48,9 +48,24 @@ runs:
         columns="| \`main\` (\`${merge_base:0:7}\`) | This pull request (\`${HEAD_SHA:0:7}\`) | Change | Changed lines |"
         note="_From [Codecov](https://app.codecov.io/gh/${GITHUB_REPOSITORY}/pull/${PR_NUMBER}): the pull request fails when less than ${TARGET}% of the changed lines are covered, or when the app is under ${TARGET}% overall (❌)._"
 
+        # Codecov reports codecov/patch/<component> as a check run or, on some commits, as a commit status. A status
+        # is read into the same shape as a check run: its latest Codecov state once it is no longer pending.
         patch_check() {
-          gh api "repos/${GITHUB_REPOSITORY}/commits/${HEAD_SHA}/check-runs?check_name=codecov/patch/$1" \
-            --jq '[.check_runs[] | select(.app.slug == "codecov" and .status == "completed")][0] // empty' || true
+          local check
+          check=$(gh api "repos/${GITHUB_REPOSITORY}/commits/${HEAD_SHA}/check-runs?check_name=codecov/patch/$1" \
+            --jq '[.check_runs[] | select(.app.slug == "codecov" and .status == "completed")][0] // empty' || true)
+          if [ -z "$check" ]; then
+            check=$(gh api "repos/${GITHUB_REPOSITORY}/commits/${HEAD_SHA}/statuses?per_page=100" \
+              | jq -c --arg context "codecov/patch/$1" '
+                  [.[] | select(.context == $context and .creator.login == "codecov[bot]")][0] // empty
+                  | select(.state != "pending")
+                  | {
+                      conclusion: (if .state == "success" then "success" else "failure" end),
+                      output: { title: .description },
+                      html_url: .target_url
+                    }' || true)
+          fi
+          printf '%s' "$check"
         }
         total() {
           curl -sS --fail --retry 3 --max-time 60 "${codecov_api}/totals/?sha=$1&path=${2//\//%2F}%2F" \

@@ -77,14 +77,15 @@ The logic is in `.github/actions/vitest-pr-report/report-lib.mjs`, covered by
 
 Codecov is the source of truth for coverage; the CI never recomputes it. Each Vitest shard uploads its coverage with
 the flag `frontend-shard-N` / `backend-shard-N`, and `codecov.yml` waits for all of them (`after_n_builds`, the total
-number of shard uploads) before reporting. Its components post one check per app on the lines a pull request
-changes, `codecov/patch/frontend` and `codecov/patch/backend`, with an 80% target.
+number of shard uploads) before reporting. Its components report one verdict per app on the lines a pull request
+changes, `codecov/patch/frontend` and `codecov/patch/backend`, with an 80% target. Codecov posts it as a check run
+or, on some commits, as a commit status: the `coverage` job reads either.
 
 On pull requests, once both shard jobs succeed and `run-front-unit-tests` / `run-api-unit-tests` have posted their
 test reports, the `coverage` job ("Coverage") calls the composite action `.github/actions/coverage` for each app the
 pull request changes (the `frontend` and `backend` outputs of `detect-changes`). Codecov can leave the check of an
 untouched app in progress for good, so that app is not checked. For each changed app, the job waits for the Codecov
-check on the pull request head (15 minutes at most), then:
+verdict on the pull request head (15 minutes at most), then:
 
 - writes each app's coverage at the point the pull request branched from `main` against its head, and Codecov's
   changed-lines verdict, at the top of the app's Vitest report comment, between `<!-- coverage:start -->` and
