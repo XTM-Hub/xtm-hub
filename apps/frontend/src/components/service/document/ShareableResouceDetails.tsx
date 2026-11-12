@@ -25,11 +25,14 @@ import {
   isResourceDownloadable,
 } from '@/utils/shareable-resources/utils/shareable-resources.client.utils';
 import { LogoFiligranIcon } from '@filigran/icon';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { DocumentMetadataKeyCode, IntegrationType } from '@graphql/generated';
+import {
+  DocumentItemFragment,
+  DocumentMetadataKeyCode,
+  IntegrationType,
+} from '@graphql/generated';
 
 interface ShareableResourceDetailsProps {
-  documentData: documentItem_fragment$data | PublicDocumentByServiceSlugItem;
+  documentData: DocumentItemFragment | PublicDocumentByServiceSlugItem;
   downloadNumber?: number | null;
   shareNumber?: number | null;
   filigranWebsiteUtm?: FiligranWebsiteUtm;

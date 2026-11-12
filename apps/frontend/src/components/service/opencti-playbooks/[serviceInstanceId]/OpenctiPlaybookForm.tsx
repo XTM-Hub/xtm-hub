@@ -13,8 +13,7 @@ import {
   optionalFileListCheck,
   transformToFileList,
 } from '@/utils/documents';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { DocumentImageType } from '@graphql/generated';
+import { DocumentImageType, DocumentItemFragment } from '@graphql/generated';
 import { useContext, useMemo } from 'react';
 import slugify from 'slugify';
 import { z } from 'zod';
@@ -53,7 +52,7 @@ export type OpenCTIPlaybookFormValues = z.infer<
 
 export interface OpenCTIPlaybookFormProps {
   handleSubmit: (values: OpenCTIPlaybookFormValues) => void;
-  document?: documentItem_fragment$data;
+  document?: DocumentItemFragment;
 }
 
 export const OpenctiPlaybookForm = ({

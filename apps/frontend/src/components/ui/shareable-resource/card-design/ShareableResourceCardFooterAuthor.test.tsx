@@ -1,5 +1,5 @@
 import testRender from '@/utils/test/test-render';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
+import { DocumentItemFragment } from '@graphql/generated';
 import { screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { ShareableResourceCardFooterAuthor } from './ShareableResourceCardFooterAuthor';
@@ -13,7 +13,7 @@ describe('ShareableResourceCardFooterAuthor', () => {
   it('renders author name and a share button', () => {
     testRender(
       <ShareableResourceCardFooterAuthor
-        document={document as documentItem_fragment$data}
+        document={document as DocumentItemFragment}
         shareLinkUrl="https://share.local"
       />
     );
@@ -25,7 +25,7 @@ describe('ShareableResourceCardFooterAuthor', () => {
   it('hides author block when shouldDisplayAuthor is false', () => {
     testRender(
       <ShareableResourceCardFooterAuthor
-        document={document as documentItem_fragment$data}
+        document={document as DocumentItemFragment}
         shareLinkUrl="https://share.local"
         shouldDisplayAuthor={false}
         extraContent={<span>extra</span>}

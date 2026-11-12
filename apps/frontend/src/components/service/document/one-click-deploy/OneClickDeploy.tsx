@@ -16,20 +16,25 @@ import {
   toAnalyticsResourceData,
 } from '@/lib/analytics/analytics.context';
 import { analyticsId } from '@/lib/analytics/analytics.ids';
+import { portalGraphqlClient } from '@/lib/graphql-client';
 import {
   getPlatformIdentifier,
   isEeCapableContract,
   requiresEnterpriseEdition,
 } from '@/utils/platform';
-import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
+import {
+  isIntegrationItem,
+  ShareableResourceType,
+} from '@/utils/shareable-resources/shareable-resources.types';
 import { Button, Dialog, DialogContent } from '@filigran/design-system';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { OneClickDeployMutation as OneClickDeployMutationType } from '@generated/OneClickDeployMutation.graphql';
+import {
+  DocumentItemFragment,
+  useOneClickDeployMutation,
+} from '@graphql/generated';
 import { useCallback, useMemo, useState } from 'react';
-import { graphql, useMutation } from 'react-relay';
 
 interface OneClickDeployProps {
-  documentData: documentItem_fragment$data;
+  documentData: DocumentItemFragment;
   requiredProductVersion?: string | null;
 }
 
@@ -43,20 +48,8 @@ const OneClickDeploy = ({
     onlyActive: true,
   });
 
-  const SendOneClickDeployTelemetryMutation = graphql`
-    mutation OneClickDeployMutation($input: OneClickDeployInput!) {
-      sendTelemetryEvent {
-        oneClickDeploy(input: $input) {
-          result
-          message
-        }
-      }
-    }
-  `;
-
-  const [sendOneClickDeployEvent] = useMutation<OneClickDeployMutationType>(
-    SendOneClickDeployTelemetryMutation
-  );
+  const { mutate: sendOneClickDeployEvent } =
+    useOneClickDeployMutation(portalGraphqlClient);
 
   const [isOpen, setIsOpen] = useState(false);
   const [isEeSheetOpen, setIsEeSheetOpen] = useState(false);
@@ -71,7 +64,9 @@ const OneClickDeploy = ({
 
   const requiresEe =
     documentData.type === ShareableResourceType.OPENCTI_PLAYBOOK ||
-    requiresEnterpriseEdition(documentData.license_type);
+    requiresEnterpriseEdition(
+      isIntegrationItem(documentData) ? documentData.license_type : null
+    );
 
   const hasEeCapablePlatform = useMemo(
     () => platforms.some((platform) => isEeCapableContract(platform.contract)),
@@ -86,14 +81,12 @@ const OneClickDeploy = ({
       );
       if (platform) {
         sendOneClickDeployEvent({
-          variables: {
-            input: {
-              platform_identifier: platformIdentifier,
-              service_instance_id: documentData.service_instance!.id,
-              resource_id: documentData.id,
-              resource_title: documentData.name ?? '',
-              platform_service_instance_id: platform!.id,
-            },
+          input: {
+            platform_identifier: platformIdentifier,
+            service_instance_id: documentData.service_instance!.id,
+            resource_id: documentData.id,
+            resource_title: documentData.name ?? '',
+            platform_service_instance_id: platform!.id,
           },
         });
       }

@@ -6,12 +6,12 @@ import {
   resolveResourceListEvents,
 } from '@/lib/analytics/analytics.list';
 import { type ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
-import { type documentsQuery$variables } from '@generated/documentsQuery.graphql';
+import { type DocumentsListQueryVariables } from '@graphql/generated';
 import { useEffect, useRef } from 'react';
 
 interface UseResourceListAnalyticsParams extends ResourceListResults {
   resourceType: ShareableResourceType;
-  variables: Pick<documentsQuery$variables, 'searchTerm' | 'logicalFilters'>;
+  variables: Pick<DocumentsListQueryVariables, 'searchTerm' | 'logicalFilters'>;
   /** False while the results are not the ones of the current search and filters (loading, stale placeholder). */
   enabled?: boolean;
 }

@@ -6,13 +6,13 @@ import { useTranslate } from '@/hooks/use-translate';
 import { FiligranWebsiteUtm } from '@/utils/filigran-website-utm';
 import { PublicDocumentData } from '@/utils/shareable-resources/shareable-resources.types';
 import { docHasMetadata } from '@/utils/shareable-resources/utils/shareable-resources.client.utils';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
+import { DocumentItemFragment } from '@graphql/generated';
 import { ReactNode, useMemo } from 'react';
 
 type Variant = 'text' | 'link';
 
 interface ShareableResourceDetailMetadataItemProps {
-  documentData: documentItem_fragment$data | PublicDocumentData;
+  documentData: DocumentItemFragment | PublicDocumentData;
   metadataKey: string;
   translationKey: string;
   translationMetadata?: Record<string, string | number | Date>;

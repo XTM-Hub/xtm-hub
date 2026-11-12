@@ -2,8 +2,8 @@ import ServiceList from '@/components/service/components/ServiceList';
 import { ServiceListDisplayMode } from '@/components/service/components/header/ServiceListHeader';
 import { ServiceListStorageKey } from '@/utils/filters-storage.utils';
 import testRender from '@/utils/test/test-render';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import {
+  DocumentItemFragment,
   DocumentOrdering,
   IntegrationType,
   OrderingMode,
@@ -119,7 +119,7 @@ describe('ServiceList', () => {
         short_description: 'Active description',
         use_cases: [],
       },
-    ] as Partial<documentItem_fragment$data>[];
+    ] as Partial<DocumentItemFragment>[];
     const draft = [
       {
         id: 'draft-1',
@@ -129,7 +129,7 @@ describe('ServiceList', () => {
         short_description: 'Draft description',
         use_cases: [],
       },
-    ] as Partial<documentItem_fragment$data>[];
+    ] as Partial<DocumentItemFragment>[];
 
     testRender(
       <ServiceList
@@ -163,7 +163,7 @@ describe('ServiceList', () => {
         short_description: 'Active description',
         use_cases: [],
       },
-    ] as Partial<documentItem_fragment$data>[];
+    ] as Partial<DocumentItemFragment>[];
     const draft = [
       {
         id: 'draft-1',
@@ -173,7 +173,7 @@ describe('ServiceList', () => {
         short_description: 'Draft description',
         use_cases: [],
       },
-    ] as Partial<documentItem_fragment$data>[];
+    ] as Partial<DocumentItemFragment>[];
 
     testRender(
       <ServiceList
@@ -208,7 +208,7 @@ describe('ServiceList', () => {
         short_description: 'Dashboard description',
         use_cases: [],
       },
-    ] as Partial<documentItem_fragment$data>[];
+    ] as Partial<DocumentItemFragment>[];
 
     testRender(
       <ServiceList

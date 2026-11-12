@@ -2,11 +2,11 @@ import { useTranslate } from '@/hooks/use-translate';
 import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { SHAREABLE_RESOURCE_TYPE_NAME_MAPPING } from '@/utils/shareable-resources/shareable-resources.types';
 import { Button, DialogTitle } from '@filigran/design-system';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { useRegisteredPlatformsFragment$data } from '@generated/useRegisteredPlatformsFragment.graphql';
+import { DocumentItemFragment } from '@graphql/generated';
 
 interface OnePlatformDisplayProps {
-  documentData: documentItem_fragment$data;
+  documentData: DocumentItemFragment;
   platforms: useRegisteredPlatformsFragment$data[];
   setIsOpen: (isOpen: boolean) => void;
   oneClickDeploy: (url: string) => void;

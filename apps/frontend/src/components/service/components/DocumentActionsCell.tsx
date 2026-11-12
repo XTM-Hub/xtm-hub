@@ -17,8 +17,11 @@ import {
   APP_PATH,
   PUBLIC_CYBERSECURITY_SOLUTIONS_PATH,
 } from '@/utils/path/constant';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { IntegrationType, ServiceRestriction } from '@graphql/generated';
+import {
+  DocumentItemFragment,
+  IntegrationType,
+  ServiceRestriction,
+} from '@graphql/generated';
 import { useContext, useState } from 'react';
 
 import { useTranslate } from '@/hooks/use-translate';
@@ -31,7 +34,7 @@ import { MoreVertIcon } from '@filigran/icon';
 import { useRouter } from 'next/navigation';
 
 interface DocumentActionsCellProps {
-  document: documentItem_fragment$data;
+  document: DocumentItemFragment;
 }
 
 export const DocumentActionsCell = ({ document }: DocumentActionsCellProps) => {

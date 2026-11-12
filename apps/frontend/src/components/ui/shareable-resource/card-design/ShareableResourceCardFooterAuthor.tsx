@@ -1,11 +1,11 @@
 import { UserDisplay } from '@/components/ui/UserDisplay';
 import { ShareLinkButton } from '@/components/ui/share-link/ShareLinkButton';
 import { PublicDocumentData } from '@/utils/shareable-resources/shareable-resources.types';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
+import { DocumentItemFragment } from '@graphql/generated';
 import { ReactNode } from 'react';
 
 interface ShareableResourceCardFooterAuthorProps {
-  document: documentItem_fragment$data | PublicDocumentData;
+  document: DocumentItemFragment | PublicDocumentData;
   shareLinkUrl: string;
   shouldDisplayAuthor?: boolean;
   extraContent?: ReactNode;
