@@ -186,6 +186,7 @@ const ShareableResourceServiceList = ({
     return (
       <ServiceLoadError
         message={t('Service.List.LoadError')}
+        retryAnalyticsId="resource_list_refresh"
         onRetry={() => void refetch()}
       />
     );

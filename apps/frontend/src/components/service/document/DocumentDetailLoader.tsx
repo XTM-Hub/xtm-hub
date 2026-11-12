@@ -57,6 +57,7 @@ const DocumentDetailLoader = ({
     return (
       <ServiceLoadError
         message={t('Error.AnErrorOccured')}
+        retryAnalyticsId="resource_detail_refresh"
         onRetry={() => void refetch()}
       />
     );

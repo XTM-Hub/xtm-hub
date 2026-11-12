@@ -348,6 +348,7 @@ export const ANALYTICS_ELEMENT_IDS = {
   resource_csv_export_open_signup: { action: 'Sign up to export integrations' },
   resource_delete: { action: 'Delete resource' },
   resource_deletion_confirm: { action: 'Confirm resource deletion' },
+  resource_detail_refresh: { action: 'Retry loading the resource' },
   resource_deploy: { action: 'Deploy resource' },
   resource_deploy_cancel: { action: 'Cancel deployment' },
   resource_deploy_confirm: { action: 'Confirm deployment' },
