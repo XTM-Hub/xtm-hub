@@ -1,5 +1,6 @@
 import testRender from '@/utils/test/test-render';
 import { screen, waitFor, within } from '@testing-library/react';
+import { useFormContext } from 'react-hook-form';
 import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import { AutoForm } from './AutoForm';
@@ -23,6 +24,12 @@ const TAGS_KEY = 'tags';
 const TAGS = ['threat', 'intel'];
 const REQUIRED_STAR = '*';
 const FORM_CLASS = 'mt-4';
+
+// Lists the keys the form holds, to check that every field of the schema has one
+const FormKeys = () => {
+  const { getValues } = useFormContext();
+  return <output>{Object.keys(getValues()).sort().join(',')}</output>;
+};
 
 const stringsSchema = z.object({
   name: z.string(),
@@ -107,6 +114,22 @@ describe('AutoForm', () => {
     // Then
     expect(screen.getByRole('textbox', { name: NAME_LABEL })).toHaveValue(
       NAME_VALUE
+    );
+  });
+
+  it('should keep a key for every field of the schema when values leave some out', async () => {
+    // Given / When
+    testRender(
+      <AutoForm
+        formSchema={stringsSchema}
+        values={{ name: NAME_VALUE }}>
+        <FormKeys />
+      </AutoForm>
+    );
+
+    // Then
+    await waitFor(() =>
+      expect(screen.getByRole('status')).toHaveTextContent('firstName,name')
     );
   });
 

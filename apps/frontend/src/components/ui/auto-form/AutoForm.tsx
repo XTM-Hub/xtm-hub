@@ -2,7 +2,7 @@
 import { Form } from '@/components/ui/form';
 import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { type ReactNode, useEffect } from 'react';
+import { type ReactNode, useEffect, useMemo } from 'react';
 import {
   type DefaultValues,
   type FormState,
@@ -46,6 +46,21 @@ const AutoForm = <SchemaType extends ZodObjectOrWrapped>({
 }: AutoFormProps<SchemaType>) => {
   const objectFormSchema = getObjectFormSchema(formSchema);
 
+  // Every field keeps a key in the values, even unset: react-hook-form compares
+  // the keys, so a field registering one the values lack (a file field) makes
+  // the form dirty before any edit. Memoized, as the values object is a
+  // dependency of react-hook-form's reset effect.
+  const values = useMemo(
+    () =>
+      valuesProp && {
+        ...(Object.fromEntries(
+          Object.keys(objectFormSchema.shape).map((key) => [key, undefined])
+        ) as Partial<z.infer<SchemaType>>),
+        ...valuesProp,
+      },
+    [objectFormSchema, valuesProp]
+  );
+
   const defaultValues =
     getDefaultValues(
       objectFormSchema,
@@ -61,7 +76,7 @@ const AutoForm = <SchemaType extends ZodObjectOrWrapped>({
     resolver: zodResolver(formSchema as any),
     defaultValues: defaultValues as
       DefaultValues<z.infer<SchemaType>> | undefined,
-    values: valuesProp,
+    values,
   });
 
   function onSubmit(values: z.infer<SchemaType>) {
