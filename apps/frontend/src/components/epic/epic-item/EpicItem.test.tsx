@@ -96,4 +96,22 @@ describe('EpicItem', () => {
     expect(mockReplaceState).toHaveBeenCalledOnce();
     expect(mockReplaceState).toHaveBeenCalledWith(null, '', '/epics');
   });
+
+  it('gives the detail dialog an accessible name and description', () => {
+    // Given
+    vi.mocked(useSearchParams).mockReturnValue({
+      get: vi.fn().mockReturnValue('epic-1'),
+      toString: vi.fn().mockReturnValue('epicId=epic-1'),
+    } as unknown as ReturnType<typeof useSearchParams>);
+
+    // When
+    testRender(<EpicItem {...defaultProps} />);
+
+    // Then
+    const dialog = screen.getByRole('dialog', { name: epic.title });
+    expect(dialog).toHaveAccessibleDescription(epic.short_description);
+    expect(
+      within(dialog).getByRole('heading', { level: 2, name: epic.title })
+    ).toBeInTheDocument();
+  });
 });

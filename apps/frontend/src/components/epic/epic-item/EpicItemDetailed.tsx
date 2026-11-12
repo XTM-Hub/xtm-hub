@@ -4,10 +4,9 @@ import {
   EPIC_SLACK_LINK_REGEX,
 } from '@/components/epic/epic-slack-links';
 import { MarkdownRenderer } from '@/components/ui/markdown-renderer';
-import { Separator } from '@/components/ui/separator';
 import { useTranslate } from '@/hooks/use-translate';
-import { analyticsEpic } from '@/lib/analytics/analytics.context';
 import { analyticsId } from '@/lib/analytics/analytics.ids';
+import { DialogBody, DialogFooter } from '@filigran/design-system';
 import { EpicFieldsFragment } from '@graphql/generated';
 import Link from 'next/link';
 
@@ -28,13 +27,8 @@ export const EpicItemDetailed = ({ epic }: EpicItemDetailedProps) => {
   ].filter(({ source }) => source);
 
   return (
-    <div
-      {...analyticsEpic(epic.title)}
-      className="flex h-full min-h-0 flex-1 flex-col">
-      <h2 className="pr-8">{epic.title}</h2>
-      <p className="text-default-secondary text-sm">{epic.short_description}</p>
-      <Separator className="my-4" />
-      <div className="min-h-0 flex-1 overflow-y-auto">
+    <>
+      <DialogBody>
         {epic.description && (
           <MarkdownRenderer
             source={epic.description}
@@ -43,16 +37,15 @@ export const EpicItemDetailed = ({ epic }: EpicItemDetailedProps) => {
         )}
         {sections.map(({ labelKey, source }) => (
           <section key={labelKey}>
-            <h3 className="mt-4 mb-2 text-lg font-semibold">{t(labelKey)}</h3>
+            <h3 className="title-xs mt-4 mb-2">{t(labelKey)}</h3>
             <MarkdownRenderer
               source={source}
               linkAnalyticsId="roadmap_description_link_open"
             />
           </section>
         ))}
-      </div>
-      <Separator className="my-4" />
-      <div className="markdown-content">
+      </DialogBody>
+      <DialogFooter className="markdown-content justify-start *:flex-1">
         <EpicItemFooter epic={epic}>
           <div className="ml-auto flex min-h-9 flex-wrap items-center gap-1">
             <Link
@@ -66,7 +59,7 @@ export const EpicItemDetailed = ({ epic }: EpicItemDetailedProps) => {
             </Link>
           </div>
         </EpicItemFooter>
-      </div>
-    </div>
+      </DialogFooter>
+    </>
   );
 };
