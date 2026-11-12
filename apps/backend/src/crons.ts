@@ -3,6 +3,7 @@ import portalConfig from './config';
 import { requestContext } from './context/request.context';
 import { DeploymentApp } from './modules/deployment/deployment.app';
 import { ServiceGroupApp } from './modules/deployment/group/service-group.app';
+import { DocumentApp } from './modules/document/document.app';
 import { NewsFeedApp } from './modules/news-feed/news-feed.app';
 import { UserAccountStatusSyncApp } from './modules/organization-management/user/user-account-status-sync/user-account-status-sync.app';
 import { UserOrganizationApp } from './modules/organization-management/user/user-organization/user-organization.app';
@@ -78,6 +79,17 @@ const syncUserAccountStatus = async (): Promise<void> => {
   });
 };
 
+const sendNotPublishedResourcesReminder = async (): Promise<void> => {
+  logApp.info('Running sendNotPublishedResourcesReminder job');
+  await requestContext.run(CRONS_USER_CONTEXT, async () => {
+    try {
+      await DocumentApp.sendNotPublishedReminder();
+    } catch (error) {
+      logApp.error('sendNotPublishedResourcesReminder job failed:', { error });
+    }
+  });
+};
+
 export const initCronJobs = () => {
   logApp.info('Initializing cron jobs');
   scheduledTasks.push(cron.schedule('0 2 * * *', expireTrials));
@@ -89,6 +101,9 @@ export const initCronJobs = () => {
   );
   scheduledTasks.push(cron.schedule('0 3 * * *', cleanExpiredTrialGroups));
   scheduledTasks.push(cron.schedule('0 4 * * *', cleanExpiredNewsFeedItems));
+  scheduledTasks.push(
+    cron.schedule('0 10 * * 1', sendNotPublishedResourcesReminder)
+  );
   if (portalConfig.auth0_sync.enabled) {
     // Environments restored from production share the Auth0 tenant and keep
     // real accounts, so the sync is enabled explicitly per environment.

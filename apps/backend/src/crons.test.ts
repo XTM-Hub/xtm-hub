@@ -13,6 +13,7 @@ const cronMocks = vi.hoisted(() => ({
   sendPublicRoadmapMonthlyReminderMock: vi.fn(async () => undefined),
   removeExpiredGroupsMock: vi.fn(async () => undefined),
   cleanExpiredNewsFeedItemsMock: vi.fn(async () => undefined),
+  sendNotPublishedReminderMock: vi.fn(async () => undefined),
   syncUserAccountStatusWithAuth0Mock: vi.fn(async () => undefined),
   auth0Sync: { enabled: true },
 }));
@@ -79,6 +80,12 @@ vi.mock('./utils/app-logger.util', () => ({
   },
 }));
 
+vi.mock('./modules/document/document.app', () => ({
+  DocumentApp: {
+    sendNotPublishedReminder: cronMocks.sendNotPublishedReminderMock,
+  },
+}));
+
 vi.mock('./modules/news-feed/news-feed.app', () => ({
   NewsFeedApp: {
     cleanExpiredNewsFeedItems: cronMocks.cleanExpiredNewsFeedItemsMock,
@@ -97,6 +104,7 @@ vi.mock(
 
 import { initCronJobs, stopCronJobs } from './crons';
 import { CRONS_USER_CONTEXT } from './portal.const';
+import { logApp } from './utils/app-logger.util';
 
 describe('crons', () => {
   beforeEach(() => {
@@ -110,13 +118,13 @@ describe('crons', () => {
   it('should set CRONS_USER_CONTEXT for every cron task execution', async () => {
     initCronJobs();
 
-    expect(cronMocks.scheduledCallbacks).toHaveLength(6);
+    expect(cronMocks.scheduledCallbacks).toHaveLength(7);
 
     for (const callback of cronMocks.scheduledCallbacks) {
       await callback();
     }
 
-    expect(cronMocks.requestContextRunMock).toHaveBeenCalledTimes(6);
+    expect(cronMocks.requestContextRunMock).toHaveBeenCalledTimes(7);
     expect(cronMocks.requestContextRunMock).toHaveBeenNthCalledWith(
       1,
       CRONS_USER_CONTEXT,
@@ -147,6 +155,11 @@ describe('crons', () => {
       CRONS_USER_CONTEXT,
       expect.any(Function)
     );
+    expect(cronMocks.requestContextRunMock).toHaveBeenNthCalledWith(
+      7,
+      CRONS_USER_CONTEXT,
+      expect.any(Function)
+    );
 
     expect(cronMocks.expireTrialsMock).toHaveBeenCalledTimes(1);
     expect(cronMocks.sendPendingUsersDigestMock).toHaveBeenCalledTimes(1);
@@ -155,6 +168,7 @@ describe('crons', () => {
     ).toHaveBeenCalledTimes(1);
     expect(cronMocks.removeExpiredGroupsMock).toHaveBeenCalledTimes(1);
     expect(cronMocks.cleanExpiredNewsFeedItemsMock).toHaveBeenCalledTimes(1);
+    expect(cronMocks.sendNotPublishedReminderMock).toHaveBeenCalledTimes(1);
     expect(cronMocks.syncUserAccountStatusWithAuth0Mock).toHaveBeenCalledTimes(
       1
     );
@@ -170,12 +184,39 @@ describe('crons', () => {
     );
   });
 
+  it('should schedule the not published resources reminder every Monday at 10:00', () => {
+    initCronJobs();
+
+    expect(cron.schedule).toHaveBeenCalledWith(
+      '0 10 * * 1',
+      expect.any(Function)
+    );
+  });
+
+  it('should log and swallow the error when the not published resources reminder fails', async () => {
+    cronMocks.sendNotPublishedReminderMock.mockRejectedValueOnce(
+      new Error('reminder failed')
+    );
+    initCronJobs();
+    const reminderCall = vi
+      .mocked(cron.schedule)
+      .mock.calls.find(([expression]) => expression === '0 10 * * 1');
+    const reminder = reminderCall?.[1] as () => Promise<void>;
+
+    await expect(reminder()).resolves.toBeUndefined();
+
+    expect(logApp.error).toHaveBeenCalledWith(
+      'sendNotPublishedResourcesReminder job failed:',
+      { error: new Error('reminder failed') }
+    );
+  });
+
   it('should not schedule the Auth0 sync when it is disabled', () => {
     cronMocks.auth0Sync.enabled = false;
 
     initCronJobs();
 
-    expect(cronMocks.scheduledCallbacks).toHaveLength(5);
+    expect(cronMocks.scheduledCallbacks).toHaveLength(6);
     expect(cron.schedule).not.toHaveBeenCalledWith(
       '0 * * * *',
       expect.any(Function),
@@ -188,7 +229,7 @@ describe('crons', () => {
 
     stopCronJobs();
 
-    expect(cronMocks.scheduledTaskStops).toHaveLength(6);
+    expect(cronMocks.scheduledTaskStops).toHaveLength(7);
     for (const stop of cronMocks.scheduledTaskStops) {
       expect(stop).toHaveBeenCalledTimes(1);
     }
