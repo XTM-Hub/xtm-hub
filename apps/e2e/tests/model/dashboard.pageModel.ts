@@ -1,5 +1,5 @@
 import { Page } from '@playwright/test';
-import { selectUseCase, waitForDrawerToClose } from './common';
+import { publishResource, selectUseCase, waitForDrawerToClose } from './common';
 export const TEST_JSON_FILE = {
   path: './tests/tests_files/assets/octi_dashboard.json',
   name: 'octi_dashboard.json',
@@ -58,12 +58,14 @@ export default class DashboardPage {
     version,
     description,
     jsonFilePath = TEST_JSON_FILE.path,
+    publish = false,
   }: {
     name: string;
     shortDescription: string;
     version: string;
     description: string;
     jsonFilePath?: string;
+    publish?: boolean;
   }) {
     await this.page.getByRole('button', { name: 'Add new dashboard' }).click();
     await this.page.getByPlaceholder('Dashboard name').fill(name);
@@ -74,12 +76,14 @@ export default class DashboardPage {
     await this.page
       .getByPlaceholder('This is a paragraph to')
       .fill(description);
-    await this.page.getByLabel('Publish').click();
     await this.uploadJsonDocument(jsonFilePath);
     await this.uploadImageDocument(TEST_IMAGE_FILE.path);
     await selectUseCase(this.page);
-    await this.page.getByRole('button', { name: 'Validate' }).click();
+    await this.page.getByRole('button', { name: 'Request validation' }).click();
     await waitForDrawerToClose(this.page);
+    if (publish) {
+      await publishResource(this.page, name);
+    }
   }
 
   async navigateToDashboard(shortDescription: string) {

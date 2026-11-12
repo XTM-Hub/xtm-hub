@@ -82,7 +82,10 @@ test.describe('OpenCTI news feed', () => {
       const dashboardPage = new DashboardPage(xtmHubTab);
       await new HomePage(xtmHubTab).navigateTo();
       await dashboardPage.navigateToDashboardService();
-      await dashboardPage.addCustomDashboard(dashboard);
+      await dashboardPage.addCustomDashboard({
+        ...dashboard,
+        publish: true,
+      });
     });
 
     let toastHref: string | null = null;

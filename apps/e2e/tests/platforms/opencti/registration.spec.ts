@@ -32,7 +32,7 @@ test.describe('OpenCTI one-click deploy', () => {
     await test.step('publish a dashboard in XTM Hub', async () => {
       await new HomePage(page).navigateTo();
       await dashboardPage.navigateToDashboardService();
-      await dashboardPage.addCustomDashboard(DASHBOARD);
+      await dashboardPage.addCustomDashboard({ ...DASHBOARD, publish: true });
     });
 
     await test.step('deploy it in OpenCTI', async () => {

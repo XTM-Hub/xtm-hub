@@ -35,6 +35,17 @@ export async function selectSolutionCategories(page: Page) {
   await page.keyboard.press('Escape');
 }
 
+// A new resource is only requested for validation: a publisher publishes it from its update drawer.
+export async function publishResource(page: Page, name: string) {
+  const card = page.getByRole('listitem').filter({
+    has: page.getByText(name, { exact: true }),
+  });
+  await card.getByRole('button', { name: 'Open menu', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Update' }).click();
+  await page.getByRole('button', { name: 'Publish', exact: true }).click();
+  await waitForDrawerToClose(page);
+}
+
 export async function waitForDrawerToOpen(page: Page) {
   await page.locator('body > [role="dialog"]').waitFor({ state: 'visible' });
 }

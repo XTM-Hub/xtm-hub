@@ -115,6 +115,7 @@ test.describe('OpenCTI one-click deploy of each resource type', () => {
       version: '1.0.0',
       description: 'A custom view deployed in a real OpenCTI',
       entityType: 'Intrusion Set',
+      publish: true,
     });
     await customViewPage.navigateToResource(shortDescription);
 
@@ -143,6 +144,7 @@ test.describe('OpenCTI one-click deploy of each resource type', () => {
       shortDescription,
       version: '1.0.0',
       description: 'A playbook XTM Hub cannot deploy in a Community Edition',
+      publish: true,
     });
     await playbookPage.navigateToResource(shortDescription);
 
