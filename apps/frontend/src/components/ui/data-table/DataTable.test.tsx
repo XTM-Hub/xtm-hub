@@ -1,7 +1,15 @@
+import {
+  ANALYTICS_ID_ATTRIBUTE,
+  ANALYTICS_RESOURCE_ID_ATTRIBUTE,
+} from '@/lib/analytics/analytics.consts';
+import { analyticsResource } from '@/lib/analytics/analytics.context';
+import { type AnalyticsElementId } from '@/lib/analytics/analytics.ids';
+import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 import testRender from '@/utils/test/test-render';
 import type {
   ColumnDef,
   PaginationState,
+  Row,
   SortingState,
   TableState,
   Updater,
@@ -57,6 +65,7 @@ const ACTIONS_TEST_ID = 'actions';
 const SEARCH_TRACK_CLASSES = ['w-full', 'sm:w-65'];
 const FILTER_CLASSES = ['*:w-full', 'sm:*:w-50'];
 const SPACING_CLASS = 'pt-2';
+const ROW_ANALYTICS_ID: AnalyticsElementId = 'resource_open';
 
 const DEFAULT_LABELS = {
   previousPage: 'Go to previous page',
@@ -133,6 +142,19 @@ const applyUpdater = <T,>(updater: Updater<T> | undefined, previous: T) =>
   typeof updater === 'function'
     ? (updater as (old: T) => T)(previous)
     : updater;
+
+const getRowAnalyticsResource = ({ original }: Row<Person>) =>
+  analyticsResource({
+    id: original.id,
+    name: original.name,
+    type: ShareableResourceType.OPENCTI_CUSTOM_DASHBOARD,
+  });
+
+const getRowAnalyticsId = () => ROW_ANALYTICS_ID;
+
+const ONLY_ALICE_SELECTABLE: DataTableProps<Person, unknown>['tableOptions'] = {
+  enableRowSelection: (row) => row.original.id !== BOB.id,
+};
 
 const getRowOf = (text: string) => screen.getByText(text).closest('tr')!;
 
@@ -241,9 +263,7 @@ describe('DataTable', () => {
       const onClickRow = vi.fn();
       const { user } = renderTable({
         onClickRow,
-        tableOptions: {
-          enableRowSelection: (row) => row.original.id !== BOB.id,
-        },
+        tableOptions: ONLY_ALICE_SELECTABLE,
       });
 
       // When
@@ -257,13 +277,51 @@ describe('DataTable', () => {
   it('should grey a row that cannot be selected', () => {
     // Given / When
     renderTable({
-      tableOptions: {
-        enableRowSelection: (row) => row.original.id !== BOB.id,
-      },
+      tableOptions: ONLY_ALICE_SELECTABLE,
     });
 
     // Then
     expect(getRowOf(BOB.name)).toHaveClass(DISABLED_ROW_CLASS);
+  });
+
+  it('should carry the ID returned by getRowAnalyticsId on a row when the row is clickable', () => {
+    // Given / When
+    renderTable({
+      onClickRow: vi.fn(),
+      getRowAnalyticsId,
+    });
+
+    // Then
+    expect(getRowOf(BOB.name)).toHaveAttribute(
+      ANALYTICS_ID_ATTRIBUTE,
+      ROW_ANALYTICS_ID
+    );
+  });
+
+  it('should carry no analytics ID on a row when the row cannot be selected', () => {
+    // Given / When
+    renderTable({
+      onClickRow: vi.fn(),
+      tableOptions: ONLY_ALICE_SELECTABLE,
+      getRowAnalyticsId,
+    });
+
+    // Then
+    expect(getRowOf(BOB.name)).not.toHaveAttribute(ANALYTICS_ID_ATTRIBUTE);
+  });
+
+  it('should spread the resource attributes of its own row when they are given', () => {
+    // Given / When
+    renderTable({
+      onClickRow: vi.fn(),
+      getRowAnalyticsResource,
+    });
+
+    // Then
+    expect(getRowOf(BOB.name)).toHaveAttribute(
+      ANALYTICS_RESOURCE_ID_ATTRIBUTE,
+      BOB.id
+    );
   });
 
   it('should render thirty skeleton rows when loading', () => {

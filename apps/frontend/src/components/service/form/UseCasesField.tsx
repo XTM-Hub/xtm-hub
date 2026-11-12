@@ -41,6 +41,7 @@ export const ServiceFormUseCasesField = <
 
   return (
     <AppCombobox
+      formField
       multiple
       label={t('Service.Form.UseCasesLabel')}
       required={required}

@@ -60,6 +60,7 @@ export const ServiceSlugDeleteSubscription: FunctionComponent<
 
   return (
     <ConfirmDialog
+      confirmAnalyticsId="admin_subscription_removal_confirm"
       key={`remove-${subscriptions.map((subscription) => subscription.id).join('-')}`}
       title={t('Service.Management.RemoveAccess')}
       confirmLabel={t('Service.Management.RemoveAccess')}

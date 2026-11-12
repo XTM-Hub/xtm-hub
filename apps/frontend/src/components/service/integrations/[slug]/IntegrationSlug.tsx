@@ -12,37 +12,25 @@ import {
   isConnectorResource,
   ShareableResourceType,
 } from '@/utils/shareable-resources/shareable-resources.types';
-import { IntegrationType } from '@graphql/generated';
+import { docHasMetadata } from '@/utils/shareable-resources/utils/shareable-resources.client.utils';
+import { DocumentItemFragment, IntegrationType } from '@graphql/generated';
 
-import {
-  documentItem,
-  DocumentsItemQuery,
-} from '@/components/service/document/document.graphql';
 import { useDocumentContext } from '@/components/service/document/use-document-context';
-import { documentItem_fragment$key } from '@generated/documentItem_fragment.graphql';
-import { documentQuery } from '@generated/documentQuery.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 import { useContext, useEffect } from 'react';
-import { PreloadedQuery, readInlineData, usePreloadedQuery } from 'react-relay';
 
 // Component interface
 interface IntegrationSlugProps {
-  queryRef: PreloadedQuery<documentQuery>;
+  documentData: DocumentItemFragment;
   serviceInstance: serviceInstance_fragment$data;
 }
 
 // Component
 const IntegrationSlug = ({
-  queryRef,
+  documentData,
   serviceInstance,
 }: IntegrationSlugProps) => {
-  const data = usePreloadedQuery<documentQuery>(DocumentsItemQuery, queryRef);
   const { settings } = useContext(SettingsContext);
-
-  const documentData = readInlineData<documentItem_fragment$key>(
-    documentItem,
-    data.document
-  );
 
   const breadcrumbValue = [
     {
@@ -55,8 +43,8 @@ const IntegrationSlug = ({
       fallback: serviceInstance.name,
     },
     {
-      label: `Service.Documents.${documentData!.slug}.Name`,
-      fallback: documentData!.name!,
+      label: `Service.Documents.${documentData.slug}.Name`,
+      fallback: documentData.name!,
     },
   ];
 
@@ -65,45 +53,44 @@ const IntegrationSlug = ({
     type: ShareableResourceType.OPENCTI_INTEGRATION,
   });
 
+  const integrationType = docHasMetadata(documentData, 'integration_type')
+    ? documentData.integration_type
+    : undefined;
+
   useEffect(() => {
-    setIntegrationType(
-      (documentData?.integration_type as IntegrationType) ??
-        IntegrationType.CsvFeed
-    );
-  }, [setIntegrationType, documentData?.integration_type]);
+    setIntegrationType(integrationType ?? IntegrationType.CsvFeed);
+  }, [setIntegrationType, integrationType]);
 
   const shareUrl = `${settings!.base_url_front}/${PUBLIC_CYBERSECURITY_SOLUTIONS_PATH}/${documentData?.service_instance?.slug}/${documentData?.slug}`;
 
   return (
-    documentData && (
-      <AppServiceContext
-        {...context}
-        setIntegrationType={setIntegrationType}>
-        {isConnectorResource(documentData) ? (
-          <ShareableResourceConnectorSlug
-            breadcrumbValue={breadcrumbValue}
-            serviceInstance={serviceInstance}
-            documentData={documentData}
-            shareUrl={shareUrl}
-          />
-        ) : (
-          <ShareableResourceSlug
-            serviceInstance={serviceInstance}
-            breadcrumbValue={breadcrumbValue}
-            documentData={documentData}
-            updateActions={
-              <>
-                <DeleteShareableResourceSlug document={documentData} />
-                <ServiceManageSheet
-                  document={documentData}
-                  variant={'button'}
-                />
-              </>
-            }
-          />
-        )}
-      </AppServiceContext>
-    )
+    <AppServiceContext
+      {...context}
+      setIntegrationType={setIntegrationType}>
+      {isConnectorResource(documentData) ? (
+        <ShareableResourceConnectorSlug
+          breadcrumbValue={breadcrumbValue}
+          serviceInstance={serviceInstance}
+          documentData={documentData}
+          shareUrl={shareUrl}
+        />
+      ) : (
+        <ShareableResourceSlug
+          serviceInstance={serviceInstance}
+          breadcrumbValue={breadcrumbValue}
+          documentData={documentData}
+          updateActions={
+            <>
+              <DeleteShareableResourceSlug document={documentData} />
+              <ServiceManageSheet
+                document={documentData}
+                variant={'button'}
+              />
+            </>
+          }
+        />
+      )}
+    </AppServiceContext>
   );
 };
 

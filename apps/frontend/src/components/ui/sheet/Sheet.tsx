@@ -1,5 +1,6 @@
 'use client';
 
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { cn } from '@/lib/utils';
 import { Icon, IconButton, Paper } from '@filigran/design-system';
 import * as SheetPrimitive from '@radix-ui/react-dialog';
@@ -64,6 +65,7 @@ const SheetContent = React.forwardRef<HTMLDivElement, SheetContentProps>(
             <div className="absolute right-3 top-0 z-10 flex h-16 items-center">
               <SheetPrimitive.Close asChild>
                 <IconButton
+                  {...analyticsId('common_panel_close')}
                   priority="tertiary"
                   aria-label={closeLabel}
                   icon={

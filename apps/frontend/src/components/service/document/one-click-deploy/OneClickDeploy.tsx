@@ -11,21 +11,30 @@ import { DisabledActionTooltip } from '@/components/ui/DisabledActionTooltip';
 import { useBuildCompatibilityTranslationKey } from '@/hooks/use-build-compatibility-translation-key';
 import { useRegisteredPlatforms } from '@/hooks/use-registered-platforms';
 import { useTranslate } from '@/hooks/use-translate';
-import { trackEvent } from '@/lib/analytics/analytics.client';
+import {
+  analyticsResource,
+  toAnalyticsResourceData,
+} from '@/lib/analytics/analytics.context';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
+import { portalGraphqlClient } from '@/lib/graphql-client';
 import {
   getPlatformIdentifier,
   isEeCapableContract,
   requiresEnterpriseEdition,
 } from '@/utils/platform';
-import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
+import {
+  isIntegrationItem,
+  ShareableResourceType,
+} from '@/utils/shareable-resources/shareable-resources.types';
 import { Button, Dialog, DialogContent } from '@filigran/design-system';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { OneClickDeployMutation as OneClickDeployMutationType } from '@generated/OneClickDeployMutation.graphql';
+import {
+  DocumentItemFragment,
+  useOneClickDeployMutation,
+} from '@graphql/generated';
 import { useCallback, useMemo, useState } from 'react';
-import { graphql, useMutation } from 'react-relay';
 
 interface OneClickDeployProps {
-  documentData: documentItem_fragment$data;
+  documentData: DocumentItemFragment;
   requiredProductVersion?: string | null;
 }
 
@@ -39,20 +48,8 @@ const OneClickDeploy = ({
     onlyActive: true,
   });
 
-  const SendOneClickDeployTelemetryMutation = graphql`
-    mutation OneClickDeployMutation($input: OneClickDeployInput!) {
-      sendTelemetryEvent {
-        oneClickDeploy(input: $input) {
-          result
-          message
-        }
-      }
-    }
-  `;
-
-  const [sendOneClickDeployEvent] = useMutation<OneClickDeployMutationType>(
-    SendOneClickDeployTelemetryMutation
-  );
+  const { mutate: sendOneClickDeployEvent } =
+    useOneClickDeployMutation(portalGraphqlClient);
 
   const [isOpen, setIsOpen] = useState(false);
   const [isEeSheetOpen, setIsEeSheetOpen] = useState(false);
@@ -67,7 +64,9 @@ const OneClickDeploy = ({
 
   const requiresEe =
     documentData.type === ShareableResourceType.OPENCTI_PLAYBOOK ||
-    requiresEnterpriseEdition(documentData.license_type);
+    requiresEnterpriseEdition(
+      isIntegrationItem(documentData) ? documentData.license_type : null
+    );
 
   const hasEeCapablePlatform = useMemo(
     () => platforms.some((platform) => isEeCapableContract(platform.contract)),
@@ -82,14 +81,12 @@ const OneClickDeploy = ({
       );
       if (platform) {
         sendOneClickDeployEvent({
-          variables: {
-            input: {
-              platform_identifier: platformIdentifier,
-              service_instance_id: documentData.service_instance!.id,
-              resource_id: documentData.id,
-              resource_title: documentData.name ?? '',
-              platform_service_instance_id: platform!.id,
-            },
+          input: {
+            platform_identifier: platformIdentifier,
+            service_instance_id: documentData.service_instance!.id,
+            resource_id: documentData.id,
+            resource_title: documentData.name ?? '',
+            platform_service_instance_id: platform!.id,
           },
         });
       }
@@ -112,15 +109,6 @@ const OneClickDeploy = ({
     openTab();
     setShouldOpenTab(false);
   }
-
-  const openEeSheet = useCallback(() => {
-    trackEvent('ee_badge_click', {
-      resource_id: documentData.id,
-      resource_title: documentData.name ?? '',
-      resource_type: documentData.type,
-    });
-    setIsEeSheetOpen(true);
-  }, [documentData.id, documentData.name, documentData.type]);
 
   const alertContent = useMemo(() => {
     if (platforms.length === 1) {
@@ -176,6 +164,7 @@ const OneClickDeploy = ({
   }
   const button = (
     <Button
+      {...analyticsId('resource_deploy')}
       disabled={isDeploymentDisabled || eeBlocked}
       onClick={() => setIsOpen(true)}>
       {t('Service.ShareableResources.Deploy.DeployPlatform', {
@@ -189,7 +178,7 @@ const OneClickDeploy = ({
     <div className="relative inline-flex items-center mr-6">
       {button}
       <div className="absolute inset-y-0 right-0 flex items-center translate-x-1/2 z-10">
-        <EeBadge onClick={openEeSheet} />
+        <EeBadge onClick={() => setIsEeSheetOpen(true)} />
       </div>
     </div>
   ) : (
@@ -208,6 +197,8 @@ const OneClickDeploy = ({
     buttonWithBadge
   );
 
+  const resource = toAnalyticsResourceData(documentData);
+
   return (
     <>
       {container}
@@ -215,6 +206,7 @@ const OneClickDeploy = ({
         open={isOpen}
         onOpenChange={setIsOpen}>
         <DialogContent
+          {...analyticsResource(resource)}
           size="lg"
           role="alertdialog"
           onInteractOutside={(e) => e.preventDefault()}
@@ -226,6 +218,7 @@ const OneClickDeploy = ({
         open={isEeSheetOpen}
         setOpen={setIsEeSheetOpen}
         platformIdentifier={platformIdentifier}
+        resource={resource}
       />
     </>
   );

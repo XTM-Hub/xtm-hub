@@ -4,6 +4,7 @@ import { Form, FormField } from '@/components/ui/form';
 import { SheetFooter } from '@/components/ui/sheet';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import {
   fromFileSelectValue,
   getFileSelectLabels,
@@ -89,12 +90,17 @@ export const ServiceForm = ({ handleSubmit }: ServiceFormProps) => {
 
           <SheetFooter className="pt-2">
             <Button
+              {...analyticsId('admin_form_cancel')}
               priority="secondary"
               type="button"
               onClick={(e) => handleCloseSheet(e)}>
               {t('Utils.Cancel')}
             </Button>
-            <Button type="submit">{t('Utils.Validate')}</Button>
+            <Button
+              {...analyticsId('admin_service_pictures_submit')}
+              type="submit">
+              {t('Utils.Validate')}
+            </Button>
           </SheetFooter>
         </form>
       </Form>

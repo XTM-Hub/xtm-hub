@@ -7,6 +7,7 @@ import { AutoForm } from '@/components/ui/auto-form';
 import { useFormField } from '@/components/ui/form';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import {
   Button,
@@ -195,12 +196,14 @@ export const BundleCancelSheet = ({
             </div>
             <DialogFooter>
               <Button
+                {...analyticsId('trial_cancellation_close')}
                 priority="secondary"
                 type="button"
                 onClick={() => setOpen(false)}>
                 {t('Utils.Cancel')}
               </Button>
               <Button
+                {...analyticsId('trial_cancellation_confirm')}
                 variant="destructive"
                 disabled={!selectedCancellationReason.trim()}
                 loading={isPending}

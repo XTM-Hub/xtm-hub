@@ -3,6 +3,7 @@ import { Form, FormField } from '@/components/ui/form';
 import { SheetFooter } from '@/components/ui/sheet';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import {
   Button,
   Combobox,
@@ -152,12 +153,14 @@ export const OrganizationForm = ({
 
         <SheetFooter className="pt-2">
           <Button
+            {...analyticsId('admin_form_cancel')}
             priority="secondary"
             type="button"
             onClick={(e) => handleCloseSheet(e)}>
             {t('Utils.Cancel')}
           </Button>
           <Button
+            {...analyticsId('admin_organization_form_submit')}
             disabled={!form.formState.isDirty || isSubmitting}
             type="submit">
             {t('Utils.Validate')}

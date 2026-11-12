@@ -1,5 +1,6 @@
 import { IntegrationsCsvExportDialog } from '@/components/service/components/header/IntegrationsCsvExportDialog';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { buildSignupRedirect } from '@/utils/redirect';
 import {
   IconButton,
@@ -45,6 +46,11 @@ export const IntegrationsCsvExportButton = ({
           disableHoverableContent={true}>
           <TooltipTrigger asChild>
             <IconButton
+              {...analyticsId(
+                isAuthenticated
+                  ? 'resource_csv_export_open'
+                  : 'resource_csv_export_open_signup'
+              )}
               priority="secondary"
               aria-label={t('Service.CsvExport.TriggerButton')}
               icon={<DownloadIcon className="h-4 w-4" />}

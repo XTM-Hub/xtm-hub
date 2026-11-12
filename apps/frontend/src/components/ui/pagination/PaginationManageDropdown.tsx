@@ -1,4 +1,5 @@
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import {
   IconButton,
   Menu,
@@ -26,6 +27,7 @@ export const PaginationManageDropdown = ({
     <Menu>
       <MenuTrigger asChild>
         <IconButton
+          {...analyticsId('list_settings_open')}
           priority="tertiary"
           className="h-9 w-9 rounded-none"
           aria-label={t('GenericActions.Paginate.Manage')}
@@ -36,12 +38,13 @@ export const PaginationManageDropdown = ({
         align="end"
         className="layer-1">
         <MenuSub>
-          <MenuSubTrigger>
+          <MenuSubTrigger {...analyticsId('list_page_sizes_open')}>
             {t('GenericActions.Paginate.RowsPerPage')}
           </MenuSubTrigger>
           <MenuSubContent className="layer-1">
             {[50, 100, 200, 300, 500].map((size) => (
               <MenuItem
+                {...analyticsId('list_page_size_select')}
                 key={size}
                 selected={size === pageSize}
                 onSelect={() => onSetPageSize(size)}>

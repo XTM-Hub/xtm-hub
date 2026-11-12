@@ -3,6 +3,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Form, FormField } from '@/components/ui/form';
 import { SheetFooter } from '@/components/ui/sheet';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { toComboboxOptionIds } from '@/utils/design-system/combobox';
 import { Button, ColorPicker, Input } from '@filigran/design-system';
 import { FiligranProduct } from '@graphql/generated';
@@ -81,6 +82,7 @@ const UseCaseForm = ({
           name="product"
           render={({ field, fieldState }) => (
             <AppCombobox
+              formField
               multiple
               label={t('UseCaseForm.Product')}
               placeholder={t('UseCaseForm.Product')}
@@ -109,13 +111,15 @@ const UseCaseForm = ({
         <SheetFooter className={useCase ? 'sm:justify-between pb-0' : 'pt-2'}>
           {useCase && (
             <ConfirmDialog
+              confirmAnalyticsId="admin_use_case_deletion_confirm"
               title={t('MenuActions.Delete')}
               confirmLabel={t('MenuActions.Delete')}
               destructive
               trigger={
                 <Button
                   variant="destructive"
-                  priority="secondary">
+                  priority="secondary"
+                  {...analyticsId('admin_use_case_delete')}>
                   {t('MenuActions.Delete')}
                 </Button>
               }
@@ -129,12 +133,14 @@ const UseCaseForm = ({
             <Button
               priority="secondary"
               type="button"
+              {...analyticsId('admin_form_cancel')}
               onClick={onClose}>
               {t('Utils.Cancel')}
             </Button>
             <Button
               disabled={!form.formState.isDirty}
-              type="submit">
+              type="submit"
+              {...analyticsId('admin_use_case_submit')}>
               {t('Utils.Validate')}
             </Button>
           </div>

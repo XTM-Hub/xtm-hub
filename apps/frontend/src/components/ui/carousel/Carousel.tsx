@@ -1,5 +1,9 @@
 'use client';
 
+import {
+  analyticsId,
+  type AnalyticsElementId,
+} from '@/lib/analytics/analytics.ids';
 import { cn } from '@/lib/utils';
 import { Icon, IconButton } from '@filigran/design-system';
 import type { EmblaCarouselType, EmblaOptionsType } from 'embla-carousel';
@@ -13,6 +17,9 @@ export interface CarouselProps extends React.HTMLAttributes<HTMLDivElement> {
   previousLabel?: string;
   nextLabel?: string;
   slideLabel?: (slide: number) => string;
+  previousAnalyticsId: AnalyticsElementId;
+  nextAnalyticsId: AnalyticsElementId;
+  slideAnalyticsId: AnalyticsElementId;
 }
 
 export type CarouselItemProps = React.HTMLAttributes<HTMLDivElement>;
@@ -26,6 +33,9 @@ const Carousel = React.forwardRef<HTMLDivElement, CarouselProps>(
       previousLabel = 'Previous slide',
       nextLabel = 'Next slide',
       slideLabel = defaultSlideLabel,
+      previousAnalyticsId,
+      nextAnalyticsId,
+      slideAnalyticsId,
       className,
       children,
       ...props
@@ -94,6 +104,7 @@ const Carousel = React.forwardRef<HTMLDivElement, CarouselProps>(
           <div className="flex h-full">{children}</div>
         </div>
         <IconButton
+          {...analyticsId(previousAnalyticsId)}
           priority="primary"
           aria-label={previousLabel}
           icon={
@@ -107,6 +118,7 @@ const Carousel = React.forwardRef<HTMLDivElement, CarouselProps>(
           className="absolute top-1/2 left-4 -translate-y-1/2"
         />
         <IconButton
+          {...analyticsId(nextAnalyticsId)}
           priority="primary"
           aria-label={nextLabel}
           icon={
@@ -126,6 +138,7 @@ const Carousel = React.forwardRef<HTMLDivElement, CarouselProps>(
             return (
               <button
                 key={index}
+                {...analyticsId(slideAnalyticsId)}
                 type="button"
                 aria-label={slideLabel(index + 1)}
                 aria-current={selected}

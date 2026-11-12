@@ -1,5 +1,4 @@
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { FiligranProduct } from '@graphql/generated';
+import { DocumentItemFragment, FiligranProduct } from '@graphql/generated';
 import { renderHook } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { useServiceFormFields } from './UseServiceFormFields';
@@ -15,7 +14,7 @@ const existingDocument = {
   slug: 'existing-slug',
   name: 'Existing Document',
   children_documents: [],
-} as unknown as documentItem_fragment$data;
+} as unknown as DocumentItemFragment;
 
 describe('useServiceFormFields', () => {
   describe('slug field', () => {

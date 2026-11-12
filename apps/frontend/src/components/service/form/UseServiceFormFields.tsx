@@ -13,8 +13,8 @@ import { FormItem } from '@/components/ui/form';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { useTranslate } from '@/hooks/use-translate';
 import { filterDocumentImages } from '@/utils/documents';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import {
+  DocumentItemFragment,
   DocumentMetadataKeyCode,
   FiligranProduct,
   IntegrationType,
@@ -88,7 +88,7 @@ type AvailableFields =
 interface Props {
   documentType: DocumentType;
   platform: Platform;
-  document?: documentItem_fragment$data;
+  document?: DocumentItemFragment;
   disabledFields?: AvailableFields[];
 }
 

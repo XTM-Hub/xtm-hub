@@ -8,6 +8,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { useMemo } from 'react';
 
 interface ServiceListFilterSectionProps {
@@ -45,7 +46,9 @@ export const ServiceListFilterSection = ({
           <AccordionItem
             value={filterKey}
             className="border-0">
-            <AccordionTrigger className="p-2 hover:cursor-pointer content-compact-medium">
+            <AccordionTrigger
+              {...analyticsId('resource_filter_section_toggle')}
+              className="p-2 hover:cursor-pointer content-compact-medium">
               {filter.title ?? filterKey}
             </AccordionTrigger>
             {/* pr-2 matches the trigger's 8px right padding so each count

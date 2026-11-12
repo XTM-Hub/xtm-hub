@@ -2,6 +2,7 @@ import { AddSubscriptionCapabilityMutation } from '@/components/subcription/subs
 import { BadgeOverflow } from '@/components/ui/BadgeOverflowCounter';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import {
   Button,
   Checkbox,
@@ -123,11 +124,13 @@ export const ServiceSlugAddCapabilities = ({
 
         <DialogFooter>
           <Button
+            {...analyticsId('admin_form_cancel')}
             priority="tertiary"
             onClick={() => resetAndClose()}>
             {t('Utils.Cancel')}
           </Button>
           <Button
+            {...analyticsId('admin_subscription_capability_confirm')}
             disabled={selectedCapabilityIds.size === 0 || isInFlight}
             onClick={handleSubmit}>
             {t('Utils.Validate')}

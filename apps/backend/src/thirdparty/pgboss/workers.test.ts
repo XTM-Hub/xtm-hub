@@ -15,6 +15,8 @@ import { DeadLetterWorkers } from './deadletter.workers';
 import { HUBSPOT_QUEUES } from './hubspot.jobs';
 import { HubspotWorkers } from './hubspot.workers';
 import { RETRY_STRATEGIES } from './retry-strategies';
+import { TEAMS_NOTIFICATION_QUEUES } from './teams-notification.jobs';
+import { TeamsNotificationWorkers } from './teams-notification.workers';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -74,6 +76,31 @@ describe('workers – queue configuration (unit)', () => {
     );
     expect(work).toHaveBeenCalledWith(
       HUBSPOT_QUEUES.REACH_OUT_SALES,
+      { batchSize: 1 },
+      expect.any(Function)
+    );
+  });
+
+  it('should create deadletter queue and wire the teams notification queue with standard retry + deadletter', async () => {
+    // Given
+    const createQueue = vi.fn();
+    const work = vi.fn();
+    const boss = { createQueue, work } as unknown as PgBoss;
+
+    // When
+    await TeamsNotificationWorkers.start(boss);
+
+    // Then
+    expect(createQueue).toHaveBeenCalledWith(
+      TEAMS_NOTIFICATION_QUEUES.DEAD_LETTER,
+      { ...RETRY_STRATEGIES.dlq }
+    );
+    expect(createQueue).toHaveBeenCalledWith(TEAMS_NOTIFICATION_QUEUES.SEND, {
+      ...RETRY_STRATEGIES.standard,
+      deadLetter: TEAMS_NOTIFICATION_QUEUES.DEAD_LETTER,
+    });
+    expect(work).toHaveBeenCalledWith(
+      TEAMS_NOTIFICATION_QUEUES.SEND,
       { batchSize: 1 },
       expect.any(Function)
     );

@@ -1,5 +1,6 @@
 import { PublicHeaderAuthButtons } from '@/components/layout/PublicHeaderAuthButtons';
 import { PublicMobileMenuButton } from '@/components/menu/navigation/public/PublicMobileMenuButton';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import LogoXTMDark from '@public/logo_xtm_hub_dark.svg';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
@@ -18,6 +19,7 @@ export const PublicHeaderContent = async ({
   return (
     <>
       <Link
+        {...analyticsId('nav_home_open')}
         href={`/${locale}`}
         className="md:hidden">
         <LogoXTMDark className="text-icon-highlight mr-2 h-8 w-auto" />

@@ -5,6 +5,7 @@ import { ShareableResourceDetailsLink } from '@/components/service/document/Shar
 import { ShareableResourceBasicInformation } from '@/components/service/document/ui/ShareableResourceBasicInformation';
 import { ShareableResourceDetailItem } from '@/components/service/document/ui/ShareableResourceDetailItem';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { roundToNearest } from '@/lib/utils';
 import {
   FiligranWebsiteUtm,
@@ -55,6 +56,7 @@ export const ShareableResourceConnectorDetails = ({
             priority="tertiary"
             asChild>
             <Link
+              {...analyticsId('resource_source_code_open')}
               href={connectorDetails.source_code}
               target="_blank">
               <LogoGitIcon className="h-4 w-4 mr-2" />
@@ -71,6 +73,7 @@ export const ShareableResourceConnectorDetails = ({
             priority="tertiary"
             asChild>
             <Link
+              {...analyticsId('resource_vendor_open')}
               href={
                 filigranWebsiteUtm
                   ? withFiligranWebsiteUtm(

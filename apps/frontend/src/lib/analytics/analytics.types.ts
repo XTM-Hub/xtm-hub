@@ -1,4 +1,5 @@
 import {
+  type ANALYTICS_LINK_TYPES,
   type FILTER_NAME_LABELS,
   type METRICS_PERIOD_LABELS,
   type ORDER_BY_LABELS,
@@ -74,7 +75,7 @@ export interface AnalyticsItem {
   item_name: string;
   item_category: AnalyticsLibrary;
   item_brand: AnalyticsProduct;
-  index: number;
+  index?: number;
 }
 
 interface AnalyticsResourceParams extends AnalyticsLibraryParams {
@@ -94,6 +95,8 @@ type AnalyticsOrderBy = (typeof ORDER_BY_LABELS)[SortableDocumentOrdering];
 
 type AnalyticsOrderMode =
   (typeof ORDER_MODE_LABELS)[keyof typeof ORDER_MODE_LABELS];
+
+export type AnalyticsLinkType = (typeof ANALYTICS_LINK_TYPES)[number];
 
 export type AnalyticsDeployEligibility =
   | 'Signed out'
@@ -138,11 +141,11 @@ export interface AnalyticsEvents {
     section?: string;
     epic_name?: string;
     feature_name?: string;
+    link_type?: AnalyticsLinkType;
   };
-  ee_badge_click: {
-    resource_id: string;
-    resource_title: string;
-    resource_type: string;
+  select_item: {
+    item_list_name: AnalyticsLibrary | AnalyticsPageType;
+    items: AnalyticsItem[];
   };
   view_item: AnalyticsResourceParams & {
     items: AnalyticsItem[];

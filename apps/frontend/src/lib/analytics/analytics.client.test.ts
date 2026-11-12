@@ -31,23 +31,25 @@ const MEASUREMENT_ID = 'G-TEST';
 const GA_DISABLE_KEY = `ga-disable-${MEASUREMENT_ID}` as const;
 const ORIGIN = 'https://hub.filigran.io';
 const RESOURCE_ID = 'resource-id';
-const RESOURCE_TITLE = 'Ransomware playbook';
-const RESOURCE_TYPE = 'opencti_playbook';
+const RESOURCE_NAME = 'Ransomware playbook';
+const USE_CASE = 'Threat hunting';
 const RESULT_COUNT = 42;
 
 type TrackedEvent = {
   [Name in AnalyticsEventName]: [Name, AnalyticsEvents[Name]];
 }[AnalyticsEventName];
 
-const badgeParams = {
+const useCaseParams: AnalyticsEvents['view_item_use_case'] = {
   resource_id: RESOURCE_ID,
-  resource_title: RESOURCE_TITLE,
-  resource_type: RESOURCE_TYPE,
+  resource_name: RESOURCE_NAME,
+  library: 'Playbooks',
+  product: 'OpenCTI',
+  use_case: USE_CASE,
 };
 
 const item: AnalyticsItem = {
   item_id: RESOURCE_ID,
-  item_name: RESOURCE_TITLE,
+  item_name: RESOURCE_NAME,
   item_category: 'Playbooks',
   item_brand: 'OpenCTI',
   index: 0,
@@ -55,7 +57,7 @@ const item: AnalyticsItem = {
 
 const viewItemParams: AnalyticsEvents['view_item'] = {
   resource_id: RESOURCE_ID,
-  resource_name: RESOURCE_TITLE,
+  resource_name: RESOURCE_NAME,
   library: 'Playbooks',
   product: 'OpenCTI',
   items: [item],
@@ -85,9 +87,9 @@ const startAnalytics = () => {
   releaseAnalyticsEvents();
 };
 
-const trackBadgeClicks = (count: number) => {
+const trackUseCaseViews = (count: number) => {
   for (let index = 0; index < count; index += 1) {
-    trackEvent('ee_badge_click', badgeParams);
+    trackEvent('view_item_use_case', useCaseParams);
   }
 };
 
@@ -102,7 +104,7 @@ afterEach(() => {
 describe('trackEvent', () => {
   it('should send nothing when analytics was never initialized', () => {
     // Given / When
-    trackEvent('ee_badge_click', badgeParams);
+    trackEvent('view_item_use_case', useCaseParams);
 
     // Then
     expect(window.dataLayer).toBeUndefined();
@@ -114,16 +116,35 @@ describe('trackEvent', () => {
     revokeAnalyticsConsent();
 
     // When
-    trackEvent('ee_badge_click', badgeParams);
+    trackEvent('view_item_use_case', useCaseParams);
 
     // Then
-    expect(readTrackedEvents('ee_badge_click')).toEqual([]);
+    expect(readTrackedEvents('view_item_use_case')).toEqual([]);
+  });
+
+  it('should address the event to the initialized measurement only when it is sent', () => {
+    // Given
+    startAnalytics();
+
+    // When
+    trackEvent('view_item_use_case', useCaseParams);
+
+    // Then
+    expect(
+      readGtagCommands().filter(([command]) => command === 'event')
+    ).toEqual([
+      [
+        'event',
+        'view_item_use_case',
+        expect.objectContaining({ send_to: MEASUREMENT_ID }),
+      ],
+    ]);
   });
 
   it('should send a page view when the flood cap is reached', () => {
     // Given
     startAnalytics();
-    trackBadgeClicks(MAX_EVENTS_PER_WINDOW);
+    trackUseCaseViews(MAX_EVENTS_PER_WINDOW);
 
     // When
     trackEvent('page_view', pageViewParams);
@@ -138,7 +159,7 @@ describe('trackEvent', () => {
   ])('should send %s when the flood cap is reached', (name, params) => {
     // Given
     startAnalytics();
-    trackBadgeClicks(MAX_EVENTS_PER_WINDOW);
+    trackUseCaseViews(MAX_EVENTS_PER_WINDOW);
 
     // When
     trackEvent(name, params);
@@ -156,14 +177,14 @@ describe('trackEvent', () => {
       // Given
       vi.useFakeTimers();
       startAnalytics();
-      trackBadgeClicks(MAX_EVENTS_PER_WINDOW);
+      trackUseCaseViews(MAX_EVENTS_PER_WINDOW);
       vi.advanceTimersByTime(elapsedMs);
 
       // When
-      trackEvent('ee_badge_click', badgeParams);
+      trackEvent('view_item_use_case', useCaseParams);
 
       // Then
-      expect(readTrackedEvents('ee_badge_click')).toHaveLength(
+      expect(readTrackedEvents('view_item_use_case')).toHaveLength(
         MAX_EVENTS_PER_WINDOW + acceptedCount
       );
     }
@@ -201,22 +222,22 @@ describe('trackEvent', () => {
   it.each([
     ['jane.doe@acme.com', REDACTED_VALUE],
     ['Contact jane.doe@acme.com for access', REDACTED_VALUE],
-    [RESOURCE_TITLE, RESOURCE_TITLE],
+    [RESOURCE_NAME, RESOURCE_NAME],
   ])(
     'should send %s as %s when it is a parameter value',
-    (resourceTitle, sentValue) => {
+    (resourceName, sentValue) => {
       // Given
       startAnalytics();
 
       // When
-      trackEvent('ee_badge_click', {
-        ...badgeParams,
-        resource_title: resourceTitle,
+      trackEvent('view_item_use_case', {
+        ...useCaseParams,
+        resource_name: resourceName,
       });
 
       // Then
-      expect(readTrackedEvents('ee_badge_click')).toEqual([
-        expect.objectContaining({ resource_title: sentValue }),
+      expect(readTrackedEvents('view_item_use_case')).toEqual([
+        expect.objectContaining({ resource_name: sentValue }),
       ]);
     }
   );
@@ -272,7 +293,7 @@ describe('trackEvent', () => {
     trackEvent('search', {
       library: 'Playbooks',
       product: 'OpenCTI',
-      search_term: RESOURCE_TITLE,
+      search_term: RESOURCE_NAME,
       result_count: RESULT_COUNT,
       has_results: 'Yes',
     });
@@ -300,7 +321,7 @@ describe('releaseAnalyticsEvents', () => {
     // Given
     initializeAnalytics(MEASUREMENT_ID);
     trackEvent('page_view', pageViewParams);
-    trackEvent('ee_badge_click', badgeParams);
+    trackEvent('view_item_use_case', useCaseParams);
 
     // When
     releaseAnalyticsEvents();
@@ -310,36 +331,36 @@ describe('releaseAnalyticsEvents', () => {
       readGtagCommands()
         .filter(([command]) => command === 'event')
         .map(([, name]) => name)
-    ).toEqual(['page_view', 'ee_badge_click']);
+    ).toEqual(['page_view', 'view_item_use_case']);
   });
 
   it('should send a held event with the page context of when it happened', () => {
     // Given
     initializeAnalytics(MEASUREMENT_ID);
     setAnalyticsPageContext(homeContext);
-    trackEvent('ee_badge_click', badgeParams);
+    trackEvent('view_item_use_case', useCaseParams);
     setAnalyticsPageContext(profileContext);
 
     // When
     releaseAnalyticsEvents();
 
     // Then
-    expect(readTrackedEvents('ee_badge_click')).toEqual([
-      { ...homeContext, ...badgeParams },
+    expect(readTrackedEvents('view_item_use_case')).toEqual([
+      { ...homeContext, ...useCaseParams },
     ]);
   });
 
   it('should drop the held events when analytics consent is withdrawn', () => {
     // Given
     initializeAnalytics(MEASUREMENT_ID);
-    trackEvent('ee_badge_click', badgeParams);
+    trackEvent('view_item_use_case', useCaseParams);
     revokeAnalyticsConsent();
 
     // When
     releaseAnalyticsEvents();
 
     // Then
-    expect(readTrackedEvents('ee_badge_click')).toEqual([]);
+    expect(readTrackedEvents('view_item_use_case')).toEqual([]);
   });
 });
 

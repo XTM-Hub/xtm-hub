@@ -33,6 +33,7 @@ export const ServiceFormSolutionCategoryField = ({
 
   return (
     <AppCombobox
+      formField
       multiple
       label={t('Service.Form.SolutionCategoriesLabel')}
       placeholder={t('Service.Form.SolutionCategoriesPlaceholder')}

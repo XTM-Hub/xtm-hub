@@ -5,6 +5,7 @@ import { LastDeployedPlatform } from '@/components/homepage/last-deployed-resour
 import { PlatformMetadataMapping } from '@/components/registration/PlatformIdentifierMapping';
 import { Separator } from '@/components/ui/separator';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import {
   Select,
@@ -44,6 +45,7 @@ const LastDeployedResourcesClient = ({
           value={selectedServiceInstanceId}
           onValueChange={setSelectedServiceInstanceId}>
           <SelectTrigger
+            {...analyticsId('home_platforms_open')}
             aria-label={t('ProductPlaceholder')}
             className="w-56">
             <SelectValue placeholder={t('ProductPlaceholder')} />

@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import {
   Button,
   Card,
@@ -28,6 +29,7 @@ export const ProfileFormResetPassword = ({
       </CardContent>
       <CardFooter className="justify-end">
         <Button
+          {...analyticsId('account_password_reset_submit')}
           aria-label={t('UserForm.ResetPassword.Action')}
           onClick={onSubmit}>
           {t('UserForm.ResetPassword.Action')}

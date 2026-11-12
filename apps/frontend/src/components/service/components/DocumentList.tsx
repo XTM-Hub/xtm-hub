@@ -7,29 +7,28 @@ import ServiceCard from '@/components/service/components/ServiceCard';
 import { useServiceContext } from '@/components/service/components/ServiceContext';
 import { SettingsContext } from '@/components/settings/EnvPortalContext';
 import {
+  analyticsResource,
+  toAnalyticsResourceData,
+} from '@/lib/analytics/analytics.context';
+import {
   APP_PATH,
   PUBLIC_CYBERSECURITY_SOLUTIONS_PATH,
 } from '@/utils/path/constant';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { useContext, useMemo } from 'react';
 
 import { DataTable } from '@/components/ui/data-table';
 import useScrollPosition from '@/hooks/use-scroll-position';
 import { useTranslate } from '@/hooks/use-translate';
 import { getDataTableLabels } from '@/utils/design-system/data-table';
+import { DocumentItemFragment } from '@graphql/generated';
 import { useRouter } from 'next/navigation';
 
 interface DocumentListProps {
-  documents: documentItem_fragment$data[];
+  documents: DocumentItemFragment[];
   displayMode: ServiceListDisplayMode;
-  connectionId?: string;
 }
 
-const DocumentList = ({
-  documents,
-  displayMode,
-  connectionId,
-}: DocumentListProps) => {
+const DocumentList = ({ documents, displayMode }: DocumentListProps) => {
   const { settings } = useContext(SettingsContext);
   const { serviceInstance } = useServiceContext();
   const t = useTranslate();
@@ -58,7 +57,6 @@ const DocumentList = ({
             <ServiceCard
               key={document.id}
               document={document}
-              connectionId={connectionId}
               detailUrl={`/${APP_PATH}/service/${serviceInstance.service_definition?.identifier}/${serviceInstance.id}/${document.id}`}
               shareLinkUrl={`${settings!.base_url_front}/${PUBLIC_CYBERSECURITY_SOLUTIONS_PATH}/${serviceInstance.slug}/${document.slug}`}
             />
@@ -70,6 +68,10 @@ const DocumentList = ({
           columns={tableColumns}
           data={documents}
           toolbar={<></>}
+          getRowAnalyticsId={() => 'resource_open'}
+          getRowAnalyticsResource={({ original }) =>
+            analyticsResource(toAnalyticsResourceData(original))
+          }
           onClickRow={(row) => {
             save();
             router.push(

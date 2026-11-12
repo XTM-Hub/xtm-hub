@@ -11,6 +11,7 @@ import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import useAdminPath from '@/hooks/use-admin-path';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { isEmpty } from '@/lib/utils';
 import { Button } from '@filigran/design-system';
 import { UserList_fragment$data } from '@generated/UserList_fragment.graphql';
@@ -107,12 +108,14 @@ export const UserUpdateForm = ({ user, callback }: UserUpdateFormProps) => {
             <Button
               priority="secondary"
               type="button"
+              {...analyticsId('organization_form_cancel')}
               onClick={(e) => handleCloseSheet(e)}>
               {t('Utils.Cancel')}
             </Button>
             <Button
               disabled={!form.formState.isValid}
-              type="submit">
+              type="submit"
+              {...analyticsId('organization_member_submit')}>
               {t('Utils.Validate')}
             </Button>
           </div>

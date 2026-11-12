@@ -6,7 +6,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { useTranslate } from '@/hooks/use-translate';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
+import { DocumentItemFragment } from '@graphql/generated';
 import { ControllerRenderProps, FieldValues } from 'react-hook-form';
 
 export interface ServiceFormReplaceFileTexts {
@@ -18,7 +18,7 @@ export interface ServiceFormReplaceFileTexts {
 interface ServiceFormReplaceFileFieldProps {
   field: ControllerRenderProps<FieldValues, string>;
   setIsDirty: (isDirty: boolean) => void;
-  document?: documentItem_fragment$data;
+  document?: DocumentItemFragment;
   texts: ServiceFormReplaceFileTexts;
   accept: string;
 }
@@ -39,6 +39,7 @@ export const ServiceFormReplaceFileField = ({
         })}
       </FormLabel>
       <FormControl>
+        {/* eslint-disable-next-line no-restricted-syntax -- container whose children carry the IDs */}
         <div onClick={() => setIsDirty(true)}>
           <FileInputWithPrevent
             field={field}
@@ -48,6 +49,8 @@ export const ServiceFormReplaceFileField = ({
               dialogDescription: t(texts.updateFileDescription),
             }}
             allowedTypes={accept}
+            analyticsId="resource_file_replacement_open"
+            confirmAnalyticsId="resource_file_replacement_confirm"
           />
         </div>
       </FormControl>

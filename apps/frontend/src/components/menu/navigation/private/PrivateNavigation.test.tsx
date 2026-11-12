@@ -482,6 +482,7 @@ describe('PrivateNavigation hook behavior', () => {
     expect(myProductLink?.subLinks?.[0]).toEqual({
       label: 'OpenCTI Alpha Platform',
       href: '/app/service/opencti_registration/service-instance-opencti-alpha',
+      analyticsId: 'nav_connected_platform_open',
       tooltip: 'https://opencti.example.com',
     });
   });

@@ -11,14 +11,16 @@ export const MarkdownRendererMeta: ComponentMeta = {
   variants: ['default'],
   sizes: [],
   examples: [
-    '<MarkdownRenderer source={feature.description} />',
-    '<MarkdownRenderer source={document.description} className="p-6" />',
+    '<MarkdownRenderer source={feature.description} linkAnalyticsId="roadmap_description_link_open" />',
+    '<MarkdownRenderer source={document.description} linkAnalyticsId="resource_description_link_open" className="p-6" />',
   ],
   props: {
     source:
       'string (required) - the markdown to render; an empty string renders an empty root.',
     className:
       'string (optional) - extra classes on the root <div>, merged last with tailwind-merge (a gap-4 replaces the default gap-3).',
+    linkAnalyticsId:
+      'AnalyticsElementId (required) - the analytics id of every link of the markdown.',
     transformLinkHref:
       '(href: string) => string (optional) - rewrites the href of every link of the sanitised markdown, for example to tag outgoing links; pass a stable function.',
   },

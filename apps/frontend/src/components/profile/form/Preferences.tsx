@@ -42,6 +42,7 @@ export const ProfileFormPreferences = () => {
         clamp={0}
         className="grid gap-4">
         <SelectField
+          analyticsId="account_themes_open"
           label={t('ProfilePage.Preferences.Theme')}
           placeholder={t('ThemeToggle.SetTheme')}
           options={[
@@ -56,6 +57,7 @@ export const ProfileFormPreferences = () => {
         />
 
         <SelectField
+          analyticsId="account_languages_open"
           label={t('ProfilePage.Preferences.Language')}
           placeholder={t('LocaleSwitcher.Label')}
           options={availableLocales.map((loc) => ({

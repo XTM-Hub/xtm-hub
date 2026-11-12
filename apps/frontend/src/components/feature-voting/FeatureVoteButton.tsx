@@ -4,6 +4,7 @@ import { getFeatureVotingPrivatePath } from '@/components/feature-voting/feature
 import { useFeatureVote } from '@/hooks/use-feature-vote';
 import usePublicPath from '@/hooks/use-public-path';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { buildSignupRedirect } from '@/utils/redirect';
 import { CheckCircleIcon } from '@filigran/icon';
 
@@ -64,6 +65,9 @@ export const FeatureVoteButton = ({
 
   return (
     <Button
+      {...analyticsId(
+        isAuthenticated ? 'roadmap_feature_vote' : 'roadmap_feature_vote_signup'
+      )}
       className={className}
       onClick={handleVote}
       disabled={isPending}>

@@ -8,6 +8,7 @@ import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useKeepSelectedOptions } from '@/hooks/use-keep-selected-options';
 import { useTranslate } from '@/hooks/use-translate';
 import { useUsersList } from '@/hooks/use-users-list';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { toComboboxOptionIds } from '@/utils/design-system/combobox';
 import { Button } from '@filigran/design-system';
 import { serviceGroup_fragment$key } from '@generated/serviceGroup_fragment.graphql';
@@ -164,6 +165,7 @@ export const TrialsManageUsersForm = ({
         render={({ field: { value, onChange }, fieldState }) => {
           return (
             <AppCombobox
+              formField
               multiple
               label={group.name}
               placeholder={t('Service.Trials.ManageUsers.Email')}
@@ -189,12 +191,14 @@ export const TrialsManageUsersForm = ({
         <SheetFooter>
           <div className="flex gap-2">
             <Button
+              {...analyticsId('trial_users_cancel')}
               priority="secondary"
               type="button"
               onClick={onCancel}>
               {t('Utils.Cancel')}
             </Button>
             <Button
+              {...analyticsId('trial_users_submit')}
               disabled={!form.formState.isDirty}
               loading={isInFlight}
               type="submit">

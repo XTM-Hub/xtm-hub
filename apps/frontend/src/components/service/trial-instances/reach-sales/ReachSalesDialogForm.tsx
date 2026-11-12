@@ -1,5 +1,6 @@
 import { Form, FormField } from '@/components/ui/form';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import {
   Button,
   Dialog,
@@ -79,12 +80,14 @@ export const ReachSalesDialogForm = ({
         </DialogBody>
         <DialogFooter>
           <Button
+            {...analyticsId('trial_sales_request_cancel')}
             priority="secondary"
             type="button"
             onClick={() => setIsDialogOpen(false)}>
             {t('Utils.Cancel')}
           </Button>
           <Button
+            {...analyticsId('trial_sales_request_submit')}
             type="submit"
             form="reach-sales-form"
             disabled={!message?.trim()}>

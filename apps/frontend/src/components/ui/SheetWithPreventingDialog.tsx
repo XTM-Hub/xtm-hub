@@ -8,6 +8,7 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { useTranslate } from '@/hooks/use-translate';
+import { type AnalyticsContextAttributes } from '@/lib/analytics/analytics.context';
 import { createContext, ReactNode, useContext, useState } from 'react';
 
 interface UserFormSheetProps {
@@ -18,6 +19,7 @@ interface UserFormSheetProps {
   description?: string;
   children: ReactNode;
   onOpenAutoFocus?: (event: Event) => void;
+  analyticsContext?: AnalyticsContextAttributes;
 }
 
 interface DialogContextProps {
@@ -43,6 +45,7 @@ export const SheetWithPreventingDialog = ({
   description = '',
   children,
   onOpenAutoFocus,
+  analyticsContext,
 }: UserFormSheetProps) => {
   const t = useTranslate();
   const [openDialog, setOpenDialog] = useState(false);
@@ -67,6 +70,7 @@ export const SheetWithPreventingDialog = ({
         onOpenChange={setOpen}>
         {trigger && <SheetTrigger asChild>{trigger}</SheetTrigger>}
         <SheetContent
+          {...analyticsContext}
           side={'right'}
           closeLabel={t('Utils.Close')}
           onPointerDownOutside={(e) => alertDialogSheetClose(e)}
@@ -87,6 +91,8 @@ export const SheetWithPreventingDialog = ({
         </SheetContent>
       </Sheet>
       <ConfirmDialog
+        confirmAnalyticsId="common_unsaved_changes_confirm"
+        analyticsContext={analyticsContext}
         title={t('DialogActions.PreventSheetTitle')}
         confirmLabel={t('MenuActions.Continue')}
         open={openDialog}

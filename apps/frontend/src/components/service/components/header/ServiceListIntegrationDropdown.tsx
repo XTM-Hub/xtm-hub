@@ -1,4 +1,5 @@
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import {
   Button,
   Menu,
@@ -22,7 +23,9 @@ export const ServiceListIntegrationDropdown = ({
   return (
     <Menu>
       <MenuTrigger asChild>
-        <Button>{t('Service.OpenctiIntegrations.AddService')}</Button>
+        <Button {...analyticsId('resource_create')}>
+          {t('Service.OpenctiIntegrations.AddService')}
+        </Button>
       </MenuTrigger>
       <MenuContent className="layer-1">
         <MenuGroup>
@@ -33,25 +36,30 @@ export const ServiceListIntegrationDropdown = ({
           <MenuSeparator />
 
           <MenuItem
+            {...analyticsId('resource_integration_type_select')}
             onClick={() => onIntegrationTypeSelect(IntegrationType.CsvFeed)}>
             {t(`Service.OpenctiIntegrations.Type.csv_feed`)}
           </MenuItem>
           <MenuItem
+            {...analyticsId('resource_integration_type_select')}
             onClick={() => onIntegrationTypeSelect(IntegrationType.TaxiiFeed)}>
             {t(`Service.OpenctiIntegrations.Type.taxii_feed`)}
           </MenuItem>
           <MenuItem
+            {...analyticsId('resource_integration_type_select')}
             onClick={() => onIntegrationTypeSelect(IntegrationType.Stream)}>
             {t(`Service.OpenctiIntegrations.Type.stream`)}
           </MenuItem>
 
           <MenuItem
+            {...analyticsId('resource_integration_type_select')}
             onClick={() =>
               onIntegrationTypeSelect(IntegrationType.ThirdPartyIntegration)
             }>
             {t(`Service.OpenctiIntegrations.Type.third_party_integration`)}
           </MenuItem>
           <MenuItem
+            {...analyticsId('resource_integration_type_select')}
             onClick={() => onIntegrationTypeSelect(IntegrationType.RssFeed)}>
             {t(`Service.OpenctiIntegrations.Type.rss_feed`)}
           </MenuItem>

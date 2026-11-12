@@ -70,7 +70,7 @@
     "express-prom-bundle": "8.0.0",
     "express-rate-limit": "8.6.2",
     "express-session": "1.19.0",
-    "glob": "13.0.6",
+    "glob": "13.0.7",
     "graphql": "catalog:",
     "graphql-relay": "0.10.2",
     "graphql-sse": "catalog:",

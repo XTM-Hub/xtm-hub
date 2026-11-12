@@ -4,6 +4,8 @@ import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDi
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useEpicFilter } from '@/hooks/use-epic-filter';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsEpic } from '@/lib/analytics/analytics.context';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { updateInQueryCache } from '@/utils/query-cache';
 import { Button } from '@filigran/design-system';
@@ -120,6 +122,7 @@ export const EpicFormSheet = ({
   };
   return (
     <SheetWithPreventingDialog
+      analyticsContext={epic && analyticsEpic(epic.title)}
       open={openSheet}
       setOpen={setOpenSheet}
       trigger={
@@ -128,6 +131,7 @@ export const EpicFormSheet = ({
         ) : (
           triggerElement || (
             <Button
+              {...analyticsId('roadmap_epic_create')}
               priority="tertiary"
               startIcon={<AddIcon className="size-4" />}>
               {t('Utils.Create')}

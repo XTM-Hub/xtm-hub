@@ -1,6 +1,7 @@
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { IconActionsItem } from '@/components/ui/IconActions';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 import { Button } from '@filigran/design-system';
 import { IntegrationType } from '@graphql/generated';
@@ -41,6 +42,7 @@ export const ServiceDelete = ({
   return (
     userCanDelete && (
       <ConfirmDialog
+        confirmAnalyticsId="resource_deletion_confirm"
         confirmLabel={t('Utils.Delete')}
         destructive
         title={t(`Service.${translationKey}.DeleteService`, {
@@ -49,6 +51,7 @@ export const ServiceDelete = ({
         trigger={
           type === 'menuitem' ? (
             <IconActionsItem
+              {...analyticsId('resource_delete')}
               onSelect={(e) => {
                 e.preventDefault();
               }}>
@@ -56,6 +59,7 @@ export const ServiceDelete = ({
             </IconActionsItem>
           ) : (
             <Button
+              {...analyticsId('resource_delete')}
               variant="destructive"
               priority="secondary">
               {t('Utils.Delete')}

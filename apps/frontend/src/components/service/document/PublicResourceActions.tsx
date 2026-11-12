@@ -5,6 +5,7 @@ import { ResourceViewTracker } from '@/components/service/document/ResourceViewT
 import { DisabledActionTooltip } from '@/components/ui/DisabledActionTooltip';
 import { ShareLinkButton } from '@/components/ui/share-link/ShareLinkButton';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { type AnalyticsDeployEligibility } from '@/lib/analytics/analytics.types';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { isValueInEnum } from '@/utils/is-value-in-enum';
@@ -95,6 +96,7 @@ export const PublicResourceActions = ({
         />
       )}
       <ShareLinkButton
+        analyticsId="resource_share"
         documentId={documentData.id}
         url={pageUrl}
         tooltipText={shareTooltipText}
@@ -112,7 +114,10 @@ export const PublicResourceActions = ({
                   className="z-[2]"
                   aria-label={t('Service.ShareableResources.Download')}
                   icon={<DownloadIcon className="h-4 w-4" />}>
-                  <Link href={signupHref} />
+                  <Link
+                    {...analyticsId('resource_download_signup')}
+                    href={signupHref}
+                  />
                 </IconButton>
               </TooltipTrigger>
               <TooltipContent>
@@ -124,7 +129,11 @@ export const PublicResourceActions = ({
           <Button
             asChild
             className="whitespace-nowrap">
-            <Link href={signupHref}>{t('PublicResourcePage.Download')}</Link>
+            <Link
+              {...analyticsId('resource_download_signup')}
+              href={signupHref}>
+              {t('PublicResourcePage.Download')}
+            </Link>
           </Button>
         ))}
       {showDeploy &&
@@ -132,7 +141,11 @@ export const PublicResourceActions = ({
           <Button
             asChild
             className="whitespace-nowrap">
-            <Link href={signupHref}>{deployLabel}</Link>
+            <Link
+              {...analyticsId('resource_deploy_signup')}
+              href={signupHref}>
+              {deployLabel}
+            </Link>
           </Button>
         ) : (
           <DisabledActionTooltip

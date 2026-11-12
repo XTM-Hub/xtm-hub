@@ -1,3 +1,5 @@
+import config from 'config';
+import { toGlobalId } from 'graphql-relay/node/node.js';
 import { FileUpload } from 'graphql-upload/processRequest.mjs';
 import { v4 as uuidv4 } from 'uuid';
 import {
@@ -17,7 +19,10 @@ import {
   IntegrationType,
   ServiceDefinitionIdentifier,
 } from '../../__generated__/resolvers-types';
-import { default as DocumentModel } from '../../model/kanel/public/Document';
+import {
+  DocumentId,
+  default as DocumentModel,
+} from '../../model/kanel/public/Document';
 import { MinIOClient } from '../../thirdparty/minio/client';
 import { MinioFile } from '../../thirdparty/minio/types';
 import { ErrorCode, UnknownErrorCode } from '../../utils/error/error.code';
@@ -306,6 +311,121 @@ describe('documentHelper', () => {
         expect(transition).toThrow(ErrorCode.InvalidDocumentStatusTransition);
       }
     );
+  });
+
+  describe('buildInValidationPayload', () => {
+    const DOCUMENT_ID = '5a9b1f0e-2d6c-4b8e-9f3a-7c1d2e4f6a8b' as DocumentId;
+    const DOCUMENT_NAME = 'My resource';
+    const SHORT_DESCRIPTION = 'A short description. And a second sentence.';
+    const AUTHOR_EMAIL = 'author@filigran.io';
+    const SERVICE_DEFINITION = TestHelper.serviceDefinition.build();
+
+    const buildPayload = ({
+      type = OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+      integrationType = null,
+      authorEmail = AUTHOR_EMAIL,
+      name = DOCUMENT_NAME,
+      shortDescription = SHORT_DESCRIPTION,
+    }: {
+      type?: string;
+      integrationType?: IntegrationType | null;
+      authorEmail?: string | null;
+      name?: string | null;
+      shortDescription?: string | null;
+    } = {}) =>
+      DocumentHelper.buildInValidationPayload({
+        document: TestHelper.document.build({
+          id: DOCUMENT_ID,
+          name,
+          short_description: shortDescription,
+          type,
+        }),
+        serviceDefinition: SERVICE_DEFINITION,
+        integrationType,
+        authorEmail,
+      });
+
+    it.each`
+      integrationType                          | label
+      ${IntegrationType.Connector}             | ${'Connector'}
+      ${IntegrationType.CsvFeed}               | ${'CSV Feed'}
+      ${IntegrationType.RssFeed}               | ${'RSS Feed'}
+      ${IntegrationType.Stream}                | ${'Stream'}
+      ${IntegrationType.TaxiiFeed}             | ${'TAXII Feed'}
+      ${IntegrationType.ThirdPartyIntegration} | ${'Third party integration'}
+    `(
+      'should label the resource type $label when the integration type is $integrationType',
+      ({
+        integrationType,
+        label,
+      }: {
+        integrationType: IntegrationType;
+        label: string;
+      }) => {
+        // Given an integration document of the given integration type
+
+        // When
+        const payload = buildPayload({
+          type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+          integrationType,
+        });
+
+        // Then
+        expect(payload.resource.type).toBe(label);
+      }
+    );
+
+    it('should have no resource type when the document is not an integration', () => {
+      // Given a custom dashboard document, whose library already says what it is
+
+      // When
+      const payload = buildPayload({
+        type: OPENCTI_CUSTOM_DASHBOARD_DOCUMENT_TYPE,
+      });
+
+      // Then
+      expect(payload.resource.type).toBeNull();
+    });
+
+    it('should build the payload with the library, the resource and a link to the document', () => {
+      // Given an integration document in validation
+
+      // When
+      const payload = buildPayload({
+        integrationType: IntegrationType.CsvFeed,
+      });
+
+      // Then
+      expect(payload).toEqual({
+        library: SERVICE_DEFINITION.name,
+        resource: {
+          name: DOCUMENT_NAME,
+          type: 'CSV Feed',
+          status: DocumentStatus.InValidation,
+          short_description: SHORT_DESCRIPTION,
+          link: `${config.get<string>('base_url_front')}/redirect/${SERVICE_DEFINITION.identifier}?document_id=${toGlobalId('Document', DOCUMENT_ID)}`,
+          author_email: AUTHOR_EMAIL,
+        },
+      });
+    });
+
+    it('should keep null fields as null when the document has no name, no short description and no author', () => {
+      // Given a document without name, short description and author
+
+      // When
+      const payload = buildPayload({
+        name: null,
+        shortDescription: null,
+        authorEmail: null,
+      });
+
+      // Then
+      expect(payload.resource).toMatchObject({
+        name: null,
+        short_description: null,
+        author_email: null,
+      });
+    });
   });
 
   describe('assertMetadataIsNotMissing', () => {

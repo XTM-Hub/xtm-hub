@@ -130,6 +130,7 @@ export const EditTrialUsersForm = ({
   return (
     <TrialUserFormSkeleton
       form={form}
+      submitAnalyticsId="trial_user_roles_confirm"
       onSubmit={onSubmit}
       usersOptions={usersOptions}
       pickerLabel={t('Service.Bundle.ManageTrial.EditUsersDialog.Users')}

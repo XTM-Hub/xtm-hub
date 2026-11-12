@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/IconActions';
 import { useDebouncedSearch } from '@/hooks/use-debounced-search';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { getDataTableLabels } from '@/utils/design-system/data-table';
 import { APP_PATH } from '@/utils/path/constant';
 import { SearchField } from '@filigran/design-system';
@@ -73,6 +74,7 @@ const AdminServiceTab = ({ serviceData, refetch }: AdminServiceTabProps) => {
           <>
             <div className="flex items-center justify-end">
               <IconActions
+                analyticsId="list_row_actions_open"
                 aria-label={t('Utils.OpenMenu')}
                 icon={
                   <MoreVertIcon
@@ -84,11 +86,14 @@ const AdminServiceTab = ({ serviceData, refetch }: AdminServiceTabProps) => {
                 {row.original.service_definition?.identifier !==
                   ServiceDefinitionIdentifier.Link && (
                   <IconActionsLink
+                    analyticsId="admin_service_open"
                     href={`/${APP_PATH}/admin/service/${row.id}`}>
                     {t('Service.GoToAdminLabel')}
                   </IconActionsLink>
                 )}
-                <IconActionsItem onClick={() => editService(row.original)}>
+                <IconActionsItem
+                  {...analyticsId('admin_service_pictures_edit')}
+                  onClick={() => editService(row.original)}>
                   {t('ServiceForm.UpdatePictures')}
                 </IconActionsItem>
               </IconActions>
@@ -155,6 +160,7 @@ const AdminServiceTab = ({ serviceData, refetch }: AdminServiceTabProps) => {
             }
             filters={
               <AppCombobox<{ value: string; label: string }>
+                analyticsId="admin_service_types_open"
                 label={label}
                 labelPosition="none"
                 placeholder={label}

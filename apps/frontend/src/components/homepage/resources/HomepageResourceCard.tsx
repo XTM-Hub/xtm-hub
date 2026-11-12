@@ -5,6 +5,7 @@ import BadgeOverflowCounter, {
   BadgeOverflow,
 } from '@/components/ui/BadgeOverflowCounter';
 import { ResourceStatusIcons } from '@/components/ui/ResourceStatusIcons';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import {
   Chip,
   Tooltip,
@@ -65,6 +66,7 @@ const HomepageResourceCard = ({
         />
       </div>
       <Link
+        {...analyticsId('resource_open')}
         className="flex flex-col flex-1 min-h-0 overflow-hidden p-3 gap-2 focus-visible:outline-none"
         prefetch={false}
         href={url}>

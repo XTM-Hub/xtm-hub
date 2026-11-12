@@ -4,6 +4,7 @@ import { Form, FormField } from '@/components/ui/form';
 import { SelectField } from '@/components/ui/SelectField';
 import { SheetFooter } from '@/components/ui/sheet';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { Button, Input, Textarea } from '@filigran/design-system';
 import { VotingRoundTheme } from '@graphql/generated';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -83,6 +84,7 @@ const VotingRoundForm = ({
             name="service_instance_id"
             render={({ field, fieldState }) => (
               <SelectField
+                formField
                 label={t('VotingRound.Form.ServiceInstance')}
                 placeholder={t('VotingRound.Form.ServiceInstancePlaceholder')}
                 options={serviceInstances.map((serviceInstance) => ({
@@ -125,6 +127,7 @@ const VotingRoundForm = ({
           name="theme"
           render={({ field, fieldState }) => (
             <SelectField
+              formField
               label={t('VotingRound.Form.Theme')}
               options={THEME_VALUES.map((themeValue) => ({
                 value: themeValue,
@@ -142,6 +145,7 @@ const VotingRoundForm = ({
             name="copy_features_from_round_id"
             render={({ field, fieldState }) => (
               <SelectField
+                formField
                 label={t('VotingRound.Form.CopyFeaturesFrom')}
                 placeholder={t('VotingRound.Form.CopyFeaturesNone')}
                 options={[
@@ -167,13 +171,15 @@ const VotingRoundForm = ({
           className={votingRound ? 'sm:justify-between pb-0' : 'pt-2'}>
           {votingRound && (
             <ConfirmDialog
+              confirmAnalyticsId="admin_voting_round_deletion_confirm"
               title={t('MenuActions.Delete')}
               confirmLabel={t('MenuActions.Delete')}
               destructive
               trigger={
                 <Button
                   variant="destructive"
-                  priority="secondary">
+                  priority="secondary"
+                  {...analyticsId('admin_voting_round_delete')}>
                   {t('MenuActions.Delete')}
                 </Button>
               }
@@ -185,12 +191,14 @@ const VotingRoundForm = ({
             <Button
               priority="secondary"
               type="button"
+              {...analyticsId('admin_form_cancel')}
               onClick={onClose}>
               {t('Utils.Cancel')}
             </Button>
             <Button
               disabled={!form.formState.isDirty}
-              type="submit">
+              type="submit"
+              {...analyticsId('admin_voting_round_submit')}>
               {t('Utils.Validate')}
             </Button>
           </div>

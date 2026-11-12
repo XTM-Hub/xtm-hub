@@ -1,6 +1,10 @@
 'use client';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
+import {
+  type AnalyticsElementId,
+  analyticsId,
+} from '@/lib/analytics/analytics.ids';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { ShareIcon } from '@filigran/icon';
 import { useIncrementShareNumberDocumentMutation } from '@graphql/generated';
@@ -21,6 +25,7 @@ export interface ShareLinkButtonProps {
   tooltipText?: string;
   size?: IconButtonProps['size'];
   onShare?: () => void;
+  analyticsId: AnalyticsElementId;
 }
 
 export const ShareLinkButton = (props: ShareLinkButtonProps) => {
@@ -52,6 +57,7 @@ export const ShareLinkCommonButton = ({
   onClickAction,
   tooltipText,
   size,
+  analyticsId: elementId,
 }: ShareLinkCommonProps) => {
   const t = useTranslate();
   const [_, copy] = useCopyToClipboard();
@@ -81,6 +87,7 @@ export const ShareLinkCommonButton = ({
         disableHoverableContent={true}>
         <TooltipTrigger asChild>
           <IconButton
+            {...analyticsId(elementId)}
             priority="tertiary"
             size={size}
             onClick={handleCopy}

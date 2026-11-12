@@ -9,12 +9,22 @@ import UseCases from '@/components/admin/use-case/UseCases';
 import AdminServiceList from '@/components/service/AdminServiceList';
 import { useTranslate } from '@/hooks/use-translate';
 import {
+  analyticsId,
+  type AnalyticsElementId,
+} from '@/lib/analytics/analytics.ids';
+import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
 } from '@filigran/design-system';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+
+const TAB_ANALYTICS_IDS: Record<ServiceCatalogTab, AnalyticsElementId> = {
+  [ServiceCatalogTab.Services]: 'admin_services_select',
+  [ServiceCatalogTab.SolutionCategories]: 'admin_solution_categories_select',
+  [ServiceCatalogTab.UseCases]: 'admin_use_cases_select',
+};
 
 const TAB_TITLES: Record<ServiceCatalogTab, string> = {
   [ServiceCatalogTab.Services]: 'MenuLinks.Services',
@@ -44,6 +54,7 @@ const ServiceCatalog = () => {
         {Object.values(ServiceCatalogTab).map((tab) => (
           <TabsTrigger
             key={tab}
+            {...analyticsId(TAB_ANALYTICS_IDS[tab])}
             value={tab}>
             {t(TAB_TITLES[tab])}
           </TabsTrigger>

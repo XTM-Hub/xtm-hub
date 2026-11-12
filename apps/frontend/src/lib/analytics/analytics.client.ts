@@ -114,7 +114,10 @@ const sendEvent = (name: AnalyticsEventName, params: AnalyticsParams): void => {
   if (!gtag || !acceptsEvent(name, Date.now())) {
     return;
   }
-  gtag('event', name, sanitizeParams(params));
+  gtag('event', name, {
+    ...sanitizeParams(params),
+    send_to: enabledMeasurementId,
+  });
 };
 
 export const initializeAnalytics = (measurementId: string): void => {

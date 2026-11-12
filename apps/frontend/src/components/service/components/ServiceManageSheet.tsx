@@ -1,6 +1,5 @@
 'use client';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { ServiceRestriction } from '@graphql/generated';
+import { DocumentItemFragment, ServiceRestriction } from '@graphql/generated';
 
 import { useServiceContext } from '@/components/service/components/ServiceContext';
 import { ServiceFormValues } from '@/components/service/components/subscribable-services.types';
@@ -9,13 +8,18 @@ import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDi
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import useServiceCapability from '@/hooks/use-service-capability';
 import { useTranslate } from '@/hooks/use-translate';
+import {
+  analyticsResource,
+  toAnalyticsResourceData,
+} from '@/lib/analytics/analytics.context';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import revalidatePathActions from '@/utils/actions/revalidate-path.actions';
 import { PUBLIC_CYBERSECURITY_SOLUTIONS_PATH } from '@/utils/path/constant';
 import { Button } from '@filigran/design-system';
 import { useState } from 'react';
 
 interface ServiceManageSheetProps {
-  document?: documentItem_fragment$data;
+  document?: DocumentItemFragment;
   variant?: 'menu' | 'button';
   open?: boolean;
   setOpen?: (open: boolean) => void;
@@ -95,20 +99,25 @@ export const ServiceManageSheet = ({
             setOpen={setOpenSheet}
             trigger={
               variant === 'button' ? (
-                <Button priority="secondary">{t('Utils.Update')}</Button>
+                <Button
+                  {...analyticsId('resource_edit')}
+                  priority="secondary">
+                  {t('Utils.Update')}
+                </Button>
               ) : undefined
             }
+            analyticsContext={analyticsResource(
+              toAnalyticsResourceData(document)
+            )}
             title={t(`${translationKey}.UpdateService`, {
               name: document.name ?? '',
             })}>
-            {
-              <ServiceForm
-                document={document}
-                handleSubmit={(values: ServiceFormValues) =>
-                  handleUpdateSheet(values, document, onUpdateSuccess, onError)
-                }
-              />
-            }
+            <ServiceForm
+              document={document}
+              handleSubmit={(values: ServiceFormValues) =>
+                handleUpdateSheet(values, document, onUpdateSuccess, onError)
+              }
+            />
           </SheetWithPreventingDialog>
         )}
       </>
@@ -124,7 +133,9 @@ export const ServiceManageSheet = ({
           setOpen={setOpenSheet}
           trigger={
             variant === 'button' ? (
-              <Button>{t(`${translationKey}.AddService`)}</Button>
+              <Button {...analyticsId('resource_create')}>
+                {t(`${translationKey}.AddService`)}
+              </Button>
             ) : undefined
           }
           title={t(`${translationKey}.AddService`)}>

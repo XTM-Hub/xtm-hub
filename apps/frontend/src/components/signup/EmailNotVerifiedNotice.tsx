@@ -8,6 +8,7 @@ import {
 import { useResendVerificationEmail } from '@/components/signup/use-resend-verification-email';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { Alert, Button } from '@filigran/design-system';
 import { useSearchParams } from 'next/navigation';
 import { useState } from 'react';
@@ -67,6 +68,7 @@ export const EmailNotVerifiedNotice = ({
       description={t('SignUpPage.EmailNotVerifiedError.Description')}
       action={
         <Button
+          {...analyticsId('account_verification_email_submit')}
           priority="secondary"
           size="sm"
           loading={isPending}
