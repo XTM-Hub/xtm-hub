@@ -39,8 +39,9 @@ docs {
   marketing token in the x-xtm-hub-marketing-token header (disabled above:
   tick it and untick Cookie). Ensure xtm-hub-marketing-token is defined in
   environment, and that the API runs with MARKETING_TOKEN_HASH and
-  MARKETING_TOKEN_SALT matching it: there is no default, so without them no
-  marketing token is accepted. The system token is not accepted here. Such an
+  MARKETING_TOKEN_SALT matching it. Without them, the marketing token takes
+  the default system token hash and salt (the local dev value is "changeMe"),
+  still only in this header: the x-xtm-hub-token header is not accepted here. Such an
   export runs as a user without any capability or organization subscription,
   so it only contains the public published integrations, and sends no
   telemetry event.

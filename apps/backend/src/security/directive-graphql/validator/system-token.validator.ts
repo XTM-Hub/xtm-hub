@@ -10,8 +10,8 @@ import { ForbiddenAccess } from '../../../utils/error/error.util';
 import { validatePassword } from '../../util/user';
 
 export const SYSTEM_TOKEN_HEADER = 'x-xtm-hub-token';
-export const SYSTEM_TOKEN_HASH = config.get<string>('system_token_hash');
-export const SYSTEM_TOKEN_SALT = config.get<string>('system_token_salt');
+export const SYSTEM_TOKEN_HASH = config.get<string>('system_token.hash');
+export const SYSTEM_TOKEN_SALT = config.get<string>('system_token.salt');
 export const SYSTEM_TOKEN_DIRECTIVE_NAME = 'system_token';
 
 export type SystemTokenDirectiveArgs = {

@@ -34,4 +34,12 @@ describe('isValidMarketingToken', () => {
       expect(result).toBe(expected);
     }
   );
+
+  it('should accept the system token with the default configuration', () => {
+    // When — config/default.json gives the marketing token the system token hash and salt
+    const result = isValidMarketingToken('changeMe');
+
+    // Then
+    expect(result).toBe(true);
+  });
 });
