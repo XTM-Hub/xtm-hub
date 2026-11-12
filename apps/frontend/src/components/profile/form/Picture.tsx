@@ -67,7 +67,10 @@ export const ProfileFormPicture = ({ onSubmit }: ProfileFormPictureProps) => {
           {...analyticsId('account_picture_select')}
           className="size-24 cursor-pointer"
           onClick={() => inputRef.current?.click()}>
-          <Avatar src={preview || me?.picture || undefined} />
+          <Avatar
+            src={preview || me?.picture || undefined}
+            size={96}
+          />
         </div>
       </CardContent>
       <CardFooter>

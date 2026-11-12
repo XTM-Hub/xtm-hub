@@ -1,7 +1,7 @@
 import { ProfileFormPicture } from '@/components/profile/form/Picture';
 import testRender from '@/utils/test/test-render';
 import { fireEvent, screen, waitFor } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const CURRENT_PICTURE_URL = 'https://filigran.io/current-picture.png';
 const FIRST_PREVIEW_URL = 'blob:first-preview';
@@ -9,15 +9,6 @@ const SECOND_PREVIEW_URL = 'blob:second-preview';
 
 const makeImageFile = (name: string) =>
   new File(['picture'], name, { type: 'image/png' });
-
-// jsdom never loads images: every picture is reported as already loaded so the Avatar shows it.
-class LoadedImage {
-  onload: (() => void) | null = null;
-  onerror: (() => void) | null = null;
-  complete = true;
-  naturalWidth = 64;
-  src = '';
-}
 
 const getFileInput = (container: HTMLElement) =>
   container.querySelector<HTMLInputElement>('input[type="file"]')!;
@@ -27,16 +18,11 @@ const getDisplayedPicture = () => screen.getByRole('presentation');
 
 describe('ProfileFormPicture', () => {
   beforeEach(() => {
-    vi.stubGlobal('Image', LoadedImage);
     URL.createObjectURL = vi
       .fn()
       .mockReturnValueOnce(FIRST_PREVIEW_URL)
       .mockReturnValueOnce(SECOND_PREVIEW_URL);
     URL.revokeObjectURL = vi.fn();
-  });
-
-  afterEach(() => {
-    vi.unstubAllGlobals();
   });
 
   it('should display the current profile picture when the user has one', async () => {

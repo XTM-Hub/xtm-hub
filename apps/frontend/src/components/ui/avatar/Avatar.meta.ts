@@ -3,7 +3,7 @@ import type { ComponentMeta } from '@filigran/design-system/meta';
 export const AvatarMeta: ComponentMeta = {
   name: 'Avatar',
   description:
-    'Round picture of a person. Preloads src and shows the image, cropped with object-cover, only once it loaded; while it loads, when it fails and without src it shows the user Icon on bg-elevation-highlight. Has no size: it fills its parent, or the caller sizes it through className.',
+    'Round picture of a person. Loads src lazily under the fallback and shows the image, cropped with object-cover, only once it loaded; while it loads, when it fails and without src it shows the user Icon on bg-elevation-highlight. Pictures of the backend (/user/picture/:userId) go through the Next image optimiser, Gravatar ones are asked at twice the size, any other host is loaded as it is. Has no size of its own: it fills its parent, or the caller sizes it through className; the size prop only says at which resolution the picture is requested.',
   status: 'beta',
   category: 'data-display',
   version: '0.1.0',
@@ -17,6 +17,7 @@ export const AvatarMeta: ComponentMeta = {
   props: {
     src: 'string (optional) - the picture URL; empty or missing shows the fallback glyph.',
     alt: 'string (optional, default "") - the text alternative of the image, and of the fallback while it loads or after it fails; pass it only for a standalone avatar.',
+    size: 'number (optional, default 48) - the displayed size of the picture in CSS pixels, not applied as a style: it sets the width and height of the image and the resolution it is requested at (twice that for Gravatar, the size and its retina twin for the optimiser).',
     className:
       'string (optional) - extra classes, merged last with tailwind-merge (a size-8 replaces the default size-full).',
     ref: 'React.Ref<HTMLSpanElement> (optional) - forwarded to the root <span> element.',

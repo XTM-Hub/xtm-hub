@@ -217,6 +217,15 @@ const nextConfig = {
     },
   },
   images: {
+    // Declaring localPatterns replaces the Next default, so that default (every local path, no query
+    // string) is kept first: the images already served through next/image rely on it.
+    localPatterns: [
+      { pathname: '**', search: '' },
+      // User pictures of the backend (see avatar-image.util.ts): one segment shaped like a UUID, and
+      // any query string, as the `t` cache-buster changes with each upload and Next only matches
+      // `search` exactly.
+      { pathname: '/user/picture/????????-????-????-????-????????????' },
+    ],
     remotePatterns: [
       {
         protocol: 'https',

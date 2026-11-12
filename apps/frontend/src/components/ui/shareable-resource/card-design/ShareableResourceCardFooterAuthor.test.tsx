@@ -22,6 +22,43 @@ describe('ShareableResourceCardFooterAuthor', () => {
     expect(screen.getByRole('button')).toBeInTheDocument();
   });
 
+  it('loads the author picture in a small avatar', () => {
+    const { container } = testRender(
+      <ShareableResourceCardFooterAuthor
+        document={document as DocumentItemFragment}
+        shareLinkUrl="https://share.local"
+      />
+    );
+
+    expect(container.querySelector('img')).toHaveAttribute(
+      'src',
+      'https://img'
+    );
+    expect(container.querySelector('img')?.closest('.size-6')).not.toBeNull();
+  });
+
+  it('asks Gravatar for a right-sized author picture', () => {
+    const gravatarDocument = {
+      ...document,
+      uploader: {
+        ...document.uploader,
+        picture: 'https://s.gravatar.com/avatar/538dc0e?s=480&r=pg',
+      },
+    };
+
+    const { container } = testRender(
+      <ShareableResourceCardFooterAuthor
+        document={gravatarDocument as DocumentItemFragment}
+        shareLinkUrl="https://share.local"
+      />
+    );
+
+    expect(container.querySelector('img')).toHaveAttribute(
+      'src',
+      'https://s.gravatar.com/avatar/538dc0e?s=96&r=pg'
+    );
+  });
+
   it('hides author block when shouldDisplayAuthor is false', () => {
     testRender(
       <ShareableResourceCardFooterAuthor
