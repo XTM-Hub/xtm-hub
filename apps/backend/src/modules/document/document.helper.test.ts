@@ -428,6 +428,38 @@ describe('documentHelper', () => {
     });
   });
 
+  describe('toIntegrationType', () => {
+    it.each`
+      documentType                              | value                        | expected
+      ${OPENCTI_INTEGRATION_DOCUMENT_TYPE}      | ${IntegrationType.CsvFeed}   | ${IntegrationType.CsvFeed}
+      ${OPENCTI_INTEGRATION_DOCUMENT_TYPE}      | ${'not_an_integration_type'} | ${null}
+      ${OPENCTI_INTEGRATION_DOCUMENT_TYPE}      | ${null}                      | ${null}
+      ${OPENCTI_CUSTOM_DASHBOARD_DOCUMENT_TYPE} | ${IntegrationType.CsvFeed}   | ${null}
+    `(
+      'should return $expected when the document type is $documentType and the metadata value is $value',
+      ({
+        documentType,
+        value,
+        expected,
+      }: {
+        documentType: string;
+        value: string | null;
+        expected: IntegrationType | null;
+      }) => {
+        // Given a document type and an integration type metadata value
+
+        // When
+        const integrationType = DocumentHelper.toIntegrationType(
+          documentType,
+          value
+        );
+
+        // Then
+        expect(integrationType).toBe(expected);
+      }
+    );
+  });
+
   describe('assertMetadataIsNotMissing', () => {
     it('should throw error when metadata mapping is missing', () => {
       expect(() =>

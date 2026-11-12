@@ -34,10 +34,7 @@ import { NewsFeedApp } from '../news-feed/news-feed.app';
 import { UserDomain } from '../organization-management/user/user-domain/user.domain';
 import { RegistrationApp } from '../registration/registration.app';
 import { ServiceDefinitionDomain } from '../service/definition/service-definition.domain';
-import {
-  isIntegrationType,
-  OPENCTI_INTEGRATION_DOCUMENT_TYPE,
-} from '../shareable-resource/opencti/integration/integration.model';
+import { OPENCTI_INTEGRATION_DOCUMENT_TYPE } from '../shareable-resource/opencti/integration/integration.model';
 import { objectSolutionCategoryDomain } from '../solution-category/object-solution-category/object-solution-category.domain';
 import { solutionCategoryApp } from '../solution-category/solution-category.app';
 import { TelemetryApp } from '../telemetry/telemetry.app';
@@ -108,10 +105,10 @@ const notifyInValidation = async (
       payload: DocumentHelper.buildInValidationPayload({
         document,
         serviceDefinition,
-        integrationType:
-          integrationType && isIntegrationType(integrationType)
-            ? integrationType
-            : null,
+        integrationType: DocumentHelper.toIntegrationType(
+          document.type,
+          integrationType
+        ),
         authorEmail: author?.email ?? null,
       }),
     }
