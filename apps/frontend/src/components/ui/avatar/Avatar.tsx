@@ -15,6 +15,8 @@ export interface AvatarProps extends Omit<
   alt?: string;
   /** Displayed size of the picture, in CSS pixels: it sets the width and height of the image, not the size of the avatar. */
   size?: number;
+  /** 'lazy' (default) loads the picture when it comes near the viewport; 'eager' for an avatar that is always visible. */
+  loading?: 'lazy' | 'eager';
 }
 
 type ImageStatus = 'idle' | 'loaded' | 'error';
@@ -34,12 +36,13 @@ interface AvatarPictureProps {
   src: string;
   alt: string;
   size: number;
+  loading: 'lazy' | 'eager';
 }
 
 // Mounted once per src (see its key in Avatar): the load outcome of a picture never outlives it,
 // so a late event of a previous picture cannot count for the new one, and a picture that failed
 // is tried again when its src comes back.
-const AvatarPicture = ({ src, alt, size }: AvatarPictureProps) => {
+const AvatarPicture = ({ src, alt, size, loading }: AvatarPictureProps) => {
   const imageRef = React.useRef<HTMLImageElement>(null);
   const [status, setStatus] = React.useState<ImageStatus>('idle');
 
@@ -57,8 +60,8 @@ const AvatarPicture = ({ src, alt, size }: AvatarPictureProps) => {
     <>
       {!isLoaded && <AvatarGlyph alt={alt} />}
       {status !== 'error' && (
-        // The picture loads, lazily, under the glyph and replaces it once it is there.
-        // Pictures come from any identity provider host, which next/image cannot be made to proxy.
+        // The picture loads under the glyph and replaces it once it is there.
+        // Pictures come from any identity provider host, so they are loaded as they are, by a plain img.
         // eslint-disable-next-line @next/next/no-img-element
         <img
           ref={imageRef}
@@ -66,7 +69,7 @@ const AvatarPicture = ({ src, alt, size }: AvatarPictureProps) => {
           alt={alt}
           width={size}
           height={size}
-          loading="lazy"
+          loading={loading}
           decoding="async"
           aria-hidden={isLoaded ? undefined : true}
           className={cn(
@@ -82,7 +85,17 @@ const AvatarPicture = ({ src, alt, size }: AvatarPictureProps) => {
 };
 
 const Avatar = React.forwardRef<HTMLSpanElement, AvatarProps>(
-  ({ className, src, alt = '', size = DEFAULT_AVATAR_SIZE, ...props }, ref) => (
+  (
+    {
+      className,
+      src,
+      alt = '',
+      size = DEFAULT_AVATAR_SIZE,
+      loading = 'lazy',
+      ...props
+    },
+    ref
+  ) => (
     <span
       ref={ref}
       {...props}
@@ -96,6 +109,7 @@ const Avatar = React.forwardRef<HTMLSpanElement, AvatarProps>(
           src={src}
           alt={alt}
           size={size}
+          loading={loading}
         />
       ) : (
         <AvatarGlyph alt={alt} />

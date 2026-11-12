@@ -101,6 +101,15 @@ describe('Avatar', () => {
     expect(getImage()).toHaveAttribute('decoding', 'async');
   });
 
+  it('should load the image eagerly when the caller asks for it', () => {
+    // Given / When
+    renderAvatar({ src: PICTURE_URL, loading: 'eager' });
+
+    // Then
+    expect(getImage()).toHaveAttribute('loading', 'eager');
+    expect(getImage()).toHaveAttribute('decoding', 'async');
+  });
+
   it('should not preload the picture with an Image object', () => {
     // Given
     const imageConstructor = vi.fn();

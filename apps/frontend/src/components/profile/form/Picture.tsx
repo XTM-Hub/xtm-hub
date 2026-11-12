@@ -77,6 +77,7 @@ export const ProfileFormPicture = ({ onSubmit }: ProfileFormPictureProps) => {
               PROFILE_PICTURE_SIZE
             )}
             size={PROFILE_PICTURE_SIZE}
+            loading="eager"
           />
         </div>
       </CardContent>

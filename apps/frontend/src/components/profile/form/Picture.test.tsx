@@ -48,6 +48,18 @@ describe('ProfileFormPicture', () => {
     );
   });
 
+  it('should load the profile picture eagerly as it is always visible', async () => {
+    // Given / When
+    testRender(<ProfileFormPicture onSubmit={vi.fn()} />, {
+      me: { picture: CURRENT_PICTURE_URL },
+    });
+
+    // Then
+    await waitFor(() =>
+      expect(getDisplayedPicture()).toHaveAttribute('loading', 'eager')
+    );
+  });
+
   it('should ask Gravatar for a picture sized for the profile avatar', async () => {
     // Given / When
     testRender(<ProfileFormPicture onSubmit={vi.fn()} />, {

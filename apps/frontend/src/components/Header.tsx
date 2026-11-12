@@ -101,6 +101,7 @@ const HeaderComponent = ({ displayLogo }: HeaderComponentProps) => {
                     HEADER_AVATAR_SIZE
                   )}
                   size={HEADER_AVATAR_SIZE}
+                  loading="eager"
                 />
               </div>
             }>
