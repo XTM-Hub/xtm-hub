@@ -152,7 +152,11 @@ describe('HomepageResourceCard', () => {
     it('renders the matching number of status icons', () => {
       testRender(
         <HomepageResourceCard
-          {...buildProps({ active: true, verified: true, deployable: false })}
+          {...buildProps({
+            published: true,
+            verified: true,
+            deployable: false,
+          })}
         />
       );
 
@@ -166,27 +170,27 @@ describe('HomepageResourceCard', () => {
 
   describe('title padding', () => {
     it.each`
-      active   | verified | deployable | expectedPadding | description
-      ${false} | ${false} | ${false}   | ${8}            | ${'no icons → buffer only'}
-      ${true}  | ${false} | ${false}   | ${32}           | ${'one icon'}
-      ${true}  | ${true}  | ${false}   | ${60}           | ${'two icons'}
-      ${true}  | ${true}  | ${true}    | ${88}           | ${'three icons'}
+      published | verified | deployable | expectedPadding | description
+      ${false}  | ${false} | ${false}   | ${8}            | ${'no icons → buffer only'}
+      ${true}   | ${false} | ${false}   | ${32}           | ${'one icon'}
+      ${true}   | ${true}  | ${false}   | ${60}           | ${'two icons'}
+      ${true}   | ${true}  | ${true}    | ${88}           | ${'three icons'}
     `(
       'applies paddingRight of $expectedPadding px when $description',
       ({
-        active,
+        published,
         verified,
         deployable,
         expectedPadding,
       }: {
-        active: boolean;
+        published: boolean;
         verified: boolean;
         deployable: boolean;
         expectedPadding: number;
       }) => {
         testRender(
           <HomepageResourceCard
-            {...buildProps({ active, verified, deployable })}
+            {...buildProps({ published, verified, deployable })}
           />
         );
 
