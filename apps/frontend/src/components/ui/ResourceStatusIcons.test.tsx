@@ -24,7 +24,7 @@ describe('ResourceStatusIcons', () => {
     it('renders nothing when all props are explicitly false', () => {
       const { container } = testRender(
         <ResourceStatusIcons
-          active={false}
+          published={false}
           verified={false}
           deployable={false}
         />
@@ -96,32 +96,32 @@ describe('ResourceStatusIcons', () => {
     });
   });
 
-  describe('when active is true', () => {
+  describe('when published is true', () => {
     it('renders one icon', () => {
-      const { container } = testRender(<ResourceStatusIcons active />);
+      const { container } = testRender(<ResourceStatusIcons published />);
       expect(container.querySelectorAll('svg')).toHaveLength(1);
     });
 
     it('shows the "Published" tooltip label', () => {
-      testRender(<ResourceStatusIcons active />);
+      testRender(<ResourceStatusIcons published />);
       expect(screen.getByText('Badge.Published')).toBeInTheDocument();
     });
   });
 
   describe('when multiple props are true', () => {
     it.each`
-      active   | verified | deployable | isConnector | expectedIconCount
-      ${true}  | ${true}  | ${false}   | ${true}     | ${2}
-      ${true}  | ${false} | ${true}    | ${true}     | ${3}
-      ${false} | ${false} | ${true}    | ${true}     | ${2}
-      ${false} | ${false} | ${false}   | ${true}     | ${1}
-      ${true}  | ${true}  | ${true}    | ${true}     | ${3}
+      published | verified | deployable | isConnector | expectedIconCount
+      ${true}   | ${true}  | ${false}   | ${true}     | ${2}
+      ${true}   | ${false} | ${true}    | ${true}     | ${3}
+      ${false}  | ${false} | ${true}    | ${true}     | ${2}
+      ${false}  | ${false} | ${false}   | ${true}     | ${1}
+      ${true}   | ${true}  | ${true}    | ${true}     | ${3}
     `(
-      'renders $expectedIconCount icon(s) for active=$active verified=$verified deployable=$deployable isConnector=$isConnector',
-      ({ active, verified, deployable, isConnector, expectedIconCount }) => {
+      'renders $expectedIconCount icon(s) for published=$published verified=$verified deployable=$deployable isConnector=$isConnector',
+      ({ published, verified, deployable, isConnector, expectedIconCount }) => {
         const { container } = testRender(
           <ResourceStatusIcons
-            active={active}
+            published={published}
             verified={verified}
             deployable={deployable}
             displayUnverifiedIcon={isConnector}
@@ -136,7 +136,7 @@ describe('ResourceStatusIcons', () => {
 
   describe('without an iconClassName', () => {
     it('paints the icon in the success colour', () => {
-      const { container } = testRender(<ResourceStatusIcons active />);
+      const { container } = testRender(<ResourceStatusIcons published />);
       expect(container.querySelector('svg')).toHaveClass('text-icon-success');
     });
   });
@@ -145,7 +145,7 @@ describe('ResourceStatusIcons', () => {
     it('applies the custom class to the rendered icon', () => {
       const { container } = testRender(
         <ResourceStatusIcons
-          active
+          published
           iconClassName="custom-icon-class"
         />
       );
@@ -156,7 +156,7 @@ describe('ResourceStatusIcons', () => {
     it('does not apply the default class when a custom one is provided', () => {
       const { container } = testRender(
         <ResourceStatusIcons
-          active
+          published
           iconClassName="custom-icon-class"
         />
       );
