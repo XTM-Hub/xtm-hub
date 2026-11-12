@@ -44,7 +44,7 @@ export const DetailCard = ({
     // eslint-disable-next-line no-restricted-syntax -- forwards its click to the tagged title button
     <div
       onClick={handleCardClick}
-      className="group flex h-full flex-col overflow-hidden rounded layer-1 bg-elevation-default hover:cursor-pointer">
+      className="group flex h-full flex-col overflow-hidden rounded layer-1 bg-elevation-default hover:cursor-pointer has-[h2>button:focus-visible]:ring-2 has-[h2>button:focus-visible]:ring-focus">
       {media}
       <div className="flex flex-1 flex-col gap-3 p-4 group-hover:bg-elevation-hover">
         <div className="flex flex-col gap-3">
@@ -55,7 +55,7 @@ export const DetailCard = ({
               type="button"
               data-no-open-detail
               onClick={() => onOpenDetail()}
-              className="focus-visible:ring-focus text-left focus-visible:outline-none focus-visible:ring-2">
+              className="text-left focus-visible:outline-none">
               {title}
             </button>
           </h2>

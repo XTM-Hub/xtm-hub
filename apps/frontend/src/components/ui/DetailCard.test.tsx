@@ -57,4 +57,35 @@ describe('DetailCard', () => {
     expect(readTrackedEvents('ui_click')).toEqual([]);
     expect(onOpenDetail).not.toHaveBeenCalled();
   });
+
+  it('should focus the title button on Tab and open the detail on Enter', async () => {
+    // Given
+    const onOpenDetail = vi.fn();
+    const { user } = renderCard(onOpenDetail);
+
+    // When
+    await user.tab();
+    await user.keyboard('{Enter}');
+
+    // Then
+    expect(screen.getByRole('button', { name: TITLE })).toHaveFocus();
+    expect(onOpenDetail).toHaveBeenCalledOnce();
+  });
+
+  it('should paint the focus ring on the whole card and not on the title button', () => {
+    // Given
+    renderCard(vi.fn());
+
+    // When
+    const title = screen.getByRole('button', { name: TITLE });
+    const card = title.closest('.group');
+
+    // Then
+    expect(card).toHaveClass(
+      'has-[h2>button:focus-visible]:ring-2',
+      'has-[h2>button:focus-visible]:ring-focus'
+    );
+    expect(title).not.toHaveClass('focus-visible:ring-2');
+    expect(title).not.toHaveClass('focus-visible:ring-focus');
+  });
 });
