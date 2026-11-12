@@ -16,6 +16,7 @@ interface UserFormSheetProps {
   setOpen: (open: boolean) => void;
   trigger?: ReactNode;
   title: string;
+  titleBadge?: ReactNode;
   description?: string;
   children: ReactNode;
   onOpenAutoFocus?: (event: Event) => void;
@@ -25,6 +26,7 @@ interface UserFormSheetProps {
 interface DialogContextProps {
   handleCloseSheet: (e: React.MouseEvent<HTMLButtonElement>) => void;
   setIsDirty: (isDirty: boolean) => void;
+  setUploadsDirty: (uploadsDirty: boolean) => void;
   setOpenSheet: (open: boolean) => void;
 }
 const DialogContext = createContext<DialogContextProps | undefined>(undefined);
@@ -42,6 +44,7 @@ export const SheetWithPreventingDialog = ({
   setOpen,
   trigger,
   title,
+  titleBadge,
   description = '',
   children,
   onOpenAutoFocus,
@@ -50,12 +53,14 @@ export const SheetWithPreventingDialog = ({
   const t = useTranslate();
   const [openDialog, setOpenDialog] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
+  // Raised by the file fields: an upload is not in the form state, so reverting a field cannot undo it
+  const [uploadsDirty, setUploadsDirty] = useState(false);
 
   const alertDialogSheetClose = (
-    e: Event | React.MouseEvent<HTMLButtonElement>
+    e?: Event | React.MouseEvent<HTMLButtonElement>
   ) => {
-    if (isDirty) {
-      e.preventDefault();
+    if (isDirty || uploadsDirty) {
+      e?.preventDefault();
       setOpenDialog(true);
     } else {
       setOpen(false);
@@ -67,7 +72,9 @@ export const SheetWithPreventingDialog = ({
       <Sheet
         key={'right'}
         open={open}
-        onOpenChange={setOpen}>
+        onOpenChange={(nextOpen) =>
+          nextOpen ? setOpen(true) : alertDialogSheetClose()
+        }>
         {trigger && <SheetTrigger asChild>{trigger}</SheetTrigger>}
         <SheetContent
           {...analyticsContext}
@@ -77,13 +84,17 @@ export const SheetWithPreventingDialog = ({
           onEscapeKeyDown={(e) => alertDialogSheetClose(e)}
           onOpenAutoFocus={onOpenAutoFocus}>
           <SheetHeader>
-            <SheetTitle>{title}</SheetTitle>
+            <div className="flex items-center gap-3">
+              <SheetTitle>{title}</SheetTitle>
+              {titleBadge}
+            </div>
             <SheetDescription>{description}</SheetDescription>
           </SheetHeader>
           <DialogContext.Provider
             value={{
               handleCloseSheet: alertDialogSheetClose,
               setIsDirty,
+              setUploadsDirty,
               setOpenSheet: setOpen,
             }}>
             {children}
