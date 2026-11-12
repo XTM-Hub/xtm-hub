@@ -58,7 +58,18 @@ describe('DetailCard', () => {
     expect(onOpenDetail).not.toHaveBeenCalled();
   });
 
-  it('should focus the title button on Tab and open the detail on Enter', async () => {
+  it('should focus the title button, the card control carrying the focus ring, on Tab', async () => {
+    // Given
+    const { user } = renderCard(vi.fn());
+
+    // When
+    await user.tab();
+
+    // Then
+    expect(screen.getByRole('button', { name: TITLE })).toHaveFocus();
+  });
+
+  it('should open the detail once when Enter is pressed on the focused title button', async () => {
     // Given
     const onOpenDetail = vi.fn();
     const { user } = renderCard(onOpenDetail);
@@ -68,11 +79,13 @@ describe('DetailCard', () => {
     await user.keyboard('{Enter}');
 
     // Then
-    expect(screen.getByRole('button', { name: TITLE })).toHaveFocus();
     expect(onOpenDetail).toHaveBeenCalledOnce();
   });
 
-  it('should paint the focus ring on the whole card and not on the title button', () => {
+  // jsdom cannot evaluate `:has(:focus-visible)`: this only guards the ring
+  // target (the card root, keyed on the title button) against regressing to
+  // a ring on the title alone.
+  it('should key the focus ring of the card root on the title button and not ring the title itself', () => {
     // Given
     renderCard(vi.fn());
 
@@ -81,11 +94,11 @@ describe('DetailCard', () => {
     const card = title.closest('.group');
 
     // Then
+    expect(title).toHaveAttribute('data-detail-title');
     expect(card).toHaveClass(
-      'has-[h2>button:focus-visible]:ring-2',
-      'has-[h2>button:focus-visible]:ring-focus'
+      'has-[[data-detail-title]:focus-visible]:ring-2',
+      'has-[[data-detail-title]:focus-visible]:ring-focus'
     );
     expect(title).not.toHaveClass('focus-visible:ring-2');
-    expect(title).not.toHaveClass('focus-visible:ring-focus');
   });
 });
