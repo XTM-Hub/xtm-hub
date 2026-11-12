@@ -9,19 +9,10 @@ import { SYSTEM_USER_CONTEXT } from '../../../portal.const';
 import { ForbiddenAccess } from '../../../utils/error/error.util';
 import { validatePassword } from '../../util/user';
 
-type TokenConfig = {
-  hash: string;
-  salt: string;
-};
-
 export const SYSTEM_TOKEN_HEADER = 'x-xtm-hub-token';
+export const SYSTEM_TOKEN_HASH = config.get<string>('system_token_hash');
+export const SYSTEM_TOKEN_SALT = config.get<string>('system_token_salt');
 export const SYSTEM_TOKEN_DIRECTIVE_NAME = 'system_token';
-const SYSTEM_TOKEN = config.get<TokenConfig>('system_token');
-// Marketing tooling has its own token, the system token until both its hash and its salt are configured.
-const MARKETING_TOKEN =
-  config.has('marketing_token.hash') && config.has('marketing_token.salt')
-    ? config.get<TokenConfig>('marketing_token')
-    : SYSTEM_TOKEN;
 
 export type SystemTokenDirectiveArgs = {
   portalCapa?: PortalCapability[];
@@ -62,21 +53,12 @@ export const extractSystemToken = (context: PortalContext): string | null => {
   return (context.req?.headers?.[SYSTEM_TOKEN_HEADER] as string) || null;
 };
 
-const isValidToken = (
-  token: string | null,
-  { hash, salt }: TokenConfig
-): boolean => {
+export const isValidSystemToken = (token: string | null): boolean => {
   if (!token) {
     return false;
   }
-  return validatePassword(salt, token, hash);
+  return validatePassword(SYSTEM_TOKEN_SALT, token, SYSTEM_TOKEN_HASH);
 };
-
-export const isValidSystemToken = (token: string | null): boolean =>
-  isValidToken(token, SYSTEM_TOKEN);
-
-export const isValidMarketingToken = (token: string | null): boolean =>
-  isValidToken(token, MARKETING_TOKEN);
 
 export const validateSystemToken = (context: PortalContext): boolean => {
   const token = extractSystemToken(context);

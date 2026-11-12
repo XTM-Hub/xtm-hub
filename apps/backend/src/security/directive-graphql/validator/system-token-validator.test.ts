@@ -5,7 +5,6 @@ import type { PortalContext } from '../../../model/portal-context';
 import type { UserLoadUserBy } from '../../../model/user';
 import {
   createSystemTokenResolver,
-  isValidMarketingToken,
   SYSTEM_TOKEN_HEADER,
   validateSystemToken,
 } from './system-token.validator';
@@ -66,26 +65,6 @@ describe('system Token Validation', () => {
         'Invalid system token attempt'
       );
     });
-  });
-
-  describe('isValidMarketingToken', () => {
-    it.each`
-      description                              | token              | expected
-      ${'the system token, its default value'} | ${'changeMe'}      | ${true}
-      ${'a wrong token'}                       | ${'invalid-token'} | ${false}
-      ${'the system token with a suffix'}      | ${'changeMeX'}     | ${false}
-      ${'an empty token'}                      | ${''}              | ${false}
-      ${'no token'}                            | ${null}            | ${false}
-    `(
-      'should return $expected for $description when no marketing token is configured',
-      ({ token, expected }: { token: string | null; expected: boolean }) => {
-        // When
-        const result = isValidMarketingToken(token);
-
-        // Then
-        expect(result).toBe(expected);
-      }
-    );
   });
 
   describe('createSystemTokenResolver', () => {
