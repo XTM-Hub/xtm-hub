@@ -116,7 +116,8 @@ export const ThirdPartyIntegrationForm = ({
     const extendedSchema = document
       ? thirdPartyIntegrationFormSchema.extend({
           document: z.custom<FileList>(fileListCheck).optional(),
-          images: z.custom<FileList>(fileListCheck).optional(),
+          // An integration stored without an image can still be edited.
+          images: z.custom<FileList>(optionalFileListCheck).optional(),
         })
       : thirdPartyIntegrationFormSchema;
 
