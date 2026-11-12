@@ -67,8 +67,10 @@
       "__format": "json"
     }
   },
-  "system_token_hash": "SYSTEM_TOKEN_HASH",
-  "system_token_salt": "SYSTEM_TOKEN_SALT",
+  "system_token": {
+    "hash": "SYSTEM_TOKEN_HASH",
+    "salt": "SYSTEM_TOKEN_SALT"
+  },
   "session": {
     "name": "PORTAL_COOKIE_NAME",
     "secret": "PORTAL_COOKIE_SECRET"
