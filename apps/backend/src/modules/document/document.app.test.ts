@@ -1313,7 +1313,7 @@ describe('documentApp', () => {
     });
   });
 
-  describe('sendNotPublishedReminder', () => {
+  describe('sendResourceNotPublishedReminder', () => {
     const AUTHOR = TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2;
     const OTHER_AUTHOR = TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS;
 
@@ -1388,7 +1388,7 @@ describe('documentApp', () => {
       });
 
       // When
-      await DocumentApp.sendNotPublishedReminder();
+      await DocumentApp.sendResourceNotPublishedReminder();
 
       // Then
       expect(sendSpy).not.toHaveBeenCalled();
@@ -1405,7 +1405,7 @@ describe('documentApp', () => {
       });
 
       // When
-      await DocumentApp.sendNotPublishedReminder();
+      await DocumentApp.sendResourceNotPublishedReminder();
 
       // Then
       expect(sendSpy).not.toHaveBeenCalled();
@@ -1449,7 +1449,7 @@ describe('documentApp', () => {
       });
 
       // When
-      await DocumentApp.sendNotPublishedReminder();
+      await DocumentApp.sendResourceNotPublishedReminder();
 
       // Then
       expect(sendSpy).toHaveBeenCalledTimes(2);
@@ -1518,7 +1518,7 @@ describe('documentApp', () => {
       });
 
       // When
-      const reminder = DocumentApp.sendNotPublishedReminder();
+      const reminder = DocumentApp.sendResourceNotPublishedReminder();
 
       // Then
       await expect(reminder).rejects.toThrow(
@@ -1547,7 +1547,7 @@ describe('documentApp', () => {
       });
 
       // When
-      await DocumentApp.sendNotPublishedReminder();
+      await DocumentApp.sendResourceNotPublishedReminder();
 
       // Then
       expect(sendSpy.mock.calls[0]?.[1]).toMatchObject({
@@ -1580,7 +1580,7 @@ describe('documentApp', () => {
       });
 
       // When
-      await DocumentApp.sendNotPublishedReminder();
+      await DocumentApp.sendResourceNotPublishedReminder();
 
       // Then
       expect(sendSpy.mock.calls[0]?.[1]).toMatchObject({
@@ -1596,7 +1596,10 @@ describe('documentApp', () => {
     it('should load the authors and the integration types in batches, not once per document', async () => {
       // Given several documents of different authors
       const loadEmailsSpy = vi.spyOn(UserDomain, 'loadEmailsByIds');
-      const hydrateSpy = vi.spyOn(DocumentMetadataDomain, 'hydrateMetadata');
+      const integrationTypeSpy = vi.spyOn(
+        DocumentMetadataDomain,
+        'buildIntegrationTypeQuery'
+      );
       await Promise.all(
         [AUTHOR.ID, OTHER_AUTHOR.ID, AUTHOR.ID].map((uploaderId, index) =>
           createNotPublished({
@@ -1611,12 +1614,12 @@ describe('documentApp', () => {
       );
 
       // When
-      await DocumentApp.sendNotPublishedReminder();
+      await DocumentApp.sendResourceNotPublishedReminder();
 
       // Then
       expect(loadEmailsSpy).toHaveBeenCalledTimes(1);
       expect(loadEmailsSpy.mock.calls[0]?.[0]).toHaveLength(2);
-      expect(hydrateSpy).toHaveBeenCalledTimes(1);
+      expect(integrationTypeSpy).toHaveBeenCalledTimes(1);
     });
   });
 

@@ -13,7 +13,7 @@ const cronMocks = vi.hoisted(() => ({
   sendPublicRoadmapMonthlyReminderMock: vi.fn(async () => undefined),
   removeExpiredGroupsMock: vi.fn(async () => undefined),
   cleanExpiredNewsFeedItemsMock: vi.fn(async () => undefined),
-  sendNotPublishedReminderMock: vi.fn(async () => undefined),
+  sendResourceNotPublishedReminderMock: vi.fn(async () => undefined),
   syncUserAccountStatusWithAuth0Mock: vi.fn(async () => undefined),
   auth0Sync: { enabled: true },
 }));
@@ -82,7 +82,8 @@ vi.mock('./utils/app-logger.util', () => ({
 
 vi.mock('./modules/document/document.app', () => ({
   DocumentApp: {
-    sendNotPublishedReminder: cronMocks.sendNotPublishedReminderMock,
+    sendResourceNotPublishedReminder:
+      cronMocks.sendResourceNotPublishedReminderMock,
   },
 }));
 
@@ -168,7 +169,9 @@ describe('crons', () => {
     ).toHaveBeenCalledTimes(1);
     expect(cronMocks.removeExpiredGroupsMock).toHaveBeenCalledTimes(1);
     expect(cronMocks.cleanExpiredNewsFeedItemsMock).toHaveBeenCalledTimes(1);
-    expect(cronMocks.sendNotPublishedReminderMock).toHaveBeenCalledTimes(1);
+    expect(
+      cronMocks.sendResourceNotPublishedReminderMock
+    ).toHaveBeenCalledTimes(1);
     expect(cronMocks.syncUserAccountStatusWithAuth0Mock).toHaveBeenCalledTimes(
       1
     );
@@ -194,7 +197,7 @@ describe('crons', () => {
   });
 
   it('should log and swallow the error when the not published resources reminder fails', async () => {
-    cronMocks.sendNotPublishedReminderMock.mockRejectedValueOnce(
+    cronMocks.sendResourceNotPublishedReminderMock.mockRejectedValueOnce(
       new Error('reminder failed')
     );
     initCronJobs();
@@ -206,7 +209,7 @@ describe('crons', () => {
     await expect(reminder()).resolves.toBeUndefined();
 
     expect(logApp.error).toHaveBeenCalledWith(
-      'sendNotPublishedResourcesReminder job failed:',
+      'sendResourceNotPublishedReminder job failed:',
       { error: new Error('reminder failed') }
     );
   });

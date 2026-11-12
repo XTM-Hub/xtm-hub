@@ -16,6 +16,7 @@ import {
 import ServiceDefinition from '../../model/kanel/public/ServiceDefinition';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { UseCaseId } from '../../model/kanel/public/UseCase';
+import User, { UserId } from '../../model/kanel/public/User';
 import { MinIOClient } from '../../thirdparty/minio/client';
 import { MinioFile } from '../../thirdparty/minio/types';
 import type {
@@ -63,7 +64,10 @@ import { TelemetryEventType } from '../telemetry/telemetry.types';
 import { DocumentApp } from './document.app';
 import { DOCUMENT_IMAGE_METADATA_KEYS } from './document.model';
 import { Upload } from './document.uploads.helper';
-import { DocumentDomain } from './domain/document.domain';
+import {
+  DocumentDomain,
+  type NotPublishedResource,
+} from './domain/document.domain';
 
 export const BOOLEAN_METADATA = [
   DocumentMetadataKeyCode.Verified,
@@ -209,6 +213,11 @@ export interface NotPublishedResourceInput {
   authorEmail: string | null;
 }
 
+export interface NotPublishedLibrary {
+  serviceDefinition: NotPublishedResource['serviceDefinition'];
+  resources: NotPublishedResourceInput[];
+}
+
 const buildResourceItem = ({
   document,
   status,
@@ -246,6 +255,43 @@ export const DocumentHelper = {
     isIntegrationType(value)
       ? value
       : null,
+
+  groupNotPublishedByLibrary: ({
+    notPublished,
+    authors,
+    integrationTypes,
+  }: {
+    notPublished: NotPublishedResource[];
+    authors: Pick<User, 'id' | 'email'>[];
+    integrationTypes: { document_id: string; value: string }[];
+  }): NotPublishedLibrary[] => {
+    const authorEmails = new Map<UserId, string>(
+      authors.map(({ id, email }) => [id, email])
+    );
+    const integrationTypeByDocument = new Map(
+      integrationTypes.map(({ document_id, value }) => [document_id, value])
+    );
+
+    const libraries = new Map<string, NotPublishedLibrary>();
+    for (const { document, serviceDefinition } of notPublished) {
+      const library = libraries.get(serviceDefinition.id) ?? {
+        serviceDefinition,
+        resources: [],
+      };
+      library.resources.push({
+        document,
+        integrationType: DocumentHelper.toIntegrationType(
+          document.type,
+          integrationTypeByDocument.get(document.id)
+        ),
+        authorEmail: document.uploader_id
+          ? (authorEmails.get(document.uploader_id) ?? null)
+          : null,
+      });
+      libraries.set(serviceDefinition.id, library);
+    }
+    return [...libraries.values()];
+  },
 
   buildInValidationPayload: ({
     document,

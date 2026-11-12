@@ -23,6 +23,8 @@ import {
   DocumentId,
   default as DocumentModel,
 } from '../../model/kanel/public/Document';
+import { ServiceDefinitionId } from '../../model/kanel/public/ServiceDefinition';
+import { UserId } from '../../model/kanel/public/User';
 import { MinIOClient } from '../../thirdparty/minio/client';
 import { MinioFile } from '../../thirdparty/minio/types';
 import { ErrorCode, UnknownErrorCode } from '../../utils/error/error.code';
@@ -520,6 +522,105 @@ describe('documentHelper', () => {
           },
         ],
       });
+    });
+  });
+
+  describe('groupNotPublishedByLibrary', () => {
+    const AUTHOR_ID = 'f3a1c2d4-5b6e-4f70-8a9b-0c1d2e3f4a5b' as UserId;
+    const LIBRARY_A = TestHelper.serviceDefinition.build({
+      id: 'library-a' as ServiceDefinitionId,
+      name: 'Library A',
+    });
+    const LIBRARY_B = TestHelper.serviceDefinition.build({
+      id: 'library-b' as ServiceDefinitionId,
+      name: 'Library B',
+    });
+
+    it('should group the resources by library, in the order received, with the author email and the integration type', () => {
+      // Given three resources of two libraries, one of them without author
+      const feed = TestHelper.document.build({
+        id: 'feed' as DocumentId,
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        uploader_id: AUTHOR_ID,
+      });
+      const dashboard = TestHelper.document.build({
+        id: 'dashboard' as DocumentId,
+        type: OPENCTI_CUSTOM_DASHBOARD_DOCUMENT_TYPE,
+        uploader_id: null,
+      });
+      const otherFeed = TestHelper.document.build({
+        id: 'other-feed' as DocumentId,
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        uploader_id: AUTHOR_ID,
+      });
+
+      // When
+      const libraries = DocumentHelper.groupNotPublishedByLibrary({
+        notPublished: [
+          { document: feed, serviceDefinition: LIBRARY_A },
+          { document: dashboard, serviceDefinition: LIBRARY_B },
+          { document: otherFeed, serviceDefinition: LIBRARY_A },
+        ],
+        authors: [{ id: AUTHOR_ID, email: 'author@filigran.io' }],
+        integrationTypes: [
+          { document_id: feed.id, value: IntegrationType.CsvFeed },
+          { document_id: otherFeed.id, value: 'not_an_integration_type' },
+        ],
+      });
+
+      // Then
+      expect(libraries).toEqual([
+        {
+          serviceDefinition: LIBRARY_A,
+          resources: [
+            {
+              document: feed,
+              integrationType: IntegrationType.CsvFeed,
+              authorEmail: 'author@filigran.io',
+            },
+            {
+              document: otherFeed,
+              integrationType: null,
+              authorEmail: 'author@filigran.io',
+            },
+          ],
+        },
+        {
+          serviceDefinition: LIBRARY_B,
+          resources: [
+            { document: dashboard, integrationType: null, authorEmail: null },
+          ],
+        },
+      ]);
+    });
+
+    it('should leave the author email empty when the author is unknown', () => {
+      // Given a document whose uploader is not in the loaded authors
+      const document = TestHelper.document.build({ uploader_id: AUTHOR_ID });
+
+      // When
+      const libraries = DocumentHelper.groupNotPublishedByLibrary({
+        notPublished: [{ document, serviceDefinition: LIBRARY_A }],
+        authors: [],
+        integrationTypes: [],
+      });
+
+      // Then
+      expect(libraries[0]?.resources[0]?.authorEmail).toBeNull();
+    });
+
+    it('should return no library when nothing is not published', () => {
+      // Given nothing to group
+
+      // When
+      const libraries = DocumentHelper.groupNotPublishedByLibrary({
+        notPublished: [],
+        authors: [],
+        integrationTypes: [],
+      });
+
+      // Then
+      expect(libraries).toEqual([]);
     });
   });
 

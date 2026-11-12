@@ -79,13 +79,13 @@ const syncUserAccountStatus = async (): Promise<void> => {
   });
 };
 
-const sendNotPublishedResourcesReminder = async (): Promise<void> => {
-  logApp.info('Running sendNotPublishedResourcesReminder job');
+const sendResourceNotPublishedReminder = async (): Promise<void> => {
+  logApp.info('Running sendResourceNotPublishedReminder job');
   await requestContext.run(CRONS_USER_CONTEXT, async () => {
     try {
-      await DocumentApp.sendNotPublishedReminder();
+      await DocumentApp.sendResourceNotPublishedReminder();
     } catch (error) {
-      logApp.error('sendNotPublishedResourcesReminder job failed:', { error });
+      logApp.error('sendResourceNotPublishedReminder job failed:', { error });
     }
   });
 };
@@ -102,7 +102,7 @@ export const initCronJobs = () => {
   scheduledTasks.push(cron.schedule('0 3 * * *', cleanExpiredTrialGroups));
   scheduledTasks.push(cron.schedule('0 4 * * *', cleanExpiredNewsFeedItems));
   scheduledTasks.push(
-    cron.schedule('0 10 * * 1', sendNotPublishedResourcesReminder)
+    cron.schedule('0 10 * * 1', sendResourceNotPublishedReminder)
   );
   if (portalConfig.auth0_sync.enabled) {
     // Environments restored from production share the Auth0 tenant and keep

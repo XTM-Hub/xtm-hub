@@ -49,7 +49,6 @@ import {
   DocumentHelper,
   DocumentTypeMappedByServiceDefinition,
   ManageableServiceDefinitionIdentifier,
-  NotPublishedResourceInput,
   ServiceDefinitionIdentifiersByPlatformIdentifier,
 } from './document.helper';
 import { DocumentListOptions } from './document.model';
@@ -58,11 +57,7 @@ import {
   DocumentChildrenDomain,
   ExternalImageFile,
 } from './domain/document.children.domain';
-import {
-  DocumentData,
-  DocumentDomain,
-  NotPublishedResource,
-} from './domain/document.domain';
+import { DocumentData, DocumentDomain } from './domain/document.domain';
 import {
   DocumentMetadataDomain,
   DocumentMetadataKeys,
@@ -670,7 +665,7 @@ export const DocumentApp = {
     return doc;
   },
 
-  sendNotPublishedReminder: async (): Promise<void> => {
+  sendResourceNotPublishedReminder: async (): Promise<void> => {
     if (
       !portalConfig.enabled_teams_notifications.resource_not_published_reminder
     ) {
@@ -692,50 +687,20 @@ export const DocumentApp = {
         )
       ),
     ];
-    const [authors, hydratedDocuments] = await Promise.all([
+    const [authors, integrationTypes] = await Promise.all([
       UserDomain.loadEmailsByIds(authorIds),
-      DocumentMetadataDomain.hydrateMetadata(
-        notPublished.map(({ document }) => document),
-        [DocumentMetadataKeyCode.IntegrationType]
+      DocumentMetadataDomain.buildIntegrationTypeQuery(
+        notPublished.map(({ document }) => document.id)
       ),
     ]);
-    const authorEmails = new Map<string | null, string>(
-      authors.map(({ id, email }) => [id, email])
-    );
-    const integrationTypes = new Map(
-      hydratedDocuments.map((document) => [
-        document.id,
-        DocumentHelper.toIntegrationType(
-          document.type,
-          (document as DocumentWithDynamicMetadata)[
-            DocumentMetadataKeyCode.IntegrationType
-          ]
-        ),
-      ])
-    );
-
-    const resourcesByLibrary = new Map<
-      string,
-      {
-        serviceDefinition: NotPublishedResource['serviceDefinition'];
-        resources: NotPublishedResourceInput[];
-      }
-    >();
-    for (const { document, serviceDefinition } of notPublished) {
-      const library = resourcesByLibrary.get(serviceDefinition.id) ?? {
-        serviceDefinition,
-        resources: [],
-      };
-      library.resources.push({
-        document,
-        integrationType: integrationTypes.get(document.id) ?? null,
-        authorEmail: authorEmails.get(document.uploader_id) ?? null,
-      });
-      resourcesByLibrary.set(serviceDefinition.id, library);
-    }
+    const libraries = DocumentHelper.groupNotPublishedByLibrary({
+      notPublished,
+      authors,
+      integrationTypes,
+    });
 
     let failed = 0;
-    for (const [serviceDefinitionId, library] of resourcesByLibrary) {
+    for (const library of libraries) {
       try {
         await PgBossProducer.send<
           TeamsNotificationJobData<'resource_not_published'>
@@ -747,18 +712,18 @@ export const DocumentApp = {
         failed += 1;
         logApp.error('Unable to enqueue the not published resources reminder', {
           error,
-          serviceDefinitionId,
+          serviceDefinitionId: library.serviceDefinition.id,
         });
       }
     }
 
     logApp.info('Not published resources Teams reminder enqueued', {
-      libraries: resourcesByLibrary.size,
+      libraries: libraries.length,
       failed,
     });
     if (failed > 0) {
       throw new Error(
-        `Not published resources reminder failed for ${failed} of ${resourcesByLibrary.size} libraries`
+        `Not published resources reminder failed for ${failed} of ${libraries.length} libraries`
       );
     }
   },
