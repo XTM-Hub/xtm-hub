@@ -1,8 +1,17 @@
 import testRender from '@/utils/test/test-render';
 import { act, fireEvent, screen } from '@testing-library/react';
-import { createMockEnvironment, MockPayloadGenerator } from 'relay-test-utils';
-import { describe, expect, it } from 'vitest';
+import { createMockEnvironment } from 'relay-test-utils';
+import { describe, expect, it, vi } from 'vitest';
 import { TrialsManageUsersDialog } from './TrialsManageUsersDialog';
+
+// The users of the form come from react-query, outside the Relay environment.
+vi.mock('@graphql/generated', async (importOriginal) => {
+  const { mockGeneratedQueryHooks } =
+    await import('@/utils/test/mock-generated-query');
+  return mockGeneratedQueryHooks(importOriginal, {
+    useUsersQuery: () => ({ data: { users: { edges: [] } } }),
+  });
+});
 
 describe('TrialsManageUsersDialog', () => {
   it('should render the trigger button and not trigger any GraphQL query on mount', () => {
@@ -32,12 +41,8 @@ describe('TrialsManageUsersDialog', () => {
       fireEvent.click(screen.getByRole('button'));
     });
 
-    await act(async () => {
-      environment.mock.resolveMostRecentOperation((operation) =>
-        MockPayloadGenerator.generate(operation)
-      );
-    });
-
+    // The service groups query is the only Relay operation of the form: it is
+    // read while still pending, as nothing resolves it.
     const operations = environment.mock.getAllOperations();
     const serviceGroupsOperation = operations.find(
       (op) =>
