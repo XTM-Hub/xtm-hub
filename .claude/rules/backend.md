@@ -116,8 +116,10 @@ the indices of another instance. Without a prefix the names are unchanged.
 The backend ships the 8.x and the 9.x Elastic clients. `esDbClient.init()` picks one at startup, before the ES
 migrations (`src/thirdparty/elasticsearch/engine-detection.ts`): detected from the server's `GET /` by default,
 forced with `ELASTIC_ENGINE_CLIENT` (`elasticsearch8`, `elasticsearch9`). OpenSearch is refused. Call Elasticsearch
-through `esDbClient` only: the 9.x client goes through the 8.x types, so a call both majors do not serve alike is
-caught only by the `*.es.test.ts` suites (`yarn test:es`, run by the "Elasticsearch tests" CI job on each major).
+through `esDbClient` only: its calls are typed in `src/thirdparty/elasticsearch/engine-api.ts` so that a request must
+fit the types of both majors, and both clients satisfy them without a cast. A new call goes there first. The
+`*.es.test.ts` suites (`yarn test:es`, run by the "Elasticsearch tests" CI job on each major) check the calls against a
+real server.
 
 ## Configuration
 

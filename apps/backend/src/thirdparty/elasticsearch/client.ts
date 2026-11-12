@@ -1,9 +1,32 @@
-import { Client, ClientOptions, estypes } from '@elastic/elasticsearch';
+import { Client, ClientOptions } from '@elastic/elasticsearch';
 import { Client as ClientV9 } from '@elastic/elasticsearch-v9';
 
 import fs from 'fs';
 import portalConfig from '../../config';
 import { logApp } from '../../utils/app-logger.util';
+import {
+  BulkRequest,
+  BulkResponse,
+  CountRequest,
+  CreateRequest,
+  CreateResponse,
+  DeleteByQueryRequest,
+  DeleteByQueryResponse,
+  DeleteRequest,
+  DeleteResponse,
+  EngineApi,
+  IndexRequest,
+  IndexResponse,
+  IndicesApi,
+  LegacyPutMappingRequest,
+  PutMappingRequest,
+  QueryContainer,
+  SearchRequest,
+  SearchResponse,
+  Sort,
+  UpdateByQueryRequest,
+  UpdateByQueryResponse,
+} from './engine-api';
 import {
   ENGINE_PROBE_TIMEOUT_MS,
   EngineClient,
@@ -27,7 +50,7 @@ const readCa = () => {
   return ca_path ? fs.readFileSync(ca_path) : undefined;
 };
 
-const createClient = (engineClient: EngineClient): Client => {
+const createClient = (engineClient: EngineClient): EngineApi => {
   // Only the options both client majors share: their full ClientOptions types
   // come from two incompatible transports
   const config: Pick<
@@ -53,12 +76,16 @@ const createClient = (engineClient: EngineClient): Client => {
     ca: readCa(),
     rejectUnauthorized: portalConfig.elasticsearch.tls.reject_unauthorized,
   };
-  // The 9.x client goes through the 8.x types: both majors expose the same API
-  // and response envelope for every call the hub makes
+  // Both clients satisfy EngineApi as they are (engine-api.ts)
   return engineClient === 'elasticsearch9'
-    ? (new ClientV9(config) as unknown as Client)
+    ? new ClientV9(config)
     : new Client(config);
 };
+
+const isLegacyPutMapping = (
+  params: PutMappingRequest | LegacyPutMappingRequest
+): params is LegacyPutMappingRequest =>
+  'body' in params && params.body !== undefined;
 
 const logEngineDecision = (decision: EngineDecision) => {
   if (decision.source === 'configuration') {
@@ -78,7 +105,7 @@ const logEngineDecision = (decision: EngineDecision) => {
 };
 
 class ElasticSearchService {
-  private elasticsearchClient: Client | undefined;
+  private elasticsearchClient: EngineApi | undefined;
 
   // Chooses the client of the engine's major (engine-detection.ts): must run
   // once at startup, before any other call
@@ -102,7 +129,7 @@ class ElasticSearchService {
     return decision;
   }
 
-  private get client(): Client {
+  private get client(): EngineApi {
     if (!this.elasticsearchClient) {
       if (!globalThis.xtmHubEngineClient) {
         throw new Error(
@@ -114,12 +141,25 @@ class ElasticSearchService {
     return this.elasticsearchClient;
   }
 
-  getIndices() {
-    return this.client.indices;
+  getIndices(): IndicesApi {
+    const indices = this.client.indices;
+    return {
+      create: (params) => indices.create(params),
+      delete: (params) => indices.delete(params),
+      exists: (params) => indices.exists(params),
+      putIndexTemplate: (params) => indices.putIndexTemplate(params),
+      deleteIndexTemplate: (params) => indices.deleteIndexTemplate(params),
+      // Sent at the top level whatever the shape: the same request for both
+      // majors, without touching the ES migrations
+      putMapping: (params) =>
+        indices.putMapping(
+          isLegacyPutMapping(params)
+            ? { index: params.index, ...params.body }
+            : params
+        ),
+    };
   }
-  async search<T = unknown>(
-    params: estypes.SearchRequest
-  ): Promise<estypes.SearchResponse<T>> {
+  async search<T = unknown>(params: SearchRequest): Promise<SearchResponse<T>> {
     try {
       return this.client.search<T>(params);
     } catch (error) {
@@ -135,8 +175,8 @@ class ElasticSearchService {
     size = 10,
   }: {
     index: string;
-    query?: estypes.QueryDslQueryContainer;
-    sort?: estypes.Sort;
+    query?: QueryContainer;
+    sort?: Sort;
     size: number;
   }): Promise<T[]> {
     const result = await this.search<T>({
@@ -151,9 +191,7 @@ class ElasticSearchService {
     );
   }
 
-  async create<T = unknown>(
-    params: estypes.CreateRequest
-  ): Promise<estypes.CreateResponse> {
+  async create<T = unknown>(params: CreateRequest<T>): Promise<CreateResponse> {
     try {
       return this.client.create<T>(params);
     } catch (error) {
@@ -162,9 +200,7 @@ class ElasticSearchService {
     }
   }
 
-  async index<T = unknown>(
-    params: estypes.IndexRequest
-  ): Promise<estypes.IndexResponse> {
+  async index<T = unknown>(params: IndexRequest<T>): Promise<IndexResponse> {
     try {
       return this.client.index<T>(params);
     } catch (error) {
@@ -173,7 +209,7 @@ class ElasticSearchService {
     }
   }
 
-  async delete(params: estypes.DeleteRequest): Promise<estypes.DeleteResponse> {
+  async delete(params: DeleteRequest): Promise<DeleteResponse> {
     try {
       return this.client.delete(params);
     } catch (error) {
@@ -182,8 +218,8 @@ class ElasticSearchService {
     }
   }
   async updateByQuery(
-    params: estypes.UpdateByQueryRequest
-  ): Promise<estypes.UpdateByQueryResponse> {
+    params: UpdateByQueryRequest
+  ): Promise<UpdateByQueryResponse> {
     try {
       return this.client.updateByQuery(params);
     } catch (error) {
@@ -191,7 +227,7 @@ class ElasticSearchService {
       throw error;
     }
   }
-  async bulk(params: estypes.BulkRequest): Promise<estypes.BulkResponse> {
+  async bulk(params: BulkRequest): Promise<BulkResponse> {
     try {
       return this.client.bulk(params);
     } catch (error) {
@@ -201,8 +237,8 @@ class ElasticSearchService {
   }
 
   async deleteByQuery(
-    params: estypes.DeleteByQueryRequest
-  ): Promise<estypes.DeleteByQueryResponse> {
+    params: DeleteByQueryRequest
+  ): Promise<DeleteByQueryResponse> {
     try {
       return this.client.deleteByQuery(params);
     } catch (error) {
@@ -211,7 +247,7 @@ class ElasticSearchService {
     }
   }
 
-  async count(params: estypes.CountRequest): Promise<number> {
+  async count(params: CountRequest): Promise<number> {
     try {
       const result = await this.client.count(params);
       return result.count;

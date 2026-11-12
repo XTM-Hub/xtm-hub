@@ -15,6 +15,7 @@ interface SeenRequest {
   url?: string;
   accept?: string;
   authorization?: string;
+  body: string;
 }
 
 // A fake Elasticsearch on a free local port: it answers GET / with the given
@@ -23,12 +24,17 @@ interface SeenRequest {
 // The Elastic clients only talk to a server announcing the Elasticsearch product.
 const startEngine = async (version: string, stalled = false) => {
   const seen: SeenRequest[] = [];
-  const server = http.createServer((request, response) => {
+  const server = http.createServer(async (request, response) => {
+    let received = '';
+    for await (const chunk of request) {
+      received += String(chunk);
+    }
     seen.push({
       method: request.method,
       url: request.url,
       accept: request.headers.accept,
       authorization: request.headers.authorization,
+      body: received,
     });
     if (stalled && request.url !== '/') {
       return;
@@ -57,6 +63,7 @@ const ENGINE_USERNAME = 'elastic';
 const ENGINE_PASSWORD = 'changeme';
 
 const DOCUMENT = { name: 'first' };
+const MAPPING = { properties: { name: { type: 'keyword' as const } } };
 const SHORT_REQUEST_TIMEOUT_MS = 200;
 
 // One call per method of the service, each reaching the engine once
@@ -98,6 +105,11 @@ const SERVICE_CALLS: [
       service.deleteByQuery({ index: TEST_INDEX, query: { match_all: {} } }),
   ],
   ['count', (service) => service.count({ index: TEST_INDEX })],
+  [
+    'putMapping',
+    (service) =>
+      service.getIndices().putMapping({ index: TEST_INDEX, ...MAPPING }),
+  ],
 ];
 
 const countRequestAccept = (seen: SeenRequest[]) =>
@@ -265,6 +277,26 @@ describe('elasticSearchService engine client', () => {
 
       // Then
       await expect(count).rejects.toMatchObject({ name: 'TimeoutError' });
+    }
+  );
+
+  it.each(['elasticsearch8' as const, 'elasticsearch9' as const])(
+    'should send the mapping at the top level when an ES migration passes it under body with the %s client',
+    async (engineClient) => {
+      // Given
+      const { seen } = await useEngine(ES9_VERSION, engineClient);
+      const service = new ElasticSearchService();
+      await service.init();
+
+      // When
+      await service
+        .getIndices()
+        .putMapping({ index: TEST_INDEX, body: MAPPING });
+
+      // Then
+      expect(seen.map((request) => JSON.parse(request.body))).toEqual([
+        MAPPING,
+      ]);
     }
   );
 
