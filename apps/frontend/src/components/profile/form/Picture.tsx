@@ -16,6 +16,9 @@ import {
 import { EditIcon } from '@filigran/icon';
 import React, { useContext, useRef, useState } from 'react';
 
+// Displayed size of the profile picture in px: keep it in step with the size-24 of its wrapper.
+const PROFILE_PICTURE_SIZE = 96;
+
 interface ProfileFormPictureProps {
   onSubmit: (files: (File | null)[]) => void;
 }
@@ -69,8 +72,11 @@ export const ProfileFormPicture = ({ onSubmit }: ProfileFormPictureProps) => {
           className="size-24 cursor-pointer"
           onClick={() => inputRef.current?.click()}>
           <Avatar
-            src={getGravatarSizedUrl(preview || me?.picture || undefined, 96)}
-            size={96}
+            src={getGravatarSizedUrl(
+              preview || me?.picture || undefined,
+              PROFILE_PICTURE_SIZE
+            )}
+            size={PROFILE_PICTURE_SIZE}
           />
         </div>
       </CardContent>

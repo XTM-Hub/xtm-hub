@@ -3,7 +3,7 @@ import type { ComponentMeta } from '@filigran/design-system/meta';
 export const AvatarMeta: ComponentMeta = {
   name: 'Avatar',
   description:
-    'Round picture of a person. Loads src lazily under the fallback and shows the image, cropped with object-cover, only once it loaded; while it loads, when it fails and without src it shows the user Icon on bg-elevation-highlight. Has no size: it fills its parent, or the caller sizes it through className.',
+    'Round picture of a person. Loads src lazily under the fallback and shows the image, cropped with object-cover, only once it loaded; while it loads, when it fails and without src it shows the user Icon on bg-elevation-highlight. Has no fixed display size: it fills its parent, or the caller sizes it through className; the size prop only describes the image.',
   status: 'beta',
   category: 'data-display',
   version: '0.1.0',
@@ -12,12 +12,13 @@ export const AvatarMeta: ComponentMeta = {
   sizes: [],
   examples: [
     '<Avatar src={user.picture} className="size-8" />',
+    '<Avatar src={user.picture} className="size-6" size={24} />',
     '<Avatar className="size-6" />',
   ],
   props: {
     src: 'string (optional) - the picture URL; empty or missing shows the fallback glyph.',
     alt: 'string (optional, default "") - the text alternative of the image, and of the fallback while it loads or after it fails; pass it only for a standalone avatar.',
-    size: 'number (optional, default 48) - the displayed size of the picture in CSS pixels: it sets the width and height attributes of the image (to reserve its space), not the size of the avatar.',
+    size: 'number (optional, default 48) - the size at which the picture is displayed, in CSS pixels (match the avatar size the caller gives): it sets the width and height attributes of the image, which reserve its space and give its intrinsic size, and does not size the avatar.',
     className:
       'string (optional) - extra classes, merged last with tailwind-merge (a size-8 replaces the default size-full).',
     ref: 'React.Ref<HTMLSpanElement> (optional) - forwarded to the root <span> element.',

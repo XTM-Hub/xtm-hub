@@ -254,6 +254,62 @@ describe('Avatar', () => {
     expect(queryGlyph()).toBeInTheDocument();
   });
 
+  it('should keep the new image hidden when the previous src loads late', () => {
+    // Given
+    const { rerender } = renderAvatar({ src: PICTURE_URL });
+    const previousImage = getImage();
+    rerenderAvatar(rerender, { src: OTHER_PICTURE_URL });
+
+    // When
+    fireEvent.load(previousImage);
+
+    // Then
+    expect(getImage()).toHaveAttribute('src', OTHER_PICTURE_URL);
+    expect(getImage()).toHaveClass(HIDDEN_CLASS);
+    expect(queryGlyph()).toBeInTheDocument();
+  });
+
+  it('should not drop the new image when the previous src fails late', () => {
+    // Given
+    const { rerender } = renderAvatar({ src: PICTURE_URL });
+    const previousImage = getImage();
+    rerenderAvatar(rerender, { src: OTHER_PICTURE_URL });
+
+    // When
+    fireEvent.error(previousImage);
+
+    // Then
+    expect(getImage()).toHaveAttribute('src', OTHER_PICTURE_URL);
+  });
+
+  it('should try a picture again when its src comes back after it failed', () => {
+    // Given
+    const { rerender } = renderAvatar({ src: PICTURE_URL });
+    fireEvent.error(getImage());
+    rerenderAvatar(rerender, { src: OTHER_PICTURE_URL });
+
+    // When
+    rerenderAvatar(rerender, { src: PICTURE_URL });
+
+    // Then
+    expect(getImage()).toHaveAttribute('src', PICTURE_URL);
+    expect(getImage()).toHaveClass(HIDDEN_CLASS);
+    expect(queryGlyph()).toBeInTheDocument();
+  });
+
+  it('should try a picture again when its src comes back after the src was removed', () => {
+    // Given
+    const { rerender } = renderAvatar({ src: PICTURE_URL });
+    fireEvent.error(getImage());
+    rerenderAvatar(rerender, { src: undefined });
+
+    // When
+    rerenderAvatar(rerender, { src: PICTURE_URL });
+
+    // Then
+    expect(getImage()).toHaveAttribute('src', PICTURE_URL);
+  });
+
   it('should go back to the fallback and drop the image when the src is removed', () => {
     // Given
     const { rerender } = renderAvatar({ src: PICTURE_URL });

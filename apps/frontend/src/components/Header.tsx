@@ -33,6 +33,9 @@ import { useCallback, useContext, useEffect, useState } from 'react';
 import { useMutation } from 'react-relay';
 
 // Component interface
+// Displayed size of the user avatar in px: keep it in step with the size-6 of its wrapper.
+const HEADER_AVATAR_SIZE = 24;
+
 interface HeaderComponentProps {
   displayLogo?: boolean;
 }
@@ -93,8 +96,11 @@ const HeaderComponent = ({ displayLogo }: HeaderComponentProps) => {
             icon={
               <div className="my-auto size-6">
                 <Avatar
-                  src={getGravatarSizedUrl(me?.picture || undefined, 24)}
-                  size={24}
+                  src={getGravatarSizedUrl(
+                    me?.picture || undefined,
+                    HEADER_AVATAR_SIZE
+                  )}
+                  size={HEADER_AVATAR_SIZE}
                 />
               </div>
             }>
