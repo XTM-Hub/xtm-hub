@@ -250,23 +250,22 @@ export const Register = ({
       );
     }
 
-    if (
-      isPlatformRegistered.status ===
-        PlatformRegistrationStatus.NeverRegistered ||
-      isPlatformRegistered.status === PlatformRegistrationStatus.Unregistered ||
-      !isOwnedByUserOrganization
-    ) {
-      return (
-        <RegisterOrganizationForm
-          userOrganizationsQueryData={userOrganizationsQueryData}
-          defaultPlatformName={platform.title}
-          cancel={cancel}
-          confirm={register}
-        />
-      );
+    // Registered on a known organization: the effect above registers it again there.
+    const isAutoRegistering =
+      isPlatformRegistered.status === PlatformRegistrationStatus.Registered &&
+      isOwnedByUserOrganization;
+    if (isAutoRegistering) {
+      return <Loader />;
     }
 
-    return <Loader />;
+    return (
+      <RegisterOrganizationForm
+        userOrganizationsQueryData={userOrganizationsQueryData}
+        defaultPlatformName={platform.title}
+        cancel={cancel}
+        confirm={register}
+      />
+    );
   }, [
     cancel,
     state.chosenOrganizationId,
