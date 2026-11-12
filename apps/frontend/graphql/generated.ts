@@ -4536,6 +4536,13 @@ export type PendingUsersBulkRemoveMutationVariables = Exact<{
 
 export type PendingUsersBulkRemoveMutation = { __typename?: 'Mutation', bulkRemovePendingUserFromOrganization: { __typename?: 'Success', success: boolean } | null };
 
+export type PendingUserEventsSubscriptionVariables = Exact<{
+  organizationId: Scalars['ID']['input'];
+}>;
+
+
+export type PendingUserEventsSubscription = { __typename?: 'Subscription', UserPending: { __typename?: 'UserPendingSubscription', delete: { __typename?: 'User', id: string } | null, invalidate: { __typename?: 'OrganizationRef', id: string } | null } | null };
+
 export type UsersWithCapabilitiesInOrganizationQueryVariables = Exact<{
   input: UsersWithCapabilitiesInOrganizationInput;
 }>;
@@ -10252,6 +10259,18 @@ usePendingUsersBulkRemoveMutation.getKey = () => ['PendingUsersBulkRemove'];
 usePendingUsersBulkRemoveMutation.getRootKey = () => ['PendingUsersBulkRemove'] as const;
 usePendingUsersBulkRemoveMutation.fetcher = (client: GraphQLClient, variables?: PendingUsersBulkRemoveMutationVariables, headers?: RequestInit['headers']) => fetcher<PendingUsersBulkRemoveMutation, PendingUsersBulkRemoveMutationVariables>(client, PendingUsersBulkRemoveDocument, variables, headers);
 
+export const PendingUserEventsDocument = `
+    subscription PendingUserEvents($organizationId: ID!) {
+  UserPending(organizationId: $organizationId) {
+    delete {
+      id
+    }
+    invalidate {
+      id
+    }
+  }
+}
+    `;
 export const UsersWithCapabilitiesInOrganizationDocument = `
     query UsersWithCapabilitiesInOrganization($input: UsersWithCapabilitiesInOrganizationInput!) {
   usersWithCapabilitiesInOrganization(input: $input) {

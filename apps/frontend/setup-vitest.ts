@@ -89,6 +89,16 @@ vi.mock('@/lib/query-client', async (importOriginal) => {
   };
 });
 
+// jsdom is a browser, so the real getSseClient would open a connection to the
+// test origin: hand every subscription a client that never emits.
+vi.mock('@/lib/sse-client', () => ({
+  getSseClient: () => ({
+    subscribe: () => () => {},
+    iterate: () => ({}),
+    dispose: () => {},
+  }),
+}));
+
 const relayRegistryMocks = vi.hoisted(() => ({
   getClientEnvironment: vi.fn(),
   registerClientEnvironment: vi.fn(),
