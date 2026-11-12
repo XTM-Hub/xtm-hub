@@ -3,6 +3,7 @@
 import { Avatar } from '@/components/ui/avatar';
 import { useTranslate } from '@/hooks/use-translate';
 import { cn } from '@/lib/utils';
+import { getGravatarSizedUrl } from '@/utils/format/gravatar';
 import { formatPersonNames } from '@/utils/format/name';
 import { PublicDocumentData } from '@/utils/shareable-resources/shareable-resources.types';
 import {
@@ -13,6 +14,8 @@ import {
 } from '@filigran/design-system';
 import { DocumentItemFragment } from '@graphql/generated';
 
+const DEFAULT_PICTURE_SIZE = 32;
+
 interface UserDisplayProps {
   uploader:
     | DocumentItemFragment['uploader']
@@ -22,7 +25,8 @@ interface UserDisplayProps {
   className?: string;
   withTooltip?: boolean;
   displayPicture?: boolean;
-  pictureClassName?: string;
+  /** Displayed size of the picture in CSS pixels. */
+  pictureSize?: number;
 }
 
 export const UserDisplay = ({
@@ -30,7 +34,7 @@ export const UserDisplay = ({
   className,
   withTooltip = false,
   displayPicture = true,
-  pictureClassName = 'size-8',
+  pictureSize = DEFAULT_PICTURE_SIZE,
 }: UserDisplayProps) => {
   const t = useTranslate('UserDisplay');
   const formattedName = formatPersonNames(uploader);
@@ -54,8 +58,13 @@ export const UserDisplay = ({
   return (
     <>
       {displayPicture && (
-        <div className={cn('shrink-0', pictureClassName)}>
-          <Avatar src={uploader?.picture ?? ''} />
+        <div
+          className="shrink-0"
+          style={{ width: pictureSize, height: pictureSize }}>
+          <Avatar
+            src={getGravatarSizedUrl(uploader?.picture ?? '', pictureSize)}
+            size={pictureSize}
+          />
         </div>
       )}
       {withTooltip ? (

@@ -105,36 +105,56 @@ describe('UserDisplay', () => {
     );
   });
 
-  it('should load the picture of a backend uploader through its local path', () => {
+  it('should ask Gravatar for a picture of twice the displayed size', () => {
     // Given
-    const userId = '89efc660-a732-4d71-abe2-455188be1505';
     const { container } = testRender(
       <UserDisplay
         uploader={{
           ...uploaderWithPicture,
-          picture: `${window.location.origin}/user/picture/${userId}?t=1760000000000`,
+          picture: 'https://s.gravatar.com/avatar/538dc0e?s=480&r=pg',
         }}
+        pictureSize={24}
       />
     );
 
     // Then
     expect(container.querySelector('img')).toHaveAttribute(
       'src',
-      `/user/picture/${userId}?t=1760000000000`
+      'https://s.gravatar.com/avatar/538dc0e?s=48&r=pg'
     );
   });
 
-  it('should size the avatar container with pictureClassName', () => {
+  it('should size the avatar container and the image with pictureSize', () => {
     // Given
     const { container } = testRender(
       <UserDisplay
         uploader={uploaderWithPicture}
-        pictureClassName="size-6"
+        pictureSize={24}
       />
     );
 
     // Then
-    expect(container.querySelector('img')?.closest('.size-6')).not.toBeNull();
+    const image = container.querySelector('img');
+    expect(image).toHaveAttribute('width', '24');
+    expect(image?.closest('div')).toHaveStyle({
+      width: '24px',
+      height: '24px',
+    });
+  });
+
+  it('should size the avatar for 32 px by default', () => {
+    // Given
+    const { container } = testRender(
+      <UserDisplay uploader={uploaderWithPicture} />
+    );
+
+    // Then
+    const image = container.querySelector('img');
+    expect(image).toHaveAttribute('width', '32');
+    expect(image?.closest('div')).toHaveStyle({
+      width: '32px',
+      height: '32px',
+    });
   });
 
   it('should not render the avatar container when displayPicture is false', () => {

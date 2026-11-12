@@ -20,6 +20,7 @@ import {
 import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { cn } from '@/lib/utils';
 import { clearFiltersStorage } from '@/utils/filters-storage.utils';
+import { getGravatarSizedUrl } from '@/utils/format/gravatar';
 import { APP_PATH } from '@/utils/path/constant';
 
 import { useTranslate } from '@/hooks/use-translate';
@@ -91,7 +92,10 @@ const HeaderComponent = ({ displayLogo }: HeaderComponentProps) => {
             aria-label={t('MenuUser.ToggleUser')}
             icon={
               <div className="my-auto size-6">
-                <Avatar src={me?.picture || undefined} />
+                <Avatar
+                  src={getGravatarSizedUrl(me?.picture || undefined, 24)}
+                  size={24}
+                />
               </div>
             }>
             <IconActionsItem asChild>

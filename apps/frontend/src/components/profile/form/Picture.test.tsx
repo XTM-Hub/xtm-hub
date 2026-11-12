@@ -1,7 +1,7 @@
 import { ProfileFormPicture } from '@/components/profile/form/Picture';
 import testRender from '@/utils/test/test-render';
 import { fireEvent, screen, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const CURRENT_PICTURE_URL = 'https://filigran.io/current-picture.png';
 const FIRST_PREVIEW_URL = 'blob:first-preview';
@@ -18,11 +18,22 @@ const getDisplayedPicture = () => screen.getByRole('presentation');
 
 describe('ProfileFormPicture', () => {
   beforeEach(() => {
+    // jsdom never loads images: every picture is reported as already loaded so the Avatar shows it.
+    vi.spyOn(HTMLImageElement.prototype, 'complete', 'get').mockReturnValue(
+      true
+    );
+    vi.spyOn(HTMLImageElement.prototype, 'naturalWidth', 'get').mockReturnValue(
+      64
+    );
     URL.createObjectURL = vi
       .fn()
       .mockReturnValueOnce(FIRST_PREVIEW_URL)
       .mockReturnValueOnce(SECOND_PREVIEW_URL);
     URL.revokeObjectURL = vi.fn();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it('should display the current profile picture when the user has one', async () => {
@@ -34,6 +45,21 @@ describe('ProfileFormPicture', () => {
     // Then
     await waitFor(() =>
       expect(getDisplayedPicture()).toHaveAttribute('src', CURRENT_PICTURE_URL)
+    );
+  });
+
+  it('should ask Gravatar for a picture sized for the profile avatar', async () => {
+    // Given / When
+    testRender(<ProfileFormPicture onSubmit={vi.fn()} />, {
+      me: { picture: 'https://s.gravatar.com/avatar/538dc0e?s=480&r=pg' },
+    });
+
+    // Then
+    await waitFor(() =>
+      expect(getDisplayedPicture()).toHaveAttribute(
+        'src',
+        'https://s.gravatar.com/avatar/538dc0e?s=192&r=pg'
+      )
     );
   });
 

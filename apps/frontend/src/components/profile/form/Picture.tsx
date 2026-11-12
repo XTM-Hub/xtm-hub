@@ -4,6 +4,7 @@ import { PortalContext } from '@/components/me/AppPortalContext';
 import { Avatar } from '@/components/ui/avatar';
 import { useTranslate } from '@/hooks/use-translate';
 import { analyticsId } from '@/lib/analytics/analytics.ids';
+import { getGravatarSizedUrl } from '@/utils/format/gravatar';
 import {
   Button,
   Card,
@@ -68,7 +69,7 @@ export const ProfileFormPicture = ({ onSubmit }: ProfileFormPictureProps) => {
           className="size-24 cursor-pointer"
           onClick={() => inputRef.current?.click()}>
           <Avatar
-            src={preview || me?.picture || undefined}
+            src={getGravatarSizedUrl(preview || me?.picture || undefined, 96)}
             size={96}
           />
         </div>

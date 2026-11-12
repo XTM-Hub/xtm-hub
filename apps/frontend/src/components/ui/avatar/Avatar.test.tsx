@@ -1,19 +1,13 @@
 import testRender from '@/utils/test/test-render';
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 import { createRef } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Avatar } from './Avatar';
 
-// The shared setup replaces next/image with a bare <img>: these tests need the real component,
-// which sets the loading attributes, the sizes and the optimiser URLs of the picture.
-vi.unmock('next/image');
-
 const TEST_ID = 'avatar';
 const NATIVE_ID = 'author-avatar';
-const PICTURE_URL = 'https://cdn.auth0.com/avatar.png';
-const OTHER_PICTURE_URL = 'https://cdn.auth0.com/other-avatar.png';
-const USER_ID = '89efc660-a732-4d71-abe2-455188be1505';
-const GRAVATAR_URL = 'https://s.gravatar.com/avatar/538dc0e?s=480&r=pg';
+const PICTURE_URL = 'https://filigran.io/avatar.png';
+const OTHER_PICTURE_URL = 'https://filigran.io/other-avatar.png';
 const PERSON_NAME = 'Jane Doe';
 const DEFAULT_SIZE_CLASS = 'size-full';
 const ROOT_CLASSES = [
@@ -28,9 +22,7 @@ const ROOT_CLASSES = [
 ];
 const CALLER_SIZE_CLASS = 'size-8';
 const CROP_CLASS = 'object-cover';
-
-const backendPictureUrl = () =>
-  `${window.location.origin}/user/picture/${USER_ID}?t=1760000000000`;
+const HIDDEN_CLASS = 'opacity-0';
 
 const getAvatar = () => screen.getByTestId(TEST_ID);
 const queryImage = () => getAvatar().querySelector('img');
@@ -45,6 +37,17 @@ const renderAvatar = (props: React.ComponentProps<typeof Avatar> = {}) =>
     />
   );
 
+const rerenderAvatar = (
+  rerender: ReturnType<typeof renderAvatar>['rerender'],
+  props: React.ComponentProps<typeof Avatar>
+) =>
+  rerender(
+    <Avatar
+      data-testid={TEST_ID}
+      {...props}
+    />
+  );
+
 // jsdom never loads images, so a picture the browser already holds is simulated on the prototype.
 const holdImagesInBrowserCache = () => {
   vi.spyOn(HTMLImageElement.prototype, 'complete', 'get').mockReturnValue(true);
@@ -53,14 +56,10 @@ const holdImagesInBrowserCache = () => {
   );
 };
 
-const finishLoading = async (image: HTMLImageElement) => {
-  fireEvent.load(image);
-  await waitFor(() => expect(queryGlyph()).not.toBeInTheDocument());
-};
-
 describe('Avatar', () => {
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
   it.each([
@@ -87,8 +86,9 @@ describe('Avatar', () => {
     // Then
     expect(queryGlyph()).toBeInTheDocument();
     expect(queryGlyph()).toHaveAttribute('aria-hidden', 'true');
+    expect(getImage()).toHaveAttribute('src', PICTURE_URL);
     expect(getImage()).toHaveAttribute('aria-hidden', 'true');
-    expect(getImage()).toHaveClass('absolute', 'opacity-0');
+    expect(getImage()).toHaveClass('absolute', HIDDEN_CLASS);
     expect(screen.queryByRole('img')).not.toBeInTheDocument();
   });
 
@@ -99,6 +99,18 @@ describe('Avatar', () => {
     // Then
     expect(getImage()).toHaveAttribute('loading', 'lazy');
     expect(getImage()).toHaveAttribute('decoding', 'async');
+  });
+
+  it('should not preload the picture with an Image object', () => {
+    // Given
+    const imageConstructor = vi.fn();
+    vi.stubGlobal('Image', imageConstructor);
+
+    // When
+    renderAvatar({ src: PICTURE_URL });
+
+    // Then
+    expect(imageConstructor).not.toHaveBeenCalled();
   });
 
   it('should reserve the default size for the image', () => {
@@ -112,29 +124,30 @@ describe('Avatar', () => {
 
   it('should reserve the size the caller gives for the image', () => {
     // Given / When
-    renderAvatar({ src: PICTURE_URL, size: 96 });
+    renderAvatar({ src: PICTURE_URL, size: 24 });
 
     // Then
-    expect(getImage()).toHaveAttribute('width', '96');
-    expect(getImage()).toHaveAttribute('height', '96');
+    expect(getImage()).toHaveAttribute('width', '24');
+    expect(getImage()).toHaveAttribute('height', '24');
   });
 
-  it('should show the cropped image and drop the fallback once the image loaded', async () => {
+  it('should show the cropped image and drop the fallback once the image loaded', () => {
     // Given
     renderAvatar({ src: PICTURE_URL });
 
     // When
-    await finishLoading(getImage());
+    fireEvent.load(getImage());
 
     // Then
     expect(getImage()).toHaveAttribute('src', PICTURE_URL);
     expect(getImage()).toHaveAttribute('alt', '');
     expect(getImage()).toHaveClass(CROP_CLASS);
-    expect(getImage()).not.toHaveClass('opacity-0');
+    expect(getImage()).not.toHaveClass(HIDDEN_CLASS);
     expect(getImage()).not.toHaveAttribute('aria-hidden');
+    expect(queryGlyph()).not.toBeInTheDocument();
   });
 
-  it('should keep the fallback glyph and drop the image when the image fails to load', async () => {
+  it('should keep the fallback glyph and drop the image when the image fails to load', () => {
     // Given
     renderAvatar({ src: PICTURE_URL });
 
@@ -142,7 +155,7 @@ describe('Avatar', () => {
     fireEvent.error(getImage());
 
     // Then
-    await waitFor(() => expect(queryImage()).not.toBeInTheDocument());
+    expect(queryImage()).not.toBeInTheDocument();
     expect(queryGlyph()).toBeInTheDocument();
   });
 
@@ -155,7 +168,7 @@ describe('Avatar', () => {
 
     // Then
     expect(getImage()).toHaveAttribute('src', PICTURE_URL);
-    expect(getImage()).not.toHaveClass('opacity-0');
+    expect(getImage()).not.toHaveClass(HIDDEN_CLASS);
     expect(queryGlyph()).not.toBeInTheDocument();
   });
 
@@ -170,15 +183,15 @@ describe('Avatar', () => {
 
     // Then
     expect(queryGlyph()).toBeInTheDocument();
-    expect(getImage()).toHaveClass('opacity-0');
+    expect(getImage()).toHaveClass(HIDDEN_CLASS);
   });
 
-  it('should give the image the alt when one is given', async () => {
+  it('should give the image the alt when one is given', () => {
     // Given
     renderAvatar({ src: PICTURE_URL, alt: PERSON_NAME });
 
     // When
-    await finishLoading(getImage());
+    fireEvent.load(getImage());
 
     // Then
     expect(getImage()).toHaveAttribute('alt', PERSON_NAME);
@@ -197,128 +210,61 @@ describe('Avatar', () => {
     expect(screen.getAllByRole('img')).toHaveLength(1);
   });
 
-  it('should show the fallback at once when a loaded src is replaced by one still loading', async () => {
+  it('should show the fallback at once when a loaded src is replaced by one still loading', () => {
     // Given
     const { rerender } = renderAvatar({ src: PICTURE_URL });
-    await finishLoading(getImage());
+    fireEvent.load(getImage());
+    expect(queryGlyph()).not.toBeInTheDocument();
 
     // When
-    rerender(
-      <Avatar
-        data-testid={TEST_ID}
-        src={OTHER_PICTURE_URL}
-      />
-    );
+    rerenderAvatar(rerender, { src: OTHER_PICTURE_URL });
 
     // Then
     expect(queryGlyph()).toBeInTheDocument();
     expect(getImage()).toHaveAttribute('src', OTHER_PICTURE_URL);
-    expect(getImage()).toHaveClass('opacity-0');
+    expect(getImage()).toHaveClass(HIDDEN_CLASS);
   });
 
-  it('should keep the new image waiting when the previous src loads late', () => {
+  it('should show the new image once it loaded after a src change', () => {
     // Given
     const { rerender } = renderAvatar({ src: PICTURE_URL });
-    const previousImage = getImage();
-    rerender(
-      <Avatar
-        data-testid={TEST_ID}
-        src={OTHER_PICTURE_URL}
-      />
-    );
+    fireEvent.load(getImage());
+    rerenderAvatar(rerender, { src: OTHER_PICTURE_URL });
 
     // When
-    fireEvent.load(previousImage);
+    fireEvent.load(getImage());
 
     // Then
     expect(getImage()).toHaveAttribute('src', OTHER_PICTURE_URL);
-    expect(getImage()).toHaveClass('opacity-0');
+    expect(getImage()).not.toHaveClass(HIDDEN_CLASS);
+    expect(queryGlyph()).not.toBeInTheDocument();
+  });
+
+  it('should try the new image when the previous src failed to load', () => {
+    // Given
+    const { rerender } = renderAvatar({ src: PICTURE_URL });
+    fireEvent.error(getImage());
+    expect(queryImage()).not.toBeInTheDocument();
+
+    // When
+    rerenderAvatar(rerender, { src: OTHER_PICTURE_URL });
+
+    // Then
+    expect(getImage()).toHaveAttribute('src', OTHER_PICTURE_URL);
     expect(queryGlyph()).toBeInTheDocument();
   });
 
-  it('should ask the optimiser for a backend picture at the displayed size, as a local path', () => {
-    // Given / When
-    renderAvatar({ src: backendPictureUrl(), size: 24 });
-
-    // Then
-    const optimiserUrl = new URL(getImage().src);
-    expect(optimiserUrl.pathname).toBe('/_next/image');
-    expect(optimiserUrl.searchParams.get('url')).toBe(
-      `/user/picture/${USER_ID}?t=1760000000000`
-    );
-    expect(optimiserUrl.searchParams.get('w')).toBe('48');
-  });
-
-  it('should offer the optimiser the displayed size and its retina twin only', () => {
-    // Given / When
-    renderAvatar({ src: backendPictureUrl(), size: 48 });
-
-    // Then
-    const widths = getImage()
-      .srcset.split(',')
-      .map((candidate) =>
-        new URL(
-          candidate.trim().split(' ')[0],
-          window.location.origin
-        ).searchParams.get('w')
-      );
-    expect(widths).toEqual(['48', '96']);
-  });
-
-  it('should load a picture of another host as it is, never through the optimiser', () => {
-    // Given / When
-    renderAvatar({ src: PICTURE_URL });
-
-    // Then
-    expect(getImage()).toHaveAttribute('src', PICTURE_URL);
-    expect(getImage().srcset).toBe('');
-  });
-
-  it('should load a picture of the backend of another origin as it is', () => {
+  it('should go back to the fallback and drop the image when the src is removed', () => {
     // Given
-    const src = `https://evil.io/user/picture/${USER_ID}?t=1`;
+    const { rerender } = renderAvatar({ src: PICTURE_URL });
+    fireEvent.load(getImage());
 
     // When
-    renderAvatar({ src });
+    rerenderAvatar(rerender, { src: undefined });
 
     // Then
-    expect(getImage()).toHaveAttribute('src', src);
-    expect(getImage().srcset).toBe('');
-  });
-
-  it('should load a local preview as it is', () => {
-    // Given
-    const preview = 'blob:http://localhost:3000/1234';
-
-    // When
-    renderAvatar({ src: preview });
-
-    // Then
-    expect(getImage()).toHaveAttribute('src', preview);
-    expect(getImage().srcset).toBe('');
-  });
-
-  it('should ask Gravatar for twice the default size', () => {
-    // Given / When
-    renderAvatar({ src: GRAVATAR_URL });
-
-    // Then
-    expect(getImage()).toHaveAttribute(
-      'src',
-      'https://s.gravatar.com/avatar/538dc0e?s=96&r=pg'
-    );
-    expect(getImage().srcset).toBe('');
-  });
-
-  it('should ask Gravatar for twice the size the caller gives', () => {
-    // Given / When
-    renderAvatar({ src: GRAVATAR_URL, size: 24 });
-
-    // Then
-    expect(getImage()).toHaveAttribute(
-      'src',
-      'https://s.gravatar.com/avatar/538dc0e?s=48&r=pg'
-    );
+    expect(queryImage()).not.toBeInTheDocument();
+    expect(queryGlyph()).toBeInTheDocument();
   });
 
   it('should draw the round root', () => {

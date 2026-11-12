@@ -2,9 +2,10 @@
 
 import { cn } from '@/lib/utils';
 import { Icon } from '@filigran/design-system';
-import Image from 'next/image';
 import * as React from 'react';
-import { DEFAULT_AVATAR_SIZE, resolveAvatarImage } from './avatar-image.util';
+
+// In-app avatars are 24 to 32 px: the default covers a small avatar on a retina screen.
+const DEFAULT_AVATAR_SIZE = 48;
 
 export interface AvatarProps extends Omit<
   React.ComponentPropsWithoutRef<'span'>,
@@ -12,7 +13,7 @@ export interface AvatarProps extends Omit<
 > {
   src?: string;
   alt?: string;
-  /** Displayed size of the picture, in CSS pixels: the resolution the picture is requested at. */
+  /** Displayed size of the picture, in CSS pixels: it sets the width and height of the image, not the size of the avatar. */
   size?: number;
 }
 
@@ -21,37 +22,28 @@ interface ImageLoad {
   status: 'loaded' | 'error';
 }
 
-const subscribeToNothing = () => () => undefined;
-const getPageOrigin = () => window.location.origin;
-// The server, and the hydration of its markup, know no page origin: no picture is rendered then.
-const getServerPageOrigin = () => undefined;
+type ImageStatus = 'idle' | 'loaded' | 'error';
+
+// The outcome of a load only counts for the src it was reported for.
+const getImageStatus = (
+  imageLoad: ImageLoad | null,
+  src: string | undefined
+): ImageStatus => (src && imageLoad?.src === src ? imageLoad.status : 'idle');
 
 const Avatar = React.forwardRef<HTMLSpanElement, AvatarProps>(
   ({ className, src, alt = '', size = DEFAULT_AVATAR_SIZE, ...props }, ref) => {
     const imageRef = React.useRef<HTMLImageElement>(null);
     const [imageLoad, setImageLoad] = React.useState<ImageLoad | null>(null);
-    const origin = React.useSyncExternalStore(
-      subscribeToNothing,
-      getPageOrigin,
-      getServerPageOrigin
-    );
-
-    const image = React.useMemo(
-      () => (src && origin ? resolveAvatarImage(src, size, origin) : null),
-      [src, size, origin]
-    );
-    const imageSrc = image?.src;
 
     React.useLayoutEffect(() => {
       const element = imageRef.current;
-      if (imageSrc && element?.complete && element.naturalWidth > 0) {
+      if (src && element?.complete && element.naturalWidth > 0) {
         // A picture the browser already holds is shown before paint, so it never flashes the glyph.
-        setImageLoad({ src: imageSrc, status: 'loaded' });
+        setImageLoad({ src, status: 'loaded' });
       }
-    }, [imageSrc]);
+    }, [src]);
 
-    const status = imageLoad?.src === imageSrc ? imageLoad?.status : undefined;
-    const isLoaded = status === 'loaded';
+    const status = getImageStatus(imageLoad, src);
 
     return (
       <span
@@ -61,7 +53,7 @@ const Avatar = React.forwardRef<HTMLSpanElement, AvatarProps>(
           'relative flex size-full shrink-0 items-center justify-center overflow-hidden rounded-full',
           className
         )}>
-        {!isLoaded && (
+        {status !== 'loaded' && (
           <span
             {...(alt ? { role: 'img', 'aria-label': alt } : {})}
             className="flex size-full items-center justify-center bg-elevation-highlight text-icon-default">
@@ -71,27 +63,25 @@ const Avatar = React.forwardRef<HTMLSpanElement, AvatarProps>(
             />
           </span>
         )}
-        {image && status !== 'error' && (
-          // The picture loads, lazily, under the glyph and replaces it once it is there. Only the
-          // backend pictures go through the Next image optimiser: the others are hosted by identity
-          // providers (or are local previews), which next/image must not be made to proxy.
-          <Image
-            key={image.src}
+        {src && status !== 'error' && (
+          // The picture loads, lazily, under the glyph and replaces it once it is there.
+          // Pictures come from any identity provider host, which next/image cannot be made to proxy.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
             ref={imageRef}
-            src={image.src}
+            src={src}
             alt={alt}
             width={size}
             height={size}
             loading="lazy"
             decoding="async"
-            unoptimized={!image.optimized}
-            aria-hidden={isLoaded ? undefined : true}
+            aria-hidden={status === 'loaded' ? undefined : true}
             className={cn(
               'size-full object-cover',
-              !isLoaded && 'absolute inset-0 opacity-0'
+              status !== 'loaded' && 'absolute inset-0 opacity-0'
             )}
-            onLoad={() => setImageLoad({ src: image.src, status: 'loaded' })}
-            onError={() => setImageLoad({ src: image.src, status: 'error' })}
+            onLoad={() => setImageLoad({ src, status: 'loaded' })}
+            onError={() => setImageLoad({ src, status: 'error' })}
           />
         )}
       </span>
