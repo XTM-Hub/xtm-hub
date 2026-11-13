@@ -23,9 +23,15 @@ describe('getEntityTypeLabel', () => {
 });
 
 describe('EntityTypeIcon', () => {
-  it.each(['Malware', 'Security-Coverage'])(
-    'should hide the %s icon from assistive technology by default',
-    (entityType) => {
+  it.each([
+    ['a known entity type', 'Malware'],
+    [
+      'an unknown entity type, rendered with the fallback icon',
+      'Security-Coverage',
+    ],
+  ])(
+    'should hide the icon of %s from assistive technology by default',
+    (_label, entityType) => {
       // Given / When
       const { container } = testRender(
         <EntityTypeIcon entityType={entityType} />

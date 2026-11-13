@@ -109,6 +109,27 @@ describe('PublicSubLink', () => {
   );
 });
 
+describe('PublicSubLink external icon', () => {
+  it('should hide the external link icon from assistive technology', () => {
+    // Given
+    vi.mocked(usePathname).mockReturnValue('/en');
+
+    // When
+    testRender(
+      <PublicSubLink
+        href="https://docs.example.com"
+        label={LABEL}
+        analyticsId={ANALYTICS_ID}
+        external
+      />
+    );
+
+    // Then
+    const icon = screen.getByRole('link', { name: LABEL }).querySelector('svg');
+    expect(icon).toHaveAttribute('aria-hidden', 'true');
+  });
+});
+
 describe('NavigationLinkMenu', () => {
   it.each(INTERACTIONS)(
     'should show the full label in a tooltip when the link is %s and the label is truncated in the opened menu',

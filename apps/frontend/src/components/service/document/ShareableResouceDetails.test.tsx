@@ -67,6 +67,25 @@ describe('ShareableResourceDetails', () => {
     expect(screen.getByText('+1k')).toBeInTheDocument();
   });
 
+  it('should hide the decorative icons of the organization and documentation link from assistive technology', () => {
+    // Given
+    const { container } = testRender(
+      <ShareableResourceDetails
+        documentData={buildDocumentData()}
+        downloadNumber={1450}
+      />
+    );
+
+    // When
+    const icons = container.querySelectorAll('svg');
+
+    // Then
+    expect(icons.length).toBeGreaterThan(0);
+    icons.forEach((icon) =>
+      expect(icon).toHaveAttribute('aria-hidden', 'true')
+    );
+  });
+
   it('should hide downloads for third-party integrations', () => {
     testRender(
       <ShareableResourceDetails

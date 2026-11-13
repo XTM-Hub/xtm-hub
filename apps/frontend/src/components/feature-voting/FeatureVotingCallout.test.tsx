@@ -55,6 +55,24 @@ describe('FeatureVotingCallout', () => {
     expect(screen.getByText('Tell us what matters to you')).toBeInTheDocument();
   });
 
+  it('should hide the decorative campaign icon from assistive technology', async () => {
+    // Given
+    vi.mocked(usePathname).mockReturnValue(PUBLIC_ROADMAP_PATH);
+    mockCurrentRound(openRound(VotingRoundTheme.Default, null));
+
+    // When
+    const { container } = testRender(
+      <FeatureVotingCallout serviceInstanceId="instance-1" />
+    );
+
+    // Then
+    await screen.findByText('FeatureVoting.CalloutTitle');
+    expect(container.querySelector('svg')).toHaveAttribute(
+      'aria-hidden',
+      'true'
+    );
+  });
+
   it('should link to the private page when the roadmap is browsed while logged in', async () => {
     // Given
     vi.mocked(usePathname).mockReturnValue(PRIVATE_ROADMAP_PATH);

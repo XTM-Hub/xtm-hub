@@ -336,6 +336,21 @@ describe('EditModeContentObserver', () => {
     }
   );
 
+  it('should hide the decorative icon of the edit badge from assistive technology', async () => {
+    // Given
+    renderObserver({ overriddenKeys: [] });
+
+    // When
+    fireEvent.mouseMove(document, POINT_BESIDE_TEXT);
+
+    // Then
+    await waitFor(() => expect(findBadge()).toBeInTheDocument());
+    expect(findBadge()?.querySelector('svg')).toHaveAttribute(
+      'aria-hidden',
+      'true'
+    );
+  });
+
   it('should hide the edit badge while the page scrolls', async () => {
     // Given
     renderObserver();
