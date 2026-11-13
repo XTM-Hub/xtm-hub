@@ -4,13 +4,16 @@ import {
   LinkedSection,
   OpenedSection,
 } from '@/components/menu/navigation/shared/NavigationSections';
+import { findActiveSectionKey } from '@/components/menu/navigation/shared/navigation-path.utils';
 import {
   BottomLink,
   SectionConfig,
 } from '@/components/menu/navigation/shared/navigation.type';
+import { useActiveAccordionItem } from '@/components/menu/navigation/shared/use-active-accordion-item';
 import { Accordion } from '@/components/ui/accordion';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
+import { usePathname } from 'next/navigation';
 
 interface SharedNavigationProps {
   open: boolean;
@@ -25,12 +28,22 @@ export const SharedNavigation = ({
   bottomLinks,
   footerSections = [],
 }: SharedNavigationProps) => {
+  const currentPath = usePathname();
+  const [openSection, setOpenSection] = useActiveAccordionItem(
+    findActiveSectionKey(sections, currentPath)
+  );
+  const [openFooterSection, setOpenFooterSection] = useActiveAccordionItem(
+    findActiveSectionKey(footerSections, currentPath)
+  );
+
   return (
     <nav className="flex-1 min-h-0 overflow-y-auto">
       {open ? (
         <Accordion
           type="single"
           collapsible
+          value={openSection}
+          onValueChange={setOpenSection}
           className="w-full">
           {sections.map((section) =>
             section.href ? (
@@ -94,6 +107,8 @@ export const SharedNavigation = ({
             <Accordion
               type="single"
               collapsible
+              value={openFooterSection}
+              onValueChange={setOpenFooterSection}
               className="w-full">
               {footerSections.map((section) =>
                 section.href ? (
