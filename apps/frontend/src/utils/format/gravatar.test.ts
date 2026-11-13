@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { getGravatarSizedUrl } from './gravatar';
 
 const GRAVATAR_HASH = '538dc0e5c6e4b1d4f0b1e3a4c7d8f9a0';
-const AUTH0_URL = 'https://cdn.auth0.com/avatars/jd.png';
+const AUTH0_URL = 'https://cdn.example.test/avatars/jd.png';
 
 const sizeOf = (url: string | undefined) =>
   new URL(url as string).searchParams.get('s');
@@ -86,7 +86,7 @@ describe('getGravatarSizedUrl', () => {
     ['another host', AUTH0_URL],
     [
       'a host that only starts with a Gravatar one',
-      `https://s.gravatar.com.evil.io/avatar/${GRAVATAR_HASH}?s=480`,
+      `https://s.gravatar.com.evil.example.test/avatar/${GRAVATAR_HASH}?s=480`,
     ],
     [
       'a host that only ends with a Gravatar one',
@@ -94,15 +94,15 @@ describe('getGravatarSizedUrl', () => {
     ],
     [
       'a Gravatar host given as a user name',
-      `https://s.gravatar.com@evil.io/avatar/${GRAVATAR_HASH}?s=480`,
+      `https://s.gravatar.com@evil.example.test/avatar/${GRAVATAR_HASH}?s=480`,
     ],
     [
       'a Gravatar URL in the query of another host',
-      `https://evil.io/?u=https://s.gravatar.com/avatar/${GRAVATAR_HASH}`,
+      `https://evil.example.test/?u=https://s.gravatar.com/avatar/${GRAVATAR_HASH}`,
     ],
     ['a host Gravatar does not use for avatars', 'https://gravatar.com/a.png'],
     ['a relative path', '/user/picture/1?s=480'],
-    ['a blob URL', 'blob:https://hub.filigran.io/1234'],
+    ['a blob URL', 'blob:https://hub.example.test/1234'],
     ['a data URL', 'data:image/png;base64,AAAA'],
     ['text that is not a URL', 'not a url'],
     ['an empty string', ''],

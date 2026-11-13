@@ -6,8 +6,8 @@ import { Avatar } from './Avatar';
 
 const TEST_ID = 'avatar';
 const NATIVE_ID = 'author-avatar';
-const PICTURE_URL = 'https://filigran.io/avatar.png';
-const OTHER_PICTURE_URL = 'https://filigran.io/other-avatar.png';
+const PICTURE_URL = 'https://example.test/avatar.png';
+const OTHER_PICTURE_URL = 'https://example.test/other-avatar.png';
 const PERSON_NAME = 'Jane Doe';
 const DEFAULT_SIZE_CLASS = 'size-full';
 const ROOT_CLASSES = [
@@ -63,7 +63,7 @@ const holdBrokenImagesInBrowserCache = () => {
     0
   );
   vi.spyOn(HTMLImageElement.prototype, 'currentSrc', 'get').mockReturnValue(
-    'https://filigran.io/avatar.png'
+    'https://example.test/avatar.png'
   );
 };
 

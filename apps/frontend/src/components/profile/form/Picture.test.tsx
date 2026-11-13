@@ -3,7 +3,7 @@ import testRender from '@/utils/test/test-render';
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const CURRENT_PICTURE_URL = 'https://filigran.io/current-picture.png';
+const CURRENT_PICTURE_URL = 'https://example.test/current-picture.png';
 const FIRST_PREVIEW_URL = 'blob:first-preview';
 const SECOND_PREVIEW_URL = 'blob:second-preview';
 
@@ -78,7 +78,7 @@ describe('ProfileFormPicture', () => {
   it('should show a backend profile picture as it is stored, so a new one shows at once', async () => {
     // Given
     const stored =
-      'https://hub.filigran.io/user/picture/89efc660-a732-4d71-abe2-455188be1505?t=1760000000000';
+      'https://hub.example.test/user/picture/89efc660-a732-4d71-abe2-455188be1505?t=1760000000000';
 
     // When
     testRender(<ProfileFormPicture onSubmit={vi.fn()} />, {

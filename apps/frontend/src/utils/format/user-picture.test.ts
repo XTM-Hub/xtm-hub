@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { getAvatarPictureSource } from './user-picture';
 
-const ORIGIN = 'https://hub.filigran.io';
+const ORIGIN = 'https://hub.example.test';
 const USER_ID = '89efc660-a732-4d71-abe2-455188be1505';
 const LOCAL_PATH = `/user/picture/${USER_ID}`;
 const STORED_PATH = `${LOCAL_PATH}?t=1760000000000`;
-const AUTH0_URL = 'https://cdn.auth0.com/avatars/jd.png';
+const AUTH0_URL = 'https://cdn.example.test/avatars/jd.png';
 const GRAVATAR_URL = 'https://s.gravatar.com/avatar/538dc0e?s=480&r=pg';
 
 // Candidates of a srcset such as "/_next/image?url=...&w=32&q=75 1x, /_next/image?...&w=48&q=75 2x".
@@ -36,7 +36,7 @@ describe('getAvatarPictureSource', () => {
       ['an http URL', `http://localhost:3002${STORED_PATH}`],
       [
         'a URL on another origin of the front',
-        `https://staging.filigran.io${STORED_PATH}`,
+        `https://staging.example.test${STORED_PATH}`,
       ],
       ['a URL without query', `${ORIGIN}${LOCAL_PATH}`],
       ['a URL with a fragment', `${ORIGIN}${STORED_PATH}#top`],
@@ -149,14 +149,14 @@ describe('getAvatarPictureSource', () => {
       ],
       ['an encoded slash', `${ORIGIN}${LOCAL_PATH}%2Fother?t=1`],
       ['an encoded UUID', `${ORIGIN}/user/picture/%38${USER_ID.slice(1)}?t=1`],
-      ['a protocol-relative URL', `//evil.io${STORED_PATH}`],
-      ['a backslash host', `/\\evil.io${STORED_PATH}`],
-      ['user info', `https://user:secret@hub.filigran.io${STORED_PATH}`],
-      ['a user name only', `https://user@hub.filigran.io${STORED_PATH}`],
+      ['a protocol-relative URL', `//evil.example.test${STORED_PATH}`],
+      ['a backslash host', `/\\evil.example.test${STORED_PATH}`],
+      ['user info', `https://user:secret@hub.example.test${STORED_PATH}`],
+      ['a user name only', `https://user@hub.example.test${STORED_PATH}`],
       ['another query parameter', `${ORIGIN}${LOCAL_PATH}?x=1`],
       ['a cache-buster that is not a number', `${ORIGIN}${LOCAL_PATH}?t=abc`],
       ['a cache-buster with more parameters', `${ORIGIN}${LOCAL_PATH}?t=1&x=2`],
-      ['another scheme', `ftp://hub.filigran.io${STORED_PATH}`],
+      ['another scheme', `ftp://hub.example.test${STORED_PATH}`],
       ['a blob URL', `blob:${ORIGIN}/${USER_ID}`],
       ['a data URL', 'data:image/png;base64,AAAA'],
       ['a javascript URL', `javascript:${LOCAL_PATH}`],

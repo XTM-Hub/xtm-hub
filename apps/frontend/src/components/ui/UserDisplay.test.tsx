@@ -7,8 +7,8 @@ const uploaderWithPicture = {
   id: 'user-with-picture',
   first_name: 'jane',
   last_name: 'doe',
-  email: 'jane@filigran.io',
-  picture: 'https://filigran.io/avatar.png',
+  email: 'jane@example.test',
+  picture: 'https://example.test/avatar.png',
 };
 
 describe('UserDisplay', () => {
@@ -19,7 +19,7 @@ describe('UserDisplay', () => {
           id: 'user-1',
           first_name: 'jane',
           last_name: 'doe',
-          email: 'jane@filigran.io',
+          email: 'jane@example.test',
           picture: null,
         }}
       />
@@ -35,13 +35,13 @@ describe('UserDisplay', () => {
           id: 'user-2',
           first_name: null,
           last_name: null,
-          email: 'author@filigran.io',
+          email: 'author@example.test',
           picture: null,
         }}
       />
     );
 
-    expect(screen.getByText('author@filigran.io')).toBeInTheDocument();
+    expect(screen.getByText('author@example.test')).toBeInTheDocument();
   });
 
   it.each`
@@ -66,7 +66,7 @@ describe('UserDisplay', () => {
           id: 'user-1',
           first_name: 'jane',
           last_name: 'doe',
-          email: 'jane@filigran.io',
+          email: 'jane@example.test',
           picture: null,
         }}
       />
@@ -127,7 +127,7 @@ describe('UserDisplay', () => {
   it('should serve a backend picture through the Next image optimiser at the displayed size', () => {
     // Given
     const userId = '89efc660-a732-4d71-abe2-455188be1505';
-    const stored = `https://hub.filigran.io/user/picture/${userId}?t=1760000000000`;
+    const stored = `https://hub.example.test/user/picture/${userId}?t=1760000000000`;
     const { container } = testRender(
       <UserDisplay
         uploader={{ ...uploaderWithPicture, picture: stored }}
