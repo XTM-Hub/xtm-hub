@@ -1,13 +1,5 @@
 import type { Request, Response } from 'express';
-import {
-  afterAll,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
   loadDocumentsMock,
@@ -64,12 +56,25 @@ vi.mock('../../../utils/app-logger.util', () => ({
   logApp: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
 
+// By default the marketing token has the system token hash and salt: give it its own value to tell the two apart.
+const { VALID_MARKETING_TOKEN } = vi.hoisted(() => ({
+  VALID_MARKETING_TOKEN: 'a-marketing-token',
+}));
+vi.mock('../../../config', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../config')>();
+  const { hashPassword } = await import('../../../utils/hash-password.util');
+  return {
+    default: {
+      ...actual.default,
+      marketing_token: hashPassword(VALID_MARKETING_TOKEN),
+    },
+  };
+});
+
 import { ServiceDefinitionIdentifier } from '../../../__generated__/resolvers-types';
-import portalConfig from '../../../config';
 import { MARKETING_USER_CONTEXT } from '../../../portal.const';
 import { SYSTEM_TOKEN_HEADER } from '../../../security/directive-graphql/validator/system-token.validator';
 import { MARKETING_TOKEN_HEADER } from '../../../security/util/marketing-token';
-import { hashPassword } from '../../../utils/hash-password.util';
 import { IntegrationCsvExportEndpoint } from './integration-csv-export-endpoint';
 
 const buildResponse = () => ({
@@ -97,7 +102,6 @@ const buildRequest = (
 
 // Dev value whose hash and salt are in config/default.json.
 const VALID_SYSTEM_TOKEN = 'changeMe';
-const VALID_MARKETING_TOKEN = 'a-marketing-token';
 
 const VALID_PARAMS = { serviceInstanceId: 'U2VydmljZUluc3RhbmNlOnNlcnZpY2Ux' };
 
@@ -124,12 +128,6 @@ const buildDocumentEdge = (overrides: Record<string, unknown> = {}) => ({
 });
 
 describe('integrationCsvExportEndpoint.exportCsv', () => {
-  const configuredMarketingToken = portalConfig.marketing_token;
-
-  beforeAll(() => {
-    portalConfig.marketing_token = hashPassword(VALID_MARKETING_TOKEN);
-  });
-
   beforeEach(() => {
     vi.clearAllMocks();
     loadServiceDefinitionByServiceInstanceMock.mockResolvedValue(
@@ -140,10 +138,6 @@ describe('integrationCsvExportEndpoint.exportCsv', () => {
     solutionCategoriesByDocumentIdLoaderLoadManyMock.mockResolvedValue([]);
     loadOrganizationByMock.mockResolvedValue({ id: 'org-1' });
     sendTelemetryEventMock.mockResolvedValue(undefined);
-  });
-
-  afterAll(() => {
-    portalConfig.marketing_token = configuredMarketingToken;
   });
 
   it('returns 401 when the user is not logged in', async () => {
