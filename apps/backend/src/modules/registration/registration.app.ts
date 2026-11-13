@@ -534,11 +534,27 @@ export const RegistrationApp = {
       throw new Error(ErrorCode.SubscriptionNotFound);
     }
 
+    const status =
+      platformConfiguration.status === PlatformConfigurationStatus.Active
+        ? PlatformRegistrationStatus.Registered
+        : PlatformRegistrationStatus.Unregistered;
+
+    // Anyone signed in may ask about a platform_id: only the owner organization's members learn who owns it.
+    // Bypass users too, so they refresh the platform in its owner organization instead of moving it.
+    const user = requestContext.requireUser();
+    if (!AuthHelper.userHasBypassCapability(user)) {
+      const [userOrganization] =
+        await UserOrganizationDomain.loadUserOrganization({
+          user_id: user.id,
+          organization_id: subscription.organization_id,
+        });
+      if (!userOrganization) {
+        return { status };
+      }
+    }
+
     return {
-      status:
-        platformConfiguration.status === PlatformConfigurationStatus.Active
-          ? PlatformRegistrationStatus.Registered
-          : PlatformRegistrationStatus.Unregistered,
+      status,
       organization: { id: subscription.organization_id },
       platformTitle: platformConfiguration.platform_title,
     };
@@ -583,7 +599,8 @@ export const RegistrationApp = {
     return {
       isAllowed,
       isInOrganization,
-      organizationId: subscription.organization_id,
+      // Allowed users (bypass included) count as in the organization: outsiders never learn who owns the platform.
+      organizationId: isInOrganization ? subscription.organization_id : null,
       organizationName: organization?.name ?? null,
     };
   },

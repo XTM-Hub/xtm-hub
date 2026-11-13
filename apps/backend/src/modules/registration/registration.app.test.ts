@@ -17,6 +17,7 @@ import {
   // eslint-disable-next-line no-restricted-imports
   requestContextAdminUser,
   requestContextRegistererUserSecondOrga,
+  requestContextSimpleUserFiligran2,
   requestContextSimpleUserSecondOrga,
   SERVICES,
   TEST_ORGANIZATIONS,
@@ -286,6 +287,7 @@ describe('registration app', () => {
         organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
         service_instance_id: serviceInstanceId,
       });
+      requestContext.set(requestContextSimpleUserSecondOrga);
 
       const result = await RegistrationApp.isPlatformRegistered({
         platformId,
@@ -320,6 +322,7 @@ describe('registration app', () => {
         organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
         service_instance_id: serviceInstanceId,
       });
+      requestContext.set(requestContextSimpleUserSecondOrga);
 
       const result = await RegistrationApp.isPlatformRegistered({
         platformId,
@@ -331,6 +334,85 @@ describe('registration app', () => {
         TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID
       );
       expect(result.platformTitle).toBe(platformTitle);
+    });
+
+    it.each`
+      description                       | status                                  | expectedStatus
+      ${'registered'}                   | ${PlatformConfigurationStatus.Active}   | ${PlatformRegistrationStatus.Registered}
+      ${'registered then unregistered'} | ${PlatformConfigurationStatus.Inactive} | ${PlatformRegistrationStatus.Unregistered}
+    `(
+      'should return only the status of a platform $description by another organization',
+      async ({
+        status,
+        expectedStatus,
+      }: {
+        status: PlatformConfigurationStatus;
+        expectedStatus: PlatformRegistrationStatus;
+      }) => {
+        // Given — a platform owned by the second organization, asked by a user outside it
+        const platformId = uuidv4();
+        const serviceInstanceId = uuidv4() as ServiceInstanceId;
+        await TestHelper.serviceInstance.create({
+          id: serviceInstanceId,
+          name: 'test',
+        });
+        await TestHelper.platformConfiguration.create({
+          service_instance_id: serviceInstanceId,
+          platform_id: platformId,
+          platform_title: 'Platform title',
+          status,
+        });
+        await TestHelper.subscription.create({
+          id: uuidv4() as SubscriptionId,
+          organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+          service_instance_id: serviceInstanceId,
+        });
+        requestContext.set(requestContextSimpleUserFiligran2);
+
+        // When
+        const result = await RegistrationApp.isPlatformRegistered({
+          platformId,
+        });
+
+        // Then
+        expect(result.status).toBe(expectedStatus);
+        expect(result.organization).toBeUndefined();
+        expect(result.platformTitle).toBeUndefined();
+      }
+    );
+
+    it('should return the owner organization of a platform to a bypass user outside it', async () => {
+      // Given — a platform owned by the second organization, asked by a bypass user outside it
+      const platformId = uuidv4();
+      const serviceInstanceId = uuidv4() as ServiceInstanceId;
+      await TestHelper.serviceInstance.create({
+        id: serviceInstanceId,
+        name: 'test',
+      });
+      await TestHelper.platformConfiguration.create({
+        service_instance_id: serviceInstanceId,
+        platform_id: platformId,
+        platform_title: 'Platform title',
+        status: PlatformConfigurationStatus.Active,
+      });
+      await TestHelper.subscription.create({
+        id: uuidv4() as SubscriptionId,
+        organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        service_instance_id: serviceInstanceId,
+      });
+      requestContext.set(requestContextAdminUser);
+
+      // When
+      const result = await RegistrationApp.isPlatformRegistered({
+        platformId,
+      });
+
+      // Then
+      expect(result.status).toBe(PlatformRegistrationStatus.Registered);
+      expect(result.organization).toEqual({
+        id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+      });
+      expect(result.platformTitle).toBe('Platform title');
     });
 
     describe('with tenantId', () => {
@@ -1960,7 +2042,7 @@ describe('registration app', () => {
     it('should allow user to register when he has the required capabilities', async () => {
       const organizationId = TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID;
       isUserAllowedOnOrganizationSpy.mockReturnValue(
-        Promise.resolve({ isAllowed: true })
+        Promise.resolve({ isAllowed: true, isInOrganization: true })
       );
       loadResolvedConfigurationByPlatformSpy.mockReturnValue(
         Promise.resolve(buildResolved())
@@ -1998,6 +2080,31 @@ describe('registration app', () => {
 
       expect(result.isAllowed).toBeFalsy();
       expect(result.isInOrganization).toBeFalsy();
+      expect(result.organizationId).toBeNull();
+      expect(result.organizationName).toBeNull();
+    });
+
+    it('should return the owner organization to a member without the required capabilities', async () => {
+      // Given — a member of the owner organization who cannot manage platform registrations
+      const organizationId = TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID;
+      loadResolvedConfigurationByPlatformSpy.mockReturnValue(
+        Promise.resolve(buildResolved())
+      );
+      loadSubscriptionBySpy.mockReturnValue(
+        Promise.resolve({ organization_id: organizationId })
+      );
+      isUserAllowedOnOrganizationSpy.mockReturnValue(
+        Promise.resolve({ isAllowed: false, isInOrganization: true })
+      );
+
+      // When
+      const result = await RegistrationApp.canUnregisterPlatform({
+        platformId,
+      });
+
+      // Then
+      expect(result.isAllowed).toBeFalsy();
+      expect(result.isInOrganization).toBeTruthy();
       expect(result.organizationId).toBe(organizationId);
       expect(result.organizationName).toBeNull();
     });

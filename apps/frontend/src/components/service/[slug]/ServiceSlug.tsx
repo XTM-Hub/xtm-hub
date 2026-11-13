@@ -31,7 +31,7 @@ import { Button, SearchField, Switch } from '@filigran/design-system';
 import { AddIcon, DeleteIcon, MoreVertIcon } from '@filigran/icon';
 import { serviceInstanceByIdQuery } from '@generated/serviceInstanceByIdQuery.graphql';
 import { serviceInstanceForSubscriptions_fragment$key } from '@generated/serviceInstanceForSubscriptions_fragment.graphql';
-import { subscription_fragment$data } from '@generated/subscription_fragment.graphql';
+import { SubscriptionItemFragment } from '@graphql/generated';
 import { ColumnDef, PaginationState } from '@tanstack/react-table';
 import { useMemo, useState } from 'react';
 import { PreloadedQuery, readInlineData, usePreloadedQuery } from 'react-relay';
@@ -40,9 +40,8 @@ import { ServiceSlugDeleteSubscription } from './ServiceSlugDeleteSubscription';
 import { ServiceSlugSubscription } from './ServiceSlugSubscription';
 
 interface ServiceSlugProps {
-  subscriptions: subscription_fragment$data[];
+  subscriptions: SubscriptionItemFragment[];
   queryRefServiceInstance: PreloadedQuery<serviceInstanceByIdQuery>;
-  subscriptionConnectionId: string;
 }
 
 const emptySelectionState = (): SelectionState => ({
@@ -54,7 +53,6 @@ const emptySelectionState = (): SelectionState => ({
 const ServiceSlug = ({
   subscriptions,
   queryRefServiceInstance,
-  subscriptionConnectionId,
 }: ServiceSlugProps) => {
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -76,10 +74,10 @@ const ServiceSlug = ({
   const [shouldDisplayPersonalSpaces, setShouldDisplayPersonalSpaces] =
     useState(false);
   const [deleteSubscriptions, setDeleteSubscriptions] = useState<
-    subscription_fragment$data[] | undefined
+    SubscriptionItemFragment[] | undefined
   >(undefined);
   const [updateSubscription, setUpdateSubscription] = useState<
-    subscription_fragment$data | undefined
+    SubscriptionItemFragment | undefined
   >(undefined);
   const [openEdit, setOpenEdit] = useState(false);
   const [openAddCapabilities, setOpenAddCapabilities] = useState(false);
@@ -117,7 +115,7 @@ const ServiceSlug = ({
     },
   ];
 
-  const columns: ColumnDef<subscription_fragment$data>[] = [
+  const columns: ColumnDef<SubscriptionItemFragment>[] = [
     {
       accessorKey: 'organization.name',
       id: 'organizationName',
@@ -201,7 +199,6 @@ const ServiceSlug = ({
             subscriptions={subscriptions}
             subscriptionToEdit={updateSubscription}
             serviceInstance={serviceInstance}
-            subscriptionConnectionId={subscriptionConnectionId}
             openEdit={openEdit}
             setOpenEdit={(open) => {
               setOpenEdit(open);
@@ -327,7 +324,6 @@ const ServiceSlug = ({
       {deleteSubscriptions && deleteSubscriptions.length > 0 && (
         <ServiceSlugDeleteSubscription
           subscriptions={deleteSubscriptions}
-          subscriptionConnectionId={subscriptionConnectionId}
           onDeleted={() => {
             setSelection(emptySelectionState);
           }}

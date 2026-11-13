@@ -233,8 +233,11 @@ export const Register = ({
       return renderer();
     }
 
+    // The owner organization is only known to its members: anyone else picks one of their own organizations.
+    const isOwnedByUserOrganization = !!isPlatformRegistered.organization;
     const shouldRegisterOnSameOrganization =
       isPlatformRegistered.status === PlatformRegistrationStatus.Unregistered &&
+      isOwnedByUserOrganization &&
       userOrganizationsQueryData.userOrganizations.length > 2;
     if (shouldRegisterOnSameOrganization) {
       return (
@@ -247,22 +250,22 @@ export const Register = ({
       );
     }
 
-    if (
-      isPlatformRegistered.status ===
-        PlatformRegistrationStatus.NeverRegistered ||
-      isPlatformRegistered.status === PlatformRegistrationStatus.Unregistered
-    ) {
-      return (
-        <RegisterOrganizationForm
-          userOrganizationsQueryData={userOrganizationsQueryData}
-          defaultPlatformName={platform.title}
-          cancel={cancel}
-          confirm={register}
-        />
-      );
+    // Registered on a known organization: the effect above registers it again there.
+    const isAutoRegistering =
+      isPlatformRegistered.status === PlatformRegistrationStatus.Registered &&
+      isOwnedByUserOrganization;
+    if (isAutoRegistering) {
+      return <Loader />;
     }
 
-    return <Loader />;
+    return (
+      <RegisterOrganizationForm
+        userOrganizationsQueryData={userOrganizationsQueryData}
+        defaultPlatformName={platform.title}
+        cancel={cancel}
+        confirm={register}
+      />
+    );
   }, [
     cancel,
     state.chosenOrganizationId,

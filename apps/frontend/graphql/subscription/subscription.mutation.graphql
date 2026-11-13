@@ -1,0 +1,26 @@
+mutation CreateSubscriptions($input: CreateSubscriptionsInput!) {
+  createSubscriptions(input: $input) {
+    id
+  }
+}
+
+mutation UpdateSubscription(
+  $subscription_id: SubscriptionId!
+  $input: UpdateSubscriptionInput!
+) {
+  updateSubscription(subscription_id: $subscription_id, input: $input) {
+    id
+  }
+}
+
+mutation DeleteSubscriptions($subscription_ids: [SubscriptionId!]!) {
+  deleteSubscriptions(subscription_ids: $subscription_ids) {
+    id
+  }
+}
+
+mutation AddSubscriptionCapability($input: AddSubscriptionCapabilityInput!) {
+  addSubscriptionCapability(input: $input) {
+    id
+  }
+}

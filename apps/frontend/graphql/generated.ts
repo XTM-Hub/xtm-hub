@@ -4322,6 +4322,56 @@ export type SolutionCategoriesListQueryVariables = Exact<{
 
 export type SolutionCategoriesListQuery = { __typename?: 'Query', solutionCategories: { __typename?: 'SolutionCategoryConnection', totalCount: number, edges: Array<{ __typename?: 'SolutionCategoryEdge', node: { __typename?: 'SolutionCategory', id: string, name: string, product: Array<FiligranProduct> } }> } | null };
 
+export type CreateSubscriptionsMutationVariables = Exact<{
+  input: CreateSubscriptionsInput;
+}>;
+
+
+export type CreateSubscriptionsMutation = { __typename?: 'Mutation', createSubscriptions: Array<{ __typename?: 'SubscriptionModel', id: string }> };
+
+export type UpdateSubscriptionMutationVariables = Exact<{
+  subscription_id: Scalars['SubscriptionId']['input'];
+  input: UpdateSubscriptionInput;
+}>;
+
+
+export type UpdateSubscriptionMutation = { __typename?: 'Mutation', updateSubscription: { __typename?: 'SubscriptionModel', id: string } | null };
+
+export type DeleteSubscriptionsMutationVariables = Exact<{
+  subscription_ids: Array<Scalars['SubscriptionId']['input']> | Scalars['SubscriptionId']['input'];
+}>;
+
+
+export type DeleteSubscriptionsMutation = { __typename?: 'Mutation', deleteSubscriptions: Array<{ __typename?: 'SubscriptionModel', id: string }> };
+
+export type AddSubscriptionCapabilityMutationVariables = Exact<{
+  input: AddSubscriptionCapabilityInput;
+}>;
+
+
+export type AddSubscriptionCapabilityMutation = { __typename?: 'Mutation', addSubscriptionCapability: Array<{ __typename?: 'SubscriptionModel', id: string }> };
+
+export type SubscriptionItemFragment = { __typename?: 'SubscriptionModel', id: string, start_date: any | null, end_date: any | null, organization: { __typename?: 'Organization', name: string, id: string, personal_space: boolean }, subscription_capability: Array<{ __typename?: 'SubscriptionCapability', id: string, service_capability: { __typename?: 'ServiceCapability', id: string, description: string | null, name: string | null } | null } | null> | null, service_instance: { __typename?: 'ServiceInstance', id: string, name: string } };
+
+export type SubscriptionsListQueryVariables = Exact<{
+  count: Scalars['Int']['input'];
+  cursor: InputMaybe<Scalars['ID']['input']>;
+  orderBy: SubscriptionOrdering;
+  orderMode: OrderingMode;
+  filters: InputMaybe<Array<SubscriptionFilter> | SubscriptionFilter>;
+  searchTerm: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type SubscriptionsListQuery = { __typename?: 'Query', subscriptions: { __typename?: 'SubscriptionConnection', totalCount: number, edges: Array<{ __typename?: 'SubscriptionEdge', node: { __typename?: 'SubscriptionModel', id: string, start_date: any | null, end_date: any | null, organization: { __typename?: 'Organization', name: string, id: string, personal_space: boolean }, subscription_capability: Array<{ __typename?: 'SubscriptionCapability', id: string, service_capability: { __typename?: 'ServiceCapability', id: string, description: string | null, name: string | null } | null } | null> | null, service_instance: { __typename?: 'ServiceInstance', id: string, name: string } } }> } };
+
+export type SubscriptionByIdQueryVariables = Exact<{
+  subscriptionId: InputMaybe<Scalars['SubscriptionId']['input']>;
+}>;
+
+
+export type SubscriptionByIdQuery = { __typename?: 'Query', subscriptionById: { __typename?: 'SubscriptionModel', id: string, organization: { __typename?: 'Organization', id: string, name: string }, service_instance: { __typename?: 'ServiceInstance', id: string, name: string, description: string | null, tags: Array<ServiceInstanceTag> | null, service_definition: { __typename?: 'ServiceDefinition', service_capability: Array<{ __typename?: 'ServiceCapability', id: string, name: string | null, description: string | null } | null> | null } | null }, subscription_capability: Array<{ __typename?: 'SubscriptionCapability', id: string, service_capability: { __typename?: 'ServiceCapability', id: string, name: string | null, description: string | null } | null } | null> | null } | null };
+
 export type CreateDeploymentRequestMutationVariables = Exact<{
   input: CreateDeploymentRequestInput;
 }>;
@@ -5030,6 +5080,30 @@ export const SolutionCategoryRowFragmentDoc = `
   id
   name
   product
+}
+    `;
+export const SubscriptionItemFragmentDoc = `
+    fragment SubscriptionItem on SubscriptionModel {
+  id
+  organization {
+    name
+    id
+    personal_space
+  }
+  subscription_capability {
+    id
+    service_capability {
+      id
+      description
+      name
+    }
+  }
+  service_instance {
+    id
+    name
+  }
+  start_date
+  end_date
 }
     `;
 export const UseCaseRowFragmentDoc = `
@@ -9095,6 +9169,265 @@ export const useInfiniteSolutionCategoriesListQuery = <
 useInfiniteSolutionCategoriesListQuery.getKey = (variables: SolutionCategoriesListQueryVariables) => ['SolutionCategoriesList.infinite', variables];
 useInfiniteSolutionCategoriesListQuery.getRootKey = () => ['SolutionCategoriesList.infinite'] as const;
 useSolutionCategoriesListQuery.fetcher = (client: GraphQLClient, variables: SolutionCategoriesListQueryVariables, headers?: RequestInit['headers']) => fetcher<SolutionCategoriesListQuery, SolutionCategoriesListQueryVariables>(client, SolutionCategoriesListDocument, variables, headers);
+
+export const CreateSubscriptionsDocument = `
+    mutation CreateSubscriptions($input: CreateSubscriptionsInput!) {
+  createSubscriptions(input: $input) {
+    id
+  }
+}
+    `;
+
+export const useCreateSubscriptionsMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<CreateSubscriptionsMutation, TError, CreateSubscriptionsMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<CreateSubscriptionsMutation, TError, CreateSubscriptionsMutationVariables, TContext>(
+      {
+    mutationKey: ['CreateSubscriptions'],
+    mutationFn: (variables?: CreateSubscriptionsMutationVariables) => fetcher<CreateSubscriptionsMutation, CreateSubscriptionsMutationVariables>(client, CreateSubscriptionsDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useCreateSubscriptionsMutation.getKey = () => ['CreateSubscriptions'];
+useCreateSubscriptionsMutation.getRootKey = () => ['CreateSubscriptions'] as const;
+useCreateSubscriptionsMutation.fetcher = (client: GraphQLClient, variables: CreateSubscriptionsMutationVariables, headers?: RequestInit['headers']) => fetcher<CreateSubscriptionsMutation, CreateSubscriptionsMutationVariables>(client, CreateSubscriptionsDocument, variables, headers);
+
+export const UpdateSubscriptionDocument = `
+    mutation UpdateSubscription($subscription_id: SubscriptionId!, $input: UpdateSubscriptionInput!) {
+  updateSubscription(subscription_id: $subscription_id, input: $input) {
+    id
+  }
+}
+    `;
+
+export const useUpdateSubscriptionMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<UpdateSubscriptionMutation, TError, UpdateSubscriptionMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<UpdateSubscriptionMutation, TError, UpdateSubscriptionMutationVariables, TContext>(
+      {
+    mutationKey: ['UpdateSubscription'],
+    mutationFn: (variables?: UpdateSubscriptionMutationVariables) => fetcher<UpdateSubscriptionMutation, UpdateSubscriptionMutationVariables>(client, UpdateSubscriptionDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useUpdateSubscriptionMutation.getKey = () => ['UpdateSubscription'];
+useUpdateSubscriptionMutation.getRootKey = () => ['UpdateSubscription'] as const;
+useUpdateSubscriptionMutation.fetcher = (client: GraphQLClient, variables: UpdateSubscriptionMutationVariables, headers?: RequestInit['headers']) => fetcher<UpdateSubscriptionMutation, UpdateSubscriptionMutationVariables>(client, UpdateSubscriptionDocument, variables, headers);
+
+export const DeleteSubscriptionsDocument = `
+    mutation DeleteSubscriptions($subscription_ids: [SubscriptionId!]!) {
+  deleteSubscriptions(subscription_ids: $subscription_ids) {
+    id
+  }
+}
+    `;
+
+export const useDeleteSubscriptionsMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<DeleteSubscriptionsMutation, TError, DeleteSubscriptionsMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<DeleteSubscriptionsMutation, TError, DeleteSubscriptionsMutationVariables, TContext>(
+      {
+    mutationKey: ['DeleteSubscriptions'],
+    mutationFn: (variables?: DeleteSubscriptionsMutationVariables) => fetcher<DeleteSubscriptionsMutation, DeleteSubscriptionsMutationVariables>(client, DeleteSubscriptionsDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useDeleteSubscriptionsMutation.getKey = () => ['DeleteSubscriptions'];
+useDeleteSubscriptionsMutation.getRootKey = () => ['DeleteSubscriptions'] as const;
+useDeleteSubscriptionsMutation.fetcher = (client: GraphQLClient, variables: DeleteSubscriptionsMutationVariables, headers?: RequestInit['headers']) => fetcher<DeleteSubscriptionsMutation, DeleteSubscriptionsMutationVariables>(client, DeleteSubscriptionsDocument, variables, headers);
+
+export const AddSubscriptionCapabilityDocument = `
+    mutation AddSubscriptionCapability($input: AddSubscriptionCapabilityInput!) {
+  addSubscriptionCapability(input: $input) {
+    id
+  }
+}
+    `;
+
+export const useAddSubscriptionCapabilityMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<AddSubscriptionCapabilityMutation, TError, AddSubscriptionCapabilityMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<AddSubscriptionCapabilityMutation, TError, AddSubscriptionCapabilityMutationVariables, TContext>(
+      {
+    mutationKey: ['AddSubscriptionCapability'],
+    mutationFn: (variables?: AddSubscriptionCapabilityMutationVariables) => fetcher<AddSubscriptionCapabilityMutation, AddSubscriptionCapabilityMutationVariables>(client, AddSubscriptionCapabilityDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useAddSubscriptionCapabilityMutation.getKey = () => ['AddSubscriptionCapability'];
+useAddSubscriptionCapabilityMutation.getRootKey = () => ['AddSubscriptionCapability'] as const;
+useAddSubscriptionCapabilityMutation.fetcher = (client: GraphQLClient, variables: AddSubscriptionCapabilityMutationVariables, headers?: RequestInit['headers']) => fetcher<AddSubscriptionCapabilityMutation, AddSubscriptionCapabilityMutationVariables>(client, AddSubscriptionCapabilityDocument, variables, headers);
+
+export const SubscriptionsListDocument = `
+    query SubscriptionsList($count: Int!, $cursor: ID, $orderBy: SubscriptionOrdering!, $orderMode: OrderingMode!, $filters: [SubscriptionFilter!], $searchTerm: String) {
+  subscriptions(
+    first: $count
+    after: $cursor
+    orderBy: $orderBy
+    orderMode: $orderMode
+    searchTerm: $searchTerm
+    filters: $filters
+  ) {
+    totalCount
+    edges {
+      node {
+        ...SubscriptionItem
+      }
+    }
+  }
+}
+    ${SubscriptionItemFragmentDoc}`;
+
+export const useSubscriptionsListQuery = <
+      TData = SubscriptionsListQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: SubscriptionsListQueryVariables,
+      options?: Omit<UseQueryOptions<SubscriptionsListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<SubscriptionsListQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<SubscriptionsListQuery, TError, TData>(
+      {
+    queryKey: ['SubscriptionsList', variables],
+    queryFn: fetcher<SubscriptionsListQuery, SubscriptionsListQueryVariables>(client, SubscriptionsListDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSubscriptionsListQuery.getKey = (variables: SubscriptionsListQueryVariables) => ['SubscriptionsList', variables];
+useSubscriptionsListQuery.getRootKey = () => ['SubscriptionsList'] as const;
+export const useInfiniteSubscriptionsListQuery = <
+      TData = InfiniteData<SubscriptionsListQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: SubscriptionsListQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<SubscriptionsListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<SubscriptionsListQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<SubscriptionsListQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['SubscriptionsList.infinite', variables],
+      queryFn: (metaData) => fetcher<SubscriptionsListQuery, SubscriptionsListQueryVariables>(client, SubscriptionsListDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteSubscriptionsListQuery.getKey = (variables: SubscriptionsListQueryVariables) => ['SubscriptionsList.infinite', variables];
+useInfiniteSubscriptionsListQuery.getRootKey = () => ['SubscriptionsList.infinite'] as const;
+useSubscriptionsListQuery.fetcher = (client: GraphQLClient, variables: SubscriptionsListQueryVariables, headers?: RequestInit['headers']) => fetcher<SubscriptionsListQuery, SubscriptionsListQueryVariables>(client, SubscriptionsListDocument, variables, headers);
+
+export const SubscriptionByIdDocument = `
+    query SubscriptionById($subscriptionId: SubscriptionId) {
+  subscriptionById(subscription_id: $subscriptionId) {
+    id
+    organization {
+      id
+      name
+    }
+    service_instance {
+      id
+      name
+      description
+      tags
+      service_definition {
+        service_capability {
+          id
+          name
+          description
+        }
+      }
+    }
+    subscription_capability {
+      id
+      service_capability {
+        id
+        name
+        description
+      }
+    }
+  }
+}
+    `;
+
+export const useSubscriptionByIdQuery = <
+      TData = SubscriptionByIdQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables?: SubscriptionByIdQueryVariables,
+      options?: Omit<UseQueryOptions<SubscriptionByIdQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<SubscriptionByIdQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<SubscriptionByIdQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['SubscriptionById'] : ['SubscriptionById', variables],
+    queryFn: fetcher<SubscriptionByIdQuery, SubscriptionByIdQueryVariables>(client, SubscriptionByIdDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSubscriptionByIdQuery.getKey = (variables?: SubscriptionByIdQueryVariables) => variables === undefined ? ['SubscriptionById'] : ['SubscriptionById', variables];
+useSubscriptionByIdQuery.getRootKey = () => ['SubscriptionById'] as const;
+export const useInfiniteSubscriptionByIdQuery = <
+      TData = InfiniteData<SubscriptionByIdQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: SubscriptionByIdQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<SubscriptionByIdQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<SubscriptionByIdQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<SubscriptionByIdQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['SubscriptionById.infinite'] : ['SubscriptionById.infinite', variables],
+      queryFn: (metaData) => fetcher<SubscriptionByIdQuery, SubscriptionByIdQueryVariables>(client, SubscriptionByIdDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteSubscriptionByIdQuery.getKey = (variables?: SubscriptionByIdQueryVariables) => variables === undefined ? ['SubscriptionById.infinite'] : ['SubscriptionById.infinite', variables];
+useInfiniteSubscriptionByIdQuery.getRootKey = () => ['SubscriptionById.infinite'] as const;
+useSubscriptionByIdQuery.fetcher = (client: GraphQLClient, variables?: SubscriptionByIdQueryVariables, headers?: RequestInit['headers']) => fetcher<SubscriptionByIdQuery, SubscriptionByIdQueryVariables>(client, SubscriptionByIdDocument, variables, headers);
 
 export const CreateDeploymentRequestDocument = `
     mutation CreateDeploymentRequest($input: CreateDeploymentRequestInput!) {
