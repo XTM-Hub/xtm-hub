@@ -47,12 +47,12 @@ const createCostMeasurer = (context: ValidationContext) => {
     let aliases = 0;
     for (const selection of selectionSet.selections) {
       if (selection.kind === Kind.FIELD) {
-        if (selection.alias) {
-          aliases += 1;
-        }
         // Introspection and __typename are governed by the introspection settings, not by these limits
         if (selection.name.value.startsWith('__')) {
           continue;
+        }
+        if (selection.alias) {
+          aliases += 1;
         }
         const child = selection.selectionSet
           ? measureSelectionSet(selection.selectionSet)
