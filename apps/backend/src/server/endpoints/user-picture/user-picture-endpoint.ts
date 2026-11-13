@@ -1,25 +1,16 @@
 import cors from 'cors';
 import { Express, Request, Response } from 'express';
-import rateLimit from 'express-rate-limit';
 import { Readable } from 'stream';
 import { UserDomain } from '../../../modules/organization-management/user/user-domain/user.domain';
 import { MinIOClient } from '../../../thirdparty/minio/client';
 import { logApp } from '../../../utils/app-logger.util';
+import { userPictureRateLimiter } from '../../../utils/rate-limit.util';
 import {
   setStoredFileSecurityHeaders,
   toStoredImageContentType,
 } from '../shared/stored-file.util';
 
-const USER_PICTURE_RATE_WINDOW_MS = 60 * 1000;
-const USER_PICTURE_RATE_MAX = 300;
 const USER_PICTURE_CACHE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
-
-const userPictureRateLimiter = rateLimit({
-  windowMs: USER_PICTURE_RATE_WINDOW_MS,
-  max: USER_PICTURE_RATE_MAX,
-  standardHeaders: true,
-  legacyHeaders: false,
-});
 
 export const getUserPicture = async (
   req: Request,

@@ -1,6 +1,5 @@
 import cors from 'cors';
 import { Express, Request } from 'express';
-import rateLimit from 'express-rate-limit';
 import { Readable } from 'stream';
 import { requestContext } from '../../../context/request.context';
 import { DocumentId } from '../../../model/kanel/public/Document';
@@ -19,19 +18,12 @@ import { MinIOClient } from '../../../thirdparty/minio/client';
 import { logApp } from '../../../utils/app-logger.util';
 import { ErrorCode } from '../../../utils/error/error.code';
 import { NotFoundError } from '../../../utils/error/error.util';
-import { extractId } from '../../../utils/utils';
 import {
-  buildDocumentDownloadIpRateLimiterOptions,
-  buildDocumentDownloadUserRateLimiterOptions,
+  documentDownloadIpRateLimiter,
+  documentDownloadUserRateLimiter,
   USER_PLATFORM_TOKEN_HEADER,
-} from './document-download-endpoint.rate-limit';
-
-const documentDownloadIpRateLimiter = rateLimit(
-  buildDocumentDownloadIpRateLimiterOptions()
-);
-const documentDownloadUserRateLimiter = rateLimit(
-  buildDocumentDownloadUserRateLimiterOptions()
-);
+} from '../../../utils/rate-limit.util';
+import { extractId } from '../../../utils/utils';
 
 const loadUser = async (
   req: Request

@@ -26,6 +26,7 @@ import {
   NotFoundErrorCode,
 } from '../../utils/error/error.code';
 import { ErrorType } from '../../utils/error/error.type';
+import { shareCountRateLimiter } from '../../utils/rate-limit.util';
 import { ServiceInstanceDomain } from '../service/instance/service-instance.domain';
 import { OPENAEV_SCENARIO_DOCUMENT_TYPE } from '../shareable-resource/openaev/scenario/scenario.model';
 import { OPENCTI_CUSTOM_DASHBOARD_DOCUMENT_TYPE } from '../shareable-resource/opencti/custom-dashboard/custom-dashboard.model';
@@ -35,7 +36,7 @@ import { TelemetryHelper } from '../telemetry/telemetry.helper';
 import { DocumentApp } from './document.app';
 import { subscriptionByServiceInstanceLoaderKey } from './document.dataloader';
 import { DocumentHelper } from './document.helper';
-import documentResolver, { shareCountRateLimiter } from './document.resolver';
+import documentResolver from './document.resolver';
 import { DocumentDomain } from './domain/document.domain';
 
 describe('create document GraphQL mutation', () => {

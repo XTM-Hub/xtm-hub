@@ -32,7 +32,6 @@ import {
   registerReadOnlySessionEndpoints,
 } from './server/endpoints';
 import { withQueryLimitRules } from './server/graphql-query-limits';
-import { createGraphqlRateLimiters } from './server/graphql-rate-limit.middleware';
 import createSchema from './server/graphql-schema';
 import { createHttpMetricsMiddleware } from './server/http-metrics.middleware';
 import platformInit, { minioInit } from './server/initialize';
@@ -50,6 +49,7 @@ import { runESMigrations } from './thirdparty/elasticsearch/migrate';
 import { PgBossApp } from './thirdparty/pgboss/pgboss';
 import { logApp } from './utils/app-logger.util';
 import { getErrorStringProperty } from './utils/error/error-guard.util';
+import { createGraphqlRateLimiters } from './utils/rate-limit.util';
 import {
   startSessionCleanup,
   stopSessionCleanup,

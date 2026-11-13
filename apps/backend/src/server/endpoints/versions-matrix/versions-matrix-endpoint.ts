@@ -1,12 +1,11 @@
 import cors from 'cors';
 import { Express, Request, Response } from 'express';
-import rateLimit, { type Options } from 'express-rate-limit';
 import { PlatformIdentifier } from '../../../__generated__/resolvers-types';
 import { DocumentDomain } from '../../../modules/document/domain/document.domain';
 import { ManageProductVersionDomain } from '../../../modules/manage-product-version/manage-product-version.domain';
 import { ManifestFragmentHelper } from '../../../modules/shareable-resource/manifest-fragment/manifest-fragment.helper';
 import { logApp } from '../../../utils/app-logger.util';
-import { buildRateLimiterOptions } from '../../../utils/rate-limit.util';
+import { versionsMatrixRateLimiter } from '../../../utils/rate-limit.util';
 import {
   buildETag,
   CacheControl,
@@ -32,22 +31,6 @@ import {
   type VersionsMatrixEntry,
   type VersionsMatrixFormat,
 } from './versions-matrix-endpoint.utils';
-
-const VERSIONS_MATRIX_RATE_WINDOW_MS = 60 * 1000;
-const VERSIONS_MATRIX_RATE_MAX = 300;
-
-export const buildVersionsMatrixRateLimiterOptions = (): Partial<Options> =>
-  buildRateLimiterOptions({
-    windowMs: VERSIONS_MATRIX_RATE_WINDOW_MS,
-    limit: VERSIONS_MATRIX_RATE_MAX,
-    logLabel: 'Versions matrix',
-    sendRateLimitError: (res) =>
-      sendVersionsMatrixError(res, VERSIONS_MATRIX_ERRORS.TooManyRequests),
-  });
-
-const versionsMatrixRateLimiter = rateLimit(
-  buildVersionsMatrixRateLimiterOptions()
-);
 
 type Result<T> =
   { ok: true; value: T } | { ok: false; error: VersionsMatrixError };

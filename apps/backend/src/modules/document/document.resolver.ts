@@ -12,7 +12,7 @@ import { toError } from '../../utils/error/error-guard.util';
 import { ErrorCode, UnknownErrorCode } from '../../utils/error/error.code';
 import { mapToGraphQLError } from '../../utils/error/error.mapping';
 import { AlreadyExistsError } from '../../utils/error/error.util';
-import { createKeyRateLimiter } from '../../utils/rate-limit.util';
+import { shareCountRateLimiter } from '../../utils/rate-limit.util';
 import { createRelayIdScalar } from '../../utils/scalar.util';
 import { stripNulls } from '../../utils/typescript';
 import { OrganizationDomain } from '../organization-management/organization/organization.domain';
@@ -31,12 +31,6 @@ import { DocumentDomain } from './domain/document.domain';
 
 const isPublished = ({ status }: { status: DocumentStatus }) =>
   status === DocumentStatus.Published;
-
-// The share counter is public and the mutation needs no session: one share per address and document per hour.
-export const shareCountRateLimiter = createKeyRateLimiter({
-  windowMs: 60 * 60 * 1000,
-  limit: 1,
-});
 
 const resolvers: Resolvers = {
   DocumentId: createRelayIdScalar<DocumentId>('Document'),

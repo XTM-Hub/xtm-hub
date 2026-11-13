@@ -23,9 +23,10 @@ import {
 } from '../../../../__generated__/resolvers-types';
 import { requestContext } from '../../../../context/request.context';
 import { ErrorCode } from '../../../../utils/error/error.code';
+import { contactSalesRateLimiter } from '../../../../utils/rate-limit.util';
 import * as utils from '../../../../utils/utils';
 import { RegistrationApp } from '../../../registration/registration.app';
-import { contactSalesRateLimiter, UserContactApp } from './user-contact.app';
+import { UserContactApp } from './user-contact.app';
 
 vi.mock('config', async (importOriginal) => {
   const mod = await importOriginal<{ default: typeof config }>();

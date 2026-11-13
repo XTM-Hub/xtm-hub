@@ -1,8 +1,31 @@
-import type { Request, Response } from 'express';
-import { ipKeyGenerator, MemoryStore, type Options } from 'express-rate-limit';
+import type { Request, RequestHandler, Response } from 'express';
+import rateLimit, {
+  ipKeyGenerator,
+  MemoryStore,
+  type Options,
+} from 'express-rate-limit';
+import { createHash } from 'node:crypto';
 import { BlockList, isIP } from 'node:net';
-import { logApp } from './app-logger.util';
+import { PLATFORM_ID_HEADER } from '../modules/security-management/token/platform-token.util';
+import {
+  MANIFEST_ERRORS,
+  sendManifestError,
+} from '../server/endpoints/manifest/manifest-endpoint.errors';
+import {
+  sendVerificationEmailError,
+  VERIFICATION_EMAIL_ERRORS,
+} from '../server/endpoints/verification-email/verification-email-endpoint.errors';
+import {
+  sendVersionsMatrixError,
+  VERSIONS_MATRIX_ERRORS,
+} from '../server/endpoints/versions-matrix/versions-matrix-endpoint.errors';
+import { AppLogsCategory, logApp } from './app-logger.util';
 import { ErrorCode } from './error/error.code';
+
+/**
+ * Every rate limiter of the API, with the helpers they are built from. Each in-memory store counts on its own API
+ * replica, so the effective limit is multiplied by the number of replicas.
+ */
 
 // region Client addresses
 
@@ -185,5 +208,294 @@ export const createKeyRateLimiter = ({
     reset: () => store.resetAll(),
   };
 };
+
+// endregion
+
+// region GraphQL
+
+const GRAPHQL_RATE_WINDOW_MS = 60 * 1000;
+// A page of the Hub sends a few dozen operations at most: these leave room for fast navigation
+export const GRAPHQL_USER_RATE_LIMIT = 600;
+export const GRAPHQL_ANONYMOUS_IP_RATE_LIMIT = 300;
+
+const sendGraphqlTooManyRequests = (res: Response) => {
+  res.status(429).json({
+    errors: [
+      {
+        message: ErrorCode.TooManyRequests,
+        extensions: { code: ErrorCode.TooManyRequests },
+      },
+    ],
+  });
+};
+
+const isPreflight = (req: Request) => req.method === 'OPTIONS';
+
+/**
+ * Keyed by the signed-in user, from the session: the browser and the server rendering of the frontend share it, and
+ * the users of a company behind one address keep their own budget.
+ */
+export const buildGraphqlUserRateLimiterOptions = (): Partial<Options> =>
+  buildRateLimiterOptions({
+    windowMs: GRAPHQL_RATE_WINDOW_MS,
+    limit: GRAPHQL_USER_RATE_LIMIT,
+    logLabel: 'GraphQL user',
+    sendRateLimitError: sendGraphqlTooManyRequests,
+    keyGenerator: sessionUserKey,
+    skip: (req) => isPreflight(req) || !req.session?.user,
+  });
+
+/**
+ * Keyed by the IP of an anonymous caller: public pages and platforms. Private addresses are skipped, because the
+ * server rendering of public pages reaches the API from inside the network with one address for every visitor.
+ * Platform headers are not used as a key: they are not checked yet when the limiter runs, so a caller could change
+ * them on every request.
+ */
+export const buildGraphqlAnonymousRateLimiterOptions = (): Partial<Options> =>
+  buildRateLimiterOptions({
+    windowMs: GRAPHQL_RATE_WINDOW_MS,
+    limit: GRAPHQL_ANONYMOUS_IP_RATE_LIMIT,
+    logLabel: 'GraphQL anonymous',
+    sendRateLimitError: sendGraphqlTooManyRequests,
+    skipPrivateIp: true,
+    skip: (req) => isPreflight(req) || Boolean(req.session?.user),
+  });
+
+/** Built once, so that every GraphQL path shares the same budgets. */
+export const createGraphqlRateLimiters = (): RequestHandler[] => [
+  rateLimit(buildGraphqlUserRateLimiterOptions()),
+  rateLimit(buildGraphqlAnonymousRateLimiterOptions()),
+];
+
+// The share counter is public and the mutation needs no session: one share per address and document per hour.
+export const shareCountRateLimiter = createKeyRateLimiter({
+  windowMs: 60 * 60 * 1000,
+  limit: 1,
+});
+
+// Each message reaches HubSpot and the sales team: a sender gets a few per hour, counted once the sender is known so
+// that a refused request costs nothing.
+export const contactSalesRateLimiter = createKeyRateLimiter({
+  windowMs: 60 * 60 * 1000,
+  limit: 5,
+});
+
+// endregion
+
+// region Document download
+
+export const USER_PLATFORM_TOKEN_HEADER = 'XTM-Hub-User-Platform-Token';
+
+const DOWNLOAD_RATE_WINDOW_MS = 3 * 60 * 1000;
+const DOWNLOAD_USER_RATE_LIMIT = 10;
+// A platform downloads from its server for all its users, from one address
+const DOWNLOAD_IP_RATE_LIMIT = 100;
+
+/**
+ * The user who downloads: from their Hub session, or from the user token a platform sends with its own id. The token
+ * is hashed so that the limiter does not keep it in memory. Without either, the caller's IP.
+ */
+const downloadUserKey = (req: Request) => {
+  const userPlatformToken = req.header(USER_PLATFORM_TOKEN_HEADER);
+  if (req.session?.user || !userPlatformToken) {
+    return sessionUserKey(req);
+  }
+  const tokenHash = createHash('sha256')
+    .update(userPlatformToken)
+    .digest('hex');
+  return `platform:${req.header(PLATFORM_ID_HEADER) ?? ''}|user:${tokenHash}`;
+};
+
+export const buildDocumentDownloadUserRateLimiterOptions =
+  (): Partial<Options> =>
+    buildRateLimiterOptions({
+      windowMs: DOWNLOAD_RATE_WINDOW_MS,
+      limit: DOWNLOAD_USER_RATE_LIMIT,
+      logLabel: 'Document download user',
+      keyGenerator: downloadUserKey,
+    });
+
+/**
+ * Bounds what one address can send, whatever user token it puts in its requests: the user key comes from headers
+ * that are not checked yet when the limiter runs.
+ */
+export const buildDocumentDownloadIpRateLimiterOptions = (): Partial<Options> =>
+  buildRateLimiterOptions({
+    windowMs: DOWNLOAD_RATE_WINDOW_MS,
+    limit: DOWNLOAD_IP_RATE_LIMIT,
+    logLabel: 'Document download',
+    skipPrivateIp: true,
+  });
+
+export const documentDownloadIpRateLimiter = rateLimit(
+  buildDocumentDownloadIpRateLimiterOptions()
+);
+export const documentDownloadUserRateLimiter = rateLimit(
+  buildDocumentDownloadUserRateLimiterOptions()
+);
+
+// endregion
+
+// region Verification email
+
+const VERIFICATION_EMAIL_IP_RATE_WINDOW_MS = 15 * 60 * 1000;
+const VERIFICATION_EMAIL_IP_RATE_MAX = 10;
+// The store is in memory, so each API replica allows its own email per window.
+const VERIFICATION_EMAIL_SUBJECT_RATE_WINDOW_MS = 5 * 60 * 1000;
+const VERIFICATION_EMAIL_SUBJECT_RATE_MAX = 1;
+
+const sendVerificationEmailTooManyRequests = (res: Response) =>
+  sendVerificationEmailError(res, VERIFICATION_EMAIL_ERRORS.TooManyRequests);
+
+export const buildVerificationEmailIpRateLimiterOptions =
+  (): Partial<Options> =>
+    buildRateLimiterOptions({
+      windowMs: VERIFICATION_EMAIL_IP_RATE_WINDOW_MS,
+      limit: VERIFICATION_EMAIL_IP_RATE_MAX,
+      logLabel: 'Verification email',
+      sendRateLimitError: sendVerificationEmailTooManyRequests,
+    });
+
+/**
+ * Keyed by the refused Auth0 account, not the IP: whoever registered an
+ * address they don't own must not be able to flood its mailbox by retrying
+ * from new sessions or IPs.
+ */
+export const buildVerificationEmailSubjectRateLimiterOptions =
+  (): Partial<Options> => ({
+    windowMs: VERIFICATION_EMAIL_SUBJECT_RATE_WINDOW_MS,
+    limit: VERIFICATION_EMAIL_SUBJECT_RATE_MAX,
+    standardHeaders: true,
+    legacyHeaders: false,
+    // A failed send must not cost the user their only attempt of the window.
+    skipFailedRequests: true,
+    skip: (req: Request) => !req.session.unverifiedIdpSubject,
+    keyGenerator: (req: Request) => req.session.unverifiedIdpSubject ?? '',
+    handler: (req: Request, res: Response) => {
+      logApp.warn(
+        '[RATE-LIMIT] Verification email request rate limited',
+        { idpSubject: req.session.unverifiedIdpSubject },
+        AppLogsCategory.LOGIN_PROVIDER
+      );
+      sendVerificationEmailTooManyRequests(res);
+    },
+  });
+
+/** Built when the endpoint is registered: the IP limiter runs first, then the one per refused account. */
+export const createVerificationEmailRateLimiters = (): RequestHandler[] => [
+  rateLimit(buildVerificationEmailIpRateLimiterOptions()),
+  rateLimit(buildVerificationEmailSubjectRateLimiterOptions()),
+];
+
+// endregion
+
+// region Public endpoints
+
+const MANIFEST_RATE_WINDOW_MS = 60 * 1000;
+const MANIFEST_RATE_MAX = 300;
+
+export const buildManifestRateLimiterOptions = (): Partial<Options> =>
+  buildRateLimiterOptions({
+    windowMs: MANIFEST_RATE_WINDOW_MS,
+    limit: MANIFEST_RATE_MAX,
+    logLabel: 'Manifest',
+    sendRateLimitError: (res) =>
+      sendManifestError(res, MANIFEST_ERRORS.TooManyRequests),
+  });
+
+export const manifestRateLimiter = rateLimit(buildManifestRateLimiterOptions());
+
+const VERSIONS_MATRIX_RATE_WINDOW_MS = 60 * 1000;
+const VERSIONS_MATRIX_RATE_MAX = 300;
+
+export const versionsMatrixRateLimiter = rateLimit(
+  buildRateLimiterOptions({
+    windowMs: VERSIONS_MATRIX_RATE_WINDOW_MS,
+    limit: VERSIONS_MATRIX_RATE_MAX,
+    logLabel: 'Versions matrix',
+    sendRateLimitError: (res) =>
+      sendVersionsMatrixError(res, VERSIONS_MATRIX_ERRORS.TooManyRequests),
+  })
+);
+
+const PRODUCT_VERSION_RATE_WINDOW_MS = 60 * 1000;
+const PRODUCT_VERSION_RATE_MAX = 300;
+
+export const buildProductVersionRateLimiterOptions = (): Partial<Options> =>
+  buildRateLimiterOptions({
+    windowMs: PRODUCT_VERSION_RATE_WINDOW_MS,
+    limit: PRODUCT_VERSION_RATE_MAX,
+    logLabel: 'Product version',
+    sendRateLimitError: (res) =>
+      res.status(429).json({
+        code: 429,
+        message: 'Too many requests, please try again later',
+      }),
+  });
+
+export const productVersionRateLimiter = rateLimit(
+  buildProductVersionRateLimiterOptions()
+);
+
+// Clicks from a news feed are rare, so the limit is far below the other public endpoints
+const NEWS_FEED_REDIRECT_RATE_WINDOW_MS = 60 * 1000;
+const NEWS_FEED_REDIRECT_RATE_MAX = 60;
+
+export const newsFeedRedirectRateLimiter = rateLimit(
+  buildRateLimiterOptions({
+    windowMs: NEWS_FEED_REDIRECT_RATE_WINDOW_MS,
+    limit: NEWS_FEED_REDIRECT_RATE_MAX,
+    logLabel: 'News feed redirect',
+    sendRateLimitError: (res) => {
+      res.status(429).json({
+        code: 429,
+        message: 'Too many requests, please try again later',
+      });
+    },
+  })
+);
+
+// Called by n8n on every blog post change, a few times a minute at most
+const NEWS_FEED_BLOGPOST_SYNC_RATE_WINDOW_MS = 60 * 1000;
+const NEWS_FEED_BLOGPOST_SYNC_RATE_MAX = 30;
+
+export const newsFeedBlogpostSyncRateLimiter = rateLimit(
+  buildRateLimiterOptions({
+    windowMs: NEWS_FEED_BLOGPOST_SYNC_RATE_WINDOW_MS,
+    limit: NEWS_FEED_BLOGPOST_SYNC_RATE_MAX,
+    logLabel: 'News feed blogpost sync',
+    sendRateLimitError: (res) => {
+      res.status(429).json({
+        message: 'Too many requests, please try again later',
+      });
+    },
+  })
+);
+
+// The limiters below keep the express-rate-limit default key and response.
+
+export const csvExportRateLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 10, // max 10 exports per minute per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const USER_PICTURE_RATE_WINDOW_MS = 60 * 1000;
+const USER_PICTURE_RATE_MAX = 300;
+
+export const userPictureRateLimiter = rateLimit({
+  windowMs: USER_PICTURE_RATE_WINDOW_MS,
+  max: USER_PICTURE_RATE_MAX,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+export const authProviderRateLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 // endregion

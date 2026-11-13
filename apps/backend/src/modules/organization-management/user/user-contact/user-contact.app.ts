@@ -10,7 +10,7 @@ import {
   type ReachOutSalesPayload,
 } from '../../../../thirdparty/hubspot/hubspot';
 import { ErrorCode } from '../../../../utils/error/error.code';
-import { createKeyRateLimiter } from '../../../../utils/rate-limit.util';
+import { contactSalesRateLimiter } from '../../../../utils/rate-limit.util';
 import {
   DeploymentRequestDomain,
   FullyQualifiedDeploymentRequest,
@@ -20,13 +20,6 @@ import { OrganizationDomain } from '../../organization/organization.domain';
 import { UserDomain } from '../user-domain/user.domain';
 
 const DEFAULT_MESSAGE = 'Please contact me about the OpenCTI free trial';
-
-// Each message reaches HubSpot and the sales team: a sender gets a few per hour, counted once the sender is known so
-// that a refused request costs nothing.
-export const contactSalesRateLimiter = createKeyRateLimiter({
-  windowMs: 60 * 60 * 1000,
-  limit: 5,
-});
 
 const buildTrialContact = (
   deploymentRequest: FullyQualifiedDeploymentRequest,

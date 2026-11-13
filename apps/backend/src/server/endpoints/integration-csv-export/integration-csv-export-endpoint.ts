@@ -1,6 +1,5 @@
 import cors from 'cors';
 import { Application, Request, Response } from 'express';
-import rateLimit from 'express-rate-limit';
 import {
   DocumentOrdering,
   OrderingMode,
@@ -23,6 +22,7 @@ import {
   SYSTEM_TOKEN_HEADER,
 } from '../../../security/directive-graphql/validator/system-token.validator';
 import { logApp } from '../../../utils/app-logger.util';
+import { csvExportRateLimiter } from '../../../utils/rate-limit.util';
 import { extractId } from '../../../utils/utils';
 import {
   buildIntegrationsCsv,
@@ -31,13 +31,6 @@ import {
   parseRequestedColumns,
   parseRequestedFilters,
 } from './integration-csv-export-endpoint.utils';
-
-const csvExportRateLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 10, // max 10 exports per minute per IP
-  standardHeaders: true,
-  legacyHeaders: false,
-});
 
 const sendTelemetry = async (
   serviceDefinitionIdentifier: ServiceDefinitionIdentifier,
