@@ -1,6 +1,11 @@
-import type { Request, Response } from 'express';
-import { describe, expect, it, vi } from 'vitest';
+import express, { type Request, type Response } from 'express';
+import rateLimit from 'express-rate-limit';
+import { once } from 'node:events';
+import type { Server } from 'node:http';
+import type { AddressInfo } from 'node:net';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { logApp } from '../utils/app-logger.util';
+import { parseTrustProxy } from '../utils/config-validation.util';
 import {
   buildGraphqlAnonymousRateLimiterOptions,
   buildGraphqlUserRateLimiterOptions,
@@ -94,24 +99,51 @@ describe('buildGraphqlAnonymousRateLimiterOptions', () => {
     }
   );
 
-  it('should answer a GraphQL error with the TOO_MANY_REQUESTS code', () => {
-    // Given
-    vi.spyOn(logApp, 'warn').mockImplementation(() => undefined);
-    const handler = buildGraphqlAnonymousRateLimiterOptions().handler!;
-    const { res, status, json } = buildResponse();
+  describe('once over the limit', () => {
+    let server: Server | undefined;
 
-    // When
-    handler(buildRequest({}), res, vi.fn(), {} as never);
+    afterEach(async () => {
+      await new Promise((resolve) => server?.close(resolve));
+      server = undefined;
+    });
 
-    // Then
-    expect(status).toHaveBeenCalledWith(429);
-    expect(json).toHaveBeenCalledWith({
-      errors: [
-        {
-          message: 'TOO_MANY_REQUESTS',
-          extensions: { code: 'TOO_MANY_REQUESTS' },
-        },
-      ],
+    it('should answer a GraphQL error with the TOO_MANY_REQUESTS code', async () => {
+      // Given
+      vi.spyOn(logApp, 'warn').mockImplementation(() => undefined);
+      const app = express();
+      // Same value the API gets from TRUST_PROXY=1, so the public forwarded address is the client IP.
+      app.set('trust proxy', parseTrustProxy('1'));
+      app.post(
+        '/graphql-api',
+        rateLimit({ ...buildGraphqlAnonymousRateLimiterOptions(), limit: 1 }),
+        (_req, res) => {
+          res.status(204).end();
+        }
+      );
+      server = app.listen(0);
+      await once(server, 'listening');
+      const { port } = server.address() as AddressInfo;
+      const sendRequest = () =>
+        fetch(`http://127.0.0.1:${port}/graphql-api`, {
+          method: 'POST',
+          headers: { 'x-forwarded-for': PUBLIC_IP },
+        });
+
+      // When
+      const allowed = await sendRequest();
+      const limited = await sendRequest();
+
+      // Then
+      expect(allowed.status).toBe(204);
+      expect(limited.status).toBe(429);
+      expect(await limited.json()).toEqual({
+        errors: [
+          {
+            message: 'TOO_MANY_REQUESTS',
+            extensions: { code: 'TOO_MANY_REQUESTS' },
+          },
+        ],
+      });
     });
   });
 });
