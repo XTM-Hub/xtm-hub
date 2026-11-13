@@ -1,8 +1,10 @@
 import { getImageProps } from 'next/image';
 import { getGravatarSizedUrl } from './gravatar';
 
+// Lowercase only, as the backend writes it and the only form its endpoint serves: an upper case UUID is
+// the same user for the database but another URL for the optimiser, so it is never offered to it.
 const BACKEND_PICTURE_PATHNAME =
-  /^\/user\/picture\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  /^\/user\/picture\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 // The backend appends the upload time to the URL of a picture, to bust the caches when it changes.
 const BACKEND_PICTURE_SEARCH = /^(\?t=\d+)?$/;
 // Only there to resolve a local path: its host is never read.
@@ -57,10 +59,10 @@ const getBackendPicturePath = (src: string): string | null => {
  *   WebP), and falls back to the stored URL if the optimiser cannot serve it. The optimised URL has
  *   no `t` cache-buster, so a replaced picture only shows up in these views once the copies of the
  *   optimiser, and of the browsers, have expired. The optimiser keeps a copy for the longer of
- *   `images.minimumCacheTTL` (one day) and the backend `USER_PICTURE_CACHE_MAX_AGE_SECONDS` (a
- *   week). A picture viewed often stays stale for about two weeks at most; a rarely viewed one can
+ *   `images.minimumCacheTTL` (one day) and the backend `USER_PICTURE_CACHE_MAX_AGE_SECONDS` (one
+ *   day). A picture viewed often stays stale for about two days at most; a rarely viewed one can
  *   stay stale until the first request after its copy expired (an expired copy is served at once and
- *   refreshed in the background), and that browser then keeps it for one more week;
+ *   refreshed in the background), and that browser then keeps it for one more day;
  * - a Gravatar picture is asked at twice the size;
  * - any other picture (identity provider host, blob: or data: preview) is used as it is.
  */

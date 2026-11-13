@@ -45,9 +45,9 @@ interface AvatarPictureProps {
   loading: 'lazy' | 'eager';
 }
 
-// Mounted once per src (see its key in Avatar): the load outcome of a picture never outlives it,
-// so a late event of a previous picture cannot count for the new one, and a picture that failed
-// is tried again when its src comes back.
+// Mounted once per src, srcSet and fallbackSrc (see its key in Avatar): the load outcome of a picture
+// never outlives it, so a late event of a previous picture cannot count for the new one, and a picture
+// that failed is tried again when its src comes back, or when only its fallbackSrc changes (a new upload).
 const AvatarPicture = ({
   src,
   srcSet,
@@ -67,6 +67,9 @@ const AvatarPicture = ({
     (wasFallbackTried: boolean) => {
       if (canTryFallback && !wasFallbackTried) {
         setIsFallbackTried(true);
+        // A picture that had loaded can fail later, when the browser picks another srcset candidate:
+        // the glyph is back while the fallback loads.
+        setStatus('idle');
       } else {
         setStatus('error');
       }
@@ -165,7 +168,7 @@ const Avatar = React.forwardRef<HTMLSpanElement, AvatarProps>(
       )}>
       {src ? (
         <AvatarPicture
-          key={src}
+          key={JSON.stringify([src, srcSet, fallbackSrc])}
           src={src}
           srcSet={srcSet}
           fallbackSrc={fallbackSrc}

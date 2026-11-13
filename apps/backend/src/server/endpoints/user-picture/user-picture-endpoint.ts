@@ -20,6 +20,13 @@ const USER_PICTURE_RATE_MAX = 300;
 // optimiser sends the full lifetime).
 const USER_PICTURE_CACHE_MAX_AGE_SECONDS = 60 * 60 * 24;
 
+// The one form of the URL the backend writes (a lowercase, hyphenated UUID, no trailing slash). PostgreSQL
+// also reads the upper case, braced or hyphenless forms of the same id, and Express ignores the case of the
+// route and its trailing slash: each of them would be one more URL for the same picture, so one more copy
+// for the frontend image optimiser to fetch and resize. The raw path is tested, so an encoded form fails too.
+const CANONICAL_USER_PICTURE_PATH =
+  /^\/user\/picture\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
 const userPictureRateLimiter = rateLimit({
   windowMs: USER_PICTURE_RATE_WINDOW_MS,
   max: USER_PICTURE_RATE_MAX,
@@ -31,6 +38,11 @@ export const getUserPicture = async (
   req: Request,
   res: Response
 ): Promise<void> => {
+  if (!CANONICAL_USER_PICTURE_PATH.test(req.path)) {
+    res.status(404).json({ message: 'No picture found' });
+    return;
+  }
+
   try {
     const pictureMinio = await UserDomain.loadUserPictureMinio(
       req.params.userId as string

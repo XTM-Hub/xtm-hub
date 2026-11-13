@@ -238,6 +238,65 @@ describe('Avatar', () => {
     expect(getImage()).toHaveAttribute('src', `${OTHER_PICTURE_URL}?v=2`);
   });
 
+  it('should show the glyph again while the fallback loads when a picture that had loaded fails later', () => {
+    // Given
+    renderAvatar({
+      src: PICTURE_URL,
+      srcSet: `${PICTURE_URL}?w=96 2x`,
+      fallbackSrc: OTHER_PICTURE_URL,
+    });
+    fireEvent.load(getImage());
+
+    // When
+    fireEvent.error(getImage());
+
+    // Then
+    expect(getImage()).toHaveAttribute('src', OTHER_PICTURE_URL);
+    expect(getImage()).toHaveClass(HIDDEN_CLASS);
+    expect(queryGlyph()).toBeInTheDocument();
+  });
+
+  it('should try the pictures again when only the fallback picture changes after both failed', () => {
+    // Given
+    const { rerender } = renderAvatar({
+      src: PICTURE_URL,
+      fallbackSrc: OTHER_PICTURE_URL,
+    });
+    fireEvent.error(getImage());
+    fireEvent.error(getImage());
+
+    // When
+    rerenderAvatar(rerender, {
+      src: PICTURE_URL,
+      fallbackSrc: `${OTHER_PICTURE_URL}?t=2`,
+    });
+
+    // Then
+    expect(getImage()).toHaveAttribute('src', PICTURE_URL);
+    expect(queryGlyph()).toBeInTheDocument();
+  });
+
+  it('should try the pictures again when only the srcset changes after both failed', () => {
+    // Given
+    const { rerender } = renderAvatar({
+      src: PICTURE_URL,
+      srcSet: `${PICTURE_URL}?w=96 2x`,
+      fallbackSrc: OTHER_PICTURE_URL,
+    });
+    fireEvent.error(getImage());
+    fireEvent.error(getImage());
+
+    // When
+    rerenderAvatar(rerender, {
+      src: PICTURE_URL,
+      srcSet: `${PICTURE_URL}?w=192 2x`,
+      fallbackSrc: OTHER_PICTURE_URL,
+    });
+
+    // Then
+    expect(getImage()).toHaveAttribute('srcset', `${PICTURE_URL}?w=192 2x`);
+  });
+
   it('should not preload the picture with an Image object', () => {
     // Given
     const imageConstructor = vi.fn();

@@ -48,16 +48,6 @@ describe('getAvatarPictureSource', () => {
       }
     );
 
-    it('should accept an upper case UUID', () => {
-      // Given
-      const upperCasePath = `/user/picture/${USER_ID.toUpperCase()}`;
-
-      // When / Then
-      expect(getOptimisedSource(`${ORIGIN}${upperCasePath}?t=1`)).toBe(
-        upperCasePath
-      );
-    });
-
     it('should never put the cache-buster in the optimiser URL', () => {
       // When
       const source = getAvatarPictureSource(`${ORIGIN}${STORED_PATH}`, 48);
@@ -129,6 +119,14 @@ describe('getAvatarPictureSource', () => {
   describe('for a picture that is not a plain backend one', () => {
     it.each([
       ['an id that is not a UUID', `${ORIGIN}/user/picture/not-a-uuid?t=1`],
+      [
+        'an upper case UUID, another URL of the same picture',
+        `${ORIGIN}/user/picture/${USER_ID.toUpperCase()}?t=1`,
+      ],
+      [
+        'a UUID without hyphens, another URL of the same picture',
+        `${ORIGIN}/user/picture/${USER_ID.replaceAll('-', '')}?t=1`,
+      ],
       [
         'a UUID missing a character',
         `${ORIGIN}/user/picture/${USER_ID.slice(1)}?t=1`,
