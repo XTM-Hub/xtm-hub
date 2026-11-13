@@ -2,6 +2,10 @@ import {
   NavigationLinkMenu,
   PublicSubLink,
 } from '@/components/menu/navigation/shared/NavigationLinks';
+import {
+  NAVIGATION_ACTIVE_CLASSES,
+  NAVIGATION_SUBMENU_ACTIVE_CLASSES,
+} from '@/components/menu/navigation/shared/navigation-styles';
 import testRender from '@/utils/test/test-render';
 import { act, screen } from '@testing-library/react';
 import userEvent, { UserEvent } from '@testing-library/user-event';
@@ -12,6 +16,19 @@ const LINK_HREF = '/en/link';
 const ANALYTICS_ID = 'nav_blog_open';
 const LABEL = 'Tableaux de bord personnalisés';
 const TestIcon = () => <svg />;
+
+const ROADMAP_HREF =
+  '/app/service/xtm_platform_roadmap/U2VydmljZUluc3RhbmNlOjEyMw==';
+const ROADMAP_ENCODED_PATH =
+  '/app/service/xtm_platform_roadmap/U2VydmljZUluc3RhbmNlOjEyMw%3D%3D';
+const ROADMAP_SUBPAGE_PATH = `${ROADMAP_HREF}/feature-voting`;
+const ACTIVE_PATHS: [string, string][] = [
+  ['the raw path', ROADMAP_HREF],
+  ['the encoded path', ROADMAP_ENCODED_PATH],
+  ['a subpage', ROADMAP_SUBPAGE_PATH],
+];
+const ACTIVE_CLASSES = NAVIGATION_ACTIVE_CLASSES.split(' ');
+const SUBMENU_ACTIVE_CLASSES = NAVIGATION_SUBMENU_ACTIVE_CLASSES.split(' ');
 
 const LABEL_BOX_WIDTH = 100;
 const FITTING_LABEL_WIDTH = LABEL_BOX_WIDTH;
@@ -66,6 +83,47 @@ describe('PublicSubLink', () => {
     );
   });
 
+  it.each(ACTIVE_PATHS)(
+    'should be selected when the current path is %s',
+    (_name, currentPath) => {
+      // Given
+      vi.mocked(usePathname).mockReturnValue(currentPath);
+
+      // When
+      testRender(
+        <PublicSubLink
+          href={ROADMAP_HREF}
+          label={LABEL}
+          analyticsId={ANALYTICS_ID}
+        />
+      );
+
+      // Then
+      expect(screen.getByRole('link', { name: LABEL })).toHaveClass(
+        ...SUBMENU_ACTIVE_CLASSES
+      );
+    }
+  );
+
+  it('should not be selected when the current path is a sibling page', () => {
+    // Given
+    vi.mocked(usePathname).mockReturnValue(`${ROADMAP_HREF}2`);
+
+    // When
+    testRender(
+      <PublicSubLink
+        href={ROADMAP_HREF}
+        label={LABEL}
+        analyticsId={ANALYTICS_ID}
+      />
+    );
+
+    // Then
+    expect(screen.getByRole('link', { name: LABEL })).not.toHaveClass(
+      ...SUBMENU_ACTIVE_CLASSES
+    );
+  });
+
   it.each(INTERACTIONS)(
     'should show the full label in a tooltip when the link is %s and the label is truncated',
     async (_interactionName, interaction) => {
@@ -110,6 +168,51 @@ describe('PublicSubLink', () => {
 });
 
 describe('NavigationLinkMenu', () => {
+  it.each(ACTIVE_PATHS)(
+    'should be selected when the current path is %s',
+    (_name, currentPath) => {
+      // Given
+      vi.mocked(usePathname).mockReturnValue(currentPath);
+
+      // When
+      testRender(
+        <NavigationLinkMenu
+          open
+          href={ROADMAP_HREF}
+          icon={TestIcon}
+          text={LABEL}
+          analyticsId={ANALYTICS_ID}
+        />
+      );
+
+      // Then
+      expect(screen.getByRole('link', { name: LABEL })).toHaveClass(
+        ...ACTIVE_CLASSES
+      );
+    }
+  );
+
+  it('should not be selected when the current path is another page', () => {
+    // Given
+    vi.mocked(usePathname).mockReturnValue('/app/service/other/abc');
+
+    // When
+    testRender(
+      <NavigationLinkMenu
+        open
+        href={ROADMAP_HREF}
+        icon={TestIcon}
+        text={LABEL}
+        analyticsId={ANALYTICS_ID}
+      />
+    );
+
+    // Then
+    expect(screen.getByRole('link', { name: LABEL })).not.toHaveClass(
+      ...ACTIVE_CLASSES
+    );
+  });
+
   it.each(INTERACTIONS)(
     'should show the full label in a tooltip when the link is %s and the label is truncated in the opened menu',
     async (_interactionName, interaction) => {

@@ -1,4 +1,8 @@
 import {
+  isNavigationPathActive,
+  isSectionPathActive,
+} from '@/components/menu/navigation/shared/navigation-path.utils';
+import {
   NAVIGATION_ACTIVE_CLASSES,
   NAVIGATION_HOVER_CLASSES,
   NAVIGATION_SECTION_ACTIVE_CLASSES,
@@ -7,11 +11,13 @@ import {
 import type {
   SectionConfig,
   SectionLink,
+  SectionSubLink,
 } from '@/components/menu/navigation/shared/navigation.type';
 import {
   MenuItemIcon,
   PublicSubLink,
 } from '@/components/menu/navigation/shared/NavigationLinks';
+import { useActiveAccordionItem } from '@/components/menu/navigation/shared/use-active-accordion-item';
 import {
   Accordion,
   AccordionContent,
@@ -53,27 +59,32 @@ const groupSectionLinks = (links: SectionLink[]): SectionLinksGroup[] => {
 const getSectionLinkKey = (link: SectionLink) =>
   `${link.label}-${link.href ?? `group-${link.subLinks?.length ?? 0}`}`;
 
-const SectionLinkItem = ({ link }: { link: SectionLink }) => {
-  const nestedLinks = link.subLinks ?? [];
-  const key = getSectionLinkKey(link);
-
-  if (!link.subLinks) {
-    return (
-      <li>
-        <PublicSubLink {...link} />
-      </li>
-    );
-  }
+const SectionLinkGroup = ({
+  link,
+}: {
+  link: Extract<SectionLink, { subLinks: SectionSubLink[] }>;
+}) => {
+  const currentPath = usePathname();
+  const accordionKey = `${getSectionLinkKey(link)}-accordion`;
+  const hasActiveSubLink = link.subLinks.some(
+    (subLink) =>
+      !!subLink.href && isNavigationPathActive(currentPath, subLink.href)
+  );
+  const [openItem, setOpenItem] = useActiveAccordionItem(
+    hasActiveSubLink ? accordionKey : undefined
+  );
 
   return (
     <li>
       <Accordion
         type="single"
         collapsible
+        value={openItem}
+        onValueChange={setOpenItem}
         className="w-full">
         <AccordionItem
           className="border-none pl-0"
-          value={`${key}-accordion`}>
+          value={accordionKey}>
           <AccordionTrigger
             {...analyticsId(link.analyticsId)}
             className={cn(
@@ -93,7 +104,7 @@ const SectionLinkItem = ({ link }: { link: SectionLink }) => {
           </AccordionTrigger>
           <AccordionContent className="pb-0 pt-0">
             <ul className="p-0">
-              {nestedLinks.map((subLink) => {
+              {link.subLinks.map((subLink) => {
                 const subKey = `${subLink.label}-${subLink.href ?? 'sub-link'}`;
 
                 return (
@@ -109,6 +120,15 @@ const SectionLinkItem = ({ link }: { link: SectionLink }) => {
     </li>
   );
 };
+
+const SectionLinkItem = ({ link }: { link: SectionLink }) =>
+  link.subLinks ? (
+    <SectionLinkGroup link={link} />
+  ) : (
+    <li>
+      <PublicSubLink {...link} />
+    </li>
+  );
 
 const SectionLinksList = ({ links }: { links: SectionLink[] }) => (
   <ul className="space-y-1">
@@ -153,7 +173,7 @@ export const LinkedSection = ({
   const currentPath = usePathname();
   const isActive = section.href
     ? currentPath === section.href
-    : currentPath.startsWith(section.pathPrefix);
+    : isSectionPathActive(section, currentPath);
   return (
     <Link
       {...analyticsId(section.analyticsId)}
@@ -198,7 +218,7 @@ export const ClosedSection = ({ section }: { section: SectionConfig }) => {
           priority="tertiary"
           className={cn(
             'h-9 w-full justify-start rounded-none pl-5 cursor-pointer',
-            currentPath.startsWith(section.pathPrefix)
+            isSectionPathActive(section, currentPath)
               ? NAVIGATION_SECTION_ACTIVE_CLASSES
               : NAVIGATION_HOVER_CLASSES
           )}
@@ -234,7 +254,7 @@ export const OpenedSection = ({ section }: { section: SectionConfig }) => {
         {...analyticsId(section.analyticsId)}
         className={cn(
           'h-9 pl-5 py-1 cursor-pointer hover:bg-elevation-hover font-normal hover:shadow-[inset_2px_0px]',
-          currentPath.startsWith(section.pathPrefix) &&
+          isSectionPathActive(section, currentPath) &&
             NAVIGATION_SECTION_ACTIVE_CLASSES
         )}>
         <MenuItemIcon icon={Icon} />

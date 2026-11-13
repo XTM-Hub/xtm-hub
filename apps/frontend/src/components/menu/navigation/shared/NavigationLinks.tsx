@@ -1,3 +1,4 @@
+import { isNavigationPathActive } from '@/components/menu/navigation/shared/navigation-path.utils';
 import {
   NAVIGATION_ACTIVE_CLASSES,
   NAVIGATION_HOVER_CLASSES,
@@ -77,7 +78,7 @@ export const PublicSubLink = ({
 }) => {
   const currentPath = usePathname();
   const labelRef = useRef<HTMLSpanElement>(null);
-  const isActive = !!href && currentPath === href;
+  const isActive = !!href && isNavigationPathActive(currentPath, href);
   const sharedClassName = cn(
     buttonVariants({
       priority: 'tertiary',
@@ -208,7 +209,7 @@ export const NavigationLinkMenu = ({
           className:
             'h-9 w-full justify-start rounded-none normal-case pl-5 pr-2 content-compact text-default-secondary text-xs',
         }),
-        currentPath === href
+        isNavigationPathActive(currentPath, href)
           ? NAVIGATION_ACTIVE_CLASSES
           : NAVIGATION_HOVER_CLASSES
       )}>
