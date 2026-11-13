@@ -12,12 +12,13 @@ import {
 
 const USER_PICTURE_RATE_WINDOW_MS = 60 * 1000;
 const USER_PICTURE_RATE_MAX = 300;
-// One week, and not immutable: the frontend image optimiser fetches the picture by its path alone, whose
-// content changes when the user uploads a new one, and keeps its resized copy for this long. A replaced
-// picture viewed often stays stale in the optimised views for about two weeks at most; a rarely viewed one
-// can stay stale until the first request after its copy expired (served at once, refreshed in the
-// background), and that browser then keeps it for one more week (the optimiser sends the full lifetime).
-const USER_PICTURE_CACHE_MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
+// One day, and not immutable: the frontend image optimiser fetches the picture by its path alone, whose
+// content changes when the user uploads a new one, and keeps its resized copy for this long (its own
+// `minimumCacheTTL` is also one day). A replaced picture viewed often stays stale in the optimised views for
+// about two days at most; a rarely viewed one can stay stale until the first request after its copy expired
+// (served at once, refreshed in the background), and that browser then keeps it for one more day (the
+// optimiser sends the full lifetime).
+const USER_PICTURE_CACHE_MAX_AGE_SECONDS = 60 * 60 * 24;
 
 const userPictureRateLimiter = rateLimit({
   windowMs: USER_PICTURE_RATE_WINDOW_MS,
