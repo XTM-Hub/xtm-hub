@@ -11,6 +11,7 @@ import {
 import type {
   SectionConfig,
   SectionLink,
+  SectionSubLink,
 } from '@/components/menu/navigation/shared/navigation.type';
 import {
   MenuItemIcon,
@@ -61,7 +62,7 @@ const getSectionLinkKey = (link: SectionLink) =>
 const SectionLinkGroup = ({
   link,
 }: {
-  link: Exclude<SectionLink, { subLinks?: undefined }>;
+  link: Extract<SectionLink, { subLinks: SectionSubLink[] }>;
 }) => {
   const currentPath = usePathname();
   const accordionKey = `${getSectionLinkKey(link)}-accordion`;
