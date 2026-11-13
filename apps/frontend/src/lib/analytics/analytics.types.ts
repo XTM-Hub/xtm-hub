@@ -135,6 +135,7 @@ export interface AnalyticsEvents {
     page_type: AnalyticsPageType;
     resource_id?: string;
     resource_name?: string;
+    resource_status?: string;
     library?: string;
     use_cases?: string;
     product?: string;

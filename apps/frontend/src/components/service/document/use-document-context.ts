@@ -213,7 +213,7 @@ export function useDocumentContext({
     updateMutation(
       {
         variables: {
-          input: toUpdateDocumentInput(formValues, resource.status),
+          input: toUpdateDocumentInput(formValues),
           serviceInstanceId: serviceInstance.id,
           sourceDocument: null,
           images: null,

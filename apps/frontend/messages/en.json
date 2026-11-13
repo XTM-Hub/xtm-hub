@@ -14,6 +14,11 @@
     "Enabled": "Enabled",
     "Published": "Published"
   },
+  "DocumentStatus": {
+    "Draft": "Draft",
+    "InValidation": "In validation",
+    "Published": "Published"
+  },
   "CapabilityDescription": {
     "Capabilities": {
       "ADMINISTRATE_ORGANIZATION": "Grants every capability within the organization",
@@ -1347,7 +1352,6 @@
       "PlaybookSupportedLabel": "Playbook supported",
       "ProductVersionLabel": "{platform} compatibility version",
       "ProductVersionPlaceholder": "1.0.0",
-      "PublishedPlaceholder": "Is the {documentType} published?",
       "LicenseTypeLabel": "License type",
       "Restore": "Restore",
       "SelectImage": "Select image(s)",
@@ -1368,7 +1372,11 @@
       "VendorUrlLabel": "Vendor link (url)",
       "VerifiedLabel": "Verified",
       "EntityTypesLabel": "Entity types",
-      "EntityTypesPlaceholder": "Add entity types"
+      "EntityTypesPlaceholder": "Add entity types",
+      "SaveAsDraft": "Save as draft",
+      "RequestValidation": "Request validation",
+      "Save": "Save",
+      "Publish": "Publish"
     },
     "OpenctiIntegrations": {
       "Actions": {
@@ -1425,10 +1433,8 @@
         "Share": "Share CSV Feed",
         "Updated": "The CSV {name} has been modified successfully"
       },
-      "Active": "Published",
       "AddService": "Add new CSV Feed",
       "DeleteService": "Delete the CSV Feed {name}",
-      "NonActive": "Draft",
       "SureDeleteService": "Are you sure you want to delete the CSV Feed {name}?",
       "UpdateService": "Update the CSV Feed {name}"
     },
@@ -1439,10 +1445,8 @@
         "Share": "Share RSS Feed",
         "Updated": "The RSS {name} has been modified successfully"
       },
-      "Active": "Published",
       "AddService": "Add new RSS Feed",
       "DeleteService": "Delete the RSS Feed {name}",
-      "NonActive": "Draft",
       "SureDeleteService": "Are you sure you want to delete the RSS Feed {name}?",
       "UpdateService": "Update the RSS Feed {name}"
     },
@@ -1453,10 +1457,8 @@
         "Share": "Share TAXII Feed",
         "Updated": "The TAXII {name} has been modified successfully"
       },
-      "Active": "Published",
       "AddService": "Add new TAXII Feed",
       "DeleteService": "Delete the TAXII Feed {name}",
-      "NonActive": "Draft",
       "SureDeleteService": "Are you sure you want to delete the TAXII Feed {name}?",
       "UpdateService": "Update the TAXII Feed {name}"
     },
@@ -1467,10 +1469,8 @@
         "Share": "Share Connector",
         "Updated": "The Connector {name} has been modified successfully"
       },
-      "Active": "Published",
       "AddService": "Add new Connector",
       "DeleteService": "Delete the Connector {name}",
-      "NonActive": "Draft",
       "SureDeleteService": "Are you sure you want to delete the Connector {name}?",
       "UpdateService": "Update the Connector {name}"
     },
@@ -1481,10 +1481,8 @@
         "Share": "Share Stream",
         "Updated": "The Stream {name} has been modified successfully"
       },
-      "Active": "Published",
       "AddService": "Add new Stream",
       "DeleteService": "Delete the Stream {name}",
-      "NonActive": "Draft",
       "SureDeleteService": "Are you sure you want to delete the Stream {name}?",
       "UpdateService": "Update the Stream {name}"
     },
@@ -1495,10 +1493,8 @@
         "Share": "Share Third Party Integration",
         "Updated": "The Third Party Integration {name} has been modified successfully"
       },
-      "Active": "Published",
       "AddService": "Add new Third Party Integration",
       "DeleteService": "Delete the Third Party Integration {name}",
-      "NonActive": "Draft",
       "SureDeleteService": "Are you sure you want to delete the Third Party Integration {name}?",
       "UpdateService": "Update the Third Party Integration {name}"
     },
@@ -1509,10 +1505,8 @@
         "Share": "Share Custom Dashboard",
         "Updated": "The custom dashboard {name} has been modified successfully"
       },
-      "Active": "Published",
       "AddService": "Add new dashboard",
       "DeleteService": "Delete the custom dashboard {name}",
-      "NonActive": "Draft",
       "SureDeleteService": "Are you sure you want to delete the dashboard {name}?",
       "UpdateService": "Update dashboard"
     },
@@ -1532,9 +1526,7 @@
       "AddService": "Add new scenario",
       "UpdateService": "Update the scenario {name}",
       "DeleteService": "Delete the scenario {name}",
-      "SureDeleteService": "Are you sure you want to delete the scenario {name}?",
-      "NonActive": "Draft",
-      "Active": "Published"
+      "SureDeleteService": "Are you sure you want to delete the scenario {name}?"
     },
     "OpenCTIPlaybook": {
       "Actions": {
@@ -1546,9 +1538,7 @@
       "AddService": "Add new playbook",
       "UpdateService": "Update the playbook {name}",
       "DeleteService": "Delete the playbook {name}",
-      "SureDeleteService": "Are you sure you want to delete the playbook {name}?",
-      "NonActive": "Draft",
-      "Active": "Published"
+      "SureDeleteService": "Are you sure you want to delete the playbook {name}?"
     },
     "Description": "Description",
     "GoTo": "Go to service page",
@@ -2050,9 +2040,7 @@
       "AddService": "Add new custom view",
       "UpdateService": "Update the custom view {name}",
       "DeleteService": "Delete the custom view {name}",
-      "SureDeleteService": "Are you sure you want to delete the custom view {name}?",
-      "NonActive": "Draft",
-      "Active": "Published"
+      "SureDeleteService": "Are you sure you want to delete the custom view {name}?"
     },
     "Bundle": {
       "ManageTrial": {

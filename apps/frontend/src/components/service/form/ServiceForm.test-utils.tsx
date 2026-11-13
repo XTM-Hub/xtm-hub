@@ -10,6 +10,7 @@ import {
   DocumentImageType,
   DocumentItemFragment,
   DocumentSourceType,
+  DocumentStatus,
   FiligranProduct,
   IntegrationType,
   LicenseType,
@@ -33,6 +34,7 @@ const DELETE_IMAGE_LABEL = 'Service.Form.DeleteImage';
 const PRODUCT_VERSION_ERROR = 'Product version must be X.Y.Z';
 export const DESCRIPTION_PLACEHOLDER = 'Service.Form.DescriptionPlaceholder';
 export const VALIDATE_LABEL = 'Utils.Validate';
+export const REQUEST_VALIDATION_LABEL = 'Service.Form.RequestValidation';
 
 export const CURRENT_USER_ID = 'current-user';
 const CURRENT_USER_EMAIL = 'current.user@filigran.io';
@@ -535,7 +537,9 @@ export const defineRequiredFileTest = <Values,>({
     await fillCreationFields(user);
 
     // When
-    await user.click(screen.getByRole('button', { name: VALIDATE_LABEL }));
+    await user.click(
+      screen.getByRole('button', { name: REQUEST_VALIDATION_LABEL })
+    );
 
     // Then
     await waitFor(() =>
@@ -576,7 +580,9 @@ export const defineServiceFormTests = <Values,>({
     await uploadFile(user, fileField);
 
     // When
-    await user.click(screen.getByRole('button', { name: VALIDATE_LABEL }));
+    await user.click(
+      screen.getByRole('button', { name: REQUEST_VALIDATION_LABEL })
+    );
 
     // Then
     await waitFor(() =>
@@ -589,6 +595,7 @@ export const defineServiceFormTests = <Values,>({
         uploader_organization_id: CURRENT_ORGANIZATION.id,
         use_cases: [USE_CASE.id],
         document: [fileField.file],
+        status: DocumentStatus.InValidation,
         logo: [],
         images: [],
         ...creationValues,
@@ -621,7 +628,7 @@ export const defineServiceFormTests = <Values,>({
         product_version: DOCUMENT_PRODUCT_VERSION,
         uploader_organization_id: DOCUMENT_ORGANIZATION.id,
         use_cases: [USE_CASE.id],
-        active: true,
+        status: DocumentStatus.Published,
         logo: [],
         images: [DELETED_IMAGE, KEPT_IMAGE],
         ...editionValues,
@@ -673,7 +680,9 @@ export const defineIntegrationFormTests = <Values,>({
     await uploadFile(user, JSON_FILE_FIELD);
 
     // When
-    await user.click(screen.getByRole('button', { name: VALIDATE_LABEL }));
+    await user.click(
+      screen.getByRole('button', { name: REQUEST_VALIDATION_LABEL })
+    );
 
     // Then
     await waitFor(() =>
@@ -688,6 +697,7 @@ export const defineIntegrationFormTests = <Values,>({
         use_cases: [USE_CASE.id],
         solution_categories: [SOLUTION_CATEGORY.id],
         document: [JSON_FILE_FIELD.file],
+        status: DocumentStatus.InValidation,
         logo: [],
         images: [],
         ...creationValues,
@@ -725,7 +735,7 @@ export const defineIntegrationFormTests = <Values,>({
         use_cases: [USE_CASE.id],
         solution_categories: [SOLUTION_CATEGORY.id],
         license_type: LicenseType.Commercial,
-        active: true,
+        status: DocumentStatus.Published,
         logo: [],
         images: [DELETED_IMAGE, KEPT_IMAGE],
       })

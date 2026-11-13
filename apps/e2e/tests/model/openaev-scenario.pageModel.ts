@@ -1,5 +1,5 @@
 import { Page } from '@playwright/test';
-import { selectUseCase, waitForDrawerToClose } from './common';
+import { publishResource, selectUseCase, waitForDrawerToClose } from './common';
 import { TEST_IMAGE_FILE } from './dashboard.pageModel';
 
 // A real OpenAEV scenario export, that a real OpenAEV accepts to import.
@@ -22,11 +22,13 @@ export default class OpenaevScenarioPage {
     shortDescription,
     version,
     description,
+    publish = false,
   }: {
     name: string;
     shortDescription: string;
     version: string;
     description: string;
+    publish?: boolean;
   }) {
     await this.page.getByRole('button', { name: 'Add new scenario' }).click();
     await this.page.getByPlaceholder('Scenario name').fill(name);
@@ -37,7 +39,6 @@ export default class OpenaevScenarioPage {
     await this.page
       .getByPlaceholder('This is a paragraph to')
       .fill(description);
-    await this.page.getByLabel('Publish').click();
     await this.page
       .locator('input[type="file"][accept*="zip"]')
       .setInputFiles(DEPLOYABLE_SCENARIO_FILE.path);
@@ -45,8 +46,11 @@ export default class OpenaevScenarioPage {
       .locator('input[type="file"][accept="image/jpeg, image/png"]')
       .setInputFiles(TEST_IMAGE_FILE.path);
     await selectUseCase(this.page);
-    await this.page.getByRole('button', { name: 'Validate' }).click();
+    await this.page.getByRole('button', { name: 'Request validation' }).click();
     await waitForDrawerToClose(this.page);
+    if (publish) {
+      await publishResource(this.page, name);
+    }
   }
 
   async navigateToScenario(shortDescription: string) {

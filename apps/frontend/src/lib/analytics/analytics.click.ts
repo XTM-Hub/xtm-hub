@@ -8,6 +8,7 @@ import {
   ANALYTICS_PRODUCT_ATTRIBUTE,
   ANALYTICS_RESOURCE_ID_ATTRIBUTE,
   ANALYTICS_RESOURCE_NAME_ATTRIBUTE,
+  ANALYTICS_RESOURCE_STATUS_ATTRIBUTE,
   ANALYTICS_RESOURCE_TYPE_ATTRIBUTE,
   ANALYTICS_SECTION_ATTRIBUTE,
   ANALYTICS_USE_CASES_ATTRIBUTE,
@@ -135,6 +136,10 @@ export const buildClickParams = (
     page_type: pageType,
     resource_id: readAttribute(resource, ANALYTICS_RESOURCE_ID_ATTRIBUTE),
     resource_name: readAttribute(resource, ANALYTICS_RESOURCE_NAME_ATTRIBUTE),
+    resource_status: readAttribute(
+      resource,
+      ANALYTICS_RESOURCE_STATUS_ATTRIBUTE
+    ),
     library: readAttribute(resource, ANALYTICS_LIBRARY_ATTRIBUTE),
     use_cases: readAttribute(resource, ANALYTICS_USE_CASES_ATTRIBUTE),
     product: readClosestAttribute(chain, ANALYTICS_PRODUCT_ATTRIBUTE),

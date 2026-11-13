@@ -1,6 +1,7 @@
 'use client';
 import { DocumentItemFragment, ServiceRestriction } from '@graphql/generated';
 
+import { DocumentStatusChip } from '@/components/service/components/DocumentStatusChip';
 import { useServiceContext } from '@/components/service/components/ServiceContext';
 import { ServiceFormValues } from '@/components/service/components/subscribable-services.types';
 
@@ -111,7 +112,8 @@ export const ServiceManageSheet = ({
             )}
             title={t(`${translationKey}.UpdateService`, {
               name: document.name ?? '',
-            })}>
+            })}
+            titleBadge={<DocumentStatusChip status={document.status} />}>
             <ServiceForm
               document={document}
               handleSubmit={(values: ServiceFormValues) =>

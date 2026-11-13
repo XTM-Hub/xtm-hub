@@ -1,4 +1,4 @@
-import { splitPublishedAndOthers } from '@/components/service/components/service-list-utils';
+import { splitDocumentsByStatus } from '@/components/service/components/service-list-utils';
 import { AppServiceContext } from '@/components/service/components/ServiceContext';
 import ServiceList from '@/components/service/components/ServiceList';
 import { AppServiceListStorageKeyContext } from '@/components/service/components/ServiceListStorageKeyContext';
@@ -37,7 +37,7 @@ export interface ShareableResourceServiceListProps {
 /**
  * Mutualizes the behaviour shared by every shareable-resource list (integrations, custom
  * dashboards, custom views, OpenAEV scenarios, OpenCTI playbooks): loading the documents
- * connection, splitting published/draft documents, wiring the document CRUD context, and
+ * connection, splitting documents by status, wiring the document CRUD context, and
  * rendering the paginated `ServiceList`. Resource-specific filters are passed in via
  * `logicalFilters`.
  */
@@ -130,9 +130,9 @@ const ShareableResourceServiceList = ({
     setPagination((prev) => ({ ...prev, pageIndex: lastPageIndex }));
   }
 
-  const [published, draft] = useMemo(
+  const { draft, inValidation, published } = useMemo(
     () =>
-      splitPublishedAndOthers(
+      splitDocumentsByStatus(
         (data?.documents.edges ?? []).map(({ node }) => node)
       ),
     [data]
@@ -143,8 +143,9 @@ const ShareableResourceServiceList = ({
     serviceInstance
   );
   const visibleResources = useMemo(
-    () => (canSeeDrafts ? [...draft, ...published] : published),
-    [canSeeDrafts, draft, published]
+    () =>
+      canSeeDrafts ? [...draft, ...inValidation, ...published] : published,
+    [canSeeDrafts, draft, inValidation, published]
   );
 
   useResourceListAnalytics({
@@ -200,8 +201,9 @@ const ShareableResourceServiceList = ({
     <AppServiceContext {...context}>
       <AppServiceListStorageKeyContext storageKey={storageKey}>
         <ServiceList
-          active={published}
+          published={published}
           draft={draft}
+          inValidation={inValidation}
           search={search}
           onSearchChange={onSearchChange}
           additionalFilters={filters}

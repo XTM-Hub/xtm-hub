@@ -6,6 +6,7 @@ import { analyticsResource } from '@/lib/analytics/analytics.context';
 import { type AnalyticsElementId } from '@/lib/analytics/analytics.ids';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 import testRender from '@/utils/test/test-render';
+import { DocumentStatus } from '@graphql/generated';
 import type {
   ColumnDef,
   PaginationState,
@@ -148,6 +149,7 @@ const getRowAnalyticsResource = ({ original }: Row<Person>) =>
     id: original.id,
     name: original.name,
     type: ShareableResourceType.OPENCTI_CUSTOM_DASHBOARD,
+    status: DocumentStatus.Published,
   });
 
 const getRowAnalyticsId = () => ROW_ANALYTICS_ID;

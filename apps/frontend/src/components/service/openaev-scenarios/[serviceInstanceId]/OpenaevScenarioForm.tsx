@@ -6,14 +6,16 @@ import {
 } from '@/components/service/form/UseDocumentFileField';
 import { useServiceFormFields } from '@/components/service/form/UseServiceFormFields';
 import { AutoForm } from '@/components/ui/auto-form';
-import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import {
   fileListCheck,
-  isDocumentPublished,
   optionalFileListCheck,
   transformToFileList,
 } from '@/utils/documents';
-import { DocumentImageType, DocumentItemFragment } from '@graphql/generated';
+import {
+  DocumentImageType,
+  DocumentItemFragment,
+  DocumentStatus,
+} from '@graphql/generated';
 import { useContext, useMemo } from 'react';
 import slugify from 'slugify';
 import { z } from 'zod';
@@ -32,6 +34,7 @@ const SCENARIO_DOCUMENT_FILE: ServiceFormDocumentFile = {
 const openAEVScenarioFormSchema = z.object({
   name: z.string().min(1, 'Required'),
   slug: z.string().min(1, 'Required'),
+  status: z.enum(DocumentStatus).optional(),
   uploader_id: z.string().optional(),
   short_description: z.string().min(1, 'Required').max(250),
   description: z.string().min(1, 'Required'),
@@ -40,7 +43,6 @@ const openAEVScenarioFormSchema = z.object({
   }),
   uploader_organization_id: z.string().min(1, 'Required'),
   use_cases: z.array(z.string()).min(1, 'Required'),
-  active: z.boolean().optional(),
   document: z.custom<FileList>(fileListCheck),
   logo: z.custom<FileList>(optionalFileListCheck).optional(),
   images: z.custom<FileList>(optionalFileListCheck),
@@ -61,7 +63,6 @@ export const OpenaevScenarioForm = ({
   const { me } = useContext(PortalContext);
 
   const isCreation = !document;
-  const { handleCloseSheet } = useDialogContext();
   const onSubmit = (values: OpenAEVScenarioFormValues) => {
     if (isCreation) {
       handleSubmit({ ...values, images: images as unknown as FileList });
@@ -82,7 +83,6 @@ export const OpenaevScenarioForm = ({
     () =>
       ({
         ...document,
-        active: document ? isDocumentPublished(document.status) : undefined,
         images: transformToFileList(DocumentImageType.Image, document),
         logo: transformToFileList(DocumentImageType.Logo, document),
         use_cases: document?.use_cases?.map((useCase) => useCase.id),
@@ -106,7 +106,6 @@ export const OpenaevScenarioForm = ({
   );
 
   const {
-    active,
     slug,
     name,
     short_description,
@@ -119,6 +118,7 @@ export const OpenaevScenarioForm = ({
     images,
     imagesToDelete,
     logo,
+    status,
   } = useServiceFormFields({
     documentType: 'Scenario',
     platform: 'OpenAEV',
@@ -153,13 +153,13 @@ export const OpenaevScenarioForm = ({
         document: documentField,
         logo,
         images: imagesField,
-        active,
+        status,
         short_description,
         slug,
         name,
         product_version,
       }}>
-      <ServiceFormSheetFooter handleCloseSheet={handleCloseSheet} />
+      <ServiceFormSheetFooter status={document?.status} />
     </AutoForm>
   );
 };

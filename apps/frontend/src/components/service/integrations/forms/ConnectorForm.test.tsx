@@ -22,7 +22,11 @@ import {
   ConnectorFormValues,
 } from '@/components/service/integrations/forms/ConnectorForm';
 import { DocumentOverrides } from '@/utils/test/document-overrides';
-import { IntegrationType, LicenseType } from '@graphql/generated';
+import {
+  DocumentStatus,
+  IntegrationType,
+  LicenseType,
+} from '@graphql/generated';
 import { screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -95,10 +99,10 @@ describe('ConnectorForm', () => {
         use_cases: [USE_CASE.id],
         solution_categories: [SOLUTION_CATEGORY.id],
         license_type: LicenseType.Commercial,
-        active: true,
         verified: 'true',
         manager_supported: 'true',
         playbook_supported: 'false',
+        status: DocumentStatus.Published,
         logo: [],
         images: [DELETED_IMAGE, KEPT_IMAGE],
       } satisfies ExpectedValues)

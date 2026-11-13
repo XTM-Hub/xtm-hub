@@ -11,8 +11,6 @@ import {
   FormImagesValues,
   isDocumentPublished,
   splitExistingAndNewImages,
-  toDocumentStatus,
-  toStatusUpdate,
   transformToFileList,
 } from './documents';
 
@@ -90,49 +88,6 @@ describe('Documents utils', () => {
 
         // Then
         expect(result).toBe(expected);
-      }
-    );
-  });
-
-  describe('toDocumentStatus', () => {
-    it.each([
-      [true, DocumentStatus.Published],
-      [false, DocumentStatus.Draft],
-      [undefined, DocumentStatus.Draft],
-      [null, DocumentStatus.Draft],
-    ])(
-      'should return the matching status when the publication switch is %s',
-      (published, expected) => {
-        // Given the value of the publication switch
-
-        // When
-        const result = toDocumentStatus(published);
-
-        // Then
-        expect(result).toBe(expected);
-      }
-    );
-  });
-
-  describe('toStatusUpdate', () => {
-    it.each([
-      [false, DocumentStatus.Published, { status: DocumentStatus.Draft }],
-      [true, DocumentStatus.Draft, { status: DocumentStatus.Published }],
-      [true, DocumentStatus.InValidation, { status: DocumentStatus.Published }],
-      [true, DocumentStatus.Published, {}],
-      [false, DocumentStatus.Draft, {}],
-      [false, DocumentStatus.InValidation, {}],
-      [undefined, DocumentStatus.Draft, {}],
-    ])(
-      'should return the status update when the switch is %s and the document is %s',
-      (published, currentStatus, expected) => {
-        // Given the switch value and the status saved on the document
-
-        // When
-        const result = toStatusUpdate(published, currentStatus);
-
-        // Then
-        expect(result).toEqual(expected);
       }
     );
   });

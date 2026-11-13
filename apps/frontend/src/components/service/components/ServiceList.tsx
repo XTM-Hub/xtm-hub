@@ -8,6 +8,7 @@ import DocumentList from '@/components/service/components/DocumentList';
 import { FilterSidebar } from '@/components/service/components/header/filter/FilterSidebar';
 import { IntegrationsCsvExportButton } from '@/components/service/components/header/IntegrationsCsvExportButton';
 import {
+  ServiceListDisplayMode,
   ServiceListFilterMap,
   ServiceListHeader,
 } from '@/components/service/components/header/ServiceListHeader';
@@ -28,24 +29,44 @@ import { ShareableResourceType } from '@/utils/shareable-resources/shareable-res
 import { useLayoutEffect, useRef } from 'react';
 
 export interface ServiceListProps {
-  active: DocumentItemFragment[];
+  published: DocumentItemFragment[];
   draft: DocumentItemFragment[];
+  inValidation: DocumentItemFragment[];
   search: string;
   onSearchChange: (v: string) => void;
   additionalFilters: ServiceListFilterMap;
   paginationControls?: React.ReactNode;
 }
 
+const DocumentSection = ({
+  title,
+  documents,
+  displayMode,
+}: {
+  title?: string;
+  documents: DocumentItemFragment[];
+  displayMode: ServiceListDisplayMode;
+}) => (
+  <>
+    {title && <div className="title-xs">{title}:</div>}
+    <DocumentList
+      documents={documents}
+      displayMode={displayMode}
+    />
+  </>
+);
+
 const ServiceList = ({
-  active,
+  published,
   draft,
+  inValidation,
   search,
   onSearchChange,
   additionalFilters,
   paginationControls,
 }: ServiceListProps) => {
   const t = useTranslate();
-  const { translationKey, serviceInstance, type } = useServiceContext();
+  const { serviceInstance, type } = useServiceContext();
   const userCanUpdate = useServiceCapability(
     ServiceRestriction.Upload,
     serviceInstance
@@ -101,22 +122,27 @@ const ServiceList = ({
         <FilterSidebar filters={additionalFilters} />
         <div className="grow shrink min-w-0 px-3 pb-3 flex flex-col gap-6">
           {userCanUpdate && draft.length > 0 && (
-            <>
-              <div className="title-xs">
-                {t(`${translationKey}.NonActive`)}:
-              </div>
-              <DocumentList
-                documents={draft}
-                displayMode={selectedDisplayMode}
-              />
-              {active.length > 0 && (
-                <div className="title-xs">{t(`${translationKey}.Active`)}:</div>
-              )}
-            </>
+            <DocumentSection
+              title={t('DocumentStatus.Draft')}
+              documents={draft}
+              displayMode={selectedDisplayMode}
+            />
           )}
-          {active.length > 0 && (
-            <DocumentList
-              documents={active}
+          {userCanUpdate && inValidation.length > 0 && (
+            <DocumentSection
+              title={t('DocumentStatus.InValidation')}
+              documents={inValidation}
+              displayMode={selectedDisplayMode}
+            />
+          )}
+          {published.length > 0 && (
+            <DocumentSection
+              title={
+                userCanUpdate && (draft.length > 0 || inValidation.length > 0)
+                  ? t('DocumentStatus.Published')
+                  : undefined
+              }
+              documents={published}
               displayMode={selectedDisplayMode}
             />
           )}
