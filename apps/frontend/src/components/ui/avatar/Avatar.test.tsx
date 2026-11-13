@@ -56,6 +56,17 @@ const holdImagesInBrowserCache = () => {
   );
 };
 
+// A picture the browser already gave up on, for instance before the server-rendered markup hydrated.
+const holdBrokenImagesInBrowserCache = () => {
+  vi.spyOn(HTMLImageElement.prototype, 'complete', 'get').mockReturnValue(true);
+  vi.spyOn(HTMLImageElement.prototype, 'naturalWidth', 'get').mockReturnValue(
+    0
+  );
+  vi.spyOn(HTMLImageElement.prototype, 'currentSrc', 'get').mockReturnValue(
+    'https://filigran.io/avatar.png'
+  );
+};
+
 describe('Avatar', () => {
   afterEach(() => {
     vi.restoreAllMocks();
@@ -110,12 +121,11 @@ describe('Avatar', () => {
     expect(getImage()).toHaveAttribute('decoding', 'async');
   });
 
-  it('should hand the srcset and the sizes to the image', () => {
+  it('should hand the srcset to the image', () => {
     // Given / When
     renderAvatar({
       src: PICTURE_URL,
       srcSet: `${PICTURE_URL}?w=48 1x, ${PICTURE_URL}?w=96 2x`,
-      sizes: '48px',
     });
 
     // Then
@@ -123,7 +133,6 @@ describe('Avatar', () => {
       'srcset',
       `${PICTURE_URL}?w=48 1x, ${PICTURE_URL}?w=96 2x`
     );
-    expect(getImage()).toHaveAttribute('sizes', '48px');
   });
 
   it('should try the fallback picture once, as it is, when the picture fails to load', () => {
@@ -131,7 +140,6 @@ describe('Avatar', () => {
     renderAvatar({
       src: PICTURE_URL,
       srcSet: `${PICTURE_URL}?w=96 2x`,
-      sizes: '48px',
       fallbackSrc: OTHER_PICTURE_URL,
     });
 
@@ -141,7 +149,6 @@ describe('Avatar', () => {
     // Then
     expect(getImage()).toHaveAttribute('src', OTHER_PICTURE_URL);
     expect(getImage()).not.toHaveAttribute('srcset');
-    expect(getImage()).not.toHaveAttribute('sizes');
     expect(getImage()).toHaveClass(HIDDEN_CLASS);
     expect(queryGlyph()).toBeInTheDocument();
   });
@@ -299,6 +306,79 @@ describe('Avatar', () => {
     // Then
     expect(queryGlyph()).toBeInTheDocument();
     expect(getImage()).toHaveClass(HIDDEN_CLASS);
+  });
+
+  it('should use the fallback picture when the browser already gave up on the picture before mount', () => {
+    // Given
+    holdBrokenImagesInBrowserCache();
+
+    // When
+    renderAvatar({ src: PICTURE_URL, fallbackSrc: OTHER_PICTURE_URL });
+
+    // Then
+    expect(getImage()).toHaveAttribute('src', OTHER_PICTURE_URL);
+    expect(getImage()).toHaveClass(HIDDEN_CLASS);
+    expect(queryGlyph()).toBeInTheDocument();
+  });
+
+  it('should show the fallback picture that loads after the first one was found broken at mount', () => {
+    // Given
+    holdBrokenImagesInBrowserCache();
+    renderAvatar({ src: PICTURE_URL, fallbackSrc: OTHER_PICTURE_URL });
+
+    // When
+    fireEvent.load(getImage());
+
+    // Then
+    expect(getImage()).toHaveAttribute('src', OTHER_PICTURE_URL);
+    expect(getImage()).not.toHaveClass(HIDDEN_CLASS);
+    expect(queryGlyph()).not.toBeInTheDocument();
+  });
+
+  it('should drop the image and keep the glyph when the picture is found broken at mount and has no fallback', () => {
+    // Given
+    holdBrokenImagesInBrowserCache();
+
+    // When
+    renderAvatar({ src: PICTURE_URL });
+
+    // Then
+    expect(queryImage()).not.toBeInTheDocument();
+    expect(queryGlyph()).toBeInTheDocument();
+  });
+
+  it('should drop the image when the fallback picture is the one found broken at mount', () => {
+    // Given
+    holdBrokenImagesInBrowserCache();
+
+    // When
+    renderAvatar({ src: PICTURE_URL, fallbackSrc: PICTURE_URL });
+
+    // Then
+    expect(queryImage()).not.toBeInTheDocument();
+    expect(queryGlyph()).toBeInTheDocument();
+  });
+
+  it('should not count a picture that has not started loading as a failed one', () => {
+    // Given: complete is false and there is no currentSrc, as for a lazy image off screen
+    // When
+    renderAvatar({ src: PICTURE_URL, fallbackSrc: OTHER_PICTURE_URL });
+
+    // Then
+    expect(getImage()).toHaveAttribute('src', PICTURE_URL);
+  });
+
+  it('should not count a complete picture without a currentSrc as a failed one', () => {
+    // Given
+    vi.spyOn(HTMLImageElement.prototype, 'complete', 'get').mockReturnValue(
+      true
+    );
+
+    // When
+    renderAvatar({ src: PICTURE_URL, fallbackSrc: OTHER_PICTURE_URL });
+
+    // Then
+    expect(getImage()).toHaveAttribute('src', PICTURE_URL);
   });
 
   it('should give the image the alt when one is given', () => {

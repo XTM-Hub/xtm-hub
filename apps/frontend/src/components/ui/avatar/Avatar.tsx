@@ -12,10 +12,8 @@ export interface AvatarProps extends Omit<
   'children' | 'dangerouslySetInnerHTML'
 > {
   src?: string;
-  /** Resized candidates of the picture (`srcset`), when the caller has any: the browser picks the one that fits. */
+  /** Resized candidates of the picture (the `srcset` of the image), when the caller has any: the browser picks the one that fits. */
   srcSet?: string;
-  /** The `sizes` attribute that goes with a width-based `srcSet`. */
-  sizes?: string;
   /** Picture tried once, as it is (no `srcSet`), when `src` fails to load, before the fallback glyph is shown. */
   fallbackSrc?: string;
   alt?: string;
@@ -41,7 +39,6 @@ const AvatarGlyph = ({ alt }: { alt: string }) => (
 interface AvatarPictureProps {
   src: string;
   srcSet?: string;
-  sizes?: string;
   fallbackSrc?: string;
   alt: string;
   size: number;
@@ -54,13 +51,11 @@ interface AvatarPictureProps {
 const AvatarPicture = ({
   src,
   srcSet,
-  sizes,
   fallbackSrc,
   alt,
   size,
   loading,
 }: AvatarPictureProps) => {
-  const imageRef = React.useRef<HTMLImageElement>(null);
   const [status, setStatus] = React.useState<ImageStatus>('idle');
   const [isFallbackTried, setIsFallbackTried] = React.useState(false);
   const canTryFallback = !!fallbackSrc && fallbackSrc !== src;
@@ -75,13 +70,28 @@ const AvatarPicture = ({
     setStatus('error');
   };
 
-  React.useLayoutEffect(() => {
-    const element = imageRef.current;
-    if (element?.complete && element.naturalWidth > 0) {
-      // A picture the browser already holds is shown before paint, so it never flashes the glyph.
-      setStatus('loaded');
-    }
-  }, []);
+  // Runs when the image is attached, before paint, with whatever the browser already knows of it.
+  const handleImageRef = React.useCallback(
+    (element: HTMLImageElement | null) => {
+      if (!element?.complete) {
+        return;
+      }
+      if (element.naturalWidth > 0) {
+        // A picture the browser already holds is shown before paint, so it never flashes the glyph.
+        setStatus('loaded');
+      } else if (element.currentSrc) {
+        // The browser already gave up on the picture, for instance while the server-rendered markup
+        // was loading before hydration: React missed that error event and would never replay it.
+        // A lazy picture that has not started loading is not complete, nor has it a currentSrc.
+        if (canTryFallback) {
+          setIsFallbackTried(true);
+        } else {
+          setStatus('error');
+        }
+      }
+    },
+    [canTryFallback]
+  );
 
   const isLoaded = status === 'loaded';
 
@@ -89,14 +99,14 @@ const AvatarPicture = ({
     <>
       {!isLoaded && <AvatarGlyph alt={alt} />}
       {status !== 'error' && (
-        // The picture loads under the glyph and replaces it once it is there.
-        // Pictures come from any identity provider host, so they are loaded as they are, by a plain img.
+        // The picture loads under the glyph and replaces it once it is there. A plain img, not
+        // next/image: the pictures come from any identity provider host, which next/image must not
+        // proxy, and the caller hands over resized candidates through srcSet when it has any.
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          ref={imageRef}
+          ref={handleImageRef}
           src={isUsingFallback ? fallbackSrc : src}
           srcSet={isUsingFallback ? undefined : srcSet}
-          sizes={isUsingFallback ? undefined : sizes}
           alt={alt}
           width={size}
           height={size}
@@ -121,7 +131,6 @@ const Avatar = React.forwardRef<HTMLSpanElement, AvatarProps>(
       className,
       src,
       srcSet,
-      sizes,
       fallbackSrc,
       alt = '',
       size = DEFAULT_AVATAR_SIZE,
@@ -142,7 +151,6 @@ const Avatar = React.forwardRef<HTMLSpanElement, AvatarProps>(
           key={src}
           src={src}
           srcSet={srcSet}
-          sizes={sizes}
           fallbackSrc={fallbackSrc}
           alt={alt}
           size={size}

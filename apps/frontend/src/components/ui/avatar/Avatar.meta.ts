@@ -19,10 +19,8 @@ export const AvatarMeta: ComponentMeta = {
     src: 'string (optional) - the picture URL; empty or missing shows the fallback glyph.',
     srcSet:
       'string (optional) - resized candidates of the picture, passed as the srcset attribute of the image, when the caller has any (for instance "a.webp?w=48 1x, a.webp?w=96 2x").',
-    sizes:
-      'string (optional) - the sizes attribute that goes with a width-based srcSet.',
     fallbackSrc:
-      'string (optional) - a picture tried once, as it is (without srcSet and sizes), when src fails to load, before the fallback glyph is shown.',
+      'string (optional) - a picture tried once, as it is (without srcSet), when src fails to load, before the fallback glyph is shown.',
     alt: 'string (optional, default "") - the text alternative of the image, and of the fallback while it loads or after it fails; pass it only for a standalone avatar.',
     size: 'number (optional, default 48) - the size at which the picture is displayed, in CSS pixels (match the avatar size the caller gives): it sets the width and height attributes of the image, which reserve its space and give its intrinsic size, and does not size the avatar.',
     loading:
