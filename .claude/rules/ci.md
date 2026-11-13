@@ -27,6 +27,7 @@ flowchart LR
   C --> F[run-api-unit-tests-shards<br/>8 shards]
   C --> G[deploy-feature-branch]
   C --> P[run-e2e-platform-tests<br/>opencti · openaev]
+  C --> S[run-elasticsearch-tests<br/>elasticsearch8 · elasticsearch9]
   D --> H[run-e2e-tests]
   E --> I[run-front-unit-tests]
   F --> J[run-api-unit-tests]
@@ -36,6 +37,7 @@ flowchart LR
   H --> K
   I --> K
   J --> K
+  S --> K
   K --> L[deploy · AWX]
 ```
 
@@ -55,6 +57,11 @@ flowchart LR
   Its compose files are `xtm-hub-dev/docker-compose-ci-opencti.yml` and `docker-compose-ci-openaev.yml`, layered on
   `docker-compose-ci.yml`. Each leg posts its own pull request report ("OpenCTI e2e", "OpenAEV e2e", told apart by a
   `comment-tag`), next to the "XTM Hub e2e" report of the shards, which run the `chromium` Playwright project only.
+- **run-elasticsearch-tests** ("Elasticsearch tests") runs once per supported Elasticsearch major, the image set
+  through `ELASTICSEARCH_IMAGE` (`portal-elasticsearch` of `docker-compose-ci.yml` defaults to the Elasticsearch 8
+  one the other jobs use). It boots the `portal-api` image on it, checks the client it detected, then runs the
+  `*.es.test.ts` suites (`yarn test:es`) in `portal-api-test`. Those suites are skipped in the API shards, which have
+  no Elasticsearch. It uploads no coverage, and `build-images-prod` waits for it. Skipped on tag builds.
 - **deploy-feature-branch** publishes an ephemeral preview at `https://dev-pr-{number}.hub.staging.filigran.io`.
 - **build-images-prod** and **deploy** only run outside pull requests.
 

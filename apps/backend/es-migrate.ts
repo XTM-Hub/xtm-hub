@@ -1,3 +1,4 @@
+import { esDbClient } from './src/thirdparty/elasticsearch/client';
 import { runESMigrations } from './src/thirdparty/elasticsearch/migrate';
 import {
   MIGRATION_DIRECTORY,
@@ -21,11 +22,15 @@ if (!command || !isMigrationCommand(command)) {
   process.exit(1);
 }
 
-runESMigrations({
-  command,
-  migrationName,
-  migrationsDirectory: MIGRATION_DIRECTORY,
-})
+esDbClient
+  .init()
+  .then(() =>
+    runESMigrations({
+      command,
+      migrationName,
+      migrationsDirectory: MIGRATION_DIRECTORY,
+    })
+  )
   .then(() => {
     logApp.info('[ES migration] migration completed');
   })

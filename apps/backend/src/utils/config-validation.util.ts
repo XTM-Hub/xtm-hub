@@ -1,4 +1,10 @@
 import { z } from 'zod';
+import {
+  ENGINE_CLIENT_AUTO,
+  ENGINE_CLIENT_SETTINGS,
+  EngineClientSetting,
+  OPENSEARCH_NOT_SUPPORTED_MESSAGE,
+} from '../thirdparty/elasticsearch/engine-detection';
 import { logApp } from './app-logger.util';
 
 // Zod schema for DevUser organization
@@ -248,6 +254,52 @@ export const parseEsIndexPrefix = (value: unknown): string => {
     );
   }
   return value;
+};
+
+/**
+ * Parses the Elasticsearch client setting (ELASTIC_ENGINE_CLIENT). Unset or
+ * empty means `auto`: the client is detected from the server at startup.
+ */
+export const parseEsEngineClient = (value: unknown): EngineClientSetting => {
+  if (value === undefined || value === null || value === '') {
+    return ENGINE_CLIENT_AUTO;
+  }
+  if (value === 'opensearch') {
+    throw new Error(OPENSEARCH_NOT_SUPPORTED_MESSAGE);
+  }
+  const setting = ENGINE_CLIENT_SETTINGS.find((allowed) => allowed === value);
+  if (!setting) {
+    throw new Error(
+      `[ELASTICSEARCH] Invalid elasticsearch.engine_client configuration (ELASTIC_ENGINE_CLIENT): expected one of ${ENGINE_CLIENT_SETTINGS.join(', ')}, got ${JSON.stringify(value)}`
+    );
+  }
+  return setting;
+};
+
+// The 8.x client's own default: the 9.x client has none and would wait forever
+export const ES_DEFAULT_REQUEST_TIMEOUT_MS = 600_000;
+
+/**
+ * Parses the Elasticsearch request timeout in milliseconds
+ * (ELASTIC_REQUEST_TIMEOUT), given to both client majors. Unset or empty means
+ * the 8.x client's default, 10 minutes.
+ */
+export const parseEsRequestTimeout = (value: unknown): number => {
+  if (value === undefined || value === null || value === '') {
+    return ES_DEFAULT_REQUEST_TIMEOUT_MS;
+  }
+  const timeout =
+    typeof value === 'string' && /^\d+$/.test(value) ? Number(value) : value;
+  if (
+    typeof timeout !== 'number' ||
+    !Number.isSafeInteger(timeout) ||
+    timeout <= 0
+  ) {
+    throw new Error(
+      `[ELASTICSEARCH] Invalid elasticsearch.request_timeout configuration (ELASTIC_REQUEST_TIMEOUT): expected a positive number of milliseconds, got ${JSON.stringify(value)}`
+    );
+  }
+  return timeout;
 };
 
 // Export schemas for potential reuse
