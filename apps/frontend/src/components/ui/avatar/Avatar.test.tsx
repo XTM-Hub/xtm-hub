@@ -1,5 +1,5 @@
 import testRender from '@/utils/test/test-render';
-import { fireEvent, screen } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { createRef } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Avatar } from './Avatar';
@@ -67,10 +67,23 @@ const holdBrokenImagesInBrowserCache = () => {
   );
 };
 
+// jsdom has no decode(): browsers have it, and it rejects for a broken image only.
+const stubImageDecode = (outcome: 'resolve' | 'reject') => {
+  Object.defineProperty(HTMLImageElement.prototype, 'decode', {
+    configurable: true,
+    value: vi.fn(() =>
+      outcome === 'resolve'
+        ? Promise.resolve()
+        : Promise.reject(new Error('EncodingError'))
+    ),
+  });
+};
+
 describe('Avatar', () => {
   afterEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
+    Reflect.deleteProperty(HTMLImageElement.prototype, 'decode');
   });
 
   it.each([
@@ -356,6 +369,61 @@ describe('Avatar', () => {
 
     // Then
     expect(queryImage()).not.toBeInTheDocument();
+    expect(queryGlyph()).toBeInTheDocument();
+  });
+
+  it('should show a picture that is complete without a natural width but decodes, such as an SVG without a size', async () => {
+    // Given
+    holdBrokenImagesInBrowserCache();
+    stubImageDecode('resolve');
+
+    // When
+    renderAvatar({ src: PICTURE_URL, fallbackSrc: OTHER_PICTURE_URL });
+
+    // Then
+    await waitFor(() => expect(queryGlyph()).not.toBeInTheDocument());
+    expect(getImage()).toHaveAttribute('src', PICTURE_URL);
+    expect(getImage()).not.toHaveClass(HIDDEN_CLASS);
+  });
+
+  it('should show a picture without a natural width that decodes even when it has no fallback', async () => {
+    // Given
+    holdBrokenImagesInBrowserCache();
+    stubImageDecode('resolve');
+
+    // When
+    renderAvatar({ src: PICTURE_URL });
+
+    // Then
+    await waitFor(() => expect(queryGlyph()).not.toBeInTheDocument());
+    expect(getImage()).toHaveAttribute('src', PICTURE_URL);
+  });
+
+  it('should use the fallback picture when the picture found complete without a natural width fails to decode', async () => {
+    // Given
+    holdBrokenImagesInBrowserCache();
+    stubImageDecode('reject');
+
+    // When
+    renderAvatar({ src: PICTURE_URL, fallbackSrc: OTHER_PICTURE_URL });
+
+    // Then
+    await waitFor(() =>
+      expect(getImage()).toHaveAttribute('src', OTHER_PICTURE_URL)
+    );
+    expect(queryGlyph()).toBeInTheDocument();
+  });
+
+  it('should drop the image when the picture found complete without a natural width fails to decode and has no fallback', async () => {
+    // Given
+    holdBrokenImagesInBrowserCache();
+    stubImageDecode('reject');
+
+    // When
+    renderAvatar({ src: PICTURE_URL });
+
+    // Then
+    await waitFor(() => expect(queryImage()).not.toBeInTheDocument());
     expect(queryGlyph()).toBeInTheDocument();
   });
 

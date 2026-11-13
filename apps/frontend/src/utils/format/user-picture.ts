@@ -55,8 +55,11 @@ const getBackendPicturePath = (src: string): string | null => {
  * What an Avatar loads for a user picture, shown at `size` CSS pixels:
  * - a backend picture goes through the Next image optimiser (the size and its retina twin, in
  *   WebP), and falls back to the stored URL if the optimiser cannot serve it. The optimised URL has
- *   no `t` cache-buster, so a changed picture shows up in these views only once the optimiser
- *   copy, which proxy.ts keeps for at most a day, and the browser copy have expired;
+ *   no `t` cache-buster, so a replaced picture only shows up in these views once the copies of the
+ *   optimiser, and of the browsers, have expired. The optimiser keeps its copy for the longer of
+ *   `images.minimumCacheTTL` (one day) and the backend `USER_PICTURE_CACHE_MAX_AGE_SECONDS` (a
+ *   week), and it sends the full lifetime, not the time left, even for a stale copy it revalidates:
+ *   in the worst case the old picture is still shown about two weeks after the change;
  * - a Gravatar picture is asked at twice the size;
  * - any other picture (identity provider host, blob: or data: preview) is used as it is.
  */

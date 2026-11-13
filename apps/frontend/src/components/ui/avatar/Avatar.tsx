@@ -70,6 +70,14 @@ const AvatarPicture = ({
     setStatus('error');
   };
 
+  const failPicture = React.useCallback(() => {
+    if (canTryFallback) {
+      setIsFallbackTried(true);
+    } else {
+      setStatus('error');
+    }
+  }, [canTryFallback]);
+
   // Runs when the image is attached, before paint, with whatever the browser already knows of it.
   const handleImageRef = React.useCallback(
     (element: HTMLImageElement | null) => {
@@ -79,18 +87,27 @@ const AvatarPicture = ({
       if (element.naturalWidth > 0) {
         // A picture the browser already holds is shown before paint, so it never flashes the glyph.
         setStatus('loaded');
-      } else if (element.currentSrc) {
-        // The browser already gave up on the picture, for instance while the server-rendered markup
-        // was loading before hydration: React missed that error event and would never replay it.
-        // A lazy picture that has not started loading is not complete, nor has it a currentSrc.
-        if (canTryFallback) {
-          setIsFallbackTried(true);
-        } else {
-          setStatus('error');
-        }
+        return;
+      }
+      // Assumes a browser reports `complete === false` and no currentSrc for a lazy image whose
+      // fetch is deferred, so a complete image with a currentSrc has settled (to verify in a real
+      // browser; jsdom cannot show it). Without a natural width it has either failed, while the
+      // server-rendered markup was loading before hydration (React missed that error event and
+      // would never replay it), or loaded with no intrinsic size (an SVG without width and height).
+      if (!element.currentSrc) {
+        return;
+      }
+      if (typeof element.decode === 'function') {
+        // decode() rejects for a broken image only: it tells the two cases apart.
+        element.decode().then(
+          () => setStatus('loaded'),
+          () => failPicture()
+        );
+      } else {
+        failPicture();
       }
     },
-    [canTryFallback]
+    [failPicture]
   );
 
   const isLoaded = status === 'loaded';
@@ -100,8 +117,8 @@ const AvatarPicture = ({
       {!isLoaded && <AvatarGlyph alt={alt} />}
       {status !== 'error' && (
         // The picture loads under the glyph and replaces it once it is there. A plain img, not
-        // next/image: the pictures come from any identity provider host, which next/image must not
-        // proxy, and the caller hands over resized candidates through srcSet when it has any.
+        // next/image, so that any host works as it is (identity providers, which next/image must
+        // not proxy); a caller that has resized candidates of the picture hands them over as srcSet.
         // eslint-disable-next-line @next/next/no-img-element
         <img
           ref={handleImageRef}

@@ -23,10 +23,10 @@ const parseSrcSet = (srcSet: string | undefined) =>
   });
 
 // The local path the optimiser is asked for, or null when the picture is not offered to it.
-const getOptimisedSource = (picture: string) =>
-  getAvatarPictureSource(picture, 48).srcSet
-    ? parseSrcSet(getAvatarPictureSource(picture, 48).srcSet)[0].source
-    : null;
+const getOptimisedSource = (picture: string) => {
+  const { srcSet } = getAvatarPictureSource(picture, 48);
+  return srcSet ? parseSrcSet(srcSet)[0].source : null;
+};
 
 describe('getAvatarPictureSource', () => {
   describe('for a picture of the backend', () => {
