@@ -103,7 +103,7 @@ pull request that does not run the shards or changes neither app, and in the mer
 
 The shards still upload their coverage to Codecov (flags `frontend-shard-N` / `backend-shard-N`, all of them awaited
 through `after_n_builds` in `codecov.yml`) for its pull request comment and its `codecov/patch/*` checks. Those are
-informational: no job waits for Codecov.
+informational (`informational: true`, they never fail) and no job waits for Codecov: only "Coverage" is required.
 
 Before the Docker builds, migrations and seeds are copied into the e2e workspace:
 

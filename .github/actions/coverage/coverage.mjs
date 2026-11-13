@@ -23,6 +23,8 @@ const { values: args } = parseArgs({
     reports: { type: 'string' },
     base: { type: 'string' },
     head: { type: 'string' },
+    // Commit shown in the report: the pull request head rather than the merge commit the shards tested.
+    'display-sha': { type: 'string' },
     target: { type: 'string' },
     'summary-file': { type: 'string' },
     'blocks-dir': { type: 'string' },
@@ -31,9 +33,12 @@ const { values: args } = parseArgs({
 });
 const target = Number(args.target);
 const maxFiles = Number(args['max-files']);
-const headSha = execFileSync('git', ['rev-parse', '--short=7', args.head], {
-  encoding: 'utf8',
-}).trim();
+const headSha = (
+  args['display-sha'] ||
+  execFileSync('git', ['rev-parse', args.head], { encoding: 'utf8' })
+)
+  .trim()
+  .slice(0, 7);
 
 const apps = args.apps
   .split('\n')

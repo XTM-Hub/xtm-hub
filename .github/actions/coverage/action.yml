@@ -37,6 +37,7 @@ runs:
         APPS: ${{ inputs.apps }}
         TARGET: ${{ inputs.target }}
         PR_NUMBER: ${{ github.event.pull_request.number }}
+        PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         # A pull request from a fork gets a read-only token: the job summary is the report there.
         CAN_COMMENT: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
         BLOCK_START: '<!-- coverage:start -->'
@@ -48,8 +49,10 @@ runs:
         mkdir -p "$WORK_DIR"
         # The shards test the merge commit: its first parent is the base branch, so the diff is the pull request.
         failed=0
+        # The report shows the pull request head: the merge commit is on neither the branch nor the base.
         node "${GITHUB_ACTION_PATH}/coverage.mjs" --apps "$APPS" --reports "$REPORTS_DIR" --base HEAD^1 --head HEAD \
-          --target "$TARGET" --summary-file "$GITHUB_STEP_SUMMARY" --blocks-dir "$WORK_DIR" || failed=1
+          --display-sha "$PR_HEAD_SHA" --target "$TARGET" --summary-file "$GITHUB_STEP_SUMMARY" \
+          --blocks-dir "$WORK_DIR" || failed=1
 
         # Replaces the coverage block of the app's Vitest comment, or adds it under the comment's title.
         comment_coverage() {

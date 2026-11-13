@@ -13,9 +13,9 @@ coverage:
       default:
         informational: true
 
-# The lines a pull request changes must be at least 80% covered, checked separately for each app. Informational: the
-# coverage job of dockerbuild-ci.yml checks the same rules from the Vitest reports and is the one that fails the
-# pull request. Keep both in sync.
+# The lines a pull request changes must be at least 80% covered, checked separately for each app. Informational, so
+# codecov/patch/<app> never fails: the coverage job of dockerbuild-ci.yml checks the same rules from the Vitest reports
+# and is the one that fails the pull request. Keep both in sync.
 component_management:
   individual_components:
     - component_id: frontend
@@ -25,6 +25,7 @@ component_management:
       statuses:
         - type: patch
           target: 80%
+          informational: true
     - component_id: backend
       name: backend
       paths:
@@ -32,6 +33,7 @@ component_management:
       statuses:
         - type: patch
           target: 80%
+          informational: true
 
 comment:
   layout: "reach,diff,flags,files,footer"
