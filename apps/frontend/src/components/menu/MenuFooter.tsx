@@ -23,13 +23,19 @@ export const MenuFooter = ({ open, handleOpenMenu }: PublicMenuFooterProps) => {
       {open ? (
         <div className="flex items-center px-3 pb-2 gap-1 text-default-secondary text-[10px] whitespace-nowrap">
           {t('App.MadeBy')}
-          <LogoFiligranIcon className="min-h-4 size-3 shrink-0" />
+          <LogoFiligranIcon
+            aria-hidden={true}
+            className="min-h-4 size-3 shrink-0"
+          />
           {/* eslint-disable-next-line xtm-hub-i18n-rules/no-literal-string-in-jsx */}
           {'Filigran'}
         </div>
       ) : (
         <div className="flex justify-center pb-2 text-icon-subtle">
-          <LogoFiligranIcon className="min-h-4 size-3" />
+          <LogoFiligranIcon
+            aria-hidden={true}
+            className="min-h-4 size-3"
+          />
         </div>
       )}
     </div>

@@ -66,7 +66,10 @@ const ShareableResourceConnectorSlugPublic = async ({
             <h1 className="whitespace-nowrap">{documentData.name}</h1>
             {documentData.manager_supported && (
               <div className="flex items-center gap-2 py-1 px-4 font-semibold bg-feedback-success-secondary-transparency-30 text-feedback-success-primary rounded">
-                <MotionPlayIcon className="h-5 w-5 shrink-0 mr-1" />
+                <MotionPlayIcon
+                  aria-hidden={true}
+                  className="h-5 w-5 shrink-0 mr-1"
+                />
                 {t('Utils.AutomaticDeploy')}
               </div>
             )}
@@ -79,12 +82,18 @@ const ShareableResourceConnectorSlugPublic = async ({
               )}>
               {documentData.verified ? (
                 <>
-                  <LogoFiligranIcon className="h-5 w-5 shrink-0 mr-1 text-icon-default" />
+                  <LogoFiligranIcon
+                    aria-hidden={true}
+                    className="h-5 w-5 shrink-0 mr-1 text-icon-default"
+                  />
                   {t('Service.ShareableResources.Details.SupportedByFiligran')}
                 </>
               ) : (
                 <>
-                  <ThreatActorGroupIcon className="h-5 w-5 shrink-0 mr-1 text-feedback-neutral-primary" />
+                  <ThreatActorGroupIcon
+                    aria-hidden={true}
+                    className="h-5 w-5 shrink-0 mr-1 text-feedback-neutral-primary"
+                  />
                   {t('Service.ShareableResources.Details.SupportedByCommunity')}
                 </>
               )}

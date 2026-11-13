@@ -40,7 +40,10 @@ export const ShareableResourceDetailsLink = ({
               }
               rel="noopener noreferrer"
               target="_blank">
-              <OpenInNewIcon className="h-4 w-4 mr-2" />
+              <OpenInNewIcon
+                aria-hidden={true}
+                className="h-4 w-4 mr-2"
+              />
               <span className="max-w-64 overflow-hidden text-ellipsis whitespace-nowrap">
                 {url}
               </span>

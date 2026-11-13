@@ -14,7 +14,7 @@ import {
   MotionPlayIcon,
   ThreatActorGroupIcon,
 } from '@filigran/icon';
-import type { ReactNode } from 'react';
+import type { ComponentType, SVGProps } from 'react';
 
 export interface ResourceStatusIconsProps {
   active?: boolean;
@@ -28,12 +28,19 @@ const ICON_CLASS = 'h-6 w-6 shrink-0 text-icon-success';
 
 interface StatusIconProps {
   label: string;
-  icon: ReactNode;
+  icon: ComponentType<SVGProps<SVGSVGElement>>;
+  className?: string;
 }
 
-const StatusIcon = ({ label, icon }: StatusIconProps) => (
+// The icon is the only carrier of the status: it takes the tooltip label as its accessible name.
+const StatusIcon = ({ label, icon: Icon, className }: StatusIconProps) => (
   <Tooltip>
-    <TooltipTrigger asChild>{icon}</TooltipTrigger>
+    <TooltipTrigger asChild>
+      <Icon
+        aria-label={label}
+        className={className}
+      />
+    </TooltipTrigger>
     <TooltipContent>{label}</TooltipContent>
   </Tooltip>
 );
@@ -56,34 +63,30 @@ export const ResourceStatusIcons = ({
       {deployable && (
         <StatusIcon
           label={t('Utils.AutomaticDeploy')}
-          icon={<MotionPlayIcon className={iconClassName} />}
+          icon={MotionPlayIcon}
+          className={iconClassName}
         />
       )}
       {verified && (
         <StatusIcon
           label={t('Service.ShareableResources.Details.SupportedByFiligran')}
-          icon={
-            // Scaled down: this logo fills its viewBox, the others are padded.
-            <LogoFiligranIcon
-              className={cn(iconClassName, 'text-icon-highlight scale-90')}
-            />
-          }
+          icon={LogoFiligranIcon}
+          // Scaled down: this logo fills its viewBox, the others are padded.
+          className={cn(iconClassName, 'text-icon-highlight scale-90')}
         />
       )}
       {!verified && displayUnverifiedIcon && (
         <StatusIcon
           label={t('Service.ShareableResources.Details.SupportedByCommunity')}
-          icon={
-            <ThreatActorGroupIcon
-              className={cn(iconClassName, 'text-icon-disabled')}
-            />
-          }
+          icon={ThreatActorGroupIcon}
+          className={cn(iconClassName, 'text-icon-disabled')}
         />
       )}
       {active && (
         <StatusIcon
           label={t('Badge.Published')}
-          icon={<CampaignIcon className={iconClassName} />}
+          icon={CampaignIcon}
+          className={iconClassName}
         />
       )}
     </TooltipProvider>

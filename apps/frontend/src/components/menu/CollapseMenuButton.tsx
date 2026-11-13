@@ -25,12 +25,14 @@ export const CollapseMenuButton = ({
         <span className="flex w-8 shrink-0 justify-center">
           <span className="relative h-6 w-6">
             <LeftPanelCloseIcon
+              aria-hidden={true}
               className={cn(
                 'absolute h-6 w-6 p-1 transition-all duration-300 ease-in-out text-icon-subtle',
                 open ? 'rotate-0 opacity-100' : 'rotate-90 opacity-0'
               )}
             />
             <LeftPanelOpenIcon
+              aria-hidden={true}
               className={cn(
                 'absolute h-6 w-6 p-1 transition-all duration-300 ease-in-out text-icon-subtle',
                 open ? '-rotate-90 opacity-0' : 'rotate-0 opacity-100'
