@@ -6,6 +6,7 @@
   <a href="https://docs.hub.filigran.io" alt="Documentation"><img src="https://img.shields.io/badge/documentation-latest-orange.svg" /></a>
   <a href="https://community.filigran.io" alt="Slack"><img src="https://img.shields.io/badge/slack-3K%2B%20members-4A154B" /></a>
   <a href="https://github.com/XTM-Hub/xtm-hub/actions"><img src="https://github.com/XTM-Hub/xtm-hub/actions/workflows/dockerbuild-ci.yml/badge.svg?branch=main" /></a>
+  <a href="https://codecov.io/gh/XTM-Hub/xtm-hub" alt="Coverage"><img src="https://codecov.io/gh/XTM-Hub/xtm-hub/graph/badge.svg?token=I1DAUFP6P1" /></a>
 </p>
 
 ## Introduction
