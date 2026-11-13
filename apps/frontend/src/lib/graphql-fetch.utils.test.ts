@@ -3,6 +3,7 @@ import {
   buildCookieHeader,
   extractOperationName,
   extractOperationType,
+  findOperationName,
   GraphqlRequestError,
   prepareUri,
   resolveActiveCacheConfig,
@@ -221,6 +222,25 @@ describe('extractOperationType', () => {
   `('extractOperationType("$query") -> $expected', ({ query, expected }) => {
     expect(extractOperationType(query)).toBe(expected);
   });
+});
+
+describe('findOperationName', () => {
+  it.each`
+    query                                        | expected
+    ${'subscription MySubscription { field }'}   | ${'MySubscription'}
+    ${'subscription { field }'}                  | ${undefined}
+    ${'{ field }'}                               | ${undefined}
+    ${'# comment\nsubscription Named { field }'} | ${undefined}
+  `(
+    'should return $expected as the name of "$query"',
+    ({ query, expected }) => {
+      // Given / When
+      const operationName = findOperationName(query);
+
+      // Then
+      expect(operationName).toBe(expected);
+    }
+  );
 });
 
 describe('extractOperationName', () => {

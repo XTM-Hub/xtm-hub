@@ -6,8 +6,8 @@ import {
   scrubSensitiveVariables,
   throwOnGraphqlErrors,
 } from '@/lib/graphql-fetch.utils';
+import { getSseClient } from '@/lib/sse-client';
 import { isDevelopment } from '@/lib/utils';
-import { createClient } from 'graphql-sse';
 import {
   GraphQLResponse,
   Observable,
@@ -71,11 +71,6 @@ export async function networkFetch({
   return json;
 }
 
-const subscriptionsClient = createClient({
-  url: '/graphql-sse',
-  singleConnection: true,
-});
-
 export function fetchOrSubscribe(
   operation: RequestParameters,
   variables: Variables
@@ -84,7 +79,7 @@ export function fetchOrSubscribe(
     if (!operation.text) {
       return sink.error(new Error('Operation text cannot be empty'));
     }
-    return subscriptionsClient.subscribe(
+    return getSseClient().subscribe(
       {
         operationName: operation.name,
         query: operation.text,
