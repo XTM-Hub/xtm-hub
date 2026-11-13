@@ -61,22 +61,20 @@ const AvatarPicture = ({
   const canTryFallback = !!fallbackSrc && fallbackSrc !== src;
   const isUsingFallback = isFallbackTried && canTryFallback;
 
-  const handleError = () => {
-    if (canTryFallback && !isFallbackTried) {
-      // The first picture failed: one more try with the fallback one before showing the glyph.
-      setIsFallbackTried(true);
-      return;
-    }
-    setStatus('error');
-  };
+  // The picture failed: one more try with the fallback one, if there is any and it was not tried yet,
+  // before showing the glyph.
+  const failPicture = React.useCallback(
+    (wasFallbackTried: boolean) => {
+      if (canTryFallback && !wasFallbackTried) {
+        setIsFallbackTried(true);
+      } else {
+        setStatus('error');
+      }
+    },
+    [canTryFallback]
+  );
 
-  const failPicture = React.useCallback(() => {
-    if (canTryFallback) {
-      setIsFallbackTried(true);
-    } else {
-      setStatus('error');
-    }
-  }, [canTryFallback]);
+  const handleError = () => failPicture(isFallbackTried);
 
   // Runs when the image is attached, before paint, with whatever the browser already knows of it.
   const handleImageRef = React.useCallback(
@@ -97,14 +95,16 @@ const AvatarPicture = ({
       if (!element.currentSrc) {
         return;
       }
+      // decode() is absent in jsdom and in old browsers: do not remove this check as dead code.
       if (typeof element.decode === 'function') {
         // decode() rejects for a broken image only: it tells the two cases apart.
         element.decode().then(
           () => setStatus('loaded'),
-          () => failPicture()
+          // This is the first picture: the fallback has not been tried at mount.
+          () => failPicture(false)
         );
       } else {
-        failPicture();
+        failPicture(false);
       }
     },
     [failPicture]

@@ -56,10 +56,11 @@ const getBackendPicturePath = (src: string): string | null => {
  * - a backend picture goes through the Next image optimiser (the size and its retina twin, in
  *   WebP), and falls back to the stored URL if the optimiser cannot serve it. The optimised URL has
  *   no `t` cache-buster, so a replaced picture only shows up in these views once the copies of the
- *   optimiser, and of the browsers, have expired. The optimiser keeps its copy for the longer of
+ *   optimiser, and of the browsers, have expired. The optimiser keeps a copy for the longer of
  *   `images.minimumCacheTTL` (one day) and the backend `USER_PICTURE_CACHE_MAX_AGE_SECONDS` (a
- *   week), and it sends the full lifetime, not the time left, even for a stale copy it revalidates:
- *   in the worst case the old picture is still shown about two weeks after the change;
+ *   week). A picture viewed often stays stale for about two weeks at most; a rarely viewed one can
+ *   stay stale until the first request after its copy expired (an expired copy is served at once and
+ *   refreshed in the background), and that browser then keeps it for one more week;
  * - a Gravatar picture is asked at twice the size;
  * - any other picture (identity provider host, blob: or data: preview) is used as it is.
  */

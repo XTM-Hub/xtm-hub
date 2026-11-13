@@ -69,14 +69,16 @@ const holdBrokenImagesInBrowserCache = () => {
 
 // jsdom has no decode(): browsers have it, and it rejects for a broken image only.
 const stubImageDecode = (outcome: 'resolve' | 'reject') => {
+  const decode = vi.fn(() =>
+    outcome === 'resolve'
+      ? Promise.resolve()
+      : Promise.reject(new Error('EncodingError'))
+  );
   Object.defineProperty(HTMLImageElement.prototype, 'decode', {
     configurable: true,
-    value: vi.fn(() =>
-      outcome === 'resolve'
-        ? Promise.resolve()
-        : Promise.reject(new Error('EncodingError'))
-    ),
+    value: decode,
   });
+  return decode;
 };
 
 describe('Avatar', () => {
@@ -402,7 +404,7 @@ describe('Avatar', () => {
   it('should use the fallback picture when the picture found complete without a natural width fails to decode', async () => {
     // Given
     holdBrokenImagesInBrowserCache();
-    stubImageDecode('reject');
+    const decode = stubImageDecode('reject');
 
     // When
     renderAvatar({ src: PICTURE_URL, fallbackSrc: OTHER_PICTURE_URL });
@@ -411,19 +413,21 @@ describe('Avatar', () => {
     await waitFor(() =>
       expect(getImage()).toHaveAttribute('src', OTHER_PICTURE_URL)
     );
+    expect(decode).toHaveBeenCalledTimes(1);
     expect(queryGlyph()).toBeInTheDocument();
   });
 
   it('should drop the image when the picture found complete without a natural width fails to decode and has no fallback', async () => {
     // Given
     holdBrokenImagesInBrowserCache();
-    stubImageDecode('reject');
+    const decode = stubImageDecode('reject');
 
     // When
     renderAvatar({ src: PICTURE_URL });
 
     // Then
     await waitFor(() => expect(queryImage()).not.toBeInTheDocument());
+    expect(decode).toHaveBeenCalledTimes(1);
     expect(queryGlyph()).toBeInTheDocument();
   });
 
