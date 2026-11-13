@@ -18,7 +18,7 @@
     "Capabilities": {
       "ADMINISTRATE_ORGANIZATION": "Grants every capability within the organization",
       "MANAGE_ACCESS": "Ability to invite other users to this organization",
-      "MANAGE_PLATFORM_REGISTRATION": "Ability to connect and disconnect products, and to start, cancel and manage trials",
+      "MANAGE_PLATFORM_REGISTRATION": "Ability to connect and disconnect products, and to start, cancel and manage trials. For SaaS customer, ability to see metrics of the product.",
       "MANAGE_SUBSCRIPTION": "Ability to manage and subscribe the organization to services"
     },
     "Description": "You can add specific capabilities to Filigran users",
@@ -1028,6 +1028,14 @@
       "PlatformVersion": "Platform version"
     },
     "Metrics": {
+      "AccessRequest": {
+        "Title": "Ask for access to SaaS metrics",
+        "Description": "SaaS metrics show this platform's storage, availability and subscription. To see them, you need the \"Manage platform registration\" capability.",
+        "AdministratorList": "An organization administrator can grant it to you:",
+        "SeeDocumentation": "See documentation",
+        "EmailSubject": "Access to the SaaS metrics of {platform}",
+        "EmailBody": "Hello,\n\nCould you please grant me the \"Manage platform registration\" capability so that I can see the SaaS metrics of {platform}?\n\nThank you!"
+      },
       "Title": "Usage & health",
       "StorageTitle": "Storage consumption",
       "Unavailable": "The metrics are currently unavailable",

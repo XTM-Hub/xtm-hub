@@ -6,9 +6,11 @@ import {
 } from '@/components/registration/register/register.graphql';
 import { PlatformInformation } from '@/components/service/registration/PlatformInformation';
 import { PlatformMetrics } from '@/components/service/registration/PlatformMetrics';
+import { PlatformMetricsAccessRequest } from '@/components/service/registration/PlatformMetricsAccessRequest';
 import { getRegisteredPlatformBreadcrumbs } from '@/components/service/registration/registered-platform-overview.utils';
 import { RegisteredPlatformHeader } from '@/components/service/registration/RegisteredPlatformHeader';
 import { BreadcrumbNav } from '@/components/ui/BreadcrumbNav';
+import useGranted from '@/hooks/use-granted';
 import { useIsFeatureEnabled } from '@/hooks/use-is-feature-enabled';
 import { useUserHasPortalCapability } from '@/hooks/use-portal-capability';
 import { portalGraphqlClient } from '@/lib/graphql-client';
@@ -21,6 +23,7 @@ import { registeredPlatformByServiceInstanceIdQuery } from '@generated/registere
 import {
   CommercialModel,
   FeatureFlag,
+  OrganizationCapability,
   PlatformIdentifier,
   PortalCapability,
   SaasPlatformMetricsPeriod,
@@ -30,7 +33,7 @@ import { productInformationKeys } from '@graphql/product-information/product-inf
 import { keepPreviousData } from '@tanstack/react-query';
 import { notFound, useSearchParams } from 'next/navigation';
 import { use, useState } from 'react';
-import { useFragment, useLazyLoadQuery } from 'react-relay';
+import { useFragment, useLazyLoadQuery } from 'react-relay'; // Matches the backend cache: a remount within a minute would only get the same answer back.
 
 // Matches the backend cache: a remount within a minute would only get the same answer back.
 const SAAS_PLATFORM_DATA_STALE_TIME = 60_000;
@@ -76,6 +79,21 @@ export const RegisteredPlatformOverview = ({
   const isSaas = platform?.commercial_model === CommercialModel.Saas;
   const showSaasPlatformData =
     isSaasMetricsEnabled && isSaas && canReadSaasMetrics;
+  const hasRightToVisualize = !!useUserHasPortalCapability([
+    PortalCapability.Bypass,
+    PortalCapability.ReadSaasMetrics,
+  ]);
+
+  const canAdministrateOrganization = useGranted(
+    OrganizationCapability.AdministrateOrganization
+  );
+  const canManagePlatformRegistration = useGranted(
+    OrganizationCapability.ManagePlatformRegistration
+  );
+  const canSeePlatformMetrics =
+    hasRightToVisualize ||
+    canAdministrateOrganization ||
+    canManagePlatformRegistration;
 
   const [metricsPeriod, setMetricsPeriod] = useState<SaasPlatformMetricsPeriod>(
     SaasPlatformMetricsPeriod.Last_90Days
@@ -119,17 +137,20 @@ export const RegisteredPlatformOverview = ({
       <RegisteredPlatformHeader
         registeredPlatform={queryData.registeredPlatform}
       />
-      {showSaasPlatformData && (
-        <PlatformMetrics
-          platformIdentifier={platformIdentifier}
-          metrics={saasPlatformData?.registeredSaasPlatformData?.metrics}
-          storage={saasPlatformData?.registeredSaasPlatformData?.storage}
-          sla={saasPlatformData?.registeredSaasPlatformData?.sla}
-          isLoading={isSaasPlatformDataPending || isPreviousMetricsPeriodData}
-          period={metricsPeriod}
-          onPeriodChange={setMetricsPeriod}
-        />
-      )}
+      {showSaasPlatformData &&
+        (canSeePlatformMetrics ? (
+          <PlatformMetrics
+            platformIdentifier={platformIdentifier}
+            metrics={saasPlatformData?.registeredSaasPlatformData?.metrics}
+            storage={saasPlatformData?.registeredSaasPlatformData?.storage}
+            sla={saasPlatformData?.registeredSaasPlatformData?.sla}
+            isLoading={isSaasPlatformDataPending || isPreviousMetricsPeriodData}
+            period={metricsPeriod}
+            onPeriodChange={setMetricsPeriod}
+          />
+        ) : (
+          <PlatformMetricsAccessRequest platformTitle={platform.title} />
+        ))}
       <PlatformInformation
         registeredPlatform={queryData.registeredPlatform}
         showMetadata={showSaasPlatformData}

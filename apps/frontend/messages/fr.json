@@ -18,7 +18,7 @@
     "Capabilities": {
       "ADMINISTRATE_ORGANIZATION": "Possibilité d'effectuer toutes les actions au sein d'une organisation",
       "MANAGE_ACCESS": "Possibilité d'inviter d'autres utilisateurs dans cette organisation",
-      "MANAGE_PLATFORM_REGISTRATION": "Possibilité de connecter et de déconnecter les produits, ainsi que de démarrer, annuler et gérer les essais",
+      "MANAGE_PLATFORM_REGISTRATION": "Possibilité de connecter et de déconnecter des produits, ainsi que de lancer, d'annuler et gérer les essais. Pour les clients SaaS, possibilité de consulter les indicateurs de performance du produit.",
       "MANAGE_SUBSCRIPTION": "Possibilité de gérer et d'abonner l'organisation à des services"
     },
     "Description": "Vous pouvez ajouter des capacités spécifiques aux utilisateurs de Filigran",
@@ -1028,6 +1028,14 @@
       "PlatformVersion": "Version de la plateforme"
     },
     "Metrics": {
+      "AccessRequest": {
+        "Title": "Demander l'accès aux indicateurs SaaS",
+        "Description": "Les indicateurs SaaS présentent le stockage, la disponibilité et l'abonnement de cette plateforme. Pour les consulter, vous avez besoin de la capacité « Manage platform registration ».",
+        "AdministratorList": "Un administrateur de l'organisation peut vous l'attribuer :",
+        "SeeDocumentation": "Voir la documentation",
+        "EmailSubject": "Accès aux indicateurs SaaS de {platform}",
+        "EmailBody": "Bonjour,\n\nPourriez-vous m'attribuer la capacité « Manage platform registration » afin que je puisse consulter les indicateurs SaaS de {platform} ?\n\nMerci !"
+      },
       "Title": "Utilisation et santé",
       "StorageTitle": "Utilisation de l'espace de stockage",
       "Unavailable": "Ces indicateurs ne sont actuellement pas disponibles",
