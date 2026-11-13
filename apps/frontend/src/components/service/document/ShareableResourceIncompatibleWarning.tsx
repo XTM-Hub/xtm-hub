@@ -9,7 +9,10 @@ export const ShareableResourceIncompatibleWarning = ({
 }: ShareableResourceIncompatibleWarningProps) => {
   return (
     <div className="border border-solid border-alert-warning rounded text-feedback-warning-primary flex gap-1 p-2">
-      <CheckIndeterminateIcon className="shrink-0 h-6 w-6" />
+      <CheckIndeterminateIcon
+        aria-hidden={true}
+        className="shrink-0 h-6 w-6"
+      />
       {message}
     </div>
   );

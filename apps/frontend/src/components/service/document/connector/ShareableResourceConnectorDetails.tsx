@@ -59,7 +59,10 @@ export const ShareableResourceConnectorDetails = ({
               {...analyticsId('resource_source_code_open')}
               href={connectorDetails.source_code}
               target="_blank">
-              <LogoGitIcon className="h-4 w-4 mr-2" />
+              <LogoGitIcon
+                aria-hidden={true}
+                className="h-4 w-4 mr-2"
+              />
               {connectorDetails.name}
             </Link>
           </Button>
@@ -84,7 +87,10 @@ export const ShareableResourceConnectorDetails = ({
               }
               rel="noopener noreferrer"
               target="_blank">
-              <OpenInNewIcon className="h-4 w-4 mr-2" />
+              <OpenInNewIcon
+                aria-hidden={true}
+                className="h-4 w-4 mr-2"
+              />
               {t('Service.Connectors.VendorContact')}
             </Link>
           </Button>

@@ -71,6 +71,19 @@ describe('HomepageResourceCard', () => {
     });
   });
 
+  describe('default logo accessibility', () => {
+    it('hides the default Filigran icon from assistive technology', () => {
+      const { container } = testRender(
+        <HomepageResourceCard {...buildProps({ logoUrl: undefined })} />
+      );
+
+      expect(container.querySelector('a svg')).toHaveAttribute(
+        'aria-hidden',
+        'true'
+      );
+    });
+  });
+
   describe('short description', () => {
     it('renders the short description when provided', () => {
       testRender(

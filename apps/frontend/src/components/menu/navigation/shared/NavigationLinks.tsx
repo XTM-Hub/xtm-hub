@@ -95,7 +95,12 @@ export const PublicSubLink = ({
   const content = (
     <>
       <span className="flex min-w-0 flex-1 items-center gap-1">
-        {external && <OpenInNewIcon className="h-3 w-3 shrink-0" />}
+        {external && (
+          <OpenInNewIcon
+            aria-hidden={true}
+            className="h-3 w-3 shrink-0"
+          />
+        )}
         <span
           ref={labelRef}
           className={cn(

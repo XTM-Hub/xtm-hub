@@ -158,6 +158,20 @@ describe('ServiceListHeader', () => {
     }
   );
 
+  it('should name the display mode buttons and hide their icons from assistive technology', () => {
+    // Given
+    testState.useServiceListStorage.mockReturnValue(buildStorageState());
+
+    // When
+    renderHeader();
+
+    // Then
+    ['Service.List.ViewTab', 'Service.List.ViewList'].forEach((name) => {
+      const icon = screen.getByRole('button', { name }).querySelector('svg');
+      expect(icon).toHaveAttribute('aria-hidden', 'true');
+    });
+  });
+
   it('toggles ordering mode when clicking sort direction button', async () => {
     testState.useServiceListStorage.mockReturnValue(buildStorageState());
     const { user } = renderHeader();

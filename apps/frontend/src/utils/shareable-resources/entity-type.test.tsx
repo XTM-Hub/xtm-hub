@@ -1,5 +1,10 @@
+import testRender from '@/utils/test/test-render';
 import { describe, expect, it } from 'vitest';
-import { getEntityTypeLabel } from './entity-type';
+import {
+  EntityTypeIcon,
+  EntityTypeOrFiligranLogo,
+  getEntityTypeLabel,
+} from './entity-type';
 
 describe('getEntityTypeLabel', () => {
   it.each([
@@ -15,4 +20,67 @@ describe('getEntityTypeLabel', () => {
     // Then
     expect(label).toBe(expected);
   });
+});
+
+describe('EntityTypeIcon', () => {
+  it.each([
+    ['a known entity type', 'Malware'],
+    [
+      'an unknown entity type, rendered with the fallback icon',
+      'Security-Coverage',
+    ],
+  ])(
+    'should hide the icon of %s from assistive technology by default',
+    (_label, entityType) => {
+      // Given / When
+      const { container } = testRender(
+        <EntityTypeIcon entityType={entityType} />
+      );
+
+      // Then
+      expect(container.querySelector('svg')).toHaveAttribute(
+        'aria-hidden',
+        'true'
+      );
+    }
+  );
+
+  it('should let a caller name the icon when it is used on its own', () => {
+    // Given / When
+    const { container } = testRender(
+      <EntityTypeIcon
+        entityType="Malware"
+        aria-hidden={false}
+        aria-label="Malware"
+      />
+    );
+
+    // Then
+    expect(container.querySelector('svg')).toHaveAttribute(
+      'aria-label',
+      'Malware'
+    );
+    expect(container.querySelector('svg')).not.toHaveAttribute(
+      'aria-hidden',
+      'true'
+    );
+  });
+});
+
+describe('EntityTypeOrFiligranLogo', () => {
+  it.each([[['Malware']], [[]], [undefined]])(
+    'should hide the logo from assistive technology for entity types %j',
+    (entityTypes) => {
+      // Given / When
+      const { container } = testRender(
+        <EntityTypeOrFiligranLogo entityTypes={entityTypes} />
+      );
+
+      // Then
+      expect(container.querySelector('svg')).toHaveAttribute(
+        'aria-hidden',
+        'true'
+      );
+    }
+  );
 });

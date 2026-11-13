@@ -44,6 +44,7 @@ export const EditTranslationsButton = ({
         onClick={() => (isEditMode ? exitEditMode() : setEditMode(true))}>
         <span className="flex w-8 shrink-0 justify-center">
           <LanguageIcon
+            aria-hidden={true}
             className={cn(
               'h-6 w-6 p-1',
               isEditMode ? 'text-icon-highlight' : 'text-icon-subtle'
