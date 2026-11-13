@@ -5,6 +5,8 @@ import { EditTranslationsButton } from '@/components/menu/EditTranslationsButton
 import { useTranslate } from '@/hooks/use-translate';
 import { LogoFiligranIcon } from '@filigran/icon';
 
+const BRAND_NAME = 'Filigran';
+
 interface PublicMenuFooterProps {
   open: boolean;
   handleOpenMenu: () => void;
@@ -27,11 +29,11 @@ export const MenuFooter = ({ open, handleOpenMenu }: PublicMenuFooterProps) => {
             aria-hidden={true}
             className="min-h-4 size-3 shrink-0"
           />
-          {/* eslint-disable-next-line xtm-hub-i18n-rules/no-literal-string-in-jsx */}
-          {'Filigran'}
+          {BRAND_NAME}
         </div>
       ) : (
         <div className="flex justify-center pb-2 text-icon-subtle">
+          <span className="sr-only">{`${t('App.MadeBy')} ${BRAND_NAME}`}</span>
           <LogoFiligranIcon
             aria-hidden={true}
             className="min-h-4 size-3"

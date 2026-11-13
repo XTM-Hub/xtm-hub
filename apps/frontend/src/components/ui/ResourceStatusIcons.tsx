@@ -67,11 +67,11 @@ export const ResourceStatusIcons = ({
           className={iconClassName}
         />
       )}
+      {/* Scaled down: this logo fills its viewBox, the others are padded. */}
       {verified && (
         <StatusIcon
           label={t('Service.ShareableResources.Details.SupportedByFiligran')}
           icon={LogoFiligranIcon}
-          // Scaled down: this logo fills its viewBox, the others are padded.
           className={cn(iconClassName, 'text-icon-highlight scale-90')}
         />
       )}
