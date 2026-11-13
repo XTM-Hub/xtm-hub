@@ -13,9 +13,9 @@ import {
 const USER_PICTURE_RATE_WINDOW_MS = 60 * 1000;
 const USER_PICTURE_RATE_MAX = 300;
 // One week, and not immutable: the frontend image optimiser fetches the picture by its path alone, whose
-// content changes when the user uploads a new one, and keeps its resized copy for this long (it never
-// goes below its own minimum of one day), so a changed picture can take up to a week to show in the
-// views that use the optimiser.
+// content changes when the user uploads a new one. The optimiser keeps its resized copy for this long, and
+// sends the full lifetime (not the time left) with every response, even a stale one it then revalidates:
+// a replaced picture can stay visible in the views that use the optimiser for about twice this, two weeks.
 const USER_PICTURE_CACHE_MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
 
 const userPictureRateLimiter = rateLimit({
