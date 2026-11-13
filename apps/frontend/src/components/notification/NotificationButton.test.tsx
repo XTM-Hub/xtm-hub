@@ -1,5 +1,6 @@
 import { PortalContext } from '@/components/me/AppPortalContext';
 import { notificationPendingUserQueryFilters } from '@/components/notification/use-notification-pending-users';
+import { INVALIDATION_BATCH_DELAY_MS } from '@/hooks/use-batched-invalidation';
 import testRender from '@/utils/test/test-render';
 import {
   PendingUserEventsDocument,
@@ -11,7 +12,7 @@ import { QueryClient } from '@tanstack/react-query';
 import { act, screen } from '@testing-library/react';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { NotificationButton } from './NotificationButton';
 
@@ -118,6 +119,10 @@ const renderNotificationButton = (selectedOrganizationId: string | null) => {
 };
 
 describe('NotificationButton', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.useNotificationPendingUsers.mockReturnValue({ data: PENDING_USERS });
@@ -172,7 +177,9 @@ describe('NotificationButton', () => {
       const { invalidateQueries } = renderNotificationButton(ORGANIZATION_ID);
 
       // When
+      vi.useFakeTimers();
       act(() => lastSubscriptionOptions().onNext(data));
+      act(() => vi.advanceTimersByTime(INVALIDATION_BATCH_DELAY_MS));
 
       // Then
       expect(invalidateQueries).toHaveBeenCalledExactlyOnceWith(

@@ -18,6 +18,7 @@ import {
   handleSortingChange,
   mapToSortingTableValue,
 } from '@/components/ui/handle-sorting.utils';
+import { useBatchedInvalidation } from '@/hooks/use-batched-invalidation';
 import { useDebouncedSearch } from '@/hooks/use-debounced-search';
 import { useGraphqlSubscription } from '@/hooks/use-graphql-subscription';
 import { useTablePagination } from '@/hooks/use-table-pagination';
@@ -36,7 +37,7 @@ import {
   usePendingUsersQuery,
 } from '@graphql/generated';
 import { pendingUsersKeys } from '@graphql/user/users.keys';
-import { keepPreviousData, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
 import {
   ReactNode,
@@ -123,15 +124,13 @@ const PendingUserList = ({ organization }: PendingUserListProps) => {
   });
   const { clearSelection } = useRowSelection(selection, setSelection);
 
-  const queryClient = useQueryClient();
   // Only the list on screen, as the Relay refetch did: the bell and the tab
-  // counter keep their own pending users query.
-  const refreshPendingUsers = useCallback(() => {
-    void queryClient.invalidateQueries({
-      queryKey: pendingUsersKeys.list(variables),
-      exact: true,
-    });
-  }, [queryClient, variables]);
+  // counter keep their own pending users query. Batched, as an action is
+  // followed by its own deletion event and a bulk accept by one per user.
+  const refreshPendingUsers = useBatchedInvalidation({
+    queryKey: pendingUsersKeys.list(variables),
+    exact: true,
+  });
 
   useGraphqlSubscription<
     PendingUserEventsSubscription,
