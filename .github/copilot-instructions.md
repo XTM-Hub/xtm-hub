@@ -2,6 +2,7 @@
 
 @../AGENTS.md
 
+@../.claude/rules/access-control.md
 @../.claude/rules/backend.md
 @../.claude/rules/ci.md
 @../.claude/rules/design-system.md

@@ -35,7 +35,7 @@ src/config.ts                Configuration via node-config
 src/crons.ts                 Scheduled jobs (node-cron)
 src/portal.const.ts          Platform constants (UUIDs, roles, system user)
 src/modules/                 Feature modules
-src/security/                Authorization: @auth directive, guards, restrictions
+src/security/                Authorization: @Guarded decorator (security/guarded), @auth directives, restrictions
 src/context/                 AsyncLocalStorage (request, database transaction)
 src/model/kanel/             Types generated from PostgreSQL via kanel
 src/nodes/                   Relay-compatible GraphQL Node interface
@@ -126,8 +126,9 @@ Never read `process.env` directly in application code — go through `src/config
 
 - Providers: OIDC (`openid-client`) and local form-based, under `src/modules/security-management/authentication/`.
 - Sessions: `express-session`, PostgreSQL or memory store (`src/session-store-manager.ts`).
-- GraphQL authorization: the `@auth` directive transformer in `src/security/directive-graphql/`. Put access control
-  on the schema, not scattered through resolvers.
+- GraphQL authorization: `@Guarded` / `@Public()` on the resolver for migrated modules, the `@auth` directive
+  transformer in `src/security/directive-graphql/` for the others. Never both on one operation. See
+  [`access-control.md`](access-control.md). Put access control in that declaration, not scattered through resolvers.
 - Subscriptions: GraphQL SSE (`graphql-sse`) on `/graphql-sse`, with PubSub in `src/pub.ts`.
 
 ## Logging
