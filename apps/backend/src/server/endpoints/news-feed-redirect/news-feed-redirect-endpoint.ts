@@ -7,7 +7,7 @@ import {
 import { NEWS_FEED_REDIRECT_PATH_PREFIX } from '../../../modules/news-feed/news-feed.model';
 import { TelemetryApp } from '../../../modules/telemetry/telemetry.app';
 import { logApp } from '../../../utils/app-logger.util';
-import { buildIpRateLimiterOptions } from '../shared/ip-rate-limit.util';
+import { buildRateLimiterOptions } from '../../../utils/rate-limit.util';
 
 // Clicks from a news feed are rare, so the limit is far below the other public endpoints
 const NEWS_FEED_REDIRECT_RATE_WINDOW_MS = 60 * 1000;
@@ -16,7 +16,7 @@ const NEWS_FEED_REDIRECT_RATE_MAX = 60;
 const HUB_ROOT_PATH = '/';
 
 export const buildNewsFeedRedirectRateLimiterOptions = (): Partial<Options> =>
-  buildIpRateLimiterOptions({
+  buildRateLimiterOptions({
     windowMs: NEWS_FEED_REDIRECT_RATE_WINDOW_MS,
     limit: NEWS_FEED_REDIRECT_RATE_MAX,
     logLabel: 'News feed redirect',

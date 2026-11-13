@@ -6,12 +6,12 @@ import { DocumentDomain } from '../../../modules/document/domain/document.domain
 import { ManageProductVersionDomain } from '../../../modules/manage-product-version/manage-product-version.domain';
 import { ManifestFragmentHelper } from '../../../modules/shareable-resource/manifest-fragment/manifest-fragment.helper';
 import { logApp } from '../../../utils/app-logger.util';
+import { buildRateLimiterOptions } from '../../../utils/rate-limit.util';
 import {
   buildETag,
   CacheControl,
   respondNotModifiedIfFresh,
 } from '../shared/http-cache.util';
-import { buildIpRateLimiterOptions } from '../shared/ip-rate-limit.util';
 import { isProduct } from '../shared/product.util';
 import {
   sendVersionsMatrixError,
@@ -37,7 +37,7 @@ const VERSIONS_MATRIX_RATE_WINDOW_MS = 60 * 1000;
 const VERSIONS_MATRIX_RATE_MAX = 300;
 
 export const buildVersionsMatrixRateLimiterOptions = (): Partial<Options> =>
-  buildIpRateLimiterOptions({
+  buildRateLimiterOptions({
     windowMs: VERSIONS_MATRIX_RATE_WINDOW_MS,
     limit: VERSIONS_MATRIX_RATE_MAX,
     logLabel: 'Versions matrix',

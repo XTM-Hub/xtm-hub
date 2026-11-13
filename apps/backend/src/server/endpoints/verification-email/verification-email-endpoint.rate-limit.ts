@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
 import type { Options } from 'express-rate-limit';
 import { AppLogsCategory, logApp } from '../../../utils/app-logger.util';
-import { buildIpRateLimiterOptions } from '../shared/ip-rate-limit.util';
+import { buildRateLimiterOptions } from '../../../utils/rate-limit.util';
 import {
   sendVerificationEmailError,
   VERIFICATION_EMAIL_ERRORS,
@@ -18,7 +18,7 @@ const sendTooManyRequests = (res: Response) =>
 
 export const buildVerificationEmailIpRateLimiterOptions =
   (): Partial<Options> =>
-    buildIpRateLimiterOptions({
+    buildRateLimiterOptions({
       windowMs: IP_RATE_WINDOW_MS,
       limit: IP_RATE_MAX,
       logLabel: 'Verification email',

@@ -9,7 +9,7 @@ import {
 } from '../../../security/directive-graphql/validator/system-token.validator';
 import { BlogApiError } from '../../../thirdparty/blog-api/errors';
 import { logApp } from '../../../utils/app-logger.util';
-import { buildIpRateLimiterOptions } from '../shared/ip-rate-limit.util';
+import { buildRateLimiterOptions } from '../../../utils/rate-limit.util';
 
 const NEWS_FEED_BLOGPOST_SYNC_PATH = '/webhooks/news-feed/blogposts';
 // Called by n8n on every blog post change, a few times a minute at most
@@ -21,7 +21,7 @@ const SYNC_FAILURE_MESSAGE = 'Unable to synchronize blog posts';
 
 export const buildNewsFeedBlogpostSyncRateLimiterOptions =
   (): Partial<Options> =>
-    buildIpRateLimiterOptions({
+    buildRateLimiterOptions({
       windowMs: NEWS_FEED_BLOGPOST_SYNC_RATE_WINDOW_MS,
       limit: NEWS_FEED_BLOGPOST_SYNC_RATE_MAX,
       logLabel: 'News feed blogpost sync',
