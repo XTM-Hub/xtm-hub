@@ -12,7 +12,11 @@ import {
 
 const USER_PICTURE_RATE_WINDOW_MS = 60 * 1000;
 const USER_PICTURE_RATE_MAX = 300;
-const USER_PICTURE_CACHE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
+// One week, and not immutable: the frontend image optimiser fetches the picture by its path alone, whose
+// content changes when the user uploads a new one, and keeps its resized copy for this long (it never
+// goes below its own minimum of one day), so a changed picture can take up to a week to show in the
+// views that use the optimiser.
+const USER_PICTURE_CACHE_MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
 
 const userPictureRateLimiter = rateLimit({
   windowMs: USER_PICTURE_RATE_WINDOW_MS,
@@ -47,7 +51,7 @@ export const getUserPicture = async (
     res.setHeader('Content-Type', toStoredImageContentType(file.mimeType));
     res.setHeader(
       'Cache-Control',
-      `public, max-age=${USER_PICTURE_CACHE_MAX_AGE_SECONDS}, immutable`
+      `public, max-age=${USER_PICTURE_CACHE_MAX_AGE_SECONDS}`
     );
     setStoredFileSecurityHeaders(res);
 

@@ -23,7 +23,7 @@ vi.mock('../../../utils/app-logger.util', () => ({
 
 import { getUserPicture } from './user-picture-endpoint';
 
-const CACHE_CONTROL = 'public, max-age=2592000, immutable';
+const CACHE_CONTROL = 'public, max-age=604800';
 const STORED_FILE_CSP =
   "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox";
 
@@ -49,7 +49,7 @@ describe('getUserPicture', () => {
     vi.clearAllMocks();
   });
 
-  it('sets an immutable Cache-Control header on a successful response', async () => {
+  it('sets a one week Cache-Control header, not immutable, on a successful response', async () => {
     loadUserPictureMinioMock.mockResolvedValue('picture/abc');
     downloadFileWithMimeTypeMock.mockResolvedValue(
       buildStoredPicture({ on: vi.fn(), pipe: vi.fn() })
