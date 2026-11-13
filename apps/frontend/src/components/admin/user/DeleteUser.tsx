@@ -1,15 +1,15 @@
 import { getDeletionBlockedReasonKey } from '@/components/admin/user/delete-user.utils';
+import { UsersListUser } from '@/components/admin/user/user-list.types';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { DialogInformative } from '@/components/ui/Dialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import { UserList_fragment$data } from '@generated/UserList_fragment.graphql';
 import { useUserDeleteMutation } from '@graphql/generated';
 import React, { useState } from 'react';
 
 interface DeleteUserProps {
-  user: UserList_fragment$data;
+  user: UsersListUser;
   onUserDeleted: () => void;
   open: boolean;
   setOpen: (open: boolean) => void;

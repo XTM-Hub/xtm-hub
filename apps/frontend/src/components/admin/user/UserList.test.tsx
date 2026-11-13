@@ -1,8 +1,19 @@
 import UserList from '@/components/admin/user/UserList';
+import { UsersListUser } from '@/components/admin/user/user-list.types';
 import { PortalContext } from '@/components/me/AppPortalContext';
+import { INVALIDATION_BATCH_DELAY_MS } from '@/hooks/use-batched-invalidation';
+import { toCursor } from '@/hooks/use-table-pagination';
 import testRender from '@/utils/test/test-render';
-import { UserList_fragment$data } from '@generated/UserList_fragment.graphql';
-import { UserOrdering } from '@graphql/generated';
+import {
+  AdminUserEventsDocument,
+  FilterKey,
+  OrganizationUserEventsDocument,
+  UserOrdering,
+  UsersListQuery,
+  UsersListQueryVariables,
+} from '@graphql/generated';
+import { usersListKeys } from '@graphql/user/users.keys';
+import { keepPreviousData, QueryClient } from '@tanstack/react-query';
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -13,11 +24,24 @@ type CapturedColumn = {
   cell?: (args: { row: { original: Record<string, unknown> } }) => ReactNode;
 };
 
-type CapturedOnClickRow = (row: { original: UserList_fragment$data }) => void;
+type CapturedOnClickRow = (row: { original: UsersListUser }) => void;
 
 type ResendInviteMutationOptions = {
   onSuccess: () => void;
   onError: (error: unknown) => void;
+};
+
+type UsersListQueryOptions = {
+  placeholderData: unknown;
+  throwOnError: (
+    error: Error,
+    query: { state: { data: UsersListQuery | undefined } }
+  ) => boolean;
+};
+
+type SubscriptionOptions = {
+  enabled: boolean;
+  onNext: (data: unknown) => void;
 };
 
 const USER_EMAIL = 'user-1@test.io';
@@ -30,14 +54,40 @@ const FORMATTED_INVITATION_DATE = 'March 15, 2024';
 const SERVER_ERROR_CODE = 'ADDING_USER_ERROR';
 const RESEND_INVITE_LABEL = 'UserListPage.ResendInvite';
 const EDIT_SHEET_TITLE = 'UserActions.UpdateUser';
+const PAGE_SIZE = 10;
+const SEARCH_TERM = 'jane';
+const FILTERED_ORGANIZATION_ID = 'organization-2';
+
+const SECOND_PAGE_CURSOR = toCursor(PAGE_SIZE, 1);
+const FIRST_PAGE_VARIABLES: UsersListQueryVariables = {
+  first: PAGE_SIZE,
+  after: toCursor(PAGE_SIZE, 0),
+  orderBy: 'first_name' as UserOrdering,
+  orderMode: 'asc' as UsersListQueryVariables['orderMode'],
+  searchTerm: null,
+  filters: null,
+};
+
+const LIST_ON_SCREEN_INVALIDATION = {
+  queryKey: usersListKeys.list(FIRST_PAGE_VARIABLES),
+  exact: true,
+};
 
 const mocks = vi.hoisted(() => ({
   isAdminPath: true,
   canDeleteUser: true,
   totalCount: 0,
   edges: [] as Array<{ node: Record<string, unknown> }>,
-  refetch: vi.fn(),
-  setConnectionId: vi.fn(),
+  isLoading: false,
+  usersListQuery: vi.fn(),
+  useGraphqlSubscription: vi.fn(),
+  setOrganizationFilter: vi.fn(),
+  capturedOrganizationChange: undefined as
+    ((organizationId: string | undefined) => void) | undefined,
+  capturedOnPaginationChange: undefined as
+    ((updater: unknown) => void) | undefined,
+  capturedIsLoading: undefined as boolean | undefined,
+  capturedOnUserDeleted: undefined as (() => void) | undefined,
   capturedColumns: [] as Array<CapturedColumn>,
   capturedOnClickRow: undefined as CapturedOnClickRow | undefined,
   resendInvite: vi.fn(),
@@ -53,21 +103,12 @@ vi.mock('@/components/ui/snackbar/snackbar-store', () => ({
   showSnackbar: mocks.showSnackbar,
 }));
 
-vi.mock('react-relay', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('react-relay')>();
-  return {
-    ...actual,
-    graphql: (
-      strings: TemplateStringsArray,
-      ..._values: ReadonlyArray<unknown>
-    ) => strings.join(''),
-    readInlineData: (_fragment: unknown, node: unknown) => node,
-    useSubscription: vi.fn(),
-  };
-});
-
 vi.mock('@graphql/generated', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@graphql/generated')>();
+  const { mockGeneratedQueryHooks } =
+    await import('@/utils/test/mock-generated-query');
+  const withMockedQuery = await mockGeneratedQueryHooks(importOriginal, {
+    useUsersListQuery: mocks.usersListQuery,
+  });
   const mockResendInviteMutation =
     (mutate: (variables: unknown) => void, isPending: () => boolean) =>
     (_client: unknown, options: ResendInviteMutationOptions) => ({
@@ -78,7 +119,7 @@ vi.mock('@graphql/generated', async (importOriginal) => {
       isPending: isPending(),
     });
   return {
-    ...actual,
+    ...withMockedQuery,
     useUserResendInviteMutation: mockResendInviteMutation(
       mocks.resendInvite,
       () => mocks.isResendInvitePending
@@ -98,17 +139,15 @@ vi.mock('@/hooks/use-portal-capability', () => ({
   useAdminByPass: () => mocks.canDeleteUser,
 }));
 
-vi.mock('@/hooks/use-users-list', () => ({
-  useUsersList: () => ({
-    data: {
-      users: {
-        __id: 'users-connection-id',
-        totalCount: mocks.totalCount,
-        edges: mocks.edges,
-      },
-    },
-    refetch: mocks.refetch,
-  }),
+vi.mock('@/hooks/use-graphql-subscription', () => ({
+  useGraphqlSubscription: mocks.useGraphqlSubscription,
+}));
+
+// The debounce delay is not under test: searches run as soon as they are asked
+vi.mock('usehooks-ts', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('usehooks-ts')>()),
+  useDebounceCallback: (callback: (...args: never[]) => void) =>
+    Object.assign(callback, { cancel: vi.fn() }),
 }));
 
 vi.mock('@/components/admin/user/user-list-localstorage', () => ({
@@ -124,14 +163,10 @@ vi.mock('@/components/admin/user/user-list-localstorage', () => ({
     columnVisibility: {},
     setColumnVisibility: vi.fn(),
     organizationFilter: undefined,
-    setOrganizationFilter: vi.fn(),
+    setOrganizationFilter: mocks.setOrganizationFilter,
     resetAll: vi.fn(),
     removeOrder: vi.fn(),
   }),
-}));
-
-vi.mock('@/components/admin/user/UserListPage', () => ({
-  getUserListContext: () => ({ setConnectionId: mocks.setConnectionId }),
 }));
 
 vi.mock('@/components/ui/handle-sorting.utils', () => ({
@@ -149,7 +184,21 @@ vi.mock('@/components/admin/user/forms/admin/AdminAddUser', () => ({
 }));
 
 vi.mock('@/components/admin/user/UserOrganizationFilter', () => ({
-  UserOrganizationFilter: () => <div>UserOrganizationFilter</div>,
+  UserOrganizationFilter: ({
+    onChange,
+  }: {
+    onChange: (organizationId: string | undefined) => void;
+  }) => {
+    mocks.capturedOrganizationChange = onChange;
+    return <div>UserOrganizationFilter</div>;
+  },
+}));
+
+vi.mock('@/components/admin/user/DeleteUser', () => ({
+  DeleteUser: ({ onUserDeleted }: { onUserDeleted: () => void }) => {
+    mocks.capturedOnUserDeleted = onUserDeleted;
+    return null;
+  },
 }));
 
 // Simplified stand-ins so the resend/delete menu items render as plain,
@@ -183,13 +232,19 @@ vi.mock('@/components/ui/data-table', async (importOriginal) => {
       columns,
       toolbar,
       onClickRow,
+      isLoading,
+      tableOptions,
     }: {
       columns: Array<CapturedColumn>;
       toolbar?: ReactNode;
       onClickRow?: CapturedOnClickRow;
+      isLoading?: boolean;
+      tableOptions?: { onPaginationChange?: (updater: unknown) => void };
     }) => {
       mocks.capturedColumns = columns;
       mocks.capturedOnClickRow = onClickRow;
+      mocks.capturedIsLoading = isLoading;
+      mocks.capturedOnPaginationChange = tableOptions?.onPaginationChange;
       return (
         <div>
           <div>DataTable</div>
@@ -204,25 +259,45 @@ vi.mock('@/components/admin/user/forms/admin/AdminUserUpdateForm', () => ({
   AdminUserUpdateForm: () => <div>AdminUserUpdateForm</div>,
 }));
 
-const renderUserList = () =>
-  testRender(
-    <PortalContext.Provider
-      value={{
-        me: {
-          id: 'me-user-id',
-          selected_organization_id: SELECTED_ORGANIZATION_ID,
-          organizations: [],
-          selected_org_capabilities: [],
-          capabilities: [],
-        } as never,
-      }}>
-      <UserList />
-    </PortalContext.Provider>
-  );
+const renderUserList = (organization?: string) => {
+  const queryClient = new QueryClient();
+  const invalidateQueries = vi
+    .spyOn(queryClient, 'invalidateQueries')
+    .mockResolvedValue();
+  return {
+    invalidateQueries,
+    ...testRender(
+      <PortalContext.Provider
+        value={{
+          me: {
+            id: 'me-user-id',
+            selected_organization_id: SELECTED_ORGANIZATION_ID,
+            organizations: [],
+            selected_org_capabilities: [],
+            capabilities: [],
+          } as never,
+        }}>
+        <UserList organization={organization} />
+      </PortalContext.Provider>,
+      { queryClient }
+    ),
+  };
+};
+
+const lastQueryVariables = () =>
+  mocks.usersListQuery.mock.lastCall?.[1] as UsersListQueryVariables;
+
+const lastQueryOptions = () =>
+  mocks.usersListQuery.mock.lastCall?.[2] as UsersListQueryOptions;
+
+const lastSubscriptionOptions = (document: string) =>
+  mocks.useGraphqlSubscription.mock.calls
+    .filter(([calledDocument]) => calledDocument === document)
+    .at(-1)?.[2] as SubscriptionOptions;
 
 const makeUserNode = (
-  overrides: Partial<UserList_fragment$data> = {}
-): UserList_fragment$data => ({
+  overrides: Partial<UsersListUser> = {}
+): UsersListUser => ({
   id: 'user-1',
   email: USER_EMAIL,
   first_name: USER_FIRST_NAME,
@@ -233,12 +308,11 @@ const makeUserNode = (
   status: null,
   invitation_date: null,
   organization_capabilities: [],
-  ' $fragmentType': 'UserList_fragment',
   ...overrides,
 });
 
 const selectedOrganizationCapabilities: NonNullable<
-  UserList_fragment$data['organization_capabilities']
+  UsersListUser['organization_capabilities']
 >[number] = {
   id: 'organization-capabilities-1',
   organization: {
@@ -249,20 +323,23 @@ const selectedOrganizationCapabilities: NonNullable<
   capabilities: [SELECTED_ORGANIZATION_CAPABILITY],
 };
 
-const renderUserListWith = (node: UserList_fragment$data) => {
+const renderUserListWith = (node: UsersListUser) => {
   mocks.totalCount = 1;
   mocks.edges = [{ node }];
   return renderUserList();
 };
 
 // DataTable is stubbed, so render the user's cell for that column on its own
-const renderUserCell = (columnId: string, node: UserList_fragment$data) => {
-  renderUserListWith(node);
+const renderUserCell = (columnId: string, node: UsersListUser) => {
+  const { invalidateQueries } = renderUserListWith(node);
   const column = mocks.capturedColumns.find(({ id }) => id === columnId);
   if (!column?.cell) {
     throw new Error(`Column "${columnId}" was not captured or has no cell`);
   }
-  return render(column.cell({ row: { original: node } }));
+  return {
+    invalidateQueries,
+    ...render(column.cell({ row: { original: node } })),
+  };
 };
 
 describe('UserList', () => {
@@ -271,8 +348,16 @@ describe('UserList', () => {
     mocks.canDeleteUser = true;
     mocks.totalCount = 0;
     mocks.edges = [];
-    mocks.refetch.mockReset();
-    mocks.setConnectionId.mockReset();
+    mocks.isLoading = false;
+    vi.clearAllMocks();
+    mocks.usersListQuery.mockImplementation(() => ({
+      data: { users: { totalCount: mocks.totalCount, edges: mocks.edges } },
+      isLoading: mocks.isLoading,
+    }));
+    mocks.capturedOrganizationChange = undefined;
+    mocks.capturedOnPaginationChange = undefined;
+    mocks.capturedIsLoading = undefined;
+    mocks.capturedOnUserDeleted = undefined;
     mocks.capturedColumns = [];
     mocks.capturedOnClickRow = undefined;
     mocks.resendInvite.mockReset();
@@ -416,7 +501,7 @@ describe('UserList', () => {
       email: 'user-2@test.io',
     });
 
-    const clickRow = (node: UserList_fragment$data) => {
+    const clickRow = (node: UsersListUser) => {
       const onClickRow = mocks.capturedOnClickRow;
       if (!onClickRow) {
         throw new Error('DataTable was not given an onClickRow handler');
@@ -678,17 +763,19 @@ describe('UserList', () => {
         mocks.settleResendInvite.mockImplementation(({ onSuccess }) =>
           onSuccess()
         );
-        renderUserCell(columnId, makeUserNode({ status: 'expired' }));
+        const { invalidateQueries } = renderUserCell(
+          columnId,
+          makeUserNode({ status: 'expired' })
+        );
 
         // When resend is clicked
         fireEvent.click(
           screen.getByRole('button', { name: RESEND_INVITE_LABEL })
         );
 
-        // Then the list is refetched, bypassing the Relay store, so the row is up to date
-        expect(mocks.refetch).toHaveBeenCalledExactlyOnceWith(
-          {},
-          { fetchPolicy: 'network-only' }
+        // Then the list on screen is reloaded, so the row is up to date
+        expect(invalidateQueries).toHaveBeenCalledExactlyOnceWith(
+          LIST_ON_SCREEN_INVALIDATION
         );
       });
 
@@ -697,7 +784,10 @@ describe('UserList', () => {
         mocks.settleResendInvite.mockImplementation(({ onError }) =>
           onError(new Error(SERVER_ERROR_CODE))
         );
-        renderUserCell(columnId, makeUserNode({ status: 'expired' }));
+        const { invalidateQueries } = renderUserCell(
+          columnId,
+          makeUserNode({ status: 'expired' })
+        );
 
         // When resend is clicked
         fireEvent.click(
@@ -705,7 +795,7 @@ describe('UserList', () => {
         );
 
         // Then the list is left as is
-        expect(mocks.refetch).not.toHaveBeenCalled();
+        expect(invalidateQueries).not.toHaveBeenCalled();
       });
     }
   );
@@ -773,5 +863,282 @@ describe('UserList', () => {
     expect(
       screen.getByRole('button', { name: 'Utils.Delete' })
     ).toBeInTheDocument();
+  });
+
+  describe('users list query', () => {
+    it.each([
+      {
+        path: 'the bypass admin path, without an organization filter',
+        isAdminPath: true,
+        organization: undefined,
+        filters: null,
+      },
+      {
+        path: 'the org-admin manage/user path, in its organization',
+        isAdminPath: false,
+        organization: SELECTED_ORGANIZATION_ID,
+        filters: [
+          { key: FilterKey.OrganizationId, value: [SELECTED_ORGANIZATION_ID] },
+        ],
+      },
+    ])(
+      'should load the first page of users on $path',
+      ({ isAdminPath, organization, filters }) => {
+        // Given
+        mocks.isAdminPath = isAdminPath;
+
+        // When
+        renderUserList(organization);
+
+        // Then
+        expect(lastQueryVariables()).toEqual({
+          ...FIRST_PAGE_VARIABLES,
+          filters,
+        });
+      }
+    );
+
+    it('should go back to the first page when the user searches', async () => {
+      // Given
+      const { user } = renderUserList();
+      act(() =>
+        mocks.capturedOnPaginationChange!({
+          pageIndex: 1,
+          pageSize: PAGE_SIZE,
+        })
+      );
+      expect(lastQueryVariables().after).toBe(SECOND_PAGE_CURSOR);
+
+      // When
+      await user.type(
+        screen.getByPlaceholderText('UserActions.SearchUser'),
+        SEARCH_TERM
+      );
+
+      // Then
+      expect(lastQueryVariables()).toEqual({
+        ...FIRST_PAGE_VARIABLES,
+        searchTerm: SEARCH_TERM,
+      });
+    });
+
+    it('should store the organization filter and go back to the first page when it changes', () => {
+      // Given
+      renderUserList();
+      act(() =>
+        mocks.capturedOnPaginationChange!({
+          pageIndex: 1,
+          pageSize: PAGE_SIZE,
+        })
+      );
+      expect(lastQueryVariables().after).toBe(SECOND_PAGE_CURSOR);
+
+      // When
+      act(() => mocks.capturedOrganizationChange?.(FILTERED_ORGANIZATION_ID));
+
+      // Then
+      expect(mocks.setOrganizationFilter).toHaveBeenCalledWith(
+        FILTERED_ORGANIZATION_ID
+      );
+      expect(lastQueryVariables()).toEqual({
+        ...FIRST_PAGE_VARIABLES,
+        filters: [
+          { key: FilterKey.OrganizationId, value: [FILTERED_ORGANIZATION_ID] },
+        ],
+      });
+    });
+
+    it('should keep the current rows on screen while another page loads', () => {
+      // When
+      renderUserList();
+
+      // Then
+      expect(lastQueryOptions().placeholderData).toBe(keepPreviousData);
+    });
+
+    it.each([
+      {
+        case: 'send the error to the error page when the first load fails',
+        data: undefined,
+        expected: true,
+      },
+      {
+        case: 'keep the rows on screen when a background refetch fails',
+        data: { users: { totalCount: 0, edges: [] } },
+        expected: false,
+      },
+    ])('should $case', ({ data, expected }) => {
+      // Given
+      renderUserList();
+
+      // When
+      const shouldThrow = lastQueryOptions().throwOnError(new Error(), {
+        state: { data },
+      });
+
+      // Then
+      expect(shouldThrow).toBe(expected);
+    });
+
+    it('should show the table loading state, and no empty state, while the users load', () => {
+      // Given
+      mocks.usersListQuery.mockImplementation(() => ({
+        data: undefined,
+        isLoading: true,
+      }));
+
+      // When
+      renderUserList();
+
+      // Then
+      expect(mocks.capturedIsLoading).toBe(true);
+      expect(
+        screen.queryByText('UserListPage.NoUsers')
+      ).not.toBeInTheDocument();
+    });
+
+    it('should reload the list on screen when a user is deleted', () => {
+      // Given
+      const { invalidateQueries } = renderUserCell('actions', makeUserNode());
+      fireEvent.click(screen.getByRole('button', { name: 'Utils.Delete' }));
+
+      // When
+      act(() => mocks.capturedOnUserDeleted?.());
+
+      // Then
+      expect(invalidateQueries).toHaveBeenCalledExactlyOnceWith(
+        LIST_ON_SCREEN_INVALIDATION
+      );
+    });
+  });
+
+  describe('new users in real time', () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it.each([
+      {
+        path: 'the bypass admin path',
+        isAdminPath: true,
+        organization: undefined,
+        adminEnabled: true,
+        organizationEnabled: false,
+      },
+      {
+        path: 'the org-admin manage/user path',
+        isAdminPath: false,
+        organization: SELECTED_ORGANIZATION_ID,
+        adminEnabled: false,
+        organizationEnabled: true,
+      },
+      {
+        path: 'the org-admin manage/user path without an organization',
+        isAdminPath: false,
+        organization: undefined,
+        adminEnabled: false,
+        organizationEnabled: false,
+      },
+    ])(
+      'should listen to the right new users on $path',
+      ({ isAdminPath, organization, adminEnabled, organizationEnabled }) => {
+        // Given
+        mocks.isAdminPath = isAdminPath;
+
+        // When
+        renderUserList(organization);
+
+        // Then
+        expect(lastSubscriptionOptions(AdminUserEventsDocument).enabled).toBe(
+          adminEnabled
+        );
+        expect(
+          lastSubscriptionOptions(OrganizationUserEventsDocument).enabled
+        ).toBe(organizationEnabled);
+      }
+    );
+
+    it('should listen to the new users of the organization', () => {
+      // Given
+      mocks.isAdminPath = false;
+
+      // When
+      renderUserList(SELECTED_ORGANIZATION_ID);
+
+      // Then
+      expect(mocks.useGraphqlSubscription).toHaveBeenCalledWith(
+        OrganizationUserEventsDocument,
+        { organizationId: SELECTED_ORGANIZATION_ID },
+        expect.anything()
+      );
+    });
+
+    it.each([
+      {
+        path: 'the bypass admin path',
+        isAdminPath: true,
+        organization: undefined,
+        document: AdminUserEventsDocument,
+        event: { AdminUser: { add: { id: 'new-user' } } },
+        filters: null,
+      },
+      {
+        path: 'the org-admin manage/user path',
+        isAdminPath: false,
+        organization: SELECTED_ORGANIZATION_ID,
+        document: OrganizationUserEventsDocument,
+        event: { User: { add: { id: 'new-user' } } },
+        filters: [
+          { key: FilterKey.OrganizationId, value: [SELECTED_ORGANIZATION_ID] },
+        ],
+      },
+    ])(
+      'should reload the list on screen when a user is added on $path',
+      ({ isAdminPath, organization, document, event, filters }) => {
+        // Given
+        mocks.isAdminPath = isAdminPath;
+        const { invalidateQueries } = renderUserList(organization);
+
+        // When
+        vi.useFakeTimers();
+        act(() => lastSubscriptionOptions(document).onNext(event));
+        act(() => vi.advanceTimersByTime(INVALIDATION_BATCH_DELAY_MS));
+
+        // Then
+        expect(invalidateQueries).toHaveBeenCalledExactlyOnceWith({
+          queryKey: usersListKeys.list({ ...FIRST_PAGE_VARIABLES, filters }),
+          exact: true,
+        });
+      }
+    );
+
+    it('should reload the searched list when a user is added after a search', async () => {
+      // Given
+      const { user, invalidateQueries } = renderUserList();
+      await user.type(
+        screen.getByPlaceholderText('UserActions.SearchUser'),
+        SEARCH_TERM
+      );
+      const searchedVariables = {
+        ...FIRST_PAGE_VARIABLES,
+        searchTerm: SEARCH_TERM,
+      };
+      expect(lastQueryVariables()).toEqual(searchedVariables);
+
+      // When
+      vi.useFakeTimers();
+      act(() =>
+        lastSubscriptionOptions(AdminUserEventsDocument).onNext({
+          AdminUser: { add: { id: 'new-user' } },
+        })
+      );
+      act(() => vi.advanceTimersByTime(INVALIDATION_BATCH_DELAY_MS));
+
+      // Then
+      expect(invalidateQueries).toHaveBeenCalledExactlyOnceWith({
+        queryKey: usersListKeys.list(searchedVariables),
+        exact: true,
+      });
+    });
   });
 });

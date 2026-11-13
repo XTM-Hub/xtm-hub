@@ -1,5 +1,5 @@
 import { useUserListLocalstorage } from '@/components/admin/user/user-list-localstorage';
-import { UserFragment } from '@/components/admin/user/UserList';
+import Loader from '@/components/Loader';
 import { serviceGroupFragment } from '@/components/service/service-group.graphql';
 import { AppCombobox } from '@/components/ui/AppCombobox';
 import { Form, FormField } from '@/components/ui/form';
@@ -7,8 +7,8 @@ import { SheetFooter } from '@/components/ui/sheet';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useKeepSelectedOptions } from '@/hooks/use-keep-selected-options';
 import { useTranslate } from '@/hooks/use-translate';
-import { useUsersList } from '@/hooks/use-users-list';
 import { analyticsId } from '@/lib/analytics/analytics.ids';
+import { portalGraphqlClient } from '@/lib/graphql-client';
 import { toComboboxOptionIds } from '@/utils/design-system/combobox';
 import { Button } from '@filigran/design-system';
 import { serviceGroup_fragment$key } from '@generated/serviceGroup_fragment.graphql';
@@ -16,7 +16,7 @@ import ServiceGroupsByServiceInstanceIdQueryGraphql, {
   serviceGroupsByServiceInstanceIdQuery,
 } from '@generated/serviceGroupsByServiceInstanceIdQuery.graphql';
 import ServiceGroupsUpdateMutationGraphql from '@generated/serviceGroupsUpdateMutation.graphql';
-import { UserList_fragment$key } from '@generated/UserList_fragment.graphql';
+import { FilterKey, useUsersQuery } from '@graphql/generated';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMemo } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
@@ -50,12 +50,23 @@ export const TrialsManageUsersForm = ({
 }: TrialsManageUsersFormProps) => {
   const t = useTranslate();
   const { orderMode, orderBy, pageSize } = useUserListLocalstorage();
-  const { data: availableUsers } = useUsersList({
-    orderMode,
-    orderBy,
-    pageSize,
-    filter: { organization: organizationId },
-  });
+  const { data: availableUsers } = useUsersQuery(
+    portalGraphqlClient,
+    {
+      first: pageSize,
+      orderMode,
+      orderBy,
+      searchTerm: null,
+      filters: organizationId
+        ? [{ key: FilterKey.OrganizationId, value: [organizationId] }]
+        : null,
+    },
+    {
+      // Like Relay, a failed load reaches the error page; a failed background
+      // refetch keeps the users shown.
+      throwOnError: (_error, query) => query.state.data === undefined,
+    }
+  );
 
   const data = useLazyLoadQuery<serviceGroupsByServiceInstanceIdQuery>(
     ServiceGroupsByServiceInstanceIdQueryGraphql,
@@ -90,18 +101,14 @@ export const TrialsManageUsersForm = ({
     });
   };
 
-  const options = useMemo(() => {
-    return availableUsers.users.edges.map(({ node }) => {
-      const { email, id } = readInlineData<UserList_fragment$key>(
-        UserFragment,
-        node
-      );
-      return {
-        label: email,
-        value: id,
-      };
-    });
-  }, [availableUsers.users.edges]);
+  const options = useMemo(
+    () =>
+      availableUsers?.users.edges.map(({ node }) => ({
+        label: node.email,
+        value: node.id,
+      })) ?? [],
+    [availableUsers]
+  );
 
   const groups = useMemo(() => {
     return data.serviceGroups.map((group) => {
@@ -181,6 +188,11 @@ export const TrialsManageUsersForm = ({
       />
     ));
   }, [groups, form.control, t, optionIds]);
+
+  // The form waits for the users, as it did when the Relay query suspended it.
+  if (!availableUsers) {
+    return <Loader />;
+  }
 
   return (
     <Form {...form}>

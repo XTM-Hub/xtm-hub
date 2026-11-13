@@ -1,6 +1,5 @@
 import { isValueInEnum } from '@/utils/is-value-in-enum';
-import { OrderingMode } from '@generated/UserListQuery.graphql';
-import { UserOrdering } from '@graphql/generated';
+import { OrderingMode, UserOrdering } from '@graphql/generated';
 import { useLocalStorage } from 'usehooks-ts';
 
 export const useUserListLocalstorage = () => {
@@ -9,7 +8,7 @@ export const useUserListLocalstorage = () => {
     50
   );
   const [orderMode, setOrderMode, removeOrderMode] =
-    useLocalStorage<OrderingMode>('orderModePendingUserList', 'asc');
+    useLocalStorage<OrderingMode>('orderModePendingUserList', OrderingMode.Asc);
   const [orderBy, setOrderBy, removeOrderBy] = useLocalStorage<UserOrdering>(
     'orderByPendingUserList',
     UserOrdering.Email

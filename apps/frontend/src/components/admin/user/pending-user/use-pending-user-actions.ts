@@ -1,20 +1,16 @@
-import {
-  AcceptPendingUserBulkMutation,
-  AcceptPendingUserMutation,
-  RemovePendingUserBulkMutation,
-  RemovePendingUserMutation,
-} from '@/components/admin/user/pending-user/pending-user.graphql';
+import { PendingUser } from '@/components/admin/user/pending-user/pending-user-list.types';
 import { SelectionState } from '@/components/ui/data-table';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
-import { PendingUserListAcceptUserBulkMutation } from '@generated/PendingUserListAcceptUserBulkMutation.graphql';
-import { PendingUserListAcceptUserMutation } from '@generated/PendingUserListAcceptUserMutation.graphql';
-import { PendingUserListRemoveUserBulkMutation } from '@generated/PendingUserListRemoveUserBulkMutation.graphql';
-import { PendingUserListRemoveUserMutation } from '@generated/PendingUserListRemoveUserMutation.graphql';
-import { UserList_fragment$data } from '@generated/UserList_fragment.graphql';
-import { FilterKey } from '@graphql/generated';
-import { useCallback } from 'react';
-import { useMutation } from 'react-relay';
+import { portalGraphqlClient } from '@/lib/graphql-client';
+import {
+  FilterKey,
+  usePendingUserAcceptMutation,
+  usePendingUserRemoveMutation,
+  usePendingUsersBulkAcceptMutation,
+  usePendingUsersBulkRemoveMutation,
+} from '@graphql/generated';
+import { useCallback, useRef } from 'react';
 
 interface UsePendingUserActionsParams {
   organization: string;
@@ -33,92 +29,89 @@ export const usePendingUserActions = ({
 }: UsePendingUserActionsParams) => {
   const t = useTranslate();
 
-  const [approvePendingUser] = useMutation<PendingUserListAcceptUserMutation>(
-    AcceptPendingUserMutation
-  );
-  const [rejectPendingUser] = useMutation<PendingUserListRemoveUserMutation>(
-    RemovePendingUserMutation
-  );
-  const [bulkApprovePendingUsers] =
-    useMutation<PendingUserListAcceptUserBulkMutation>(
-      AcceptPendingUserBulkMutation
-    );
-  const [bulkRejectPendingUsers] =
-    useMutation<PendingUserListRemoveUserBulkMutation>(
-      RemovePendingUserBulkMutation
-    );
+  // The success message names the user, whom the mutation variables only know
+  // by id. The email of a user never changes, so it is kept for every action
+  // on that user, even two in flight at once.
+  const emailsByUserId = useRef(new Map<string, string>());
+  const emailOf = (userId: string) => emailsByUserId.current.get(userId) ?? '';
 
-  const onMutationError = useCallback(
-    (error: Error) => {
-      showSnackbar({
-        severity: 'error',
-        title: t('Utils.Error'),
-        description: t(`Error.Server.${error.message || 'UnknownError'}`),
-      });
-    },
-    [t]
+  const onMutationError = (error: Error) => {
+    showSnackbar({
+      severity: 'error',
+      title: t('Utils.Error'),
+      description: t(`Error.Server.${error.message || 'UnknownError'}`),
+    });
+  };
+
+  // The outcome callbacks are on the hooks, not on mutate: they still run once
+  // the tabs have unmounted the list.
+  const { mutate: approvePendingUser } = usePendingUserAcceptMutation<Error>(
+    portalGraphqlClient,
+    {
+      onSuccess: (response, { user_id }) => {
+        if (!response.acceptPendingUserInOrganization) {
+          return;
+        }
+
+        showSnackbar({
+          severity: 'success',
+          title: t('Utils.Success'),
+          description: t('PendingUserListPage.ActionSuccessApprove', {
+            email: emailOf(user_id),
+          }),
+        });
+        onAfterSingleMutation();
+      },
+      onError: onMutationError,
+    }
   );
+  const { mutate: rejectPendingUser } = usePendingUserRemoveMutation<Error>(
+    portalGraphqlClient,
+    {
+      onSuccess: (_response, { user_id }) => {
+        showSnackbar({
+          severity: 'success',
+          title: t('Utils.Success'),
+          description: t('PendingUserListPage.ActionSuccessDeny', {
+            email: emailOf(user_id),
+          }),
+        });
+        onAfterSingleMutation();
+      },
+      onError: onMutationError,
+    }
+  );
+  const { mutate: bulkApprovePendingUsers } =
+    usePendingUsersBulkAcceptMutation<Error>(portalGraphqlClient, {
+      onSuccess: onAfterBulkMutation,
+      onError: onMutationError,
+    });
+  const { mutate: bulkRejectPendingUsers } =
+    usePendingUsersBulkRemoveMutation<Error>(portalGraphqlClient, {
+      onSuccess: onAfterBulkMutation,
+      onError: onMutationError,
+    });
 
   const approveUser = useCallback(
-    (user: UserList_fragment$data) => {
+    (user: PendingUser) => {
+      emailsByUserId.current.set(user.id, user.email);
       approvePendingUser({
-        variables: {
-          user_id: user.id,
-          organization_id: selectedOrganizationId,
-        },
-        onCompleted: (response) => {
-          if (!response.acceptPendingUserInOrganization) {
-            return;
-          }
-
-          showSnackbar({
-            severity: 'success',
-            title: t('Utils.Success'),
-            description: t('PendingUserListPage.ActionSuccessApprove', {
-              email: user.email,
-            }),
-          });
-          onAfterSingleMutation();
-        },
-        onError: onMutationError,
+        user_id: user.id,
+        organization_id: selectedOrganizationId,
       });
     },
-    [
-      approvePendingUser,
-      onAfterSingleMutation,
-      onMutationError,
-      selectedOrganizationId,
-      t,
-    ]
+    [approvePendingUser, selectedOrganizationId]
   );
 
   const rejectUser = useCallback(
-    (user: UserList_fragment$data) => {
+    (user: PendingUser) => {
+      emailsByUserId.current.set(user.id, user.email);
       rejectPendingUser({
-        variables: {
-          user_id: user.id,
-          organization_id: selectedOrganizationId,
-        },
-        onCompleted: () => {
-          showSnackbar({
-            severity: 'success',
-            title: t('Utils.Success'),
-            description: t('PendingUserListPage.ActionSuccessDeny', {
-              email: user.email,
-            }),
-          });
-          onAfterSingleMutation();
-        },
-        onError: onMutationError,
+        user_id: user.id,
+        organization_id: selectedOrganizationId,
       });
     },
-    [
-      onAfterSingleMutation,
-      onMutationError,
-      rejectPendingUser,
-      selectedOrganizationId,
-      t,
-    ]
+    [rejectPendingUser, selectedOrganizationId]
   );
 
   const buildBulkQueryVariables = useCallback(
@@ -126,7 +119,7 @@ export const usePendingUserActions = ({
       if (selectionState.selectAll) {
         return {
           ids: [],
-          searchTerm,
+          searchTerm: searchTerm ?? null,
           filters: [
             {
               key: FilterKey.OrganizationId,
@@ -139,7 +132,7 @@ export const usePendingUserActions = ({
 
       return {
         ids: Array.from(selectionState.selectedIds),
-        searchTerm: undefined,
+        searchTerm: null,
         filters: [],
         excludedIds: [],
       };
@@ -149,34 +142,16 @@ export const usePendingUserActions = ({
 
   const handleBulkApprove = useCallback(
     (selectionState: SelectionState) => {
-      bulkApprovePendingUsers({
-        variables: buildBulkQueryVariables(selectionState),
-        onCompleted: onAfterBulkMutation,
-        onError: onMutationError,
-      });
+      bulkApprovePendingUsers(buildBulkQueryVariables(selectionState));
     },
-    [
-      buildBulkQueryVariables,
-      bulkApprovePendingUsers,
-      onAfterBulkMutation,
-      onMutationError,
-    ]
+    [buildBulkQueryVariables, bulkApprovePendingUsers]
   );
 
   const handleBulkReject = useCallback(
     (selectionState: SelectionState) => {
-      bulkRejectPendingUsers({
-        variables: buildBulkQueryVariables(selectionState),
-        onCompleted: onAfterBulkMutation,
-        onError: onMutationError,
-      });
+      bulkRejectPendingUsers(buildBulkQueryVariables(selectionState));
     },
-    [
-      buildBulkQueryVariables,
-      bulkRejectPendingUsers,
-      onAfterBulkMutation,
-      onMutationError,
-    ]
+    [buildBulkQueryVariables, bulkRejectPendingUsers]
   );
 
   return {

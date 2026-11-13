@@ -10,7 +10,8 @@ interface MutationCallbacks {
  * hook-level callbacks run once `mutate` has been called and the request
  * resolves.
  *
- * `isPending` is what the hook reports while the request is in flight.
+ * `isPending` is what the hook reports while the request is in flight, `data`
+ * what a successful request answers.
  *
  * Returns the `mutate` spy, called with the variables the component sends.
  */
@@ -20,7 +21,8 @@ export const mockMutationHook = (
   {
     error = new Error('SERVER_ERROR'),
     isPending = false,
-  }: { error?: Error; isPending?: boolean } = {}
+    data = {},
+  }: { error?: Error; isPending?: boolean; data?: unknown } = {}
 ) => {
   const mutate = vi.fn();
   hookMock.mockImplementation(
@@ -29,7 +31,7 @@ export const mockMutationHook = (
         mutate(variables);
         void Promise.resolve().then(() =>
           outcome === 'success'
-            ? callbacks.onSuccess?.({}, variables)
+            ? callbacks.onSuccess?.(data, variables)
             : callbacks.onError?.(error, variables)
         );
       },

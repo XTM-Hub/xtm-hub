@@ -13,6 +13,7 @@ import { describe, vi } from 'vitest';
 vi.mock('@graphql/generated', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@graphql/generated')>()),
   useUseCasesListQuery: vi.fn(),
+  useUsersQuery: vi.fn(),
   useSolutionCategoriesListQuery: vi.fn(() => ({ data: undefined })),
 }));
 

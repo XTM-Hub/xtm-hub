@@ -1,10 +1,9 @@
+import { UsersListUser } from '@/components/admin/user/user-list.types';
+import { mockMutationHook } from '@/utils/test/mock-mutation-hook';
 import testRender from '@/utils/test/test-render';
-import { UserList_fragment$data } from '@generated/UserList_fragment.graphql';
 import { OrganizationCapability } from '@graphql/generated';
-import { act, screen, within } from '@testing-library/react';
-import { createMockEnvironment, MockPayloadGenerator } from 'relay-test-utils';
-import { RelayMockEnvironment } from 'relay-test-utils/lib/RelayModernMockEnvironment';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { screen, waitFor, within } from '@testing-library/react';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 
 type AdminUserUpdateFormModule =
   typeof import('@/components/admin/user/forms/admin/AdminUserUpdateForm');
@@ -17,7 +16,6 @@ const SELECTED_VALUES_LABEL = 'DesignSystem.Combobox.SelectedValues';
 const ADD_ORGANIZATION_LABEL = 'UserForm.AddOrganization';
 const FIRST_NAME_LABEL = 'UserForm.FirstName';
 const LAST_NAME_LABEL = 'UserForm.LastName';
-const MUTATION_NAME = 'AdminUserUpdateFormMutation';
 const MANAGE_ACCESS_OPTION = 'MANAGE ACCESS';
 const MANAGE_SUBSCRIPTION_OPTION = 'MANAGE SUBSCRIPTION';
 const SERVER_ERROR = 'UNKNOWN_ERROR';
@@ -42,10 +40,7 @@ const GLOBEX_ORGANIZATION = {
   domains: [],
 };
 
-const buildUser = (
-  overrides: Partial<UserList_fragment$data> = {}
-): UserList_fragment$data => ({
-  ' $fragmentType': 'UserList_fragment',
+const buildUser = (overrides: Partial<UsersListUser> = {}): UsersListUser => ({
   id: 'user-ada',
   email: 'ada.lovelace@filigran.io',
   first_name: 'Ada',
@@ -80,13 +75,21 @@ const USER_WITH_ACME_ONLY = buildUser({
   organization_capabilities: USER.organization_capabilities?.slice(0, 2),
 });
 
+const mocks = vi.hoisted(() => ({
+  refreshUsersList: vi.fn(),
+  useUserAdminEditMutation: vi.fn(),
+}));
+
 let AdminUserUpdateForm: AdminUserUpdateFormModule['AdminUserUpdateForm'];
 let SheetWithPreventingDialog: SheetModule['SheetWithPreventingDialog'];
 let AppSnackbars: AppSnackbarsModule['AppSnackbars'];
+// The mutate spy of the edit mutation, accepted unless a test says otherwise.
+let mutate: Mock;
 
 // The messages live at module level, and the sheet context must come from the
 // same module instance as the form: everything is loaded again for each test.
 beforeEach(async () => {
+  mutate = mockMutationHook(mocks.useUserAdminEditMutation, 'success');
   vi.resetModules();
   ({ AdminUserUpdateForm } =
     await import('@/components/admin/user/forms/admin/AdminUserUpdateForm'));
@@ -94,6 +97,16 @@ beforeEach(async () => {
     await import('@/components/ui/SheetWithPreventingDialog'));
   ({ AppSnackbars } = await import('@/components/ui/snackbar/AppSnackbars'));
 });
+
+const refuseMutation = () => {
+  mutate = mockMutationHook(mocks.useUserAdminEditMutation, 'error', {
+    error: new Error(SERVER_ERROR),
+  });
+};
+
+vi.mock('@/components/admin/user/use-refresh-users-list', () => ({
+  useRefreshUsersList: () => mocks.refreshUsersList,
+}));
 
 // The organization list query answers the same organizations for every search.
 vi.mock('@graphql/generated', async (importOriginal) => {
@@ -110,24 +123,22 @@ vi.mock('@graphql/generated', async (importOriginal) => {
       isLoading: false,
       isError: false,
     }),
-  });
+  }).then((generated) => ({
+    ...generated,
+    useUserAdminEditMutation: mocks.useUserAdminEditMutation,
+  }));
 });
-
-// The mutation stays pending until the test settles it.
-const createEnvironment = () => createMockEnvironment();
 
 const renderForm = ({
   user = USER,
   callback = vi.fn(),
   setOpen = vi.fn(),
 }: {
-  user?: UserList_fragment$data;
+  user?: UsersListUser;
   callback?: () => void;
   setOpen?: () => void;
 } = {}) => {
-  const environment = createEnvironment();
   return {
-    environment,
     ...testRender(
       <AppSnackbars>
         <SheetWithPreventingDialog
@@ -139,31 +150,12 @@ const renderForm = ({
             callback={callback}
           />
         </SheetWithPreventingDialog>
-      </AppSnackbars>,
-      { relayConfig: environment }
+      </AppSnackbars>
     ),
   };
 };
 
-const getSentMutation = (environment: RelayMockEnvironment) => {
-  const operation = environment.mock.getMostRecentOperation();
-  expect(operation.request.node.params.name).toBe(MUTATION_NAME);
-  return operation.request.variables;
-};
-
-const resolveMutation = async (environment: RelayMockEnvironment) => {
-  await act(async () => {
-    environment.mock.resolveMostRecentOperation((operation) =>
-      MockPayloadGenerator.generate(operation)
-    );
-  });
-};
-
-const rejectMutation = async (environment: RelayMockEnvironment) => {
-  await act(async () => {
-    environment.mock.rejectMostRecentOperation(new Error(SERVER_ERROR));
-  });
-};
+const getSentMutation = () => mutate.mock.lastCall?.[0];
 
 describe('AdminUserUpdateForm', () => {
   it('should list each non personal organization of the user under its own name', () => {
@@ -219,7 +211,7 @@ describe('AdminUserUpdateForm', () => {
 
   it('should send the edited identity and the capabilities of each organization when validated', async () => {
     // Given
-    const { user, environment } = renderForm();
+    const { user } = renderForm();
     const firstName = screen.getByLabelText(FIRST_NAME_LABEL);
     const lastName = screen.getByLabelText(LAST_NAME_LABEL);
 
@@ -231,11 +223,14 @@ describe('AdminUserUpdateForm', () => {
     await user.click(screen.getByRole('button', { name: 'Utils.Validate' }));
 
     // Then
-    expect(getSentMutation(environment)).toEqual({
+    expect(getSentMutation()).toEqual({
       id: USER.id,
       input: {
         first_name: NEW_FIRST_NAME,
         last_name: NEW_LAST_NAME,
+        password: null,
+        disabled: null,
+        email: null,
         organization_capabilities: [
           {
             organization_id: ACME_ORGANIZATION.id,
@@ -252,7 +247,7 @@ describe('AdminUserUpdateForm', () => {
 
   it('should leave a removed organization out of what is sent', async () => {
     // Given
-    const { user, environment } = renderForm();
+    const { user } = renderForm();
 
     // When
     await user.click(
@@ -262,7 +257,7 @@ describe('AdminUserUpdateForm', () => {
 
     // Then
     expect(screen.queryByText(ACME_ORGANIZATION.name)).not.toBeInTheDocument();
-    expect(getSentMutation(environment)).toEqual(
+    expect(getSentMutation()).toEqual(
       expect.objectContaining({
         input: expect.objectContaining({
           organization_capabilities: [
@@ -279,11 +274,10 @@ describe('AdminUserUpdateForm', () => {
   it('should confirm the update and notify the caller when the server accepts it', async () => {
     // Given
     const callback = vi.fn();
-    const { user, environment } = renderForm({ callback });
-    await user.click(screen.getByRole('button', { name: 'Utils.Validate' }));
+    const { user } = renderForm({ callback });
 
     // When
-    await resolveMutation(environment);
+    await user.click(screen.getByRole('button', { name: 'Utils.Validate' }));
 
     // Then
     expect(await screen.findByText('Utils.Success')).toBeInTheDocument();
@@ -293,12 +287,12 @@ describe('AdminUserUpdateForm', () => {
 
   it('should report the server error and not notify the caller when the server refuses the update', async () => {
     // Given
+    refuseMutation();
     const callback = vi.fn();
-    const { user, environment } = renderForm({ callback });
-    await user.click(screen.getByRole('button', { name: 'Utils.Validate' }));
+    const { user } = renderForm({ callback });
 
     // When
-    await rejectMutation(environment);
+    await user.click(screen.getByRole('button', { name: 'Utils.Validate' }));
 
     // Then
     expect(await screen.findByText('Utils.Error')).toBeInTheDocument();
@@ -311,7 +305,7 @@ describe('AdminUserUpdateForm', () => {
   it('should disable an enabled user once the administrator confirms', async () => {
     // Given
     const callback = vi.fn();
-    const { user, environment } = renderForm({
+    const { user } = renderForm({
       user: buildUser({ disabled: false }),
       callback,
     });
@@ -326,26 +320,30 @@ describe('AdminUserUpdateForm', () => {
     const dialog = await screen.findByRole('alertdialog', {
       name: 'MenuActions.Disable',
     });
-    expect(
-      environment.mock
-        .getAllOperations()
-        .some(({ request }) => request.node.params.name === MUTATION_NAME)
-    ).toBe(false);
+    expect(mutate).not.toHaveBeenCalled();
     await user.click(
       within(dialog).getByRole('button', { name: 'MenuActions.Disable' })
     );
-    const variables = getSentMutation(environment);
-    await resolveMutation(environment);
 
     // Then
-    expect(variables).toEqual({ id: USER.id, input: { disabled: true } });
-    expect(callback).toHaveBeenCalledOnce();
+    expect(getSentMutation()).toEqual({
+      id: USER.id,
+      input: {
+        disabled: true,
+        first_name: null,
+        last_name: null,
+        organization_capabilities: null,
+        password: null,
+        email: null,
+      },
+    });
+    await waitFor(() => expect(callback).toHaveBeenCalledOnce());
   });
 
   it('should enable a disabled user without asking for confirmation', async () => {
     // Given
     const callback = vi.fn();
-    const { user, environment } = renderForm({
+    const { user } = renderForm({
       user: buildUser({ disabled: true }),
       callback,
     });
@@ -357,18 +355,27 @@ describe('AdminUserUpdateForm', () => {
     await user.click(
       screen.getByRole('button', { name: 'UserActions.Enable' })
     );
-    const variables = getSentMutation(environment);
-    await resolveMutation(environment);
 
     // Then
-    expect(variables).toEqual({ id: USER.id, input: { disabled: false } });
-    expect(callback).toHaveBeenCalledOnce();
+    expect(getSentMutation()).toEqual({
+      id: USER.id,
+      input: {
+        disabled: false,
+        first_name: null,
+        last_name: null,
+        organization_capabilities: null,
+        password: null,
+        email: null,
+      },
+    });
+    await waitFor(() => expect(callback).toHaveBeenCalledOnce());
   });
 
   it('should report the server error and not notify the caller when the status change is refused', async () => {
     // Given
+    refuseMutation();
     const callback = vi.fn();
-    const { user, environment } = renderForm({
+    const { user } = renderForm({
       user: buildUser({ disabled: true }),
       callback,
     });
@@ -377,7 +384,6 @@ describe('AdminUserUpdateForm', () => {
     await user.click(
       screen.getByRole('button', { name: 'UserActions.Enable' })
     );
-    await rejectMutation(environment);
 
     // Then
     expect(await screen.findByText('Utils.Error')).toBeInTheDocument();
@@ -403,5 +409,68 @@ describe('AdminUserUpdateForm', () => {
       })
     ).toBeInTheDocument();
     expect(setOpen).not.toHaveBeenCalled();
+  });
+
+  describe('users list refresh', () => {
+    beforeEach(() => {
+      mocks.refreshUsersList.mockClear();
+    });
+
+    it('should reload the users list when the update is accepted', async () => {
+      // Given
+      const { user } = renderForm();
+
+      // When
+      await user.click(screen.getByRole('button', { name: 'Utils.Validate' }));
+
+      // Then
+      await waitFor(() =>
+        expect(mocks.refreshUsersList).toHaveBeenCalledOnce()
+      );
+    });
+
+    it('should reload the users list when the status change is accepted', async () => {
+      // Given
+      const { user } = renderForm({
+        user: buildUser({ disabled: true }),
+      });
+
+      // When
+      await user.click(
+        screen.getByRole('button', { name: 'UserActions.Enable' })
+      );
+
+      // Then
+      await waitFor(() =>
+        expect(mocks.refreshUsersList).toHaveBeenCalledOnce()
+      );
+    });
+
+    it('should leave the users list as is when the update is refused', async () => {
+      // Given
+      refuseMutation();
+      const { user } = renderForm();
+
+      // When
+      await user.click(screen.getByRole('button', { name: 'Utils.Validate' }));
+
+      // Then
+      expect(await screen.findByText('Utils.Error')).toBeInTheDocument();
+      expect(mocks.refreshUsersList).not.toHaveBeenCalled();
+    });
+
+    it('should give the outcome callbacks to the mutation hook', () => {
+      // When
+      renderForm();
+
+      // Then
+      expect(mocks.useUserAdminEditMutation).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          onSuccess: expect.any(Function),
+          onError: expect.any(Function),
+        })
+      );
+    });
   });
 });

@@ -1,14 +1,18 @@
 import { useUserListLocalstorage } from '@/components/admin/user/user-list-localstorage';
-import { UserFragment } from '@/components/admin/user/UserList';
 import { AppCombobox } from '@/components/ui/AppCombobox';
 import { useKeepSelectedOptions } from '@/hooks/use-keep-selected-options';
 import { useTranslate } from '@/hooks/use-translate';
-import { useUsersList } from '@/hooks/use-users-list';
+import { portalGraphqlClient } from '@/lib/graphql-client';
 import { DEBOUNCE_TIME } from '@/utils/constant';
-import { UserList_fragment$key } from '@generated/UserList_fragment.graphql';
-import { useMemo } from 'react';
-import { readInlineData } from 'react-relay';
+import { UsersQueryVariables, useUsersQuery } from '@graphql/generated';
+import { keepPreviousData } from '@tanstack/react-query';
+import { useMemo, useState } from 'react';
 import { useDebounceCallback } from 'usehooks-ts';
+
+// As with the Relay refetch it replaces, a search loads fewer users than the
+// first load, even once the search is cleared.
+const INITIAL_USERS_COUNT = 50;
+const SEARCHED_USERS_COUNT = 10;
 
 interface UserOption {
   value: string;
@@ -38,28 +42,39 @@ const SelectUsersFormField = ({
   const t = useTranslate();
 
   const { orderMode, orderBy } = useUserListLocalstorage();
-  const { data, refetch } = useUsersList({
-    orderBy,
-    orderMode,
-    pageSize: 50,
-    filter: {
-      search: '',
-    },
+  const [search, setSearch] = useState({
+    first: INITIAL_USERS_COUNT,
+    searchTerm: '',
   });
+  const variables = useMemo<UsersQueryVariables>(
+    () => ({
+      first: search.first,
+      orderBy,
+      orderMode,
+      searchTerm: search.searchTerm,
+      filters: null,
+    }),
+    [search, orderBy, orderMode]
+  );
+  const { data, isLoading, isPlaceholderData } = useUsersQuery(
+    portalGraphqlClient,
+    variables,
+    {
+      // A search keeps the previous data, so the field never goes back to empty.
+      placeholderData: keepPreviousData,
+      // Like Relay, a failed load reaches the error page; a failed background
+      // refetch keeps the options shown.
+      throwOnError: (_error, query) => query.state.data === undefined,
+    }
+  );
 
   const users = useMemo(
     () =>
-      data?.users?.edges?.map((edge) => {
-        const user = readInlineData<UserList_fragment$key>(
-          UserFragment,
-          edge.node
-        );
-        return {
-          value: user.id,
-          label: user.email,
-        };
-      }) || [],
-    [data?.users?.edges]
+      data?.users.edges.map(({ node }) => ({
+        value: node.id,
+        label: node.email,
+      })) ?? [],
+    [data]
   );
 
   const defaultUserId = defaultUser?.value;
@@ -87,12 +102,7 @@ const SelectUsersFormField = ({
   }, [value, keptUsers]);
 
   const handleSearch = useDebounceCallback((searchTerm: string) => {
-    refetch({
-      count: 10,
-      orderMode,
-      orderBy,
-      searchTerm,
-    });
+    setSearch({ first: SEARCHED_USERS_COUNT, searchTerm });
   }, DEBOUNCE_TIME);
 
   return (
@@ -110,6 +120,7 @@ const SelectUsersFormField = ({
       getOptionLabel={(user) => user.label}
       isOptionEqualToValue={(a, b) => a.value === b.value}
       filterOptions={(options) => options}
+      loading={isLoading || isPlaceholderData}
       disabled={disabled}
     />
   );

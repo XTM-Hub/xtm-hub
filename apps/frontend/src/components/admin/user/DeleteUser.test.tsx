@@ -1,8 +1,8 @@
 import { DeleteUser } from '@/components/admin/user/DeleteUser';
+import { UsersListUser } from '@/components/admin/user/user-list.types';
 import { mockGraphqlMutation } from '@/utils/test/msw/graphql-api';
 import { mswServer } from '@/utils/test/msw/server';
 import testRender from '@/utils/test/test-render';
-import { UserList_fragment$data } from '@generated/UserList_fragment.graphql';
 import { UserDeleteMutation } from '@graphql/generated';
 import { mockUser } from '@graphql/mocks';
 import { screen, waitFor } from '@testing-library/react';
@@ -19,7 +19,7 @@ const GQL_OPERATION_USER_DELETE = 'UserDelete';
 const user = {
   id: 'user-to-delete',
   email: 'to-delete@filigran.io',
-} as UserList_fragment$data;
+} as UsersListUser;
 
 const renderDeleteUser = (onUserDeleted = vi.fn(), setOpen = vi.fn()) =>
   testRender(

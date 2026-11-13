@@ -1,8 +1,8 @@
 import { CapabilityDescription } from '@/components/admin/user/CapabilityDescription';
 import { userEditFormSchema } from '@/components/admin/user/forms/user-form.schema';
 import { RemoveUserFromOrga } from '@/components/admin/user/RemoveUserFromOrga';
-import { UserSlugEditMutation } from '@/components/admin/user/user.graphql';
-import { getUserListContext } from '@/components/admin/user/UserListPage';
+import { useRefreshUsersList } from '@/components/admin/user/use-refresh-users-list';
+import { UsersListUser } from '@/components/admin/user/user-list.types';
 import { PortalContext } from '@/components/me/AppPortalContext';
 import { CapabilityMultiSelect } from '@/components/ui/capability/MultiSelect';
 import { Form, FormField } from '@/components/ui/form';
@@ -12,17 +12,20 @@ import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import useAdminPath from '@/hooks/use-admin-path';
 import { useTranslate } from '@/hooks/use-translate';
 import { analyticsId } from '@/lib/analytics/analytics.ids';
+import { portalGraphqlClient } from '@/lib/graphql-client';
 import { isEmpty } from '@/lib/utils';
 import { Button } from '@filigran/design-system';
-import { UserList_fragment$data } from '@generated/UserList_fragment.graphql';
+import {
+  EditUserCapabilitiesInput,
+  useUserCapabilitiesEditMutation,
+} from '@graphql/generated';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useContext } from 'react';
 import { useForm } from 'react-hook-form';
-import { useMutation } from 'react-relay';
 import { z } from 'zod';
 
 interface UserUpdateFormProps {
-  user: UserList_fragment$data;
+  user: UsersListUser;
   callback: () => void;
 }
 
@@ -47,22 +50,14 @@ export const UserUpdateForm = ({ user, callback }: UserUpdateFormProps) => {
   // Some issue with addUser, the formState isDirty without any modification, so for now we check if dirtyFields get any key
   setIsDirty(!isEmpty(form.formState.dirtyFields));
 
-  const [updateUserMutation] = useMutation(UserSlugEditMutation);
-
-  const { connectionID } = getUserListContext();
-  const updateUser = (values: z.infer<typeof userEditFormSchema>) => {
-    const variables = isAdminPath
-      ? values
-      : { capabilities: values.capabilities };
-    updateUserMutation({
-      variables: {
-        input: {
-          ...variables,
-        },
-        id: user.id,
-        userListConnections: [connectionID ?? ''],
-      },
-      onCompleted: () => {
+  const refreshUsersList = useRefreshUsersList();
+  const { mutate: updateUserMutation } = useUserCapabilitiesEditMutation<Error>(
+    portalGraphqlClient,
+    {
+      // On the hook, not on mutate: like Relay, the outcome is handled even if
+      // the form is gone by then.
+      onSuccess: () => {
+        refreshUsersList();
         showSnackbar({
           severity: 'success',
           title: t('Utils.Success'),
@@ -77,7 +72,14 @@ export const UserUpdateForm = ({ user, callback }: UserUpdateFormProps) => {
           description: t(`Error.Server.${error.message}`),
         });
       },
-    });
+    }
+  );
+
+  const updateUser = (values: z.infer<typeof userEditFormSchema>) => {
+    const input: EditUserCapabilitiesInput = isAdminPath
+      ? values
+      : { capabilities: values.capabilities };
+    updateUserMutation({ input, id: user.id });
   };
 
   const onSubmit = (values: z.infer<typeof userEditFormSchema>) => {
