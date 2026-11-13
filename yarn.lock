@@ -2283,10 +2283,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@electric-sql/pglite@npm:0.5.15":
-  version: 0.5.15
-  resolution: "@electric-sql/pglite@npm:0.5.15"
-  checksum: 10/5e9e67f807b7ff2d21023ae9e62d62ee2aa2dc64151982bace8d48ecb39e527e5796238ec11835041f108a3f19676e2ce993e2fc002db9b5385231369ef0724b
+"@electric-sql/pglite@npm:0.5.16":
+  version: 0.5.16
+  resolution: "@electric-sql/pglite@npm:0.5.16"
+  checksum: 10/8f6769ba9619b305a3cf19efc7fe91ad26c7862afc7ff89d2e579798051f78e382ea49fb1e1a28c7f08a59cdf9b4cd379ab8ff5281c90bea8846cce2e8b88cce
   languageName: node
   linkType: hard
 
@@ -4865,13 +4865,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@next/eslint-plugin-next@npm:16.4.5":
-  version: 16.4.5
-  resolution: "@next/eslint-plugin-next@npm:16.4.5"
+"@next/eslint-plugin-next@npm:16.4.6":
+  version: 16.4.6
+  resolution: "@next/eslint-plugin-next@npm:16.4.6"
   dependencies:
     "@eslint-community/eslint-utils": "npm:4.9.1"
     fast-glob: "npm:3.3.1"
-  checksum: 10/6100994fd947ebd96b8834b7750a44e44d160bec202ae4125ce606dcace2fd02162514d03adb8b006c56c7da5cb6685fbd92e4b70fe040de1d922eed79b50976
+  checksum: 10/52cd1ca565c9ec04f53b5900319759ad21e6daa6c46dd7dc34109074673cc5b2ae5ed0a44c1facc1238349f501eef6e7a9b135f02a3115d9fae700dee2f4ea20
   languageName: node
   linkType: hard
 
@@ -7655,12 +7655,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@testing-library/user-event@npm:14.6.8":
-  version: 14.6.8
-  resolution: "@testing-library/user-event@npm:14.6.8"
+"@testing-library/user-event@npm:14.6.9":
+  version: 14.6.9
+  resolution: "@testing-library/user-event@npm:14.6.9"
   peerDependencies:
     "@testing-library/dom": ">=7.21.4"
-  checksum: 10/674190e5d592d5f1478af26c08c13ee197dbbc03885da3b99312c9cd810e4dc9c0ffbd4df91c51f39d467c1866a0c28f451df56d3fd535a5260d7660c24d9f42
+  checksum: 10/9b3c7708b9d0a49353516b30fbad2f672968813b97a971e483c4b85b2e09629220fae8852acf86ade6b83257ecceba8cfdd4c5acb441c9634a7b93f4ea390e81
   languageName: node
   linkType: hard
 
@@ -9232,9 +9232,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@vitejs/plugin-react@npm:6.2.1":
-  version: 6.2.1
-  resolution: "@vitejs/plugin-react@npm:6.2.1"
+"@vitejs/plugin-react@npm:6.3.0":
+  version: 6.3.0
+  resolution: "@vitejs/plugin-react@npm:6.3.0"
   dependencies:
     "@rolldown/pluginutils": "npm:^1.0.1"
   peerDependencies:
@@ -9249,7 +9249,7 @@ __metadata:
       optional: true
     oxc-transform-react:
       optional: true
-  checksum: 10/7274c52ad63fa5c28af0dc26451858456aa2c910a3a8c6957fd0a568fc1630e825865eeab2663c78f6cbc8f778b9dd59299c5b176bc16b39e21926208fc54460
+  checksum: 10/b46262a000b406c4d7c5a261952d2a1b8e519a0135a439092b25900f5d6cc2f8da74fb506f3bb0b638c866e83d36fd576ff1ef637a277dacd4517315657dbfa7
   languageName: node
   linkType: hard
 
@@ -9440,7 +9440,7 @@ __metadata:
     "@aws-sdk/client-s3": "npm:3.1145.0"
     "@aws-sdk/lib-storage": "npm:3.1145.0"
     "@elastic/elasticsearch": "npm:8.19.2"
-    "@electric-sql/pglite": "npm:0.5.15"
+    "@electric-sql/pglite": "npm:0.5.16"
     "@eslint/js": "catalog:"
     "@graphql-codegen/cli": "catalog:"
     "@graphql-codegen/typescript": "catalog:"
@@ -9537,14 +9537,14 @@ __metadata:
     "@testing-library/dom": "npm:10.4.2"
     "@testing-library/jest-dom": "npm:6.9.1"
     "@testing-library/react": "npm:16.3.3"
-    "@testing-library/user-event": "npm:14.6.8"
+    "@testing-library/user-event": "npm:14.6.9"
     "@types/node": "catalog:"
     "@types/react": "npm:19.3.0"
     "@types/react-dom": "npm:19.3.0"
     "@types/react-relay": "npm:18.2.1"
     "@types/relay-test-utils": "npm:19.0.0"
     "@uiw/react-md-editor": "npm:4.2.3"
-    "@vitejs/plugin-react": "npm:6.2.1"
+    "@vitejs/plugin-react": "npm:6.3.0"
     "@vitest/coverage-v8": "catalog:"
     apexcharts: "npm:8.3.1"
     babel-plugin-relay: "npm:21.0.1"
@@ -9553,7 +9553,7 @@ __metadata:
     embla-carousel: "npm:8.6.0"
     embla-carousel-react: "npm:8.6.0"
     eslint: "catalog:"
-    eslint-config-next: "npm:16.4.5"
+    eslint-config-next: "npm:16.4.6"
     eslint-config-prettier: "catalog:"
     eslint-plugin-unicorn: "catalog:"
     graphql: "catalog:"
@@ -12387,11 +12387,11 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eslint-config-next@npm:16.4.5":
-  version: 16.4.5
-  resolution: "eslint-config-next@npm:16.4.5"
+"eslint-config-next@npm:16.4.6":
+  version: 16.4.6
+  resolution: "eslint-config-next@npm:16.4.6"
   dependencies:
-    "@next/eslint-plugin-next": "npm:16.4.5"
+    "@next/eslint-plugin-next": "npm:16.4.6"
     eslint-import-resolver-node: "npm:^0.3.6"
     eslint-import-resolver-typescript: "npm:^3.5.2"
     eslint-plugin-import: "npm:^2.32.0"
@@ -12406,7 +12406,7 @@ __metadata:
   peerDependenciesMeta:
     typescript:
       optional: true
-  checksum: 10/a63c637a8c8c4305c3eacd60ec0270ab73152ff809f7c0e4ed8a0cd592cc369308be334b4e9785d1f244062e333527623da807645eb2d5d768b41100095e24ae
+  checksum: 10/2e74a53ce078c1e1980570c30645600443032ca40f2da947de9774fced72eb7d51e81b14783588d8a99c9697abdff4257bedac13d741c9e31ebc080d9b8ccaf6
   languageName: node
   linkType: hard
 
