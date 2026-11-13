@@ -6,7 +6,7 @@ import { SYSTEM_USER_CONTEXT } from '../../../portal.const';
 import {
   isValidSystemToken,
   SYSTEM_TOKEN_HEADER,
-} from '../../../security/directive-graphql/validator/system-token.validator';
+} from '../../../security/util/hashed-token';
 import { BlogApiError } from '../../../thirdparty/blog-api/errors';
 import { logApp } from '../../../utils/app-logger.util';
 import { buildIpRateLimiterOptions } from '../shared/ip-rate-limit.util';

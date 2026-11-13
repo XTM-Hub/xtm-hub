@@ -1,5 +1,6 @@
 // https://github.com/node-config/node-config
 import config from 'config';
+import type { HashedTokenConfig } from './security/util/hashed-token';
 import {
   DevUser,
   parseAndValidateDevUsers,
@@ -57,6 +58,8 @@ interface PortalConfig {
     name: string;
     secret: string;
   };
+  system_token: HashedTokenConfig;
+  marketing_token: HashedTokenConfig;
   trust_proxy: number | false;
   local_dev: boolean;
   environment: string;
@@ -132,6 +135,14 @@ const portalConfig: PortalConfig = {
   session: {
     name: config.get<string>('session.name'),
     secret: config.get<string>('session.secret'),
+  },
+  system_token: {
+    hash: config.get<string>('system_token.hash'),
+    salt: config.get<string>('system_token.salt'),
+  },
+  marketing_token: {
+    hash: config.get<string>('marketing_token.hash'),
+    salt: config.get<string>('marketing_token.salt'),
   },
   local_dev: localDev,
   trust_proxy: resolveTrustProxy(config.get<unknown>('trust_proxy'), localDev),

@@ -56,9 +56,27 @@ vi.mock('../../../utils/app-logger.util', () => ({
   logApp: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
 
+// By default the marketing token has the system token hash and salt: give it its own value to tell the two apart.
+const { VALID_MARKETING_TOKEN } = vi.hoisted(() => ({
+  VALID_MARKETING_TOKEN: 'a-marketing-token',
+}));
+vi.mock('../../../config', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../config')>();
+  const { hashPassword } = await import('../../../utils/hash-password.util');
+  return {
+    default: {
+      ...actual.default,
+      marketing_token: hashPassword(VALID_MARKETING_TOKEN),
+    },
+  };
+});
+
 import { ServiceDefinitionIdentifier } from '../../../__generated__/resolvers-types';
 import { MARKETING_USER_CONTEXT } from '../../../portal.const';
-import { SYSTEM_TOKEN_HEADER } from '../../../security/directive-graphql/validator/system-token.validator';
+import {
+  MARKETING_TOKEN_HEADER,
+  SYSTEM_TOKEN_HEADER,
+} from '../../../security/util/hashed-token';
 import { IntegrationCsvExportEndpoint } from './integration-csv-export-endpoint';
 
 const buildResponse = () => ({
@@ -136,12 +154,14 @@ describe('integrationCsvExportEndpoint.exportCsv', () => {
   });
 
   it.each`
-    description                                      | headers
-    ${'an empty system token'}                       | ${{ [SYSTEM_TOKEN_HEADER]: '' }}
-    ${'a wrong system token'}                        | ${{ [SYSTEM_TOKEN_HEADER]: 'invalid-token' }}
-    ${'the valid system token with a suffix'}        | ${{ [SYSTEM_TOKEN_HEADER]: `${VALID_SYSTEM_TOKEN}X` }}
-    ${'the system token in another header'}          | ${{ 'x-xtm-hub-marketing-token': VALID_SYSTEM_TOKEN }}
-    ${'the system token as an authorization bearer'} | ${{ authorization: `Bearer ${VALID_SYSTEM_TOKEN}` }}
+    description                                         | headers
+    ${'an empty marketing token'}                       | ${{ [MARKETING_TOKEN_HEADER]: '' }}
+    ${'a wrong marketing token'}                        | ${{ [MARKETING_TOKEN_HEADER]: 'invalid-token' }}
+    ${'the valid marketing token with a suffix'}        | ${{ [MARKETING_TOKEN_HEADER]: `${VALID_MARKETING_TOKEN}X` }}
+    ${'the marketing token in the system token header'} | ${{ [SYSTEM_TOKEN_HEADER]: VALID_MARKETING_TOKEN }}
+    ${'the marketing token as an authorization bearer'} | ${{ authorization: `Bearer ${VALID_MARKETING_TOKEN}` }}
+    ${'the valid system token'}                         | ${{ [SYSTEM_TOKEN_HEADER]: VALID_SYSTEM_TOKEN }}
+    ${'the valid system token in the marketing header'} | ${{ [MARKETING_TOKEN_HEADER]: VALID_SYSTEM_TOKEN }}
   `(
     'returns 401 without a session when sending $description',
     async ({ headers }) => {
@@ -156,7 +176,7 @@ describe('integrationCsvExportEndpoint.exportCsv', () => {
     }
   );
 
-  it('exports as the capability-less marketing user, not the system user, when the system token is valid', async () => {
+  it('exports as the capability-less marketing user when the marketing token is valid', async () => {
     loadDocumentsMock.mockResolvedValue({
       edges: [buildDocumentEdge({ id: 'doc-1', name: 'My Integration' })],
     });
@@ -166,7 +186,7 @@ describe('integrationCsvExportEndpoint.exportCsv', () => {
     const res = buildResponse();
     await IntegrationCsvExportEndpoint.exportCsv(
       buildRequest(VALID_PARAMS, {}, null, {
-        [SYSTEM_TOKEN_HEADER]: VALID_SYSTEM_TOKEN,
+        [MARKETING_TOKEN_HEADER]: VALID_MARKETING_TOKEN,
       }),
       res as unknown as Response
     );
@@ -179,11 +199,11 @@ describe('integrationCsvExportEndpoint.exportCsv', () => {
     expect(csv).toContain('My Integration');
   });
 
-  it('does not send a telemetry export event for a system token export', async () => {
+  it('does not send a telemetry export event for a marketing token export', async () => {
     const res = buildResponse();
     await IntegrationCsvExportEndpoint.exportCsv(
       buildRequest(VALID_PARAMS, {}, null, {
-        [SYSTEM_TOKEN_HEADER]: VALID_SYSTEM_TOKEN,
+        [MARKETING_TOKEN_HEADER]: VALID_MARKETING_TOKEN,
       }),
       res as unknown as Response
     );
