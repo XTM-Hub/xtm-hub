@@ -2,96 +2,21 @@ import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 import readline from 'node:readline/promises';
-
-const resolverTemplate = (
-  resolverName: string,
-  needScalarId: boolean
-) => `import { Resolvers } from '../../__generated__/resolvers-types';
-${needScalarId ? "import { createRelayIdScalar } from '../../utils/scalar.util';\n" : ''}
-const resolvers: Resolvers = {
-  ${needScalarId ? `${toPascalCase(resolverName)}Id: createRelayIdScalar<${toPascalCase(resolverName)}Id>('${toPascalCase(resolverName)}'),\n  ` : ''}
-  Query: {
-  },
-  Mutation: {
-  },
-};
-  
-export default resolvers;
-`;
-
-const testTemplate = (
-  resolverName: string
-) => `import { describe, expect, it } from 'vitest';
-import resolver from './${resolverName}.resolver';
-
-describe('${resolverName}.resolver', () => {
-  it('should be defined', () => {
-    expect(resolver).toBeDefined();
-  });
-});
-`;
-
-const appTemplate = (resolverName: string) => {
-  const appIdentifier = `${toPascalCase(resolverName)}App`;
-  return `export const ${appIdentifier} = {};
-`;
-};
-
-const appTestTemplate = (resolverName: string) => {
-  const appIdentifier = `${toPascalCase(resolverName)}App`;
-  return `import { describe, expect, it } from 'vitest';
-import { ${appIdentifier} } from './${resolverName}.app';
-
-describe('${resolverName}.app', () => {
-  it('should be defined', () => {
-    expect(${appIdentifier}).toBeDefined();
-  });
-});
-`;
-};
-
-const domainTemplate = (resolverName: string) => {
-  const domainIdentifier = `${toPascalCase(resolverName)}Domain`;
-  return `export const ${domainIdentifier} = {};
-`;
-};
-
-const graphQLTemplate = (resolverName: string, needScalarId: boolean) => {
-  return `
-  ${
-    needScalarId
-      ? `scalar ${toPascalCase(resolverName)}Id
-  `
-      : ''
-  }
-
-  type ${toPascalCase(resolverName)} implements Node {
-  }
-  `;
-};
+import {
+  appTemplate,
+  appTestTemplate,
+  domainTemplate,
+  graphQLTemplate,
+  resolverTemplate,
+  testTemplate,
+  toPascalCase,
+} from './generate-new-module.templates';
 
 const schemaFilePath = path.resolve(
   process.cwd(),
   'src/server/graphql-schema.ts'
 );
 const codegenFilePath = path.resolve(process.cwd(), 'codegen.yml');
-
-const toPascalCase = (value: string) => {
-  const normalized = value
-    .split(/[^a-zA-Z0-9]+/)
-    .filter(Boolean)
-    .map((part) => {
-      const lower = part.toLowerCase();
-      return `${lower.charAt(0).toUpperCase()}${lower.slice(1)}`;
-    })
-    .join('');
-
-  if (!normalized) {
-    throw new Error('Le nom du resolver est invalide.');
-  }
-
-  return normalized;
-};
 
 const fileExists = async (filePath: string) => {
   try {

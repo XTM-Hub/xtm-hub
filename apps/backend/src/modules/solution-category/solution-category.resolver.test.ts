@@ -1,6 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
 import { describe, expect, it, vi } from 'vitest';
 import {
+  // eslint-disable-next-line no-restricted-imports
+  contextBypassUser,
   contextSimpleUserFiligran2,
   GRAPHQL_RESOLVE_INFO,
 } from '../../../tests/tests.const';
@@ -91,7 +93,7 @@ describe('add solution category GraphQL mutation', () => {
       .addSolutionCategory!(
       {},
       { input },
-      contextSimpleUserFiligran2,
+      contextBypassUser,
       GRAPHQL_RESOLVE_INFO
     );
 
@@ -125,7 +127,7 @@ describe('edit solution category GraphQL mutation', () => {
       .editSolutionCategory!(
       {},
       { id, input },
-      contextSimpleUserFiligran2,
+      contextBypassUser,
       GRAPHQL_RESOLVE_INFO
     );
 
@@ -156,7 +158,7 @@ describe('delete solution category GraphQL mutation', () => {
       .deleteSolutionCategory!(
       {},
       { id },
-      contextSimpleUserFiligran2,
+      contextBypassUser,
       GRAPHQL_RESOLVE_INFO
     );
 

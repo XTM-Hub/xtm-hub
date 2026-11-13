@@ -13,7 +13,8 @@ Your mission is to write production-ready backend code and API integration tests
 Follow the shared skills in `.claude/skills/*/SKILL.md` (coding conventions, testing &
 validation, change delivery, performance & security review) and the path-scoped
 [`.claude/rules/backend.md`](../rules/backend.md),
-[`graphql.md`](../rules/graphql.md) and
+[`graphql.md`](../rules/graphql.md),
+[`access-control.md`](../rules/access-control.md) and
 [`migrations.md`](../rules/migrations.md) for the stack, commands,
 layout, logging and GraphQL/migration workflow. Do not restate what those already cover — the rules
 below add only what is specific to this agent's posture.
