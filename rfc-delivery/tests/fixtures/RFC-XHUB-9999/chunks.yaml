@@ -1,0 +1,36 @@
+# Fixture plan for the tests: MS-001 split in two, MS-003 delivered by another repository.
+rfc: RFC-XHUB-9999
+chunks:
+  - id: ms-001-saved-search-model
+    slice: MS-001
+    type: feat
+    scope: backend
+    title: store saved searches behind the saved_searches flag
+    acceptance: [AC-001, AC-003]
+    tests: [TST-001]
+    description: >-
+      The table, its migration and the GraphQL mutation and query.
+  - id: ms-001-saved-search-limit
+    slice: MS-001
+    type: feat
+    scope: backend
+    title: cap saved searches per user
+    acceptance: []
+    no_acceptance_reason: RISK-001 mitigation
+    depends_on: [ms-001-saved-search-model]
+  - id: ms-002-library-saved-searches
+    slice: MS-002
+    type: feat
+    scope: frontend
+    title: save and reopen searches from the library
+    acceptance: [AC-002, AC-004]
+    tests: [TST-002]
+    depends_on: [ms-001-saved-search-model]
+    spec_checkpoint: true
+  - id: ms-003-docs
+    slice: MS-003
+    repository: XTM-Hub/xtm-hub-docs
+    type: docs
+    title: document saved searches
+    acceptance: []
+    no_acceptance_reason: documentation
