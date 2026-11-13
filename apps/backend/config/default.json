@@ -21,6 +21,9 @@
     "pending_user_digest": false,
     "public_roadmap_monthly_reminder": false
   },
+  "enabled_teams_notifications": {
+    "resource_not_published_reminder": false
+  },
   "auth0": {
     "domain": "filigran.eu.auth0.com",
     "clientId": "changeme",

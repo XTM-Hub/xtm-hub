@@ -16,6 +16,7 @@ import {
   default as DocumentModel,
   DocumentMutator,
 } from '../../../model/kanel/public/Document';
+import ServiceDefinition from '../../../model/kanel/public/ServiceDefinition';
 import { ServiceInstanceId } from '../../../model/kanel/public/ServiceInstance';
 import User, { UserId } from '../../../model/kanel/public/User';
 import { UnknownErrorCode } from '../../../utils/error/error.code';
@@ -58,6 +59,19 @@ import {
   DocumentMetadataDomain,
   DocumentMetadataKeys,
 } from './document.metadata.domain';
+
+export interface NotPublishedResource {
+  document: DocumentModel;
+  serviceDefinition: Pick<ServiceDefinition, 'id' | 'name' | 'identifier'>;
+}
+
+type NotPublishedRow = DocumentModel & {
+  service_definition_id: ServiceDefinition['id'];
+  service_definition_name: string;
+  service_definition_identifier: ServiceDefinition['identifier'];
+};
+
+type RankedNotPublishedRow = NotPublishedRow & { position: string };
 
 type UseCaseValue = UseCaseId | string;
 type SolutionCategoryValue = SolutionCategoryId | string;
@@ -777,5 +791,67 @@ export const DocumentDomain = {
     return rows
       .map((row) => row.slug)
       .filter((slug): slug is string => slug !== null);
+  },
+
+  loadNotPublishedForReminder: async (
+    limitPerStatus: number
+  ): Promise<NotPublishedResource[]> => {
+    const notPublished = [DocumentStatus.Draft, DocumentStatus.InValidation];
+    const ranked = db<NotPublishedRow>('Document')
+      .join(
+        'ServiceInstance',
+        'ServiceInstance.id',
+        '=',
+        'Document.service_instance_id'
+      )
+      .join(
+        'ServiceDefinition',
+        'ServiceDefinition.id',
+        '=',
+        'ServiceInstance.service_definition_id'
+      )
+      .whereIn('Document.status', notPublished)
+      .select(
+        'Document.*',
+        'ServiceDefinition.id as service_definition_id',
+        'ServiceDefinition.name as service_definition_name',
+        'ServiceDefinition.identifier as service_definition_identifier'
+      )
+      .select(
+        dbRaw(
+          `row_number() over (partition by "ServiceDefinition"."id", "Document"."status" order by "Document"."created_at" asc, "Document"."id") as position`
+        )
+      )
+      .as('ranked');
+
+    const rows: RankedNotPublishedRow[] = await db<RankedNotPublishedRow>(
+      'Document'
+    )
+      .from(ranked)
+      .where('position', '<=', limitPerStatus)
+      .orderBy([
+        'service_definition_name',
+        'service_definition_id',
+        'status',
+        'created_at',
+        'id',
+      ]);
+
+    return rows.map(
+      ({
+        service_definition_id,
+        service_definition_name,
+        service_definition_identifier,
+        position: _position,
+        ...document
+      }) => ({
+        document,
+        serviceDefinition: {
+          id: service_definition_id,
+          name: service_definition_name,
+          identifier: service_definition_identifier,
+        },
+      })
+    );
   },
 };

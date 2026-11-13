@@ -11,6 +11,7 @@ import {
   QueryDocumentsArgs,
   QueryPublicDocumentsArgs,
 } from '../../__generated__/resolvers-types';
+import portalConfig from '../../config';
 import { withTransaction } from '../../context/database.context';
 import { requestContext } from '../../context/request.context';
 import Document, {
@@ -34,10 +35,7 @@ import { NewsFeedApp } from '../news-feed/news-feed.app';
 import { UserDomain } from '../organization-management/user/user-domain/user.domain';
 import { RegistrationApp } from '../registration/registration.app';
 import { ServiceDefinitionDomain } from '../service/definition/service-definition.domain';
-import {
-  isIntegrationType,
-  OPENCTI_INTEGRATION_DOCUMENT_TYPE,
-} from '../shareable-resource/opencti/integration/integration.model';
+import { OPENCTI_INTEGRATION_DOCUMENT_TYPE } from '../shareable-resource/opencti/integration/integration.model';
 import { objectSolutionCategoryDomain } from '../solution-category/object-solution-category/object-solution-category.domain';
 import { solutionCategoryApp } from '../solution-category/solution-category.app';
 import { TelemetryApp } from '../telemetry/telemetry.app';
@@ -108,15 +106,17 @@ const notifyInValidation = async (
       payload: DocumentHelper.buildInValidationPayload({
         document,
         serviceDefinition,
-        integrationType:
-          integrationType && isIntegrationType(integrationType)
-            ? integrationType
-            : null,
+        integrationType: DocumentHelper.toIntegrationType(
+          document.type,
+          integrationType
+        ),
         authorEmail: author?.email ?? null,
       }),
     }
   );
 };
+
+const NOT_PUBLISHED_REMINDER_LIMIT_PER_STATUS = 5;
 
 export const DocumentApp = {
   createDocument: async ({
@@ -663,6 +663,69 @@ export const DocumentApp = {
     await DocumentHelper.deleteObsoleteFiles(obsoleteMinioNames);
 
     return doc;
+  },
+
+  sendResourceNotPublishedReminder: async (): Promise<void> => {
+    if (
+      !portalConfig.enabled_teams_notifications.resource_not_published_reminder
+    ) {
+      logApp.info('Not published resources Teams reminder is disabled.');
+      return;
+    }
+
+    const notPublished = await DocumentDomain.loadNotPublishedForReminder(
+      NOT_PUBLISHED_REMINDER_LIMIT_PER_STATUS
+    );
+    if (!notPublished.length) {
+      return;
+    }
+
+    const authorIds = [
+      ...new Set(
+        notPublished.flatMap(({ document }) =>
+          document.uploader_id ? [document.uploader_id] : []
+        )
+      ),
+    ];
+    const [authors, integrationTypes] = await Promise.all([
+      UserDomain.loadEmailsByIds(authorIds),
+      DocumentMetadataDomain.buildIntegrationTypeQuery(
+        notPublished.map(({ document }) => document.id)
+      ),
+    ]);
+    const libraries = DocumentHelper.groupNotPublishedByLibrary({
+      notPublished,
+      authors,
+      integrationTypes,
+    });
+
+    let failed = 0;
+    for (const library of libraries) {
+      try {
+        await PgBossProducer.send<
+          TeamsNotificationJobData<'resource_not_published'>
+        >(TEAMS_NOTIFICATION_QUEUES.SEND, {
+          event: 'resource_not_published',
+          payload: DocumentHelper.buildNotPublishedPayload(library),
+        });
+      } catch (error) {
+        failed += 1;
+        logApp.error('Unable to enqueue the not published resources reminder', {
+          error,
+          serviceDefinitionId: library.serviceDefinition.id,
+        });
+      }
+    }
+
+    logApp.info('Not published resources Teams reminder enqueued', {
+      libraries: libraries.length,
+      failed,
+    });
+    if (failed > 0) {
+      throw new Error(
+        `Not published resources reminder failed for ${failed} of ${libraries.length} libraries`
+      );
+    }
   },
 
   deleteDocument: async <T extends DocumentModel>(

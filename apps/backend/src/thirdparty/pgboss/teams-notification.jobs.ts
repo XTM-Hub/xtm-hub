@@ -14,6 +14,10 @@ export interface TeamsNotificationPayloadMap {
     library: string;
     resource: TeamsResourceItem;
   };
+  resource_not_published: {
+    library: string;
+    resources: TeamsResourceItem[];
+  };
 }
 
 export type TeamsNotificationEvent = keyof TeamsNotificationPayloadMap;

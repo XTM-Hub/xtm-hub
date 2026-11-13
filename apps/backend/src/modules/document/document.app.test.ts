@@ -30,6 +30,7 @@ import {
   QueryPublicDocumentsArgs,
   ServiceDefinitionIdentifier,
 } from '../../__generated__/resolvers-types';
+import portalConfig from '../../config';
 import { databaseContext } from '../../context/database.context';
 import Document, { DocumentId } from '../../model/kanel/public/Document';
 import { OrganizationId } from '../../model/kanel/public/Organization';
@@ -42,8 +43,10 @@ import { ADMIN_UUID } from '../../portal.const';
 import { MinIOClient } from '../../thirdparty/minio/client';
 import { PgBossProducer } from '../../thirdparty/pgboss/producer';
 import { TEAMS_NOTIFICATION_QUEUES } from '../../thirdparty/pgboss/teams-notification.jobs';
+import { logApp } from '../../utils/app-logger.util';
 import { ErrorCode } from '../../utils/error/error.code';
 import { NewsFeedApp } from '../news-feed/news-feed.app';
+import { UserDomain } from '../organization-management/user/user-domain/user.domain';
 import { RegistrationApp } from '../registration/registration.app';
 import { ServiceDefinitionDomain } from '../service/definition/service-definition.domain';
 import { OPENAEV_SCENARIO_DOCUMENT_TYPE } from '../shareable-resource/openaev/scenario/scenario.model';
@@ -1307,6 +1310,316 @@ describe('documentApp', () => {
         serviceDefinitionIdentifier:
           ServiceDefinitionIdentifier.OpenctiCustomDashboards,
       });
+    });
+  });
+
+  describe('sendResourceNotPublishedReminder', () => {
+    const AUTHOR = TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2;
+    const OTHER_AUTHOR = TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS;
+
+    let originalFlag: boolean;
+    let sendSpy: MockInstance;
+
+    const linkOf = (identifier: string, id: DocumentId) =>
+      `${config.get<string>('base_url_front')}/redirect/${identifier}?document_id=${toGlobalId('Document', id)}`;
+
+    const createNotPublished = async ({
+      name,
+      status,
+      serviceInstanceId,
+      type,
+      uploaderId,
+      shortDescription,
+      createdAt,
+      integrationType,
+    }: {
+      name: string;
+      status: DocumentStatus;
+      serviceInstanceId: ServiceInstanceId;
+      type: string;
+      uploaderId?: UserId;
+      shortDescription?: string;
+      createdAt: Date;
+      integrationType?: IntegrationType;
+    }) => {
+      const document = await TestHelper.document.create({
+        name,
+        status,
+        service_instance_id: serviceInstanceId,
+        type,
+        uploader_id: uploaderId,
+        short_description: shortDescription,
+        created_at: createdAt,
+      });
+      if (integrationType) {
+        await TestHelper.documentMetadata.create({
+          document_id: document.id,
+          key: DocumentMetadataKeyCode.IntegrationType,
+          value: integrationType,
+        });
+      }
+      return document;
+    };
+
+    beforeEach(async () => {
+      await TestHelper.document.delete({});
+      originalFlag =
+        portalConfig.enabled_teams_notifications
+          .resource_not_published_reminder;
+      portalConfig.enabled_teams_notifications.resource_not_published_reminder = true;
+      sendSpy = vi.spyOn(PgBossProducer, 'send').mockResolvedValue('job-id');
+    });
+
+    afterEach(async () => {
+      portalConfig.enabled_teams_notifications.resource_not_published_reminder =
+        originalFlag;
+      await TestHelper.documentMetadata.delete({});
+    });
+
+    it('should not enqueue anything when the reminder is disabled', async () => {
+      // Given a draft document and the reminder switched off
+      portalConfig.enabled_teams_notifications.resource_not_published_reminder = false;
+      await createNotPublished({
+        name: 'draft',
+        status: DocumentStatus.Draft,
+        serviceInstanceId: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
+        type: OPENCTI_CUSTOM_DASHBOARD_DOCUMENT_TYPE,
+        createdAt: new Date('2026-01-01T00:00:00Z'),
+      });
+
+      // When
+      await DocumentApp.sendResourceNotPublishedReminder();
+
+      // Then
+      expect(sendSpy).not.toHaveBeenCalled();
+    });
+
+    it('should not enqueue anything when every document is published', async () => {
+      // Given only a published document
+      await createNotPublished({
+        name: 'published',
+        status: DocumentStatus.Published,
+        serviceInstanceId: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
+        type: OPENCTI_CUSTOM_DASHBOARD_DOCUMENT_TYPE,
+        createdAt: new Date('2026-01-01T00:00:00Z'),
+      });
+
+      // When
+      await DocumentApp.sendResourceNotPublishedReminder();
+
+      // Then
+      expect(sendSpy).not.toHaveBeenCalled();
+    });
+
+    it('should enqueue one job per library listing its draft and in validation resources', async () => {
+      // Given two libraries holding drafts and resources in validation
+      const [integrationsDefinition, dashboardsDefinition] = await Promise.all([
+        ServiceDefinitionDomain.loadServiceDefinitionByServiceInstance(
+          SERVICES.INSTANCES.INTEGRATIONS.ID
+        ),
+        ServiceDefinitionDomain.loadServiceDefinitionByServiceInstance(
+          SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID
+        ),
+      ]);
+      const feedDraft = await createNotPublished({
+        name: 'Feed draft',
+        status: DocumentStatus.Draft,
+        serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        uploaderId: AUTHOR.ID,
+        shortDescription: 'Feed description',
+        createdAt: new Date('2026-01-01T00:00:00Z'),
+        integrationType: IntegrationType.CsvFeed,
+      });
+      const taxiiFeed = await createNotPublished({
+        name: 'TAXII feed in validation',
+        status: DocumentStatus.InValidation,
+        serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        createdAt: new Date('2026-01-02T00:00:00Z'),
+        integrationType: IntegrationType.TaxiiFeed,
+      });
+      const dashboard = await createNotPublished({
+        name: 'Dashboard in validation',
+        status: DocumentStatus.InValidation,
+        serviceInstanceId: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
+        type: OPENCTI_CUSTOM_DASHBOARD_DOCUMENT_TYPE,
+        uploaderId: OTHER_AUTHOR.ID,
+        createdAt: new Date('2026-01-03T00:00:00Z'),
+      });
+
+      // When
+      await DocumentApp.sendResourceNotPublishedReminder();
+
+      // Then
+      expect(sendSpy).toHaveBeenCalledTimes(2);
+      expect(sendSpy).toHaveBeenCalledWith(TEAMS_NOTIFICATION_QUEUES.SEND, {
+        event: 'resource_not_published',
+        payload: {
+          library: integrationsDefinition!.name,
+          resources: [
+            {
+              name: 'Feed draft',
+              type: 'CSV Feed',
+              status: 'draft',
+              short_description: 'Feed description',
+              link: linkOf(integrationsDefinition!.identifier, feedDraft.id),
+              author_email: AUTHOR.EMAIL,
+            },
+            {
+              name: 'TAXII feed in validation',
+              type: 'TAXII Feed',
+              status: 'in_validation',
+              short_description: null,
+              link: linkOf(integrationsDefinition!.identifier, taxiiFeed.id),
+              author_email: null,
+            },
+          ],
+        },
+      });
+      expect(sendSpy).toHaveBeenCalledWith(TEAMS_NOTIFICATION_QUEUES.SEND, {
+        event: 'resource_not_published',
+        payload: {
+          library: dashboardsDefinition!.name,
+          resources: [
+            {
+              name: 'Dashboard in validation',
+              type: null,
+              status: 'in_validation',
+              short_description: null,
+              link: linkOf(dashboardsDefinition!.identifier, dashboard.id),
+              author_email: OTHER_AUTHOR.EMAIL,
+            },
+          ],
+        },
+      });
+    });
+
+    it('should keep enqueuing the other libraries and fail at the end when one library cannot be enqueued', async () => {
+      // Given two libraries, the first send rejecting
+      const errorSpy = vi.spyOn(logApp, 'error').mockImplementation(() => {});
+      sendSpy
+        .mockRejectedValueOnce(new Error('queue unavailable'))
+        .mockResolvedValueOnce('job-id');
+      await createNotPublished({
+        name: 'integration draft',
+        status: DocumentStatus.Draft,
+        serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        createdAt: new Date('2026-01-01T00:00:00Z'),
+        integrationType: IntegrationType.CsvFeed,
+      });
+      await createNotPublished({
+        name: 'dashboard draft',
+        status: DocumentStatus.Draft,
+        serviceInstanceId: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
+        type: OPENCTI_CUSTOM_DASHBOARD_DOCUMENT_TYPE,
+        createdAt: new Date('2026-01-01T00:00:00Z'),
+      });
+
+      // When
+      const reminder = DocumentApp.sendResourceNotPublishedReminder();
+
+      // Then
+      await expect(reminder).rejects.toThrow(
+        'Not published resources reminder failed for 1 of 2 libraries'
+      );
+      expect(sendSpy).toHaveBeenCalledTimes(2);
+      expect(errorSpy).toHaveBeenCalledWith(
+        'Unable to enqueue the not published resources reminder',
+        {
+          error: new Error('queue unavailable'),
+          serviceDefinitionId: expect.any(String),
+        }
+      );
+    });
+
+    it('should leave the author email empty when the uploader cannot be loaded', async () => {
+      // Given a document whose uploader is not returned by the user query
+      vi.spyOn(UserDomain, 'loadEmailsByIds').mockResolvedValue([]);
+      await createNotPublished({
+        name: 'orphan author',
+        status: DocumentStatus.Draft,
+        serviceInstanceId: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
+        type: OPENCTI_CUSTOM_DASHBOARD_DOCUMENT_TYPE,
+        uploaderId: AUTHOR.ID,
+        createdAt: new Date('2026-01-01T00:00:00Z'),
+      });
+
+      // When
+      await DocumentApp.sendResourceNotPublishedReminder();
+
+      // Then
+      expect(sendSpy.mock.calls[0]?.[1]).toMatchObject({
+        payload: {
+          resources: [{ name: 'orphan author', author_email: null }],
+        },
+      });
+    });
+
+    it('should leave the type empty when an integration has a missing or unrecognized integration type', async () => {
+      // Given an integration without type metadata and one with an unknown type
+      await createNotPublished({
+        name: 'no type',
+        status: DocumentStatus.Draft,
+        serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        createdAt: new Date('2026-01-01T00:00:00Z'),
+      });
+      const unknownType = await createNotPublished({
+        name: 'unknown type',
+        status: DocumentStatus.Draft,
+        serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        createdAt: new Date('2026-01-02T00:00:00Z'),
+      });
+      await TestHelper.documentMetadata.create({
+        document_id: unknownType.id,
+        key: DocumentMetadataKeyCode.IntegrationType,
+        value: 'not_an_integration_type',
+      });
+
+      // When
+      await DocumentApp.sendResourceNotPublishedReminder();
+
+      // Then
+      expect(sendSpy.mock.calls[0]?.[1]).toMatchObject({
+        payload: {
+          resources: [
+            { name: 'no type', type: null },
+            { name: 'unknown type', type: null },
+          ],
+        },
+      });
+    });
+
+    it('should load the authors and the integration types in batches, not once per document', async () => {
+      // Given several documents of different authors
+      const loadEmailsSpy = vi.spyOn(UserDomain, 'loadEmailsByIds');
+      const integrationTypeSpy = vi.spyOn(
+        DocumentMetadataDomain,
+        'buildIntegrationTypeQuery'
+      );
+      await Promise.all(
+        [AUTHOR.ID, OTHER_AUTHOR.ID, AUTHOR.ID].map((uploaderId, index) =>
+          createNotPublished({
+            name: `batch-${index}`,
+            status: DocumentStatus.Draft,
+            serviceInstanceId: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
+            type: OPENCTI_CUSTOM_DASHBOARD_DOCUMENT_TYPE,
+            uploaderId,
+            createdAt: new Date('2026-01-01T00:00:00Z'),
+          })
+        )
+      );
+
+      // When
+      await DocumentApp.sendResourceNotPublishedReminder();
+
+      // Then
+      expect(loadEmailsSpy).toHaveBeenCalledTimes(1);
+      expect(loadEmailsSpy.mock.calls[0]?.[0]).toHaveLength(2);
+      expect(integrationTypeSpy).toHaveBeenCalledTimes(1);
     });
   });
 
