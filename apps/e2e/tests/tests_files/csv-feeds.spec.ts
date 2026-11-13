@@ -1,7 +1,7 @@
 import { expect, test } from '../fixtures/baseFixtures';
 import LoginPage from '../model/login.pageModel';
 import IntegrationPage from '../model/integration.pageModel';
-import { publishResource } from '../model/common';
+import { openResourceUpdateDrawer, publishResource } from '../model/common';
 
 const CSV_FEED_TEST = {
   name: 'e2e CSV Feed name',
@@ -44,6 +44,16 @@ test.describe('CSV Feeds', () => {
     await expect(
       page.getByText(CSV_FEED_TEST.name, { exact: true })
     ).toBeVisible();
+
+    await openResourceUpdateDrawer(page, CSV_FEED_TEST.name);
+    const drawer = page.getByRole('dialog');
+    await expect(drawer.getByText('Published', { exact: true })).toBeVisible();
+    await expect(
+      drawer.getByRole('button', { name: 'Validate', exact: true })
+    ).toBeVisible();
+    await expect(
+      drawer.getByRole('button', { name: 'Publish', exact: true })
+    ).not.toBeVisible();
   });
   test('Should delete CSV Feed from the list', async ({ page }) => {
     await expect(
