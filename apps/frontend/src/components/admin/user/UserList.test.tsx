@@ -1,6 +1,7 @@
 import UserList from '@/components/admin/user/UserList';
 import { UsersListUser } from '@/components/admin/user/user-list.types';
 import { PortalContext } from '@/components/me/AppPortalContext';
+import { INVALIDATION_BATCH_DELAY_MS } from '@/hooks/use-batched-invalidation';
 import { toCursor } from '@/hooks/use-table-pagination';
 import testRender from '@/utils/test/test-render';
 import {
@@ -1012,6 +1013,10 @@ describe('UserList', () => {
   });
 
   describe('new users in real time', () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
     it.each([
       {
         path: 'the bypass admin path',
@@ -1095,7 +1100,9 @@ describe('UserList', () => {
         const { invalidateQueries } = renderUserList(organization);
 
         // When
+        vi.useFakeTimers();
         act(() => lastSubscriptionOptions(document).onNext(event));
+        act(() => vi.advanceTimersByTime(INVALIDATION_BATCH_DELAY_MS));
 
         // Then
         expect(invalidateQueries).toHaveBeenCalledExactlyOnceWith({
@@ -1119,11 +1126,13 @@ describe('UserList', () => {
       expect(lastQueryVariables()).toEqual(searchedVariables);
 
       // When
+      vi.useFakeTimers();
       act(() =>
         lastSubscriptionOptions(AdminUserEventsDocument).onNext({
           AdminUser: { add: { id: 'new-user' } },
         })
       );
+      act(() => vi.advanceTimersByTime(INVALIDATION_BATCH_DELAY_MS));
 
       // Then
       expect(invalidateQueries).toHaveBeenCalledExactlyOnceWith({

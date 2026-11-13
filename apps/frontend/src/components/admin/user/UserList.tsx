@@ -28,6 +28,7 @@ import {
 import { IconActions, IconActionsItem } from '@/components/ui/IconActions';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import useAdminPath from '@/hooks/use-admin-path';
+import { useBatchedInvalidation } from '@/hooks/use-batched-invalidation';
 import { useDebouncedSearch } from '@/hooks/use-debounced-search';
 import { useGraphqlSubscription } from '@/hooks/use-graphql-subscription';
 import { useAdminByPass } from '@/hooks/use-portal-capability';
@@ -201,6 +202,11 @@ const UserList = ({ organization }: UserListProps) => {
   );
 
   // A new user reloads the list on screen, in place of the Relay @appendNode.
+  // Batched, as a bulk accept of pending users adds them one event at a time.
+  const refreshUsersAfterEvent = useBatchedInvalidation({
+    queryKey: usersListKeys.list(variables),
+    exact: true,
+  });
   useGraphqlSubscription<
     OrganizationUserEventsSubscription,
     OrganizationUserEventsSubscriptionVariables
@@ -211,7 +217,7 @@ const UserList = ({ organization }: UserListProps) => {
       enabled: !isAdminPath && !!organization,
       onNext: ({ User }) => {
         if (User?.add) {
-          refreshUsers();
+          refreshUsersAfterEvent();
         }
       },
     }
@@ -223,7 +229,7 @@ const UserList = ({ organization }: UserListProps) => {
       enabled: isAdminPath,
       onNext: ({ AdminUser }) => {
         if (AdminUser?.add) {
-          refreshUsers();
+          refreshUsersAfterEvent();
         }
       },
     }

@@ -11,6 +11,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
+import { useBatchedInvalidation } from '@/hooks/use-batched-invalidation';
 import { useGraphqlSubscription } from '@/hooks/use-graphql-subscription';
 import { useTranslate } from '@/hooks/use-translate';
 import { analyticsId } from '@/lib/analytics/analytics.ids';
@@ -22,7 +23,6 @@ import {
   PendingUserEventsSubscriptionVariables,
 } from '@graphql/generated';
 import { pendingUsersKeys } from '@graphql/user/users.keys';
-import { useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useContext, useState } from 'react';
 
@@ -49,7 +49,15 @@ const PendingUserNotifications = ({
 
   const { data } = useNotificationPendingUsers(organizationId);
 
-  const queryClient = useQueryClient();
+  // The bell and the pending users tab counter share this query, as they
+  // shared the Relay record: both follow a deletion or an invalidation.
+  // Batched, as a bulk accept sends one deletion per user.
+  const refreshPendingUsers = useBatchedInvalidation({
+    queryKey: pendingUsersKeys.list(
+      notificationPendingUserQueryFilters(organizationId)
+    ),
+    exact: true,
+  });
   useGraphqlSubscription<
     PendingUserEventsSubscription,
     PendingUserEventsSubscriptionVariables
@@ -58,15 +66,8 @@ const PendingUserNotifications = ({
     { organizationId },
     {
       onNext: ({ UserPending }) => {
-        // The bell and the pending users tab counter share this query, as they
-        // shared the Relay record: both follow a deletion or an invalidation.
         if (UserPending?.delete || UserPending?.invalidate) {
-          void queryClient.invalidateQueries({
-            queryKey: pendingUsersKeys.list(
-              notificationPendingUserQueryFilters(organizationId)
-            ),
-            exact: true,
-          });
+          refreshPendingUsers();
         }
       },
     }

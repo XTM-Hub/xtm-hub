@@ -1,5 +1,6 @@
 import { PendingUser } from '@/components/admin/user/pending-user/pending-user-list.types';
 import { SelectionState } from '@/components/ui/data-table';
+import { INVALIDATION_BATCH_DELAY_MS } from '@/hooks/use-batched-invalidation';
 import { toCursor } from '@/hooks/use-table-pagination';
 import testRender from '@/utils/test/test-render';
 import {
@@ -16,7 +17,7 @@ import { pendingUsersKeys } from '@graphql/user/users.keys';
 import { keepPreviousData, QueryClient } from '@tanstack/react-query';
 import { act, screen, within } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import PendingUserList from './PendingUserList';
 
@@ -468,6 +469,13 @@ describe('PendingUserList', () => {
   });
 
   describe('refresh of the list on screen', () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    // The refresh waits for the burst of invalidations to end.
+    const runBatchedRefresh = () =>
+      act(() => vi.advanceTimersByTime(INVALIDATION_BATCH_DELAY_MS));
     it.each([
       {
         action: 'a single accept',
@@ -494,12 +502,14 @@ describe('PendingUserList', () => {
         await user.click(screen.getByRole('button', { name: confirm }));
 
         // When
+        vi.useFakeTimers();
         act(() =>
           lastMutationCallbacks(mutation).onSuccess(
             response,
             PENDING_USER_VARIABLES
           )
         );
+        runBatchedRefresh();
 
         // Then
         expect(invalidateQueries).toHaveBeenCalledExactlyOnceWith(
@@ -522,12 +532,14 @@ describe('PendingUserList', () => {
       };
 
       // When
+      vi.useFakeTimers();
       act(() =>
         lastMutationCallbacks('approve').onSuccess(
           response,
           PENDING_USER_VARIABLES
         )
       );
+      runBatchedRefresh();
 
       // Then
       expect(invalidateQueries).not.toHaveBeenCalled();
@@ -552,9 +564,11 @@ describe('PendingUserList', () => {
         await user.click(screen.getByRole('button', { name: confirm }));
 
         // When
+        vi.useFakeTimers();
         act(() =>
           lastMutationCallbacks(mutation).onSuccess({ success: true }, {})
         );
+        runBatchedRefresh();
 
         // Then
         expect(mocks.clearSelection).toHaveBeenCalledOnce();
@@ -569,11 +583,13 @@ describe('PendingUserList', () => {
       const { invalidateQueries } = renderPendingUserList();
 
       // When
+      vi.useFakeTimers();
       act(() =>
         lastSubscriptionOptions().onNext({
           UserPending: { delete: { id: 'pending-1' }, invalidate: null },
         })
       );
+      runBatchedRefresh();
 
       // Then
       expect(invalidateQueries).toHaveBeenCalledExactlyOnceWith(
@@ -592,11 +608,13 @@ describe('PendingUserList', () => {
       expect(lastQueryVariables()).toEqual(secondPageVariables);
 
       // When
+      vi.useFakeTimers();
       act(() =>
         lastSubscriptionOptions().onNext({
           UserPending: { delete: { id: 'pending-1' }, invalidate: null },
         })
       );
+      runBatchedRefresh();
 
       // Then
       expect(invalidateQueries).toHaveBeenCalledExactlyOnceWith({
@@ -610,11 +628,13 @@ describe('PendingUserList', () => {
       const { invalidateQueries } = renderPendingUserList();
 
       // When
+      vi.useFakeTimers();
       act(() =>
         lastSubscriptionOptions().onNext({
           UserPending: { delete: null, invalidate: { id: ORGANIZATION_ID } },
         })
       );
+      runBatchedRefresh();
 
       // Then
       expect(invalidateQueries).not.toHaveBeenCalled();
