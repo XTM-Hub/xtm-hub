@@ -22,10 +22,7 @@ const DOCUMENT_STATUS_CHIPS: Record<
 
 export const DocumentStatusChip = ({ status }: { status: DocumentStatus }) => {
   const t = useTranslate();
-  // Draft is the default, as in the footer and the list split
-  const { labelKey, severity } =
-    DOCUMENT_STATUS_CHIPS[status] ??
-    DOCUMENT_STATUS_CHIPS[DocumentStatus.Draft];
+  const { labelKey, severity } = DOCUMENT_STATUS_CHIPS[status];
 
   return (
     <Chip

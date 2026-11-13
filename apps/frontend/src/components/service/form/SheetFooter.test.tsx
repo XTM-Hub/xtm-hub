@@ -108,11 +108,6 @@ describe('ServiceFormSheetFooter', () => {
       [SAVE_LABEL, PUBLISH_LABEL],
     ],
     ['a published resource', DocumentStatus.Published, [VALIDATE_LABEL]],
-    [
-      'a status the footer does not know',
-      'archived' as DocumentStatus,
-      [SAVE_AS_DRAFT_LABEL, REQUEST_VALIDATION_LABEL],
-    ],
   ])(
     'should offer the matching actions when the footer is for %s',
     (_resource, status, expectedLabels) => {

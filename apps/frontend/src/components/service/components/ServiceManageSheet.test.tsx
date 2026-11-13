@@ -153,14 +153,6 @@ describe('ServiceManageSheet', () => {
     }
   );
 
-  it('should show the draft badge when the status of the resource is not known', () => {
-    // When
-    renderSheet(buildDocument('archived' as DocumentStatus));
-
-    // Then
-    expect(screen.getByText('DocumentStatus.Draft')).toBeInTheDocument();
-  });
-
   it('should not show any status badge when the user creates a resource', () => {
     // When
     renderSheet();
