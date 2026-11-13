@@ -137,12 +137,11 @@ describe('UserDisplay', () => {
 
     // Then
     const image = container.querySelector('img');
-    const localPath = encodeURIComponent(
-      `/user/picture/${userId}?t=1760000000000`
-    );
+    const localPath = encodeURIComponent(`/user/picture/${userId}`);
     expect(image?.getAttribute('srcset')).toBe(
       `/_next/image?url=${localPath}&w=32&q=75 1x, /_next/image?url=${localPath}&w=48&q=75 2x`
     );
+    expect(image).toHaveAttribute('src', expect.not.stringContaining('t%3D'));
   });
 
   it('should size the avatar container and the image with pictureSize', () => {

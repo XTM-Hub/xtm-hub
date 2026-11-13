@@ -1,8 +1,6 @@
 import { getImageProps } from 'next/image';
 import { getGravatarSizedUrl } from './gravatar';
 
-// The picture route of the backend. It mirrors the `images.localPatterns` entry of next.config.mjs,
-// which is what lets the Next image optimiser fetch these pictures.
 const BACKEND_PICTURE_PATHNAME =
   /^\/user\/picture\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 // The backend appends the upload time to the URL of a picture, to bust the caches when it changes.
@@ -13,7 +11,6 @@ const LOCAL_PARSE_BASE = 'http://localhost';
 export interface AvatarPictureSource {
   src?: string;
   srcSet?: string;
-  sizes?: string;
   fallbackSrc?: string;
 }
 
@@ -31,13 +28,16 @@ const parseUrl = (src: string): URL | null => {
 };
 
 /**
- * Returns the local path (`/user/picture/:userId?t=...`) of a picture served by the backend, which
- * stores it as an absolute URL built on the front base URL, or null for any other picture.
+ * Returns the local path (`/user/picture/:userId`) of a picture served by the backend, which stores
+ * it as an absolute URL built on the front base URL, or null for any other picture.
  *
- * Only the path and the query of the URL are kept, so the host of the stored URL is never used: the
- * Next image optimiser always fetches this path from our own server.
+ * The path has NO query: the Next image optimiser only accepts a local path without query string
+ * (its default), so nobody can vary the query to make it fetch and resize the same picture again.
+ * The `t` cache-buster is therefore not part of the optimised URL: see getAvatarPictureSource.
+ * Only the path of the URL is kept, so its host is never used: the optimiser always fetches the
+ * path from our own server.
  */
-export const getBackendPicturePath = (src: string): string | null => {
+const getBackendPicturePath = (src: string): string | null => {
   const url = parseUrl(src);
   if (
     !url ||
@@ -48,13 +48,15 @@ export const getBackendPicturePath = (src: string): string | null => {
   ) {
     return null;
   }
-  return url.pathname + url.search;
+  return url.pathname;
 };
 
 /**
  * What an Avatar loads for a user picture, shown at `size` CSS pixels:
  * - a backend picture goes through the Next image optimiser (the size and its retina twin, in
- *   WebP), and falls back to the stored URL if the optimiser cannot serve it;
+ *   WebP), and falls back to the stored URL if the optimiser cannot serve it. The optimised URL has
+ *   no `t` cache-buster, so a changed picture shows up in these views only once the optimiser
+ *   copy, which proxy.ts keeps for at most a day, and the browser copy have expired;
  * - a Gravatar picture is asked at twice the size;
  * - any other picture (identity provider host, blob: or data: preview) is used as it is.
  */
@@ -76,7 +78,6 @@ export const getAvatarPictureSource = (
     return {
       src: props.src,
       srcSet: props.srcSet,
-      sizes: props.sizes,
       fallbackSrc: picture,
     };
   }

@@ -75,26 +75,21 @@ describe('ProfileFormPicture', () => {
     );
   });
 
-  it('should serve a backend profile picture through the Next image optimiser at the profile size', async () => {
+  it('should show a backend profile picture as it is stored, so a new one shows at once', async () => {
     // Given
-    const userId = '89efc660-a732-4d71-abe2-455188be1505';
-    const localPath = encodeURIComponent(
-      `/user/picture/${userId}?t=1760000000000`
-    );
+    const stored =
+      'https://hub.filigran.io/user/picture/89efc660-a732-4d71-abe2-455188be1505?t=1760000000000';
 
     // When
     testRender(<ProfileFormPicture onSubmit={vi.fn()} />, {
-      me: {
-        picture: `https://hub.filigran.io/user/picture/${userId}?t=1760000000000`,
-      },
+      me: { picture: stored },
     });
 
     // Then
     await waitFor(() =>
-      expect(getDisplayedPicture().getAttribute('srcset')).toBe(
-        `/_next/image?url=${localPath}&w=96&q=75 1x, /_next/image?url=${localPath}&w=256&q=75 2x`
-      )
+      expect(getDisplayedPicture()).toHaveAttribute('src', stored)
     );
+    expect(getDisplayedPicture()).not.toHaveAttribute('srcset');
   });
 
   it('should preview a chosen file as it is, without the optimiser', async () => {

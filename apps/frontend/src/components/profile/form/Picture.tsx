@@ -4,7 +4,7 @@ import { PortalContext } from '@/components/me/AppPortalContext';
 import { Avatar } from '@/components/ui/avatar';
 import { useTranslate } from '@/hooks/use-translate';
 import { analyticsId } from '@/lib/analytics/analytics.ids';
-import { getAvatarPictureSource } from '@/utils/format/user-picture';
+import { getGravatarSizedUrl } from '@/utils/format/gravatar';
 import {
   Button,
   Card,
@@ -71,9 +71,11 @@ export const ProfileFormPicture = ({ onSubmit }: ProfileFormPictureProps) => {
           {...analyticsId('account_picture_select')}
           className="size-24 cursor-pointer"
           onClick={() => inputRef.current?.click()}>
+          {/* The stored URL (with its cache-buster), not the optimiser copy: the user sees a new
+              picture at once, while the optimised views catch up within the backend cache lifetime. */}
           <Avatar
-            {...getAvatarPictureSource(
-              preview || me?.picture,
+            src={getGravatarSizedUrl(
+              preview || me?.picture || undefined,
               PROFILE_PICTURE_SIZE
             )}
             size={PROFILE_PICTURE_SIZE}

@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { getAvatarPictureSource, getBackendPicturePath } from './user-picture';
+import { getAvatarPictureSource } from './user-picture';
 
 const ORIGIN = 'https://hub.filigran.io';
 const USER_ID = '89efc660-a732-4d71-abe2-455188be1505';
-const PICTURE_PATH = `/user/picture/${USER_ID}?t=1760000000000`;
+const LOCAL_PATH = `/user/picture/${USER_ID}`;
+const STORED_PATH = `${LOCAL_PATH}?t=1760000000000`;
 const AUTH0_URL = 'https://cdn.auth0.com/avatars/jd.png';
 const GRAVATAR_URL = 'https://s.gravatar.com/avatar/538dc0e?s=480&r=pg';
 
@@ -21,183 +22,168 @@ const parseSrcSet = (srcSet: string | undefined) =>
     };
   });
 
-describe('getBackendPicturePath', () => {
-  it.each([
-    ['an absolute URL', `${ORIGIN}${PICTURE_PATH}`],
-    ['a relative path', PICTURE_PATH],
-    ['an http URL', `http://localhost:3002${PICTURE_PATH}`],
-    [
-      'a URL on another origin of the front',
-      `https://staging.filigran.io${PICTURE_PATH}`,
-    ],
-  ])(
-    'should return the local path and the cache-buster of %s',
-    (_case, src) => {
-      // When / Then
-      expect(getBackendPicturePath(src)).toBe(PICTURE_PATH);
-    }
-  );
-
-  it('should return the path alone when the URL has no query', () => {
-    // When / Then
-    expect(getBackendPicturePath(`${ORIGIN}/user/picture/${USER_ID}`)).toBe(
-      `/user/picture/${USER_ID}`
-    );
-  });
-
-  it('should drop the fragment of the URL', () => {
-    // When / Then
-    expect(getBackendPicturePath(`${ORIGIN}${PICTURE_PATH}#top`)).toBe(
-      PICTURE_PATH
-    );
-  });
-
-  it('should accept an upper case UUID', () => {
-    // Given
-    const path = `/user/picture/${USER_ID.toUpperCase()}?t=1`;
-
-    // When / Then
-    expect(getBackendPicturePath(`${ORIGIN}${path}`)).toBe(path);
-  });
-
-  it.each([
-    ['an id that is not a UUID', `${ORIGIN}/user/picture/not-a-uuid?t=1`],
-    [
-      'a UUID missing a character',
-      `${ORIGIN}/user/picture/${USER_ID.slice(1)}?t=1`,
-    ],
-    ['a UUID with a character more', `${ORIGIN}/user/picture/0${USER_ID}?t=1`],
-    ['a deeper path', `${ORIGIN}/user/picture/${USER_ID}/other?t=1`],
-    ['a trailing slash', `${ORIGIN}/user/picture/${USER_ID}/?t=1`],
-    ['another route', `${ORIGIN}/document/get/${USER_ID}?t=1`],
-    [
-      'another route that ends like the picture one',
-      `${ORIGIN}/x/user/picture/${USER_ID}?t=1`,
-    ],
-    ['a path traversal', `${ORIGIN}/user/picture/../auth/${USER_ID}?t=1`],
-    [
-      'an encoded path traversal',
-      `${ORIGIN}/user/picture/%2e%2e/auth/${USER_ID}`,
-    ],
-    ['an encoded slash', `${ORIGIN}/user/picture/${USER_ID}%2Fother?t=1`],
-    ['an encoded UUID', `${ORIGIN}/user/picture/%38${USER_ID.slice(1)}?t=1`],
-    ['a protocol-relative URL', `//evil.io/user/picture/${USER_ID}?t=1`],
-    ['a backslash host', `/\\evil.io/user/picture/${USER_ID}?t=1`],
-    [
-      'user info',
-      `https://user:secret@hub.filigran.io/user/picture/${USER_ID}?t=1`,
-    ],
-    [
-      'a user name only',
-      `https://user@hub.filigran.io/user/picture/${USER_ID}?t=1`,
-    ],
-    ['another query parameter', `${ORIGIN}/user/picture/${USER_ID}?x=1`],
-    [
-      'a cache-buster that is not a number',
-      `${ORIGIN}/user/picture/${USER_ID}?t=abc`,
-    ],
-    [
-      'a cache-buster with more parameters',
-      `${ORIGIN}/user/picture/${USER_ID}?t=1&x=2`,
-    ],
-    ['another scheme', `ftp://hub.filigran.io/user/picture/${USER_ID}?t=1`],
-    ['a blob URL', `blob:${ORIGIN}/${USER_ID}`],
-    ['a data URL', 'data:image/png;base64,AAAA'],
-    ['a javascript URL', `javascript:/user/picture/${USER_ID}`],
-    ['a Gravatar URL', GRAVATAR_URL],
-    ['an identity provider URL', AUTH0_URL],
-    ['an empty string', ''],
-    ['text that is not a URL', 'not a url'],
-  ])('should return null for %s', (_case, src) => {
-    // When / Then
-    expect(getBackendPicturePath(src)).toBeNull();
-  });
-});
+// The local path the optimiser is asked for, or null when the picture is not offered to it.
+const getOptimisedSource = (picture: string) =>
+  getAvatarPictureSource(picture, 48).srcSet
+    ? parseSrcSet(getAvatarPictureSource(picture, 48).srcSet)[0].source
+    : null;
 
 describe('getAvatarPictureSource', () => {
-  it('should offer a backend picture to the optimiser at the size and its retina twin', () => {
-    // When
-    const source = getAvatarPictureSource(`${ORIGIN}${PICTURE_PATH}`, 48);
+  describe('for a picture of the backend', () => {
+    it.each([
+      ['an absolute URL', `${ORIGIN}${STORED_PATH}`],
+      ['a relative path', STORED_PATH],
+      ['an http URL', `http://localhost:3002${STORED_PATH}`],
+      [
+        'a URL on another origin of the front',
+        `https://staging.filigran.io${STORED_PATH}`,
+      ],
+      ['a URL without query', `${ORIGIN}${LOCAL_PATH}`],
+      ['a URL with a fragment', `${ORIGIN}${STORED_PATH}#top`],
+    ])(
+      'should ask the optimiser for the path alone, without query, for %s',
+      (_case, picture) => {
+        // When / Then
+        expect(getOptimisedSource(picture)).toBe(LOCAL_PATH);
+      }
+    );
 
-    // Then
-    expect(parseSrcSet(source.srcSet)).toEqual([
-      {
-        pathname: '/_next/image',
-        source: PICTURE_PATH,
-        width: '48',
-        quality: '75',
-        descriptor: '1x',
-      },
-      {
-        pathname: '/_next/image',
-        source: PICTURE_PATH,
-        width: '96',
-        quality: '75',
-        descriptor: '2x',
-      },
-    ]);
-  });
+    it('should accept an upper case UUID', () => {
+      // Given
+      const upperCasePath = `/user/picture/${USER_ID.toUpperCase()}`;
 
-  it('should only use the sizes Next serves for a small avatar', () => {
-    // When
-    const source = getAvatarPictureSource(`${ORIGIN}${PICTURE_PATH}`, 24);
+      // When / Then
+      expect(getOptimisedSource(`${ORIGIN}${upperCasePath}?t=1`)).toBe(
+        upperCasePath
+      );
+    });
 
-    // Then
-    expect(parseSrcSet(source.srcSet).map(({ width }) => width)).toEqual([
-      '32',
-      '48',
-    ]);
-  });
+    it('should never put the cache-buster in the optimiser URL', () => {
+      // When
+      const source = getAvatarPictureSource(`${ORIGIN}${STORED_PATH}`, 48);
 
-  it('should use the retina candidate as the src of a backend picture', () => {
-    // When
-    const source = getAvatarPictureSource(`${ORIGIN}${PICTURE_PATH}`, 48);
+      // Then
+      expect(source.src).not.toContain('t%3D');
+      expect(source.srcSet).not.toContain('t%3D');
+      expect(source.srcSet).not.toContain('%3F');
+    });
 
-    // Then
-    const retinaCandidate = parseSrcSet(source.srcSet)[1];
-    const srcUrl = new URL(source.src as string, ORIGIN);
-    expect(srcUrl.pathname).toBe('/_next/image');
-    expect(srcUrl.searchParams.get('url')).toBe(retinaCandidate.source);
-    expect(srcUrl.searchParams.get('w')).toBe(retinaCandidate.width);
-  });
+    it('should offer the optimiser the size and its retina twin', () => {
+      // When
+      const source = getAvatarPictureSource(`${ORIGIN}${STORED_PATH}`, 48);
 
-  it('should keep the stored URL of a backend picture as its fallback', () => {
-    // Given
-    const stored = `${ORIGIN}${PICTURE_PATH}`;
+      // Then
+      expect(parseSrcSet(source.srcSet)).toEqual([
+        {
+          pathname: '/_next/image',
+          source: LOCAL_PATH,
+          width: '48',
+          quality: '75',
+          descriptor: '1x',
+        },
+        {
+          pathname: '/_next/image',
+          source: LOCAL_PATH,
+          width: '96',
+          quality: '75',
+          descriptor: '2x',
+        },
+      ]);
+    });
 
-    // When
-    const source = getAvatarPictureSource(stored, 48);
+    it('should only use the sizes Next serves for a small avatar', () => {
+      // When
+      const source = getAvatarPictureSource(`${ORIGIN}${STORED_PATH}`, 24);
 
-    // Then
-    expect(source.fallbackSrc).toBe(stored);
-    expect(source.sizes).toBeUndefined();
-  });
+      // Then
+      expect(parseSrcSet(source.srcSet).map(({ width }) => width)).toEqual([
+        '32',
+        '48',
+      ]);
+    });
 
-  it('should ask Gravatar for twice the size and load it as it is', () => {
-    // When
-    const source = getAvatarPictureSource(GRAVATAR_URL, 24);
+    it('should use the retina candidate as the src', () => {
+      // When
+      const source = getAvatarPictureSource(`${ORIGIN}${STORED_PATH}`, 48);
 
-    // Then
-    expect(source).toEqual({
-      src: 'https://s.gravatar.com/avatar/538dc0e?s=48&r=pg',
+      // Then
+      const retinaCandidate = parseSrcSet(source.srcSet)[1];
+      const srcUrl = new URL(source.src as string, ORIGIN);
+      expect(srcUrl.pathname).toBe('/_next/image');
+      expect(srcUrl.searchParams.get('url')).toBe(retinaCandidate.source);
+      expect(srcUrl.searchParams.get('w')).toBe(retinaCandidate.width);
+    });
+
+    it('should keep the stored URL, cache-buster included, as the fallback', () => {
+      // Given
+      const stored = `${ORIGIN}${STORED_PATH}`;
+
+      // When
+      const source = getAvatarPictureSource(stored, 48);
+
+      // Then
+      expect(source.fallbackSrc).toBe(stored);
     });
   });
 
-  it.each([
-    ['an identity provider host', AUTH0_URL],
-    ['a blob preview', 'blob:https://hub.filigran.io/1234'],
-    ['a data preview', 'data:image/png;base64,AAAA'],
-    [
-      'a picture of the route with an id that is not a UUID',
-      `${ORIGIN}/user/picture/not-a-uuid?t=1`,
-    ],
-    ['a path traversal', `${ORIGIN}/user/picture/../auth/login`],
-  ])('should load %s as it is', (_case, picture) => {
-    // When
-    const source = getAvatarPictureSource(picture, 48);
+  describe('for a picture that is not a plain backend one', () => {
+    it.each([
+      ['an id that is not a UUID', `${ORIGIN}/user/picture/not-a-uuid?t=1`],
+      [
+        'a UUID missing a character',
+        `${ORIGIN}/user/picture/${USER_ID.slice(1)}?t=1`,
+      ],
+      [
+        'a UUID with a character more',
+        `${ORIGIN}/user/picture/0${USER_ID}?t=1`,
+      ],
+      ['a deeper path', `${ORIGIN}${LOCAL_PATH}/other?t=1`],
+      ['a trailing slash', `${ORIGIN}${LOCAL_PATH}/?t=1`],
+      ['another route', `${ORIGIN}/document/get/${USER_ID}?t=1`],
+      [
+        'another route that ends like the picture one',
+        `${ORIGIN}/x${LOCAL_PATH}?t=1`,
+      ],
+      ['a path traversal', `${ORIGIN}/user/picture/../auth/${USER_ID}?t=1`],
+      [
+        'an encoded path traversal',
+        `${ORIGIN}/user/picture/%2e%2e/auth/${USER_ID}`,
+      ],
+      ['an encoded slash', `${ORIGIN}${LOCAL_PATH}%2Fother?t=1`],
+      ['an encoded UUID', `${ORIGIN}/user/picture/%38${USER_ID.slice(1)}?t=1`],
+      ['a protocol-relative URL', `//evil.io${STORED_PATH}`],
+      ['a backslash host', `/\\evil.io${STORED_PATH}`],
+      ['user info', `https://user:secret@hub.filigran.io${STORED_PATH}`],
+      ['a user name only', `https://user@hub.filigran.io${STORED_PATH}`],
+      ['another query parameter', `${ORIGIN}${LOCAL_PATH}?x=1`],
+      ['a cache-buster that is not a number', `${ORIGIN}${LOCAL_PATH}?t=abc`],
+      ['a cache-buster with more parameters', `${ORIGIN}${LOCAL_PATH}?t=1&x=2`],
+      ['another scheme', `ftp://hub.filigran.io${STORED_PATH}`],
+      ['a blob URL', `blob:${ORIGIN}/${USER_ID}`],
+      ['a data URL', 'data:image/png;base64,AAAA'],
+      ['a javascript URL', `javascript:${LOCAL_PATH}`],
+      ['an identity provider URL', AUTH0_URL],
+      ['text that is not a URL', 'not a url'],
+    ])(
+      'should load %s as it is, never through the optimiser',
+      (_case, picture) => {
+        // When
+        const source = getAvatarPictureSource(picture, 48);
 
-    // Then
-    expect(source).toEqual({ src: picture });
+        // Then
+        expect(source).toEqual({ src: picture });
+      }
+    );
+
+    it('should ask Gravatar for twice the size and load it as it is', () => {
+      // When
+      const source = getAvatarPictureSource(GRAVATAR_URL, 24);
+
+      // Then
+      expect(source).toEqual({
+        src: 'https://s.gravatar.com/avatar/538dc0e?s=48&r=pg',
+      });
+    });
   });
 
   it.each([
