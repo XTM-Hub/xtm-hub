@@ -13,7 +13,7 @@ const resolverTemplate = (resolverName: string, needScalarId: boolean) => {
 } from '../../__generated__/resolvers-types';
 import { Guarded } from '../../security/guarded/guarded.decorator';
 import { portalCapabilityGuard } from '../../security/guarded/guards/portal.guard';
-${needScalarId ? "import { createRelayIdScalar } from '../../utils/scalar.util';\n" : ''}import { ${pascal}Domain } from './${resolverName}.domain';
+${needScalarId ? `import { ${pascal}Id } from '../../model/kanel/public/${pascal}';\nimport { createRelayIdScalar } from '../../utils/scalar.util';\n` : ''}import { ${pascal}Domain } from './${resolverName}.domain';
 
 // Every operation declares its access: @Public() or @Guarded(guard), never a bare resolver.
 // Admin-only by default, widen it on purpose.
