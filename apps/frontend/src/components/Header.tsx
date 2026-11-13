@@ -32,10 +32,10 @@ import { usePathname } from 'next/navigation';
 import { useCallback, useContext, useEffect, useState } from 'react';
 import { useMutation } from 'react-relay';
 
-// Component interface
 // Displayed size of the user avatar in px: keep it in step with the size-6 of its wrapper.
 const HEADER_AVATAR_SIZE = 24;
 
+// Component interface
 interface HeaderComponentProps {
   displayLogo?: boolean;
 }
