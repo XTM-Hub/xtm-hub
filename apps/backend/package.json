@@ -3,7 +3,7 @@
   "version": "1.260622.0",
   "description": "Portal API",
   "main": "src/index.js",
-  "repository": "https://github.com/FiligranHQ/cloud-portal",
+  "repository": "https://github.com/XTM-Hub/xtm-hub",
   "author": "Filigran",
   "license": "Filigran",
   "type": "module",
