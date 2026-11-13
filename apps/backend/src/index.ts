@@ -31,6 +31,8 @@ import {
   registerEndpoints,
   registerReadOnlySessionEndpoints,
 } from './server/endpoints';
+import { withQueryLimitRules } from './server/graphql-query-limits';
+import { createGraphqlRateLimiters } from './server/graphql-rate-limit.middleware';
 import createSchema from './server/graphql-schema';
 import { createHttpMetricsMiddleware } from './server/http-metrics.middleware';
 import platformInit, { minioInit } from './server/initialize';
@@ -312,6 +314,7 @@ const sseSchemaDetailsOptions = createSseSchemaDetailsOptions(
 const handler = createHandler({
   schema,
   ...sseSchemaDetailsOptions,
+  validate: withQueryLimitRules(sseSchemaDetailsOptions.validate),
   context: async (_req) => {
     const session = await new Promise((resolve) => {
       sessionMiddleware(_req.raw, {} as express.Response, () =>
@@ -336,9 +339,11 @@ const handler = createHandler({
   },
 });
 
+const graphqlRateLimiters = createGraphqlRateLimiters();
 app.use(
   PORTAL_WEBSOCKET_PATH,
   cors<cors.CorsRequest>(PORTAL_CORS_OPTIONS),
+  ...graphqlRateLimiters,
   json(),
   handler
 );
@@ -346,6 +351,7 @@ app.use(
   PORTAL_GRAPHQL_PATH,
   sessionMiddleware,
   cors<cors.CorsRequest>(PORTAL_CORS_OPTIONS),
+  ...graphqlRateLimiters,
   json(),
   middlewareExpress
 );

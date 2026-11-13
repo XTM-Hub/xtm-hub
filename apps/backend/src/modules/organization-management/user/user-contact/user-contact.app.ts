@@ -10,6 +10,7 @@ import {
   type ReachOutSalesPayload,
 } from '../../../../thirdparty/hubspot/hubspot';
 import { ErrorCode } from '../../../../utils/error/error.code';
+import { createKeyRateLimiter } from '../../../../utils/rate-limit.util';
 import {
   DeploymentRequestDomain,
   FullyQualifiedDeploymentRequest,
@@ -19,6 +20,19 @@ import { OrganizationDomain } from '../../organization/organization.domain';
 import { UserDomain } from '../user-domain/user.domain';
 
 const DEFAULT_MESSAGE = 'Please contact me about the OpenCTI free trial';
+
+// Each message reaches HubSpot and the sales team: a sender gets a few per hour.
+export const contactSalesRateLimiter = createKeyRateLimiter({
+  windowMs: 60 * 60 * 1000,
+  limit: 5,
+});
+
+/** Counts one message for the sender once it is known, so a refused request costs nothing. */
+const assertCanContactSales = async (senderKey: string) => {
+  if (!(await contactSalesRateLimiter.tryConsume(senderKey))) {
+    throw new Error(ErrorCode.TooManyRequests);
+  }
+};
 
 const buildTrialContact = (
   deploymentRequest: FullyQualifiedDeploymentRequest,
@@ -200,6 +214,7 @@ export const UserContactApp = {
       platformIdentifier,
       ...input,
     });
+    await assertCanContactSales(`user:${requestContext.requireUser().id}`);
     await hubspotReachOutSalesHook(contact);
   },
 
@@ -221,6 +236,7 @@ export const UserContactApp = {
       platformId,
       platformToken,
     });
+    await assertCanContactSales(`platform:${platformId}`);
     await hubspotReachOutSalesHook(contact);
   },
 };

@@ -1,3 +1,4 @@
+import { ipKeyGenerator } from 'express-rate-limit';
 import {
   DocumentStatus,
   IntegrationType,
@@ -12,6 +13,7 @@ import { toError } from '../../utils/error/error-guard.util';
 import { ErrorCode, UnknownErrorCode } from '../../utils/error/error.code';
 import { mapToGraphQLError } from '../../utils/error/error.mapping';
 import { AlreadyExistsError } from '../../utils/error/error.util';
+import { createKeyRateLimiter, isPrivateIp } from '../../utils/rate-limit.util';
 import { createRelayIdScalar } from '../../utils/scalar.util';
 import { stripNulls } from '../../utils/typescript';
 import { OrganizationDomain } from '../organization-management/organization/organization.domain';
@@ -30,6 +32,25 @@ import { DocumentDomain } from './domain/document.domain';
 
 const isPublished = ({ status }: { status: DocumentStatus }) =>
   status === DocumentStatus.Published;
+
+// The share counter is public and the mutation needs no session: one share per address and document per hour.
+export const shareCountRateLimiter = createKeyRateLimiter({
+  windowMs: 60 * 60 * 1000,
+  limit: 1,
+});
+
+/**
+ * A private address does not tell visitors apart (a proxy that `trust proxy` does not cover, or a server-side call),
+ * so its shares are all counted rather than merged into one per hour.
+ */
+const shouldCountShare = async (
+  ip: string | undefined,
+  documentId: DocumentId
+) =>
+  isPrivateIp(ip) ||
+  (await shareCountRateLimiter.tryConsume(
+    `${ipKeyGenerator(ip ?? 'unknown')}|${documentId}`
+  ));
 
 const resolvers: Resolvers = {
   DocumentId: createRelayIdScalar<DocumentId>('Document'),
@@ -87,6 +108,9 @@ const resolvers: Resolvers = {
         );
         const documentWithCounters =
           await DocumentHelper.updateDocumentWithCounters(document);
+        if (!(await shouldCountShare(context.req?.ip, documentId))) {
+          return documentWithCounters;
+        }
         try {
           if (!document.service_instance_id) {
             throw new Error(ErrorCode.ServiceInstanceNotFound);
