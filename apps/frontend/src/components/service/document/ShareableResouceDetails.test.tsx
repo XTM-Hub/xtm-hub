@@ -69,7 +69,7 @@ describe('ShareableResourceDetails', () => {
 
   it('should hide the decorative icons of the organization and documentation link from assistive technology', () => {
     // Given
-    const { container } = testRender(
+    testRender(
       <ShareableResourceDetails
         documentData={buildDocumentData()}
         downloadNumber={1450}
@@ -77,13 +77,18 @@ describe('ShareableResourceDetails', () => {
     );
 
     // When
-    const icons = container.querySelectorAll('svg');
+    const organizationLogo = screen
+      .getByText('Filigran Team')
+      .querySelector('svg');
+    const documentationLinkIcon = screen
+      .getByRole('link', {
+        name: /https:\/\/docs\.opencti\.io\/latest\/usage\/import\/csv-feed\//i,
+      })
+      .querySelector('svg');
 
     // Then
-    expect(icons.length).toBeGreaterThan(0);
-    icons.forEach((icon) =>
-      expect(icon).toHaveAttribute('aria-hidden', 'true')
-    );
+    expect(organizationLogo).toHaveAttribute('aria-hidden', 'true');
+    expect(documentationLinkIcon).toHaveAttribute('aria-hidden', 'true');
   });
 
   it('should hide downloads for third-party integrations', () => {
