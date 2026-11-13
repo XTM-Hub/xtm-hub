@@ -3,25 +3,44 @@ import path from 'node:path';
 import process from 'node:process';
 import readline from 'node:readline/promises';
 
-const resolverTemplate = (
-  resolverName: string,
-  needScalarId: boolean
-) => `import { Resolvers } from '../../__generated__/resolvers-types';
-${needScalarId ? "import { createRelayIdScalar } from '../../utils/scalar.util';\n" : ''}
+const resolverTemplate = (resolverName: string, needScalarId: boolean) => {
+  const pascal = toPascalCase(resolverName);
+  const query = toQueryName(resolverName);
+  return `import {
+  PortalCapability,
+  QueryResolvers,
+  Resolvers,
+} from '../../__generated__/resolvers-types';
+import { Guarded } from '../../security/guarded/guarded.decorator';
+import { portalCapabilityGuard } from '../../security/guarded/guards/portal.guard';
+${needScalarId ? "import { createRelayIdScalar } from '../../utils/scalar.util';\n" : ''}import { ${pascal}Domain } from './${resolverName}.domain';
+
+// Every operation declares its access: @Public() or @Guarded(guard), never a bare resolver.
+// Admin-only by default, widen it on purpose.
+class ${pascal}Queries {
+  @Guarded(portalCapabilityGuard([PortalCapability.Bypass]))
+  static readonly ${query}: NonNullable<QueryResolvers['${query}']> = () =>
+    ${pascal}Domain.loadAll();
+}
+
 const resolvers: Resolvers = {
-  ${needScalarId ? `${toPascalCase(resolverName)}Id: createRelayIdScalar<${toPascalCase(resolverName)}Id>('${toPascalCase(resolverName)}'),\n  ` : ''}
-  Query: {
-  },
+  ${needScalarId ? `${pascal}Id: createRelayIdScalar<${pascal}Id>('${pascal}'),\n  ` : ''}
+  Query: { ...${pascal}Queries },
   Mutation: {
   },
 };
   
 export default resolvers;
 `;
+};
 
-const testTemplate = (
-  resolverName: string
-) => `import { describe, expect, it } from 'vitest';
+const testTemplate = (resolverName: string) => {
+  const pascal = toPascalCase(resolverName);
+  const query = toQueryName(resolverName);
+  return `import { describe, expect, it, vi } from 'vitest';
+import { TestHelper } from '../../../tests/helper/test.helper';
+import { ErrorType } from '../../utils/error/error.type';
+import { ${pascal}Domain } from './${resolverName}.domain';
 import resolver from './${resolverName}.resolver';
 
 describe('${resolverName}.resolver', () => {
@@ -29,7 +48,26 @@ describe('${resolverName}.resolver', () => {
     expect(resolver).toBeDefined();
   });
 });
+
+describe('${query} query', () => {
+  TestHelper.expectAccessMatrix({
+    operation: '{ ${query} { id } }',
+    guarded: () => vi.spyOn(${pascal}Domain, 'loadAll'),
+    expected: {
+      anonymous: ErrorType.Unauthenticated,
+      user: ErrorType.ForbiddenAccess,
+      admin: 'allowed',
+    },
+    prepare: () =>
+      Promise.resolve({
+        variables: {},
+        expectedData: { ${query}: [] },
+        cleanup: () => Promise.resolve(),
+      }),
+  });
+});
 `;
+};
 
 const appTemplate = (resolverName: string) => {
   const appIdentifier = `${toPascalCase(resolverName)}App`;
@@ -51,8 +89,12 @@ describe('${resolverName}.app', () => {
 };
 
 const domainTemplate = (resolverName: string) => {
-  const domainIdentifier = `${toPascalCase(resolverName)}Domain`;
-  return `export const ${domainIdentifier} = {};
+  const pascal = toPascalCase(resolverName);
+  return `import { ${pascal} } from '../../__generated__/resolvers-types';
+
+export const ${pascal}Domain = {
+  loadAll: (): Promise<${pascal}[]> => Promise.resolve([]),
+};
 `;
 };
 
@@ -66,6 +108,11 @@ const graphQLTemplate = (resolverName: string, needScalarId: boolean) => {
   }
 
   type ${toPascalCase(resolverName)} implements Node {
+    id: ID!
+  }
+
+  type Query {
+    ${toQueryName(resolverName)}: [${toPascalCase(resolverName)}!]!
   }
   `;
 };
@@ -91,6 +138,11 @@ const toPascalCase = (value: string) => {
   }
 
   return normalized;
+};
+
+const toQueryName = (value: string) => {
+  const pascal = toPascalCase(value);
+  return `${pascal.charAt(0).toLowerCase()}${pascal.slice(1)}List`;
 };
 
 const fileExists = async (filePath: string) => {
