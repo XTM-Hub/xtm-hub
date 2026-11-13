@@ -23,7 +23,7 @@ export const ShareableResourceCardFooterAuthor = ({
           <div className="flex min-w-0 items-center gap-2 whitespace-nowrap">
             <UserDisplay
               uploader={document.uploader}
-              pictureClassName="size-6"
+              pictureSize={24}
               className="content-compact-bold"
             />
           </div>

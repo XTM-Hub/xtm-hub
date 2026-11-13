@@ -3,21 +3,12 @@ import testRender from '@/utils/test/test-render';
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const CURRENT_PICTURE_URL = 'https://filigran.io/current-picture.png';
+const CURRENT_PICTURE_URL = 'https://example.test/current-picture.png';
 const FIRST_PREVIEW_URL = 'blob:first-preview';
 const SECOND_PREVIEW_URL = 'blob:second-preview';
 
 const makeImageFile = (name: string) =>
   new File(['picture'], name, { type: 'image/png' });
-
-// jsdom never loads images: every picture is reported as already loaded so the Avatar shows it.
-class LoadedImage {
-  onload: (() => void) | null = null;
-  onerror: (() => void) | null = null;
-  complete = true;
-  naturalWidth = 64;
-  src = '';
-}
 
 const getFileInput = (container: HTMLElement) =>
   container.querySelector<HTMLInputElement>('input[type="file"]')!;
@@ -27,7 +18,13 @@ const getDisplayedPicture = () => screen.getByRole('presentation');
 
 describe('ProfileFormPicture', () => {
   beforeEach(() => {
-    vi.stubGlobal('Image', LoadedImage);
+    // jsdom never loads images: every picture is reported as already loaded so the Avatar shows it.
+    vi.spyOn(HTMLImageElement.prototype, 'complete', 'get').mockReturnValue(
+      true
+    );
+    vi.spyOn(HTMLImageElement.prototype, 'naturalWidth', 'get').mockReturnValue(
+      64
+    );
     URL.createObjectURL = vi
       .fn()
       .mockReturnValueOnce(FIRST_PREVIEW_URL)
@@ -36,7 +33,7 @@ describe('ProfileFormPicture', () => {
   });
 
   afterEach(() => {
-    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
   });
 
   it('should display the current profile picture when the user has one', async () => {
@@ -49,6 +46,66 @@ describe('ProfileFormPicture', () => {
     await waitFor(() =>
       expect(getDisplayedPicture()).toHaveAttribute('src', CURRENT_PICTURE_URL)
     );
+  });
+
+  it('should load the profile picture eagerly as it is always visible', async () => {
+    // Given / When
+    testRender(<ProfileFormPicture onSubmit={vi.fn()} />, {
+      me: { picture: CURRENT_PICTURE_URL },
+    });
+
+    // Then
+    await waitFor(() =>
+      expect(getDisplayedPicture()).toHaveAttribute('loading', 'eager')
+    );
+  });
+
+  it('should ask Gravatar for a picture sized for the profile avatar', async () => {
+    // Given / When
+    testRender(<ProfileFormPicture onSubmit={vi.fn()} />, {
+      me: { picture: 'https://s.gravatar.com/avatar/538dc0e?s=480&r=pg' },
+    });
+
+    // Then
+    await waitFor(() =>
+      expect(getDisplayedPicture()).toHaveAttribute(
+        'src',
+        'https://s.gravatar.com/avatar/538dc0e?s=192&r=pg'
+      )
+    );
+  });
+
+  it('should show a backend profile picture as it is stored, so a new one shows at once', async () => {
+    // Given
+    const stored =
+      'https://hub.example.test/user/picture/89efc660-a732-4d71-abe2-455188be1505?t=1760000000000';
+
+    // When
+    testRender(<ProfileFormPicture onSubmit={vi.fn()} />, {
+      me: { picture: stored },
+    });
+
+    // Then
+    await waitFor(() =>
+      expect(getDisplayedPicture()).toHaveAttribute('src', stored)
+    );
+    expect(getDisplayedPicture()).not.toHaveAttribute('srcset');
+  });
+
+  it('should preview a chosen file as it is, without the optimiser', async () => {
+    // Given
+    const { user, container } = testRender(
+      <ProfileFormPicture onSubmit={vi.fn()} />
+    );
+
+    // When
+    await user.upload(getFileInput(container), makeImageFile('first.png'));
+
+    // Then
+    await waitFor(() =>
+      expect(getDisplayedPicture()).toHaveAttribute('src', FIRST_PREVIEW_URL)
+    );
+    expect(getDisplayedPicture()).not.toHaveAttribute('srcset');
   });
 
   it('should open the file picker when the user clicks the edit button', async () => {

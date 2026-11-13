@@ -20,6 +20,7 @@ import {
 import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { cn } from '@/lib/utils';
 import { clearFiltersStorage } from '@/utils/filters-storage.utils';
+import { getAvatarPictureSource } from '@/utils/format/user-picture';
 import { APP_PATH } from '@/utils/path/constant';
 
 import { useTranslate } from '@/hooks/use-translate';
@@ -30,6 +31,9 @@ import { OrganizationCapability } from '@graphql/generated';
 import { usePathname } from 'next/navigation';
 import { useCallback, useContext, useEffect, useState } from 'react';
 import { useMutation } from 'react-relay';
+
+// Displayed size of the user avatar in px: keep it in step with the size-6 of its wrapper.
+const HEADER_AVATAR_SIZE = 24;
 
 // Component interface
 interface HeaderComponentProps {
@@ -91,7 +95,11 @@ const HeaderComponent = ({ displayLogo }: HeaderComponentProps) => {
             aria-label={t('MenuUser.ToggleUser')}
             icon={
               <div className="my-auto size-6">
-                <Avatar src={me?.picture || undefined} />
+                <Avatar
+                  {...getAvatarPictureSource(me?.picture, HEADER_AVATAR_SIZE)}
+                  size={HEADER_AVATAR_SIZE}
+                  loading="eager"
+                />
               </div>
             }>
             <IconActionsItem asChild>
