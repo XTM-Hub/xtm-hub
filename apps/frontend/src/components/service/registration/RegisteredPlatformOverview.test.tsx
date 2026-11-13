@@ -298,27 +298,13 @@ describe('RegisteredPlatformOverview', () => {
     }
   );
 
-  it.each([[PortalCapability.Bypass], [PortalCapability.ReadSaasMetrics]])(
-    'should query and display the SaaS subscription metadata when the user has %s',
-    async (capability) => {
-      // Given
-      vi.mocked(useIsFeatureEnabled).mockReturnValue(true);
-
-      // When
-      await renderOverview(saasPlatform, [capability]);
-
-      // Then
-      expect(useRegisteredSaasPlatformDataQuery).toHaveBeenLastCalledWith(
-        expect.anything(),
-        expect.anything(),
-        expect.objectContaining({ enabled: true })
-      );
-      expect(screen.getByText(HOSTNAME)).toBeInTheDocument();
-    }
-  );
-
-  it.each([[[]], [[PortalCapability.ReadTrials]]])(
-    'should neither query nor display the SaaS subscription metadata when the user capabilities are %j',
+  it.each([
+    [[]],
+    [[PortalCapability.ReadTrials]],
+    [[PortalCapability.Bypass]],
+    [[PortalCapability.ReadSaasMetrics]],
+  ])(
+    'should query and display the SaaS platform data whatever the user capabilities, here %j',
     async (capabilities) => {
       // Given
       vi.mocked(useIsFeatureEnabled).mockReturnValue(true);
@@ -330,12 +316,15 @@ describe('RegisteredPlatformOverview', () => {
       expect(useRegisteredSaasPlatformDataQuery).toHaveBeenLastCalledWith(
         expect.anything(),
         expect.anything(),
-        expect.objectContaining({ enabled: false })
+        expect.objectContaining({ enabled: true })
       );
+      expect(screen.getByText(HOSTNAME)).toBeInTheDocument();
       expect(
-        screen.queryByText('Register.Metrics.Metadata.Hostname:')
-      ).not.toBeInTheDocument();
-      expect(screen.getByText(basePlatform.url)).toBeInTheDocument();
+        screen.getByRole('heading', {
+          level: 2,
+          name: 'Register.Metrics.Title',
+        })
+      ).toBeInTheDocument();
     }
   );
 

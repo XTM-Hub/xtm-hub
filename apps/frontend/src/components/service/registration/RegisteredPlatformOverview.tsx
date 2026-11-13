@@ -74,8 +74,7 @@ export const RegisteredPlatformOverview = ({
       REGISTERED_PLATFORM_ORIGIN_CSM_BOARD;
   const isSaasMetricsEnabled = useIsFeatureEnabled(FeatureFlag.SaasMetrics);
   const isSaas = platform?.commercial_model === CommercialModel.Saas;
-  const showSaasPlatformData =
-    isSaasMetricsEnabled && isSaas && canReadSaasMetrics;
+  const showSaasPlatformData = isSaasMetricsEnabled && isSaas;
 
   const [metricsPeriod, setMetricsPeriod] = useState<SaasPlatformMetricsPeriod>(
     SaasPlatformMetricsPeriod.Last_90Days
