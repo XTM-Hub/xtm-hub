@@ -12,6 +12,7 @@ import { toError } from '../../utils/error/error-guard.util';
 import { ErrorCode, UnknownErrorCode } from '../../utils/error/error.code';
 import { mapToGraphQLError } from '../../utils/error/error.mapping';
 import { AlreadyExistsError } from '../../utils/error/error.util';
+import { shareCountRateLimiter } from '../../utils/rate-limit.util';
 import { createRelayIdScalar } from '../../utils/scalar.util';
 import { stripNulls } from '../../utils/typescript';
 import { OrganizationDomain } from '../organization-management/organization/organization.domain';
@@ -87,6 +88,14 @@ const resolvers: Resolvers = {
         );
         const documentWithCounters =
           await DocumentHelper.updateDocumentWithCounters(document);
+        if (
+          !(await shareCountRateLimiter.tryConsumeForIp(
+            context.req?.ip,
+            documentId
+          ))
+        ) {
+          return documentWithCounters;
+        }
         try {
           if (!document.service_instance_id) {
             throw new Error(ErrorCode.ServiceInstanceNotFound);

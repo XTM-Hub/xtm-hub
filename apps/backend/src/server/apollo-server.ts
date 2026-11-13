@@ -12,6 +12,7 @@ import { Server } from 'http';
 import { ErrorCode, UnknownErrorCode } from '../utils/error/error.code';
 import { Context, errorLoggingPlugin } from './apollo-plugins/log';
 import { operationMetricsPlugin } from './apollo-plugins/metrics';
+import { QUERY_LIMIT_RULES } from './graphql-query-limits';
 import { removeSuggestionHint } from './schema-details';
 
 const REQUEST_ERROR_CODES = new Set<string>(
@@ -54,6 +55,7 @@ export const createApolloServer = ({
   new ApolloServer<Context>({
     schema,
     csrfPrevention: true,
+    validationRules: QUERY_LIMIT_RULES,
     introspection: exposeSchemaDetails,
     includeStacktraceInErrorResponses: exposeSchemaDetails,
     formatError: (formattedError, error) => {

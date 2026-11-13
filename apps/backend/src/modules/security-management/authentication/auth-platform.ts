@@ -1,6 +1,5 @@
 import bodyParser from 'body-parser';
 import { Express, NextFunction, Request, Response } from 'express';
-import rateLimit from 'express-rate-limit';
 import { createHash } from 'node:crypto';
 import { requestContext } from '../../../context/request.context';
 import { UserInfo } from '../../../model/user';
@@ -12,6 +11,7 @@ import {
   getErrorStringProperty,
   toError,
 } from '../../../utils/error/error-guard.util';
+import { authProviderRateLimiter } from '../../../utils/rate-limit.util';
 import { setCookieError } from '../../../utils/set-cookies.util';
 import {
   AUTHENTICATED_HOME,
@@ -22,13 +22,6 @@ import {
 import { authenticateUser, isSessionUserActive } from './auth-user';
 import { UNVERIFIABLE_AUTHORIZATION_REQUEST } from './provider/oidc-strategy';
 import { initProviders } from './provider/providers';
-
-const authProviderRateLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  limit: 10,
-  standardHeaders: true,
-  legacyHeaders: false,
-});
 
 // Ties the start of a sign-in to its callback in the logs without writing the
 // session id, which is a credential.

@@ -449,6 +449,7 @@
       "TENANT_ID_MANDATORY": "Tenant id is mandatory",
       "TENANT_ID_NOT_SUPPORTED": "This platform does not support tenants",
       "TOO_MANY_EMAILS": "You can invite at most 50 emails at once",
+      "TOO_MANY_REQUESTS": "Too many requests. Please try again later.",
       "TRANSFER_ME_ERROR": "Error while requesting personal space transfer.",
       "UNKNOWN_ERROR": "An unknown error occurred",
       "UNREGISTER_PLATFORM_UNKNOWN_ERROR": "An unknown error occurred during platform unregistration",

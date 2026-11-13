@@ -449,6 +449,7 @@
       "TENANT_ID_MANDATORY": "テナントIDは必須です",
       "TENANT_ID_NOT_SUPPORTED": "このプラットフォームはテナントに対応していません",
       "TOO_MANY_EMAILS": "一度に招待できるメールアドレスは最大50件です",
+      "TOO_MANY_REQUESTS": "リクエストが多すぎます。しばらくしてから再度お試しください。",
       "TRANSFER_ME_ERROR": "個人スペースの転送要求中にエラーが発生しました。",
       "UNKNOWN_ERROR": "不明なエラーが発生",
       "UNREGISTER_PLATFORM_UNKNOWN_ERROR": "プラットフォーム登録解除中に不明なエラーが発生した",

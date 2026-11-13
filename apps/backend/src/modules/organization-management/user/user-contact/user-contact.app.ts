@@ -10,6 +10,7 @@ import {
   type ReachOutSalesPayload,
 } from '../../../../thirdparty/hubspot/hubspot';
 import { ErrorCode } from '../../../../utils/error/error.code';
+import { contactSalesRateLimiter } from '../../../../utils/rate-limit.util';
 import {
   DeploymentRequestDomain,
   FullyQualifiedDeploymentRequest,
@@ -200,6 +201,9 @@ export const UserContactApp = {
       platformIdentifier,
       ...input,
     });
+    await contactSalesRateLimiter.consumeOrThrow(
+      `user:${requestContext.requireUser().id}`
+    );
     await hubspotReachOutSalesHook(contact);
   },
 
@@ -221,6 +225,7 @@ export const UserContactApp = {
       platformId,
       platformToken,
     });
+    await contactSalesRateLimiter.consumeOrThrow(`platform:${platformId}`);
     await hubspotReachOutSalesHook(contact);
   },
 };

@@ -1,15 +1,11 @@
 import { Express, Request, Response } from 'express';
-import rateLimit from 'express-rate-limit';
 import { auth0Client } from '../../../thirdparty/auth0/client';
 import { AppLogsCategory, logApp } from '../../../utils/app-logger.util';
+import { createVerificationEmailRateLimiters } from '../../../utils/rate-limit.util';
 import {
   sendVerificationEmailError,
   VERIFICATION_EMAIL_ERRORS,
 } from './verification-email-endpoint.errors';
-import {
-  buildVerificationEmailIpRateLimiterOptions,
-  buildVerificationEmailSubjectRateLimiterOptions,
-} from './verification-email-endpoint.rate-limit';
 
 export const VERIFICATION_EMAIL_PATH = '/auth/verification-email';
 
@@ -65,8 +61,7 @@ export const resendVerificationEmail = async (
 export const verificationEmailEndpoint = (app: Express) => {
   app.post(
     VERIFICATION_EMAIL_PATH,
-    rateLimit(buildVerificationEmailIpRateLimiterOptions()),
-    rateLimit(buildVerificationEmailSubjectRateLimiterOptions()),
+    ...createVerificationEmailRateLimiters(),
     resendVerificationEmail
   );
 };

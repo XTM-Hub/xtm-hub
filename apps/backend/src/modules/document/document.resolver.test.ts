@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   contextSimpleUserFiligran2,
   GRAPHQL_RESOLVE_INFO,
@@ -26,10 +26,13 @@ import {
   NotFoundErrorCode,
 } from '../../utils/error/error.code';
 import { ErrorType } from '../../utils/error/error.type';
+import { shareCountRateLimiter } from '../../utils/rate-limit.util';
 import { ServiceInstanceDomain } from '../service/instance/service-instance.domain';
 import { OPENAEV_SCENARIO_DOCUMENT_TYPE } from '../shareable-resource/openaev/scenario/scenario.model';
 import { OPENCTI_CUSTOM_DASHBOARD_DOCUMENT_TYPE } from '../shareable-resource/opencti/custom-dashboard/custom-dashboard.model';
 import { OPENCTI_INTEGRATION_DOCUMENT_TYPE } from '../shareable-resource/opencti/integration/integration.model';
+import { TelemetryApp } from '../telemetry/telemetry.app';
+import { TelemetryHelper } from '../telemetry/telemetry.helper';
 import { DocumentApp } from './document.app';
 import { subscriptionByServiceInstanceLoaderKey } from './document.dataloader';
 import { DocumentHelper } from './document.helper';
@@ -252,6 +255,113 @@ describe('increment share number document GraphQL mutation', () => {
     await expect(call).rejects.toMatchObject({
       name: ErrorType.ForbiddenAccess,
     });
+  });
+});
+
+describe('increment share number document rate limit', () => {
+  const VISITOR_IP = '203.0.113.7';
+  const OTHER_VISITOR_IP = '198.51.100.20';
+
+  const shareFrom = (ip: string, documentId: DocumentId) =>
+    documentResolver.Mutation!.incrementShareNumberDocument!(
+      {},
+      { documentId },
+      {
+        ...contextSimpleUserFiligran2,
+        req: { ip },
+      } as unknown as typeof contextSimpleUserFiligran2,
+      GRAPHQL_RESOLVE_INFO
+    );
+
+  const givenSharableDocument = () => {
+    const documentId = uuidv4() as DocumentId;
+    const document = {
+      id: documentId,
+      service_instance_id: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
+      name: 'doc',
+    } as unknown as Awaited<
+      ReturnType<typeof DocumentDomain.loadDocumentWithMetadataById>
+    >;
+    vi.spyOn(DocumentDomain, 'loadDocumentWithMetadataById').mockResolvedValue(
+      document
+    );
+    vi.spyOn(DocumentHelper, 'updateDocumentWithCounters').mockResolvedValue(
+      document as unknown as Awaited<
+        ReturnType<typeof DocumentHelper.updateDocumentWithCounters>
+      >
+    );
+    return documentId;
+  };
+
+  let sendTelemetryEventSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(async () => {
+    await shareCountRateLimiter.reset();
+    vi.spyOn(
+      ServiceInstanceDomain,
+      'loadServiceDefinitionByServiceInstance'
+    ).mockResolvedValue({ identifier: 'custom_dashboards' } as Awaited<
+      ReturnType<
+        typeof ServiceInstanceDomain.loadServiceDefinitionByServiceInstance
+      >
+    >);
+    vi.spyOn(TelemetryHelper, 'shouldSendEventForService').mockReturnValue(
+      true
+    );
+    vi.spyOn(TelemetryHelper, 'buildShareEvent').mockResolvedValue(
+      {} as Awaited<ReturnType<typeof TelemetryHelper.buildShareEvent>>
+    );
+    sendTelemetryEventSpy = vi
+      .spyOn(TelemetryApp, 'sendTelemetryEvent')
+      .mockResolvedValue(undefined);
+  });
+
+  it('should count a second share of the same document from the same address only once', async () => {
+    // Given
+    const documentId = givenSharableDocument();
+    await shareFrom(VISITOR_IP, documentId);
+
+    // When
+    const result = await shareFrom(VISITOR_IP, documentId);
+
+    // Then
+    expect(result).toMatchObject({ id: documentId });
+    expect(sendTelemetryEventSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('should count the shares of the same document from two addresses', async () => {
+    // Given
+    const documentId = givenSharableDocument();
+    await shareFrom(VISITOR_IP, documentId);
+
+    // When
+    await shareFrom(OTHER_VISITOR_IP, documentId);
+
+    // Then
+    expect(sendTelemetryEventSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it('should count every share from a private address, which does not tell visitors apart', async () => {
+    // Given
+    const documentId = givenSharableDocument();
+    await shareFrom('10.0.3.12', documentId);
+
+    // When
+    await shareFrom('10.0.3.12', documentId);
+
+    // Then
+    expect(sendTelemetryEventSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it('should count the shares of two documents from the same address', async () => {
+    // Given
+    await shareFrom(VISITOR_IP, givenSharableDocument());
+
+    // When
+    await shareFrom(VISITOR_IP, givenSharableDocument());
+
+    // Then
+    expect(sendTelemetryEventSpy).toHaveBeenCalledTimes(2);
   });
 });
 

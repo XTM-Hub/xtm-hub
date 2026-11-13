@@ -69,9 +69,13 @@ Adding a module:
 ## REST endpoint structure
 
 Every REST endpoint (as opposed to a GraphQL operation) lives under `src/server/endpoints/<name>/`, named
-`<name>-endpoint.ts`, with optional `<name>-endpoint.utils.ts` / `.errors.ts` / `.rate-limit.ts` siblings for
-non-trivial endpoints (see `manifest/` or `versions-matrix/` for the fuller shape). Endpoints delegate to a module's
-`.domain.ts` (or `.app.ts`) rather than querying the database directly.
+`<name>-endpoint.ts`, with optional `<name>-endpoint.utils.ts` / `.errors.ts` siblings for non-trivial endpoints
+(see `manifest/` or `versions-matrix/` for the fuller shape). Endpoints delegate to a module's `.domain.ts` (or
+`.app.ts`) rather than querying the database directly.
+
+Every rate limiter — the Express middleware of each endpoint and GraphQL, and the key limiters a resolver or app
+calls — lives in `src/utils/rate-limit.util.ts`. Add a new one there and import it, rather than calling
+`rateLimit()` next to the route.
 
 All endpoints are wired in `src/server/endpoints/index.ts` (`registerEndpoints(app)`), the single place `src/index.ts`
 calls to mount them — do not import or call an endpoint directly from `src/index.ts`.
