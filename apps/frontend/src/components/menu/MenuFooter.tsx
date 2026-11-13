@@ -33,7 +33,9 @@ export const MenuFooter = ({ open, handleOpenMenu }: PublicMenuFooterProps) => {
         </div>
       ) : (
         <div className="flex justify-center pb-2 text-icon-subtle">
-          <span className="sr-only">{`${t('App.MadeBy')} ${BRAND_NAME}`}</span>
+          <span className="sr-only">
+            {t('App.MadeByBrand', { brand: BRAND_NAME })}
+          </span>
           <LogoFiligranIcon
             aria-hidden={true}
             className="min-h-4 size-3"
