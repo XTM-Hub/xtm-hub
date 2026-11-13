@@ -113,7 +113,7 @@ export type AdminEditUserInput = {
   last_name?: InputMaybe<Scalars['String']['input']>;
   organization_capabilities?: InputMaybe<Array<OrganizationCapabilitiesInput>>;
   /**
-   * Sets the password of a local account. Platform administrators only, refused in production.
+   * Sets the password of a local account. Platform administrators only, in development environments only.
    * An empty or null value leaves the password unchanged.
    */
   password?: InputMaybe<Scalars['String']['input']>;

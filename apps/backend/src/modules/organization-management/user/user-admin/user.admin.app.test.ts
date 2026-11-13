@@ -230,6 +230,7 @@ describe('users admin app', () => {
 
       beforeEach(async () => {
         originalEnvironment = portalConfig.environment;
+        portalConfig.environment = 'development';
         requestContext.set(requestContextAdminUser);
         user = await UserProvisioningDomain.createUser(
           {
@@ -245,7 +246,7 @@ describe('users admin app', () => {
         await UserHelper.removeUser({ id: user.id });
       });
 
-      it('should let a platform admin set the password outside production', async () => {
+      it('should let a platform admin set the password in development', async () => {
         await UserAdminApp.editUser({
           userId: user.id,
           input: { password: NEW_PASSWORD },
@@ -283,20 +284,25 @@ describe('users admin app', () => {
         );
       });
 
-      it('should refuse to set the password in production and keep the current one', async () => {
-        portalConfig.environment = 'production';
+      it.each(['production', 'staging', 'prod'])(
+        'should refuse to set the password in %s and keep the current one',
+        async (environment) => {
+          portalConfig.environment = environment;
 
-        const call = UserAdminApp.editUser({
-          userId: user.id,
-          input: { password: NEW_PASSWORD },
-        });
+          const call = UserAdminApp.editUser({
+            userId: user.id,
+            input: { password: NEW_PASSWORD },
+          });
 
-        await expect(call).rejects.toThrow(ErrorCode.SetUserPasswordNotAllowed);
-        expect(await loadStoredUser()).toMatchObject({
-          salt: user.salt,
-          password: user.password,
-        });
-      });
+          await expect(call).rejects.toThrow(
+            ErrorCode.SetUserPasswordNotAllowed
+          );
+          expect(await loadStoredUser()).toMatchObject({
+            salt: user.salt,
+            password: user.password,
+          });
+        }
+      );
 
       it('should refuse a password set by an organization administrator', async () => {
         requestContext.set(requestContextAdminSecondOrga);

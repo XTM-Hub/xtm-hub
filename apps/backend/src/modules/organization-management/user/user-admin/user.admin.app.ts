@@ -47,12 +47,15 @@ const isForeignKeyViolation = (error: unknown): boolean =>
   'code' in error &&
   (error as { code?: string }).code === FOREIGN_KEY_VIOLATION_CODE;
 
-// Setting a password by hand is a convenience for development and demo environments: production accounts set their
-// own password through the identity provider.
+// Setting a password by hand is a convenience for development and feature environments, the only ones with local
+// sign-in: staging and production accounts sign in through the identity provider. Allowed in development only, so an
+// unknown environment (a missing or misspelled NODE_ENV) refuses it too.
+const PASSWORD_SETTABLE_ENVIRONMENT = 'development';
+
 const assertCanSetUserPassword = (contextUser: UserLoadUserBy) => {
   if (
     !isUserAdminPlatform(contextUser) ||
-    portalConfig.environment === 'production'
+    portalConfig.environment !== PASSWORD_SETTABLE_ENVIRONMENT
   ) {
     throw ForbiddenAccess(ErrorCode.SetUserPasswordNotAllowed);
   }

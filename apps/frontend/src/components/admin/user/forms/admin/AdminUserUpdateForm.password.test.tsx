@@ -73,7 +73,7 @@ const EXPECTED_ORGANIZATION_CAPABILITIES = [
   { organization_id: ORGANIZATION_ID, capabilities: ['MANAGE_ACCESS'] },
 ];
 
-const renderForm = (environment = 'local') =>
+const renderForm = (environment = 'development') =>
   testRender(
     <AdminUserUpdateForm
       user={USER}
@@ -101,10 +101,11 @@ describe('AdminUserUpdateForm', () => {
 
   it.each`
     environment      | isVisible
-    ${'local'}       | ${true}
     ${'development'} | ${true}
-    ${'staging'}     | ${true}
+    ${'staging'}     | ${false}
     ${'production'}  | ${false}
+    ${'local'}       | ${false}
+    ${''}            | ${false}
   `(
     'should display the password field: $isVisible when the environment is $environment',
     ({ environment, isVisible }) => {

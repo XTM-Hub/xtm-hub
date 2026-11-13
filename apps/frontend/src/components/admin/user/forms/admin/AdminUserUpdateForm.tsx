@@ -45,8 +45,8 @@ export const AdminUserUpdateForm = ({
   const { handleCloseSheet, setIsDirty } = useDialogContext();
   const { settings } = useContext(SettingsContext);
 
-  const isDevelopmentEnvSetting =
-    settings?.environment && settings.environment !== 'production';
+  // Matches the API, which accepts a password in development only.
+  const isDevelopmentEnvSetting = settings?.environment === 'development';
 
   const [userOrganization, setUserOrganization] = useState<
     UserOrganizationFormProps[]
