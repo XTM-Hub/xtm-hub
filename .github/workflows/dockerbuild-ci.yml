@@ -92,6 +92,10 @@ jobs:
         if: matrix.label == 'backend'
         run: node --test .github/actions/vitest-pr-report/report.test.mjs
 
+      - name: Test the coverage script
+        if: matrix.label == 'backend'
+        run: node --test .github/actions/coverage/coverage.test.mjs
+
       - name: Check formatting
         working-directory: ${{ matrix.working-directory }}
         run: yarn format:check
@@ -340,6 +344,17 @@ jobs:
           retention-days: 7
           overwrite: true
 
+      # Read by the coverage job, which merges the shards to check the pull request coverage.
+      - name: Upload coverage report
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-frontend-shard-${{ matrix.shard }}
+          path: coverage/coverage-final.json
+          if-no-files-found: error
+          retention-days: 7
+          overwrite: true
+
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v7
         with:
@@ -406,6 +421,17 @@ jobs:
         with:
           name: vitest-backend-report-shard-${{ matrix.shard }}
           path: test-reports/
+          retention-days: 7
+          overwrite: true
+
+      # Read by the coverage job, which merges the shards to check the pull request coverage.
+      - name: Upload coverage report
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-backend-shard-${{ matrix.shard }}
+          path: xtm-hub-dev/coverage/coverage-final.json
+          if-no-files-found: error
           retention-days: 7
           overwrite: true
 
@@ -680,10 +706,10 @@ jobs:
           title: Backend unit and integration tests
           app-dir: apps/backend
 
-  # Codecov's coverage of each app on pull requests: fails when Codecov fails the changed lines of an app or when an app
-  # is under 80% overall, and adds it at the top of the app's test report comment, hence the run-*-unit-tests
-  # needs. Only checks the apps the pull request changes: Codecov can leave the check of an untouched app in progress
-  # for good. Skipped, so passing, when the shards did not run or when neither app changed.
+  # Vitest coverage of each app on pull requests, merged from the coverage reports of its shards: fails when less than
+  # 80% of the changed lines of an app are covered or when an app is under 80% overall, and adds it at the top of the
+  # app's test report comment, hence the run-*-unit-tests needs. Only checks the apps the pull request changes.
+  # Skipped, so passing, when the shards did not run or when neither app changed.
   coverage:
     name: Coverage
     needs:
@@ -699,16 +725,16 @@ jobs:
       needs.run-api-unit-tests-shards.result == 'success' &&
       (needs.detect-changes.outputs.frontend == 'true' || needs.detect-changes.outputs.backend == 'true')
     runs-on: ubuntu-26.04
-    timeout-minutes: 20
+    timeout-minutes: 10
     permissions:
       contents: read
-      checks: read
       pull-requests: write
     steps:
-      - name: Checkout the coverage action
+      # The merge commit the shards tested, with its parent to diff the pull request.
+      - name: Checkout repository
         uses: actions/checkout@v6
         with:
-          sparse-checkout: .github/actions/coverage
+          fetch-depth: 2
 
       - name: Check and comment the coverage
         uses: ./.github/actions/coverage
