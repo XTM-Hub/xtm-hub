@@ -110,6 +110,112 @@ describe('Avatar', () => {
     expect(getImage()).toHaveAttribute('decoding', 'async');
   });
 
+  it('should hand the srcset and the sizes to the image', () => {
+    // Given / When
+    renderAvatar({
+      src: PICTURE_URL,
+      srcSet: `${PICTURE_URL}?w=48 1x, ${PICTURE_URL}?w=96 2x`,
+      sizes: '48px',
+    });
+
+    // Then
+    expect(getImage()).toHaveAttribute(
+      'srcset',
+      `${PICTURE_URL}?w=48 1x, ${PICTURE_URL}?w=96 2x`
+    );
+    expect(getImage()).toHaveAttribute('sizes', '48px');
+  });
+
+  it('should try the fallback picture once, as it is, when the picture fails to load', () => {
+    // Given
+    renderAvatar({
+      src: PICTURE_URL,
+      srcSet: `${PICTURE_URL}?w=96 2x`,
+      sizes: '48px',
+      fallbackSrc: OTHER_PICTURE_URL,
+    });
+
+    // When
+    fireEvent.error(getImage());
+
+    // Then
+    expect(getImage()).toHaveAttribute('src', OTHER_PICTURE_URL);
+    expect(getImage()).not.toHaveAttribute('srcset');
+    expect(getImage()).not.toHaveAttribute('sizes');
+    expect(getImage()).toHaveClass(HIDDEN_CLASS);
+    expect(queryGlyph()).toBeInTheDocument();
+  });
+
+  it('should show the fallback picture once it loaded', () => {
+    // Given
+    renderAvatar({ src: PICTURE_URL, fallbackSrc: OTHER_PICTURE_URL });
+    fireEvent.error(getImage());
+
+    // When
+    fireEvent.load(getImage());
+
+    // Then
+    expect(getImage()).toHaveAttribute('src', OTHER_PICTURE_URL);
+    expect(getImage()).not.toHaveClass(HIDDEN_CLASS);
+    expect(queryGlyph()).not.toBeInTheDocument();
+  });
+
+  it('should keep the fallback glyph when the fallback picture fails too', () => {
+    // Given
+    renderAvatar({ src: PICTURE_URL, fallbackSrc: OTHER_PICTURE_URL });
+    fireEvent.error(getImage());
+
+    // When
+    fireEvent.error(getImage());
+
+    // Then
+    expect(queryImage()).not.toBeInTheDocument();
+    expect(queryGlyph()).toBeInTheDocument();
+  });
+
+  it('should not try the fallback picture when the picture loads', () => {
+    // Given
+    renderAvatar({ src: PICTURE_URL, fallbackSrc: OTHER_PICTURE_URL });
+
+    // When
+    fireEvent.load(getImage());
+
+    // Then
+    expect(getImage()).toHaveAttribute('src', PICTURE_URL);
+  });
+
+  it('should not retry a fallback picture that is the picture itself', () => {
+    // Given
+    renderAvatar({ src: PICTURE_URL, fallbackSrc: PICTURE_URL });
+
+    // When
+    fireEvent.error(getImage());
+
+    // Then
+    expect(queryImage()).not.toBeInTheDocument();
+    expect(queryGlyph()).toBeInTheDocument();
+  });
+
+  it('should try the fallback picture again for a new src that fails', () => {
+    // Given
+    const { rerender } = renderAvatar({
+      src: PICTURE_URL,
+      fallbackSrc: OTHER_PICTURE_URL,
+    });
+    fireEvent.error(getImage());
+    fireEvent.error(getImage());
+    rerenderAvatar(rerender, {
+      src: `${PICTURE_URL}?v=2`,
+      fallbackSrc: `${OTHER_PICTURE_URL}?v=2`,
+    });
+
+    // When
+    fireEvent.error(getImage());
+
+    // Then
+    expect(getImage()).toHaveAttribute('src', `${OTHER_PICTURE_URL}?v=2`);
+  });
+
   it('should not preload the picture with an Image object', () => {
     // Given
     const imageConstructor = vi.fn();

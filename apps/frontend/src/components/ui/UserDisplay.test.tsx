@@ -124,6 +124,27 @@ describe('UserDisplay', () => {
     );
   });
 
+  it('should serve a backend picture through the Next image optimiser at the displayed size', () => {
+    // Given
+    const userId = '89efc660-a732-4d71-abe2-455188be1505';
+    const stored = `https://hub.filigran.io/user/picture/${userId}?t=1760000000000`;
+    const { container } = testRender(
+      <UserDisplay
+        uploader={{ ...uploaderWithPicture, picture: stored }}
+        pictureSize={24}
+      />
+    );
+
+    // Then
+    const image = container.querySelector('img');
+    const localPath = encodeURIComponent(
+      `/user/picture/${userId}?t=1760000000000`
+    );
+    expect(image?.getAttribute('srcset')).toBe(
+      `/_next/image?url=${localPath}&w=32&q=75 1x, /_next/image?url=${localPath}&w=48&q=75 2x`
+    );
+  });
+
   it('should size the avatar container and the image with pictureSize', () => {
     // Given
     const { container } = testRender(

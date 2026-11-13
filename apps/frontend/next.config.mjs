@@ -217,6 +217,20 @@ const nextConfig = {
     },
   },
   images: {
+    // Declaring localPatterns replaces the Next default, so that default (every local path, no query
+    // string) is kept first: the images already served through next/image rely on it.
+    localPatterns: [
+      { pathname: '**', search: '' },
+      // User pictures of the backend (see src/utils/format/user-picture.ts): one UUID-shaped segment.
+      // `search` is left out on purpose: the backend adds a `t` upload-time cache-buster to the URL
+      // and Next matches `search` exactly, so any query string is accepted. The widths, the quality
+      // and the format below, and the disk cache limit, bound what a request can make Next produce.
+      { pathname: '/user/picture/????????-????-????-????-????????????' },
+    ],
+    // Pinned to the Next defaults, so that a future change cannot widen them unnoticed:
+    // WebP only (AVIF is far heavier to encode) and the one quality the avatars use.
+    formats: ['image/webp'],
+    qualities: [75],
     remotePatterns: [
       {
         protocol: 'https',

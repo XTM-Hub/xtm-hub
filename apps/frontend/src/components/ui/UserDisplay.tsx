@@ -3,8 +3,8 @@
 import { Avatar } from '@/components/ui/avatar';
 import { useTranslate } from '@/hooks/use-translate';
 import { cn } from '@/lib/utils';
-import { getGravatarSizedUrl } from '@/utils/format/gravatar';
 import { formatPersonNames } from '@/utils/format/name';
+import { getAvatarPictureSource } from '@/utils/format/user-picture';
 import { PublicDocumentData } from '@/utils/shareable-resources/shareable-resources.types';
 import {
   Tooltip,
@@ -62,7 +62,7 @@ export const UserDisplay = ({
           className="shrink-0"
           style={{ width: pictureSize, height: pictureSize }}>
           <Avatar
-            src={getGravatarSizedUrl(uploader?.picture ?? '', pictureSize)}
+            {...getAvatarPictureSource(uploader?.picture, pictureSize)}
             size={pictureSize}
           />
         </div>

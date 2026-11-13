@@ -75,6 +75,44 @@ describe('ProfileFormPicture', () => {
     );
   });
 
+  it('should serve a backend profile picture through the Next image optimiser at the profile size', async () => {
+    // Given
+    const userId = '89efc660-a732-4d71-abe2-455188be1505';
+    const localPath = encodeURIComponent(
+      `/user/picture/${userId}?t=1760000000000`
+    );
+
+    // When
+    testRender(<ProfileFormPicture onSubmit={vi.fn()} />, {
+      me: {
+        picture: `https://hub.filigran.io/user/picture/${userId}?t=1760000000000`,
+      },
+    });
+
+    // Then
+    await waitFor(() =>
+      expect(getDisplayedPicture().getAttribute('srcset')).toBe(
+        `/_next/image?url=${localPath}&w=96&q=75 1x, /_next/image?url=${localPath}&w=256&q=75 2x`
+      )
+    );
+  });
+
+  it('should preview a chosen file as it is, without the optimiser', async () => {
+    // Given
+    const { user, container } = testRender(
+      <ProfileFormPicture onSubmit={vi.fn()} />
+    );
+
+    // When
+    await user.upload(getFileInput(container), makeImageFile('first.png'));
+
+    // Then
+    await waitFor(() =>
+      expect(getDisplayedPicture()).toHaveAttribute('src', FIRST_PREVIEW_URL)
+    );
+    expect(getDisplayedPicture()).not.toHaveAttribute('srcset');
+  });
+
   it('should open the file picker when the user clicks the edit button', async () => {
     // Given
     const onFilePickerOpened = vi.fn();

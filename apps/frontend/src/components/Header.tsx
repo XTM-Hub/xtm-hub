@@ -20,7 +20,7 @@ import {
 import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { cn } from '@/lib/utils';
 import { clearFiltersStorage } from '@/utils/filters-storage.utils';
-import { getGravatarSizedUrl } from '@/utils/format/gravatar';
+import { getAvatarPictureSource } from '@/utils/format/user-picture';
 import { APP_PATH } from '@/utils/path/constant';
 
 import { useTranslate } from '@/hooks/use-translate';
@@ -96,10 +96,7 @@ const HeaderComponent = ({ displayLogo }: HeaderComponentProps) => {
             icon={
               <div className="my-auto size-6">
                 <Avatar
-                  src={getGravatarSizedUrl(
-                    me?.picture || undefined,
-                    HEADER_AVATAR_SIZE
-                  )}
+                  {...getAvatarPictureSource(me?.picture, HEADER_AVATAR_SIZE)}
                   size={HEADER_AVATAR_SIZE}
                   loading="eager"
                 />

@@ -12,6 +12,12 @@ export interface AvatarProps extends Omit<
   'children' | 'dangerouslySetInnerHTML'
 > {
   src?: string;
+  /** Resized candidates of the picture (`srcset`), when the caller has any: the browser picks the one that fits. */
+  srcSet?: string;
+  /** The `sizes` attribute that goes with a width-based `srcSet`. */
+  sizes?: string;
+  /** Picture tried once, as it is (no `srcSet`), when `src` fails to load, before the fallback glyph is shown. */
+  fallbackSrc?: string;
   alt?: string;
   /** Displayed size of the picture, in CSS pixels: it sets the width and height of the image, not the size of the avatar. */
   size?: number;
@@ -34,6 +40,9 @@ const AvatarGlyph = ({ alt }: { alt: string }) => (
 
 interface AvatarPictureProps {
   src: string;
+  srcSet?: string;
+  sizes?: string;
+  fallbackSrc?: string;
   alt: string;
   size: number;
   loading: 'lazy' | 'eager';
@@ -42,9 +51,29 @@ interface AvatarPictureProps {
 // Mounted once per src (see its key in Avatar): the load outcome of a picture never outlives it,
 // so a late event of a previous picture cannot count for the new one, and a picture that failed
 // is tried again when its src comes back.
-const AvatarPicture = ({ src, alt, size, loading }: AvatarPictureProps) => {
+const AvatarPicture = ({
+  src,
+  srcSet,
+  sizes,
+  fallbackSrc,
+  alt,
+  size,
+  loading,
+}: AvatarPictureProps) => {
   const imageRef = React.useRef<HTMLImageElement>(null);
   const [status, setStatus] = React.useState<ImageStatus>('idle');
+  const [isFallbackTried, setIsFallbackTried] = React.useState(false);
+  const canTryFallback = !!fallbackSrc && fallbackSrc !== src;
+  const isUsingFallback = isFallbackTried && canTryFallback;
+
+  const handleError = () => {
+    if (canTryFallback && !isFallbackTried) {
+      // The first picture failed: one more try with the fallback one before showing the glyph.
+      setIsFallbackTried(true);
+      return;
+    }
+    setStatus('error');
+  };
 
   React.useLayoutEffect(() => {
     const element = imageRef.current;
@@ -65,7 +94,9 @@ const AvatarPicture = ({ src, alt, size, loading }: AvatarPictureProps) => {
         // eslint-disable-next-line @next/next/no-img-element
         <img
           ref={imageRef}
-          src={src}
+          src={isUsingFallback ? fallbackSrc : src}
+          srcSet={isUsingFallback ? undefined : srcSet}
+          sizes={isUsingFallback ? undefined : sizes}
           alt={alt}
           width={size}
           height={size}
@@ -77,7 +108,7 @@ const AvatarPicture = ({ src, alt, size, loading }: AvatarPictureProps) => {
             !isLoaded && 'absolute inset-0 opacity-0'
           )}
           onLoad={() => setStatus('loaded')}
-          onError={() => setStatus('error')}
+          onError={handleError}
         />
       )}
     </>
@@ -89,6 +120,9 @@ const Avatar = React.forwardRef<HTMLSpanElement, AvatarProps>(
     {
       className,
       src,
+      srcSet,
+      sizes,
+      fallbackSrc,
       alt = '',
       size = DEFAULT_AVATAR_SIZE,
       loading = 'lazy',
@@ -107,6 +141,9 @@ const Avatar = React.forwardRef<HTMLSpanElement, AvatarProps>(
         <AvatarPicture
           key={src}
           src={src}
+          srcSet={srcSet}
+          sizes={sizes}
+          fallbackSrc={fallbackSrc}
           alt={alt}
           size={size}
           loading={loading}
