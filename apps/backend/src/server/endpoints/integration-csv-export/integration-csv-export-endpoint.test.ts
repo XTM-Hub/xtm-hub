@@ -73,8 +73,10 @@ vi.mock('../../../config', async (importOriginal) => {
 
 import { ServiceDefinitionIdentifier } from '../../../__generated__/resolvers-types';
 import { MARKETING_USER_CONTEXT } from '../../../portal.const';
-import { SYSTEM_TOKEN_HEADER } from '../../../security/directive-graphql/validator/system-token.validator';
-import { MARKETING_TOKEN_HEADER } from '../../../security/util/marketing-token';
+import {
+  MARKETING_TOKEN_HEADER,
+  SYSTEM_TOKEN_HEADER,
+} from '../../../security/util/hashed-token';
 import { IntegrationCsvExportEndpoint } from './integration-csv-export-endpoint';
 
 const buildResponse = () => ({

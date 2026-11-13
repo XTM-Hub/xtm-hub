@@ -21,7 +21,7 @@ import { MARKETING_USER_CONTEXT } from '../../../portal.const';
 import {
   isValidMarketingToken,
   MARKETING_TOKEN_HEADER,
-} from '../../../security/util/marketing-token';
+} from '../../../security/util/hashed-token';
 import { logApp } from '../../../utils/app-logger.util';
 import { extractId } from '../../../utils/utils';
 import {

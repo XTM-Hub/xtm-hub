@@ -17,7 +17,7 @@ import {
   NewsFeedApp,
 } from '../../../modules/news-feed/news-feed.app';
 import { SYSTEM_USER_UUID } from '../../../portal.const';
-import { SYSTEM_TOKEN_HEADER } from '../../../security/directive-graphql/validator/system-token.validator';
+import { SYSTEM_TOKEN_HEADER } from '../../../security/util/hashed-token';
 import {
   BlogApiError,
   BlogApiErrorCode,
