@@ -255,7 +255,7 @@ const buildTrialsColumns = (
     enableResizing: false,
     header: undefined,
     cell: ({ row }: TrialsCellProps) => (
-      <div className="flex items-center justify-end">
+      <div className="flex items-center justify-end gap-2">
         {renderActions(row.original)}
       </div>
     ),

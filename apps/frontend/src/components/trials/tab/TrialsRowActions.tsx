@@ -105,7 +105,6 @@ export const TrialsRowActions = ({
             <IconButton
               variant="destructive"
               priority="tertiary"
-              className="border m-1"
               {...analyticsId('admin_trial_request_cancel')}
               aria-label={t('TrialsDashboard.Actions.CancelBundle')}
               icon={<CloseIcon className="h-4 w-4" />}
@@ -124,7 +123,6 @@ export const TrialsRowActions = ({
               <TooltipTrigger asChild>
                 <IconButton
                   priority="tertiary"
-                  className="border m-1"
                   {...analyticsId('admin_trial_queue_top_select')}
                   aria-label={t('TrialsDashboard.Actions.MoveToTop')}
                   icon={<ArrowShapeUpStackIcon className="h-4 w-4" />}
@@ -148,7 +146,6 @@ export const TrialsRowActions = ({
               <TooltipTrigger asChild>
                 <IconButton
                   priority="tertiary"
-                  className="border m-1"
                   {...analyticsId('admin_trial_queue_up_select')}
                   aria-label={t('TrialsDashboard.Actions.MoveUp')}
                   icon={<ArrowShapeUpIcon className="h-4 w-4" />}
@@ -176,7 +173,6 @@ export const TrialsRowActions = ({
               <IconButton
                 asChild
                 priority="tertiary"
-                className="border m-1"
                 aria-label={t('Service.Trials.ManageUsers.Title')}
                 icon={<GroupIcon className="h-4 w-4" />}>
                 <Link
