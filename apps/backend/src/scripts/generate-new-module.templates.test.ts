@@ -27,9 +27,7 @@ describe('generate-new-module templates', () => {
       const resolver = resolverTemplate('review-widget', false);
 
       expect(resolver).toContain('class ReviewWidgetQueries {');
-      expect(resolver).toContain(
-        '@Guarded(portalCapabilityGuard([PortalCapability.Bypass]))'
-      );
+      expect(resolver).toContain('@Guarded(bypassOnlyGuard())');
       expect(resolver).toContain(
         "static readonly reviewWidgetList: NonNullable<QueryResolvers['reviewWidgetList']>"
       );

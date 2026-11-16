@@ -5,18 +5,17 @@ export const resolverTemplate = (
   const pascal = toPascalCase(resolverName);
   const query = toQueryName(resolverName);
   return `import {
-  PortalCapability,
   QueryResolvers,
   Resolvers,
 } from '../../__generated__/resolvers-types';
 import { Guarded } from '../../security/guarded/guarded.decorator';
-import { portalCapabilityGuard } from '../../security/guarded/guards/portal.guard';
+import { bypassOnlyGuard } from '../../security/guarded/guards/portal.guard';
 ${needScalarId ? `import { ${pascal}Id } from '../../model/kanel/public/${pascal}';\nimport { createRelayIdScalar } from '../../utils/scalar.util';\n` : ''}import { ${pascal}Domain } from './${resolverName}.domain';
 
 // Every operation declares its access: @Public() or @Guarded(guard), never a bare resolver.
 // Admin-only by default, widen it on purpose.
 class ${pascal}Queries {
-  @Guarded(portalCapabilityGuard([PortalCapability.Bypass]))
+  @Guarded(bypassOnlyGuard())
   static readonly ${query}: NonNullable<QueryResolvers['${query}']> = () =>
     ${pascal}Domain.loadAll();
 }

@@ -1,6 +1,5 @@
 import {
   MutationResolvers,
-  PortalCapability,
   QueryResolvers,
   Resolvers,
 } from '../../__generated__/resolvers-types';
@@ -9,7 +8,7 @@ import {
   SolutionCategoryMutator,
 } from '../../model/kanel/public/SolutionCategory';
 import { Guarded, Public } from '../../security/guarded/guarded.decorator';
-import { portalCapabilityGuard } from '../../security/guarded/guards/portal.guard';
+import { bypassOnlyGuard } from '../../security/guarded/guards/portal.guard';
 import { createRelayIdScalar } from '../../utils/scalar.util';
 import { solutionCategoryApp } from './solution-category.app';
 import { solutionCategoryDomain } from './solution-category.domain';
@@ -22,7 +21,7 @@ class SolutionCategoryQueries {
 }
 
 class SolutionCategoryMutations {
-  @Guarded(portalCapabilityGuard([PortalCapability.Bypass]))
+  @Guarded(bypassOnlyGuard())
   static readonly addSolutionCategory: NonNullable<
     MutationResolvers['addSolutionCategory']
   > = (_, { input }) =>
@@ -31,7 +30,7 @@ class SolutionCategoryMutations {
       product: input.product ?? [],
     });
 
-  @Guarded(portalCapabilityGuard([PortalCapability.Bypass]))
+  @Guarded(bypassOnlyGuard())
   static readonly editSolutionCategory: NonNullable<
     MutationResolvers['editSolutionCategory']
   > = (_, { id, input }) =>
@@ -40,7 +39,7 @@ class SolutionCategoryMutations {
       input
     );
 
-  @Guarded(portalCapabilityGuard([PortalCapability.Bypass]))
+  @Guarded(bypassOnlyGuard())
   static readonly deleteSolutionCategory: NonNullable<
     MutationResolvers['deleteSolutionCategory']
   > = (_, { id }) =>

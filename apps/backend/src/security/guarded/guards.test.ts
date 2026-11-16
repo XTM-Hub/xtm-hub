@@ -6,7 +6,7 @@ import {
   ForbiddenErrorCode,
   UnauthenticatedErrorCode,
 } from '../../utils/error/error.code';
-import { portalCapabilityGuard } from './guards/portal.guard';
+import { bypassOnlyGuard, portalCapabilityGuard } from './guards/portal.guard';
 import { publicAccess } from './guards/public-access.guard';
 import { Principal } from './principal';
 
@@ -15,13 +15,13 @@ const ORGANIZATION_ID = 'organization-id' as OrganizationId;
 
 const buildUserPrincipal = (
   overrides: {
-    isPlatformAdmin?: boolean;
+    isBypassUser?: boolean;
     capabilities?: PortalCapability[];
   } = {}
 ): Principal => ({
   kind: 'user',
   actorId: USER_ID,
-  isPlatformAdmin: overrides.isPlatformAdmin ?? false,
+  isBypassUser: overrides.isBypassUser ?? false,
   portalCapabilities: new Set(overrides.capabilities ?? []),
   selectedOrganizationId: ORGANIZATION_ID,
 });
@@ -33,8 +33,8 @@ describe('publicAccess guard', () => {
     { label: 'an anonymous visitor', principal: ANONYMOUS },
     { label: 'a user', principal: buildUserPrincipal() },
     {
-      label: 'a platform admin',
-      principal: buildUserPrincipal({ isPlatformAdmin: true }),
+      label: 'a BYPASS user',
+      principal: buildUserPrincipal({ isBypassUser: true }),
     },
   ])('should allow $label', async ({ principal }) => {
     // Given the public guard
@@ -44,6 +44,48 @@ describe('publicAccess guard', () => {
 
     // Then
     expect(result).toEqual({ allowed: true });
+  });
+});
+
+describe('bypassOnlyGuard', () => {
+  it.each([
+    {
+      label: 'an anonymous visitor',
+      principal: ANONYMOUS,
+      expected: {
+        allowed: false,
+        code: UnauthenticatedErrorCode.Unauthenticated,
+      },
+    },
+    {
+      label: 'a user without any capability',
+      principal: buildUserPrincipal(),
+      expected: { allowed: false, code: ForbiddenErrorCode.ForbiddenAccess },
+    },
+    {
+      label: 'a user with another capability',
+      principal: buildUserPrincipal({
+        capabilities: [PortalCapability.ManageDeployment],
+      }),
+      expected: { allowed: false, code: ForbiddenErrorCode.ForbiddenAccess },
+    },
+    {
+      label: 'a BYPASS user',
+      principal: buildUserPrincipal({
+        isBypassUser: true,
+        capabilities: [PortalCapability.Bypass],
+      }),
+      expected: { allowed: true },
+    },
+  ])('should answer $label', async ({ principal, expected }) => {
+    // Given
+    const guard = bypassOnlyGuard();
+
+    // When
+    const result = await guard(principal);
+
+    // Then
+    expect(result).toEqual(expected);
   });
 });
 
@@ -70,9 +112,9 @@ describe('portalCapabilityGuard', () => {
       expected: { allowed: false, code: ForbiddenErrorCode.ForbiddenAccess },
     },
     {
-      label: 'a platform admin',
+      label: 'a BYPASS user',
       principal: buildUserPrincipal({
-        isPlatformAdmin: true,
+        isBypassUser: true,
         capabilities: [PortalCapability.Bypass],
       }),
       expected: { allowed: true },

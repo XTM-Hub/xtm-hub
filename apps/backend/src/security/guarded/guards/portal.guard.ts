@@ -14,9 +14,18 @@ export const portalCapabilityGuard =
       return deny(UnauthenticatedErrorCode.Unauthenticated);
     }
     const isAllowed =
-      principal.isPlatformAdmin ||
+      principal.isBypassUser ||
       capabilities.some((capability) =>
         principal.portalCapabilities.has(capability)
       );
     return isAllowed ? allow() : deny(ForbiddenErrorCode.ForbiddenAccess);
   };
+
+export const bypassOnlyGuard = (): Guard => (principal) => {
+  if (principal.kind === 'anonymous') {
+    return deny(UnauthenticatedErrorCode.Unauthenticated);
+  }
+  return principal.isBypassUser
+    ? allow()
+    : deny(ForbiddenErrorCode.ForbiddenAccess);
+};

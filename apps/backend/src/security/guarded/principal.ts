@@ -15,7 +15,7 @@ export type Principal =
   | {
       kind: 'user';
       actorId: UserId;
-      isPlatformAdmin: boolean;
+      isBypassUser: boolean;
       portalCapabilities: Set<PortalCapability>;
       selectedOrganizationId: OrganizationId;
     };
@@ -40,7 +40,7 @@ export const buildPrincipal = async (
   return {
     kind: 'user',
     actorId: user.id,
-    isPlatformAdmin: AuthHelper.userHasBypassCapability(user),
+    isBypassUser: AuthHelper.userHasBypassCapability(user),
     portalCapabilities: new Set(
       user.capabilities.map(({ name }) => name as PortalCapability)
     ),

@@ -32,7 +32,7 @@ class SolutionCategoryQueries {
 }
 
 class SolutionCategoryMutations {
-  @Guarded(portalCapabilityGuard([PortalCapability.Bypass]))
+  @Guarded(bypassOnlyGuard())
   static readonly addSolutionCategory: NonNullable<MutationResolvers['addSolutionCategory']> = (_, { input }) =>
     solutionCategoryDomain.insertSolutionCategory(input);
 }
@@ -58,6 +58,7 @@ export default resolvers;
 | Declaration | Allows | Refuses with |
 | --- | --- | --- |
 | `@Public()` | Anyone, anonymous included. Nothing is built or loaded | Never |
+| `@Guarded(bypassOnlyGuard())` | A `BYPASS` user only. Use it for admin-only operations rather than listing `BYPASS` | `UNAUTHENTICATED` (anonymous or disabled user), `FORBIDDEN_ACCESS` (not `BYPASS`) |
 | `@Guarded(portalCapabilityGuard([PortalCapability.X, …]))` | A user holding one of the portal capabilities; `BYPASS` always. The list cannot be empty | `UNAUTHENTICATED` (anonymous or disabled user), `FORBIDDEN_ACCESS` (capability missing) |
 
 A guard returns `allow()` or `deny(code)`. An exception, or anything else, is a denial. Add each new guard to this

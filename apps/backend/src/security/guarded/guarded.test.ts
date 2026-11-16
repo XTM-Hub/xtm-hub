@@ -107,13 +107,13 @@ describe('buildPrincipal', () => {
     expect(principal).toEqual({
       kind: 'user',
       actorId: user.id,
-      isPlatformAdmin: false,
+      isBypassUser: false,
       portalCapabilities: new Set([PortalCapability.ManageDeployment]),
       selectedOrganizationId: user.selected_organization_id,
     });
   });
 
-  it('should flag a BYPASS user as platform admin', async () => {
+  it('should set isBypassUser for a BYPASS user', async () => {
     // Given
     const user = buildUser({ capabilities: [CAPABILITY_BYPASS] });
 
@@ -123,7 +123,7 @@ describe('buildPrincipal', () => {
     // Then
     expect(principal).toMatchObject({
       kind: 'user',
-      isPlatformAdmin: true,
+      isBypassUser: true,
       portalCapabilities: new Set([PortalCapability.Bypass]),
     });
   });
@@ -142,7 +142,7 @@ describe('buildPrincipal', () => {
     // Then
     expect(getCapabilities).toHaveBeenCalledExactlyOnceWith(user.id);
     expect(user.capabilities).toMatchObject([CAPABILITY_BYPASS]);
-    expect(principal).toMatchObject({ kind: 'user', isPlatformAdmin: true });
+    expect(principal).toMatchObject({ kind: 'user', isBypassUser: true });
   });
 
   it('should not load the capabilities again when they are already there', async () => {
