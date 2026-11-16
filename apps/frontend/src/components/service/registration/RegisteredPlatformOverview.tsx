@@ -33,7 +33,7 @@ import { productInformationKeys } from '@graphql/product-information/product-inf
 import { keepPreviousData } from '@tanstack/react-query';
 import { notFound, useSearchParams } from 'next/navigation';
 import { use, useState } from 'react';
-import { useFragment, useLazyLoadQuery } from 'react-relay'; // Matches the backend cache: a remount within a minute would only get the same answer back.
+import { useFragment, useLazyLoadQuery } from 'react-relay';
 
 // Matches the backend cache: a remount within a minute would only get the same answer back.
 const SAAS_PLATFORM_DATA_STALE_TIME = 60_000;

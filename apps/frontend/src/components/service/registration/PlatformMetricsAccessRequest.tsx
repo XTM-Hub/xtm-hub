@@ -36,10 +36,13 @@ export const PlatformMetricsAccessRequest = ({
     {
       input: {
         organizationId,
-        capabilities: [OrganizationCapability.AdministrateOrganization],
+        capabilities: [
+          OrganizationCapability.AdministrateOrganization,
+          OrganizationCapability.ManagePlatformRegistration,
+        ],
       },
     },
-    { enabled: organizationId.length > 0 }
+    { enabled: !!organizationId }
   );
   const administrators = (
     data?.usersWithCapabilitiesInOrganization ?? []

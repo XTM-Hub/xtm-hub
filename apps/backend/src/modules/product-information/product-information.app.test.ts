@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   CAPABILITY_READ_SAAS_METRICS,
+  requestContextAdminSecondOrga,
   requestContextRegistererUserSecondOrga,
   requestContextSimpleUserFiligran2,
   SERVICES,
@@ -349,7 +350,7 @@ describe('product information app', () => {
     });
 
     it.each([['ADMINISTRATE_ORGANIZATION'], ['MANAGE_PLATFORM_REGISTRATION']])(
-      'should return null without asking the SaaS Manager when the user has %s only in another organization',
+      "should return null without asking the SaaS Manager for a platform of another organization, even with %s in the user's own organization",
       async (organizationCapability) => {
         // Given
         const callSpy = mockSaasManagerFullMetadata();
@@ -372,6 +373,30 @@ describe('product information app', () => {
         expect(callSpy).not.toHaveBeenCalled();
       }
     );
+
+    it('should return the data to an administrator of the owning organization without any portal capability', async () => {
+      // Given
+      const callSpy = mockSaasManagerFullMetadata();
+      requestContext.set(requestContextAdminSecondOrga);
+
+      // When
+      const data = await ProductInformationApp.loadRegisteredSaasPlatformData(
+        serviceInstanceId,
+        metricsPeriod
+      );
+
+      // Then
+      expect(data).toEqual({
+        metadata: fullMetadata,
+        metrics: null,
+        storage: null,
+        sla: null,
+      });
+      expect(callSpy).toHaveBeenCalledExactlyOnceWith({
+        platform_id: platformId,
+        include_metrics: 95,
+      });
+    });
 
     it.each([
       ['READ_SAAS_METRICS', CAPABILITY_READ_SAAS_METRICS],

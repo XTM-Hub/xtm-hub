@@ -56,7 +56,7 @@ describe('PlatformMetricsAccessRequest', () => {
     mockAdministrators(ADMINISTRATORS);
   });
 
-  it('should query the administrators of the selected organization', () => {
+  it('should query the members holding ADMINISTRATE_ORGANIZATION or MANAGE_PLATFORM_REGISTRATION in the selected organization', () => {
     // Given / When
     renderAccessRequest();
 
@@ -66,7 +66,10 @@ describe('PlatformMetricsAccessRequest', () => {
       {
         input: {
           organizationId: ORGANIZATION_ID,
-          capabilities: [OrganizationCapability.AdministrateOrganization],
+          capabilities: [
+            OrganizationCapability.AdministrateOrganization,
+            OrganizationCapability.ManagePlatformRegistration,
+          ],
         },
       },
       { enabled: true }
