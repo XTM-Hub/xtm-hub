@@ -1,5 +1,10 @@
-import { Resolvers } from '../../__generated__/resolvers-types';
+import {
+  MutationResolvers,
+  Resolvers,
+} from '../../__generated__/resolvers-types';
 import { UserId } from '../../model/kanel/public/User';
+import { Guarded } from '../../security/guarded/guarded.decorator';
+import { loggedInGuard } from '../../security/guarded/guards/portal.guard';
 import { logApp } from '../../utils/app-logger.util';
 import { getErrorMessage } from '../../utils/error/error-guard.util';
 import { UnknownErrorCode } from '../../utils/error/error.code';
@@ -29,12 +34,15 @@ const runTelemetryMutation = async (
   }
 };
 
+class TelemetryMutations {
+  @Guarded(loggedInGuard())
+  static readonly sendTelemetryEvent: NonNullable<
+    MutationResolvers['sendTelemetryEvent']
+  > = () => ({});
+}
+
 const resolvers: Resolvers = {
-  Mutation: {
-    sendTelemetryEvent: () => {
-      return {}; // just a placeholder object is fine
-    },
-  },
+  Mutation: { ...TelemetryMutations },
 
   SendTelemetryMutation: {
     oneClickDeploy: async (_, args, context) => {

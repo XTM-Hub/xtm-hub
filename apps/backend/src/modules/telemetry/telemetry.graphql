@@ -20,11 +20,12 @@ input NewsFeedRedirectInput {
   utm_content: NewsFeedUtmContent
 }
 
+# Guarded only by Mutation.sendTelemetryEvent: no other field may return this type
 type SendTelemetryMutation {
   oneClickDeploy(input: OneClickDeployInput!): TelemetryResponse
   newsFeedRedirect(input: NewsFeedRedirectInput!): TelemetryResponse
 }
 
 extend type Mutation {
-  sendTelemetryEvent: SendTelemetryMutation @auth
+  sendTelemetryEvent: SendTelemetryMutation
 }
