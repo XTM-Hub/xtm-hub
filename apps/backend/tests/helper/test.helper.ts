@@ -82,6 +82,7 @@ import { TestContentTranslationHelper } from './test.content-translation.helper'
 import { TestDeploymentHelper } from './test.deployment.helper';
 import { TestDocumentHelper } from './test.document.helper';
 import { TestNewsfeedHelper } from './test.newsfeed.helper';
+import { TestPlatformAssertionHelper } from './test.platform-assertion.helper';
 import { TestServiceHelper } from './test.service.helper';
 import { TestSessionHelper } from './test.session.helper';
 import { TestUserHelper } from './test.user.helper';
@@ -101,6 +102,7 @@ export const TestHelper = {
   ...TestDocumentHelper,
   ...TestServiceHelper,
   ...TestPlatformConfigurationHelper,
+  ...TestPlatformAssertionHelper,
   ...TestUserHelper,
   ...TestAuth0Helper,
   ...TestDeploymentHelper,

@@ -15,6 +15,7 @@ const cronMocks = vi.hoisted(() => ({
   cleanExpiredNewsFeedItemsMock: vi.fn(async () => undefined),
   sendResourceNotPublishedReminderMock: vi.fn(async () => undefined),
   syncUserAccountStatusWithAuth0Mock: vi.fn(async () => undefined),
+  purgeExpiredAssertionIdsMock: vi.fn(async () => undefined),
   auth0Sync: { enabled: true },
 }));
 
@@ -103,6 +104,15 @@ vi.mock(
   })
 );
 
+vi.mock(
+  './modules/registration/platform-assertion/platform-assertion.app',
+  () => ({
+    PlatformAssertionApp: {
+      purgeExpiredAssertionIds: cronMocks.purgeExpiredAssertionIdsMock,
+    },
+  })
+);
+
 import { initCronJobs, stopCronJobs } from './crons';
 import { CRONS_USER_CONTEXT } from './portal.const';
 import { logApp } from './utils/app-logger.util';
@@ -119,13 +129,13 @@ describe('crons', () => {
   it('should set CRONS_USER_CONTEXT for every cron task execution', async () => {
     initCronJobs();
 
-    expect(cronMocks.scheduledCallbacks).toHaveLength(7);
+    expect(cronMocks.scheduledCallbacks).toHaveLength(8);
 
     for (const callback of cronMocks.scheduledCallbacks) {
       await callback();
     }
 
-    expect(cronMocks.requestContextRunMock).toHaveBeenCalledTimes(7);
+    expect(cronMocks.requestContextRunMock).toHaveBeenCalledTimes(8);
     expect(cronMocks.requestContextRunMock).toHaveBeenNthCalledWith(
       1,
       CRONS_USER_CONTEXT,
@@ -161,6 +171,11 @@ describe('crons', () => {
       CRONS_USER_CONTEXT,
       expect.any(Function)
     );
+    expect(cronMocks.requestContextRunMock).toHaveBeenNthCalledWith(
+      8,
+      CRONS_USER_CONTEXT,
+      expect.any(Function)
+    );
 
     expect(cronMocks.expireTrialsMock).toHaveBeenCalledTimes(1);
     expect(cronMocks.sendPendingUsersDigestMock).toHaveBeenCalledTimes(1);
@@ -174,6 +189,16 @@ describe('crons', () => {
     ).toHaveBeenCalledTimes(1);
     expect(cronMocks.syncUserAccountStatusWithAuth0Mock).toHaveBeenCalledTimes(
       1
+    );
+    expect(cronMocks.purgeExpiredAssertionIdsMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('should schedule the purge of expired platform assertion ids every day at 05:00', () => {
+    initCronJobs();
+
+    expect(cron.schedule).toHaveBeenCalledWith(
+      '0 5 * * *',
+      expect.any(Function)
     );
   });
 
@@ -219,7 +244,7 @@ describe('crons', () => {
 
     initCronJobs();
 
-    expect(cronMocks.scheduledCallbacks).toHaveLength(6);
+    expect(cronMocks.scheduledCallbacks).toHaveLength(7);
     expect(cron.schedule).not.toHaveBeenCalledWith(
       '0 * * * *',
       expect.any(Function),
@@ -232,7 +257,7 @@ describe('crons', () => {
 
     stopCronJobs();
 
-    expect(cronMocks.scheduledTaskStops).toHaveLength(7);
+    expect(cronMocks.scheduledTaskStops).toHaveLength(8);
     for (const stop of cronMocks.scheduledTaskStops) {
       expect(stop).toHaveBeenCalledTimes(1);
     }

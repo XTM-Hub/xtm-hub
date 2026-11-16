@@ -27,11 +27,17 @@ export default interface PlatformConfiguration {
 
   last_connectivity_check: Date | null;
 
-  token: string;
+  token: string | null;
 
   status: PlatformConfigurationStatus;
 
   commercial_model: CommercialModel;
+
+  public_key: unknown | null;
+
+  public_key_id: string | null;
+
+  key_enrolled_at: Date | null;
 }
 
 /** Represents the initializer for the table public.PlatformConfiguration */
@@ -56,11 +62,17 @@ export interface PlatformConfigurationInitializer {
 
   last_connectivity_check?: Date | null;
 
-  token: string;
+  token?: string | null;
 
   status?: PlatformConfigurationStatus;
 
   commercial_model?: CommercialModel;
+
+  public_key?: unknown | null;
+
+  public_key_id?: string | null;
+
+  key_enrolled_at?: Date | null;
 }
 
 /** Represents the mutator for the table public.PlatformConfiguration */
@@ -85,9 +97,15 @@ export interface PlatformConfigurationMutator {
 
   last_connectivity_check?: Date | null;
 
-  token?: string;
+  token?: string | null;
 
   status?: PlatformConfigurationStatus;
 
   commercial_model?: CommercialModel;
+
+  public_key?: unknown | null;
+
+  public_key_id?: string | null;
+
+  key_enrolled_at?: Date | null;
 }
