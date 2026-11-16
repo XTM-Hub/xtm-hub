@@ -1,9 +1,11 @@
 import { ServiceFormUploaderOrganizationIdField } from '@/components/service/form/UploaderOrganizationIdField';
 import { Form, FormField } from '@/components/ui/form';
 import testRender from '@/utils/test/test-render';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import type { meContext_fragment$data } from '@generated/meContext_fragment.graphql';
-import type { MeOrganizationsQuery } from '@graphql/generated';
+import type {
+  DocumentItemFragment,
+  MeOrganizationsQuery,
+} from '@graphql/generated';
 import {
   focusManager,
   useQuery,
@@ -98,9 +100,9 @@ const DOCUMENT = {
     name: UPLOADER_ORGANIZATION_NAME,
     personal_space: false,
   },
-} as documentItem_fragment$data;
+} as DocumentItemFragment;
 
-const TestForm = ({ document }: { document?: documentItem_fragment$data }) => {
+const TestForm = ({ document }: { document?: DocumentItemFragment }) => {
   const form = useForm<{ uploader_organization_id: string }>({
     defaultValues: { uploader_organization_id: '' },
   });
@@ -122,7 +124,7 @@ const TestForm = ({ document }: { document?: documentItem_fragment$data }) => {
   );
 };
 
-const renderField = (document?: documentItem_fragment$data) =>
+const renderField = (document?: DocumentItemFragment) =>
   testRender(<TestForm document={document} />, { me: PORTAL_ME });
 
 // The field is hidden on creation, so the hidden elements are queried too.

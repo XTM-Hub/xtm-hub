@@ -1,6 +1,6 @@
 import { UserServiceForm } from '@/components/service/[slug]/UserServiceForm';
 import testRender from '@/utils/test/test-render';
-import { subscriptionByIdQuery$data } from '@generated/subscriptionByIdQuery.graphql';
+import { SubscriptionByIdQuery } from '@graphql/generated';
 import { screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -17,7 +17,7 @@ const SUBSCRIPTION = {
     },
     subscription_capability: [],
   },
-} as unknown as subscriptionByIdQuery$data;
+} as unknown as SubscriptionByIdQuery;
 
 vi.mock('react-relay', async (importOriginal) => ({
   ...(await importOriginal<typeof import('react-relay')>()),

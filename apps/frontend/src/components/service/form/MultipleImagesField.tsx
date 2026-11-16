@@ -16,8 +16,7 @@ import {
   TooltipTrigger,
 } from '@filigran/design-system';
 import { AddIcon, DeleteIcon, ReplayIcon } from '@filigran/icon';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { DocumentSourceType } from '@graphql/generated';
+import { DocumentItemFragment, DocumentSourceType } from '@graphql/generated';
 import { ChangeEvent, useRef } from 'react';
 import { ControllerRenderProps, FieldValues } from 'react-hook-form';
 
@@ -27,7 +26,7 @@ export type ServiceFormMultipleImagesFieldImages = (ExistingFile | NewFile) & {
 
 interface ServiceFormMultipleImagesFieldProps {
   field: ControllerRenderProps<FieldValues, string>;
-  document?: documentItem_fragment$data;
+  document?: DocumentItemFragment;
   images: Array<ServiceFormMultipleImagesFieldImages>;
   setImages: (images: Array<ServiceFormMultipleImagesFieldImages>) => void;
   imagesToDelete: string[];

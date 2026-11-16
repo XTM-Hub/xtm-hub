@@ -111,14 +111,24 @@ resolves it once at module level (`TELEMETRY_INDEX` in `telemetry.app.ts`); ES m
 `ELASTIC_INDEX_PREFIX` lets several instances share one cluster: a literal name escapes the prefix and reads or writes
 the indices of another instance. Without a prefix the names are unchanged.
 
+## Elasticsearch client
+
+The backend ships the 8.x and the 9.x Elastic clients. `esDbClient.init()` picks one at startup, before the ES
+migrations (`src/thirdparty/elasticsearch/engine-detection.ts`): detected from the server's `GET /` by default,
+forced with `ELASTIC_ENGINE_CLIENT` (`elasticsearch8`, `elasticsearch9`). OpenSearch is refused. Call Elasticsearch
+through `esDbClient` only: its calls are typed in `src/thirdparty/elasticsearch/engine-api.ts` so that a request must
+fit the types of both majors, and both clients satisfy them without a cast. A new call goes there first. The
+`*.es.test.ts` suites (`yarn test:es`, run by the "Elasticsearch tests" CI job on each major) check the calls against a
+real server.
+
 ## Configuration
 
 `node-config` reads `config/*.json` (`default`, `development`, `production`, `staging`, `local`). Environment
 variables map through `config/custom-environment-variables.json`:
 `DATABASE_HOST`, `DATABASE_PORT`, `DATABASE_USER`, `DATABASE_PASSWORD`, `DATABASE_BASE`, `ADMIN_EMAIL`,
 `ADMIN_PASSWORD`, `MINIO_ENDPOINT`, `MINIO_PORT`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `MINIO_BUCKET_NAME`,
-`MINIO_USE_SSL`, `ELASTIC_HOST`, `ELASTIC_PORT`, `ELASTIC_INDEX_PREFIX`, `NODE_ENV`, `VITEST_MODE`, `DATA_SEEDING`,
-`SESSION_STORE_TYPE`, `BASE_URL_FRONT`.
+`MINIO_USE_SSL`, `ELASTIC_HOST`, `ELASTIC_PORT`, `ELASTIC_INDEX_PREFIX`, `ELASTIC_ENGINE_CLIENT`,
+`ELASTIC_REQUEST_TIMEOUT`, `NODE_ENV`, `VITEST_MODE`, `DATA_SEEDING`, `SESSION_STORE_TYPE`, `BASE_URL_FRONT`.
 
 Never read `process.env` directly in application code — go through `src/config.ts`.
 

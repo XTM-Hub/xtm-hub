@@ -71,4 +71,28 @@ describe('ShareableResourceConnectorSlugPublic', () => {
       expect(screen.getByText(label)).toBeInTheDocument();
     }
   );
+
+  it.each([
+    { verified: true, label: SUPPORTED_BY_FILIGRAN },
+    { verified: false, label: SUPPORTED_BY_COMMUNITY },
+    { verified: false, label: 'Utils.AutomaticDeploy', managerSupported: true },
+  ])(
+    'should hide the decorative icon of the "$label" badge from assistive technology',
+    async ({ verified, label, managerSupported = false }) => {
+      // Given
+      const documentData = buildConnector({
+        verified,
+        manager_supported: managerSupported,
+      });
+
+      // When
+      await renderConnector(documentData);
+
+      // Then
+      expect(screen.getByText(label).querySelector('svg')).toHaveAttribute(
+        'aria-hidden',
+        'true'
+      );
+    }
+  );
 });

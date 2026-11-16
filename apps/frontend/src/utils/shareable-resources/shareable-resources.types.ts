@@ -1,5 +1,7 @@
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import {
+  DocumentItemFragment,
+  IntegrationType,
+  LicenseType,
   PublicDocumentByServiceSlugItemFragment,
   PublicDocumentListItemFragment,
   ServiceDefinitionIdentifier,
@@ -27,22 +29,27 @@ export type PublicDocumentData =
   PublicDocumentListItemFragment | PublicDocumentByServiceSlugItem;
 
 /**
+ * Same shape as the `solution_categories` items codegen emits, so that
+ * intersecting it with a `DocumentItemFragment` member stays a single array
+ * type (an `Array & ReadonlyArray` intersection is not callable).
+ */
+export type SolutionCategoryFields = {
+  __typename?: 'SolutionCategory';
+  id: string;
+  name: string;
+};
+
+/**
  * Fields only present on `Document`s implementing the `Integration`
  * GraphQL interface. Used to narrow a document union via `isIntegrationItem`.
- *
- * `integration_type`/`license_type` are widened to `string`/`string | null`
- * instead of the `IntegrationType`/`LicenseType` enums: Relay generates its
- * own local literal-union type per fragment for these fields, and
- * intersecting it with the schema enum collapses to `never`. Cast to the
- * enum at call sites that need it (e.g. `as IntegrationType`).
  */
 export type IntegrationFields = {
-  integration_type: string;
+  integration_type: IntegrationType;
   datasheet_url: string | null;
   blogpost_url: string | null;
   demo_url: string | null;
-  solution_categories: ReadonlyArray<{ id: string; name: string }> | null;
-  license_type: string | null;
+  solution_categories: Array<SolutionCategoryFields> | null;
+  license_type: LicenseType | null;
 };
 
 /** Fields only present on `Connector` documents (a subtype of `Integration`). */
@@ -56,6 +63,13 @@ export type ConnectorFields = IntegrationFields & {
   playbook_supported: boolean;
   minimum_deployable_version: string | null;
   contact: string | null;
+};
+
+/** Fields only present on `ThirdPartyIntegration` documents (a subtype of `Integration`). */
+export type ThirdPartyIntegrationFields = IntegrationFields & {
+  product_version: string | null;
+  vendor_url: string;
+  github_url: string | null;
 };
 
 export enum ShareableResourceType {
@@ -146,7 +160,7 @@ export const SERVICE_SLUG_SHAREABLE_RESOURCE_MAPPING: Record<
 };
 
 export const isIntegrationItem = <
-  T extends documentItem_fragment$data | PublicDocumentData,
+  T extends DocumentItemFragment | PublicDocumentData,
 >(
   resource: T
 ): resource is T & IntegrationFields => {
@@ -154,9 +168,17 @@ export const isIntegrationItem = <
 };
 
 export const isConnectorResource = <
-  T extends documentItem_fragment$data | PublicDocumentData,
+  T extends DocumentItemFragment | PublicDocumentData,
 >(
   resource: T
 ): resource is T & ConnectorFields => {
   return resource.__typename === 'Connector';
+};
+
+export const isThirdPartyIntegrationResource = <
+  T extends DocumentItemFragment | PublicDocumentData,
+>(
+  resource: T
+): resource is T & ThirdPartyIntegrationFields => {
+  return resource.__typename === 'ThirdPartyIntegration';
 };

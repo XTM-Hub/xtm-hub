@@ -165,6 +165,41 @@ describe('ResourceStatusIcons', () => {
     });
   });
 
+  describe('accessible names', () => {
+    it.each`
+      props                                              | expectedName
+      ${{ deployable: true }}                            | ${'Utils.AutomaticDeploy'}
+      ${{ verified: true, displayUnverifiedIcon: true }} | ${'Service.ShareableResources.Details.SupportedByFiligran'}
+      ${{ displayUnverifiedIcon: true }}                 | ${'Service.ShareableResources.Details.SupportedByCommunity'}
+      ${{ active: true }}                                | ${'Badge.Published'}
+    `(
+      'should expose "$expectedName" as the name of the icon for $props',
+      ({ props, expectedName }) => {
+        // Given / When
+        testRender(<ResourceStatusIcons {...props} />);
+
+        // Then
+        expect(screen.getByRole('img', { name: expectedName })).toBeVisible();
+      }
+    );
+
+    it('should give every icon its own name when several statuses are shown', () => {
+      // Given / When
+      testRender(
+        <ResourceStatusIcons
+          active
+          deployable
+          verified
+        />
+      );
+
+      // Then
+      const icons = screen.getAllByRole('img');
+      expect(icons).toHaveLength(3);
+      icons.forEach((icon) => expect(icon).toHaveAccessibleName());
+    });
+  });
+
   describe('the Filigran icon', () => {
     it('uses the brand colour and is scaled to match the other icons', () => {
       const { container } = testRender(

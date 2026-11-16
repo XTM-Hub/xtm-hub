@@ -276,7 +276,10 @@ const Page = async ({
           </div>
         ) : (
           <div className="w-24 p-3 border shrink-0">
-            <LogoFiligranIcon className="size-18" />
+            <LogoFiligranIcon
+              aria-hidden={true}
+              className="size-18"
+            />
           </div>
         )}
         <div className="flex flex-col w-full justify-center">

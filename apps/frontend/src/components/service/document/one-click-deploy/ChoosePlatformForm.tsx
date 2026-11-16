@@ -14,12 +14,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@filigran/design-system';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { useRegisteredPlatformsFragment$data } from '@generated/useRegisteredPlatformsFragment.graphql';
+import { DocumentItemFragment } from '@graphql/generated';
 import { z } from 'zod';
 
 interface ChoosePlatformFormProps {
-  documentData: documentItem_fragment$data;
+  documentData: DocumentItemFragment;
   platforms: useRegisteredPlatformsFragment$data[];
   translatedPlatformIdentifier: string;
   oneClickDeploy: (platformUrl: string) => void;

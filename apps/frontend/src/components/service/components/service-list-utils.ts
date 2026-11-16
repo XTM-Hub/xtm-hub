@@ -1,31 +1,16 @@
 import { isDocumentPublished } from '@/utils/documents';
-import { useMemo } from 'react';
-import { readInlineData } from 'react-relay';
-import { GraphQLTaggedNode } from 'relay-runtime';
-import { KeyType } from 'relay-runtime/lib/store/FragmentTypes';
 
+/**
+ * Splits documents into the published ones and the others (draft, in validation),
+ * keeping their order.
+ */
 export const splitPublishedAndOthers = <TDocument extends { status: string }>(
-  documents: TDocument[]
-): [TDocument[], TDocument[]] => [
-  documents.filter(({ status }) => isDocumentPublished(status)),
-  documents.filter(({ status }) => !isDocumentPublished(status)),
-];
-
-export function usePublishedAndDraftSplit<
-  TFragmentData extends { status: string },
-  TFragmentKey extends KeyType<TFragmentData>,
->(
-  edges: ReadonlyArray<{ readonly node: TFragmentKey }> | undefined,
-  fragment: GraphQLTaggedNode
-): [TFragmentData[], TFragmentData[]] {
-  return useMemo(
-    () =>
-      splitPublishedAndOthers(
-        (edges ?? []).map(
-          ({ node }) =>
-            readInlineData<TFragmentKey>(fragment, node) as TFragmentData
-        )
-      ),
-    [edges, fragment]
+  documents: readonly TDocument[]
+): [TDocument[], TDocument[]] =>
+  documents.reduce<[TDocument[], TDocument[]]>(
+    (acc, document) => {
+      acc[isDocumentPublished(document.status) ? 0 : 1].push(document);
+      return acc;
+    },
+    [[], []]
   );
-}

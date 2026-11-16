@@ -6,7 +6,7 @@ import type { FieldConfigItem } from '@/components/ui/auto-form/types';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { useTranslate } from '@/hooks/use-translate';
 import { JSON_FILE_ACCEPT } from '@/utils/documents';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
+import { DocumentItemFragment } from '@graphql/generated';
 import { useMemo } from 'react';
 
 export interface ServiceFormDocumentFile {
@@ -27,7 +27,7 @@ export const JSON_DOCUMENT_FILE: ServiceFormDocumentFile = {
 
 export const useDocumentFileField = (
   { label, accept, texts }: ServiceFormDocumentFile,
-  document?: documentItem_fragment$data
+  document?: DocumentItemFragment
 ): FieldConfigItem => {
   const t = useTranslate();
   const { setIsDirty } = useDialogContext();

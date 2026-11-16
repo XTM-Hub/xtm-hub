@@ -20,14 +20,19 @@ import {
   userServices_fragment$data,
   userServices_fragment$key,
 } from '@generated/userServices_fragment.graphql';
-import { OrganizationCapability, ServiceRestriction } from '@graphql/generated';
+import {
+  OrganizationCapability,
+  ServiceRestriction,
+  SubscriptionByIdQuery,
+  useSubscriptionByIdQuery,
+} from '@graphql/generated';
+import { subscriptionKeys } from '@graphql/subscription/subscription.keys';
 import { ColumnDef, PaginationState } from '@tanstack/react-table';
 
 import { useCallback, useContext, useMemo, useState } from 'react';
 
 import { DeleteUserService } from '@/components/subcription/[slug]/DeleteUserService';
 import { SubscriptionSlugUserService } from '@/components/subcription/[slug]/SubscriptionSlugUserService';
-import { SubscriptionById } from '@/components/subcription/subscription.graphql';
 import {
   BreadcrumbNav,
   BreadcrumbNavLink,
@@ -40,22 +45,29 @@ import {
   useRefetchableFragment,
 } from 'react-relay';
 
+import Loader from '@/components/Loader';
 import { PortalContext } from '@/components/me/AppPortalContext';
 import ServiceSlugHeader from '@/components/service/[slug]/ServiceSlugHeader';
 import { SubscriptionSlugAddCapabilities } from '@/components/subcription/[slug]/SubscriptionSlugAddCapabilities';
 import { useAdminByPass } from '@/hooks/use-portal-capability';
 import { analyticsId } from '@/lib/analytics/analytics.ids';
+import { portalGraphqlClient } from '@/lib/graphql-client';
 import { ADMIN_SERVICE_CATALOG_PATH, APP_PATH } from '@/utils/path/constant';
 import { Button } from '@filigran/design-system';
 import { serviceInstanceForSubscriptions_fragment$data } from '@generated/serviceInstanceForSubscriptions_fragment.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
-import { subscriptionByIdQuery } from '@generated/subscriptionByIdQuery.graphql';
 import { userServiceFromSubscriptionQuery } from '@generated/userServiceFromSubscriptionQuery.graphql';
 import { notFound } from 'next/navigation';
 
 interface SubscriptionSlugProps {
   queryRef: PreloadedQuery<userServiceFromSubscriptionQuery>;
-  queryRefSubscription: PreloadedQuery<subscriptionByIdQuery>;
+  subscriptionId: string;
+  serviceInstance?: serviceInstance_fragment$data;
+}
+
+interface SubscriptionSlugContentProps {
+  queryRef: PreloadedQuery<userServiceFromSubscriptionQuery>;
+  queryDataSubscription: SubscriptionByIdQuery;
   serviceInstance?: serviceInstance_fragment$data;
 }
 
@@ -65,11 +77,11 @@ const emptySelectionState = (): SelectionState => ({
   excludedIds: new Set<string>(),
 });
 
-const SubscriptionSlug = ({
+const SubscriptionSlugContent = ({
   queryRef,
-  queryRefSubscription,
+  queryDataSubscription,
   serviceInstance,
-}: SubscriptionSlugProps) => {
+}: SubscriptionSlugContentProps) => {
   const t = useTranslate();
   const [editUserService, setEditUserService] = useState<
     userServices_fragment$data | undefined
@@ -88,10 +100,6 @@ const SubscriptionSlug = ({
     queryRef
   );
 
-  const queryDataSubscription = usePreloadedQuery<subscriptionByIdQuery>(
-    SubscriptionById,
-    queryRefSubscription
-  );
   if (!queryDataSubscription.subscriptionById) {
     notFound();
   }
@@ -399,4 +407,30 @@ const SubscriptionSlug = ({
     </>
   );
 };
+
+const SubscriptionSlug = ({
+  queryRef,
+  subscriptionId,
+  serviceInstance,
+}: SubscriptionSlugProps) => {
+  const variables = useMemo(() => ({ subscriptionId }), [subscriptionId]);
+  const { data } = useSubscriptionByIdQuery(portalGraphqlClient, variables, {
+    queryKey: subscriptionKeys.byId(variables),
+    // A failed first load reaches the error page; a failed background refetch keeps the data shown.
+    throwOnError: (_error, query) => query.state.data === undefined,
+  });
+
+  if (!data) {
+    return <Loader />;
+  }
+
+  return (
+    <SubscriptionSlugContent
+      queryRef={queryRef}
+      queryDataSubscription={data}
+      serviceInstance={serviceInstance}
+    />
+  );
+};
+
 export default SubscriptionSlug;

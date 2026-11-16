@@ -181,6 +181,7 @@ export const ServiceListHeader = ({
                 aria-pressed={storedDisplayMode === ServiceListDisplayMode.Tab}
                 aria-label={t('Service.List.ViewTab')}>
                 <CalendarViewMonthIcon
+                  aria-hidden={true}
                   className={cn(
                     'h-5 w-5',
                     storedDisplayMode === ServiceListDisplayMode.Tab
@@ -203,6 +204,7 @@ export const ServiceListHeader = ({
                 aria-pressed={storedDisplayMode === ServiceListDisplayMode.List}
                 aria-label={t('Service.List.ViewList')}>
                 <ListViewIcon
+                  aria-hidden={true}
                   className={cn(
                     'h-4 w-4',
                     storedDisplayMode === ServiceListDisplayMode.List

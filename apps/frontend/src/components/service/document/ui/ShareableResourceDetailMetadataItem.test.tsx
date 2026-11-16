@@ -1,4 +1,4 @@
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
+import { DocumentItemFragment } from '@graphql/generated';
 import { render, screen } from '@testing-library/react';
 import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
@@ -31,7 +31,7 @@ describe('ShareableResourceDetailMetadataItem', () => {
   const baseData = {
     textKey: 'Some text',
     linkKey: 'https://example.com',
-  } as unknown as documentItem_fragment$data;
+  } as unknown as DocumentItemFragment;
 
   it('renders nothing if value is falsy', () => {
     const { container } = render(

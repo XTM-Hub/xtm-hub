@@ -21,7 +21,7 @@ import {
   ConnectorForm,
   ConnectorFormValues,
 } from '@/components/service/integrations/forms/ConnectorForm';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
+import { DocumentOverrides } from '@/utils/test/document-overrides';
 import { IntegrationType, LicenseType } from '@graphql/generated';
 import { screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
@@ -44,8 +44,9 @@ const SOURCE_CODE = 'https://github.com/OpenCTI-Platform/connectors';
 const MINIMUM_DEPLOYABLE_VERSION = '6.2.0';
 const UPPERCASE_LTS_MINIMUM_DEPLOYABLE_VERSION = '6.0.0-LTS.1';
 
-const buildConnector = (overrides: Partial<documentItem_fragment$data> = {}) =>
+const buildConnector = (overrides: DocumentOverrides = {}) =>
   buildIntegrationDocument({
+    __typename: 'Connector',
     container_image: CONTAINER_IMAGE,
     source_code: SOURCE_CODE,
     verified: true,

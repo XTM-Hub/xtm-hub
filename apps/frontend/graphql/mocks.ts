@@ -100,6 +100,7 @@ export const mockAdminEditUserInput = (overrides?: Partial<AdminEditUserInput>, 
         first_name: overrides && overrides.hasOwnProperty('first_name') ? overrides.first_name! : 'crux',
         last_name: overrides && overrides.hasOwnProperty('last_name') ? overrides.last_name! : 'aliquam',
         organization_capabilities: overrides && overrides.hasOwnProperty('organization_capabilities') ? overrides.organization_capabilities! : [relationshipsToOmit.has('OrganizationCapabilitiesInput') ? {} as OrganizationCapabilitiesInput : mockOrganizationCapabilitiesInput({}, relationshipsToOmit)],
+        password: overrides && overrides.hasOwnProperty('password') ? overrides.password! : 'terga',
     };
 };
 

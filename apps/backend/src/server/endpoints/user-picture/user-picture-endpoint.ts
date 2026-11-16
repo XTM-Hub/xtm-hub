@@ -12,7 +12,20 @@ import {
 
 const USER_PICTURE_RATE_WINDOW_MS = 60 * 1000;
 const USER_PICTURE_RATE_MAX = 300;
-const USER_PICTURE_CACHE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
+// One day, and not immutable: the frontend image optimiser fetches the picture by its path alone, whose
+// content changes when the user uploads a new one, and keeps its resized copy for this long (its own
+// `minimumCacheTTL` is also one day). A replaced picture viewed often stays stale in the optimised views for
+// about two days at most; a rarely viewed one can stay stale until the first request after its copy expired
+// (served at once, refreshed in the background), and that browser then keeps it for one more day (the
+// optimiser sends the full lifetime).
+const USER_PICTURE_CACHE_MAX_AGE_SECONDS = 60 * 60 * 24;
+
+// The one form of the URL the backend writes (a lowercase, hyphenated UUID, no trailing slash). PostgreSQL
+// also reads the upper case, braced or hyphenless forms of the same id, and Express ignores the case of the
+// route and its trailing slash: each of them would be one more URL for the same picture, so one more copy
+// for the frontend image optimiser to fetch and resize. The raw path is tested, so an encoded form fails too.
+const CANONICAL_USER_PICTURE_PATH =
+  /^\/user\/picture\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 const userPictureRateLimiter = rateLimit({
   windowMs: USER_PICTURE_RATE_WINDOW_MS,
@@ -25,6 +38,11 @@ export const getUserPicture = async (
   req: Request,
   res: Response
 ): Promise<void> => {
+  if (!CANONICAL_USER_PICTURE_PATH.test(req.path)) {
+    res.status(404).json({ message: 'No picture found' });
+    return;
+  }
+
   try {
     const pictureMinio = await UserDomain.loadUserPictureMinio(
       req.params.userId as string
@@ -47,7 +65,7 @@ export const getUserPicture = async (
     res.setHeader('Content-Type', toStoredImageContentType(file.mimeType));
     res.setHeader(
       'Cache-Control',
-      `public, max-age=${USER_PICTURE_CACHE_MAX_AGE_SECONDS}, immutable`
+      `public, max-age=${USER_PICTURE_CACHE_MAX_AGE_SECONDS}`
     );
     setStoredFileSecurityHeaders(res);
 

@@ -142,7 +142,11 @@ interface EntityTypeIconProps extends SVGProps<SVGSVGElement> {
   entityType: string;
 }
 
-/** Renders the OpenCTI icon for an entity type, with a generic fallback. */
+/**
+ * Renders the OpenCTI icon for an entity type, with a generic fallback.
+ * Decorative by default: callers show the entity type name next to it. Pass
+ * `aria-hidden={false}` with an `aria-label` to use it on its own.
+ */
 export const EntityTypeIcon = ({
   entityType,
   style,
@@ -153,6 +157,7 @@ export const EntityTypeIcon = ({
   const color = entityStyle?.color;
   return (
     <Icon
+      aria-hidden={true}
       style={{ color, ...style }}
       {...props}
     />
@@ -179,6 +184,9 @@ export const EntityTypeOrFiligranLogo = ({
       className={cn('shrink-0', className)}
     />
   ) : (
-    <LogoFiligranIcon className={className} />
+    <LogoFiligranIcon
+      aria-hidden={true}
+      className={className}
+    />
   );
 };

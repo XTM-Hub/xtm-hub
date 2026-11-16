@@ -10,9 +10,13 @@ import {
   optionalFileListCheck,
   transformToFileList,
 } from '@/utils/documents';
+import { isConnectorResource } from '@/utils/shareable-resources/shareable-resources.types';
 import { semanticVersionRegex, validLtsVersionRegex } from '@/utils/versioning';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { DocumentImageType, IntegrationType } from '@graphql/generated';
+import {
+  DocumentImageType,
+  DocumentItemFragment,
+  IntegrationType,
+} from '@graphql/generated';
 import { useContext, useMemo } from 'react';
 import { z } from 'zod';
 
@@ -66,7 +70,7 @@ export type ConnectorFormValues = z.infer<typeof connectorSchema>;
 
 interface ConnectorFormProps {
   handleSubmit: (values: ConnectorFormValues) => void;
-  document: documentItem_fragment$data | undefined;
+  document: DocumentItemFragment | undefined;
 }
 
 export const ConnectorForm = ({
@@ -93,6 +97,9 @@ export const ConnectorForm = ({
     handleSubmit(finalValues);
   };
 
+  const connector =
+    document && isConnectorResource(document) ? document : undefined;
+
   const values = useMemo(
     () =>
       ({
@@ -101,25 +108,25 @@ export const ConnectorForm = ({
         images: transformToFileList(DocumentImageType.Image, document),
         logo: transformToFileList(DocumentImageType.Logo, document),
         use_cases: document?.use_cases?.map((label) => label.id),
-        solution_categories: document?.solution_categories?.map(
+        solution_categories: connector?.solution_categories?.map(
           (label) => label.id
         ),
-        license_type: document?.license_type ?? undefined,
+        license_type: connector?.license_type ?? undefined,
         uploader_id: document?.uploader?.id ?? me!.id,
         uploader_organization_id: document?.uploader_organization?.id ?? '',
         integration_type: IntegrationType.Connector,
       }) as ConnectorFormValues,
-    [me, document]
+    [me, document, connector]
   );
 
   const formSchema = useMemo(
     () =>
-      document?.manager_supported
+      connector?.manager_supported
         ? connectorSchema
         : connectorSchema.extend({
             minimum_deployable_version: z.string().nullish(),
           }),
-    [document?.manager_supported]
+    [connector?.manager_supported]
   );
 
   const {
@@ -204,7 +211,7 @@ export const ConnectorForm = ({
           datasheet_url,
           blogpost_url,
           product_version,
-          minimum_deployable_version: document?.manager_supported
+          minimum_deployable_version: connector?.manager_supported
             ? minimum_deployable_version
             : { fieldType: () => <FormItem hidden={true} /> },
           demo_url,

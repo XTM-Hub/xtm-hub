@@ -25,11 +25,14 @@ import {
   isResourceDownloadable,
 } from '@/utils/shareable-resources/utils/shareable-resources.client.utils';
 import { LogoFiligranIcon } from '@filigran/icon';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { DocumentMetadataKeyCode, IntegrationType } from '@graphql/generated';
+import {
+  DocumentItemFragment,
+  DocumentMetadataKeyCode,
+  IntegrationType,
+} from '@graphql/generated';
 
 interface ShareableResourceDetailsProps {
-  documentData: documentItem_fragment$data | PublicDocumentByServiceSlugItem;
+  documentData: DocumentItemFragment | PublicDocumentByServiceSlugItem;
   downloadNumber?: number | null;
   shareNumber?: number | null;
   filigranWebsiteUtm?: FiligranWebsiteUtm;
@@ -76,7 +79,10 @@ const ShareableResourceDetails = ({
         <div>
           <ShareableResourceDetailItem label="Organization">
             <div className="mb-2 flex items-center gap-2">
-              <LogoFiligranIcon className="size-8" />
+              <LogoFiligranIcon
+                aria-hidden={true}
+                className="size-8"
+              />
               {/*By default, if the organization is undefined, we display Filigran*/}
 
               {`${documentData.uploader_organization?.name ?? 'Filigran'}`}

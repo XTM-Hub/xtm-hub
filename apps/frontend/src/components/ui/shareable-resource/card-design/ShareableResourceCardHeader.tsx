@@ -2,10 +2,10 @@ import { ShareableResourceCardImage } from '@/components/ui/shareable-resource/c
 import { ShareableResourceCardTags } from '@/components/ui/shareable-resource/card-design/ShareableResourceCardTags';
 import { PublicDocumentData } from '@/utils/shareable-resources/shareable-resources.types';
 import { Text } from '@filigran/design-system';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
+import { DocumentItemFragment } from '@graphql/generated';
 
 interface ShareableResourceCardHeaderProps {
-  document: documentItem_fragment$data | PublicDocumentData;
+  document: DocumentItemFragment | PublicDocumentData;
   serviceInstanceId: string;
 }
 export const ShareableResourceCardHeader = ({
