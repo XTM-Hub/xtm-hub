@@ -108,10 +108,12 @@ worktree: stop your own `yarn dev:api` and `yarn dev:front` first, they serve ot
 | `yarn rfc <RFC-ID> issues` / `start` | Called by `start-rfc`: issues, RFC branch and PR, tracking PR, worktree |
 | `node rfc-delivery/cli.mjs …` | The deterministic part: parsing RFCs, the tracking files, planning (see its header) |
 
-**From Claude Code**: the `run-rfc` skill ("run RFC-XHUB-NNNN") launches the loop in the background,
-follows its log and handles each stop with you in the conversation. Without a terminal, `debug`,
-`feedback` and `review` print their brief instead of opening a session, and the calling session
-follows it. The loop then lives as long as that session; for a night unattended, use a terminal.
+**With Claude Code**: run the loop on the side in a terminal (`tmux` survives closing it); when it
+stops, ask Claude Code "why did RFC-XHUB-NNNN stop?": the `run-rfc` skill reads the log and handles
+the stop with you (debug, a question, a held spec, the review), then you relaunch. It can launch a
+short run itself (`--once`, a resume), which lives as long as its session. Without a terminal,
+`debug`, `feedback` and `review` print their brief instead of opening a session, and the calling
+session follows it.
 
 `yarn rfc --help` lists the environment variables: the model, a budget per session, the timeouts,
 the ports, the worktree's place.

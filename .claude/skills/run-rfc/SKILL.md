@@ -1,10 +1,11 @@
 ---
 name: run-rfc
 description: >-
-  Runs the delivery loop of a Filigran Flow RFC in XTM Hub (`yarn rfc`) from this Claude Code
-  session - launches it in the background, follows its log, and when it stops, works out why and
-  carries on with the human - debugging a blocked chunk, answering a question, approving a held
-  spec, answering the team's review of a chunk pull request, then the RFC review. Use when someone
+  Conducts the delivery loop of a Filigran Flow RFC in XTM Hub (`yarn rfc`) from Claude Code -
+  has the human run it in a terminal on the side (or launches a short run itself), and when it
+  stops, works out why from its log and carries on with the human - debugging a blocked chunk,
+  answering a question, approving a held spec, answering the team's review of a chunk pull
+  request, then the RFC review. Use when someone
   says "run RFC-XHUB-NNNN", "launch the loop", "continue the delivery of", or asks why a delivery
   stopped. Not for starting a delivery (`start-rfc`).
 ---
@@ -31,13 +32,18 @@ edit `rfc-status.yaml`, but as a brief below tells you. Never merge a pull reque
 
 ## 2. Launch and follow
 
-Launch from the root of this checkout with the Bash tool in the background (`run_in_background`,
-no `&`, no `nohup`): `caffeinate -i yarn rfc <RFC-ID>`, with `--once` for one chunk. You are
-notified when it exits; do not poll it. It runs as long as this session: closing the session
-stops it cleanly, and a rerun resumes where it stopped. For a night unattended, the human runs it
-in a terminal instead.
+The loop is meant to run on the side for hours: by default, give the human the command to run in
+a terminal, in `tmux` to survive closing it: `caffeinate -i yarn rfc <RFC-ID>`. It does not
+depend on this session then, and its log does not fill your context. When it stops, they come
+back here, and section 3 needs no more than its log.
 
-Follow its log, `<git common dir>/rfc-delivery/<RFC-ID>/run.log`
+Launch it from this session only for a short run the human follows (`--once`, a resume) or when
+they ask: from the root of this checkout, with the Bash tool in the background
+(`run_in_background`, no `&`, no `nohup`). You are notified when it exits; do not poll it. It
+runs as long as this session: closing the session stops it cleanly, and a rerun resumes where it
+stopped.
+
+When you launched it, follow its log, `<git common dir>/rfc-delivery/<RFC-ID>/run.log`
 (`git rev-parse --path-format=absolute --git-common-dir`), with the Monitor tool where you have
 it, on `tail -n 0 -F` of the log. Tell the human in one line what matters: a chunk starting, its
 pull request opened or ready, a fix attempt, a stop. The sessions' detail is in `events.jsonl` and
