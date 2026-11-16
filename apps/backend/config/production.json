@@ -11,6 +11,9 @@
     "pending_user_digest": true,
     "public_roadmap_monthly_reminder": true
   },
+  "enabled_teams_notifications": {
+    "resource_not_published_reminder": true
+  },
   "auth0_sync": {
     "enabled": true
   },

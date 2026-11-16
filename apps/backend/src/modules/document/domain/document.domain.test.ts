@@ -66,6 +66,7 @@ import {
 } from '../../../portal.const';
 import { isFeatureEnabled } from '../../../utils/feature-flag.util';
 import { UserServiceCapabilityHelper } from '../../security-management/user-service-capability/user-service-capability.helper';
+import { ServiceDefinitionDomain } from '../../service/definition/service-definition.domain';
 import { objectSolutionCategoryDomain } from '../../solution-category/object-solution-category/object-solution-category.domain';
 import { solutionCategoryDomain } from '../../solution-category/solution-category.domain';
 import { DocumentListOptions } from '../document.model';
@@ -2822,5 +2823,171 @@ describe('document domain', () => {
         }
       }
     );
+  });
+
+  describe('loadNotPublishedForReminder', () => {
+    const LIMIT_PER_STATUS = 5;
+    const FIRST_CREATION = new Date('2026-01-01T00:00:00Z').getTime();
+    const ONE_DAY = 24 * 60 * 60 * 1000;
+
+    const createDocuments = (
+      serviceInstanceId: ServiceInstanceId,
+      status: DocumentStatus,
+      count: number
+    ) =>
+      Promise.all(
+        Array.from({ length: count }, (_, index) =>
+          TestHelper.document.create({
+            name: `${serviceInstanceId}-${status}-${index}`,
+            status,
+            service_instance_id: serviceInstanceId,
+            created_at: new Date(FIRST_CREATION + index * ONE_DAY),
+          })
+        )
+      );
+
+    beforeEach(async () => {
+      await TestHelper.document.delete({});
+    });
+
+    afterEach(async () => {
+      await TestHelper.document.delete({});
+    });
+
+    it('should keep the oldest 5 documents of each status for a library', async () => {
+      // Given 7 drafts and 6 documents in validation in the integrations library
+      const instanceId = SERVICES.INSTANCES.INTEGRATIONS.ID;
+      await createDocuments(instanceId, DocumentStatus.Draft, 7);
+      await createDocuments(instanceId, DocumentStatus.InValidation, 6);
+
+      // When
+      const result =
+        await DocumentDomain.loadNotPublishedForReminder(LIMIT_PER_STATUS);
+
+      // Then
+      const names = (status: DocumentStatus) =>
+        result
+          .filter(({ document }) => document.status === status)
+          .map(({ document }) => document.name);
+      expect(names(DocumentStatus.Draft)).toEqual(
+        [0, 1, 2, 3, 4].map(
+          (index) => `${instanceId}-${DocumentStatus.Draft}-${index}`
+        )
+      );
+      expect(names(DocumentStatus.InValidation)).toEqual(
+        [0, 1, 2, 3, 4].map(
+          (index) => `${instanceId}-${DocumentStatus.InValidation}-${index}`
+        )
+      );
+      expect(result).toHaveLength(10);
+    });
+
+    it('should ignore published documents and group the documents by library with its definition', async () => {
+      // Given not published documents in two libraries and a published one
+      const integrations = SERVICES.INSTANCES.INTEGRATIONS.ID;
+      const dashboards = SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID;
+      await createDocuments(integrations, DocumentStatus.Draft, 2);
+      await createDocuments(integrations, DocumentStatus.Published, 1);
+      await createDocuments(dashboards, DocumentStatus.InValidation, 2);
+      const [integrationsDefinition, dashboardsDefinition] = await Promise.all([
+        ServiceDefinitionDomain.loadServiceDefinitionByServiceInstance(
+          integrations
+        ),
+        ServiceDefinitionDomain.loadServiceDefinitionByServiceInstance(
+          dashboards
+        ),
+      ]);
+
+      // When
+      const result =
+        await DocumentDomain.loadNotPublishedForReminder(LIMIT_PER_STATUS);
+
+      // Then
+      expect(result).toHaveLength(4);
+      expect(result.map(({ document }) => document.status)).not.toContain(
+        DocumentStatus.Published
+      );
+      const libraryIds = result.map(
+        ({ serviceDefinition }) => serviceDefinition.id
+      );
+      expect(new Set(libraryIds).size).toBe(2);
+      expect(
+        libraryIds.filter((id, index) => id !== libraryIds[index - 1])
+      ).toHaveLength(2);
+      expect(result).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            document: expect.objectContaining({
+              service_instance_id: integrations,
+              status: DocumentStatus.Draft,
+            }),
+            serviceDefinition: {
+              id: integrationsDefinition!.id,
+              name: integrationsDefinition!.name,
+              identifier: integrationsDefinition!.identifier,
+            },
+          }),
+          expect.objectContaining({
+            document: expect.objectContaining({
+              service_instance_id: dashboards,
+              status: DocumentStatus.InValidation,
+            }),
+            serviceDefinition: {
+              id: dashboardsDefinition!.id,
+              name: dashboardsDefinition!.name,
+              identifier: dashboardsDefinition!.identifier,
+            },
+          }),
+        ])
+      );
+    });
+
+    it('should list drafts before documents in validation even when the latter are older', async () => {
+      // Given documents in validation created before the drafts
+      const instanceId = SERVICES.INSTANCES.INTEGRATIONS.ID;
+      const inValidation = await createDocuments(
+        instanceId,
+        DocumentStatus.InValidation,
+        2
+      );
+      const drafts = await createDocuments(instanceId, DocumentStatus.Draft, 2);
+      const olderThanDrafts = new Date(FIRST_CREATION - 10 * ONE_DAY);
+      await Promise.all(
+        inValidation.map(({ id }) =>
+          TestHelper.document.update({ id }, { created_at: olderThanDrafts })
+        )
+      );
+
+      // When
+      const result =
+        await DocumentDomain.loadNotPublishedForReminder(LIMIT_PER_STATUS);
+
+      // Then
+      expect(result.map(({ document }) => document.status)).toEqual([
+        DocumentStatus.Draft,
+        DocumentStatus.Draft,
+        DocumentStatus.InValidation,
+        DocumentStatus.InValidation,
+      ]);
+      expect(result.slice(0, 2).map(({ document }) => document.id)).toEqual(
+        drafts.map(({ id }) => id)
+      );
+    });
+
+    it('should return nothing when every document is published', async () => {
+      // Given only a published document
+      await createDocuments(
+        SERVICES.INSTANCES.INTEGRATIONS.ID,
+        DocumentStatus.Published,
+        1
+      );
+
+      // When
+      const result =
+        await DocumentDomain.loadNotPublishedForReminder(LIMIT_PER_STATUS);
+
+      // Then
+      expect(result).toEqual([]);
+    });
   });
 });
