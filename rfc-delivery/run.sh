@@ -301,6 +301,7 @@ Bash(cd:*),Bash(tail:*),Bash(head:*),Bash(grep:*),Bash(cat:*),Bash(ls:*),Bash(wc
 SPEC_TOOLS="$READ_TOOLS,Edit,Write,Bash(node rfc-delivery/screenshot.mjs:*)"
 WRITE_TOOLS="$READ_TOOLS,Edit,Write,Bash(node rfc-delivery/screenshot.mjs:*),\
 Bash(rm apps/*),Bash(rm $PWD/apps/*),Bash(git diff HEAD:*),\
+Bash(git restore apps/backend/src/model/kanel/*),Bash(yarn workspace @xtm-hub/backend tsx ../../rfc-delivery/print-schema.ts),\
 Bash(yarn workspace @xtm-hub/backend check-ts:*),Bash(yarn workspace @xtm-hub/backend lint:*),\
 Bash(yarn workspace @xtm-hub/backend format:*),Bash(yarn workspace @xtm-hub/backend test:*),\
 Bash(yarn workspace @xtm-hub/backend generate:ts:*),Bash(yarn workspace @xtm-hub/backend generate:module:*),\
@@ -485,9 +486,9 @@ validate_chunk() {
   [ -n "$changed" ] || { echo "the change is empty"; return 1; }
   # A note or a summary a session left behind may quote the spec: nothing new outside these trees.
   local stray
-  stray="$(git status --porcelain --untracked-files=all | awk '$1 == "??" { print $2 }' | grep -vE '^(apps|docs|chart|xtm-hub-dev)/' || true)"
+  stray="$(git status --porcelain --untracked-files=all | awk '$1 == "??" { print $2 }' | grep -vE '^(apps|bruno|docs|chart|xtm-hub-dev)/' || true)"
   if [ -n "$stray" ]; then
-    echo "new files outside apps/, docs/, chart/ and xtm-hub-dev/, refused (move or delete them): $stray"
+    echo "new files outside apps/, bruno/, docs/, chart/ and xtm-hub-dev/, refused (move or delete them): $stray"
     return 1
   fi
   if grep -q '^apps/backend/' <<<"$changed"; then

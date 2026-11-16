@@ -98,6 +98,7 @@ chunk's spec until a human sets `approved_by` in it.
 | `chunk-template.md` | The chunk spec: BMAD's intent contract, the code map, the verification |
 | `DEBUG.md`, `FEEDBACK.md` | The interactive sessions `run.sh` opens |
 | `screenshot.mjs` | Screens before and after a chunk the user sees, light and dark |
+| `print-schema.ts` | Writes `apps/frontend/schema.graphql` as the API does when it starts, for sessions that cannot start it |
 | `tests/` | `node --test rfc-delivery/tests/rfc-delivery.test.mjs`, on a fictional RFC |
 | `.claude/skills/start-rfc`, `.claude/skills/review-rfc` | The two interactive steps |
 

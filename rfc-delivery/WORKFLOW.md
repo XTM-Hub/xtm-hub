@@ -17,7 +17,8 @@ folder and the Flow checkout, which the invocation gives as absolute paths. Run 
 `yarn workspace @xtm-hub/<backend|frontend|test_e2e> <script>`, never `cd apps/… && yarn <script>`,
 even where a rule file writes it that way: only the first form is allowed. A refused command means
 changing the command, not working around it: read files with Read, search with Grep or Glob. One
-command per call, with literal paths: a variable assignment (`D=…; ls $D`) matches no rule.
+command per call, with literal paths: a variable assignment (`D=…; ls $D`), a `for` loop, `node -e`
+or a `;` chain matches no rule. Read several files with parallel Read calls instead.
 Subagents always run in the foreground: you get each report before you continue.
 
 ## Confidentiality
@@ -118,8 +119,16 @@ The spec exists and, when it declares screens, the script has captured them on t
    one at a time, with this prompt, and wait for it: "Implement `<dir>/chunks/<chunk>.md`, the
    `<backend|frontend>` part. It is your only source of truth: change nothing it does not list. Do not
    commit. Report what changed, the files touched and the validation you ran." Give the frontend agent
-   the backend agent's report. After a GraphQL change, the derived files are regenerated as
-   `.claude/rules/graphql.md` says.
+   the backend agent's report. Generated files, with no server to start:
+   - After a GraphQL change, the derived files are regenerated as `.claude/rules/graphql.md` says,
+     except `apps/frontend/schema.graphql`: instead of restarting the API, write it with
+     `yarn workspace @xtm-hub/backend tsx ../../rfc-delivery/print-schema.ts`, then run the frontend
+     generators.
+   - `yarn workspace @xtm-hub/backend generate-pg-to-ts` rewrites every Kanel model from the
+     database, and some differ from the committed ones. Keep only the models of the tables the
+     chunk's migrations create or alter; put each other one back with
+     `git restore apps/backend/src/model/kanel/public/<Model>.ts`, and note the drift under the
+     spec's `## Deferred findings`.
 2. **Verify.** Run every command of the spec's Verification section. On failure, send the output to
    the same agent to fix, at most twice. Still failing: `FAILED` with the output.
 3. **Matrix audit** (BMAD). Every row of the I/O & Edge-Case Matrix and every criterion is covered by
