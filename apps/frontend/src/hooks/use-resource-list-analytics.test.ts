@@ -7,7 +7,7 @@ import {
   resetAnalyticsEnvironment,
   startAnalytics,
 } from '@/utils/test/analytics';
-import { type LogicalFilterInput } from '@generated/documentsQuery.graphql';
+import { type LogicalFilterInput } from '@graphql/generated';
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 

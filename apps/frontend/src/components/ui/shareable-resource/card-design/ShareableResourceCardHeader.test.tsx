@@ -1,5 +1,5 @@
 import testRender from '@/utils/test/test-render';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
+import { DocumentItemFragment } from '@graphql/generated';
 import { screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { ShareableResourceCardHeader } from './ShareableResourceCardHeader';
@@ -16,7 +16,7 @@ const renderHeader = () =>
           name: NAME,
           use_cases: [{ id: 'uc-1', name: USE_CASE }],
           entity_types: [ENTITY_TYPE],
-        } as unknown as documentItem_fragment$data
+        } as unknown as DocumentItemFragment
       }
       serviceInstanceId="svc-id"
     />

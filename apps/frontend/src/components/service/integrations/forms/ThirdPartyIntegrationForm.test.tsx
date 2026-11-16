@@ -65,6 +65,7 @@ const fillThirdPartyCreationFields = async (user: ServiceFormUser) => {
 
 const buildThirdPartyIntegration = () =>
   buildIntegrationDocument({
+    __typename: 'ThirdPartyIntegration',
     vendor_url: VENDOR_URL,
     github_url: GITHUB_URL,
   });
@@ -159,6 +160,32 @@ describe('ThirdPartyIntegrationForm', () => {
         images: [DELETED_IMAGE, KEPT_IMAGE],
       } satisfies ExpectedValues)
     );
+  });
+
+  it('should save the third party integration when the user edits one stored without any image', async () => {
+    // Given
+    const { user, handleSubmit } = renderServiceForm(
+      ThirdPartyIntegrationForm,
+      buildIntegrationDocument({
+        __typename: 'ThirdPartyIntegration',
+        vendor_url: VENDOR_URL,
+        github_url: GITHUB_URL,
+        children_documents: [],
+      })
+    );
+
+    // When
+    await user.click(screen.getByRole('button', { name: VALIDATE_LABEL }));
+
+    // Then
+    await waitFor(() =>
+      expect(handleSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({ images: [] })
+      )
+    );
+    expect(
+      screen.getByLabelText(IMAGES_LABEL, { selector: 'input' })
+    ).not.toHaveAttribute('aria-invalid', 'true');
   });
 
   it.each([

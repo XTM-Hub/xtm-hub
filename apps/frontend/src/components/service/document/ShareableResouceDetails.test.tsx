@@ -1,13 +1,16 @@
 import ShareableResourceDetails from '@/components/service/document/ShareableResouceDetails';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 import testRender from '@/utils/test/test-render';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { IntegrationType } from '@graphql/generated';
+import {
+  DocumentItemFragment,
+  IntegrationType,
+  LicenseType,
+} from '@graphql/generated';
 import { screen } from '@testing-library/react';
 
 const buildDocumentData = (
-  overrides: Partial<documentItem_fragment$data> = {}
-): documentItem_fragment$data =>
+  overrides: Partial<DocumentItemFragment> = {}
+): DocumentItemFragment =>
   ({
     id: 'doc-1',
     type: ShareableResourceType.OPENCTI_INTEGRATION,
@@ -33,7 +36,7 @@ const buildDocumentData = (
       },
     ],
     ...overrides,
-  }) as unknown as documentItem_fragment$data;
+  }) as unknown as DocumentItemFragment;
 
 const DOCUMENT_SHARE_NUMBER = 3;
 const LIVE_SHARE_NUMBER = 7;
@@ -64,6 +67,30 @@ describe('ShareableResourceDetails', () => {
     expect(screen.getByText('+1k')).toBeInTheDocument();
   });
 
+  it('should hide the decorative icons of the organization and documentation link from assistive technology', () => {
+    // Given
+    testRender(
+      <ShareableResourceDetails
+        documentData={buildDocumentData()}
+        downloadNumber={1450}
+      />
+    );
+
+    // When
+    const organizationLogo = screen
+      .getByText('Filigran Team')
+      .querySelector('svg');
+    const documentationLinkIcon = screen
+      .getByRole('link', {
+        name: /https:\/\/docs\.opencti\.io\/latest\/usage\/import\/csv-feed\//i,
+      })
+      .querySelector('svg');
+
+    // Then
+    expect(organizationLogo).toHaveAttribute('aria-hidden', 'true');
+    expect(documentationLinkIcon).toHaveAttribute('aria-hidden', 'true');
+  });
+
   it('should hide downloads for third-party integrations', () => {
     testRender(
       <ShareableResourceDetails
@@ -83,7 +110,7 @@ describe('ShareableResourceDetails', () => {
     testRender(
       <ShareableResourceDetails
         documentData={buildDocumentData({
-          license_type: 'Commercial',
+          license_type: LicenseType.Commercial,
         })}
       />
     );

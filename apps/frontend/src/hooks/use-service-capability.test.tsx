@@ -140,7 +140,6 @@ describe('useServiceCapability', () => {
       { service_instance_id: ServiceInstanceId },
       expect.objectContaining({
         enabled: true,
-        queryKey: ['service-user-capabilities', ServiceInstanceId],
         staleTime: 10 * 60 * 1000,
       })
     );

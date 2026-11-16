@@ -1,4 +1,4 @@
-import { subscription_fragment$data } from '@generated/subscription_fragment.graphql';
+import { SubscriptionItemFragment } from '@graphql/generated';
 import { useMemo } from 'react';
 
 interface SubscriptionDefaultValues {
@@ -9,7 +9,7 @@ interface SubscriptionDefaultValues {
 }
 
 export const useSubscriptionDefaultValues = (
-  subscriptionToEdit?: subscription_fragment$data
+  subscriptionToEdit?: SubscriptionItemFragment
 ): SubscriptionDefaultValues => {
   return useMemo(
     () => ({

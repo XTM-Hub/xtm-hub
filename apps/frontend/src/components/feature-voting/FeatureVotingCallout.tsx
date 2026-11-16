@@ -65,7 +65,10 @@ export const FeatureVotingCallout = ({
       className={`mx-2 mt-2 mb-4 flex flex-wrap items-center justify-between gap-3 rounded border p-3 ${theme.containerClassName}`}
       style={theme.containerStyle}>
       <div className="flex items-start gap-3">
-        <CampaignIcon className="mt-1 size-5 shrink-0" />
+        <CampaignIcon
+          aria-hidden={true}
+          className="mt-1 size-5 shrink-0"
+        />
         <div className="flex flex-col gap-1">
           <p className={theme.titleClassName}>
             {t('FeatureVoting.CalloutTitle')}

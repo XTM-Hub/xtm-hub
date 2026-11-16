@@ -6,10 +6,10 @@ import {
   ShareableResourceType,
 } from '@/utils/shareable-resources/shareable-resources.types';
 import { Chip } from '@filigran/design-system';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
+import { DocumentItemFragment } from '@graphql/generated';
 
 interface ShareableResourceTypeChipProps {
-  document: documentItem_fragment$data | PublicDocumentData;
+  document: DocumentItemFragment | PublicDocumentData;
   className?: string;
 }
 
@@ -22,7 +22,7 @@ const RESOURCE_TYPE_LABEL_KEYS: Partial<Record<ShareableResourceType, string>> =
   };
 
 const getTypeLabelKey = (
-  document: documentItem_fragment$data | PublicDocumentData
+  document: DocumentItemFragment | PublicDocumentData
 ) => {
   if (isIntegrationItem(document)) {
     return `Service.OpenctiIntegrations.Type.${document.integration_type}`;

@@ -3,9 +3,7 @@
 import { IntegrationListUrlFiltersSync } from '@/components/service/integrations/[serviceInstanceId]/IntegrationListUrlFiltersSync';
 import IntegrationsList from '@/components/service/integrations/[serviceInstanceId]/IntegrationsList';
 import { useIntegrationListStorage } from '@/components/service/integrations/[serviceInstanceId]/use-integration-list-storage';
-import { Skeleton } from '@/components/ui/skeleton';
 import { useLogicalFiltersFromStorage } from '@/hooks/use-logical-filters-from-storage';
-import { useShareableResourceQueryLoader } from '@/hooks/use-shareable-resource-query-loader';
 import { ServiceSlug } from '@/utils/shareable-resources/shareable-resources.types';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 
@@ -15,7 +13,6 @@ interface PageLoaderProps {
 
 const PageLoader = ({ serviceInstance }: PageLoaderProps) => {
   const {
-    pageSize,
     search,
     labels,
     integrationTypes,
@@ -25,8 +22,6 @@ const PageLoader = ({ serviceInstance }: PageLoaderProps) => {
     setSearch,
     deployable,
     verified,
-    orderBy,
-    orderMode,
   } = useIntegrationListStorage();
 
   const logicalFilters = useLogicalFiltersFromStorage({
@@ -40,28 +35,15 @@ const PageLoader = ({ serviceInstance }: PageLoaderProps) => {
     solutionCategories,
   });
 
-  const { queryRef } = useShareableResourceQueryLoader({
-    pageSize,
-    orderBy,
-    orderMode,
-    serviceInstanceId: serviceInstance.id,
-    searchTerm: search,
-    logicalFilters,
-  });
-
   return (
     <>
       <IntegrationListUrlFiltersSync />
-      {queryRef ? (
-        <IntegrationsList
-          serviceInstance={serviceInstance}
-          queryRef={queryRef}
-          search={search}
-          onSearchChange={setSearch}
-        />
-      ) : (
-        <Skeleton className="w-full inset-1/2" />
-      )}
+      <IntegrationsList
+        serviceInstance={serviceInstance}
+        logicalFilters={logicalFilters}
+        search={search}
+        onSearchChange={setSearch}
+      />
     </>
   );
 };

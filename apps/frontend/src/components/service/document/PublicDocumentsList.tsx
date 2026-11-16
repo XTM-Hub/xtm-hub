@@ -30,7 +30,6 @@ import {
 import { useShareableResourceMapping } from '@/utils/shareable-resources/use-shareable-resource-mapping';
 import { Button } from '@filigran/design-system';
 import {
-  LogicalFilterInput,
   PublicDocumentListItemFragment,
   SeoServiceInstanceItemFragment,
   usePublicDocumentsQuery,
@@ -156,8 +155,7 @@ const PublicDocumentsList = ({
         orderMode,
         serviceInstanceId: serviceInstance.id,
         searchTerm: search,
-        logicalFilters:
-          (logicalFilters as LogicalFilterInput | undefined) ?? null,
+        logicalFilters,
       },
       { placeholderData: keepPreviousData }
     );
@@ -179,7 +177,10 @@ const PublicDocumentsList = ({
 
   useResourceListAnalytics({
     resourceType,
-    variables: { searchTerm: search, logicalFilters },
+    variables: {
+      searchTerm: search,
+      logicalFilters,
+    },
     totalCount: data?.publicDocuments.totalCount ?? 0,
     resources: documents,
     enabled: !!data && !isPlaceholderData,

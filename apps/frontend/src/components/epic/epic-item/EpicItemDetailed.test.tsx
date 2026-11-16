@@ -42,15 +42,15 @@ describe('EpicItemDetailed', () => {
     vi.clearAllMocks();
   });
 
-  it('renders title, short description, markdown description and footer', () => {
+  it('renders the markdown description and the footer', () => {
     // When
     testRender(<EpicItemDetailed {...defaultProps} />);
 
     // Then
-    const heading = screen.getByRole('heading', { level: 2 });
-    expect(heading).toHaveTextContent(defaultProps.epic.title);
-    expect(screen.getByText('short description')).toBeInTheDocument();
     expect(screen.getByText('description')).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: 'Epic.JoinCommunity' })
+    ).toBeInTheDocument();
   });
 
   it('renders the problem, solution and value sections as markdown', () => {

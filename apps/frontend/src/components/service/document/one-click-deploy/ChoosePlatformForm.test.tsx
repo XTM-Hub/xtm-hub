@@ -1,8 +1,8 @@
 import ChoosePlatformForm from '@/components/service/document/one-click-deploy/ChoosePlatformForm';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 import testRender from '@/utils/test/test-render';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { useRegisteredPlatformsFragment$data } from '@generated/useRegisteredPlatformsFragment.graphql';
+import { DocumentItemFragment } from '@graphql/generated';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
@@ -10,7 +10,7 @@ const documentData = {
   id: 'doc-1',
   name: 'Feed',
   type: ShareableResourceType.OPENCTI_INTEGRATION,
-} as unknown as documentItem_fragment$data;
+} as unknown as DocumentItemFragment;
 
 const buildPlatform = (id: string, title: string) =>
   ({

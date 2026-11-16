@@ -26,7 +26,6 @@ const useServiceCapabilityData = (
     },
     {
       enabled: !!serviceInstance?.id,
-      queryKey: ['service-user-capabilities', serviceInstance?.id],
       staleTime: ServiceUserCapabilitiesStaleTime,
     }
   );

@@ -43,4 +43,17 @@ describe('FiligranProductMapping', () => {
       expect(logo.type).toBe(expectedLogoComponent);
     }
   );
+
+  it.each(Object.values(FiligranProduct))(
+    'hides the %s logo from assistive technology as the product name is shown next to it',
+    (product) => {
+      // Given
+      const logo = FiligranProductMapping[product].logo as React.ReactElement<{
+        'aria-hidden'?: boolean;
+      }>;
+
+      // When / Then
+      expect(logo.props['aria-hidden']).toBe(true);
+    }
+  );
 });

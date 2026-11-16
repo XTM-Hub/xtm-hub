@@ -26,7 +26,10 @@ const redirectOnUnauthenticated = (
 };
 
 // Retrying cannot bring an expired session back, it only delays the redirect.
-const retryUnlessUnauthenticated = (failureCount: number, error: Error) =>
+export const retryUnlessUnauthenticated = (
+  failureCount: number,
+  error: unknown
+) =>
   !(error instanceof UnauthenticatedError) && failureCount < MAX_QUERY_RETRIES;
 
 export const createQueryClient = () =>

@@ -3,11 +3,11 @@ import { findDocumentLogo } from '@/utils/documents';
 import { EntityTypeOrFiligranLogo } from '@/utils/shareable-resources/entity-type';
 import { PublicDocumentData } from '@/utils/shareable-resources/shareable-resources.types';
 import { getDocumentEntityTypes } from '@/utils/shareable-resources/utils/shareable-resources.client.utils';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
+import { DocumentItemFragment } from '@graphql/generated';
 import Image from 'next/image';
 
 interface ShareableResourceCardImageProps {
-  document: documentItem_fragment$data | PublicDocumentData;
+  document: DocumentItemFragment | PublicDocumentData;
   serviceInstanceId: string;
 }
 export const ShareableResourceCardImage = ({

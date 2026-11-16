@@ -1,33 +1,24 @@
 import { AppServiceContext } from '@/components/service/components/ServiceContext';
 import { ServiceManageSheet } from '@/components/service/components/ServiceManageSheet';
 import DeleteShareableResourceSlug from '@/components/service/document/DeleteShareableResourceSlug';
-import {
-  documentItem,
-  DocumentsItemQuery,
-} from '@/components/service/document/document.graphql';
 import ShareableResourceSlug from '@/components/service/document/ShareableResourceSlug';
 import { useDocumentContext } from '@/components/service/document/use-document-context';
 import { APP_PATH } from '@/utils/path/constant';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
-import { documentItem_fragment$key } from '@generated/documentItem_fragment.graphql';
-import { documentQuery } from '@generated/documentQuery.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
-import { PreloadedQuery, readInlineData, usePreloadedQuery } from 'react-relay';
+import { DocumentItemFragment } from '@graphql/generated';
 
 // Component interface
 interface DashboardSlugProps {
-  queryRef: PreloadedQuery<documentQuery>;
+  documentData: DocumentItemFragment;
   serviceInstance: serviceInstance_fragment$data;
 }
 
 // Component
-const DashboardSlug = ({ queryRef, serviceInstance }: DashboardSlugProps) => {
-  const data = usePreloadedQuery<documentQuery>(DocumentsItemQuery, queryRef);
-  const documentData = readInlineData<documentItem_fragment$key>(
-    documentItem,
-    data.document
-  );
-
+const DashboardSlug = ({
+  documentData,
+  serviceInstance,
+}: DashboardSlugProps) => {
   const breadcrumbValue = [
     {
       label: 'MenuLinks.Home',
@@ -39,8 +30,8 @@ const DashboardSlug = ({ queryRef, serviceInstance }: DashboardSlugProps) => {
       fallback: serviceInstance.name,
     },
     {
-      label: `Service.Documents.${documentData!.slug}.Name`,
-      fallback: documentData!.name!,
+      label: `Service.Documents.${documentData.slug}.Name`,
+      fallback: documentData.name!,
     },
   ];
 
@@ -50,24 +41,22 @@ const DashboardSlug = ({ queryRef, serviceInstance }: DashboardSlugProps) => {
   });
 
   return (
-    documentData && (
-      <AppServiceContext {...context}>
-        <ShareableResourceSlug
-          serviceInstance={serviceInstance}
-          breadcrumbValue={breadcrumbValue}
-          documentData={documentData}
-          updateActions={
-            <>
-              <DeleteShareableResourceSlug document={documentData} />
-              <ServiceManageSheet
-                document={documentData}
-                variant={'button'}
-              />
-            </>
-          }
-        />
-      </AppServiceContext>
-    )
+    <AppServiceContext {...context}>
+      <ShareableResourceSlug
+        serviceInstance={serviceInstance}
+        breadcrumbValue={breadcrumbValue}
+        documentData={documentData}
+        updateActions={
+          <>
+            <DeleteShareableResourceSlug document={documentData} />
+            <ServiceManageSheet
+              document={documentData}
+              variant={'button'}
+            />
+          </>
+        }
+      />
+    </AppServiceContext>
   );
 };
 

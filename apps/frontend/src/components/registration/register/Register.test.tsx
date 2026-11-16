@@ -415,14 +415,43 @@ describe('Register', () => {
     );
   });
 
-  it('renders a loader as a fallback for any other status', async () => {
+  it('should render the organization form when the platform is registered by an organization the user is not in', async () => {
+    // Given — the owner organization and the title are hidden from non-members
     testState.isPlatformRegistered = {
       status: PlatformRegistrationStatus.Registered,
       platformTitle: null,
       organization: null,
     } as registerIsPlatformRegisteredFragment$data;
+
+    // When
     await renderRegister();
-    expect(screen.getByTestId('loader')).toBeInTheDocument();
+
+    // Then
+    expect(screen.getByTestId('organization-form')).toBeInTheDocument();
+    expect(testState.lastRegisterVariables).toBeNull();
+  });
+
+  it('should render the organization form when the platform is unregistered from an organization the user is not in', async () => {
+    // Given
+    testState.isPlatformRegistered = {
+      status: PlatformRegistrationStatus.Unregistered,
+      platformTitle: null,
+      organization: null,
+    } as registerIsPlatformRegisteredFragment$data;
+    testState.userOrganizations = [
+      { id: 'org-1', name: 'Org One', personal_space: false },
+      { id: 'org-2', name: 'Org Two', personal_space: false },
+      { id: 'org-3', name: 'Org Three', personal_space: true },
+    ];
+
+    // When
+    await renderRegister();
+
+    // Then
+    expect(screen.getByTestId('organization-form')).toBeInTheDocument();
+    expect(
+      screen.queryByText('Register.TooManyOrganizations.Title')
+    ).not.toBeInTheDocument();
   });
 
   it('should stay suspended until the user organizations are loaded', async () => {

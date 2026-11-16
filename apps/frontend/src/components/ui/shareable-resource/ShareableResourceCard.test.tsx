@@ -1,7 +1,6 @@
 import { useIsFeatureEnabled } from '@/hooks/use-is-feature-enabled';
 import testRender from '@/utils/test/test-render';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { IntegrationType } from '@graphql/generated';
+import { DocumentItemFragment, IntegrationType } from '@graphql/generated';
 import { screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import ShareableResourceCard from './ShareableResourceCard';
@@ -29,7 +28,7 @@ describe('ShareableResourceCard', () => {
             short_description: 'A connector description',
             integration_type: IntegrationType.Connector,
             use_cases: [],
-          } as documentItem_fragment$data
+          } as DocumentItemFragment
         }
         detailUrl="/details"
         shareLinkUrl="/share"
@@ -52,7 +51,7 @@ describe('ShareableResourceCard', () => {
             type: 'opencti_integration',
             short_description: 'A third-party description',
             integration_type: IntegrationType.ThirdPartyIntegration,
-          } as documentItem_fragment$data
+          } as DocumentItemFragment
         }
         detailUrl="/details"
         shareLinkUrl="/share"

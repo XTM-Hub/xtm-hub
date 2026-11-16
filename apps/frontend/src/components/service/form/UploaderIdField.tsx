@@ -2,13 +2,13 @@ import { PortalContext } from '@/components/me/AppPortalContext';
 import { useFormField } from '@/components/ui/form';
 import SelectUsersFormField from '@/components/ui/SelectUsers';
 import { useTranslate } from '@/hooks/use-translate';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
+import { DocumentItemFragment } from '@graphql/generated';
 import { useContext } from 'react';
 import { ControllerRenderProps, FieldValues } from 'react-hook-form';
 
 interface ServiceFormUploaderIdFieldProps {
   field: ControllerRenderProps<FieldValues, string>;
-  document?: documentItem_fragment$data;
+  document?: DocumentItemFragment;
   disabled?: boolean;
 }
 

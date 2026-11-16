@@ -4,15 +4,14 @@ import { useTranslate } from '@/hooks/use-translate';
 import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { Button } from '@filigran/design-system';
 import { serviceInstanceForSubscriptions_fragment$data } from '@generated/serviceInstanceForSubscriptions_fragment.graphql';
-import { subscription_fragment$data } from '@generated/subscription_fragment.graphql';
+import { SubscriptionItemFragment } from '@graphql/generated';
 import { FunctionComponent, useState } from 'react';
 import { ServiceSlugOrgaForm } from './ServiceSlugOrgaForm';
 
 interface ServiceSlugAddSubscriptionActionProps {
   serviceInstance: serviceInstanceForSubscriptions_fragment$data;
-  subscriptions: subscription_fragment$data[];
-  subscriptionConnectionId: string;
-  subscriptionToEdit?: subscription_fragment$data;
+  subscriptions: SubscriptionItemFragment[];
+  subscriptionToEdit?: SubscriptionItemFragment;
   openEdit?: boolean;
   setOpenEdit?: (open: boolean) => void;
 }
@@ -22,7 +21,6 @@ export const ServiceSlugSubscription: FunctionComponent<
 > = ({
   serviceInstance,
   subscriptions,
-  subscriptionConnectionId,
   subscriptionToEdit,
   openEdit,
   setOpenEdit,
@@ -56,7 +54,6 @@ export const ServiceSlugSubscription: FunctionComponent<
       }>
       <ServiceSlugOrgaForm
         subscriptions={subscriptions}
-        subscriptionConnectionId={subscriptionConnectionId}
         serviceInstance={serviceInstance}
         subscriptionToEdit={subscriptionToEdit}
       />

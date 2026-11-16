@@ -31,9 +31,11 @@ vi.mock('@/hooks/use-is-feature-enabled', () => ({
   useIsFeatureEnabled: vi.fn(),
 }));
 
-vi.mock('next/image', async () => {
+vi.mock('next/image', async (importOriginal) => {
   const React = await import('react');
   return {
+    // getImageProps stays the real one: it only builds the props of an img.
+    ...(await importOriginal<typeof import('next/image')>()),
     __esModule: true,
     default: ({ src, alt }: { src: string; alt: string }) =>
       React.createElement('img', { src, alt }),

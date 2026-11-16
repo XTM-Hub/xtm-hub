@@ -15,9 +15,12 @@ import {
 } from '@/utils/shareable-resources/shareable-resources.types';
 import { docHasMetadata } from '@/utils/shareable-resources/utils/shareable-resources.client.utils';
 import { Paper } from '@filigran/design-system';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { ServiceDefinitionIdentifier } from '@generated/serviceList_fragment.graphql';
-import { DocumentMetadataKeyCode, IntegrationType } from '@graphql/generated';
+import {
+  DocumentItemFragment,
+  DocumentMetadataKeyCode,
+  IntegrationType,
+} from '@graphql/generated';
 import Link from 'next/link';
 import { ReactNode } from 'react';
 
@@ -28,7 +31,7 @@ interface ShareableServiceInstance {
   } | null;
 }
 interface ShareableResourceCardProps {
-  document: documentItem_fragment$data | PublicDocumentData;
+  document: DocumentItemFragment | PublicDocumentData;
   detailUrl: string;
   shareLinkUrl: string;
   extraContent?: ReactNode;

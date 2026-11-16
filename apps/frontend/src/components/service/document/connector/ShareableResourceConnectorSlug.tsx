@@ -29,6 +29,7 @@ import { cn } from '@/lib/utils';
 import { filterDocumentImages, findDocumentLogo } from '@/utils/documents';
 import { getResourcePageFiligranWebsiteUtm } from '@/utils/filigran-website-utm';
 import { getPlatformIdentifier } from '@/utils/platform';
+import { ConnectorFields } from '@/utils/shareable-resources/shareable-resources.types';
 import { Button } from '@filigran/design-system';
 import {
   InfoIcon,
@@ -36,14 +37,14 @@ import {
   MotionPlayIcon,
   ThreatActorGroupIcon,
 } from '@filigran/icon';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
+import { DocumentItemFragment } from '@graphql/generated';
 import Image from 'next/image';
 import Link from 'next/link';
 
 // Component interface
 interface ShareableResourceConnectorSlugProps {
-  documentData: documentItem_fragment$data;
+  documentData: DocumentItemFragment & ConnectorFields;
   serviceInstance: serviceInstance_fragment$data;
   breadcrumbValue: BreadcrumbNavLink[];
   shareUrl: string;

@@ -84,7 +84,10 @@ const HomepageResourceCard = ({
               />
             ) : (
               <div className="w-12 p-1 rounded">
-                <LogoFiligranIcon className="size-9" />
+                <LogoFiligranIcon
+                  aria-hidden={true}
+                  className="size-9"
+                />
               </div>
             )}
           </div>
