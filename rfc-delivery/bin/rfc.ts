@@ -21,6 +21,7 @@ const USAGE = `Usage: yarn rfc <RFC-ID> [command] [options]
   debug <chunk>         interactive session on a blocked chunk
   feedback <chunk>      interactive session on the team's review of a chunk pull request
   review                interactive session to finish the RFC review and close it
+                        (debug, feedback, review: without a terminal, print the session's brief)
 
 Environment: RFC_PRIVATE_DIR (../xtm-hub-private), RFC_FLOW_DIR (../filigran-flow), RFC_WORKTREE
 (../<checkout>-<rfc-id>), RFC_MODEL, RFC_BUDGET_USD (per session), RFC_SESSION_TIMEOUT (5400 s),

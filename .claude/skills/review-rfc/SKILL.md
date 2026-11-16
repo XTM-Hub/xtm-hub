@@ -19,7 +19,7 @@ the run logs and the tooling folder. You run in the RFC's worktree, where the lo
 chunk branches: fix and commit there. Answer in the human's language.
 
 The human decides. Ask before every fix that changes behaviour, every commit series and every push.
-Never merge a pull request: the team merges. Never run the main loop; the human relaunches it.
+Never merge a pull request: the team merges. Never run the main loop unless the human asks.
 The decision rules of `rfc-delivery/WORKFLOW.md` still rule the code (the RFC is right, the chunk and
 nothing more), and its Confidentiality section every public text.
 

@@ -188,5 +188,6 @@ Both need what `rfc-delivery/README.md` (Commands) lists.
 In a few lines: the links of the two pull requests; that the team reviews the split in the tracking
 pull request, and that **an approval by someone other than its author starts the loop**; the command,
 to launch from this checkout with what `rfc-delivery/README.md` (Commands) lists:
-`caffeinate -i yarn rfc <RFC-ID>`; and what follows, as `rfc-delivery/README.md` (The stack)
+`caffeinate -i yarn rfc <RFC-ID>`, or from a Claude Code session, the `run-rfc` skill ("run
+RFC-XHUB-NNNN"); and what follows, as `rfc-delivery/README.md` (The stack)
 describes, ending with `yarn rfc <RFC-ID> review`.

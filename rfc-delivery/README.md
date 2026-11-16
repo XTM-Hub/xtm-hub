@@ -108,6 +108,11 @@ worktree: stop your own `yarn dev:api` and `yarn dev:front` first, they serve ot
 | `yarn rfc <RFC-ID> issues` / `start` | Called by `start-rfc`: issues, RFC branch and PR, tracking PR, worktree |
 | `node rfc-delivery/cli.mjs …` | The deterministic part: parsing RFCs, the tracking files, planning (see its header) |
 
+**From Claude Code**: the `run-rfc` skill ("run RFC-XHUB-NNNN") launches the loop in the background,
+follows its log and handles each stop with you in the conversation. Without a terminal, `debug`,
+`feedback` and `review` print their brief instead of opening a session, and the calling session
+follows it. The loop then lives as long as that session; for a night unattended, use a terminal.
+
 `yarn rfc --help` lists the environment variables: the model, a budget per session, the timeouts,
 the ports, the worktree's place.
 
@@ -131,7 +136,7 @@ chunk's spec until a human sets `approved_by` in it.
 | `screenshot.mjs` | Screens before and after a chunk the user sees, light and dark |
 | `print-schema.ts` | Writes `apps/frontend/schema.graphql` as the API does when it starts, for sessions that cannot start it |
 | `tests/` | `yarn --cwd rfc-delivery test`, on a fictional RFC; `yarn --cwd rfc-delivery check-ts` type-checks |
-| `.claude/skills/start-rfc`, `.claude/skills/review-rfc` | The two interactive steps |
+| `.claude/skills/start-rfc`, `.claude/skills/run-rfc`, `.claude/skills/review-rfc` | Start, conduct the loop from Claude Code, close |
 
 `node rfc-delivery/cli.mjs check-flow ../filigran-flow` parses every RFC on every branch of a Flow
 checkout and compares its counts with a plain grep: run it when the RFC template changes.

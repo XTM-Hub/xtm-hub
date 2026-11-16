@@ -12,7 +12,7 @@ help the human answer that review, fix what they approve on the chunk's branch, 
 fixes into the chunks stacked above it. Answer in the human's language.
 
 The human decides. Ask before every fix that changes behaviour, before every commit series, and
-before every push. Never run the main loop. `<tool>/WORKFLOW.md` still rules the code: the RFC
+before every push. Never run the main loop unless the human asks. `<tool>/WORKFLOW.md` still rules the code: the RFC
 is right, the chunk and nothing more, and the public texts follow its Confidentiality section.
 
 ## 1. Load the review

@@ -833,13 +833,21 @@ export class Delivery {
     ].join('\n');
   }
 
-  /** An interactive Claude Code session in the worktree, for a human: debug, feedback, review. */
+  /**
+   * An interactive Claude Code session in the worktree, for a human: debug, feedback, review.
+   * Without a terminal (run by an agent, the run-rfc skill), prints the brief instead: the calling
+   * session follows it itself rather than opening a session inside its own.
+   */
   async interactive(doc: string, prompt: string): Promise<number> {
     const pid = this.runningPid();
     if (pid) throw new Stop(`a delivery of ${this.cfg.rfc} is running (pid ${pid}): let it stop first`);
     await this.wt.ensure(this.status.base);
     const s = this.status;
     const full = `Read ${doc} fully and follow it. ${prompt} The worktree of the RFC is ${this.cfg.worktree}, the tracking folder ${this.cfg.dir}, the RFC is git -C ${this.cfg.flowDir} show ${s.source.sha}:${s.source.path}, the run logs are in ${this.cfg.logDir}, the tooling in ${this.cfg.toolDir}.`;
+    if (!process.stdin.isTTY) {
+      process.stdout.write(`${full}\n`);
+      return 0;
+    }
     const result = await run('claude', ['--add-dir', this.cfg.dir, '--add-dir', this.cfg.flowDir, '--add-dir', this.cfg.toolDir, full], { cwd: this.cfg.worktree, inherit: true, allowFailure: true });
     return result.code;
   }
