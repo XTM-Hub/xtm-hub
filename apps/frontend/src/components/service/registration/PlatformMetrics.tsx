@@ -16,6 +16,7 @@ import {
   METRICS_PERIOD_LABELS,
   PRODUCT_LABELS,
 } from '@/lib/analytics/analytics.consts';
+import { Paper } from '@filigran/design-system';
 import {
   MetricType,
   PlatformIdentifier,
@@ -70,7 +71,7 @@ export const PlatformMetrics = ({
   const databaseUsage = findDatabaseUsage(metrics, storage);
 
   return (
-    <div className="mt-3 layer-2 bg-filigran-brand-primary-transparency-10 p-6">
+    <Paper className="mt-3">
       <div className="flex items-center justify-between gap-4">
         <h2>{t('Register.Metrics.Title')}</h2>
         <PlatformMetricsPeriodSelector
@@ -79,7 +80,7 @@ export const PlatformMetrics = ({
           disabled={isUnavailable}
         />
       </div>
-      <Separator className="m-3" />
+      <Separator className="my-3" />
       {isLoading && (
         <section aria-busy="true">
           <Skeleton className="h-40 w-full" />
@@ -111,6 +112,6 @@ export const PlatformMetrics = ({
           {sla && <SlaAvailabilityChart sla={sla} />}
         </div>
       )}
-    </div>
+    </Paper>
   );
 };
