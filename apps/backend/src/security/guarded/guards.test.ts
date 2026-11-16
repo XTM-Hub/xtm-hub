@@ -6,7 +6,11 @@ import {
   ForbiddenErrorCode,
   UnauthenticatedErrorCode,
 } from '../../utils/error/error.code';
-import { bypassOnlyGuard, portalCapabilityGuard } from './guards/portal.guard';
+import {
+  bypassOnlyGuard,
+  loggedInGuard,
+  portalCapabilityGuard,
+} from './guards/portal.guard';
 import { publicAccess } from './guards/public-access.guard';
 import { Principal } from './principal';
 
@@ -80,6 +84,41 @@ describe('bypassOnlyGuard', () => {
   ])('should answer $label', async ({ principal, expected }) => {
     // Given
     const guard = bypassOnlyGuard();
+
+    // When
+    const result = await guard(principal);
+
+    // Then
+    expect(result).toEqual(expected);
+  });
+});
+
+describe('loggedInGuard', () => {
+  it.each([
+    {
+      label: 'an anonymous visitor',
+      principal: ANONYMOUS,
+      expected: {
+        allowed: false,
+        code: UnauthenticatedErrorCode.Unauthenticated,
+      },
+    },
+    {
+      label: 'a user without any capability',
+      principal: buildUserPrincipal(),
+      expected: { allowed: true },
+    },
+    {
+      label: 'a BYPASS user',
+      principal: buildUserPrincipal({
+        isBypassUser: true,
+        capabilities: [PortalCapability.Bypass],
+      }),
+      expected: { allowed: true },
+    },
+  ])('should answer $label', async ({ principal, expected }) => {
+    // Given
+    const guard = loggedInGuard();
 
     // When
     const result = await guard(principal);

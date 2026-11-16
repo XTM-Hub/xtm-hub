@@ -29,3 +29,9 @@ export const bypassOnlyGuard = (): Guard => (principal) => {
     ? allow()
     : deny(ForbiddenErrorCode.ForbiddenAccess);
 };
+
+// Same rule as @auth without arguments
+export const loggedInGuard = (): Guard => (principal) =>
+  principal.kind === 'user'
+    ? allow()
+    : deny(UnauthenticatedErrorCode.Unauthenticated);
