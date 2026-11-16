@@ -8,7 +8,11 @@ import { BreadcrumbNav } from '@/components/ui/BreadcrumbNav';
 import { SelectionState } from '@/components/ui/data-table';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import { ADMIN_MANAGE_TRIALS_PATH, APP_PATH } from '@/utils/path/constant';
+import {
+  ADMIN_MANAGE_TRIALS_PATH,
+  APP_PATH,
+  XTM_PLATFORM_TRIAL_PATH,
+} from '@/utils/path/constant';
 import {
   useBundleProductsQuery,
   useBundleUserServiceGroupsQuery,
@@ -72,6 +76,7 @@ const ClientSection = ({ params, fromDashboard }: ClientSectionProps) => {
     },
     {
       label: 'Service.Bundle.ManageTrial.Breadcrumb.BundleName',
+      href: XTM_PLATFORM_TRIAL_PATH,
     },
     {
       label: 'Service.Bundle.ManageTrial.Breadcrumb.ManageUsers',
