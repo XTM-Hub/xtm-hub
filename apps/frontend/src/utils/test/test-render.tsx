@@ -1,7 +1,9 @@
 import { AppPortalContext } from '@/components/me/AppPortalContext';
-import { SettingsPortalContext } from '@/components/settings/EnvPortalContext';
+import {
+  PortalSettings,
+  SettingsPortalContext,
+} from '@/components/settings/EnvPortalContext';
 import { meContext_fragment$data } from '@generated/meContext_fragment.graphql';
-import { settingsContext_fragment$data } from '@generated/settingsContext_fragment.graphql';
 import messages from '@messages/en.json';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, renderHook } from '@testing-library/react';
@@ -15,7 +17,7 @@ import { RelayMockEnvironment } from 'relay-test-utils/lib/RelayModernMockEnviro
 export interface ProvidersWrapperProps {
   children: ReactNode;
   me?: meContext_fragment$data;
-  settings?: settingsContext_fragment$data;
+  settings?: PortalSettings;
   relayConfig?: RelayMockEnvironment;
 }
 
@@ -49,9 +51,7 @@ export const generateMockUser = (
   } as meContext_fragment$data;
 };
 
-export const generateSettings = (
-  settings?: Partial<settingsContext_fragment$data> | null
-) => {
+export const generateSettings = (settings?: Partial<PortalSettings> | null) => {
   return {
     platform_providers: [
       {
@@ -69,7 +69,7 @@ export const generateSettings = (
     base_url_front: 'http://localhost:3002',
     platform_feature_flags: ['*'],
     ...settings,
-  } as settingsContext_fragment$data;
+  } as PortalSettings;
 };
 export const ProvidersWrapper = ({
   children,
@@ -92,7 +92,7 @@ interface TestRenderOptions {
   /** The react-query client to render with, to seed or inspect its cache. */
   queryClient?: QueryClient;
   me?: Partial<meContext_fragment$data> | null;
-  settings?: Partial<settingsContext_fragment$data> | null;
+  settings?: Partial<PortalSettings> | null;
 }
 
 /**

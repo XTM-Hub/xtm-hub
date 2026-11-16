@@ -1,34 +1,31 @@
 'use client';
 
-import {
-  SettingsContext_fragment,
-  SettingsContextQuery,
-} from '@/components/login/settings.graphql';
 import { SettingsPortalContext } from '@/components/settings/EnvPortalContext';
-import { settingsContext_fragment$key } from '@generated/settingsContext_fragment.graphql';
-import { settingsContextQuery } from '@generated/settingsContextQuery.graphql';
+import { portalGraphqlClient } from '@/lib/graphql-client';
+import { useSettingsQuery } from '@graphql/generated';
+import { settingsKeys } from '@graphql/settings/settings.keys';
 import * as React from 'react';
-import { PreloadedQuery, useFragment, usePreloadedQuery } from 'react-relay';
 
 // Component interface
 interface ContextProps {
-  queryRefSettings: PreloadedQuery<settingsContextQuery>;
   children: React.ReactNode;
 }
 
 // Component
-const SettingsContext = ({ queryRefSettings, children }: ContextProps) => {
-  const dataSettings = usePreloadedQuery<settingsContextQuery>(
-    SettingsContextQuery,
-    queryRefSettings
-  );
-  const settings = useFragment<settingsContext_fragment$key>(
-    SettingsContext_fragment,
-    dataSettings.settings
-  );
+const SettingsContext = ({ children }: ContextProps) => {
+  // A failure reaches the nearest error boundary, as the Relay query did.
+  const { data } = useSettingsQuery(portalGraphqlClient, undefined, {
+    queryKey: settingsKeys.detail(),
+    throwOnError: true,
+  });
+
+  // The children read the settings on their first render: wait for them.
+  if (!data) {
+    return null;
+  }
 
   return (
-    <SettingsPortalContext settings={settings}>
+    <SettingsPortalContext settings={data.settings}>
       {children}
     </SettingsPortalContext>
   );

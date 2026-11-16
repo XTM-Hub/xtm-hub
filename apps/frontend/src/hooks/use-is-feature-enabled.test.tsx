@@ -1,10 +1,10 @@
 import {
+  PortalSettings,
   Settings,
   SettingsContext,
   SettingsProps,
 } from '@/components/settings/EnvPortalContext';
 import { useIsFeatureEnabled } from '@/hooks/use-is-feature-enabled';
-import { settingsContext_fragment$data } from '@generated/settingsContext_fragment.graphql';
 import { FeatureFlag } from '@graphql/generated';
 import { renderHook } from '@testing-library/react';
 import { expect } from 'vitest';
@@ -28,9 +28,9 @@ describe('useIsFeatureEnabled', () => {
   `(
     'Should return $expected when enabled feature flags are $featureFlags',
     ({ expected, featureFlags }) => {
-      const settings: settingsContext_fragment$data = {
+      const settings: PortalSettings = {
         platform_feature_flags: featureFlags,
-      } as Partial<settingsContext_fragment$data> as settingsContext_fragment$data;
+      } as Partial<PortalSettings> as PortalSettings;
 
       const { result } = renderHook(
         () => useIsFeatureEnabled(FeatureFlag.Dummy),

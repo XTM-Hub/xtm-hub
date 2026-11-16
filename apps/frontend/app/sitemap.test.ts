@@ -4,13 +4,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import sitemap from './sitemap';
 
 const sitemapMocks = vi.hoisted(() => ({
-  serverFetchGraphQLMock: vi.fn(),
+  fetchServerSettingsMock: vi.fn(),
   fetchSeoServiceInstancesMock: vi.fn(),
   fetchPublicDocumentSlugsMock: vi.fn(),
 }));
 
-vi.mock('@/relay/server-portal-api-fetch', () => ({
-  serverFetchGraphQL: sitemapMocks.serverFetchGraphQLMock,
+vi.mock('@/utils/settings.service', () => ({
+  fetchServerSettings: sitemapMocks.fetchServerSettingsMock,
 }));
 
 vi.mock(
@@ -31,8 +31,8 @@ const BASE_URL = 'https://hub.filigran.io';
 
 describe('sitemap', () => {
   beforeEach(() => {
-    sitemapMocks.serverFetchGraphQLMock.mockResolvedValue({
-      data: { settings: { base_url_front: BASE_URL } },
+    sitemapMocks.fetchServerSettingsMock.mockResolvedValue({
+      base_url_front: BASE_URL,
     });
     sitemapMocks.fetchPublicDocumentSlugsMock.mockResolvedValue([]);
   });
