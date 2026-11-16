@@ -79,7 +79,10 @@ const ShareableResourceDetails = ({
         <div>
           <ShareableResourceDetailItem label="Organization">
             <div className="mb-2 flex items-center gap-2">
-              <LogoFiligranIcon className="size-8" />
+              <LogoFiligranIcon
+                aria-hidden={true}
+                className="size-8"
+              />
               {/*By default, if the organization is undefined, we display Filigran*/}
 
               {`${documentData.uploader_organization?.name ?? 'Filigran'}`}
