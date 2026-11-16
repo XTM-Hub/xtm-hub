@@ -9,7 +9,8 @@ paths:
 
 # Access Control Instructions (`apps/backend`)
 
-Every GraphQL operation declares who may call it with one decorator. Two mechanisms coexist while modules migrate:
+Every GraphQL operation declares who may call it with a decorator or, until its module is migrated, a directive. Two
+mechanisms coexist while modules migrate:
 
 | Mechanism | Where | Used by |
 | --- | --- | --- |

@@ -42,6 +42,7 @@ export const buildPrincipal = async (
     actorId: user.id,
     isBypassUser: AuthHelper.userHasBypassCapability(user),
     portalCapabilities: new Set(
+      // Names are inserted by migrations, one per PortalCapability value. An unknown one never matches a guard
       user.capabilities.map(({ name }) => name as PortalCapability)
     ),
     selectedOrganizationId: user.selected_organization_id,

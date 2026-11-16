@@ -12,18 +12,18 @@ import {
 
 describe('generate-new-module templates', () => {
   describe('names', () => {
-    it('builds the Pascal case and the query name from a kebab-case module', () => {
+    it('should build the Pascal case and the query name when the module name is kebab-case', () => {
       expect(toPascalCase('review-widget')).toBe('ReviewWidget');
       expect(toQueryName('review-widget')).toBe('reviewWidgetList');
     });
 
-    it('rejects a name without letters or digits', () => {
+    it('should reject the name when it has no letter or digit', () => {
       expect(() => toPascalCase('--')).toThrow();
     });
   });
 
   describe('resolver', () => {
-    it('declares one admin-only guarded query and spreads its class', () => {
+    it('should declare one admin-only guarded query and spread its class when the module has no scalar', () => {
       const resolver = resolverTemplate('review-widget', false);
 
       expect(resolver).toContain('class ReviewWidgetQueries {');
@@ -36,7 +36,7 @@ describe('generate-new-module templates', () => {
       expect(resolver).not.toContain('ReviewWidgetId');
     });
 
-    it('declares and imports the ID type when the module has a scalar', () => {
+    it('should declare and import the ID type when the module has a scalar', () => {
       const resolver = resolverTemplate('review-widget', true);
 
       expect(resolver).toContain(
@@ -52,7 +52,7 @@ describe('generate-new-module templates', () => {
   });
 
   describe('test', () => {
-    it('runs the access matrix on the generated query', () => {
+    it('should run the access matrix on the query when the test is generated', () => {
       const test = testTemplate('review-widget');
 
       expect(test).toContain('TestHelper.expectAccessMatrix({');
@@ -69,7 +69,7 @@ describe('generate-new-module templates', () => {
   });
 
   describe('graphql', () => {
-    it('declares the query, and the scalar only when asked', () => {
+    it('should declare the query, and the scalar only when it is asked', () => {
       const withScalar = graphQLTemplate('review-widget', true);
       const withoutScalar = graphQLTemplate('review-widget', false);
 
@@ -80,7 +80,7 @@ describe('generate-new-module templates', () => {
   });
 
   describe('app and domain', () => {
-    it('generates the app, its test and the domain loader', () => {
+    it('should generate the app, its test and the domain loader when the module is scaffolded', () => {
       expect(appTemplate('review-widget')).toContain(
         'export const ReviewWidgetApp = {};'
       );

@@ -53,6 +53,7 @@ const enforce =
   ) =>
   (resolver: Fn): Fn => {
     const guarded = async (...args: Parameters<Fn>) => {
+      // GraphQL passes the context third. GuardableResolver types it never so that any resolver fits.
       // The context goes to the resolver unchanged
       const context = args[2] as GuardedContext;
       const principal = await resolvePrincipal(context);
@@ -63,6 +64,7 @@ const enforce =
       }
       return Reflect.apply(resolver, undefined, args);
     };
+    // Same parameters as Fn, returning a Promise of its result: TypeScript cannot prove that is a generic Fn
     return guarded as unknown as Fn;
   };
 
