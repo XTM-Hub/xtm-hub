@@ -3554,6 +3554,19 @@ export type XtmoneIntegrationStatusEntry = {
   status: Scalars['String']['output'];
 };
 
+export type LoginMutationVariables = Exact<{
+  email: Scalars['String']['input'];
+  password: Scalars['String']['input'];
+}>;
+
+
+export type LoginMutation = { __typename?: 'Mutation', login: { __typename?: 'User', id: string } | null };
+
+export type LogoutMutationVariables = Exact<{ [key: string]: never; }>;
+
+
+export type LogoutMutation = { __typename?: 'Mutation', logout: string };
+
 export type CompetitorAddMutationVariables = Exact<{
   input: CreateCompetitorInput;
 }>;
@@ -5179,6 +5192,62 @@ export const EpicFieldsFragmentDoc = `
   updated_at
 }
     `;
+export const LoginDocument = `
+    mutation Login($email: String!, $password: String!) {
+  login(email: $email, password: $password) {
+    id
+  }
+}
+    `;
+
+export const useLoginMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<LoginMutation, TError, LoginMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<LoginMutation, TError, LoginMutationVariables, TContext>(
+      {
+    mutationKey: ['Login'],
+    mutationFn: (variables?: LoginMutationVariables) => fetcher<LoginMutation, LoginMutationVariables>(client, LoginDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useLoginMutation.getKey = () => ['Login'];
+useLoginMutation.getRootKey = () => ['Login'] as const;
+useLoginMutation.fetcher = (client: GraphQLClient, variables: LoginMutationVariables, headers?: RequestInit['headers']) => fetcher<LoginMutation, LoginMutationVariables>(client, LoginDocument, variables, headers);
+
+export const LogoutDocument = `
+    mutation Logout {
+  logout
+}
+    `;
+
+export const useLogoutMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<LogoutMutation, TError, LogoutMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<LogoutMutation, TError, LogoutMutationVariables, TContext>(
+      {
+    mutationKey: ['Logout'],
+    mutationFn: (variables?: LogoutMutationVariables) => fetcher<LogoutMutation, LogoutMutationVariables>(client, LogoutDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useLogoutMutation.getKey = () => ['Logout'];
+useLogoutMutation.getRootKey = () => ['Logout'] as const;
+useLogoutMutation.fetcher = (client: GraphQLClient, variables?: LogoutMutationVariables, headers?: RequestInit['headers']) => fetcher<LogoutMutation, LogoutMutationVariables>(client, LogoutDocument, variables, headers);
+
 export const CompetitorAddDocument = `
     mutation CompetitorAdd($input: CreateCompetitorInput!) {
   createCompetitor(input: $input) {

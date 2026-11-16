@@ -11,8 +11,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const DELETED_USER_ID = 'deleted-user-id';
 
+const RELAY_ENVIRONMENT = { name: 'relay-environment' };
+
 const testState = vi.hoisted(() => ({
   commitLogout: vi.fn(),
+  commitLocalUpdate: vi.fn(),
+  logoutOptions: undefined as { onSuccess: () => void } | undefined,
   subscriptionConfig: undefined as
     | GraphQLSubscriptionConfig<{
         variables: object;
@@ -21,9 +25,21 @@ const testState = vi.hoisted(() => ({
     | undefined,
 }));
 
+vi.mock('@graphql/generated', async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  useLogoutMutation: (
+    _client: unknown,
+    options: (typeof testState)['logoutOptions']
+  ) => {
+    testState.logoutOptions = options;
+    return { mutate: testState.commitLogout };
+  },
+}));
+
 vi.mock('react-relay', async (importOriginal) => ({
   ...(await importOriginal<typeof import('react-relay')>()),
-  useMutation: () => [testState.commitLogout, false],
+  useRelayEnvironment: () => RELAY_ENVIRONMENT,
+  commitLocalUpdate: testState.commitLocalUpdate,
   useSubscription: (
     config: NonNullable<(typeof testState)['subscriptionConfig']>
   ) => {
@@ -34,6 +50,8 @@ vi.mock('react-relay', async (importOriginal) => ({
 vi.mock('@/utils/filters-storage.utils', () => ({
   clearFiltersStorage: vi.fn(),
 }));
+
+const succeedLogout = () => testState.logoutOptions?.onSuccess();
 
 afterEach(() => {
   vi.useRealTimers();
@@ -56,6 +74,25 @@ describe('UserEventSubscription', () => {
     expect(clearFiltersStorage).toHaveBeenCalledOnce();
   });
 
+  it('should invalidate the Relay store when the logout succeeds', () => {
+    // Given
+    testRender(<UserEventSubscription />);
+    act(() => {
+      testState.subscriptionConfig?.onNext?.({
+        MeUser: { delete: DELETED_USER_ID },
+      } as unknown as userMeSubscription$data);
+    });
+
+    // When
+    succeedLogout();
+
+    // Then
+    expect(testState.commitLocalUpdate).toHaveBeenCalledWith(
+      RELAY_ENVIRONMENT,
+      expect.any(Function)
+    );
+  });
+
   it.each([
     ['stay', USER_PROPERTIES_WAIT_MS - 1, 0],
     ['leave', USER_PROPERTIES_WAIT_MS, 1],
@@ -73,8 +110,7 @@ describe('UserEventSubscription', () => {
           MeUser: { delete: DELETED_USER_ID },
         } as unknown as userMeSubscription$data);
       });
-      const [{ onCompleted }] = testState.commitLogout.mock.lastCall;
-      onCompleted();
+      succeedLogout();
 
       // When
       await act(() => vi.advanceTimersByTimeAsync(elapsedMs));

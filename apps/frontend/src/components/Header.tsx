@@ -1,7 +1,6 @@
 'use client';
 
 import { ConnectedProductsDropdown } from '@/components/connected-products/ConnectedProductsDropdown';
-import { LogoutMutation } from '@/components/logout.graphql';
 import { PortalContext } from '@/components/me/AppPortalContext';
 import PrivateNavigation from '@/components/menu/navigation/private/PrivateNavigation';
 import HeaderOrganizationSwitcher from '@/components/menu/organization-switcher/HeaderOrganizationSwitcher';
@@ -18,6 +17,7 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { analyticsId } from '@/lib/analytics/analytics.ids';
+import { portalGraphqlClient } from '@/lib/graphql-client';
 import { cn } from '@/lib/utils';
 import { clearFiltersStorage } from '@/utils/filters-storage.utils';
 import { getAvatarPictureSource } from '@/utils/format/user-picture';
@@ -27,10 +27,9 @@ import { useTranslate } from '@/hooks/use-translate';
 import { MenuIcon } from '@filigran/icon';
 import Link from 'next/link';
 
-import { OrganizationCapability } from '@graphql/generated';
+import { OrganizationCapability, useLogoutMutation } from '@graphql/generated';
 import { usePathname } from 'next/navigation';
 import { useCallback, useContext, useEffect, useState } from 'react';
-import { useMutation } from 'react-relay';
 
 // Displayed size of the user avatar in px: keep it in step with the size-6 of its wrapper.
 const HEADER_AVATAR_SIZE = 24;
@@ -45,7 +44,12 @@ const HeaderComponent = ({ displayLogo }: HeaderComponentProps) => {
   const [open, setOpen] = useState(false);
   const currentPath = usePathname();
   const t = useTranslate();
-  const [commitLogoutMutation] = useMutation(LogoutMutation);
+  const { mutate: logout } = useLogoutMutation(portalGraphqlClient, {
+    onSuccess() {
+      clearFiltersStorage();
+      window.location.href = '/';
+    },
+  });
 
   // Legitimate effect: close the menu on route change.
   // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -57,18 +61,7 @@ const HeaderComponent = ({ displayLogo }: HeaderComponentProps) => {
     ) ||
       hasOrganizationCapability(OrganizationCapability.ManageAccess));
 
-  const handleLogout = useCallback(() => {
-    commitLogoutMutation({
-      variables: {},
-      onCompleted() {
-        clearFiltersStorage();
-        // A full page load drops the react-query cache and the Relay store, so no
-        // user-scoped data outlives the session, and no mounted query refetches
-        // without it, which would redirect to the login page.
-        window.location.href = '/';
-      },
-    });
-  }, [commitLogoutMutation]);
+  const handleLogout = useCallback(() => logout({}), [logout]);
 
   const headerContent = (
     <>

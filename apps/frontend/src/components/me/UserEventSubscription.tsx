@@ -1,8 +1,8 @@
 'use client';
 
-import { LogoutMutation } from '@/components/logout.graphql';
 import { useTranslate } from '@/hooks/use-translate';
 import { refreshAnalyticsUser } from '@/lib/analytics/analytics.user';
+import { portalGraphqlClient } from '@/lib/graphql-client';
 import { clearFiltersStorage } from '@/utils/filters-storage.utils';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -14,29 +14,32 @@ import {
   userMeSubscription$data,
   userMeSubscription as userMeSubscriptionType,
 } from '@generated/userMeSubscription.graphql';
-import { useMutation, useSubscription } from 'react-relay';
+import { useLogoutMutation } from '@graphql/generated';
+import {
+  commitLocalUpdate,
+  useRelayEnvironment,
+  useSubscription,
+} from 'react-relay';
 
 // Component
 const UserEventSubscription = () => {
-  const [commitLogoutMutation] = useMutation(LogoutMutation);
   const t = useTranslate();
-
   const router = useRouter();
+  const environment = useRelayEnvironment();
+
+  const { mutate: commitLogout } = useLogoutMutation(portalGraphqlClient, {
+    onSuccess() {
+      commitLocalUpdate(environment, (store) => store.invalidateStore());
+      refreshAnalyticsUser().then(() => {
+        router.push('/?error=account-deleted');
+        router.refresh();
+      });
+    },
+  });
 
   const logout = () => {
     clearFiltersStorage();
-    commitLogoutMutation({
-      variables: {},
-      updater: (store) => {
-        store.invalidateStore();
-      },
-      onCompleted() {
-        refreshAnalyticsUser().then(() => {
-          router.push('/?error=account-deleted');
-          router.refresh();
-        });
-      },
-    });
+    commitLogout({});
   };
 
   const [isOpen, setIsOpen] = useState(false);

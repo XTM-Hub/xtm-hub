@@ -1,18 +1,18 @@
 'use client';
 
-import { LoginFormMutation } from '@/components/login/login.graphql';
 import { Form, FormField } from '@/components/ui/form';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import useDecodedQuery from '@/hooks/use-decoded-query';
 import { useTranslate } from '@/hooks/use-translate';
 import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { refreshAnalyticsUser } from '@/lib/analytics/analytics.user';
+import { portalGraphqlClient } from '@/lib/graphql-client';
 import { decodeSafeRedirect } from '@/utils/redirect';
 import { Button, Input } from '@filigran/design-system';
+import { useLoginMutation } from '@graphql/generated';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
-import { useMutation } from 'react-relay';
 import { z } from 'zod';
 
 const formSchema = z.object({
@@ -32,29 +32,26 @@ const LoginForm = () => {
       password: '',
     },
   });
-  const [commitLoginFormMutation] = useMutation(LoginFormMutation);
-  const onSubmit = (variables: z.infer<typeof formSchema>) => {
-    commitLoginFormMutation({
-      variables,
-      onError() {
-        showSnackbar({
-          severity: 'error',
-          title: t('Utils.Error'),
-          description: t(`Error.Login.LoginError`),
-        });
-      },
-      onCompleted() {
-        refreshAnalyticsUser().then(() => {
-          const destination = decodeSafeRedirect(redirect);
-          if (destination) {
-            router.push(destination);
-          }
-          // If login succeed, refresh the page
-          router.refresh();
-        });
-      },
-    });
-  };
+  const { mutate: login } = useLoginMutation(portalGraphqlClient, {
+    onError() {
+      showSnackbar({
+        severity: 'error',
+        title: t('Utils.Error'),
+        description: t(`Error.Login.LoginError`),
+      });
+    },
+    onSuccess() {
+      refreshAnalyticsUser().then(() => {
+        const destination = decodeSafeRedirect(redirect);
+        if (destination) {
+          router.push(destination);
+        }
+        // If login succeed, refresh the page
+        router.refresh();
+      });
+    },
+  });
+  const onSubmit = (variables: z.infer<typeof formSchema>) => login(variables);
   return (
     <div className="layer-1 bg-elevation-default border border-elevation-subtle rounded w-full p-4 mb-4">
       <Form {...form}>
