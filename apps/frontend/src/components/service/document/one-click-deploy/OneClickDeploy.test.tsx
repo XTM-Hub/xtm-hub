@@ -3,7 +3,11 @@ import { useRegisteredPlatforms } from '@/hooks/use-registered-platforms';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 import testRender from '@/utils/test/test-render';
 import { useRegisteredPlatformsFragment$data } from '@generated/useRegisteredPlatformsFragment.graphql';
-import { DocumentItemFragment, PlatformIdentifier } from '@graphql/generated';
+import {
+  DocumentItemFragment,
+  OrganizationCapability,
+  PlatformIdentifier,
+} from '@graphql/generated';
 import { screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -16,11 +20,14 @@ const PLATFORM_URL = 'https://platform-1.example.com';
 const mocks = vi.hoisted(() => ({
   sendTelemetry: vi.fn(),
   openTab: vi.fn(),
+  useUsersWithCapabilitiesInOrganizationQuery: vi.fn(),
 }));
 
 vi.mock('@graphql/generated', async (importOriginal) => ({
   ...(await importOriginal<object>()),
   useOneClickDeployMutation: () => ({ mutate: mocks.sendTelemetry }),
+  useUsersWithCapabilitiesInOrganizationQuery:
+    mocks.useUsersWithCapabilitiesInOrganizationQuery,
 }));
 
 vi.mock(
@@ -34,6 +41,14 @@ const documentData = {
   name: DOCUMENT_NAME,
   type: ShareableResourceType.OPENCTI_INTEGRATION,
   service_instance: { id: SERVICE_INSTANCE_ID, slug: 'opencti-integrations' },
+} as unknown as DocumentItemFragment;
+
+const ADMIN_EMAIL = 'admin@example.com';
+
+const playbookData = {
+  ...documentData,
+  __typename: 'OpenctiPlaybook',
+  type: ShareableResourceType.OPENCTI_PLAYBOOK,
 } as unknown as DocumentItemFragment;
 
 const platform = {
@@ -92,5 +107,89 @@ describe('OneClickDeploy', () => {
 
     // Then
     expect(mocks.sendTelemetry).not.toHaveBeenCalled();
+  });
+
+  describe('when no product is connected', () => {
+    beforeEach(() => {
+      vi.mocked(useRegisteredPlatforms).mockReturnValue({
+        platforms: [],
+      } as unknown as ReturnType<typeof useRegisteredPlatforms>);
+      mocks.useUsersWithCapabilitiesInOrganizationQuery.mockReturnValue({
+        data: {
+          usersWithCapabilitiesInOrganization: [
+            { id: 'admin-1', email: ADMIN_EMAIL },
+          ],
+        },
+      });
+    });
+
+    it.each([
+      { name: 'an integration', document: documentData },
+      { name: 'an Enterprise Edition playbook', document: playbookData },
+    ])('should keep the deploy button enabled for $name', ({ document }) => {
+      // Given / When
+      testRender(<OneClickDeploy documentData={document} />);
+
+      // Then
+      expect(
+        screen.getByRole('button', {
+          name: 'Service.ShareableResources.Deploy.DeployPlatform',
+        })
+      ).toBeEnabled();
+    });
+
+    it('should open the connection form when the user can register a product', async () => {
+      // Given
+      const { user } = testRender(
+        <OneClickDeploy documentData={documentData} />,
+        {
+          me: {
+            selected_org_capabilities: [
+              OrganizationCapability.ManagePlatformRegistration,
+            ],
+          },
+        }
+      );
+
+      // When
+      await user.click(
+        screen.getByRole('button', {
+          name: 'Service.ShareableResources.Deploy.DeployPlatform',
+        })
+      );
+
+      // Then
+      expect(
+        screen.getByText('Register.ConnectFromHub.ConnectProduct')
+      ).toBeInTheDocument();
+      expect(
+        screen.getByPlaceholderText('Register.Details.ProductURL')
+      ).toBeInTheDocument();
+      expect(mocks.sendTelemetry).not.toHaveBeenCalled();
+    });
+
+    it('should list the administrators when the user cannot register a product', async () => {
+      // Given
+      const { user } = testRender(
+        <OneClickDeploy documentData={documentData} />,
+        { me: { selected_org_capabilities: [] } }
+      );
+
+      // When
+      await user.click(
+        screen.getByRole('button', {
+          name: 'Service.ShareableResources.Deploy.DeployPlatform',
+        })
+      );
+
+      // Then
+      expect(
+        screen.getByText('Register.ConnectFromHub.PermissionRequired')
+      ).toBeInTheDocument();
+      expect(screen.getByText(ADMIN_EMAIL)).toBeInTheDocument();
+      expect(
+        screen.queryByPlaceholderText('Register.Details.ProductURL')
+      ).not.toBeInTheDocument();
+    });
   });
 });
