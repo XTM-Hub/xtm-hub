@@ -68,6 +68,7 @@ purpose, not `@` includes: those would load every rule in every session.
 | `apps/backend` | [`backend.md`](.claude/rules/backend.md) | `backend-code-writer` |
 | `apps/frontend` | [`frontend.md`](.claude/rules/frontend.md), [`design-system.md`](.claude/rules/design-system.md) | `frontend-code-writer` |
 | GraphQL schema, resolvers, operations | [`graphql.md`](.claude/rules/graphql.md) | |
+| Who may call an entry point (`@Guarded`, `@Public()`, directives), access tests | [`access-control.md`](.claude/rules/access-control.md) | `backend-code-writer` |
 | Migrations and seeds | [`migrations.md`](.claude/rules/migrations.md) | `backend-code-writer` |
 | Tests | [`testing.md`](.claude/rules/testing.md) | |
 | `apps/e2e` | [`e2e.md`](.claude/rules/e2e.md) | |

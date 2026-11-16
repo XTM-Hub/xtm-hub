@@ -44,10 +44,9 @@ type Query {
 
 type Mutation {
   addSolutionCategory(input: AddSolutionCategoryInput!): SolutionCategory!
-    @auth(portalCapa: [BYPASS])
   editSolutionCategory(
     id: ID!
     input: EditSolutionCategoryInput!
-  ): SolutionCategory! @auth(portalCapa: [BYPASS])
-  deleteSolutionCategory(id: ID!): SolutionCategory! @auth(portalCapa: [BYPASS])
+  ): SolutionCategory!
+  deleteSolutionCategory(id: ID!): SolutionCategory!
 }
