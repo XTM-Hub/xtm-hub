@@ -62,8 +62,10 @@ describe('generate-new-module templates', () => {
       expect(test).toContain(
         "guarded: () => vi.spyOn(ReviewWidgetDomain, 'loadAll')"
       );
-      expect(test).toContain('anonymous: ErrorType.Unauthenticated');
-      expect(test).toContain('user: ErrorType.ForbiddenAccess');
+      expect(test).toContain(
+        'anonymous: UnauthenticatedErrorCode.Unauthenticated'
+      );
+      expect(test).toContain('user: ForbiddenErrorCode.ForbiddenAccess');
       expect(test).toContain("admin: 'allowed'");
     });
   });

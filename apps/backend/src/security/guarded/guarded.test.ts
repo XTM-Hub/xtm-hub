@@ -9,6 +9,10 @@ import { UserLoadUserBy } from '../../model/user';
 import { UserDomain } from '../../modules/organization-management/user/user-domain/user.domain';
 import { CAPABILITY_BYPASS } from '../../portal.const';
 import { logApp } from '../../utils/app-logger.util';
+import {
+  ForbiddenErrorCode,
+  UnauthenticatedErrorCode,
+} from '../../utils/error/error.code';
 import { ErrorType } from '../../utils/error/error.type';
 import { deny, Guard, GuardResult } from './guard.types';
 import { Guarded, Public } from './guarded.decorator';
@@ -31,7 +35,7 @@ const throwingGuard: Guard = () => {
   throw new Error('guard failure');
 };
 
-const denyingGuard: Guard = () => deny(ErrorType.ForbiddenAccess);
+const denyingGuard: Guard = () => deny(ForbiddenErrorCode.ForbiddenAccess);
 
 let malformedResult: unknown;
 const malformedGuard: Guard = () => malformedResult as GuardResult;
@@ -181,19 +185,19 @@ describe('@Guarded decorator', () => {
     {
       label: 'an anonymous visitor',
       context: { user: undefined },
-      code: ErrorType.Unauthenticated,
+      code: UnauthenticatedErrorCode.Unauthenticated,
     },
     {
       label: 'a disabled admin',
       context: {
         user: buildUser({ disabled: true, capabilities: [CAPABILITY_BYPASS] }),
       },
-      code: ErrorType.Unauthenticated,
+      code: UnauthenticatedErrorCode.Unauthenticated,
     },
     {
       label: 'a user without the capability',
       context: { user: buildUser({ capabilities: [] }) },
-      code: ErrorType.ForbiddenAccess,
+      code: ForbiddenErrorCode.ForbiddenAccess,
     },
   ])(
     'should refuse $label with $code and not call the resolver',
@@ -239,7 +243,7 @@ describe('@Guarded decorator', () => {
 
     // Then
     await expect(call).rejects.toMatchObject({
-      message: ErrorType.ForbiddenAccess,
+      message: ForbiddenErrorCode.ForbiddenAccess,
       extensions: { code: ErrorType.ForbiddenAccess },
     });
     const guardFailureLogs = logError.mock.calls.filter(
@@ -309,7 +313,7 @@ describe('@Guarded decorator', () => {
 
       // Then
       await expect(call).rejects.toMatchObject({
-        message: ErrorType.ForbiddenAccess,
+        message: ForbiddenErrorCode.ForbiddenAccess,
         extensions: { code: ErrorType.ForbiddenAccess },
       });
       expect(resolve).not.toHaveBeenCalled();

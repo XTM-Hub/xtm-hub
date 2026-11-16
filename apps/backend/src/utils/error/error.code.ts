@@ -1,4 +1,9 @@
+export enum UnauthenticatedErrorCode {
+  Unauthenticated = 'UNAUTHENTICATED',
+}
+
 export enum ForbiddenErrorCode {
+  ForbiddenAccess = 'FORBIDDEN_ACCESS',
   MissingCapabilityOnOrganization = 'MISSING_CAPABILITY_ON_ORGANIZATION',
   MissingCapabilityOnService = 'MISSING_CAPABILITY_ON_SERVICE',
   ServiceInstanceNotPublic = 'SERVICE_INSTANCE_NOT_PUBLIC',
@@ -173,6 +178,7 @@ export enum NotFoundErrorCode {
 }
 
 export const ErrorCode = {
+  ...UnauthenticatedErrorCode,
   ...ForbiddenErrorCode,
   ...BadRequestErrorCode,
   ...AlreadyExistsErrorCode,

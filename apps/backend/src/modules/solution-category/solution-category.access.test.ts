@@ -6,13 +6,16 @@ import {
   OrderingMode,
   SolutionCategoryOrdering,
 } from '../../__generated__/resolvers-types';
-import { ErrorType } from '../../utils/error/error.type';
+import {
+  ForbiddenErrorCode,
+  UnauthenticatedErrorCode,
+} from '../../utils/error/error.code';
 import { solutionCategoryApp } from './solution-category.app';
 import { solutionCategoryDomain } from './solution-category.domain';
 
 const ADMIN_ONLY = {
-  anonymous: ErrorType.Unauthenticated,
-  user: ErrorType.ForbiddenAccess,
+  anonymous: UnauthenticatedErrorCode.Unauthenticated,
+  user: ForbiddenErrorCode.ForbiddenAccess,
   admin: 'allowed',
 } as const;
 

@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { PortalCapability } from '../../__generated__/resolvers-types';
 import { OrganizationId } from '../../model/kanel/public/Organization';
 import { UserId } from '../../model/kanel/public/User';
-import { ErrorType } from '../../utils/error/error.type';
+import {
+  ForbiddenErrorCode,
+  UnauthenticatedErrorCode,
+} from '../../utils/error/error.code';
 import { portalCapabilityGuard } from './guards/portal.guard';
 import { publicAccess } from './guards/public-access.guard';
 import { Principal } from './principal';
@@ -49,19 +52,22 @@ describe('portalCapabilityGuard', () => {
     {
       label: 'an anonymous visitor',
       principal: ANONYMOUS,
-      expected: { allowed: false, code: ErrorType.Unauthenticated },
+      expected: {
+        allowed: false,
+        code: UnauthenticatedErrorCode.Unauthenticated,
+      },
     },
     {
       label: 'a user without any capability',
       principal: buildUserPrincipal(),
-      expected: { allowed: false, code: ErrorType.ForbiddenAccess },
+      expected: { allowed: false, code: ForbiddenErrorCode.ForbiddenAccess },
     },
     {
       label: 'a user with another capability',
       principal: buildUserPrincipal({
         capabilities: [PortalCapability.ReadTrials],
       }),
-      expected: { allowed: false, code: ErrorType.ForbiddenAccess },
+      expected: { allowed: false, code: ForbiddenErrorCode.ForbiddenAccess },
     },
     {
       label: 'a platform admin',

@@ -37,7 +37,10 @@ export const testTemplate = (resolverName: string) => {
   const query = toQueryName(resolverName);
   return `import { describe, expect, it, vi } from 'vitest';
 import { TestHelper } from '../../../tests/helper/test.helper';
-import { ErrorType } from '../../utils/error/error.type';
+import {
+  ForbiddenErrorCode,
+  UnauthenticatedErrorCode,
+} from '../../utils/error/error.code';
 import { ${pascal}Domain } from './${resolverName}.domain';
 import resolver from './${resolverName}.resolver';
 
@@ -52,8 +55,8 @@ describe('${query} query', () => {
     operation: '{ ${query} { id } }',
     guarded: () => vi.spyOn(${pascal}Domain, 'loadAll'),
     expected: {
-      anonymous: ErrorType.Unauthenticated,
-      user: ErrorType.ForbiddenAccess,
+      anonymous: UnauthenticatedErrorCode.Unauthenticated,
+      user: ForbiddenErrorCode.ForbiddenAccess,
       admin: 'allowed',
     },
     prepare: () =>

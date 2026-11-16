@@ -1,5 +1,8 @@
 import { PortalCapability } from '../../../__generated__/resolvers-types';
-import { ErrorType } from '../../../utils/error/error.type';
+import {
+  ForbiddenErrorCode,
+  UnauthenticatedErrorCode,
+} from '../../../utils/error/error.code';
 import { allow, deny, Guard } from '../guard.types';
 
 // Same rule as hasCapability of the @auth directive: BYPASS passes everything,
@@ -8,12 +11,12 @@ export const portalCapabilityGuard =
   (capabilities: readonly [PortalCapability, ...PortalCapability[]]): Guard =>
   (principal) => {
     if (principal.kind === 'anonymous') {
-      return deny(ErrorType.Unauthenticated);
+      return deny(UnauthenticatedErrorCode.Unauthenticated);
     }
     const isAllowed =
       principal.isPlatformAdmin ||
       capabilities.some((capability) =>
         principal.portalCapabilities.has(capability)
       );
-    return isAllowed ? allow() : deny(ErrorType.ForbiddenAccess);
+    return isAllowed ? allow() : deny(ForbiddenErrorCode.ForbiddenAccess);
   };

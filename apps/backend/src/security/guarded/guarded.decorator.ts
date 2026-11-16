@@ -1,7 +1,10 @@
 import { logApp } from '../../utils/app-logger.util';
-import { ErrorType } from '../../utils/error/error.type';
-import { buildGuardError } from './guard-error';
-import { Guard, GuardResult } from './guard.types';
+import {
+  ForbiddenErrorCode,
+  UnauthenticatedErrorCode,
+} from '../../utils/error/error.code';
+import { mapToGraphQLError } from '../../utils/error/error.mapping';
+import { DenialCode, Guard, GuardResult } from './guard.types';
 import { publicAccess } from './guards/public-access.guard';
 import {
   ANONYMOUS_PRINCIPAL,
@@ -28,9 +31,16 @@ const runGuard = async (
       error,
       actorId: principal.kind === 'user' ? principal.actorId : undefined,
     });
-    return { allowed: false, code: ErrorType.ForbiddenAccess };
+    return { allowed: false, code: ForbiddenErrorCode.ForbiddenAccess };
   }
 };
+
+// Fails closed: a malformed result or an unknown code is FORBIDDEN_ACCESS, never UNKNOWN_ERROR
+const toDenialCode = (result: GuardResult | undefined): DenialCode =>
+  result?.allowed === false &&
+  result.code === UnauthenticatedErrorCode.Unauthenticated
+    ? UnauthenticatedErrorCode.Unauthenticated
+    : ForbiddenErrorCode.ForbiddenAccess;
 
 const enforce =
   (
@@ -49,9 +59,7 @@ const enforce =
       const result = await runGuard(guard, principal);
       // Only an explicit allow lets the resolver run, whatever else the guard returned
       if (result?.allowed !== true) {
-        throw buildGuardError(
-          result?.allowed === false ? result.code : ErrorType.ForbiddenAccess
-        );
+        throw mapToGraphQLError(toDenialCode(result));
       }
       return Reflect.apply(resolver, undefined, args);
     };

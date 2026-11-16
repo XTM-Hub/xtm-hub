@@ -65,9 +65,10 @@ table.
 
 ## Errors
 
-A refusal's `message` and `extensions.code` are both the code, so the frontend shows `Error.Server.<code>`. Build it
-with `buildGuardError` (`src/security/guarded/guard-error.ts`): a plain `new Error('FORBIDDEN_ACCESS')` is masked as
-`UNKNOWN_ERROR` by `formatError`.
+A guard denies with `UnauthenticatedErrorCode.Unauthenticated` or `ForbiddenErrorCode.ForbiddenAccess`
+(`src/utils/error/error.code.ts`). The decorator builds the error with `mapToGraphQLError`
+(`src/utils/error/error.mapping.ts`), like any other GraphQL error: the code is both the `message`, so the frontend
+shows `Error.Server.<code>`, and `extensions.code`.
 
 **A changed code is a frontend change.** When a migrated operation answers a different code or message than before,
 add the `Error.Server.<code>` key to `apps/frontend/messages/{en,fr,ja}.json` in the same pull request, and say in the
@@ -82,7 +83,11 @@ describe('addSolutionCategory mutation', () => {
   TestHelper.expectAccessMatrix({
     operation: `mutation ($input: AddSolutionCategoryInput!) { addSolutionCategory(input: $input) { name } }`,
     guarded: () => vi.spyOn(solutionCategoryDomain, 'insertSolutionCategory'),
-    expected: { anonymous: ErrorType.Unauthenticated, user: ErrorType.ForbiddenAccess, admin: 'allowed' },
+    expected: {
+      anonymous: UnauthenticatedErrorCode.Unauthenticated,
+      user: ForbiddenErrorCode.ForbiddenAccess,
+      admin: 'allowed',
+    },
     prepare: async () => ({ variables, expectedData, cleanup }),
   });
 });

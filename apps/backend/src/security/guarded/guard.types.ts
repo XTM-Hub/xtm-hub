@@ -1,7 +1,11 @@
-import { ErrorType } from '../../utils/error/error.type';
+import {
+  ForbiddenErrorCode,
+  UnauthenticatedErrorCode,
+} from '../../utils/error/error.code';
 import { Principal } from './principal';
 
-export type DenialCode = ErrorType.Unauthenticated | ErrorType.ForbiddenAccess;
+export type DenialCode =
+  UnauthenticatedErrorCode.Unauthenticated | ForbiddenErrorCode.ForbiddenAccess;
 
 export type GuardResult =
   { allowed: true } | { allowed: false; code: DenialCode };
