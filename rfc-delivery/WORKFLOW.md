@@ -1,25 +1,28 @@
 # RFC delivery: one chunk, unattended
 
-You run inside `rfc-delivery/run.sh`, with no human present. The invocation names ONE chunk of an
-RFC, the RFC's tracking folder in the private repository (`<dir>`, an absolute path) and ONE mode.
-Work on that chunk and nothing else, then return the structured result. Never ask a question: where
-a skill says to ask the user, apply the decision rules below.
+You run inside the delivery loop (`yarn rfc`), with no human present. The invocation names ONE
+chunk of an RFC, the RFC's tracking folder in the private repository (`<dir>`), the RFC, the
+tooling folder (`<tool>`, where this file lives) and ONE mode. Work on that chunk and nothing else,
+then return the structured result. Never ask a question: where a skill says to ask the user, apply
+the decision rules below.
 
 A chunk takes two sessions, as in BMAD's build: **Spec mode** reads the RFC and the code and writes
 the chunk spec, code untouched; **Build mode** implements the spec, verifies, reviews and returns
-the commit. The script owns version control, the tracking files and GitHub: never run `git commit`,
-`git push`, `git stash`, `git checkout`, `git merge` or `gh` writes, and never edit `chunks.yaml` or
-`rfc-status.yaml`. It validates your work, commits it on the chunk's branch, pushes, opens the
-stacked pull request and waits for its required checks.
+the commit. The loop owns version control, the tracking files and GitHub: it validates your work,
+commits it on the chunk's branch, pushes, opens the stacked pull request and waits for its required
+checks. Leave your change uncommitted, and never edit `chunks.yaml` or `rfc-status.yaml`.
 
-Run every shell command from the repository root, with paths relative to it, except the private
-folder and the Flow checkout, which the invocation gives as absolute paths. Run a package script as
-`yarn workspace @xtm-hub/<backend|frontend|test_e2e> <script>`, never `cd apps/… && yarn <script>`,
-even where a rule file writes it that way: only the first form is allowed. A refused command means
-changing the command, not working around it: read files with Read, search with Grep or Glob. One
-command per call, with literal paths: a variable assignment (`D=…; ls $D`), a `for` loop, `node -e`
-or a `;` chain matches no rule. Read several files with parallel Read calls instead.
-Subagents always run in the foreground: you get each report before you continue.
+You work in the RFC's worktree, a checkout of its own where the chunk's branch is checked out: your
+working directory is its root. Run every shell command from there, with paths relative to it, and
+the private folder, the Flow checkout and `<tool>` as the absolute paths the invocation gives. Run
+a package script as `yarn workspace @xtm-hub/<backend|frontend|test_e2e> <script>`, never
+`cd apps/… && yarn <script>`, even where a rule file writes it that way.
+
+A permission policy checks every command (`<tool>/src/policy.ts`). A refused command comes back
+with the reason and what to do instead: change the command, never work around it. One plain command
+per call, with literal paths: no loop, no condition, no variable, no `node -e`, no redirection to a
+file. Read several files with parallel Read calls, search with Grep or Glob, write with Write and
+Edit. Subagents always run in the foreground: you get each report before you continue.
 
 ## Confidentiality
 
@@ -35,10 +38,10 @@ PRD, a customer, a date, a commitment, or a weakness the change does not already
 1. **The RFC**, at the commit the plan was made from: `rfc-status.yaml`'s `source` gives the Flow
    checkout path, the `sha` and the `path`. Read it with
    `git -C <flow> show <sha>:<path>`, and its parsed form with
-   `node rfc-delivery/cli.mjs parse <sha>:<path> --flow <flow>`. Its acceptance criteria are the
+   `node <tool>/cli.mjs parse <sha>:<path> --flow <flow>`. Its acceptance criteria are the
    contract; its technical design, contracts and test plan are the design. Its PRD
    (`prds/<prd>-*/prd.md` at the same sha) explains why.
-2. **The chunk**: `node rfc-delivery/cli.mjs chunk <dir> <chunk>` prints its entry in `chunks.yaml`
+2. **The chunk**: `node <tool>/cli.mjs chunk <dir> <chunk>` prints its entry in `chunks.yaml`
    (`acceptance`, `tests`, `depends_on`, `description`, `invoke_dev_with`) and its facts. Its
    `invoke_dev_with` holds the team's guardrails from the split review: they bind you.
 3. **The other chunks**: `<dir>/chunks.yaml` says what belongs to the chunks before and after this
@@ -56,7 +59,7 @@ Use them by name; do not restate or override them.
 | Analyse, spec | `change-delivery`, the `.claude/rules/` file of each area touched | Scope posture and each area's stack and rules |
 | Implement, backend | `backend-code-writer` agent, with `knex-migration`, `elasticsearch-migration` or `postgres-concurrency` when the spec needs them | Backend conventions, migrations, tests |
 | Implement, frontend | `frontend-code-writer` agent | Frontend stack, design system, i18n, analytics IDs |
-| Compare | `rfc-delivery/screenshot.mjs`, then Read on the images | The rendering before and after, in both themes |
+| Compare | `<tool>/screenshot.mjs`, then Read on the images | The rendering before and after, in both themes |
 | Review | `code-review`, `performance-security-review`, `testing-validation` | The brutally honest pass, the devil's advocate, the tests |
 | Commit message | `commit-splitter` agent's message rules, `AGENTS.md` | Conventional commit, intent over file names |
 | Instruction drift | `hub-review` | When the code contradicts `.claude/` or `AGENTS.md`: a line under Deferred findings, never an edit here |
@@ -94,7 +97,7 @@ the change needs a secret, an external service or a production action.
    screens it changes. When `<dir>/chunks/<chunk>.md` exists (a retry after a block), start from it
    and from the answer: the tracking pull request's comments since the block
    (`gh pr view <private_pull_request> --repo <private_repository> --comments`).
-2. **Spec.** Write `<dir>/chunks/<chunk>.md` from `rfc-delivery/chunk-template.md`. Every criterion
+2. **Spec.** Write `<dir>/chunks/<chunk>.md` from `<tool>/chunk-template.md`. Every criterion
    of the chunk gets its verbatim row, its outermost surface and its test; every behaviour a test must
    pin gets a matrix row; every file it touches is in the Code Map.
 3. **Ready for development** (BMAD). The spec is ready when it is *actionable* (every task names a
@@ -102,18 +105,18 @@ the change needs a secret, an external service or a production action.
    test at its surface), *surface-anchored* (a criterion is observed at the outermost surface the
    RFC names, never at an internal proxy), *complete* (no placeholder), *sufficient* (no known gap)
    and *coherent* (no contradiction with the RFC, the plan or an earlier spec). Run
-   `node rfc-delivery/cli.mjs check-spec <dir> <chunk>` and fix every error. Repair once; still not
+   `node <tool>/cli.mjs check-spec <dir> <chunk>` and fix every error. Repair once; still not
    ready: `FAILED` with the failing criteria.
 4. **Screens.** For a chunk the user sees, declare one to three screens, the most visible first, and
-   run `node rfc-delivery/screenshot.mjs <dir>/chunks/<chunk>.md before`: open the images and fix the
+   run `node <tool>/screenshot.mjs <dir>/chunks/<chunk>.md before`: open the images and fix the
    screens until each shows what the chunk changes. A screen that only exists after the change
    (a new page) is captured at Build mode; leave it out of the `before` run with `"after_only": true`.
 5. **Return** `DONE`, or `NEEDS_HUMAN` with the `question`. Change no file outside
-   `<dir>/chunks/<chunk>.md`: the script rejects the chunk otherwise.
+   `<dir>/chunks/<chunk>.md`: the loop rejects the chunk otherwise.
 
 ## Build mode
 
-The spec exists and, when it declares screens, the script has captured them on the untouched code.
+The spec exists and, when it declares screens, the loop has captured them on the untouched code.
 
 1. **Implement.** Launch the agent of each area the Code Map touches, backend first when both do,
    one at a time, with this prompt, and wait for it: "Implement `<dir>/chunks/<chunk>.md`, the
@@ -122,7 +125,7 @@ The spec exists and, when it declares screens, the script has captured them on t
    the backend agent's report. Generated files, with no server to start:
    - After a GraphQL change, the derived files are regenerated as `.claude/rules/graphql.md` says,
      except `apps/frontend/schema.graphql`: instead of restarting the API, write it with
-     `yarn workspace @xtm-hub/backend tsx ../../rfc-delivery/print-schema.ts`, then run the frontend
+     `yarn workspace @xtm-hub/backend tsx <tool>/print-schema.ts`, then run the frontend
      generators.
    - `yarn workspace @xtm-hub/backend generate-pg-to-ts` rewrites every Kanel model from the
      database, and some differ from the committed ones. Keep only the models of the tables the
@@ -135,7 +138,7 @@ The spec exists and, when it declares screens, the script has captured them on t
    a test that ran and passed in the verification output. A test that exists but did not run counts
    as missing. A test that disagrees with the spec is fixed in the code, never in its expectation.
 4. **Compare.** When the spec declares screens, run
-   `node rfc-delivery/screenshot.mjs <dir>/chunks/<chunk>.md after` and open each pair. A broken
+   `node <tool>/screenshot.mjs <dir>/chunks/<chunk>.md after` and open each pair. A broken
    layout, a missing state or label, cut text or an unreadable theme is a defect: send it to the
    frontend agent, then verify and compare again, at most twice.
 5. **Review.** Launch four context-free subagents in the same message and wait for all of them. Each
@@ -163,7 +166,7 @@ The spec exists and, when it declares screens, the script has captured them on t
    After fixes, re-run steps 2 to 4. At most two review rounds, and `review_loop_iteration` at most
    3; beyond, `FAILED`.
 6. **Return** the structured result:
-   - `commit_subject`: `node rfc-delivery/cli.mjs title <dir> <chunk>` prints the pull request title;
+   - `commit_subject`: `node <tool>/cli.mjs title <dir> <chunk>` prints the pull request title;
      use it as the subject unless the change is better described otherwise, keeping the
      `type(scope): description (#issue)` form.
    - `commit_body`: three to six lines, what changed and why, with no trailer.
@@ -172,7 +175,7 @@ The spec exists and, when it declares screens, the script has captured them on t
      flag it sits behind if any. Follow the Confidentiality section.
    - `how_to_test`: steps a reviewer follows on the feature environment or locally.
 
-The script validates again: `check-spec`, the whole suites of the touched workspaces and the screens.
+The loop validates again: `check-spec`, the whole suites of the touched workspaces and the screens.
 
 ## CI fix mode
 
@@ -187,7 +190,7 @@ scope: fix it in `apps/e2e/tests/` and add it to the Code Map.
 
 ## Validation fix mode
 
-Build mode returned `DONE` but the script's validation failed: it runs the whole suites of the
+Build mode returned `DONE` but the loop's validation failed: it runs the whole suites of the
 touched workspaces, where the session ran the tests it touched. The change is uncommitted. Read the
 failing log the invocation names, find the failing step, send the cause to the agent of its area
 with the spec, run Build mode steps 2 to 5, then run the failing step yourself. A test that fails
@@ -196,7 +199,7 @@ Return `DONE` with Build mode's fields, or `FAILED`.
 
 ## Stack fix mode
 
-A chunk below this one in the stack changed after this one was built (a review fix), and the script
+A chunk below this one in the stack changed after this one was built (a review fix), and the loop
 is carrying that change up by merging the lower branch into this chunk's branch. Git stopped on
 conflicts in the files the invocation names. Resolve each conflict so both sides survive: the lower
 chunk's fix, with this chunk's change on top. Change no other file and run no git command. Run the

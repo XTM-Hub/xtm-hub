@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // The deterministic half of rfc-delivery: reads Flow RFCs, keeps the tracking files of the private
-// repository, and plans the loop. run.sh and the skills call it; it never runs git writes, gh or
+// repository, and plans the loop. The skills and the sessions call it; it never runs git writes, gh or
 // claude. Every command prints plain text, or JSON with --json.
 //
 //   node rfc-delivery/cli.mjs locate <RFC-ID> --flow <filigran-flow checkout>   where the RFC is
@@ -27,7 +27,7 @@ import { parseRfc, readiness } from './lib/rfc.mjs';
 import * as st from './lib/state.mjs';
 import { Document } from 'yaml';
 
-const STATUS_HEADER = `# Delivery status of one RFC, BMAD sprint-status style. Written by rfc-delivery/run.sh only:
+const STATUS_HEADER = `# Delivery status of one RFC, BMAD sprint-status style. Written by the loop (yarn rfc) only:
 # the plan is chunks.yaml, reviewed by the team in the tracking pull request.
 #
 # rfc_status:  planning (the plan waits for the team) | in-progress | review (RFC review posted) | done

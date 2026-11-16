@@ -1,17 +1,18 @@
 ---
 name: rfc-delivery-feedback
-description: Works through the team's review of one chunk pull request of an RFC delivery with a human - triage, fixes on the chunk's own branch, replies - then carries the fixes up the stack. Launched by `rfc-delivery/run.sh <RFC-ID> feedback <chunk>`.
+description: Works through the team's review of one chunk pull request of an RFC delivery with a human - triage, fixes on the chunk's own branch, replies - then carries the fixes up the stack. Launched by `yarn rfc <RFC-ID> feedback <chunk>`.
 ---
 
 # RFC delivery: answer the review of a chunk
 
-A human is at the keyboard. The invocation names a chunk, its public pull request, its branch, the
-tracking folder in the private repository and the RFC. The team reviewed the chunk's pull request;
+A human is at the keyboard. You run in the RFC's worktree, where the loop builds the chunks. The
+invocation names a chunk, its public pull request, its branch, the tracking folder in the private
+repository, the RFC and the tooling folder (`<tool>`). The team reviewed the chunk's pull request;
 help the human answer that review, fix what they approve on the chunk's branch, and carry the
 fixes into the chunks stacked above it. Answer in the human's language.
 
 The human decides. Ask before every fix that changes behaviour, before every commit series, and
-before every push. Never run the main loop. `rfc-delivery/WORKFLOW.md` still rules the code: the RFC
+before every push. Never run the main loop. `<tool>/WORKFLOW.md` still rules the code: the RFC
 is right, the chunk and nothing more, and the public texts follow its Confidentiality section.
 
 ## 1. Load the review
@@ -19,8 +20,8 @@ is right, the chunk and nothing more, and the public texts follow its Confidenti
 - The comments, reviews and inline threads of the pull request, unresolved first:
   `gh pr view <pr> --comments`, `gh api repos/<repository>/pulls/<pr>/comments --paginate`,
   `gh api repos/<repository>/pulls/<pr>/reviews`.
-- The chunk spec and its criteria, the plan entry (`node rfc-delivery/cli.mjs chunk <dir> <chunk>`).
-- The chunks above it: `node rfc-delivery/cli.mjs above <dir> <chunk>`. A fix here reaches them.
+- The chunk spec and its criteria, the plan entry (`node <tool>/cli.mjs chunk <dir> <chunk>`).
+- The chunks above it: `node <tool>/cli.mjs above <dir> <chunk>`. A fix here reaches them.
 
 ## 2. Triage
 
@@ -48,10 +49,10 @@ Classify each comment:
 
 With the human's go:
 
-1. `rfc-delivery/run.sh <RFC-ID> restack <chunk>`: pushes this branch, merges it into each chunk above
+1. `yarn rfc <RFC-ID> restack <chunk>`, from the xtm-hub checkout: pushes this branch, merges it into each chunk above
    (a Stack fix session resolves conflicts), pushes them, and puts the chunks that moved back in
    review.
 2. Reply to each thread: what was fixed and in which commit, or why not. Resolve the threads the
    human agrees are settled.
-3. Ask the human to relaunch `rfc-delivery/run.sh <RFC-ID>`: it waits for the checks of every chunk
+3. Ask the human to relaunch `yarn rfc <RFC-ID>`: it waits for the checks of every chunk
    that moved.

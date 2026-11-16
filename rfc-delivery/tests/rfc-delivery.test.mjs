@@ -1,7 +1,7 @@
 // node --test rfc-delivery/tests/
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { cpSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
@@ -224,24 +224,32 @@ test('checkSpec: the template filled for the fixture passes, its gaps are named'
   assert.ok(errors.some((e) => e.includes('placeholders')));
 });
 
-test('run.sh: --dry-run and status read the plan from the private folder', () => {
+test('yarn rfc: --dry-run and status read the plan from the private folder', () => {
   const root = mkdtempSync(join(tmpdir(), 'rfc-private-'));
   const dir = join(root, 'rfc-delivery', 'RFC-XHUB-9999');
   cpSync(fixture, dir, { recursive: true });
   const header = { ...HEADER, rfc_status: 'planning', required_checks: 'run-api-unit-tests', base: 'main' };
   execFileSync('node', [cli, 'generate', dir, '--header', JSON.stringify(header)], { stdio: 'pipe' });
-  const runSh = (...a) =>
-    execFileSync('bash', [join(here, '..', 'run.sh'), 'RFC-XHUB-9999', ...a], {
+  const rfc = (...a) =>
+    execFileSync('node', [join(here, '..', 'bin', 'rfc.ts'), 'RFC-XHUB-9999', ...a], {
       encoding: 'utf8',
-      env: { ...process.env, RFC_PRIVATE_DIR: root, RFC_FLOW_DIR: root },
+      env: { ...process.env, RFC_PRIVATE_DIR: root, RFC_FLOW_DIR: root, RFC_WORKTREE: join(root, 'worktree') },
       stdio: ['ignore', 'pipe', 'pipe'],
     });
-  assert.match(runSh('--dry-run'), /^next: approve - -$/m);
-  run('set', dir, 'rfc_status', 'in-progress');
-  assert.match(runSh('--dry-run'), /^next: run ms-001-saved-search-model -$/m);
-  const status = runSh('status');
-  assert.match(status, /3 backlog/);
-  assert.match(status, /rfc_status: in-progress/);
+  try {
+    assert.match(rfc('--dry-run'), /^next: approve - -$/m);
+    run('set', dir, 'rfc_status', 'in-progress');
+    assert.match(rfc('--dry-run'), /^next: run ms-001-saved-search-model -$/m);
+    const status = rfc('status');
+    assert.match(status, /3 backlog/);
+    assert.match(status, /rfc_status: in-progress/);
+    assert.match(status, /not created yet/);
+    assert.equal(existsSync(join(root, 'worktree')), false, 'reading the state creates no worktree');
+  } finally {
+    const logs = execFileSync('git', ['rev-parse', '--path-format=absolute', '--git-common-dir'], { cwd: here, encoding: 'utf8' }).trim();
+    rmSync(join(logs, 'rfc-delivery', 'RFC-XHUB-9999'), { recursive: true, force: true });
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 test('validate: public_title must read like a pull request title', () => {

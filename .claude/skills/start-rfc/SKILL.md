@@ -7,7 +7,7 @@ description: >-
   developers validate them, splitting only a slice too big to review, has the plan reviewed
   independently, then writes it in xtm-hub-private, creates the issues, the RFC branch
   and its draft pull request, and the tracking pull request the team approves before
-  `rfc-delivery/run.sh` builds the chunks. Use when someone says "let's build RFC-XHUB-NNNN", "start
+  the delivery loop (`yarn rfc`) builds the chunks. Use when someone says "let's build RFC-XHUB-NNNN", "start
   the RFC", "plan the chunks of", or names an RFC to implement. Not for writing the RFC (`/flow:write-rfc`).
 ---
 
@@ -15,7 +15,7 @@ description: >-
 
 BMAD's sprint planning, for one Flow RFC: check the plan is implementable, turn it into stories,
 write the tracking file. Here the stories are **chunks**: one pull request each, stacked on one
-another, built later by `rfc-delivery/run.sh` (see `rfc-delivery/README.md`).
+another, built later by the delivery loop, `yarn rfc` (see `rfc-delivery/README.md`).
 
 A human is at the keyboard: usually the engineers who will review the chunks. **The split is
 already theirs**: they wrote the RFC's delivery plan, its slices `MS-NNN`, with `/flow:write-rfc`.
@@ -111,7 +111,7 @@ On a branch of the private repository, `git -C <private> switch -c rfc/<RFC-ID> 
 the existing one). Write `<dir>/chunks.yaml`:
 
 ```yaml
-# Plan of RFC-XHUB-NNNN, agreed with <who> on <date>. Read by rfc-delivery/run.sh, never written by it.
+# Plan of RFC-XHUB-NNNN, agreed with <who> on <date>. Read by the loop (yarn rfc), never written by it.
 rfc: RFC-XHUB-NNNN
 skipped_slices: {}            # MS-NNN: why it is not built now
 chunks:
@@ -179,7 +179,8 @@ Show what will be created, then ask once:
 - in XTM-Hub/xtm-hub-private: the branch `rfc/<RFC-ID>` with `<dir>`, and the **tracking pull
   request**, where the team reviews the split.
 
-On the go: `rfc-delivery/run.sh <RFC-ID> issues --yes`, then `rfc-delivery/run.sh <RFC-ID> start`.
+On the go: `yarn rfc <RFC-ID> issues --yes`, then `yarn rfc <RFC-ID> start`, which also creates
+the RFC's worktree next to this checkout (`../<checkout>-<rfc-id>`) and installs its dependencies.
 Both need what `rfc-delivery/README.md` (Commands) lists.
 
 ## 8. Hand over
@@ -187,5 +188,5 @@ Both need what `rfc-delivery/README.md` (Commands) lists.
 In a few lines: the links of the two pull requests; that the team reviews the split in the tracking
 pull request, and that **an approval by someone other than its author starts the loop**; the command,
 to launch from this checkout with what `rfc-delivery/README.md` (Commands) lists:
-`caffeinate -i rfc-delivery/run.sh <RFC-ID>`; and what follows, as `rfc-delivery/README.md` (The
-stack) describes, ending with `rfc-delivery/run.sh <RFC-ID> review`.
+`caffeinate -i yarn rfc <RFC-ID>`; and what follows, as `rfc-delivery/README.md` (The stack)
+describes, ending with `yarn rfc <RFC-ID> review`.

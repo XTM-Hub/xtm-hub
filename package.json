@@ -15,7 +15,8 @@
     "dev:front": "yarn workspace  @xtm-hub/frontend dev",
     "check:dependencies": "node scripts/check-dependencies.mjs",
     "prepare": "husky ./.husky",
-    "lint-staged": "lint-staged"
+    "lint-staged": "lint-staged",
+    "rfc": "yarn --cwd rfc-delivery rfc"
   },
   "devDependencies": {
     "@types/node": "catalog:",
