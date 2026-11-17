@@ -4123,6 +4123,13 @@ export type RefreshUserPlatformTokenMutationVariables = Exact<{ [key: string]: n
 
 export type RefreshUserPlatformTokenMutation = { __typename?: 'Mutation', refreshUserPlatformToken: { __typename?: 'RefreshUserPlatformTokenResponse', token: string } };
 
+export type UnregisterPlatformMutationVariables = Exact<{
+  input: UnregisterPlatformInput;
+}>;
+
+
+export type UnregisterPlatformMutation = { __typename?: 'Mutation', unregisterPlatform: { __typename?: 'Success', success: boolean } };
+
 export type RegisteredPlatformsQueryVariables = Exact<{
   input: RegisteredPlatformsInput;
 }>;
@@ -4144,6 +4151,15 @@ export type RegisteredPlatformRedirectTargetQueryVariables = Exact<{
 
 
 export type RegisteredPlatformRedirectTargetQuery = { __typename?: 'Query', registeredPlatformByPlatformId: { __typename?: 'RegisteredPlatform', service_instance_id: any, identifier: ServiceDefinitionIdentifier, deployment_request: { __typename?: 'DeploymentRequest', parent_id: any | null } | null } | null };
+
+export type RegisteredPlatformDetailsFragment = { __typename?: 'RegisteredPlatform', id: string, service_instance_id: any, platform_id: string, last_connectivity_check: any | null, commercial_model: CommercialModel | null, tenant_id: string | null, title: string, contract: PlatformContract, url: string, version: string | null, identifier: ServiceDefinitionIdentifier, subscription: { __typename?: 'SubscriptionModel', start_date: any | null, end_date: any | null, service_instance: { __typename?: 'ServiceInstance', id: string }, organization: { __typename?: 'Organization', id: string } } | null, deployment_request: { __typename?: 'DeploymentRequest', id: string, hub_status: DeploymentRequestHubStatus, region: DeploymentRequestPlatformRegion, counts_in_orga_quota: boolean, platform_identifier: PlatformIdentifier | null, requester_email: string | null } | null, myGroups: Array<{ __typename?: 'ServiceGroup', name: ServiceGroupName }> | null };
+
+export type RegisteredPlatformByServiceInstanceQueryVariables = Exact<{
+  input: RegisteredPlatformInput;
+}>;
+
+
+export type RegisteredPlatformByServiceInstanceQuery = { __typename?: 'Query', registeredPlatform: { __typename?: 'RegisteredPlatform', id: string, service_instance_id: any, platform_id: string, last_connectivity_check: any | null, commercial_model: CommercialModel | null, tenant_id: string | null, title: string, contract: PlatformContract, url: string, version: string | null, identifier: ServiceDefinitionIdentifier, subscription: { __typename?: 'SubscriptionModel', start_date: any | null, end_date: any | null, service_instance: { __typename?: 'ServiceInstance', id: string }, organization: { __typename?: 'Organization', id: string } } | null, deployment_request: { __typename?: 'DeploymentRequest', id: string, hub_status: DeploymentRequestHubStatus, region: DeploymentRequestPlatformRegion, counts_in_orga_quota: boolean, platform_identifier: PlatformIdentifier | null, requester_email: string | null } | null, myGroups: Array<{ __typename?: 'ServiceGroup', name: ServiceGroupName }> | null } | null };
 
 export type AddRolePortalMutationVariables = Exact<{
   input: AddRolePortalInput;
@@ -4301,6 +4317,13 @@ export type EditSeoServiceInstanceMetadataMutationVariables = Exact<{
 
 
 export type EditSeoServiceInstanceMetadataMutation = { __typename?: 'Mutation', editSeoServiceInstance: { __typename?: 'SeoServiceInstanceMetadata', service_instance_id: any, language: Locale, meta_title: string, meta_description: string } };
+
+export type UpdatePlatformServiceMetadataMutationVariables = Exact<{
+  input: UpdatePlatformServiceMetadataInput;
+}>;
+
+
+export type UpdatePlatformServiceMetadataMutation = { __typename?: 'Mutation', updatePlatformServiceMetadata: { __typename?: 'RegisteredPlatform', id: string, title: string } | null };
 
 export type ServiceUserCapabilitiesQueryVariables = Exact<{
   service_instance_id: Scalars['ServiceInstanceId']['input'];
@@ -5043,6 +5066,42 @@ export const OrganizationItemFragmentDoc = `
   name
   domains
   personal_space
+}
+    `;
+export const RegisteredPlatformDetailsFragmentDoc = `
+    fragment RegisteredPlatformDetails on RegisteredPlatform {
+  id
+  service_instance_id
+  platform_id
+  last_connectivity_check
+  commercial_model
+  tenant_id
+  title
+  contract
+  url
+  version
+  identifier
+  subscription {
+    start_date
+    end_date
+    service_instance {
+      id
+    }
+    organization {
+      id
+    }
+  }
+  deployment_request {
+    id
+    hub_status
+    region
+    counts_in_orga_quota
+    platform_identifier
+    requester_email
+  }
+  myGroups {
+    name
+  }
 }
     `;
 export const SaasPlatformRowFragmentDoc = `
@@ -7985,6 +8044,35 @@ useRefreshUserPlatformTokenMutation.getKey = () => ['RefreshUserPlatformToken'];
 useRefreshUserPlatformTokenMutation.getRootKey = () => ['RefreshUserPlatformToken'] as const;
 useRefreshUserPlatformTokenMutation.fetcher = (client: GraphQLClient, variables?: RefreshUserPlatformTokenMutationVariables, headers?: RequestInit['headers']) => fetcher<RefreshUserPlatformTokenMutation, RefreshUserPlatformTokenMutationVariables>(client, RefreshUserPlatformTokenDocument, variables, headers);
 
+export const UnregisterPlatformDocument = `
+    mutation UnregisterPlatform($input: UnregisterPlatformInput!) {
+  unregisterPlatform(input: $input) {
+    success
+  }
+}
+    `;
+
+export const useUnregisterPlatformMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<UnregisterPlatformMutation, TError, UnregisterPlatformMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<UnregisterPlatformMutation, TError, UnregisterPlatformMutationVariables, TContext>(
+      {
+    mutationKey: ['UnregisterPlatform'],
+    mutationFn: (variables?: UnregisterPlatformMutationVariables) => fetcher<UnregisterPlatformMutation, UnregisterPlatformMutationVariables>(client, UnregisterPlatformDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useUnregisterPlatformMutation.getKey = () => ['UnregisterPlatform'];
+useUnregisterPlatformMutation.getRootKey = () => ['UnregisterPlatform'] as const;
+useUnregisterPlatformMutation.fetcher = (client: GraphQLClient, variables: UnregisterPlatformMutationVariables, headers?: RequestInit['headers']) => fetcher<UnregisterPlatformMutation, UnregisterPlatformMutationVariables>(client, UnregisterPlatformDocument, variables, headers);
+
 export const RegisteredPlatformsDocument = `
     query RegisteredPlatforms($input: RegisteredPlatformsInput!) {
   registeredPlatforms(input: $input) {
@@ -8158,6 +8246,59 @@ export const useInfiniteRegisteredPlatformRedirectTargetQuery = <
 useInfiniteRegisteredPlatformRedirectTargetQuery.getKey = (variables: RegisteredPlatformRedirectTargetQueryVariables) => ['RegisteredPlatformRedirectTarget.infinite', variables];
 useInfiniteRegisteredPlatformRedirectTargetQuery.getRootKey = () => ['RegisteredPlatformRedirectTarget.infinite'] as const;
 useRegisteredPlatformRedirectTargetQuery.fetcher = (client: GraphQLClient, variables: RegisteredPlatformRedirectTargetQueryVariables, headers?: RequestInit['headers']) => fetcher<RegisteredPlatformRedirectTargetQuery, RegisteredPlatformRedirectTargetQueryVariables>(client, RegisteredPlatformRedirectTargetDocument, variables, headers);
+
+export const RegisteredPlatformByServiceInstanceDocument = `
+    query RegisteredPlatformByServiceInstance($input: RegisteredPlatformInput!) {
+  registeredPlatform(input: $input) {
+    ...RegisteredPlatformDetails
+  }
+}
+    ${RegisteredPlatformDetailsFragmentDoc}`;
+
+export const useRegisteredPlatformByServiceInstanceQuery = <
+      TData = RegisteredPlatformByServiceInstanceQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: RegisteredPlatformByServiceInstanceQueryVariables,
+      options?: Omit<UseQueryOptions<RegisteredPlatformByServiceInstanceQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<RegisteredPlatformByServiceInstanceQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<RegisteredPlatformByServiceInstanceQuery, TError, TData>(
+      {
+    queryKey: ['RegisteredPlatformByServiceInstance', variables],
+    queryFn: fetcher<RegisteredPlatformByServiceInstanceQuery, RegisteredPlatformByServiceInstanceQueryVariables>(client, RegisteredPlatformByServiceInstanceDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useRegisteredPlatformByServiceInstanceQuery.getKey = (variables: RegisteredPlatformByServiceInstanceQueryVariables) => ['RegisteredPlatformByServiceInstance', variables];
+useRegisteredPlatformByServiceInstanceQuery.getRootKey = () => ['RegisteredPlatformByServiceInstance'] as const;
+export const useInfiniteRegisteredPlatformByServiceInstanceQuery = <
+      TData = InfiniteData<RegisteredPlatformByServiceInstanceQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: RegisteredPlatformByServiceInstanceQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<RegisteredPlatformByServiceInstanceQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<RegisteredPlatformByServiceInstanceQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<RegisteredPlatformByServiceInstanceQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['RegisteredPlatformByServiceInstance.infinite', variables],
+      queryFn: (metaData) => fetcher<RegisteredPlatformByServiceInstanceQuery, RegisteredPlatformByServiceInstanceQueryVariables>(client, RegisteredPlatformByServiceInstanceDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteRegisteredPlatformByServiceInstanceQuery.getKey = (variables: RegisteredPlatformByServiceInstanceQueryVariables) => ['RegisteredPlatformByServiceInstance.infinite', variables];
+useInfiniteRegisteredPlatformByServiceInstanceQuery.getRootKey = () => ['RegisteredPlatformByServiceInstance.infinite'] as const;
+useRegisteredPlatformByServiceInstanceQuery.fetcher = (client: GraphQLClient, variables: RegisteredPlatformByServiceInstanceQueryVariables, headers?: RequestInit['headers']) => fetcher<RegisteredPlatformByServiceInstanceQuery, RegisteredPlatformByServiceInstanceQueryVariables>(client, RegisteredPlatformByServiceInstanceDocument, variables, headers);
 
 export const AddRolePortalDocument = `
     mutation AddRolePortal($input: AddRolePortalInput!) {
@@ -9065,6 +9206,36 @@ export const useEditSeoServiceInstanceMetadataMutation = <
 useEditSeoServiceInstanceMetadataMutation.getKey = () => ['EditSeoServiceInstanceMetadata'];
 useEditSeoServiceInstanceMetadataMutation.getRootKey = () => ['EditSeoServiceInstanceMetadata'] as const;
 useEditSeoServiceInstanceMetadataMutation.fetcher = (client: GraphQLClient, variables: EditSeoServiceInstanceMetadataMutationVariables, headers?: RequestInit['headers']) => fetcher<EditSeoServiceInstanceMetadataMutation, EditSeoServiceInstanceMetadataMutationVariables>(client, EditSeoServiceInstanceMetadataDocument, variables, headers);
+
+export const UpdatePlatformServiceMetadataDocument = `
+    mutation UpdatePlatformServiceMetadata($input: UpdatePlatformServiceMetadataInput!) {
+  updatePlatformServiceMetadata(input: $input) {
+    id
+    title
+  }
+}
+    `;
+
+export const useUpdatePlatformServiceMetadataMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<UpdatePlatformServiceMetadataMutation, TError, UpdatePlatformServiceMetadataMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<UpdatePlatformServiceMetadataMutation, TError, UpdatePlatformServiceMetadataMutationVariables, TContext>(
+      {
+    mutationKey: ['UpdatePlatformServiceMetadata'],
+    mutationFn: (variables?: UpdatePlatformServiceMetadataMutationVariables) => fetcher<UpdatePlatformServiceMetadataMutation, UpdatePlatformServiceMetadataMutationVariables>(client, UpdatePlatformServiceMetadataDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useUpdatePlatformServiceMetadataMutation.getKey = () => ['UpdatePlatformServiceMetadata'];
+useUpdatePlatformServiceMetadataMutation.getRootKey = () => ['UpdatePlatformServiceMetadata'] as const;
+useUpdatePlatformServiceMetadataMutation.fetcher = (client: GraphQLClient, variables: UpdatePlatformServiceMetadataMutationVariables, headers?: RequestInit['headers']) => fetcher<UpdatePlatformServiceMetadataMutation, UpdatePlatformServiceMetadataMutationVariables>(client, UpdatePlatformServiceMetadataDocument, variables, headers);
 
 export const ServiceUserCapabilitiesDocument = `
     query ServiceUserCapabilities($service_instance_id: ServiceInstanceId!) {

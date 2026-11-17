@@ -1,20 +1,12 @@
 import { RegisteredPlatformHeader } from '@/components/service/registration/RegisteredPlatformHeader';
 import { basePlatform } from '@/components/service/registration/registered-platform.fixtures';
 import testRender from '@/utils/test/test-render';
-import { registeredPlatformByServiceInstanceId_fragment$data } from '@generated/registeredPlatformByServiceInstanceId_fragment.graphql';
-import { PlatformContract } from '@graphql/generated';
+import {
+  PlatformContract,
+  RegisteredPlatformDetailsFragment,
+} from '@graphql/generated';
 import { screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
-// ─── Mocks ────────────────────────────────────────────────────────────────────
-
-let mockPlatformData: registeredPlatformByServiceInstanceId_fragment$data;
-
-vi.mock('react-relay', async (importOriginal) => ({
-  ...(await importOriginal()),
-  useFragment: () => mockPlatformData,
-  useMutation: () => [vi.fn(), false],
-}));
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -25,12 +17,13 @@ const PLATFORM_ORGANIZATION_ID = basePlatform.subscription!.organization.id;
 const OTHER_ORGANIZATION_ID = 'other-org-id';
 
 const renderHeader = (
-  platform: Partial<registeredPlatformByServiceInstanceId_fragment$data> = {},
+  platform: Partial<RegisteredPlatformDetailsFragment> = {},
   selectedOrganizationId: string = PLATFORM_ORGANIZATION_ID
 ) => {
-  mockPlatformData = { ...basePlatform, ...platform };
   return testRender(
-    <RegisteredPlatformHeader registeredPlatform={mockPlatformData} />,
+    <RegisteredPlatformHeader
+      registeredPlatform={{ ...basePlatform, ...platform }}
+    />,
     { me: { selected_organization_id: selectedOrganizationId } }
   );
 };

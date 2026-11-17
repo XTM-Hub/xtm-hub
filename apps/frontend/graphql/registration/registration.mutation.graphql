@@ -3,3 +3,9 @@ mutation RefreshUserPlatformToken {
     token
   }
 }
+
+mutation UnregisterPlatform($input: UnregisterPlatformInput!) {
+  unregisterPlatform(input: $input) {
+    success
+  }
+}

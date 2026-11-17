@@ -2,31 +2,26 @@
 
 import { PortalContext } from '@/components/me/AppPortalContext';
 import { CONTRACT_LABEL_BY_CONTRACT } from '@/components/registration/PlatformIdentifierMapping';
-import { registeredPlatformByServiceInstanceIdFragment } from '@/components/registration/register/register.graphql';
 import { ConnectedProductButtons } from '@/components/service/registration/ConnectedProductButtons';
 import { useTranslate } from '@/hooks/use-translate';
 import { isWithinLastMonths } from '@/utils/date';
 import { Chip } from '@filigran/design-system';
-import { registeredPlatformByServiceInstanceId_fragment$key } from '@generated/registeredPlatformByServiceInstanceId_fragment.graphql';
-import { PlatformContract } from '@graphql/generated';
+import {
+  PlatformContract,
+  RegisteredPlatformDetailsFragment,
+} from '@graphql/generated';
 import { useContext } from 'react';
-import { useFragment } from 'react-relay';
 
 interface RegisteredPlatformHeaderProps {
-  registeredPlatform: registeredPlatformByServiceInstanceId_fragment$key;
+  registeredPlatform: RegisteredPlatformDetailsFragment;
 }
 
 export const RegisteredPlatformHeader = ({
-  registeredPlatform,
+  registeredPlatform: platform,
 }: RegisteredPlatformHeaderProps) => {
   const t = useTranslate();
 
   const { me } = useContext(PortalContext);
-  const platform =
-    useFragment<registeredPlatformByServiceInstanceId_fragment$key>(
-      registeredPlatformByServiceInstanceIdFragment,
-      registeredPlatform
-    );
 
   const shouldDisplayHeaderButtons =
     me?.selected_organization_id === platform.subscription?.organization.id;

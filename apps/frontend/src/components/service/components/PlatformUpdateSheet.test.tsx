@@ -1,10 +1,10 @@
 import { PlatformUpdateSheet } from '@/components/service/components/PlatformUpdateSheet';
 import testRender from '@/utils/test/test-render';
 import { ServiceDefinitionIdentifier } from '@graphql/generated';
+import { registrationKeys } from '@graphql/registration/registration.keys';
 import { QueryClient } from '@tanstack/react-query';
 import { screen } from '@testing-library/react';
 import React from 'react';
-import { createMockEnvironment } from 'relay-test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const testState = vi.hoisted(() => ({
@@ -36,10 +36,15 @@ vi.mock('@/components/ui/SheetWithPreventingDialog', () => ({
   ),
 }));
 
-vi.mock('react-relay', async (importOriginal) => ({
-  ...(await importOriginal()),
-  useMutation: () => [testState.commitMutation, false],
-}));
+vi.mock('@graphql/generated', async (importOriginal) => {
+  const { mockGeneratedQueryHooks } =
+    await import('@/utils/test/mock-generated-query');
+  return mockGeneratedQueryHooks(importOriginal, {
+    useUpdatePlatformServiceMetadataMutation: () => ({
+      mutate: testState.commitMutation,
+    }),
+  });
+});
 
 describe('PlatformUpdateSheet', () => {
   const defaultProps = {
@@ -57,20 +62,18 @@ describe('PlatformUpdateSheet', () => {
     testState.commitMutation.mockReset();
     testState.invalidatePrivateNavigationQueries.mockReset();
     testState.commitMutation.mockImplementation(
-      (opts: {
-        variables: Record<string, unknown>;
-        onCompleted?: () => void;
-      }) => {
-        testState.lastVariables = opts.variables;
-        opts.onCompleted?.();
+      (
+        variables: Record<string, unknown>,
+        options?: { onSuccess?: () => void }
+      ) => {
+        testState.lastVariables = variables;
+        options?.onSuccess?.();
       }
     );
   });
 
   it('displays URL input with the provided URL', () => {
-    testRender(<PlatformUpdateSheet {...defaultProps} />, {
-      relayConfig: createMockEnvironment(),
-    });
+    testRender(<PlatformUpdateSheet {...defaultProps} />);
 
     expect(
       screen.getByDisplayValue('https://platform.example.com')
@@ -78,9 +81,7 @@ describe('PlatformUpdateSheet', () => {
   });
 
   it('renders URL input as non-editable', () => {
-    testRender(<PlatformUpdateSheet {...defaultProps} />, {
-      relayConfig: createMockEnvironment(),
-    });
+    testRender(<PlatformUpdateSheet {...defaultProps} />);
 
     expect(screen.getByDisplayValue(defaultProps.platformUrl)).toBeDisabled();
   });
@@ -91,10 +92,7 @@ describe('PlatformUpdateSheet', () => {
       <PlatformUpdateSheet
         {...defaultProps}
         setOpen={setOpen}
-      />,
-      {
-        relayConfig: createMockEnvironment(),
-      }
+      />
     );
 
     await user.click(screen.getByRole('button', { name: 'Utils.Update' }));
@@ -111,9 +109,7 @@ describe('PlatformUpdateSheet', () => {
   });
 
   it('invalidates the private navigation queries after a successful update', async () => {
-    const { user } = testRender(<PlatformUpdateSheet {...defaultProps} />, {
-      relayConfig: createMockEnvironment(),
-    });
+    const { user } = testRender(<PlatformUpdateSheet {...defaultProps} />);
 
     expect(testState.invalidatePrivateNavigationQueries).not.toHaveBeenCalled();
 
@@ -123,5 +119,44 @@ describe('PlatformUpdateSheet', () => {
     expect(testState.invalidatePrivateNavigationQueries).toHaveBeenCalledWith(
       expect.any(QueryClient)
     );
+  });
+
+  it('refreshes the registered platform page after a successful update', async () => {
+    // Given
+    const queryClient = new QueryClient();
+    const invalidateQueries = vi.spyOn(queryClient, 'invalidateQueries');
+    const { user } = testRender(<PlatformUpdateSheet {...defaultProps} />, {
+      queryClient,
+    });
+
+    // When
+    await user.click(screen.getByRole('button', { name: 'Utils.Update' }));
+
+    // Then
+    expect(invalidateQueries).toHaveBeenCalledWith({
+      queryKey: registrationKeys.allByServiceInstance(),
+    });
+  });
+
+  it('keeps the sheet open and shows the server error when the update fails', async () => {
+    // Given
+    const setOpen = vi.fn();
+    testState.commitMutation.mockImplementation(
+      (_variables, options: { onError: (error: Error) => void }) =>
+        options.onError(new Error('SERVICE_INSTANCE_NOT_FOUND'))
+    );
+    const { user } = testRender(
+      <PlatformUpdateSheet
+        {...defaultProps}
+        setOpen={setOpen}
+      />
+    );
+
+    // When
+    await user.click(screen.getByRole('button', { name: 'Utils.Update' }));
+
+    // Then
+    expect(setOpen).not.toHaveBeenCalled();
+    expect(testState.invalidatePrivateNavigationQueries).not.toHaveBeenCalled();
   });
 });

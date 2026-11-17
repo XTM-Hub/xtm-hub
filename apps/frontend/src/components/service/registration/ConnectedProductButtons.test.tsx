@@ -5,11 +5,11 @@ import {
   trialPlatformWithAccess,
 } from '@/components/service/registration/registered-platform.fixtures';
 import testRender from '@/utils/test/test-render';
-import { registeredPlatformByServiceInstanceId_fragment$data } from '@generated/registeredPlatformByServiceInstanceId_fragment.graphql';
 import {
   DeploymentRequestHubStatus,
   OrganizationCapability,
   PortalCapability,
+  RegisteredPlatformDetailsFragment,
 } from '@graphql/generated';
 import { screen } from '@testing-library/react';
 import { useSearchParams } from 'next/navigation';
@@ -50,7 +50,7 @@ vi.mock(
 );
 
 const renderButtons = (
-  platform: registeredPlatformByServiceInstanceId_fragment$data,
+  platform: RegisteredPlatformDetailsFragment,
   me?: NonNullable<Parameters<typeof testRender>[1]>['me']
 ) => testRender(<ConnectedProductButtons platform={platform} />, { me });
 

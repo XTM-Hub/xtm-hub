@@ -1,9 +1,6 @@
 'use client';
 
-import {
-  registeredPlatformByServiceInstanceId,
-  registeredPlatformByServiceInstanceIdFragment,
-} from '@/components/registration/register/register.graphql';
+import Loader from '@/components/Loader';
 import { PlatformInformation } from '@/components/service/registration/PlatformInformation';
 import { PlatformMetrics } from '@/components/service/registration/PlatformMetrics';
 import { PlatformMetricsAccessRequest } from '@/components/service/registration/PlatformMetricsAccessRequest';
@@ -13,25 +10,25 @@ import { BreadcrumbNav } from '@/components/ui/BreadcrumbNav';
 import useGranted from '@/hooks/use-granted';
 import { useUserHasPortalCapability } from '@/hooks/use-portal-capability';
 import { portalGraphqlClient } from '@/lib/graphql-client';
+import { throwOnFirstLoadError } from '@/lib/query-client';
 import {
   REGISTERED_PLATFORM_ORIGIN_CSM_BOARD,
   REGISTERED_PLATFORM_ORIGIN_PARAM,
 } from '@/utils/path/constant';
-import { registeredPlatformByServiceInstanceId_fragment$key } from '@generated/registeredPlatformByServiceInstanceId_fragment.graphql';
-import { registeredPlatformByServiceInstanceIdQuery } from '@generated/registeredPlatformByServiceInstanceIdQuery.graphql';
 import {
   CommercialModel,
   OrganizationCapability,
   PlatformIdentifier,
   PortalCapability,
   SaasPlatformMetricsPeriod,
+  useRegisteredPlatformByServiceInstanceQuery,
   useRegisteredSaasPlatformDataQuery,
 } from '@graphql/generated';
 import { productInformationKeys } from '@graphql/product-information/product-information.keys';
+import { registrationKeys } from '@graphql/registration/registration.keys';
 import { keepPreviousData } from '@tanstack/react-query';
 import { notFound, useSearchParams } from 'next/navigation';
 import { use, useState } from 'react';
-import { useFragment, useLazyLoadQuery } from 'react-relay';
 
 // Matches the backend cache: a remount within a minute would only get the same answer back.
 const SAAS_PLATFORM_DATA_STALE_TIME = 60_000;
@@ -48,20 +45,22 @@ export const RegisteredPlatformOverview = ({
   const { serviceInstanceId } = use(params);
   const decodedServiceInstanceId = decodeURIComponent(serviceInstanceId);
 
-  const queryData =
-    useLazyLoadQuery<registeredPlatformByServiceInstanceIdQuery>(
-      registeredPlatformByServiceInstanceId,
+  const registeredPlatformVariables = {
+    input: { service_instance_id: decodedServiceInstanceId },
+  };
+  // Prefetched by the page: hydrated with its data, it does not load again on mount.
+  const { data: registeredPlatformData } =
+    useRegisteredPlatformByServiceInstanceQuery(
+      portalGraphqlClient,
+      registeredPlatformVariables,
       {
-        input: {
-          service_instance_id: decodedServiceInstanceId,
-        },
+        queryKey: registrationKeys.byServiceInstance(
+          registeredPlatformVariables
+        ),
+        throwOnError: throwOnFirstLoadError,
       }
     );
-  const platform =
-    useFragment<registeredPlatformByServiceInstanceId_fragment$key>(
-      registeredPlatformByServiceInstanceIdFragment,
-      queryData.registeredPlatform
-    );
+  const platform = registeredPlatformData?.registeredPlatform;
 
   const searchParams = useSearchParams();
   // Only a user who can open the CSM board is led back to it.
@@ -117,7 +116,11 @@ export const RegisteredPlatformOverview = ({
     }
   );
 
-  if (!queryData.registeredPlatform || !platform) {
+  if (!registeredPlatformData) {
+    return <Loader />;
+  }
+
+  if (!platform) {
     notFound();
   }
 
@@ -129,9 +132,7 @@ export const RegisteredPlatformOverview = ({
   return (
     <>
       <BreadcrumbNav value={breadcrumbs} />
-      <RegisteredPlatformHeader
-        registeredPlatform={queryData.registeredPlatform}
-      />
+      <RegisteredPlatformHeader registeredPlatform={platform} />
       {isSaas &&
         (canSeePlatformMetrics ? (
           <PlatformMetrics
@@ -147,7 +148,7 @@ export const RegisteredPlatformOverview = ({
           <PlatformMetricsAccessRequest platformTitle={platform.title} />
         ))}
       <PlatformInformation
-        registeredPlatform={queryData.registeredPlatform}
+        registeredPlatform={platform}
         showMetadata={isSaas}
         metadata={saasPlatformData?.registeredSaasPlatformData?.metadata}
         isMetadataLoading={isSaasPlatformDataPending}
