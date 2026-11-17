@@ -2570,7 +2570,11 @@ describe('newsFeedApp', () => {
       const sync = NewsFeedApp.syncBlogposts();
 
       // Then
-      await expect(sync).rejects.toThrow(ErrorCode.NewsFeedBlogpostEmptyFeed);
+      await expect(sync).rejects.toThrow(ErrorCode.NewsFeedBlogpostSyncFailed);
+      await expect(sync).rejects.toHaveProperty(
+        'cause.message',
+        ErrorCode.NewsFeedBlogpostEmptyFeed
+      );
       expect(await loadBlogpostState()).toEqual(stateBefore);
     });
 
@@ -2625,7 +2629,11 @@ describe('newsFeedApp', () => {
       const sync = NewsFeedApp.syncBlogposts();
 
       // Then
-      await expect(sync).rejects.toThrow('Blog API unreachable');
+      await expect(sync).rejects.toThrow(ErrorCode.NewsFeedBlogpostSyncFailed);
+      await expect(sync).rejects.toHaveProperty(
+        'cause.message',
+        'Blog API unreachable'
+      );
       expect(await loadBlogpostState()).toEqual(stateBefore);
     });
 
@@ -2648,7 +2656,7 @@ describe('newsFeedApp', () => {
       const sync = NewsFeedApp.syncBlogposts();
 
       // Then
-      await expect(sync).rejects.toThrow();
+      await expect(sync).rejects.toThrow(ErrorCode.NewsFeedBlogpostSyncFailed);
       expect(await loadBlogpostItem('blog-post-3')).toBeUndefined();
       expect(await loadBlogpostState()).toEqual(stateBefore);
     });
@@ -2681,7 +2689,11 @@ describe('newsFeedApp', () => {
       const sync = NewsFeedApp.syncBlogposts();
 
       // Then
-      await expect(sync).rejects.toThrow('provisioning failed');
+      await expect(sync).rejects.toThrow(ErrorCode.NewsFeedBlogpostSyncFailed);
+      await expect(sync).rejects.toHaveProperty(
+        'cause.message',
+        'provisioning failed'
+      );
       expect(await loadBlogpostItem('blog-post-0')).toBeUndefined();
       expect(await loadBlogpostState()).toEqual(stateBefore);
     });
@@ -3111,7 +3123,7 @@ describe('newsFeedApp', () => {
         await expect(sync).rejects.toThrow(
           ErrorCode.NewsFeedBlogpostSyncFailed
         );
-        await expect(sync).rejects.toMatchObject({ cause: failure });
+        await expect(sync).rejects.toHaveProperty('cause', failure);
         expect(logError).toHaveBeenCalledWith(
           'Unable to synchronize the blog posts of a product',
           expect.objectContaining({ product: 'openaev', error: failure })
@@ -3159,9 +3171,10 @@ describe('newsFeedApp', () => {
         await expect(sync).rejects.toThrow(
           ErrorCode.NewsFeedBlogpostSyncFailed
         );
-        await expect(sync).rejects.toMatchObject({
-          cause: new Error('provisioning failed'),
-        });
+        await expect(sync).rejects.toHaveProperty(
+          'cause.message',
+          'provisioning failed'
+        );
         expect(await loadItemOfProduct(OPENCTI, 'blog-post-1')).toMatchObject({
           is_deleted: false,
         });
