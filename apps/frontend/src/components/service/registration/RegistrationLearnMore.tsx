@@ -75,7 +75,7 @@ export const RegistrationLearnMore = async ({
 
   return (
     <>
-      <Section className="bg-filigran-brand-primary-transparency-10 px-6">
+      <Section>
         <div className="text-center w-[70%] m-auto">
           <Text
             as="h2"
