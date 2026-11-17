@@ -13,10 +13,11 @@ interface ContextProps {
 
 // Component
 const SettingsContext = ({ children }: ContextProps) => {
-  // A failure reaches the nearest error boundary, as the Relay query did.
+  // A failed first load reaches the nearest error boundary; a failed background refetch keeps the settings
+  // already loaded.
   const { data } = useSettingsQuery(portalGraphqlClient, undefined, {
     queryKey: settingsKeys.detail(),
-    throwOnError: true,
+    throwOnError: (_error, query) => query.state.data === undefined,
   });
 
   // The children read the settings on their first render: wait for them.
