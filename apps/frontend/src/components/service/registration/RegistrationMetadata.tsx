@@ -54,7 +54,7 @@ export const RegistrationMetadata = ({
       : null;
 
   return (
-    <section className="flex justify-between p-6">
+    <section className="flex justify-between">
       <ul className="text-sm flex flex-col gap-4">
         <li className="flex items-center">
           <span>
@@ -146,7 +146,7 @@ const RegistrationMetadataSkeleton = () => {
   return (
     <section
       aria-busy="true"
-      className="flex justify-between p-6">
+      className="flex justify-between">
       <ul className="text-sm flex flex-col gap-4">
         {[
           'Register.Metrics.Metadata.Hostname',

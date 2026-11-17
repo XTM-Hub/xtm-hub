@@ -80,7 +80,7 @@ export const PlatformMetrics = ({
           disabled={isUnavailable}
         />
       </div>
-      <Separator className="my-3" />
+      <Separator className="mr-3 my-3" />
       {isLoading && (
         <section aria-busy="true">
           <Skeleton className="h-40 w-full" />
