@@ -1814,7 +1814,6 @@ type ServiceInstanceSubscription {
 enum FeatureFlag {
   DUMMY
   DECOUPLING_CONNECTORS
-  SAAS_METRICS
 }
 
 type PlatformProvider {

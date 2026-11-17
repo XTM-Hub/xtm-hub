@@ -1,6 +1,6 @@
 {
   "environment": "development",
-  "enabled_features": ["SAAS_METRICS"],
+  "enabled_features": [],
   "port": 4001,
   "admin": {
     "email": "admin@filigran.io",

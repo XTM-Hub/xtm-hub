@@ -1,5 +1,4 @@
 import {
-  FeatureFlag,
   OrderingMode,
   QuerySaasManagerPlatformsArgs,
   SaasPlatformData,
@@ -7,7 +6,6 @@ import {
   SaasPlatformPage,
 } from '../../__generated__/resolvers-types';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
-import { isFeatureEnabled } from '../../utils/feature-flag.util';
 import { RegistrationDomain } from '../registration/registration.domain';
 import { ProductInformationHelper } from './product-information.helper';
 
@@ -69,10 +67,6 @@ export const ProductInformationApp = {
     serviceInstanceId: ServiceInstanceId,
     metricsPeriod: SaasPlatformMetricsPeriod
   ): Promise<SaasPlatformData | null> => {
-    if (!isFeatureEnabled(FeatureFlag.SaasMetrics)) {
-      return null;
-    }
-
     // Resolve the platform through the organization-scoped query first, so that
     // the SaaS Manager is only ever called for a platform the user can access,
     // and with the platform_id stored in the Hub, never a client-supplied one.
@@ -97,10 +91,6 @@ export const ProductInformationApp = {
     searchTerm,
     product,
   }: QuerySaasManagerPlatformsArgs): Promise<SaasPlatformPage | null> => {
-    if (!isFeatureEnabled(FeatureFlag.SaasMetrics)) {
-      return null;
-    }
-
     // The board pages as the SaaS Manager does: its page goes through as it is.
     return ProductInformationHelper.fetchSaasPlatforms({
       page: Math.max(1, page),
