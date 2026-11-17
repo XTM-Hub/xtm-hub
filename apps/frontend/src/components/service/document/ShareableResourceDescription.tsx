@@ -25,13 +25,15 @@ const ShareableResourceDescription = ({
         padding={16}
         className="overflow-x-auto"
         title={<h2>{t('Service.ShareableResources.Details.Overview')}</h2>}>
-        <h3>{shortDescription}</h3>
-        <ResourceMarkdownRenderer
-          source={longDescription}
-          filigranWebsiteUtm={getResourcePageFiligranWebsiteUtm(
-            serviceDefinitionIdentifier
-          )}
-        />
+        <div className="flex flex-col gap-8">
+          <h3>{shortDescription}</h3>
+          <ResourceMarkdownRenderer
+            source={longDescription}
+            filigranWebsiteUtm={getResourcePageFiligranWebsiteUtm(
+              serviceDefinitionIdentifier
+            )}
+          />
+        </div>
       </Paper>
     </div>
   );

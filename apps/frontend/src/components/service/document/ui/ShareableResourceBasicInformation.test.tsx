@@ -3,40 +3,37 @@ import testRender from '@/utils/test/test-render';
 import { screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
+const renderBasicInformation = () =>
+  testRender(
+    <ShareableResourceBasicInformation>
+      <span>Item</span>
+    </ShareableResourceBasicInformation>
+  );
+
+const getTitle = () =>
+  screen.getByRole('heading', {
+    level: 2,
+    name: 'Service.ShareableResources.Details.BasicInformation',
+  });
+
 describe('ShareableResourceBasicInformation', () => {
   it('should display the Basic information title as a level 2 heading', () => {
     // Given / When
-    testRender(
-      <ShareableResourceBasicInformation>
-        <span>Item</span>
-      </ShareableResourceBasicInformation>
-    );
+    renderBasicInformation();
 
     // Then
-    expect(
-      screen.getByRole('heading', {
-        level: 2,
-        name: 'Service.ShareableResources.Details.BasicInformation',
-      })
-    ).toBeInTheDocument();
+    expect(getTitle()).toBeInTheDocument();
   });
 
-  it('should render its children in a surface that does not contain the title', () => {
+  it('should render its children on the design system Paper surface, with the title above it', () => {
     // Given / When
-    testRender(
-      <ShareableResourceBasicInformation>
-        <span>Item</span>
-      </ShareableResourceBasicInformation>
-    );
+    renderBasicInformation();
 
     // Then
     const surface = screen.getByText('Item').closest('section');
-    expect(surface).toBeInTheDocument();
-    expect(surface).not.toContainElement(
-      screen.getByRole('heading', {
-        level: 2,
-        name: 'Service.ShareableResources.Details.BasicInformation',
-      })
-    );
+    // The design system radius, not the hand-made `rounded`
+    expect(surface).toHaveClass('rounded-sm', 'p-4');
+    expect(surface).not.toContainElement(getTitle());
+    expect(surface?.parentElement).toContainElement(getTitle());
   });
 });

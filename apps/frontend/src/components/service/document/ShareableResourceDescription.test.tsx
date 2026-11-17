@@ -11,18 +11,22 @@ const renderDescription = () =>
     />
   );
 
+const getOverviewTitle = () =>
+  screen.getByRole('heading', {
+    level: 2,
+    name: 'Service.ShareableResources.Details.Overview',
+  });
+
+const getShortDescription = () =>
+  screen.getByRole('heading', { level: 3, name: 'A short description' });
+
 describe('ShareableResourceDescription', () => {
   it('should display the Overview title as a level 2 heading', () => {
     // Given / When
     renderDescription();
 
     // Then
-    expect(
-      screen.getByRole('heading', {
-        level: 2,
-        name: 'Service.ShareableResources.Details.Overview',
-      })
-    ).toBeInTheDocument();
+    expect(getOverviewTitle()).toBeInTheDocument();
   });
 
   it('should display the short description as a level 3 heading and the long description', () => {
@@ -30,26 +34,40 @@ describe('ShareableResourceDescription', () => {
     renderDescription();
 
     // Then
-    expect(
-      screen.getByRole('heading', { level: 3, name: 'A short description' })
-    ).toBeInTheDocument();
+    expect(getShortDescription()).toBeInTheDocument();
     expect(screen.getByText('long')).toBeInTheDocument();
   });
 
-  it('should render the descriptions in a design system Paper that scrolls horizontally, with the title outside of it', () => {
+  it('should render the descriptions on the design system Paper surface, with the title above it', () => {
     // Given / When
     renderDescription();
 
     // Then
-    const surface = screen
-      .getByRole('heading', { level: 3, name: 'A short description' })
-      .closest('section');
-    expect(surface).toHaveClass('overflow-x-auto');
-    expect(surface).not.toContainElement(
-      screen.getByRole('heading', {
-        level: 2,
-        name: 'Service.ShareableResources.Details.Overview',
-      })
+    const surface = getShortDescription().closest('section');
+    // The design system radius and padding, not the hand-made `rounded`
+    expect(surface).toHaveClass('rounded-sm', 'p-4');
+    expect(surface).not.toContainElement(getOverviewTitle());
+    expect(surface?.parentElement).toContainElement(getOverviewTitle());
+  });
+
+  it('should separate the short description from the long description with a gap', () => {
+    // Given / When
+    renderDescription();
+
+    // Then
+    const descriptions = getShortDescription().parentElement;
+    expect(descriptions).toHaveClass('flex', 'flex-col', 'gap-8');
+    expect(descriptions).toContainElement(screen.getByText('long'));
+  });
+
+  it('should let a long description scroll horizontally inside its surface', () => {
+    // Given / When
+    renderDescription();
+
+    // Then
+    // The class is the only hook for overflow in jsdom, which does not lay out
+    expect(getShortDescription().closest('section')).toHaveClass(
+      'overflow-x-auto'
     );
   });
 });
