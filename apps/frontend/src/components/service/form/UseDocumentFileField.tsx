@@ -30,14 +30,14 @@ export const useDocumentFileField = (
   document?: DocumentItemFragment
 ): FieldConfigItem => {
   const t = useTranslate();
-  const { setIsDirty } = useDialogContext();
+  const { setUploadsDirty } = useDialogContext();
   const { existingFile, updateFile, updateFileDescription } = texts;
   const replaceFileField = useMemo<FieldConfigItem>(
     () => ({
       fieldType: ({ field }) => (
         <ServiceFormReplaceFileField
           field={field}
-          setIsDirty={setIsDirty}
+          setUploadsDirty={setUploadsDirty}
           document={document}
           texts={{ existingFile, updateFile, updateFileDescription }}
           accept={accept}
@@ -46,7 +46,7 @@ export const useDocumentFileField = (
     }),
     [
       document,
-      setIsDirty,
+      setUploadsDirty,
       existingFile,
       updateFile,
       updateFileDescription,

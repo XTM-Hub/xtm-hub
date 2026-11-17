@@ -6,10 +6,10 @@ import {
   JSON_FILE_FIELD,
   NEW_DESCRIPTION,
   renderServiceForm,
+  REQUEST_VALIDATION_LABEL,
   ServiceFormResource,
   typeNewDescription,
   uploadFile,
-  VALIDATE_LABEL,
 } from '@/components/service/form/ServiceForm.test-utils';
 import { screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
@@ -53,7 +53,9 @@ describe('CustomViewForm', () => {
     await uploadFile(user, JSON_FILE_FIELD);
 
     // When
-    await user.click(screen.getByRole('button', { name: VALIDATE_LABEL }));
+    await user.click(
+      screen.getByRole('button', { name: REQUEST_VALIDATION_LABEL })
+    );
 
     // Then
     await waitFor(() =>

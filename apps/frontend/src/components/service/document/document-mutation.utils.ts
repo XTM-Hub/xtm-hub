@@ -5,13 +5,13 @@ import {
 } from '@/lib/graphql-upload-client';
 import { omit } from '@/lib/omit';
 import { pick } from '@/lib/pick';
-import { toDocumentStatus, toStatusUpdate } from '@/utils/documents';
-import type {
-  CreateDocumentInput,
-  DocumentMetadata,
-  DocumentMetadataKeyCode,
-  LicenseType,
-  UpdateDocumentInput,
+import {
+  type CreateDocumentInput,
+  type DocumentMetadata,
+  type DocumentMetadataKeyCode,
+  DocumentStatus,
+  type LicenseType,
+  type UpdateDocumentInput,
 } from '@graphql/generated';
 
 export type DocumentFormValues = ServiceFormValues & {
@@ -31,7 +31,7 @@ const documentBaseKeys: Array<keyof DocumentFormValues> = [
   'solution_categories',
   'license_type',
   'entity_types',
-  'active',
+  'status',
 ];
 
 const documentFileKeys: Array<keyof DocumentFormValues> = [
@@ -43,7 +43,7 @@ const documentFileKeys: Array<keyof DocumentFormValues> = [
 export const toCreateDocumentInput = (
   values: DocumentFormValues
 ): CreateDocumentInput => {
-  const { active, ...input } = omit(
+  const input = omit(
     {
       ...pick(values, documentBaseKeys),
       uploader_id: values.uploader_id ?? '',
@@ -53,7 +53,10 @@ export const toCreateDocumentInput = (
 
   return {
     ...input,
-    status: toDocumentStatus(active),
+    status:
+      input.status === DocumentStatus.InValidation
+        ? DocumentStatus.InValidation
+        : DocumentStatus.Draft,
     use_cases: input.use_cases ?? [],
     solution_categories: input.solution_categories ?? [],
     entity_types: input.entity_types ?? null,
@@ -69,21 +72,15 @@ export const toCreateDocumentInput = (
  * a field the schema renames or retypes still fails to compile here.
  */
 export const toUpdateDocumentInput = (
-  values: DocumentFormValues,
-  currentStatus: string
+  values: DocumentFormValues
 ): UpdateDocumentInput => {
-  const { active, ...input } = omit(
+  const update = omit(
     {
       ...pick(values, documentBaseKeys),
       uploader_id: values.uploader_id ?? '',
     },
     ['slug']
-  );
-
-  const update = {
-    ...input,
-    ...toStatusUpdate(active, currentStatus),
-  } satisfies Partial<UpdateDocumentInput>;
+  ) satisfies Partial<UpdateDocumentInput>;
 
   return update as UpdateDocumentInput;
 };

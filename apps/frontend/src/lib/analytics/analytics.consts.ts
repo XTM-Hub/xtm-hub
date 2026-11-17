@@ -152,6 +152,8 @@ export const ANALYTICS_SECTION_ATTRIBUTE = 'data-analytics-section';
 export const ANALYTICS_RESOURCE_ID_ATTRIBUTE = 'data-analytics-resource-id';
 export const ANALYTICS_RESOURCE_NAME_ATTRIBUTE = 'data-analytics-resource-name';
 export const ANALYTICS_RESOURCE_TYPE_ATTRIBUTE = 'data-analytics-resource-type';
+export const ANALYTICS_RESOURCE_STATUS_ATTRIBUTE =
+  'data-analytics-resource-status';
 export const ANALYTICS_LIBRARY_ATTRIBUTE = 'data-analytics-library';
 export const ANALYTICS_USE_CASES_ATTRIBUTE = 'data-analytics-use-cases';
 export const ANALYTICS_EPIC_NAME_ATTRIBUTE = 'data-analytics-epic-name';

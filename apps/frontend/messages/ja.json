@@ -15,6 +15,11 @@
     "Enabled": "有効",
     "Published": "発行済み"
   },
+  "DocumentStatus": {
+    "Draft": "ドラフト",
+    "InValidation": "検証中",
+    "Published": "発行済み"
+  },
   "CapabilityDescription": {
     "Capabilities": {
       "ADMINISTRATE_ORGANIZATION": "組織内のすべての権限を付与する",
@@ -1367,7 +1372,6 @@
       "PlaybookSupportedLabel": "対応プレイブック",
       "ProductVersionLabel": "{platform} 互換バージョン",
       "ProductVersionPlaceholder": "1.0.0",
-      "PublishedPlaceholder": "{documentType} は公開されていますか？",
       "LicenseTypeLabel": "ライセンスの種類",
       "Restore": "リストア",
       "SelectImage": "画像を選択",
@@ -1388,7 +1392,11 @@
       "VendorUrlLabel": "ベンダーリンク (url)",
       "VerifiedLabel": "検証済み",
       "EntityTypesLabel": "エンティティタイプ",
-      "EntityTypesPlaceholder": "エンティティタイプを追加"
+      "EntityTypesPlaceholder": "エンティティタイプを追加",
+      "SaveAsDraft": "ドラフトとして保存",
+      "RequestValidation": "検証をリクエスト",
+      "Save": "保存",
+      "Publish": "公開"
     },
     "OpenctiIntegrations": {
       "Actions": {
@@ -1446,10 +1454,8 @@
         "Share": "CSVフィードの共有",
         "Updated": "CSV {name} は正常に変更されました。"
       },
-      "Active": "公開",
       "AddService": "新しいCSVフィードを追加",
       "DeleteService": "CSVフィード {name} を削除する",
-      "NonActive": "ドラフト",
       "SureDeleteService": "CSV フィード {name} を本当に削除しますか？",
       "UpdateService": "CSVフィードを更新 {name}"
     },
@@ -1460,10 +1466,8 @@
         "Share": "RSSフィードを共有する",
         "Updated": "RSS {name} は正常に変更されました"
       },
-      "Active": "公開",
       "AddService": "新しいRSSフィードを追加",
       "DeleteService": "RSSフィードを削除 {name}",
-      "NonActive": "ドラフト",
       "SureDeleteService": "本当にRSSフィード {name} を削除しますか？",
       "UpdateService": "RSSフィード {name} を更新する"
     },
@@ -1474,10 +1478,8 @@
         "Share": "TAXII フィードを共有する",
         "Updated": "TAXII {name} は正常に変更されました。"
       },
-      "Active": "公開",
       "AddService": "新しいTAXIIフィードを追加する",
       "DeleteService": "TAXIIフィード {name} を削除する",
-      "NonActive": "ドラフト",
       "SureDeleteService": "本当にTAXIIフィード {name} を削除しますか？",
       "UpdateService": "TAXIIフィード {name} を更新する"
     },
@@ -1488,10 +1490,8 @@
         "Share": "共有コネクタ",
         "Updated": "コネクタ {name} は正常に変更されました"
       },
-      "Active": "公開",
       "AddService": "新しいコネクタを追加",
       "DeleteService": "コネクターの削除 {name}",
-      "NonActive": "ドラフト",
       "SureDeleteService": "本当にコネクタ {name} を削除しますか？",
       "UpdateService": "コネクタを更新 {name}"
     },
@@ -1502,10 +1502,8 @@
         "Share": "ストリームを共有",
         "Updated": "ストリーム {name} は正常に変更されました"
       },
-      "Active": "公開",
       "AddService": "新しいストリームを追加",
       "DeleteService": "ストリームを削除 {name}",
-      "NonActive": "下書き",
       "SureDeleteService": "本当にストリーム {name} を削除しますか？",
       "UpdateService": "ストリームを更新 {name}"
     },
@@ -1516,10 +1514,8 @@
         "Share": "サードパーティ統合を共有する",
         "Updated": "サードパーティ統合 {name} は正常に変更されました。"
       },
-      "Active": "公開",
       "AddService": "新しいサードパーティインテグレーションを追加する",
       "DeleteService": "サードパーティー統合 {name} を削除する",
-      "NonActive": "ドラフト",
       "SureDeleteService": "本当にサードパーティ統合 {name} を削除しますか？",
       "UpdateService": "サードパーティ統合 {name} を更新しますか？"
     },
@@ -1530,10 +1526,8 @@
         "Share": "カスタムダッシュボードの共有",
         "Updated": "カスタムダッシュボード {name} は正常に変更されました。"
       },
-      "Active": "公開日",
       "AddService": "新しいダッシュボードを追加",
       "DeleteService": "カスタムダッシュボードを削除 {name}",
-      "NonActive": "下書き",
       "SureDeleteService": "本当にダッシュボード {name} を削除しますか？",
       "UpdateService": "ダッシュボードを更新"
     },
@@ -1553,9 +1547,7 @@
       "AddService": "新しいシナリオを追加",
       "UpdateService": "シナリオの更新 {name}",
       "DeleteService": "シナリオの削除 {name}",
-      "SureDeleteService": "本当にシナリオ {name} を削除しますか？",
-      "NonActive": "草案",
-      "Active": "公開"
+      "SureDeleteService": "本当にシナリオ {name} を削除しますか？"
     },
     "OpenCTIPlaybook": {
       "Actions": {
@@ -1567,9 +1559,7 @@
       "AddService": "新しいプレイブックを追加する",
       "UpdateService": "プレイブックを更新する {name}",
       "DeleteService": "プレイブックを削除する {name}",
-      "SureDeleteService": "本当にプレイブック {name} を削除しますか？",
-      "NonActive": "草案",
-      "Active": "公開"
+      "SureDeleteService": "本当にプレイブック {name} を削除しますか？"
     },
     "Description": "出版",
     "GoTo": "サービスページへ",
@@ -2072,9 +2062,7 @@
       "AddService": "新しいカスタムビューを追加する",
       "UpdateService": "カスタムビューを更新する {name}",
       "DeleteService": "カスタムビューを削除する {name}",
-      "SureDeleteService": "本当にカスタムビュー {name} を削除しますか？",
-      "NonActive": "草案",
-      "Active": "公開"
+      "SureDeleteService": "本当にカスタムビュー {name} を削除しますか？"
     },
     "Bundle": {
       "ManageTrial": {

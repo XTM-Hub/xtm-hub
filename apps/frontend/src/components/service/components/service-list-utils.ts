@@ -1,16 +1,34 @@
 import { isDocumentPublished } from '@/utils/documents';
+import { DocumentStatus } from '@graphql/generated';
+
+export interface DocumentsByStatus<TDocument> {
+  draft: TDocument[];
+  inValidation: TDocument[];
+  published: TDocument[];
+}
 
 /**
- * Splits documents into the published ones and the others (draft, in validation),
- * keeping their order.
+ * Splits documents by status, keeping their order. A status other than
+ * published or in validation counts as draft.
  */
-export const splitPublishedAndOthers = <TDocument extends { status: string }>(
+export const splitDocumentsByStatus = <TDocument extends { status: string }>(
   documents: readonly TDocument[]
-): [TDocument[], TDocument[]] =>
-  documents.reduce<[TDocument[], TDocument[]]>(
-    (acc, document) => {
-      acc[isDocumentPublished(document.status) ? 0 : 1].push(document);
-      return acc;
-    },
-    [[], []]
-  );
+): DocumentsByStatus<TDocument> => {
+  const result: DocumentsByStatus<TDocument> = {
+    draft: [],
+    inValidation: [],
+    published: [],
+  };
+
+  for (const document of documents) {
+    if (isDocumentPublished(document.status)) {
+      result.published.push(document);
+    } else if (document.status === DocumentStatus.InValidation) {
+      result.inValidation.push(document);
+    } else {
+      result.draft.push(document);
+    }
+  }
+
+  return result;
+};

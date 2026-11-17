@@ -22,7 +22,7 @@ export interface HomepageResourceCardProps {
   shortDescription?: string | null;
   url: string;
   logoUrl?: string;
-  active?: boolean;
+  published?: boolean;
   verified?: boolean;
   deployable?: boolean;
   useCases?: BadgeOverflow[];
@@ -34,13 +34,13 @@ const HomepageResourceCard = ({
   shortDescription,
   url,
   logoUrl,
-  active,
+  published,
   verified,
   deployable,
   useCases = [],
   footerTags = [],
 }: HomepageResourceCardProps) => {
-  const iconCount = [active, verified, deployable].filter(Boolean).length;
+  const iconCount = [published, verified, deployable].filter(Boolean).length;
   const titlePaddingRight = computeTitlePaddingRight(iconCount);
 
   const description = shortDescription ? (
@@ -60,7 +60,7 @@ const HomepageResourceCard = ({
     <div className="overflow-hidden flex flex-col relative rounded layer-1 bg-elevation-default hover:bg-elevation-hover has-[>a:focus-visible]:ring-2 has-[>a:focus-visible]:ring-focus">
       <div className="absolute top-3 right-3 flex gap-1 z-10">
         <ResourceStatusIcons
-          active={active}
+          published={published}
           verified={verified}
           deployable={deployable}
         />
