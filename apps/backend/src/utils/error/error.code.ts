@@ -154,6 +154,7 @@ export enum AlreadyExistsErrorCode {
 }
 
 export enum NotFoundErrorCode {
+  NotFound = 'NOT_FOUND',
   ServiceInstanceNotFound = 'SERVICE_INSTANCE_NOT_FOUND',
   SeoServiceInstanceNotFound = 'SEO_SERVICE_INSTANCE_NOT_FOUND',
   ServiceDefinitionNotFound = 'SERVICE_DEFINITION_NOT_FOUND',

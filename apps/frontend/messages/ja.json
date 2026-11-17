@@ -423,6 +423,7 @@
       "NEWS_FEED_ITEM_NOT_FOUND": "ニュースフィード項目が見つかりません",
       "NO_ASYNC_CONTEXT_AVAILABLE": "不明なエラーが発生しました",
       "NOT_ALLOWED_BY_DEPLOYMENT_STATUS": "不明なエラーが発生しました",
+      "NOT_FOUND": "要求されたリソースが見つかりません",
       "ORGANIZATION_NOT_FOUND": "組織が見つかりません",
       "ORGANIZATION_SAME_DOMAIN_EXISTS": "同じドメインの組織が既に存在する",
       "ORGANIZATION_SAME_NAME_EXISTS": "同じ名前の組織がすでに存在する",

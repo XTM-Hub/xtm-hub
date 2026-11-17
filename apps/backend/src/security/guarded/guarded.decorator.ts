@@ -2,6 +2,7 @@ import { requestContext } from '../../context/request.context';
 import { logApp } from '../../utils/app-logger.util';
 import {
   ForbiddenErrorCode,
+  NotFoundErrorCode,
   UnauthenticatedErrorCode,
 } from '../../utils/error/error.code';
 import { mapToGraphQLError } from '../../utils/error/error.mapping';
@@ -38,11 +39,20 @@ const runGuard = async (
   }
 };
 
+const DENIAL_CODES: ReadonlySet<string> = new Set<DenialCode>([
+  UnauthenticatedErrorCode.Unauthenticated,
+  ForbiddenErrorCode.ForbiddenAccess,
+  ForbiddenErrorCode.MissingCapabilityOnOrganization,
+  NotFoundErrorCode.NotFound,
+]);
+
+const isDenialCode = (code: unknown): code is DenialCode =>
+  typeof code === 'string' && DENIAL_CODES.has(code);
+
 // Fails closed: a malformed result or an unknown code is FORBIDDEN_ACCESS, never UNKNOWN_ERROR
 const toDenialCode = (result: GuardResult | undefined): DenialCode =>
-  result?.allowed === false &&
-  result.code === UnauthenticatedErrorCode.Unauthenticated
-    ? UnauthenticatedErrorCode.Unauthenticated
+  result?.allowed === false && isDenialCode(result.code)
+    ? result.code
     : ForbiddenErrorCode.ForbiddenAccess;
 
 const enforce =

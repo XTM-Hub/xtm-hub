@@ -3,9 +3,13 @@ import {
   // eslint-disable-next-line no-restricted-imports
   contextBypassUser,
   contextSimpleUserFiligran2,
+  TEST_ORGANIZATIONS,
   TEST_SYSTEM_TOKEN,
 } from '../../../tests/tests.const';
-import { PortalCapability } from '../../__generated__/resolvers-types';
+import {
+  OrganizationCapability,
+  PortalCapability,
+} from '../../__generated__/resolvers-types';
 import { requestContext } from '../../context/request.context';
 import { UserLoadUserBy } from '../../model/user';
 import { UserDomain } from '../../modules/organization-management/user/user-domain/user.domain';
@@ -13,11 +17,12 @@ import { CAPABILITY_BYPASS, SYSTEM_USER_UUID } from '../../portal.const';
 import { logApp } from '../../utils/app-logger.util';
 import {
   ForbiddenErrorCode,
+  NotFoundErrorCode,
   UnauthenticatedErrorCode,
 } from '../../utils/error/error.code';
 import { ErrorType } from '../../utils/error/error.type';
 import { SYSTEM_TOKEN_HEADER } from '../system-token';
-import { deny, Guard, GuardResult } from './guard.types';
+import { DenialCode, deny, Guard, GuardResult } from './guard.types';
 import { Guarded, Public } from './guarded.decorator';
 import { callerGuard } from './guards/caller.guard';
 import { portalCapabilityGuard } from './guards/portal.guard';
@@ -45,6 +50,9 @@ const throwingGuard: Guard = () => {
 
 const denyingGuard: Guard = () => deny(ForbiddenErrorCode.ForbiddenAccess);
 
+let denialCode: DenialCode;
+const codeGuard: Guard = () => deny(denialCode);
+
 let malformedResult: unknown;
 const malformedGuard: Guard = () => malformedResult as GuardResult;
 
@@ -61,6 +69,10 @@ class TestResolvers {
 
   @Guarded(denyingGuard)
   static readonly guardDenies: TestResolver = (...args) => resolve(...args);
+
+  @Guarded(codeGuard)
+  static readonly guardDeniesWithCode: TestResolver = (...args) =>
+    resolve(...args);
 
   @Guarded(malformedGuard)
   static readonly guardMalformed: TestResolver = (...args) => resolve(...args);
@@ -119,6 +131,7 @@ describe('buildPrincipal', () => {
       capabilities: [
         { id: 'capability-id', name: PortalCapability.ManageDeployment },
       ] as UserLoadUserBy['capabilities'],
+      organization_capabilities: [],
     });
 
     // When
@@ -131,7 +144,45 @@ describe('buildPrincipal', () => {
       isBypassUser: false,
       portalCapabilities: new Set([PortalCapability.ManageDeployment]),
       selectedOrganizationId: user.selected_organization_id,
+      memberships: [],
     });
+  });
+
+  it('should take the memberships from the organization capabilities of the session', async () => {
+    // Given
+    const user = buildUser({
+      capabilities: [],
+      organization_capabilities: [
+        {
+          id: 'membership-id',
+          organization: { id: TEST_ORGANIZATIONS.FILIGRAN.ID },
+          capabilities: [OrganizationCapability.ManageAccess],
+        },
+      ] as UserLoadUserBy['organization_capabilities'],
+    });
+
+    // When
+    const principal = await buildPrincipal({ user });
+
+    // Then
+    expect(principal).toMatchObject({
+      kind: 'user',
+      memberships: user.organization_capabilities,
+    });
+  });
+
+  it('should build no membership when the session has no organization capabilities', async () => {
+    // Given
+    const user = buildUser({
+      capabilities: [],
+      organization_capabilities: undefined,
+    });
+
+    // When
+    const principal = await buildPrincipal({ user });
+
+    // Then
+    expect(principal).toMatchObject({ kind: 'user', memberships: [] });
   });
 
   it('should set isBypassUser for a BYPASS user', async () => {
@@ -425,6 +476,36 @@ describe('@Guarded decorator', () => {
     expect(guardFailureLogs).toHaveLength(1);
     expect(resolve).not.toHaveBeenCalled();
   });
+
+  it.each([
+    {
+      code: ForbiddenErrorCode.MissingCapabilityOnOrganization,
+      family: ErrorType.ForbiddenAccess,
+    },
+    { code: NotFoundErrorCode.NotFound, family: ErrorType.NotFound },
+  ])(
+    'should refuse with $code as message and $family as extensions code and not call the resolver when the guard denies with $code',
+    async ({ code, family }) => {
+      // Given
+      denialCode = code;
+      const context = { user: buildUser() };
+
+      // When
+      const call = TestResolvers.guardDeniesWithCode(
+        PARENT,
+        ARGS,
+        context,
+        INFO
+      );
+
+      // Then
+      await expect(call).rejects.toMatchObject({
+        message: code,
+        extensions: { code: family },
+      });
+      expect(resolve).not.toHaveBeenCalled();
+    }
+  );
 
   it('should not log a guard failure when the guard denies on its own', async () => {
     // Given

@@ -423,6 +423,7 @@
       "NEWS_FEED_ITEM_NOT_FOUND": "L'article du fil d'actualité n'a pas été trouvé",
       "NO_ASYNC_CONTEXT_AVAILABLE": "Une erreur inconnue s'est produite",
       "NOT_ALLOWED_BY_DEPLOYMENT_STATUS": "Une erreur inconnue s'est produite",
+      "NOT_FOUND": "La ressource demandée est introuvable",
       "ORGANIZATION_NOT_FOUND": "Organisation introuvable",
       "ORGANIZATION_SAME_DOMAIN_EXISTS": "Une organisation ayant le même domaine existe déjà",
       "ORGANIZATION_SAME_NAME_EXISTS": "Une organisation portant le même nom existe déjà",

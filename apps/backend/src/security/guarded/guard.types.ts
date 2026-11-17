@@ -1,12 +1,16 @@
 import { PortalCapability } from '../../__generated__/resolvers-types';
 import {
   ForbiddenErrorCode,
+  NotFoundErrorCode,
   UnauthenticatedErrorCode,
 } from '../../utils/error/error.code';
 import { Principal } from './principal';
 
 export type DenialCode =
-  UnauthenticatedErrorCode.Unauthenticated | ForbiddenErrorCode.ForbiddenAccess;
+  | UnauthenticatedErrorCode.Unauthenticated
+  | ForbiddenErrorCode.ForbiddenAccess
+  | ForbiddenErrorCode.MissingCapabilityOnOrganization
+  | NotFoundErrorCode.NotFound;
 
 export type GuardResult =
   { allowed: true } | { allowed: false; code: DenialCode };
