@@ -1,6 +1,5 @@
-import { logFrontendError } from '@/components/error-frontend-log.graphql';
-import { getClientEnvironment } from '@/relay/environment/registry';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { logFrontendError } from '@/lib/frontend-error-log';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   buildLoginRedirect,
   buildOidcRedirect,
@@ -193,11 +192,8 @@ describe('buildOidcRedirect', () => {
 });
 
 describe('decodeSafeRedirect', () => {
-  beforeEach(() => {
-    vi.mocked(getClientEnvironment).mockReturnValue(null);
-  });
-
   afterEach(() => {
+    vi.unstubAllGlobals();
     vi.clearAllMocks();
   });
 
@@ -237,37 +233,25 @@ describe('decodeSafeRedirect', () => {
   });
 
   it('calls logFrontendError when base64 decodes to a backslash bypass path', () => {
-    const mockEnv = {} as never;
-    vi.mocked(getClientEnvironment).mockReturnValue(mockEnv);
-
     decodeSafeRedirect(btoa('/\\evil.com'));
 
     expect(logFrontendError).toHaveBeenCalledWith(
-      mockEnv,
       'Unsafe redirect param detected: /\\evil.com'
     );
   });
 
   it('calls logFrontendError when base64 decodes to an unsafe path', () => {
-    const mockEnv = {} as never;
-    vi.mocked(getClientEnvironment).mockReturnValue(mockEnv);
-
     decodeSafeRedirect(btoa('https://evil.com'));
 
     expect(logFrontendError).toHaveBeenCalledWith(
-      mockEnv,
       'Unsafe redirect param detected: https://evil.com'
     );
   });
 
   it('calls logFrontendError when base64 decodes to a protocol-relative unsafe path', () => {
-    const mockEnv = {} as never;
-    vi.mocked(getClientEnvironment).mockReturnValue(mockEnv);
-
     decodeSafeRedirect(btoa('//evil.com'));
 
     expect(logFrontendError).toHaveBeenCalledWith(
-      mockEnv,
       'Unsafe redirect param detected: //evil.com'
     );
   });
@@ -277,20 +261,16 @@ describe('decodeSafeRedirect', () => {
     expect(decodeSafeRedirect('!!!not-base64!!!')).toBeNull();
   });
 
-  it('calls logFrontendError when base64 is malformed and environment is available', () => {
-    const mockEnv = {} as never;
-    vi.mocked(getClientEnvironment).mockReturnValue(mockEnv);
-
+  it('calls logFrontendError when base64 is malformed in the browser', () => {
     decodeSafeRedirect('!!!not-base64!!!');
 
     expect(logFrontendError).toHaveBeenCalledWith(
-      mockEnv,
       'Malformed base64 redirect param'
     );
   });
 
-  it('does not call logFrontendError when environment is null', () => {
-    vi.mocked(getClientEnvironment).mockReturnValue(null);
+  it('does not call logFrontendError when decoding on the server', () => {
+    vi.stubGlobal('window', undefined);
 
     decodeSafeRedirect('!!!not-base64!!!');
 
@@ -298,9 +278,6 @@ describe('decodeSafeRedirect', () => {
   });
 
   it('does not call logFrontendError for valid safe input', () => {
-    const mockEnv = {} as never;
-    vi.mocked(getClientEnvironment).mockReturnValue(mockEnv);
-
     decodeSafeRedirect(btoa('/app/manage/user'));
 
     expect(logFrontendError).not.toHaveBeenCalled();

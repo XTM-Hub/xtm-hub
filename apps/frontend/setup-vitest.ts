@@ -19,7 +19,7 @@ import {
   useSearchParams,
 } from 'next/navigation';
 
-vi.mock('@/components/error-frontend-log.graphql', () => ({
+vi.mock('@/lib/frontend-error-log', () => ({
   logFrontendError: vi.fn(),
 }));
 

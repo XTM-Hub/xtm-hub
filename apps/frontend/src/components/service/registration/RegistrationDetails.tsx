@@ -46,7 +46,7 @@ export const RegistrationDetails = ({
       DeploymentRequestHubStatus.Active;
 
   return (
-    <section className="flex justify-between p-6">
+    <section className="flex justify-between">
       <ul className="text-sm flex flex-col gap-4">
         {platform.title && (
           <li>

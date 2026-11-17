@@ -1,5 +1,4 @@
-import { logFrontendError } from '@/components/error-frontend-log.graphql';
-import { getClientEnvironment } from '@/relay/environment/registry';
+import { logFrontendError } from '@/lib/frontend-error-log';
 
 export const isSafeRedirect = (url: string): boolean => {
   // Browsers normalise a backslash to a forward slash, so `/\evil.com` would
@@ -45,10 +44,16 @@ export const buildOidcRedirect = (
   pathname: string | null | undefined
 ): string => buildAuthRedirect('/auth/oidc', pathname);
 
+// Only the browser reports: the server-side callers have no visitor to blame.
+const reportUnsafeRedirect = (message: string): void => {
+  if (typeof window === 'undefined') return;
+  logFrontendError(message);
+};
+
 /**
  * Decodes a base64-encoded redirect parameter and validates it is a safe
  * relative path to prevent open redirect attacks (CWE-601).
- * Logs a warning when the param is unsafe or malformed.
+ * Logs a warning from the browser when the param is unsafe or malformed.
  * Returns the decoded path if safe, null otherwise.
  */
 export const decodeSafeRedirect = (
@@ -60,16 +65,10 @@ export const decodeSafeRedirect = (
     if (isSafeRedirect(decoded)) {
       return decoded;
     }
-    const env = getClientEnvironment();
-    if (env) {
-      logFrontendError(env, `Unsafe redirect param detected: ${decoded}`);
-    }
+    reportUnsafeRedirect(`Unsafe redirect param detected: ${decoded}`);
     return null;
   } catch {
-    const env = getClientEnvironment();
-    if (env) {
-      logFrontendError(env, 'Malformed base64 redirect param');
-    }
+    reportUnsafeRedirect('Malformed base64 redirect param');
     return null;
   }
 };

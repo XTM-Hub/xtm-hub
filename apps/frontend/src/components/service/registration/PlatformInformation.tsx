@@ -26,8 +26,8 @@ export const PlatformInformation = ({
   return (
     <Paper className="my-3">
       <h2>{t('Register.Details.PlatformInformation')}</h2>
-      <Separator className="my-3" />
-      <div className="grid grid-cols-2">
+      <Separator className="mr-3 my-3" />
+      <div className="grid lg:grid-cols-2">
         <RegistrationDetails registeredPlatform={registeredPlatform} />
         {showMetadata && (
           <RegistrationMetadata

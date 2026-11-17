@@ -3554,6 +3554,19 @@ export type XtmoneIntegrationStatusEntry = {
   status: Scalars['String']['output'];
 };
 
+export type LoginMutationVariables = Exact<{
+  email: Scalars['String']['input'];
+  password: Scalars['String']['input'];
+}>;
+
+
+export type LoginMutation = { __typename?: 'Mutation', login: { __typename?: 'User', id: string } | null };
+
+export type LogoutMutationVariables = Exact<{ [key: string]: never; }>;
+
+
+export type LogoutMutation = { __typename?: 'Mutation', logout: string };
+
 export type CompetitorAddMutationVariables = Exact<{
   input: CreateCompetitorInput;
 }>;
@@ -4291,6 +4304,16 @@ export type ServiceUserCapabilitiesQueryVariables = Exact<{
 
 
 export type ServiceUserCapabilitiesQuery = { __typename?: 'Query', userServiceCapabilities: { __typename?: 'UserServiceCapabilitiesResponse', subscription_id: any | null, userServiceCapabilities: Array<{ __typename?: 'UserServiceCapability', id: string, user_service_id: string, generic_service_capability: { __typename?: 'GenericServiceCapability', id: string, name: string | null } | null, subscription_capability: { __typename?: 'SubscriptionCapability', id: string, service_capability: { __typename?: 'ServiceCapability', name: string | null, id: string } | null } | null }> } };
+
+export type SettingsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type SettingsQuery = { __typename?: 'Query', settings: { __typename?: 'Settings', environment: string, base_url_front: string, platform_feature_flags: Array<FeatureFlag>, platform_providers: Array<{ __typename?: 'PlatformProvider', name: string, provider: string, type: string }> } };
+
+export type ServerSettingsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type ServerSettingsQuery = { __typename?: 'Query', settings: { __typename?: 'Settings', base_url_front: string, platform_feature_flags: Array<FeatureFlag>, platform_providers: Array<{ __typename?: 'PlatformProvider', provider: string }> } };
 
 export type SolutionCategoryAddMutationVariables = Exact<{
   input: AddSolutionCategoryInput;
@@ -5169,6 +5192,62 @@ export const EpicFieldsFragmentDoc = `
   updated_at
 }
     `;
+export const LoginDocument = `
+    mutation Login($email: String!, $password: String!) {
+  login(email: $email, password: $password) {
+    id
+  }
+}
+    `;
+
+export const useLoginMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<LoginMutation, TError, LoginMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<LoginMutation, TError, LoginMutationVariables, TContext>(
+      {
+    mutationKey: ['Login'],
+    mutationFn: (variables?: LoginMutationVariables) => fetcher<LoginMutation, LoginMutationVariables>(client, LoginDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useLoginMutation.getKey = () => ['Login'];
+useLoginMutation.getRootKey = () => ['Login'] as const;
+useLoginMutation.fetcher = (client: GraphQLClient, variables: LoginMutationVariables, headers?: RequestInit['headers']) => fetcher<LoginMutation, LoginMutationVariables>(client, LoginDocument, variables, headers);
+
+export const LogoutDocument = `
+    mutation Logout {
+  logout
+}
+    `;
+
+export const useLogoutMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<LogoutMutation, TError, LogoutMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<LogoutMutation, TError, LogoutMutationVariables, TContext>(
+      {
+    mutationKey: ['Logout'],
+    mutationFn: (variables?: LogoutMutationVariables) => fetcher<LogoutMutation, LogoutMutationVariables>(client, LogoutDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useLogoutMutation.getKey = () => ['Logout'];
+useLogoutMutation.getRootKey = () => ['Logout'] as const;
+useLogoutMutation.fetcher = (client: GraphQLClient, variables?: LogoutMutationVariables, headers?: RequestInit['headers']) => fetcher<LogoutMutation, LogoutMutationVariables>(client, LogoutDocument, variables, headers);
+
 export const CompetitorAddDocument = `
     mutation CompetitorAdd($input: CreateCompetitorInput!) {
   createCompetitor(input: $input) {
@@ -9021,6 +9100,123 @@ export const useInfiniteServiceUserCapabilitiesQuery = <
 useInfiniteServiceUserCapabilitiesQuery.getKey = (variables: ServiceUserCapabilitiesQueryVariables) => ['ServiceUserCapabilities.infinite', variables];
 useInfiniteServiceUserCapabilitiesQuery.getRootKey = () => ['ServiceUserCapabilities.infinite'] as const;
 useServiceUserCapabilitiesQuery.fetcher = (client: GraphQLClient, variables: ServiceUserCapabilitiesQueryVariables, headers?: RequestInit['headers']) => fetcher<ServiceUserCapabilitiesQuery, ServiceUserCapabilitiesQueryVariables>(client, ServiceUserCapabilitiesDocument, variables, headers);
+
+export const SettingsDocument = `
+    query Settings {
+  settings {
+    platform_providers {
+      name
+      provider
+      type
+    }
+    environment
+    base_url_front
+    platform_feature_flags
+  }
+}
+    `;
+
+export const useSettingsQuery = <
+      TData = SettingsQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables?: SettingsQueryVariables,
+      options?: Omit<UseQueryOptions<SettingsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<SettingsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<SettingsQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['Settings'] : ['Settings', variables],
+    queryFn: fetcher<SettingsQuery, SettingsQueryVariables>(client, SettingsDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSettingsQuery.getKey = (variables?: SettingsQueryVariables) => variables === undefined ? ['Settings'] : ['Settings', variables];
+useSettingsQuery.getRootKey = () => ['Settings'] as const;
+export const useInfiniteSettingsQuery = <
+      TData = InfiniteData<SettingsQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: SettingsQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<SettingsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<SettingsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<SettingsQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['Settings.infinite'] : ['Settings.infinite', variables],
+      queryFn: (metaData) => fetcher<SettingsQuery, SettingsQueryVariables>(client, SettingsDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteSettingsQuery.getKey = (variables?: SettingsQueryVariables) => variables === undefined ? ['Settings.infinite'] : ['Settings.infinite', variables];
+useInfiniteSettingsQuery.getRootKey = () => ['Settings.infinite'] as const;
+useSettingsQuery.fetcher = (client: GraphQLClient, variables?: SettingsQueryVariables, headers?: RequestInit['headers']) => fetcher<SettingsQuery, SettingsQueryVariables>(client, SettingsDocument, variables, headers);
+
+export const ServerSettingsDocument = `
+    query ServerSettings {
+  settings {
+    platform_providers {
+      provider
+    }
+    base_url_front
+    platform_feature_flags
+  }
+}
+    `;
+
+export const useServerSettingsQuery = <
+      TData = ServerSettingsQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables?: ServerSettingsQueryVariables,
+      options?: Omit<UseQueryOptions<ServerSettingsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<ServerSettingsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<ServerSettingsQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['ServerSettings'] : ['ServerSettings', variables],
+    queryFn: fetcher<ServerSettingsQuery, ServerSettingsQueryVariables>(client, ServerSettingsDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useServerSettingsQuery.getKey = (variables?: ServerSettingsQueryVariables) => variables === undefined ? ['ServerSettings'] : ['ServerSettings', variables];
+useServerSettingsQuery.getRootKey = () => ['ServerSettings'] as const;
+export const useInfiniteServerSettingsQuery = <
+      TData = InfiniteData<ServerSettingsQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: ServerSettingsQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<ServerSettingsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<ServerSettingsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<ServerSettingsQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['ServerSettings.infinite'] : ['ServerSettings.infinite', variables],
+      queryFn: (metaData) => fetcher<ServerSettingsQuery, ServerSettingsQueryVariables>(client, ServerSettingsDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteServerSettingsQuery.getKey = (variables?: ServerSettingsQueryVariables) => variables === undefined ? ['ServerSettings.infinite'] : ['ServerSettings.infinite', variables];
+useInfiniteServerSettingsQuery.getRootKey = () => ['ServerSettings.infinite'] as const;
+useServerSettingsQuery.fetcher = (client: GraphQLClient, variables?: ServerSettingsQueryVariables, headers?: RequestInit['headers']) => fetcher<ServerSettingsQuery, ServerSettingsQueryVariables>(client, ServerSettingsDocument, variables, headers);
 
 export const SolutionCategoryAddDocument = `
     mutation SolutionCategoryAdd($input: AddSolutionCategoryInput!) {

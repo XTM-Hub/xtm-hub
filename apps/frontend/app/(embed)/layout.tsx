@@ -3,17 +3,18 @@ import * as React from 'react';
 import '@styles/embed.css';
 import '@styles/globals.css';
 
-import { serverMutateGraphQL } from '@/relay/server-portal-api-fetch';
-
 import { SharedContent } from '@/components/layout/SharedContent';
 import { ReactQueryProvider } from '@/components/ReactQueryProvider';
 import { ErrorPage } from '@/components/ui/ErrorPage';
+import { serverGraphqlFetch } from '@/lib/server-graphql-fetch';
 import { RelayProvider } from '@/relay/relay-provider';
 import { loadMeUser } from '@/utils/load-me-user';
 import { getMetadataBase } from '@/utils/metadata';
-import errorFrontendLogMutationNode, {
-  errorFrontendLogMutation,
-} from '@generated/errorFrontendLogMutation.graphql';
+import {
+  FrontendErrorLogDocument,
+  FrontendErrorLogMutation,
+  FrontendErrorLogMutationVariables,
+} from '@graphql/generated';
 import LogoXTMDark from '@public/logo_xtm_hub_dark.svg';
 import { Metadata } from 'next';
 import { redirect } from 'next/navigation';
@@ -43,12 +44,17 @@ const RootLayout = async ({ children }: RootLayoutProps) => {
       shouldRedirect = true;
     }
   } catch (error) {
-    await serverMutateGraphQL<errorFrontendLogMutation>(
-      errorFrontendLogMutationNode,
+    await serverGraphqlFetch<
+      FrontendErrorLogMutation,
+      FrontendErrorLogMutationVariables
+    >(
+      FrontendErrorLogDocument,
       {
         message: `EmbedLayout: unexpected ${(error as Error).name} error ${(error as Error).message}`,
+        codeStack: null,
         componentStack: 'app/(embed)/Layout.tsx',
-      }
+      },
+      { cache: 'no-store' }
     );
     hasError = true;
   }
