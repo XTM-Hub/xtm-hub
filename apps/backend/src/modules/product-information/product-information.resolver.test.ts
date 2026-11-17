@@ -28,17 +28,11 @@ import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { PortalContext } from '../../model/portal-context';
 import createSchema from '../../server/graphql-schema';
 import { SaasManagerClient } from '../../thirdparty/saasmanager/client';
-import { isFeatureEnabled } from '../../utils/feature-flag.util';
 import { PlatformConfigurationDomain } from '../registration/platform-configuration/platform-configuration.domain';
 import { RegistrationDomain } from '../registration/registration.domain';
 import { ServiceInstanceDomain } from '../service/instance/service-instance.domain';
 import { ProductInformationApp } from './product-information.app';
 import productInformationResolver from './product-information.resolver';
-
-// isFeatureEnabled is mocked so that tests are deterministic and independent of the local `enabled_features` config.
-vi.mock('../../utils/feature-flag.util', () => ({
-  isFeatureEnabled: vi.fn(),
-}));
 
 describe('query.registeredSaasPlatformData', () => {
   it('should pass the service_instance_id to productInformationApp and return its data', async () => {
@@ -123,7 +117,6 @@ describe('query.registeredSaasPlatformData', () => {
       // The days asked to the SaaS Manager depend on the current date.
       vi.useFakeTimers({ toFake: ['Date'] });
       vi.setSystemTime('2026-10-27T09:00:00.000Z');
-      vi.mocked(isFeatureEnabled).mockReturnValue(true);
       requestContext.set(requestContextRegistererUserSecondOrga);
       platformId = uuidv4();
       serviceInstanceId = await RegistrationDomain.registerNewPlatform({

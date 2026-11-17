@@ -11,7 +11,6 @@ import { getRegisteredPlatformBreadcrumbs } from '@/components/service/registrat
 import { RegisteredPlatformHeader } from '@/components/service/registration/RegisteredPlatformHeader';
 import { BreadcrumbNav } from '@/components/ui/BreadcrumbNav';
 import useGranted from '@/hooks/use-granted';
-import { useIsFeatureEnabled } from '@/hooks/use-is-feature-enabled';
 import { useUserHasPortalCapability } from '@/hooks/use-portal-capability';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import {
@@ -22,7 +21,6 @@ import { registeredPlatformByServiceInstanceId_fragment$key } from '@generated/r
 import { registeredPlatformByServiceInstanceIdQuery } from '@generated/registeredPlatformByServiceInstanceIdQuery.graphql';
 import {
   CommercialModel,
-  FeatureFlag,
   OrganizationCapability,
   PlatformIdentifier,
   PortalCapability,
@@ -74,9 +72,7 @@ export const RegisteredPlatformOverview = ({
   const isFromCsmBoard =
     searchParams.get(REGISTERED_PLATFORM_ORIGIN_PARAM) ===
       REGISTERED_PLATFORM_ORIGIN_CSM_BOARD && isMetricAdmin;
-  const isSaasMetricsEnabled = useIsFeatureEnabled(FeatureFlag.SaasMetrics);
   const isSaas = platform?.commercial_model === CommercialModel.Saas;
-  const showSaasPlatformData = isSaasMetricsEnabled && isSaas;
 
   const hasRightToVisualize = !!useUserHasPortalCapability([
     PortalCapability.Bypass,
@@ -114,7 +110,7 @@ export const RegisteredPlatformOverview = ({
       queryKey: productInformationKeys.registeredSaasPlatformData(
         saasPlatformDataVariables
       ),
-      enabled: showSaasPlatformData,
+      enabled: isSaas,
       staleTime: SAAS_PLATFORM_DATA_STALE_TIME,
       // The metadata does not depend on the period: keep it on screen while the metrics of another period load.
       placeholderData: keepPreviousData,
@@ -136,7 +132,7 @@ export const RegisteredPlatformOverview = ({
       <RegisteredPlatformHeader
         registeredPlatform={queryData.registeredPlatform}
       />
-      {showSaasPlatformData &&
+      {isSaas &&
         (canSeePlatformMetrics ? (
           <PlatformMetrics
             platformIdentifier={platformIdentifier}
@@ -152,7 +148,7 @@ export const RegisteredPlatformOverview = ({
         ))}
       <PlatformInformation
         registeredPlatform={queryData.registeredPlatform}
-        showMetadata={showSaasPlatformData}
+        showMetadata={isSaas}
         metadata={saasPlatformData?.registeredSaasPlatformData?.metadata}
         isMetadataLoading={isSaasPlatformDataPending}
       />
