@@ -65,20 +65,19 @@ export const RegisteredPlatformOverview = ({
       queryData.registeredPlatform
     );
 
-  const canReadSaasMetrics = !!useUserHasPortalCapability([
+  const searchParams = useSearchParams();
+  // Only a user who can open the CSM board is led back to it.
+  const isMetricAdmin = !!useUserHasPortalCapability([
     PortalCapability.Bypass,
     PortalCapability.ReadSaasMetrics,
   ]);
-  const searchParams = useSearchParams();
-  // Only a user who can open the CSM board is led back to it.
   const isFromCsmBoard =
-    canReadSaasMetrics &&
     searchParams.get(REGISTERED_PLATFORM_ORIGIN_PARAM) ===
-      REGISTERED_PLATFORM_ORIGIN_CSM_BOARD;
+      REGISTERED_PLATFORM_ORIGIN_CSM_BOARD && isMetricAdmin;
   const isSaasMetricsEnabled = useIsFeatureEnabled(FeatureFlag.SaasMetrics);
   const isSaas = platform?.commercial_model === CommercialModel.Saas;
-  const showSaasPlatformData =
-    isSaasMetricsEnabled && isSaas && canReadSaasMetrics;
+  const showSaasPlatformData = isSaasMetricsEnabled && isSaas;
+
   const hasRightToVisualize = !!useUserHasPortalCapability([
     PortalCapability.Bypass,
     PortalCapability.ReadSaasMetrics,

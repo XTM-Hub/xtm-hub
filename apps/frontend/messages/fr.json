@@ -1092,6 +1092,14 @@
         "Approaching": "Capacité bientôt atteinte",
         "Over": "Capacité dépassée"
       },
+      "ByteSize": {
+        "Byte": "{value} o",
+        "Kibibyte": "{value} Kio",
+        "Mebibyte": "{value} Mio",
+        "Gibibyte": "{value} Gio",
+        "Tebibyte": "{value} Tio",
+        "Pebibyte": "{value} Pio"
+      },
       "MaxCapacity": "Capacité maximale",
       "UsedOfLimit": "<highlight>{used}</highlight> <secondary>sur {limit}</secondary>"
     },
