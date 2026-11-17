@@ -2387,6 +2387,7 @@
       "ManageColumns": "列の表示管理",
       "NextPage": "次のページへ",
       "PreviousPage": "前のページへ",
+      "ReorderColumn": "列「{name}」を並べ替え",
       "ResetTable": "表のリセット",
       "RowsPerPage": "ページあたりの行数",
       "SelectAll": "すべて選択",

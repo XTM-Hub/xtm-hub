@@ -100,6 +100,7 @@ export interface DataTableLabels {
   selectAllLabel?: string;
   selectRowLabel?: string;
   selectedCountLabel?: (count: number) => string;
+  reorderColumnLabel?: string | ((columnName: string) => string);
 }
 
 export interface DataTableProps<
@@ -134,6 +135,8 @@ const defaultLabels: Required<DataTableLabels> = {
   selectAllLabel: 'Select all',
   selectRowLabel: 'Select row',
   selectedCountLabel: (count) => `${count} selected`,
+  reorderColumnLabel: (columnName: string) =>
+    columnName ? `Reorder column ${columnName}` : 'Reorder column',
 };
 
 interface DataTableContextValue<TData> {
@@ -447,6 +450,7 @@ const DataTableHeaderCell = <TData, TValue>({
 }: {
   header: Header<TData, TValue>;
 }) => {
+  const { labels } = useDataTableContext<TData>();
   const { attributes, isDragging, listeners, setNodeRef, transform } =
     useSortable({ id: header.column.id });
 
@@ -459,13 +463,34 @@ const DataTableHeaderCell = <TData, TValue>({
     style.minWidth = size;
     style.width = size;
   }
+  const canSort = !header.isPlaceholder && header.column.getCanSort();
   const sorted = header.column.getIsSorted();
+
+  const columnName =
+    typeof header.column.columnDef.header === 'string'
+      ? header.column.columnDef.header
+      : header.column.id;
+  const reorderLabel =
+    typeof labels.reorderColumnLabel === 'function'
+      ? labels.reorderColumnLabel(columnName)
+      : columnName
+        ? `${labels.reorderColumnLabel} ${columnName}`
+        : labels.reorderColumnLabel;
 
   return (
     <th
       ref={setNodeRef}
       colSpan={header.colSpan}
       data-column-id={header.column.id}
+      aria-sort={
+        canSort
+          ? sorted === 'asc'
+            ? 'ascending'
+            : sorted === 'desc'
+              ? 'descending'
+              : 'none'
+          : undefined
+      }
       style={style}
       className={cn(
         'relative group whitespace-nowrap truncate px-4 h-12 text-left align-middle bg-elevation-highlight content-compact-bold text-default-primary transition-transform duration-200 ease-in-out [&:has([role=checkbox])]:pr-0',
@@ -475,6 +500,7 @@ const DataTableHeaderCell = <TData, TValue>({
         // eslint-disable-next-line no-restricted-syntax -- drag handle to reorder columns, a drag target and not a click
         <button
           type="button"
+          aria-label={reorderLabel}
           className={cn(
             'absolute left-0 top-0 bottom-0 flex w-4 cursor-grab items-center justify-center text-icon-default opacity-0 focus:opacity-100 group-hover:opacity-100',
             isDragging && 'cursor-grabbing'
@@ -488,14 +514,11 @@ const DataTableHeaderCell = <TData, TValue>({
         </button>
       )}
       <div className="flex items-center justify-between">
-        {header.isPlaceholder ? null : (
-          <span
-            {...(header.column.getCanSort() &&
-              analyticsId('list_column_sort_toggle'))}
-            className={cn(
-              'flex items-center',
-              header.column.getCanSort() && 'cursor-pointer select-none'
-            )}
+        {header.isPlaceholder ? null : canSort ? (
+          <button
+            type="button"
+            {...analyticsId('list_column_sort_toggle')}
+            className="flex items-center cursor-pointer select-none"
             onClick={header.column.getToggleSortingHandler()}>
             {flexRender(header.column.columnDef.header, header.getContext())}
             {sorted && (
@@ -505,6 +528,10 @@ const DataTableHeaderCell = <TData, TValue>({
                 className="ml-2 text-icon-default"
               />
             )}
+          </button>
+        ) : (
+          <span className="flex items-center">
+            {flexRender(header.column.columnDef.header, header.getContext())}
           </span>
         )}
         <div className="opacity-0 group-hover:opacity-100 focus-within:opacity-100">
@@ -641,6 +668,7 @@ const DataTable = <TData extends { id: string }, TValue>({
   selectAllLabel = defaultLabels.selectAllLabel,
   selectRowLabel = defaultLabels.selectRowLabel,
   selectedCountLabel = defaultLabels.selectedCountLabel,
+  reorderColumnLabel = defaultLabels.reorderColumnLabel,
 }: DataTableProps<TData, TValue>) => {
   const hasSelection = !!selectionOptions;
 
@@ -734,6 +762,7 @@ const DataTable = <TData extends { id: string }, TValue>({
       selectAllLabel,
       selectRowLabel,
       selectedCountLabel,
+      reorderColumnLabel,
     },
     onResetTable,
     selectionHandlers,
@@ -783,6 +812,7 @@ const DataTable = <TData extends { id: string }, TValue>({
                 ) : (
                   table.getRowModel().rows.map((row) => {
                     const canSelect = row.getCanSelect();
+                    const isRowClickable = Boolean(onClickRow && canSelect);
                     const rowAnalyticsId = canSelect
                       ? getRowAnalyticsId?.(row)
                       : undefined;
@@ -791,6 +821,7 @@ const DataTable = <TData extends { id: string }, TValue>({
                         key={row.id}
                         {...(rowAnalyticsId && analyticsId(rowAnalyticsId))}
                         {...getRowAnalyticsResource?.(row)}
+                        tabIndex={isRowClickable ? 0 : undefined}
                         className={cn(
                           'border-b border-elevation-subtle transition-colors last:border-b-0',
                           canSelect
@@ -804,7 +835,22 @@ const DataTable = <TData extends { id: string }, TValue>({
                           if (onClickRow && canSelect) {
                             onClickRow(row);
                           }
-                        }}>
+                        }}
+                        onKeyDown={
+                          isRowClickable
+                            ? (event) => {
+                                if (
+                                  event.target === event.currentTarget &&
+                                  (event.key === 'Enter' ||
+                                    event.key === ' ' ||
+                                    event.code === 'Space')
+                                ) {
+                                  event.preventDefault();
+                                  onClickRow?.(row);
+                                }
+                              }
+                            : undefined
+                        }>
                         {row.getVisibleCells().map((cell) => (
                           <SortableContext
                             key={cell.id}

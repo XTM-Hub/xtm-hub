@@ -20,4 +20,6 @@ export const getDataTableLabels = (
   selectRowLabel: t('DesignSystem.DataTable.SelectRow'),
   selectedCountLabel: (count: number) =>
     t('DesignSystem.DataTable.SelectedCount', { count }),
+  reorderColumnLabel: (name: string) =>
+    t('DesignSystem.DataTable.ReorderColumn', { name }),
 });
