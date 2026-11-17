@@ -1,5 +1,8 @@
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
-import { HomepageResourceDocumentFragment } from '@graphql/generated';
+import {
+  DocumentImageType,
+  HomepageResourceDocumentFragment,
+} from '@graphql/generated';
 import { render } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import HomepageResourceList from './HomepageResourceList';
@@ -144,6 +147,58 @@ describe('HomepageResourceList', () => {
       expect.objectContaining({ serviceInstance: { id: 'instance-42' } }),
       undefined
     );
+  });
+
+  describe('logo', () => {
+    const children_documents = [
+      { id: 'logo-1', image_type: DocumentImageType.Logo },
+    ];
+
+    it('keeps the logo when the document has a service instance id', () => {
+      render(
+        <HomepageResourceList
+          title="Resources"
+          baseUrl={BASE_URL}
+          paramsLocale="en"
+          documents={[
+            buildDocument({
+              service_instance_id: 'instance-1',
+              children_documents,
+            }),
+          ]}
+        />
+      );
+
+      expect(mockCard).toHaveBeenCalledWith(
+        expect.objectContaining({
+          document: expect.objectContaining({ children_documents }),
+        }),
+        undefined
+      );
+    });
+
+    it('drops the logo when the document has no service instance id, so the card never builds a broken image url', () => {
+      render(
+        <HomepageResourceList
+          title="Resources"
+          baseUrl={BASE_URL}
+          paramsLocale="en"
+          documents={[
+            buildDocument({ service_instance_id: null, children_documents }),
+          ]}
+        />
+      );
+
+      expect(mockCard).toHaveBeenCalledWith(
+        expect.objectContaining({
+          document: expect.objectContaining({
+            id: 'doc-1',
+            children_documents: null,
+          }),
+        }),
+        undefined
+      );
+    });
   });
 
   it.each`

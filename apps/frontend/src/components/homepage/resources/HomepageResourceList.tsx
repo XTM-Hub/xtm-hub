@@ -33,7 +33,7 @@ const HomepageResourceList = ({
   return (
     <section className="flex flex-col gap-2">
       <h2 className="title-md">{title}</h2>
-      <ul className="grid grid-cols-[repeat(auto-fit,minmax(16rem,1fr))] gap-6">
+      <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(280px,100%),1fr))] gap-4">
         {documents.map((resource) => {
           const resourceType = resource.type as ShareableResourceType;
           const serviceSlug =
@@ -46,10 +46,16 @@ const HomepageResourceList = ({
               ? `/app/service/${SHAREABLE_RESOURCE_SERVICE_DEFINITION_IDENTIFIER_MAPPING[resourceType]}/${resource.service_instance_id}/${resource.id}`
               : `/${usedLocale}/${publicPath}`;
 
+          // The card builds the logo url from the service instance id: without
+          // one, drop the logo so the card falls back to its default image.
+          const cardDocument = resource.service_instance_id
+            ? resource
+            : { ...resource, children_documents: null };
+
           return (
             <ShareableResourceCard
               key={resource.id}
-              document={resource}
+              document={cardDocument}
               detailUrl={detailUrl}
               shareLinkUrl={`${baseUrl}/${publicPath}`}
               serviceInstance={{ id: resource.service_instance_id ?? '' }}
