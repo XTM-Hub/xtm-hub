@@ -2,10 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { PortalCapability } from '../../__generated__/resolvers-types';
 import { OrganizationId } from '../../model/kanel/public/Organization';
 import { UserId } from '../../model/kanel/public/User';
+import { SYSTEM_USER_UUID } from '../../portal.const';
 import {
   ForbiddenErrorCode,
   UnauthenticatedErrorCode,
 } from '../../utils/error/error.code';
+import { callerGuard } from './guards/caller.guard';
 import {
   bypassOnlyGuard,
   loggedInGuard,
@@ -31,6 +33,14 @@ const buildUserPrincipal = (
 });
 
 const ANONYMOUS: Principal = { kind: 'anonymous' };
+
+const buildSystemPrincipal = (
+  capabilities: PortalCapability[] = []
+): Principal => ({
+  kind: 'system',
+  actorId: SYSTEM_USER_UUID,
+  portalCapabilities: new Set(capabilities),
+});
 
 describe('publicAccess guard', () => {
   it.each([
@@ -81,6 +91,11 @@ describe('bypassOnlyGuard', () => {
       }),
       expected: { allowed: true },
     },
+    {
+      label: 'a system caller',
+      principal: buildSystemPrincipal([PortalCapability.Bypass]),
+      expected: { allowed: false, code: ForbiddenErrorCode.ForbiddenAccess },
+    },
   ])('should answer $label', async ({ principal, expected }) => {
     // Given
     const guard = bypassOnlyGuard();
@@ -115,6 +130,11 @@ describe('loggedInGuard', () => {
         capabilities: [PortalCapability.Bypass],
       }),
       expected: { allowed: true },
+    },
+    {
+      label: 'a system caller',
+      principal: buildSystemPrincipal([PortalCapability.Bypass]),
+      expected: { allowed: false, code: ForbiddenErrorCode.ForbiddenAccess },
     },
   ])('should answer $label', async ({ principal, expected }) => {
     // Given
@@ -165,6 +185,11 @@ describe('portalCapabilityGuard', () => {
       }),
       expected: { allowed: true },
     },
+    {
+      label: 'a system caller holding the named capability',
+      principal: buildSystemPrincipal([PortalCapability.ManageDeployment]),
+      expected: { allowed: false, code: ForbiddenErrorCode.ForbiddenAccess },
+    },
   ])(
     'should answer $label for the ManageDeployment capability',
     async ({ principal, expected }) => {
@@ -194,5 +219,78 @@ describe('portalCapabilityGuard', () => {
 
     // Then
     expect(result).toEqual({ allowed: true });
+  });
+});
+
+describe('callerGuard for a system caller', () => {
+  it.each([
+    {
+      label: 'an anonymous visitor',
+      principal: ANONYMOUS,
+      expected: {
+        allowed: false,
+        code: UnauthenticatedErrorCode.Unauthenticated,
+      },
+    },
+    {
+      label: 'a user holding the scope',
+      principal: buildUserPrincipal({
+        capabilities: [PortalCapability.GenerateManifest],
+      }),
+      expected: { allowed: false, code: ForbiddenErrorCode.ForbiddenAccess },
+    },
+    {
+      label: 'a BYPASS user',
+      principal: buildUserPrincipal({
+        isBypassUser: true,
+        capabilities: [PortalCapability.Bypass],
+      }),
+      expected: { allowed: false, code: ForbiddenErrorCode.ForbiddenAccess },
+    },
+    {
+      label: 'a system caller without the scope',
+      principal: buildSystemPrincipal(),
+      expected: { allowed: false, code: ForbiddenErrorCode.ForbiddenAccess },
+    },
+    {
+      label: 'a system caller holding another scope only',
+      principal: buildSystemPrincipal([PortalCapability.ManageDeployment]),
+      expected: { allowed: false, code: ForbiddenErrorCode.ForbiddenAccess },
+    },
+    {
+      label: 'a system caller holding the scope',
+      principal: buildSystemPrincipal([PortalCapability.GenerateManifest]),
+      expected: { allowed: true },
+    },
+  ])(
+    'should answer $label for the GenerateManifest scope',
+    async ({ principal, expected }) => {
+      // Given
+      const guard = callerGuard('system', [PortalCapability.GenerateManifest]);
+
+      // When
+      const result = await guard(principal);
+
+      // Then
+      expect(result).toEqual(expected);
+    }
+  );
+
+  it('should refuse a system caller when it misses one of the declared scopes', async () => {
+    // Given
+    const guard = callerGuard('system', [
+      PortalCapability.GenerateManifest,
+      PortalCapability.ManageDeployment,
+    ]);
+    const principal = buildSystemPrincipal([PortalCapability.GenerateManifest]);
+
+    // When
+    const result = await guard(principal);
+
+    // Then
+    expect(result).toEqual({
+      allowed: false,
+      code: ForbiddenErrorCode.ForbiddenAccess,
+    });
   });
 });
