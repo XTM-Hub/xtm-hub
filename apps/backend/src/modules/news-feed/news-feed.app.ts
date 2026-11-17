@@ -123,30 +123,6 @@ export interface BlogpostSyncResult extends BlogpostSyncCounts {
   products: Record<BlogpostProduct, BlogpostSyncCounts>;
 }
 
-export interface BlogpostProductFailure {
-  product: BlogpostProduct;
-  error: unknown;
-}
-
-// Thrown once every product has been synchronized when at least one failed: the other products are already applied
-export class BlogpostSyncError extends Error {
-  readonly failures: BlogpostProductFailure[];
-
-  constructor(failures: BlogpostProductFailure[]) {
-    super(
-      `Unable to synchronize the blog posts of ${failures
-        .map(
-          ({ product, error }) =>
-            `${product} (${error instanceof Error ? error.message : String(error)})`
-        )
-        .join(', ')}`,
-      { cause: failures[0]?.error }
-    );
-    this.name = 'BlogpostSyncError';
-    this.failures = failures;
-  }
-}
-
 // Object.entries loses the keys type: the mapping is a closed Record, so its keys are exactly the BlogpostProduct
 const BLOGPOST_PRODUCTS = Object.entries(blogpostProductMapping) as [
   BlogpostProduct,
@@ -292,7 +268,7 @@ export const NewsFeedApp = {
   syncBlogposts: async (): Promise<BlogpostSyncResult> => {
     const limit = NewsFeedHelper.getBlogpostLimit();
     const succeeded: [BlogpostProduct, BlogpostSyncCounts][] = [];
-    const failures: BlogpostProductFailure[] = [];
+    const failures: { product: BlogpostProduct; error: unknown }[] = [];
 
     for (const [product, platformIdentifier] of BLOGPOST_PRODUCTS) {
       try {
@@ -319,7 +295,16 @@ export const NewsFeedApp = {
         synchronized: Object.fromEntries(succeeded),
         failedProducts: failures.map(({ product }) => product),
       });
-      throw new BlogpostSyncError(failures);
+      // The other products are already applied: the error tells which ones are left to fix
+      throw new Error(
+        `Unable to synchronize the blog posts of ${failures
+          .map(
+            ({ product, error }) =>
+              `${product} (${error instanceof Error ? error.message : String(error)})`
+          )
+          .join(', ')}`,
+        { cause: failures[0]?.error }
+      );
     }
 
     // Object.fromEntries loses the keys type: without any failure, every mapped product has succeeded

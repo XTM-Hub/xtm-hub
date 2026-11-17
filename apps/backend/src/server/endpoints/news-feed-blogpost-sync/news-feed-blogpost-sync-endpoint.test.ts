@@ -10,11 +10,9 @@ import {
   it,
   vi,
 } from 'vitest';
-import { FiligranProduct } from '../../../__generated__/resolvers-types';
 import { requestContext } from '../../../context/request.context';
 import { UserLoadUserBy } from '../../../model/user';
 import {
-  BlogpostSyncError,
   BlogpostSyncResult,
   NewsFeedApp,
 } from '../../../modules/news-feed/news-feed.app';
@@ -264,41 +262,21 @@ describe('news feed blogpost sync endpoint', () => {
         new Error(ErrorCode.NewsFeedBlogpostEmptyFeed),
         undefined,
       ],
+      [
+        'a product failing while the other is applied',
+        new Error(
+          `Unable to synchronize the blog posts of openaev (${INTERNAL_ERROR_MESSAGE})`,
+          {
+            cause: new BlogApiError(
+              BlogApiErrorCode.Unreachable,
+              INTERNAL_ERROR_MESSAGE
+            ),
+          }
+        ),
+        undefined,
+      ],
       ['any other error', new Error(INTERNAL_ERROR_MESSAGE), undefined],
     ];
-
-    it('should answer a 500 with the message only, and log the failing products, when a product fails and the other is applied', async () => {
-      // Given
-      const logError = vi
-        .spyOn(logApp, 'error')
-        .mockImplementation(() => undefined);
-      const error = new BlogpostSyncError([
-        {
-          product: FiligranProduct.Openaev,
-          error: new BlogApiError(
-            BlogApiErrorCode.Unreachable,
-            INTERNAL_ERROR_MESSAGE
-          ),
-        },
-      ]);
-      vi.spyOn(NewsFeedApp, 'syncBlogposts').mockRejectedValue(error);
-
-      // When
-      const response = await summarize(
-        await callWebhook({ headers: withToken() })
-      );
-
-      // Then
-      expect(response).toMatchObject({
-        status: 500,
-        body: JSON.stringify(SYNC_FAILURE_BODY),
-      });
-      expect(response.body).not.toContain(INTERNAL_ERROR_MESSAGE);
-      expect(logError).toHaveBeenCalledWith(
-        'Error while synchronizing blog posts',
-        { error, postId: undefined, failedProducts: ['openaev'] }
-      );
-    });
 
     it.each(failureCases)(
       'should answer a 500 with the message only, and log the post id, when the synchronization throws %s',

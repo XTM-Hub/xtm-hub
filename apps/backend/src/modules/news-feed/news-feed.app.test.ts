@@ -46,7 +46,7 @@ import { ErrorCode } from '../../utils/error/error.code';
 import { RequiredPlatformVersions } from '../../utils/required-platform-version';
 import { objectUseCaseDomain } from '../use-case/object-use-case/object-use-case.domain';
 import { useCaseDomain } from '../use-case/use-case.domain';
-import { BlogpostSyncError, NewsFeedApp } from './news-feed.app';
+import { NewsFeedApp } from './news-feed.app';
 import { NewsFeedDomain } from './news-feed.domain';
 import { NewsFeedHelper } from './news-feed.helper';
 import { BlogpostProduct, blogpostProductMapping } from './news-feed.model';
@@ -3019,10 +3019,9 @@ describe('newsFeedApp', () => {
           const sync = NewsFeedApp.syncBlogposts();
 
           // Then
-          await expect(sync).rejects.toBeInstanceOf(BlogpostSyncError);
-          await expect(sync).rejects.toMatchObject({
-            failures: [{ product: failingProduct }],
-          });
+          await expect(sync).rejects.toThrow(
+            `Unable to synchronize the blog posts of ${failingProduct} (`
+          );
           expect(
             await loadItemOfProduct(healthyProduct, 'blog-post-0')
           ).toMatchObject({ is_deleted: false });
@@ -3082,7 +3081,9 @@ describe('newsFeedApp', () => {
         const sync = NewsFeedApp.syncBlogposts();
 
         // Then
-        await expect(sync).rejects.toBeInstanceOf(BlogpostSyncError);
+        await expect(sync).rejects.toThrow(
+          'Unable to synchronize the blog posts of openaev ('
+        );
         expect(logError).toHaveBeenCalledWith(
           'Unable to synchronize the blog posts of a product',
           expect.objectContaining({ product: 'openaev', postId: 'post-614' })
@@ -3140,7 +3141,9 @@ describe('newsFeedApp', () => {
         const sync = NewsFeedApp.syncBlogposts();
 
         // Then
-        await expect(sync).rejects.toBeInstanceOf(BlogpostSyncError);
+        await expect(sync).rejects.toThrow(
+          'Unable to synchronize the blog posts of openaev (provisioning failed)'
+        );
         expect(await loadItemOfProduct(OPENCTI, 'blog-post-1')).toMatchObject({
           is_deleted: false,
         });
