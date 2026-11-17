@@ -165,6 +165,9 @@ export const sseOperationMetrics = {
 // Client errors are the typed ones below 500 and the codes mapToGraphQLError maps to them; anything else is a server
 // error. The resolver's error is read directly: unwrapResolverError's instanceof fails when two copies of graphql load.
 const isClientError = (error: GraphQLError) => {
+  if (!error.path && error.extensions?.code === 'BAD_USER_INPUT') {
+    return true;
+  }
   const originalError =
     error.path && error.originalError ? error.originalError : error;
   if (isCustomApolloError(originalError)) {
