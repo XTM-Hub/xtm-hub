@@ -332,6 +332,12 @@ export const ANALYTICS_ELEMENT_IDS = {
   platform_disconnection_confirm: { action: 'Confirm platform disconnection' },
   platform_hostname_copy: { action: 'Copy platform host name' },
   platform_instance_open: { action: 'Open connected platform' },
+  platform_metrics_access_contact: {
+    action: 'Ask admin for platform metrics access',
+  },
+  platform_metrics_access_documentation_open: {
+    action: 'Open metrics access documentation',
+  },
   platform_metrics_period_select: { action: 'Change platform metrics period' },
   platform_name_cancel: { action: 'Cancel platform rename' },
   platform_name_edit: { action: 'Rename connected platform' },

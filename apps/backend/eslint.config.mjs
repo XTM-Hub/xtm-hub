@@ -54,6 +54,16 @@ export default defineConfig([
     },
   },
   {
+    // Guarded resolvers are typed static properties of a class
+    files: ['**/*.resolver.ts'],
+    rules: {
+      '@typescript-eslint/no-extraneous-class': [
+        'error',
+        { allowStaticOnly: true },
+      ],
+    },
+  },
+  {
     files: ['**/*.test.ts', '**/*.test.utils.ts'],
     rules: {
       '@typescript-eslint/no-non-null-assertion': 'off',
