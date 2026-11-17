@@ -21,7 +21,7 @@ export const ShareableResourceCardHeader = ({
         />
         <div className="flex min-h-12 min-w-0 flex-1 items-center">
           <Text
-            as="h2"
+            as="h3"
             variant="title-sm"
             title={document.name ?? undefined}
             className="min-w-0 break-words line-clamp-2">

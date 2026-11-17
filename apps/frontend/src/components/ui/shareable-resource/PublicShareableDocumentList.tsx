@@ -10,7 +10,7 @@ import {
   toAnalyticsResourceData,
 } from '@/lib/analytics/analytics.context';
 import { getDataTableLabels } from '@/utils/design-system/data-table';
-import { PUBLIC_CYBERSECURITY_SOLUTIONS_PATH } from '@/utils/path/constant';
+import { publicResourcePath } from '@/utils/path/public-resource-path';
 import {
   PublicDocumentListItemFragment,
   SeoServiceInstanceItemFragment,
@@ -49,7 +49,7 @@ export const PublicShareableDocumentList = ({
             <ShareLinkButton
               analyticsId="resource_share"
               documentId={document.id}
-              url={`${baseUrl}/${PUBLIC_CYBERSECURITY_SOLUTIONS_PATH}/${serviceInstance.slug}/${document.slug}`}
+              url={`${baseUrl}/${publicResourcePath(serviceInstance.slug, document.slug)}`}
               size="sm"
             />
           </div>
@@ -71,8 +71,8 @@ export const PublicShareableDocumentList = ({
               key={document.id}
               document={document}
               serviceInstance={serviceInstance}
-              detailUrl={`/${locale}/${PUBLIC_CYBERSECURITY_SOLUTIONS_PATH}/${serviceInstance.slug}/${document.slug}`}
-              shareLinkUrl={`${baseUrl}/${PUBLIC_CYBERSECURITY_SOLUTIONS_PATH}/${serviceInstance.slug}/${document.slug}`}
+              detailUrl={`/${locale}/${publicResourcePath(serviceInstance.slug, document.slug)}`}
+              shareLinkUrl={`${baseUrl}/${publicResourcePath(serviceInstance.slug, document.slug)}`}
             />
           ))}
         </ul>
@@ -89,7 +89,7 @@ export const PublicShareableDocumentList = ({
           onClickRow={(row) => {
             save();
             router.push(
-              `/${locale}/${PUBLIC_CYBERSECURITY_SOLUTIONS_PATH}/${serviceInstance.slug}/${row.original.slug}`
+              `/${locale}/${publicResourcePath(serviceInstance.slug, row.original.slug)}`
             );
           }}
         />

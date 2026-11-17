@@ -1,6 +1,5 @@
 import { XTM_PLATFORM_TRIAL_PATH } from '@/utils/path/constant';
 import {
-  DocumentImageType,
   PlatformContract,
   PlatformIdentifier,
   ServiceDefinitionIdentifier,
@@ -8,7 +7,6 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   buildDistinctPlatformIdentifiersFromServiceDefinition,
-  findLogoUrl,
   mapRegisteredPlatformsToHomepageCards,
   resolveRemainingTrialDays,
 } from './Homepage.utils';
@@ -197,60 +195,4 @@ describe('mapRegisteredPlatformsToHomepageCards', () => {
       },
     ]);
   });
-});
-
-describe('findLogoUrl', () => {
-  it.each([
-    {
-      children_documents: null,
-      service_instance_id: 'inst-1',
-      expected: undefined,
-      description: 'returns undefined when children_documents is null',
-    },
-    {
-      children_documents: [
-        { id: 'd1', image_type: DocumentImageType.Screenshot },
-      ],
-      service_instance_id: 'inst-1',
-      expected: undefined,
-      description: 'returns undefined when no child has Logo image type',
-    },
-    {
-      children_documents: [{ id: 'd1', image_type: DocumentImageType.Logo }],
-      service_instance_id: null,
-      expected: undefined,
-      description:
-        'returns undefined when logo is present but service_instance_id is null',
-    },
-    {
-      children_documents: [{ id: 'd1', image_type: DocumentImageType.Logo }],
-      service_instance_id: 'inst-1',
-      expected: '/document/images/inst-1/d1',
-      description:
-        'returns the image URL when logo and service_instance_id are both present',
-    },
-  ] as {
-    children_documents: { id: string; image_type: DocumentImageType }[] | null;
-    service_instance_id: string | null;
-    expected: string | undefined;
-    description: string;
-  }[])(
-    '$description',
-    ({ children_documents, service_instance_id, expected }) => {
-      const resource = {
-        id: 'res-1',
-        name: 'Resource',
-        type: 'opencti_custom_dashboard',
-        status: 'published',
-        slug: 'resource-slug',
-        short_description: null,
-        service_instance_id,
-        children_documents,
-        use_cases: null,
-      };
-      expect(findLogoUrl(resource as Parameters<typeof findLogoUrl>[0])).toBe(
-        expected
-      );
-    }
-  );
 });

@@ -1,26 +1,18 @@
-import { findLogoUrl } from '@/components/homepage/Homepage.utils';
-import HomepageResourceCard from '@/components/homepage/resources/HomepageResourceCard';
+import ShareableResourceCard from '@/components/ui/shareable-resource/ShareableResourceCard';
 import { PublicLocale } from '@/i18n/config';
+import { publicResourcePath } from '@/utils/path/public-resource-path';
 import {
-  analyticsResource,
-  toAnalyticsResourceData,
-} from '@/lib/analytics/analytics.context';
-import { isDocumentPublished } from '@/utils/documents';
-import { PUBLIC_CYBERSECURITY_SOLUTIONS_PATH } from '@/utils/path/constant';
-import {
-  SHAREABLE_RESOURCE_LIBRARY_MAPPING,
-  SHAREABLE_RESOURCE_PRODUCT_MAPPING,
   SHAREABLE_RESOURCE_SERVICE_DEFINITION_IDENTIFIER_MAPPING,
   SHAREABLE_RESOURCE_SERVICE_SLUG_MAPPING,
   ShareableResourceType,
 } from '@/utils/shareable-resources/shareable-resources.types';
-import { docHasMetadata } from '@/utils/shareable-resources/utils/shareable-resources.client.utils';
-import { HomepageDocumentFragment } from '@graphql/generated';
+import { HomepageResourceDocumentFragment } from '@graphql/generated';
 import { useLocale } from 'next-intl';
 
 type HomepageResourceListProps = {
   title: string;
-  documents: HomepageDocumentFragment[];
+  documents: HomepageResourceDocumentFragment[];
+  baseUrl: string;
   isAuthenticated?: boolean;
   paramsLocale?: PublicLocale;
 };
@@ -28,6 +20,7 @@ type HomepageResourceListProps = {
 const HomepageResourceList = ({
   title,
   documents,
+  baseUrl,
   isAuthenticated = false,
   paramsLocale,
 }: HomepageResourceListProps) => {
@@ -40,56 +33,34 @@ const HomepageResourceList = ({
   return (
     <section className="flex flex-col gap-2">
       <h2 className="title-md">{title}</h2>
-      <ul className="grid grid-cols-[repeat(auto-fit,minmax(16rem,1fr))] gap-6">
+      <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(280px,100%),1fr))] gap-4">
         {documents.map((resource) => {
           const resourceType = resource.type as ShareableResourceType;
           const serviceSlug =
             SHAREABLE_RESOURCE_SERVICE_SLUG_MAPPING[resourceType];
           if (!serviceSlug || !resource.slug) return null;
 
-          const url =
+          const publicPath = publicResourcePath(serviceSlug, resource.slug);
+          const detailUrl =
             isAuthenticated && resource.service_instance_id
               ? `/app/service/${SHAREABLE_RESOURCE_SERVICE_DEFINITION_IDENTIFIER_MAPPING[resourceType]}/${resource.service_instance_id}/${resource.id}`
-              : `/${usedLocale}/${PUBLIC_CYBERSECURITY_SOLUTIONS_PATH}/${serviceSlug}/${resource.slug}`;
-          const footerTags = [
-            SHAREABLE_RESOURCE_PRODUCT_MAPPING[resourceType],
-            SHAREABLE_RESOURCE_LIBRARY_MAPPING[resourceType],
-          ];
+              : `/${usedLocale}/${publicPath}`;
 
-          const logoUrl = findLogoUrl(resource);
-
-          const verified =
-            docHasMetadata(resource, 'verified') && Boolean(resource.verified);
-          const deployable =
-            docHasMetadata(resource, 'manager_supported') &&
-            Boolean(resource.manager_supported);
-
-          const active =
-            isDocumentPublished(resource.status) &&
-            resource.type !== ShareableResourceType.OPENCTI_INTEGRATION;
+          // The card builds the logo url from the service instance id: without
+          // one, drop the logo so the card falls back to its default image.
+          const cardDocument = resource.service_instance_id
+            ? resource
+            : { ...resource, children_documents: null };
 
           return (
-            <li
+            <ShareableResourceCard
               key={resource.id}
-              {...analyticsResource(toAnalyticsResourceData(resource))}>
-              <HomepageResourceCard
-                key={resource.id}
-                name={resource.name ?? ''}
-                shortDescription={resource.short_description}
-                url={url}
-                logoUrl={logoUrl}
-                active={active}
-                verified={verified}
-                deployable={deployable}
-                useCases={
-                  resource.use_cases?.map((uc) => ({
-                    id: uc.id,
-                    name: uc.name,
-                  })) ?? []
-                }
-                footerTags={footerTags}
-              />
-            </li>
+              document={cardDocument}
+              detailUrl={detailUrl}
+              shareLinkUrl={`${baseUrl}/${publicPath}`}
+              serviceInstance={{ id: resource.service_instance_id ?? '' }}
+              publicPath={!isAuthenticated}
+            />
           );
         })}
       </ul>
