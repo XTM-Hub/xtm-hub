@@ -2,9 +2,16 @@ import type { ApolloServer } from '@apollo/server';
 import { afterAll, beforeAll, expect, it, type MockInstance } from 'vitest';
 import type { DenialCode } from '../../src/security/guarded/guard.types';
 import type { Context } from '../../src/server/apollo-plugins/log';
-import { contextBypassUser, contextSimpleUserFiligran2 } from '../tests.const';
+import {
+  contextBypassUser,
+  contextInvalidSystemToken,
+  contextSimpleUserFiligran2,
+  contextSystemToken,
+} from '../tests.const';
 
-export type AccessRow = 'anonymous' | 'user' | 'admin';
+type SessionRow = 'anonymous' | 'user' | 'admin';
+type SystemTokenRow = 'system' | 'invalidSystemToken';
+export type AccessRow = SessionRow | SystemTokenRow;
 export type AccessOutcome = 'allowed' | DenialCode;
 
 export interface AccessMatrixFixture {
@@ -20,10 +27,17 @@ export interface AccessMatrixOptions {
   // Spies on the app or domain function behind the operation: not called when the row is refused,
   // e.g. () => vi.spyOn(solutionCategoryDomain, 'insertSolutionCategory')
   guarded: () => MockInstance;
-  expected: Record<AccessRow, AccessOutcome>;
+  expected: Record<SessionRow, AccessOutcome> &
+    Partial<Record<SystemTokenRow, AccessOutcome>>;
 }
 
-const ROWS: AccessRow[] = ['anonymous', 'user', 'admin'];
+const ROWS: AccessRow[] = [
+  'anonymous',
+  'user',
+  'admin',
+  'system',
+  'invalidSystemToken',
+];
 
 const contextOf = (row: AccessRow): Context => {
   switch (row) {
@@ -37,6 +51,10 @@ const contextOf = (row: AccessRow): Context => {
       return contextSimpleUserFiligran2;
     case 'admin':
       return contextBypassUser;
+    case 'system':
+      return contextSystemToken;
+    case 'invalidSystemToken':
+      return contextInvalidSystemToken;
   }
 };
 
@@ -79,7 +97,7 @@ const useGraphqlServer = () => {
 
 export const TestAccessMatrixHelper = {
   // Call inside a describe named after the operation. Runs it as an anonymous visitor,
-  // a user without the capability and a platform admin
+  // a user without the capability and a platform admin, plus the system-token rows that expected lists
   expectAccessMatrix: ({
     operation,
     prepare,
@@ -90,7 +108,9 @@ export const TestAccessMatrixHelper = {
 
     const refusedRows = ROWS.flatMap((row) => {
       const outcome = expected[row];
-      return outcome === 'allowed' ? [] : [{ row, code: outcome }];
+      return outcome === undefined || outcome === 'allowed'
+        ? []
+        : [{ row, code: outcome }];
     });
     const allowedRows = ROWS.filter((row) => expected[row] === 'allowed').map(
       (row) => ({ row })
