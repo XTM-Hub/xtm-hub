@@ -14,7 +14,7 @@ mechanisms coexist while modules migrate:
 
 | Mechanism | Where | Used by |
 | --- | --- | --- |
-| `@Public()` / `@Guarded(guard)` on the resolver | `src/security/guarded/` | Migrated modules (`solution-category`) |
+| `@Public()` / `@Guarded(guard)` on the resolver | `src/security/guarded/` | Migrated modules (`solution-category`, `telemetry`) |
 | `@auth`, `@service_capa`, `@system_token`, `@platform_token` in the `.graphql` file | `src/security/directive-graphql/` | Every other module. A field with no directive is public there |
 
 **An operation has a directive or a decorator, never both.** Migrating an operation removes its directive in the same
@@ -50,15 +50,19 @@ export default resolvers;
 - Members must be `static` fields: the spread copies a class's own static fields, not instance members or getters.
 - Type each property as `NonNullable<QueryResolvers['x']>` / `MutationResolvers['x']`, or its parameters are untyped.
 - The decorator runs the guard before the resolver, so a direct call of the resolver is guarded too: a test that
-  calls it directly passes a context whose user holds the capability.
+  calls it directly passes a context whose user passes the guard.
 - A guard receives the caller (`Principal`, built from the context), never the session. It must not assume a full
   `PortalContext`: the SSE context is only `{ user, req }`.
+- A namespace type (a root field returning `{}`, such as `sendTelemetryEvent`) is guarded on its root field only,
+  and only while nothing else reaches that type (field, union or interface). Each one needs its own reachability
+  test, as in `telemetry.access.test.ts`.
 
 ## Guards
 
 | Declaration | Allows | Refuses with |
 | --- | --- | --- |
 | `@Public()` | Anyone, anonymous included. Nothing is built or loaded | Never |
+| `@Guarded(loggedInGuard())` | Any logged-in user. Not a substitute for a capability check | `UNAUTHENTICATED` (anonymous or disabled user) |
 | `@Guarded(bypassOnlyGuard())` | A `BYPASS` user only. Use it for admin-only operations rather than listing `BYPASS` | `UNAUTHENTICATED` (anonymous or disabled user), `FORBIDDEN_ACCESS` (not `BYPASS`) |
 | `@Guarded(portalCapabilityGuard([PortalCapability.X, …]))` | A user holding one of the portal capabilities; `BYPASS` always. The list cannot be empty | `UNAUTHENTICATED` (anonymous or disabled user), `FORBIDDEN_ACCESS` (capability missing) |
 
@@ -95,8 +99,8 @@ describe('addSolutionCategory mutation', () => {
 });
 ```
 
-Rows are anonymous, a user without the capability and a platform admin. `guarded` returns a spy on the function behind
-the operation: refused rows assert it was not called, allowed rows that it was called once. Wrap the call in a
+Rows are anonymous, a logged-in user with no capability and a platform admin. `guarded` returns a spy on the function
+behind the operation: refused rows assert it was not called, allowed rows that it was called once. Wrap the call in a
 `describe` with a literal name, and use `TestHelper`, never the helper file directly.
 
 ## Adding or migrating an entry point
