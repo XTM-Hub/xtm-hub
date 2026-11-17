@@ -28,7 +28,7 @@ describe('ShareableResourceCardHeader', () => {
     renderHeader();
 
     // Then
-    expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent(NAME);
+    expect(screen.getByRole('heading', { level: 3 })).toHaveTextContent(NAME);
   });
 
   it('renders the use cases and no entity types', () => {
