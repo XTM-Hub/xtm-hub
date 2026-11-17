@@ -10,14 +10,15 @@ export const XtmPlatformTrialLimitations = () => {
       severity="info"
       title={t('Service.Trials.XtmPlatform.Page.Limitations.Title')}
       description={
-        // Alert renders the description in a <p>, which cannot hold a <p> or a <ul>.
         <>
           <span className="block">
             {t('Service.Trials.XtmPlatform.Page.Limitations.Intro')}
           </span>
+          {/* Alert renders the description in a <p>, which cannot hold a <ul>.
+              list-disc and pl-4 are the only styling kept: they draw the bullets. */}
           <span
             role="list"
-            className="my-2 block list-disc pl-4">
+            className="block list-disc pl-4">
             <span
               role="listitem"
               className="list-item">
@@ -29,10 +30,10 @@ export const XtmPlatformTrialLimitations = () => {
               {t('Service.Trials.XtmPlatform.Page.Limitations.OpenAEV')}
             </span>
           </span>
-          <span className="block text-xs">
+          <span className="block">
             {t('Service.Trials.XtmPlatform.Page.Limitations.Ingestion')}
           </span>
-          <span className="block text-xs">
+          <span className="block">
             {t('Service.Trials.XtmPlatform.Page.Limitations.NoSLA')}
           </span>
         </>

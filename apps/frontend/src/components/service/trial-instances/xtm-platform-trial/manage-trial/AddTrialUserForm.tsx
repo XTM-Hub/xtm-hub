@@ -152,10 +152,10 @@ export const AddTrialUserForm = ({
       )}
       pickerNotice={
         <>
+          {/* The dialog content is a layer-2 surface: both alerts use elevation 1. */}
           {!canManageUsers && (
             <Alert
               severity="warning"
-              // The dialog content is a layer-2 surface.
               elevation={1}
               title={t(
                 'Service.Bundle.ManageTrial.AddUserDialog.NoPermissionToInvite'
@@ -165,7 +165,6 @@ export const AddTrialUserForm = ({
           {hasSelectedExpiredUsers && (
             <Alert
               severity="warning"
-              // The dialog content is a layer-2 surface.
               elevation={1}
               title={t(
                 'Service.Bundle.ManageTrial.AddUserDialog.ExpiredUsersReinvited'
