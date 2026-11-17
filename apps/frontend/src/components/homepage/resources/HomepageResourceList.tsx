@@ -1,6 +1,6 @@
 import ShareableResourceCard from '@/components/ui/shareable-resource/ShareableResourceCard';
 import { PublicLocale } from '@/i18n/config';
-import { PUBLIC_CYBERSECURITY_SOLUTIONS_PATH } from '@/utils/path/constant';
+import { publicResourcePath } from '@/utils/path/public-resource-path';
 import {
   SHAREABLE_RESOURCE_SERVICE_DEFINITION_IDENTIFIER_MAPPING,
   SHAREABLE_RESOURCE_SERVICE_SLUG_MAPPING,
@@ -40,7 +40,7 @@ const HomepageResourceList = ({
             SHAREABLE_RESOURCE_SERVICE_SLUG_MAPPING[resourceType];
           if (!serviceSlug || !resource.slug) return null;
 
-          const publicPath = `${PUBLIC_CYBERSECURITY_SOLUTIONS_PATH}/${serviceSlug}/${resource.slug}`;
+          const publicPath = publicResourcePath(serviceSlug, resource.slug);
           const detailUrl =
             isAuthenticated && resource.service_instance_id
               ? `/app/service/${SHAREABLE_RESOURCE_SERVICE_DEFINITION_IDENTIFIER_MAPPING[resourceType]}/${resource.service_instance_id}/${resource.id}`

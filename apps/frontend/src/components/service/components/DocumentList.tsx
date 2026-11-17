@@ -10,10 +10,8 @@ import {
   analyticsResource,
   toAnalyticsResourceData,
 } from '@/lib/analytics/analytics.context';
-import {
-  APP_PATH,
-  PUBLIC_CYBERSECURITY_SOLUTIONS_PATH,
-} from '@/utils/path/constant';
+import { APP_PATH } from '@/utils/path/constant';
+import { publicResourcePath } from '@/utils/path/public-resource-path';
 import { useContext, useMemo } from 'react';
 
 import { DataTable } from '@/components/ui/data-table';
@@ -58,7 +56,7 @@ const DocumentList = ({ documents, displayMode }: DocumentListProps) => {
               key={document.id}
               document={document}
               detailUrl={`/${APP_PATH}/service/${serviceInstance.service_definition?.identifier}/${serviceInstance.id}/${document.id}`}
-              shareLinkUrl={`${settings!.base_url_front}/${PUBLIC_CYBERSECURITY_SOLUTIONS_PATH}/${serviceInstance.slug}/${document.slug}`}
+              shareLinkUrl={`${settings!.base_url_front}/${publicResourcePath(serviceInstance.slug, document.slug)}`}
             />
           ))}
         </ul>
