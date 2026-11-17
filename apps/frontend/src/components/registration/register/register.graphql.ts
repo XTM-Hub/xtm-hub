@@ -1,13 +1,5 @@
 import { graphql } from 'react-relay';
 
-export const RefreshUserPlatformTokenMutation = graphql`
-  mutation registerRefreshUserPlatformTokenMutation {
-    refreshUserPlatformToken {
-      token
-    }
-  }
-`;
-
 export const IsPlatformRegisteredFragment = graphql`
   fragment registerIsPlatformRegisteredFragment on IsPlatformRegisteredResponse {
     status

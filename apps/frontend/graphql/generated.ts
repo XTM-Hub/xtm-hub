@@ -4118,6 +4118,11 @@ export type RegisteredPlatformsListQueryVariables = Exact<{
 
 export type RegisteredPlatformsListQuery = { __typename?: 'Query', registeredPlatforms: Array<{ __typename?: 'RegisteredPlatform', id: string, platform_id: string, title: string, url: string, contract: PlatformContract, version: string | null, identifier: ServiceDefinitionIdentifier, deployment_request: { __typename?: 'DeploymentRequest', parent_id: any | null } | null, subscription: { __typename?: 'SubscriptionModel', end_date: any | null, start_date: any | null, service_instance: { __typename?: 'ServiceInstance', id: string, name: string } } | null }> };
 
+export type RefreshUserPlatformTokenMutationVariables = Exact<{ [key: string]: never; }>;
+
+
+export type RefreshUserPlatformTokenMutation = { __typename?: 'Mutation', refreshUserPlatformToken: { __typename?: 'RefreshUserPlatformTokenResponse', token: string } };
+
 export type RegisteredPlatformsQueryVariables = Exact<{
   input: RegisteredPlatformsInput;
 }>;
@@ -7950,6 +7955,35 @@ export const useInfiniteRegisteredPlatformsListQuery = <
 useInfiniteRegisteredPlatformsListQuery.getKey = (variables: RegisteredPlatformsListQueryVariables) => ['RegisteredPlatformsList.infinite', variables];
 useInfiniteRegisteredPlatformsListQuery.getRootKey = () => ['RegisteredPlatformsList.infinite'] as const;
 useRegisteredPlatformsListQuery.fetcher = (client: GraphQLClient, variables: RegisteredPlatformsListQueryVariables, headers?: RequestInit['headers']) => fetcher<RegisteredPlatformsListQuery, RegisteredPlatformsListQueryVariables>(client, RegisteredPlatformsListDocument, variables, headers);
+
+export const RefreshUserPlatformTokenDocument = `
+    mutation RefreshUserPlatformToken {
+  refreshUserPlatformToken {
+    token
+  }
+}
+    `;
+
+export const useRefreshUserPlatformTokenMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<RefreshUserPlatformTokenMutation, TError, RefreshUserPlatformTokenMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<RefreshUserPlatformTokenMutation, TError, RefreshUserPlatformTokenMutationVariables, TContext>(
+      {
+    mutationKey: ['RefreshUserPlatformToken'],
+    mutationFn: (variables?: RefreshUserPlatformTokenMutationVariables) => fetcher<RefreshUserPlatformTokenMutation, RefreshUserPlatformTokenMutationVariables>(client, RefreshUserPlatformTokenDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useRefreshUserPlatformTokenMutation.getKey = () => ['RefreshUserPlatformToken'];
+useRefreshUserPlatformTokenMutation.getRootKey = () => ['RefreshUserPlatformToken'] as const;
+useRefreshUserPlatformTokenMutation.fetcher = (client: GraphQLClient, variables?: RefreshUserPlatformTokenMutationVariables, headers?: RequestInit['headers']) => fetcher<RefreshUserPlatformTokenMutation, RefreshUserPlatformTokenMutationVariables>(client, RefreshUserPlatformTokenDocument, variables, headers);
 
 export const RegisteredPlatformsDocument = `
     query RegisteredPlatforms($input: RegisteredPlatformsInput!) {
