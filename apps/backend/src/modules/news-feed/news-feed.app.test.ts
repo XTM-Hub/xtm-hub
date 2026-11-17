@@ -3020,7 +3020,7 @@ describe('newsFeedApp', () => {
 
           // Then
           await expect(sync).rejects.toThrow(
-            `Unable to synchronize the blog posts of ${failingProduct} (`
+            ErrorCode.NewsFeedBlogpostSyncFailed
           );
           expect(
             await loadItemOfProduct(healthyProduct, 'blog-post-0')
@@ -3082,7 +3082,7 @@ describe('newsFeedApp', () => {
 
         // Then
         await expect(sync).rejects.toThrow(
-          'Unable to synchronize the blog posts of openaev ('
+          ErrorCode.NewsFeedBlogpostSyncFailed
         );
         expect(logError).toHaveBeenCalledWith(
           'Unable to synchronize the blog posts of a product',
@@ -3090,20 +3090,35 @@ describe('newsFeedApp', () => {
         );
       });
 
-      it('should name the failing product in the error', async () => {
+      it('should throw the sync failure with the first failure as cause, and name the failing products in the logs', async () => {
         // Given
+        const failure = new Error('blog down');
         mockFeeds({
           opencti: buildFeed(1),
-          openaev: new Error('blog down'),
+          openaev: failure,
         });
-        vi.spyOn(logApp, 'error').mockImplementation(() => logApp);
+        const logError = vi
+          .spyOn(logApp, 'error')
+          .mockImplementation(() => logApp);
+        const logWarn = vi
+          .spyOn(logApp, 'warn')
+          .mockImplementation(() => logApp);
 
         // When
         const sync = NewsFeedApp.syncBlogposts();
 
         // Then
         await expect(sync).rejects.toThrow(
-          'Unable to synchronize the blog posts of openaev (blog down)'
+          ErrorCode.NewsFeedBlogpostSyncFailed
+        );
+        await expect(sync).rejects.toMatchObject({ cause: failure });
+        expect(logError).toHaveBeenCalledWith(
+          'Unable to synchronize the blog posts of a product',
+          expect.objectContaining({ product: 'openaev', error: failure })
+        );
+        expect(logWarn).toHaveBeenCalledWith(
+          'Synchronized the blog posts of some products only',
+          expect.objectContaining({ failedProducts: ['openaev'] })
         );
       });
 
@@ -3142,8 +3157,11 @@ describe('newsFeedApp', () => {
 
         // Then
         await expect(sync).rejects.toThrow(
-          'Unable to synchronize the blog posts of openaev (provisioning failed)'
+          ErrorCode.NewsFeedBlogpostSyncFailed
         );
+        await expect(sync).rejects.toMatchObject({
+          cause: new Error('provisioning failed'),
+        });
         expect(await loadItemOfProduct(OPENCTI, 'blog-post-1')).toMatchObject({
           is_deleted: false,
         });

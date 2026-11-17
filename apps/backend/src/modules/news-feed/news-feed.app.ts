@@ -263,8 +263,9 @@ export const NewsFeedApp = {
 
   // Each product is synchronized on its own, one after the other: it fetches the blog API first, outside any
   // transaction, then reconciles and provisions in a single transaction of its own. A failing product rolls back
-  // only itself, provisioning included, and does not stop the others. The error is thrown once all of them have been
-  // tried, so that the caller knows that something is left to fix.
+  // only itself, provisioning included, and does not stop the others. Each failure is logged with its product, and a
+  // NewsFeedBlogpostSyncFailed error is thrown once all of them have been tried, so that the caller knows that
+  // something is left to fix.
   syncBlogposts: async (): Promise<BlogpostSyncResult> => {
     const limit = NewsFeedHelper.getBlogpostLimit();
     const succeeded: [BlogpostProduct, BlogpostSyncCounts][] = [];
@@ -295,16 +296,10 @@ export const NewsFeedApp = {
         synchronized: Object.fromEntries(succeeded),
         failedProducts: failures.map(({ product }) => product),
       });
-      // The other products are already applied: the error tells which ones are left to fix
-      throw new Error(
-        `Unable to synchronize the blog posts of ${failures
-          .map(
-            ({ product, error }) =>
-              `${product} (${error instanceof Error ? error.message : String(error)})`
-          )
-          .join(', ')}`,
-        { cause: failures[0]?.error }
-      );
+      // The other products are already applied. The failed products and the reasons are in the logs above.
+      throw new Error(ErrorCode.NewsFeedBlogpostSyncFailed, {
+        cause: failures[0]?.error,
+      });
     }
 
     // Object.fromEntries loses the keys type: without any failure, every mapped product has succeeded

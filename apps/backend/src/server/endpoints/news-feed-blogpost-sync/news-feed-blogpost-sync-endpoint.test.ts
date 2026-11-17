@@ -264,15 +264,12 @@ describe('news feed blogpost sync endpoint', () => {
       ],
       [
         'a product failing while the other is applied',
-        new Error(
-          `Unable to synchronize the blog posts of openaev (${INTERNAL_ERROR_MESSAGE})`,
-          {
-            cause: new BlogApiError(
-              BlogApiErrorCode.Unreachable,
-              INTERNAL_ERROR_MESSAGE
-            ),
-          }
-        ),
+        new Error(ErrorCode.NewsFeedBlogpostSyncFailed, {
+          cause: new BlogApiError(
+            BlogApiErrorCode.Unreachable,
+            INTERNAL_ERROR_MESSAGE
+          ),
+        }),
         undefined,
       ],
       ['any other error', new Error(INTERNAL_ERROR_MESSAGE), undefined],
