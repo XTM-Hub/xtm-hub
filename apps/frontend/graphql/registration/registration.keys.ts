@@ -1,6 +1,10 @@
 import {
+  type CanUnregisterPlatformQueryVariables,
+  type IsPlatformRegisteredQueryVariables,
   type RegisteredPlatformByServiceInstanceQueryVariables,
   type RegisteredPlatformsQueryVariables,
+  useCanUnregisterPlatformQuery,
+  useIsPlatformRegisteredQuery,
   useRegisteredPlatformByServiceInstanceQuery,
   useRegisteredPlatformsQuery,
 } from '@graphql/generated';
@@ -17,4 +21,8 @@ export const registrationKeys = {
   byServiceInstance: (
     variables: RegisteredPlatformByServiceInstanceQueryVariables
   ) => useRegisteredPlatformByServiceInstanceQuery.getKey(variables),
+  isPlatformRegistered: (variables: IsPlatformRegisteredQueryVariables) =>
+    useIsPlatformRegisteredQuery.getKey(variables),
+  canUnregisterPlatform: (variables: CanUnregisterPlatformQueryVariables) =>
+    useCanUnregisterPlatformQuery.getKey(variables),
 };

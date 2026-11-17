@@ -73,3 +73,23 @@ query RegisteredPlatformByServiceInstance($input: RegisteredPlatformInput!) {
     ...RegisteredPlatformDetails
   }
 }
+
+query IsPlatformRegistered($input: IsPlatformRegisteredInput!) {
+  isPlatformRegistered(input: $input) {
+    status
+    platformTitle
+    organization {
+      id
+    }
+  }
+}
+
+query CanUnregisterPlatform($input: CanUnregisterPlatformInput!) {
+  canUnregisterPlatform(input: $input) {
+    isPlatformRegistered
+    isAllowed
+    isInOrganization
+    organizationId
+    organizationName
+  }
+}

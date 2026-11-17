@@ -4130,6 +4130,13 @@ export type UnregisterPlatformMutationVariables = Exact<{
 
 export type UnregisterPlatformMutation = { __typename?: 'Mutation', unregisterPlatform: { __typename?: 'Success', success: boolean } };
 
+export type RegisterPlatformMutationVariables = Exact<{
+  input: RegisterPlatformInput;
+}>;
+
+
+export type RegisterPlatformMutation = { __typename?: 'Mutation', registerPlatform: { __typename?: 'RegistrationResponse', token: string } };
+
 export type RegisteredPlatformsQueryVariables = Exact<{
   input: RegisteredPlatformsInput;
 }>;
@@ -4160,6 +4167,20 @@ export type RegisteredPlatformByServiceInstanceQueryVariables = Exact<{
 
 
 export type RegisteredPlatformByServiceInstanceQuery = { __typename?: 'Query', registeredPlatform: { __typename?: 'RegisteredPlatform', id: string, service_instance_id: any, platform_id: string, last_connectivity_check: any | null, commercial_model: CommercialModel | null, tenant_id: string | null, title: string, contract: PlatformContract, url: string, version: string | null, identifier: ServiceDefinitionIdentifier, subscription: { __typename?: 'SubscriptionModel', start_date: any | null, end_date: any | null, service_instance: { __typename?: 'ServiceInstance', id: string }, organization: { __typename?: 'Organization', id: string } } | null, deployment_request: { __typename?: 'DeploymentRequest', id: string, hub_status: DeploymentRequestHubStatus, region: DeploymentRequestPlatformRegion, counts_in_orga_quota: boolean, platform_identifier: PlatformIdentifier | null, requester_email: string | null } | null, myGroups: Array<{ __typename?: 'ServiceGroup', name: ServiceGroupName }> | null } | null };
+
+export type IsPlatformRegisteredQueryVariables = Exact<{
+  input: IsPlatformRegisteredInput;
+}>;
+
+
+export type IsPlatformRegisteredQuery = { __typename?: 'Query', isPlatformRegistered: { __typename?: 'IsPlatformRegisteredResponse', status: PlatformRegistrationStatus, platformTitle: string | null, organization: { __typename?: 'IsPlatformRegisteredOrganization', id: string } | null } };
+
+export type CanUnregisterPlatformQueryVariables = Exact<{
+  input: CanUnregisterPlatformInput;
+}>;
+
+
+export type CanUnregisterPlatformQuery = { __typename?: 'Query', canUnregisterPlatform: { __typename?: 'CanUnregisterResponse', isPlatformRegistered: boolean, isAllowed: boolean | null, isInOrganization: boolean | null, organizationId: any | null, organizationName: string | null } };
 
 export type AddRolePortalMutationVariables = Exact<{
   input: AddRolePortalInput;
@@ -8073,6 +8094,35 @@ useUnregisterPlatformMutation.getKey = () => ['UnregisterPlatform'];
 useUnregisterPlatformMutation.getRootKey = () => ['UnregisterPlatform'] as const;
 useUnregisterPlatformMutation.fetcher = (client: GraphQLClient, variables: UnregisterPlatformMutationVariables, headers?: RequestInit['headers']) => fetcher<UnregisterPlatformMutation, UnregisterPlatformMutationVariables>(client, UnregisterPlatformDocument, variables, headers);
 
+export const RegisterPlatformDocument = `
+    mutation RegisterPlatform($input: RegisterPlatformInput!) {
+  registerPlatform(input: $input) {
+    token
+  }
+}
+    `;
+
+export const useRegisterPlatformMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<RegisterPlatformMutation, TError, RegisterPlatformMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<RegisterPlatformMutation, TError, RegisterPlatformMutationVariables, TContext>(
+      {
+    mutationKey: ['RegisterPlatform'],
+    mutationFn: (variables?: RegisterPlatformMutationVariables) => fetcher<RegisterPlatformMutation, RegisterPlatformMutationVariables>(client, RegisterPlatformDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useRegisterPlatformMutation.getKey = () => ['RegisterPlatform'];
+useRegisterPlatformMutation.getRootKey = () => ['RegisterPlatform'] as const;
+useRegisterPlatformMutation.fetcher = (client: GraphQLClient, variables: RegisterPlatformMutationVariables, headers?: RequestInit['headers']) => fetcher<RegisterPlatformMutation, RegisterPlatformMutationVariables>(client, RegisterPlatformDocument, variables, headers);
+
 export const RegisteredPlatformsDocument = `
     query RegisteredPlatforms($input: RegisteredPlatformsInput!) {
   registeredPlatforms(input: $input) {
@@ -8299,6 +8349,120 @@ export const useInfiniteRegisteredPlatformByServiceInstanceQuery = <
 useInfiniteRegisteredPlatformByServiceInstanceQuery.getKey = (variables: RegisteredPlatformByServiceInstanceQueryVariables) => ['RegisteredPlatformByServiceInstance.infinite', variables];
 useInfiniteRegisteredPlatformByServiceInstanceQuery.getRootKey = () => ['RegisteredPlatformByServiceInstance.infinite'] as const;
 useRegisteredPlatformByServiceInstanceQuery.fetcher = (client: GraphQLClient, variables: RegisteredPlatformByServiceInstanceQueryVariables, headers?: RequestInit['headers']) => fetcher<RegisteredPlatformByServiceInstanceQuery, RegisteredPlatformByServiceInstanceQueryVariables>(client, RegisteredPlatformByServiceInstanceDocument, variables, headers);
+
+export const IsPlatformRegisteredDocument = `
+    query IsPlatformRegistered($input: IsPlatformRegisteredInput!) {
+  isPlatformRegistered(input: $input) {
+    status
+    platformTitle
+    organization {
+      id
+    }
+  }
+}
+    `;
+
+export const useIsPlatformRegisteredQuery = <
+      TData = IsPlatformRegisteredQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: IsPlatformRegisteredQueryVariables,
+      options?: Omit<UseQueryOptions<IsPlatformRegisteredQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<IsPlatformRegisteredQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<IsPlatformRegisteredQuery, TError, TData>(
+      {
+    queryKey: ['IsPlatformRegistered', variables],
+    queryFn: fetcher<IsPlatformRegisteredQuery, IsPlatformRegisteredQueryVariables>(client, IsPlatformRegisteredDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useIsPlatformRegisteredQuery.getKey = (variables: IsPlatformRegisteredQueryVariables) => ['IsPlatformRegistered', variables];
+useIsPlatformRegisteredQuery.getRootKey = () => ['IsPlatformRegistered'] as const;
+export const useInfiniteIsPlatformRegisteredQuery = <
+      TData = InfiniteData<IsPlatformRegisteredQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: IsPlatformRegisteredQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<IsPlatformRegisteredQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<IsPlatformRegisteredQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<IsPlatformRegisteredQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['IsPlatformRegistered.infinite', variables],
+      queryFn: (metaData) => fetcher<IsPlatformRegisteredQuery, IsPlatformRegisteredQueryVariables>(client, IsPlatformRegisteredDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteIsPlatformRegisteredQuery.getKey = (variables: IsPlatformRegisteredQueryVariables) => ['IsPlatformRegistered.infinite', variables];
+useInfiniteIsPlatformRegisteredQuery.getRootKey = () => ['IsPlatformRegistered.infinite'] as const;
+useIsPlatformRegisteredQuery.fetcher = (client: GraphQLClient, variables: IsPlatformRegisteredQueryVariables, headers?: RequestInit['headers']) => fetcher<IsPlatformRegisteredQuery, IsPlatformRegisteredQueryVariables>(client, IsPlatformRegisteredDocument, variables, headers);
+
+export const CanUnregisterPlatformDocument = `
+    query CanUnregisterPlatform($input: CanUnregisterPlatformInput!) {
+  canUnregisterPlatform(input: $input) {
+    isPlatformRegistered
+    isAllowed
+    isInOrganization
+    organizationId
+    organizationName
+  }
+}
+    `;
+
+export const useCanUnregisterPlatformQuery = <
+      TData = CanUnregisterPlatformQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: CanUnregisterPlatformQueryVariables,
+      options?: Omit<UseQueryOptions<CanUnregisterPlatformQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<CanUnregisterPlatformQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<CanUnregisterPlatformQuery, TError, TData>(
+      {
+    queryKey: ['CanUnregisterPlatform', variables],
+    queryFn: fetcher<CanUnregisterPlatformQuery, CanUnregisterPlatformQueryVariables>(client, CanUnregisterPlatformDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useCanUnregisterPlatformQuery.getKey = (variables: CanUnregisterPlatformQueryVariables) => ['CanUnregisterPlatform', variables];
+useCanUnregisterPlatformQuery.getRootKey = () => ['CanUnregisterPlatform'] as const;
+export const useInfiniteCanUnregisterPlatformQuery = <
+      TData = InfiniteData<CanUnregisterPlatformQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: CanUnregisterPlatformQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<CanUnregisterPlatformQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<CanUnregisterPlatformQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<CanUnregisterPlatformQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['CanUnregisterPlatform.infinite', variables],
+      queryFn: (metaData) => fetcher<CanUnregisterPlatformQuery, CanUnregisterPlatformQueryVariables>(client, CanUnregisterPlatformDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteCanUnregisterPlatformQuery.getKey = (variables: CanUnregisterPlatformQueryVariables) => ['CanUnregisterPlatform.infinite', variables];
+useInfiniteCanUnregisterPlatformQuery.getRootKey = () => ['CanUnregisterPlatform.infinite'] as const;
+useCanUnregisterPlatformQuery.fetcher = (client: GraphQLClient, variables: CanUnregisterPlatformQueryVariables, headers?: RequestInit['headers']) => fetcher<CanUnregisterPlatformQuery, CanUnregisterPlatformQueryVariables>(client, CanUnregisterPlatformDocument, variables, headers);
 
 export const AddRolePortalDocument = `
     mutation AddRolePortal($input: AddRolePortalInput!) {

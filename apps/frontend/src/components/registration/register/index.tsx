@@ -3,28 +3,17 @@ import { RegistrationContext } from '@/components/registration/Context';
 import { RegisterStateFailed } from '@/components/registration/register/Failed';
 import { RegisterStateMissingCapability } from '@/components/registration/register/MissingCapability';
 import { RegisterOrganizationForm } from '@/components/registration/register/OrganizationForm';
-import { RegisterPlatform } from '@/components/registration/register/register.graphql';
 import { RegisterStateSucceeded } from '@/components/registration/register/Succeeded';
 import { RegisterStateTooManyOrganizations } from '@/components/registration/register/TooManyOrganizations';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import registerFragmentGraphql, {
-  registerFragment$key,
-} from '@generated/registerFragment.graphql';
-import registerIsPlatformRegisteredFragmentGraphql, {
-  registerIsPlatformRegisteredFragment$key,
-} from '@generated/registerIsPlatformRegisteredFragment.graphql';
-import RegisterIsPlatformRegisteredQueryGraphql, {
-  registerIsPlatformRegisteredQuery,
-} from '@generated/registerIsPlatformRegisteredQuery.graphql';
 import {
-  PlatformInput,
-  registerPlatformMutation,
-} from '@generated/registerPlatformMutation.graphql';
-import {
+  IsPlatformRegisteredQuery,
   PlatformIdentifier,
+  PlatformInput,
   PlatformRegistrationStatus,
+  useRegisterPlatformMutation,
   useUserOrganizationsQuery,
 } from '@graphql/generated';
 import { useSuspenseQuery } from '@tanstack/react-query';
@@ -37,17 +26,11 @@ import {
   useReducer,
   useRef,
 } from 'react';
-import {
-  PreloadedQuery,
-  useFragment,
-  useMutation,
-  usePreloadedQuery,
-} from 'react-relay';
 
 interface RegisterProps {
   platform: PlatformInput;
   platformOrigin: string;
-  queryRef: PreloadedQuery<registerIsPlatformRegisteredQuery>;
+  isPlatformRegistered: IsPlatformRegisteredQuery['isPlatformRegistered'];
   /** The nonce XTM One opened the page with, echoed back in its messages. */
   state?: string;
 }
@@ -58,12 +41,13 @@ export type RegistrationRequestStatus =
 interface State {
   registrationRequestStatus: RegistrationRequestStatus;
   chosenOrganizationId?: string;
-  registerFragmentRef: registerFragment$key | null;
+  /** What the platform gets back once registered. */
+  registrationToken: string | null;
 }
 
 type Action =
   | { type: 'SET_ORGANIZATION_ID'; payload: string }
-  | { type: 'SET_FRAGMENT_REF'; payload: registerFragment$key }
+  | { type: 'SET_REGISTRATION_TOKEN'; payload: string }
   | { type: 'SET_STATUS'; payload: RegistrationRequestStatus }
   | { type: 'SET_SUCCEEDED' };
 
@@ -71,8 +55,8 @@ const reducer = (state: State, action: Action): State => {
   switch (action.type) {
     case 'SET_ORGANIZATION_ID':
       return { ...state, chosenOrganizationId: action.payload };
-    case 'SET_FRAGMENT_REF':
-      return { ...state, registerFragmentRef: action.payload };
+    case 'SET_REGISTRATION_TOKEN':
+      return { ...state, registrationToken: action.payload };
     case 'SET_STATUS':
       return { ...state, registrationRequestStatus: action.payload };
     case 'SET_SUCCEEDED':
@@ -85,11 +69,11 @@ const reducer = (state: State, action: Action): State => {
 const initialState: State = {
   registrationRequestStatus: 'idle',
   chosenOrganizationId: undefined,
-  registerFragmentRef: null,
+  registrationToken: null,
 };
 
 export const Register = ({
-  queryRef,
+  isPlatformRegistered,
   platform,
   platformOrigin,
   state: openerState,
@@ -98,31 +82,14 @@ export const Register = ({
   const { displayedIdentifier, identifier } = useContext(RegistrationContext);
   const [state, dispatch] = useReducer(reducer, initialState);
 
-  const isPlatformRegisteredPreloadedQuery =
-    usePreloadedQuery<registerIsPlatformRegisteredQuery>(
-      RegisterIsPlatformRegisteredQueryGraphql,
-      queryRef
-    );
-
   // Suspends like the rest of the page until the organizations are loaded.
   const { data: userOrganizationsQueryData } = useSuspenseQuery({
     queryKey: useUserOrganizationsQuery.getKey(),
     queryFn: useUserOrganizationsQuery.fetcher(portalGraphqlClient),
   });
 
-  const isPlatformRegistered =
-    useFragment<registerIsPlatformRegisteredFragment$key>(
-      registerIsPlatformRegisteredFragmentGraphql,
-      isPlatformRegisteredPreloadedQuery.isPlatformRegistered
-    );
-
-  const [registerPlatform] =
-    useMutation<registerPlatformMutation>(RegisterPlatform);
-
-  const registerDataResponse = useFragment<registerFragment$key>(
-    registerFragmentGraphql,
-    state.registerFragmentRef
-  );
+  const { mutate: registerPlatform } =
+    useRegisterPlatformMutation(portalGraphqlClient);
 
   const hasPostedMessageRef = useRef(false);
   const hasAutoRegisteredRef = useRef(false);
@@ -151,57 +118,62 @@ export const Register = ({
         return;
       }
       dispatch({ type: 'SET_ORGANIZATION_ID', payload: organizationId });
-      registerPlatform({
-        variables: {
+      registerPlatform(
+        {
           input: {
             organizationId,
             platform: { ...platform, title: platformName },
             identifier,
           },
         },
-        onCompleted: (response) => {
-          dispatch({
-            type: 'SET_FRAGMENT_REF',
-            payload: response.registerPlatform,
-          });
-        },
-        onError: (error) => {
-          if (error.message === 'MISSING_CAPABILITY_ON_ORGANIZATION') {
-            dispatch({ type: 'SET_STATUS', payload: 'missed-capability' });
-          } else {
-            dispatch({ type: 'SET_STATUS', payload: 'failed' });
-            showSnackbar({
-              severity: 'error',
-              title: t('Utils.Error'),
-              description: t(`Error.Server.${error.message}`),
+        {
+          onSuccess: (response) => {
+            dispatch({
+              type: 'SET_REGISTRATION_TOKEN',
+              payload: response.registerPlatform.token,
             });
-          }
-        },
-      });
+          },
+          onError: (error) => {
+            const errorMessage =
+              error instanceof Error ? error.message : 'UNKNOWN_ERROR';
+            if (errorMessage === 'MISSING_CAPABILITY_ON_ORGANIZATION') {
+              dispatch({ type: 'SET_STATUS', payload: 'missed-capability' });
+            } else {
+              dispatch({ type: 'SET_STATUS', payload: 'failed' });
+              showSnackbar({
+                severity: 'error',
+                title: t('Utils.Error'),
+                description: t(`Error.Server.${errorMessage}`),
+              });
+            }
+          },
+        }
+      );
     },
     [identifier, platform, registerPlatform, t]
   );
 
   useLayoutEffect(() => {
-    if (registerDataResponse?.token && !hasPostedMessageRef.current) {
+    if (state.registrationToken && !hasPostedMessageRef.current) {
       hasPostedMessageRef.current = true;
       postMessageToPlatform({
         action: 'register',
-        token: registerDataResponse.token,
+        token: state.registrationToken,
       });
       dispatch({ type: 'SET_SUCCEEDED' });
     }
-  }, [registerDataResponse?.token, postMessageToPlatform]);
+  }, [state.registrationToken, postMessageToPlatform]);
 
   useLayoutEffect(() => {
+    const { status, organization } = isPlatformRegistered;
     const shouldAutoRegister =
-      isPlatformRegistered.status === PlatformRegistrationStatus.Registered &&
-      isPlatformRegistered.organization &&
+      status === PlatformRegistrationStatus.Registered &&
+      organization &&
       !hasAutoRegisteredRef.current;
 
     if (shouldAutoRegister) {
       hasAutoRegisteredRef.current = true;
-      register(isPlatformRegistered.organization.id);
+      register(organization.id);
     }
   }, [isPlatformRegistered, register]);
 

@@ -9,3 +9,9 @@ mutation UnregisterPlatform($input: UnregisterPlatformInput!) {
     success
   }
 }
+
+mutation RegisterPlatform($input: RegisterPlatformInput!) {
+  registerPlatform(input: $input) {
+    token
+  }
+}

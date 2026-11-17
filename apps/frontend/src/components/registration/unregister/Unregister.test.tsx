@@ -3,40 +3,36 @@ import { PlatformMetadataMapping } from '@/components/registration/PlatformIdent
 import { Unregister } from '@/components/registration/unregister/Index';
 import * as SnackbarStore from '@/components/ui/snackbar/snackbar-store';
 import testRender from '@/utils/test/test-render';
-import { registerCanUnregisterPlatformQuery } from '@generated/registerCanUnregisterPlatformQuery.graphql';
-import { PlatformIdentifier } from '@graphql/generated';
+import {
+  CanUnregisterPlatformQuery,
+  PlatformIdentifier,
+} from '@graphql/generated';
 import { screen, waitFor } from '@testing-library/react';
-import { PreloadedQuery } from 'react-relay';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const testState = vi.hoisted(() => ({
   mutationMode: 'success' as 'success' | 'error',
+  unregisterPlatform: vi.fn(),
 }));
 
-vi.mock('react-relay', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('react-relay')>()),
-  usePreloadedQuery: () => ({ canUnregisterPlatform: {} }),
-  useFragment: () => ({
+vi.mock('@graphql/generated', async (importOriginal) => {
+  const { mockGeneratedQueryHooks } =
+    await import('@/utils/test/mock-generated-query');
+  return mockGeneratedQueryHooks(importOriginal, {
+    useUnregisterPlatformMutation: () => ({
+      mutate: testState.unregisterPlatform,
+    }),
+  });
+});
+
+const CAN_UNREGISTER_PLATFORM: CanUnregisterPlatformQuery['canUnregisterPlatform'] =
+  {
     isAllowed: true,
     isPlatformRegistered: true,
     isInOrganization: true,
     organizationId: 'org-1',
     organizationName: 'Org One',
-  }),
-  useMutation: () => [
-    (opts: {
-      onCompleted?: (data: unknown) => void;
-      onError?: (error: Error) => void;
-    }) => {
-      if (testState.mutationMode === 'error') {
-        opts.onError?.(new Error('SOME_ERROR'));
-        return;
-      }
-      opts.onCompleted?.({});
-    },
-    {},
-  ],
-}));
+  };
 
 vi.mock('@/components/Loader', () => ({
   default: () => <div data-testid="loader" />,
@@ -57,8 +53,6 @@ vi.mock('@/components/registration/unregister/Confirm', () => ({
   ),
 }));
 
-const mockQueryRef = {} as PreloadedQuery<registerCanUnregisterPlatformQuery>;
-
 const renderUnregister = (identifier: PlatformIdentifier, state?: string) =>
   testRender(
     <RegistrationContext.Provider
@@ -67,7 +61,7 @@ const renderUnregister = (identifier: PlatformIdentifier, state?: string) =>
         displayedIdentifier: PlatformMetadataMapping[identifier].name,
       }}>
       <Unregister
-        queryRef={mockQueryRef}
+        canUnregisterPlatform={CAN_UNREGISTER_PLATFORM}
         platformId="platform-id"
         state={state}
       />
@@ -86,7 +80,44 @@ const mockOpener = () => {
 describe('Unregister', () => {
   beforeEach(() => {
     testState.mutationMode = 'success';
+    testState.unregisterPlatform.mockReset();
+    testState.unregisterPlatform.mockImplementation(
+      (
+        _variables,
+        options: { onSuccess: () => void; onError: (error: Error) => void }
+      ) => {
+        if (testState.mutationMode === 'error') {
+          options.onError(new Error('SOME_ERROR'));
+          return;
+        }
+        options.onSuccess();
+      }
+    );
     vi.spyOn(SnackbarStore, 'showSnackbar').mockImplementation(() => undefined);
+  });
+
+  it('unregisters the platform of the opener from its product', async () => {
+    // Given
+    mockOpener();
+    const { user } = renderUnregister(PlatformIdentifier.Opencti);
+
+    // When
+    await user.click(screen.getByRole('button', { name: 'mock-confirm' }));
+
+    // Then
+    expect(testState.unregisterPlatform).toHaveBeenCalledWith(
+      {
+        input: {
+          platformId: 'platform-id',
+          identifier: PlatformIdentifier.Opencti,
+          tenantId: null,
+        },
+      },
+      expect.anything()
+    );
+    expect(
+      await screen.findByText('Unregister.Succeeded.Description')
+    ).toBeInTheDocument();
   });
 
   describe('state echo', () => {
