@@ -171,7 +171,7 @@ describe('ResourceStatusIcons', () => {
       ${{ deployable: true }}                            | ${'Utils.AutomaticDeploy'}
       ${{ verified: true, displayUnverifiedIcon: true }} | ${'Service.ShareableResources.Details.SupportedByFiligran'}
       ${{ displayUnverifiedIcon: true }}                 | ${'Service.ShareableResources.Details.SupportedByCommunity'}
-      ${{ active: true }}                                | ${'Badge.Published'}
+      ${{ published: true }}                             | ${'Badge.Published'}
     `(
       'should expose "$expectedName" as the name of the icon for $props',
       ({ props, expectedName }) => {
@@ -187,7 +187,7 @@ describe('ResourceStatusIcons', () => {
       // Given / When
       testRender(
         <ResourceStatusIcons
-          active
+          published
           deployable
           verified
         />
