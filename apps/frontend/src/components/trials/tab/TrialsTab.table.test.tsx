@@ -202,9 +202,11 @@ describe('TrialsTab', () => {
     testRender(<TrialsTab type={TrialsTabType.Running} />);
 
     // Then
-    expect(screen.getByRole('alert')).toHaveTextContent(
-      'TrialsDashboard.WarningCancellation'
-    );
+    const alert = screen.getByRole('alert');
+    expect(alert).toHaveTextContent('TrialsDashboard.WarningCancellation');
+    // The design system exposes the severity only through its documented
+    // `border-alert-<severity>` token utility, not an attribute.
+    expect(alert).toHaveClass('border-alert-warning');
   });
 
   it('should search the trials matching the term when the admin types it', async () => {
