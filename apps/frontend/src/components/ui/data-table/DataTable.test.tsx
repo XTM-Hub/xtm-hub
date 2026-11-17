@@ -412,18 +412,22 @@ describe('DataTable', () => {
   });
 
   it.each([{ key: '{Enter}' }, { key: ' ' }])(
-    'should trigger onClickRow when a clickable row is focused and $key is pressed',
+    'should route keyboard activation through a DOM click event triggering onClickRow when $key is pressed',
     async ({ key }) => {
       // Given
       const onClickRow = vi.fn();
+      const onDomClick = vi.fn();
       const { user } = renderTable({ onClickRow });
 
-      // When
       const aliceRow = getRowOf(ALICE.name);
+      aliceRow.addEventListener('click', onDomClick);
+
+      // When
       aliceRow.focus();
       await user.keyboard(key);
 
       // Then
+      expect(onDomClick).toHaveBeenCalledTimes(1);
       expect(onClickRow).toHaveBeenCalledTimes(1);
       expect(onClickRow.mock.calls[0][0].original).toEqual(ALICE);
     }

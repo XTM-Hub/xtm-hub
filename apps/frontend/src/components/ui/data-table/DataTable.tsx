@@ -846,7 +846,7 @@ const DataTable = <TData extends { id: string }, TValue>({
                                     event.code === 'Space')
                                 ) {
                                   event.preventDefault();
-                                  onClickRow?.(row);
+                                  event.currentTarget.click();
                                 }
                               }
                             : undefined
