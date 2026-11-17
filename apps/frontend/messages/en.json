@@ -1092,6 +1092,14 @@
         "Approaching": "Approaching capacity",
         "Over": "Over capacity"
       },
+      "ByteSize": {
+        "Byte": "{value} B",
+        "Kibibyte": "{value} KiB",
+        "Mebibyte": "{value} MiB",
+        "Gibibyte": "{value} GiB",
+        "Tebibyte": "{value} TiB",
+        "Pebibyte": "{value} PiB"
+      },
       "MaxCapacity": "Max capacity",
       "UsedOfLimit": "<highlight>{used}</highlight> <secondary>of {limit}</secondary>"
     },

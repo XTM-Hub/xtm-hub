@@ -1,8 +1,13 @@
 import { StorageUsageChart } from '@/components/service/registration/StorageUsageChart';
+import {
+  mockTranslations,
+  translateWithValues,
+} from '@/utils/test/mock-translations';
 import testRender from '@/utils/test/test-render';
 import { SaasPlatformStorageUsage } from '@graphql/generated';
 import { screen } from '@testing-library/react';
 import type { ApexOptions } from 'apexcharts';
+import { useTranslations } from 'next-intl';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
@@ -19,17 +24,18 @@ vi.mock('react-apexcharts', () => ({
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
+const GIB = 1_024 ** 3;
 const points = [
-  { timestamp: '2026-09-22T09:00:00.000Z', value: 1_000_000_000 },
-  { timestamp: '2026-09-22T11:00:00.000Z', value: 1_500_000_000 },
+  { timestamp: '2026-09-22T09:00:00.000Z', value: GIB },
+  { timestamp: '2026-09-22T11:00:00.000Z', value: 1.5 * GIB },
 ];
 
 const GRAPH_TYPE = 'FileStorage';
 const COLOR = 'var(--color-filigran-brand-secondary)';
 const storageUsage = (percent: number | null): SaasPlatformStorageUsage => ({
   percent,
-  used: 1_500_000_000,
-  limit: 3_000_000_000,
+  used: 1.5 * GIB,
+  limit: 3 * GIB,
   time: '2026-10-23T13:46:23.624Z',
 });
 
@@ -47,6 +53,13 @@ const renderStorageUsageChart = async (
   await screen.findByTestId('storage-usage-chart');
   return (mocks.chart.mock.lastCall?.[0] as { options: ApexOptions }).options;
 };
+
+const translateSizes = () =>
+  vi
+    .mocked(useTranslations)
+    .mockReturnValue(mockTranslations({ translate: translateWithValues }));
+const size = (value: string, unit: string) =>
+  `Register.Metrics.ByteSize.${unit}:${JSON.stringify({ value })}`;
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
@@ -84,17 +97,21 @@ describe('StorageUsageChart', () => {
   });
 
   it.each`
-    bytes                | expected
-    ${0}                 | ${'0 byte'}
-    ${999}               | ${'999 byte'}
-    ${1_500}             | ${'1.5 kB'}
-    ${12_340_000}        | ${'12.3 MB'}
-    ${1_500_000_000}     | ${'1.5 GB'}
-    ${4_000_000_000_000} | ${'4 TB'}
+    bytes                 | expected
+    ${0}                  | ${size('0', 'Byte')}
+    ${1_023}              | ${size('1,023', 'Byte')}
+    ${1_536}              | ${size('1.5', 'Kibibyte')}
+    ${12.34 * 1_024 ** 2} | ${size('12.3', 'Mebibyte')}
+    ${1.5 * GIB}          | ${size('1.5', 'Gibibyte')}
+    ${1_500_000_000}      | ${size('1.4', 'Gibibyte')}
+    ${4 * 1_024 ** 4}     | ${size('4', 'Tebibyte')}
   `(
     'should show $bytes bytes as $expected on the y axis and in the tooltip',
     async ({ bytes, expected }) => {
-      // Given / When
+      // Given
+      translateSizes();
+
+      // When
       const options = await renderStorageUsageChart();
 
       // Then
@@ -106,15 +123,18 @@ describe('StorageUsageChart', () => {
   );
 
   it('should draw the peak line of the storage used', async () => {
-    // Given / When
+    // Given
+    translateSizes();
+
+    // When
     const options = await renderStorageUsageChart();
 
     // Then
     expect(options.annotations?.yaxis).toEqual([
       expect.objectContaining({
-        y: 1_500_000_000,
+        y: 1.5 * GIB,
         label: expect.objectContaining({
-          text: 'TimeSeriesBarChart.Peak - 1.5 GB',
+          text: `TimeSeriesBarChart.Peak - ${size('1.5', 'Gibibyte')}`,
         }),
       }),
     ]);
@@ -142,13 +162,16 @@ describe('StorageUsageChart', () => {
 
   it.each`
     case             | percent | expected
-    ${'above 90%'}   | ${95}   | ${[expect.objectContaining({ y: 3_000_000_000, label: expect.objectContaining({ text: 'Register.Metrics.MaxCapacity - 3 GB' }) }), expect.objectContaining({ y: 1_500_000_000 })]}
-    ${'exactly 90%'} | ${90}   | ${[expect.objectContaining({ y: 1_500_000_000 })]}
-    ${'unknown'}     | ${null} | ${[expect.objectContaining({ y: 1_500_000_000 })]}
+    ${'above 90%'}   | ${95}   | ${[expect.objectContaining({ y: 3 * GIB, label: expect.objectContaining({ text: `Register.Metrics.MaxCapacity - ${size('3', 'Gibibyte')}` }) }), expect.objectContaining({ y: 1.5 * GIB })]}
+    ${'exactly 90%'} | ${90}   | ${[expect.objectContaining({ y: 1.5 * GIB })]}
+    ${'unknown'}     | ${null} | ${[expect.objectContaining({ y: 1.5 * GIB })]}
   `(
     'should draw the max capacity line only when the usage is $case',
     async ({ percent, expected }) => {
-      // Given / When
+      // Given
+      translateSizes();
+
+      // When
       const options = await renderStorageUsageChart(storageUsage(percent));
 
       // Then

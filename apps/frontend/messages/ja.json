@@ -1092,6 +1092,14 @@
         "Approaching": "容量上限に接近",
         "Over": "容量超過"
       },
+      "ByteSize": {
+        "Byte": "{value} B",
+        "Kibibyte": "{value} KiB",
+        "Mebibyte": "{value} MiB",
+        "Gibibyte": "{value} GiB",
+        "Tebibyte": "{value} TiB",
+        "Pebibyte": "{value} PiB"
+      },
       "MaxCapacity": "最大容量",
       "UsedOfLimit": "<secondary>{limit} 中</secondary> <highlight>{used}</highlight>"
     },

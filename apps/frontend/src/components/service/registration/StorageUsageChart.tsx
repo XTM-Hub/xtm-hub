@@ -42,14 +42,11 @@ export const StorageUsageChart = ({
   const formatSize = useCallback(
     (bytes: number) => {
       const { value, unit } = splitByteSize(bytes);
-      return format.number(value, {
-        style: 'unit',
-        unit,
-        unitDisplay: 'short',
-        maximumFractionDigits: 1,
+      return t(`Register.Metrics.ByteSize.${unit}`, {
+        value: format.number(value, { maximumFractionDigits: 1 }),
       });
     },
-    [format]
+    [format, t]
   );
 
   const limitLineValue = storageLimitLineValue(storage);

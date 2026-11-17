@@ -322,10 +322,9 @@ describe('RegisteredPlatformOverview', () => {
   });
 
   it.each`
-    description                                | isSaasMetricsEnabled | platform        | capabilities
-    ${'SAAS_METRICS is disabled'}              | ${false}             | ${saasPlatform} | ${[PortalCapability.ReadSaasMetrics]}
-    ${'the platform is not a SaaS one'}        | ${true}              | ${basePlatform} | ${[PortalCapability.ReadSaasMetrics]}
-    ${'the user cannot read the SaaS metrics'} | ${true}              | ${saasPlatform} | ${[]}
+    description                         | isSaasMetricsEnabled | platform        | capabilities
+    ${'SAAS_METRICS is disabled'}       | ${false}             | ${saasPlatform} | ${[PortalCapability.ReadSaasMetrics]}
+    ${'the platform is not a SaaS one'} | ${true}              | ${basePlatform} | ${[PortalCapability.ReadSaasMetrics]}
   `(
     'should not display the access request when $description',
     async ({ isSaasMetricsEnabled, platform, capabilities }) => {
@@ -396,7 +395,7 @@ describe('RegisteredPlatformOverview', () => {
       vi.mocked(useIsFeatureEnabled).mockReturnValue(true);
 
       // When
-      await renderOverview(saasPlatform, { capabilities: [capability] });
+      await renderOverview(saasPlatform, { capabilities });
 
       // Then
       expect(useRegisteredSaasPlatformDataQuery).toHaveBeenLastCalledWith(
@@ -409,7 +408,7 @@ describe('RegisteredPlatformOverview', () => {
   );
 
   it.each([[[]], [[PortalCapability.ReadTrials]]])(
-    'should neither query nor display the SaaS subscription metadata when the user capabilities are %j',
+    'should display the access request instead of the platform metrics when the user has %j and no organization capability',
     async (capabilities) => {
       // Given
       vi.mocked(useIsFeatureEnabled).mockReturnValue(true);
@@ -418,17 +417,15 @@ describe('RegisteredPlatformOverview', () => {
       await renderOverview(saasPlatform, { capabilities });
 
       // Then
-      expect(useRegisteredSaasPlatformDataQuery).toHaveBeenLastCalledWith(
-        expect.anything(),
-        expect.anything(),
-        expect.objectContaining({ enabled: false })
-      );
       expect(
-        screen.getByRole('heading', {
+        screen.getByText('Register.Metrics.AccessRequest.Title')
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByRole('heading', {
           level: 2,
           name: 'Register.Metrics.Title',
         })
-      ).toBeInTheDocument();
+      ).not.toBeInTheDocument();
     }
   );
 
