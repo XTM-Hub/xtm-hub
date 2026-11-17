@@ -16,15 +16,25 @@ headers {
 
 docs {
   Webhook called by n8n each time a blog post is published, edited or unpublished. It is only a trigger: the request
-  body is ignored, the Hub fetches the latest blog posts itself and reconciles the news feed.
+  body is ignored, the Hub fetches the latest blog posts of each product (OpenCTI and OpenAEV) itself and reconciles
+  the news feed. A post tagged for both products gives two items, and every product is synchronized on its own: its
+  own blog API call, safeguard and transaction.
 
   Ensure xtm-hub-token is defined in environment. It is the system token: the sync runs as the system user.
 
   Answers:
-  - 200 once the synchronization is committed, with the counts only:
-    { "created": 1, "updated": 0, "dropped": 1, "provisionedPlatforms": 12 }
+  - 200 once every product is committed, with the totals and the same counts for each product:
+    {
+      "created": 2, "updated": 0, "dropped": 1, "provisionedPlatforms": 12,
+      "products": {
+        "opencti": { "created": 1, "updated": 0, "dropped": 1, "provisionedPlatforms": 12 },
+        "openaev": { "created": 1, "updated": 0, "dropped": 0, "provisionedPlatforms": 0 }
+      }
+    }
+    provisionedPlatforms is 0 for a product whose platforms do not support blog posts yet (OpenAEV is still disabled).
   - 401, with no body, when the token is missing or wrong (identical in both cases)
   - 429 when the rate limit is exceeded (30 requests per minute per IP)
-  - 500 with { "message": "Unable to synchronize blog posts" } when anything fails, nothing is applied then.
-    The details are in the Hub logs.
+  - 500 with { "message": "Unable to synchronize blog posts" } when at least one product fails. Nothing of the failing
+    product is applied, but the other products are: calling the endpoint again fixes the failed one. The details
+    (product, post id) are in the Hub logs.
 }

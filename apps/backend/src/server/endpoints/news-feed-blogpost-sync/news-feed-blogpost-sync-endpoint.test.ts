@@ -10,9 +10,11 @@ import {
   it,
   vi,
 } from 'vitest';
+import { FiligranProduct } from '../../../__generated__/resolvers-types';
 import { requestContext } from '../../../context/request.context';
 import { UserLoadUserBy } from '../../../model/user';
 import {
+  BlogpostSyncError,
   BlogpostSyncResult,
   NewsFeedApp,
 } from '../../../modules/news-feed/news-feed.app';
@@ -36,10 +38,14 @@ const INVALID_POST_ID = 'post-614';
 const INTERNAL_ERROR_MESSAGE = 'connection to 10.1.2.3:5432 refused';
 
 const SYNC_RESULT: BlogpostSyncResult = {
-  created: 1,
-  updated: 2,
-  dropped: 3,
-  provisionedPlatforms: 4,
+  created: 3,
+  updated: 5,
+  dropped: 7,
+  provisionedPlatforms: 9,
+  products: {
+    opencti: { created: 1, updated: 2, dropped: 3, provisionedPlatforms: 4 },
+    openaev: { created: 2, updated: 3, dropped: 4, provisionedPlatforms: 5 },
+  },
 };
 
 const buildApp = () => {
@@ -147,12 +153,16 @@ describe('news feed blogpost sync endpoint', () => {
   });
 
   describe('synchronization', () => {
-    it('should answer a 200 with the counts only when the token is valid', async () => {
+    it('should answer a 200 with the totals and the counts of each product only when the token is valid', async () => {
       // Given
       vi.spyOn(NewsFeedApp, 'syncBlogposts').mockResolvedValue({
         ...SYNC_RESULT,
         // Anything else the app returns must not leak into the answer
         internal: 'not-for-the-caller',
+        products: {
+          opencti: { ...SYNC_RESULT.products.opencti, internal: 'secret' },
+          openaev: { ...SYNC_RESULT.products.openaev, internal: 'secret' },
+        },
       } as BlogpostSyncResult);
 
       // When
@@ -160,7 +170,26 @@ describe('news feed blogpost sync endpoint', () => {
 
       // Then
       expect(response.status).toBe(200);
-      expect(await response.json()).toEqual(SYNC_RESULT);
+      expect(await response.json()).toEqual({
+        created: 3,
+        updated: 5,
+        dropped: 7,
+        provisionedPlatforms: 9,
+        products: {
+          opencti: {
+            created: 1,
+            updated: 2,
+            dropped: 3,
+            provisionedPlatforms: 4,
+          },
+          openaev: {
+            created: 2,
+            updated: 3,
+            dropped: 4,
+            provisionedPlatforms: 5,
+          },
+        },
+      });
     });
 
     it('should run the synchronization once, in a context of the system user', async () => {
@@ -237,6 +266,39 @@ describe('news feed blogpost sync endpoint', () => {
       ],
       ['any other error', new Error(INTERNAL_ERROR_MESSAGE), undefined],
     ];
+
+    it('should answer a 500 with the message only, and log the failing products, when a product fails and the other is applied', async () => {
+      // Given
+      const logError = vi
+        .spyOn(logApp, 'error')
+        .mockImplementation(() => undefined);
+      const error = new BlogpostSyncError([
+        {
+          product: FiligranProduct.Openaev,
+          error: new BlogApiError(
+            BlogApiErrorCode.Unreachable,
+            INTERNAL_ERROR_MESSAGE
+          ),
+        },
+      ]);
+      vi.spyOn(NewsFeedApp, 'syncBlogposts').mockRejectedValue(error);
+
+      // When
+      const response = await summarize(
+        await callWebhook({ headers: withToken() })
+      );
+
+      // Then
+      expect(response).toMatchObject({
+        status: 500,
+        body: JSON.stringify(SYNC_FAILURE_BODY),
+      });
+      expect(response.body).not.toContain(INTERNAL_ERROR_MESSAGE);
+      expect(logError).toHaveBeenCalledWith(
+        'Error while synchronizing blog posts',
+        { error, postId: undefined, failedProducts: ['openaev'] }
+      );
+    });
 
     it.each(failureCases)(
       'should answer a 500 with the message only, and log the post id, when the synchronization throws %s',

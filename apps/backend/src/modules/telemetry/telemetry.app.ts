@@ -4,6 +4,7 @@ import {
   NewsFeedItemType,
   NewsFeedRedirectInput,
   OneClickDeployInput,
+  PlatformIdentifier,
 } from '../../__generated__/resolvers-types';
 import portalConfig from '../../config';
 import { requestContext } from '../../context/request.context';
@@ -284,18 +285,22 @@ export const TelemetryApp = {
     user,
     newsFeedItemId,
     newsFeedItemType,
+    platformIdentifier,
     destinationHost,
     platformId,
   }: {
     user: Pick<UserLoadUserBy, 'id' | 'selected_organization_id'> | undefined;
     newsFeedItemId: string;
     newsFeedItemType: NewsFeedItemType;
+    // The product the item was given to: it tells the clicks of OpenAEV and OpenCTI apart
+    platformIdentifier: PlatformIdentifier;
     destinationHost: string;
     platformId: unknown;
   }): Promise<void> {
     await sendNewsFeedRedirectEvent(user, {
       news_feed_item_id: newsFeedItemId,
       news_feed_item_type: newsFeedItemType,
+      platform_identifier: platformIdentifier,
       destination_host: destinationHost,
       platform_id: parsePlatformId(
         typeof platformId === 'string' ? platformId : undefined

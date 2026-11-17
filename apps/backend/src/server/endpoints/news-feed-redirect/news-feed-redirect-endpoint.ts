@@ -52,6 +52,7 @@ const emitRedirectTelemetry = (
     user: req.session?.user,
     newsFeedItemId: redirect.newsFeedItemId,
     newsFeedItemType: redirect.newsFeedItemType,
+    platformIdentifier: redirect.platformIdentifier,
     destinationHost: redirect.host,
     platformId: req.query.platform_id,
   }).catch((error) => {

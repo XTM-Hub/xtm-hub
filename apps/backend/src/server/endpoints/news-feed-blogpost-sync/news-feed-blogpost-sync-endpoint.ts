@@ -1,7 +1,11 @@
 import { Express, Request, Response } from 'express';
 import rateLimit, { type Options } from 'express-rate-limit';
 import { requestContext } from '../../../context/request.context';
-import { NewsFeedApp } from '../../../modules/news-feed/news-feed.app';
+import {
+  BlogpostSyncCounts,
+  BlogpostSyncError,
+  NewsFeedApp,
+} from '../../../modules/news-feed/news-feed.app';
 import { SYSTEM_USER_CONTEXT } from '../../../portal.const';
 import {
   isValidSystemToken,
@@ -41,6 +45,19 @@ const sendUnauthorized = (res: Response): void => {
   res.status(401).end();
 };
 
+// Only the counts leave the Hub
+const toCounts = ({
+  created,
+  updated,
+  dropped,
+  provisionedPlatforms,
+}: BlogpostSyncCounts): BlogpostSyncCounts => ({
+  created,
+  updated,
+  dropped,
+  provisionedPlatforms,
+});
+
 export const NewsFeedBlogpostSyncEndpoint = {
   sync: async (req: Request, res: Response): Promise<void> => {
     if (!isValidSystemToken(req.header(SYSTEM_TOKEN_HEADER) ?? null)) {
@@ -59,12 +76,22 @@ export const NewsFeedBlogpostSyncEndpoint = {
         updated: result.updated,
         dropped: result.dropped,
         provisionedPlatforms: result.provisionedPlatforms,
+        products: Object.fromEntries(
+          Object.entries(result.products).map(([product, counts]) => [
+            product,
+            toCounts(counts),
+          ])
+        ),
       });
     } catch (error) {
-      // The post id of an invalid item stays in the logs, it is never sent back to the caller
+      // The post id of an invalid item and the failing products stay in the logs (the app has already logged each
+      // failure with its product and post id), they are never sent back to the caller
       logApp.error('Error while synchronizing blog posts', {
         error,
         postId: error instanceof BlogApiError ? error.postId : undefined,
+        ...(error instanceof BlogpostSyncError && {
+          failedProducts: error.failures.map(({ product }) => product),
+        }),
       });
       res.status(500).json({ message: SYNC_FAILURE_MESSAGE });
     }

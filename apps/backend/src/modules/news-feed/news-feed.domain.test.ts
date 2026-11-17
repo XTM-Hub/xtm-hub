@@ -11,6 +11,7 @@ import {
 import { NewsFeedItemId } from '../../model/kanel/public/NewsFeedItem';
 import { NewsFeedItemMetadataKey as NewsFeedItemMetadataKeyModel } from '../../model/kanel/public/NewsFeedItemMetadata';
 import { ProvisionedNewsFeedItemPlatformId } from '../../model/kanel/public/ProvisionedNewsFeedItem';
+import type { BlogFeedItem } from '../../thirdparty/blog-api/schema';
 import { BadRequestErrorCode } from '../../utils/error/error.code';
 import { RequiredPlatformVersions } from '../../utils/required-platform-version';
 import { NewsFeedDomain } from './news-feed.domain';
@@ -144,16 +145,42 @@ describe('newsFeedDomain', () => {
       it('should not list the blogpost type for a platform that is not mapped to a blog product', () => {
         // Given
         setRequiredVersion(BLOGPOST_REQUIRED_VERSION);
+        RequiredPlatformVersions.NewsFeedBlogpostSupport = {
+          ...RequiredPlatformVersions.NewsFeedBlogpostSupport,
+          [PlatformIdentifier.Xtmone]: BLOGPOST_REQUIRED_VERSION,
+        };
 
         // When
         const result = NewsFeedDomain.loadAvailableNewsFeedTypes(
-          PlatformIdentifier.Openaev,
+          PlatformIdentifier.Xtmone,
           '99.0.0'
         );
 
         // Then
-        expect(result).toEqual([NewsFeedItemType.ResourceScenario]);
+        expect(result).toEqual([]);
       });
+
+      it.each`
+        description      | requiredVersion              | version                      | expected
+        ${'disabled'}    | ${null}                      | ${'99.0.0'}                  | ${[NewsFeedItemType.ResourceScenario]}
+        ${'not reached'} | ${BLOGPOST_REQUIRED_VERSION} | ${'7.260831.0'}              | ${[NewsFeedItemType.ResourceScenario]}
+        ${'reached'}     | ${BLOGPOST_REQUIRED_VERSION} | ${BLOGPOST_REQUIRED_VERSION} | ${[NewsFeedItemType.ResourceScenario, NewsFeedItemType.BlogPost]}
+      `(
+        'should list the blogpost type for OpenAEV only when its gate is $description',
+        ({ requiredVersion, version, expected }) => {
+          // Given
+          setRequiredVersion(requiredVersion);
+
+          // When
+          const result = NewsFeedDomain.loadAvailableNewsFeedTypes(
+            PlatformIdentifier.Openaev,
+            version
+          );
+
+          // Then
+          expect(result).toEqual(expected);
+        }
+      );
     });
 
     it('should return empty array for a platform with no configured news feed types', () => {
@@ -1204,6 +1231,257 @@ describe('newsFeedDomain', () => {
         news_feed_item_id: oldItem.id,
       });
       expect(remainingAfter).toHaveLength(0);
+    });
+  });
+
+  describe('news feed item key', () => {
+    const UNIQUE_VIOLATION = '23505';
+    const KEY = 'a-blog-post';
+
+    const createKeyedItem = (
+      overrides: Parameters<typeof TestHelper.newsFeed.createItem>[0] = {}
+    ) =>
+      TestHelper.newsFeed.createItem({
+        type: NewsFeedItemType.BlogPost,
+        platform_identifier: PlatformIdentifier.Opencti,
+        title: 'A blog post',
+        key: KEY,
+        ...overrides,
+      });
+
+    it('should refuse a second item with the same platform identifier, type and key', async () => {
+      // Given
+      await createKeyedItem({ title: 'First' });
+
+      // When
+      const secondItem = createKeyedItem({ title: 'Second' });
+
+      // Then
+      await expect(secondItem).rejects.toMatchObject({
+        code: UNIQUE_VIOLATION,
+      });
+      expect(await TestHelper.newsFeed.loadItems({ key: KEY })).toMatchObject([
+        { title: 'First' },
+      ]);
+    });
+
+    it.each([
+      [
+        'on another platform identifier',
+        { platform_identifier: PlatformIdentifier.Openaev },
+      ],
+      ['with another type', { type: NewsFeedItemType.ResourcePlaybook }],
+    ])(
+      'should accept a second item with the same key %s',
+      async (_description, secondItemOverrides) => {
+        // Given
+        await createKeyedItem({ title: 'First' });
+
+        // When
+        const secondItem = await createKeyedItem({
+          title: 'Second',
+          ...secondItemOverrides,
+        });
+
+        // Then
+        expect(secondItem).toMatchObject({ key: KEY, ...secondItemOverrides });
+        expect(await TestHelper.newsFeed.loadItems({ key: KEY })).toHaveLength(
+          2
+        );
+      }
+    );
+
+    it.each([[null], [undefined]])(
+      'should accept several items of the same platform identifier and type when their key is %s',
+      async (key) => {
+        // Given
+        await createKeyedItem({ title: 'First', key });
+
+        // When
+        const secondItem = await createKeyedItem({ title: 'Second', key });
+
+        // Then
+        expect(secondItem).toMatchObject({ title: 'Second', key: null });
+        expect(await TestHelper.newsFeed.loadItems({ key: null })).toHaveLength(
+          2
+        );
+      }
+    );
+  });
+
+  describe('reconcileBlogposts', () => {
+    const buildPost = (
+      slug: string,
+      overrides: Partial<BlogFeedItem> = {}
+    ): BlogFeedItem => ({
+      id: `post-${slug}`,
+      slug,
+      title: `Title of ${slug}`,
+      summary: null,
+      image: null,
+      authors: [],
+      categories: [],
+      products: ['opencti', 'openaev'],
+      read_minutes: undefined,
+      published_at: '2026-09-01T08:00:00.000Z',
+      ...overrides,
+    });
+
+    const createBlogpost = (
+      platformIdentifier: PlatformIdentifier,
+      key: string | null,
+      overrides: Parameters<typeof TestHelper.newsFeed.createItem>[0] = {}
+    ) =>
+      TestHelper.newsFeed.createItem({
+        type: NewsFeedItemType.BlogPost,
+        platform_identifier: platformIdentifier,
+        title: `Existing ${key}`,
+        key,
+        ...overrides,
+      });
+
+    it.each([PlatformIdentifier.Opencti, PlatformIdentifier.Openaev])(
+      'should create the items of %s with the slug of the posts as key, for this product only',
+      async (platformIdentifier) => {
+        // When
+        const result = await NewsFeedDomain.reconcileBlogposts({
+          platformIdentifier,
+          posts: [buildPost('post-a'), buildPost('post-b')],
+        });
+
+        // Then
+        expect(result.created).toHaveLength(2);
+        const items = await TestHelper.newsFeed.loadItems();
+        expect(items).toHaveLength(2);
+        expect(items).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              platform_identifier: platformIdentifier,
+              type: NewsFeedItemType.BlogPost,
+              key: 'post-a',
+            }),
+            expect.objectContaining({
+              platform_identifier: platformIdentifier,
+              type: NewsFeedItemType.BlogPost,
+              key: 'post-b',
+            }),
+          ])
+        );
+      }
+    );
+
+    it('should only update the item of the product when another product holds the same key', async () => {
+      // Given
+      const openCtiItem = await createBlogpost(
+        PlatformIdentifier.Opencti,
+        'post-a'
+      );
+      const openAevItem = await createBlogpost(
+        PlatformIdentifier.Openaev,
+        'post-a'
+      );
+
+      // When
+      const result = await NewsFeedDomain.reconcileBlogposts({
+        platformIdentifier: PlatformIdentifier.Openaev,
+        posts: [buildPost('post-a', { title: 'A new title' })],
+      });
+
+      // Then
+      expect(result).toEqual({
+        created: [],
+        updated: [openAevItem.id],
+        dropped: [],
+        restored: [],
+      });
+      expect(
+        await TestHelper.newsFeed.loadFirstItem({ id: openAevItem.id })
+      ).toMatchObject({ title: 'A new title', key: 'post-a' });
+      expect(
+        await TestHelper.newsFeed.loadFirstItem({ id: openCtiItem.id })
+      ).toMatchObject({ title: 'Existing post-a', key: 'post-a' });
+    });
+
+    it('should drop only the active items of the product that are not in its feed', async () => {
+      // Given
+      const openCtiItems = [
+        await createBlogpost(PlatformIdentifier.Opencti, 'post-a'),
+        await createBlogpost(PlatformIdentifier.Opencti, 'post-b'),
+      ];
+      const openAevKept = await createBlogpost(
+        PlatformIdentifier.Openaev,
+        'post-a'
+      );
+      const openAevDropped = await createBlogpost(
+        PlatformIdentifier.Openaev,
+        'post-b'
+      );
+
+      // When
+      const result = await NewsFeedDomain.reconcileBlogposts({
+        platformIdentifier: PlatformIdentifier.Openaev,
+        posts: [buildPost('post-a')],
+      });
+
+      // Then
+      expect(result.dropped).toEqual([openAevDropped.id]);
+      expect(
+        await TestHelper.newsFeed.loadFirstItem({ id: openAevDropped.id })
+      ).toMatchObject({ is_deleted: true });
+      expect(
+        await TestHelper.newsFeed.loadFirstItem({ id: openAevKept.id })
+      ).toMatchObject({ is_deleted: false });
+      expect(
+        await TestHelper.newsFeed.loadItems({
+          platform_identifier: PlatformIdentifier.Opencti,
+          is_deleted: false,
+        })
+      ).toHaveLength(openCtiItems.length);
+    });
+
+    it('should bring back a dropped item of the product instead of creating another one', async () => {
+      // Given
+      const droppedItem = await createBlogpost(
+        PlatformIdentifier.Openaev,
+        'post-a',
+        { is_deleted: true }
+      );
+
+      // When
+      const result = await NewsFeedDomain.reconcileBlogposts({
+        platformIdentifier: PlatformIdentifier.Openaev,
+        posts: [buildPost('post-a')],
+      });
+
+      // Then
+      expect(result).toMatchObject({
+        created: [],
+        restored: [droppedItem.id],
+      });
+      expect(
+        await TestHelper.newsFeed.loadFirstItem({ id: droppedItem.id })
+      ).toMatchObject({ is_deleted: false, key: 'post-a' });
+    });
+
+    it('should neither match nor drop an active blog item without key', async () => {
+      // Given
+      const itemWithoutKey = await createBlogpost(
+        PlatformIdentifier.Opencti,
+        null
+      );
+
+      // When
+      const result = await NewsFeedDomain.reconcileBlogposts({
+        platformIdentifier: PlatformIdentifier.Opencti,
+        posts: [buildPost('post-a')],
+      });
+
+      // Then
+      expect(result.created).toHaveLength(1);
+      expect(result.dropped).toEqual([]);
+      expect(
+        await TestHelper.newsFeed.loadFirstItem({ id: itemWithoutKey.id })
+      ).toMatchObject({ is_deleted: false, key: null });
     });
   });
 });
