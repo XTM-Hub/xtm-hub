@@ -1,5 +1,6 @@
+import testRender from '@/utils/test/test-render';
 import ClientSection from '@app/(application)/app/(user)/service/xtm-platform-trial/[serviceInstanceId]/manage-users/client-section';
-import { render } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('react', async (importOriginal) => ({
@@ -29,10 +30,6 @@ vi.mock(
   '@/components/service/trial-instances/xtm-platform-trial/manage-trial/ManageTrialTable',
   () => ({ ManageTrialTable: () => <div /> })
 );
-vi.mock('@/components/ui/BreadcrumbNav', () => ({
-  BreadcrumbNav: () => <nav />,
-}));
-
 vi.mock('@graphql/service-group/service-group.keys', () => ({
   bundleProductsKeys: { list: () => ['bundleProducts'] },
   bundleUserServiceGroupsKeys: { list: () => ['bundleUserServiceGroups'] },
@@ -51,7 +48,7 @@ vi.mock('@graphql/generated', async (importOriginal) => ({
 }));
 
 const renderClientSection = (fromDashboard: boolean) =>
-  render(
+  testRender(
     <ClientSection
       params={
         { serviceInstanceId: 'bundle-1' } as unknown as Promise<{
@@ -84,5 +81,18 @@ describe('manage-users ClientSection', () => {
     const props = manageTrialHeaderProps.mock.calls[0][0];
     expect(props).not.toHaveProperty('backHref');
     expect(props).not.toHaveProperty('backLabelKey');
+  });
+
+  it('links the trial breadcrumb item to the welcome page', () => {
+    renderClientSection(false);
+
+    expect(
+      screen.getByRole('link', {
+        name: 'Service.Bundle.ManageTrial.Breadcrumb.BundleName',
+      })
+    ).toHaveAttribute('href', '/app/service/xtm-platform-trial');
+    expect(
+      screen.getByText('Service.Bundle.ManageTrial.Breadcrumb.ManageUsers')
+    ).toHaveAttribute('aria-current', 'page');
   });
 });
