@@ -8,6 +8,7 @@ import {
   OTHER_METHOD_LABEL,
   UNMATCHED_PATH_LABEL,
 } from './http-metrics.middleware';
+import { REQUEST_DURATION_BUCKETS_SECONDS } from './metrics.const';
 
 const ROUTE_PATTERN = '/document/visualize/:serviceInstanceId/:filename';
 const MOUNT_PATH = '/graphql-api';
@@ -111,5 +112,25 @@ describe('createHttpMetricsMiddleware', () => {
     // Then the only method label is the fixed one, never the method sent
     const { labels } = await getLabels(baseUrl, 'method');
     expect(labels).toEqual([OTHER_METHOD_LABEL]);
+  });
+
+  it('should measure the request duration with the shared duration buckets', async () => {
+    // Given a server measured by the HTTP metrics middleware
+    // When a client calls a route
+    await fetch(
+      `${baseUrl}/document/visualize/${MADE_UP_ID}/${MADE_UP_FILENAME}`
+    );
+
+    // Then the histogram has exactly the shared buckets, plus +Inf
+    const metrics = await (await fetch(`${baseUrl}/metrics`)).text();
+    const bucketBounds = [
+      ...metrics.matchAll(
+        /^http_request_duration_seconds_bucket\{[^}]*le="([^"]*)"/gm
+      ),
+    ].map(([, bound]) => bound);
+    expect(bucketBounds).toEqual([
+      ...REQUEST_DURATION_BUCKETS_SECONDS.map(String),
+      '+Inf',
+    ]);
   });
 });

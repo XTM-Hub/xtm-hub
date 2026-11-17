@@ -12,10 +12,13 @@ import {
   vi,
 } from 'vitest';
 import { AppLogsCategory, logApp } from '../../utils/app-logger.util';
+import { NotFoundErrorCode } from '../../utils/error/error.code';
+import { NotFoundError } from '../../utils/error/error.util';
 import {
   graphqlMutationCounter,
   graphqlOperationDuration,
   graphqlQueryCounter,
+  OPERATION_RESULT,
   operationMetricsPlugin,
   registry,
   sseActiveConnectionsGauge,
@@ -32,6 +35,9 @@ const TEST_SCHEMA = makeExecutableSchema({
       me: String
       contentTranslations: String
       contentTranslationDrafts: String
+      typedNotFound: String
+      codedNotFound: String
+      crash: String
     }
     type Mutation {
       vote(id: ID): Boolean
@@ -41,7 +47,19 @@ const TEST_SCHEMA = makeExecutableSchema({
     }
   `,
   resolvers: {
-    Query: { currentVotingRound: () => 'round', otherField: () => 'other' },
+    Query: {
+      currentVotingRound: () => 'round',
+      otherField: () => 'other',
+      typedNotFound: () => {
+        throw NotFoundError(NotFoundErrorCode.SubscriptionNotFound);
+      },
+      codedNotFound: () => {
+        throw new Error(NotFoundErrorCode.SubscriptionNotFound);
+      },
+      crash: () => {
+        throw new Error('made-up crash');
+      },
+    },
     Mutation: { vote: () => true },
     Subscription: {
       votingRoundUpdated: {
@@ -253,7 +271,46 @@ describe('operationMetricsPlugin', () => {
       'graphql_query_total{query="currentVotingRound"} 1'
     );
     expect(metrics).toContain(
-      'graphql_operation_duration_seconds_count{operation="query",name="currentVotingRound"} 1'
+      'graphql_operation_duration_seconds_count{operation="query",name="currentVotingRound",result="success"} 1'
+    );
+  });
+
+  describe('when the operation fails', () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it.each([
+      {
+        description: 'a typed error below 500',
+        field: 'typedNotFound',
+        expectedResult: OPERATION_RESULT.clientError,
+      },
+      {
+        description: 'an error code mapped to a client error',
+        field: 'codedNotFound',
+        expectedResult: OPERATION_RESULT.clientError,
+      },
+      {
+        description: 'any other error',
+        field: 'crash',
+        expectedResult: OPERATION_RESULT.serverError,
+      },
+    ])(
+      'should label the duration $expectedResult when it throws $description',
+      async ({ field, expectedResult }) => {
+        // Given an error the logger would print
+        vi.spyOn(logApp, 'error').mockImplementation(() => {});
+
+        // When
+        await server.executeOperation({ query: `{ ${field} }` });
+
+        // Then
+        const metrics = await registry.metrics();
+        expect(metrics).toContain(
+          `graphql_operation_duration_seconds_count{operation="query",name="${field}",result="${expectedResult}"} 1`
+        );
+      }
     );
   });
 
@@ -267,7 +324,7 @@ describe('operationMetricsPlugin', () => {
     const metrics = await registry.metrics();
     expect(metrics).toContain('graphql_mutation_total{mutation="vote"} 1');
     expect(metrics).toContain(
-      'graphql_operation_duration_seconds_count{operation="mutation",name="vote"} 1'
+      'graphql_operation_duration_seconds_count{operation="mutation",name="vote",result="success"} 1'
     );
     expect(metrics).not.toContain('MadeUpVote');
   });

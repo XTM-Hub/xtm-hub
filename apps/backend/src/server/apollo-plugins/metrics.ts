@@ -1,15 +1,20 @@
 import { ApolloServerPlugin } from '@apollo/server';
+import { isInstance as isCustomApolloError } from 'apollo-errors';
 import {
   DocumentNode,
   ExecutionArgs,
   FragmentDefinitionNode,
   getOperationAST,
+  GraphQLError,
   Kind,
   OperationDefinitionNode,
   SelectionSetNode,
 } from 'graphql';
 import client, { Counter, Gauge, Histogram } from 'prom-client';
 import { AppLogsCategory, logApp } from '../../utils/app-logger.util';
+import { isClientErrorCode } from '../../utils/error/error.mapping';
+import { CustomApolloError } from '../../utils/error/error.type';
+import { REQUEST_DURATION_BUCKETS_SECONDS } from '../metrics.const';
 
 export const registry = client.register;
 
@@ -27,11 +32,17 @@ export const graphqlQueryCounter = new Counter({
   labelNames: ['query'],
 });
 
+export const OPERATION_RESULT = {
+  success: 'success',
+  clientError: 'client_error',
+  serverError: 'server_error',
+} as const;
+
 export const graphqlOperationDuration = new Histogram({
   name: 'graphql_operation_duration_seconds',
   help: 'Duration of GraphQL operations in seconds',
-  labelNames: ['operation', 'name'],
-  buckets: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5],
+  labelNames: ['operation', 'name', 'result'],
+  buckets: REQUEST_DURATION_BUCKETS_SECONDS,
 });
 
 export const sseSubscriptionCounter = new Counter({
@@ -151,9 +162,24 @@ export const sseOperationMetrics = {
   },
 };
 
+// Client errors are the typed ones below 500 and the codes mapToGraphQLError maps to them; anything else is a server
+// error. The resolver's error is read directly: unwrapResolverError's instanceof fails when two copies of graphql load.
+const isClientError = (error: GraphQLError) => {
+  const originalError =
+    error.path && error.originalError ? error.originalError : error;
+  if (isCustomApolloError(originalError)) {
+    const httpStatus = (originalError as CustomApolloError).data?.http_status;
+    return httpStatus !== undefined && httpStatus < 500;
+  }
+  return (
+    originalError instanceof Error && isClientErrorCode(originalError.message)
+  );
+};
+
 export const operationMetricsPlugin: ApolloServerPlugin = {
   async requestDidStart() {
-    let endTimer: (() => void) | null = null;
+    let endTimer: ((labels: { result: string }) => void) | null = null;
+    let result: string = OPERATION_RESULT.success;
 
     const operationMapping = {
       mutation: (name: string) => {
@@ -180,9 +206,16 @@ export const operationMetricsPlugin: ApolloServerPlugin = {
         });
       },
 
+      // A GraphQL error is answered with HTTP 200: only the error tells a failed operation
+      async didEncounterErrors({ errors }) {
+        result = errors.every(isClientError)
+          ? OPERATION_RESULT.clientError
+          : OPERATION_RESULT.serverError;
+      },
+
       async willSendResponse() {
         if (endTimer) {
-          endTimer();
+          endTimer({ result });
         }
       },
     };
