@@ -1424,6 +1424,7 @@
         },
         "Verified": {
           "Label": "ステータス",
+          "Description": "コネクタにのみ適用されるフィルター",
           "Placeholder": "ステータス...",
           "Verified": "Filigranの提供による",
           "Unverified": "コミュニティの提供による"
@@ -1579,6 +1580,7 @@
       "ViewTab": "タブ表示を選択",
       "ViewList": "リスト表示を選択",
       "Filters": "フィルター",
+      "FilterInformation": "このフィルターについて",
       "Tab": {
         "Name": "名前",
         "Description": "説明",

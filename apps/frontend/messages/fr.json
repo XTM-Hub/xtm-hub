@@ -1424,6 +1424,7 @@
         },
         "Verified": {
           "Label": "Statut",
+          "Description": "Filtre applicable aux connecteurs uniquement",
           "Placeholder": "Statut...",
           "Verified": "Pris en charge par Filigran",
           "Unverified": "Pris en charge par la communauté"
@@ -1579,6 +1580,7 @@
       "ViewTab": "Sélectionner l'affichage par onglets",
       "ViewList": "Sélectionner l'affichage sous forme de liste",
       "Filters": "Filtres",
+      "FilterInformation": "À propos de ce filtre",
       "Tab": {
         "Name": "Nom",
         "Description": "Description",
