@@ -3,6 +3,7 @@ import { getTranslate } from '@/hooks/get-translate';
 import { PublicLocale } from '@/i18n/config';
 import { serverGraphqlFetch } from '@/lib/server-graphql-fetch';
 import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '@/utils/constant';
+import { getBaseUrl } from '@/utils/generate-metadata';
 import {
   MostDeployedDocumentsQueryDocument,
   MostDeployedDocumentsQueryQuery,
@@ -23,6 +24,7 @@ const MostDeployedResources = async ({
   isAuthenticated = false,
   paramsLocale,
 }: MostDeployedResourcesProps) => {
+  const baseUrl = await getBaseUrl();
   const t = await getTranslate('HomePage.XtmMostDeployedResources');
 
   const data = await serverGraphqlFetch<
@@ -41,6 +43,7 @@ const MostDeployedResources = async ({
     <HomepageResourceList
       title={t('Title')}
       documents={data.mostDeployedDocuments}
+      baseUrl={baseUrl}
       isAuthenticated={isAuthenticated}
       paramsLocale={paramsLocale}
     />

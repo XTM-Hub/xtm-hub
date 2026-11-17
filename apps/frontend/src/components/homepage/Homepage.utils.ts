@@ -2,8 +2,6 @@ import { ServiceDefinitionIdentifierToPlatformIdentifier } from '@/components/re
 import { daysUntil } from '@/utils/date';
 import { registeredPlatformDetailPath } from '@/utils/path/registered-platform-detail-path';
 import {
-  DocumentImageType,
-  HomepageDocumentFragment,
   PlatformContract,
   PlatformIdentifier,
   RegisteredPlatformsQuery,
@@ -82,15 +80,4 @@ export const mapRegisteredPlatformsToHomepageCards = (
       },
     ];
   });
-};
-
-export const findLogoUrl = (
-  resource: HomepageDocumentFragment
-): string | undefined => {
-  const logo = resource.children_documents?.find(
-    (doc) => doc.image_type === DocumentImageType.Logo
-  );
-  return logo && resource.service_instance_id
-    ? `/document/images/${String(resource.service_instance_id)}/${logo.id}`
-    : undefined;
 };

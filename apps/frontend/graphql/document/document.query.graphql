@@ -112,6 +112,11 @@ fragment DocumentItem on Document {
   }
 }
 
+fragment HomepageResourceDocument on Document {
+  ...PublicDocumentListItem
+  service_instance_id
+}
+
 fragment HomepageDocument on Document {
   id
   name
@@ -142,7 +147,7 @@ query MostDeployedDocumentsQuery(
     limit: $limit
     platformIdentifiers: $platformIdentifiers
   ) {
-    ...HomepageDocument
+    ...HomepageResourceDocument
   }
 }
 
@@ -151,7 +156,7 @@ query NewestDocumentsQuery(
   $platformIdentifiers: [PlatformIdentifier!]
 ) {
   newestDocuments(limit: $limit, platformIdentifiers: $platformIdentifiers) {
-    ...HomepageDocument
+    ...HomepageResourceDocument
   }
 }
 
