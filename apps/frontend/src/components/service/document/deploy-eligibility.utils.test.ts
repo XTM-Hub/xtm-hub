@@ -1,6 +1,6 @@
 import { resolveDeployEligibility } from '@/components/service/document/deploy-eligibility.utils';
+import { type RegisteredPlatformsListItem } from '@/hooks/use-registered-platforms';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
-import { type useRegisteredPlatformsFragment$data } from '@generated/useRegisteredPlatformsFragment.graphql';
 import { LicenseType } from '@graphql/generated';
 import { describe, expect, it } from 'vitest';
 
@@ -21,10 +21,7 @@ const COMMERCIAL_CONNECTOR = {
   license_type: LicenseType.Commercial,
 };
 
-type Platform = Pick<
-  useRegisteredPlatformsFragment$data,
-  'contract' | 'version'
->;
+type Platform = Pick<RegisteredPlatformsListItem, 'contract' | 'version'>;
 
 const OLD_EE_PLATFORM: Platform = { contract: 'EE', version: OLD_VERSION };
 const OLD_CE_PLATFORM: Platform = { contract: 'CE', version: OLD_VERSION };

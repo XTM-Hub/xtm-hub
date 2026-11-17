@@ -1,8 +1,10 @@
 import OneClickDeploy from '@/components/service/document/one-click-deploy/OneClickDeploy';
-import { useRegisteredPlatforms } from '@/hooks/use-registered-platforms';
+import {
+  RegisteredPlatformsListItem,
+  useRegisteredPlatforms,
+} from '@/hooks/use-registered-platforms';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 import testRender from '@/utils/test/test-render';
-import { useRegisteredPlatformsFragment$data } from '@generated/useRegisteredPlatformsFragment.graphql';
 import {
   DocumentItemFragment,
   OrganizationCapability,
@@ -23,12 +25,15 @@ const mocks = vi.hoisted(() => ({
   useUsersWithCapabilitiesInOrganizationQuery: vi.fn(),
 }));
 
-vi.mock('@graphql/generated', async (importOriginal) => ({
-  ...(await importOriginal<object>()),
-  useOneClickDeployMutation: () => ({ mutate: mocks.sendTelemetry }),
-  useUsersWithCapabilitiesInOrganizationQuery:
-    mocks.useUsersWithCapabilitiesInOrganizationQuery,
-}));
+vi.mock('@graphql/generated', async (importOriginal) => {
+  const { mockGeneratedQueryHooks } =
+    await import('@/utils/test/mock-generated-query');
+  return mockGeneratedQueryHooks(importOriginal, {
+    useOneClickDeployMutation: () => ({ mutate: mocks.sendTelemetry }),
+    useUsersWithCapabilitiesInOrganizationQuery:
+      mocks.useUsersWithCapabilitiesInOrganizationQuery,
+  });
+});
 
 vi.mock(
   '@/components/service/document/one-click-deploy/UseOneClickDeployTab',
@@ -57,7 +62,7 @@ const platform = {
   url: PLATFORM_URL,
   version: '6.0.0',
   contract: 'EE',
-} as unknown as useRegisteredPlatformsFragment$data;
+} as unknown as RegisteredPlatformsListItem;
 
 describe('OneClickDeploy', () => {
   beforeEach(() => {
@@ -65,6 +70,7 @@ describe('OneClickDeploy', () => {
     mocks.openTab.mockReset();
     vi.mocked(useRegisteredPlatforms).mockReturnValue({
       platforms: [platform],
+      isPending: false,
     } as unknown as ReturnType<typeof useRegisteredPlatforms>);
   });
 
@@ -109,10 +115,29 @@ describe('OneClickDeploy', () => {
     expect(mocks.sendTelemetry).not.toHaveBeenCalled();
   });
 
+  it('should keep the deploy button disabled until the platforms are loaded', () => {
+    // Given
+    vi.mocked(useRegisteredPlatforms).mockReturnValue({
+      platforms: [],
+      isPending: true,
+    });
+
+    // When
+    testRender(<OneClickDeploy documentData={documentData} />);
+
+    // Then
+    expect(
+      screen.getByRole('button', {
+        name: 'Service.ShareableResources.Deploy.DeployPlatform',
+      })
+    ).toBeDisabled();
+  });
+
   describe('when no product is connected', () => {
     beforeEach(() => {
       vi.mocked(useRegisteredPlatforms).mockReturnValue({
         platforms: [],
+        isPending: false,
       } as unknown as ReturnType<typeof useRegisteredPlatforms>);
       mocks.useUsersWithCapabilitiesInOrganizationQuery.mockReturnValue({
         data: {
