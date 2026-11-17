@@ -1264,6 +1264,7 @@ describe('newsFeedDomain', () => {
       TestHelper.newsFeed.createItem({
         type: NewsFeedItemType.BlogPost,
         platform_identifier: PlatformIdentifier.Openaev,
+        title: 'A blog post',
         ...overrides,
       });
 
