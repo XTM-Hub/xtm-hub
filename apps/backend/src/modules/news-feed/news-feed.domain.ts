@@ -323,6 +323,8 @@ export const NewsFeedDomain = {
         type: NewsFeedItemType.BlogPost,
         is_deleted: false,
       })
+      // Same scope as reconcileBlogposts: an item without key is not managed by the synchronization
+      .whereNotNull('key')
       .count('* as count');
     return Number(row?.count ?? 0);
   },
@@ -340,19 +342,15 @@ export const NewsFeedDomain = {
     const desiredSlugs = posts.map((post) => post.slug);
 
     // The active items to compare with the desired set, and the dropped ones that may come back
-    const matchingItems: NewsFeedItem[] = await db('NewsFeedItem')
-      .where({
-        platform_identifier: platformIdentifier,
-        type: NewsFeedItemType.BlogPost,
-      })
+    const existingItems = (await db<NewsFeedItem[]>('NewsFeedItem')
+      .where('platform_identifier', platformIdentifier)
+      .where('type', NewsFeedItemType.BlogPost)
       .whereNotNull('key')
       .andWhere((builder) =>
         builder.where('is_deleted', false).orWhereIn('key', desiredSlugs)
       )
-      .select('NewsFeedItem.*');
-    const existingItems = matchingItems.flatMap((item) =>
-      item.key === null ? [] : [{ ...item, key: item.key }]
-    );
+      // The key is never null here: whereNotNull('key') above
+      .select('*')) as (NewsFeedItem & { key: string })[];
     const existingItemBySlug = new Map(
       existingItems.map((item) => [item.key, item])
     );

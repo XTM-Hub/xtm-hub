@@ -1111,75 +1111,98 @@ describe('newsFeedDomain', () => {
     );
 
     describe('blog posts', () => {
-      const createExpiredBlogPost = (isDeleted: boolean) =>
+      const createExpiredBlogPost = (
+        isDeleted: boolean,
+        platformIdentifier: PlatformIdentifier
+      ) =>
         TestHelper.newsFeed.createItem({
           type: NewsFeedItemType.BlogPost,
-          platform_identifier: PlatformIdentifier.Opencti,
+          platform_identifier: platformIdentifier,
           title: 'expired-blog-post',
           creation_date: monthsAgo(24),
           is_deleted: isDeleted,
         });
 
-      it('should keep an expired blog post that is not deleted', async () => {
-        // Given
-        const liveBlogPost = await createExpiredBlogPost(false);
-        const expiredResource = await createItemWithAge(24);
+      const BLOG_PRODUCTS = [
+        PlatformIdentifier.Opencti,
+        PlatformIdentifier.Openaev,
+      ];
 
-        // When
-        const deletedCount = await NewsFeedDomain.deleteNewsFeedItemsOlderThan(
-          monthsAgo(6)
-        );
+      it.each(BLOG_PRODUCTS)(
+        'should keep an expired blog post of %s that is not deleted',
+        async (platformIdentifier) => {
+          // Given
+          const liveBlogPost = await createExpiredBlogPost(
+            false,
+            platformIdentifier
+          );
+          const expiredResource = await createItemWithAge(24);
 
-        // Then
-        expect(deletedCount).toBe(1);
-        expect(
-          await TestHelper.newsFeed.loadFirstItem({ id: liveBlogPost.id })
-        ).toMatchObject({ id: liveBlogPost.id, is_deleted: false });
-        expect(
-          await TestHelper.newsFeed.loadFirstItem({ id: expiredResource.id })
-        ).toBeUndefined();
-      });
+          // When
+          const deletedCount =
+            await NewsFeedDomain.deleteNewsFeedItemsOlderThan(monthsAgo(6));
 
-      it('should delete an expired blog post that is already deleted', async () => {
-        // Given
-        const deletedBlogPost = await createExpiredBlogPost(true);
+          // Then
+          expect(deletedCount).toBe(1);
+          expect(
+            await TestHelper.newsFeed.loadFirstItem({ id: liveBlogPost.id })
+          ).toMatchObject({ id: liveBlogPost.id, is_deleted: false });
+          expect(
+            await TestHelper.newsFeed.loadFirstItem({ id: expiredResource.id })
+          ).toBeUndefined();
+        }
+      );
 
-        // When
-        const deletedCount = await NewsFeedDomain.deleteNewsFeedItemsOlderThan(
-          monthsAgo(6)
-        );
+      it.each(BLOG_PRODUCTS)(
+        'should delete an expired blog post of %s that is already deleted',
+        async (platformIdentifier) => {
+          // Given
+          const deletedBlogPost = await createExpiredBlogPost(
+            true,
+            platformIdentifier
+          );
 
-        // Then
-        expect(deletedCount).toBe(1);
-        expect(
-          await TestHelper.newsFeed.loadFirstItem({ id: deletedBlogPost.id })
-        ).toBeUndefined();
-      });
+          // When
+          const deletedCount =
+            await NewsFeedDomain.deleteNewsFeedItemsOlderThan(monthsAgo(6));
 
-      it('should keep an expired deleted blog post while a platform has not consumed its deletion', async () => {
-        // Given
-        const deletedBlogPost = await createExpiredBlogPost(true);
-        const platformId = uuidv4();
-        await NewsFeedDomain.provisionNewsFeedItem(deletedBlogPost.id, [
-          platformId,
-        ]);
+          // Then
+          expect(deletedCount).toBe(1);
+          expect(
+            await TestHelper.newsFeed.loadFirstItem({ id: deletedBlogPost.id })
+          ).toBeUndefined();
+        }
+      );
 
-        // When
-        const deletedCount = await NewsFeedDomain.deleteNewsFeedItemsOlderThan(
-          monthsAgo(6)
-        );
+      it.each(BLOG_PRODUCTS)(
+        'should keep an expired deleted blog post of %s while a platform has not consumed its deletion',
+        async (platformIdentifier) => {
+          // Given
+          const deletedBlogPost = await createExpiredBlogPost(
+            true,
+            platformIdentifier
+          );
+          const platformId = uuidv4();
+          await NewsFeedDomain.provisionNewsFeedItem(deletedBlogPost.id, [
+            platformId,
+          ]);
 
-        // Then
-        expect(deletedCount).toBe(0);
-        expect(
-          await TestHelper.newsFeed.loadFirstItem({ id: deletedBlogPost.id })
-        ).toMatchObject({ id: deletedBlogPost.id, is_deleted: true });
-        expect(
-          await TestHelper.newsFeed.loadProvisioned({
-            news_feed_item_id: deletedBlogPost.id,
-          })
-        ).toHaveLength(1);
-      });
+          // When
+          const deletedCount =
+            await NewsFeedDomain.deleteNewsFeedItemsOlderThan(monthsAgo(6));
+
+          // Then
+          expect(deletedCount).toBe(0);
+          expect(
+            await TestHelper.newsFeed.loadFirstItem({ id: deletedBlogPost.id })
+          ).toMatchObject({ id: deletedBlogPost.id, is_deleted: true });
+          expect(
+            await TestHelper.newsFeed.loadProvisioned({
+              news_feed_item_id: deletedBlogPost.id,
+            })
+          ).toHaveLength(1);
+        }
+      );
     });
 
     it('should return the count of deleted items', async () => {
@@ -1231,6 +1254,41 @@ describe('newsFeedDomain', () => {
         news_feed_item_id: oldItem.id,
       });
       expect(remainingAfter).toHaveLength(0);
+    });
+  });
+
+  describe('countActiveBlogpostItems', () => {
+    const createBlogpost = (
+      overrides: Parameters<typeof TestHelper.newsFeed.createItem>[0] = {}
+    ) =>
+      TestHelper.newsFeed.createItem({
+        type: NewsFeedItemType.BlogPost,
+        platform_identifier: PlatformIdentifier.Openaev,
+        ...overrides,
+      });
+
+    it('should count the active blog items with a key of the product only', async () => {
+      // Given
+      await createBlogpost({ key: 'active-post' });
+      await createBlogpost({ key: 'other-active-post' });
+      await createBlogpost({ key: 'deleted-post', is_deleted: true });
+      await createBlogpost({ key: null });
+      await createBlogpost({
+        key: 'other-product-post',
+        platform_identifier: PlatformIdentifier.Opencti,
+      });
+      await createBlogpost({
+        key: 'playbook',
+        type: NewsFeedItemType.ResourcePlaybook,
+      });
+
+      // When
+      const count = await NewsFeedDomain.countActiveBlogpostItems(
+        PlatformIdentifier.Openaev
+      );
+
+      // Then
+      expect(count).toBe(2);
     });
   });
 

@@ -147,6 +147,7 @@ export class BlogpostSyncError extends Error {
   }
 }
 
+// Object.entries loses the keys type: the mapping is a closed Record, so its keys are exactly the BlogpostProduct
 const BLOGPOST_PRODUCTS = Object.entries(blogpostProductMapping) as [
   BlogpostProduct,
   PlatformIdentifier,
@@ -321,6 +322,7 @@ export const NewsFeedApp = {
       throw new BlogpostSyncError(failures);
     }
 
+    // Object.fromEntries loses the keys type: without any failure, every mapped product has succeeded
     const result = buildBlogpostSyncResult(
       Object.fromEntries(succeeded) as Record<
         BlogpostProduct,

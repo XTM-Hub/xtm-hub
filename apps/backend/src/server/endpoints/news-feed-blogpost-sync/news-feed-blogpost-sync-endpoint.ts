@@ -45,7 +45,7 @@ const sendUnauthorized = (res: Response): void => {
   res.status(401).end();
 };
 
-// Only the counts leave the Hub
+// The one allowlist of what leaves the Hub: the counts, nothing else of the app result
 const toCounts = ({
   created,
   updated,
@@ -72,10 +72,7 @@ export const NewsFeedBlogpostSyncEndpoint = {
         NewsFeedApp.syncBlogposts()
       );
       res.status(200).json({
-        created: result.created,
-        updated: result.updated,
-        dropped: result.dropped,
-        provisionedPlatforms: result.provisionedPlatforms,
+        ...toCounts(result),
         products: Object.fromEntries(
           Object.entries(result.products).map(([product, counts]) => [
             product,

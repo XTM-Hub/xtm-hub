@@ -53,16 +53,16 @@ A click on a news feed link, i.e. a user following a link given to OpenCTI or Op
 
 Both are fire and forget: a telemetry failure never changes the redirect. The IP and the user agent are never stored. `hub_instance_id` and `hub_environment` are stamped as for every event.
 
-| Field                 | External redirect                                                               | Resource redirect                                                  |
-| :-------------------- | :------------------------------------------------------------------------------ | :----------------------------------------------------------------- |
-| `news_feed_item_id`   | The item clicked.                                                               | Not set (the link carries no item id).                             |
-| `news_feed_item_type` | Item type in lowercase, e.g. `blog-post`.                                       | Not set.                                                           |
-| `destination_host`    | `filigran.io` (or `github.com` for releases, later).                            | Not set.                                                           |
-| `platform_id`         | The platform UUID of the query, when valid. Never forwarded to the destination. | The platform UUID of the query, when valid.                        |
-| `service`             | Not set.                                                                        | The service (`TelemetryEventService`).                             |
-| `resource_id`         | Not set.                                                                        | The document the link targets.                                     |
-| `target_product`      | The product the item was given to (`open-cti` or `open-aev`).                   | The product of the link (`utm_source`).                            |
-| `utm_content`         | Not set.                                                                        | Kind of resource (`custom_dashboard`, `playbook`, ... or `other`). |
+| Field                 | External redirect                                                                | Resource redirect                                                  |
+| :-------------------- | :------------------------------------------------------------------------------- | :----------------------------------------------------------------- |
+| `news_feed_item_id`   | The item clicked.                                                                | Not set (the link carries no item id).                             |
+| `news_feed_item_type` | Item type in lowercase, e.g. `blog-post`.                                        | Not set.                                                           |
+| `destination_host`    | `filigran.io` (or `github.com` for releases, later).                             | Not set.                                                           |
+| `platform_id`         | The platform UUID of the query, when valid. Never forwarded to the destination.  | The platform UUID of the query, when valid.                        |
+| `service`             | Not set.                                                                         | The service (`TelemetryEventService`).                             |
+| `resource_id`         | Not set.                                                                         | The document the link targets.                                     |
+| `target_product`      | The product the item was given to (`open-cti` or `open-aev`), whatever its type. | The product of the link (`utm_source`).                            |
+| `utm_content`         | Not set.                                                                         | Kind of resource (`custom_dashboard`, `playbook`, ... or `other`). |
 
 Who the event identifies: when a user is logged in (the external route reads the existing session read-only, it never creates or modifies one), the event carries `user_id` and the organization (`organization_id`, `organization_name`, `organization_type`) of the selected organization. Otherwise it is anonymous: no `user_id`, no organization, and `organization_type` is `Public`. `platform_id` comes from the query string, so it is validated (UUID) and is best-effort analytics only.
 

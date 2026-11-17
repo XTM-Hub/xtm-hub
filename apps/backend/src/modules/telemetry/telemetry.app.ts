@@ -292,7 +292,8 @@ export const TelemetryApp = {
     user: Pick<UserLoadUserBy, 'id' | 'selected_organization_id'> | undefined;
     newsFeedItemId: string;
     newsFeedItemType: NewsFeedItemType;
-    // The product the item was given to: it tells the clicks of OpenAEV and OpenCTI apart
+    // The product the item was given to: buildNewsFeedRedirectEvent turns it into the target_product of the event,
+    // which tells the clicks of OpenAEV and OpenCTI apart
     platformIdentifier: PlatformIdentifier;
     destinationHost: string;
     platformId: unknown;

@@ -15,6 +15,8 @@ export async function up(knex) {
 
   // The existing blog items keep the slug they were identified by: the blog_post_slug metadata is left untouched,
   // the key is derived from it. The other types of items keep a null key.
+  // A single UPDATE, not batches: the Hub only holds a handful of blog items per product (the latest six, kept for 180
+  // days at most).
   await knex.raw(`
     UPDATE "NewsFeedItem" AS item
       SET key = metadata.value
@@ -36,6 +38,8 @@ export async function up(knex) {
 /**
  * The slug-only index cannot be restored while two items hold the same slug for different products: the
  * creation of the index then fails, and the items of the other products must be removed first.
+ * Runbook: the blogpost synchronization creates the OpenAEV items from its first call, even while the OpenAEV gate is
+ * disabled, so delete the OpenAEV blog items (type BLOG_POST, platform_identifier openaev) before a rollback.
  *
  * @param { import("knex").Knex } knex
  * @returns { Promise<void> }

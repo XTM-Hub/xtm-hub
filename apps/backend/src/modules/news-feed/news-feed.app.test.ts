@@ -3041,6 +3041,29 @@ describe('newsFeedApp', () => {
         }
       );
 
+      it('should accept an empty feed when the product only holds active items without key', async () => {
+        // Given
+        const itemWithoutKey = await TestHelper.newsFeed.createItem({
+          type: NewsFeedItemType.BlogPost,
+          platform_identifier: PlatformIdentifier.Openaev,
+          title: 'A blog post without key',
+        });
+        mockFeeds({ opencti: [], openaev: [] });
+
+        // When
+        const result = await NewsFeedApp.syncBlogposts();
+
+        // Then
+        expect(result).toMatchObject({
+          created: 0,
+          dropped: 0,
+          products: { openaev: { created: 0, dropped: 0 } },
+        });
+        expect(
+          await TestHelper.newsFeed.loadFirstItem({ id: itemWithoutKey.id })
+        ).toMatchObject({ is_deleted: false, key: null });
+      });
+
       it('should log the post id of the invalid item with the failing product', async () => {
         // Given
         mockFeeds({
