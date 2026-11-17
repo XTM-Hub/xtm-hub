@@ -14,7 +14,7 @@ mechanisms coexist while modules migrate:
 
 | Mechanism | Where | Used by |
 | --- | --- | --- |
-| `@Public()` / `@Guarded(guard)` on the resolver | `src/security/guarded/` | Migrated modules (`solution-category`, `telemetry`) |
+| `@Public()` / `@Guarded(guard)` on the resolver | `src/security/guarded/` | Migrated modules (`solution-category`, `telemetry`, `manage-product-version`) |
 | `@auth`, `@service_capa`, `@system_token`, `@platform_token` in the `.graphql` file | `src/security/directive-graphql/` | Every other module. A field with no directive is public there |
 
 **An operation has a directive or a decorator, never both.** Migrating an operation removes its directive in the same
@@ -65,9 +65,21 @@ export default resolvers;
 | `@Guarded(loggedInGuard())` | Any logged-in user. Not a substitute for a capability check | `UNAUTHENTICATED` (anonymous or disabled user) |
 | `@Guarded(bypassOnlyGuard())` | A `BYPASS` user only. Use it for admin-only operations rather than listing `BYPASS` | `UNAUTHENTICATED` (anonymous or disabled user), `FORBIDDEN_ACCESS` (not `BYPASS`) |
 | `@Guarded(portalCapabilityGuard([PortalCapability.X, …]))` | A user holding one of the portal capabilities; `BYPASS` always. The list cannot be empty | `UNAUTHENTICATED` (anonymous or disabled user), `FORBIDDEN_ACCESS` (capability missing) |
+| `@Guarded(callerGuard('system', [PortalCapability.X, …]))` | A machine with a valid `x-xtm-hub-token` holding every listed scope. The list cannot be empty | `UNAUTHENTICATED` (no or invalid token, session ignored), `FORBIDDEN_ACCESS` (scope missing) |
 
 A guard returns `allow()` or `deny(code)`. An exception, or anything else, is a denial. Add each new guard to this
 table.
+
+## Machine callers
+
+`callerGuard('system', scopes)` is for an operation only a machine calls, with the `x-xtm-hub-token` header, such as
+`newProductVersion`.
+
+- Only an operation guarded by `callerGuard` reads the header, and it is judged on the token alone, never on the
+  session: a valid token is a system caller, a missing, empty or invalid one is anonymous. The other guards and
+  `@Public()` ignore the header.
+- Until scoped tokens, the system caller holds exactly the declared scopes, and so does the user the resolver gets
+  (`context.user`, `requireUser()`).
 
 ## Errors
 
@@ -99,9 +111,10 @@ describe('addSolutionCategory mutation', () => {
 });
 ```
 
-Rows are anonymous, a logged-in user with no capability and a platform admin. `guarded` returns a spy on the function
-behind the operation: refused rows assert it was not called, allowed rows that it was called once. Wrap the call in a
-`describe` with a literal name, and use `TestHelper`, never the helper file directly.
+Rows are anonymous, a logged-in user with no capability and a platform admin, plus `system` and `invalidSystemToken`
+for an operation a machine calls. `guarded` returns a spy on the function behind the operation: refused rows assert it
+was not called, allowed rows that it was called once. Wrap the call in a `describe` with a literal name, and use
+`TestHelper`, never the helper file directly.
 
 ## Adding or migrating an entry point
 

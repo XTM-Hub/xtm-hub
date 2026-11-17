@@ -146,6 +146,11 @@ Never read `process.env` directly in application code — go through `src/config
 Use `logApp` from `src/utils/app-logger.util.ts`. `console.log` is never acceptable. `console.warn` and
 `console.error` are tolerated only in standalone scripts and launch code that is not part of the running app.
 
+## Background jobs (pgboss)
+
+A pgboss worker builds its handler with `createBatchHandler(identity, processJob)` (`src/thirdparty/pgboss/workers.ts`).
+Each job runs in a copy of that identity, so it always has a user in its request context.
+
 ## API collection (Bruno)
 
 `bruno/` at the repo root (`bruno/bruno.json`) is a Bruno collection mirroring the real GraphQL and REST surface, one
