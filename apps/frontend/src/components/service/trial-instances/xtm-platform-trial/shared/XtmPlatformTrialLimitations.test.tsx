@@ -3,6 +3,20 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
 describe('XtmPlatformTrialLimitations', () => {
+  it('renders the limitations as an info alert', () => {
+    render(<XtmPlatformTrialLimitations />);
+
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Service.Trials.XtmPlatform.Page.Limitations.Title'
+    );
+  });
+
+  it('lists the product limits', () => {
+    render(<XtmPlatformTrialLimitations />);
+
+    expect(screen.getAllByRole('listitem')).toHaveLength(2);
+  });
+
   it('renders the limitations title, list and disclaimers', () => {
     render(<XtmPlatformTrialLimitations />);
 
