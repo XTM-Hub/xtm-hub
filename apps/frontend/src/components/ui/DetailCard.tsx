@@ -41,10 +41,13 @@ export const DetailCard = ({
   }, []);
 
   return (
+    // The ring is painted here, on the whole card, when the title button
+    // (`data-detail-title`), the control that opens the detail, takes
+    // keyboard focus. Other controls in the card keep their own focus style.
     // eslint-disable-next-line no-restricted-syntax -- forwards its click to the tagged title button
     <div
       onClick={handleCardClick}
-      className="group flex h-full flex-col overflow-hidden rounded layer-1 bg-elevation-default hover:cursor-pointer">
+      className="group flex h-full flex-col overflow-hidden rounded layer-1 bg-elevation-default hover:cursor-pointer has-[[data-detail-title]:focus-visible]:ring-2 has-[[data-detail-title]:focus-visible]:ring-focus">
       {media}
       <div className="flex flex-1 flex-col gap-3 p-4 group-hover:bg-elevation-hover">
         <div className="flex flex-col gap-3">
@@ -54,8 +57,9 @@ export const DetailCard = ({
               ref={titleRef}
               type="button"
               data-no-open-detail
+              data-detail-title
               onClick={() => onOpenDetail()}
-              className="focus-visible:ring-focus text-left focus-visible:outline-none focus-visible:ring-2">
+              className="text-left focus-visible:outline-none">
               {title}
             </button>
           </h2>

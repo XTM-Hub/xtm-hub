@@ -23,7 +23,8 @@ vi.mock('../../../utils/app-logger.util', () => ({
 
 import { getUserPicture } from './user-picture-endpoint';
 
-const CACHE_CONTROL = 'public, max-age=2592000, immutable';
+const USER_ID = '89efc660-a732-4d71-abe2-455188be1505';
+const CACHE_CONTROL = 'public, max-age=86400';
 const STORED_FILE_CSP =
   "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox";
 
@@ -41,31 +42,54 @@ const buildResponse = () => ({
   destroy: vi.fn(),
 });
 
-const buildRequest = (userId: string) =>
-  ({ params: { userId } }) as unknown as Request;
+const buildRequest = (userId: string, path = `/user/picture/${userId}`) =>
+  ({ params: { userId }, path }) as unknown as Request;
 
 describe('getUserPicture', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('sets an immutable Cache-Control header on a successful response', async () => {
+  it('sets a one day Cache-Control header, not immutable, on a successful response', async () => {
     loadUserPictureMinioMock.mockResolvedValue('picture/abc');
     downloadFileWithMimeTypeMock.mockResolvedValue(
       buildStoredPicture({ on: vi.fn(), pipe: vi.fn() })
     );
 
     const res = buildResponse();
-    await getUserPicture(buildRequest('user-1'), res as unknown as Response);
+    await getUserPicture(buildRequest(USER_ID), res as unknown as Response);
 
     expect(res.setHeader).toHaveBeenCalledWith('Cache-Control', CACHE_CONTROL);
   });
+
+  it.each([
+    ['an upper case id', `/user/picture/${USER_ID.toUpperCase()}`],
+    ['an id without hyphens', `/user/picture/${USER_ID.replaceAll('-', '')}`],
+    ['a braced id', `/user/picture/{${USER_ID}}`],
+    ['a trailing slash', `/user/picture/${USER_ID}/`],
+    ['an upper case route', `/USER/PICTURE/${USER_ID}`],
+    ['an encoded character', `/user/picture/%38${USER_ID.slice(1)}`],
+  ])(
+    'returns 404 before any lookup for %s, so it cannot be a second URL of the picture',
+    async (_case, path) => {
+      const res = buildResponse();
+      const userId = path.split('/').filter(Boolean).pop() as string;
+      await getUserPicture(
+        buildRequest(userId, path),
+        res as unknown as Response
+      );
+
+      expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.setHeader).not.toHaveBeenCalled();
+      expect(loadUserPictureMinioMock).not.toHaveBeenCalled();
+    }
+  );
 
   it('returns 404 and no cache header when the user has no picture', async () => {
     loadUserPictureMinioMock.mockResolvedValue(null);
 
     const res = buildResponse();
-    await getUserPicture(buildRequest('user-1'), res as unknown as Response);
+    await getUserPicture(buildRequest(USER_ID), res as unknown as Response);
 
     expect(res.status).toHaveBeenCalledWith(404);
     expect(res.setHeader).not.toHaveBeenCalled();
@@ -76,7 +100,7 @@ describe('getUserPicture', () => {
     downloadFileWithMimeTypeMock.mockResolvedValue(null);
 
     const res = buildResponse();
-    await getUserPicture(buildRequest('user-1'), res as unknown as Response);
+    await getUserPicture(buildRequest(USER_ID), res as unknown as Response);
 
     expect(res.status).toHaveBeenCalledWith(404);
     expect(res.setHeader).not.toHaveBeenCalled();
@@ -97,7 +121,7 @@ describe('getUserPicture', () => {
     );
 
     const res = buildResponse();
-    await getUserPicture(buildRequest('user-1'), res as unknown as Response);
+    await getUserPicture(buildRequest(USER_ID), res as unknown as Response);
     onError(new Error('minio unreachable'));
 
     expect(res.removeHeader).toHaveBeenCalledWith('Cache-Control');
@@ -131,7 +155,7 @@ describe('getUserPicture', () => {
       const res = buildResponse();
 
       // When
-      await getUserPicture(buildRequest('user-1'), res as unknown as Response);
+      await getUserPicture(buildRequest(USER_ID), res as unknown as Response);
 
       // Then
       expect(res.setHeader).toHaveBeenCalledWith('Content-Type', contentType);
@@ -150,7 +174,7 @@ describe('getUserPicture', () => {
     const res = buildResponse();
 
     // When
-    await getUserPicture(buildRequest('user-1'), res as unknown as Response);
+    await getUserPicture(buildRequest(USER_ID), res as unknown as Response);
 
     // Then
     expect(res.setHeader).toHaveBeenCalledWith(
@@ -176,7 +200,7 @@ describe('getUserPicture', () => {
     const res = buildResponse();
 
     // When
-    await getUserPicture(buildRequest('user-1'), res as unknown as Response);
+    await getUserPicture(buildRequest(USER_ID), res as unknown as Response);
     onError(new Error('minio unreachable'));
 
     // Then

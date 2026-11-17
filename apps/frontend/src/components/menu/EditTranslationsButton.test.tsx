@@ -97,6 +97,19 @@ describe('EditTranslationsButton', () => {
     }
   );
 
+  it('should hide its decorative icon from assistive technology', () => {
+    // Given
+    renderButton({ canEditContent: true, isEditMode: false });
+
+    // When
+    const icon = screen
+      .getByRole('button', { name: EDIT_LABEL })
+      .querySelector('svg');
+
+    // Then
+    expect(icon).toHaveAttribute('aria-hidden', 'true');
+  });
+
   it('should ask what to do with drafts instead of leaving when changes are pending', async () => {
     // Given
     renderButton({

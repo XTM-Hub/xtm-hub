@@ -22,6 +22,47 @@ describe('ShareableResourceCardFooterAuthor', () => {
     expect(screen.getByRole('button')).toBeInTheDocument();
   });
 
+  it('loads the author picture in a 24 px avatar', () => {
+    const { container } = testRender(
+      <ShareableResourceCardFooterAuthor
+        document={document as DocumentItemFragment}
+        shareLinkUrl="https://share.local"
+      />
+    );
+
+    expect(container.querySelector('img')).toHaveAttribute(
+      'src',
+      'https://img'
+    );
+    expect(container.querySelector('img')).toHaveAttribute('width', '24');
+    expect(container.querySelector('img')?.closest('div')).toHaveStyle({
+      width: '24px',
+      height: '24px',
+    });
+  });
+
+  it('asks Gravatar for a right-sized author picture', () => {
+    const gravatarDocument = {
+      ...document,
+      uploader: {
+        ...document.uploader,
+        picture: 'https://s.gravatar.com/avatar/538dc0e?s=480&r=pg',
+      },
+    };
+
+    const { container } = testRender(
+      <ShareableResourceCardFooterAuthor
+        document={gravatarDocument as DocumentItemFragment}
+        shareLinkUrl="https://share.local"
+      />
+    );
+
+    expect(container.querySelector('img')).toHaveAttribute(
+      'src',
+      'https://s.gravatar.com/avatar/538dc0e?s=48&r=pg'
+    );
+  });
+
   it('hides author block when shouldDisplayAuthor is false', () => {
     testRender(
       <ShareableResourceCardFooterAuthor

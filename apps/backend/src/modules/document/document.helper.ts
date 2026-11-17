@@ -16,9 +16,13 @@ import {
 import ServiceDefinition from '../../model/kanel/public/ServiceDefinition';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { UseCaseId } from '../../model/kanel/public/UseCase';
+import User, { UserId } from '../../model/kanel/public/User';
 import { MinIOClient } from '../../thirdparty/minio/client';
 import { MinioFile } from '../../thirdparty/minio/types';
-import type { TeamsNotificationPayloadMap } from '../../thirdparty/pgboss/teams-notification.jobs';
+import type {
+  TeamsNotificationPayloadMap,
+  TeamsResourceItem,
+} from '../../thirdparty/pgboss/teams-notification.jobs';
 import { logApp } from '../../utils/app-logger.util';
 import { ErrorCode, UnknownErrorCode } from '../../utils/error/error.code';
 import { OptionalMetadata } from '../../utils/metadata';
@@ -60,7 +64,10 @@ import { TelemetryEventType } from '../telemetry/telemetry.types';
 import { DocumentApp } from './document.app';
 import { DOCUMENT_IMAGE_METADATA_KEYS } from './document.model';
 import { Upload } from './document.uploads.helper';
-import { DocumentDomain } from './domain/document.domain';
+import {
+  DocumentDomain,
+  type NotPublishedResource,
+} from './domain/document.domain';
 
 export const BOOLEAN_METADATA = [
   DocumentMetadataKeyCode.Verified,
@@ -200,11 +207,90 @@ const INTEGRATION_TYPE_LABELS: Record<IntegrationType, string> = {
   [IntegrationType.ThirdPartyIntegration]: 'Third party integration',
 };
 
+export interface NotPublishedResourceInput {
+  document: DocumentModel;
+  integrationType: IntegrationType | null;
+  authorEmail: string | null;
+}
+
+export interface NotPublishedLibrary {
+  serviceDefinition: NotPublishedResource['serviceDefinition'];
+  resources: NotPublishedResourceInput[];
+}
+
+const buildResourceItem = ({
+  document,
+  status,
+  serviceDefinition,
+  integrationType,
+  authorEmail,
+}: {
+  document: DocumentModel;
+  status: DocumentStatus;
+  serviceDefinition: Pick<ServiceDefinition, 'identifier'>;
+  integrationType: IntegrationType | null;
+  authorEmail: string | null;
+}): TeamsResourceItem => ({
+  name: document.name,
+  type: integrationType ? INTEGRATION_TYPE_LABELS[integrationType] : null,
+  status,
+  short_description: document.short_description,
+  link: `${config.get<string>('base_url_front')}/redirect/${serviceDefinition.identifier}?document_id=${toGlobalId('Document', document.id)}`,
+  author_email: authorEmail,
+});
+
 export const DocumentHelper = {
   assertStatusTransition: (from: DocumentStatus, to: DocumentStatus) => {
     if (from !== to && !ALLOWED_STATUS_TRANSITIONS[from].includes(to)) {
       throw new Error(ErrorCode.InvalidDocumentStatusTransition);
     }
+  },
+
+  toIntegrationType: (
+    documentType: string,
+    value: unknown
+  ): IntegrationType | null =>
+    documentType === OPENCTI_INTEGRATION_DOCUMENT_TYPE &&
+    typeof value === 'string' &&
+    isIntegrationType(value)
+      ? value
+      : null,
+
+  groupNotPublishedByLibrary: ({
+    notPublished,
+    authors,
+    integrationTypes,
+  }: {
+    notPublished: NotPublishedResource[];
+    authors: Pick<User, 'id' | 'email'>[];
+    integrationTypes: { document_id: string; value: string }[];
+  }): NotPublishedLibrary[] => {
+    const authorEmails = new Map<UserId, string>(
+      authors.map(({ id, email }) => [id, email])
+    );
+    const integrationTypeByDocument = new Map(
+      integrationTypes.map(({ document_id, value }) => [document_id, value])
+    );
+
+    const libraries = new Map<string, NotPublishedLibrary>();
+    for (const { document, serviceDefinition } of notPublished) {
+      const library = libraries.get(serviceDefinition.id) ?? {
+        serviceDefinition,
+        resources: [],
+      };
+      library.resources.push({
+        document,
+        integrationType: DocumentHelper.toIntegrationType(
+          document.type,
+          integrationTypeByDocument.get(document.id)
+        ),
+        authorEmail: document.uploader_id
+          ? (authorEmails.get(document.uploader_id) ?? null)
+          : null,
+      });
+      libraries.set(serviceDefinition.id, library);
+    }
+    return [...libraries.values()];
   },
 
   buildInValidationPayload: ({
@@ -219,14 +305,32 @@ export const DocumentHelper = {
     authorEmail: string | null;
   }): TeamsNotificationPayloadMap['resource_in_validation'] => ({
     library: serviceDefinition.name,
-    resource: {
-      name: document.name,
-      type: integrationType ? INTEGRATION_TYPE_LABELS[integrationType] : null,
+    resource: buildResourceItem({
+      document,
       status: DocumentStatus.InValidation,
-      short_description: document.short_description,
-      link: `${config.get<string>('base_url_front')}/redirect/${serviceDefinition.identifier}?document_id=${toGlobalId('Document', document.id)}`,
-      author_email: authorEmail,
-    },
+      serviceDefinition,
+      integrationType,
+      authorEmail,
+    }),
+  }),
+
+  buildNotPublishedPayload: ({
+    serviceDefinition,
+    resources,
+  }: {
+    serviceDefinition: Pick<ServiceDefinition, 'name' | 'identifier'>;
+    resources: NotPublishedResourceInput[];
+  }): TeamsNotificationPayloadMap['resource_not_published'] => ({
+    library: serviceDefinition.name,
+    resources: resources.map(({ document, integrationType, authorEmail }) =>
+      buildResourceItem({
+        document,
+        status: document.status,
+        serviceDefinition,
+        integrationType,
+        authorEmail,
+      })
+    ),
   }),
 
   buildCompleteMetadataFromDocumentFile: ({

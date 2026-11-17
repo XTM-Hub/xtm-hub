@@ -49,6 +49,7 @@ export enum ForbiddenErrorCode {
   OpenVotingRoundWithoutActiveFeature = 'OPEN_VOTING_ROUND_WITHOUT_ACTIVE_FEATURE',
   RolePortalProtected = 'ROLE_PORTAL_PROTECTED',
   CantDeleteBlogpostNewsFeedItem = 'CANT_DELETE_BLOGPOST_NEWS_FEED_ITEM',
+  SetUserPasswordNotAllowed = 'SET_USER_PASSWORD_NOT_ALLOWED',
 }
 
 export enum BadRequestErrorCode {

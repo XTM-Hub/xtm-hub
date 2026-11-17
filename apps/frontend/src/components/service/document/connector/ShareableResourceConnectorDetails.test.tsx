@@ -42,6 +42,26 @@ describe('ShareableResourceConnectorDetails', () => {
     expect(screen.queryByText(CONTACT_LABEL)).not.toBeInTheDocument();
   });
 
+  it('should hide the decorative icons of the source code and vendor links from assistive technology', () => {
+    // Given a connector with a source code link and a vendor link
+    testRender(
+      <ShareableResourceConnectorDetails
+        connectorDetails={{
+          name: CONNECTOR_NAME,
+          source_code: 'https://github.com/example/connector',
+          subscription_link: VENDOR_URL,
+        }}
+      />
+    );
+
+    // When the details panel is rendered
+    // Then the icon next to each link text is hidden, the link keeps its text as name
+    [CONNECTOR_NAME, 'Service.Connectors.VendorContact'].forEach((name) => {
+      const icon = screen.getByRole('link', { name }).querySelector('svg');
+      expect(icon).toHaveAttribute('aria-hidden', 'true');
+    });
+  });
+
   it('should tag the filigran.io links of the panel when a filigran website utm is given', () => {
     // Given a connector whose datasheet is hosted on filigran.io and whose vendor link is not
     testRender(

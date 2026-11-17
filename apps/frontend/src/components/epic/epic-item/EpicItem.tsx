@@ -3,7 +3,12 @@ import { EpicItemCard } from '@/components/epic/epic-item/EpicItemCard';
 import { EpicItemDetailed } from '@/components/epic/epic-item/EpicItemDetailed';
 import { useDetailParam } from '@/hooks/use-detail-param';
 import { analyticsEpic } from '@/lib/analytics/analytics.context';
-import { Dialog, DialogContent } from '@filigran/design-system';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from '@filigran/design-system';
 import { EpicFieldsFragment } from '@graphql/generated';
 
 interface EpicItemProps {
@@ -31,7 +36,15 @@ export const EpicItem = ({
       <Dialog
         open={isOpen}
         onOpenChange={(open) => !open && close()}>
-        <DialogContent size="lg">
+        <DialogContent
+          {...analyticsEpic(epic.title)}
+          size="lg">
+          <div className="flex flex-col gap-1">
+            <DialogTitle>{epic.title}</DialogTitle>
+            <DialogDescription className="text-default-secondary">
+              {epic.short_description}
+            </DialogDescription>
+          </div>
           <EpicItemDetailed epic={epic} />
         </DialogContent>
       </Dialog>

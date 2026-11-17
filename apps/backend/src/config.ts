@@ -1,9 +1,12 @@
 // https://github.com/node-config/node-config
 import config from 'config';
+import { EngineClientSetting } from './thirdparty/elasticsearch/engine-detection';
 import {
   DevUser,
   parseAndValidateDevUsers,
+  parseEsEngineClient,
   parseEsIndexPrefix,
+  parseEsRequestTimeout,
   resolveTrustProxy,
 } from './utils/config-validation.util';
 
@@ -25,6 +28,9 @@ interface PortalConfig {
     pending_user_digest: boolean;
     public_roadmap_monthly_reminder: boolean;
   };
+  enabled_teams_notifications: {
+    resource_not_published_reminder: boolean;
+  };
   registration: {
     omitted_tenant_silence_hours: number;
   };
@@ -44,6 +50,8 @@ interface PortalConfig {
     username: string | null;
     password: string | null;
     index_prefix: string;
+    engine_client: EngineClientSetting;
+    request_timeout: number;
     tls: {
       ca_path: string | null;
       reject_unauthorized: boolean;
@@ -93,6 +101,12 @@ const portalConfig: PortalConfig = {
       config.get<boolean>('enabled_emails.public_roadmap_monthly_reminder') ??
       false,
   },
+  enabled_teams_notifications: {
+    resource_not_published_reminder:
+      config.get<boolean>(
+        'enabled_teams_notifications.resource_not_published_reminder'
+      ) ?? false,
+  },
   registration: {
     omitted_tenant_silence_hours:
       config.get<number>('registration.omitted_tenant_silence_hours') ?? 3,
@@ -115,6 +129,12 @@ const portalConfig: PortalConfig = {
     password: config.get<string | null>('elasticsearch.password'),
     index_prefix: parseEsIndexPrefix(
       config.get<unknown>('elasticsearch.index_prefix')
+    ),
+    engine_client: parseEsEngineClient(
+      config.get<unknown>('elasticsearch.engine_client')
+    ),
+    request_timeout: parseEsRequestTimeout(
+      config.get<unknown>('elasticsearch.request_timeout')
     ),
     tls: {
       ca_path: config.get<string | null>('elasticsearch.tls.ca_path'),

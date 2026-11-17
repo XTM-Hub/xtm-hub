@@ -19,23 +19,48 @@ export const FiligranProductMapping: Record<
 > = {
   [FiligranProduct.Xtmhub]: {
     name: 'XTM Hub',
-    logo: <LogoFiligranIcon className="w-5 h-5" />,
+    logo: (
+      <LogoFiligranIcon
+        aria-hidden={true}
+        className="w-5 h-5"
+      />
+    ),
   },
   [FiligranProduct.Opencti]: {
     name: 'OpenCTI',
-    logo: <OpenCtiIconIcon className="w-5 h-5" />,
+    logo: (
+      <OpenCtiIconIcon
+        aria-hidden={true}
+        className="w-5 h-5"
+      />
+    ),
   },
   [FiligranProduct.Openaev]: {
     name: 'OpenAEV',
-    logo: <OpenAevIconIcon className="w-5 h-5" />,
+    logo: (
+      <OpenAevIconIcon
+        aria-hidden={true}
+        className="w-5 h-5"
+      />
+    ),
   },
   [FiligranProduct.Xtmone]: {
     name: 'XTM One',
-    logo: <LogoXtmOneIcon className="w-5 h-5" />,
+    logo: (
+      <LogoXtmOneIcon
+        aria-hidden={true}
+        className="w-5 h-5"
+      />
+    ),
   },
   // OpenGRC is OpenCRQ's former name: its icon is still exported as OpenGrcIcon.
   [FiligranProduct.Opencrq]: {
     name: 'OpenCRQ',
-    logo: <OpenGrcIcon className="w-5 h-5" />,
+    logo: (
+      <OpenGrcIcon
+        aria-hidden={true}
+        className="w-5 h-5"
+      />
+    ),
   },
 };
