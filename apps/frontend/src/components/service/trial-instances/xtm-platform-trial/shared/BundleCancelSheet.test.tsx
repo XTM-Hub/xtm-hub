@@ -109,9 +109,9 @@ describe('BundleCancelSheet', () => {
     expect(
       screen.getByText('XtmPlatformTrial.CancelDialog.Description')
     ).toBeInTheDocument();
-    expect(
-      screen.getByText('XtmPlatformTrial.CancelDialog.Warning')
-    ).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'XtmPlatformTrial.CancelDialog.Warning'
+    );
     expect(
       screen.getByRole('button', { name: 'Utils.Cancel' })
     ).toBeInTheDocument();

@@ -6,7 +6,7 @@ import useGranted from '@/hooks/use-granted';
 import { useAdminByPass } from '@/hooks/use-portal-capability';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import { CheckIndeterminateIcon } from '@filigran/icon';
+import { Alert } from '@filigran/design-system';
 import {
   OrganizationCapability,
   PlatformIdentifier,
@@ -18,7 +18,7 @@ import { bundleUserServiceGroupsKeys } from '@graphql/service-group/service-grou
 import { usersKeys } from '@graphql/user/users.keys';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
-import { ReactNode, useContext, useMemo } from 'react';
+import { useContext, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import {
   getBundleRolePanels,
@@ -29,13 +29,6 @@ import {
 } from './manage-trial.const';
 import { TrialUserFormSkeleton } from './TrialUserFormSkeleton';
 import { useTrialUserOptions } from './use-trial-user-options';
-
-const PickerWarning = ({ children }: { children: ReactNode }) => (
-  <div className="border border-solid border-alert-warning rounded text-feedback-warning-primary flex items-center gap-1 p-2 text-sm">
-    <CheckIndeterminateIcon className="shrink-0 h-4 w-4 mr-1" />
-    {children}
-  </div>
-);
 
 interface AddTrialUserFormProps {
   serviceInstanceId: string;
@@ -159,19 +152,24 @@ export const AddTrialUserForm = ({
       )}
       pickerNotice={
         <>
+          {/* The dialog content is a layer-2 surface: both alerts use elevation 1. */}
           {!canManageUsers && (
-            <PickerWarning>
-              {t(
+            <Alert
+              severity="warning"
+              elevation={1}
+              title={t(
                 'Service.Bundle.ManageTrial.AddUserDialog.NoPermissionToInvite'
               )}
-            </PickerWarning>
+            />
           )}
           {hasSelectedExpiredUsers && (
-            <PickerWarning>
-              {t(
+            <Alert
+              severity="warning"
+              elevation={1}
+              title={t(
                 'Service.Bundle.ManageTrial.AddUserDialog.ExpiredUsersReinvited'
               )}
-            </PickerWarning>
+            />
           )}
         </>
       }
