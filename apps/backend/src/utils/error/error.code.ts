@@ -4,6 +4,8 @@ export enum UnauthenticatedErrorCode {
 
 export enum ForbiddenErrorCode {
   ForbiddenAccess = 'FORBIDDEN_ACCESS',
+  ReadOnlyApiToken = 'READ_ONLY_API_TOKEN',
+  NotAllowedWithApiToken = 'NOT_ALLOWED_WITH_API_TOKEN',
   MissingCapabilityOnOrganization = 'MISSING_CAPABILITY_ON_ORGANIZATION',
   MissingCapabilityOnService = 'MISSING_CAPABILITY_ON_SERVICE',
   ServiceInstanceNotPublic = 'SERVICE_INSTANCE_NOT_PUBLIC',
@@ -58,6 +60,7 @@ export enum ForbiddenErrorCode {
 }
 
 export enum BadRequestErrorCode {
+  InvalidApiToken = 'INVALID_API_TOKEN',
   InvalidImageUrl = 'INVALID_IMAGE_URL',
   InvalidPlatformConfiguration = 'INVALID_PLATFORM_CONFIGURATION',
   PlatformNotRegistered = 'PLATFORM_NOT_REGISTERED',

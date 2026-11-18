@@ -10,6 +10,9 @@ const DEFAULT_IMPORT_PATH = '../../../__generated__/resolvers-types';
  * Nullability is handled automatically by Kanel from the DB schema.
  */
 const COLUMN_ENUM_MAP = {
+  ApiToken: {
+    scope: 'ApiTokenScope',
+  },
   Competitor: {
     tier: 'CompetitorTier',
   },
