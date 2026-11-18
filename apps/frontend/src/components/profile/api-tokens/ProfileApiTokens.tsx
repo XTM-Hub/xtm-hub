@@ -106,6 +106,8 @@ export const ProfileApiTokens = () => {
       {
         id: 'name',
         accessorKey: 'name',
+        // -1: name and organization share what the fixed columns leave, so the table fits the card
+        size: -1,
         header: t('ApiTokens.Column.Name'),
         cell: ({ row }) => (
           <div className="flex min-w-0 flex-col">
@@ -119,6 +121,7 @@ export const ProfileApiTokens = () => {
       {
         id: 'organization',
         accessorKey: 'organization_name',
+        size: -1,
         header: t('ApiTokens.Column.Organization'),
         cell: ({ row }) => (
           <span className="truncate">{row.original.organization_name}</span>
@@ -127,11 +130,13 @@ export const ProfileApiTokens = () => {
       {
         id: 'scope',
         accessorKey: 'scope',
+        size: 130,
         header: t('ApiTokens.Column.Scope'),
         cell: ({ row }) => t(`ApiTokens.Scope.${row.original.scope}`),
       },
       {
         id: 'status',
+        size: 110,
         header: t('ApiTokens.Column.Status'),
         enableSorting: false,
         cell: ({ row }) => {
@@ -147,12 +152,14 @@ export const ProfileApiTokens = () => {
       {
         id: 'expires_at',
         accessorKey: 'expires_at',
+        size: 130,
         header: t('ApiTokens.Column.Expires'),
         cell: ({ row }) => formatDate(row.original.expires_at, 'DATE_MEDIUM'),
       },
       {
         id: 'last_used_at',
         accessorKey: 'last_used_at',
+        size: 130,
         header: t('ApiTokens.Column.LastUsed'),
         cell: ({ row }) =>
           formatDate(row.original.last_used_at, 'DATE_MEDIUM') ??
@@ -160,6 +167,7 @@ export const ProfileApiTokens = () => {
       },
       {
         id: 'actions',
+        size: 110,
         enableSorting: false,
         enableHiding: false,
         cell: ({ row }) =>

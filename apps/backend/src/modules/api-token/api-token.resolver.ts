@@ -20,7 +20,10 @@ import { ApiTokenApp } from './api-token.app';
 import { getApiTokenAuthentication } from './api-token.auth';
 import { ApiTokenDomain, ApiTokenWithNames } from './api-token.domain';
 
+// __typename lets the Node id resolver serve a Relay global id, the form the request context decodes back to the
+// row id for a top-level $id variable (revokeApiToken)
 const toGraphql = (token: ApiTokenWithNames): GraphqlApiToken => ({
+  __typename: 'ApiToken',
   id: token.id,
   name: token.name,
   token_prefix: token.token_prefix,

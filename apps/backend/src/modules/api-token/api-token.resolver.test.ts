@@ -76,6 +76,7 @@ const authentication = (scope: ApiTokenScope): ApiTokenAuthentication =>
 
 // What the API answers: never the hash, never the owner id
 const exposed = {
+  __typename: 'ApiToken',
   id: stored.id,
   name: stored.name,
   token_prefix: stored.token_prefix,

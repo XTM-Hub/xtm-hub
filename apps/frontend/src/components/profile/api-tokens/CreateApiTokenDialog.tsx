@@ -177,6 +177,8 @@ export const CreateApiTokenDialog = ({
           <Form {...form}>
             <form
               className="contents"
+              // The schema validates and shows the translated error: no native browser bubble
+              noValidate
               onSubmit={form.handleSubmit(handleSubmit)}>
               <DialogTitle>{t('ApiTokens.Create.Title')}</DialogTitle>
               <DialogDescription>
