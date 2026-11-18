@@ -7,7 +7,10 @@ import {
   GRAPHQL_RESOLVE_INFO,
   TEST_ORGANIZATIONS,
 } from '../../../tests/tests.const';
-import { ApiTokenScope } from '../../__generated__/resolvers-types';
+import {
+  ApiTokenScope,
+  OrganizationCapability,
+} from '../../__generated__/resolvers-types';
 import { ApiTokenId } from '../../model/kanel/public/ApiToken';
 import { Context } from '../../server/apollo-plugins/log';
 import { ForbiddenErrorCode } from '../../utils/error/error.code';
@@ -27,6 +30,21 @@ vi.mock('./api-token.auth', async (importOriginal) => ({
 
 const TOKEN_ID = 'f7a1c0de-0000-4000-8000-000000000001' as ApiTokenId;
 const ORGANIZATION = TEST_ORGANIZATIONS.FILIGRAN;
+
+// The organization guard reads memberships as { organization: { id } }, the shape the session user loader returns
+const contextOrganizationAdmin = {
+  ...contextAdminSecondOrga,
+  user: {
+    ...contextAdminSecondOrga.user,
+    organization_capabilities: [
+      {
+        id: 'api-token-organization-admin',
+        organization: { id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID },
+        capabilities: [OrganizationCapability.AdministrateOrganization],
+      },
+    ],
+  },
+} as unknown as typeof contextAdminSecondOrga;
 
 const stored: ApiTokenWithNames = {
   id: TOKEN_ID,
@@ -103,11 +121,14 @@ describe('api-token.resolver', () => {
     const result = await resolver.Query!.organizationApiTokens!(
       {},
       {},
-      contextAdminSecondOrga,
+      contextOrganizationAdmin,
       GRAPHQL_RESOLVE_INFO
     );
 
     // Then
+    expect(ApiTokenApp.listOrganization).toHaveBeenCalledWith(
+      contextOrganizationAdmin.user
+    );
     expect(result).toEqual([exposed]);
   });
 
