@@ -10,7 +10,7 @@ import {
   PlatformRegistrationStatus,
   UserOrganizationsQuery,
 } from '@graphql/generated';
-import { screen, waitFor } from '@testing-library/react';
+import { act, screen, waitFor } from '@testing-library/react';
 import { Suspense } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -26,7 +26,12 @@ const testState = vi.hoisted(() => ({
   ] as UserOrganizationsQuery['userOrganizations'],
   fetchUserOrganizations: null as
     (() => Promise<UserOrganizationsQuery>) | null,
-  mutationMode: 'success' as 'success' | 'missing-capability' | 'error',
+  mutationMode: 'success' as
+    'success' | 'missing-capability' | 'error' | 'pending',
+  pendingRegistrations: [] as {
+    onSuccess: (data: unknown) => void;
+    onError: (error: Error) => void;
+  }[],
   token: 'a-token',
   errorMessage: 'SOME_ERROR',
   lastRegisterVariables: null as Record<string, unknown> | null,
@@ -40,6 +45,10 @@ const registerPlatform = (
   }
 ) => {
   testState.lastRegisterVariables = variables;
+  if (testState.mutationMode === 'pending') {
+    testState.pendingRegistrations.push(options);
+    return;
+  }
   if (testState.mutationMode === 'missing-capability') {
     options.onError(new Error('MISSING_CAPABILITY_ON_ORGANIZATION'));
     return;
@@ -158,6 +167,7 @@ describe('Register', () => {
       { id: 'org-2', name: 'Org Two', personal_space: true },
     ];
     testState.mutationMode = 'success';
+    testState.pendingRegistrations = [];
     testState.token = 'a-token';
     testState.errorMessage = 'SOME_ERROR';
     testState.lastRegisterVariables = null;
@@ -297,6 +307,44 @@ describe('Register', () => {
         PLATFORM_ORIGIN
       );
     });
+  });
+
+  it('should start a single registration when the confirm button is clicked twice before the server answers', async () => {
+    // Given
+    testState.isPlatformRegistered = {
+      status: PlatformRegistrationStatus.NeverRegistered,
+      platformTitle: null,
+      organization: null,
+    } as IsPlatformRegisteredQuery['isPlatformRegistered'];
+    testState.mutationMode = 'pending';
+    const postMessage = vi.fn();
+    Object.defineProperty(window, 'opener', {
+      value: { postMessage },
+      writable: true,
+    });
+    const { user } = await renderRegister();
+    const confirm = screen.getByRole('button', { name: 'mock-confirm' });
+
+    // When
+    await user.click(confirm);
+    await user.click(confirm);
+    act(() =>
+      testState.pendingRegistrations[0]?.onSuccess({
+        registerPlatform: { token: 'my-token' },
+      })
+    );
+
+    // Then
+    expect(testState.pendingRegistrations).toHaveLength(1);
+    await waitFor(() => {
+      expect(postMessage).toHaveBeenCalledWith(
+        { action: 'register', token: 'my-token' },
+        PLATFORM_ORIGIN
+      );
+    });
+    expect(
+      screen.getByRole('heading', { name: 'Register.Succeeded.Title' })
+    ).toBeInTheDocument();
   });
 
   it('automatically registers when the platform is already registered with an organization', async () => {

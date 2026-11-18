@@ -52,8 +52,19 @@ export const PlatformUpdateSheet = ({
       serviceDefinitionIdentifier
     ];
 
+  // Hook-level callbacks still run when the sheet unmounts before the request
+  // settles, unlike the per-call ones, so the caches never keep the old name.
   const { mutate: updatePlatformMetadata } =
-    useUpdatePlatformServiceMetadataMutation(portalGraphqlClient);
+    useUpdatePlatformServiceMetadataMutation(portalGraphqlClient, {
+      onSuccess: () => {
+        invalidatePrivateNavigationQueries(queryClient);
+        // The registered platform page shows the name.
+        void queryClient.invalidateQueries({
+          queryKey: registrationKeys.allByServiceInstance(),
+        });
+        onUpdated?.();
+      },
+    });
 
   const form = useForm<z.infer<typeof platformUpdateSchema>>({
     resolver: zodResolver(platformUpdateSchema),
@@ -73,12 +84,6 @@ export const PlatformUpdateSheet = ({
       {
         onSuccess: () => {
           setOpen(false);
-          invalidatePrivateNavigationQueries(queryClient);
-          // The registered platform page shows the name.
-          void queryClient.invalidateQueries({
-            queryKey: registrationKeys.allByServiceInstance(),
-          });
-          onUpdated?.();
           showSnackbar({
             severity: 'success',
             title: t('Utils.Success'),

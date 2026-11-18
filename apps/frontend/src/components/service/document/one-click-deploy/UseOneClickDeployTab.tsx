@@ -79,19 +79,25 @@ export const useOneClickDeployTab = ({
 }: Props): Return => {
   const t = useTranslate();
   const { mutate: refreshUserPlatformToken } =
-    useRefreshUserPlatformTokenMutation(portalGraphqlClient);
+    useRefreshUserPlatformTokenMutation(portalGraphqlClient, {
+      scope: {
+        id: useRefreshUserPlatformTokenMutation.getRootKey()[0],
+      },
+      // Hook-level, unlike the per-call callbacks that only the latest call of a mounted component runs: every
+      // rotated token reaches the tab, even when a later refresh fails or the page unmounts before the answer.
+      onSuccess: (response) => {
+        postMessage({
+          action: 'set-token',
+          token: response.refreshUserPlatformToken.token,
+        });
+      },
+    });
 
   const handleMessage = (event: MessageEvent) => {
     if (event.data?.action === 'refresh-token') {
       refreshUserPlatformToken(
         {},
         {
-          onSuccess: (response) => {
-            postMessage({
-              action: 'set-token',
-              token: response.refreshUserPlatformToken.token,
-            });
-          },
           onError: (error) => {
             showSnackbar({
               severity: 'error',

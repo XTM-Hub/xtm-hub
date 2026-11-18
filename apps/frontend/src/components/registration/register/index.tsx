@@ -93,6 +93,10 @@ export const Register = ({
 
   const hasPostedMessageRef = useRef(false);
   const hasAutoRegisteredRef = useRef(false);
+  // Set synchronously so that a second click on a still-enabled confirm button cannot start another registration:
+  // only the latest call runs its callbacks, so a failing second call would hide the token the first one got.
+  // It stays set once a registration succeeds.
+  const isRegisteringRef = useRef(false);
 
   // OpenCTI and OpenAEV never receive the state: their messages are unchanged.
   const echoedState =
@@ -114,9 +118,10 @@ export const Register = ({
 
   const register = useCallback(
     (organizationId: string, platformName: string = platform.title) => {
-      if (!identifier) {
+      if (!identifier || isRegisteringRef.current) {
         return;
       }
+      isRegisteringRef.current = true;
       dispatch({ type: 'SET_ORGANIZATION_ID', payload: organizationId });
       registerPlatform(
         {
@@ -134,6 +139,7 @@ export const Register = ({
             });
           },
           onError: (error) => {
+            isRegisteringRef.current = false;
             const errorMessage =
               error instanceof Error ? error.message : 'UNKNOWN_ERROR';
             if (errorMessage === 'MISSING_CAPABILITY_ON_ORGANIZATION') {

@@ -32,8 +32,13 @@ export const UnregisterButton = ({ platform }: UnregisterButtonProps) => {
 
   const isTrial = platform.contract === PlatformContract.Trial;
 
-  const { mutate: commitUnregisterPlatform } =
-    useUnregisterPlatformMutation(portalGraphqlClient);
+  // Hook-level callbacks still run when the button unmounts before the request
+  // settles, unlike the per-call ones, so the navigation drops the disconnected
+  // platform even if the user has already left the page.
+  const { mutate: commitUnregisterPlatform } = useUnregisterPlatformMutation(
+    portalGraphqlClient,
+    { onSuccess: () => invalidatePrivateNavigationQueries(queryClient) }
+  );
 
   const unregisterPlatform = () => {
     const identifier =
@@ -58,8 +63,6 @@ export const UnregisterButton = ({ platform }: UnregisterButtonProps) => {
       },
       {
         onSuccess: () => {
-          // The navigation lists the connected platforms: drop the one just disconnected.
-          invalidatePrivateNavigationQueries(queryClient);
           router.push('/app');
           showSnackbar({
             severity: 'success',

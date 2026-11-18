@@ -12,7 +12,7 @@ import {
   PlatformIdentifier,
   useUnregisterPlatformMutation,
 } from '@graphql/generated';
-import { useContext, useState } from 'react';
+import { useContext, useRef, useState } from 'react';
 
 interface UnregisterProps {
   platformId: string;
@@ -44,6 +44,10 @@ export const Unregister = ({
     useUnregisterPlatformMutation(portalGraphqlClient);
 
   const [status, setStatus] = useState<UnregistrationStatus>('idle');
+  // Set synchronously so that a confirm called again while the request is pending (the not-registered page calls it
+  // from an effect that each render reruns) cannot start another one: only the latest call runs its callbacks, so a
+  // second call would loop and hide the success the opener waits for. It stays set once the unregistration succeeds.
+  const isUnregisteringRef = useRef(false);
   // OpenCTI and OpenAEV never receive the state: their messages are unchanged.
   const echoedState =
     identifier === PlatformIdentifier.Xtmone ? state : undefined;
@@ -56,9 +60,10 @@ export const Unregister = ({
   const cancel = () => postToOpener('cancel');
 
   const confirm = () => {
-    if (!identifier) {
+    if (!identifier || isUnregisteringRef.current) {
       return;
     }
+    isUnregisteringRef.current = true;
 
     unregisterPlatform(
       {
@@ -74,6 +79,7 @@ export const Unregister = ({
           setStatus('succeeded');
         },
         onError: (error) => {
+          isUnregisteringRef.current = false;
           setStatus('failed');
           showSnackbar({
             severity: 'error',

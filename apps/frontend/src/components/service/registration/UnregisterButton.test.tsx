@@ -6,9 +6,10 @@ import {
   PlatformIdentifier,
   RegisteredPlatformDetailsFragment,
   ServiceDefinitionIdentifier,
+  UnregisterPlatformMutationVariables,
 } from '@graphql/generated';
-import { QueryClient } from '@tanstack/react-query';
-import { screen } from '@testing-library/react';
+import { QueryClient, UseMutationOptions } from '@tanstack/react-query';
+import { screen, waitFor } from '@testing-library/react';
 import { useRouter } from 'next/navigation';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -21,8 +22,22 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@graphql/generated', async (importOriginal) => {
   const { mockGeneratedQueryHooks } =
     await import('@/utils/test/mock-generated-query');
+  const { useMutation } = await import('@tanstack/react-query');
   return mockGeneratedQueryHooks(importOriginal, {
-    useUnregisterPlatformMutation: () => ({ mutate: mocks.unregisterPlatform }),
+    // The real react-query lifecycle around a mocked request, so a test can
+    // hold the request and unmount the button before it settles.
+    useUnregisterPlatformMutation: (
+      _client: unknown,
+      options?: UseMutationOptions<
+        unknown,
+        Error,
+        UnregisterPlatformMutationVariables
+      >
+    ) =>
+      useMutation({
+        ...options,
+        mutationFn: (variables) => mocks.unregisterPlatform(variables),
+      }),
   });
 });
 
@@ -124,52 +139,70 @@ describe('Unregister the platform', () => {
 
   it('should unregister the platform of its product then go back home', async () => {
     // Given
-    mocks.unregisterPlatform.mockImplementation((_variables, options) =>
-      options.onSuccess()
-    );
+    mocks.unregisterPlatform.mockResolvedValue({});
     const { user } = renderButton();
 
     // When
     await confirmUnregistration(user);
 
     // Then
-    expect(mocks.unregisterPlatform).toHaveBeenCalledWith(
-      {
-        input: {
-          platformId: registeredPlatform.platform_id,
-          identifier: PlatformIdentifier.Openaev,
-          tenantId: null,
-        },
+    await waitFor(() => expect(push).toHaveBeenCalledWith('/app'));
+    expect(mocks.unregisterPlatform).toHaveBeenCalledWith({
+      input: {
+        platformId: registeredPlatform.platform_id,
+        identifier: PlatformIdentifier.Openaev,
+        tenantId: null,
       },
-      expect.anything()
-    );
+    });
     expect(mocks.invalidatePrivateNavigationQueries).toHaveBeenCalledWith(
       expect.any(QueryClient)
     );
-    expect(push).toHaveBeenCalledWith('/app');
     expect(mocks.showSnackbar).toHaveBeenCalledWith(
       expect.objectContaining({ severity: 'success' })
     );
   });
 
+  it('should refresh the navigation even when the button unmounts before the unregistration settles', async () => {
+    // Given
+    const request = Promise.withResolvers<unknown>();
+    mocks.unregisterPlatform.mockReturnValue(request.promise);
+    const { user, unmount } = renderButton();
+    await confirmUnregistration(user);
+    expect(mocks.invalidatePrivateNavigationQueries).not.toHaveBeenCalled();
+
+    // When
+    unmount();
+    request.resolve({});
+
+    // Then
+    await waitFor(() =>
+      expect(mocks.invalidatePrivateNavigationQueries).toHaveBeenCalledWith(
+        expect.any(QueryClient)
+      )
+    );
+    expect(push).not.toHaveBeenCalled();
+    expect(mocks.showSnackbar).not.toHaveBeenCalled();
+  });
+
   it('should stay on the page and show the server error when the unregistration fails', async () => {
     // Given
-    mocks.unregisterPlatform.mockImplementation((_variables, options) =>
-      options.onError(new Error('PLATFORM_NOT_FOUND'))
-    );
+    mocks.unregisterPlatform.mockRejectedValue(new Error('PLATFORM_NOT_FOUND'));
     const { user } = renderButton();
 
     // When
     await confirmUnregistration(user);
 
     // Then
-    expect(push).not.toHaveBeenCalled();
-    expect(mocks.showSnackbar).toHaveBeenCalledWith(
-      expect.objectContaining({
-        severity: 'error',
-        description: 'Error.Server.PLATFORM_NOT_FOUND',
-      })
+    await waitFor(() =>
+      expect(mocks.showSnackbar).toHaveBeenCalledWith(
+        expect.objectContaining({
+          severity: 'error',
+          description: 'Error.Server.PLATFORM_NOT_FOUND',
+        })
+      )
     );
+    expect(push).not.toHaveBeenCalled();
+    expect(mocks.invalidatePrivateNavigationQueries).not.toHaveBeenCalled();
   });
 
   it('should not call the server when the platform has no known product', async () => {
