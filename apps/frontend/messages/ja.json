@@ -1000,7 +1000,13 @@
       "NamePlaceholder": "Filigran Copilot",
       "Organization": "組織",
       "OrganizationError": "組織を選択してください",
-      "Scope": "スコープ"
+      "Scope": "スコープ",
+      "ExpirationInfo": "この日以降、APIはトークンを拒否するため、新しく作成します。例：連携には90日。有効期間を短くすると、漏えいした場合の被害を抑えられます。",
+      "InfoLabel": "{field}について",
+      "NameInfo": "あなた専用のラベルで、APIは読み取りません。例：Filigran Copilot。後から変更できないため、変更するにはトークンを失効させて新しく作成します。",
+      "OrganizationHelper": "トークンは別の組織に切り替えられません。",
+      "OrganizationInfo": "トークンはこの組織内でのみ、その組織でのあなたの権限で動作します。例：会社の組織。別の組織に使うには、別のトークンを作成します。",
+      "ScopeInfo": "トークンができる範囲で、あなた自身の権限を超えることはありません。例：ダッシュボードには読み取り、コンテンツを作成する連携には読み取りと書き込み。"
     },
     "Lifetime": "{count, plural, other {#日}}",
     "NeverUsed": "未使用",
@@ -1027,7 +1033,20 @@
       "expired": "期限切れ",
       "revoked": "失効済み"
     },
-    "Title": "APIトークン"
+    "Title": "APIトークン",
+    "ScopeOption": {
+      "admin": "あなたの管理権限も、現在のとおりに含みます。",
+      "read": "クエリのみ。変更はできません。",
+      "read_write": "クエリと変更。管理は含みません。"
+    },
+    "Toolbar": {
+      "AllOrganizations": "すべての組織",
+      "AllScopes": "すべてのスコープ",
+      "AllStatuses": "すべてのステータス",
+      "NoMatch": "検索またはフィルターに一致するトークンはありません。",
+      "Search": "名前またはプレフィックスで検索",
+      "Total": "{count, plural, other {#件のトークン}}"
+    }
   },
   "ProfilePage": {
     "Picture": "写真",

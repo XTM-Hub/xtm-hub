@@ -50,3 +50,54 @@ export const sortApiTokens = (
       new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   );
 };
+
+/** The value of a toolbar filter that keeps every token. */
+export const API_TOKEN_FILTER_ALL = 'all';
+
+export interface ApiTokenFilters {
+  search: string;
+  organizationId: string;
+  scope: string;
+  status: string;
+}
+
+export const DEFAULT_API_TOKEN_FILTERS: ApiTokenFilters = {
+  search: '',
+  organizationId: API_TOKEN_FILTER_ALL,
+  scope: API_TOKEN_FILTER_ALL,
+  status: API_TOKEN_FILTER_ALL,
+};
+
+/** Search on name and prefix (case-insensitive), then the three filters. */
+export const filterApiTokens = (
+  tokens: readonly ApiTokenRowFragment[],
+  filters: ApiTokenFilters,
+  now: Date = new Date()
+): ApiTokenRowFragment[] => {
+  const term = filters.search.trim().toLowerCase();
+  return tokens.filter(
+    (token) =>
+      (!term ||
+        token.name.toLowerCase().includes(term) ||
+        token.token_prefix.toLowerCase().includes(term)) &&
+      (filters.organizationId === API_TOKEN_FILTER_ALL ||
+        token.organization_id === filters.organizationId) &&
+      (filters.scope === API_TOKEN_FILTER_ALL ||
+        token.scope === filters.scope) &&
+      (filters.status === API_TOKEN_FILTER_ALL ||
+        getApiTokenStatus(token, now) === filters.status)
+  );
+};
+
+/** The organizations the tokens belong to, once each, by name. */
+export const getApiTokenOrganizations = (
+  tokens: readonly ApiTokenRowFragment[]
+): { id: string; name: string }[] => {
+  const byId = new Map<string, string>();
+  tokens.forEach((token) =>
+    byId.set(token.organization_id, token.organization_name)
+  );
+  return [...byId]
+    .map(([id, name]) => ({ id, name }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+};

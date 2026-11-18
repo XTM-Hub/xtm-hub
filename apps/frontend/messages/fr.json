@@ -1000,7 +1000,13 @@
       "NamePlaceholder": "Filigran Copilot",
       "Organization": "Organisation",
       "OrganizationError": "Choisissez une organisation",
-      "Scope": "Portée"
+      "Scope": "Portée",
+      "ExpirationInfo": "Après cette date, l'API refuse le jeton et vous en créez un nouveau. Exemple : 90 jours pour une intégration. Une durée courte limite les dégâts d'un jeton divulgué.",
+      "InfoLabel": "À propos de {field}",
+      "NameInfo": "Un libellé pour vous seul, l'API ne le lit jamais. Exemple : Filigran Copilot. Il ne peut pas être modifié ensuite : révoquez le jeton et créez-en un nouveau.",
+      "OrganizationHelper": "Le jeton ne peut pas passer dans une autre organisation.",
+      "OrganizationInfo": "Le jeton fonctionne uniquement dans cette organisation, avec vos droits dans celle-ci. Exemple : l'organisation de votre entreprise. Pour une autre organisation, créez un autre jeton.",
+      "ScopeInfo": "Jusqu'où le jeton peut aller, jamais au-delà de vos propres droits. Exemple : Lecture pour un tableau de bord, Lecture et écriture pour une intégration qui crée du contenu."
     },
     "Lifetime": "{count, plural, one {# jour} other {# jours}}",
     "NeverUsed": "Jamais utilisé",
@@ -1027,7 +1033,20 @@
       "expired": "Expiré",
       "revoked": "Révoqué"
     },
-    "Title": "Jetons d’API"
+    "Title": "Jetons d’API",
+    "ScopeOption": {
+      "admin": "Vos droits d'administration aussi, tels que vous les avez.",
+      "read": "Requêtes uniquement, rien ne peut être modifié.",
+      "read_write": "Requêtes et modifications, sans administration."
+    },
+    "Toolbar": {
+      "AllOrganizations": "Toutes les organisations",
+      "AllScopes": "Toutes les portées",
+      "AllStatuses": "Tous les statuts",
+      "NoMatch": "Aucun jeton ne correspond à la recherche ou aux filtres.",
+      "Search": "Rechercher par nom ou préfixe",
+      "Total": "{count, plural, one {# jeton} other {# jetons}}"
+    }
   },
   "ProfilePage": {
     "Picture": "Photo de profil",

@@ -8,6 +8,7 @@ import {
   DEFAULT_API_TOKEN_LIFETIME_DAYS,
   getApiTokenExpiry,
 } from '@/components/profile/api-tokens/api-token.utils';
+import { FieldInfoTip } from '@/components/ui/FieldInfoTip';
 import { Form, FormField } from '@/components/ui/form';
 import { SelectField } from '@/components/ui/SelectField';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
@@ -76,6 +77,11 @@ export const CreateApiTokenDialog = ({
   });
   const lifetime = useWatch({ control: form.control, name: 'lifetime' });
   const scope = useWatch({ control: form.control, name: 'scope' });
+  const infoTip = (field: string, text: string) => (
+    <FieldInfoTip label={t('ApiTokens.Field.InfoLabel', { field })}>
+      {text}
+    </FieldInfoTip>
+  );
 
   const { mutate: createApiToken, isPending } = useApiTokenCreateMutation(
     portalGraphqlClient,
@@ -185,6 +191,10 @@ export const CreateApiTokenDialog = ({
                     <Input
                       label={t('ApiTokens.Field.Name')}
                       required
+                      infoTooltip={infoTip(
+                        t('ApiTokens.Field.Name'),
+                        t('ApiTokens.Field.NameInfo')
+                      )}
                       placeholder={t('ApiTokens.Field.NamePlaceholder')}
                       helperText={t('ApiTokens.Field.NameHelper')}
                       maxLength={NAME_MAX_LENGTH}
@@ -205,6 +215,11 @@ export const CreateApiTokenDialog = ({
                       formField
                       required
                       label={t('ApiTokens.Field.Organization')}
+                      infoTooltip={infoTip(
+                        t('ApiTokens.Field.Organization'),
+                        t('ApiTokens.Field.OrganizationInfo')
+                      )}
+                      helperText={t('ApiTokens.Field.OrganizationHelper')}
                       options={organizations.map((organization) => ({
                         value: organization.id,
                         label: organization.personal_space
@@ -229,18 +244,21 @@ export const CreateApiTokenDialog = ({
                       formField
                       required
                       label={t('ApiTokens.Field.Scope')}
+                      infoTooltip={infoTip(
+                        t('ApiTokens.Field.Scope'),
+                        t('ApiTokens.Field.ScopeInfo')
+                      )}
+                      helperText={t(`ApiTokens.ScopeHelp.${scope}`)}
                       options={API_TOKEN_SCOPES.map((option) => ({
                         value: option,
                         label: t(`ApiTokens.Scope.${option}`),
+                        description: t(`ApiTokens.ScopeOption.${option}`),
                       }))}
                       value={field.value}
                       onValueChange={field.onChange}
                     />
                   )}
                 />
-                <p className="text-sm text-default-secondary">
-                  {t(`ApiTokens.ScopeHelp.${scope}`)}
-                </p>
                 <FormField
                   control={form.control}
                   name="lifetime"
@@ -249,6 +267,17 @@ export const CreateApiTokenDialog = ({
                       formField
                       required
                       label={t('ApiTokens.Field.Expiration')}
+                      infoTooltip={infoTip(
+                        t('ApiTokens.Field.Expiration'),
+                        t('ApiTokens.Field.ExpirationInfo')
+                      )}
+                      helperText={t('ApiTokens.Field.ExpiresOn', {
+                        date:
+                          formatDate(
+                            getApiTokenExpiry(lifetime),
+                            'DATE_FULL'
+                          ) ?? '',
+                      })}
                       options={API_TOKEN_LIFETIME_DAYS.map((days) => ({
                         value: days,
                         label: t('ApiTokens.Lifetime', { count: Number(days) }),
@@ -260,13 +289,6 @@ export const CreateApiTokenDialog = ({
                     />
                   )}
                 />
-                <p className="text-sm text-default-secondary">
-                  {t('ApiTokens.Field.ExpiresOn', {
-                    date:
-                      formatDate(getApiTokenExpiry(lifetime), 'DATE_FULL') ??
-                      '',
-                  })}
-                </p>
               </DialogBody>
               <DialogFooter>
                 <Button

@@ -8,6 +8,11 @@ export const ANALYTICS_ELEMENT_IDS = {
   account_api_token_close: { action: 'Close new API token' },
   account_api_token_copy: { action: 'Copy new API token' },
   account_api_token_create: { action: 'Create API token' },
+  account_api_token_filter_organization: {
+    action: 'Filter API tokens by organization',
+  },
+  account_api_token_filter_scope: { action: 'Filter API tokens by scope' },
+  account_api_token_filter_status: { action: 'Filter API tokens by status' },
   account_api_token_open: { action: 'Open API token creation' },
   account_api_token_remove: { action: 'Revoke API token' },
   account_api_token_revocation_confirm: {

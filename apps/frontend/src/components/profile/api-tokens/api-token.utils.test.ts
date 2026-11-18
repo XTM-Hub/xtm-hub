@@ -1,5 +1,8 @@
 import {
+  DEFAULT_API_TOKEN_FILTERS,
+  filterApiTokens,
   getApiTokenExpiry,
+  getApiTokenOrganizations,
   getApiTokenStatus,
   sortApiTokens,
 } from '@/components/profile/api-tokens/api-token.utils';
@@ -77,5 +80,58 @@ describe('sortApiTokens', () => {
     expect(
       sortApiTokens([revoked, older, expired, newer], NOW).map(({ id }) => id)
     ).toEqual(['newer', 'older', 'expired', 'revoked']);
+  });
+});
+
+describe('filterApiTokens', () => {
+  const copilot = token({ id: 'copilot' });
+  const script = token({
+    id: 'script',
+    name: 'Nightly script',
+    token_prefix: 'xhp_zz9999',
+    scope: ApiTokenScope.Admin,
+    organization_id: 'other-org',
+    organization_name: 'Acme',
+    revoked_at: '2026-11-10T00:00:00Z',
+  });
+  const all = [copilot, script];
+  const ids = (filters: Partial<typeof DEFAULT_API_TOKEN_FILTERS>) =>
+    filterApiTokens(all, { ...DEFAULT_API_TOKEN_FILTERS, ...filters }, NOW).map(
+      ({ id }) => id
+    );
+
+  it('should keep every token with the default filters', () => {
+    expect(ids({})).toEqual(['copilot', 'script']);
+  });
+
+  it('should search the name and the prefix, case-insensitive', () => {
+    expect(ids({ search: '  NIGHTLY ' })).toEqual(['script']);
+    expect(ids({ search: 'zz99' })).toEqual(['script']);
+  });
+
+  it('should filter on organization, scope and status', () => {
+    expect(ids({ organizationId: 'org-id' })).toEqual(['copilot']);
+    expect(ids({ scope: ApiTokenScope.Admin })).toEqual(['script']);
+    expect(ids({ status: 'revoked' })).toEqual(['script']);
+    expect(ids({ status: 'expired' })).toEqual([]);
+  });
+});
+
+describe('getApiTokenOrganizations', () => {
+  it('should list each organization once, by name', () => {
+    expect(
+      getApiTokenOrganizations([
+        token({ id: 'a' }),
+        token({
+          id: 'b',
+          organization_id: 'acme-id',
+          organization_name: 'Acme',
+        }),
+        token({ id: 'c' }),
+      ])
+    ).toEqual([
+      { id: 'acme-id', name: 'Acme' },
+      { id: 'org-id', name: 'Filigran' },
+    ]);
   });
 });

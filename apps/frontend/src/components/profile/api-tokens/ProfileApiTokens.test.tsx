@@ -89,6 +89,62 @@ describe('ProfileApiTokens', () => {
     ).toHaveLength(1);
   });
 
+  it('should narrow the list with the search and say when nothing matches', async () => {
+    serveTokens([revokedToken, activeToken]);
+
+    const { user } = testRender(<ProfileApiTokens />);
+
+    await screen.findByText('Filigran Copilot');
+    await user.type(
+      screen.getByRole('searchbox', { name: 'ApiTokens.Toolbar.Search' }),
+      'old'
+    );
+
+    expect(screen.getByText('Old script')).toBeInTheDocument();
+    expect(screen.queryByText('Filigran Copilot')).toBeNull();
+
+    await user.type(
+      screen.getByRole('searchbox', { name: 'ApiTokens.Toolbar.Search' }),
+      'zzz'
+    );
+
+    expect(screen.getByText('ApiTokens.Toolbar.NoMatch')).toBeInTheDocument();
+  });
+
+  it('should filter the list by status', async () => {
+    serveTokens([revokedToken, activeToken]);
+
+    const { user } = testRender(<ProfileApiTokens />);
+
+    await screen.findByText('Filigran Copilot');
+    await user.click(
+      screen.getByRole('combobox', { name: 'ApiTokens.Column.Status' })
+    );
+    await user.click(
+      screen.getByRole('option', { name: 'ApiTokens.Status.revoked' })
+    );
+
+    expect(screen.getByText('Old script')).toBeInTheDocument();
+    expect(screen.queryByText('Filigran Copilot')).toBeNull();
+  });
+
+  it('should give every field of the create dialog an info bubble', async () => {
+    serveTokens([]);
+
+    const { user } = testRender(<ProfileApiTokens />);
+
+    await user.click(
+      await screen.findByRole('button', { name: 'ApiTokens.Create.Open' })
+    );
+    const dialog = await screen.findByRole('dialog');
+
+    expect(
+      within(dialog).getAllByRole('button', {
+        name: 'ApiTokens.Field.InfoLabel',
+      })
+    ).toHaveLength(4);
+  });
+
   it('should revoke a token after confirmation', async () => {
     serveTokens([activeToken]);
     let revoked: ApiTokenRevokeMutationVariables | undefined;

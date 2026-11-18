@@ -1000,7 +1000,13 @@
       "NamePlaceholder": "Filigran Copilot",
       "Organization": "Organization",
       "OrganizationError": "Choose an organization",
-      "Scope": "Scope"
+      "Scope": "Scope",
+      "ExpirationInfo": "After this date the API refuses the token and you create a new one. Example: 90 days for an integration. A shorter lifetime limits the damage of a leaked token.",
+      "InfoLabel": "About {field}",
+      "NameInfo": "A label for you only, the API never reads it. Example: Filigran Copilot. It cannot be changed later: revoke the token and create a new one.",
+      "OrganizationHelper": "The token cannot switch to another organization.",
+      "OrganizationInfo": "The token works in this organization only, with your rights there. Example: your company's organization. To reach another organization, create another token.",
+      "ScopeInfo": "How far the token can go, never beyond your own rights. Example: Read for a dashboard, Read and write for an integration that creates content."
     },
     "Lifetime": "{count, plural, one {# day} other {# days}}",
     "NeverUsed": "Never used",
@@ -1027,7 +1033,20 @@
       "expired": "Expired",
       "revoked": "Revoked"
     },
-    "Title": "API tokens"
+    "Title": "API tokens",
+    "ScopeOption": {
+      "admin": "Your administration rights too, as you have them.",
+      "read": "Queries only, nothing can be changed.",
+      "read_write": "Queries and changes, without administration."
+    },
+    "Toolbar": {
+      "AllOrganizations": "All organizations",
+      "AllScopes": "All scopes",
+      "AllStatuses": "All statuses",
+      "NoMatch": "No token matches the search or the filters.",
+      "Search": "Search by name or prefix",
+      "Total": "{count, plural, one {# token} other {# tokens}}"
+    }
   },
   "ProfilePage": {
     "Picture": "Picture",

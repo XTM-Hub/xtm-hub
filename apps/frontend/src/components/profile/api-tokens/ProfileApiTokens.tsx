@@ -1,13 +1,24 @@
 'use client';
 
 import {
+  API_TOKEN_FILTER_ALL,
+  API_TOKEN_SCOPES,
+  ApiTokenFilters,
   ApiTokenStatus,
+  DEFAULT_API_TOKEN_FILTERS,
+  filterApiTokens,
+  getApiTokenOrganizations,
   getApiTokenStatus,
   sortApiTokens,
 } from '@/components/profile/api-tokens/api-token.utils';
 import { CreateApiTokenDialog } from '@/components/profile/api-tokens/CreateApiTokenDialog';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { DataTable } from '@/components/ui/data-table';
+import {
+  DataTable,
+  DataTableHeadBarOptions,
+  DataTableToolbar,
+} from '@/components/ui/data-table';
+import { SelectField } from '@/components/ui/SelectField';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { analyticsId } from '@/lib/analytics/analytics.ids';
@@ -23,6 +34,7 @@ import {
   CardTitle,
   Chip,
   ChipSeverity,
+  SearchField,
 } from '@filigran/design-system';
 import { apiTokenKeys } from '@graphql/api-token/api-token.keys';
 import {
@@ -40,11 +52,18 @@ const STATUS_SEVERITY: Record<ApiTokenStatus, ChipSeverity> = {
   revoked: 'neutral',
 };
 
+const API_TOKEN_STATUSES: ApiTokenStatus[] = ['active', 'expired', 'revoked'];
+
 export const ProfileApiTokens = () => {
   const t = useTranslate();
   const formatDate = useDateFormatter();
   const queryClient = useQueryClient();
   const [openCreate, setOpenCreate] = useState(false);
+  const [filters, setFilters] = useState<ApiTokenFilters>(
+    DEFAULT_API_TOKEN_FILTERS
+  );
+  const setFilter = (key: keyof ApiTokenFilters) => (value: string) =>
+    setFilters((current) => ({ ...current, [key]: value }));
 
   const { data, isLoading } = useApiTokensQuery(portalGraphqlClient);
 
@@ -73,6 +92,14 @@ export const ProfileApiTokens = () => {
   const tokens = useMemo(
     () => sortApiTokens(data?.apiTokens ?? []),
     [data?.apiTokens]
+  );
+  const visibleTokens = useMemo(
+    () => filterApiTokens(tokens, filters),
+    [tokens, filters]
+  );
+  const organizations = useMemo(
+    () => getApiTokenOrganizations(tokens),
+    [tokens]
   );
 
   const columns: ColumnDef<ApiTokenRowFragment>[] = useMemo(
@@ -182,15 +209,107 @@ export const ProfileApiTokens = () => {
         {!isLoading && tokens.length === 0 ? (
           <p className="text-default-secondary">{t('ApiTokens.Empty')}</p>
         ) : (
-          <DataTable
-            columns={columns}
-            data={tokens}
-            isLoading={isLoading}
-            {...getDataTableLabels(t)}
-            tableState={{
-              columnPinning: { right: ['actions'] },
-            }}
-          />
+          <>
+            <DataTable
+              columns={columns}
+              data={visibleTokens}
+              isLoading={isLoading}
+              {...getDataTableLabels(t)}
+              onResetTable={() => setFilters(DEFAULT_API_TOKEN_FILTERS)}
+              toolbar={
+                <DataTableToolbar
+                  search={
+                    <SearchField
+                      fullWidth
+                      aria-label={t('ApiTokens.Toolbar.Search')}
+                      placeholder={t('ApiTokens.Toolbar.Search')}
+                      clearLabel={t('DesignSystem.SearchField.Clear')}
+                      value={filters.search}
+                      onChange={(event) =>
+                        setFilter('search')(event.target.value)
+                      }
+                      onClear={() => setFilter('search')('')}
+                    />
+                  }
+                  filters={
+                    <>
+                      <SelectField
+                        hideLabel
+                        label={t('ApiTokens.Column.Organization')}
+                        analyticsId="account_api_token_filter_organization"
+                        options={[
+                          {
+                            value: API_TOKEN_FILTER_ALL,
+                            label: t('ApiTokens.Toolbar.AllOrganizations'),
+                          },
+                          ...organizations.map((organization) => ({
+                            value: organization.id,
+                            label: organization.name,
+                          })),
+                        ]}
+                        value={filters.organizationId}
+                        onValueChange={setFilter('organizationId')}
+                      />
+                      <SelectField
+                        hideLabel
+                        label={t('ApiTokens.Column.Scope')}
+                        analyticsId="account_api_token_filter_scope"
+                        options={[
+                          {
+                            value: API_TOKEN_FILTER_ALL,
+                            label: t('ApiTokens.Toolbar.AllScopes'),
+                          },
+                          ...API_TOKEN_SCOPES.map((scope) => ({
+                            value: scope,
+                            label: t(`ApiTokens.Scope.${scope}`),
+                          })),
+                        ]}
+                        value={filters.scope}
+                        onValueChange={setFilter('scope')}
+                      />
+                      <SelectField
+                        hideLabel
+                        label={t('ApiTokens.Column.Status')}
+                        analyticsId="account_api_token_filter_status"
+                        options={[
+                          {
+                            value: API_TOKEN_FILTER_ALL,
+                            label: t('ApiTokens.Toolbar.AllStatuses'),
+                          },
+                          ...API_TOKEN_STATUSES.map((status) => ({
+                            value: status,
+                            label: t(`ApiTokens.Status.${status}`),
+                          })),
+                        ]}
+                        value={filters.status}
+                        onValueChange={setFilter('status')}
+                      />
+                    </>
+                  }
+                  actions={
+                    <>
+                      <span
+                        className="text-sm text-default-secondary"
+                        aria-live="polite">
+                        {t('ApiTokens.Toolbar.Total', {
+                          count: visibleTokens.length,
+                        })}
+                      </span>
+                      <DataTableHeadBarOptions />
+                    </>
+                  }
+                />
+              }
+              tableState={{
+                columnPinning: { right: ['actions'] },
+              }}
+            />
+            {!isLoading && visibleTokens.length === 0 && (
+              <p className="mt-4 text-center text-sm text-default-secondary">
+                {t('ApiTokens.Toolbar.NoMatch')}
+              </p>
+            )}
+          </>
         )}
       </CardContent>
       <CreateApiTokenDialog
