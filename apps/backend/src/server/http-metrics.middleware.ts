@@ -1,6 +1,7 @@
 import type { Request } from 'express';
 import promBundle from 'express-prom-bundle';
 import { register, Registry } from 'prom-client';
+import { REQUEST_DURATION_BUCKETS_SECONDS } from './metrics.const';
 
 export const UNMATCHED_PATH_LABEL = 'unmatched';
 export const OTHER_METHOD_LABEL = 'other';
@@ -50,6 +51,8 @@ export const createHttpMetricsMiddleware = ({
   promBundle({
     includeMethod: true,
     includePath: true,
+    // The default buckets jump from 300ms to 1.5s, too coarse for a P95
+    buckets: REQUEST_DURATION_BUCKETS_SECONDS,
     normalizePath: createMetricsPathNormalizer(mountPaths),
     transformLabels: (labels, req) => {
       labels.method = LABELLED_METHODS.has(req.method)
