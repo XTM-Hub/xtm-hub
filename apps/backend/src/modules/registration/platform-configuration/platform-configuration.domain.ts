@@ -192,6 +192,34 @@ export const PlatformConfigurationDomain = {
     return qb;
   },
 
+  loadResolvedConfigurationByServiceInstance: async (
+    serviceInstanceId: ServiceInstanceId
+  ): Promise<FullPlatformConfiguration | undefined> => {
+    if (!isUuid(serviceInstanceId)) {
+      return undefined;
+    }
+    const row = (await buildJoinedConfigurationQuery()
+      .where(
+        'PlatformConfiguration.service_instance_id',
+        '=',
+        serviceInstanceId
+      )
+      .first()) as PlatformConfigurationWithDefinition | undefined;
+    return row ? resolvePlatformFromJoinedRow(row) : undefined;
+  },
+
+  // Only an active registration moves to inactive, so of two concurrent calls only the first gets true.
+  deactivateConfiguration: async (
+    serviceInstanceId: ServiceInstanceId
+  ): Promise<boolean> => {
+    const updated = await db<PlatformConfiguration>('PlatformConfiguration')
+      .update({ status: PlatformConfigurationStatus.Inactive })
+      .where('service_instance_id', '=', serviceInstanceId)
+      .where('status', '=', PlatformConfigurationStatus.Active)
+      .returning('service_instance_id');
+    return updated.length > 0;
+  },
+
   updateConfiguration: async (
     serviceInstanceId: ServiceInstanceId,
     mutator: PlatformConfigurationMutator
