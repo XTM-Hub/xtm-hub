@@ -1,4 +1,5 @@
 import { ApolloServerPlugin } from '@apollo/server';
+import { ApolloServerErrorCode } from '@apollo/server/errors';
 import { isInstance as isCustomApolloError } from 'apollo-errors';
 import {
   DocumentNode,
@@ -164,8 +165,14 @@ export const sseOperationMetrics = {
 
 // Client errors are the typed ones below 500 and the codes mapToGraphQLError maps to them; anything else is a server
 // error. The resolver's error is read directly: unwrapResolverError's instanceof fails when two copies of graphql load.
+// Not isClientSafeError from apollo-server.ts: that one tells which message a client may read, and lets through the
+// unknown errors, which are the server's fault. The only request error left once the timer runs is a variable that
+// fails coercion, parsing and validation failing before the operation resolves.
 const isClientError = (error: GraphQLError) => {
-  if (!error.path && error.extensions?.code === 'BAD_USER_INPUT') {
+  if (
+    !error.path &&
+    error.extensions?.code === ApolloServerErrorCode.BAD_USER_INPUT
+  ) {
     return true;
   }
   const originalError =

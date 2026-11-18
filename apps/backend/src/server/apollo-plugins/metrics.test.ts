@@ -282,33 +282,55 @@ describe('operationMetricsPlugin', () => {
 
     it.each([
       {
-        description: 'a typed error below 500',
-        field: 'typedNotFound',
+        description: 'throws a typed error below 500',
+        query: '{ typedNotFound }',
+        expectedName: 'typedNotFound',
         expectedResult: OPERATION_RESULT.clientError,
       },
       {
-        description: 'an error code mapped to a client error',
-        field: 'codedNotFound',
+        description: 'throws an error code mapped to a client error',
+        query: '{ codedNotFound }',
+        expectedName: 'codedNotFound',
         expectedResult: OPERATION_RESULT.clientError,
       },
       {
-        description: 'any other error',
-        field: 'crash',
+        description: 'throws any other error',
+        query: '{ crash }',
+        expectedName: 'crash',
+        expectedResult: OPERATION_RESULT.serverError,
+      },
+      {
+        description: 'gets a variable that fails coercion',
+        query: 'query ($id: ID!) { currentVotingRound(id: $id) }',
+        expectedName: 'currentVotingRound',
+        expectedResult: OPERATION_RESULT.clientError,
+      },
+      {
+        description: 'throws only client errors',
+        query: '{ typedNotFound codedNotFound }',
+        expectedName: 'multiple',
+        expectedResult: OPERATION_RESULT.clientError,
+      },
+      {
+        description: 'throws a client error and a server error',
+        query: '{ typedNotFound crash }',
+        expectedName: 'multiple',
         expectedResult: OPERATION_RESULT.serverError,
       },
     ])(
-      'should label the duration $expectedResult when it throws $description',
-      async ({ field, expectedResult }) => {
-        // Given an error the logger would print
+      'should label the duration $expectedResult when it $description',
+      async ({ query, expectedName, expectedResult }) => {
+        // Given errors and multiple root fields the logger would print
         vi.spyOn(logApp, 'error').mockImplementation(() => {});
+        vi.spyOn(logApp, 'warn').mockImplementation(() => {});
 
         // When
-        await server.executeOperation({ query: `{ ${field} }` });
+        await server.executeOperation({ query, variables: {} });
 
         // Then
         const metrics = await registry.metrics();
         expect(metrics).toContain(
-          `graphql_operation_duration_seconds_count{operation="query",name="${field}",result="${expectedResult}"} 1`
+          `graphql_operation_duration_seconds_count{operation="query",name="${expectedName}",result="${expectedResult}"} 1`
         );
       }
     );
