@@ -44,7 +44,9 @@ describe('ShareableResourceDescription', () => {
 
     // Then
     const surface = getShortDescription().closest('section');
-    // The design system radius and padding, not the hand-made `rounded`
+    // The surface carries the design system radius and padding classes. These
+    // pin the design system's class names on purpose, as jsdom does no layout:
+    // a rename in the design system needs this test updated.
     expect(surface).toHaveClass('rounded-sm', 'p-4');
     expect(surface).not.toContainElement(getOverviewTitle());
     expect(surface?.parentElement).toContainElement(getOverviewTitle());
@@ -55,6 +57,8 @@ describe('ShareableResourceDescription', () => {
     renderDescription();
 
     // Then
+    // The gap is asserted through its classes on purpose, as jsdom does no
+    // layout: changing them needs this test updated
     const descriptions = getShortDescription().parentElement;
     expect(descriptions).toHaveClass('flex', 'flex-col', 'gap-8');
     expect(descriptions).toContainElement(screen.getByText('long'));

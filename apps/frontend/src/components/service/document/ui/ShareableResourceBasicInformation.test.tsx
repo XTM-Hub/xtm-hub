@@ -31,7 +31,9 @@ describe('ShareableResourceBasicInformation', () => {
 
     // Then
     const surface = screen.getByText('Item').closest('section');
-    // The design system radius, not the hand-made `rounded`
+    // The surface carries the design system radius and padding classes. These
+    // pin the design system's class names on purpose, as jsdom does no layout:
+    // a rename in the design system needs this test updated.
     expect(surface).toHaveClass('rounded-sm', 'p-4');
     expect(surface).not.toContainElement(getTitle());
     expect(surface?.parentElement).toContainElement(getTitle());
