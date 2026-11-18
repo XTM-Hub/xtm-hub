@@ -211,8 +211,8 @@ describe('TimeSeriesBarChart', () => {
 
   it.each`
     case                                    | computedMax      | expected
-    ${'the highest bar is below the limit'} | ${1_500_000_000} | ${2_000_000_000}
-    ${'the highest bar is above the limit'} | ${2_500_000_000} | ${2_500_000_000}
+    ${'the highest bar is below the limit'} | ${1_500_000_000} | ${2_200_000_000}
+    ${'the highest bar is above the limit'} | ${2_500_000_000} | ${2_750_000_000}
   `(
     'should end the y axis at $expected when $case',
     async ({ computedMax, expected }) => {
