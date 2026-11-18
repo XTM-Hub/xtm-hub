@@ -17,8 +17,11 @@ const resolvers: Resolvers = {
       ),
   },
   Query: {
-    organization: async (_, { id }) =>
-      OrganizationDomain.loadOrganizationBy({ id: id as OrganizationId }),
+    organization: async (_, { id }, context) =>
+      OrganizationApp.loadOrganizationVisibleTo(
+        context.user,
+        id as OrganizationId
+      ),
     organizations: async (_, opts) => {
       return OrganizationDomain.loadOrganizations(opts);
     },

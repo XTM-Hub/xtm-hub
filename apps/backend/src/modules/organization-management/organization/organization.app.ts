@@ -2,10 +2,12 @@ import { v4 as uuidv4 } from 'uuid';
 import { OrganizationInput } from '../../../__generated__/resolvers-types';
 import { requestContext } from '../../../context/request.context';
 import { OrganizationId } from '../../../model/kanel/public/Organization';
+import { UserLoadUserBy } from '../../../model/user';
 import { dispatch } from '../../../pub';
 import { logApp } from '../../../utils/app-logger.util';
 import { ErrorCode, UnknownErrorCode } from '../../../utils/error/error.code';
 import { PlatformConfigurationDomain } from '../../registration/platform-configuration/platform-configuration.domain';
+import { AuthHelper } from '../../security-management/capability/auth.helper';
 import { TelemetryApp } from '../../telemetry/telemetry.app';
 import { TelemetryHelper } from '../../telemetry/telemetry.helper';
 import {
@@ -15,6 +17,19 @@ import {
 import { OrganizationDomain } from './organization.domain';
 
 export const OrganizationApp = {
+  // A personal space is visible to BYPASS only: anyone else gets the same
+  // answer as for an unknown id
+  async loadOrganizationVisibleTo(user: UserLoadUserBy, id: OrganizationId) {
+    const organization = await OrganizationDomain.loadOrganizationBy({ id });
+    if (
+      organization?.personal_space &&
+      !AuthHelper.userHasBypassCapability(user)
+    ) {
+      return undefined;
+    }
+    return organization;
+  },
+
   async updateOrganization(id: OrganizationId, input: OrganizationInput) {
     const updatedOrganization = await OrganizationDomain.updateOrganizationBy(
       { id },

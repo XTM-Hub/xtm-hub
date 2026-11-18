@@ -3,6 +3,7 @@ import { toGlobalId } from 'graphql-relay/node/node.js';
 import { v4 as uuidv4 } from 'uuid';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import {
+  CAPABILITY_READ_ORGANIZATION_MEMBERS,
   CAPABILITY_READ_SAAS_METRICS,
   contextSimpleUserSecondOrga,
   TEST_ORGANIZATIONS,
@@ -34,11 +35,50 @@ const USER_ORGANIZATIONS_ADMINISTRATOR_EMAILS_QUERY = `query {
 
 const NOT_AUTHORIZED = /^Not authorized/;
 
+const SECOND_ORGANIZATION_USERS = TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS;
+const PERSONAL_SPACE_ID =
+  SECOND_ORGANIZATION_USERS.ADMIN_ORGA.PERSONAL_SPACE_ID;
+
+// Matches SECOND ORGA and the personal spaces of its three users, named after their email
+const SECOND_ORGANIZATION_SEARCH_TERM = 'second';
+
 // The Node id resolver exposes the Relay global id
 const SECOND_ORGANIZATION_GLOBAL_ID = toGlobalId(
   'Organization',
   TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID
 );
+
+const PERSONAL_SPACE_GLOBAL_IDS = [
+  SECOND_ORGANIZATION_USERS.ADMIN_ORGA.PERSONAL_SPACE_ID,
+  SECOND_ORGANIZATION_USERS.SIMPLE.PERSONAL_SPACE_ID,
+  SECOND_ORGANIZATION_USERS.REGISTERER.PERSONAL_SPACE_ID,
+].map((id) => toGlobalId('Organization', id));
+
+type OrganizationMutationCase = {
+  mutation: string;
+  appMethod: 'createOrganization' | 'updateOrganization' | 'deleteOrganization';
+  query: string;
+};
+
+// Each mutation carries its own @auth, so each one is checked: removing one
+// of them would leave the two others green
+const ORGANIZATION_MUTATIONS: OrganizationMutationCase[] = [
+  {
+    mutation: 'addOrganization',
+    appMethod: 'createOrganization',
+    query: `mutation ($input: OrganizationInput!) { addOrganization(input: $input) { id } }`,
+  },
+  {
+    mutation: 'editOrganization',
+    appMethod: 'updateOrganization',
+    query: `mutation ($id: ID!, $input: OrganizationInput!) { editOrganization(id: $id, input: $input) { id } }`,
+  },
+  {
+    mutation: 'deleteOrganization',
+    appMethod: 'deleteOrganization',
+    query: `mutation ($id: ID!) { deleteOrganization(id: $id) { id } }`,
+  },
+];
 
 // Each request gets its own dataloaders, as the server builds them per request
 const withOrganizationDataLoader = (context: PortalContext): PortalContext =>
@@ -110,6 +150,25 @@ describe('organization GraphQL schema', () => {
       });
     });
 
+    it('should let a READ_ORGANIZATION_MEMBERS user list the organizations, without the personal spaces', async () => {
+      // Given / When
+      const { data, errors } = await execute(
+        ORGANIZATIONS_QUERY,
+        withPortalCapability(CAPABILITY_READ_ORGANIZATION_MEMBERS),
+        { searchTerm: SECOND_ORGANIZATION_SEARCH_TERM }
+      );
+
+      // Then
+      expect(errors).toBeUndefined();
+      const nodeIds = (
+        data as { organizations: { edges: { node: { id: string } }[] } }
+      ).organizations.edges.map(({ node }) => node.id);
+      expect(nodeIds).toContain(SECOND_ORGANIZATION_GLOBAL_ID);
+      PERSONAL_SPACE_GLOBAL_IDS.forEach((personalSpaceId) =>
+        expect(nodeIds).not.toContain(personalSpaceId)
+      );
+    });
+
     it('should forbid a user without any capability to list the organizations', async () => {
       // Given
       const loadOrganizations = vi.spyOn(
@@ -149,6 +208,62 @@ describe('organization GraphQL schema', () => {
       });
     });
 
+    it('should let a READ_ORGANIZATION_MEMBERS user read an organization', async () => {
+      // Given / When
+      const { data, errors } = await execute(
+        ORGANIZATION_QUERY,
+        withPortalCapability(CAPABILITY_READ_ORGANIZATION_MEMBERS),
+        { id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID }
+      );
+
+      // Then
+      expect(errors).toBeUndefined();
+      expect(data).toEqual({
+        organization: {
+          id: SECOND_ORGANIZATION_GLOBAL_ID,
+          name: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.NAME,
+        },
+      });
+    });
+
+    it.each`
+      description         | id
+      ${'personal space'} | ${PERSONAL_SPACE_ID}
+      ${'unknown id'}     | ${uuidv4()}
+    `(
+      'should answer null without error to a READ_ORGANIZATION_MEMBERS user asking for a $description',
+      async ({ id }: { id: string }) => {
+        // Given / When
+        const { data, errors } = await execute(
+          ORGANIZATION_QUERY,
+          withPortalCapability(CAPABILITY_READ_ORGANIZATION_MEMBERS),
+          { id }
+        );
+
+        // Then
+        expect(errors).toBeUndefined();
+        expect(data).toEqual({ organization: null });
+      }
+    );
+
+    it('should still let a BYPASS user read a personal space', async () => {
+      // Given / When
+      const { data, errors } = await execute(
+        ORGANIZATION_QUERY,
+        withPortalCapability(CAPABILITY_BYPASS),
+        { id: PERSONAL_SPACE_ID }
+      );
+
+      // Then
+      expect(errors).toBeUndefined();
+      expect(data).toEqual({
+        organization: {
+          id: toGlobalId('Organization', PERSONAL_SPACE_ID),
+          name: SECOND_ORGANIZATION_USERS.ADMIN_ORGA.EMAIL,
+        },
+      });
+    });
+
     it('should forbid a user without any capability to read an organization', async () => {
       // Given
       const loadOrganizationBy = vi.spyOn(
@@ -170,28 +285,12 @@ describe('organization GraphQL schema', () => {
     });
   });
 
-  // Each mutation carries its own @auth, so each one is checked: removing one
-  // of them would leave the two others green
   describe('organization mutations', () => {
     const organizationInput = { name: 'Never created', domains: [] };
 
-    it.each`
-      mutation                | appMethod               | query
-      ${'addOrganization'}    | ${'createOrganization'} | ${`mutation ($input: OrganizationInput!) { addOrganization(input: $input) { id } }`}
-      ${'editOrganization'}   | ${'updateOrganization'} | ${`mutation ($id: ID!, $input: OrganizationInput!) { editOrganization(id: $id, input: $input) { id } }`}
-      ${'deleteOrganization'} | ${'deleteOrganization'} | ${`mutation ($id: ID!) { deleteOrganization(id: $id) { id } }`}
-    `(
+    it.each(ORGANIZATION_MUTATIONS)(
       'should forbid a user without any capability to call $mutation',
-      async ({
-        mutation,
-        appMethod,
-        query,
-      }: {
-        mutation: string;
-        appMethod:
-          'createOrganization' | 'updateOrganization' | 'deleteOrganization';
-        query: string;
-      }) => {
+      async ({ mutation, appMethod, query }) => {
         // Given the app layer is stubbed, so a broken guard cannot write to the shared database
         const guarded = vi
           .spyOn(OrganizationApp, appMethod)
@@ -201,6 +300,28 @@ describe('organization GraphQL schema', () => {
         const { data, errors } = await execute(
           query,
           contextSimpleUserSecondOrga,
+          { id: uuidv4(), input: organizationInput }
+        );
+
+        // Then
+        expect(errors?.[0]?.message).toMatch(NOT_AUTHORIZED);
+        expect(data).toEqual({ [mutation]: null });
+        expect(guarded).not.toHaveBeenCalled();
+      }
+    );
+
+    it.each(ORGANIZATION_MUTATIONS)(
+      'should forbid a READ_ORGANIZATION_MEMBERS user to call $mutation',
+      async ({ mutation, appMethod, query }) => {
+        // Given the app layer is stubbed, so a broken guard cannot write to the shared database
+        const guarded = vi
+          .spyOn(OrganizationApp, appMethod)
+          .mockResolvedValue(undefined as never);
+
+        // When
+        const { data, errors } = await execute(
+          query,
+          withPortalCapability(CAPABILITY_READ_ORGANIZATION_MEMBERS),
           { id: uuidv4(), input: organizationInput }
         );
 

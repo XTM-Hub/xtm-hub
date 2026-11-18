@@ -29,14 +29,16 @@ type OrganizationConnection {
 }
 
 type Query {
-  organization(id: ID!): Organization @auth(portalCapa: [BYPASS])
+  organization(id: ID!): Organization
+    @auth(portalCapa: [BYPASS, READ_ORGANIZATION_MEMBERS])
   organizations(
     first: Int = 50
     after: ID
     orderBy: OrganizationOrdering!
     orderMode: OrderingMode!
     searchTerm: String
-  ): OrganizationConnection! @auth(portalCapa: [BYPASS])
+  ): OrganizationConnection!
+    @auth(portalCapa: [BYPASS, READ_ORGANIZATION_MEMBERS])
   userOrganizations: [Organization!]! @auth
 }
 
