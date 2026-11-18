@@ -6,7 +6,7 @@ import { UserDomain } from '../../modules/organization-management/user/user-doma
 import { AuthHelper } from '../../modules/security-management/capability/auth.helper';
 import { SYSTEM_USER_UUID } from '../../portal.const';
 import { logApp } from '../../utils/app-logger.util';
-import { isValidSystemToken, SYSTEM_TOKEN_HEADER } from '../system-token';
+import { isValidSystemToken, SYSTEM_TOKEN_HEADER } from '../machine-user';
 
 // Structural on purpose: the SSE context is only { user, req }, not a full PortalContext
 export interface GuardedContext {

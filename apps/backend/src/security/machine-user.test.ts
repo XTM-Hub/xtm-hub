@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { TEST_SYSTEM_TOKEN } from '../../tests/tests.const';
 import { PortalCapability } from '../__generated__/resolvers-types';
 import { SYSTEM_USER_UUID } from '../portal.const';
-import { buildScopedSystemUser, isValidSystemToken } from './system-token';
+import { buildScopedSystemUser, isValidSystemToken } from './machine-user';
 
 describe('isValidSystemToken', () => {
   it.each([

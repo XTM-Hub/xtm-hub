@@ -58,7 +58,7 @@ vi.mock('../../../utils/app-logger.util', () => ({
 
 import { ServiceDefinitionIdentifier } from '../../../__generated__/resolvers-types';
 import { MARKETING_USER_CONTEXT } from '../../../portal.const';
-import { SYSTEM_TOKEN_HEADER } from '../../../security/system-token';
+import { SYSTEM_TOKEN_HEADER } from '../../../security/machine-user';
 import { IntegrationCsvExportEndpoint } from './integration-csv-export-endpoint';
 
 const buildResponse = () => ({

@@ -7,7 +7,7 @@ import {
   buildScopedSystemUser,
   isValidSystemToken,
   SYSTEM_TOKEN_HEADER,
-} from '../../system-token';
+} from '../../machine-user';
 
 export const SYSTEM_TOKEN_DIRECTIVE_NAME = 'system_token';
 

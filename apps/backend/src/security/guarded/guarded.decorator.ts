@@ -2,7 +2,7 @@ import { requestContext } from '../../context/request.context';
 import { logApp } from '../../utils/app-logger.util';
 import { ForbiddenErrorCode } from '../../utils/error/error.code';
 import { mapToGraphQLError } from '../../utils/error/error.mapping';
-import { buildScopedSystemUser } from '../system-token';
+import { buildScopedSystemUser } from '../machine-user';
 import { DENIAL_CODES, DenialCode, Guard, GuardResult } from './guard.types';
 import { publicAccess } from './guards/public-access.guard';
 import { GuardedContext, Principal } from './principal';
