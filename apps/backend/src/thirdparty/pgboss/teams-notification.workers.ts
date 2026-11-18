@@ -1,4 +1,5 @@
 import type { PgBoss } from 'pg-boss';
+import { SYSTEM_USER_CONTEXT } from '../../portal.const';
 import { logApp } from '../../utils/app-logger.util';
 import { teamsNotificationSend } from '../teams-notification/teams-notification';
 import { RETRY_STRATEGIES } from './retry-strategies';
@@ -9,6 +10,7 @@ import {
 import { createBatchHandler } from './workers';
 
 const handleTeamsNotificationJob = createBatchHandler<TeamsNotificationJobData>(
+  SYSTEM_USER_CONTEXT,
   async (job) => teamsNotificationSend(job.data.event, job.data.payload)
 );
 

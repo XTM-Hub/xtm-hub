@@ -30,7 +30,7 @@ test.describe('One Click Deploy', () => {
 
     await homePage.navigateTo();
     await csvFeedPage.navigateToIntegrationsService();
-    await csvFeedPage.fillCsvFeed(CSV_FEED_TEST);
+    await csvFeedPage.fillCsvFeed(CSV_FEED_TEST, { publish: true });
   });
 
   test('should send telemetry event', async ({ page }) => {

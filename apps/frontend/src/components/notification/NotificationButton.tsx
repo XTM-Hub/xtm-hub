@@ -1,56 +1,30 @@
 import { IndividualIcon, NotificationsIcon } from '@filigran/icon';
 
-import {
-  UserPendingListFragment,
-  UserPendingListQuery,
-  UserPendingListSubscription,
-} from '@/components/admin/user/user.graphql';
-import { UserFragment } from '@/components/admin/user/UserList';
 import { PortalContext } from '@/components/me/AppPortalContext';
+import {
+  notificationPendingUserQueryFilters,
+  useNotificationPendingUsers,
+} from '@/components/notification/use-notification-pending-users';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
+import { useBatchedInvalidation } from '@/hooks/use-batched-invalidation';
+import { useGraphqlSubscription } from '@/hooks/use-graphql-subscription';
 import { useTranslate } from '@/hooks/use-translate';
 import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { APP_PATH } from '@/utils/path/constant';
 import { Button } from '@filigran/design-system';
 import {
-  UserList_fragment$data,
-  UserList_fragment$key,
-} from '@generated/UserList_fragment.graphql';
-import { userPendingList_users$key } from '@generated/userPendingList_users.graphql';
-import {
-  userPendingListQuery,
-  userPendingListQuery$variables,
-} from '@generated/userPendingListQuery.graphql';
-import {
-  userPendingListSubscription,
-  userPendingListSubscription$data,
-} from '@generated/userPendingListSubscription.graphql';
+  PendingUserEventsDocument,
+  PendingUserEventsSubscription,
+  PendingUserEventsSubscriptionVariables,
+} from '@graphql/generated';
+import { pendingUsersKeys } from '@graphql/user/users.keys';
 import Link from 'next/link';
-import { useContext, useMemo, useState } from 'react';
-import {
-  commitLocalUpdate,
-  readInlineData,
-  useLazyLoadQuery,
-  useRefetchableFragment,
-  useRelayEnvironment,
-  useSubscription,
-} from 'react-relay';
-
-export function notificationPendingUserQueryFilters(
-  organization_id: string
-): userPendingListQuery$variables {
-  return {
-    count: 20,
-    orderMode: 'asc',
-    orderBy: 'last_login',
-    filters: [{ key: 'organization_id', value: [organization_id] }],
-  };
-}
+import { useContext, useState } from 'react';
 
 export const NotificationButton = () => {
   const { me } = useContext(PortalContext);
@@ -73,57 +47,34 @@ const PendingUserNotifications = ({
   const t = useTranslate();
   const [openPopover, setOpenPopover] = useState(false);
 
-  const queryData = useLazyLoadQuery<userPendingListQuery>(
-    UserPendingListQuery,
-    notificationPendingUserQueryFilters(organizationId)
-  );
+  const { data } = useNotificationPendingUsers(organizationId);
 
-  const [data, refetch] = useRefetchableFragment<
-    userPendingListQuery,
-    userPendingList_users$key
-  >(UserPendingListFragment, queryData);
-
-  const connectionID = data?.pendingUsers?.__id;
-
-  const environment = useRelayEnvironment();
-
-  const pendingUserListSubscriptionConfig = useMemo(
-    () => ({
-      variables: {
-        connections: [connectionID],
-        organizationId,
-      },
-      subscription: UserPendingListSubscription,
-      onNext: (
-        payload: userPendingListSubscription$data | null | undefined
-      ) => {
-        if (payload?.UserPending?.invalidate) {
-          refetch({}, { fetchPolicy: 'network-only' });
-        }
-        if (payload?.UserPending?.delete) {
-          commitLocalUpdate(environment, (store) => {
-            const connection = store.get(connectionID);
-
-            const totalCount = connection?.getValue('totalCount');
-            if (totalCount) {
-              connection?.setValue((totalCount as number) - 1, 'totalCount');
-            }
-          });
+  // The bell and the pending users tab counter share this query, as they
+  // shared the Relay record: both follow a deletion or an invalidation.
+  // Batched, as a bulk accept sends one deletion per user.
+  const refreshPendingUsers = useBatchedInvalidation({
+    queryKey: pendingUsersKeys.list(
+      notificationPendingUserQueryFilters(organizationId)
+    ),
+    exact: true,
+  });
+  useGraphqlSubscription<
+    PendingUserEventsSubscription,
+    PendingUserEventsSubscriptionVariables
+  >(
+    PendingUserEventsDocument,
+    { organizationId },
+    {
+      onNext: ({ UserPending }) => {
+        if (UserPending?.delete || UserPending?.invalidate) {
+          refreshPendingUsers();
         }
       },
-    }),
-    [connectionID, environment, organizationId, refetch]
+    }
   );
 
-  useSubscription<userPendingListSubscription>(
-    pendingUserListSubscriptionConfig
-  );
-
-  const users: UserList_fragment$data[] = data.pendingUsers.edges.map(
-    ({ node }) => readInlineData<UserList_fragment$key>(UserFragment, node)
-  );
-
-  const nbUsers = data.pendingUsers.totalCount;
+  const users = data?.pendingUsers.edges.map(({ node }) => node) ?? [];
+  const nbUsers = data?.pendingUsers.totalCount ?? 0;
 
   return (
     <Popover

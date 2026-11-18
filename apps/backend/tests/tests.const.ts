@@ -31,6 +31,7 @@ import {
   PLATFORM_ORGANIZATION_UUID,
   SYSTEM_USER_CONTEXT,
 } from '../src/portal.const';
+import { SYSTEM_TOKEN_HEADER } from '../src/security/system-token';
 
 export const GRAPHQL_RESOLVE_INFO = {} as GraphQLResolveInfo;
 
@@ -494,3 +495,16 @@ export const requestContextSimpleUserFiligran2 = {
   user: contextSimpleUserFiligran2.user,
   portalContext: contextSimpleUserFiligran2,
 };
+
+// Matches system_token_hash in config/default.json
+export const TEST_SYSTEM_TOKEN = 'changeMe';
+
+// A machine request has no session, and the resolvers under test read neither res nor dataLoaders
+const systemTokenContext = (token: string): PortalContext =>
+  ({
+    req: { headers: { [SYSTEM_TOKEN_HEADER]: token } },
+  }) as unknown as PortalContext;
+
+export const contextSystemToken = systemTokenContext(TEST_SYSTEM_TOKEN);
+
+export const contextInvalidSystemToken = systemTokenContext('invalid-token');

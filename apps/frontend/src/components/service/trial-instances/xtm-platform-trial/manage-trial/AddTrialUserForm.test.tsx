@@ -483,11 +483,9 @@ describe('AddTrialUserForm user search and invitations', () => {
     const { searchedTerms } = setupSearchableQueryMocks();
     const { user } = renderForm(platformRegistrationManagerMe);
 
-    expect(
-      await screen.findByText(
-        'Service.Bundle.ManageTrial.AddUserDialog.NoPermissionToInvite'
-      )
-    ).toBeInTheDocument();
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Service.Bundle.ManageTrial.AddUserDialog.NoPermissionToInvite'
+    );
 
     await openEmailDropdown(user);
     await screen.findByText('active@filigran.io');
@@ -513,11 +511,9 @@ describe('AddTrialUserForm user search and invitations', () => {
       )
     );
 
-    expect(
-      screen.getByText(
-        'Service.Bundle.ManageTrial.AddUserDialog.ExpiredUsersReinvited'
-      )
-    ).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Service.Bundle.ManageTrial.AddUserDialog.ExpiredUsersReinvited'
+    );
   });
 
   it('does not show the re-invitation notice when no expired user is selected', async () => {

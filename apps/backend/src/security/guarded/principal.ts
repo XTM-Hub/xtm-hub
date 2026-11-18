@@ -4,10 +4,14 @@ import { UserId } from '../../model/kanel/public/User';
 import { UserLoadUserBy } from '../../model/user';
 import { UserDomain } from '../../modules/organization-management/user/user-domain/user.domain';
 import { AuthHelper } from '../../modules/security-management/capability/auth.helper';
+import { SYSTEM_USER_UUID } from '../../portal.const';
+import { logApp } from '../../utils/app-logger.util';
+import { isValidSystemToken, SYSTEM_TOKEN_HEADER } from '../system-token';
 
 // Structural on purpose: the SSE context is only { user, req }, not a full PortalContext
 export interface GuardedContext {
   user?: UserLoadUserBy | null;
+  req?: { headers?: Readonly<Record<string, unknown>> };
 }
 
 export type Principal =
@@ -18,11 +22,38 @@ export type Principal =
       isBypassUser: boolean;
       portalCapabilities: Set<PortalCapability>;
       selectedOrganizationId: OrganizationId;
+    }
+  | {
+      kind: 'system';
+      actorId: UserId;
+      portalCapabilities: ReadonlySet<PortalCapability>;
     };
 
 // Shared by every @Public() call: frozen so no caller can alter it for the next one
 export const ANONYMOUS_PRINCIPAL: Readonly<{ kind: 'anonymous' }> =
   Object.freeze({ kind: 'anonymous' });
+
+// Until scoped tokens, the single system token is granted every requested scope
+const grantedSystemScopes = (
+  requestedScopes: readonly PortalCapability[]
+): ReadonlySet<PortalCapability> => new Set(requestedScopes);
+
+// A system operation is judged on its token alone, never on the session
+export const buildSystemPrincipal = (
+  context: GuardedContext,
+  systemScopes: readonly PortalCapability[]
+): Principal => {
+  const token = context.req?.headers?.[SYSTEM_TOKEN_HEADER];
+  if (typeof token !== 'string' || !isValidSystemToken(token)) {
+    logApp.warn('Invalid system token attempt');
+    return ANONYMOUS_PRINCIPAL;
+  }
+  return {
+    kind: 'system',
+    actorId: SYSTEM_USER_UUID,
+    portalCapabilities: grantedSystemScopes(systemScopes),
+  };
+};
 
 export const buildPrincipal = async (
   context: GuardedContext

@@ -3,21 +3,29 @@ import {
   // eslint-disable-next-line no-restricted-imports
   contextBypassUser,
   contextSimpleUserFiligran2,
+  TEST_SYSTEM_TOKEN,
 } from '../../../tests/tests.const';
 import { PortalCapability } from '../../__generated__/resolvers-types';
+import { requestContext } from '../../context/request.context';
 import { UserLoadUserBy } from '../../model/user';
 import { UserDomain } from '../../modules/organization-management/user/user-domain/user.domain';
-import { CAPABILITY_BYPASS } from '../../portal.const';
+import { CAPABILITY_BYPASS, SYSTEM_USER_UUID } from '../../portal.const';
 import { logApp } from '../../utils/app-logger.util';
 import {
   ForbiddenErrorCode,
   UnauthenticatedErrorCode,
 } from '../../utils/error/error.code';
 import { ErrorType } from '../../utils/error/error.type';
+import { SYSTEM_TOKEN_HEADER } from '../system-token';
 import { deny, Guard, GuardResult } from './guard.types';
 import { Guarded, Public } from './guarded.decorator';
+import { callerGuard } from './guards/caller.guard';
 import { portalCapabilityGuard } from './guards/portal.guard';
-import { buildPrincipal, GuardedContext } from './principal';
+import {
+  buildPrincipal,
+  buildSystemPrincipal,
+  GuardedContext,
+} from './principal';
 
 const RESOLVED_VALUE = 'resolved';
 const GUARD_FAILURE_LOG = 'Access guard threw, access denied';
@@ -45,6 +53,9 @@ class TestResolvers {
   @Guarded(portalCapabilityGuard([PortalCapability.Bypass]))
   static readonly adminOnly: TestResolver = (...args) => resolve(...args);
 
+  @Guarded(callerGuard('system', [PortalCapability.GenerateManifest]))
+  static readonly systemOnly: TestResolver = (...args) => resolve(...args);
+
   @Guarded(throwingGuard)
   static readonly guardThrows: TestResolver = (...args) => resolve(...args);
 
@@ -67,6 +78,16 @@ const buildUser = (
 ): UserLoadUserBy => ({
   ...structuredClone(contextSimpleUserFiligran2.user),
   ...overrides,
+});
+
+const INVALID_TOKEN_LOG = 'Invalid system token attempt';
+
+const withSystemToken = (
+  token: string,
+  user?: UserLoadUserBy
+): GuardedContext => ({
+  user,
+  req: { headers: { [SYSTEM_TOKEN_HEADER]: token } },
 });
 
 afterEach(() => {
@@ -156,6 +177,83 @@ describe('buildPrincipal', () => {
     // Then
     expect(getCapabilities).not.toHaveBeenCalled();
   });
+
+  it.each([
+    { label: 'valid', token: TEST_SYSTEM_TOKEN },
+    { label: 'invalid', token: 'invalid-token' },
+  ])(
+    'should judge on the session without checking the token when the request carries a $label system token',
+    async ({ token }) => {
+      // Given
+      const logWarn = vi
+        .spyOn(logApp, 'warn')
+        .mockImplementation(() => undefined);
+      const user = buildUser({ capabilities: [CAPABILITY_BYPASS] });
+      const context = withSystemToken(token, user);
+
+      // When
+      const principal = await buildPrincipal(context);
+
+      // Then
+      expect(principal).toMatchObject({ kind: 'user', actorId: user.id });
+      expect(logWarn).not.toHaveBeenCalled();
+    }
+  );
+});
+
+describe('buildSystemPrincipal', () => {
+  it.each([
+    { label: 'no session', user: undefined },
+    {
+      label: 'a BYPASS session',
+      user: buildUser({ capabilities: [CAPABILITY_BYPASS] }),
+    },
+  ])(
+    'should build a system caller holding exactly the requested scopes when the system token is valid and the request has $label',
+    ({ user }) => {
+      // Given
+      const context = withSystemToken(TEST_SYSTEM_TOKEN, user);
+
+      // When
+      const principal = buildSystemPrincipal(context, [
+        PortalCapability.GenerateManifest,
+      ]);
+
+      // Then
+      expect(principal).toEqual({
+        kind: 'system',
+        actorId: SYSTEM_USER_UUID,
+        portalCapabilities: new Set([PortalCapability.GenerateManifest]),
+      });
+    }
+  );
+
+  it.each([
+    { label: 'invalid', headers: { [SYSTEM_TOKEN_HEADER]: 'invalid-token' } },
+    { label: 'empty', headers: { [SYSTEM_TOKEN_HEADER]: '' } },
+    { label: 'missing', headers: {} },
+  ])(
+    'should build an anonymous principal despite a BYPASS session and warn without the value when the system token is $label',
+    ({ headers }) => {
+      // Given
+      const logWarn = vi
+        .spyOn(logApp, 'warn')
+        .mockImplementation(() => undefined);
+      const context: GuardedContext = {
+        user: buildUser({ capabilities: [CAPABILITY_BYPASS] }),
+        req: { headers },
+      };
+
+      // When
+      const principal = buildSystemPrincipal(context, [
+        PortalCapability.GenerateManifest,
+      ]);
+
+      // Then
+      expect(principal).toEqual({ kind: 'anonymous' });
+      expect(logWarn).toHaveBeenCalledExactlyOnceWith(INVALID_TOKEN_LOG);
+    }
+  );
 });
 
 describe('@Guarded decorator', () => {
@@ -182,6 +280,57 @@ describe('@Guarded decorator', () => {
   });
 
   it.each([
+    { label: 'no session', user: undefined },
+    {
+      label: 'a BYPASS session',
+      user: buildUser({ capabilities: [CAPABILITY_BYPASS] }),
+    },
+  ])(
+    'should call the resolver with a copied context holding a system user scoped to the declared capability when a valid system token comes with $label',
+    async ({ user }) => {
+      // Given
+      const context = withSystemToken(TEST_SYSTEM_TOKEN, user);
+      const snapshot = structuredClone(context);
+      const systemUser = expect.objectContaining({
+        id: SYSTEM_USER_UUID,
+        capabilities: [
+          expect.objectContaining({ name: PortalCapability.GenerateManifest }),
+        ],
+      });
+
+      // When
+      await TestResolvers.systemOnly(PARENT, ARGS, context, INFO);
+
+      // Then
+      expect(resolve).toHaveBeenCalledExactlyOnceWith(
+        PARENT,
+        ARGS,
+        { ...context, user: systemUser },
+        INFO
+      );
+      expect(requestContext.update).toHaveBeenCalledExactlyOnceWith({
+        user: systemUser,
+      });
+      expect(context).toEqual(snapshot);
+    }
+  );
+
+  it('should refuse with UNAUTHENTICATED and not call the resolver when a BYPASS session without token calls a system-only resolver', async () => {
+    // Given
+    const context = { user: buildUser({ capabilities: [CAPABILITY_BYPASS] }) };
+
+    // When
+    const call = TestResolvers.systemOnly(PARENT, ARGS, context, INFO);
+
+    // Then
+    await expect(call).rejects.toMatchObject({
+      message: UnauthenticatedErrorCode.Unauthenticated,
+      extensions: { code: UnauthenticatedErrorCode.Unauthenticated },
+    });
+    expect(resolve).not.toHaveBeenCalled();
+  });
+
+  it.each([
     {
       label: 'an anonymous visitor',
       context: { user: undefined },
@@ -199,6 +348,11 @@ describe('@Guarded decorator', () => {
       context: { user: buildUser({ capabilities: [] }) },
       code: ForbiddenErrorCode.ForbiddenAccess,
     },
+    {
+      label: 'a machine with a valid system token and no session',
+      context: withSystemToken(TEST_SYSTEM_TOKEN),
+      code: UnauthenticatedErrorCode.Unauthenticated,
+    },
   ])(
     'should refuse $label with $code and not call the resolver',
     async ({ context, code }) => {
@@ -215,6 +369,25 @@ describe('@Guarded decorator', () => {
       expect(resolve).not.toHaveBeenCalled();
     }
   );
+
+  it('should call the resolver with the context unchanged when a BYPASS session sends a system token to a capability-guarded resolver', async () => {
+    // Given
+    const context = withSystemToken(
+      TEST_SYSTEM_TOKEN,
+      buildUser({ capabilities: [CAPABILITY_BYPASS] })
+    );
+
+    // When
+    await TestResolvers.adminOnly(PARENT, ARGS, context, INFO);
+
+    // Then
+    expect(resolve).toHaveBeenCalledExactlyOnceWith(
+      PARENT,
+      ARGS,
+      context,
+      INFO
+    );
+  });
 
   it('should load the capabilities of a session user lazily and write them back on the context user', async () => {
     // Given

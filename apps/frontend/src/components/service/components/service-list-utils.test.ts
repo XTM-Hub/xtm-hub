@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { splitPublishedAndOthers } from './service-list-utils';
+import { splitDocumentsByStatus } from './service-list-utils';
 
 interface Item {
   id: string;
@@ -13,23 +13,59 @@ const IN_VALIDATION_ITEM: Item = {
   status: 'in_validation',
 };
 
-describe('splitPublishedAndOthers', () => {
+describe('splitDocumentsByStatus', () => {
   it.each`
     description                            | items                                               | expected
-    ${'there are no documents'}            | ${[]}                                               | ${[[], []]}
-    ${'every document is published'}       | ${[PUBLISHED_ITEM]}                                 | ${[[PUBLISHED_ITEM], []]}
-    ${'no document is published'}          | ${[DRAFT_ITEM, IN_VALIDATION_ITEM]}                 | ${[[], [DRAFT_ITEM, IN_VALIDATION_ITEM]]}
-    ${'documents have different statuses'} | ${[DRAFT_ITEM, PUBLISHED_ITEM, IN_VALIDATION_ITEM]} | ${[[PUBLISHED_ITEM], [DRAFT_ITEM, IN_VALIDATION_ITEM]]}
+    ${'there are no documents'}            | ${[]}                                               | ${{ draft: [], inValidation: [], published: [] }}
+    ${'every document is published'}       | ${[PUBLISHED_ITEM]}                                 | ${{ draft: [], inValidation: [], published: [PUBLISHED_ITEM] }}
+    ${'documents are in validation'}       | ${[IN_VALIDATION_ITEM]}                             | ${{ draft: [], inValidation: [IN_VALIDATION_ITEM], published: [] }}
+    ${'documents have different statuses'} | ${[DRAFT_ITEM, PUBLISHED_ITEM, IN_VALIDATION_ITEM]} | ${{ draft: [DRAFT_ITEM], inValidation: [IN_VALIDATION_ITEM], published: [PUBLISHED_ITEM] }}
   `(
-    'should put the published documents first and the others second when $description',
-    ({ items, expected }: { items: Item[]; expected: [Item[], Item[]] }) => {
+    'should group the documents by status when $description',
+    ({ items, expected }: { items: Item[]; expected: object }) => {
       // Given a list of documents
 
       // When
-      const result = splitPublishedAndOthers(items);
+      const result = splitDocumentsByStatus(items);
 
       // Then
       expect(result).toEqual(expected);
     }
   );
+
+  it('should keep the order of the documents inside each group', () => {
+    // Given two documents of each status, interleaved
+    const secondDraft = { id: 'draft-2', status: 'draft' };
+    const secondInValidation = {
+      id: 'in-validation-2',
+      status: 'in_validation',
+    };
+    const items = [
+      DRAFT_ITEM,
+      IN_VALIDATION_ITEM,
+      secondDraft,
+      secondInValidation,
+    ];
+
+    // When
+    const result = splitDocumentsByStatus(items);
+
+    // Then
+    expect(result.draft).toEqual([DRAFT_ITEM, secondDraft]);
+    expect(result.inValidation).toEqual([
+      IN_VALIDATION_ITEM,
+      secondInValidation,
+    ]);
+  });
+
+  it('should count an unknown status as draft', () => {
+    // Given a document with a status the UI does not know
+    const unknown = { id: 'unknown', status: 'archived' };
+
+    // When
+    const result = splitDocumentsByStatus([unknown]);
+
+    // Then
+    expect(result.draft).toEqual([unknown]);
+  });
 });

@@ -1,5 +1,6 @@
 import { Page } from '@playwright/test';
 import {
+  publishResource,
   selectSolutionCategories,
   selectUseCase,
   waitForDrawerToClose,
@@ -9,26 +10,21 @@ import {
 export const DEPLOYABLE_INTEGRATIONS = {
   csv: {
     menuItem: 'CSV Feeds',
-    publishCheckbox: 'Is the CSV Feed published?',
     path: './tests/tests_files/assets/octi_csv_feed_deployable.json',
     feedName: 'E2E deployed CSV feed',
   },
   taxii: {
     menuItem: 'TAXII Feeds',
-    publishCheckbox: 'Is the TAXII Feed published?',
     path: './tests/tests_files/assets/octi_taxii_feed_deployable.json',
     feedName: 'E2E deployed TAXII feed',
   },
-  // An RSS Feed form starts published.
   rss: {
     menuItem: 'RSS Feeds',
-    publishCheckbox: null,
     path: './tests/tests_files/assets/octi_rss_feed_deployable.json',
     feedName: 'E2E deployed RSS feed',
   },
   stream: {
     menuItem: 'OpenCTI Streams',
-    publishCheckbox: 'Is the Stream published?',
     path: './tests/tests_files/assets/octi_stream_deployable.json',
     feedName: 'E2E deployed stream',
   },
@@ -98,15 +94,12 @@ export default class IntegrationPage {
     await this.page
       .getByPlaceholder('This is a paragraph to')
       .fill(description);
-    await this.page
-      .getByRole('checkbox', { name: 'Is the TAXII Feed published?' })
-      .click();
     await this.uploadJsonDocument(TEST_JSON_FILE.path);
     await this.uploadImageDocument(TEST_IMAGE_FILE.path);
     await selectUseCase(this.page);
     await selectSolutionCategories(this.page);
     await this.page.getByRole('radio', { name: 'Commercial' }).click();
-    await this.page.getByRole('button', { name: 'Validate' }).click();
+    await this.page.getByRole('button', { name: 'Request validation' }).click();
   }
   async fillRssFeed({
     name,
@@ -135,7 +128,7 @@ export default class IntegrationPage {
     await selectUseCase(this.page);
     await selectSolutionCategories(this.page);
     await this.page.getByRole('radio', { name: 'Commercial' }).click();
-    await this.page.getByRole('button', { name: 'Validate' }).click();
+    await this.page.getByRole('button', { name: 'Request validation' }).click();
   }
 
   async fillStream({
@@ -160,25 +153,25 @@ export default class IntegrationPage {
     await this.page
       .getByPlaceholder('This is a paragraph to')
       .fill(description);
-    await this.page
-      .getByRole('checkbox', { name: 'Is the Stream published?' })
-      .click();
     await this.uploadJsonDocument(TEST_JSON_FILE.path);
     await this.uploadImageDocument(TEST_IMAGE_FILE.path);
     await selectUseCase(this.page);
     await selectSolutionCategories(this.page);
     await this.page.getByRole('radio', { name: 'Commercial' }).click();
-    await this.page.getByRole('button', { name: 'Validate' }).click();
+    await this.page.getByRole('button', { name: 'Request validation' }).click();
   }
-  async fillCsvFeed({
-    name,
-    shortDescription,
-    description,
-  }: {
-    name: string;
-    shortDescription: string;
-    description: string;
-  }) {
+  async fillCsvFeed(
+    {
+      name,
+      shortDescription,
+      description,
+    }: {
+      name: string;
+      shortDescription: string;
+      description: string;
+    },
+    { publish = false }: { publish?: boolean } = {}
+  ) {
     await this.page
       .getByRole('button', { name: 'Add new Integration' })
       .click();
@@ -192,15 +185,16 @@ export default class IntegrationPage {
     await this.page
       .getByPlaceholder('This is a paragraph to')
       .fill(description);
-    await this.page
-      .getByRole('checkbox', { name: 'Is the CSV Feed published?' })
-      .click();
     await this.uploadJsonDocument(TEST_JSON_FILE.path);
     await this.uploadImageDocument(TEST_IMAGE_FILE.path);
     await selectUseCase(this.page);
     await selectSolutionCategories(this.page);
     await this.page.getByRole('radio', { name: 'Commercial' }).click();
-    await this.page.getByRole('button', { name: 'Validate' }).click();
+    await this.page.getByRole('button', { name: 'Request validation' }).click();
+    if (publish) {
+      await waitForDrawerToClose(this.page);
+      await publishResource(this.page, name);
+    }
   }
 
   async fillThirdPartyIntegration({
@@ -228,11 +222,6 @@ export default class IntegrationPage {
       .getByPlaceholder('This is a paragraph to')
       .fill(description);
     await this.page
-      .getByRole('checkbox', {
-        name: 'Is the Third party integration published?',
-      })
-      .click();
-    await this.page
       .getByRole('textbox', { name: 'Vendor link (url)' })
       .fill('https://example.com');
     await this.page
@@ -245,10 +234,10 @@ export default class IntegrationPage {
     await selectUseCase(this.page);
     await selectSolutionCategories(this.page);
     await this.page.getByRole('radio', { name: 'Commercial' }).click();
-    await this.page.getByRole('button', { name: 'Validate' }).click();
+    await this.page.getByRole('button', { name: 'Request validation' }).click();
   }
 
-  // A free integration: a Commercial one can only be deployed on an Enterprise Edition platform.
+  // A free integration, published: a Commercial one can only be deployed on an Enterprise Edition platform.
   async addDeployableIntegration(
     kind: DeployableIntegrationKind,
     {
@@ -273,18 +262,14 @@ export default class IntegrationPage {
     await this.page
       .getByPlaceholder('This is a paragraph to')
       .fill(description);
-    if (integration.publishCheckbox) {
-      await this.page
-        .getByRole('checkbox', { name: integration.publishCheckbox })
-        .click();
-    }
     await this.uploadJsonDocument(integration.path);
     await this.uploadImageDocument(TEST_IMAGE_FILE.path);
     await selectUseCase(this.page);
     await selectSolutionCategories(this.page);
     await this.page.getByRole('radio', { name: 'Free' }).click();
-    await this.page.getByRole('button', { name: 'Validate' }).click();
+    await this.page.getByRole('button', { name: 'Request validation' }).click();
     await waitForDrawerToClose(this.page);
+    await publishResource(this.page, name);
   }
 
   async navigateToIntegration(shortDescription: string) {

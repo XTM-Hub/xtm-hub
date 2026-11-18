@@ -15,6 +15,7 @@ import { describe, expect, it, vi } from 'vitest';
 vi.mock('@graphql/generated', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@graphql/generated')>()),
   useUseCasesListQuery: vi.fn(),
+  useUsersQuery: vi.fn(),
 }));
 
 const CANCEL_LABEL = 'Utils.Cancel';
@@ -55,7 +56,7 @@ describe('OpenaevScenarioForm', () => {
     );
 
     // When
-    await user.click(screen.getByRole('button', { name: CANCEL_LABEL }));
+    await user.click(screen.getByRole('button', { name: 'Utils.Close' }));
 
     // Then
     expect(

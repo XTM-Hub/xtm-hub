@@ -1,10 +1,16 @@
-import { UserFragment } from '@/components/admin/user/UserList';
 import { AppCombobox } from '@/components/ui/AppCombobox';
 import { DEBOUNCE_TIME } from '@/utils/constant';
-import { ServiceRestriction, SubscriptionByIdQuery } from '@graphql/generated';
-import { useContext, useEffect, useMemo } from 'react';
+import {
+  FilterKey,
+  ServiceRestriction,
+  SubscriptionByIdQuery,
+  UsersQueryVariables,
+  useUsersQuery,
+} from '@graphql/generated';
+import { useContext, useEffect, useMemo, useState } from 'react';
 
 import { useUserListLocalstorage } from '@/components/admin/user/user-list-localstorage';
+import Loader from '@/components/Loader';
 import { PortalContext } from '@/components/me/AppPortalContext';
 import {
   UserServiceCreateMutation,
@@ -16,8 +22,8 @@ import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useKeepSelectedOptions } from '@/hooks/use-keep-selected-options';
 import { useTranslate } from '@/hooks/use-translate';
-import { useUsersList } from '@/hooks/use-users-list';
 import { analyticsId } from '@/lib/analytics/analytics.ids';
+import { portalGraphqlClient } from '@/lib/graphql-client';
 import { toComboboxOptionIds } from '@/utils/design-system/combobox';
 import {
   Button,
@@ -27,13 +33,13 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@filigran/design-system';
-import { UserList_fragment$key } from '@generated/UserList_fragment.graphql';
 import { userServiceCreateMutation } from '@generated/userServiceCreateMutation.graphql';
 import { userServiceEditMutation } from '@generated/userServiceEditMutation.graphql';
 import { userServices_fragment$data } from '@generated/userServices_fragment.graphql';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { keepPreviousData } from '@tanstack/react-query';
 import { useForm, useWatch } from 'react-hook-form';
-import { readInlineData, useMutation } from 'react-relay';
+import { useMutation } from 'react-relay';
 import { useDebounceCallback } from 'usehooks-ts';
 import { z } from 'zod';
 
@@ -225,45 +231,43 @@ export const UserServiceForm = ({
     );
   };
 
-  const { data, refetch } = useUsersList({
-    pageSize,
-    orderMode,
-    orderBy,
-    filter: { organization: organizationId },
-  });
-  const handleUsersInputChange = useDebounceCallback((search: string) => {
-    refetch({
-      count: pageSize,
+  const [usersSearchTerm, setUsersSearchTerm] = useState<string | null>(null);
+  const usersVariables = useMemo<UsersQueryVariables>(
+    () => ({
+      first: pageSize,
       orderMode,
       orderBy,
-      searchTerm: search,
+      searchTerm: usersSearchTerm,
       filters: organizationId
-        ? [{ key: 'organization_id', value: [organizationId] }]
-        : undefined,
-    });
+        ? [{ key: FilterKey.OrganizationId, value: [organizationId] }]
+        : null,
+    }),
+    [pageSize, orderMode, orderBy, usersSearchTerm, organizationId]
+  );
+  const { data, isLoading, isPlaceholderData } = useUsersQuery(
+    portalGraphqlClient,
+    usersVariables,
+    {
+      // A search keeps the previous data, so the field never goes back to empty.
+      placeholderData: keepPreviousData,
+      // Like Relay, a failed load reaches the error page; a failed background
+      // refetch keeps the options shown.
+      throwOnError: (_error, query) => query.state.data === undefined,
+    }
+  );
+  const handleUsersInputChange = useDebounceCallback((search: string) => {
+    setUsersSearchTerm(search);
   }, DEBOUNCE_TIME);
 
   const usersOptions = useMemo(
     () =>
-      data?.users?.edges
-        ?.filter((edge) => {
-          const user = readInlineData<UserList_fragment$key>(
-            UserFragment,
-            edge.node
-          );
-          return user.id !== me?.id;
-        })
-        ?.map((edge) => {
-          const user = readInlineData<UserList_fragment$key>(
-            UserFragment,
-            edge.node
-          );
-          return {
-            label: user.email,
-            value: user.email,
-          };
-        }) ?? [],
-    [data?.users?.edges, me?.id]
+      data?.users.edges
+        .filter(({ node }) => node.id !== me?.id)
+        .map(({ node }) => ({
+          label: node.email,
+          value: node.email,
+        })) ?? [],
+    [data, me?.id]
   );
   const selectedEmails = useWatch({
     control: extendedForm.control,
@@ -283,6 +287,11 @@ export const UserServiceForm = ({
       ),
     [keptUsersOptions]
   );
+
+  // The form waits for the users, as it did when the Relay query suspended it.
+  if (!data) {
+    return <Loader />;
+  }
 
   return (
     <Form {...(form as typeof extendedForm)}>
@@ -314,6 +323,7 @@ export const UserServiceForm = ({
                   }}
                   filterOptions={(options) => options}
                   getOptionLabel={usersOptionIds.getOptionLabel}
+                  loading={isLoading || isPlaceholderData}
                 />
               )}
             />

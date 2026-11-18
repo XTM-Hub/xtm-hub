@@ -197,6 +197,16 @@ describe('TrialsTab', () => {
     }
   );
 
+  it('should warn about the cancellation consequences with an alert', () => {
+    // Given / When
+    testRender(<TrialsTab type={TrialsTabType.Running} />);
+
+    // Then
+    const alert = screen.getByRole('alert');
+    expect(alert).toHaveTextContent('TrialsDashboard.WarningCancellation');
+    expect(alert).toHaveClass('border-alert-warning');
+  });
+
   it('should search the trials matching the term when the admin types it', async () => {
     // Given
     vi.useFakeTimers();

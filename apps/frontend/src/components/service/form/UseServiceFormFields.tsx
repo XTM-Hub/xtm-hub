@@ -67,7 +67,6 @@ type AvailableFields =
   | 'entity_types'
   | 'images'
   | 'integration_type'
-  | 'active'
   | 'short_description'
   | 'slug'
   | 'name'
@@ -108,7 +107,7 @@ export const useServiceFormFields = ({
   );
 
   const [imagesToDelete, setImagesToDelete] = useState<string[]>([]);
-  const { setIsDirty } = useDialogContext();
+  const { setUploadsDirty } = useDialogContext();
   const integrationType = integrationTypeMappedByDocumentType[documentType];
   const t = useTranslate();
 
@@ -209,7 +208,7 @@ export const useServiceFormFields = ({
             setImages={setImages}
             imagesToDelete={imagesToDelete}
             setImagesToDelete={setImagesToDelete}
-            setIsDirty={setIsDirty}
+            setUploadsDirty={setUploadsDirty}
           />
         ),
       },
@@ -226,18 +225,11 @@ export const useServiceFormFields = ({
         ),
       },
       integration_type: { fieldType: () => <FormItem hidden={true} /> },
+      status: { fieldType: () => null },
       license_type: {
         label: t('Service.Form.LicenseTypeLabel'),
         inputProps: {
           disabled: disabledFields.includes('license_type'),
-        },
-      },
-      active: {
-        label: t('Service.Form.PublishedPlaceholder', {
-          documentType,
-        }),
-        inputProps: {
-          disabled: disabledFields.includes('active'),
         },
       },
       short_description: {
@@ -375,7 +367,7 @@ export const useServiceFormFields = ({
       setImages,
       imagesToDelete,
       setImagesToDelete,
-      setIsDirty,
+      setUploadsDirty,
       disabledFields,
     ]
   );

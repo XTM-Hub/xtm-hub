@@ -858,8 +858,7 @@ export type FacetBucket = {
 
 export enum FeatureFlag {
   DecouplingConnectors = 'DECOUPLING_CONNECTORS',
-  Dummy = 'DUMMY',
-  SaasMetrics = 'SAAS_METRICS'
+  Dummy = 'DUMMY'
 }
 
 export enum FiligranProduct {

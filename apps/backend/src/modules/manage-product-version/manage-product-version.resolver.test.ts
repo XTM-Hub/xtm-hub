@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TestHelper } from '../../../tests/helper/test.helper';
 import {
   contextSimpleUserFiligran2,
+  contextSystemToken,
   GRAPHQL_RESOLVE_INFO,
 } from '../../../tests/tests.const';
 import { PlatformIdentifier } from '../../__generated__/resolvers-types';
@@ -29,7 +30,7 @@ describe('manageProductVersionResolver', () => {
       const result = await resolvers.Mutation!.newProductVersion!(
         {},
         { product: PlatformIdentifier.Opencti, version: '6.4.0' },
-        contextSimpleUserFiligran2,
+        contextSystemToken,
         GRAPHQL_RESOLVE_INFO
       );
 
@@ -55,7 +56,7 @@ describe('manageProductVersionResolver', () => {
         resolvers.Mutation!.newProductVersion!(
           {},
           { product: PlatformIdentifier.Opencti, version: 'not-a-version' },
-          contextSimpleUserFiligran2,
+          contextSystemToken,
           GRAPHQL_RESOLVE_INFO
         )
       ).rejects.toThrow('invalid version');

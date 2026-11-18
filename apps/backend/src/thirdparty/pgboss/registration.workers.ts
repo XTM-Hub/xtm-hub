@@ -1,5 +1,6 @@
 import type { PgBoss } from 'pg-boss';
 import { RegistrationApp } from '../../modules/registration/registration.app';
+import { SYSTEM_USER_CONTEXT } from '../../portal.const';
 import { logApp } from '../../utils/app-logger.util';
 import {
   REGISTRATION_QUEUES,
@@ -9,6 +10,7 @@ import { RETRY_STRATEGIES } from './retry-strategies';
 import { createBatchHandler } from './workers';
 
 const handleCommercialModelJob = createBatchHandler<CommercialModelJobData>(
+  SYSTEM_USER_CONTEXT,
   async (job) => RegistrationApp.refreshCommercialModel(job.data)
 );
 

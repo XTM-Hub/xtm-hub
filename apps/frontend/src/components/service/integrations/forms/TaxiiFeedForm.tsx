@@ -6,10 +6,8 @@ import {
 } from '@/components/service/form/UseDocumentFileField';
 import { useServiceFormFields } from '@/components/service/form/UseServiceFormFields';
 import { AutoForm } from '@/components/ui/auto-form';
-import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import {
   fileListCheck,
-  isDocumentPublished,
   optionalFileListCheck,
   transformToFileList,
 } from '@/utils/documents';
@@ -17,6 +15,7 @@ import { isIntegrationItem } from '@/utils/shareable-resources/shareable-resourc
 import {
   DocumentImageType,
   DocumentItemFragment,
+  DocumentStatus,
   IntegrationType,
 } from '@graphql/generated';
 import { useContext, useMemo } from 'react';
@@ -26,6 +25,7 @@ import { z } from 'zod';
 const taxiiFeedFormSchema = z.object({
   name: z.string().min(1, 'Required'),
   slug: z.string().min(1, 'Required'),
+  status: z.enum(DocumentStatus).optional(),
   uploader_id: z.string().optional(),
   short_description: z.string().min(1, 'Required').max(250),
   description: z.string().min(1, 'Required'),
@@ -34,7 +34,6 @@ const taxiiFeedFormSchema = z.object({
   use_cases: z.array(z.string()).min(1, 'Required'),
   solution_categories: z.array(z.string()).min(1, 'Required'),
   license_type: z.enum(['Free', 'Commercial']).optional(),
-  active: z.boolean().optional(),
   datasheet_url: z.url().or(z.literal('')).nullish(),
   blogpost_url: z.url().or(z.literal('')).nullish(),
   demo_url: z.url().or(z.literal('')).nullish(),
@@ -54,7 +53,6 @@ export const TaxiiFeedForm = ({
   document,
 }: TaxiiFeedFormProps) => {
   const { me } = useContext(PortalContext);
-  const { handleCloseSheet } = useDialogContext();
 
   const isCreation = !document;
 
@@ -81,7 +79,6 @@ export const TaxiiFeedForm = ({
     () =>
       ({
         ...document,
-        active: document ? isDocumentPublished(document.status) : undefined,
         images: transformToFileList(DocumentImageType.Image, document),
         logo: transformToFileList(DocumentImageType.Logo, document),
         use_cases: document?.use_cases?.map((useCase) => useCase.id),
@@ -110,7 +107,6 @@ export const TaxiiFeedForm = ({
   );
 
   const {
-    active,
     name,
     slug,
     short_description,
@@ -128,6 +124,7 @@ export const TaxiiFeedForm = ({
     images,
     imagesToDelete,
     logo,
+    status,
   } = useServiceFormFields({
     documentType: 'TAXII Feed',
     platform: 'OpenCTI',
@@ -168,7 +165,7 @@ export const TaxiiFeedForm = ({
           document: documentField,
           logo,
           images: imagesField,
-          active,
+          status,
           short_description,
           slug,
           name,
@@ -177,7 +174,7 @@ export const TaxiiFeedForm = ({
           blogpost_url,
           demo_url,
         }}>
-        <ServiceFormSheetFooter handleCloseSheet={handleCloseSheet} />
+        <ServiceFormSheetFooter status={document?.status} />
       </AutoForm>
     </>
   );
