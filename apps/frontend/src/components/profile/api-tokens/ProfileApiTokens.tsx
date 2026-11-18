@@ -236,7 +236,7 @@ export const ProfileApiTokens = () => {
                       <SelectField
                         hideLabel
                         label={t('ApiTokens.Column.Organization')}
-                        analyticsId="account_api_token_filter_organization"
+                        analyticsId="account_api_token_organization_filter"
                         options={[
                           {
                             value: API_TOKEN_FILTER_ALL,
@@ -253,7 +253,7 @@ export const ProfileApiTokens = () => {
                       <SelectField
                         hideLabel
                         label={t('ApiTokens.Column.Scope')}
-                        analyticsId="account_api_token_filter_scope"
+                        analyticsId="account_api_token_scope_filter"
                         options={[
                           {
                             value: API_TOKEN_FILTER_ALL,
@@ -270,7 +270,7 @@ export const ProfileApiTokens = () => {
                       <SelectField
                         hideLabel
                         label={t('ApiTokens.Column.Status')}
-                        analyticsId="account_api_token_filter_status"
+                        analyticsId="account_api_token_status_filter"
                         options={[
                           {
                             value: API_TOKEN_FILTER_ALL,
