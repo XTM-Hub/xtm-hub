@@ -30,9 +30,8 @@ import { filterDocumentImages, findDocumentLogo } from '@/utils/documents';
 import { getResourcePageFiligranWebsiteUtm } from '@/utils/filigran-website-utm';
 import { getPlatformIdentifier } from '@/utils/platform';
 import { ConnectorFields } from '@/utils/shareable-resources/shareable-resources.types';
-import { Button } from '@filigran/design-system';
+import { Alert, Button } from '@filigran/design-system';
 import {
-  InfoIcon,
   LogoFiligranIcon,
   MotionPlayIcon,
   ThreatActorGroupIcon,
@@ -179,17 +178,22 @@ const ShareableResourceConnectorSlug = ({
         className="mt-4"
       />
       {documentData.verified && (
-        <div className="border border-solid border-alert-info rounded flex items-center gap-1 p-2 text-sm mt-4">
-          <InfoIcon className="shrink-0 h-4 w-4 mr-1 text-icon-info" />
-          {t('Service.Connectors.ImproveIntegrationPrefix')}
-          <Link
-            {...analyticsId('resource_repository_open')}
-            href={manifest_url}
-            target="_blank"
-            className="underline">
-            {t('Service.Connectors.GithubRepositoryLink')}
-          </Link>
-        </div>
+        <Alert
+          severity="info"
+          className="mt-4"
+          title={
+            <>
+              {t('Service.Connectors.ImproveIntegrationPrefix')}{' '}
+              <Link
+                {...analyticsId('resource_repository_open')}
+                href={manifest_url}
+                target="_blank"
+                className="underline">
+                {t('Service.Connectors.GithubRepositoryLink')}
+              </Link>
+            </>
+          }
+        />
       )}
       <div className="flex flex-col-reverse lg:flex-row w-full mt-4 gap-6">
         <ShareableResourceDescription

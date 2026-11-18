@@ -140,6 +140,44 @@ describe('ShareableResourceConnectorSlug - Share count refresh', () => {
   });
 });
 
+describe('ShareableResourceConnectorSlug - Improve integration callout', () => {
+  const CALLOUT_TEXT = 'Service.Connectors.ImproveIntegrationPrefix';
+
+  it('should invite to improve a verified integration through its repository', () => {
+    // Given
+    const connector = {
+      ...buildConnector('connector-1', 0),
+      verified: true,
+      source_code: 'https://github.com/filigran/connector',
+    };
+
+    // When
+    testRender(renderSlugElement(connector));
+
+    // Then
+    expect(screen.getByRole('status')).toHaveTextContent(CALLOUT_TEXT);
+    expect(
+      screen.getByRole('link', {
+        name: 'Service.Connectors.GithubRepositoryLink',
+      })
+    ).toHaveAttribute(
+      'href',
+      'https://github.com/filigran/connector/__metadata__/connector_manifest.json'
+    );
+  });
+
+  it('should not show the callout for a community integration', () => {
+    // Given
+    const connector = { ...buildConnector('connector-1', 0), verified: false };
+
+    // When
+    testRender(renderSlugElement(connector));
+
+    // Then
+    expect(screen.queryByText(CALLOUT_TEXT, { exact: false })).toBeNull();
+  });
+});
+
 describe('ShareableResourceConnectorSlug - Resource view', () => {
   beforeEach(() => {
     startAnalytics();

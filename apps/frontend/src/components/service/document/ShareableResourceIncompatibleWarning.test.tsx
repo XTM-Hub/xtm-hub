@@ -14,6 +14,14 @@ describe('ShareableResourceIncompatibleWarning', () => {
     expect(screen.getByText(MESSAGE)).toBeInTheDocument();
   });
 
+  it('should announce the message as a warning alert', () => {
+    // Given / When
+    testRender(<ShareableResourceIncompatibleWarning message={MESSAGE} />);
+
+    // Then
+    expect(screen.getByRole('alert')).toHaveTextContent(MESSAGE);
+  });
+
   it('should hide the decorative icon from assistive technology', () => {
     // Given / When
     const { container } = testRender(
