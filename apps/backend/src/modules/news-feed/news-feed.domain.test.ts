@@ -15,6 +15,7 @@ import type { BlogFeedItem } from '../../thirdparty/blog-api/schema';
 import { BadRequestErrorCode } from '../../utils/error/error.code';
 import { RequiredPlatformVersions } from '../../utils/required-platform-version';
 import { NewsFeedDomain } from './news-feed.domain';
+import { blogpostProductMapping } from './news-feed.model';
 
 describe('newsFeedDomain', () => {
   const tags = ['threat-intel', 'malware'];
@@ -1123,10 +1124,7 @@ describe('newsFeedDomain', () => {
           is_deleted: isDeleted,
         });
 
-      const BLOG_PRODUCTS = [
-        PlatformIdentifier.Opencti,
-        PlatformIdentifier.Openaev,
-      ];
+      const BLOG_PRODUCTS = Object.values(blogpostProductMapping);
 
       it.each(BLOG_PRODUCTS)(
         'should keep an expired blog post of %s that is not deleted',

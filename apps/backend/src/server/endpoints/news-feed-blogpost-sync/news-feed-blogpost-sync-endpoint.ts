@@ -10,7 +10,6 @@ import {
   isValidSystemToken,
   SYSTEM_TOKEN_HEADER,
 } from '../../../security/directive-graphql/validator/system-token.validator';
-import { BlogApiError } from '../../../thirdparty/blog-api/errors';
 import { logApp } from '../../../utils/app-logger.util';
 import { buildIpRateLimiterOptions } from '../shared/ip-rate-limit.util';
 
@@ -80,12 +79,9 @@ export const NewsFeedBlogpostSyncEndpoint = {
         ),
       });
     } catch (error) {
-      // The post id of an invalid item stays in the logs, it is never sent back to the caller. When a product fails,
-      // the app has already logged its failure with its product and post id, and this error names the failed products.
-      logApp.error('Error while synchronizing blog posts', {
-        error,
-        postId: error instanceof BlogApiError ? error.postId : undefined,
-      });
+      // The caller only gets a generic message. When a product fails, the app has already logged the failure with its
+      // product and post id, and the error carries the first failure as its cause.
+      logApp.error('Error while synchronizing blog posts', { error });
       res.status(500).json({ message: SYNC_FAILURE_MESSAGE });
     }
   },

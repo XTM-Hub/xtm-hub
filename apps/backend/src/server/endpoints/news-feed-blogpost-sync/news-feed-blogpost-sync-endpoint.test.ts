@@ -32,7 +32,6 @@ const VALID_TOKEN = 'changeMe';
 const RATE_LIMIT = 30;
 const CLIENT_IP_HEADER = 'x-test-client-ip';
 const SYNC_FAILURE_BODY = { message: 'Unable to synchronize blog posts' };
-const INVALID_POST_ID = 'post-614';
 const INTERNAL_ERROR_MESSAGE = 'connection to 10.1.2.3:5432 refused';
 
 const SYNC_RESULT: BlogpostSyncResult = {
@@ -244,23 +243,10 @@ describe('news feed blogpost sync endpoint', () => {
   });
 
   describe('failure', () => {
-    const failureCases: [string, Error, string | undefined][] = [
-      [
-        'an invalid item of the blog API',
-        new BlogApiError(BlogApiErrorCode.InvalidItem, INTERNAL_ERROR_MESSAGE, {
-          postId: INVALID_POST_ID,
-        }),
-        INVALID_POST_ID,
-      ],
-      [
-        'a failure of the blog API without a post',
-        new BlogApiError(BlogApiErrorCode.Timeout, INTERNAL_ERROR_MESSAGE),
-        undefined,
-      ],
+    const failureCases: [string, Error][] = [
       [
         'the empty feed safeguard',
         new Error(ErrorCode.NewsFeedBlogpostEmptyFeed),
-        undefined,
       ],
       [
         'a product failing while the other is applied',
@@ -270,14 +256,13 @@ describe('news feed blogpost sync endpoint', () => {
             INTERNAL_ERROR_MESSAGE
           ),
         }),
-        undefined,
       ],
-      ['any other error', new Error(INTERNAL_ERROR_MESSAGE), undefined],
+      ['any other error', new Error(INTERNAL_ERROR_MESSAGE)],
     ];
 
     it.each(failureCases)(
-      'should answer a 500 with the message only, and log the post id, when the synchronization throws %s',
-      async (_description, error, expectedPostId) => {
+      'should answer a 500 with the message only, and log the error, when the synchronization throws %s',
+      async (_description, error) => {
         // Given
         const logError = vi
           .spyOn(logApp, 'error')
@@ -296,7 +281,7 @@ describe('news feed blogpost sync endpoint', () => {
         });
         expect(logError).toHaveBeenCalledWith(
           'Error while synchronizing blog posts',
-          { error, postId: expectedPostId }
+          { error }
         );
       }
     );
