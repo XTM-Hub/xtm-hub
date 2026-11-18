@@ -318,6 +318,7 @@ export const UserDomain = {
       return [];
     }
 
+    // Sorted by email, a selected column as SELECT DISTINCT requires
     return db<User>('User')
       .join('User_Organization', 'User_Organization.user_id', 'User.id')
       .join(
@@ -328,7 +329,8 @@ export const UserDomain = {
       .whereIn('User_Organization.organization_id', organizationIds)
       .andWhere('UserOrganization_Capability.name', '=', capability)
       .select('User_Organization.organization_id', 'User.email')
-      .distinct();
+      .distinct()
+      .orderBy('User.email', 'asc');
   },
 
   loadUserConnection: (opts: QueryUsersArgs) => {

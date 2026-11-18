@@ -29,6 +29,12 @@ const ORGANIZATION_QUERY = `query ($id: ID!) {
   organization(id: $id) { id name }
 }`;
 
+const ORGANIZATIONS_ADMINISTRATOR_EMAILS_QUERY = `query ($searchTerm: String) {
+  organizations(orderBy: name, orderMode: asc, searchTerm: $searchTerm) {
+    edges { node { id administrator_emails } }
+  }
+}`;
+
 const USER_ORGANIZATIONS_ADMINISTRATOR_EMAILS_QUERY = `query {
   userOrganizations { id administrator_emails }
 }`;
@@ -365,6 +371,32 @@ describe('organization GraphQL schema', () => {
       expect(errors).toHaveLength(organizations.length);
       errors?.forEach(({ message }) => expect(message).toMatch(NOT_AUTHORIZED));
       expect(loadAdministratorEmails).not.toHaveBeenCalled();
+    });
+
+    it('should show the administrator emails to a READ_ORGANIZATION_MEMBERS user listing the organizations', async () => {
+      // Given / When
+      const { data, errors } = await execute(
+        ORGANIZATIONS_ADMINISTRATOR_EMAILS_QUERY,
+        withOrganizationDataLoader(
+          withPortalCapability(CAPABILITY_READ_ORGANIZATION_MEMBERS)
+        ),
+        { searchTerm: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.NAME }
+      );
+
+      // Then
+      expect(errors).toBeUndefined();
+      expect(data?.organizations).toMatchObject({
+        edges: expect.arrayContaining([
+          {
+            node: {
+              id: SECOND_ORGANIZATION_GLOBAL_ID,
+              administrator_emails: expect.arrayContaining([
+                SECOND_ORGANIZATION_USERS.ADMIN_ORGA.EMAIL,
+              ]),
+            },
+          },
+        ]),
+      });
     });
 
     it('should show the administrator emails to a READ_SAAS_METRICS user', async () => {
