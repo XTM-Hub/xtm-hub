@@ -482,7 +482,10 @@
       "VOTABLE_FEATURE_PRODUCT_LOCKED": "この機能には既に投票があるため、製品を変更できません",
       "VOTABLE_FEATURE_PRODUCT_NOT_VOTABLE": "この製品は投票の対象ではありません",
       "COPY_FEATURES_FROM_ANOTHER_ROADMAP": "機能は同じロードマップのラウンドからのみコピーできます",
-      "VOTABLE_FEATURE_MUTATION_ERROR": "機能の保存中にエラーが発生しました"
+      "VOTABLE_FEATURE_MUTATION_ERROR": "機能の保存中にエラーが発生しました",
+      "INVALID_API_TOKEN": "トークン名または有効期限が無効です",
+      "NOT_ALLOWED_WITH_API_TOKEN": "この操作はAPIトークンでは許可されていません",
+      "READ_ONLY_API_TOKEN": "このAPIトークンは読み取り専用です"
     },
     "SomethingWentWrong": "何かが間違っている",
     "YouAreNotAuthorized": "このページを表示する権限がありません。"
@@ -960,6 +963,71 @@
     "opencti": "OpenCTI",
     "xtmhub": "XTM Hub",
     "xtmone": "XTM One"
+  },
+  "ApiTokens": {
+    "Column": {
+      "Expires": "有効期限",
+      "LastUsed": "最終使用",
+      "Name": "名前",
+      "Organization": "組織",
+      "Scope": "スコープ",
+      "Status": "ステータス"
+    },
+    "Create": {
+      "Description": "トークンは、選択した組織で選択したスコープにより、あなたとして動作します。",
+      "Open": "トークンを作成",
+      "Submit": "トークンを作成",
+      "Title": "APIトークンを作成"
+    },
+    "Created": {
+      "Copied": "トークンをコピーしました",
+      "Copy": "トークンをコピー",
+      "CopyFailed": "トークンをコピーできませんでした。選択して手動でコピーしてください。",
+      "Description": "トークン {name} が表示されるのは今回だけです。シークレットマネージャーに保存してください。紛失した場合は失効して新しく作成してください。",
+      "Done": "完了",
+      "Helper": "Authorizationヘッダーで、Bearerに続けてトークンを送信します。",
+      "Title": "今すぐAPIトークンをコピーしてください",
+      "Token": "APIトークン"
+    },
+    "Description": "トークンを使うと、スクリプトやFiligran Copilotなどの連携が、1つの組織であなたとしてXTM Hub APIを呼び出せます。トークンの権限があなたの権限を超えることはありません。",
+    "Empty": "APIトークンはまだありません。スクリプトや連携を接続するには作成してください。",
+    "Field": {
+      "Expiration": "有効期限",
+      "ExpiresOn": "{date} に期限切れ",
+      "Name": "名前",
+      "NameError": "100文字以内で名前を入力してください",
+      "NameHelper": "後で識別できるよう、このトークンを使うものを入力します。",
+      "NamePlaceholder": "Filigran Copilot",
+      "Organization": "組織",
+      "OrganizationError": "組織を選択してください",
+      "Scope": "スコープ"
+    },
+    "Lifetime": "{count, plural, other {#日}}",
+    "NeverUsed": "未使用",
+    "PersonalSpace": "個人スペース",
+    "Revoke": "失効",
+    "RevokeDialog": {
+      "Text": "{name} を使用しているスクリプトや連携は直ちにアクセスを失います。この操作は元に戻せません。",
+      "Title": "このAPIトークンを失効しますか？"
+    },
+    "RevokeNamed": "トークン {name} を失効",
+    "Revoked": "トークン {name} を失効しました",
+    "Scope": {
+      "admin": "管理者",
+      "read": "読み取り",
+      "read_write": "読み取りと書き込み"
+    },
+    "ScopeHelp": {
+      "admin": "管理者：現在あなたが持つ組織とプラットフォームの管理権限。信頼できるツールにのみ付与してください。",
+      "read": "読み取り：クエリのみ。変更はできません。",
+      "read_write": "読み取りと書き込み：クエリと変更。組織の管理とプラットフォームの管理は含みません。"
+    },
+    "Status": {
+      "active": "有効",
+      "expired": "期限切れ",
+      "revoked": "失効済み"
+    },
+    "Title": "APIトークン"
   },
   "ProfilePage": {
     "Picture": "写真",

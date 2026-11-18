@@ -6,6 +6,7 @@ import {
   MeResetPasswordMutation,
   MeUploadUserPictureMutation,
 } from '@/components/me/me.graphql';
+import { ProfileApiTokens } from '@/components/profile/api-tokens/ProfileApiTokens';
 import {
   ProfileFormEdit,
   ProfileFormEditSchema,
@@ -120,6 +121,7 @@ export const Profile = () => {
         <ProfileFormPreferences />
         <ProfileFormPicture onSubmit={handleUploadPicture} />
         <ProfileFormResetPassword onSubmit={handleResetPassword} />
+        <ProfileApiTokens />
         <RequestTransferPersonalSpace />
       </section>
       <ConfirmDialog

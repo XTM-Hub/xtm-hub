@@ -482,7 +482,10 @@
       "VOTABLE_FEATURE_PRODUCT_LOCKED": "Cette fonctionnalité a déjà des votes, son produit ne peut plus être modifié",
       "VOTABLE_FEATURE_PRODUCT_NOT_VOTABLE": "Ce produit n'est pas ouvert au vote",
       "COPY_FEATURES_FROM_ANOTHER_ROADMAP": "Les fonctionnalités ne peuvent être copiées que depuis un round de la même roadmap",
-      "VOTABLE_FEATURE_MUTATION_ERROR": "Une erreur est survenue lors de l'enregistrement de la fonctionnalité"
+      "VOTABLE_FEATURE_MUTATION_ERROR": "Une erreur est survenue lors de l'enregistrement de la fonctionnalité",
+      "INVALID_API_TOKEN": "Le nom ou la date d’expiration du jeton n’est pas valide",
+      "NOT_ALLOWED_WITH_API_TOKEN": "Cette action n’est pas autorisée avec un jeton d’API",
+      "READ_ONLY_API_TOKEN": "Ce jeton d’API ne peut que lire"
     },
     "SomethingWentWrong": "Une erreur est survenue",
     "YouAreNotAuthorized": "Vous n'êtes pas autorisé à accéder à cette page."
@@ -960,6 +963,71 @@
     "opencti": "OpenCTI",
     "xtmhub": "XTM Hub",
     "xtmone": "XTM One"
+  },
+  "ApiTokens": {
+    "Column": {
+      "Expires": "Expire le",
+      "LastUsed": "Dernière utilisation",
+      "Name": "Nom",
+      "Organization": "Organisation",
+      "Scope": "Portée",
+      "Status": "Statut"
+    },
+    "Create": {
+      "Description": "Le jeton agit en votre nom dans l’organisation choisie, avec la portée choisie.",
+      "Open": "Créer un jeton",
+      "Submit": "Créer le jeton",
+      "Title": "Créer un jeton d’API"
+    },
+    "Created": {
+      "Copied": "Jeton copié",
+      "Copy": "Copier le jeton",
+      "CopyFailed": "Le jeton n’a pas pu être copié : sélectionnez-le et copiez-le à la main.",
+      "Description": "C’est la seule fois où le jeton {name} est affiché. Conservez-le dans un gestionnaire de secrets ; si vous le perdez, révoquez-le et créez-en un nouveau.",
+      "Done": "Terminé",
+      "Helper": "Envoyez-le dans l’en-tête Authorization : Bearer suivi du jeton.",
+      "Title": "Copiez votre jeton d’API maintenant",
+      "Token": "Jeton d’API"
+    },
+    "Description": "Un jeton permet à un script ou à une intégration comme Filigran Copilot d’appeler l’API XTM Hub en votre nom, dans une organisation. Un jeton n’a jamais plus de droits que vous.",
+    "Empty": "Aucun jeton d’API pour l’instant. Créez-en un pour connecter un script ou une intégration.",
+    "Field": {
+      "Expiration": "Expiration",
+      "ExpiresOn": "Expire le {date}",
+      "Name": "Nom",
+      "NameError": "Saisissez un nom de 100 caractères au plus",
+      "NameHelper": "Ce qui utilise ce jeton, pour le reconnaître plus tard.",
+      "NamePlaceholder": "Filigran Copilot",
+      "Organization": "Organisation",
+      "OrganizationError": "Choisissez une organisation",
+      "Scope": "Portée"
+    },
+    "Lifetime": "{count, plural, one {# jour} other {# jours}}",
+    "NeverUsed": "Jamais utilisé",
+    "PersonalSpace": "Espace personnel",
+    "Revoke": "Révoquer",
+    "RevokeDialog": {
+      "Text": "Tout script ou intégration qui utilise {name} perd l’accès immédiatement. Cette action est irréversible.",
+      "Title": "Révoquer ce jeton d’API ?"
+    },
+    "RevokeNamed": "Révoquer le jeton {name}",
+    "Revoked": "Jeton {name} révoqué",
+    "Scope": {
+      "admin": "Administration",
+      "read": "Lecture",
+      "read_write": "Lecture et écriture"
+    },
+    "ScopeHelp": {
+      "admin": "Administration : vos droits d’administration de l’organisation et de la plateforme, tels que vous les avez aujourd’hui. À réserver à un outil de confiance.",
+      "read": "Lecture : requêtes uniquement, rien ne peut être modifié.",
+      "read_write": "Lecture et écriture : requêtes et modifications, sans l’administration de l’organisation ni de la plateforme."
+    },
+    "Status": {
+      "active": "Actif",
+      "expired": "Expiré",
+      "revoked": "Révoqué"
+    },
+    "Title": "Jetons d’API"
   },
   "ProfilePage": {
     "Picture": "Photo de profil",

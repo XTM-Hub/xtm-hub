@@ -4,6 +4,15 @@ import {
 } from '@/lib/analytics/analytics.ids';
 
 export const ANALYTICS_ELEMENT_IDS = {
+  account_api_token_cancel: { action: 'Cancel API token creation' },
+  account_api_token_close: { action: 'Close new API token' },
+  account_api_token_copy: { action: 'Copy new API token' },
+  account_api_token_create: { action: 'Create API token' },
+  account_api_token_open: { action: 'Open API token creation' },
+  account_api_token_remove: { action: 'Revoke API token' },
+  account_api_token_revocation_confirm: {
+    action: 'Confirm API token revocation',
+  },
   account_change_notice_close: { action: 'Dismiss account change notice' },
   account_languages_open: { action: 'Show language choices' },
   account_local_login_open: { action: 'Log in with local account' },
