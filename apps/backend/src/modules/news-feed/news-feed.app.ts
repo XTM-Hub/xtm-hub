@@ -455,7 +455,7 @@ export const NewsFeedApp = {
     updatedDocument,
     serviceDefinitionIdentifier,
   }: {
-    documentBeforeUpdate?: Document;
+    documentBeforeUpdate: Document;
     updatedDocument: Document;
     serviceDefinitionIdentifier: ServiceDefinitionIdentifier;
   }): Promise<void> => {
@@ -469,16 +469,11 @@ export const NewsFeedApp = {
     }
 
     if (updatedDocument.status !== DocumentStatus.Published) {
-      if (documentBeforeUpdate?.status === DocumentStatus.Published) {
-        await NewsFeedApp.deleteResourceNewsFeed({
-          documentId: updatedDocument.id,
-        });
-      }
       return;
     }
 
     const shouldCreateNewsFeedItem =
-      documentBeforeUpdate?.status !== DocumentStatus.Published;
+      documentBeforeUpdate.status !== DocumentStatus.Published;
     if (shouldCreateNewsFeedItem) {
       await NewsFeedApp.createResourceNewsFeedItem({
         document: updatedDocument,
@@ -487,7 +482,7 @@ export const NewsFeedApp = {
         logApp.error('Unable to create news feed item', {
           error,
           documentId: updatedDocument.id,
-          source: documentBeforeUpdate ? 'update' : 'creation',
+          source: 'update',
         })
       );
       return;

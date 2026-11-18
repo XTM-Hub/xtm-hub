@@ -161,7 +161,12 @@ describe('document domain', () => {
     const PAGE_SIZE = 3;
     const DRAFT_NAME = 'm-draft';
     const IN_VALIDATION_NAME = 'n-in-validation';
-    const ACTIVE_NAMES = ['a-active', 'b-active', 'y-active', 'z-active'];
+    const PUBLISHED_NAMES = [
+      'a-published',
+      'b-published',
+      'y-published',
+      'z-published',
+    ];
 
     beforeEach(async () => {
       vi.spyOn(PgBossProducer, 'send').mockResolvedValue('job-id');
@@ -169,7 +174,7 @@ describe('document domain', () => {
         type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
       });
 
-      for (const name of [...ACTIVE_NAMES, DRAFT_NAME]) {
+      for (const name of [...PUBLISHED_NAMES, DRAFT_NAME]) {
         await TestHelper.document.createWholeDocument({
           name,
           slug: name,
@@ -223,8 +228,8 @@ describe('document domain', () => {
 
     it.each`
       orderMode            | expectedNames
-      ${OrderingMode.Asc}  | ${['m-draft', 'n-in-validation', 'a-active', 'b-active', 'y-active', 'z-active']}
-      ${OrderingMode.Desc} | ${['m-draft', 'n-in-validation', 'z-active', 'y-active', 'b-active', 'a-active']}
+      ${OrderingMode.Asc}  | ${['m-draft', 'n-in-validation', 'a-published', 'b-published', 'y-published', 'z-published']}
+      ${OrderingMode.Desc} | ${['m-draft', 'n-in-validation', 'z-published', 'y-published', 'b-published', 'a-published']}
     `(
       'should put the draft and in validation documents first, then follow the requested $orderMode order',
       async ({
@@ -248,15 +253,15 @@ describe('document domain', () => {
       expect(pages.flatMap(namesOf)).toEqual([
         DRAFT_NAME,
         IN_VALIDATION_NAME,
-        ...ACTIVE_NAMES,
+        ...PUBLISHED_NAMES,
       ]);
       pages.forEach((page) => expect(Number(page.totalCount)).toBe(6));
     });
 
     it.each`
-      description                                                         | options                    | expectedNames                                                                     | expectedTotal
-      ${'drops the draft and in validation documents when publishedOnly'} | ${{ publishedOnly: true }} | ${['a-active', 'b-active', 'y-active', 'z-active']}                               | ${4}
-      ${'keeps the draft and in validation documents otherwise'}          | ${{}}                      | ${['m-draft', 'n-in-validation', 'a-active', 'b-active', 'y-active', 'z-active']} | ${6}
+      description                                                         | options                    | expectedNames                                                                                 | expectedTotal
+      ${'drops the draft and in validation documents when publishedOnly'} | ${{ publishedOnly: true }} | ${['a-published', 'b-published', 'y-published', 'z-published']}                               | ${4}
+      ${'keeps the draft and in validation documents otherwise'}          | ${{}}                      | ${['m-draft', 'n-in-validation', 'a-published', 'b-published', 'y-published', 'z-published']} | ${6}
     `(
       'should $description',
       async ({
@@ -276,9 +281,9 @@ describe('document domain', () => {
     );
 
     it.each`
-      description                                                                           | serviceCapabilities            | expectedNames                                                                     | expectedTotal
-      ${'hide the draft and in validation documents from a user without upload capability'} | ${[]}                          | ${['a-active', 'b-active', 'y-active', 'z-active']}                               | ${4}
-      ${'return the draft and in validation documents to a user with upload capability'}    | ${[ServiceRestriction.Upload]} | ${['m-draft', 'n-in-validation', 'a-active', 'b-active', 'y-active', 'z-active']} | ${6}
+      description                                                                           | serviceCapabilities            | expectedNames                                                                                 | expectedTotal
+      ${'hide the draft and in validation documents from a user without upload capability'} | ${[]}                          | ${['a-published', 'b-published', 'y-published', 'z-published']}                               | ${4}
+      ${'return the draft and in validation documents to a user with upload capability'}    | ${[ServiceRestriction.Upload]} | ${['m-draft', 'n-in-validation', 'a-published', 'b-published', 'y-published', 'z-published']} | ${6}
     `(
       'should $description',
       async ({
@@ -1010,7 +1015,7 @@ describe('document domain', () => {
 
     let parentDoc: Document;
     let childDoc: Document;
-    let inactiveDoc: Document;
+    let unpublishedDoc: Document;
     let inValidationDoc: Document;
     let otherServiceDoc: Document;
 
@@ -1046,10 +1051,10 @@ describe('document domain', () => {
         child_document_id: childDoc.id,
       });
 
-      inactiveDoc = await TestHelper.document.create({
-        name: 'Inactive SEO Doc',
+      unpublishedDoc = await TestHelper.document.create({
+        name: 'Unpublished SEO Doc',
         type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
-        slug: 'inactive-seo',
+        slug: 'unpublished-seo',
         uploader_id: ADMIN_UUID,
         uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
         service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
@@ -1089,7 +1094,7 @@ describe('document domain', () => {
       });
     });
 
-    it('should return only active parent documents for the given service slug and type', async () => {
+    it('should return only published parent documents for the given service slug and type', async () => {
       const docs = await DocumentDomain.loadSeoDocumentsByServiceSlug(
         OPENCTI_INTEGRATION_DOCUMENT_TYPE,
         TEST_SERVICE_SLUG
@@ -1117,14 +1122,14 @@ describe('document domain', () => {
       expect(docs.map((d: Document) => d.id)).not.toContain(inValidationDoc.id);
     });
 
-    it('should not return child, inactive, or other-service documents', async () => {
+    it('should not return child, unpublished, or other-service documents', async () => {
       const docs = await DocumentDomain.loadSeoDocumentsByServiceSlug(
         OPENCTI_INTEGRATION_DOCUMENT_TYPE,
         TEST_SERVICE_SLUG
       );
       const ids = docs.map((d: Document) => d.id);
       expect(ids).not.toContain(childDoc.id);
-      expect(ids).not.toContain(inactiveDoc.id);
+      expect(ids).not.toContain(unpublishedDoc.id);
       expect(ids).not.toContain(otherServiceDoc.id);
     });
 
@@ -1177,7 +1182,7 @@ describe('document domain', () => {
 
     let parentDoc: Document;
     let childDoc: Document;
-    let inactiveDoc: Document;
+    let unpublishedDoc: Document;
     let inValidationDoc: Document;
     let otherServiceDoc: Document;
 
@@ -1213,10 +1218,10 @@ describe('document domain', () => {
         child_document_id: childDoc.id,
       });
 
-      inactiveDoc = await TestHelper.document.create({
-        name: 'Inactive SEO Doc',
+      unpublishedDoc = await TestHelper.document.create({
+        name: 'Unpublished SEO Doc',
         type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
-        slug: 'inactive-seo',
+        slug: 'unpublished-seo',
         uploader_id: ADMIN_UUID,
         uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
         service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
@@ -1250,7 +1255,7 @@ describe('document domain', () => {
       });
     });
 
-    it('should return only slug/created_at/updated_at of active parent documents', async () => {
+    it('should return only slug/created_at/updated_at of published parent documents', async () => {
       const docs = await DocumentDomain.loadSeoDocumentSlugsByServiceSlug(
         OPENCTI_INTEGRATION_DOCUMENT_TYPE,
         TEST_SERVICE_SLUG
@@ -1283,14 +1288,14 @@ describe('document domain', () => {
       expect(docs.map(({ slug }) => slug)).not.toContain(inValidationDoc.slug);
     });
 
-    it('should not return child, inactive, or other-service documents', async () => {
+    it('should not return child, unpublished, or other-service documents', async () => {
       const docs = await DocumentDomain.loadSeoDocumentSlugsByServiceSlug(
         OPENCTI_INTEGRATION_DOCUMENT_TYPE,
         TEST_SERVICE_SLUG
       );
       const slugs = docs.map((d) => d.slug);
       expect(slugs).not.toContain(childDoc.slug);
-      expect(slugs).not.toContain(inactiveDoc.slug);
+      expect(slugs).not.toContain(unpublishedDoc.slug);
       expect(slugs).not.toContain(otherServiceDoc.slug);
     });
 
@@ -1523,7 +1528,7 @@ describe('document domain', () => {
       await TestHelper.document.delete({});
     });
 
-    it('should return active documents sorted by creation date newest first', async () => {
+    it('should return published documents sorted by creation date newest first', async () => {
       // Given
       const olderDoc = await TestHelper.document.create({
         name: 'Older document',
@@ -1554,21 +1559,21 @@ describe('document domain', () => {
       expect(result[1]?.id).toBe(olderDoc.id);
     });
 
-    it('should exclude inactive documents', async () => {
+    it('should exclude unpublished documents', async () => {
       // Given
-      const activeDoc = await TestHelper.document.create({
-        name: 'Active document',
+      const publishedDoc = await TestHelper.document.create({
+        name: 'Published document',
         type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
-        slug: 'active-document',
+        slug: 'published-document',
         uploader_id: ADMIN_UUID,
         uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
         service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
         status: DocumentStatus.Published,
       });
       await TestHelper.document.create({
-        name: 'Inactive document',
+        name: 'Draft document',
         type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
-        slug: 'inactive-document',
+        slug: 'draft-document',
         uploader_id: ADMIN_UUID,
         uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
         service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
@@ -1580,7 +1585,7 @@ describe('document domain', () => {
 
       // Then
       expect(result).toHaveLength(1);
-      expect(result[0]?.id).toBe(activeDoc.id);
+      expect(result[0]?.id).toBe(publishedDoc.id);
     });
 
     it('should not return in validation documents when loading the newest documents', async () => {
