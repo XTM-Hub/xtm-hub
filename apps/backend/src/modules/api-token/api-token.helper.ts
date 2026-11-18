@@ -1,4 +1,4 @@
-import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 
 // A personal API token: `xhp_` then 32 random bytes in base64url (43 characters). The prefix lets secret scanning
 // recognise a leaked token; the XTM One connector checks the same shape.
@@ -27,12 +27,6 @@ export const ApiTokenHelper = {
     createHash('sha256').update(token, 'utf8').digest('hex'),
 
   isWellFormed: (token: string): boolean => API_TOKEN_RE.test(token),
-
-  sameHash: (left: string, right: string): boolean => {
-    const a = Buffer.from(left, 'hex');
-    const b = Buffer.from(right, 'hex');
-    return a.length === b.length && timingSafeEqual(a, b);
-  },
 
   // The token of an `Authorization: Bearer xhp_...` header, or null when the header carries no API token
   fromAuthorizationHeader: (header: unknown): string | null => {

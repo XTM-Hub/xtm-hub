@@ -1,6 +1,13 @@
 import { ApolloServerPlugin } from '@apollo/server';
 import type { Request, Response } from 'express';
 import { rateLimit } from 'express-rate-limit';
+import {
+  type DocumentNode,
+  type FragmentDefinitionNode,
+  Kind,
+  type OperationDefinitionNode,
+  type SelectionSetNode,
+} from 'graphql';
 import { ApiTokenScope } from '../../__generated__/resolvers-types';
 import { Context } from '../../server/apollo-plugins/log';
 import { logApp } from '../../utils/app-logger.util';
@@ -46,6 +53,58 @@ export const apiTokenRateLimiter = rateLimit({
 });
 
 /**
+ * The root fields an operation runs, fragments included: `mutation { ...F } fragment F on Mutation { logout }` runs
+ * logout as surely as `mutation { logout }`.
+ */
+export const operationRootFields = (
+  operation: OperationDefinitionNode,
+  document: DocumentNode
+): string[] => {
+  const fragments = new Map<string, FragmentDefinitionNode>(
+    document.definitions.flatMap((definition) =>
+      definition.kind === Kind.FRAGMENT_DEFINITION
+        ? [[definition.name.value, definition] as const]
+        : []
+    )
+  );
+  const visited = new Set<string>();
+  const collect = (selectionSet: SelectionSetNode): string[] =>
+    selectionSet.selections.flatMap((selection) => {
+      if (selection.kind === Kind.FIELD) {
+        return [selection.name.value];
+      }
+      if (selection.kind === Kind.INLINE_FRAGMENT) {
+        return collect(selection.selectionSet);
+      }
+      const fragment = fragments.get(selection.name.value);
+      if (!fragment || visited.has(selection.name.value)) {
+        return [];
+      }
+      visited.add(selection.name.value);
+      return collect(fragment.selectionSet);
+    });
+  return collect(operation.selectionSet);
+};
+
+// Why a token of this scope may not run this operation, or null when it may
+export const apiTokenOperationRefusal = (
+  scope: ApiTokenScope,
+  operationType: OperationDefinitionNode['operation'],
+  fields: string[]
+): ForbiddenErrorCode | null => {
+  if (operationType !== 'mutation') {
+    return null;
+  }
+  if (fields.some((field) => API_TOKEN_DENIED_FIELDS.has(field))) {
+    return ForbiddenErrorCode.NotAllowedWithApiToken;
+  }
+  if (scope === ApiTokenScope.Read) {
+    return ForbiddenErrorCode.ReadOnlyApiToken;
+  }
+  return null;
+};
+
+/**
  * The scope of a token is enforced on the operation, before any resolver: a read token runs no mutation, and no token
  * runs the operations of API_TOKEN_DENIED_FIELDS. One audit line per call names the token and the operation.
  */
@@ -56,13 +115,11 @@ export const apiTokenPlugin: ApolloServerPlugin<Context> = {
       return {};
     }
     return {
-      async didResolveOperation({ operation, operationName }) {
+      async didResolveOperation({ operation, operationName, document }) {
         if (!operation) {
           throw mapToGraphQLError(ForbiddenErrorCode.ForbiddenAccess);
         }
-        const fields = operation.selectionSet.selections.flatMap((selection) =>
-          selection.kind === 'Field' ? [selection.name.value] : []
-        );
+        const fields = operationRootFields(operation, document);
         logApp.info('API token call', {
           api_token_id: authentication.token.id,
           user_id: authentication.user.id,
@@ -71,14 +128,13 @@ export const apiTokenPlugin: ApolloServerPlugin<Context> = {
           operation_name: operationName ?? null,
           fields,
         });
-        if (operation.operation !== 'mutation') {
-          return;
-        }
-        if (fields.some((field) => API_TOKEN_DENIED_FIELDS.has(field))) {
-          throw mapToGraphQLError(ForbiddenErrorCode.NotAllowedWithApiToken);
-        }
-        if (authentication.token.scope === ApiTokenScope.Read) {
-          throw mapToGraphQLError(ForbiddenErrorCode.ReadOnlyApiToken);
+        const refusal = apiTokenOperationRefusal(
+          authentication.token.scope,
+          operation.operation,
+          fields
+        );
+        if (refusal) {
+          throw mapToGraphQLError(refusal);
         }
       },
     };

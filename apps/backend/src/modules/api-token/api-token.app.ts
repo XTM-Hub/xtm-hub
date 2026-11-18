@@ -1,5 +1,4 @@
 import {
-  ApiTokenScope,
   CreateApiTokenInput,
   OrganizationCapability,
 } from '../../__generated__/resolvers-types';
@@ -102,7 +101,4 @@ export const ApiTokenApp = {
     });
     return (await ApiTokenDomain.loadById(id)) as ApiTokenWithNames;
   },
-
-  isScope: (value: string): value is ApiTokenScope =>
-    (Object.values(ApiTokenScope) as string[]).includes(value),
 };

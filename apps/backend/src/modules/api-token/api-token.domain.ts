@@ -1,5 +1,4 @@
 import { db } from '../../../knexfile';
-import { ApiTokenScope } from '../../__generated__/resolvers-types';
 import ApiToken, {
   ApiTokenId,
   ApiTokenInitializer,
@@ -60,6 +59,3 @@ export const ApiTokenDomain = {
     await db<ApiToken>('ApiToken').where('id', id).update({ last_used_at: at });
   },
 };
-
-export const isWritableScope = (scope: ApiTokenScope): boolean =>
-  scope === ApiTokenScope.ReadWrite || scope === ApiTokenScope.Admin;
