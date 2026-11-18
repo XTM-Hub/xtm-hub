@@ -428,6 +428,7 @@
       "NEWS_FEED_ITEM_NOT_FOUND": "News feed item not found",
       "NO_ASYNC_CONTEXT_AVAILABLE": "An unknown error occurred",
       "NOT_ALLOWED_BY_DEPLOYMENT_STATUS": "An unknown error occurred",
+      "NOT_FOUND": "The requested resource was not found",
       "ORGANIZATION_NOT_FOUND": "Organization not found",
       "ORGANIZATION_SAME_DOMAIN_EXISTS": "An organization with the same domain already exists",
       "ORGANIZATION_SAME_NAME_EXISTS": "An organization with the same name already exists",

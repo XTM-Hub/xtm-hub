@@ -42,14 +42,13 @@ input UpdateSubscriptionInput {
 
 type Mutation {
   createSubscriptions(input: CreateSubscriptionsInput!): [SubscriptionModel!]!
-    @auth(portalCapa: [BYPASS])
   updateSubscription(
     subscription_id: SubscriptionId!
     input: UpdateSubscriptionInput!
-  ): SubscriptionModel @auth(portalCapa: [BYPASS])
+  ): SubscriptionModel
   deleteSubscriptions(
     subscription_ids: [SubscriptionId!]!
-  ): [SubscriptionModel!]! @auth(portalCapa: [BYPASS])
+  ): [SubscriptionModel!]!
 }
 
 type SubscriptionConnection {
@@ -68,7 +67,7 @@ input SubscriptionFilter {
 }
 
 type Query {
-  subscriptionById(subscription_id: SubscriptionId): SubscriptionModel @auth
+  subscriptionById(subscription_id: SubscriptionId): SubscriptionModel
   subscriptions(
     first: Int!
     after: ID
@@ -76,5 +75,5 @@ type Query {
     orderMode: OrderingMode!
     searchTerm: String
     filters: [SubscriptionFilter!]
-  ): SubscriptionConnection! @auth
+  ): SubscriptionConnection!
 }

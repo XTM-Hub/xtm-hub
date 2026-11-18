@@ -1,12 +1,19 @@
 import { PortalCapability } from '../../__generated__/resolvers-types';
 import {
   ForbiddenErrorCode,
+  NotFoundErrorCode,
   UnauthenticatedErrorCode,
 } from '../../utils/error/error.code';
 import { Principal } from './principal';
 
-export type DenialCode =
-  UnauthenticatedErrorCode.Unauthenticated | ForbiddenErrorCode.ForbiddenAccess;
+export const DENIAL_CODES = [
+  UnauthenticatedErrorCode.Unauthenticated,
+  ForbiddenErrorCode.ForbiddenAccess,
+  ForbiddenErrorCode.MissingCapabilityOnOrganization,
+  NotFoundErrorCode.NotFound,
+] as const;
+
+export type DenialCode = (typeof DENIAL_CODES)[number];
 
 export type GuardResult =
   { allowed: true } | { allowed: false; code: DenialCode };
@@ -25,7 +32,10 @@ export const deny = (code: DenialCode): GuardResult => ({
 });
 
 type CallerKind = Exclude<Principal['kind'], 'anonymous'>;
-type CallerOf<Kind extends CallerKind> = Extract<Principal, { kind: Kind }>;
+export type CallerOf<Kind extends CallerKind> = Extract<
+  Principal,
+  { kind: Kind }
+>;
 
 const isCaller = <Kind extends CallerKind>(
   principal: Principal,

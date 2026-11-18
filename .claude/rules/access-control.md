@@ -14,7 +14,7 @@ mechanisms coexist while modules migrate:
 
 | Mechanism | Where | Used by |
 | --- | --- | --- |
-| `@Public()` / `@Guarded(guard)` on the resolver | `src/security/guarded/` | Migrated modules (`solution-category`, `telemetry`, `manage-product-version`) |
+| `@Public()` / `@Guarded(guard)` on the resolver | `src/security/guarded/` | Migrated modules (`solution-category`, `telemetry`, `manage-product-version`, `subscription`) |
 | `@auth`, `@service_capa`, `@system_token`, `@platform_token` in the `.graphql` file | `src/security/directive-graphql/` | Every other module. A field with no directive is public there |
 
 **An operation has a directive or a decorator, never both.** Migrating an operation removes its directive in the same
@@ -66,9 +66,14 @@ export default resolvers;
 | `@Guarded(bypassOnlyGuard())` | A `BYPASS` user only. Use it for admin-only operations rather than listing `BYPASS` | `UNAUTHENTICATED` (anonymous or disabled user), `FORBIDDEN_ACCESS` (not `BYPASS`) |
 | `@Guarded(portalCapabilityGuard([PortalCapability.X, …]))` | A user holding one of the portal capabilities; `BYPASS` always. The list cannot be empty | `UNAUTHENTICATED` (anonymous or disabled user), `FORBIDDEN_ACCESS` (capability missing) |
 | `@Guarded(callerGuard('system', [PortalCapability.X, …]))` | A machine with a valid `x-xtm-hub-token` holding every listed scope. The list cannot be empty | `UNAUTHENTICATED` (no or invalid token, session ignored), `FORBIDDEN_ACCESS` (scope missing) |
+| `@Guarded(orgGuard({ organization: selectedOrganization, capabilities: [OrganizationCapability.X, …] }))` | A member of the selected organization holding one of the capabilities (`ADMINISTRATE_ORGANIZATION` implies them all, `[]` requires the membership only); `BYPASS` always | `UNAUTHENTICATED` (anonymous or disabled user), `NOT_FOUND` (not a member), `MISSING_CAPABILITY_ON_ORGANIZATION` (capability missing) |
 
 A guard returns `allow()` or `deny(code)`. An exception, or anything else, is a denial. Add each new guard to this
 table.
+
+`orgGuard` checks the caller's membership, not that the data belongs to the organization: keep the row filter in
+`src/security/restriction/`. Whether `BYPASS` sees every row depends on the use case: some filters let it through
+themselves, others leave it to their caller, so read the filter before calling it.
 
 ## Machine callers
 
@@ -83,10 +88,9 @@ table.
 
 ## Errors
 
-A guard denies with `UnauthenticatedErrorCode.Unauthenticated` or `ForbiddenErrorCode.ForbiddenAccess`
-(`src/utils/error/error.code.ts`). The decorator builds the error with `mapToGraphQLError`
-(`src/utils/error/error.mapping.ts`), like any other GraphQL error: the code is both the `message`, so the frontend
-shows `Error.Server.<code>`, and `extensions.code`.
+A guard denies with a `DenialCode` (`src/security/guarded/guard.types.ts`). The decorator builds the error with
+`mapToGraphQLError` (`src/utils/error/error.mapping.ts`), like any other GraphQL error: the code is the `message`, so
+the frontend shows `Error.Server.<code>`.
 
 **A changed code is a frontend change.** When a migrated operation answers a different code or message than before,
 add the `Error.Server.<code>` key to `apps/frontend/messages/{en,fr,ja}.json` in the same pull request, and say in the
@@ -111,10 +115,12 @@ describe('addSolutionCategory mutation', () => {
 });
 ```
 
-Rows are anonymous, a logged-in user with no capability and a platform admin, plus `system` and `invalidSystemToken`
-for an operation a machine calls. `guarded` returns a spy on the function behind the operation: refused rows assert it
-was not called, allowed rows that it was called once. Wrap the call in a `describe` with a literal name, and use
-`TestHelper`, never the helper file directly.
+Rows are `anonymous`, `user` (a member with no portal capability) and `admin` (a platform admin). An operation behind
+`orgGuard` also lists `memberWithoutCapability`, `otherOrganization` and `nonMember`; one a machine calls lists
+`system` and `invalidSystemToken`. `guarded` returns a spy on the function behind the operation: refused rows assert
+it was not called, allowed rows that it was called once and answered `expectedData`, or `expectedDataByRow[row]` for
+a row that sees different data. Wrap the call in a `describe` with a literal name, and use `TestHelper`, never the
+helper file directly.
 
 ## Adding or migrating an entry point
 
