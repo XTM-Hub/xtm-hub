@@ -1110,6 +1110,7 @@
         "NotConnected": "Connexion perdue",
         "NotConnectedDetails": "Vous devez à nouveau connecter votre produit."
       },
+      "OrganizationName": "Organisation : {name}",
       "ProductName": "Nom du produit",
       "Product": "Produit",
       "ProductURL": "URL du produit",

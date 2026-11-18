@@ -1110,6 +1110,7 @@
         "NotConnected": "接続が切れた",
         "NotConnectedDetails": "プラットフォームを再登録してください。"
       },
+      "OrganizationName": "組織：{name}",
       "ProductName": "製品名",
       "Product": "製品",
       "ProductURL": "商品URL",

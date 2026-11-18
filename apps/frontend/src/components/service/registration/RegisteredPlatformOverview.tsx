@@ -132,7 +132,10 @@ export const RegisteredPlatformOverview = ({
   return (
     <>
       <BreadcrumbNav value={breadcrumbs} />
-      <RegisteredPlatformHeader platform={platform} />
+      <RegisteredPlatformHeader
+        isAdmin={hasRightToVisualize}
+        platform={platform}
+      />
       {isSaas &&
         (canSeePlatformMetrics ? (
           <PlatformMetrics
