@@ -213,7 +213,6 @@ export const mockConnector = (overrides?: Partial<Connector>, _relationshipsToOm
     relationshipsToOmit.add('Connector');
     return {
         __typename: 'Connector',
-        active: overrides && overrides.hasOwnProperty('active') ? overrides.active! : true,
         blogpost_url: overrides && overrides.hasOwnProperty('blogpost_url') ? overrides.blogpost_url! : 'caute',
         children_documents: overrides && overrides.hasOwnProperty('children_documents') ? overrides.children_documents! : [relationshipsToOmit.has('ShareableResource') ? {} as ShareableResource : mockShareableResource({}, relationshipsToOmit)],
         contact: overrides && overrides.hasOwnProperty('contact') ? overrides.contact! : 'cubo',
@@ -387,7 +386,6 @@ export const mockCsvFeed = (overrides?: Partial<CsvFeed>, _relationshipsToOmit: 
     relationshipsToOmit.add('CsvFeed');
     return {
         __typename: 'CsvFeed',
-        active: overrides && overrides.hasOwnProperty('active') ? overrides.active! : false,
         blogpost_url: overrides && overrides.hasOwnProperty('blogpost_url') ? overrides.blogpost_url! : 'accusantium',
         children_documents: overrides && overrides.hasOwnProperty('children_documents') ? overrides.children_documents! : [relationshipsToOmit.has('ShareableResource') ? {} as ShareableResource : mockShareableResource({}, relationshipsToOmit)],
         created_at: overrides && overrides.hasOwnProperty('created_at') ? overrides.created_at! : '2021-03-09T23:44:00.946Z',
@@ -424,7 +422,6 @@ export const mockCustomDashboard = (overrides?: Partial<CustomDashboard>, _relat
     relationshipsToOmit.add('CustomDashboard');
     return {
         __typename: 'CustomDashboard',
-        active: overrides && overrides.hasOwnProperty('active') ? overrides.active! : true,
         children_documents: overrides && overrides.hasOwnProperty('children_documents') ? overrides.children_documents! : [relationshipsToOmit.has('ShareableResource') ? {} as ShareableResource : mockShareableResource({}, relationshipsToOmit)],
         created_at: overrides && overrides.hasOwnProperty('created_at') ? overrides.created_at! : '2021-02-26T11:07:24.595Z',
         description: overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'claro',
@@ -454,7 +451,6 @@ export const mockCustomView = (overrides?: Partial<CustomView>, _relationshipsTo
     relationshipsToOmit.add('CustomView');
     return {
         __typename: 'CustomView',
-        active: overrides && overrides.hasOwnProperty('active') ? overrides.active! : false,
         children_documents: overrides && overrides.hasOwnProperty('children_documents') ? overrides.children_documents! : [relationshipsToOmit.has('ShareableResource') ? {} as ShareableResource : mockShareableResource({}, relationshipsToOmit)],
         created_at: overrides && overrides.hasOwnProperty('created_at') ? overrides.created_at! : '2021-01-16T00:25:14.770Z',
         description: overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'fugiat',
@@ -485,7 +481,6 @@ export const mockDefaultDocument = (overrides?: Partial<DefaultDocument>, _relat
     relationshipsToOmit.add('DefaultDocument');
     return {
         __typename: 'DefaultDocument',
-        active: overrides && overrides.hasOwnProperty('active') ? overrides.active! : false,
         children_documents: overrides && overrides.hasOwnProperty('children_documents') ? overrides.children_documents! : [relationshipsToOmit.has('ShareableResource') ? {} as ShareableResource : mockShareableResource({}, relationshipsToOmit)],
         created_at: overrides && overrides.hasOwnProperty('created_at') ? overrides.created_at! : '2021-01-09T03:39:30.695Z',
         description: overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'vergo',
@@ -611,7 +606,6 @@ export const mockDocument = (overrides?: Partial<Document>, _relationshipsToOmit
     relationshipsToOmit.add('Document');
     return {
         __typename: 'Document',
-        active: overrides && overrides.hasOwnProperty('active') ? overrides.active! : true,
         children_documents: overrides && overrides.hasOwnProperty('children_documents') ? overrides.children_documents! : [relationshipsToOmit.has('ShareableResource') ? {} as ShareableResource : mockShareableResource({}, relationshipsToOmit)],
         created_at: overrides && overrides.hasOwnProperty('created_at') ? overrides.created_at! : '2021-04-20T23:59:15.763Z',
         description: overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'natus',
@@ -826,7 +820,6 @@ export const mockIntegration = (overrides?: Partial<Integration>, _relationships
     relationshipsToOmit.add('Integration');
     return {
         __typename: 'Integration',
-        active: overrides && overrides.hasOwnProperty('active') ? overrides.active! : false,
         blogpost_url: overrides && overrides.hasOwnProperty('blogpost_url') ? overrides.blogpost_url! : 'deleniti',
         children_documents: overrides && overrides.hasOwnProperty('children_documents') ? overrides.children_documents! : [relationshipsToOmit.has('ShareableResource') ? {} as ShareableResource : mockShareableResource({}, relationshipsToOmit)],
         created_at: overrides && overrides.hasOwnProperty('created_at') ? overrides.created_at! : '2021-07-21T07:00:48.060Z',
@@ -862,7 +855,6 @@ export const mockIntegrationHack = (overrides?: Partial<IntegrationHack>, _relat
     relationshipsToOmit.add('IntegrationHack');
     return {
         __typename: 'IntegrationHack',
-        active: overrides && overrides.hasOwnProperty('active') ? overrides.active! : false,
         blogpost_url: overrides && overrides.hasOwnProperty('blogpost_url') ? overrides.blogpost_url! : 'dedecor',
         children_documents: overrides && overrides.hasOwnProperty('children_documents') ? overrides.children_documents! : [relationshipsToOmit.has('ShareableResource') ? {} as ShareableResource : mockShareableResource({}, relationshipsToOmit)],
         created_at: overrides && overrides.hasOwnProperty('created_at') ? overrides.created_at! : '2021-08-03T14:38:06.226Z',
@@ -937,7 +929,6 @@ export const mockLoadDocumentFacetInput = (overrides?: Partial<LoadDocumentFacet
     return {
         documentType: overrides && overrides.hasOwnProperty('documentType') ? overrides.documentType! : 'sum',
         logicalFilters: overrides && overrides.hasOwnProperty('logicalFilters') ? overrides.logicalFilters! : relationshipsToOmit.has('LogicalFilterInput') ? {} as LogicalFilterInput : mockLogicalFilterInput({}, relationshipsToOmit),
-        restrictToActiveDocuments: overrides && overrides.hasOwnProperty('restrictToActiveDocuments') ? overrides.restrictToActiveDocuments! : false,
         restrictToPublishedDocuments: overrides && overrides.hasOwnProperty('restrictToPublishedDocuments') ? overrides.restrictToPublishedDocuments! : true,
         searchTerm: overrides && overrides.hasOwnProperty('searchTerm') ? overrides.searchTerm! : 'quis',
         serviceInstanceId: overrides && overrides.hasOwnProperty('serviceInstanceId') ? overrides.serviceInstanceId! : 'trepide',
@@ -1188,7 +1179,6 @@ export const mockOpenAevScenario = (overrides?: Partial<OpenAevScenario>, _relat
     relationshipsToOmit.add('OpenAevScenario');
     return {
         __typename: 'OpenAEVScenario',
-        active: overrides && overrides.hasOwnProperty('active') ? overrides.active! : false,
         children_documents: overrides && overrides.hasOwnProperty('children_documents') ? overrides.children_documents! : [relationshipsToOmit.has('ShareableResource') ? {} as ShareableResource : mockShareableResource({}, relationshipsToOmit)],
         created_at: overrides && overrides.hasOwnProperty('created_at') ? overrides.created_at! : '2021-05-13T16:17:56.001Z',
         description: overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'colo',
@@ -1236,7 +1226,6 @@ export const mockOpenCtiPlaybook = (overrides?: Partial<OpenCtiPlaybook>, _relat
     relationshipsToOmit.add('OpenCtiPlaybook');
     return {
         __typename: 'OpenCTIPlaybook',
-        active: overrides && overrides.hasOwnProperty('active') ? overrides.active! : true,
         children_documents: overrides && overrides.hasOwnProperty('children_documents') ? overrides.children_documents! : [relationshipsToOmit.has('ShareableResource') ? {} as ShareableResource : mockShareableResource({}, relationshipsToOmit)],
         created_at: overrides && overrides.hasOwnProperty('created_at') ? overrides.created_at! : '2021-04-05T02:59:14.572Z',
         description: overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'vorago',
@@ -1739,7 +1728,6 @@ export const mockRssFeed = (overrides?: Partial<RssFeed>, _relationshipsToOmit: 
     relationshipsToOmit.add('RssFeed');
     return {
         __typename: 'RssFeed',
-        active: overrides && overrides.hasOwnProperty('active') ? overrides.active! : false,
         blogpost_url: overrides && overrides.hasOwnProperty('blogpost_url') ? overrides.blogpost_url! : 'atavus',
         children_documents: overrides && overrides.hasOwnProperty('children_documents') ? overrides.children_documents! : [relationshipsToOmit.has('ShareableResource') ? {} as ShareableResource : mockShareableResource({}, relationshipsToOmit)],
         created_at: overrides && overrides.hasOwnProperty('created_at') ? overrides.created_at! : '2021-08-14T14:48:23.932Z',
@@ -2091,7 +2079,6 @@ export const mockShareableResource = (overrides?: Partial<ShareableResource>, _r
     relationshipsToOmit.add('ShareableResource');
     return {
         __typename: 'ShareableResource',
-        active: overrides && overrides.hasOwnProperty('active') ? overrides.active! : false,
         created_at: overrides && overrides.hasOwnProperty('created_at') ? overrides.created_at! : '2021-07-22T04:58:28.807Z',
         description: overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'barba',
         download_number: overrides && overrides.hasOwnProperty('download_number') ? overrides.download_number! : 4426,
@@ -2141,7 +2128,6 @@ export const mockStream = (overrides?: Partial<Stream>, _relationshipsToOmit: Se
     relationshipsToOmit.add('Stream');
     return {
         __typename: 'Stream',
-        active: overrides && overrides.hasOwnProperty('active') ? overrides.active! : false,
         blogpost_url: overrides && overrides.hasOwnProperty('blogpost_url') ? overrides.blogpost_url! : 'ocer',
         children_documents: overrides && overrides.hasOwnProperty('children_documents') ? overrides.children_documents! : [relationshipsToOmit.has('ShareableResource') ? {} as ShareableResource : mockShareableResource({}, relationshipsToOmit)],
         created_at: overrides && overrides.hasOwnProperty('created_at') ? overrides.created_at! : '2021-06-20T00:56:06.636Z',
@@ -2271,7 +2257,6 @@ export const mockTaxiiFeed = (overrides?: Partial<TaxiiFeed>, _relationshipsToOm
     relationshipsToOmit.add('TaxiiFeed');
     return {
         __typename: 'TaxiiFeed',
-        active: overrides && overrides.hasOwnProperty('active') ? overrides.active! : true,
         blogpost_url: overrides && overrides.hasOwnProperty('blogpost_url') ? overrides.blogpost_url! : 'advoco',
         children_documents: overrides && overrides.hasOwnProperty('children_documents') ? overrides.children_documents! : [relationshipsToOmit.has('ShareableResource') ? {} as ShareableResource : mockShareableResource({}, relationshipsToOmit)],
         created_at: overrides && overrides.hasOwnProperty('created_at') ? overrides.created_at! : '2021-11-08T19:45:38.037Z',
@@ -2340,7 +2325,6 @@ export const mockThirdPartyIntegration = (overrides?: Partial<ThirdPartyIntegrat
     relationshipsToOmit.add('ThirdPartyIntegration');
     return {
         __typename: 'ThirdPartyIntegration',
-        active: overrides && overrides.hasOwnProperty('active') ? overrides.active! : false,
         blogpost_url: overrides && overrides.hasOwnProperty('blogpost_url') ? overrides.blogpost_url! : 'damnatio',
         children_documents: overrides && overrides.hasOwnProperty('children_documents') ? overrides.children_documents! : [relationshipsToOmit.has('ShareableResource') ? {} as ShareableResource : mockShareableResource({}, relationshipsToOmit)],
         created_at: overrides && overrides.hasOwnProperty('created_at') ? overrides.created_at! : '2021-02-21T08:27:31.113Z',
