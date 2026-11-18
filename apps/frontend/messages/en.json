@@ -2604,11 +2604,7 @@
       "Product": "Product",
       "AllProducts": "All products",
       "Status": "Status",
-      "AllStatuses": "All statuses",
-      "Credential": "Credential",
-      "AllCredentials": "All credentials",
-      "WithToken": "With a token",
-      "WithoutToken": "Without a token"
+      "AllStatuses": "All statuses"
     },
     "Unregister": "Unregister",
     "UnregisterSuccess": "The platform \"{title}\" has been unregistered",

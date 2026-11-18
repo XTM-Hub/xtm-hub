@@ -2771,16 +2771,6 @@ describe('registration app, platform admin', () => {
         filter: { organizationId: TEST_ORGANIZATIONS.FILIGRAN.ID },
         expected: [],
       },
-      {
-        name: 'a token present',
-        filter: { hasToken: true },
-        expected: ['OpenAEV inactive', 'OpenCTI active'],
-      },
-      {
-        name: 'no token',
-        filter: { hasToken: false },
-        expected: [],
-      },
     ])('should filter on $name', async ({ filter, expected }) => {
       // Given
       await createAdminFixture({ title: `${marker} OpenCTI active` });

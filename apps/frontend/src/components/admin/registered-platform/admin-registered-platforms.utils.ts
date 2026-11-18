@@ -27,15 +27,9 @@ export const ADMIN_REGISTERED_PLATFORMS_DEFAULT_ORDER_MODE = OrderingMode.Desc;
 // The value of a select filter that keeps every platform.
 export const ALL_FILTER_VALUE = 'all';
 
-export enum CredentialFilterValue {
-  WithToken = 'with_token',
-  WithoutToken = 'without_token',
-}
-
 export interface AdminRegisteredPlatformsFilters {
   identifier: PlatformIdentifier | null;
   status: PlatformConfigurationStatus | null;
-  hasToken: boolean | null;
   organizationId: string | null;
   searchTerm: string | null;
 }
@@ -44,7 +38,6 @@ export const EMPTY_ADMIN_REGISTERED_PLATFORMS_FILTERS: AdminRegisteredPlatformsF
   {
     identifier: null,
     status: null,
-    hasToken: null,
     organizationId: null,
     searchTerm: null,
   };
@@ -57,18 +50,12 @@ export const normalizeAdminRegisteredPlatformsPageSize = (
 export const toAdminRegisteredPlatformsFilter = ({
   identifier,
   status,
-  hasToken,
   organizationId,
 }: AdminRegisteredPlatformsFilters): AdminRegisteredPlatformsFilter | null => {
-  if (
-    identifier === null &&
-    status === null &&
-    hasToken === null &&
-    organizationId === null
-  ) {
+  if (identifier === null && status === null && organizationId === null) {
     return null;
   }
-  return { identifier, status, hasToken, organizationId };
+  return { identifier, status, organizationId };
 };
 
 export const buildAdminRegisteredPlatformsVariables = ({
@@ -102,26 +89,6 @@ export const parseStatusFilterValue = (
   value: string
 ): PlatformConfigurationStatus | null =>
   isValueInEnum(value, PlatformConfigurationStatus) ? value : null;
-
-export const parseCredentialFilterValue = (value: string): boolean | null => {
-  switch (value) {
-    case CredentialFilterValue.WithToken:
-      return true;
-    case CredentialFilterValue.WithoutToken:
-      return false;
-    default:
-      return null;
-  }
-};
-
-export const toCredentialFilterValue = (hasToken: boolean | null): string => {
-  if (hasToken === null) {
-    return ALL_FILTER_VALUE;
-  }
-  return hasToken
-    ? CredentialFilterValue.WithToken
-    : CredentialFilterValue.WithoutToken;
-};
 
 // The URL is sent by the platform itself: only a web address is made a link, never a javascript: or data: one.
 export const isHttpUrl = (url: string): boolean => {

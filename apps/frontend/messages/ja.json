@@ -2604,11 +2604,7 @@
       "Product": "製品",
       "AllProducts": "すべての製品",
       "Status": "ステータス",
-      "AllStatuses": "すべてのステータス",
-      "Credential": "認証情報",
-      "AllCredentials": "すべての認証情報",
-      "WithToken": "トークンあり",
-      "WithoutToken": "トークンなし"
+      "AllStatuses": "すべてのステータス"
     },
     "Unregister": "登録解除",
     "UnregisterSuccess": "プラットフォーム「{title}」の登録を解除しました",

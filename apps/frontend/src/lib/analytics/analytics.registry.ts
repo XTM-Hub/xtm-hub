@@ -45,9 +45,6 @@ export const ANALYTICS_ELEMENT_IDS = {
   admin_organization_services_open: {
     action: 'Open organization subscribed services',
   },
-  admin_registered_platform_credentials_open: {
-    action: 'Show registered platform credential choices',
-  },
   admin_registered_platform_organizations_open: {
     action: 'Show registered platform organization choices',
   },

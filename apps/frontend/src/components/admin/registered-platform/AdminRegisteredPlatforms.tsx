@@ -7,7 +7,6 @@ import {
   ALL_FILTER_VALUE,
   buildAdminRegisteredPlatformsVariables,
   canUnregisterPlatform,
-  CredentialFilterValue,
   EMPTY_ADMIN_REGISTERED_PLATFORMS_FILTERS,
   getCommercialModelLabelKey,
   getContractLabelKey,
@@ -17,11 +16,9 @@ import {
   getStatusLabelKey,
   isHttpUrl,
   normalizeAdminRegisteredPlatformsPageSize,
-  parseCredentialFilterValue,
   parseIdentifierFilterValue,
   parseStatusFilterValue,
   toAdminRegisteredPlatformRows,
-  toCredentialFilterValue,
 } from '@/components/admin/registered-platform/admin-registered-platforms.utils';
 import { AdminRegisteredPlatformsSelectFilter } from '@/components/admin/registered-platform/AdminRegisteredPlatformsSelectFilter';
 import { AdminUnregisterPlatform } from '@/components/admin/registered-platform/AdminUnregisterPlatform';
@@ -364,16 +361,6 @@ export const AdminRegisteredPlatforms = () => {
       label: translateOrRaw(getStatusLabelKey(status), status),
     })
   );
-  const credentialOptions = [
-    {
-      value: CredentialFilterValue.WithToken,
-      label: t('AdminRegisteredPlatforms.Filters.WithToken'),
-    },
-    {
-      value: CredentialFilterValue.WithoutToken,
-      label: t('AdminRegisteredPlatforms.Filters.WithoutToken'),
-    },
-  ];
 
   return (
     // One provider for every tooltip of the table, rather than one per cell.
@@ -438,20 +425,6 @@ export const AdminRegisteredPlatforms = () => {
                     updateFilters({ status: parseStatusFilterValue(value) })
                   }
                   triggerAnalyticsId="admin_registered_platform_statuses_open"
-                />
-                <AdminRegisteredPlatformsSelectFilter
-                  label={t('AdminRegisteredPlatforms.Filters.Credential')}
-                  allLabel={t(
-                    'AdminRegisteredPlatforms.Filters.AllCredentials'
-                  )}
-                  value={toCredentialFilterValue(filters.hasToken)}
-                  options={credentialOptions}
-                  onValueChange={(value) =>
-                    updateFilters({
-                      hasToken: parseCredentialFilterValue(value),
-                    })
-                  }
-                  triggerAnalyticsId="admin_registered_platform_credentials_open"
                 />
                 <UserOrganizationFilter
                   analyticsId="admin_registered_platform_organizations_open"

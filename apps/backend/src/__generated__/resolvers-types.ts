@@ -173,7 +173,6 @@ export type AdminRegisteredPlatformRegisterer = {
 };
 
 export type AdminRegisteredPlatformsFilter = {
-  hasToken?: InputMaybe<Scalars['Boolean']['input']>;
   identifier?: InputMaybe<PlatformIdentifier>;
   organizationId?: InputMaybe<Scalars['OrganizationId']['input']>;
   status?: InputMaybe<PlatformConfigurationStatus>;

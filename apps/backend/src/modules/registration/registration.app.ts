@@ -627,7 +627,6 @@ export const RegistrationApp = {
           status: filter?.status ?? undefined,
           organizationId:
             (filter?.organizationId as OrganizationId) ?? undefined,
-          hasToken: filter?.hasToken ?? undefined,
           searchTerm: searchTerm ?? undefined,
         },
         offset,

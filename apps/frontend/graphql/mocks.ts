@@ -174,7 +174,6 @@ export const mockAdminRegisteredPlatformsFilter = (overrides?: Partial<AdminRegi
     const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
     relationshipsToOmit.add('AdminRegisteredPlatformsFilter');
     return {
-        hasToken: overrides && overrides.hasOwnProperty('hasToken') ? overrides.hasToken! : true,
         identifier: overrides && overrides.hasOwnProperty('identifier') ? overrides.identifier! : PlatformIdentifier.Openaev,
         organizationId: overrides && overrides.hasOwnProperty('organizationId') ? overrides.organizationId! : 'benevolentia',
         status: overrides && overrides.hasOwnProperty('status') ? overrides.status! : PlatformConfigurationStatus.Active,

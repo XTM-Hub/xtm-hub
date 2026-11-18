@@ -1660,7 +1660,6 @@ input AdminRegisteredPlatformsFilter {
   identifier: PlatformIdentifier
   status: PlatformConfigurationStatus
   organizationId: OrganizationId
-  hasToken: Boolean
 }
 
 type RolePortal implements Node {

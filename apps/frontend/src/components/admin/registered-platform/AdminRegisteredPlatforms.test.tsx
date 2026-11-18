@@ -273,11 +273,6 @@ describe('AdminRegisteredPlatforms', () => {
       'AdminRegisteredPlatforms.Status.inactive',
       { status: PlatformConfigurationStatus.Inactive },
     ],
-    [
-      'AdminRegisteredPlatforms.Filters.Credential',
-      'AdminRegisteredPlatforms.Filters.WithoutToken',
-      { hasToken: false },
-    ],
   ])(
     'should fetch the platforms filtered on the %s the admin picks',
     async (filterLabel, optionLabel, expectedFilter) => {
@@ -291,7 +286,6 @@ describe('AdminRegisteredPlatforms', () => {
       expect(lastQueryVariables().filter).toEqual({
         identifier: null,
         status: null,
-        hasToken: null,
         organizationId: null,
         ...expectedFilter,
       });

@@ -4,18 +4,15 @@ import {
   ALL_FILTER_VALUE,
   buildAdminRegisteredPlatformsVariables,
   canUnregisterPlatform,
-  CredentialFilterValue,
   EMPTY_ADMIN_REGISTERED_PLATFORMS_FILTERS,
   getCredentialKindLabelKey,
   getPlatformProductName,
   getRegistererName,
   isHttpUrl,
   normalizeAdminRegisteredPlatformsPageSize,
-  parseCredentialFilterValue,
   parseIdentifierFilterValue,
   parseStatusFilterValue,
   toAdminRegisteredPlatformRows,
-  toCredentialFilterValue,
 } from '@/components/admin/registered-platform/admin-registered-platforms.utils';
 import {
   AdminRegisteredPlatformOrdering,
@@ -73,8 +70,6 @@ describe('buildAdminRegisteredPlatformsVariables', () => {
       { status: PlatformConfigurationStatus.Inactive },
       { status: PlatformConfigurationStatus.Inactive },
     ],
-    ['platforms with a token', { hasToken: true }, { hasToken: true }],
-    ['platforms without a token', { hasToken: false }, { hasToken: false }],
     [
       'an organization',
       { organizationId: ORGANIZATION_ID },
@@ -90,7 +85,6 @@ describe('buildAdminRegisteredPlatformsVariables', () => {
       expect(filter).toEqual({
         identifier: null,
         status: null,
-        hasToken: null,
         organizationId: null,
         ...expectedFilter,
       });
@@ -158,25 +152,6 @@ describe('filter values', () => {
   ])('should read the status %s as %s', (value, expected) => {
     // Given / When / Then
     expect(parseStatusFilterValue(value)).toBe(expected);
-  });
-
-  it.each([
-    [CredentialFilterValue.WithToken, true],
-    [CredentialFilterValue.WithoutToken, false],
-    [ALL_FILTER_VALUE, null],
-    ['unknown', null],
-  ])('should read the credential %s as %s', (value, expected) => {
-    // Given / When / Then
-    expect(parseCredentialFilterValue(value)).toBe(expected);
-  });
-
-  it.each([
-    [true, CredentialFilterValue.WithToken],
-    [false, CredentialFilterValue.WithoutToken],
-    [null, ALL_FILTER_VALUE],
-  ])('should select the credential choice of %s', (hasToken, expected) => {
-    // Given / When / Then
-    expect(toCredentialFilterValue(hasToken)).toBe(expected);
   });
 });
 

@@ -2604,11 +2604,7 @@
       "Product": "Produit",
       "AllProducts": "Tous les produits",
       "Status": "Statut",
-      "AllStatuses": "Tous les statuts",
-      "Credential": "Identifiant de connexion",
-      "AllCredentials": "Tous les identifiants de connexion",
-      "WithToken": "Avec un jeton",
-      "WithoutToken": "Sans jeton"
+      "AllStatuses": "Tous les statuts"
     },
     "Unregister": "Désinscrire",
     "UnregisterSuccess": "La plateforme « {title} » a été désinscrite",

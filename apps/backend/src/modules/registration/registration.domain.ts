@@ -89,7 +89,6 @@ export interface AdminRegisteredPlatformsFilters {
   platformIdentifier?: PlatformIdentifier;
   status?: PlatformConfigurationStatus;
   organizationId?: OrganizationId;
-  hasToken?: boolean;
   searchTerm?: string;
 }
 
@@ -160,8 +159,7 @@ const applyAdminRegisteredPlatformsFilters = (
   query: Knex.QueryBuilder,
   filters: AdminRegisteredPlatformsFilters
 ) => {
-  const { platformIdentifier, status, organizationId, hasToken, searchTerm } =
-    filters;
+  const { platformIdentifier, status, organizationId, searchTerm } = filters;
   if (platformIdentifier) {
     query.where(
       'ServiceDefinition.identifier',
@@ -174,11 +172,6 @@ const applyAdminRegisteredPlatformsFilters = (
   }
   if (organizationId) {
     query.where('OwnerSubscription.organization_id', '=', organizationId);
-  }
-  if (hasToken === true) {
-    query.whereNotNull('PlatformConfiguration.token');
-  } else if (hasToken === false) {
-    query.whereNull('PlatformConfiguration.token');
   }
   const trimmedSearchTerm = searchTerm?.trim();
   if (trimmedSearchTerm) {
