@@ -2030,6 +2030,7 @@ export enum PortalCapability {
   ModifyServiceMetadata = 'MODIFY_SERVICE_METADATA',
   ModifyTrials = 'MODIFY_TRIALS',
   ModifyTrialsQuota = 'MODIFY_TRIALS_QUOTA',
+  ReadOrganizationMembers = 'READ_ORGANIZATION_MEMBERS',
   ReadSaasMetrics = 'READ_SAAS_METRICS',
   ReadTrials = 'READ_TRIALS'
 }

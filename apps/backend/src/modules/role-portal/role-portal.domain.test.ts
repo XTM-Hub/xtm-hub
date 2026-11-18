@@ -1,7 +1,11 @@
 import { v4 as uuidv4 } from 'uuid';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { TestHelper } from '../../../tests/helper/test.helper';
-import { TEST_ORGANIZATIONS } from '../../../tests/tests.const';
+import {
+  CAPABILITY_READ_ORGANIZATION_MEMBERS,
+  TEST_ORGANIZATIONS,
+} from '../../../tests/tests.const';
+import { PortalCapability } from '../../__generated__/resolvers-types';
 import { RolePortalId } from '../../model/kanel/public/RolePortal';
 import { UserId } from '../../model/kanel/public/User';
 import { CAPABILITY_BYPASS } from '../../portal.const';
@@ -9,6 +13,27 @@ import { ErrorCode } from '../../utils/error/error.code';
 import { RolePortalDomain } from './role-portal.domain';
 
 describe('role portal domain tests', () => {
+  // Kept first: loadRolePortalsBySSOGroups below deletes every role, and the
+  // role links with them, which would hide a role the migration gave it
+  describe('loadCapabilityPortalsByNames', () => {
+    it('should find the READ_ORGANIZATION_MEMBERS capability its migration inserts, given to no role', async () => {
+      // When
+      const capabilities = await RolePortalDomain.loadCapabilityPortalsByNames([
+        PortalCapability.ReadOrganizationMembers,
+      ]);
+
+      // Then
+      expect(capabilities).toEqual([
+        expect.objectContaining(CAPABILITY_READ_ORGANIZATION_MEMBERS),
+      ]);
+      expect(
+        await TestHelper.rolePortal_CapabilityPortal.loadAll({
+          capability_portal_id: CAPABILITY_READ_ORGANIZATION_MEMBERS.id,
+        })
+      ).toEqual([]);
+    });
+  });
+
   describe('loadRolePortalsBySSOGroups', () => {
     beforeEach(async () => {
       await TestHelper.ssoGroup_RolePortal.delete({});

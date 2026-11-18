@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { TestHelper } from '../../../tests/helper/test.helper';
+import { CAPABILITY_READ_ORGANIZATION_MEMBERS } from '../../../tests/tests.const';
 import { PortalCapability } from '../../__generated__/resolvers-types';
 import { CAPABILITY_BYPASS, ROLE_ADMIN, ROLE_USER } from '../../portal.const';
 import { ErrorCode } from '../../utils/error/error.code';
@@ -222,6 +223,28 @@ describe('role portal app tests', () => {
       ).toEqual([CAPABILITY_BYPASS.id]);
     });
 
+    it('should create a role holding the READ_ORGANIZATION_MEMBERS capability', async () => {
+      // When
+      const result = await RolePortalApp.addRolePortal({
+        name: ROLE_NAME,
+        capabilities: [PortalCapability.ReadOrganizationMembers],
+      });
+
+      // Then
+      expect(result.capabilities).toEqual([
+        expect.objectContaining(CAPABILITY_READ_ORGANIZATION_MEMBERS),
+      ]);
+      expect(
+        await TestHelper.rolePortal_CapabilityPortal.loadAll({
+          role_portal_id: result.id,
+        })
+      ).toEqual([
+        expect.objectContaining({
+          capability_portal_id: CAPABILITY_READ_ORGANIZATION_MEMBERS.id,
+        }),
+      ]);
+    });
+
     it('should accept a role without capabilities', async () => {
       const result = await RolePortalApp.addRolePortal({
         name: ROLE_NAME,
@@ -299,6 +322,23 @@ describe('role portal app tests', () => {
           ssoGroup: SSO_GROUP,
           rolePortal: expect.objectContaining({ name: NEW_ROLE_NAME }),
         },
+      ]);
+    });
+
+    it('should give the READ_ORGANIZATION_MEMBERS capability to an existing role', async () => {
+      // When
+      await RolePortalApp.updateRolePortal(ROLE_NAME, {
+        name: ROLE_NAME,
+        capabilities: [
+          PortalCapability.Bypass,
+          PortalCapability.ReadOrganizationMembers,
+        ],
+      });
+
+      // Then
+      expect(await loadRoleCapabilityNames(ROLE_NAME)).toEqual([
+        PortalCapability.Bypass,
+        PortalCapability.ReadOrganizationMembers,
       ]);
     });
 
