@@ -72,7 +72,7 @@ describe('publicAccess guard', () => {
     // Given the public guard
 
     // When
-    const result = await publicAccess(principal);
+    const result = await publicAccess.check(principal);
 
     // Then
     expect(result).toEqual({ allowed: true });
@@ -119,7 +119,7 @@ describe('bypassOnlyGuard', () => {
     const guard = bypassOnlyGuard();
 
     // When
-    const result = await guard(principal);
+    const result = await guard.check(principal);
 
     // Then
     expect(result).toEqual(expected);
@@ -159,7 +159,7 @@ describe('loggedInGuard', () => {
     const guard = loggedInGuard();
 
     // When
-    const result = await guard(principal);
+    const result = await guard.check(principal);
 
     // Then
     expect(result).toEqual(expected);
@@ -215,7 +215,7 @@ describe('portalCapabilityGuard', () => {
       const guard = portalCapabilityGuard([PortalCapability.ManageDeployment]);
 
       // When
-      const result = await guard(principal);
+      const result = await guard.check(principal);
 
       // Then
       expect(result).toEqual(expected);
@@ -233,7 +233,7 @@ describe('portalCapabilityGuard', () => {
     });
 
     // When
-    const result = await guard(principal);
+    const result = await guard.check(principal);
 
     // Then
     expect(result).toEqual({ allowed: true });
@@ -287,7 +287,7 @@ describe('callerGuard for a system caller', () => {
       const guard = callerGuard('system', [PortalCapability.GenerateManifest]);
 
       // When
-      const result = await guard(principal);
+      const result = await guard.check(principal);
 
       // Then
       expect(result).toEqual(expected);
@@ -303,7 +303,7 @@ describe('callerGuard for a system caller', () => {
     const principal = buildSystemPrincipal([PortalCapability.GenerateManifest]);
 
     // When
-    const result = await guard(principal);
+    const result = await guard.check(principal);
 
     // Then
     expect(result).toEqual({
@@ -388,7 +388,7 @@ describe('orgGuard on the selected organization', () => {
       });
 
       // When
-      const result = await guard(principal);
+      const result = await guard.check(principal);
 
       // Then
       expect(result).toEqual(expected);
@@ -411,7 +411,7 @@ describe('orgGuard on the selected organization', () => {
     });
 
     // When
-    const result = await guard(principal);
+    const result = await guard.check(principal);
 
     // Then
     expect(result).toEqual({ allowed: true });
@@ -446,7 +446,7 @@ describe('orgGuard on the selected organization', () => {
       });
 
       // When
-      const result = await guard(
+      const result = await guard.check(
         buildUserPrincipal({ selectedOrganizationId, memberships })
       );
 
@@ -469,7 +469,7 @@ describe('orgGuard on the selected organization', () => {
     });
 
     // When
-    const result = await guard(principal);
+    const result = await guard.check(principal);
 
     // Then
     expect(result).toEqual({

@@ -22,7 +22,7 @@ import {
 } from '../../utils/error/error.code';
 import { ErrorType } from '../../utils/error/error.type';
 import { SYSTEM_TOKEN_HEADER } from '../system-token';
-import { DenialCode, deny, Guard, GuardResult } from './guard.types';
+import { allow, DenialCode, deny, Guard, GuardResult } from './guard.types';
 import { Guarded, Public } from './guarded.decorator';
 import { callerGuard } from './guards/caller.guard';
 import { portalCapabilityGuard } from './guards/portal.guard';
@@ -30,6 +30,7 @@ import {
   buildPrincipal,
   buildSystemPrincipal,
   GuardedContext,
+  Principal,
 } from './principal';
 
 const RESOLVED_VALUE = 'resolved';
@@ -44,17 +45,50 @@ type TestResolver = (
 
 const resolve = vi.fn<TestResolver>(() => RESOLVED_VALUE);
 
-const throwingGuard: Guard = () => {
-  throw new Error('guard failure');
+const throwingGuard: Guard = {
+  check: () => {
+    throw new Error('guard failure');
+  },
+  principalFrom: buildPrincipal,
 };
 
-const denyingGuard: Guard = () => deny(ForbiddenErrorCode.ForbiddenAccess);
+const denyingGuard: Guard = {
+  check: () => deny(ForbiddenErrorCode.ForbiddenAccess),
+  principalFrom: buildPrincipal,
+};
 
 let denialCode: DenialCode;
-const codeGuard: Guard = () => deny(denialCode);
+const codeGuard: Guard = {
+  check: () => deny(denialCode),
+  principalFrom: buildPrincipal,
+};
 
 let malformedResult: unknown;
-const malformedGuard: Guard = () => malformedResult as GuardResult;
+const malformedGuard: Guard = {
+  check: () => malformedResult as GuardResult,
+  principalFrom: buildPrincipal,
+};
+
+const OWN_PRINCIPAL: Principal = {
+  kind: 'system',
+  actorId: SYSTEM_USER_UUID,
+  portalCapabilities: new Set([PortalCapability.ManageDeployment]),
+};
+const buildOwnPrincipal = vi.fn((_context: GuardedContext) => OWN_PRINCIPAL);
+const receivedPrincipals: Principal[] = [];
+const ownPrincipalGuard: Guard = {
+  check: (principal) => {
+    receivedPrincipals.push(principal);
+    return allow();
+  },
+  principalFrom: buildOwnPrincipal,
+};
+
+const PRINCIPAL_FAILURE = new Error('principal unavailable');
+const failingPrincipalGuard: Guard = {
+  check: () => allow(),
+  principalFrom: () => Promise.reject(PRINCIPAL_FAILURE),
+};
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 class TestResolvers {
@@ -63,6 +97,13 @@ class TestResolvers {
 
   @Guarded(callerGuard('system', [PortalCapability.GenerateManifest]))
   static readonly systemOnly: TestResolver = (...args) => resolve(...args);
+
+  @Guarded(failingPrincipalGuard)
+  static readonly failingPrincipal: TestResolver = (...args) =>
+    resolve(...args);
+
+  @Guarded(ownPrincipalGuard)
+  static readonly ownPrincipal: TestResolver = (...args) => resolve(...args);
 
   @Guarded(throwingGuard)
   static readonly guardThrows: TestResolver = (...args) => resolve(...args);
@@ -104,6 +145,8 @@ const withSystemToken = (
 
 afterEach(() => {
   vi.restoreAllMocks();
+  buildOwnPrincipal.mockClear();
+  receivedPrincipals.length = 0;
 });
 
 describe('buildPrincipal', () => {
@@ -365,6 +408,30 @@ describe('@Guarded decorator', () => {
       expect(context).toEqual(snapshot);
     }
   );
+
+  it('should not call the resolver and let the error through when the principal cannot be built', async () => {
+    // Given
+    const context: GuardedContext = { user: undefined };
+
+    // When
+    const call = TestResolvers.failingPrincipal(PARENT, ARGS, context, INFO);
+
+    // Then
+    await expect(call).rejects.toBe(PRINCIPAL_FAILURE);
+    expect(resolve).not.toHaveBeenCalled();
+  });
+
+  it('should judge a guard on the principal built by its own principalFrom', async () => {
+    // Given
+    const context: GuardedContext = { user: undefined };
+
+    // When
+    await TestResolvers.ownPrincipal(PARENT, ARGS, context, INFO);
+
+    // Then
+    expect(buildOwnPrincipal).toHaveBeenCalledExactlyOnceWith(context);
+    expect(receivedPrincipals).toEqual([OWN_PRINCIPAL]);
+  });
 
   it('should refuse with UNAUTHENTICATED and not call the resolver when a BYPASS session without token calls a system-only resolver', async () => {
     // Given

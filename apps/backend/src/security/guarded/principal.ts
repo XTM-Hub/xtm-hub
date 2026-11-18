@@ -14,6 +14,10 @@ export interface GuardedContext {
   req?: { headers?: Readonly<Record<string, unknown>> };
 }
 
+export type PrincipalBuilder = (
+  context: GuardedContext
+) => Principal | Promise<Principal>;
+
 export type Principal =
   | { kind: 'anonymous' }
   | {

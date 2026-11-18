@@ -1,10 +1,9 @@
-import { PortalCapability } from '../../__generated__/resolvers-types';
 import {
   ForbiddenErrorCode,
   NotFoundErrorCode,
   UnauthenticatedErrorCode,
 } from '../../utils/error/error.code';
-import { Principal } from './principal';
+import { buildPrincipal, Principal, PrincipalBuilder } from './principal';
 
 export const DENIAL_CODES = [
   UnauthenticatedErrorCode.Unauthenticated,
@@ -18,10 +17,9 @@ export type DenialCode = (typeof DENIAL_CODES)[number];
 export type GuardResult =
   { allowed: true } | { allowed: false; code: DenialCode };
 
-export type Guard = ((
-  principal: Principal
-) => GuardResult | Promise<GuardResult>) & {
-  readonly systemScopes?: readonly PortalCapability[];
+export type Guard = {
+  check: (principal: Principal) => GuardResult | Promise<GuardResult>;
+  principalFrom: PrincipalBuilder;
 };
 
 export const allow = (): GuardResult => ({ allowed: true });
@@ -42,16 +40,18 @@ const isCaller = <Kind extends CallerKind>(
   kind: Kind
 ): principal is CallerOf<Kind> => principal.kind === kind;
 
-export const forCaller =
-  <Kind extends CallerKind>(
-    kind: Kind,
-    check: (caller: CallerOf<Kind>) => GuardResult
-  ): Guard =>
-  (principal) => {
+export const forCaller = <Kind extends CallerKind>(
+  kind: Kind,
+  check: (caller: CallerOf<Kind>) => GuardResult,
+  principalFrom: PrincipalBuilder = buildPrincipal
+): Guard => ({
+  check: (principal) => {
     if (principal.kind === 'anonymous') {
       return deny(UnauthenticatedErrorCode.Unauthenticated);
     }
     return isCaller(principal, kind)
       ? check(principal)
       : deny(ForbiddenErrorCode.ForbiddenAccess);
-  };
+  },
+  principalFrom,
+});

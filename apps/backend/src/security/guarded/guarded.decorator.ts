@@ -5,13 +5,7 @@ import { mapToGraphQLError } from '../../utils/error/error.mapping';
 import { buildScopedSystemUser } from '../system-token';
 import { DENIAL_CODES, DenialCode, Guard, GuardResult } from './guard.types';
 import { publicAccess } from './guards/public-access.guard';
-import {
-  ANONYMOUS_PRINCIPAL,
-  buildPrincipal,
-  buildSystemPrincipal,
-  GuardedContext,
-  Principal,
-} from './principal';
+import { GuardedContext, Principal } from './principal';
 
 type GuardableResolver = (
   parent: never,
@@ -25,7 +19,7 @@ const runGuard = async (
   principal: Principal
 ): Promise<GuardResult> => {
   try {
-    return await guard(principal);
+    return await guard.check(principal);
   } catch (error) {
     logApp.error('Access guard threw, access denied', {
       error,
@@ -45,12 +39,7 @@ const toDenialCode = (result: GuardResult | undefined): DenialCode =>
     : ForbiddenErrorCode.ForbiddenAccess;
 
 const enforce =
-  (
-    guard: Guard,
-    resolvePrincipal: (
-      context: GuardedContext
-    ) => Principal | Promise<Principal>
-  ) =>
+  (guard: Guard) =>
   <This, Fn extends GuardableResolver>(
     _value: undefined,
     _context: ClassFieldDecoratorContext<This, Fn>
@@ -60,7 +49,7 @@ const enforce =
       // GraphQL passes the context third. GuardableResolver types it never so that any resolver fits.
       // The context goes to the resolver unchanged, except for a system caller
       const context = args[2] as GuardedContext;
-      const principal = await resolvePrincipal(context);
+      const principal = await guard.principalFrom(context);
       const result = await runGuard(guard, principal);
       // Only an explicit allow lets the resolver run, whatever else the guard returned
       if (result?.allowed !== true) {
@@ -83,16 +72,7 @@ const enforce =
     return guarded as unknown as Fn;
   };
 
-export const Guarded = (guard: Guard) => {
-  const { systemScopes } = guard;
-  return enforce(
-    guard,
-    systemScopes
-      ? (context) => buildSystemPrincipal(context, systemScopes)
-      : buildPrincipal
-  );
-};
+export const Guarded = (guard: Guard) => enforce(guard);
 
 // Nothing is built and nothing is loaded: a public field makes no database call
-export const Public = () =>
-  enforce(publicAccess, () => Promise.resolve(ANONYMOUS_PRINCIPAL));
+export const Public = () => enforce(publicAccess);
