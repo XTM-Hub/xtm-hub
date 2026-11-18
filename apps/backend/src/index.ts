@@ -15,6 +15,11 @@ import portalConfig from './config';
 import { initCronJobs, stopCronJobs } from './crons';
 import { PortalContext } from './model/portal-context';
 import { UserLoadUserBy } from './model/user';
+import {
+  apiTokenMiddleware,
+  getApiTokenAuthentication,
+} from './modules/api-token/api-token.auth';
+import { apiTokenRateLimiter } from './modules/api-token/api-token.plugin';
 import { DeploymentRequestDataLoader } from './modules/deployment/deployment.dataloader';
 import { DocumentDataLoader } from './modules/document/document.dataloader';
 import { FeatureVotingDataLoader } from './modules/feature-voting/feature-voting.dataloader';
@@ -251,6 +256,8 @@ if (
   fs.writeFileSync('../frontend/schema.graphql', printedSchema);
 }
 
+// Before the request context: a Bearer API token sets the user every later layer reads
+app.use(apiTokenMiddleware);
 app.use(requestContextMiddleware);
 
 const server = createApolloServer({
@@ -278,13 +285,13 @@ declare module 'express-session' {
 
 const middlewareExpress = expressMiddleware(server, {
   context: async ({ req, res }) => {
-    const { user } = req.session;
+    // A Bearer API token (apiTokenMiddleware) runs the request as its user, narrowed to the token's organization
+    // and scope; otherwise the session user
+    const user = getApiTokenAuthentication(req)?.user ?? req.session.user;
     // extract id, only done for request with id directly
     if (req?.body?.variables?.id) {
       req.body.variables.id = extractId(req.body.variables.id);
     }
-
-    // TODO Add build session from request authorization
 
     // user may be undefined for unauthenticated requests;
     // the @auth directive enforces authentication before any resolver accesses it.
@@ -348,6 +355,7 @@ app.use(
   sessionMiddleware,
   cors<cors.CorsRequest>(PORTAL_CORS_OPTIONS),
   json(),
+  apiTokenRateLimiter,
   middlewareExpress
 );
 

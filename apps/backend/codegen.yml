@@ -32,3 +32,4 @@ generates:
         SubscriptionCapabilityId: '../model/kanel/public/SubscriptionCapability.js#SubscriptionCapabilityId'
         VotableFeatureId: '../model/kanel/public/VotableFeature.js#VotableFeatureId'
         VotingRoundId: '../model/kanel/public/VotingRound.js#VotingRoundId'
+        ApiTokenId: '../model/kanel/public/ApiToken.js#ApiTokenId'
