@@ -325,7 +325,9 @@ const handler = createHandler({
     const { user } = session as SessionData;
     // if (!user) throw new GraphQLError("You must be logged in", { extensions: { code: 'UNAUTHENTICATED' } });
     // TODO Add build session from request authorization
-    return { user, req: _req };
+    // `req` is the Express request on both transports, as `PortalContext` declares: graphql-sse's own request has no
+    // `ip` and keeps the Express one in `raw`.
+    return { user, req: _req.raw };
   },
 
   onOperation: (ctx, _req, args) => {

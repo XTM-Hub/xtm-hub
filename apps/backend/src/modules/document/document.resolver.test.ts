@@ -16,6 +16,7 @@ import {
   QueryPublicDocumentsArgs,
   SubscriptionModel,
 } from '../../__generated__/resolvers-types';
+import { requestContext } from '../../context/request.context';
 import DocumentModel, { DocumentId } from '../../model/kanel/public/Document';
 import ServiceInstance from '../../model/kanel/public/ServiceInstance';
 import UseCase from '../../model/kanel/public/UseCase';
@@ -262,15 +263,19 @@ describe('increment share number document rate limit', () => {
   const VISITOR_IP = '203.0.113.7';
   const OTHER_VISITOR_IP = '198.51.100.20';
 
-  const shareFrom = (ip: string, documentId: DocumentId) =>
-    documentResolver.Mutation!.incrementShareNumberDocument!(
-      {},
-      { documentId },
-      {
-        ...contextSimpleUserFiligran2,
-        req: { ip },
-      } as unknown as typeof contextSimpleUserFiligran2,
-      GRAPHQL_RESOLVE_INFO
+  // The request context middleware sets `ip` from the Express request on every route, GraphQL transports included.
+  const shareFrom = (
+    ip: string,
+    documentId: DocumentId,
+    graphqlContext = contextSimpleUserFiligran2
+  ) =>
+    requestContext.run({ user: contextSimpleUserFiligran2.user, ip }, () =>
+      documentResolver.Mutation!.incrementShareNumberDocument!(
+        {},
+        { documentId },
+        graphqlContext,
+        GRAPHQL_RESOLVE_INFO
+      )
     );
 
   const givenSharableDocument = () => {
@@ -326,6 +331,22 @@ describe('increment share number document rate limit', () => {
 
     // Then
     expect(result).toMatchObject({ id: documentId });
+    expect(sendTelemetryEventSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('should count a second share sent over /graphql-sse only once, although its GraphQL request has no ip', async () => {
+    // Given
+    const documentId = givenSharableDocument();
+    const sseContext = {
+      ...contextSimpleUserFiligran2,
+      req: { raw: { ip: VISITOR_IP } },
+    } as unknown as typeof contextSimpleUserFiligran2;
+    await shareFrom(VISITOR_IP, documentId, sseContext);
+
+    // When
+    await shareFrom(VISITOR_IP, documentId, sseContext);
+
+    // Then
     expect(sendTelemetryEventSpy).toHaveBeenCalledTimes(1);
   });
 
