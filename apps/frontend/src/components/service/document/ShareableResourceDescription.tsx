@@ -24,7 +24,11 @@ const ShareableResourceDescription = ({
         as="section"
         padding={16}
         className="overflow-x-auto"
-        title={<h2>{t('Service.ShareableResources.Details.Overview')}</h2>}>
+        title={
+          <h2 className="[font:inherit] tracking-[inherit]">
+            {t('Service.ShareableResources.Details.Overview')}
+          </h2>
+        }>
         <div className="flex flex-col gap-8">
           <h3>{shortDescription}</h3>
           <ResourceMarkdownRenderer

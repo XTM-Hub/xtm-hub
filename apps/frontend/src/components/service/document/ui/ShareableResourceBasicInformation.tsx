@@ -18,7 +18,9 @@ export const ShareableResourceBasicInformation = ({
         as="section"
         padding={16}
         title={
-          <h2>{t('Service.ShareableResources.Details.BasicInformation')}</h2>
+          <h2 className="[font:inherit] tracking-[inherit]">
+            {t('Service.ShareableResources.Details.BasicInformation')}
+          </h2>
         }>
         <div className="space-y-6">{children}</div>
       </Paper>
