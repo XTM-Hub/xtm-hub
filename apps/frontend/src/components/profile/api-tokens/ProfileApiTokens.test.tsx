@@ -9,7 +9,15 @@ import {
 } from '@graphql/generated';
 import { screen, waitFor, within } from '@testing-library/react';
 import { graphql, HttpResponse } from 'msw';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const mocks = vi.hoisted(() => ({
+  showSnackbar: vi.fn(),
+}));
+
+vi.mock('@/components/ui/snackbar/snackbar-store', () => ({
+  showSnackbar: mocks.showSnackbar,
+}));
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -41,7 +49,25 @@ const serveTokens = (tokens: ApiTokenRowFragment[]) =>
     )
   );
 
+const serveCreated = () =>
+  mswServer.use(
+    graphql.mutation('ApiTokenCreate', () =>
+      HttpResponse.json({
+        data: {
+          createApiToken: {
+            token: 'xhp_abcdef_secret',
+            api_token: activeToken,
+          },
+        },
+      })
+    )
+  );
+
 describe('ProfileApiTokens', () => {
+  beforeEach(() => {
+    mocks.showSnackbar.mockReset();
+  });
+
   it('should explain the empty list', async () => {
     serveTokens([]);
 
@@ -160,5 +186,118 @@ describe('ProfileApiTokens', () => {
       await screen.findByText('ApiTokens.Field.NameError')
     ).toBeInTheDocument();
     expect(called).toBe(false);
+  });
+
+  it('should show the server error when the creation is rejected', async () => {
+    serveTokens([]);
+    mswServer.use(
+      graphql.mutation('ApiTokenCreate', () =>
+        HttpResponse.json({ errors: [{ message: 'FORBIDDEN_ACCESS' }] })
+      )
+    );
+
+    const { user } = testRender(<ProfileApiTokens />);
+
+    await user.click(
+      await screen.findByRole('button', { name: 'ApiTokens.Create.Open' })
+    );
+    await user.type(screen.getByLabelText(/ApiTokens.Field.Name/), 'Script');
+    await user.click(
+      screen.getByRole('button', { name: 'ApiTokens.Create.Submit' })
+    );
+
+    await waitFor(() =>
+      expect(mocks.showSnackbar).toHaveBeenCalledWith(
+        expect.objectContaining({ severity: 'error', title: 'Utils.Error' })
+      )
+    );
+    expect(screen.queryByDisplayValue('xhp_abcdef_secret')).toBeNull();
+  });
+
+  it('should copy the secret and forget it once the dialog is closed', async () => {
+    serveTokens([]);
+    serveCreated();
+
+    const { user } = testRender(<ProfileApiTokens />);
+
+    await user.click(
+      await screen.findByRole('button', { name: 'ApiTokens.Create.Open' })
+    );
+    await user.type(screen.getByLabelText(/ApiTokens.Field.Name/), 'Script');
+    await user.click(
+      screen.getByRole('button', { name: 'ApiTokens.Create.Submit' })
+    );
+    await user.click(
+      await screen.findByRole('button', { name: 'ApiTokens.Created.Copy' })
+    );
+
+    expect(await navigator.clipboard.readText()).toBe('xhp_abcdef_secret');
+    expect(mocks.showSnackbar).toHaveBeenCalledWith(
+      expect.objectContaining({ severity: 'success' })
+    );
+
+    await user.click(
+      screen.getByRole('button', { name: 'ApiTokens.Created.Done' })
+    );
+
+    await waitFor(() =>
+      expect(screen.queryByDisplayValue('xhp_abcdef_secret')).toBeNull()
+    );
+  });
+
+  it('should say so when the secret cannot be copied', async () => {
+    serveTokens([]);
+    serveCreated();
+
+    const { user } = testRender(<ProfileApiTokens />);
+
+    await user.click(
+      await screen.findByRole('button', { name: 'ApiTokens.Create.Open' })
+    );
+    await user.type(screen.getByLabelText(/ApiTokens.Field.Name/), 'Script');
+    await user.click(
+      screen.getByRole('button', { name: 'ApiTokens.Create.Submit' })
+    );
+    const copy = await screen.findByRole('button', {
+      name: 'ApiTokens.Created.Copy',
+    });
+    vi.spyOn(navigator.clipboard, 'writeText').mockRejectedValueOnce(
+      new Error('denied')
+    );
+    await user.click(copy);
+
+    await waitFor(() =>
+      expect(mocks.showSnackbar).toHaveBeenCalledWith(
+        expect.objectContaining({
+          severity: 'error',
+          description: 'ApiTokens.Created.CopyFailed',
+        })
+      )
+    );
+  });
+
+  it('should show the server error when the revocation is rejected', async () => {
+    serveTokens([activeToken]);
+    mswServer.use(
+      graphql.mutation('ApiTokenRevoke', () =>
+        HttpResponse.json({ errors: [{ message: 'FORBIDDEN_ACCESS' }] })
+      )
+    );
+
+    const { user } = testRender(<ProfileApiTokens />);
+
+    await user.click(
+      await screen.findByRole('button', { name: 'ApiTokens.RevokeNamed' })
+    );
+    const dialog = await screen.findByRole('alertdialog');
+    await user.click(
+      within(dialog).getByRole('button', { name: 'ApiTokens.Revoke' })
+    );
+
+    await waitFor(() =>
+      expect(mocks.showSnackbar).toHaveBeenCalledWith(
+        expect.objectContaining({ severity: 'error', title: 'Utils.Error' })
+      )
+    );
   });
 });
