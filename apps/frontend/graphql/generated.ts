@@ -23,6 +23,8 @@ export type Scalars = {
   Boolean: { input: boolean; output: boolean; }
   Int: { input: number; output: number; }
   Float: { input: number; output: number; }
+  /** A Relay global ID for ApiToken, extracted to a branded ApiTokenId string */
+  ApiTokenId: { input: any; output: any; }
   /** A Relay global ID for Competitor, extracted to a branded CompetitorId string */
   CompetitorId: { input: any; output: any; }
   Date: { input: any; output: any; }
@@ -125,6 +127,33 @@ export type AdminEditUserInput = {
    */
   password: InputMaybe<Scalars['String']['input']>;
 };
+
+export type ApiToken = Node & {
+  __typename?: 'ApiToken';
+  created_at: Scalars['Date']['output'];
+  expires_at: Scalars['Date']['output'];
+  id: Scalars['ID']['output'];
+  last_used_at: Maybe<Scalars['Date']['output']>;
+  name: Scalars['String']['output'];
+  organization_id: Scalars['ID']['output'];
+  organization_name: Scalars['String']['output'];
+  revoked_at: Maybe<Scalars['Date']['output']>;
+  scope: ApiTokenScope;
+  /** The first characters of the token, to tell tokens apart */
+  token_prefix: Scalars['String']['output'];
+  user_email: Scalars['String']['output'];
+};
+
+/**
+ * What a personal API token may do. read: queries only. read_write: queries and mutations, without the organization
+ * administration and without any portal capability. admin: the user's organization and portal capabilities, BYPASS
+ * excepted. A token never exceeds its user's live rights.
+ */
+export enum ApiTokenScope {
+  Admin = 'admin',
+  Read = 'read',
+  ReadWrite = 'read_write'
+}
 
 export type AutoRegisterPlatformInput = {
   existing_users_count: InputMaybe<Scalars['Int']['input']>;
@@ -269,6 +298,13 @@ export type ContentTranslationValueInput = {
   value: Scalars['String']['input'];
 };
 
+export type CreateApiTokenInput = {
+  expires_at: Scalars['Date']['input'];
+  name: Scalars['String']['input'];
+  organization_id: Scalars['OrganizationId']['input'];
+  scope: ApiTokenScope;
+};
+
 export type CreateCompetitorInput = {
   domain: Scalars['String']['input'];
   name: Scalars['String']['input'];
@@ -338,6 +374,13 @@ export type CreateVotingRoundInput = {
   theme: InputMaybe<VotingRoundTheme>;
 };
 
+/** The token is shown here once: only its hash is kept */
+export type CreatedApiToken = {
+  __typename?: 'CreatedApiToken';
+  api_token: ApiToken;
+  token: Scalars['String']['output'];
+};
+
 export type CsvFeed = Document & Integration & Node & {
   __typename?: 'CsvFeed';
   /** @deprecated Use status */
@@ -370,6 +413,18 @@ export type CsvFeed = Document & Integration & Node & {
   uploader: Maybe<User>;
   uploader_organization: Maybe<Organization>;
   use_cases: Maybe<Array<UseCase>>;
+};
+
+/** The token that authenticates the current request */
+export type CurrentApiToken = {
+  __typename?: 'CurrentApiToken';
+  expires_at: Scalars['Date']['output'];
+  id: Scalars['ID']['output'];
+  last_used_at: Maybe<Scalars['Date']['output']>;
+  name: Scalars['String']['output'];
+  organization_id: Scalars['ID']['output'];
+  organization_name: Scalars['String']['output'];
+  scope: ApiTokenScope;
 };
 
 export type CustomDashboard = Document & Node & {
@@ -1117,6 +1172,7 @@ export type Mutation = {
   changeSelectedOrganization: Maybe<User>;
   consumeProvisionedNewsFeedItems: ConsumeProvisionedNewsFeedItemsResponse;
   contactUs: Success;
+  createApiToken: CreatedApiToken;
   createCompetitor: Competitor;
   createDeploymentRequest: DeploymentRequest;
   createDocument: Document;
@@ -1166,6 +1222,8 @@ export type Mutation = {
   reorderDeploymentRequestInQueue: Success;
   requestTransferPersonalSpace: Success;
   resetPassword: Success;
+  /** The owner, or an administrator of the token's organization, revokes it */
+  revokeApiToken: ApiToken;
   saveContentTranslationDraft: Array<ContentTranslationEntry>;
   sendTelemetryEvent: Maybe<SendTelemetryMutation>;
   setVotingRoundStatus: Array<VotingRound>;
@@ -1303,6 +1361,11 @@ export type MutationContactUsArgs = {
   message: InputMaybe<Scalars['String']['input']>;
   platformId: InputMaybe<Scalars['ID']['input']>;
   platformIdentifier: InputMaybe<PlatformIdentifier>;
+};
+
+
+export type MutationCreateApiTokenArgs = {
+  input: CreateApiTokenInput;
 };
 
 
@@ -1548,6 +1611,11 @@ export type MutationReorderDeploymentRequestInQueueArgs = {
 
 export type MutationRequestTransferPersonalSpaceArgs = {
   new_email: Scalars['String']['input'];
+};
+
+
+export type MutationRevokeApiTokenArgs = {
+  id: Scalars['ApiTokenId']['input'];
 };
 
 
@@ -2021,6 +2089,8 @@ export type PublicDocumentSlugInfo = {
 
 export type Query = {
   __typename?: 'Query';
+  /** The current user's API tokens, revoked and expired ones included */
+  apiTokens: Array<ApiToken>;
   bundleProducts: Array<PlatformIdentifier>;
   bundleUserServiceGroups: Array<BundleUserServiceGroup>;
   canUnregisterPlatform: CanUnregisterResponse;
@@ -2028,6 +2098,8 @@ export type Query = {
   contentTranslationDrafts: Array<ContentTranslationEntry>;
   contentTranslations: Array<ContentTranslationEntry>;
   countEpicsPerTimeline: Array<EpicCountPerTimeline>;
+  /** The token of the current request, null for a session */
+  currentApiToken: Maybe<CurrentApiToken>;
   /**
    * The round currently collecting votes on a service instance, if any.
    * Publicly readable, like the roadmap the round belongs to.
@@ -2049,6 +2121,8 @@ export type Query = {
   /** @deprecated Use `refreshPlatformRegistrationConnectivityStatus` instead. This field is no longer used in the OpenCTI platform due to refactoring and the addition of a version value in the endpoint. */
   openCTIPlatformRegistrationStatus: OpenCtiPlatformRegistrationStatusResponse;
   organization: Maybe<Organization>;
+  /** The API tokens of the selected organization, for its administrators */
+  organizationApiTokens: Array<ApiToken>;
   organizations: OrganizationConnection;
   pendingUsers: UserConnection;
   platformAssociatedOrganization: Maybe<Organization>;
@@ -2912,10 +2986,16 @@ export enum ServiceRestriction {
 export type Settings = {
   __typename?: 'Settings';
   base_url_front: Scalars['String']['output'];
+  capabilities: Array<SettingsCapability>;
   environment: Scalars['String']['output'];
   platform_feature_flags: Array<FeatureFlag>;
   platform_providers: Array<PlatformProvider>;
 };
+
+/** What this Hub accepts, for API clients that detect a feature before using it */
+export enum SettingsCapability {
+  ApiTokens = 'API_TOKENS'
+}
 
 export type ShareableResource = {
   __typename?: 'ShareableResource';
@@ -3552,6 +3632,27 @@ export type XtmoneIntegrationStatusEntry = {
   last_checked_at: Maybe<Scalars['String']['output']>;
   status: Scalars['String']['output'];
 };
+
+export type ApiTokenCreateMutationVariables = Exact<{
+  input: CreateApiTokenInput;
+}>;
+
+
+export type ApiTokenCreateMutation = { __typename?: 'Mutation', createApiToken: { __typename?: 'CreatedApiToken', token: string, api_token: { __typename?: 'ApiToken', id: string, name: string, token_prefix: string, scope: ApiTokenScope, organization_id: string, organization_name: string, expires_at: any, last_used_at: any | null, created_at: any, revoked_at: any | null } } };
+
+export type ApiTokenRevokeMutationVariables = Exact<{
+  id: Scalars['ApiTokenId']['input'];
+}>;
+
+
+export type ApiTokenRevokeMutation = { __typename?: 'Mutation', revokeApiToken: { __typename?: 'ApiToken', id: string, name: string, token_prefix: string, scope: ApiTokenScope, organization_id: string, organization_name: string, expires_at: any, last_used_at: any | null, created_at: any, revoked_at: any | null } };
+
+export type ApiTokenRowFragment = { __typename?: 'ApiToken', id: string, name: string, token_prefix: string, scope: ApiTokenScope, organization_id: string, organization_name: string, expires_at: any, last_used_at: any | null, created_at: any, revoked_at: any | null };
+
+export type ApiTokensQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type ApiTokensQuery = { __typename?: 'Query', apiTokens: Array<{ __typename?: 'ApiToken', id: string, name: string, token_prefix: string, scope: ApiTokenScope, organization_id: string, organization_name: string, expires_at: any, last_used_at: any | null, created_at: any, revoked_at: any | null }> };
 
 export type LoginMutationVariables = Exact<{
   email: Scalars['String']['input'];
@@ -4738,6 +4839,20 @@ export type EpicsQueryVariables = Exact<{
 export type EpicsQuery = { __typename?: 'Query', epics: { __typename?: 'EpicConnection', totalCount: number, edges: Array<{ __typename?: 'EpicEdge', node: { __typename?: 'Epic', id: string, short_description: string, description: string, problem_to_solve: string, proposed_solution: string, expected_value: string, title: string, timeline: Timeline, edition_type: EditionType, products: Array<FiligranProduct>, slack_link: string | null, active: boolean, epic_type: EpicType, created_at: any, updated_at: any | null } }> } | null };
 
 
+export const ApiTokenRowFragmentDoc = `
+    fragment ApiTokenRow on ApiToken {
+  id
+  name
+  token_prefix
+  scope
+  organization_id
+  organization_name
+  expires_at
+  last_used_at
+  created_at
+  revoked_at
+}
+    `;
 export const CompetitorRowFragmentDoc = `
     fragment CompetitorRow on Competitor {
   id
@@ -5294,6 +5409,120 @@ export const EpicFieldsFragmentDoc = `
   updated_at
 }
     `;
+export const ApiTokenCreateDocument = `
+    mutation ApiTokenCreate($input: CreateApiTokenInput!) {
+  createApiToken(input: $input) {
+    token
+    api_token {
+      ...ApiTokenRow
+    }
+  }
+}
+    ${ApiTokenRowFragmentDoc}`;
+
+export const useApiTokenCreateMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<ApiTokenCreateMutation, TError, ApiTokenCreateMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<ApiTokenCreateMutation, TError, ApiTokenCreateMutationVariables, TContext>(
+      {
+    mutationKey: ['ApiTokenCreate'],
+    mutationFn: (variables?: ApiTokenCreateMutationVariables) => fetcher<ApiTokenCreateMutation, ApiTokenCreateMutationVariables>(client, ApiTokenCreateDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useApiTokenCreateMutation.getKey = () => ['ApiTokenCreate'];
+useApiTokenCreateMutation.getRootKey = () => ['ApiTokenCreate'] as const;
+useApiTokenCreateMutation.fetcher = (client: GraphQLClient, variables: ApiTokenCreateMutationVariables, headers?: RequestInit['headers']) => fetcher<ApiTokenCreateMutation, ApiTokenCreateMutationVariables>(client, ApiTokenCreateDocument, variables, headers);
+
+export const ApiTokenRevokeDocument = `
+    mutation ApiTokenRevoke($id: ApiTokenId!) {
+  revokeApiToken(id: $id) {
+    ...ApiTokenRow
+  }
+}
+    ${ApiTokenRowFragmentDoc}`;
+
+export const useApiTokenRevokeMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<ApiTokenRevokeMutation, TError, ApiTokenRevokeMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<ApiTokenRevokeMutation, TError, ApiTokenRevokeMutationVariables, TContext>(
+      {
+    mutationKey: ['ApiTokenRevoke'],
+    mutationFn: (variables?: ApiTokenRevokeMutationVariables) => fetcher<ApiTokenRevokeMutation, ApiTokenRevokeMutationVariables>(client, ApiTokenRevokeDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useApiTokenRevokeMutation.getKey = () => ['ApiTokenRevoke'];
+useApiTokenRevokeMutation.getRootKey = () => ['ApiTokenRevoke'] as const;
+useApiTokenRevokeMutation.fetcher = (client: GraphQLClient, variables: ApiTokenRevokeMutationVariables, headers?: RequestInit['headers']) => fetcher<ApiTokenRevokeMutation, ApiTokenRevokeMutationVariables>(client, ApiTokenRevokeDocument, variables, headers);
+
+export const ApiTokensDocument = `
+    query ApiTokens {
+  apiTokens {
+    ...ApiTokenRow
+  }
+}
+    ${ApiTokenRowFragmentDoc}`;
+
+export const useApiTokensQuery = <
+      TData = ApiTokensQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables?: ApiTokensQueryVariables,
+      options?: Omit<UseQueryOptions<ApiTokensQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<ApiTokensQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<ApiTokensQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['ApiTokens'] : ['ApiTokens', variables],
+    queryFn: fetcher<ApiTokensQuery, ApiTokensQueryVariables>(client, ApiTokensDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useApiTokensQuery.getKey = (variables?: ApiTokensQueryVariables) => variables === undefined ? ['ApiTokens'] : ['ApiTokens', variables];
+useApiTokensQuery.getRootKey = () => ['ApiTokens'] as const;
+export const useInfiniteApiTokensQuery = <
+      TData = InfiniteData<ApiTokensQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: ApiTokensQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<ApiTokensQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<ApiTokensQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<ApiTokensQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['ApiTokens.infinite'] : ['ApiTokens.infinite', variables],
+      queryFn: (metaData) => fetcher<ApiTokensQuery, ApiTokensQueryVariables>(client, ApiTokensDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteApiTokensQuery.getKey = (variables?: ApiTokensQueryVariables) => variables === undefined ? ['ApiTokens.infinite'] : ['ApiTokens.infinite', variables];
+useInfiniteApiTokensQuery.getRootKey = () => ['ApiTokens.infinite'] as const;
+useApiTokensQuery.fetcher = (client: GraphQLClient, variables?: ApiTokensQueryVariables, headers?: RequestInit['headers']) => fetcher<ApiTokensQuery, ApiTokensQueryVariables>(client, ApiTokensDocument, variables, headers);
+
 export const LoginDocument = `
     mutation Login($email: String!, $password: String!) {
   login(email: $email, password: $password) {

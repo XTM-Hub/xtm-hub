@@ -1,0 +1,14 @@
+mutation ApiTokenCreate($input: CreateApiTokenInput!) {
+  createApiToken(input: $input) {
+    token
+    api_token {
+      ...ApiTokenRow
+    }
+  }
+}
+
+mutation ApiTokenRevoke($id: ApiTokenId!) {
+  revokeApiToken(id: $id) {
+    ...ApiTokenRow
+  }
+}
