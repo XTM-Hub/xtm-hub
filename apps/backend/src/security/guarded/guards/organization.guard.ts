@@ -5,12 +5,9 @@ import {
   ForbiddenErrorCode,
   NotFoundErrorCode,
 } from '../../../utils/error/error.code';
-import { allow, deny, forCaller, Guard } from '../guard.types';
-import { Principal } from '../principal';
+import { allow, CallerOf, deny, forCaller, Guard } from '../guard.types';
 
-type UserCaller = Extract<Principal, { kind: 'user' }>;
-
-type OrganizationSource = (user: UserCaller) => OrganizationId;
+type OrganizationSource = (user: CallerOf<'user'>) => OrganizationId;
 
 export const selectedOrganization: OrganizationSource = (user) =>
   user.selectedOrganizationId;

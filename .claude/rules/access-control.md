@@ -72,7 +72,8 @@ A guard returns `allow()` or `deny(code)`. An exception, or anything else, is a 
 table.
 
 `orgGuard` checks the caller's membership, not that the data belongs to the organization: keep the row filter in
-`src/security/restriction/`.
+`src/security/restriction/`. Whether `BYPASS` sees every row depends on the use case: some filters let it through
+themselves, others leave it to their caller, so read the filter before calling it.
 
 ## Machine callers
 
