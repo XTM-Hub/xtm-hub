@@ -75,10 +75,15 @@ export const sessionUserKey = (req: Request) =>
 const RATE_LIMIT_LOG_INTERVAL_MS = 60 * 1000;
 const MAX_LOG_RATE_ENTRIES = 100;
 
+const TOO_MANY_REQUESTS_MESSAGE = 'Too many requests, please try again later';
+
 const sendDefaultTooManyRequests = (res: Response) => {
-  res
-    .status(429)
-    .json({ message: 'Too many requests, please try again later' });
+  res.status(429).json({ message: TOO_MANY_REQUESTS_MESSAGE });
+};
+
+/** The default body with the status repeated as `code`, the shape the product version and news feed clients read. */
+const sendTooManyRequestsWithCode = (res: Response) => {
+  res.status(429).json({ code: 429, message: TOO_MANY_REQUESTS_MESSAGE });
 };
 
 export interface RateLimiterConfig {
@@ -168,8 +173,6 @@ export const buildRateLimiterOptions = ({
 // region Code outside a route
 
 export interface KeyRateLimiter {
-  /** Counts one hit for the key and tells whether it is still within the limit. */
-  tryConsume: (key: string) => Promise<boolean>;
   /** Counts one hit for the key and throws `TOO_MANY_REQUESTS` once it is over the limit. */
   consumeOrThrow: (key: string) => Promise<void>;
   /**
@@ -193,10 +196,10 @@ export const createKeyRateLimiter = ({
 }): KeyRateLimiter => {
   const store = new MemoryStore();
   store.init({ windowMs } as Options);
+  // Counts one hit for the key and tells whether it is still within the limit.
   const tryConsume = async (key: string) =>
     (await store.increment(key)).totalHits <= limit;
   return {
-    tryConsume,
     consumeOrThrow: async (key) => {
       if (!(await tryConsume(key))) {
         throw new Error(ErrorCode.TooManyRequests);
@@ -268,16 +271,22 @@ export const createGraphqlRateLimiters = (): RequestHandler[] => [
 ];
 
 // The share counter is public and the mutation needs no session: one share per address and document per hour.
+const SHARE_COUNT_RATE_WINDOW_MS = 60 * 60 * 1000;
+const SHARE_COUNT_RATE_LIMIT = 1;
+
 export const shareCountRateLimiter = createKeyRateLimiter({
-  windowMs: 60 * 60 * 1000,
-  limit: 1,
+  windowMs: SHARE_COUNT_RATE_WINDOW_MS,
+  limit: SHARE_COUNT_RATE_LIMIT,
 });
 
 // Each message reaches HubSpot and the sales team: a sender gets a few per hour, counted once the sender is known so
 // that a refused request costs nothing.
+const CONTACT_SALES_RATE_WINDOW_MS = 60 * 60 * 1000;
+const CONTACT_SALES_RATE_LIMIT = 5;
+
 export const contactSalesRateLimiter = createKeyRateLimiter({
-  windowMs: 60 * 60 * 1000,
-  limit: 5,
+  windowMs: CONTACT_SALES_RATE_WINDOW_MS,
+  limit: CONTACT_SALES_RATE_LIMIT,
 });
 
 // endregion
@@ -339,10 +348,10 @@ export const documentDownloadUserRateLimiter = rateLimit(
 // region Verification email
 
 const VERIFICATION_EMAIL_IP_RATE_WINDOW_MS = 15 * 60 * 1000;
-const VERIFICATION_EMAIL_IP_RATE_MAX = 10;
+const VERIFICATION_EMAIL_IP_RATE_LIMIT = 10;
 // The store is in memory, so each API replica allows its own email per window.
 const VERIFICATION_EMAIL_SUBJECT_RATE_WINDOW_MS = 5 * 60 * 1000;
-const VERIFICATION_EMAIL_SUBJECT_RATE_MAX = 1;
+const VERIFICATION_EMAIL_SUBJECT_RATE_LIMIT = 1;
 
 const sendVerificationEmailTooManyRequests = (res: Response) =>
   sendVerificationEmailError(res, VERIFICATION_EMAIL_ERRORS.TooManyRequests);
@@ -351,7 +360,7 @@ export const buildVerificationEmailIpRateLimiterOptions =
   (): Partial<Options> =>
     buildRateLimiterOptions({
       windowMs: VERIFICATION_EMAIL_IP_RATE_WINDOW_MS,
-      limit: VERIFICATION_EMAIL_IP_RATE_MAX,
+      limit: VERIFICATION_EMAIL_IP_RATE_LIMIT,
       logLabel: 'Verification email',
       sendRateLimitError: sendVerificationEmailTooManyRequests,
     });
@@ -364,7 +373,7 @@ export const buildVerificationEmailIpRateLimiterOptions =
 export const buildVerificationEmailSubjectRateLimiterOptions =
   (): Partial<Options> => ({
     windowMs: VERIFICATION_EMAIL_SUBJECT_RATE_WINDOW_MS,
-    limit: VERIFICATION_EMAIL_SUBJECT_RATE_MAX,
+    limit: VERIFICATION_EMAIL_SUBJECT_RATE_LIMIT,
     standardHeaders: true,
     legacyHeaders: false,
     // A failed send must not cost the user their only attempt of the window.
@@ -392,12 +401,12 @@ export const createVerificationEmailRateLimiters = (): RequestHandler[] => [
 // region Public endpoints
 
 const MANIFEST_RATE_WINDOW_MS = 60 * 1000;
-const MANIFEST_RATE_MAX = 300;
+const MANIFEST_RATE_LIMIT = 300;
 
 export const buildManifestRateLimiterOptions = (): Partial<Options> =>
   buildRateLimiterOptions({
     windowMs: MANIFEST_RATE_WINDOW_MS,
-    limit: MANIFEST_RATE_MAX,
+    limit: MANIFEST_RATE_LIMIT,
     logLabel: 'Manifest',
     sendRateLimitError: (res) =>
       sendManifestError(res, MANIFEST_ERRORS.TooManyRequests),
@@ -406,12 +415,12 @@ export const buildManifestRateLimiterOptions = (): Partial<Options> =>
 export const manifestRateLimiter = rateLimit(buildManifestRateLimiterOptions());
 
 const VERSIONS_MATRIX_RATE_WINDOW_MS = 60 * 1000;
-const VERSIONS_MATRIX_RATE_MAX = 300;
+const VERSIONS_MATRIX_RATE_LIMIT = 300;
 
 export const versionsMatrixRateLimiter = rateLimit(
   buildRateLimiterOptions({
     windowMs: VERSIONS_MATRIX_RATE_WINDOW_MS,
-    limit: VERSIONS_MATRIX_RATE_MAX,
+    limit: VERSIONS_MATRIX_RATE_LIMIT,
     logLabel: 'Versions matrix',
     sendRateLimitError: (res) =>
       sendVersionsMatrixError(res, VERSIONS_MATRIX_ERRORS.TooManyRequests),
@@ -419,18 +428,14 @@ export const versionsMatrixRateLimiter = rateLimit(
 );
 
 const PRODUCT_VERSION_RATE_WINDOW_MS = 60 * 1000;
-const PRODUCT_VERSION_RATE_MAX = 300;
+const PRODUCT_VERSION_RATE_LIMIT = 300;
 
 export const buildProductVersionRateLimiterOptions = (): Partial<Options> =>
   buildRateLimiterOptions({
     windowMs: PRODUCT_VERSION_RATE_WINDOW_MS,
-    limit: PRODUCT_VERSION_RATE_MAX,
+    limit: PRODUCT_VERSION_RATE_LIMIT,
     logLabel: 'Product version',
-    sendRateLimitError: (res) =>
-      res.status(429).json({
-        code: 429,
-        message: 'Too many requests, please try again later',
-      }),
+    sendRateLimitError: sendTooManyRequestsWithCode,
   });
 
 export const productVersionRateLimiter = rateLimit(
@@ -439,61 +444,57 @@ export const productVersionRateLimiter = rateLimit(
 
 // Clicks from a news feed are rare, so the limit is far below the other public endpoints
 const NEWS_FEED_REDIRECT_RATE_WINDOW_MS = 60 * 1000;
-const NEWS_FEED_REDIRECT_RATE_MAX = 60;
+const NEWS_FEED_REDIRECT_RATE_LIMIT = 60;
 
 export const newsFeedRedirectRateLimiter = rateLimit(
   buildRateLimiterOptions({
     windowMs: NEWS_FEED_REDIRECT_RATE_WINDOW_MS,
-    limit: NEWS_FEED_REDIRECT_RATE_MAX,
+    limit: NEWS_FEED_REDIRECT_RATE_LIMIT,
     logLabel: 'News feed redirect',
-    sendRateLimitError: (res) => {
-      res.status(429).json({
-        code: 429,
-        message: 'Too many requests, please try again later',
-      });
-    },
+    sendRateLimitError: sendTooManyRequestsWithCode,
   })
 );
 
 // Called by n8n on every blog post change, a few times a minute at most
 const NEWS_FEED_BLOGPOST_SYNC_RATE_WINDOW_MS = 60 * 1000;
-const NEWS_FEED_BLOGPOST_SYNC_RATE_MAX = 30;
+const NEWS_FEED_BLOGPOST_SYNC_RATE_LIMIT = 30;
 
 export const newsFeedBlogpostSyncRateLimiter = rateLimit(
   buildRateLimiterOptions({
     windowMs: NEWS_FEED_BLOGPOST_SYNC_RATE_WINDOW_MS,
-    limit: NEWS_FEED_BLOGPOST_SYNC_RATE_MAX,
+    limit: NEWS_FEED_BLOGPOST_SYNC_RATE_LIMIT,
     logLabel: 'News feed blogpost sync',
-    sendRateLimitError: (res) => {
-      res.status(429).json({
-        message: 'Too many requests, please try again later',
-      });
-    },
   })
 );
 
 // The limiters below keep the express-rate-limit default key and response.
 
+const CSV_EXPORT_RATE_WINDOW_MS = 60 * 1000;
+const CSV_EXPORT_RATE_LIMIT = 10;
+
 export const csvExportRateLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 10, // max 10 exports per minute per IP
+  windowMs: CSV_EXPORT_RATE_WINDOW_MS,
+  limit: CSV_EXPORT_RATE_LIMIT,
   standardHeaders: true,
   legacyHeaders: false,
 });
 
 const USER_PICTURE_RATE_WINDOW_MS = 60 * 1000;
-const USER_PICTURE_RATE_MAX = 300;
+const USER_PICTURE_RATE_LIMIT = 300;
 
 export const userPictureRateLimiter = rateLimit({
   windowMs: USER_PICTURE_RATE_WINDOW_MS,
-  max: USER_PICTURE_RATE_MAX,
+  limit: USER_PICTURE_RATE_LIMIT,
   standardHeaders: true,
   legacyHeaders: false,
 });
 
+const AUTH_PROVIDER_RATE_WINDOW_MS = 60 * 1000;
+const AUTH_PROVIDER_RATE_LIMIT = 10;
+
 export const authProviderRateLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  limit: 10,
+  windowMs: AUTH_PROVIDER_RATE_WINDOW_MS,
+  limit: AUTH_PROVIDER_RATE_LIMIT,
   standardHeaders: true,
   legacyHeaders: false,
 });

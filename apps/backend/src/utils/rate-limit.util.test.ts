@@ -177,12 +177,12 @@ describe('createKeyRateLimiter', () => {
   it('should refuse a key over the limit and keep the other keys apart', async () => {
     // Given
     const limiter = createKeyRateLimiter({ windowMs: 60 * 1000, limit: 2 });
-    await limiter.tryConsume('a');
-    await limiter.tryConsume('a');
+    await limiter.tryConsumeForIp(CLIENT_A, 'a');
+    await limiter.tryConsumeForIp(CLIENT_A, 'a');
 
     // When
-    const third = await limiter.tryConsume('a');
-    const other = await limiter.tryConsume('b');
+    const third = await limiter.tryConsumeForIp(CLIENT_A, 'a');
+    const other = await limiter.tryConsumeForIp(CLIENT_A, 'b');
 
     // Then
     expect(third).toBe(false);
@@ -192,11 +192,11 @@ describe('createKeyRateLimiter', () => {
   it('should allow a key again once reset', async () => {
     // Given
     const limiter = createKeyRateLimiter({ windowMs: 60 * 1000, limit: 1 });
-    await limiter.tryConsume('a');
+    await limiter.tryConsumeForIp(CLIENT_A, 'a');
     await limiter.reset();
 
     // When
-    const result = await limiter.tryConsume('a');
+    const result = await limiter.tryConsumeForIp(CLIENT_A, 'a');
 
     // Then
     expect(result).toBe(true);
