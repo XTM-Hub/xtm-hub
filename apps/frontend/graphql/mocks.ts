@@ -1316,6 +1316,7 @@ export const mockOrganization = (overrides?: Partial<Organization>, _relationshi
         capabilityUser: overrides && overrides.hasOwnProperty('capabilityUser') ? overrides.capabilityUser! : [relationshipsToOmit.has('Capability') ? {} as Capability : mockCapability({}, relationshipsToOmit)],
         domains: overrides && overrides.hasOwnProperty('domains') ? overrides.domains! : ['commodo'],
         id: overrides && overrides.hasOwnProperty('id') ? overrides.id! : '5f8a43ce-bfc3-411d-b6d9-e3b4c562c170',
+        members_count: overrides && overrides.hasOwnProperty('members_count') ? overrides.members_count! : 9912,
         name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'succedo',
         personal_space: overrides && overrides.hasOwnProperty('personal_space') ? overrides.personal_space! : true,
     };

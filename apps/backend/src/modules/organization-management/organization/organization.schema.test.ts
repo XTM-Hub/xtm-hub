@@ -14,6 +14,7 @@ import { Context } from '../../../server/apollo-plugins/log';
 import { createApolloServer } from '../../../server/apollo-server';
 import createSchema from '../../../server/graphql-schema';
 import { UserDomain } from '../user/user-domain/user.domain';
+import { UserOrganizationDomain } from '../user/user-organization/user-organization.domain';
 import { OrganizationApp } from './organization.app';
 import { OrganizationDataLoader } from './organization.dataloader';
 import { OrganizationDomain } from './organization.domain';
@@ -33,6 +34,16 @@ const ORGANIZATIONS_ADMINISTRATOR_EMAILS_QUERY = `query ($searchTerm: String) {
   organizations(orderBy: name, orderMode: asc, searchTerm: $searchTerm) {
     edges { node { id administrator_emails } }
   }
+}`;
+
+const ORGANIZATIONS_MEMBERS_COUNT_QUERY = `query ($searchTerm: String) {
+  organizations(orderBy: name, orderMode: asc, searchTerm: $searchTerm) {
+    edges { node { id members_count } }
+  }
+}`;
+
+const USER_ORGANIZATIONS_MEMBERS_COUNT_QUERY = `query {
+  userOrganizations { id name members_count }
 }`;
 
 const USER_ORGANIZATIONS_ADMINISTRATOR_EMAILS_QUERY = `query {
@@ -417,5 +428,92 @@ describe('organization GraphQL schema', () => {
         ]),
       });
     });
+  });
+
+  describe('members_count field of Organization', () => {
+    it.each`
+      description                    | capability
+      ${'BYPASS'}                    | ${CAPABILITY_BYPASS}
+      ${'READ_ORGANIZATION_MEMBERS'} | ${CAPABILITY_READ_ORGANIZATION_MEMBERS}
+    `(
+      'should show the members count to a $description user listing the organizations',
+      async ({
+        capability,
+      }: {
+        capability: typeof CAPABILITY_READ_ORGANIZATION_MEMBERS;
+      }) => {
+        // Given
+        const expectedCount =
+          await UserOrganizationDomain.countUsersInOrganization(
+            TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID
+          );
+
+        // When
+        const { data, errors } = await execute(
+          ORGANIZATIONS_MEMBERS_COUNT_QUERY,
+          withOrganizationDataLoader(withPortalCapability(capability)),
+          { searchTerm: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.NAME }
+        );
+
+        // Then
+        expect(errors).toBeUndefined();
+        expect(data?.organizations).toMatchObject({
+          edges: expect.arrayContaining([
+            {
+              node: {
+                id: SECOND_ORGANIZATION_GLOBAL_ID,
+                members_count: expectedCount,
+              },
+            },
+          ]),
+        });
+      }
+    );
+
+    it.each`
+      description                       | context
+      ${'without any capability'}       | ${contextSimpleUserSecondOrga}
+      ${'with READ_SAAS_METRICS alone'} | ${withPortalCapability(CAPABILITY_READ_SAAS_METRICS)}
+    `(
+      'should hide the members count from a user $description, and keep the rest of the answer',
+      async ({ context }: { context: PortalContext }) => {
+        // Given
+        const countMembers = vi.spyOn(
+          UserOrganizationDomain,
+          'countUsersInOrganizations'
+        );
+
+        // When
+        const { data, errors } = await execute(
+          USER_ORGANIZATIONS_MEMBERS_COUNT_QUERY,
+          withOrganizationDataLoader(context)
+        );
+
+        // Then the organizations are listed with their name, each without its members count
+        const organizations = (
+          data as {
+            userOrganizations: {
+              id: string;
+              name: string;
+              members_count: unknown;
+            }[];
+          }
+        ).userOrganizations;
+        expect(organizations).toContainEqual({
+          id: SECOND_ORGANIZATION_GLOBAL_ID,
+          name: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.NAME,
+          members_count: null,
+        });
+        organizations.forEach((organization) => {
+          expect(organization.name).toEqual(expect.any(String));
+          expect(organization.members_count).toBeNull();
+        });
+        expect(errors).toHaveLength(organizations.length);
+        errors?.forEach(({ message }) =>
+          expect(message).toMatch(NOT_AUTHORIZED)
+        );
+        expect(countMembers).not.toHaveBeenCalled();
+      }
+    );
   });
 });
