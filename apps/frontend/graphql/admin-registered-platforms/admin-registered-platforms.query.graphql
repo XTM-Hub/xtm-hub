@@ -1,0 +1,53 @@
+fragment AdminRegisteredPlatformRow on AdminRegisteredPlatform {
+  service_instance_id
+  platform_id
+  title
+  url
+  identifier
+  version
+  contract
+  commercial_model
+  tenant_id
+  tenant_name
+  status
+  last_connectivity_check
+  organization {
+    id
+    name
+  }
+  registerer {
+    id
+    email
+    first_name
+    last_name
+  }
+  credential {
+    kind
+    has_token
+  }
+}
+
+query AdminRegisteredPlatforms(
+  $first: Int!
+  $after: ID
+  $orderBy: AdminRegisteredPlatformOrdering!
+  $orderMode: OrderingMode!
+  $searchTerm: String
+  $filter: AdminRegisteredPlatformsFilter
+) {
+  adminRegisteredPlatforms(
+    first: $first
+    after: $after
+    orderBy: $orderBy
+    orderMode: $orderMode
+    searchTerm: $searchTerm
+    filter: $filter
+  ) {
+    totalCount
+    edges {
+      node {
+        ...AdminRegisteredPlatformRow
+      }
+    }
+  }
+}

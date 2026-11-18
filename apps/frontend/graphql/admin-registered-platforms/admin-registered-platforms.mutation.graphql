@@ -1,0 +1,5 @@
+mutation AdminUnregisterPlatform($serviceInstanceId: ServiceInstanceId!) {
+  adminUnregisterPlatform(serviceInstanceId: $serviceInstanceId) {
+    ...AdminRegisteredPlatformRow
+  }
+}
