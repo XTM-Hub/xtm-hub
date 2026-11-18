@@ -15,6 +15,20 @@ export const getApiTokenStatus = (
     : 'active';
 };
 
+export const UNKNOWN_SERVER_ERROR_KEY = 'Error.Server.UNKNOWN_ERROR';
+
+/**
+ * The catalog key of a server error, or the generic unknown-error line when
+ * the catalog has no entry for its message, so a raw key is never shown.
+ */
+export const getServerErrorKey = (
+  error: unknown,
+  has: (key: string) => boolean
+): string => {
+  const key = `Error.Server.${error instanceof Error ? error.message : 'UNKNOWN_ERROR'}`;
+  return has(key) ? key : UNKNOWN_SERVER_ERROR_KEY;
+};
+
 /** The lifetimes offered at creation; the API refuses more than 366 days. */
 export const API_TOKEN_LIFETIME_DAYS = ['7', '30', '90', '180', '365'] as const;
 export type ApiTokenLifetimeDays = (typeof API_TOKEN_LIFETIME_DAYS)[number];

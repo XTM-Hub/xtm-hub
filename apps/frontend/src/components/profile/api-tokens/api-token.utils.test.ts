@@ -4,7 +4,9 @@ import {
   getApiTokenExpiry,
   getApiTokenOrganizations,
   getApiTokenStatus,
+  getServerErrorKey,
   sortApiTokens,
+  UNKNOWN_SERVER_ERROR_KEY,
 } from '@/components/profile/api-tokens/api-token.utils';
 import { ApiTokenRowFragment, ApiTokenScope } from '@graphql/generated';
 import { describe, expect, it } from 'vitest';
@@ -114,6 +116,25 @@ describe('filterApiTokens', () => {
     expect(ids({ scope: ApiTokenScope.Admin })).toEqual(['script']);
     expect(ids({ status: 'revoked' })).toEqual(['script']);
     expect(ids({ status: 'expired' })).toEqual([]);
+  });
+});
+
+describe('getServerErrorKey', () => {
+  const has = (key: string) => key === 'Error.Server.FORBIDDEN_ACCESS';
+
+  it('should use the catalog key of a known server error', () => {
+    expect(getServerErrorKey(new Error('FORBIDDEN_ACCESS'), has)).toBe(
+      'Error.Server.FORBIDDEN_ACCESS'
+    );
+  });
+
+  it('should fall back to the unknown error when the catalog has no key', () => {
+    expect(
+      getServerErrorKey(new Error('invalid input syntax for type uuid'), has)
+    ).toBe(UNKNOWN_SERVER_ERROR_KEY);
+    expect(getServerErrorKey('not an error', has)).toBe(
+      UNKNOWN_SERVER_ERROR_KEY
+    );
   });
 });
 

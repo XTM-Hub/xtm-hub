@@ -9,6 +9,7 @@ import {
   filterApiTokens,
   getApiTokenOrganizations,
   getApiTokenStatus,
+  getServerErrorKey,
   sortApiTokens,
 } from '@/components/profile/api-tokens/api-token.utils';
 import { CreateApiTokenDialog } from '@/components/profile/api-tokens/CreateApiTokenDialog';
@@ -78,12 +79,10 @@ export const ProfileApiTokens = () => {
         await queryClient.invalidateQueries({ queryKey: apiTokenKeys.all() });
       },
       onError: (error: unknown) => {
-        const errorMessage =
-          error instanceof Error ? error.message : 'UNKNOWN_ERROR';
         showSnackbar({
           severity: 'error',
           title: t('Utils.Error'),
-          description: t(`Error.Server.${errorMessage}`),
+          description: t(getServerErrorKey(error, t.has)),
         });
       },
     }

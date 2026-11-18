@@ -7,6 +7,7 @@ import {
   ApiTokenLifetimeDays,
   DEFAULT_API_TOKEN_LIFETIME_DAYS,
   getApiTokenExpiry,
+  getServerErrorKey,
 } from '@/components/profile/api-tokens/api-token.utils';
 import { FieldInfoTip } from '@/components/ui/FieldInfoTip';
 import { Form, FormField } from '@/components/ui/form';
@@ -91,12 +92,10 @@ export const CreateApiTokenDialog = ({
         await queryClient.invalidateQueries({ queryKey: apiTokenKeys.all() });
       },
       onError: (error: unknown) => {
-        const errorMessage =
-          error instanceof Error ? error.message : 'UNKNOWN_ERROR';
         showSnackbar({
           severity: 'error',
           title: t('Utils.Error'),
-          description: t(`Error.Server.${errorMessage}`),
+          description: t(getServerErrorKey(error, t.has)),
         });
       },
     }

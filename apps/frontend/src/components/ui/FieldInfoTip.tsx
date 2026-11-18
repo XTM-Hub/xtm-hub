@@ -26,7 +26,7 @@ export const FieldInfoTip = ({ label, children }: FieldInfoTipProps) => (
         <button
           type="button"
           aria-label={label}
-          className="inline-flex text-default-secondary">
+          className="inline-flex rounded text-default-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus">
           <Icon
             name="info"
             size={16}
