@@ -1,0 +1,21 @@
+{
+  "name": "@xtm-hub/rfc-delivery",
+  "private": true,
+  "type": "module",
+  "description": "Builds a Filigran Flow RFC as a stack of pull requests, with Claude Code sessions doing the spec, the code and a first review of each chunk",
+  "scripts": {
+    "check-ts": "tsc --noEmit",
+    "test": "node --test 'tests/**/*.test.ts' 'tests/**/*.test.mjs'",
+    "rfc": "node bin/rfc.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "0.3.323",
+    "yaml": "2.9.1",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:"
+  },
+  "packageManager": "yarn@4.18.1"
+}
