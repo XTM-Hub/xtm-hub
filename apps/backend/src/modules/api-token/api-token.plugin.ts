@@ -15,11 +15,26 @@ import { ForbiddenErrorCode } from '../../utils/error/error.code';
 import { mapToGraphQLError } from '../../utils/error/error.mapping';
 import { getApiTokenAuthentication } from './api-token.auth';
 
-// Operations a token never runs, whatever its scope: they change the identity or the credentials of the caller
+/**
+ * Mutations a token never runs, whatever its scope: they act on the caller's own account, credentials, profile,
+ * personal space or sessions, or issue a credential that would outlive the token (`refreshUserPlatformToken`).
+ * `revokeApiToken` stays allowed: revoking with a token only ever reduces access. Add here any new mutation of that
+ * kind.
+ */
 export const API_TOKEN_DENIED_FIELDS: ReadonlySet<string> = new Set([
+  // Organization and sessions
   'changeSelectedOrganization',
-  'createApiToken',
+  'login',
   'logout',
+  // Credentials
+  'createApiToken',
+  'refreshUserPlatformToken',
+  'resetPassword',
+  // Profile and personal space
+  'editMeUser',
+  'uploadUserPicture',
+  'requestTransferPersonalSpace',
+  'transferPersonalSpace',
 ]);
 
 const API_TOKEN_RATE_LIMIT_WINDOW_MS = 60 * 1000;
