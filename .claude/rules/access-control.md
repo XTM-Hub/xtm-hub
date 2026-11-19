@@ -99,7 +99,7 @@ same `NOT_FOUND` as for a row that does not exist.
   one instead of rewriting its `where` inline, and write a new one there when none fits.
 - The caller comes from `requestContext`, never from an argument the client sends.
 - A filter that depends on a capability has two halves: the SQL restriction, and the check that decides whether to
-  apply it. `isUserRestrictedToPublishedDocument` (`modules/document/document.security.ts`) is the example: a document
+  apply it. `isUserRestrictedToPublishedDocument` (`src/modules/document/document.security.ts`) is the example: a document
   is `draft`, `in_validation` or `published`, and on a manageable service (`MANAGEABLE_SERVICE_DEFINITION_IDENTIFIERS`)
   a user without the `UPLOAD` capability on the service instance only gets `published` ones (platform admins see
   everything). Keep that decision in a `<name>.security.ts` helper, next to the module, not in the resolver.
