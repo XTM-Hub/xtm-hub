@@ -101,6 +101,14 @@ what the user may not see (a draft, a document in validation): if the API return
 UI gate and the backend disagree, the backend is right: fix the backend if it is too open, and show the
 `Error.Server.<code>` message if it refuses.
 
+**An action the user may not perform stays visible, disabled, with a tooltip saying why.** Do not hide the control, and
+do not disable it silently: the user must learn that the action exists and what is missing. Wrap the disabled control in
+`DisabledActionTooltip` (`src/components/ui/DisabledActionTooltip.tsx`), which carries the tooltip because a disabled
+control gets no hover or focus (see `PublicResourceActions.tsx`). The `reason` is a `next-intl` key in every locale
+file, and names what is missing in plain words (the capability or role, or the state that blocks the action), not a
+generic "not allowed". Hide a control only when the user can never reach it, such as an entry that belongs to another
+product or to an area they cannot open at all. The disabled state is only a hint: the backend still refuses the call.
+
 ## Data fetching
 
 The backend is reached through `proxy.ts` (Next.js 16's convention file, renamed from `middleware.ts`), which
