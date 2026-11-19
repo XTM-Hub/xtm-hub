@@ -30,7 +30,7 @@ import {
 import { apiTokenKeys } from '@graphql/api-token/api-token.keys';
 import { ApiTokenScope, useApiTokenCreateMutation } from '@graphql/generated';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useIsMutating, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useContext, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
@@ -84,27 +84,30 @@ export const CreateApiTokenDialog = ({
     </FieldInfoTip>
   );
 
-  const { mutate: createApiToken, reset: resetCreateApiToken } =
-    useApiTokenCreateMutation(portalGraphqlClient, {
-      // The response holds the one-time secret: drop it from the mutation cache
-      // as soon as nothing observes it, instead of keeping it for the default 5 minutes.
-      gcTime: 0,
-      // Runs even for a creation detached by close(): the list still shows the new token.
-      onSuccess: async () => {
-        await queryClient.invalidateQueries({ queryKey: apiTokenKeys.all() });
-      },
-      onError: (error: unknown) => {
-        showSnackbar({
-          severity: 'error',
-          title: t('Utils.Error'),
-          description: t(getServerErrorKey(error, t.has)),
-        });
-      },
-    });
-  // Counts creations still running after close() detached them, not only the attached one,
-  // so a new submission waits for the previous one to complete.
-  const isCreating =
-    useIsMutating({ mutationKey: useApiTokenCreateMutation.getKey() }) > 0;
+  const {
+    mutate: createApiToken,
+    reset: resetCreateApiToken,
+    isPending: isCreating,
+  } = useApiTokenCreateMutation(portalGraphqlClient, {
+    // The response holds the one-time secret: drop it from the mutation cache
+    // as soon as nothing observes it, instead of keeping it for the default 5 minutes.
+    gcTime: 0,
+    onSuccess: ({ createApiToken: result }) => {
+      setCreated({ token: result.token, name: result.api_token.name });
+      // Not awaited: the mutation stays pending, and the dialog locked, until onSuccess returns.
+      void queryClient.invalidateQueries({ queryKey: apiTokenKeys.all() });
+    },
+    onError: (error: unknown) => {
+      showSnackbar({
+        severity: 'error',
+        title: t('Utils.Error'),
+        description: t(getServerErrorKey(error, t.has)),
+      });
+    },
+  });
+  // Locked while the creation runs, so it cannot complete with nobody left to see its secret,
+  // and while the secret is shown, so a stray key or click cannot lose it: only Done closes it.
+  const locked = isCreating || !!created;
 
   const close = () => {
     onOpenChange(false);
@@ -115,23 +118,14 @@ export const CreateApiTokenDialog = ({
   };
 
   const handleSubmit = (values: CreateApiTokenValues) => {
-    createApiToken(
-      {
-        input: {
-          name: values.name,
-          organization_id: values.organization_id,
-          scope: values.scope,
-          expires_at: getApiTokenExpiry(values.lifetime).toISOString(),
-        },
+    createApiToken({
+      input: {
+        name: values.name,
+        organization_id: values.organization_id,
+        scope: values.scope,
+        expires_at: getApiTokenExpiry(values.lifetime).toISOString(),
       },
-      {
-        // Called only while this observer is attached: after close() resets the
-        // mutation, a late response no longer reaches the dialog state.
-        onSuccess: ({ createApiToken: result }) => {
-          setCreated({ token: result.token, name: result.api_token.name });
-        },
-      }
-    );
+    });
   };
 
   const copyToken = async () => {
@@ -160,9 +154,8 @@ export const CreateApiTokenDialog = ({
       <DialogContent
         // The secret is shown once: a stray click outside must not lose it.
         onInteractOutside={(e) => e.preventDefault()}
-        // Nor a stray Escape or corner icon: only the Done button closes it.
-        onEscapeKeyDown={created ? (e) => e.preventDefault() : undefined}
-        hideCloseButton={!!created}>
+        onEscapeKeyDown={locked ? (e) => e.preventDefault() : undefined}
+        hideCloseButton={locked}>
         {created ? (
           <>
             <DialogTitle>{t('ApiTokens.Created.Title')}</DialogTitle>
@@ -314,13 +307,14 @@ export const CreateApiTokenDialog = ({
                 <Button
                   type="button"
                   priority="secondary"
+                  disabled={isCreating}
                   {...analyticsId('account_api_token_cancel')}
                   onClick={close}>
                   {t('Utils.Cancel')}
                 </Button>
                 <Button
                   type="submit"
-                  disabled={isCreating}
+                  loading={isCreating}
                   {...analyticsId('account_api_token_create')}>
                   {t('ApiTokens.Create.Submit')}
                 </Button>
