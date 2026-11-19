@@ -84,26 +84,32 @@ export const CreateApiTokenDialog = ({
     </FieldInfoTip>
   );
 
-  const { mutate: createApiToken, isPending } = useApiTokenCreateMutation(
-    portalGraphqlClient,
-    {
-      onSuccess: async ({ createApiToken: result }) => {
-        setCreated({ token: result.token, name: result.api_token.name });
-        await queryClient.invalidateQueries({ queryKey: apiTokenKeys.all() });
-      },
-      onError: (error: unknown) => {
-        showSnackbar({
-          severity: 'error',
-          title: t('Utils.Error'),
-          description: t(getServerErrorKey(error, t.has)),
-        });
-      },
-    }
-  );
+  const {
+    mutate: createApiToken,
+    reset: resetCreateApiToken,
+    isPending,
+  } = useApiTokenCreateMutation(portalGraphqlClient, {
+    // The response holds the one-time secret: drop it from the mutation cache
+    // as soon as nothing observes it, instead of keeping it for the default 5 minutes.
+    gcTime: 0,
+    onSuccess: async ({ createApiToken: result }) => {
+      setCreated({ token: result.token, name: result.api_token.name });
+      await queryClient.invalidateQueries({ queryKey: apiTokenKeys.all() });
+    },
+    onError: (error: unknown) => {
+      showSnackbar({
+        severity: 'error',
+        title: t('Utils.Error'),
+        description: t(getServerErrorKey(error, t.has)),
+      });
+    },
+  });
 
   const close = () => {
     onOpenChange(false);
     setCreated(undefined);
+    // Detaches the mutation from this observer, so gcTime 0 evicts the secret from the cache.
+    resetCreateApiToken();
     form.reset();
   };
 
@@ -143,7 +149,10 @@ export const CreateApiTokenDialog = ({
       onOpenChange={(next) => (next ? onOpenChange(true) : close())}>
       <DialogContent
         // The secret is shown once: a stray click outside must not lose it.
-        onInteractOutside={(e) => e.preventDefault()}>
+        onInteractOutside={(e) => e.preventDefault()}
+        // Nor a stray Escape or corner icon: only the Done button closes it.
+        onEscapeKeyDown={created ? (e) => e.preventDefault() : undefined}
+        hideCloseButton={!!created}>
         {created ? (
           <>
             <DialogTitle>{t('ApiTokens.Created.Title')}</DialogTitle>

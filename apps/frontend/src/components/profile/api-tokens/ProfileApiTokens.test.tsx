@@ -2,11 +2,13 @@ import { ProfileApiTokens } from '@/components/profile/api-tokens/ProfileApiToke
 import { mswServer } from '@/utils/test/msw/server';
 import testRender from '@/utils/test/test-render';
 import {
+  ApiTokenCreateMutation,
   ApiTokenCreateMutationVariables,
   ApiTokenRevokeMutationVariables,
   ApiTokenRowFragment,
   ApiTokenScope,
 } from '@graphql/generated';
+import { QueryClient } from '@tanstack/react-query';
 import { screen, waitFor, within } from '@testing-library/react';
 import { graphql, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -299,6 +301,70 @@ describe('ProfileApiTokens', () => {
     await waitFor(() =>
       expect(screen.queryByDisplayValue('xhp_abcdef_secret')).toBeNull()
     );
+  });
+
+  it('should keep the secret dialog open on Escape and offer no corner close icon', async () => {
+    serveTokens([]);
+    serveCreated();
+
+    const { user } = testRender(<ProfileApiTokens />);
+
+    await user.click(
+      await screen.findByRole('button', { name: 'ApiTokens.Create.Open' })
+    );
+    await user.type(screen.getByLabelText(/ApiTokens.Field.Name/), 'Script');
+    await user.click(
+      screen.getByRole('button', { name: 'ApiTokens.Create.Submit' })
+    );
+    await screen.findByDisplayValue('xhp_abcdef_secret');
+
+    await user.keyboard('{Escape}');
+
+    expect(screen.getByDisplayValue('xhp_abcdef_secret')).toBeInTheDocument();
+    expect(
+      within(screen.getByRole('dialog')).queryByRole('button', {
+        name: 'Close',
+      })
+    ).toBeNull();
+  });
+
+  it('should remove the secret from the mutation cache once the dialog is closed', async () => {
+    serveTokens([]);
+    serveCreated();
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    });
+    const cachedSecrets = () =>
+      queryClient
+        .getMutationCache()
+        .getAll()
+        .map(
+          (mutation) =>
+            (mutation.state.data as ApiTokenCreateMutation | undefined)
+              ?.createApiToken?.token
+        )
+        .filter(Boolean);
+
+    const { user } = testRender(<ProfileApiTokens />, { queryClient });
+
+    await user.click(
+      await screen.findByRole('button', { name: 'ApiTokens.Create.Open' })
+    );
+    await user.type(screen.getByLabelText(/ApiTokens.Field.Name/), 'Script');
+    await user.click(
+      screen.getByRole('button', { name: 'ApiTokens.Create.Submit' })
+    );
+    await screen.findByDisplayValue('xhp_abcdef_secret');
+    expect(cachedSecrets()).toEqual(['xhp_abcdef_secret']);
+
+    await user.click(
+      screen.getByRole('button', { name: 'ApiTokens.Created.Done' })
+    );
+
+    await waitFor(() => expect(cachedSecrets()).toEqual([]));
   });
 
   it('should say so when the secret cannot be copied', async () => {
