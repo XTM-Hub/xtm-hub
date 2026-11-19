@@ -506,6 +506,25 @@ describe('security Guard with an API token', () => {
       );
     });
 
+    it.each([ApiTokenScope.Read, ApiTokenScope.ReadWrite])(
+      'should refuse a capability its user holds to a %s token, even in the token organization',
+      async (scope) => {
+        // Given
+        await actAsToken(scope);
+
+        // When
+        const call = securityGuard.assertUserCapabilities(
+          [OrganizationCapability.ManageAccess],
+          tokenOrganization.id
+        );
+
+        // Then
+        await expect(call).rejects.toThrow(
+          ErrorCode.MissingCapabilityOnOrganization
+        );
+      }
+    );
+
     it('should let a session user reach every organization where they hold the capability', async () => {
       // Given
       await actAsSession();
@@ -568,6 +587,29 @@ describe('security Guard with an API token', () => {
         ErrorCode.MissingCapabilityOnOrganization
       );
     });
+
+    it.each([ApiTokenScope.Read, ApiTokenScope.ReadWrite])(
+      'should refuse a capability its user holds to a %s token, even in the token organization',
+      async (scope) => {
+        // Given
+        await actAsToken(scope);
+
+        // When
+        const call = securityGuard.assertUserIsAllowedOnOrganization(
+          requestContext.requireUser(),
+          {
+            organizationId: tokenOrganization.id,
+            requiredCapability:
+              OrganizationCapability.ManagePlatformRegistration,
+          }
+        );
+
+        // Then
+        await expect(call).rejects.toThrow(
+          ErrorCode.MissingCapabilityOnOrganization
+        );
+      }
+    );
 
     it('should allow the token organization with a capability the token kept', async () => {
       // Given
