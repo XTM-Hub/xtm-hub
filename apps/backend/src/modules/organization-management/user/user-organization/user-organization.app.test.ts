@@ -876,7 +876,8 @@ describe('usersOrganizationApp', () => {
     });
 
     describe('with an API token', () => {
-      // The caller manages access in two organizations: a token pinned to one must not act on the other
+      // The caller manages access in two organizations: a token pinned to one must not act on the other. The admin
+      // scope keeps the caller's organization capabilities, so a refusal comes from the organization pin alone.
       let tokenOrganization: Organization;
       let caller: User;
       let target: User;
@@ -899,7 +900,7 @@ describe('usersOrganizationApp', () => {
         await TestHelper.apiToken.actAs(
           caller.id,
           tokenOrganization.id,
-          ApiTokenScope.ReadWrite
+          ApiTokenScope.Admin
         );
 
         // When
@@ -928,7 +929,7 @@ describe('usersOrganizationApp', () => {
         await TestHelper.apiToken.actAs(
           caller.id,
           tokenOrganization.id,
-          ApiTokenScope.ReadWrite
+          ApiTokenScope.Admin
         );
 
         // When
@@ -960,7 +961,7 @@ describe('usersOrganizationApp', () => {
         await TestHelper.apiToken.actAs(
           caller.id,
           tokenOrganization.id,
-          ApiTokenScope.ReadWrite
+          ApiTokenScope.Admin
         );
 
         // When
@@ -987,7 +988,7 @@ describe('usersOrganizationApp', () => {
         await TestHelper.apiToken.actAs(
           caller.id,
           organization.id,
-          ApiTokenScope.ReadWrite
+          ApiTokenScope.Admin
         );
 
         // When

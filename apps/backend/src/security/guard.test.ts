@@ -418,7 +418,8 @@ describe('security Guard with an API token', () => {
     );
   };
 
-  const actAsToken = (scope: ApiTokenScope = ApiTokenScope.ReadWrite) =>
+  // The admin scope keeps the user's organization capabilities: a refusal then comes from the organization pin alone
+  const actAsToken = (scope: ApiTokenScope = ApiTokenScope.Admin) =>
     TestHelper.apiToken.actAs(user.id, tokenOrganization.id, scope);
 
   // A session with the token organization selected, the same user as the token's
