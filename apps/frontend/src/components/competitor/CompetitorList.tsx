@@ -4,6 +4,7 @@ import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTablePagination } from '@/hooks/use-table-pagination';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
+import { throwOnFirstLoadError } from '@/lib/query-client';
 import { getDataTableLabels } from '@/utils/design-system/data-table';
 import { removeFromQueryCache } from '@/utils/query-cache';
 import { DeleteIcon, EditIcon } from '@filigran/icon';
@@ -73,8 +74,7 @@ const CompetitorList = () => {
     variables,
     {
       placeholderData: keepPreviousData,
-      // Like Relay, a failed load reaches the admin error page; a failed background refetch keeps the rows shown.
-      throwOnError: (_error, query) => query.state.data === undefined,
+      throwOnError: throwOnFirstLoadError,
     }
   );
 

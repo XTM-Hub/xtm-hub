@@ -134,6 +134,8 @@ export const DocumentApp = {
     logo?: Upload;
     images?: Upload[];
   }) => {
+    DocumentHelper.assertCreationStatus(input.status);
+
     const serviceDefinition =
       await ServiceDefinitionDomain.loadServiceDefinitionByServiceInstance(
         serviceInstanceId
@@ -286,12 +288,6 @@ export const DocumentApp = {
         documentId: createdDocument.id,
       });
     }
-
-    void NewsFeedApp.upsertResourceNewsFeed({
-      documentBeforeUpdate: undefined,
-      updatedDocument: createdDocument,
-      serviceDefinitionIdentifier: serviceDefinition.identifier,
-    });
 
     return createdDocument;
   },

@@ -13,10 +13,15 @@ export const DeployableResourceViewTracker = ({
   resource,
   requiredProductVersion,
 }: DeployableResourceViewTrackerProps) => {
-  const { platforms } = useRegisteredPlatforms(
+  const { platforms, isPending } = useRegisteredPlatforms(
     getPlatformIdentifier(resource.type),
     { onlyActive: true }
   );
+
+  // The view is tracked once: wait for the platforms, or it would always report none connected.
+  if (isPending) {
+    return null;
+  }
 
   return (
     <ResourceViewTracker

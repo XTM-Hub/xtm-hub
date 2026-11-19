@@ -170,7 +170,7 @@ type Mutation {
   updateBundleUserGroups(serviceInstanceId: ServiceInstanceId!, input: UpdateBundleUserGroupsInput!): [BundleUserServiceGroup!]!
   createDocument(input: CreateDocumentInput!, metadata: [DocumentMetadata!]!, serviceInstanceId: ServiceInstanceId!, sourceDocument: Upload, logo: Upload, images: [Upload!]): Document!
   updateDocument(documentId: DocumentId!, input: UpdateDocumentInput!, metadata: [DocumentMetadata!]!, serviceInstanceId: ServiceInstanceId!, sourceDocument: Upload, logo: Upload, images: [Upload!], existingImageIds: [DocumentId!]): Document!
-  deleteDocument(documentId: DocumentId!, service_instance_id: ServiceInstanceId!, forceDelete: Boolean @deprecated(reason: "Ignored, documents are always deleted")): Document!
+  deleteDocument(documentId: DocumentId!, service_instance_id: ServiceInstanceId!): Document!
   incrementShareNumberDocument(documentId: DocumentId!): Document!
   voteForFeature(feature_id: VotableFeatureId!): [VotableFeature!]!
   createVotingRound(input: CreateVotingRoundInput!): VotingRound!
@@ -790,7 +790,6 @@ type ShareableResource {
   name: String
   description: String
   download_number: Int
-  active: Boolean @deprecated(reason: "Use status")
   status: DocumentStatus!
   source_type: DocumentSourceType!
   image_type: DocumentImageType
@@ -824,7 +823,6 @@ type DefaultDocument implements Node & Document {
   short_description: String
   description: String
   file_name: String
-  active: Boolean @deprecated(reason: "Use status")
   status: DocumentStatus!
   created_at: Date!
   updated_at: Date
@@ -848,7 +846,6 @@ interface Document implements Node {
   short_description: String
   description: String
   file_name: String
-  active: Boolean @deprecated(reason: "Use status")
   status: DocumentStatus!
   created_at: Date!
   updated_at: Date
@@ -936,7 +933,6 @@ input LoadDocumentFacetInput {
   searchTerm: String
   documentType: String
   logicalFilters: LogicalFilterInput
-  restrictToActiveDocuments: Boolean @deprecated(reason: "Use restrictToPublishedDocuments")
   restrictToPublishedDocuments: Boolean
 }
 
@@ -1151,6 +1147,12 @@ type Organization implements Node {
   personal_space: Boolean!
   capabilityUser: [Capability]
   administrator_emails: [String!]
+
+  """
+  Members of the organization, invited and disabled users included, pending requests excluded.
+  Nullable: a refused read answers null without failing the whole query.
+  """
+  members_count: Int
 }
 
 type OrganizationEdge {
@@ -1944,7 +1946,6 @@ type OpenAEVScenario implements Document & Node {
   short_description: String
   description: String
   file_name: String!
-  active: Boolean @deprecated(reason: "Use status")
   status: DocumentStatus!
   created_at: Date!
   updated_at: Date
@@ -1969,7 +1970,6 @@ type CustomDashboard implements Document & Node {
   short_description: String
   description: String
   file_name: String!
-  active: Boolean @deprecated(reason: "Use status")
   status: DocumentStatus!
   created_at: Date!
   updated_at: Date
@@ -1994,7 +1994,6 @@ type CustomView implements Document & Node {
   short_description: String
   description: String
   file_name: String!
-  active: Boolean @deprecated(reason: "Use status")
   status: DocumentStatus!
   created_at: Date!
   updated_at: Date
@@ -2029,7 +2028,6 @@ interface Integration implements Node & Document {
   short_description: String
   description: String
   file_name: String
-  active: Boolean @deprecated(reason: "Use status")
   status: DocumentStatus!
   created_at: Date!
   updated_at: Date
@@ -2060,7 +2058,6 @@ type IntegrationHack implements Node & Document & Integration {
   short_description: String
   description: String
   file_name: String
-  active: Boolean @deprecated(reason: "Use status")
   status: DocumentStatus!
   created_at: Date!
   updated_at: Date
@@ -2091,7 +2088,6 @@ type CsvFeed implements Node & Document & Integration {
   short_description: String
   description: String
   file_name: String
-  active: Boolean @deprecated(reason: "Use status")
   status: DocumentStatus!
   created_at: Date!
   updated_at: Date
@@ -2123,7 +2119,6 @@ type Connector implements Node & Document & Integration {
   short_description: String
   description: String
   file_name: String
-  active: Boolean @deprecated(reason: "Use status")
   status: DocumentStatus!
   created_at: Date!
   updated_at: Date
@@ -2163,7 +2158,6 @@ type TaxiiFeed implements Node & Document & Integration {
   short_description: String
   description: String
   file_name: String
-  active: Boolean @deprecated(reason: "Use status")
   status: DocumentStatus!
   created_at: Date!
   updated_at: Date
@@ -2195,7 +2189,6 @@ type RssFeed implements Node & Document & Integration {
   short_description: String
   description: String
   file_name: String
-  active: Boolean @deprecated(reason: "Use status")
   status: DocumentStatus!
   created_at: Date!
   updated_at: Date
@@ -2227,7 +2220,6 @@ type Stream implements Node & Document & Integration {
   short_description: String
   description: String
   file_name: String
-  active: Boolean @deprecated(reason: "Use status")
   status: DocumentStatus!
   created_at: Date!
   updated_at: Date
@@ -2259,7 +2251,6 @@ type ThirdPartyIntegration implements Node & Document & Integration {
   short_description: String
   description: String
   file_name: String
-  active: Boolean @deprecated(reason: "Use status")
   status: DocumentStatus!
   created_at: Date!
   updated_at: Date
@@ -2293,7 +2284,6 @@ type OpenCTIPlaybook implements Document & Node {
   short_description: String
   description: String
   file_name: String!
-  active: Boolean @deprecated(reason: "Use status")
   status: DocumentStatus!
   created_at: Date!
   updated_at: Date
@@ -2634,6 +2624,7 @@ enum PortalCapability {
   MANAGE_MANIFEST_INGESTIONS
   GENERATE_MANIFEST
   READ_SAAS_METRICS
+  READ_ORGANIZATION_MEMBERS
 }
 
 enum OrganizationCapability {

@@ -1,5 +1,4 @@
 import {
-  DocumentStatus,
   IntegrationType,
   Resolvers,
   ServiceInstance as ServiceInstanceModel,
@@ -27,9 +26,6 @@ import { DocumentApp } from './document.app';
 import { subscriptionByServiceInstanceLoaderKey } from './document.dataloader';
 import { DocumentHelper } from './document.helper';
 import { DocumentDomain } from './domain/document.domain';
-
-const isPublished = ({ status }: { status: DocumentStatus }) =>
-  status === DocumentStatus.Published;
 
 const resolvers: Resolvers = {
   DocumentId: createRelayIdScalar<DocumentId>('Document'),
@@ -133,11 +129,7 @@ const resolvers: Resolvers = {
       }
     },
   },
-  ShareableResource: {
-    active: isPublished,
-  },
   Document: {
-    active: isPublished,
     async __resolveType(document, context) {
       const TYPE_MAPPINGS = {
         [OPENCTI_CUSTOM_DASHBOARD_DOCUMENT_TYPE]: 'CustomDashboard',

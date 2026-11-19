@@ -16,10 +16,16 @@ const resolvers: Resolvers = {
       context.dataLoaders.organization.administratorEmailsByOrganizationIdLoader.load(
         id as OrganizationId
       ),
+    members_count: async ({ id }, _, context) =>
+      context.dataLoaders.organization.membersCountByOrganizationIdLoader.load(
+        id as OrganizationId
+      ),
   },
   Query: {
     organization: async (_, { id }) =>
-      OrganizationDomain.loadOrganizationBy({ id: id as OrganizationId }),
+      OrganizationDomain.loadFirstProfessionalOrganizationBy({
+        id: id as OrganizationId,
+      }),
     organizations: async (_, opts) => {
       return OrganizationDomain.loadOrganizations(opts);
     },

@@ -95,4 +95,27 @@ describe('ShareableResourceConnectorSlugPublic', () => {
       );
     }
   );
+
+  it('should render the Overview on the design system Paper surface, with its title above it', async () => {
+    // Given
+    const documentData = buildConnector({
+      short_description: 'A short description',
+    } as Partial<ConnectorFields>);
+
+    // When
+    await renderConnector(documentData);
+
+    // Then
+    const title = screen.getByRole('heading', {
+      level: 2,
+      name: 'PublicResourcePage.Overview',
+    });
+    const surface = screen.getByText('A short description').closest('section');
+    // The surface carries the design system radius, padding and overflow
+    // classes. These pin the design system's class names on purpose, as jsdom
+    // does no layout: a rename in the design system needs this test updated.
+    expect(surface).toHaveClass('rounded-sm', 'p-4', 'overflow-x-auto');
+    expect(surface).not.toContainElement(title);
+    expect(surface?.parentElement).toContainElement(title);
+  });
 });

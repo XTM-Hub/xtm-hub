@@ -52,6 +52,7 @@ import { SubscriptionSlugAddCapabilities } from '@/components/subcription/[slug]
 import { useAdminByPass } from '@/hooks/use-portal-capability';
 import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { portalGraphqlClient } from '@/lib/graphql-client';
+import { throwOnFirstLoadError } from '@/lib/query-client';
 import { ADMIN_SERVICE_CATALOG_PATH, APP_PATH } from '@/utils/path/constant';
 import { Button } from '@filigran/design-system';
 import { serviceInstanceForSubscriptions_fragment$data } from '@generated/serviceInstanceForSubscriptions_fragment.graphql';
@@ -416,8 +417,7 @@ const SubscriptionSlug = ({
   const variables = useMemo(() => ({ subscriptionId }), [subscriptionId]);
   const { data } = useSubscriptionByIdQuery(portalGraphqlClient, variables, {
     queryKey: subscriptionKeys.byId(variables),
-    // A failed first load reaches the error page; a failed background refetch keeps the data shown.
-    throwOnError: (_error, query) => query.state.data === undefined,
+    throwOnError: throwOnFirstLoadError,
   });
 
   if (!data) {

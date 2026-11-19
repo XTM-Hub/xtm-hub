@@ -1,5 +1,5 @@
 import { UnauthenticatedError } from '@/lib/graphql-fetch.utils';
-import { createQueryClient } from '@/lib/query-client';
+import { createQueryClient, throwOnFirstLoadError } from '@/lib/query-client';
 import { buildLoginRedirect } from '@/utils/redirect';
 import { MutationObserver, QueryObserver } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -237,4 +237,22 @@ describe('getQueryClient', () => {
     await expect(fetching).rejects.toBeInstanceOf(UnauthenticatedError);
     expect(location.href).toBe('');
   });
+});
+
+describe('throwOnFirstLoadError', () => {
+  it.each([
+    ['throw', 'it has no data yet', undefined, true],
+    ['not throw', 'it already holds data', { value: 'loaded' }, false],
+  ])(
+    'should %s when the query fails and %s',
+    (_outcome, _context, data, expected) => {
+      // When
+      const result = throwOnFirstLoadError(new Error('FAILED'), {
+        state: { data },
+      });
+
+      // Then
+      expect(result).toBe(expected);
+    }
+  );
 });

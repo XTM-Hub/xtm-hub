@@ -19,7 +19,6 @@ interface Integration implements Node & Document {
   short_description: String
   description: String
   file_name: String @auth
-  active: Boolean @deprecated(reason: "Use status")
   status: DocumentStatus!
   created_at: Date!
   updated_at: Date
@@ -56,7 +55,6 @@ type IntegrationHack implements Node & Document & Integration {
   short_description: String
   description: String
   file_name: String @auth
-  active: Boolean @deprecated(reason: "Use status")
   status: DocumentStatus!
   created_at: Date!
   updated_at: Date
@@ -92,7 +90,6 @@ type CsvFeed implements Node & Document & Integration {
   short_description: String
   description: String
   file_name: String @auth
-  active: Boolean @deprecated(reason: "Use status")
   status: DocumentStatus!
   created_at: Date!
   updated_at: Date
@@ -129,7 +126,6 @@ type Connector implements Node & Document & Integration {
   short_description: String
   description: String
   file_name: String @auth
-  active: Boolean @deprecated(reason: "Use status")
   status: DocumentStatus!
   created_at: Date!
   updated_at: Date
@@ -174,7 +170,6 @@ type TaxiiFeed implements Node & Document & Integration {
   short_description: String
   description: String
   file_name: String @auth
-  active: Boolean @deprecated(reason: "Use status")
   status: DocumentStatus!
   created_at: Date!
   updated_at: Date
@@ -210,7 +205,6 @@ type RssFeed implements Node & Document & Integration {
   short_description: String
   description: String
   file_name: String @auth
-  active: Boolean @deprecated(reason: "Use status")
   status: DocumentStatus!
   created_at: Date!
   updated_at: Date
@@ -247,7 +241,6 @@ type Stream implements Node & Document & Integration {
   short_description: String
   description: String
   file_name: String @auth
-  active: Boolean @deprecated(reason: "Use status")
   status: DocumentStatus!
   created_at: Date!
   updated_at: Date
@@ -284,7 +277,6 @@ type ThirdPartyIntegration implements Node & Document & Integration {
   short_description: String
   description: String
   file_name: String @auth
-  active: Boolean @deprecated(reason: "Use status")
   status: DocumentStatus!
   created_at: Date!
   updated_at: Date

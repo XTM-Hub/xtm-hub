@@ -4,7 +4,9 @@ import {
   BreadcrumbNav,
   BreadcrumbNavLink,
 } from '@/components/ui/BreadcrumbNav';
+import { useBuildCompatibilityTranslationKey } from '@/hooks/use-build-compatibility-translation-key';
 import { useDocumentCounter } from '@/hooks/use-document-counter';
+import { useRegisteredPlatforms } from '@/hooks/use-registered-platforms';
 import { useTranslate } from '@/hooks/use-translate';
 
 import { PlatformMetadataMapping } from '@/components/registration/PlatformIdentifierMapping';
@@ -14,6 +16,7 @@ import { DeployableResourceViewTracker } from '@/components/service/document/Dep
 import OneClickDeploy from '@/components/service/document/one-click-deploy/OneClickDeploy';
 import { ResourceViewTracker } from '@/components/service/document/ResourceViewTracker';
 import ShareableResourceDescription from '@/components/service/document/ShareableResourceDescription';
+import { ShareableResourceIncompatibleWarning } from '@/components/service/document/ShareableResourceIncompatibleWarning';
 import ShareableResourceCarousel from '@/components/service/document/ui/ShareableResourceCarouselView';
 import BadgeOverflowCounter, {
   BadgeOverflow,
@@ -30,15 +33,14 @@ import { filterDocumentImages, findDocumentLogo } from '@/utils/documents';
 import { getResourcePageFiligranWebsiteUtm } from '@/utils/filigran-website-utm';
 import { getPlatformIdentifier } from '@/utils/platform';
 import { ConnectorFields } from '@/utils/shareable-resources/shareable-resources.types';
-import { Button } from '@filigran/design-system';
+import { Alert, Button } from '@filigran/design-system';
 import {
-  InfoIcon,
   LogoFiligranIcon,
   MotionPlayIcon,
   ThreatActorGroupIcon,
 } from '@filigran/icon';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
-import { DocumentItemFragment } from '@graphql/generated';
+import { DocumentItemFragment, PlatformIdentifier } from '@graphql/generated';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -64,6 +66,15 @@ const ShareableResourceConnectorSlug = ({
   const manifest_url = documentData.source_code
     ? `${documentData.source_code}/__metadata__/connector_manifest.json`
     : '';
+
+  const { platforms } = useRegisteredPlatforms(PlatformIdentifier.Opencti, {
+    onlyActive: true,
+  });
+  const { platformToBeUpdated, incompatiblePlatformsCount } =
+    useBuildCompatibilityTranslationKey({
+      platforms,
+      requiredProductVersion: documentData.minimum_deployable_version,
+    });
 
   const { count: shareNumber, increment: incrementShareNumber } =
     useDocumentCounter(documentData.id, documentData.share_number);
@@ -179,17 +190,31 @@ const ShareableResourceConnectorSlug = ({
         className="mt-4"
       />
       {documentData.verified && (
-        <div className="border border-solid border-alert-info rounded flex items-center gap-1 p-2 text-sm mt-4">
-          <InfoIcon className="shrink-0 h-4 w-4 mr-1 text-icon-info" />
-          {t('Service.Connectors.ImproveIntegrationPrefix')}
-          <Link
-            {...analyticsId('resource_repository_open')}
-            href={manifest_url}
-            target="_blank"
-            className="underline">
-            {t('Service.Connectors.GithubRepositoryLink')}
-          </Link>
-        </div>
+        <Alert
+          severity="info"
+          className="mt-4"
+          title={
+            <>
+              {t('Service.Connectors.ImproveIntegrationPrefix')}{' '}
+              <Link
+                {...analyticsId('resource_repository_open')}
+                href={manifest_url}
+                target="_blank"
+                className="underline">
+                {t('Service.Connectors.GithubRepositoryLink')}
+              </Link>
+            </>
+          }
+        />
+      )}
+      {incompatiblePlatformsCount > 0 && documentData.manager_supported && (
+        <ShareableResourceIncompatibleWarning
+          className="mt-4"
+          message={t('Service.Connectors.Incompatible', {
+            count: incompatiblePlatformsCount,
+            platformToBeUpdated,
+          })}
+        />
       )}
       <div className="flex flex-col-reverse lg:flex-row w-full mt-4 gap-6">
         <ShareableResourceDescription
@@ -200,6 +225,7 @@ const ShareableResourceConnectorSlug = ({
           }
         />
         <ShareableResourceConnectorPrivateDetails
+          incompatiblePlatformsCount={incompatiblePlatformsCount}
           connectorDetails={{
             ...documentData,
             name: documentData.name ?? '',
