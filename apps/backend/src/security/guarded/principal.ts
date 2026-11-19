@@ -22,6 +22,7 @@ export type Principal =
       isBypassUser: boolean;
       portalCapabilities: Set<PortalCapability>;
       selectedOrganizationId: OrganizationId;
+      memberships: NonNullable<UserLoadUserBy['organization_capabilities']>;
     }
   | {
       kind: 'system';
@@ -77,5 +78,6 @@ export const buildPrincipal = async (
       user.capabilities.map(({ name }) => name as PortalCapability)
     ),
     selectedOrganizationId: user.selected_organization_id,
+    memberships: user.organization_capabilities ?? [],
   };
 };

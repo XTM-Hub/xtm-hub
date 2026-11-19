@@ -1,9 +1,9 @@
+import { RegisteredPlatformsListItem } from '@/hooks/use-registered-platforms';
 import { doesVersionSatisfy } from '@/utils/versioning';
-import { useRegisteredPlatformsFragment$data } from '@generated/useRegisteredPlatformsFragment.graphql';
 import { useMemo } from 'react';
 
 interface Props {
-  platforms: useRegisteredPlatformsFragment$data[];
+  platforms: RegisteredPlatformsListItem[];
   requiredProductVersion?: string | null;
 }
 

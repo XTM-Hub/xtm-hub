@@ -4,30 +4,20 @@ import {
   trialPlatform,
 } from '@/components/service/registration/registered-platform.fixtures';
 import testRender from '@/utils/test/test-render';
-import { registeredPlatformByServiceInstanceId_fragment$data } from '@generated/registeredPlatformByServiceInstanceId_fragment.graphql';
-import { DeploymentRequestHubStatus } from '@graphql/generated';
+import {
+  DeploymentRequestHubStatus,
+  RegisteredPlatformDetailsFragment,
+} from '@graphql/generated';
 import { screen, within } from '@testing-library/react';
-import { createMockEnvironment } from 'relay-test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const PLATFORM_VERSION = '6.8.1';
 
-// ─── Mocks ────────────────────────────────────────────────────────────────────
-
-let mockPlatformData: registeredPlatformByServiceInstanceId_fragment$data;
-
-vi.mock('react-relay', async (importOriginal) => ({
-  ...(await importOriginal()),
-  useFragment: () => mockPlatformData,
-}));
-
 const renderDetails = (
-  platform: registeredPlatformByServiceInstanceId_fragment$data,
+  platform: RegisteredPlatformDetailsFragment,
   me?: NonNullable<Parameters<typeof testRender>[1]>['me']
 ) => {
-  mockPlatformData = platform;
-  return testRender(<RegistrationDetails registeredPlatform={{} as never} />, {
-    relayConfig: createMockEnvironment(),
+  return testRender(<RegistrationDetails platform={platform} />, {
     me,
   });
 };

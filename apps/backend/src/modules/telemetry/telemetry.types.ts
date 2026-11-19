@@ -134,8 +134,9 @@ export interface OneClickDeployEvent extends BaseTelemetryEvent {
 
 /**
  * A click on a news feed link. Which optional fields are set depends on the route that emits it:
- * the external redirect sets the item, its type and the destination host; the resource redirect sets the service,
- * the resource, the target product and utm_content. The user and the organization are only set when logged in.
+ * the external redirect sets the item, its type, the target product and the destination host; the resource redirect
+ * sets the service, the resource, the target product and utm_content. The user and the organization are only set when
+ * logged in.
  */
 export interface NewsFeedRedirectEvent extends BaseTelemetryEvent {
   event_type: TelemetryEventType.NEWS_FEED_REDIRECT;

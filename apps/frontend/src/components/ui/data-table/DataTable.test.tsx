@@ -754,6 +754,30 @@ describe('DataTable', () => {
       ]);
     });
 
+    it('should keep a right-pinned column in view while the table scrolls', () => {
+      // Given
+      const columns: ColumnDef<Person>[] = [
+        ...COLUMNS,
+        { id: ACTIONS_COLUMN_ID, header: ACTIONS_HEADER },
+      ];
+
+      // When
+      renderTable({
+        columns,
+        tableState: { columnPinning: { right: [ACTIONS_COLUMN_ID] } },
+      });
+
+      // Then
+      const pinned = document.querySelectorAll(
+        `[data-column-id="${ACTIONS_COLUMN_ID}"]`
+      );
+      expect(pinned.length).toBe(PEOPLE.length + 1);
+      pinned.forEach((cell) => expect(cell).toHaveClass('sticky', 'right-0'));
+      document
+        .querySelectorAll(`[data-column-id="${NAME_COLUMN_ID}"]`)
+        .forEach((cell) => expect(cell).not.toHaveClass('sticky'));
+    });
+
     it.each([
       {
         control: 'row checkbox',

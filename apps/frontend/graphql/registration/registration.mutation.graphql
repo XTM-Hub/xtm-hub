@@ -1,0 +1,17 @@
+mutation RefreshUserPlatformToken {
+  refreshUserPlatformToken {
+    token
+  }
+}
+
+mutation UnregisterPlatform($input: UnregisterPlatformInput!) {
+  unregisterPlatform(input: $input) {
+    success
+  }
+}
+
+mutation RegisterPlatform($input: RegisterPlatformInput!) {
+  registerPlatform(input: $input) {
+    token
+  }
+}

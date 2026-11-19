@@ -1,0 +1,66 @@
+scalar ApiTokenId
+
+"""
+What a personal API token may do. read: queries only. read_write: queries and mutations, without the organization
+administration and without any portal capability. admin: the user's organization and portal capabilities, BYPASS
+excepted. A token never exceeds its user's live rights.
+"""
+enum ApiTokenScope {
+  read
+  read_write
+  admin
+}
+
+type ApiToken implements Node {
+  id: ID!
+  name: String!
+  "The first characters of the token, to tell tokens apart"
+  token_prefix: String!
+  scope: ApiTokenScope!
+  organization_id: ID!
+  organization_name: String!
+  user_email: String!
+  expires_at: Date!
+  last_used_at: Date
+  created_at: Date!
+  revoked_at: Date
+}
+
+"The token is shown here once: only its hash is kept"
+type CreatedApiToken {
+  token: String!
+  api_token: ApiToken!
+}
+
+"The token that authenticates the current request"
+type CurrentApiToken {
+  id: ID!
+  name: String!
+  scope: ApiTokenScope!
+  organization_id: ID!
+  organization_name: String!
+  expires_at: Date!
+  last_used_at: Date
+}
+
+input CreateApiTokenInput {
+  name: String!
+  scope: ApiTokenScope!
+  organization_id: OrganizationId!
+  expires_at: Date!
+}
+
+type Query {
+  "The current user's API tokens, revoked and expired ones included"
+  apiTokens: [ApiToken!]!
+  "The API tokens of the selected organization, for its administrators"
+  organizationApiTokens: [ApiToken!]!
+  "The token of the current request, null for a session"
+  currentApiToken: CurrentApiToken
+}
+
+type Mutation {
+  createApiToken(input: CreateApiTokenInput!): CreatedApiToken!
+  "The owner, or an administrator of the token's organization, revokes it"
+  revokeApiToken(id: ApiTokenId!): ApiToken!
+}

@@ -16,11 +16,11 @@ import {
   LicenseType,
   useSolutionCategoriesListQuery,
   useUseCasesListQuery,
+  useUsersQuery,
 } from '@graphql/generated';
 import '@testing-library/jest-dom/vitest';
 import { screen, waitFor, within } from '@testing-library/react';
 import { ComponentType } from 'react';
-import { createMockEnvironment, MockPayloadGenerator } from 'relay-test-utils';
 import { beforeEach, expect, it, vi } from 'vitest';
 
 const SHEET_TITLE = 'Service form';
@@ -176,16 +176,6 @@ type ServiceFormComponent<Values> = ComponentType<{
 
 export type ServiceFormUser = ReturnType<typeof testRender>['user'];
 
-const createUsersEnvironment = () => {
-  const environment = createMockEnvironment();
-  environment.mock.queueOperationResolver((operation) =>
-    MockPayloadGenerator.generate(operation, {
-      Query: () => ({ users: { edges: [] } }),
-    })
-  );
-  return environment;
-};
-
 export const renderServiceForm = <Values,>(
   Form: ServiceFormComponent<Values>,
   document?: DocumentItemFragment
@@ -199,6 +189,10 @@ export const renderServiceForm = <Values,>(
       },
     },
   } as ReturnType<typeof useUseCasesListQuery>);
+  // The users offered as authors.
+  vi.mocked(useUsersQuery).mockReturnValue({
+    data: { users: { edges: [] } },
+  } as unknown as ReturnType<typeof useUsersQuery>);
 
   return {
     handleSubmit,
@@ -215,7 +209,6 @@ export const renderServiceForm = <Values,>(
         </SheetWithPreventingDialog>
       </AppServiceContext>,
       {
-        relayConfig: createUsersEnvironment(),
         me: {
           id: CURRENT_USER_ID,
           email: CURRENT_USER_EMAIL,

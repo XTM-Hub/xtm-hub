@@ -14,3 +14,12 @@ mutation EditSeoServiceInstanceMetadata(
     meta_description
   }
 }
+
+mutation UpdatePlatformServiceMetadata(
+  $input: UpdatePlatformServiceMetadataInput!
+) {
+  updatePlatformServiceMetadata(input: $input) {
+    id
+    title
+  }
+}

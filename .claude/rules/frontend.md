@@ -93,6 +93,23 @@ Before tightening a field, check what the already-stored rows hold and backfill 
 constraint to creation only. A `zod` rule is also not a constraint on the data: the resolver and the column accept
 anything the browser didn't filter, so validate server-side too when it matters.
 
+## Rights and visibility
+
+Hiding a button, a route or a row is a convenience, never the protection: the backend guards every operation and
+filters the rows it returns, see [`access-control.md`](access-control.md). Do not filter a list in the client to remove
+what the user may not see (a draft, a document in validation): if the API returns it, the user already has it. When a
+UI gate and the backend disagree, the backend is right: fix the backend if it is too open, and show the
+`Error.Server.<code>` message if it refuses.
+
+**An action the user may not perform stays visible, disabled, with a tooltip saying why.** Do not hide the control, and
+do not disable it silently: the user must learn that the action exists and what is missing. Wrap the disabled control in
+`DisabledActionTooltip` (`src/components/ui/DisabledActionTooltip.tsx`), which carries the tooltip because a disabled
+control gets no hover or focus (see `PublicResourceActions.tsx`). It renders the `reason` as given and does not
+translate: pass the translated message (`reason={t('…')}`, as `PublicResourceActions.tsx` does), never the raw key, and
+add the underlying key to every locale file. The message names what is missing in plain words (the capability or role,
+or the state that blocks the action), not a generic "not allowed". Hide a control only when the user can never reach it, such as an entry that belongs to another
+product or to an area they cannot open at all. The disabled state is only a hint: the backend still refuses the call.
+
 ## Data fetching
 
 The backend is reached through `proxy.ts` (Next.js 16's convention file, renamed from `middleware.ts`), which

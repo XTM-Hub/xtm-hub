@@ -9,6 +9,7 @@ import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin
 import { isInstance as isCustomApolloError } from 'apollo-errors';
 import type { GraphQLFormattedError, GraphQLSchema } from 'graphql';
 import { Server } from 'http';
+import { apiTokenPlugin } from '../modules/api-token/api-token.plugin';
 import { ErrorCode, UnknownErrorCode } from '../utils/error/error.code';
 import { Context, errorLoggingPlugin } from './apollo-plugins/log';
 import { operationMetricsPlugin } from './apollo-plugins/metrics';
@@ -93,5 +94,6 @@ export const createApolloServer = ({
         : ApolloServerPluginLandingPageDisabled(),
       errorLoggingPlugin(),
       operationMetricsPlugin,
+      apiTokenPlugin,
     ],
   });

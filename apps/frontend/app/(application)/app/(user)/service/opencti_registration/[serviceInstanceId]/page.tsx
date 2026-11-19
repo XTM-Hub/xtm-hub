@@ -1,4 +1,4 @@
-import { RegisteredPlatformOverview } from '@/components/service/registration/RegisteredPlatformOverview';
+import { PrefetchedRegisteredPlatformOverview } from '@/components/service/registration/PrefetchedRegisteredPlatformOverview';
 import { RegistrationLearnMore } from '@/components/service/registration/RegistrationLearnMore';
 import { PlatformIdentifier } from '@graphql/generated';
 
@@ -8,7 +8,7 @@ export interface ServiceOpenCTIRegistrationPageProps {
 const Page = ({ params }: ServiceOpenCTIRegistrationPageProps) => {
   return (
     <>
-      <RegisteredPlatformOverview
+      <PrefetchedRegisteredPlatformOverview
         params={params}
         platformIdentifier={PlatformIdentifier.Opencti}
       />
