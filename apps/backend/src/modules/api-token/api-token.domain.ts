@@ -55,7 +55,20 @@ export const ApiTokenDomain = {
       .update({ revoked_at: new Date() });
   },
 
-  touchLastUsed: async (id: ApiTokenId, at: Date): Promise<void> => {
-    await db<ApiToken>('ApiToken').where('id', id).update({ last_used_at: at });
+  // Writes `at` unless the stored last use is less than `minIntervalMs` older: never moves it back, and concurrent
+  // calls write once
+  touchLastUsed: async (
+    id: ApiTokenId,
+    at: Date,
+    minIntervalMs: number
+  ): Promise<void> => {
+    await db<ApiToken>('ApiToken')
+      .where('id', id)
+      .andWhere((builder) =>
+        builder
+          .whereNull('last_used_at')
+          .orWhere('last_used_at', '<=', new Date(at.getTime() - minIntervalMs))
+      )
+      .update({ last_used_at: at });
   },
 };

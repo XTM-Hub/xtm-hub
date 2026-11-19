@@ -11,7 +11,7 @@ import { ROLE_ADMIN } from '../../portal.const';
 import { logApp } from '../../utils/app-logger.util';
 import { UserDomain } from '../organization-management/user/user-domain/user.domain';
 import { ApiTokenDomain } from './api-token.domain';
-import { ApiTokenHelper, createLastUseThrottle } from './api-token.helper';
+import { ApiTokenHelper } from './api-token.helper';
 
 // What a request authenticated by an API token knows about it
 export interface ApiTokenCaller {
@@ -20,6 +20,7 @@ export interface ApiTokenCaller {
   scope: ApiTokenScope;
   organization_id: OrganizationId;
   expires_at: Date;
+  last_used_at: Date | null;
 }
 
 export interface ApiTokenAuthentication {
@@ -27,14 +28,9 @@ export interface ApiTokenAuthentication {
   user: UserLoadUserBy;
 }
 
-// Written once per minute per token at most: a call never waits on it. The throttle forgets a token a minute after
-// its last write, and never holds more than LAST_USED_MAX_TRACKED tokens.
+// Written once per minute per token at most: a call never waits on it. The throttle reads the `last_used_at` loaded
+// with the token, so it holds across restarts and replicas and keeps nothing in memory.
 const LAST_USED_WRITE_INTERVAL_MS = 60 * 1000;
-const LAST_USED_MAX_TRACKED = 10_000;
-const lastUsedThrottle = createLastUseThrottle({
-  intervalMs: LAST_USED_WRITE_INTERVAL_MS,
-  maxEntries: LAST_USED_MAX_TRACKED,
-});
 
 const authentications = new WeakMap<Request, ApiTokenAuthentication>();
 
@@ -137,21 +133,27 @@ export const resolveApiToken = async (
         scope: token.scope,
         organization_id: token.organization_id,
         expires_at: token.expires_at,
+        last_used_at: token.last_used_at,
       },
       user: narrowed,
     },
   };
 };
 
-const recordUse = (id: ApiTokenId, now: Date) => {
-  if (!lastUsedThrottle.shouldRecord(id, now.getTime())) {
+const recordUse = ({ id, last_used_at }: ApiTokenCaller, now: Date) => {
+  if (
+    last_used_at &&
+    now.getTime() - last_used_at.getTime() < LAST_USED_WRITE_INTERVAL_MS
+  ) {
     return;
   }
-  ApiTokenDomain.touchLastUsed(id, now).catch((error: unknown) =>
-    logApp.warn('Could not record the last use of an API token', {
-      error,
-      api_token_id: id,
-    })
+  // The write is conditional on the stored value too: concurrent calls that all read an old `last_used_at` write once
+  ApiTokenDomain.touchLastUsed(id, now, LAST_USED_WRITE_INTERVAL_MS).catch(
+    (error: unknown) =>
+      logApp.warn('Could not record the last use of an API token', {
+        error,
+        api_token_id: id,
+      })
   );
 };
 
@@ -188,7 +190,7 @@ export const apiTokenMiddleware = async (
       return;
     }
     authentications.set(req, resolution.authentication);
-    recordUse(resolution.authentication.token.id, now);
+    recordUse(resolution.authentication.token, now);
     next();
   } catch (error) {
     next(error);
