@@ -97,7 +97,6 @@ export enum BadRequestErrorCode {
   InvalidContentTranslationKey = 'INVALID_CONTENT_TRANSLATION_KEY',
   UserStatusChangedConcurrently = 'USER_STATUS_CHANGED_CONCURRENTLY',
   TooManyEmails = 'TOO_MANY_EMAILS',
-  TooManyRequests = 'TOO_MANY_REQUESTS',
   VotableFeatureProductNotVotable = 'VOTABLE_FEATURE_PRODUCT_NOT_VOTABLE',
   InvalidDocumentStatusTransition = 'INVALID_DOCUMENT_STATUS_TRANSITION',
 }

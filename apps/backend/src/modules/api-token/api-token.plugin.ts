@@ -11,13 +11,10 @@ import {
 import { ApiTokenScope } from '../../__generated__/resolvers-types';
 import { Context } from '../../server/apollo-plugins/log';
 import { logApp } from '../../utils/app-logger.util';
-import {
-  BadRequestErrorCode,
-  ForbiddenErrorCode,
-} from '../../utils/error/error.code';
+import { ForbiddenErrorCode } from '../../utils/error/error.code';
 import { mapToGraphQLError } from '../../utils/error/error.mapping';
 import { getApiTokenAuthentication } from './api-token.auth';
-import { ApiTokenHelper } from './api-token.helper';
+import { API_TOKEN_ERRORS, sendApiTokenError } from './api-token.errors';
 
 // Operations a token never runs, whatever its scope: they change the identity or the credentials of the caller
 export const API_TOKEN_DENIED_FIELDS: ReadonlySet<string> = new Set([
@@ -45,7 +42,7 @@ export const apiTokenRateLimiter = rateLimit({
     logApp.warn('[RATE-LIMIT] API token rate limited', {
       api_token_id: getApiTokenAuthentication(req)?.token.id,
     });
-    ApiTokenHelper.sendError(res, 429, BadRequestErrorCode.TooManyRequests);
+    sendApiTokenError(res, API_TOKEN_ERRORS.TooManyRequests);
   },
 });
 

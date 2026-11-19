@@ -19,8 +19,8 @@ import {
   resolveApiToken,
 } from './api-token.auth';
 import { ApiTokenDomain } from './api-token.domain';
+import { API_TOKEN_FAILURE_RATE_MAX } from './api-token.failure-limit';
 import { ApiTokenHelper } from './api-token.helper';
-import { API_TOKEN_FAILURE_RATE_MAX } from './api-token.rate-limit';
 
 const SECOND = TEST_ORGANIZATIONS.SECOND_ORGANIZATION;
 const FILIGRAN = TEST_ORGANIZATIONS.FILIGRAN;
@@ -189,7 +189,11 @@ describe('resolveApiToken', () => {
 
 describe('apiTokenMiddleware', () => {
   const response = () => {
-    const res = { status: vi.fn(), json: vi.fn(), setHeader: vi.fn() };
+    const res = {
+      status: vi.fn(),
+      json: vi.fn(),
+      setHeader: vi.fn(),
+    };
     res.status.mockReturnValue(res);
     return res;
   };
@@ -419,17 +423,73 @@ describe('apiTokenMiddleware', () => {
     const loadByHash = vi.spyOn(ApiTokenDomain, 'loadByHash');
     const first = bearerRequest(ip, token);
     const second = bearerRequest(ip, token);
-    const res = response();
+    const firstRes = response();
+    const secondRes = response();
 
     // When
-    await apiTokenMiddleware(first, response() as unknown as Response, vi.fn());
-    await apiTokenMiddleware(second, res as unknown as Response, vi.fn());
+    await apiTokenMiddleware(first, firstRes as unknown as Response, vi.fn());
+    await apiTokenMiddleware(second, secondRes as unknown as Response, vi.fn());
 
     // Then
     expect(loadByHash).toHaveBeenCalledTimes(1);
     expect(getApiTokenAuthentication(first)).toBeUndefined();
     expect(getApiTokenAuthentication(second)).toBeUndefined();
-    expect(res.status).toHaveBeenCalledWith(429);
+    expect(firstRes.status).toHaveBeenCalledWith(401);
+    expect(secondRes.status).toHaveBeenCalledWith(429);
+  });
+
+  it('should look up at most the limit of a burst of unknown tokens sent at once', async () => {
+    // Given
+    const ip = '192.0.2.17';
+    const loadByHash = vi.spyOn(ApiTokenDomain, 'loadByHash');
+    const responses = Array.from(
+      { length: API_TOKEN_FAILURE_RATE_MAX + 10 },
+      response
+    );
+
+    // When
+    await Promise.all(
+      responses.map((res) =>
+        apiTokenMiddleware(
+          bearerRequest(ip, ApiTokenHelper.generate().token),
+          res as unknown as Response,
+          vi.fn()
+        )
+      )
+    );
+
+    // Then
+    expect(loadByHash).toHaveBeenCalledTimes(API_TOKEN_FAILURE_RATE_MAX);
+    expect(
+      responses.filter((res) => res.status.mock.calls[0]?.[0] === 429)
+    ).toHaveLength(10);
+  });
+
+  it('should not use up the allowance of a client with the tokens it gets accepted', async () => {
+    // Given
+    const ip = '192.0.2.18';
+    const { token } = await createToken(
+      SECOND.USERS.SIMPLE.ID,
+      SECOND.ID,
+      ApiTokenScope.Read
+    );
+    await apiTokenMiddleware(
+      bearerRequest(ip, token),
+      response() as unknown as Response,
+      vi.fn()
+    );
+    await refuseTokensFrom(ip, API_TOKEN_FAILURE_RATE_MAX - 1);
+    const res = response();
+
+    // When
+    await apiTokenMiddleware(
+      bearerRequest(ip, ApiTokenHelper.generate().token),
+      res as unknown as Response,
+      vi.fn()
+    );
+
+    // Then
+    expect(res.status).toHaveBeenCalledWith(401);
   });
 
   it('should pass an unexpected failure to the error handler', async () => {

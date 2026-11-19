@@ -6,12 +6,12 @@ import { DocumentDomain } from '../../../modules/document/domain/document.domain
 import { ManageProductVersionDomain } from '../../../modules/manage-product-version/manage-product-version.domain';
 import { ManifestFragmentHelper } from '../../../modules/shareable-resource/manifest-fragment/manifest-fragment.helper';
 import { logApp } from '../../../utils/app-logger.util';
+import { buildIpRateLimiterOptions } from '../../../utils/ip-rate-limit.util';
 import {
   buildETag,
   CacheControl,
   respondNotModifiedIfFresh,
 } from '../shared/http-cache.util';
-import { buildIpRateLimiterOptions } from '../shared/ip-rate-limit.util';
 import { isProduct } from '../shared/product.util';
 import {
   sendVersionsMatrixError,

@@ -9,15 +9,16 @@ import { OrganizationId } from '../../model/kanel/public/Organization';
 import { UserLoadUserBy } from '../../model/user';
 import { ROLE_ADMIN } from '../../portal.const';
 import { logApp } from '../../utils/app-logger.util';
-import { UnauthenticatedErrorCode } from '../../utils/error/error.code';
 import { UserDomain } from '../organization-management/user/user-domain/user.domain';
 import { ApiTokenDomain } from './api-token.domain';
-import { ApiTokenHelper } from './api-token.helper';
+import { API_TOKEN_ERRORS, sendApiTokenError } from './api-token.errors';
 import {
-  countApiTokenFailure,
-  isApiTokenFailureLimitReached,
+  admitApiTokenLookup,
+  countRefusedApiToken,
   recentApiTokens,
-} from './api-token.rate-limit';
+  refundApiTokenLookup,
+} from './api-token.failure-limit';
+import { ApiTokenHelper } from './api-token.helper';
 
 // What a request authenticated by an API token knows about it
 export interface ApiTokenCaller {
@@ -166,7 +167,7 @@ const recordUse = (id: ApiTokenId, now: Date) => {
  * (session cookie, system token, platform token). A refused token answers 401 whatever the route: the caller asked
  * for the token's identity, it never falls back to a session. Refused tokens are counted per client IP: over the
  * limit, the client gets 429 and its tokens are no longer looked up until the window ends, except the tokens accepted
- * recently, which are still looked up and checked as usual.
+ * recently, which are still looked up and checked as usual. A token that was looked up and refused always gets 401.
  */
 export const apiTokenMiddleware = async (
   req: Request,
@@ -181,34 +182,25 @@ export const apiTokenMiddleware = async (
     return;
   }
   try {
-    const refuse = () =>
-      countApiTokenFailure(
-        req,
-        res,
-        () =>
-          ApiTokenHelper.sendError(
-            res,
-            401,
-            UnauthenticatedErrorCode.Unauthenticated
-          ),
-        next
-      );
     const tokenHash = ApiTokenHelper.hash(secret);
-    // Over the limit: answered 429 without looking the token up, unless it was accepted recently
-    if (
-      !recentApiTokens.has(tokenHash) &&
-      (await isApiTokenFailureLimitReached(req))
-    ) {
-      await refuse();
+    // A token not accepted recently takes a hit before its lookup and, over the limit, is answered 429 without one
+    const acceptedRecently = recentApiTokens.has(tokenHash);
+    if (!acceptedRecently && !admitApiTokenLookup(req, res)) {
       return;
     }
     const now = new Date();
     const resolution = await resolveApiToken(secret, now);
     if (!resolution.authenticated) {
       recentApiTokens.forget(tokenHash);
+      if (acceptedRecently) {
+        countRefusedApiToken(req);
+      }
       logApp.warn('API token refused', { reason: resolution.reason });
-      await refuse();
+      sendApiTokenError(res, API_TOKEN_ERRORS.Unauthenticated);
       return;
+    }
+    if (!acceptedRecently) {
+      refundApiTokenLookup(req);
     }
     recentApiTokens.remember(tokenHash, now.getTime());
     authentications.set(req, resolution.authentication);

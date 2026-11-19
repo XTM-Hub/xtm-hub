@@ -2,15 +2,17 @@ import type { Request, Response } from 'express';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { logApp } from '../../utils/app-logger.util';
 import {
+  admitApiTokenLookup,
   API_TOKEN_FAILURE_RATE_MAX,
-  countApiTokenFailure,
+  countRefusedApiToken,
+  createFailureCounter,
   createRecentApiTokens,
-  isApiTokenFailureLimitReached,
   RECENT_API_TOKEN_MAX,
   recentApiTokens,
-} from './api-token.rate-limit';
+  refundApiTokenLookup,
+} from './api-token.failure-limit';
 
-// Documentation addresses (RFC 5737), one per test: the store lives as long as the module
+// Documentation addresses (RFC 5737), one per test: the counter lives as long as the module
 const buildRequest = (ip: string) =>
   ({ ip, path: '/graphql-api', headers: {} }) as unknown as Request;
 
@@ -20,58 +22,110 @@ const buildResponse = () => {
   return res;
 };
 
-const refuse = async (ip: string) => {
+const admit = (ip: string) => {
   const res = buildResponse();
-  const sendRefusal = vi.fn();
-  const next = vi.fn();
-  await countApiTokenFailure(
+  const admitted = admitApiTokenLookup(
     buildRequest(ip),
-    res as unknown as Response,
-    sendRefusal,
-    next
+    res as unknown as Response
   );
-  return { res, sendRefusal, next };
+  return { res, admitted };
 };
 
-const refuseMany = async (ip: string, count: number) => {
+const admitMany = (ip: string, count: number) => {
   for (let index = 0; index < count; index++) {
-    await refuse(ip);
+    admit(ip);
   }
 };
+
+describe('failure counter', () => {
+  const WINDOW_MS = 1000;
+  const NOW = 1_700_000_000_000;
+
+  it('should count the hits of a key within its window', () => {
+    // Given
+    const counter = createFailureCounter({ windowMs: WINDOW_MS });
+    counter.hit('key-a', NOW);
+
+    // When
+    const result = counter.hit('key-a', NOW + WINDOW_MS - 1);
+
+    // Then
+    expect(result).toEqual({ hits: 2, resetAt: NOW + WINDOW_MS });
+  });
+
+  it('should start a new window once the previous one is over', () => {
+    // Given
+    const counter = createFailureCounter({ windowMs: WINDOW_MS });
+    counter.hit('key-a', NOW);
+
+    // When
+    const result = counter.hit('key-a', NOW + WINDOW_MS);
+
+    // Then
+    expect(result).toEqual({ hits: 1, resetAt: NOW + 2 * WINDOW_MS });
+  });
+
+  it('should give back a hit of the current window only', () => {
+    // Given
+    const counter = createFailureCounter({ windowMs: WINDOW_MS });
+    counter.hit('key-a', NOW);
+    counter.hit('key-a', NOW);
+
+    // When
+    counter.refund('key-a', NOW);
+    counter.refund('key-b', NOW);
+
+    // Then
+    expect(counter.hit('key-a', NOW).hits).toBe(2);
+    expect(counter.size()).toBe(1);
+  });
+
+  it('should drop the windows that are over when a hit comes in', () => {
+    // Given
+    const counter = createFailureCounter({ windowMs: WINDOW_MS });
+    counter.hit('key-a', NOW);
+    counter.hit('key-b', NOW + 1);
+
+    // When
+    counter.hit('key-c', NOW + WINDOW_MS + 1);
+
+    // Then
+    expect(counter.size()).toBe(1);
+  });
+});
 
 describe('api token failure rate limit', () => {
   beforeEach(() => {
     vi.spyOn(logApp, 'warn').mockImplementation(() => undefined);
   });
 
-  it('should send the refusal of each failure up to the limit', async () => {
+  it('should admit each lookup up to the limit', () => {
     // Given
     const ip = '198.51.100.40';
-    await refuseMany(ip, API_TOKEN_FAILURE_RATE_MAX - 1);
+    admitMany(ip, API_TOKEN_FAILURE_RATE_MAX - 1);
 
     // When
-    const reachedBefore = await isApiTokenFailureLimitReached(buildRequest(ip));
-    const { res, sendRefusal, next } = await refuse(ip);
+    const { res, admitted } = admit(ip);
 
     // Then
-    expect(reachedBefore).toBe(false);
-    expect(sendRefusal).toHaveBeenCalledTimes(1);
+    expect(admitted).toBe(true);
     expect(res.status).not.toHaveBeenCalled();
-    expect(next).not.toHaveBeenCalled();
   });
 
-  it('should answer 429 once a client has used up its failures', async () => {
+  it('should answer 429 with a retry delay once a client has used up its lookups', () => {
     // Given
     const ip = '198.51.100.41';
-    await refuseMany(ip, API_TOKEN_FAILURE_RATE_MAX);
+    admitMany(ip, API_TOKEN_FAILURE_RATE_MAX);
 
     // When
-    const reached = await isApiTokenFailureLimitReached(buildRequest(ip));
-    const { res, sendRefusal } = await refuse(ip);
+    const { res, admitted } = admit(ip);
 
     // Then
-    expect(reached).toBe(true);
-    expect(sendRefusal).not.toHaveBeenCalled();
+    expect(admitted).toBe(false);
+    expect(res.setHeader).toHaveBeenCalledWith(
+      'Retry-After',
+      expect.stringMatching(/^\d+$/)
+    );
     expect(res.status).toHaveBeenCalledWith(429);
     expect(res.json).toHaveBeenCalledWith({
       errors: [
@@ -83,17 +137,53 @@ describe('api token failure rate limit', () => {
     });
   });
 
-  it('should keep the budget of a client while another one is over its limit', async () => {
+  it('should log a client going over its limit once per window', () => {
     // Given
-    await refuseMany('198.51.100.42', API_TOKEN_FAILURE_RATE_MAX + 1);
+    const ip = '198.51.100.42';
+    admitMany(ip, API_TOKEN_FAILURE_RATE_MAX);
 
     // When
-    const reached = await isApiTokenFailureLimitReached(
-      buildRequest('198.51.100.43')
-    );
+    admitMany(ip, 3);
 
     // Then
-    expect(reached).toBe(false);
+    expect(logApp.warn).toHaveBeenCalledTimes(1);
+  });
+
+  it('should give back the hit of a lookup that was refunded', () => {
+    // Given
+    const ip = '198.51.100.43';
+    admitMany(ip, API_TOKEN_FAILURE_RATE_MAX);
+    refundApiTokenLookup(buildRequest(ip));
+
+    // When
+    const { admitted } = admit(ip);
+
+    // Then
+    expect(admitted).toBe(true);
+  });
+
+  it('should count a refusal made without a lookup hit', () => {
+    // Given
+    const ip = '198.51.100.44';
+    admitMany(ip, API_TOKEN_FAILURE_RATE_MAX - 1);
+    countRefusedApiToken(buildRequest(ip));
+
+    // When
+    const { admitted } = admit(ip);
+
+    // Then
+    expect(admitted).toBe(false);
+  });
+
+  it('should keep the allowance of a client while another one is over its limit', () => {
+    // Given
+    admitMany('198.51.100.45', API_TOKEN_FAILURE_RATE_MAX + 1);
+
+    // When
+    const { admitted } = admit('198.51.100.46');
+
+    // Then
+    expect(admitted).toBe(true);
   });
 });
 

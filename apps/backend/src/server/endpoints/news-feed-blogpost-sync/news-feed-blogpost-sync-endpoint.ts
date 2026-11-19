@@ -11,7 +11,7 @@ import {
   SYSTEM_TOKEN_HEADER,
 } from '../../../security/system-token';
 import { logApp } from '../../../utils/app-logger.util';
-import { buildIpRateLimiterOptions } from '../shared/ip-rate-limit.util';
+import { buildIpRateLimiterOptions } from '../../../utils/ip-rate-limit.util';
 
 const NEWS_FEED_BLOGPOST_SYNC_PATH = '/webhooks/news-feed/blogposts';
 // Called by n8n on every blog post change, a few times a minute at most
