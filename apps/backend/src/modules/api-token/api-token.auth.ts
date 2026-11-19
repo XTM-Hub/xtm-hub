@@ -9,6 +9,7 @@ import { OrganizationId } from '../../model/kanel/public/Organization';
 import { UserLoadUserBy } from '../../model/user';
 import { ROLE_ADMIN } from '../../portal.const';
 import { logApp } from '../../utils/app-logger.util';
+import { ForbiddenErrorCode } from '../../utils/error/error.code';
 import { UserDomain } from '../organization-management/user/user-domain/user.domain';
 import { ApiTokenDomain } from './api-token.domain';
 import { ApiTokenHelper } from './api-token.helper';
@@ -193,4 +194,33 @@ export const apiTokenMiddleware = async (
   } catch (error) {
     next(error);
   }
+};
+
+/**
+ * A token authenticates the GraphQL API only, where apiTokenPlugin enforces its scope and denylist. Any other route
+ * (`/graphql-sse`, REST, `/auth`) authorizes the session while the request context runs as the token's user: the
+ * token is refused there rather than ignored.
+ */
+export const refuseApiTokenMiddleware = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const authentication = getApiTokenAuthentication(req);
+  if (!authentication) {
+    next();
+    return;
+  }
+  logApp.warn('API token refused outside the GraphQL API', {
+    api_token_id: authentication.token.id,
+    path: req.path,
+  });
+  res.status(403).json({
+    errors: [
+      {
+        message: ForbiddenErrorCode.NotAllowedWithApiToken,
+        extensions: { code: ForbiddenErrorCode.NotAllowedWithApiToken },
+      },
+    ],
+  });
 };
