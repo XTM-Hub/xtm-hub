@@ -14,12 +14,12 @@ import { useContext } from 'react';
 
 interface RegisteredPlatformHeaderProps {
   platform: RegisteredPlatformDetailsFragment;
-  isAdmin: boolean;
+  showOrganization: boolean;
 }
 
 export const RegisteredPlatformHeader = ({
   platform,
-  isAdmin,
+  showOrganization,
 }: RegisteredPlatformHeaderProps) => {
   const t = useTranslate();
 
@@ -56,7 +56,7 @@ export const RegisteredPlatformHeader = ({
             )}
             severity={isConnectionStatusOk ? 'low' : 'critical'}
           />
-          {isAdmin && platform.organization && (
+          {showOrganization && platform.organization && (
             <Chip
               label={t('Register.Details.OrganizationName', {
                 name: platform.organization.name,

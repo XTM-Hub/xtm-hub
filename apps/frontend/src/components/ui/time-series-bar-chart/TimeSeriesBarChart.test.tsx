@@ -236,6 +236,17 @@ describe('TimeSeriesBarChart', () => {
     expect(options.yaxis).not.toHaveProperty('max');
   });
 
+  it('should neither draw a limit line nor bound the y axis when the limit is null', async () => {
+    // Given / When
+    const { options } = await renderChart({ limit: null });
+
+    // Then
+    expect(options.annotations?.yaxis).toEqual([
+      expect.objectContaining({ y: 1_500_000_000 }),
+    ]);
+    expect(options.yaxis).not.toHaveProperty('max');
+  });
+
   it.each([
     ['there are no points', []],
     [

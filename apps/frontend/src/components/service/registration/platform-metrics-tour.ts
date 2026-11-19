@@ -16,7 +16,7 @@ export const PLATFORM_METRICS_TOUR_TARGET = {
   SlaChart: 'platform-metrics-sla-chart',
 } as const;
 
-type PlatformMetricsTourTarget =
+export type PlatformMetricsTourTarget =
   (typeof PLATFORM_METRICS_TOUR_TARGET)[keyof typeof PLATFORM_METRICS_TOUR_TARGET];
 
 export const platformMetricsTourTarget = (

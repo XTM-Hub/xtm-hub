@@ -180,6 +180,48 @@ describe('PlatformMetrics', () => {
     ).not.toBeInTheDocument();
   });
 
+  it('should keep the charts of the previous period on screen, as loading, while another period loads', () => {
+    // Given / When
+    const { container } = testRender(
+      <PlatformMetrics
+        platformIdentifier={PlatformIdentifier.Opencti}
+        metrics={metrics}
+        storage={storage}
+        isLoading={false}
+        isRefreshing
+        period={SaasPlatformMetricsPeriod.Last_30Days}
+        onPeriodChange={vi.fn()}
+      />
+    );
+
+    // Then
+    const busySections = container.querySelectorAll('[aria-busy="true"]');
+    expect(busySections).toHaveLength(1);
+    expect(
+      busySections[0]?.querySelectorAll('[data-testid="storage-usage-chart"]')
+    ).toHaveLength(2);
+  });
+
+  it('should display the metrics as loading while another period loads after metrics that were unavailable', () => {
+    // Given / When
+    const { container } = testRender(
+      <PlatformMetrics
+        platformIdentifier={PlatformIdentifier.Opencti}
+        metrics={null}
+        isLoading={false}
+        isRefreshing
+        period={SaasPlatformMetricsPeriod.Last_30Days}
+        onPeriodChange={vi.fn()}
+      />
+    );
+
+    // Then
+    expect(container.querySelector('[aria-busy="true"]')).toBeInTheDocument();
+    expect(
+      screen.queryByText('Register.Metrics.Unavailable')
+    ).not.toBeInTheDocument();
+  });
+
   it('should display the storage of each card when only the metrics series are unavailable', () => {
     // Given / When
     testRender(
@@ -555,6 +597,38 @@ describe('PlatformMetrics', () => {
       expect(
         screen.getByRole('button', { name: 'Tour.NextStep' })
       ).toBeDisabled();
+    });
+
+    it('should keep the tour open on the period step while the chosen period loads', async () => {
+      // Given the tour opened on the step about the period selector
+      const renderPeriod = (
+        period: SaasPlatformMetricsPeriod,
+        isRefreshing: boolean
+      ) => (
+        <PlatformMetrics
+          platformIdentifier={PlatformIdentifier.Opencti}
+          metrics={metrics}
+          storage={storage}
+          isLoading={false}
+          isRefreshing={isRefreshing}
+          period={period}
+          onPeriodChange={vi.fn()}
+          showGuidedTour
+        />
+      );
+      const { user, rerender } = testRender(
+        renderPeriod(SaasPlatformMetricsPeriod.Last_90Days, false)
+      );
+      await goToStep(user, 4);
+
+      // When the admin chooses another period, which loads then shows
+      rerender(renderPeriod(SaasPlatformMetricsPeriod.Last_30Days, true));
+      rerender(renderPeriod(SaasPlatformMetricsPeriod.Last_30Days, false));
+
+      // Then the tour stays on the same step
+      expect(
+        await screen.findByText('Register.Metrics.Tour.ChartAxes')
+      ).toBeVisible();
     });
 
     it.each`

@@ -24,12 +24,12 @@ const OTHER_ORGANIZATION_ID = 'other-org-id';
 const renderHeader = (
   platform: Partial<RegisteredPlatformDetailsFragment> = {},
   selectedOrganizationId: string = PLATFORM_ORGANIZATION_ID,
-  isAdmin = false
+  showOrganization = false
 ) => {
   return testRender(
     <RegisteredPlatformHeader
       platform={{ ...basePlatform, ...platform }}
-      isAdmin={isAdmin}
+      showOrganization={showOrganization}
     />,
     { me: { selected_organization_id: selectedOrganizationId } }
   );
@@ -126,7 +126,7 @@ describe('RegisteredPlatformHeader', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('should display the owner organization when the user is an admin of another organization', () => {
+  it('should display the owner organization when asked to', () => {
     // Given
     vi.mocked(useTranslations).mockReturnValue(
       mockTranslations({ translate: translateWithValues })
@@ -145,7 +145,7 @@ describe('RegisteredPlatformHeader', () => {
     ).toBeInTheDocument();
   });
 
-  it('should hide the owner organization when the user is not an admin', () => {
+  it('should hide the owner organization when not asked to', () => {
     // Given / When
     renderHeader({}, PLATFORM_ORGANIZATION_ID, false);
 

@@ -63,20 +63,15 @@ export const RegisteredPlatformOverview = ({
   const platform = registeredPlatformData?.registeredPlatform;
 
   const searchParams = useSearchParams();
-  // Only a user who can open the CSM board is led back to it.
   const isMetricAdmin = !!useUserHasPortalCapability([
     PortalCapability.Bypass,
     PortalCapability.ReadSaasMetrics,
   ]);
+  // Only a user who can open the CSM board is led back to it.
   const isFromCsmBoard =
     searchParams.get(REGISTERED_PLATFORM_ORIGIN_PARAM) ===
       REGISTERED_PLATFORM_ORIGIN_CSM_BOARD && isMetricAdmin;
   const isSaas = platform?.commercial_model === CommercialModel.Saas;
-
-  const hasRightToVisualize = !!useUserHasPortalCapability([
-    PortalCapability.Bypass,
-    PortalCapability.ReadSaasMetrics,
-  ]);
 
   const canAdministrateOrganization = useGranted(
     OrganizationCapability.AdministrateOrganization
@@ -85,7 +80,7 @@ export const RegisteredPlatformOverview = ({
     OrganizationCapability.ManagePlatformRegistration
   );
   const canSeePlatformMetrics =
-    hasRightToVisualize ||
+    isMetricAdmin ||
     canAdministrateOrganization ||
     canManagePlatformRegistration;
 
@@ -133,7 +128,7 @@ export const RegisteredPlatformOverview = ({
     <>
       <BreadcrumbNav value={breadcrumbs} />
       <RegisteredPlatformHeader
-        isAdmin={hasRightToVisualize}
+        showOrganization={isMetricAdmin}
         platform={platform}
       />
       {isSaas &&
@@ -143,10 +138,11 @@ export const RegisteredPlatformOverview = ({
             metrics={saasPlatformData?.registeredSaasPlatformData?.metrics}
             storage={saasPlatformData?.registeredSaasPlatformData?.storage}
             sla={saasPlatformData?.registeredSaasPlatformData?.sla}
-            isLoading={isSaasPlatformDataPending || isPreviousMetricsPeriodData}
+            isLoading={isSaasPlatformDataPending}
+            isRefreshing={isPreviousMetricsPeriodData}
             period={metricsPeriod}
             onPeriodChange={setMetricsPeriod}
-            showGuidedTour={hasRightToVisualize}
+            showGuidedTour={isMetricAdmin}
           />
         ) : (
           <PlatformMetricsAccessRequest platformTitle={platform.title} />

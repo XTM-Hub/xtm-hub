@@ -1,5 +1,7 @@
 'use client';
 
+import type { PlatformMetricsTourTarget } from '@/components/service/registration/platform-metrics-tour';
+import type { SaasListTourTarget } from '@/components/subcription/saas/tour/saas-list-tour';
 import { useTranslate } from '@/hooks/use-translate';
 import {
   type AnalyticsElementId,
@@ -169,12 +171,15 @@ export const AppTourProvider = ({
   );
 };
 
+// Every `data-tour` value a tour points at, so a target cannot be typed by hand.
+type AppTourTarget = SaasListTourTarget | PlatformMetricsTourTarget;
+
 interface AppTourButtonProps {
   analyticsId: AnalyticsElementId;
   // Runs before the tour opens, to show what its steps point at.
   onStart?: () => void;
   // The `data-tour` attribute, when a step points at the button itself.
-  'data-tour'?: string;
+  'data-tour'?: AppTourTarget;
 }
 
 export const AppTourButton = ({

@@ -24,6 +24,7 @@ import {
   METRICS_PERIOD_LABELS,
   PRODUCT_LABELS,
 } from '@/lib/analytics/analytics.consts';
+import { cn } from '@/lib/utils';
 import { Paper } from '@filigran/design-system';
 import {
   MetricType,
@@ -43,6 +44,9 @@ interface PlatformMetricsProps {
   // Null without any SLA to show: the section is left out.
   sla?: SaasPlatformSla | null;
   isLoading: boolean;
+  // Another period loads while the previous one stays on screen: its charts stay mounted, which keeps the guided
+  // tour on its targets.
+  isRefreshing?: boolean;
   period: SaasPlatformMetricsPeriod;
   onPeriodChange: (period: SaasPlatformMetricsPeriod) => void;
   // For the Filigran teams only: the tour explains where the metrics come from.
@@ -55,6 +59,7 @@ export const PlatformMetrics = ({
   storage,
   sla,
   isLoading,
+  isRefreshing = false,
   period,
   onPeriodChange,
   showGuidedTour = false,
@@ -79,9 +84,11 @@ export const PlatformMetrics = ({
     });
   }, [isAnalyticsEnabled, platformIdentifier, period]);
 
+  const hasMetrics = !!(metrics || storage);
+  const isPending = isLoading || (isRefreshing && !hasMetrics);
   // Another period would not bring the metrics back: the storage does not depend on it.
-  const isUnavailable = !isLoading && !metrics && !storage;
-  const hasCharts = !isLoading && !!(metrics || storage);
+  const isUnavailable = !isPending && !hasMetrics;
+  const hasCharts = !isPending && hasMetrics;
   const databaseUsage = findDatabaseUsage(metrics, storage);
   const slaTarget = sla
     ? format.number(sla.target, SLA_PERCENT_FORMAT)
@@ -93,7 +100,6 @@ export const PlatformMetrics = ({
 
   return (
     <AppTourProvider
-      key={`${hasCharts}-${tourSteps.length}`}
       steps={tourSteps}
       analyticsIds={PLATFORM_METRICS_TOUR_ANALYTICS_IDS}>
       <Paper
@@ -119,7 +125,7 @@ export const PlatformMetrics = ({
           </div>
         </div>
         <Separator className="mr-3 my-3" />
-        {isLoading && (
+        {isPending && (
           <section aria-busy="true">
             <Skeleton className="h-40 w-full" />
           </section>
@@ -129,7 +135,12 @@ export const PlatformMetrics = ({
         )}
 
         {hasCharts && (
-          <div className="flex flex-col gap-6">
+          <div
+            aria-busy={isRefreshing}
+            className={cn(
+              'flex flex-col gap-6 transition-opacity',
+              isRefreshing && 'opacity-50'
+            )}>
             <section className="flex flex-col gap-4">
               <h3 className="title-xs">{t('Register.Metrics.StorageTitle')}</h3>
               <div

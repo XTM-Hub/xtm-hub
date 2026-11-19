@@ -88,7 +88,7 @@ export const SaasListTourButton = () => {
   return (
     <AppTourButton
       analyticsId="admin_saas_tour_open"
-      data-tour={SAAS_LIST_TOUR_TARGET.Documentation}
+      {...saasListTourTarget(SAAS_LIST_TOUR_TARGET.Documentation)}
       onStart={showTourColumns}
     />
   );
