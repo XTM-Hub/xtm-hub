@@ -1,5 +1,10 @@
 import { Page } from '@playwright/test';
-import { publishResource, selectUseCase, waitForDrawerToClose } from './common';
+import {
+  fillMetaDescription,
+  publishResource,
+  selectUseCase,
+  waitForDrawerToClose,
+} from './common';
 import { TEST_IMAGE_FILE } from './dashboard.pageModel';
 
 // OpenCTI resources of XTM Hub other than dashboards and integrations, with the exports OpenCTI accepts to import.
@@ -38,6 +43,7 @@ export default class OpenctiResourcePage {
 
   async addResource({
     name,
+    metaDescription,
     shortDescription,
     version,
     description,
@@ -45,6 +51,7 @@ export default class OpenctiResourcePage {
     publish = false,
   }: {
     name: string;
+    metaDescription: string;
     shortDescription: string;
     version: string;
     description: string;
@@ -55,6 +62,7 @@ export default class OpenctiResourcePage {
     const resource = OPENCTI_RESOURCES[this.kind];
     await this.page.getByRole('button', { name: resource.addButton }).click();
     await this.page.getByPlaceholder(resource.namePlaceholder).fill(name);
+    await fillMetaDescription(this.page, metaDescription);
     await this.page
       .getByPlaceholder('This is some catchphrases to')
       .fill(shortDescription);

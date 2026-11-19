@@ -35,6 +35,18 @@ export async function selectSolutionCategories(page: Page) {
   await page.keyboard.press('Escape');
 }
 
+// The form publishes `{Product} {Type}: {summary}.`, which needs 120 to 160 characters and must not start with the
+// resource name: this summary gives 137 (OpenCTI Playbook, OpenAEV Scenario) to 140 (OpenCTI Custom View,
+// OpenCTI Integration) characters.
+export const META_DESCRIPTION_SUMMARY =
+  'Sample resource created by the end-to-end tests to check that its creation, validation and publication work in XTM Hub';
+
+export async function fillMetaDescription(page: Page, summary: string) {
+  await page
+    .getByRole('textbox', { name: 'Meta-description', exact: true })
+    .fill(summary);
+}
+
 // A new resource is only requested for validation: a publisher publishes it from its update drawer.
 export async function openResourceUpdateDrawer(page: Page, name: string) {
   const card = page.getByRole('listitem').filter({
