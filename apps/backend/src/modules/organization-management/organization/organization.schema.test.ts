@@ -350,7 +350,9 @@ describe('organization GraphQL schema', () => {
         // Given the app layer is stubbed, so a broken guard cannot write to the shared database
         const guarded = vi
           .spyOn(OrganizationApp, appMethod)
-          .mockResolvedValue(undefined as never);
+          .mockRejectedValue(
+            new Error('Unexpected organization mutation call')
+          );
 
         // When
         const { data, errors } = await execute(
@@ -372,7 +374,9 @@ describe('organization GraphQL schema', () => {
         // Given the app layer is stubbed, so a broken guard cannot write to the shared database
         const guarded = vi
           .spyOn(OrganizationApp, appMethod)
-          .mockResolvedValue(undefined as never);
+          .mockRejectedValue(
+            new Error('Unexpected organization mutation call')
+          );
 
         // When
         const { data, errors } = await execute(
