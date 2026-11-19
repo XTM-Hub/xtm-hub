@@ -93,6 +93,14 @@ Before tightening a field, check what the already-stored rows hold and backfill 
 constraint to creation only. A `zod` rule is also not a constraint on the data: the resolver and the column accept
 anything the browser didn't filter, so validate server-side too when it matters.
 
+## Rights and visibility
+
+Hiding a button, a route or a row is a convenience, never the protection: the backend guards every operation and
+filters the rows it returns, see [`access-control.md`](access-control.md). Do not filter a list in the client to remove
+what the user may not see (a draft, a document in validation): if the API returns it, the user already has it. When a
+UI gate and the backend disagree, the backend is right: fix the backend if it is too open, and show the
+`Error.Server.<code>` message if it refuses.
+
 ## Data fetching
 
 The backend is reached through `proxy.ts` (Next.js 16's convention file, renamed from `middleware.ts`), which
