@@ -53,7 +53,7 @@ const expectRefused = async (secret: string, reason: string, now?: Date) => {
 };
 
 describe('resolveApiToken', () => {
-  it('should run a read_write token as its user, pinned to its organization, without organization administration', async () => {
+  it('should run a read_write token as its user, pinned to its organization, without any organization capability', async () => {
     // Given
     const { token, api_token } = await createToken(
       SECOND.USERS.ADMIN_ORGA.ID,
@@ -76,11 +76,47 @@ describe('resolveApiToken', () => {
     expect(user.id).toBe(SECOND.USERS.ADMIN_ORGA.ID);
     expect(user.selected_organization_id).toBe(SECOND.ID);
     expect(user.organizations.map(({ id }) => id)).toEqual([SECOND.ID]);
-    expect(user.selected_org_capabilities).not.toContain(
-      OrganizationCapability.AdministrateOrganization
-    );
+    expect(user.selected_org_capabilities).toEqual([]);
     expect(user.capabilities).toEqual([]);
   });
+
+  // MANAGE_ACCESS alone lets editUserCapabilities make another member an organization administrator
+  it.each`
+    member                                  | userId                        | organizationId | scope
+    ${'MANAGE_ACCESS, MANAGE_SUBSCRIPTION'} | ${FILIGRAN.USERS.SIMPLE2.ID}  | ${FILIGRAN.ID} | ${ApiTokenScope.ReadWrite}
+    ${'MANAGE_ACCESS, MANAGE_SUBSCRIPTION'} | ${FILIGRAN.USERS.SIMPLE2.ID}  | ${FILIGRAN.ID} | ${ApiTokenScope.Read}
+    ${'MANAGE_PLATFORM_REGISTRATION'}       | ${SECOND.USERS.REGISTERER.ID} | ${SECOND.ID}   | ${ApiTokenScope.ReadWrite}
+    ${'MANAGE_PLATFORM_REGISTRATION'}       | ${SECOND.USERS.REGISTERER.ID} | ${SECOND.ID}   | ${ApiTokenScope.Read}
+  `(
+    'should give no organization capability to a $scope token of a member holding $member',
+    async ({
+      userId,
+      organizationId,
+      scope,
+    }: {
+      userId: UserId;
+      organizationId: OrganizationId;
+      scope: ApiTokenScope;
+    }) => {
+      // Given
+      const { token } = await createToken(userId, organizationId, scope);
+
+      // When
+      const resolution = await resolveApiToken(token);
+
+      // Then
+      expect(resolution.authenticated).toBe(true);
+      if (!resolution.authenticated) return;
+      expect(resolution.authentication.user).toMatchObject({
+        id: userId,
+        selected_organization_id: organizationId,
+        selected_org_capabilities: [],
+        organization_capabilities: [
+          { organization: { id: organizationId }, capabilities: [] },
+        ],
+      });
+    }
+  );
 
   it('should keep the organization administration of its user with the admin scope', async () => {
     // Given

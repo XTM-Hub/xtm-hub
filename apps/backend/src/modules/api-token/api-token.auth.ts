@@ -1,7 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
 import {
   ApiTokenScope,
-  OrganizationCapability,
   PortalCapability,
 } from '../../__generated__/resolvers-types';
 import { ApiTokenId } from '../../model/kanel/public/ApiToken';
@@ -42,8 +41,9 @@ export const getApiTokenAuthentication = (
  * The user a token acts as: the token's user as loaded now, so a right removed, a disabled account or a membership
  * ended takes effect on the next call, narrowed to what the token may do.
  * - Only the token's organization: it is pinned as the selected one, the others are hidden.
- * - Without the admin scope: no portal capability, and no ADMINISTRATE_ORGANIZATION (which implies every
- *   organization capability).
+ * - Without the admin scope: no portal capability and no organization capability. Every organization capability
+ *   administers the organization (its members and their rights, its subscriptions, its platforms), and read_write is
+ *   not administration.
  * - With the admin scope: the user's portal capabilities, BYPASS excepted. A token never carries BYPASS.
  */
 export const narrowUserToToken = (
@@ -57,12 +57,7 @@ export const narrowUserToToken = (
     return undefined;
   }
   const isAdmin = token.scope === ApiTokenScope.Admin;
-  const organizationCapabilities = isAdmin
-    ? membership.capabilities
-    : membership.capabilities.filter(
-        (capability) =>
-          capability !== OrganizationCapability.AdministrateOrganization
-      );
+  const organizationCapabilities = isAdmin ? membership.capabilities : [];
   return {
     ...user,
     selected_organization_id: token.organization_id,
