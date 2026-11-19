@@ -1,40 +1,57 @@
 import express from 'express';
 import { GraphQLObjectType } from 'graphql';
-import { describe, expect, it, vi } from 'vitest';
+import { v4 as uuidv4 } from 'uuid';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { TestHelper } from '../../../tests/helper/test.helper';
 import {
+  // eslint-disable-next-line no-restricted-imports
+  contextBypassUser,
   contextSimpleUserFiligran2,
   GRAPHQL_RESOLVE_INFO,
+  TEST_ORGANIZATIONS,
 } from '../../../tests/tests.const';
 import { NewsFeedItemMetadataKey } from '../../__generated__/resolvers-types';
+import type DeploymentRequest from '../../model/kanel/public/DeploymentRequest';
 import { NewsFeedItemId } from '../../model/kanel/public/NewsFeedItem';
 import { UserLoadUserBy } from '../../model/user';
 import createSchema from '../../server/graphql-schema';
-import { ErrorCode, UnknownErrorCode } from '../../utils/error/error.code';
+import {
+  BadRequestErrorCode,
+  ErrorCode,
+  UnauthenticatedErrorCode,
+  UnknownErrorCode,
+} from '../../utils/error/error.code';
+import { DeploymentRequestDomain } from '../deployment/deployment.domain';
 import { NewsFeedApp } from './news-feed.app';
 import { NewsFeedDomain } from './news-feed.domain';
 import newsFeedResolver from './news-feed.resolver';
 
-const makeMockContext = (platformId: string | null, token: string | null) => ({
-  req: {
-    headers: {
-      'xtm-hub-platform-id': platformId ?? undefined,
-      'xtm-hub-platform-token': token ?? undefined,
-    },
-  } as unknown as express.Request,
+const makeMockContext = (headers: Record<string, string>) => ({
+  req: { headers } as unknown as express.Request,
   res: {} as express.Response,
   user: undefined as unknown as UserLoadUserBy,
 });
 
 describe('consume provisioned news feed items GraphQL mutation', () => {
-  it('should consume provisioned news feed items with extracted platformId and token and return the result', async () => {
+  let platformCaller: Awaited<
+    ReturnType<typeof TestHelper.platformCaller.create>
+  >;
+
+  beforeEach(async () => {
+    platformCaller = await TestHelper.platformCaller.create();
+  });
+
+  afterEach(async () => {
+    await platformCaller.cleanup();
+  });
+
+  it('should consume provisioned news feed items with the platform caller checked by the guard and return the result', async () => {
     // Given
-    const platformId = 'platform-abc';
-    const token = 'token-xyz';
     const mockResult = { news_feed_items: [], available_news_feed_types: [] };
     vi.spyOn(NewsFeedApp, 'consumeProvisionedNewsFeedItems').mockResolvedValue(
       mockResult
     );
-    const context = makeMockContext(platformId, token);
+    const context = makeMockContext(platformCaller.headers);
 
     // When
     const result = await newsFeedResolver.Mutation!
@@ -42,23 +59,26 @@ describe('consume provisioned news feed items GraphQL mutation', () => {
 
     // Then
     expect(NewsFeedApp.consumeProvisionedNewsFeedItems).toHaveBeenCalledWith({
-      platformId,
-      token,
+      registration: expect.objectContaining({
+        platformConfiguration: expect.objectContaining({
+          platform_id: platformCaller.platformId,
+          service_instance_id: platformCaller.serviceInstanceId,
+        }),
+        platformIdentifier: 'opencti',
+      }),
     });
     expect(result).toBe(mockResult);
   });
 
-  it('should consume provisioned news feed items with null platformId when header is missing', async () => {
+  it('should refuse with UNAUTHENTICATED and not consume anything when the platform id header is missing', async () => {
     // Given
-    const token = 'token-xyz';
-    const mockResult = { news_feed_items: [], available_news_feed_types: [] };
-    vi.spyOn(NewsFeedApp, 'consumeProvisionedNewsFeedItems').mockResolvedValue(
-      mockResult
-    );
-    const context = makeMockContext(null, token);
+    vi.spyOn(NewsFeedApp, 'consumeProvisionedNewsFeedItems');
+    const context = makeMockContext({
+      'xtm-hub-platform-token': platformCaller.token,
+    });
 
     // When
-    await newsFeedResolver.Mutation!.consumeProvisionedNewsFeedItems!(
+    const call = newsFeedResolver.Mutation!.consumeProvisionedNewsFeedItems!(
       {},
       {},
       context,
@@ -66,10 +86,67 @@ describe('consume provisioned news feed items GraphQL mutation', () => {
     );
 
     // Then
-    expect(NewsFeedApp.consumeProvisionedNewsFeedItems).toHaveBeenCalledWith({
-      platformId: null,
-      token,
+    await expect(call).rejects.toMatchObject({
+      message: UnauthenticatedErrorCode.Unauthenticated,
     });
+    expect(NewsFeedApp.consumeProvisionedNewsFeedItems).not.toHaveBeenCalled();
+  });
+
+  it('should refuse with UNAUTHENTICATED and not consume anything when the token is wrong', async () => {
+    // Given
+    vi.spyOn(NewsFeedApp, 'consumeProvisionedNewsFeedItems');
+    const context = makeMockContext({
+      ...platformCaller.headers,
+      'xtm-hub-platform-token': uuidv4(),
+    });
+
+    // When
+    const call = newsFeedResolver.Mutation!.consumeProvisionedNewsFeedItems!(
+      {},
+      {},
+      context,
+      GRAPHQL_RESOLVE_INFO
+    );
+
+    // Then
+    await expect(call).rejects.toMatchObject({
+      message: UnauthenticatedErrorCode.Unauthenticated,
+      data: { http_status: 401 },
+    });
+    expect(NewsFeedApp.consumeProvisionedNewsFeedItems).not.toHaveBeenCalled();
+  });
+
+  it('should refuse with PLATFORM_NOT_REGISTERED and not consume anything when the caller only holds a deployment request token', async () => {
+    // Given
+    const platformId = uuidv4();
+    const token = uuidv4();
+    vi.spyOn(NewsFeedApp, 'consumeProvisionedNewsFeedItems');
+    vi.spyOn(
+      DeploymentRequestDomain,
+      'loadDeploymentRequestBy'
+    ).mockResolvedValue({
+      platform_id: platformId,
+      platform_token: token,
+      organization_requester_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+    } as DeploymentRequest);
+    const context = makeMockContext({
+      'xtm-hub-platform-id': platformId,
+      'xtm-hub-platform-token': token,
+    });
+
+    // When
+    const call = newsFeedResolver.Mutation!.consumeProvisionedNewsFeedItems!(
+      {},
+      {},
+      context,
+      GRAPHQL_RESOLVE_INFO
+    );
+
+    // Then
+    await expect(call).rejects.toMatchObject({
+      message: BadRequestErrorCode.PlatformNotRegistered,
+    });
+    expect(NewsFeedApp.consumeProvisionedNewsFeedItems).not.toHaveBeenCalled();
   });
 
   it('should throw a mapped GraphQL error with UnknownError when the app throws', async () => {
@@ -77,7 +154,7 @@ describe('consume provisioned news feed items GraphQL mutation', () => {
     vi.spyOn(NewsFeedApp, 'consumeProvisionedNewsFeedItems').mockRejectedValue(
       new Error('UNEXPECTED')
     );
-    const context = makeMockContext('platform-abc', 'token-xyz');
+    const context = makeMockContext(platformCaller.headers);
 
     // When
     const call = newsFeedResolver.Mutation!.consumeProvisionedNewsFeedItems!(
@@ -113,7 +190,7 @@ describe('newsFeedItems GraphQL query', () => {
     const result = await newsFeedResolver.Query!.newsFeedItems!(
       {},
       { first: 10, after: 'cursor-abc' },
-      contextSimpleUserFiligran2,
+      contextBypassUser,
       GRAPHQL_RESOLVE_INFO
     );
 
@@ -135,7 +212,7 @@ describe('newsFeedItems GraphQL query', () => {
     const call = newsFeedResolver.Query!.newsFeedItems!(
       {},
       { first: 10 },
-      contextSimpleUserFiligran2,
+      contextBypassUser,
       GRAPHQL_RESOLVE_INFO
     );
 
@@ -154,7 +231,7 @@ describe('deleteNewsFeedItem GraphQL mutation', () => {
     const result = await newsFeedResolver.Mutation!.deleteNewsFeedItem!(
       {},
       { id },
-      contextSimpleUserFiligran2,
+      contextBypassUser,
       GRAPHQL_RESOLVE_INFO
     );
 
@@ -175,7 +252,7 @@ describe('deleteNewsFeedItem GraphQL mutation', () => {
     const call = newsFeedResolver.Mutation!.deleteNewsFeedItem!(
       {},
       { id: 'some-id' as NewsFeedItemId },
-      contextSimpleUserFiligran2,
+      contextBypassUser,
       GRAPHQL_RESOLVE_INFO
     );
 
@@ -193,7 +270,7 @@ describe('deleteNewsFeedItem GraphQL mutation', () => {
     const call = newsFeedResolver.Mutation!.deleteNewsFeedItem!(
       {},
       { id: 'blog-post-id' as NewsFeedItemId },
-      contextSimpleUserFiligran2,
+      contextBypassUser,
       GRAPHQL_RESOLVE_INFO
     );
 
