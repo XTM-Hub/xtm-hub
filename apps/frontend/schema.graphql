@@ -1147,6 +1147,12 @@ type Organization implements Node {
   personal_space: Boolean!
   capabilityUser: [Capability]
   administrator_emails: [String!]
+
+  """
+  Members of the organization, invited and disabled users included, pending requests excluded.
+  Nullable: a refused read answers null without failing the whole query.
+  """
+  members_count: Int
 }
 
 type OrganizationEdge {
@@ -2618,6 +2624,7 @@ enum PortalCapability {
   MANAGE_MANIFEST_INGESTIONS
   GENERATE_MANIFEST
   READ_SAAS_METRICS
+  READ_ORGANIZATION_MEMBERS
 }
 
 enum OrganizationCapability {

@@ -1859,6 +1859,11 @@ export type Organization = Node & {
   capabilityUser?: Maybe<Array<Maybe<Capability>>>;
   domains?: Maybe<Array<Scalars['String']['output']>>;
   id: Scalars['ID']['output'];
+  /**
+   * Members of the organization, invited and disabled users included, pending requests excluded.
+   * Nullable: a refused read answers null without failing the whole query.
+   */
+  members_count?: Maybe<Scalars['Int']['output']>;
   name: Scalars['String']['output'];
   personal_space: Scalars['Boolean']['output'];
 };
@@ -2030,6 +2035,7 @@ export enum PortalCapability {
   ModifyServiceMetadata = 'MODIFY_SERVICE_METADATA',
   ModifyTrials = 'MODIFY_TRIALS',
   ModifyTrialsQuota = 'MODIFY_TRIALS_QUOTA',
+  ReadOrganizationMembers = 'READ_ORGANIZATION_MEMBERS',
   ReadSaasMetrics = 'READ_SAAS_METRICS',
   ReadTrials = 'READ_TRIALS'
 }
@@ -4941,6 +4947,7 @@ export type OrganizationResolvers<ContextType = PortalContext, ParentType extend
   capabilityUser?: Resolver<Maybe<Array<Maybe<ResolversTypes['Capability']>>>, ParentType, ContextType>;
   domains?: Resolver<Maybe<Array<ResolversTypes['String']>>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  members_count?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   personal_space?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
