@@ -51,7 +51,7 @@ A CTEM program runs on tradecraft: the dashboards that scope the threats against
 | **Prioritization** | OpenCTI custom views that put the threats and exposures that matter in front of each analyst. |
 | **Validation** | OpenAEV scenarios by category: atomic testing, attack simulation, penetration testing, platform validation, purple team, tabletop exercises, OpenCTI coverage and the CTEM framework. |
 | **Mobilization** | OpenCTI playbooks that automate triage and response. One-click deployment of playbooks needs OpenCTI Enterprise Edition. |
-| **Every stage** | One-click deploy into a connected instance, instance registration for OpenCTI, OpenAEV and XTM One, the public XTM Platform roadmap with feature voting, and personal API tokens (read, read and write, admin) with a lifetime for your scripts and pipelines. |
+| **Every stage** | One-click deploy into a connected instance, instance registration for OpenCTI, OpenAEV and [XTM One](https://github.com/XTM-One-Platform/xtm-one), the public XTM Platform roadmap with feature voting, and personal API tokens (read, read and write, admin) with a lifetime for your scripts and pipelines. |
 
 Use cases: CTI teams start from sector dashboards and curated feeds; SOC and detection engineers add enrichment and playbooks; red and purple teams run ready-made attack scenarios; vulnerability and exposure management teams test the techniques that reach their assets; CISOs share one library across every instance they run.
 
@@ -243,7 +243,7 @@ XTM Hub is free to use at [hub.filigran.io](https://hub.filigran.io). Its source
 
 - Read the [contributing guide](CONTRIBUTING.md) and the [code of conduct](CODE_OF_CONDUCT.md).
 - New to the codebase? Start with the [good first issues](https://github.com/XTM-Hub/xtm-hub/issues?q=is%3Aissue%20state%3Aopen%20label%3A%22good%20first%20issue%22).
-- Pull request titles follow Conventional Commits and end with the issue they close, for example `fix(frontend): keep the filter on reload (#123)`. Commits are signed.
+- Pull request titles follow Conventional Commits and end with the issue they close, for example `fix(frontend): keep the filter on reload (#<issue>)`. Commits are signed.
 
 ## Security
 
