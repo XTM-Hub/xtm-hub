@@ -38,12 +38,16 @@ export const newsFeedConfigurationMapping: Partial<
   },
 };
 
-// Products of the blog API whose posts become news feed items, with the platform that consumes them. MVP: OpenCTI only,
-// the other products are ignored.
-export const blogpostProductMapping: Partial<
-  Record<FiligranProduct, PlatformIdentifier>
+// Products of the blog API whose posts become news feed items. Each one is synchronized on its own, with the platform
+// that consumes its items. The other products of the blog API are ignored.
+export type BlogpostProduct = FiligranProduct.Opencti | FiligranProduct.Openaev;
+
+export const blogpostProductMapping: Record<
+  BlogpostProduct,
+  PlatformIdentifier
 > = {
   [FiligranProduct.Opencti]: PlatformIdentifier.Opencti,
+  [FiligranProduct.Openaev]: PlatformIdentifier.Openaev,
 };
 
 // Metadata keys that only serve the Hub (document lookup, external destination of a redirect): they are never

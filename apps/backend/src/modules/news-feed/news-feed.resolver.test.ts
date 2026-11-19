@@ -1,4 +1,5 @@
 import express from 'express';
+import { GraphQLObjectType } from 'graphql';
 import { describe, expect, it, vi } from 'vitest';
 import {
   contextSimpleUserFiligran2,
@@ -7,6 +8,7 @@ import {
 import { NewsFeedItemMetadataKey } from '../../__generated__/resolvers-types';
 import { NewsFeedItemId } from '../../model/kanel/public/NewsFeedItem';
 import { UserLoadUserBy } from '../../model/user';
+import createSchema from '../../server/graphql-schema';
 import { ErrorCode, UnknownErrorCode } from '../../utils/error/error.code';
 import { NewsFeedApp } from './news-feed.app';
 import { NewsFeedDomain } from './news-feed.domain';
@@ -235,5 +237,41 @@ describe('newsFeedItem metadata field resolver', () => {
     expect(result).toEqual([
       { key: NewsFeedItemMetadataKey.UrlPath, value: 'redirect/foo' },
     ]);
+  });
+});
+
+describe('news feed GraphQL schema', () => {
+  // The key of an item is its identity for the Hub only: a column that no type declares is never returned
+  it.each([
+    [
+      'NewsFeedItem',
+      [
+        'creation_date',
+        'id',
+        'is_deleted',
+        'metadata',
+        'tags',
+        'title',
+        'type',
+      ],
+    ],
+    [
+      'ProvisionedNewsFeedItem',
+      [
+        'creation_date',
+        'id',
+        'is_deleted',
+        'metadata',
+        'tags',
+        'title',
+        'type',
+      ],
+    ],
+  ])('should not expose the key of the %s type', (typeName, expectedFields) => {
+    // When
+    const type = createSchema().getType(typeName) as GraphQLObjectType;
+
+    // Then
+    expect(Object.keys(type.getFields()).sort()).toEqual(expectedFields);
   });
 });

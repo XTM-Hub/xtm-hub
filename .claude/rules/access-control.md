@@ -3,18 +3,28 @@ paths:
   - "apps/backend/**/*.resolver.ts"
   - "apps/backend/**/*.graphql"
   - "apps/backend/src/security/**"
+  - "apps/backend/**/*.domain.ts"
   - "apps/backend/tests/helper/test.access-matrix.helper.ts"
   - "apps/backend/**/*.access.test.ts"
 ---
 
 # Access Control Instructions (`apps/backend`)
 
+**The backend is the only place rights are enforced.** The frontend hides what a user cannot do or see for comfort
+only: any user can call the API directly. Every right therefore exists twice, in two layers:
+
+1. **Who may call an operation**: declared on the operation, see below.
+2. **Which data the caller may see or change**: a row filter in `src/security/restriction/`, see
+   [Filtering data](#filtering-data). A guard that lets a user in says nothing about the rows they get back.
+
+A new feature that gates something in the UI is not done until the backend refuses it too, with a test.
+
 Every GraphQL operation declares who may call it with a decorator or, until its module is migrated, a directive. Two
 mechanisms coexist while modules migrate:
 
 | Mechanism | Where | Used by |
 | --- | --- | --- |
-| `@Public()` / `@Guarded(guard)` on the resolver | `src/security/guarded/` | Migrated modules (`solution-category`, `telemetry`, `manage-product-version`) |
+| `@Public()` / `@Guarded(guard)` on the resolver | `src/security/guarded/` | Migrated modules (`solution-category`, `telemetry`, `manage-product-version`, `subscription`) |
 | `@auth`, `@service_capa`, `@system_token`, `@platform_token` in the `.graphql` file | `src/security/directive-graphql/` | Every other module. A field with no directive is public there |
 
 **An operation has a directive or a decorator, never both.** Migrating an operation removes its directive in the same
@@ -66,9 +76,39 @@ export default resolvers;
 | `@Guarded(bypassOnlyGuard())` | A `BYPASS` user only. Use it for admin-only operations rather than listing `BYPASS` | `UNAUTHENTICATED` (anonymous or disabled user), `FORBIDDEN_ACCESS` (not `BYPASS`) |
 | `@Guarded(portalCapabilityGuard([PortalCapability.X, …]))` | A user holding one of the portal capabilities; `BYPASS` always. The list cannot be empty | `UNAUTHENTICATED` (anonymous or disabled user), `FORBIDDEN_ACCESS` (capability missing) |
 | `@Guarded(callerGuard('system', [PortalCapability.X, …]))` | A machine with a valid `x-xtm-hub-token` holding every listed scope. The list cannot be empty | `UNAUTHENTICATED` (no or invalid token, session ignored), `FORBIDDEN_ACCESS` (scope missing) |
+| `@Guarded(orgGuard({ organization: selectedOrganization, capabilities: [OrganizationCapability.X, …] }))` | A member of the selected organization holding one of the capabilities (`ADMINISTRATE_ORGANIZATION` implies them all, `[]` requires the membership only); `BYPASS` always | `UNAUTHENTICATED` (anonymous or disabled user), `NOT_FOUND` (not a member), `MISSING_CAPABILITY_ON_ORGANIZATION` (capability missing) |
 
 A guard returns `allow()` or `deny(code)`. An exception, or anything else, is a denial. Add each new guard to this
 table.
+
+`orgGuard` checks the caller's membership, not that the data belongs to the organization: keep the row filter in
+`src/security/restriction/`. Whether `BYPASS` sees every row depends on the use case: some filters let it through
+themselves, others leave it to their caller, so read the filter before calling it.
+
+## Filtering data
+
+A guard decides whether a caller may run an operation. It does not decide which rows the operation returns: a
+`loggedInGuard()` query that selects `Document.*` hands every document, drafts included, to every logged-in user.
+**Every query, count, facet, search, export, dataloader, subscription payload and "by id" lookup that reads protected
+data filters the rows to what the caller may see, in the query itself.** Never fetch everything and filter in the
+resolver or in the frontend, and never trust an id the client sends: a user who guesses or reuses an id must get the
+same `NOT_FOUND` as for a row that does not exist.
+
+- The filter is a reusable function in `src/security/restriction/` (`restrictDocumentToPublished`,
+  `restrictDocumentToAccessibleServiceInstance`, …), applied with `.tap(...)` on the Knex query. Reuse the existing
+  one instead of rewriting its `where` inline, and write a new one there when none fits.
+- The caller comes from `requestContext`, never from an argument the client sends.
+- A filter that depends on a capability has two halves: the SQL restriction, and the check that decides whether to
+  apply it. `isUserRestrictedToPublishedDocument` (`src/modules/document/document.security.ts`) is the example: a document
+  is `draft`, `in_validation` or `published`, and on a manageable service (`MANAGEABLE_SERVICE_DEFINITION_IDENTIFIERS`)
+  a user without the `UPLOAD` capability on the service instance only gets `published` ones (platform admins see
+  everything). Keep that decision in a `<name>.security.ts` helper, next to the module, not in the resolver.
+- Every path that reaches the same data applies the same filter. When a listing is restricted, check the by-id load,
+  the count, the facets, the search, the children / related rows and the export: one unfiltered sibling leaks what the
+  others hide. Search for the other readers of the table before declaring the filter done.
+- The same goes for writes: a caller who may not see a row may not update, delete or change its status either. Filter
+  the row (or check it) before the write, not after.
+- `BYPASS` sees every row only if the filter says so: read it first (see `orgGuard` above).
 
 ## Machine callers
 
@@ -83,10 +123,9 @@ table.
 
 ## Errors
 
-A guard denies with `UnauthenticatedErrorCode.Unauthenticated` or `ForbiddenErrorCode.ForbiddenAccess`
-(`src/utils/error/error.code.ts`). The decorator builds the error with `mapToGraphQLError`
-(`src/utils/error/error.mapping.ts`), like any other GraphQL error: the code is both the `message`, so the frontend
-shows `Error.Server.<code>`, and `extensions.code`.
+A guard denies with a `DenialCode` (`src/security/guarded/guard.types.ts`). The decorator builds the error with
+`mapToGraphQLError` (`src/utils/error/error.mapping.ts`), like any other GraphQL error: the code is the `message`, so
+the frontend shows `Error.Server.<code>`.
 
 **A changed code is a frontend change.** When a migrated operation answers a different code or message than before,
 add the `Error.Server.<code>` key to `apps/frontend/messages/{en,fr,ja}.json` in the same pull request, and say in the
@@ -111,10 +150,18 @@ describe('addSolutionCategory mutation', () => {
 });
 ```
 
-Rows are anonymous, a logged-in user with no capability and a platform admin, plus `system` and `invalidSystemToken`
-for an operation a machine calls. `guarded` returns a spy on the function behind the operation: refused rows assert it
-was not called, allowed rows that it was called once. Wrap the call in a `describe` with a literal name, and use
-`TestHelper`, never the helper file directly.
+Rows are `anonymous`, `user` (a member with no portal capability) and `admin` (a platform admin). An operation behind
+`orgGuard` also lists `memberWithoutCapability`, `otherOrganization` and `nonMember`; one a machine calls lists
+`system` and `invalidSystemToken`. `guarded` returns a spy on the function behind the operation: refused rows assert
+it was not called, allowed rows that it was called once and answered `expectedData`, or `expectedDataByRow[row]` for
+a row that sees different data. Wrap the call in a `describe` with a literal name, and use `TestHelper`, never the
+helper file directly.
+
+The matrix proves who may call the operation. **A filter has its own test**: seed one row the caller must not see (a
+`draft` document for a user without `UPLOAD`) next to one they may see, call the operation and every sibling path
+(list, by-id, count, search) as that user, and assert the hidden row is absent everywhere, then that a user with the
+capability gets both. A test that only seeds visible rows passes with the filter removed: remove it and rerun, the
+test must fail.
 
 ## Adding or migrating an entry point
 
@@ -122,6 +169,8 @@ was not called, allowed rows that it was called once. Wrap the call in a `descri
    admin-only guarded query, its `type Query` field and an `expectAccessMatrix` call. Widen the guard on purpose.
 2. Existing operation: declare the rule its directive checks today with a guard, remove the directive, add the matrix.
 3. An operation open to anyone is written `@Public()`, never left bare.
+4. An operation that returns or changes rows: name the rule that restricts them, apply the restriction from
+   `src/security/restriction/`, and test a row the caller must not see.
 
 Decorators need no compiler option (`experimentalDecorators` stays off). Vitest and the production bundle lower them
 with esbuild: see the comments in `apps/backend/vitest.config.ts` and `apps/backend/builder/prod/prod.js`.

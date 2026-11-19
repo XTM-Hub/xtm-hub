@@ -442,6 +442,9 @@ const DataTableColumnMenu = <TData, TValue>({
   );
 };
 
+// A column pinned right (the row actions) stays in view while a table wider than its container scrolls
+const PINNED_RIGHT_CLASS = 'sticky right-0 z-[1]';
+
 const DataTableHeaderCell = <TData, TValue>({
   header,
 }: {
@@ -469,6 +472,7 @@ const DataTableHeaderCell = <TData, TValue>({
       style={style}
       className={cn(
         'relative group whitespace-nowrap truncate px-4 h-12 text-left align-middle bg-elevation-highlight content-compact-bold text-default-primary transition-transform duration-200 ease-in-out [&:has([role=checkbox])]:pr-0',
+        header.column.getIsPinned() === 'right' && PINNED_RIGHT_CLASS,
         isDragging && 'z-10 opacity-80'
       )}>
       {!header.column.getIsPinned() && (
@@ -543,6 +547,8 @@ const DataTableCell = <TData,>({ cell }: { cell: Cell<TData, unknown> }) => {
       }}
       className={cn(
         'relative h-12 px-4 align-middle truncate content-compact text-default-primary transition-transform duration-200 ease-in-out [&:has([role=checkbox])]:pr-0',
+        cell.column.getIsPinned() === 'right' &&
+          cn(PINNED_RIGHT_CLASS, 'bg-elevation-default'),
         isDragging && 'z-10 opacity-80'
       )}>
       {flexRender(cell.column.columnDef.cell, cell.getContext())}

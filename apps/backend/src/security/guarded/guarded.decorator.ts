@@ -1,12 +1,9 @@
 import { requestContext } from '../../context/request.context';
 import { logApp } from '../../utils/app-logger.util';
-import {
-  ForbiddenErrorCode,
-  UnauthenticatedErrorCode,
-} from '../../utils/error/error.code';
+import { ForbiddenErrorCode } from '../../utils/error/error.code';
 import { mapToGraphQLError } from '../../utils/error/error.mapping';
 import { buildScopedSystemUser } from '../system-token';
-import { DenialCode, Guard, GuardResult } from './guard.types';
+import { DENIAL_CODES, DenialCode, Guard, GuardResult } from './guard.types';
 import { publicAccess } from './guards/public-access.guard';
 import {
   ANONYMOUS_PRINCIPAL,
@@ -38,11 +35,13 @@ const runGuard = async (
   }
 };
 
+const isDenialCode = (code: unknown): code is DenialCode =>
+  DENIAL_CODES.some((denialCode) => denialCode === code);
+
 // Fails closed: a malformed result or an unknown code is FORBIDDEN_ACCESS, never UNKNOWN_ERROR
 const toDenialCode = (result: GuardResult | undefined): DenialCode =>
-  result?.allowed === false &&
-  result.code === UnauthenticatedErrorCode.Unauthenticated
-    ? UnauthenticatedErrorCode.Unauthenticated
+  result?.allowed === false && isDenialCode(result.code)
+    ? result.code
     : ForbiddenErrorCode.ForbiddenAccess;
 
 const enforce =

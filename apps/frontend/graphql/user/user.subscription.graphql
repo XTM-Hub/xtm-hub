@@ -1,0 +1,26 @@
+subscription PendingUserEvents($organizationId: ID!) {
+  UserPending(organizationId: $organizationId) {
+    delete {
+      id
+    }
+    invalidate {
+      id
+    }
+  }
+}
+
+subscription OrganizationUserEvents($organizationId: ID!) {
+  User(organizationId: $organizationId) {
+    add {
+      id
+    }
+  }
+}
+
+subscription AdminUserEvents {
+  AdminUser {
+    add {
+      id
+    }
+  }
+}

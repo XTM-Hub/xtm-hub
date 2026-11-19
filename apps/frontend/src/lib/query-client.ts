@@ -32,6 +32,16 @@ export const retryUnlessUnauthenticated = (
 ) =>
   !(error instanceof UnauthenticatedError) && failureCount < MAX_QUERY_RETRIES;
 
+/**
+ * `throwOnError` of a query whose failed first load reaches the nearest error
+ * boundary, as a Relay query did: a failed background refetch keeps the data
+ * already on screen instead.
+ */
+export const throwOnFirstLoadError = (
+  _error: unknown,
+  query: { state: { data: unknown } }
+): boolean => query.state.data === undefined;
+
 export const createQueryClient = () =>
   new QueryClient({
     queryCache: new QueryCache({ onError: redirectOnUnauthenticated }),

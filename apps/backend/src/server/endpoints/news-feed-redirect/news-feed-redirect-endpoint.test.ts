@@ -24,12 +24,14 @@ import {
 import {
   NewsFeedItemMetadataKey,
   NewsFeedItemType,
+  PlatformIdentifier,
 } from '../../../__generated__/resolvers-types';
 import { NewsFeedDomain } from '../../../modules/news-feed/news-feed.domain';
 import { TelemetryApp } from '../../../modules/telemetry/telemetry.app';
 import {
   TelemetryNewsFeedItemType,
   TelemetryOrganizationType,
+  TelemetryTargetProduct,
 } from '../../../modules/telemetry/telemetry.const';
 import { TelemetryEventType } from '../../../modules/telemetry/telemetry.types';
 import { logApp } from '../../../utils/app-logger.util';
@@ -115,15 +117,18 @@ const createBlogPostItem = async ({
   slug,
   isDeleted = false,
   type = NewsFeedItemType.BlogPost,
+  platformIdentifier = PlatformIdentifier.Opencti,
 }: {
   slug?: string;
   isDeleted?: boolean;
   type?: NewsFeedItemType;
+  platformIdentifier?: PlatformIdentifier;
 } = {}) => {
   const item = await TestHelper.newsFeed.createItem({
     type,
     title: 'Blog post',
     is_deleted: isDeleted,
+    platform_identifier: platformIdentifier,
   });
   if (slug !== undefined) {
     await TestHelper.newsFeed.createMetadata({
@@ -354,6 +359,38 @@ describe('news feed redirect endpoint', () => {
         user_id: undefined,
       });
     });
+
+    it.each([
+      [PlatformIdentifier.Opencti, TelemetryTargetProduct.OPEN_CTI],
+      [PlatformIdentifier.Openaev, TelemetryTargetProduct.OPEN_AEV],
+    ])(
+      'should redirect to the blog post and tell the product apart in the event when the item belongs to %s',
+      async (platformIdentifier, expectedTargetProduct) => {
+        // Given
+        const item = await createBlogPostItem({
+          slug: BLOG_POST_SLUG,
+          platformIdentifier,
+        });
+        const sendTelemetryEvent = vi
+          .spyOn(TelemetryApp, 'sendTelemetryEvent')
+          .mockResolvedValue(undefined);
+
+        // When
+        const response = await request(redirectPath(item.id));
+
+        // Then
+        expect(response.headers.get('location')).toBe(BLOG_POST_URL);
+        await vi.waitFor(() =>
+          expect(sendTelemetryEvent).toHaveBeenCalledTimes(1)
+        );
+        expect(sendTelemetryEvent.mock.calls[0]![0]).toMatchObject({
+          event_type: TelemetryEventType.NEWS_FEED_REDIRECT,
+          news_feed_item_id: item.id,
+          news_feed_item_type: TelemetryNewsFeedItemType.BLOG_POST,
+          target_product: expectedTargetProduct,
+        });
+      }
+    );
 
     it('should emit the event with the user and the organization, and leave the session untouched, when the request carries a valid session', async () => {
       // Given

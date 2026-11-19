@@ -1,12 +1,13 @@
+import Loader from '@/components/Loader';
 import { RegistrationContext } from '@/components/registration/Context';
 import { RegistrationLayout } from '@/components/registration/Layout';
 import { useTranslate } from '@/hooks/use-translate';
-import UserWithCapabilitiesInOrganizationQueryGraphql, {
-  userWithCapabilitiesInOrganizationQuery,
-} from '@generated/userWithCapabilitiesInOrganizationQuery.graphql';
-import { OrganizationCapability } from '@graphql/generated';
+import { portalGraphqlClient } from '@/lib/graphql-client';
+import {
+  OrganizationCapability,
+  useUsersWithCapabilitiesInOrganizationQuery,
+} from '@graphql/generated';
 import { useContext } from 'react';
-import { useLazyLoadQuery } from 'react-relay';
 
 interface UnregisterMissingCapabilityProps {
   cancel: () => void;
@@ -24,11 +25,19 @@ export const UnregisterMissingCapability = ({
     capabilities.push(capability);
   }
 
-  const { usersWithCapabilitiesInOrganization } =
-    useLazyLoadQuery<userWithCapabilitiesInOrganizationQuery>(
-      UserWithCapabilitiesInOrganizationQueryGraphql,
-      { input: { organizationId, capabilities } }
-    );
+  const { data } = useUsersWithCapabilitiesInOrganizationQuery(
+    portalGraphqlClient,
+    { input: { organizationId, capabilities } },
+    {
+      // Like Relay, a failed load reaches the error page; a failed background
+      // refetch of a list already loaded keeps it shown.
+      throwOnError: (_error, query) => query.state.data === undefined,
+    }
+  );
+
+  if (!data) {
+    return <Loader />;
+  }
 
   return (
     <RegistrationLayout
@@ -46,7 +55,7 @@ export const UnregisterMissingCapability = ({
       </p>
       <p>{t(`Unregister.Error.Capability.AdminListTitle`)}</p>
       <ul className="list-disc ml-4">
-        {usersWithCapabilitiesInOrganization.map((administrator) => (
+        {data.usersWithCapabilitiesInOrganization.map((administrator) => (
           <li key={administrator.id}>
             {administrator.first_name} {administrator.last_name} -{' '}
             {administrator.email}

@@ -43,10 +43,6 @@ interface BlogpostMetadataRow {
   value: string;
 }
 
-interface NewsFeedItemWithSlug extends NewsFeedItem {
-  slug: string;
-}
-
 // Metadata of a blogpost item. A value that is absent is omitted, so that rewriting an item makes it disappear.
 const buildBlogpostMetadata = (
   newsFeedItemId: NewsFeedItemId,
@@ -327,13 +323,15 @@ export const NewsFeedDomain = {
         type: NewsFeedItemType.BlogPost,
         is_deleted: false,
       })
+      // Same scope as reconcileBlogposts: an item without key is not managed by the synchronization
+      .whereNotNull('key')
       .count('* as count');
     return Number(row?.count ?? 0);
   },
 
-  // Applies the desired blogposts in the current transaction, the caller owns the transaction. Existing items are
-  // matched by platform identifier, type and blog_post_slug. The unique index on the slug makes an overlapping call
-  // fail instead of creating a duplicate.
+  // Applies the desired blogposts of one product in the current transaction, the caller owns the transaction. Existing
+  // items are matched by platform identifier, type and key (the slug). The unique index on these three columns makes an
+  // overlapping call fail instead of creating a duplicate.
   reconcileBlogposts: async ({
     platformIdentifier,
     posts,
@@ -344,25 +342,17 @@ export const NewsFeedDomain = {
     const desiredSlugs = posts.map((post) => post.slug);
 
     // The active items to compare with the desired set, and the dropped ones that may come back
-    const existingItems: NewsFeedItemWithSlug[] = await db('NewsFeedItem')
-      .innerJoin(
-        'NewsFeedItemMetadata',
-        'NewsFeedItemMetadata.news_feed_item_id',
-        'NewsFeedItem.id'
-      )
-      .where({
-        'NewsFeedItem.platform_identifier': platformIdentifier,
-        'NewsFeedItem.type': NewsFeedItemType.BlogPost,
-        'NewsFeedItemMetadata.key': NewsFeedItemMetadataKey.BlogPostSlug,
-      })
+    const existingItems = (await db<NewsFeedItem[]>('NewsFeedItem')
+      .where('platform_identifier', platformIdentifier)
+      .where('type', NewsFeedItemType.BlogPost)
+      .whereNotNull('key')
       .andWhere((builder) =>
-        builder
-          .where('NewsFeedItem.is_deleted', false)
-          .orWhereIn('NewsFeedItemMetadata.value', desiredSlugs)
+        builder.where('is_deleted', false).orWhereIn('key', desiredSlugs)
       )
-      .select('NewsFeedItem.*', 'NewsFeedItemMetadata.value as slug');
+      // The key is never null here: whereNotNull('key') above
+      .select('*')) as (NewsFeedItem & { key: string })[];
     const existingItemBySlug = new Map(
-      existingItems.map((item) => [item.slug, item])
+      existingItems.map((item) => [item.key, item])
     );
 
     const created: NewsFeedItemId[] = [];
@@ -370,7 +360,13 @@ export const NewsFeedDomain = {
     const restored: NewsFeedItemId[] = [];
     const itemsToInsert: Pick<
       NewsFeedItem,
-      'id' | 'type' | 'platform_identifier' | 'title' | 'creation_date' | 'tags'
+      | 'id'
+      | 'type'
+      | 'platform_identifier'
+      | 'key'
+      | 'title'
+      | 'creation_date'
+      | 'tags'
     >[] = [];
     const itemsToUpdate: {
       id: NewsFeedItemId;
@@ -397,6 +393,7 @@ export const NewsFeedDomain = {
           id,
           type: NewsFeedItemType.BlogPost,
           platform_identifier: platformIdentifier,
+          key: post.slug,
           ...fields,
         });
         created.push(id);
@@ -406,7 +403,7 @@ export const NewsFeedDomain = {
 
     const desiredSlugSet = new Set(desiredSlugs);
     const dropped = existingItems
-      .filter((item) => !item.is_deleted && !desiredSlugSet.has(item.slug))
+      .filter((item) => !item.is_deleted && !desiredSlugSet.has(item.key))
       .map((item) => item.id);
 
     if (itemsToInsert.length > 0) {

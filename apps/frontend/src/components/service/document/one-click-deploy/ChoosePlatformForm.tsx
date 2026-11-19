@@ -1,5 +1,6 @@
 import { AutoForm } from '@/components/ui/auto-form';
 import { FormControl, FormItem, FormMessage } from '@/components/ui/form';
+import { RegisteredPlatformsListItem } from '@/hooks/use-registered-platforms';
 import { useTranslate } from '@/hooks/use-translate';
 import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { isEeCapableContract } from '@/utils/platform';
@@ -14,13 +15,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@filigran/design-system';
-import { useRegisteredPlatformsFragment$data } from '@generated/useRegisteredPlatformsFragment.graphql';
 import { DocumentItemFragment } from '@graphql/generated';
 import { z } from 'zod';
 
 interface ChoosePlatformFormProps {
   documentData: DocumentItemFragment;
-  platforms: useRegisteredPlatformsFragment$data[];
+  platforms: RegisteredPlatformsListItem[];
   translatedPlatformIdentifier: string;
   oneClickDeploy: (platformUrl: string) => void;
   setIsOpen: (isOpen: boolean) => void;

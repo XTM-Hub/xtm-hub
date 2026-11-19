@@ -429,6 +429,7 @@
       "NEWS_FEED_ITEM_NOT_FOUND": "News feed item not found",
       "NO_ASYNC_CONTEXT_AVAILABLE": "An unknown error occurred",
       "NOT_ALLOWED_BY_DEPLOYMENT_STATUS": "An unknown error occurred",
+      "NOT_FOUND": "The requested resource was not found",
       "ORGANIZATION_NOT_FOUND": "Organization not found",
       "ORGANIZATION_SAME_DOMAIN_EXISTS": "An organization with the same domain already exists",
       "ORGANIZATION_SAME_NAME_EXISTS": "An organization with the same name already exists",
@@ -482,7 +483,10 @@
       "VOTABLE_FEATURE_PRODUCT_LOCKED": "This feature already collected votes, its product can no longer be changed",
       "VOTABLE_FEATURE_PRODUCT_NOT_VOTABLE": "This product is not open to voting",
       "COPY_FEATURES_FROM_ANOTHER_ROADMAP": "Features can only be copied from a round of the same roadmap",
-      "VOTABLE_FEATURE_MUTATION_ERROR": "An error occurred while saving the feature"
+      "VOTABLE_FEATURE_MUTATION_ERROR": "An error occurred while saving the feature",
+      "INVALID_API_TOKEN": "The token name or expiration date is not valid",
+      "NOT_ALLOWED_WITH_API_TOKEN": "This action is not allowed with an API token",
+      "READ_ONLY_API_TOKEN": "This API token can only read"
     },
     "SomethingWentWrong": "Something went wrong",
     "YouAreNotAuthorized": "You are not authorized to get this page."
@@ -960,6 +964,90 @@
     "opencti": "OpenCTI",
     "xtmhub": "XTM Hub",
     "xtmone": "XTM One"
+  },
+  "ApiTokens": {
+    "Column": {
+      "Expires": "Expires",
+      "LastUsed": "Last used",
+      "Name": "Name",
+      "Organization": "Organization",
+      "Scope": "Scope",
+      "Status": "Status"
+    },
+    "Create": {
+      "Description": "The token acts as you in the organization you choose, with the scope you choose.",
+      "Open": "Create token",
+      "Submit": "Create token",
+      "Title": "Create an API token"
+    },
+    "Created": {
+      "Copied": "Token copied",
+      "Copy": "Copy token",
+      "CopyFailed": "The token could not be copied: select it and copy it by hand.",
+      "Description": "This is the only time the token {name} is shown. Store it in a secret manager; if you lose it, revoke it and create a new one.",
+      "Done": "Done",
+      "Helper": "Send it in the Authorization header: Bearer followed by the token.",
+      "Title": "Copy your API token now",
+      "Token": "API token"
+    },
+    "Description": "Tokens let a script or an integration such as Filigran Copilot call the XTM Hub API as you, in one organization. A token never has more rights than you.",
+    "Empty": "No API token yet. Create one to connect a script or an integration.",
+    "Field": {
+      "Expiration": "Expiration",
+      "ExpiresOn": "Expires on {date}",
+      "Name": "Name",
+      "NameError": "Enter a name of 100 characters at most",
+      "NameHelper": "What uses this token, so you recognise it later.",
+      "NamePlaceholder": "Filigran Copilot",
+      "Organization": "Organization",
+      "OrganizationError": "Choose an organization",
+      "Scope": "Scope",
+      "ExpirationInfo": "After this date the API refuses the token and you create a new one. Example: 90 days for an integration. A shorter lifetime limits the damage of a leaked token.",
+      "InfoLabel": "About {field}",
+      "NameInfo": "A label for you only, the API never reads it. Example: Filigran Copilot. It cannot be changed later: revoke the token and create a new one.",
+      "OrganizationHelper": "The token cannot switch to another organization.",
+      "OrganizationInfo": "The token works in this organization only, with your rights there. Example: your company's organization. To reach another organization, create another token.",
+      "ScopeInfo": "How far the token can go, never beyond your own rights. Example: Read for a dashboard, Read and write for an integration that creates content."
+    },
+    "Lifetime": "{count, plural, one {# day} other {# days}}",
+    "NeverUsed": "Never used",
+    "PersonalSpace": "Personal space",
+    "Revoke": "Revoke",
+    "RevokeDialog": {
+      "Text": "Every script or integration using {name} loses access at once. This cannot be undone.",
+      "Title": "Revoke this API token?"
+    },
+    "RevokeNamed": "Revoke the token {name}",
+    "Revoked": "Token {name} revoked",
+    "Scope": {
+      "admin": "Admin",
+      "read": "Read",
+      "read_write": "Read and write"
+    },
+    "ScopeHelp": {
+      "admin": "Admin: your organization and platform administration rights, as you have them today. Give it only to a tool you trust.",
+      "read": "Read: queries only, nothing can be changed.",
+      "read_write": "Read and write: queries and changes, without organization administration or platform administration."
+    },
+    "Status": {
+      "active": "Active",
+      "expired": "Expired",
+      "revoked": "Revoked"
+    },
+    "Title": "API tokens",
+    "ScopeOption": {
+      "admin": "Your administration rights too, as you have them.",
+      "read": "Queries only, nothing can be changed.",
+      "read_write": "Queries and changes, without administration."
+    },
+    "Toolbar": {
+      "AllOrganizations": "All organizations",
+      "AllScopes": "All scopes",
+      "AllStatuses": "All statuses",
+      "NoMatch": "No token matches the search or the filters.",
+      "Search": "Search by name or prefix",
+      "Total": "{count, plural, one {# token} other {# tokens}}"
+    }
   },
   "ProfilePage": {
     "Picture": "Picture",

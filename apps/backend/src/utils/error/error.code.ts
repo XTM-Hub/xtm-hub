@@ -4,6 +4,8 @@ export enum UnauthenticatedErrorCode {
 
 export enum ForbiddenErrorCode {
   ForbiddenAccess = 'FORBIDDEN_ACCESS',
+  ReadOnlyApiToken = 'READ_ONLY_API_TOKEN',
+  NotAllowedWithApiToken = 'NOT_ALLOWED_WITH_API_TOKEN',
   MissingCapabilityOnOrganization = 'MISSING_CAPABILITY_ON_ORGANIZATION',
   MissingCapabilityOnService = 'MISSING_CAPABILITY_ON_SERVICE',
   ServiceInstanceNotPublic = 'SERVICE_INSTANCE_NOT_PUBLIC',
@@ -58,6 +60,7 @@ export enum ForbiddenErrorCode {
 }
 
 export enum BadRequestErrorCode {
+  InvalidApiToken = 'INVALID_API_TOKEN',
   InvalidImageUrl = 'INVALID_IMAGE_URL',
   InvalidPlatformConfiguration = 'INVALID_PLATFORM_CONFIGURATION',
   PlatformNotRegistered = 'PLATFORM_NOT_REGISTERED',
@@ -78,6 +81,7 @@ export enum BadRequestErrorCode {
   MissingAutoRegisterPlatformArgument = 'MISSING_AUTO_REGISTER_PLATFORM_ARGUMENT',
   DocumentFileMissing = 'DOCUMENT_FILE_MISSING',
   NewsFeedBlogpostEmptyFeed = 'NEWS_FEED_BLOGPOST_EMPTY_FEED',
+  NewsFeedBlogpostSyncFailed = 'NEWS_FEED_BLOGPOST_SYNC_FAILED',
   TenantIdMandatory = 'TENANT_ID_MANDATORY',
   TenantIdNotSupported = 'TENANT_ID_NOT_SUPPORTED',
   NewsFeedItemMissingTitle = 'NEWS_FEED_ITEM_MISSING_TITLE',
@@ -155,6 +159,7 @@ export enum AlreadyExistsErrorCode {
 }
 
 export enum NotFoundErrorCode {
+  NotFound = 'NOT_FOUND',
   ServiceInstanceNotFound = 'SERVICE_INSTANCE_NOT_FOUND',
   SeoServiceInstanceNotFound = 'SEO_SERVICE_INSTANCE_NOT_FOUND',
   ServiceDefinitionNotFound = 'SERVICE_DEFINITION_NOT_FOUND',
