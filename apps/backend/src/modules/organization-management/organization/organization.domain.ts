@@ -5,6 +5,7 @@ import {
   OrganizationConnection,
   QueryOrganizationsArgs,
 } from '../../../__generated__/resolvers-types';
+import { requestContext } from '../../../context/request.context';
 import Organization, {
   OrganizationId,
   OrganizationInitializer,
@@ -12,13 +13,17 @@ import Organization, {
 } from '../../../model/kanel/public/Organization';
 import { ServiceInstanceId } from '../../../model/kanel/public/ServiceInstance';
 import User, { UserId } from '../../../model/kanel/public/User';
-import { restrictOrganizationToProfessionalSpace } from '../../../security/restriction/organization';
+import {
+  restrictOrganizationToMembersReadable,
+  restrictOrganizationToProfessionalSpace,
+} from '../../../security/restriction/organization';
 import {
   getErrorMessage,
   getErrorStringProperty,
 } from '../../../utils/error/error-guard.util';
 import { UnknownErrorCode } from '../../../utils/error/error.code';
 import { extractDomain } from '../../../utils/verify-email.util';
+import { isUserRestrictedToOwnOrganizationMembers } from './organization.security';
 
 export const OrganizationDomain = {
   loadOrganizationsFromEmail: async (
@@ -126,6 +131,20 @@ export const OrganizationDomain = {
       .tap(restrictOrganizationToProfessionalSpace)
       .select('Organization.*')
       .first();
+  },
+
+  loadOrganizationWhoseMembersAreReadableBy: async (
+    conditions: OrganizationMutator
+  ): Promise<Organization | undefined> => {
+    const query = db<Organization>('Organization')
+      .where(conditions)
+      .tap(restrictOrganizationToProfessionalSpace);
+    if (
+      isUserRestrictedToOwnOrganizationMembers(requestContext.requireUser())
+    ) {
+      query.tap(restrictOrganizationToMembersReadable);
+    }
+    return query.select('Organization.*').first();
   },
 
   loadOrganizationsByIds: async (
