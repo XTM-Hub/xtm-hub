@@ -77,6 +77,7 @@ describe('apiTokenOperationRefusal', () => {
     'changeSelectedOrganization',
     'login',
     'logout',
+    'addUser',
     'createApiToken',
     'refreshUserPlatformToken',
     'registerPlatform',
@@ -109,7 +110,7 @@ describe('apiTokenOperationRefusal', () => {
 
 describe('api token denied fields', () => {
   it('should only name root Mutation fields of the schema', () => {
-    // A renamed or misspelled field would silently stop being denied
+    // The type check reads the committed generated types: this reads the .graphql files they may lag behind
     const mutationFields = Object.keys(
       createSchema().getMutationType()?.getFields() ?? {}
     );

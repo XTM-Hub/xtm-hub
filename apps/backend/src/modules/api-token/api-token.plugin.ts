@@ -19,31 +19,29 @@ import { mapToGraphQLError } from '../../utils/error/error.mapping';
 import { getApiTokenAuthentication } from './api-token.auth';
 
 /**
- * Mutations a token never runs, whatever its scope: they act on the caller's own account, credentials, profile,
- * personal space or sessions, or issue a credential that would outlive the token (`refreshUserPlatformToken`,
- * `registerPlatform`).
- * `revokeApiToken` stays allowed: revoking with a token only ever reduces access. Add here any new mutation of that
- * kind. Typed with the generated Mutation fields: a misspelled or renamed field does not compile.
+ * Mutations no token runs, whatever its scope: they act on the caller's own account, or issue a credential that would
+ * outlive the token. Add any new mutation of that kind here. `revokeApiToken` and `unregisterPlatform` stay allowed:
+ * they only ever reduce access. Typed with the generated Mutation fields, so a misspelled name does not compile.
  */
-type MutationField = Exclude<keyof Mutation, '__typename'>;
-
-export const API_TOKEN_DENIED_FIELDS: ReadonlySet<string> =
-  new Set<MutationField>([
-    // Organization and sessions
-    'changeSelectedOrganization',
-    'login',
-    'logout',
-    // Credentials
-    'createApiToken',
-    'refreshUserPlatformToken',
-    'registerPlatform',
-    'resetPassword',
-    // Profile and personal space
-    'editMeUser',
-    'uploadUserPicture',
-    'requestTransferPersonalSpace',
-    'transferPersonalSpace',
-  ]);
+export const API_TOKEN_DENIED_FIELDS: ReadonlySet<string> = new Set<
+  Exclude<keyof Mutation, '__typename'>
+>([
+  // Organization and sessions
+  'changeSelectedOrganization',
+  'login',
+  'logout',
+  // Credentials
+  'addUser', // its password creates a local login that outlives the token
+  'createApiToken',
+  'refreshUserPlatformToken',
+  'registerPlatform',
+  'resetPassword',
+  // Profile and personal space
+  'editMeUser',
+  'uploadUserPicture',
+  'requestTransferPersonalSpace',
+  'transferPersonalSpace',
+]);
 
 const API_TOKEN_RATE_LIMIT_WINDOW_MS = 60 * 1000;
 const API_TOKEN_RATE_LIMIT = 300;
