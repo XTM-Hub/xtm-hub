@@ -318,7 +318,6 @@ export const UserDomain = {
       return [];
     }
 
-    // Sorted by email, a selected column as SELECT DISTINCT requires
     return db<User>('User')
       .join('User_Organization', 'User_Organization.user_id', 'User.id')
       .join(

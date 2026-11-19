@@ -2,10 +2,9 @@ import { v4 as uuidv4 } from 'uuid';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { TestHelper } from '../../../tests/helper/test.helper';
 import {
-  CAPABILITY_READ_ORGANIZATION_MEMBERS,
+  CAPABILITY_READ_SAAS_METRICS,
   TEST_ORGANIZATIONS,
 } from '../../../tests/tests.const';
-import { PortalCapability } from '../../__generated__/resolvers-types';
 import { RolePortalId } from '../../model/kanel/public/RolePortal';
 import { UserId } from '../../model/kanel/public/User';
 import { CAPABILITY_BYPASS } from '../../portal.const';
@@ -14,16 +13,21 @@ import { RolePortalDomain } from './role-portal.domain';
 
 describe('role portal domain tests', () => {
   describe('loadCapabilityPortalsByNames', () => {
-    it('should find the READ_ORGANIZATION_MEMBERS capability its migration inserts', async () => {
+    it('should return the capabilities requested by their name', async () => {
       // When
       const capabilities = await RolePortalDomain.loadCapabilityPortalsByNames([
-        PortalCapability.ReadOrganizationMembers,
+        CAPABILITY_BYPASS.name,
+        CAPABILITY_READ_SAAS_METRICS.name,
       ]);
 
       // Then
-      expect(capabilities).toEqual([
-        expect.objectContaining(CAPABILITY_READ_ORGANIZATION_MEMBERS),
-      ]);
+      expect(capabilities).toHaveLength(2);
+      expect(capabilities).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining(CAPABILITY_BYPASS),
+          expect.objectContaining(CAPABILITY_READ_SAAS_METRICS),
+        ])
+      );
     });
   });
 
