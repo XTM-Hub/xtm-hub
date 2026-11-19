@@ -75,7 +75,7 @@ export default resolvers;
 | `@Guarded(loggedInGuard())` | Any logged-in user. Not a substitute for a capability check | `UNAUTHENTICATED` (anonymous or disabled user) |
 | `@Guarded(bypassOnlyGuard())` | A `BYPASS` user only. Use it for admin-only operations rather than listing `BYPASS` | `UNAUTHENTICATED` (anonymous or disabled user), `FORBIDDEN_ACCESS` (not `BYPASS`) |
 | `@Guarded(portalCapabilityGuard([PortalCapability.X, …]))` | A user holding one of the portal capabilities; `BYPASS` always. The list cannot be empty | `UNAUTHENTICATED` (anonymous or disabled user), `FORBIDDEN_ACCESS` (capability missing) |
-| `@Guarded(callerGuard('system', [PortalCapability.X, …]))` | A machine with a valid `x-xtm-hub-token` holding every listed scope. The list cannot be empty | `UNAUTHENTICATED` (no or invalid token, session ignored), `FORBIDDEN_ACCESS` (scope missing) |
+| `@Guarded(systemCallerGuard([PortalCapability.X, …]))` | A machine with a valid `x-xtm-hub-token` holding every listed scope. The list cannot be empty | `UNAUTHENTICATED` (no or invalid token, session ignored), `FORBIDDEN_ACCESS` (scope missing) |
 | `@Guarded(orgGuard({ organization: selectedOrganization, capabilities: [OrganizationCapability.X, …] }))` | A member of the selected organization holding one of the capabilities (`ADMINISTRATE_ORGANIZATION` implies them all, `[]` requires the membership only); `BYPASS` always | `UNAUTHENTICATED` (anonymous or disabled user), `NOT_FOUND` (not a member), `MISSING_CAPABILITY_ON_ORGANIZATION` (capability missing) |
 
 A guard returns `allow()` or `deny(code)`. An exception, or anything else, is a denial. Add each new guard to this
@@ -112,10 +112,10 @@ same `NOT_FOUND` as for a row that does not exist.
 
 ## Machine callers
 
-`callerGuard('system', scopes)` is for an operation only a machine calls, with the `x-xtm-hub-token` header, such as
+`systemCallerGuard(scopes)` is for an operation only a machine calls, with the `x-xtm-hub-token` header, such as
 `newProductVersion`.
 
-- Only an operation guarded by `callerGuard` reads the header, and it is judged on the token alone, never on the
+- Only an operation guarded by `systemCallerGuard` reads the header, and it is judged on the token alone, never on the
   session: a valid token is a system caller, a missing, empty or invalid one is anonymous. The other guards and
   `@Public()` ignore the header.
 - Until scoped tokens, the system caller holds exactly the declared scopes, and so does the user the resolver gets

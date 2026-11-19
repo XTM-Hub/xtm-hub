@@ -8,12 +8,29 @@ import {
 } from '../../../tests/tests.const';
 import {
   OrganizationCapability,
+  PlatformConfigurationStatus,
   PortalCapability,
 } from '../../__generated__/resolvers-types';
 import { requestContext } from '../../context/request.context';
+import type DeploymentRequest from '../../model/kanel/public/DeploymentRequest';
+import type Organization from '../../model/kanel/public/Organization';
 import { UserLoadUserBy } from '../../model/user';
+import { DeploymentRequestDomain } from '../../modules/deployment/deployment.domain';
+import { OrganizationDomain } from '../../modules/organization-management/organization/organization.domain';
 import { UserDomain } from '../../modules/organization-management/user/user-domain/user.domain';
-import { CAPABILITY_BYPASS, SYSTEM_USER_UUID } from '../../portal.const';
+import {
+  FullPlatformConfiguration,
+  PlatformConfigurationDomain,
+} from '../../modules/registration/platform-configuration/platform-configuration.domain';
+import {
+  PLATFORM_ID_HEADER,
+  PLATFORM_TOKEN_HEADER,
+} from '../../modules/security-management/token/platform-token.util';
+import {
+  CAPABILITY_BYPASS,
+  PLATFORM_USER_UUID,
+  SYSTEM_USER_UUID,
+} from '../../portal.const';
 import { logApp } from '../../utils/app-logger.util';
 import {
   ForbiddenErrorCode,
@@ -24,9 +41,10 @@ import { ErrorType } from '../../utils/error/error.type';
 import { SYSTEM_TOKEN_HEADER } from '../machine-user';
 import { allow, DenialCode, deny, Guard, GuardResult } from './guard.types';
 import { Guarded, Public } from './guarded.decorator';
-import { callerGuard } from './guards/caller.guard';
+import { platformCallerGuard, systemCallerGuard } from './guards/caller.guard';
 import { portalCapabilityGuard } from './guards/portal.guard';
 import {
+  buildPlatformPrincipal,
   buildPrincipal,
   buildSystemPrincipal,
   GuardedContext,
@@ -95,8 +113,11 @@ class TestResolvers {
   @Guarded(portalCapabilityGuard([PortalCapability.Bypass]))
   static readonly adminOnly: TestResolver = (...args) => resolve(...args);
 
-  @Guarded(callerGuard('system', [PortalCapability.GenerateManifest]))
+  @Guarded(systemCallerGuard([PortalCapability.GenerateManifest]))
   static readonly systemOnly: TestResolver = (...args) => resolve(...args);
+
+  @Guarded(platformCallerGuard())
+  static readonly platformOnly: TestResolver = (...args) => resolve(...args);
 
   @Guarded(failingPrincipalGuard)
   static readonly failingPrincipal: TestResolver = (...args) =>
@@ -142,6 +163,76 @@ const withSystemToken = (
   user,
   req: { headers: { [SYSTEM_TOKEN_HEADER]: token } },
 });
+
+const PLATFORM_ID = '3f0e6f7e-5c1a-4e7e-8a52-0d1b6f2a9c11';
+const PLATFORM_TOKEN = '9a7d3c52-1b64-4f0a-b3a8-6e2d4c8f1a77';
+const PLATFORM_ORGANIZATION = {
+  id: 'platform-organization-id',
+  name: 'Platform organization',
+} as Organization;
+const REGISTRATION = {
+  platformConfiguration: {
+    service_instance_id: 'service-instance-id',
+    platform_id: PLATFORM_ID,
+    token: PLATFORM_TOKEN,
+    status: PlatformConfigurationStatus.Active,
+  },
+  serviceDefinition: { identifier: 'opencti_registration' },
+  platformIdentifier: 'opencti',
+} as unknown as FullPlatformConfiguration;
+const DEPLOYMENT_REQUEST = {
+  platform_id: PLATFORM_ID,
+  platform_token: PLATFORM_TOKEN,
+  organization_requester_id: PLATFORM_ORGANIZATION.id,
+} as unknown as DeploymentRequest;
+const MISSING_CREDENTIALS_LOG = 'Missing platform credentials';
+const INVALID_CREDENTIALS_LOG = 'Invalid platform credentials attempt';
+
+const platformHeaders = (
+  platformId: string = PLATFORM_ID,
+  token: string = PLATFORM_TOKEN
+) => ({
+  [PLATFORM_ID_HEADER]: platformId,
+  [PLATFORM_TOKEN_HEADER]: token,
+});
+
+const withPlatformHeaders = (
+  headers: Record<string, unknown>,
+  user?: UserLoadUserBy
+): GuardedContext => ({ user, req: { headers } });
+
+const givenRegistration = (organization: Organization | null) => {
+  vi.spyOn(
+    PlatformConfigurationDomain,
+    'loadResolvedConfigurationByPlatformAndToken'
+  ).mockResolvedValue(REGISTRATION);
+  return vi
+    .spyOn(OrganizationDomain, 'loadOrganizationSubscribedToServiceInstance')
+    .mockResolvedValue(organization);
+};
+
+const givenNoRegistration = () =>
+  vi
+    .spyOn(
+      PlatformConfigurationDomain,
+      'loadResolvedConfigurationByPlatformAndToken'
+    )
+    .mockResolvedValue(undefined);
+
+const givenDeploymentRequest = (organization: Organization | undefined) => {
+  vi.spyOn(
+    DeploymentRequestDomain,
+    'loadDeploymentRequestBy'
+  ).mockResolvedValue(DEPLOYMENT_REQUEST);
+  return vi
+    .spyOn(OrganizationDomain, 'loadOrganizationBy')
+    .mockResolvedValue(organization);
+};
+
+const givenNoDeploymentRequest = () =>
+  vi
+    .spyOn(DeploymentRequestDomain, 'loadDeploymentRequestBy')
+    .mockResolvedValue(undefined);
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -350,6 +441,266 @@ describe('buildSystemPrincipal', () => {
   );
 });
 
+describe('buildPlatformPrincipal', () => {
+  it.each([
+    { label: 'no session', user: undefined },
+    {
+      label: 'a BYPASS session',
+      user: buildUser({ capabilities: [CAPABILITY_BYPASS] }),
+    },
+  ])(
+    'should build a platform caller from the matching registration when the request has $label',
+    async ({ user }) => {
+      // Given
+      givenRegistration(PLATFORM_ORGANIZATION);
+      const lookup = vi.spyOn(
+        PlatformConfigurationDomain,
+        'loadResolvedConfigurationByPlatformAndToken'
+      );
+      const context = withPlatformHeaders(platformHeaders(), user);
+
+      // When
+      const principal = await buildPlatformPrincipal(context);
+
+      // Then
+      expect(principal).toEqual({
+        kind: 'platform',
+        actorId: PLATFORM_USER_UUID,
+        platformId: PLATFORM_ID,
+        organization: PLATFORM_ORGANIZATION,
+        credential: 'registration',
+        registration: REGISTRATION,
+      });
+      expect(lookup).toHaveBeenCalledExactlyOnceWith({
+        platform_id: PLATFORM_ID,
+        token: PLATFORM_TOKEN,
+      });
+    }
+  );
+
+  it('should take the platform id of the matched registration when the header is written in upper case', async () => {
+    // Given
+    givenRegistration(PLATFORM_ORGANIZATION);
+    const context = withPlatformHeaders(
+      platformHeaders(PLATFORM_ID.toUpperCase())
+    );
+
+    // When
+    const principal = await buildPlatformPrincipal(context);
+
+    // Then
+    expect(principal).toMatchObject({
+      kind: 'platform',
+      platformId: PLATFORM_ID,
+    });
+  });
+
+  it('should build a platform caller from the deployment request when no registration matches', async () => {
+    // Given
+    givenNoRegistration();
+    givenDeploymentRequest(PLATFORM_ORGANIZATION);
+
+    // When
+    const principal = await buildPlatformPrincipal(
+      withPlatformHeaders(platformHeaders())
+    );
+
+    // Then
+    expect(principal).toEqual({
+      kind: 'platform',
+      actorId: PLATFORM_USER_UUID,
+      platformId: PLATFORM_ID,
+      organization: PLATFORM_ORGANIZATION,
+      credential: 'deploymentRequest',
+      deploymentRequest: DEPLOYMENT_REQUEST,
+    });
+  });
+
+  it('should fall back to the deployment request when the registration has no subscribed organization', async () => {
+    // Given
+    givenRegistration(null);
+    givenDeploymentRequest(PLATFORM_ORGANIZATION);
+
+    // When
+    const principal = await buildPlatformPrincipal(
+      withPlatformHeaders(platformHeaders())
+    );
+
+    // Then
+    expect(principal).toMatchObject({
+      kind: 'platform',
+      credential: 'deploymentRequest',
+    });
+  });
+
+  it('should build a platform caller from a registration that is not active', async () => {
+    // Given
+    const inactive = {
+      ...REGISTRATION,
+      platformConfiguration: {
+        ...REGISTRATION.platformConfiguration,
+        status: PlatformConfigurationStatus.Inactive,
+      },
+    };
+    vi.spyOn(
+      PlatformConfigurationDomain,
+      'loadResolvedConfigurationByPlatformAndToken'
+    ).mockResolvedValue(inactive);
+    vi.spyOn(
+      OrganizationDomain,
+      'loadOrganizationSubscribedToServiceInstance'
+    ).mockResolvedValue(PLATFORM_ORGANIZATION);
+
+    // When
+    const principal = await buildPlatformPrincipal(
+      withPlatformHeaders(platformHeaders())
+    );
+
+    // Then
+    expect(principal).toMatchObject({
+      kind: 'platform',
+      credential: 'registration',
+      registration: inactive,
+    });
+  });
+
+  it.each([
+    { label: 'both headers are missing', headers: {} },
+    {
+      label: 'the platform id header is missing',
+      headers: { [PLATFORM_TOKEN_HEADER]: PLATFORM_TOKEN },
+    },
+    {
+      label: 'the platform token header is missing',
+      headers: { [PLATFORM_ID_HEADER]: PLATFORM_ID },
+    },
+    {
+      label: 'the platform token is empty',
+      headers: platformHeaders(PLATFORM_ID, ''),
+    },
+    {
+      label: 'the platform id is not a string',
+      headers: { ...platformHeaders(), [PLATFORM_ID_HEADER]: [PLATFORM_ID] },
+    },
+  ])(
+    'should build an anonymous principal without any lookup and warn when $label',
+    async ({ headers }) => {
+      // Given
+      const logWarn = vi
+        .spyOn(logApp, 'warn')
+        .mockImplementation(() => undefined);
+      const registrationLookup = vi.spyOn(
+        PlatformConfigurationDomain,
+        'loadResolvedConfigurationByPlatformAndToken'
+      );
+      const deploymentRequestLookup = vi.spyOn(
+        DeploymentRequestDomain,
+        'loadDeploymentRequestBy'
+      );
+
+      // When
+      const principal = await buildPlatformPrincipal(
+        withPlatformHeaders(headers)
+      );
+
+      // Then
+      expect(principal).toEqual({ kind: 'anonymous' });
+      expect(logWarn).toHaveBeenCalledExactlyOnceWith(MISSING_CREDENTIALS_LOG);
+      expect(registrationLookup).not.toHaveBeenCalled();
+      expect(deploymentRequestLookup).not.toHaveBeenCalled();
+    }
+  );
+
+  it('should build an anonymous principal despite a BYPASS session when there are no platform headers', async () => {
+    // Given
+    vi.spyOn(logApp, 'warn').mockImplementation(() => undefined);
+    const context = withPlatformHeaders(
+      {},
+      buildUser({ capabilities: [CAPABILITY_BYPASS] })
+    );
+
+    // When
+    const principal = await buildPlatformPrincipal(context);
+
+    // Then
+    expect(principal).toEqual({ kind: 'anonymous' });
+  });
+
+  it('should build an anonymous principal when the id and the token are not UUIDs and no deployment request matches', async () => {
+    // Given
+    vi.spyOn(logApp, 'warn').mockImplementation(() => undefined);
+    givenNoDeploymentRequest();
+    const context = withPlatformHeaders(
+      platformHeaders('platform-abc', 'token-xyz')
+    );
+
+    // When
+    const principal = await buildPlatformPrincipal(context);
+
+    // Then
+    expect(principal).toEqual({ kind: 'anonymous' });
+  });
+
+  it.each([
+    {
+      label: 'no registration and no deployment request match',
+      given: () => {
+        givenNoRegistration();
+        givenNoDeploymentRequest();
+      },
+    },
+    {
+      label:
+        'the registration has no organization and no deployment request matches',
+      given: () => {
+        givenRegistration(null);
+        givenNoDeploymentRequest();
+      },
+    },
+    {
+      label: 'the organization of the deployment request is gone',
+      given: () => {
+        givenNoRegistration();
+        givenDeploymentRequest(undefined);
+      },
+    },
+  ])(
+    'should build an anonymous principal and warn without the token when $label',
+    async ({ given }) => {
+      // Given
+      const logWarn = vi
+        .spyOn(logApp, 'warn')
+        .mockImplementation(() => undefined);
+      given();
+
+      // When
+      const principal = await buildPlatformPrincipal(
+        withPlatformHeaders(platformHeaders())
+      );
+
+      // Then
+      expect(principal).toEqual({ kind: 'anonymous' });
+      expect(logWarn).toHaveBeenCalledWith(INVALID_CREDENTIALS_LOG);
+      expect(JSON.stringify(logWarn.mock.calls)).not.toContain(PLATFORM_TOKEN);
+    }
+  );
+
+  it('should let the error through when a lookup fails', async () => {
+    // Given
+    const failure = new Error('database unavailable');
+    vi.spyOn(
+      PlatformConfigurationDomain,
+      'loadResolvedConfigurationByPlatformAndToken'
+    ).mockRejectedValue(failure);
+
+    // When
+    const call = buildPlatformPrincipal(withPlatformHeaders(platformHeaders()));
+
+    // Then
+    await expect(call).rejects.toBe(failure);
+  });
+});
+
 describe('@Guarded decorator', () => {
   it('should call the resolver with the arguments and the context unchanged when the guard allows', async () => {
     // Given
@@ -408,6 +759,85 @@ describe('@Guarded decorator', () => {
       expect(context).toEqual(snapshot);
     }
   );
+
+  it('should call the resolver with a copied context holding the platform user and the platform caller when the platform headers are valid', async () => {
+    // Given
+    givenRegistration(PLATFORM_ORGANIZATION);
+    const context = withPlatformHeaders(
+      platformHeaders(),
+      buildUser({ capabilities: [CAPABILITY_BYPASS] })
+    );
+    const snapshot = structuredClone(context);
+    const platformUser = expect.objectContaining({
+      id: PLATFORM_USER_UUID,
+      selected_organization_id: PLATFORM_ORGANIZATION.id,
+      selected_org_capabilities: [
+        OrganizationCapability.ManagePlatformRegistration,
+      ],
+    });
+
+    // When
+    await TestResolvers.platformOnly(PARENT, ARGS, context, INFO);
+
+    // Then
+    expect(resolve).toHaveBeenCalledExactlyOnceWith(
+      PARENT,
+      ARGS,
+      {
+        ...context,
+        user: platformUser,
+        platformCaller: expect.objectContaining({
+          kind: 'platform',
+          credential: 'registration',
+          registration: REGISTRATION,
+        }),
+      },
+      INFO
+    );
+    expect(requestContext.update).toHaveBeenCalledExactlyOnceWith({
+      user: platformUser,
+    });
+    expect(context).toEqual(snapshot);
+  });
+
+  it.each([
+    { label: 'no headers and no session', context: { user: undefined } },
+    {
+      label: 'no headers and a BYPASS session',
+      context: { user: buildUser({ capabilities: [CAPABILITY_BYPASS] }) },
+    },
+    {
+      label: 'a valid system token and no platform headers',
+      context: withSystemToken(TEST_SYSTEM_TOKEN),
+    },
+  ])(
+    'should refuse with UNAUTHENTICATED and not call the resolver when a platform-only resolver gets $label',
+    async ({ context }) => {
+      // Given
+      vi.spyOn(logApp, 'warn').mockImplementation(() => undefined);
+
+      // When
+      const call = TestResolvers.platformOnly(PARENT, ARGS, context, INFO);
+
+      // Then
+      await expect(call).rejects.toMatchObject({
+        message: UnauthenticatedErrorCode.Unauthenticated,
+        extensions: { code: UnauthenticatedErrorCode.Unauthenticated },
+      });
+      expect(resolve).not.toHaveBeenCalled();
+    }
+  );
+
+  it('should not give the platform caller to the resolver of a system caller', async () => {
+    // Given
+    const context = withSystemToken(TEST_SYSTEM_TOKEN);
+
+    // When
+    await TestResolvers.systemOnly(PARENT, ARGS, context, INFO);
+
+    // Then
+    expect(resolve.mock.calls[0]?.[2]).not.toHaveProperty('platformCaller');
+  });
 
   it('should not call the resolver and let the error through when the principal cannot be built', async () => {
     // Given
