@@ -15,6 +15,11 @@
     "Enabled": "有効",
     "Published": "発行済み"
   },
+  "DocumentStatus": {
+    "Draft": "ドラフト",
+    "InValidation": "検証中",
+    "Published": "発行済み"
+  },
   "CapabilityDescription": {
     "Capabilities": {
       "ADMINISTRATE_ORGANIZATION": "組織内のすべての権限を付与する",
@@ -423,6 +428,7 @@
       "NEWS_FEED_ITEM_NOT_FOUND": "ニュースフィード項目が見つかりません",
       "NO_ASYNC_CONTEXT_AVAILABLE": "不明なエラーが発生しました",
       "NOT_ALLOWED_BY_DEPLOYMENT_STATUS": "不明なエラーが発生しました",
+      "NOT_FOUND": "要求されたリソースが見つかりません",
       "ORGANIZATION_NOT_FOUND": "組織が見つかりません",
       "ORGANIZATION_SAME_DOMAIN_EXISTS": "同じドメインの組織が既に存在する",
       "ORGANIZATION_SAME_NAME_EXISTS": "同じ名前の組織がすでに存在する",
@@ -476,7 +482,10 @@
       "VOTABLE_FEATURE_PRODUCT_LOCKED": "この機能には既に投票があるため、製品を変更できません",
       "VOTABLE_FEATURE_PRODUCT_NOT_VOTABLE": "この製品は投票の対象ではありません",
       "COPY_FEATURES_FROM_ANOTHER_ROADMAP": "機能は同じロードマップのラウンドからのみコピーできます",
-      "VOTABLE_FEATURE_MUTATION_ERROR": "機能の保存中にエラーが発生しました"
+      "VOTABLE_FEATURE_MUTATION_ERROR": "機能の保存中にエラーが発生しました",
+      "INVALID_API_TOKEN": "トークン名または有効期限が無効です",
+      "NOT_ALLOWED_WITH_API_TOKEN": "この操作はAPIトークンでは許可されていません",
+      "READ_ONLY_API_TOKEN": "このAPIトークンは読み取り専用です"
     },
     "SomethingWentWrong": "何かが間違っている",
     "YouAreNotAuthorized": "このページを表示する権限がありません。"
@@ -955,6 +964,90 @@
     "xtmhub": "XTM Hub",
     "xtmone": "XTM One"
   },
+  "ApiTokens": {
+    "Column": {
+      "Expires": "有効期限",
+      "LastUsed": "最終使用",
+      "Name": "名前",
+      "Organization": "組織",
+      "Scope": "スコープ",
+      "Status": "ステータス"
+    },
+    "Create": {
+      "Description": "トークンは、選択した組織で選択したスコープにより、あなたとして動作します。",
+      "Open": "トークンを作成",
+      "Submit": "トークンを作成",
+      "Title": "APIトークンを作成"
+    },
+    "Created": {
+      "Copied": "トークンをコピーしました",
+      "Copy": "トークンをコピー",
+      "CopyFailed": "トークンをコピーできませんでした。選択して手動でコピーしてください。",
+      "Description": "トークン {name} が表示されるのは今回だけです。シークレットマネージャーに保存してください。紛失した場合は失効して新しく作成してください。",
+      "Done": "完了",
+      "Helper": "Authorizationヘッダーで、Bearerに続けてトークンを送信します。",
+      "Title": "今すぐAPIトークンをコピーしてください",
+      "Token": "APIトークン"
+    },
+    "Description": "トークンを使うと、スクリプトやFiligran Copilotなどの連携が、1つの組織であなたとしてXTM Hub APIを呼び出せます。トークンの権限があなたの権限を超えることはありません。",
+    "Empty": "APIトークンはまだありません。スクリプトや連携を接続するには作成してください。",
+    "Field": {
+      "Expiration": "有効期限",
+      "ExpiresOn": "{date} に期限切れ",
+      "Name": "名前",
+      "NameError": "100文字以内で名前を入力してください",
+      "NameHelper": "後で識別できるよう、このトークンを使うものを入力します。",
+      "NamePlaceholder": "Filigran Copilot",
+      "Organization": "組織",
+      "OrganizationError": "組織を選択してください",
+      "Scope": "スコープ",
+      "ExpirationInfo": "この日以降、APIはトークンを拒否するため、新しく作成します。例：連携には90日。有効期間を短くすると、漏えいした場合の被害を抑えられます。",
+      "InfoLabel": "{field}について",
+      "NameInfo": "あなた専用のラベルで、APIは読み取りません。例：Filigran Copilot。後から変更できないため、変更するにはトークンを失効させて新しく作成します。",
+      "OrganizationHelper": "トークンは別の組織に切り替えられません。",
+      "OrganizationInfo": "トークンはこの組織内でのみ、その組織でのあなたの権限で動作します。例：会社の組織。別の組織に使うには、別のトークンを作成します。",
+      "ScopeInfo": "トークンができる範囲で、あなた自身の権限を超えることはありません。例：ダッシュボードには読み取り、コンテンツを作成する連携には読み取りと書き込み。"
+    },
+    "Lifetime": "{count, plural, other {#日}}",
+    "NeverUsed": "未使用",
+    "PersonalSpace": "個人スペース",
+    "Revoke": "失効",
+    "RevokeDialog": {
+      "Text": "{name} を使用しているスクリプトや連携は直ちにアクセスを失います。この操作は元に戻せません。",
+      "Title": "このAPIトークンを失効しますか？"
+    },
+    "RevokeNamed": "トークン {name} を失効",
+    "Revoked": "トークン {name} を失効しました",
+    "Scope": {
+      "admin": "管理者",
+      "read": "読み取り",
+      "read_write": "読み取りと書き込み"
+    },
+    "ScopeHelp": {
+      "admin": "管理者：現在あなたが持つ組織とプラットフォームの管理権限。信頼できるツールにのみ付与してください。",
+      "read": "読み取り：クエリのみ。変更はできません。",
+      "read_write": "読み取りと書き込み：クエリと変更。組織の管理とプラットフォームの管理は含みません。"
+    },
+    "Status": {
+      "active": "有効",
+      "expired": "期限切れ",
+      "revoked": "失効済み"
+    },
+    "Title": "APIトークン",
+    "ScopeOption": {
+      "admin": "あなたの管理権限も、現在のとおりに含みます。",
+      "read": "クエリのみ。変更はできません。",
+      "read_write": "クエリと変更。管理は含みません。"
+    },
+    "Toolbar": {
+      "AllOrganizations": "すべての組織",
+      "AllScopes": "すべてのスコープ",
+      "AllStatuses": "すべてのステータス",
+      "NoMatch": "検索またはフィルターに一致するトークンはありません。",
+      "Search": "名前またはプレフィックスで検索",
+      "Total": "{count, plural, other {#件のトークン}}"
+    }
+  },
   "ProfilePage": {
     "Picture": "写真",
     "Preferences": {
@@ -1367,7 +1460,6 @@
       "PlaybookSupportedLabel": "対応プレイブック",
       "ProductVersionLabel": "{platform} 互換バージョン",
       "ProductVersionPlaceholder": "1.0.0",
-      "PublishedPlaceholder": "{documentType} は公開されていますか？",
       "LicenseTypeLabel": "ライセンスの種類",
       "Restore": "リストア",
       "SelectImage": "画像を選択",
@@ -1388,7 +1480,11 @@
       "VendorUrlLabel": "ベンダーリンク (url)",
       "VerifiedLabel": "検証済み",
       "EntityTypesLabel": "エンティティタイプ",
-      "EntityTypesPlaceholder": "エンティティタイプを追加"
+      "EntityTypesPlaceholder": "エンティティタイプを追加",
+      "SaveAsDraft": "ドラフトとして保存",
+      "RequestValidation": "検証をリクエスト",
+      "Save": "保存",
+      "Publish": "公開"
     },
     "OpenctiIntegrations": {
       "Actions": {
@@ -1446,10 +1542,8 @@
         "Share": "CSVフィードの共有",
         "Updated": "CSV {name} は正常に変更されました。"
       },
-      "Active": "公開",
       "AddService": "新しいCSVフィードを追加",
       "DeleteService": "CSVフィード {name} を削除する",
-      "NonActive": "ドラフト",
       "SureDeleteService": "CSV フィード {name} を本当に削除しますか？",
       "UpdateService": "CSVフィードを更新 {name}"
     },
@@ -1460,10 +1554,8 @@
         "Share": "RSSフィードを共有する",
         "Updated": "RSS {name} は正常に変更されました"
       },
-      "Active": "公開",
       "AddService": "新しいRSSフィードを追加",
       "DeleteService": "RSSフィードを削除 {name}",
-      "NonActive": "ドラフト",
       "SureDeleteService": "本当にRSSフィード {name} を削除しますか？",
       "UpdateService": "RSSフィード {name} を更新する"
     },
@@ -1474,10 +1566,8 @@
         "Share": "TAXII フィードを共有する",
         "Updated": "TAXII {name} は正常に変更されました。"
       },
-      "Active": "公開",
       "AddService": "新しいTAXIIフィードを追加する",
       "DeleteService": "TAXIIフィード {name} を削除する",
-      "NonActive": "ドラフト",
       "SureDeleteService": "本当にTAXIIフィード {name} を削除しますか？",
       "UpdateService": "TAXIIフィード {name} を更新する"
     },
@@ -1488,10 +1578,8 @@
         "Share": "共有コネクタ",
         "Updated": "コネクタ {name} は正常に変更されました"
       },
-      "Active": "公開",
       "AddService": "新しいコネクタを追加",
       "DeleteService": "コネクターの削除 {name}",
-      "NonActive": "ドラフト",
       "SureDeleteService": "本当にコネクタ {name} を削除しますか？",
       "UpdateService": "コネクタを更新 {name}"
     },
@@ -1502,10 +1590,8 @@
         "Share": "ストリームを共有",
         "Updated": "ストリーム {name} は正常に変更されました"
       },
-      "Active": "公開",
       "AddService": "新しいストリームを追加",
       "DeleteService": "ストリームを削除 {name}",
-      "NonActive": "下書き",
       "SureDeleteService": "本当にストリーム {name} を削除しますか？",
       "UpdateService": "ストリームを更新 {name}"
     },
@@ -1516,10 +1602,8 @@
         "Share": "サードパーティ統合を共有する",
         "Updated": "サードパーティ統合 {name} は正常に変更されました。"
       },
-      "Active": "公開",
       "AddService": "新しいサードパーティインテグレーションを追加する",
       "DeleteService": "サードパーティー統合 {name} を削除する",
-      "NonActive": "ドラフト",
       "SureDeleteService": "本当にサードパーティ統合 {name} を削除しますか？",
       "UpdateService": "サードパーティ統合 {name} を更新しますか？"
     },
@@ -1530,10 +1614,8 @@
         "Share": "カスタムダッシュボードの共有",
         "Updated": "カスタムダッシュボード {name} は正常に変更されました。"
       },
-      "Active": "公開日",
       "AddService": "新しいダッシュボードを追加",
       "DeleteService": "カスタムダッシュボードを削除 {name}",
-      "NonActive": "下書き",
       "SureDeleteService": "本当にダッシュボード {name} を削除しますか？",
       "UpdateService": "ダッシュボードを更新"
     },
@@ -1553,9 +1635,7 @@
       "AddService": "新しいシナリオを追加",
       "UpdateService": "シナリオの更新 {name}",
       "DeleteService": "シナリオの削除 {name}",
-      "SureDeleteService": "本当にシナリオ {name} を削除しますか？",
-      "NonActive": "草案",
-      "Active": "公開"
+      "SureDeleteService": "本当にシナリオ {name} を削除しますか？"
     },
     "OpenCTIPlaybook": {
       "Actions": {
@@ -1567,9 +1647,7 @@
       "AddService": "新しいプレイブックを追加する",
       "UpdateService": "プレイブックを更新する {name}",
       "DeleteService": "プレイブックを削除する {name}",
-      "SureDeleteService": "本当にプレイブック {name} を削除しますか？",
-      "NonActive": "草案",
-      "Active": "公開"
+      "SureDeleteService": "本当にプレイブック {name} を削除しますか？"
     },
     "Description": "出版",
     "GoTo": "サービスページへ",
@@ -2072,9 +2150,7 @@
       "AddService": "新しいカスタムビューを追加する",
       "UpdateService": "カスタムビューを更新する {name}",
       "DeleteService": "カスタムビューを削除する {name}",
-      "SureDeleteService": "本当にカスタムビュー {name} を削除しますか？",
-      "NonActive": "草案",
-      "Active": "公開"
+      "SureDeleteService": "本当にカスタムビュー {name} を削除しますか？"
     },
     "Bundle": {
       "ManageTrial": {

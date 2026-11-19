@@ -31,7 +31,7 @@ interface ServiceFormMultipleImagesFieldProps {
   setImages: (images: Array<ServiceFormMultipleImagesFieldImages>) => void;
   imagesToDelete: string[];
   setImagesToDelete: (ids: string[]) => void;
-  setIsDirty: (isDirty: boolean) => void;
+  setUploadsDirty: (uploadsDirty: boolean) => void;
 }
 
 export const ServiceFormMultipleImagesField = ({
@@ -41,7 +41,7 @@ export const ServiceFormMultipleImagesField = ({
   setImages,
   imagesToDelete,
   setImagesToDelete,
-  setIsDirty,
+  setUploadsDirty,
 }: ServiceFormMultipleImagesFieldProps) => {
   const t = useTranslate();
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -162,7 +162,7 @@ export const ServiceFormMultipleImagesField = ({
                           icon={<DeleteIcon className="size-4" />}
                           onClick={() => {
                             setImagesToDelete([...imagesToDelete, doc!.id]);
-                            setIsDirty(true);
+                            setUploadsDirty(true);
                           }}
                         />
                       </TooltipTrigger>

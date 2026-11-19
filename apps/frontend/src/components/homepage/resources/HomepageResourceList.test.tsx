@@ -64,12 +64,12 @@ describe('HomepageResourceList — url', () => {
   );
 });
 
-describe('HomepageResourceList — active prop', () => {
+describe('HomepageResourceList — published prop', () => {
   beforeEach(() => {
     mockCard.mockClear();
   });
 
-  it('passes active={false} to the card when document type is OPENCTI_INTEGRATION, even if the resource is published', () => {
+  it('passes published={false} to the card when document type is OPENCTI_INTEGRATION, even if the resource is published', () => {
     render(
       <HomepageResourceList
         title="Resources"
@@ -84,12 +84,12 @@ describe('HomepageResourceList — active prop', () => {
     );
 
     expect(mockCard).toHaveBeenCalledWith(
-      expect.objectContaining({ active: false }),
+      expect.objectContaining({ published: false }),
       undefined
     );
   });
 
-  it('passes active={true} to the card for non-integration types when the resource is published', () => {
+  it('passes published={true} to the card for non-integration types when the resource is published', () => {
     render(
       <HomepageResourceList
         title="Resources"
@@ -104,13 +104,13 @@ describe('HomepageResourceList — active prop', () => {
     );
 
     expect(mockCard).toHaveBeenCalledWith(
-      expect.objectContaining({ active: true }),
+      expect.objectContaining({ published: true }),
       undefined
     );
   });
 
   it.each(['draft', 'in_validation'] as const)(
-    'passes active={false} to the card for non-integration types when the resource is %s',
+    'passes published={false} to the card for non-integration types when the resource is %s',
     (status) => {
       // Given
       render(
@@ -128,7 +128,7 @@ describe('HomepageResourceList — active prop', () => {
 
       // Then
       expect(mockCard).toHaveBeenCalledWith(
-        expect.objectContaining({ active: false }),
+        expect.objectContaining({ published: false }),
         undefined
       );
     }

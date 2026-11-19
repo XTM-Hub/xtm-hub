@@ -17,7 +17,7 @@ import {
 import type { ComponentType, SVGProps } from 'react';
 
 export interface ResourceStatusIconsProps {
-  active?: boolean;
+  published?: boolean;
   verified?: boolean;
   deployable?: boolean;
   displayUnverifiedIcon?: boolean;
@@ -46,7 +46,7 @@ const StatusIcon = ({ label, icon: Icon, className }: StatusIconProps) => (
 );
 
 export const ResourceStatusIcons = ({
-  active,
+  published,
   verified,
   deployable,
   displayUnverifiedIcon = false,
@@ -54,7 +54,7 @@ export const ResourceStatusIcons = ({
 }: ResourceStatusIconsProps) => {
   const t = useTranslate();
 
-  if (!active && !deployable && !displayUnverifiedIcon) {
+  if (!published && !deployable && !displayUnverifiedIcon) {
     return null;
   }
 
@@ -82,7 +82,7 @@ export const ResourceStatusIcons = ({
           className={cn(iconClassName, 'text-icon-disabled')}
         />
       )}
-      {active && (
+      {published && (
         <StatusIcon
           label={t('Badge.Published')}
           icon={CampaignIcon}

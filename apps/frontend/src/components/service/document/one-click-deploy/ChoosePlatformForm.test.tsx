@@ -1,7 +1,7 @@
 import ChoosePlatformForm from '@/components/service/document/one-click-deploy/ChoosePlatformForm';
+import { RegisteredPlatformsListItem } from '@/hooks/use-registered-platforms';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 import testRender from '@/utils/test/test-render';
-import { useRegisteredPlatformsFragment$data } from '@generated/useRegisteredPlatformsFragment.graphql';
 import { DocumentItemFragment } from '@graphql/generated';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -19,7 +19,7 @@ const buildPlatform = (id: string, title: string) =>
     url: `https://${id}.example.com`,
     version: '6.0.0',
     contract: 'EE',
-  }) as unknown as useRegisteredPlatformsFragment$data;
+  }) as unknown as RegisteredPlatformsListItem;
 
 describe('ChoosePlatformForm', () => {
   it('should deploy on the picked platform and close when Continue is clicked', async () => {

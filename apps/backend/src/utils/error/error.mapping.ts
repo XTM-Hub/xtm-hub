@@ -45,6 +45,14 @@ errorSetMapping.set(badRequestErrorsSet, BadRequestError);
 errorSetMapping.set(alreadyExistsErrorSet, AlreadyExistsError);
 errorSetMapping.set(notFoundErrorsSet, NotFoundError);
 
+// The codes mapToGraphQLError turns into a client error, any other one becoming an unknown error
+export const isClientErrorCode = (code: string) => {
+  for (const errorSet of errorSetMapping.keys()) {
+    if (errorSet.has(code)) return true;
+  }
+  return false;
+};
+
 export const mapToGraphQLError = (
   error: unknown,
   customUnknownErrorCode: UnknownErrorCode = UnknownErrorCode.UnknownError

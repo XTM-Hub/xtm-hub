@@ -10,16 +10,17 @@ import {
   DocumentImageType,
   DocumentItemFragment,
   DocumentSourceType,
+  DocumentStatus,
   FiligranProduct,
   IntegrationType,
   LicenseType,
   useSolutionCategoriesListQuery,
   useUseCasesListQuery,
+  useUsersQuery,
 } from '@graphql/generated';
 import '@testing-library/jest-dom/vitest';
 import { screen, waitFor, within } from '@testing-library/react';
 import { ComponentType } from 'react';
-import { createMockEnvironment, MockPayloadGenerator } from 'relay-test-utils';
 import { beforeEach, expect, it, vi } from 'vitest';
 
 const SHEET_TITLE = 'Service form';
@@ -33,6 +34,7 @@ const DELETE_IMAGE_LABEL = 'Service.Form.DeleteImage';
 const PRODUCT_VERSION_ERROR = 'Product version must be X.Y.Z';
 export const DESCRIPTION_PLACEHOLDER = 'Service.Form.DescriptionPlaceholder';
 export const VALIDATE_LABEL = 'Utils.Validate';
+export const REQUEST_VALIDATION_LABEL = 'Service.Form.RequestValidation';
 
 export const CURRENT_USER_ID = 'current-user';
 const CURRENT_USER_EMAIL = 'current.user@filigran.io';
@@ -174,16 +176,6 @@ type ServiceFormComponent<Values> = ComponentType<{
 
 export type ServiceFormUser = ReturnType<typeof testRender>['user'];
 
-const createUsersEnvironment = () => {
-  const environment = createMockEnvironment();
-  environment.mock.queueOperationResolver((operation) =>
-    MockPayloadGenerator.generate(operation, {
-      Query: () => ({ users: { edges: [] } }),
-    })
-  );
-  return environment;
-};
-
 export const renderServiceForm = <Values,>(
   Form: ServiceFormComponent<Values>,
   document?: DocumentItemFragment
@@ -197,6 +189,10 @@ export const renderServiceForm = <Values,>(
       },
     },
   } as ReturnType<typeof useUseCasesListQuery>);
+  // The users offered as authors.
+  vi.mocked(useUsersQuery).mockReturnValue({
+    data: { users: { edges: [] } },
+  } as unknown as ReturnType<typeof useUsersQuery>);
 
   return {
     handleSubmit,
@@ -213,7 +209,6 @@ export const renderServiceForm = <Values,>(
         </SheetWithPreventingDialog>
       </AppServiceContext>,
       {
-        relayConfig: createUsersEnvironment(),
         me: {
           id: CURRENT_USER_ID,
           email: CURRENT_USER_EMAIL,
@@ -535,7 +530,9 @@ export const defineRequiredFileTest = <Values,>({
     await fillCreationFields(user);
 
     // When
-    await user.click(screen.getByRole('button', { name: VALIDATE_LABEL }));
+    await user.click(
+      screen.getByRole('button', { name: REQUEST_VALIDATION_LABEL })
+    );
 
     // Then
     await waitFor(() =>
@@ -576,7 +573,9 @@ export const defineServiceFormTests = <Values,>({
     await uploadFile(user, fileField);
 
     // When
-    await user.click(screen.getByRole('button', { name: VALIDATE_LABEL }));
+    await user.click(
+      screen.getByRole('button', { name: REQUEST_VALIDATION_LABEL })
+    );
 
     // Then
     await waitFor(() =>
@@ -589,6 +588,7 @@ export const defineServiceFormTests = <Values,>({
         uploader_organization_id: CURRENT_ORGANIZATION.id,
         use_cases: [USE_CASE.id],
         document: [fileField.file],
+        status: DocumentStatus.InValidation,
         logo: [],
         images: [],
         ...creationValues,
@@ -621,7 +621,7 @@ export const defineServiceFormTests = <Values,>({
         product_version: DOCUMENT_PRODUCT_VERSION,
         uploader_organization_id: DOCUMENT_ORGANIZATION.id,
         use_cases: [USE_CASE.id],
-        active: true,
+        status: DocumentStatus.Published,
         logo: [],
         images: [DELETED_IMAGE, KEPT_IMAGE],
         ...editionValues,
@@ -673,7 +673,9 @@ export const defineIntegrationFormTests = <Values,>({
     await uploadFile(user, JSON_FILE_FIELD);
 
     // When
-    await user.click(screen.getByRole('button', { name: VALIDATE_LABEL }));
+    await user.click(
+      screen.getByRole('button', { name: REQUEST_VALIDATION_LABEL })
+    );
 
     // Then
     await waitFor(() =>
@@ -688,6 +690,7 @@ export const defineIntegrationFormTests = <Values,>({
         use_cases: [USE_CASE.id],
         solution_categories: [SOLUTION_CATEGORY.id],
         document: [JSON_FILE_FIELD.file],
+        status: DocumentStatus.InValidation,
         logo: [],
         images: [],
         ...creationValues,
@@ -725,7 +728,7 @@ export const defineIntegrationFormTests = <Values,>({
         use_cases: [USE_CASE.id],
         solution_categories: [SOLUTION_CATEGORY.id],
         license_type: LicenseType.Commercial,
-        active: true,
+        status: DocumentStatus.Published,
         logo: [],
         images: [DELETED_IMAGE, KEPT_IMAGE],
       })

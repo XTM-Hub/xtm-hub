@@ -3,40 +3,46 @@ import { PlatformMetadataMapping } from '@/components/registration/PlatformIdent
 import { Unregister } from '@/components/registration/unregister/Index';
 import * as SnackbarStore from '@/components/ui/snackbar/snackbar-store';
 import testRender from '@/utils/test/test-render';
-import { registerCanUnregisterPlatformQuery } from '@generated/registerCanUnregisterPlatformQuery.graphql';
-import { PlatformIdentifier } from '@graphql/generated';
+import {
+  CanUnregisterPlatformQuery,
+  PlatformIdentifier,
+} from '@graphql/generated';
 import { screen, waitFor } from '@testing-library/react';
-import { PreloadedQuery } from 'react-relay';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const testState = vi.hoisted(() => ({
   mutationMode: 'success' as 'success' | 'error',
+  unregisterPlatform: vi.fn(),
+  // When set, the hook returns a real react-query mutation whose request is this function,
+  // so the pending, success and error states re-render the page as they do in the app.
+  unregisterRequest: null as ((variables: unknown) => Promise<unknown>) | null,
 }));
 
-vi.mock('react-relay', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('react-relay')>()),
-  usePreloadedQuery: () => ({ canUnregisterPlatform: {} }),
-  useFragment: () => ({
+vi.mock('@graphql/generated', async (importOriginal) => {
+  const { mockGeneratedQueryHooks } =
+    await import('@/utils/test/mock-generated-query');
+  const { useMutation } = await import('@tanstack/react-query');
+  return mockGeneratedQueryHooks(importOriginal, {
+    useUnregisterPlatformMutation: () => {
+      const mutation = useMutation({
+        mutationFn: (variables: unknown) =>
+          testState.unregisterRequest?.(variables) ?? Promise.resolve({}),
+      });
+      return testState.unregisterRequest
+        ? mutation
+        : { mutate: testState.unregisterPlatform };
+    },
+  });
+});
+
+const CAN_UNREGISTER_PLATFORM: CanUnregisterPlatformQuery['canUnregisterPlatform'] =
+  {
     isAllowed: true,
     isPlatformRegistered: true,
     isInOrganization: true,
     organizationId: 'org-1',
     organizationName: 'Org One',
-  }),
-  useMutation: () => [
-    (opts: {
-      onCompleted?: (data: unknown) => void;
-      onError?: (error: Error) => void;
-    }) => {
-      if (testState.mutationMode === 'error') {
-        opts.onError?.(new Error('SOME_ERROR'));
-        return;
-      }
-      opts.onCompleted?.({});
-    },
-    {},
-  ],
-}));
+  };
 
 vi.mock('@/components/Loader', () => ({
   default: () => <div data-testid="loader" />,
@@ -57,9 +63,11 @@ vi.mock('@/components/registration/unregister/Confirm', () => ({
   ),
 }));
 
-const mockQueryRef = {} as PreloadedQuery<registerCanUnregisterPlatformQuery>;
-
-const renderUnregister = (identifier: PlatformIdentifier, state?: string) =>
+const renderUnregister = (
+  identifier: PlatformIdentifier,
+  state?: string,
+  canUnregisterPlatform = CAN_UNREGISTER_PLATFORM
+) =>
   testRender(
     <RegistrationContext.Provider
       value={{
@@ -67,7 +75,7 @@ const renderUnregister = (identifier: PlatformIdentifier, state?: string) =>
         displayedIdentifier: PlatformMetadataMapping[identifier].name,
       }}>
       <Unregister
-        queryRef={mockQueryRef}
+        canUnregisterPlatform={canUnregisterPlatform}
         platformId="platform-id"
         state={state}
       />
@@ -86,7 +94,83 @@ const mockOpener = () => {
 describe('Unregister', () => {
   beforeEach(() => {
     testState.mutationMode = 'success';
+    testState.unregisterRequest = null;
+    testState.unregisterPlatform.mockReset();
+    testState.unregisterPlatform.mockImplementation(
+      (
+        _variables,
+        options: { onSuccess: () => void; onError: (error: Error) => void }
+      ) => {
+        if (testState.mutationMode === 'error') {
+          options.onError(new Error('SOME_ERROR'));
+          return;
+        }
+        options.onSuccess();
+      }
+    );
     vi.spyOn(SnackbarStore, 'showSnackbar').mockImplementation(() => undefined);
+  });
+
+  it('unregisters the platform of the opener from its product', async () => {
+    // Given
+    mockOpener();
+    const { user } = renderUnregister(PlatformIdentifier.Opencti);
+
+    // When
+    await user.click(screen.getByRole('button', { name: 'mock-confirm' }));
+
+    // Then
+    expect(testState.unregisterPlatform).toHaveBeenCalledWith(
+      {
+        input: {
+          platformId: 'platform-id',
+          identifier: PlatformIdentifier.Opencti,
+          tenantId: null,
+        },
+      },
+      expect.anything()
+    );
+    expect(
+      await screen.findByText('Unregister.Succeeded.Description')
+    ).toBeInTheDocument();
+  });
+
+  it('acknowledges a platform that is no longer registered with a single request', async () => {
+    // Given a platform the hub no longer knows, and a request that stays pending until the test ends it
+    const postMessage = mockOpener();
+    let endRequest: () => void = () => undefined;
+    const unregisterRequest = vi.fn(
+      () =>
+        new Promise<unknown>((resolve) => {
+          endRequest = () => resolve({ unregisterPlatform: true });
+        })
+    );
+    testState.unregisterRequest = unregisterRequest;
+
+    // When the page opens and the request is still pending
+    renderUnregister(PlatformIdentifier.Xtmone, 's-1', {
+      ...CAN_UNREGISTER_PLATFORM,
+      isPlatformRegistered: false,
+    });
+    await waitFor(() => {
+      expect(unregisterRequest).toHaveBeenCalled();
+    });
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    // Then the pending state does not start another request
+    expect(unregisterRequest).toHaveBeenCalledOnce();
+
+    // When the request succeeds
+    endRequest();
+
+    // Then the opener learns the platform is unregistered
+    expect(
+      await screen.findByText('Unregister.Succeeded.Description')
+    ).toBeInTheDocument();
+    expect(postMessage).toHaveBeenCalledExactlyOnceWith(
+      { action: 'unregister', state: 's-1' },
+      '*'
+    );
   });
 
   describe('state echo', () => {

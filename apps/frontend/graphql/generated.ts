@@ -23,6 +23,8 @@ export type Scalars = {
   Boolean: { input: boolean; output: boolean; }
   Int: { input: number; output: number; }
   Float: { input: number; output: number; }
+  /** A Relay global ID for ApiToken, extracted to a branded ApiTokenId string */
+  ApiTokenId: { input: any; output: any; }
   /** A Relay global ID for Competitor, extracted to a branded CompetitorId string */
   CompetitorId: { input: any; output: any; }
   Date: { input: any; output: any; }
@@ -125,6 +127,33 @@ export type AdminEditUserInput = {
    */
   password: InputMaybe<Scalars['String']['input']>;
 };
+
+export type ApiToken = Node & {
+  __typename?: 'ApiToken';
+  created_at: Scalars['Date']['output'];
+  expires_at: Scalars['Date']['output'];
+  id: Scalars['ID']['output'];
+  last_used_at: Maybe<Scalars['Date']['output']>;
+  name: Scalars['String']['output'];
+  organization_id: Scalars['ID']['output'];
+  organization_name: Scalars['String']['output'];
+  revoked_at: Maybe<Scalars['Date']['output']>;
+  scope: ApiTokenScope;
+  /** The first characters of the token, to tell tokens apart */
+  token_prefix: Scalars['String']['output'];
+  user_email: Scalars['String']['output'];
+};
+
+/**
+ * What a personal API token may do. read: queries only. read_write: queries and mutations, without the organization
+ * administration and without any portal capability. admin: the user's organization and portal capabilities, BYPASS
+ * excepted. A token never exceeds its user's live rights.
+ */
+export enum ApiTokenScope {
+  Admin = 'admin',
+  Read = 'read',
+  ReadWrite = 'read_write'
+}
 
 export type AutoRegisterPlatformInput = {
   existing_users_count: InputMaybe<Scalars['Int']['input']>;
@@ -269,6 +298,13 @@ export type ContentTranslationValueInput = {
   value: Scalars['String']['input'];
 };
 
+export type CreateApiTokenInput = {
+  expires_at: Scalars['Date']['input'];
+  name: Scalars['String']['input'];
+  organization_id: Scalars['OrganizationId']['input'];
+  scope: ApiTokenScope;
+};
+
 export type CreateCompetitorInput = {
   domain: Scalars['String']['input'];
   name: Scalars['String']['input'];
@@ -338,6 +374,13 @@ export type CreateVotingRoundInput = {
   theme: InputMaybe<VotingRoundTheme>;
 };
 
+/** The token is shown here once: only its hash is kept */
+export type CreatedApiToken = {
+  __typename?: 'CreatedApiToken';
+  api_token: ApiToken;
+  token: Scalars['String']['output'];
+};
+
 export type CsvFeed = Document & Integration & Node & {
   __typename?: 'CsvFeed';
   /** @deprecated Use status */
@@ -370,6 +413,18 @@ export type CsvFeed = Document & Integration & Node & {
   uploader: Maybe<User>;
   uploader_organization: Maybe<Organization>;
   use_cases: Maybe<Array<UseCase>>;
+};
+
+/** The token that authenticates the current request */
+export type CurrentApiToken = {
+  __typename?: 'CurrentApiToken';
+  expires_at: Scalars['Date']['output'];
+  id: Scalars['ID']['output'];
+  last_used_at: Maybe<Scalars['Date']['output']>;
+  name: Scalars['String']['output'];
+  organization_id: Scalars['ID']['output'];
+  organization_name: Scalars['String']['output'];
+  scope: ApiTokenScope;
 };
 
 export type CustomDashboard = Document & Node & {
@@ -1117,6 +1172,7 @@ export type Mutation = {
   changeSelectedOrganization: Maybe<User>;
   consumeProvisionedNewsFeedItems: ConsumeProvisionedNewsFeedItemsResponse;
   contactUs: Success;
+  createApiToken: CreatedApiToken;
   createCompetitor: Competitor;
   createDeploymentRequest: DeploymentRequest;
   createDocument: Document;
@@ -1166,6 +1222,8 @@ export type Mutation = {
   reorderDeploymentRequestInQueue: Success;
   requestTransferPersonalSpace: Success;
   resetPassword: Success;
+  /** The owner, or an administrator of the token's organization, revokes it */
+  revokeApiToken: ApiToken;
   saveContentTranslationDraft: Array<ContentTranslationEntry>;
   sendTelemetryEvent: Maybe<SendTelemetryMutation>;
   setVotingRoundStatus: Array<VotingRound>;
@@ -1303,6 +1361,11 @@ export type MutationContactUsArgs = {
   message: InputMaybe<Scalars['String']['input']>;
   platformId: InputMaybe<Scalars['ID']['input']>;
   platformIdentifier: InputMaybe<PlatformIdentifier>;
+};
+
+
+export type MutationCreateApiTokenArgs = {
+  input: CreateApiTokenInput;
 };
 
 
@@ -1548,6 +1611,11 @@ export type MutationReorderDeploymentRequestInQueueArgs = {
 
 export type MutationRequestTransferPersonalSpaceArgs = {
   new_email: Scalars['String']['input'];
+};
+
+
+export type MutationRevokeApiTokenArgs = {
+  id: Scalars['ApiTokenId']['input'];
 };
 
 
@@ -2021,6 +2089,8 @@ export type PublicDocumentSlugInfo = {
 
 export type Query = {
   __typename?: 'Query';
+  /** The current user's API tokens, revoked and expired ones included */
+  apiTokens: Array<ApiToken>;
   bundleProducts: Array<PlatformIdentifier>;
   bundleUserServiceGroups: Array<BundleUserServiceGroup>;
   canUnregisterPlatform: CanUnregisterResponse;
@@ -2028,6 +2098,8 @@ export type Query = {
   contentTranslationDrafts: Array<ContentTranslationEntry>;
   contentTranslations: Array<ContentTranslationEntry>;
   countEpicsPerTimeline: Array<EpicCountPerTimeline>;
+  /** The token of the current request, null for a session */
+  currentApiToken: Maybe<CurrentApiToken>;
   /**
    * The round currently collecting votes on a service instance, if any.
    * Publicly readable, like the roadmap the round belongs to.
@@ -2049,6 +2121,8 @@ export type Query = {
   /** @deprecated Use `refreshPlatformRegistrationConnectivityStatus` instead. This field is no longer used in the OpenCTI platform due to refactoring and the addition of a version value in the endpoint. */
   openCTIPlatformRegistrationStatus: OpenCtiPlatformRegistrationStatusResponse;
   organization: Maybe<Organization>;
+  /** The API tokens of the selected organization, for its administrators */
+  organizationApiTokens: Array<ApiToken>;
   organizations: OrganizationConnection;
   pendingUsers: UserConnection;
   platformAssociatedOrganization: Maybe<Organization>;
@@ -2912,10 +2986,16 @@ export enum ServiceRestriction {
 export type Settings = {
   __typename?: 'Settings';
   base_url_front: Scalars['String']['output'];
+  capabilities: Array<SettingsCapability>;
   environment: Scalars['String']['output'];
   platform_feature_flags: Array<FeatureFlag>;
   platform_providers: Array<PlatformProvider>;
 };
+
+/** What this Hub accepts, for API clients that detect a feature before using it */
+export enum SettingsCapability {
+  ApiTokens = 'API_TOKENS'
+}
 
 export type ShareableResource = {
   __typename?: 'ShareableResource';
@@ -3553,6 +3633,27 @@ export type XtmoneIntegrationStatusEntry = {
   status: Scalars['String']['output'];
 };
 
+export type ApiTokenCreateMutationVariables = Exact<{
+  input: CreateApiTokenInput;
+}>;
+
+
+export type ApiTokenCreateMutation = { __typename?: 'Mutation', createApiToken: { __typename?: 'CreatedApiToken', token: string, api_token: { __typename?: 'ApiToken', id: string, name: string, token_prefix: string, scope: ApiTokenScope, organization_id: string, organization_name: string, expires_at: any, last_used_at: any | null, created_at: any, revoked_at: any | null } } };
+
+export type ApiTokenRevokeMutationVariables = Exact<{
+  id: Scalars['ApiTokenId']['input'];
+}>;
+
+
+export type ApiTokenRevokeMutation = { __typename?: 'Mutation', revokeApiToken: { __typename?: 'ApiToken', id: string, name: string, token_prefix: string, scope: ApiTokenScope, organization_id: string, organization_name: string, expires_at: any, last_used_at: any | null, created_at: any, revoked_at: any | null } };
+
+export type ApiTokenRowFragment = { __typename?: 'ApiToken', id: string, name: string, token_prefix: string, scope: ApiTokenScope, organization_id: string, organization_name: string, expires_at: any, last_used_at: any | null, created_at: any, revoked_at: any | null };
+
+export type ApiTokensQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type ApiTokensQuery = { __typename?: 'Query', apiTokens: Array<{ __typename?: 'ApiToken', id: string, name: string, token_prefix: string, scope: ApiTokenScope, organization_id: string, organization_name: string, expires_at: any, last_used_at: any | null, created_at: any, revoked_at: any | null }> };
+
 export type LoginMutationVariables = Exact<{
   email: Scalars['String']['input'];
   password: Scalars['String']['input'];
@@ -4118,6 +4219,25 @@ export type RegisteredPlatformsListQueryVariables = Exact<{
 
 export type RegisteredPlatformsListQuery = { __typename?: 'Query', registeredPlatforms: Array<{ __typename?: 'RegisteredPlatform', id: string, platform_id: string, title: string, url: string, contract: PlatformContract, version: string | null, identifier: ServiceDefinitionIdentifier, deployment_request: { __typename?: 'DeploymentRequest', parent_id: any | null } | null, subscription: { __typename?: 'SubscriptionModel', end_date: any | null, start_date: any | null, service_instance: { __typename?: 'ServiceInstance', id: string, name: string } } | null }> };
 
+export type RefreshUserPlatformTokenMutationVariables = Exact<{ [key: string]: never; }>;
+
+
+export type RefreshUserPlatformTokenMutation = { __typename?: 'Mutation', refreshUserPlatformToken: { __typename?: 'RefreshUserPlatformTokenResponse', token: string } };
+
+export type UnregisterPlatformMutationVariables = Exact<{
+  input: UnregisterPlatformInput;
+}>;
+
+
+export type UnregisterPlatformMutation = { __typename?: 'Mutation', unregisterPlatform: { __typename?: 'Success', success: boolean } };
+
+export type RegisterPlatformMutationVariables = Exact<{
+  input: RegisterPlatformInput;
+}>;
+
+
+export type RegisterPlatformMutation = { __typename?: 'Mutation', registerPlatform: { __typename?: 'RegistrationResponse', token: string } };
+
 export type RegisteredPlatformsQueryVariables = Exact<{
   input: RegisteredPlatformsInput;
 }>;
@@ -4139,6 +4259,29 @@ export type RegisteredPlatformRedirectTargetQueryVariables = Exact<{
 
 
 export type RegisteredPlatformRedirectTargetQuery = { __typename?: 'Query', registeredPlatformByPlatformId: { __typename?: 'RegisteredPlatform', service_instance_id: any, identifier: ServiceDefinitionIdentifier, deployment_request: { __typename?: 'DeploymentRequest', parent_id: any | null } | null } | null };
+
+export type RegisteredPlatformDetailsFragment = { __typename?: 'RegisteredPlatform', id: string, service_instance_id: any, platform_id: string, last_connectivity_check: any | null, commercial_model: CommercialModel | null, tenant_id: string | null, title: string, contract: PlatformContract, url: string, version: string | null, identifier: ServiceDefinitionIdentifier, subscription: { __typename?: 'SubscriptionModel', start_date: any | null, end_date: any | null, service_instance: { __typename?: 'ServiceInstance', id: string }, organization: { __typename?: 'Organization', id: string } } | null, deployment_request: { __typename?: 'DeploymentRequest', id: string, hub_status: DeploymentRequestHubStatus, region: DeploymentRequestPlatformRegion, counts_in_orga_quota: boolean, platform_identifier: PlatformIdentifier | null, requester_email: string | null } | null, myGroups: Array<{ __typename?: 'ServiceGroup', name: ServiceGroupName }> | null };
+
+export type RegisteredPlatformByServiceInstanceQueryVariables = Exact<{
+  input: RegisteredPlatformInput;
+}>;
+
+
+export type RegisteredPlatformByServiceInstanceQuery = { __typename?: 'Query', registeredPlatform: { __typename?: 'RegisteredPlatform', id: string, service_instance_id: any, platform_id: string, last_connectivity_check: any | null, commercial_model: CommercialModel | null, tenant_id: string | null, title: string, contract: PlatformContract, url: string, version: string | null, identifier: ServiceDefinitionIdentifier, subscription: { __typename?: 'SubscriptionModel', start_date: any | null, end_date: any | null, service_instance: { __typename?: 'ServiceInstance', id: string }, organization: { __typename?: 'Organization', id: string } } | null, deployment_request: { __typename?: 'DeploymentRequest', id: string, hub_status: DeploymentRequestHubStatus, region: DeploymentRequestPlatformRegion, counts_in_orga_quota: boolean, platform_identifier: PlatformIdentifier | null, requester_email: string | null } | null, myGroups: Array<{ __typename?: 'ServiceGroup', name: ServiceGroupName }> | null } | null };
+
+export type IsPlatformRegisteredQueryVariables = Exact<{
+  input: IsPlatformRegisteredInput;
+}>;
+
+
+export type IsPlatformRegisteredQuery = { __typename?: 'Query', isPlatformRegistered: { __typename?: 'IsPlatformRegisteredResponse', status: PlatformRegistrationStatus, platformTitle: string | null, organization: { __typename?: 'IsPlatformRegisteredOrganization', id: string } | null } };
+
+export type CanUnregisterPlatformQueryVariables = Exact<{
+  input: CanUnregisterPlatformInput;
+}>;
+
+
+export type CanUnregisterPlatformQuery = { __typename?: 'Query', canUnregisterPlatform: { __typename?: 'CanUnregisterResponse', isPlatformRegistered: boolean, isAllowed: boolean | null, isInOrganization: boolean | null, organizationId: any | null, organizationName: string | null } };
 
 export type AddRolePortalMutationVariables = Exact<{
   input: AddRolePortalInput;
@@ -4296,6 +4439,13 @@ export type EditSeoServiceInstanceMetadataMutationVariables = Exact<{
 
 
 export type EditSeoServiceInstanceMetadataMutation = { __typename?: 'Mutation', editSeoServiceInstance: { __typename?: 'SeoServiceInstanceMetadata', service_instance_id: any, language: Locale, meta_title: string, meta_description: string } };
+
+export type UpdatePlatformServiceMetadataMutationVariables = Exact<{
+  input: UpdatePlatformServiceMetadataInput;
+}>;
+
+
+export type UpdatePlatformServiceMetadataMutation = { __typename?: 'Mutation', updatePlatformServiceMetadata: { __typename?: 'RegisteredPlatform', id: string, title: string } | null };
 
 export type ServiceUserCapabilitiesQueryVariables = Exact<{
   service_instance_id: Scalars['ServiceInstanceId']['input'];
@@ -4500,6 +4650,85 @@ export type UserAdminResendInviteMutationVariables = Exact<{
 
 export type UserAdminResendInviteMutation = { __typename?: 'Mutation', adminAddUser: { __typename?: 'User', id: string } | null };
 
+export type PendingUserAcceptMutationVariables = Exact<{
+  user_id: Scalars['UserId']['input'];
+  organization_id: Scalars['OrganizationId']['input'];
+}>;
+
+
+export type PendingUserAcceptMutation = { __typename?: 'Mutation', acceptPendingUserInOrganization: { __typename?: 'User', id: string } | null };
+
+export type PendingUserRemoveMutationVariables = Exact<{
+  user_id: Scalars['UserId']['input'];
+  organization_id: Scalars['OrganizationId']['input'];
+}>;
+
+
+export type PendingUserRemoveMutation = { __typename?: 'Mutation', removePendingUserFromOrganization: { __typename?: 'User', id: string } | null };
+
+export type PendingUsersBulkAcceptMutationVariables = Exact<{
+  ids: InputMaybe<Array<Scalars['UserId']['input']> | Scalars['UserId']['input']>;
+  searchTerm: InputMaybe<Scalars['String']['input']>;
+  filters: InputMaybe<Array<Filter> | Filter>;
+  excludedIds: InputMaybe<Array<Scalars['UserId']['input']> | Scalars['UserId']['input']>;
+}>;
+
+
+export type PendingUsersBulkAcceptMutation = { __typename?: 'Mutation', bulkAcceptPendingUserInOrganization: { __typename?: 'Success', success: boolean } | null };
+
+export type PendingUsersBulkRemoveMutationVariables = Exact<{
+  ids: InputMaybe<Array<Scalars['UserId']['input']> | Scalars['UserId']['input']>;
+  searchTerm: InputMaybe<Scalars['String']['input']>;
+  filters: InputMaybe<Array<Filter> | Filter>;
+  excludedIds: InputMaybe<Array<Scalars['UserId']['input']> | Scalars['UserId']['input']>;
+}>;
+
+
+export type PendingUsersBulkRemoveMutation = { __typename?: 'Mutation', bulkRemovePendingUserFromOrganization: { __typename?: 'Success', success: boolean } | null };
+
+export type UserCapabilitiesEditMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+  input: EditUserCapabilitiesInput;
+}>;
+
+
+export type UserCapabilitiesEditMutation = { __typename?: 'Mutation', editUserCapabilities: { __typename?: 'User', id: string } };
+
+export type UserAdminEditMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+  input: AdminEditUserInput;
+}>;
+
+
+export type UserAdminEditMutation = { __typename?: 'Mutation', adminEditUser: { __typename?: 'User', id: string } };
+
+export type UserOrganizationRemoveMutationVariables = Exact<{
+  user_id: Scalars['UserId']['input'];
+  organization_id: Scalars['OrganizationId']['input'];
+}>;
+
+
+export type UserOrganizationRemoveMutation = { __typename?: 'Mutation', removeUserFromOrganization: { __typename?: 'User', id: string } | null };
+
+export type PendingUserEventsSubscriptionVariables = Exact<{
+  organizationId: Scalars['ID']['input'];
+}>;
+
+
+export type PendingUserEventsSubscription = { __typename?: 'Subscription', UserPending: { __typename?: 'UserPendingSubscription', delete: { __typename?: 'User', id: string } | null, invalidate: { __typename?: 'OrganizationRef', id: string } | null } | null };
+
+export type OrganizationUserEventsSubscriptionVariables = Exact<{
+  organizationId: Scalars['ID']['input'];
+}>;
+
+
+export type OrganizationUserEventsSubscription = { __typename?: 'Subscription', User: { __typename?: 'UserSubscription', add: { __typename?: 'User', id: string } | null } | null };
+
+export type AdminUserEventsSubscriptionVariables = Exact<{ [key: string]: never; }>;
+
+
+export type AdminUserEventsSubscription = { __typename?: 'Subscription', AdminUser: { __typename?: 'UserSubscription', add: { __typename?: 'User', id: string } | null } | null };
+
 export type UsersWithCapabilitiesInOrganizationQueryVariables = Exact<{
   input: UsersWithCapabilitiesInOrganizationInput;
 }>;
@@ -4517,6 +4746,30 @@ export type UsersQueryVariables = Exact<{
 
 
 export type UsersQuery = { __typename?: 'Query', users: { __typename?: 'UserConnection', edges: Array<{ __typename?: 'UserEdge', node: { __typename?: 'User', id: string, email: string, status: UserAccountStatus | null } }> } };
+
+export type PendingUsersQueryVariables = Exact<{
+  first: Scalars['Int']['input'];
+  after: InputMaybe<Scalars['ID']['input']>;
+  orderBy: UserOrdering;
+  orderMode: OrderingMode;
+  filters: InputMaybe<Array<Filter> | Filter>;
+  searchTerm: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type PendingUsersQuery = { __typename?: 'Query', pendingUsers: { __typename?: 'UserConnection', totalCount: number, edges: Array<{ __typename?: 'UserEdge', node: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null } }> } };
+
+export type UsersListQueryVariables = Exact<{
+  first: Scalars['Int']['input'];
+  after: InputMaybe<Scalars['ID']['input']>;
+  orderBy: UserOrdering;
+  orderMode: OrderingMode;
+  filters: InputMaybe<Array<Filter> | Filter>;
+  searchTerm: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type UsersListQuery = { __typename?: 'Query', users: { __typename?: 'UserConnection', totalCount: number, edges: Array<{ __typename?: 'UserEdge', node: { __typename?: 'User', id: string, email: string, last_name: string | null, first_name: string | null, disabled: boolean | null, last_login: any | null, country: string | null, status: UserAccountStatus | null, invitation_date: any | null, organization_capabilities: Array<{ __typename?: 'OrganizationCapabilities', id: string, capabilities: Array<OrganizationCapability> | null, organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } }> | null } }> } };
 
 export type VotingRoundCreateMutationVariables = Exact<{
   input: CreateVotingRoundInput;
@@ -4635,6 +4888,20 @@ export type EpicsQueryVariables = Exact<{
 export type EpicsQuery = { __typename?: 'Query', epics: { __typename?: 'EpicConnection', totalCount: number, edges: Array<{ __typename?: 'EpicEdge', node: { __typename?: 'Epic', id: string, short_description: string, description: string, problem_to_solve: string, proposed_solution: string, expected_value: string, title: string, timeline: Timeline, edition_type: EditionType, products: Array<FiligranProduct>, slack_link: string | null, active: boolean, epic_type: EpicType, created_at: any, updated_at: any | null } }> } | null };
 
 
+export const ApiTokenRowFragmentDoc = `
+    fragment ApiTokenRow on ApiToken {
+  id
+  name
+  token_prefix
+  scope
+  organization_id
+  organization_name
+  expires_at
+  last_used_at
+  created_at
+  revoked_at
+}
+    `;
 export const CompetitorRowFragmentDoc = `
     fragment CompetitorRow on Competitor {
   id
@@ -5040,6 +5307,42 @@ export const OrganizationItemFragmentDoc = `
   personal_space
 }
     `;
+export const RegisteredPlatformDetailsFragmentDoc = `
+    fragment RegisteredPlatformDetails on RegisteredPlatform {
+  id
+  service_instance_id
+  platform_id
+  last_connectivity_check
+  commercial_model
+  tenant_id
+  title
+  contract
+  url
+  version
+  identifier
+  subscription {
+    start_date
+    end_date
+    service_instance {
+      id
+    }
+    organization {
+      id
+    }
+  }
+  deployment_request {
+    id
+    hub_status
+    region
+    counts_in_orga_quota
+    platform_identifier
+    requester_email
+  }
+  myGroups {
+    name
+  }
+}
+    `;
 export const SaasPlatformRowFragmentDoc = `
     fragment SaasPlatformRow on SaasPlatform {
   id
@@ -5191,6 +5494,120 @@ export const EpicFieldsFragmentDoc = `
   updated_at
 }
     `;
+export const ApiTokenCreateDocument = `
+    mutation ApiTokenCreate($input: CreateApiTokenInput!) {
+  createApiToken(input: $input) {
+    token
+    api_token {
+      ...ApiTokenRow
+    }
+  }
+}
+    ${ApiTokenRowFragmentDoc}`;
+
+export const useApiTokenCreateMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<ApiTokenCreateMutation, TError, ApiTokenCreateMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<ApiTokenCreateMutation, TError, ApiTokenCreateMutationVariables, TContext>(
+      {
+    mutationKey: ['ApiTokenCreate'],
+    mutationFn: (variables?: ApiTokenCreateMutationVariables) => fetcher<ApiTokenCreateMutation, ApiTokenCreateMutationVariables>(client, ApiTokenCreateDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useApiTokenCreateMutation.getKey = () => ['ApiTokenCreate'];
+useApiTokenCreateMutation.getRootKey = () => ['ApiTokenCreate'] as const;
+useApiTokenCreateMutation.fetcher = (client: GraphQLClient, variables: ApiTokenCreateMutationVariables, headers?: RequestInit['headers']) => fetcher<ApiTokenCreateMutation, ApiTokenCreateMutationVariables>(client, ApiTokenCreateDocument, variables, headers);
+
+export const ApiTokenRevokeDocument = `
+    mutation ApiTokenRevoke($id: ApiTokenId!) {
+  revokeApiToken(id: $id) {
+    ...ApiTokenRow
+  }
+}
+    ${ApiTokenRowFragmentDoc}`;
+
+export const useApiTokenRevokeMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<ApiTokenRevokeMutation, TError, ApiTokenRevokeMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<ApiTokenRevokeMutation, TError, ApiTokenRevokeMutationVariables, TContext>(
+      {
+    mutationKey: ['ApiTokenRevoke'],
+    mutationFn: (variables?: ApiTokenRevokeMutationVariables) => fetcher<ApiTokenRevokeMutation, ApiTokenRevokeMutationVariables>(client, ApiTokenRevokeDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useApiTokenRevokeMutation.getKey = () => ['ApiTokenRevoke'];
+useApiTokenRevokeMutation.getRootKey = () => ['ApiTokenRevoke'] as const;
+useApiTokenRevokeMutation.fetcher = (client: GraphQLClient, variables: ApiTokenRevokeMutationVariables, headers?: RequestInit['headers']) => fetcher<ApiTokenRevokeMutation, ApiTokenRevokeMutationVariables>(client, ApiTokenRevokeDocument, variables, headers);
+
+export const ApiTokensDocument = `
+    query ApiTokens {
+  apiTokens {
+    ...ApiTokenRow
+  }
+}
+    ${ApiTokenRowFragmentDoc}`;
+
+export const useApiTokensQuery = <
+      TData = ApiTokensQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables?: ApiTokensQueryVariables,
+      options?: Omit<UseQueryOptions<ApiTokensQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<ApiTokensQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<ApiTokensQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['ApiTokens'] : ['ApiTokens', variables],
+    queryFn: fetcher<ApiTokensQuery, ApiTokensQueryVariables>(client, ApiTokensDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useApiTokensQuery.getKey = (variables?: ApiTokensQueryVariables) => variables === undefined ? ['ApiTokens'] : ['ApiTokens', variables];
+useApiTokensQuery.getRootKey = () => ['ApiTokens'] as const;
+export const useInfiniteApiTokensQuery = <
+      TData = InfiniteData<ApiTokensQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: ApiTokensQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<ApiTokensQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<ApiTokensQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<ApiTokensQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['ApiTokens.infinite'] : ['ApiTokens.infinite', variables],
+      queryFn: (metaData) => fetcher<ApiTokensQuery, ApiTokensQueryVariables>(client, ApiTokensDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteApiTokensQuery.getKey = (variables?: ApiTokensQueryVariables) => variables === undefined ? ['ApiTokens.infinite'] : ['ApiTokens.infinite', variables];
+useInfiniteApiTokensQuery.getRootKey = () => ['ApiTokens.infinite'] as const;
+useApiTokensQuery.fetcher = (client: GraphQLClient, variables?: ApiTokensQueryVariables, headers?: RequestInit['headers']) => fetcher<ApiTokensQuery, ApiTokensQueryVariables>(client, ApiTokensDocument, variables, headers);
+
 export const LoginDocument = `
     mutation Login($email: String!, $password: String!) {
   login(email: $email, password: $password) {
@@ -7951,6 +8368,93 @@ useInfiniteRegisteredPlatformsListQuery.getKey = (variables: RegisteredPlatforms
 useInfiniteRegisteredPlatformsListQuery.getRootKey = () => ['RegisteredPlatformsList.infinite'] as const;
 useRegisteredPlatformsListQuery.fetcher = (client: GraphQLClient, variables: RegisteredPlatformsListQueryVariables, headers?: RequestInit['headers']) => fetcher<RegisteredPlatformsListQuery, RegisteredPlatformsListQueryVariables>(client, RegisteredPlatformsListDocument, variables, headers);
 
+export const RefreshUserPlatformTokenDocument = `
+    mutation RefreshUserPlatformToken {
+  refreshUserPlatformToken {
+    token
+  }
+}
+    `;
+
+export const useRefreshUserPlatformTokenMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<RefreshUserPlatformTokenMutation, TError, RefreshUserPlatformTokenMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<RefreshUserPlatformTokenMutation, TError, RefreshUserPlatformTokenMutationVariables, TContext>(
+      {
+    mutationKey: ['RefreshUserPlatformToken'],
+    mutationFn: (variables?: RefreshUserPlatformTokenMutationVariables) => fetcher<RefreshUserPlatformTokenMutation, RefreshUserPlatformTokenMutationVariables>(client, RefreshUserPlatformTokenDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useRefreshUserPlatformTokenMutation.getKey = () => ['RefreshUserPlatformToken'];
+useRefreshUserPlatformTokenMutation.getRootKey = () => ['RefreshUserPlatformToken'] as const;
+useRefreshUserPlatformTokenMutation.fetcher = (client: GraphQLClient, variables?: RefreshUserPlatformTokenMutationVariables, headers?: RequestInit['headers']) => fetcher<RefreshUserPlatformTokenMutation, RefreshUserPlatformTokenMutationVariables>(client, RefreshUserPlatformTokenDocument, variables, headers);
+
+export const UnregisterPlatformDocument = `
+    mutation UnregisterPlatform($input: UnregisterPlatformInput!) {
+  unregisterPlatform(input: $input) {
+    success
+  }
+}
+    `;
+
+export const useUnregisterPlatformMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<UnregisterPlatformMutation, TError, UnregisterPlatformMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<UnregisterPlatformMutation, TError, UnregisterPlatformMutationVariables, TContext>(
+      {
+    mutationKey: ['UnregisterPlatform'],
+    mutationFn: (variables?: UnregisterPlatformMutationVariables) => fetcher<UnregisterPlatformMutation, UnregisterPlatformMutationVariables>(client, UnregisterPlatformDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useUnregisterPlatformMutation.getKey = () => ['UnregisterPlatform'];
+useUnregisterPlatformMutation.getRootKey = () => ['UnregisterPlatform'] as const;
+useUnregisterPlatformMutation.fetcher = (client: GraphQLClient, variables: UnregisterPlatformMutationVariables, headers?: RequestInit['headers']) => fetcher<UnregisterPlatformMutation, UnregisterPlatformMutationVariables>(client, UnregisterPlatformDocument, variables, headers);
+
+export const RegisterPlatformDocument = `
+    mutation RegisterPlatform($input: RegisterPlatformInput!) {
+  registerPlatform(input: $input) {
+    token
+  }
+}
+    `;
+
+export const useRegisterPlatformMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<RegisterPlatformMutation, TError, RegisterPlatformMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<RegisterPlatformMutation, TError, RegisterPlatformMutationVariables, TContext>(
+      {
+    mutationKey: ['RegisterPlatform'],
+    mutationFn: (variables?: RegisterPlatformMutationVariables) => fetcher<RegisterPlatformMutation, RegisterPlatformMutationVariables>(client, RegisterPlatformDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useRegisterPlatformMutation.getKey = () => ['RegisterPlatform'];
+useRegisterPlatformMutation.getRootKey = () => ['RegisterPlatform'] as const;
+useRegisterPlatformMutation.fetcher = (client: GraphQLClient, variables: RegisterPlatformMutationVariables, headers?: RequestInit['headers']) => fetcher<RegisterPlatformMutation, RegisterPlatformMutationVariables>(client, RegisterPlatformDocument, variables, headers);
+
 export const RegisteredPlatformsDocument = `
     query RegisteredPlatforms($input: RegisteredPlatformsInput!) {
   registeredPlatforms(input: $input) {
@@ -8124,6 +8628,173 @@ export const useInfiniteRegisteredPlatformRedirectTargetQuery = <
 useInfiniteRegisteredPlatformRedirectTargetQuery.getKey = (variables: RegisteredPlatformRedirectTargetQueryVariables) => ['RegisteredPlatformRedirectTarget.infinite', variables];
 useInfiniteRegisteredPlatformRedirectTargetQuery.getRootKey = () => ['RegisteredPlatformRedirectTarget.infinite'] as const;
 useRegisteredPlatformRedirectTargetQuery.fetcher = (client: GraphQLClient, variables: RegisteredPlatformRedirectTargetQueryVariables, headers?: RequestInit['headers']) => fetcher<RegisteredPlatformRedirectTargetQuery, RegisteredPlatformRedirectTargetQueryVariables>(client, RegisteredPlatformRedirectTargetDocument, variables, headers);
+
+export const RegisteredPlatformByServiceInstanceDocument = `
+    query RegisteredPlatformByServiceInstance($input: RegisteredPlatformInput!) {
+  registeredPlatform(input: $input) {
+    ...RegisteredPlatformDetails
+  }
+}
+    ${RegisteredPlatformDetailsFragmentDoc}`;
+
+export const useRegisteredPlatformByServiceInstanceQuery = <
+      TData = RegisteredPlatformByServiceInstanceQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: RegisteredPlatformByServiceInstanceQueryVariables,
+      options?: Omit<UseQueryOptions<RegisteredPlatformByServiceInstanceQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<RegisteredPlatformByServiceInstanceQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<RegisteredPlatformByServiceInstanceQuery, TError, TData>(
+      {
+    queryKey: ['RegisteredPlatformByServiceInstance', variables],
+    queryFn: fetcher<RegisteredPlatformByServiceInstanceQuery, RegisteredPlatformByServiceInstanceQueryVariables>(client, RegisteredPlatformByServiceInstanceDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useRegisteredPlatformByServiceInstanceQuery.getKey = (variables: RegisteredPlatformByServiceInstanceQueryVariables) => ['RegisteredPlatformByServiceInstance', variables];
+useRegisteredPlatformByServiceInstanceQuery.getRootKey = () => ['RegisteredPlatformByServiceInstance'] as const;
+export const useInfiniteRegisteredPlatformByServiceInstanceQuery = <
+      TData = InfiniteData<RegisteredPlatformByServiceInstanceQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: RegisteredPlatformByServiceInstanceQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<RegisteredPlatformByServiceInstanceQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<RegisteredPlatformByServiceInstanceQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<RegisteredPlatformByServiceInstanceQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['RegisteredPlatformByServiceInstance.infinite', variables],
+      queryFn: (metaData) => fetcher<RegisteredPlatformByServiceInstanceQuery, RegisteredPlatformByServiceInstanceQueryVariables>(client, RegisteredPlatformByServiceInstanceDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteRegisteredPlatformByServiceInstanceQuery.getKey = (variables: RegisteredPlatformByServiceInstanceQueryVariables) => ['RegisteredPlatformByServiceInstance.infinite', variables];
+useInfiniteRegisteredPlatformByServiceInstanceQuery.getRootKey = () => ['RegisteredPlatformByServiceInstance.infinite'] as const;
+useRegisteredPlatformByServiceInstanceQuery.fetcher = (client: GraphQLClient, variables: RegisteredPlatformByServiceInstanceQueryVariables, headers?: RequestInit['headers']) => fetcher<RegisteredPlatformByServiceInstanceQuery, RegisteredPlatformByServiceInstanceQueryVariables>(client, RegisteredPlatformByServiceInstanceDocument, variables, headers);
+
+export const IsPlatformRegisteredDocument = `
+    query IsPlatformRegistered($input: IsPlatformRegisteredInput!) {
+  isPlatformRegistered(input: $input) {
+    status
+    platformTitle
+    organization {
+      id
+    }
+  }
+}
+    `;
+
+export const useIsPlatformRegisteredQuery = <
+      TData = IsPlatformRegisteredQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: IsPlatformRegisteredQueryVariables,
+      options?: Omit<UseQueryOptions<IsPlatformRegisteredQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<IsPlatformRegisteredQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<IsPlatformRegisteredQuery, TError, TData>(
+      {
+    queryKey: ['IsPlatformRegistered', variables],
+    queryFn: fetcher<IsPlatformRegisteredQuery, IsPlatformRegisteredQueryVariables>(client, IsPlatformRegisteredDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useIsPlatformRegisteredQuery.getKey = (variables: IsPlatformRegisteredQueryVariables) => ['IsPlatformRegistered', variables];
+useIsPlatformRegisteredQuery.getRootKey = () => ['IsPlatformRegistered'] as const;
+export const useInfiniteIsPlatformRegisteredQuery = <
+      TData = InfiniteData<IsPlatformRegisteredQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: IsPlatformRegisteredQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<IsPlatformRegisteredQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<IsPlatformRegisteredQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<IsPlatformRegisteredQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['IsPlatformRegistered.infinite', variables],
+      queryFn: (metaData) => fetcher<IsPlatformRegisteredQuery, IsPlatformRegisteredQueryVariables>(client, IsPlatformRegisteredDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteIsPlatformRegisteredQuery.getKey = (variables: IsPlatformRegisteredQueryVariables) => ['IsPlatformRegistered.infinite', variables];
+useInfiniteIsPlatformRegisteredQuery.getRootKey = () => ['IsPlatformRegistered.infinite'] as const;
+useIsPlatformRegisteredQuery.fetcher = (client: GraphQLClient, variables: IsPlatformRegisteredQueryVariables, headers?: RequestInit['headers']) => fetcher<IsPlatformRegisteredQuery, IsPlatformRegisteredQueryVariables>(client, IsPlatformRegisteredDocument, variables, headers);
+
+export const CanUnregisterPlatformDocument = `
+    query CanUnregisterPlatform($input: CanUnregisterPlatformInput!) {
+  canUnregisterPlatform(input: $input) {
+    isPlatformRegistered
+    isAllowed
+    isInOrganization
+    organizationId
+    organizationName
+  }
+}
+    `;
+
+export const useCanUnregisterPlatformQuery = <
+      TData = CanUnregisterPlatformQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: CanUnregisterPlatformQueryVariables,
+      options?: Omit<UseQueryOptions<CanUnregisterPlatformQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<CanUnregisterPlatformQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<CanUnregisterPlatformQuery, TError, TData>(
+      {
+    queryKey: ['CanUnregisterPlatform', variables],
+    queryFn: fetcher<CanUnregisterPlatformQuery, CanUnregisterPlatformQueryVariables>(client, CanUnregisterPlatformDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useCanUnregisterPlatformQuery.getKey = (variables: CanUnregisterPlatformQueryVariables) => ['CanUnregisterPlatform', variables];
+useCanUnregisterPlatformQuery.getRootKey = () => ['CanUnregisterPlatform'] as const;
+export const useInfiniteCanUnregisterPlatformQuery = <
+      TData = InfiniteData<CanUnregisterPlatformQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: CanUnregisterPlatformQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<CanUnregisterPlatformQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<CanUnregisterPlatformQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<CanUnregisterPlatformQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['CanUnregisterPlatform.infinite', variables],
+      queryFn: (metaData) => fetcher<CanUnregisterPlatformQuery, CanUnregisterPlatformQueryVariables>(client, CanUnregisterPlatformDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteCanUnregisterPlatformQuery.getKey = (variables: CanUnregisterPlatformQueryVariables) => ['CanUnregisterPlatform.infinite', variables];
+useInfiniteCanUnregisterPlatformQuery.getRootKey = () => ['CanUnregisterPlatform.infinite'] as const;
+useCanUnregisterPlatformQuery.fetcher = (client: GraphQLClient, variables: CanUnregisterPlatformQueryVariables, headers?: RequestInit['headers']) => fetcher<CanUnregisterPlatformQuery, CanUnregisterPlatformQueryVariables>(client, CanUnregisterPlatformDocument, variables, headers);
 
 export const AddRolePortalDocument = `
     mutation AddRolePortal($input: AddRolePortalInput!) {
@@ -9031,6 +9702,36 @@ export const useEditSeoServiceInstanceMetadataMutation = <
 useEditSeoServiceInstanceMetadataMutation.getKey = () => ['EditSeoServiceInstanceMetadata'];
 useEditSeoServiceInstanceMetadataMutation.getRootKey = () => ['EditSeoServiceInstanceMetadata'] as const;
 useEditSeoServiceInstanceMetadataMutation.fetcher = (client: GraphQLClient, variables: EditSeoServiceInstanceMetadataMutationVariables, headers?: RequestInit['headers']) => fetcher<EditSeoServiceInstanceMetadataMutation, EditSeoServiceInstanceMetadataMutationVariables>(client, EditSeoServiceInstanceMetadataDocument, variables, headers);
+
+export const UpdatePlatformServiceMetadataDocument = `
+    mutation UpdatePlatformServiceMetadata($input: UpdatePlatformServiceMetadataInput!) {
+  updatePlatformServiceMetadata(input: $input) {
+    id
+    title
+  }
+}
+    `;
+
+export const useUpdatePlatformServiceMetadataMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<UpdatePlatformServiceMetadataMutation, TError, UpdatePlatformServiceMetadataMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<UpdatePlatformServiceMetadataMutation, TError, UpdatePlatformServiceMetadataMutationVariables, TContext>(
+      {
+    mutationKey: ['UpdatePlatformServiceMetadata'],
+    mutationFn: (variables?: UpdatePlatformServiceMetadataMutationVariables) => fetcher<UpdatePlatformServiceMetadataMutation, UpdatePlatformServiceMetadataMutationVariables>(client, UpdatePlatformServiceMetadataDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useUpdatePlatformServiceMetadataMutation.getKey = () => ['UpdatePlatformServiceMetadata'];
+useUpdatePlatformServiceMetadataMutation.getRootKey = () => ['UpdatePlatformServiceMetadata'] as const;
+useUpdatePlatformServiceMetadataMutation.fetcher = (client: GraphQLClient, variables: UpdatePlatformServiceMetadataMutationVariables, headers?: RequestInit['headers']) => fetcher<UpdatePlatformServiceMetadataMutation, UpdatePlatformServiceMetadataMutationVariables>(client, UpdatePlatformServiceMetadataDocument, variables, headers);
 
 export const ServiceUserCapabilitiesDocument = `
     query ServiceUserCapabilities($service_instance_id: ServiceInstanceId!) {
@@ -10078,6 +10779,249 @@ useUserAdminResendInviteMutation.getKey = () => ['UserAdminResendInvite'];
 useUserAdminResendInviteMutation.getRootKey = () => ['UserAdminResendInvite'] as const;
 useUserAdminResendInviteMutation.fetcher = (client: GraphQLClient, variables: UserAdminResendInviteMutationVariables, headers?: RequestInit['headers']) => fetcher<UserAdminResendInviteMutation, UserAdminResendInviteMutationVariables>(client, UserAdminResendInviteDocument, variables, headers);
 
+export const PendingUserAcceptDocument = `
+    mutation PendingUserAccept($user_id: UserId!, $organization_id: OrganizationId!) {
+  acceptPendingUserInOrganization(
+    user_id: $user_id
+    organization_id: $organization_id
+  ) {
+    id
+  }
+}
+    `;
+
+export const usePendingUserAcceptMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<PendingUserAcceptMutation, TError, PendingUserAcceptMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<PendingUserAcceptMutation, TError, PendingUserAcceptMutationVariables, TContext>(
+      {
+    mutationKey: ['PendingUserAccept'],
+    mutationFn: (variables?: PendingUserAcceptMutationVariables) => fetcher<PendingUserAcceptMutation, PendingUserAcceptMutationVariables>(client, PendingUserAcceptDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+usePendingUserAcceptMutation.getKey = () => ['PendingUserAccept'];
+usePendingUserAcceptMutation.getRootKey = () => ['PendingUserAccept'] as const;
+usePendingUserAcceptMutation.fetcher = (client: GraphQLClient, variables: PendingUserAcceptMutationVariables, headers?: RequestInit['headers']) => fetcher<PendingUserAcceptMutation, PendingUserAcceptMutationVariables>(client, PendingUserAcceptDocument, variables, headers);
+
+export const PendingUserRemoveDocument = `
+    mutation PendingUserRemove($user_id: UserId!, $organization_id: OrganizationId!) {
+  removePendingUserFromOrganization(
+    user_id: $user_id
+    organization_id: $organization_id
+  ) {
+    id
+  }
+}
+    `;
+
+export const usePendingUserRemoveMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<PendingUserRemoveMutation, TError, PendingUserRemoveMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<PendingUserRemoveMutation, TError, PendingUserRemoveMutationVariables, TContext>(
+      {
+    mutationKey: ['PendingUserRemove'],
+    mutationFn: (variables?: PendingUserRemoveMutationVariables) => fetcher<PendingUserRemoveMutation, PendingUserRemoveMutationVariables>(client, PendingUserRemoveDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+usePendingUserRemoveMutation.getKey = () => ['PendingUserRemove'];
+usePendingUserRemoveMutation.getRootKey = () => ['PendingUserRemove'] as const;
+usePendingUserRemoveMutation.fetcher = (client: GraphQLClient, variables: PendingUserRemoveMutationVariables, headers?: RequestInit['headers']) => fetcher<PendingUserRemoveMutation, PendingUserRemoveMutationVariables>(client, PendingUserRemoveDocument, variables, headers);
+
+export const PendingUsersBulkAcceptDocument = `
+    mutation PendingUsersBulkAccept($ids: [UserId!], $searchTerm: String, $filters: [Filter!], $excludedIds: [UserId!]) {
+  bulkAcceptPendingUserInOrganization(
+    input: {ids: $ids, searchTerm: $searchTerm, filters: $filters, excludedIds: $excludedIds}
+  ) {
+    success
+  }
+}
+    `;
+
+export const usePendingUsersBulkAcceptMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<PendingUsersBulkAcceptMutation, TError, PendingUsersBulkAcceptMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<PendingUsersBulkAcceptMutation, TError, PendingUsersBulkAcceptMutationVariables, TContext>(
+      {
+    mutationKey: ['PendingUsersBulkAccept'],
+    mutationFn: (variables?: PendingUsersBulkAcceptMutationVariables) => fetcher<PendingUsersBulkAcceptMutation, PendingUsersBulkAcceptMutationVariables>(client, PendingUsersBulkAcceptDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+usePendingUsersBulkAcceptMutation.getKey = () => ['PendingUsersBulkAccept'];
+usePendingUsersBulkAcceptMutation.getRootKey = () => ['PendingUsersBulkAccept'] as const;
+usePendingUsersBulkAcceptMutation.fetcher = (client: GraphQLClient, variables?: PendingUsersBulkAcceptMutationVariables, headers?: RequestInit['headers']) => fetcher<PendingUsersBulkAcceptMutation, PendingUsersBulkAcceptMutationVariables>(client, PendingUsersBulkAcceptDocument, variables, headers);
+
+export const PendingUsersBulkRemoveDocument = `
+    mutation PendingUsersBulkRemove($ids: [UserId!], $searchTerm: String, $filters: [Filter!], $excludedIds: [UserId!]) {
+  bulkRemovePendingUserFromOrganization(
+    input: {ids: $ids, searchTerm: $searchTerm, filters: $filters, excludedIds: $excludedIds}
+  ) {
+    success
+  }
+}
+    `;
+
+export const usePendingUsersBulkRemoveMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<PendingUsersBulkRemoveMutation, TError, PendingUsersBulkRemoveMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<PendingUsersBulkRemoveMutation, TError, PendingUsersBulkRemoveMutationVariables, TContext>(
+      {
+    mutationKey: ['PendingUsersBulkRemove'],
+    mutationFn: (variables?: PendingUsersBulkRemoveMutationVariables) => fetcher<PendingUsersBulkRemoveMutation, PendingUsersBulkRemoveMutationVariables>(client, PendingUsersBulkRemoveDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+usePendingUsersBulkRemoveMutation.getKey = () => ['PendingUsersBulkRemove'];
+usePendingUsersBulkRemoveMutation.getRootKey = () => ['PendingUsersBulkRemove'] as const;
+usePendingUsersBulkRemoveMutation.fetcher = (client: GraphQLClient, variables?: PendingUsersBulkRemoveMutationVariables, headers?: RequestInit['headers']) => fetcher<PendingUsersBulkRemoveMutation, PendingUsersBulkRemoveMutationVariables>(client, PendingUsersBulkRemoveDocument, variables, headers);
+
+export const UserCapabilitiesEditDocument = `
+    mutation UserCapabilitiesEdit($id: ID!, $input: EditUserCapabilitiesInput!) {
+  editUserCapabilities(id: $id, input: $input) {
+    id
+  }
+}
+    `;
+
+export const useUserCapabilitiesEditMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<UserCapabilitiesEditMutation, TError, UserCapabilitiesEditMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<UserCapabilitiesEditMutation, TError, UserCapabilitiesEditMutationVariables, TContext>(
+      {
+    mutationKey: ['UserCapabilitiesEdit'],
+    mutationFn: (variables?: UserCapabilitiesEditMutationVariables) => fetcher<UserCapabilitiesEditMutation, UserCapabilitiesEditMutationVariables>(client, UserCapabilitiesEditDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useUserCapabilitiesEditMutation.getKey = () => ['UserCapabilitiesEdit'];
+useUserCapabilitiesEditMutation.getRootKey = () => ['UserCapabilitiesEdit'] as const;
+useUserCapabilitiesEditMutation.fetcher = (client: GraphQLClient, variables: UserCapabilitiesEditMutationVariables, headers?: RequestInit['headers']) => fetcher<UserCapabilitiesEditMutation, UserCapabilitiesEditMutationVariables>(client, UserCapabilitiesEditDocument, variables, headers);
+
+export const UserAdminEditDocument = `
+    mutation UserAdminEdit($id: ID!, $input: AdminEditUserInput!) {
+  adminEditUser(id: $id, input: $input) {
+    id
+  }
+}
+    `;
+
+export const useUserAdminEditMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<UserAdminEditMutation, TError, UserAdminEditMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<UserAdminEditMutation, TError, UserAdminEditMutationVariables, TContext>(
+      {
+    mutationKey: ['UserAdminEdit'],
+    mutationFn: (variables?: UserAdminEditMutationVariables) => fetcher<UserAdminEditMutation, UserAdminEditMutationVariables>(client, UserAdminEditDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useUserAdminEditMutation.getKey = () => ['UserAdminEdit'];
+useUserAdminEditMutation.getRootKey = () => ['UserAdminEdit'] as const;
+useUserAdminEditMutation.fetcher = (client: GraphQLClient, variables: UserAdminEditMutationVariables, headers?: RequestInit['headers']) => fetcher<UserAdminEditMutation, UserAdminEditMutationVariables>(client, UserAdminEditDocument, variables, headers);
+
+export const UserOrganizationRemoveDocument = `
+    mutation UserOrganizationRemove($user_id: UserId!, $organization_id: OrganizationId!) {
+  removeUserFromOrganization(user_id: $user_id, organization_id: $organization_id) {
+    id
+  }
+}
+    `;
+
+export const useUserOrganizationRemoveMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<UserOrganizationRemoveMutation, TError, UserOrganizationRemoveMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<UserOrganizationRemoveMutation, TError, UserOrganizationRemoveMutationVariables, TContext>(
+      {
+    mutationKey: ['UserOrganizationRemove'],
+    mutationFn: (variables?: UserOrganizationRemoveMutationVariables) => fetcher<UserOrganizationRemoveMutation, UserOrganizationRemoveMutationVariables>(client, UserOrganizationRemoveDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useUserOrganizationRemoveMutation.getKey = () => ['UserOrganizationRemove'];
+useUserOrganizationRemoveMutation.getRootKey = () => ['UserOrganizationRemove'] as const;
+useUserOrganizationRemoveMutation.fetcher = (client: GraphQLClient, variables: UserOrganizationRemoveMutationVariables, headers?: RequestInit['headers']) => fetcher<UserOrganizationRemoveMutation, UserOrganizationRemoveMutationVariables>(client, UserOrganizationRemoveDocument, variables, headers);
+
+export const PendingUserEventsDocument = `
+    subscription PendingUserEvents($organizationId: ID!) {
+  UserPending(organizationId: $organizationId) {
+    delete {
+      id
+    }
+    invalidate {
+      id
+    }
+  }
+}
+    `;
+export const OrganizationUserEventsDocument = `
+    subscription OrganizationUserEvents($organizationId: ID!) {
+  User(organizationId: $organizationId) {
+    add {
+      id
+    }
+  }
+}
+    `;
+export const AdminUserEventsDocument = `
+    subscription AdminUserEvents {
+  AdminUser {
+    add {
+      id
+    }
+  }
+}
+    `;
 export const UsersWithCapabilitiesInOrganizationDocument = `
     query UsersWithCapabilitiesInOrganization($input: UsersWithCapabilitiesInOrganizationInput!) {
   usersWithCapabilitiesInOrganization(input: $input) {
@@ -10198,6 +11142,156 @@ export const useInfiniteUsersQuery = <
 useInfiniteUsersQuery.getKey = (variables: UsersQueryVariables) => ['Users.infinite', variables];
 useInfiniteUsersQuery.getRootKey = () => ['Users.infinite'] as const;
 useUsersQuery.fetcher = (client: GraphQLClient, variables: UsersQueryVariables, headers?: RequestInit['headers']) => fetcher<UsersQuery, UsersQueryVariables>(client, UsersDocument, variables, headers);
+
+export const PendingUsersDocument = `
+    query PendingUsers($first: Int!, $after: ID, $orderBy: UserOrdering!, $orderMode: OrderingMode!, $filters: [Filter!], $searchTerm: String) {
+  pendingUsers(
+    first: $first
+    after: $after
+    orderBy: $orderBy
+    orderMode: $orderMode
+    filters: $filters
+    searchTerm: $searchTerm
+  ) {
+    totalCount
+    edges {
+      node {
+        id
+        email
+        first_name
+        last_name
+      }
+    }
+  }
+}
+    `;
+
+export const usePendingUsersQuery = <
+      TData = PendingUsersQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: PendingUsersQueryVariables,
+      options?: Omit<UseQueryOptions<PendingUsersQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<PendingUsersQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<PendingUsersQuery, TError, TData>(
+      {
+    queryKey: ['PendingUsers', variables],
+    queryFn: fetcher<PendingUsersQuery, PendingUsersQueryVariables>(client, PendingUsersDocument, variables, headers),
+    ...options
+  }
+    )};
+
+usePendingUsersQuery.getKey = (variables: PendingUsersQueryVariables) => ['PendingUsers', variables];
+usePendingUsersQuery.getRootKey = () => ['PendingUsers'] as const;
+export const useInfinitePendingUsersQuery = <
+      TData = InfiniteData<PendingUsersQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: PendingUsersQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<PendingUsersQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<PendingUsersQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<PendingUsersQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['PendingUsers.infinite', variables],
+      queryFn: (metaData) => fetcher<PendingUsersQuery, PendingUsersQueryVariables>(client, PendingUsersDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfinitePendingUsersQuery.getKey = (variables: PendingUsersQueryVariables) => ['PendingUsers.infinite', variables];
+useInfinitePendingUsersQuery.getRootKey = () => ['PendingUsers.infinite'] as const;
+usePendingUsersQuery.fetcher = (client: GraphQLClient, variables: PendingUsersQueryVariables, headers?: RequestInit['headers']) => fetcher<PendingUsersQuery, PendingUsersQueryVariables>(client, PendingUsersDocument, variables, headers);
+
+export const UsersListDocument = `
+    query UsersList($first: Int!, $after: ID, $orderBy: UserOrdering!, $orderMode: OrderingMode!, $filters: [Filter!], $searchTerm: String) {
+  users(
+    first: $first
+    after: $after
+    orderBy: $orderBy
+    orderMode: $orderMode
+    filters: $filters
+    searchTerm: $searchTerm
+  ) {
+    totalCount
+    edges {
+      node {
+        id
+        email
+        last_name
+        first_name
+        disabled
+        last_login
+        country
+        status
+        invitation_date
+        organization_capabilities {
+          id
+          organization {
+            id
+            name
+            personal_space
+          }
+          capabilities
+        }
+      }
+    }
+  }
+}
+    `;
+
+export const useUsersListQuery = <
+      TData = UsersListQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: UsersListQueryVariables,
+      options?: Omit<UseQueryOptions<UsersListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<UsersListQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<UsersListQuery, TError, TData>(
+      {
+    queryKey: ['UsersList', variables],
+    queryFn: fetcher<UsersListQuery, UsersListQueryVariables>(client, UsersListDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useUsersListQuery.getKey = (variables: UsersListQueryVariables) => ['UsersList', variables];
+useUsersListQuery.getRootKey = () => ['UsersList'] as const;
+export const useInfiniteUsersListQuery = <
+      TData = InfiniteData<UsersListQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: UsersListQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<UsersListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<UsersListQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<UsersListQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['UsersList.infinite', variables],
+      queryFn: (metaData) => fetcher<UsersListQuery, UsersListQueryVariables>(client, UsersListDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteUsersListQuery.getKey = (variables: UsersListQueryVariables) => ['UsersList.infinite', variables];
+useInfiniteUsersListQuery.getRootKey = () => ['UsersList.infinite'] as const;
+useUsersListQuery.fetcher = (client: GraphQLClient, variables: UsersListQueryVariables, headers?: RequestInit['headers']) => fetcher<UsersListQuery, UsersListQueryVariables>(client, UsersListDocument, variables, headers);
 
 export const VotingRoundCreateDocument = `
     mutation VotingRoundCreate($input: CreateVotingRoundInput!) {

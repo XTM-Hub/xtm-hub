@@ -23,6 +23,7 @@ import {
   NEW_SHORT_DESCRIPTION,
   NEW_SLUG,
   renderServiceForm,
+  REQUEST_VALIDATION_LABEL,
   ServiceFormResource,
   SOLUTION_CATEGORY,
   UPLOADER,
@@ -34,13 +35,18 @@ import {
   CsvFeedForm,
   CsvFeedFormValues,
 } from '@/components/service/integrations/forms/CsvFeedForm';
-import { IntegrationType, LicenseType } from '@graphql/generated';
+import {
+  DocumentStatus,
+  IntegrationType,
+  LicenseType,
+} from '@graphql/generated';
 import { screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@graphql/generated', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@graphql/generated')>()),
   useUseCasesListQuery: vi.fn(),
+  useUsersQuery: vi.fn(),
   useSolutionCategoriesListQuery: vi.fn(() => ({ data: undefined })),
 }));
 
@@ -69,7 +75,9 @@ describe('CsvFeedForm', () => {
     await uploadFile(user, JSON_FILE_FIELD);
 
     // When
-    await user.click(screen.getByRole('button', { name: VALIDATE_LABEL }));
+    await user.click(
+      screen.getByRole('button', { name: REQUEST_VALIDATION_LABEL })
+    );
 
     // Then
     await waitFor(() =>
@@ -84,6 +92,7 @@ describe('CsvFeedForm', () => {
         use_cases: [USE_CASE.id],
         solution_categories: [SOLUTION_CATEGORY.id],
         document: [JSON_FILE_FIELD.file],
+        status: DocumentStatus.InValidation,
         logo: [],
         images: [],
       } satisfies ExpectedValues)
@@ -95,6 +104,17 @@ describe('CsvFeedForm', () => {
     resourceName: ServiceFormResource.CSV_FEED,
     fileField: JSON_FILE_FIELD,
     fillCreationFields: fillIntegrationCreationFields,
+  });
+
+  it('should close without asking when the user closes the form of an untouched CSV feed', async () => {
+    // Given
+    const { user } = renderServiceForm(CsvFeedForm, buildIntegrationDocument());
+
+    // When
+    await user.click(screen.getByRole('button', { name: 'Utils.Close' }));
+
+    // Then
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
   });
 
   it('should save the CSV feed without a new JSON file when the user edits it', async () => {
@@ -120,7 +140,7 @@ describe('CsvFeedForm', () => {
         use_cases: [USE_CASE.id],
         solution_categories: [SOLUTION_CATEGORY.id],
         license_type: LicenseType.Commercial,
-        active: true,
+        status: DocumentStatus.Published,
         logo: [],
         images: [DELETED_IMAGE, KEPT_IMAGE],
       } satisfies ExpectedValues)

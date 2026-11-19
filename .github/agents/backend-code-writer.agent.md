@@ -25,7 +25,9 @@ performance bottlenecks and security weaknesses before delivering it.
 - Work only on backend code under `apps/backend/` unless explicitly asked otherwise.
 
 ## Code Quality Expectations
-- Consider authorization, data exposure, and security implications for every new resolver/service path.
+- Consider authorization, data exposure, and security implications for every new resolver/service path. Enforce
+  rights in the backend only: guard the operation and filter the rows it returns or changes to what the caller may
+  see, on every path that reads the data, and test a row the caller must not see.
 - Avoid speculative schema changes when requirements are ambiguous. Never guess silently: ask, or if you
   cannot ask, state the ambiguity and the assumption you made in your final report.
 

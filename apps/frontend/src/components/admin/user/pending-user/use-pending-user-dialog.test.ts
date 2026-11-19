@@ -1,11 +1,11 @@
-import { UserList_fragment$data } from '@generated/UserList_fragment.graphql';
+import { PendingUser } from '@/components/admin/user/pending-user/pending-user-list.types';
 import { act, renderHook } from '@testing-library/react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { usePendingUserDialog } from './use-pending-user-dialog';
 
-const pendingUsers = [
+const pendingUsers: PendingUser[] = [
   {
     id: 'user-1',
     email: 'pending.one@filigran.io',
@@ -18,7 +18,7 @@ const pendingUsers = [
     first_name: 'Pending',
     last_name: 'Two',
   },
-] as UserList_fragment$data[];
+];
 
 describe('usePendingUserDialog', () => {
   const replaceMock = vi.fn();
@@ -60,7 +60,7 @@ describe('usePendingUserDialog', () => {
     );
 
     const { result, rerender } = renderHook(
-      ({ userData }: { userData: UserList_fragment$data[] }) =>
+      ({ userData }: { userData: PendingUser[] }) =>
         usePendingUserDialog({
           userData,
           approveUser: approveUserMock,
@@ -171,7 +171,7 @@ describe('usePendingUserDialog', () => {
     );
 
     const { result, rerender } = renderHook(
-      ({ userData }: { userData: UserList_fragment$data[] }) =>
+      ({ userData }: { userData: PendingUser[] }) =>
         usePendingUserDialog({
           userData,
           approveUser: approveUserMock,
@@ -235,5 +235,35 @@ describe('usePendingUserDialog', () => {
 
     expect(approveUserMock).not.toHaveBeenCalled();
     expect(rejectUserMock).not.toHaveBeenCalled();
+  });
+
+  it('should wait for the pending users before resolving the URL', () => {
+    // Given
+    vi.mocked(useSearchParams).mockReturnValue(
+      new URLSearchParams('action=approve&user_id=user-1') as never
+    );
+    const { result, rerender } = renderHook(
+      ({ userData }: { userData: PendingUser[] | undefined }) =>
+        usePendingUserDialog({
+          userData,
+          approveUser: approveUserMock,
+          rejectUser: rejectUserMock,
+        }),
+      { initialProps: { userData: undefined as PendingUser[] | undefined } }
+    );
+    expect(result.current.pendingUserDialog).toBeNull();
+    expect(result.current.alreadyProcessedDialogOpen).toBe(false);
+    expect(replaceMock).not.toHaveBeenCalled();
+
+    // When
+    rerender({ userData: pendingUsers });
+
+    // Then
+    expect(result.current.pendingUserDialog).toEqual({
+      action: 'approve',
+      user: pendingUsers[0],
+    });
+    expect(result.current.alreadyProcessedDialogOpen).toBe(false);
+    expect(replaceMock).toHaveBeenCalledOnce();
   });
 });

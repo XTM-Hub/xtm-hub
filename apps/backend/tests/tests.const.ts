@@ -5,6 +5,7 @@ import {
   DeploymentRequestPlatformRegion,
   DeploymentRequestSource,
   DeploymentRequestUseCase,
+  OrganizationCapability,
   PlatformIdentifier,
   PortalCapability,
 } from '../src/__generated__/resolvers-types';
@@ -390,6 +391,21 @@ export const contextSimpleUserSecondOrga: PortalContext = {
     ],
     capabilities: [],
     roles_portal: [],
+    organization_capabilities: [
+      {
+        id: 'simple-second-organization',
+        organization: { id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID },
+        capabilities: [],
+      },
+      {
+        id: 'simple-second-organization-personal-space',
+        organization: {
+          id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.SIMPLE
+            .PERSONAL_SPACE_ID,
+        },
+        capabilities: [],
+      },
+    ],
   },
 } as unknown as PortalContext;
 
@@ -427,6 +443,24 @@ export const contextSimpleUserFiligran2: PortalContext = {
     ],
     capabilities: [],
     roles_portal: [],
+    organization_capabilities: [
+      {
+        id: 'access-subscription-filigran',
+        organization: { id: TEST_ORGANIZATIONS.FILIGRAN.ID },
+        capabilities: [
+          OrganizationCapability.ManageAccess,
+          OrganizationCapability.ManageSubscription,
+        ],
+      },
+      {
+        id: 'access-subscription-personal-space',
+        organization: {
+          id: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2
+            .ID as unknown as OrganizationId,
+        },
+        capabilities: [OrganizationCapability.AdministrateOrganization],
+      },
+    ],
   },
   dataLoaders: {
     deploymentRequest: {

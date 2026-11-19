@@ -5,13 +5,14 @@ import PublicPathError from '@/components/PublicPathError';
 import { RegistrationContextProvider } from '@/components/registration/Context';
 import { Unregister } from '@/components/registration/unregister/Index';
 import useDecodedQuery from '@/hooks/use-decoded-query';
-import useMountingLoader from '@/hooks/use-mounting-loader';
-import RegisterCanUnregisterPlatformQueryGraphql, {
-  registerCanUnregisterPlatformQuery,
-} from '@generated/registerCanUnregisterPlatformQuery.graphql';
-import { PlatformIdentifier } from '@graphql/generated';
+import { portalGraphqlClient } from '@/lib/graphql-client';
+import { throwOnFirstLoadError } from '@/lib/query-client';
+import {
+  PlatformIdentifier,
+  useCanUnregisterPlatformQuery,
+} from '@graphql/generated';
+import { registrationKeys } from '@graphql/registration/registration.keys';
 import { redirect, useParams } from 'next/navigation';
-import { useQueryLoader } from 'react-relay';
 
 export const PageLoader = () => {
   const { identifier } = useParams<{ identifier: PlatformIdentifier }>();
@@ -32,22 +33,55 @@ export const PageLoader = () => {
     state,
   } = useDecodedQuery();
 
-  const [queryRef, loadQuery] =
-    useQueryLoader<registerCanUnregisterPlatformQuery>(
-      RegisterCanUnregisterPlatformQueryGraphql
-    );
-  useMountingLoader(loadQuery, { input: { platformId, tenantId } });
   if (!platformId) {
     return redirect('/');
   }
 
-  return queryRef ? (
+  return (
+    <UnregisterLoader
+      identifier={identifier}
+      platformId={platformId}
+      tenantId={tenantId ?? null}
+      state={state ?? undefined}
+    />
+  );
+};
+
+interface UnregisterLoaderProps {
+  identifier: PlatformIdentifier;
+  platformId: string;
+  tenantId: string | null;
+  state?: string;
+}
+
+// Only rendered once the platform id is known, so the query never runs without it.
+const UnregisterLoader = ({
+  identifier,
+  platformId,
+  tenantId,
+  state,
+}: UnregisterLoaderProps) => {
+  const variables = { input: { platformId, tenantId } };
+  // Loaded in the browser only: the unregistration posts its result to the opener window.
+  const { data } = useCanUnregisterPlatformQuery(
+    portalGraphqlClient,
+    variables,
+    {
+      queryKey: registrationKeys.canUnregisterPlatform(variables),
+      // Loaded once: the popup regains focus often, and a refetch would hand the flow in progress a new
+      // status. A query that is never stale is not refetched on focus, mount or reconnect.
+      staleTime: Infinity,
+      throwOnError: throwOnFirstLoadError,
+    }
+  );
+
+  return data ? (
     <RegistrationContextProvider identifier={identifier}>
       <Unregister
-        queryRef={queryRef}
+        canUnregisterPlatform={data.canUnregisterPlatform}
         platformId={platformId}
         tenantId={tenantId}
-        state={state ?? undefined}
+        state={state}
       />
     </RegistrationContextProvider>
   ) : (

@@ -682,6 +682,7 @@ describe('telemetryApp', () => {
       const externalRedirect = {
         newsFeedItemId: NEWS_FEED_ITEM_ID,
         newsFeedItemType: NewsFeedItemType.BlogPost,
+        platformIdentifier: PlatformIdentifier.Opencti,
         destinationHost: 'filigran.io',
         platformId: PLATFORM_ID,
       };
@@ -701,9 +702,32 @@ describe('telemetryApp', () => {
           news_feed_item_type: TelemetryNewsFeedItemType.BLOG_POST,
           destination_host: 'filigran.io',
           platform_id: PLATFORM_ID,
+          target_product: TelemetryTargetProduct.OPEN_CTI,
           ...LOGGED_IN_IDENTITY,
         });
       });
+
+      it.each([
+        [PlatformIdentifier.Opencti, TelemetryTargetProduct.OPEN_CTI],
+        [PlatformIdentifier.Openaev, TelemetryTargetProduct.OPEN_AEV],
+      ])(
+        'should tell the product of the item apart in the event when the item belongs to %s',
+        async (platformIdentifier, expectedTargetProduct) => {
+          // When
+          await TelemetryApp.sendExternalNewsFeedRedirectEvent({
+            user: undefined,
+            ...externalRedirect,
+            platformIdentifier,
+          });
+
+          // Then
+          expect(sendTelemetryEventSpy.mock.calls[0]![0]).toMatchObject({
+            event_type: TelemetryEventType.NEWS_FEED_REDIRECT,
+            news_feed_item_type: TelemetryNewsFeedItemType.BLOG_POST,
+            target_product: expectedTargetProduct,
+          });
+        }
+      );
 
       it('should send an anonymous event when nobody is logged in', async () => {
         // When

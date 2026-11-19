@@ -1,5 +1,8 @@
 import ShareableResourceConnectorSlug from '@/components/service/document/connector/ShareableResourceConnectorSlug';
-import { useRegisteredPlatforms } from '@/hooks/use-registered-platforms';
+import {
+  RegisteredPlatformsListItem,
+  useRegisteredPlatforms,
+} from '@/hooks/use-registered-platforms';
 import { ConnectorFields } from '@/utils/shareable-resources/shareable-resources.types';
 import { readTrackedEvents, startAnalytics } from '@/utils/test/analytics';
 import { mswServer } from '@/utils/test/msw/server';
@@ -151,9 +154,9 @@ describe('ShareableResourceConnectorSlug - Resource view', () => {
           url: 'https://opencti.acme.com',
           version: '6.4.0',
           contract: 'EE',
-          ' $fragmentType': 'useRegisteredPlatformsFragment',
-        },
+        } as RegisteredPlatformsListItem,
       ],
+      isPending: false,
     });
   });
 

@@ -21,10 +21,12 @@ const SERVICE_INSTANCE_ID = 'service-1';
 const PAGE_SIZE = 50;
 const LARGE_TOTAL_COUNT = 144;
 const FILTERED_TOTAL_COUNT = 4;
-const ACTIVE_DOCUMENT_ID = 'active-doc';
+const PUBLISHED_DOCUMENT_ID = 'published-doc';
 const DRAFT_DOCUMENT_ID = 'draft-doc';
+const IN_VALIDATION_DOCUMENT_ID = 'in-validation-doc';
 const PUBLISHED_RESOURCE_NAME = 'Published connector';
 const DRAFT_RESOURCE_NAME = 'Draft connector';
+const IN_VALIDATION_RESOURCE_NAME = 'In validation connector';
 
 const testState = vi.hoisted(() => ({
   useDocumentsListQuery: vi.fn(),
@@ -40,8 +42,8 @@ const testState = vi.hoisted(() => ({
 const makeDocument = (id: string, name: string, status: DocumentStatus) =>
   ({ id, name, status }) as DocumentItemFragment;
 
-const buildDocument = (id: string, published: boolean) =>
-  ({ id, status: published ? 'published' : 'draft' }) as DocumentItemFragment;
+const buildDocument = (id: string, status: DocumentStatus) =>
+  ({ id, status }) as DocumentItemFragment;
 
 const withDocuments = (
   totalCount: number,
@@ -117,8 +119,9 @@ vi.mock('@/utils/shareable-resources/use-shareable-resource-mapping', () => ({
 vi.mock('@/components/service/components/ServiceList', () => ({
   default: (props: {
     paginationControls?: React.ReactNode;
-    active: DocumentItemFragment[];
+    published: DocumentItemFragment[];
     draft: DocumentItemFragment[];
+    inValidation: DocumentItemFragment[];
   }) => {
     testState.serviceListProps(props);
     return <>{props.paginationControls}</>;
@@ -313,12 +316,13 @@ describe('ShareableResourceServiceList', () => {
     });
   });
 
-  it('should hand the active documents and the drafts to the list separately', () => {
+  it('should hand the published documents, the ones in validation and the drafts to the list separately', () => {
     // Given
     testState.useDocumentsListQuery.mockReturnValue(
-      withDocuments(2, [
-        buildDocument(DRAFT_DOCUMENT_ID, false),
-        buildDocument(ACTIVE_DOCUMENT_ID, true),
+      withDocuments(3, [
+        buildDocument(DRAFT_DOCUMENT_ID, DocumentStatus.Draft),
+        buildDocument(PUBLISHED_DOCUMENT_ID, DocumentStatus.Published),
+        buildDocument(IN_VALIDATION_DOCUMENT_ID, DocumentStatus.InValidation),
       ])
     );
 
@@ -326,12 +330,16 @@ describe('ShareableResourceServiceList', () => {
     renderList('');
 
     // Then
-    const { active, draft } = testState.serviceListProps.mock.lastCall![0];
-    expect(active.map(({ id }: DocumentItemFragment) => id)).toEqual([
-      ACTIVE_DOCUMENT_ID,
+    const { published, draft, inValidation } =
+      testState.serviceListProps.mock.lastCall![0];
+    expect(published.map(({ id }: DocumentItemFragment) => id)).toEqual([
+      PUBLISHED_DOCUMENT_ID,
     ]);
     expect(draft.map(({ id }: DocumentItemFragment) => id)).toEqual([
       DRAFT_DOCUMENT_ID,
+    ]);
+    expect(inValidation.map(({ id }: DocumentItemFragment) => id)).toEqual([
+      IN_VALIDATION_DOCUMENT_ID,
     ]);
   });
 
@@ -391,14 +399,18 @@ describe('ShareableResourceServiceList', () => {
 
   it.each([
     [
-      'the drafts first',
+      'the drafts, then the ones in validation, then the published ones',
       'can see the drafts',
       true,
       [
         expect.objectContaining({ item_name: DRAFT_RESOURCE_NAME, index: 0 }),
         expect.objectContaining({
-          item_name: PUBLISHED_RESOURCE_NAME,
+          item_name: IN_VALIDATION_RESOURCE_NAME,
           index: 1,
+        }),
+        expect.objectContaining({
+          item_name: PUBLISHED_RESOURCE_NAME,
+          index: 2,
         }),
       ],
     ],
@@ -420,11 +432,16 @@ describe('ShareableResourceServiceList', () => {
       startAnalytics();
       testState.useServiceCapability.mockReturnValue(canSeeDrafts);
       testState.useDocumentsListQuery.mockReturnValue(
-        withDocuments(2, [
+        withDocuments(3, [
           makeDocument(
             '0d1c2b3a-4e5f-4a6b-8c7d-9e0f1a2b3c4d',
             PUBLISHED_RESOURCE_NAME,
             DocumentStatus.Published
+          ),
+          makeDocument(
+            '7a8b9c0d-1e2f-4a3b-8c4d-5e6f7a8b9c0d',
+            IN_VALIDATION_RESOURCE_NAME,
+            DocumentStatus.InValidation
           ),
           makeDocument(
             '5e6f7a8b-9c0d-4e1f-8a2b-3c4d5e6f7a8b',

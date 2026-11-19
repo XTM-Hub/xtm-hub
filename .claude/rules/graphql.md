@@ -50,7 +50,9 @@ flowchart LR
 
 Access control is declared per operation, never hand-rolled inside a resolver: `@Guarded` / `@Public()` on the resolver
 for migrated modules, the `@auth` directive (transformer in `apps/backend/src/security/directive-graphql/`) for the
-others. An operation has one of the two, never both. See [`access-control.md`](access-control.md).
+others. An operation has one of the two, never both. The returned data is filtered in the backend query too (drafts and
+documents in validation are not for everyone), never by the frontend or a field the client chooses to ask for. See
+[`access-control.md`](access-control.md).
 
 ## Relay conventions (existing pages only)
 

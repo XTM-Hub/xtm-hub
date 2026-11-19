@@ -64,7 +64,7 @@ const HomepageResourceList = ({
             docHasMetadata(resource, 'manager_supported') &&
             Boolean(resource.manager_supported);
 
-          const active =
+          const published =
             isDocumentPublished(resource.status) &&
             resource.type !== ShareableResourceType.OPENCTI_INTEGRATION;
 
@@ -78,7 +78,7 @@ const HomepageResourceList = ({
                 shortDescription={resource.short_description}
                 url={url}
                 logoUrl={logoUrl}
-                active={active}
+                published={published}
                 verified={verified}
                 deployable={deployable}
                 useCases={
