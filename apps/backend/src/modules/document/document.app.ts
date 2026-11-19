@@ -134,10 +134,6 @@ export const DocumentApp = {
     logo?: Upload;
     images?: Upload[];
   }) => {
-    const metaDescription = DocumentHelper.validateMetaDescription(
-      input.meta_description
-    );
-
     const serviceDefinition =
       await ServiceDefinitionDomain.loadServiceDefinitionByServiceInstance(
         serviceInstanceId
@@ -145,6 +141,13 @@ export const DocumentApp = {
     if (!serviceDefinition) {
       throw new Error(ErrorCode.ServiceDefinitionNotFound);
     }
+
+    const metaDescription = DocumentHelper.validateMetaDescription({
+      serviceDefinitionIdentifier:
+        serviceDefinition.identifier as ManageableServiceDefinitionIdentifier,
+      summary: input.meta_description,
+      name: input.name,
+    });
 
     const [sourceDocumentFile] = await DocumentUploadsHelper.processUploads(
       sourceDocument,
@@ -320,10 +323,6 @@ export const DocumentApp = {
     images?: Upload[];
     input: MutationUpdateDocumentArgsResolverType['input'];
   }) => {
-    const metaDescription = DocumentHelper.validateOptionalMetaDescription(
-      input.meta_description
-    );
-
     const serviceDefinition =
       await ServiceDefinitionDomain.loadServiceDefinitionByServiceInstance(
         serviceInstanceId
@@ -343,6 +342,14 @@ export const DocumentApp = {
     if (documentBeforeUpdate.service_instance_id !== serviceInstanceId) {
       throw new Error(ErrorCode.DocumentNotFound);
     }
+
+    const metaDescription = DocumentHelper.validateUpdatedMetaDescription({
+      serviceDefinitionIdentifier:
+        serviceDefinition.identifier as ManageableServiceDefinitionIdentifier,
+      summary: input.meta_description,
+      name: input.name,
+      storedDocument: documentBeforeUpdate,
+    });
 
     // Not atomic with the update below: two editors saving at once can skip
     // the rule. Accepted, editors are few and the status shows in the list.

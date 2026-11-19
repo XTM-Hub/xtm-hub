@@ -17,6 +17,7 @@ import ServiceDefinition from '../../model/kanel/public/ServiceDefinition';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { UseCaseId } from '../../model/kanel/public/UseCase';
 import User, { UserId } from '../../model/kanel/public/User';
+import { PlatformIdentifierToString } from '../../server/mail-template/mail';
 import { MinIOClient } from '../../thirdparty/minio/client';
 import { MinioFile } from '../../thirdparty/minio/types';
 import type {
@@ -74,11 +75,6 @@ export const BOOLEAN_METADATA = [
   DocumentMetadataKeyCode.ManagerSupported,
   DocumentMetadataKeyCode.PlaybookSupported,
 ];
-
-// Below this length, search engines tend to replace the <meta name="description"> with an excerpt of the page.
-export const META_DESCRIPTION_MIN_LENGTH = 120;
-// The length search engines display for a <meta name="description">; the Document column is a varchar(160).
-export const META_DESCRIPTION_MAX_LENGTH = 160;
 
 export type Document = WithUseCases<DocumentModel>;
 export type WithDocumentId<T> = T & { _document_id: string };
@@ -147,6 +143,27 @@ export const DocumentTypeMappedByServiceDefinition: Record<
     OPENAEV_SCENARIO_DOCUMENT_TYPE,
   [ServiceDefinitionIdentifier.OpenctiPlaybooks]:
     OPENCTI_PLAYBOOK_DOCUMENT_TYPE,
+};
+
+// Bounds of the meta description generated from the summary (see DocumentHelper.buildMetaDescription), not of the
+// summary itself. Below the minimum, search engines tend to replace the <meta name="description"> with an excerpt of
+// the page; the maximum is the length they display.
+export const META_DESCRIPTION_MIN_LENGTH = 120;
+export const META_DESCRIPTION_MAX_LENGTH = 160;
+
+// The em dash (U+2014) and the en dash (U+2013) are refused in a meta description; the hyphen is allowed.
+const META_DESCRIPTION_FORBIDDEN_DASHES = /[\u2013\u2014]/;
+
+export const META_DESCRIPTION_TYPE_LABELS: Record<
+  ManageableServiceDefinitionIdentifier,
+  string
+> = {
+  [ServiceDefinitionIdentifier.OpenctiCustomDashboards]: 'Dashboard',
+  [ServiceDefinitionIdentifier.OpenaevScenarios]: 'Scenario',
+  [ServiceDefinitionIdentifier.OpenctiCustomViews]: 'Custom View',
+  // Every integration subtype (connector, feeds, stream, third party) shares this label.
+  [ServiceDefinitionIdentifier.OpenctiIntegrations]: 'Integration',
+  [ServiceDefinitionIdentifier.OpenctiPlaybooks]: 'Playbook',
 };
 
 const DocumentMetadataMappedByServiceIdentifier: Record<
@@ -251,31 +268,124 @@ export const DocumentHelper = {
     }
   },
 
-  /** Returns the trimmed meta description, required on creation. */
-  validateMetaDescription: (metaDescription: string): string => {
-    const trimmed = metaDescription.trim();
-    if (!trimmed) {
-      throw new Error(ErrorCode.MetaDescriptionRequired);
+  /** Name of the product a resource belongs to, e.g. OpenCTI for a custom dashboard. */
+  getProductName: (
+    serviceDefinitionIdentifier: ManageableServiceDefinitionIdentifier
+  ): string => {
+    for (const [
+      platformIdentifier,
+      serviceDefinitionIdentifiers,
+    ] of ServiceDefinitionIdentifiersByPlatformIdentifier) {
+      if (serviceDefinitionIdentifiers.includes(serviceDefinitionIdentifier)) {
+        return PlatformIdentifierToString[platformIdentifier];
+      }
     }
-    if (trimmed.length < META_DESCRIPTION_MIN_LENGTH) {
-      throw new Error(ErrorCode.MetaDescriptionTooShort);
-    }
-    if (trimmed.length > META_DESCRIPTION_MAX_LENGTH) {
-      throw new Error(ErrorCode.MetaDescriptionTooLong);
-    }
-    return trimmed;
+    throw new Error(ErrorCode.ServiceNotManageable);
   },
 
   /**
-   * Returns the trimmed meta description of an update, or undefined when none is given: the documents created before
-   * the field existed have none and stay editable, so an empty value leaves the stored one untouched.
+   * The meta description published on the resource page: "{Product} {TypeLabel}: {summary}.", where the summary is
+   * the meta_description stored on the document. A summary that already ends with a period gets no second one, so
+   * that a summary written as a full sentence does not end up with "..".
    */
-  validateOptionalMetaDescription: (
-    metaDescription: string | null | undefined
-  ): string | undefined =>
-    metaDescription?.trim()
-      ? DocumentHelper.validateMetaDescription(metaDescription)
-      : undefined,
+  buildMetaDescription: ({
+    serviceDefinitionIdentifier,
+    summary,
+  }: {
+    serviceDefinitionIdentifier: ManageableServiceDefinitionIdentifier;
+    summary: string;
+  }): string => {
+    const trimmedSummary = summary.trim();
+    const period = trimmedSummary.endsWith('.') ? '' : '.';
+    return `${DocumentHelper.getProductName(serviceDefinitionIdentifier)} ${META_DESCRIPTION_TYPE_LABELS[serviceDefinitionIdentifier]}: ${trimmedSummary}${period}`;
+  },
+
+  /** Throws when the generated meta description breaks a publishing rule; title is the document name (the page h1). */
+  validateGeneratedMetaDescription: ({
+    metaDescription,
+    title,
+  }: {
+    metaDescription: string;
+    title: string | null;
+  }) => {
+    if (metaDescription.length < META_DESCRIPTION_MIN_LENGTH) {
+      throw new Error(ErrorCode.MetaDescriptionTooShort);
+    }
+    if (metaDescription.length > META_DESCRIPTION_MAX_LENGTH) {
+      throw new Error(ErrorCode.MetaDescriptionTooLong);
+    }
+    if (META_DESCRIPTION_FORBIDDEN_DASHES.test(metaDescription)) {
+      throw new Error(ErrorCode.MetaDescriptionInvalidDash);
+    }
+    const normalizedTitle = title?.trim().toLowerCase();
+    // An empty title would prefix every text: there is nothing to compare against.
+    if (
+      normalizedTitle &&
+      metaDescription.trim().toLowerCase().startsWith(normalizedTitle)
+    ) {
+      throw new Error(ErrorCode.MetaDescriptionMatchesTitle);
+    }
+  },
+
+  /** Returns the trimmed summary to store on creation, where it is required. */
+  validateMetaDescription: ({
+    serviceDefinitionIdentifier,
+    summary,
+    name,
+  }: {
+    serviceDefinitionIdentifier: ManageableServiceDefinitionIdentifier;
+    summary: string;
+    name: string;
+  }): string => {
+    const trimmedSummary = summary.trim();
+    if (!trimmedSummary) {
+      throw new Error(ErrorCode.MetaDescriptionRequired);
+    }
+    DocumentHelper.validateGeneratedMetaDescription({
+      metaDescription: DocumentHelper.buildMetaDescription({
+        serviceDefinitionIdentifier,
+        summary: trimmedSummary,
+      }),
+      title: name,
+    });
+    return trimmedSummary;
+  },
+
+  /**
+   * Returns the trimmed summary of an update, or undefined when none is given: the documents created before the field
+   * existed have none and stay editable, so an empty value leaves the stored one untouched.
+   * The generated meta description depends on both the summary and the name, so it is validated again whenever the
+   * update changes either of them, each taken from the input or else from the stored document. A document left without
+   * a summary is not validated.
+   */
+  validateUpdatedMetaDescription: ({
+    serviceDefinitionIdentifier,
+    summary,
+    name,
+    storedDocument,
+  }: {
+    serviceDefinitionIdentifier: ManageableServiceDefinitionIdentifier;
+    summary: string | null | undefined;
+    name: string | null | undefined;
+    storedDocument: Pick<DocumentModel, 'meta_description' | 'name'>;
+  }): string | undefined => {
+    const inputSummary = summary?.trim() || undefined;
+    const nextSummary = inputSummary ?? storedDocument.meta_description;
+    const nextName = name ?? storedDocument.name;
+    const changed =
+      nextSummary !== storedDocument.meta_description ||
+      nextName !== storedDocument.name;
+    if (nextSummary && changed) {
+      DocumentHelper.validateGeneratedMetaDescription({
+        metaDescription: DocumentHelper.buildMetaDescription({
+          serviceDefinitionIdentifier,
+          summary: nextSummary,
+        }),
+        title: nextName,
+      });
+    }
+    return inputSummary;
+  },
 
   toIntegrationType: (
     documentType: string,

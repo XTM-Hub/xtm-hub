@@ -102,6 +102,8 @@ export enum BadRequestErrorCode {
   MetaDescriptionRequired = 'META_DESCRIPTION_REQUIRED',
   MetaDescriptionTooShort = 'META_DESCRIPTION_TOO_SHORT',
   MetaDescriptionTooLong = 'META_DESCRIPTION_TOO_LONG',
+  MetaDescriptionInvalidDash = 'META_DESCRIPTION_INVALID_DASH',
+  MetaDescriptionMatchesTitle = 'META_DESCRIPTION_MATCHES_TITLE',
 }
 
 export enum UnknownErrorCode {

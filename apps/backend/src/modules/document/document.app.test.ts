@@ -83,8 +83,20 @@ import {
   DocumentMetadataKeys,
 } from './domain/document.metadata.domain';
 
-const TOO_LONG_META_DESCRIPTION = 'a'.repeat(META_DESCRIPTION_MAX_LENGTH + 1);
-const TOO_SHORT_META_DESCRIPTION = 'a'.repeat(META_DESCRIPTION_MIN_LENGTH - 1);
+// The documents of these tests are integrations: their meta description is generated as
+// "OpenCTI Integration: {summary}.", so a summary of this length generates one of the given length.
+const integrationSummaryForLength = (length: number) =>
+  'a'.repeat(length - 'OpenCTI Integration: '.length - '.'.length);
+const TOO_LONG_META_DESCRIPTION = integrationSummaryForLength(
+  META_DESCRIPTION_MAX_LENGTH + 1
+);
+const TOO_SHORT_META_DESCRIPTION = integrationSummaryForLength(
+  META_DESCRIPTION_MIN_LENGTH - 1
+);
+const EM_DASH_META_DESCRIPTION = `${TEST_META_DESCRIPTIONS.DEFAULT.slice(0, 100)} \u2014 and more`;
+const EN_DASH_META_DESCRIPTION = `${TEST_META_DESCRIPTIONS.DEFAULT.slice(0, 100)} \u2013 and more`;
+// The generated meta description starts with it.
+const TITLE_PREFIXING_META_DESCRIPTION = 'OpenCTI integration';
 const UPDATED_META_DESCRIPTION = TEST_META_DESCRIPTIONS.UPDATED;
 
 describe('documentApp', () => {
@@ -284,30 +296,58 @@ describe('documentApp', () => {
     });
 
     it.each([
-      ['empty', '', ErrorCode.MetaDescriptionRequired],
-      ['blank', '   ', ErrorCode.MetaDescriptionRequired],
       [
-        'shorter than the minimum',
-        TOO_SHORT_META_DESCRIPTION,
+        'the summary is empty',
+        { meta_description: '' },
+        ErrorCode.MetaDescriptionRequired,
+      ],
+      [
+        'the summary is blank',
+        { meta_description: '   ' },
+        ErrorCode.MetaDescriptionRequired,
+      ],
+      [
+        'the generated text is shorter than the minimum',
+        { meta_description: TOO_SHORT_META_DESCRIPTION },
         ErrorCode.MetaDescriptionTooShort,
       ],
       [
-        'longer than the limit',
-        TOO_LONG_META_DESCRIPTION,
+        'the generated text is longer than the limit',
+        { meta_description: TOO_LONG_META_DESCRIPTION },
         ErrorCode.MetaDescriptionTooLong,
       ],
+      [
+        'the summary holds an em dash',
+        { meta_description: EM_DASH_META_DESCRIPTION },
+        ErrorCode.MetaDescriptionInvalidDash,
+      ],
+      [
+        'the summary holds an en dash',
+        { meta_description: EN_DASH_META_DESCRIPTION },
+        ErrorCode.MetaDescriptionInvalidDash,
+      ],
+      [
+        'the generated text starts with the name',
+        { name: TITLE_PREFIXING_META_DESCRIPTION },
+        ErrorCode.MetaDescriptionMatchesTitle,
+      ],
     ])(
-      'should reject the creation when the meta description is %s',
-      async (_label, metaDescription, expectedError) => {
+      'should reject the creation when %s',
+      async (_label, inputOverride, expectedError) => {
         // When
         const call = DocumentApp.createDocument({
-          input: { ...documentData, meta_description: metaDescription },
+          input: { ...documentData, ...inputOverride },
           metadata: integrationMetadata,
           serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
         });
 
         // Then
         await expect(call).rejects.toThrow(expectedError);
+        expect(
+          await TestHelper.document.loadAll({
+            service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
+          })
+        ).toHaveLength(0);
       }
     );
 
@@ -610,31 +650,79 @@ describe('documentApp', () => {
 
     it.each([
       [
-        'shorter than the minimum',
-        TOO_SHORT_META_DESCRIPTION,
+        'the generated text is shorter than the minimum',
+        { meta_description: TOO_SHORT_META_DESCRIPTION },
         ErrorCode.MetaDescriptionTooShort,
       ],
       [
-        'longer than the limit',
-        TOO_LONG_META_DESCRIPTION,
+        'the generated text is longer than the limit',
+        { meta_description: TOO_LONG_META_DESCRIPTION },
         ErrorCode.MetaDescriptionTooLong,
       ],
+      [
+        'the summary holds an em dash',
+        { meta_description: EM_DASH_META_DESCRIPTION },
+        ErrorCode.MetaDescriptionInvalidDash,
+      ],
+      [
+        'the summary holds an en dash',
+        { meta_description: EN_DASH_META_DESCRIPTION },
+        ErrorCode.MetaDescriptionInvalidDash,
+      ],
+      [
+        'the generated text from the stored summary starts with the new name',
+        { name: TITLE_PREFIXING_META_DESCRIPTION },
+        ErrorCode.MetaDescriptionMatchesTitle,
+      ],
     ])(
-      'should reject the update when the meta description is %s',
-      async (_label, metaDescription, expectedError) => {
+      'should reject the update and keep the document when %s',
+      async (_label, input, expectedError) => {
         // When
         const call = DocumentApp.updateDocument({
           parentDocumentId: createdDocument!.id,
           serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
           metadata: integrationMetadata,
-          input: { meta_description: metaDescription },
+          input,
           existingImageIds: [],
         });
 
         // Then
         await expect(call).rejects.toThrow(expectedError);
+        const persistedDocument = await DocumentDomain.loadDocumentBy({
+          id: createdDocument!.id,
+        });
+        expect(persistedDocument).toMatchObject({
+          name: documentData.name,
+          meta_description: documentData.meta_description,
+        });
       }
     );
+
+    it('should keep a document created without meta description editable', async () => {
+      // Given a document created before the meta description existed
+      await TestHelper.document.update(
+        { id: createdDocument!.id },
+        { meta_description: null }
+      );
+
+      // When renamed to a name the generated meta description would start with, had it one
+      await DocumentApp.updateDocument({
+        parentDocumentId: createdDocument!.id,
+        serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
+        metadata: integrationMetadata,
+        input: { name: TITLE_PREFIXING_META_DESCRIPTION },
+        existingImageIds: [],
+      });
+
+      // Then
+      const persistedDocument = await DocumentDomain.loadDocumentBy({
+        id: createdDocument!.id,
+      });
+      expect(persistedDocument).toMatchObject({
+        name: TITLE_PREFIXING_META_DESCRIPTION,
+        meta_description: null,
+      });
+    });
 
     it('should persist provided data and validate each field in it', async () => {
       // Given

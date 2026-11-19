@@ -94,6 +94,8 @@ describe('create document GraphQL mutation', () => {
     BadRequestErrorCode.MetaDescriptionRequired,
     BadRequestErrorCode.MetaDescriptionTooShort,
     BadRequestErrorCode.MetaDescriptionTooLong,
+    BadRequestErrorCode.MetaDescriptionInvalidDash,
+    BadRequestErrorCode.MetaDescriptionMatchesTitle,
   ])('should map to BadRequest for %s error', async (errorCode) => {
     // Given
     vi.spyOn(DocumentApp, 'createDocument').mockRejectedValue(
@@ -185,10 +187,15 @@ describe('update document GraphQL mutation', () => {
     await expect(call).rejects.toMatchObject({ name: ErrorType.BadRequest });
   });
 
-  it('should map to BadRequest for MetaDescriptionTooLong error', async () => {
+  it.each([
+    BadRequestErrorCode.MetaDescriptionTooShort,
+    BadRequestErrorCode.MetaDescriptionTooLong,
+    BadRequestErrorCode.MetaDescriptionInvalidDash,
+    BadRequestErrorCode.MetaDescriptionMatchesTitle,
+  ])('should map to BadRequest for %s error', async (errorCode) => {
     // Given
     vi.spyOn(DocumentApp, 'updateDocument').mockRejectedValue(
-      new Error(BadRequestErrorCode.MetaDescriptionTooLong)
+      new Error(errorCode)
     );
 
     // When
@@ -207,7 +214,7 @@ describe('update document GraphQL mutation', () => {
     // Then
     await expect(call).rejects.toMatchObject({
       name: ErrorType.BadRequest,
-      message: BadRequestErrorCode.MetaDescriptionTooLong,
+      message: errorCode,
     });
   });
 });
