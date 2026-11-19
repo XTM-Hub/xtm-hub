@@ -11,7 +11,7 @@ import { ROLE_ADMIN } from '../../portal.const';
 import { logApp } from '../../utils/app-logger.util';
 import { UserDomain } from '../organization-management/user/user-domain/user.domain';
 import { ApiTokenDomain } from './api-token.domain';
-import { ApiTokenHelper } from './api-token.helper';
+import { ApiTokenHelper, createLastUseThrottle } from './api-token.helper';
 
 // What a request authenticated by an API token knows about it
 export interface ApiTokenCaller {
@@ -27,9 +27,14 @@ export interface ApiTokenAuthentication {
   user: UserLoadUserBy;
 }
 
-// Written once per minute per token at most: a call never waits on it
+// Written once per minute per token at most: a call never waits on it. The throttle forgets a token a minute after
+// its last write, and never holds more than LAST_USED_MAX_TRACKED tokens.
 const LAST_USED_WRITE_INTERVAL_MS = 60 * 1000;
-const lastUsedWrites = new Map<string, number>();
+const LAST_USED_MAX_TRACKED = 10_000;
+const lastUsedThrottle = createLastUseThrottle({
+  intervalMs: LAST_USED_WRITE_INTERVAL_MS,
+  maxEntries: LAST_USED_MAX_TRACKED,
+});
 
 const authentications = new WeakMap<Request, ApiTokenAuthentication>();
 
@@ -139,14 +144,9 @@ export const resolveApiToken = async (
 };
 
 const recordUse = (id: ApiTokenId, now: Date) => {
-  const last = lastUsedWrites.get(id);
-  if (
-    last !== undefined &&
-    now.getTime() - last < LAST_USED_WRITE_INTERVAL_MS
-  ) {
+  if (!lastUsedThrottle.shouldRecord(id, now.getTime())) {
     return;
   }
-  lastUsedWrites.set(id, now.getTime());
   ApiTokenDomain.touchLastUsed(id, now).catch((error: unknown) =>
     logApp.warn('Could not record the last use of an API token', {
       error,

@@ -40,3 +40,58 @@ export const ApiTokenHelper = {
     return match[1];
   },
 };
+
+export interface LastUseThrottle {
+  // True when the use at `nowMs` should be written: the first one of the id, or the first after the interval
+  shouldRecord: (id: string, nowMs: number) => boolean;
+  size: () => number;
+}
+
+/**
+ * Remembers when each token's last use was written, to write it once per interval at most. Bounded: an entry older
+ * than the interval is pruned on the next call, as it would let the next write through anyway, and past `maxEntries`
+ * the oldest entries are evicted, which costs at most one extra write each. Entries are kept in the order they were
+ * written (a rewrite moves the entry to the end), so both prunes stop at the first entry they keep.
+ */
+export const createLastUseThrottle = ({
+  intervalMs,
+  maxEntries,
+}: {
+  intervalMs: number;
+  maxEntries: number;
+}): LastUseThrottle => {
+  const writes = new Map<string, number>();
+
+  const pruneExpired = (nowMs: number) => {
+    for (const [id, writtenAt] of writes) {
+      if (nowMs - writtenAt < intervalMs) {
+        return;
+      }
+      writes.delete(id);
+    }
+  };
+
+  const evictOverflow = () => {
+    for (const id of writes.keys()) {
+      if (writes.size <= maxEntries) {
+        return;
+      }
+      writes.delete(id);
+    }
+  };
+
+  return {
+    shouldRecord: (id, nowMs) => {
+      pruneExpired(nowMs);
+      const last = writes.get(id);
+      if (last !== undefined && nowMs - last < intervalMs) {
+        return false;
+      }
+      writes.delete(id);
+      writes.set(id, nowMs);
+      evictOverflow();
+      return true;
+    },
+    size: () => writes.size,
+  };
+};

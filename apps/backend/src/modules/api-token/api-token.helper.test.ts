@@ -8,7 +8,11 @@ import { OrganizationId } from '../../model/kanel/public/Organization';
 import { UserLoadUserBy } from '../../model/user';
 import { CAPABILITY_BYPASS, ROLE_ADMIN } from '../../portal.const';
 import { narrowUserToToken } from './api-token.auth';
-import { API_TOKEN_PREFIX, ApiTokenHelper } from './api-token.helper';
+import {
+  API_TOKEN_PREFIX,
+  ApiTokenHelper,
+  createLastUseThrottle,
+} from './api-token.helper';
 
 const ORGANIZATION = 'a1d4c0de-0000-4000-8000-000000000001' as OrganizationId;
 const OTHER_ORGANIZATION =
@@ -113,5 +117,109 @@ describe('narrowUserToToken', () => {
         { scope: ApiTokenScope.Admin, organization_id: ORGANIZATION }
       )
     ).toBeUndefined();
+  });
+});
+
+describe('createLastUseThrottle', () => {
+  const INTERVAL_MS = 60 * 1000;
+  const TOKEN = 'a1d4c0de-0000-4000-8000-000000000010';
+  const OTHER_TOKEN = 'a1d4c0de-0000-4000-8000-000000000011';
+  const T0 = 1_700_000_000_000;
+
+  it('should record the first use, skip the uses inside the interval and record again once it has passed', () => {
+    // Given
+    const throttle = createLastUseThrottle({
+      intervalMs: INTERVAL_MS,
+      maxEntries: 10,
+    });
+
+    // When
+    const decisions = [
+      throttle.shouldRecord(TOKEN, T0),
+      throttle.shouldRecord(TOKEN, T0 + 1),
+      throttle.shouldRecord(TOKEN, T0 + INTERVAL_MS - 1),
+      throttle.shouldRecord(OTHER_TOKEN, T0 + INTERVAL_MS - 1),
+      throttle.shouldRecord(TOKEN, T0 + INTERVAL_MS),
+      throttle.shouldRecord(TOKEN, T0 + INTERVAL_MS + 1),
+    ];
+
+    // Then
+    expect(decisions).toEqual([true, false, false, true, true, false]);
+  });
+
+  it('should forget a token once its interval has passed', () => {
+    // Given
+    const throttle = createLastUseThrottle({
+      intervalMs: INTERVAL_MS,
+      maxEntries: 10,
+    });
+    throttle.shouldRecord(TOKEN, T0);
+    throttle.shouldRecord(OTHER_TOKEN, T0 + INTERVAL_MS / 2);
+
+    // When
+    const recorded = throttle.shouldRecord(
+      'a1d4c0de-0000-4000-8000-000000000012',
+      T0 + INTERVAL_MS
+    );
+
+    // Then: TOKEN expired and was pruned, OTHER_TOKEN is still inside its interval
+    expect(recorded).toBe(true);
+    expect(throttle.size()).toBe(2);
+    expect(throttle.shouldRecord(OTHER_TOKEN, T0 + INTERVAL_MS)).toBe(false);
+  });
+
+  it('should drop every entry once they have all expired', () => {
+    // Given
+    const throttle = createLastUseThrottle({
+      intervalMs: INTERVAL_MS,
+      maxEntries: 100,
+    });
+    for (let index = 0; index < 50; index++) {
+      throttle.shouldRecord(`token-${index}`, T0 + index);
+    }
+
+    // When
+    throttle.shouldRecord(TOKEN, T0 + 49 + INTERVAL_MS);
+
+    // Then
+    expect(throttle.size()).toBe(1);
+  });
+
+  it('should never hold more than maxEntries tokens, evicting the oldest', () => {
+    // Given
+    const throttle = createLastUseThrottle({
+      intervalMs: INTERVAL_MS,
+      maxEntries: 3,
+    });
+
+    // When
+    for (let index = 0; index < 10; index++) {
+      throttle.shouldRecord(`token-${index}`, T0 + index);
+    }
+
+    // Then: the newest stay throttled, an evicted one is written again
+    expect(throttle.size()).toBe(3);
+    expect(throttle.shouldRecord('token-9', T0 + 10)).toBe(false);
+    expect(throttle.shouldRecord('token-0', T0 + 10)).toBe(true);
+    expect(throttle.size()).toBe(3);
+  });
+
+  it('should keep a rewritten token as the newest so it is evicted last', () => {
+    // Given
+    const throttle = createLastUseThrottle({
+      intervalMs: INTERVAL_MS,
+      maxEntries: 2,
+    });
+    throttle.shouldRecord(TOKEN, T0);
+    throttle.shouldRecord(OTHER_TOKEN, T0 + INTERVAL_MS / 2);
+    // TOKEN is written again: it moves behind OTHER_TOKEN
+    throttle.shouldRecord(TOKEN, T0 + INTERVAL_MS);
+
+    // When
+    throttle.shouldRecord('token-new', T0 + INTERVAL_MS + 1);
+
+    // Then: OTHER_TOKEN, now the oldest, was evicted
+    expect(throttle.shouldRecord(TOKEN, T0 + INTERVAL_MS + 2)).toBe(false);
+    expect(throttle.shouldRecord(OTHER_TOKEN, T0 + INTERVAL_MS + 2)).toBe(true);
   });
 });
