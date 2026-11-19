@@ -10,7 +10,11 @@ import { UserLoadUserBy } from '../../model/user';
 import { ROLE_ADMIN } from '../../portal.const';
 import { logApp } from '../../utils/app-logger.util';
 import { getErrorMessage } from '../../utils/error/error-guard.util';
-import { ErrorCode } from '../../utils/error/error.code';
+import {
+  ErrorCode,
+  UnauthenticatedErrorCode,
+  UnknownErrorCode,
+} from '../../utils/error/error.code';
 import { UserDomain } from '../organization-management/user/user-domain/user.domain';
 import { ApiTokenDomain } from './api-token.domain';
 import { ApiTokenHelper } from './api-token.helper';
@@ -161,17 +165,6 @@ const recordUse = (id: ApiTokenId, now: Date) => {
   );
 };
 
-// Same shape as a GraphQL error: an API token client reads JSON, whatever the failure
-const sendError = (
-  res: Response,
-  status: number,
-  code: 'UNAUTHENTICATED' | 'INTERNAL_SERVER_ERROR'
-) => {
-  res
-    .status(status)
-    .json({ errors: [{ message: code, extensions: { code } }] });
-};
-
 /**
  * `Authorization: Bearer xhp_...` authenticates the request as the token's user. Any other request goes on unchanged
  * (session cookie, system token, platform token). A refused token answers 401 whatever the route: the caller asked
@@ -197,12 +190,17 @@ export const apiTokenMiddleware = async (
   } catch (error) {
     // Never the secret: only the error, whose query carries the token hash at most
     logApp.error('API token authentication failed', { error });
-    sendError(res, 500, 'INTERNAL_SERVER_ERROR');
+    // The same code Apollo gives an internal error on the GraphQL routes
+    ApiTokenHelper.sendError(res, 500, UnknownErrorCode.UnknownError);
     return;
   }
   if (!resolution.authenticated) {
     logApp.warn('API token refused', { reason: resolution.reason });
-    sendError(res, 401, 'UNAUTHENTICATED');
+    ApiTokenHelper.sendError(
+      res,
+      401,
+      UnauthenticatedErrorCode.Unauthenticated
+    );
     return;
   }
   authentications.set(req, resolution.authentication);
