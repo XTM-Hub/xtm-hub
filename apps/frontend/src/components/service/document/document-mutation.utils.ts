@@ -26,6 +26,7 @@ const documentBaseKeys: Array<keyof DocumentFormValues> = [
   'uploader_id',
   'uploader_organization_id',
   'short_description',
+  'meta_description',
   'description',
   'use_cases',
   'solution_categories',
@@ -57,6 +58,7 @@ export const toCreateDocumentInput = (
       input.status === DocumentStatus.InValidation
         ? DocumentStatus.InValidation
         : DocumentStatus.Draft,
+    meta_description: input.meta_description ?? '',
     use_cases: input.use_cases ?? [],
     solution_categories: input.solution_categories ?? [],
     entity_types: input.entity_types ?? null,

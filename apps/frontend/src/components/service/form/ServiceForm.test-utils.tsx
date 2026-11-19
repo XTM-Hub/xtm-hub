@@ -27,6 +27,8 @@ const SHEET_TITLE = 'Service form';
 const NAME_LABEL = 'Service.Form.NameLabel';
 const SLUG_LABEL = 'Service.Form.SlugLabel';
 const SHORT_DESCRIPTION_LABEL = 'Service.Form.ShortDescriptionLabel';
+const META_DESCRIPTION_LABEL = 'Service.Form.MetaDescriptionLabel';
+const META_DESCRIPTION_MAX_LENGTH = 160;
 export const PRODUCT_VERSION_LABEL = 'Service.Form.ProductVersionLabel';
 const USE_CASES_LABEL = 'Service.Form.UseCasesLabel';
 const SOLUTION_CATEGORIES_LABEL = 'Service.Form.SolutionCategoriesLabel';
@@ -70,9 +72,11 @@ export const DOCUMENT_SLUG = 'ransomware-overview';
 export const DOCUMENT_SHORT_DESCRIPTION = 'Track ransomware activity';
 export const DOCUMENT_DESCRIPTION = 'Every ransomware campaign at a glance';
 export const DOCUMENT_PRODUCT_VERSION = '6.4.0';
+const DOCUMENT_META_DESCRIPTION = 'Ransomware campaigns tracked in OpenCTI';
 export const NEW_NAME = 'Threat Intel: APT-28 (v2)';
 export const NEW_SLUG = 'threat-intel-apt-28-v2';
 export const NEW_SHORT_DESCRIPTION = 'Follow APT-28';
+export const NEW_META_DESCRIPTION = 'Indicators and campaigns of APT-28';
 const NEW_PRODUCT_VERSION = '6.5.1';
 export const NEW_DESCRIPTION = 'Everything about APT-28';
 
@@ -220,11 +224,15 @@ export const renderServiceForm = <Values,>(
   };
 };
 
-const typeNewNameAndShortDescription = async (user: ServiceFormUser) => {
+const typeNewNameAndDescriptions = async (user: ServiceFormUser) => {
   await user.type(screen.getByRole('textbox', { name: NAME_LABEL }), NEW_NAME);
   await user.type(
     screen.getByRole('textbox', { name: SHORT_DESCRIPTION_LABEL }),
     NEW_SHORT_DESCRIPTION
+  );
+  await user.type(
+    screen.getByRole('textbox', { name: META_DESCRIPTION_LABEL }),
+    NEW_META_DESCRIPTION
   );
 };
 
@@ -240,7 +248,7 @@ const selectOption = async (
 export const fillCustomContentCreationFields = async (
   user: ServiceFormUser
 ) => {
-  await typeNewNameAndShortDescription(user);
+  await typeNewNameAndDescriptions(user);
   await user.type(
     screen.getByRole('textbox', { name: PRODUCT_VERSION_LABEL }),
     NEW_PRODUCT_VERSION
@@ -274,7 +282,7 @@ export const givenSolutionCategories = () =>
   } as ReturnType<typeof useSolutionCategoriesListQuery>);
 
 export const fillIntegrationCreationFields = async (user: ServiceFormUser) => {
-  await typeNewNameAndShortDescription(user);
+  await typeNewNameAndDescriptions(user);
   await typeNewDescription(user);
   await selectOption(user, USE_CASES_LABEL, USE_CASE.name);
   await selectOption(user, SOLUTION_CATEGORIES_LABEL, SOLUTION_CATEGORY.name);
@@ -511,6 +519,129 @@ export const defineShortDescriptionLengthTests = <Values,>({
   });
 };
 
+const fillMetaDescription = async (
+  user: ServiceFormUser,
+  metaDescription: string
+) => {
+  const metaDescriptionField = screen.getByRole('textbox', {
+    name: META_DESCRIPTION_LABEL,
+  });
+  await user.clear(metaDescriptionField);
+  await user.click(metaDescriptionField);
+  await user.paste(metaDescription);
+  return metaDescriptionField;
+};
+
+interface MetaDescriptionCreationTestsOptions<
+  Values,
+> extends ServiceFormTestTarget<Values> {
+  fillCreationFields: (user: ServiceFormUser) => Promise<void>;
+}
+
+export const defineMetaDescriptionCreationTests = <Values,>({
+  Form,
+  resourceName,
+  fillCreationFields,
+}: MetaDescriptionCreationTestsOptions<Values>) => {
+  it.each([
+    { context: 'without it', metaDescription: '' },
+    { context: 'with blanks only', metaDescription: '   ' },
+    {
+      context: `with more than ${META_DESCRIPTION_MAX_LENGTH} characters`,
+      metaDescription: 'a'.repeat(META_DESCRIPTION_MAX_LENGTH + 1),
+    },
+  ])(
+    `should reject the meta-description when the user creates a ${resourceName} $context`,
+    async ({ metaDescription }) => {
+      // Given
+      const { user } = renderServiceForm(Form);
+      await fillCreationFields(user);
+      const metaDescriptionField = await fillMetaDescription(
+        user,
+        metaDescription
+      );
+
+      // When
+      await user.click(
+        screen.getByRole('button', { name: REQUEST_VALIDATION_LABEL })
+      );
+
+      // Then: an empty field fails the native constraint, the others fail zod
+      await waitFor(() => expect(metaDescriptionField).toBeInvalid());
+    }
+  );
+};
+
+export const defineMetaDescriptionEditionTests = <Values,>({
+  Form,
+  resourceName,
+  buildEditedDocument,
+}: EditedServiceFormTestsOptions<Values>) => {
+  it(`should show the stored meta-description when the user edits the ${resourceName}`, () => {
+    // Given / When
+    renderServiceForm(Form, {
+      ...buildEditedDocument(),
+      meta_description: DOCUMENT_META_DESCRIPTION,
+    });
+
+    // Then
+    expect(
+      screen.getByRole('textbox', { name: META_DESCRIPTION_LABEL })
+    ).toHaveValue(DOCUMENT_META_DESCRIPTION);
+  });
+
+  it(`should save the ${resourceName} when the user edits one stored without a meta-description`, async () => {
+    // Given
+    const { user, handleSubmit } = renderServiceForm(Form, {
+      ...buildEditedDocument(),
+      meta_description: null,
+    });
+
+    // When
+    await user.click(screen.getByRole('button', { name: VALIDATE_LABEL }));
+
+    // Then
+    await waitFor(() => expect(handleSubmit).toHaveBeenCalledOnce());
+  });
+
+  it(`should save a meta-description of ${META_DESCRIPTION_MAX_LENGTH} characters when the user edits the ${resourceName}`, async () => {
+    // Given
+    const { user, handleSubmit } = renderServiceForm(
+      Form,
+      buildEditedDocument()
+    );
+    const metaDescription = 'a'.repeat(META_DESCRIPTION_MAX_LENGTH);
+    await fillMetaDescription(user, metaDescription);
+
+    // When
+    await user.click(screen.getByRole('button', { name: VALIDATE_LABEL }));
+
+    // Then
+    await waitFor(() =>
+      expect(handleSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({ meta_description: metaDescription })
+      )
+    );
+  });
+
+  it(`should reject a meta-description longer than ${META_DESCRIPTION_MAX_LENGTH} characters when the user edits the ${resourceName}`, async () => {
+    // Given
+    const { user } = renderServiceForm(Form, buildEditedDocument());
+    const metaDescriptionField = await fillMetaDescription(
+      user,
+      'a'.repeat(META_DESCRIPTION_MAX_LENGTH + 1)
+    );
+
+    // When
+    await user.click(screen.getByRole('button', { name: VALIDATE_LABEL }));
+
+    // Then
+    await waitFor(() =>
+      expect(metaDescriptionField).toHaveAttribute('aria-invalid', 'true')
+    );
+  });
+};
+
 interface RequiredFileTestOptions<
   Values,
 > extends ServiceFormTestTarget<Values> {
@@ -584,6 +715,7 @@ export const defineServiceFormTests = <Values,>({
         slug: NEW_SLUG,
         uploader_id: CURRENT_USER_ID,
         short_description: NEW_SHORT_DESCRIPTION,
+        meta_description: NEW_META_DESCRIPTION,
         product_version: NEW_PRODUCT_VERSION,
         uploader_organization_id: CURRENT_ORGANIZATION.id,
         use_cases: [USE_CASE.id],
@@ -597,6 +729,18 @@ export const defineServiceFormTests = <Values,>({
   });
 
   defineRequiredFileTest({ Form, resourceName, fileField, fillCreationFields });
+
+  defineMetaDescriptionCreationTests({
+    Form,
+    resourceName,
+    fillCreationFields,
+  });
+
+  defineMetaDescriptionEditionTests({
+    Form,
+    resourceName,
+    buildEditedDocument,
+  });
 
   defineReplaceFileConfirmationTest({ Form, fileField, buildEditedDocument });
 
@@ -684,6 +828,7 @@ export const defineIntegrationFormTests = <Values,>({
         slug: NEW_SLUG,
         uploader_id: CURRENT_USER_ID,
         short_description: NEW_SHORT_DESCRIPTION,
+        meta_description: NEW_META_DESCRIPTION,
         description: NEW_DESCRIPTION,
         uploader_organization_id: CURRENT_ORGANIZATION.id,
         integration_type: integrationType,
@@ -703,6 +848,18 @@ export const defineIntegrationFormTests = <Values,>({
     resourceName,
     fileField: JSON_FILE_FIELD,
     fillCreationFields: fillIntegrationCreationFields,
+  });
+
+  defineMetaDescriptionCreationTests({
+    Form,
+    resourceName,
+    fillCreationFields: fillIntegrationCreationFields,
+  });
+
+  defineMetaDescriptionEditionTests({
+    Form,
+    resourceName,
+    buildEditedDocument: buildIntegrationDocument,
   });
 
   it(`should save the ${resourceName} without a new ${JSON_FILE_FIELD.name} when the user edits it`, async () => {

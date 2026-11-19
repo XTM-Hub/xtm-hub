@@ -28,6 +28,7 @@ const taxiiFeedFormSchema = z.object({
   status: z.enum(DocumentStatus).optional(),
   uploader_id: z.string().optional(),
   short_description: z.string().min(1, 'Required').max(250),
+  meta_description: z.string().trim().min(1, 'Required').max(160),
   description: z.string().min(1, 'Required'),
   uploader_organization_id: z.string().min(1, 'Required'),
   integration_type: z.string().min(1, 'Required'),
@@ -99,6 +100,8 @@ export const TaxiiFeedForm = ({
     () =>
       document
         ? taxiiFeedFormSchema.extend({
+            // A resource stored before the meta-description existed stays editable.
+            meta_description: z.string().trim().max(160).nullish(),
             document: z.custom<FileList>(fileListCheck).optional(),
             images: z.custom<FileList>(optionalFileListCheck).optional(),
           })
@@ -110,6 +113,7 @@ export const TaxiiFeedForm = ({
     name,
     slug,
     short_description,
+    meta_description,
     description,
     use_cases,
     solution_categories,
@@ -167,6 +171,7 @@ export const TaxiiFeedForm = ({
           images: imagesField,
           status,
           short_description,
+          meta_description,
           slug,
           name,
           integration_type,

@@ -3,6 +3,8 @@ import {
   CURRENT_ORGANIZATION,
   CURRENT_USER_ID,
   defineDeletedImagesTest,
+  defineMetaDescriptionCreationTests,
+  defineMetaDescriptionEditionTests,
   defineProductVersionFormatTests,
   defineShortDescriptionLengthTests,
   defineSlugGenerationTests,
@@ -17,6 +19,7 @@ import {
   givenSolutionCategories,
   KEPT_IMAGE,
   NEW_DESCRIPTION,
+  NEW_META_DESCRIPTION,
   NEW_NAME,
   NEW_SHORT_DESCRIPTION,
   NEW_SLUG,
@@ -108,6 +111,7 @@ describe('ThirdPartyIntegrationForm', () => {
         slug: NEW_SLUG,
         uploader_id: CURRENT_USER_ID,
         short_description: NEW_SHORT_DESCRIPTION,
+        meta_description: NEW_META_DESCRIPTION,
         description: NEW_DESCRIPTION,
         uploader_organization_id: CURRENT_ORGANIZATION.id,
         integration_type: IntegrationType.ThirdPartyIntegration,
@@ -299,5 +303,17 @@ describe('ThirdPartyIntegrationForm', () => {
     resourceName: ServiceFormResource.THIRD_PARTY_INTEGRATION,
     buildEditedDocument: buildThirdPartyIntegration,
     shortDescriptionMaxLength: 250,
+  });
+
+  defineMetaDescriptionCreationTests({
+    Form: ThirdPartyIntegrationForm,
+    resourceName: ServiceFormResource.THIRD_PARTY_INTEGRATION,
+    fillCreationFields: fillThirdPartyCreationFields,
+  });
+
+  defineMetaDescriptionEditionTests({
+    Form: ThirdPartyIntegrationForm,
+    resourceName: ServiceFormResource.THIRD_PARTY_INTEGRATION,
+    buildEditedDocument: buildThirdPartyIntegration,
   });
 });

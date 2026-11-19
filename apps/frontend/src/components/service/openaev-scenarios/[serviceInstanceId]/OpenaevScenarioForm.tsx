@@ -37,6 +37,7 @@ const openAEVScenarioFormSchema = z.object({
   status: z.enum(DocumentStatus).optional(),
   uploader_id: z.string().optional(),
   short_description: z.string().min(1, 'Required').max(250),
+  meta_description: z.string().trim().min(1, 'Required').max(160),
   description: z.string().min(1, 'Required'),
   product_version: z.string().regex(/^\d+\.\d+\.\d+$/, {
     error: 'Product version must be X.Y.Z',
@@ -98,6 +99,8 @@ export const OpenaevScenarioForm = ({
     () =>
       document
         ? openAEVScenarioFormSchema.extend({
+            // A resource stored before the meta-description existed stays editable.
+            meta_description: z.string().trim().max(160).nullish(),
             document: z.custom<FileList>(fileListCheck).optional(),
             images: z.custom<FileList>(optionalFileListCheck).optional(),
           })
@@ -109,6 +112,7 @@ export const OpenaevScenarioForm = ({
     slug,
     name,
     short_description,
+    meta_description,
     product_version,
     description,
     uploader_organization_id,
@@ -155,6 +159,7 @@ export const OpenaevScenarioForm = ({
         images: imagesField,
         status,
         short_description,
+        meta_description,
         slug,
         name,
         product_version,
