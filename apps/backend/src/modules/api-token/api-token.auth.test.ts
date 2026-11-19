@@ -25,6 +25,14 @@ import { ApiTokenHelper } from './api-token.helper';
 const SECOND = TEST_ORGANIZATIONS.SECOND_ORGANIZATION;
 const FILIGRAN = TEST_ORGANIZATIONS.FILIGRAN;
 const DAY_MS = 24 * 60 * 60 * 1000;
+const INTERNAL_ERROR_BODY = {
+  errors: [
+    {
+      message: 'INTERNAL_SERVER_ERROR',
+      extensions: { code: 'INTERNAL_SERVER_ERROR' },
+    },
+  ],
+};
 
 const loadUser = async (id: UserId): Promise<UserLoadUserBy> => {
   const user = (await UserDomain.loadUserBy({
@@ -186,7 +194,7 @@ describe('resolveApiToken', () => {
     await expectRefused(token, 'user disabled');
   });
 
-  it('should not take an unexpected failure while loading the user for a refused token', async () => {
+  it('should rethrow an unexpected failure while loading the user instead of refusing the token', async () => {
     // Given
     const { token } = await createToken(
       SECOND.USERS.SIMPLE.ID,
@@ -303,7 +311,7 @@ describe('apiTokenMiddleware', () => {
     expect(getApiTokenAuthentication(req)).toBeUndefined();
   });
 
-  it('should log an unexpected failure while loading the user and pass it to the error handler, never answering 401', async () => {
+  it('should log an unexpected failure while loading the user once and answer 500, never 401', async () => {
     // Given
     const { token } = await createToken(
       SECOND.USERS.SIMPLE.ID,
@@ -321,30 +329,42 @@ describe('apiTokenMiddleware', () => {
     await apiTokenMiddleware(req, res as unknown as Response, next);
 
     // Then
-    expect(next).toHaveBeenCalledWith(failure);
-    expect(res.status).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith(INTERNAL_ERROR_BODY);
+    expect(next).not.toHaveBeenCalled();
+    expect(error).toHaveBeenCalledTimes(1);
     expect(error).toHaveBeenCalledWith('API token authentication failed', {
       error: failure,
     });
-    expect(JSON.stringify(error.mock.calls)).not.toContain(token);
+    const [[, logged]] = error.mock.calls as [[string, { error: Error }]];
+    expect(logged.error.message).not.toContain(token);
+    expect(logged.error.stack).not.toContain(token);
     expect(getApiTokenAuthentication(req)).toBeUndefined();
   });
 
-  it('should pass an unexpected failure to the error handler', async () => {
+  it('should answer 500 without detail to an unexpected failure while loading the token', async () => {
     // Given
     const failure = new Error('database down');
     vi.spyOn(ApiTokenDomain, 'loadByHash').mockRejectedValue(failure);
+    const error = vi.spyOn(logApp, 'error').mockImplementation(() => {});
     const req = {
       headers: {
         authorization: `Bearer ${ApiTokenHelper.generate().token}`,
       },
     } as Request;
+    const res = response();
     const next = vi.fn();
 
     // When
-    await apiTokenMiddleware(req, response() as unknown as Response, next);
+    await apiTokenMiddleware(req, res as unknown as Response, next);
 
     // Then
-    expect(next).toHaveBeenCalledWith(failure);
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith(INTERNAL_ERROR_BODY);
+    expect(next).not.toHaveBeenCalled();
+    expect(error).toHaveBeenCalledTimes(1);
+    expect(error).toHaveBeenCalledWith('API token authentication failed', {
+      error: failure,
+    });
   });
 });

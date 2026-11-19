@@ -115,7 +115,7 @@ export const resolveApiToken = async (
     });
   } catch (error) {
     // loadUserBy throws USER_DISABLED for a disabled user. Any other failure (database down, a bug) is not a refused
-    // token: it goes up to the middleware, which answers 5xx instead of telling the client its token is bad.
+    // token: it goes up to the middleware, which answers 500 instead of telling the client its token is bad.
     if (getErrorMessage(error) === ErrorCode.UserDisabled) {
       return { authenticated: false, reason: 'user disabled' };
     }
@@ -161,10 +161,22 @@ const recordUse = (id: ApiTokenId, now: Date) => {
   );
 };
 
+// Same shape as a GraphQL error: an API token client reads JSON, whatever the failure
+const sendError = (
+  res: Response,
+  status: number,
+  code: 'UNAUTHENTICATED' | 'INTERNAL_SERVER_ERROR'
+) => {
+  res
+    .status(status)
+    .json({ errors: [{ message: code, extensions: { code } }] });
+};
+
 /**
  * `Authorization: Bearer xhp_...` authenticates the request as the token's user. Any other request goes on unchanged
  * (session cookie, system token, platform token). A refused token answers 401 whatever the route: the caller asked
- * for the token's identity, it never falls back to a session.
+ * for the token's identity, it never falls back to a session. A failure while checking the token answers 500 with no
+ * detail: the error only goes to the logs.
  */
 export const apiTokenMiddleware = async (
   req: Request,
@@ -178,27 +190,22 @@ export const apiTokenMiddleware = async (
     next();
     return;
   }
+  const now = new Date();
+  let resolution: Resolution;
   try {
-    const now = new Date();
-    const resolution = await resolveApiToken(secret, now);
-    if (!resolution.authenticated) {
-      logApp.warn('API token refused', { reason: resolution.reason });
-      res.status(401).json({
-        errors: [
-          {
-            message: 'UNAUTHENTICATED',
-            extensions: { code: 'UNAUTHENTICATED' },
-          },
-        ],
-      });
-      return;
-    }
-    authentications.set(req, resolution.authentication);
-    recordUse(resolution.authentication.token.id, now);
-    next();
+    resolution = await resolveApiToken(secret, now);
   } catch (error) {
     // Never the secret: only the error, whose query carries the token hash at most
     logApp.error('API token authentication failed', { error });
-    next(error);
+    sendError(res, 500, 'INTERNAL_SERVER_ERROR');
+    return;
   }
+  if (!resolution.authenticated) {
+    logApp.warn('API token refused', { reason: resolution.reason });
+    sendError(res, 401, 'UNAUTHENTICATED');
+    return;
+  }
+  authentications.set(req, resolution.authentication);
+  recordUse(resolution.authentication.token.id, now);
+  next();
 };
