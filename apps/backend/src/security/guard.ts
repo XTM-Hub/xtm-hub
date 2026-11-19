@@ -18,19 +18,30 @@ import { logApp } from '../utils/app-logger.util';
 import { ErrorCode } from '../utils/error/error.code';
 import { BadRequestError, ForbiddenAccess } from '../utils/error/error.util';
 import { isUserAdminPlatform } from './access';
+import { ApiTokenReach } from './api-token-reach';
 
 export const securityGuard = {
-  assertUserIsInOrganization: async (
+  // An API token reaches its own organization only: another one is answered as if the user were not a member
+  isUserInOrganization: async (
     user: UserLoadUserBy,
     organizationId: OrganizationId
-  ) => {
+  ): Promise<boolean> => {
+    if (!ApiTokenReach.allowsOrganization(organizationId)) {
+      return false;
+    }
     const [userOrganization] =
       await UserOrganizationDomain.loadUserOrganization({
         user_id: user.id,
         organization_id: organizationId,
       });
+    return !!userOrganization;
+  },
 
-    if (!userOrganization) {
+  assertUserIsInOrganization: async (
+    user: UserLoadUserBy,
+    organizationId: OrganizationId
+  ) => {
+    if (!(await securityGuard.isUserInOrganization(user, organizationId))) {
       throw new Error(ErrorCode.UserIsNotInOrganization);
     }
   },
@@ -85,10 +96,19 @@ export const securityGuard = {
     organizationId?: OrganizationId
   ) => {
     const user = requestContext.requireUser();
+    const targetOrgId = organizationId || user.selected_organization_id;
+
+    // Before the platform administrator check: an API token stays in its organization, with its capabilities
+    const reachableCapabilities =
+      ApiTokenReach.narrowCapabilities(requiredCapabilities);
+    if (
+      (targetOrgId && !ApiTokenReach.allowsOrganization(targetOrgId)) ||
+      (requiredCapabilities.length > 0 && reachableCapabilities.length === 0)
+    ) {
+      throw ForbiddenAccess(ErrorCode.MissingCapabilityOnOrganization);
+    }
 
     if (isUserAdminPlatform(user)) return;
-
-    const targetOrgId = organizationId || user.selected_organization_id;
 
     if (!targetOrgId) {
       throw BadRequestError('Organization context required');
@@ -106,7 +126,7 @@ export const securityGuard = {
         'User_Organization.user_id': user.id,
         'User_Organization.organization_id': targetOrgId,
       })
-      .whereIn('UserOrganization_Capability.name', requiredCapabilities)
+      .whereIn('UserOrganization_Capability.name', reachableCapabilities)
       .first();
 
     if (!userCapabilities) {

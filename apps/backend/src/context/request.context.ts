@@ -1,7 +1,15 @@
 import { AsyncLocalStorage } from 'async_hooks';
+import { OrganizationCapability } from '../__generated__/resolvers-types';
 import { OrganizationId } from '../model/kanel/public/Organization';
 import { UserLoadUserBy } from '../model/user';
 import { UnknownErrorCode } from '../utils/error/error.code';
+
+// What a request authenticated by an API token may reach: its organization only, with the capabilities it narrowed
+export interface ApiTokenReach {
+  organizationId: OrganizationId;
+  organizationCapabilities: readonly OrganizationCapability[];
+}
+
 export interface RequestContext {
   user?: UserLoadUserBy;
   correlationId?: string;
@@ -9,6 +17,8 @@ export interface RequestContext {
   ip?: string;
   referer?: string;
   organizationId?: OrganizationId;
+  // Set for a request authenticated by an API token only
+  apiToken?: ApiTokenReach;
 }
 
 // Create typed AsyncLocalStorage
