@@ -12,7 +12,10 @@ import {
   vi,
 } from 'vitest';
 import { TestHelper } from '../../../tests/helper/test.helper';
-import { TEST_ORGANIZATIONS } from '../../../tests/tests.const';
+import {
+  TEST_META_DESCRIPTIONS,
+  TEST_ORGANIZATIONS,
+} from '../../../tests/tests.const';
 import {
   DocumentMetadataKeyCode,
   DocumentStatus,
@@ -42,6 +45,7 @@ import {
   DocumentHelper,
   ManageableServiceDefinitionIdentifier,
   META_DESCRIPTION_MAX_LENGTH,
+  META_DESCRIPTION_MIN_LENGTH,
 } from './document.helper';
 import { DocumentUploadsHelper } from './document.uploads.helper';
 import { DocumentDomain } from './domain/document.domain';
@@ -86,7 +90,7 @@ describe('documentHelper', () => {
           name: 'myCsvFeed',
           description: 'description',
           short_description: 'short_description',
-          meta_description: 'meta_description',
+          meta_description: TEST_META_DESCRIPTIONS.DEFAULT,
           slug: 'slug',
           status: DocumentStatus.Published,
         },
@@ -317,14 +321,20 @@ describe('documentHelper', () => {
     );
   });
 
-  const META_DESCRIPTION = 'Meta description';
+  const META_DESCRIPTION = TEST_META_DESCRIPTIONS.DEFAULT;
 
   describe('validateMetaDescription', () => {
+    const SHORTEST_META_DESCRIPTION = 'a'.repeat(META_DESCRIPTION_MIN_LENGTH);
     const LONGEST_META_DESCRIPTION = 'a'.repeat(META_DESCRIPTION_MAX_LENGTH);
 
     it.each([
       ['a regular value', META_DESCRIPTION, META_DESCRIPTION],
       ['surrounded by spaces', `  ${META_DESCRIPTION}  `, META_DESCRIPTION],
+      [
+        'exactly at the minimum',
+        SHORTEST_META_DESCRIPTION,
+        SHORTEST_META_DESCRIPTION,
+      ],
       [
         'exactly at the limit',
         LONGEST_META_DESCRIPTION,
@@ -349,6 +359,16 @@ describe('documentHelper', () => {
     it.each([
       ['empty', '', ErrorCode.MetaDescriptionRequired],
       ['blank', ' \t\n ', ErrorCode.MetaDescriptionRequired],
+      [
+        'one character under the minimum',
+        SHORTEST_META_DESCRIPTION.slice(1),
+        ErrorCode.MetaDescriptionTooShort,
+      ],
+      [
+        'under the minimum once trimmed',
+        `  ${SHORTEST_META_DESCRIPTION.slice(1)}  `,
+        ErrorCode.MetaDescriptionTooShort,
+      ],
       [
         'one character over the limit',
         `${LONGEST_META_DESCRIPTION}a`,
@@ -395,16 +415,28 @@ describe('documentHelper', () => {
       expect(result).toBe(META_DESCRIPTION);
     });
 
-    it('should reject a meta description longer than the limit', () => {
-      // When
-      const validate = () =>
-        DocumentHelper.validateOptionalMetaDescription(
-          'a'.repeat(META_DESCRIPTION_MAX_LENGTH + 1)
-        );
+    it.each([
+      [
+        'shorter than the minimum',
+        'a'.repeat(META_DESCRIPTION_MIN_LENGTH - 1),
+        ErrorCode.MetaDescriptionTooShort,
+      ],
+      [
+        'longer than the limit',
+        'a'.repeat(META_DESCRIPTION_MAX_LENGTH + 1),
+        ErrorCode.MetaDescriptionTooLong,
+      ],
+    ])(
+      'should reject a meta description %s',
+      (_label, metaDescription, expectedError) => {
+        // When
+        const validate = () =>
+          DocumentHelper.validateOptionalMetaDescription(metaDescription);
 
-      // Then
-      expect(validate).toThrow(ErrorCode.MetaDescriptionTooLong);
-    });
+        // Then
+        expect(validate).toThrow(expectedError);
+      }
+    );
   });
 
   describe('buildInValidationPayload', () => {

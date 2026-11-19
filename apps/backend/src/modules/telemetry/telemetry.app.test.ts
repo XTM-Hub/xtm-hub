@@ -36,6 +36,7 @@ import { TestHelper } from '../../../tests/helper/test.helper';
 import {
   contextSimpleUserFiligran2,
   SERVICES,
+  TEST_META_DESCRIPTIONS,
   TEST_ORGANIZATIONS,
 } from '../../../tests/tests.const';
 import {
@@ -154,7 +155,7 @@ describe('telemetryApp', () => {
           name: 'myCsvFeed',
           description: 'description',
           short_description: 'short_description',
-          meta_description: 'meta_description',
+          meta_description: TEST_META_DESCRIPTIONS.DEFAULT,
           slug: 'slug',
           status: DocumentStatus.Published,
         },
@@ -252,7 +253,7 @@ describe('telemetryApp', () => {
           name: 'myCsvFeed',
           description: 'description',
           short_description: 'short_description',
-          meta_description: 'meta_description',
+          meta_description: TEST_META_DESCRIPTIONS.DEFAULT,
           slug: 'slug',
           status: DocumentStatus.Published,
         },
@@ -338,7 +339,7 @@ describe('telemetryApp', () => {
           name: 'myCsvFeed',
           description: 'description',
           short_description: 'short_description',
-          meta_description: 'meta_description',
+          meta_description: TEST_META_DESCRIPTIONS.DEFAULT,
           slug: 'slug',
           status: DocumentStatus.Published,
         },

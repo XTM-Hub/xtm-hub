@@ -1,7 +1,10 @@
 import { FileUpload } from 'graphql-upload/processRequest.mjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TestHelper } from '../../../../tests/helper/test.helper';
-import { TEST_ORGANIZATIONS } from '../../../../tests/tests.const';
+import {
+  TEST_META_DESCRIPTIONS,
+  TEST_ORGANIZATIONS,
+} from '../../../../tests/tests.const';
 import {
   DocumentMetadataKeyCode,
   DocumentStatus,
@@ -52,7 +55,7 @@ describe('documentMetadataDomain', () => {
           name: 'myCsvFeed',
           description: 'description',
           short_description: 'short_description',
-          meta_description: 'meta_description',
+          meta_description: TEST_META_DESCRIPTIONS.DEFAULT,
           slug: 'my-csv-feed',
           status: DocumentStatus.Published,
         },
@@ -85,7 +88,7 @@ describe('documentMetadataDomain', () => {
           name: 'myCsvFeed',
           description: 'description',
           short_description: 'short_description',
-          meta_description: 'meta_description',
+          meta_description: TEST_META_DESCRIPTIONS.DEFAULT,
           slug: 'my-csv-feed',
           status: DocumentStatus.Published,
         },
@@ -127,7 +130,7 @@ describe('documentMetadataDomain', () => {
           name: 'myTaxiiFeed',
           description: 'description',
           short_description: 'short_description',
-          meta_description: 'meta_description',
+          meta_description: TEST_META_DESCRIPTIONS.DEFAULT,
           slug: 'my-taxii-feed',
           status: DocumentStatus.Published,
         },
@@ -166,7 +169,7 @@ describe('documentMetadataDomain', () => {
           name: 'firstCsvFeed',
           description: 'description',
           short_description: 'short_description',
-          meta_description: 'meta_description',
+          meta_description: TEST_META_DESCRIPTIONS.DEFAULT,
           slug: 'first-csv-feed',
           status: DocumentStatus.Published,
         },
@@ -190,7 +193,7 @@ describe('documentMetadataDomain', () => {
           name: 'secondCsvFeed',
           description: 'description',
           short_description: 'short_description',
-          meta_description: 'meta_description',
+          meta_description: TEST_META_DESCRIPTIONS.DEFAULT,
           slug: 'second-csv-feed',
           status: DocumentStatus.Published,
         },

@@ -75,6 +75,8 @@ export const BOOLEAN_METADATA = [
   DocumentMetadataKeyCode.PlaybookSupported,
 ];
 
+// Below this length, search engines tend to replace the <meta name="description"> with an excerpt of the page.
+export const META_DESCRIPTION_MIN_LENGTH = 120;
 // The length search engines display for a <meta name="description">; the Document column is a varchar(160).
 export const META_DESCRIPTION_MAX_LENGTH = 160;
 
@@ -254,6 +256,9 @@ export const DocumentHelper = {
     const trimmed = metaDescription.trim();
     if (!trimmed) {
       throw new Error(ErrorCode.MetaDescriptionRequired);
+    }
+    if (trimmed.length < META_DESCRIPTION_MIN_LENGTH) {
+      throw new Error(ErrorCode.MetaDescriptionTooShort);
     }
     if (trimmed.length > META_DESCRIPTION_MAX_LENGTH) {
       throw new Error(ErrorCode.MetaDescriptionTooLong);

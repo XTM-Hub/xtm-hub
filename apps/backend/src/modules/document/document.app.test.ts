@@ -16,6 +16,7 @@ import { TestHelper } from '../../../tests/helper/test.helper';
 import {
   requestContextSimpleUserFiligran2,
   SERVICES,
+  TEST_META_DESCRIPTIONS,
   TEST_ORGANIZATIONS,
   TEST_USE_CASES,
 } from '../../../tests/tests.const';
@@ -70,6 +71,7 @@ import {
   ALL_METADATA_KEYS,
   DocumentTypeMappedByServiceDefinition,
   META_DESCRIPTION_MAX_LENGTH,
+  META_DESCRIPTION_MIN_LENGTH,
   ServiceDefinitionIdentifiersByPlatformIdentifier,
 } from './document.helper';
 import { DOCUMENT_IMAGE_METADATA_KEYS, DocumentImage } from './document.model';
@@ -82,7 +84,8 @@ import {
 } from './domain/document.metadata.domain';
 
 const TOO_LONG_META_DESCRIPTION = 'a'.repeat(META_DESCRIPTION_MAX_LENGTH + 1);
-const UPDATED_META_DESCRIPTION = 'updated meta description';
+const TOO_SHORT_META_DESCRIPTION = 'a'.repeat(META_DESCRIPTION_MIN_LENGTH - 1);
+const UPDATED_META_DESCRIPTION = TEST_META_DESCRIPTIONS.UPDATED;
 
 describe('documentApp', () => {
   const minioFileMock = {
@@ -106,7 +109,7 @@ describe('documentApp', () => {
 
   const documentData = {
     short_description: 'short_description',
-    meta_description: 'meta_description',
+    meta_description: TEST_META_DESCRIPTIONS.DEFAULT,
     slug: 'slug',
     uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID,
     name: 'name',
@@ -210,7 +213,7 @@ describe('documentApp', () => {
       // Given
       const input = {
         short_description: 'created short description',
-        meta_description: 'created meta description',
+        meta_description: TEST_META_DESCRIPTIONS.DEFAULT,
         slug: `persisted-data-create-${uuidv4()}`,
         uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID,
         name: 'created name',
@@ -283,6 +286,11 @@ describe('documentApp', () => {
     it.each([
       ['empty', '', ErrorCode.MetaDescriptionRequired],
       ['blank', '   ', ErrorCode.MetaDescriptionRequired],
+      [
+        'shorter than the minimum',
+        TOO_SHORT_META_DESCRIPTION,
+        ErrorCode.MetaDescriptionTooShort,
+      ],
       [
         'longer than the limit',
         TOO_LONG_META_DESCRIPTION,
@@ -600,19 +608,33 @@ describe('documentApp', () => {
       }
     );
 
-    it('should reject the update when the meta description is longer than the limit', async () => {
-      // When
-      const call = DocumentApp.updateDocument({
-        parentDocumentId: createdDocument!.id,
-        serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
-        metadata: integrationMetadata,
-        input: { meta_description: TOO_LONG_META_DESCRIPTION },
-        existingImageIds: [],
-      });
+    it.each([
+      [
+        'shorter than the minimum',
+        TOO_SHORT_META_DESCRIPTION,
+        ErrorCode.MetaDescriptionTooShort,
+      ],
+      [
+        'longer than the limit',
+        TOO_LONG_META_DESCRIPTION,
+        ErrorCode.MetaDescriptionTooLong,
+      ],
+    ])(
+      'should reject the update when the meta description is %s',
+      async (_label, metaDescription, expectedError) => {
+        // When
+        const call = DocumentApp.updateDocument({
+          parentDocumentId: createdDocument!.id,
+          serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
+          metadata: integrationMetadata,
+          input: { meta_description: metaDescription },
+          existingImageIds: [],
+        });
 
-      // Then
-      await expect(call).rejects.toThrow(ErrorCode.MetaDescriptionTooLong);
-    });
+        // Then
+        await expect(call).rejects.toThrow(expectedError);
+      }
+    );
 
     it('should persist provided data and validate each field in it', async () => {
       // Given
@@ -1795,7 +1817,7 @@ describe('documentApp', () => {
           name: 'myCustomDashboard',
           description: 'description',
           short_description: 'short_description',
-          meta_description: 'meta_description',
+          meta_description: TEST_META_DESCRIPTIONS.DEFAULT,
           slug: 'slug',
           status: DocumentStatus.Published,
         },
@@ -1853,7 +1875,7 @@ describe('documentApp', () => {
           name: 'myCustomDashboard',
           description: 'description',
           short_description: 'short_description',
-          meta_description: 'meta_description',
+          meta_description: TEST_META_DESCRIPTIONS.DEFAULT,
           slug: 'slug',
           status: DocumentStatus.Published,
         },

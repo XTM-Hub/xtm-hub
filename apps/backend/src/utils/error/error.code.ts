@@ -100,6 +100,7 @@ export enum BadRequestErrorCode {
   VotableFeatureProductNotVotable = 'VOTABLE_FEATURE_PRODUCT_NOT_VOTABLE',
   InvalidDocumentStatusTransition = 'INVALID_DOCUMENT_STATUS_TRANSITION',
   MetaDescriptionRequired = 'META_DESCRIPTION_REQUIRED',
+  MetaDescriptionTooShort = 'META_DESCRIPTION_TOO_SHORT',
   MetaDescriptionTooLong = 'META_DESCRIPTION_TOO_LONG',
 }
 

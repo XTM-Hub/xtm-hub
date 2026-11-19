@@ -92,6 +92,7 @@ describe('create document GraphQL mutation', () => {
 
   it.each([
     BadRequestErrorCode.MetaDescriptionRequired,
+    BadRequestErrorCode.MetaDescriptionTooShort,
     BadRequestErrorCode.MetaDescriptionTooLong,
   ])('should map to BadRequest for %s error', async (errorCode) => {
     // Given
