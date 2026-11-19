@@ -24,9 +24,9 @@ const connectorSchema = z.object({
   slug: z.string().min(1, 'Required'),
   status: z.enum(DocumentStatus).optional(),
   uploader_id: z.string().optional(),
-  short_description: z.string().min(1, 'Required').max(250),
   // Connectors are only edited here, and the existing ones have no meta-description.
   meta_description: z.string().trim().max(160).nullish(),
+  short_description: z.string().min(1, 'Required').max(250),
   description: z.string().min(1, 'Required'),
   product_version: z
     .string()
@@ -129,8 +129,8 @@ export const ConnectorForm = ({
   );
 
   const {
-    short_description,
     meta_description,
+    short_description,
     slug,
     name,
     description,
@@ -202,8 +202,8 @@ export const ConnectorForm = ({
           },
           uploader_id,
           uploader_organization_id,
-          short_description,
           meta_description,
+          short_description,
           slug,
           name,
           integration_type,

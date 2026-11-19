@@ -27,8 +27,8 @@ const csvFeedFormSchema = z.object({
   slug: z.string().min(1, 'Required'),
   status: z.enum(DocumentStatus).optional(),
   uploader_id: z.string().optional(),
-  short_description: z.string().min(1, 'Required').max(250),
   meta_description: z.string().trim().min(1, 'Required').max(160),
+  short_description: z.string().min(1, 'Required').max(250),
   description: z.string().min(1, 'Required'),
   uploader_organization_id: z.string().min(1, 'Required'),
   integration_type: z.string().min(1, 'Required'),
@@ -108,8 +108,8 @@ export const CsvFeedForm = ({ handleSubmit, document }: CsvFeedFormProps) => {
   );
 
   const {
-    short_description,
     meta_description,
+    short_description,
     slug,
     name,
     description,
@@ -168,8 +168,8 @@ export const CsvFeedForm = ({ handleSubmit, document }: CsvFeedFormProps) => {
           logo,
           images: imagesField,
           status,
-          short_description,
           meta_description,
+          short_description,
           slug,
           name,
           integration_type,

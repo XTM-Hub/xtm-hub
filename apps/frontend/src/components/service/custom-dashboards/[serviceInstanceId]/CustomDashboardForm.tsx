@@ -25,8 +25,8 @@ const customDashboardSchema = z.object({
   slug: z.string().min(1, 'Required'),
   status: z.enum(DocumentStatus).optional(),
   uploader_id: z.string().optional(),
-  short_description: z.string().max(255).min(1, 'Required'),
   meta_description: z.string().trim().min(1, 'Required').max(160),
+  short_description: z.string().max(255).min(1, 'Required'),
   description: z.string().min(1, 'Required'),
   product_version: z.string().regex(/^\d+\.\d+\.\d+$/, {
     error: 'Product version must be X.Y.Z',
@@ -98,8 +98,8 @@ export const CustomDashboardForm = ({
 
   const {
     name,
-    short_description,
     meta_description,
+    short_description,
     slug,
     product_version,
     description,
@@ -146,8 +146,8 @@ export const CustomDashboardForm = ({
         logo,
         images: imagesField,
         status,
-        short_description,
         meta_description,
+        short_description,
         slug,
         name,
         product_version,
