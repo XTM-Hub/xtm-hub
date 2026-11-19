@@ -342,6 +342,96 @@ describe('apiTokenMiddleware', () => {
     });
   });
 
+  it('should keep authenticating a token accepted before from a client over its limit', async () => {
+    // Given
+    const ip = '192.0.2.14';
+    const { token, api_token } = await createToken(
+      SECOND.USERS.SIMPLE.ID,
+      SECOND.ID,
+      ApiTokenScope.Read
+    );
+    await apiTokenMiddleware(
+      bearerRequest(ip, token),
+      response() as unknown as Response,
+      vi.fn()
+    );
+    await refuseTokensFrom(ip, API_TOKEN_FAILURE_RATE_MAX + 1);
+    const req = bearerRequest(ip, token);
+    const res = response();
+    const next = vi.fn();
+
+    // When
+    await apiTokenMiddleware(req, res as unknown as Response, next);
+
+    // Then
+    expect(next).toHaveBeenCalledWith();
+    expect(res.status).not.toHaveBeenCalled();
+    expect(getApiTokenAuthentication(req)?.token).toMatchObject({
+      id: api_token.id,
+      organization_id: SECOND.ID,
+    });
+  });
+
+  it('should still answer 429 without lookup to a token never accepted from a client over its limit', async () => {
+    // Given
+    const ip = '192.0.2.15';
+    const { token } = await createToken(
+      SECOND.USERS.SIMPLE.ID,
+      SECOND.ID,
+      ApiTokenScope.Read
+    );
+    await apiTokenMiddleware(
+      bearerRequest(ip, token),
+      response() as unknown as Response,
+      vi.fn()
+    );
+    await refuseTokensFrom(ip, API_TOKEN_FAILURE_RATE_MAX);
+    const loadByHash = vi.spyOn(ApiTokenDomain, 'loadByHash');
+    const req = bearerRequest(ip, ApiTokenHelper.generate().token);
+    const res = response();
+    const next = vi.fn();
+
+    // When
+    await apiTokenMiddleware(req, res as unknown as Response, next);
+
+    // Then
+    expect(loadByHash).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(429);
+    expect(next).not.toHaveBeenCalled();
+    expect(getApiTokenAuthentication(req)).toBeUndefined();
+  });
+
+  it('should refuse a token accepted before once revoked, then stop looking it up from a client over its limit', async () => {
+    // Given
+    const ip = '192.0.2.16';
+    const { token, api_token } = await createToken(
+      SECOND.USERS.SIMPLE.ID,
+      SECOND.ID,
+      ApiTokenScope.Read
+    );
+    await apiTokenMiddleware(
+      bearerRequest(ip, token),
+      response() as unknown as Response,
+      vi.fn()
+    );
+    await refuseTokensFrom(ip, API_TOKEN_FAILURE_RATE_MAX);
+    await ApiTokenDomain.revoke(api_token.id);
+    const loadByHash = vi.spyOn(ApiTokenDomain, 'loadByHash');
+    const first = bearerRequest(ip, token);
+    const second = bearerRequest(ip, token);
+    const res = response();
+
+    // When
+    await apiTokenMiddleware(first, response() as unknown as Response, vi.fn());
+    await apiTokenMiddleware(second, res as unknown as Response, vi.fn());
+
+    // Then
+    expect(loadByHash).toHaveBeenCalledTimes(1);
+    expect(getApiTokenAuthentication(first)).toBeUndefined();
+    expect(getApiTokenAuthentication(second)).toBeUndefined();
+    expect(res.status).toHaveBeenCalledWith(429);
+  });
+
   it('should pass an unexpected failure to the error handler', async () => {
     // Given
     const failure = new Error('database down');

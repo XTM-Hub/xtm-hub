@@ -15,6 +15,7 @@ import { ApiTokenHelper } from './api-token.helper';
 import {
   countApiTokenFailure,
   isApiTokenFailureLimitReached,
+  recentApiTokens,
 } from './api-token.rate-limit';
 
 // What a request authenticated by an API token knows about it
@@ -174,7 +175,8 @@ const sendUnauthenticated = (res: Response) => {
  * `Authorization: Bearer xhp_...` authenticates the request as the token's user. Any other request goes on unchanged
  * (session cookie, system token, platform token). A refused token answers 401 whatever the route: the caller asked
  * for the token's identity, it never falls back to a session. Refused tokens are counted per client IP: over the
- * limit, the client gets 429 and its tokens are no longer looked up until the window ends.
+ * limit, the client gets 429 and its tokens are no longer looked up until the window ends, except the tokens accepted
+ * recently, which are still looked up and checked as usual.
  */
 export const apiTokenMiddleware = async (
   req: Request,
@@ -191,18 +193,24 @@ export const apiTokenMiddleware = async (
   try {
     const refuse = () =>
       countApiTokenFailure(req, res, () => sendUnauthenticated(res), next);
-    // Over the limit: answered 429 without looking the token up
-    if (await isApiTokenFailureLimitReached(req)) {
+    const tokenHash = ApiTokenHelper.hash(secret);
+    // Over the limit: answered 429 without looking the token up, unless it was accepted recently
+    if (
+      !recentApiTokens.has(tokenHash) &&
+      (await isApiTokenFailureLimitReached(req))
+    ) {
       await refuse();
       return;
     }
     const now = new Date();
     const resolution = await resolveApiToken(secret, now);
     if (!resolution.authenticated) {
+      recentApiTokens.forget(tokenHash);
       logApp.warn('API token refused', { reason: resolution.reason });
       await refuse();
       return;
     }
+    recentApiTokens.remember(tokenHash, now.getTime());
     authentications.set(req, resolution.authentication);
     recordUse(resolution.authentication.token.id, now);
     next();
