@@ -7,19 +7,19 @@ import { TrialsManageUsersDialog } from '@/components/service/trial-instances/ma
 import { useTranslate } from '@/hooks/use-translate';
 import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { Button } from '@filigran/design-system';
-import { registeredPlatformByServiceInstanceId_fragment$data } from '@generated/registeredPlatformByServiceInstanceId_fragment.graphql';
 import {
   DeploymentRequestHubStatus,
   OrganizationCapability,
   PlatformContract,
   PortalCapability,
+  RegisteredPlatformDetailsFragment,
 } from '@graphql/generated';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useContext, useState } from 'react';
 
 interface ConnectedProductButtonsProps {
-  platform: registeredPlatformByServiceInstanceId_fragment$data;
+  platform: RegisteredPlatformDetailsFragment;
 }
 
 export const ConnectedProductButtons = ({

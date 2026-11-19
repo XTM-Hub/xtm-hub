@@ -17,16 +17,6 @@ export const ServiceAddPicture = graphql`
   }
 `;
 
-export const UpdatePlatformServiceMetadata = graphql`
-  mutation serviceUpdatePlatformServiceMetadataMutation(
-    $input: UpdatePlatformServiceMetadataInput!
-  ) {
-    updatePlatformServiceMetadata(input: $input) {
-      ...registerRegisteredPlatformFragment
-    }
-  }
-`;
-
 export const ServiceById = graphql`
   query serviceByIdQuery($service_instance_id: ServiceInstanceId!) {
     serviceInstanceById(service_instance_id: $service_instance_id) {
