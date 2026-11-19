@@ -1,4 +1,5 @@
 import { PortalContext } from '@/components/me/AppPortalContext';
+import { optionalMetaDescriptionSchema } from '@/components/service/form/meta-description.schema';
 import { ServiceFormSheetFooter } from '@/components/service/form/SheetFooter';
 import { useServiceFormFields } from '@/components/service/form/UseServiceFormFields';
 import { AutoForm } from '@/components/ui/auto-form';
@@ -25,7 +26,7 @@ const connectorSchema = z.object({
   status: z.enum(DocumentStatus).optional(),
   uploader_id: z.string().optional(),
   // Connectors are only edited here, and the existing ones have no meta-description.
-  meta_description: z.string().trim().max(160).nullish(),
+  meta_description: optionalMetaDescriptionSchema,
   short_description: z.string().min(1, 'Required').max(250),
   description: z.string().min(1, 'Required'),
   product_version: z

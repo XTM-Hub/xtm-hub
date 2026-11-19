@@ -2,6 +2,10 @@ import {
   AppServiceContext,
   ServiceContextProps,
 } from '@/components/service/components/ServiceContext';
+import {
+  META_DESCRIPTION_MAX_LENGTH,
+  META_DESCRIPTION_MIN_LENGTH,
+} from '@/components/service/form/meta-description.schema';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 import { DocumentOverrides } from '@/utils/test/document-overrides';
@@ -28,7 +32,6 @@ const NAME_LABEL = 'Service.Form.NameLabel';
 const SLUG_LABEL = 'Service.Form.SlugLabel';
 const SHORT_DESCRIPTION_LABEL = 'Service.Form.ShortDescriptionLabel';
 const META_DESCRIPTION_LABEL = 'Service.Form.MetaDescriptionLabel';
-const META_DESCRIPTION_MAX_LENGTH = 160;
 export const PRODUCT_VERSION_LABEL = 'Service.Form.ProductVersionLabel';
 const USE_CASES_LABEL = 'Service.Form.UseCasesLabel';
 const SOLUTION_CATEGORIES_LABEL = 'Service.Form.SolutionCategoriesLabel';
@@ -72,11 +75,13 @@ export const DOCUMENT_SLUG = 'ransomware-overview';
 export const DOCUMENT_SHORT_DESCRIPTION = 'Track ransomware activity';
 export const DOCUMENT_DESCRIPTION = 'Every ransomware campaign at a glance';
 export const DOCUMENT_PRODUCT_VERSION = '6.4.0';
-const DOCUMENT_META_DESCRIPTION = 'Ransomware campaigns tracked in OpenCTI';
+const DOCUMENT_META_DESCRIPTION =
+  'Ransomware campaigns tracked in OpenCTI, with the threat actors, targeted sectors, victims and indicators behind each one of them.';
 export const NEW_NAME = 'Threat Intel: APT-28 (v2)';
 export const NEW_SLUG = 'threat-intel-apt-28-v2';
 export const NEW_SHORT_DESCRIPTION = 'Follow APT-28';
-export const NEW_META_DESCRIPTION = 'Indicators and campaigns of APT-28';
+export const NEW_META_DESCRIPTION =
+  'Indicators, campaigns, malware and attack patterns of APT-28, gathered in OpenCTI to follow the activity of this threat actor.';
 const NEW_PRODUCT_VERSION = '6.5.1';
 export const NEW_DESCRIPTION = 'Everything about APT-28';
 
@@ -547,6 +552,10 @@ export const defineMetaDescriptionCreationTests = <Values,>({
     { context: 'without it', metaDescription: '' },
     { context: 'with blanks only', metaDescription: '   ' },
     {
+      context: `with fewer than ${META_DESCRIPTION_MIN_LENGTH} characters`,
+      metaDescription: 'a'.repeat(META_DESCRIPTION_MIN_LENGTH - 1),
+    },
+    {
       context: `with more than ${META_DESCRIPTION_MAX_LENGTH} characters`,
       metaDescription: 'a'.repeat(META_DESCRIPTION_MAX_LENGTH + 1),
     },
@@ -604,42 +613,61 @@ export const defineMetaDescriptionEditionTests = <Values,>({
     await waitFor(() => expect(handleSubmit).toHaveBeenCalledOnce());
   });
 
-  it(`should save a meta-description of ${META_DESCRIPTION_MAX_LENGTH} characters when the user edits the ${resourceName}`, async () => {
-    // Given
-    const { user, handleSubmit } = renderServiceForm(
-      Form,
-      buildEditedDocument()
-    );
-    const metaDescription = 'a'.repeat(META_DESCRIPTION_MAX_LENGTH);
-    await fillMetaDescription(user, metaDescription);
+  it.each([META_DESCRIPTION_MIN_LENGTH, META_DESCRIPTION_MAX_LENGTH])(
+    `should save a meta-description of %i characters when the user edits the ${resourceName}`,
+    async (length) => {
+      // Given
+      const { user, handleSubmit } = renderServiceForm(
+        Form,
+        buildEditedDocument()
+      );
+      const metaDescription = 'a'.repeat(length);
+      await fillMetaDescription(user, metaDescription);
 
-    // When
-    await user.click(screen.getByRole('button', { name: VALIDATE_LABEL }));
+      // When
+      await user.click(screen.getByRole('button', { name: VALIDATE_LABEL }));
 
-    // Then
-    await waitFor(() =>
-      expect(handleSubmit).toHaveBeenCalledWith(
-        expect.objectContaining({ meta_description: metaDescription })
-      )
-    );
-  });
+      // Then
+      await waitFor(() =>
+        expect(handleSubmit).toHaveBeenCalledWith(
+          expect.objectContaining({ meta_description: metaDescription })
+        )
+      );
+    }
+  );
 
-  it(`should reject a meta-description longer than ${META_DESCRIPTION_MAX_LENGTH} characters when the user edits the ${resourceName}`, async () => {
-    // Given
-    const { user } = renderServiceForm(Form, buildEditedDocument());
-    const metaDescriptionField = await fillMetaDescription(
-      user,
-      'a'.repeat(META_DESCRIPTION_MAX_LENGTH + 1)
-    );
+  it.each([
+    {
+      context: `shorter than ${META_DESCRIPTION_MIN_LENGTH} characters`,
+      metaDescription: 'a'.repeat(META_DESCRIPTION_MIN_LENGTH - 1),
+    },
+    {
+      context: `longer than ${META_DESCRIPTION_MAX_LENGTH} characters`,
+      metaDescription: 'a'.repeat(META_DESCRIPTION_MAX_LENGTH + 1),
+    },
+  ])(
+    `should reject a meta-description $context when the user edits the ${resourceName}`,
+    async ({ metaDescription }) => {
+      // Given
+      const { user, handleSubmit } = renderServiceForm(
+        Form,
+        buildEditedDocument()
+      );
+      const metaDescriptionField = await fillMetaDescription(
+        user,
+        metaDescription
+      );
 
-    // When
-    await user.click(screen.getByRole('button', { name: VALIDATE_LABEL }));
+      // When
+      await user.click(screen.getByRole('button', { name: VALIDATE_LABEL }));
 
-    // Then
-    await waitFor(() =>
-      expect(metaDescriptionField).toHaveAttribute('aria-invalid', 'true')
-    );
-  });
+      // Then
+      await waitFor(() =>
+        expect(metaDescriptionField).toHaveAttribute('aria-invalid', 'true')
+      );
+      expect(handleSubmit).not.toHaveBeenCalled();
+    }
+  );
 };
 
 interface RequiredFileTestOptions<

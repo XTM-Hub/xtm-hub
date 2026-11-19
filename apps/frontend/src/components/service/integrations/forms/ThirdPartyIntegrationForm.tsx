@@ -1,4 +1,8 @@
 import { PortalContext } from '@/components/me/AppPortalContext';
+import {
+  metaDescriptionSchema,
+  optionalMetaDescriptionSchema,
+} from '@/components/service/form/meta-description.schema';
 import { ServiceFormSheetFooter } from '@/components/service/form/SheetFooter';
 import { useServiceFormFields } from '@/components/service/form/UseServiceFormFields';
 import { AutoForm } from '@/components/ui/auto-form';
@@ -25,7 +29,7 @@ const thirdPartyIntegrationFormSchema = z.object({
   slug: z.string().min(1, 'Required'),
   status: z.enum(DocumentStatus).optional(),
   uploader_id: z.string().optional(),
-  meta_description: z.string().trim().min(1, 'Required').max(160),
+  meta_description: metaDescriptionSchema,
   short_description: z.string().min(1, 'Required').max(250),
   description: z.string().min(1, 'Required'),
   uploader_organization_id: z.string().min(1, 'Required'),
@@ -113,8 +117,7 @@ export const ThirdPartyIntegrationForm = ({
   const formSchema = useMemo(() => {
     const extendedSchema = document
       ? thirdPartyIntegrationFormSchema.extend({
-          // A resource stored before the meta-description existed stays editable.
-          meta_description: z.string().trim().max(160).nullish(),
+          meta_description: optionalMetaDescriptionSchema,
           document: z.custom<FileList>(fileListCheck).optional(),
           // An integration stored without an image can still be edited.
           images: z.custom<FileList>(optionalFileListCheck).optional(),
