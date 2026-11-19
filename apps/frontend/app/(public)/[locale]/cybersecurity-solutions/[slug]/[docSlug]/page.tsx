@@ -27,6 +27,7 @@ import { fetchSeoServiceInstanceBySlug } from '@/utils/seo-service-instance/util
 import { localeMap } from '@/utils/shareable-resources/shareable-resources.consts';
 import {
   isConnectorResource,
+  PublicDocumentByServiceSlugItem,
   ServiceSlug,
 } from '@/utils/shareable-resources/shareable-resources.types';
 import {
@@ -51,6 +52,20 @@ const FALLBACK_DESCRIPTION_KEYS: Record<ServiceSlug, string> = {
   [ServiceSlug.OPEN_CTI_PLAYBOOKS]:
     'Metadata.DocumentFallbackDescriptionGeneric',
 };
+
+/**
+ * The SEO description of a resource, shared by its meta tag and its JSON-LD
+ */
+const describeDocument = (
+  document: Pick<
+    PublicDocumentByServiceSlugItem,
+    'meta_description' | 'short_description'
+  >,
+  fallbackDescription: string
+) =>
+  document.meta_description ||
+  document.short_description ||
+  fallbackDescription;
 
 /**
  * Fetch the data for the page with caching to avoid multiple requests
@@ -105,7 +120,7 @@ export async function generateMetadata({
       'Metadata.DocumentFallbackDescriptionGeneric'
   );
 
-  const description = document.short_description || fallbackDescription;
+  const description = describeDocument(document, fallbackDescription);
   const serviceLabel = t(
     `Service.ServiceDefinitionIdentifier.${serviceInstance.service_definition.identifier}`
   );
@@ -178,7 +193,7 @@ const Page = async ({
     '@context': 'https://schema.org',
     '@type': 'TechArticle',
     headline: `${document.name} | ${t(`Service.ServiceDefinitionIdentifier.${serviceInstance.service_definition.identifier}`)} | XTM Hub`,
-    description: document.short_description || fallbackDescription,
+    description: describeDocument(document, fallbackDescription),
     articleBody: document.description,
     author: document.uploader
       ? {
