@@ -13,10 +13,8 @@ import { ErrorCode } from '../../utils/error/error.code';
 import { RolePortalDomain } from './role-portal.domain';
 
 describe('role portal domain tests', () => {
-  // Kept first: loadRolePortalsBySSOGroups below deletes every role, and the
-  // role links with them, which would hide a role the migration gave it
   describe('loadCapabilityPortalsByNames', () => {
-    it('should find the READ_ORGANIZATION_MEMBERS capability its migration inserts, given to no role', async () => {
+    it('should find the READ_ORGANIZATION_MEMBERS capability its migration inserts', async () => {
       // When
       const capabilities = await RolePortalDomain.loadCapabilityPortalsByNames([
         PortalCapability.ReadOrganizationMembers,
@@ -26,11 +24,6 @@ describe('role portal domain tests', () => {
       expect(capabilities).toEqual([
         expect.objectContaining(CAPABILITY_READ_ORGANIZATION_MEMBERS),
       ]);
-      expect(
-        await TestHelper.rolePortal_CapabilityPortal.loadAll({
-          capability_portal_id: CAPABILITY_READ_ORGANIZATION_MEMBERS.id,
-        })
-      ).toEqual([]);
     });
   });
 

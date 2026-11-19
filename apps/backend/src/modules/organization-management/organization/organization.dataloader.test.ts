@@ -53,19 +53,22 @@ describe('batchLoadAdministratorEmails', () => {
 
   describe('with several administrators', () => {
     const createdUserIds: UserId[] = [];
-    let organizationId: OrganizationId;
+    const createdOrganizationIds: OrganizationId[] = [];
 
     afterEach(async () => {
       // Deleting the users cascades to their memberships and capabilities
       for (const id of createdUserIds.splice(0)) {
         await TestHelper.user.delete({ id });
       }
-      await TestHelper.organization.delete({ id: organizationId });
+      for (const id of createdOrganizationIds.splice(0)) {
+        await TestHelper.organization.delete({ id });
+      }
     });
 
     it('should return the administrator emails sorted by email', async () => {
       // Given administrators added out of alphabetical order, next to a plain member
-      ({ id: organizationId } = await TestHelper.organization.create());
+      const { id: organizationId } = await TestHelper.organization.create();
+      createdOrganizationIds.push(organizationId);
       const addMember = async (prefix: string, isAdministrator: boolean) => {
         const email = `${prefix}.${uuidv4()}@admin-hub.test`;
         const { user, userOrganization } =

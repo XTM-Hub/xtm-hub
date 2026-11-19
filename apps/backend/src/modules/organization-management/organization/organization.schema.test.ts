@@ -167,7 +167,7 @@ describe('organization GraphQL schema', () => {
       });
     });
 
-    it('should let a READ_ORGANIZATION_MEMBERS user list the organizations, without the personal spaces', async () => {
+    it('should let a READ_ORGANIZATION_MEMBERS user list the organizations, the personal spaces staying out of the list as for any caller', async () => {
       // Given / When
       const { data, errors } = await execute(
         ORGANIZATIONS_QUERY,
@@ -197,6 +197,25 @@ describe('organization GraphQL schema', () => {
       const { data, errors } = await execute(
         ORGANIZATIONS_QUERY,
         contextSimpleUserSecondOrga
+      );
+
+      // Then
+      expect(errors?.[0]?.message).toMatch(NOT_AUTHORIZED);
+      expect(data).toBeNull();
+      expect(loadOrganizations).not.toHaveBeenCalled();
+    });
+
+    it('should forbid a READ_SAAS_METRICS user to list the organizations', async () => {
+      // Given
+      const loadOrganizations = vi.spyOn(
+        OrganizationDomain,
+        'loadOrganizations'
+      );
+
+      // When
+      const { data, errors } = await execute(
+        ORGANIZATIONS_QUERY,
+        withPortalCapability(CAPABILITY_READ_SAAS_METRICS)
       );
 
       // Then
@@ -292,6 +311,26 @@ describe('organization GraphQL schema', () => {
       const { data, errors } = await execute(
         ORGANIZATION_QUERY,
         contextSimpleUserSecondOrga,
+        { id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID }
+      );
+
+      // Then
+      expect(errors?.[0]?.message).toMatch(NOT_AUTHORIZED);
+      expect(data).toEqual({ organization: null });
+      expect(loadOrganizationBy).not.toHaveBeenCalled();
+    });
+
+    it('should forbid a READ_SAAS_METRICS user to read an organization', async () => {
+      // Given
+      const loadOrganizationBy = vi.spyOn(
+        OrganizationDomain,
+        'loadOrganizationBy'
+      );
+
+      // When
+      const { data, errors } = await execute(
+        ORGANIZATION_QUERY,
+        withPortalCapability(CAPABILITY_READ_SAAS_METRICS),
         { id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID }
       );
 
@@ -442,7 +481,8 @@ describe('organization GraphQL schema', () => {
       }: {
         capability: typeof CAPABILITY_READ_ORGANIZATION_MEMBERS;
       }) => {
-        // Given
+        // Given the count read with the same rule as the field: this test checks
+        // the GraphQL wiring, the counting rule is covered by organization.dataloader.test.ts
         const expectedCount =
           await UserOrganizationDomain.countUsersInOrganization(
             TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID
