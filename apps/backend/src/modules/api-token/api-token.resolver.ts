@@ -53,7 +53,12 @@ class ApiTokenQueries {
     context
   ) =>
     run(async () =>
-      (await ApiTokenApp.listOwn(context.user as UserLoadUserBy)).map(toGraphql)
+      (
+        await ApiTokenApp.listOwn(
+          context.user as UserLoadUserBy,
+          getApiTokenAuthentication(context.req)?.token.organization_id
+        )
+      ).map(toGraphql)
     );
 
   @Guarded(
@@ -119,7 +124,8 @@ class ApiTokenMutations {
       toGraphql(
         await ApiTokenApp.revoke(
           context.user as UserLoadUserBy,
-          id as ApiTokenId
+          id as ApiTokenId,
+          getApiTokenAuthentication(context.req)?.token.organization_id
         )
       )
     );

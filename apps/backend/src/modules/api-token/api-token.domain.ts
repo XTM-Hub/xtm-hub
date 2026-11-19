@@ -36,9 +36,18 @@ export const ApiTokenDomain = {
   loadByHash: async (tokenHash: string): Promise<ApiToken | undefined> =>
     db<ApiToken>('ApiToken').where('token_hash', tokenHash).first(),
 
-  listByUser: async (userId: UserId): Promise<ApiTokenWithNames[]> =>
+  // Every organization of the user, unless one is given
+  listByUser: async (
+    userId: UserId,
+    organizationId?: OrganizationId
+  ): Promise<ApiTokenWithNames[]> =>
     withNames()
       .where('ApiToken.user_id', userId)
+      .modify((queryBuilder) => {
+        if (organizationId) {
+          queryBuilder.where('ApiToken.organization_id', organizationId);
+        }
+      })
       .orderBy('ApiToken.created_at', 'desc'),
 
   listByOrganization: async (

@@ -15,6 +15,7 @@ import {
 } from '../../utils/error/error.code';
 import { UserDomain } from '../organization-management/user/user-domain/user.domain';
 import { ApiTokenApp } from './api-token.app';
+import { ApiTokenAuthentication, resolveApiToken } from './api-token.auth';
 import { API_TOKEN_MAX_LIFETIME_MS, ApiTokenHelper } from './api-token.helper';
 
 const SECOND = TEST_ORGANIZATIONS.SECOND_ORGANIZATION;
@@ -24,6 +25,17 @@ const UNKNOWN_TOKEN_ID = 'f7a1c0de-0000-4000-8000-000000000099' as ApiTokenId;
 
 const loadUser = async (id: UserId): Promise<UserLoadUserBy> =>
   (await UserDomain.loadUserBy({ 'User.id': id })) as UserLoadUserBy;
+
+// What the request of a token knows: its user narrowed to the token's organization
+const authenticate = async (
+  secret: string
+): Promise<ApiTokenAuthentication> => {
+  const resolution = await resolveApiToken(secret);
+  if (!resolution.authenticated) {
+    throw new Error(`token refused: ${resolution.reason}`);
+  }
+  return resolution.authentication;
+};
 
 const input = (
   overrides: Partial<CreateApiTokenInput> = {}
@@ -112,6 +124,55 @@ describe('api token app lists', () => {
   });
 });
 
+describe('api token app lists for a token', () => {
+  it('should list to a token only the own tokens of its organization, and every own token to a session', async () => {
+    // Given a user with a token in its organization and one in its personal space
+    const simple = await loadUser(SECOND.USERS.SIMPLE.ID);
+    const caller = await ApiTokenApp.create(
+      simple,
+      input({ name: 'caller', scope: ApiTokenScope.Read })
+    );
+    const { api_token: otherOrganization } = await ApiTokenApp.create(
+      simple,
+      input({
+        name: 'other organization',
+        organization_id: SECOND.USERS.SIMPLE.PERSONAL_SPACE_ID,
+      })
+    );
+    const { user, token } = await authenticate(caller.token);
+
+    // When
+    const listedToToken = await ApiTokenApp.listOwn(
+      user,
+      token.organization_id
+    );
+    const listedToSession = await ApiTokenApp.listOwn(simple);
+
+    // Then
+    expect(listedToToken.map(({ id }) => id)).toContain(caller.api_token.id);
+    expect(listedToToken.map(({ id }) => id)).not.toContain(
+      otherOrganization.id
+    );
+    expect(
+      listedToToken.every(
+        ({ organization_id }) => organization_id === SECOND.ID
+      )
+    ).toBe(true);
+    expect(listedToSession).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: caller.api_token.id,
+          organization_id: SECOND.ID,
+        }),
+        expect.objectContaining({
+          id: otherOrganization.id,
+          organization_id: SECOND.USERS.SIMPLE.PERSONAL_SPACE_ID,
+        }),
+      ])
+    );
+  });
+});
+
 describe('api token app revoke', () => {
   it('should let the owner revoke a token', async () => {
     // Given
@@ -160,6 +221,79 @@ describe('api token app revoke', () => {
     await expect(ApiTokenApp.revoke(outsider, api_token.id)).rejects.toThrow(
       NotFoundErrorCode.NotFound
     );
+  });
+
+  it('should let a token revoke an own token of its organization', async () => {
+    // Given
+    const simple = await loadUser(SECOND.USERS.SIMPLE.ID);
+    const caller = await ApiTokenApp.create(simple, input({ name: 'caller' }));
+    const { api_token: target } = await ApiTokenApp.create(
+      simple,
+      input({ name: 'same organization' })
+    );
+    const { user, token } = await authenticate(caller.token);
+
+    // When
+    const revoked = await ApiTokenApp.revoke(
+      user,
+      target.id,
+      token.organization_id
+    );
+
+    // Then
+    expect(revoked).toMatchObject({
+      id: target.id,
+      organization_id: SECOND.ID,
+    });
+    expect(revoked.revoked_at).toBeInstanceOf(Date);
+  });
+
+  it('should answer not found to a token revoking an own token of another organization, and leave it active', async () => {
+    // Given
+    const simple = await loadUser(SECOND.USERS.SIMPLE.ID);
+    const caller = await ApiTokenApp.create(simple, input({ name: 'caller' }));
+    const { api_token: target } = await ApiTokenApp.create(
+      simple,
+      input({
+        name: 'other organization',
+        organization_id: SECOND.USERS.SIMPLE.PERSONAL_SPACE_ID,
+      })
+    );
+    const { user, token } = await authenticate(caller.token);
+
+    // When
+    await expect(
+      ApiTokenApp.revoke(user, target.id, token.organization_id)
+    ).rejects.toThrow(NotFoundErrorCode.NotFound);
+
+    // Then
+    const listed = await ApiTokenApp.listOwn(simple);
+    expect(listed.find(({ id }) => id === target.id)).toMatchObject({
+      id: target.id,
+      revoked_at: null,
+    });
+  });
+
+  it('should let a session revoke an own token of any of its organizations', async () => {
+    // Given
+    const simple = await loadUser(SECOND.USERS.SIMPLE.ID);
+    const { api_token: target } = await ApiTokenApp.create(
+      simple,
+      input({
+        name: 'personal space',
+        organization_id: SECOND.USERS.SIMPLE.PERSONAL_SPACE_ID,
+      })
+    );
+
+    // When
+    const revoked = await ApiTokenApp.revoke(simple, target.id);
+
+    // Then
+    expect(revoked).toMatchObject({
+      id: target.id,
+      organization_id: SECOND.USERS.SIMPLE.PERSONAL_SPACE_ID,
+    });
+    expect(revoked.revoked_at).toBeInstanceOf(Date);
   });
 
   it('should answer not found for an unknown token', async () => {

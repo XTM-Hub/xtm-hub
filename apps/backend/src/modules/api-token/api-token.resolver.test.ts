@@ -109,7 +109,31 @@ describe('api-token.resolver', () => {
 
     // Then
     expect(ApiTokenApp.listOwn).toHaveBeenCalledWith(
-      contextSimpleUserFiligran2.user
+      contextSimpleUserFiligran2.user,
+      undefined
+    );
+    expect(result).toEqual([exposed]);
+  });
+
+  it('should list to a token only the own tokens of its organization', async () => {
+    // Given
+    vi.mocked(getApiTokenAuthentication).mockReturnValue(
+      authentication(ApiTokenScope.Read)
+    );
+    vi.spyOn(ApiTokenApp, 'listOwn').mockResolvedValue([stored]);
+
+    // When
+    const result = await resolver.Query!.apiTokens!(
+      {},
+      {},
+      contextSimpleUserFiligran2,
+      GRAPHQL_RESOLVE_INFO
+    );
+
+    // Then
+    expect(ApiTokenApp.listOwn).toHaveBeenCalledWith(
+      contextSimpleUserFiligran2.user,
+      ORGANIZATION.ID
     );
     expect(result).toEqual([exposed]);
   });
@@ -235,6 +259,40 @@ describe('api-token.resolver', () => {
 
     // Then
     expect(result).toEqual({ ...exposed, revoked_at: revokedAt });
+  });
+
+  it.each([
+    {
+      case: 'a session, in any organization',
+      scope: undefined,
+      expected: undefined,
+    },
+    {
+      case: 'a token, in its organization only',
+      scope: ApiTokenScope.ReadWrite,
+      expected: ORGANIZATION.ID,
+    },
+  ])('should revoke for $case', async ({ scope, expected }) => {
+    // Given
+    vi.mocked(getApiTokenAuthentication).mockReturnValue(
+      scope ? authentication(scope) : undefined
+    );
+    vi.spyOn(ApiTokenApp, 'revoke').mockResolvedValue(stored);
+
+    // When
+    await resolver.Mutation!.revokeApiToken!(
+      {},
+      { id: TOKEN_ID },
+      contextSimpleUserFiligran2,
+      GRAPHQL_RESOLVE_INFO
+    );
+
+    // Then
+    expect(ApiTokenApp.revoke).toHaveBeenCalledWith(
+      contextSimpleUserFiligran2.user,
+      TOKEN_ID,
+      expected
+    );
   });
 
   it('should map an application error to a GraphQL error', async () => {
