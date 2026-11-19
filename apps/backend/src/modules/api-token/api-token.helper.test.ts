@@ -14,13 +14,8 @@ const ORGANIZATION = 'a1d4c0de-0000-4000-8000-000000000001' as OrganizationId;
 const OTHER_ORGANIZATION =
   'a1d4c0de-0000-4000-8000-000000000002' as OrganizationId;
 
-// Every organization capability: each one administers the organization
-const ORGANIZATION_CAPABILITIES = [
-  OrganizationCapability.AdministrateOrganization,
-  OrganizationCapability.ManageAccess,
-  OrganizationCapability.ManageSubscription,
-  OrganizationCapability.ManagePlatformRegistration,
-];
+// Each one administers the organization
+const ORGANIZATION_CAPABILITIES = Object.values(OrganizationCapability);
 
 const user = {
   id: 'a1d4c0de-0000-4000-8000-000000000003',
