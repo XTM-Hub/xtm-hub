@@ -182,8 +182,8 @@ export const AuthHelper = {
     const isAllowed = AuthHelper.isUserAllowed({
       requiredCapability: requiredCapability,
       userCapabilities: user.capabilities,
-      // Only the capabilities the token kept: a token without the admin scope drops ADMINISTRATE_ORGANIZATION, which
-      // would otherwise allow every capability
+      // Only the capabilities the token kept: a token without the admin scope keeps none, not even
+      // ADMINISTRATE_ORGANIZATION, which would otherwise allow every capability
       organizationCapabilities: ApiTokenReach.narrowCapabilities(
         organizationCapabilities.map(
           ({ name }) => name as OrganizationCapability
