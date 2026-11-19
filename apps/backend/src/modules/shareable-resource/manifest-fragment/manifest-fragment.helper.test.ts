@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { TEST_META_DESCRIPTIONS } from '../../../../tests/tests.const';
 import { BadRequestErrorCode } from '../../../utils/error/error.code';
 import {
   ManifestFragmentHelper,
@@ -158,6 +159,40 @@ describe('getConnectorMetadataFromExisting', () => {
       blogpost_url: 'https://existing/blogpost',
       demo_url: 'https://existing/demo',
     });
+  });
+
+  it.each`
+    description                                                      | currentLatestConnector                                  | existingBatchConnectors                                                               | expected
+    ${'carries the meta description of the current latest'}          | ${{ meta_description: TEST_META_DESCRIPTIONS.DEFAULT }} | ${[{ meta_description: TEST_META_DESCRIPTIONS.UPDATED }]}                             | ${{ meta_description: TEST_META_DESCRIPTIONS.DEFAULT }}
+    ${'falls back to the meta description of an existing connector'} | ${{ meta_description: null }}                           | ${[{ meta_description: null }, { meta_description: TEST_META_DESCRIPTIONS.UPDATED }]} | ${{ meta_description: TEST_META_DESCRIPTIONS.UPDATED }}
+    ${'carries a meta description alone, without any URL'}           | ${undefined}                                            | ${[{ meta_description: TEST_META_DESCRIPTIONS.DEFAULT }]}                             | ${{ meta_description: TEST_META_DESCRIPTIONS.DEFAULT }}
+  `(
+    '$description',
+    ({ currentLatestConnector, existingBatchConnectors, expected }) => {
+      // When
+      const result = ManifestFragmentHelper.getConnectorMetadataFromExisting({
+        currentLatestConnector,
+        existingBatchConnectors,
+      });
+
+      // Then
+      expect(result).toMatchObject(expected);
+    }
+  );
+
+  it.each`
+    description                                  | existingBatchConnectors
+    ${'the family is brand new'}                 | ${[]}
+    ${'no connector of the family has metadata'} | ${[{ meta_description: null }]}
+  `('returns undefined when $description', ({ existingBatchConnectors }) => {
+    // When
+    const result = ManifestFragmentHelper.getConnectorMetadataFromExisting({
+      currentLatestConnector: existingBatchConnectors[0],
+      existingBatchConnectors,
+    });
+
+    // Then
+    expect(result).toBeUndefined();
   });
 });
 
