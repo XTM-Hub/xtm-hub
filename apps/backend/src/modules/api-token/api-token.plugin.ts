@@ -8,7 +8,10 @@ import {
   type OperationDefinitionNode,
   type SelectionSetNode,
 } from 'graphql';
-import { ApiTokenScope } from '../../__generated__/resolvers-types';
+import {
+  ApiTokenScope,
+  type Mutation,
+} from '../../__generated__/resolvers-types';
 import { Context } from '../../server/apollo-plugins/log';
 import { logApp } from '../../utils/app-logger.util';
 import { ForbiddenErrorCode } from '../../utils/error/error.code';
@@ -20,24 +23,27 @@ import { getApiTokenAuthentication } from './api-token.auth';
  * personal space or sessions, or issue a credential that would outlive the token (`refreshUserPlatformToken`,
  * `registerPlatform`).
  * `revokeApiToken` stays allowed: revoking with a token only ever reduces access. Add here any new mutation of that
- * kind.
+ * kind. Typed with the generated Mutation fields: a misspelled or renamed field does not compile.
  */
-export const API_TOKEN_DENIED_FIELDS: ReadonlySet<string> = new Set([
-  // Organization and sessions
-  'changeSelectedOrganization',
-  'login',
-  'logout',
-  // Credentials
-  'createApiToken',
-  'refreshUserPlatformToken',
-  'registerPlatform',
-  'resetPassword',
-  // Profile and personal space
-  'editMeUser',
-  'uploadUserPicture',
-  'requestTransferPersonalSpace',
-  'transferPersonalSpace',
-]);
+type MutationField = Exclude<keyof Mutation, '__typename'>;
+
+export const API_TOKEN_DENIED_FIELDS: ReadonlySet<string> =
+  new Set<MutationField>([
+    // Organization and sessions
+    'changeSelectedOrganization',
+    'login',
+    'logout',
+    // Credentials
+    'createApiToken',
+    'refreshUserPlatformToken',
+    'registerPlatform',
+    'resetPassword',
+    // Profile and personal space
+    'editMeUser',
+    'uploadUserPicture',
+    'requestTransferPersonalSpace',
+    'transferPersonalSpace',
+  ]);
 
 const API_TOKEN_RATE_LIMIT_WINDOW_MS = 60 * 1000;
 const API_TOKEN_RATE_LIMIT = 300;
