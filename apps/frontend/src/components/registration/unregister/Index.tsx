@@ -79,14 +79,14 @@ export const Unregister = ({
           setStatus('succeeded');
         },
         onError: (error) => {
+          const errorMessage =
+            error instanceof Error ? error.message : 'UNKNOWN_ERROR';
           isUnregisteringRef.current = false;
           setStatus('failed');
           showSnackbar({
             severity: 'error',
             title: t('Utils.Error'),
-            description: t(
-              `Error.Server.${error instanceof Error ? error.message : 'UNKNOWN_ERROR'}`
-            ),
+            description: t(`Error.Server.${errorMessage}`),
           });
         },
       }

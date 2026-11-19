@@ -74,7 +74,6 @@ const CompetitorList = () => {
     variables,
     {
       placeholderData: keepPreviousData,
-      // Like Relay, a failed load reaches the admin error page; a failed background refetch keeps the rows shown.
       throwOnError: throwOnFirstLoadError,
     }
   );

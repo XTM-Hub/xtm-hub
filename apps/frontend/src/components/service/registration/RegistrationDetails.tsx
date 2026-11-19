@@ -9,12 +9,10 @@ import {
 } from '@graphql/generated';
 
 interface RegistrationDetailsProps {
-  registeredPlatform: RegisteredPlatformDetailsFragment;
+  platform: RegisteredPlatformDetailsFragment;
 }
 
-export const RegistrationDetails = ({
-  registeredPlatform: platform,
-}: RegistrationDetailsProps) => {
+export const RegistrationDetails = ({ platform }: RegistrationDetailsProps) => {
   const t = useTranslate();
   const formatDate = useDateFormatter();
 

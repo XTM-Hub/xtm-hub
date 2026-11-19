@@ -30,7 +30,7 @@ export const PlatformInformation = ({
       <h2>{t('Register.Details.PlatformInformation')}</h2>
       <Separator className="mr-3 my-3" />
       <div className="grid lg:grid-cols-2">
-        <RegistrationDetails registeredPlatform={registeredPlatform} />
+        <RegistrationDetails platform={registeredPlatform} />
         {showMetadata && (
           <RegistrationMetadata
             metadata={metadata}

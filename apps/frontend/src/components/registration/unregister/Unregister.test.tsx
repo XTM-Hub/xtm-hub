@@ -15,8 +15,7 @@ const testState = vi.hoisted(() => ({
   unregisterPlatform: vi.fn(),
   // When set, the hook returns a real react-query mutation whose request is this function,
   // so the pending, success and error states re-render the page as they do in the app.
-  unregisterRequest: null as
-    ((variables: unknown) => Promise<unknown>) | null,
+  unregisterRequest: null as ((variables: unknown) => Promise<unknown>) | null,
 }));
 
 vi.mock('@graphql/generated', async (importOriginal) => {

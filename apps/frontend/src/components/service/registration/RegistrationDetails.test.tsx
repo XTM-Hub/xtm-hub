@@ -17,7 +17,7 @@ const renderDetails = (
   platform: RegisteredPlatformDetailsFragment,
   me?: NonNullable<Parameters<typeof testRender>[1]>['me']
 ) => {
-  return testRender(<RegistrationDetails registeredPlatform={platform} />, {
+  return testRender(<RegistrationDetails platform={platform} />, {
     me,
   });
 };

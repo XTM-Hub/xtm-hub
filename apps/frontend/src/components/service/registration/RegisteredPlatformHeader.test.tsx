@@ -21,9 +21,7 @@ const renderHeader = (
   selectedOrganizationId: string = PLATFORM_ORGANIZATION_ID
 ) => {
   return testRender(
-    <RegisteredPlatformHeader
-      registeredPlatform={{ ...basePlatform, ...platform }}
-    />,
+    <RegisteredPlatformHeader platform={{ ...basePlatform, ...platform }} />,
     { me: { selected_organization_id: selectedOrganizationId } }
   );
 };

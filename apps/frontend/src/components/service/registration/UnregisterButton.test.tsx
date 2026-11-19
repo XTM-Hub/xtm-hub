@@ -8,6 +8,7 @@ import {
   ServiceDefinitionIdentifier,
   UnregisterPlatformMutationVariables,
 } from '@graphql/generated';
+import { registrationKeys } from '@graphql/registration/registration.keys';
 import { QueryClient, UseMutationOptions } from '@tanstack/react-query';
 import { screen, waitFor } from '@testing-library/react';
 import { useRouter } from 'next/navigation';
@@ -68,7 +69,8 @@ const ADMIN = {
 
 const renderButton = (
   platform: Partial<RegisteredPlatformDetailsFragment> = {},
-  me: NonNullable<Parameters<typeof testRender>[1]>['me'] = ADMIN
+  me: NonNullable<Parameters<typeof testRender>[1]>['me'] = ADMIN,
+  queryClient?: QueryClient
 ) =>
   testRender(
     <UnregisterButton
@@ -80,7 +82,7 @@ const renderButton = (
         } as RegisteredPlatformDetailsFragment
       }
     />,
-    { me }
+    { me, queryClient }
   );
 
 const confirmUnregistration = async (
@@ -159,6 +161,25 @@ describe('Unregister the platform', () => {
     );
     expect(mocks.showSnackbar).toHaveBeenCalledWith(
       expect.objectContaining({ severity: 'success' })
+    );
+  });
+
+  it('should mark the registered platform page stale without refetching it while still on screen', async () => {
+    // Given
+    mocks.unregisterPlatform.mockResolvedValue({});
+    const queryClient = new QueryClient();
+    const invalidateQueries = vi.spyOn(queryClient, 'invalidateQueries');
+    const { user } = renderButton({}, ADMIN, queryClient);
+
+    // When
+    await confirmUnregistration(user);
+
+    // Then
+    await waitFor(() =>
+      expect(invalidateQueries).toHaveBeenCalledWith({
+        queryKey: registrationKeys.allByServiceInstance(),
+        refetchType: 'none',
+      })
     );
   });
 

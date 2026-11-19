@@ -96,12 +96,12 @@ export const PlatformUpdateSheet = ({
           });
         },
         onError: (error) => {
+          const errorMessage =
+            error instanceof Error ? error.message : 'UNKNOWN_ERROR';
           showSnackbar({
             severity: 'error',
             title: t('Utils.Error'),
-            description: t(
-              `Error.Server.${error instanceof Error ? error.message : 'UNKNOWN_ERROR'}`
-            ),
+            description: t(`Error.Server.${errorMessage}`),
           });
         },
       }

@@ -18,6 +18,7 @@ import {
   ServiceDefinitionIdentifier,
   useUnregisterPlatformMutation,
 } from '@graphql/generated';
+import { registrationKeys } from '@graphql/registration/registration.keys';
 import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 
@@ -37,7 +38,18 @@ export const UnregisterButton = ({ platform }: UnregisterButtonProps) => {
   // platform even if the user has already left the page.
   const { mutate: commitUnregisterPlatform } = useUnregisterPlatformMutation(
     portalGraphqlClient,
-    { onSuccess: () => invalidatePrivateNavigationQueries(queryClient) }
+    {
+      onSuccess: () => {
+        invalidatePrivateNavigationQueries(queryClient);
+        // Going back to the registered platform page must not show the
+        // disconnected platform from the cache. Marked stale only: refetching
+        // the page still on screen would answer not found before it leaves.
+        void queryClient.invalidateQueries({
+          queryKey: registrationKeys.allByServiceInstance(),
+          refetchType: 'none',
+        });
+      },
+    }
   );
 
   const unregisterPlatform = () => {
@@ -73,12 +85,12 @@ export const UnregisterButton = ({ platform }: UnregisterButtonProps) => {
           });
         },
         onError: (error) => {
+          const errorMessage =
+            error instanceof Error ? error.message : 'UNKNOWN_ERROR';
           showSnackbar({
             severity: 'error',
             title: t('Utils.Error'),
-            description: t(
-              `Error.Server.${error instanceof Error ? error.message : 'UNKNOWN_ERROR'}`
-            ),
+            description: t(`Error.Server.${errorMessage}`),
           });
         },
       }

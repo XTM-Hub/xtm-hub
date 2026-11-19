@@ -13,11 +13,11 @@ import {
 import { useContext } from 'react';
 
 interface RegisteredPlatformHeaderProps {
-  registeredPlatform: RegisteredPlatformDetailsFragment;
+  platform: RegisteredPlatformDetailsFragment;
 }
 
 export const RegisteredPlatformHeader = ({
-  registeredPlatform: platform,
+  platform,
 }: RegisteredPlatformHeaderProps) => {
   const t = useTranslate();
 

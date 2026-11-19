@@ -85,8 +85,10 @@ export const useOneClickDeployTab = ({
       },
       // Hook-level, unlike the per-call callbacks that only the latest call of a mounted component runs: every
       // rotated token reaches the tab, even when a later refresh fails or the page unmounts before the answer.
+      // postToTab is declared below: the tab's message handler needs this mutation, so one of the two must come
+      // first; this callback only runs after render.
       onSuccess: (response) => {
-        postMessage({
+        postToTab({
           action: 'set-token',
           token: response.refreshUserPlatformToken.token,
         });
@@ -99,16 +101,12 @@ export const useOneClickDeployTab = ({
         {},
         {
           onError: (error) => {
+            const errorMessage =
+              error instanceof Error ? error.message : 'UNKNOWN_ERROR';
             showSnackbar({
               severity: 'error',
               title: t('Utils.Error'),
-              description: (
-                <>
-                  {t(
-                    `Error.Server.${error instanceof Error ? error.message : 'UNKNOWN_ERROR'}`
-                  )}
-                </>
-              ),
+              description: <>{t(`Error.Server.${errorMessage}`)}</>,
             });
           },
         }
@@ -116,7 +114,7 @@ export const useOneClickDeployTab = ({
     }
   };
   const url = computeDeployUrl(documentData, platformBasePath);
-  const { openTab, postMessage } = useExternalTab({
+  const { openTab, postMessage: postToTab } = useExternalTab({
     url,
     tabName:
       documentData.type === ShareableResourceType.OPENAEV_SCENARIO
