@@ -1026,7 +1026,7 @@
     },
     "ScopeHelp": {
       "admin": "Admin: your organization and platform administration rights, as you have them today. Give it only to a tool you trust.",
-      "read": "Read: queries only, nothing can be changed.",
+      "read": "Read: queries only, without organization administration. Nothing can be changed.",
       "read_write": "Read and write: queries and changes, without organization administration or platform administration."
     },
     "Status": {
@@ -1037,7 +1037,7 @@
     "Title": "API tokens",
     "ScopeOption": {
       "admin": "Your administration rights too, as you have them.",
-      "read": "Queries only, nothing can be changed.",
+      "read": "Queries only, without administration. Nothing can be changed.",
       "read_write": "Queries and changes, without administration."
     },
     "Toolbar": {

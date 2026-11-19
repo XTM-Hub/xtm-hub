@@ -7,9 +7,14 @@ you, without your session. A token belongs to you and to one of your organizatio
 
 | Scope        | What the token may do                                                                                             |
 |--------------|-------------------------------------------------------------------------------------------------------------------|
-| `read`       | Queries only. Every mutation is refused (`READ_ONLY_API_TOKEN`).                                                  |
+| `read`       | Queries only, without the administration of the organization. Every mutation is refused (`READ_ONLY_API_TOKEN`). |
 | `read_write` | Queries and mutations, without the administration of the organization and without any platform capability.       |
 | `admin`      | Your rights in the organization, organization administration included, and your platform capabilities, `BYPASS` excepted. |
+
+Without the `admin` scope, a token holds none of your rights in the organization: managing its members and their
+rights, its subscriptions and its platforms is refused, and so is any query or subscription that needs one of those
+rights, such as following the changes of its users in real time. What every member may read, such as the list of the
+organization's members, stays readable.
 
 A token never exceeds your rights: they are read again on every call. A right removed from you, a disabled account or
 a membership that ended takes effect on the next call. No token, whatever its scope, may change the selected
