@@ -30,7 +30,7 @@ import {
 import { apiTokenKeys } from '@graphql/api-token/api-token.keys';
 import { ApiTokenScope, useApiTokenCreateMutation } from '@graphql/generated';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useQueryClient } from '@tanstack/react-query';
+import { useIsMutating, useQueryClient } from '@tanstack/react-query';
 import { useContext, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
@@ -84,26 +84,27 @@ export const CreateApiTokenDialog = ({
     </FieldInfoTip>
   );
 
-  const {
-    mutate: createApiToken,
-    reset: resetCreateApiToken,
-    isPending,
-  } = useApiTokenCreateMutation(portalGraphqlClient, {
-    // The response holds the one-time secret: drop it from the mutation cache
-    // as soon as nothing observes it, instead of keeping it for the default 5 minutes.
-    gcTime: 0,
-    onSuccess: async ({ createApiToken: result }) => {
-      setCreated({ token: result.token, name: result.api_token.name });
-      await queryClient.invalidateQueries({ queryKey: apiTokenKeys.all() });
-    },
-    onError: (error: unknown) => {
-      showSnackbar({
-        severity: 'error',
-        title: t('Utils.Error'),
-        description: t(getServerErrorKey(error, t.has)),
-      });
-    },
-  });
+  const { mutate: createApiToken, reset: resetCreateApiToken } =
+    useApiTokenCreateMutation(portalGraphqlClient, {
+      // The response holds the one-time secret: drop it from the mutation cache
+      // as soon as nothing observes it, instead of keeping it for the default 5 minutes.
+      gcTime: 0,
+      // Runs even for a creation detached by close(): the list still shows the new token.
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({ queryKey: apiTokenKeys.all() });
+      },
+      onError: (error: unknown) => {
+        showSnackbar({
+          severity: 'error',
+          title: t('Utils.Error'),
+          description: t(getServerErrorKey(error, t.has)),
+        });
+      },
+    });
+  // Counts creations still running after close() detached them, not only the attached one,
+  // so a new submission waits for the previous one to complete.
+  const isCreating =
+    useIsMutating({ mutationKey: useApiTokenCreateMutation.getKey() }) > 0;
 
   const close = () => {
     onOpenChange(false);
@@ -114,14 +115,23 @@ export const CreateApiTokenDialog = ({
   };
 
   const handleSubmit = (values: CreateApiTokenValues) => {
-    createApiToken({
-      input: {
-        name: values.name,
-        organization_id: values.organization_id,
-        scope: values.scope,
-        expires_at: getApiTokenExpiry(values.lifetime).toISOString(),
+    createApiToken(
+      {
+        input: {
+          name: values.name,
+          organization_id: values.organization_id,
+          scope: values.scope,
+          expires_at: getApiTokenExpiry(values.lifetime).toISOString(),
+        },
       },
-    });
+      {
+        // Called only while this observer is attached: after close() resets the
+        // mutation, a late response no longer reaches the dialog state.
+        onSuccess: ({ createApiToken: result }) => {
+          setCreated({ token: result.token, name: result.api_token.name });
+        },
+      }
+    );
   };
 
   const copyToken = async () => {
@@ -310,7 +320,7 @@ export const CreateApiTokenDialog = ({
                 </Button>
                 <Button
                   type="submit"
-                  disabled={isPending}
+                  disabled={isCreating}
                   {...analyticsId('account_api_token_create')}>
                   {t('ApiTokens.Create.Submit')}
                 </Button>

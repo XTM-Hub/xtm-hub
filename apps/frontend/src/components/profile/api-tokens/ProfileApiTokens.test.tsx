@@ -65,6 +65,51 @@ const serveCreated = () =>
     )
   );
 
+// Holds the creation response until `respond` is called, and counts the list requests
+// so a test can wait for the refresh that follows a completed creation.
+const serveDelayedCreation = () => {
+  let listRequestCount = 0;
+  let release!: () => void;
+  const released = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  mswServer.use(
+    graphql.query('ApiTokens', () => {
+      listRequestCount += 1;
+      return HttpResponse.json({ data: { apiTokens: [] } });
+    }),
+    graphql.mutation('ApiTokenCreate', async () => {
+      await released;
+      return HttpResponse.json({
+        data: {
+          createApiToken: {
+            token: 'xhp_abcdef_secret',
+            api_token: activeToken,
+          },
+        },
+      });
+    })
+  );
+  return { listRequests: () => listRequestCount, respond: release };
+};
+
+const openAndSubmitCreation = async (
+  user: ReturnType<typeof testRender>['user']
+) => {
+  await user.click(
+    await screen.findByRole('button', { name: 'ApiTokens.Create.Open' })
+  );
+  await user.type(screen.getByLabelText(/ApiTokens.Field.Name/), 'Script');
+  await user.click(
+    screen.getByRole('button', { name: 'ApiTokens.Create.Submit' })
+  );
+  await waitFor(() =>
+    expect(
+      screen.getByRole('button', { name: 'ApiTokens.Create.Submit' })
+    ).toBeDisabled()
+  );
+};
+
 describe('ProfileApiTokens', () => {
   beforeEach(() => {
     mocks.showSnackbar.mockReset();
@@ -365,6 +410,48 @@ describe('ProfileApiTokens', () => {
     );
 
     await waitFor(() => expect(cachedSecrets()).toEqual([]));
+  });
+
+  it('should not show the secret of a creation cancelled before it completed', async () => {
+    const { listRequests, respond } = serveDelayedCreation();
+
+    const { user } = testRender(<ProfileApiTokens />);
+
+    await openAndSubmitCreation(user);
+    await user.click(screen.getByRole('button', { name: 'Utils.Cancel' }));
+    respond();
+    await waitFor(() => expect(listRequests()).toBe(2));
+    await user.click(
+      screen.getByRole('button', { name: 'ApiTokens.Create.Open' })
+    );
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.queryByDisplayValue('xhp_abcdef_secret')).toBeNull();
+  });
+
+  it('should not submit a new creation until the cancelled one has completed', async () => {
+    const { listRequests, respond } = serveDelayedCreation();
+
+    const { user } = testRender(<ProfileApiTokens />);
+
+    await openAndSubmitCreation(user);
+    await user.click(screen.getByRole('button', { name: 'Utils.Cancel' }));
+    await user.click(
+      screen.getByRole('button', { name: 'ApiTokens.Create.Open' })
+    );
+
+    expect(
+      screen.getByRole('button', { name: 'ApiTokens.Create.Submit' })
+    ).toBeDisabled();
+
+    respond();
+    await waitFor(() => expect(listRequests()).toBe(2));
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'ApiTokens.Create.Submit' })
+      ).toBeEnabled()
+    );
   });
 
   it('should say so when the secret cannot be copied', async () => {
