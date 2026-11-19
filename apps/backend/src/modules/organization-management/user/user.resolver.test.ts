@@ -1649,4 +1649,62 @@ describe('user fields of the caller of a request', () => {
     );
     expect(rolesPortal).toMatchObject([{ id: rolePortalId }]);
   });
+
+  it("should list every organization, portal capability and role of another user for a token, which narrows its own user's only", async () => {
+    // Given
+    const { user: tokenUser } = await TestHelper.user.insertInOrganization(
+      tokenOrganization.id,
+      {
+        email: `caller-fields-token-user-${uuidv4()}@caller-fields-test.io`,
+        selected_organization_id: tokenOrganization.id,
+      }
+    );
+    await TestHelper.apiToken.actAs(
+      tokenUser.id,
+      tokenOrganization.id,
+      ApiTokenScope.Admin
+    );
+    const context = {
+      ...contextSimpleUserFiligran2,
+      user: requestContext.requireUser(),
+    };
+    const otherUser = { id: userId } as Parameters<
+      NonNullable<NonNullable<typeof usersResolver.User>['organizations']>
+    >[0];
+
+    try {
+      // When
+      const [organizations, capabilities, rolesPortal] = await Promise.all([
+        usersResolver.User!.organizations!(
+          otherUser,
+          {},
+          context,
+          GRAPHQL_RESOLVE_INFO
+        ),
+        usersResolver.User!.capabilities!(
+          otherUser,
+          {},
+          context,
+          GRAPHQL_RESOLVE_INFO
+        ),
+        usersResolver.User!.roles_portal!(
+          otherUser,
+          {},
+          context,
+          GRAPHQL_RESOLVE_INFO
+        ),
+      ]);
+
+      // Then
+      expect(organizations).toHaveLength(2);
+      expect(capabilities).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ id: CAPABILITY_BYPASS.id }),
+        ])
+      );
+      expect(rolesPortal).toHaveLength(2);
+    } finally {
+      await TestHelper.user.delete({ id: tokenUser.id });
+    }
+  });
 });

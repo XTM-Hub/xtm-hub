@@ -19,6 +19,9 @@ const actAs = async (
   organizationId: OrganizationId,
   scope: ApiTokenScope
 ): Promise<void> => {
+  // Like a real call, the token is resolved outside any request context: one left by an earlier call would narrow
+  // the rights its user is loaded with
+  requestContext.set(undefined);
   const user = await UserDomain.loadUserBy({ 'User.id': userId });
   if (!user) {
     throw new Error(`Test user ${userId} not found`);

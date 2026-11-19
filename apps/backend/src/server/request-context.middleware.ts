@@ -14,13 +14,19 @@ export const buildRequestContext = (req: Request): RequestContext => {
     ip: req.ip,
     referer: req.headers.referer,
     organizationId: user?.selected_organization_id,
-    // Kept apart from the user, which a resolver may replace: the guards read it to stay in the token's organization
+    // Kept apart from the user, which a resolver may replace: the guards and the restrictions read it to stay within
+    // what the token reaches
     ...(authentication && {
       apiToken: {
+        userId: authentication.user.id,
         organizationId: authentication.token.organization_id,
         organizationCapabilities: [
           ...authentication.user.selected_org_capabilities,
         ],
+        portalCapabilityIds: authentication.user.capabilities.map(
+          ({ id }) => id
+        ),
+        rolePortalIds: authentication.user.roles_portal.map(({ id }) => id),
       },
     }),
   };

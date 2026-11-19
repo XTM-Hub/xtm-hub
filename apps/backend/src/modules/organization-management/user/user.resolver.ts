@@ -14,8 +14,6 @@ import { getErrorMessage } from '../../../utils/error/error-guard.util';
 import { requestContext } from '../../../context/request.context';
 import { UserTransferRequestId } from '../../../model/kanel/public/UserTransferRequest';
 import { PortalContext } from '../../../model/portal-context';
-import { UserLoadUserBy } from '../../../model/user';
-import { ApiTokenReach } from '../../../security/api-token-reach';
 import { securityGuard } from '../../../security/guard';
 import { ErrorCode, UnknownErrorCode } from '../../../utils/error/error.code';
 import { mapToGraphQLError } from '../../../utils/error/error.mapping';
@@ -48,49 +46,13 @@ const assertCanListenOrganizationUsers = (organizationId: string) =>
     }
   );
 
-/**
- * The caller of a request authenticated by an API token, as the token narrowed it (narrowUserToToken), when this user
- * is that caller. The database knows every organization and portal right of the user: the token's own are kept only.
- */
-const callerNarrowedByApiToken = (
-  id: string,
-  context: Pick<PortalContext, 'user'>
-): UserLoadUserBy | undefined =>
-  requestContext.get()?.apiToken && context.user?.id === id
-    ? context.user
-    : undefined;
-
-const keepRowsOf = <Row extends { id: string }>(
-  rows: Row[],
-  kept: readonly { id: string }[]
-): Row[] => {
-  const keptIds = new Set(kept.map(({ id }) => id));
-  return rows.filter(({ id }) => keptIds.has(id));
-};
-
 const resolvers: Resolvers = {
   UserId: createRelayIdScalar<UserId>('User'),
   User: {
-    organizations: async ({ id }, _, context) => {
-      const organizations = await UserDomain.getOrganizations(id);
-      return callerNarrowedByApiToken(id, context)
-        ? ApiTokenReach.filterOrganizations(organizations)
-        : organizations;
-    },
-    capabilities: async ({ id }, _, context) => {
-      const capabilities = await UserDomain.getCapabilities(id);
-      const caller = callerNarrowedByApiToken(id, context);
-      return caller
-        ? keepRowsOf(capabilities, caller.capabilities)
-        : capabilities;
-    },
-    roles_portal: async ({ id }, _, context) => {
-      const rolesPortal = await UserDomain.getRolesPortal(id);
-      const caller = callerNarrowedByApiToken(id, context);
-      return caller
-        ? keepRowsOf(rolesPortal, caller.roles_portal)
-        : rolesPortal;
-    },
+    // For the caller of a request authenticated by an API token, the readers keep only what the token reaches
+    organizations: ({ id }, _) => UserDomain.getOrganizations(id),
+    capabilities: ({ id }, _) => UserDomain.getCapabilities(id),
+    roles_portal: ({ id }, _) => UserDomain.getRolesPortal(id),
   },
   Query: {
     me: async (_, __, context) => {
