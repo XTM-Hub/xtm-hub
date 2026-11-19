@@ -1,7 +1,6 @@
+import type { useTranslate } from '@/hooks/use-translate';
 import {
   buildResourceMetaDescription,
-  META_DESCRIPTION_MAX_LENGTH,
-  META_DESCRIPTION_MIN_LENGTH,
   MetaDescriptionErrorCode,
   validateMetaDescription,
 } from '@/utils/shareable-resources/meta-description.utils';
@@ -17,25 +16,25 @@ export const metaDescriptionSchema = z.string().trim().min(1, 'Required');
  */
 export const optionalMetaDescriptionSchema = z.string().trim().nullish();
 
-const lengthMessage = (rule: string, length: number) =>
-  `${rule}: the generated meta-description has ${length} characters, it must have between ${META_DESCRIPTION_MIN_LENGTH} and ${META_DESCRIPTION_MAX_LENGTH}`;
+type Translate = ReturnType<typeof useTranslate>;
 
+/**
+ * The message of a broken rule, translated: the same `Error.Server` key as the backend error, with the length of the
+ * generated meta-description for a length rule.
+ */
 const errorMessage = (
+  t: Translate,
   error: MetaDescriptionErrorCode,
   metaDescription: string
 ) => {
-  switch (error) {
-    case MetaDescriptionErrorCode.REQUIRED:
-      return 'Required';
-    case MetaDescriptionErrorCode.TOO_SHORT:
-      return lengthMessage('Too short', metaDescription.length);
-    case MetaDescriptionErrorCode.TOO_LONG:
-      return lengthMessage('Too long', metaDescription.length);
-    case MetaDescriptionErrorCode.INVALID_DASH:
-      return 'Long dashes (— or –) are not allowed: use a plain hyphen (-)';
-    case MetaDescriptionErrorCode.MATCHES_TITLE:
-      return 'The generated meta-description must not start with the name of the resource';
-  }
+  const message = t(`Error.Server.${error}`);
+  return error === MetaDescriptionErrorCode.TOO_SHORT ||
+    error === MetaDescriptionErrorCode.TOO_LONG
+    ? t('Service.Form.MetaDescriptionCurrentLength', {
+        error: message,
+        length: metaDescription.length,
+      })
+    : message;
 };
 
 interface MetaDescriptionFormValues {
@@ -53,7 +52,8 @@ export const withMetaDescriptionRule = <
   Schema extends z.ZodType<MetaDescriptionFormValues>,
 >(
   schema: Schema,
-  resourceType: ShareableResourceType
+  resourceType: ShareableResourceType,
+  t: Translate
 ) =>
   schema.superRefine((values, ctx) => {
     const summary = values.meta_description ?? '';
@@ -71,6 +71,7 @@ export const withMetaDescriptionRule = <
         code: 'custom',
         path: ['meta_description'],
         message: errorMessage(
+          t,
           error,
           buildResourceMetaDescription(resourceType, summary)
         ),

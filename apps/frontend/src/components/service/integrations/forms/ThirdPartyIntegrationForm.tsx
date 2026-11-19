@@ -8,6 +8,7 @@ import { ServiceFormSheetFooter } from '@/components/service/form/SheetFooter';
 import { useServiceFormFields } from '@/components/service/form/UseServiceFormFields';
 import { AutoForm } from '@/components/ui/auto-form';
 import { FormItem } from '@/components/ui/form';
+import { useTranslate } from '@/hooks/use-translate';
 import {
   fileListCheck,
   optionalFileListCheck,
@@ -118,6 +119,7 @@ export const ThirdPartyIntegrationForm = ({
       }) as ThirdPartyIntegrationFormValues,
     [me, document, isCreation, thirdParty]
   );
+  const t = useTranslate();
   const formSchema = useMemo(() => {
     const extendedSchema = document
       ? thirdPartyIntegrationFormSchema.extend({
@@ -130,7 +132,8 @@ export const ThirdPartyIntegrationForm = ({
 
     return withMetaDescriptionRule(
       extendedSchema,
-      ShareableResourceType.OPENCTI_INTEGRATION
+      ShareableResourceType.OPENCTI_INTEGRATION,
+      t
     ).superRefine((data, ctx) => {
       if (data.github_url && !data.product_version) {
         ctx.addIssue({
@@ -148,7 +151,7 @@ export const ThirdPartyIntegrationForm = ({
         });
       }
     });
-  }, [document]);
+  }, [document, t]);
 
   const {
     meta_description,

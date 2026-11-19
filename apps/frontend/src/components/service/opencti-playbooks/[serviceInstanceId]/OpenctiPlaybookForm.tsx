@@ -11,6 +11,7 @@ import {
 } from '@/components/service/form/UseDocumentFileField';
 import { useServiceFormFields } from '@/components/service/form/UseServiceFormFields';
 import { AutoForm } from '@/components/ui/auto-form';
+import { useTranslate } from '@/hooks/use-translate';
 import {
   fileListCheck,
   optionalFileListCheck,
@@ -103,6 +104,7 @@ export const OpenctiPlaybookForm = ({
       }) as OpenCTIPlaybookFormValues,
     [me, document, isCreation]
   );
+  const t = useTranslate();
   const formSchema = useMemo(
     () =>
       withMetaDescriptionRule(
@@ -113,9 +115,10 @@ export const OpenctiPlaybookForm = ({
               images: z.custom<FileList>(optionalFileListCheck).optional(),
             })
           : openCTIPlaybookFormSchema,
-        ShareableResourceType.OPENCTI_PLAYBOOK
+        ShareableResourceType.OPENCTI_PLAYBOOK,
+        t
       ),
-    [document]
+    [document, t]
   );
 
   const {

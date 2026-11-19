@@ -11,6 +11,7 @@ import {
 } from '@/components/service/form/UseDocumentFileField';
 import { useServiceFormFields } from '@/components/service/form/UseServiceFormFields';
 import { AutoForm } from '@/components/ui/auto-form';
+import { useTranslate } from '@/hooks/use-translate';
 import {
   fileListCheck,
   optionalFileListCheck,
@@ -101,6 +102,7 @@ export const StreamForm = ({ handleSubmit, document }: StreamFormProps) => {
       }) as StreamFormValues,
     [me, document, isCreation, integration]
   );
+  const t = useTranslate();
   const formSchema = useMemo(
     () =>
       withMetaDescriptionRule(
@@ -111,9 +113,10 @@ export const StreamForm = ({ handleSubmit, document }: StreamFormProps) => {
               images: z.custom<FileList>(optionalFileListCheck).optional(),
             })
           : streamFormSchema,
-        ShareableResourceType.OPENCTI_INTEGRATION
+        ShareableResourceType.OPENCTI_INTEGRATION,
+        t
       ),
-    [document]
+    [document, t]
   );
 
   const {

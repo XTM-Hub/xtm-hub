@@ -1458,6 +1458,7 @@
       "LogoLabel": "Logo",
       "ManagerSupportedLabel": "Manager supported",
       "ManageAccessCapabilityLabel": "Manage access: The user can invite other users from his/her organization to this service",
+      "MetaDescriptionCurrentLength": "{error} (currently {length} characters)",
       "MetaDescriptionLabel": "Meta-description",
       "MetaDescriptionPlaceholder": "For SEO: the whole sentence needs 120 to 160 characters, with plain hyphens (-) only, no long dashes (— or –).",
       "MinimumDeployableVersionLabel": "{platform} deployable from hub version",

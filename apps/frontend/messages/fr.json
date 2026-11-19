@@ -1458,6 +1458,7 @@
       "LogoLabel": "Logo",
       "ManagerSupportedLabel": "Gestionnaire pris en charge",
       "ManageAccessCapabilityLabel": "Gérer les accès : l'utilisateur peut inviter d'autres utilisateurs de son organisation à ce service",
+      "MetaDescriptionCurrentLength": "{error} (actuellement {length} caractères)",
       "MetaDescriptionLabel": "Méta-description",
       "MetaDescriptionPlaceholder": "Pour le SEO : la phrase entière doit compter entre 120 et 160 caractères, avec des tirets simples (-) uniquement, sans tirets longs (— ou –).",
       "MinimumDeployableVersionLabel": "Version minimale pour déployer sur {platform}",

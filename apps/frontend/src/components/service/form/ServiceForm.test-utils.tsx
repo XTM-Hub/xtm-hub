@@ -9,6 +9,10 @@ import {
 } from '@/utils/shareable-resources/meta-description.utils';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 import { DocumentOverrides } from '@/utils/test/document-overrides';
+import {
+  mockTranslations,
+  translateWithValues,
+} from '@/utils/test/mock-translations';
 import testRender from '@/utils/test/test-render';
 import {
   DocumentImageType,
@@ -24,8 +28,10 @@ import {
 } from '@graphql/generated';
 import '@testing-library/jest-dom/vitest';
 import { screen, waitFor, within } from '@testing-library/react';
+// eslint-disable-next-line no-restricted-imports -- mocks the next-intl hook that useTranslate wraps, no text is rendered with it
+import { useTranslations } from 'next-intl';
 import { ComponentType } from 'react';
-import { beforeEach, expect, it, vi } from 'vitest';
+import { beforeEach, expect, it, onTestFinished, vi } from 'vitest';
 
 const SHEET_TITLE = 'Service form';
 const NAME_LABEL = 'Service.Form.NameLabel';
@@ -572,12 +578,31 @@ const VALID_GENERATED_LENGTH = 140;
 const titleStartingMetaDescription = (resourceName: ServiceFormResource) =>
   META_DESCRIPTION_PREFIXES[resourceName].replace(/: $/, '').toUpperCase();
 
-const lengthErrorMessage = (rule: string, length: number) =>
-  `${rule}: the generated meta-description has ${length} characters, it must have between ${META_DESCRIPTION_MIN_LENGTH} and ${META_DESCRIPTION_MAX_LENGTH}`;
-const INVALID_DASH_ERROR =
-  'Long dashes (\u2014 or \u2013) are not allowed: use a plain hyphen (-)';
-const MATCHES_TITLE_ERROR =
-  'The generated meta-description must not start with the name of the resource';
+// The translated messages: the same Error.Server keys as the backend, with the generated length for a length rule.
+const CURRENT_LENGTH_KEY = 'Service.Form.MetaDescriptionCurrentLength';
+const lengthErrorMessage = (error: string, length: number) =>
+  translateWithValues(CURRENT_LENGTH_KEY, {
+    error: `Error.Server.${error}`,
+    length,
+  });
+const INVALID_DASH_ERROR = 'Error.Server.META_DESCRIPTION_INVALID_DASH';
+const MATCHES_TITLE_ERROR = 'Error.Server.META_DESCRIPTION_MATCHES_TITLE';
+
+/**
+ * Lets the test read the values the length message is interpolated with, until it ends. Every other key stays bare,
+ * so the placeholders the form fields are found by do not change.
+ */
+const translateMessagesWithValues = () => {
+  vi.mocked(useTranslations).mockReturnValue(
+    mockTranslations({
+      translate: (key, values) =>
+        key === CURRENT_LENGTH_KEY ? translateWithValues(key, values) : key,
+    })
+  );
+  onTestFinished(() => {
+    vi.mocked(useTranslations).mockImplementation(() => mockTranslations());
+  });
+};
 
 const metaDescriptionLengthCases = (resourceName: ServiceFormResource) => [
   {
@@ -586,7 +611,10 @@ const metaDescriptionLengthCases = (resourceName: ServiceFormResource) => [
       resourceName,
       META_DESCRIPTION_MIN_LENGTH - 1
     ),
-    message: lengthErrorMessage('Too short', META_DESCRIPTION_MIN_LENGTH - 1),
+    message: lengthErrorMessage(
+      'META_DESCRIPTION_TOO_SHORT',
+      META_DESCRIPTION_MIN_LENGTH - 1
+    ),
   },
   {
     context: `${META_DESCRIPTION_MAX_LENGTH + 1} characters`,
@@ -594,7 +622,10 @@ const metaDescriptionLengthCases = (resourceName: ServiceFormResource) => [
       resourceName,
       META_DESCRIPTION_MAX_LENGTH + 1
     ),
-    message: lengthErrorMessage('Too long', META_DESCRIPTION_MAX_LENGTH + 1),
+    message: lengthErrorMessage(
+      'META_DESCRIPTION_TOO_LONG',
+      META_DESCRIPTION_MAX_LENGTH + 1
+    ),
   },
 ];
 
@@ -641,6 +672,7 @@ export const defineMetaDescriptionCreationTests = <Values,>({
     `should reject the meta-description when the user creates a ${resourceName} whose generated meta-description has $context`,
     async ({ metaDescription, message }) => {
       // Given
+      translateMessagesWithValues();
       const { user } = renderServiceForm(Form);
       await fillCreationForm(user);
       await fillMetaDescription(user, metaDescription);
@@ -747,6 +779,7 @@ export const defineMetaDescriptionEditionTests = <Values,>({
     `should reject a meta-description $context when the user edits the ${resourceName}`,
     async ({ metaDescription, message }) => {
       // Given
+      translateMessagesWithValues();
       const { user, handleSubmit } = renderServiceForm(
         Form,
         buildEditedDocument()

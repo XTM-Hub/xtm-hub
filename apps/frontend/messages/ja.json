@@ -1458,6 +1458,7 @@
       "LogoLabel": "ロゴ",
       "ManagerSupportedLabel": "マネージャー",
       "ManageAccessCapabilityLabel": "アクセス管理: ユーザーは所属組織の他ユーザーをこのサービスに招待できます",
+      "MetaDescriptionCurrentLength": "{error}（現在{length}文字）",
       "MetaDescriptionLabel": "メタディスクリプション",
       "MetaDescriptionPlaceholder": "SEO用：文全体を120〜160文字にし、長いダッシュ（— または –）ではなく半角ハイフン（-）のみを使用してください。",
       "MinimumDeployableVersionLabel": "{platform} Hub のバージョンからデプロイ可能",

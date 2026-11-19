@@ -7,6 +7,7 @@ import { ServiceFormSheetFooter } from '@/components/service/form/SheetFooter';
 import { useServiceFormFields } from '@/components/service/form/UseServiceFormFields';
 import { AutoForm } from '@/components/ui/auto-form';
 import { FormItem } from '@/components/ui/form';
+import { useTranslate } from '@/hooks/use-translate';
 import {
   fileListCheck,
   optionalFileListCheck,
@@ -125,6 +126,7 @@ export const ConnectorForm = ({
     [me, document, connector]
   );
 
+  const t = useTranslate();
   const formSchema = useMemo(
     () =>
       withMetaDescriptionRule(
@@ -133,9 +135,10 @@ export const ConnectorForm = ({
           : connectorSchema.extend({
               minimum_deployable_version: z.string().nullish(),
             }),
-        ShareableResourceType.OPENCTI_INTEGRATION
+        ShareableResourceType.OPENCTI_INTEGRATION,
+        t
       ),
-    [connector?.manager_supported]
+    [connector?.manager_supported, t]
   );
 
   const {

@@ -11,6 +11,7 @@ import {
 } from '@/components/service/form/UseDocumentFileField';
 import { useServiceFormFields } from '@/components/service/form/UseServiceFormFields';
 import { AutoForm } from '@/components/ui/auto-form';
+import { useTranslate } from '@/hooks/use-translate';
 import {
   fileListCheck,
   optionalFileListCheck,
@@ -89,6 +90,7 @@ export const CustomDashboardForm = ({
       }) as CustomDashboardFormValues,
     [me, document, isCreation]
   );
+  const t = useTranslate();
   const formSchema = useMemo(
     () =>
       withMetaDescriptionRule(
@@ -99,9 +101,10 @@ export const CustomDashboardForm = ({
               images: z.custom<FileList>(optionalFileListCheck).optional(),
             })
           : customDashboardSchema,
-        ShareableResourceType.OPENCTI_CUSTOM_DASHBOARD
+        ShareableResourceType.OPENCTI_CUSTOM_DASHBOARD,
+        t
       ),
-    [document]
+    [document, t]
   );
 
   const {
