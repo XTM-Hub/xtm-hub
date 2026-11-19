@@ -17,6 +17,7 @@ import {
   DOCUMENT_SHORT_DESCRIPTION,
   DOCUMENT_SLUG,
   fillIntegrationCreationFields,
+  fillIntegrationCreationForm,
   givenSolutionCategories,
   JSON_FILE_FIELD,
   KEPT_IMAGE,
@@ -167,7 +168,7 @@ describe('CsvFeedForm', () => {
   defineMetaDescriptionCreationTests({
     Form: CsvFeedForm,
     resourceName: ServiceFormResource.CSV_FEED,
-    fillCreationFields: fillIntegrationCreationFields,
+    fillCreationForm: fillIntegrationCreationForm,
   });
 
   defineMetaDescriptionEditionTests({

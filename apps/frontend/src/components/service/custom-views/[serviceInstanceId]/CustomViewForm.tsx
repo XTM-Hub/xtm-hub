@@ -2,6 +2,7 @@ import { PortalContext } from '@/components/me/AppPortalContext';
 import {
   metaDescriptionSchema,
   optionalMetaDescriptionSchema,
+  withMetaDescriptionRule,
 } from '@/components/service/form/meta-description.schema';
 import { ServiceFormSheetFooter } from '@/components/service/form/SheetFooter';
 import {
@@ -15,6 +16,7 @@ import {
   optionalFileListCheck,
   transformToFileList,
 } from '@/utils/documents';
+import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 import { getDocumentEntityTypes } from '@/utils/shareable-resources/utils/shareable-resources.client.utils';
 import {
   DocumentImageType,
@@ -91,13 +93,16 @@ export const CustomViewForm = ({
   );
   const formSchema = useMemo(
     () =>
-      document
-        ? customViewFormSchema.extend({
-            meta_description: optionalMetaDescriptionSchema,
-            document: z.custom<FileList>(fileListCheck).optional(),
-            images: z.custom<FileList>(optionalFileListCheck).optional(),
-          })
-        : customViewFormSchema,
+      withMetaDescriptionRule(
+        document
+          ? customViewFormSchema.extend({
+              meta_description: optionalMetaDescriptionSchema,
+              document: z.custom<FileList>(fileListCheck).optional(),
+              images: z.custom<FileList>(optionalFileListCheck).optional(),
+            })
+          : customViewFormSchema,
+        ShareableResourceType.OPENCTI_CUSTOM_VIEW
+      ),
     [document]
   );
 

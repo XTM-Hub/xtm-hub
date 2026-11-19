@@ -2,11 +2,11 @@ import {
   AppServiceContext,
   ServiceContextProps,
 } from '@/components/service/components/ServiceContext';
+import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
 import {
   META_DESCRIPTION_MAX_LENGTH,
   META_DESCRIPTION_MIN_LENGTH,
-} from '@/components/service/form/meta-description.schema';
-import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
+} from '@/utils/shareable-resources/meta-description.utils';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 import { DocumentOverrides } from '@/utils/test/document-overrides';
 import testRender from '@/utils/test/test-render';
@@ -293,6 +293,11 @@ export const fillIntegrationCreationFields = async (user: ServiceFormUser) => {
   await selectOption(user, SOLUTION_CATEGORIES_LABEL, SOLUTION_CATEGORY.name);
 };
 
+export const fillIntegrationCreationForm = async (user: ServiceFormUser) => {
+  await fillIntegrationCreationFields(user);
+  await uploadFile(user, JSON_FILE_FIELD);
+};
+
 interface ServiceFormTestTarget<Values> {
   Form: ServiceFormComponent<Values>;
   resourceName: ServiceFormResource;
@@ -537,34 +542,86 @@ const fillMetaDescription = async (
   return metaDescriptionField;
 };
 
+/** What the published meta-description puts before the summary, per resource. */
+const META_DESCRIPTION_PREFIXES: Record<ServiceFormResource, string> = {
+  [ServiceFormResource.CUSTOM_DASHBOARD]: 'OpenCTI Dashboard: ',
+  [ServiceFormResource.CUSTOM_VIEW]: 'OpenCTI Custom View: ',
+  [ServiceFormResource.PLAYBOOK]: 'OpenCTI Playbook: ',
+  [ServiceFormResource.SCENARIO]: 'OpenAEV Scenario: ',
+  [ServiceFormResource.CSV_FEED]: 'OpenCTI Integration: ',
+  [ServiceFormResource.RSS_FEED]: 'OpenCTI Integration: ',
+  [ServiceFormResource.STREAM]: 'OpenCTI Integration: ',
+  [ServiceFormResource.TAXII_FEED]: 'OpenCTI Integration: ',
+  [ServiceFormResource.THIRD_PARTY_INTEGRATION]: 'OpenCTI Integration: ',
+  [ServiceFormResource.CONNECTOR]: 'OpenCTI Integration: ',
+};
+
+/** A summary whose meta-description, prefix and final period included, has exactly `length` characters. */
+const summaryOfGeneratedLength = (
+  resourceName: ServiceFormResource,
+  length: number
+) =>
+  'a'.repeat(
+    length - META_DESCRIPTION_PREFIXES[resourceName].length - '.'.length
+  );
+
+// Within the bounds, with room for a few more words.
+const VALID_GENERATED_LENGTH = 140;
+
+/** A name the meta-description of the resource starts with, in another case. */
+const titleStartingMetaDescription = (resourceName: ServiceFormResource) =>
+  META_DESCRIPTION_PREFIXES[resourceName].replace(/: $/, '').toUpperCase();
+
+const lengthErrorMessage = (rule: string, length: number) =>
+  `${rule}: the generated meta-description has ${length} characters, it must have between ${META_DESCRIPTION_MIN_LENGTH} and ${META_DESCRIPTION_MAX_LENGTH}`;
+const INVALID_DASH_ERROR =
+  'Long dashes (\u2014 or \u2013) are not allowed: use a plain hyphen (-)';
+const MATCHES_TITLE_ERROR =
+  'The generated meta-description must not start with the name of the resource';
+
+const metaDescriptionLengthCases = (resourceName: ServiceFormResource) => [
+  {
+    context: `${META_DESCRIPTION_MIN_LENGTH - 1} characters`,
+    metaDescription: summaryOfGeneratedLength(
+      resourceName,
+      META_DESCRIPTION_MIN_LENGTH - 1
+    ),
+    message: lengthErrorMessage('Too short', META_DESCRIPTION_MIN_LENGTH - 1),
+  },
+  {
+    context: `${META_DESCRIPTION_MAX_LENGTH + 1} characters`,
+    metaDescription: summaryOfGeneratedLength(
+      resourceName,
+      META_DESCRIPTION_MAX_LENGTH + 1
+    ),
+    message: lengthErrorMessage('Too long', META_DESCRIPTION_MAX_LENGTH + 1),
+  },
+];
+
 interface MetaDescriptionCreationTestsOptions<
   Values,
 > extends ServiceFormTestTarget<Values> {
-  fillCreationFields: (user: ServiceFormUser) => Promise<void>;
+  /**
+   * Fills every required field, files included: zod checks the generated meta-description once no field aborts the
+   * parsing, and a missing file does.
+   */
+  fillCreationForm: (user: ServiceFormUser) => Promise<void>;
 }
 
 export const defineMetaDescriptionCreationTests = <Values,>({
   Form,
   resourceName,
-  fillCreationFields,
+  fillCreationForm,
 }: MetaDescriptionCreationTestsOptions<Values>) => {
   it.each([
     { context: 'without it', metaDescription: '' },
     { context: 'with blanks only', metaDescription: '   ' },
-    {
-      context: `with fewer than ${META_DESCRIPTION_MIN_LENGTH} characters`,
-      metaDescription: 'a'.repeat(META_DESCRIPTION_MIN_LENGTH - 1),
-    },
-    {
-      context: `with more than ${META_DESCRIPTION_MAX_LENGTH} characters`,
-      metaDescription: 'a'.repeat(META_DESCRIPTION_MAX_LENGTH + 1),
-    },
   ])(
     `should reject the meta-description when the user creates a ${resourceName} $context`,
     async ({ metaDescription }) => {
       // Given
       const { user } = renderServiceForm(Form);
-      await fillCreationFields(user);
+      await fillCreationForm(user);
       const metaDescriptionField = await fillMetaDescription(
         user,
         metaDescription
@@ -575,10 +632,45 @@ export const defineMetaDescriptionCreationTests = <Values,>({
         screen.getByRole('button', { name: REQUEST_VALIDATION_LABEL })
       );
 
-      // Then: an empty field fails the native constraint, the others fail zod
+      // Then: an empty field fails the native constraint, a blank one fails zod
       await waitFor(() => expect(metaDescriptionField).toBeInvalid());
     }
   );
+
+  it.each(metaDescriptionLengthCases(resourceName))(
+    `should reject the meta-description when the user creates a ${resourceName} whose generated meta-description has $context`,
+    async ({ metaDescription, message }) => {
+      // Given
+      const { user } = renderServiceForm(Form);
+      await fillCreationForm(user);
+      await fillMetaDescription(user, metaDescription);
+
+      // When
+      await user.click(
+        screen.getByRole('button', { name: REQUEST_VALIDATION_LABEL })
+      );
+
+      // Then
+      expect(await screen.findByText(message)).toBeInTheDocument();
+    }
+  );
+
+  it(`should reject the meta-description when the user renames a new ${resourceName} like the start of it`, async () => {
+    // Given
+    const { user } = renderServiceForm(Form);
+    await fillCreationForm(user);
+    const nameField = screen.getByRole('textbox', { name: NAME_LABEL });
+    await user.clear(nameField);
+    await user.type(nameField, titleStartingMetaDescription(resourceName));
+
+    // When
+    await user.click(
+      screen.getByRole('button', { name: REQUEST_VALIDATION_LABEL })
+    );
+
+    // Then
+    expect(await screen.findByText(MATCHES_TITLE_ERROR)).toBeInTheDocument();
+  });
 };
 
 export const defineMetaDescriptionEditionTests = <Values,>({
@@ -614,14 +706,14 @@ export const defineMetaDescriptionEditionTests = <Values,>({
   });
 
   it.each([META_DESCRIPTION_MIN_LENGTH, META_DESCRIPTION_MAX_LENGTH])(
-    `should save a meta-description of %i characters when the user edits the ${resourceName}`,
+    `should save a meta-description whose generated text has %i characters when the user edits the ${resourceName}`,
     async (length) => {
       // Given
       const { user, handleSubmit } = renderServiceForm(
         Form,
         buildEditedDocument()
       );
-      const metaDescription = 'a'.repeat(length);
+      const metaDescription = summaryOfGeneratedLength(resourceName, length);
       await fillMetaDescription(user, metaDescription);
 
       // When
@@ -637,37 +729,54 @@ export const defineMetaDescriptionEditionTests = <Values,>({
   );
 
   it.each([
+    ...metaDescriptionLengthCases(resourceName).map((lengthCase) => ({
+      ...lengthCase,
+      context: `whose generated text has ${lengthCase.context}`,
+    })),
     {
-      context: `shorter than ${META_DESCRIPTION_MIN_LENGTH} characters`,
-      metaDescription: 'a'.repeat(META_DESCRIPTION_MIN_LENGTH - 1),
+      context: 'holding an em dash',
+      metaDescription: `${summaryOfGeneratedLength(resourceName, VALID_GENERATED_LENGTH)} \u2014 APT-28`,
+      message: INVALID_DASH_ERROR,
     },
     {
-      context: `longer than ${META_DESCRIPTION_MAX_LENGTH} characters`,
-      metaDescription: 'a'.repeat(META_DESCRIPTION_MAX_LENGTH + 1),
+      context: 'holding an en dash',
+      metaDescription: `${summaryOfGeneratedLength(resourceName, VALID_GENERATED_LENGTH)} \u2013 APT-28`,
+      message: INVALID_DASH_ERROR,
     },
   ])(
     `should reject a meta-description $context when the user edits the ${resourceName}`,
-    async ({ metaDescription }) => {
+    async ({ metaDescription, message }) => {
       // Given
       const { user, handleSubmit } = renderServiceForm(
         Form,
         buildEditedDocument()
       );
-      const metaDescriptionField = await fillMetaDescription(
-        user,
-        metaDescription
-      );
+      await fillMetaDescription(user, metaDescription);
 
       // When
       await user.click(screen.getByRole('button', { name: VALIDATE_LABEL }));
 
       // Then
-      await waitFor(() =>
-        expect(metaDescriptionField).toHaveAttribute('aria-invalid', 'true')
-      );
+      expect(await screen.findByText(message)).toBeInTheDocument();
       expect(handleSubmit).not.toHaveBeenCalled();
     }
   );
+
+  it(`should reject the stored meta-description when the user edits a ${resourceName} named like the start of it`, async () => {
+    // Given
+    const { user, handleSubmit } = renderServiceForm(Form, {
+      ...buildEditedDocument(),
+      name: titleStartingMetaDescription(resourceName),
+      meta_description: DOCUMENT_META_DESCRIPTION,
+    });
+
+    // When
+    await user.click(screen.getByRole('button', { name: VALIDATE_LABEL }));
+
+    // Then
+    expect(await screen.findByText(MATCHES_TITLE_ERROR)).toBeInTheDocument();
+    expect(handleSubmit).not.toHaveBeenCalled();
+  });
 };
 
 interface RequiredFileTestOptions<
@@ -761,7 +870,10 @@ export const defineServiceFormTests = <Values,>({
   defineMetaDescriptionCreationTests({
     Form,
     resourceName,
-    fillCreationFields,
+    fillCreationForm: async (user) => {
+      await fillCreationFields(user);
+      await uploadFile(user, fileField);
+    },
   });
 
   defineMetaDescriptionEditionTests({
@@ -881,7 +993,7 @@ export const defineIntegrationFormTests = <Values,>({
   defineMetaDescriptionCreationTests({
     Form,
     resourceName,
-    fillCreationFields: fillIntegrationCreationFields,
+    fillCreationForm: fillIntegrationCreationForm,
   });
 
   defineMetaDescriptionEditionTests({

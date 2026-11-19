@@ -2,6 +2,7 @@ import { PortalContext } from '@/components/me/AppPortalContext';
 import {
   metaDescriptionSchema,
   optionalMetaDescriptionSchema,
+  withMetaDescriptionRule,
 } from '@/components/service/form/meta-description.schema';
 import { ServiceFormSheetFooter } from '@/components/service/form/SheetFooter';
 import {
@@ -15,6 +16,7 @@ import {
   optionalFileListCheck,
   transformToFileList,
 } from '@/utils/documents';
+import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 import {
   DocumentImageType,
   DocumentItemFragment,
@@ -89,13 +91,16 @@ export const CustomDashboardForm = ({
   );
   const formSchema = useMemo(
     () =>
-      document
-        ? customDashboardSchema.extend({
-            meta_description: optionalMetaDescriptionSchema,
-            document: z.custom<FileList>(fileListCheck).optional(),
-            images: z.custom<FileList>(optionalFileListCheck).optional(),
-          })
-        : customDashboardSchema,
+      withMetaDescriptionRule(
+        document
+          ? customDashboardSchema.extend({
+              meta_description: optionalMetaDescriptionSchema,
+              document: z.custom<FileList>(fileListCheck).optional(),
+              images: z.custom<FileList>(optionalFileListCheck).optional(),
+            })
+          : customDashboardSchema,
+        ShareableResourceType.OPENCTI_CUSTOM_DASHBOARD
+      ),
     [document]
   );
 

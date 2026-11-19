@@ -2,6 +2,7 @@ import { PortalContext } from '@/components/me/AppPortalContext';
 import {
   metaDescriptionSchema,
   optionalMetaDescriptionSchema,
+  withMetaDescriptionRule,
 } from '@/components/service/form/meta-description.schema';
 import { ServiceFormSheetFooter } from '@/components/service/form/SheetFooter';
 import { useServiceFormFields } from '@/components/service/form/UseServiceFormFields';
@@ -12,7 +13,10 @@ import {
   optionalFileListCheck,
   transformToFileList,
 } from '@/utils/documents';
-import { isThirdPartyIntegrationResource } from '@/utils/shareable-resources/shareable-resources.types';
+import {
+  isThirdPartyIntegrationResource,
+  ShareableResourceType,
+} from '@/utils/shareable-resources/shareable-resources.types';
 import {
   DocumentImageType,
   DocumentItemFragment,
@@ -124,7 +128,10 @@ export const ThirdPartyIntegrationForm = ({
         })
       : thirdPartyIntegrationFormSchema;
 
-    return extendedSchema.superRefine((data, ctx) => {
+    return withMetaDescriptionRule(
+      extendedSchema,
+      ShareableResourceType.OPENCTI_INTEGRATION
+    ).superRefine((data, ctx) => {
       if (data.github_url && !data.product_version) {
         ctx.addIssue({
           path: [DocumentMetadataKeyCode.ProductVersion],

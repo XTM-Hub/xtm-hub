@@ -2,6 +2,7 @@ import { PortalContext } from '@/components/me/AppPortalContext';
 import {
   metaDescriptionSchema,
   optionalMetaDescriptionSchema,
+  withMetaDescriptionRule,
 } from '@/components/service/form/meta-description.schema';
 import { ServiceFormSheetFooter } from '@/components/service/form/SheetFooter';
 import {
@@ -15,7 +16,10 @@ import {
   optionalFileListCheck,
   transformToFileList,
 } from '@/utils/documents';
-import { isIntegrationItem } from '@/utils/shareable-resources/shareable-resources.types';
+import {
+  isIntegrationItem,
+  ShareableResourceType,
+} from '@/utils/shareable-resources/shareable-resources.types';
 import {
   DocumentImageType,
   DocumentItemFragment,
@@ -99,14 +103,17 @@ export const CsvFeedForm = ({ handleSubmit, document }: CsvFeedFormProps) => {
   );
   const formSchema = useMemo(
     () =>
-      document
-        ? csvFeedFormSchema.extend({
-            meta_description: optionalMetaDescriptionSchema,
-            document: z.custom<FileList>(fileListCheck).optional(),
-            images: z.custom<FileList>(optionalFileListCheck).optional(),
-            logo: z.custom<FileList>(optionalFileListCheck).optional(),
-          })
-        : csvFeedFormSchema,
+      withMetaDescriptionRule(
+        document
+          ? csvFeedFormSchema.extend({
+              meta_description: optionalMetaDescriptionSchema,
+              document: z.custom<FileList>(fileListCheck).optional(),
+              images: z.custom<FileList>(optionalFileListCheck).optional(),
+              logo: z.custom<FileList>(optionalFileListCheck).optional(),
+            })
+          : csvFeedFormSchema,
+        ShareableResourceType.OPENCTI_INTEGRATION
+      ),
     [document]
   );
 

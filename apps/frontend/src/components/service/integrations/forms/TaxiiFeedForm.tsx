@@ -2,6 +2,7 @@ import { PortalContext } from '@/components/me/AppPortalContext';
 import {
   metaDescriptionSchema,
   optionalMetaDescriptionSchema,
+  withMetaDescriptionRule,
 } from '@/components/service/form/meta-description.schema';
 import { ServiceFormSheetFooter } from '@/components/service/form/SheetFooter';
 import {
@@ -15,7 +16,10 @@ import {
   optionalFileListCheck,
   transformToFileList,
 } from '@/utils/documents';
-import { isIntegrationItem } from '@/utils/shareable-resources/shareable-resources.types';
+import {
+  isIntegrationItem,
+  ShareableResourceType,
+} from '@/utils/shareable-resources/shareable-resources.types';
 import {
   DocumentImageType,
   DocumentItemFragment,
@@ -102,13 +106,16 @@ export const TaxiiFeedForm = ({
   );
   const formSchema = useMemo(
     () =>
-      document
-        ? taxiiFeedFormSchema.extend({
-            meta_description: optionalMetaDescriptionSchema,
-            document: z.custom<FileList>(fileListCheck).optional(),
-            images: z.custom<FileList>(optionalFileListCheck).optional(),
-          })
-        : taxiiFeedFormSchema,
+      withMetaDescriptionRule(
+        document
+          ? taxiiFeedFormSchema.extend({
+              meta_description: optionalMetaDescriptionSchema,
+              document: z.custom<FileList>(fileListCheck).optional(),
+              images: z.custom<FileList>(optionalFileListCheck).optional(),
+            })
+          : taxiiFeedFormSchema,
+        ShareableResourceType.OPENCTI_INTEGRATION
+      ),
     [document]
   );
 

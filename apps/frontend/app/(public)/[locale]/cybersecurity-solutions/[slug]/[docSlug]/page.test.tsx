@@ -23,6 +23,7 @@ const NOT_FOUND_ERROR = 'NEXT_NOT_FOUND';
 const SERVICE_SLUG = 'opencti-integrations';
 const DOC_SLUG = 'my-connector';
 const META_DESCRIPTION = 'Ingest ransomware indicators into OpenCTI';
+const GENERATED_META_DESCRIPTION = `OpenCTI Integration: ${META_DESCRIPTION}.`;
 const SHORT_DESCRIPTION = 'Track ransomware activity';
 const FALLBACK_DESCRIPTION = 'Metadata.DocumentFallbackDescriptionIntegration';
 
@@ -136,7 +137,7 @@ describe('public document page', () => {
         meta_description: META_DESCRIPTION,
         short_description: SHORT_DESCRIPTION,
       },
-      expectedDescription: META_DESCRIPTION,
+      expectedDescription: GENERATED_META_DESCRIPTION,
     },
     {
       context: 'the document has no meta-description',
@@ -150,6 +151,14 @@ describe('public document page', () => {
       context: 'the meta-description of the document is empty',
       descriptions: {
         meta_description: '',
+        short_description: SHORT_DESCRIPTION,
+      },
+      expectedDescription: SHORT_DESCRIPTION,
+    },
+    {
+      context: 'the meta-description of the document is blank',
+      descriptions: {
+        meta_description: '   ',
         short_description: SHORT_DESCRIPTION,
       },
       expectedDescription: SHORT_DESCRIPTION,
@@ -169,6 +178,46 @@ describe('public document page', () => {
       );
       vi.mocked(fetchSingleDocument).mockResolvedValue(
         buildPublicDocument(descriptions)
+      );
+      vi.mocked(buildSeoPageMetadata).mockReturnValue({});
+
+      // When
+      await generateMetadata({ params });
+      await Page({ params });
+
+      // Then
+      expect(buildSeoPageMetadata).toHaveBeenCalledWith(
+        expect.objectContaining({ description: expectedDescription })
+      );
+      expect(stringifyJsonLd).toHaveBeenCalledWith(
+        expect.objectContaining({ description: expectedDescription })
+      );
+    }
+  );
+
+  it.each([
+    {
+      serviceSlug: 'opencti-custom-dashboards',
+      expectedDescription: `OpenCTI Dashboard: ${META_DESCRIPTION}.`,
+    },
+    {
+      serviceSlug: 'openaev-scenarios',
+      expectedDescription: `OpenAEV Scenario: ${META_DESCRIPTION}.`,
+    },
+  ])(
+    'should describe the page and its JSON-LD with $expectedDescription when the document belongs to $serviceSlug',
+    async ({ serviceSlug, expectedDescription }) => {
+      // Given
+      vi.mocked(isPublicDocumentSlug).mockResolvedValue(true);
+      vi.mocked(fetchSeoServiceInstanceBySlug).mockResolvedValue({
+        ...SERVICE_INSTANCE,
+        slug: serviceSlug,
+      });
+      vi.mocked(fetchSingleDocument).mockResolvedValue(
+        buildPublicDocument({
+          meta_description: META_DESCRIPTION,
+          short_description: SHORT_DESCRIPTION,
+        })
       );
       vi.mocked(buildSeoPageMetadata).mockReturnValue({});
 

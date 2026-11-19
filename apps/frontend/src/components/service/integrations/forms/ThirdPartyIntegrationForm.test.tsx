@@ -63,12 +63,21 @@ const IMAGES_LABEL = 'Service.Form.ImageLabel';
 const VENDOR_URL = 'https://vendor.example.com';
 const NEW_VENDOR_URL = 'https://new-vendor.example.com';
 const GITHUB_URL = 'https://github.com/vendor/integration';
+const SCREENSHOT = new File(['image'], 'screenshot.png', { type: 'image/png' });
 
 const fillThirdPartyCreationFields = async (user: ServiceFormUser) => {
   await fillIntegrationCreationFields(user);
   await user.type(
     screen.getByRole('textbox', { name: VENDOR_URL_LABEL }),
     NEW_VENDOR_URL
+  );
+};
+
+const fillThirdPartyCreationForm = async (user: ServiceFormUser) => {
+  await fillThirdPartyCreationFields(user);
+  await user.upload(
+    screen.getByLabelText(IMAGES_LABEL, { selector: 'input' }),
+    SCREENSHOT
   );
 };
 
@@ -308,7 +317,7 @@ describe('ThirdPartyIntegrationForm', () => {
   defineMetaDescriptionCreationTests({
     Form: ThirdPartyIntegrationForm,
     resourceName: ServiceFormResource.THIRD_PARTY_INTEGRATION,
-    fillCreationFields: fillThirdPartyCreationFields,
+    fillCreationForm: fillThirdPartyCreationForm,
   });
 
   defineMetaDescriptionEditionTests({
