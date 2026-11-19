@@ -17,7 +17,8 @@ import { getApiTokenAuthentication } from './api-token.auth';
 
 /**
  * Mutations a token never runs, whatever its scope: they act on the caller's own account, credentials, profile,
- * personal space or sessions, or issue a credential that would outlive the token (`refreshUserPlatformToken`).
+ * personal space or sessions, or issue a credential that would outlive the token (`refreshUserPlatformToken`,
+ * `registerPlatform`).
  * `revokeApiToken` stays allowed: revoking with a token only ever reduces access. Add here any new mutation of that
  * kind.
  */
@@ -29,6 +30,7 @@ export const API_TOKEN_DENIED_FIELDS: ReadonlySet<string> = new Set([
   // Credentials
   'createApiToken',
   'refreshUserPlatformToken',
+  'registerPlatform',
   'resetPassword',
   // Profile and personal space
   'editMeUser',

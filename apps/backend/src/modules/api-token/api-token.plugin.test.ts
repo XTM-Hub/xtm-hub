@@ -79,6 +79,7 @@ describe('apiTokenOperationRefusal', () => {
     'logout',
     'createApiToken',
     'refreshUserPlatformToken',
+    'registerPlatform',
     'resetPassword',
     'editMeUser',
     'uploadUserPicture',

@@ -12,10 +12,10 @@ you, without your session. A token belongs to you and to one of your organizatio
 | `admin`      | Your rights in the organization, organization administration included, and your platform capabilities, `BYPASS` excepted. |
 
 A token never exceeds your rights: they are read again on every call. A right removed from you, a disabled account or
-a membership that ended takes effect on the next call. No token, whatever its scope, may act on your own account
-(`NOT_ALLOWED_WITH_API_TOKEN`): change the selected organization, log in or out, create another token, refresh your
-platform token, reset your password, edit your profile or picture, or transfer your personal space. A `read_write` or
-`admin` token may still revoke a token.
+a membership that ended takes effect on the next call. No token, whatever its scope, may act on your own account or
+obtain a credential that would outlive it (`NOT_ALLOWED_WITH_API_TOKEN`): change the selected organization, log in or
+out, create another token, refresh your platform token, register a platform, reset your password, edit your profile or
+picture, or transfer your personal space. A `read_write` or `admin` token may still revoke a token.
 
 ## Create a token
 
