@@ -434,6 +434,8 @@ export const DocumentApp = {
         : undefined;
 
       // entity_types and license_type are persisted as metadata (see above), not as Document columns.
+      // meta_description is a column, but only its validated, trimmed value is written, and a
+      // missing or blank one keeps the stored value.
       const {
         entity_types: _entityTypes,
         license_type: _licenseType,
