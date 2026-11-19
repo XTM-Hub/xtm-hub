@@ -178,6 +178,55 @@ describe('ShareableResourceConnectorSlug - Improve integration callout', () => {
   });
 });
 
+describe('ShareableResourceConnectorSlug - Incompatible platforms warning', () => {
+  const OUTDATED_PLATFORM = {
+    id: 'platform-id',
+    title: 'Production OpenCTI',
+    url: 'https://opencti.acme.com',
+    version: '6.4.0',
+    contract: 'EE',
+    ' $fragmentType': 'useRegisteredPlatformsFragment',
+  } as const;
+
+  const buildIncompatibleConnector = (managerSupported: boolean) => ({
+    ...buildConnector('connector-1', 0),
+    verified: true,
+    manager_supported: managerSupported,
+    minimum_deployable_version: '6.5.0',
+  });
+
+  beforeEach(() => {
+    vi.mocked(useRegisteredPlatforms).mockReturnValue({
+      platforms: [OUTDATED_PLATFORM],
+    });
+  });
+
+  it('should show the warning right under the improve integration callout', () => {
+    // Given
+    const connector = buildIncompatibleConnector(true);
+
+    // When
+    testRender(renderSlugElement(connector));
+
+    // Then
+    const infoAlert = screen.getByRole('status');
+    const warningAlert = screen.getByRole('alert');
+    expect(warningAlert).toHaveTextContent('Service.Connectors.Incompatible');
+    expect(infoAlert.nextElementSibling).toBe(warningAlert);
+  });
+
+  it('should not show the warning when the connector is not deployable by the manager', () => {
+    // Given
+    const connector = buildIncompatibleConnector(false);
+
+    // When
+    testRender(renderSlugElement(connector));
+
+    // Then
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+});
+
 describe('ShareableResourceConnectorSlug - Resource view', () => {
   beforeEach(() => {
     startAnalytics();

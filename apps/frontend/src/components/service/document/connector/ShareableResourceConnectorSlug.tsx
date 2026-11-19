@@ -4,7 +4,9 @@ import {
   BreadcrumbNav,
   BreadcrumbNavLink,
 } from '@/components/ui/BreadcrumbNav';
+import { useBuildCompatibilityTranslationKey } from '@/hooks/use-build-compatibility-translation-key';
 import { useDocumentCounter } from '@/hooks/use-document-counter';
+import { useRegisteredPlatforms } from '@/hooks/use-registered-platforms';
 import { useTranslate } from '@/hooks/use-translate';
 
 import { PlatformMetadataMapping } from '@/components/registration/PlatformIdentifierMapping';
@@ -14,6 +16,7 @@ import { DeployableResourceViewTracker } from '@/components/service/document/Dep
 import OneClickDeploy from '@/components/service/document/one-click-deploy/OneClickDeploy';
 import { ResourceViewTracker } from '@/components/service/document/ResourceViewTracker';
 import ShareableResourceDescription from '@/components/service/document/ShareableResourceDescription';
+import { ShareableResourceIncompatibleWarning } from '@/components/service/document/ShareableResourceIncompatibleWarning';
 import ShareableResourceCarousel from '@/components/service/document/ui/ShareableResourceCarouselView';
 import BadgeOverflowCounter, {
   BadgeOverflow,
@@ -37,7 +40,7 @@ import {
   ThreatActorGroupIcon,
 } from '@filigran/icon';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
-import { DocumentItemFragment } from '@graphql/generated';
+import { DocumentItemFragment, PlatformIdentifier } from '@graphql/generated';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -63,6 +66,15 @@ const ShareableResourceConnectorSlug = ({
   const manifest_url = documentData.source_code
     ? `${documentData.source_code}/__metadata__/connector_manifest.json`
     : '';
+
+  const { platforms } = useRegisteredPlatforms(PlatformIdentifier.Opencti, {
+    onlyActive: true,
+  });
+  const { platformToBeUpdated, incompatiblePlatformsCount } =
+    useBuildCompatibilityTranslationKey({
+      platforms,
+      requiredProductVersion: documentData.minimum_deployable_version,
+    });
 
   const { count: shareNumber, increment: incrementShareNumber } =
     useDocumentCounter(documentData.id, documentData.share_number);
@@ -195,6 +207,15 @@ const ShareableResourceConnectorSlug = ({
           }
         />
       )}
+      {incompatiblePlatformsCount > 0 && documentData.manager_supported && (
+        <ShareableResourceIncompatibleWarning
+          className="mt-4"
+          message={t('Service.Connectors.Incompatible', {
+            count: incompatiblePlatformsCount,
+            platformToBeUpdated,
+          })}
+        />
+      )}
       <div className="flex flex-col-reverse lg:flex-row w-full mt-4 gap-6">
         <ShareableResourceDescription
           shortDescription={documentData?.short_description ?? ''}
@@ -204,6 +225,7 @@ const ShareableResourceConnectorSlug = ({
           }
         />
         <ShareableResourceConnectorPrivateDetails
+          incompatiblePlatformsCount={incompatiblePlatformsCount}
           connectorDetails={{
             ...documentData,
             name: documentData.name ?? '',

@@ -22,6 +22,19 @@ describe('ShareableResourceIncompatibleWarning', () => {
     expect(screen.getByRole('alert')).toHaveTextContent(MESSAGE);
   });
 
+  it('should apply the given class name to the alert', () => {
+    // Given / When
+    testRender(
+      <ShareableResourceIncompatibleWarning
+        message={MESSAGE}
+        className="mt-4"
+      />
+    );
+
+    // Then
+    expect(screen.getByRole('alert')).toHaveClass('mt-4');
+  });
+
   it('should hide the decorative icon from assistive technology', () => {
     // Given / When
     const { container } = testRender(
