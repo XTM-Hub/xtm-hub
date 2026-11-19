@@ -17,7 +17,7 @@
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./.github/img/readme/hero-dark.webp">
   <source media="(prefers-color-scheme: light)" srcset="./.github/img/readme/hero-light.webp">
-  <img alt="XTM Hub home: the XTM Platform overview, the public roadmap and the newest and most deployed OpenCTI dashboards, OpenAEV scenarios and OpenCTI integrations" src="./.github/img/readme/hero-light.webp" width="100%">
+  <img alt="XTM Hub home: the connected OpenCTI and OpenAEV instances of the workspace, the XTM Platform overview and the newest OpenAEV scenarios" src="./.github/img/readme/hero-light.webp" width="100%">
 </picture>
 
 ## Table of contents
@@ -43,7 +43,7 @@ A CTEM program runs on tradecraft: dashboards, integrations, playbooks and attac
 
 - **A shared library, curated.** Dashboards, custom views, integrations, playbooks and scenarios, searchable by use case, type and compatibility.
 - **One click to your instance.** A deployment sends the resource straight to the OpenCTI or OpenAEV you pick, with no export, no file to move and no manual import.
-- **One gateway for the platform.** Instance registration for OpenCTI, OpenAEV and XTM One, the public roadmap with feature voting and personal API tokens.
+- **One gateway for the platform.** Instance registration for OpenCTI, OpenAEV and XTM One, feature voting and personal API tokens.
 
 ## Capabilities
 
@@ -159,7 +159,7 @@ XTM Hub is one of the five products of the [XTM Platform](https://filigran.io), 
 | **Detection engineering** | Playbooks and integrations that route intelligence to the detection stack. |
 | **Red and purple team** | Ready-made OpenAEV attack scenarios by category, from atomic tests to purple team exercises. |
 | **Vulnerability and exposure management** | Scenarios that test the techniques that reach your assets and dashboards on the vulnerabilities exploited in the wild. |
-| **Risk and CISO** | One library shared across every instance you run, and the public XTM Platform roadmap. |
+| **Risk and CISO** | One library shared across every instance you run, with the connected instances in one view. |
 
 ## Quick start
 
@@ -182,7 +182,7 @@ yarn dev:api && yarn dev:front                           # API on :4002, web app
 | | Free service | Source code |
 |---|---|---|
 | License | [hub.filigran.io](https://hub.filigran.io) terms | [Source available](LICENSE) |
-| Libraries, one-click deploy, registration, roadmap | Yes | Read, fork for personal use |
+| Libraries, one-click deploy, registration, voting | Yes | Read, fork for personal use |
 | Production and commercial use of the code | | Not permitted |
 
 Some content depends on the edition of the product it deploys to: one-click deployment of playbooks needs OpenCTI Enterprise Edition.
