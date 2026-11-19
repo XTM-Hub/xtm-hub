@@ -145,7 +145,7 @@ describe('public document page', () => {
         meta_description: null,
         short_description: SHORT_DESCRIPTION,
       },
-      expectedDescription: SHORT_DESCRIPTION,
+      expectedDescription: FALLBACK_DESCRIPTION,
     },
     {
       context: 'the meta-description of the document is empty',
@@ -153,7 +153,7 @@ describe('public document page', () => {
         meta_description: '',
         short_description: SHORT_DESCRIPTION,
       },
-      expectedDescription: SHORT_DESCRIPTION,
+      expectedDescription: FALLBACK_DESCRIPTION,
     },
     {
       context: 'the meta-description of the document is blank',
@@ -161,7 +161,7 @@ describe('public document page', () => {
         meta_description: '   ',
         short_description: SHORT_DESCRIPTION,
       },
-      expectedDescription: SHORT_DESCRIPTION,
+      expectedDescription: FALLBACK_DESCRIPTION,
     },
     {
       context: 'the document has neither a meta nor a short description',

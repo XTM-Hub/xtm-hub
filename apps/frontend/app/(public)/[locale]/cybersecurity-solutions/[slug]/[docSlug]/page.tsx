@@ -57,13 +57,11 @@ const FALLBACK_DESCRIPTION_KEYS: Record<ServiceSlug, string> = {
 
 /**
  * The SEO description of a resource, shared by its meta tag and its JSON-LD: the meta-description generated from the
- * summary its author entered, else the short description.
+ * summary its author entered, else the default text of the resource type. Never derived from the short description or
+ * the body.
  */
 const describeDocument = (
-  document: Pick<
-    PublicDocumentByServiceSlugItem,
-    'meta_description' | 'short_description'
-  >,
+  document: Pick<PublicDocumentByServiceSlugItem, 'meta_description'>,
   serviceSlug: ServiceSlug,
   fallbackDescription: string
 ) =>
@@ -72,7 +70,7 @@ const describeDocument = (
         SERVICE_SLUG_SHAREABLE_RESOURCE_MAPPING[serviceSlug],
         document.meta_description
       )
-    : document.short_description || fallbackDescription;
+    : fallbackDescription;
 
 /**
  * Fetch the data for the page with caching to avoid multiple requests
