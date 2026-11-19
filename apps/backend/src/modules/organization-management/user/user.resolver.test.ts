@@ -29,18 +29,27 @@ import {
 } from '../../../../tests/tests.const';
 import {
   AddUserInput,
+  ApiTokenScope,
   FilterKey,
   OrderingMode,
   Organization,
   OrganizationCapability,
+  PortalCapability,
   UserOrdering,
 } from '../../../__generated__/resolvers-types';
 import { requestContext } from '../../../context/request.context';
-import { OrganizationId } from '../../../model/kanel/public/Organization';
+import OrganizationRow, {
+  OrganizationId,
+} from '../../../model/kanel/public/Organization';
+import { RolePortalId } from '../../../model/kanel/public/RolePortal';
 import { UserId } from '../../../model/kanel/public/User';
 import { PortalContext } from '../../../model/portal-context';
 import { UserLoadUserBy } from '../../../model/user';
-import { PLATFORM_IDP_GROUP } from '../../../portal.const';
+import {
+  CAPABILITY_BYPASS,
+  PLATFORM_IDP_GROUP,
+  ROLE_ADMIN,
+} from '../../../portal.const';
 import { auth0ClientMock } from '../../../thirdparty/auth0/mock';
 import { ErrorCode } from '../../../utils/error/error.code';
 import { loginFromProvider } from '../../security-management/authentication/auth-user';
@@ -1485,5 +1494,159 @@ describe('user subscription resolver', () => {
       { MeUser: { edit: { id: memberId } } },
     ]);
     await otherSpy.expectNoEvents();
+  });
+});
+
+describe('user fields of the caller of a request', () => {
+  // A user in two organizations, with the platform administrator role and a role carrying a portal capability
+  let tokenOrganization: OrganizationRow;
+  let otherOrganization: OrganizationRow;
+  let userId: UserId;
+  let rolePortalId: RolePortalId;
+
+  const actAsSession = async () => {
+    requestContext.set({
+      user: (await UserDomain.loadUserBy({ 'User.id': userId }))!,
+    });
+  };
+
+  const loadMe = async () => {
+    const context = {
+      ...contextSimpleUserFiligran2,
+      user: requestContext.requireUser(),
+    };
+    const me = (await usersResolver.Query!.me!(
+      {},
+      {},
+      context,
+      GRAPHQL_RESOLVE_INFO
+    ))!;
+    const [organizations, capabilities, rolesPortal] = await Promise.all([
+      usersResolver.User!.organizations!(me, {}, context, GRAPHQL_RESOLVE_INFO),
+      usersResolver.User!.capabilities!(me, {}, context, GRAPHQL_RESOLVE_INFO),
+      usersResolver.User!.roles_portal!(me, {}, context, GRAPHQL_RESOLVE_INFO),
+    ]);
+    return { organizations, capabilities, rolesPortal };
+  };
+
+  beforeEach(async () => {
+    tokenOrganization = await TestHelper.organization.create();
+    otherOrganization = await TestHelper.organization.create();
+    const { user } = await TestHelper.user.insertInOrganization(
+      tokenOrganization.id,
+      {
+        email: `caller-fields-${uuidv4()}@caller-fields-test.io`,
+        selected_organization_id: tokenOrganization.id,
+      }
+    );
+    userId = user.id;
+    await TestHelper.user_Organization.create({
+      user_id: userId,
+      organization_id: otherOrganization.id,
+    });
+    const rolePortal = await TestHelper.rolePortal.create({});
+    rolePortalId = rolePortal!.id;
+    await TestHelper.rolePortal_CapabilityPortal.create({
+      role_portal_id: rolePortalId,
+      capability_portal_id: CAPABILITY_BYPASS.id,
+    });
+    await TestHelper.user_RolePortal.create({
+      user_id: userId,
+      role_portal_id: rolePortalId,
+    });
+    await TestHelper.user_RolePortal.create({
+      user_id: userId,
+      role_portal_id: ROLE_ADMIN.id,
+    });
+  });
+
+  afterEach(async () => {
+    await TestHelper.user_RolePortal.delete({ user_id: userId });
+    await TestHelper.rolePortal_CapabilityPortal.delete({
+      role_portal_id: rolePortalId,
+    });
+    await TestHelper.rolePortal.delete({ id: rolePortalId });
+    await TestHelper.user.delete({ id: userId });
+    await TestHelper.organization.delete({ id: tokenOrganization.id });
+    await TestHelper.organization.delete({ id: otherOrganization.id });
+  });
+
+  it('should list every organization, portal capability and role of the user for a session', async () => {
+    // Given
+    await actAsSession();
+
+    // When
+    const { organizations, capabilities, rolesPortal } = await loadMe();
+
+    // Then
+    expect(organizations).toHaveLength(2);
+    expect(organizations).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: tokenOrganization.id,
+          name: tokenOrganization.name,
+        }),
+        expect.objectContaining({
+          id: otherOrganization.id,
+          name: otherOrganization.name,
+        }),
+      ])
+    );
+    expect(capabilities).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: CAPABILITY_BYPASS.id,
+          name: PortalCapability.Bypass,
+        }),
+      ])
+    );
+    expect(rolesPortal).toHaveLength(2);
+    expect(rolesPortal).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: rolePortalId }),
+        expect.objectContaining({ id: ROLE_ADMIN.id, name: ROLE_ADMIN.name }),
+      ])
+    );
+  });
+
+  it.each([ApiTokenScope.Read, ApiTokenScope.ReadWrite])(
+    'should list only the token organization, no portal capability and no administrator role for a %s token',
+    async (scope) => {
+      // Given
+      await TestHelper.apiToken.actAs(userId, tokenOrganization.id, scope);
+
+      // When
+      const { organizations, capabilities, rolesPortal } = await loadMe();
+
+      // Then
+      expect(organizations).toMatchObject([
+        { id: tokenOrganization.id, name: tokenOrganization.name },
+      ]);
+      expect(capabilities).toEqual([]);
+      expect(rolesPortal).toMatchObject([{ id: rolePortalId }]);
+    }
+  );
+
+  it('should list only the token organization, without BYPASS nor the administrator role, for an admin token', async () => {
+    // Given
+    await TestHelper.apiToken.actAs(
+      userId,
+      tokenOrganization.id,
+      ApiTokenScope.Admin
+    );
+
+    // When
+    const { organizations, capabilities, rolesPortal } = await loadMe();
+
+    // Then
+    expect(organizations).toMatchObject([
+      { id: tokenOrganization.id, name: tokenOrganization.name },
+    ]);
+    expect(capabilities).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: PortalCapability.Bypass }),
+      ])
+    );
+    expect(rolesPortal).toMatchObject([{ id: rolePortalId }]);
   });
 });

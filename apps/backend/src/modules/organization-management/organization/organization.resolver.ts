@@ -1,5 +1,6 @@
 import { Resolvers } from '../../../__generated__/resolvers-types';
 import { OrganizationId } from '../../../model/kanel/public/Organization';
+import { ApiTokenReach } from '../../../security/api-token-reach';
 import { getErrorMessage } from '../../../utils/error/error-guard.util';
 import { UnknownErrorCode } from '../../../utils/error/error.code';
 import { mapToGraphQLError } from '../../../utils/error/error.mapping';
@@ -23,7 +24,10 @@ const resolvers: Resolvers = {
       return OrganizationDomain.loadOrganizations(opts);
     },
     userOrganizations: async (_, __, context) => {
-      return OrganizationDomain.loadOrganizationsByUser(context.user.id);
+      // The caller's organizations: an API token lists its own only
+      return ApiTokenReach.filterOrganizations(
+        await OrganizationDomain.loadOrganizationsByUser(context.user.id)
+      );
     },
   },
   Mutation: {

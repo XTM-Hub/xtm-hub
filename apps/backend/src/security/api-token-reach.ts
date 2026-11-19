@@ -12,6 +12,12 @@ export const ApiTokenReach = {
     return !apiToken || apiToken.organizationId === organizationId;
   },
 
+  // The organizations of these a token allows, all of them without a token
+  filterOrganizations: <Organization extends { id: string }>(
+    organizations: readonly Organization[]
+  ): Organization[] =>
+    organizations.filter(({ id }) => ApiTokenReach.allowsOrganization(id)),
+
   // The capabilities a token leaves of these, all of them without a token. For an organization it allows only.
   narrowCapabilities: <Capability extends string>(
     capabilities: readonly Capability[]
