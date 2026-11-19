@@ -81,7 +81,10 @@ import {
 import { TelemetryEventType } from '../telemetry/telemetry.types';
 import { PlatformConfigurationDomain } from './platform-configuration/platform-configuration.domain';
 import { RegistrationApp } from './registration.app';
-import { RegistrationDomain } from './registration.domain';
+import {
+  ADMIN_REGISTERED_PLATFORMS_SEARCH_TERM_MAX_LENGTH,
+  RegistrationDomain,
+} from './registration.domain';
 import { OPENAEV_DEFAULT_TENANT_ID } from './registration.helper';
 
 const BLOGPOST_REQUIRED_VERSION = '7.260901.0';
@@ -2646,13 +2649,16 @@ const createAdminFixture = async ({
   identifier = PlatformIdentifier.Opencti,
   status = PlatformConfigurationStatus.Active,
   tenantName = null,
+  creationStatus,
 }: {
   title: string;
   identifier?: PlatformIdentifier;
   status?: PlatformConfigurationStatus;
   tenantName?: string | null;
+  creationStatus?: ServiceInstanceCreationStatus;
 }): Promise<PlatformConfiguration> => {
   const serviceInstance = await TestHelper.serviceInstance.create({
+    ...(creationStatus ? { creation_status: creationStatus } : {}),
     service_definition_id:
       identifier === PlatformIdentifier.Openaev
         ? SERVICES.DEFINITIONS.OPENAEV_REGISTRATION.ID
@@ -2807,6 +2813,38 @@ describe('registration app, platform admin', () => {
       expect(titles).toEqual([]);
     });
 
+    it('should not return the registration of a disabled service instance', async () => {
+      // Given
+      await createAdminFixture({
+        title: `${marker} Disabled`,
+        creationStatus: ServiceInstanceCreationStatus.Disabled,
+      });
+      await createAdminFixture({ title: `${marker} Enabled` });
+
+      // When
+      const titles = await loadAdminTitles({ searchTerm: marker });
+
+      // Then
+      expect(titles).toEqual([`${marker} Enabled`]);
+    });
+
+    it('should cap the length of the search term', async () => {
+      // Given a title the first characters of the term match, and the characters past the cap do not
+      const title = marker.padEnd(
+        ADMIN_REGISTERED_PLATFORMS_SEARCH_TERM_MAX_LENGTH,
+        'x'
+      );
+      await createAdminFixture({ title });
+
+      // When
+      const titles = await loadAdminTitles({
+        searchTerm: `${title}${'b'.repeat(500)}`,
+      });
+
+      // Then
+      expect(titles).toEqual([title]);
+    });
+
     it('should paginate', async () => {
       await createAdminFixture({ title: `${marker} A` });
       await createAdminFixture({ title: `${marker} B` });
@@ -2912,6 +2950,50 @@ describe('registration app, platform admin', () => {
           organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
         })
       );
+    });
+
+    it('should unregister, mail the other admins and send telemetry when a mail fails', async () => {
+      // Given
+      const configuration = await createAdminFixture({
+        title: 'Mail failure',
+      });
+      const sendMailSpy = vi
+        .spyOn(MailService, 'sendMail')
+        .mockImplementation(async ({ to }) => {
+          if (
+            to === TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.ADMIN_ORGA.EMAIL
+          ) {
+            throw new Error('SMTP down');
+          }
+        });
+      const telemetrySpy = vi
+        .spyOn(TelemetryApp, 'sendTelemetryEvent')
+        .mockResolvedValue();
+      const errorSpy = vi.spyOn(logApp, 'error');
+
+      // When
+      await RegistrationApp.adminUnregisterPlatform(
+        configuration.service_instance_id
+      );
+
+      // Then
+      const stored = await TestHelper.platformConfiguration.load({
+        service_instance_id: configuration.service_instance_id,
+      });
+      expect(stored?.status).toBe(PlatformConfigurationStatus.Inactive);
+      const recipients = sendMailSpy.mock.calls.map(([mail]) => mail.to);
+      expect(recipients).toContain(
+        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.ADMIN_ORGA.EMAIL
+      );
+      expect(recipients.length).toBeGreaterThan(1);
+      expect(errorSpy).toHaveBeenCalledExactlyOnceWith(
+        'Unable to send the platform unregistered mail',
+        expect.objectContaining({
+          userId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.ADMIN_ORGA.ID,
+          serviceInstanceId: configuration.service_instance_id,
+        })
+      );
+      expect(telemetrySpy).toHaveBeenCalledOnce();
     });
 
     it('should unregister on behalf of the owner the list shows when the platform has several subscriptions', async () => {

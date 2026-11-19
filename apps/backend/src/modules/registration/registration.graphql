@@ -261,6 +261,7 @@ type Query {
   ): Organization @auth
   "Every platform registration, whatever its organization. searchTerm matches the title, URL, ids, tenant, organization and registerer."
   adminRegisteredPlatforms(
+    "Page size, at most 100: a larger value is clamped to 100."
     first: Int!
     after: ID
     orderBy: AdminRegisteredPlatformOrdering

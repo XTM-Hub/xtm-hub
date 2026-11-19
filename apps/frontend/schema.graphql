@@ -130,7 +130,15 @@ type Query {
   """
   Every platform registration, whatever its organization. searchTerm matches the title, URL, ids, tenant, organization and registerer.
   """
-  adminRegisteredPlatforms(first: Int!, after: ID, orderBy: AdminRegisteredPlatformOrdering, orderMode: OrderingMode, searchTerm: String, filter: AdminRegisteredPlatformsFilter): AdminRegisteredPlatformConnection!
+  adminRegisteredPlatforms(
+    """Page size, at most 100: a larger value is clamped to 100."""
+    first: Int!
+    after: ID
+    orderBy: AdminRegisteredPlatformOrdering
+    orderMode: OrderingMode
+    searchTerm: String
+    filter: AdminRegisteredPlatformsFilter
+  ): AdminRegisteredPlatformConnection!
   rolePortals: [RolePortal!]!
   ssoGroupRolePortals: [SSOGroupRolePortal!]!
   userServiceCapabilities(service_instance_id: ServiceInstanceId!): UserServiceCapabilitiesResponse!

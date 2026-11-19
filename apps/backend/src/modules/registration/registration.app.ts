@@ -178,11 +178,7 @@ const buildPlatformConfiguration = (
 
 const ADMIN_REGISTERED_PLATFORMS_MAX_PAGE = 100;
 
-// This list cannot use paginate() from knexfile.ts: paginate() selects PlatformConfiguration.*, the token included,
-// and counts an `id` column PlatformConfiguration does not have. It pages by offset itself and builds the connection
-// with dbConnections, which reads the cursor of the current page; hence the re-encoded offset and the hasNextPage
-// computed from the total, which also holds when the last page is exactly full.
-// Offset cursors as written by dbConnections; anything unreadable starts from the first page.
+// Offset cursors as written by loadAdminRegisteredPlatforms; anything unreadable starts from the first page.
 const decodeOffsetCursor = (after?: string | null): number => {
   if (!after) {
     return 0;
@@ -223,6 +219,8 @@ const deactivateRegistration = async ({
     ]
   );
 
+  // The registration is already inactive: a mail that fails is logged, it does not fail the unregistration, and a
+  // retry would find nothing left to do.
   await Promise.all(
     users.map((user) =>
       sendMail({
@@ -232,6 +230,12 @@ const deactivateRegistration = async ({
           adminName: formatName(user.first_name ?? ''),
           platformIdentifier,
         },
+      }).catch((error: unknown) => {
+        logApp.error('Unable to send the platform unregistered mail', {
+          error,
+          userId: user.id,
+          serviceInstanceId: platformConfiguration.service_instance_id,
+        });
       })
     )
   );
@@ -640,6 +644,10 @@ export const RegistrationApp = {
           orderBy ?? AdminRegisteredPlatformOrdering.LastConnectivityCheck,
         orderMode: orderMode ?? OrderingMode.Desc,
       });
+    // This list cannot use paginate() from knexfile.ts: paginate() selects PlatformConfiguration.*, the token included,
+    // and counts an `id` column PlatformConfiguration does not have. It pages by offset itself and builds the
+    // connection with dbConnections, which reads the cursor of the current page; hence the re-encoded offset and the
+    // hasNextPage computed from the total, which also holds when the last page is exactly full.
     const connection = dbConnections(
       rows.map(mapAdminRegisteredPlatformRowToGraphQL),
       offset > 0 ? btoa(String(offset)) : undefined,

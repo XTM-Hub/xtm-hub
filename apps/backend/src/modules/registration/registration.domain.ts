@@ -119,6 +119,9 @@ const AdminRegisteredPlatformSearchColumns = [
   'User.email',
 ];
 
+// The term is matched as %term% over every search column: a longer one cannot match more, it only costs more.
+export const ADMIN_REGISTERED_PLATFORMS_SEARCH_TERM_MAX_LENGTH = 100;
+
 const escapeLikePattern = (value: string) => value.replace(/[\\%_]/g, '\\$&');
 
 const getAdminRegisteredPlatformsBaseQuery = () =>
@@ -150,6 +153,7 @@ const getAdminRegisteredPlatformsBaseQuery = () =>
       'OwnerSubscription.organization_id'
     )
     .leftJoin('User', 'User.id', '=', 'PlatformConfiguration.registerer_id')
+    .where('ServiceInstance.creation_status', '!=', 'DISABLED')
     .whereIn(
       'ServiceDefinition.identifier',
       Object.values(serviceDefinitionIdentifierMappedByPlatformIdentifier)
@@ -173,7 +177,9 @@ const applyAdminRegisteredPlatformsFilters = (
   if (organizationId) {
     query.where('OwnerSubscription.organization_id', '=', organizationId);
   }
-  const trimmedSearchTerm = searchTerm?.trim();
+  const trimmedSearchTerm = searchTerm
+    ?.trim()
+    .slice(0, ADMIN_REGISTERED_PLATFORMS_SEARCH_TERM_MAX_LENGTH);
   if (trimmedSearchTerm) {
     const pattern = `%${escapeLikePattern(trimmedSearchTerm)}%`;
     query.where((search) => {
