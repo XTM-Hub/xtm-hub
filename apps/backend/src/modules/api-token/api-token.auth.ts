@@ -9,6 +9,7 @@ import { OrganizationId } from '../../model/kanel/public/Organization';
 import { UserLoadUserBy } from '../../model/user';
 import { ROLE_ADMIN } from '../../portal.const';
 import { logApp } from '../../utils/app-logger.util';
+import { UnauthenticatedErrorCode } from '../../utils/error/error.code';
 import { UserDomain } from '../organization-management/user/user-domain/user.domain';
 import { ApiTokenDomain } from './api-token.domain';
 import { ApiTokenHelper } from './api-token.helper';
@@ -160,17 +161,6 @@ const recordUse = (id: ApiTokenId, now: Date) => {
   );
 };
 
-const sendUnauthenticated = (res: Response) => {
-  res.status(401).json({
-    errors: [
-      {
-        message: 'UNAUTHENTICATED',
-        extensions: { code: 'UNAUTHENTICATED' },
-      },
-    ],
-  });
-};
-
 /**
  * `Authorization: Bearer xhp_...` authenticates the request as the token's user. Any other request goes on unchanged
  * (session cookie, system token, platform token). A refused token answers 401 whatever the route: the caller asked
@@ -192,7 +182,17 @@ export const apiTokenMiddleware = async (
   }
   try {
     const refuse = () =>
-      countApiTokenFailure(req, res, () => sendUnauthenticated(res), next);
+      countApiTokenFailure(
+        req,
+        res,
+        () =>
+          ApiTokenHelper.sendError(
+            res,
+            401,
+            UnauthenticatedErrorCode.Unauthenticated
+          ),
+        next
+      );
     const tokenHash = ApiTokenHelper.hash(secret);
     // Over the limit: answered 429 without looking the token up, unless it was accepted recently
     if (

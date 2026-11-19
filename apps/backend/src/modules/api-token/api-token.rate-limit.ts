@@ -1,6 +1,8 @@
 import type { NextFunction, Request, Response } from 'express';
 import { ipKeyGenerator, rateLimit } from 'express-rate-limit';
 import { buildIpRateLimiterOptions } from '../../server/endpoints/shared/ip-rate-limit.util';
+import { BadRequestErrorCode } from '../../utils/error/error.code';
+import { ApiTokenHelper } from './api-token.helper';
 
 const API_TOKEN_FAILURE_RATE_WINDOW_MS = 15 * 60 * 1000;
 export const API_TOKEN_FAILURE_RATE_MAX = 30;
@@ -13,16 +15,8 @@ const failureRateLimiterOptions = buildIpRateLimiterOptions({
   windowMs: API_TOKEN_FAILURE_RATE_WINDOW_MS,
   limit: API_TOKEN_FAILURE_RATE_MAX,
   logLabel: 'Refused API token',
-  sendRateLimitError: (res) => {
-    res.status(429).json({
-      errors: [
-        {
-          message: 'TOO_MANY_REQUESTS',
-          extensions: { code: 'TOO_MANY_REQUESTS' },
-        },
-      ],
-    });
-  },
+  sendRateLimitError: (res) =>
+    ApiTokenHelper.sendError(res, 429, BadRequestErrorCode.TooManyRequests),
 });
 
 /**
