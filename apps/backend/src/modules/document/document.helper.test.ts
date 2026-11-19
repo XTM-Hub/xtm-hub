@@ -1,6 +1,5 @@
 import config from 'config';
 import { toGlobalId } from 'graphql-relay/node/node.js';
-import { FileUpload } from 'graphql-upload/processRequest.mjs';
 import { v4 as uuidv4 } from 'uuid';
 import {
   afterAll,
@@ -12,7 +11,6 @@ import {
   vi,
 } from 'vitest';
 import { TestHelper } from '../../../tests/helper/test.helper';
-import { TEST_ORGANIZATIONS } from '../../../tests/tests.const';
 import {
   DocumentMetadataKeyCode,
   DocumentStatus,
@@ -30,13 +28,9 @@ import { MinioFile } from '../../thirdparty/minio/types';
 import { ErrorCode, UnknownErrorCode } from '../../utils/error/error.code';
 import { OPENAEV_SCENARIO_DOCUMENT_TYPE } from '../shareable-resource/openaev/scenario/scenario.model';
 import { OPENCTI_CUSTOM_DASHBOARD_DOCUMENT_TYPE } from '../shareable-resource/opencti/custom-dashboard/custom-dashboard.model';
-import {
-  INTEGRATION_SERVICE_INSTANCE_ID,
-  OPENCTI_INTEGRATION_DOCUMENT_TYPE,
-} from '../shareable-resource/opencti/integration/integration.model';
+import { OPENCTI_INTEGRATION_DOCUMENT_TYPE } from '../shareable-resource/opencti/integration/integration.model';
 import { TelemetryApp } from '../telemetry/telemetry.app';
 import { TelemetryEventType } from '../telemetry/telemetry.types';
-import { DocumentApp } from './document.app';
 import {
   type Document,
   DocumentHelper,
@@ -51,18 +45,6 @@ describe('documentHelper', () => {
     mimeType: 'mimeType',
     fileName: 'csvfilename',
   };
-  const mockFileUpload: FileUpload = {
-    filename: 'test-image.png',
-    mimetype: 'image/png',
-    encoding: '7bit',
-    createReadStream: vi.fn(),
-  };
-
-  const mockUpload = {
-    file: mockFileUpload,
-    promise: Promise.resolve(mockFileUpload),
-  };
-
   beforeEach(() => {
     vi.spyOn(DocumentUploadsHelper, 'processUploads').mockResolvedValue([
       minioFileMock,
@@ -79,31 +61,9 @@ describe('documentHelper', () => {
     });
 
     it('should return the document with elastic search counters', async () => {
-      const document = await DocumentApp.createDocument({
-        input: {
-          uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
-          name: 'myCsvFeed',
-          description: 'description',
-          short_description: 'short_description',
-          slug: 'slug',
-          status: DocumentStatus.Published,
-        },
-        metadata: [
-          {
-            key: DocumentMetadataKeyCode.IntegrationType,
-            value: IntegrationType.CsvFeed,
-          },
-          {
-            key: DocumentMetadataKeyCode.FeedUrl,
-            value: 'https://example.com',
-          },
-        ],
-        serviceInstanceId: INTEGRATION_SERVICE_INSTANCE_ID,
-        sourceDocument: mockUpload,
-      });
-      expect(document).toBeDefined();
+      const document = await TestHelper.document.createWholeDocument({});
 
-      const documentId = document!.id;
+      const documentId = document.id;
 
       vi.spyOn(TelemetryApp, 'countEventsByDocumentId').mockImplementation(
         async (eventType: TelemetryEventType, eventDocumentId: string) => {
@@ -276,9 +236,7 @@ describe('documentHelper', () => {
     it.each`
       from                           | to
       ${DocumentStatus.Draft}        | ${DocumentStatus.InValidation}
-      ${DocumentStatus.Draft}        | ${DocumentStatus.Published}
       ${DocumentStatus.InValidation} | ${DocumentStatus.Published}
-      ${DocumentStatus.Published}    | ${DocumentStatus.Draft}
       ${DocumentStatus.Draft}        | ${DocumentStatus.Draft}
       ${DocumentStatus.InValidation} | ${DocumentStatus.InValidation}
       ${DocumentStatus.Published}    | ${DocumentStatus.Published}
@@ -298,7 +256,9 @@ describe('documentHelper', () => {
 
     it.each`
       from                           | to
+      ${DocumentStatus.Draft}        | ${DocumentStatus.Published}
       ${DocumentStatus.InValidation} | ${DocumentStatus.Draft}
+      ${DocumentStatus.Published}    | ${DocumentStatus.Draft}
       ${DocumentStatus.Published}    | ${DocumentStatus.InValidation}
     `(
       'should reject the transition when the status goes from $from to $to',
@@ -313,6 +273,28 @@ describe('documentHelper', () => {
         expect(transition).toThrow(ErrorCode.InvalidDocumentStatusTransition);
       }
     );
+  });
+
+  describe('assertCreationStatus', () => {
+    it.each([[DocumentStatus.Draft], [DocumentStatus.InValidation]])(
+      'should accept a document created as %s',
+      (status) => {
+        // When
+        const creation = () => DocumentHelper.assertCreationStatus(status);
+
+        // Then
+        expect(creation).not.toThrow();
+      }
+    );
+
+    it('should reject a document created as published', () => {
+      // When
+      const creation = () =>
+        DocumentHelper.assertCreationStatus(DocumentStatus.Published);
+
+      // Then
+      expect(creation).toThrow(ErrorCode.InvalidDocumentCreationStatus);
+    });
   });
 
   describe('buildInValidationPayload', () => {

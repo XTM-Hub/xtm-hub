@@ -337,24 +337,24 @@ describe('facet.domain', () => {
             .selected_organization_id as OrganizationId,
         });
 
-        // 2 active + 1 inactive documents. Every document carries exactly ONE
+        // 2 published + 1 draft documents. Every document carries exactly ONE
         // Verified metadata value: this is the invariant that makes
         // sum(verified buckets) === list totalCount a valid parity check.
-        const activeVerified = await TestHelper.document.create({
+        const publishedVerified = await TestHelper.document.create({
           name: `facet-parity-a-${uuidv4()}`,
           slug: `facet-parity-a-${uuidv4()}`,
           type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
           status: DocumentStatus.Published,
           service_instance_id: privateServiceInstance.id,
         });
-        const activeUnverified = await TestHelper.document.create({
+        const publishedUnverified = await TestHelper.document.create({
           name: `facet-parity-b-${uuidv4()}`,
           slug: `facet-parity-b-${uuidv4()}`,
           type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
           status: DocumentStatus.Published,
           service_instance_id: privateServiceInstance.id,
         });
-        const inactiveVerified = await TestHelper.document.create({
+        const draftVerified = await TestHelper.document.create({
           name: `facet-parity-c-${uuidv4()}`,
           slug: `facet-parity-c-${uuidv4()}`,
           type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
@@ -362,24 +362,24 @@ describe('facet.domain', () => {
           service_instance_id: privateServiceInstance.id,
         });
         createdDocumentIds.push(
-          activeVerified.id,
-          activeUnverified.id,
-          inactiveVerified.id
+          publishedVerified.id,
+          publishedUnverified.id,
+          draftVerified.id
         );
 
         await Promise.all([
           TestHelper.documentMetadata.create({
-            document_id: activeVerified.id,
+            document_id: publishedVerified.id,
             key: DocumentMetadataKeyCode.Verified,
             value: VERIFIED_TRUE_VALUE,
           }),
           TestHelper.documentMetadata.create({
-            document_id: activeUnverified.id,
+            document_id: publishedUnverified.id,
             key: DocumentMetadataKeyCode.Verified,
             value: VERIFIED_FALSE_VALUE,
           }),
           TestHelper.documentMetadata.create({
-            document_id: inactiveVerified.id,
+            document_id: draftVerified.id,
             key: DocumentMetadataKeyCode.Verified,
             value: VERIFIED_TRUE_VALUE,
           }),
@@ -416,97 +416,91 @@ describe('facet.domain', () => {
       }
     );
 
-    it.each([
-      'restrictToActiveDocuments',
-      'restrictToPublishedDocuments',
-    ] as const)(
-      'should exclude inactive documents from every facet bucket for a user with upload capability when %s is true',
-      async (field) => {
-        // Given — a user who sees inactive documents by default, but the caller
-        // explicitly opts into the public, active-only scope.
-        vi.spyOn(
-          UserServiceCapabilityHelper,
-          'loadCapabilities'
-        ).mockResolvedValue([ServiceRestriction.Upload]);
-        const privateServiceInstance = await TestHelper.serviceInstance.create({
-          service_definition_id: SERVICES.DEFINITIONS.OPENCTI_INTEGRATIONS.ID,
-          name: `facet-parity-restrict-${uuidv4()}`,
-          slug: `facet-parity-restrict-${uuidv4()}`,
-          public: false,
-        });
-        createdServiceInstanceIds.push(privateServiceInstance.id);
+    it('should exclude unpublished documents from every facet bucket for a user with upload capability when restrictToPublishedDocuments is true', async () => {
+      // Given — a user who sees unpublished documents by default, but the caller
+      // explicitly opts into the public, published-only scope.
+      vi.spyOn(
+        UserServiceCapabilityHelper,
+        'loadCapabilities'
+      ).mockResolvedValue([ServiceRestriction.Upload]);
+      const privateServiceInstance = await TestHelper.serviceInstance.create({
+        service_definition_id: SERVICES.DEFINITIONS.OPENCTI_INTEGRATIONS.ID,
+        name: `facet-parity-restrict-${uuidv4()}`,
+        slug: `facet-parity-restrict-${uuidv4()}`,
+        public: false,
+      });
+      createdServiceInstanceIds.push(privateServiceInstance.id);
 
-        await TestHelper.subscription.create({
-          service_instance_id: privateServiceInstance.id,
-          organization_id: requestContextSimpleUserFiligran2.user
-            .selected_organization_id as OrganizationId,
-        });
+      await TestHelper.subscription.create({
+        service_instance_id: privateServiceInstance.id,
+        organization_id: requestContextSimpleUserFiligran2.user
+          .selected_organization_id as OrganizationId,
+      });
 
-        const activeVerified = await TestHelper.document.create({
-          name: `facet-parity-restrict-a-${uuidv4()}`,
-          slug: `facet-parity-restrict-a-${uuidv4()}`,
-          type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
-          status: DocumentStatus.Published,
-          service_instance_id: privateServiceInstance.id,
-        });
-        const inactiveVerified = await TestHelper.document.create({
-          name: `facet-parity-restrict-b-${uuidv4()}`,
-          slug: `facet-parity-restrict-b-${uuidv4()}`,
-          type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
-          status: DocumentStatus.Draft,
-          service_instance_id: privateServiceInstance.id,
-        });
-        const inValidationVerified = await TestHelper.document.create({
-          name: `facet-parity-restrict-c-${uuidv4()}`,
-          slug: `facet-parity-restrict-c-${uuidv4()}`,
-          type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
-          status: DocumentStatus.InValidation,
-          service_instance_id: privateServiceInstance.id,
-        });
-        createdDocumentIds.push(
-          activeVerified.id,
-          inactiveVerified.id,
-          inValidationVerified.id
-        );
+      const publishedVerified = await TestHelper.document.create({
+        name: `facet-parity-restrict-a-${uuidv4()}`,
+        slug: `facet-parity-restrict-a-${uuidv4()}`,
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        status: DocumentStatus.Published,
+        service_instance_id: privateServiceInstance.id,
+      });
+      const draftVerified = await TestHelper.document.create({
+        name: `facet-parity-restrict-b-${uuidv4()}`,
+        slug: `facet-parity-restrict-b-${uuidv4()}`,
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        status: DocumentStatus.Draft,
+        service_instance_id: privateServiceInstance.id,
+      });
+      const inValidationVerified = await TestHelper.document.create({
+        name: `facet-parity-restrict-c-${uuidv4()}`,
+        slug: `facet-parity-restrict-c-${uuidv4()}`,
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        status: DocumentStatus.InValidation,
+        service_instance_id: privateServiceInstance.id,
+      });
+      createdDocumentIds.push(
+        publishedVerified.id,
+        draftVerified.id,
+        inValidationVerified.id
+      );
 
-        await Promise.all([
-          TestHelper.documentMetadata.create({
-            document_id: activeVerified.id,
-            key: DocumentMetadataKeyCode.Verified,
-            value: VERIFIED_TRUE_VALUE,
-          }),
-          TestHelper.documentMetadata.create({
-            document_id: inactiveVerified.id,
-            key: DocumentMetadataKeyCode.Verified,
-            value: VERIFIED_TRUE_VALUE,
-          }),
-          TestHelper.documentMetadata.create({
-            document_id: inValidationVerified.id,
-            key: DocumentMetadataKeyCode.Verified,
-            value: VERIFIED_TRUE_VALUE,
-          }),
-        ]);
+      await Promise.all([
+        TestHelper.documentMetadata.create({
+          document_id: publishedVerified.id,
+          key: DocumentMetadataKeyCode.Verified,
+          value: VERIFIED_TRUE_VALUE,
+        }),
+        TestHelper.documentMetadata.create({
+          document_id: draftVerified.id,
+          key: DocumentMetadataKeyCode.Verified,
+          value: VERIFIED_TRUE_VALUE,
+        }),
+        TestHelper.documentMetadata.create({
+          document_id: inValidationVerified.id,
+          key: DocumentMetadataKeyCode.Verified,
+          value: VERIFIED_TRUE_VALUE,
+        }),
+      ]);
 
-        // When — same authenticated user, but the flag forces active-only scope
-        const facets = await requestContext.run(
-          requestContextSimpleUserFiligran2,
-          async () =>
-            FacetDomain.loadDocumentFacets({
-              serviceInstanceId: privateServiceInstance.id,
-              documentType: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
-              logicalFilters: null,
-              [field]: true,
-            })
-        );
+      // When — same authenticated user, but the flag forces published-only scope
+      const facets = await requestContext.run(
+        requestContextSimpleUserFiligran2,
+        async () =>
+          FacetDomain.loadDocumentFacets({
+            serviceInstanceId: privateServiceInstance.id,
+            documentType: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+            logicalFilters: null,
+            restrictToPublishedDocuments: true,
+          })
+      );
 
-        // Then — only the active document is counted, never the draft/inactive one
-        const verifiedSum = facets.verified.reduce(
-          (sum, bucket) => sum + bucket.count,
-          0
-        );
-        expect(verifiedSum).toBe(1);
-      }
-    );
+      // Then — only the published document is counted, never the draft or in-validation one
+      const verifiedSum = facets.verified.reduce(
+        (sum, bucket) => sum + bucket.count,
+        0
+      );
+      expect(verifiedSum).toBe(1);
+    });
   });
 
   describe('single-query batching parity', () => {
@@ -636,7 +630,6 @@ describe('facet.domain', () => {
       const user = requestContext.get()?.user;
       const restrictToPublished =
         input.restrictToPublishedDocuments === true ||
-        input.restrictToActiveDocuments === true ||
         !user ||
         (await isUserRestrictedToPublishedDocument(
           user,

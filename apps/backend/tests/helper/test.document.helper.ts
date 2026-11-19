@@ -94,7 +94,7 @@ export const TestDocumentHelper = {
       serviceInstanceId?: ServiceInstanceId;
       sourceDocument?: Upload;
     }): Promise<Document> => {
-      const document = await DocumentApp.createDocument({
+      return TestDocumentHelper.document.createInStatus({
         input: {
           name,
           description,
@@ -109,10 +109,25 @@ export const TestDocumentHelper = {
         serviceInstanceId,
         sourceDocument,
       });
+    },
+    // DocumentApp.createDocument refuses Published: such a document is created
+    // as a draft, then published directly in the database.
+    createInStatus: async (
+      args: Parameters<typeof DocumentApp.createDocument>[0]
+    ): Promise<Document> => {
+      if (args.input.status !== DocumentStatus.Published) {
+        return DocumentApp.createDocument(args);
+      }
 
-      expect(document).toBeDefined();
-
-      return document!;
+      const document = await DocumentApp.createDocument({
+        ...args,
+        input: { ...args.input, status: DocumentStatus.Draft },
+      });
+      await TestDocumentHelper.document.update(
+        { id: document.id },
+        { status: DocumentStatus.Published }
+      );
+      return { ...document, status: DocumentStatus.Published };
     },
     create: async (data?: DocumentMutator): Promise<Document> => {
       const [document] = await db<Document>('Document')

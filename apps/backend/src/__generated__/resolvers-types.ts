@@ -231,8 +231,6 @@ export enum CompetitorTier {
 
 export type Connector = Document & Integration & Node & {
   __typename?: 'Connector';
-  /** @deprecated Use status */
-  active?: Maybe<Scalars['Boolean']['output']>;
   blogpost_url?: Maybe<Scalars['String']['output']>;
   children_documents?: Maybe<Array<ShareableResource>>;
   contact?: Maybe<Scalars['String']['output']>;
@@ -376,8 +374,6 @@ export type CreatedApiToken = {
 
 export type CsvFeed = Document & Integration & Node & {
   __typename?: 'CsvFeed';
-  /** @deprecated Use status */
-  active?: Maybe<Scalars['Boolean']['output']>;
   blogpost_url?: Maybe<Scalars['String']['output']>;
   children_documents?: Maybe<Array<ShareableResource>>;
   created_at: Scalars['Date']['output'];
@@ -422,8 +418,6 @@ export type CurrentApiToken = {
 
 export type CustomDashboard = Document & Node & {
   __typename?: 'CustomDashboard';
-  /** @deprecated Use status */
-  active?: Maybe<Scalars['Boolean']['output']>;
   children_documents?: Maybe<Array<ShareableResource>>;
   created_at: Scalars['Date']['output'];
   description?: Maybe<Scalars['String']['output']>;
@@ -449,8 +443,6 @@ export type CustomDashboard = Document & Node & {
 
 export type CustomView = Document & Node & {
   __typename?: 'CustomView';
-  /** @deprecated Use status */
-  active?: Maybe<Scalars['Boolean']['output']>;
   children_documents?: Maybe<Array<ShareableResource>>;
   created_at: Scalars['Date']['output'];
   description?: Maybe<Scalars['String']['output']>;
@@ -481,8 +473,6 @@ export type CustomView = Document & Node & {
  */
 export type DefaultDocument = Document & Node & {
   __typename?: 'DefaultDocument';
-  /** @deprecated Use status */
-  active?: Maybe<Scalars['Boolean']['output']>;
   children_documents?: Maybe<Array<ShareableResource>>;
   created_at: Scalars['Date']['output'];
   description?: Maybe<Scalars['String']['output']>;
@@ -716,8 +706,6 @@ export enum DeploymentRequestUseCase {
 }
 
 export type Document = {
-  /** @deprecated Use status */
-  active?: Maybe<Scalars['Boolean']['output']>;
   children_documents?: Maybe<Array<ShareableResource>>;
   created_at: Scalars['Date']['output'];
   description?: Maybe<Scalars['String']['output']>;
@@ -963,8 +951,6 @@ export enum HasRepliedSatisfaction {
 }
 
 export type Integration = {
-  /** @deprecated Use status */
-  active?: Maybe<Scalars['Boolean']['output']>;
   blogpost_url?: Maybe<Scalars['String']['output']>;
   children_documents?: Maybe<Array<ShareableResource>>;
   created_at: Scalars['Date']['output'];
@@ -996,8 +982,6 @@ export type Integration = {
 
 export type IntegrationHack = Document & Integration & Node & {
   __typename?: 'IntegrationHack';
-  /** @deprecated Use status */
-  active?: Maybe<Scalars['Boolean']['output']>;
   blogpost_url?: Maybe<Scalars['String']['output']>;
   children_documents?: Maybe<Array<ShareableResource>>;
   created_at: Scalars['Date']['output'];
@@ -1066,8 +1050,6 @@ export enum LicenseType {
 export type LoadDocumentFacetInput = {
   documentType?: InputMaybe<Scalars['String']['input']>;
   logicalFilters?: InputMaybe<LogicalFilterInput>;
-  /** @deprecated Use restrictToPublishedDocuments */
-  restrictToActiveDocuments?: InputMaybe<Scalars['Boolean']['input']>;
   restrictToPublishedDocuments?: InputMaybe<Scalars['Boolean']['input']>;
   searchTerm?: InputMaybe<Scalars['String']['input']>;
   serviceInstanceId: Scalars['ServiceInstanceId']['input'];
@@ -1410,7 +1392,6 @@ export type MutationDeleteCompetitorArgs = {
 
 export type MutationDeleteDocumentArgs = {
   documentId: Scalars['DocumentId']['input'];
-  forceDelete?: InputMaybe<Scalars['Boolean']['input']>;
   service_instance_id: Scalars['ServiceInstanceId']['input'];
 };
 
@@ -1809,8 +1790,6 @@ export type OneClickDeployInput = {
 
 export type OpenAevScenario = Document & Node & {
   __typename?: 'OpenAEVScenario';
-  /** @deprecated Use status */
-  active?: Maybe<Scalars['Boolean']['output']>;
   children_documents?: Maybe<Array<ShareableResource>>;
   created_at: Scalars['Date']['output'];
   description?: Maybe<Scalars['String']['output']>;
@@ -1846,8 +1825,6 @@ export type OpenCtiPlatformRegistrationStatusResponse = {
 
 export type OpenCtiPlaybook = Document & Node & {
   __typename?: 'OpenCTIPlaybook';
-  /** @deprecated Use status */
-  active?: Maybe<Scalars['Boolean']['output']>;
   children_documents?: Maybe<Array<ShareableResource>>;
   created_at: Scalars['Date']['output'];
   description?: Maybe<Scalars['String']['output']>;
@@ -2635,8 +2612,6 @@ export type RolePortal = Node & {
 
 export type RssFeed = Document & Integration & Node & {
   __typename?: 'RssFeed';
-  /** @deprecated Use status */
-  active?: Maybe<Scalars['Boolean']['output']>;
   blogpost_url?: Maybe<Scalars['String']['output']>;
   children_documents?: Maybe<Array<ShareableResource>>;
   created_at: Scalars['Date']['output'];
@@ -2992,8 +2967,6 @@ export enum SettingsCapability {
 
 export type ShareableResource = {
   __typename?: 'ShareableResource';
-  /** @deprecated Use status */
-  active?: Maybe<Scalars['Boolean']['output']>;
   created_at: Scalars['Date']['output'];
   description?: Maybe<Scalars['String']['output']>;
   download_number?: Maybe<Scalars['Int']['output']>;
@@ -3031,8 +3004,6 @@ export enum SolutionCategoryOrdering {
 
 export type Stream = Document & Integration & Node & {
   __typename?: 'Stream';
-  /** @deprecated Use status */
-  active?: Maybe<Scalars['Boolean']['output']>;
   blogpost_url?: Maybe<Scalars['String']['output']>;
   children_documents?: Maybe<Array<ShareableResource>>;
   created_at: Scalars['Date']['output'];
@@ -3152,8 +3123,6 @@ export type Success = {
 
 export type TaxiiFeed = Document & Integration & Node & {
   __typename?: 'TaxiiFeed';
-  /** @deprecated Use status */
-  active?: Maybe<Scalars['Boolean']['output']>;
   blogpost_url?: Maybe<Scalars['String']['output']>;
   children_documents?: Maybe<Array<ShareableResource>>;
   created_at: Scalars['Date']['output'];
@@ -3206,8 +3175,6 @@ export type TenantStatus = {
 
 export type ThirdPartyIntegration = Document & Integration & Node & {
   __typename?: 'ThirdPartyIntegration';
-  /** @deprecated Use status */
-  active?: Maybe<Scalars['Boolean']['output']>;
   blogpost_url?: Maybe<Scalars['String']['output']>;
   children_documents?: Maybe<Array<ShareableResource>>;
   created_at: Scalars['Date']['output'];
@@ -4335,7 +4302,6 @@ export interface CompetitorIdScalarConfig extends GraphQLScalarTypeConfig<Resolv
 }
 
 export type ConnectorResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['Connector'] = ResolversParentTypes['Connector']> = ResolversObject<{
-  active?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   blogpost_url?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   children_documents?: Resolver<Maybe<Array<ResolversTypes['ShareableResource']>>, ParentType, ContextType>;
   contact?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
@@ -4397,7 +4363,6 @@ export type CreatedApiTokenResolvers<ContextType = PortalContext, ParentType ext
 }>;
 
 export type CsvFeedResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['CsvFeed'] = ResolversParentTypes['CsvFeed']> = ResolversObject<{
-  active?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   blogpost_url?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   children_documents?: Resolver<Maybe<Array<ResolversTypes['ShareableResource']>>, ParentType, ContextType>;
   created_at?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
@@ -4441,7 +4406,6 @@ export type CurrentApiTokenResolvers<ContextType = PortalContext, ParentType ext
 }>;
 
 export type CustomDashboardResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['CustomDashboard'] = ResolversParentTypes['CustomDashboard']> = ResolversObject<{
-  active?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   children_documents?: Resolver<Maybe<Array<ResolversTypes['ShareableResource']>>, ParentType, ContextType>;
   created_at?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
   description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
@@ -4467,7 +4431,6 @@ export type CustomDashboardResolvers<ContextType = PortalContext, ParentType ext
 }>;
 
 export type CustomViewResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['CustomView'] = ResolversParentTypes['CustomView']> = ResolversObject<{
-  active?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   children_documents?: Resolver<Maybe<Array<ResolversTypes['ShareableResource']>>, ParentType, ContextType>;
   created_at?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
   description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
@@ -4498,7 +4461,6 @@ export interface DateScalarConfig extends GraphQLScalarTypeConfig<ResolversTypes
 }
 
 export type DefaultDocumentResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['DefaultDocument'] = ResolversParentTypes['DefaultDocument']> = ResolversObject<{
-  active?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   children_documents?: Resolver<Maybe<Array<ResolversTypes['ShareableResource']>>, ParentType, ContextType>;
   created_at?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
   description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
@@ -4587,7 +4549,6 @@ export interface DeploymentRequestIdScalarConfig extends GraphQLScalarTypeConfig
 
 export type DocumentResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['Document'] = ResolversParentTypes['Document']> = ResolversObject<{
   __resolveType: TypeResolveFn<'Connector' | 'CsvFeed' | 'CustomDashboard' | 'CustomView' | 'DefaultDocument' | 'IntegrationHack' | 'OpenAEVScenario' | 'OpenCTIPlaybook' | 'RssFeed' | 'Stream' | 'TaxiiFeed' | 'ThirdPartyIntegration', ParentType, ContextType>;
-  active?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   children_documents?: Resolver<Maybe<Array<ResolversTypes['ShareableResource']>>, ParentType, ContextType>;
   created_at?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
   description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
@@ -4691,7 +4652,6 @@ export type GenericServiceCapabilityResolvers<ContextType = PortalContext, Paren
 
 export type IntegrationResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['Integration'] = ResolversParentTypes['Integration']> = ResolversObject<{
   __resolveType: TypeResolveFn<'Connector' | 'CsvFeed' | 'IntegrationHack' | 'RssFeed' | 'Stream' | 'TaxiiFeed' | 'ThirdPartyIntegration', ParentType, ContextType>;
-  active?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   blogpost_url?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   children_documents?: Resolver<Maybe<Array<ResolversTypes['ShareableResource']>>, ParentType, ContextType>;
   created_at?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
@@ -4722,7 +4682,6 @@ export type IntegrationResolvers<ContextType = PortalContext, ParentType extends
 }>;
 
 export type IntegrationHackResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['IntegrationHack'] = ResolversParentTypes['IntegrationHack']> = ResolversObject<{
-  active?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   blogpost_url?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   children_documents?: Resolver<Maybe<Array<ResolversTypes['ShareableResource']>>, ParentType, ContextType>;
   created_at?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
@@ -4923,7 +4882,6 @@ export type NodeResolvers<ContextType = PortalContext, ParentType extends Resolv
 }>;
 
 export type OpenAevScenarioResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['OpenAEVScenario'] = ResolversParentTypes['OpenAEVScenario']> = ResolversObject<{
-  active?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   children_documents?: Resolver<Maybe<Array<ResolversTypes['ShareableResource']>>, ParentType, ContextType>;
   created_at?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
   description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
@@ -4954,7 +4912,6 @@ export type OpenCtiPlatformRegistrationStatusResponseResolvers<ContextType = Por
 }>;
 
 export type OpenCtiPlaybookResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['OpenCTIPlaybook'] = ResolversParentTypes['OpenCTIPlaybook']> = ResolversObject<{
-  active?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   children_documents?: Resolver<Maybe<Array<ResolversTypes['ShareableResource']>>, ParentType, ContextType>;
   created_at?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
   description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
@@ -5234,7 +5191,6 @@ export type RolePortalResolvers<ContextType = PortalContext, ParentType extends 
 }>;
 
 export type RssFeedResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['RssFeed'] = ResolversParentTypes['RssFeed']> = ResolversObject<{
-  active?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   blogpost_url?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   children_documents?: Resolver<Maybe<Array<ResolversTypes['ShareableResource']>>, ParentType, ContextType>;
   created_at?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
@@ -5486,7 +5442,6 @@ export type SettingsResolvers<ContextType = PortalContext, ParentType extends Re
 }>;
 
 export type ShareableResourceResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['ShareableResource'] = ResolversParentTypes['ShareableResource']> = ResolversObject<{
-  active?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   created_at?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
   description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   download_number?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
@@ -5524,7 +5479,6 @@ export interface SolutionCategoryIdScalarConfig extends GraphQLScalarTypeConfig<
 }
 
 export type StreamResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['Stream'] = ResolversParentTypes['Stream']> = ResolversObject<{
-  active?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   blogpost_url?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   children_documents?: Resolver<Maybe<Array<ResolversTypes['ShareableResource']>>, ParentType, ContextType>;
   created_at?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
@@ -5616,7 +5570,6 @@ export type SuccessResolvers<ContextType = PortalContext, ParentType extends Res
 }>;
 
 export type TaxiiFeedResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['TaxiiFeed'] = ResolversParentTypes['TaxiiFeed']> = ResolversObject<{
-  active?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   blogpost_url?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   children_documents?: Resolver<Maybe<Array<ResolversTypes['ShareableResource']>>, ParentType, ContextType>;
   created_at?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
@@ -5662,7 +5615,6 @@ export type TenantStatusResolvers<ContextType = PortalContext, ParentType extend
 }>;
 
 export type ThirdPartyIntegrationResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['ThirdPartyIntegration'] = ResolversParentTypes['ThirdPartyIntegration']> = ResolversObject<{
-  active?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   blogpost_url?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   children_documents?: Resolver<Maybe<Array<ResolversTypes['ShareableResource']>>, ParentType, ContextType>;
   created_at?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
