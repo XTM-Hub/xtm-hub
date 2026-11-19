@@ -1026,7 +1026,7 @@
     },
     "ScopeHelp": {
       "admin": "Administration : vos droits d’administration de l’organisation et de la plateforme, tels que vous les avez aujourd’hui. À réserver à un outil de confiance.",
-      "read": "Lecture : requêtes uniquement, rien ne peut être modifié.",
+      "read": "Lecture : requêtes uniquement, sans l’administration de l’organisation. Rien ne peut être modifié.",
       "read_write": "Lecture et écriture : requêtes et modifications, sans l’administration de l’organisation ni de la plateforme."
     },
     "Status": {
@@ -1037,7 +1037,7 @@
     "Title": "Jetons d’API",
     "ScopeOption": {
       "admin": "Vos droits d’administration aussi, tels que vous les avez.",
-      "read": "Requêtes uniquement, rien ne peut être modifié.",
+      "read": "Requêtes uniquement, sans administration. Rien ne peut être modifié.",
       "read_write": "Requêtes et modifications, sans administration."
     },
     "Toolbar": {
