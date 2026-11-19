@@ -5,17 +5,21 @@ import {
   buildAdminRegisteredPlatformsVariables,
   canUnregisterPlatform,
   EMPTY_ADMIN_REGISTERED_PLATFORMS_FILTERS,
+  getCommercialModelLabelKey,
   getCredentialKindLabelKey,
   getPlatformProductName,
   getRegistererName,
+  getStatusLabelKey,
   isHttpUrl,
   normalizeAdminRegisteredPlatformsPageSize,
   parseIdentifierFilterValue,
   parseStatusFilterValue,
   toAdminRegisteredPlatformRows,
+  translateOrRaw,
 } from '@/components/admin/registered-platform/admin-registered-platforms.utils';
 import {
   AdminRegisteredPlatformOrdering,
+  CommercialModel,
   OrderingMode,
   PlatformConfigurationStatus,
   PlatformIdentifier,
@@ -169,6 +173,50 @@ describe('getCredentialKindLabelKey', () => {
   ])('should label the credential kind %s with %s', (kind, expected) => {
     // Given / When / Then
     expect(getCredentialKindLabelKey(kind)).toBe(expected);
+  });
+});
+
+describe('getCommercialModelLabelKey', () => {
+  it.each([
+    [CommercialModel.Saas, 'AdminRegisteredPlatforms.CommercialModel.SAAS'],
+    [CommercialModel.Other, 'AdminRegisteredPlatforms.CommercialModel.OTHER'],
+    ['on_premise', undefined],
+  ])('should label the commercial model %s with %s', (model, expected) => {
+    // Given / When / Then
+    expect(getCommercialModelLabelKey(model)).toBe(expected);
+  });
+});
+
+describe('getStatusLabelKey', () => {
+  it.each([
+    [
+      PlatformConfigurationStatus.Active,
+      'AdminRegisteredPlatforms.Status.active',
+    ],
+    [
+      PlatformConfigurationStatus.Inactive,
+      'AdminRegisteredPlatforms.Status.inactive',
+    ],
+    ['archived', undefined],
+  ])('should label the status %s with %s', (status, expected) => {
+    // Given / When / Then
+    expect(getStatusLabelKey(status)).toBe(expected);
+  });
+});
+
+describe('translateOrRaw', () => {
+  const translate = (labelKey: string) => `translated ${labelKey}`;
+
+  it('should translate a value that has a label key', () => {
+    // Given / When / Then
+    expect(translateOrRaw(translate, 'Some.key', 'raw')).toBe(
+      'translated Some.key'
+    );
+  });
+
+  it('should show as is a value that has no label key', () => {
+    // Given / When / Then
+    expect(translateOrRaw(translate, undefined, 'raw')).toBe('raw');
   });
 });
 

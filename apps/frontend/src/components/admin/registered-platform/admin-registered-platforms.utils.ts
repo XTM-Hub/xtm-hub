@@ -17,7 +17,8 @@ import {
   RegisteredPlatformCredentialKind,
 } from '@graphql/generated';
 
-// The API serves at most this many platforms a page: a larger page size would skip rows between two pages.
+// The API clamps `first` to this same value (the backend holds its own copy): the description of `first` in the
+// GraphQL schema is the contract. A larger page size would skip rows between two pages.
 export const ADMIN_REGISTERED_PLATFORMS_MAX_PAGE_SIZE = 100;
 
 export const ADMIN_REGISTERED_PLATFORMS_DEFAULT_ORDER_BY =
@@ -122,24 +123,40 @@ export const getContractLabelKey = (contract: string): string | undefined =>
     ? CONTRACT_LABEL_BY_CONTRACT[contract]
     : undefined;
 
-const COMMERCIAL_MODEL_LABEL_KEYS: Partial<Record<string, string>> = {
+const COMMERCIAL_MODEL_LABEL_KEY_BY_COMMERCIAL_MODEL: Record<
+  CommercialModel,
+  string
+> = {
   [CommercialModel.Saas]: 'AdminRegisteredPlatforms.CommercialModel.SAAS',
   [CommercialModel.Other]: 'AdminRegisteredPlatforms.CommercialModel.OTHER',
 };
 
 export const getCommercialModelLabelKey = (
   commercialModel: string
-): string | undefined => COMMERCIAL_MODEL_LABEL_KEYS[commercialModel];
+): string | undefined =>
+  isValueInEnum(commercialModel, CommercialModel)
+    ? COMMERCIAL_MODEL_LABEL_KEY_BY_COMMERCIAL_MODEL[commercialModel]
+    : undefined;
 
-const STATUS_LABEL_KEYS: Partial<Record<string, string>> = {
-  [PlatformConfigurationStatus.Active]:
-    'AdminRegisteredPlatforms.Status.active',
-  [PlatformConfigurationStatus.Inactive]:
-    'AdminRegisteredPlatforms.Status.inactive',
-};
+const STATUS_LABEL_KEY_BY_STATUS: Record<PlatformConfigurationStatus, string> =
+  {
+    [PlatformConfigurationStatus.Active]:
+      'AdminRegisteredPlatforms.Status.active',
+    [PlatformConfigurationStatus.Inactive]:
+      'AdminRegisteredPlatforms.Status.inactive',
+  };
 
 export const getStatusLabelKey = (status: string): string | undefined =>
-  STATUS_LABEL_KEYS[status];
+  isValueInEnum(status, PlatformConfigurationStatus)
+    ? STATUS_LABEL_KEY_BY_STATUS[status]
+    : undefined;
+
+// A value the API sends that this client does not know yet is shown as is.
+export const translateOrRaw = (
+  translate: (labelKey: string) => string,
+  labelKey: string | undefined,
+  value: string
+): string => (labelKey ? translate(labelKey) : value);
 
 export const getRegistererName = (
   registerer: AdminRegisteredPlatformRowFragment['registerer']
@@ -151,25 +168,21 @@ export const getRegistererName = (
   return name || null;
 };
 
-type UnregistrablePlatform<
-  T extends Pick<AdminRegisteredPlatformRowFragment, 'status' | 'organization'>,
-> = T & {
-  organization: NonNullable<AdminRegisteredPlatformRowFragment['organization']>;
-};
-
-// Only an active registration can be unregistered, and the API needs its organization to email the administrators.
-export const canUnregisterPlatform = <
-  T extends Pick<AdminRegisteredPlatformRowFragment, 'status' | 'organization'>,
->(
-  platform: T
-): platform is UnregistrablePlatform<T> =>
-  platform.status === PlatformConfigurationStatus.Active &&
-  platform.organization !== null;
-
 // The table identifies its rows by an id: a registration is identified by its service instance.
 export type AdminRegisteredPlatformRow = AdminRegisteredPlatformRowFragment & {
   id: string;
 };
+
+export type UnregistrablePlatformRow = AdminRegisteredPlatformRow & {
+  organization: NonNullable<AdminRegisteredPlatformRow['organization']>;
+};
+
+// Only an active registration can be unregistered, and the API needs its organization to email the administrators.
+export const canUnregisterPlatform = (
+  platform: AdminRegisteredPlatformRow
+): platform is UnregistrablePlatformRow =>
+  platform.status === PlatformConfigurationStatus.Active &&
+  platform.organization !== null;
 
 export const toAdminRegisteredPlatformRows = (
   data: AdminRegisteredPlatformsQuery | undefined

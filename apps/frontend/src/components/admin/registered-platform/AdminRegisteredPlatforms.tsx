@@ -19,6 +19,7 @@ import {
   parseIdentifierFilterValue,
   parseStatusFilterValue,
   toAdminRegisteredPlatformRows,
+  translateOrRaw,
 } from '@/components/admin/registered-platform/admin-registered-platforms.utils';
 import { AdminRegisteredPlatformsSelectFilter } from '@/components/admin/registered-platform/AdminRegisteredPlatformsSelectFilter';
 import { AdminUnregisterPlatform } from '@/components/admin/registered-platform/AdminUnregisterPlatform';
@@ -146,10 +147,6 @@ export const AdminRegisteredPlatforms = () => {
     });
   };
 
-  // A value the API sends that this client does not know yet is shown as is.
-  const translateOrRaw = (labelKey: string | undefined, value: string) =>
-    labelKey ? t(labelKey) : value;
-
   const columns: ColumnDef<AdminRegisteredPlatformRow>[] = [
     {
       id: AdminRegisteredPlatformOrdering.Title,
@@ -221,12 +218,14 @@ export const AdminRegisteredPlatforms = () => {
         <div className="flex min-w-0 flex-col">
           <span className="truncate">
             {translateOrRaw(
+              t,
               getContractLabelKey(row.original.contract),
               row.original.contract
             )}
           </span>
           <SecondaryText>
             {translateOrRaw(
+              t,
               getCommercialModelLabelKey(row.original.commercial_model),
               row.original.commercial_model
             )}
@@ -242,6 +241,7 @@ export const AdminRegisteredPlatforms = () => {
       cell: ({ row }) => (
         <Chip
           label={translateOrRaw(
+            t,
             getStatusLabelKey(row.original.status),
             row.original.status
           )}
@@ -292,7 +292,7 @@ export const AdminRegisteredPlatforms = () => {
         return (
           <div className="flex min-w-0 flex-col items-start gap-0.5">
             <Chip
-              label={translateOrRaw(getCredentialKindLabelKey(kind), kind)}
+              label={translateOrRaw(t, getCredentialKindLabelKey(kind), kind)}
             />
             <SecondaryText>
               {has_token
@@ -358,7 +358,7 @@ export const AdminRegisteredPlatforms = () => {
   const statusOptions = Object.values(PlatformConfigurationStatus).map(
     (status) => ({
       value: status,
-      label: translateOrRaw(getStatusLabelKey(status), status),
+      label: translateOrRaw(t, getStatusLabelKey(status), status),
     })
   );
 

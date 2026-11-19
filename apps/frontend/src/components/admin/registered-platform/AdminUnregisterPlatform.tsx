@@ -1,4 +1,7 @@
-import { getPlatformProductName } from '@/components/admin/registered-platform/admin-registered-platforms.utils';
+import {
+  getPlatformProductName,
+  type UnregistrablePlatformRow,
+} from '@/components/admin/registered-platform/admin-registered-platforms.utils';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
@@ -6,23 +9,16 @@ import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { Button } from '@filigran/design-system';
 import { adminRegisteredPlatformsKeys } from '@graphql/admin-registered-platforms/admin-registered-platforms.keys';
-import {
-  type AdminRegisteredPlatformRowFragment,
-  useAdminUnregisterPlatformMutation,
-} from '@graphql/generated';
+import { useAdminUnregisterPlatformMutation } from '@graphql/generated';
 import { registeredPlatformsKeys } from '@graphql/registered-platforms/registered-platforms.keys';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
 interface AdminUnregisterPlatformProps {
   platform: Pick<
-    AdminRegisteredPlatformRowFragment,
-    'service_instance_id' | 'title' | 'identifier'
-  > & {
-    organization: NonNullable<
-      AdminRegisteredPlatformRowFragment['organization']
-    >;
-  };
+    UnregistrablePlatformRow,
+    'service_instance_id' | 'title' | 'identifier' | 'organization'
+  >;
 }
 
 export const AdminUnregisterPlatform = ({
