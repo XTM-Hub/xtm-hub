@@ -3,11 +3,14 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { TestHelper } from '../../../../tests/helper/test.helper';
 import {
   contextSimpleUserSecondOrga,
+  requestContextSimpleUserSecondOrga,
   TEST_ORGANIZATIONS,
 } from '../../../../tests/tests.const';
+import { requestContext } from '../../../context/request.context';
 import { OrganizationId } from '../../../model/kanel/public/Organization';
 import ServiceInstance from '../../../model/kanel/public/ServiceInstance';
 import { UserId } from '../../../model/kanel/public/User';
+import { CAPABILITY_BYPASS } from '../../../portal.const';
 import { OrganizationDomain } from './organization.domain';
 
 describe('organizationsDomain', () => {
@@ -103,6 +106,88 @@ describe('organizationsDomain', () => {
       const organizations = await OrganizationDomain.loadOrganizationsByIds([]);
 
       expect(organizations).toEqual([]);
+    });
+  });
+
+  describe('loadAccessibleOrganizationBy', () => {
+    it('should return a personal space to a BYPASS user', async () => {
+      // Given
+      requestContext.set({
+        ...requestContextSimpleUserSecondOrga,
+        user: {
+          ...requestContextSimpleUserSecondOrga.user,
+          capabilities: [CAPABILITY_BYPASS],
+        },
+      });
+      const id =
+        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.ADMIN_ORGA
+          .PERSONAL_SPACE_ID;
+
+      // When
+      const organization =
+        await OrganizationDomain.loadAccessibleOrganizationBy({ id });
+
+      // Then
+      expect(organization).toMatchObject({ id, personal_space: true });
+    });
+
+    it('should not return the personal space of someone else to a user without BYPASS', async () => {
+      // Given
+      requestContext.set(requestContextSimpleUserSecondOrga);
+      const id =
+        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.ADMIN_ORGA
+          .PERSONAL_SPACE_ID;
+
+      // When
+      const organization =
+        await OrganizationDomain.loadAccessibleOrganizationBy({ id });
+
+      // Then
+      expect(organization).toBeUndefined();
+    });
+
+    it('should not return their own personal space to a user without BYPASS', async () => {
+      // Given
+      requestContext.set(requestContextSimpleUserSecondOrga);
+      const id =
+        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.SIMPLE.PERSONAL_SPACE_ID;
+
+      // When
+      const organization =
+        await OrganizationDomain.loadAccessibleOrganizationBy({ id });
+
+      // Then
+      expect(organization).toBeUndefined();
+    });
+
+    it('should return a standard organization to a user without BYPASS', async () => {
+      // Given
+      requestContext.set(requestContextSimpleUserSecondOrga);
+      const id = TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID;
+
+      // When
+      const organization =
+        await OrganizationDomain.loadAccessibleOrganizationBy({ id });
+
+      // Then
+      expect(organization).toMatchObject({
+        id,
+        name: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.NAME,
+        personal_space: false,
+      });
+    });
+
+    it('should return undefined for an unknown id', async () => {
+      // Given
+      requestContext.set(requestContextSimpleUserSecondOrga);
+      const id = uuidv4() as OrganizationId;
+
+      // When
+      const organization =
+        await OrganizationDomain.loadAccessibleOrganizationBy({ id });
+
+      // Then
+      expect(organization).toBeUndefined();
     });
   });
 });
