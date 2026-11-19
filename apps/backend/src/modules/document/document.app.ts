@@ -134,6 +134,10 @@ export const DocumentApp = {
     logo?: Upload;
     images?: Upload[];
   }) => {
+    const metaDescription = DocumentHelper.validateMetaDescription(
+      input.meta_description
+    );
+
     const serviceDefinition =
       await ServiceDefinitionDomain.loadServiceDefinitionByServiceInstance(
         serviceInstanceId
@@ -202,6 +206,7 @@ export const DocumentApp = {
     } = input;
     const documentData: DocumentData<Document> = {
       ...documentColumnInput,
+      meta_description: metaDescription,
       use_cases: input.use_cases ?? undefined,
       solution_categories: input.solution_categories ?? undefined,
       service_instance_id: serviceInstanceId,
@@ -315,6 +320,10 @@ export const DocumentApp = {
     images?: Upload[];
     input: MutationUpdateDocumentArgsResolverType['input'];
   }) => {
+    const metaDescription = DocumentHelper.validateOptionalMetaDescription(
+      input.meta_description
+    );
+
     const serviceDefinition =
       await ServiceDefinitionDomain.loadServiceDefinitionByServiceInstance(
         serviceInstanceId
@@ -428,12 +437,16 @@ export const DocumentApp = {
       const {
         entity_types: _entityTypes,
         license_type: _licenseType,
+        meta_description: _metaDescription,
         ...documentColumnData
       } = input;
       const doc = await DocumentDomain.updateDocument({
         parentDocumentId,
         document: {
-          data: documentColumnData,
+          data: {
+            ...documentColumnData,
+            ...(metaDescription ? { meta_description: metaDescription } : {}),
+          },
           file,
           type: documentType,
         },

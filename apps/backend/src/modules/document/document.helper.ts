@@ -75,6 +75,9 @@ export const BOOLEAN_METADATA = [
   DocumentMetadataKeyCode.PlaybookSupported,
 ];
 
+// The length search engines display for a <meta name="description">; the Document column is a varchar(160).
+export const META_DESCRIPTION_MAX_LENGTH = 160;
+
 export type Document = WithUseCases<DocumentModel>;
 export type WithDocumentId<T> = T & { _document_id: string };
 export type WithParentId<T> = T & { _parent_id: string };
@@ -245,6 +248,29 @@ export const DocumentHelper = {
       throw new Error(ErrorCode.InvalidDocumentStatusTransition);
     }
   },
+
+  /** Returns the trimmed meta description, required on creation. */
+  validateMetaDescription: (metaDescription: string): string => {
+    const trimmed = metaDescription.trim();
+    if (!trimmed) {
+      throw new Error(ErrorCode.MetaDescriptionRequired);
+    }
+    if (trimmed.length > META_DESCRIPTION_MAX_LENGTH) {
+      throw new Error(ErrorCode.MetaDescriptionTooLong);
+    }
+    return trimmed;
+  },
+
+  /**
+   * Returns the trimmed meta description of an update, or undefined when none is given: the documents created before
+   * the field existed have none and stay editable, so an empty value leaves the stored one untouched.
+   */
+  validateOptionalMetaDescription: (
+    metaDescription: string | null | undefined
+  ): string | undefined =>
+    metaDescription?.trim()
+      ? DocumentHelper.validateMetaDescription(metaDescription)
+      : undefined,
 
   toIntegrationType: (
     documentType: string,

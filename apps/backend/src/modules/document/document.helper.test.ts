@@ -41,6 +41,7 @@ import {
   type Document,
   DocumentHelper,
   ManageableServiceDefinitionIdentifier,
+  META_DESCRIPTION_MAX_LENGTH,
 } from './document.helper';
 import { DocumentUploadsHelper } from './document.uploads.helper';
 import { DocumentDomain } from './domain/document.domain';
@@ -85,6 +86,7 @@ describe('documentHelper', () => {
           name: 'myCsvFeed',
           description: 'description',
           short_description: 'short_description',
+          meta_description: 'meta_description',
           slug: 'slug',
           status: DocumentStatus.Published,
         },
@@ -313,6 +315,96 @@ describe('documentHelper', () => {
         expect(transition).toThrow(ErrorCode.InvalidDocumentStatusTransition);
       }
     );
+  });
+
+  const META_DESCRIPTION = 'Meta description';
+
+  describe('validateMetaDescription', () => {
+    const LONGEST_META_DESCRIPTION = 'a'.repeat(META_DESCRIPTION_MAX_LENGTH);
+
+    it.each([
+      ['a regular value', META_DESCRIPTION, META_DESCRIPTION],
+      ['surrounded by spaces', `  ${META_DESCRIPTION}  `, META_DESCRIPTION],
+      [
+        'exactly at the limit',
+        LONGEST_META_DESCRIPTION,
+        LONGEST_META_DESCRIPTION,
+      ],
+      [
+        'at the limit once trimmed',
+        ` ${LONGEST_META_DESCRIPTION} `,
+        LONGEST_META_DESCRIPTION,
+      ],
+    ])(
+      'should return the trimmed meta description when it is %s',
+      (_label, metaDescription, expected) => {
+        // When
+        const result = DocumentHelper.validateMetaDescription(metaDescription);
+
+        // Then
+        expect(result).toBe(expected);
+      }
+    );
+
+    it.each([
+      ['empty', '', ErrorCode.MetaDescriptionRequired],
+      ['blank', ' \t\n ', ErrorCode.MetaDescriptionRequired],
+      [
+        'one character over the limit',
+        `${LONGEST_META_DESCRIPTION}a`,
+        ErrorCode.MetaDescriptionTooLong,
+      ],
+    ])(
+      'should reject the meta description when it is %s',
+      (_label, metaDescription, expectedError) => {
+        // When
+        const validate = () =>
+          DocumentHelper.validateMetaDescription(metaDescription);
+
+        // Then
+        expect(validate).toThrow(expectedError);
+      }
+    );
+  });
+
+  describe('validateOptionalMetaDescription', () => {
+    it.each([
+      ['omitted', undefined],
+      ['null', null],
+      ['empty', ''],
+      ['blank', '   '],
+    ])(
+      'should return undefined when the meta description is %s',
+      (_label, metaDescription) => {
+        // When
+        const result =
+          DocumentHelper.validateOptionalMetaDescription(metaDescription);
+
+        // Then
+        expect(result).toBeUndefined();
+      }
+    );
+
+    it('should return the trimmed meta description when one is given', () => {
+      // When
+      const result = DocumentHelper.validateOptionalMetaDescription(
+        `  ${META_DESCRIPTION} `
+      );
+
+      // Then
+      expect(result).toBe(META_DESCRIPTION);
+    });
+
+    it('should reject a meta description longer than the limit', () => {
+      // When
+      const validate = () =>
+        DocumentHelper.validateOptionalMetaDescription(
+          'a'.repeat(META_DESCRIPTION_MAX_LENGTH + 1)
+        );
+
+      // Then
+      expect(validate).toThrow(ErrorCode.MetaDescriptionTooLong);
+    });
   });
 
   describe('buildInValidationPayload', () => {

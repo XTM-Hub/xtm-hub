@@ -99,6 +99,8 @@ export enum BadRequestErrorCode {
   TooManyEmails = 'TOO_MANY_EMAILS',
   VotableFeatureProductNotVotable = 'VOTABLE_FEATURE_PRODUCT_NOT_VOTABLE',
   InvalidDocumentStatusTransition = 'INVALID_DOCUMENT_STATUS_TRANSITION',
+  MetaDescriptionRequired = 'META_DESCRIPTION_REQUIRED',
+  MetaDescriptionTooLong = 'META_DESCRIPTION_TOO_LONG',
 }
 
 export enum UnknownErrorCode {

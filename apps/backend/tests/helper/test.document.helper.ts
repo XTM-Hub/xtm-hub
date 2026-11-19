@@ -57,6 +57,7 @@ export const TestDocumentHelper = {
       updated_at: null,
       updater_id: null,
       short_description: null,
+      meta_description: null,
       slug: null,
       uploader_organization_id: null,
       type: 'test-type',
@@ -71,6 +72,7 @@ export const TestDocumentHelper = {
       name = 'myCsvFeed',
       description = 'description',
       short_description = 'short_description',
+      meta_description = 'meta_description',
       slug = 'slug',
       status = DocumentStatus.Published,
       uploader_id = TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
@@ -87,6 +89,7 @@ export const TestDocumentHelper = {
       name?: string;
       description?: string;
       short_description?: string;
+      meta_description?: string;
       slug?: string;
       status?: DocumentStatus;
       uploader_id?: UserId;
@@ -99,6 +102,7 @@ export const TestDocumentHelper = {
           name,
           description,
           short_description,
+          meta_description,
           slug,
           status,
           uploader_id,

@@ -69,6 +69,7 @@ import { DocumentApp } from './document.app';
 import {
   ALL_METADATA_KEYS,
   DocumentTypeMappedByServiceDefinition,
+  META_DESCRIPTION_MAX_LENGTH,
   ServiceDefinitionIdentifiersByPlatformIdentifier,
 } from './document.helper';
 import { DOCUMENT_IMAGE_METADATA_KEYS, DocumentImage } from './document.model';
@@ -79,6 +80,9 @@ import {
   DocumentMetadataDomain,
   DocumentMetadataKeys,
 } from './domain/document.metadata.domain';
+
+const TOO_LONG_META_DESCRIPTION = 'a'.repeat(META_DESCRIPTION_MAX_LENGTH + 1);
+const UPDATED_META_DESCRIPTION = 'updated meta description';
 
 describe('documentApp', () => {
   const minioFileMock = {
@@ -102,6 +106,7 @@ describe('documentApp', () => {
 
   const documentData = {
     short_description: 'short_description',
+    meta_description: 'meta_description',
     slug: 'slug',
     uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID,
     name: 'name',
@@ -205,6 +210,7 @@ describe('documentApp', () => {
       // Given
       const input = {
         short_description: 'created short description',
+        meta_description: 'created meta description',
         slug: `persisted-data-create-${uuidv4()}`,
         uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID,
         name: 'created name',
@@ -253,6 +259,49 @@ describe('documentApp', () => {
       });
       expect(licenseTypeFromDb).toBe(input.license_type);
     });
+
+    it('should persist the trimmed meta description when creating a document', async () => {
+      // When
+      const result = await DocumentApp.createDocument({
+        input: {
+          ...documentData,
+          meta_description: `  ${documentData.meta_description}  `,
+        },
+        metadata: integrationMetadata,
+        serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
+      });
+
+      // Then
+      const persistedDocument = await DocumentDomain.loadDocumentBy({
+        id: result.id,
+      });
+      expect(persistedDocument).toMatchObject({
+        meta_description: documentData.meta_description,
+      });
+    });
+
+    it.each([
+      ['empty', '', ErrorCode.MetaDescriptionRequired],
+      ['blank', '   ', ErrorCode.MetaDescriptionRequired],
+      [
+        'longer than the limit',
+        TOO_LONG_META_DESCRIPTION,
+        ErrorCode.MetaDescriptionTooLong,
+      ],
+    ])(
+      'should reject the creation when the meta description is %s',
+      async (_label, metaDescription, expectedError) => {
+        // When
+        const call = DocumentApp.createDocument({
+          input: { ...documentData, meta_description: metaDescription },
+          metadata: integrationMetadata,
+          serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
+        });
+
+        // Then
+        await expect(call).rejects.toThrow(expectedError);
+      }
+    );
 
     it('should link all provided solution categories when multiple are provided on create', async () => {
       // Given
@@ -502,6 +551,67 @@ describe('documentApp', () => {
         short_description: 'short_description',
         vendor_url: 'https://changed.com',
       });
+    });
+
+    it('should persist the meta description when updating a document', async () => {
+      // When
+      await DocumentApp.updateDocument({
+        parentDocumentId: createdDocument!.id,
+        serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
+        metadata: integrationMetadata,
+        input: { meta_description: UPDATED_META_DESCRIPTION },
+        existingImageIds: [],
+      });
+
+      // Then
+      const persistedDocument = await DocumentDomain.loadDocumentBy({
+        id: createdDocument!.id,
+      });
+      expect(persistedDocument).toMatchObject({
+        meta_description: UPDATED_META_DESCRIPTION,
+      });
+    });
+
+    it.each([
+      ['omitted', undefined],
+      ['null', null],
+      ['empty', ''],
+      ['blank', '   '],
+    ])(
+      'should keep the stored meta description when the update meta description is %s',
+      async (_label, metaDescription) => {
+        // When
+        await DocumentApp.updateDocument({
+          parentDocumentId: createdDocument!.id,
+          serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
+          metadata: integrationMetadata,
+          input: { name: 'renamed', meta_description: metaDescription },
+          existingImageIds: [],
+        });
+
+        // Then
+        const persistedDocument = await DocumentDomain.loadDocumentBy({
+          id: createdDocument!.id,
+        });
+        expect(persistedDocument).toMatchObject({
+          name: 'renamed',
+          meta_description: documentData.meta_description,
+        });
+      }
+    );
+
+    it('should reject the update when the meta description is longer than the limit', async () => {
+      // When
+      const call = DocumentApp.updateDocument({
+        parentDocumentId: createdDocument!.id,
+        serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
+        metadata: integrationMetadata,
+        input: { meta_description: TOO_LONG_META_DESCRIPTION },
+        existingImageIds: [],
+      });
+
+      // Then
+      await expect(call).rejects.toThrow(ErrorCode.MetaDescriptionTooLong);
     });
 
     it('should persist provided data and validate each field in it', async () => {
@@ -1685,6 +1795,7 @@ describe('documentApp', () => {
           name: 'myCustomDashboard',
           description: 'description',
           short_description: 'short_description',
+          meta_description: 'meta_description',
           slug: 'slug',
           status: DocumentStatus.Published,
         },
@@ -1742,6 +1853,7 @@ describe('documentApp', () => {
           name: 'myCustomDashboard',
           description: 'description',
           short_description: 'short_description',
+          meta_description: 'meta_description',
           slug: 'slug',
           status: DocumentStatus.Published,
         },
