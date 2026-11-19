@@ -9,6 +9,8 @@ import { OrganizationId } from '../../model/kanel/public/Organization';
 import { UserLoadUserBy } from '../../model/user';
 import { ROLE_ADMIN } from '../../portal.const';
 import { logApp } from '../../utils/app-logger.util';
+import { getErrorMessage } from '../../utils/error/error-guard.util';
+import { ErrorCode } from '../../utils/error/error.code';
 import { UserDomain } from '../organization-management/user/user-domain/user.domain';
 import { ApiTokenDomain } from './api-token.domain';
 import { ApiTokenHelper } from './api-token.helper';
@@ -111,9 +113,13 @@ export const resolveApiToken = async (
       'User.id': token.user_id,
       'Organization.id': token.organization_id,
     });
-  } catch {
-    // loadUserBy throws for a disabled user
-    return { authenticated: false, reason: 'user disabled' };
+  } catch (error) {
+    // loadUserBy throws USER_DISABLED for a disabled user. Any other failure (database down, a bug) is not a refused
+    // token: it goes up to the middleware, which answers 5xx instead of telling the client its token is bad.
+    if (getErrorMessage(error) === ErrorCode.UserDisabled) {
+      return { authenticated: false, reason: 'user disabled' };
+    }
+    throw error;
   }
   if (!user || user.disabled) {
     return { authenticated: false, reason: 'user not in organization' };
@@ -191,6 +197,8 @@ export const apiTokenMiddleware = async (
     recordUse(resolution.authentication.token.id, now);
     next();
   } catch (error) {
+    // Never the secret: only the error, whose query carries the token hash at most
+    logApp.error('API token authentication failed', { error });
     next(error);
   }
 };

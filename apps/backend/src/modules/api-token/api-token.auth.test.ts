@@ -10,6 +10,7 @@ import { OrganizationId } from '../../model/kanel/public/Organization';
 import { UserId } from '../../model/kanel/public/User';
 import { UserLoadUserBy } from '../../model/user';
 import { ROLE_ADMIN } from '../../portal.const';
+import { logApp } from '../../utils/app-logger.util';
 import { ErrorCode } from '../../utils/error/error.code';
 import { UserDomain } from '../organization-management/user/user-domain/user.domain';
 import { ApiTokenApp } from './api-token.app';
@@ -184,6 +185,20 @@ describe('resolveApiToken', () => {
     // Then
     await expectRefused(token, 'user disabled');
   });
+
+  it('should not take an unexpected failure while loading the user for a refused token', async () => {
+    // Given
+    const { token } = await createToken(
+      SECOND.USERS.SIMPLE.ID,
+      SECOND.ID,
+      ApiTokenScope.ReadWrite
+    );
+    const failure = new Error('relation "User_Organization" does not exist');
+    vi.spyOn(UserDomain, 'loadUserBy').mockRejectedValue(failure);
+
+    // Then
+    await expect(resolveApiToken(token)).rejects.toBe(failure);
+  });
 });
 
 describe('apiTokenMiddleware', () => {
@@ -256,6 +271,62 @@ describe('apiTokenMiddleware', () => {
       ],
     });
     expect(next).not.toHaveBeenCalled();
+    expect(getApiTokenAuthentication(req)).toBeUndefined();
+  });
+
+  it('should answer 401 to a token of a disabled user', async () => {
+    // Given
+    const { token } = await createToken(
+      SECOND.USERS.SIMPLE.ID,
+      SECOND.ID,
+      ApiTokenScope.Read
+    );
+    vi.spyOn(UserDomain, 'loadUserBy').mockRejectedValue(
+      new Error(ErrorCode.UserDisabled)
+    );
+    const warn = vi.spyOn(logApp, 'warn');
+    const error = vi.spyOn(logApp, 'error');
+    const req = { headers: { authorization: `Bearer ${token}` } } as Request;
+    const res = response();
+    const next = vi.fn();
+
+    // When
+    await apiTokenMiddleware(req, res as unknown as Response, next);
+
+    // Then
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(warn).toHaveBeenCalledWith('API token refused', {
+      reason: 'user disabled',
+    });
+    expect(error).not.toHaveBeenCalled();
+    expect(next).not.toHaveBeenCalled();
+    expect(getApiTokenAuthentication(req)).toBeUndefined();
+  });
+
+  it('should log an unexpected failure while loading the user and pass it to the error handler, never answering 401', async () => {
+    // Given
+    const { token } = await createToken(
+      SECOND.USERS.SIMPLE.ID,
+      SECOND.ID,
+      ApiTokenScope.Read
+    );
+    const failure = new Error('relation "User_Organization" does not exist');
+    vi.spyOn(UserDomain, 'loadUserBy').mockRejectedValue(failure);
+    const error = vi.spyOn(logApp, 'error').mockImplementation(() => {});
+    const req = { headers: { authorization: `Bearer ${token}` } } as Request;
+    const res = response();
+    const next = vi.fn();
+
+    // When
+    await apiTokenMiddleware(req, res as unknown as Response, next);
+
+    // Then
+    expect(next).toHaveBeenCalledWith(failure);
+    expect(res.status).not.toHaveBeenCalled();
+    expect(error).toHaveBeenCalledWith('API token authentication failed', {
+      error: failure,
+    });
+    expect(JSON.stringify(error.mock.calls)).not.toContain(token);
     expect(getApiTokenAuthentication(req)).toBeUndefined();
   });
 
