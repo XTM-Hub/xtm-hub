@@ -25,6 +25,15 @@ const SECOND = TEST_ORGANIZATIONS.SECOND_ORGANIZATION;
 const FILIGRAN = TEST_ORGANIZATIONS.FILIGRAN;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+// What the seeds give FILIGRAN.USERS.SIMPLE2 in Filigran and SECOND.USERS.REGISTERER in the second organization
+const SEEDED = {
+  MANAGE_ACCESS_SUBSCRIPTION: [
+    OrganizationCapability.ManageAccess,
+    OrganizationCapability.ManageSubscription,
+  ],
+  MANAGE_PLATFORMS: [OrganizationCapability.ManagePlatformRegistration],
+};
+
 const loadUser = async (id: UserId): Promise<UserLoadUserBy> => {
   const user = (await UserDomain.loadUserBy({
     'User.id': id,
@@ -80,25 +89,32 @@ describe('resolveApiToken', () => {
     expect(user.capabilities).toEqual([]);
   });
 
-  // MANAGE_ACCESS alone lets editUserCapabilities make another member an organization administrator
+  // Each organization capability administers the organization: none survives a token without the admin scope
   it.each`
-    member                                  | userId                        | organizationId | scope
-    ${'MANAGE_ACCESS, MANAGE_SUBSCRIPTION'} | ${FILIGRAN.USERS.SIMPLE2.ID}  | ${FILIGRAN.ID} | ${ApiTokenScope.ReadWrite}
-    ${'MANAGE_ACCESS, MANAGE_SUBSCRIPTION'} | ${FILIGRAN.USERS.SIMPLE2.ID}  | ${FILIGRAN.ID} | ${ApiTokenScope.Read}
-    ${'MANAGE_PLATFORM_REGISTRATION'}       | ${SECOND.USERS.REGISTERER.ID} | ${SECOND.ID}   | ${ApiTokenScope.ReadWrite}
-    ${'MANAGE_PLATFORM_REGISTRATION'}       | ${SECOND.USERS.REGISTERER.ID} | ${SECOND.ID}   | ${ApiTokenScope.Read}
+    held                                 | userId                        | organizationId | scope
+    ${SEEDED.MANAGE_ACCESS_SUBSCRIPTION} | ${FILIGRAN.USERS.SIMPLE2.ID}  | ${FILIGRAN.ID} | ${ApiTokenScope.ReadWrite}
+    ${SEEDED.MANAGE_ACCESS_SUBSCRIPTION} | ${FILIGRAN.USERS.SIMPLE2.ID}  | ${FILIGRAN.ID} | ${ApiTokenScope.Read}
+    ${SEEDED.MANAGE_PLATFORMS}           | ${SECOND.USERS.REGISTERER.ID} | ${SECOND.ID}   | ${ApiTokenScope.ReadWrite}
+    ${SEEDED.MANAGE_PLATFORMS}           | ${SECOND.USERS.REGISTERER.ID} | ${SECOND.ID}   | ${ApiTokenScope.Read}
   `(
-    'should give no organization capability to a $scope token of a member holding $member',
+    'should give no organization capability to a $scope token of a member holding $held',
     async ({
+      held,
       userId,
       organizationId,
       scope,
     }: {
+      held: OrganizationCapability[];
       userId: UserId;
       organizationId: OrganizationId;
       scope: ApiTokenScope;
     }) => {
-      // Given
+      // Given a member holding exactly these capabilities in the organization
+      const member = await loadUser(userId);
+      const membership = member.organization_capabilities?.find(
+        ({ organization }) => organization.id === organizationId
+      );
+      expect(new Set(membership?.capabilities)).toEqual(new Set(held));
       const { token } = await createToken(userId, organizationId, scope);
 
       // When
