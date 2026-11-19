@@ -44,6 +44,7 @@ import type { BlogFeedItem } from '../../thirdparty/blog-api/schema';
 import { logApp } from '../../utils/app-logger.util';
 import { ErrorCode } from '../../utils/error/error.code';
 import { RequiredPlatformVersions } from '../../utils/required-platform-version';
+import { PlatformConfigurationDomain } from '../registration/platform-configuration/platform-configuration.domain';
 import { objectUseCaseDomain } from '../use-case/object-use-case/object-use-case.domain';
 import { useCaseDomain } from '../use-case/use-case.domain';
 import { NewsFeedApp } from './news-feed.app';
@@ -191,6 +192,32 @@ describe('newsFeedApp', () => {
           token: uuidv4(),
         })
       ).rejects.toThrow(ErrorCode.PlatformNotRegistered);
+    });
+
+    it('should refuse an unregistered platform and keep its provisioned items', async () => {
+      // Given
+      const item = await TestHelper.newsFeed.createItem({
+        type: NewsFeedItemType.ResourceCustomDashboard,
+        platform_identifier: PlatformIdentifier.Opencti,
+        title: 'Dashboard of an unregistered platform',
+        creation_date: new Date(),
+        tags: [],
+      });
+      await NewsFeedDomain.provisionNewsFeedItem(item.id, [platformId]);
+      await PlatformConfigurationDomain.deactivateConfiguration(
+        registrationServiceInstanceId
+      );
+
+      // When
+      const call = NewsFeedApp.consumeProvisionedNewsFeedItems({
+        platformId,
+        token,
+      });
+
+      // Then
+      await expect(call).rejects.toThrow(ErrorCode.PlatformNotRegistered);
+      const remaining = await TestHelper.newsFeed.loadProvisioned({});
+      expect(remaining).toHaveLength(1);
     });
 
     it('should return empty news feed items and available types when nothing is provisioned', async () => {

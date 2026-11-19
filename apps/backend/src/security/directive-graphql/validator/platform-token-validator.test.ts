@@ -1,6 +1,7 @@
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { describe, expect, it, vi } from 'vitest';
+import { PlatformConfigurationStatus } from '../../../__generated__/resolvers-types';
 import { requestContext } from '../../../context/request.context';
 import DeploymentRequest from '../../../model/kanel/public/DeploymentRequest';
 import Organization from '../../../model/kanel/public/Organization';
@@ -123,6 +124,7 @@ describe('createPlatformTokenResolver', () => {
         'loadConfigurationByPlatformAndToken'
       ).mockResolvedValue({
         service_instance_id: serviceInstanceId,
+        status: PlatformConfigurationStatus.Active,
       } as PlatformConfiguration);
 
       vi.spyOn(
@@ -158,6 +160,67 @@ describe('createPlatformTokenResolver', () => {
       await expect(runResolver(resolver, context)).rejects.toMatchObject(
         INVALID_PLATFORM_TOKEN_ERROR
       );
+    });
+
+    it('should refuse the token of an unregistered registration', async () => {
+      // Given
+      vi.spyOn(
+        DeploymentRequestDomain,
+        'loadDeploymentRequestBy'
+      ).mockResolvedValue(undefined);
+      vi.spyOn(
+        PlatformConfigurationDomain,
+        'loadConfigurationByPlatformAndToken'
+      ).mockResolvedValue({
+        service_instance_id: uuidv4(),
+        status: PlatformConfigurationStatus.Inactive,
+      } as PlatformConfiguration);
+      const subscribedOrganizationSpy = vi.spyOn(
+        OrganizationDomain,
+        'loadOrganizationSubscribedToServiceInstance'
+      );
+      const resolverSpy = vi.fn();
+      const resolver = createPlatformTokenResolver(resolverSpy);
+      const context = makePortalContext(validHeaders);
+
+      // When
+      const call = runResolver(resolver, context);
+
+      // Then
+      await expect(call).rejects.toMatchObject(INVALID_PLATFORM_TOKEN_ERROR);
+      expect(subscribedOrganizationSpy).not.toHaveBeenCalled();
+      expect(resolverSpy).not.toHaveBeenCalled();
+    });
+
+    it('should still accept an unregistered trial through its deployment request', async () => {
+      // Given
+      const orgId = uuidv4();
+      vi.spyOn(
+        PlatformConfigurationDomain,
+        'loadConfigurationByPlatformAndToken'
+      ).mockResolvedValue({
+        service_instance_id: uuidv4(),
+        status: PlatformConfigurationStatus.Inactive,
+      } as PlatformConfiguration);
+      vi.spyOn(
+        DeploymentRequestDomain,
+        'loadDeploymentRequestBy'
+      ).mockResolvedValue({
+        platform_id: platformId,
+        organization_requester_id: orgId,
+      } as unknown as DeploymentRequest);
+      vi.spyOn(OrganizationDomain, 'loadOrganizationBy').mockResolvedValue({
+        id: orgId,
+      } as Organization);
+      const resolverSpy = vi.fn(async (_s, _a, ctx: PortalContext) => ctx.user);
+      const resolver = createPlatformTokenResolver(resolverSpy);
+      const context = makePortalContext(validHeaders);
+
+      // When
+      const result = await runResolver(resolver, context);
+
+      // Then
+      expect(result.selected_organization_id).toBe(orgId);
     });
 
     it('should throw an organization not found error when the deployment request organization no longer exists', async () => {

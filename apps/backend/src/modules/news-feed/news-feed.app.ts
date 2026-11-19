@@ -5,6 +5,7 @@ import {
   DocumentStatus,
   NewsFeedItemMetadataKey,
   NewsFeedItemType,
+  PlatformConfigurationStatus,
   PlatformIdentifier,
   ServiceDefinitionIdentifier,
 } from '../../__generated__/resolvers-types';
@@ -331,7 +332,11 @@ export const NewsFeedApp = {
           token,
         }
       );
-    if (!resolvedConfiguration) {
+    // An unregistered platform gets no more items, even through a trial deployment request
+    if (
+      resolvedConfiguration?.platformConfiguration.status !==
+      PlatformConfigurationStatus.Active
+    ) {
       throw new Error(ErrorCode.PlatformNotRegistered);
     }
 

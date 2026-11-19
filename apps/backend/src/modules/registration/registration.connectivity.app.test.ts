@@ -439,6 +439,49 @@ describe('registration connectivity app', () => {
       });
     });
 
+    it('should only record the check of an unregistered tenant, never what it sends', async () => {
+      // Given
+      const platformId = uuidv4();
+      const tenantId = uuidv4();
+      const token = await registerOpenaevTenant(platformId, tenantId);
+      await ageLastConnectivityCheck(platformId, tenantId, 1);
+      const registered = await loadTenantConfiguration(platformId, tenantId);
+      await PlatformConfigurationDomain.deactivateConfiguration(
+        registered!.service_instance_id
+      );
+
+      // When
+      const result =
+        await RegistrationConnectivityApp.refreshPlatformRegistrationConnectivityStatusSingleTenant(
+          {
+            platformId,
+            token,
+            platformVersion: '2.5.0',
+            url: 'http://example.com/elsewhere',
+            tenantId,
+            tenantName: 'Renamed tenant',
+            platformIdentifier: PlatformIdentifier.Openaev,
+            platformContract: PlatformContract.Ce,
+          }
+        );
+
+      // Then
+      expect(result.status).toBe(
+        PlatformRegistrationConnectivityStatus.Inactive
+      );
+      const stored = await loadTenantConfiguration(platformId, tenantId);
+      expect(stored).toMatchObject({
+        status: PlatformConfigurationStatus.Inactive,
+        platform_version: registered!.platform_version,
+        platform_url: registered!.platform_url,
+        tenant_name: registered!.tenant_name,
+        platform_contract: registered!.platform_contract,
+      });
+      expect(stored!.last_connectivity_check!.getTime()).toBeGreaterThan(
+        registered!.last_connectivity_check!.getTime()
+      );
+    });
+
     it('should return no commercial model when the tenant is not registered', async () => {
       // When
       const result =

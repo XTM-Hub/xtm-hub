@@ -2698,7 +2698,7 @@
     "UnregisterSuccess": "The platform \"{title}\" has been unregistered",
     "UnregisterDialog": {
       "Title": "Unregister the platform \"{title}\"?",
-      "Text": "The {product} platform \"{title}\" will be disconnected from the {organization} organization on XTM Hub. The administrators of the organization will be notified by email. To reconnect it, the platform has to go through the connection process again. Unregistering does not revoke the credential the platform holds."
+      "Text": "The {product} platform \"{title}\" will be disconnected from the {organization} organization on XTM Hub. The administrators of the organization will be notified by email. To reconnect it, the platform has to go through the connection process again. The platform can no longer use its credential with XTM Hub, other than to learn that it is unregistered."
     }
   }
 }
