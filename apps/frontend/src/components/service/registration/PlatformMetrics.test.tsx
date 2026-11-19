@@ -480,6 +480,21 @@ describe('PlatformMetrics', () => {
       ).not.toBeInTheDocument();
     });
 
+    it('should tell that the tour is only available to the CSM when the tour button is hovered', async () => {
+      // Given
+      const { user } = renderMetrics({ showGuidedTour: true });
+
+      // When
+      await user.hover(screen.getByRole('button', { name: 'Tour.GuidedTour' }));
+
+      // Then
+      expect(
+        await screen.findByRole('tooltip', {
+          name: 'Register.Metrics.GuidedTourAvailability',
+        })
+      ).toBeInTheDocument();
+    });
+
     it('should hide the tour while the metrics load', () => {
       // Given / When
       renderMetrics({ showGuidedTour: true, isLoading: true });

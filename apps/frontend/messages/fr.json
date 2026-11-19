@@ -1192,6 +1192,7 @@
       },
       "MaxCapacity": "Capacité maximale",
       "UsedOfLimit": "<highlight>{used}</highlight> <secondary>sur {limit}</secondary>",
+      "GuidedTourAvailability": "Visite guidée disponible uniquement pour les CSM",
       "Tour": {
         "Source": "Ces métriques viennent du SaaS Manager. XTM Hub les affiche telles quelles, sans les retraiter.",
         "Database": "Ce graphique montre l'utilisation de {database} par la plateforme, comparée à ce que l'offre du client autorise. Ce n'est pas le tableau de bord Grafana : Grafana compare l'utilisation brute à la taille de disque allouée à la plateforme, une marge de sécurité qui l'empêche de planter, et ne peut donc jamais dépasser 100 %. Ici, l'utilisation est comparée à ce que le client paie, et peut dépasser 100 %.",

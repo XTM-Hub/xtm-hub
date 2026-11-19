@@ -25,7 +25,13 @@ import {
   PRODUCT_LABELS,
 } from '@/lib/analytics/analytics.consts';
 import { cn } from '@/lib/utils';
-import { Paper } from '@filigran/design-system';
+import {
+  Paper,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@filigran/design-system';
 import {
   MetricType,
   PlatformIdentifier,
@@ -110,7 +116,18 @@ export const PlatformMetrics = ({
           <div className="flex items-center gap-2">
             {/* The tour points at the charts: it starts once they show. */}
             {showGuidedTour && hasCharts && (
-              <AppTourButton analyticsId="platform_metrics_tour_open" />
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="inline-flex">
+                      <AppTourButton analyticsId="platform_metrics_tour_open" />
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {t('Register.Metrics.GuidedTourAvailability')}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             )}
             <div
               {...platformMetricsTourTarget(

@@ -1192,6 +1192,7 @@
       },
       "MaxCapacity": "最大容量",
       "UsedOfLimit": "<secondary>{limit} 中</secondary> <highlight>{used}</highlight>",
+      "GuidedTourAvailability": "ガイドツアーはCSMのみ利用できます",
       "Tour": {
         "Source": "これらの指標は SaaS Manager から取得したもので、XTM Hub は加工せずにそのまま表示します。",
         "Database": "このグラフは、顧客のプランで許可された容量に対するプラットフォームの {database} の使用量を示します。Grafana のダッシュボードとは異なります。Grafana は、プラットフォームのクラッシュを防ぐために割り当てたディスク容量に対する実際の使用量を示すため、100% を超えることはありません。ここでは顧客が支払っている容量と比較するため、100% を超えることがあります。",
