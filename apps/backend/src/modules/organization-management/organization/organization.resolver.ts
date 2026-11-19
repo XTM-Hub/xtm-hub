@@ -22,7 +22,7 @@ const resolvers: Resolvers = {
   },
   Query: {
     organization: async (_, { id }) =>
-      OrganizationDomain.loadAccessibleOrganizationBy({
+      OrganizationDomain.loadFirstProfessionalOrganizationBy({
         id: id as OrganizationId,
       }),
     organizations: async (_, opts) => {

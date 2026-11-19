@@ -32,11 +32,11 @@ describe('organization GraphQL query', () => {
     // Given
     const id = TEST_ORGANIZATIONS.FILIGRAN.ID;
     const expected = { id, name: 'Filigran' } as unknown as Awaited<
-      ReturnType<typeof OrganizationDomain.loadAccessibleOrganizationBy>
+      ReturnType<typeof OrganizationDomain.loadFirstProfessionalOrganizationBy>
     >;
     vi.spyOn(
       OrganizationDomain,
-      'loadAccessibleOrganizationBy'
+      'loadFirstProfessionalOrganizationBy'
     ).mockResolvedValue(expected);
 
     // When
@@ -49,7 +49,7 @@ describe('organization GraphQL query', () => {
 
     // Then
     expect(
-      OrganizationDomain.loadAccessibleOrganizationBy
+      OrganizationDomain.loadFirstProfessionalOrganizationBy
     ).toHaveBeenCalledWith({ id });
     expect(result).toMatchObject({ id, name: 'Filigran' });
   });

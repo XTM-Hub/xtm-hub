@@ -109,7 +109,7 @@ describe('organizationsDomain', () => {
     });
   });
 
-  describe('loadAccessibleOrganizationBy', () => {
+  describe('loadFirstProfessionalOrganizationBy', () => {
     it('should return a personal space to a BYPASS user', async () => {
       // Given
       requestContext.set({
@@ -125,7 +125,7 @@ describe('organizationsDomain', () => {
 
       // When
       const organization =
-        await OrganizationDomain.loadAccessibleOrganizationBy({ id });
+        await OrganizationDomain.loadFirstProfessionalOrganizationBy({ id });
 
       // Then
       expect(organization).toMatchObject({ id, personal_space: true });
@@ -140,7 +140,7 @@ describe('organizationsDomain', () => {
 
       // When
       const organization =
-        await OrganizationDomain.loadAccessibleOrganizationBy({ id });
+        await OrganizationDomain.loadFirstProfessionalOrganizationBy({ id });
 
       // Then
       expect(organization).toBeUndefined();
@@ -154,7 +154,7 @@ describe('organizationsDomain', () => {
 
       // When
       const organization =
-        await OrganizationDomain.loadAccessibleOrganizationBy({ id });
+        await OrganizationDomain.loadFirstProfessionalOrganizationBy({ id });
 
       // Then
       expect(organization).toBeUndefined();
@@ -167,7 +167,7 @@ describe('organizationsDomain', () => {
 
       // When
       const organization =
-        await OrganizationDomain.loadAccessibleOrganizationBy({ id });
+        await OrganizationDomain.loadFirstProfessionalOrganizationBy({ id });
 
       // Then
       expect(organization).toMatchObject({
@@ -184,7 +184,7 @@ describe('organizationsDomain', () => {
 
       // When
       const organization =
-        await OrganizationDomain.loadAccessibleOrganizationBy({ id });
+        await OrganizationDomain.loadFirstProfessionalOrganizationBy({ id });
 
       // Then
       expect(organization).toBeUndefined();

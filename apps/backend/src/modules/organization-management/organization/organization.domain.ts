@@ -12,7 +12,7 @@ import Organization, {
 } from '../../../model/kanel/public/Organization';
 import { ServiceInstanceId } from '../../../model/kanel/public/ServiceInstance';
 import User, { UserId } from '../../../model/kanel/public/User';
-import { restrictOrganizationToAccessible } from '../../../security/restriction/organization';
+import { restrictOrganizationToProfessionalSpace } from '../../../security/restriction/organization';
 import {
   getErrorMessage,
   getErrorStringProperty,
@@ -118,12 +118,12 @@ export const OrganizationDomain = {
       .first();
   },
 
-  loadAccessibleOrganizationBy: async (
+  loadFirstProfessionalOrganizationBy: async (
     conditions: OrganizationMutator
   ): Promise<Organization | undefined> => {
     return db<Organization>('Organization')
       .where(conditions)
-      .tap(restrictOrganizationToAccessible)
+      .tap(restrictOrganizationToProfessionalSpace)
       .select('Organization.*')
       .first();
   },
