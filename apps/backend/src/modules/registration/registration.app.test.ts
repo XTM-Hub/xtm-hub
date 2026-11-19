@@ -2914,6 +2914,49 @@ describe('registration app, platform admin', () => {
       );
     });
 
+    it('should unregister on behalf of the owner the list shows when the platform has several subscriptions', async () => {
+      // Given an older subscription of another organization, created first
+      const serviceInstance = await TestHelper.serviceInstance.create({
+        service_definition_id: SERVICES.DEFINITIONS.OPENCTI_REGISTRATION.ID,
+      });
+      await TestHelper.subscription.create({
+        organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+        service_instance_id: serviceInstance.id,
+        start_date: new Date('2024-01-01'),
+      });
+      await TestHelper.subscription.create({
+        organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        service_instance_id: serviceInstance.id,
+        start_date: new Date(),
+      });
+      const configuration = await TestHelper.platformConfiguration.create({
+        service_instance_id: serviceInstance.id,
+        platform_title: 'Several subscriptions',
+      });
+      vi.spyOn(MailService, 'sendMail').mockResolvedValue();
+      const telemetrySpy = vi
+        .spyOn(TelemetryApp, 'sendTelemetryEvent')
+        .mockResolvedValue();
+      const listed = await RegistrationApp.loadAdminRegisteredPlatform(
+        configuration.service_instance_id
+      );
+
+      // When
+      await RegistrationApp.adminUnregisterPlatform(
+        configuration.service_instance_id
+      );
+
+      // Then
+      expect(listed?.organization?.id).toBe(
+        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID
+      );
+      expect(telemetrySpy).toHaveBeenCalledExactlyOnceWith(
+        expect.objectContaining({
+          organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        })
+      );
+    });
+
     it('should do nothing on an inactive registration', async () => {
       // Given
       const configuration = await createAdminFixture({
