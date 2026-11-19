@@ -20,6 +20,7 @@ import {
 } from './api-token.auth';
 import { ApiTokenDomain } from './api-token.domain';
 import { ApiTokenHelper } from './api-token.helper';
+import { API_TOKEN_FAILURE_RATE_MAX } from './api-token.rate-limit';
 
 const SECOND = TEST_ORGANIZATIONS.SECOND_ORGANIZATION;
 const FILIGRAN = TEST_ORGANIZATIONS.FILIGRAN;
@@ -188,9 +189,23 @@ describe('resolveApiToken', () => {
 
 describe('apiTokenMiddleware', () => {
   const response = () => {
-    const res = { status: vi.fn(), json: vi.fn() };
+    const res = { status: vi.fn(), json: vi.fn(), setHeader: vi.fn() };
     res.status.mockReturnValue(res);
     return res;
+  };
+
+  // Documentation addresses (RFC 5737), one per test: the refused tokens are counted per IP for the whole file
+  const bearerRequest = (ip: string, token: string) =>
+    ({ ip, headers: { authorization: `Bearer ${token}` } }) as Request;
+
+  const refuseTokensFrom = async (ip: string, count: number) => {
+    for (let index = 0; index < count; index++) {
+      await apiTokenMiddleware(
+        bearerRequest(ip, ApiTokenHelper.generate().token),
+        response() as unknown as Response,
+        vi.fn()
+      );
+    }
   };
 
   it('should let a request without an API token through unchanged', async () => {
@@ -257,6 +272,74 @@ describe('apiTokenMiddleware', () => {
     });
     expect(next).not.toHaveBeenCalled();
     expect(getApiTokenAuthentication(req)).toBeUndefined();
+  });
+
+  it('should answer 429 without looking tokens up once a client has used up its refused tokens', async () => {
+    // Given
+    const ip = '192.0.2.10';
+    const loadByHash = vi.spyOn(ApiTokenDomain, 'loadByHash');
+    await refuseTokensFrom(ip, API_TOKEN_FAILURE_RATE_MAX);
+    const req = bearerRequest(ip, ApiTokenHelper.generate().token);
+    const res = response();
+    const next = vi.fn();
+
+    // When
+    await apiTokenMiddleware(req, res as unknown as Response, next);
+
+    // Then
+    expect(loadByHash).toHaveBeenCalledTimes(API_TOKEN_FAILURE_RATE_MAX);
+    expect(res.status).toHaveBeenCalledWith(429);
+    expect(res.json).toHaveBeenCalledWith({
+      errors: [
+        {
+          message: 'TOO_MANY_REQUESTS',
+          extensions: { code: 'TOO_MANY_REQUESTS' },
+        },
+      ],
+    });
+    expect(next).not.toHaveBeenCalled();
+    expect(getApiTokenAuthentication(req)).toBeUndefined();
+  });
+
+  it('should answer 401 to each refused token below the limit', async () => {
+    // Given
+    const ip = '192.0.2.11';
+    await refuseTokensFrom(ip, API_TOKEN_FAILURE_RATE_MAX - 1);
+    const res = response();
+
+    // When
+    await apiTokenMiddleware(
+      bearerRequest(ip, ApiTokenHelper.generate().token),
+      res as unknown as Response,
+      vi.fn()
+    );
+
+    // Then
+    expect(res.status).toHaveBeenCalledWith(401);
+  });
+
+  it('should authenticate a valid token while another client is over its limit', async () => {
+    // Given
+    await refuseTokensFrom('192.0.2.12', API_TOKEN_FAILURE_RATE_MAX + 1);
+    const { token, api_token } = await createToken(
+      SECOND.USERS.SIMPLE.ID,
+      SECOND.ID,
+      ApiTokenScope.Read
+    );
+    const req = bearerRequest('192.0.2.13', token);
+    const res = response();
+    const next = vi.fn();
+
+    // When
+    await apiTokenMiddleware(req, res as unknown as Response, next);
+
+    // Then
+    expect(next).toHaveBeenCalledWith();
+    expect(res.status).not.toHaveBeenCalled();
+    expect(getApiTokenAuthentication(req)?.token).toMatchObject({
+      id: api_token.id,
+      organization_id: SECOND.ID,
+    });
   });
 
   it('should pass an unexpected failure to the error handler', async () => {

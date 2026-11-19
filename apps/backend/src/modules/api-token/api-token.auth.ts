@@ -12,6 +12,10 @@ import { logApp } from '../../utils/app-logger.util';
 import { UserDomain } from '../organization-management/user/user-domain/user.domain';
 import { ApiTokenDomain } from './api-token.domain';
 import { ApiTokenHelper } from './api-token.helper';
+import {
+  countApiTokenFailure,
+  isApiTokenFailureLimitReached,
+} from './api-token.rate-limit';
 
 // What a request authenticated by an API token knows about it
 export interface ApiTokenCaller {
@@ -155,10 +159,22 @@ const recordUse = (id: ApiTokenId, now: Date) => {
   );
 };
 
+const sendUnauthenticated = (res: Response) => {
+  res.status(401).json({
+    errors: [
+      {
+        message: 'UNAUTHENTICATED',
+        extensions: { code: 'UNAUTHENTICATED' },
+      },
+    ],
+  });
+};
+
 /**
  * `Authorization: Bearer xhp_...` authenticates the request as the token's user. Any other request goes on unchanged
  * (session cookie, system token, platform token). A refused token answers 401 whatever the route: the caller asked
- * for the token's identity, it never falls back to a session.
+ * for the token's identity, it never falls back to a session. Refused tokens are counted per client IP: over the
+ * limit, the client gets 429 and its tokens are no longer looked up until the window ends.
  */
 export const apiTokenMiddleware = async (
   req: Request,
@@ -173,18 +189,18 @@ export const apiTokenMiddleware = async (
     return;
   }
   try {
+    const refuse = () =>
+      countApiTokenFailure(req, res, () => sendUnauthenticated(res), next);
+    // Over the limit: answered 429 without looking the token up
+    if (await isApiTokenFailureLimitReached(req)) {
+      await refuse();
+      return;
+    }
     const now = new Date();
     const resolution = await resolveApiToken(secret, now);
     if (!resolution.authenticated) {
       logApp.warn('API token refused', { reason: resolution.reason });
-      res.status(401).json({
-        errors: [
-          {
-            message: 'UNAUTHENTICATED',
-            extensions: { code: 'UNAUTHENTICATED' },
-          },
-        ],
-      });
+      await refuse();
       return;
     }
     authentications.set(req, resolution.authentication);
