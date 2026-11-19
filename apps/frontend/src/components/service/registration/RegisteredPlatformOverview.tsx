@@ -146,6 +146,7 @@ export const RegisteredPlatformOverview = ({
             isLoading={isSaasPlatformDataPending || isPreviousMetricsPeriodData}
             period={metricsPeriod}
             onPeriodChange={setMetricsPeriod}
+            showGuidedTour={hasRightToVisualize}
           />
         ) : (
           <PlatformMetricsAccessRequest platformTitle={platform.title} />

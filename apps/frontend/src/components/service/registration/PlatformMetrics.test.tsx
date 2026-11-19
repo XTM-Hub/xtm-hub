@@ -5,6 +5,10 @@ import {
   resetAnalyticsEnvironment,
   startAnalytics,
 } from '@/utils/test/analytics';
+import {
+  mockTranslations,
+  translateWithValues,
+} from '@/utils/test/mock-translations';
 import testRender from '@/utils/test/test-render';
 import {
   MetricType,
@@ -16,7 +20,8 @@ import {
   SaasPlatformStorage,
 } from '@graphql/generated';
 import { act, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { useTranslations } from 'next-intl';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
@@ -371,5 +376,226 @@ describe('PlatformMetrics', () => {
 
     // Then
     expect(readTrackedEvents('view_platform_metrics')).toHaveLength(1);
+  });
+
+  describe('guided tour', () => {
+    const postgresMetrics: SaasPlatformMetrics = {
+      ...metrics,
+      series: [
+        {
+          metric_type: MetricType.PostgresUsedSize,
+          points: [{ timestamp: '2026-09-22T12:00:00.000Z', value: 1_000 }],
+        },
+      ],
+    };
+
+    const renderMetrics = ({
+      showGuidedTour,
+      isLoading = false,
+      platformMetrics = metrics,
+      platformSla = null,
+    }: {
+      showGuidedTour: boolean;
+      isLoading?: boolean;
+      platformMetrics?: SaasPlatformMetrics;
+      platformSla?: SaasPlatformSla | null;
+    }) =>
+      testRender(
+        <PlatformMetrics
+          platformIdentifier={PlatformIdentifier.Opencti}
+          metrics={platformMetrics}
+          sla={platformSla}
+          isLoading={isLoading}
+          period={SaasPlatformMetricsPeriod.Last_90Days}
+          onPeriodChange={vi.fn()}
+          showGuidedTour={showGuidedTour}
+        />
+      );
+
+    afterEach(() => {
+      vi.mocked(useTranslations).mockImplementation(() => mockTranslations());
+    });
+
+    const goToStep = async (
+      user: ReturnType<typeof testRender>['user'],
+      step: number
+    ) => {
+      await user.click(screen.getByRole('button', { name: 'Tour.GuidedTour' }));
+      for (let index = 1; index < step; index++) {
+        await user.click(
+          await screen.findByRole('button', { name: 'Tour.NextStep' })
+        );
+      }
+    };
+
+    it('should hide the tour from a user who is not an admin', () => {
+      // Given / When
+      renderMetrics({ showGuidedTour: false });
+
+      // Then
+      expect(
+        screen.queryByRole('button', { name: 'Tour.GuidedTour' })
+      ).not.toBeInTheDocument();
+    });
+
+    it('should hide the tour while the metrics load', () => {
+      // Given / When
+      renderMetrics({ showGuidedTour: true, isLoading: true });
+
+      // Then
+      expect(
+        screen.queryByRole('button', { name: 'Tour.GuidedTour' })
+      ).not.toBeInTheDocument();
+    });
+
+    it('should explain where the metrics come from on the first step', async () => {
+      // Given the metrics shown to an admin
+      const { user } = renderMetrics({ showGuidedTour: true });
+
+      // When the admin starts the tour
+      await user.click(screen.getByRole('button', { name: 'Tour.GuidedTour' }));
+
+      // Then
+      expect(
+        await screen.findByText('Register.Metrics.Tour.Source')
+      ).toBeVisible();
+    });
+
+    it.each`
+      step | content
+      ${3} | ${'Register.Metrics.Tour.FileStorage'}
+      ${4} | ${'Register.Metrics.Tour.ChartAxes'}
+    `(
+      'should show $content on step $step',
+      async ({ step, content }: { step: number; content: string }) => {
+        // Given the metrics of a platform, shown to an admin
+        const { user } = renderMetrics({ showGuidedTour: true });
+
+        // When the admin goes to the step
+        await goToStep(user, step);
+
+        // Then
+        expect(await screen.findByText(content)).toBeVisible();
+      }
+    );
+
+    it('should explain the colors of the SLA chart against the contractual rate on the last step', async () => {
+      // Given the metrics of a platform with an SLA, shown to an admin
+      vi.mocked(useTranslations).mockReturnValue(
+        mockTranslations({ translate: translateWithValues })
+      );
+      const { user } = renderMetrics({
+        showGuidedTour: true,
+        platformSla: sla,
+      });
+
+      // When the admin goes to the fifth step
+      await goToStep(user, 5);
+
+      // Then the step gives the target of the contract
+      expect(
+        await screen.findByText(
+          translateWithValues('Register.Metrics.Tour.Sla', {
+            target: '99.98%',
+          })
+        )
+      ).toBeVisible();
+      expect(
+        screen.getByRole('button', { name: 'Tour.NextStep' })
+      ).toBeDisabled();
+    });
+
+    it('should point at the charts of the metrics loaded after the page opened', async () => {
+      // Given the metrics of a platform with PostgreSQL and an SLA, loaded after the page opened
+      vi.mocked(useTranslations).mockReturnValue(
+        mockTranslations({ translate: translateWithValues })
+      );
+      const renderLoadedMetrics = (isLoading: boolean) => (
+        <PlatformMetrics
+          platformIdentifier={PlatformIdentifier.Openaev}
+          metrics={isLoading ? undefined : postgresMetrics}
+          sla={isLoading ? undefined : sla}
+          isLoading={isLoading}
+          period={SaasPlatformMetricsPeriod.Last_90Days}
+          onPeriodChange={vi.fn()}
+          showGuidedTour
+        />
+      );
+      const { user, rerender } = testRender(renderLoadedMetrics(true));
+      rerender(renderLoadedMetrics(false));
+
+      // When the admin starts the tour
+      await user.click(screen.getByRole('button', { name: 'Tour.GuidedTour' }));
+
+      // Then the tour names the database of the loaded metrics and ends on their SLA chart
+      expect(
+        screen.getAllByRole('button', { name: /Tour\.GoToStep/ })
+      ).toHaveLength(5);
+      await user.click(screen.getByRole('button', { name: 'Tour.NextStep' }));
+      expect(
+        await screen.findByText(
+          translateWithValues('Register.Metrics.Tour.Database', {
+            database: 'PostgreSQL',
+          })
+        )
+      ).toBeVisible();
+    });
+
+    it('should end the tour on the storage charts when the platform has no SLA', async () => {
+      // Given the metrics of a platform without SLA, shown to an admin
+      const { user } = renderMetrics({ showGuidedTour: true });
+
+      // When the admin goes to the fourth step
+      await goToStep(user, 4);
+
+      // Then it is the last one
+      expect(
+        await screen.findByText('Register.Metrics.Tour.ChartAxes')
+      ).toBeVisible();
+      expect(
+        screen.getByRole('button', { name: 'Tour.NextStep' })
+      ).toBeDisabled();
+    });
+
+    it.each`
+      engine             | platformMetrics
+      ${'Elasticsearch'} | ${metrics}
+      ${'PostgreSQL'}    | ${postgresMetrics}
+    `(
+      'should name $engine on the step about the database chart',
+      async ({
+        engine,
+        platformMetrics,
+      }: {
+        engine: string;
+        platformMetrics: SaasPlatformMetrics;
+      }) => {
+        // Given the tour opened on the metrics of a platform
+        vi.mocked(useTranslations).mockReturnValue(
+          mockTranslations({ translate: translateWithValues })
+        );
+        const { user } = renderMetrics({
+          showGuidedTour: true,
+          platformMetrics,
+        });
+        await user.click(
+          screen.getByRole('button', { name: 'Tour.GuidedTour' })
+        );
+
+        // When the admin goes to the next step
+        await user.click(
+          await screen.findByRole('button', { name: 'Tour.NextStep' })
+        );
+
+        // Then the step names the database the chart measures
+        expect(
+          await screen.findByText(
+            translateWithValues('Register.Metrics.Tour.Database', {
+              database: engine,
+            })
+          )
+        ).toBeVisible();
+      }
+    );
   });
 });
