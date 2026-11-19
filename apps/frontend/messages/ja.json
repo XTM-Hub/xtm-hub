@@ -1459,7 +1459,7 @@
       "ManagerSupportedLabel": "マネージャー",
       "ManageAccessCapabilityLabel": "アクセス管理: ユーザーは所属組織の他ユーザーをこのサービスに招待できます",
       "MetaDescriptionLabel": "メタディスクリプション",
-      "MetaDescriptionPlaceholder": "製品名と種類の後に公開される概要です（例:「OpenCTI Dashboard: 概要.」）。文全体を120〜160文字にし、長いダッシュ（— または –）ではなく半角ハイフン（-）のみを使用してください。",
+      "MetaDescriptionPlaceholder": "SEO用：文全体を120〜160文字にし、長いダッシュ（— または –）ではなく半角ハイフン（-）のみを使用してください。",
       "MinimumDeployableVersionLabel": "{platform} Hub のバージョンからデプロイ可能",
       "MinimumDeployableVersionPlaceholder": "1.0.0",
       "NameLabel": "名前",

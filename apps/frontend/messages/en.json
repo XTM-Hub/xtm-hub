@@ -1459,7 +1459,7 @@
       "ManagerSupportedLabel": "Manager supported",
       "ManageAccessCapabilityLabel": "Manage access: The user can invite other users from his/her organization to this service",
       "MetaDescriptionLabel": "Meta-description",
-      "MetaDescriptionPlaceholder": "Summary published after the product and type, as in \"OpenCTI Dashboard: your summary.\" The whole sentence needs 120 to 160 characters, with plain hyphens (-) only, no long dashes (— or –).",
+      "MetaDescriptionPlaceholder": "For SEO: the whole sentence needs 120 to 160 characters, with plain hyphens (-) only, no long dashes (— or –).",
       "MinimumDeployableVersionLabel": "{platform} deployable from hub version",
       "MinimumDeployableVersionPlaceholder": "1.0.0",
       "NameLabel": "Name",

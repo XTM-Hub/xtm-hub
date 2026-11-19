@@ -1459,7 +1459,7 @@
       "ManagerSupportedLabel": "Gestionnaire pris en charge",
       "ManageAccessCapabilityLabel": "Gérer les accès : l'utilisateur peut inviter d'autres utilisateurs de son organisation à ce service",
       "MetaDescriptionLabel": "Méta-description",
-      "MetaDescriptionPlaceholder": "Résumé publié après le produit et le type, comme dans « OpenCTI Dashboard: votre résumé. » La phrase entière doit compter entre 120 et 160 caractères, avec des tirets simples (-) uniquement, sans tirets longs (— ou –).",
+      "MetaDescriptionPlaceholder": "Pour le SEO : la phrase entière doit compter entre 120 et 160 caractères, avec des tirets simples (-) uniquement, sans tirets longs (— ou –).",
       "MinimumDeployableVersionLabel": "Version minimale pour déployer sur {platform}",
       "MinimumDeployableVersionPlaceholder": "1.0.0",
       "NameLabel": "Nom",
