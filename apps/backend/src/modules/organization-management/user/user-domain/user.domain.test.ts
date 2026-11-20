@@ -21,7 +21,6 @@ import {
   UserOrdering,
 } from '../../../../__generated__/resolvers-types';
 import { requestContext } from '../../../../context/request.context';
-import CapabilityPortal from '../../../../model/kanel/public/CapabilityPortal';
 import { DeploymentRequestId } from '../../../../model/kanel/public/DeploymentRequest';
 import Organization, {
   OrganizationId,
@@ -29,7 +28,6 @@ import Organization, {
 import { ServiceGroupId } from '../../../../model/kanel/public/ServiceGroup';
 import User, { UserId, UserMutator } from '../../../../model/kanel/public/User';
 import UserOrganization from '../../../../model/kanel/public/UserOrganization';
-import { UserLoadUserBy } from '../../../../model/user';
 import { CAPABILITY_BYPASS, ROLE_ADMIN } from '../../../../portal.const';
 import { narrowUserToToken } from '../../../api-token/api-token.auth';
 import { TelemetryApp } from '../../../telemetry/telemetry.app';
@@ -634,28 +632,9 @@ describe('users domain', () => {
       }
     };
 
-    // A request-context user member of the given organizations. The restriction reads organization_capabilities
-    // only: organizations is filled for narrowUserToToken, which filters both
-    const buildCaller = (
-      user: User,
-      memberOf: Organization[],
-      capabilities: CapabilityPortal[] = []
-    ): UserLoadUserBy => ({
-      ...user,
-      organizations: memberOf,
-      selected_org_capabilities: [],
-      roles_portal: [],
-      capabilities,
-      organization_capabilities: memberOf.map((organization) => ({
-        id: `${user.id}-${organization.id}`,
-        organization,
-        capabilities: [],
-      })),
-    });
-
     const setBypassCaller = () =>
       requestContext.set({
-        user: buildCaller(bypassUser, [], [CAPABILITY_BYPASS]),
+        user: TestHelper.caller.build(bypassUser, [], [CAPABILITY_BYPASS]),
       });
 
     const memberIds = ({ edges }: OrganizationMemberConnection) =>
@@ -975,7 +954,9 @@ describe('users domain', () => {
         const { user: caller } = await addMember(organizationA);
         const { user: colleague } = await addMember(organizationA);
         await addMember(organizationB);
-        requestContext.set({ user: buildCaller(caller, [organizationA]) });
+        requestContext.set({
+          user: TestHelper.caller.build(caller, [organizationA]),
+        });
 
         // When
         const connectionA = await UserDomain.loadOrganizationMemberConnection(
@@ -999,7 +980,9 @@ describe('users domain', () => {
         // Given
         const { user: caller } = await addMember(organizationA);
         await addMember(organizationB, { last_name: 'Haystack' });
-        requestContext.set({ user: buildCaller(caller, [organizationA]) });
+        requestContext.set({
+          user: TestHelper.caller.build(caller, [organizationA]),
+        });
 
         // When
         const connection = await UserDomain.loadOrganizationMemberConnection(
@@ -1022,7 +1005,7 @@ describe('users domain', () => {
         await addMember(organizationB);
         requestContext.set({
           user: narrowUserToToken(
-            buildCaller(caller, [organizationA, organizationB]),
+            TestHelper.caller.build(caller, [organizationA, organizationB]),
             {
               scope: ApiTokenScope.ReadWrite,
               organization_id: organizationA.id,
@@ -1045,7 +1028,9 @@ describe('users domain', () => {
         // Given
         const { user: caller } = await addMember(organizationA);
         await addMember(organizationA);
-        requestContext.set({ user: buildCaller(caller, [organizationA]) });
+        requestContext.set({
+          user: TestHelper.caller.build(caller, [organizationA]),
+        });
         await TestHelper.user_Organization.delete({
           user_id: caller.id,
           organization_id: organizationA.id,
@@ -1078,7 +1063,7 @@ describe('users domain', () => {
           organization_id: personalSpace.id,
         });
         requestContext.set({
-          user: buildCaller(
+          user: TestHelper.caller.build(
             owner,
             [personalSpace],
             [CAPABILITY_READ_ORGANIZATION_MEMBERS]

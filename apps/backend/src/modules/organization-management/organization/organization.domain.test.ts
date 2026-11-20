@@ -9,35 +9,14 @@ import {
 } from '../../../../tests/tests.const';
 import { ApiTokenScope } from '../../../__generated__/resolvers-types';
 import { requestContext } from '../../../context/request.context';
-import CapabilityPortal from '../../../model/kanel/public/CapabilityPortal';
 import Organization, {
   OrganizationId,
 } from '../../../model/kanel/public/Organization';
 import ServiceInstance from '../../../model/kanel/public/ServiceInstance';
 import User, { UserId } from '../../../model/kanel/public/User';
-import { UserLoadUserBy } from '../../../model/user';
 import { CAPABILITY_BYPASS } from '../../../portal.const';
 import { narrowUserToToken } from '../../api-token/api-token.auth';
 import { OrganizationDomain } from './organization.domain';
-
-// A request-context user member of the given organizations. The restriction reads organization_capabilities only:
-// organizations is filled for narrowUserToToken, which filters both
-const buildCaller = (
-  user: User,
-  memberOf: Organization[],
-  capabilities: CapabilityPortal[] = []
-): UserLoadUserBy => ({
-  ...user,
-  organizations: memberOf,
-  selected_org_capabilities: [],
-  roles_portal: [],
-  capabilities,
-  organization_capabilities: memberOf.map((organization) => ({
-    id: `${user.id}-${organization.id}`,
-    organization,
-    capabilities: [],
-  })),
-});
 
 describe('organizationsDomain', () => {
   describe('loadOrganizationsByUser', () => {
@@ -271,7 +250,7 @@ describe('organizationsDomain', () => {
       async (key) => {
         // Given
         requestContext.set({
-          user: buildCaller(
+          user: TestHelper.caller.build(
             member,
             [personalSpace, organizationA],
             [CAPABILITY_BYPASS]
@@ -299,7 +278,7 @@ describe('organizationsDomain', () => {
       async (key) => {
         // Given
         requestContext.set({
-          user: buildCaller(
+          user: TestHelper.caller.build(
             member,
             [personalSpace, organizationA],
             [CAPABILITY_READ_ORGANIZATION_MEMBERS]
@@ -325,7 +304,7 @@ describe('organizationsDomain', () => {
     it('should not return their own personal space to a user with READ_ORGANIZATION_MEMBERS', async () => {
       // Given
       requestContext.set({
-        user: buildCaller(
+        user: TestHelper.caller.build(
           member,
           [personalSpace, organizationA],
           [CAPABILITY_READ_ORGANIZATION_MEMBERS]
@@ -345,7 +324,7 @@ describe('organizationsDomain', () => {
     it('should return their organization to a member without portal capability', async () => {
       // Given
       requestContext.set({
-        user: buildCaller(member, [personalSpace, organizationA]),
+        user: TestHelper.caller.build(member, [personalSpace, organizationA]),
       });
 
       // When
@@ -367,7 +346,7 @@ describe('organizationsDomain', () => {
       async (key) => {
         // Given
         requestContext.set({
-          user: buildCaller(member, [personalSpace, organizationA]),
+          user: TestHelper.caller.build(member, [personalSpace, organizationA]),
         });
 
         // When
@@ -387,7 +366,7 @@ describe('organizationsDomain', () => {
         email: `loner-${uuidv4()}@filigran.io`,
       });
       createdUserIds.push(loner.id);
-      requestContext.set({ user: buildCaller(loner, []) });
+      requestContext.set({ user: TestHelper.caller.build(loner, []) });
 
       // When
       const organization =
@@ -402,7 +381,7 @@ describe('organizationsDomain', () => {
     it('should return undefined for an unknown id', async () => {
       // Given
       requestContext.set({
-        user: buildCaller(member, [personalSpace, organizationA]),
+        user: TestHelper.caller.build(member, [personalSpace, organizationA]),
       });
 
       // When
@@ -422,7 +401,11 @@ describe('organizationsDomain', () => {
       });
       requestContext.set({
         user: narrowUserToToken(
-          buildCaller(member, [personalSpace, organizationA, organizationB]),
+          TestHelper.caller.build(member, [
+            personalSpace,
+            organizationA,
+            organizationB,
+          ]),
           { scope: ApiTokenScope.ReadWrite, organization_id: organizationA.id }
         ),
       });
@@ -463,7 +446,7 @@ describe('organizationsDomain', () => {
     it('should not return an organization the user was removed from since the session was written', async () => {
       // Given
       requestContext.set({
-        user: buildCaller(member, [personalSpace, organizationA]),
+        user: TestHelper.caller.build(member, [personalSpace, organizationA]),
       });
       await TestHelper.user_Organization.delete({
         user_id: member.id,

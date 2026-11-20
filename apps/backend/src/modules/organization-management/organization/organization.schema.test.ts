@@ -20,7 +20,6 @@ import {
   UserAccountStatus,
 } from '../../../__generated__/resolvers-types';
 import { requestContext } from '../../../context/request.context';
-import CapabilityPortal from '../../../model/kanel/public/CapabilityPortal';
 import Organization, {
   OrganizationId,
 } from '../../../model/kanel/public/Organization';
@@ -49,25 +48,6 @@ const ORGANIZATION_NOT_FOUND_ERROR = {
   message: 'ORGANIZATION_NOT_FOUND',
   extensions: { code: 'NOT_FOUND' },
 };
-
-// A caller member of the given organizations. The restriction reads organization_capabilities only: organizations
-// is filled for narrowUserToToken, which filters both
-const buildCaller = (
-  user: User,
-  memberOf: Organization[],
-  capabilities: CapabilityPortal[] = []
-): UserLoadUserBy => ({
-  ...user,
-  organizations: memberOf,
-  selected_org_capabilities: [],
-  roles_portal: [],
-  capabilities,
-  organization_capabilities: memberOf.map((organization) => ({
-    id: `${user.id}-${organization.id}`,
-    organization,
-    capabilities: [],
-  })),
-});
 
 const buildContext = (user: UserLoadUserBy | undefined): PortalContext =>
   ({
@@ -214,7 +194,7 @@ describe('organizationMembers GraphQL schema', () => {
 
     // When
     const { data, errors } = await queryMembers(
-      buildCaller(caller, [organizationA]),
+      TestHelper.caller.build(caller, [organizationA]),
       organizationA.id
     );
 
@@ -249,28 +229,34 @@ describe('organizationMembers GraphQL schema', () => {
     [
       'another organization, to a member of organization A',
       async () => ({
-        caller: buildCaller(await addMember(organizationA), [organizationA]),
+        caller: TestHelper.caller.build(await addMember(organizationA), [
+          organizationA,
+        ]),
         organizationId: organizationB.id as string,
       }),
     ],
     [
       'an unknown UUID',
       async () => ({
-        caller: buildCaller(await addMember(organizationA), [organizationA]),
+        caller: TestHelper.caller.build(await addMember(organizationA), [
+          organizationA,
+        ]),
         organizationId: uuidv4(),
       }),
     ],
     [
       'an id that is not a UUID',
       async () => ({
-        caller: buildCaller(await addMember(organizationA), [organizationA]),
+        caller: TestHelper.caller.build(await addMember(organizationA), [
+          organizationA,
+        ]),
         organizationId: 'not-a-uuid',
       }),
     ],
     [
       'a personal space, to a user with READ_ORGANIZATION_MEMBERS',
       async () => ({
-        caller: buildCaller(
+        caller: TestHelper.caller.build(
           outsider,
           [],
           [CAPABILITY_READ_ORGANIZATION_MEMBERS]
@@ -289,7 +275,7 @@ describe('organizationMembers GraphQL schema', () => {
         });
         return {
           caller: narrowUserToToken(
-            buildCaller(user, [organizationA, organizationB]),
+            TestHelper.caller.build(user, [organizationA, organizationB]),
             {
               scope: ApiTokenScope.ReadWrite,
               organization_id: organizationA.id,
@@ -320,7 +306,7 @@ describe('organizationMembers GraphQL schema', () => {
     // Given
     const caller = await addMember(organizationA);
     await addMember(organizationA);
-    const callerInA = buildCaller(caller, [organizationA]);
+    const callerInA = TestHelper.caller.build(caller, [organizationA]);
 
     // When
     const byRawId = await queryMembers(callerInA, organizationA.id);
@@ -348,7 +334,7 @@ describe('organizationMembers GraphQL schema', () => {
 
     // When
     const { data, errors } = await queryMembers(
-      buildCaller(caller, [organizationA]),
+      TestHelper.caller.build(caller, [organizationA]),
       toGlobalId('User', organizationA.id)
     );
 
@@ -365,7 +351,11 @@ describe('organizationMembers GraphQL schema', () => {
 
     // When
     const { data, errors } = await queryMembers(
-      buildCaller(outsider, [], [CAPABILITY_READ_ORGANIZATION_MEMBERS]),
+      TestHelper.caller.build(
+        outsider,
+        [],
+        [CAPABILITY_READ_ORGANIZATION_MEMBERS]
+      ),
       organizationA.id
     );
 
@@ -385,7 +375,7 @@ describe('organizationMembers GraphQL schema', () => {
 
     // When
     const { data, errors } = await queryMembers(
-      buildCaller(outsider, [], [CAPABILITY_BYPASS]),
+      TestHelper.caller.build(outsider, [], [CAPABILITY_BYPASS]),
       personalSpace.id
     );
 
@@ -432,7 +422,11 @@ describe('organizationMembers GraphQL schema', () => {
 
     // When
     const { data, errors } = await execute(
-      buildCaller(outsider, [], [CAPABILITY_READ_ORGANIZATION_MEMBERS]),
+      TestHelper.caller.build(
+        outsider,
+        [],
+        [CAPABILITY_READ_ORGANIZATION_MEMBERS]
+      ),
       `query ($organizationId: OrganizationId!, $id: ID!) {
         organizationMembers(organizationId: $organizationId, first: 1) { totalCount }
         organization(id: $id) { members_count }
