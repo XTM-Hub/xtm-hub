@@ -76,6 +76,32 @@ const connectedXtmoneStatus: XtmoneStatusState = {
 };
 
 describe('BundleProductCard', () => {
+  it('should render the product on the design system Paper surface, with its logo as the title above it', () => {
+    // Given / When
+    testRender(
+      <BundleProductCard
+        product={buildProduct()}
+        xtmoneStatus={emptyXtmoneStatus}
+        canManage={false}
+      />
+    );
+
+    // Then
+    const title = screen.getByRole('heading', {
+      level: 2,
+      name: /OpenCTI/,
+    });
+    const surface = screen.getByText('OpenCTI Instance').closest('section');
+    // The surface carries the design system radius, padding and elevation
+    // classes. These pin the design system's class names on purpose, as jsdom
+    // does no layout: a rename in the design system needs this test updated.
+    // The elevation is the default one, shared with the other blocks of the page.
+    expect(surface).toHaveClass('rounded-sm', 'p-4', 'layer-1');
+    expect(surface).not.toContainElement(title);
+    expect(surface?.parentElement).toContainElement(title);
+    expect(title).toContainElement(screen.getAllByAltText('OpenCTI')[0]);
+  });
+
   it('renders the product name and role', () => {
     testRender(
       <BundleProductCard

@@ -13,13 +13,7 @@ import { analyticsProduct } from '@/lib/analytics/analytics.context';
 import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { useDateFormatter } from '@/utils/date';
 import { toExternalHref } from '@/utils/external-url';
-import {
-  Button,
-  Card,
-  CardContent,
-  Chip,
-  IconButton,
-} from '@filigran/design-system';
+import { Button, Chip, IconButton, Paper } from '@filigran/design-system';
 import { EditIcon } from '@filigran/icon';
 import { xtmPlatformBundleKeys } from '@graphql/deployment/deployment.keys';
 import {
@@ -100,25 +94,26 @@ export const BundleProductCard = ({
   );
 
   return (
-    <Card
-      {...analyticsProduct(product.platform_identifier)}
-      padding={16}
-      className="h-full">
-      <CardContent
-        clamp={0}
-        className="flex flex-col gap-3 h-full">
-        <div className="flex gap-2 items-center min-w-0">
-          <Image
-            src={darkTextLogo}
-            alt={name}
-            className="hidden h-9 w-auto shrink-0 dark:block"
-          />
-          <Image
-            src={lightTextLogo}
-            alt={name}
-            className="block h-9 w-auto shrink-0 dark:hidden"
-          />
-        </div>
+    <div className="h-full [&>div]:h-full">
+      <Paper
+        as="section"
+        {...analyticsProduct(product.platform_identifier)}
+        padding={16}
+        className="flex flex-1 flex-col gap-3"
+        title={
+          <h2 className="flex items-center gap-2 [font:inherit] tracking-[inherit]">
+            <Image
+              src={darkTextLogo}
+              alt={name}
+              className="hidden h-6 w-auto shrink-0 dark:block"
+            />
+            <Image
+              src={lightTextLogo}
+              alt={name}
+              className="block h-6 w-auto shrink-0 dark:hidden"
+            />
+          </h2>
+        }>
         {isXtmone ? (
           <div className="flex flex-col">
             {productNameRow}
@@ -214,24 +209,24 @@ export const BundleProductCard = ({
             </Button>
           )}
         </div>
-      </CardContent>
-      {canManage && (
-        <PlatformUpdateSheet
-          serviceInstanceId={product.service_instance_id}
-          serviceInstanceName={product.service_instance?.name ?? ''}
-          platformUrl={product.url ?? ''}
-          serviceDefinitionIdentifier={getRegisteredPlatformServiceIdentifier(
-            product.platform_identifier
-          )}
-          open={openEditName}
-          setOpen={setOpenEditName}
-          onUpdated={() =>
-            queryClient.invalidateQueries({
-              queryKey: xtmPlatformBundleKeys.all(),
-            })
-          }
-        />
-      )}
-    </Card>
+        {canManage && (
+          <PlatformUpdateSheet
+            serviceInstanceId={product.service_instance_id}
+            serviceInstanceName={product.service_instance?.name ?? ''}
+            platformUrl={product.url ?? ''}
+            serviceDefinitionIdentifier={getRegisteredPlatformServiceIdentifier(
+              product.platform_identifier
+            )}
+            open={openEditName}
+            setOpen={setOpenEditName}
+            onUpdated={() =>
+              queryClient.invalidateQueries({
+                queryKey: xtmPlatformBundleKeys.all(),
+              })
+            }
+          />
+        )}
+      </Paper>
+    </div>
   );
 };

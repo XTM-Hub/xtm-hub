@@ -124,7 +124,7 @@
       "Remaining": "Remaining",
       "DaysRemaining": "{days, plural, =1 {# day} other {# days}}",
       "TrialRequester": "Trial requester",
-      "Title": "XTM Product Trial details:"
+      "Title": "XTM Product Trial details"
     },
     "Products": {
       "ConnectionStatus": "Connection status",

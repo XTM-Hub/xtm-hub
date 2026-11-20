@@ -111,7 +111,7 @@ test.describe('XTM Platform bundle trial', () => {
 
       const trialDetails = page.getByRole('main');
       await expect(
-        trialDetails.getByText('XTM Product Trial details:')
+        trialDetails.getByText('XTM Product Trial details')
       ).toBeVisible();
       await expect(
         trialDetails.getByText('Filigran', { exact: true })

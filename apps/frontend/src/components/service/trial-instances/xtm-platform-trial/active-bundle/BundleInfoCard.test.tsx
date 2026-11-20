@@ -52,4 +52,28 @@ describe('BundleInfoCard', () => {
       screen.getByText('XtmPlatformTrial.CancelTrial')
     ).toBeInTheDocument();
   });
+
+  it('should render the details on the design system Paper surface, with the title above it', () => {
+    // Given / When
+    testRender(
+      <BundleInfoCard
+        bundle={buildBundle()}
+        canManage={false}
+      />
+    );
+
+    // Then
+    const title = screen.getByRole('heading', {
+      level: 2,
+      name: 'XtmPlatformTrial.BundleInfo.Title',
+    });
+    const surface = screen.getByText('ACME').closest('section');
+    // The surface carries the design system radius, padding and elevation
+    // classes. These pin the design system's class names on purpose, as jsdom
+    // does no layout: a rename in the design system needs this test updated.
+    // The elevation is the default one, shared with the other blocks of the page.
+    expect(surface).toHaveClass('rounded-sm', 'p-4', 'layer-1');
+    expect(surface).not.toContainElement(title);
+    expect(surface?.parentElement).toContainElement(title);
+  });
 });

@@ -6,7 +6,7 @@ import { useTranslate } from '@/hooks/use-translate';
 import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { daysUntil, useDateFormatter } from '@/utils/date';
 import { xtmPlatformTrialManageUsersPath } from '@/utils/path/constant';
-import { Button, Card, CardContent, Chip } from '@filigran/design-system';
+import { Button, Chip, Paper } from '@filigran/design-system';
 import {
   PlatformContract,
   XtmPlatformBundleDetailsFragment,
@@ -42,18 +42,16 @@ export const BundleInfoCard = ({ bundle, canManage }: BundleInfoCardProps) => {
     : null;
 
   return (
-    <Card
-      elevation={2}
-      padding={16}
-      className="h-full">
-      <CardContent
-        clamp={0}
-        className="flex flex-col gap-3 h-full">
-        <div className="flex items-center gap-1 min-w-0">
-          <span className="truncate">
+    <div className="h-full [&>div]:h-full">
+      <Paper
+        as="section"
+        padding={16}
+        className="flex flex-1 flex-col gap-3"
+        title={
+          <h2 className="[font:inherit] tracking-[inherit]">
             {t('XtmPlatformTrial.BundleInfo.Title')}
-          </span>
-        </div>
+          </h2>
+        }>
         <div className="flex flex-col divide-y divide-[var(--border-elevation-subtle)]">
           <InfoRow label={t('XtmPlatformTrial.BundleInfo.OrganizationName')}>
             {bundle.organization_name ?? '-'}
@@ -107,7 +105,7 @@ export const BundleInfoCard = ({ bundle, canManage }: BundleInfoCardProps) => {
             />
           </div>
         )}
-      </CardContent>
-    </Card>
+      </Paper>
+    </div>
   );
 };
