@@ -1,14 +1,20 @@
 import SubscriptionSlug from '@/components/subcription/[slug]/SubscriptionSlug';
 import testRender from '@/utils/test/test-render';
-import { userServiceFromSubscriptionQuery } from '@generated/userServiceFromSubscriptionQuery.graphql';
-import { ServiceInstanceItemFragment } from '@graphql/generated';
+import {
+  OrderingMode,
+  ServiceDefinitionIdentifier,
+  ServiceInstanceItemFragment,
+  UserServiceItemFragment,
+  UserServiceOrdering,
+  UserServicesFromSubscriptionQuery,
+} from '@graphql/generated';
 import { screen } from '@testing-library/react';
 import { notFound } from 'next/navigation';
-import { PreloadedQuery } from 'react-relay';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const NOT_FOUND_ERROR = 'NEXT_NOT_FOUND';
 const ORGANIZATION_NAME = 'Subscribed Organization';
+const MANAGED_SERVICE_NAME = 'Managed service';
 
 const SUBSCRIPTION = {
   id: 'subscription-1',
@@ -23,14 +29,39 @@ const SUBSCRIPTION = {
   subscription_capability: [],
 };
 
-const SERVICE_INSTANCE = {
+const SERVICE_INSTANCE: ServiceInstanceItemFragment = {
   id: 'service-instance-1',
   name: 'Service',
-  service_definition: { identifier: 'custom_dashboards' },
-} as unknown as ServiceInstanceItemFragment;
+  description: null,
+  slug: null,
+  capabilities: [],
+  service_definition: {
+    identifier: ServiceDefinitionIdentifier.OpenctiCustomDashboards,
+  },
+};
+
+const USER_EMAIL = 'jane.doe@filigran.io';
+const USER_SERVICE: UserServiceItemFragment = {
+  id: 'user-service-1',
+  user: {
+    id: 'user-1',
+    first_name: 'Jane',
+    last_name: 'Doe',
+    email: USER_EMAIL,
+  },
+  subscription: null,
+  user_service_capability: [],
+};
+
+const USER_SERVICES: UserServicesFromSubscriptionQuery = {
+  userServiceFromSubscription: {
+    edges: [{ node: USER_SERVICE }, { node: null }],
+  },
+};
 
 const mocks = vi.hoisted(() => ({
   useSubscriptionByIdQuery: vi.fn(),
+  useUserServicesFromSubscriptionQuery: vi.fn(),
 }));
 
 vi.mock('@graphql/generated', async (importOriginal) => {
@@ -38,8 +69,21 @@ vi.mock('@graphql/generated', async (importOriginal) => {
     await import('@/utils/test/mock-generated-query');
   return mockGeneratedQueryHooks(importOriginal, {
     useSubscriptionByIdQuery: mocks.useSubscriptionByIdQuery,
+    useUserServicesFromSubscriptionQuery:
+      mocks.useUserServicesFromSubscriptionQuery,
   });
 });
+
+vi.mock('@/components/ui/data-table', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/components/ui/data-table')>()),
+  DataTable: ({ data }: { data: UserServiceItemFragment[] }) => (
+    <div>
+      {data.map((userService) => (
+        <span key={userService.id}>{userService.user?.email}</span>
+      ))}
+    </div>
+  ),
+}));
 
 const mockSubscriptionQuery = (subscriptionById: typeof SUBSCRIPTION | null) =>
   mocks.useSubscriptionByIdQuery.mockReturnValue({
@@ -47,16 +91,6 @@ const mockSubscriptionQuery = (subscriptionById: typeof SUBSCRIPTION | null) =>
   });
 
 vi.mock('@/components/Loader', () => ({ default: () => <div>loader</div> }));
-
-vi.mock('react-relay', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('react-relay')>()),
-  usePreloadedQuery: () => ({}),
-  useRefetchableFragment: () => [
-    { userServiceFromSubscription: { __id: 'connection-1', edges: [] } },
-    vi.fn(),
-  ],
-  useMutation: () => [vi.fn(), {}],
-}));
 
 type SubscriptionQueryOptions = {
   throwOnError: (error: Error, query: { state: { data: unknown } }) => boolean;
@@ -70,15 +104,18 @@ const renderSubscriptionSlug = (
 ) =>
   testRender(
     <SubscriptionSlug
-      queryRef={
-        {} as unknown as PreloadedQuery<userServiceFromSubscriptionQuery>
-      }
       subscriptionId={SUBSCRIPTION.id}
       serviceInstance={serviceInstance}
     />
   );
 
 describe('SubscriptionSlug', () => {
+  beforeEach(() => {
+    mocks.useUserServicesFromSubscriptionQuery.mockReturnValue({
+      data: USER_SERVICES,
+    });
+  });
+
   it.each([
     { page: 'admin', serviceInstance: undefined },
     { page: 'manage', serviceInstance: SERVICE_INSTANCE },
@@ -163,5 +200,74 @@ describe('SubscriptionSlug', () => {
 
     // Then
     expect(shouldThrow).toBe(false);
+  });
+
+  it('should list the users of the subscription', () => {
+    // Given
+    mockSubscriptionQuery(SUBSCRIPTION);
+
+    // When
+    renderSubscriptionSlug();
+
+    // Then
+    expect(screen.getByText(USER_EMAIL)).toBeInTheDocument();
+  });
+
+  it('should read the users of the subscription ordered by first name', () => {
+    // Given
+    mockSubscriptionQuery(SUBSCRIPTION);
+
+    // When
+    renderSubscriptionSlug();
+
+    // Then
+    expect(
+      mocks.useUserServicesFromSubscriptionQuery.mock.lastCall?.[1]
+    ).toEqual({
+      subscriptionId: SUBSCRIPTION.id,
+      count: 50,
+      orderBy: UserServiceOrdering.FirstName,
+      orderMode: OrderingMode.Asc,
+    });
+  });
+
+  it('should display the loader while the users are loading', () => {
+    // Given
+    mockSubscriptionQuery(SUBSCRIPTION);
+    mocks.useUserServicesFromSubscriptionQuery.mockReturnValue({
+      data: undefined,
+    });
+
+    // When
+    renderSubscriptionSlug();
+
+    // Then
+    expect(screen.getByText('loader')).toBeInTheDocument();
+  });
+
+  it('should head the manage page with its own service instance', () => {
+    // Given
+    mockSubscriptionQuery(SUBSCRIPTION);
+
+    // When
+    renderSubscriptionSlug({ ...SERVICE_INSTANCE, name: MANAGED_SERVICE_NAME });
+
+    // Then
+    expect(
+      screen.getByRole('heading', { name: MANAGED_SERVICE_NAME })
+    ).toBeInTheDocument();
+  });
+
+  it('should head the admin page with the service instance of the subscription', () => {
+    // Given
+    mockSubscriptionQuery(SUBSCRIPTION);
+
+    // When
+    renderSubscriptionSlug();
+
+    // Then
+    expect(
+      screen.getByRole('heading', { name: SUBSCRIPTION.service_instance.name })
+    ).toBeInTheDocument();
   });
 });

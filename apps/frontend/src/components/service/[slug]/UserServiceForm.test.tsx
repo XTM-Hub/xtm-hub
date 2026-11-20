@@ -1,16 +1,21 @@
 import { UserServiceForm } from '@/components/service/[slug]/UserServiceForm';
+import * as SnackbarStore from '@/components/ui/snackbar/snackbar-store';
+import { mockMutationHook } from '@/utils/test/mock-mutation-hook';
 import testRender from '@/utils/test/test-render';
 import {
   FilterKey,
   OrderingMode,
+  ServiceRestriction,
   SubscriptionByIdQuery,
   UserAccountStatus,
   UserOrdering,
+  UserServiceItemFragment,
   UsersQuery,
   UsersQueryVariables,
 } from '@graphql/generated';
-import { keepPreviousData } from '@tanstack/react-query';
-import { screen } from '@testing-library/react';
+import { userServicesKeys } from '@graphql/user-service/user-service.keys';
+import { keepPreviousData, QueryClient } from '@tanstack/react-query';
+import { screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const VALIDATE_LABEL = 'Utils.Validate';
@@ -24,13 +29,39 @@ const ME_EMAIL = 'me@filigran.io';
 const OTHER_EMAIL = 'other@filigran.io';
 const USER_STATUS = UserAccountStatus.Invited;
 const LOADING_MESSAGE = 'Utils.Loading';
+const SERVER_ERROR = 'USER_SERVICE_ALREADY_EXISTS';
+
+const SUBSCRIPTION_ID = 'subscription-1';
+const SERVICE_INSTANCE_ID = 'service-instance-1';
+const USER_SERVICE_ID = 'user-service-1';
+
+const USER_SERVICE: UserServiceItemFragment = {
+  id: USER_SERVICE_ID,
+  user: {
+    id: 'other-id',
+    first_name: null,
+    last_name: null,
+    email: OTHER_EMAIL,
+  },
+  subscription: null,
+  user_service_capability: [
+    {
+      id: 'user-service-capability-1',
+      generic_service_capability: {
+        id: 'generic-capability-1',
+        name: ServiceRestriction.ManageAccess,
+      },
+      subscription_capability: null,
+    },
+  ],
+};
 
 const SUBSCRIPTION = {
   subscriptionById: {
-    id: 'subscription-1',
+    id: SUBSCRIPTION_ID,
     organization: { id: ORGANIZATION_ID },
     service_instance: {
-      id: 'service-instance-1',
+      id: SERVICE_INSTANCE_ID,
       name: 'Service',
       service_definition: { service_capability: [] },
     },
@@ -65,19 +96,20 @@ type UsersQueryOptions = {
 
 const mocks = vi.hoisted(() => ({
   usersQuery: vi.fn(),
-}));
-
-vi.mock('react-relay', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('react-relay')>()),
-  useMutation: () => [vi.fn(), true],
+  useAddUserServiceMutation: vi.fn(),
+  useEditUserServiceMutation: vi.fn(),
 }));
 
 vi.mock('@graphql/generated', async (importOriginal) => {
   const { mockGeneratedQueryHooks } =
     await import('@/utils/test/mock-generated-query');
-  return mockGeneratedQueryHooks(importOriginal, {
-    useUsersQuery: mocks.usersQuery,
-  });
+  return {
+    ...(await mockGeneratedQueryHooks(importOriginal, {
+      useUsersQuery: mocks.usersQuery,
+    })),
+    useAddUserServiceMutation: mocks.useAddUserServiceMutation,
+    useEditUserServiceMutation: mocks.useEditUserServiceMutation,
+  };
 });
 
 vi.mock('@/components/Loader', () => ({
@@ -90,11 +122,13 @@ vi.mock('usehooks-ts', async (importOriginal) => ({
   useDebounceCallback: (callback: unknown) => callback,
 }));
 
+const { setOpenSheet } = vi.hoisted(() => ({ setOpenSheet: vi.fn() }));
+
 vi.mock('@/components/ui/SheetWithPreventingDialog', () => ({
   useDialogContext: () => ({
     handleCloseSheet: vi.fn(),
     setIsDirty: vi.fn(),
-    setOpenSheet: vi.fn(),
+    setOpenSheet,
   }),
 }));
 
@@ -104,22 +138,36 @@ const lastQueryVariables = () =>
 const lastQueryOptions = () =>
   mocks.usersQuery.mock.lastCall?.[2] as UsersQueryOptions;
 
-const renderUserServiceForm = () =>
+const renderUserServiceForm = (userService?: UserServiceItemFragment) =>
   testRender(
     <UserServiceForm
-      connectionId="connection-1"
       subscription={SUBSCRIPTION}
+      userService={userService}
     />
   );
+
+const pickOtherUser = async (
+  user: ReturnType<typeof renderUserServiceForm>['user']
+) => {
+  await user.click(screen.getByRole('combobox', { name: EMAIL_LABEL }));
+  await user.click(await screen.findByRole('option', { name: OTHER_EMAIL }));
+};
 
 describe('UserServiceForm', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.usersQuery.mockReturnValue({ data: USERS });
+    mockMutationHook(mocks.useAddUserServiceMutation, 'success');
+    mockMutationHook(mocks.useEditUserServiceMutation, 'success');
+    vi.spyOn(SnackbarStore, 'showSnackbar').mockImplementation(() => undefined);
   });
 
   it('should disable the validate button while the user service mutation is in flight', () => {
     // Given a user service mutation in flight
+    mockMutationHook(mocks.useAddUserServiceMutation, 'success', {
+      isPending: true,
+    });
+
     // When the form renders
     renderUserServiceForm();
 
@@ -247,4 +295,145 @@ describe('UserServiceForm', () => {
       screen.queryByRole('option', { name: OTHER_EMAIL })
     ).not.toBeInTheDocument();
   });
+
+  it('should invite the picked users to the subscription', async () => {
+    // Given
+    const addUserService = mockMutationHook(
+      mocks.useAddUserServiceMutation,
+      'success'
+    );
+    const { user } = renderUserServiceForm();
+    await pickOtherUser(user);
+
+    // When
+    await user.click(
+      screen.getByRole('button', { name: new RegExp(`^${VALIDATE_LABEL}`) })
+    );
+
+    // Then
+    await waitFor(() =>
+      expect(addUserService).toHaveBeenCalledWith({
+        input: {
+          email: [OTHER_EMAIL],
+          capabilities: [],
+          subscription_id: SUBSCRIPTION_ID,
+        },
+        service_instance_id: SERVICE_INSTANCE_ID,
+      })
+    );
+  });
+
+  it('should send the checked capabilities of the edited user', async () => {
+    // Given
+    const editUserService = mockMutationHook(
+      mocks.useEditUserServiceMutation,
+      'success'
+    );
+    const { user } = renderUserServiceForm(USER_SERVICE);
+
+    // When
+    await user.click(
+      screen.getByRole('button', { name: new RegExp(`^${VALIDATE_LABEL}`) })
+    );
+
+    // Then
+    await waitFor(() =>
+      expect(editUserService).toHaveBeenCalledWith({
+        input: {
+          userServiceId: USER_SERVICE_ID,
+          capabilities: [ServiceRestriction.ManageAccess],
+        },
+        service_instance_id: SERVICE_INSTANCE_ID,
+      })
+    );
+  });
+
+  it.each([
+    {
+      action: 'invitation',
+      hook: () => mocks.useAddUserServiceMutation,
+      userService: undefined,
+      description: 'ServiceActions.UserServiceAdded',
+      fillForm: pickOtherUser,
+    },
+    {
+      action: 'edition',
+      hook: () => mocks.useEditUserServiceMutation,
+      userService: USER_SERVICE,
+      description: 'ServiceActions.UserCapabilitiesModified',
+      fillForm: async () => undefined,
+    },
+  ])(
+    'should refresh the users, confirm and close the sheet once the $action succeeds',
+    async ({ hook, userService, description, fillForm }) => {
+      // Given
+      const queryClient = new QueryClient();
+      const invalidateQueries = vi
+        .spyOn(queryClient, 'invalidateQueries')
+        .mockResolvedValue();
+      mockMutationHook(hook(), 'success');
+      const { user } = testRender(
+        <UserServiceForm
+          subscription={SUBSCRIPTION}
+          userService={userService}
+        />,
+        { queryClient }
+      );
+      await fillForm(user);
+
+      // When
+      await user.click(
+        screen.getByRole('button', { name: new RegExp(`^${VALIDATE_LABEL}`) })
+      );
+
+      // Then
+      await waitFor(() => expect(setOpenSheet).toHaveBeenCalledWith(false));
+      expect(invalidateQueries).toHaveBeenCalledWith({
+        queryKey: userServicesKeys.all(),
+      });
+      expect(SnackbarStore.showSnackbar).toHaveBeenCalledWith(
+        expect.objectContaining({ severity: 'success', description })
+      );
+    }
+  );
+
+  it.each([
+    {
+      action: 'invitation',
+      hook: () => mocks.useAddUserServiceMutation,
+      userService: undefined,
+      fillForm: pickOtherUser,
+      description: <>{`Error.Server.${SERVER_ERROR}`}</>,
+    },
+    {
+      action: 'edition',
+      hook: () => mocks.useEditUserServiceMutation,
+      userService: USER_SERVICE,
+      fillForm: async () => undefined,
+      description: `Error.Server.${SERVER_ERROR}`,
+    },
+  ])(
+    'should show the server error and keep the sheet open when the $action is rejected',
+    async ({ hook, userService, fillForm, description }) => {
+      // Given
+      mockMutationHook(hook(), 'error', { error: new Error(SERVER_ERROR) });
+      const { user } = renderUserServiceForm(userService);
+      await fillForm(user);
+
+      // When
+      await user.click(
+        screen.getByRole('button', { name: new RegExp(`^${VALIDATE_LABEL}`) })
+      );
+
+      // Then
+      await waitFor(() =>
+        expect(SnackbarStore.showSnackbar).toHaveBeenCalledWith({
+          severity: 'error',
+          title: 'Utils.Error',
+          description,
+        })
+      );
+      expect(setOpenSheet).not.toHaveBeenCalled();
+    }
+  );
 });
