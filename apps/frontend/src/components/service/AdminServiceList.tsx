@@ -1,38 +1,65 @@
 'use client';
+import Loader from '@/components/Loader';
 import AdminServiceTab, {
   ADMIN_SERVICE_TAB_SERVICE_DEFINITION_IDENTIFIERS,
+  AdminServiceListRefetch,
 } from '@/components/service/AdminServiceTab';
+import { portalGraphqlClient } from '@/lib/graphql-client';
+import { throwOnFirstLoadError } from '@/lib/query-client';
 import {
-  ServiceListQuery,
-  servicesListFragment,
-} from '@/components/service/service.graphql';
-import { serviceList_fragment$data } from '@generated/serviceList_fragment.graphql';
-import { serviceQuery } from '@generated/serviceQuery.graphql';
-import { servicesList_services$key } from '@generated/servicesList_services.graphql';
-import { ServiceInstanceFilterKey } from '@graphql/generated';
-import { useLazyLoadQuery, useRefetchableFragment } from 'react-relay';
+  type AdminServiceInstancesListQueryVariables,
+  OrderingMode,
+  ServiceInstanceFilterKey,
+  ServiceInstanceOrdering,
+  useAdminServiceInstancesListQuery,
+} from '@graphql/generated';
+import { adminServiceInstancesKeys } from '@graphql/service-instances/service-instances.keys';
+import { keepPreviousData } from '@tanstack/react-query';
+import { useCallback, useMemo, useState } from 'react';
+
+const INITIAL_VARIABLES: AdminServiceInstancesListQueryVariables = {
+  count: 50,
+  orderBy: ServiceInstanceOrdering.Name,
+  orderMode: OrderingMode.Asc,
+  searchTerm: '',
+  includeInaccessible: true,
+  filters: [
+    {
+      key: ServiceInstanceFilterKey.ServiceDefinitionIdentifier,
+      value: ADMIN_SERVICE_TAB_SERVICE_DEFINITION_IDENTIFIERS,
+    },
+  ],
+};
 
 const AdminServiceList = () => {
-  const queryData = useLazyLoadQuery<serviceQuery>(ServiceListQuery, {
-    count: 50,
-    orderBy: 'name',
-    orderMode: 'asc',
-    searchTerm: '',
-    includeInaccessible: true,
-    filters: [
-      {
-        key: ServiceInstanceFilterKey.ServiceDefinitionIdentifier,
-        value: ADMIN_SERVICE_TAB_SERVICE_DEFINITION_IDENTIFIERS,
-      },
-    ],
-  });
-  const [data, refetch] = useRefetchableFragment<
-    serviceQuery,
-    servicesList_services$key
-  >(servicesListFragment, queryData);
-  const serviceData = data?.serviceInstances?.edges.map(
-    (service) => service?.node as serviceList_fragment$data
+  const [variables, setVariables] = useState(INITIAL_VARIABLES);
+  const { data } = useAdminServiceInstancesListQuery(
+    portalGraphqlClient,
+    variables,
+    {
+      queryKey: adminServiceInstancesKeys.list(variables),
+      // A search or a filter keeps the current services until the new ones arrive.
+      placeholderData: keepPreviousData,
+      throwOnError: throwOnFirstLoadError,
+    }
   );
+
+  // Like the Relay refetch it replaces, a change keeps the other variables.
+  const refetch = useCallback<AdminServiceListRefetch>(
+    (change) => setVariables((current) => ({ ...current, ...change })),
+    []
+  );
+
+  const serviceData = useMemo(
+    () =>
+      data?.serviceInstances.edges.flatMap(({ node }) => (node ? [node] : [])),
+    [data]
+  );
+
+  if (!serviceData) {
+    return <Loader />;
+  }
+
   return (
     <AdminServiceTab
       serviceData={serviceData}

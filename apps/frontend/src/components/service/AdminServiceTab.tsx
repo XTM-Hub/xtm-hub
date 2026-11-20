@@ -1,6 +1,8 @@
 'use client';
 import { AppCombobox } from '@/components/ui/AppCombobox';
 import {
+  type AdminServiceInstanceItemFragment,
+  type AdminServiceInstancesListQueryVariables,
   ServiceDefinitionIdentifier,
   ServiceInstanceFilterKey,
 } from '@graphql/generated';
@@ -19,16 +21,18 @@ import { getDataTableLabels } from '@/utils/design-system/data-table';
 import { APP_PATH } from '@/utils/path/constant';
 import { SearchField } from '@filigran/design-system';
 import { MoreVertIcon } from '@filigran/icon';
-import { serviceList_fragment$data } from '@generated/serviceList_fragment.graphql';
-import { serviceQuery } from '@generated/serviceQuery.graphql';
-import { servicesList_services$key } from '@generated/servicesList_services.graphql';
 import { ColumnDef, getSortedRowModel } from '@tanstack/react-table';
 import { useState } from 'react';
-import { RefetchFnDynamic } from 'react-relay';
+
+export type AdminServiceListRefetch = (
+  change: Partial<
+    Pick<AdminServiceInstancesListQueryVariables, 'searchTerm' | 'filters'>
+  >
+) => void;
 
 interface AdminServiceTabProps {
-  serviceData: serviceList_fragment$data[];
-  refetch: RefetchFnDynamic<serviceQuery, servicesList_services$key>;
+  serviceData: AdminServiceInstanceItemFragment[];
+  refetch: AdminServiceListRefetch;
 }
 
 export const ADMIN_SERVICE_TAB_SERVICE_DEFINITION_IDENTIFIERS = Object.values(
@@ -47,7 +51,7 @@ const AdminServiceTab = ({ serviceData, refetch }: AdminServiceTabProps) => {
   const t = useTranslate();
   const [open, setOpen] = useState(false);
   const [editedService, setEditedService] =
-    useState<serviceList_fragment$data>();
+    useState<AdminServiceInstanceItemFragment>();
   const [selectedValue, setSelectedValue] = useState<
     | {
         value: string;
@@ -55,7 +59,7 @@ const AdminServiceTab = ({ serviceData, refetch }: AdminServiceTabProps) => {
       }
     | undefined
   >(undefined);
-  const columns: ColumnDef<serviceList_fragment$data>[] = [
+  const columns: ColumnDef<AdminServiceInstanceItemFragment>[] = [
     {
       accessorKey: 'name',
       id: 'name',
@@ -104,7 +108,7 @@ const AdminServiceTab = ({ serviceData, refetch }: AdminServiceTabProps) => {
     },
   ];
 
-  const editService = (service: serviceList_fragment$data) => {
+  const editService = (service: AdminServiceInstanceItemFragment) => {
     setEditedService(service);
     setOpen(true);
   };
@@ -183,7 +187,7 @@ const AdminServiceTab = ({ serviceData, refetch }: AdminServiceTabProps) => {
       <EditService
         setOpen={setOpen}
         open={open}
-        service={editedService as serviceList_fragment$data}
+        service={editedService}
       />
     </>
   );
