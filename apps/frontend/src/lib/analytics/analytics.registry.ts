@@ -397,6 +397,7 @@ export const ANALYTICS_ELEMENT_IDS = {
     action: 'Expand or collapse filter section',
   },
   resource_filters_open: { action: 'Open filters' },
+  resource_filters_remove: { action: 'Remove all resource filters' },
   resource_form_cancel: { action: 'Cancel resource form' },
   resource_form_draft_submit: { action: 'Save resource as draft' },
   resource_form_publication_submit: { action: 'Publish resource' },

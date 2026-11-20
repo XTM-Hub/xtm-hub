@@ -1,5 +1,7 @@
+import { ClearAllFiltersButton } from '@/components/service/components/header/filter/ClearAllFiltersButton';
 import { ServiceListFilterSection } from '@/components/service/components/header/filter/ServiceListFilterSection';
 import { ServiceListFilterMap } from '@/components/service/components/header/ServiceListHeader';
+import { useServiceListStorageKeyContext } from '@/components/service/components/ServiceListStorageKeyContext';
 import {
   Sheet,
   SheetContent,
@@ -7,10 +9,12 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
+import { useServiceListStorage } from '@/hooks/use-service-list-storage';
 import { useTranslate } from '@/hooks/use-translate';
 import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { IconButton } from '@filigran/design-system';
 import { Funnel } from 'lucide-react';
+import { useRef } from 'react';
 
 interface FilterSheetProps {
   filters: ServiceListFilterMap;
@@ -18,6 +22,17 @@ interface FilterSheetProps {
 
 export const FilterSheet = ({ filters }: FilterSheetProps) => {
   const t = useTranslate();
+  const { storageKey } = useServiceListStorageKeyContext();
+  const { hasActiveFilters, clearFilters } = useServiceListStorage(storageKey);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+
+  // Keeps the focus off "Clear all", which is the first tabbable element.
+  const focusTitle = () => titleRef.current?.focus();
+
+  const handleClearAll = () => {
+    clearFilters();
+    focusTitle();
+  };
 
   return (
     <Sheet>
@@ -34,9 +49,23 @@ export const FilterSheet = ({ filters }: FilterSheetProps) => {
         side="left"
         closeLabel={t('Utils.Close')}
         aria-describedby={undefined}
+        onOpenAutoFocus={(event) => {
+          if (!hasActiveFilters) return;
+          event.preventDefault();
+          focusTitle();
+        }}
         className="bg-gradient-default">
         <SheetHeader className="bg-gradient-default">
-          <SheetTitle>{t('Service.List.Filters')}</SheetTitle>
+          <div className="flex items-center justify-between gap-2">
+            <SheetTitle
+              ref={titleRef}
+              tabIndex={-1}>
+              {t('Service.List.Filters')}
+            </SheetTitle>
+            {hasActiveFilters && (
+              <ClearAllFiltersButton onClick={handleClearAll} />
+            )}
+          </div>
         </SheetHeader>
         <ServiceListFilterSection
           filters={filters}
