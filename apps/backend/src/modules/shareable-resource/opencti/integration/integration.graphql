@@ -17,6 +17,7 @@ interface Integration implements Node & Document {
   uploader_organization: Organization
   name: String!
   short_description: String
+  meta_description: String
   description: String
   file_name: String @auth
   status: DocumentStatus!
@@ -53,6 +54,7 @@ type IntegrationHack implements Node & Document & Integration {
   uploader_organization: Organization
   name: String!
   short_description: String
+  meta_description: String
   description: String
   file_name: String @auth
   status: DocumentStatus!
@@ -88,6 +90,7 @@ type CsvFeed implements Node & Document & Integration {
   uploader_organization: Organization
   name: String!
   short_description: String
+  meta_description: String
   description: String
   file_name: String @auth
   status: DocumentStatus!
@@ -124,6 +127,7 @@ type Connector implements Node & Document & Integration {
   uploader_organization: Organization
   name: String!
   short_description: String
+  meta_description: String
   description: String
   file_name: String @auth
   status: DocumentStatus!
@@ -168,6 +172,7 @@ type TaxiiFeed implements Node & Document & Integration {
   uploader_organization: Organization
   name: String!
   short_description: String
+  meta_description: String
   description: String
   file_name: String @auth
   status: DocumentStatus!
@@ -203,6 +208,7 @@ type RssFeed implements Node & Document & Integration {
   uploader_organization: Organization
   name: String!
   short_description: String
+  meta_description: String
   description: String
   file_name: String @auth
   status: DocumentStatus!
@@ -239,6 +245,7 @@ type Stream implements Node & Document & Integration {
   uploader_organization: Organization
   name: String!
   short_description: String
+  meta_description: String
   description: String
   file_name: String @auth
   status: DocumentStatus!
@@ -275,6 +282,7 @@ type ThirdPartyIntegration implements Node & Document & Integration {
   uploader_organization: Organization
   name: String!
   short_description: String
+  meta_description: String
   description: String
   file_name: String @auth
   status: DocumentStatus!

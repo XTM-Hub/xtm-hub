@@ -6,11 +6,16 @@ import DashboardPage, {
   TEST_3_IMAGE_FILE,
   TEST_JSON_FILE,
 } from '../model/dashboard.pageModel';
-import { publishResource, waitForDrawerToClose } from '../model/common';
+import {
+  META_DESCRIPTION_SUMMARY,
+  publishResource,
+  waitForDrawerToClose,
+} from '../model/common';
 import { waitForAllImageLoaded } from '../utils/wait-for-all-image-loaded';
 
 const DASHBOARD_TEST = {
   name: 'e2e dashboard name',
+  metaDescription: META_DESCRIPTION_SUMMARY,
   shortDescription: 'This is a short description',
   version: '1.0.0',
   description: 'This is a dashboard description markdown',

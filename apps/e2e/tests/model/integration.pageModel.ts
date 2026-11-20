@@ -1,5 +1,6 @@
 import { Page } from '@playwright/test';
 import {
+  fillMetaDescription,
   publishResource,
   selectSolutionCategories,
   selectUseCase,
@@ -74,10 +75,12 @@ export default class IntegrationPage {
 
   async fillTaxiiFeed({
     name,
+    metaDescription,
     shortDescription,
     description,
   }: {
     name: string;
+    metaDescription: string;
     shortDescription: string;
     description: string;
   }) {
@@ -88,6 +91,7 @@ export default class IntegrationPage {
     await this.page
       .getByRole('textbox', { name: 'Name', exact: true })
       .fill(name);
+    await fillMetaDescription(this.page, metaDescription);
     await this.page
       .getByRole('textbox', { name: 'Short Description' })
       .fill(shortDescription);
@@ -103,10 +107,12 @@ export default class IntegrationPage {
   }
   async fillRssFeed({
     name,
+    metaDescription,
     shortDescription,
     description,
   }: {
     name: string;
+    metaDescription: string;
     shortDescription: string;
     description: string;
   }) {
@@ -117,6 +123,7 @@ export default class IntegrationPage {
     await this.page
       .getByRole('textbox', { name: 'Name', exact: true })
       .fill(name);
+    await fillMetaDescription(this.page, metaDescription);
     await this.page
       .getByRole('textbox', { name: 'Short Description' })
       .fill(shortDescription);
@@ -133,10 +140,12 @@ export default class IntegrationPage {
 
   async fillStream({
     name,
+    metaDescription,
     shortDescription,
     description,
   }: {
     name: string;
+    metaDescription: string;
     shortDescription: string;
     description: string;
   }) {
@@ -147,6 +156,7 @@ export default class IntegrationPage {
     await this.page
       .getByRole('textbox', { name: 'Name', exact: true })
       .fill(name);
+    await fillMetaDescription(this.page, metaDescription);
     await this.page
       .getByRole('textbox', { name: 'Short Description' })
       .fill(shortDescription);
@@ -163,10 +173,12 @@ export default class IntegrationPage {
   async fillCsvFeed(
     {
       name,
+      metaDescription,
       shortDescription,
       description,
     }: {
       name: string;
+      metaDescription: string;
       shortDescription: string;
       description: string;
     },
@@ -179,6 +191,7 @@ export default class IntegrationPage {
     await this.page
       .getByRole('textbox', { name: 'Name', exact: true })
       .fill(name);
+    await fillMetaDescription(this.page, metaDescription);
     await this.page
       .getByRole('textbox', { name: 'Short Description' })
       .fill(shortDescription);
@@ -199,10 +212,12 @@ export default class IntegrationPage {
 
   async fillThirdPartyIntegration({
     name,
+    metaDescription,
     shortDescription,
     description,
   }: {
     name: string;
+    metaDescription: string;
     shortDescription: string;
     description: string;
   }) {
@@ -215,6 +230,7 @@ export default class IntegrationPage {
     await this.page
       .getByRole('textbox', { name: 'Name', exact: true })
       .fill(name);
+    await fillMetaDescription(this.page, metaDescription);
     await this.page
       .getByRole('textbox', { name: 'Short Description' })
       .fill(shortDescription);
@@ -242,9 +258,15 @@ export default class IntegrationPage {
     kind: DeployableIntegrationKind,
     {
       name,
+      metaDescription,
       shortDescription,
       description,
-    }: { name: string; shortDescription: string; description: string }
+    }: {
+      name: string;
+      metaDescription: string;
+      shortDescription: string;
+      description: string;
+    }
   ) {
     const integration = DEPLOYABLE_INTEGRATIONS[kind];
     await this.page
@@ -256,6 +278,7 @@ export default class IntegrationPage {
     await this.page
       .getByRole('textbox', { name: 'Name', exact: true })
       .fill(name);
+    await fillMetaDescription(this.page, metaDescription);
     await this.page
       .getByRole('textbox', { name: 'Short Description' })
       .fill(shortDescription);

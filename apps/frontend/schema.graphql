@@ -821,6 +821,7 @@ type DefaultDocument implements Node & Document {
   uploader_organization: Organization
   name: String
   short_description: String
+  meta_description: String
   description: String
   file_name: String
   status: DocumentStatus!
@@ -844,6 +845,7 @@ interface Document implements Node {
   uploader_organization: Organization
   name: String
   short_description: String
+  meta_description: String
   description: String
   file_name: String
   status: DocumentStatus!
@@ -869,6 +871,7 @@ input CreateDocumentInput {
   name: String!
   slug: String!
   short_description: String!
+  meta_description: String!
   description: String!
   status: DocumentStatus!
   use_cases: [UseCaseId!]!
@@ -881,6 +884,7 @@ input CreateDocumentInput {
 input UpdateDocumentInput {
   name: String
   short_description: String
+  meta_description: String
   description: String
   status: DocumentStatus
   use_cases: [UseCaseId!]
@@ -1944,6 +1948,7 @@ type OpenAEVScenario implements Document & Node {
   uploader_organization: Organization
   name: String!
   short_description: String
+  meta_description: String
   description: String
   file_name: String!
   status: DocumentStatus!
@@ -1968,6 +1973,7 @@ type CustomDashboard implements Document & Node {
   uploader_organization: Organization
   name: String!
   short_description: String
+  meta_description: String
   description: String
   file_name: String!
   status: DocumentStatus!
@@ -1992,6 +1998,7 @@ type CustomView implements Document & Node {
   uploader_organization: Organization
   name: String!
   short_description: String
+  meta_description: String
   description: String
   file_name: String!
   status: DocumentStatus!
@@ -2026,6 +2033,7 @@ interface Integration implements Node & Document {
   uploader_organization: Organization
   name: String!
   short_description: String
+  meta_description: String
   description: String
   file_name: String
   status: DocumentStatus!
@@ -2056,6 +2064,7 @@ type IntegrationHack implements Node & Document & Integration {
   uploader_organization: Organization
   name: String!
   short_description: String
+  meta_description: String
   description: String
   file_name: String
   status: DocumentStatus!
@@ -2086,6 +2095,7 @@ type CsvFeed implements Node & Document & Integration {
   uploader_organization: Organization
   name: String!
   short_description: String
+  meta_description: String
   description: String
   file_name: String
   status: DocumentStatus!
@@ -2117,6 +2127,7 @@ type Connector implements Node & Document & Integration {
   uploader_organization: Organization
   name: String!
   short_description: String
+  meta_description: String
   description: String
   file_name: String
   status: DocumentStatus!
@@ -2156,6 +2167,7 @@ type TaxiiFeed implements Node & Document & Integration {
   uploader_organization: Organization
   name: String!
   short_description: String
+  meta_description: String
   description: String
   file_name: String
   status: DocumentStatus!
@@ -2187,6 +2199,7 @@ type RssFeed implements Node & Document & Integration {
   uploader_organization: Organization
   name: String!
   short_description: String
+  meta_description: String
   description: String
   file_name: String
   status: DocumentStatus!
@@ -2218,6 +2231,7 @@ type Stream implements Node & Document & Integration {
   uploader_organization: Organization
   name: String!
   short_description: String
+  meta_description: String
   description: String
   file_name: String
   status: DocumentStatus!
@@ -2249,6 +2263,7 @@ type ThirdPartyIntegration implements Node & Document & Integration {
   uploader_organization: Organization
   name: String!
   short_description: String
+  meta_description: String
   description: String
   file_name: String
   status: DocumentStatus!
@@ -2282,6 +2297,7 @@ type OpenCTIPlaybook implements Document & Node {
   uploader_organization: Organization
   name: String!
   short_description: String
+  meta_description: String
   description: String
   file_name: String!
   status: DocumentStatus!

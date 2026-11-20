@@ -1,14 +1,22 @@
 import { PortalContext } from '@/components/me/AppPortalContext';
+import {
+  optionalMetaDescriptionSchema,
+  withMetaDescriptionRule,
+} from '@/components/service/form/meta-description.schema';
 import { ServiceFormSheetFooter } from '@/components/service/form/SheetFooter';
 import { useServiceFormFields } from '@/components/service/form/UseServiceFormFields';
 import { AutoForm } from '@/components/ui/auto-form';
 import { FormItem } from '@/components/ui/form';
+import { useTranslate } from '@/hooks/use-translate';
 import {
   fileListCheck,
   optionalFileListCheck,
   transformToFileList,
 } from '@/utils/documents';
-import { isConnectorResource } from '@/utils/shareable-resources/shareable-resources.types';
+import {
+  isConnectorResource,
+  ShareableResourceType,
+} from '@/utils/shareable-resources/shareable-resources.types';
 import { semanticVersionRegex, validLtsVersionRegex } from '@/utils/versioning';
 import {
   DocumentImageType,
@@ -24,6 +32,8 @@ const connectorSchema = z.object({
   slug: z.string().min(1, 'Required'),
   status: z.enum(DocumentStatus).optional(),
   uploader_id: z.string().optional(),
+  // Connectors are only edited here, and the existing ones have no meta-description.
+  meta_description: optionalMetaDescriptionSchema,
   short_description: z.string().min(1, 'Required').max(250),
   description: z.string().min(1, 'Required'),
   product_version: z
@@ -116,17 +126,23 @@ export const ConnectorForm = ({
     [me, document, connector]
   );
 
+  const t = useTranslate();
   const formSchema = useMemo(
     () =>
-      connector?.manager_supported
-        ? connectorSchema
-        : connectorSchema.extend({
-            minimum_deployable_version: z.string().nullish(),
-          }),
-    [connector?.manager_supported]
+      withMetaDescriptionRule(
+        connector?.manager_supported
+          ? connectorSchema
+          : connectorSchema.extend({
+              minimum_deployable_version: z.string().nullish(),
+            }),
+        ShareableResourceType.OPENCTI_INTEGRATION,
+        t
+      ),
+    [connector?.manager_supported, t]
   );
 
   const {
+    meta_description,
     short_description,
     slug,
     name,
@@ -199,6 +215,7 @@ export const ConnectorForm = ({
           },
           uploader_id,
           uploader_organization_id,
+          meta_description,
           short_description,
           slug,
           name,

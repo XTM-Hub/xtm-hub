@@ -16,6 +16,7 @@ import { TestHelper } from '../../../tests/helper/test.helper';
 import {
   requestContextSimpleUserFiligran2,
   SERVICES,
+  TEST_META_DESCRIPTIONS,
   TEST_ORGANIZATIONS,
   TEST_USE_CASES,
 } from '../../../tests/tests.const';
@@ -80,6 +81,8 @@ import {
   DocumentMetadataKeys,
 } from './domain/document.metadata.domain';
 
+const UPDATED_META_DESCRIPTION = TEST_META_DESCRIPTIONS.UPDATED;
+
 describe('documentApp', () => {
   const minioFileMock = {
     minioName: 'minioFile',
@@ -102,6 +105,7 @@ describe('documentApp', () => {
 
   const documentData = {
     short_description: 'short_description',
+    meta_description: TEST_META_DESCRIPTIONS.DEFAULT,
     slug: 'slug',
     uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID,
     name: 'name',
@@ -210,6 +214,7 @@ describe('documentApp', () => {
       // Given
       const input = {
         short_description: 'created short description',
+        meta_description: TEST_META_DESCRIPTIONS.DEFAULT,
         slug: `persisted-data-create-${uuidv4()}`,
         uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID,
         name: 'created name',
@@ -257,6 +262,26 @@ describe('documentApp', () => {
         status: input.status,
       });
       expect(licenseTypeFromDb).toBe(input.license_type);
+    });
+
+    it('should persist the trimmed meta description when creating a document', async () => {
+      // When
+      const result = await DocumentApp.createDocument({
+        input: {
+          ...documentData,
+          meta_description: `  ${documentData.meta_description}  `,
+        },
+        metadata: integrationMetadata,
+        serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
+      });
+
+      // Then
+      const persistedDocument = await DocumentDomain.loadDocumentBy({
+        id: result.id,
+      });
+      expect(persistedDocument).toMatchObject({
+        meta_description: documentData.meta_description,
+      });
     });
 
     it('should link all provided solution categories when multiple are provided on create', async () => {
@@ -517,6 +542,25 @@ describe('documentApp', () => {
       expect(result).toMatchObject({
         short_description: 'short_description',
         vendor_url: 'https://changed.com',
+      });
+    });
+
+    it('should persist the meta description when updating a document', async () => {
+      // When
+      await DocumentApp.updateDocument({
+        parentDocumentId: createdDocument!.id,
+        serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
+        metadata: integrationMetadata,
+        input: { meta_description: UPDATED_META_DESCRIPTION },
+        existingImageIds: [],
+      });
+
+      // Then
+      const persistedDocument = await DocumentDomain.loadDocumentBy({
+        id: createdDocument!.id,
+      });
+      expect(persistedDocument).toMatchObject({
+        meta_description: UPDATED_META_DESCRIPTION,
       });
     });
 
@@ -1683,6 +1727,7 @@ describe('documentApp', () => {
           name: 'myCustomDashboard',
           description: 'description',
           short_description: 'short_description',
+          meta_description: TEST_META_DESCRIPTIONS.DEFAULT,
           slug: 'slug',
           status: DocumentStatus.Published,
         },
@@ -1740,6 +1785,7 @@ describe('documentApp', () => {
           name: 'myCustomDashboard',
           description: 'description',
           short_description: 'short_description',
+          meta_description: TEST_META_DESCRIPTIONS.DEFAULT,
           slug: 'slug',
           status: DocumentStatus.Published,
         },

@@ -144,6 +144,13 @@ export const DocumentApp = {
       throw new Error(ErrorCode.ServiceDefinitionNotFound);
     }
 
+    const metaDescription = DocumentHelper.validateMetaDescription({
+      serviceDefinitionIdentifier:
+        serviceDefinition.identifier as ManageableServiceDefinitionIdentifier,
+      summary: input.meta_description,
+      name: input.name,
+    });
+
     const [sourceDocumentFile] = await DocumentUploadsHelper.processUploads(
       sourceDocument,
       serviceInstanceId
@@ -204,6 +211,7 @@ export const DocumentApp = {
     } = input;
     const documentData: DocumentData<Document> = {
       ...documentColumnInput,
+      meta_description: metaDescription,
       use_cases: input.use_cases ?? undefined,
       solution_categories: input.solution_categories ?? undefined,
       service_instance_id: serviceInstanceId,
@@ -331,6 +339,14 @@ export const DocumentApp = {
       throw new Error(ErrorCode.DocumentNotFound);
     }
 
+    const metaDescription = DocumentHelper.validateUpdatedMetaDescription({
+      serviceDefinitionIdentifier:
+        serviceDefinition.identifier as ManageableServiceDefinitionIdentifier,
+      summary: input.meta_description,
+      name: input.name,
+      storedDocument: documentBeforeUpdate,
+    });
+
     // Not atomic with the update below: two editors saving at once can skip
     // the rule. Accepted, editors are few and the status shows in the list.
     if (input.status) {
@@ -421,15 +437,21 @@ export const DocumentApp = {
         : undefined;
 
       // entity_types and license_type are persisted as metadata (see above), not as Document columns.
+      // meta_description is a column, but only its validated, trimmed value is written, and a
+      // missing or blank one keeps the stored value.
       const {
         entity_types: _entityTypes,
         license_type: _licenseType,
+        meta_description: _metaDescription,
         ...documentColumnData
       } = input;
       const doc = await DocumentDomain.updateDocument({
         parentDocumentId,
         document: {
-          data: documentColumnData,
+          data: {
+            ...documentColumnData,
+            ...(metaDescription ? { meta_description: metaDescription } : {}),
+          },
           file,
           type: documentType,
         },

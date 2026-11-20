@@ -1,4 +1,9 @@
 import { PortalContext } from '@/components/me/AppPortalContext';
+import {
+  metaDescriptionSchema,
+  optionalMetaDescriptionSchema,
+  withMetaDescriptionRule,
+} from '@/components/service/form/meta-description.schema';
 import { ServiceFormSheetFooter } from '@/components/service/form/SheetFooter';
 import {
   JSON_DOCUMENT_FILE,
@@ -6,11 +11,13 @@ import {
 } from '@/components/service/form/UseDocumentFileField';
 import { useServiceFormFields } from '@/components/service/form/UseServiceFormFields';
 import { AutoForm } from '@/components/ui/auto-form';
+import { useTranslate } from '@/hooks/use-translate';
 import {
   fileListCheck,
   optionalFileListCheck,
   transformToFileList,
 } from '@/utils/documents';
+import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 import { getDocumentEntityTypes } from '@/utils/shareable-resources/utils/shareable-resources.client.utils';
 import {
   DocumentImageType,
@@ -26,6 +33,7 @@ const customViewFormSchema = z.object({
   slug: z.string().min(1, 'Required'),
   status: z.enum(DocumentStatus).optional(),
   uploader_id: z.string().optional(),
+  meta_description: metaDescriptionSchema,
   short_description: z.string().min(1, 'Required').max(250),
   description: z.string().min(1, 'Required'),
   product_version: z.string().regex(/^\d+\.\d+\.\d+$/, {
@@ -84,20 +92,27 @@ export const CustomViewForm = ({
       }) as CustomViewFormValues,
     [me, document, isCreation]
   );
+  const t = useTranslate();
   const formSchema = useMemo(
     () =>
-      document
-        ? customViewFormSchema.extend({
-            document: z.custom<FileList>(fileListCheck).optional(),
-            images: z.custom<FileList>(optionalFileListCheck).optional(),
-          })
-        : customViewFormSchema,
-    [document]
+      withMetaDescriptionRule(
+        document
+          ? customViewFormSchema.extend({
+              meta_description: optionalMetaDescriptionSchema,
+              document: z.custom<FileList>(fileListCheck).optional(),
+              images: z.custom<FileList>(optionalFileListCheck).optional(),
+            })
+          : customViewFormSchema,
+        ShareableResourceType.OPENCTI_CUSTOM_VIEW,
+        t
+      ),
+    [document, t]
   );
 
   const {
     slug,
     name,
+    meta_description,
     short_description,
     product_version,
     description,
@@ -146,6 +161,7 @@ export const CustomViewForm = ({
         logo,
         images: imagesField,
         status,
+        meta_description,
         short_description,
         slug,
         name,

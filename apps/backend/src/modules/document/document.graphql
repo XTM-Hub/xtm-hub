@@ -89,6 +89,7 @@ type DefaultDocument implements Node & Document {
   uploader_organization: Organization
   name: String
   short_description: String
+  meta_description: String
   description: String
   file_name: String @auth
   status: DocumentStatus!
@@ -112,6 +113,7 @@ interface Document implements Node {
   uploader_organization: Organization
   name: String
   short_description: String
+  meta_description: String
   description: String
   file_name: String @auth
   status: DocumentStatus!
@@ -137,6 +139,7 @@ input CreateDocumentInput {
   name: String!
   slug: String!
   short_description: String!
+  meta_description: String!
   description: String!
   status: DocumentStatus!
   use_cases: [UseCaseId!]!
@@ -149,6 +152,7 @@ input CreateDocumentInput {
 input UpdateDocumentInput {
   name: String
   short_description: String
+  meta_description: String
   description: String
   status: DocumentStatus
   use_cases: [UseCaseId!]

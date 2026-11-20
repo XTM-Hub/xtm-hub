@@ -24,9 +24,12 @@ import {
 } from '@/utils/generate-metadata';
 import { PUBLIC_CYBERSECURITY_SOLUTIONS_PATH } from '@/utils/path/constant';
 import { fetchSeoServiceInstanceBySlug } from '@/utils/seo-service-instance/utils/seo-service-instance.server.utils';
+import { buildResourceMetaDescription } from '@/utils/shareable-resources/meta-description.utils';
 import { localeMap } from '@/utils/shareable-resources/shareable-resources.consts';
 import {
   isConnectorResource,
+  PublicDocumentByServiceSlugItem,
+  SERVICE_SLUG_SHAREABLE_RESOURCE_MAPPING,
   ServiceSlug,
 } from '@/utils/shareable-resources/shareable-resources.types';
 import {
@@ -52,6 +55,23 @@ const FALLBACK_DESCRIPTION_KEYS: Record<ServiceSlug, string> = {
   [ServiceSlug.OPEN_CTI_PLAYBOOKS]:
     'Metadata.DocumentFallbackDescriptionGeneric',
 };
+
+/**
+ * The SEO description of a resource, shared by its meta tag and its JSON-LD: the meta-description generated from the
+ * summary its author entered, else the default text of the resource type. Never derived from the short description or
+ * the body.
+ */
+const describeDocument = (
+  document: Pick<PublicDocumentByServiceSlugItem, 'meta_description'>,
+  serviceSlug: ServiceSlug,
+  fallbackDescription: string
+) =>
+  document.meta_description?.trim()
+    ? buildResourceMetaDescription(
+        SERVICE_SLUG_SHAREABLE_RESOURCE_MAPPING[serviceSlug],
+        document.meta_description
+      )
+    : fallbackDescription;
 
 /**
  * Fetch the data for the page with caching to avoid multiple requests
@@ -106,7 +126,11 @@ export async function generateMetadata({
       'Metadata.DocumentFallbackDescriptionGeneric'
   );
 
-  const description = document.short_description || fallbackDescription;
+  const description = describeDocument(
+    document,
+    serviceInstance.slug as ServiceSlug,
+    fallbackDescription
+  );
   const serviceLabel = t(
     `Service.ServiceDefinitionIdentifier.${serviceInstance.service_definition.identifier}`
   );
@@ -179,7 +203,11 @@ const Page = async ({
     '@context': 'https://schema.org',
     '@type': 'TechArticle',
     headline: `${document.name} | ${t(`Service.ServiceDefinitionIdentifier.${serviceInstance.service_definition.identifier}`)} | XTM Hub`,
-    description: document.short_description || fallbackDescription,
+    description: describeDocument(
+      document,
+      serviceInstance.slug as ServiceSlug,
+      fallbackDescription
+    ),
     articleBody: document.description,
     author: document.uploader
       ? {

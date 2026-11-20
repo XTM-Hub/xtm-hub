@@ -68,6 +68,7 @@ type AvailableFields =
   | 'images'
   | 'integration_type'
   | 'short_description'
+  | 'meta_description'
   | 'slug'
   | 'name'
   | 'vendor_url'
@@ -237,6 +238,14 @@ export const useServiceFormFields = ({
         inputProps: {
           placeholder: t('Service.Form.ShortDescriptionPlaceholder'),
           disabled: disabledFields.includes('short_description'),
+        },
+      },
+      meta_description: {
+        label: t('Service.Form.MetaDescriptionLabel'),
+        fieldType: 'textarea' as const,
+        inputProps: {
+          placeholder: t('Service.Form.MetaDescriptionPlaceholder'),
+          disabled: disabledFields.includes('meta_description'),
         },
       },
       slug: {

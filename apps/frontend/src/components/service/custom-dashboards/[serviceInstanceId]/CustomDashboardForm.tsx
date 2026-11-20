@@ -1,4 +1,9 @@
 import { PortalContext } from '@/components/me/AppPortalContext';
+import {
+  metaDescriptionSchema,
+  optionalMetaDescriptionSchema,
+  withMetaDescriptionRule,
+} from '@/components/service/form/meta-description.schema';
 import { ServiceFormSheetFooter } from '@/components/service/form/SheetFooter';
 import {
   JSON_DOCUMENT_FILE,
@@ -6,11 +11,13 @@ import {
 } from '@/components/service/form/UseDocumentFileField';
 import { useServiceFormFields } from '@/components/service/form/UseServiceFormFields';
 import { AutoForm } from '@/components/ui/auto-form';
+import { useTranslate } from '@/hooks/use-translate';
 import {
   fileListCheck,
   optionalFileListCheck,
   transformToFileList,
 } from '@/utils/documents';
+import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 import {
   DocumentImageType,
   DocumentItemFragment,
@@ -25,6 +32,7 @@ const customDashboardSchema = z.object({
   slug: z.string().min(1, 'Required'),
   status: z.enum(DocumentStatus).optional(),
   uploader_id: z.string().optional(),
+  meta_description: metaDescriptionSchema,
   short_description: z.string().max(255).min(1, 'Required'),
   description: z.string().min(1, 'Required'),
   product_version: z.string().regex(/^\d+\.\d+\.\d+$/, {
@@ -82,19 +90,26 @@ export const CustomDashboardForm = ({
       }) as CustomDashboardFormValues,
     [me, document, isCreation]
   );
+  const t = useTranslate();
   const formSchema = useMemo(
     () =>
-      document
-        ? customDashboardSchema.extend({
-            document: z.custom<FileList>(fileListCheck).optional(),
-            images: z.custom<FileList>(optionalFileListCheck).optional(),
-          })
-        : customDashboardSchema,
-    [document]
+      withMetaDescriptionRule(
+        document
+          ? customDashboardSchema.extend({
+              meta_description: optionalMetaDescriptionSchema,
+              document: z.custom<FileList>(fileListCheck).optional(),
+              images: z.custom<FileList>(optionalFileListCheck).optional(),
+            })
+          : customDashboardSchema,
+        ShareableResourceType.OPENCTI_CUSTOM_DASHBOARD,
+        t
+      ),
+    [document, t]
   );
 
   const {
     name,
+    meta_description,
     short_description,
     slug,
     product_version,
@@ -142,6 +157,7 @@ export const CustomDashboardForm = ({
         logo,
         images: imagesField,
         status,
+        meta_description,
         short_description,
         slug,
         name,

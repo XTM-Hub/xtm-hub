@@ -1,4 +1,9 @@
 import { PortalContext } from '@/components/me/AppPortalContext';
+import {
+  metaDescriptionSchema,
+  optionalMetaDescriptionSchema,
+  withMetaDescriptionRule,
+} from '@/components/service/form/meta-description.schema';
 import { ServiceFormSheetFooter } from '@/components/service/form/SheetFooter';
 import {
   ServiceFormDocumentFile,
@@ -6,11 +11,13 @@ import {
 } from '@/components/service/form/UseDocumentFileField';
 import { useServiceFormFields } from '@/components/service/form/UseServiceFormFields';
 import { AutoForm } from '@/components/ui/auto-form';
+import { useTranslate } from '@/hooks/use-translate';
 import {
   fileListCheck,
   optionalFileListCheck,
   transformToFileList,
 } from '@/utils/documents';
+import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 import {
   DocumentImageType,
   DocumentItemFragment,
@@ -36,6 +43,7 @@ const openAEVScenarioFormSchema = z.object({
   slug: z.string().min(1, 'Required'),
   status: z.enum(DocumentStatus).optional(),
   uploader_id: z.string().optional(),
+  meta_description: metaDescriptionSchema,
   short_description: z.string().min(1, 'Required').max(250),
   description: z.string().min(1, 'Required'),
   product_version: z.string().regex(/^\d+\.\d+\.\d+$/, {
@@ -94,20 +102,27 @@ export const OpenaevScenarioForm = ({
       }) as OpenAEVScenarioFormValues,
     [me, document, isCreation]
   );
+  const t = useTranslate();
   const formSchema = useMemo(
     () =>
-      document
-        ? openAEVScenarioFormSchema.extend({
-            document: z.custom<FileList>(fileListCheck).optional(),
-            images: z.custom<FileList>(optionalFileListCheck).optional(),
-          })
-        : openAEVScenarioFormSchema,
-    [document]
+      withMetaDescriptionRule(
+        document
+          ? openAEVScenarioFormSchema.extend({
+              meta_description: optionalMetaDescriptionSchema,
+              document: z.custom<FileList>(fileListCheck).optional(),
+              images: z.custom<FileList>(optionalFileListCheck).optional(),
+            })
+          : openAEVScenarioFormSchema,
+        ShareableResourceType.OPENAEV_SCENARIO,
+        t
+      ),
+    [document, t]
   );
 
   const {
     slug,
     name,
+    meta_description,
     short_description,
     product_version,
     description,
@@ -154,6 +169,7 @@ export const OpenaevScenarioForm = ({
         logo,
         images: imagesField,
         status,
+        meta_description,
         short_description,
         slug,
         name,
