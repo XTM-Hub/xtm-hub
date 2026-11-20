@@ -8,7 +8,6 @@ type CustomDashboard implements Document & Node {
   meta_description: String
   description: String
   file_name: String! @auth
-  active: Boolean @deprecated(reason: "Use status")
   status: DocumentStatus!
   created_at: Date!
   updated_at: Date

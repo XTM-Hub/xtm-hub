@@ -8,6 +8,7 @@ import {
   fetchSingleDocument,
   isPublicDocumentSlug,
 } from '@/utils/shareable-resources/utils/shareable-resources.server.utils';
+import testRender from '@/utils/test/test-render';
 import Page, {
   generateMetadata,
 } from '@app/(public)/[locale]/cybersecurity-solutions/[slug]/[docSlug]/page';
@@ -16,6 +17,8 @@ import {
   SeoServiceInstanceItemFragment,
   ServiceDefinitionIdentifier,
 } from '@graphql/generated';
+import { mockSeoServiceInstance } from '@graphql/mocks';
+import { screen } from '@testing-library/react';
 import { notFound } from 'next/navigation';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -75,6 +78,10 @@ vi.mock(
   '@/utils/shareable-resources/utils/shareable-resources.server.utils',
   () => ({ fetchSingleDocument: vi.fn(), isPublicDocumentSlug: vi.fn() })
 );
+
+vi.mock('@/components/service/document/ShareableResouceDetails', () => ({
+  default: () => <div />,
+}));
 
 vi.mock('next-intl/server', () => ({
   getTranslations: vi.fn(async () => (key: string) => key),
@@ -234,4 +241,42 @@ describe('public document page', () => {
       );
     }
   );
+
+  it('should render the Overview of a regular resource on the design system Paper surface, with its title above it', async () => {
+    // Given a public resource that is not a connector
+    vi.mocked(isPublicDocumentSlug).mockResolvedValue(true);
+    vi.mocked(fetchSeoServiceInstanceBySlug).mockResolvedValue(
+      mockSeoServiceInstance({
+        id: 'service-instance-1',
+        slug: 'opencti-custom-dashboards',
+      })
+    );
+    vi.mocked(fetchSingleDocument).mockResolvedValue({
+      __typename: 'CustomDashboard',
+      id: 'dashboard-1',
+      slug: 'my-dashboard',
+      name: 'My dashboard',
+      short_description: 'A short description',
+      description: 'Some **long** description',
+      children_documents: [],
+      use_cases: [],
+    } as unknown as Awaited<ReturnType<typeof fetchSingleDocument>>);
+
+    // When rendering the page
+    testRender(await Page({ params }));
+
+    // Then
+    const title = screen.getByRole('heading', {
+      level: 2,
+      name: 'PublicResourcePage.Overview',
+    });
+    const surface = screen.getByText('A short description').closest('section');
+    // The surface carries the design system radius, padding and overflow
+    // classes. These pin the design system's class names on purpose, as jsdom
+    // does no layout: a rename in the design system needs this test updated.
+    expect(surface).toHaveClass('rounded-sm', 'p-4', 'overflow-x-auto');
+    expect(surface).not.toContainElement(title);
+    expect(surface?.parentElement).toContainElement(title);
+    expect(screen.getByText('long')).toBeInTheDocument();
+  });
 });

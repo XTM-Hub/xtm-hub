@@ -1,26 +1,26 @@
-<h1 align="center">
-  <a href="https://hub.filigran.io"><img src="./.github/img/logo_xtm_hub.png" alt="XTM Hub"></a>
-</h1>
+<a href="https://filigran.io/platforms/xtm-hub/"><img src="./.github/img/readme/banner.svg" width="100%" alt="XTM Hub by Filigran"></a>
+
 <p align="center">
-  <a href="https://github.com/XTM-Hub/xtm-hub/stargazers"><img src="https://img.shields.io/github/stars/XTM-Hub/xtm-hub?style=social" alt="GitHub stars" /></a>
-  <a href="https://github.com/XTM-Hub/xtm-hub/releases"><img src="https://img.shields.io/github/v/release/XTM-Hub/xtm-hub" alt="Latest release" /></a>
-  <a href="./LICENSE"><img src="https://img.shields.io/badge/license-source%20available-lightgrey" alt="License: source available" /></a>
-  <a href="https://docs.hub.filigran.io"><img src="https://img.shields.io/badge/documentation-latest-orange.svg" alt="Documentation" /></a>
-  <a href="https://community.filigran.io"><img src="https://img.shields.io/badge/slack-join%20the%20community-4A154B?logo=slack" alt="Slack community" /></a>
+  <a href="https://github.com/XTM-Hub/xtm-hub/stargazers"><img src="https://img.shields.io/github/stars/XTM-Hub/xtm-hub?style=flat-square&labelColor=0A0C1C&logo=github&logoColor=white&color=001BDA" alt="stars"></a>
+  <a href="https://github.com/XTM-Hub/xtm-hub/releases/latest"><img src="https://img.shields.io/github/v/release/XTM-Hub/xtm-hub?style=flat-square&labelColor=0A0C1C&color=001BDA" alt="release"></a>
+  <a href="https://hub.filigran.io"><img src="https://img.shields.io/badge/docker%20pulls-hosted-001BDA?style=flat-square&labelColor=0A0C1C&logo=docker&logoColor=white" alt="docker pulls"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-source%20available-001BDA?style=flat-square&labelColor=0A0C1C" alt="license"></a>
+  <a href="https://github.com/XTM-Hub/xtm-hub/actions/workflows/dockerbuild-ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/XTM-Hub/xtm-hub/dockerbuild-ci.yml?branch=main&label=CI&style=flat-square&labelColor=0A0C1C&logo=githubactions&logoColor=white&color=001BDA" alt="CI"></a>
+  <a href="https://docs.hub.filigran.io"><img src="https://img.shields.io/badge/docs-read-001BDA?style=flat-square&labelColor=0A0C1C" alt="docs"></a>
+  <a href="https://community.filigran.io"><img src="https://img.shields.io/badge/community-slack-001BDA?style=flat-square&labelColor=0A0C1C&logo=slack&logoColor=white" alt="community"></a>
 </p>
 
 <p align="center"><b>The tradecraft library and gateway of the XTM Platform: CTEM content you deploy in one click into your own OpenCTI and OpenAEV.</b></p>
 
-[XTM Hub](https://hub.filigran.io) gives security teams ready-made tradecraft for Continuous Threat Exposure Management (CTEM): [OpenCTI](https://github.com/OpenCTI-Platform/opencti) dashboards, custom views, integrations and playbooks to know the adversary and map the exposure, and [OpenAEV](https://github.com/OpenAEV-Platform/openaev) scenarios to prove your defenses against real attacker techniques. Connect your instance once, then deploy any resource into it in one click instead of rebuilding it by hand.
+[XTM Hub](https://hub.filigran.io) gives security teams ready-made tradecraft for Continuous Threat Exposure Management (CTEM): [OpenCTI](https://github.com/OpenCTI-Platform/opencti) dashboards, custom views, integrations and playbooks to know the adversary and map the exposure, and [OpenAEV](https://github.com/OpenAEV-Platform/openaev) scenarios to prove your defenses against real attacker techniques. Connect your instance once, then deploy any resource into it in one click.
 
-> If XTM Hub or the [XTM Platform](https://filigran.io) helps your team, **star this repository**. It is the simplest way to help the project reach more defenders.
+<p align="center">If XTM Hub helps your security program, <a href="https://github.com/XTM-Hub/xtm-hub/stargazers">give it a star</a>: it is how the project grows.</p>
 
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./.github/img/hub-home-dark.webp">
-    <img src="./.github/img/hub-home-light.webp" alt="XTM Hub home: the XTM Platform overview, the public roadmap, and the newest and most deployed OpenCTI dashboards, OpenAEV scenarios and OpenCTI integrations">
-  </picture>
-</p>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./.github/img/readme/hero-dark.webp">
+  <source media="(prefers-color-scheme: light)" srcset="./.github/img/readme/hero-light.webp">
+  <img alt="XTM Hub home: the XTM Platform overview and the newest and most deployed OpenCTI dashboards, OpenAEV scenarios and OpenCTI integrations" src="./.github/img/readme/hero-light.webp" width="100%">
+</picture>
 
 ## Table of contents
 
@@ -29,6 +29,7 @@
 - [Gallery](#gallery)
 - [How it works](#how-it-works)
 - [Part of the XTM Platform](#part-of-the-xtm-platform)
+- [Use cases by security role](#use-cases-by-security-role)
 - [Quick start](#quick-start)
 - [Editions](#editions)
 - [Integrations and ecosystem](#integrations-and-ecosystem)
@@ -40,221 +41,193 @@
 
 ## Why XTM Hub
 
-A CTEM program runs on tradecraft: the dashboards that scope the threats against your sector, the integrations that feed your threat intelligence, the playbooks that automate triage and the attack scenarios that validate your controls. Each one takes days to build, and most teams rebuild what another team already got right. XTM Hub turns that tradecraft into a shared library, curated and searchable, that lands in your own instance in one click.
+A CTEM program runs on tradecraft: dashboards, integrations, playbooks and attack scenarios. Each one takes days to build, and most teams rebuild what another team already got right.
+
+- **A shared library, curated.** Dashboards, custom views, integrations, playbooks and scenarios, searchable by use case, type and compatibility.
+- **One click to your instance.** A deployment sends the resource straight to the OpenCTI or OpenAEV you pick, with no export, no file to move and no manual import.
+- **One gateway for the platform.** Instance registration for OpenCTI, OpenAEV and XTM One, subscribed services and personal API tokens.
 
 ## Capabilities
 
-| CTEM stage | What XTM Hub gives the security team |
-| --- | --- |
+| CTEM stage | What XTM Hub gives your team |
+|---|---|
 | **Scoping** | OpenCTI custom dashboards for sectors and threat topics: the actors, malware, techniques and vulnerabilities that target organizations like yours. |
-| **Discovery** | OpenCTI integrations (threat feeds, enrichment, third-party security tools), filtered by use case, integration type, deployment type and license, to bring new sources into your intelligence. |
+| **Discovery** | OpenCTI integrations (threat feeds, enrichment, third-party tools), filtered by use case, integration type, deployment type and license. |
 | **Prioritization** | OpenCTI custom views that put the threats and exposures that matter in front of each analyst. |
-| **Validation** | OpenAEV scenarios by category: atomic testing, attack simulation, penetration testing, platform validation, purple team, tabletop exercises, OpenCTI coverage and the CTEM framework. |
-| **Mobilization** | OpenCTI playbooks that automate triage and response. One-click deployment of playbooks needs OpenCTI Enterprise Edition. |
-| **Every stage** | One-click deploy into a connected instance, instance registration for OpenCTI, OpenAEV and [XTM One](https://github.com/XTM-One-Platform/xtm-one), the public XTM Platform roadmap with feature voting, and personal API tokens (read, read and write, admin) with a lifetime for your scripts and pipelines. |
-
-Use cases: CTI teams start from sector dashboards and curated feeds; SOC and detection engineers add enrichment and playbooks; red and purple teams run ready-made attack scenarios; vulnerability and exposure management teams test the techniques that reach their assets; CISOs share one library across every instance they run.
+| **Validation** | OpenAEV scenarios by category: atomic testing, attack simulation, purple team, tabletop exercises, OpenCTI coverage and the CTEM framework. |
+| **Mobilization** | OpenCTI playbooks that automate triage and response, deployed in one click to OpenCTI Enterprise Edition. |
 
 ## Gallery
 
 <table>
   <tr>
-    <td width="50%">
+    <td width="50%" valign="top">
       <picture>
-        <source media="(prefers-color-scheme: dark)" srcset="./.github/img/hub-dashboards-dark.webp">
-        <img src="./.github/img/hub-dashboards-light.webp" alt="The OpenCTI custom dashboards library: sector and threat dashboards as cards with search, sort and use case filters">
+        <source media="(prefers-color-scheme: dark)" srcset="./.github/img/readme/g1-dark.webp">
+        <source media="(prefers-color-scheme: light)" srcset="./.github/img/readme/g1-light.webp">
+        <img alt="The OpenCTI custom dashboards library: sector and threat dashboards as cards with search, sort and use case filters" src="./.github/img/readme/g1-light.webp" width="100%">
       </picture>
-      <p align="center"><b>Dashboards library</b>: start from sector and threat dashboards instead of an empty OpenCTI workspace.</p>
+      <p><b>Dashboards library.</b> Start from sector and threat dashboards instead of an empty workspace.</p>
     </td>
-    <td width="50%">
+    <td width="50%" valign="top">
       <picture>
-        <source media="(prefers-color-scheme: dark)" srcset="./.github/img/hub-dashboard-detail-dark.webp">
-        <img src="./.github/img/hub-dashboard-detail-light.webp" alt="A banking sector dashboard in the library with its description, author and the Deploy in OpenCTI action">
+        <source media="(prefers-color-scheme: dark)" srcset="./.github/img/readme/g2-dark.webp">
+        <source media="(prefers-color-scheme: light)" srcset="./.github/img/readme/g2-light.webp">
+        <img alt="A banking sector dashboard in the library with its description, author and the Deploy in OpenCTI action" src="./.github/img/readme/g2-light.webp" width="100%">
       </picture>
-      <p align="center"><b>One-click deploy</b>: read what a dashboard shows, then send it to your OpenCTI.</p>
-    </td>
-  </tr>
-  <tr>
-    <td width="50%">
-      <picture>
-        <source media="(prefers-color-scheme: dark)" srcset="./.github/img/hub-scenarios-dark.webp">
-        <img src="./.github/img/hub-scenarios-light.webp" alt="The OpenAEV scenarios library with category filters for atomic testing, attack simulation, purple team and tabletop exercises">
-      </picture>
-      <p align="center"><b>Scenarios library</b>: attack scenarios by category to validate your controls.</p>
-    </td>
-    <td width="50%">
-      <picture>
-        <source media="(prefers-color-scheme: dark)" srcset="./.github/img/hub-scenario-detail-dark.webp">
-        <img src="./.github/img/hub-scenario-detail-light.webp" alt="A Linux privilege escalation scenario with its objective, compatibility version and the Deploy in OpenAEV action">
-      </picture>
-      <p align="center"><b>Scenario detail</b>: the objective and compatibility of a test before you run it in OpenAEV.</p>
+      <p><b>One-click deploy.</b> Read what a dashboard shows, then send it to your OpenCTI.</p>
     </td>
   </tr>
   <tr>
-    <td width="50%">
+    <td width="50%" valign="top">
       <picture>
-        <source media="(prefers-color-scheme: dark)" srcset="./.github/img/hub-integrations-dark.webp">
-        <img src="./.github/img/hub-integrations-light.webp" alt="The OpenCTI integrations catalog filtered by compatibility version, use case, integration type, deployment type, status and license">
+        <source media="(prefers-color-scheme: dark)" srcset="./.github/img/readme/g3-dark.webp">
+        <source media="(prefers-color-scheme: light)" srcset="./.github/img/readme/g3-light.webp">
+        <img alt="The OpenAEV scenarios library with category filters for atomic testing, attack simulation, purple team and tabletop exercises" src="./.github/img/readme/g3-light.webp" width="100%">
       </picture>
-      <p align="center"><b>Integrations catalog</b>: find the feed or enrichment that fills a gap in your intelligence.</p>
+      <p><b>Scenarios library.</b> Attack scenarios by category to validate your controls in OpenAEV.</p>
     </td>
-    <td width="50%">
+    <td width="50%" valign="top">
       <picture>
-        <source media="(prefers-color-scheme: dark)" srcset="./.github/img/hub-playbooks-dark.webp">
-        <img src="./.github/img/hub-playbooks-light.webp" alt="The OpenCTI playbooks library with ready-to-use automation playbooks as cards">
+        <source media="(prefers-color-scheme: dark)" srcset="./.github/img/readme/g4-dark.webp">
+        <source media="(prefers-color-scheme: light)" srcset="./.github/img/readme/g4-light.webp">
+        <img alt="A Linux privilege escalation scenario with its objective, compatibility version and the Deploy in OpenAEV action" src="./.github/img/readme/g4-light.webp" width="100%">
       </picture>
-      <p align="center"><b>Playbooks library</b>: automation you apply as is or adapt to your workflow.</p>
+      <p><b>Scenario detail.</b> The objective and compatibility of a test before you run it.</p>
     </td>
   </tr>
   <tr>
-    <td colspan="2">
+    <td width="50%" valign="top">
       <picture>
-        <source media="(prefers-color-scheme: dark)" srcset="./.github/img/hub-connect-dark.webp">
-        <img src="./.github/img/hub-connect-light.webp" alt="The dialog that asks to connect an OpenCTI instance before the first one-click deployment">
+        <source media="(prefers-color-scheme: dark)" srcset="./.github/img/readme/g5-dark.webp">
+        <source media="(prefers-color-scheme: light)" srcset="./.github/img/readme/g5-light.webp">
+        <img alt="The OpenCTI integrations catalog filtered by compatibility version, use case, integration type, deployment type, status and license" src="./.github/img/readme/g5-light.webp" width="100%">
       </picture>
-      <p align="center"><b>Connect an instance</b>: register your OpenCTI or OpenAEV once, and every later deployment is one click.</p>
+      <p><b>Integrations catalog.</b> Find the feed or enrichment that fills a gap in your intelligence.</p>
+    </td>
+    <td width="50%" valign="top">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="./.github/img/readme/g6-dark.webp">
+        <source media="(prefers-color-scheme: light)" srcset="./.github/img/readme/g6-light.webp">
+        <img alt="The OpenCTI playbooks library with ready-to-use automation playbooks as cards" src="./.github/img/readme/g6-light.webp" width="100%">
+      </picture>
+      <p><b>Playbooks library.</b> Automation you apply as is or adapt to your workflow.</p>
     </td>
   </tr>
 </table>
 
+**Walkthrough.** From the library to a dashboard deployed in your OpenCTI, in 15 seconds.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./.github/img/readme/walkthrough-dark.webp">
+  <source media="(prefers-color-scheme: light)" srcset="./.github/img/readme/walkthrough-light.webp">
+  <img alt="Animated walkthrough: the XTM Hub home, the dashboards library, a dashboard detail and its one-click deployment to a connected OpenCTI" src="./.github/img/readme/walkthrough-light.webp" width="100%">
+</picture>
+
 ## How it works
 
-XTM Hub serves curated content to the instances you connect. Registration links an OpenCTI, OpenAEV or XTM One instance to your organization in the Hub; a deployment sends the resource straight to the instance you pick, with no export, no file to move and no manual import.
+XTM Hub serves curated content to the instances you connect. Registration links an OpenCTI, OpenAEV or XTM One instance to your organization; a deployment sends the resource straight to the instance you pick. Under the hood: a GraphQL API (Express, Apollo Server, PostgreSQL, Elasticsearch, S3-compatible storage) and a Next.js web application, in one TypeScript monorepo.
 
-```mermaid
-flowchart LR
-    subgraph hub["XTM Hub library"]
-        direction TB
-        dash["OpenCTI dashboards<br/>and custom views"]
-        integ["OpenCTI integrations"]
-        play["OpenCTI playbooks"]
-        scen["OpenAEV scenarios"]
-    end
-    deploy{{"One-click deploy"}}
-    reg["Instance registration"]
-    subgraph yours["Your connected instances"]
-        direction TB
-        cti["OpenCTI"]
-        aev["OpenAEV"]
-        one["XTM One"]
-    end
-    dash --> deploy
-    integ --> deploy
-    play --> deploy
-    scen --> deploy
-    deploy --> cti
-    deploy --> aev
-    reg -. links .-> cti
-    reg -. links .-> aev
-    reg -. links .-> one
-```
-
-Under the hood, XTM Hub is a TypeScript monorepo: a GraphQL API (`apps/backend`: Express, Apollo Server, PostgreSQL, Elasticsearch, S3-compatible storage) and a Next.js web application (`apps/frontend`).
-
-```mermaid
-flowchart LR
-    user["Security team<br/>(browser)"] --> front["Next.js frontend<br/>apps/frontend"]
-    front --> api["GraphQL API<br/>apps/backend"]
-    inst["Connected OpenCTI,<br/>OpenAEV, XTM One"] <--> api
-    api --> pg[("PostgreSQL")]
-    api --> es[("Elasticsearch<br/>search")]
-    api --> s3[("S3-compatible<br/>storage")]
-```
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./.github/img/readme/flow-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="./.github/img/readme/flow-light.svg">
+  <img alt="How XTM Hub works: dashboards, integrations, playbooks and scenarios flow through one-click deployment into your registered OpenCTI, OpenAEV and XTM One instances" src="./.github/img/readme/flow-light.svg" width="100%">
+</picture>
 
 ## Part of the XTM Platform
 
-XTM Hub is one of the five products of the [XTM Platform](https://filigran.io), the open platform for Agentic CTEM.
+XTM Hub is one of the five products of the [XTM Platform](https://filigran.io), the open platform for Agentic CTEM. Each product owns stages of the CTEM loop; XTM One runs the loop across them.
 
-```mermaid
-flowchart LR
-    subgraph platform["XTM Platform"]
-        direction TB
-        one["XTM One<br/>core and agentic layer"]
-        cti["OpenCTI<br/>threat intelligence"]
-        aev["OpenAEV<br/>adversarial exposure validation"]
-        crq["OpenCRQ<br/>cyber risk quantification"]
-        hub["XTM Hub<br/>tradecraft library and gateway"]
-        one --- cti
-        one --- aev
-        one --- crq
-        hub -. one-click deploy .-> cti
-        hub -. one-click deploy .-> aev
-    end
-    scoping(["1. Scoping"]) --> discovery(["2. Discovery"]) --> prioritization(["3. Prioritization"]) --> validation(["4. Validation"]) --> mobilization(["5. Mobilization"])
-    mobilization -. continuous loop .-> scoping
-    cti -. know the adversary .-> scoping
-    cti -. map the exposure .-> discovery
-    crq -. quantify the risk .-> prioritization
-    aev -. prove the defenses .-> validation
-    one -. get the fix done .-> mobilization
-```
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./.github/img/readme/xtm-platform-ctem-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="./.github/img/readme/xtm-platform-ctem-light.svg">
+  <img alt="The XTM Platform and the CTEM loop: XTM One at the core, OpenCTI, OpenCRQ and OpenAEV as modules, XTM Hub as the library, around the five stages scoping, discovery, prioritization, validation and mobilization" src="./.github/img/readme/xtm-platform-ctem-light.svg" width="100%">
+</picture>
 
-| Product | What it does for a CTEM program |
-| --- | --- |
-| [XTM One](https://github.com/XTM-One-Platform/xtm-one) | The core and agentic layer that runs CTEM across the modules ([product page](https://filigran.io/products/xtm-one)) |
-| [OpenCTI](https://github.com/OpenCTI-Platform/opencti) | Threat intelligence: know the adversary and the threats that target you ([product page](https://filigran.io/products/opencti)) |
-| [OpenAEV](https://github.com/OpenAEV-Platform/openaev) | Adversarial exposure validation: prove your defenses against real attacker techniques ([product page](https://filigran.io/products/openaev)) |
-| [OpenCRQ](https://filigran.io/products/opencrq) | Cyber risk quantification: turn exposure into financial risk |
-| [XTM Hub](https://hub.filigran.io) | The tradecraft library and gateway for all of them ([product page](https://filigran.io/platforms/xtm-hub/)) |
+| | Product | Role in CTEM | Repository | Product page |
+|---|---|---|---|---|
+| <picture><source media="(prefers-color-scheme: dark)" srcset="./.github/img/readme/mark-xtm-one-dark.svg"><img src="./.github/img/readme/mark-xtm-one-light.svg" width="24" alt=""></picture> | **XTM One** | Core and agentic layer: runs CTEM across the modules and gets the fix done | [XTM-One-Platform/xtm-one](https://github.com/XTM-One-Platform/xtm-one) | [filigran.io/products/xtm-one](https://filigran.io/products/xtm-one) |
+| <picture><source media="(prefers-color-scheme: dark)" srcset="./.github/img/readme/mark-opencti-dark.svg"><img src="./.github/img/readme/mark-opencti-light.svg" width="24" alt=""></picture> | **OpenCTI** | Scoping and Discovery: know the adversary and the threats that target you | [OpenCTI-Platform/opencti](https://github.com/OpenCTI-Platform/opencti) | [filigran.io/products/opencti](https://filigran.io/products/opencti) |
+| <picture><source media="(prefers-color-scheme: dark)" srcset="./.github/img/readme/mark-opencrq-dark.svg"><img src="./.github/img/readme/mark-opencrq-light.svg" width="24" alt=""></picture> | **OpenCRQ** | Prioritization: turn exposure into financial risk | [OpenCRQ-Platform/opencrq](https://github.com/OpenCRQ-Platform/opencrq) | [filigran.io/products/opencrq](https://filigran.io/products/opencrq) |
+| <picture><source media="(prefers-color-scheme: dark)" srcset="./.github/img/readme/mark-openaev-dark.svg"><img src="./.github/img/readme/mark-openaev-light.svg" width="24" alt=""></picture> | **OpenAEV** | Validation: prove your defenses against real attacker techniques | [OpenAEV-Platform/openaev](https://github.com/OpenAEV-Platform/openaev) | [filigran.io/products/openaev](https://filigran.io/products/openaev) |
+| <picture><source media="(prefers-color-scheme: dark)" srcset="./.github/img/readme/mark-xtm-hub-dark.svg"><img src="./.github/img/readme/mark-xtm-hub-light.svg" width="24" alt=""></picture> | **XTM Hub** | Tradecraft library and gateway: integrations, dashboards and scenarios for every product | [XTM-Hub/xtm-hub](https://github.com/XTM-Hub/xtm-hub) | [filigran.io/platforms/xtm-hub](https://filigran.io/platforms/xtm-hub/) |
+
+## Use cases by security role
+
+| Role | What XTM Hub does for it |
+|---|---|
+| **CTI** | Sector dashboards and curated feeds to start from, deployed into OpenCTI in one click. |
+| **SOC** | Enrichment integrations and custom views that put the alerts that matter in front of each analyst. |
+| **Detection engineering** | Playbooks and integrations that route intelligence to the detection stack. |
+| **Red and purple team** | Ready-made OpenAEV attack scenarios by category, from atomic tests to purple team exercises. |
+| **Vulnerability and exposure management** | Scenarios that test the techniques that reach your assets and dashboards on the vulnerabilities exploited in the wild. |
+| **Risk and CISO** | One library shared across every OpenCTI and OpenAEV instance you run, deployed from one account. |
 
 ## Quick start
 
-**Use it**: XTM Hub runs as a service at [hub.filigran.io](https://hub.filigran.io). Sign in, open a library, and connect your instance from the first deployment. The [documentation](https://docs.hub.filigran.io) covers registration, deployment and API tokens.
+**Use it**: XTM Hub runs as a service at [hub.filigran.io](https://hub.filigran.io). Sign in, open a library and connect your instance from the first deployment.
 
-**Run it locally**: the Node version comes from [`.nvmrc`](.nvmrc) and the Yarn version from `packageManager` in [`package.json`](package.json).
+**Run it locally**: Node from [`.nvmrc`](.nvmrc) and Yarn from `packageManager` in [`package.json`](package.json).
 
 ```bash
-corepack enable                                       # required before any yarn command
-yarn install                                          # installs every workspace
-docker compose -f xtm-hub-dev/docker-compose.yml up   # PostgreSQL, S3 storage, Elasticsearch, Kibana, Mailpit
-yarn dev:api                                          # GraphQL API on http://localhost:4002
-yarn dev:front                                        # web application on http://localhost:3002, start the API first
+corepack enable && yarn install
+docker compose -f xtm-hub-dev/docker-compose.yml up -d   # PostgreSQL, S3, Elasticsearch, Mailpit
+yarn dev:api && yarn dev:front                           # API on :4002, web application on :3002
 ```
 
-In development the backend seeds sample library content, so the libraries are not empty on first start. Validation commands and the coding rules of each area are in [AGENTS.md](AGENTS.md). The Helm chart used to deploy the Hub is in [`chart/`](chart).
+- **Docs**: [registration, deployment and API tokens](https://docs.hub.filigran.io).
+- **Helm**: the chart used to deploy the Hub is in [`chart/`](chart).
+- **Contributors**: validation commands and coding rules in [AGENTS.md](AGENTS.md).
 
 ## Editions
 
-XTM Hub is free to use at [hub.filigran.io](https://hub.filigran.io). Its source code is available under the terms of the [LICENSE](LICENSE): you may read it, fork it for personal or educational use, and contribute through issues and pull requests; production and commercial use are not permitted. Some content depends on the edition of the product it deploys to: one-click deployment of playbooks needs OpenCTI Enterprise Edition.
+| | Free service | Source code |
+|---|---|---|
+| License | [hub.filigran.io](https://hub.filigran.io) terms | [Source available](LICENSE) |
+| Libraries, one-click deploy, registration | Yes | Read, fork for personal use |
+| Production and commercial use of the code | | Not permitted |
+
+Some content depends on the edition of the product it deploys to: one-click deployment of playbooks needs OpenCTI Enterprise Edition.
 
 ## Integrations and ecosystem
 
-- **Libraries**: [OpenCTI dashboards, custom views, integrations and playbooks, OpenAEV scenarios](https://hub.filigran.io) in one place.
-- **Products**: [OpenCTI](https://github.com/OpenCTI-Platform/opencti), [OpenAEV](https://github.com/OpenAEV-Platform/openaev) and [XTM One](https://github.com/XTM-One-Platform/xtm-one) register with the Hub; [OpenCTI connectors](https://github.com/OpenCTI-Platform/connectors) are listed in the integrations catalog.
-- **Learn**: [Filigran Academy](https://academy.filigran.io) courses for OpenCTI and OpenAEV, and the [Filigran blog](https://filigran.io/blog).
+- **XTM Platform:** OpenCTI, OpenAEV and XTM One register with the Hub and receive its content in one click.
+- **[Libraries](https://hub.filigran.io):** OpenCTI dashboards, custom views, integrations and playbooks, and OpenAEV scenarios in one place.
+- **Connectors:** the [OpenCTI connectors](https://github.com/OpenCTI-Platform/connectors) are listed in the integrations catalog.
+- **API:** personal API tokens (read, read and write, admin) with a lifetime for your scripts and pipelines.
 
 ## Community
 
-- Like the project? [Star XTM Hub](https://github.com/XTM-Hub/xtm-hub/stargazers) and the other XTM Platform repositories.
-- Report a bug or ask for a feature in [GitHub issues](https://github.com/XTM-Hub/xtm-hub/issues).
-- Vote on the [XTM Platform roadmap](https://hub.filigran.io) in the Hub.
-- Join the discussion on the [Filigran community Slack](https://community.filigran.io).
+Star XTM Hub to follow it and to help other security teams find it.
 
-<a href="https://star-history.com/#XTM-Hub/xtm-hub&Date">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=XTM-Hub/xtm-hub&type=Date&theme=dark">
-    <img src="https://api.star-history.com/svg?repos=XTM-Hub/xtm-hub&type=Date" alt="Star history of XTM Hub">
-  </picture>
-</a>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./.github/img/readme/stars-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="./.github/img/readme/stars-light.svg">
+  <img alt="GitHub stars of XTM Hub over time" src="./.github/img/readme/stars-light.svg" width="100%">
+</picture>
 
-<a href="https://github.com/XTM-Hub/xtm-hub/graphs/contributors"><img src="https://contrib.rocks/image?repo=XTM-Hub/xtm-hub" alt="Contributors of XTM Hub" /></a>
+- **Questions and discussion**: the Filigran [community Slack](https://community.filigran.io).
+- **Bugs and feature requests**: [GitHub issues](https://github.com/XTM-Hub/xtm-hub/issues).
+- **Learn**: free courses on [Filigran Academy](https://academy.filigran.io).
 
 ## Contributing
 
-- Read the [contributing guide](CONTRIBUTING.md) and the [code of conduct](CODE_OF_CONDUCT.md).
-- New to the codebase? Start with the [good first issues](https://github.com/XTM-Hub/xtm-hub/issues?q=is%3Aissue%20state%3Aopen%20label%3A%22good%20first%20issue%22).
-- Pull request titles follow Conventional Commits and end with the issue they close, for example `fix(frontend): keep the filter on reload (#<issue>)`. Commits are signed.
+Read the [contributing guide](CONTRIBUTING.md) to set up a development environment and propose a change. XTM Hub has adopted a [Code of Conduct](CODE_OF_CONDUCT.md). First contribution: the [good first issues](https://github.com/XTM-Hub/xtm-hub/labels/good%20first%20issue).
 
 ## Security
 
-Please do not report a security vulnerability in a public issue. Send it to [contact@filigran.io](mailto:contact@filigran.io) with a description, the affected version and the steps to reproduce.
+Report vulnerabilities privately as described in [SECURITY.md](SECURITY.md), never in a public issue.
 
 ## License
 
-XTM Hub is source available. See [LICENSE](LICENSE) for the full terms.
+XTM Hub is source available under the terms of [LICENSE](LICENSE).
 
 ## About Filigran
 
-[Filigran](https://filigran.io) builds the XTM Platform, the open platform for Agentic CTEM, with XTM One, OpenCTI, OpenAEV, OpenCRQ and XTM Hub.
+XTM Hub is designed and developed by [Filigran](https://filigran.io), the company behind the [XTM Platform](https://filigran.io) for Agentic CTEM.
 
-<a href="https://filigran.io"><img src="./.github/img/logo_filigran.png" width="300" alt="Filigran" /></a>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./.github/img/readme/filigran-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="./.github/img/readme/filigran-light.svg">
+  <img alt="Filigran" src="./.github/img/readme/filigran-light.svg" width="240">
+</picture>

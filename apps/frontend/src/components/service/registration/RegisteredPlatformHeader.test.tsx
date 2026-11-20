@@ -1,11 +1,16 @@
 import { RegisteredPlatformHeader } from '@/components/service/registration/RegisteredPlatformHeader';
 import { basePlatform } from '@/components/service/registration/registered-platform.fixtures';
+import {
+  mockTranslations,
+  translateWithValues,
+} from '@/utils/test/mock-translations';
 import testRender from '@/utils/test/test-render';
 import {
   PlatformContract,
   RegisteredPlatformDetailsFragment,
 } from '@graphql/generated';
 import { screen } from '@testing-library/react';
+import { useTranslations } from 'next-intl';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
@@ -18,10 +23,14 @@ const OTHER_ORGANIZATION_ID = 'other-org-id';
 
 const renderHeader = (
   platform: Partial<RegisteredPlatformDetailsFragment> = {},
-  selectedOrganizationId: string = PLATFORM_ORGANIZATION_ID
+  selectedOrganizationId: string = PLATFORM_ORGANIZATION_ID,
+  showOrganization = false
 ) => {
   return testRender(
-    <RegisteredPlatformHeader platform={{ ...basePlatform, ...platform }} />,
+    <RegisteredPlatformHeader
+      platform={{ ...basePlatform, ...platform }}
+      showOrganization={showOrganization}
+    />,
     { me: { selected_organization_id: selectedOrganizationId } }
   );
 };
@@ -35,6 +44,7 @@ describe('RegisteredPlatformHeader', () => {
 
   afterEach(() => {
     vi.useRealTimers();
+    vi.mocked(useTranslations).mockImplementation(() => mockTranslations());
   });
 
   it('should display the platform title', () => {
@@ -113,6 +123,45 @@ describe('RegisteredPlatformHeader', () => {
     // Then
     expect(
       screen.queryByRole('link', { name: /Register\.Details\.Access/ })
+    ).not.toBeInTheDocument();
+  });
+
+  it('should display the owner organization when asked to', () => {
+    // Given
+    vi.mocked(useTranslations).mockReturnValue(
+      mockTranslations({ translate: translateWithValues })
+    );
+
+    // When
+    renderHeader({ subscription: null }, OTHER_ORGANIZATION_ID, true);
+
+    // Then
+    expect(
+      screen.getByText(
+        translateWithValues('Register.Details.OrganizationName', {
+          name: basePlatform.organization!.name,
+        })
+      )
+    ).toBeInTheDocument();
+  });
+
+  it('should hide the owner organization when not asked to', () => {
+    // Given / When
+    renderHeader({}, PLATFORM_ORGANIZATION_ID, false);
+
+    // Then
+    expect(
+      screen.queryByText(/Register\.Details\.OrganizationName/)
+    ).not.toBeInTheDocument();
+  });
+
+  it('should hide the owner organization when the platform has no owner', () => {
+    // Given / When
+    renderHeader({ organization: null }, OTHER_ORGANIZATION_ID, true);
+
+    // Then
+    expect(
+      screen.queryByText(/Register\.Details\.OrganizationName/)
     ).not.toBeInTheDocument();
   });
 });

@@ -56,11 +56,6 @@
     "SearchPlatform": "Search platform",
     "ClearSearch": "Clear search",
     "Tour": {
-      "GuidedTour": "Guided tour",
-      "Close": "Close the tour",
-      "PreviousStep": "Go to previous step",
-      "NextStep": "Go to next step",
-      "GoToStep": "Go to step {step}",
       "Table": "This board lists every SaaS platform from the SaaS Manager, with the data it reports.",
       "Search": "Search for a platform by customer name.",
       "ProductFilter": "Show only the platforms of one product.",
@@ -404,6 +399,7 @@
       "INTEGRATION_TYPE_NOT_RECOGNIZED": "This type of integration is not recognized",
       "INVALID_ACTION_SIZE": "An unknown error occurred",
       "INVALID_CONTENT_TRANSLATION_KEY": "Invalid content key",
+      "INVALID_DOCUMENT_CREATION_STATUS": "A resource can only be created as a draft or in validation",
       "INVALID_DOCUMENT_STATUS_TRANSITION": "This status change is not allowed for this resource",
       "INVALID_EMAIL": "The email should be in valid format.",
       "INVALID_IMAGE_URL": "The image URL is not valid",
@@ -1114,6 +1110,7 @@
         "NotConnected": "Connection lost",
         "NotConnectedDetails": "You should connect your product again."
       },
+      "OrganizationName": "Organization: {name}",
       "ProductName": "Product name",
       "Product": "Product",
       "ProductURL": "Product URL",
@@ -1199,7 +1196,15 @@
         "Pebibyte": "{value} PiB"
       },
       "MaxCapacity": "Max capacity",
-      "UsedOfLimit": "<highlight>{used}</highlight> <secondary>of {limit}</secondary>"
+      "UsedOfLimit": "<highlight>{used}</highlight> <secondary>of {limit}</secondary>",
+      "GuidedTourAvailability": "Guided tour only available to CSM",
+      "Tour": {
+        "Source": "These metrics come from the SaaS Manager. XTM Hub shows them as they are, without any processing.",
+        "Database": "This chart shows the {database} usage of the platform compared to what the customer's plan allows. It is not the Grafana dashboard: Grafana compares the raw usage to the disk size allocated to the platform, a safeguard that keeps the platform from crashing, so it can never go above 100%. Here, the usage is compared to what the customer pays for, and can go over 100%.",
+        "FileStorage": "This chart shows the S3 file storage usage of the platform compared to what the customer's plan allows. As for the database, it is not the Grafana dashboard: Grafana compares the raw usage to the disk size allocated to the platform, a safeguard that keeps the platform from crashing, so it can never go above 100%. Here, the usage is compared to what the customer pays for, and can go over 100%.",
+        "ChartAxes": "On each chart, the horizontal axis shows time and the vertical axis the storage used, in GiB. Change the period shown by clicking 30, 90 or 180 days at the top.",
+        "Sla": "This chart shows the SLA availability of the platform, day by day. Green bars are at or above the contractual rate ({target}), orange ones below it. Grey bars have no data, or no data yet."
+      }
     },
     "Error": {
       "Capability": {
@@ -2658,5 +2663,12 @@
     "Title": "Welcome to XTM Hub",
     "Subtitle": "The unified entry point for the Filigran ecosystem.",
     "Instructions": "Use Edit Translations in the sidebar to turn edit mode on (BYPASS-capability users only), then click the outlined title or subtitle below. Saving creates a draft to publish from the edit mode banner."
+  },
+  "Tour": {
+    "GuidedTour": "Guided tour",
+    "Close": "Close the tour",
+    "PreviousStep": "Go to previous step",
+    "NextStep": "Go to next step",
+    "GoToStep": "Go to step {step}"
   }
 }

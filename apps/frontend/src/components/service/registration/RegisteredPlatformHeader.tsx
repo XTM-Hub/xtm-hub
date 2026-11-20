@@ -5,7 +5,7 @@ import { CONTRACT_LABEL_BY_CONTRACT } from '@/components/registration/PlatformId
 import { ConnectedProductButtons } from '@/components/service/registration/ConnectedProductButtons';
 import { useTranslate } from '@/hooks/use-translate';
 import { isWithinLastMonths } from '@/utils/date';
-import { Chip } from '@filigran/design-system';
+import { Chip, Icon } from '@filigran/design-system';
 import {
   PlatformContract,
   RegisteredPlatformDetailsFragment,
@@ -14,10 +14,12 @@ import { useContext } from 'react';
 
 interface RegisteredPlatformHeaderProps {
   platform: RegisteredPlatformDetailsFragment;
+  showOrganization: boolean;
 }
 
 export const RegisteredPlatformHeader = ({
   platform,
+  showOrganization,
 }: RegisteredPlatformHeaderProps) => {
   const t = useTranslate();
 
@@ -54,6 +56,14 @@ export const RegisteredPlatformHeader = ({
             )}
             severity={isConnectionStatusOk ? 'low' : 'critical'}
           />
+          {showOrganization && platform.organization && (
+            <Chip
+              label={t('Register.Details.OrganizationName', {
+                name: platform.organization.name,
+              })}
+              startIcon={<Icon name="building-2" />}
+            />
+          )}
         </div>
       </div>
       {shouldDisplayHeaderButtons && (

@@ -36,7 +36,7 @@ export interface SeedDocumentsResult {
 }
 
 /**
- * Inserts `count` active documents with full metadata using TestHelper.
+ * Inserts `count` published documents with full metadata using TestHelper.
  * Documents are created in parallel batches of 50 to keep setup time short.
  * Returns the IDs of every inserted document and its associated image child,
  * so callers can track them for teardown.

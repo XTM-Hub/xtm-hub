@@ -31,18 +31,13 @@ import {
 } from './telemetry.types';
 
 import { toGlobalId } from 'graphql-relay/node/node.js';
-import { FileUpload } from 'graphql-upload/processRequest.mjs';
 import { TestHelper } from '../../../tests/helper/test.helper';
 import {
   contextSimpleUserFiligran2,
   SERVICES,
-  TEST_META_DESCRIPTIONS,
   TEST_ORGANIZATIONS,
 } from '../../../tests/tests.const';
 import {
-  DocumentMetadataKeyCode,
-  DocumentStatus,
-  IntegrationType,
   NewsFeedItemType,
   NewsFeedRedirectInput,
   NewsFeedUtmContent,
@@ -53,11 +48,9 @@ import {
 } from '../../__generated__/resolvers-types';
 import type { DocumentId } from '../../model/kanel/public/Document';
 import type { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
-import { DocumentApp } from '../document/document.app';
 import { DocumentUploadsHelper } from '../document/document.uploads.helper';
 import { OrganizationDomain } from '../organization-management/organization/organization.domain';
 import { ServiceInstanceDomain } from '../service/instance/service-instance.domain';
-import { INTEGRATION_SERVICE_INSTANCE_ID } from '../shareable-resource/opencti/integration/integration.model';
 
 vi.mock('config', async (importOriginal) => {
   const mod = await importOriginal<{ default: typeof config }>();
@@ -105,18 +98,6 @@ describe('telemetryApp', () => {
     fileName: 'csvfilename',
   };
 
-  const mockFileUpload: FileUpload = {
-    filename: 'test-image.png',
-    mimetype: 'image/png',
-    encoding: '7bit',
-    createReadStream: vi.fn(),
-  };
-
-  const mockUpload = {
-    file: mockFileUpload,
-    promise: Promise.resolve(mockFileUpload),
-  };
-
   beforeEach(async () => {
     vi.spyOn(DocumentUploadsHelper, 'processUploads').mockResolvedValue([
       minioFileMock,
@@ -149,32 +130,9 @@ describe('telemetryApp', () => {
         last_connectivity_check: new Date(),
       });
 
-      const document = await DocumentApp.createDocument({
-        input: {
-          uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
-          name: 'myCsvFeed',
-          description: 'description',
-          short_description: 'short_description',
-          meta_description: TEST_META_DESCRIPTIONS.DEFAULT,
-          slug: 'slug',
-          status: DocumentStatus.Published,
-        },
-        metadata: [
-          {
-            key: DocumentMetadataKeyCode.IntegrationType,
-            value: IntegrationType.CsvFeed,
-          },
-          {
-            key: DocumentMetadataKeyCode.FeedUrl,
-            value: 'https://example.com',
-          },
-        ],
-        serviceInstanceId: INTEGRATION_SERVICE_INSTANCE_ID,
-        sourceDocument: mockUpload,
-      });
-      expect(document).toBeDefined();
+      const document = await TestHelper.document.createWholeDocument({});
 
-      const documentId = document!.id;
+      const documentId = document.id;
 
       const telemetrySpy = vi
         .spyOn(TelemetryApp, 'sendTelemetryEvent')
@@ -247,32 +205,9 @@ describe('telemetryApp', () => {
         last_connectivity_check: new Date(),
       });
 
-      const document = await DocumentApp.createDocument({
-        input: {
-          uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
-          name: 'myCsvFeed',
-          description: 'description',
-          short_description: 'short_description',
-          meta_description: TEST_META_DESCRIPTIONS.DEFAULT,
-          slug: 'slug',
-          status: DocumentStatus.Published,
-        },
-        metadata: [
-          {
-            key: DocumentMetadataKeyCode.IntegrationType,
-            value: IntegrationType.CsvFeed,
-          },
-          {
-            key: DocumentMetadataKeyCode.FeedUrl,
-            value: 'https://example.com',
-          },
-        ],
-        serviceInstanceId: INTEGRATION_SERVICE_INSTANCE_ID,
-        sourceDocument: mockUpload,
-      });
-      expect(document).toBeDefined();
+      const document = await TestHelper.document.createWholeDocument({});
 
-      const documentId = document!.id;
+      const documentId = document.id;
 
       const telemetrySpy = vi
         .spyOn(TelemetryApp, 'sendTelemetryEvent')
@@ -333,32 +268,9 @@ describe('telemetryApp', () => {
         status: PlatformConfigurationStatus.Active,
         last_connectivity_check: new Date(),
       });
-      const document = await DocumentApp.createDocument({
-        input: {
-          uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
-          name: 'myCsvFeed',
-          description: 'description',
-          short_description: 'short_description',
-          meta_description: TEST_META_DESCRIPTIONS.DEFAULT,
-          slug: 'slug',
-          status: DocumentStatus.Published,
-        },
-        metadata: [
-          {
-            key: DocumentMetadataKeyCode.IntegrationType,
-            value: IntegrationType.CsvFeed,
-          },
-          {
-            key: DocumentMetadataKeyCode.FeedUrl,
-            value: 'https://example.com',
-          },
-        ],
-        serviceInstanceId: INTEGRATION_SERVICE_INSTANCE_ID,
-        sourceDocument: mockUpload,
-      });
-      expect(document).toBeDefined();
+      const document = await TestHelper.document.createWholeDocument({});
 
-      const documentId = document!.id;
+      const documentId = document.id;
 
       const telemetrySpy = vi
         .spyOn(TelemetryApp, 'sendTelemetryEvent')

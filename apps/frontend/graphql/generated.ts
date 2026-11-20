@@ -238,8 +238,6 @@ export enum CompetitorTier {
 
 export type Connector = Document & Integration & Node & {
   __typename?: 'Connector';
-  /** @deprecated Use status */
-  active: Maybe<Scalars['Boolean']['output']>;
   blogpost_url: Maybe<Scalars['String']['output']>;
   children_documents: Maybe<Array<ShareableResource>>;
   contact: Maybe<Scalars['String']['output']>;
@@ -385,8 +383,6 @@ export type CreatedApiToken = {
 
 export type CsvFeed = Document & Integration & Node & {
   __typename?: 'CsvFeed';
-  /** @deprecated Use status */
-  active: Maybe<Scalars['Boolean']['output']>;
   blogpost_url: Maybe<Scalars['String']['output']>;
   children_documents: Maybe<Array<ShareableResource>>;
   created_at: Scalars['Date']['output'];
@@ -432,8 +428,6 @@ export type CurrentApiToken = {
 
 export type CustomDashboard = Document & Node & {
   __typename?: 'CustomDashboard';
-  /** @deprecated Use status */
-  active: Maybe<Scalars['Boolean']['output']>;
   children_documents: Maybe<Array<ShareableResource>>;
   created_at: Scalars['Date']['output'];
   description: Maybe<Scalars['String']['output']>;
@@ -460,8 +454,6 @@ export type CustomDashboard = Document & Node & {
 
 export type CustomView = Document & Node & {
   __typename?: 'CustomView';
-  /** @deprecated Use status */
-  active: Maybe<Scalars['Boolean']['output']>;
   children_documents: Maybe<Array<ShareableResource>>;
   created_at: Scalars['Date']['output'];
   description: Maybe<Scalars['String']['output']>;
@@ -493,8 +485,6 @@ export type CustomView = Document & Node & {
  */
 export type DefaultDocument = Document & Node & {
   __typename?: 'DefaultDocument';
-  /** @deprecated Use status */
-  active: Maybe<Scalars['Boolean']['output']>;
   children_documents: Maybe<Array<ShareableResource>>;
   created_at: Scalars['Date']['output'];
   description: Maybe<Scalars['String']['output']>;
@@ -729,8 +719,6 @@ export enum DeploymentRequestUseCase {
 }
 
 export type Document = {
-  /** @deprecated Use status */
-  active: Maybe<Scalars['Boolean']['output']>;
   children_documents: Maybe<Array<ShareableResource>>;
   created_at: Scalars['Date']['output'];
   description: Maybe<Scalars['String']['output']>;
@@ -977,8 +965,6 @@ export enum HasRepliedSatisfaction {
 }
 
 export type Integration = {
-  /** @deprecated Use status */
-  active: Maybe<Scalars['Boolean']['output']>;
   blogpost_url: Maybe<Scalars['String']['output']>;
   children_documents: Maybe<Array<ShareableResource>>;
   created_at: Scalars['Date']['output'];
@@ -1011,8 +997,6 @@ export type Integration = {
 
 export type IntegrationHack = Document & Integration & Node & {
   __typename?: 'IntegrationHack';
-  /** @deprecated Use status */
-  active: Maybe<Scalars['Boolean']['output']>;
   blogpost_url: Maybe<Scalars['String']['output']>;
   children_documents: Maybe<Array<ShareableResource>>;
   created_at: Scalars['Date']['output'];
@@ -1082,8 +1066,6 @@ export enum LicenseType {
 export type LoadDocumentFacetInput = {
   documentType: InputMaybe<Scalars['String']['input']>;
   logicalFilters: InputMaybe<LogicalFilterInput>;
-  /** @deprecated Use restrictToPublishedDocuments */
-  restrictToActiveDocuments: InputMaybe<Scalars['Boolean']['input']>;
   restrictToPublishedDocuments: InputMaybe<Scalars['Boolean']['input']>;
   searchTerm: InputMaybe<Scalars['String']['input']>;
   serviceInstanceId: Scalars['ServiceInstanceId']['input'];
@@ -1426,7 +1408,6 @@ export type MutationDeleteCompetitorArgs = {
 
 export type MutationDeleteDocumentArgs = {
   documentId: Scalars['DocumentId']['input'];
-  forceDelete: InputMaybe<Scalars['Boolean']['input']>;
   service_instance_id: Scalars['ServiceInstanceId']['input'];
 };
 
@@ -1825,8 +1806,6 @@ export type OneClickDeployInput = {
 
 export type OpenAevScenario = Document & Node & {
   __typename?: 'OpenAEVScenario';
-  /** @deprecated Use status */
-  active: Maybe<Scalars['Boolean']['output']>;
   children_documents: Maybe<Array<ShareableResource>>;
   created_at: Scalars['Date']['output'];
   description: Maybe<Scalars['String']['output']>;
@@ -1863,8 +1842,6 @@ export type OpenCtiPlatformRegistrationStatusResponse = {
 
 export type OpenCtiPlaybook = Document & Node & {
   __typename?: 'OpenCTIPlaybook';
-  /** @deprecated Use status */
-  active: Maybe<Scalars['Boolean']['output']>;
   children_documents: Maybe<Array<ShareableResource>>;
   created_at: Scalars['Date']['output'];
   description: Maybe<Scalars['String']['output']>;
@@ -1900,6 +1877,11 @@ export type Organization = Node & {
   capabilityUser: Maybe<Array<Maybe<Capability>>>;
   domains: Maybe<Array<Scalars['String']['output']>>;
   id: Scalars['ID']['output'];
+  /**
+   * Members of the organization, invited and disabled users included, pending requests excluded.
+   * Nullable: a refused read answers null without failing the whole query.
+   */
+  members_count: Maybe<Scalars['Int']['output']>;
   name: Scalars['String']['output'];
   personal_space: Scalars['Boolean']['output'];
 };
@@ -2071,6 +2053,7 @@ export enum PortalCapability {
   ModifyServiceMetadata = 'MODIFY_SERVICE_METADATA',
   ModifyTrials = 'MODIFY_TRIALS',
   ModifyTrialsQuota = 'MODIFY_TRIALS_QUOTA',
+  ReadOrganizationMembers = 'READ_ORGANIZATION_MEMBERS',
   ReadSaasMetrics = 'READ_SAAS_METRICS',
   ReadTrials = 'READ_TRIALS'
 }
@@ -2653,8 +2636,6 @@ export type RolePortal = Node & {
 
 export type RssFeed = Document & Integration & Node & {
   __typename?: 'RssFeed';
-  /** @deprecated Use status */
-  active: Maybe<Scalars['Boolean']['output']>;
   blogpost_url: Maybe<Scalars['String']['output']>;
   children_documents: Maybe<Array<ShareableResource>>;
   created_at: Scalars['Date']['output'];
@@ -3011,8 +2992,6 @@ export enum SettingsCapability {
 
 export type ShareableResource = {
   __typename?: 'ShareableResource';
-  /** @deprecated Use status */
-  active: Maybe<Scalars['Boolean']['output']>;
   created_at: Scalars['Date']['output'];
   description: Maybe<Scalars['String']['output']>;
   download_number: Maybe<Scalars['Int']['output']>;
@@ -3050,8 +3029,6 @@ export enum SolutionCategoryOrdering {
 
 export type Stream = Document & Integration & Node & {
   __typename?: 'Stream';
-  /** @deprecated Use status */
-  active: Maybe<Scalars['Boolean']['output']>;
   blogpost_url: Maybe<Scalars['String']['output']>;
   children_documents: Maybe<Array<ShareableResource>>;
   created_at: Scalars['Date']['output'];
@@ -3172,8 +3149,6 @@ export type Success = {
 
 export type TaxiiFeed = Document & Integration & Node & {
   __typename?: 'TaxiiFeed';
-  /** @deprecated Use status */
-  active: Maybe<Scalars['Boolean']['output']>;
   blogpost_url: Maybe<Scalars['String']['output']>;
   children_documents: Maybe<Array<ShareableResource>>;
   created_at: Scalars['Date']['output'];
@@ -3227,8 +3202,6 @@ export type TenantStatus = {
 
 export type ThirdPartyIntegration = Document & Integration & Node & {
   __typename?: 'ThirdPartyIntegration';
-  /** @deprecated Use status */
-  active: Maybe<Scalars['Boolean']['output']>;
   blogpost_url: Maybe<Scalars['String']['output']>;
   children_documents: Maybe<Array<ShareableResource>>;
   created_at: Scalars['Date']['output'];
@@ -4276,14 +4249,14 @@ export type RegisteredPlatformRedirectTargetQueryVariables = Exact<{
 
 export type RegisteredPlatformRedirectTargetQuery = { __typename?: 'Query', registeredPlatformByPlatformId: { __typename?: 'RegisteredPlatform', service_instance_id: any, identifier: ServiceDefinitionIdentifier, deployment_request: { __typename?: 'DeploymentRequest', parent_id: any | null } | null } | null };
 
-export type RegisteredPlatformDetailsFragment = { __typename?: 'RegisteredPlatform', id: string, service_instance_id: any, platform_id: string, last_connectivity_check: any | null, commercial_model: CommercialModel | null, tenant_id: string | null, title: string, contract: PlatformContract, url: string, version: string | null, identifier: ServiceDefinitionIdentifier, subscription: { __typename?: 'SubscriptionModel', start_date: any | null, end_date: any | null, service_instance: { __typename?: 'ServiceInstance', id: string }, organization: { __typename?: 'Organization', id: string } } | null, deployment_request: { __typename?: 'DeploymentRequest', id: string, hub_status: DeploymentRequestHubStatus, region: DeploymentRequestPlatformRegion, counts_in_orga_quota: boolean, platform_identifier: PlatformIdentifier | null, requester_email: string | null } | null, myGroups: Array<{ __typename?: 'ServiceGroup', name: ServiceGroupName }> | null };
+export type RegisteredPlatformDetailsFragment = { __typename?: 'RegisteredPlatform', id: string, service_instance_id: any, platform_id: string, last_connectivity_check: any | null, commercial_model: CommercialModel | null, tenant_id: string | null, title: string, contract: PlatformContract, url: string, version: string | null, identifier: ServiceDefinitionIdentifier, subscription: { __typename?: 'SubscriptionModel', start_date: any | null, end_date: any | null, service_instance: { __typename?: 'ServiceInstance', id: string }, organization: { __typename?: 'Organization', id: string } } | null, organization: { __typename?: 'Organization', name: string } | null, deployment_request: { __typename?: 'DeploymentRequest', id: string, hub_status: DeploymentRequestHubStatus, region: DeploymentRequestPlatformRegion, counts_in_orga_quota: boolean, platform_identifier: PlatformIdentifier | null, requester_email: string | null } | null, myGroups: Array<{ __typename?: 'ServiceGroup', name: ServiceGroupName }> | null };
 
 export type RegisteredPlatformByServiceInstanceQueryVariables = Exact<{
   input: RegisteredPlatformInput;
 }>;
 
 
-export type RegisteredPlatformByServiceInstanceQuery = { __typename?: 'Query', registeredPlatform: { __typename?: 'RegisteredPlatform', id: string, service_instance_id: any, platform_id: string, last_connectivity_check: any | null, commercial_model: CommercialModel | null, tenant_id: string | null, title: string, contract: PlatformContract, url: string, version: string | null, identifier: ServiceDefinitionIdentifier, subscription: { __typename?: 'SubscriptionModel', start_date: any | null, end_date: any | null, service_instance: { __typename?: 'ServiceInstance', id: string }, organization: { __typename?: 'Organization', id: string } } | null, deployment_request: { __typename?: 'DeploymentRequest', id: string, hub_status: DeploymentRequestHubStatus, region: DeploymentRequestPlatformRegion, counts_in_orga_quota: boolean, platform_identifier: PlatformIdentifier | null, requester_email: string | null } | null, myGroups: Array<{ __typename?: 'ServiceGroup', name: ServiceGroupName }> | null } | null };
+export type RegisteredPlatformByServiceInstanceQuery = { __typename?: 'Query', registeredPlatform: { __typename?: 'RegisteredPlatform', id: string, service_instance_id: any, platform_id: string, last_connectivity_check: any | null, commercial_model: CommercialModel | null, tenant_id: string | null, title: string, contract: PlatformContract, url: string, version: string | null, identifier: ServiceDefinitionIdentifier, subscription: { __typename?: 'SubscriptionModel', start_date: any | null, end_date: any | null, service_instance: { __typename?: 'ServiceInstance', id: string }, organization: { __typename?: 'Organization', id: string } } | null, organization: { __typename?: 'Organization', name: string } | null, deployment_request: { __typename?: 'DeploymentRequest', id: string, hub_status: DeploymentRequestHubStatus, region: DeploymentRequestPlatformRegion, counts_in_orga_quota: boolean, platform_identifier: PlatformIdentifier | null, requester_email: string | null } | null, myGroups: Array<{ __typename?: 'ServiceGroup', name: ServiceGroupName }> | null } | null };
 
 export type IsPlatformRegisteredQueryVariables = Exact<{
   input: IsPlatformRegisteredInput;
@@ -5347,6 +5320,9 @@ export const RegisteredPlatformDetailsFragmentDoc = `
     organization {
       id
     }
+  }
+  organization {
+    name
   }
   deployment_request {
     id

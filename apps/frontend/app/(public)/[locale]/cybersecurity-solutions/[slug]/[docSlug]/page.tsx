@@ -36,6 +36,7 @@ import {
   fetchSingleDocument,
   isPublicDocumentSlug,
 } from '@/utils/shareable-resources/utils/shareable-resources.server.utils';
+import { Paper } from '@filigran/design-system';
 import { LogoFiligranIcon } from '@filigran/icon';
 import { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
@@ -338,20 +339,26 @@ const Page = async ({
         />
       )}
       <div className="flex flex-col-reverse lg:flex-row w-full mt-4 gap-6">
-        <div className="flex-[3_3_0%]">
-          <h2 className="py-2 title-xs uppercase truncate text-default-secondary">
-            {t('PublicResourcePage.Overview')}
-          </h2>
-          <section className="rounded layer-1 bg-elevation-default">
-            <p className="p-4 content-base">{document?.short_description}</p>
-            <ResourceMarkdownRenderer
-              source={document?.description ?? ''}
-              className="p-4"
-              filigranWebsiteUtm={getResourcePageFiligranWebsiteUtm(
-                serviceInstance.service_definition.identifier
-              )}
-            />
-          </section>
+        <div className="flex-[3_3_0%] min-w-0">
+          <Paper
+            as="section"
+            padding={16}
+            className="overflow-x-auto"
+            title={
+              <h2 className="[font:inherit] tracking-[inherit]">
+                {t('PublicResourcePage.Overview')}
+              </h2>
+            }>
+            <div className="flex flex-col gap-8">
+              <p className="content-base">{document?.short_description}</p>
+              <ResourceMarkdownRenderer
+                source={document?.description ?? ''}
+                filigranWebsiteUtm={getResourcePageFiligranWebsiteUtm(
+                  serviceInstance.service_definition.identifier
+                )}
+              />
+            </div>
+          </Paper>
         </div>
         {document && (
           <ShareableResourceDetails

@@ -7,7 +7,6 @@ export const FacetApp = {
     searchTerm,
     logicalFilters,
     documentType,
-    restrictToActiveDocuments,
     restrictToPublishedDocuments,
   }: LoadDocumentFacetInput) => {
     return FacetDomain.loadDocumentFacets({
@@ -15,7 +14,6 @@ export const FacetApp = {
       documentType,
       searchTerm,
       logicalFilters,
-      restrictToActiveDocuments,
       restrictToPublishedDocuments,
     });
   },

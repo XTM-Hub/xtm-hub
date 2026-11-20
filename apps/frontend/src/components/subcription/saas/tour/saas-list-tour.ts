@@ -20,7 +20,7 @@ export type SaasListTourStep = StepType & {
   columnIds?: string[];
 };
 
-type SaasListTourTarget =
+export type SaasListTourTarget =
   (typeof SAAS_LIST_TOUR_TARGET)[keyof typeof SAAS_LIST_TOUR_TARGET];
 
 export const saasListTourTarget = (target: SaasListTourTarget) => ({

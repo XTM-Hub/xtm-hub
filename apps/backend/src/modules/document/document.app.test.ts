@@ -110,9 +110,14 @@ describe('documentApp', () => {
     uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID,
     name: 'name',
     description: 'description',
-    status: DocumentStatus.Published,
+    status: DocumentStatus.Draft,
     use_cases: [],
     solution_categories: [],
+  };
+
+  const baseDocumentData = {
+    ...documentData,
+    status: DocumentStatus.Published,
   };
 
   const documentUpdateData = {
@@ -120,7 +125,7 @@ describe('documentApp', () => {
     uploader_id: documentData.uploader_id,
     name: documentData.name,
     description: documentData.description,
-    status: documentData.status,
+    status: DocumentStatus.Published,
   };
 
   const integrationMetadata = [
@@ -389,24 +394,44 @@ describe('documentApp', () => {
         service: TelemetryEventService.CUSTOM_DASHBOARDS_LIBRARY,
         resource_id: expect.any(String),
         resource_title: documentData.name,
-        status: 'published',
+        status: 'draft',
         service_type: undefined,
       });
     });
 
-    it('should delegate news feed synchronization to NewsFeedApp.upsertResourceNewsFeed on document creation', async () => {
+    it('should throw InvalidDocumentCreationStatus and write or upload nothing when the status is published', async () => {
+      // Given
+      const processUploadsSpy = vi.spyOn(
+        DocumentUploadsHelper,
+        'processUploads'
+      );
+      const slug = `published-creation-${uuidv4()}`;
+
+      // When
+      const call = DocumentApp.createDocument({
+        input: { ...documentData, slug, status: DocumentStatus.Published },
+        metadata: integrationMetadata,
+        serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
+        sourceDocument: mockUpload,
+      });
+
+      // Then
+      await expect(call).rejects.toThrow(
+        ErrorCode.InvalidDocumentCreationStatus
+      );
+      expect(processUploadsSpy).not.toHaveBeenCalled();
+      expect(await TestHelper.document.load({ slug })).toBeUndefined();
+    });
+
+    it('should not synchronize the news feed on document creation', async () => {
       // Given
       const upsertResourceNewsFeedSpy = vi
         .spyOn(NewsFeedApp, 'upsertResourceNewsFeed')
         .mockResolvedValue();
 
       // When
-      const result = await DocumentApp.createDocument({
-        input: {
-          ...documentData,
-          status: DocumentStatus.Published,
-          slug: 'news-feed-active-slug',
-        },
+      await DocumentApp.createDocument({
+        input: { ...documentData, slug: 'news-feed-creation-slug' },
         metadata: [
           { key: DocumentMetadataKeyCode.ProductVersion, value: '1.0.0' },
         ],
@@ -415,16 +440,7 @@ describe('documentApp', () => {
       });
 
       // Then
-      expect(upsertResourceNewsFeedSpy).toHaveBeenCalledOnce();
-      expect(upsertResourceNewsFeedSpy).toHaveBeenCalledWith({
-        documentBeforeUpdate: undefined,
-        updatedDocument: expect.objectContaining({
-          id: result!.id,
-          status: DocumentStatus.Published,
-        }),
-        serviceDefinitionIdentifier:
-          ServiceDefinitionIdentifier.OpenctiCustomDashboards,
-      });
+      expect(upsertResourceNewsFeedSpy).not.toHaveBeenCalled();
     });
   });
 
@@ -432,8 +448,8 @@ describe('documentApp', () => {
     let createdDocument: Document | undefined;
     beforeEach(async () => {
       await TestHelper.document.delete({});
-      createdDocument = await DocumentApp.createDocument({
-        input: documentData,
+      createdDocument = await TestHelper.document.createInStatus({
+        input: baseDocumentData,
         metadata: integrationMetadata,
         serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
       });
@@ -444,7 +460,7 @@ describe('documentApp', () => {
         parentDocumentId: createdDocument!.id,
         serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
         metadata: [],
-        input: documentData,
+        input: baseDocumentData,
         existingImageIds: [],
       });
 
@@ -464,7 +480,7 @@ describe('documentApp', () => {
         parentDocumentId: createdDocument!.id,
         serviceInstanceId: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
         metadata: integrationMetadata,
-        input: documentData,
+        input: baseDocumentData,
         existingImageIds: [],
       });
 
@@ -481,7 +497,7 @@ describe('documentApp', () => {
         parentDocumentId: randomDocumentId,
         serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
         metadata: integrationMetadata,
-        input: documentData,
+        input: baseDocumentData,
         existingImageIds: [],
       });
 
@@ -495,7 +511,7 @@ describe('documentApp', () => {
         parentDocumentId: createdDocument!.id,
         serviceInstanceId: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
         metadata: integrationMetadata,
-        input: documentData,
+        input: baseDocumentData,
         existingImageIds: [],
       });
 
@@ -518,7 +534,7 @@ describe('documentApp', () => {
             value: 'https://changed.com',
           },
         ],
-        input: documentData,
+        input: baseDocumentData,
         existingImageIds: [],
       });
 
@@ -550,7 +566,8 @@ describe('documentApp', () => {
 
     it('should persist provided data and validate each field in it', async () => {
       // Given
-      const customDashboardDocument = await DocumentApp.createDocument({
+      vi.spyOn(PgBossProducer, 'send').mockResolvedValue('job-id');
+      const customDashboardDocument = await TestHelper.document.createInStatus({
         input: {
           ...documentData,
           slug: `persisted-data-update-${uuidv4()}`,
@@ -567,7 +584,7 @@ describe('documentApp', () => {
         uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID,
         name: 'updated name',
         description: 'updated description',
-        status: DocumentStatus.Draft,
+        status: DocumentStatus.InValidation,
         license_type: 'Commercial',
       };
 
@@ -630,7 +647,7 @@ describe('documentApp', () => {
         ],
         sourceDocument: mockUpload,
         existingImageIds: [],
-        input: documentData,
+        input: baseDocumentData,
       });
 
       // Then
@@ -649,7 +666,7 @@ describe('documentApp', () => {
         metadata: integrationMetadata,
         sourceDocument: mockUpload,
         existingImageIds: [],
-        input: documentData,
+        input: baseDocumentData,
       });
 
       // Then
@@ -668,7 +685,7 @@ describe('documentApp', () => {
         metadata: integrationMetadata,
         sourceDocument: mockUpload,
         existingImageIds: [],
-        input: documentData,
+        input: baseDocumentData,
         logo: mockUpload,
       });
 
@@ -743,8 +760,8 @@ describe('documentApp', () => {
           },
         ];
 
-        const createdDocument = await DocumentApp.createDocument({
-          input: { ...documentData, slug },
+        const createdDocument = await TestHelper.document.createInStatus({
+          input: { ...baseDocumentData, slug },
           metadata,
           serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
           sourceDocument: mockUpload,
@@ -801,8 +818,8 @@ describe('documentApp', () => {
         },
       ];
       const slug = 'connector-slug';
-      const createdDocument = await DocumentApp.createDocument({
-        input: { ...documentData, slug },
+      const createdDocument = await TestHelper.document.createInStatus({
+        input: { ...baseDocumentData, slug },
         metadata: connectorMetadata,
         serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
         sourceDocument: mockUpload,
@@ -850,8 +867,8 @@ describe('documentApp', () => {
     it('should preserve slug when updating a document', async () => {
       // Given
       const originalSlug = 'my-original-slug';
-      const documentWithSlug = await DocumentApp.createDocument({
-        input: { ...documentData, slug: originalSlug },
+      const documentWithSlug = await TestHelper.document.createInStatus({
+        input: { ...baseDocumentData, slug: originalSlug },
         metadata: integrationMetadata,
         serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
       });
@@ -1024,8 +1041,8 @@ describe('documentApp', () => {
       ];
 
       const createDocumentWithStatus = (status: DocumentStatus, slug: string) =>
-        DocumentApp.createDocument({
-          input: { ...documentData, status, slug },
+        TestHelper.document.createInStatus({
+          input: { ...baseDocumentData, status, slug },
           metadata: METADATA,
           serviceInstanceId: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
           sourceDocument: mockUpload,
@@ -1048,9 +1065,7 @@ describe('documentApp', () => {
       it.each`
         from                           | to
         ${DocumentStatus.Draft}        | ${DocumentStatus.InValidation}
-        ${DocumentStatus.Draft}        | ${DocumentStatus.Published}
         ${DocumentStatus.InValidation} | ${DocumentStatus.Published}
-        ${DocumentStatus.Published}    | ${DocumentStatus.Draft}
       `(
         'should save the new status when the document goes from $from to $to',
         async ({ from, to }: { from: DocumentStatus; to: DocumentStatus }) => {
@@ -1073,7 +1088,9 @@ describe('documentApp', () => {
 
       it.each`
         from                           | to
+        ${DocumentStatus.Draft}        | ${DocumentStatus.Published}
         ${DocumentStatus.InValidation} | ${DocumentStatus.Draft}
+        ${DocumentStatus.Published}    | ${DocumentStatus.Draft}
         ${DocumentStatus.Published}    | ${DocumentStatus.InValidation}
       `(
         'should keep the status and throw when the document goes from $from to $to',
@@ -1129,8 +1146,8 @@ describe('documentApp', () => {
         );
 
       const createDashboard = (status: DocumentStatus, slug: string) =>
-        DocumentApp.createDocument({
-          input: { ...documentData, status, slug },
+        TestHelper.document.createInStatus({
+          input: { ...baseDocumentData, status, slug },
           metadata: METADATA,
           serviceInstanceId: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
           sourceDocument: mockUpload,
@@ -1156,7 +1173,7 @@ describe('documentApp', () => {
       it('should enqueue one teams notification with the resource payload when a document is created in validation', async () => {
         // Given
         const input = {
-          ...documentData,
+          ...baseDocumentData,
           status: DocumentStatus.InValidation,
           slug: 'teams-notification-create',
         };
@@ -1178,10 +1195,10 @@ describe('documentApp', () => {
             payload: {
               library: customDashboardsLibrary,
               resource: {
-                name: documentData.name,
+                name: baseDocumentData.name,
                 type: null,
                 status: DocumentStatus.InValidation,
-                short_description: documentData.short_description,
+                short_description: baseDocumentData.short_description,
                 link: `${config.get<string>('base_url_front')}/redirect/${ServiceDefinitionIdentifier.OpenctiCustomDashboards}?document_id=${toGlobalId('Document', document.id)}`,
                 author_email: AUTHOR.EMAIL,
               },
@@ -1192,9 +1209,9 @@ describe('documentApp', () => {
 
       it('should label the resource with its integration type when an integration is created in validation', async () => {
         // When
-        await DocumentApp.createDocument({
+        await TestHelper.document.createInStatus({
           input: {
-            ...documentData,
+            ...baseDocumentData,
             status: DocumentStatus.InValidation,
             slug: 'teams-notification-integration',
           },
@@ -1214,34 +1231,16 @@ describe('documentApp', () => {
         });
       });
 
-      it('should enqueue a new teams notification when a published document goes back to draft then in validation', async () => {
-        // Given
-        const document = await createDashboard(
-          DocumentStatus.Published,
-          'teams-notification-reentry'
-        );
-        await updateDashboard(document.id, { status: DocumentStatus.Draft });
-        sendSpy.mockClear();
-
+      it('should not enqueue any teams notification when a document is created as draft', async () => {
         // When
-        await updateDashboard(document.id, {
-          status: DocumentStatus.InValidation,
-        });
+        await createDashboard(
+          DocumentStatus.Draft,
+          'teams-notification-create-draft'
+        );
 
         // Then
-        expect(teamsNotificationCalls()).toHaveLength(1);
+        expect(teamsNotificationCalls()).toHaveLength(0);
       });
-
-      it.each([[DocumentStatus.Draft], [DocumentStatus.Published]])(
-        'should not enqueue any teams notification when a document is created as %s',
-        async (status) => {
-          // When
-          await createDashboard(status, `teams-notification-create-${status}`);
-
-          // Then
-          expect(teamsNotificationCalls()).toHaveLength(0);
-        }
-      );
 
       it('should send the email of the uploader saved by the update as author', async () => {
         // Given
@@ -1267,8 +1266,6 @@ describe('documentApp', () => {
         ${DocumentStatus.Draft}        | ${DocumentStatus.InValidation} | ${1}
         ${DocumentStatus.InValidation} | ${DocumentStatus.InValidation} | ${0}
         ${DocumentStatus.InValidation} | ${DocumentStatus.Published}    | ${0}
-        ${DocumentStatus.Published}    | ${DocumentStatus.Draft}        | ${0}
-        ${DocumentStatus.Draft}        | ${DocumentStatus.Published}    | ${0}
       `(
         'should enqueue $notifications teams notification when the document goes from $from to $to',
         async ({
@@ -1314,12 +1311,13 @@ describe('documentApp', () => {
       const upsertResourceNewsFeedSpy = vi
         .spyOn(NewsFeedApp, 'upsertResourceNewsFeed')
         .mockResolvedValue();
+      vi.spyOn(PgBossProducer, 'send').mockResolvedValue('job-id');
 
-      const inactiveDoc = await DocumentApp.createDocument({
+      const unpublishedDoc = await TestHelper.document.createInStatus({
         input: {
-          ...documentData,
-          status: DocumentStatus.Draft,
-          slug: 'inactive-to-active',
+          ...baseDocumentData,
+          status: DocumentStatus.InValidation,
+          slug: 'in-validation-to-published',
         },
         metadata: [
           { key: DocumentMetadataKeyCode.ProductVersion, value: '1.0.0' },
@@ -1331,7 +1329,7 @@ describe('documentApp', () => {
 
       // When
       const updatedDocument = await DocumentApp.updateDocument({
-        parentDocumentId: inactiveDoc!.id,
+        parentDocumentId: unpublishedDoc!.id,
         serviceInstanceId: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
         metadata: [
           { key: DocumentMetadataKeyCode.ProductVersion, value: '1.0.0' },
@@ -1344,8 +1342,8 @@ describe('documentApp', () => {
       expect(upsertResourceNewsFeedSpy).toHaveBeenCalledOnce();
       expect(upsertResourceNewsFeedSpy).toHaveBeenCalledWith({
         documentBeforeUpdate: expect.objectContaining({
-          id: inactiveDoc!.id,
-          status: DocumentStatus.Draft,
+          id: unpublishedDoc!.id,
+          status: DocumentStatus.InValidation,
         }),
         updatedDocument: expect.objectContaining({
           id: updatedDocument.id,
@@ -1723,7 +1721,7 @@ describe('documentApp', () => {
   describe('loadDocument', () => {
     it('should return the document with elastic search counters', async () => {
       // Given
-      const document = await DocumentApp.createDocument({
+      const document = await TestHelper.document.createInStatus({
         input: {
           uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
           name: 'myCustomDashboard',
@@ -1781,7 +1779,7 @@ describe('documentApp', () => {
 
     it('should return the document with elastic search counters', async () => {
       // Given
-      const document = await DocumentApp.createDocument({
+      const document = await TestHelper.document.createInStatus({
         input: {
           uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
           name: 'myCustomDashboard',
