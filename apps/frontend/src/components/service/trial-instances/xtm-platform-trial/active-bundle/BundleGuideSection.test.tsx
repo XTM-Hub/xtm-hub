@@ -1,4 +1,4 @@
-import { BundleGuideCard } from '@/components/service/trial-instances/xtm-platform-trial/active-bundle/BundleGuideCard';
+import { BundleGuideSection } from '@/components/service/trial-instances/xtm-platform-trial/active-bundle/BundleGuideSection';
 import { XTM_PLATFORM_TRIAL_GUIDE_PATH } from '@/utils/path/constant';
 import { expectPaperWithTitleAbove } from '@/utils/test/paper';
 import testRender from '@/utils/test/test-render';
@@ -8,7 +8,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 const SEE_MORE_LABEL = 'XtmPlatformTrial.Guide.SeeMore';
 
-describe('BundleGuideCard', () => {
+describe('BundleGuideSection', () => {
   it('should link the see more button to the XTM Platform trial guide', () => {
     // Given
     vi.mocked(useTranslations).mockImplementation(
@@ -16,7 +16,7 @@ describe('BundleGuideCard', () => {
     );
 
     // When
-    testRender(<BundleGuideCard />);
+    testRender(<BundleGuideSection />);
 
     // Then
     expect(screen.getByRole('link', { name: SEE_MORE_LABEL })).toHaveAttribute(
@@ -32,7 +32,7 @@ describe('BundleGuideCard', () => {
     );
 
     // When
-    testRender(<BundleGuideCard />);
+    testRender(<BundleGuideSection />);
 
     // Then
     const title = screen.getByRole('heading', {

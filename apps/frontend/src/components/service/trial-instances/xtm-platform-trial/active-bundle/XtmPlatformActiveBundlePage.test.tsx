@@ -48,9 +48,9 @@ vi.mock(
 );
 
 vi.mock(
-  '@/components/service/trial-instances/xtm-platform-trial/active-bundle/BundleGuideCard',
+  '@/components/service/trial-instances/xtm-platform-trial/active-bundle/BundleGuideSection',
   () => ({
-    BundleGuideCard: () => <div data-testid="bundle-guide-card" />,
+    BundleGuideSection: () => <div data-testid="bundle-guide-section" />,
   })
 );
 
@@ -149,7 +149,7 @@ describe('XtmPlatformActiveBundlePage', () => {
     // Then
     expect(screen.getByText('XtmPlatformTrial.Title')).toBeInTheDocument();
     expect(screen.getByTestId('bundle-info-card')).toBeInTheDocument();
-    expect(screen.getByTestId('bundle-guide-card')).toBeInTheDocument();
+    expect(screen.getByTestId('bundle-guide-section')).toBeInTheDocument();
     expect(screen.getByTestId('trial-limitations')).toBeInTheDocument();
     expect(
       screen.getByTestId('bundle-product-card-opencti-instance')

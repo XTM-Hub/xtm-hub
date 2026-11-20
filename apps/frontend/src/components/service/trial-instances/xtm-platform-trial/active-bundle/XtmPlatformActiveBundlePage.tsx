@@ -2,7 +2,7 @@
 
 import { ReachSalesButton } from '@/components/service/trial-instances/reach-sales/ReachSalesButton';
 import { SlackSupportButton } from '@/components/service/trial-instances/SlackSupport';
-import { BundleGuideCard } from '@/components/service/trial-instances/xtm-platform-trial/active-bundle/BundleGuideCard';
+import { BundleGuideSection } from '@/components/service/trial-instances/xtm-platform-trial/active-bundle/BundleGuideSection';
 import { BundleInfoCard } from '@/components/service/trial-instances/xtm-platform-trial/active-bundle/BundleInfoCard';
 import { BundleProductCard } from '@/components/service/trial-instances/xtm-platform-trial/active-bundle/BundleProductCard';
 import { useXtmoneIntegrationStatus } from '@/components/service/trial-instances/xtm-platform-trial/active-bundle/useXtmoneIntegrationStatus';
@@ -101,8 +101,8 @@ export const XtmPlatformActiveBundlePage = () => {
           bundle={bundle}
           canManage={canManage}
         />
-        <div className="lg:col-span-2">
-          <BundleGuideCard />
+        <div className="grid lg:col-span-2">
+          <BundleGuideSection />
         </div>
       </div>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
