@@ -33,8 +33,8 @@ const buildPlatform = (): PlatformInput => ({
 });
 
 // registerPlatform and unregisterPlatform carry @auth only: their capability check reads the database, not the
-// token user. The user registers platforms in two organizations, and the admin scope keeps that capability, so a
-// refusal comes from the organization the token is pinned to.
+// token user. The user registers platforms in two organizations. The admin scope keeps that capability, so its
+// refusal comes from the organization the token is pinned to; the read and read_write scopes keep none.
 describe('registration app with an API token', () => {
   let otherOrganization: Organization;
   let user: User;
@@ -109,5 +109,52 @@ describe('registration app with an API token', () => {
 
     // Then
     await expect(call).rejects.toThrow(ErrorCode.UserIsNotInOrganization);
+  });
+
+  it.each([ApiTokenScope.Read, ApiTokenScope.ReadWrite])(
+    'should refuse registering a platform in the token organization with a %s token',
+    async (scope) => {
+      // Given
+      await TestHelper.apiToken.actAs(user.id, SECOND_ORGANIZATION_ID, scope);
+
+      // When
+      const call = RegistrationApp.registerPlatform({
+        organizationId: SECOND_ORGANIZATION_ID,
+        platform: buildPlatform(),
+        identifier: PlatformIdentifier.Opencti,
+      });
+
+      // Then
+      await expect(call).rejects.toThrow(
+        ErrorCode.MissingCapabilityOnOrganization
+      );
+    }
+  );
+
+  it('should refuse unregistering a platform of the token organization with a read_write token', async () => {
+    // Given a platform registered in the second organization from a session
+    const platform = buildPlatform();
+    requestContext.set(requestContextRegistererUserSecondOrga);
+    await RegistrationApp.registerPlatform({
+      organizationId: SECOND_ORGANIZATION_ID,
+      platform,
+      identifier: PlatformIdentifier.Opencti,
+    });
+    await TestHelper.apiToken.actAs(
+      user.id,
+      SECOND_ORGANIZATION_ID,
+      ApiTokenScope.ReadWrite
+    );
+
+    // When
+    const call = RegistrationApp.unregisterPlatform({
+      platformId: platform.id,
+      identifier: PlatformIdentifier.Opencti,
+    });
+
+    // Then
+    await expect(call).rejects.toThrow(
+      ErrorCode.MissingCapabilityOnOrganization
+    );
   });
 });
