@@ -5,6 +5,7 @@ import {
   FilterKey,
   Organization,
   OrganizationCapability,
+  PageInfo,
   PlatformIdentifier,
   QueryUsersArgs,
   ServiceGroupName,
@@ -34,6 +35,10 @@ import {
   restrictOrganizationToApiToken,
   restrictRolePortalToApiToken,
 } from '../../../../security/restriction/api-token';
+import {
+  restrictOrganizationToMembersReadable,
+  restrictOrganizationToProfessionalSpace,
+} from '../../../../security/restriction/organization';
 import { auth0Client } from '../../../../thirdparty/auth0/client';
 import { hubspotLoginHook } from '../../../../thirdparty/hubspot/hubspot';
 import { logApp } from '../../../../utils/app-logger.util';
@@ -48,10 +53,27 @@ import { isEmpty } from '../../../../utils/utils';
 import { RolePortalDomain } from '../../../role-portal/role-portal.domain';
 import { TelemetryApp } from '../../../telemetry/telemetry.app';
 import { TelemetryHelper } from '../../../telemetry/telemetry.helper';
+import { isUserRestrictedToOwnOrganizationMembers } from '../../organization/organization.security';
 
 export type UserToSyncAccountStatus = User & {
   status: UserAccountStatus.Waiting | UserAccountStatus.Invited;
 };
+
+export type OrganizationMember = User & {
+  capabilities: OrganizationCapability[];
+};
+
+export interface OrganizationMemberConnectionArgs {
+  first?: number | null;
+  after?: string | null;
+  searchTerm?: string | null;
+}
+
+export interface OrganizationMemberConnection {
+  edges: { cursor: string; node: OrganizationMember }[];
+  pageInfo: PageInfo;
+  totalCount: number;
+}
 
 export type LoadUserByFilter = (
   addPrefixToObject<UserMutator, 'User.'> | UserMutator
@@ -340,6 +362,75 @@ export const UserDomain = {
       .select('User_Organization.organization_id', 'User.email')
       .distinct()
       .orderBy('User.email', 'asc');
+  },
+
+  // Every member of the organization, whatever their status (invited, expired, waiting, disabled); pending requests
+  // live in User_Organization_Pending and are not members. An organization whose members the caller may not read
+  // gives an empty connection.
+  loadOrganizationMemberConnection: (
+    organizationId: OrganizationId,
+    { first, after, searchTerm }: OrganizationMemberConnectionArgs
+  ) => {
+    const query = db<User>('User')
+      .innerJoin('User_Organization as memberUserOrganization', function () {
+        this.on('memberUserOrganization.user_id', '=', 'User.id').andOnVal(
+          'memberUserOrganization.organization_id',
+          '=',
+          organizationId
+        );
+      })
+      .innerJoin(
+        'Organization',
+        'Organization.id',
+        'memberUserOrganization.organization_id'
+      )
+      .leftJoin(
+        'UserOrganization_Capability as memberCapability',
+        'memberCapability.user_organization_id',
+        'memberUserOrganization.id'
+      )
+      .tap(restrictOrganizationToProfessionalSpace);
+    if (
+      isUserRestrictedToOwnOrganizationMembers(requestContext.requireUser())
+    ) {
+      query.tap(restrictOrganizationToMembersReadable);
+    }
+    if (searchTerm) {
+      // Grouped, so that an OR never escapes the organization filter or the restrictions
+      query.where((search) =>
+        search
+          .whereILike('User.email', `%${searchTerm}%`)
+          .orWhereILike('User.first_name', `%${searchTerm}%`)
+          .orWhereILike('User.last_name', `%${searchTerm}%`)
+      );
+    }
+    query
+      .select(
+        dbRaw(
+          `COALESCE(array_agg(DISTINCT ??.name) FILTER (WHERE ??.name IS NOT NULL), '{}') AS capabilities`,
+          ['memberCapability', 'memberCapability']
+        )
+      )
+      .groupBy('User.id')
+      // bool_or is NULL for a member without capability: COALESCE keeps them after the administrators
+      .orderByRaw(
+        'COALESCE(bool_or(??.name = ?), false) DESC, ??.email ASC, ??.id ASC',
+        [
+          'memberCapability',
+          OrganizationCapability.AdministrateOrganization,
+          'User',
+          'User',
+        ]
+      );
+    // No searchTerm nor orderBy for paginate: its applySearch would add country, and the order is set above.
+    // Its count clears the select, the order and the group by and counts distinct User.id, so neither the
+    // capability join nor the grouping inflates totalCount
+    return paginate<OrganizationMember, OrganizationMemberConnection>(
+      'User',
+      { first, after },
+      undefined,
+      query
+    );
   },
 
   loadUserConnection: (opts: QueryUsersArgs) => {
