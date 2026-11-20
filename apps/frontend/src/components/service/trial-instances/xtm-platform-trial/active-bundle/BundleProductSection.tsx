@@ -99,21 +99,19 @@ export const BundleProductSection = ({
         as="section"
         {...analyticsProduct(product.platform_identifier)}
         padding={16}
-        className="flex flex-1 flex-col gap-3"
-        title={
-          <h2 className="flex items-center gap-2 [font:inherit] tracking-[inherit]">
-            <Image
-              src={darkTextLogo}
-              alt={name}
-              className="hidden h-6 w-auto shrink-0 dark:block"
-            />
-            <Image
-              src={lightTextLogo}
-              alt={name}
-              className="block h-6 w-auto shrink-0 dark:hidden"
-            />
-          </h2>
-        }>
+        className="flex flex-col gap-3">
+        <h2 className="flex min-w-0 items-center gap-2">
+          <Image
+            src={darkTextLogo}
+            alt={name}
+            className="hidden h-9 w-auto shrink-0 dark:block"
+          />
+          <Image
+            src={lightTextLogo}
+            alt={name}
+            className="block h-9 w-auto shrink-0 dark:hidden"
+          />
+        </h2>
         {isXtmone ? (
           <div className="flex flex-col">
             {productNameRow}

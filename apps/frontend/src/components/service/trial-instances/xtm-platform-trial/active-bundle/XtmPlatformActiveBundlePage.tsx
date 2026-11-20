@@ -101,7 +101,7 @@ export const XtmPlatformActiveBundlePage = () => {
           bundle={bundle}
           canManage={canManage}
         />
-        <div className="grid lg:col-span-2">
+        <div className="lg:col-span-2">
           <BundleGuideSection />
         </div>
       </div>

@@ -47,13 +47,12 @@ export const BundleInfoSection = ({
   return (
     <Paper
       as="section"
+      elevation={2}
       padding={16}
-      className="flex flex-1 flex-col gap-3"
-      title={
-        <h2 className="[font:inherit] tracking-[inherit]">
-          {t('XtmPlatformTrial.BundleInfo.Title')}
-        </h2>
-      }>
+      className="flex flex-col gap-3">
+      <h2 className="min-w-0 truncate">
+        {t('XtmPlatformTrial.BundleInfo.Title')}
+      </h2>
       <div className="flex flex-col divide-y divide-[var(--border-elevation-subtle)]">
         <InfoRow label={t('XtmPlatformTrial.BundleInfo.OrganizationName')}>
           {bundle.organization_name ?? '-'}

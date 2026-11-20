@@ -53,7 +53,7 @@ describe('BundleInfoSection', () => {
     ).toBeInTheDocument();
   });
 
-  it('should render the details on the design system Paper surface, with the title above it', () => {
+  it('should render the details on the design system Paper surface, with its title inside it', () => {
     // Given / When
     testRender(
       <BundleInfoSection
@@ -71,9 +71,8 @@ describe('BundleInfoSection', () => {
     // The surface carries the design system radius, padding and elevation
     // classes. These pin the design system's class names on purpose, as jsdom
     // does no layout: a rename in the design system needs this test updated.
-    // The elevation is the default one, shared with the other blocks of the page.
-    expect(surface).toHaveClass('rounded-sm', 'p-4', 'layer-1');
-    expect(surface).not.toContainElement(title);
-    expect(surface?.parentElement).toContainElement(title);
+    // The details block sits one elevation above the default one.
+    expect(surface).toHaveClass('rounded-sm', 'p-4', 'layer-2');
+    expect(surface).toContainElement(title);
   });
 });

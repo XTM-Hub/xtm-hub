@@ -14,14 +14,14 @@ export const BundleGuideSection = () => {
     <Paper
       as="section"
       padding={16}
-      className="flex flex-1 items-center justify-center"
-      title={
-        <h2 className="[font:inherit] tracking-[inherit]">{tGuide('Title')}</h2>
-      }>
+      className="flex h-full items-center justify-center">
       <div className="flex w-full max-w-sm flex-col gap-4">
-        <p className="text-content-compact text-default-primary">
-          {tGuide('Content')}
-        </p>
+        <div className="flex flex-col">
+          <h2 className="text-title-xl">{tGuide('Title')}</h2>
+          <p className="text-content-compact text-default-primary">
+            {tGuide('Content')}
+          </p>
+        </div>
         <Button
           priority="secondary"
           className="self-start"
