@@ -3,7 +3,7 @@ import testRender from '@/utils/test/test-render';
 import { XtmPlatformBundleDetailsFragment } from '@graphql/generated';
 import { screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { BundleInfoCard } from './BundleInfoCard';
+import { BundleInfoSection } from './BundleInfoSection';
 
 const buildBundle = (
   overrides: Partial<XtmPlatformBundleDetailsFragment> = {}
@@ -18,10 +18,10 @@ const buildBundle = (
   ...overrides,
 });
 
-describe('BundleInfoCard', () => {
+describe('BundleInfoSection', () => {
   it('renders the organization name, requester and license', () => {
     testRender(
-      <BundleInfoCard
+      <BundleInfoSection
         bundle={buildBundle()}
         canManage={false}
       />
@@ -34,7 +34,7 @@ describe('BundleInfoCard', () => {
 
   it('shows the management actions only when the user can manage', () => {
     const { rerender } = testRender(
-      <BundleInfoCard
+      <BundleInfoSection
         bundle={buildBundle()}
         canManage={false}
       />
@@ -44,7 +44,7 @@ describe('BundleInfoCard', () => {
     ).not.toBeInTheDocument();
 
     rerender(
-      <BundleInfoCard
+      <BundleInfoSection
         bundle={buildBundle()}
         canManage={true}
       />
@@ -57,7 +57,7 @@ describe('BundleInfoCard', () => {
   it('should render the details on the design system Paper surface, with the title above it', () => {
     // Given / When
     testRender(
-      <BundleInfoCard
+      <BundleInfoSection
         bundle={buildBundle()}
         canManage={false}
       />

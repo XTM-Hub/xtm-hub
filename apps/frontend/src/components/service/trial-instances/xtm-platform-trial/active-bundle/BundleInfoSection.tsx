@@ -14,7 +14,7 @@ import {
 import Link from 'next/link';
 import { useState } from 'react';
 
-interface BundleInfoCardProps {
+interface BundleInfoSectionProps {
   bundle: XtmPlatformBundleDetailsFragment;
   canManage: boolean;
 }
@@ -32,7 +32,10 @@ const InfoRow = ({
   </div>
 );
 
-export const BundleInfoCard = ({ bundle, canManage }: BundleInfoCardProps) => {
+export const BundleInfoSection = ({
+  bundle,
+  canManage,
+}: BundleInfoSectionProps) => {
   const t = useTranslate();
   const formatDate = useDateFormatter();
   const [openCancel, setOpenCancel] = useState(false);

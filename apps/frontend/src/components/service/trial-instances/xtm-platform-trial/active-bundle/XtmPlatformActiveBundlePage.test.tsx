@@ -41,9 +41,9 @@ vi.mock(
 );
 
 vi.mock(
-  '@/components/service/trial-instances/xtm-platform-trial/active-bundle/BundleInfoCard',
+  '@/components/service/trial-instances/xtm-platform-trial/active-bundle/BundleInfoSection',
   () => ({
-    BundleInfoCard: () => <div data-testid="bundle-info-card" />,
+    BundleInfoSection: () => <div data-testid="bundle-info-section" />,
   })
 );
 
@@ -104,7 +104,7 @@ describe('XtmPlatformActiveBundlePage', () => {
 
     // Then
     expect(container).not.toHaveTextContent('XtmPlatformTrial.Title');
-    expect(screen.queryByTestId('bundle-info-card')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('bundle-info-section')).not.toBeInTheDocument();
   });
 
   it('should render nothing when there is no active bundle', () => {
@@ -148,7 +148,7 @@ describe('XtmPlatformActiveBundlePage', () => {
 
     // Then
     expect(screen.getByText('XtmPlatformTrial.Title')).toBeInTheDocument();
-    expect(screen.getByTestId('bundle-info-card')).toBeInTheDocument();
+    expect(screen.getByTestId('bundle-info-section')).toBeInTheDocument();
     expect(screen.getByTestId('bundle-guide-section')).toBeInTheDocument();
     expect(screen.getByTestId('trial-limitations')).toBeInTheDocument();
     expect(
@@ -200,6 +200,6 @@ describe('XtmPlatformActiveBundlePage', () => {
     testRender(<XtmPlatformActiveBundlePage />);
 
     // Then
-    expect(screen.getByTestId('bundle-info-card')).toBeInTheDocument();
+    expect(screen.getByTestId('bundle-info-section')).toBeInTheDocument();
   });
 });
