@@ -71,7 +71,10 @@ export const ApiTokenApp = {
     return { token, api_token: withNames as ApiTokenWithNames };
   },
 
-  listOwn: (user: UserLoadUserBy) => ApiTokenDomain.listByUser(user.id),
+  // tokenOrganizationId is the organization of the token that authenticates the request, undefined for a session:
+  // a token is pinned to one organization, so it never sees nor revokes the owner's tokens of another one
+  listOwn: (user: UserLoadUserBy, tokenOrganizationId?: OrganizationId) =>
+    ApiTokenDomain.listByUser(user.id, tokenOrganizationId),
 
   listOrganization: (user: UserLoadUserBy) =>
     ApiTokenDomain.listByOrganization(user.selected_organization_id),
@@ -79,10 +82,15 @@ export const ApiTokenApp = {
   // The owner revokes a token; so does an administrator of its organization
   revoke: async (
     user: UserLoadUserBy,
-    id: ApiTokenId
+    id: ApiTokenId,
+    tokenOrganizationId?: OrganizationId
   ): Promise<ApiTokenWithNames> => {
     const token = await ApiTokenDomain.loadById(id);
-    if (!token) {
+    // A token of another organization than the calling token's is answered as unknown
+    if (
+      !token ||
+      (tokenOrganizationId && token.organization_id !== tokenOrganizationId)
+    ) {
       throw new Error(NotFoundErrorCode.NotFound);
     }
     const isOwner = token.user_id === user.id;
