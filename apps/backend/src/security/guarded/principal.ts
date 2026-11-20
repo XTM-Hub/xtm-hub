@@ -14,7 +14,7 @@ import {
 } from '../../modules/security-management/token/platform-token.util';
 import { PLATFORM_USER_UUID, SYSTEM_USER_UUID } from '../../portal.const';
 import { logApp } from '../../utils/app-logger.util';
-import { isValidSystemToken, SYSTEM_TOKEN_HEADER } from '../machine-user';
+import { isValidSystemToken, SYSTEM_TOKEN_HEADER } from '../system-token';
 
 // Structural on purpose: the SSE context is only { user, req }, not a full PortalContext
 export interface GuardedContext {

@@ -3,7 +3,7 @@ import { PortalCapability } from '../../../__generated__/resolvers-types';
 import { requestContext } from '../../../context/request.context';
 import type { PortalContext } from '../../../model/portal-context';
 import type { UserLoadUserBy } from '../../../model/user';
-import { SYSTEM_TOKEN_HEADER } from '../../machine-user';
+import { SYSTEM_TOKEN_HEADER } from '../../system-token';
 import {
   createSystemTokenResolver,
   validateSystemToken,

@@ -38,7 +38,7 @@ import {
   UnauthenticatedErrorCode,
 } from '../../utils/error/error.code';
 import { ErrorType } from '../../utils/error/error.type';
-import { SYSTEM_TOKEN_HEADER } from '../machine-user';
+import { SYSTEM_TOKEN_HEADER } from '../system-token';
 import { allow, DenialCode, deny, Guard, GuardResult } from './guard.types';
 import { Guarded, Public } from './guarded.decorator';
 import { platformCallerGuard, systemCallerGuard } from './guards/caller.guard';

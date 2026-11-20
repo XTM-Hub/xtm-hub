@@ -9,7 +9,7 @@ import { SYSTEM_USER_CONTEXT } from '../../../portal.const';
 import {
   isValidSystemToken,
   SYSTEM_TOKEN_HEADER,
-} from '../../../security/machine-user';
+} from '../../../security/system-token';
 import { logApp } from '../../../utils/app-logger.util';
 import { buildIpRateLimiterOptions } from '../shared/ip-rate-limit.util';
 

@@ -32,7 +32,7 @@ import {
   PLATFORM_ORGANIZATION_UUID,
   SYSTEM_USER_CONTEXT,
 } from '../src/portal.const';
-import { SYSTEM_TOKEN_HEADER } from '../src/security/machine-user';
+import { SYSTEM_TOKEN_HEADER } from '../src/security/system-token';
 
 export const GRAPHQL_RESOLVE_INFO = {} as GraphQLResolveInfo;
 
