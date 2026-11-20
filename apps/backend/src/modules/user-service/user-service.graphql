@@ -36,29 +36,14 @@ type Mutation {
     input: UserServiceAddInput!
     service_instance_id: ServiceInstanceId!
   ): [UserService]
-    @auth(
-      portalCapa: [BYPASS]
-      orgaCapa: [ADMINISTRATE_ORGANIZATION, MANAGE_SUBSCRIPTION]
-    )
-    @service_capa(requires: [MANAGE_ACCESS])
   editUserService(
     input: UserServiceEditInput!
     service_instance_id: ServiceInstanceId!
   ): UserService
-    @auth(
-      portalCapa: [BYPASS]
-      orgaCapa: [ADMINISTRATE_ORGANIZATION, MANAGE_SUBSCRIPTION]
-    )
-    @service_capa(requires: [MANAGE_ACCESS])
   deleteUserServices(
     input: UserServicesDeleteInput!
     service_instance_id: ServiceInstanceId!
   ): [UserService]
-    @auth(
-      portalCapa: [BYPASS]
-      orgaCapa: [ADMINISTRATE_ORGANIZATION, MANAGE_SUBSCRIPTION]
-    )
-    @service_capa(requires: [MANAGE_ACCESS])
 }
 type Query {
   userServiceFromSubscription(
@@ -67,7 +52,7 @@ type Query {
     orderBy: UserServiceOrdering!
     orderMode: OrderingMode!
     subscription_id: SubscriptionId!
-  ): UserServiceConnection @auth
+  ): UserServiceConnection
 }
 type UserServiceConnection {
   totalCount: Int!

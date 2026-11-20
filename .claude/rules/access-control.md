@@ -25,7 +25,7 @@ mechanisms coexist while modules migrate:
 
 | Mechanism | Where | Used by |
 | --- | --- | --- |
-| `@Public()` / `@Guarded(guard)` on the resolver | `src/security/guarded/` | Migrated modules (`solution-category`, `telemetry`, `manage-product-version`, `subscription`, `news-feed`) |
+| `@Public()` / `@Guarded(guard)` on the resolver | `src/security/guarded/` | Migrated modules (`solution-category`, `telemetry`, `manage-product-version`, `subscription`, `news-feed`, `user-service`, `user-service-capability`) |
 | `@auth`, `@service_capa`, `@system_token`, `@platform_token` in the `.graphql` file | `src/security/directive-graphql/` | Every other module. A field with no directive is public there |
 
 **An operation has a directive or a decorator, never both.** Migrating an operation removes its directive in the same
@@ -62,8 +62,8 @@ export default resolvers;
 - Type each property as `NonNullable<QueryResolvers['x']>` / `MutationResolvers['x']`, or its parameters are untyped.
 - The decorator runs the guard before the resolver, so a direct call of the resolver is guarded too: a test that
   calls it directly passes a context whose user passes the guard.
-- A guard receives the caller (`Principal`, built from the context), never the session. It must not assume a full
-  `PortalContext`: the SSE context is only `{ user, req }`.
+- A guard receives the caller (`Principal`, built from the context), never the session, and the arguments of the
+  operation. It must not assume a full `PortalContext`: the SSE context is only `{ user, req }`.
 - A namespace type (a root field returning `{}`, such as `sendTelemetryEvent`) is guarded on its root field only,
   and only while nothing else reaches that type (field, union or interface). Each one needs its own reachability
   test, as in `telemetry.access.test.ts`.
@@ -77,7 +77,8 @@ export default resolvers;
 | `@Guarded(bypassOnlyGuard())` | A `BYPASS` user only. Use it for admin-only operations rather than listing `BYPASS` | `UNAUTHENTICATED` (anonymous or disabled user), `FORBIDDEN_ACCESS` (not `BYPASS`) |
 | `@Guarded(portalCapabilityGuard([PortalCapability.X, …]))` | A user holding one of the portal capabilities; `BYPASS` always. The list cannot be empty | `UNAUTHENTICATED` (anonymous or disabled user), `FORBIDDEN_ACCESS` (capability missing) |
 | `@Guarded(systemCallerGuard([PortalCapability.X, …]))` | A machine with a valid `x-xtm-hub-token` holding every listed scope. The list cannot be empty | `UNAUTHENTICATED` (no or invalid token, session ignored), `FORBIDDEN_ACCESS` (scope missing) |
-| `@Guarded(orgGuard({ organization: selectedOrganization, capabilities: [OrganizationCapability.X, …] }))` | A member of the selected organization holding one of the capabilities (`ADMINISTRATE_ORGANIZATION` implies them all, `[]` requires the membership only); `BYPASS` always | `UNAUTHENTICATED` (anonymous or disabled user), `NOT_FOUND` (not a member), `MISSING_CAPABILITY_ON_ORGANIZATION` (capability missing) |
+| `@Guarded(orgGuard({ organization: selectedOrganization, capabilities: [OrganizationCapability.X, …] }))` | A member of the selected organization holding one of the capabilities (`ADMINISTRATE_ORGANIZATION` implies them all, `[]` requires the membership only); `BYPASS` always | `UNAUTHENTICATED` (anonymous or disabled user), `NOT_FOUND` (not a member, or no organization from the source), `MISSING_CAPABILITY_ON_ORGANIZATION` (capability missing) |
+| `@Guarded(serviceGuard({ serviceInstance: fromArg('service_instance_id'), capabilities: [ServiceRestriction.X, …] }))` | A user with an access row on the selected organization's subscription to the service instance, holding one of the service capabilities; `BYPASS` always. The list cannot be empty | `UNAUTHENTICATED` (anonymous or disabled user), `NOT_FOUND` (no such service instance, or no access row on it), `MISSING_CAPABILITY_ON_SERVICE` (capability missing) |
 | `@Guarded(platformCallerGuard())` | A platform sending valid `xtm-hub-platform-id` and `xtm-hub-platform-token` headers: a registration with a subscribed organization (active or inactive), or a deployment request token | `UNAUTHENTICATED` (missing, invalid or unknown credentials, session ignored) |
 
 A guard returns `allow()` or `deny(code)`. An exception from the guard, or anything else it returns, is a denial.
@@ -87,6 +88,22 @@ called. Add each new guard to this table.
 `orgGuard` checks the caller's membership, not that the data belongs to the organization: keep the row filter in
 `src/security/restriction/`. Whether `BYPASS` sees every row depends on the use case: some filters let it through
 themselves, others leave it to their caller, so read the filter before calling it.
+
+### Combining guards and checking the ids of the request
+
+Type the arguments with an explicit generic (`orgGuard<MutationXArgs>(…)`), so a wrong key fails `check-ts`.
+
+- **Sources.** `organization` of `orgGuard` and `serviceInstance` of `serviceGuard` take `selectedOrganization` or
+  `fromArg('key')`; a missing id answers `NOT_FOUND`.
+- **`anyOf(guardA, guardB)`** allows when one guard allows. It refuses with `UNAUTHENTICATED`, else the first
+  `MISSING_CAPABILITY_*`, else `FORBIDDEN_ACCESS`, else `NOT_FOUND`. The guards must share one principal builder: a user
+  guard cannot be combined with a system or platform guard.
+- **`.targets(belongTo(table, args => ids, { serviceInstance? }))`** on `orgGuard`, `serviceGuard` or `anyOf` checks that
+  every id the arguments name belongs to what the guard checked: the organization, or the service instance and the
+  organization; anything for `BYPASS`. One missing, foreign or malformed id refuses the whole request with `NOT_FOUND`;
+  an empty list is allowed. `serviceInstance` says where the request names the service instance, so the ids must be on
+  it. Use it whenever a guard checks an organization or a service from one argument and the operation acts on other ids.
+- Add an entry to the ownership map (`src/security/guarded/ownership.ts`) before using `belongTo` on a table.
 
 ## Filtering data
 
@@ -175,7 +192,9 @@ describe('addSolutionCategory mutation', () => {
 ```
 
 Rows are `anonymous`, `user` (a member with no portal capability) and `admin` (a platform admin). An operation behind
-`orgGuard` also lists `memberWithoutCapability`, `otherOrganization` and `nonMember`; one a system caller calls lists
+`orgGuard` also lists `memberWithoutCapability`, `otherOrganization` and `nonMember`; one behind a `serviceGuard` adds
+`serviceManager`, `serviceMember` and `serviceStranger` (organization members without organization capability, whose
+access to the service the fixture grants through `TestHelper.serviceRowUserIds`); one a system caller calls lists
 `system` and `invalidSystemToken`; one a platform calls lists `platform`, `invalidPlatformToken` and `unknownPlatform`
 (the fixture returns the `platformCredentials` of a registered platform, from `TestHelper.platformCaller.create()`).
 `guarded` returns a spy on the function behind the operation: refused rows assert it was not called, allowed rows that

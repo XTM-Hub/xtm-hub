@@ -663,6 +663,52 @@ describe('userServiceDomain', () => {
     });
   });
 
+  describe('loadSubscriptionByUserService', () => {
+    const secondOrgaSub = useSubscription();
+    let filigranSubId: SubscriptionId;
+    let ownUserServiceId: UserServiceId;
+    let foreignUserServiceId: UserServiceId;
+
+    beforeEach(async () => {
+      filigranSubId = await createTestSubscription({
+        organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+        service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
+        start_date: new Date(),
+        end_date: undefined,
+      });
+      ownUserServiceId = await insertUserService(SIMPLE.ID, secondOrgaSub.id);
+      foreignUserServiceId = await insertUserService(
+        TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
+        filigranSubId
+      );
+    });
+
+    afterEach(async () => {
+      await cleanupUserServices(filigranSubId);
+      await TestHelper.subscription.delete({ id: filigranSubId });
+    });
+
+    it('should load the subscription of a user service of the selected organization', async () => {
+      requestContext.set(requestContextAdminSecondOrga);
+
+      const result =
+        await UserServiceDomain.loadSubscriptionByUserService(ownUserServiceId);
+
+      expect(result?.id).toBe(secondOrgaSub.id);
+    });
+
+    it('should not load the subscription of a user service of another organization', async () => {
+      requestContext.set(requestContextAdminSecondOrga);
+
+      const result =
+        await UserServiceDomain.loadSubscriptionByUserService(
+          foreignUserServiceId
+        );
+
+      expect(result).toBeUndefined();
+    });
+  });
+
   describe('doesUserServiceExist', () => {
     const sub = useSubscription();
 
