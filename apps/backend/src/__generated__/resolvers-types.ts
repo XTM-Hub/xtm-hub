@@ -121,6 +121,65 @@ export type AdminEditUserInput = {
   password?: InputMaybe<Scalars['String']['input']>;
 };
 
+export type AdminRegisteredPlatform = {
+  __typename?: 'AdminRegisteredPlatform';
+  commercial_model: CommercialModel;
+  contract: PlatformContract;
+  credential: RegisteredPlatformCredential;
+  identifier: PlatformIdentifier;
+  last_connectivity_check?: Maybe<Scalars['Date']['output']>;
+  /** The organization owning the registration: the one of its newest subscription. */
+  organization?: Maybe<AdminRegisteredPlatformOrganization>;
+  platform_id: Scalars['String']['output'];
+  registerer?: Maybe<AdminRegisteredPlatformRegisterer>;
+  service_instance_id: Scalars['ServiceInstanceId']['output'];
+  status: PlatformConfigurationStatus;
+  tenant_id?: Maybe<Scalars['String']['output']>;
+  tenant_name?: Maybe<Scalars['String']['output']>;
+  title: Scalars['String']['output'];
+  url: Scalars['String']['output'];
+  version?: Maybe<Scalars['String']['output']>;
+};
+
+export type AdminRegisteredPlatformConnection = {
+  __typename?: 'AdminRegisteredPlatformConnection';
+  edges: Array<AdminRegisteredPlatformEdge>;
+  pageInfo: PageInfo;
+  totalCount: Scalars['Int']['output'];
+};
+
+export type AdminRegisteredPlatformEdge = {
+  __typename?: 'AdminRegisteredPlatformEdge';
+  cursor: Scalars['String']['output'];
+  node: AdminRegisteredPlatform;
+};
+
+export enum AdminRegisteredPlatformOrdering {
+  LastConnectivityCheck = 'last_connectivity_check',
+  OrganizationName = 'organization_name',
+  Title = 'title'
+}
+
+export type AdminRegisteredPlatformOrganization = {
+  __typename?: 'AdminRegisteredPlatformOrganization';
+  id: Scalars['OrganizationId']['output'];
+  name: Scalars['String']['output'];
+};
+
+export type AdminRegisteredPlatformRegisterer = {
+  __typename?: 'AdminRegisteredPlatformRegisterer';
+  email: Scalars['String']['output'];
+  first_name?: Maybe<Scalars['String']['output']>;
+  id: Scalars['UserId']['output'];
+  last_name?: Maybe<Scalars['String']['output']>;
+};
+
+export type AdminRegisteredPlatformsFilter = {
+  identifier?: InputMaybe<PlatformIdentifier>;
+  organizationId?: InputMaybe<Scalars['OrganizationId']['input']>;
+  status?: InputMaybe<PlatformConfigurationStatus>;
+};
+
 export type ApiToken = Node & {
   __typename?: 'ApiToken';
   created_at: Scalars['Date']['output'];
@@ -1149,6 +1208,8 @@ export type Mutation = {
   adminAddUser?: Maybe<User>;
   adminCancelDeploymentRequest?: Maybe<DeploymentRequest>;
   adminEditUser: User;
+  /** Unregisters a platform without being a member of its organization. Does nothing on an inactive registration. */
+  adminUnregisterPlatform: AdminRegisteredPlatform;
   autoRegisterPlatform: Success;
   bulkAcceptPendingUserInOrganization?: Maybe<Success>;
   bulkRemovePendingUserFromOrganization?: Maybe<Success>;
@@ -1310,6 +1371,11 @@ export type MutationAdminCancelDeploymentRequestArgs = {
 export type MutationAdminEditUserArgs = {
   id: Scalars['ID']['input'];
   input: AdminEditUserInput;
+};
+
+
+export type MutationAdminUnregisterPlatformArgs = {
+  serviceInstanceId: Scalars['ServiceInstanceId']['input'];
 };
 
 
@@ -2076,6 +2142,8 @@ export type PublicDocumentSlugInfo = {
 
 export type Query = {
   __typename?: 'Query';
+  /** Every platform registration, whatever its organization. searchTerm matches the title, URL, ids, tenant, organization and registerer. */
+  adminRegisteredPlatforms: AdminRegisteredPlatformConnection;
   /** The current user's API tokens, revoked and expired ones included */
   apiTokens: Array<ApiToken>;
   bundleProducts: Array<PlatformIdentifier>;
@@ -2154,6 +2222,16 @@ export type Query = {
   votingRounds: Array<VotingRound>;
   xtmPlatformBundle?: Maybe<DeploymentRequest>;
   xtmonePlatformIntegrationStatus?: Maybe<XtmoneIntegrationStatus>;
+};
+
+
+export type QueryAdminRegisteredPlatformsArgs = {
+  after?: InputMaybe<Scalars['ID']['input']>;
+  filter?: InputMaybe<AdminRegisteredPlatformsFilter>;
+  first: Scalars['Int']['input'];
+  orderBy?: InputMaybe<AdminRegisteredPlatformOrdering>;
+  orderMode?: InputMaybe<OrderingMode>;
+  searchTerm?: InputMaybe<Scalars['String']['input']>;
 };
 
 
@@ -2581,6 +2659,19 @@ export type RegisteredPlatformByPlatformIdInput = {
   platformId: Scalars['String']['input'];
   tenantId?: InputMaybe<Scalars['String']['input']>;
 };
+
+/** The current credential of a registration. It says which credential exists, never its value. */
+export type RegisteredPlatformCredential = {
+  __typename?: 'RegisteredPlatformCredential';
+  has_token: Scalars['Boolean']['output'];
+  kind: RegisteredPlatformCredentialKind;
+};
+
+/** How a registration authenticates to the Hub. More kinds are expected, so a client must accept a value it does not know. */
+export enum RegisteredPlatformCredentialKind {
+  None = 'none',
+  Token = 'token'
+}
 
 export type RegisteredPlatformInput = {
   service_instance_id: Scalars['ServiceInstanceId']['input'];
@@ -3699,6 +3790,13 @@ export type ResolversTypes = ResolversObject<{
   AddUsersToBundleGroupsInput: AddUsersToBundleGroupsInput;
   AdminAddUserInput: AdminAddUserInput;
   AdminEditUserInput: AdminEditUserInput;
+  AdminRegisteredPlatform: ResolverTypeWrapper<AdminRegisteredPlatform>;
+  AdminRegisteredPlatformConnection: ResolverTypeWrapper<AdminRegisteredPlatformConnection>;
+  AdminRegisteredPlatformEdge: ResolverTypeWrapper<AdminRegisteredPlatformEdge>;
+  AdminRegisteredPlatformOrdering: AdminRegisteredPlatformOrdering;
+  AdminRegisteredPlatformOrganization: ResolverTypeWrapper<AdminRegisteredPlatformOrganization>;
+  AdminRegisteredPlatformRegisterer: ResolverTypeWrapper<AdminRegisteredPlatformRegisterer>;
+  AdminRegisteredPlatformsFilter: AdminRegisteredPlatformsFilter;
   ApiToken: ResolverTypeWrapper<ApiToken>;
   ApiTokenId: ResolverTypeWrapper<Scalars['ApiTokenId']['output']>;
   ApiTokenScope: ApiTokenScope;
@@ -3861,6 +3959,8 @@ export type ResolversTypes = ResolversObject<{
   RegisterPlatformInput: RegisterPlatformInput;
   RegisteredPlatform: ResolverTypeWrapper<RegisteredPlatform>;
   RegisteredPlatformByPlatformIdInput: RegisteredPlatformByPlatformIdInput;
+  RegisteredPlatformCredential: ResolverTypeWrapper<RegisteredPlatformCredential>;
+  RegisteredPlatformCredentialKind: RegisteredPlatformCredentialKind;
   RegisteredPlatformInput: RegisteredPlatformInput;
   RegisteredPlatformsInput: RegisteredPlatformsInput;
   RegisteredProductVersion: ResolverTypeWrapper<RegisteredProductVersion>;
@@ -4008,6 +4108,12 @@ export type ResolversParentTypes = ResolversObject<{
   AddUsersToBundleGroupsInput: AddUsersToBundleGroupsInput;
   AdminAddUserInput: AdminAddUserInput;
   AdminEditUserInput: AdminEditUserInput;
+  AdminRegisteredPlatform: AdminRegisteredPlatform;
+  AdminRegisteredPlatformConnection: AdminRegisteredPlatformConnection;
+  AdminRegisteredPlatformEdge: AdminRegisteredPlatformEdge;
+  AdminRegisteredPlatformOrganization: AdminRegisteredPlatformOrganization;
+  AdminRegisteredPlatformRegisterer: AdminRegisteredPlatformRegisterer;
+  AdminRegisteredPlatformsFilter: AdminRegisteredPlatformsFilter;
   ApiToken: ApiToken;
   ApiTokenId: Scalars['ApiTokenId']['output'];
   AutoRegisterPlatformInput: AutoRegisterPlatformInput;
@@ -4125,6 +4231,7 @@ export type ResolversParentTypes = ResolversObject<{
   RegisterPlatformInput: RegisterPlatformInput;
   RegisteredPlatform: RegisteredPlatform;
   RegisteredPlatformByPlatformIdInput: RegisteredPlatformByPlatformIdInput;
+  RegisteredPlatformCredential: RegisteredPlatformCredential;
   RegisteredPlatformInput: RegisteredPlatformInput;
   RegisteredPlatformsInput: RegisteredPlatformsInput;
   RegisteredProductVersion: RegisteredProductVersion;
@@ -4257,6 +4364,52 @@ export type System_TokenDirectiveArgs = {
 };
 
 export type System_TokenDirectiveResolver<Result, Parent, ContextType = PortalContext, Args = System_TokenDirectiveArgs> = DirectiveResolverFn<Result, Parent, ContextType, Args>;
+
+export type AdminRegisteredPlatformResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['AdminRegisteredPlatform'] = ResolversParentTypes['AdminRegisteredPlatform']> = ResolversObject<{
+  commercial_model?: Resolver<ResolversTypes['CommercialModel'], ParentType, ContextType>;
+  contract?: Resolver<ResolversTypes['PlatformContract'], ParentType, ContextType>;
+  credential?: Resolver<ResolversTypes['RegisteredPlatformCredential'], ParentType, ContextType>;
+  identifier?: Resolver<ResolversTypes['PlatformIdentifier'], ParentType, ContextType>;
+  last_connectivity_check?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
+  organization?: Resolver<Maybe<ResolversTypes['AdminRegisteredPlatformOrganization']>, ParentType, ContextType>;
+  platform_id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  registerer?: Resolver<Maybe<ResolversTypes['AdminRegisteredPlatformRegisterer']>, ParentType, ContextType>;
+  service_instance_id?: Resolver<ResolversTypes['ServiceInstanceId'], ParentType, ContextType>;
+  status?: Resolver<ResolversTypes['PlatformConfigurationStatus'], ParentType, ContextType>;
+  tenant_id?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  tenant_name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  url?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  version?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type AdminRegisteredPlatformConnectionResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['AdminRegisteredPlatformConnection'] = ResolversParentTypes['AdminRegisteredPlatformConnection']> = ResolversObject<{
+  edges?: Resolver<Array<ResolversTypes['AdminRegisteredPlatformEdge']>, ParentType, ContextType>;
+  pageInfo?: Resolver<ResolversTypes['PageInfo'], ParentType, ContextType>;
+  totalCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type AdminRegisteredPlatformEdgeResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['AdminRegisteredPlatformEdge'] = ResolversParentTypes['AdminRegisteredPlatformEdge']> = ResolversObject<{
+  cursor?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  node?: Resolver<ResolversTypes['AdminRegisteredPlatform'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type AdminRegisteredPlatformOrganizationResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['AdminRegisteredPlatformOrganization'] = ResolversParentTypes['AdminRegisteredPlatformOrganization']> = ResolversObject<{
+  id?: Resolver<ResolversTypes['OrganizationId'], ParentType, ContextType>;
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type AdminRegisteredPlatformRegistererResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['AdminRegisteredPlatformRegisterer'] = ResolversParentTypes['AdminRegisteredPlatformRegisterer']> = ResolversObject<{
+  email?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  first_name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['UserId'], ParentType, ContextType>;
+  last_name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
 
 export type ApiTokenResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['ApiToken'] = ResolversParentTypes['ApiToken']> = ResolversObject<{
   created_at?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
@@ -4792,6 +4945,7 @@ export type MutationResolvers<ContextType = PortalContext, ParentType extends Re
   adminAddUser?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType, RequireFields<MutationAdminAddUserArgs, 'input'>>;
   adminCancelDeploymentRequest?: Resolver<Maybe<ResolversTypes['DeploymentRequest']>, ParentType, ContextType, RequireFields<MutationAdminCancelDeploymentRequestArgs, 'deploymentRequestId'>>;
   adminEditUser?: Resolver<ResolversTypes['User'], ParentType, ContextType, RequireFields<MutationAdminEditUserArgs, 'id' | 'input'>>;
+  adminUnregisterPlatform?: Resolver<ResolversTypes['AdminRegisteredPlatform'], ParentType, ContextType, RequireFields<MutationAdminUnregisterPlatformArgs, 'serviceInstanceId'>>;
   autoRegisterPlatform?: Resolver<ResolversTypes['Success'], ParentType, ContextType, Partial<MutationAutoRegisterPlatformArgs>>;
   bulkAcceptPendingUserInOrganization?: Resolver<Maybe<ResolversTypes['Success']>, ParentType, ContextType, RequireFields<MutationBulkAcceptPendingUserInOrganizationArgs, 'input'>>;
   bulkRemovePendingUserFromOrganization?: Resolver<Maybe<ResolversTypes['Success']>, ParentType, ContextType, RequireFields<MutationBulkRemovePendingUserFromOrganizationArgs, 'input'>>;
@@ -5099,6 +5253,7 @@ export type PublicDocumentSlugInfoResolvers<ContextType = PortalContext, ParentT
 }>;
 
 export type QueryResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['Query'] = ResolversParentTypes['Query']> = ResolversObject<{
+  adminRegisteredPlatforms?: Resolver<ResolversTypes['AdminRegisteredPlatformConnection'], ParentType, ContextType, RequireFields<QueryAdminRegisteredPlatformsArgs, 'first'>>;
   apiTokens?: Resolver<Array<ResolversTypes['ApiToken']>, ParentType, ContextType>;
   bundleProducts?: Resolver<Array<ResolversTypes['PlatformIdentifier']>, ParentType, ContextType, RequireFields<QueryBundleProductsArgs, 'serviceInstanceId'>>;
   bundleUserServiceGroups?: Resolver<Array<ResolversTypes['BundleUserServiceGroup']>, ParentType, ContextType, RequireFields<QueryBundleUserServiceGroupsArgs, 'serviceInstanceId'>>;
@@ -5201,6 +5356,12 @@ export type RegisteredPlatformResolvers<ContextType = PortalContext, ParentType 
   title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   url?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   version?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type RegisteredPlatformCredentialResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['RegisteredPlatformCredential'] = ResolversParentTypes['RegisteredPlatformCredential']> = ResolversObject<{
+  has_token?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  kind?: Resolver<ResolversTypes['RegisteredPlatformCredentialKind'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -5894,6 +6055,11 @@ export type XtmoneIntegrationStatusEntryResolvers<ContextType = PortalContext, P
 }>;
 
 export type Resolvers<ContextType = PortalContext> = ResolversObject<{
+  AdminRegisteredPlatform?: AdminRegisteredPlatformResolvers<ContextType>;
+  AdminRegisteredPlatformConnection?: AdminRegisteredPlatformConnectionResolvers<ContextType>;
+  AdminRegisteredPlatformEdge?: AdminRegisteredPlatformEdgeResolvers<ContextType>;
+  AdminRegisteredPlatformOrganization?: AdminRegisteredPlatformOrganizationResolvers<ContextType>;
+  AdminRegisteredPlatformRegisterer?: AdminRegisteredPlatformRegistererResolvers<ContextType>;
   ApiToken?: ApiTokenResolvers<ContextType>;
   ApiTokenId?: GraphQLScalarType;
   BundleUserServiceGroup?: BundleUserServiceGroupResolvers<ContextType>;
@@ -5968,6 +6134,7 @@ export type Resolvers<ContextType = PortalContext> = ResolversObject<{
   RefreshPlatformRegistrationConnectivityStatusResponse?: RefreshPlatformRegistrationConnectivityStatusResponseResolvers<ContextType>;
   RefreshUserPlatformTokenResponse?: RefreshUserPlatformTokenResponseResolvers<ContextType>;
   RegisteredPlatform?: RegisteredPlatformResolvers<ContextType>;
+  RegisteredPlatformCredential?: RegisteredPlatformCredentialResolvers<ContextType>;
   RegisteredProductVersion?: RegisteredProductVersionResolvers<ContextType>;
   RegistrationResponse?: RegistrationResponseResolvers<ContextType>;
   RolePortal?: RolePortalResolvers<ContextType>;

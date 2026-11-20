@@ -128,6 +128,65 @@ export type AdminEditUserInput = {
   password: InputMaybe<Scalars['String']['input']>;
 };
 
+export type AdminRegisteredPlatform = {
+  __typename?: 'AdminRegisteredPlatform';
+  commercial_model: CommercialModel;
+  contract: PlatformContract;
+  credential: RegisteredPlatformCredential;
+  identifier: PlatformIdentifier;
+  last_connectivity_check: Maybe<Scalars['Date']['output']>;
+  /** The organization owning the registration: the one of its newest subscription. */
+  organization: Maybe<AdminRegisteredPlatformOrganization>;
+  platform_id: Scalars['String']['output'];
+  registerer: Maybe<AdminRegisteredPlatformRegisterer>;
+  service_instance_id: Scalars['ServiceInstanceId']['output'];
+  status: PlatformConfigurationStatus;
+  tenant_id: Maybe<Scalars['String']['output']>;
+  tenant_name: Maybe<Scalars['String']['output']>;
+  title: Scalars['String']['output'];
+  url: Scalars['String']['output'];
+  version: Maybe<Scalars['String']['output']>;
+};
+
+export type AdminRegisteredPlatformConnection = {
+  __typename?: 'AdminRegisteredPlatformConnection';
+  edges: Array<AdminRegisteredPlatformEdge>;
+  pageInfo: PageInfo;
+  totalCount: Scalars['Int']['output'];
+};
+
+export type AdminRegisteredPlatformEdge = {
+  __typename?: 'AdminRegisteredPlatformEdge';
+  cursor: Scalars['String']['output'];
+  node: AdminRegisteredPlatform;
+};
+
+export enum AdminRegisteredPlatformOrdering {
+  LastConnectivityCheck = 'last_connectivity_check',
+  OrganizationName = 'organization_name',
+  Title = 'title'
+}
+
+export type AdminRegisteredPlatformOrganization = {
+  __typename?: 'AdminRegisteredPlatformOrganization';
+  id: Scalars['OrganizationId']['output'];
+  name: Scalars['String']['output'];
+};
+
+export type AdminRegisteredPlatformRegisterer = {
+  __typename?: 'AdminRegisteredPlatformRegisterer';
+  email: Scalars['String']['output'];
+  first_name: Maybe<Scalars['String']['output']>;
+  id: Scalars['UserId']['output'];
+  last_name: Maybe<Scalars['String']['output']>;
+};
+
+export type AdminRegisteredPlatformsFilter = {
+  identifier: InputMaybe<PlatformIdentifier>;
+  organizationId: InputMaybe<Scalars['OrganizationId']['input']>;
+  status: InputMaybe<PlatformConfigurationStatus>;
+};
+
 export type ApiToken = Node & {
   __typename?: 'ApiToken';
   created_at: Scalars['Date']['output'];
@@ -1156,6 +1215,8 @@ export type Mutation = {
   adminAddUser: Maybe<User>;
   adminCancelDeploymentRequest: Maybe<DeploymentRequest>;
   adminEditUser: User;
+  /** Unregisters a platform without being a member of its organization. Does nothing on an inactive registration. */
+  adminUnregisterPlatform: AdminRegisteredPlatform;
   autoRegisterPlatform: Success;
   bulkAcceptPendingUserInOrganization: Maybe<Success>;
   bulkRemovePendingUserFromOrganization: Maybe<Success>;
@@ -1317,6 +1378,11 @@ export type MutationAdminCancelDeploymentRequestArgs = {
 export type MutationAdminEditUserArgs = {
   id: Scalars['ID']['input'];
   input: AdminEditUserInput;
+};
+
+
+export type MutationAdminUnregisterPlatformArgs = {
+  serviceInstanceId: Scalars['ServiceInstanceId']['input'];
 };
 
 
@@ -2083,6 +2149,8 @@ export type PublicDocumentSlugInfo = {
 
 export type Query = {
   __typename?: 'Query';
+  /** Every platform registration, whatever its organization. searchTerm matches the title, URL, ids, tenant, organization and registerer. */
+  adminRegisteredPlatforms: AdminRegisteredPlatformConnection;
   /** The current user's API tokens, revoked and expired ones included */
   apiTokens: Array<ApiToken>;
   bundleProducts: Array<PlatformIdentifier>;
@@ -2161,6 +2229,16 @@ export type Query = {
   votingRounds: Array<VotingRound>;
   xtmPlatformBundle: Maybe<DeploymentRequest>;
   xtmonePlatformIntegrationStatus: Maybe<XtmoneIntegrationStatus>;
+};
+
+
+export type QueryAdminRegisteredPlatformsArgs = {
+  after: InputMaybe<Scalars['ID']['input']>;
+  filter: InputMaybe<AdminRegisteredPlatformsFilter>;
+  first: Scalars['Int']['input'];
+  orderBy: InputMaybe<AdminRegisteredPlatformOrdering>;
+  orderMode: InputMaybe<OrderingMode>;
+  searchTerm: InputMaybe<Scalars['String']['input']>;
 };
 
 
@@ -2588,6 +2666,19 @@ export type RegisteredPlatformByPlatformIdInput = {
   platformId: Scalars['String']['input'];
   tenantId: InputMaybe<Scalars['String']['input']>;
 };
+
+/** The current credential of a registration. It says which credential exists, never its value. */
+export type RegisteredPlatformCredential = {
+  __typename?: 'RegisteredPlatformCredential';
+  has_token: Scalars['Boolean']['output'];
+  kind: RegisteredPlatformCredentialKind;
+};
+
+/** How a registration authenticates to the Hub. More kinds are expected, so a client must accept a value it does not know. */
+export enum RegisteredPlatformCredentialKind {
+  None = 'none',
+  Token = 'token'
+}
 
 export type RegisteredPlatformInput = {
   service_instance_id: Scalars['ServiceInstanceId']['input'];
@@ -3621,6 +3712,27 @@ export type XtmoneIntegrationStatusEntry = {
   last_checked_at: Maybe<Scalars['String']['output']>;
   status: Scalars['String']['output'];
 };
+
+export type AdminUnregisterPlatformMutationVariables = Exact<{
+  serviceInstanceId: Scalars['ServiceInstanceId']['input'];
+}>;
+
+
+export type AdminUnregisterPlatformMutation = { __typename?: 'Mutation', adminUnregisterPlatform: { __typename?: 'AdminRegisteredPlatform', service_instance_id: any, platform_id: string, title: string, url: string, identifier: PlatformIdentifier, version: string | null, contract: PlatformContract, commercial_model: CommercialModel, tenant_id: string | null, tenant_name: string | null, status: PlatformConfigurationStatus, last_connectivity_check: any | null, organization: { __typename?: 'AdminRegisteredPlatformOrganization', id: any, name: string } | null, registerer: { __typename?: 'AdminRegisteredPlatformRegisterer', id: any, email: string, first_name: string | null, last_name: string | null } | null, credential: { __typename?: 'RegisteredPlatformCredential', kind: RegisteredPlatformCredentialKind, has_token: boolean } } };
+
+export type AdminRegisteredPlatformRowFragment = { __typename?: 'AdminRegisteredPlatform', service_instance_id: any, platform_id: string, title: string, url: string, identifier: PlatformIdentifier, version: string | null, contract: PlatformContract, commercial_model: CommercialModel, tenant_id: string | null, tenant_name: string | null, status: PlatformConfigurationStatus, last_connectivity_check: any | null, organization: { __typename?: 'AdminRegisteredPlatformOrganization', id: any, name: string } | null, registerer: { __typename?: 'AdminRegisteredPlatformRegisterer', id: any, email: string, first_name: string | null, last_name: string | null } | null, credential: { __typename?: 'RegisteredPlatformCredential', kind: RegisteredPlatformCredentialKind, has_token: boolean } };
+
+export type AdminRegisteredPlatformsQueryVariables = Exact<{
+  first: Scalars['Int']['input'];
+  after: InputMaybe<Scalars['ID']['input']>;
+  orderBy: AdminRegisteredPlatformOrdering;
+  orderMode: OrderingMode;
+  searchTerm: InputMaybe<Scalars['String']['input']>;
+  filter: InputMaybe<AdminRegisteredPlatformsFilter>;
+}>;
+
+
+export type AdminRegisteredPlatformsQuery = { __typename?: 'Query', adminRegisteredPlatforms: { __typename?: 'AdminRegisteredPlatformConnection', totalCount: number, edges: Array<{ __typename?: 'AdminRegisteredPlatformEdge', node: { __typename?: 'AdminRegisteredPlatform', service_instance_id: any, platform_id: string, title: string, url: string, identifier: PlatformIdentifier, version: string | null, contract: PlatformContract, commercial_model: CommercialModel, tenant_id: string | null, tenant_name: string | null, status: PlatformConfigurationStatus, last_connectivity_check: any | null, organization: { __typename?: 'AdminRegisteredPlatformOrganization', id: any, name: string } | null, registerer: { __typename?: 'AdminRegisteredPlatformRegisterer', id: any, email: string, first_name: string | null, last_name: string | null } | null, credential: { __typename?: 'RegisteredPlatformCredential', kind: RegisteredPlatformCredentialKind, has_token: boolean } } }> } };
 
 export type ApiTokenCreateMutationVariables = Exact<{
   input: CreateApiTokenInput;
@@ -4877,6 +4989,36 @@ export type EpicsQueryVariables = Exact<{
 export type EpicsQuery = { __typename?: 'Query', epics: { __typename?: 'EpicConnection', totalCount: number, edges: Array<{ __typename?: 'EpicEdge', node: { __typename?: 'Epic', id: string, short_description: string, description: string, problem_to_solve: string, proposed_solution: string, expected_value: string, title: string, timeline: Timeline, edition_type: EditionType, products: Array<FiligranProduct>, slack_link: string | null, active: boolean, epic_type: EpicType, created_at: any, updated_at: any | null } }> } | null };
 
 
+export const AdminRegisteredPlatformRowFragmentDoc = `
+    fragment AdminRegisteredPlatformRow on AdminRegisteredPlatform {
+  service_instance_id
+  platform_id
+  title
+  url
+  identifier
+  version
+  contract
+  commercial_model
+  tenant_id
+  tenant_name
+  status
+  last_connectivity_check
+  organization {
+    id
+    name
+  }
+  registerer {
+    id
+    email
+    first_name
+    last_name
+  }
+  credential {
+    kind
+    has_token
+  }
+}
+    `;
 export const ApiTokenRowFragmentDoc = `
     fragment ApiTokenRow on ApiToken {
   id
@@ -5488,6 +5630,100 @@ export const EpicFieldsFragmentDoc = `
   updated_at
 }
     `;
+export const AdminUnregisterPlatformDocument = `
+    mutation AdminUnregisterPlatform($serviceInstanceId: ServiceInstanceId!) {
+  adminUnregisterPlatform(serviceInstanceId: $serviceInstanceId) {
+    ...AdminRegisteredPlatformRow
+  }
+}
+    ${AdminRegisteredPlatformRowFragmentDoc}`;
+
+export const useAdminUnregisterPlatformMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<AdminUnregisterPlatformMutation, TError, AdminUnregisterPlatformMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<AdminUnregisterPlatformMutation, TError, AdminUnregisterPlatformMutationVariables, TContext>(
+      {
+    mutationKey: ['AdminUnregisterPlatform'],
+    mutationFn: (variables?: AdminUnregisterPlatformMutationVariables) => fetcher<AdminUnregisterPlatformMutation, AdminUnregisterPlatformMutationVariables>(client, AdminUnregisterPlatformDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useAdminUnregisterPlatformMutation.getKey = () => ['AdminUnregisterPlatform'];
+useAdminUnregisterPlatformMutation.getRootKey = () => ['AdminUnregisterPlatform'] as const;
+useAdminUnregisterPlatformMutation.fetcher = (client: GraphQLClient, variables: AdminUnregisterPlatformMutationVariables, headers?: RequestInit['headers']) => fetcher<AdminUnregisterPlatformMutation, AdminUnregisterPlatformMutationVariables>(client, AdminUnregisterPlatformDocument, variables, headers);
+
+export const AdminRegisteredPlatformsDocument = `
+    query AdminRegisteredPlatforms($first: Int!, $after: ID, $orderBy: AdminRegisteredPlatformOrdering!, $orderMode: OrderingMode!, $searchTerm: String, $filter: AdminRegisteredPlatformsFilter) {
+  adminRegisteredPlatforms(
+    first: $first
+    after: $after
+    orderBy: $orderBy
+    orderMode: $orderMode
+    searchTerm: $searchTerm
+    filter: $filter
+  ) {
+    totalCount
+    edges {
+      node {
+        ...AdminRegisteredPlatformRow
+      }
+    }
+  }
+}
+    ${AdminRegisteredPlatformRowFragmentDoc}`;
+
+export const useAdminRegisteredPlatformsQuery = <
+      TData = AdminRegisteredPlatformsQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: AdminRegisteredPlatformsQueryVariables,
+      options?: Omit<UseQueryOptions<AdminRegisteredPlatformsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<AdminRegisteredPlatformsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<AdminRegisteredPlatformsQuery, TError, TData>(
+      {
+    queryKey: ['AdminRegisteredPlatforms', variables],
+    queryFn: fetcher<AdminRegisteredPlatformsQuery, AdminRegisteredPlatformsQueryVariables>(client, AdminRegisteredPlatformsDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useAdminRegisteredPlatformsQuery.getKey = (variables: AdminRegisteredPlatformsQueryVariables) => ['AdminRegisteredPlatforms', variables];
+useAdminRegisteredPlatformsQuery.getRootKey = () => ['AdminRegisteredPlatforms'] as const;
+export const useInfiniteAdminRegisteredPlatformsQuery = <
+      TData = InfiniteData<AdminRegisteredPlatformsQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: AdminRegisteredPlatformsQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<AdminRegisteredPlatformsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<AdminRegisteredPlatformsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<AdminRegisteredPlatformsQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['AdminRegisteredPlatforms.infinite', variables],
+      queryFn: (metaData) => fetcher<AdminRegisteredPlatformsQuery, AdminRegisteredPlatformsQueryVariables>(client, AdminRegisteredPlatformsDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteAdminRegisteredPlatformsQuery.getKey = (variables: AdminRegisteredPlatformsQueryVariables) => ['AdminRegisteredPlatforms.infinite', variables];
+useInfiniteAdminRegisteredPlatformsQuery.getRootKey = () => ['AdminRegisteredPlatforms.infinite'] as const;
+useAdminRegisteredPlatformsQuery.fetcher = (client: GraphQLClient, variables: AdminRegisteredPlatformsQueryVariables, headers?: RequestInit['headers']) => fetcher<AdminRegisteredPlatformsQuery, AdminRegisteredPlatformsQueryVariables>(client, AdminRegisteredPlatformsDocument, variables, headers);
+
 export const ApiTokenCreateDocument = `
     mutation ApiTokenCreate($input: CreateApiTokenInput!) {
   createApiToken(input: $input) {

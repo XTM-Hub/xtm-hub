@@ -742,7 +742,8 @@
     "SettingsAccess": "Access",
     "SettingsCommunity": "Community",
     "SettingsManagement": "Management",
-    "ServiceCatalog": "Service catalog"
+    "ServiceCatalog": "Service catalog",
+    "RegisteredPlatforms": "Registered platforms"
   },
   "NewsFeedAdminPage": {
     "Title": "Title",
@@ -2663,6 +2664,55 @@
     "Title": "Welcome to XTM Hub",
     "Subtitle": "The unified entry point for the Filigran ecosystem.",
     "Instructions": "Use Edit Translations in the sidebar to turn edit mode on (BYPASS-capability users only), then click the outlined title or subtitle below. Saving creates a draft to publish from the edit mode banner."
+  },
+  "AdminRegisteredPlatforms": {
+    "Search": "Search by title, URL, organization, email or ID",
+    "ClearSearch": "Clear search",
+    "Columns": {
+      "Platform": "Platform",
+      "Product": "Product",
+      "Organization": "Organization",
+      "Tenant": "Tenant",
+      "Contract": "Contract",
+      "Status": "Status",
+      "LastConnectivityCheck": "Last connectivity check",
+      "Registerer": "Registered by",
+      "Credential": "Credential",
+      "Identifiers": "Identifiers"
+    },
+    "Identifiers": {
+      "ServiceInstance": "Service instance",
+      "Platform": "Platform",
+      "Tenant": "Tenant"
+    },
+    "Status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "CommercialModel": {
+      "SAAS": "SaaS",
+      "OTHER": "Other"
+    },
+    "Credential": {
+      "Kind": {
+        "token": "Token",
+        "none": "None"
+      },
+      "TokenStored": "Token stored",
+      "NoTokenStored": "No token stored"
+    },
+    "Filters": {
+      "Product": "Product",
+      "AllProducts": "All products",
+      "Status": "Status",
+      "AllStatuses": "All statuses"
+    },
+    "Unregister": "Unregister",
+    "UnregisterSuccess": "The platform \"{title}\" has been unregistered",
+    "UnregisterDialog": {
+      "Title": "Unregister the platform \"{title}\"?",
+      "Text": "The {product} platform \"{title}\" will be disconnected from the {organization} organization on XTM Hub. The administrators of the organization will be notified by email. To reconnect it, the platform has to go through the connection process again. The platform can no longer use its credential with XTM Hub, other than to learn that it is unregistered."
+    }
   },
   "Tour": {
     "GuidedTour": "Guided tour",

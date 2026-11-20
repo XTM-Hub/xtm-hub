@@ -172,6 +172,76 @@ input AutoRegisterPlatformInput {
   existing_users_count: Int
 }
 
+"""
+How a registration authenticates to the Hub. More kinds are expected, so a client must accept a value it does not know.
+"""
+enum RegisteredPlatformCredentialKind {
+  token
+  none
+}
+
+"""
+The current credential of a registration. It says which credential exists, never its value.
+"""
+type RegisteredPlatformCredential {
+  kind: RegisteredPlatformCredentialKind!
+  has_token: Boolean!
+}
+
+type AdminRegisteredPlatformOrganization {
+  id: OrganizationId!
+  name: String!
+}
+
+type AdminRegisteredPlatformRegisterer {
+  id: UserId!
+  email: String!
+  first_name: String
+  last_name: String
+}
+
+type AdminRegisteredPlatform {
+  service_instance_id: ServiceInstanceId!
+  platform_id: String!
+  title: String!
+  url: String!
+  identifier: PlatformIdentifier!
+  version: String
+  contract: PlatformContract!
+  commercial_model: CommercialModel!
+  tenant_id: String
+  tenant_name: String
+  status: PlatformConfigurationStatus!
+  last_connectivity_check: Date
+  "The organization owning the registration: the one of its newest subscription."
+  organization: AdminRegisteredPlatformOrganization
+  registerer: AdminRegisteredPlatformRegisterer
+  credential: RegisteredPlatformCredential!
+}
+
+type AdminRegisteredPlatformEdge {
+  cursor: String!
+  node: AdminRegisteredPlatform!
+}
+
+type AdminRegisteredPlatformConnection {
+  totalCount: Int!
+  edges: [AdminRegisteredPlatformEdge!]!
+  pageInfo: PageInfo!
+}
+
+enum AdminRegisteredPlatformOrdering {
+  title
+  last_connectivity_check
+  organization_name
+}
+
+input AdminRegisteredPlatformsFilter {
+  identifier: PlatformIdentifier
+  status: PlatformConfigurationStatus
+  organizationId: OrganizationId
+}
+
 type Query {
   isPlatformRegistered(
     input: IsPlatformRegisteredInput!
@@ -189,11 +259,25 @@ type Query {
     platformId: String!
     tenantId: String
   ): Organization @auth
+  "Every platform registration, whatever its organization. searchTerm matches the title, URL, ids, tenant, organization and registerer."
+  adminRegisteredPlatforms(
+    "Page size, at most 100: a larger value is clamped to 100."
+    first: Int!
+    after: ID
+    orderBy: AdminRegisteredPlatformOrdering
+    orderMode: OrderingMode
+    searchTerm: String
+    filter: AdminRegisteredPlatformsFilter
+  ): AdminRegisteredPlatformConnection!
 }
 
 type Mutation {
   registerPlatform(input: RegisterPlatformInput!): RegistrationResponse! @auth
   unregisterPlatform(input: UnregisterPlatformInput!): Success! @auth
+  "Unregisters a platform without being a member of its organization. Does nothing on an inactive registration."
+  adminUnregisterPlatform(
+    serviceInstanceId: ServiceInstanceId!
+  ): AdminRegisteredPlatform!
   refreshUserPlatformToken: RefreshUserPlatformTokenResponse! @auth
   # Warning ! Used by OpenCTI
   refreshPlatformRegistrationConnectivityStatus(

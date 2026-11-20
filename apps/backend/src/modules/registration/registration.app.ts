@@ -1,5 +1,9 @@
 import { validate as isUuid, v4 as uuidv4 } from 'uuid';
+import { dbConnections } from '../../../knexfile';
 import {
+  AdminRegisteredPlatform,
+  AdminRegisteredPlatformConnection,
+  AdminRegisteredPlatformOrdering,
   AutoRegisterPlatformInput,
   CanUnregisterPlatformInput,
   CommercialModel,
@@ -7,15 +11,19 @@ import {
   IsPlatformRegisteredInput,
   IsPlatformRegisteredResponse,
   OpenCtiPlatformRegistrationStatusInput,
+  OrderingMode,
   OrganizationCapability,
   PlatformConfigurationStatus,
   PlatformContract,
+  PlatformIdentifier,
   PlatformInput,
   PlatformRegistrationConnectivityStatus,
   PlatformRegistrationStatus,
+  QueryAdminRegisteredPlatformsArgs,
   RefreshUserPlatformTokenResponse,
   RegisteredPlatform,
   RegisteredPlatformByPlatformIdInput,
+  RegisteredPlatformCredentialKind,
   RegisteredPlatformsInput,
   RegisterPlatformInput,
   ServiceDefinitionIdentifier,
@@ -28,7 +36,9 @@ import DeploymentRequest from '../../model/kanel/public/DeploymentRequest';
 import Organization, {
   OrganizationId,
 } from '../../model/kanel/public/Organization';
-import { PlatformConfigurationMutator } from '../../model/kanel/public/PlatformConfiguration';
+import PlatformConfiguration, {
+  PlatformConfigurationMutator,
+} from '../../model/kanel/public/PlatformConfiguration';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { UserId } from '../../model/kanel/public/User';
 import { securityGuard } from '../../security/guard';
@@ -60,11 +70,13 @@ import { TelemetryApp } from '../telemetry/telemetry.app';
 import { TelemetryHelper } from '../telemetry/telemetry.helper';
 import { PlatformConfigurationDomain } from './platform-configuration/platform-configuration.domain';
 import {
+  AdminRegisteredPlatformRow,
   DomainRegisteredPlatform,
   PlatformConfigurationInput,
   RegistrationDomain,
 } from './registration.domain';
 import { RegistrationHelper } from './registration.helper';
+import { platformIdentifierMappedByServiceDefinitionIdentifier } from './registration.mapping';
 
 /**
  * Returns undefined when the SaaS Manager cannot classify the platform, so the
@@ -162,6 +174,97 @@ const buildPlatformConfiguration = (
   last_connectivity_check: new Date(),
   token,
 });
+
+const ADMIN_REGISTERED_PLATFORMS_MAX_PAGE = 100;
+
+// Offset cursors as written by loadAdminRegisteredPlatforms; anything unreadable starts from the first page.
+const decodeOffsetCursor = (after?: string | null): number => {
+  if (!after) {
+    return 0;
+  }
+  try {
+    const offset = Number(atob(after));
+    return Number.isSafeInteger(offset) && offset > 0 ? offset : 0;
+  } catch {
+    return 0;
+  }
+};
+
+// Moves an active registration to inactive, then tells the organization admins and telemetry. Returns false, and does
+// nothing else, when the registration was no longer active.
+const deactivateRegistration = async ({
+  platformConfiguration,
+  platformIdentifier,
+  organizationId,
+  actorId,
+}: {
+  platformConfiguration: PlatformConfiguration;
+  platformIdentifier: PlatformIdentifier;
+  organizationId: OrganizationId;
+  actorId: UserId;
+}): Promise<boolean> => {
+  const deactivated = await PlatformConfigurationDomain.deactivateConfiguration(
+    platformConfiguration.service_instance_id
+  );
+  if (!deactivated) {
+    return false;
+  }
+
+  const users = await UserDomain.loadUsersByCapabilitiesInOrganization(
+    organizationId,
+    [
+      OrganizationCapability.AdministrateOrganization,
+      OrganizationCapability.ManagePlatformRegistration,
+    ]
+  );
+
+  // The registration is already inactive: a mail that fails is logged, it does not fail the unregistration, and a
+  // retry would find nothing left to do.
+  await Promise.all(
+    users.map((user) =>
+      sendMail({
+        to: user.email,
+        template: 'platform_unregistered',
+        params: {
+          adminName: formatName(user.first_name ?? ''),
+          platformIdentifier,
+        },
+      }).catch((error: unknown) => {
+        logApp.error('Unable to send the platform unregistered mail', {
+          error,
+          userId: user.id,
+          serviceInstanceId: platformConfiguration.service_instance_id,
+        });
+      })
+    )
+  );
+
+  try {
+    const selectedOrga = await OrganizationDomain.loadOrganizationBy({
+      id: organizationId,
+    });
+    if (!selectedOrga) {
+      throw new Error(NotFoundErrorCode.OrganizationNotFound);
+    }
+
+    const unregisterEvent = TelemetryHelper.buildUnregisterEvent(
+      selectedOrga,
+      actorId,
+      platformIdentifier,
+      platformConfiguration.platform_id,
+      platformConfiguration.platform_contract,
+      platformConfiguration.platform_version,
+      platformConfiguration.platform_url,
+      platformConfiguration.tenant_id ?? undefined
+    );
+    await TelemetryApp.sendTelemetryEvent(unregisterEvent);
+  } catch (error) {
+    logApp.error('Unable to send telemetry event for unregistration', {
+      error,
+    });
+  }
+  return true;
+};
 
 export const RegistrationApp = {
   loadPlatformAssociatedOrganization: async (
@@ -457,56 +560,112 @@ export const RegistrationApp = {
       requiredCapability: OrganizationCapability.ManagePlatformRegistration,
     });
 
-    await PlatformConfigurationDomain.updateConfiguration(
-      platformConfiguration.service_instance_id,
-      { status: PlatformConfigurationStatus.Inactive }
-    );
+    await deactivateRegistration({
+      platformConfiguration,
+      platformIdentifier: identifier,
+      organizationId: subscription.organization_id,
+      actorId: user.id,
+    });
+  },
 
-    const users = await UserDomain.loadUsersByCapabilitiesInOrganization(
-      subscription.organization_id,
-      [
-        OrganizationCapability.AdministrateOrganization,
-        OrganizationCapability.ManagePlatformRegistration,
-      ]
-    );
-
-    await Promise.all(
-      users.map((user) =>
-        sendMail({
-          to: user.email,
-          template: 'platform_unregistered',
-          params: {
-            adminName: formatName(user.first_name ?? ''),
-            platformIdentifier: identifier,
-          },
-        })
-      )
-    );
-
-    try {
-      const selectedOrga = await OrganizationDomain.loadOrganizationBy({
-        id: subscription.organization_id,
-      });
-      if (!selectedOrga) {
-        throw new Error(NotFoundErrorCode.OrganizationNotFound);
-      }
-
-      const unregisterEvent = TelemetryHelper.buildUnregisterEvent(
-        selectedOrga,
-        user.id,
-        identifier,
-        platformConfiguration.platform_id,
-        platformConfiguration.platform_contract,
-        platformConfiguration.platform_version,
-        platformConfiguration.platform_url,
-        platformConfiguration.tenant_id ?? undefined
+  // A platform admin unregisters a platform of any organization, so the organization capability check is skipped.
+  adminUnregisterPlatform: async (
+    serviceInstanceId: ServiceInstanceId
+  ): Promise<void> => {
+    const admin = requestContext.requireUser();
+    const resolvedConfiguration =
+      await PlatformConfigurationDomain.loadResolvedConfigurationByServiceInstance(
+        serviceInstanceId
       );
-      await TelemetryApp.sendTelemetryEvent(unregisterEvent);
-    } catch (error) {
-      logApp.error('Unable to send telemetry event for unregistration', {
-        error,
+    if (!resolvedConfiguration) {
+      throw new Error(ErrorCode.PlatformNotRegistered);
+    }
+    const { platformConfiguration, platformIdentifier } = resolvedConfiguration;
+    if (platformConfiguration.status !== PlatformConfigurationStatus.Active) {
+      return;
+    }
+
+    // The same owner the admin list and its confirmation dialog show: the organization of the newest subscription.
+    const [owner] =
+      await RegistrationDomain.loadPlatformOwnerOrganizationsByServiceInstanceIds(
+        [platformConfiguration.service_instance_id]
+      );
+    if (!owner) {
+      throw new Error(ErrorCode.SubscriptionNotFound);
+    }
+
+    const deactivated = await deactivateRegistration({
+      platformConfiguration,
+      platformIdentifier,
+      organizationId: owner.id,
+      actorId: admin.id,
+    });
+    if (deactivated) {
+      logApp.info('Platform unregistered by a platform admin', {
+        adminId: admin.id,
+        serviceInstanceId: platformConfiguration.service_instance_id,
+        platformId: platformConfiguration.platform_id,
+        tenantId: platformConfiguration.tenant_id,
+        organizationId: owner.id,
       });
     }
+  },
+
+  loadAdminRegisteredPlatforms: async ({
+    first,
+    after,
+    orderBy,
+    orderMode,
+    searchTerm,
+    filter,
+  }: QueryAdminRegisteredPlatformsArgs): Promise<AdminRegisteredPlatformConnection> => {
+    const limit = Math.min(
+      Math.max(first, 1),
+      ADMIN_REGISTERED_PLATFORMS_MAX_PAGE
+    );
+    const offset = decodeOffsetCursor(after);
+    const { rows, totalCount } =
+      await RegistrationDomain.loadAdminRegisteredPlatforms({
+        filters: {
+          platformIdentifier: filter?.identifier ?? undefined,
+          status: filter?.status ?? undefined,
+          organizationId: filter?.organizationId ?? undefined,
+          searchTerm: searchTerm ?? undefined,
+        },
+        offset,
+        limit,
+        orderBy:
+          orderBy ?? AdminRegisteredPlatformOrdering.LastConnectivityCheck,
+        orderMode: orderMode ?? OrderingMode.Desc,
+      });
+    // This list cannot use paginate() from knexfile.ts: paginate() selects PlatformConfiguration.*, the token included,
+    // and counts an `id` column PlatformConfiguration does not have. It pages by offset itself and builds the
+    // connection with dbConnections, which reads the cursor of the current page; hence the re-encoded offset and the
+    // hasNextPage computed from the total, which also holds when the last page is exactly full.
+    const connection = dbConnections(
+      rows.map(mapAdminRegisteredPlatformRowToGraphQL),
+      offset > 0 ? btoa(String(offset)) : undefined,
+      limit,
+      totalCount
+    );
+    return {
+      ...connection,
+      pageInfo: {
+        ...connection.pageInfo,
+        hasNextPage: offset + rows.length < totalCount,
+      },
+    };
+  },
+
+  loadAdminRegisteredPlatform: async (
+    serviceInstanceId: ServiceInstanceId
+  ): Promise<AdminRegisteredPlatform> => {
+    const row =
+      await RegistrationDomain.loadAdminRegisteredPlatform(serviceInstanceId);
+    if (!row) {
+      throw new Error(ErrorCode.PlatformNotRegistered);
+    }
+    return mapAdminRegisteredPlatformRowToGraphQL(row);
   },
 
   isPlatformRegistered: async (
@@ -691,6 +850,50 @@ export const RegistrationApp = {
       platformVersion: input.platform.version,
     });
   },
+};
+
+export const mapAdminRegisteredPlatformRowToGraphQL = (
+  row: AdminRegisteredPlatformRow
+): AdminRegisteredPlatform => {
+  const identifier =
+    platformIdentifierMappedByServiceDefinitionIdentifier[
+      row.service_definition_identifier
+    ];
+  if (!identifier) {
+    throw new Error(ErrorCode.InvalidPlatformIdentifier);
+  }
+  return {
+    service_instance_id: row.service_instance_id,
+    platform_id: row.platform_id,
+    title: row.platform_title,
+    url: row.platform_url,
+    identifier,
+    version: row.platform_version,
+    contract: row.platform_contract,
+    commercial_model: row.commercial_model,
+    tenant_id: row.tenant_id,
+    tenant_name: row.tenant_name,
+    status: row.status,
+    last_connectivity_check: row.last_connectivity_check,
+    organization:
+      row.organization_id && row.organization_name
+        ? { id: row.organization_id, name: row.organization_name }
+        : null,
+    registerer: row.registerer_email
+      ? {
+          id: row.registerer_id,
+          email: row.registerer_email,
+          first_name: row.registerer_first_name,
+          last_name: row.registerer_last_name,
+        }
+      : null,
+    credential: {
+      kind: row.has_token
+        ? RegisteredPlatformCredentialKind.Token
+        : RegisteredPlatformCredentialKind.None,
+      has_token: row.has_token,
+    },
+  };
 };
 
 export const mapDomainRegisteredPlatformToGraphQL = (

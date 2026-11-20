@@ -1,0 +1,96 @@
+meta {
+  name: adminRegisteredPlatforms
+  type: graphql
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/graphql-api
+  body: graphql
+  auth: inherit
+}
+
+headers {
+  cookie: {{cookie}}
+}
+
+body:graphql {
+  query AdminRegisteredPlatforms(
+    $first: Int!
+    $after: ID
+    $orderBy: AdminRegisteredPlatformOrdering
+    $orderMode: OrderingMode
+    $searchTerm: String
+    $filter: AdminRegisteredPlatformsFilter
+  ) {
+    adminRegisteredPlatforms(
+      first: $first
+      after: $after
+      orderBy: $orderBy
+      orderMode: $orderMode
+      searchTerm: $searchTerm
+      filter: $filter
+    ) {
+      totalCount
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+      edges {
+        node {
+          service_instance_id
+          platform_id
+          title
+          url
+          identifier
+          version
+          contract
+          commercial_model
+          tenant_id
+          tenant_name
+          status
+          last_connectivity_check
+          organization {
+            id
+            name
+          }
+          registerer {
+            id
+            email
+            first_name
+            last_name
+          }
+          credential {
+            kind
+            has_token
+          }
+        }
+      }
+    }
+  }
+}
+
+body:graphql:vars {
+  {
+    "first": 25,
+    "after": null,
+    "orderBy": "last_connectivity_check",
+    "orderMode": "desc",
+    "searchTerm": null,
+    "filter": {
+      "identifier": null,
+      "status": null,
+      "organizationId": null
+    }
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+
+docs {
+  Platform admin (BYPASS) only. Every platform registration, whatever its organization.
+  The credential says whether a platform token exists, never its value.
+}

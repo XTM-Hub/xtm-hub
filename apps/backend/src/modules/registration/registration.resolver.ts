@@ -1,10 +1,14 @@
 import { fromGlobalId } from 'graphql-relay/node/node.js';
 import {
   AutoRegisterPlatformInput,
+  MutationResolvers,
+  QueryResolvers,
   Resolvers,
 } from '../../__generated__/resolvers-types';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { PortalContext } from '../../model/portal-context';
+import { Guarded } from '../../security/guarded/guarded.decorator';
+import { bypassOnlyGuard } from '../../security/guarded/guards/portal.guard';
 import { getErrorMessage } from '../../utils/error/error-guard.util';
 import {
   BadRequestErrorCode,
@@ -19,6 +23,32 @@ import { extractPlatformToken } from '../security-management/token/platform-toke
 import { ServiceInstanceDomain } from '../service/instance/service-instance.domain';
 import { RegistrationApp } from './registration.app';
 import { RegistrationConnectivityApp } from './registration.connectivity.app';
+
+class RegistrationAdminQueries {
+  @Guarded(bypassOnlyGuard())
+  static readonly adminRegisteredPlatforms: NonNullable<
+    QueryResolvers['adminRegisteredPlatforms']
+  > = (_, args) => RegistrationApp.loadAdminRegisteredPlatforms(args);
+}
+
+class RegistrationAdminMutations {
+  @Guarded(bypassOnlyGuard())
+  static readonly adminUnregisterPlatform: NonNullable<
+    MutationResolvers['adminUnregisterPlatform']
+  > = async (_, { serviceInstanceId }) => {
+    try {
+      await RegistrationApp.adminUnregisterPlatform(serviceInstanceId);
+      return await RegistrationApp.loadAdminRegisteredPlatform(
+        serviceInstanceId
+      );
+    } catch (error) {
+      throw mapToGraphQLError(
+        error,
+        UnknownErrorCode.UnregisterPlatformUnknownError
+      );
+    }
+  };
+}
 
 const resolvers: Resolvers = {
   RegisteredPlatform: {
@@ -42,6 +72,7 @@ const resolvers: Resolvers = {
       ),
   },
   Query: {
+    ...RegistrationAdminQueries,
     isPlatformRegistered: async (_, { input }) => {
       try {
         return await RegistrationApp.isPlatformRegistered(input);
@@ -98,6 +129,7 @@ const resolvers: Resolvers = {
     },
   },
   Mutation: {
+    ...RegistrationAdminMutations,
     registerPlatform: async (_, { input }) => {
       try {
         const { id: decodedId, type: decodedType } = fromGlobalId(

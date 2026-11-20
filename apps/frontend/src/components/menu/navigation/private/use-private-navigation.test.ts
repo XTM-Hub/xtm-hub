@@ -330,7 +330,7 @@ describe('usePrivateNavigation', () => {
 
   it.each`
     capabilities                                                                                           | expectedSettingsLabels
-    ${[PortalCapability.Bypass]}                                                                           | ${['Organization', 'Parameters', 'Roles', 'Security', 'VotingRound', 'NewsFeed', 'Competitors', 'CSMBoard', 'ServiceCatalog', 'Trials']}
+    ${[PortalCapability.Bypass]}                                                                           | ${['Organization', 'Parameters', 'Roles', 'Security', 'VotingRound', 'NewsFeed', 'Competitors', 'CSMBoard', 'RegisteredPlatforms', 'ServiceCatalog', 'Trials']}
     ${[PortalCapability.ReadTrials]}                                                                       | ${['Trials']}
     ${[PortalCapability.ReadSaasMetrics]}                                                                  | ${['CSMBoard']}
     ${[PortalCapability.ModifyCompetitors]}                                                                | ${['Competitors']}
@@ -379,6 +379,7 @@ describe('usePrivateNavigation', () => {
       ['SettingsCommunity', 'NewsFeed'],
       ['SettingsManagement', 'Competitors'],
       ['SettingsManagement', 'CSMBoard'],
+      ['SettingsManagement', 'RegisteredPlatforms'],
       ['SettingsManagement', 'ServiceCatalog'],
       ['SettingsManagement', 'Trials'],
     ]);

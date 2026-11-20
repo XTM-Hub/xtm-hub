@@ -23,6 +23,7 @@ import {
   TEST_ORGANIZATIONS,
 } from '../../../tests/tests.const';
 import {
+  AdminRegisteredPlatformOrdering,
   CommercialModel,
   DeploymentRequestActivitySector,
   DeploymentRequestDeploymentType,
@@ -32,12 +33,14 @@ import {
   DeploymentRequestPlatformState,
   DeploymentRequestUseCase,
   NewsFeedItemType,
+  OrderingMode,
   PlatformConfigurationStatus,
   PlatformContract,
   PlatformIdentifier,
   PlatformInput,
   PlatformRegistrationConnectivityStatus,
   PlatformRegistrationStatus,
+  RegisteredPlatformCredentialKind,
   ServiceDefinitionIdentifier,
   ServiceInstanceCreationStatus,
 } from '../../__generated__/resolvers-types';
@@ -50,6 +53,7 @@ import ServiceInstance, {
   ServiceInstanceId,
 } from '../../model/kanel/public/ServiceInstance';
 import { SubscriptionId } from '../../model/kanel/public/Subscription';
+import * as MailService from '../../server/mail-service';
 import { PgBossProducer } from '../../thirdparty/pgboss/producer';
 import { REGISTRATION_QUEUES } from '../../thirdparty/pgboss/registration.jobs';
 import { SaasManagerClient } from '../../thirdparty/saasmanager/client';
@@ -77,7 +81,10 @@ import {
 import { TelemetryEventType } from '../telemetry/telemetry.types';
 import { PlatformConfigurationDomain } from './platform-configuration/platform-configuration.domain';
 import { RegistrationApp } from './registration.app';
-import { RegistrationDomain } from './registration.domain';
+import {
+  ADMIN_REGISTERED_PLATFORMS_SEARCH_TERM_MAX_LENGTH,
+  RegistrationDomain,
+} from './registration.domain';
 import { OPENAEV_DEFAULT_TENANT_ID } from './registration.helper';
 
 const BLOGPOST_REQUIRED_VERSION = '7.260901.0';
@@ -2632,6 +2639,437 @@ describe('registration app', () => {
           []
         );
       });
+    });
+  });
+});
+
+// A registration of the second organization, which the platform admin is not a member of
+const createAdminFixture = async ({
+  title,
+  identifier = PlatformIdentifier.Opencti,
+  status = PlatformConfigurationStatus.Active,
+  tenantName = null,
+  creationStatus,
+}: {
+  title: string;
+  identifier?: PlatformIdentifier;
+  status?: PlatformConfigurationStatus;
+  tenantName?: string | null;
+  creationStatus?: ServiceInstanceCreationStatus;
+}): Promise<PlatformConfiguration> => {
+  const serviceInstance = await TestHelper.serviceInstance.create({
+    ...(creationStatus ? { creation_status: creationStatus } : {}),
+    service_definition_id:
+      identifier === PlatformIdentifier.Openaev
+        ? SERVICES.DEFINITIONS.OPENAEV_REGISTRATION.ID
+        : SERVICES.DEFINITIONS.OPENCTI_REGISTRATION.ID,
+  });
+  await TestHelper.subscription.create({
+    organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+    service_instance_id: serviceInstance.id,
+    start_date: new Date(),
+  });
+  return TestHelper.platformConfiguration.create({
+    service_instance_id: serviceInstance.id,
+    platform_title: title,
+    status,
+    tenant_id: tenantName ? uuidv4() : null,
+    tenant_name: tenantName,
+  });
+};
+
+const loadAdminTitles = async (
+  args: Partial<
+    Parameters<typeof RegistrationApp.loadAdminRegisteredPlatforms>[0]
+  >
+) => {
+  const connection = await RegistrationApp.loadAdminRegisteredPlatforms({
+    first: 50,
+    orderBy: AdminRegisteredPlatformOrdering.Title,
+    orderMode: OrderingMode.Asc,
+    ...args,
+  });
+  return connection.edges.map(({ node }) => node.title);
+};
+
+describe('registration app, platform admin', () => {
+  beforeEach(() => {
+    requestContext.set(requestContextAdminUser);
+  });
+
+  describe('loadAdminRegisteredPlatforms', () => {
+    let marker: string;
+
+    beforeEach(() => {
+      marker = uuidv4();
+    });
+
+    it('should return the registrations of every organization with their owner and registerer', async () => {
+      const configuration = await createAdminFixture({ title: `${marker} A` });
+
+      const connection = await RegistrationApp.loadAdminRegisteredPlatforms({
+        first: 10,
+        searchTerm: marker,
+      });
+
+      expect(connection.totalCount).toBe(1);
+      expect(connection.edges[0]?.node).toEqual({
+        service_instance_id: configuration.service_instance_id,
+        platform_id: configuration.platform_id,
+        title: `${marker} A`,
+        url: configuration.platform_url,
+        identifier: PlatformIdentifier.Opencti,
+        version: configuration.platform_version,
+        contract: configuration.platform_contract,
+        commercial_model: configuration.commercial_model,
+        tenant_id: null,
+        tenant_name: null,
+        status: PlatformConfigurationStatus.Active,
+        last_connectivity_check: configuration.last_connectivity_check,
+        organization: {
+          id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+          name: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.NAME,
+        },
+        registerer: {
+          id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.ID,
+          email: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.EMAIL,
+          first_name:
+            TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.FIRST_NAME,
+          last_name:
+            TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.LAST_NAME,
+        },
+        credential: {
+          kind: RegisteredPlatformCredentialKind.Token,
+          has_token: true,
+        },
+      });
+    });
+
+    it('should never return the token value', async () => {
+      const configuration = await createAdminFixture({ title: `${marker} A` });
+
+      const connection = await RegistrationApp.loadAdminRegisteredPlatforms({
+        first: 10,
+        searchTerm: marker,
+      });
+
+      expect(JSON.stringify(connection)).not.toContain(configuration.token);
+    });
+
+    it.each([
+      {
+        name: 'product',
+        filter: { identifier: PlatformIdentifier.Openaev },
+        expected: ['OpenAEV inactive'],
+      },
+      {
+        name: 'status',
+        filter: { status: PlatformConfigurationStatus.Active },
+        expected: ['OpenCTI active'],
+      },
+      {
+        name: 'organization',
+        filter: { organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID },
+        expected: ['OpenAEV inactive', 'OpenCTI active'],
+      },
+      {
+        name: 'another organization',
+        filter: { organizationId: TEST_ORGANIZATIONS.FILIGRAN.ID },
+        expected: [],
+      },
+    ])('should filter on $name', async ({ filter, expected }) => {
+      // Given
+      await createAdminFixture({ title: `${marker} OpenCTI active` });
+      await createAdminFixture({
+        title: `${marker} OpenAEV inactive`,
+        identifier: PlatformIdentifier.Openaev,
+        status: PlatformConfigurationStatus.Inactive,
+      });
+
+      // When
+      const titles = await loadAdminTitles({ searchTerm: marker, filter });
+
+      // Then
+      expect(titles).toEqual(expected.map((title) => `${marker} ${title}`));
+    });
+
+    it('should search the tenant name', async () => {
+      await createAdminFixture({
+        title: 'Tenanted platform',
+        identifier: PlatformIdentifier.Openaev,
+        tenantName: `tenant ${marker}`,
+      });
+
+      const titles = await loadAdminTitles({ searchTerm: `TENANT ${marker}` });
+
+      expect(titles).toEqual(['Tenanted platform']);
+    });
+
+    it('should take the LIKE wildcards of the search term literally', async () => {
+      await createAdminFixture({ title: `${marker} A` });
+
+      const titles = await loadAdminTitles({ searchTerm: `${marker}%` });
+
+      expect(titles).toEqual([]);
+    });
+
+    it('should not return the registration of a disabled service instance', async () => {
+      // Given
+      await createAdminFixture({
+        title: `${marker} Disabled`,
+        creationStatus: ServiceInstanceCreationStatus.Disabled,
+      });
+      await createAdminFixture({ title: `${marker} Enabled` });
+
+      // When
+      const titles = await loadAdminTitles({ searchTerm: marker });
+
+      // Then
+      expect(titles).toEqual([`${marker} Enabled`]);
+    });
+
+    it('should cap the length of the search term', async () => {
+      // Given a title the first characters of the term match, and the characters past the cap do not
+      const title = marker.padEnd(
+        ADMIN_REGISTERED_PLATFORMS_SEARCH_TERM_MAX_LENGTH,
+        'x'
+      );
+      await createAdminFixture({ title });
+
+      // When
+      const titles = await loadAdminTitles({
+        searchTerm: `${title}${'b'.repeat(500)}`,
+      });
+
+      // Then
+      expect(titles).toEqual([title]);
+    });
+
+    it('should paginate', async () => {
+      await createAdminFixture({ title: `${marker} A` });
+      await createAdminFixture({ title: `${marker} B` });
+      await createAdminFixture({ title: `${marker} C` });
+
+      const firstPage = await RegistrationApp.loadAdminRegisteredPlatforms({
+        first: 2,
+        searchTerm: marker,
+        orderBy: AdminRegisteredPlatformOrdering.Title,
+        orderMode: OrderingMode.Asc,
+      });
+      const secondPage = await RegistrationApp.loadAdminRegisteredPlatforms({
+        first: 2,
+        after: firstPage.pageInfo.endCursor,
+        searchTerm: marker,
+        orderBy: AdminRegisteredPlatformOrdering.Title,
+        orderMode: OrderingMode.Asc,
+      });
+
+      expect(firstPage.totalCount).toBe(3);
+      expect(firstPage.edges.map(({ node }) => node.title)).toEqual([
+        `${marker} A`,
+        `${marker} B`,
+      ]);
+      expect(firstPage.pageInfo.hasNextPage).toBe(true);
+      expect(secondPage.edges.map(({ node }) => node.title)).toEqual([
+        `${marker} C`,
+      ]);
+      expect(secondPage.pageInfo.hasNextPage).toBe(false);
+    });
+
+    it('should report no next page when the last page is exactly full', async () => {
+      await createAdminFixture({ title: `${marker} A` });
+      await createAdminFixture({ title: `${marker} B` });
+
+      const page = await RegistrationApp.loadAdminRegisteredPlatforms({
+        first: 2,
+        searchTerm: marker,
+      });
+
+      expect(page.edges).toHaveLength(2);
+      expect(page.pageInfo.hasNextPage).toBe(false);
+    });
+
+    it('should start from the first page when the cursor is unreadable', async () => {
+      await createAdminFixture({ title: `${marker} A` });
+
+      const titles = await loadAdminTitles({
+        searchTerm: marker,
+        after: 'not a cursor',
+      });
+
+      expect(titles).toEqual([`${marker} A`]);
+    });
+  });
+
+  describe('adminUnregisterPlatform', () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('should set the status to inactive, tell the organization admins and send telemetry', async () => {
+      // Given
+      const configuration = await createAdminFixture({
+        title: 'To unregister',
+      });
+      const sendMailSpy = vi.spyOn(MailService, 'sendMail').mockResolvedValue();
+      const telemetrySpy = vi
+        .spyOn(TelemetryApp, 'sendTelemetryEvent')
+        .mockResolvedValue();
+      const logSpy = vi.spyOn(logApp, 'info');
+
+      // When
+      await RegistrationApp.adminUnregisterPlatform(
+        configuration.service_instance_id
+      );
+
+      // Then
+      const stored = await TestHelper.platformConfiguration.load({
+        service_instance_id: configuration.service_instance_id,
+      });
+      expect(stored?.status).toBe(PlatformConfigurationStatus.Inactive);
+      expect(sendMailSpy).toHaveBeenCalledWith({
+        to: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.ADMIN_ORGA.EMAIL,
+        template: 'platform_unregistered',
+        params: expect.objectContaining({
+          platformIdentifier: PlatformIdentifier.Opencti,
+        }),
+      });
+      expect(telemetrySpy).toHaveBeenCalledExactlyOnceWith(
+        expect.objectContaining({
+          event_type: TelemetryEventType.UNREGISTER,
+          organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+          user_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
+          platform_id: configuration.platform_id,
+        })
+      );
+      expect(logSpy).toHaveBeenCalledWith(
+        'Platform unregistered by a platform admin',
+        expect.objectContaining({
+          adminId: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
+          serviceInstanceId: configuration.service_instance_id,
+          organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        })
+      );
+    });
+
+    it('should unregister, mail the other admins and send telemetry when a mail fails', async () => {
+      // Given
+      const configuration = await createAdminFixture({
+        title: 'Mail failure',
+      });
+      const sendMailSpy = vi
+        .spyOn(MailService, 'sendMail')
+        .mockImplementation(async ({ to }) => {
+          if (
+            to === TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.ADMIN_ORGA.EMAIL
+          ) {
+            throw new Error('SMTP down');
+          }
+        });
+      const telemetrySpy = vi
+        .spyOn(TelemetryApp, 'sendTelemetryEvent')
+        .mockResolvedValue();
+      const errorSpy = vi.spyOn(logApp, 'error');
+
+      // When
+      await RegistrationApp.adminUnregisterPlatform(
+        configuration.service_instance_id
+      );
+
+      // Then
+      const stored = await TestHelper.platformConfiguration.load({
+        service_instance_id: configuration.service_instance_id,
+      });
+      expect(stored?.status).toBe(PlatformConfigurationStatus.Inactive);
+      const recipients = sendMailSpy.mock.calls.map(([mail]) => mail.to);
+      expect(recipients).toContain(
+        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.ADMIN_ORGA.EMAIL
+      );
+      expect(recipients.length).toBeGreaterThan(1);
+      expect(errorSpy).toHaveBeenCalledExactlyOnceWith(
+        'Unable to send the platform unregistered mail',
+        expect.objectContaining({
+          userId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.ADMIN_ORGA.ID,
+          serviceInstanceId: configuration.service_instance_id,
+        })
+      );
+      expect(telemetrySpy).toHaveBeenCalledOnce();
+    });
+
+    it('should unregister on behalf of the owner the list shows when the platform has several subscriptions', async () => {
+      // Given an older subscription of another organization, created first
+      const serviceInstance = await TestHelper.serviceInstance.create({
+        service_definition_id: SERVICES.DEFINITIONS.OPENCTI_REGISTRATION.ID,
+      });
+      await TestHelper.subscription.create({
+        organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+        service_instance_id: serviceInstance.id,
+        start_date: new Date('2024-01-01'),
+      });
+      await TestHelper.subscription.create({
+        organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        service_instance_id: serviceInstance.id,
+        start_date: new Date(),
+      });
+      const configuration = await TestHelper.platformConfiguration.create({
+        service_instance_id: serviceInstance.id,
+        platform_title: 'Several subscriptions',
+      });
+      vi.spyOn(MailService, 'sendMail').mockResolvedValue();
+      const telemetrySpy = vi
+        .spyOn(TelemetryApp, 'sendTelemetryEvent')
+        .mockResolvedValue();
+      const listed = await RegistrationApp.loadAdminRegisteredPlatform(
+        configuration.service_instance_id
+      );
+
+      // When
+      await RegistrationApp.adminUnregisterPlatform(
+        configuration.service_instance_id
+      );
+
+      // Then
+      expect(listed?.organization?.id).toBe(
+        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID
+      );
+      expect(telemetrySpy).toHaveBeenCalledExactlyOnceWith(
+        expect.objectContaining({
+          organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        })
+      );
+    });
+
+    it('should do nothing on an inactive registration', async () => {
+      // Given
+      const configuration = await createAdminFixture({
+        title: 'Already unregistered',
+        status: PlatformConfigurationStatus.Inactive,
+      });
+      const sendMailSpy = vi.spyOn(MailService, 'sendMail').mockResolvedValue();
+      const telemetrySpy = vi
+        .spyOn(TelemetryApp, 'sendTelemetryEvent')
+        .mockResolvedValue();
+
+      // When
+      await RegistrationApp.adminUnregisterPlatform(
+        configuration.service_instance_id
+      );
+
+      // Then
+      const stored = await TestHelper.platformConfiguration.load({
+        service_instance_id: configuration.service_instance_id,
+      });
+      expect(stored?.status).toBe(PlatformConfigurationStatus.Inactive);
+      expect(sendMailSpy).not.toHaveBeenCalled();
+      expect(telemetrySpy).not.toHaveBeenCalled();
+    });
+
+    it('should throw when the service instance has no registration', async () => {
+      const call = RegistrationApp.adminUnregisterPlatform(
+        uuidv4() as ServiceInstanceId
+      );
+
+      await expect(call).rejects.toThrow(ErrorCode.PlatformNotRegistered);
     });
   });
 });

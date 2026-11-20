@@ -1,0 +1,41 @@
+meta {
+  name: adminUnregisterPlatform
+  type: graphql
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/graphql-api
+  body: graphql
+  auth: inherit
+}
+
+headers {
+  cookie: {{cookie}}
+}
+
+body:graphql {
+  mutation AdminUnregisterPlatform($serviceInstanceId: ServiceInstanceId!) {
+    adminUnregisterPlatform(serviceInstanceId: $serviceInstanceId) {
+      service_instance_id
+      title
+      status
+    }
+  }
+}
+
+body:graphql:vars {
+  {
+    "serviceInstanceId": ""
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+
+docs {
+  Platform admin (BYPASS) only. Sets an active registration to inactive and mails the admins of its organization,
+  without being a member of that organization. Does nothing on an inactive registration.
+}

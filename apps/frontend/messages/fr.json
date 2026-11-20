@@ -742,7 +742,8 @@
     "SettingsAccess": "Accès",
     "SettingsCommunity": "Communauté",
     "SettingsManagement": "Gestion",
-    "ServiceCatalog": "Catalogue de services"
+    "ServiceCatalog": "Catalogue de services",
+    "RegisteredPlatforms": "Plateformes enregistrées"
   },
   "NewsFeedAdminPage": {
     "Title": "Titre",
@@ -2663,6 +2664,55 @@
     "Title": "Bienvenue sur XTM Hub",
     "Subtitle": "Le point d'entrée unifié de l'écosystème Filigran.",
     "Instructions": "Utilisez « Modifier les traductions » dans la barre latérale pour activer le mode édition (réservé aux utilisateurs avec la capacité BYPASS), puis cliquez sur le titre ou le sous-titre encadré ci-dessous. L’enregistrement crée un brouillon à publier depuis le bandeau du mode édition."
+  },
+  "AdminRegisteredPlatforms": {
+    "Search": "Rechercher par titre, URL, organisation, e-mail ou ID",
+    "ClearSearch": "Effacer la recherche",
+    "Columns": {
+      "Platform": "Plateforme",
+      "Product": "Produit",
+      "Organization": "Organisation",
+      "Tenant": "Tenant",
+      "Contract": "Contrat",
+      "Status": "Statut",
+      "LastConnectivityCheck": "Dernière vérification de connectivité",
+      "Registerer": "Enregistrée par",
+      "Credential": "Identifiant de connexion",
+      "Identifiers": "Identifiants"
+    },
+    "Identifiers": {
+      "ServiceInstance": "Instance de service",
+      "Platform": "Plateforme",
+      "Tenant": "Tenant"
+    },
+    "Status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "CommercialModel": {
+      "SAAS": "SaaS",
+      "OTHER": "Autre"
+    },
+    "Credential": {
+      "Kind": {
+        "token": "Jeton",
+        "none": "Aucun"
+      },
+      "TokenStored": "Jeton enregistré",
+      "NoTokenStored": "Aucun jeton enregistré"
+    },
+    "Filters": {
+      "Product": "Produit",
+      "AllProducts": "Tous les produits",
+      "Status": "Statut",
+      "AllStatuses": "Tous les statuts"
+    },
+    "Unregister": "Désinscrire",
+    "UnregisterSuccess": "La plateforme « {title} » a été désinscrite",
+    "UnregisterDialog": {
+      "Title": "Désinscrire la plateforme « {title} » ?",
+      "Text": "La plateforme {product} « {title} » sera déconnectée de l'organisation {organization} sur XTM Hub. Les administrateurs de l'organisation seront prévenus par e-mail. Pour la reconnecter, la plateforme devra refaire le processus de connexion. La plateforme ne pourra plus utiliser ses identifiants avec XTM Hub, sauf pour apprendre qu'elle est désinscrite."
+    }
   },
   "Tour": {
     "GuidedTour": "Visite guidée",

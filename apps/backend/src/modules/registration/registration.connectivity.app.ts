@@ -66,7 +66,9 @@ const handleTenantUpgrade = async ({
     );
 
   if (
-    resolvedConfigWithoutTenant?.platformIdentifier ===
+    resolvedConfigWithoutTenant?.platformConfiguration.status ===
+      PlatformConfigurationStatus.Active &&
+    resolvedConfigWithoutTenant.platformIdentifier ===
       PlatformIdentifier.Openaev &&
     !RegistrationHelper.isTenantIdRequired(
       PlatformIdentifier.Openaev,
@@ -256,6 +258,19 @@ const refreshConnectivityStatus = async ({
     };
   }
 
+  // An unregistered (inactive) registration only learns its status: what the platform sends no longer changes it.
+  if (platformConfiguration.status !== PlatformConfigurationStatus.Active) {
+    await PlatformConfigurationDomain.updateConfiguration(
+      platformConfiguration.service_instance_id,
+      { last_connectivity_check: new Date() }
+    );
+    return {
+      status: PlatformRegistrationConnectivityStatus.Inactive,
+      commercialModel: platformConfiguration.commercial_model,
+      isTokenValid: true,
+    };
+  }
+
   await saveConfig({
     platformConfiguration,
     platform_version,
@@ -266,10 +281,7 @@ const refreshConnectivityStatus = async ({
   });
 
   return {
-    status:
-      platformConfiguration.status === PlatformConfigurationStatus.Active
-        ? PlatformRegistrationConnectivityStatus.Active
-        : PlatformRegistrationConnectivityStatus.Inactive,
+    status: PlatformRegistrationConnectivityStatus.Active,
     commercialModel: platformConfiguration.commercial_model,
     isTokenValid: true,
   };

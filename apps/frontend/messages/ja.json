@@ -742,7 +742,8 @@
     "SettingsAccess": "アクセス",
     "SettingsCommunity": "コミュニティ",
     "SettingsManagement": "管理",
-    "ServiceCatalog": "サービスカタログ"
+    "ServiceCatalog": "サービスカタログ",
+    "RegisteredPlatforms": "登録済みプラットフォーム"
   },
   "NewsFeedAdminPage": {
     "Title": "タイトル",
@@ -2663,6 +2664,55 @@
     "Title": "XTM Hub へようこそ",
     "Subtitle": "Filigran エコシステムの統合エントリーポイント。",
     "Instructions": "サイドバーの「翻訳を編集」で編集モードを有効にしてください(BYPASS 権限を持つユーザーのみ)。その後、下の枠で囲まれたタイトルまたはサブタイトルをクリックしてください。保存すると下書きが作成され、編集モードのバナーから公開できます。"
+  },
+  "AdminRegisteredPlatforms": {
+    "Search": "タイトル、URL、組織、メール、IDで検索",
+    "ClearSearch": "検索をクリア",
+    "Columns": {
+      "Platform": "プラットフォーム",
+      "Product": "製品",
+      "Organization": "組織",
+      "Tenant": "テナント",
+      "Contract": "契約",
+      "Status": "ステータス",
+      "LastConnectivityCheck": "最終接続確認",
+      "Registerer": "登録者",
+      "Credential": "認証情報",
+      "Identifiers": "識別子"
+    },
+    "Identifiers": {
+      "ServiceInstance": "サービスインスタンス",
+      "Platform": "プラットフォーム",
+      "Tenant": "テナント"
+    },
+    "Status": {
+      "active": "有効",
+      "inactive": "無効"
+    },
+    "CommercialModel": {
+      "SAAS": "SaaS",
+      "OTHER": "その他"
+    },
+    "Credential": {
+      "Kind": {
+        "token": "トークン",
+        "none": "なし"
+      },
+      "TokenStored": "トークン保存済み",
+      "NoTokenStored": "トークン未保存"
+    },
+    "Filters": {
+      "Product": "製品",
+      "AllProducts": "すべての製品",
+      "Status": "ステータス",
+      "AllStatuses": "すべてのステータス"
+    },
+    "Unregister": "登録解除",
+    "UnregisterSuccess": "プラットフォーム「{title}」の登録を解除しました",
+    "UnregisterDialog": {
+      "Title": "プラットフォーム「{title}」の登録を解除しますか？",
+      "Text": "{product} プラットフォーム「{title}」は、XTM Hub 上の {organization} 組織から切断されます。組織の管理者にはメールで通知されます。再接続するには、プラットフォームで接続プロセスをもう一度行う必要があります。登録解除後、プラットフォームは登録解除されたことの確認以外に、XTM Hub で認証情報を使用できなくなります。"
+    }
   },
   "Tour": {
     "GuidedTour": "ガイド付きツアー",
