@@ -112,7 +112,10 @@ type RegisterClientEnvironment = Parameters<
 >[0];
 
 const setDefaultGlobalMocks = () => {
-  vi.mocked(useRegisteredPlatforms).mockReturnValue({ platforms: [] });
+  vi.mocked(useRegisteredPlatforms).mockReturnValue({
+    platforms: [],
+    isPending: false,
+  });
   vi.mocked(useIsFeatureEnabled).mockReturnValue(false);
   vi.mocked(usePathname).mockReturnValue('/mock');
   vi.mocked(useRouter).mockReturnValue({

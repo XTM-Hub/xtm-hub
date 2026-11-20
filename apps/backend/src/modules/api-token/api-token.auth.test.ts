@@ -1,5 +1,5 @@
-import { inspect } from 'node:util';
 import type { NextFunction, Request, Response } from 'express';
+import { inspect } from 'node:util';
 import { describe, expect, it, vi } from 'vitest';
 import { TEST_ORGANIZATIONS } from '../../../tests/tests.const';
 import {
@@ -264,7 +264,69 @@ describe('apiTokenMiddleware', () => {
     expect(getApiTokenAuthentication(req)?.user.id).toBe(
       SECOND.USERS.SIMPLE.ID
     );
-    expect(touch).toHaveBeenCalledWith(api_token.id, expect.any(Date));
+    expect(touch).toHaveBeenCalledWith(
+      api_token.id,
+      expect.any(Date),
+      expect.any(Number)
+    );
+  });
+
+  it.each([
+    { elapsedMs: 5 * 1000, recorded: false },
+    { elapsedMs: 2 * 60 * 1000, recorded: true },
+  ])(
+    'should record the use of a token last used $elapsedMs ms ago: $recorded',
+    async ({ elapsedMs, recorded }) => {
+      // Given
+      const { token, api_token } = await createToken(
+        SECOND.USERS.SIMPLE.ID,
+        SECOND.ID,
+        ApiTokenScope.Read
+      );
+      const lastUsedAt = new Date(Date.now() - elapsedMs);
+      await ApiTokenDomain.touchLastUsed(api_token.id, lastUsedAt, 0);
+      const touch = vi.spyOn(ApiTokenDomain, 'touchLastUsed');
+      const req = { headers: { authorization: `Bearer ${token}` } } as Request;
+
+      // When
+      await apiTokenMiddleware(
+        req,
+        response() as unknown as Response,
+        vi.fn() as NextFunction
+      );
+
+      // Then
+      expect(touch).toHaveBeenCalledTimes(recorded ? 1 : 0);
+    }
+  );
+
+  it('should write the last use once when the same token is touched at the same time', async () => {
+    // Given
+    const { api_token } = await createToken(
+      SECOND.USERS.SIMPLE.ID,
+      SECOND.ID,
+      ApiTokenScope.Read
+    );
+    const first = new Date();
+    const second = new Date(first.getTime() + 1000);
+
+    // When
+    await Promise.all([
+      ApiTokenDomain.touchLastUsed(api_token.id, first, 60 * 1000),
+      ApiTokenDomain.touchLastUsed(api_token.id, second, 60 * 1000),
+    ]);
+
+    // Then
+    const stored = await ApiTokenDomain.loadById(api_token.id);
+    expect([first, second]).toContainEqual(stored?.last_used_at);
+    await ApiTokenDomain.touchLastUsed(
+      api_token.id,
+      new Date(first.getTime() - 5 * 60 * 1000),
+      60 * 1000
+    );
+    expect((await ApiTokenDomain.loadById(api_token.id))?.last_used_at).toEqual(
+      stored?.last_used_at
+    );
   });
 
   it('should answer 401 to a refused token, never falling back to a session', async () => {

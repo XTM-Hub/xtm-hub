@@ -84,26 +84,36 @@ export const CreateApiTokenDialog = ({
     </FieldInfoTip>
   );
 
-  const { mutate: createApiToken, isPending } = useApiTokenCreateMutation(
-    portalGraphqlClient,
-    {
-      onSuccess: async ({ createApiToken: result }) => {
-        setCreated({ token: result.token, name: result.api_token.name });
-        await queryClient.invalidateQueries({ queryKey: apiTokenKeys.all() });
-      },
-      onError: (error: unknown) => {
-        showSnackbar({
-          severity: 'error',
-          title: t('Utils.Error'),
-          description: t(getServerErrorKey(error, t.has)),
-        });
-      },
-    }
-  );
+  const {
+    mutate: createApiToken,
+    reset: resetCreateApiToken,
+    isPending: isCreating,
+  } = useApiTokenCreateMutation(portalGraphqlClient, {
+    // The response holds the one-time secret: drop it from the mutation cache
+    // as soon as nothing observes it, instead of keeping it for the default 5 minutes.
+    gcTime: 0,
+    onSuccess: ({ createApiToken: result }) => {
+      setCreated({ token: result.token, name: result.api_token.name });
+      // Not awaited: the mutation stays pending, and the dialog locked, until onSuccess returns.
+      void queryClient.invalidateQueries({ queryKey: apiTokenKeys.all() });
+    },
+    onError: (error: unknown) => {
+      showSnackbar({
+        severity: 'error',
+        title: t('Utils.Error'),
+        description: t(getServerErrorKey(error, t.has)),
+      });
+    },
+  });
+  // Locked while the creation runs, so it cannot complete with nobody left to see its secret,
+  // and while the secret is shown, so a stray key or click cannot lose it: only Done closes it.
+  const locked = isCreating || !!created;
 
   const close = () => {
     onOpenChange(false);
     setCreated(undefined);
+    // Detaches the mutation from this observer, so gcTime 0 evicts the secret from the cache.
+    resetCreateApiToken();
     form.reset();
   };
 
@@ -143,7 +153,9 @@ export const CreateApiTokenDialog = ({
       onOpenChange={(next) => (next ? onOpenChange(true) : close())}>
       <DialogContent
         // The secret is shown once: a stray click outside must not lose it.
-        onInteractOutside={(e) => e.preventDefault()}>
+        onInteractOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={locked ? (e) => e.preventDefault() : undefined}
+        hideCloseButton={locked}>
         {created ? (
           <>
             <DialogTitle>{t('ApiTokens.Created.Title')}</DialogTitle>
@@ -295,13 +307,14 @@ export const CreateApiTokenDialog = ({
                 <Button
                   type="button"
                   priority="secondary"
+                  disabled={isCreating}
                   {...analyticsId('account_api_token_cancel')}
                   onClick={close}>
                   {t('Utils.Cancel')}
                 </Button>
                 <Button
                   type="submit"
-                  disabled={isPending}
+                  loading={isCreating}
                   {...analyticsId('account_api_token_create')}>
                   {t('ApiTokens.Create.Submit')}
                 </Button>

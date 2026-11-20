@@ -190,13 +190,15 @@ const DocumentMetadataMappedByServiceIdentifier: Record<
 };
 
 const ALLOWED_STATUS_TRANSITIONS: Record<DocumentStatus, DocumentStatus[]> = {
-  [DocumentStatus.Draft]: [
-    DocumentStatus.InValidation,
-    DocumentStatus.Published,
-  ],
+  [DocumentStatus.Draft]: [DocumentStatus.InValidation],
   [DocumentStatus.InValidation]: [DocumentStatus.Published],
-  [DocumentStatus.Published]: [DocumentStatus.Draft],
+  [DocumentStatus.Published]: [],
 };
+
+const CREATABLE_STATUSES: DocumentStatus[] = [
+  DocumentStatus.Draft,
+  DocumentStatus.InValidation,
+];
 
 const INTEGRATION_TYPE_LABELS: Record<IntegrationType, string> = {
   [IntegrationType.Connector]: 'Connector',
@@ -240,6 +242,12 @@ const buildResourceItem = ({
 });
 
 export const DocumentHelper = {
+  assertCreationStatus: (status: DocumentStatus) => {
+    if (!CREATABLE_STATUSES.includes(status)) {
+      throw new Error(ErrorCode.InvalidDocumentCreationStatus);
+    }
+  },
+
   assertStatusTransition: (from: DocumentStatus, to: DocumentStatus) => {
     if (from !== to && !ALLOWED_STATUS_TRANSITIONS[from].includes(to)) {
       throw new Error(ErrorCode.InvalidDocumentStatusTransition);

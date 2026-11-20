@@ -2,6 +2,7 @@
 
 import { SettingsPortalContext } from '@/components/settings/EnvPortalContext';
 import { portalGraphqlClient } from '@/lib/graphql-client';
+import { throwOnFirstLoadError } from '@/lib/query-client';
 import { useSettingsQuery } from '@graphql/generated';
 import { settingsKeys } from '@graphql/settings/settings.keys';
 import * as React from 'react';
@@ -13,11 +14,9 @@ interface ContextProps {
 
 // Component
 const SettingsContext = ({ children }: ContextProps) => {
-  // A failed first load reaches the nearest error boundary; a failed background refetch keeps the settings
-  // already loaded.
   const { data } = useSettingsQuery(portalGraphqlClient, undefined, {
     queryKey: settingsKeys.detail(),
-    throwOnError: (_error, query) => query.state.data === undefined,
+    throwOnError: throwOnFirstLoadError,
   });
 
   // The children read the settings on their first render: wait for them.

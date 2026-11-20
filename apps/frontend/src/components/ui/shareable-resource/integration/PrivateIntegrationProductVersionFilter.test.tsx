@@ -1,4 +1,7 @@
-import { useRegisteredPlatforms } from '@/hooks/use-registered-platforms';
+import {
+  RegisteredPlatformsListItem,
+  useRegisteredPlatforms,
+} from '@/hooks/use-registered-platforms';
 import testRender from '@/utils/test/test-render';
 import { screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -26,7 +29,8 @@ describe('PrivateIntegrationProductVersionFilter', () => {
         { version: '6.6.0', title: '', url: 'https://dev' },
         { version: undefined, title: 'No version', url: 'https://none' },
         { version: '', title: 'Empty version', url: 'https://empty' },
-      ],
+      ] as RegisteredPlatformsListItem[],
+      isPending: false,
     });
 
     testRender(<PrivateIntegrationProductVersionFilter />);
@@ -46,7 +50,10 @@ describe('PrivateIntegrationProductVersionFilter', () => {
   });
 
   it('calls useRegisteredPlatforms for the OpenCTI platform, restricted to active instances', () => {
-    vi.mocked(useRegisteredPlatforms).mockReturnValue({ platforms: [] });
+    vi.mocked(useRegisteredPlatforms).mockReturnValue({
+      platforms: [],
+      isPending: false,
+    });
 
     testRender(<PrivateIntegrationProductVersionFilter />);
 

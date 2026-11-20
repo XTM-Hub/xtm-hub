@@ -4,6 +4,7 @@ import { EpicList } from '@/components/epic/EpicList';
 import { EpicListSkeleton } from '@/components/epic/EpicListSkeleton';
 import { useEpicFilter } from '@/hooks/use-epic-filter';
 import { portalGraphqlClient } from '@/lib/graphql-client';
+import { throwOnFirstLoadError } from '@/lib/query-client';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 import {
   EpicFieldsFragment,
@@ -35,9 +36,7 @@ export const EpicPage = ({ serviceInstance }: EpicPageProps) => {
     queryKey: epicKeys.list(variables),
     // A search keeps the current epics on screen until its results arrive.
     placeholderData: keepPreviousData,
-    // Like Relay, a failed load or search reaches the error page; a failed
-    // background refetch of a list already loaded keeps it shown.
-    throwOnError: (_error, query) => query.state.data === undefined,
+    throwOnError: throwOnFirstLoadError,
   });
 
   const epics = useMemo<EpicFieldsFragment[]>(

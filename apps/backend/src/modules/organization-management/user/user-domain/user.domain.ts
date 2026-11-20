@@ -328,7 +328,8 @@ export const UserDomain = {
       .whereIn('User_Organization.organization_id', organizationIds)
       .andWhere('UserOrganization_Capability.name', '=', capability)
       .select('User_Organization.organization_id', 'User.email')
-      .distinct();
+      .distinct()
+      .orderBy('User.email', 'asc');
   },
 
   loadUserConnection: (opts: QueryUsersArgs) => {
