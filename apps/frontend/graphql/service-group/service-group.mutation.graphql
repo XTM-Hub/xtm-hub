@@ -39,3 +39,9 @@ mutation UpdateBundleUserGroups(
     }
   }
 }
+
+mutation UpdateServiceGroups($input: UpdateServiceGroupsInput!) {
+  updateServiceGroups(input: $input) {
+    id
+  }
+}

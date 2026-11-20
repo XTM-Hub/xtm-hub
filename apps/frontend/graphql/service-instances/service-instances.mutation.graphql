@@ -23,3 +23,18 @@ mutation UpdatePlatformServiceMetadata(
     title
   }
 }
+
+mutation AddServicePicture(
+  $serviceInstanceId: ServiceInstanceId!
+  $document: Upload
+  $isLogo: Boolean!
+) {
+  addServicePicture(
+    serviceInstanceId: $serviceInstanceId
+    document: $document
+    isLogo: $isLogo
+  ) {
+    id
+    name
+  }
+}
