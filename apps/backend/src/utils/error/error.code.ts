@@ -106,6 +106,7 @@ export enum BadRequestErrorCode {
   MetaDescriptionInvalidDash = 'META_DESCRIPTION_INVALID_DASH',
   MetaDescriptionMatchesTitle = 'META_DESCRIPTION_MATCHES_TITLE',
   InvalidDocumentCreationStatus = 'INVALID_DOCUMENT_CREATION_STATUS',
+  InvalidPageSize = 'INVALID_PAGE_SIZE',
 }
 
 export enum UnknownErrorCode {

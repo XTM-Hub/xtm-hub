@@ -441,4 +441,55 @@ describe('organizationMembers GraphQL schema', () => {
       organization: { members_count: 3 },
     });
   });
+
+  it('should return no member but the exact totalCount for a page of 0', async () => {
+    // Given
+    const caller = await addMember(organizationA);
+    await addMember(organizationA);
+
+    // When
+    const { data, errors } = await execute(
+      TestHelper.caller.build(caller, [organizationA]),
+      `query ($organizationId: OrganizationId!) {
+        organizationMembers(organizationId: $organizationId, first: 0) {
+          totalCount
+          edges { node { id } }
+        }
+      }`,
+      { organizationId: organizationA.id }
+    );
+
+    // Then
+    expect(errors).toBeUndefined();
+    expect(data).toEqual({ organizationMembers: { totalCount: 2, edges: [] } });
+  });
+
+  it('should refuse a negative page size with INVALID_PAGE_SIZE without loading any member', async () => {
+    // Given
+    const caller = await addMember(organizationA);
+    const memberConnectionSpy = vi.spyOn(
+      UserDomain,
+      'loadOrganizationMemberConnection'
+    );
+
+    // When
+    const { data, errors } = await execute(
+      TestHelper.caller.build(caller, [organizationA]),
+      `query ($organizationId: OrganizationId!) {
+        organizationMembers(organizationId: $organizationId, first: -1) {
+          totalCount
+        }
+      }`,
+      { organizationId: organizationA.id }
+    );
+
+    // Then
+    // extensions.code is not asserted: BadRequestError sets none, so Apollo answers INTERNAL_SERVER_ERROR for every
+    // BadRequestErrorCode, a defect of the shared error builder outside this query
+    expect(data).toBeNull();
+    expect(errors?.map(({ message }) => message)).toEqual([
+      'INVALID_PAGE_SIZE',
+    ]);
+    expect(memberConnectionSpy).not.toHaveBeenCalled();
+  });
 });

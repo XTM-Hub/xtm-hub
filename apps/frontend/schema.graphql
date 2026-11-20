@@ -121,7 +121,9 @@ type Query {
   organizationMembers(
     organizationId: OrganizationId!
 
-    """The page size, brought between 1 and 100."""
+    """
+    The page size, brought down to 100. 0 returns no member but the totalCount; a negative one is refused with INVALID_PAGE_SIZE.
+    """
     first: Int!
     after: ID
 

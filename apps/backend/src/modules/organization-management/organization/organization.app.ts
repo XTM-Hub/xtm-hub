@@ -36,6 +36,10 @@ export const OrganizationApp = {
       searchTerm,
     }: Omit<QueryOrganizationMembersArgs, 'organizationId'>
   ): Promise<OrganizationMemberConnection> {
+    // 0 is a valid page size: no member, but the totalCount
+    if (first < 0) {
+      throw new Error(ErrorCode.InvalidPageSize);
+    }
     // A malformed id would make PostgreSQL fail on the uuid cast: refuse it before any query
     if (!isUuid(organizationId)) {
       throw new Error(ErrorCode.OrganizationNotFound);
@@ -48,7 +52,7 @@ export const OrganizationApp = {
       throw new Error(ErrorCode.OrganizationNotFound);
     }
     return UserDomain.loadOrganizationMemberConnection(organization.id, {
-      first: Math.min(Math.max(1, first), ORGANIZATION_MEMBERS_MAX_PAGE_SIZE),
+      first: Math.min(first, ORGANIZATION_MEMBERS_MAX_PAGE_SIZE),
       after,
       searchTerm,
     });
