@@ -349,7 +349,7 @@ export const UserDomain = {
       first,
       after,
       searchTerm,
-    }: Partial<Omit<QueryOrganizationMembersArgs, 'organizationId'>>
+    }: Omit<QueryOrganizationMembersArgs, 'organizationId'>
   ) => {
     const query = db<User>('User')
       .innerJoin('User_Organization as memberUserOrganization', function () {

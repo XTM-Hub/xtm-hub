@@ -595,6 +595,8 @@ describe('users domain', () => {
   });
 
   describe('loadOrganizationMemberConnection', () => {
+    // Larger than any organization these tests create: every member fits on one page
+    const PAGE_SIZE = 100;
     const createdUserIds: UserId[] = [];
     const createdOrganizationIds: OrganizationId[] = [];
     let organizationA: Organization;
@@ -670,7 +672,7 @@ describe('users domain', () => {
         // When
         const connection = await UserDomain.loadOrganizationMemberConnection(
           organizationA.id,
-          {}
+          { first: PAGE_SIZE }
         );
 
         // Then
@@ -699,7 +701,7 @@ describe('users domain', () => {
         // When
         const connection = await UserDomain.loadOrganizationMemberConnection(
           organizationA.id,
-          {}
+          { first: PAGE_SIZE }
         );
 
         // Then
@@ -735,7 +737,7 @@ describe('users domain', () => {
         // When
         const connection = await UserDomain.loadOrganizationMemberConnection(
           organizationA.id,
-          {}
+          { first: PAGE_SIZE }
         );
 
         // Then
@@ -754,7 +756,7 @@ describe('users domain', () => {
         // When
         const connection = await UserDomain.loadOrganizationMemberConnection(
           organizationA.id,
-          {}
+          { first: PAGE_SIZE }
         );
 
         // Then
@@ -775,7 +777,7 @@ describe('users domain', () => {
         // When
         const connection = await UserDomain.loadOrganizationMemberConnection(
           organizationA.id,
-          {}
+          { first: PAGE_SIZE }
         );
 
         // Then
@@ -802,7 +804,7 @@ describe('users domain', () => {
         // When
         const connection = await UserDomain.loadOrganizationMemberConnection(
           organizationA.id,
-          {}
+          { first: PAGE_SIZE }
         );
 
         // Then
@@ -837,7 +839,7 @@ describe('users domain', () => {
         // When
         const connection = await UserDomain.loadOrganizationMemberConnection(
           organizationA.id,
-          {}
+          { first: PAGE_SIZE }
         );
 
         // Then
@@ -858,7 +860,7 @@ describe('users domain', () => {
         }
         const singlePage = await UserDomain.loadOrganizationMemberConnection(
           organizationA.id,
-          {}
+          { first: PAGE_SIZE }
         );
 
         // When
@@ -904,7 +906,7 @@ describe('users domain', () => {
         // When
         const connection = await UserDomain.loadOrganizationMemberConnection(
           organizationA.id,
-          { searchTerm: 'needle' }
+          { first: PAGE_SIZE, searchTerm: 'needle' }
         );
 
         // Then
@@ -922,7 +924,7 @@ describe('users domain', () => {
         // When
         const connection = await UserDomain.loadOrganizationMemberConnection(
           organizationA.id,
-          { searchTerm: 'atlantis' }
+          { first: PAGE_SIZE, searchTerm: 'atlantis' }
         );
 
         // Then
@@ -939,7 +941,7 @@ describe('users domain', () => {
         // When
         const connection = await UserDomain.loadOrganizationMemberConnection(
           organizationA.id,
-          { searchTerm: 'haystack' }
+          { first: PAGE_SIZE, searchTerm: 'haystack' }
         );
 
         // Then
@@ -961,11 +963,11 @@ describe('users domain', () => {
         // When
         const connectionA = await UserDomain.loadOrganizationMemberConnection(
           organizationA.id,
-          {}
+          { first: PAGE_SIZE }
         );
         const connectionB = await UserDomain.loadOrganizationMemberConnection(
           organizationB.id,
-          {}
+          { first: PAGE_SIZE }
         );
 
         // Then
@@ -987,7 +989,7 @@ describe('users domain', () => {
         // When
         const connection = await UserDomain.loadOrganizationMemberConnection(
           organizationB.id,
-          { searchTerm: 'haystack' }
+          { first: PAGE_SIZE, searchTerm: 'haystack' }
         );
 
         // Then
@@ -1016,7 +1018,7 @@ describe('users domain', () => {
         // When
         const connection = await UserDomain.loadOrganizationMemberConnection(
           organizationB.id,
-          {}
+          { first: PAGE_SIZE }
         );
 
         // Then
@@ -1039,7 +1041,7 @@ describe('users domain', () => {
         // When
         const connection = await UserDomain.loadOrganizationMemberConnection(
           organizationA.id,
-          {}
+          { first: PAGE_SIZE }
         );
 
         // Then
@@ -1072,16 +1074,14 @@ describe('users domain', () => {
 
         // When
         const readerConnection =
-          await UserDomain.loadOrganizationMemberConnection(
-            personalSpace.id,
-            {}
-          );
+          await UserDomain.loadOrganizationMemberConnection(personalSpace.id, {
+            first: PAGE_SIZE,
+          });
         setBypassCaller();
         const bypassConnection =
-          await UserDomain.loadOrganizationMemberConnection(
-            personalSpace.id,
-            {}
-          );
+          await UserDomain.loadOrganizationMemberConnection(personalSpace.id, {
+            first: PAGE_SIZE,
+          });
 
         // Then
         expect(readerConnection.edges).toEqual([]);
