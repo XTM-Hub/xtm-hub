@@ -68,7 +68,7 @@ export const createPlatformTokenResolver = (
     );
     const platformUser = buildPlatformUser(organization);
 
-    // If token is valid, override context with system user
+    // If token is valid, override context with the platform user
     const enhancedContext: PortalContext = {
       ...portalContext,
       user: platformUser,

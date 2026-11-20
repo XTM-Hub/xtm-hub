@@ -28,10 +28,7 @@ describe('consumeProvisionedNewsFeedItems mutation', () => {
         expectedData: {
           consumeProvisionedNewsFeedItems: { news_feed_items: [] },
         },
-        platformCredentials: {
-          platformId: platformCaller.platformId,
-          token: platformCaller.token,
-        },
+        platformCredentials: platformCaller,
         cleanup: platformCaller.cleanup,
       };
     },
@@ -65,10 +62,7 @@ describe('newsFeedItems query', () => {
             edges: [{ node: { title: 'Access matrix news feed item' } }],
           },
         },
-        platformCredentials: {
-          platformId: platformCaller.platformId,
-          token: platformCaller.token,
-        },
+        platformCredentials: platformCaller,
         cleanup: async () => {
           await TestHelper.newsFeed.deleteItem({ id: item.id });
           await platformCaller.cleanup();
@@ -99,10 +93,7 @@ describe('deleteNewsFeedItem mutation', () => {
       return {
         variables: { id: item.id },
         expectedData: { deleteNewsFeedItem: true },
-        platformCredentials: {
-          platformId: platformCaller.platformId,
-          token: platformCaller.token,
-        },
+        platformCredentials: platformCaller,
         cleanup: async () => {
           await TestHelper.newsFeed.deleteProvisioned({
             news_feed_item_id: item.id,
