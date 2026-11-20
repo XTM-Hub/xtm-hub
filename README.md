@@ -3,10 +3,10 @@
 <p align="center">
   <a href="https://github.com/XTM-Hub/xtm-hub/stargazers"><img src="https://img.shields.io/github/stars/XTM-Hub/xtm-hub?style=flat-square&labelColor=0A0C1C&logo=github&logoColor=white&color=001BDA" alt="stars"></a>
   <a href="https://github.com/XTM-Hub/xtm-hub/releases/latest"><img src="https://img.shields.io/github/v/release/XTM-Hub/xtm-hub?style=flat-square&labelColor=0A0C1C&color=001BDA" alt="release"></a>
-  <a href="https://hub.filigran.io"><img src="https://img.shields.io/badge/docker%20pulls-hosted%20service-001BDA?style=flat-square&labelColor=0A0C1C&logo=docker&logoColor=white" alt="docker pulls"></a>
+  <a href="https://hub.filigran.io"><img src="https://img.shields.io/badge/docker%20pulls-hosted-001BDA?style=flat-square&labelColor=0A0C1C&logo=docker&logoColor=white" alt="docker pulls"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-source%20available-001BDA?style=flat-square&labelColor=0A0C1C" alt="license"></a>
   <a href="https://github.com/XTM-Hub/xtm-hub/actions/workflows/dockerbuild-ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/XTM-Hub/xtm-hub/dockerbuild-ci.yml?branch=main&label=CI&style=flat-square&labelColor=0A0C1C&logo=githubactions&logoColor=white&color=001BDA" alt="CI"></a>
-  <a href="https://docs.hub.filigran.io"><img src="https://img.shields.io/badge/docs-docs.hub.filigran.io-001BDA?style=flat-square&labelColor=0A0C1C" alt="docs"></a>
+  <a href="https://docs.hub.filigran.io"><img src="https://img.shields.io/badge/docs-read-001BDA?style=flat-square&labelColor=0A0C1C" alt="docs"></a>
   <a href="https://community.filigran.io"><img src="https://img.shields.io/badge/community-slack-001BDA?style=flat-square&labelColor=0A0C1C&logo=slack&logoColor=white" alt="community"></a>
 </p>
 
