@@ -6,7 +6,11 @@ import {
 } from '../../__generated__/resolvers-types';
 import Document from '../../model/kanel/public/Document';
 import { RequiredPlatformVersions } from '../../utils/required-platform-version';
-import { doesVersionSatisfy, isValidVersion } from '../../utils/versioning';
+import {
+  doesVersionSatisfy,
+  isLtsVersion,
+  isValidVersion,
+} from '../../utils/versioning';
 import { isConnectorDocument } from '../shareable-resource/opencti/integration/integration.model';
 import {
   NEWS_FEED_REDIRECT_PATH_PREFIX,
@@ -50,6 +54,22 @@ export const doesPlatformSupportBlogpostNewsFeed = (
     RequiredPlatformVersions.NewsFeedBlogpostSupport[identifier],
     version
   );
+
+// Gate of the platform's own track: compareVersions ranks every LTS version above every non-LTS one
+export const doesPlatformSupportGithubReleaseNewsFeed = (
+  identifier: PlatformIdentifier,
+  version?: string | null
+): boolean => {
+  if (!version) return false;
+  const requiredVersions = isLtsVersion(version)
+    ? RequiredPlatformVersions.NewsFeedGithubReleaseLtsSupport
+    : RequiredPlatformVersions.NewsFeedGithubReleaseSupport;
+  // compareVersions reads the accepted inline suffix (-lts1) as part of the patch: compared as -lts.1
+  return isPlatformVersionAtLeast(
+    requiredVersions[identifier],
+    version.replace(/-lts(\d+)$/, '-lts.$1')
+  );
+};
 
 export const NewsFeedHelper = {
   // Number of newest blog posts kept per product

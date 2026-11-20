@@ -11,6 +11,7 @@ import Document from '../../model/kanel/public/Document';
 import { RequiredPlatformVersions } from '../../utils/required-platform-version';
 import {
   doesPlatformSupportBlogpostNewsFeed,
+  doesPlatformSupportGithubReleaseNewsFeed,
   doesPlatformSupportNewsFeed,
   NewsFeedHelper,
 } from './news-feed.helper';
@@ -34,6 +35,8 @@ const mockConfigGet = vi.mocked(config.get);
 
 const NEWS_FEED_ITEM_ID = '4f1c0d52-8b6e-4c43-9f0e-6d2a1b7c3e55';
 const BLOGPOST_REQUIRED_VERSION = '7.260901.0';
+const GITHUB_RELEASE_REQUIRED_VERSION = '7.261201.0';
+const GITHUB_RELEASE_LTS_REQUIRED_VERSION = '7.260309.0-lts.8';
 
 describe('news-feed.helper', () => {
   describe('doesPlatformSupportNewsFeed', () => {
@@ -156,6 +159,178 @@ describe('news-feed.helper', () => {
           '99.0.0'
         )
       ).toBe(false);
+    });
+  });
+
+  describe('doesPlatformSupportGithubReleaseNewsFeed', () => {
+    const originalGithubReleaseSupport =
+      RequiredPlatformVersions.NewsFeedGithubReleaseSupport;
+    const originalGithubReleaseLtsSupport =
+      RequiredPlatformVersions.NewsFeedGithubReleaseLtsSupport;
+
+    const replaceRequiredVersions = ({
+      nonLts,
+      lts,
+    }: {
+      nonLts: string | null;
+      lts: string | null;
+    }) => {
+      RequiredPlatformVersions.NewsFeedGithubReleaseSupport = {
+        [PlatformIdentifier.Opencti]: nonLts,
+        [PlatformIdentifier.Openaev]: null,
+        [PlatformIdentifier.Xtmone]: null,
+      };
+      RequiredPlatformVersions.NewsFeedGithubReleaseLtsSupport = {
+        [PlatformIdentifier.Opencti]: lts,
+        [PlatformIdentifier.Openaev]: null,
+        [PlatformIdentifier.Xtmone]: null,
+      };
+    };
+
+    afterEach(() => {
+      RequiredPlatformVersions.NewsFeedGithubReleaseSupport =
+        originalGithubReleaseSupport;
+      RequiredPlatformVersions.NewsFeedGithubReleaseLtsSupport =
+        originalGithubReleaseLtsSupport;
+    });
+
+    it.each([
+      ['a non-LTS', '99.0.0'],
+      ['an LTS', '99.0.0-lts.1'],
+    ])(
+      'should return false for %s OpenCTI version when the shipped configuration is used',
+      (_description, version) => {
+        // Given the shipped configuration, left untouched
+
+        // When
+        const result = doesPlatformSupportGithubReleaseNewsFeed(
+          PlatformIdentifier.Opencti,
+          version
+        );
+
+        // Then
+        expect(result).toBe(false);
+      }
+    );
+
+    it.each([
+      [
+        'a non-LTS version below the non-LTS gate',
+        GITHUB_RELEASE_REQUIRED_VERSION,
+        GITHUB_RELEASE_LTS_REQUIRED_VERSION,
+        '7.261130.0',
+        false,
+      ],
+      [
+        'a non-LTS version equal to the non-LTS gate',
+        GITHUB_RELEASE_REQUIRED_VERSION,
+        GITHUB_RELEASE_LTS_REQUIRED_VERSION,
+        GITHUB_RELEASE_REQUIRED_VERSION,
+        true,
+      ],
+      [
+        'an LTS version below the LTS gate',
+        GITHUB_RELEASE_REQUIRED_VERSION,
+        GITHUB_RELEASE_LTS_REQUIRED_VERSION,
+        '7.260309.0-lts.7',
+        false,
+      ],
+      [
+        'an LTS version equal to the LTS gate',
+        GITHUB_RELEASE_REQUIRED_VERSION,
+        GITHUB_RELEASE_LTS_REQUIRED_VERSION,
+        GITHUB_RELEASE_LTS_REQUIRED_VERSION,
+        true,
+      ],
+      [
+        'an inline LTS suffix below the LTS gate',
+        GITHUB_RELEASE_REQUIRED_VERSION,
+        GITHUB_RELEASE_LTS_REQUIRED_VERSION,
+        '7.260309.0-lts1',
+        false,
+      ],
+      [
+        'an inline LTS suffix equal to the LTS gate',
+        GITHUB_RELEASE_REQUIRED_VERSION,
+        GITHUB_RELEASE_LTS_REQUIRED_VERSION,
+        '7.260309.0-lts8',
+        true,
+      ],
+      // compareVersions ranks every LTS above every non-LTS: compared with the non-LTS gate, it would pass
+      [
+        'an LTS version while only the non-LTS gate is set',
+        GITHUB_RELEASE_REQUIRED_VERSION,
+        null,
+        '7.270101.0-lts.1',
+        false,
+      ],
+      [
+        'a non-LTS version while only the LTS gate is set',
+        null,
+        GITHUB_RELEASE_LTS_REQUIRED_VERSION,
+        '99.0.0',
+        false,
+      ],
+      [
+        'an LTS version at the LTS gate while the non-LTS gate is null',
+        null,
+        GITHUB_RELEASE_LTS_REQUIRED_VERSION,
+        GITHUB_RELEASE_LTS_REQUIRED_VERSION,
+        true,
+      ],
+      [
+        'a non-LTS version at the non-LTS gate while the LTS gate is null',
+        GITHUB_RELEASE_REQUIRED_VERSION,
+        null,
+        GITHUB_RELEASE_REQUIRED_VERSION,
+        true,
+      ],
+      [
+        'an invalid version',
+        GITHUB_RELEASE_REQUIRED_VERSION,
+        GITHUB_RELEASE_LTS_REQUIRED_VERSION,
+        'not-a-version',
+        false,
+      ],
+      [
+        'a null version',
+        GITHUB_RELEASE_REQUIRED_VERSION,
+        GITHUB_RELEASE_LTS_REQUIRED_VERSION,
+        null,
+        false,
+      ],
+    ])(
+      'should return the expected support for OpenCTI when the platform has %s',
+      (_description, nonLts, lts, version, expected) => {
+        // Given
+        replaceRequiredVersions({ nonLts, lts });
+
+        // When
+        const result = doesPlatformSupportGithubReleaseNewsFeed(
+          PlatformIdentifier.Opencti,
+          version
+        );
+
+        // Then
+        expect(result).toBe(expected);
+      }
+    );
+
+    it('should return false for a platform whose gates are null when the OpenCTI gates are set', () => {
+      // Given
+      replaceRequiredVersions({
+        nonLts: GITHUB_RELEASE_REQUIRED_VERSION,
+        lts: GITHUB_RELEASE_LTS_REQUIRED_VERSION,
+      });
+
+      // When
+      const result = doesPlatformSupportGithubReleaseNewsFeed(
+        PlatformIdentifier.Openaev,
+        '99.0.0'
+      );
+
+      // Then
+      expect(result).toBe(false);
     });
   });
 

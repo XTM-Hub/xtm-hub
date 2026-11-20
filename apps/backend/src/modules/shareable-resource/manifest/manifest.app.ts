@@ -9,8 +9,6 @@ import {
 import { withTransaction } from '../../../context/database.context';
 import type { DocumentId } from '../../../model/kanel/public/Document';
 import { logApp } from '../../../utils/app-logger.util';
-import { BadRequestErrorCode } from '../../../utils/error/error.code';
-import { BadRequestError } from '../../../utils/error/error.util';
 import { isFeatureEnabled } from '../../../utils/feature-flag.util';
 import { isLtsVersion } from '../../../utils/versioning';
 import { DocumentDomain } from '../../document/domain/document.domain';
@@ -141,13 +139,7 @@ export const ManifestApp = {
     version: string;
     type: ManifestType;
   }): Promise<void> => {
-    try {
-      ManifestFragmentHelper.validateAndFormatManifestVersion(version);
-    } catch {
-      throw BadRequestError(BadRequestErrorCode.InvalidPlatformVersion, {
-        detail: `Invalid version format: ${version}`,
-      });
-    }
+    ManifestFragmentHelper.validateProductVersion(version);
 
     const key: ManifestKey = {
       platformIdentifier: product,
