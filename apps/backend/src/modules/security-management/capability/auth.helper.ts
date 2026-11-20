@@ -12,6 +12,7 @@ import { ServiceInstanceId } from '../../../model/kanel/public/ServiceInstance';
 import { SubscriptionMutator } from '../../../model/kanel/public/Subscription';
 import { UserServiceId } from '../../../model/kanel/public/UserService';
 import { UserLoadUserBy } from '../../../model/user';
+import { ApiTokenReach } from '../../../security/api-token-reach';
 import { ServiceCapabilityArgs } from '../../../security/directive-graphql/validator/service-capability.validator';
 import { ErrorCode } from '../../../utils/error/error.code';
 import { UserOrganizationDomain } from '../../organization-management/user/user-organization/user-organization.domain';
@@ -168,6 +169,11 @@ export const AuthHelper = {
       requiredCapability: OrganizationCapability;
     }
   ): Promise<{ isAllowed: boolean; isInOrganization: boolean }> => {
+    // An API token reaches its own organization only: another one is answered as if the user were not a member
+    if (!ApiTokenReach.allowsOrganization(organizationId)) {
+      return { isAllowed: false, isInOrganization: false };
+    }
+
     const organizationCapabilities =
       await UserOrganizationCapabilityDomain.loadUserOrganizationCapabilities(
         organizationId
@@ -176,8 +182,12 @@ export const AuthHelper = {
     const isAllowed = AuthHelper.isUserAllowed({
       requiredCapability: requiredCapability,
       userCapabilities: user.capabilities,
-      organizationCapabilities: organizationCapabilities.map(
-        ({ name }) => name as OrganizationCapability
+      // Only the capabilities the token kept: a token without the admin scope drops ADMINISTRATE_ORGANIZATION, which
+      // would otherwise allow every capability
+      organizationCapabilities: ApiTokenReach.narrowCapabilities(
+        organizationCapabilities.map(
+          ({ name }) => name as OrganizationCapability
+        )
       ),
     });
 

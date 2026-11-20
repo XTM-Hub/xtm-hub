@@ -28,6 +28,12 @@ import {
   UserWithOrganizationsAndRole,
 } from '../../../../model/user';
 import { ADMIN_UUID, CAPABILITY_BYPASS } from '../../../../portal.const';
+import { ApiTokenReach } from '../../../../security/api-token-reach';
+import {
+  restrictCapabilityPortalToApiToken,
+  restrictOrganizationToApiToken,
+  restrictRolePortalToApiToken,
+} from '../../../../security/restriction/api-token';
 import { auth0Client } from '../../../../thirdparty/auth0/client';
 import { hubspotLoginHook } from '../../../../thirdparty/hubspot/hubspot';
 import { logApp } from '../../../../utils/app-logger.util';
@@ -91,6 +97,7 @@ export const UserDomain = {
       )
       .leftJoin('User', 'User.id', 'User_Organization.user_id')
       .where('User.id', '=', id)
+      .tap(restrictOrganizationToApiToken(id))
       .groupBy('Organization.id')
       .select('Organization.*');
   },
@@ -113,9 +120,11 @@ export const UserDomain = {
       )
       .leftJoin('User', 'User.id', '=', 'user_RolePortal.user_id')
       .where('User.id', '=', id)
+      .tap(restrictCapabilityPortalToApiToken(id))
       .groupBy('CapabilityPortal.id')
       .select('CapabilityPortal.*');
-    if (id === ADMIN_UUID) {
+    // A token never carries BYPASS, the platform administrator's included
+    if (id === ADMIN_UUID && !ApiTokenReach.overUser(id)) {
       const capabilityIds = capabilities.map((c: CapabilityPortal) => c.id);
       if (!capabilityIds.includes(CAPABILITY_BYPASS.id)) {
         capabilities.push(CAPABILITY_BYPASS);
@@ -134,6 +143,7 @@ export const UserDomain = {
       )
       .leftJoin('User', 'User.id', '=', 'user_RolePortal.user_id')
       .where('User.id', '=', id)
+      .tap(restrictRolePortalToApiToken(id))
       .select('RolePortal.*');
   },
 
