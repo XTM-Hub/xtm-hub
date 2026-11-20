@@ -14,6 +14,7 @@ import {
   ApiTokenScope,
   OrderingMode,
   OrganizationCapability,
+  OrganizationMemberConnection,
   PlatformIdentifier,
   ServiceGroupName,
   UserAccountStatus,
@@ -34,7 +35,7 @@ import { narrowUserToToken } from '../../../api-token/api-token.auth';
 import { TelemetryApp } from '../../../telemetry/telemetry.app';
 import { TelemetrySource } from '../../../telemetry/telemetry.const';
 import { UserOrganizationDomain } from '../user-organization/user-organization.domain';
-import { OrganizationMemberConnection, UserDomain } from './user.domain';
+import { UserDomain } from './user.domain';
 
 //Issue with test
 describe('users domain', () => {

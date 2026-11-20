@@ -31,6 +31,16 @@ const resolvers: Resolvers = {
     userOrganizations: async (_, __, context) => {
       return OrganizationDomain.loadOrganizationsByUser(context.user.id);
     },
+    organizationMembers: async (_, { organizationId, ...args }) => {
+      try {
+        return await OrganizationApp.loadOrganizationMembers(
+          organizationId,
+          args
+        );
+      } catch (error) {
+        throw mapToGraphQLError(error);
+      }
+    },
   },
   Mutation: {
     addOrganization: async (_, { input }) => {

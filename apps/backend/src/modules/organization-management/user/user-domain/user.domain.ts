@@ -5,8 +5,10 @@ import {
   FilterKey,
   Organization,
   OrganizationCapability,
-  PageInfo,
+  OrganizationMember,
+  OrganizationMemberConnection,
   PlatformIdentifier,
+  QueryOrganizationMembersArgs,
   QueryUsersArgs,
   ServiceGroupName,
   UserAccountStatus,
@@ -52,22 +54,6 @@ import { isUserRestrictedToOwnOrganizationMembers } from '../../organization/org
 export type UserToSyncAccountStatus = User & {
   status: UserAccountStatus.Waiting | UserAccountStatus.Invited;
 };
-
-export type OrganizationMember = User & {
-  capabilities: OrganizationCapability[];
-};
-
-export interface OrganizationMemberConnectionArgs {
-  first?: number | null;
-  after?: string | null;
-  searchTerm?: string | null;
-}
-
-export interface OrganizationMemberConnection {
-  edges: { cursor: string; node: OrganizationMember }[];
-  pageInfo: PageInfo;
-  totalCount: number;
-}
 
 export type LoadUserByFilter = (
   addPrefixToObject<UserMutator, 'User.'> | UserMutator
@@ -359,7 +345,11 @@ export const UserDomain = {
   // gives an empty connection.
   loadOrganizationMemberConnection: (
     organizationId: OrganizationId,
-    { first, after, searchTerm }: OrganizationMemberConnectionArgs
+    {
+      first,
+      after,
+      searchTerm,
+    }: Partial<Omit<QueryOrganizationMembersArgs, 'organizationId'>>
   ) => {
     const query = db<User>('User')
       .innerJoin('User_Organization as memberUserOrganization', function () {
