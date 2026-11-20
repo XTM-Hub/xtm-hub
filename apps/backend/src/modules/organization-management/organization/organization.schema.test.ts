@@ -285,6 +285,20 @@ describe('organizationMembers GraphQL schema', () => {
         };
       },
     ],
+    [
+      'organization B, to a BYPASS user through an admin API key restricted to organization A',
+      async () => ({
+        caller: narrowUserToToken(
+          TestHelper.caller.build(
+            await addMember(organizationA),
+            [organizationA],
+            [CAPABILITY_BYPASS]
+          ),
+          { scope: ApiTokenScope.Admin, organization_id: organizationA.id }
+        ),
+        organizationId: organizationB.id as string,
+      }),
+    ],
   ])(
     'should answer exactly ORGANIZATION_NOT_FOUND for %s',
     async (_, prepare) => {
@@ -385,6 +399,65 @@ describe('organizationMembers GraphQL schema', () => {
       organizationMembers: {
         totalCount: 1,
         edges: [{ node: { id: toGlobalId('User', owner.id) } }],
+      },
+    });
+  });
+
+  it('should return the members of an organization they do not belong to, to a READ_ORGANIZATION_MEMBERS holder through an admin API key', async () => {
+    // Given
+    const holder = await addMember(organizationA);
+    const memberOfB = await addMember(organizationB);
+    const caller = narrowUserToToken(
+      TestHelper.caller.build(
+        holder,
+        [organizationA],
+        [CAPABILITY_READ_ORGANIZATION_MEMBERS]
+      ),
+      { scope: ApiTokenScope.Admin, organization_id: organizationA.id }
+    );
+
+    // When
+    const { data, errors } = await queryMembers(caller, organizationB.id);
+
+    // Then
+    expect(errors).toBeUndefined();
+    expect(data).toMatchObject({
+      organizationMembers: {
+        totalCount: 1,
+        edges: [{ node: { id: toGlobalId('User', memberOfB.id) } }],
+      },
+    });
+  });
+
+  it('should return the members of the organization of an admin API key to a BYPASS user', async () => {
+    // Given
+    const bypassUser = await addMember(organizationA);
+    const otherMember = await addMember(organizationA);
+    const caller = narrowUserToToken(
+      TestHelper.caller.build(bypassUser, [organizationA], [CAPABILITY_BYPASS]),
+      { scope: ApiTokenScope.Admin, organization_id: organizationA.id }
+    );
+
+    // When
+    const { data, errors } = await queryMembers(caller, organizationA.id);
+
+    // Then
+    expect(errors).toBeUndefined();
+    expect(data).toMatchObject({
+      organizationMembers: {
+        totalCount: 2,
+        edges: expect.arrayContaining([
+          {
+            node: expect.objectContaining({
+              id: toGlobalId('User', bypassUser.id),
+            }),
+          },
+          {
+            node: expect.objectContaining({
+              id: toGlobalId('User', otherMember.id),
+            }),
+          },
+        ]),
       },
     });
   });
