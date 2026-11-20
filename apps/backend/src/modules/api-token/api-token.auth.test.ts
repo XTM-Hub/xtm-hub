@@ -1,3 +1,4 @@
+import { inspect } from 'node:util';
 import type { NextFunction, Request, Response } from 'express';
 import { describe, expect, it, vi } from 'vitest';
 import { TEST_ORGANIZATIONS } from '../../../tests/tests.const';
@@ -11,7 +12,6 @@ import { UserId } from '../../model/kanel/public/User';
 import { UserLoadUserBy } from '../../model/user';
 import { ROLE_ADMIN } from '../../portal.const';
 import { logApp } from '../../utils/app-logger.util';
-import { ErrorCode } from '../../utils/error/error.code';
 import { UserDomain } from '../organization-management/user/user-domain/user.domain';
 import { ApiTokenApp } from './api-token.app';
 import {
@@ -54,6 +54,17 @@ const createToken = async (
     organization_id: organizationId,
     expires_at: new Date(Date.now() + 30 * DAY_MS),
   });
+};
+
+// Really disables the user in the database for the time of the callback, so the 401 does not depend on the exact
+// message a mocked loadUserBy throws
+const withDisabledUser = async (userId: UserId, run: () => Promise<void>) => {
+  await UserDomain.updateUser(userId, { disabled: true });
+  try {
+    await run();
+  } finally {
+    await UserDomain.updateUser(userId, { disabled: false });
+  }
 };
 
 const expectRefused = async (secret: string, reason: string, now?: Date) => {
@@ -185,13 +196,11 @@ describe('resolveApiToken', () => {
       SECOND.ID,
       ApiTokenScope.ReadWrite
     );
-    // loadUserBy refuses a disabled user, whatever the organization asked
-    vi.spyOn(UserDomain, 'loadUserBy').mockRejectedValue(
-      new Error(ErrorCode.UserDisabled)
-    );
 
     // Then
-    await expectRefused(token, 'user disabled');
+    await withDisabledUser(SECOND.USERS.SIMPLE.ID, () =>
+      expectRefused(token, 'user disabled')
+    );
   });
 
   it('should rethrow an unexpected failure while loading the user instead of refusing the token', async () => {
@@ -289,9 +298,6 @@ describe('apiTokenMiddleware', () => {
       SECOND.ID,
       ApiTokenScope.Read
     );
-    vi.spyOn(UserDomain, 'loadUserBy').mockRejectedValue(
-      new Error(ErrorCode.UserDisabled)
-    );
     const warn = vi.spyOn(logApp, 'warn');
     const error = vi.spyOn(logApp, 'error');
     const req = { headers: { authorization: `Bearer ${token}` } } as Request;
@@ -299,10 +305,17 @@ describe('apiTokenMiddleware', () => {
     const next = vi.fn();
 
     // When
-    await apiTokenMiddleware(req, res as unknown as Response, next);
+    await withDisabledUser(SECOND.USERS.SIMPLE.ID, () =>
+      apiTokenMiddleware(req, res as unknown as Response, next)
+    );
 
     // Then
     expect(res.status).toHaveBeenCalledWith(401);
+    expect(res.json).toHaveBeenCalledWith({
+      errors: [
+        { message: 'UNAUTHENTICATED', extensions: { code: 'UNAUTHENTICATED' } },
+      ],
+    });
     expect(warn).toHaveBeenCalledWith('API token refused', {
       reason: 'user disabled',
     });
@@ -318,7 +331,10 @@ describe('apiTokenMiddleware', () => {
       SECOND.ID,
       ApiTokenScope.Read
     );
-    const failure = new Error('relation "User_Organization" does not exist');
+    // A knex error embeds the query bindings: here the hash of the token the lookup was made with
+    const failure = new Error(
+      `select "ApiToken".* from "ApiToken" where "token_hash" = '${ApiTokenHelper.hash(token)}' - relation "User_Organization" does not exist`
+    );
     vi.spyOn(UserDomain, 'loadUserBy').mockRejectedValue(failure);
     const error = vi.spyOn(logApp, 'error').mockImplementation(() => {});
     const req = { headers: { authorization: `Bearer ${token}` } } as Request;
@@ -336,9 +352,10 @@ describe('apiTokenMiddleware', () => {
     expect(error).toHaveBeenCalledWith('API token authentication failed', {
       error: failure,
     });
-    const [[, logged]] = error.mock.calls as [[string, { error: Error }]];
-    expect(logged.error.message).not.toContain(token);
-    expect(logged.error.stack).not.toContain(token);
+    // Everything that reaches the log carries the hash, never the secret
+    const logged = inspect(error.mock.calls, { depth: null });
+    expect(logged).toContain(ApiTokenHelper.hash(token));
+    expect(logged).not.toContain(token);
     expect(getApiTokenAuthentication(req)).toBeUndefined();
   });
 
