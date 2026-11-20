@@ -74,8 +74,13 @@ export default class XtmOnePage {
     return this.page.locator('#xtm-hub');
   }
 
+  // The status badge of the card header, apart from the "Registered" date the card also lists once registered: that
+  // label stays when the status turns to "Connectivity lost" or "Register again". XTM One marks its badges with
+  // data-slot="badge".
   getRegistrationStatus(status: XtmOneRegistrationStatus) {
-    return this.getXtmHubCard().getByText(status, { exact: true }).first();
+    return this.getXtmHubCard()
+      .locator('[data-slot="badge"]')
+      .filter({ hasText: new RegExp(`^${status}$`) });
   }
 
   getRegisterButton() {
@@ -91,13 +96,14 @@ export default class XtmOnePage {
   // XTM Hub forgot any previous registration when its database was reset, but XTM One only learns it from its next
   // check: XTM Hub then answers that it does not know the platform, and XTM One drops the registration.
   async resetRegistration() {
-    const notRegistered = this.getRegistrationStatus('Not registered');
     const checkNow = this.getCheckNowButton();
-    await expect(notRegistered.or(checkNow).first()).toBeVisible();
+    // The card shows "Not registered" until XTM One has loaded its saved registration, and keeps Register disabled
+    // until then: wait for an enabled Register or Check now before reading the state.
+    await expect(this.getRegisterButton().or(checkNow)).toBeEnabled();
     if (await checkNow.isVisible()) {
       await checkNow.click();
     }
-    await expect(notRegistered).toBeVisible();
+    await expect(this.getRegistrationStatus('Not registered')).toBeVisible();
   }
 
   // Asks XTM Hub now, from the card, and waits for XTM One's answer.
