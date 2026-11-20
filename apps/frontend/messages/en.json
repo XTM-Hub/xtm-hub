@@ -1670,6 +1670,7 @@
       "Retry": "Retry",
       "ViewTab": "Select tab view",
       "ViewList": "Select list view",
+      "ClearAllFilters": "Clear all",
       "Filters": "Filters",
       "FilterInformation": "About this filter",
       "Tab": {

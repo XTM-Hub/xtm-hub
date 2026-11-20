@@ -6,12 +6,12 @@ import {
 import usePublicPath from '@/hooks/use-public-path';
 import {
   buildServiceListStorageKey,
+  ServiceListFilterName,
   ServiceListStorageKey,
   ServiceListStorageName,
 } from '@/utils/filters-storage.utils';
 import { type SortableDocumentOrdering } from '@/utils/shareable-resources/shareable-resources.consts';
 import { DocumentOrdering, OrderingMode } from '@graphql/generated';
-import { useCallback } from 'react';
 import { useLocalStorage, useSessionStorage } from 'usehooks-ts';
 
 const deserializeLogicalMultiSelectSelection = (
@@ -29,6 +29,11 @@ const deserializeLogicalMultiSelectSelection = (
     return {};
   }
 };
+
+interface FilterStorage {
+  selection: LogicalMultiSelectSelection;
+  remove: () => void;
+}
 
 export const useServiceListStorage = (serviceName: ServiceListStorageKey) => {
   const isPublicPath = usePublicPath();
@@ -136,40 +141,49 @@ export const useServiceListStorage = (serviceName: ServiceListStorageKey) => {
       ServiceListDisplayMode.Tab
     );
 
-  const resetAll = useCallback(() => {
+  const filterStorages: Record<ServiceListFilterName, FilterStorage> = {
+    label: { selection: labels, remove: removeLabels },
+    integrationType: {
+      selection: integrationTypes,
+      remove: removeIntegrationTypes,
+    },
+    productVersion: {
+      selection: productVersions,
+      remove: removeProductVersions,
+    },
+    licenseType: { selection: licenseTypes, remove: removeLicenseTypes },
+    solutionCategory: {
+      selection: solutionCategories,
+      remove: removeSolutionCategories,
+    },
+    entityType: { selection: entityTypes, remove: removeEntityTypes },
+    deployable: { selection: deployable, remove: removeDeployable },
+    verified: { selection: verified, remove: removeVerified },
+  };
+
+  const hasActiveFilters = Object.values(filterStorages).some(
+    ({ selection }) => Object.keys(selection).length > 0
+  );
+
+  const clearFilters = () => {
+    Object.values(filterStorages).forEach(({ remove }) => remove());
+  };
+
+  const resetAll = () => {
     removePageSize();
     removeSearch();
-    removeLabels();
-    removeIntegrationTypes();
-    removeProductVersions();
-    removeLicenseTypes();
-    removeSolutionCategories();
-    removeEntityTypes();
-    removeDeployable();
-    removeVerified();
+    clearFilters();
     removeOrderBy();
     removeOrderMode();
     removeDisplayMode();
-  }, [
-    removePageSize,
-    removeSearch,
-    removeLabels,
-    removeIntegrationTypes,
-    removeProductVersions,
-    removeLicenseTypes,
-    removeSolutionCategories,
-    removeEntityTypes,
-    removeDeployable,
-    removeVerified,
-    removeOrderBy,
-    removeOrderMode,
-    removeDisplayMode,
-  ]);
+  };
 
   return {
     pageSize,
     setPageSize,
     resetAll,
+    hasActiveFilters,
+    clearFilters,
     search,
     setSearch,
     removeSearch,

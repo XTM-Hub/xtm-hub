@@ -29,7 +29,7 @@ export const ServiceListFilterLabel = ({
   return (
     <LogicalMultiSelectFormField
       options={labelOptions}
-      initialValue={labels}
+      value={labels}
       noResultString={t('Utils.NotFound')}
       onValueChange={setLabels}
       analyticsFilter={{
