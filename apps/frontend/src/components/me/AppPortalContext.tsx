@@ -1,10 +1,10 @@
-import { meContext_fragment$data } from '@generated/meContext_fragment.graphql';
+import { PortalUser } from '@/components/me/portal-user.utils';
 import { OrganizationCapability, PortalCapability } from '@graphql/generated';
 import * as React from 'react';
 import { createContext } from 'react';
 
 export interface Portal {
-  me?: meContext_fragment$data | null;
+  me?: PortalUser | null;
   isPersonalSpace?: boolean;
   hasCapability?: (capability: PortalCapability) => boolean;
   hasOrganizationCapability?: (capability: OrganizationCapability) => boolean;
@@ -16,9 +16,7 @@ export interface PortalProps extends Portal {
 
 export const PortalContext = createContext<Portal>({});
 
-export const generatePortalContext = (
-  me?: meContext_fragment$data | null
-): Portal => {
+export const generatePortalContext = (me?: PortalUser | null): Portal => {
   return {
     me,
     isPersonalSpace:

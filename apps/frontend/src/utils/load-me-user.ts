@@ -1,29 +1,21 @@
-import serverPortalApiFetch from '@/relay/server-portal-api-fetch';
-import MeLoaderQuery, { meLoaderQuery } from '@generated/meLoaderQuery.graphql';
-import { OrganizationCapability, PortalCapability } from '@graphql/generated';
+import type { PortalUser } from '@/components/me/portal-user.utils';
+import { getAuthenticatedGraphqlClient } from '@/lib/graphql-client';
+import { getQueryClient } from '@/lib/query-client';
+import { redirectToSignupOnUnauthenticated } from '@/lib/server-unauthenticated-redirect';
+import { useMeQuery } from '@graphql/generated';
+import { meKeys } from '@graphql/me/me.keys';
+import { QueryClient } from '@tanstack/react-query';
 
-interface MeResponse {
-  data: {
-    me: {
-      id: string;
-      selected_organization_id: string;
-      organizations: {
-        id: string;
-        name: string;
-        personal_space: boolean;
-      }[];
-      capabilities: { name: PortalCapability }[];
-      selected_org_capabilities: OrganizationCapability[];
-    };
-  };
-}
-
-export const loadMeUser = async () => {
-  const meResponse = (await serverPortalApiFetch<
-    typeof MeLoaderQuery,
-    meLoaderQuery
-  >(MeLoaderQuery, {}, { cache: 'no-store' })) as MeResponse;
-  return meResponse.data.me ?? null;
+export const loadMeUser = async (
+  queryClient: QueryClient = getQueryClient()
+) => {
+  const { me } = await redirectToSignupOnUnauthenticated(async () =>
+    queryClient.fetchQuery({
+      queryKey: meKeys.detail(),
+      queryFn: useMeQuery.fetcher(await getAuthenticatedGraphqlClient()),
+    })
+  );
+  return me as PortalUser | null;
 };
 
 export const loadCurrentUser = async () => {

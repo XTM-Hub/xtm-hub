@@ -1,7 +1,7 @@
+import type { PortalUser } from '@/components/me/portal-user.utils';
 import { ServiceFormUploaderOrganizationIdField } from '@/components/service/form/UploaderOrganizationIdField';
 import { Form, FormField } from '@/components/ui/form';
 import testRender from '@/utils/test/test-render';
-import type { meContext_fragment$data } from '@generated/meContext_fragment.graphql';
 import type {
   DocumentItemFragment,
   MeOrganizationsQuery,
@@ -50,7 +50,7 @@ const RENAMED_ORGANIZATION_NAME = 'Acme Industries';
 const FIELD_LABEL = 'OrganizationInServiceAction.Organization';
 
 // The user the server loaded into the portal context.
-const PORTAL_ME: Partial<meContext_fragment$data> = {
+const PORTAL_ME: Partial<PortalUser> = {
   id: 'user-1',
   selected_organization_id: SELECTED_ORGANIZATION_ID,
   organizations: [

@@ -8,11 +8,14 @@ import { EditionModeBanner } from '@/components/content-translation/EditionModeB
 import { EditModeContentObserver } from '@/components/content-translation/EditModeContentObserver';
 import HeaderComponent from '@/components/Header';
 import { AppShell } from '@/components/layout/AppShell';
+import MeContext from '@/components/me/MeContext';
 import PrivateMenu from '@/components/menu/PrivateMenu';
 import { ReactQueryProvider } from '@/components/ReactQueryProvider';
 import { PrivateXtmPlatformTrialBanner } from '@/components/service/trial-instances/banner/xtm-platform-trial/PrivateXtmPlatformTrialBanner';
+import SettingsContext from '@/components/settings/SettingsContext';
 import { EditModeProvider } from '@/context/edit-mode-context';
 import { loadOverriddenContentKeys } from '@/i18n/content-translation-overrides';
+import { getQueryClient } from '@/lib/query-client';
 import { RelayProvider } from '@/relay/relay-provider';
 import {
   hasContentEditCapability,
@@ -24,10 +27,10 @@ import { loadMeUser } from '@/utils/load-me-user';
 import { getMetadataBase } from '@/utils/metadata';
 import { APP_PATH } from '@/utils/path/constant';
 import { buildSignupRedirect } from '@/utils/redirect';
+import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
 import { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
-import PageLoader from './page-loader';
 
 export const dynamic = 'force-dynamic';
 
@@ -49,7 +52,8 @@ const RootLayout = async ({ children }: RootLayoutProps) => {
   const h = await headers();
   const pathname = h.get('x-pathname') ?? `/${APP_PATH}`;
 
-  const me = await loadMeUser();
+  const queryClient = getQueryClient();
+  const me = await loadMeUser(queryClient);
   if (!me) {
     redirect(buildSignupRedirect(pathname));
   }
@@ -72,24 +76,28 @@ const RootLayout = async ({ children }: RootLayoutProps) => {
   return (
     <RelayProvider>
       <ReactQueryProvider>
-        <div className="flex min-h-[calc(100dvh-var(--cookie-banner-height,0px))]">
-          <PageLoader>
-            <EditModeProvider
-              canEditContent={hasContentEditCapability(me)}
-              isEditMode={isEditMode}
-              pendingChangeCount={pendingChangeCount}
-              overriddenKeys={overriddenKeys}>
-              <AppShell
-                banners={banners}
-                menu={<PrivateMenu />}
-                headerContent={<HeaderComponent />}
-                contentClassName="p-3 sm:p-6">
-                {children}
-              </AppShell>
-              <EditModeContentObserver />
-            </EditModeProvider>
-          </PageLoader>
-        </div>
+        <HydrationBoundary state={dehydrate(queryClient)}>
+          <div className="flex min-h-[calc(100dvh-var(--cookie-banner-height,0px))]">
+            <SettingsContext>
+              <MeContext>
+                <EditModeProvider
+                  canEditContent={hasContentEditCapability(me)}
+                  isEditMode={isEditMode}
+                  pendingChangeCount={pendingChangeCount}
+                  overriddenKeys={overriddenKeys}>
+                  <AppShell
+                    banners={banners}
+                    menu={<PrivateMenu />}
+                    headerContent={<HeaderComponent />}
+                    contentClassName="p-3 sm:p-6">
+                    {children}
+                  </AppShell>
+                  <EditModeContentObserver />
+                </EditModeProvider>
+              </MeContext>
+            </SettingsContext>
+          </div>
+        </HydrationBoundary>
       </ReactQueryProvider>
     </RelayProvider>
   );

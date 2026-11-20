@@ -1,9 +1,9 @@
 import { AppPortalContext } from '@/components/me/AppPortalContext';
+import { PortalUser } from '@/components/me/portal-user.utils';
 import {
   PortalSettings,
   SettingsPortalContext,
 } from '@/components/settings/EnvPortalContext';
-import { meContext_fragment$data } from '@generated/meContext_fragment.graphql';
 import messages from '@messages/en.json';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, renderHook } from '@testing-library/react';
@@ -16,14 +16,12 @@ import { RelayMockEnvironment } from 'relay-test-utils/lib/RelayModernMockEnviro
 
 export interface ProvidersWrapperProps {
   children: ReactNode;
-  me?: meContext_fragment$data;
+  me?: PortalUser;
   settings?: PortalSettings;
   relayConfig?: RelayMockEnvironment;
 }
 
-export const generateMockUser = (
-  me?: Partial<meContext_fragment$data> | null
-) => {
+export const generateMockUser = (me?: Partial<PortalUser> | null) => {
   return {
     id: 'mock_id',
     email: 'user@filigran.io',
@@ -33,7 +31,6 @@ export const generateMockUser = (
     picture: '',
     selected_organization_id: 'org-test-456',
     capabilities: [],
-    roles_portal: [],
     organizations: [
       {
         id: 'mock_id',
@@ -46,9 +43,8 @@ export const generateMockUser = (
         personal_space: false,
       },
     ],
-    ' $fragmentType': 'context_fragment',
     ...me,
-  } as meContext_fragment$data;
+  } as PortalUser;
 };
 
 export const generateSettings = (settings?: Partial<PortalSettings> | null) => {
@@ -91,7 +87,7 @@ interface TestRenderOptions {
   relayConfig?: RelayMockEnvironment;
   /** The react-query client to render with, to seed or inspect its cache. */
   queryClient?: QueryClient;
-  me?: Partial<meContext_fragment$data> | null;
+  me?: Partial<PortalUser> | null;
   settings?: Partial<PortalSettings> | null;
 }
 
