@@ -23,11 +23,14 @@ export default class NavigationMenu {
     return section.getByRole('link', { name: linkName });
   }
 
-  async openMyProduct(sectionName: string, productTitle: string) {
+  // The link of a registered product, under the "My product" menu of its section.
+  async getMyProductLink(sectionName: string, productTitle: string) {
     const section = await this.expandSection(sectionName);
     await section.getByRole('button', { name: 'My product' }).click();
-    await section
-      .getByRole('link', { name: productTitle, exact: true })
-      .click();
+    return section.getByRole('link', { name: productTitle, exact: true });
+  }
+
+  async openMyProduct(sectionName: string, productTitle: string) {
+    await (await this.getMyProductLink(sectionName, productTitle)).click();
   }
 }

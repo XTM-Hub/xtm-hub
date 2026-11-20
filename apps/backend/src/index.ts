@@ -256,6 +256,12 @@ if (
   fs.writeFileSync('../frontend/schema.graphql', printedSchema);
 }
 
+// CORS of the GraphQL endpoints before the API token middleware, which may answer 401 or 429 itself: a browser client
+// must be able to read those answers
+app.use(
+  [PORTAL_GRAPHQL_PATH, PORTAL_WEBSOCKET_PATH],
+  cors<cors.CorsRequest>(PORTAL_CORS_OPTIONS)
+);
 // Before the request context: a Bearer API token sets the user every later layer reads
 app.use(apiTokenMiddleware);
 app.use(requestContextMiddleware);
@@ -344,16 +350,11 @@ const handler = createHandler({
   },
 });
 
-app.use(
-  PORTAL_WEBSOCKET_PATH,
-  cors<cors.CorsRequest>(PORTAL_CORS_OPTIONS),
-  json(),
-  handler
-);
+// CORS of both endpoints is applied before the API token middleware
+app.use(PORTAL_WEBSOCKET_PATH, json(), handler);
 app.use(
   PORTAL_GRAPHQL_PATH,
   sessionMiddleware,
-  cors<cors.CorsRequest>(PORTAL_CORS_OPTIONS),
   json(),
   apiTokenRateLimiter,
   middlewareExpress

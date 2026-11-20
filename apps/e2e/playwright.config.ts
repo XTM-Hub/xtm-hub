@@ -85,9 +85,9 @@ export default defineConfig({
       },
       dependencies: ['setup'],
     },
-    // Against a real OpenCTI or OpenAEV, see xtm-hub-dev/docker-compose-ci-{opencti,openaev}.yml: each project runs
-    // the specs of its folder in tests/platforms/.
-    ...(['opencti', 'openaev'] as const).map((platform) => ({
+    // Against a real OpenCTI, OpenAEV or XTM One, see xtm-hub-dev/docker-compose-ci-{opencti,openaev,xtmone}.yml:
+    // each project runs the specs of its folder in tests/platforms/.
+    ...(['opencti', 'openaev', 'xtmone'] as const).map((platform) => ({
       name: platform,
       testMatch: new RegExp(`platforms/${platform}/.*\\.spec\\.ts`),
       use: {

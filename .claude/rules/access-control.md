@@ -145,6 +145,22 @@ static readonly consumeProvisionedNewsFeedItems: NonNullable<MutationResolvers['
   };
 ```
 
+## Personal API tokens
+
+A request with `Authorization: Bearer xhp_…` runs as the token's user, narrowed by `narrowUserToToken`
+(`src/modules/api-token/api-token.auth.ts`) to the token's organization and scope. The database still knows every
+organization and right of that user, so anything that reads them again must apply the token:
+
+- `requestContext.get()?.apiToken` holds what the token reaches. It is set for a token request only, and kept apart
+  from `context.user`, which a resolver may replace.
+- Check the caller's membership or capabilities on an organization the client names with `securityGuard` or
+  `AuthHelper`, which apply `ApiTokenReach` (`src/security/api-token-reach.ts`), never with
+  `UserOrganizationDomain.loadUserOrganization` directly: a token of organization A would pass for organization B.
+- The token user's own organizations, portal capabilities and roles are filtered in the query by
+  `src/security/restriction/api-token.ts`. Reading them for another user, or for an invariant check, is unchanged.
+- A mutation that acts on the account itself (session, credentials, profile, personal space) goes in
+  `API_TOKEN_DENIED_FIELDS` (`src/modules/api-token/api-token.plugin.ts`).
+
 ## Errors
 
 A guard denies with a `DenialCode` (`src/security/guarded/guard.types.ts`). The decorator builds the error with

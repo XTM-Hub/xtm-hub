@@ -337,6 +337,34 @@ describe('newsFeedApp', () => {
       );
 
       it.each`
+        description                 | version         | expected
+        ${'below the shipped gate'} | ${'3.261117.0'} | ${false}
+        ${'at the shipped gate'}    | ${'3.261118.0'} | ${true}
+      `(
+        'should list BLOG_POST with the shipped gate only when the OpenAEV version is $description ($version): $expected',
+        async ({ version, expected }) => {
+          // Given the shipped required version, left untouched
+          const gatedPlatformId = uuidv4();
+          const gatedToken = uuidv4();
+          await createOpenAEVPlatformForOrganization(
+            gatedPlatformId,
+            TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+            { token: gatedToken, platform_version: version }
+          );
+
+          // When
+          const result = await NewsFeedApp.consumeProvisionedNewsFeedItems(
+            await loadConsumeInput(gatedPlatformId, gatedToken)
+          );
+
+          // Then
+          expect(
+            result.available_news_feed_types.includes(NewsFeedItemType.BlogPost)
+          ).toBe(expected);
+        }
+      );
+
+      it.each`
         description  | version                      | expected
         ${'below'}   | ${'7.260831.0'}              | ${false}
         ${'equal'}   | ${BLOGPOST_REQUIRED_VERSION} | ${true}

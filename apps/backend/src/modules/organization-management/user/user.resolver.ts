@@ -49,6 +49,7 @@ const assertCanListenOrganizationUsers = (organizationId: string) =>
 const resolvers: Resolvers = {
   UserId: createRelayIdScalar<UserId>('User'),
   User: {
+    // For the caller of a request authenticated by an API token, the readers keep only what the token reaches
     organizations: ({ id }, _) => UserDomain.getOrganizations(id),
     capabilities: ({ id }, _) => UserDomain.getCapabilities(id),
     roles_portal: ({ id }, _) => UserDomain.getRolesPortal(id),
