@@ -1,17 +1,15 @@
 import cors from 'cors';
 import { Express, Request, Response } from 'express';
-import rateLimit from 'express-rate-limit';
 import { Readable } from 'stream';
 import { UserDomain } from '../../../modules/organization-management/user/user-domain/user.domain';
 import { MinIOClient } from '../../../thirdparty/minio/client';
 import { logApp } from '../../../utils/app-logger.util';
+import { userPictureRateLimiter } from '../../../utils/rate-limit.util';
 import {
   setStoredFileSecurityHeaders,
   toStoredImageContentType,
 } from '../shared/stored-file.util';
 
-const USER_PICTURE_RATE_WINDOW_MS = 60 * 1000;
-const USER_PICTURE_RATE_MAX = 300;
 // One day, and not immutable: the frontend image optimiser fetches the picture by its path alone, whose
 // content changes when the user uploads a new one, and keeps its resized copy for this long (its own
 // `minimumCacheTTL` is also one day). A replaced picture viewed often stays stale in the optimised views for
@@ -26,13 +24,6 @@ const USER_PICTURE_CACHE_MAX_AGE_SECONDS = 60 * 60 * 24;
 // for the frontend image optimiser to fetch and resize. The raw path is tested, so an encoded form fails too.
 const CANONICAL_USER_PICTURE_PATH =
   /^\/user\/picture\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
-
-const userPictureRateLimiter = rateLimit({
-  windowMs: USER_PICTURE_RATE_WINDOW_MS,
-  max: USER_PICTURE_RATE_MAX,
-  standardHeaders: true,
-  legacyHeaders: false,
-});
 
 export const getUserPicture = async (
   req: Request,

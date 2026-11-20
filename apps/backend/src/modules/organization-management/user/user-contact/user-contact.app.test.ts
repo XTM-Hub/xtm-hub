@@ -23,6 +23,7 @@ import {
 } from '../../../../__generated__/resolvers-types';
 import { requestContext } from '../../../../context/request.context';
 import { ErrorCode } from '../../../../utils/error/error.code';
+import { contactSalesRateLimiter } from '../../../../utils/rate-limit.util';
 import * as utils from '../../../../utils/utils';
 import { RegistrationApp } from '../../../registration/registration.app';
 import { UserContactApp } from './user-contact.app';
@@ -46,6 +47,10 @@ describe('user contact app', () => {
       .getMockImplementation() as typeof config.get;
   });
   let fetchSpy: MockInstance;
+
+  beforeEach(async () => {
+    await contactSalesRateLimiter.reset();
+  });
 
   afterEach(async () => {
     await TestHelper.deploymentRequest.delete({});
@@ -155,6 +160,43 @@ describe('user contact app', () => {
           }),
         })
       );
+    });
+
+    it('should refuse a sixth message from the same user within the hour without sending it', async () => {
+      // Given
+      const platformId = uuidv4();
+      await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+        { platform_id: platformId }
+      );
+      for (let sent = 0; sent < 5; sent++) {
+        await UserContactApp.contactSales({ platformId });
+      }
+
+      // When
+      const call = UserContactApp.contactSales({ platformId });
+
+      // Then
+      await expect(call).rejects.toThrow(ErrorCode.TooManyRequests);
+      expect(fetchSpy).toHaveBeenCalledTimes(5);
+    });
+
+    it('should not count a refused message against the sender', async () => {
+      // Given
+      for (let refused = 0; refused < 5; refused++) {
+        await expect(
+          UserContactApp.contactSales({ platformId: uuidv4() })
+        ).rejects.toThrow(ErrorCode.DeploymentRequestNotFound);
+      }
+      const platformId = uuidv4();
+      await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+        { platform_id: platformId }
+      );
+
+      // When
+      await UserContactApp.contactSales({ platformId });
+
+      // Then
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
     });
 
     it('should send message when request is retrieved from platform token', async () => {
@@ -375,6 +417,30 @@ describe('user contact app', () => {
         company: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.NAME,
         message: 'opencti: Please call me',
       });
+    });
+
+    it('should refuse a sixth message from the same platform within the hour without sending it', async () => {
+      // Given
+      const platformId = uuidv4();
+      const deploymentRequest =
+        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+          { platform_id: platformId }
+        );
+      const input = {
+        message: 'Please call me',
+        platformId,
+        platformToken: deploymentRequest.platform_token!,
+      };
+      for (let sent = 0; sent < 5; sent++) {
+        await UserContactApp.contactSalesFromPlatform(input);
+      }
+
+      // When
+      const call = UserContactApp.contactSalesFromPlatform(input);
+
+      // Then
+      await expect(call).rejects.toThrow(ErrorCode.TooManyRequests);
+      expect(fetchSpy).toHaveBeenCalledTimes(5);
     });
 
     it('should refuse an unknown platform token without sending anything', async () => {

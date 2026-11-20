@@ -36,6 +36,7 @@ import {
   registerEndpoints,
   registerReadOnlySessionEndpoints,
 } from './server/endpoints';
+import { withQueryLimitRules } from './server/graphql-query-limits';
 import createSchema from './server/graphql-schema';
 import { createHttpMetricsMiddleware } from './server/http-metrics.middleware';
 import platformInit, { minioInit } from './server/initialize';
@@ -54,6 +55,7 @@ import { runESMigrations } from './thirdparty/elasticsearch/migrate';
 import { PgBossApp } from './thirdparty/pgboss/pgboss';
 import { logApp } from './utils/app-logger.util';
 import { getErrorStringProperty } from './utils/error/error-guard.util';
+import { createGraphqlRateLimiters } from './utils/rate-limit.util';
 import {
   startSessionCleanup,
   stopSessionCleanup,
@@ -320,6 +322,7 @@ const sseSchemaDetailsOptions = createSseSchemaDetailsOptions(
 const handler = createHandler({
   schema,
   ...sseSchemaDetailsOptions,
+  validate: withQueryLimitRules(sseSchemaDetailsOptions.validate),
   context: async (_req) => {
     const session = await new Promise((resolve) => {
       sessionMiddleware(_req.raw, {} as express.Response, () =>
@@ -329,7 +332,9 @@ const handler = createHandler({
     const { user } = session as SessionData;
     // if (!user) throw new GraphQLError("You must be logged in", { extensions: { code: 'UNAUTHENTICATED' } });
     // TODO Add build session from request authorization
-    return { user, req: _req };
+    // `req` is the Express request on both transports, as `PortalContext` declares: graphql-sse's own request has no
+    // `ip` and keeps the Express one in `raw`.
+    return { user, req: _req.raw };
   },
 
   onOperation: (ctx, _req, args) => {
@@ -344,9 +349,11 @@ const handler = createHandler({
   },
 });
 
+const graphqlRateLimiters = createGraphqlRateLimiters();
 app.use(
   PORTAL_WEBSOCKET_PATH,
   cors<cors.CorsRequest>(PORTAL_CORS_OPTIONS),
+  ...graphqlRateLimiters,
   json(),
   handler
 );
@@ -354,6 +361,7 @@ app.use(
   PORTAL_GRAPHQL_PATH,
   sessionMiddleware,
   cors<cors.CorsRequest>(PORTAL_CORS_OPTIONS),
+  ...graphqlRateLimiters,
   json(),
   apiTokenRateLimiter,
   middlewareExpress

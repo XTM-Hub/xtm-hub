@@ -1,6 +1,5 @@
 import cors from 'cors';
 import { Express, Request, Response } from 'express';
-import rateLimit from 'express-rate-limit';
 import { Readable } from 'stream';
 import { PlatformIdentifier } from '../../../__generated__/resolvers-types';
 import { ManifestDomain } from '../../../modules/shareable-resource/manifest/manifest.domain';
@@ -9,6 +8,7 @@ import { MinIOClient } from '../../../thirdparty/minio/client';
 import { StorageUnavailableError } from '../../../thirdparty/minio/storage-error';
 import { logApp } from '../../../utils/app-logger.util';
 import { getErrorMessage } from '../../../utils/error/error-guard.util';
+import { manifestRateLimiter } from '../../../utils/rate-limit.util';
 import {
   CacheControl,
   quoteETag,
@@ -19,14 +19,11 @@ import {
   sendManifestError,
   sendManifestValidationError,
 } from './manifest-endpoint.errors';
-import { buildManifestRateLimiterOptions } from './manifest-endpoint.rate-limit';
 import {
   isValidManifestName,
   parseCount,
   validateManifestParams,
 } from './manifest-endpoint.utils';
-
-const manifestRateLimiter = rateLimit(buildManifestRateLimiterOptions());
 
 export const ManifestEndpoint = {
   listManifests: async (req: Request, res: Response): Promise<void> => {
