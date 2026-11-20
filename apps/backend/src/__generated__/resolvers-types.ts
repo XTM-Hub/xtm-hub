@@ -1916,12 +1916,36 @@ export type OrganizationInput = {
   name: Scalars['String']['input'];
 };
 
+/** A member of an organization, whatever their status: invited, expired, waiting for validation or disabled. */
+export type OrganizationMember = {
+  __typename?: 'OrganizationMember';
+  /** Their capabilities in this organization, empty when they hold none. */
+  capabilities: Array<OrganizationCapability>;
+  email: Scalars['String']['output'];
+  first_name?: Maybe<Scalars['String']['output']>;
+  id: Scalars['UserId']['output'];
+  last_name?: Maybe<Scalars['String']['output']>;
+};
+
+export type OrganizationMemberConnection = {
+  __typename?: 'OrganizationMemberConnection';
+  edges: Array<OrganizationMemberEdge>;
+  pageInfo: PageInfo;
+  totalCount: Scalars['Int']['output'];
+};
+
 export type OrganizationMemberContact = {
   __typename?: 'OrganizationMemberContact';
   email: Scalars['String']['output'];
   first_name?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
   last_name?: Maybe<Scalars['String']['output']>;
+};
+
+export type OrganizationMemberEdge = {
+  __typename?: 'OrganizationMemberEdge';
+  cursor: Scalars['String']['output'];
+  node: OrganizationMember;
 };
 
 export enum OrganizationOrdering {
@@ -2110,6 +2134,11 @@ export type Query = {
   organization?: Maybe<Organization>;
   /** The API tokens of the selected organization, for its administrators */
   organizationApiTokens: Array<ApiToken>;
+  /**
+   * The members of an organization, administrators first, then by email. Pending requests are not members.
+   * An organization whose members the caller may not read is refused with ORGANIZATION_NOT_FOUND, as an unknown one.
+   */
+  organizationMembers: OrganizationMemberConnection;
   organizations: OrganizationConnection;
   pendingUsers: UserConnection;
   platformAssociatedOrganization?: Maybe<Organization>;
@@ -2282,6 +2311,14 @@ export type QueryOpenCtiPlatformRegistrationStatusArgs = {
 
 export type QueryOrganizationArgs = {
   id: Scalars['ID']['input'];
+};
+
+
+export type QueryOrganizationMembersArgs = {
+  after?: InputMaybe<Scalars['ID']['input']>;
+  first: Scalars['Int']['input'];
+  organizationId: Scalars['OrganizationId']['input'];
+  searchTerm?: InputMaybe<Scalars['String']['input']>;
 };
 
 
@@ -3832,7 +3869,10 @@ export type ResolversTypes = ResolversObject<{
   OrganizationEdge: ResolverTypeWrapper<OrganizationEdge>;
   OrganizationId: ResolverTypeWrapper<Scalars['OrganizationId']['output']>;
   OrganizationInput: OrganizationInput;
+  OrganizationMember: ResolverTypeWrapper<OrganizationMember>;
+  OrganizationMemberConnection: ResolverTypeWrapper<OrganizationMemberConnection>;
   OrganizationMemberContact: ResolverTypeWrapper<OrganizationMemberContact>;
+  OrganizationMemberEdge: ResolverTypeWrapper<OrganizationMemberEdge>;
   OrganizationOrdering: OrganizationOrdering;
   OrganizationRef: ResolverTypeWrapper<OrganizationRef>;
   PageInfo: ResolverTypeWrapper<PageInfo>;
@@ -4103,7 +4143,10 @@ export type ResolversParentTypes = ResolversObject<{
   OrganizationEdge: OrganizationEdge;
   OrganizationId: Scalars['OrganizationId']['output'];
   OrganizationInput: OrganizationInput;
+  OrganizationMember: OrganizationMember;
+  OrganizationMemberConnection: OrganizationMemberConnection;
   OrganizationMemberContact: OrganizationMemberContact;
+  OrganizationMemberEdge: OrganizationMemberEdge;
   OrganizationRef: OrganizationRef;
   PageInfo: PageInfo;
   PlatformDeploymentRequest: PlatformDeploymentRequest;
@@ -5003,11 +5046,33 @@ export interface OrganizationIdScalarConfig extends GraphQLScalarTypeConfig<Reso
   name: 'OrganizationId';
 }
 
+export type OrganizationMemberResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['OrganizationMember'] = ResolversParentTypes['OrganizationMember']> = ResolversObject<{
+  capabilities?: Resolver<Array<ResolversTypes['OrganizationCapability']>, ParentType, ContextType>;
+  email?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  first_name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['UserId'], ParentType, ContextType>;
+  last_name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type OrganizationMemberConnectionResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['OrganizationMemberConnection'] = ResolversParentTypes['OrganizationMemberConnection']> = ResolversObject<{
+  edges?: Resolver<Array<ResolversTypes['OrganizationMemberEdge']>, ParentType, ContextType>;
+  pageInfo?: Resolver<ResolversTypes['PageInfo'], ParentType, ContextType>;
+  totalCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type OrganizationMemberContactResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['OrganizationMemberContact'] = ResolversParentTypes['OrganizationMemberContact']> = ResolversObject<{
   email?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   first_name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   last_name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type OrganizationMemberEdgeResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['OrganizationMemberEdge'] = ResolversParentTypes['OrganizationMemberEdge']> = ResolversObject<{
+  cursor?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  node?: Resolver<ResolversTypes['OrganizationMember'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -5125,6 +5190,7 @@ export type QueryResolvers<ContextType = PortalContext, ParentType extends Resol
   openCTIPlatformRegistrationStatus?: Resolver<ResolversTypes['OpenCTIPlatformRegistrationStatusResponse'], ParentType, ContextType, RequireFields<QueryOpenCtiPlatformRegistrationStatusArgs, 'input'>>;
   organization?: Resolver<Maybe<ResolversTypes['Organization']>, ParentType, ContextType, RequireFields<QueryOrganizationArgs, 'id'>>;
   organizationApiTokens?: Resolver<Array<ResolversTypes['ApiToken']>, ParentType, ContextType>;
+  organizationMembers?: Resolver<ResolversTypes['OrganizationMemberConnection'], ParentType, ContextType, RequireFields<QueryOrganizationMembersArgs, 'first' | 'organizationId'>>;
   organizations?: Resolver<ResolversTypes['OrganizationConnection'], ParentType, ContextType, RequireFields<QueryOrganizationsArgs, 'first' | 'orderBy' | 'orderMode'>>;
   pendingUsers?: Resolver<ResolversTypes['UserConnection'], ParentType, ContextType, RequireFields<QueryPendingUsersArgs, 'first' | 'orderBy' | 'orderMode'>>;
   platformAssociatedOrganization?: Resolver<Maybe<ResolversTypes['Organization']>, ParentType, ContextType, RequireFields<QueryPlatformAssociatedOrganizationArgs, 'platformId'>>;
@@ -5953,7 +6019,10 @@ export type Resolvers<ContextType = PortalContext> = ResolversObject<{
   OrganizationConnection?: OrganizationConnectionResolvers<ContextType>;
   OrganizationEdge?: OrganizationEdgeResolvers<ContextType>;
   OrganizationId?: GraphQLScalarType;
+  OrganizationMember?: OrganizationMemberResolvers<ContextType>;
+  OrganizationMemberConnection?: OrganizationMemberConnectionResolvers<ContextType>;
   OrganizationMemberContact?: OrganizationMemberContactResolvers<ContextType>;
+  OrganizationMemberEdge?: OrganizationMemberEdgeResolvers<ContextType>;
   OrganizationRef?: OrganizationRefResolvers<ContextType>;
   PageInfo?: PageInfoResolvers<ContextType>;
   PlatformDeploymentRequest?: PlatformDeploymentRequestResolvers<ContextType>;

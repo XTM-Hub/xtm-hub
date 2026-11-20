@@ -1,16 +1,21 @@
 import { v4 as uuidv4 } from 'uuid';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { TestHelper } from '../../../../tests/helper/test.helper';
 import {
+  CAPABILITY_READ_ORGANIZATION_MEMBERS,
   contextSimpleUserSecondOrga,
   requestContextSimpleUserSecondOrga,
   TEST_ORGANIZATIONS,
 } from '../../../../tests/tests.const';
+import { ApiTokenScope } from '../../../__generated__/resolvers-types';
 import { requestContext } from '../../../context/request.context';
-import { OrganizationId } from '../../../model/kanel/public/Organization';
+import Organization, {
+  OrganizationId,
+} from '../../../model/kanel/public/Organization';
 import ServiceInstance from '../../../model/kanel/public/ServiceInstance';
-import { UserId } from '../../../model/kanel/public/User';
+import User, { UserId } from '../../../model/kanel/public/User';
 import { CAPABILITY_BYPASS } from '../../../portal.const';
+import { narrowUserToToken } from '../../api-token/api-token.auth';
 import { OrganizationDomain } from './organization.domain';
 
 describe('organizationsDomain', () => {
@@ -185,6 +190,274 @@ describe('organizationsDomain', () => {
       // When
       const organization =
         await OrganizationDomain.loadFirstProfessionalOrganizationBy({ id });
+
+      // Then
+      expect(organization).toBeUndefined();
+    });
+  });
+
+  describe('loadOrganizationWhoseMembersAreReadableBy', () => {
+    const createdUserIds: UserId[] = [];
+    const createdOrganizationIds: OrganizationId[] = [];
+    let organizationA: Organization;
+    let organizationB: Organization;
+    // Member of organization A and of its own personal space, in the database
+    let member: User;
+    let personalSpace: Organization;
+
+    const createOrganization = async (data?: Partial<Organization>) => {
+      const organization = await TestHelper.organization.create(data);
+      createdOrganizationIds.push(organization.id);
+      return organization;
+    };
+
+    beforeEach(async () => {
+      organizationA = await createOrganization();
+      organizationB = await createOrganization();
+      ({ user: member } = await TestHelper.user.insertInOrganization(
+        organizationA.id
+      ));
+      createdUserIds.push(member.id);
+      personalSpace = await createOrganization({
+        id: member.id as unknown as OrganizationId,
+        name: member.email,
+        personal_space: true,
+      });
+      await TestHelper.user_Organization.create({
+        user_id: member.id,
+        organization_id: personalSpace.id,
+      });
+    });
+
+    afterEach(async () => {
+      // Deleting the users cascades to their memberships
+      for (const id of createdUserIds.splice(0)) {
+        await TestHelper.user.delete({ id });
+      }
+      for (const id of createdOrganizationIds.splice(0)) {
+        await TestHelper.organization.delete({ id });
+      }
+    });
+
+    const organizations = () => ({
+      organizationA,
+      organizationB,
+      personalSpace,
+    });
+
+    it.each(['organizationA', 'organizationB', 'personalSpace'] as const)(
+      'should return %s to a BYPASS user',
+      async (key) => {
+        // Given
+        requestContext.set({
+          user: TestHelper.caller.build(
+            member,
+            [personalSpace, organizationA],
+            [CAPABILITY_BYPASS]
+          ),
+        });
+        const expected = organizations()[key];
+
+        // When
+        const organization =
+          await OrganizationDomain.loadOrganizationWhoseMembersAreReadableBy({
+            id: expected.id,
+          });
+
+        // Then
+        expect(organization).toMatchObject({
+          id: expected.id,
+          name: expected.name,
+          personal_space: expected.personal_space,
+        });
+      }
+    );
+
+    it.each(['organizationA', 'organizationB'] as const)(
+      'should return %s to a user with READ_ORGANIZATION_MEMBERS',
+      async (key) => {
+        // Given
+        requestContext.set({
+          user: TestHelper.caller.build(
+            member,
+            [personalSpace, organizationA],
+            [CAPABILITY_READ_ORGANIZATION_MEMBERS]
+          ),
+        });
+        const expected = organizations()[key];
+
+        // When
+        const organization =
+          await OrganizationDomain.loadOrganizationWhoseMembersAreReadableBy({
+            id: expected.id,
+          });
+
+        // Then
+        expect(organization).toMatchObject({
+          id: expected.id,
+          name: expected.name,
+          personal_space: false,
+        });
+      }
+    );
+
+    it('should not return their own personal space to a user with READ_ORGANIZATION_MEMBERS', async () => {
+      // Given
+      requestContext.set({
+        user: TestHelper.caller.build(
+          member,
+          [personalSpace, organizationA],
+          [CAPABILITY_READ_ORGANIZATION_MEMBERS]
+        ),
+      });
+
+      // When
+      const organization =
+        await OrganizationDomain.loadOrganizationWhoseMembersAreReadableBy({
+          id: personalSpace.id,
+        });
+
+      // Then
+      expect(organization).toBeUndefined();
+    });
+
+    it('should return their organization to a member without portal capability', async () => {
+      // Given
+      requestContext.set({
+        user: TestHelper.caller.build(member, [personalSpace, organizationA]),
+      });
+
+      // When
+      const organization =
+        await OrganizationDomain.loadOrganizationWhoseMembersAreReadableBy({
+          id: organizationA.id,
+        });
+
+      // Then
+      expect(organization).toMatchObject({
+        id: organizationA.id,
+        name: organizationA.name,
+        personal_space: false,
+      });
+    });
+
+    it.each(['organizationB', 'personalSpace'] as const)(
+      'should not return %s to a member of organization A without portal capability',
+      async (key) => {
+        // Given
+        requestContext.set({
+          user: TestHelper.caller.build(member, [personalSpace, organizationA]),
+        });
+
+        // When
+        const organization =
+          await OrganizationDomain.loadOrganizationWhoseMembersAreReadableBy({
+            id: organizations()[key].id,
+          });
+
+        // Then
+        expect(organization).toBeUndefined();
+      }
+    );
+
+    it('should not return an organization to a user who belongs to none', async () => {
+      // Given
+      const loner = await TestHelper.user.insert({
+        email: `loner-${uuidv4()}@filigran.io`,
+      });
+      createdUserIds.push(loner.id);
+      requestContext.set({ user: TestHelper.caller.build(loner, []) });
+
+      // When
+      const organization =
+        await OrganizationDomain.loadOrganizationWhoseMembersAreReadableBy({
+          id: organizationA.id,
+        });
+
+      // Then
+      expect(organization).toBeUndefined();
+    });
+
+    it('should return undefined for an unknown id', async () => {
+      // Given
+      requestContext.set({
+        user: TestHelper.caller.build(member, [personalSpace, organizationA]),
+      });
+
+      // When
+      const organization =
+        await OrganizationDomain.loadOrganizationWhoseMembersAreReadableBy({
+          id: uuidv4() as OrganizationId,
+        });
+
+      // Then
+      expect(organization).toBeUndefined();
+    });
+
+    const setCallerWithApiTokenOnOrganizationA = async () => {
+      await TestHelper.user_Organization.create({
+        user_id: member.id,
+        organization_id: organizationB.id,
+      });
+      requestContext.set({
+        user: narrowUserToToken(
+          TestHelper.caller.build(member, [
+            personalSpace,
+            organizationA,
+            organizationB,
+          ]),
+          { scope: ApiTokenScope.ReadWrite, organization_id: organizationA.id }
+        ),
+      });
+    };
+
+    it('should return the organization of the API token to a member of several organizations', async () => {
+      // Given
+      await setCallerWithApiTokenOnOrganizationA();
+
+      // When
+      const organization =
+        await OrganizationDomain.loadOrganizationWhoseMembersAreReadableBy({
+          id: organizationA.id,
+        });
+
+      // Then
+      expect(organization).toMatchObject({
+        id: organizationA.id,
+        name: organizationA.name,
+        personal_space: false,
+      });
+    });
+
+    it('should not return another organization of the user to an API token restricted to one', async () => {
+      // Given
+      await setCallerWithApiTokenOnOrganizationA();
+
+      // When
+      const organization =
+        await OrganizationDomain.loadOrganizationWhoseMembersAreReadableBy({
+          id: organizationB.id,
+        });
+
+      // Then
+      expect(organization).toBeUndefined();
+    });
+
+    it('should not return an organization the user was removed from since the session was written', async () => {
+      // Given
+      requestContext.set({
+        user: TestHelper.caller.build(member, [personalSpace, organizationA]),
+      });
+      await TestHelper.user_Organization.delete({
+        user_id: member.id,
+        organization_id: organizationA.id,
+      });
+
+      // When
+      const organization =
+        await OrganizationDomain.loadOrganizationWhoseMembersAreReadableBy({
+          id: organizationA.id,
+        });
 
       // Then
       expect(organization).toBeUndefined();

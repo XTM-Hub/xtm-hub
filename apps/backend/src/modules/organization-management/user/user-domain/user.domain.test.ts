@@ -1,7 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TestHelper } from '../../../../../tests/helper/test.helper';
 import {
+  CAPABILITY_READ_ORGANIZATION_MEMBERS,
   contextSimpleUserSecondOrga,
   requestContextAdminSecondOrga,
   // eslint-disable-next-line no-restricted-imports
@@ -10,7 +11,10 @@ import {
   TEST_ORGANIZATIONS,
 } from '../../../../../tests/tests.const';
 import {
+  ApiTokenScope,
   OrderingMode,
+  OrganizationCapability,
+  OrganizationMemberConnection,
   PlatformIdentifier,
   ServiceGroupName,
   UserAccountStatus,
@@ -18,11 +22,17 @@ import {
 } from '../../../../__generated__/resolvers-types';
 import { requestContext } from '../../../../context/request.context';
 import { DeploymentRequestId } from '../../../../model/kanel/public/DeploymentRequest';
+import Organization, {
+  OrganizationId,
+} from '../../../../model/kanel/public/Organization';
 import { ServiceGroupId } from '../../../../model/kanel/public/ServiceGroup';
-import User, { UserId } from '../../../../model/kanel/public/User';
-import { ROLE_ADMIN } from '../../../../portal.const';
+import User, { UserId, UserMutator } from '../../../../model/kanel/public/User';
+import UserOrganization from '../../../../model/kanel/public/UserOrganization';
+import { CAPABILITY_BYPASS, ROLE_ADMIN } from '../../../../portal.const';
+import { narrowUserToToken } from '../../../api-token/api-token.auth';
 import { TelemetryApp } from '../../../telemetry/telemetry.app';
 import { TelemetrySource } from '../../../telemetry/telemetry.const';
+import { UserOrganizationDomain } from '../user-organization/user-organization.domain';
 import { UserDomain } from './user.domain';
 
 //Issue with test
@@ -581,6 +591,503 @@ describe('users domain', () => {
 
       // Then
       expect(rows).toEqual([]);
+    });
+  });
+
+  describe('loadOrganizationMemberConnection', () => {
+    // Larger than any organization these tests create: every member fits on one page
+    const PAGE_SIZE = 100;
+    const createdUserIds: UserId[] = [];
+    const createdOrganizationIds: OrganizationId[] = [];
+    let organizationA: Organization;
+    let organizationB: Organization;
+    // Member of no organization, made BYPASS by the tests that need it
+    let bypassUser: User;
+
+    const createOrganization = async (data?: Partial<Organization>) => {
+      const organization = await TestHelper.organization.create(data);
+      createdOrganizationIds.push(organization.id);
+      return organization;
+    };
+
+    const addMember = async (
+      organization: Organization,
+      fields: UserMutator = {},
+      capabilities: OrganizationCapability[] = []
+    ) => {
+      const { user, userOrganization } =
+        await TestHelper.user.insertInOrganization(organization.id, fields);
+      createdUserIds.push(user.id);
+      await grantCapabilities(userOrganization, capabilities);
+      return { user, userOrganization };
+    };
+
+    const grantCapabilities = async (
+      userOrganization: UserOrganization,
+      capabilities: OrganizationCapability[]
+    ) => {
+      for (const name of capabilities) {
+        await TestHelper.user_OrganizationCapability.create({
+          user_organization_id: userOrganization.id,
+          name,
+        });
+      }
+    };
+
+    const setBypassCaller = () =>
+      requestContext.set({
+        user: TestHelper.caller.build(bypassUser, [], [CAPABILITY_BYPASS]),
+      });
+
+    const memberIds = ({ edges }: OrganizationMemberConnection) =>
+      edges.map(({ node }) => node.id);
+
+    beforeEach(async () => {
+      organizationA = await createOrganization();
+      organizationB = await createOrganization();
+      bypassUser = await TestHelper.user.insert({
+        email: `bypass-${uuidv4()}@admin-hub.test`,
+      });
+      createdUserIds.push(bypassUser.id);
+    });
+
+    afterEach(async () => {
+      // Deleting the users cascades to their memberships, capabilities and pending requests
+      for (const id of createdUserIds.splice(0)) {
+        await TestHelper.user.delete({ id });
+      }
+      for (const id of createdOrganizationIds.splice(0)) {
+        await TestHelper.organization.delete({ id });
+      }
+    });
+
+    describe('as a BYPASS user', () => {
+      it('should return the members of the organization only', async () => {
+        // Given
+        setBypassCaller();
+        const { user: firstMember } = await addMember(organizationA);
+        const { user: secondMember } = await addMember(organizationA);
+        await addMember(organizationB);
+
+        // When
+        const connection = await UserDomain.loadOrganizationMemberConnection(
+          organizationA.id,
+          { first: PAGE_SIZE }
+        );
+
+        // Then
+        expect(memberIds(connection).sort()).toEqual(
+          [firstMember.id, secondMember.id].sort()
+        );
+        expect(Number(connection.totalCount)).toBe(2);
+      });
+
+      it('should return invited, expired, waiting and disabled members but not the pending requests', async () => {
+        // Given
+        setBypassCaller();
+        const members = await Promise.all([
+          addMember(organizationA),
+          addMember(organizationA, { status: UserAccountStatus.Invited }),
+          addMember(organizationA, { status: UserAccountStatus.Expired }),
+          addMember(organizationA, { status: UserAccountStatus.Waiting }),
+          addMember(organizationA, { disabled: true }),
+        ]);
+        const pendingUser = await TestHelper.user.insertWithPendingOrganization(
+          { email: `pending-${uuidv4()}@admin-hub.test` },
+          organizationA.id
+        );
+        createdUserIds.push(pendingUser.id);
+
+        // When
+        const connection = await UserDomain.loadOrganizationMemberConnection(
+          organizationA.id,
+          { first: PAGE_SIZE }
+        );
+
+        // Then
+        const membersCounts =
+          await UserOrganizationDomain.countUsersInOrganizations([
+            organizationA.id,
+          ]);
+        expect(memberIds(connection).sort()).toEqual(
+          members.map(({ user }) => user.id).sort()
+        );
+        // A missing row fails here, showing the rows received
+        expect(membersCounts).toEqual([
+          { organization_id: organizationA.id, count: 5 },
+        ]);
+        expect(Number(connection.totalCount)).toBe(membersCounts[0]?.count);
+      });
+
+      it('should return the capabilities of the membership in this organization only', async () => {
+        // Given
+        setBypassCaller();
+        const { user } = await addMember(organizationA, {}, [
+          OrganizationCapability.ManageAccess,
+        ]);
+        const membershipB = await TestHelper.user_Organization.create({
+          user_id: user.id,
+          organization_id: organizationB.id,
+        });
+        await grantCapabilities(membershipB!, [
+          OrganizationCapability.AdministrateOrganization,
+          OrganizationCapability.ManageSubscription,
+        ]);
+
+        // When
+        const connection = await UserDomain.loadOrganizationMemberConnection(
+          organizationA.id,
+          { first: PAGE_SIZE }
+        );
+
+        // Then
+        expect(connection.edges).toHaveLength(1);
+        expect(connection.edges[0]!.node).toMatchObject({
+          id: user.id,
+          capabilities: [OrganizationCapability.ManageAccess],
+        });
+      });
+
+      it('should return an empty capability list to a member without capability', async () => {
+        // Given
+        setBypassCaller();
+        const { user } = await addMember(organizationA);
+
+        // When
+        const connection = await UserDomain.loadOrganizationMemberConnection(
+          organizationA.id,
+          { first: PAGE_SIZE }
+        );
+
+        // Then
+        expect(connection.edges).toHaveLength(1);
+        expect(connection.edges[0]!.node).toMatchObject({ id: user.id });
+        expect(connection.edges[0]!.node.capabilities).toEqual([]);
+      });
+
+      it('should return a capability stored twice once', async () => {
+        // Given
+        setBypassCaller();
+        await addMember(organizationA, {}, [
+          OrganizationCapability.ManageAccess,
+          OrganizationCapability.ManageAccess,
+          OrganizationCapability.ManageSubscription,
+        ]);
+
+        // When
+        const connection = await UserDomain.loadOrganizationMemberConnection(
+          organizationA.id,
+          { first: PAGE_SIZE }
+        );
+
+        // Then
+        expect([...connection.edges[0]!.node.capabilities].sort()).toEqual([
+          OrganizationCapability.ManageAccess,
+          OrganizationCapability.ManageSubscription,
+        ]);
+      });
+
+      it('should count each member once when members hold several capabilities', async () => {
+        // Given
+        setBypassCaller();
+        await addMember(organizationA, {}, [
+          OrganizationCapability.AdministrateOrganization,
+          OrganizationCapability.ManageAccess,
+          OrganizationCapability.ManageSubscription,
+        ]);
+        await addMember(organizationA, {}, [
+          OrganizationCapability.ManageAccess,
+          OrganizationCapability.ManagePlatformRegistration,
+        ]);
+        await addMember(organizationA);
+
+        // When
+        const connection = await UserDomain.loadOrganizationMemberConnection(
+          organizationA.id,
+          { first: PAGE_SIZE }
+        );
+
+        // Then
+        expect(connection.edges).toHaveLength(3);
+        expect(Number(connection.totalCount)).toBe(3);
+      });
+
+      it('should return the administrators first, then the members sorted by email', async () => {
+        // Given members added out of order, one without any capability
+        setBypassCaller();
+        const add = async (
+          prefix: string,
+          capabilities: OrganizationCapability[]
+        ) => {
+          const { user } = await addMember(
+            organizationA,
+            { email: `${prefix}.${uuidv4()}@admin-hub.test` },
+            capabilities
+          );
+          return user.id;
+        };
+        const zed = await add('zed', [
+          OrganizationCapability.AdministrateOrganization,
+        ]);
+        const amy = await add('amy', []);
+        const carl = await add('carl', [OrganizationCapability.ManageAccess]);
+        const bob = await add('bob', [
+          OrganizationCapability.ManageAccess,
+          OrganizationCapability.AdministrateOrganization,
+        ]);
+
+        // When
+        const connection = await UserDomain.loadOrganizationMemberConnection(
+          organizationA.id,
+          { first: PAGE_SIZE }
+        );
+
+        // Then
+        expect(memberIds(connection)).toEqual([bob, zed, amy, carl]);
+      });
+
+      it('should page through every member once, in the order of a single page', async () => {
+        // Given
+        setBypassCaller();
+        for (let index = 0; index < 5; index++) {
+          await addMember(
+            organizationA,
+            {},
+            index % 2 === 0
+              ? [OrganizationCapability.AdministrateOrganization]
+              : []
+          );
+        }
+        const singlePage = await UserDomain.loadOrganizationMemberConnection(
+          organizationA.id,
+          { first: PAGE_SIZE }
+        );
+
+        // When
+        const pages: OrganizationMemberConnection[] = [];
+        let after: string | null = null;
+        do {
+          const page: OrganizationMemberConnection =
+            await UserDomain.loadOrganizationMemberConnection(
+              organizationA.id,
+              { first: 2, after }
+            );
+          pages.push(page);
+          after = page.pageInfo.hasNextPage ? page.pageInfo.endCursor! : null;
+        } while (after && pages.length < 10);
+
+        // Then
+        const pagedIds = pages.flatMap(memberIds);
+        expect(pages.map(({ edges }) => edges.length)).toEqual([2, 2, 1]);
+        expect(pages.map(({ totalCount }) => Number(totalCount))).toEqual([
+          5, 5, 5,
+        ]);
+        expect(new Set(pagedIds).size).toBe(5);
+        expect(pagedIds).toEqual(memberIds(singlePage));
+      });
+
+      it('should search the email, the first name and the last name, ignoring case', async () => {
+        // Given
+        setBypassCaller();
+        const { user: byEmail } = await addMember(organizationA, {
+          email: `NEEDLE-${uuidv4()}@admin-hub.test`,
+        });
+        const { user: byFirstName } = await addMember(organizationA, {
+          first_name: 'NeEdLe',
+        });
+        const { user: byLastName } = await addMember(organizationA, {
+          last_name: 'Needleman',
+        });
+        await addMember(organizationA, {
+          first_name: 'Hay',
+          last_name: 'Stack',
+        });
+
+        // When
+        const connection = await UserDomain.loadOrganizationMemberConnection(
+          organizationA.id,
+          { first: PAGE_SIZE, searchTerm: 'needle' }
+        );
+
+        // Then
+        expect(memberIds(connection).sort()).toEqual(
+          [byEmail.id, byFirstName.id, byLastName.id].sort()
+        );
+        expect(Number(connection.totalCount)).toBe(3);
+      });
+
+      it('should not search the country', async () => {
+        // Given
+        setBypassCaller();
+        await addMember(organizationA, { country: 'Atlantis' });
+
+        // When
+        const connection = await UserDomain.loadOrganizationMemberConnection(
+          organizationA.id,
+          { first: PAGE_SIZE, searchTerm: 'atlantis' }
+        );
+
+        // Then
+        expect(connection.edges).toEqual([]);
+        expect(Number(connection.totalCount)).toBe(0);
+      });
+
+      it('should not return a member of another organization matching the search', async () => {
+        // Given
+        setBypassCaller();
+        await addMember(organizationA, { last_name: 'Smith' });
+        await addMember(organizationB, { last_name: 'Haystack' });
+
+        // When
+        const connection = await UserDomain.loadOrganizationMemberConnection(
+          organizationA.id,
+          { first: PAGE_SIZE, searchTerm: 'haystack' }
+        );
+
+        // Then
+        expect(connection.edges).toEqual([]);
+        expect(Number(connection.totalCount)).toBe(0);
+      });
+    });
+
+    describe('restricted to the organizations whose members the caller can read', () => {
+      it('should return the members of their organization to a member without portal capability, and none of another', async () => {
+        // Given
+        const { user: caller } = await addMember(organizationA);
+        const { user: colleague } = await addMember(organizationA);
+        await addMember(organizationB);
+        requestContext.set({
+          user: TestHelper.caller.build(caller, [organizationA]),
+        });
+
+        // When
+        const connectionA = await UserDomain.loadOrganizationMemberConnection(
+          organizationA.id,
+          { first: PAGE_SIZE }
+        );
+        const connectionB = await UserDomain.loadOrganizationMemberConnection(
+          organizationB.id,
+          { first: PAGE_SIZE }
+        );
+
+        // Then
+        expect(memberIds(connectionA).sort()).toEqual(
+          [caller.id, colleague.id].sort()
+        );
+        expect(connectionB.edges).toEqual([]);
+        expect(Number(connectionB.totalCount)).toBe(0);
+      });
+
+      it('should not return a member of another organization matching the search to a member without portal capability', async () => {
+        // Given
+        const { user: caller } = await addMember(organizationA);
+        await addMember(organizationB, { last_name: 'Haystack' });
+        requestContext.set({
+          user: TestHelper.caller.build(caller, [organizationA]),
+        });
+
+        // When
+        const connection = await UserDomain.loadOrganizationMemberConnection(
+          organizationB.id,
+          { first: PAGE_SIZE, searchTerm: 'haystack' }
+        );
+
+        // Then
+        expect(connection.edges).toEqual([]);
+        expect(Number(connection.totalCount)).toBe(0);
+      });
+
+      it('should not return the members of another organization of the user to an API token restricted to one', async () => {
+        // Given
+        const { user: caller } = await addMember(organizationA);
+        await TestHelper.user_Organization.create({
+          user_id: caller.id,
+          organization_id: organizationB.id,
+        });
+        await addMember(organizationB);
+        requestContext.set({
+          user: narrowUserToToken(
+            TestHelper.caller.build(caller, [organizationA, organizationB]),
+            {
+              scope: ApiTokenScope.ReadWrite,
+              organization_id: organizationA.id,
+            }
+          ),
+        });
+
+        // When
+        const connection = await UserDomain.loadOrganizationMemberConnection(
+          organizationB.id,
+          { first: PAGE_SIZE }
+        );
+
+        // Then
+        expect(connection.edges).toEqual([]);
+        expect(Number(connection.totalCount)).toBe(0);
+      });
+
+      it('should not return the members of an organization the user was removed from since the session was written', async () => {
+        // Given
+        const { user: caller } = await addMember(organizationA);
+        await addMember(organizationA);
+        requestContext.set({
+          user: TestHelper.caller.build(caller, [organizationA]),
+        });
+        await TestHelper.user_Organization.delete({
+          user_id: caller.id,
+          organization_id: organizationA.id,
+        });
+
+        // When
+        const connection = await UserDomain.loadOrganizationMemberConnection(
+          organizationA.id,
+          { first: PAGE_SIZE }
+        );
+
+        // Then
+        expect(connection.edges).toEqual([]);
+        expect(Number(connection.totalCount)).toBe(0);
+      });
+
+      it('should not return the member of a personal space to a user with READ_ORGANIZATION_MEMBERS, but to a BYPASS user', async () => {
+        // Given
+        const owner = await TestHelper.user.insert({
+          email: `owner-${uuidv4()}@admin-hub.test`,
+        });
+        createdUserIds.push(owner.id);
+        const personalSpace = await createOrganization({
+          id: owner.id as unknown as OrganizationId,
+          name: owner.email,
+          personal_space: true,
+        });
+        await TestHelper.user_Organization.create({
+          user_id: owner.id,
+          organization_id: personalSpace.id,
+        });
+        requestContext.set({
+          user: TestHelper.caller.build(
+            owner,
+            [personalSpace],
+            [CAPABILITY_READ_ORGANIZATION_MEMBERS]
+          ),
+        });
+
+        // When
+        const readerConnection =
+          await UserDomain.loadOrganizationMemberConnection(personalSpace.id, {
+            first: PAGE_SIZE,
+          });
+        setBypassCaller();
+        const bypassConnection =
+          await UserDomain.loadOrganizationMemberConnection(personalSpace.id, {
+            first: PAGE_SIZE,
+          });
+
+        // Then
+        expect(readerConnection.edges).toEqual([]);
+        expect(Number(readerConnection.totalCount)).toBe(0);
+        expect(memberIds(bypassConnection)).toEqual([owner.id]);
+      });
     });
   });
 });

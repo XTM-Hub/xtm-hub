@@ -1,20 +1,63 @@
 import { v4 as uuidv4 } from 'uuid';
-import { OrganizationInput } from '../../../__generated__/resolvers-types';
+import {
+  OrganizationInput,
+  OrganizationMemberConnection,
+  QueryOrganizationMembersArgs,
+} from '../../../__generated__/resolvers-types';
 import { requestContext } from '../../../context/request.context';
 import { OrganizationId } from '../../../model/kanel/public/Organization';
 import { dispatch } from '../../../pub';
 import { logApp } from '../../../utils/app-logger.util';
 import { ErrorCode, UnknownErrorCode } from '../../../utils/error/error.code';
+import { isUuid } from '../../../utils/uuid.util';
 import { PlatformConfigurationDomain } from '../../registration/platform-configuration/platform-configuration.domain';
 import { TelemetryApp } from '../../telemetry/telemetry.app';
 import { TelemetryHelper } from '../../telemetry/telemetry.helper';
+import { UserDomain } from '../user/user-domain/user.domain';
 import {
   assertOrganizationHasNoPendingUsers,
   organizationWouldLoseLastMember,
 } from './organization-membership.util';
 import { OrganizationDomain } from './organization.domain';
 
+// Each page is one query: the size a caller asks for is bounded so it cannot make it list every member at once.
+const ORGANIZATION_MEMBERS_MAX_PAGE_SIZE = 100;
+
 export const OrganizationApp = {
+  /**
+   * An organization the caller may not read the members of answers ORGANIZATION_NOT_FOUND, exactly as an unknown or
+   * malformed id, so that a refused id cannot be told from a missing one.
+   */
+  async loadOrganizationMembers(
+    organizationId: OrganizationId,
+    {
+      first,
+      after,
+      searchTerm,
+    }: Omit<QueryOrganizationMembersArgs, 'organizationId'>
+  ): Promise<OrganizationMemberConnection> {
+    // 0 is a valid page size: no member, but the totalCount
+    if (first < 0) {
+      throw new Error(ErrorCode.InvalidPageSize);
+    }
+    // A malformed id would make PostgreSQL fail on the uuid cast: refuse it before any query
+    if (!isUuid(organizationId)) {
+      throw new Error(ErrorCode.OrganizationNotFound);
+    }
+    const organization =
+      await OrganizationDomain.loadOrganizationWhoseMembersAreReadableBy({
+        id: organizationId,
+      });
+    if (!organization) {
+      throw new Error(ErrorCode.OrganizationNotFound);
+    }
+    return UserDomain.loadOrganizationMemberConnection(organization.id, {
+      first: Math.min(first, ORGANIZATION_MEMBERS_MAX_PAGE_SIZE),
+      after,
+      searchTerm,
+    });
+  },
+
   async updateOrganization(id: OrganizationId, input: OrganizationInput) {
     const updatedOrganization = await OrganizationDomain.updateOrganizationBy(
       { id },

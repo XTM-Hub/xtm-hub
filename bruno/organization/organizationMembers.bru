@@ -1,0 +1,67 @@
+meta {
+  name: organizationMembers
+  type: graphql
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/graphql-api
+  body: graphql
+  auth: inherit
+}
+
+headers {
+  cookie: {{cookie}}
+}
+
+body:graphql {
+  query OrganizationMembers(
+    $organizationId: OrganizationId!
+    $first: Int!
+    $after: ID
+    $searchTerm: String
+  ) {
+    organizationMembers(
+      organizationId: $organizationId
+      first: $first
+      after: $after
+      searchTerm: $searchTerm
+    ) {
+      totalCount
+      edges {
+        cursor
+        node {
+          id
+          email
+          first_name
+          last_name
+          capabilities
+        }
+      }
+      pageInfo {
+        startCursor
+        endCursor
+        hasNextPage
+        hasPreviousPage
+      }
+    }
+  }
+}
+
+body:graphql:vars {
+  {
+    "organizationId": "",
+    "first": 25,
+    "after": null,
+    "searchTerm": null
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+
+docs {
+  Lists the members of an organization, administrators first, then by email: invited, expired, waiting and disabled users included, pending requests excluded. Set organizationId to the id of the organization, raw or global. first is brought down to 100, 0 returns no member but the totalCount and a negative one is refused with INVALID_PAGE_SIZE; pass the endCursor of a page as after to get the next one. searchTerm matches the email, the first name or the last name, ignoring case. A logged-in user reads the members of the organizations they belong to (a personal space excepted); BYPASS reads those of any organization; READ_ORGANIZATION_MEMBERS those of any organization except a personal space. Any other organization answers ORGANIZATION_NOT_FOUND, as an unknown one.
+}

@@ -2,7 +2,10 @@ import { v4 as uuidv4 } from 'uuid';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { TestHelper } from '../../../../tests/helper/test.helper';
 import { TEST_ORGANIZATIONS } from '../../../../tests/tests.const';
-import { OrganizationId } from '../../../model/kanel/public/Organization';
+import { OrganizationMemberConnection } from '../../../__generated__/resolvers-types';
+import Organization, {
+  OrganizationId,
+} from '../../../model/kanel/public/Organization';
 import { ErrorCode } from '../../../utils/error/error.code';
 import { TelemetryApp } from '../../telemetry/telemetry.app';
 import { TelemetrySource } from '../../telemetry/telemetry.const';
@@ -13,6 +16,7 @@ import { UserOrganizationPendingDomain } from '../user/user-pending/user-organiz
 import { UserProvisioningDomain } from '../user/user-provisioning/user-provisioning.domain';
 import { UserHelper } from '../user/user.helper';
 import { OrganizationApp } from './organization.app';
+import { OrganizationDomain } from './organization.domain';
 import { OrganizationHelper } from './organization.helper';
 
 describe('organizationApp', () => {
@@ -284,6 +288,140 @@ describe('organizationApp', () => {
       expect(
         await TestHelper.organization.load({ id: personalSpaceId })
       ).toBeUndefined();
+    });
+  });
+
+  describe('loadOrganizationMembers', () => {
+    const ORGANIZATION: Organization = {
+      id: 'c0a8e6f2-4d1b-4e3a-9f6c-2b7d8e9a1c34' as OrganizationId,
+      name: 'Readable organization',
+      domains: null,
+      personal_space: false,
+    };
+    const AFTER = btoa('2');
+    const SEARCH_TERM = 'needle';
+    const CONNECTION: OrganizationMemberConnection = {
+      edges: [],
+      pageInfo: {
+        startCursor: null,
+        endCursor: null,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      },
+      totalCount: 0,
+    };
+
+    const mockReadableOrganization = (organization: Organization | undefined) =>
+      vi
+        .spyOn(OrganizationDomain, 'loadOrganizationWhoseMembersAreReadableBy')
+        .mockResolvedValue(organization);
+    const mockMemberConnection = () =>
+      vi
+        .spyOn(UserDomain, 'loadOrganizationMemberConnection')
+        .mockResolvedValue(CONNECTION);
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('should refuse an organization id that is not a UUID as an unknown organization, without reading the database', async () => {
+      // Given
+      const readableOrganizationSpy = mockReadableOrganization(ORGANIZATION);
+      const memberConnectionSpy = mockMemberConnection();
+
+      // When
+      const call = OrganizationApp.loadOrganizationMembers(
+        'not-a-uuid' as OrganizationId,
+        { first: 20 }
+      );
+
+      // Then
+      await expect(call).rejects.toThrow(ErrorCode.OrganizationNotFound);
+      expect(readableOrganizationSpy).not.toHaveBeenCalled();
+      expect(memberConnectionSpy).not.toHaveBeenCalled();
+    });
+
+    it('should refuse an organization whose members the caller may not read as an unknown organization', async () => {
+      // Given
+      const readableOrganizationSpy = mockReadableOrganization(undefined);
+      const memberConnectionSpy = mockMemberConnection();
+
+      // When
+      const call = OrganizationApp.loadOrganizationMembers(ORGANIZATION.id, {
+        first: 20,
+      });
+
+      // Then
+      await expect(call).rejects.toThrow(ErrorCode.OrganizationNotFound);
+      expect(readableOrganizationSpy).toHaveBeenCalledExactlyOnceWith({
+        id: ORGANIZATION.id,
+      });
+      expect(memberConnectionSpy).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      [1000, 100],
+      [101, 100],
+      [100, 100],
+      [20, 20],
+      [1, 1],
+      [0, 0],
+    ])(
+      'should load a page of %i members as a page of %i',
+      async (first, expectedFirst) => {
+        // Given
+        mockReadableOrganization(ORGANIZATION);
+        const memberConnectionSpy = mockMemberConnection();
+
+        // When
+        await OrganizationApp.loadOrganizationMembers(ORGANIZATION.id, {
+          first,
+        });
+
+        // Then
+        expect(memberConnectionSpy).toHaveBeenCalledExactlyOnceWith(
+          ORGANIZATION.id,
+          expect.objectContaining({ first: expectedFirst })
+        );
+      }
+    );
+
+    it.each([-1, -5])(
+      'should refuse a page of %i members before reading the database',
+      async (first) => {
+        // Given
+        const readableOrganizationSpy = mockReadableOrganization(ORGANIZATION);
+        const memberConnectionSpy = mockMemberConnection();
+
+        // When
+        const call = OrganizationApp.loadOrganizationMembers(ORGANIZATION.id, {
+          first,
+        });
+
+        // Then
+        await expect(call).rejects.toThrow(ErrorCode.InvalidPageSize);
+        expect(readableOrganizationSpy).not.toHaveBeenCalled();
+        expect(memberConnectionSpy).not.toHaveBeenCalled();
+      }
+    );
+
+    it('should load the members of the readable organization with the cursor and the search term', async () => {
+      // Given
+      mockReadableOrganization(ORGANIZATION);
+      const memberConnectionSpy = mockMemberConnection();
+
+      // When
+      const connection = await OrganizationApp.loadOrganizationMembers(
+        ORGANIZATION.id,
+        { first: 20, after: AFTER, searchTerm: SEARCH_TERM }
+      );
+
+      // Then
+      expect(memberConnectionSpy).toHaveBeenCalledExactlyOnceWith(
+        ORGANIZATION.id,
+        { first: 20, after: AFTER, searchTerm: SEARCH_TERM }
+      );
+      expect(connection).toEqual(CONNECTION);
     });
   });
 });
