@@ -8,16 +8,13 @@ import {
 } from '../../../__generated__/resolvers-types';
 import CapabilityPortal from '../../../model/kanel/public/CapabilityPortal';
 import { OrganizationId } from '../../../model/kanel/public/Organization';
-import { ServiceInstanceId } from '../../../model/kanel/public/ServiceInstance';
 import { SubscriptionMutator } from '../../../model/kanel/public/Subscription';
-import { UserServiceId } from '../../../model/kanel/public/UserService';
 import { UserLoadUserBy } from '../../../model/user';
 import { ApiTokenReach } from '../../../security/api-token-reach';
 import { ServiceCapabilityArgs } from '../../../security/directive-graphql/validator/service-capability.validator';
 import { ErrorCode } from '../../../utils/error/error.code';
 import { UserOrganizationDomain } from '../../organization-management/user/user-organization/user-organization.domain';
 import { SubscriptionDomain } from '../../subscription/subscription.domain';
-import { UserServiceDomain } from '../../user-service/user-service.domain';
 import { UserOrganizationCapabilityDomain } from '../user-organization-capability/user-organization-capability.domain';
 
 export const AuthHelper = {
@@ -81,23 +78,14 @@ export const AuthHelper = {
             WHEN "Service_Capability".id IS NOT NULL THEN
               "Service_Capability".name
             ELSE NULL
-        dbRaw('bool_or("userService".id IS NOT NULL) AS is_member'),
           END
         ) FILTER (WHERE "Generic_Service_Capability".id IS NOT NULL OR "Service_Capability".id IS NOT NULL) AS capabilities`
         ),
+        dbRaw('bool_or("userService".id IS NOT NULL) AS is_member'),
       ])
       .where('ServiceInstance.id', '=', dbRaw('?', [serviceId]))
       .groupBy(['ServiceInstance.id', 'subscription.id'])
       .first();
-  },
-
-  checkUserServiceIsInServiceInstance: async (
-    userServiceId: UserServiceId,
-    serviceInstanceId: ServiceInstanceId
-  ) => {
-    const userService =
-      await UserServiceDomain.loadUserServiceById(userServiceId);
-    return userService.subscription.service_instance_id === serviceInstanceId;
   },
 
   userHasBypassCapability: (user: UserLoadUserBy): boolean => {
