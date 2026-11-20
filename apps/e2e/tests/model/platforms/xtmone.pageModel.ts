@@ -1,6 +1,7 @@
 import { Page } from '@playwright/test';
 import { expect } from '../../fixtures/baseFixtures';
 import { XtmHubRegistrationTab } from '../register.pageModel';
+import { getPlatformUrl } from './xtm-platform.pageModel';
 
 // A real XTM One, started by xtm-hub-dev/docker-compose-ci-xtmone.yml. Unlike OpenCTI and OpenAEV, XTM One registers
 // itself from its Settings > Platform page, in a popup on XTM Hub that posts the platform token back to it.
@@ -14,23 +15,19 @@ export const XTMONE = {
   disconnectedToast: 'This platform is no longer registered with the XTM Hub',
 } as const;
 
-export const isXtmOneRunning = () => !!process.env[XTMONE.urlVariable];
-
 // XTM One's URL, as the browser of the tests reaches it.
-export const getXtmOneUrl = (): string => {
-  const url = process.env[XTMONE.urlVariable];
-  if (!url) {
-    throw new Error(
-      `${XTMONE.name} is not running: ${XTMONE.urlVariable} is not set`
-    );
-  }
-  return url;
-};
+const getXtmOneUrl = () => getPlatformUrl(XTMONE);
 
 export type XtmOneRegistrationStatus = 'Registered' | 'Not registered';
 
 export default class XtmOnePage {
   constructor(private page: Page) {}
+
+  // XTM One also copies each toast into an aria-live region, prefixed with "Notification": only the exact text is the
+  // toast itself.
+  getToast(text: string) {
+    return this.page.getByText(text, { exact: true });
+  }
 
   // A fresh XTM One proposes its organization setup, in a dialog over the whole app, to its first administrator:
   // answer it over the API so it never hides the Settings page.

@@ -1,23 +1,19 @@
 import { Page } from '@playwright/test';
 import { expect, test } from '../../fixtures/baseFixtures';
 import { getLastConnectivityCheck } from '../../db-utils/platform-configuration.helper';
-import { waitForReactIdle } from '../../model/common';
-import { HomePage } from '../../model/home.pageModel';
-import LoginPage from '../../model/login.pageModel';
 import { XtmHubRegistrationTab } from '../../model/register.pageModel';
-import XtmOnePage, {
-  getXtmOneUrl,
-  isXtmOneRunning,
-  XTMONE,
-} from '../../model/platforms/xtmone.pageModel';
+import { getPlatformUrl } from '../../model/platforms/xtm-platform.pageModel';
+import XtmOnePage, { XTMONE } from '../../model/platforms/xtmone.pageModel';
+import {
+  expectPlatformListedInXtmHub,
+  signInToXtmHub,
+  skipWithoutPlatform,
+} from '../platform-registration';
 
 // Signs in to XTM Hub and to XTM One, in the same browser context, and opens XTM One's Settings > Platform, where its
 // XTM Hub card shows "Not registered".
 const signInToXtmHubAndXtmOne = async (page: Page) => {
-  // The XTM Hub popups XTM One opens are signed in by this login.
-  const loginPage = new LoginPage(page);
-  await loginPage.navigateToAndLogin();
-  await page.waitForURL('/app');
+  await signInToXtmHub(page);
 
   const xtmOnePage = new XtmOnePage(page);
   await xtmOnePage.login();
@@ -25,14 +21,10 @@ const signInToXtmHubAndXtmOne = async (page: Page) => {
   await xtmOnePage.resetRegistration();
   return xtmOnePage;
 };
-
 // XTM One registers itself on XTM Hub the way a user does: from its settings it opens XTM Hub in a popup, and XTM Hub
 // posts the platform token back to it. XTM One has no one-click deploy yet.
 test.describe('XTM One registration', () => {
-  test.skip(
-    !isXtmOneRunning(),
-    'Needs a running XTM One: see xtm-hub-dev/docker-compose-ci-xtmone.yml'
-  );
+  skipWithoutPlatform(XTMONE);
 
   const displayedName = 'E2E XTM One';
   let xtmOnePage: XtmOnePage;
@@ -49,21 +41,14 @@ test.describe('XTM One registration', () => {
       await expect(xtmHubTab.getConnectionHeading(XTMONE.name)).toBeVisible();
       await xtmHubTab.connect(displayedName);
 
-      await expect(page.getByText(XTMONE.connectedToast)).toBeVisible();
+      await expect(xtmOnePage.getToast(XTMONE.connectedToast)).toBeVisible();
       await expect(
         xtmOnePage.getRegistrationStatus('Registered')
       ).toBeVisible();
     });
 
     await test.step('XTM One is listed in XTM Hub', async () => {
-      const homePage = new HomePage(page);
-      await homePage.navigateTo();
-      await waitForReactIdle(page);
-      await page.getByRole('button', { name: XTMONE.name }).click();
-      await page.getByRole('button', { name: 'My product' }).click();
-      await expect(
-        page.getByRole('link', { name: displayedName, exact: true })
-      ).toBeVisible();
+      await expectPlatformListedInXtmHub(page, XTMONE.name, displayedName);
     });
 
     await test.step('unregister from XTM One', async () => {
@@ -79,7 +64,7 @@ test.describe('XTM One registration', () => {
       ).toBeVisible();
       await xtmHubTab.confirmDisconnection();
 
-      await expect(page.getByText(XTMONE.disconnectedToast)).toBeVisible();
+      await expect(xtmOnePage.getToast(XTMONE.disconnectedToast)).toBeVisible();
       await expect(
         xtmOnePage.getRegistrationStatus('Not registered')
       ).toBeVisible();
@@ -101,7 +86,7 @@ test.describe('XTM One registration', () => {
 
   test('should check its connectivity with XTM Hub each time it is asked to', async () => {
     await xtmOnePage.registerOnXtmHub(displayedName);
-    const xtmOneUrl = getXtmOneUrl();
+    const xtmOneUrl = getPlatformUrl(XTMONE);
 
     // Two checks in a row: each one must reach XTM Hub, not only the first.
     for (const check of [1, 2]) {
