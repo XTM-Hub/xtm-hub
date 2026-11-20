@@ -2907,9 +2907,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@filigran/design-system@npm:1.5.3":
-  version: 1.5.3
-  resolution: "@filigran/design-system@npm:1.5.3"
+"@filigran/design-system@npm:1.9.0":
+  version: 1.9.0
+  resolution: "@filigran/design-system@npm:1.9.0"
   dependencies:
     "@dnd-kit/core": "npm:^6.3.1"
     "@dnd-kit/sortable": "npm:^10.0.0"
@@ -2949,7 +2949,7 @@ __metadata:
     react-dom: ^19.0.0
   bin:
     filigran-design-system: bin/install-skills.mjs
-  checksum: 10/f80168603c4acb743411e777a5a6270ce4cb464b3dbe771cdbd38012c3de8f49e2018d4987121a4388337c28a3112de53d8fc5a502df75d46413e495fbab0720
+  checksum: 10/f22a06f520e40782f2a398266ea22303de9d32f23c75a021b264d90c27e0812ce2e941240029a68c62088915fe7afbe042bb66d6a1c7ea13a668f035238237f3
   languageName: node
   linkType: hard
 
@@ -9643,7 +9643,7 @@ __metadata:
     "@dnd-kit/modifiers": "npm:9.0.0"
     "@dnd-kit/sortable": "npm:10.0.0"
     "@dnd-kit/utilities": "npm:3.2.2"
-    "@filigran/design-system": "npm:1.5.3"
+    "@filigran/design-system": "npm:1.9.0"
     "@filigran/icon": "npm:0.24.3"
     "@graphql-codegen/cli": "catalog:"
     "@graphql-codegen/typescript": "catalog:"
