@@ -162,7 +162,7 @@ describe('createPlatformTokenResolver', () => {
       );
     });
 
-    it('should throw an organization not found error when the deployment request organization no longer exists', async () => {
+    it('should throw an invalid platform token error when the deployment request organization no longer exists', async () => {
       // Given
       vi.spyOn(
         DeploymentRequestDomain,
@@ -181,9 +181,7 @@ describe('createPlatformTokenResolver', () => {
       const call = runResolver(resolver, context);
 
       // Then
-      await expect(call).rejects.toMatchObject({
-        message: ErrorCode.OrganizationNotFound,
-      });
+      await expect(call).rejects.toMatchObject(INVALID_PLATFORM_TOKEN_ERROR);
     });
   });
 });

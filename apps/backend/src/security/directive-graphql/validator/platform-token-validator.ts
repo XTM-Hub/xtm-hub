@@ -2,13 +2,11 @@ import express from 'express';
 import { GraphQLFieldResolver } from 'graphql';
 import { requestContext } from '../../../context/request.context';
 import { PortalContext } from '../../../model/portal-context';
-import {
-  loadPlatformCredentialMatch,
-  validateExistsPlatformAndToken,
-} from '../../../modules/security-management/token/platform-token.util';
+import { validateExistsPlatformAndToken } from '../../../modules/security-management/token/platform-token.util';
 import { ErrorCode } from '../../../utils/error/error.code';
 import { ForbiddenAccess } from '../../../utils/error/error.util';
 import { buildPlatformUser } from '../../machine-user';
+import { loadPlatformCredentialMatch } from '../../platform-credential';
 
 export {
   extractPlatformId,
@@ -68,10 +66,6 @@ export const createPlatformTokenResolver = (
     const organization = await loadOrganizationFromPlatformIdAndTokenHeaders(
       portalContext.req
     );
-    if (!organization) {
-      throw new Error(ErrorCode.OrganizationNotFound);
-    }
-
     const platformUser = buildPlatformUser(organization);
 
     // If token is valid, override context with system user

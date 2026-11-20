@@ -1,19 +1,21 @@
 import { PortalCapability } from '../../__generated__/resolvers-types';
-import type DeploymentRequest from '../../model/kanel/public/DeploymentRequest';
-import type Organization from '../../model/kanel/public/Organization';
 import { OrganizationId } from '../../model/kanel/public/Organization';
 import { UserId } from '../../model/kanel/public/User';
 import { UserLoadUserBy } from '../../model/user';
 import { UserDomain } from '../../modules/organization-management/user/user-domain/user.domain';
-import type { FullPlatformConfiguration } from '../../modules/registration/platform-configuration/platform-configuration.domain';
 import { AuthHelper } from '../../modules/security-management/capability/auth.helper';
 import {
-  loadPlatformCredentialMatch,
   PLATFORM_ID_HEADER,
   PLATFORM_TOKEN_HEADER,
 } from '../../modules/security-management/token/platform-token.util';
 import { PLATFORM_USER_UUID, SYSTEM_USER_UUID } from '../../portal.const';
 import { logApp } from '../../utils/app-logger.util';
+import {
+  isAcceptedPlatformMatch,
+  loadPlatformCredentialMatch,
+  PlatformCredential,
+  PlatformCredentialMatch,
+} from '../platform-credential';
 import { isValidSystemToken, SYSTEM_TOKEN_HEADER } from '../system-token';
 
 // Structural on purpose: the SSE context is only { user, req }, not a full PortalContext
@@ -26,18 +28,10 @@ export type PrincipalBuilder = (
   context: GuardedContext
 ) => Principal | Promise<Principal>;
 
-interface PlatformPrincipalBase {
+export type PlatformPrincipal = {
   kind: 'platform';
   actorId: UserId;
-  platformId: string;
-  organization: Organization;
-}
-
-export type PlatformPrincipal = PlatformPrincipalBase &
-  (
-    | { credential: 'registration'; registration: FullPlatformConfiguration }
-    | { credential: 'deploymentRequest'; deploymentRequest: DeploymentRequest }
-  );
+} & PlatformCredentialMatch;
 
 export type Principal =
   | { kind: 'anonymous' }
@@ -65,13 +59,21 @@ const grantedSystemScopes = (
   requestedScopes: readonly PortalCapability[]
 ): ReadonlySet<PortalCapability> => new Set(requestedScopes);
 
+const headerValue = (
+  context: GuardedContext,
+  name: string
+): string | undefined => {
+  const value = context.req?.headers?.[name];
+  return typeof value === 'string' ? value : undefined;
+};
+
 // A system operation is judged on its token alone, never on the session
 export const buildSystemPrincipal = (
   context: GuardedContext,
   systemScopes: readonly PortalCapability[]
 ): Principal => {
-  const token = context.req?.headers?.[SYSTEM_TOKEN_HEADER];
-  if (typeof token !== 'string' || !isValidSystemToken(token)) {
+  const token = headerValue(context, SYSTEM_TOKEN_HEADER);
+  if (!token || !isValidSystemToken(token)) {
     logApp.warn('Invalid system token attempt');
     return ANONYMOUS_PRINCIPAL;
   }
@@ -82,50 +84,60 @@ export const buildSystemPrincipal = (
   };
 };
 
-// A platform operation is judged on the platform headers alone, never on the session
-export const buildPlatformPrincipal = async (
-  context: GuardedContext
-): Promise<Principal> => {
-  const platformId = context.req?.headers?.[PLATFORM_ID_HEADER];
-  const token = context.req?.headers?.[PLATFORM_TOKEN_HEADER];
-  if (
-    typeof platformId !== 'string' ||
-    typeof token !== 'string' ||
-    !platformId ||
-    !token
-  ) {
-    logApp.warn('Missing platform credentials');
-    return ANONYMOUS_PRINCIPAL;
-  }
+export type PlatformCallerOf<Credential extends PlatformCredential> = Extract<
+  PlatformPrincipal,
+  { credential: Credential }
+>;
 
-  const match = await loadPlatformCredentialMatch({
-    platform_id: platformId,
-    token,
-  });
-  const organization = match?.organization;
-  if (!match || !organization) {
-    logApp.warn('Invalid platform credentials attempt');
-    return ANONYMOUS_PRINCIPAL;
-  }
+const isPlatformCaller = <Credential extends PlatformCredential>(
+  platformCaller: PlatformPrincipal | undefined,
+  credential: Credential
+): platformCaller is PlatformCallerOf<Credential> =>
+  platformCaller?.credential === credential;
 
-  const base = {
-    kind: 'platform',
-    actorId: PLATFORM_USER_UUID,
-    platformId: match.platformId,
-    organization,
-  } as const;
-  return match.credential === 'registration'
-    ? {
-        ...base,
-        credential: 'registration',
-        registration: match.registration,
-      }
-    : {
-        ...base,
-        credential: 'deploymentRequest',
-        deploymentRequest: match.deploymentRequest,
-      };
+// Unreachable behind the platformCallerGuard of the same credential
+export const requirePlatformCaller = <Credential extends PlatformCredential>(
+  context: { platformCaller?: PlatformPrincipal },
+  credential: Credential
+): PlatformCallerOf<Credential> => {
+  const { platformCaller } = context;
+  if (!isPlatformCaller(platformCaller, credential)) {
+    throw new Error(`A ${credential} platform caller is required`);
+  }
+  return platformCaller;
 };
+
+// A platform operation is judged on the platform headers alone, never on the session.
+// The lookup is shared with @platform_token and also matches an inactive registration or a deployment request in any
+// status: only the credential this operation requires, in a status it accepts, makes a platform caller
+export const buildPlatformPrincipal =
+  (credential: PlatformCredential): PrincipalBuilder =>
+  async (context) => {
+    const platformId = headerValue(context, PLATFORM_ID_HEADER);
+    const token = headerValue(context, PLATFORM_TOKEN_HEADER);
+    if (!platformId || !token) {
+      return ANONYMOUS_PRINCIPAL;
+    }
+
+    const match = await loadPlatformCredentialMatch({
+      platform_id: platformId,
+      token,
+    });
+    if (
+      !match ||
+      match.credential !== credential ||
+      !isAcceptedPlatformMatch(match)
+    ) {
+      logApp.warn('Rejected platform credentials');
+      return ANONYMOUS_PRINCIPAL;
+    }
+
+    return {
+      kind: 'platform',
+      actorId: PLATFORM_USER_UUID,
+      ...match,
+    };
+  };
 
 export const buildPrincipal = async (
   context: GuardedContext

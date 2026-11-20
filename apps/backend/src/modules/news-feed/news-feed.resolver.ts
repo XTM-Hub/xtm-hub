@@ -10,8 +10,7 @@ import { PortalContext } from '../../model/portal-context';
 import { Guarded } from '../../security/guarded/guarded.decorator';
 import { platformCallerGuard } from '../../security/guarded/guards/caller.guard';
 import { bypassOnlyGuard } from '../../security/guarded/guards/portal.guard';
-import type { PlatformPrincipal } from '../../security/guarded/principal';
-import { ErrorCode } from '../../utils/error/error.code';
+import { requirePlatformCaller } from '../../security/guarded/principal';
 import { mapToGraphQLError } from '../../utils/error/error.mapping';
 import { createRelayIdScalar } from '../../utils/scalar.util';
 import { NewsFeedApp } from './news-feed.app';
@@ -33,16 +32,12 @@ class NewsFeedQueries {
 }
 
 class NewsFeedMutations {
-  @Guarded(platformCallerGuard())
+  @Guarded(platformCallerGuard({ credential: 'registration' }))
   static readonly consumeProvisionedNewsFeedItems: NonNullable<
     MutationResolvers['consumeProvisionedNewsFeedItems']
   > = async (_, __, context) => {
     try {
-      // Set by platformCallerGuard, typed optional because other guards do not set it
-      const platformCaller = context.platformCaller as PlatformPrincipal;
-      if (platformCaller.credential === 'deploymentRequest') {
-        throw new Error(ErrorCode.PlatformNotRegistered);
-      }
+      const platformCaller = requirePlatformCaller(context, 'registration');
       return await NewsFeedApp.consumeProvisionedNewsFeedItems({
         registration: platformCaller.registration,
       });

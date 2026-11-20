@@ -10,13 +10,16 @@ import {
   GRAPHQL_RESOLVE_INFO,
   TEST_ORGANIZATIONS,
 } from '../../../tests/tests.const';
-import { NewsFeedItemMetadataKey } from '../../__generated__/resolvers-types';
+import {
+  DeploymentRequestHubStatus,
+  NewsFeedItemMetadataKey,
+  PlatformConfigurationStatus,
+} from '../../__generated__/resolvers-types';
 import type DeploymentRequest from '../../model/kanel/public/DeploymentRequest';
 import { NewsFeedItemId } from '../../model/kanel/public/NewsFeedItem';
 import { UserLoadUserBy } from '../../model/user';
 import createSchema from '../../server/graphql-schema';
 import {
-  BadRequestErrorCode,
   ErrorCode,
   UnauthenticatedErrorCode,
   UnknownErrorCode,
@@ -116,7 +119,7 @@ describe('consume provisioned news feed items GraphQL mutation', () => {
     expect(NewsFeedApp.consumeProvisionedNewsFeedItems).not.toHaveBeenCalled();
   });
 
-  it('should refuse with PLATFORM_NOT_REGISTERED and not consume anything when the caller only holds a deployment request token', async () => {
+  it('should refuse with UNAUTHENTICATED and not consume anything when the caller only holds a deployment request token', async () => {
     // Given
     const platformId = uuidv4();
     const token = uuidv4();
@@ -128,6 +131,7 @@ describe('consume provisioned news feed items GraphQL mutation', () => {
       platform_id: platformId,
       platform_token: token,
       organization_requester_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+      hub_status: DeploymentRequestHubStatus.Active,
     } as DeploymentRequest);
     const context = makeMockContext({
       'xtm-hub-platform-id': platformId,
@@ -144,9 +148,40 @@ describe('consume provisioned news feed items GraphQL mutation', () => {
 
     // Then
     await expect(call).rejects.toMatchObject({
-      message: BadRequestErrorCode.PlatformNotRegistered,
+      message: UnauthenticatedErrorCode.Unauthenticated,
+      data: { http_status: 401 },
     });
     expect(NewsFeedApp.consumeProvisionedNewsFeedItems).not.toHaveBeenCalled();
+  });
+
+  it('should refuse with UNAUTHENTICATED and not consume anything when the registration of the caller is inactive', async () => {
+    // Given
+    const inactivePlatformCaller = await TestHelper.platformCaller.create({
+      platformConfiguration: { status: PlatformConfigurationStatus.Inactive },
+    });
+    vi.spyOn(NewsFeedApp, 'consumeProvisionedNewsFeedItems');
+    const context = makeMockContext(inactivePlatformCaller.headers);
+
+    try {
+      // When
+      const call = newsFeedResolver.Mutation!.consumeProvisionedNewsFeedItems!(
+        {},
+        {},
+        context,
+        GRAPHQL_RESOLVE_INFO
+      );
+
+      // Then
+      await expect(call).rejects.toMatchObject({
+        message: UnauthenticatedErrorCode.Unauthenticated,
+        data: { http_status: 401 },
+      });
+      expect(
+        NewsFeedApp.consumeProvisionedNewsFeedItems
+      ).not.toHaveBeenCalled();
+    } finally {
+      await inactivePlatformCaller.cleanup();
+    }
   });
 
   it('should throw a mapped GraphQL error with UnknownError when the app throws', async () => {

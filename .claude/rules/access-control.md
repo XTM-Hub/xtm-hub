@@ -78,7 +78,7 @@ export default resolvers;
 | `@Guarded(portalCapabilityGuard([PortalCapability.X, …]))` | A user holding one of the portal capabilities; `BYPASS` always. The list cannot be empty | `UNAUTHENTICATED` (anonymous or disabled user), `FORBIDDEN_ACCESS` (capability missing) |
 | `@Guarded(systemCallerGuard([PortalCapability.X, …]))` | A machine with a valid `x-xtm-hub-token` holding every listed scope. The list cannot be empty | `UNAUTHENTICATED` (no or invalid token, session ignored), `FORBIDDEN_ACCESS` (scope missing) |
 | `@Guarded(orgGuard({ organization: selectedOrganization, capabilities: [OrganizationCapability.X, …] }))` | A member of the selected organization holding one of the capabilities (`ADMINISTRATE_ORGANIZATION` implies them all, `[]` requires the membership only); `BYPASS` always | `UNAUTHENTICATED` (anonymous or disabled user), `NOT_FOUND` (not a member), `MISSING_CAPABILITY_ON_ORGANIZATION` (capability missing) |
-| `@Guarded(platformCallerGuard())` | A platform sending valid `xtm-hub-platform-id` and `xtm-hub-platform-token` headers: a registration with a subscribed organization (active or inactive), or a deployment request token | `UNAUTHENTICATED` (missing, invalid or unknown credentials, session ignored) |
+| `@Guarded(platformCallerGuard({ credential: 'registration' \| 'deploymentRequest' }))` | A platform sending valid `xtm-hub-platform-id` and `xtm-hub-platform-token` headers for the required credential: an `Active` registration with a subscribed organization, or a deployment request token in the `Active`, `Pending` or `Provisioning` hub status | `UNAUTHENTICATED` (missing, invalid or unknown credentials, other credential, inactive registration or other hub status, session ignored) |
 
 A guard returns `allow()` or `deny(code)`. An exception from the guard, or anything else it returns, is a denial.
 An exception while building the principal (such as a database error) is not: it propagates and the resolver is not
@@ -124,24 +124,24 @@ same `NOT_FOUND` as for a row that does not exist.
 - Until scoped tokens, the system caller holds exactly the declared scopes, and so does the user the resolver gets
   (`context.user`, `requireUser()`).
 
-`platformCallerGuard()` is for an operation only a platform calls, with its platform headers, such as
-`consumeProvisionedNewsFeedItems`. The guard also admits a deployment request token and an inactive registration.
-`credential` only rules out the deployment request tokens: an operation that must refuse inactive registrations reads
-`registration.platformConfiguration.status`.
+`platformCallerGuard({ credential })` is for an operation only a platform calls, with its platform headers, such as
+`consumeProvisionedNewsFeedItems`. The credential is required, with no default.
 
-- The resolver gets a platform `context.user` bound to the matched organization, and reads `context.platformCaller`,
-  typed optional, so it casts it.
+- `registration`: a registered platform. The registration must be `Active` and have a subscribed organization.
+- `deploymentRequest`: a platform being deployed. The deployment request must be in a hub status
+  `PLATFORM_ACCEPTED_HUB_STATUSES` lists (`src/security/platform-credential.ts`).
+- A caller with the other credential, or whose status is not accepted, is anonymous: `UNAUTHENTICATED`, and the
+  resolver is not called. A call without headers is just unauthenticated and logs nothing.
+- The resolver gets a platform `context.user` bound to the matched organization. It reads the caller with
+  `requirePlatformCaller(context, credential)`, which returns the principal narrowed to that credential.
 - The credential lookup is not scoped by tenant: never use `platformCaller` to pick tenant data.
 
 ```ts
-@Guarded(platformCallerGuard())
+@Guarded(platformCallerGuard({ credential: 'registration' }))
 static readonly consumeProvisionedNewsFeedItems: NonNullable<MutationResolvers['consumeProvisionedNewsFeedItems']> =
   (_, __, context) => {
-    const caller = context.platformCaller as PlatformPrincipal;
-    if (caller.credential === 'deploymentRequest') {
-      throw new Error(ErrorCode.PlatformNotRegistered);
-    }
-    return NewsFeedApp.consumeProvisionedNewsFeedItems({ registration: caller.registration });
+    const { registration } = requirePlatformCaller(context, 'registration');
+    return NewsFeedApp.consumeProvisionedNewsFeedItems({ registration });
   };
 ```
 

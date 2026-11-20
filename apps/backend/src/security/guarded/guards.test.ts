@@ -25,7 +25,7 @@ import {
   portalCapabilityGuard,
 } from './guards/portal.guard';
 import { publicAccess } from './guards/public-access.guard';
-import { buildPlatformPrincipal, buildPrincipal, Principal } from './principal';
+import { buildPrincipal, Principal } from './principal';
 
 const USER_ID = 'user-id' as UserId;
 const ORGANIZATION_ID = 'organization-id' as OrganizationId;
@@ -563,20 +563,12 @@ describe('platformCallerGuard', () => {
     },
   ])('should answer $label', async ({ principal, expected }) => {
     // Given
-    const guard = platformCallerGuard();
+    const guard = platformCallerGuard({ credential: 'registration' });
 
     // When
     const result = await guard.check(principal);
 
     // Then
     expect(result).toEqual(expected);
-  });
-
-  it('should build its principal from the platform headers', () => {
-    // Given
-    const guard = platformCallerGuard();
-
-    // Then
-    expect(guard.principalFrom).toBe(buildPlatformPrincipal);
   });
 });

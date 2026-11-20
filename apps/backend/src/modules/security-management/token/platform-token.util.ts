@@ -1,14 +1,9 @@
 import express from 'express';
 import { PlatformConfigurationStatus } from '../../../__generated__/resolvers-types';
 import type DeploymentRequest from '../../../model/kanel/public/DeploymentRequest';
-import type Organization from '../../../model/kanel/public/Organization';
 import { logApp } from '../../../utils/app-logger.util';
 import { DeploymentRequestDomain } from '../../deployment/deployment.domain';
-import { OrganizationDomain } from '../../organization-management/organization/organization.domain';
-import {
-  FullPlatformConfiguration,
-  PlatformConfigurationDomain,
-} from '../../registration/platform-configuration/platform-configuration.domain';
+import { PlatformConfigurationDomain } from '../../registration/platform-configuration/platform-configuration.domain';
 
 export const PLATFORM_TOKEN_HEADER = 'xtm-hub-platform-token';
 export const PLATFORM_ID_HEADER = 'xtm-hub-platform-id';
@@ -78,63 +73,4 @@ export const validateAndGetRequestedPlatformToken = async ({
   }
 
   return isValid ? deploymentRequest : undefined;
-};
-
-export type PlatformCredentialMatch =
-  | {
-      platformId: string;
-      credential: 'registration';
-      registration: FullPlatformConfiguration;
-      organization: Organization;
-    }
-  | {
-      platformId: string;
-      credential: 'deploymentRequest';
-      deploymentRequest: DeploymentRequest;
-      organization: Organization | undefined;
-    };
-
-export const loadPlatformCredentialMatch = async ({
-  platform_id,
-  token,
-}: {
-  platform_id: string;
-  token: string;
-}): Promise<PlatformCredentialMatch | undefined> => {
-  const registration =
-    await PlatformConfigurationDomain.loadResolvedConfigurationByPlatformAndToken(
-      { platform_id, token }
-    );
-  if (registration) {
-    const { platformConfiguration } = registration;
-    const organization =
-      await OrganizationDomain.loadOrganizationSubscribedToServiceInstance(
-        platformConfiguration.service_instance_id
-      );
-    if (organization) {
-      return {
-        platformId: platformConfiguration.platform_id,
-        credential: 'registration',
-        registration,
-        organization,
-      };
-    }
-  }
-
-  const deploymentRequest = await validateAndGetRequestedPlatformToken({
-    platform_id,
-    token,
-  });
-  if (deploymentRequest && deploymentRequest.platform_id !== null) {
-    return {
-      platformId: deploymentRequest.platform_id,
-      credential: 'deploymentRequest',
-      deploymentRequest,
-      organization: await OrganizationDomain.loadOrganizationBy({
-        id: deploymentRequest.organization_requester_id,
-      }),
-    };
-  }
-
-  return undefined;
 };

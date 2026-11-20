@@ -1,16 +1,12 @@
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { describe, expect, it, vi } from 'vitest';
-import { TestHelper } from '../../../../tests/helper/test.helper';
-import { SERVICES, TEST_ORGANIZATIONS } from '../../../../tests/tests.const';
 import { PlatformConfigurationStatus } from '../../../__generated__/resolvers-types';
 import DeploymentRequest from '../../../model/kanel/public/DeploymentRequest';
 import PlatformConfiguration from '../../../model/kanel/public/PlatformConfiguration';
 import { DeploymentRequestDomain } from '../../../modules/deployment/deployment.domain';
-import { ErrorCode } from '../../../utils/error/error.code';
 import { PlatformConfigurationDomain } from '../../registration/platform-configuration/platform-configuration.domain';
 import {
-  loadPlatformCredentialMatch,
   PLATFORM_ID_HEADER,
   PLATFORM_TOKEN_HEADER,
   validateActivePlatformToken,
@@ -178,68 +174,5 @@ describe('platform Token Validation', () => {
 
       expect(result).toBe(undefined);
     });
-  });
-});
-
-describe('loadPlatformCredentialMatch', () => {
-  it('should match the resolved registration and its subscribed organization', async () => {
-    // Given
-    const caller = await TestHelper.platformCaller.create();
-
-    try {
-      // When
-      const match = await loadPlatformCredentialMatch({
-        platform_id: caller.platformId,
-        token: caller.token,
-      });
-
-      // Then
-      expect(match).toMatchObject({
-        credential: 'registration',
-        platformId: caller.platformId,
-        registration: {
-          platformConfiguration: {
-            platform_id: caller.platformId,
-            token: caller.token,
-            service_instance_id: caller.serviceInstanceId,
-          },
-          platformIdentifier: 'opencti',
-        },
-        organization: { id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID },
-      });
-    } finally {
-      await caller.cleanup();
-    }
-  });
-
-  it('should throw when the service definition of the registration has no mapped platform', async () => {
-    // Given
-    const caller = await TestHelper.platformCaller.create({
-      serviceDefinitionId: SERVICES.DEFINITIONS.OPENCTI_INTEGRATIONS.ID,
-    });
-
-    try {
-      // When
-      const call = loadPlatformCredentialMatch({
-        platform_id: caller.platformId,
-        token: caller.token,
-      });
-
-      // Then
-      await expect(call).rejects.toThrow(ErrorCode.InvalidPlatformIdentifier);
-    } finally {
-      await caller.cleanup();
-    }
-  });
-
-  it('should match nothing when the credentials are unknown', async () => {
-    // When
-    const match = await loadPlatformCredentialMatch({
-      platform_id: uuidv4(),
-      token: uuidv4(),
-    });
-
-    // Then
-    expect(match).toBeUndefined();
   });
 });

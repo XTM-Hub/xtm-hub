@@ -7,6 +7,7 @@ import {
   TEST_SYSTEM_TOKEN,
 } from '../../../tests/tests.const';
 import {
+  DeploymentRequestHubStatus,
   OrganizationCapability,
   PlatformConfigurationStatus,
   PortalCapability,
@@ -48,7 +49,9 @@ import {
   buildPrincipal,
   buildSystemPrincipal,
   GuardedContext,
+  PlatformPrincipal,
   Principal,
+  requirePlatformCaller,
 } from './principal';
 
 const RESOLVED_VALUE = 'resolved';
@@ -116,8 +119,12 @@ class TestResolvers {
   @Guarded(systemCallerGuard([PortalCapability.GenerateManifest]))
   static readonly systemOnly: TestResolver = (...args) => resolve(...args);
 
-  @Guarded(platformCallerGuard())
+  @Guarded(platformCallerGuard({ credential: 'registration' }))
   static readonly platformOnly: TestResolver = (...args) => resolve(...args);
+
+  @Guarded(platformCallerGuard({ credential: 'deploymentRequest' }))
+  static readonly deploymentRequestOnly: TestResolver = (...args) =>
+    resolve(...args);
 
   @Guarded(failingPrincipalGuard)
   static readonly failingPrincipal: TestResolver = (...args) =>
@@ -184,9 +191,9 @@ const DEPLOYMENT_REQUEST = {
   platform_id: PLATFORM_ID,
   platform_token: PLATFORM_TOKEN,
   organization_requester_id: PLATFORM_ORGANIZATION.id,
+  hub_status: DeploymentRequestHubStatus.Pending,
 } as unknown as DeploymentRequest;
-const MISSING_CREDENTIALS_LOG = 'Missing platform credentials';
-const INVALID_CREDENTIALS_LOG = 'Invalid platform credentials attempt';
+const REJECTED_CREDENTIALS_LOG = 'Rejected platform credentials';
 
 const platformHeaders = (
   platformId: string = PLATFORM_ID,
@@ -201,11 +208,17 @@ const withPlatformHeaders = (
   user?: UserLoadUserBy
 ): GuardedContext => ({ user, req: { headers } });
 
-const givenRegistration = (organization: Organization | null) => {
+const givenRegistration = (
+  organization: Organization | null,
+  status: PlatformConfigurationStatus = PlatformConfigurationStatus.Active
+) => {
   vi.spyOn(
     PlatformConfigurationDomain,
     'loadResolvedConfigurationByPlatformAndToken'
-  ).mockResolvedValue(REGISTRATION);
+  ).mockResolvedValue({
+    ...REGISTRATION,
+    platformConfiguration: { ...REGISTRATION.platformConfiguration, status },
+  });
   return vi
     .spyOn(OrganizationDomain, 'loadOrganizationSubscribedToServiceInstance')
     .mockResolvedValue(organization);
@@ -219,11 +232,14 @@ const givenNoRegistration = () =>
     )
     .mockResolvedValue(undefined);
 
-const givenDeploymentRequest = (organization: Organization | undefined) => {
+const givenDeploymentRequest = (
+  organization: Organization,
+  hubStatus: DeploymentRequestHubStatus = DEPLOYMENT_REQUEST.hub_status
+) => {
   vi.spyOn(
     DeploymentRequestDomain,
     'loadDeploymentRequestBy'
-  ).mockResolvedValue(DEPLOYMENT_REQUEST);
+  ).mockResolvedValue({ ...DEPLOYMENT_REQUEST, hub_status: hubStatus });
   return vi
     .spyOn(OrganizationDomain, 'loadOrganizationBy')
     .mockResolvedValue(organization);
@@ -460,7 +476,7 @@ describe('buildPlatformPrincipal', () => {
       const context = withPlatformHeaders(platformHeaders(), user);
 
       // When
-      const principal = await buildPlatformPrincipal(context);
+      const principal = await buildPlatformPrincipal('registration')(context);
 
       // Then
       expect(principal).toEqual({
@@ -486,7 +502,7 @@ describe('buildPlatformPrincipal', () => {
     );
 
     // When
-    const principal = await buildPlatformPrincipal(context);
+    const principal = await buildPlatformPrincipal('registration')(context);
 
     // Then
     expect(principal).toMatchObject({
@@ -495,13 +511,13 @@ describe('buildPlatformPrincipal', () => {
     });
   });
 
-  it('should build a platform caller from the deployment request when no registration matches', async () => {
+  it('should build a platform caller from the deployment request when the deployment request credential is required and no registration matches', async () => {
     // Given
     givenNoRegistration();
     givenDeploymentRequest(PLATFORM_ORGANIZATION);
 
     // When
-    const principal = await buildPlatformPrincipal(
+    const principal = await buildPlatformPrincipal('deploymentRequest')(
       withPlatformHeaders(platformHeaders())
     );
 
@@ -516,13 +532,13 @@ describe('buildPlatformPrincipal', () => {
     });
   });
 
-  it('should fall back to the deployment request when the registration has no subscribed organization', async () => {
+  it('should fall back to the deployment request when the registration has no subscribed organization and the deployment request credential is required', async () => {
     // Given
     givenRegistration(null);
     givenDeploymentRequest(PLATFORM_ORGANIZATION);
 
     // When
-    const principal = await buildPlatformPrincipal(
+    const principal = await buildPlatformPrincipal('deploymentRequest')(
       withPlatformHeaders(platformHeaders())
     );
 
@@ -533,35 +549,112 @@ describe('buildPlatformPrincipal', () => {
     });
   });
 
-  it('should build a platform caller from a registration that is not active', async () => {
+  it.each([
+    DeploymentRequestHubStatus.Active,
+    DeploymentRequestHubStatus.Pending,
+    DeploymentRequestHubStatus.Provisioning,
+  ])(
+    'should build a platform caller from a deployment request in the %s status when the deployment request credential is required',
+    async (hubStatus) => {
+      // Given
+      givenNoRegistration();
+      givenDeploymentRequest(PLATFORM_ORGANIZATION, hubStatus);
+
+      // When
+      const principal = await buildPlatformPrincipal('deploymentRequest')(
+        withPlatformHeaders(platformHeaders())
+      );
+
+      // Then
+      expect(principal).toMatchObject({
+        kind: 'platform',
+        credential: 'deploymentRequest',
+        deploymentRequest: { hub_status: hubStatus },
+      });
+    }
+  );
+
+  it.each([
+    DeploymentRequestHubStatus.Cancelled,
+    DeploymentRequestHubStatus.Expired,
+    DeploymentRequestHubStatus.Failed,
+    DeploymentRequestHubStatus.Queued,
+  ])(
+    'should build an anonymous principal and warn without the token when the deployment request is in the %s status',
+    async (hubStatus) => {
+      // Given
+      const logWarn = vi
+        .spyOn(logApp, 'warn')
+        .mockImplementation(() => undefined);
+      givenNoRegistration();
+      givenDeploymentRequest(PLATFORM_ORGANIZATION, hubStatus);
+
+      // When
+      const principal = await buildPlatformPrincipal('deploymentRequest')(
+        withPlatformHeaders(platformHeaders())
+      );
+
+      // Then
+      expect(principal).toEqual({ kind: 'anonymous' });
+      expect(logWarn).toHaveBeenCalledExactlyOnceWith(REJECTED_CREDENTIALS_LOG);
+      expect(JSON.stringify(logWarn.mock.calls)).not.toContain(PLATFORM_TOKEN);
+    }
+  );
+
+  it('should build an anonymous principal and warn when the registration credential is required and only a deployment request matches', async () => {
     // Given
-    const inactive = {
-      ...REGISTRATION,
-      platformConfiguration: {
-        ...REGISTRATION.platformConfiguration,
-        status: PlatformConfigurationStatus.Inactive,
-      },
-    };
-    vi.spyOn(
-      PlatformConfigurationDomain,
-      'loadResolvedConfigurationByPlatformAndToken'
-    ).mockResolvedValue(inactive);
-    vi.spyOn(
-      OrganizationDomain,
-      'loadOrganizationSubscribedToServiceInstance'
-    ).mockResolvedValue(PLATFORM_ORGANIZATION);
+    const logWarn = vi
+      .spyOn(logApp, 'warn')
+      .mockImplementation(() => undefined);
+    givenNoRegistration();
+    givenDeploymentRequest(PLATFORM_ORGANIZATION);
 
     // When
-    const principal = await buildPlatformPrincipal(
+    const principal = await buildPlatformPrincipal('registration')(
       withPlatformHeaders(platformHeaders())
     );
 
     // Then
-    expect(principal).toMatchObject({
-      kind: 'platform',
-      credential: 'registration',
-      registration: inactive,
-    });
+    expect(principal).toEqual({ kind: 'anonymous' });
+    expect(logWarn).toHaveBeenCalledExactlyOnceWith(REJECTED_CREDENTIALS_LOG);
+  });
+
+  it('should build an anonymous principal and warn when the deployment request credential is required and a registration matches', async () => {
+    // Given
+    const logWarn = vi
+      .spyOn(logApp, 'warn')
+      .mockImplementation(() => undefined);
+    givenRegistration(PLATFORM_ORGANIZATION);
+
+    // When
+    const principal = await buildPlatformPrincipal('deploymentRequest')(
+      withPlatformHeaders(platformHeaders())
+    );
+
+    // Then
+    expect(principal).toEqual({ kind: 'anonymous' });
+    expect(logWarn).toHaveBeenCalledExactlyOnceWith(REJECTED_CREDENTIALS_LOG);
+  });
+
+  it('should build an anonymous principal and warn without the token when the registration is not active', async () => {
+    // Given
+    const logWarn = vi
+      .spyOn(logApp, 'warn')
+      .mockImplementation(() => undefined);
+    givenRegistration(
+      PLATFORM_ORGANIZATION,
+      PlatformConfigurationStatus.Inactive
+    );
+
+    // When
+    const principal = await buildPlatformPrincipal('registration')(
+      withPlatformHeaders(platformHeaders())
+    );
+
+    // Then
+    expect(principal).toEqual({ kind: 'anonymous' });
+    expect(logWarn).toHaveBeenCalledExactlyOnceWith(REJECTED_CREDENTIALS_LOG);
+    expect(JSON.stringify(logWarn.mock.calls)).not.toContain(PLATFORM_TOKEN);
   });
 
   it.each([
@@ -583,7 +676,7 @@ describe('buildPlatformPrincipal', () => {
       headers: { ...platformHeaders(), [PLATFORM_ID_HEADER]: [PLATFORM_ID] },
     },
   ])(
-    'should build an anonymous principal without any lookup and warn when $label',
+    'should build an anonymous principal without any lookup and without warning when $label',
     async ({ headers }) => {
       // Given
       const logWarn = vi
@@ -599,13 +692,13 @@ describe('buildPlatformPrincipal', () => {
       );
 
       // When
-      const principal = await buildPlatformPrincipal(
+      const principal = await buildPlatformPrincipal('registration')(
         withPlatformHeaders(headers)
       );
 
       // Then
       expect(principal).toEqual({ kind: 'anonymous' });
-      expect(logWarn).toHaveBeenCalledExactlyOnceWith(MISSING_CREDENTIALS_LOG);
+      expect(logWarn).not.toHaveBeenCalled();
       expect(registrationLookup).not.toHaveBeenCalled();
       expect(deploymentRequestLookup).not.toHaveBeenCalled();
     }
@@ -620,7 +713,7 @@ describe('buildPlatformPrincipal', () => {
     );
 
     // When
-    const principal = await buildPlatformPrincipal(context);
+    const principal = await buildPlatformPrincipal('registration')(context);
 
     // Then
     expect(principal).toEqual({ kind: 'anonymous' });
@@ -635,7 +728,7 @@ describe('buildPlatformPrincipal', () => {
     );
 
     // When
-    const principal = await buildPlatformPrincipal(context);
+    const principal = await buildPlatformPrincipal('registration')(context);
 
     // Then
     expect(principal).toEqual({ kind: 'anonymous' });
@@ -657,13 +750,6 @@ describe('buildPlatformPrincipal', () => {
         givenNoDeploymentRequest();
       },
     },
-    {
-      label: 'the organization of the deployment request is gone',
-      given: () => {
-        givenNoRegistration();
-        givenDeploymentRequest(undefined);
-      },
-    },
   ])(
     'should build an anonymous principal and warn without the token when $label',
     async ({ given }) => {
@@ -674,13 +760,13 @@ describe('buildPlatformPrincipal', () => {
       given();
 
       // When
-      const principal = await buildPlatformPrincipal(
+      const principal = await buildPlatformPrincipal('registration')(
         withPlatformHeaders(platformHeaders())
       );
 
       // Then
       expect(principal).toEqual({ kind: 'anonymous' });
-      expect(logWarn).toHaveBeenCalledWith(INVALID_CREDENTIALS_LOG);
+      expect(logWarn).toHaveBeenCalledWith(REJECTED_CREDENTIALS_LOG);
       expect(JSON.stringify(logWarn.mock.calls)).not.toContain(PLATFORM_TOKEN);
     }
   );
@@ -694,7 +780,9 @@ describe('buildPlatformPrincipal', () => {
     ).mockRejectedValue(failure);
 
     // When
-    const call = buildPlatformPrincipal(withPlatformHeaders(platformHeaders()));
+    const call = buildPlatformPrincipal('registration')(
+      withPlatformHeaders(platformHeaders())
+    );
 
     // Then
     await expect(call).rejects.toBe(failure);
@@ -827,6 +915,81 @@ describe('@Guarded decorator', () => {
       expect(resolve).not.toHaveBeenCalled();
     }
   );
+
+  it.each([
+    {
+      label: 'a deployment request token on a registration-only resolver',
+      resolver: () => TestResolvers.platformOnly,
+      given: () => {
+        givenNoRegistration();
+        givenDeploymentRequest(PLATFORM_ORGANIZATION);
+      },
+    },
+    {
+      label: 'a registration token on a deployment-request-only resolver',
+      resolver: () => TestResolvers.deploymentRequestOnly,
+      given: () => givenRegistration(PLATFORM_ORGANIZATION),
+    },
+    {
+      label: 'an inactive registration on a registration-only resolver',
+      resolver: () => TestResolvers.platformOnly,
+      given: () =>
+        givenRegistration(
+          PLATFORM_ORGANIZATION,
+          PlatformConfigurationStatus.Inactive
+        ),
+    },
+    {
+      label:
+        'a cancelled deployment request on a deployment-request-only resolver',
+      resolver: () => TestResolvers.deploymentRequestOnly,
+      given: () => {
+        givenNoRegistration();
+        givenDeploymentRequest(
+          PLATFORM_ORGANIZATION,
+          DeploymentRequestHubStatus.Cancelled
+        );
+      },
+    },
+  ])(
+    'should refuse with UNAUTHENTICATED and not call the resolver when it gets $label',
+    async ({ resolver, given }) => {
+      // Given
+      vi.spyOn(logApp, 'warn').mockImplementation(() => undefined);
+      given();
+      const context = withPlatformHeaders(platformHeaders());
+
+      // When
+      const call = resolver()(PARENT, ARGS, context, INFO);
+
+      // Then
+      await expect(call).rejects.toMatchObject({
+        message: UnauthenticatedErrorCode.Unauthenticated,
+        extensions: { code: UnauthenticatedErrorCode.Unauthenticated },
+      });
+      expect(resolve).not.toHaveBeenCalled();
+    }
+  );
+
+  it('should call a deployment-request-only resolver with the deployment request platform caller when the deployment request is accepted', async () => {
+    // Given
+    givenNoRegistration();
+    givenDeploymentRequest(PLATFORM_ORGANIZATION);
+    const context = withPlatformHeaders(platformHeaders());
+
+    // When
+    await TestResolvers.deploymentRequestOnly(PARENT, ARGS, context, INFO);
+
+    // Then
+    expect(resolve).toHaveBeenCalledOnce();
+    expect(resolve.mock.calls[0]?.[2]).toMatchObject({
+      platformCaller: {
+        kind: 'platform',
+        credential: 'deploymentRequest',
+        deploymentRequest: DEPLOYMENT_REQUEST,
+      },
+    });
+  });
 
   it('should not give the platform caller to the resolver of a system caller', async () => {
     // Given
@@ -1118,4 +1281,45 @@ describe('@Public decorator', () => {
       INFO
     );
   });
+});
+
+describe('requirePlatformCaller', () => {
+  const registrationCaller: PlatformPrincipal = {
+    kind: 'platform',
+    actorId: PLATFORM_USER_UUID,
+    platformId: PLATFORM_ID,
+    organization: PLATFORM_ORGANIZATION,
+    credential: 'registration',
+    registration: REGISTRATION,
+  };
+
+  it('should return the platform caller when it holds the required credential', () => {
+    // When
+    const caller = requirePlatformCaller(
+      { platformCaller: registrationCaller },
+      'registration'
+    );
+
+    // Then
+    expect(caller).toBe(registrationCaller);
+    expect(caller.registration).toBe(REGISTRATION);
+  });
+
+  it.each([
+    { label: 'no platform caller', context: {}, credential: 'registration' },
+    {
+      label: 'a platform caller holding another credential',
+      context: { platformCaller: registrationCaller },
+      credential: 'deploymentRequest',
+    },
+  ] as const)(
+    'should throw when the context has $label',
+    ({ context, credential }) => {
+      // When
+      const call = () => requirePlatformCaller(context, credential);
+
+      // Then
+      expect(call).toThrow(`A ${credential} platform caller is required`);
+    }
+  );
 });
