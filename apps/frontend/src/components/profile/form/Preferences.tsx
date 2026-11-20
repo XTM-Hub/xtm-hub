@@ -1,21 +1,23 @@
 'use client';
 
-import { MeEditUserMutation } from '@/components/me/me.graphql';
+import { setCurrentUser } from '@/components/me/current-user-query';
 import { SettingsContext } from '@/components/settings/EnvPortalContext';
 import { SelectField } from '@/components/ui/SelectField';
 import { useTranslate } from '@/hooks/use-translate';
 import { Locale, locales, publicLocales } from '@/i18n/config';
 import { setUserLocale } from '@/i18n/locale';
+import { portalGraphqlClient } from '@/lib/graphql-client';
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from '@filigran/design-system';
+import { useMeEditMutation } from '@graphql/generated';
+import { useQueryClient } from '@tanstack/react-query';
 import { useLocale } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { useContext } from 'react';
-import { useMutation } from 'react-relay';
 
 export const ProfileFormPreferences = () => {
   const t = useTranslate();
@@ -23,12 +25,20 @@ export const ProfileFormPreferences = () => {
   const isDevelopmentEnvSetting = settings?.environment === 'development';
   const locale = useLocale();
   const { theme, setTheme } = useTheme();
-  const [commitEditMeUserMutation] = useMutation(MeEditUserMutation);
+  const queryClient = useQueryClient();
+  const { mutate: editMeUser } = useMeEditMutation(portalGraphqlClient, {
+    onSuccess: ({ editMeUser: user }) => setCurrentUser(queryClient, user),
+  });
   const availableLocales = isDevelopmentEnvSetting ? locales : publicLocales;
 
   const onLocaleChange = (value: string) => {
     void setUserLocale(value as Locale);
-    commitEditMeUserMutation({ variables: { selected_language: value } });
+    editMeUser({
+      first_name: null,
+      last_name: null,
+      country: null,
+      selected_language: value,
+    });
   };
 
   const currentTheme = theme ?? 'dark';
