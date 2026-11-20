@@ -230,6 +230,7 @@ export const ServiceSlugOrgaForm = ({
           <Paper
             as="section"
             elevation={3}
+            className="flex flex-col gap-2"
             padding={16}
             title={t('OrganizationInServiceAction.SelectCapa')}>
             <p className="content-compact italic">
