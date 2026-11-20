@@ -21,9 +21,11 @@ import { UserOrganizationCapabilityDomain } from '../user-organization-capabilit
 
 export const AuthHelper = {
   loadCapabilitiesByServiceId: async (
-    user: UserLoadUserBy,
+    user: Pick<UserLoadUserBy, 'id' | 'selected_organization_id'>,
     serviceId: string
-  ): Promise<{ capabilities: string[] } | undefined> => {
+  ): Promise<
+    { capabilities: string[] | null; is_member: boolean } | undefined
+  > => {
     const userId = user.id;
     const organizationId = user.selected_organization_id;
     return db<ServiceInstance>('ServiceInstance')
@@ -78,6 +80,7 @@ export const AuthHelper = {
             WHEN "Service_Capability".id IS NOT NULL THEN
               "Service_Capability".name
             ELSE NULL
+        dbRaw('bool_or("userService".id IS NOT NULL) AS is_member'),
           END
         ) FILTER (WHERE "Generic_Service_Capability".id IS NOT NULL OR "Service_Capability".id IS NOT NULL) AS capabilities`
         ),

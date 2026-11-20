@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { expect } from 'vitest';
 import { db } from '../../knexfile';
+import { GenericServiceCapabilityId } from '../../src/model/kanel/public/GenericServiceCapability';
 import { OrganizationId } from '../../src/model/kanel/public/Organization';
 import RolePortal, {
   RolePortalId,
@@ -14,6 +15,7 @@ import SSOGroupRolePortal, {
   SSOGroupRolePortalRolePortal,
   SSOGroupRolePortalSSOGroup,
 } from '../../src/model/kanel/public/SSOGroupRolePortal';
+import { SubscriptionId } from '../../src/model/kanel/public/Subscription';
 import User, { UserId, UserMutator } from '../../src/model/kanel/public/User';
 import UserOrganization, {
   UserOrganizationInitializer,
@@ -36,6 +38,7 @@ import UserServiceCapability, {
   UserServiceCapabilityId,
   UserServiceCapabilityMutator,
 } from '../../src/model/kanel/public/UserServiceCapability';
+import { GenericServiceCapabilityIds } from '../../src/modules/security-management/service-capability/generic-service-capability.const';
 import { TEST_ORGANIZATIONS } from '../tests.const';
 
 export const TestUserHelper = {
@@ -57,6 +60,35 @@ export const TestUserHelper = {
           ...data,
         })
         .returning('*');
+      return userService;
+    },
+    // The capabilities are deleted with the row
+    createWithGenericCapabilities: async ({
+      user_id,
+      subscription_id,
+      capabilities,
+    }: {
+      user_id: UserId;
+      subscription_id: SubscriptionId;
+      capabilities: GenericServiceCapabilityIds[];
+    }): Promise<UserService> => {
+      const [userService] = await db<UserService>('User_Service')
+        .insert({ id: uuidv4() as UserServiceId, user_id, subscription_id })
+        .returning('*');
+      if (!userService) {
+        throw new Error('The user service was not created');
+      }
+      // An empty insert makes knex throw
+      if (capabilities.length > 0) {
+        await db<UserServiceCapability>('UserService_Capability').insert(
+          capabilities.map((capability) => ({
+            id: uuidv4() as UserServiceCapabilityId,
+            user_service_id: userService.id,
+            generic_service_capability_id:
+              capability as unknown as GenericServiceCapabilityId,
+          }))
+        );
+      }
       return userService;
     },
     delete: async (field: UserServiceMutator) => {
