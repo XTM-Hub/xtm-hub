@@ -9,7 +9,7 @@ import {
 } from '@graphql/generated';
 import { screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { BundleProductCard } from './BundleProductCard';
+import { BundleProductSection } from './BundleProductSection';
 import { XtmoneStatusState } from './useXtmoneIntegrationStatus';
 
 const PAGE_TYPE = 'Trial';
@@ -76,11 +76,11 @@ const connectedXtmoneStatus: XtmoneStatusState = {
   hasUrl: true,
 };
 
-describe('BundleProductCard', () => {
+describe('BundleProductSection', () => {
   it('should render the product on the design system Paper surface, with its logo as the title above it', () => {
     // Given / When
     testRender(
-      <BundleProductCard
+      <BundleProductSection
         product={buildProduct()}
         xtmoneStatus={emptyXtmoneStatus}
         canManage={false}
@@ -99,7 +99,7 @@ describe('BundleProductCard', () => {
 
   it('renders the product name and role', () => {
     testRender(
-      <BundleProductCard
+      <BundleProductSection
         product={buildProduct()}
         xtmoneStatus={emptyXtmoneStatus}
         canManage={false}
@@ -120,7 +120,7 @@ describe('BundleProductCard', () => {
     'renders "$expected" for connectivity_status "$status" from the platform configuration',
     ({ status, expected }) => {
       testRender(
-        <BundleProductCard
+        <BundleProductSection
           product={buildProduct({ status })}
           xtmoneStatus={emptyXtmoneStatus}
           canManage={false}
@@ -133,7 +133,7 @@ describe('BundleProductCard', () => {
 
   it('renders the no-role fallback and disables access when the user has no role', () => {
     testRender(
-      <BundleProductCard
+      <BundleProductSection
         product={buildProduct({ roles: [] })}
         xtmoneStatus={emptyXtmoneStatus}
         canManage={false}
@@ -154,7 +154,7 @@ describe('BundleProductCard', () => {
 
   it('renders the XTM One connection rows from the integration status', () => {
     testRender(
-      <BundleProductCard
+      <BundleProductSection
         product={buildProduct({
           platformIdentifier: 'xtmone',
           name: 'XTM One Instance',
@@ -176,7 +176,7 @@ describe('BundleProductCard', () => {
 
   it('enables the XTM One access link from its url even without a role', () => {
     testRender(
-      <BundleProductCard
+      <BundleProductSection
         product={buildProduct({
           platformIdentifier: 'xtmone',
           name: 'XTM One Instance',
@@ -197,7 +197,7 @@ describe('BundleProductCard', () => {
 
   it('falls back to deployment request url when registered platform url is empty', () => {
     testRender(
-      <BundleProductCard
+      <BundleProductSection
         product={buildProduct({
           platformIdentifier: 'xtmone',
           name: 'XTM One Instance',
@@ -219,7 +219,7 @@ describe('BundleProductCard', () => {
 
   it('hides the edit-name button when the user cannot manage', () => {
     testRender(
-      <BundleProductCard
+      <BundleProductSection
         product={buildProduct()}
         xtmoneStatus={emptyXtmoneStatus}
         canManage={false}
@@ -233,7 +233,7 @@ describe('BundleProductCard', () => {
 
   it('shows the edit-name button when the user can manage', () => {
     testRender(
-      <BundleProductCard
+      <BundleProductSection
         product={buildProduct()}
         xtmoneStatus={emptyXtmoneStatus}
         canManage={true}
@@ -247,7 +247,7 @@ describe('BundleProductCard', () => {
 
   it('shows the edit-name button on the XTM One card when the user can manage', () => {
     testRender(
-      <BundleProductCard
+      <BundleProductSection
         product={buildProduct({
           platformIdentifier: 'xtmone',
           name: 'XTM One Instance',
@@ -268,7 +268,7 @@ describe('BundleProductCard', () => {
     const { user } = testRender(
       <>
         <AnalyticsClickCapture pageType={PAGE_TYPE} />
-        <BundleProductCard
+        <BundleProductSection
           product={buildProduct()}
           xtmoneStatus={emptyXtmoneStatus}
           canManage={true}

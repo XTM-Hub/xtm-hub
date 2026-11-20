@@ -4,7 +4,7 @@ import { ReachSalesButton } from '@/components/service/trial-instances/reach-sal
 import { SlackSupportButton } from '@/components/service/trial-instances/SlackSupport';
 import { BundleGuideSection } from '@/components/service/trial-instances/xtm-platform-trial/active-bundle/BundleGuideSection';
 import { BundleInfoSection } from '@/components/service/trial-instances/xtm-platform-trial/active-bundle/BundleInfoSection';
-import { BundleProductCard } from '@/components/service/trial-instances/xtm-platform-trial/active-bundle/BundleProductCard';
+import { BundleProductSection } from '@/components/service/trial-instances/xtm-platform-trial/active-bundle/BundleProductSection';
 import { useXtmoneIntegrationStatus } from '@/components/service/trial-instances/xtm-platform-trial/active-bundle/useXtmoneIntegrationStatus';
 import { XtmPlatformTrialLimitations } from '@/components/service/trial-instances/xtm-platform-trial/shared/XtmPlatformTrialLimitations';
 import useGranted from '@/hooks/use-granted';
@@ -107,7 +107,7 @@ export const XtmPlatformActiveBundlePage = () => {
       </div>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {orderedProducts.map((product) => (
-          <BundleProductCard
+          <BundleProductSection
             key={product.service_instance_id}
             product={product}
             xtmoneStatus={xtmoneStatus}

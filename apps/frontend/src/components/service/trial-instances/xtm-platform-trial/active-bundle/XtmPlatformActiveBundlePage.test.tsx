@@ -55,14 +55,16 @@ vi.mock(
 );
 
 vi.mock(
-  '@/components/service/trial-instances/xtm-platform-trial/active-bundle/BundleProductCard',
+  '@/components/service/trial-instances/xtm-platform-trial/active-bundle/BundleProductSection',
   () => ({
-    BundleProductCard: ({
+    BundleProductSection: ({
       product,
     }: {
       product: { service_instance_id: string };
     }) => (
-      <div data-testid={`bundle-product-card-${product.service_instance_id}`} />
+      <div
+        data-testid={`bundle-product-section-${product.service_instance_id}`}
+      />
     ),
   })
 );
@@ -152,10 +154,10 @@ describe('XtmPlatformActiveBundlePage', () => {
     expect(screen.getByTestId('bundle-guide-section')).toBeInTheDocument();
     expect(screen.getByTestId('trial-limitations')).toBeInTheDocument();
     expect(
-      screen.getByTestId('bundle-product-card-opencti-instance')
+      screen.getByTestId('bundle-product-section-opencti-instance')
     ).toBeInTheDocument();
     expect(
-      screen.getByTestId('bundle-product-card-xtmone-instance')
+      screen.getByTestId('bundle-product-section-xtmone-instance')
     ).toBeInTheDocument();
   });
 
@@ -180,7 +182,7 @@ describe('XtmPlatformActiveBundlePage', () => {
 
     // Then
     expect(
-      screen.queryByTestId('bundle-product-card-xtmone-instance')
+      screen.queryByTestId('bundle-product-section-xtmone-instance')
     ).not.toBeInTheDocument();
   });
 

@@ -26,17 +26,17 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
 
-interface BundleProductCardProps {
+interface BundleProductSectionProps {
   product: XtmPlatformBundleProductFragment;
   xtmoneStatus: XtmoneStatusState;
   canManage: boolean;
 }
 
-export const BundleProductCard = ({
+export const BundleProductSection = ({
   product,
   xtmoneStatus,
   canManage,
-}: BundleProductCardProps) => {
+}: BundleProductSectionProps) => {
   const t = useTranslate();
   const formatDate = useDateFormatter();
   const queryClient = useQueryClient();
