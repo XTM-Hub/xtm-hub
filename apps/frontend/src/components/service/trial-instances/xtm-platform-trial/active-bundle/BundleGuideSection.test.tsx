@@ -1,6 +1,5 @@
 import { BundleGuideSection } from '@/components/service/trial-instances/xtm-platform-trial/active-bundle/BundleGuideSection';
 import { XTM_PLATFORM_TRIAL_GUIDE_PATH } from '@/utils/path/constant';
-import { expectPaperWithTitleAbove } from '@/utils/test/paper';
 import testRender from '@/utils/test/test-render';
 import { screen } from '@testing-library/react';
 import { useTranslations } from 'next-intl';
@@ -42,6 +41,12 @@ describe('BundleGuideSection', () => {
     const surface = screen
       .getByText('XtmPlatformTrial.Guide.Content')
       .closest('section');
-    expectPaperWithTitleAbove(surface, title);
+    // The surface carries the design system radius, padding and elevation
+    // classes. These pin the design system's class names on purpose, as jsdom
+    // does no layout: a rename in the design system needs this test updated.
+    // The elevation is the default one, shared with the other blocks of the page.
+    expect(surface).toHaveClass('rounded-sm', 'p-4', 'layer-1');
+    expect(surface).not.toContainElement(title);
+    expect(surface?.parentElement).toContainElement(title);
   });
 });
