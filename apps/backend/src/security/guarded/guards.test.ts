@@ -1,17 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import { TestHelper } from '../../../tests/helper/test.helper';
 import { contextSimpleUserFiligran2 } from '../../../tests/tests.const';
 import {
   OrganizationCapability,
   PortalCapability,
 } from '../../__generated__/resolvers-types';
-import type DeploymentRequest from '../../model/kanel/public/DeploymentRequest';
-import Organization, {
-  OrganizationId,
-} from '../../model/kanel/public/Organization';
-import { UserId } from '../../model/kanel/public/User';
-import { OrganizationHelper } from '../../modules/organization-management/organization/organization.helper';
-import type { FullPlatformConfiguration } from '../../modules/registration/platform-configuration/platform-configuration.domain';
-import { PLATFORM_USER_UUID, SYSTEM_USER_UUID } from '../../portal.const';
 import {
   ForbiddenErrorCode,
   NotFoundErrorCode,
@@ -25,64 +18,18 @@ import {
   portalCapabilityGuard,
 } from './guards/portal.guard';
 import { publicAccess } from './guards/public-access.guard';
-import { buildPrincipal, Principal } from './principal';
+import { buildPrincipal } from './principal';
 
-const USER_ID = 'user-id' as UserId;
-const ORGANIZATION_ID = 'organization-id' as OrganizationId;
-const OTHER_ORGANIZATION_ID = 'other-organization-id' as OrganizationId;
-const PERSONAL_SPACE_ID = OrganizationHelper.personalSpaceIdOf({ id: USER_ID });
-
-const buildUserPrincipal = (
-  overrides: {
-    isBypassUser?: boolean;
-    capabilities?: PortalCapability[];
-    selectedOrganizationId?: OrganizationId;
-    memberships?: Record<string, OrganizationCapability[]>;
-  } = {}
-): Principal => ({
-  kind: 'user',
-  actorId: USER_ID,
-  isBypassUser: overrides.isBypassUser ?? false,
-  portalCapabilities: new Set(overrides.capabilities ?? []),
-  selectedOrganizationId: overrides.selectedOrganizationId ?? ORGANIZATION_ID,
-  memberships: Object.entries(overrides.memberships ?? {}).map(
-    ([organizationId, capabilities]) => ({
-      id: organizationId,
-      organization: { id: organizationId as OrganizationId },
-      capabilities,
-    })
-  ),
-});
-
-const ANONYMOUS: Principal = { kind: 'anonymous' };
-
-const buildSystemPrincipal = (
-  capabilities: PortalCapability[] = []
-): Principal => ({
-  kind: 'system',
-  actorId: SYSTEM_USER_UUID,
-  portalCapabilities: new Set(capabilities),
-});
-
-const PLATFORM_ID = 'platform-id';
-
-const buildRegistrationPlatformPrincipal = (): Principal => ({
-  kind: 'platform',
-  actorId: PLATFORM_USER_UUID,
-  platformId: PLATFORM_ID,
-  organization: { id: ORGANIZATION_ID } as Organization,
-  credential: 'registration',
-  registration: {} as FullPlatformConfiguration,
-});
-
-const buildDeploymentRequestPlatformPrincipal = (): Principal => ({
-  kind: 'platform',
-  actorId: PLATFORM_USER_UUID,
-  platformId: PLATFORM_ID,
-  organization: { id: ORGANIZATION_ID } as Organization,
-  credential: 'deploymentRequest',
-  deploymentRequest: {} as DeploymentRequest,
-});
+const {
+  ANONYMOUS,
+  ORGANIZATION_ID,
+  OTHER_ORGANIZATION_ID,
+  PERSONAL_SPACE_ID,
+  buildDeploymentRequestPlatformPrincipal,
+  buildRegistrationPlatformPrincipal,
+  buildSystemPrincipal,
+  buildUserPrincipal,
+} = TestHelper.guardFixtures;
 
 describe('publicAccess guard', () => {
   it.each([
@@ -96,7 +43,7 @@ describe('publicAccess guard', () => {
     // Given the public guard
 
     // When
-    const result = await publicAccess.check(principal);
+    const result = await publicAccess.check(principal, {});
 
     // Then
     expect(result).toEqual({ allowed: true });
@@ -148,7 +95,7 @@ describe('bypassOnlyGuard', () => {
     const guard = bypassOnlyGuard();
 
     // When
-    const result = await guard.check(principal);
+    const result = await guard.check(principal, {});
 
     // Then
     expect(result).toEqual(expected);
@@ -193,7 +140,7 @@ describe('loggedInGuard', () => {
     const guard = loggedInGuard();
 
     // When
-    const result = await guard.check(principal);
+    const result = await guard.check(principal, {});
 
     // Then
     expect(result).toEqual(expected);
@@ -254,7 +201,7 @@ describe('portalCapabilityGuard', () => {
       const guard = portalCapabilityGuard([PortalCapability.ManageDeployment]);
 
       // When
-      const result = await guard.check(principal);
+      const result = await guard.check(principal, {});
 
       // Then
       expect(result).toEqual(expected);
@@ -272,7 +219,7 @@ describe('portalCapabilityGuard', () => {
     });
 
     // When
-    const result = await guard.check(principal);
+    const result = await guard.check(principal, {});
 
     // Then
     expect(result).toEqual({ allowed: true });
@@ -331,7 +278,7 @@ describe('systemCallerGuard', () => {
       const guard = systemCallerGuard([PortalCapability.GenerateManifest]);
 
       // When
-      const result = await guard.check(principal);
+      const result = await guard.check(principal, {});
 
       // Then
       expect(result).toEqual(expected);
@@ -347,7 +294,7 @@ describe('systemCallerGuard', () => {
     const principal = buildSystemPrincipal([PortalCapability.GenerateManifest]);
 
     // When
-    const result = await guard.check(principal);
+    const result = await guard.check(principal, {});
 
     // Then
     expect(result).toEqual({
@@ -383,7 +330,7 @@ describe('orgGuard on the selected organization', () => {
         isBypassUser: true,
         memberships: {},
       }),
-      expected: { allowed: true },
+      expected: { allowed: true, checked: { kind: 'admin' } },
     },
     {
       label: 'a user who is not a member',
@@ -403,7 +350,10 @@ describe('orgGuard on the selected organization', () => {
           [ORGANIZATION_ID]: [OrganizationCapability.ManageSubscription],
         },
       }),
-      expected: { allowed: true },
+      expected: {
+        allowed: true,
+        checked: { kind: 'organization', organizationId: ORGANIZATION_ID },
+      },
     },
     {
       label: 'a member holding ADMINISTRATE_ORGANIZATION',
@@ -412,7 +362,10 @@ describe('orgGuard on the selected organization', () => {
           [ORGANIZATION_ID]: [OrganizationCapability.AdministrateOrganization],
         },
       }),
-      expected: { allowed: true },
+      expected: {
+        allowed: true,
+        checked: { kind: 'organization', organizationId: ORGANIZATION_ID },
+      },
     },
     {
       label: 'a member holding the capability in another organization only',
@@ -437,7 +390,7 @@ describe('orgGuard on the selected organization', () => {
       });
 
       // When
-      const result = await guard.check(principal);
+      const result = await guard.check(principal, {});
 
       // Then
       expect(result).toEqual(expected);
@@ -460,17 +413,23 @@ describe('orgGuard on the selected organization', () => {
     });
 
     // When
-    const result = await guard.check(principal);
+    const result = await guard.check(principal, {});
 
     // Then
-    expect(result).toEqual({ allowed: true });
+    expect(result).toEqual({
+      allowed: true,
+      checked: { kind: 'organization', organizationId: ORGANIZATION_ID },
+    });
   });
 
   it.each([
     {
       label: 'a member without any capability',
       memberships: { [ORGANIZATION_ID]: [] },
-      expected: { allowed: true },
+      expected: {
+        allowed: true,
+        checked: { kind: 'organization', organizationId: ORGANIZATION_ID },
+      },
     },
     {
       label: 'a user who is not a member',
@@ -483,7 +442,10 @@ describe('orgGuard on the selected organization', () => {
       memberships: {
         [PERSONAL_SPACE_ID]: [OrganizationCapability.AdministrateOrganization],
       },
-      expected: { allowed: true },
+      expected: {
+        allowed: true,
+        checked: { kind: 'organization', organizationId: PERSONAL_SPACE_ID },
+      },
     },
   ])(
     'should answer $label when only the membership is required',
@@ -496,7 +458,8 @@ describe('orgGuard on the selected organization', () => {
 
       // When
       const result = await guard.check(
-        buildUserPrincipal({ selectedOrganizationId, memberships })
+        buildUserPrincipal({ selectedOrganizationId, memberships }),
+        {}
       );
 
       // Then
@@ -518,7 +481,7 @@ describe('orgGuard on the selected organization', () => {
     });
 
     // When
-    const result = await guard.check(principal);
+    const result = await guard.check(principal, {});
 
     // Then
     expect(result).toEqual({
@@ -566,7 +529,7 @@ describe('platformCallerGuard', () => {
     const guard = platformCallerGuard({ credential: 'registration' });
 
     // When
-    const result = await guard.check(principal);
+    const result = await guard.check(principal, {});
 
     // Then
     expect(result).toEqual(expected);

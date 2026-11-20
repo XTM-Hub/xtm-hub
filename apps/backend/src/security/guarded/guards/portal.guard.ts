@@ -20,4 +20,4 @@ export const bypassOnlyGuard = (): Guard =>
   );
 
 // Same rule as @auth without arguments
-export const loggedInGuard = (): Guard => forCaller('user', allow);
+export const loggedInGuard = (): Guard => forCaller('user', () => allow());

@@ -73,6 +73,7 @@ const ERROR_FAMILY: Record<DenialCode, ErrorType> = {
   [ForbiddenErrorCode.ForbiddenAccess]: ErrorType.ForbiddenAccess,
   [ForbiddenErrorCode.MissingCapabilityOnOrganization]:
     ErrorType.ForbiddenAccess,
+  [ForbiddenErrorCode.MissingCapabilityOnService]: ErrorType.ForbiddenAccess,
   [NotFoundErrorCode.NotFound]: ErrorType.NotFound,
 };
 

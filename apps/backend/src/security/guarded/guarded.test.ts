@@ -105,6 +105,15 @@ const ownPrincipalGuard: Guard = {
   principalFrom: buildOwnPrincipal,
 };
 
+const receivedArgs: unknown[] = [];
+const argsGuard: Guard = {
+  check: (_principal, args) => {
+    receivedArgs.push(args);
+    return allow();
+  },
+  principalFrom: buildPrincipal,
+};
+
 const PRINCIPAL_FAILURE = new Error('principal unavailable');
 const failingPrincipalGuard: Guard = {
   check: () => allow(),
@@ -129,6 +138,9 @@ class TestResolvers {
   @Guarded(failingPrincipalGuard)
   static readonly failingPrincipal: TestResolver = (...args) =>
     resolve(...args);
+
+  @Guarded(argsGuard)
+  static readonly argsRecorded: TestResolver = (...args) => resolve(...args);
 
   @Guarded(ownPrincipalGuard)
   static readonly ownPrincipal: TestResolver = (...args) => resolve(...args);
@@ -254,6 +266,7 @@ afterEach(() => {
   vi.restoreAllMocks();
   buildOwnPrincipal.mockClear();
   receivedPrincipals.length = 0;
+  receivedArgs.length = 0;
 });
 
 describe('buildPrincipal', () => {
@@ -1115,6 +1128,18 @@ describe('@Guarded decorator', () => {
     expect(user.capabilities).toMatchObject([CAPABILITY_BYPASS]);
   });
 
+  it('should hand the arguments of the operation to the guard', async () => {
+    // Given
+    const context = { user: buildUser() };
+
+    // When
+    await TestResolvers.argsRecorded(PARENT, ARGS, context, INFO);
+
+    // Then
+    expect(receivedArgs).toEqual([ARGS]);
+    expect(resolve).toHaveBeenCalledOnce();
+  });
+
   it('should deny with FORBIDDEN_ACCESS, log the failure once and not call the resolver when the guard throws', async () => {
     // Given
     const logError = vi
@@ -1142,8 +1167,12 @@ describe('@Guarded decorator', () => {
       code: ForbiddenErrorCode.MissingCapabilityOnOrganization,
       family: ErrorType.ForbiddenAccess,
     },
+    {
+      code: ForbiddenErrorCode.MissingCapabilityOnService,
+      family: ErrorType.ForbiddenAccess,
+    },
     { code: NotFoundErrorCode.NotFound, family: ErrorType.NotFound },
-  ])(
+  ] as const)(
     'should refuse with $code as message and $family as extensions code and not call the resolver when the guard denies with $code',
     async ({ code, family }) => {
       // Given
