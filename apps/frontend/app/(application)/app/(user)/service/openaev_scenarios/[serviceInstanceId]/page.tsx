@@ -1,10 +1,6 @@
+import { fetchServiceInstanceById } from '@/components/service/service-instance.server';
 import { BreadcrumbNav } from '@/components/ui/BreadcrumbNav';
-import { serverFetchGraphQL } from '@/relay/server-portal-api-fetch';
 import { APP_PATH } from '@/utils/path/constant';
-import ServiceByIdQuery, {
-  serviceByIdQuery,
-} from '@generated/serviceByIdQuery.graphql';
-import { ServiceInstanceItemFragment } from '@graphql/generated';
 import PageLoader from './page-loader';
 
 interface ServiceCustomDashboardsPageProps {
@@ -14,15 +10,10 @@ interface ServiceCustomDashboardsPageProps {
 const Page = async ({ params }: ServiceCustomDashboardsPageProps) => {
   const { serviceInstanceId } = await params;
   const decodedServiceInstanceId = decodeURIComponent(serviceInstanceId);
-  const response = await serverFetchGraphQL<serviceByIdQuery>(
-    ServiceByIdQuery,
-    {
-      service_instance_id: decodedServiceInstanceId,
-    }
+  const serviceInstance = await fetchServiceInstanceById(
+    decodedServiceInstanceId
   );
 
-  const serviceInstance = response?.data
-    .serviceInstanceById as unknown as ServiceInstanceItemFragment;
   const breadcrumbs = [
     {
       label: 'MenuLinks.Home',
@@ -36,15 +27,10 @@ const Page = async ({ params }: ServiceCustomDashboardsPageProps) => {
 
   return (
     <>
-      {response ? (
+      {serviceInstance ? (
         <>
           <BreadcrumbNav value={breadcrumbs} />
-          <PageLoader
-            serviceInstance={
-              response.data
-                .serviceInstanceById as unknown as ServiceInstanceItemFragment
-            }
-          />
+          <PageLoader serviceInstance={serviceInstance} />
         </>
       ) : (
         <h1>Service not found</h1>

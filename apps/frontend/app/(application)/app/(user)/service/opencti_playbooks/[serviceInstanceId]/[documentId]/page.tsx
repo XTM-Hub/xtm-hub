@@ -1,9 +1,5 @@
+import { fetchServiceInstanceById } from '@/components/service/service-instance.server';
 import { getTranslate } from '@/hooks/get-translate';
-import { serverFetchGraphQL } from '@/relay/server-portal-api-fetch';
-import ServiceByIdQuery, {
-  serviceByIdQuery,
-} from '@generated/serviceByIdQuery.graphql';
-import { ServiceInstanceItemFragment } from '@graphql/generated';
 import PageLoader from './page-loader';
 
 interface ServicePlaybookPageProps {
@@ -15,22 +11,16 @@ const Page = async ({ params }: ServicePlaybookPageProps) => {
   const decodedServiceInstanceId = decodeURIComponent(serviceInstanceId);
   const decodedDocumentId = decodeURIComponent(documentId);
   const t = await getTranslate();
-  const response = await serverFetchGraphQL<serviceByIdQuery>(
-    ServiceByIdQuery,
-    {
-      service_instance_id: decodedServiceInstanceId,
-    }
+  const serviceInstance = await fetchServiceInstanceById(
+    decodedServiceInstanceId
   );
 
   return (
     <>
-      {decodedDocumentId && response ? (
+      {decodedDocumentId && serviceInstance ? (
         <PageLoader
           documentId={decodedDocumentId}
-          serviceInstance={
-            response.data
-              .serviceInstanceById as unknown as ServiceInstanceItemFragment
-          }
+          serviceInstance={serviceInstance}
         />
       ) : (
         <h1>{t('Utils.DocumentNotFound')}</h1>
