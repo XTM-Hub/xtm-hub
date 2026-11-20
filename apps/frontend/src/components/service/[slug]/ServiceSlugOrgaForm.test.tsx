@@ -270,6 +270,23 @@ describe('ServiceSlugOrgaForm', () => {
     expect(await screen.findByText('Utils.Loading')).toBeInTheDocument();
   });
 
+  it('should render the capabilities on a design system Paper one layer above the drawer, with its title above it', () => {
+    // Given / When
+    renderForm();
+
+    // Then
+    const title = screen.getByText('OrganizationInServiceAction.SelectCapa');
+    const surface = screen
+      .getByText('OrganizationInServiceAction.SelectCapaDescription')
+      .closest('div');
+    // The surface carries the design system layer, radius and padding classes.
+    // These pin the design system's class names on purpose, as jsdom does no
+    // layout: a rename in the design system needs this test updated.
+    expect(surface).toHaveClass('layer-3', 'rounded-sm', 'p-4');
+    expect(surface).not.toContainElement(title);
+    expect(surface?.parentElement).toContainElement(title);
+  });
+
   describe('creation of a subscription', () => {
     shouldHandleSubmissionOutcomes({
       hook: mocks.useCreateSubscriptionsMutation,
