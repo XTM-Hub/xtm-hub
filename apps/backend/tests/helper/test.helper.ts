@@ -87,6 +87,7 @@ import { TestNewsfeedHelper } from './test.newsfeed.helper';
 import { TestPlatformCallerHelper } from './test.platform-caller.helper';
 import { TestServiceHelper } from './test.service.helper';
 import { TestSessionHelper } from './test.session.helper';
+import { TestUserServiceSceneHelper } from './test.user-service-scene.helper';
 import { TestUserHelper } from './test.user.helper';
 
 export { seedDocuments } from './perf/test.document.perf.helper';
@@ -106,15 +107,16 @@ export const TestHelper = {
   ...TestPlatformConfigurationHelper,
   ...TestPlatformCallerHelper,
   ...TestUserHelper,
+  ...TestUserServiceSceneHelper,
   ...TestAuth0Helper,
   ...TestDeploymentHelper,
   ...TestNewsfeedHelper,
   ...TestContentTranslationHelper,
   ...TestSessionHelper,
   ...TestAccessMatrixHelper,
+  ...TestGuardFixturesHelper,
   subscription: {
     create: async (data?: Partial<Subscription>): Promise<Subscription> => {
-  ...TestGuardFixturesHelper,
       const [subscription] = await db<Subscription>('Subscription')
         .insert({
           id: uuidv4() as SubscriptionId,
