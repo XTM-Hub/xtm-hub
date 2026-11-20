@@ -2,7 +2,7 @@ import testRender from '@/utils/test/test-render';
 import { XtmPlatformBundleDetailsFragment } from '@graphql/generated';
 import { screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { BundleInfoCard } from './BundleInfoCard';
+import { BundleInfoSection } from './BundleInfoSection';
 
 const buildBundle = (
   overrides: Partial<XtmPlatformBundleDetailsFragment> = {}
@@ -17,10 +17,10 @@ const buildBundle = (
   ...overrides,
 });
 
-describe('BundleInfoCard', () => {
+describe('BundleInfoSection', () => {
   it('renders the organization name, requester and license', () => {
     testRender(
-      <BundleInfoCard
+      <BundleInfoSection
         bundle={buildBundle()}
         canManage={false}
       />
@@ -33,7 +33,7 @@ describe('BundleInfoCard', () => {
 
   it('shows the management actions only when the user can manage', () => {
     const { rerender } = testRender(
-      <BundleInfoCard
+      <BundleInfoSection
         bundle={buildBundle()}
         canManage={false}
       />
@@ -43,7 +43,7 @@ describe('BundleInfoCard', () => {
     ).not.toBeInTheDocument();
 
     rerender(
-      <BundleInfoCard
+      <BundleInfoSection
         bundle={buildBundle()}
         canManage={true}
       />
@@ -51,5 +51,28 @@ describe('BundleInfoCard', () => {
     expect(
       screen.getByText('XtmPlatformTrial.CancelTrial')
     ).toBeInTheDocument();
+  });
+
+  it('should render the details on the design system Paper surface, with its title inside it', () => {
+    // Given / When
+    testRender(
+      <BundleInfoSection
+        bundle={buildBundle()}
+        canManage={false}
+      />
+    );
+
+    // Then
+    const title = screen.getByRole('heading', {
+      level: 2,
+      name: 'XtmPlatformTrial.BundleInfo.Title',
+    });
+    const surface = screen.getByText('ACME').closest('section');
+    // The surface carries the design system radius, padding and elevation
+    // classes. These pin the design system's class names on purpose, as jsdom
+    // does no layout: a rename in the design system needs this test updated.
+    // The details block sits one elevation above the default one.
+    expect(surface).toHaveClass('rounded-sm', 'p-4', 'layer-2');
+    expect(surface).toContainElement(title);
   });
 });
