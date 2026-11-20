@@ -105,7 +105,10 @@ const ServiceIdentifierToEventService = new Map<
 export const NewsFeedItemTypeToTelemetryNewsFeedItemType = new Map<
   NewsFeedItemType,
   TelemetryNewsFeedItemType
->([[NewsFeedItemType.BlogPost, TelemetryNewsFeedItemType.BLOG_POST]]);
+>([
+  [NewsFeedItemType.BlogPost, TelemetryNewsFeedItemType.BLOG_POST],
+  [NewsFeedItemType.GithubRelease, TelemetryNewsFeedItemType.GITHUB_RELEASE],
+]);
 
 export const TelemetryTargetProductMappedByPlatformIdentifier = new Map<
   PlatformIdentifier,

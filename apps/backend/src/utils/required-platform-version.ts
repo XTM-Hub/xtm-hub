@@ -8,6 +8,8 @@ type RequiredPlatformVersionsConfig = {
   TenantIdRequired: Record<PlatformIdentifier, string | null>;
   NewsFeedSupport: Record<PlatformIdentifier, string | null>;
   NewsFeedBlogpostSupport: Record<PlatformIdentifier, string | null>;
+  NewsFeedGithubReleaseSupport: Record<PlatformIdentifier, string | null>;
+  NewsFeedGithubReleaseLtsSupport: Record<PlatformIdentifier, string | null>;
 };
 
 // A null value means the feature is disabled/not required for that identifier.
@@ -34,6 +36,16 @@ export const RequiredPlatformVersions: RequiredPlatformVersionsConfig = {
   // until they ship blogpost support.
   NewsFeedBlogpostSupport: {
     [PlatformIdentifier.Opencti]: '7.261106.0',
+    [PlatformIdentifier.Openaev]: null,
+    [PlatformIdentifier.Xtmone]: null,
+  },
+  NewsFeedGithubReleaseSupport: {
+    [PlatformIdentifier.Opencti]: null,
+    [PlatformIdentifier.Openaev]: null,
+    [PlatformIdentifier.Xtmone]: null,
+  },
+  NewsFeedGithubReleaseLtsSupport: {
+    [PlatformIdentifier.Opencti]: null,
     [PlatformIdentifier.Openaev]: null,
     [PlatformIdentifier.Xtmone]: null,
   },
