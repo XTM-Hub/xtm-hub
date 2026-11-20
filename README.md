@@ -3,9 +3,11 @@
 <p align="center">
   <a href="https://github.com/XTM-Hub/xtm-hub/stargazers"><img src="https://img.shields.io/github/stars/XTM-Hub/xtm-hub?style=flat-square&labelColor=0A0C1C&logo=github&logoColor=white&color=001BDA" alt="stars"></a>
   <a href="https://github.com/XTM-Hub/xtm-hub/releases/latest"><img src="https://img.shields.io/github/v/release/XTM-Hub/xtm-hub?style=flat-square&labelColor=0A0C1C&color=001BDA" alt="release"></a>
+  <a href="https://hub.filigran.io"><img src="https://img.shields.io/badge/docker%20pulls-hosted-001BDA?style=flat-square&labelColor=0A0C1C&logo=docker&logoColor=white" alt="docker pulls"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-source%20available-001BDA?style=flat-square&labelColor=0A0C1C" alt="license"></a>
-  <a href="https://docs.hub.filigran.io"><img src="https://img.shields.io/badge/docs-docs.hub.filigran.io-001BDA?style=flat-square&labelColor=0A0C1C" alt="docs"></a>
-  <a href="https://community.filigran.io"><img src="https://img.shields.io/badge/slack-community-001BDA?style=flat-square&labelColor=0A0C1C&logo=slack&logoColor=white" alt="slack"></a>
+  <a href="https://github.com/XTM-Hub/xtm-hub/actions/workflows/dockerbuild-ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/XTM-Hub/xtm-hub/dockerbuild-ci.yml?branch=main&label=CI&style=flat-square&labelColor=0A0C1C&logo=githubactions&logoColor=white&color=001BDA" alt="CI"></a>
+  <a href="https://docs.hub.filigran.io"><img src="https://img.shields.io/badge/docs-read-001BDA?style=flat-square&labelColor=0A0C1C" alt="docs"></a>
+  <a href="https://community.filigran.io"><img src="https://img.shields.io/badge/community-slack-001BDA?style=flat-square&labelColor=0A0C1C&logo=slack&logoColor=white" alt="community"></a>
 </p>
 
 <p align="center"><b>The tradecraft library and gateway of the XTM Platform: CTEM content you deploy in one click into your own OpenCTI and OpenAEV.</b></p>
@@ -17,7 +19,7 @@
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./.github/img/readme/hero-dark.webp">
   <source media="(prefers-color-scheme: light)" srcset="./.github/img/readme/hero-light.webp">
-  <img alt="XTM Hub home: the XTM Platform overview, the public roadmap and the newest and most deployed OpenCTI dashboards, OpenAEV scenarios and OpenCTI integrations" src="./.github/img/readme/hero-light.webp" width="100%">
+  <img alt="XTM Hub home: the XTM Platform overview and the newest and most deployed OpenCTI dashboards, OpenAEV scenarios and OpenCTI integrations" src="./.github/img/readme/hero-light.webp" width="100%">
 </picture>
 
 ## Table of contents
@@ -43,7 +45,7 @@ A CTEM program runs on tradecraft: dashboards, integrations, playbooks and attac
 
 - **A shared library, curated.** Dashboards, custom views, integrations, playbooks and scenarios, searchable by use case, type and compatibility.
 - **One click to your instance.** A deployment sends the resource straight to the OpenCTI or OpenAEV you pick, with no export, no file to move and no manual import.
-- **One gateway for the platform.** Instance registration for OpenCTI, OpenAEV and XTM One, the public roadmap with feature voting and personal API tokens.
+- **One gateway for the platform.** Instance registration for OpenCTI, OpenAEV and XTM One, subscribed services and personal API tokens.
 
 ## Capabilities
 
@@ -159,7 +161,7 @@ XTM Hub is one of the five products of the [XTM Platform](https://filigran.io), 
 | **Detection engineering** | Playbooks and integrations that route intelligence to the detection stack. |
 | **Red and purple team** | Ready-made OpenAEV attack scenarios by category, from atomic tests to purple team exercises. |
 | **Vulnerability and exposure management** | Scenarios that test the techniques that reach your assets and dashboards on the vulnerabilities exploited in the wild. |
-| **Risk and CISO** | One library shared across every instance you run, and the public XTM Platform roadmap. |
+| **Risk and CISO** | One library shared across every OpenCTI and OpenAEV instance you run, deployed from one account. |
 
 ## Quick start
 
@@ -182,7 +184,7 @@ yarn dev:api && yarn dev:front                           # API on :4002, web app
 | | Free service | Source code |
 |---|---|---|
 | License | [hub.filigran.io](https://hub.filigran.io) terms | [Source available](LICENSE) |
-| Libraries, one-click deploy, registration, roadmap | Yes | Read, fork for personal use |
+| Libraries, one-click deploy, registration | Yes | Read, fork for personal use |
 | Production and commercial use of the code | | Not permitted |
 
 Some content depends on the edition of the product it deploys to: one-click deployment of playbooks needs OpenCTI Enterprise Edition.
