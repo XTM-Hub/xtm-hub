@@ -50,8 +50,11 @@ curl https://hub.filigran.io/graphql-api \
 ```
 
 The request runs as you, in the token's organization. A revoked, expired or unknown token is answered `401`: the API
-never falls back to a session. Calls are limited to 300 per minute per token, and every call is logged with the token
-and the operation it ran.
+never falls back to a session. After 30 refused tokens in 15 minutes from the same address, the API answers `429` to
+every token from that address until the 15 minutes are over. The tokens it accepted in the last hour usually keep
+working, but not always: each API server only knows the tokens it accepted itself, and forgets them when it restarts.
+Calls are limited to 300 per minute per token, and every call is logged with the token and the operation it
+ran.
 
 `settings { capabilities }` lists `API_TOKENS` when the Hub accepts personal API tokens.
 
