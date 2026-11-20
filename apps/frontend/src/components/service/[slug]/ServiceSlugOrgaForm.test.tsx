@@ -278,7 +278,7 @@ describe('ServiceSlugOrgaForm', () => {
     const title = screen.getByText('OrganizationInServiceAction.SelectCapa');
     const surface = screen
       .getByText('OrganizationInServiceAction.SelectCapaDescription')
-      .closest('div');
+      .closest('section');
     // The surface carries the design system layer, radius and padding classes.
     // These pin the design system's class names on purpose, as jsdom does no
     // layout: a rename in the design system needs this test updated.

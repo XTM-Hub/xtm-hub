@@ -332,6 +332,7 @@ export const UserServiceForm = ({
         )}
 
         <Paper
+          as="section"
           elevation={3}
           padding={16}
           title={t('OrganizationInServiceAction.SelectCapa')}>
