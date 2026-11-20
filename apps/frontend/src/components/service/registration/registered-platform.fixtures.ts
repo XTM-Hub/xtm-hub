@@ -28,6 +28,7 @@ export const basePlatform: RegisteredPlatformDetailsFragment = {
     service_instance: { id: 'service-instance-id' },
     organization: { id: 'org-id' },
   },
+  organization: { name: 'Owner Organization' },
 };
 
 export const trialPlatform: RegisteredPlatformDetailsFragment = {

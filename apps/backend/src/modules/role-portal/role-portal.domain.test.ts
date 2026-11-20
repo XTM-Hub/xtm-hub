@@ -1,7 +1,10 @@
 import { v4 as uuidv4 } from 'uuid';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { TestHelper } from '../../../tests/helper/test.helper';
-import { TEST_ORGANIZATIONS } from '../../../tests/tests.const';
+import {
+  CAPABILITY_READ_SAAS_METRICS,
+  TEST_ORGANIZATIONS,
+} from '../../../tests/tests.const';
 import { RolePortalId } from '../../model/kanel/public/RolePortal';
 import { UserId } from '../../model/kanel/public/User';
 import { CAPABILITY_BYPASS } from '../../portal.const';
@@ -9,6 +12,25 @@ import { ErrorCode } from '../../utils/error/error.code';
 import { RolePortalDomain } from './role-portal.domain';
 
 describe('role portal domain tests', () => {
+  describe('loadCapabilityPortalsByNames', () => {
+    it('should return the capabilities requested by their name', async () => {
+      // When
+      const capabilities = await RolePortalDomain.loadCapabilityPortalsByNames([
+        CAPABILITY_BYPASS.name,
+        CAPABILITY_READ_SAAS_METRICS.name,
+      ]);
+
+      // Then
+      expect(capabilities).toHaveLength(2);
+      expect(capabilities).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining(CAPABILITY_BYPASS),
+          expect.objectContaining(CAPABILITY_READ_SAAS_METRICS),
+        ])
+      );
+    });
+  });
+
   describe('loadRolePortalsBySSOGroups', () => {
     beforeEach(async () => {
       await TestHelper.ssoGroup_RolePortal.delete({});

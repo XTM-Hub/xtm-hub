@@ -56,11 +56,6 @@
     "SearchPlatform": "Rechercher une plateforme",
     "ClearSearch": "Effacer la recherche",
     "Tour": {
-      "GuidedTour": "Visite guidée",
-      "Close": "Fermer la visite",
-      "PreviousStep": "Aller à l'étape précédente",
-      "NextStep": "Aller à l'étape suivante",
-      "GoToStep": "Aller à l'étape {step}",
       "Table": "Ce tableau liste toutes les plateformes SaaS du SaaS Manager, avec les données qu'il remonte.",
       "Search": "Recherchez une plateforme par nom de client.",
       "ProductFilter": "N'affichez que les plateformes d'un produit.",
@@ -404,6 +399,7 @@
       "INTEGRATION_TYPE_NOT_RECOGNIZED": "Ce type d'intégration n'est pas reconnu",
       "INVALID_ACTION_SIZE": "Une erreur inconnue s'est produite",
       "INVALID_CONTENT_TRANSLATION_KEY": "Clé de contenu invalide",
+      "INVALID_DOCUMENT_CREATION_STATUS": "Une ressource ne peut être créée qu'en brouillon ou en validation",
       "INVALID_DOCUMENT_STATUS_TRANSITION": "Ce changement de statut n'est pas autorisé pour cette ressource",
       "INVALID_EMAIL": "L'email doit être dans un format valide.",
       "INVALID_IMAGE_URL": "L'URL de l'image n'est pas valide",
@@ -417,6 +413,11 @@
       "IS_PLATFORM_REGISTERED_UNKNOWN_ERROR": "Une erreur inconnue s'est produite lors de la connexion avec le produit",
       "LOAD_CAPABILITIES_ERROR": "Une erreur s'est produite lors du chargement des capacités",
       "LIST_FACET_ERROR": "Une erreur inconnue s'est produite lors de l'affichage des facettes.",
+      "META_DESCRIPTION_INVALID_DASH": "La méta-description doit utiliser des tirets simples (-), pas de tirets longs (— ou –)",
+      "META_DESCRIPTION_MATCHES_TITLE": "La méta-description générée ne doit pas commencer par le nom de la ressource",
+      "META_DESCRIPTION_REQUIRED": "La méta-description est obligatoire",
+      "META_DESCRIPTION_TOO_SHORT": "La méta-description générée, produit et type compris, doit contenir au moins 120 caractères",
+      "META_DESCRIPTION_TOO_LONG": "La méta-description générée, produit et type compris, ne doit pas dépasser 160 caractères",
       "MISSING_AUTO_REGISTER_PLATFORM_ARGUMENT": "Argument de connexion automatique du produit manquant",
       "MISSING_CAPABILITY_ON_ORGANIZATION": "Permissions manquantes",
       "MISSING_CAPABILITY_ON_SERVICE": "Permissions manquantes",
@@ -1110,6 +1111,7 @@
         "NotConnected": "Connexion perdue",
         "NotConnectedDetails": "Vous devez à nouveau connecter votre produit."
       },
+      "OrganizationName": "Organisation : {name}",
       "ProductName": "Nom du produit",
       "Product": "Produit",
       "ProductURL": "URL du produit",
@@ -1195,7 +1197,15 @@
         "Pebibyte": "{value} Pio"
       },
       "MaxCapacity": "Capacité maximale",
-      "UsedOfLimit": "<highlight>{used}</highlight> <secondary>sur {limit}</secondary>"
+      "UsedOfLimit": "<highlight>{used}</highlight> <secondary>sur {limit}</secondary>",
+      "GuidedTourAvailability": "Visite guidée disponible uniquement pour les CSM",
+      "Tour": {
+        "Source": "Ces métriques viennent du SaaS Manager. XTM Hub les affiche telles quelles, sans les retraiter.",
+        "Database": "Ce graphique montre l'utilisation de {database} par la plateforme, comparée à ce que l'offre du client autorise. Ce n'est pas le tableau de bord Grafana : Grafana compare l'utilisation brute à la taille de disque allouée à la plateforme, une marge de sécurité qui l'empêche de planter, et ne peut donc jamais dépasser 100 %. Ici, l'utilisation est comparée à ce que le client paie, et peut dépasser 100 %.",
+        "FileStorage": "Ce graphique montre l'utilisation du stockage de fichiers S3 par la plateforme, comparée à ce que l'offre du client autorise. Comme pour la base de données, ce n'est pas le tableau de bord Grafana : Grafana compare l'utilisation brute à la taille de disque allouée à la plateforme, une marge de sécurité qui l'empêche de planter, et ne peut donc jamais dépasser 100 %. Ici, l'utilisation est comparée à ce que le client paie, et peut dépasser 100 %.",
+        "ChartAxes": "Sur chaque graphique, l'axe horizontal montre le temps et l'axe vertical l'espace utilisé, en GiB. Changez la période affichée en cliquant sur 30, 90 ou 180 jours en haut.",
+        "Sla": "Ce graphique montre la disponibilité SLA de la plateforme, jour par jour. Les barres vertes sont au niveau ou au-dessus du taux contractuel ({target}), les orange en dessous. Les barres grises n'ont pas de données, ou pas encore."
+      }
     },
     "Error": {
       "Capability": {
@@ -1454,6 +1464,9 @@
       "LogoLabel": "Logo",
       "ManagerSupportedLabel": "Gestionnaire pris en charge",
       "ManageAccessCapabilityLabel": "Gérer les accès : l'utilisateur peut inviter d'autres utilisateurs de son organisation à ce service",
+      "MetaDescriptionCurrentLength": "{error} (actuellement {length} caractères)",
+      "MetaDescriptionLabel": "Méta-description",
+      "MetaDescriptionPlaceholder": "Pour le SEO : la phrase entière doit compter entre 120 et 160 caractères, avec des tirets simples (-) uniquement, sans tirets longs (— ou –).",
       "MinimumDeployableVersionLabel": "Version minimale pour déployer sur {platform}",
       "MinimumDeployableVersionPlaceholder": "1.0.0",
       "NameLabel": "Nom",
@@ -2700,5 +2713,12 @@
       "Title": "Désinscrire la plateforme « {title} » ?",
       "Text": "La plateforme {product} « {title} » sera déconnectée de l'organisation {organization} sur XTM Hub. Les administrateurs de l'organisation seront prévenus par e-mail. Pour la reconnecter, la plateforme devra refaire le processus de connexion. La plateforme ne pourra plus utiliser ses identifiants avec XTM Hub, sauf pour apprendre qu'elle est désinscrite."
     }
+  },
+  "Tour": {
+    "GuidedTour": "Visite guidée",
+    "Close": "Fermer la visite",
+    "PreviousStep": "Aller à l'étape précédente",
+    "NextStep": "Aller à l'étape suivante",
+    "GoToStep": "Aller à l'étape {step}"
   }
 }

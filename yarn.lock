@@ -2907,9 +2907,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@filigran/design-system@npm:1.5.1":
-  version: 1.5.1
-  resolution: "@filigran/design-system@npm:1.5.1"
+"@filigran/design-system@npm:1.5.3":
+  version: 1.5.3
+  resolution: "@filigran/design-system@npm:1.5.3"
   dependencies:
     "@dnd-kit/core": "npm:^6.3.1"
     "@dnd-kit/sortable": "npm:^10.0.0"
@@ -2949,7 +2949,7 @@ __metadata:
     react-dom: ^19.0.0
   bin:
     filigran-design-system: bin/install-skills.mjs
-  checksum: 10/f09691c2a0f6dded88fb61d2521e2c353cbbe1c7538a8aab8dc78962e1d465efc304a77ca1b9d79c312d9b89951667cf86dea3821d3324f191ea89ad7d0e2e02
+  checksum: 10/f80168603c4acb743411e777a5a6270ce4cb464b3dbe771cdbd38012c3de8f49e2018d4987121a4388337c28a3112de53d8fc5a502df75d46413e495fbab0720
   languageName: node
   linkType: hard
 
@@ -7769,12 +7769,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@testing-library/user-event@npm:14.6.10":
-  version: 14.6.10
-  resolution: "@testing-library/user-event@npm:14.6.10"
+"@testing-library/user-event@npm:14.6.12":
+  version: 14.6.12
+  resolution: "@testing-library/user-event@npm:14.6.12"
   peerDependencies:
     "@testing-library/dom": ">=7.21.4"
-  checksum: 10/51619796d7e926fdea5c8c5be882872d5e939cbe781c240fe3e40f4bf5cd157c6af3445eb8560ec12b4acb4ca90347c59c4af2f1e44b4be74d8c500177b89b89
+  checksum: 10/154f83dc80b7c2d4a808b8ee0a6ef1d2995660638f2b777edaeaf5c19f7a7b7e6f4faa2f4158cef678b57117ca3b1c65257436cd1fbd1b4036edc20cfbe50074
   languageName: node
   linkType: hard
 
@@ -9643,7 +9643,7 @@ __metadata:
     "@dnd-kit/modifiers": "npm:9.0.0"
     "@dnd-kit/sortable": "npm:10.0.0"
     "@dnd-kit/utilities": "npm:3.2.2"
-    "@filigran/design-system": "npm:1.5.1"
+    "@filigran/design-system": "npm:1.5.3"
     "@filigran/icon": "npm:0.24.3"
     "@graphql-codegen/cli": "catalog:"
     "@graphql-codegen/typescript": "catalog:"
@@ -9663,7 +9663,7 @@ __metadata:
     "@testing-library/dom": "npm:10.4.2"
     "@testing-library/jest-dom": "npm:6.9.1"
     "@testing-library/react": "npm:16.3.3"
-    "@testing-library/user-event": "npm:14.6.10"
+    "@testing-library/user-event": "npm:14.6.12"
     "@types/node": "catalog:"
     "@types/react": "npm:19.3.0"
     "@types/react-dom": "npm:19.3.0"

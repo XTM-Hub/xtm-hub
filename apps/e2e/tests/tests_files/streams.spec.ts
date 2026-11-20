@@ -1,9 +1,11 @@
 import { expect, test } from '../fixtures/baseFixtures';
+import { META_DESCRIPTION_SUMMARY } from '../model/common';
 import LoginPage from '../model/login.pageModel';
 import IntegrationPage from '../model/integration.pageModel';
 
 const STREAM_TEST = {
   name: 'e2e Stream name',
+  metaDescription: META_DESCRIPTION_SUMMARY,
   shortDescription: 'This is a short description',
   description: 'This is a Stream description markdown',
   streamsServiceInstanceId: '0f4aad4b-bdd6-4084-8b1f-82c9c66578cc',

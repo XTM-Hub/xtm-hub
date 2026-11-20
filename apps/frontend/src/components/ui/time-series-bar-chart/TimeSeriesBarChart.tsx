@@ -11,6 +11,7 @@ import {
   findPeakValue,
   type TimeSeriesPoint,
   toChartData,
+  yAxisMaxWithHeadroom,
 } from './time-series-bar-chart.utils';
 
 // ApexCharts reaches for window as soon as it loads: keep it out of the server render.
@@ -190,9 +191,9 @@ export const TimeSeriesBarChart = ({
       },
       yaxis: {
         min: 0,
-        // ApexCharts hides an annotation above the highest bar: stretch the axis up to the limit.
+        // ApexCharts hides an annotation above the highest bar: stretch the axis up to the limit, with headroom.
         ...(limit && {
-          max: (max: number) => Math.max(max, limit.value),
+          max: (max: number) => yAxisMaxWithHeadroom(max, limit.value),
         }),
         labels: {
           style: { colors: 'var(--text-default-secondary)' },

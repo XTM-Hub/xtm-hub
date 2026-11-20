@@ -19,8 +19,6 @@ input LoadDocumentFacetInput {
   searchTerm: String
   documentType: String
   logicalFilters: LogicalFilterInput
-  restrictToActiveDocuments: Boolean
-    @deprecated(reason: "Use restrictToPublishedDocuments")
   restrictToPublishedDocuments: Boolean
 }
 

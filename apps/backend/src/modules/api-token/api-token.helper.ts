@@ -1,4 +1,13 @@
+import type { Response } from 'express';
 import { createHash, randomBytes } from 'node:crypto';
+import {
+  UnauthenticatedErrorCode,
+  UnknownErrorCode,
+} from '../../utils/error/error.code';
+
+// The errors the token middlewares answer themselves, before GraphQL runs
+export type ApiTokenErrorCode =
+  UnauthenticatedErrorCode.Unauthenticated | UnknownErrorCode.UnknownError;
 
 // A personal API token: `xhp_` then 32 random bytes in base64url (43 characters). The prefix lets secret scanning
 // recognise a leaked token; the XTM One connector checks the same shape.
@@ -10,6 +19,13 @@ const DISPLAYED_PREFIX_LENGTH = 6;
 export const API_TOKEN_MAX_LIFETIME_MS = 366 * 24 * 60 * 60 * 1000;
 
 export const ApiTokenHelper = {
+  // Same shape as a GraphQL error: an API token client reads JSON, whatever the route and the failure
+  sendError: (res: Response, status: number, code: ApiTokenErrorCode) => {
+    res
+      .status(status)
+      .json({ errors: [{ message: code, extensions: { code } }] });
+  },
+
   generate: (): { token: string; tokenPrefix: string; tokenHash: string } => {
     const token = `${API_TOKEN_PREFIX}${randomBytes(32).toString('base64url')}`;
     return {

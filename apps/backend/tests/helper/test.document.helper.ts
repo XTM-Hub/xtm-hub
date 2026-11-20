@@ -24,7 +24,7 @@ import { DocumentApp } from '../../src/modules/document/document.app';
 import { Document as DocumentWithUseCases } from '../../src/modules/document/document.helper';
 import { Upload } from '../../src/modules/document/document.uploads.helper';
 import { INTEGRATION_SERVICE_INSTANCE_ID } from '../../src/modules/shareable-resource/opencti/integration/integration.model';
-import { TEST_ORGANIZATIONS } from '../tests.const';
+import { TEST_META_DESCRIPTIONS, TEST_ORGANIZATIONS } from '../tests.const';
 
 const mockFileUpload: FileUpload = {
   filename: 'test-image.png',
@@ -57,6 +57,7 @@ export const TestDocumentHelper = {
       updated_at: null,
       updater_id: null,
       short_description: null,
+      meta_description: null,
       slug: null,
       uploader_organization_id: null,
       type: 'test-type',
@@ -71,6 +72,7 @@ export const TestDocumentHelper = {
       name = 'myCsvFeed',
       description = 'description',
       short_description = 'short_description',
+      meta_description = TEST_META_DESCRIPTIONS.DEFAULT,
       slug = 'slug',
       status = DocumentStatus.Published,
       uploader_id = TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
@@ -87,6 +89,7 @@ export const TestDocumentHelper = {
       name?: string;
       description?: string;
       short_description?: string;
+      meta_description?: string;
       slug?: string;
       status?: DocumentStatus;
       uploader_id?: UserId;
@@ -94,11 +97,12 @@ export const TestDocumentHelper = {
       serviceInstanceId?: ServiceInstanceId;
       sourceDocument?: Upload;
     }): Promise<Document> => {
-      const document = await DocumentApp.createDocument({
+      return TestDocumentHelper.document.createInStatus({
         input: {
           name,
           description,
           short_description,
+          meta_description,
           slug,
           status,
           uploader_id,
@@ -109,10 +113,25 @@ export const TestDocumentHelper = {
         serviceInstanceId,
         sourceDocument,
       });
+    },
+    // DocumentApp.createDocument refuses Published: such a document is created
+    // as a draft, then published directly in the database.
+    createInStatus: async (
+      args: Parameters<typeof DocumentApp.createDocument>[0]
+    ): Promise<Document> => {
+      if (args.input.status !== DocumentStatus.Published) {
+        return DocumentApp.createDocument(args);
+      }
 
-      expect(document).toBeDefined();
-
-      return document!;
+      const document = await DocumentApp.createDocument({
+        ...args,
+        input: { ...args.input, status: DocumentStatus.Draft },
+      });
+      await TestDocumentHelper.document.update(
+        { id: document.id },
+        { status: DocumentStatus.Published }
+      );
+      return { ...document, status: DocumentStatus.Published };
     },
     create: async (data?: DocumentMutator): Promise<Document> => {
       const [document] = await db<Document>('Document')

@@ -372,6 +372,14 @@ export const ANALYTICS_ELEMENT_IDS = {
     action: 'Open metrics access documentation',
   },
   platform_metrics_period_select: { action: 'Change platform metrics period' },
+  platform_metrics_tour_close: { action: 'Close platform metrics tour' },
+  platform_metrics_tour_next_step_open: {
+    action: 'Go to next platform metrics tour step',
+  },
+  platform_metrics_tour_open: { action: 'Start platform metrics tour' },
+  platform_metrics_tour_previous_step_open: {
+    action: 'Go to previous platform metrics tour step',
+  },
   platform_name_cancel: { action: 'Cancel platform rename' },
   platform_name_edit: { action: 'Rename connected platform' },
   platform_name_submit: { action: 'Save platform name' },

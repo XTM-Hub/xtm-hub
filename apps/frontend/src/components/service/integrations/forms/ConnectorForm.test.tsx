@@ -1,6 +1,7 @@
 import {
   buildIntegrationDocument,
   defineDeletedImagesTest,
+  defineMetaDescriptionEditionTests,
   DELETED_IMAGE,
   DOCUMENT_DESCRIPTION,
   DOCUMENT_NAME,
@@ -268,6 +269,12 @@ describe('ConnectorForm', () => {
   );
 
   defineDeletedImagesTest({
+    Form: ConnectorForm,
+    resourceName: ServiceFormResource.CONNECTOR,
+    buildEditedDocument: buildConnector,
+  });
+
+  defineMetaDescriptionEditionTests({
     Form: ConnectorForm,
     resourceName: ServiceFormResource.CONNECTOR,
     buildEditedDocument: buildConnector,

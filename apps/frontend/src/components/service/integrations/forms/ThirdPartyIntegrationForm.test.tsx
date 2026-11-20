@@ -3,6 +3,8 @@ import {
   CURRENT_ORGANIZATION,
   CURRENT_USER_ID,
   defineDeletedImagesTest,
+  defineMetaDescriptionCreationTests,
+  defineMetaDescriptionEditionTests,
   defineProductVersionFormatTests,
   defineShortDescriptionLengthTests,
   defineSlugGenerationTests,
@@ -17,6 +19,7 @@ import {
   givenSolutionCategories,
   KEPT_IMAGE,
   NEW_DESCRIPTION,
+  NEW_META_DESCRIPTION,
   NEW_NAME,
   NEW_SHORT_DESCRIPTION,
   NEW_SLUG,
@@ -60,12 +63,21 @@ const IMAGES_LABEL = 'Service.Form.ImageLabel';
 const VENDOR_URL = 'https://vendor.example.com';
 const NEW_VENDOR_URL = 'https://new-vendor.example.com';
 const GITHUB_URL = 'https://github.com/vendor/integration';
+const SCREENSHOT = new File(['image'], 'screenshot.png', { type: 'image/png' });
 
 const fillThirdPartyCreationFields = async (user: ServiceFormUser) => {
   await fillIntegrationCreationFields(user);
   await user.type(
     screen.getByRole('textbox', { name: VENDOR_URL_LABEL }),
     NEW_VENDOR_URL
+  );
+};
+
+const fillThirdPartyCreationForm = async (user: ServiceFormUser) => {
+  await fillThirdPartyCreationFields(user);
+  await user.upload(
+    screen.getByLabelText(IMAGES_LABEL, { selector: 'input' }),
+    SCREENSHOT
   );
 };
 
@@ -108,6 +120,7 @@ describe('ThirdPartyIntegrationForm', () => {
         slug: NEW_SLUG,
         uploader_id: CURRENT_USER_ID,
         short_description: NEW_SHORT_DESCRIPTION,
+        meta_description: NEW_META_DESCRIPTION,
         description: NEW_DESCRIPTION,
         uploader_organization_id: CURRENT_ORGANIZATION.id,
         integration_type: IntegrationType.ThirdPartyIntegration,
@@ -299,5 +312,17 @@ describe('ThirdPartyIntegrationForm', () => {
     resourceName: ServiceFormResource.THIRD_PARTY_INTEGRATION,
     buildEditedDocument: buildThirdPartyIntegration,
     shortDescriptionMaxLength: 250,
+  });
+
+  defineMetaDescriptionCreationTests({
+    Form: ThirdPartyIntegrationForm,
+    resourceName: ServiceFormResource.THIRD_PARTY_INTEGRATION,
+    fillCreationForm: fillThirdPartyCreationForm,
+  });
+
+  defineMetaDescriptionEditionTests({
+    Form: ThirdPartyIntegrationForm,
+    resourceName: ServiceFormResource.THIRD_PARTY_INTEGRATION,
+    buildEditedDocument: buildThirdPartyIntegration,
   });
 });

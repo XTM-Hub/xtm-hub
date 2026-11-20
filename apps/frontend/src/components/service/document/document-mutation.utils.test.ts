@@ -13,6 +13,8 @@ vi.mock('@/lib/graphql-upload-client', () => ({
   requestGraphqlWithUploads: vi.fn(),
 }));
 
+const META_DESCRIPTION = 'Every ransomware campaign in one dashboard';
+
 const buildValues = (
   overrides: Record<string, unknown> = {}
 ): DocumentFormValues =>
@@ -22,6 +24,7 @@ const buildValues = (
     uploader_id: 'user-1',
     uploader_organization_id: 'org-1',
     short_description: 'short',
+    meta_description: META_DESCRIPTION,
     description: 'long',
     product_version: '6.0.0',
     use_cases: ['use-case-1'],
@@ -43,6 +46,7 @@ describe('toCreateDocumentInput', () => {
       slug: 'my-dashboard',
       uploader_id: 'user-1',
       short_description: 'short',
+      meta_description: META_DESCRIPTION,
       description: 'long',
       use_cases: ['use-case-1'],
       solution_categories: [],
@@ -68,6 +72,16 @@ describe('toCreateDocumentInput', () => {
       solution_categories: [],
       uploader_id: '',
     });
+  });
+
+  it('should send an empty meta-description, which the API refuses, when the values carry none', () => {
+    // When
+    const input = toCreateDocumentInput(
+      buildValues({ meta_description: undefined })
+    );
+
+    // Then
+    expect(input.meta_description).toBe('');
   });
 });
 
@@ -109,10 +123,24 @@ describe('toUpdateDocumentInput', () => {
       uploader_id: 'user-1',
       uploader_organization_id: 'org-1',
       short_description: 'short',
+      meta_description: META_DESCRIPTION,
       description: 'long',
       use_cases: ['use-case-1'],
     });
   });
+
+  it.each([undefined, null])(
+    'should not default the meta-description when the edited values carry %s',
+    (metaDescription) => {
+      // When
+      const input = toUpdateDocumentInput(
+        buildValues({ meta_description: metaDescription })
+      );
+
+      // Then
+      expect(input.meta_description).toBe(metaDescription);
+    }
+  );
 
   it.each`
     requestedStatus                | expectedStatus
