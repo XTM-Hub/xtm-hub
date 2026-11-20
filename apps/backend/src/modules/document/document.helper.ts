@@ -17,7 +17,6 @@ import ServiceDefinition from '../../model/kanel/public/ServiceDefinition';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { UseCaseId } from '../../model/kanel/public/UseCase';
 import User, { UserId } from '../../model/kanel/public/User';
-import { PlatformIdentifierToString } from '../../server/mail-template/mail';
 import { MinIOClient } from '../../thirdparty/minio/client';
 import { MinioFile } from '../../thirdparty/minio/types';
 import type {
@@ -27,6 +26,7 @@ import type {
 import { logApp } from '../../utils/app-logger.util';
 import { ErrorCode, UnknownErrorCode } from '../../utils/error/error.code';
 import { OptionalMetadata } from '../../utils/metadata';
+import { PlatformIdentifierToString } from '../../utils/platform';
 import { WithUseCases } from '../../utils/types';
 import { isValidUrl } from '../../utils/utils';
 import {

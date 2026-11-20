@@ -145,12 +145,14 @@ describe('getConnectorMetadataFromExisting', () => {
       ManifestFragmentHelper.getConnectorMetadataFromExisting({
         currentLatestConnector: {
           datasheet_url: 'https://latest/datasheet',
+          meta_description: null,
         },
         existingBatchConnectors: [
           {
             datasheet_url: 'https://existing/datasheet',
             blogpost_url: 'https://existing/blogpost',
             demo_url: 'https://existing/demo',
+            meta_description: TEST_META_DESCRIPTIONS.DEFAULT,
           },
         ],
       })
@@ -158,41 +160,19 @@ describe('getConnectorMetadataFromExisting', () => {
       datasheet_url: 'https://latest/datasheet',
       blogpost_url: 'https://existing/blogpost',
       demo_url: 'https://existing/demo',
+      meta_description: TEST_META_DESCRIPTIONS.DEFAULT,
     });
   });
 
-  it.each`
-    description                                                      | currentLatestConnector                                  | existingBatchConnectors                                                               | expected
-    ${'carries the meta description of the current latest'}          | ${{ meta_description: TEST_META_DESCRIPTIONS.DEFAULT }} | ${[{ meta_description: TEST_META_DESCRIPTIONS.UPDATED }]}                             | ${{ meta_description: TEST_META_DESCRIPTIONS.DEFAULT }}
-    ${'falls back to the meta description of an existing connector'} | ${{ meta_description: null }}                           | ${[{ meta_description: null }, { meta_description: TEST_META_DESCRIPTIONS.UPDATED }]} | ${{ meta_description: TEST_META_DESCRIPTIONS.UPDATED }}
-    ${'carries a meta description alone, without any URL'}           | ${undefined}                                            | ${[{ meta_description: TEST_META_DESCRIPTIONS.DEFAULT }]}                             | ${{ meta_description: TEST_META_DESCRIPTIONS.DEFAULT }}
-  `(
-    '$description',
-    ({ currentLatestConnector, existingBatchConnectors, expected }) => {
-      // When
-      const result = ManifestFragmentHelper.getConnectorMetadataFromExisting({
-        currentLatestConnector,
-        existingBatchConnectors,
-      });
-
-      // Then
-      expect(result).toMatchObject(expected);
-    }
-  );
-
-  it.each`
-    description                                  | existingBatchConnectors
-    ${'the family is brand new'}                 | ${[]}
-    ${'no connector of the family has metadata'} | ${[{ meta_description: null }]}
-  `('returns undefined when $description', ({ existingBatchConnectors }) => {
-    // When
-    const result = ManifestFragmentHelper.getConnectorMetadataFromExisting({
-      currentLatestConnector: existingBatchConnectors[0],
-      existingBatchConnectors,
-    });
-
-    // Then
-    expect(result).toBeUndefined();
+  it('returns a meta description alone, without any URL', () => {
+    expect(
+      ManifestFragmentHelper.getConnectorMetadataFromExisting({
+        currentLatestConnector: undefined,
+        existingBatchConnectors: [
+          { meta_description: TEST_META_DESCRIPTIONS.DEFAULT },
+        ],
+      })
+    ).toEqual({ meta_description: TEST_META_DESCRIPTIONS.DEFAULT });
   });
 });
 

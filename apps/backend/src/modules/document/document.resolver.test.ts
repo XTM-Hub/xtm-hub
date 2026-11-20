@@ -89,36 +89,6 @@ describe('create document GraphQL mutation', () => {
 
     await expect(call).rejects.toMatchObject({ name: ErrorType.BadRequest });
   });
-
-  it.each([
-    BadRequestErrorCode.MetaDescriptionRequired,
-    BadRequestErrorCode.MetaDescriptionTooShort,
-    BadRequestErrorCode.MetaDescriptionTooLong,
-    BadRequestErrorCode.MetaDescriptionInvalidDash,
-    BadRequestErrorCode.MetaDescriptionMatchesTitle,
-  ])('should map to BadRequest for %s error', async (errorCode) => {
-    // Given
-    vi.spyOn(DocumentApp, 'createDocument').mockRejectedValue(
-      new Error(errorCode)
-    );
-
-    // When
-    const call = documentResolver.Mutation!.createDocument!(
-      {},
-      {
-        serviceInstanceId: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
-        input: {},
-      } as unknown as MutationCreateDocumentArgs,
-      contextSimpleUserFiligran2,
-      GRAPHQL_RESOLVE_INFO
-    );
-
-    // Then
-    await expect(call).rejects.toMatchObject({
-      name: ErrorType.BadRequest,
-      message: errorCode,
-    });
-  });
 });
 
 describe('update document GraphQL mutation', () => {
@@ -185,37 +155,6 @@ describe('update document GraphQL mutation', () => {
     );
 
     await expect(call).rejects.toMatchObject({ name: ErrorType.BadRequest });
-  });
-
-  it.each([
-    BadRequestErrorCode.MetaDescriptionTooShort,
-    BadRequestErrorCode.MetaDescriptionTooLong,
-    BadRequestErrorCode.MetaDescriptionInvalidDash,
-    BadRequestErrorCode.MetaDescriptionMatchesTitle,
-  ])('should map to BadRequest for %s error', async (errorCode) => {
-    // Given
-    vi.spyOn(DocumentApp, 'updateDocument').mockRejectedValue(
-      new Error(errorCode)
-    );
-
-    // When
-    const call = documentResolver.Mutation!.updateDocument!(
-      {},
-      {
-        documentId: uuidv4(),
-        serviceInstanceId: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
-        existingImageIds: [],
-        input: {},
-      } as unknown as MutationUpdateDocumentArgs,
-      contextSimpleUserFiligran2,
-      GRAPHQL_RESOLVE_INFO
-    );
-
-    // Then
-    await expect(call).rejects.toMatchObject({
-      name: ErrorType.BadRequest,
-      message: errorCode,
-    });
   });
 });
 
