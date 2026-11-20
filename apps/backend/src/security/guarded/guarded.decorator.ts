@@ -38,10 +38,11 @@ const machineContext = (principal: Principal): MachineContext | undefined => {
 
 const runGuard = async (
   guard: Guard,
-  principal: Principal
+  principal: Principal,
+  args: unknown
 ): Promise<GuardResult> => {
   try {
-    return await guard.check(principal);
+    return await guard.check(principal, args);
   } catch (error) {
     logApp.error('Access guard threw, access denied', {
       error,
@@ -72,7 +73,7 @@ const enforce =
       // The context goes to the resolver unchanged, except for a system or a platform caller
       const context = args[2] as GuardedContext;
       const principal = await guard.principalFrom(context);
-      const result = await runGuard(guard, principal);
+      const result = await runGuard(guard, principal, args[1]);
       // Only an explicit allow lets the resolver run, whatever else the guard returned
       if (result?.allowed !== true) {
         throw mapToGraphQLError(toDenialCode(result));

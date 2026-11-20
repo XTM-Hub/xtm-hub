@@ -83,6 +83,7 @@ const withSessionUser = (
 
 const SESSION_CONTEXTS: Record<
   SessionRow | OrganizationRow | SystemTokenRow,
+  [ForbiddenErrorCode.MissingCapabilityOnService]: ErrorType.ForbiddenAccess,
   Context
 > = {
   // The API leaves the user undefined for a visitor without session, which Context does not allow
