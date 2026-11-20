@@ -211,8 +211,8 @@ describe('TimeSeriesBarChart', () => {
 
   it.each`
     case                                    | computedMax      | expected
-    ${'the highest bar is below the limit'} | ${1_500_000_000} | ${2_000_000_000}
-    ${'the highest bar is above the limit'} | ${2_500_000_000} | ${2_500_000_000}
+    ${'the highest bar is below the limit'} | ${1_500_000_000} | ${2_200_000_000}
+    ${'the highest bar is above the limit'} | ${2_500_000_000} | ${2_750_000_000}
   `(
     'should end the y axis at $expected when $case',
     async ({ computedMax, expected }) => {
@@ -233,6 +233,17 @@ describe('TimeSeriesBarChart', () => {
 
     // Then
     expect(options.annotations?.yaxis).toHaveLength(1);
+    expect(options.yaxis).not.toHaveProperty('max');
+  });
+
+  it('should neither draw a limit line nor bound the y axis when the limit is null', async () => {
+    // Given / When
+    const { options } = await renderChart({ limit: null });
+
+    // Then
+    expect(options.annotations?.yaxis).toEqual([
+      expect.objectContaining({ y: 1_500_000_000 }),
+    ]);
     expect(options.yaxis).not.toHaveProperty('max');
   });
 

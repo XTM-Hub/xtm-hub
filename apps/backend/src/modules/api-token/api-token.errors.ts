@@ -1,7 +1,10 @@
 import type { Response } from 'express';
-import { UnauthenticatedErrorCode } from '../../utils/error/error.code';
+import {
+  UnauthenticatedErrorCode,
+  UnknownErrorCode,
+} from '../../utils/error/error.code';
 
-type ApiTokenErrorStatus = 401 | 429;
+type ApiTokenErrorStatus = 401 | 429 | 500;
 
 interface ApiTokenErrorDefinition {
   readonly code: string;
@@ -18,6 +21,7 @@ export const API_TOKEN_ERRORS = {
     status: 401,
   },
   TooManyRequests: { code: 'TOO_MANY_REQUESTS', status: 429 },
+  UnknownError: { code: UnknownErrorCode.UnknownError, status: 500 },
 } as const satisfies Record<string, ApiTokenErrorDefinition>;
 
 type ApiTokenError = (typeof API_TOKEN_ERRORS)[keyof typeof API_TOKEN_ERRORS];

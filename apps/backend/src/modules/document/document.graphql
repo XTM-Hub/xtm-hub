@@ -58,7 +58,6 @@ type ShareableResource {
   name: String
   description: String
   download_number: Int
-  active: Boolean @deprecated(reason: "Use status")
   status: DocumentStatus!
   source_type: DocumentSourceType!
   image_type: DocumentImageType
@@ -92,7 +91,6 @@ type DefaultDocument implements Node & Document {
   short_description: String
   description: String
   file_name: String @auth
-  active: Boolean @deprecated(reason: "Use status")
   status: DocumentStatus!
   created_at: Date!
   updated_at: Date
@@ -116,7 +114,6 @@ interface Document implements Node {
   short_description: String
   description: String
   file_name: String @auth
-  active: Boolean @deprecated(reason: "Use status")
   status: DocumentStatus!
   created_at: Date!
   updated_at: Date
@@ -195,8 +192,6 @@ type Mutation {
   deleteDocument(
     documentId: DocumentId!
     service_instance_id: ServiceInstanceId!
-    forceDelete: Boolean
-      @deprecated(reason: "Ignored, documents are always deleted")
   ): Document! @auth @service_capa(requires: [DELETE])
   incrementShareNumberDocument(documentId: DocumentId!): Document!
 }

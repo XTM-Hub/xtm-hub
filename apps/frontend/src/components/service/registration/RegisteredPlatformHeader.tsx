@@ -2,31 +2,28 @@
 
 import { PortalContext } from '@/components/me/AppPortalContext';
 import { CONTRACT_LABEL_BY_CONTRACT } from '@/components/registration/PlatformIdentifierMapping';
-import { registeredPlatformByServiceInstanceIdFragment } from '@/components/registration/register/register.graphql';
 import { ConnectedProductButtons } from '@/components/service/registration/ConnectedProductButtons';
 import { useTranslate } from '@/hooks/use-translate';
 import { isWithinLastMonths } from '@/utils/date';
-import { Chip } from '@filigran/design-system';
-import { registeredPlatformByServiceInstanceId_fragment$key } from '@generated/registeredPlatformByServiceInstanceId_fragment.graphql';
-import { PlatformContract } from '@graphql/generated';
+import { Chip, Icon } from '@filigran/design-system';
+import {
+  PlatformContract,
+  RegisteredPlatformDetailsFragment,
+} from '@graphql/generated';
 import { useContext } from 'react';
-import { useFragment } from 'react-relay';
 
 interface RegisteredPlatformHeaderProps {
-  registeredPlatform: registeredPlatformByServiceInstanceId_fragment$key;
+  platform: RegisteredPlatformDetailsFragment;
+  showOrganization: boolean;
 }
 
 export const RegisteredPlatformHeader = ({
-  registeredPlatform,
+  platform,
+  showOrganization,
 }: RegisteredPlatformHeaderProps) => {
   const t = useTranslate();
 
   const { me } = useContext(PortalContext);
-  const platform =
-    useFragment<registeredPlatformByServiceInstanceId_fragment$key>(
-      registeredPlatformByServiceInstanceIdFragment,
-      registeredPlatform
-    );
 
   const shouldDisplayHeaderButtons =
     me?.selected_organization_id === platform.subscription?.organization.id;
@@ -59,6 +56,14 @@ export const RegisteredPlatformHeader = ({
             )}
             severity={isConnectionStatusOk ? 'low' : 'critical'}
           />
+          {showOrganization && platform.organization && (
+            <Chip
+              label={t('Register.Details.OrganizationName', {
+                name: platform.organization.name,
+              })}
+              startIcon={<Icon name="building-2" />}
+            />
+          )}
         </div>
       </div>
       {shouldDisplayHeaderButtons && (

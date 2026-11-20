@@ -2,16 +2,18 @@ import { RegisteredPlatformOverview } from '@/components/service/registration/Re
 import { basePlatform } from '@/components/service/registration/registered-platform.fixtures';
 import { readTrackedEvents, startAnalytics } from '@/utils/test/analytics';
 import testRender from '@/utils/test/test-render';
-import { registeredPlatformByServiceInstanceId_fragment$data } from '@generated/registeredPlatformByServiceInstanceId_fragment.graphql';
 import {
   CommercialModel,
   OrganizationCapability,
   PlatformIdentifier,
   PortalCapability,
+  RegisteredPlatformDetailsFragment,
   SaasPlatformMetricsPeriod,
   SaasPlatformStorage,
+  useRegisteredPlatformByServiceInstanceQuery,
   useRegisteredSaasPlatformDataQuery,
 } from '@graphql/generated';
+import { registrationKeys } from '@graphql/registration/registration.keys';
 import { act, screen, within } from '@testing-library/react';
 import {
   notFound,
@@ -19,32 +21,20 @@ import {
   useSearchParams,
 } from 'next/navigation';
 import { Suspense } from 'react';
-import { useLazyLoadQuery } from 'react-relay';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
-let mockPlatformData: registeredPlatformByServiceInstanceId_fragment$data | null;
-
-vi.mock('react-relay', async (importOriginal) => ({
-  ...(await importOriginal()),
-  useLazyLoadQuery: vi.fn(() => ({ registeredPlatform: mockPlatformData })),
-  useFragment: () => mockPlatformData,
-  useMutation: () => [vi.fn(), false],
-}));
-
 vi.mock('@graphql/generated', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@graphql/generated')>();
-  const useRegisteredSaasPlatformDataQuery = Object.assign(vi.fn(), {
-    getKey: actual.useRegisteredSaasPlatformDataQuery.getKey,
-  });
-  return {
-    ...actual,
-    useRegisteredSaasPlatformDataQuery,
+  const { mockGeneratedQueryHooks } =
+    await import('@/utils/test/mock-generated-query');
+  return mockGeneratedQueryHooks(importOriginal, {
+    useRegisteredPlatformByServiceInstanceQuery: vi.fn(),
+    useRegisteredSaasPlatformDataQuery: vi.fn(),
     useUsersWithCapabilitiesInOrganizationQuery: vi.fn(() => ({
       data: undefined,
     })),
-  };
+  });
 });
 
 const HOSTNAME = 'my-platform.filigran.io';
@@ -82,7 +72,7 @@ const mockSaasPlatformDataQuery = ({
 const SERVICE_INSTANCE_ID = 'service instance/id';
 const NOT_FOUND_ERROR = 'NEXT_NOT_FOUND';
 
-const saasPlatform: registeredPlatformByServiceInstanceId_fragment$data = {
+const saasPlatform: RegisteredPlatformDetailsFragment = {
   ...basePlatform,
   commercial_model: CommercialModel.Saas,
 };
@@ -93,7 +83,7 @@ const METRICS_VIEWER = {
 };
 
 const renderOverview = async (
-  platform: registeredPlatformByServiceInstanceId_fragment$data | null,
+  platform: RegisteredPlatformDetailsFragment | null,
   {
     capabilities = [PortalCapability.ReadSaasMetrics],
     organizationCapabilities = [],
@@ -102,7 +92,9 @@ const renderOverview = async (
     organizationCapabilities?: OrganizationCapability[];
   } = {}
 ) => {
-  mockPlatformData = platform;
+  vi.mocked(useRegisteredPlatformByServiceInstanceQuery).mockReturnValue({
+    data: { registeredPlatform: platform },
+  } as ReturnType<typeof useRegisteredPlatformByServiceInstanceQuery>);
   let rendered: ReturnType<typeof testRender> | undefined;
   await act(async () => {
     rendered = testRender(
@@ -138,9 +130,42 @@ describe('RegisteredPlatformOverview', () => {
     await renderOverview(basePlatform);
 
     // Then
-    expect(useLazyLoadQuery).toHaveBeenCalledWith(expect.anything(), {
-      input: { service_instance_id: SERVICE_INSTANCE_ID },
+    const variables = { input: { service_instance_id: SERVICE_INSTANCE_ID } };
+    expect(useRegisteredPlatformByServiceInstanceQuery).toHaveBeenCalledWith(
+      expect.anything(),
+      variables,
+      expect.objectContaining({
+        queryKey: registrationKeys.byServiceInstance(variables),
+      })
+    );
+  });
+
+  it('should display a loader until the registered platform is loaded', async () => {
+    // Given
+    vi.mocked(useRegisteredPlatformByServiceInstanceQuery).mockReturnValue({
+      data: undefined,
+    } as ReturnType<typeof useRegisteredPlatformByServiceInstanceQuery>);
+
+    // When
+    await act(async () => {
+      testRender(
+        <Suspense>
+          <RegisteredPlatformOverview
+            params={Promise.resolve({ serviceInstanceId: SERVICE_INSTANCE_ID })}
+            platformIdentifier={PlatformIdentifier.Opencti}
+          />
+        </Suspense>
+      );
     });
+
+    // Then
+    expect(notFound).not.toHaveBeenCalled();
+    expect(
+      screen.queryByRole('heading', {
+        level: 2,
+        name: 'Register.Details.PlatformInformation',
+      })
+    ).not.toBeInTheDocument();
   });
 
   it('should redirect to the not found page when the platform is not visible to the user', async () => {

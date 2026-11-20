@@ -1,6 +1,7 @@
 import ResourceMarkdownRenderer from '@/components/service/document/ResourceMarkdownRenderer';
 import { useTranslate } from '@/hooks/use-translate';
 import { getResourcePageFiligranWebsiteUtm } from '@/utils/filigran-website-utm';
+import { Paper } from '@filigran/design-system';
 
 // Component interface
 interface ShareableResourceDescriptionProps {
@@ -19,19 +20,25 @@ const ShareableResourceDescription = ({
 
   return (
     <div className="flex-[3_3_0%] min-w-0">
-      <h2 className="py-2 title-xs uppercase truncate text-default-secondary">
-        {t('Service.ShareableResources.Details.Overview')}
-      </h2>
-      <section className="rounded layer-1 bg-elevation-default overflow-x-auto">
-        <h3 className="p-4">{shortDescription}</h3>
-        <ResourceMarkdownRenderer
-          source={longDescription}
-          className="p-4"
-          filigranWebsiteUtm={getResourcePageFiligranWebsiteUtm(
-            serviceDefinitionIdentifier
-          )}
-        />
-      </section>
+      <Paper
+        as="section"
+        padding={16}
+        className="overflow-x-auto"
+        title={
+          <h2 className="[font:inherit] tracking-[inherit]">
+            {t('Service.ShareableResources.Details.Overview')}
+          </h2>
+        }>
+        <div className="flex flex-col gap-8">
+          <h3>{shortDescription}</h3>
+          <ResourceMarkdownRenderer
+            source={longDescription}
+            filigranWebsiteUtm={getResourcePageFiligranWebsiteUtm(
+              serviceDefinitionIdentifier
+            )}
+          />
+        </div>
+      </Paper>
     </div>
   );
 };

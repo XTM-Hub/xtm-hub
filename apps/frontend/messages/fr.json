@@ -56,11 +56,6 @@
     "SearchPlatform": "Rechercher une plateforme",
     "ClearSearch": "Effacer la recherche",
     "Tour": {
-      "GuidedTour": "Visite guidée",
-      "Close": "Fermer la visite",
-      "PreviousStep": "Aller à l'étape précédente",
-      "NextStep": "Aller à l'étape suivante",
-      "GoToStep": "Aller à l'étape {step}",
       "Table": "Ce tableau liste toutes les plateformes SaaS du SaaS Manager, avec les données qu'il remonte.",
       "Search": "Recherchez une plateforme par nom de client.",
       "ProductFilter": "N'affichez que les plateformes d'un produit.",
@@ -404,6 +399,7 @@
       "INTEGRATION_TYPE_NOT_RECOGNIZED": "Ce type d'intégration n'est pas reconnu",
       "INVALID_ACTION_SIZE": "Une erreur inconnue s'est produite",
       "INVALID_CONTENT_TRANSLATION_KEY": "Clé de contenu invalide",
+      "INVALID_DOCUMENT_CREATION_STATUS": "Une ressource ne peut être créée qu'en brouillon ou en validation",
       "INVALID_DOCUMENT_STATUS_TRANSITION": "Ce changement de statut n'est pas autorisé pour cette ressource",
       "INVALID_EMAIL": "L'email doit être dans un format valide.",
       "INVALID_IMAGE_URL": "L'URL de l'image n'est pas valide",
@@ -1109,6 +1105,7 @@
         "NotConnected": "Connexion perdue",
         "NotConnectedDetails": "Vous devez à nouveau connecter votre produit."
       },
+      "OrganizationName": "Organisation : {name}",
       "ProductName": "Nom du produit",
       "Product": "Produit",
       "ProductURL": "URL du produit",
@@ -1194,7 +1191,15 @@
         "Pebibyte": "{value} Pio"
       },
       "MaxCapacity": "Capacité maximale",
-      "UsedOfLimit": "<highlight>{used}</highlight> <secondary>sur {limit}</secondary>"
+      "UsedOfLimit": "<highlight>{used}</highlight> <secondary>sur {limit}</secondary>",
+      "GuidedTourAvailability": "Visite guidée disponible uniquement pour les CSM",
+      "Tour": {
+        "Source": "Ces métriques viennent du SaaS Manager. XTM Hub les affiche telles quelles, sans les retraiter.",
+        "Database": "Ce graphique montre l'utilisation de {database} par la plateforme, comparée à ce que l'offre du client autorise. Ce n'est pas le tableau de bord Grafana : Grafana compare l'utilisation brute à la taille de disque allouée à la plateforme, une marge de sécurité qui l'empêche de planter, et ne peut donc jamais dépasser 100 %. Ici, l'utilisation est comparée à ce que le client paie, et peut dépasser 100 %.",
+        "FileStorage": "Ce graphique montre l'utilisation du stockage de fichiers S3 par la plateforme, comparée à ce que l'offre du client autorise. Comme pour la base de données, ce n'est pas le tableau de bord Grafana : Grafana compare l'utilisation brute à la taille de disque allouée à la plateforme, une marge de sécurité qui l'empêche de planter, et ne peut donc jamais dépasser 100 %. Ici, l'utilisation est comparée à ce que le client paie, et peut dépasser 100 %.",
+        "ChartAxes": "Sur chaque graphique, l'axe horizontal montre le temps et l'axe vertical l'espace utilisé, en GiB. Changez la période affichée en cliquant sur 30, 90 ou 180 jours en haut.",
+        "Sla": "Ce graphique montre la disponibilité SLA de la plateforme, jour par jour. Les barres vertes sont au niveau ou au-dessus du taux contractuel ({target}), les orange en dessous. Les barres grises n'ont pas de données, ou pas encore."
+      }
     },
     "Error": {
       "Capability": {
@@ -2650,5 +2655,12 @@
     "Title": "Bienvenue sur XTM Hub",
     "Subtitle": "Le point d'entrée unifié de l'écosystème Filigran.",
     "Instructions": "Utilisez « Modifier les traductions » dans la barre latérale pour activer le mode édition (réservé aux utilisateurs avec la capacité BYPASS), puis cliquez sur le titre ou le sous-titre encadré ci-dessous. L’enregistrement crée un brouillon à publier depuis le bandeau du mode édition."
+  },
+  "Tour": {
+    "GuidedTour": "Visite guidée",
+    "Close": "Fermer la visite",
+    "PreviousStep": "Aller à l'étape précédente",
+    "NextStep": "Aller à l'étape suivante",
+    "GoToStep": "Aller à l'étape {step}"
   }
 }

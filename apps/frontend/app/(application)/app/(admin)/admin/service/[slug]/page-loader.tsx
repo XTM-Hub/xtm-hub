@@ -12,6 +12,7 @@ import ServiceSlug from '@/components/service/[slug]/ServiceSlug';
 import { ServiceInstanceByIdQuery } from '@/components/service/service.graphql';
 import useMountingLoader from '@/hooks/use-mounting-loader';
 import { portalGraphqlClient } from '@/lib/graphql-client';
+import { throwOnFirstLoadError } from '@/lib/query-client';
 import { serviceInstanceByIdQuery } from '@generated/serviceInstanceByIdQuery.graphql';
 import { subscriptionKeys } from '@graphql/subscription/subscription.keys';
 import { useMemo } from 'react';
@@ -46,8 +47,7 @@ const PageLoader = ({ id }: PreloaderProps) => {
   );
   const { data } = useSubscriptionsListQuery(portalGraphqlClient, variables, {
     queryKey: subscriptionKeys.list(variables),
-    // A failed first load reaches the error page; a failed background refetch keeps the data shown.
-    throwOnError: (_error, query) => query.state.data === undefined,
+    throwOnError: throwOnFirstLoadError,
   });
 
   const subscriptions = useMemo(
