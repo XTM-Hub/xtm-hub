@@ -31,6 +31,9 @@ const SAFE_PATH_SEGMENT_PATTERN = /^[A-Za-z0-9]+(?:[._-][A-Za-z0-9]+)*$/;
 const SAFE_PATH_SEGMENT_MAX_LENGTH = 200;
 
 const FILIGRAN_BLOG_PATH = '/blog/';
+const GITHUB_ORIGIN = 'https://github.com';
+const OPENCTI_GITHUB_RELEASE_TAG_PATH =
+  '/OpenCTI-Platform/opencti/releases/tag/';
 
 const getBlogBaseUrl = (): string => config.get<string>('blog_api.base_url');
 
@@ -111,7 +114,21 @@ export const NewsFeedDestinationRegistry: Partial<
         segment: metadata[NewsFeedItemMetadataKey.BlogPostSlug],
       }),
   },
+  [NewsFeedItemType.GithubRelease]: {
+    getHost: () => new URL(GITHUB_ORIGIN).hostname,
+    forwardUtmParams: false,
+    buildUrl: (metadata) =>
+      NewsFeedRedirectHelper.buildUrlWithSegment({
+        origin: GITHUB_ORIGIN,
+        pathPrefix: OPENCTI_GITHUB_RELEASE_TAG_PATH,
+        segment: metadata[NewsFeedItemMetadataKey.ProductVersion],
+      }),
+  },
 };
+
+// A type without an external redirect (Hub resources) keeps its utm parameters
+export const shouldAddUtmToUrlPath = (type: NewsFeedItemType): boolean =>
+  NewsFeedDestinationRegistry[type]?.forwardUtmParams !== false;
 
 export const buildNewsFeedDestination = (
   type: NewsFeedItemType,

@@ -18,10 +18,12 @@ import type { BlogFeedItem } from '../../thirdparty/blog-api/schema';
 import { ErrorCode } from '../../utils/error/error.code';
 import {
   doesPlatformSupportBlogpostNewsFeed,
+  doesPlatformSupportGithubReleaseNewsFeed,
   NewsFeedHelper,
 } from './news-feed.helper';
 import {
   blogpostProductMapping,
+  githubReleasePlatformIdentifiers,
   NEWS_FEED_INTERNAL_METADATA_KEYS,
   newsFeedConfigurationMapping,
 } from './news-feed.model';
@@ -88,9 +90,38 @@ const buildBlogpostMetadata = (
   );
 };
 
+// The id is generated first, so that a metadata value such as the url_path can be built from it
+const insertNewsFeedItem = async ({
+  item,
+  buildMetadata,
+}: {
+  item: Pick<NewsFeedItem, 'type' | 'platform_identifier' | 'title' | 'tags'>;
+  buildMetadata: (
+    id: NewsFeedItemId
+  ) => { key: NewsFeedItemMetadataKey; value: string }[];
+}): Promise<NewsFeedItem> => {
+  const id = uuidv4() as NewsFeedItemId;
+  const [newsFeedItem] = await db<NewsFeedItem>('NewsFeedItem')
+    .insert({ id, ...item, creation_date: new Date() })
+    .returning('*');
+
+  if (!newsFeedItem) {
+    throw new Error(ErrorCode.NewsFeedItemNotFound);
+  }
+
+  await db('NewsFeedItemMetadata').insert(
+    buildMetadata(id).map((metadata) => ({
+      news_feed_item_id: id,
+      ...metadata,
+    }))
+  );
+
+  return newsFeedItem;
+};
+
 export const NewsFeedDomain = {
-  // BLOG_POST is listed only for platforms whose version supports blogpost items: it is also what shows the
-  // OpenCTI See all link
+  // BLOG_POST and GITHUB_RELEASE are listed only for platforms whose version supports them: BLOG_POST is also what
+  // shows the OpenCTI See all link
   loadAvailableNewsFeedTypes: (
     platformIdentifier: PlatformIdentifier,
     platformVersion?: string | null
@@ -103,9 +134,18 @@ export const NewsFeedDomain = {
       Object.values(blogpostProductMapping).includes(platformIdentifier) &&
       doesPlatformSupportBlogpostNewsFeed(platformIdentifier, platformVersion);
 
-    return supportsBlogpost
-      ? [...resourceTypes, NewsFeedItemType.BlogPost]
-      : resourceTypes;
+    const supportsGithubRelease =
+      githubReleasePlatformIdentifiers.includes(platformIdentifier) &&
+      doesPlatformSupportGithubReleaseNewsFeed(
+        platformIdentifier,
+        platformVersion
+      );
+
+    return [
+      ...resourceTypes,
+      ...(supportsBlogpost ? [NewsFeedItemType.BlogPost] : []),
+      ...(supportsGithubRelease ? [NewsFeedItemType.GithubRelease] : []),
+    ];
   },
 
   loadAndConsumeProvisionedNewsFeedItems: async (
@@ -147,9 +187,13 @@ export const NewsFeedDomain = {
         return acc;
       }, new Map<NewsFeedItemId, NewsFeedItemMetadata[]>());
 
-      // Auto-cleanup: hard-delete is_deleted items with no remaining provisioned rows
+      // Auto-cleanup: hard-delete is_deleted items with no remaining provisioned rows. A release row is kept: it keeps
+      // the version from being created again.
       const deletedItemIds = newsFeedItems
-        .filter((item) => item.is_deleted)
+        .filter(
+          (item) =>
+            item.is_deleted && item.type !== NewsFeedItemType.GithubRelease
+        )
         .map((item) => item.id);
       if (deletedItemIds.length > 0) {
         await db('NewsFeedItem')
@@ -188,38 +232,76 @@ export const NewsFeedDomain = {
     if (!document.name) {
       throw new Error(ErrorCode.NewsFeedItemMissingTitle);
     }
-    const [newsFeedItem] = await db<NewsFeedItem>('NewsFeedItem')
-      .insert({
-        id: uuidv4() as NewsFeedItemId,
+    const globalDocumentId = toGlobalId('Document', document.id);
+
+    return insertNewsFeedItem({
+      item: {
         type,
         platform_identifier: platformIdentifier,
         title: document.name,
-        creation_date: new Date(),
         tags,
-      })
-      .returning('*');
-
-    if (!newsFeedItem) {
-      throw new Error(ErrorCode.NewsFeedItemNotFound);
-    }
-
-    const globalDocumentId = toGlobalId('Document', document.id);
-
-    await db('NewsFeedItemMetadata').insert([
-      {
-        news_feed_item_id: newsFeedItem.id,
-        key: NewsFeedItemMetadataKey.UrlPath,
-        value: `redirect/${serviceDefinitionIdentifier}?document_id=${globalDocumentId}`,
       },
-      {
-        news_feed_item_id: newsFeedItem.id,
-        key: NewsFeedItemMetadataKey.DocumentId,
-        value: document.id,
-      },
-    ]);
-
-    return newsFeedItem;
+      buildMetadata: () => [
+        {
+          key: NewsFeedItemMetadataKey.UrlPath,
+          value: `redirect/${serviceDefinitionIdentifier}?document_id=${globalDocumentId}`,
+        },
+        { key: NewsFeedItemMetadataKey.DocumentId, value: document.id },
+      ],
+    });
   },
+
+  // Deleted items included, so that a deleted release is never created again
+  loadGithubReleaseItemByProductVersion: ({
+    platformIdentifier,
+    productVersion,
+  }: {
+    platformIdentifier: PlatformIdentifier;
+    productVersion: string;
+  }): Promise<NewsFeedItem | undefined> =>
+    db<NewsFeedItem>('NewsFeedItem')
+      .innerJoin(
+        'NewsFeedItemMetadata',
+        'NewsFeedItemMetadata.news_feed_item_id',
+        'NewsFeedItem.id'
+      )
+      .where({
+        'NewsFeedItem.type': NewsFeedItemType.GithubRelease,
+        'NewsFeedItem.platform_identifier': platformIdentifier,
+        'NewsFeedItemMetadata.key': NewsFeedItemMetadataKey.ProductVersion,
+        'NewsFeedItemMetadata.value': productVersion,
+      })
+      .select('NewsFeedItem.*')
+      .first(),
+
+  // Runs in the current transaction, the caller owns it
+  createGithubReleaseNewsFeedItem: ({
+    platformIdentifier,
+    title,
+    productVersion,
+  }: {
+    platformIdentifier: PlatformIdentifier;
+    title: string;
+    productVersion: string;
+  }): Promise<NewsFeedItem> =>
+    insertNewsFeedItem({
+      item: {
+        type: NewsFeedItemType.GithubRelease,
+        platform_identifier: platformIdentifier,
+        title,
+        tags: [],
+      },
+      buildMetadata: (id) => [
+        {
+          key: NewsFeedItemMetadataKey.UrlPath,
+          value: NewsFeedHelper.buildRedirectUrlPath(id),
+        },
+        {
+          key: NewsFeedItemMetadataKey.ProductVersion,
+          value: productVersion,
+        },
+      ],
+    }),
 
   loadMetadataByNewsFeedItemIds: async (
     newsFeedItemIds: readonly NewsFeedItemId[]
@@ -501,8 +583,10 @@ export const NewsFeedDomain = {
     // Live blog items are only removed by the blogpost synchronization, whatever their age.
     // A dropped one is kept while platforms still have to consume its deletion: the hard
     // delete cascades to ProvisionedNewsFeedItem, so they would never be notified.
+    // Release items are never removed: they keep a version from being created again.
     const deletedRows: { id: NewsFeedItemId }[] = await db('NewsFeedItem')
       .where('creation_date', '<', cutoffDate)
+      .whereNot('type', NewsFeedItemType.GithubRelease)
       .where((builder) =>
         builder
           .whereNot('type', NewsFeedItemType.BlogPost)

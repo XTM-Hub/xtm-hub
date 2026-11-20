@@ -1750,12 +1750,14 @@ export enum NewsFeedItemMetadataKey {
   DocumentId = 'document_id',
   ImageAlt = 'image_alt',
   ImageUrl = 'image_url',
+  ProductVersion = 'product_version',
   ReadMinutes = 'read_minutes',
   UrlPath = 'url_path'
 }
 
 export enum NewsFeedItemType {
   BlogPost = 'BLOG_POST',
+  GithubRelease = 'GITHUB_RELEASE',
   ResourceCustomDashboard = 'RESOURCE_CUSTOM_DASHBOARD',
   ResourceCustomView = 'RESOURCE_CUSTOM_VIEW',
   ResourceIntegration = 'RESOURCE_INTEGRATION',

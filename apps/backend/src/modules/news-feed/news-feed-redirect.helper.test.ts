@@ -8,6 +8,7 @@ import {
   buildNewsFeedDestination,
   NewsFeedDestinationRegistry,
   NewsFeedRedirectHelper,
+  shouldAddUtmToUrlPath,
 } from './news-feed-redirect.helper';
 
 vi.mock('config', async (importOriginal) => {
@@ -25,6 +26,9 @@ const realConfigGet = vi.mocked(config.get).getMockImplementation();
 const BLOG_POST_SLUG = 'threat-report-2026';
 const BLOG_HOST = new URL(config.get<string>('blog_api.base_url')).hostname;
 const BLOG_POST_URL = `${config.get<string>('blog_api.base_url')}/blog/${BLOG_POST_SLUG}`;
+const GITHUB_HOST = 'github.com';
+const OPENCTI_RELEASES_URL =
+  'https://github.com/OpenCTI-Platform/opencti/releases/tag';
 
 const UNSAFE_SEGMENTS: [string, string][] = [
   ['a slash', 'a/b'],
@@ -211,6 +215,55 @@ describe('news-feed-redirect.helper', () => {
     });
 
     it.each([
+      ['a non-LTS', '7.261201.0'],
+      ['an LTS', '7.260309.0-lts.8'],
+    ])(
+      'should build the OpenCTI release tag destination when the product_version is %s version',
+      (_description, productVersion) => {
+        // When
+        const destination = buildNewsFeedDestination(
+          NewsFeedItemType.GithubRelease,
+          {
+            [NewsFeedItemMetadataKey.ProductVersion]: productVersion,
+            [NewsFeedItemMetadataKey.UrlPath]: 'redirect/news-feed/ignored',
+          }
+        );
+
+        // Then
+        expect(destination).toEqual({
+          url: `${OPENCTI_RELEASES_URL}/${productVersion}`,
+          host: GITHUB_HOST,
+          forwardUtmParams: false,
+        });
+      }
+    );
+
+    it.each([
+      [
+        'an unsafe product_version',
+        { [NewsFeedItemMetadataKey.ProductVersion]: '../../evil' },
+      ],
+      [
+        'a product_version with a query',
+        { [NewsFeedItemMetadataKey.ProductVersion]: '7.261201.0?a=1' },
+      ],
+      ['no product_version', {}],
+      [
+        'only a blog_post_slug',
+        { [NewsFeedItemMetadataKey.BlogPostSlug]: BLOG_POST_SLUG },
+      ],
+    ])('should refuse a GitHub release with %s', (_description, metadata) => {
+      // When
+      const destination = buildNewsFeedDestination(
+        NewsFeedItemType.GithubRelease,
+        metadata
+      );
+
+      // Then
+      expect(destination).toBeUndefined();
+    });
+
+    it.each([
       NewsFeedItemType.ResourceCustomDashboard,
       NewsFeedItemType.ResourceCustomView,
       NewsFeedItemType.ResourceIntegration,
@@ -228,10 +281,29 @@ describe('news-feed-redirect.helper', () => {
   });
 
   describe('newsFeedDestinationRegistry', () => {
-    it('should only register the blog post type', () => {
+    it('should only register the blog post and GitHub release types', () => {
       expect(Object.keys(NewsFeedDestinationRegistry)).toEqual([
         NewsFeedItemType.BlogPost,
+        NewsFeedItemType.GithubRelease,
       ]);
     });
+  });
+
+  describe('shouldAddUtmToUrlPath', () => {
+    it.each([
+      [NewsFeedItemType.BlogPost, true],
+      [NewsFeedItemType.ResourceCustomDashboard, true],
+      [NewsFeedItemType.ResourceScenario, true],
+      [NewsFeedItemType.GithubRelease, false],
+    ])(
+      'should add the utm parameters to the url_path of a %s item only when its redirect forwards them: %s',
+      (type, expected) => {
+        // When
+        const result = shouldAddUtmToUrlPath(type);
+
+        // Then
+        expect(result).toBe(expected);
+      }
+    );
   });
 });

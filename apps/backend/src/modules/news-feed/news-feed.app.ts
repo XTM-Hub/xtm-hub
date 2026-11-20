@@ -16,6 +16,8 @@ import { BlogApiClient } from '../../thirdparty/blog-api/client';
 import { BlogApiError } from '../../thirdparty/blog-api/errors';
 import { logApp } from '../../utils/app-logger.util';
 import { ErrorCode } from '../../utils/error/error.code';
+import { PlatformIdentifierToString } from '../../utils/platform';
+import { isLtsVersion } from '../../utils/versioning';
 import {
   INTERVAL_UNITS,
   IntervalHelper,
@@ -30,16 +32,19 @@ import {
   buildNewsFeedDestination,
   NewsFeedMetadataValues,
   NewsFeedRedirectHelper,
+  shouldAddUtmToUrlPath,
 } from './news-feed-redirect.helper';
 import { NewsFeedDomain } from './news-feed.domain';
 import {
   doesPlatformSupportBlogpostNewsFeed,
+  doesPlatformSupportGithubReleaseNewsFeed,
   doesPlatformSupportNewsFeed,
   NewsFeedHelper,
 } from './news-feed.helper';
 import {
   BlogpostProduct,
   blogpostProductMapping,
+  githubReleasePlatformIdentifiers,
   NEWS_FEED_INTERNAL_METADATA_KEYS,
   newsFeedConfigurationMapping,
 } from './news-feed.model';
@@ -76,11 +81,13 @@ const provisionNewsFeedItemForAllSupportedPlatforms = async ({
 };
 
 // Same as provisionNewsFeedItemForAllSupportedPlatforms for several items, with the platforms filtered by the given
-// predicate instead of the news feed version gate. Returns the number of platforms the items are provisioned to.
+// predicate instead of the news feed version gate, and by release track when isLts is given. Returns the number of
+// platforms the items are provisioned to.
 const provisionNewsFeedItemsForPlatformsMatching = async ({
   newsFeedItemIds,
   platformIdentifier,
   isPlatformSupported,
+  isLts,
 }: {
   newsFeedItemIds: NewsFeedItemId[];
   platformIdentifier: PlatformIdentifier;
@@ -88,6 +95,7 @@ const provisionNewsFeedItemsForPlatformsMatching = async ({
     platform_id: string;
     platform_version: string | null;
   }) => boolean;
+  isLts?: boolean;
 }): Promise<number> => {
   if (newsFeedItemIds.length === 0) {
     return 0;
@@ -95,7 +103,8 @@ const provisionNewsFeedItemsForPlatformsMatching = async ({
 
   const registeredPlatforms =
     await RegistrationDomain.loadAllActiveRegisteredPlatformsByPlatformIdentifier(
-      platformIdentifier
+      platformIdentifier,
+      { isLts }
     );
   const platformIds = [
     ...new Set(
@@ -109,6 +118,26 @@ const provisionNewsFeedItemsForPlatformsMatching = async ({
   }
   return platformIds.length;
 };
+
+const provisionGithubReleaseNewsFeedItem = ({
+  newsFeedItemId,
+  platformIdentifier,
+  isLts,
+}: {
+  newsFeedItemId: NewsFeedItemId;
+  platformIdentifier: PlatformIdentifier;
+  isLts?: boolean;
+}): Promise<number> =>
+  provisionNewsFeedItemsForPlatformsMatching({
+    newsFeedItemIds: [newsFeedItemId],
+    platformIdentifier,
+    isPlatformSupported: (platform) =>
+      doesPlatformSupportGithubReleaseNewsFeed(
+        platformIdentifier,
+        platform.platform_version
+      ),
+    isLts,
+  });
 
 export interface BlogpostSyncCounts {
   created: number;
@@ -335,7 +364,9 @@ export const NewsFeedApp = {
         .map((m) => ({
           key: m.key as NewsFeedItemMetadataKey,
           value:
-            m.key === NewsFeedItemMetadataKey.UrlPath && m.value
+            m.key === NewsFeedItemMetadataKey.UrlPath &&
+            m.value &&
+            shouldAddUtmToUrlPath(item.type)
               ? NewsFeedHelper.addUtmToUrlPath({
                   urlPath: m.value,
                   type: item.type,
@@ -433,6 +464,46 @@ export const NewsFeedApp = {
         serviceInstanceId,
       });
     }
+  },
+
+  // No lock: a plain lookup, then the write. newProductVersion is called once per release.
+  createGithubReleaseNewsFeedItem: async ({
+    product,
+    version,
+  }: {
+    product: PlatformIdentifier;
+    version: string;
+  }): Promise<void> => {
+    if (!githubReleasePlatformIdentifiers.includes(product)) {
+      return;
+    }
+
+    const existingItem =
+      await NewsFeedDomain.loadGithubReleaseItemByProductVersion({
+        platformIdentifier: product,
+        productVersion: version,
+      });
+    if (existingItem) {
+      return;
+    }
+
+    // One transaction: a failed provisioning rolls the item back, else the existing item would block every retry
+    await withTransaction(async () => {
+      const newsFeedItem = await NewsFeedDomain.createGithubReleaseNewsFeedItem(
+        {
+          platformIdentifier: product,
+          title: `${PlatformIdentifierToString[product]} ${version}`,
+          productVersion: version,
+        }
+      );
+
+      // An LTS customer does not want the non-LTS releases, and the reverse
+      await provisionGithubReleaseNewsFeedItem({
+        newsFeedItemId: newsFeedItem.id,
+        platformIdentifier: product,
+        isLts: isLtsVersion(version),
+      });
+    });
   },
 
   createResourceNewsFeedItem: async ({
@@ -588,6 +659,15 @@ export const NewsFeedApp = {
     const newsFeedItem = await NewsFeedDomain.markNewsFeedItemAsDeleted(
       newsFeedItemId as NewsFeedItemId
     );
+
+    // Every track: a platform may have changed release track since consuming the item
+    if (newsFeedItem.type === NewsFeedItemType.GithubRelease) {
+      await provisionGithubReleaseNewsFeedItem({
+        newsFeedItemId: newsFeedItem.id,
+        platformIdentifier: newsFeedItem.platform_identifier,
+      });
+      return;
+    }
 
     const platformIdentifier = Object.values(newsFeedConfigurationMapping).find(
       (config) => config.newsFeedType === newsFeedItem.type

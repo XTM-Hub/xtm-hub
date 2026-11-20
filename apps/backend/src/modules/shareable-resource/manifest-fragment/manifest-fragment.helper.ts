@@ -1,4 +1,5 @@
 import { BadRequestErrorCode } from '../../../utils/error/error.code';
+import { BadRequestError } from '../../../utils/error/error.util';
 import { compareVersions, isLtsVersion } from '../../../utils/versioning';
 
 export const MANIFEST_VERSION_PATTERN = String.raw`(\d+)\.(\d{1,6})\.(\d+)(?:-lts\.(\d+))?`;
@@ -38,6 +39,16 @@ export const ManifestFragmentHelper = {
 
     const ltsPatch = (match[4] ?? '0').padStart(3, '0');
     return `${major}.${datePart}.${patch}.LTS.${ltsPatch}`;
+  },
+
+  validateProductVersion: (version: string): void => {
+    try {
+      ManifestFragmentHelper.validateAndFormatManifestVersion(version);
+    } catch {
+      throw BadRequestError(BadRequestErrorCode.InvalidPlatformVersion, {
+        detail: `Invalid version format: ${version}`,
+      });
+    }
   },
 
   validateShortDescriptionLength: (shortDescription: string): void => {

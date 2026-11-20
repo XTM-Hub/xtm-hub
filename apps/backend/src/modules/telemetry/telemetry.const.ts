@@ -29,6 +29,7 @@ export enum TelemetryTargetProduct {
 
 export enum TelemetryNewsFeedItemType {
   BLOG_POST = 'blog-post',
+  GITHUB_RELEASE = 'github-release',
 }
 
 export enum TelemetryOrganizationType {
