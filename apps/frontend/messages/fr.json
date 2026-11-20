@@ -124,7 +124,7 @@
       "Remaining": "Restant",
       "DaysRemaining": "{days, plural, =1 {# jour} other {# jours}}",
       "TrialRequester": "Demandeur de l'essai",
-      "Title": "Détails de l'essai XTM Platform"
+      "Title": "Détails de l'essai XTM Platform :"
     },
     "Products": {
       "ConnectionStatus": "Statut de connexion",
