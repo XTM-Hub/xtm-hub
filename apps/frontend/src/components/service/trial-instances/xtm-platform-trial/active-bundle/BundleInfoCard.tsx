@@ -41,6 +41,9 @@ export const BundleInfoCard = ({ bundle, canManage }: BundleInfoCardProps) => {
     ? Math.max(daysUntil(new Date(bundle.end_date)), 0)
     : null;
 
+  // Keeps the block as tall as its grid cell, like the former Card `h-full`:
+  // `[&>div]:h-full` targets the div Paper renders around its title row and its
+  // surface, and `flex-1` on the surface fills that div.
   return (
     <div className="h-full [&>div]:h-full">
       <Paper

@@ -93,6 +93,9 @@ export const BundleProductCard = ({
     </div>
   );
 
+  // Keeps the block as tall as its grid cell, like the former Card `h-full`:
+  // `[&>div]:h-full` targets the div Paper renders around its title row and its
+  // surface, and `flex-1` on the surface fills that div.
   return (
     <div className="h-full [&>div]:h-full">
       <Paper
@@ -209,24 +212,24 @@ export const BundleProductCard = ({
             </Button>
           )}
         </div>
-        {canManage && (
-          <PlatformUpdateSheet
-            serviceInstanceId={product.service_instance_id}
-            serviceInstanceName={product.service_instance?.name ?? ''}
-            platformUrl={product.url ?? ''}
-            serviceDefinitionIdentifier={getRegisteredPlatformServiceIdentifier(
-              product.platform_identifier
-            )}
-            open={openEditName}
-            setOpen={setOpenEditName}
-            onUpdated={() =>
-              queryClient.invalidateQueries({
-                queryKey: xtmPlatformBundleKeys.all(),
-              })
-            }
-          />
-        )}
       </Paper>
+      {canManage && (
+        <PlatformUpdateSheet
+          serviceInstanceId={product.service_instance_id}
+          serviceInstanceName={product.service_instance?.name ?? ''}
+          platformUrl={product.url ?? ''}
+          serviceDefinitionIdentifier={getRegisteredPlatformServiceIdentifier(
+            product.platform_identifier
+          )}
+          open={openEditName}
+          setOpen={setOpenEditName}
+          onUpdated={() =>
+            queryClient.invalidateQueries({
+              queryKey: xtmPlatformBundleKeys.all(),
+            })
+          }
+        />
+      )}
     </div>
   );
 };

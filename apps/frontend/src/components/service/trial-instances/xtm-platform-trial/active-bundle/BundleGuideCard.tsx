@@ -10,8 +10,11 @@ import Link from 'next/link';
 export const BundleGuideCard = () => {
   const tGuide = useTranslate('XtmPlatformTrial.Guide');
 
+  // Keeps the block as tall as its grid cell, like the former Card `h-full`:
+  // `[&>div]:h-full` targets the div Paper renders around its title row and its
+  // surface, and `flex-1` on the surface fills that div.
   return (
-    <div className="h-full w-full [&>div]:h-full">
+    <div className="h-full [&>div]:h-full">
       <Paper
         as="section"
         padding={16}

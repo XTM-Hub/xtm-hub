@@ -1,3 +1,4 @@
+import { expectPaperWithTitleAbove } from '@/utils/test/paper';
 import testRender from '@/utils/test/test-render';
 import { XtmPlatformBundleDetailsFragment } from '@graphql/generated';
 import { screen } from '@testing-library/react';
@@ -68,12 +69,6 @@ describe('BundleInfoCard', () => {
       name: 'XtmPlatformTrial.BundleInfo.Title',
     });
     const surface = screen.getByText('ACME').closest('section');
-    // The surface carries the design system radius, padding and elevation
-    // classes. These pin the design system's class names on purpose, as jsdom
-    // does no layout: a rename in the design system needs this test updated.
-    // The elevation is the default one, shared with the other blocks of the page.
-    expect(surface).toHaveClass('rounded-sm', 'p-4', 'layer-1');
-    expect(surface).not.toContainElement(title);
-    expect(surface?.parentElement).toContainElement(title);
+    expectPaperWithTitleAbove(surface, title);
   });
 });
