@@ -21,7 +21,7 @@ import {
   IntervalHelper,
   IntervalUnit,
 } from '../common/interval.helper';
-import { PlatformConfigurationDomain } from '../registration/platform-configuration/platform-configuration.domain';
+import type { FullPlatformConfiguration } from '../registration/platform-configuration/platform-configuration.domain';
 import { RegistrationDomain } from '../registration/registration.domain';
 import { platformIdentifierMappedByServiceDefinitionIdentifier } from '../registration/registration.mapping';
 import { ServiceDefinitionDomain } from '../service/definition/service-definition.domain';
@@ -314,29 +314,14 @@ export const NewsFeedApp = {
   },
 
   consumeProvisionedNewsFeedItems: async ({
-    platformId,
-    token,
+    registration,
   }: {
-    platformId: string | null;
-    token: string | null;
+    registration: FullPlatformConfiguration;
   }): Promise<ConsumeProvisionedNewsFeedItemsResponse> => {
-    if (!platformId || !token) {
-      throw new Error(ErrorCode.InvalidPlatformId);
-    }
-
-    const resolvedConfiguration =
-      await PlatformConfigurationDomain.loadResolvedConfigurationByPlatformAndToken(
-        {
-          platform_id: platformId,
-          token,
-        }
-      );
-    if (!resolvedConfiguration) {
-      throw new Error(ErrorCode.PlatformNotRegistered);
-    }
-
     const rawItems =
-      await NewsFeedDomain.loadAndConsumeProvisionedNewsFeedItems(platformId);
+      await NewsFeedDomain.loadAndConsumeProvisionedNewsFeedItems(
+        registration.platformConfiguration.platform_id
+      );
 
     const newsFeedItems = rawItems.map((item) => ({
       ...item,
@@ -354,8 +339,8 @@ export const NewsFeedApp = {
               ? NewsFeedHelper.addUtmToUrlPath({
                   urlPath: m.value,
                   type: item.type,
-                  // The consuming platform is where the link is clicked, resolved from its id and token
-                  platformIdentifier: resolvedConfiguration.platformIdentifier,
+                  // The consuming platform is where the link is clicked
+                  platformIdentifier: registration.platformIdentifier,
                 })
               : m.value,
         })),
@@ -364,8 +349,8 @@ export const NewsFeedApp = {
     return {
       news_feed_items: newsFeedItems,
       available_news_feed_types: NewsFeedDomain.loadAvailableNewsFeedTypes(
-        resolvedConfiguration.platformIdentifier,
-        resolvedConfiguration.platformConfiguration.platform_version
+        registration.platformIdentifier,
+        registration.platformConfiguration.platform_version
       ),
     };
   },

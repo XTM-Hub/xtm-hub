@@ -1,7 +1,12 @@
 import type { ApolloServer } from '@apollo/server';
+import { v4 as uuidv4 } from 'uuid';
 import { afterAll, beforeAll, expect, it, type MockInstance } from 'vitest';
 import { requestContext } from '../../src/context/request.context';
 import type { UserLoadUserBy } from '../../src/model/user';
+import {
+  PLATFORM_ID_HEADER,
+  PLATFORM_TOKEN_HEADER,
+} from '../../src/modules/security-management/token/platform-token.util';
 import type { DenialCode } from '../../src/security/guarded/guard.types';
 import type { Context } from '../../src/server/apollo-plugins/log';
 import {
@@ -23,7 +28,9 @@ type SessionRow = 'anonymous' | 'user' | 'admin';
 type OrganizationRow =
   'memberWithoutCapability' | 'otherOrganization' | 'nonMember';
 type SystemTokenRow = 'system' | 'invalidSystemToken';
-export type AccessRow = SessionRow | OrganizationRow | SystemTokenRow;
+type PlatformRow = 'platform' | 'invalidPlatformToken' | 'unknownPlatform';
+export type AccessRow =
+  SessionRow | OrganizationRow | SystemTokenRow | PlatformRow;
 export type AccessOutcome = 'allowed' | DenialCode;
 
 export interface AccessMatrixFixture {
@@ -31,6 +38,7 @@ export interface AccessMatrixFixture {
   // What the operation answers to a row that is allowed
   expectedData: Record<string, unknown>;
   expectedDataByRow?: Partial<Record<AccessRow, Record<string, unknown>>>;
+  platformCredentials?: { platformId: string; token: string };
   cleanup: () => Promise<void>;
 }
 
@@ -41,7 +49,9 @@ export interface AccessMatrixOptions {
   // e.g. () => vi.spyOn(solutionCategoryDomain, 'insertSolutionCategory')
   guarded: () => MockInstance;
   expected: Record<SessionRow, AccessOutcome> &
-    Partial<Record<OrganizationRow | SystemTokenRow, AccessOutcome>>;
+    Partial<
+      Record<OrganizationRow | SystemTokenRow | PlatformRow, AccessOutcome>
+    >;
 }
 
 const ROWS: AccessRow[] = [
@@ -53,6 +63,9 @@ const ROWS: AccessRow[] = [
   'nonMember',
   'system',
   'invalidSystemToken',
+  'platform',
+  'invalidPlatformToken',
+  'unknownPlatform',
 ];
 
 const ERROR_FAMILY: Record<DenialCode, ErrorType> = {
@@ -68,7 +81,10 @@ const withSessionUser = (
   overrides: Partial<UserLoadUserBy>
 ): Context => ({ ...context, user: { ...context.user, ...overrides } });
 
-const CONTEXTS: Record<AccessRow, Context> = {
+const SESSION_CONTEXTS: Record<
+  SessionRow | OrganizationRow | SystemTokenRow,
+  Context
+> = {
   // The API leaves the user undefined for a visitor without session, which Context does not allow
   anonymous: {
     ...contextSimpleUserFiligran2,
@@ -91,6 +107,44 @@ const CONTEXTS: Record<AccessRow, Context> = {
   }),
   system: contextSystemToken,
   invalidSystemToken: contextInvalidSystemToken,
+};
+
+const platformContext = (platformId: string, token: string): Context =>
+  ({
+    req: {
+      headers: {
+        [PLATFORM_ID_HEADER]: platformId,
+        [PLATFORM_TOKEN_HEADER]: token,
+      },
+    },
+  }) as unknown as Context;
+
+const platformContextOf = (
+  row: PlatformRow,
+  credentials: AccessMatrixFixture['platformCredentials']
+): Context => {
+  if (!credentials) {
+    throw new Error(`The fixture needs platformCredentials for the ${row} row`);
+  }
+  switch (row) {
+    case 'platform':
+      return platformContext(credentials.platformId, credentials.token);
+    case 'invalidPlatformToken':
+      return platformContext(credentials.platformId, uuidv4());
+    case 'unknownPlatform':
+      return platformContext(uuidv4(), credentials.token);
+  }
+};
+
+const contextOf = (row: AccessRow, fixture: AccessMatrixFixture): Context => {
+  switch (row) {
+    case 'platform':
+    case 'invalidPlatformToken':
+    case 'unknownPlatform':
+      return platformContextOf(row, fixture.platformCredentials);
+    default:
+      return SESSION_CONTEXTS[row];
+  }
 };
 
 // Starts the real schema with the real formatError, as the API does
@@ -116,16 +170,16 @@ const useGraphqlServer = () => {
 
   return async (
     operation: string,
-    variables: Record<string, unknown>,
+    fixture: AccessMatrixFixture,
     row: AccessRow
   ) => {
-    const contextValue = CONTEXTS[row];
+    const contextValue = contextOf(row, fixture);
     const previousRequestContext = requestContext.get();
     // The restrictions below the guard read the caller from the request context
     requestContext.set({ user: contextValue.user ?? undefined });
     try {
       const response = await server.executeOperation(
-        { query: operation, variables },
+        { query: operation, variables: fixture.variables },
         { contextValue }
       );
       if (response.body.kind !== 'single') {
@@ -140,7 +194,7 @@ const useGraphqlServer = () => {
 
 export const TestAccessMatrixHelper = {
   // Call inside a describe named after the operation. Runs it as an anonymous visitor,
-  // a member with no portal capability and a platform admin, plus the organization and system-token rows that expected lists
+  // a member with no portal capability and a platform admin, plus the organization, system-token and platform rows that expected lists
   expectAccessMatrix: ({
     operation,
     prepare,
@@ -168,7 +222,7 @@ export const TestAccessMatrixHelper = {
 
         try {
           // When
-          const { errors } = await execute(operation, fixture.variables, row);
+          const { errors } = await execute(operation, fixture, row);
 
           // Then
           expect(errors).toMatchObject([
@@ -190,11 +244,7 @@ export const TestAccessMatrixHelper = {
 
         try {
           // When
-          const { data, errors } = await execute(
-            operation,
-            fixture.variables,
-            row
-          );
+          const { data, errors } = await execute(operation, fixture, row);
 
           // Then
           expect(errors).toBeUndefined();

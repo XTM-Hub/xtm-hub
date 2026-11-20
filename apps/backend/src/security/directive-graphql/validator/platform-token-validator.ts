@@ -1,19 +1,12 @@
 import express from 'express';
 import { GraphQLFieldResolver } from 'graphql';
-import { v4 as uuidv4 } from 'uuid';
-import { OrganizationCapability } from '../../../__generated__/resolvers-types';
 import { requestContext } from '../../../context/request.context';
 import { PortalContext } from '../../../model/portal-context';
-import { UserLoadUserBy } from '../../../model/user';
-import { OrganizationDomain } from '../../../modules/organization-management/organization/organization.domain';
-import { PlatformConfigurationDomain } from '../../../modules/registration/platform-configuration/platform-configuration.domain';
-import {
-  validateAndGetRequestedPlatformToken,
-  validateExistsPlatformAndToken,
-} from '../../../modules/security-management/token/platform-token.util';
-import { PLATFORM_USER_EMAIL, PLATFORM_USER_UUID } from '../../../portal.const';
+import { validateExistsPlatformAndToken } from '../../../modules/security-management/token/platform-token.util';
 import { ErrorCode } from '../../../utils/error/error.code';
 import { ForbiddenAccess } from '../../../utils/error/error.util';
+import { buildPlatformUser } from '../../machine-user';
+import { loadPlatformCredentialMatch } from '../../platform-credential';
 
 export {
   extractPlatformId,
@@ -43,34 +36,12 @@ const loadOrganizationFromPlatformIdAndTokenHeaders = async (
   if (!extractedAuth) {
     throw buildInvalidPlatformTokenError();
   }
-  const { token, platform_id } = extractedAuth;
 
-  const platformConfiguration =
-    await PlatformConfigurationDomain.loadConfigurationByPlatformAndToken({
-      platform_id,
-      token,
-    });
-  if (platformConfiguration) {
-    const organization =
-      await OrganizationDomain.loadOrganizationSubscribedToServiceInstance(
-        platformConfiguration.service_instance_id
-      );
-    if (organization) {
-      return organization;
-    }
+  const match = await loadPlatformCredentialMatch(extractedAuth);
+  if (!match) {
+    throw buildInvalidPlatformTokenError();
   }
-
-  const deploymentRequest = await validateAndGetRequestedPlatformToken({
-    platform_id,
-    token,
-  });
-  if (deploymentRequest) {
-    return OrganizationDomain.loadOrganizationBy({
-      id: deploymentRequest.organization_requester_id,
-    });
-  }
-
-  throw buildInvalidPlatformTokenError();
+  return match.organization;
 };
 
 type ResolverArgumentValue =
@@ -95,45 +66,9 @@ export const createPlatformTokenResolver = (
     const organization = await loadOrganizationFromPlatformIdAndTokenHeaders(
       portalContext.req
     );
-    if (!organization) {
-      throw new Error(ErrorCode.OrganizationNotFound);
-    }
+    const platformUser = buildPlatformUser(organization);
 
-    const platformUser: UserLoadUserBy = {
-      id: PLATFORM_USER_UUID,
-      email: PLATFORM_USER_EMAIL,
-      salt: '',
-      password: '',
-      first_name: null,
-      last_name: null,
-      selected_organization_id: organization.id,
-      picture: null,
-      disabled: false,
-      last_login: null,
-      country: null,
-      platform_token: null,
-      picture_minio: null,
-      selected_language: 'en',
-      status: null,
-      invitation_date: null,
-      has_replied_satisfaction: null,
-      idp_subject: null,
-      organizations: [organization],
-      capabilities: [],
-      roles_portal: [],
-      organization_capabilities: [
-        {
-          id: uuidv4(),
-          organization: organization,
-          capabilities: [OrganizationCapability.ManagePlatformRegistration],
-        },
-      ],
-      selected_org_capabilities: [
-        OrganizationCapability.ManagePlatformRegistration,
-      ],
-    };
-
-    // If token is valid, override context with system user
+    // If token is valid, override context with the platform user
     const enhancedContext: PortalContext = {
       ...portalContext,
       user: platformUser,

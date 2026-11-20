@@ -3,11 +3,8 @@ import { PortalCapability } from '../../../__generated__/resolvers-types';
 import { requestContext } from '../../../context/request.context';
 import { PortalContext } from '../../../model/portal-context';
 import { ForbiddenAccess } from '../../../utils/error/error.util';
-import {
-  buildScopedSystemUser,
-  isValidSystemToken,
-  SYSTEM_TOKEN_HEADER,
-} from '../../system-token';
+import { buildScopedSystemUser } from '../../machine-user';
+import { isValidSystemToken, SYSTEM_TOKEN_HEADER } from '../../system-token';
 
 export const SYSTEM_TOKEN_DIRECTIVE_NAME = 'system_token';
 
