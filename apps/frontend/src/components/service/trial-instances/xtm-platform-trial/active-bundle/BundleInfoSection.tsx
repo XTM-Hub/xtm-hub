@@ -50,7 +50,7 @@ export const BundleInfoSection = ({
       elevation={2}
       padding={16}
       className="flex flex-col gap-3">
-      <h2 className="min-w-0 truncate text-title-xs">
+      <h2 className="text-title-xs">
         {t('XtmPlatformTrial.BundleInfo.Title')}
       </h2>
       <div className="flex flex-col divide-y divide-[var(--border-elevation-subtle)]">
