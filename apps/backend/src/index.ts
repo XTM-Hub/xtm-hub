@@ -18,6 +18,7 @@ import { UserLoadUserBy } from './model/user';
 import {
   apiTokenMiddleware,
   getApiTokenAuthentication,
+  refuseApiTokenMiddleware,
 } from './modules/api-token/api-token.auth';
 import { apiTokenRateLimiter } from './modules/api-token/api-token.plugin';
 import { DeploymentRequestDataLoader } from './modules/deployment/deployment.dataloader';
@@ -345,18 +346,20 @@ const handler = createHandler({
 });
 
 app.use(
-  PORTAL_WEBSOCKET_PATH,
-  cors<cors.CorsRequest>(PORTAL_CORS_OPTIONS),
-  json(),
-  handler
-);
-app.use(
   PORTAL_GRAPHQL_PATH,
   sessionMiddleware,
   cors<cors.CorsRequest>(PORTAL_CORS_OPTIONS),
   json(),
   apiTokenRateLimiter,
   middlewareExpress
+);
+// An API token authenticates PORTAL_GRAPHQL_PATH only: every route mounted from here on refuses it
+app.use(refuseApiTokenMiddleware);
+app.use(
+  PORTAL_WEBSOCKET_PATH,
+  cors<cors.CorsRequest>(PORTAL_CORS_OPTIONS),
+  json(),
+  handler
 );
 
 // endregion

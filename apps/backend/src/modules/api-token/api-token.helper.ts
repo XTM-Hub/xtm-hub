@@ -1,13 +1,16 @@
 import type { Response } from 'express';
 import { createHash, randomBytes } from 'node:crypto';
 import {
+  ForbiddenErrorCode,
   UnauthenticatedErrorCode,
   UnknownErrorCode,
 } from '../../utils/error/error.code';
 
 // The errors the token middlewares answer themselves, before GraphQL runs
 export type ApiTokenErrorCode =
-  UnauthenticatedErrorCode.Unauthenticated | UnknownErrorCode.UnknownError;
+  | UnauthenticatedErrorCode.Unauthenticated
+  | UnknownErrorCode.UnknownError
+  | ForbiddenErrorCode.NotAllowedWithApiToken;
 
 // A personal API token: `xhp_` then 32 random bytes in base64url (43 characters). The prefix lets secret scanning
 // recognise a leaked token; the XTM One connector checks the same shape.

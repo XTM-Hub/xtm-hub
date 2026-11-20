@@ -12,8 +12,11 @@ you, without your session. A token belongs to you and to one of your organizatio
 | `admin`      | Your rights in the organization, organization administration included, and your platform capabilities, `BYPASS` excepted. |
 
 A token never exceeds your rights: they are read again on every call. A right removed from you, a disabled account or
-a membership that ended takes effect on the next call. No token, whatever its scope, may change the selected
-organization, create another token or log out (`NOT_ALLOWED_WITH_API_TOKEN`).
+a membership that ended takes effect on the next call. No token, whatever its scope, may act on your own account or
+obtain a credential that would outlive it (`NOT_ALLOWED_WITH_API_TOKEN`): change the selected organization, log in or
+out, add a user to the organization, create another token, refresh your platform token, register a platform, reset
+your password, edit your profile or picture, or transfer your personal space. A `read_write` or `admin` token may still
+revoke a token.
 
 ## Create a token
 
@@ -50,8 +53,9 @@ curl https://hub.filigran.io/graphql-api \
 ```
 
 The request runs as you, in the token's organization. A revoked, expired or unknown token is answered `401`: the API
-never falls back to a session. Calls are limited to 300 per minute per token, and every call is logged with the token
-and the operation it ran.
+never falls back to a session. A token works on `/graphql-api` only: any other route, the `/graphql-sse` subscription
+endpoint included, answers it `403` (`NOT_ALLOWED_WITH_API_TOKEN`). Calls are limited to 300 per minute per token, and
+every call is logged with the token and the operation it ran.
 
 `settings { capabilities }` lists `API_TOKENS` when the Hub accepts personal API tokens.
 
