@@ -20,13 +20,7 @@ import {
   userServices_fragment$data,
   userServices_fragment$key,
 } from '@generated/userServices_fragment.graphql';
-import {
-  OrganizationCapability,
-  ServiceInstanceItemFragment,
-  ServiceRestriction,
-  SubscriptionByIdQuery,
-  useSubscriptionByIdQuery,
-} from '@graphql/generated';
+import { OrganizationCapability, ServiceInstanceItemFragment, ServiceRestriction, SubscriptionByIdQuery, useSubscriptionByIdQuery, ServiceInstanceWithCapabilitiesItemFragment } from '@graphql/generated';
 import { subscriptionKeys } from '@graphql/subscription/subscription.keys';
 import { ColumnDef, PaginationState } from '@tanstack/react-table';
 
@@ -56,7 +50,6 @@ import { portalGraphqlClient } from '@/lib/graphql-client';
 import { throwOnFirstLoadError } from '@/lib/query-client';
 import { ADMIN_SERVICE_CATALOG_PATH, APP_PATH } from '@/utils/path/constant';
 import { Button } from '@filigran/design-system';
-import { serviceInstanceForSubscriptions_fragment$data } from '@generated/serviceInstanceForSubscriptions_fragment.graphql';
 import { userServiceFromSubscriptionQuery } from '@generated/userServiceFromSubscriptionQuery.graphql';
 import { notFound } from 'next/navigation';
 
@@ -328,7 +321,7 @@ const SubscriptionSlugContent = ({
       {headerServiceInstance && (
         <ServiceSlugHeader
           serviceInstance={
-            headerServiceInstance as unknown as serviceInstanceForSubscriptions_fragment$data
+            headerServiceInstance as unknown as ServiceInstanceWithCapabilitiesItemFragment
           }
         />
       )}

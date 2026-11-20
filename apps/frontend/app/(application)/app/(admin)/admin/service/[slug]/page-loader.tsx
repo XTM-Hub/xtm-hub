@@ -3,20 +3,17 @@ import {
   OrderingMode,
   SubscriptionFilterKey,
   SubscriptionOrdering,
+  useServiceInstanceWithCapabilitiesByIdQuery,
   useSubscriptionsListQuery,
 } from '@graphql/generated';
 
 import Loader from '@/components/Loader';
 import ServiceSlug from '@/components/service/[slug]/ServiceSlug';
-
-import { ServiceInstanceByIdQuery } from '@/components/service/service.graphql';
-import useMountingLoader from '@/hooks/use-mounting-loader';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { throwOnFirstLoadError } from '@/lib/query-client';
-import { serviceInstanceByIdQuery } from '@generated/serviceInstanceByIdQuery.graphql';
+import { serviceInstanceWithCapabilitiesKeys } from '@graphql/service-instances/service-instances.keys';
 import { subscriptionKeys } from '@graphql/subscription/subscription.keys';
 import { useMemo } from 'react';
-import { useQueryLoader } from 'react-relay';
 
 // Component interface
 interface PreloaderProps {
@@ -25,9 +22,21 @@ interface PreloaderProps {
 
 // Component
 const PageLoader = ({ id }: PreloaderProps) => {
-  const [queryRefServiceInstance, loadQuery] =
-    useQueryLoader<serviceInstanceByIdQuery>(ServiceInstanceByIdQuery);
-  useMountingLoader(loadQuery, { service_instance_id: id });
+  const serviceInstanceVariables = useMemo(
+    () => ({ service_instance_id: id }),
+    [id]
+  );
+  const { data: serviceInstanceData } =
+    useServiceInstanceWithCapabilitiesByIdQuery(
+      portalGraphqlClient,
+      serviceInstanceVariables,
+      {
+        queryKey: serviceInstanceWithCapabilitiesKeys.byId(
+          serviceInstanceVariables
+        ),
+        throwOnError: throwOnFirstLoadError,
+      }
+    );
 
   const variables = useMemo(
     () => ({
@@ -55,17 +64,20 @@ const PageLoader = ({ id }: PreloaderProps) => {
     [data]
   );
 
+  if (!serviceInstanceData || !subscriptions) {
+    return <Loader />;
+  }
+
+  // A service instance the admin cannot load leaves the page empty.
+  if (!serviceInstanceData.serviceInstanceById) {
+    return null;
+  }
+
   return (
-    <>
-      {queryRefServiceInstance && subscriptions ? (
-        <ServiceSlug
-          subscriptions={subscriptions}
-          queryRefServiceInstance={queryRefServiceInstance}
-        />
-      ) : (
-        <Loader />
-      )}
-    </>
+    <ServiceSlug
+      subscriptions={subscriptions}
+      serviceInstance={serviceInstanceData.serviceInstanceById}
+    />
   );
 };
 
