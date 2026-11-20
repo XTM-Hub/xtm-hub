@@ -28,7 +28,7 @@ export const ServiceListFilterEntityType = ({
   return (
     <LogicalMultiSelectFormField
       options={entityTypeOptions}
-      initialValue={entityTypes}
+      value={entityTypes}
       noResultString={t('Utils.NotFound')}
       onValueChange={setEntityTypes}
       analyticsFilter={{

@@ -34,7 +34,7 @@ export const IntegrationSolutionCategoryFilter = ({
   return (
     <LogicalMultiSelectFormField
       options={options}
-      initialValue={solutionCategories}
+      value={solutionCategories}
       noResultString={t('Utils.NotFound')}
       onValueChange={setSolutionCategories}
       analyticsFilter={{
