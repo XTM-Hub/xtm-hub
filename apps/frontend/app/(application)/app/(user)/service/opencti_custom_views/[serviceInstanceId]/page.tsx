@@ -5,7 +5,7 @@ import { APP_PATH } from '@/utils/path/constant';
 import ServiceByIdQuery, {
   serviceByIdQuery,
 } from '@generated/serviceByIdQuery.graphql';
-import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
+import { ServiceInstanceItemFragment } from '@graphql/generated';
 import PageLoader from './page-loader';
 
 interface ServiceCustomViewsPageProps {
@@ -32,7 +32,7 @@ const Page = async ({ params }: ServiceCustomViewsPageProps) => {
       label:
         (
           response?.data
-            .serviceInstanceById as unknown as serviceInstance_fragment$data
+            .serviceInstanceById as unknown as ServiceInstanceItemFragment
         )?.name ?? '',
       original: true,
     },
@@ -46,7 +46,7 @@ const Page = async ({ params }: ServiceCustomViewsPageProps) => {
           <PageLoader
             serviceInstance={
               response.data
-                .serviceInstanceById as unknown as serviceInstance_fragment$data
+                .serviceInstanceById as unknown as ServiceInstanceItemFragment
             }
           />
         </>

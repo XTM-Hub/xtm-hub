@@ -36,7 +36,6 @@ import {
   splitExistingAndNewImages,
 } from '@/utils/documents';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
-import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 import {
   DocumentCreateDocument,
   DocumentCreateMutationVariables,
@@ -45,6 +44,7 @@ import {
   DocumentUpdateDocument,
   DocumentUpdateMutationVariables,
   IntegrationType,
+  ServiceInstanceItemFragment,
   useDocumentCreateMutation,
   useDocumentDeleteMutation,
   useDocumentUpdateMutation,
@@ -53,7 +53,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 
 interface UseDocumentContextProps {
-  serviceInstance: serviceInstance_fragment$data;
+  serviceInstance: ServiceInstanceItemFragment;
   type: ShareableResourceType;
 }
 

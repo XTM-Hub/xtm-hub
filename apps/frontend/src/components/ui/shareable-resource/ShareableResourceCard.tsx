@@ -15,11 +15,11 @@ import {
 } from '@/utils/shareable-resources/shareable-resources.types';
 import { docHasMetadata } from '@/utils/shareable-resources/utils/shareable-resources.client.utils';
 import { Paper } from '@filigran/design-system';
-import { ServiceDefinitionIdentifier } from '@generated/serviceList_fragment.graphql';
 import {
   DocumentItemFragment,
   DocumentMetadataKeyCode,
   IntegrationType,
+  ServiceDefinitionIdentifier,
 } from '@graphql/generated';
 import Link from 'next/link';
 import { ReactNode } from 'react';

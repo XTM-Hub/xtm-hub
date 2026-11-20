@@ -2,8 +2,8 @@ import { useAdminByPass } from '@/hooks/use-portal-capability';
 import useServiceCapability, {
   useServiceCapabilityWithSubscriptionId,
 } from '@/hooks/use-service-capability';
-import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 import {
+  ServiceInstanceItemFragment,
   ServiceRestriction,
   ServiceUserCapabilitiesQuery,
   useServiceUserCapabilitiesQuery,
@@ -29,14 +29,13 @@ const UserServiceId = 'user-service-id';
 const GenericCapabilityId = 'generic-capability-id';
 const GenericCapabilityName = 'manage_access';
 
-const ServiceInstance: serviceInstance_fragment$data = {
+const ServiceInstance: ServiceInstanceItemFragment = {
   id: ServiceInstanceId,
   name: ServiceName,
   description: null,
   slug: ServiceSlug,
   capabilities: [],
   service_definition: null,
-  ' $fragmentType': 'serviceInstance_fragment',
 };
 
 const mockCapabilitiesQueryResult = (

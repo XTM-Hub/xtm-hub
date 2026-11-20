@@ -5,7 +5,6 @@ import { ServiceListStorageKey } from '@/utils/filters-storage.utils';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 import { readTrackedEvents, startAnalytics } from '@/utils/test/analytics';
 import testRender from '@/utils/test/test-render';
-import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 import {
   DocumentItemFragment,
   DocumentOrdering,
@@ -13,6 +12,7 @@ import {
   FilterKey,
   LogicalOperator,
   OrderingMode,
+  ServiceInstanceItemFragment,
 } from '@graphql/generated';
 import { screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -129,10 +129,14 @@ vi.mock('@/components/service/components/ServiceList', () => ({
 }));
 
 describe('ShareableResourceServiceList', () => {
-  const serviceInstance = {
+  const serviceInstance: ServiceInstanceItemFragment = {
     id: SERVICE_INSTANCE_ID,
+    name: 'Service',
+    description: null,
+    slug: null,
     capabilities: [],
-  } as serviceInstance_fragment$data;
+    service_definition: null,
+  };
 
   const buildElement = (search: string) => (
     <ShareableResourceServiceList

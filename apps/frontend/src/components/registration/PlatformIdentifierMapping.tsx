@@ -3,7 +3,6 @@ import {
   OpenAevIconIcon,
   OpenCtiIconIcon,
 } from '@filigran/icon';
-import { ServiceDefinitionIdentifier as ServiceDefinitionIdentifierFragment } from '@generated/serviceInstance_fragment.graphql';
 import {
   PlatformContract,
   PlatformIdentifier,
@@ -65,7 +64,7 @@ export const CONTRACT_LABEL_BY_CONTRACT: Record<PlatformContract, string> = {
 };
 
 export const translateServiceDefinitionIdentifier = (
-  serviceDefinitionIdentifier: ServiceDefinitionIdentifierFragment
+  serviceDefinitionIdentifier: ServiceDefinitionIdentifier
 ): string => {
   const platformIdentifier =
     ServiceDefinitionIdentifierToPlatformIdentifier[
@@ -76,7 +75,7 @@ export const translateServiceDefinitionIdentifier = (
 };
 
 export const ServiceDefinitionIdentifierToPlatformIdentifier: Partial<
-  Record<ServiceDefinitionIdentifierFragment, PlatformIdentifier>
+  Record<ServiceDefinitionIdentifier, PlatformIdentifier>
 > = {
   [ServiceDefinitionIdentifier.OpenctiRegistration]: PlatformIdentifier.Opencti,
   [ServiceDefinitionIdentifier.OpenaevRegistration]: PlatformIdentifier.Openaev,

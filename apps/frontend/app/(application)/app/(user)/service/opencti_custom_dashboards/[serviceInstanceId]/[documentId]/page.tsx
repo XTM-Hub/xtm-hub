@@ -2,7 +2,7 @@ import { serverFetchGraphQL } from '@/relay/server-portal-api-fetch';
 import ServiceByIdQuery, {
   serviceByIdQuery,
 } from '@generated/serviceByIdQuery.graphql';
-import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
+import { ServiceInstanceItemFragment } from '@graphql/generated';
 import PageLoader from './page-loader';
 
 interface ServiceCustomDashboardsPageProps {
@@ -27,7 +27,7 @@ const Page = async ({ params }: ServiceCustomDashboardsPageProps) => {
           documentId={decodedDocumentId}
           serviceInstance={
             response.data
-              .serviceInstanceById as unknown as serviceInstance_fragment$data
+              .serviceInstanceById as unknown as ServiceInstanceItemFragment
           }
         />
       ) : (

@@ -7,10 +7,10 @@ import { ConnectorFields } from '@/utils/shareable-resources/shareable-resources
 import { readTrackedEvents, startAnalytics } from '@/utils/test/analytics';
 import { mswServer } from '@/utils/test/msw/server';
 import testRender from '@/utils/test/test-render';
-import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 import {
   DocumentItemFragment,
   IncrementShareNumberDocumentMutation,
+  ServiceInstanceItemFragment,
 } from '@graphql/generated';
 import { mockDefaultDocument } from '@graphql/mocks';
 import { screen, waitFor } from '@testing-library/react';
@@ -26,7 +26,7 @@ vi.mock('@/components/service/components/ServiceContext', () => ({
 
 const SERVICE_INSTANCE = {
   id: 'service-instance-1',
-} as unknown as serviceInstance_fragment$data;
+} as unknown as ServiceInstanceItemFragment;
 
 const buildConnector = (id: string, shareNumber: number) =>
   ({

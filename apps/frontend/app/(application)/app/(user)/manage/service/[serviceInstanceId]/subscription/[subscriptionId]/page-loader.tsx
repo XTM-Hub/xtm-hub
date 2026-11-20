@@ -4,15 +4,15 @@ import Loader from '@/components/Loader';
 import { UserServiceFromSubscription } from '@/components/service/user_service.graphql';
 import SubscriptionSlug from '@/components/subcription/[slug]/SubscriptionSlug';
 import useMountingLoader from '@/hooks/use-mounting-loader';
-import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 import { userServiceFromSubscriptionQuery } from '@generated/userServiceFromSubscriptionQuery.graphql';
+import { ServiceInstanceItemFragment } from '@graphql/generated';
 import { useQueryLoader } from 'react-relay';
 import { useLocalStorage } from 'usehooks-ts';
 
 // Component interface
 interface PreloaderProps {
   subscriptionId: string;
-  serviceInstance: serviceInstance_fragment$data;
+  serviceInstance: ServiceInstanceItemFragment;
 }
 
 // Component

@@ -7,7 +7,7 @@ import { serverFetchGraphQL } from '@/relay/server-portal-api-fetch';
 import ServiceByIdQuery, {
   serviceByIdQuery,
 } from '@generated/serviceByIdQuery.graphql';
-import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
+import { ServiceInstanceItemFragment } from '@graphql/generated';
 import { Suspense } from 'react';
 import PageLoader from './page-loader';
 
@@ -32,7 +32,7 @@ const Page = async ({ params }: ServiceRoadmapPageProps) => {
         <PageLoader
           serviceInstance={
             response.data
-              .serviceInstanceById as unknown as serviceInstance_fragment$data
+              .serviceInstanceById as unknown as ServiceInstanceItemFragment
           }
         />
       </PrefetchedEpicList>

@@ -1,7 +1,7 @@
 import SubscriptionSlug from '@/components/subcription/[slug]/SubscriptionSlug';
 import testRender from '@/utils/test/test-render';
-import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 import { userServiceFromSubscriptionQuery } from '@generated/userServiceFromSubscriptionQuery.graphql';
+import { ServiceInstanceItemFragment } from '@graphql/generated';
 import { screen } from '@testing-library/react';
 import { notFound } from 'next/navigation';
 import { PreloadedQuery } from 'react-relay';
@@ -27,7 +27,7 @@ const SERVICE_INSTANCE = {
   id: 'service-instance-1',
   name: 'Service',
   service_definition: { identifier: 'custom_dashboards' },
-} as unknown as serviceInstance_fragment$data;
+} as unknown as ServiceInstanceItemFragment;
 
 const mocks = vi.hoisted(() => ({
   useSubscriptionByIdQuery: vi.fn(),
@@ -66,7 +66,7 @@ const lastQueryOptions = () =>
   mocks.useSubscriptionByIdQuery.mock.lastCall?.[2] as SubscriptionQueryOptions;
 
 const renderSubscriptionSlug = (
-  serviceInstance?: serviceInstance_fragment$data
+  serviceInstance?: ServiceInstanceItemFragment
 ) =>
   testRender(
     <SubscriptionSlug

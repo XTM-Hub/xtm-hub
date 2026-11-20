@@ -23,14 +23,15 @@ import {
   MotionPlayIcon,
   ThreatActorGroupIcon,
 } from '@filigran/icon';
-import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
-import { SeoServiceInstanceItemFragment } from '@graphql/generated';
+import {
+  SeoServiceInstanceItemFragment,
+  ServiceInstanceItemFragment,
+} from '@graphql/generated';
 import Image from 'next/image';
 
 interface ShareableResourceConnectorSlugPublicProps {
   documentData: PublicDocumentByServiceSlugItem & ConnectorFields;
-  serviceInstance:
-    SeoServiceInstanceItemFragment | serviceInstance_fragment$data;
+  serviceInstance: SeoServiceInstanceItemFragment | ServiceInstanceItemFragment;
   pageUrl: string;
 }
 

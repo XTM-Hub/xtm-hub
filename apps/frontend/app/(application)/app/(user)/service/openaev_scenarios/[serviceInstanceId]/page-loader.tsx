@@ -8,10 +8,10 @@ import {
   ServiceSlug,
   ShareableResourceType,
 } from '@/utils/shareable-resources/shareable-resources.types';
-import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
+import { ServiceInstanceItemFragment } from '@graphql/generated';
 
 interface PageLoaderProps {
-  serviceInstance: serviceInstance_fragment$data;
+  serviceInstance: ServiceInstanceItemFragment;
 }
 
 const PageLoader = ({ serviceInstance }: PageLoaderProps) => {

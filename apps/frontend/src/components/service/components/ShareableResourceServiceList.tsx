@@ -20,13 +20,16 @@ import {
   ShareableResourceType,
 } from '@/utils/shareable-resources/shareable-resources.types';
 import { useShareableResourceMapping } from '@/utils/shareable-resources/use-shareable-resource-mapping';
-import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
-import { ServiceRestriction, useDocumentsListQuery } from '@graphql/generated';
+import {
+  ServiceInstanceItemFragment,
+  ServiceRestriction,
+  useDocumentsListQuery,
+} from '@graphql/generated';
 import { keepPreviousData } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 
 export interface ShareableResourceServiceListProps {
-  serviceInstance: serviceInstance_fragment$data;
+  serviceInstance: ServiceInstanceItemFragment;
   logicalFilters: LogicalFilters;
   search: string;
   onSearchChange: (v: string) => void;

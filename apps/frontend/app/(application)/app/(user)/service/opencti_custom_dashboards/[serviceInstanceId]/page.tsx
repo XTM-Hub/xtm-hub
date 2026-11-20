@@ -4,7 +4,7 @@ import { APP_PATH } from '@/utils/path/constant';
 import ServiceByIdQuery, {
   serviceByIdQuery,
 } from '@generated/serviceByIdQuery.graphql';
-import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
+import { ServiceInstanceItemFragment } from '@graphql/generated';
 import PageLoader from './page-loader';
 
 interface ServiceCustomDashboardsPageProps {
@@ -22,7 +22,7 @@ const Page = async ({ params }: ServiceCustomDashboardsPageProps) => {
   );
 
   const serviceInstance = response?.data
-    .serviceInstanceById as unknown as serviceInstance_fragment$data;
+    .serviceInstanceById as unknown as ServiceInstanceItemFragment;
   const breadcrumbs = [
     {
       label: 'MenuLinks.Home',
@@ -42,7 +42,7 @@ const Page = async ({ params }: ServiceCustomDashboardsPageProps) => {
           <PageLoader
             serviceInstance={
               response.data
-                .serviceInstanceById as unknown as serviceInstance_fragment$data
+                .serviceInstanceById as unknown as ServiceInstanceItemFragment
             }
           />
         </>

@@ -3,11 +3,11 @@
 import Loader from '@/components/Loader';
 import DashboardDetails from '@/components/service/custom-dashboards/[slug]/CustomDashboardDetails';
 import DocumentDetailLoader from '@/components/service/document/DocumentDetailLoader';
-import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
+import { ServiceInstanceItemFragment } from '@graphql/generated';
 
 interface PreloaderProps {
   documentId: string;
-  serviceInstance: serviceInstance_fragment$data;
+  serviceInstance: ServiceInstanceItemFragment;
 }
 
 const PageLoader = ({ documentId, serviceInstance }: PreloaderProps) => {

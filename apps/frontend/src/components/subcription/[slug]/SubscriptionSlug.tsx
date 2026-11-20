@@ -22,6 +22,7 @@ import {
 } from '@generated/userServices_fragment.graphql';
 import {
   OrganizationCapability,
+  ServiceInstanceItemFragment,
   ServiceRestriction,
   SubscriptionByIdQuery,
   useSubscriptionByIdQuery,
@@ -56,20 +57,19 @@ import { throwOnFirstLoadError } from '@/lib/query-client';
 import { ADMIN_SERVICE_CATALOG_PATH, APP_PATH } from '@/utils/path/constant';
 import { Button } from '@filigran/design-system';
 import { serviceInstanceForSubscriptions_fragment$data } from '@generated/serviceInstanceForSubscriptions_fragment.graphql';
-import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 import { userServiceFromSubscriptionQuery } from '@generated/userServiceFromSubscriptionQuery.graphql';
 import { notFound } from 'next/navigation';
 
 interface SubscriptionSlugProps {
   queryRef: PreloadedQuery<userServiceFromSubscriptionQuery>;
   subscriptionId: string;
-  serviceInstance?: serviceInstance_fragment$data;
+  serviceInstance?: ServiceInstanceItemFragment;
 }
 
 interface SubscriptionSlugContentProps {
   queryRef: PreloadedQuery<userServiceFromSubscriptionQuery>;
   queryDataSubscription: SubscriptionByIdQuery;
-  serviceInstance?: serviceInstance_fragment$data;
+  serviceInstance?: ServiceInstanceItemFragment;
 }
 
 const emptySelectionState = (): SelectionState => ({
