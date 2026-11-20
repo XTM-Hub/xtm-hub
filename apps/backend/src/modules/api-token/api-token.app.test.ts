@@ -274,6 +274,32 @@ describe('api token app revoke', () => {
     });
   });
 
+  it('should answer not found to a token of an administrator revoking the token of another user in another organization, and leave it active', async () => {
+    // Given an administrator of SECOND, whose token is pinned to its personal space, and a token of another user in SECOND
+    const admin = await loadUser(SECOND.USERS.ADMIN_ORGA.ID);
+    const simple = await loadUser(SECOND.USERS.SIMPLE.ID);
+    const { api_token: target } = await ApiTokenApp.create(
+      simple,
+      input({ name: 'another user' })
+    );
+
+    // When the administrator revokes it with that token: the organization check must come before the admin check
+    await expect(
+      ApiTokenApp.revoke(
+        admin,
+        target.id,
+        SECOND.USERS.ADMIN_ORGA.PERSONAL_SPACE_ID
+      )
+    ).rejects.toThrow(NotFoundErrorCode.NotFound);
+
+    // Then
+    const listed = await ApiTokenApp.listOwn(simple);
+    expect(listed.find(({ id }) => id === target.id)).toMatchObject({
+      id: target.id,
+      revoked_at: null,
+    });
+  });
+
   it('should let a session revoke an own token of any of its organizations', async () => {
     // Given
     const simple = await loadUser(SECOND.USERS.SIMPLE.ID);
