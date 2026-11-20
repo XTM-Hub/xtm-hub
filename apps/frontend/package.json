@@ -39,7 +39,7 @@
     "@tailwindcss/postcss": "4.3.5",
     "@tanstack/react-query": "5.105.3",
     "@tanstack/react-table": "8.21.3",
-    "@uiw/react-md-editor": "4.2.3",
+    "@uiw/react-md-editor": "4.2.4",
     "apexcharts": "4.7.0",
     "clsx": "2.1.1",
     "embla-carousel": "8.6.0",
