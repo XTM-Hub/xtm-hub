@@ -55,6 +55,9 @@ fragment RegisteredPlatformDetails on RegisteredPlatform {
       id
     }
   }
+  organization {
+    name
+  }
   deployment_request {
     id
     hub_status

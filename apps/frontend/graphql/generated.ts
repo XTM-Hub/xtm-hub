@@ -4233,14 +4233,14 @@ export type RegisteredPlatformRedirectTargetQueryVariables = Exact<{
 
 export type RegisteredPlatformRedirectTargetQuery = { __typename?: 'Query', registeredPlatformByPlatformId: { __typename?: 'RegisteredPlatform', service_instance_id: any, identifier: ServiceDefinitionIdentifier, deployment_request: { __typename?: 'DeploymentRequest', parent_id: any | null } | null } | null };
 
-export type RegisteredPlatformDetailsFragment = { __typename?: 'RegisteredPlatform', id: string, service_instance_id: any, platform_id: string, last_connectivity_check: any | null, commercial_model: CommercialModel | null, tenant_id: string | null, title: string, contract: PlatformContract, url: string, version: string | null, identifier: ServiceDefinitionIdentifier, subscription: { __typename?: 'SubscriptionModel', start_date: any | null, end_date: any | null, service_instance: { __typename?: 'ServiceInstance', id: string }, organization: { __typename?: 'Organization', id: string } } | null, deployment_request: { __typename?: 'DeploymentRequest', id: string, hub_status: DeploymentRequestHubStatus, region: DeploymentRequestPlatformRegion, counts_in_orga_quota: boolean, platform_identifier: PlatformIdentifier | null, requester_email: string | null } | null, myGroups: Array<{ __typename?: 'ServiceGroup', name: ServiceGroupName }> | null };
+export type RegisteredPlatformDetailsFragment = { __typename?: 'RegisteredPlatform', id: string, service_instance_id: any, platform_id: string, last_connectivity_check: any | null, commercial_model: CommercialModel | null, tenant_id: string | null, title: string, contract: PlatformContract, url: string, version: string | null, identifier: ServiceDefinitionIdentifier, subscription: { __typename?: 'SubscriptionModel', start_date: any | null, end_date: any | null, service_instance: { __typename?: 'ServiceInstance', id: string }, organization: { __typename?: 'Organization', id: string } } | null, organization: { __typename?: 'Organization', name: string } | null, deployment_request: { __typename?: 'DeploymentRequest', id: string, hub_status: DeploymentRequestHubStatus, region: DeploymentRequestPlatformRegion, counts_in_orga_quota: boolean, platform_identifier: PlatformIdentifier | null, requester_email: string | null } | null, myGroups: Array<{ __typename?: 'ServiceGroup', name: ServiceGroupName }> | null };
 
 export type RegisteredPlatformByServiceInstanceQueryVariables = Exact<{
   input: RegisteredPlatformInput;
 }>;
 
 
-export type RegisteredPlatformByServiceInstanceQuery = { __typename?: 'Query', registeredPlatform: { __typename?: 'RegisteredPlatform', id: string, service_instance_id: any, platform_id: string, last_connectivity_check: any | null, commercial_model: CommercialModel | null, tenant_id: string | null, title: string, contract: PlatformContract, url: string, version: string | null, identifier: ServiceDefinitionIdentifier, subscription: { __typename?: 'SubscriptionModel', start_date: any | null, end_date: any | null, service_instance: { __typename?: 'ServiceInstance', id: string }, organization: { __typename?: 'Organization', id: string } } | null, deployment_request: { __typename?: 'DeploymentRequest', id: string, hub_status: DeploymentRequestHubStatus, region: DeploymentRequestPlatformRegion, counts_in_orga_quota: boolean, platform_identifier: PlatformIdentifier | null, requester_email: string | null } | null, myGroups: Array<{ __typename?: 'ServiceGroup', name: ServiceGroupName }> | null } | null };
+export type RegisteredPlatformByServiceInstanceQuery = { __typename?: 'Query', registeredPlatform: { __typename?: 'RegisteredPlatform', id: string, service_instance_id: any, platform_id: string, last_connectivity_check: any | null, commercial_model: CommercialModel | null, tenant_id: string | null, title: string, contract: PlatformContract, url: string, version: string | null, identifier: ServiceDefinitionIdentifier, subscription: { __typename?: 'SubscriptionModel', start_date: any | null, end_date: any | null, service_instance: { __typename?: 'ServiceInstance', id: string }, organization: { __typename?: 'Organization', id: string } } | null, organization: { __typename?: 'Organization', name: string } | null, deployment_request: { __typename?: 'DeploymentRequest', id: string, hub_status: DeploymentRequestHubStatus, region: DeploymentRequestPlatformRegion, counts_in_orga_quota: boolean, platform_identifier: PlatformIdentifier | null, requester_email: string | null } | null, myGroups: Array<{ __typename?: 'ServiceGroup', name: ServiceGroupName }> | null } | null };
 
 export type IsPlatformRegisteredQueryVariables = Exact<{
   input: IsPlatformRegisteredInput;
@@ -5302,6 +5302,9 @@ export const RegisteredPlatformDetailsFragmentDoc = `
     organization {
       id
     }
+  }
+  organization {
+    name
   }
   deployment_request {
     id
