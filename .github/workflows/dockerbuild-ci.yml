@@ -507,8 +507,8 @@ jobs:
           docker compose -f ./xtm-hub-dev/docker-compose-ci.yml logs --tail=200 backend || echo "Could not collect backend logs"
           docker compose -f ./xtm-hub-dev/docker-compose-ci.yml logs --tail=100 portal-elasticsearch || echo "Could not collect portal-elasticsearch logs"
 
-  # Registration against a real OpenCTI and OpenAEV (rolling images). Non-blocking on purpose: a rolling image can
-  # break it without any change on our side, so build-images-prod does not wait for it. It only warns early.
+  # Registration against a real OpenCTI, OpenAEV and XTM One (rolling images). Non-blocking on purpose: a rolling
+  # image can break it without any change on our side, so build-images-prod does not wait for it. It only warns early.
   run-e2e-platform-tests:
     name: run-e2e-platform-tests (${{ matrix.platform }})
     needs: build-images-tests
@@ -520,7 +520,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [opencti, openaev]
+        platform: [opencti, openaev, xtmone]
+        include:
+          - platform: opencti
+            title: OpenCTI
+          - platform: openaev
+            title: OpenAEV
+          - platform: xtmone
+            title: XTM One
     permissions:
       contents: read
       pull-requests: write
@@ -576,7 +583,7 @@ jobs:
         if: always()
         uses: ctrf-io/github-test-reporter@v1
         with:
-          title: ${{ matrix.platform == 'opencti' && 'OpenCTI' || 'OpenAEV' }} e2e
+          title: ${{ matrix.title }} e2e
           comment-tag: e2e-platform-${{ matrix.platform }}
           report-path: "./ctrf/**/*.json"
           pull-request: true
