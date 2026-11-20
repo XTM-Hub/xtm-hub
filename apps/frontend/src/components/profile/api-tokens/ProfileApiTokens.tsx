@@ -211,9 +211,7 @@ export const ProfileApiTokens = () => {
         }>
         <CardTitle as="h3">{t('ApiTokens.Title')}</CardTitle>
       </CardHeader>
-      <CardDescription clamp={0}>
-        {t('ApiTokens.Description')}
-      </CardDescription>
+      <CardDescription clamp={0}>{t('ApiTokens.Description')}</CardDescription>
       <CardContent clamp={0}>
         {!isLoading && tokens.length === 0 ? (
           <p className="text-default-secondary">{t('ApiTokens.Empty')}</p>
