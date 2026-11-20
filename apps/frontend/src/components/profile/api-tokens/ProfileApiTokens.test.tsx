@@ -2,11 +2,13 @@ import { ProfileApiTokens } from '@/components/profile/api-tokens/ProfileApiToke
 import { mswServer } from '@/utils/test/msw/server';
 import testRender from '@/utils/test/test-render';
 import {
+  ApiTokenCreateMutation,
   ApiTokenCreateMutationVariables,
   ApiTokenRevokeMutationVariables,
   ApiTokenRowFragment,
   ApiTokenScope,
 } from '@graphql/generated';
+import { QueryClient } from '@tanstack/react-query';
 import { screen, waitFor, within } from '@testing-library/react';
 import { graphql, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -62,6 +64,61 @@ const serveCreated = () =>
       })
     )
   );
+
+const holdUntilCalled = () => {
+  let respond!: () => void;
+  const responded = new Promise<void>((resolve) => {
+    respond = resolve;
+  });
+  return { respond, responded };
+};
+
+// Holds the creation response until `respond` is called.
+const serveDelayedCreation = () => {
+  const { respond, responded } = holdUntilCalled();
+  serveTokens([]);
+  mswServer.use(
+    graphql.mutation('ApiTokenCreate', async () => {
+      await responded;
+      return HttpResponse.json({
+        data: {
+          createApiToken: {
+            token: 'xhp_abcdef_secret',
+            api_token: activeToken,
+          },
+        },
+      });
+    })
+  );
+  return { respond };
+};
+
+// Serves the first list request, then holds every later one (the refresh after a creation)
+// until `respond` is called.
+const serveStalledListRefresh = () => {
+  const { respond, responded } = holdUntilCalled();
+  let listRequestCount = 0;
+  mswServer.use(
+    graphql.query('ApiTokens', async () => {
+      listRequestCount += 1;
+      if (listRequestCount > 1) {
+        await responded;
+      }
+      return HttpResponse.json({ data: { apiTokens: [] } });
+    })
+  );
+  return { listRequests: () => listRequestCount, respond };
+};
+
+const submitCreation = async (user: ReturnType<typeof testRender>['user']) => {
+  await user.click(
+    await screen.findByRole('button', { name: 'ApiTokens.Create.Open' })
+  );
+  await user.type(screen.getByLabelText(/ApiTokens.Field.Name/), 'Script');
+  await user.click(
+    screen.getByRole('button', { name: 'ApiTokens.Create.Submit' })
+  );
+};
 
 describe('ProfileApiTokens', () => {
   beforeEach(() => {
@@ -299,6 +356,117 @@ describe('ProfileApiTokens', () => {
     await waitFor(() =>
       expect(screen.queryByDisplayValue('xhp_abcdef_secret')).toBeNull()
     );
+  });
+
+  it('should keep the secret dialog open on Escape and offer no corner close icon', async () => {
+    serveTokens([]);
+    serveCreated();
+
+    const { user } = testRender(<ProfileApiTokens />);
+
+    await submitCreation(user);
+    await screen.findByDisplayValue('xhp_abcdef_secret');
+
+    await user.keyboard('{Escape}');
+
+    expect(screen.getByDisplayValue('xhp_abcdef_secret')).toBeInTheDocument();
+    expect(
+      within(screen.getByRole('dialog')).queryByRole('button', {
+        name: 'Close',
+      })
+    ).toBeNull();
+  });
+
+  it('should remove the secret from the mutation cache once the dialog is closed', async () => {
+    serveTokens([]);
+    serveCreated();
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    });
+    const cachedSecrets = () =>
+      queryClient
+        .getMutationCache()
+        .getAll()
+        .map(
+          (mutation) =>
+            (mutation.state.data as ApiTokenCreateMutation | undefined)
+              ?.createApiToken?.token
+        )
+        .filter(Boolean);
+
+    const { user } = testRender(<ProfileApiTokens />, { queryClient });
+
+    await submitCreation(user);
+    await screen.findByDisplayValue('xhp_abcdef_secret');
+    expect(cachedSecrets()).toEqual(['xhp_abcdef_secret']);
+
+    await user.click(
+      screen.getByRole('button', { name: 'ApiTokens.Created.Done' })
+    );
+
+    await waitFor(() => expect(cachedSecrets()).toEqual([]));
+  });
+
+  it('should close the create dialog on Escape before anything is submitted', async () => {
+    serveTokens([]);
+
+    const { user } = testRender(<ProfileApiTokens />);
+
+    await user.click(
+      await screen.findByRole('button', { name: 'ApiTokens.Create.Open' })
+    );
+    await user.keyboard('{Escape}');
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  });
+
+  it('should keep the create dialog open until the creation completes', async () => {
+    const { respond } = serveDelayedCreation();
+
+    const { user } = testRender(<ProfileApiTokens />);
+
+    await submitCreation(user);
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: /ApiTokens.Create.Submit/ })
+      ).toHaveAttribute('aria-busy', 'true')
+    );
+    await user.keyboard('{Escape}');
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Utils.Cancel' })).toBeDisabled();
+    expect(
+      within(screen.getByRole('dialog')).queryByRole('button', {
+        name: 'Close',
+      })
+    ).toBeNull();
+
+    respond();
+
+    expect(
+      await screen.findByDisplayValue('xhp_abcdef_secret')
+    ).toBeInTheDocument();
+  });
+
+  it('should show the secret without waiting for the token list to refresh', async () => {
+    const { listRequests, respond } = serveStalledListRefresh();
+    serveCreated();
+
+    const { user } = testRender(<ProfileApiTokens />);
+
+    try {
+      await submitCreation(user);
+
+      expect(
+        await screen.findByDisplayValue('xhp_abcdef_secret')
+      ).toBeInTheDocument();
+      await waitFor(() => expect(listRequests()).toBeGreaterThan(1));
+    } finally {
+      respond();
+    }
   });
 
   it('should say so when the secret cannot be copied', async () => {
