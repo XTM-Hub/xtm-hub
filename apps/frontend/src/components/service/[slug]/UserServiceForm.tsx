@@ -16,7 +16,7 @@ import {
   UserServiceCreateMutation,
   UserServiceEditMutation,
 } from '@/components/service/user_service.graphql';
-import { Form, FormField, FormLabel } from '@/components/ui/form';
+import { Form, FormField } from '@/components/ui/form';
 import { SheetFooter } from '@/components/ui/sheet';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
@@ -28,6 +28,7 @@ import { toComboboxOptionIds } from '@/utils/design-system/combobox';
 import {
   Button,
   Checkbox,
+  Paper,
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -330,8 +331,12 @@ export const UserServiceForm = ({
           </>
         )}
 
-        <div className="border border-filigran-brand-primary rounded p-4">
-          <FormLabel>{t('OrganizationInServiceAction.SelectCapa')}</FormLabel>
+        <Paper
+          as="section"
+          elevation={3}
+          className="flex flex-col gap-2"
+          padding={16}
+          title={t('OrganizationInServiceAction.SelectCapa')}>
           <p className="content-compact italic">
             {t('InviteUserServiceForm.Description')}
           </p>
@@ -383,7 +388,7 @@ export const UserServiceForm = ({
               )}
             />
           ))}
-        </div>
+        </Paper>
 
         <SheetFooter className="pt-2">
           <Button

@@ -21,13 +21,13 @@ import {
 import { useQueryClient } from '@tanstack/react-query';
 import { useSubscriptionDefaultValues } from './use-subscription-default-values';
 
-import { Form, FormField, FormLabel } from '@/components/ui/form';
+import { Form, FormField } from '@/components/ui/form';
 import { useKeepSelectedOptions } from '@/hooks/use-keep-selected-options';
 import { useTranslate } from '@/hooks/use-translate';
 import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { DEBOUNCE_TIME } from '@/utils/constant';
 import { toComboboxOptionIds } from '@/utils/design-system/combobox';
-import { Button, Checkbox, DatePicker } from '@filigran/design-system';
+import { Button, Checkbox, DatePicker, Paper } from '@filigran/design-system';
 import { serviceInstanceForSubscriptions_fragment$data } from '@generated/serviceInstanceForSubscriptions_fragment.graphql';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useLocale } from 'next-intl';
@@ -227,8 +227,12 @@ export const ServiceSlugOrgaForm = ({
             />
           )}
 
-          <div className="border border-filigran-brand-primary rounded p-4">
-            <FormLabel>{t('OrganizationInServiceAction.SelectCapa')}</FormLabel>
+          <Paper
+            as="section"
+            elevation={3}
+            className="flex flex-col gap-2"
+            padding={16}
+            title={t('OrganizationInServiceAction.SelectCapa')}>
             <p className="content-compact italic">
               {t('OrganizationInServiceAction.SelectCapaDescription')}
             </p>
@@ -256,7 +260,7 @@ export const ServiceSlugOrgaForm = ({
                   )}
                 />
               ))}
-          </div>
+          </Paper>
 
           <FormField
             control={form.control}
