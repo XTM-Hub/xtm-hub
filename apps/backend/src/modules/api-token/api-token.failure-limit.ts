@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
+import { ipRateLimitKey } from '../../server/endpoints/shared/ip-rate-limit.util';
 import { logApp } from '../../utils/app-logger.util';
-import { ipRateLimitKey } from '../../utils/ip-rate-limit.util';
 import { API_TOKEN_ERRORS, sendApiTokenError } from './api-token.errors';
 
 const SECOND_MS = 1000;

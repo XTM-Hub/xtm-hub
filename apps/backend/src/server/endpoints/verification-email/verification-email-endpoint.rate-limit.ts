@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
 import type { Options } from 'express-rate-limit';
 import { AppLogsCategory, logApp } from '../../../utils/app-logger.util';
-import { buildIpRateLimiterOptions } from '../../../utils/ip-rate-limit.util';
+import { buildIpRateLimiterOptions } from '../shared/ip-rate-limit.util';
 import {
   sendVerificationEmailError,
   VERIFICATION_EMAIL_ERRORS,

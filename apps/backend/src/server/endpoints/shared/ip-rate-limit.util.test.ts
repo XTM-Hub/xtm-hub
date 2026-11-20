@@ -4,8 +4,8 @@ import { once } from 'node:events';
 import type { Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { logApp } from './app-logger.util';
-import { parseTrustProxy } from './config-validation.util';
+import { logApp } from '../../../utils/app-logger.util';
+import { parseTrustProxy } from '../../../utils/config-validation.util';
 import { buildIpRateLimiterOptions } from './ip-rate-limit.util';
 
 const CLIENT_A = '198.51.100.20';
