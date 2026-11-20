@@ -1,12 +1,19 @@
 import { ProfileFormPreferences } from '@/components/profile/form/Preferences';
+import { mockMutationHook } from '@/utils/test/mock-mutation-hook';
 import testRender from '@/utils/test/test-render';
-import { screen } from '@testing-library/react';
+import { meKeys } from '@graphql/me/me.keys';
+import { mockUser } from '@graphql/mocks';
+import { QueryClient } from '@tanstack/react-query';
+import { screen, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+const SELECTED_LANGUAGE = 'ja';
+const EDITED_USER = mockUser({ id: 'user-1' });
+
 const mocks = vi.hoisted(() => ({
   setTheme: vi.fn(),
-  commitEditMeUserMutation: vi.fn(),
+  useMeEditMutation: vi.fn(),
   setUserLocale: vi.fn(),
 }));
 
@@ -21,8 +28,9 @@ vi.mock('next-themes', () => ({
   }),
 }));
 
-vi.mock('react-relay', () => ({
-  useMutation: () => [mocks.commitEditMeUserMutation],
+vi.mock('@graphql/generated', async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  useMeEditMutation: mocks.useMeEditMutation,
 }));
 
 vi.mock('@filigran/design-system', async () => {
@@ -61,9 +69,14 @@ vi.mock('@filigran/design-system', async () => {
 });
 
 describe('ProfileFormPreferences', () => {
+  let editMeUser: ReturnType<typeof mockMutationHook>;
+
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.setUserLocale.mockResolvedValue(undefined);
+    editMeUser = mockMutationHook(mocks.useMeEditMutation, 'success', {
+      data: { editMeUser: EDITED_USER },
+    });
   });
 
   it('should render the preference sections', () => {
@@ -99,12 +112,32 @@ describe('ProfileFormPreferences', () => {
     const { user } = testRender(<ProfileFormPreferences />);
 
     const [, localeSelect] = screen.getAllByRole('combobox');
-    await user.selectOptions(localeSelect, 'ja');
+    await user.selectOptions(localeSelect, SELECTED_LANGUAGE);
 
-    expect(mocks.setUserLocale).toHaveBeenCalledWith('ja');
-    expect(mocks.commitEditMeUserMutation).toHaveBeenCalledWith({
-      variables: { selected_language: 'ja' },
+    expect(mocks.setUserLocale).toHaveBeenCalledWith(SELECTED_LANGUAGE);
+    expect(editMeUser).toHaveBeenCalledWith({
+      first_name: null,
+      last_name: null,
+      country: null,
+      selected_language: SELECTED_LANGUAGE,
     });
+  });
+
+  it('should give the returned user to the user context when the language is saved', async () => {
+    // Given
+    const queryClient = new QueryClient();
+    const { user } = testRender(<ProfileFormPreferences />, { queryClient });
+    const [, localeSelect] = screen.getAllByRole('combobox');
+
+    // When
+    await user.selectOptions(localeSelect, SELECTED_LANGUAGE);
+
+    // Then
+    await waitFor(() =>
+      expect(queryClient.getQueryData(meKeys.detail())).toEqual({
+        me: EDITED_USER,
+      })
+    );
   });
 
   it('should display fr locale outside development environment', () => {
