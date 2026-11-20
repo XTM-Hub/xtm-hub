@@ -8,11 +8,8 @@ import { PlatformIdentifier } from '../__generated__/resolvers-types';
 import { MAIL_QUEUES, type MailJobData } from '../thirdparty/pgboss/mail.jobs';
 import { PgBossProducer } from '../thirdparty/pgboss/producer';
 import { logApp } from '../utils/app-logger.util';
-import {
-  MailTemplates,
-  PlatformIdentifierToString,
-  templateSubjects,
-} from './mail-template/mail';
+import { PlatformIdentifierToString } from '../utils/platform';
+import { MailTemplates, templateSubjects } from './mail-template/mail';
 
 Handlebars.registerHelper('eq', function (a, b) {
   return a === b;

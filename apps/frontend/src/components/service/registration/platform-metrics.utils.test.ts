@@ -66,10 +66,10 @@ describe('findDatabaseUsage', () => {
 
   it.each`
     case                                         | databaseMetrics                              | storage                                                         | expected
-    ${'PostgreSQL when its usage is sent'}       | ${databaseMetrics(esSeries, postgresSeries)} | ${{ es_used_size: esUsage, postgres_used_size: postgresUsage }} | ${{ points: postgresPoints, storage: postgresUsage }}
-    ${'PostgreSQL when only its series is sent'} | ${databaseMetrics(esSeries, postgresSeries)} | ${null}                                                         | ${{ points: postgresPoints, storage: undefined }}
-    ${'Elasticsearch without PostgreSQL'}        | ${databaseMetrics(esSeries)}                 | ${{ es_used_size: esUsage, postgres_used_size: null }}          | ${{ points: esPoints, storage: esUsage }}
-    ${'no usage without any database measure'}   | ${null}                                      | ${null}                                                         | ${{ points: [], storage: undefined }}
+    ${'PostgreSQL when its usage is sent'}       | ${databaseMetrics(esSeries, postgresSeries)} | ${{ es_used_size: esUsage, postgres_used_size: postgresUsage }} | ${{ engine: 'postgres', points: postgresPoints, storage: postgresUsage }}
+    ${'PostgreSQL when only its series is sent'} | ${databaseMetrics(esSeries, postgresSeries)} | ${null}                                                         | ${{ engine: 'postgres', points: postgresPoints, storage: undefined }}
+    ${'Elasticsearch without PostgreSQL'}        | ${databaseMetrics(esSeries)}                 | ${{ es_used_size: esUsage, postgres_used_size: null }}          | ${{ engine: 'elasticsearch', points: esPoints, storage: esUsage }}
+    ${'no usage without any database measure'}   | ${null}                                      | ${null}                                                         | ${{ engine: 'elasticsearch', points: [], storage: undefined }}
   `(
     'should return the usage of $case',
     ({

@@ -1,5 +1,10 @@
 import { Page } from '@playwright/test';
-import { publishResource, selectUseCase, waitForDrawerToClose } from './common';
+import {
+  fillMetaDescription,
+  publishResource,
+  selectUseCase,
+  waitForDrawerToClose,
+} from './common';
 export const TEST_JSON_FILE = {
   path: './tests/tests_files/assets/octi_dashboard.json',
   name: 'octi_dashboard.json',
@@ -54,6 +59,7 @@ export default class DashboardPage {
 
   async addCustomDashboard({
     name,
+    metaDescription,
     shortDescription,
     version,
     description,
@@ -61,6 +67,7 @@ export default class DashboardPage {
     publish = false,
   }: {
     name: string;
+    metaDescription: string;
     shortDescription: string;
     version: string;
     description: string;
@@ -69,6 +76,7 @@ export default class DashboardPage {
   }) {
     await this.page.getByRole('button', { name: 'Add new dashboard' }).click();
     await this.page.getByPlaceholder('Dashboard name').fill(name);
+    await fillMetaDescription(this.page, metaDescription);
     await this.page
       .getByPlaceholder('This is some catchphrases to')
       .fill(shortDescription);

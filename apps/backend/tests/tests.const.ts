@@ -157,6 +157,16 @@ export const TEST_SUBSCRIPTIONS = {
   },
 };
 
+// Document summaries (meta_description). Prefixed with the longest product and type, "OpenCTI Integration: " or
+// "OpenCTI Custom View: " (21 characters), and followed by a period, they still fit between
+// META_DESCRIPTION_MIN_LENGTH and META_DESCRIPTION_MAX_LENGTH, as a generated meta description must.
+export const TEST_META_DESCRIPTIONS = {
+  DEFAULT:
+    'Monitor ransomware activity in OpenCTI with a ready-made dashboard that tracks threat actors, targeted sectors, victims and indicators',
+  UPDATED:
+    'Track phishing campaigns in OpenCTI with a dashboard that maps sender domains, lures, targeted organizations and related indicators',
+};
+
 // Reusable use cases seeded in tests/seeds/04-insert-use-cases.js, to avoid
 // ad hoc creation in every test file. Names are not significant to the
 // features under test.

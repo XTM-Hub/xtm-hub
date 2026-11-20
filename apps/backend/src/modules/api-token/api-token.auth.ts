@@ -9,7 +9,13 @@ import { OrganizationId } from '../../model/kanel/public/Organization';
 import { UserLoadUserBy } from '../../model/user';
 import { ROLE_ADMIN } from '../../portal.const';
 import { logApp } from '../../utils/app-logger.util';
-import { ForbiddenErrorCode } from '../../utils/error/error.code';
+import { getErrorMessage } from '../../utils/error/error-guard.util';
+import {
+  ErrorCode,
+  ForbiddenErrorCode,
+  UnauthenticatedErrorCode,
+  UnknownErrorCode,
+} from '../../utils/error/error.code';
 import { UserDomain } from '../organization-management/user/user-domain/user.domain';
 import { ApiTokenDomain } from './api-token.domain';
 import { ApiTokenHelper } from './api-token.helper';
@@ -21,6 +27,7 @@ export interface ApiTokenCaller {
   scope: ApiTokenScope;
   organization_id: OrganizationId;
   expires_at: Date;
+  last_used_at: Date | null;
 }
 
 export interface ApiTokenAuthentication {
@@ -28,9 +35,9 @@ export interface ApiTokenAuthentication {
   user: UserLoadUserBy;
 }
 
-// Written once per minute per token at most: a call never waits on it
+// Written once per minute per token at most: a call never waits on it. The throttle reads the `last_used_at` loaded
+// with the token, so it holds across restarts and replicas and keeps nothing in memory.
 const LAST_USED_WRITE_INTERVAL_MS = 60 * 1000;
-const lastUsedWrites = new Map<string, number>();
 
 const authentications = new WeakMap<Request, ApiTokenAuthentication>();
 
@@ -112,9 +119,13 @@ export const resolveApiToken = async (
       'User.id': token.user_id,
       'Organization.id': token.organization_id,
     });
-  } catch {
-    // loadUserBy throws for a disabled user
-    return { authenticated: false, reason: 'user disabled' };
+  } catch (error) {
+    // loadUserBy throws USER_DISABLED for a disabled user. Any other failure (database down, a bug) is not a refused
+    // token: it goes up to the middleware, which answers 500 instead of telling the client its token is bad.
+    if (getErrorMessage(error) === ErrorCode.UserDisabled) {
+      return { authenticated: false, reason: 'user disabled' };
+    }
+    throw error;
   }
   if (!user || user.disabled) {
     return { authenticated: false, reason: 'user not in organization' };
@@ -133,33 +144,35 @@ export const resolveApiToken = async (
         scope: token.scope,
         organization_id: token.organization_id,
         expires_at: token.expires_at,
+        last_used_at: token.last_used_at,
       },
       user: narrowed,
     },
   };
 };
 
-const recordUse = (id: ApiTokenId, now: Date) => {
-  const last = lastUsedWrites.get(id);
+const recordUse = ({ id, last_used_at }: ApiTokenCaller, now: Date) => {
   if (
-    last !== undefined &&
-    now.getTime() - last < LAST_USED_WRITE_INTERVAL_MS
+    last_used_at &&
+    now.getTime() - last_used_at.getTime() < LAST_USED_WRITE_INTERVAL_MS
   ) {
     return;
   }
-  lastUsedWrites.set(id, now.getTime());
-  ApiTokenDomain.touchLastUsed(id, now).catch((error: unknown) =>
-    logApp.warn('Could not record the last use of an API token', {
-      error,
-      api_token_id: id,
-    })
+  // The write is conditional on the stored value too: concurrent calls that all read an old `last_used_at` write once
+  ApiTokenDomain.touchLastUsed(id, now, LAST_USED_WRITE_INTERVAL_MS).catch(
+    (error: unknown) =>
+      logApp.warn('Could not record the last use of an API token', {
+        error,
+        api_token_id: id,
+      })
   );
 };
 
 /**
  * `Authorization: Bearer xhp_...` authenticates the request as the token's user. Any other request goes on unchanged
  * (session cookie, system token, platform token). A refused token answers 401 whatever the route: the caller asked
- * for the token's identity, it never falls back to a session.
+ * for the token's identity, it never falls back to a session. A failure while checking the token answers 500 with no
+ * detail: the error only goes to the logs.
  */
 export const apiTokenMiddleware = async (
   req: Request,
@@ -173,27 +186,29 @@ export const apiTokenMiddleware = async (
     next();
     return;
   }
+  const now = new Date();
+  let resolution: Resolution;
   try {
-    const now = new Date();
-    const resolution = await resolveApiToken(secret, now);
-    if (!resolution.authenticated) {
-      logApp.warn('API token refused', { reason: resolution.reason });
-      res.status(401).json({
-        errors: [
-          {
-            message: 'UNAUTHENTICATED',
-            extensions: { code: 'UNAUTHENTICATED' },
-          },
-        ],
-      });
-      return;
-    }
-    authentications.set(req, resolution.authentication);
-    recordUse(resolution.authentication.token.id, now);
-    next();
+    resolution = await resolveApiToken(secret, now);
   } catch (error) {
-    next(error);
+    // Never the secret: only the error, whose query carries the token hash at most
+    logApp.error('API token authentication failed', { error });
+    // The same code Apollo gives an internal error on the GraphQL routes
+    ApiTokenHelper.sendError(res, 500, UnknownErrorCode.UnknownError);
+    return;
   }
+  if (!resolution.authenticated) {
+    logApp.warn('API token refused', { reason: resolution.reason });
+    ApiTokenHelper.sendError(
+      res,
+      401,
+      UnauthenticatedErrorCode.Unauthenticated
+    );
+    return;
+  }
+  authentications.set(req, resolution.authentication);
+  recordUse(resolution.authentication.token, now);
+  next();
 };
 
 /**
@@ -215,12 +230,5 @@ export const refuseApiTokenMiddleware = (
     api_token_id: authentication.token.id,
     path: req.path,
   });
-  res.status(403).json({
-    errors: [
-      {
-        message: ForbiddenErrorCode.NotAllowedWithApiToken,
-        extensions: { code: ForbiddenErrorCode.NotAllowedWithApiToken },
-      },
-    ],
-  });
+  ApiTokenHelper.sendError(res, 403, ForbiddenErrorCode.NotAllowedWithApiToken);
 };

@@ -3,10 +3,11 @@ import LoginPage from '../model/login.pageModel';
 import IntegrationPage from '../model/integration.pageModel';
 import { addServiceCapability } from '../db-utils/service.helper';
 import ServicePage from '../model/service.pageModel';
-import { clickRowAction } from '../model/common';
+import { clickRowAction, META_DESCRIPTION_SUMMARY } from '../model/common';
 
 const TEST_INTEGRATION = {
   name: 'e2e integration capability',
+  metaDescription: META_DESCRIPTION_SUMMARY,
   shortDescription: 'e2e integration capability short description',
   description: 'e2e integration capability markdown description',
 };

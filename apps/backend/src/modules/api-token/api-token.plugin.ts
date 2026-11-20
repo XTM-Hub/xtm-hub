@@ -49,6 +49,8 @@ const API_TOKEN_RATE_LIMIT = 300;
 /**
  * Per token, not per IP: one token cannot starve the others behind the same proxy. A request without a token is not
  * counted here.
+ * Per process: the counters live in memory (no shared express-rate-limit store exists in the backend), so a restart
+ * resets them and N replicas allow N x API_TOKEN_RATE_LIMIT calls per window.
  */
 export const apiTokenRateLimiter = rateLimit({
   windowMs: API_TOKEN_RATE_LIMIT_WINDOW_MS,

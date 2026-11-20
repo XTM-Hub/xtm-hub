@@ -1,37 +1,56 @@
 import GuardCapacityComponent from '@/components/AdminGuard';
+import { invalidatePrivateNavigationQueries } from '@/components/menu/navigation/private/private-navigation-query-invalidation';
 import {
   PlatformMetadataMapping,
   ServiceDefinitionIdentifierToPlatformIdentifier,
 } from '@/components/registration/PlatformIdentifierMapping';
-import { UnregisterPlatform } from '@/components/registration/register/register.graphql';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { analyticsId } from '@/lib/analytics/analytics.ids';
+import { portalGraphqlClient } from '@/lib/graphql-client';
 import { Button } from '@filigran/design-system';
-import { registeredPlatformByServiceInstanceId_fragment$data } from '@generated/registeredPlatformByServiceInstanceId_fragment.graphql';
-import { registerUnregisterPlatformMutation } from '@generated/registerUnregisterPlatformMutation.graphql';
 import {
   OrganizationCapability,
   PlatformContract,
   PlatformIdentifier,
+  RegisteredPlatformDetailsFragment,
   ServiceDefinitionIdentifier,
+  useUnregisterPlatformMutation,
 } from '@graphql/generated';
+import { registrationKeys } from '@graphql/registration/registration.keys';
+import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { useMutation } from 'react-relay';
 
 interface UnregisterButtonProps {
-  platform: registeredPlatformByServiceInstanceId_fragment$data;
+  platform: RegisteredPlatformDetailsFragment;
 }
 
 export const UnregisterButton = ({ platform }: UnregisterButtonProps) => {
   const t = useTranslate();
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const isTrial = platform.contract === PlatformContract.Trial;
 
-  const [commitUnregisterPlatform] =
-    useMutation<registerUnregisterPlatformMutation>(UnregisterPlatform);
+  // Hook-level callbacks still run when the button unmounts before the request
+  // settles, unlike the per-call ones, so the navigation drops the disconnected
+  // platform even if the user has already left the page.
+  const { mutate: commitUnregisterPlatform } = useUnregisterPlatformMutation(
+    portalGraphqlClient,
+    {
+      onSuccess: () => {
+        invalidatePrivateNavigationQueries(queryClient);
+        // Going back to the registered platform page must not show the
+        // disconnected platform from the cache. Marked stale only: refetching
+        // the page still on screen would answer not found before it leaves.
+        void queryClient.invalidateQueries({
+          queryKey: registrationKeys.allByServiceInstance(),
+          refetchType: 'none',
+        });
+      },
+    }
+  );
 
   const unregisterPlatform = () => {
     const identifier =
@@ -46,32 +65,36 @@ export const UnregisterButton = ({ platform }: UnregisterButtonProps) => {
       });
       return;
     }
-    commitUnregisterPlatform({
-      variables: {
+    commitUnregisterPlatform(
+      {
         input: {
           platformId: platform.platform_id,
           identifier,
           tenantId: platform.tenant_id,
         },
       },
-      onCompleted: () => {
-        router.push('/app');
-        showSnackbar({
-          severity: 'success',
-          title: t('Utils.Success'),
-          description: t('Unregister.Succeeded.Title', {
-            platformIdentifier: platform.title,
-          }),
-        });
-      },
-      onError: (error) => {
-        showSnackbar({
-          severity: 'error',
-          title: t('Utils.Error'),
-          description: t(`Error.Server.${error.message}`),
-        });
-      },
-    });
+      {
+        onSuccess: () => {
+          router.push('/app');
+          showSnackbar({
+            severity: 'success',
+            title: t('Utils.Success'),
+            description: t('Unregister.Succeeded.Title', {
+              platformIdentifier: platform.title,
+            }),
+          });
+        },
+        onError: (error) => {
+          const errorMessage =
+            error instanceof Error ? error.message : 'UNKNOWN_ERROR';
+          showSnackbar({
+            severity: 'error',
+            title: t('Utils.Error'),
+            description: t(`Error.Server.${errorMessage}`),
+          });
+        },
+      }
+    );
   };
 
   return (

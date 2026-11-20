@@ -36,9 +36,18 @@ export const ApiTokenDomain = {
   loadByHash: async (tokenHash: string): Promise<ApiToken | undefined> =>
     db<ApiToken>('ApiToken').where('token_hash', tokenHash).first(),
 
-  listByUser: async (userId: UserId): Promise<ApiTokenWithNames[]> =>
+  // Every organization of the user, unless one is given
+  listByUser: async (
+    userId: UserId,
+    organizationId?: OrganizationId
+  ): Promise<ApiTokenWithNames[]> =>
     withNames()
       .where('ApiToken.user_id', userId)
+      .modify((queryBuilder) => {
+        if (organizationId) {
+          queryBuilder.where('ApiToken.organization_id', organizationId);
+        }
+      })
       .orderBy('ApiToken.created_at', 'desc'),
 
   listByOrganization: async (
@@ -55,7 +64,20 @@ export const ApiTokenDomain = {
       .update({ revoked_at: new Date() });
   },
 
-  touchLastUsed: async (id: ApiTokenId, at: Date): Promise<void> => {
-    await db<ApiToken>('ApiToken').where('id', id).update({ last_used_at: at });
+  // Writes `at` unless the stored last use is less than `minIntervalMs` older: never moves it back, and concurrent
+  // calls write once
+  touchLastUsed: async (
+    id: ApiTokenId,
+    at: Date,
+    minIntervalMs: number
+  ): Promise<void> => {
+    await db<ApiToken>('ApiToken')
+      .where('id', id)
+      .andWhere((builder) =>
+        builder
+          .whereNull('last_used_at')
+          .orWhere('last_used_at', '<=', new Date(at.getTime() - minIntervalMs))
+      )
+      .update({ last_used_at: at });
   },
 };

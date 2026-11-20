@@ -1,5 +1,10 @@
 import { Page } from '@playwright/test';
-import { publishResource, selectUseCase, waitForDrawerToClose } from './common';
+import {
+  fillMetaDescription,
+  publishResource,
+  selectUseCase,
+  waitForDrawerToClose,
+} from './common';
 import { TEST_IMAGE_FILE } from './dashboard.pageModel';
 
 // A real OpenAEV scenario export, that a real OpenAEV accepts to import.
@@ -19,12 +24,14 @@ export default class OpenaevScenarioPage {
 
   async addScenario({
     name,
+    metaDescription,
     shortDescription,
     version,
     description,
     publish = false,
   }: {
     name: string;
+    metaDescription: string;
     shortDescription: string;
     version: string;
     description: string;
@@ -32,6 +39,7 @@ export default class OpenaevScenarioPage {
   }) {
     await this.page.getByRole('button', { name: 'Add new scenario' }).click();
     await this.page.getByPlaceholder('Scenario name').fill(name);
+    await fillMetaDescription(this.page, metaDescription);
     await this.page
       .getByPlaceholder('This is some catchphrases to')
       .fill(shortDescription);

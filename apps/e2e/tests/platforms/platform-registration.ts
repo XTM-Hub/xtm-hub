@@ -8,18 +8,43 @@ import {
 import { waitForReactIdle } from '../model/common';
 import { HomePage } from '../model/home.pageModel';
 import LoginPage from '../model/login.pageModel';
+import NavigationMenu from '../model/navigation-menu.pageModel';
 import { XtmHubRegistrationTab } from '../model/register.pageModel';
 import XtmPlatformPage, {
   getPlatformUrl,
   isPlatformRunning,
+  RunningPlatform,
   XtmPlatform,
 } from '../model/platforms/xtm-platform.pageModel';
 
-export const skipWithoutPlatform = (platform: XtmPlatform) =>
+export const skipWithoutPlatform = (platform: RunningPlatform) =>
   test.skip(
     !isPlatformRunning(platform),
-    `Needs a running ${platform.name}: see xtm-hub-dev/docker-compose-ci-${platform.name.toLowerCase()}.yml`
+    `Needs a running ${platform.name}: see xtm-hub-dev/docker-compose-ci-${platform.name.toLowerCase().replace(/\s+/g, '')}.yml`
   );
+
+// Signs in to XTM Hub. The XTM Hub tabs and popups a platform opens later in the same browser context are signed in
+// by this login.
+export const signInToXtmHub = async (page: Page) => {
+  const loginPage = new LoginPage(page);
+  await loginPage.navigateToAndLogin();
+  await page.waitForURL('/app');
+};
+
+// The platform registered as displayedName is listed under "My product" of its section of the XTM Hub home page.
+export const expectPlatformListedInXtmHub = async (
+  page: Page,
+  productName: string,
+  displayedName: string
+) => {
+  await new HomePage(page).navigateTo();
+  await waitForReactIdle(page);
+  const link = await new NavigationMenu(page).getMyProductLink(
+    productName,
+    displayedName
+  );
+  await expect(link).toBeVisible();
+};
 
 // Signs in to XTM Hub and to the platform, in the same browser context, and opens the platform's Filigran
 // Experience settings, where it shows "Not connected".
@@ -27,10 +52,7 @@ export const signInToXtmHubAndPlatform = async (
   page: Page,
   platform: XtmPlatform
 ) => {
-  // The XTM Hub tabs the platform opens are signed in by this login.
-  const loginPage = new LoginPage(page);
-  await loginPage.navigateToAndLogin();
-  await page.waitForURL('/app');
+  await signInToXtmHub(page);
 
   const platformPage = new XtmPlatformPage(page, platform);
   await platformPage.login();
@@ -70,14 +92,7 @@ export const describePlatformRegistration = (platform: XtmPlatform) => {
       });
 
       await test.step('platform is listed in XTM Hub', async () => {
-        const homePage = new HomePage(page);
-        await homePage.navigateTo();
-        await waitForReactIdle(page);
-        await page.getByRole('button', { name: platform.name }).click();
-        await page.getByRole('button', { name: 'My product' }).click();
-        await expect(
-          page.getByRole('link', { name: displayedName, exact: true })
-        ).toBeVisible();
+        await expectPlatformListedInXtmHub(page, platform.name, displayedName);
       });
 
       await test.step('disconnect from the platform', async () => {

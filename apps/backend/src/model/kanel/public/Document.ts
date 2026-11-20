@@ -51,6 +51,8 @@ export default interface Document {
   tags: string[];
 
   status: DocumentStatus;
+
+  meta_description: string | null;
 }
 
 /** Represents the initializer for the table public.Document */
@@ -101,6 +103,8 @@ export interface DocumentInitializer {
   tags?: string[];
 
   status?: DocumentStatus;
+
+  meta_description?: string | null;
 }
 
 /** Represents the mutator for the table public.Document */
@@ -146,4 +150,6 @@ export interface DocumentMutator {
   tags?: string[];
 
   status?: DocumentStatus;
+
+  meta_description?: string | null;
 }

@@ -1,13 +1,13 @@
+import { RegisteredPlatformsListItem } from '@/hooks/use-registered-platforms';
 import { useTranslate } from '@/hooks/use-translate';
 import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { SHAREABLE_RESOURCE_TYPE_NAME_MAPPING } from '@/utils/shareable-resources/shareable-resources.types';
 import { Button, DialogTitle } from '@filigran/design-system';
-import { useRegisteredPlatformsFragment$data } from '@generated/useRegisteredPlatformsFragment.graphql';
 import { DocumentItemFragment } from '@graphql/generated';
 
 interface OnePlatformDisplayProps {
   documentData: DocumentItemFragment;
-  platforms: useRegisteredPlatformsFragment$data[];
+  platforms: RegisteredPlatformsListItem[];
   setIsOpen: (isOpen: boolean) => void;
   oneClickDeploy: (url: string) => void;
 }

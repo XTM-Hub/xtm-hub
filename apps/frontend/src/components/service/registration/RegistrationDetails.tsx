@@ -1,30 +1,20 @@
 import { CONTRACT_LABEL_BY_CONTRACT } from '@/components/registration/PlatformIdentifierMapping';
-import { registeredPlatformByServiceInstanceIdFragment } from '@/components/registration/register/register.graphql';
 import { useTranslate } from '@/hooks/use-translate';
 import { isWithinLastMonths, useDateFormatter } from '@/utils/date';
 import { formatTitleCase } from '@/utils/format/case';
-import { registeredPlatformByServiceInstanceId_fragment$key } from '@generated/registeredPlatformByServiceInstanceId_fragment.graphql';
 import {
   DeploymentRequestHubStatus,
   PlatformContract,
+  RegisteredPlatformDetailsFragment,
 } from '@graphql/generated';
-import { useFragment } from 'react-relay';
 
 interface RegistrationDetailsProps {
-  registeredPlatform: registeredPlatformByServiceInstanceId_fragment$key;
+  platform: RegisteredPlatformDetailsFragment;
 }
 
-export const RegistrationDetails = ({
-  registeredPlatform,
-}: RegistrationDetailsProps) => {
+export const RegistrationDetails = ({ platform }: RegistrationDetailsProps) => {
   const t = useTranslate();
   const formatDate = useDateFormatter();
-
-  const platform =
-    useFragment<registeredPlatformByServiceInstanceId_fragment$key>(
-      registeredPlatformByServiceInstanceIdFragment,
-      registeredPlatform
-    );
 
   const isTrial = platform.contract === PlatformContract.Trial;
 

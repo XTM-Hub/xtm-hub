@@ -1,6 +1,11 @@
 import testRender from '@/utils/test/test-render';
 import { PageLoader } from '@app/(embed)/register/[identifier]/page-loader';
-import { PlatformIdentifier } from '@graphql/generated';
+import {
+  PlatformIdentifier,
+  PlatformRegistrationStatus,
+  useIsPlatformRegisteredQuery,
+} from '@graphql/generated';
+import { registrationKeys } from '@graphql/registration/registration.keys';
 import { screen } from '@testing-library/react';
 import {
   ReadonlyURLSearchParams,
@@ -10,9 +15,16 @@ import {
 } from 'next/navigation';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('react-relay', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('react-relay')>()),
-  useQueryLoader: () => [{}, vi.fn()],
+vi.mock('@graphql/generated', async (importOriginal) => {
+  const { mockGeneratedQueryHooks } =
+    await import('@/utils/test/mock-generated-query');
+  return mockGeneratedQueryHooks(importOriginal, {
+    useIsPlatformRegisteredQuery: vi.fn(),
+  });
+});
+
+vi.mock('@/components/Loader', () => ({
+  default: () => <div data-testid="loader" />,
 }));
 
 vi.mock('@/components/registration/register', () => ({
@@ -38,6 +50,15 @@ const renderPageLoader = (query: Record<string, string>) => {
 
 describe('Register PageLoader', () => {
   beforeEach(() => {
+    vi.mocked(useIsPlatformRegisteredQuery).mockReturnValue({
+      data: {
+        isPlatformRegistered: {
+          status: PlatformRegistrationStatus.NeverRegistered,
+          platformTitle: null,
+          organization: null,
+        },
+      },
+    } as ReturnType<typeof useIsPlatformRegisteredQuery>);
     vi.mocked(redirect).mockReset();
     vi.mocked(useParams).mockReturnValue({
       identifier: PlatformIdentifier.Opencti,
@@ -51,6 +72,38 @@ describe('Register PageLoader', () => {
     // Then
     expect(screen.getByTestId('register')).toHaveTextContent(PLATFORM_ORIGIN);
     expect(redirect).not.toHaveBeenCalled();
+  });
+
+  it('should ask whether the platform of the given tenant is registered', () => {
+    // When
+    renderPageLoader({ ...VALID_QUERY, tenant_id: 'tenant-id' });
+
+    // Then
+    const variables = {
+      input: { platformId: VALID_QUERY.platform_id, tenantId: 'tenant-id' },
+    };
+    expect(useIsPlatformRegisteredQuery).toHaveBeenCalledWith(
+      expect.anything(),
+      variables,
+      expect.objectContaining({
+        queryKey: registrationKeys.isPlatformRegistered(variables),
+        staleTime: Infinity,
+      })
+    );
+  });
+
+  it('should display a loader until the registration status is known', () => {
+    // Given
+    vi.mocked(useIsPlatformRegisteredQuery).mockReturnValue({
+      data: undefined,
+    } as ReturnType<typeof useIsPlatformRegisteredQuery>);
+
+    // When
+    renderPageLoader(VALID_QUERY);
+
+    // Then
+    expect(screen.getByTestId('loader')).toBeInTheDocument();
+    expect(screen.queryByTestId('register')).not.toBeInTheDocument();
   });
 
   it.each([

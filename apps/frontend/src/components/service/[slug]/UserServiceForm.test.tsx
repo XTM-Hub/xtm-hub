@@ -129,6 +129,23 @@ describe('UserServiceForm', () => {
     ).toBeDisabled();
   });
 
+  it('should render the capabilities on a design system Paper one layer above the drawer, with its title above it', () => {
+    // When
+    renderUserServiceForm();
+
+    // Then
+    const title = screen.getByText('OrganizationInServiceAction.SelectCapa');
+    const surface = screen
+      .getByText('InviteUserServiceForm.Description')
+      .closest('section');
+    // The surface carries the design system layer, radius and padding classes.
+    // These pin the design system's class names on purpose, as jsdom does no
+    // layout: a rename in the design system needs this test updated.
+    expect(surface).toHaveClass('layer-3', 'rounded-sm', 'p-4');
+    expect(surface).not.toContainElement(title);
+    expect(surface?.parentElement).toContainElement(title);
+  });
+
   it('should load the users of the subscription organization', () => {
     // When
     renderUserServiceForm();

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { TEST_META_DESCRIPTIONS } from '../../../../tests/tests.const';
 import { BadRequestErrorCode } from '../../../utils/error/error.code';
 import {
   ManifestFragmentHelper,
@@ -144,12 +145,14 @@ describe('getConnectorMetadataFromExisting', () => {
       ManifestFragmentHelper.getConnectorMetadataFromExisting({
         currentLatestConnector: {
           datasheet_url: 'https://latest/datasheet',
+          meta_description: null,
         },
         existingBatchConnectors: [
           {
             datasheet_url: 'https://existing/datasheet',
             blogpost_url: 'https://existing/blogpost',
             demo_url: 'https://existing/demo',
+            meta_description: TEST_META_DESCRIPTIONS.DEFAULT,
           },
         ],
       })
@@ -157,7 +160,19 @@ describe('getConnectorMetadataFromExisting', () => {
       datasheet_url: 'https://latest/datasheet',
       blogpost_url: 'https://existing/blogpost',
       demo_url: 'https://existing/demo',
+      meta_description: TEST_META_DESCRIPTIONS.DEFAULT,
     });
+  });
+
+  it('returns a meta description alone, without any URL', () => {
+    expect(
+      ManifestFragmentHelper.getConnectorMetadataFromExisting({
+        currentLatestConnector: undefined,
+        existingBatchConnectors: [
+          { meta_description: TEST_META_DESCRIPTIONS.DEFAULT },
+        ],
+      })
+    ).toEqual({ meta_description: TEST_META_DESCRIPTIONS.DEFAULT });
   });
 });
 

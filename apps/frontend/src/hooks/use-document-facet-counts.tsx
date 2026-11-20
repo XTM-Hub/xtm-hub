@@ -69,8 +69,6 @@ export const useDocumentFacetCounts = ({
         documentType,
         searchTerm: search,
         logicalFilters,
-        // Required by the generated type until the deprecated field is removed
-        restrictToActiveDocuments: null,
         restrictToPublishedDocuments,
       },
     },

@@ -1,3 +1,4 @@
+import { type RegisteredPlatformsListItem } from '@/hooks/use-registered-platforms';
 import { type AnalyticsDeployEligibility } from '@/lib/analytics/analytics.types';
 import {
   isEeCapableContract,
@@ -5,12 +6,11 @@ import {
 } from '@/utils/platform';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 import { doesVersionSatisfy } from '@/utils/versioning';
-import { type useRegisteredPlatformsFragment$data } from '@generated/useRegisteredPlatformsFragment.graphql';
 
 interface DeployEligibilityInput {
   resource: { type: string; license_type?: string | null };
   platforms: readonly Pick<
-    useRegisteredPlatformsFragment$data,
+    RegisteredPlatformsListItem,
     'contract' | 'version'
   >[];
   requiredProductVersion: string | null | undefined;

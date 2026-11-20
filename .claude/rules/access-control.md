@@ -3,11 +3,21 @@ paths:
   - "apps/backend/**/*.resolver.ts"
   - "apps/backend/**/*.graphql"
   - "apps/backend/src/security/**"
+  - "apps/backend/**/*.domain.ts"
   - "apps/backend/tests/helper/test.access-matrix.helper.ts"
   - "apps/backend/**/*.access.test.ts"
 ---
 
 # Access Control Instructions (`apps/backend`)
+
+**The backend is the only place rights are enforced.** The frontend hides what a user cannot do or see for comfort
+only: any user can call the API directly. Every right therefore exists twice, in two layers:
+
+1. **Who may call an operation**: declared on the operation, see below.
+2. **Which data the caller may see or change**: a row filter in `src/security/restriction/`, see
+   [Filtering data](#filtering-data). A guard that lets a user in says nothing about the rows they get back.
+
+A new feature that gates something in the UI is not done until the backend refuses it too, with a test.
 
 Every GraphQL operation declares who may call it with a decorator or, until its module is migrated, a directive. Two
 mechanisms coexist while modules migrate:
@@ -75,6 +85,31 @@ table.
 `src/security/restriction/`. Whether `BYPASS` sees every row depends on the use case: some filters let it through
 themselves, others leave it to their caller, so read the filter before calling it.
 
+## Filtering data
+
+A guard decides whether a caller may run an operation. It does not decide which rows the operation returns: a
+`loggedInGuard()` query that selects `Document.*` hands every document, drafts included, to every logged-in user.
+**Every query, count, facet, search, export, dataloader, subscription payload and "by id" lookup that reads protected
+data filters the rows to what the caller may see, in the query itself.** Never fetch everything and filter in the
+resolver or in the frontend, and never trust an id the client sends: a user who guesses or reuses an id must get the
+same `NOT_FOUND` as for a row that does not exist.
+
+- The filter is a reusable function in `src/security/restriction/` (`restrictDocumentToPublished`,
+  `restrictDocumentToAccessibleServiceInstance`, …), applied with `.tap(...)` on the Knex query. Reuse the existing
+  one instead of rewriting its `where` inline, and write a new one there when none fits.
+- The caller comes from `requestContext`, never from an argument the client sends.
+- A filter that depends on a capability has two halves: the SQL restriction, and the check that decides whether to
+  apply it. `isUserRestrictedToPublishedDocument` (`src/modules/document/document.security.ts`) is the example: a document
+  is `draft`, `in_validation` or `published`, and on a manageable service (`MANAGEABLE_SERVICE_DEFINITION_IDENTIFIERS`)
+  a user without the `UPLOAD` capability on the service instance only gets `published` ones (platform admins see
+  everything). Keep that decision in a `<name>.security.ts` helper, next to the module, not in the resolver.
+- Every path that reaches the same data applies the same filter. When a listing is restricted, check the by-id load,
+  the count, the facets, the search, the children / related rows and the export: one unfiltered sibling leaks what the
+  others hide. Search for the other readers of the table before declaring the filter done.
+- The same goes for writes: a caller who may not see a row may not update, delete or change its status either. Filter
+  the row (or check it) before the write, not after.
+- `BYPASS` sees every row only if the filter says so: read it first (see `orgGuard` above).
+
 ## Machine callers
 
 `callerGuard('system', scopes)` is for an operation only a machine calls, with the `x-xtm-hub-token` header, such as
@@ -85,6 +120,22 @@ themselves, others leave it to their caller, so read the filter before calling i
   `@Public()` ignore the header.
 - Until scoped tokens, the system caller holds exactly the declared scopes, and so does the user the resolver gets
   (`context.user`, `requireUser()`).
+
+## Personal API tokens
+
+A request with `Authorization: Bearer xhp_…` runs as the token's user, narrowed by `narrowUserToToken`
+(`src/modules/api-token/api-token.auth.ts`) to the token's organization and scope. The database still knows every
+organization and right of that user, so anything that reads them again must apply the token:
+
+- `requestContext.get()?.apiToken` holds what the token reaches. It is set for a token request only, and kept apart
+  from `context.user`, which a resolver may replace.
+- Check the caller's membership or capabilities on an organization the client names with `securityGuard` or
+  `AuthHelper`, which apply `ApiTokenReach` (`src/security/api-token-reach.ts`), never with
+  `UserOrganizationDomain.loadUserOrganization` directly: a token of organization A would pass for organization B.
+- The token user's own organizations, portal capabilities and roles are filtered in the query by
+  `src/security/restriction/api-token.ts`. Reading them for another user, or for an invariant check, is unchanged.
+- A mutation that acts on the account itself (session, credentials, profile, personal space) goes in
+  `API_TOKEN_DENIED_FIELDS` (`src/modules/api-token/api-token.plugin.ts`).
 
 ## Errors
 
@@ -122,12 +173,20 @@ it was not called, allowed rows that it was called once and answered `expectedDa
 a row that sees different data. Wrap the call in a `describe` with a literal name, and use `TestHelper`, never the
 helper file directly.
 
+The matrix proves who may call the operation. **A filter has its own test**: seed one row the caller must not see (a
+`draft` document for a user without `UPLOAD`) next to one they may see, call the operation and every sibling path
+(list, by-id, count, search) as that user, and assert the hidden row is absent everywhere, then that a user with the
+capability gets both. A test that only seeds visible rows passes with the filter removed: remove it and rerun, the
+test must fail.
+
 ## Adding or migrating an entry point
 
 1. New module: `yarn workspace @xtm-hub/backend generate:module`. It generates a `<Name>Queries` class with one
    admin-only guarded query, its `type Query` field and an `expectAccessMatrix` call. Widen the guard on purpose.
 2. Existing operation: declare the rule its directive checks today with a guard, remove the directive, add the matrix.
 3. An operation open to anyone is written `@Public()`, never left bare.
+4. An operation that returns or changes rows: name the rule that restricts them, apply the restriction from
+   `src/security/restriction/`, and test a row the caller must not see.
 
 Decorators need no compiler option (`experimentalDecorators` stays off). Vitest and the production bundle lower them
 with esbuild: see the comments in `apps/backend/vitest.config.ts` and `apps/backend/builder/prod/prod.js`.

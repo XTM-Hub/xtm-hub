@@ -92,11 +92,11 @@ describe('news-feed.helper', () => {
         originalBlogpostSupport;
     });
 
-    it('is enabled from OpenCTI 7.261106.0 and disabled for the other platforms in the shipped configuration', () => {
+    it('is enabled from OpenCTI 7.261106.0 and the OpenAEV placeholder 3.261118.0, and disabled for XTM One in the shipped configuration', () => {
       // Given the shipped configuration
       expect(RequiredPlatformVersions.NewsFeedBlogpostSupport).toEqual({
         [PlatformIdentifier.Opencti]: '7.261106.0',
-        [PlatformIdentifier.Openaev]: null,
+        [PlatformIdentifier.Openaev]: '3.261118.0',
         [PlatformIdentifier.Xtmone]: null,
       });
 
@@ -113,14 +113,23 @@ describe('news-feed.helper', () => {
           '7.261105.0'
         )
       ).toBe(false);
-      // And the other platforms never get blogposts, whatever their version
-      [PlatformIdentifier.Openaev, PlatformIdentifier.Xtmone].forEach(
-        (identifier) => {
-          expect(
-            doesPlatformSupportBlogpostNewsFeed(identifier, '99.0.0')
-          ).toBe(false);
-        }
-      );
+      // And OpenAEV follows its placeholder version
+      expect(
+        doesPlatformSupportBlogpostNewsFeed(
+          PlatformIdentifier.Openaev,
+          '3.261118.0'
+        )
+      ).toBe(true);
+      expect(
+        doesPlatformSupportBlogpostNewsFeed(
+          PlatformIdentifier.Openaev,
+          '3.261117.0'
+        )
+      ).toBe(false);
+      // And XTM One never gets blogposts, whatever its version
+      expect(
+        doesPlatformSupportBlogpostNewsFeed(PlatformIdentifier.Xtmone, '99.0.0')
+      ).toBe(false);
     });
 
     it.each`

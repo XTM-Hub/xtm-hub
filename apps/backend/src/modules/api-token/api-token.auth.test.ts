@@ -1,4 +1,5 @@
 import type { NextFunction, Request, Response } from 'express';
+import { inspect } from 'node:util';
 import { describe, expect, it, vi } from 'vitest';
 import { TEST_ORGANIZATIONS } from '../../../tests/tests.const';
 import {
@@ -10,7 +11,8 @@ import { OrganizationId } from '../../model/kanel/public/Organization';
 import { UserId } from '../../model/kanel/public/User';
 import { UserLoadUserBy } from '../../model/user';
 import { ROLE_ADMIN } from '../../portal.const';
-import { ErrorCode, ForbiddenErrorCode } from '../../utils/error/error.code';
+import { logApp } from '../../utils/app-logger.util';
+import { ForbiddenErrorCode } from '../../utils/error/error.code';
 import { UserDomain } from '../organization-management/user/user-domain/user.domain';
 import { ApiTokenApp } from './api-token.app';
 import {
@@ -25,6 +27,14 @@ import { ApiTokenHelper } from './api-token.helper';
 const SECOND = TEST_ORGANIZATIONS.SECOND_ORGANIZATION;
 const FILIGRAN = TEST_ORGANIZATIONS.FILIGRAN;
 const DAY_MS = 24 * 60 * 60 * 1000;
+const INTERNAL_ERROR_BODY = {
+  errors: [
+    {
+      message: 'UNKNOWN_ERROR',
+      extensions: { code: 'UNKNOWN_ERROR' },
+    },
+  ],
+};
 
 const loadUser = async (id: UserId): Promise<UserLoadUserBy> => {
   const user = (await UserDomain.loadUserBy({
@@ -46,6 +56,17 @@ const createToken = async (
     organization_id: organizationId,
     expires_at: new Date(Date.now() + 30 * DAY_MS),
   });
+};
+
+// Really disables the user in the database for the time of the callback, so the 401 does not depend on the exact
+// message a mocked loadUserBy throws
+const withDisabledUser = async (userId: UserId, run: () => Promise<void>) => {
+  await UserDomain.updateUser(userId, { disabled: true });
+  try {
+    await run();
+  } finally {
+    await UserDomain.updateUser(userId, { disabled: false });
+  }
 };
 
 const expectRefused = async (secret: string, reason: string, now?: Date) => {
@@ -177,13 +198,25 @@ describe('resolveApiToken', () => {
       SECOND.ID,
       ApiTokenScope.ReadWrite
     );
-    // loadUserBy refuses a disabled user, whatever the organization asked
-    vi.spyOn(UserDomain, 'loadUserBy').mockRejectedValue(
-      new Error(ErrorCode.UserDisabled)
-    );
 
     // Then
-    await expectRefused(token, 'user disabled');
+    await withDisabledUser(SECOND.USERS.SIMPLE.ID, () =>
+      expectRefused(token, 'user disabled')
+    );
+  });
+
+  it('should rethrow an unexpected failure while loading the user instead of refusing the token', async () => {
+    // Given
+    const { token } = await createToken(
+      SECOND.USERS.SIMPLE.ID,
+      SECOND.ID,
+      ApiTokenScope.ReadWrite
+    );
+    const failure = new Error('relation "User_Organization" does not exist');
+    vi.spyOn(UserDomain, 'loadUserBy').mockRejectedValue(failure);
+
+    // Then
+    await expect(resolveApiToken(token)).rejects.toBe(failure);
   });
 });
 
@@ -233,7 +266,69 @@ describe('apiTokenMiddleware', () => {
     expect(getApiTokenAuthentication(req)?.user.id).toBe(
       SECOND.USERS.SIMPLE.ID
     );
-    expect(touch).toHaveBeenCalledWith(api_token.id, expect.any(Date));
+    expect(touch).toHaveBeenCalledWith(
+      api_token.id,
+      expect.any(Date),
+      expect.any(Number)
+    );
+  });
+
+  it.each([
+    { elapsedMs: 5 * 1000, recorded: false },
+    { elapsedMs: 2 * 60 * 1000, recorded: true },
+  ])(
+    'should record the use of a token last used $elapsedMs ms ago: $recorded',
+    async ({ elapsedMs, recorded }) => {
+      // Given
+      const { token, api_token } = await createToken(
+        SECOND.USERS.SIMPLE.ID,
+        SECOND.ID,
+        ApiTokenScope.Read
+      );
+      const lastUsedAt = new Date(Date.now() - elapsedMs);
+      await ApiTokenDomain.touchLastUsed(api_token.id, lastUsedAt, 0);
+      const touch = vi.spyOn(ApiTokenDomain, 'touchLastUsed');
+      const req = { headers: { authorization: `Bearer ${token}` } } as Request;
+
+      // When
+      await apiTokenMiddleware(
+        req,
+        response() as unknown as Response,
+        vi.fn() as NextFunction
+      );
+
+      // Then
+      expect(touch).toHaveBeenCalledTimes(recorded ? 1 : 0);
+    }
+  );
+
+  it('should write the last use once when the same token is touched at the same time', async () => {
+    // Given
+    const { api_token } = await createToken(
+      SECOND.USERS.SIMPLE.ID,
+      SECOND.ID,
+      ApiTokenScope.Read
+    );
+    const first = new Date();
+    const second = new Date(first.getTime() + 1000);
+
+    // When
+    await Promise.all([
+      ApiTokenDomain.touchLastUsed(api_token.id, first, 60 * 1000),
+      ApiTokenDomain.touchLastUsed(api_token.id, second, 60 * 1000),
+    ]);
+
+    // Then
+    const stored = await ApiTokenDomain.loadById(api_token.id);
+    expect([first, second]).toContainEqual(stored?.last_used_at);
+    await ApiTokenDomain.touchLastUsed(
+      api_token.id,
+      new Date(first.getTime() - 5 * 60 * 1000),
+      60 * 1000
+    );
+    expect((await ApiTokenDomain.loadById(api_token.id))?.last_used_at).toEqual(
+      stored?.last_used_at
+    );
   });
 
   it('should answer 401 to a refused token, never falling back to a session', async () => {
@@ -260,22 +355,98 @@ describe('apiTokenMiddleware', () => {
     expect(getApiTokenAuthentication(req)).toBeUndefined();
   });
 
-  it('should pass an unexpected failure to the error handler', async () => {
+  it('should answer 401 to a token of a disabled user', async () => {
+    // Given
+    const { token } = await createToken(
+      SECOND.USERS.SIMPLE.ID,
+      SECOND.ID,
+      ApiTokenScope.Read
+    );
+    const warn = vi.spyOn(logApp, 'warn');
+    const error = vi.spyOn(logApp, 'error');
+    const req = { headers: { authorization: `Bearer ${token}` } } as Request;
+    const res = response();
+    const next = vi.fn();
+
+    // When
+    await withDisabledUser(SECOND.USERS.SIMPLE.ID, () =>
+      apiTokenMiddleware(req, res as unknown as Response, next)
+    );
+
+    // Then
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(res.json).toHaveBeenCalledWith({
+      errors: [
+        { message: 'UNAUTHENTICATED', extensions: { code: 'UNAUTHENTICATED' } },
+      ],
+    });
+    expect(warn).toHaveBeenCalledWith('API token refused', {
+      reason: 'user disabled',
+    });
+    expect(error).not.toHaveBeenCalled();
+    expect(next).not.toHaveBeenCalled();
+    expect(getApiTokenAuthentication(req)).toBeUndefined();
+  });
+
+  it('should log an unexpected failure while loading the user once and answer 500, never 401', async () => {
+    // Given
+    const { token } = await createToken(
+      SECOND.USERS.SIMPLE.ID,
+      SECOND.ID,
+      ApiTokenScope.Read
+    );
+    // A knex error embeds the query bindings: here the hash of the token the lookup was made with
+    const failure = new Error(
+      `select "ApiToken".* from "ApiToken" where "token_hash" = '${ApiTokenHelper.hash(token)}' - relation "User_Organization" does not exist`
+    );
+    vi.spyOn(UserDomain, 'loadUserBy').mockRejectedValue(failure);
+    const error = vi.spyOn(logApp, 'error').mockImplementation(() => {});
+    const req = { headers: { authorization: `Bearer ${token}` } } as Request;
+    const res = response();
+    const next = vi.fn();
+
+    // When
+    await apiTokenMiddleware(req, res as unknown as Response, next);
+
+    // Then
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith(INTERNAL_ERROR_BODY);
+    expect(next).not.toHaveBeenCalled();
+    expect(error).toHaveBeenCalledTimes(1);
+    expect(error).toHaveBeenCalledWith('API token authentication failed', {
+      error: failure,
+    });
+    // Everything that reaches the log carries the hash, never the secret
+    const logged = inspect(error.mock.calls, { depth: null });
+    expect(logged).toContain(ApiTokenHelper.hash(token));
+    expect(logged).not.toContain(token);
+    expect(getApiTokenAuthentication(req)).toBeUndefined();
+  });
+
+  it('should answer 500 without detail to an unexpected failure while loading the token', async () => {
     // Given
     const failure = new Error('database down');
     vi.spyOn(ApiTokenDomain, 'loadByHash').mockRejectedValue(failure);
+    const error = vi.spyOn(logApp, 'error').mockImplementation(() => {});
     const req = {
       headers: {
         authorization: `Bearer ${ApiTokenHelper.generate().token}`,
       },
     } as Request;
+    const res = response();
     const next = vi.fn();
 
     // When
-    await apiTokenMiddleware(req, response() as unknown as Response, next);
+    await apiTokenMiddleware(req, res as unknown as Response, next);
 
     // Then
-    expect(next).toHaveBeenCalledWith(failure);
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith(INTERNAL_ERROR_BODY);
+    expect(next).not.toHaveBeenCalled();
+    expect(error).toHaveBeenCalledTimes(1);
+    expect(error).toHaveBeenCalledWith('API token authentication failed', {
+      error: failure,
+    });
   });
 });
 

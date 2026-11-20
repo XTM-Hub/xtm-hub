@@ -41,28 +41,30 @@ vi.mock(
 );
 
 vi.mock(
-  '@/components/service/trial-instances/xtm-platform-trial/active-bundle/BundleInfoCard',
+  '@/components/service/trial-instances/xtm-platform-trial/active-bundle/BundleInfoSection',
   () => ({
-    BundleInfoCard: () => <div data-testid="bundle-info-card" />,
+    BundleInfoSection: () => <div data-testid="bundle-info-section" />,
   })
 );
 
 vi.mock(
-  '@/components/service/trial-instances/xtm-platform-trial/active-bundle/BundleGuideCard',
+  '@/components/service/trial-instances/xtm-platform-trial/active-bundle/BundleGuideSection',
   () => ({
-    BundleGuideCard: () => <div data-testid="bundle-guide-card" />,
+    BundleGuideSection: () => <div data-testid="bundle-guide-section" />,
   })
 );
 
 vi.mock(
-  '@/components/service/trial-instances/xtm-platform-trial/active-bundle/BundleProductCard',
+  '@/components/service/trial-instances/xtm-platform-trial/active-bundle/BundleProductSection',
   () => ({
-    BundleProductCard: ({
+    BundleProductSection: ({
       product,
     }: {
       product: { service_instance_id: string };
     }) => (
-      <div data-testid={`bundle-product-card-${product.service_instance_id}`} />
+      <div
+        data-testid={`bundle-product-section-${product.service_instance_id}`}
+      />
     ),
   })
 );
@@ -104,7 +106,7 @@ describe('XtmPlatformActiveBundlePage', () => {
 
     // Then
     expect(container).not.toHaveTextContent('XtmPlatformTrial.Title');
-    expect(screen.queryByTestId('bundle-info-card')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('bundle-info-section')).not.toBeInTheDocument();
   });
 
   it('should render nothing when there is no active bundle', () => {
@@ -148,14 +150,14 @@ describe('XtmPlatformActiveBundlePage', () => {
 
     // Then
     expect(screen.getByText('XtmPlatformTrial.Title')).toBeInTheDocument();
-    expect(screen.getByTestId('bundle-info-card')).toBeInTheDocument();
-    expect(screen.getByTestId('bundle-guide-card')).toBeInTheDocument();
+    expect(screen.getByTestId('bundle-info-section')).toBeInTheDocument();
+    expect(screen.getByTestId('bundle-guide-section')).toBeInTheDocument();
     expect(screen.getByTestId('trial-limitations')).toBeInTheDocument();
     expect(
-      screen.getByTestId('bundle-product-card-opencti-instance')
+      screen.getByTestId('bundle-product-section-opencti-instance')
     ).toBeInTheDocument();
     expect(
-      screen.getByTestId('bundle-product-card-xtmone-instance')
+      screen.getByTestId('bundle-product-section-xtmone-instance')
     ).toBeInTheDocument();
   });
 
@@ -180,7 +182,7 @@ describe('XtmPlatformActiveBundlePage', () => {
 
     // Then
     expect(
-      screen.queryByTestId('bundle-product-card-xtmone-instance')
+      screen.queryByTestId('bundle-product-section-xtmone-instance')
     ).not.toBeInTheDocument();
   });
 
@@ -200,6 +202,6 @@ describe('XtmPlatformActiveBundlePage', () => {
     testRender(<XtmPlatformActiveBundlePage />);
 
     // Then
-    expect(screen.getByTestId('bundle-info-card')).toBeInTheDocument();
+    expect(screen.getByTestId('bundle-info-section')).toBeInTheDocument();
   });
 });

@@ -5,7 +5,6 @@ import {
   ServiceDefinitionIdentifierToPlatformIdentifier,
   translateServiceDefinitionIdentifier,
 } from '@/components/registration/PlatformIdentifierMapping';
-import { UpdatePlatformServiceMetadata } from '@/components/service/service.graphql';
 import { Form, FormField } from '@/components/ui/form';
 import { SheetFooter } from '@/components/ui/sheet';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
@@ -13,13 +12,14 @@ import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { analyticsProduct } from '@/lib/analytics/analytics.context';
 import { analyticsId } from '@/lib/analytics/analytics.ids';
+import { portalGraphqlClient } from '@/lib/graphql-client';
 import { Button, Input } from '@filigran/design-system';
 import { ServiceDefinitionIdentifier } from '@generated/serviceInstance_fragment.graphql';
-import { serviceUpdatePlatformServiceMetadataMutation } from '@generated/serviceUpdatePlatformServiceMetadataMutation.graphql';
+import { useUpdatePlatformServiceMetadataMutation } from '@graphql/generated';
+import { registrationKeys } from '@graphql/registration/registration.keys';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
-import { useMutation } from 'react-relay';
 import { z } from 'zod';
 
 const platformUpdateSchema = z.object({
@@ -52,10 +52,19 @@ export const PlatformUpdateSheet = ({
       serviceDefinitionIdentifier
     ];
 
-  const [updatePlatformMetadata] =
-    useMutation<serviceUpdatePlatformServiceMetadataMutation>(
-      UpdatePlatformServiceMetadata
-    );
+  // Hook-level callbacks still run when the sheet unmounts before the request
+  // settles, unlike the per-call ones, so the caches never keep the old name.
+  const { mutate: updatePlatformMetadata } =
+    useUpdatePlatformServiceMetadataMutation(portalGraphqlClient, {
+      onSuccess: () => {
+        invalidatePrivateNavigationQueries(queryClient);
+        // The registered platform page shows the name.
+        void queryClient.invalidateQueries({
+          queryKey: registrationKeys.allByServiceInstance(),
+        });
+        onUpdated?.();
+      },
+    });
 
   const form = useForm<z.infer<typeof platformUpdateSchema>>({
     resolver: zodResolver(platformUpdateSchema),
@@ -65,36 +74,38 @@ export const PlatformUpdateSheet = ({
   });
 
   const onSubmit = (values: z.infer<typeof platformUpdateSchema>) => {
-    updatePlatformMetadata({
-      variables: {
+    updatePlatformMetadata(
+      {
         input: {
           serviceInstanceId: serviceInstanceId,
           name: values.name,
         },
       },
-      onCompleted: () => {
-        setOpen(false);
-        invalidatePrivateNavigationQueries(queryClient);
-        onUpdated?.();
-        showSnackbar({
-          severity: 'success',
-          title: t('Utils.Success'),
-          description: t('Platform.Updated', {
-            platformName: values.name,
-          }),
-        });
-        form.reset({
-          name: values.name,
-        });
-      },
-      onError: (error) => {
-        showSnackbar({
-          severity: 'error',
-          title: t('Utils.Error'),
-          description: t(`Error.Server.${error.message}`),
-        });
-      },
-    });
+      {
+        onSuccess: () => {
+          setOpen(false);
+          showSnackbar({
+            severity: 'success',
+            title: t('Utils.Success'),
+            description: t('Platform.Updated', {
+              platformName: values.name,
+            }),
+          });
+          form.reset({
+            name: values.name,
+          });
+        },
+        onError: (error) => {
+          const errorMessage =
+            error instanceof Error ? error.message : 'UNKNOWN_ERROR';
+          showSnackbar({
+            severity: 'error',
+            title: t('Utils.Error'),
+            description: t(`Error.Server.${errorMessage}`),
+          });
+        },
+      }
+    );
   };
 
   // Get platform name for display
