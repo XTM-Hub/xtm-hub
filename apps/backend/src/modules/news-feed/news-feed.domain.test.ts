@@ -82,16 +82,24 @@ describe('newsFeedDomain', () => {
       }
     );
 
-    it('should not list the blogpost type for OpenAEV, whose gate is disabled', () => {
-      // When
-      const result = NewsFeedDomain.loadAvailableNewsFeedTypes(
-        PlatformIdentifier.Openaev,
-        '99.0.0'
-      );
+    it.each`
+      description                 | version         | expected
+      ${'below the shipped gate'} | ${'3.261117.0'} | ${false}
+      ${'at the shipped gate'}    | ${'3.261118.0'} | ${true}
+      ${'above the shipped gate'} | ${'3.261119.0'} | ${true}
+    `(
+      'should list the blogpost type for OpenAEV $description ($version): $expected',
+      ({ version, expected }) => {
+        // When
+        const result = NewsFeedDomain.loadAvailableNewsFeedTypes(
+          PlatformIdentifier.Openaev,
+          version
+        );
 
-      // Then
-      expect(result).not.toContain(NewsFeedItemType.BlogPost);
-    });
+        // Then
+        expect(result.includes(NewsFeedItemType.BlogPost)).toBe(expected);
+      }
+    );
 
     describe('with a blogpost required version', () => {
       const BLOGPOST_REQUIRED_VERSION = '7.260901.0';
