@@ -17,8 +17,9 @@ import { API_TOKEN_ERRORS, sendApiTokenError } from './api-token.errors';
 import {
   admitApiTokenLookup,
   countRefusedApiToken,
+  type LookupReservation,
   recentApiTokens,
-  refundApiTokenLookup,
+  releaseApiTokenLookup,
 } from './api-token.failure-limit';
 import { ApiTokenHelper } from './api-token.helper';
 
@@ -191,10 +192,13 @@ export const apiTokenMiddleware = async (
     return;
   }
   const tokenHash = ApiTokenHelper.hash(secret);
-  // A token not accepted recently takes a hit before its lookup and, over the limit, is answered 429 without one
-  const acceptedRecently = recentApiTokens.has(tokenHash);
-  if (!acceptedRecently && !admitApiTokenLookup(req, res)) {
-    return;
+  // A token not accepted recently reserves a hit before its lookup and, over the limit, is answered 429 without one
+  let reservation: LookupReservation | undefined;
+  if (!recentApiTokens.has(tokenHash)) {
+    reservation = admitApiTokenLookup(req, res);
+    if (!reservation) {
+      return;
+    }
   }
   const now = new Date();
   let resolution: Resolution;
@@ -202,8 +206,8 @@ export const apiTokenMiddleware = async (
     resolution = await resolveApiToken(secret, now);
   } catch (error) {
     // Not a refused token: an outage must not use up the allowance of every client
-    if (!acceptedRecently) {
-      refundApiTokenLookup(req);
+    if (reservation) {
+      releaseApiTokenLookup(reservation);
     }
     // Never the secret: only the error, whose query carries the token hash at most
     logApp.error('API token authentication failed', { error });
@@ -213,15 +217,16 @@ export const apiTokenMiddleware = async (
   }
   if (!resolution.authenticated) {
     recentApiTokens.forget(tokenHash);
-    if (acceptedRecently) {
+    // A reserved hit stays as the refusal; a token accepted recently had none
+    if (!reservation) {
       countRefusedApiToken(req);
     }
     logApp.warn('API token refused', { reason: resolution.reason });
     sendApiTokenError(res, API_TOKEN_ERRORS.Unauthenticated);
     return;
   }
-  if (!acceptedRecently) {
-    refundApiTokenLookup(req);
+  if (reservation) {
+    releaseApiTokenLookup(reservation);
   }
   recentApiTokens.remember(tokenHash, now.getTime());
   authentications.set(req, resolution.authentication);

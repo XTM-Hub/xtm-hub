@@ -7,9 +7,10 @@ import {
   countRefusedApiToken,
   createFailureCounter,
   createRecentApiTokens,
+  type LookupReservation,
   RECENT_API_TOKEN_MAX,
   recentApiTokens,
-  refundApiTokenLookup,
+  releaseApiTokenLookup,
 } from './api-token.failure-limit';
 
 // Documentation addresses (RFC 5737), one per test: the counter lives as long as the module
@@ -24,70 +25,119 @@ const buildResponse = () => {
 
 const admit = (ip: string) => {
   const res = buildResponse();
-  const admitted = admitApiTokenLookup(
+  const reservation = admitApiTokenLookup(
     buildRequest(ip),
     res as unknown as Response
   );
-  return { res, admitted };
+  return { res, reservation };
 };
 
-const admitMany = (ip: string, count: number) => {
-  for (let index = 0; index < count; index++) {
-    admit(ip);
-  }
-};
+const admitMany = (ip: string, count: number): LookupReservation[] =>
+  Array.from({ length: count }, () => admit(ip).reservation).filter(
+    (reservation) => reservation !== undefined
+  );
 
 describe('failure counter', () => {
   const WINDOW_MS = 1000;
+  const MAX = 2;
   const NOW = 1_700_000_000_000;
 
-  it('should count the hits of a key within its window', () => {
+  const buildCounter = () =>
+    createFailureCounter({ windowMs: WINDOW_MS, max: MAX });
+
+  it('should admit a key up to its maximum within its window', () => {
     // Given
-    const counter = createFailureCounter({ windowMs: WINDOW_MS });
-    counter.hit('key-a', NOW);
+    const counter = buildCounter();
+    counter.reserve('key-a', NOW);
+    counter.reserve('key-a', NOW + 1);
 
     // When
-    const result = counter.hit('key-a', NOW + WINDOW_MS - 1);
+    const result = counter.reserve('key-a', NOW + WINDOW_MS - 1);
 
     // Then
-    expect(result).toEqual({ hits: 2, resetAt: NOW + WINDOW_MS });
+    expect(result).toEqual({
+      admitted: false,
+      resetAt: NOW + WINDOW_MS,
+      firstRejection: true,
+    });
+  });
+
+  it('should flag only the first rejection of a window', () => {
+    // Given
+    const counter = buildCounter();
+    counter.count('key-a', NOW);
+    counter.count('key-a', NOW);
+    counter.reserve('key-a', NOW);
+
+    // When
+    const result = counter.reserve('key-a', NOW);
+
+    // Then
+    expect(result).toMatchObject({ admitted: false, firstRejection: false });
+  });
+
+  it('should take no hit for a rejected request', () => {
+    // Given
+    const counter = buildCounter();
+    const reservations = [
+      counter.reserve('key-a', NOW),
+      counter.reserve('key-a', NOW),
+    ];
+    counter.reserve('key-a', NOW);
+    counter.reserve('key-a', NOW);
+
+    // When
+    reservations.forEach((result) => {
+      if (result.admitted) {
+        counter.release(result.reservation);
+      }
+    });
+
+    // Then
+    expect(counter.reserve('key-a', NOW).admitted).toBe(true);
+    expect(counter.reserve('key-a', NOW).admitted).toBe(true);
   });
 
   it('should start a new window once the previous one is over', () => {
     // Given
-    const counter = createFailureCounter({ windowMs: WINDOW_MS });
-    counter.hit('key-a', NOW);
+    const counter = buildCounter();
+    counter.count('key-a', NOW);
+    counter.count('key-a', NOW);
 
     // When
-    const result = counter.hit('key-a', NOW + WINDOW_MS);
+    const result = counter.reserve('key-a', NOW + WINDOW_MS);
 
     // Then
-    expect(result).toEqual({ hits: 1, resetAt: NOW + 2 * WINDOW_MS });
+    expect(result).toEqual({
+      admitted: true,
+      reservation: { key: 'key-a', resetAt: NOW + 2 * WINDOW_MS },
+    });
   });
 
-  it('should give back a hit of the current window only', () => {
+  it('should give back a reservation only to the window that took it', () => {
     // Given
-    const counter = createFailureCounter({ windowMs: WINDOW_MS });
-    counter.hit('key-a', NOW);
-    counter.hit('key-a', NOW);
+    const counter = buildCounter();
+    const previous = counter.reserve('key-a', NOW);
+    counter.count('key-a', NOW + WINDOW_MS);
+    counter.count('key-a', NOW + WINDOW_MS);
 
     // When
-    counter.refund('key-a', NOW);
-    counter.refund('key-b', NOW);
+    if (previous.admitted) {
+      counter.release(previous.reservation);
+    }
 
     // Then
-    expect(counter.hit('key-a', NOW).hits).toBe(2);
-    expect(counter.size()).toBe(1);
+    expect(counter.reserve('key-a', NOW + WINDOW_MS).admitted).toBe(false);
   });
 
   it('should drop the windows that are over when a hit comes in', () => {
     // Given
-    const counter = createFailureCounter({ windowMs: WINDOW_MS });
-    counter.hit('key-a', NOW);
-    counter.hit('key-b', NOW + 1);
+    const counter = buildCounter();
+    counter.count('key-a', NOW);
+    counter.count('key-b', NOW + 1);
 
     // When
-    counter.hit('key-c', NOW + WINDOW_MS + 1);
+    counter.count('key-c', NOW + WINDOW_MS + 1);
 
     // Then
     expect(counter.size()).toBe(1);
@@ -105,10 +155,10 @@ describe('api token failure rate limit', () => {
     admitMany(ip, API_TOKEN_FAILURE_RATE_MAX - 1);
 
     // When
-    const { res, admitted } = admit(ip);
+    const { res, reservation } = admit(ip);
 
     // Then
-    expect(admitted).toBe(true);
+    expect(reservation).toBeDefined();
     expect(res.status).not.toHaveBeenCalled();
   });
 
@@ -118,10 +168,10 @@ describe('api token failure rate limit', () => {
     admitMany(ip, API_TOKEN_FAILURE_RATE_MAX);
 
     // When
-    const { res, admitted } = admit(ip);
+    const { res, reservation } = admit(ip);
 
     // Then
-    expect(admitted).toBe(false);
+    expect(reservation).toBeUndefined();
     expect(res.setHeader).toHaveBeenCalledWith(
       'Retry-After',
       expect.stringMatching(/^\d+$/)
@@ -149,30 +199,45 @@ describe('api token failure rate limit', () => {
     expect(logApp.warn).toHaveBeenCalledTimes(1);
   });
 
-  it('should give back the hit of a lookup that was refunded', () => {
+  it('should give back the hit of a lookup that was released', () => {
     // Given
     const ip = '198.51.100.43';
-    admitMany(ip, API_TOKEN_FAILURE_RATE_MAX);
-    refundApiTokenLookup(buildRequest(ip));
+    const [first] = admitMany(ip, API_TOKEN_FAILURE_RATE_MAX);
+    releaseApiTokenLookup(first);
 
     // When
-    const { admitted } = admit(ip);
+    const { reservation } = admit(ip);
 
     // Then
-    expect(admitted).toBe(true);
+    expect(reservation).toBeDefined();
   });
 
-  it('should count a refusal made without a lookup hit', () => {
+  it('should not count the requests answered 429 once the lookups are released', () => {
+    // Given
+    const ip = '198.51.100.47';
+    const reservations = admitMany(ip, API_TOKEN_FAILURE_RATE_MAX);
+    admitMany(ip, API_TOKEN_FAILURE_RATE_MAX);
+
+    // When
+    reservations.forEach(releaseApiTokenLookup);
+
+    // Then
+    expect(admitMany(ip, API_TOKEN_FAILURE_RATE_MAX)).toHaveLength(
+      API_TOKEN_FAILURE_RATE_MAX
+    );
+  });
+
+  it('should count a refusal made without a reservation', () => {
     // Given
     const ip = '198.51.100.44';
     admitMany(ip, API_TOKEN_FAILURE_RATE_MAX - 1);
     countRefusedApiToken(buildRequest(ip));
 
     // When
-    const { admitted } = admit(ip);
+    const { reservation } = admit(ip);
 
     // Then
-    expect(admitted).toBe(false);
+    expect(reservation).toBeUndefined();
   });
 
   it('should keep the allowance of a client while another one is over its limit', () => {
@@ -180,10 +245,10 @@ describe('api token failure rate limit', () => {
     admitMany('198.51.100.45', API_TOKEN_FAILURE_RATE_MAX + 1);
 
     // When
-    const { admitted } = admit('198.51.100.46');
+    const { reservation } = admit('198.51.100.46');
 
     // Then
-    expect(admitted).toBe(true);
+    expect(reservation).toBeDefined();
   });
 });
 

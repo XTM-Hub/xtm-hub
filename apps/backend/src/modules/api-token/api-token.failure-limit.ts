@@ -7,12 +7,31 @@ const SECOND_MS = 1000;
 const API_TOKEN_FAILURE_RATE_WINDOW_MS = 15 * 60 * SECOND_MS;
 export const API_TOKEN_FAILURE_RATE_MAX = 30;
 
+// A hit taken for a lookup, bound to the window that took it
+export interface LookupReservation {
+  key: string;
+  resetAt: number;
+}
+
+export type ReserveResult =
+  | { admitted: true; reservation: LookupReservation }
+  // `firstRejection`: the first request of the window refused for its key
+  | { admitted: false; resetAt: number; firstRejection: boolean };
+
 export interface FailureCounter {
-  // Counts a hit for the key and returns the hits of its window, this one included
-  hit: (key: string, now?: number) => { hits: number; resetAt: number };
-  // Gives back a hit of the current window
-  refund: (key: string, now?: number) => void;
+  // Takes a hit when the key is under the limit; a request over the limit takes none
+  reserve: (key: string, now?: number) => ReserveResult;
+  // Gives back the hit of a reservation, only to the window that took it
+  release: (reservation: LookupReservation) => void;
+  // Counts a hit outside a reservation, past the limit if need be
+  count: (key: string, now?: number) => void;
   size: () => number;
+}
+
+interface FailureWindow {
+  hits: number;
+  resetAt: number;
+  rejected: boolean;
 }
 
 /**
@@ -22,32 +41,52 @@ export interface FailureCounter {
  */
 export const createFailureCounter = ({
   windowMs,
+  max,
 }: {
   windowMs: number;
+  max: number;
 }): FailureCounter => {
   // Key to window, in the order the windows started: the first key always ends first
-  const windows = new Map<string, { hits: number; resetAt: number }>();
-  return {
-    hit: (key, now = Date.now()) => {
-      for (const [oldestKey, { resetAt }] of windows) {
-        if (resetAt > now) {
-          break;
-        }
-        windows.delete(oldestKey);
+  const windows = new Map<string, FailureWindow>();
+
+  const currentWindow = (key: string, now: number): FailureWindow => {
+    for (const [oldestKey, { resetAt }] of windows) {
+      if (resetAt > now) {
+        break;
       }
-      let window = windows.get(key);
-      if (!window) {
-        window = { hits: 0, resetAt: now + windowMs };
-        windows.set(key, window);
+      windows.delete(oldestKey);
+    }
+    let window = windows.get(key);
+    if (!window) {
+      window = { hits: 0, resetAt: now + windowMs, rejected: false };
+      windows.set(key, window);
+    }
+    return window;
+  };
+
+  return {
+    reserve: (key, now = Date.now()) => {
+      const window = currentWindow(key, now);
+      if (window.hits >= max) {
+        const firstRejection = !window.rejected;
+        window.rejected = true;
+        return { admitted: false, resetAt: window.resetAt, firstRejection };
       }
       window.hits++;
-      return { hits: window.hits, resetAt: window.resetAt };
+      return {
+        admitted: true,
+        reservation: { key, resetAt: window.resetAt },
+      };
     },
-    refund: (key, now = Date.now()) => {
+    release: ({ key, resetAt }) => {
+      // A window that started after the reservation never counted its hit
       const window = windows.get(key);
-      if (window && window.resetAt > now && window.hits > 0) {
+      if (window?.resetAt === resetAt && window.hits > 0) {
         window.hits--;
       }
+    },
+    count: (key, now = Date.now()) => {
+      currentWindow(key, now).hits++;
     },
     size: () => windows.size,
   };
@@ -55,26 +94,30 @@ export const createFailureCounter = ({
 
 /**
  * Refused tokens per client IP (`req.ip`, which follows the `trust proxy` setting). A token takes its hit before its
- * lookup, so that a burst of unknown tokens sent at once sees its own hits, and an accepted token gives it back: only
- * refused tokens use up the allowance, and the failures of one client never block another. In memory and per replica,
- * like the other limiters.
+ * lookup, so that a burst of unknown tokens sent at once sees its own hits, and an accepted token or a failed lookup
+ * gives it back: only refused tokens use up the allowance, a request answered 429 takes none, and the failures of one
+ * client never block another. In memory and per replica, like the other limiters.
  */
 const failures = createFailureCounter({
   windowMs: API_TOKEN_FAILURE_RATE_WINDOW_MS,
+  max: API_TOKEN_FAILURE_RATE_MAX,
 });
 
 /**
- * Takes a hit for a token about to be looked up. Over the limit, answers 429 and returns false: the token must not be
- * looked up.
+ * Takes a hit for a token about to be looked up and returns its reservation. Over the limit, answers 429 and returns
+ * undefined: the token must not be looked up.
  */
-export const admitApiTokenLookup = (req: Request, res: Response): boolean => {
+export const admitApiTokenLookup = (
+  req: Request,
+  res: Response
+): LookupReservation | undefined => {
   const now = Date.now();
-  const { hits, resetAt } = failures.hit(ipRateLimitKey(req), now);
-  if (hits <= API_TOKEN_FAILURE_RATE_MAX) {
-    return true;
+  const result = failures.reserve(ipRateLimitKey(req), now);
+  if (result.admitted) {
+    return result.reservation;
   }
   // Once per client and window: a sustained flood does not flood the logs
-  if (hits === API_TOKEN_FAILURE_RATE_MAX + 1) {
+  if (result.firstRejection) {
     logApp.warn('[RATE-LIMIT] Refused API token request rate limited', {
       ip: req.ip,
       path: req.path,
@@ -84,20 +127,20 @@ export const admitApiTokenLookup = (req: Request, res: Response): boolean => {
   }
   res.setHeader(
     'Retry-After',
-    Math.ceil((resetAt - now) / SECOND_MS).toString()
+    Math.ceil((result.resetAt - now) / SECOND_MS).toString()
   );
   sendApiTokenError(res, API_TOKEN_ERRORS.TooManyRequests);
-  return false;
+  return undefined;
 };
 
-// An accepted token gives back the hit it took in admitApiTokenLookup
-export const refundApiTokenLookup = (req: Request): void => {
-  failures.refund(ipRateLimitKey(req));
+// An accepted token, or a lookup that failed, gives back the hit it took in admitApiTokenLookup
+export const releaseApiTokenLookup = (reservation: LookupReservation): void => {
+  failures.release(reservation);
 };
 
-// A refused token that was looked up without taking a hit, because it had been accepted recently
+// A refused token that was looked up without a reservation, because it had been accepted recently
 export const countRefusedApiToken = (req: Request): void => {
-  failures.hit(ipRateLimitKey(req));
+  failures.count(ipRateLimitKey(req));
 };
 
 const RECENT_API_TOKEN_TTL_MS = 60 * 60 * SECOND_MS;

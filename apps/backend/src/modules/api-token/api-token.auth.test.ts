@@ -586,6 +586,36 @@ describe('apiTokenMiddleware', () => {
     expect(res.status).toHaveBeenCalledWith(401);
   });
 
+  it('should not use up the allowance of a client with the calls answered 429 while its valid token was looked up', async () => {
+    // Given
+    const ip = '192.0.2.20';
+    const { token } = await createToken(
+      SECOND.USERS.SIMPLE.ID,
+      SECOND.ID,
+      ApiTokenScope.Read
+    );
+    await Promise.all(
+      Array.from({ length: 2 * API_TOKEN_FAILURE_RATE_MAX }, () =>
+        apiTokenMiddleware(
+          bearerRequest(ip, token),
+          response() as unknown as Response,
+          vi.fn()
+        )
+      )
+    );
+    const res = response();
+
+    // When
+    await apiTokenMiddleware(
+      bearerRequest(ip, ApiTokenHelper.generate().token),
+      res as unknown as Response,
+      vi.fn()
+    );
+
+    // Then
+    expect(res.status).toHaveBeenCalledWith(401);
+  });
+
   it('should answer 401 to a token of a disabled user', async () => {
     // Given
     const { token } = await createToken(
