@@ -1,0 +1,187 @@
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { TestHelper } from '../../../../tests/helper/test.helper';
+import {
+  OrganizationCapability,
+  PortalCapability,
+  ServiceRestriction,
+} from '../../../__generated__/resolvers-types';
+import { OrganizationId } from '../../../model/kanel/public/Organization';
+import { ServiceInstanceId } from '../../../model/kanel/public/ServiceInstance';
+import {
+  ForbiddenErrorCode,
+  NotFoundErrorCode,
+  UnauthenticatedErrorCode,
+} from '../../../utils/error/error.code';
+import { allow, DenialCode, deny, Guard } from '../guard.types';
+import { buildPrincipal } from '../principal';
+import { fromArg } from '../sources';
+import { systemCallerGuard } from './caller.guard';
+import { anyOf } from './combinators';
+import { orgGuard, selectedOrganization } from './organization.guard';
+import { serviceGuard } from './service.guard';
+
+const { ANONYMOUS, buildUserPrincipal } = TestHelper.guardFixtures;
+
+const SERVICE_INSTANCE_ID =
+  '11111111-1111-4111-8111-111111111111' as ServiceInstanceId;
+
+type InstanceArgs = { instanceId: ServiceInstanceId };
+const fromInstanceArg = fromArg<InstanceArgs, 'instanceId'>('instanceId');
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
+describe('anyOf', () => {
+  const allowing = (organizationId: string): Guard => ({
+    check: vi.fn(() =>
+      allow({
+        kind: 'organization',
+        organizationId: organizationId as OrganizationId,
+      })
+    ),
+    principalFrom: buildPrincipal,
+  });
+  const denying = (code: DenialCode): Guard => ({
+    check: vi.fn(() => deny(code)),
+    principalFrom: buildPrincipal,
+  });
+
+  it('should return the result of the first guard that allows and not run the next ones', async () => {
+    // Given
+    const first = allowing('first');
+    const second = allowing('second');
+    const guard = anyOf(first, second);
+
+    // When
+    const result = await guard.check(buildUserPrincipal(), {});
+
+    // Then
+    expect(result).toEqual({
+      allowed: true,
+      checked: { kind: 'organization', organizationId: 'first' },
+    });
+    expect(second.check).not.toHaveBeenCalled();
+  });
+
+  it('should return the result of a later guard when the earlier ones deny, in written order', async () => {
+    // Given
+    const first = denying(ForbiddenErrorCode.MissingCapabilityOnOrganization);
+    const second = allowing('second');
+    const guard = anyOf(first, second);
+
+    // When
+    const result = await guard.check(buildUserPrincipal(), {});
+
+    // Then
+    expect(result).toEqual({
+      allowed: true,
+      checked: { kind: 'organization', organizationId: 'second' },
+    });
+    expect(first.check).toHaveBeenCalledOnce();
+  });
+
+  it.each([
+    {
+      label: 'UNAUTHENTICATED over everything',
+      codes: [
+        ForbiddenErrorCode.MissingCapabilityOnOrganization,
+        UnauthenticatedErrorCode.Unauthenticated,
+      ],
+      expected: UnauthenticatedErrorCode.Unauthenticated,
+    },
+    {
+      label:
+        'the first MISSING_CAPABILITY_* over FORBIDDEN_ACCESS and NOT_FOUND',
+      codes: [
+        NotFoundErrorCode.NotFound,
+        ForbiddenErrorCode.MissingCapabilityOnService,
+        ForbiddenErrorCode.ForbiddenAccess,
+        ForbiddenErrorCode.MissingCapabilityOnOrganization,
+      ],
+      expected: ForbiddenErrorCode.MissingCapabilityOnService,
+    },
+    {
+      label: 'FORBIDDEN_ACCESS over NOT_FOUND',
+      codes: [NotFoundErrorCode.NotFound, ForbiddenErrorCode.ForbiddenAccess],
+      expected: ForbiddenErrorCode.ForbiddenAccess,
+    },
+    {
+      label: 'NOT_FOUND when every guard answers NOT_FOUND',
+      codes: [NotFoundErrorCode.NotFound, NotFoundErrorCode.NotFound],
+      expected: NotFoundErrorCode.NotFound,
+    },
+  ])('should refuse with $label', async ({ codes, expected }) => {
+    // Given
+    const [first, second, ...rest] = (codes as DenialCode[]).map((code) =>
+      denying(code)
+    );
+    const guard = anyOf(first!, second!, ...rest);
+
+    // When
+    const result = await guard.check(buildUserPrincipal(), {});
+
+    // Then
+    expect(result).toEqual({ allowed: false, code: expected });
+  });
+
+  it('should refuse a guard that returns nothing as FORBIDDEN_ACCESS', async () => {
+    // Given
+    const malformed: Guard = {
+      check: () => undefined as never,
+      principalFrom: buildPrincipal,
+    };
+    const guard = anyOf(malformed, denying(NotFoundErrorCode.NotFound));
+
+    // When
+    const result = await guard.check(buildUserPrincipal(), {});
+
+    // Then
+    expect(result).toEqual({
+      allowed: false,
+      code: ForbiddenErrorCode.ForbiddenAccess,
+    });
+  });
+
+  it('should throw at construction when the guards do not build the same principal', () => {
+    // Given
+    const userGuard = orgGuard({
+      organization: selectedOrganization,
+      capabilities: [],
+    });
+    const machineGuard = systemCallerGuard([PortalCapability.GenerateManifest]);
+
+    // When
+    const build = () => anyOf(userGuard, machineGuard);
+
+    // Then
+    expect(build).toThrow('anyOf needs guards that build the same principal');
+  });
+
+  it('should refuse an anonymous visitor with UNAUTHENTICATED without running any source', async () => {
+    // Given
+    const serviceInstance = vi.fn(fromInstanceArg);
+    const guard = anyOf<InstanceArgs>(
+      orgGuard<InstanceArgs>({
+        organization: selectedOrganization,
+        capabilities: [OrganizationCapability.ManageSubscription],
+      }),
+      serviceGuard<InstanceArgs>({
+        serviceInstance,
+        capabilities: [ServiceRestriction.ManageAccess],
+      })
+    );
+
+    // When
+    const result = await guard.check(ANONYMOUS, {
+      instanceId: SERVICE_INSTANCE_ID,
+    });
+
+    // Then
+    expect(result).toEqual({
+      allowed: false,
+      code: UnauthenticatedErrorCode.Unauthenticated,
+    });
+    expect(serviceInstance).not.toHaveBeenCalled();
+  });
+});
