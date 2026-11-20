@@ -112,13 +112,11 @@ describe('organizations GraphQL query', () => {
 describe('user organizations GraphQL query', () => {
   it('should load organizations by context user id and return result', async () => {
     // Given
-    const expected = [
-      { id: TEST_ORGANIZATIONS.FILIGRAN.ID, name: 'Filigran' },
-    ] as unknown as Awaited<
-      ReturnType<typeof OrganizationDomain.loadOrganizationsByUser>
-    >;
-    vi.spyOn(OrganizationDomain, 'loadOrganizationsByUser').mockResolvedValue(
-      expected
+    const expected = [{ id: TEST_ORGANIZATIONS.FILIGRAN.ID, name: 'Filigran' }];
+    vi.spyOn(UserDomain, 'getOrganizations').mockReturnValue(
+      Promise.resolve(expected) as unknown as ReturnType<
+        typeof UserDomain.getOrganizations
+      >
     );
 
     // When
@@ -130,7 +128,7 @@ describe('user organizations GraphQL query', () => {
     );
 
     // Then
-    expect(OrganizationDomain.loadOrganizationsByUser).toHaveBeenCalledWith(
+    expect(UserDomain.getOrganizations).toHaveBeenCalledWith(
       contextSimpleUserFiligran2.user.id
     );
     expect(result).toEqual(expected);
