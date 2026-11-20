@@ -1,11 +1,9 @@
 import { ClearAllFiltersButton } from '@/components/service/components/header/filter/ClearAllFiltersButton';
 import { ServiceListFilterSection } from '@/components/service/components/header/filter/ServiceListFilterSection';
+import { useClearAllFilters } from '@/components/service/components/header/filter/use-clear-all-filters';
 import { ServiceListFilterMap } from '@/components/service/components/header/ServiceListHeader';
-import { useServiceListStorageKeyContext } from '@/components/service/components/ServiceListStorageKeyContext';
-import { useServiceListStorage } from '@/hooks/use-service-list-storage';
 import { useTranslate } from '@/hooks/use-translate';
 import { Text } from '@filigran/design-system';
-import { useRef } from 'react';
 import { useIsClient } from 'usehooks-ts';
 
 interface FilterSidebarProps {
@@ -32,16 +30,8 @@ interface FilterSidebarProps {
  */
 export const FilterSidebar = ({ filters }: FilterSidebarProps) => {
   const t = useTranslate();
-  const { storageKey } = useServiceListStorageKeyContext();
-  const { hasActiveFilters, clearFilters } = useServiceListStorage(storageKey);
+  const { headingRef, hasActiveFilters, clearAll } = useClearAllFilters();
   const isClient = useIsClient();
-  const headingRef = useRef<HTMLHeadingElement>(null);
-
-  const handleClearAll = () => {
-    clearFilters();
-    // The clicked button unmounts: keep the focus inside the sidebar.
-    headingRef.current?.focus();
-  };
 
   return (
     <div className="shrink-0 grow-0 basis-[250px] self-start sticky top-[var(--list-header-height,64px)] max-h-[calc(var(--list-scroll-height,100dvh)-var(--list-header-height,64px))] overflow-y-auto rounded p-3 layer-1 bg-elevation-default max-sm:hidden">
@@ -55,7 +45,7 @@ export const FilterSidebar = ({ filters }: FilterSidebarProps) => {
         </Text>
         {/* The server cannot read the stored filters: render the button after mount. */}
         {isClient && hasActiveFilters && (
-          <ClearAllFiltersButton onClick={handleClearAll} />
+          <ClearAllFiltersButton onClick={clearAll} />
         )}
       </div>
       <ServiceListFilterSection filters={filters} />
