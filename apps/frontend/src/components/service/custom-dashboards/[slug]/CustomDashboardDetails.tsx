@@ -5,13 +5,15 @@ import ShareableResourceSlug from '@/components/service/document/ShareableResour
 import { useDocumentContext } from '@/components/service/document/use-document-context';
 import { APP_PATH } from '@/utils/path/constant';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
-import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
-import { DocumentItemFragment } from '@graphql/generated';
+import {
+  DocumentItemFragment,
+  ServiceInstanceItemFragment,
+} from '@graphql/generated';
 
 // Component interface
 interface DashboardSlugProps {
   documentData: DocumentItemFragment;
-  serviceInstance: serviceInstance_fragment$data;
+  serviceInstance: ServiceInstanceItemFragment;
 }
 
 // Component

@@ -1,8 +1,5 @@
-import { serverFetchGraphQL } from '@/relay/server-portal-api-fetch';
-import ServiceByIdQuery, {
-  serviceByIdQuery,
-} from '@generated/serviceByIdQuery.graphql';
-import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
+import { fetchServiceInstanceById } from '@/components/service/service-instance.server';
+import { notFound } from 'next/navigation';
 import PageLoader from './page-loader';
 
 export const dynamic = 'force-dynamic';
@@ -15,19 +12,16 @@ const Page = async ({ params }: PageProps) => {
   const { subscriptionId, serviceInstanceId } = await params;
   const decodedSubscriptionId = decodeURIComponent(subscriptionId);
   const decodedServiceInstanceId = decodeURIComponent(serviceInstanceId);
-  const response = await serverFetchGraphQL<serviceByIdQuery>(
-    ServiceByIdQuery,
-    {
-      service_instance_id: decodedServiceInstanceId,
-    }
+  const serviceInstance = await fetchServiceInstanceById(
+    decodedServiceInstanceId
   );
+  if (!serviceInstance) {
+    notFound();
+  }
   return (
     <PageLoader
       subscriptionId={decodedSubscriptionId}
-      serviceInstance={
-        response.data
-          .serviceInstanceById as unknown as serviceInstance_fragment$data
-      }
+      serviceInstance={serviceInstance}
     />
   );
 };

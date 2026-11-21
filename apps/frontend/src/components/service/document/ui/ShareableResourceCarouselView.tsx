@@ -10,15 +10,16 @@ import {
 import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent } from '@filigran/design-system';
-import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
-import { SeoServiceInstanceItemFragment } from '@graphql/generated';
+import {
+  SeoServiceInstanceItemFragment,
+  ServiceInstanceItemFragment,
+} from '@graphql/generated';
 import Image from 'next/image';
 
 // Component interface
 interface ShareableResourceCarouselProps {
   images?: ReadonlyArray<{ readonly id: string } | null> | null;
-  serviceInstance:
-    SeoServiceInstanceItemFragment | serviceInstance_fragment$data;
+  serviceInstance: SeoServiceInstanceItemFragment | ServiceInstanceItemFragment;
   resource: AnalyticsResourceData;
   className?: string;
 }

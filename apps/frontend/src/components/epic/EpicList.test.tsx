@@ -3,7 +3,6 @@ import { APP_PATH } from '@/utils/path/constant';
 import { mockGraphqlQuery } from '@/utils/test/msw/graphql-api';
 import { mswServer } from '@/utils/test/msw/server';
 import testRender from '@/utils/test/test-render';
-import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 import {
   CurrentVotingRoundCalloutQuery,
   EditionType,
@@ -12,6 +11,7 @@ import {
   FiligranProduct,
   OrganizationCapability,
   SeoServiceInstanceItemFragment,
+  ServiceInstanceItemFragment,
   ServiceRestriction,
   Timeline,
 } from '@graphql/generated';
@@ -93,10 +93,14 @@ const makeEpic = (
     ...overrides,
   });
 
-const serviceInstance = {
+const serviceInstance: ServiceInstanceItemFragment = {
   id: SERVICE_INSTANCE_ID,
+  name: 'Service',
+  description: null,
+  slug: null,
   capabilities: [],
-} as serviceInstance_fragment$data;
+  service_definition: null,
+};
 const seoServiceInstance = {
   id: SERVICE_INSTANCE_ID,
 } as SeoServiceInstanceItemFragment;
@@ -333,7 +337,7 @@ describe('EpicList', () => {
     const detailedServiceInstance = {
       id: SERVICE_INSTANCE_ID,
       capabilities: [ServiceRestriction.ManageAccess],
-    } as serviceInstance_fragment$data;
+    } as ServiceInstanceItemFragment;
 
     // When
     renderEpicList({ serviceInstance: detailedServiceInstance });

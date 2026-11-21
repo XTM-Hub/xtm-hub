@@ -4,11 +4,11 @@ import BadgeOverflowCounter, {
 import { useTranslate } from '@/hooks/use-translate';
 import { formatName } from '@/utils/format/name';
 import { Chip } from '@filigran/design-system';
-import { serviceInstanceForSubscriptions_fragment$data } from '@generated/serviceInstanceForSubscriptions_fragment.graphql';
+import { ServiceInstanceWithCapabilitiesItemFragment } from '@graphql/generated';
 import { useMemo } from 'react';
 
 interface ServiceSlugHeaderProps {
-  serviceInstance: serviceInstanceForSubscriptions_fragment$data;
+  serviceInstance: ServiceInstanceWithCapabilitiesItemFragment;
 }
 
 const ServiceSlugHeader = ({ serviceInstance }: ServiceSlugHeaderProps) => {

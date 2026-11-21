@@ -14,6 +14,7 @@ import {
   toDatePickerValue,
 } from '@/utils/design-system/date-picker';
 import {
+  ServiceInstanceWithCapabilitiesItemFragment,
   SubscriptionItemFragment,
   useCreateSubscriptionsMutation,
   useUpdateSubscriptionMutation,
@@ -28,7 +29,6 @@ import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { DEBOUNCE_TIME } from '@/utils/constant';
 import { toComboboxOptionIds } from '@/utils/design-system/combobox';
 import { Button, Checkbox, DatePicker, Paper } from '@filigran/design-system';
-import { serviceInstanceForSubscriptions_fragment$data } from '@generated/serviceInstanceForSubscriptions_fragment.graphql';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useLocale } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
@@ -37,7 +37,7 @@ import { useDebounceCallback } from 'usehooks-ts';
 import { z } from 'zod';
 
 interface ServiceSlugAddOrgaFormSheetProps {
-  serviceInstance: serviceInstanceForSubscriptions_fragment$data;
+  serviceInstance: ServiceInstanceWithCapabilitiesItemFragment;
   subscriptions: SubscriptionItemFragment[];
   subscriptionToEdit?: SubscriptionItemFragment;
 }

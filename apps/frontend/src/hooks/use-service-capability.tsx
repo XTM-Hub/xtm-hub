@@ -1,7 +1,7 @@
 import { useAdminByPass } from '@/hooks/use-portal-capability';
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 import {
+  ServiceInstanceItemFragment,
   ServiceRestriction,
   useServiceUserCapabilitiesQuery,
 } from '@graphql/generated';
@@ -16,7 +16,7 @@ export type UseServiceCapabilityWithSubscriptionId = {
 
 const useServiceCapabilityData = (
   capability: ServiceRestriction,
-  serviceInstance?: serviceInstance_fragment$data
+  serviceInstance?: ServiceInstanceItemFragment
 ): UseServiceCapabilityWithSubscriptionId => {
   const canBypass = useAdminByPass();
   const { data } = useServiceUserCapabilitiesQuery(
@@ -58,7 +58,7 @@ const useServiceCapabilityData = (
 
 function useServiceCapability(
   capability: ServiceRestriction,
-  serviceInstance?: serviceInstance_fragment$data
+  serviceInstance?: ServiceInstanceItemFragment
 ): boolean {
   const { hasCapability } = useServiceCapabilityData(
     capability,
@@ -69,7 +69,7 @@ function useServiceCapability(
 
 export function useServiceCapabilityWithSubscriptionId(
   capability: ServiceRestriction,
-  serviceInstance?: serviceInstance_fragment$data
+  serviceInstance?: ServiceInstanceItemFragment
 ): UseServiceCapabilityWithSubscriptionId {
   return useServiceCapabilityData(capability, serviceInstance);
 }

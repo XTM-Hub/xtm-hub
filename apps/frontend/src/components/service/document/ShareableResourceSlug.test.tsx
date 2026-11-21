@@ -3,12 +3,12 @@ import { PortalSettings } from '@/components/settings/EnvPortalContext';
 import { readTrackedEvents, startAnalytics } from '@/utils/test/analytics';
 import { mswServer } from '@/utils/test/msw/server';
 import testRender from '@/utils/test/test-render';
-import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 import {
   DocumentItemFragment,
   DocumentStatus,
   IncrementShareNumberDocumentMutation,
   IntegrationType,
+  ServiceInstanceItemFragment,
 } from '@graphql/generated';
 import { mockDefaultDocument } from '@graphql/mocks';
 import { screen, waitFor } from '@testing-library/react';
@@ -39,7 +39,7 @@ const mockSettings: Partial<PortalSettings> = {
 describe('Component: ShareableResourceSlug - OneClickDeploy Logic', () => {
   const serviceInstance = {
     id: 'service-instance-1',
-  } as unknown as serviceInstance_fragment$data;
+  } as unknown as ServiceInstanceItemFragment;
 
   it.each`
     shouldShowOneClickComponent | documentType                  | documentStatus | integrationType
@@ -92,7 +92,7 @@ describe('Component: ShareableResourceSlug - OneClickDeploy Logic', () => {
 describe('Component: ShareableResourceSlug - Download', () => {
   const serviceInstance = {
     id: 'service-instance-1',
-  } as unknown as serviceInstance_fragment$data;
+  } as unknown as ServiceInstanceItemFragment;
 
   const renderSlug = (
     documentType: string,
@@ -192,7 +192,7 @@ describe('Component: ShareableResourceSlug - Share', () => {
         serviceInstance={
           {
             id: 'service-instance-1',
-          } as unknown as serviceInstance_fragment$data
+          } as unknown as ServiceInstanceItemFragment
         }
       />,
       { settings: mockSettings }
@@ -214,7 +214,7 @@ describe('Component: ShareableResourceSlug - Share', () => {
 describe('Component: ShareableResourceSlug - Share count refresh', () => {
   const serviceInstance = {
     id: 'service-instance-1',
-  } as unknown as serviceInstance_fragment$data;
+  } as unknown as ServiceInstanceItemFragment;
 
   const buildDocument = (id: string, shareNumber: number) =>
     ({
@@ -330,7 +330,7 @@ describe('Component: ShareableResourceSlug - Share count refresh', () => {
 describe('Component: ShareableResourceSlug - Download count refresh', () => {
   const serviceInstance = {
     id: 'service-instance-1',
-  } as unknown as serviceInstance_fragment$data;
+  } as unknown as ServiceInstanceItemFragment;
 
   const buildDocument = (id: string, downloadNumber: number) =>
     ({
@@ -437,7 +437,7 @@ describe('Component: ShareableResourceSlug - Download count refresh', () => {
 describe('Component: ShareableResourceSlug - Resource view', () => {
   const serviceInstance = {
     id: 'service-instance-1',
-  } as unknown as serviceInstance_fragment$data;
+  } as unknown as ServiceInstanceItemFragment;
 
   const buildDocument = (status: DocumentStatus) =>
     ({

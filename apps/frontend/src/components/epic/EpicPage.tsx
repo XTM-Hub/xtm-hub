@@ -5,10 +5,10 @@ import { EpicListSkeleton } from '@/components/epic/EpicListSkeleton';
 import { useEpicFilter } from '@/hooks/use-epic-filter';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { throwOnFirstLoadError } from '@/lib/query-client';
-import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 import {
   EpicFieldsFragment,
   SeoServiceInstanceItemFragment,
+  ServiceInstanceItemFragment,
   useEpicsQuery,
 } from '@graphql/generated';
 import { epicKeys } from '@graphql/xtm-platform-roadmap/epic.keys';
@@ -16,8 +16,7 @@ import { keepPreviousData } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 
 interface EpicPageProps {
-  serviceInstance:
-    serviceInstance_fragment$data | SeoServiceInstanceItemFragment;
+  serviceInstance: ServiceInstanceItemFragment | SeoServiceInstanceItemFragment;
 }
 
 /**

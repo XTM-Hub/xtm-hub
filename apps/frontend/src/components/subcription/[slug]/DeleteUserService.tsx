@@ -1,15 +1,18 @@
-import { UserServiceDeleteMutation } from '@/components/service/user_service.graphql';
+import { invalidateUserServiceQueries } from '@/components/subcription/user-service.invalidation';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
-import { userServiceDeleteMutation } from '@generated/userServiceDeleteMutation.graphql';
-import { userServices_fragment$data } from '@generated/userServices_fragment.graphql';
-import { useMutation } from 'react-relay';
+import { portalGraphqlClient } from '@/lib/graphql-client';
+import {
+  type UserServiceItemFragment,
+  useDeleteUserServicesMutation,
+} from '@graphql/generated';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface DeleteUserServiceProps {
-  userServices: userServices_fragment$data[];
+  userServices: UserServiceItemFragment[];
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  connectionId: string;
   onDeleted?: () => void;
 }
 
@@ -17,31 +20,38 @@ export const DeleteUserService = ({
   userServices,
   isOpen,
   onOpenChange,
-  connectionId,
   onDeleted,
 }: DeleteUserServiceProps) => {
   const t = useTranslate();
-  const [commitUserServiceDeletingMutation] =
-    useMutation<userServiceDeleteMutation>(UserServiceDeleteMutation);
+  const queryClient = useQueryClient();
+  const { mutate: deleteUserServices } = useDeleteUserServicesMutation(
+    portalGraphqlClient,
+    {
+      onSuccess: async () => {
+        await invalidateUserServiceQueries(queryClient);
+        onOpenChange(false);
+        onDeleted?.();
+      },
+      onError: (error: Error) => {
+        showSnackbar({
+          severity: 'error',
+          title: t('Utils.Error'),
+          description: t(`Error.Server.${error.message}`),
+        });
+      },
+    }
+  );
 
   const handleConfirmDelete = () => {
     const userServiceIds = userServices
       .map((userService) => userService.id)
       .filter((id): id is string => !!id);
 
-    commitUserServiceDeletingMutation({
-      variables: {
-        connections: [connectionId],
-        input: {
-          userServiceIds,
-        },
-        service_instance_id:
-          userServices[0]?.subscription?.service_instance?.id,
+    deleteUserServices({
+      input: {
+        userServiceIds,
       },
-      onCompleted: () => {
-        onOpenChange(false);
-        onDeleted?.();
-      },
+      service_instance_id: userServices[0]?.subscription?.service_instance?.id,
     });
   };
 

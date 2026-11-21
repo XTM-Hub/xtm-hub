@@ -7,9 +7,9 @@ import {
   translateWithValues,
 } from '@/utils/test/mock-translations';
 import testRender from '@/utils/test/test-render';
-import { serviceInstanceForSubscriptions_fragment$data } from '@generated/serviceInstanceForSubscriptions_fragment.graphql';
 import {
   OrganizationItemFragment,
+  ServiceInstanceWithCapabilitiesItemFragment,
   SubscriptionItemFragment,
 } from '@graphql/generated';
 import { organizationSubscribedServicesKeys } from '@graphql/organization-subscribed-services/organization-subscribed-services.keys';
@@ -37,9 +37,7 @@ const SUBSCRIBED_ORGANIZATION: OrganizationItemFragment = {
   domains: [],
 };
 
-const SERVICE_INSTANCE: serviceInstanceForSubscriptions_fragment$data = {
-  ' $fragmentType': 'serviceInstanceForSubscriptions_fragment',
-  __id: 'service-instance-connection',
+const SERVICE_INSTANCE: ServiceInstanceWithCapabilitiesItemFragment = {
   id: 'service-instance-id',
   name: 'OpenCTI Library',
   description: null,

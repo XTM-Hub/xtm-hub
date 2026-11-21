@@ -43,14 +43,16 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@filigran/design-system';
-import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
-import { DocumentItemFragment } from '@graphql/generated';
+import {
+  DocumentItemFragment,
+  ServiceInstanceItemFragment,
+} from '@graphql/generated';
 import Image from 'next/image';
 
 // Component interface
 interface ShareableResourceSlugProps {
   documentData: DocumentItemFragment;
-  serviceInstance: serviceInstance_fragment$data;
+  serviceInstance: ServiceInstanceItemFragment;
   breadcrumbValue: BreadcrumbNavLink[];
   children?: ReactNode;
   updateActions?: ReactNode;

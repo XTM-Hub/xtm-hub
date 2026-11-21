@@ -1,6 +1,5 @@
 import { useUserListLocalstorage } from '@/components/admin/user/user-list-localstorage';
 import Loader from '@/components/Loader';
-import { serviceGroupFragment } from '@/components/service/service-group.graphql';
 import { AppCombobox } from '@/components/ui/AppCombobox';
 import { Form, FormField } from '@/components/ui/form';
 import { SheetFooter } from '@/components/ui/sheet';
@@ -9,18 +8,22 @@ import { useKeepSelectedOptions } from '@/hooks/use-keep-selected-options';
 import { useTranslate } from '@/hooks/use-translate';
 import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { portalGraphqlClient } from '@/lib/graphql-client';
+import { throwOnFirstLoadError } from '@/lib/query-client';
 import { toComboboxOptionIds } from '@/utils/design-system/combobox';
 import { Button } from '@filigran/design-system';
-import { serviceGroup_fragment$key } from '@generated/serviceGroup_fragment.graphql';
-import ServiceGroupsByServiceInstanceIdQueryGraphql, {
-  serviceGroupsByServiceInstanceIdQuery,
-} from '@generated/serviceGroupsByServiceInstanceIdQuery.graphql';
-import ServiceGroupsUpdateMutationGraphql from '@generated/serviceGroupsUpdateMutation.graphql';
-import { FilterKey, useUsersQuery } from '@graphql/generated';
+import {
+  FilterKey,
+  type ServiceGroupsQuery,
+  type UsersQuery,
+  useServiceGroupsQuery,
+  useUpdateServiceGroupsMutation,
+  useUsersQuery,
+} from '@graphql/generated';
+import { serviceGroupsKeys } from '@graphql/service-group/service-group.keys';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQueryClient } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
-import { readInlineData, useLazyLoadQuery, useMutation } from 'react-relay';
 import { z } from 'zod';
 
 const formSchema = z.object({
@@ -48,7 +51,6 @@ export const TrialsManageUsersForm = ({
   serviceInstanceId,
   onCompleted,
 }: TrialsManageUsersFormProps) => {
-  const t = useTranslate();
   const { orderMode, orderBy, pageSize } = useUserListLocalstorage();
   const { data: availableUsers } = useUsersQuery(
     portalGraphqlClient,
@@ -68,62 +70,101 @@ export const TrialsManageUsersForm = ({
     }
   );
 
-  const data = useLazyLoadQuery<serviceGroupsByServiceInstanceIdQuery>(
-    ServiceGroupsByServiceInstanceIdQueryGraphql,
-    { serviceInstanceId: serviceInstanceId }
+  const serviceGroupsVariables = useMemo(
+    () => ({ serviceInstanceId }),
+    [serviceInstanceId]
+  );
+  const { data: serviceGroups } = useServiceGroupsQuery(
+    portalGraphqlClient,
+    serviceGroupsVariables,
+    {
+      queryKey: serviceGroupsKeys.list(serviceGroupsVariables),
+      // Each opening reads the current memberships, even when a cached
+      // snapshot is still fresh: the update replaces them group by group.
+      refetchOnMount: 'always',
+      throwOnError: throwOnFirstLoadError,
+    }
   );
 
-  const [commitUpdateServiceGroups, isInFlight] = useMutation(
-    ServiceGroupsUpdateMutationGraphql
-  );
+  // The form waits for the users and the groups, as it did when the Relay
+  // query suspended it: its default values are the loaded groups.
+  if (!availableUsers || !serviceGroups) {
+    return <Loader />;
+  }
 
-  const onSubmit = (input: z.infer<typeof formSchema>) => {
-    commitUpdateServiceGroups({
-      variables: {
-        input: {
-          groups: input.groups.map(({ id, userIds }) => ({ id, userIds })),
-        },
-      },
-      onError(error) {
-        showSnackbar({
-          severity: 'error',
-          title: t('Utils.Error'),
-          description: t(`Error.Server.${error.message}`),
+  return (
+    <TrialsManageUsersFormContent
+      availableUsers={availableUsers}
+      serviceGroups={serviceGroups}
+      onCancel={onCancel}
+      onCompleted={onCompleted}
+    />
+  );
+};
+
+interface TrialsManageUsersFormContentProps {
+  availableUsers: UsersQuery;
+  serviceGroups: ServiceGroupsQuery;
+  onCancel: () => void;
+  onCompleted: () => void;
+}
+
+const TrialsManageUsersFormContent = ({
+  availableUsers,
+  serviceGroups,
+  onCancel,
+  onCompleted,
+}: TrialsManageUsersFormContentProps) => {
+  const t = useTranslate();
+  const queryClient = useQueryClient();
+
+  const { mutate: updateServiceGroups, isPending: isInFlight } =
+    useUpdateServiceGroupsMutation(portalGraphqlClient, {
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({
+          queryKey: serviceGroupsKeys.all(),
         });
-      },
-      onCompleted() {
         onCompleted();
         showSnackbar({
           severity: 'success',
           title: t('Utils.Success'),
         });
       },
+      onError: (error: Error) => {
+        showSnackbar({
+          severity: 'error',
+          title: t('Utils.Error'),
+          description: t(`Error.Server.${error.message}`),
+        });
+      },
+    });
+
+  const onSubmit = (input: z.infer<typeof formSchema>) => {
+    updateServiceGroups({
+      input: {
+        groups: input.groups.map(({ id, userIds }) => ({ id, userIds })),
+      },
     });
   };
 
   const options = useMemo(
     () =>
-      availableUsers?.users.edges.map(({ node }) => ({
+      availableUsers.users.edges.map(({ node }) => ({
         label: node.email,
         value: node.id,
-      })) ?? [],
+      })),
     [availableUsers]
   );
 
-  const groups = useMemo(() => {
-    return data.serviceGroups.map((group) => {
-      const { id, name, users } = readInlineData<serviceGroup_fragment$key>(
-        serviceGroupFragment,
-        group
-      );
-
-      return {
+  const groups = useMemo(
+    () =>
+      serviceGroups.serviceGroups.map(({ id, name, users }) => ({
         id,
         name,
         users: users ?? [],
-      };
-    });
-  }, [data.serviceGroups]);
+      })),
+    [serviceGroups]
+  );
   const groupUserOptions = useMemo(
     () =>
       groups.flatMap(({ users }) =>
@@ -132,15 +173,24 @@ export const TrialsManageUsersForm = ({
     [groups]
   );
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
+  const formValues = useMemo(
+    () => ({
       groups: groups.map(({ id, name, users }) => ({
         id,
         name,
         userIds: users.map((user) => user.id),
       })),
-    },
+    }),
+    [groups]
+  );
+
+  // The form shows a cached snapshot until the refetch of the opening lands:
+  // the refreshed memberships then replace the groups left untouched, and the
+  // groups already edited keep their edits.
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    values: formValues,
+    resetOptions: { keepDirtyValues: true },
   });
 
   const watchedGroups = useWatch({ control: form.control, name: 'groups' });
@@ -188,11 +238,6 @@ export const TrialsManageUsersForm = ({
       />
     ));
   }, [groups, form.control, t, optionIds]);
-
-  // The form waits for the users, as it did when the Relay query suspended it.
-  if (!availableUsers) {
-    return <Loader />;
-  }
 
   return (
     <Form {...form}>

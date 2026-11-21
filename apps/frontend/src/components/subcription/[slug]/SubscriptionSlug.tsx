@@ -1,8 +1,3 @@
-import {
-  UserServiceFromSubscription,
-  userServiceFromSubscriptionFragment,
-  userServicesFragment,
-} from '@/components/service/user_service.graphql';
 import BadgeOverflowCounter, {
   BadgeOverflow,
 } from '@/components/ui/BadgeOverflowCounter';
@@ -15,18 +10,20 @@ import { useTranslate } from '@/hooks/use-translate';
 import { getDataTableLabels } from '@/utils/design-system/data-table';
 import { Chip } from '@filigran/design-system';
 import { AddIcon, DeleteIcon, MoreVertIcon } from '@filigran/icon';
-import { userServiceFromSubscription$key } from '@generated/userServiceFromSubscription.graphql';
 import {
-  userServices_fragment$data,
-  userServices_fragment$key,
-} from '@generated/userServices_fragment.graphql';
-import {
+  OrderingMode,
   OrganizationCapability,
+  ServiceInstanceItemFragment,
+  ServiceInstanceWithCapabilitiesItemFragment,
   ServiceRestriction,
   SubscriptionByIdQuery,
+  UserServiceItemFragment,
+  UserServiceOrdering,
   useSubscriptionByIdQuery,
+  useUserServicesFromSubscriptionQuery,
 } from '@graphql/generated';
 import { subscriptionKeys } from '@graphql/subscription/subscription.keys';
+import { userServicesKeys } from '@graphql/user-service/user-service.keys';
 import { ColumnDef, PaginationState } from '@tanstack/react-table';
 
 import { useCallback, useContext, useMemo, useState } from 'react';
@@ -38,12 +35,6 @@ import {
   BreadcrumbNavLink,
 } from '@/components/ui/BreadcrumbNav';
 import { IconActions, IconActionsItem } from '@/components/ui/IconActions';
-import {
-  PreloadedQuery,
-  readInlineData,
-  usePreloadedQuery,
-  useRefetchableFragment,
-} from 'react-relay';
 
 import Loader from '@/components/Loader';
 import { PortalContext } from '@/components/me/AppPortalContext';
@@ -55,21 +46,18 @@ import { portalGraphqlClient } from '@/lib/graphql-client';
 import { throwOnFirstLoadError } from '@/lib/query-client';
 import { ADMIN_SERVICE_CATALOG_PATH, APP_PATH } from '@/utils/path/constant';
 import { Button } from '@filigran/design-system';
-import { serviceInstanceForSubscriptions_fragment$data } from '@generated/serviceInstanceForSubscriptions_fragment.graphql';
-import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
-import { userServiceFromSubscriptionQuery } from '@generated/userServiceFromSubscriptionQuery.graphql';
 import { notFound } from 'next/navigation';
+import { useLocalStorage } from 'usehooks-ts';
 
 interface SubscriptionSlugProps {
-  queryRef: PreloadedQuery<userServiceFromSubscriptionQuery>;
   subscriptionId: string;
-  serviceInstance?: serviceInstance_fragment$data;
+  serviceInstance?: ServiceInstanceItemFragment;
 }
 
 interface SubscriptionSlugContentProps {
-  queryRef: PreloadedQuery<userServiceFromSubscriptionQuery>;
   queryDataSubscription: SubscriptionByIdQuery;
-  serviceInstance?: serviceInstance_fragment$data;
+  userData: UserServiceItemFragment[];
+  serviceInstance?: ServiceInstanceItemFragment;
 }
 
 const emptySelectionState = (): SelectionState => ({
@@ -79,27 +67,22 @@ const emptySelectionState = (): SelectionState => ({
 });
 
 const SubscriptionSlugContent = ({
-  queryRef,
   queryDataSubscription,
+  userData,
   serviceInstance,
 }: SubscriptionSlugContentProps) => {
   const t = useTranslate();
   const [editUserService, setEditUserService] = useState<
-    userServices_fragment$data | undefined
+    UserServiceItemFragment | undefined
   >(undefined);
   const [deleteUserServices, setDeleteUserServices] = useState<
-    userServices_fragment$data[] | undefined
+    UserServiceItemFragment[] | undefined
   >(undefined);
   const [openAddCapabilities, setOpenAddCapabilities] = useState(false);
   const [selection, setSelection] =
     useState<SelectionState>(emptySelectionState);
 
   const { me, hasOrganizationCapability } = useContext(PortalContext);
-
-  const queryData = usePreloadedQuery<userServiceFromSubscriptionQuery>(
-    UserServiceFromSubscription,
-    queryRef
-  );
 
   if (!queryDataSubscription.subscriptionById) {
     notFound();
@@ -134,19 +117,6 @@ const SubscriptionSlugContent = ({
       },
     ];
   }
-
-  const [userServices] = useRefetchableFragment<
-    userServiceFromSubscriptionQuery,
-    userServiceFromSubscription$key
-  >(userServiceFromSubscriptionFragment, queryData);
-
-  const userData: userServices_fragment$data[] = (
-    userServices.userServiceFromSubscription?.edges ?? []
-  )
-    .map(({ node }) =>
-      readInlineData<userServices_fragment$key>(userServicesFragment, node)
-    )
-    .filter((data) => !!data);
 
   const canManageService = useCallback(() => {
     return userData.some((userService) => {
@@ -211,7 +181,7 @@ const SubscriptionSlugContent = ({
     );
   }, [selection, userData]);
 
-  const columns: ColumnDef<userServices_fragment$data>[] = useMemo(
+  const columns: ColumnDef<UserServiceItemFragment>[] = useMemo(
     () => [
       {
         accessorKey: 'user.first_name',
@@ -305,7 +275,6 @@ const SubscriptionSlugContent = ({
     <div className="flex justify-between flex-wrap gap-2 pt-2">
       <div className="flex gap-2 flex-wrap ml-auto">
         <SubscriptionSlugUserService
-          connectionId={userServices.userServiceFromSubscription?.__id ?? ''}
           subscription={queryDataSubscription}
           userServiceToEdit={editUserService}
           openEdit={!!editUserService}
@@ -318,19 +287,25 @@ const SubscriptionSlugContent = ({
     </div>
   );
 
-  const headerServiceInstance =
-    serviceInstance ?? queryDataSubscription.subscriptionById?.service_instance;
+  // The manage page heads with its own service instance, which carries neither
+  // tags nor capabilities; the admin page with the subscription's.
+  const headerServiceInstance:
+    ServiceInstanceWithCapabilitiesItemFragment | undefined = serviceInstance
+    ? {
+        id: serviceInstance.id,
+        name: serviceInstance.name,
+        description: serviceInstance.description,
+        tags: null,
+        service_definition: null,
+      }
+    : queryDataSubscription.subscriptionById?.service_instance;
 
   return (
     <>
       <BreadcrumbNav value={breadcrumbValue} />
 
       {headerServiceInstance && (
-        <ServiceSlugHeader
-          serviceInstance={
-            headerServiceInstance as unknown as serviceInstanceForSubscriptions_fragment$data
-          }
-        />
+        <ServiceSlugHeader serviceInstance={headerServiceInstance} />
       )}
 
       <DataTable
@@ -386,7 +361,6 @@ const SubscriptionSlugContent = ({
         <DeleteUserService
           userServices={deleteUserServices}
           isOpen={!!deleteUserServices}
-          connectionId={userServices.userServiceFromSubscription?.__id ?? ''}
           onDeleted={() => {
             setSelection(emptySelectionState);
           }}
@@ -410,7 +384,6 @@ const SubscriptionSlugContent = ({
 };
 
 const SubscriptionSlug = ({
-  queryRef,
   subscriptionId,
   serviceInstance,
 }: SubscriptionSlugProps) => {
@@ -420,14 +393,43 @@ const SubscriptionSlug = ({
     throwOnError: throwOnFirstLoadError,
   });
 
-  if (!data) {
+  const [count] = useLocalStorage('countUserServices', 50);
+  const [orderMode] = useLocalStorage(
+    'orderModeUserServices',
+    OrderingMode.Asc
+  );
+  const [orderBy] = useLocalStorage(
+    'orderByUserServices',
+    UserServiceOrdering.FirstName
+  );
+  const userServicesVariables = useMemo(
+    () => ({ subscriptionId, count, orderBy, orderMode }),
+    [subscriptionId, count, orderBy, orderMode]
+  );
+  const { data: userServicesData } = useUserServicesFromSubscriptionQuery(
+    portalGraphqlClient,
+    userServicesVariables,
+    {
+      queryKey: userServicesKeys.list(userServicesVariables),
+      throwOnError: throwOnFirstLoadError,
+    }
+  );
+  const userData = useMemo(
+    () =>
+      userServicesData?.userServiceFromSubscription?.edges.flatMap(
+        ({ node }) => (node ? [node] : [])
+      ) ?? [],
+    [userServicesData]
+  );
+
+  if (!data || !userServicesData) {
     return <Loader />;
   }
 
   return (
     <SubscriptionSlugContent
-      queryRef={queryRef}
       queryDataSubscription={data}
+      userData={userData}
       serviceInstance={serviceInstance}
     />
   );
