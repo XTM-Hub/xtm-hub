@@ -100,6 +100,7 @@ const CUSTOM_LABELS: Required<DataTableLabels> = {
   selectAllLabel: 'Tout sélectionner',
   selectRowLabel: 'Sélectionner la ligne',
   selectedCountLabel: (count) => `${count} sélectionné(s)`,
+  reorderColumnLabel: (name) => `Réorganiser la colonne ${name}`,
 };
 
 const emptySelection = (): SelectionState => ({
@@ -256,6 +257,121 @@ describe('DataTable', () => {
   );
 
   it.each([
+    { from: 'unsorted', sorting: [], expected: 'none' },
+    {
+      from: 'ascending',
+      sorting: [{ id: NAME_COLUMN_ID, desc: false }],
+      expected: 'ascending',
+    },
+    {
+      from: 'descending',
+      sorting: [{ id: NAME_COLUMN_ID, desc: true }],
+      expected: 'descending',
+    },
+  ])(
+    'should set aria-sort to $expected on the th when column is $from',
+    ({ sorting, expected }) => {
+      // Given / When
+      renderTable({ tableState: { sorting } });
+
+      // Then
+      const nameHeaderCell = screen.getByRole('columnheader', {
+        name: new RegExp(NAME_HEADER),
+      });
+      expect(nameHeaderCell).toHaveAttribute('aria-sort', expected);
+    }
+  );
+
+  it('should not set aria-sort on a non-sortable column header cell', () => {
+    // Given / When
+    renderTable({
+      columns: [
+        {
+          id: NAME_COLUMN_ID,
+          accessorKey: 'name',
+          header: NAME_HEADER,
+          enableSorting: false,
+        },
+      ],
+    });
+
+    // Then
+    const nameHeaderCell = screen.getByRole('columnheader', {
+      name: new RegExp(NAME_HEADER),
+    });
+    expect(nameHeaderCell).not.toHaveAttribute('aria-sort');
+  });
+
+  it('should not render a sort button on a non-sortable column header', () => {
+    // Given / When
+    renderTable({
+      columns: [
+        {
+          id: NAME_COLUMN_ID,
+          accessorKey: 'name',
+          header: NAME_HEADER,
+          enableSorting: false,
+        },
+      ],
+    });
+
+    // Then
+    expect(
+      screen.queryByRole('button', { name: NAME_HEADER })
+    ).not.toBeInTheDocument();
+    expect(screen.getByText(NAME_HEADER)).toBeInTheDocument();
+  });
+
+  it.each([{ key: '{Enter}' }, { key: ' ' }])(
+    'should sort when the sort button is focused and $key is pressed',
+    async ({ key }) => {
+      // Given
+      const onSortingChange = vi.fn();
+      const { user } = renderTable({
+        tableState: { sorting: [] },
+        tableOptions: { onSortingChange },
+      });
+
+      // When
+      const sortButton = screen.getByRole('button', { name: NAME_HEADER });
+      sortButton.focus();
+      await user.keyboard(key);
+
+      // Then
+      expect(
+        applyUpdater<SortingState>(onSortingChange.mock.lastCall?.[0], [])
+      ).toEqual([{ id: NAME_COLUMN_ID, desc: false }]);
+    }
+  );
+
+  it('should give the drag handle an accessible name with the column name', () => {
+    // Given / When
+    renderTable();
+
+    // Then
+    expect(
+      screen.getByRole('button', { name: `Reorder column ${NAME_HEADER}` })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: `Reorder column ${EMAIL_HEADER}` })
+    ).toBeInTheDocument();
+  });
+
+  it('should use the custom reorderColumnLabel on drag handles when provided', () => {
+    // Given / When
+    renderTable({
+      ...CUSTOM_LABELS,
+    });
+
+    // Then
+    expect(
+      screen.getByRole('button', {
+        name: `Réorganiser la colonne ${NAME_HEADER}`,
+      })
+    ).toBeInTheDocument();
+  });
+
+  it.each([
     { person: ALICE, calls: 1 },
     { person: BOB, calls: 0 },
   ])(
@@ -275,6 +391,70 @@ describe('DataTable', () => {
       expect(onClickRow).toHaveBeenCalledTimes(calls);
     }
   );
+
+  it('should add tabIndex 0 to clickable rows and not to non-clickable rows', () => {
+    // Given / When
+    renderTable({
+      onClickRow: vi.fn(),
+      tableOptions: ONLY_ALICE_SELECTABLE,
+    });
+
+    // Then
+    expect(getRowOf(ALICE.name)).toHaveAttribute('tabindex', '0');
+    expect(getRowOf(BOB.name)).not.toHaveAttribute('tabindex');
+  });
+
+  it('should not add tabIndex to rows when onClickRow is not provided', () => {
+    // Given / When
+    renderTable();
+
+    // Then
+    expect(getRowOf(ALICE.name)).not.toHaveAttribute('tabindex');
+    expect(getRowOf(BOB.name)).not.toHaveAttribute('tabindex');
+  });
+
+  it.each([{ key: '{Enter}' }, { key: ' ' }])(
+    'should route keyboard activation through a DOM click event triggering onClickRow when $key is pressed',
+    async ({ key }) => {
+      // Given
+      const onClickRow = vi.fn();
+      const onDomClick = vi.fn();
+      const { user } = renderTable({ onClickRow });
+
+      const aliceRow = getRowOf(ALICE.name);
+      aliceRow.addEventListener('click', onDomClick);
+
+      // When
+      aliceRow.focus();
+      await user.keyboard(key);
+
+      // Then
+      expect(onDomClick).toHaveBeenCalledTimes(1);
+      expect(onClickRow).toHaveBeenCalledTimes(1);
+      expect(onClickRow.mock.calls[0][0].original).toEqual(ALICE);
+    }
+  );
+
+  it('should not trigger onClickRow when Space is pressed on a child checkbox inside a clickable row', async () => {
+    // Given
+    const onClickRow = vi.fn();
+    const onSelectionChange = vi.fn();
+    const { user } = renderTable({
+      onClickRow,
+      selectionOptions: {
+        selectionState: { state: emptySelection(), onSelectionChange },
+      },
+    });
+
+    // When
+    const checkbox = getRowCheckbox(ALICE.name);
+    checkbox.focus();
+    await user.keyboard(' ');
+
+    // Then
+    expect(onClickRow).not.toHaveBeenCalled();
+    expect(onSelectionChange).toHaveBeenCalled();
+  });
 
   it('should grey a row that cannot be selected', () => {
     // Given / When

@@ -2486,6 +2486,7 @@
       "ManageColumns": "Gérer la visibilité des colonnes",
       "NextPage": "Aller à la page suivante",
       "PreviousPage": "Aller à la page précédente",
+      "ReorderColumn": "Réorganiser la colonne {name}",
       "ResetTable": "Réinitialiser",
       "RowsPerPage": "Lignes par page",
       "SelectAll": "Tout sélectionner",

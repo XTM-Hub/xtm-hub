@@ -2486,6 +2486,7 @@
       "ManageColumns": "Manage columns visibility",
       "NextPage": "Go to next page",
       "PreviousPage": "Go to previous page",
+      "ReorderColumn": "Reorder column {name}",
       "ResetTable": "Reset table",
       "RowsPerPage": "Rows per page",
       "SelectAll": "Select all",
