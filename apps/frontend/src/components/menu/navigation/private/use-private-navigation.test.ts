@@ -1,4 +1,5 @@
 import { PortalContext } from '@/components/me/AppPortalContext';
+import { PortalUser } from '@/components/me/portal-user.utils';
 import {
   getPrivateNavigationRegisteredPlatformsByIdentifier,
   getPrivateNavigationServiceHrefs,
@@ -6,7 +7,6 @@ import {
 import { usePrivateNavigation } from '@/components/menu/navigation/private/use-private-navigation';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { APP_PATH } from '@/utils/path/constant';
-import { meContext_fragment$data } from '@generated/meContext_fragment.graphql';
 import {
   OrderingMode,
   OrganizationCapability,
@@ -101,7 +101,7 @@ const renderUsePrivateNavigation = ({
             personal_space: selectedOrganizationPersonalSpace,
           },
         ],
-      } as Partial<meContext_fragment$data> as meContext_fragment$data)
+      } as Partial<PortalUser> as PortalUser)
     : undefined;
 
   const wrapper = ({ children }: PropsWithChildren) =>

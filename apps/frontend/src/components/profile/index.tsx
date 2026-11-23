@@ -1,11 +1,7 @@
 'use client';
 
 import { PortalContext } from '@/components/me/AppPortalContext';
-import {
-  MeEditUserMutation,
-  MeResetPasswordMutation,
-  MeUploadUserPictureMutation,
-} from '@/components/me/me.graphql';
+import { setCurrentUser } from '@/components/me/current-user-query';
 import { ProfileApiTokens } from '@/components/profile/api-tokens/ProfileApiTokens';
 import {
   ProfileFormEdit,
@@ -18,18 +14,67 @@ import { ProfileFormResetPassword } from '@/components/profile/form/ResetPasswor
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
-import { fileListToUploadableMap } from '@/relay/environment/fetch-form-data';
+import { portalGraphqlClient } from '@/lib/graphql-client';
+import { requestGraphqlWithUploads } from '@/lib/graphql-upload-client';
+import {
+  CurrentUserFragment,
+  MePictureUploadDocument,
+  MePictureUploadMutation,
+  MePictureUploadMutationVariables,
+  useMePasswordResetMutation,
+  useMeProfileEditMutation,
+} from '@graphql/generated';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useContext, useState } from 'react';
-import { useMutation } from 'react-relay';
 
 export const Profile = () => {
   const t = useTranslate();
   const { me } = useContext(PortalContext);
-  const [commitResetPasswordMutation] = useMutation(MeResetPasswordMutation);
-  const [commitEditMeUserMutation] = useMutation(MeEditUserMutation);
-  const [commitUploadPictureMutation] = useMutation(
-    MeUploadUserPictureMutation
+  const queryClient = useQueryClient();
+  const showError = (error: Error) => {
+    showSnackbar({
+      severity: 'error',
+      title: t('Utils.Error'),
+      description: t(`Error.Server.${error.message}`),
+    });
+  };
+  const handleUserUpdated = (user: CurrentUserFragment) => {
+    setCurrentUser(queryClient, user);
+    showSnackbar({
+      severity: 'success',
+      title: t('Utils.Success'),
+    });
+  };
+
+  const { mutate: resetPassword } = useMePasswordResetMutation<Error>(
+    portalGraphqlClient,
+    {
+      onError: showError,
+      onSuccess() {
+        showSnackbar({
+          severity: 'success',
+          title: t('Utils.Success'),
+          description: t('UserForm.ResetPassword.Success'),
+        });
+      },
+    }
   );
+  const { mutate: editMeUser } = useMeProfileEditMutation<Error>(
+    portalGraphqlClient,
+    {
+      onError: showError,
+      onSuccess: ({ editMeUser: user }) => handleUserUpdated(user),
+    }
+  );
+  const { mutate: uploadPicture } = useMutation({
+    mutationFn: (picture: File) =>
+      requestGraphqlWithUploads<
+        MePictureUploadMutation,
+        MePictureUploadMutationVariables
+      >(MePictureUploadDocument, { document: null }, { document: picture }),
+    onError: showError,
+    onSuccess: ({ uploadUserPicture: user }) => handleUserUpdated(user),
+  });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [pendingValues, setPendingValues] = useState<ProfileFormEditSchema>();
 
@@ -57,61 +102,20 @@ export const Profile = () => {
   };
 
   const editUser = (values: ProfileFormEditSchema) => {
-    commitEditMeUserMutation({
-      variables: values,
-      onCompleted() {
-        showSnackbar({
-          severity: 'success',
-          title: t('Utils.Success'),
-        });
-      },
-      onError(error) {
-        showSnackbar({
-          severity: 'error',
-          title: t('Utils.Error'),
-          description: t(`Error.Server.${error.message}`),
-        });
-      },
+    editMeUser({
+      first_name: values.first_name ?? null,
+      last_name: values.last_name ?? null,
+      country: values.country ?? null,
     });
   };
-  const handleUploadPicture = (files: (File | null)[]) => {
-    commitUploadPictureMutation({
-      variables: { document: null },
-      uploadables: fileListToUploadableMap(files),
-      onError(error) {
-        showSnackbar({
-          severity: 'error',
-          title: t('Utils.Error'),
-          description: t(`Error.Server.${error.message}`),
-        });
-      },
-      onCompleted() {
-        showSnackbar({
-          severity: 'success',
-          title: t('Utils.Success'),
-        });
-      },
-    });
+  const handleUploadPicture = ([picture]: (File | null)[]) => {
+    if (picture) {
+      uploadPicture(picture);
+    }
   };
 
   const handleResetPassword = () => {
-    commitResetPasswordMutation({
-      variables: {},
-      onError(error) {
-        showSnackbar({
-          severity: 'error',
-          title: t('Utils.Error'),
-          description: t(`Error.Server.${error.message}`),
-        });
-      },
-      onCompleted() {
-        showSnackbar({
-          severity: 'success',
-          title: t('Utils.Success'),
-          description: t('UserForm.ResetPassword.Success'),
-        });
-      },
-    });
+    resetPassword({});
   };
 
   return (

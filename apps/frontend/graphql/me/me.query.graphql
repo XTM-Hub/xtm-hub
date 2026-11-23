@@ -1,3 +1,23 @@
+fragment CurrentUser on User {
+  id
+  email
+  first_name
+  last_name
+  country
+  picture
+  selected_organization_id
+  capabilities {
+    name
+  }
+  organizations {
+    id
+    name
+    personal_space
+  }
+  selected_org_capabilities
+  has_replied_satisfaction
+}
+
 query meCheck {
   me {
     id
@@ -43,5 +63,11 @@ query MeAnalytics {
       name
     }
     selected_org_capabilities
+  }
+}
+
+query Me {
+  me {
+    ...CurrentUser
   }
 }
