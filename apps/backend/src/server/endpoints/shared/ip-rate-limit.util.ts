@@ -15,9 +15,16 @@ export interface IpRateLimiterConfig {
 }
 
 /**
- * Builds express-rate-limit options keyed by IP only (ignoring User-Agent, so
- * an attacker can't get one bucket per UA), with a throttled warning log so a
- * sustained flood doesn't spam the logs.
+ * The key of every IP limiter: the client IP only (`req.ip`, which follows the
+ * `trust proxy` setting). Adding the User-Agent would let an attacker get one
+ * bucket per UA.
+ */
+export const ipRateLimitKey = (req: Request): string =>
+  ipKeyGenerator(req.ip ?? 'unknown');
+
+/**
+ * Builds express-rate-limit options keyed by IP only (see ipRateLimitKey),
+ * with a throttled warning log so a sustained flood doesn't spam the logs.
  */
 export const buildIpRateLimiterOptions = (
   config: IpRateLimiterConfig
@@ -63,9 +70,7 @@ export const buildIpRateLimiterOptions = (
     limit: config.limit,
     standardHeaders: true,
     legacyHeaders: false,
-    // Keyed by IP only: the issue requires per-IP protection against bots, and
-    // adding the User-Agent would let an attacker get one bucket per UA.
-    keyGenerator: (req: Request) => ipKeyGenerator(req.ip ?? 'unknown'),
+    keyGenerator: ipRateLimitKey,
     handler: (req: Request, res: Response) => {
       logRateLimitThrottled(req.ip ?? 'unknown', req.path);
       config.sendRateLimitError(res);

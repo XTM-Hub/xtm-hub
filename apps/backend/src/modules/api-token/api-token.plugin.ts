@@ -17,6 +17,7 @@ import { logApp } from '../../utils/app-logger.util';
 import { ForbiddenErrorCode } from '../../utils/error/error.code';
 import { mapToGraphQLError } from '../../utils/error/error.mapping';
 import { getApiTokenAuthentication } from './api-token.auth';
+import { API_TOKEN_ERRORS, sendApiTokenError } from './api-token.errors';
 
 /**
  * Mutations no token runs, whatever its scope: they act on the caller's own account, or issue a credential that would
@@ -64,14 +65,7 @@ export const apiTokenRateLimiter = rateLimit({
     logApp.warn('[RATE-LIMIT] API token rate limited', {
       api_token_id: getApiTokenAuthentication(req)?.token.id,
     });
-    res.status(429).json({
-      errors: [
-        {
-          message: 'TOO_MANY_REQUESTS',
-          extensions: { code: 'TOO_MANY_REQUESTS' },
-        },
-      ],
-    });
+    sendApiTokenError(res, API_TOKEN_ERRORS.TooManyRequests);
   },
 });
 

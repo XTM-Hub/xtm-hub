@@ -10,14 +10,17 @@ import { UserLoadUserBy } from '../../model/user';
 import { ROLE_ADMIN } from '../../portal.const';
 import { logApp } from '../../utils/app-logger.util';
 import { getErrorMessage } from '../../utils/error/error-guard.util';
-import {
-  ErrorCode,
-  ForbiddenErrorCode,
-  UnauthenticatedErrorCode,
-  UnknownErrorCode,
-} from '../../utils/error/error.code';
+import { ErrorCode } from '../../utils/error/error.code';
 import { UserDomain } from '../organization-management/user/user-domain/user.domain';
 import { ApiTokenDomain } from './api-token.domain';
+import { API_TOKEN_ERRORS, sendApiTokenError } from './api-token.errors';
+import {
+  admitApiTokenLookup,
+  countRefusedApiToken,
+  type LookupReservation,
+  recentApiTokens,
+  releaseApiTokenLookup,
+} from './api-token.failure-limit';
 import { ApiTokenHelper } from './api-token.helper';
 
 // What a request authenticated by an API token knows about it
@@ -171,8 +174,10 @@ const recordUse = ({ id, last_used_at }: ApiTokenCaller, now: Date) => {
 /**
  * `Authorization: Bearer xhp_...` authenticates the request as the token's user. Any other request goes on unchanged
  * (session cookie, system token, platform token). A refused token answers 401 whatever the route: the caller asked
- * for the token's identity, it never falls back to a session. A failure while checking the token answers 500 with no
- * detail: the error only goes to the logs.
+ * for the token's identity, it never falls back to a session. Refused tokens are counted per client IP: over the
+ * limit, the client gets 429 and its tokens are no longer looked up until the window ends, except the tokens accepted
+ * recently, which are still looked up and checked as usual. A token that was looked up and refused always gets 401.
+ * A failure while checking the token answers 500 with no detail, and is not counted: the error only goes to the logs.
  */
 export const apiTokenMiddleware = async (
   req: Request,
@@ -186,26 +191,44 @@ export const apiTokenMiddleware = async (
     next();
     return;
   }
+  const tokenHash = ApiTokenHelper.hash(secret);
+  // A token not accepted recently reserves a hit before its lookup and, over the limit, is answered 429 without one
+  let reservation: LookupReservation | undefined;
+  if (!recentApiTokens.has(tokenHash)) {
+    reservation = admitApiTokenLookup(req, res);
+    if (!reservation) {
+      return;
+    }
+  }
   const now = new Date();
   let resolution: Resolution;
   try {
     resolution = await resolveApiToken(secret, now);
   } catch (error) {
+    // Not a refused token: an outage must not use up the allowance of every client
+    if (reservation) {
+      releaseApiTokenLookup(reservation);
+    }
     // Never the secret: only the error, whose query carries the token hash at most
     logApp.error('API token authentication failed', { error });
     // The same code Apollo gives an internal error on the GraphQL routes
-    ApiTokenHelper.sendError(res, 500, UnknownErrorCode.UnknownError);
+    sendApiTokenError(res, API_TOKEN_ERRORS.UnknownError);
     return;
   }
   if (!resolution.authenticated) {
+    recentApiTokens.forget(tokenHash);
+    // A reserved hit stays as the refusal; a token accepted recently had none
+    if (!reservation) {
+      countRefusedApiToken(req);
+    }
     logApp.warn('API token refused', { reason: resolution.reason });
-    ApiTokenHelper.sendError(
-      res,
-      401,
-      UnauthenticatedErrorCode.Unauthenticated
-    );
+    sendApiTokenError(res, API_TOKEN_ERRORS.Unauthenticated);
     return;
   }
+  if (reservation) {
+    releaseApiTokenLookup(reservation);
+  }
+  recentApiTokens.remember(tokenHash, now.getTime());
   authentications.set(req, resolution.authentication);
   recordUse(resolution.authentication.token, now);
   next();
@@ -230,5 +253,5 @@ export const refuseApiTokenMiddleware = (
     api_token_id: authentication.token.id,
     path: req.path,
   });
-  ApiTokenHelper.sendError(res, 403, ForbiddenErrorCode.NotAllowedWithApiToken);
+  sendApiTokenError(res, API_TOKEN_ERRORS.NotAllowedWithApiToken);
 };
