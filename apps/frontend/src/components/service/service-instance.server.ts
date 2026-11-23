@@ -7,6 +7,13 @@ import {
 
 // The API answers a service instance that does not exist or that the visitor
 // cannot see with one of these errors rather than with `null`.
+// Copied from ErrorCode.ServiceInstanceNotFound and
+// ErrorCode.ServiceInstanceNotPublic in apps/backend/src/utils/error/error.code.ts:
+// the frontend image is built from apps/frontend alone, so it cannot import
+// them. Renaming either there must be mirrored here, or the page shows the
+// error page instead of its not found state.
+// SERVICE_INSTANCE_NOT_PUBLIC is deliberately treated as not found: a service
+// the visitor cannot see gets the same not found state as a missing one.
 const SERVICE_INSTANCE_LOOKUP_ERRORS = new Set([
   'SERVICE_INSTANCE_NOT_FOUND',
   'SERVICE_INSTANCE_NOT_PUBLIC',

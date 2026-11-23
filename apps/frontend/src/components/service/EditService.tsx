@@ -57,7 +57,9 @@ export const EditService = ({ service, open, setOpen }: EditServiceProps) => {
         severity: 'success',
         title: t('Utils.Success'),
         description: t('ServiceForm.PictureUpdated', {
-          serviceName: response.addServicePicture!.name,
+          // The schema lets the mutation answer null: the message then names
+          // the service being edited instead.
+          serviceName: response.addServicePicture?.name ?? service?.name ?? '',
         }),
       });
     },

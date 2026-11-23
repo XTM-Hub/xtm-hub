@@ -63,7 +63,7 @@ const AdminServiceList = () => {
   return (
     <AdminServiceTab
       serviceData={serviceData}
-      refetch={refetch}
+      onVariablesChange={refetch}
     />
   );
 };

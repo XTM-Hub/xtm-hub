@@ -77,6 +77,32 @@ const READER_GROUP: ServiceGroupsQuery['serviceGroups'][number] = {
   users: [],
 };
 
+const OPENING_FETCH_ERROR = 'Opening fetch failed';
+
+// The groups query once the fetch of this opening has landed.
+const fetchedServiceGroups = (data: ServiceGroupsQuery) => ({
+  data,
+  isFetchedAfterMount: true,
+  isError: false,
+  error: null,
+});
+
+// The groups query while the fetch of this opening is in flight.
+const fetchingServiceGroups = (data?: ServiceGroupsQuery) => ({
+  data,
+  isFetchedAfterMount: false,
+  isError: false,
+  error: null,
+});
+
+// The groups query once a fetch has failed, the cached groups kept.
+const failedServiceGroups = (data: ServiceGroupsQuery) => ({
+  data,
+  isFetchedAfterMount: true,
+  isError: true,
+  error: new Error(OPENING_FETCH_ERROR),
+});
+
 const mocks = vi.hoisted(() => ({
   usersQuery: vi.fn(),
   useServiceGroupsQuery: vi.fn(),
@@ -124,9 +150,11 @@ const renderTrialsManageUsersForm = () => {
     ...rendered,
     invalidateQueries,
     onCompleted,
-    // Renders the groups the refetch of the opening answers.
-    refreshServiceGroups: (data: ServiceGroupsQuery) => {
-      mocks.useServiceGroupsQuery.mockReturnValue({ data });
+    // Renders the groups query in a new state.
+    updateServiceGroupsQuery: (
+      result: ReturnType<typeof fetchedServiceGroups>
+    ) => {
+      mocks.useServiceGroupsQuery.mockReturnValue(result);
       rendered.rerender(buildForm());
     },
   };
@@ -153,7 +181,9 @@ describe('TrialsManageUsersForm', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.usersQuery.mockReturnValue({ data: USERS });
-    mocks.useServiceGroupsQuery.mockReturnValue({ data: SERVICE_GROUPS });
+    mocks.useServiceGroupsQuery.mockReturnValue(
+      fetchedServiceGroups(SERVICE_GROUPS)
+    );
     mockMutationHook(mocks.useUpdateServiceGroupsMutation, 'success');
   });
 
@@ -245,7 +275,7 @@ describe('TrialsManageUsersForm', () => {
 
   it('should show the loader until the service groups are loaded', () => {
     // Given
-    mocks.useServiceGroupsQuery.mockReturnValue({ data: undefined });
+    mocks.useServiceGroupsQuery.mockReturnValue(fetchingServiceGroups());
 
     // When
     renderTrialsManageUsersForm();
@@ -307,20 +337,44 @@ describe('TrialsManageUsersForm', () => {
     });
   });
 
-  it('should keep the members a refresh brings to a group the admin has not edited', async () => {
-    // Given a form opened on a cached snapshot, then refreshed
+  it('should show the loader on reopening until the fetch of the opening lands, even with cached groups', () => {
+    // Given cached groups while the fetch of the opening is in flight
+    mocks.useServiceGroupsQuery.mockReturnValue(
+      fetchingServiceGroups(SERVICE_GROUPS)
+    );
+    const { updateServiceGroupsQuery } = renderTrialsManageUsersForm();
+    expect(screen.getByTestId(LOADER_TEST_ID)).toBeInTheDocument();
+    expect(
+      screen.queryByRole('combobox', { name: GROUP_NAME })
+    ).not.toBeInTheDocument();
+
+    // When the fetch of the opening lands
+    updateServiceGroupsQuery(fetchedServiceGroups(REFRESHED_SERVICE_GROUPS));
+
+    // Then the form opens
+    expect(screen.queryByTestId(LOADER_TEST_ID)).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('combobox', { name: GROUP_NAME })
+    ).toBeInTheDocument();
+  });
+
+  it('should open the form on the memberships the fetch of the opening answers, not on the cached ones', async () => {
+    // Given cached groups, then the fetch of the opening bringing a member
     const updateServiceGroups = mockMutationHook(
       mocks.useUpdateServiceGroupsMutation,
       'success'
     );
-    const { user, refreshServiceGroups } = renderTrialsManageUsersForm();
-    refreshServiceGroups(REFRESHED_SERVICE_GROUPS);
+    mocks.useServiceGroupsQuery.mockReturnValue(
+      fetchingServiceGroups(SERVICE_GROUPS)
+    );
+    const { user, updateServiceGroupsQuery } = renderTrialsManageUsersForm();
+    updateServiceGroupsQuery(fetchedServiceGroups(REFRESHED_SERVICE_GROUPS));
 
     // When the admin adds another user to that group
     await addUserToGroup(user, OTHER_USER_EMAIL);
     await validate(user);
 
-    // Then the member added since the snapshot is kept
+    // Then the member the fetch brought is kept
     await waitFor(() =>
       expect(updateServiceGroups).toHaveBeenCalledWith({
         input: {
@@ -330,46 +384,66 @@ describe('TrialsManageUsersForm', () => {
     );
   });
 
-  it('should keep the edits of a group when a refresh lands after them', async () => {
-    // Given a group the admin has already edited
-    const updateServiceGroups = mockMutationHook(
-      mocks.useUpdateServiceGroupsMutation,
-      'success'
+  it('should send the error to the error page when the fetch of the opening fails, even with cached groups', () => {
+    // Given cached groups and a failed fetch of the opening
+    mocks.useServiceGroupsQuery.mockReturnValue(
+      failedServiceGroups(SERVICE_GROUPS)
     );
-    const { user, refreshServiceGroups } = renderTrialsManageUsersForm();
-    await addUserToGroup(user, OTHER_USER_EMAIL);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
-    // When the refreshed groups arrive, then the admin validates
-    refreshServiceGroups(REFRESHED_SERVICE_GROUPS);
-    await validate(user);
+    // When the form renders
+    const render = () => renderTrialsManageUsersForm();
 
     // Then
-    await waitFor(() =>
-      expect(updateServiceGroups).toHaveBeenCalledWith({
-        input: { groups: [{ id: GROUP_ID, userIds: [OTHER_USER_ID] }] },
-      })
-    );
+    expect(render).toThrow(OPENING_FETCH_ERROR);
   });
 
-  it('should keep the edits on their group when a refresh answers the groups in another order', async () => {
-    // Given an edited Admin group listed before the Reader group
+  it('should keep the form open when a later refetch fails', () => {
+    // Given an opened form
+    const { updateServiceGroupsQuery } = renderTrialsManageUsersForm();
+
+    // When a later refetch fails
+    updateServiceGroupsQuery(failedServiceGroups(SERVICE_GROUPS));
+
+    // Then
+    expect(
+      screen.getByRole('combobox', { name: GROUP_NAME })
+    ).toBeInTheDocument();
+  });
+
+  it('should keep the fields and their values when a refetch lands after the form opened', async () => {
+    // Given an opened form with an edited Admin group listed before the Reader group
     const updateServiceGroups = mockMutationHook(
       mocks.useUpdateServiceGroupsMutation,
       'success'
     );
-    mocks.useServiceGroupsQuery.mockReturnValue({
-      data: { serviceGroups: [...SERVICE_GROUPS.serviceGroups, READER_GROUP] },
-    });
-    const { user, refreshServiceGroups } = renderTrialsManageUsersForm();
+    mocks.useServiceGroupsQuery.mockReturnValue(
+      fetchedServiceGroups({
+        serviceGroups: [...SERVICE_GROUPS.serviceGroups, READER_GROUP],
+      })
+    );
+    const { user, updateServiceGroupsQuery } = renderTrialsManageUsersForm();
     await addUserToGroup(user, OTHER_USER_EMAIL);
 
-    // When the refresh lists the Reader group first, then the admin validates
-    refreshServiceGroups({
-      serviceGroups: [READER_GROUP, ...SERVICE_GROUPS.serviceGroups],
-    });
+    // When a refetch lists the Reader group first with new Admin members
+    updateServiceGroupsQuery(
+      fetchedServiceGroups({
+        serviceGroups: [
+          READER_GROUP,
+          ...REFRESHED_SERVICE_GROUPS.serviceGroups,
+        ],
+      })
+    );
     await validate(user);
 
-    // Then the edit stays on the Admin group
+    // Then the fields keep their order and the form sends the edits only
+    expect(
+      screen
+        .getByRole('combobox', { name: GROUP_NAME })
+        .compareDocumentPosition(
+          screen.getByRole('combobox', { name: READER_GROUP.name })
+        )
+    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
     await waitFor(() =>
       expect(updateServiceGroups).toHaveBeenCalledWith({
         input: {

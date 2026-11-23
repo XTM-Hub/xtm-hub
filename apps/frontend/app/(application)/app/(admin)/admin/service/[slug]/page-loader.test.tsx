@@ -208,16 +208,4 @@ describe('Admin service PageLoader', () => {
     // Then
     expect(screen.getByText('loader')).toBeInTheDocument();
   });
-
-  it('should render nothing when the service instance cannot be loaded', () => {
-    // Given
-    mockListQuery(LIST_RESPONSE);
-    mockServiceInstanceQuery({ serviceInstanceById: null });
-
-    // When
-    const { container } = testRender(<PageLoader id={SERVICE_INSTANCE_ID} />);
-
-    // Then
-    expect(container).toBeEmptyDOMElement();
-  });
 });

@@ -122,6 +122,28 @@ describe('EditService', () => {
     });
   });
 
+  it('should still confirm the upload when the API answers without the service', async () => {
+    // Given
+    vi.mocked(requestGraphqlWithUploads).mockResolvedValue({
+      addServicePicture: null,
+    });
+    const { user, setOpen } = renderEditService();
+    await uploadPicture(user, LOGO_LABEL, makePicture('logo.png'));
+
+    // When
+    await user.click(screen.getByRole('button', { name: VALIDATE_LABEL }));
+
+    // Then
+    await waitFor(() =>
+      expect(SnackbarStore.showSnackbar).toHaveBeenCalledWith({
+        severity: 'success',
+        title: 'Utils.Success',
+        description: 'ServiceForm.PictureUpdated',
+      })
+    );
+    expect(setOpen).toHaveBeenCalledWith(false);
+  });
+
   it('should close the sheet once a picture is uploaded', async () => {
     // Given
     vi.mocked(requestGraphqlWithUploads).mockResolvedValue(RESPONSE);

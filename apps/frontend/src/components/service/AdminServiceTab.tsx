@@ -32,7 +32,7 @@ export type AdminServiceListRefetch = (
 
 interface AdminServiceTabProps {
   serviceData: AdminServiceInstanceItemFragment[];
-  refetch: AdminServiceListRefetch;
+  onVariablesChange: AdminServiceListRefetch;
 }
 
 export const ADMIN_SERVICE_TAB_SERVICE_DEFINITION_IDENTIFIERS = Object.values(
@@ -47,7 +47,10 @@ export const ADMIN_SERVICE_TAB_SERVICE_DEFINITION_IDENTIFIERS = Object.values(
     ].includes(val)
 );
 
-const AdminServiceTab = ({ serviceData, refetch }: AdminServiceTabProps) => {
+const AdminServiceTab = ({
+  serviceData,
+  onVariablesChange,
+}: AdminServiceTabProps) => {
   const t = useTranslate();
   const [open, setOpen] = useState(false);
   const [editedService, setEditedService] =
@@ -122,13 +125,13 @@ const AdminServiceTab = ({ serviceData, refetch }: AdminServiceTabProps) => {
     });
 
   const handleInputChange = (inputValue: string) => {
-    refetch({ searchTerm: inputValue });
+    onVariablesChange({ searchTerm: inputValue });
   };
   const handleIdentifierChange = (
     selectedValue: { value: string; label: string } | undefined
   ) => {
     setSelectedValue(selectedValue);
-    refetch({
+    onVariablesChange({
       filters: [
         {
           key: ServiceInstanceFilterKey.ServiceDefinitionIdentifier,

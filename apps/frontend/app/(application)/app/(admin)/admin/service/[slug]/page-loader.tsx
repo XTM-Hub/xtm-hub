@@ -64,19 +64,16 @@ const PageLoader = ({ id }: PreloaderProps) => {
     [data]
   );
 
-  if (!serviceInstanceData || !subscriptions) {
+  // The API answers an unknown service instance with an error, never `null`.
+  const serviceInstance = serviceInstanceData?.serviceInstanceById;
+  if (!serviceInstance || !subscriptions) {
     return <Loader />;
-  }
-
-  // A service instance the admin cannot load leaves the page empty.
-  if (!serviceInstanceData.serviceInstanceById) {
-    return null;
   }
 
   return (
     <ServiceSlug
       subscriptions={subscriptions}
-      serviceInstance={serviceInstanceData.serviceInstanceById}
+      serviceInstance={serviceInstance}
     />
   );
 };

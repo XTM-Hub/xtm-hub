@@ -22,7 +22,7 @@ import {
 import { serviceGroupsKeys } from '@graphql/service-group/service-group.keys';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -74,28 +74,49 @@ export const TrialsManageUsersForm = ({
     () => ({ serviceInstanceId }),
     [serviceInstanceId]
   );
-  const { data: serviceGroups } = useServiceGroupsQuery(
-    portalGraphqlClient,
-    serviceGroupsVariables,
-    {
-      queryKey: serviceGroupsKeys.list(serviceGroupsVariables),
-      // Each opening reads the current memberships, even when a cached
-      // snapshot is still fresh: the update replaces them group by group.
-      refetchOnMount: 'always',
-      throwOnError: throwOnFirstLoadError,
+  const {
+    data: serviceGroups,
+    error: serviceGroupsError,
+    isError: isServiceGroupsError,
+    isFetchedAfterMount: isServiceGroupsFetchedAfterMount,
+  } = useServiceGroupsQuery(portalGraphqlClient, serviceGroupsVariables, {
+    queryKey: serviceGroupsKeys.list(serviceGroupsVariables),
+    // Each opening reads the current memberships, even when a cached
+    // snapshot is still fresh: the update replaces them group by group.
+    refetchOnMount: 'always',
+    throwOnError: throwOnFirstLoadError,
+  });
+
+  // The form opens on the groups the fetch of this opening answers, never on a
+  // cached snapshot, and keeps them while it is open: a later refetch (window
+  // focus, invalidation) never reaches the fields, so a group label cannot move
+  // away from the members it shows.
+  const [openedServiceGroups, setOpenedServiceGroups] =
+    useState<ServiceGroupsQuery>();
+  if (
+    !openedServiceGroups &&
+    isServiceGroupsFetchedAfterMount &&
+    serviceGroups
+  ) {
+    // A failed opening fetch reaches the error page even when cached groups
+    // remain, like a failed first load: saving replaces the memberships, so a
+    // stale snapshot must not be edited.
+    if (isServiceGroupsError) {
+      throw serviceGroupsError;
     }
-  );
+    setOpenedServiceGroups(serviceGroups);
+  }
 
   // The form waits for the users and the groups, as it did when the Relay
   // query suspended it: its default values are the loaded groups.
-  if (!availableUsers || !serviceGroups) {
+  if (!availableUsers || !openedServiceGroups) {
     return <Loader />;
   }
 
   return (
     <TrialsManageUsersFormContent
       availableUsers={availableUsers}
-      serviceGroups={serviceGroups}
+      serviceGroups={openedServiceGroups}
       onCancel={onCancel}
       onCompleted={onCompleted}
     />
@@ -156,18 +177,13 @@ const TrialsManageUsersFormContent = ({
     [availableUsers]
   );
 
-  // The API does not order the groups, and keepDirtyValues keeps an edited
-  // field by its index: sorting by ID keeps each index on the same group
-  // when a refetch answers them in another order.
   const groups = useMemo(
     () =>
-      serviceGroups.serviceGroups
-        .map(({ id, name, users }) => ({
-          id,
-          name,
-          users: users ?? [],
-        }))
-        .sort((a, b) => a.id.localeCompare(b.id)),
+      serviceGroups.serviceGroups.map(({ id, name, users }) => ({
+        id,
+        name,
+        users: users ?? [],
+      })),
     [serviceGroups]
   );
   const groupUserOptions = useMemo(
@@ -178,24 +194,17 @@ const TrialsManageUsersFormContent = ({
     [groups]
   );
 
-  const formValues = useMemo(
-    () => ({
+  // The groups never change while the form is open, so each field keeps the
+  // index of its group in the default values.
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
       groups: groups.map(({ id, name, users }) => ({
         id,
         name,
         userIds: users.map((user) => user.id),
       })),
-    }),
-    [groups]
-  );
-
-  // The form shows a cached snapshot until the refetch of the opening lands:
-  // the refreshed memberships then replace the groups left untouched, and the
-  // groups already edited keep their edits.
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    values: formValues,
-    resetOptions: { keepDirtyValues: true },
+    },
   });
 
   const watchedGroups = useWatch({ control: form.control, name: 'groups' });
@@ -222,7 +231,7 @@ const TrialsManageUsersFormContent = ({
   const groupFields = useMemo(() => {
     return groups.map((group, index) => (
       <FormField
-        key={group.name}
+        key={group.id}
         control={form.control}
         render={({ field: { value, onChange }, fieldState }) => {
           return (

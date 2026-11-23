@@ -1,3 +1,5 @@
+'use client';
+
 import BadgeOverflowCounter, {
   BadgeOverflow,
 } from '@/components/ui/BadgeOverflowCounter';
@@ -11,14 +13,12 @@ import { getDataTableLabels } from '@/utils/design-system/data-table';
 import { Button, Chip } from '@filigran/design-system';
 import { AddIcon, DeleteIcon, MoreVertIcon } from '@filigran/icon';
 import {
-  OrderingMode,
   OrganizationCapability,
   ServiceInstanceItemFragment,
   ServiceInstanceWithCapabilitiesItemFragment,
   ServiceRestriction,
   SubscriptionByIdQuery,
   UserServiceItemFragment,
-  UserServiceOrdering,
   useServiceUserCapabilitiesQuery,
   useSubscriptionByIdQuery,
   useUserServicesFromSubscriptionQuery,
@@ -33,6 +33,7 @@ import { useContext, useMemo, useState } from 'react';
 
 import { DeleteUserService } from '@/components/subcription/[slug]/DeleteUserService';
 import { SubscriptionSlugUserService } from '@/components/subcription/[slug]/SubscriptionSlugUserService';
+import { useUserServiceListLocalstorage } from '@/components/subcription/[slug]/user-service-list-localstorage';
 import {
   BreadcrumbNav,
   BreadcrumbNavLink,
@@ -50,7 +51,6 @@ import { portalGraphqlClient } from '@/lib/graphql-client';
 import { throwOnFirstLoadError } from '@/lib/query-client';
 import { ADMIN_SERVICE_CATALOG_PATH, APP_PATH } from '@/utils/path/constant';
 import { notFound } from 'next/navigation';
-import { useLocalStorage } from 'usehooks-ts';
 
 interface SubscriptionSlugProps {
   subscriptionId: string;
@@ -427,20 +427,13 @@ const SubscriptionSlug = ({
     throwOnError: throwOnFirstLoadError,
   });
 
-  const [count, setCount] = useLocalStorage('countUserServices', 50);
-  const [orderMode] = useLocalStorage(
-    'orderModeUserServices',
-    OrderingMode.Asc
-  );
-  const [orderBy] = useLocalStorage(
-    'orderByUserServices',
-    UserServiceOrdering.FirstName
-  );
+  const { orderBy, orderMode, pageSize, setPageSize } =
+    useUserServiceListLocalstorage();
   // The users are read page by page, so each of them stays reachable once a
   // write invalidates the list, wherever the ordering puts them.
   const { pagination, cursor, onPaginationChange } = useTablePagination({
-    pageSize: count,
-    setPageSize: setCount,
+    pageSize,
+    setPageSize,
   });
   const userServicesVariables = useMemo(
     () => ({
@@ -498,7 +491,7 @@ const SubscriptionSlug = ({
     <SubscriptionSlugContent
       queryDataSubscription={data}
       userData={userData}
-      totalCount={userServicesData.userServiceFromSubscription?.totalCount ?? 0}
+      totalCount={totalCount ?? 0}
       pagination={pagination}
       onPaginationChange={onPaginationChange}
       serviceInstance={serviceInstance}

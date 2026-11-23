@@ -31,7 +31,7 @@ const renderAdminServiceTab = () => {
   const { user } = testRender(
     <AdminServiceTab
       serviceData={[]}
-      refetch={refetch}
+      onVariablesChange={refetch}
     />
   );
   return { refetch, user };
