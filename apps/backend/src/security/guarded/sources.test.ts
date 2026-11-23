@@ -3,8 +3,9 @@ import { TestHelper } from '../../../tests/helper/test.helper';
 import { PortalCapability } from '../../__generated__/resolvers-types';
 import { OrganizationId } from '../../model/kanel/public/Organization';
 import { NotFoundErrorCode } from '../../utils/error/error.code';
+import { CallerOf } from './guard.types';
 import { orgGuard } from './guards/organization.guard';
-import { fromArg } from './sources';
+import { fromArg, fromRecord } from './sources';
 
 const {
   ANONYMOUS,
@@ -98,5 +99,71 @@ describe('sources', () => {
 
     // Then
     expect(source).not.toHaveBeenCalled();
+  });
+});
+
+describe('fromRecord', () => {
+  type Args = { id: string };
+  type Row = { organizationId: string; ownerId: string };
+  const caller = buildUserPrincipal() as CallerOf<'user'>;
+
+  it('should load the record once for the sources picked from it with the same arguments', async () => {
+    // Given
+    const load = vi.fn((_args: Args) =>
+      Promise.resolve({ organizationId: 'organization', ownerId: 'owner' })
+    );
+    const record = fromRecord<Args, Row>(load);
+    const organization = record.pick(({ organizationId }) => organizationId);
+    const owner = record.pick(({ ownerId }) => ownerId);
+    const args = { id: 'row-id' };
+
+    // When
+    const values = [
+      await organization(caller, args),
+      await owner(caller, args),
+      await organization(caller, args),
+    ];
+
+    // Then
+    expect(values).toEqual(['organization', 'owner', 'organization']);
+    expect(load).toHaveBeenCalledExactlyOnceWith(args);
+  });
+
+  it('should load again for the arguments of another call, even with the same values', async () => {
+    // Given
+    const load = vi.fn((_args: Args) =>
+      Promise.resolve({ organizationId: 'organization', ownerId: 'owner' })
+    );
+    const organization = fromRecord<Args, Row>(load).pick(
+      ({ organizationId }) => organizationId
+    );
+
+    const first = { id: 'row-id' };
+
+    // When
+    await organization(caller, first);
+    await organization(caller, first);
+
+    // Then
+    expect(load).toHaveBeenCalledTimes(1);
+
+    // When
+    await organization(caller, { id: 'row-id' });
+
+    // Then
+    expect(load).toHaveBeenCalledTimes(2);
+  });
+
+  it('should give no id when the loader finds no record', async () => {
+    // Given
+    const organization = fromRecord<Args, Row>(() =>
+      Promise.resolve(undefined)
+    ).pick(({ organizationId }) => organizationId);
+
+    // When
+    const result = await organization(caller, { id: 'unknown' });
+
+    // Then
+    expect(result).toBeUndefined();
   });
 });

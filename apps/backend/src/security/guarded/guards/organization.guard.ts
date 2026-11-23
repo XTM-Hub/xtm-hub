@@ -6,23 +6,28 @@ import {
   NotFoundErrorCode,
 } from '../../../utils/error/error.code';
 import { allow, deny, forCaller, TargetedGuard } from '../guard.types';
-import { Source } from '../sources';
+import { AsyncSource, Source } from '../sources';
 
 export const selectedOrganization: Source<unknown, OrganizationId> = (user) =>
   user.selectedOrganizationId;
 
+// `bypass: false` makes a BYPASS user a member like any other: for an operation that acts as a member of the
+// organization, whatever the platform rights
 export const orgGuard = <Args = unknown>({
   organization,
   capabilities,
+  bypass = true,
 }: {
-  organization: Source<Args, OrganizationId>;
+  organization:
+    Source<Args, OrganizationId> | AsyncSource<Args, OrganizationId>;
   capabilities: readonly OrganizationCapability[];
+  bypass?: boolean;
 }): TargetedGuard<Args> =>
-  forCaller<'user', Args>('user', (user, args) => {
-    if (user.isBypassUser) {
+  forCaller<'user', Args>('user', async (user, args) => {
+    if (bypass && user.isBypassUser) {
       return allow({ kind: 'admin' });
     }
-    const organizationId = organization(user, args);
+    const organizationId = await organization(user, args);
     const membership = user.memberships.find(
       ({ organization: { id } }) => id === organizationId
     );

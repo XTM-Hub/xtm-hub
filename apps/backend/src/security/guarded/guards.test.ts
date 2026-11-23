@@ -535,3 +535,65 @@ describe('platformCallerGuard', () => {
     expect(result).toEqual(expected);
   });
 });
+
+describe('orgGuard without BYPASS', () => {
+  const guard = () =>
+    orgGuard({
+      organization: selectedOrganization,
+      capabilities: [],
+      bypass: false,
+    });
+
+  it('should refuse with NOT_FOUND a BYPASS user who is not a member', async () => {
+    // Given
+    const principal = buildUserPrincipal({ isBypassUser: true });
+
+    // When
+    const result = await guard().check(principal, {});
+
+    // Then
+    expect(result).toEqual({
+      allowed: false,
+      code: NotFoundErrorCode.NotFound,
+    });
+  });
+
+  it('should allow a BYPASS user who is a member, as an organization member and not as an admin', async () => {
+    // Given
+    const principal = buildUserPrincipal({
+      isBypassUser: true,
+      memberships: { [ORGANIZATION_ID]: [] },
+    });
+
+    // When
+    const result = await guard().check(principal, {});
+
+    // Then
+    expect(result).toEqual({
+      allowed: true,
+      checked: { kind: 'organization', organizationId: ORGANIZATION_ID },
+    });
+  });
+
+  it('should still refuse a BYPASS member who misses the capability', async () => {
+    // Given
+    const principal = buildUserPrincipal({
+      isBypassUser: true,
+      memberships: { [ORGANIZATION_ID]: [] },
+    });
+    const administrators = orgGuard({
+      organization: selectedOrganization,
+      capabilities: [OrganizationCapability.AdministrateOrganization],
+      bypass: false,
+    });
+
+    // When
+    const result = await administrators.check(principal, {});
+
+    // Then
+    expect(result).toEqual({
+      allowed: false,
+      code: ForbiddenErrorCode.MissingCapabilityOnOrganization,
+    });
+  });
+});
