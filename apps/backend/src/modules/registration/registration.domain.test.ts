@@ -34,7 +34,10 @@ import { DeploymentRequestDomain } from '../deployment/deployment.domain';
 import { OrganizationDomain } from '../organization-management/organization/organization.domain';
 import { ServiceInstanceDomain } from '../service/instance/service-instance.domain';
 import { SubscriptionDomain } from '../subscription/subscription.domain';
-import { PlatformConfigurationDomain } from './platform-configuration/platform-configuration.domain';
+import {
+  FullPlatformConfiguration,
+  PlatformConfigurationDomain,
+} from './platform-configuration/platform-configuration.domain';
 import {
   PlatformConfigurationInput,
   RegistrationDomain,
@@ -288,6 +291,54 @@ describe('registration domain', () => {
           ErrorCode.MissingCapabilityOnOrganization
         );
       });
+
+      describe.each`
+        status                                  | requiresOwnerCapability
+        ${PlatformConfigurationStatus.Active}   | ${true}
+        ${PlatformConfigurationStatus.Inactive} | ${false}
+      `(
+        'when the registration is $status',
+        ({ status, requiresOwnerCapability }) => {
+          beforeEach(() => {
+            vi.spyOn(
+              PlatformConfigurationDomain,
+              'loadResolvedConfigurationByServiceInstance'
+            ).mockResolvedValue({
+              platformConfiguration: { status },
+            } as FullPlatformConfiguration);
+            assertUserIsAllowedOnOrganizationSpy.mockResolvedValue({});
+            loadOrganizationsByUserSpy.mockResolvedValue([{}, {}]);
+            transferSubscriptionToOrganizationSpy.mockResolvedValue([]);
+            updateConfigurationSpy.mockResolvedValue(undefined);
+          });
+
+          it(`should ${requiresOwnerCapability ? '' : 'not '}check the capability on the owner organization and transfer the subscription`, async () => {
+            await RegistrationDomain.refreshExistingPlatform({
+              configuration,
+              serviceInstanceId,
+              targetOrganizationId,
+            });
+
+            expect(
+              assertUserIsAllowedOnOrganizationSpy.mock.calls.map(
+                ([, { organizationId }]) => organizationId
+              )
+            ).toEqual(
+              requiresOwnerCapability
+                ? [targetOrganizationId, anotherOrganizationId]
+                : [targetOrganizationId]
+            );
+            expect(transferSubscriptionToOrganizationSpy).toHaveBeenCalledWith({
+              subscriptionId,
+              organizationId: targetOrganizationId,
+            });
+            expect(updateConfigurationSpy).toHaveBeenCalledWith(
+              serviceInstanceId,
+              { ...configuration, status: PlatformConfigurationStatus.Active }
+            );
+          });
+        }
+      );
 
       it('should transfer the subscription and refresh configuration when user is allowed', async () => {
         assertUserIsAllowedOnOrganizationSpy.mockResolvedValue({});

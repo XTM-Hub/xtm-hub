@@ -10,6 +10,7 @@ export enum ForbiddenErrorCode {
   MissingCapabilityOnService = 'MISSING_CAPABILITY_ON_SERVICE',
   ServiceInstanceNotPublic = 'SERVICE_INSTANCE_NOT_PUBLIC',
   RegistrationOnAnotherOrganizationForbidden = 'REGISTRATION_ON_ANOTHER_ORGANIZATION_FORBIDDEN',
+  TrialPlatformCannotBeUnregistered = 'TRIAL_PLATFORM_CANNOT_BE_UNREGISTERED',
   UserIsNotInOrganization = 'USER_IS_NOT_IN_ORGANIZATION',
   AlreadySubscribed = 'ALREADY_SUBSCRIBED',
   EditCapabilitiesCantRemoveLastManageAccess = 'EDIT_CAPABILITIES_CANT_REMOVE_LAST_MANAGE_ACCESS',

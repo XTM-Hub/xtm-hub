@@ -34,6 +34,7 @@ import {
   DeploymentRequestUseCase,
   NewsFeedItemType,
   OrderingMode,
+  OrganizationCapability,
   PlatformConfigurationStatus,
   PlatformContract,
   PlatformIdentifier,
@@ -48,11 +49,13 @@ import { requestContext } from '../../context/request.context';
 import DeploymentRequest, {
   DeploymentRequestId,
 } from '../../model/kanel/public/DeploymentRequest';
+import { OrganizationId } from '../../model/kanel/public/Organization';
 import PlatformConfiguration from '../../model/kanel/public/PlatformConfiguration';
 import ServiceInstance, {
   ServiceInstanceId,
 } from '../../model/kanel/public/ServiceInstance';
 import { SubscriptionId } from '../../model/kanel/public/Subscription';
+import { UserId } from '../../model/kanel/public/User';
 import * as MailService from '../../server/mail-service';
 import { PgBossProducer } from '../../thirdparty/pgboss/producer';
 import { REGISTRATION_QUEUES } from '../../thirdparty/pgboss/registration.jobs';
@@ -1434,6 +1437,230 @@ describe('registration app', () => {
     });
   });
 
+  describe('registerPlatform, taking over a platform of another organization', () => {
+    const OWNER_ORGANIZATION_ID = TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID;
+    let platformId: string;
+    let ownerToken: string;
+    let serviceInstanceId: ServiceInstanceId;
+    let createdOrganizationIds: OrganizationId[];
+    let createdUserIds: UserId[];
+
+    const buildPlatform = (): PlatformInput => ({
+      id: platformId,
+      title: 'My OpenCTI platform',
+      url: 'http://example.com',
+      contract: PlatformContract.Ee,
+      version: '6.8.0',
+    });
+
+    // A member of a new organization, which is not the owner one, acting as the request user
+    const createCallerOfAnotherOrganization = async ({
+      capabilities,
+      extraOrganizations = 0,
+    }: {
+      capabilities: OrganizationCapability[];
+      extraOrganizations?: number;
+    }) => {
+      const { id: organizationId } = await TestHelper.organization.create();
+      createdOrganizationIds.push(organizationId);
+      const { user, userOrganization } =
+        await TestHelper.user.insertInOrganization(organizationId);
+      createdUserIds.push(user.id);
+      for (const name of capabilities) {
+        await TestHelper.user_OrganizationCapability.create({
+          user_organization_id: userOrganization.id,
+          name,
+        });
+      }
+      for (let index = 0; index < extraOrganizations; index++) {
+        const { id: extraOrganizationId } =
+          await TestHelper.organization.create();
+        createdOrganizationIds.push(extraOrganizationId);
+        await TestHelper.user_Organization.create({
+          user_id: user.id,
+          organization_id: extraOrganizationId,
+        });
+      }
+      requestContext.set({
+        user: {
+          ...requestContextRegistererUserSecondOrga.user,
+          id: user.id,
+          email: user.email,
+          selected_organization_id: organizationId,
+        },
+      });
+      return { organizationId, userId: user.id };
+    };
+
+    const loadOwnerOrganizationId = async () =>
+      (
+        await TestHelper.subscription.load({
+          service_instance_id: serviceInstanceId,
+        })
+      )?.organization_id;
+
+    beforeEach(async () => {
+      createdOrganizationIds = [];
+      createdUserIds = [];
+      platformId = uuidv4();
+
+      // Given a platform registered by the owner organization
+      requestContext.set(requestContextRegistererUserSecondOrga);
+      ownerToken = await RegistrationApp.registerPlatform({
+        organizationId: OWNER_ORGANIZATION_ID,
+        platform: buildPlatform(),
+        identifier: PlatformIdentifier.Opencti,
+      });
+      const registration =
+        await PlatformConfigurationDomain.loadConfigurationByPlatform(
+          platformId
+        );
+      serviceInstanceId = registration!.service_instance_id;
+    });
+
+    afterEach(async () => {
+      await TestHelper.subscription.delete({
+        service_instance_id: serviceInstanceId,
+      });
+      await PlatformConfigurationDomain.deleteConfigurationBy({
+        service_instance_id: serviceInstanceId,
+      });
+      await ServiceInstanceDomain.deleteServiceInstanceBy({
+        id: serviceInstanceId,
+      });
+      for (const id of createdUserIds) {
+        await TestHelper.user.delete({ id });
+      }
+      for (const id of createdOrganizationIds) {
+        await TestHelper.organization.delete({ id });
+      }
+    });
+
+    describe('when the registration was unregistered', () => {
+      beforeEach(async () => {
+        await RegistrationApp.unregisterPlatform({
+          platformId,
+          identifier: PlatformIdentifier.Opencti,
+        });
+      });
+
+      it('should let a user of another organization, who only manages platform registrations on it, take the platform over', async () => {
+        // Given
+        const { organizationId, userId } =
+          await createCallerOfAnotherOrganization({
+            capabilities: [OrganizationCapability.ManagePlatformRegistration],
+          });
+
+        // When
+        const token = await RegistrationApp.registerPlatform({
+          organizationId,
+          platform: { ...buildPlatform(), title: 'Taken over' },
+          identifier: PlatformIdentifier.Opencti,
+        });
+
+        // Then
+        expect(await loadOwnerOrganizationId()).toBe(organizationId);
+        expect(token).not.toBe(ownerToken);
+        const registration =
+          await PlatformConfigurationDomain.loadConfigurationByPlatform(
+            platformId
+          );
+        expect(registration).toMatchObject({
+          service_instance_id: serviceInstanceId,
+          status: PlatformConfigurationStatus.Active,
+          token,
+          registerer_id: userId,
+          platform_title: 'Taken over',
+        });
+      });
+
+      it('should refuse a user of another organization who cannot manage platform registrations on it', async () => {
+        // Given
+        const { organizationId } = await createCallerOfAnotherOrganization({
+          capabilities: [],
+        });
+
+        // When
+        const call = RegistrationApp.registerPlatform({
+          organizationId,
+          platform: buildPlatform(),
+          identifier: PlatformIdentifier.Opencti,
+        });
+
+        // Then
+        await expect(call).rejects.toThrow(
+          ErrorCode.MissingCapabilityOnOrganization
+        );
+        expect(await loadOwnerOrganizationId()).toBe(OWNER_ORGANIZATION_ID);
+        expect(
+          await PlatformConfigurationDomain.loadConfigurationByPlatform(
+            platformId
+          )
+        ).toMatchObject({
+          status: PlatformConfigurationStatus.Inactive,
+          token: ownerToken,
+        });
+      });
+
+      it('should still refuse a user who belongs to more than 2 organizations', async () => {
+        // Given
+        const { organizationId } = await createCallerOfAnotherOrganization({
+          capabilities: [OrganizationCapability.ManagePlatformRegistration],
+          extraOrganizations: 2,
+        });
+
+        // When
+        const call = RegistrationApp.registerPlatform({
+          organizationId,
+          platform: buildPlatform(),
+          identifier: PlatformIdentifier.Opencti,
+        });
+
+        // Then
+        await expect(call).rejects.toThrow(
+          ErrorCode.RegistrationOnAnotherOrganizationForbidden
+        );
+        expect(await loadOwnerOrganizationId()).toBe(OWNER_ORGANIZATION_ID);
+        expect(
+          await PlatformConfigurationDomain.loadConfigurationByPlatform(
+            platformId
+          )
+        ).toMatchObject({
+          status: PlatformConfigurationStatus.Inactive,
+          token: ownerToken,
+        });
+      });
+    });
+
+    describe('when the registration is still active', () => {
+      it('should refuse a user of another organization who does not manage the owner organization', async () => {
+        // Given
+        const { organizationId } = await createCallerOfAnotherOrganization({
+          capabilities: [OrganizationCapability.ManagePlatformRegistration],
+        });
+
+        // When
+        const call = RegistrationApp.registerPlatform({
+          organizationId,
+          platform: buildPlatform(),
+          identifier: PlatformIdentifier.Opencti,
+        });
+
+        // Then
+        await expect(call).rejects.toThrow(ErrorCode.UserIsNotInOrganization);
+        expect(await loadOwnerOrganizationId()).toBe(OWNER_ORGANIZATION_ID);
+        expect(
+          await PlatformConfigurationDomain.loadConfigurationByPlatform(
+            platformId
+          )
+        ).toMatchObject({
+          status: PlatformConfigurationStatus.Active,
+          token: ownerToken,
+        });
+      });
+    });
+  });
+
   describe('refreshCommercialModel', () => {
     const createPlatform = async (commercialModel: CommercialModel) => {
       const serviceInstanceId = uuidv4() as ServiceInstanceId;
@@ -2364,6 +2591,84 @@ describe('registration app', () => {
       });
     });
 
+    describe('when the platform was unregistered', () => {
+      const newPlatformConfiguration = {
+        id: uuidv4(),
+        title: 'My New OpenCTI platform',
+        url: 'http://example2.com',
+        contract: PlatformContract.Ee,
+        version: '2.0.0',
+      };
+      let backfillSpy: MockInstance;
+
+      beforeEach(async () => {
+        await RegistrationApp.autoRegisterPlatform(
+          deploymentRequest.platform_token as string,
+          { platform: platformConfiguration }
+        );
+        await PlatformConfigurationDomain.deactivateConfiguration(
+          deploymentRequest.service_instance_id
+        );
+        await ServiceInstanceDomain.updateServiceInstance(
+          deploymentRequest.service_instance_id,
+          { creation_status: ServiceInstanceCreationStatus.Pending }
+        );
+        backfillSpy = vi.spyOn(NewsFeedApp, 'backfillBlogpostsForPlatform');
+      });
+
+      it('should change nothing, send no telemetry and backfill no news', async () => {
+        // Given
+        const telemetrySpy = vi
+          .spyOn(TelemetryApp, 'sendTelemetryEvent')
+          .mockResolvedValue();
+
+        // When
+        await RegistrationApp.autoRegisterPlatform(
+          deploymentRequest.platform_token as string,
+          { platform: newPlatformConfiguration }
+        );
+
+        // Then
+        const configuration =
+          await PlatformConfigurationDomain.loadConfigurationByPlatform(
+            platformConfiguration.id
+          );
+        expect(configuration).toMatchObject({
+          platform_id: platformConfiguration.id,
+          platform_title: platformConfiguration.title,
+          platform_url: platformConfiguration.url,
+          platform_version: platformConfiguration.version,
+          platform_contract: platformConfiguration.contract,
+          status: PlatformConfigurationStatus.Inactive,
+          service_instance_id: deploymentRequest.service_instance_id,
+        });
+        expect(
+          await PlatformConfigurationDomain.loadConfigurationByPlatform(
+            newPlatformConfiguration.id
+          )
+        ).toBeUndefined();
+        const serviceInstance =
+          await ServiceInstanceDomain.loadServiceInstanceBy({
+            id: deploymentRequest.service_instance_id,
+          });
+        expect(serviceInstance.creation_status).toBe(
+          ServiceInstanceCreationStatus.Pending
+        );
+        expect(telemetrySpy).not.toHaveBeenCalled();
+        expect(backfillSpy).not.toHaveBeenCalled();
+      });
+
+      it('should still refuse an unknown token', async () => {
+        const call = RegistrationApp.autoRegisterPlatform(uuidv4(), {
+          platform: newPlatformConfiguration,
+        });
+
+        await expect(call).rejects.toThrow(
+          NotFoundErrorCode.DeploymentRequestNotFound
+        );
+      });
+    });
+
     describe('telemetry', () => {
       it('should send register event when platform is autoregistered', async () => {
         vi.useFakeTimers();
@@ -2650,12 +2955,14 @@ const createAdminFixture = async ({
   status = PlatformConfigurationStatus.Active,
   tenantName = null,
   creationStatus,
+  contract,
 }: {
   title: string;
   identifier?: PlatformIdentifier;
   status?: PlatformConfigurationStatus;
   tenantName?: string | null;
   creationStatus?: ServiceInstanceCreationStatus;
+  contract?: PlatformContract;
 }): Promise<PlatformConfiguration> => {
   const serviceInstance = await TestHelper.serviceInstance.create({
     ...(creationStatus ? { creation_status: creationStatus } : {}),
@@ -2675,6 +2982,7 @@ const createAdminFixture = async ({
     status,
     tenant_id: tenantName ? uuidv4() : null,
     tenant_name: tenantName,
+    ...(contract ? { platform_contract: contract } : {}),
   });
 };
 
@@ -2869,11 +3177,58 @@ describe('registration app, platform admin', () => {
         `${marker} A`,
         `${marker} B`,
       ]);
-      expect(firstPage.pageInfo.hasNextPage).toBe(true);
+      expect(firstPage.pageInfo).toEqual({
+        startCursor: btoa('1'),
+        endCursor: btoa('2'),
+        hasNextPage: true,
+        hasPreviousPage: false,
+      });
       expect(secondPage.edges.map(({ node }) => node.title)).toEqual([
         `${marker} C`,
       ]);
-      expect(secondPage.pageInfo.hasNextPage).toBe(false);
+      expect(secondPage.pageInfo).toEqual({
+        startCursor: btoa('3'),
+        endCursor: btoa('3'),
+        hasNextPage: false,
+        hasPreviousPage: true,
+      });
+    });
+
+    it('should return at least one registration when the page size is not positive', async () => {
+      await createAdminFixture({ title: `${marker} A` });
+      await createAdminFixture({ title: `${marker} B` });
+
+      const page = await RegistrationApp.loadAdminRegisteredPlatforms({
+        first: 0,
+        searchTerm: marker,
+        orderBy: AdminRegisteredPlatformOrdering.Title,
+        orderMode: OrderingMode.Asc,
+      });
+
+      expect(page.totalCount).toBe(2);
+      expect(page.edges.map(({ node }) => node.title)).toEqual([`${marker} A`]);
+      expect(page.pageInfo.hasNextPage).toBe(true);
+    });
+
+    it('should return an empty page past the last registration', async () => {
+      await createAdminFixture({ title: `${marker} A` });
+
+      const page = await RegistrationApp.loadAdminRegisteredPlatforms({
+        first: 10,
+        after: btoa('5'),
+        searchTerm: marker,
+      });
+
+      expect(page).toMatchObject({
+        totalCount: 1,
+        edges: [],
+        pageInfo: {
+          startCursor: null,
+          endCursor: null,
+          hasNextPage: false,
+          hasPreviousPage: true,
+        },
+      });
     });
 
     it('should report no next page when the last page is exactly full', async () => {
@@ -3039,6 +3394,46 @@ describe('registration app, platform admin', () => {
       );
     });
 
+    it('should unregister a platform without owner organization, mail nobody and send telemetry without organization', async () => {
+      // Given the list shows a registration with no subscription, without its organization
+      const serviceInstance = await TestHelper.serviceInstance.create({
+        service_definition_id: SERVICES.DEFINITIONS.OPENCTI_REGISTRATION.ID,
+      });
+      const configuration = await TestHelper.platformConfiguration.create({
+        service_instance_id: serviceInstance.id,
+        platform_title: 'Without owner',
+      });
+      const sendMailSpy = vi.spyOn(MailService, 'sendMail').mockResolvedValue();
+      const telemetrySpy = vi
+        .spyOn(TelemetryApp, 'sendTelemetryEvent')
+        .mockResolvedValue();
+      const listed = await RegistrationApp.loadAdminRegisteredPlatform(
+        configuration.service_instance_id
+      );
+
+      // When
+      await RegistrationApp.adminUnregisterPlatform(
+        configuration.service_instance_id
+      );
+
+      // Then
+      expect(listed.organization).toBeNull();
+      const stored = await TestHelper.platformConfiguration.load({
+        service_instance_id: configuration.service_instance_id,
+      });
+      expect(stored?.status).toBe(PlatformConfigurationStatus.Inactive);
+      expect(sendMailSpy).not.toHaveBeenCalled();
+      expect(telemetrySpy).toHaveBeenCalledOnce();
+      const [event] = telemetrySpy.mock.calls[0] ?? [];
+      expect(event).toMatchObject({
+        event_type: TelemetryEventType.UNREGISTER,
+        organization_type: TelemetryOrganizationType.PUBLIC,
+        user_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
+        platform_id: configuration.platform_id,
+      });
+      expect(event?.organization_id).toBeUndefined();
+    });
+
     it('should do nothing on an inactive registration', async () => {
       // Given
       const configuration = await createAdminFixture({
@@ -3062,6 +3457,147 @@ describe('registration app, platform admin', () => {
       expect(stored?.status).toBe(PlatformConfigurationStatus.Inactive);
       expect(sendMailSpy).not.toHaveBeenCalled();
       expect(telemetrySpy).not.toHaveBeenCalled();
+    });
+
+    describe('trial', () => {
+      afterEach(async () => {
+        await TestHelper.deploymentRequest.delete({
+          user_requester_id:
+            TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.ID,
+        });
+      });
+
+      it('should refuse to unregister a registration whose contract is a trial', async () => {
+        // Given
+        const configuration = await createAdminFixture({
+          title: 'Trial contract',
+          contract: PlatformContract.Trial,
+        });
+        const sendMailSpy = vi
+          .spyOn(MailService, 'sendMail')
+          .mockResolvedValue();
+        const telemetrySpy = vi
+          .spyOn(TelemetryApp, 'sendTelemetryEvent')
+          .mockResolvedValue();
+
+        // When
+        const call = RegistrationApp.adminUnregisterPlatform(
+          configuration.service_instance_id
+        );
+
+        // Then
+        await expect(call).rejects.toThrow(
+          ForbiddenErrorCode.TrialPlatformCannotBeUnregistered
+        );
+        const stored = await TestHelper.platformConfiguration.load({
+          service_instance_id: configuration.service_instance_id,
+        });
+        expect(stored).toMatchObject({
+          status: PlatformConfigurationStatus.Active,
+          platform_contract: PlatformContract.Trial,
+        });
+        expect(sendMailSpy).not.toHaveBeenCalled();
+        expect(telemetrySpy).not.toHaveBeenCalled();
+      });
+
+      it('should refuse to unregister a registration linked to a trial deployment request, whatever its contract', async () => {
+        // Given
+        const configuration = await createAdminFixture({
+          title: 'Trial deployment request',
+          contract: PlatformContract.Ee,
+        });
+        await TestHelper.deploymentRequest.create({
+          service_instance_id: configuration.service_instance_id,
+          organization_requester_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+          user_requester_id:
+            TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.ID,
+          type: DeploymentRequestDeploymentType.Trial,
+        });
+        const sendMailSpy = vi
+          .spyOn(MailService, 'sendMail')
+          .mockResolvedValue();
+        const telemetrySpy = vi
+          .spyOn(TelemetryApp, 'sendTelemetryEvent')
+          .mockResolvedValue();
+
+        // When
+        const call = RegistrationApp.adminUnregisterPlatform(
+          configuration.service_instance_id
+        );
+
+        // Then
+        await expect(call).rejects.toThrow(
+          ForbiddenErrorCode.TrialPlatformCannotBeUnregistered
+        );
+        const stored = await TestHelper.platformConfiguration.load({
+          service_instance_id: configuration.service_instance_id,
+        });
+        expect(stored).toMatchObject({
+          status: PlatformConfigurationStatus.Active,
+          platform_contract: PlatformContract.Ee,
+        });
+        expect(sendMailSpy).not.toHaveBeenCalled();
+        expect(telemetrySpy).not.toHaveBeenCalled();
+      });
+
+      it('should unregister a non trial registration linked to a non trial deployment request', async () => {
+        // Given
+        const configuration = await createAdminFixture({
+          title: 'Bundle deployment request',
+          contract: PlatformContract.Ee,
+        });
+        await TestHelper.deploymentRequest.create({
+          service_instance_id: configuration.service_instance_id,
+          organization_requester_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+          user_requester_id:
+            TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.ID,
+          type: DeploymentRequestDeploymentType.Bundle,
+        });
+        vi.spyOn(MailService, 'sendMail').mockResolvedValue();
+        const telemetrySpy = vi
+          .spyOn(TelemetryApp, 'sendTelemetryEvent')
+          .mockResolvedValue();
+
+        // When
+        await RegistrationApp.adminUnregisterPlatform(
+          configuration.service_instance_id
+        );
+
+        // Then
+        const stored = await TestHelper.platformConfiguration.load({
+          service_instance_id: configuration.service_instance_id,
+        });
+        expect(stored?.status).toBe(PlatformConfigurationStatus.Inactive);
+        expect(telemetrySpy).toHaveBeenCalledOnce();
+      });
+
+      it('should do nothing on an inactive trial registration', async () => {
+        // Given
+        const configuration = await createAdminFixture({
+          title: 'Inactive trial',
+          status: PlatformConfigurationStatus.Inactive,
+          contract: PlatformContract.Trial,
+        });
+        const sendMailSpy = vi
+          .spyOn(MailService, 'sendMail')
+          .mockResolvedValue();
+        const telemetrySpy = vi
+          .spyOn(TelemetryApp, 'sendTelemetryEvent')
+          .mockResolvedValue();
+
+        // When
+        await RegistrationApp.adminUnregisterPlatform(
+          configuration.service_instance_id
+        );
+
+        // Then
+        const stored = await TestHelper.platformConfiguration.load({
+          service_instance_id: configuration.service_instance_id,
+        });
+        expect(stored?.status).toBe(PlatformConfigurationStatus.Inactive);
+        expect(sendMailSpy).not.toHaveBeenCalled();
+        expect(telemetrySpy).not.toHaveBeenCalled();
+      });
     });
 
     it('should throw when the service instance has no registration', async () => {

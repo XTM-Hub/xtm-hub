@@ -1,5 +1,4 @@
 import { validate as isUuid, v4 as uuidv4 } from 'uuid';
-import { dbConnections } from '../../../knexfile';
 import {
   AdminRegisteredPlatform,
   AdminRegisteredPlatformConnection,
@@ -176,23 +175,9 @@ const buildPlatformConfiguration = (
   token,
 });
 
-const ADMIN_REGISTERED_PLATFORMS_MAX_PAGE = 100;
-
-// Offset cursors as written by loadAdminRegisteredPlatforms; anything unreadable starts from the first page.
-const decodeOffsetCursor = (after?: string | null): number => {
-  if (!after) {
-    return 0;
-  }
-  try {
-    const offset = Number(atob(after));
-    return Number.isSafeInteger(offset) && offset > 0 ? offset : 0;
-  } catch {
-    return 0;
-  }
-};
-
 // Moves an active registration to inactive, then tells the organization admins and telemetry. Returns false, and does
-// nothing else, when the registration was no longer active.
+// nothing else, when the registration was no longer active. A registration without owner organization is still
+// deactivated: nobody is mailed and the telemetry event carries no organization.
 const deactivateRegistration = async ({
   platformConfiguration,
   platformIdentifier,
@@ -201,7 +186,7 @@ const deactivateRegistration = async ({
 }: {
   platformConfiguration: PlatformConfiguration;
   platformIdentifier: PlatformIdentifier;
-  organizationId: OrganizationId;
+  organizationId: OrganizationId | null;
   actorId: UserId;
 }): Promise<boolean> => {
   const deactivated = await PlatformConfigurationDomain.deactivateConfiguration(
@@ -211,40 +196,46 @@ const deactivateRegistration = async ({
     return false;
   }
 
-  const users = await UserDomain.loadUsersByCapabilitiesInOrganization(
-    organizationId,
-    [
-      OrganizationCapability.AdministrateOrganization,
-      OrganizationCapability.ManagePlatformRegistration,
-    ]
-  );
+  if (organizationId) {
+    const users = await UserDomain.loadUsersByCapabilitiesInOrganization(
+      organizationId,
+      [
+        OrganizationCapability.AdministrateOrganization,
+        OrganizationCapability.ManagePlatformRegistration,
+      ]
+    );
 
-  // The registration is already inactive: a mail that fails is logged, it does not fail the unregistration, and a
-  // retry would find nothing left to do.
-  await Promise.all(
-    users.map((user) =>
-      sendMail({
-        to: user.email,
-        template: 'platform_unregistered',
-        params: {
-          adminName: formatName(user.first_name ?? ''),
-          platformIdentifier,
-        },
-      }).catch((error: unknown) => {
-        logApp.error('Unable to send the platform unregistered mail', {
-          error,
-          userId: user.id,
-          serviceInstanceId: platformConfiguration.service_instance_id,
-        });
-      })
-    )
-  );
+    // The registration is already inactive: a mail that fails is logged, it does not fail the unregistration, and a
+    // retry would find nothing left to do.
+    await Promise.all(
+      users.map((user) =>
+        sendMail({
+          to: user.email,
+          template: 'platform_unregistered',
+          params: {
+            adminName: formatName(user.first_name ?? ''),
+            platformIdentifier,
+          },
+        }).catch((error: unknown) => {
+          logApp.error('Unable to send the platform unregistered mail', {
+            error,
+            userId: user.id,
+            serviceInstanceId: platformConfiguration.service_instance_id,
+          });
+        })
+      )
+    );
+  } else {
+    logApp.warn('Unregistered a platform without owner organization', {
+      serviceInstanceId: platformConfiguration.service_instance_id,
+    });
+  }
 
   try {
-    const selectedOrga = await OrganizationDomain.loadOrganizationBy({
-      id: organizationId,
-    });
-    if (!selectedOrga) {
+    const selectedOrga = organizationId
+      ? await OrganizationDomain.loadOrganizationBy({ id: organizationId })
+      : undefined;
+    if (organizationId && !selectedOrga) {
       throw new Error(NotFoundErrorCode.OrganizationNotFound);
     }
 
@@ -591,19 +582,27 @@ export const RegistrationApp = {
       return;
     }
 
+    // For now, a trial is only ended through its own lifecycle: an admin cannot disconnect it.
+    if (
+      platformConfiguration.platform_contract === PlatformContract.Trial ||
+      (await RegistrationDomain.hasTrialDeploymentRequest(
+        platformConfiguration.service_instance_id
+      ))
+    ) {
+      throw new Error(ErrorCode.TrialPlatformCannotBeUnregistered);
+    }
+
     // The same owner the admin list and its confirmation dialog show: the organization of the newest subscription.
+    // A registration the list shows without owner is deactivated all the same.
     const [owner] =
       await RegistrationDomain.loadPlatformOwnerOrganizationsByServiceInstanceIds(
         [platformConfiguration.service_instance_id]
       );
-    if (!owner) {
-      throw new Error(ErrorCode.SubscriptionNotFound);
-    }
 
     const deactivated = await deactivateRegistration({
       platformConfiguration,
       platformIdentifier,
-      organizationId: owner.id,
+      organizationId: owner?.id ?? null,
       actorId: admin.id,
     });
     if (deactivated) {
@@ -612,56 +611,32 @@ export const RegistrationApp = {
         serviceInstanceId: platformConfiguration.service_instance_id,
         platformId: platformConfiguration.platform_id,
         tenantId: platformConfiguration.tenant_id,
-        organizationId: owner.id,
+        organizationId: owner?.id ?? null,
       });
     }
   },
 
-  loadAdminRegisteredPlatforms: async ({
+  loadAdminRegisteredPlatforms: ({
     first,
     after,
     orderBy,
     orderMode,
     searchTerm,
     filter,
-  }: QueryAdminRegisteredPlatformsArgs): Promise<AdminRegisteredPlatformConnection> => {
-    const limit = Math.min(
-      Math.max(first, 1),
-      ADMIN_REGISTERED_PLATFORMS_MAX_PAGE
-    );
-    const offset = decodeOffsetCursor(after);
-    const { rows, totalCount } =
-      await RegistrationDomain.loadAdminRegisteredPlatforms({
-        filters: {
-          platformIdentifier: filter?.identifier ?? undefined,
-          status: filter?.status ?? undefined,
-          organizationId: filter?.organizationId ?? undefined,
-          searchTerm: searchTerm ?? undefined,
-        },
-        offset,
-        limit,
-        orderBy:
-          orderBy ?? AdminRegisteredPlatformOrdering.LastConnectivityCheck,
-        orderMode: orderMode ?? OrderingMode.Desc,
-      });
-    // This list cannot use paginate() from knexfile.ts: paginate() selects PlatformConfiguration.*, the token included,
-    // and counts an `id` column PlatformConfiguration does not have. It pages by offset itself and builds the
-    // connection with dbConnections, which reads the cursor of the current page; hence the re-encoded offset and the
-    // hasNextPage computed from the total, which also holds when the last page is exactly full.
-    const connection = dbConnections(
-      rows.map(mapAdminRegisteredPlatformRowToGraphQL),
-      offset > 0 ? btoa(String(offset)) : undefined,
-      limit,
-      totalCount
-    );
-    return {
-      ...connection,
-      pageInfo: {
-        ...connection.pageInfo,
-        hasNextPage: offset + rows.length < totalCount,
+  }: QueryAdminRegisteredPlatformsArgs): Promise<AdminRegisteredPlatformConnection> =>
+    RegistrationDomain.loadAdminRegisteredPlatforms({
+      filters: {
+        platformIdentifier: filter?.identifier ?? undefined,
+        status: filter?.status ?? undefined,
+        organizationId: filter?.organizationId ?? undefined,
+        searchTerm: searchTerm ?? undefined,
       },
-    };
-  },
+      first,
+      after,
+      orderBy: orderBy ?? AdminRegisteredPlatformOrdering.LastConnectivityCheck,
+      orderMode: orderMode ?? OrderingMode.Desc,
+      mapRow: mapAdminRegisteredPlatformRowToGraphQL,
+    }),
 
   loadAdminRegisteredPlatform: async (
     serviceInstanceId: ServiceInstanceId
@@ -793,6 +768,24 @@ export const RegistrationApp = {
     }
     const platformIdentifier = deploymentRequest.platform_identifier;
 
+    // A trial an admin unregistered still passes its deployment request: it must not overwrite the registration, nor
+    // announce a registration that stays inactive.
+    const existingRegistration =
+      await PlatformConfigurationDomain.loadResolvedConfigurationByServiceInstance(
+        deploymentRequest.service_instance_id
+      );
+    if (
+      existingRegistration &&
+      existingRegistration.platformConfiguration.status !==
+        PlatformConfigurationStatus.Active
+    ) {
+      logApp.info('Ignored the auto registration of an unregistered platform', {
+        serviceInstanceId: deploymentRequest.service_instance_id,
+        platformId: input.platform.id,
+      });
+      return;
+    }
+
     if (
       RegistrationHelper.isTenantIdRequired(
         platformIdentifier,
@@ -859,7 +852,7 @@ export const RegistrationApp = {
   },
 };
 
-export const mapAdminRegisteredPlatformRowToGraphQL = (
+const mapAdminRegisteredPlatformRowToGraphQL = (
   row: AdminRegisteredPlatformRow
 ): AdminRegisteredPlatform => {
   const identifier =

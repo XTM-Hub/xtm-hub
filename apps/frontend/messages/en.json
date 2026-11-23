@@ -460,6 +460,7 @@
       "TENANT_ID_NOT_SUPPORTED": "This platform does not support tenants",
       "TOO_MANY_EMAILS": "You can invite at most 50 emails at once",
       "TRANSFER_ME_ERROR": "Error while requesting personal space transfer.",
+      "TRIAL_PLATFORM_CANNOT_BE_UNREGISTERED": "A trial platform cannot be unregistered",
       "UNAUTHENTICATED": "You must be signed in to do this",
       "UNKNOWN_ERROR": "An unknown error occurred",
       "UNREGISTER_PLATFORM_UNKNOWN_ERROR": "An unknown error occurred during platform unregistration",

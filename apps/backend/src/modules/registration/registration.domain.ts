@@ -8,6 +8,7 @@ import {
   DeploymentRequestHubStatus,
   OrderingMode,
   OrganizationCapability,
+  PageInfo,
   PlatformConfigurationStatus,
   PlatformContract,
   PlatformIdentifier,
@@ -16,6 +17,7 @@ import {
   ServiceInstanceCreationStatus,
 } from '../../__generated__/resolvers-types';
 import { requestContext } from '../../context/request.context';
+import DeploymentRequest from '../../model/kanel/public/DeploymentRequest';
 import { DocumentId } from '../../model/kanel/public/Document';
 import Organization, {
   OrganizationId,
@@ -92,8 +94,9 @@ export interface AdminRegisteredPlatformsFilters {
   searchTerm?: string;
 }
 
-export interface AdminRegisteredPlatformsPage {
-  rows: AdminRegisteredPlatformRow[];
+interface OffsetConnection<T> {
+  edges: { cursor: string; node: T }[];
+  pageInfo: PageInfo;
   totalCount: number;
 }
 
@@ -124,6 +127,45 @@ export const ADMIN_REGISTERED_PLATFORMS_SEARCH_TERM_MAX_LENGTH = 100;
 
 const escapeLikePattern = (value: string) => value.replace(/[\\%_]/g, '\\$&');
 
+const ADMIN_REGISTERED_PLATFORMS_MAX_PAGE = 100;
+
+// The cursor of a node is its 1-based position in the whole list, so the cursor of a page's last node is the offset of
+// the next page. Anything unreadable starts from the first page.
+const decodeOffsetCursor = (after?: string | null): number => {
+  if (!after) {
+    return 0;
+  }
+  try {
+    const offset = Number(atob(after));
+    return Number.isSafeInteger(offset) && offset > 0 ? offset : 0;
+  } catch {
+    return 0;
+  }
+};
+
+// Not paginate() from knexfile.ts: it selects PlatformConfiguration.* (the token included) and counts an `id` column
+// that PlatformConfiguration does not have.
+const buildOffsetConnection = <T>(
+  nodes: T[],
+  offset: number,
+  totalCount: number
+): OffsetConnection<T> => {
+  const edges = nodes.map((node, index) => ({
+    cursor: btoa(String(offset + index + 1)),
+    node,
+  }));
+  return {
+    edges,
+    totalCount,
+    pageInfo: {
+      startCursor: edges[0]?.cursor ?? null,
+      endCursor: edges[edges.length - 1]?.cursor ?? null,
+      hasNextPage: offset + nodes.length < totalCount,
+      hasPreviousPage: offset > 0,
+    },
+  };
+};
+
 const getAdminRegisteredPlatformsBaseQuery = () =>
   db<PlatformConfigurationModel>('PlatformConfiguration')
     .join(
@@ -153,7 +195,11 @@ const getAdminRegisteredPlatformsBaseQuery = () =>
       'OwnerSubscription.organization_id'
     )
     .leftJoin('User', 'User.id', '=', 'PlatformConfiguration.registerer_id')
-    .where('ServiceInstance.creation_status', '!=', 'DISABLED')
+    .where(
+      'ServiceInstance.creation_status',
+      '!=',
+      ServiceInstanceCreationStatus.Disabled
+    )
     .whereIn(
       'ServiceDefinition.identifier',
       Object.values(serviceDefinitionIdentifierMappedByPlatformIdentifier)
@@ -293,10 +339,21 @@ export const RegistrationDomain = {
         throw new Error(ErrorCode.RegistrationOnAnotherOrganizationForbidden);
       }
 
-      await securityGuard.assertUserIsAllowedOnOrganization(user, {
-        organizationId: subscription.organization_id,
-        requiredCapability: OrganizationCapability.ManagePlatformRegistration,
-      });
+      // An unregistered platform is up for grabs: its former owner may have left or been removed by an admin, so only
+      // the capability on the target organization, checked above, is required. An active one stays with its owner.
+      const existingRegistration =
+        await PlatformConfigurationDomain.loadResolvedConfigurationByServiceInstance(
+          serviceInstanceId
+        );
+      const isUnregistered =
+        existingRegistration?.platformConfiguration.status ===
+        PlatformConfigurationStatus.Inactive;
+      if (!isUnregistered) {
+        await securityGuard.assertUserIsAllowedOnOrganization(user, {
+          organizationId: subscription.organization_id,
+          requiredCapability: OrganizationCapability.ManagePlatformRegistration,
+        });
+      }
 
       await SubscriptionDomain.transferSubscriptionToOrganization({
         subscriptionId: subscription.id,
@@ -415,20 +472,28 @@ export const RegistrationDomain = {
       );
   },
 
-  // Every organization: the caller is a platform admin, checked by the resolver guard.
-  loadAdminRegisteredPlatforms: async ({
+  // Every organization: the caller is a platform admin, checked by the resolver guard. first is clamped to a page size
+  // the API allows, after is an offset cursor written by this method.
+  loadAdminRegisteredPlatforms: async <T>({
     filters,
-    offset,
-    limit,
+    first,
+    after,
     orderBy,
     orderMode,
+    mapRow,
   }: {
     filters: AdminRegisteredPlatformsFilters;
-    offset: number;
-    limit: number;
+    first: number;
+    after?: string | null;
     orderBy: AdminRegisteredPlatformOrdering;
     orderMode: OrderingMode;
-  }): Promise<AdminRegisteredPlatformsPage> => {
+    mapRow: (row: AdminRegisteredPlatformRow) => T;
+  }): Promise<OffsetConnection<T>> => {
+    const limit = Math.min(
+      Math.max(first, 1),
+      ADMIN_REGISTERED_PLATFORMS_MAX_PAGE
+    );
+    const offset = decodeOffsetCursor(after);
     const filteredQuery = applyAdminRegisteredPlatformsFilters(
       getAdminRegisteredPlatformsBaseQuery(),
       filters
@@ -449,7 +514,25 @@ export const RegistrationDomain = {
       .limit(limit);
 
     const [rows, [countRow]] = await Promise.all([rowsQuery, countQuery]);
-    return { rows, totalCount: Number(countRow?.count ?? 0) };
+    return buildOffsetConnection(
+      rows.map(mapRow),
+      offset,
+      Number(countRow?.count ?? 0)
+    );
+  },
+
+  // Whatever its hub_status or counts_in_orga_quota: a trial request linked to the instance makes it a trial.
+  hasTrialDeploymentRequest: async (
+    serviceInstanceId: ServiceInstanceId
+  ): Promise<boolean> => {
+    const deploymentRequest = await db<DeploymentRequest>('DeploymentRequest')
+      .where({
+        service_instance_id: serviceInstanceId,
+        type: DeploymentRequestDeploymentType.Trial,
+      })
+      .select('id')
+      .first();
+    return !!deploymentRequest;
   },
 
   loadAdminRegisteredPlatform: async (
@@ -482,7 +565,11 @@ export const RegistrationDomain = {
         '=',
         'ServiceInstance.service_definition_id'
       )
-      .where('ServiceInstance.creation_status', '!=', 'DISABLED')
+      .where(
+        'ServiceInstance.creation_status',
+        '!=',
+        ServiceInstanceCreationStatus.Disabled
+      )
       .where('ServiceDefinition.identifier', '=', serviceDefinitionIdentifier)
       .where(
         'PlatformConfiguration.status',
@@ -587,7 +674,11 @@ const getRegisteredPlatformsBaseQuery = () =>
       '=',
       'ServiceInstance.service_definition_id'
     )
-    .where('ServiceInstance.creation_status', '!=', 'DISABLED');
+    .where(
+      'ServiceInstance.creation_status',
+      '!=',
+      ServiceInstanceCreationStatus.Disabled
+    );
 
 const getRegisteredPlatformsDataQuery = ({
   skipOrganizationFilter = false,
