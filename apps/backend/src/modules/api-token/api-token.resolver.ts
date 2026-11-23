@@ -1,6 +1,8 @@
 import {
   ApiToken as GraphqlApiToken,
+  MutationCreateApiTokenArgs,
   MutationResolvers,
+  MutationRevokeApiTokenArgs,
   OrganizationCapability,
   QueryResolvers,
   Resolvers,
@@ -10,12 +12,19 @@ import { OrganizationId } from '../../model/kanel/public/Organization';
 import { UserLoadUserBy } from '../../model/user';
 import { Guarded } from '../../security/guarded/guarded.decorator';
 import {
+  callerIsGuard,
+  sessionCallerGuard,
+} from '../../security/guarded/guards/caller.guard';
+import { allOf, anyOf } from '../../security/guarded/guards/combinators';
+import {
   orgGuard,
   selectedOrganization,
 } from '../../security/guarded/guards/organization.guard';
 import { loggedInGuard } from '../../security/guarded/guards/portal.guard';
+import { fromRecord } from '../../security/guarded/sources';
 import { mapToGraphQLError } from '../../utils/error/error.mapping';
 import { createRelayIdScalar } from '../../utils/scalar.util';
+import { isUuid } from '../../utils/uuid.util';
 import { ApiTokenApp } from './api-token.app';
 import { getApiTokenAuthentication } from './api-token.auth';
 import { ApiTokenDomain, ApiTokenWithNames } from './api-token.domain';
@@ -36,6 +45,17 @@ const toGraphql = (token: ApiTokenWithNames): GraphqlApiToken => ({
   created_at: token.created_at,
   revoked_at: token.revoked_at,
 });
+
+// A malformed id would reach the query as a Postgres error
+export const loadApiTokenOfArgs = ({ id }: MutationRevokeApiTokenArgs) =>
+  isUuid(id)
+    ? ApiTokenDomain.loadById(id as ApiTokenId)
+    : Promise.resolve(undefined);
+
+const tokenOfId = fromRecord(loadApiTokenOfArgs);
+const organizationOfTokenId = tokenOfId.pick(
+  ({ organization_id }) => organization_id
+);
 
 const run = async <T>(call: () => Promise<T>): Promise<T> => {
   try {
@@ -103,8 +123,17 @@ class ApiTokenQueries {
 }
 
 class ApiTokenMutations {
-  // A token cannot create a token: the operation is refused by apiTokenPlugin before it reaches here
-  @Guarded(loggedInGuard())
+  // A token cannot create a token. Membership of the organization is all it takes to make a token for it
+  @Guarded(
+    allOf(
+      sessionCallerGuard(),
+      orgGuard<MutationCreateApiTokenArgs>({
+        organization: (_, { input }) => input.organization_id as OrganizationId,
+        capabilities: [],
+        bypass: false,
+      })
+    )
+  )
   static readonly createApiToken: NonNullable<
     MutationResolvers['createApiToken']
   > = (_, { input }, context) =>
@@ -116,7 +145,27 @@ class ApiTokenMutations {
       return { token, api_token: toGraphql(api_token) };
     });
 
-  @Guarded(loggedInGuard())
+  // The owner revokes a token; so does an administrator of its organization. Both belong to it: a token of another
+  // organization than the calling token's is a stranger's, and a BYPASS user who is not a member is one too
+  @Guarded(
+    allOf(
+      orgGuard<MutationRevokeApiTokenArgs>({
+        organization: organizationOfTokenId,
+        capabilities: [],
+        bypass: false,
+      }),
+      anyOf(
+        callerIsGuard<MutationRevokeApiTokenArgs>({
+          user: tokenOfId.pick(({ user_id }) => user_id),
+        }),
+        orgGuard<MutationRevokeApiTokenArgs>({
+          organization: organizationOfTokenId,
+          capabilities: [OrganizationCapability.AdministrateOrganization],
+          bypass: false,
+        })
+      )
+    )
+  )
   static readonly revokeApiToken: NonNullable<
     MutationResolvers['revokeApiToken']
   > = (_, { id }, context) =>
@@ -124,8 +173,7 @@ class ApiTokenMutations {
       toGraphql(
         await ApiTokenApp.revoke(
           context.user as UserLoadUserBy,
-          id as ApiTokenId,
-          getApiTokenAuthentication(context.req)?.token.organization_id
+          id as ApiTokenId
         )
       )
     );

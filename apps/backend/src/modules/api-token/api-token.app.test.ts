@@ -10,7 +10,6 @@ import { UserId } from '../../model/kanel/public/User';
 import { UserLoadUserBy } from '../../model/user';
 import {
   BadRequestErrorCode,
-  ForbiddenErrorCode,
   NotFoundErrorCode,
 } from '../../utils/error/error.code';
 import { UserDomain } from '../organization-management/user/user-domain/user.domain';
@@ -19,7 +18,6 @@ import { ApiTokenAuthentication, resolveApiToken } from './api-token.auth';
 import { API_TOKEN_MAX_LIFETIME_MS, ApiTokenHelper } from './api-token.helper';
 
 const SECOND = TEST_ORGANIZATIONS.SECOND_ORGANIZATION;
-const FILIGRAN = TEST_ORGANIZATIONS.FILIGRAN;
 const DAY_MS = 24 * 60 * 60 * 1000;
 const UNKNOWN_TOKEN_ID = 'f7a1c0de-0000-4000-8000-000000000099' as ApiTokenId;
 
@@ -89,13 +87,6 @@ describe('api token app create', () => {
     await expect(ApiTokenApp.create(user, input(overrides))).rejects.toThrow(
       BadRequestErrorCode.InvalidApiToken
     );
-  });
-
-  it('should refuse a token for an organization its user does not belong to', async () => {
-    const user = await loadUser(SECOND.USERS.SIMPLE.ID);
-    await expect(
-      ApiTokenApp.create(user, input({ organization_id: FILIGRAN.ID }))
-    ).rejects.toThrow(NotFoundErrorCode.NotFound);
   });
 });
 
@@ -183,142 +174,6 @@ describe('api token app revoke', () => {
     const revoked = await ApiTokenApp.revoke(user, api_token.id);
 
     // Then
-    expect(revoked.revoked_at).toBeInstanceOf(Date);
-  });
-
-  it('should let an administrator of the organization revoke a member token', async () => {
-    // Given
-    const owner = await loadUser(SECOND.USERS.SIMPLE.ID);
-    const admin = await loadUser(SECOND.USERS.ADMIN_ORGA.ID);
-    const { api_token } = await ApiTokenApp.create(owner, input());
-
-    // When
-    const revoked = await ApiTokenApp.revoke(admin, api_token.id);
-
-    // Then
-    expect(revoked.revoked_at).toBeInstanceOf(Date);
-  });
-
-  it('should refuse a member without the organization administration', async () => {
-    // Given
-    const owner = await loadUser(SECOND.USERS.ADMIN_ORGA.ID);
-    const member = await loadUser(SECOND.USERS.SIMPLE.ID);
-    const { api_token } = await ApiTokenApp.create(owner, input());
-
-    // Then
-    await expect(ApiTokenApp.revoke(member, api_token.id)).rejects.toThrow(
-      ForbiddenErrorCode.MissingCapabilityOnOrganization
-    );
-  });
-
-  it('should not disclose the token of another organization', async () => {
-    // Given
-    const owner = await loadUser(SECOND.USERS.SIMPLE.ID);
-    const outsider = await loadUser(FILIGRAN.USERS.SIMPLE2.ID);
-    const { api_token } = await ApiTokenApp.create(owner, input());
-
-    // Then
-    await expect(ApiTokenApp.revoke(outsider, api_token.id)).rejects.toThrow(
-      NotFoundErrorCode.NotFound
-    );
-  });
-
-  it('should let a token revoke an own token of its organization', async () => {
-    // Given
-    const simple = await loadUser(SECOND.USERS.SIMPLE.ID);
-    const caller = await ApiTokenApp.create(simple, input({ name: 'caller' }));
-    const { api_token: target } = await ApiTokenApp.create(
-      simple,
-      input({ name: 'same organization' })
-    );
-    const { user, token } = await authenticate(caller.token);
-
-    // When
-    const revoked = await ApiTokenApp.revoke(
-      user,
-      target.id,
-      token.organization_id
-    );
-
-    // Then
-    expect(revoked).toMatchObject({
-      id: target.id,
-      organization_id: SECOND.ID,
-    });
-    expect(revoked.revoked_at).toBeInstanceOf(Date);
-  });
-
-  it('should answer not found to a token revoking an own token of another organization, and leave it active', async () => {
-    // Given
-    const simple = await loadUser(SECOND.USERS.SIMPLE.ID);
-    const caller = await ApiTokenApp.create(simple, input({ name: 'caller' }));
-    const { api_token: target } = await ApiTokenApp.create(
-      simple,
-      input({
-        name: 'other organization',
-        organization_id: SECOND.USERS.SIMPLE.PERSONAL_SPACE_ID,
-      })
-    );
-    const { user, token } = await authenticate(caller.token);
-
-    // When
-    await expect(
-      ApiTokenApp.revoke(user, target.id, token.organization_id)
-    ).rejects.toThrow(NotFoundErrorCode.NotFound);
-
-    // Then
-    const listed = await ApiTokenApp.listOwn(simple);
-    expect(listed.find(({ id }) => id === target.id)).toMatchObject({
-      id: target.id,
-      revoked_at: null,
-    });
-  });
-
-  it('should answer not found to a token of an administrator revoking the token of another user in another organization, and leave it active', async () => {
-    // Given an administrator of SECOND, whose token is pinned to its personal space, and a token of another user in SECOND
-    const admin = await loadUser(SECOND.USERS.ADMIN_ORGA.ID);
-    const simple = await loadUser(SECOND.USERS.SIMPLE.ID);
-    const { api_token: target } = await ApiTokenApp.create(
-      simple,
-      input({ name: 'another user' })
-    );
-
-    // When the administrator revokes it with that token: the organization check must come before the admin check
-    await expect(
-      ApiTokenApp.revoke(
-        admin,
-        target.id,
-        SECOND.USERS.ADMIN_ORGA.PERSONAL_SPACE_ID
-      )
-    ).rejects.toThrow(NotFoundErrorCode.NotFound);
-
-    // Then
-    const listed = await ApiTokenApp.listOwn(simple);
-    expect(listed.find(({ id }) => id === target.id)).toMatchObject({
-      id: target.id,
-      revoked_at: null,
-    });
-  });
-
-  it('should let a session revoke an own token of any of its organizations', async () => {
-    // Given
-    const simple = await loadUser(SECOND.USERS.SIMPLE.ID);
-    const { api_token: target } = await ApiTokenApp.create(
-      simple,
-      input({
-        name: 'personal space',
-        organization_id: SECOND.USERS.SIMPLE.PERSONAL_SPACE_ID,
-      })
-    );
-
-    // When
-    const revoked = await ApiTokenApp.revoke(simple, target.id);
-
-    // Then
-    expect(revoked).toMatchObject({
-      id: target.id,
-      organization_id: SECOND.USERS.SIMPLE.PERSONAL_SPACE_ID,
-    });
     expect(revoked.revoked_at).toBeInstanceOf(Date);
   });
 

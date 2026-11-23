@@ -21,7 +21,7 @@ import {
 } from './api-token.auth';
 import { ApiTokenDomain, ApiTokenWithNames } from './api-token.domain';
 import { apiTokenPlugin } from './api-token.plugin';
-import resolver from './api-token.resolver';
+import resolver, { loadApiTokenOfArgs } from './api-token.resolver';
 
 vi.mock('./api-token.auth', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./api-token.auth')>()),
@@ -93,6 +93,11 @@ const exposed = {
 beforeEach(() => {
   vi.mocked(getApiTokenAuthentication).mockReturnValue(undefined);
 });
+
+// A direct call of revokeApiToken goes through its guard, which loads the token: its owner is the context user, a
+// member of its organization
+const mockOwnedToken = () =>
+  vi.spyOn(ApiTokenDomain, 'loadById').mockResolvedValue(stored);
 
 describe('api-token.resolver', () => {
   it('should list the own tokens without their hash', async () => {
@@ -243,6 +248,7 @@ describe('api-token.resolver', () => {
 
   it('should revoke a token', async () => {
     // Given
+    mockOwnedToken();
     const revokedAt = new Date();
     vi.spyOn(ApiTokenApp, 'revoke').mockResolvedValue({
       ...stored,
@@ -262,41 +268,37 @@ describe('api-token.resolver', () => {
   });
 
   it.each([
-    {
-      case: 'a session, in any organization',
-      scope: undefined,
-      expected: undefined,
-    },
-    {
-      case: 'a token, in its organization only',
-      scope: ApiTokenScope.ReadWrite,
-      expected: ORGANIZATION.ID,
-    },
-  ])('should revoke for $case', async ({ scope, expected }) => {
-    // Given
-    vi.mocked(getApiTokenAuthentication).mockReturnValue(
-      scope ? authentication(scope) : undefined
-    );
-    vi.spyOn(ApiTokenApp, 'revoke').mockResolvedValue(stored);
+    { case: 'a session', scope: undefined },
+    { case: 'a token', scope: ApiTokenScope.ReadWrite },
+  ])(
+    'should revoke for $case without any organization to pass',
+    async ({ scope }) => {
+      // Given
+      mockOwnedToken();
+      vi.mocked(getApiTokenAuthentication).mockReturnValue(
+        scope ? authentication(scope) : undefined
+      );
+      vi.spyOn(ApiTokenApp, 'revoke').mockResolvedValue(stored);
 
-    // When
-    await resolver.Mutation!.revokeApiToken!(
-      {},
-      { id: TOKEN_ID },
-      contextSimpleUserFiligran2,
-      GRAPHQL_RESOLVE_INFO
-    );
+      // When
+      await resolver.Mutation!.revokeApiToken!(
+        {},
+        { id: TOKEN_ID },
+        contextSimpleUserFiligran2,
+        GRAPHQL_RESOLVE_INFO
+      );
 
-    // Then
-    expect(ApiTokenApp.revoke).toHaveBeenCalledWith(
-      contextSimpleUserFiligran2.user,
-      TOKEN_ID,
-      expected
-    );
-  });
+      // Then
+      expect(ApiTokenApp.revoke).toHaveBeenCalledWith(
+        contextSimpleUserFiligran2.user,
+        TOKEN_ID
+      );
+    }
+  );
 
   it('should map an application error to a GraphQL error', async () => {
     // Given
+    mockOwnedToken();
     vi.spyOn(ApiTokenApp, 'revoke').mockRejectedValue(
       new Error(ForbiddenErrorCode.MissingCapabilityOnOrganization)
     );
@@ -310,6 +312,34 @@ describe('api-token.resolver', () => {
         GRAPHQL_RESOLVE_INFO
       )
     ).rejects.toThrow(ForbiddenErrorCode.MissingCapabilityOnOrganization);
+  });
+});
+
+describe('loadApiTokenOfArgs', () => {
+  it('should load the token the id names', async () => {
+    // Given
+    const loadById = vi
+      .spyOn(ApiTokenDomain, 'loadById')
+      .mockResolvedValue(stored);
+
+    // When
+    const result = await loadApiTokenOfArgs({ id: TOKEN_ID });
+
+    // Then
+    expect(loadById).toHaveBeenCalledExactlyOnceWith(TOKEN_ID);
+    expect(result).toBe(stored);
+  });
+
+  it('should find no token, without a query, for an id that is not a uuid', async () => {
+    // Given
+    const loadById = vi.spyOn(ApiTokenDomain, 'loadById');
+
+    // When
+    const result = await loadApiTokenOfArgs({ id: 'not-a-uuid' as ApiTokenId });
+
+    // Then
+    expect(result).toBeUndefined();
+    expect(loadById).not.toHaveBeenCalled();
   });
 });
 
