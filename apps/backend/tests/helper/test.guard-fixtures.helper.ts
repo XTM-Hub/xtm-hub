@@ -1,7 +1,9 @@
 import {
+  ApiTokenScope,
   OrganizationCapability,
   PortalCapability,
 } from '../../src/__generated__/resolvers-types';
+import type { ApiTokenId } from '../../src/model/kanel/public/ApiToken';
 import type DeploymentRequest from '../../src/model/kanel/public/DeploymentRequest';
 import Organization, {
   OrganizationId,
@@ -13,6 +15,7 @@ import { PLATFORM_USER_UUID, SYSTEM_USER_UUID } from '../../src/portal.const';
 import { Principal } from '../../src/security/guarded/principal';
 
 const USER_ID = 'user-id' as UserId;
+const API_TOKEN_ID = 'api-token-id' as ApiTokenId;
 const ORGANIZATION_ID = 'organization-id' as OrganizationId;
 const OTHER_ORGANIZATION_ID = 'other-organization-id' as OrganizationId;
 const PERSONAL_SPACE_ID = OrganizationHelper.personalSpaceIdOf({
@@ -25,6 +28,8 @@ const buildUserPrincipal = (
     capabilities?: PortalCapability[];
     selectedOrganizationId?: OrganizationId;
     memberships?: Record<string, OrganizationCapability[]>;
+    // A caller authenticated by an API token of this scope
+    apiTokenScope?: ApiTokenScope;
   } = {}
 ): Principal => ({
   kind: 'user',
@@ -39,6 +44,9 @@ const buildUserPrincipal = (
       capabilities,
     })
   ),
+  ...(overrides.apiTokenScope && {
+    apiToken: { id: API_TOKEN_ID, scope: overrides.apiTokenScope },
+  }),
 });
 
 const ANONYMOUS: Principal = { kind: 'anonymous' };

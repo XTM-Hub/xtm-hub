@@ -1,7 +1,12 @@
-import { PortalCapability } from '../../__generated__/resolvers-types';
+import {
+  ApiTokenScope,
+  PortalCapability,
+} from '../../__generated__/resolvers-types';
+import { ApiTokenId } from '../../model/kanel/public/ApiToken';
 import { OrganizationId } from '../../model/kanel/public/Organization';
 import { UserId } from '../../model/kanel/public/User';
 import { UserLoadUserBy } from '../../model/user';
+import { getApiTokenAuthentication } from '../../modules/api-token/api-token.auth';
 import { UserDomain } from '../../modules/organization-management/user/user-domain/user.domain';
 import { AuthHelper } from '../../modules/security-management/capability/auth.helper';
 import {
@@ -42,6 +47,8 @@ export type Principal =
       portalCapabilities: Set<PortalCapability>;
       selectedOrganizationId: OrganizationId;
       memberships: NonNullable<UserLoadUserBy['organization_capabilities']>;
+      // Set when an API token authenticated the request
+      apiToken?: { id: ApiTokenId; scope: ApiTokenScope };
     }
   | {
       kind: 'system';
@@ -152,6 +159,9 @@ export const buildPrincipal = async (
     user.capabilities = await UserDomain.getCapabilities(user.id);
   }
 
+  // The same source as `context.user`, which already is the user narrowed to the token
+  const authentication = getApiTokenAuthentication(context.req);
+
   return {
     kind: 'user',
     actorId: user.id,
@@ -162,5 +172,11 @@ export const buildPrincipal = async (
     ),
     selectedOrganizationId: user.selected_organization_id,
     memberships: user.organization_capabilities ?? [],
+    ...(authentication && {
+      apiToken: {
+        id: authentication.token.id,
+        scope: authentication.token.scope,
+      },
+    }),
   };
 };

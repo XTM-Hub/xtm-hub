@@ -41,10 +41,11 @@ export interface ApiTokenAuthentication {
 // with the token, so it holds across restarts and replicas and keeps nothing in memory.
 const LAST_USED_WRITE_INTERVAL_MS = 60 * 1000;
 
-const authentications = new WeakMap<Request, ApiTokenAuthentication>();
+const authentications = new WeakMap<object, ApiTokenAuthentication>();
 
+// Takes any object: the context of a GraphQL operation carries the Express request, the SSE one does not
 export const getApiTokenAuthentication = (
-  req: Request | undefined
+  req: object | undefined
 ): ApiTokenAuthentication | undefined =>
   req ? authentications.get(req) : undefined;
 
