@@ -58,3 +58,36 @@ export const anyOf = <Args = unknown>(
     },
   });
 };
+
+// Sequential on purpose: the first denial wins, and the last guard's `checked` is the one `.targets()` reads
+export const allOf = <Args = unknown>(
+  first: Guard<Args>,
+  second: Guard<Args>,
+  ...rest: Guard<Args>[]
+): TargetedGuard<Args> => {
+  const guards = [first, second, ...rest];
+  if (
+    guards.some(({ principalFrom }) => principalFrom !== first.principalFrom)
+  ) {
+    throw new Error('allOf needs guards that build the same principal');
+  }
+  return withTargets<Args>({
+    principalFrom: first.principalFrom,
+    check: async (principal, args) => {
+      let last: GuardResult = deny(ForbiddenErrorCode.ForbiddenAccess);
+      for (const guard of guards) {
+        const result: GuardResult | undefined = await guard.check(
+          principal,
+          args
+        );
+        if (result?.allowed !== true) {
+          return result?.allowed === false
+            ? result
+            : deny(ForbiddenErrorCode.ForbiddenAccess);
+        }
+        last = result;
+      }
+      return last;
+    },
+  });
+};

@@ -16,7 +16,7 @@ import { allow, DenialCode, deny, Guard } from '../guard.types';
 import { buildPrincipal } from '../principal';
 import { fromArg } from '../sources';
 import { systemCallerGuard } from './caller.guard';
-import { anyOf } from './combinators';
+import { allOf, anyOf } from './combinators';
 import { orgGuard, selectedOrganization } from './organization.guard';
 import { serviceGuard } from './service.guard';
 
@@ -183,5 +183,93 @@ describe('anyOf', () => {
       code: UnauthenticatedErrorCode.Unauthenticated,
     });
     expect(serviceInstance).not.toHaveBeenCalled();
+  });
+});
+
+describe('allOf', () => {
+  const allowing = (organizationId: string): Guard => ({
+    check: vi.fn(() =>
+      allow({
+        kind: 'organization',
+        organizationId: organizationId as OrganizationId,
+      })
+    ),
+    principalFrom: buildPrincipal,
+  });
+  const denying = (code: DenialCode): Guard => ({
+    check: vi.fn(() => deny(code)),
+    principalFrom: buildPrincipal,
+  });
+
+  it('should return the result of the last guard when every guard allows, each one run in written order', async () => {
+    // Given
+    const first = allowing('first');
+    const second = allowing('second');
+    const guard = allOf(first, second);
+
+    // When
+    const result = await guard.check(buildUserPrincipal(), {});
+
+    // Then
+    expect(result).toEqual({
+      allowed: true,
+      checked: { kind: 'organization', organizationId: 'second' },
+    });
+    expect(first.check).toHaveBeenCalledOnce();
+    expect(second.check).toHaveBeenCalledOnce();
+  });
+
+  it('should refuse with the code of the first denial and not run the next guards', async () => {
+    // Given
+    const next = allowing('next');
+    const guard = allOf(
+      allowing('first'),
+      denying(ForbiddenErrorCode.NotAllowedWithApiToken),
+      denying(UnauthenticatedErrorCode.Unauthenticated),
+      next
+    );
+
+    // When
+    const result = await guard.check(buildUserPrincipal(), {});
+
+    // Then
+    expect(result).toEqual({
+      allowed: false,
+      code: ForbiddenErrorCode.NotAllowedWithApiToken,
+    });
+    expect(next.check).not.toHaveBeenCalled();
+  });
+
+  it('should refuse a guard that returns nothing as FORBIDDEN_ACCESS', async () => {
+    // Given
+    const malformed: Guard = {
+      check: vi.fn().mockReturnValue(undefined),
+      principalFrom: buildPrincipal,
+    };
+    const guard = allOf(allowing('first'), malformed);
+
+    // When
+    const result = await guard.check(buildUserPrincipal(), {});
+
+    // Then
+    expect(result).toEqual({
+      allowed: false,
+      code: ForbiddenErrorCode.ForbiddenAccess,
+    });
+  });
+
+  it('should throw at construction when the guards do not build the same principal', () => {
+    // Given
+    const userGuard = orgGuard({
+      organization: selectedOrganization,
+      capabilities: [],
+    });
+    const machineGuard = systemCallerGuard([PortalCapability.GenerateManifest]);
+
+    // When
+    const build = () => allOf(userGuard, machineGuard);
+
+    // Then
+    expect(build).toThrow('allOf needs guards that build the same principal');
   });
 });
