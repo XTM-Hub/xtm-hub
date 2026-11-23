@@ -36,7 +36,7 @@ export const IntegrationLicenseTypeFilter = ({
           value: LicenseType.Commercial,
         },
       ]}
-      initialValue={licenseTypes}
+      value={licenseTypes}
       noResultString={t('Utils.NotFound')}
       onValueChange={setLicenseTypes}
       analyticsFilter={{

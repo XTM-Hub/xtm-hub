@@ -1670,6 +1670,7 @@
       "Retry": "Réessayer",
       "ViewTab": "Sélectionner l'affichage par onglets",
       "ViewList": "Sélectionner l'affichage sous forme de liste",
+      "ClearAllFilters": "Tout effacer",
       "Filters": "Filtres",
       "FilterInformation": "À propos de ce filtre",
       "Tab": {
