@@ -316,6 +316,37 @@ describe('Register', () => {
     });
   });
 
+  it('should forward a null organization name in the register message when the API returns none', async () => {
+    // Given
+    testState.isPlatformRegistered = {
+      status: PlatformRegistrationStatus.NeverRegistered,
+      platformTitle: null,
+      organization: null,
+    } as IsPlatformRegisteredQuery['isPlatformRegistered'];
+    testState.token = 'my-token';
+    testState.organizationName = null;
+    const postMessage = vi.fn();
+    Object.defineProperty(window, 'opener', {
+      value: { postMessage },
+      writable: true,
+    });
+    const { user } = await renderRegister();
+
+    // When
+    await user.click(screen.getByRole('button', { name: 'mock-confirm' }));
+
+    // Then
+    await waitFor(() => {
+      expect(postMessage).toHaveBeenCalledWith(
+        { action: 'register', token: 'my-token', organizationName: null },
+        PLATFORM_ORIGIN
+      );
+    });
+    expect(
+      screen.getByRole('heading', { name: 'Register.Succeeded.Title' })
+    ).toBeInTheDocument();
+  });
+
   it('should start a single registration when the confirm button is clicked twice before the server answers', async () => {
     // Given
     testState.isPlatformRegistered = {

@@ -26,80 +26,77 @@ import { RegistrationHelper } from './registration.helper';
 
 const HOUR_IN_MS = 60 * 60 * 1000;
 
-interface RefreshResult {
+type ServiceInstanceId = PlatformConfiguration['service_instance_id'];
+
+interface ConnectivityStatus {
   status: PlatformRegistrationConnectivityStatus;
   // Null when no registration matches the platform id and token.
   commercialModel: CommercialModel | null;
-  // Organization the platform is registered in; null when no registration matches the platform id and token.
-  organizationName: string | null;
 }
 
-type ServiceInstanceId = PlatformConfiguration['service_instance_id'];
-
-interface RefreshOutcome extends Omit<RefreshResult, 'organizationName'> {
+interface RefreshOutcome extends ConnectivityStatus {
   // Service instance of the registration the platform id and token matched; null when the token is not valid.
   serviceInstanceId: ServiceInstanceId | null;
+}
+
+interface RefreshResult extends ConnectivityStatus {
+  // Organization the platform is registered in; null when no registration matches the platform id and token.
+  organizationName: string | null;
 }
 
 const isValidPlatformUrl = (url: string): boolean =>
   PlatformUrlSchema.safeParse(url).success;
 
-// One query for every service instance, whatever their number.
+// One query for every service instance, whatever their number. The platform is already refreshed when it runs: a
+// failed lookup leaves the organization names empty rather than failing the refresh.
 const loadOwnerOrganizationNames = async (
+  platformId: string,
   serviceInstanceIds: ServiceInstanceId[]
 ): Promise<Map<ServiceInstanceId, string>> => {
-  const ownerOrganizations =
-    await RegistrationDomain.loadPlatformOwnerOrganizationsByServiceInstanceIds(
-      serviceInstanceIds
-    );
-  return new Map(
-    ownerOrganizations.map((organization) => [
-      organization.service_instance_id,
-      organization.name,
-    ])
-  );
-};
-
-const toRefreshResult = async ({
-  status,
-  commercialModel,
-  serviceInstanceId,
-}: RefreshOutcome): Promise<RefreshResult> => {
-  if (!serviceInstanceId) {
-    return { status, commercialModel, organizationName: null };
-  }
-  const organizationNames = await loadOwnerOrganizationNames([
-    serviceInstanceId,
-  ]);
-  return {
-    status,
-    commercialModel,
-    organizationName: organizationNames.get(serviceInstanceId) ?? null,
-  };
-};
-
-// The tenants are already refreshed: a failed lookup leaves their organization names empty rather than failing them.
-const loadTenantOrganizationNames = async (
-  platformId: string,
-  results: PromiseSettledResult<RefreshOutcome>[]
-): Promise<Map<ServiceInstanceId, string>> => {
-  const serviceInstanceIds = results.flatMap((result) =>
-    result.status === 'fulfilled' && result.value.serviceInstanceId
-      ? [result.value.serviceInstanceId]
-      : []
-  );
   if (serviceInstanceIds.length === 0) {
     return new Map();
   }
   try {
-    return await loadOwnerOrganizationNames(serviceInstanceIds);
+    const ownerOrganizations =
+      await RegistrationDomain.loadPlatformOwnerOrganizationsByServiceInstanceIds(
+        serviceInstanceIds
+      );
+    return new Map(
+      ownerOrganizations.map((organization) => [
+        organization.service_instance_id,
+        organization.name,
+      ])
+    );
   } catch (error) {
-    logApp.error('Failed to load the organizations of the refreshed tenants', {
+    logApp.error('Failed to load the organizations of the refreshed platform', {
       platformId,
       error,
     });
     return new Map();
   }
+};
+
+const findOrganizationName = (
+  organizationNames: Map<ServiceInstanceId, string>,
+  serviceInstanceId: ServiceInstanceId | null
+): string | null =>
+  serviceInstanceId ? (organizationNames.get(serviceInstanceId) ?? null) : null;
+
+const withOwnerOrganizationName = async (
+  platformId: string,
+  { serviceInstanceId, ...connectivityStatus }: RefreshOutcome
+): Promise<RefreshResult> => {
+  const organizationNames = await loadOwnerOrganizationNames(
+    platformId,
+    serviceInstanceId ? [serviceInstanceId] : []
+  );
+  return {
+    ...connectivityStatus,
+    organizationName: findOrganizationName(
+      organizationNames,
+      serviceInstanceId
+    ),
+  };
 };
 
 // Only a legacy OpenAEV registration, made before tenants were required, can move to a tenant. The platform type
@@ -342,7 +339,8 @@ export const RegistrationConnectivityApp = {
   refreshPlatformRegistrationConnectivityStatus: async (
     input: RefreshPlatformRegistrationConnectivityStatusInput
   ): Promise<RefreshResult> =>
-    toRefreshResult(
+    withOwnerOrganizationName(
+      input.platformId,
       await refreshConnectivityStatus({
         platform_identifier: input.platformIdentifier ?? undefined,
         platform_version: input.platformVersion,
@@ -355,7 +353,8 @@ export const RegistrationConnectivityApp = {
   refreshPlatformRegistrationConnectivityStatusSingleTenant: async (
     input: RefreshPlatformRegistrationConnectivityStatusSingleTenantInput
   ): Promise<RefreshResult> =>
-    toRefreshResult(
+    withOwnerOrganizationName(
+      input.platformId,
       await refreshConnectivityStatus({
         platform_identifier: input.platformIdentifier,
         platform_version: input.platformVersion,
@@ -385,22 +384,26 @@ export const RegistrationConnectivityApp = {
         })
       )
     );
-    const organizationNames = await loadTenantOrganizationNames(
+    const organizationNames = await loadOwnerOrganizationNames(
       input.platformId,
-      results
+      results.flatMap((result) =>
+        result.status === 'fulfilled' && result.value.serviceInstanceId
+          ? [result.value.serviceInstanceId]
+          : []
+      )
     );
     const statuses = results.map((result, index) => {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const tenant = input.tenants[index]!;
       if (result.status === 'fulfilled') {
-        const { serviceInstanceId } = result.value;
         return {
           tenantId: tenant.tenantId,
           status: result.value.status,
           commercialModel: result.value.commercialModel,
-          organizationName: serviceInstanceId
-            ? (organizationNames.get(serviceInstanceId) ?? null)
-            : null,
+          organizationName: findOrganizationName(
+            organizationNames,
+            result.value.serviceInstanceId
+          ),
         };
       }
       logApp.error(

@@ -288,7 +288,10 @@ export const RegistrationApp = {
     organizationId,
     platform,
     identifier,
-  }: RegisterPlatformInput): Promise<string> => {
+  }: RegisterPlatformInput): Promise<{
+    token: string;
+    organizationName: string | null;
+  }> => {
     const user = requestContext.requireUser();
     const token = uuidv4();
 
@@ -345,6 +348,11 @@ export const RegistrationApp = {
       throw new Error(BadRequestErrorCode.TenantIdMandatory);
     }
 
+    // Loaded before the registration is saved: a failed read must not lose the token of a saved registration.
+    const selectedOrga = await OrganizationDomain.loadOrganizationBy({
+      id: organizationId as OrganizationId,
+    });
+
     const serviceInstanceId = await withTransaction(async () => {
       if (platformConfiguration) {
         await RegistrationDomain.refreshExistingPlatform({
@@ -396,9 +404,6 @@ export const RegistrationApp = {
     );
 
     try {
-      const selectedOrga = await OrganizationDomain.loadOrganizationBy({
-        id: organizationId as OrganizationId,
-      });
       if (!selectedOrga) {
         throw new Error(NotFoundErrorCode.OrganizationNotFound);
       }
@@ -421,7 +426,7 @@ export const RegistrationApp = {
       });
     }
 
-    return token;
+    return { token, organizationName: selectedOrga?.name ?? null };
   },
 
   unregisterPlatform: async ({
