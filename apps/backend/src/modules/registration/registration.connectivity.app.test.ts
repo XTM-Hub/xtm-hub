@@ -1213,6 +1213,46 @@ describe('registration connectivity app', () => {
       expect(config?.status).toBe(PlatformConfigurationStatus.Active);
     });
 
+    it('should deactivate nothing when the only submitted tenant is unregistered', async () => {
+      // Given
+      const platformId = uuidv4();
+      const unregisteredTenantId = uuidv4();
+      const omittedTenantId = uuidv4();
+      const unregisteredToken = await registerOpenaevTenant(
+        platformId,
+        unregisteredTenantId
+      );
+      await registerOpenaevTenant(platformId, omittedTenantId);
+      const unregistered = await loadTenantConfiguration(
+        platformId,
+        unregisteredTenantId
+      );
+      await PlatformConfigurationDomain.updateConfiguration(
+        unregistered!.service_instance_id,
+        { status: PlatformConfigurationStatus.Inactive }
+      );
+      await ageLastConnectivityCheck(platformId, omittedTenantId, 4);
+
+      // When
+      const result = await refreshAllTenants(platformId, [
+        { tenantId: unregisteredTenantId, token: unregisteredToken },
+      ]);
+
+      // Then
+      expect(result.statuses).toEqual([
+        {
+          tenantId: unregisteredTenantId,
+          status: PlatformRegistrationConnectivityStatus.Inactive,
+          commercialModel: CommercialModel.Other,
+        },
+      ]);
+      const omitted = await loadTenantConfiguration(
+        platformId,
+        omittedTenantId
+      );
+      expect(omitted?.status).toBe(PlatformConfigurationStatus.Active);
+    });
+
     it('should keep an omitted tenant active when its instance refreshed it within the silence threshold', async () => {
       // Given
       const platformId = uuidv4();

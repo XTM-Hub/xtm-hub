@@ -162,19 +162,18 @@ describe('createPlatformTokenResolver', () => {
       );
     });
 
-    it('should refuse the token of an unregistered registration', async () => {
-      // Given
+    it('should only look for an active registration, so the token of an unregistered one is refused', async () => {
+      // Given the loader finds no active registration for the credentials
       vi.spyOn(
         DeploymentRequestDomain,
         'loadDeploymentRequestBy'
       ).mockResolvedValue(undefined);
-      vi.spyOn(
-        PlatformConfigurationDomain,
-        'loadConfigurationByPlatformAndToken'
-      ).mockResolvedValue({
-        service_instance_id: uuidv4(),
-        status: PlatformConfigurationStatus.Inactive,
-      } as PlatformConfiguration);
+      const loadConfigurationSpy = vi
+        .spyOn(
+          PlatformConfigurationDomain,
+          'loadConfigurationByPlatformAndToken'
+        )
+        .mockResolvedValue(undefined);
       const subscribedOrganizationSpy = vi.spyOn(
         OrganizationDomain,
         'loadOrganizationSubscribedToServiceInstance'
@@ -188,6 +187,11 @@ describe('createPlatformTokenResolver', () => {
 
       // Then
       await expect(call).rejects.toMatchObject(INVALID_PLATFORM_TOKEN_ERROR);
+      expect(loadConfigurationSpy).toHaveBeenCalledExactlyOnceWith({
+        platform_id: platformId,
+        token: platformToken,
+        activeOnly: true,
+      });
       expect(subscribedOrganizationSpy).not.toHaveBeenCalled();
       expect(resolverSpy).not.toHaveBeenCalled();
     });
@@ -198,10 +202,7 @@ describe('createPlatformTokenResolver', () => {
       vi.spyOn(
         PlatformConfigurationDomain,
         'loadConfigurationByPlatformAndToken'
-      ).mockResolvedValue({
-        service_instance_id: uuidv4(),
-        status: PlatformConfigurationStatus.Inactive,
-      } as PlatformConfiguration);
+      ).mockResolvedValue(undefined);
       vi.spyOn(
         DeploymentRequestDomain,
         'loadDeploymentRequestBy'

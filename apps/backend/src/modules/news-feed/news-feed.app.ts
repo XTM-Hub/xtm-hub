@@ -5,7 +5,6 @@ import {
   DocumentStatus,
   NewsFeedItemMetadataKey,
   NewsFeedItemType,
-  PlatformConfigurationStatus,
   PlatformIdentifier,
   ServiceDefinitionIdentifier,
 } from '../../__generated__/resolvers-types';
@@ -325,18 +324,16 @@ export const NewsFeedApp = {
       throw new Error(ErrorCode.InvalidPlatformId);
     }
 
+    // An unregistered platform gets no more items, even through a trial deployment request
     const resolvedConfiguration =
       await PlatformConfigurationDomain.loadResolvedConfigurationByPlatformAndToken(
         {
           platform_id: platformId,
           token,
+          activeOnly: true,
         }
       );
-    // An unregistered platform gets no more items, even through a trial deployment request
-    if (
-      resolvedConfiguration?.platformConfiguration.status !==
-      PlatformConfigurationStatus.Active
-    ) {
+    if (!resolvedConfiguration) {
       throw new Error(ErrorCode.PlatformNotRegistered);
     }
 

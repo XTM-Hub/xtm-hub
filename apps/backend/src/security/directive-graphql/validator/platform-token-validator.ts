@@ -1,10 +1,7 @@
 import express from 'express';
 import { GraphQLFieldResolver } from 'graphql';
 import { v4 as uuidv4 } from 'uuid';
-import {
-  OrganizationCapability,
-  PlatformConfigurationStatus,
-} from '../../../__generated__/resolvers-types';
+import { OrganizationCapability } from '../../../__generated__/resolvers-types';
 import { requestContext } from '../../../context/request.context';
 import { PortalContext } from '../../../model/portal-context';
 import { UserLoadUserBy } from '../../../model/user';
@@ -48,14 +45,15 @@ const loadOrganizationFromPlatformIdAndTokenHeaders = async (
   }
   const { token, platform_id } = extractedAuth;
 
+  // An unregistered (inactive) registration no longer authenticates its platform. A Hub-deployed trial still does
+  // through its deployment request, below.
   const platformConfiguration =
     await PlatformConfigurationDomain.loadConfigurationByPlatformAndToken({
       platform_id,
       token,
+      activeOnly: true,
     });
-  // An unregistered (inactive) registration no longer authenticates its platform. A Hub-deployed trial still does
-  // through its deployment request, below.
-  if (platformConfiguration?.status === PlatformConfigurationStatus.Active) {
+  if (platformConfiguration) {
     const organization =
       await OrganizationDomain.loadOrganizationSubscribedToServiceInstance(
         platformConfiguration.service_instance_id

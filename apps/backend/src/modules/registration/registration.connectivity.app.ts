@@ -32,7 +32,7 @@ interface RefreshResult {
 }
 
 interface RefreshOutcome extends RefreshResult {
-  // True when the platform id and token matched a registration.
+  // True when the platform id and token matched an active registration: an unregistered one authenticates nothing.
   isTokenValid: boolean;
 }
 
@@ -62,13 +62,12 @@ const handleTenantUpgrade = async ({
         platform_id,
         token,
         withoutTenantId: true,
+        activeOnly: true,
       }
     );
 
   if (
-    resolvedConfigWithoutTenant?.platformConfiguration.status ===
-      PlatformConfigurationStatus.Active &&
-    resolvedConfigWithoutTenant.platformIdentifier ===
+    resolvedConfigWithoutTenant?.platformIdentifier ===
       PlatformIdentifier.Openaev &&
     !RegistrationHelper.isTenantIdRequired(
       PlatformIdentifier.Openaev,
@@ -258,7 +257,8 @@ const refreshConnectivityStatus = async ({
     };
   }
 
-  // An unregistered (inactive) registration only learns its status: what the platform sends no longer changes it.
+  // An unregistered (inactive) registration only learns its status: what the platform sends no longer changes it, and
+  // its token no longer vouches for the platform. It is loaded without activeOnly to answer inactive, not not-found.
   if (platformConfiguration.status !== PlatformConfigurationStatus.Active) {
     await PlatformConfigurationDomain.updateConfiguration(
       platformConfiguration.service_instance_id,
@@ -267,7 +267,7 @@ const refreshConnectivityStatus = async ({
     return {
       status: PlatformRegistrationConnectivityStatus.Inactive,
       commercialModel: platformConfiguration.commercial_model,
-      isTokenValid: true,
+      isTokenValid: false,
     };
   }
 

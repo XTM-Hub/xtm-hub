@@ -145,16 +145,19 @@ export const PlatformConfigurationDomain = {
     return success;
   },
 
+  // activeOnly: only an active registration authenticates its platform, an unregistered one matches nothing.
   loadConfigurationByPlatformAndToken: async ({
     platform_id,
     token,
     tenant_id,
     withoutTenantId,
+    activeOnly,
   }: {
     platform_id: string;
     token: string;
     tenant_id?: string;
     withoutTenantId?: boolean;
+    activeOnly?: boolean;
   }): Promise<PlatformConfiguration | undefined> => {
     if (!areCredentialsUuids({ platform_id, token, tenant_id })) {
       return undefined;
@@ -163,6 +166,10 @@ export const PlatformConfigurationDomain = {
     const qb = db<PlatformConfiguration>('PlatformConfiguration')
       .where('platform_id', '=', platform_id)
       .where('token', '=', token);
+
+    if (activeOnly) {
+      qb.where('status', '=', PlatformConfigurationStatus.Active);
+    }
 
     if (tenant_id) {
       qb.where('tenant_id', '=', tenant_id);
@@ -284,16 +291,19 @@ export const PlatformConfigurationDomain = {
     return row ? resolvePlatformFromJoinedRow(row) : undefined;
   },
 
+  // activeOnly: see loadConfigurationByPlatformAndToken.
   loadResolvedConfigurationByPlatformAndToken: async ({
     platform_id,
     token,
     tenant_id,
     withoutTenantId,
+    activeOnly,
   }: {
     platform_id: string;
     token: string;
     tenant_id?: string;
     withoutTenantId?: boolean;
+    activeOnly?: boolean;
   }): Promise<FullPlatformConfiguration | undefined> => {
     if (!areCredentialsUuids({ platform_id, token, tenant_id })) {
       return undefined;
@@ -302,6 +312,14 @@ export const PlatformConfigurationDomain = {
     const qb = buildJoinedConfigurationQuery()
       .where('PlatformConfiguration.platform_id', '=', platform_id)
       .where('PlatformConfiguration.token', '=', token);
+
+    if (activeOnly) {
+      qb.where(
+        'PlatformConfiguration.status',
+        '=',
+        PlatformConfigurationStatus.Active
+      );
+    }
 
     if (tenant_id) {
       qb.where('PlatformConfiguration.tenant_id', '=', tenant_id);
