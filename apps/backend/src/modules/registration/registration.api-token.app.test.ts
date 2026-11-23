@@ -77,6 +77,22 @@ describe('registration app with an API token', () => {
     return platformId;
   };
 
+  // A platform registered in the second organization from a session, through registerPlatform
+  const registerPlatformInSecondOrganization = async () => {
+    const platform = buildPlatform();
+    requestContext.set(requestContextRegistererUserSecondOrga);
+    await RegistrationApp.registerPlatform({
+      organizationId: SECOND_ORGANIZATION_ID,
+      platform,
+      identifier: PlatformIdentifier.Opencti,
+    });
+    const registered = await TestHelper.platformConfiguration.load({
+      platform_id: platform.id,
+    });
+    serviceInstanceIds.push(registered!.service_instance_id);
+    return platform;
+  };
+
   const removePlatforms = async () => {
     for (const id of serviceInstanceIds) {
       await TestHelper.platformConfiguration.delete({
@@ -126,18 +142,8 @@ describe('registration app with an API token', () => {
   });
 
   it('should refuse unregistering a platform of an organization other than the token one', async () => {
-    // Given a platform registered in the second organization from a session
-    const platform = buildPlatform();
-    requestContext.set(requestContextRegistererUserSecondOrga);
-    await RegistrationApp.registerPlatform({
-      organizationId: SECOND_ORGANIZATION_ID,
-      platform,
-      identifier: PlatformIdentifier.Opencti,
-    });
-    const registered = await TestHelper.platformConfiguration.load({
-      platform_id: platform.id,
-    });
-    serviceInstanceIds.push(registered!.service_instance_id);
+    // Given
+    const platform = await registerPlatformInSecondOrganization();
     await TestHelper.apiToken.actAs(
       user.id,
       otherOrganization.id,
@@ -244,14 +250,8 @@ describe('registration app with an API token', () => {
   );
 
   it('should refuse unregistering a platform of the token organization with a read_write token', async () => {
-    // Given a platform registered in the second organization from a session
-    const platform = buildPlatform();
-    requestContext.set(requestContextRegistererUserSecondOrga);
-    await RegistrationApp.registerPlatform({
-      organizationId: SECOND_ORGANIZATION_ID,
-      platform,
-      identifier: PlatformIdentifier.Opencti,
-    });
+    // Given
+    const platform = await registerPlatformInSecondOrganization();
     await TestHelper.apiToken.actAs(
       user.id,
       SECOND_ORGANIZATION_ID,
