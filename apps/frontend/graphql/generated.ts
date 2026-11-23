@@ -2536,6 +2536,7 @@ export type RefreshPlatformRegistrationConnectivityStatusInput = {
 export type RefreshPlatformRegistrationConnectivityStatusResponse = {
   __typename?: 'RefreshPlatformRegistrationConnectivityStatusResponse';
   commercialModel: Maybe<CommercialModel>;
+  organizationName: Maybe<Scalars['String']['output']>;
   status: PlatformRegistrationConnectivityStatus;
 };
 
@@ -2614,6 +2615,7 @@ export type RegisteredSaasPlatformDataInput = {
 
 export type RegistrationResponse = {
   __typename?: 'RegistrationResponse';
+  organizationName: Maybe<Scalars['String']['output']>;
   token: Scalars['String']['output'];
 };
 
@@ -3196,6 +3198,7 @@ export type TenantDetails = {
 export type TenantStatus = {
   __typename?: 'TenantStatus';
   commercialModel: Maybe<CommercialModel>;
+  organizationName: Maybe<Scalars['String']['output']>;
   status: PlatformRegistrationConnectivityStatus;
   tenantId: Scalars['String']['output'];
 };
@@ -4225,7 +4228,7 @@ export type RegisterPlatformMutationVariables = Exact<{
 }>;
 
 
-export type RegisterPlatformMutation = { __typename?: 'Mutation', registerPlatform: { __typename?: 'RegistrationResponse', token: string } };
+export type RegisterPlatformMutation = { __typename?: 'Mutation', registerPlatform: { __typename?: 'RegistrationResponse', token: string, organizationName: string | null } };
 
 export type RegisteredPlatformsQueryVariables = Exact<{
   input: RegisteredPlatformsInput;
@@ -8424,6 +8427,7 @@ export const RegisterPlatformDocument = `
     mutation RegisterPlatform($input: RegisterPlatformInput!) {
   registerPlatform(input: $input) {
     token
+    organizationName
   }
 }
     `;

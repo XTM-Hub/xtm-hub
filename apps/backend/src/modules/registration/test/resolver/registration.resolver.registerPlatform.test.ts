@@ -94,6 +94,38 @@ describe('mutation.registerPlatform', () => {
     expect(result).toMatchObject({ token: generatedToken });
   });
 
+  it('should return the name of the organization the platform was registered in', async () => {
+    // Given
+    const input: RegisterPlatformInput = {
+      organizationId: toGlobalId(
+        'Organization',
+        TEST_ORGANIZATIONS.FILIGRAN.ID
+      ),
+      platform: {
+        id: uuidv4(),
+        url: 'http://example.com',
+        title: 'My Platform',
+        contract: PlatformContract.Ee,
+        version: '1.0.0',
+      },
+      identifier: PlatformIdentifier.Opencti,
+    };
+    vi.spyOn(RegistrationApp, 'registerPlatform').mockResolvedValue(uuidv4());
+
+    // When
+    const result = await registrationResolver.Mutation!.registerPlatform!(
+      {},
+      { input },
+      contextSimpleUserFiligran2,
+      GRAPHQL_RESOLVE_INFO
+    );
+
+    // Then
+    expect(result).toMatchObject({
+      organizationName: TEST_ORGANIZATIONS.FILIGRAN.NAME,
+    });
+  });
+
   it('should map to BadRequest for InvalidPlatformVersion error', async () => {
     // Given
     const input: RegisterPlatformInput = {

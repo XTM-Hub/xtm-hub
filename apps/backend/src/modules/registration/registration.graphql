@@ -54,6 +54,7 @@ input CanUnregisterPlatformInput {
 
 type RegistrationResponse {
   token: String!
+  organizationName: String
 }
 
 enum PlatformRegistrationStatus {
@@ -134,12 +135,14 @@ input RefreshPlatformRegistrationConnectivityStatusAllTenantsInput {
 type RefreshPlatformRegistrationConnectivityStatusResponse {
   status: PlatformRegistrationConnectivityStatus!
   commercialModel: CommercialModel
+  organizationName: String
 }
 
 type TenantStatus {
   tenantId: String!
   status: PlatformRegistrationConnectivityStatus!
   commercialModel: CommercialModel
+  organizationName: String
 }
 
 type RefreshPlatformRegistrationConnectivityStatusAllTenantsResponse {

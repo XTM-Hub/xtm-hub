@@ -13,6 +13,7 @@ import {
   PlatformIdentifier,
   PlatformInput,
   PlatformRegistrationStatus,
+  RegisterPlatformMutation,
   useRegisterPlatformMutation,
   useUserOrganizationsQuery,
 } from '@graphql/generated';
@@ -42,12 +43,15 @@ interface State {
   registrationRequestStatus: RegistrationRequestStatus;
   chosenOrganizationId?: string;
   /** What the platform gets back once registered. */
-  registrationToken: string | null;
+  registration: RegisterPlatformMutation['registerPlatform'] | null;
 }
 
 type Action =
   | { type: 'SET_ORGANIZATION_ID'; payload: string }
-  | { type: 'SET_REGISTRATION_TOKEN'; payload: string }
+  | {
+      type: 'SET_REGISTRATION';
+      payload: RegisterPlatformMutation['registerPlatform'];
+    }
   | { type: 'SET_STATUS'; payload: RegistrationRequestStatus }
   | { type: 'SET_SUCCEEDED' };
 
@@ -55,8 +59,8 @@ const reducer = (state: State, action: Action): State => {
   switch (action.type) {
     case 'SET_ORGANIZATION_ID':
       return { ...state, chosenOrganizationId: action.payload };
-    case 'SET_REGISTRATION_TOKEN':
-      return { ...state, registrationToken: action.payload };
+    case 'SET_REGISTRATION':
+      return { ...state, registration: action.payload };
     case 'SET_STATUS':
       return { ...state, registrationRequestStatus: action.payload };
     case 'SET_SUCCEEDED':
@@ -69,7 +73,7 @@ const reducer = (state: State, action: Action): State => {
 const initialState: State = {
   registrationRequestStatus: 'idle',
   chosenOrganizationId: undefined,
-  registrationToken: null,
+  registration: null,
 };
 
 export const Register = ({
@@ -134,8 +138,8 @@ export const Register = ({
         {
           onSuccess: (response) => {
             dispatch({
-              type: 'SET_REGISTRATION_TOKEN',
-              payload: response.registerPlatform.token,
+              type: 'SET_REGISTRATION',
+              payload: response.registerPlatform,
             });
           },
           onError: (error) => {
@@ -160,15 +164,16 @@ export const Register = ({
   );
 
   useLayoutEffect(() => {
-    if (state.registrationToken && !hasPostedMessageRef.current) {
+    if (state.registration && !hasPostedMessageRef.current) {
       hasPostedMessageRef.current = true;
       postMessageToPlatform({
         action: 'register',
-        token: state.registrationToken,
+        token: state.registration.token,
+        organizationName: state.registration.organizationName,
       });
       dispatch({ type: 'SET_SUCCEEDED' });
     }
-  }, [state.registrationToken, postMessageToPlatform]);
+  }, [state.registration, postMessageToPlatform]);
 
   useLayoutEffect(() => {
     const { status, organization } = isPlatformRegistered;

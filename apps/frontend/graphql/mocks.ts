@@ -1653,6 +1653,7 @@ export const mockRefreshPlatformRegistrationConnectivityStatusResponse = (overri
     return {
         __typename: 'RefreshPlatformRegistrationConnectivityStatusResponse',
         commercialModel: overrides && overrides.hasOwnProperty('commercialModel') ? overrides.commercialModel! : CommercialModel.Other,
+        organizationName: overrides && overrides.hasOwnProperty('organizationName') ? overrides.organizationName! : 'tepidus',
         status: overrides && overrides.hasOwnProperty('status') ? overrides.status! : PlatformRegistrationConnectivityStatus.Active,
     };
 };
@@ -1771,6 +1772,7 @@ export const mockRegistrationResponse = (overrides?: Partial<RegistrationRespons
     relationshipsToOmit.add('RegistrationResponse');
     return {
         __typename: 'RegistrationResponse',
+        organizationName: overrides && overrides.hasOwnProperty('organizationName') ? overrides.organizationName! : 'degusto',
         token: overrides && overrides.hasOwnProperty('token') ? overrides.token! : 'cedo',
     };
 };
@@ -2391,6 +2393,7 @@ export const mockTenantStatus = (overrides?: Partial<TenantStatus>, _relationshi
     return {
         __typename: 'TenantStatus',
         commercialModel: overrides && overrides.hasOwnProperty('commercialModel') ? overrides.commercialModel! : CommercialModel.Other,
+        organizationName: overrides && overrides.hasOwnProperty('organizationName') ? overrides.organizationName! : 'talio',
         status: overrides && overrides.hasOwnProperty('status') ? overrides.status! : PlatformRegistrationConnectivityStatus.Active,
         tenantId: overrides && overrides.hasOwnProperty('tenantId') ? overrides.tenantId! : 'volubilis',
     };

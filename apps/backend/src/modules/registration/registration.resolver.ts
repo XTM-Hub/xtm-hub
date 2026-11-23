@@ -3,6 +3,7 @@ import {
   AutoRegisterPlatformInput,
   Resolvers,
 } from '../../__generated__/resolvers-types';
+import { OrganizationId } from '../../model/kanel/public/Organization';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { PortalContext } from '../../model/portal-context';
 import { getErrorMessage } from '../../utils/error/error-guard.util';
@@ -15,6 +16,7 @@ import { mapToGraphQLError } from '../../utils/error/error.mapping';
 import { BadRequestError } from '../../utils/error/error.util';
 import { DeploymentRequestDomain } from '../deployment/deployment.domain';
 import { ServiceGroupApp } from '../deployment/group/service-group.app';
+import { OrganizationDomain } from '../organization-management/organization/organization.domain';
 import { extractPlatformToken } from '../security-management/token/platform-token.util';
 import { ServiceInstanceDomain } from '../service/instance/service-instance.domain';
 import { RegistrationApp } from './registration.app';
@@ -119,7 +121,10 @@ const resolvers: Resolvers = {
           organizationId,
         };
         const token = await RegistrationApp.registerPlatform(payload);
-        return { token };
+        const organization = await OrganizationDomain.loadOrganizationBy({
+          id: organizationId as OrganizationId,
+        });
+        return { token, organizationName: organization?.name ?? null };
       } catch (error) {
         throw mapToGraphQLError(
           error,

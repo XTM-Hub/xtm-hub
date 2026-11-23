@@ -12,6 +12,7 @@ import {
 import { TestHelper } from '../../../tests/helper/test.helper';
 import {
   requestContextRegistererUserSecondOrga,
+  requestContextSimpleUserFiligran2,
   TEST_ORGANIZATIONS,
 } from '../../../tests/tests.const';
 import {
@@ -31,6 +32,7 @@ import { NewsFeedDomain } from '../news-feed/news-feed.domain';
 import { PlatformConfigurationDomain } from './platform-configuration/platform-configuration.domain';
 import { RegistrationApp } from './registration.app';
 import { RegistrationConnectivityApp } from './registration.connectivity.app';
+import { RegistrationDomain } from './registration.domain';
 
 const HOUR_IN_MS = 60 * 60 * 1000;
 
@@ -257,6 +259,7 @@ describe('registration connectivity app', () => {
       expect(result).toEqual({
         status: PlatformRegistrationConnectivityStatus.Active,
         commercialModel: CommercialModel.Saas,
+        organizationName: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.NAME,
       });
     });
 
@@ -276,7 +279,41 @@ describe('registration connectivity app', () => {
       expect(result).toEqual({
         status: PlatformRegistrationConnectivityStatus.NotFound,
         commercialModel: null,
+        organizationName: null,
       });
+    });
+
+    it('should return the name of the organization the platform is registered in, not the one of the caller', async () => {
+      // Given
+      const platformId = uuidv4();
+      const token = await RegistrationApp.registerPlatform({
+        organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        platform: {
+          id: platformId,
+          url: 'http://example.com',
+          contract: PlatformContract.Ee,
+          title: 'Fake title',
+          version: '6.7.18',
+        },
+        identifier: PlatformIdentifier.Opencti,
+      });
+      requestContext.set(requestContextSimpleUserFiligran2);
+
+      // When
+      const result =
+        await RegistrationConnectivityApp.refreshPlatformRegistrationConnectivityStatus(
+          {
+            platformId,
+            token,
+            platformVersion: '6.7.18',
+            platformIdentifier: PlatformIdentifier.Opencti,
+          }
+        );
+
+      // Then
+      expect(result.organizationName).toBe(
+        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.NAME
+      );
     });
 
     it('should return active when platform is registered and update version', async () => {
@@ -436,6 +473,7 @@ describe('registration connectivity app', () => {
       expect(result).toEqual({
         status: PlatformRegistrationConnectivityStatus.Active,
         commercialModel: CommercialModel.Saas,
+        organizationName: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.NAME,
       });
     });
 
@@ -806,6 +844,10 @@ describe('registration connectivity app', () => {
   });
 
   describe('refreshPlatformRegistrationConnectivityStatusAllTenants', () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
     it('should return inactive for all tenants when version is not formatted as a semantic version', async () => {
       const tenantId = uuidv4();
       const result =
@@ -830,6 +872,7 @@ describe('registration connectivity app', () => {
         tenantId,
         status: PlatformRegistrationConnectivityStatus.Inactive,
         commercialModel: null,
+        organizationName: null,
       });
     });
 
@@ -898,11 +941,13 @@ describe('registration connectivity app', () => {
             tenantId: tenantId1,
             status: PlatformRegistrationConnectivityStatus.Active,
             commercialModel: CommercialModel.Other,
+            organizationName: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.NAME,
           },
           {
             tenantId: tenantId2,
             status: PlatformRegistrationConnectivityStatus.Active,
             commercialModel: CommercialModel.Other,
+            organizationName: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.NAME,
           },
         ])
       );
@@ -949,6 +994,63 @@ describe('registration connectivity app', () => {
           tenantId,
           status: PlatformRegistrationConnectivityStatus.NotFound,
           commercialModel: null,
+          organizationName: null,
+        },
+      ]);
+    });
+
+    it('should load the organizations of every refreshed tenant in a single query', async () => {
+      // Given
+      const platformId = uuidv4();
+      const tenantIds = [uuidv4(), uuidv4(), uuidv4()];
+      const tokens = await Promise.all(
+        tenantIds.map((tenantId) => registerOpenaevTenant(platformId, tenantId))
+      );
+      const ownerOrganizationsSpy = vi.spyOn(
+        RegistrationDomain,
+        'loadPlatformOwnerOrganizationsByServiceInstanceIds'
+      );
+
+      // When
+      const result = await refreshAllTenants(
+        platformId,
+        tenantIds.map((tenantId, index) => ({
+          tenantId,
+          token: tokens[index]!,
+        }))
+      );
+
+      // Then
+      expect(ownerOrganizationsSpy).toHaveBeenCalledTimes(1);
+      expect(ownerOrganizationsSpy.mock.calls[0]![0]).toHaveLength(3);
+      expect(result.statuses.map((s) => s.organizationName)).toEqual([
+        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.NAME,
+        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.NAME,
+        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.NAME,
+      ]);
+    });
+
+    it('should keep the tenant statuses without organization names when the organization lookup fails', async () => {
+      // Given
+      const platformId = uuidv4();
+      const tenantId = uuidv4();
+      const token = await registerOpenaevTenant(platformId, tenantId);
+      vi.spyOn(
+        RegistrationDomain,
+        'loadPlatformOwnerOrganizationsByServiceInstanceIds'
+      ).mockRejectedValue(new Error('database unavailable'));
+      vi.spyOn(logApp, 'error').mockImplementation(() => logApp);
+
+      // When
+      const result = await refreshAllTenants(platformId, [{ tenantId, token }]);
+
+      // Then
+      expect(result.statuses).toEqual([
+        {
+          tenantId,
+          status: PlatformRegistrationConnectivityStatus.Active,
+          commercialModel: CommercialModel.Other,
+          organizationName: null,
         },
       ]);
     });
@@ -982,11 +1084,13 @@ describe('registration connectivity app', () => {
             tenantId: saasTenantId,
             status: PlatformRegistrationConnectivityStatus.Active,
             commercialModel: CommercialModel.Saas,
+            organizationName: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.NAME,
           },
           {
             tenantId: otherTenantId,
             status: PlatformRegistrationConnectivityStatus.Active,
             commercialModel: CommercialModel.Other,
+            organizationName: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.NAME,
           },
         ])
       );
@@ -1056,11 +1160,13 @@ describe('registration connectivity app', () => {
             tenantId,
             status: PlatformRegistrationConnectivityStatus.Active,
             commercialModel: CommercialModel.Other,
+            organizationName: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.NAME,
           },
           {
             tenantId: failingTenantId,
             status: PlatformRegistrationConnectivityStatus.NotFound,
             commercialModel: null,
+            organizationName: null,
           },
         ])
       );
@@ -1122,6 +1228,7 @@ describe('registration connectivity app', () => {
         tenantId: tenantId1,
         status: PlatformRegistrationConnectivityStatus.Active,
         commercialModel: CommercialModel.Other,
+        organizationName: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.NAME,
       });
 
       const staleConfig =
@@ -1223,6 +1330,7 @@ describe('registration connectivity app', () => {
             tenantId: omittedTenantId,
             status: PlatformRegistrationConnectivityStatus.Inactive,
             commercialModel: CommercialModel.Other,
+            organizationName: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.NAME,
           },
         ])
       );

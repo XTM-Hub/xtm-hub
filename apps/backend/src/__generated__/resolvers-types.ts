@@ -2529,6 +2529,7 @@ export type RefreshPlatformRegistrationConnectivityStatusInput = {
 export type RefreshPlatformRegistrationConnectivityStatusResponse = {
   __typename?: 'RefreshPlatformRegistrationConnectivityStatusResponse';
   commercialModel?: Maybe<CommercialModel>;
+  organizationName?: Maybe<Scalars['String']['output']>;
   status: PlatformRegistrationConnectivityStatus;
 };
 
@@ -2607,6 +2608,7 @@ export type RegisteredSaasPlatformDataInput = {
 
 export type RegistrationResponse = {
   __typename?: 'RegistrationResponse';
+  organizationName?: Maybe<Scalars['String']['output']>;
   token: Scalars['String']['output'];
 };
 
@@ -3189,6 +3191,7 @@ export type TenantDetails = {
 export type TenantStatus = {
   __typename?: 'TenantStatus';
   commercialModel?: Maybe<CommercialModel>;
+  organizationName?: Maybe<Scalars['String']['output']>;
   status: PlatformRegistrationConnectivityStatus;
   tenantId: Scalars['String']['output'];
 };
@@ -5173,6 +5176,7 @@ export type RefreshPlatformRegistrationConnectivityStatusAllTenantsResponseResol
 
 export type RefreshPlatformRegistrationConnectivityStatusResponseResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['RefreshPlatformRegistrationConnectivityStatusResponse'] = ResolversParentTypes['RefreshPlatformRegistrationConnectivityStatusResponse']> = ResolversObject<{
   commercialModel?: Resolver<Maybe<ResolversTypes['CommercialModel']>, ParentType, ContextType>;
+  organizationName?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   status?: Resolver<ResolversTypes['PlatformRegistrationConnectivityStatus'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
@@ -5212,6 +5216,7 @@ export type RegisteredProductVersionResolvers<ContextType = PortalContext, Paren
 }>;
 
 export type RegistrationResponseResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['RegistrationResponse'] = ResolversParentTypes['RegistrationResponse']> = ResolversObject<{
+  organizationName?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   token?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
@@ -5645,6 +5650,7 @@ export type TelemetryResponseResolvers<ContextType = PortalContext, ParentType e
 
 export type TenantStatusResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['TenantStatus'] = ResolversParentTypes['TenantStatus']> = ResolversObject<{
   commercialModel?: Resolver<Maybe<ResolversTypes['CommercialModel']>, ParentType, ContextType>;
+  organizationName?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   status?: Resolver<ResolversTypes['PlatformRegistrationConnectivityStatus'], ParentType, ContextType>;
   tenantId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
