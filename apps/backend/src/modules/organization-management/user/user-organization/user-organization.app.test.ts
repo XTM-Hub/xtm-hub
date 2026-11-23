@@ -1045,4 +1045,93 @@ describe('usersOrganizationApp', () => {
       });
     });
   });
+
+  describe('resolveOrganizationUserIdsByEmails', () => {
+    let organization: Organization;
+    let domain: string;
+    let caller: User;
+    let member: User;
+    let createdUsers: User[] = [];
+
+    const createUser = async (email: string) => {
+      const user = await UserProvisioningDomain.createUser(
+        { email },
+        { sendWelcomeEmail: false }
+      );
+      createdUsers.push(user);
+      return user;
+    };
+
+    const addMember = async (
+      user: User,
+      capabilities: OrganizationCapability[]
+    ) => {
+      const userOrganization = await TestHelper.user_Organization.create({
+        user_id: user.id,
+        organization_id: organization.id,
+      });
+      await Promise.all(
+        capabilities.map((name) =>
+          TestHelper.user_OrganizationCapability.create({
+            user_organization_id: userOrganization!.id,
+            name,
+          })
+        )
+      );
+    };
+
+    beforeEach(async () => {
+      createdUsers = [];
+      domain = `resolve-emails-${uuidv4()}.io`;
+      organization = await TestHelper.organization.create({
+        domains: [domain],
+      });
+      caller = await createUser(`caller-${uuidv4()}@${domain}`);
+      await addMember(caller, [
+        OrganizationCapability.AdministrateOrganization,
+      ]);
+      member = await createUser(`member-${uuidv4()}@${domain}`);
+      await addMember(member, []);
+      await TestHelper.apiToken.actAs(
+        caller.id,
+        organization.id,
+        ApiTokenScope.Admin
+      );
+    });
+
+    afterEach(async () => {
+      vi.restoreAllMocks();
+      await Promise.all(
+        createdUsers.map((user) => UserHelper.removeUser({ id: user.id }))
+      );
+      await TestHelper.organization.delete({ id: organization.id });
+    });
+
+    it('should refuse to provision a new user to an API token before creating any account', async () => {
+      // Given
+      const email = `new-${uuidv4()}@${domain}`;
+
+      // When
+      const call = UserOrganizationApp.resolveOrganizationUserIdsByEmails({
+        organization,
+        emails: [member.email, email],
+      });
+
+      // Then
+      await expect(call).rejects.toThrow(ErrorCode.NotAllowedWithApiToken);
+      expect(await TestHelper.user.loadAll({ email })).toEqual([]);
+    });
+
+    it('should resolve the existing members to an API token', async () => {
+      // When
+      const userIds =
+        await UserOrganizationApp.resolveOrganizationUserIdsByEmails({
+          organization,
+          emails: [member.email],
+        });
+
+      // Then
+      expect(userIds).toEqual([member.id]);
+    });
+  });
 });
