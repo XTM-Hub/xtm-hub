@@ -7,11 +7,7 @@ import { ApolloServerPluginLandingPageDisabled } from '@apollo/server/plugin/dis
 import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer';
 import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin/landingPage/default';
 import { isInstance as isCustomApolloError } from 'apollo-errors';
-import {
-  GraphQLError,
-  type GraphQLFormattedError,
-  type GraphQLSchema,
-} from 'graphql';
+import type { GraphQLFormattedError, GraphQLSchema } from 'graphql';
 import { Server } from 'http';
 import { apiTokenPlugin } from '../modules/api-token/api-token.plugin';
 import { ErrorCode, UnknownErrorCode } from '../utils/error/error.code';
@@ -33,6 +29,12 @@ const isKnownClientError = (error: unknown) =>
   isCustomApolloError(error) ||
   (error instanceof Error && CLIENT_ERROR_MESSAGES.has(error.message));
 
+// Not `instanceof GraphQLError`: graphql ships a CommonJS and an ESM build, and Apollo may load the other one
+const wrappedErrorOf = (error: unknown) =>
+  error instanceof Error && 'originalError' in error
+    ? error.originalError
+    : undefined;
+
 const isClientSafeError = (
   formattedError: GraphQLFormattedError,
   originalError: unknown
@@ -43,11 +45,7 @@ const isClientSafeError = (
       return true;
     }
     // A plugin refusal before any resolver (apiTokenPlugin) has no path: Apollo wraps it, keeping ours as the cause
-    return isKnownClientError(
-      originalError instanceof GraphQLError
-        ? originalError.originalError
-        : undefined
-    );
+    return isKnownClientError(wrappedErrorOf(originalError));
   }
   return isKnownClientError(originalError);
 };
