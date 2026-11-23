@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getUrlOrigin, toExternalHref } from './external-url';
+import { getUrlOrigin, isHttpUrl, toExternalHref } from './external-url';
 
 describe('toExternalHref', () => {
   it.each`
@@ -72,5 +72,21 @@ describe('getUrlOrigin', () => {
 
     // Then
     expect(origin).toBeNull();
+  });
+});
+
+describe('isHttpUrl', () => {
+  it.each([
+    ['https://opencti.filigran.io', true],
+    ['http://localhost:4000', true],
+    ['javascript:alert(1)', false],
+    ['data:text/html,<p>platform</p>', false],
+    ['opencti.filigran.io', false],
+    ['', false],
+    [null, false],
+    [undefined, false],
+  ])('should tell the URL %j is a web address: %s', (url, expected) => {
+    // Given / When / Then
+    expect(isHttpUrl(url)).toBe(expected);
   });
 });

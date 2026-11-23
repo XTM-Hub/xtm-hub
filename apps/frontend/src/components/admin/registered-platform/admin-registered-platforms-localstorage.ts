@@ -1,7 +1,7 @@
 import {
   ADMIN_REGISTERED_PLATFORMS_DEFAULT_ORDER_BY,
   ADMIN_REGISTERED_PLATFORMS_DEFAULT_ORDER_MODE,
-  ADMIN_REGISTERED_PLATFORMS_MAX_PAGE_SIZE,
+  ADMIN_REGISTERED_PLATFORMS_DEFAULT_PAGE_SIZE,
   normalizeAdminRegisteredPlatformsPageSize,
 } from '@/components/admin/registered-platform/admin-registered-platforms.utils';
 import { isValueInEnum } from '@/utils/is-value-in-enum';
@@ -25,10 +25,11 @@ export const useAdminRegisteredPlatformsLocalstorage = () => {
     );
   const [storedPageSize, setPageSize, removePageSize] = useLocalStorage(
     'countAdminRegisteredPlatformsList',
-    ADMIN_REGISTERED_PLATFORMS_MAX_PAGE_SIZE
+    ADMIN_REGISTERED_PLATFORMS_DEFAULT_PAGE_SIZE
   );
 
-  // A stored value the list no longer accepts is replaced before any query is built with it.
+  // A stored value the list no longer accepts is replaced before any query is built with it: the page size drives the
+  // cursor, so it must already be within the API cap.
   const orderBy = isValueInEnum(storedOrderBy, AdminRegisteredPlatformOrdering)
     ? storedOrderBy
     : ADMIN_REGISTERED_PLATFORMS_DEFAULT_ORDER_BY;

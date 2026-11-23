@@ -13,18 +13,18 @@ interface OrganizationFilterOption {
 
 const getOrganizationId = ({ id }: OrganizationFilterOption) => id;
 
-interface UserOrganizationFilterProps {
+interface OrganizationFilterProps {
   value?: string;
   onChange: (organizationId: string | undefined) => void;
   // Each list that filters by organization tracks its own choices.
-  analyticsId?: AnalyticsElementId;
+  analyticsId: AnalyticsElementId;
 }
 
-export const UserOrganizationFilter = ({
+export const OrganizationFilter = ({
   value,
   onChange,
-  analyticsId = 'admin_user_organizations_open',
-}: UserOrganizationFilterProps) => {
+  analyticsId,
+}: OrganizationFilterProps) => {
   const t = useTranslate();
   const [searchTerm, setSearchTerm] = useState('');
   const {

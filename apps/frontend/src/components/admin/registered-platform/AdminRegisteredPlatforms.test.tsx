@@ -219,6 +219,27 @@ describe('AdminRegisteredPlatforms', () => {
     }
   );
 
+  it.each([
+    [PlatformContract.Trial, 0],
+    [PlatformContract.Ee, 1],
+  ])(
+    'should offer to unregister an active platform under the contract %s %i time(s)',
+    (contract, expectedButtons) => {
+      // Given
+      mockPlatforms([buildPlatform({ contract })]);
+
+      // When
+      testRender(<AdminRegisteredPlatforms />);
+
+      // Then
+      expect(
+        within(getPlatformRow()).queryAllByRole('button', {
+          name: 'AdminRegisteredPlatforms.Unregister',
+        })
+      ).toHaveLength(expectedButtons);
+    }
+  );
+
   it('should not offer to unregister an active platform that belongs to no organization', () => {
     // Given
     mockPlatforms([buildPlatform({ organization: null })]);

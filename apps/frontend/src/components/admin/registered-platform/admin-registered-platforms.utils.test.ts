@@ -1,5 +1,4 @@
 import {
-  ADMIN_REGISTERED_PLATFORMS_MAX_PAGE_SIZE,
   type AdminRegisteredPlatformsFilters,
   ALL_FILTER_VALUE,
   buildAdminRegisteredPlatformsVariables,
@@ -10,7 +9,6 @@ import {
   getPlatformProductName,
   getRegistererName,
   getStatusLabelKey,
-  isHttpUrl,
   normalizeAdminRegisteredPlatformsPageSize,
   parseIdentifierFilterValue,
   parseStatusFilterValue,
@@ -22,6 +20,7 @@ import {
   CommercialModel,
   OrderingMode,
   PlatformConfigurationStatus,
+  PlatformContract,
   PlatformIdentifier,
   RegisteredPlatformCredentialKind,
 } from '@graphql/generated';
@@ -110,17 +109,6 @@ describe('buildAdminRegisteredPlatformsVariables', () => {
       expect(variables.searchTerm).toBe(expectedSearchTerm);
     }
   );
-
-  it('should ask for no more platforms than the API serves when the page size is larger', () => {
-    // Given / When
-    const variables = buildVariables(
-      {},
-      ADMIN_REGISTERED_PLATFORMS_MAX_PAGE_SIZE + 1
-    );
-
-    // Then
-    expect(variables.first).toBe(ADMIN_REGISTERED_PLATFORMS_MAX_PAGE_SIZE);
-  });
 });
 
 describe('normalizeAdminRegisteredPlatformsPageSize', () => {
@@ -232,20 +220,6 @@ describe('getPlatformProductName', () => {
   });
 });
 
-describe('isHttpUrl', () => {
-  it.each([
-    ['https://opencti.filigran.io', true],
-    ['http://localhost:4000', true],
-    ['javascript:alert(1)', false],
-    ['data:text/html,<p>platform</p>', false],
-    ['opencti.filigran.io', false],
-    ['', false],
-  ])('should tell the URL %j is a web address: %s', (url, expected) => {
-    // Given / When / Then
-    expect(isHttpUrl(url)).toBe(expected);
-  });
-});
-
 describe('getRegistererName', () => {
   it.each([
     [{ first_name: 'Ada', last_name: 'Lovelace' }, 'Ada Lovelace'],
@@ -267,14 +241,40 @@ describe('getRegistererName', () => {
 
 describe('canUnregisterPlatform', () => {
   it.each([
-    [PlatformConfigurationStatus.Active, ORGANIZATION, true],
-    [PlatformConfigurationStatus.Inactive, ORGANIZATION, false],
-    [PlatformConfigurationStatus.Active, null, false],
+    [
+      PlatformConfigurationStatus.Active,
+      ORGANIZATION,
+      PlatformContract.Ee,
+      true,
+    ],
+    [
+      PlatformConfigurationStatus.Active,
+      ORGANIZATION,
+      PlatformContract.Ce,
+      true,
+    ],
+    [
+      PlatformConfigurationStatus.Inactive,
+      ORGANIZATION,
+      PlatformContract.Ee,
+      false,
+    ],
+    [PlatformConfigurationStatus.Active, null, PlatformContract.Ee, false],
+    [
+      PlatformConfigurationStatus.Active,
+      ORGANIZATION,
+      PlatformContract.Trial,
+      false,
+    ],
   ])(
-    'should tell a %s platform of the organization %j can be unregistered: %s',
-    (status, organization, expected) => {
+    'should tell a %s platform of the organization %j under the contract %s can be unregistered: %s',
+    (status, organization, contract, expected) => {
       // Given / When / Then
-      expect(canUnregisterPlatform({ status, organization })).toBe(expected);
+      expect(
+        canUnregisterPlatform(
+          mockAdminRegisteredPlatform({ status, organization, contract })
+        )
+      ).toBe(expected);
     }
   );
 });

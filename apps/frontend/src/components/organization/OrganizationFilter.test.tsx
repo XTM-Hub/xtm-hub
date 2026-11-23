@@ -5,9 +5,10 @@ import {
 } from '@graphql/generated';
 import { screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { UserOrganizationFilter } from './UserOrganizationFilter';
+import { OrganizationFilter } from './OrganizationFilter';
 
 const ORGANIZATION_LABEL = 'UserActions.Organization';
+const ANALYTICS_ID = 'admin_user_organizations_open';
 const ACME_ID = 'org-acme';
 const ACME_NAME = 'Acme Corporation';
 
@@ -68,13 +69,18 @@ const mockOrganizationsQuery = (
 const getCombobox = () =>
   screen.getByRole('combobox', { name: ORGANIZATION_LABEL });
 
-describe('UserOrganizationFilter', () => {
+describe('OrganizationFilter', () => {
   beforeEach(() => {
     mockOrganizationsQuery(() => ALL_EDGES);
   });
 
   it('renders the placeholder and lists non-personal organizations plus "All organizations"', async () => {
-    const { user } = testRender(<UserOrganizationFilter onChange={vi.fn()} />);
+    const { user } = testRender(
+      <OrganizationFilter
+        analyticsId={ANALYTICS_ID}
+        onChange={vi.fn()}
+      />
+    );
 
     const combobox = screen.getByRole('combobox', {
       name: 'UserActions.Organization',
@@ -93,7 +99,12 @@ describe('UserOrganizationFilter', () => {
 
   it('calls onChange with the organization id when one is selected', async () => {
     const onChange = vi.fn();
-    const { user } = testRender(<UserOrganizationFilter onChange={onChange} />);
+    const { user } = testRender(
+      <OrganizationFilter
+        analyticsId={ANALYTICS_ID}
+        onChange={onChange}
+      />
+    );
 
     await user.click(
       screen.getByRole('combobox', { name: 'UserActions.Organization' })
@@ -105,7 +116,12 @@ describe('UserOrganizationFilter', () => {
 
   it('calls onChange with undefined when "All organizations" is selected', async () => {
     const onChange = vi.fn();
-    const { user } = testRender(<UserOrganizationFilter onChange={onChange} />);
+    const { user } = testRender(
+      <OrganizationFilter
+        analyticsId={ANALYTICS_ID}
+        onChange={onChange}
+      />
+    );
 
     await user.click(
       screen.getByRole('combobox', { name: 'UserActions.Organization' })
@@ -117,7 +133,12 @@ describe('UserOrganizationFilter', () => {
 
   it('should query with the typed text and never with the picked label when typing then picking', async () => {
     // Given
-    const { user } = testRender(<UserOrganizationFilter onChange={vi.fn()} />);
+    const { user } = testRender(
+      <OrganizationFilter
+        analyticsId={ANALYTICS_ID}
+        onChange={vi.fn()}
+      />
+    );
 
     // When
     await user.type(getCombobox(), 'Acme');
@@ -135,7 +156,8 @@ describe('UserOrganizationFilter', () => {
     );
     const onChange = vi.fn();
     const renderFilter = () => (
-      <UserOrganizationFilter
+      <OrganizationFilter
+        analyticsId={ANALYTICS_ID}
         value={ACME_ID}
         onChange={onChange}
       />
@@ -161,7 +183,12 @@ describe('UserOrganizationFilter', () => {
     });
 
     // When
-    testRender(<UserOrganizationFilter onChange={vi.fn()} />);
+    testRender(
+      <OrganizationFilter
+        analyticsId={ANALYTICS_ID}
+        onChange={vi.fn()}
+      />
+    );
 
     // Then
     expect(
@@ -191,7 +218,10 @@ describe('UserOrganizationFilter', () => {
         isPlaceholderData,
       });
       const { user } = testRender(
-        <UserOrganizationFilter onChange={vi.fn()} />
+        <OrganizationFilter
+          analyticsId={ANALYTICS_ID}
+          onChange={vi.fn()}
+        />
       );
 
       // When

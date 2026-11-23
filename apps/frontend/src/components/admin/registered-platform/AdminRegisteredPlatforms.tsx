@@ -14,7 +14,6 @@ import {
   getPlatformProductName,
   getRegistererName,
   getStatusLabelKey,
-  isHttpUrl,
   normalizeAdminRegisteredPlatformsPageSize,
   parseIdentifierFilterValue,
   parseStatusFilterValue,
@@ -23,7 +22,7 @@ import {
 } from '@/components/admin/registered-platform/admin-registered-platforms.utils';
 import { AdminRegisteredPlatformsSelectFilter } from '@/components/admin/registered-platform/AdminRegisteredPlatformsSelectFilter';
 import { AdminUnregisterPlatform } from '@/components/admin/registered-platform/AdminUnregisterPlatform';
-import { UserOrganizationFilter } from '@/components/admin/user/UserOrganizationFilter';
+import { OrganizationFilter } from '@/components/organization/OrganizationFilter';
 import {
   DataTable,
   DataTableHeadBarOptions,
@@ -41,6 +40,7 @@ import { portalGraphqlClient } from '@/lib/graphql-client';
 import { DEBOUNCE_TIME } from '@/utils/constant';
 import { useDateFormatter } from '@/utils/date';
 import { getDataTableLabels } from '@/utils/design-system/data-table';
+import { isHttpUrl } from '@/utils/external-url';
 import { Chip, SearchField, TooltipProvider } from '@filigran/design-system';
 import { adminRegisteredPlatformsKeys } from '@graphql/admin-registered-platforms/admin-registered-platforms.keys';
 import {
@@ -157,6 +157,7 @@ export const AdminRegisteredPlatforms = () => {
       cell: ({ row }) => (
         <div className="flex min-w-0 flex-col">
           <TruncatedText text={row.original.title} />
+          {/* The URL is sent by the platform itself: only a web address is made a link. */}
           {isHttpUrl(row.original.url) ? (
             <a
               {...analyticsId('admin_registered_platform_url_open')}
@@ -426,7 +427,7 @@ export const AdminRegisteredPlatforms = () => {
                   }
                   triggerAnalyticsId="admin_registered_platform_statuses_open"
                 />
-                <UserOrganizationFilter
+                <OrganizationFilter
                   analyticsId="admin_registered_platform_organizations_open"
                   value={filters.organizationId ?? undefined}
                   onChange={(organizationId) =>

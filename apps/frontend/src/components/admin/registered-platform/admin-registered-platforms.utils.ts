@@ -17,9 +17,10 @@ import {
   RegisteredPlatformCredentialKind,
 } from '@graphql/generated';
 
-// The API clamps `first` to this same value (the backend holds its own copy): the description of `first` in the
-// GraphQL schema is the contract. A larger page size would skip rows between two pages.
+// Mirrors ADMIN_REGISTERED_PLATFORMS_MAX_PAGE in apps/backend/src/modules/registration/registration.app.ts, which
+// clamps `first`. A page size above it would make the cursor (page size x page index) skip rows between two pages.
 export const ADMIN_REGISTERED_PLATFORMS_MAX_PAGE_SIZE = 100;
+export const ADMIN_REGISTERED_PLATFORMS_DEFAULT_PAGE_SIZE = 50;
 
 export const ADMIN_REGISTERED_PLATFORMS_DEFAULT_ORDER_BY =
   AdminRegisteredPlatformOrdering.LastConnectivityCheck;
@@ -72,7 +73,7 @@ export const buildAdminRegisteredPlatformsVariables = ({
   orderBy: AdminRegisteredPlatformOrdering;
   orderMode: OrderingMode;
 }): AdminRegisteredPlatformsQueryVariables => ({
-  first: normalizeAdminRegisteredPlatformsPageSize(pageSize),
+  first: pageSize,
   after: cursor,
   orderBy,
   orderMode,
@@ -90,16 +91,6 @@ export const parseStatusFilterValue = (
   value: string
 ): PlatformConfigurationStatus | null =>
   isValueInEnum(value, PlatformConfigurationStatus) ? value : null;
-
-// The URL is sent by the platform itself: only a web address is made a link, never a javascript: or data: one.
-export const isHttpUrl = (url: string): boolean => {
-  try {
-    const { protocol } = new URL(url);
-    return protocol === 'https:' || protocol === 'http:';
-  } catch {
-    return false;
-  }
-};
 
 // Brand names are never translated.
 export const getPlatformProductName = (identifier: string): string =>
@@ -178,11 +169,13 @@ export type UnregistrablePlatformRow = AdminRegisteredPlatformRow & {
 };
 
 // Only an active registration can be unregistered, and the API needs its organization to email the administrators.
+// A trial cannot be unregistered for now: the API refuses it with TRIAL_PLATFORM_CANNOT_BE_UNREGISTERED.
 export const canUnregisterPlatform = (
   platform: AdminRegisteredPlatformRow
 ): platform is UnregistrablePlatformRow =>
   platform.status === PlatformConfigurationStatus.Active &&
-  platform.organization !== null;
+  platform.organization !== null &&
+  platform.contract !== PlatformContract.Trial;
 
 export const toAdminRegisteredPlatformRows = (
   data: AdminRegisteredPlatformsQuery | undefined
