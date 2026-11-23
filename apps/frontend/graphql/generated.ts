@@ -4702,13 +4702,14 @@ export type UserServiceItemFragment = { __typename?: 'UserService', id: string, 
 
 export type UserServicesFromSubscriptionQueryVariables = Exact<{
   count: Scalars['Int']['input'];
+  cursor: InputMaybe<Scalars['ID']['input']>;
   orderBy: UserServiceOrdering;
   orderMode: OrderingMode;
   subscriptionId: Scalars['SubscriptionId']['input'];
 }>;
 
 
-export type UserServicesFromSubscriptionQuery = { __typename?: 'Query', userServiceFromSubscription: { __typename?: 'UserServiceConnection', edges: Array<{ __typename?: 'UserServiceEdge', node: { __typename?: 'UserService', id: string, user: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, email: string } | null, subscription: { __typename?: 'SubscriptionModel', service_instance: { __typename?: 'ServiceInstance', id: string, name: string, service_definition: { __typename?: 'ServiceDefinition', identifier: ServiceDefinitionIdentifier } | null } } | null, user_service_capability: Array<{ __typename?: 'UserServiceCapability', id: string, generic_service_capability: { __typename?: 'GenericServiceCapability', id: string, name: string | null } | null, subscription_capability: { __typename?: 'SubscriptionCapability', id: string, service_capability: { __typename?: 'ServiceCapability', id: string, name: string | null } | null } | null } | null> | null } | null }> } | null };
+export type UserServicesFromSubscriptionQuery = { __typename?: 'Query', userServiceFromSubscription: { __typename?: 'UserServiceConnection', totalCount: number, edges: Array<{ __typename?: 'UserServiceEdge', node: { __typename?: 'UserService', id: string, user: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, email: string } | null, subscription: { __typename?: 'SubscriptionModel', service_instance: { __typename?: 'ServiceInstance', id: string, name: string, service_definition: { __typename?: 'ServiceDefinition', identifier: ServiceDefinitionIdentifier } | null } } | null, user_service_capability: Array<{ __typename?: 'UserServiceCapability', id: string, generic_service_capability: { __typename?: 'GenericServiceCapability', id: string, name: string | null } | null, subscription_capability: { __typename?: 'SubscriptionCapability', id: string, service_capability: { __typename?: 'ServiceCapability', id: string, name: string | null } | null } | null } | null> | null } | null }> } | null };
 
 export type UserDeleteMutationVariables = Exact<{
   id: Scalars['ID']['input'];
@@ -11250,13 +11251,15 @@ useAddCapabilitiesToUserServicesMutation.getRootKey = () => ['AddCapabilitiesToU
 useAddCapabilitiesToUserServicesMutation.fetcher = (client: GraphQLClient, variables: AddCapabilitiesToUserServicesMutationVariables, headers?: RequestInit['headers']) => fetcher<AddCapabilitiesToUserServicesMutation, AddCapabilitiesToUserServicesMutationVariables>(client, AddCapabilitiesToUserServicesDocument, variables, headers);
 
 export const UserServicesFromSubscriptionDocument = `
-    query UserServicesFromSubscription($count: Int!, $orderBy: UserServiceOrdering!, $orderMode: OrderingMode!, $subscriptionId: SubscriptionId!) {
+    query UserServicesFromSubscription($count: Int!, $cursor: ID, $orderBy: UserServiceOrdering!, $orderMode: OrderingMode!, $subscriptionId: SubscriptionId!) {
   userServiceFromSubscription(
     first: $count
+    after: $cursor
     orderBy: $orderBy
     orderMode: $orderMode
     subscription_id: $subscriptionId
   ) {
+    totalCount
     edges {
       node {
         ...UserServiceItem

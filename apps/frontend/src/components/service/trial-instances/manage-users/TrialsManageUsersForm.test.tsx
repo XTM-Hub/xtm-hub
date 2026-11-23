@@ -71,6 +71,12 @@ const REFRESHED_SERVICE_GROUPS: ServiceGroupsQuery = {
   ],
 };
 
+const READER_GROUP: ServiceGroupsQuery['serviceGroups'][number] = {
+  id: 'group-2',
+  name: ServiceGroupName.Reader,
+  users: [],
+};
+
 const mocks = vi.hoisted(() => ({
   usersQuery: vi.fn(),
   useServiceGroupsQuery: vi.fn(),
@@ -341,6 +347,37 @@ describe('TrialsManageUsersForm', () => {
     await waitFor(() =>
       expect(updateServiceGroups).toHaveBeenCalledWith({
         input: { groups: [{ id: GROUP_ID, userIds: [OTHER_USER_ID] }] },
+      })
+    );
+  });
+
+  it('should keep the edits on their group when a refresh answers the groups in another order', async () => {
+    // Given an edited Admin group listed before the Reader group
+    const updateServiceGroups = mockMutationHook(
+      mocks.useUpdateServiceGroupsMutation,
+      'success'
+    );
+    mocks.useServiceGroupsQuery.mockReturnValue({
+      data: { serviceGroups: [...SERVICE_GROUPS.serviceGroups, READER_GROUP] },
+    });
+    const { user, refreshServiceGroups } = renderTrialsManageUsersForm();
+    await addUserToGroup(user, OTHER_USER_EMAIL);
+
+    // When the refresh lists the Reader group first, then the admin validates
+    refreshServiceGroups({
+      serviceGroups: [READER_GROUP, ...SERVICE_GROUPS.serviceGroups],
+    });
+    await validate(user);
+
+    // Then the edit stays on the Admin group
+    await waitFor(() =>
+      expect(updateServiceGroups).toHaveBeenCalledWith({
+        input: {
+          groups: [
+            { id: GROUP_ID, userIds: [OTHER_USER_ID] },
+            { id: READER_GROUP.id, userIds: [] },
+          ],
+        },
       })
     );
   });

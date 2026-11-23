@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/data-table';
 import { useTranslate } from '@/hooks/use-translate';
 import { getDataTableLabels } from '@/utils/design-system/data-table';
-import { Chip } from '@filigran/design-system';
+import { Button, Chip } from '@filigran/design-system';
 import { AddIcon, DeleteIcon, MoreVertIcon } from '@filigran/icon';
 import {
   OrderingMode,
@@ -19,14 +19,17 @@ import {
   SubscriptionByIdQuery,
   UserServiceItemFragment,
   UserServiceOrdering,
+  useServiceUserCapabilitiesQuery,
   useSubscriptionByIdQuery,
   useUserServicesFromSubscriptionQuery,
 } from '@graphql/generated';
+import { serviceUserCapabilitiesKeys } from '@graphql/service-instances/service-instances.keys';
 import { subscriptionKeys } from '@graphql/subscription/subscription.keys';
 import { userServicesKeys } from '@graphql/user-service/user-service.keys';
-import { ColumnDef, PaginationState } from '@tanstack/react-table';
+import { keepPreviousData } from '@tanstack/react-query';
+import { ColumnDef, PaginationState, Updater } from '@tanstack/react-table';
 
-import { useCallback, useContext, useMemo, useState } from 'react';
+import { useContext, useMemo, useState } from 'react';
 
 import { DeleteUserService } from '@/components/subcription/[slug]/DeleteUserService';
 import { SubscriptionSlugUserService } from '@/components/subcription/[slug]/SubscriptionSlugUserService';
@@ -41,11 +44,11 @@ import { PortalContext } from '@/components/me/AppPortalContext';
 import ServiceSlugHeader from '@/components/service/[slug]/ServiceSlugHeader';
 import { SubscriptionSlugAddCapabilities } from '@/components/subcription/[slug]/SubscriptionSlugAddCapabilities';
 import { useAdminByPass } from '@/hooks/use-portal-capability';
+import { useTablePagination } from '@/hooks/use-table-pagination';
 import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { throwOnFirstLoadError } from '@/lib/query-client';
 import { ADMIN_SERVICE_CATALOG_PATH, APP_PATH } from '@/utils/path/constant';
-import { Button } from '@filigran/design-system';
 import { notFound } from 'next/navigation';
 import { useLocalStorage } from 'usehooks-ts';
 
@@ -57,6 +60,9 @@ interface SubscriptionSlugProps {
 interface SubscriptionSlugContentProps {
   queryDataSubscription: SubscriptionByIdQuery;
   userData: UserServiceItemFragment[];
+  totalCount: number;
+  pagination: PaginationState;
+  onPaginationChange: (updater: Updater<PaginationState>) => void;
   serviceInstance?: ServiceInstanceItemFragment;
 }
 
@@ -69,6 +75,9 @@ const emptySelectionState = (): SelectionState => ({
 const SubscriptionSlugContent = ({
   queryDataSubscription,
   userData,
+  totalCount,
+  pagination,
+  onPaginationChange,
   serviceInstance,
 }: SubscriptionSlugContentProps) => {
   const t = useTranslate();
@@ -82,7 +91,20 @@ const SubscriptionSlugContent = ({
   const [selection, setSelection] =
     useState<SelectionState>(emptySelectionState);
 
-  const { me, hasOrganizationCapability } = useContext(PortalContext);
+  // A page change or a refetch can swap the rows under a selection, and "select
+  // all" would then reach users the admin never saw. New rows start from an
+  // empty selection with the bulk dialogs closed, reset during the render so
+  // no render pairs them with the previous selection.
+  const rowIds = userData.map(({ id }) => id).join(',');
+  const [selectionRowIds, setSelectionRowIds] = useState(rowIds);
+  if (selectionRowIds !== rowIds) {
+    setSelectionRowIds(rowIds);
+    setSelection(emptySelectionState());
+    setOpenAddCapabilities(false);
+    setDeleteUserServices(undefined);
+  }
+
+  const { hasOrganizationCapability } = useContext(PortalContext);
 
   if (!queryDataSubscription.subscriptionById) {
     notFound();
@@ -118,29 +140,43 @@ const SubscriptionSlugContent = ({
     ];
   }
 
-  const canManageService = useCallback(() => {
-    return userData.some((userService) => {
-      return (
-        (userService.user?.id === me?.id &&
-          userService.user_service_capability?.some(
-            (user_service_capa) =>
-              user_service_capa?.generic_service_capability?.name ===
-              ServiceRestriction.ManageAccess
-          )) ||
-        (hasOrganizationCapability &&
-          (hasOrganizationCapability(
-            OrganizationCapability.AdministrateOrganization
-          ) ||
-            hasOrganizationCapability(
-              OrganizationCapability.ManageSubscription
-            )))
-      );
-    });
-  }, [userData, me?.id, hasOrganizationCapability]);
+  // The users are paged on the server, so the actor's own row is not always
+  // among them: their capabilities on the service are read on their own. They
+  // belong to the subscription of their organization, so they only grant
+  // access on that subscription.
+  const { data: actorCapabilitiesData } = useServiceUserCapabilitiesQuery(
+    portalGraphqlClient,
+    {
+      service_instance_id:
+        queryDataSubscription.subscriptionById.service_instance.id,
+    },
+    {
+      queryKey: serviceUserCapabilitiesKeys.byService({
+        service_instance_id:
+          queryDataSubscription.subscriptionById.service_instance.id,
+      }),
+    }
+  );
+  const actorCapabilities = actorCapabilitiesData?.userServiceCapabilities;
+  const canManageAccess =
+    actorCapabilities?.subscription_id ===
+      queryDataSubscription.subscriptionById.id &&
+    actorCapabilities.userServiceCapabilities.some(
+      (userServiceCapability) =>
+        userServiceCapability.generic_service_capability?.name ===
+        ServiceRestriction.ManageAccess
+    );
+  const canManageOrganizationSubscriptions =
+    !!hasOrganizationCapability &&
+    (hasOrganizationCapability(
+      OrganizationCapability.AdministrateOrganization
+    ) ||
+      hasOrganizationCapability(OrganizationCapability.ManageSubscription));
 
   const isBypass = useAdminByPass();
 
-  const canManageUserServices = isBypass || canManageService();
+  const canManageUserServices =
+    isBypass || canManageAccess || canManageOrganizationSubscriptions;
 
   const availableCapabilities: BadgeOverflow[] = useMemo(() => {
     const capabilities = (
@@ -266,11 +302,6 @@ const SubscriptionSlugContent = ({
     [canManageUserServices, t]
   );
 
-  const [pagination] = useState<PaginationState>({
-    pageIndex: 0,
-    pageSize: 500,
-  });
-
   const toolbar = (
     <div className="flex justify-between flex-wrap gap-2 pt-2">
       <div className="flex gap-2 flex-wrap ml-auto">
@@ -351,6 +382,9 @@ const SubscriptionSlugContent = ({
         tableOptions={{
           enableRowSelection: (row) =>
             canManageUserServices && !!row.original.id,
+          onPaginationChange,
+          manualPagination: true,
+          rowCount: totalCount,
         }}
         tableState={{
           pagination,
@@ -393,7 +427,7 @@ const SubscriptionSlug = ({
     throwOnError: throwOnFirstLoadError,
   });
 
-  const [count] = useLocalStorage('countUserServices', 50);
+  const [count, setCount] = useLocalStorage('countUserServices', 50);
   const [orderMode] = useLocalStorage(
     'orderModeUserServices',
     OrderingMode.Asc
@@ -402,15 +436,34 @@ const SubscriptionSlug = ({
     'orderByUserServices',
     UserServiceOrdering.FirstName
   );
+  // The users are read page by page, so each of them stays reachable once a
+  // write invalidates the list, wherever the ordering puts them.
+  const { pagination, cursor, onPaginationChange } = useTablePagination({
+    pageSize: count,
+    setPageSize: setCount,
+  });
   const userServicesVariables = useMemo(
-    () => ({ subscriptionId, count, orderBy, orderMode }),
-    [subscriptionId, count, orderBy, orderMode]
+    () => ({
+      subscriptionId,
+      count: pagination.pageSize,
+      cursor,
+      orderBy,
+      orderMode,
+    }),
+    [subscriptionId, pagination.pageSize, cursor, orderBy, orderMode]
   );
-  const { data: userServicesData } = useUserServicesFromSubscriptionQuery(
+  const {
+    data: userServicesData,
+    isSuccess,
+    isFetching,
+    isPlaceholderData,
+  } = useUserServicesFromSubscriptionQuery(
     portalGraphqlClient,
     userServicesVariables,
     {
       queryKey: userServicesKeys.list(userServicesVariables),
+      // A page change keeps the users shown until the next page arrives.
+      placeholderData: keepPreviousData,
       throwOnError: throwOnFirstLoadError,
     }
   );
@@ -421,6 +474,21 @@ const SubscriptionSlug = ({
       ) ?? [],
     [userServicesData]
   );
+  const totalCount = userServicesData?.userServiceFromSubscription?.totalCount;
+  if (
+    isSuccess &&
+    !isFetching &&
+    !isPlaceholderData &&
+    totalCount !== undefined
+  ) {
+    const lastPageIndex = Math.max(
+      0,
+      Math.ceil(totalCount / pagination.pageSize) - 1
+    );
+    if (pagination.pageIndex > lastPageIndex) {
+      onPaginationChange({ ...pagination, pageIndex: lastPageIndex });
+    }
+  }
 
   if (!data || !userServicesData) {
     return <Loader />;
@@ -430,6 +498,9 @@ const SubscriptionSlug = ({
     <SubscriptionSlugContent
       queryDataSubscription={data}
       userData={userData}
+      totalCount={userServicesData.userServiceFromSubscription?.totalCount ?? 0}
+      pagination={pagination}
+      onPaginationChange={onPaginationChange}
       serviceInstance={serviceInstance}
     />
   );

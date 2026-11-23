@@ -156,13 +156,18 @@ const TrialsManageUsersFormContent = ({
     [availableUsers]
   );
 
+  // The API does not order the groups, and keepDirtyValues keeps an edited
+  // field by its index: sorting by ID keeps each index on the same group
+  // when a refetch answers them in another order.
   const groups = useMemo(
     () =>
-      serviceGroups.serviceGroups.map(({ id, name, users }) => ({
-        id,
-        name,
-        users: users ?? [],
-      })),
+      serviceGroups.serviceGroups
+        .map(({ id, name, users }) => ({
+          id,
+          name,
+          users: users ?? [],
+        }))
+        .sort((a, b) => a.id.localeCompare(b.id)),
     [serviceGroups]
   );
   const groupUserOptions = useMemo(

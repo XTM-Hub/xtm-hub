@@ -33,16 +33,19 @@ fragment UserServiceItem on UserService {
 
 query UserServicesFromSubscription(
   $count: Int!
+  $cursor: ID
   $orderBy: UserServiceOrdering!
   $orderMode: OrderingMode!
   $subscriptionId: SubscriptionId!
 ) {
   userServiceFromSubscription(
     first: $count
+    after: $cursor
     orderBy: $orderBy
     orderMode: $orderMode
     subscription_id: $subscriptionId
   ) {
+    totalCount
     edges {
       node {
         ...UserServiceItem
