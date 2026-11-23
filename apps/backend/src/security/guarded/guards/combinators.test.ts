@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { TestHelper } from '../../../../tests/helper/test.helper';
 import {
+  ApiTokenScope,
   OrganizationCapability,
   PortalCapability,
   ServiceRestriction,
@@ -15,12 +16,13 @@ import {
 import { allow, DenialCode, deny, Guard } from '../guard.types';
 import { buildPrincipal } from '../principal';
 import { fromArg } from '../sources';
-import { systemCallerGuard } from './caller.guard';
+import { sessionCallerGuard, systemCallerGuard } from './caller.guard';
 import { allOf, anyOf } from './combinators';
 import { orgGuard, selectedOrganization } from './organization.guard';
 import { serviceGuard } from './service.guard';
 
-const { ANONYMOUS, buildUserPrincipal } = TestHelper.guardFixtures;
+const { ANONYMOUS, ORGANIZATION_ID, buildUserPrincipal } =
+  TestHelper.guardFixtures;
 
 const SERVICE_INSTANCE_ID =
   '11111111-1111-4111-8111-111111111111' as ServiceInstanceId;
@@ -89,6 +91,17 @@ describe('anyOf', () => {
         UnauthenticatedErrorCode.Unauthenticated,
       ],
       expected: UnauthenticatedErrorCode.Unauthenticated,
+    },
+    {
+      label:
+        'NOT_ALLOWED_WITH_API_TOKEN over MISSING_CAPABILITY_*, FORBIDDEN_ACCESS and NOT_FOUND',
+      codes: [
+        NotFoundErrorCode.NotFound,
+        ForbiddenErrorCode.ForbiddenAccess,
+        ForbiddenErrorCode.MissingCapabilityOnOrganization,
+        ForbiddenErrorCode.NotAllowedWithApiToken,
+      ],
+      expected: ForbiddenErrorCode.NotAllowedWithApiToken,
     },
     {
       label:
@@ -271,5 +284,53 @@ describe('allOf', () => {
 
     // Then
     expect(build).toThrow('allOf needs guards that build the same principal');
+  });
+
+  it('should pass what the last guard checked to the checks of its targets', async () => {
+    // Given
+    const check = vi.fn(() => allow());
+    const guard = allOf(
+      sessionCallerGuard(),
+      orgGuard({ organization: selectedOrganization, capabilities: [] })
+    ).targets(check);
+    const principal = buildUserPrincipal({
+      memberships: { [ORGANIZATION_ID]: [] },
+    });
+
+    // When
+    await guard.check(principal, {});
+
+    // Then
+    expect(check).toHaveBeenCalledExactlyOnceWith(
+      principal,
+      {},
+      {
+        kind: 'organization',
+        organizationId: ORGANIZATION_ID,
+      }
+    );
+  });
+
+  it('should refuse an API token with NOT_ALLOWED_WITH_API_TOKEN before its organization is read', async () => {
+    // Given
+    const organization = vi.fn(selectedOrganization);
+    const guard = allOf(
+      sessionCallerGuard(),
+      orgGuard({ organization, capabilities: [] })
+    );
+    const principal = buildUserPrincipal({
+      memberships: { [ORGANIZATION_ID]: [] },
+      apiTokenScope: ApiTokenScope.Admin,
+    });
+
+    // When
+    const result = await guard.check(principal, {});
+
+    // Then
+    expect(result).toEqual({
+      allowed: false,
+      code: ForbiddenErrorCode.NotAllowedWithApiToken,
+    });
+    expect(organization).not.toHaveBeenCalled();
   });
 });

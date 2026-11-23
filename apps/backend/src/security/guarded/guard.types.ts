@@ -12,6 +12,7 @@ export const DENIAL_CODES = [
   ForbiddenErrorCode.ForbiddenAccess,
   ForbiddenErrorCode.MissingCapabilityOnOrganization,
   ForbiddenErrorCode.MissingCapabilityOnService,
+  ForbiddenErrorCode.NotAllowedWithApiToken,
   NotFoundErrorCode.NotFound,
 ] as const;
 

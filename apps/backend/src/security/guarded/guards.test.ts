@@ -2,15 +2,22 @@ import { describe, expect, it } from 'vitest';
 import { TestHelper } from '../../../tests/helper/test.helper';
 import { contextSimpleUserFiligran2 } from '../../../tests/tests.const';
 import {
+  ApiTokenScope,
   OrganizationCapability,
   PortalCapability,
 } from '../../__generated__/resolvers-types';
+import { UserId } from '../../model/kanel/public/User';
 import {
   ForbiddenErrorCode,
   NotFoundErrorCode,
   UnauthenticatedErrorCode,
 } from '../../utils/error/error.code';
-import { platformCallerGuard, systemCallerGuard } from './guards/caller.guard';
+import {
+  callerIsGuard,
+  platformCallerGuard,
+  sessionCallerGuard,
+  systemCallerGuard,
+} from './guards/caller.guard';
 import { orgGuard, selectedOrganization } from './guards/organization.guard';
 import {
   bypassOnlyGuard,
@@ -22,6 +29,7 @@ import { buildPrincipal } from './principal';
 
 const {
   ANONYMOUS,
+  USER_ID,
   ORGANIZATION_ID,
   OTHER_ORGANIZATION_ID,
   PERSONAL_SPACE_ID,
@@ -594,6 +602,138 @@ describe('orgGuard without BYPASS', () => {
     expect(result).toEqual({
       allowed: false,
       code: ForbiddenErrorCode.MissingCapabilityOnOrganization,
+    });
+  });
+});
+
+describe('sessionCallerGuard', () => {
+  it.each([
+    {
+      label: 'an anonymous visitor',
+      principal: ANONYMOUS,
+      expected: {
+        allowed: false,
+        code: UnauthenticatedErrorCode.Unauthenticated,
+      },
+    },
+    {
+      label: 'a user',
+      principal: buildUserPrincipal(),
+      expected: { allowed: true },
+    },
+    {
+      label: 'a BYPASS user',
+      principal: buildUserPrincipal({ isBypassUser: true }),
+      expected: { allowed: true },
+    },
+    ...Object.values(ApiTokenScope).map((scope) => ({
+      label: `a ${scope} API token`,
+      principal: buildUserPrincipal({ apiTokenScope: scope }),
+      expected: {
+        allowed: false,
+        code: ForbiddenErrorCode.NotAllowedWithApiToken,
+      },
+    })),
+    {
+      label: 'an API token of a BYPASS user',
+      principal: buildUserPrincipal({
+        isBypassUser: true,
+        apiTokenScope: ApiTokenScope.Admin,
+      }),
+      expected: {
+        allowed: false,
+        code: ForbiddenErrorCode.NotAllowedWithApiToken,
+      },
+    },
+    {
+      label: 'a system caller',
+      principal: buildSystemPrincipal([PortalCapability.Bypass]),
+      expected: { allowed: false, code: ForbiddenErrorCode.ForbiddenAccess },
+    },
+  ])('should answer $label', async ({ principal, expected }) => {
+    // Given
+    const guard = sessionCallerGuard();
+
+    // When
+    const result = await guard.check(principal, {});
+
+    // Then
+    expect(result).toEqual(expected);
+  });
+});
+
+describe('callerIsGuard', () => {
+  const OTHER_USER_ID = 'other-user-id' as UserId;
+  type UserArgs = { userId: UserId };
+  const guard = () =>
+    callerIsGuard<UserArgs>({ user: (_caller, { userId }) => userId });
+
+  it('should allow the user the source names', async () => {
+    // When
+    const result = await guard().check(buildUserPrincipal(), {
+      userId: USER_ID,
+    });
+
+    // Then
+    expect(result).toEqual({ allowed: true });
+  });
+
+  it('should allow the user an asynchronous source names', async () => {
+    // Given
+    const asyncGuard = callerIsGuard<UserArgs>({
+      user: (_caller, { userId }) => Promise.resolve(userId),
+    });
+
+    // When
+    const result = await asyncGuard.check(buildUserPrincipal(), {
+      userId: USER_ID,
+    });
+
+    // Then
+    expect(result).toEqual({ allowed: true });
+  });
+
+  it.each([
+    { label: 'another user', principal: buildUserPrincipal() },
+    {
+      label: 'a BYPASS user who is not the named user',
+      principal: buildUserPrincipal({
+        isBypassUser: true,
+        capabilities: [PortalCapability.Bypass],
+      }),
+    },
+  ])('should refuse $label with NOT_FOUND', async ({ principal }) => {
+    // When
+    const result = await guard().check(principal, { userId: OTHER_USER_ID });
+
+    // Then
+    expect(result).toEqual({
+      allowed: false,
+      code: NotFoundErrorCode.NotFound,
+    });
+  });
+
+  it('should refuse with NOT_FOUND when the source names nobody', async () => {
+    // When
+    const result = await callerIsGuard<Partial<UserArgs>>({
+      user: (_caller, { userId }) => userId,
+    }).check(buildUserPrincipal(), {});
+
+    // Then
+    expect(result).toEqual({
+      allowed: false,
+      code: NotFoundErrorCode.NotFound,
+    });
+  });
+
+  it('should refuse an anonymous visitor with UNAUTHENTICATED', async () => {
+    // When
+    const result = await guard().check(ANONYMOUS, { userId: USER_ID });
+
+    // Then
+    expect(result).toEqual({
+      allowed: false,
+      code: UnauthenticatedErrorCode.Unauthenticated,
     });
   });
 });

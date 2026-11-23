@@ -16,9 +16,11 @@ const isMissingCapability = (code: DenialCode) =>
   code === ForbiddenErrorCode.MissingCapabilityOnOrganization ||
   code === ForbiddenErrorCode.MissingCapabilityOnService;
 
-// UNAUTHENTICATED, then the first MISSING_CAPABILITY_*, then FORBIDDEN_ACCESS, then NOT_FOUND
+// UNAUTHENTICATED, then NOT_ALLOWED_WITH_API_TOKEN, then the first MISSING_CAPABILITY_*, then FORBIDDEN_ACCESS, then
+// NOT_FOUND
 const strongestDenial = (codes: DenialCode[]): DenialCode =>
   codes.find((code) => code === UnauthenticatedErrorCode.Unauthenticated) ??
+  codes.find((code) => code === ForbiddenErrorCode.NotAllowedWithApiToken) ??
   codes.find(isMissingCapability) ??
   codes.find((code) => code === ForbiddenErrorCode.ForbiddenAccess) ??
   NotFoundErrorCode.NotFound;
