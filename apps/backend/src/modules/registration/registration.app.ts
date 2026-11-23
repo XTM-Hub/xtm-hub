@@ -3,7 +3,6 @@ import {
   AutoRegisterPlatformInput,
   CanUnregisterPlatformInput,
   CommercialModel,
-  DeploymentRequestHubStatus,
   IsPlatformRegisteredInput,
   IsPlatformRegisteredResponse,
   OpenCtiPlatformRegistrationStatusInput,
@@ -32,6 +31,7 @@ import { PlatformConfigurationMutator } from '../../model/kanel/public/PlatformC
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { UserId } from '../../model/kanel/public/User';
 import { securityGuard } from '../../security/guard';
+import { PLATFORM_ACCEPTED_HUB_STATUSES } from '../../security/platform-credential';
 import { sendMail } from '../../server/mail-service';
 import { PgBossProducer } from '../../thirdparty/pgboss/producer';
 import {
@@ -742,13 +742,7 @@ const assertValidDeploymentRequest = (
   ) {
     throw new Error(BadRequestErrorCode.InvalidPlatformId);
   }
-  if (
-    ![
-      DeploymentRequestHubStatus.Active,
-      DeploymentRequestHubStatus.Pending,
-      DeploymentRequestHubStatus.Provisioning,
-    ].includes(deploymentRequest.hub_status)
-  ) {
+  if (!PLATFORM_ACCEPTED_HUB_STATUSES.includes(deploymentRequest.hub_status)) {
     throw new Error(ForbiddenErrorCode.NotAllowedByDeploymentStatus);
   }
 };

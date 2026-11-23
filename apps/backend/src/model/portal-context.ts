@@ -8,6 +8,7 @@ import type { OrganizationDataLoaders } from '../modules/organization-management
 import type { RegistrationDataLoaders } from '../modules/registration/registration.dataloader';
 import type { ServiceInstanceDataLoaders } from '../modules/service/instance/service-instance.dataloader';
 import type { SubscriptionDataLoaders } from '../modules/subscription/subscription.dataloader';
+import type { PlatformPrincipal } from '../security/guarded/principal';
 import { UserLoadUserBy } from './user';
 
 export type PortalDataLoaders = {
@@ -27,4 +28,5 @@ export interface PortalContext {
   req: express.Request;
   res: express.Response;
   dataLoaders: PortalDataLoaders;
+  platformCaller?: PlatformPrincipal;
 }

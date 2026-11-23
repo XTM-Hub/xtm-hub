@@ -6,7 +6,7 @@ import {
   Resolvers,
 } from '../../__generated__/resolvers-types';
 import { Guarded, Public } from '../../security/guarded/guarded.decorator';
-import { callerGuard } from '../../security/guarded/guards/caller.guard';
+import { systemCallerGuard } from '../../security/guarded/guards/caller.guard';
 import { ManifestApp } from '../shareable-resource/manifest/manifest.app';
 import { ManageProductVersionApp } from './manage-product-version.app';
 
@@ -19,7 +19,7 @@ class ManageProductVersionQueries {
 }
 
 class ManageProductVersionMutations {
-  @Guarded(callerGuard('system', [PortalCapability.GenerateManifest]))
+  @Guarded(systemCallerGuard([PortalCapability.GenerateManifest]))
   static readonly newProductVersion: NonNullable<
     MutationResolvers['newProductVersion']
   > = async (_, { product, version }) => {
