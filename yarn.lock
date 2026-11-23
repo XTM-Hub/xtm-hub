@@ -9587,7 +9587,7 @@ __metadata:
     "@vitest/coverage-v8": "catalog:"
     "@vitest/eslint-plugin": "npm:1.6.28"
     apollo-errors: "npm:1.9.0"
-    auth0: "npm:5.14.1"
+    auth0: "npm:5.14.2"
     body-parser: "npm:2.3.0"
     chokidar: "npm:5.0.0"
     concurrently: "catalog:"
@@ -10238,25 +10238,25 @@ __metadata:
   languageName: node
   linkType: hard
 
-"auth0-legacy@npm:auth0@^4.37.1":
-  version: 4.37.1
-  resolution: "auth0@npm:4.37.1"
+"auth0-legacy@npm:auth0@^4.37.2":
+  version: 4.37.2
+  resolution: "auth0@npm:4.37.2"
   dependencies:
     jose: "npm:^4.13.2"
     undici-types: "npm:^6.15.0"
     uuid: "npm:11.1.1"
-  checksum: 10/d07cd3450b73a4c9cab0f36ead787d4d813508e48558889e43a693048bcc1a815eb40cae04a27aebdee9169e8f024c7245877df9c74f14029698d3ab6c9d1a16
+  checksum: 10/3c246fc483bac0a276d858c1685472bb1cd5b9f7c23f2fbe67a850e756d327bc7e16601f2c92344cdc4938f784acfbbb6b3210a3d61d3848258b9b9278d539a0
   languageName: node
   linkType: hard
 
-"auth0@npm:5.14.1":
-  version: 5.14.1
-  resolution: "auth0@npm:5.14.1"
+"auth0@npm:5.14.2":
+  version: 5.14.2
+  resolution: "auth0@npm:5.14.2"
   dependencies:
-    auth0-legacy: "npm:auth0@^4.37.1"
+    auth0-legacy: "npm:auth0@^4.37.2"
     jose: "npm:^5.0.0"
     uuid: "npm:^11.1.1"
-  checksum: 10/99762b6e300662f79d465f5b67ee78947feaf7bdd782e5b54d0d5c181c7950adb2392d0d53da64bb16d5180044bdfe1ffec9fa726e91176938dac1bc17e4f050
+  checksum: 10/5a49edd26606c5346ff918106833cc6238aabb0654dd6bb126d66f7e09939a85670844bc0ebbbe5c878e1ecb430dce1792fdcb150d34a60be90140dd049efd59
   languageName: node
   linkType: hard
 
