@@ -12,11 +12,13 @@ import { UserId } from '../../model/kanel/public/User';
 import { UserLoadUserBy } from '../../model/user';
 import { ROLE_ADMIN } from '../../portal.const';
 import { logApp } from '../../utils/app-logger.util';
+import { ForbiddenErrorCode } from '../../utils/error/error.code';
 import { UserDomain } from '../organization-management/user/user-domain/user.domain';
 import { ApiTokenApp } from './api-token.app';
 import {
   apiTokenMiddleware,
   getApiTokenAuthentication,
+  refuseApiTokenMiddleware,
   resolveApiToken,
 } from './api-token.auth';
 import { ApiTokenDomain } from './api-token.domain';
@@ -787,5 +789,58 @@ describe('apiTokenMiddleware', () => {
 
     // Then
     expect(res.status).toHaveBeenCalledWith(500);
+  });
+});
+
+describe('refuseApiTokenMiddleware', () => {
+  const response = () => {
+    const res = { status: vi.fn(), json: vi.fn() };
+    res.status.mockReturnValue(res);
+    return res;
+  };
+
+  it('should let a request without an API token through', () => {
+    // Given
+    const req = { headers: {}, path: '/graphql-sse' } as Request;
+    const res = response();
+    const next = vi.fn();
+
+    // When
+    refuseApiTokenMiddleware(req, res as unknown as Response, next);
+
+    // Then
+    expect(next).toHaveBeenCalledWith();
+    expect(res.status).not.toHaveBeenCalled();
+  });
+
+  it('should answer 403 to an authenticated token outside the GraphQL API', async () => {
+    // Given
+    const { token } = await createToken(
+      SECOND.USERS.SIMPLE.ID,
+      SECOND.ID,
+      ApiTokenScope.Read
+    );
+    const req = {
+      headers: { authorization: `Bearer ${token}` },
+      path: '/graphql-sse',
+    } as Request;
+    await apiTokenMiddleware(req, response() as unknown as Response, vi.fn());
+    const res = response();
+    const next = vi.fn();
+
+    // When
+    refuseApiTokenMiddleware(req, res as unknown as Response, next);
+
+    // Then
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(res.json).toHaveBeenCalledWith({
+      errors: [
+        {
+          message: ForbiddenErrorCode.NotAllowedWithApiToken,
+          extensions: { code: ForbiddenErrorCode.NotAllowedWithApiToken },
+        },
+      ],
+    });
+    expect(next).not.toHaveBeenCalled();
   });
 });

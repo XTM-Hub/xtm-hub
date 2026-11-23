@@ -1,10 +1,11 @@
 import type { Response } from 'express';
 import {
+  ForbiddenErrorCode,
   UnauthenticatedErrorCode,
   UnknownErrorCode,
 } from '../../utils/error/error.code';
 
-type ApiTokenErrorStatus = 401 | 429 | 500;
+type ApiTokenErrorStatus = 401 | 403 | 429 | 500;
 
 interface ApiTokenErrorDefinition {
   readonly code: string;
@@ -19,6 +20,10 @@ export const API_TOKEN_ERRORS = {
   Unauthenticated: {
     code: UnauthenticatedErrorCode.Unauthenticated,
     status: 401,
+  },
+  NotAllowedWithApiToken: {
+    code: ForbiddenErrorCode.NotAllowedWithApiToken,
+    status: 403,
   },
   TooManyRequests: { code: 'TOO_MANY_REQUESTS', status: 429 },
   UnknownError: { code: UnknownErrorCode.UnknownError, status: 500 },

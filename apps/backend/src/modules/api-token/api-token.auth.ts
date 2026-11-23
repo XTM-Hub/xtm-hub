@@ -228,3 +228,25 @@ export const apiTokenMiddleware = async (
   recordUse(resolution.authentication.token, now);
   next();
 };
+
+/**
+ * A token authenticates the GraphQL API only, where apiTokenPlugin enforces its scope and denylist. Any other route
+ * (`/graphql-sse`, REST, `/auth`) authorizes the session while the request context runs as the token's user: the
+ * token is refused there rather than ignored.
+ */
+export const refuseApiTokenMiddleware = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const authentication = getApiTokenAuthentication(req);
+  if (!authentication) {
+    next();
+    return;
+  }
+  logApp.warn('API token refused outside the GraphQL API', {
+    api_token_id: authentication.token.id,
+    path: req.path,
+  });
+  sendApiTokenError(res, API_TOKEN_ERRORS.NotAllowedWithApiToken);
+};

@@ -8,7 +8,10 @@ import {
   type OperationDefinitionNode,
   type SelectionSetNode,
 } from 'graphql';
-import { ApiTokenScope } from '../../__generated__/resolvers-types';
+import {
+  ApiTokenScope,
+  type Mutation,
+} from '../../__generated__/resolvers-types';
 import { Context } from '../../server/apollo-plugins/log';
 import { logApp } from '../../utils/app-logger.util';
 import { ForbiddenErrorCode } from '../../utils/error/error.code';
@@ -16,11 +19,29 @@ import { mapToGraphQLError } from '../../utils/error/error.mapping';
 import { getApiTokenAuthentication } from './api-token.auth';
 import { API_TOKEN_ERRORS, sendApiTokenError } from './api-token.errors';
 
-// Operations a token never runs, whatever its scope: they change the identity or the credentials of the caller
-export const API_TOKEN_DENIED_FIELDS: ReadonlySet<string> = new Set([
+/**
+ * Mutations no token runs, whatever its scope: they act on the caller's own account, or issue a credential that would
+ * outlive the token. Add any new mutation of that kind here. `revokeApiToken` and `unregisterPlatform` stay allowed:
+ * they only ever reduce access. Typed with the generated Mutation fields, so a misspelled name does not compile.
+ */
+export const API_TOKEN_DENIED_FIELDS: ReadonlySet<string> = new Set<
+  Exclude<keyof Mutation, '__typename'>
+>([
+  // Organization and sessions
   'changeSelectedOrganization',
-  'createApiToken',
+  'login',
   'logout',
+  // Credentials
+  'addUser', // its password creates a local login that outlives the token
+  'createApiToken',
+  'refreshUserPlatformToken',
+  'registerPlatform',
+  'resetPassword',
+  // Profile and personal space
+  'editMeUser',
+  'uploadUserPicture',
+  'requestTransferPersonalSpace',
+  'transferPersonalSpace',
 ]);
 
 const API_TOKEN_RATE_LIMIT_WINDOW_MS = 60 * 1000;

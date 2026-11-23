@@ -1,8 +1,10 @@
 import { Kind, type OperationDefinitionNode, parse } from 'graphql';
 import { describe, expect, it } from 'vitest';
 import { ApiTokenScope } from '../../__generated__/resolvers-types';
+import createSchema from '../../server/graphql-schema';
 import { ForbiddenErrorCode } from '../../utils/error/error.code';
 import {
+  API_TOKEN_DENIED_FIELDS,
   apiTokenOperationRefusal,
   operationRootFields,
 } from './api-token.plugin';
@@ -71,14 +73,50 @@ describe('apiTokenOperationRefusal', () => {
     }
   );
 
-  it.each(['changeSelectedOrganization', 'createApiToken', 'logout'])(
-    'should refuse %s to every token, admin included',
-    (field) => {
-      for (const scope of Object.values(ApiTokenScope)) {
-        expect(apiTokenOperationRefusal(scope, 'mutation', ['me', field])).toBe(
-          ForbiddenErrorCode.NotAllowedWithApiToken
-        );
-      }
+  it.each([
+    'changeSelectedOrganization',
+    'login',
+    'logout',
+    'addUser',
+    'createApiToken',
+    'refreshUserPlatformToken',
+    'registerPlatform',
+    'resetPassword',
+    'editMeUser',
+    'uploadUserPicture',
+    'requestTransferPersonalSpace',
+    'transferPersonalSpace',
+  ])('should refuse %s to every token, admin included', (field) => {
+    for (const scope of Object.values(ApiTokenScope)) {
+      expect(apiTokenOperationRefusal(scope, 'mutation', ['me', field])).toBe(
+        ForbiddenErrorCode.NotAllowedWithApiToken
+      );
     }
-  );
+  });
+
+  it('should refuse a personal space transfer hidden in a fragment to an admin token', () => {
+    const fields = rootFields(`
+      mutation Hidden { ...Transfer }
+      fragment Transfer on Mutation {
+        requestTransferPersonalSpace(new_email: "other@example.test") { success }
+      }
+    `);
+
+    expect(
+      apiTokenOperationRefusal(ApiTokenScope.Admin, 'mutation', fields)
+    ).toBe(ForbiddenErrorCode.NotAllowedWithApiToken);
+  });
+});
+
+describe('api token denied fields', () => {
+  it('should only name root Mutation fields of the schema', () => {
+    // The type check reads the committed generated types: this reads the .graphql files they may lag behind
+    const mutationFields = Object.keys(
+      createSchema().getMutationType()?.getFields() ?? {}
+    );
+
+    expect(mutationFields).toEqual(
+      expect.arrayContaining([...API_TOKEN_DENIED_FIELDS])
+    );
+  });
 });
