@@ -7,7 +7,11 @@ import { ApolloServerPluginLandingPageDisabled } from '@apollo/server/plugin/dis
 import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer';
 import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin/landingPage/default';
 import { isInstance as isCustomApolloError } from 'apollo-errors';
-import type { GraphQLFormattedError, GraphQLSchema } from 'graphql';
+import {
+  GraphQLError,
+  type GraphQLFormattedError,
+  type GraphQLSchema,
+} from 'graphql';
 import { Server } from 'http';
 import { apiTokenPlugin } from '../modules/api-token/api-token.plugin';
 import { ErrorCode, UnknownErrorCode } from '../utils/error/error.code';
@@ -40,7 +44,9 @@ const isClientSafeError = (
     }
     // A plugin refusal before any resolver (apiTokenPlugin) has no path: Apollo wraps it, keeping ours as the cause
     return isKnownClientError(
-      (originalError as { originalError?: unknown } | null)?.originalError
+      originalError instanceof GraphQLError
+        ? originalError.originalError
+        : undefined
     );
   }
   return isKnownClientError(originalError);
