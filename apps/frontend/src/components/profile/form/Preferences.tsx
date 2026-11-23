@@ -13,7 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@filigran/design-system';
-import { useMeEditMutation } from '@graphql/generated';
+import { useMeLanguageEditMutation } from '@graphql/generated';
 import { useQueryClient } from '@tanstack/react-query';
 import { useLocale } from 'next-intl';
 import { useTheme } from 'next-themes';
@@ -26,19 +26,17 @@ export const ProfileFormPreferences = () => {
   const locale = useLocale();
   const { theme, setTheme } = useTheme();
   const queryClient = useQueryClient();
-  const { mutate: editMeUser } = useMeEditMutation(portalGraphqlClient, {
-    onSuccess: ({ editMeUser: user }) => setCurrentUser(queryClient, user),
-  });
+  const { mutate: editLanguage } = useMeLanguageEditMutation(
+    portalGraphqlClient,
+    {
+      onSuccess: ({ editMeUser: user }) => setCurrentUser(queryClient, user),
+    }
+  );
   const availableLocales = isDevelopmentEnvSetting ? locales : publicLocales;
 
   const onLocaleChange = (value: string) => {
     void setUserLocale(value as Locale);
-    editMeUser({
-      first_name: null,
-      last_name: null,
-      country: null,
-      selected_language: value,
-    });
+    editLanguage({ selected_language: value });
   };
 
   const currentTheme = theme ?? 'dark';

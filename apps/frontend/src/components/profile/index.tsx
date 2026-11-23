@@ -21,8 +21,8 @@ import {
   MePictureUploadDocument,
   MePictureUploadMutation,
   MePictureUploadMutationVariables,
-  useMeEditMutation,
   useMePasswordResetMutation,
+  useMeProfileEditMutation,
 } from '@graphql/generated';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useContext, useState } from 'react';
@@ -59,10 +59,13 @@ export const Profile = () => {
       },
     }
   );
-  const { mutate: editMeUser } = useMeEditMutation<Error>(portalGraphqlClient, {
-    onError: showError,
-    onSuccess: ({ editMeUser: user }) => handleUserUpdated(user),
-  });
+  const { mutate: editMeUser } = useMeProfileEditMutation<Error>(
+    portalGraphqlClient,
+    {
+      onError: showError,
+      onSuccess: ({ editMeUser: user }) => handleUserUpdated(user),
+    }
+  );
   const { mutate: uploadPicture } = useMutation({
     mutationFn: (picture: File) =>
       requestGraphqlWithUploads<
@@ -103,7 +106,6 @@ export const Profile = () => {
       first_name: values.first_name ?? null,
       last_name: values.last_name ?? null,
       country: values.country ?? null,
-      selected_language: null,
     });
   };
   const handleUploadPicture = ([picture]: (File | null)[]) => {

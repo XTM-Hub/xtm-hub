@@ -1,4 +1,4 @@
-import type { PortalUser } from '@/components/me/portal-user.utils';
+import { toPortalUser } from '@/components/me/portal-user.utils';
 import { getAuthenticatedGraphqlClient } from '@/lib/graphql-client';
 import { getQueryClient } from '@/lib/query-client';
 import { redirectToSignupOnUnauthenticated } from '@/lib/server-unauthenticated-redirect';
@@ -15,7 +15,7 @@ export const loadMeUser = async (
       queryFn: useMeQuery.fetcher(await getAuthenticatedGraphqlClient()),
     })
   );
-  return me as PortalUser | null;
+  return me ? toPortalUser(me) : null;
 };
 
 export const loadCurrentUser = async () => {

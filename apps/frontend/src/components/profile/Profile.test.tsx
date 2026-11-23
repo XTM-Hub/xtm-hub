@@ -17,7 +17,7 @@ const UPDATED_USER = mockUser({ id: 'user-1', first_name: FIRST_NAME });
 const SERVER_ERROR = 'EDIT_ME_USER_ERROR';
 
 const mocks = vi.hoisted(() => ({
-  useMeEditMutation: vi.fn(),
+  useMeProfileEditMutation: vi.fn(),
   useMePasswordResetMutation: vi.fn(),
   useApiTokensQuery: vi.fn(),
   showSnackbar: vi.fn(),
@@ -30,7 +30,7 @@ vi.mock('@graphql/generated', async (importOriginal) => {
     ...(await mockGeneratedQueryHooks(importOriginal, {
       useApiTokensQuery: mocks.useApiTokensQuery,
     })),
-    useMeEditMutation: mocks.useMeEditMutation,
+    useMeProfileEditMutation: mocks.useMeProfileEditMutation,
     useMePasswordResetMutation: mocks.useMePasswordResetMutation,
   };
 });
@@ -86,7 +86,7 @@ describe('Profile', () => {
       data: { apiTokens: [] },
       isLoading: false,
     });
-    editMeUser = mockMutationHook(mocks.useMeEditMutation, 'success', {
+    editMeUser = mockMutationHook(mocks.useMeProfileEditMutation, 'success', {
       data: { editMeUser: UPDATED_USER },
     });
     mockMutationHook(mocks.useMePasswordResetMutation, 'success');
@@ -105,7 +105,6 @@ describe('Profile', () => {
         first_name: FIRST_NAME,
         last_name: LAST_NAME,
         country: COUNTRY,
-        selected_language: null,
       })
     );
   });
@@ -158,7 +157,7 @@ describe('Profile', () => {
     async (_action, runAction) => {
       // Given
       const error = new Error(SERVER_ERROR);
-      mockMutationHook(mocks.useMeEditMutation, 'error', { error });
+      mockMutationHook(mocks.useMeProfileEditMutation, 'error', { error });
       mockMutationHook(mocks.useMePasswordResetMutation, 'error', { error });
       vi.mocked(requestGraphqlWithUploads).mockRejectedValue(error);
 

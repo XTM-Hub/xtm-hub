@@ -1,17 +1,17 @@
-mutation MeEdit(
+mutation MeProfileEdit(
   $first_name: String
   $last_name: String
   $country: String
-  $selected_language: String
 ) {
   editMeUser(
-    input: {
-      first_name: $first_name
-      last_name: $last_name
-      country: $country
-      selected_language: $selected_language
-    }
+    input: { first_name: $first_name, last_name: $last_name, country: $country }
   ) {
+    ...CurrentUser
+  }
+}
+
+mutation MeLanguageEdit($selected_language: String!) {
+  editMeUser(input: { selected_language: $selected_language }) {
     ...CurrentUser
   }
 }

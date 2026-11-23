@@ -4095,15 +4095,21 @@ export type IntegrationProductVersionFilterQueryVariables = Exact<{
 
 export type IntegrationProductVersionFilterQuery = { __typename?: 'Query', registeredProductVersions: Array<{ __typename?: 'RegisteredProductVersion', version: string }> };
 
-export type MeEditMutationVariables = Exact<{
+export type MeProfileEditMutationVariables = Exact<{
   first_name: InputMaybe<Scalars['String']['input']>;
   last_name: InputMaybe<Scalars['String']['input']>;
   country: InputMaybe<Scalars['String']['input']>;
-  selected_language: InputMaybe<Scalars['String']['input']>;
 }>;
 
 
-export type MeEditMutation = { __typename?: 'Mutation', editMeUser: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, country: string | null, picture: string | null, selected_organization_id: any | null, selected_org_capabilities: Array<OrganizationCapability> | null, has_replied_satisfaction: HasRepliedSatisfaction | null, capabilities: Array<{ __typename?: 'Capability', name: PortalCapability }> | null, organizations: Array<{ __typename?: 'Organization', id: string, name: string, personal_space: boolean }> | null } };
+export type MeProfileEditMutation = { __typename?: 'Mutation', editMeUser: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, country: string | null, picture: string | null, selected_organization_id: any | null, selected_org_capabilities: Array<OrganizationCapability> | null, has_replied_satisfaction: HasRepliedSatisfaction | null, capabilities: Array<{ __typename?: 'Capability', name: PortalCapability }> | null, organizations: Array<{ __typename?: 'Organization', id: string, name: string, personal_space: boolean }> | null } };
+
+export type MeLanguageEditMutationVariables = Exact<{
+  selected_language: Scalars['String']['input'];
+}>;
+
+
+export type MeLanguageEditMutation = { __typename?: 'Mutation', editMeUser: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, country: string | null, picture: string | null, selected_organization_id: any | null, selected_org_capabilities: Array<OrganizationCapability> | null, has_replied_satisfaction: HasRepliedSatisfaction | null, capabilities: Array<{ __typename?: 'Capability', name: PortalCapability }> | null, organizations: Array<{ __typename?: 'Organization', id: string, name: string, personal_space: boolean }> | null } };
 
 export type MePictureUploadMutationVariables = Exact<{
   document: Scalars['Upload']['input'];
@@ -7537,36 +7543,65 @@ useInfiniteIntegrationProductVersionFilterQuery.getKey = (variables: Integration
 useInfiniteIntegrationProductVersionFilterQuery.getRootKey = () => ['IntegrationProductVersionFilter.infinite'] as const;
 useIntegrationProductVersionFilterQuery.fetcher = (client: GraphQLClient, variables: IntegrationProductVersionFilterQueryVariables, headers?: RequestInit['headers']) => fetcher<IntegrationProductVersionFilterQuery, IntegrationProductVersionFilterQueryVariables>(client, IntegrationProductVersionFilterDocument, variables, headers);
 
-export const MeEditDocument = `
-    mutation MeEdit($first_name: String, $last_name: String, $country: String, $selected_language: String) {
+export const MeProfileEditDocument = `
+    mutation MeProfileEdit($first_name: String, $last_name: String, $country: String) {
   editMeUser(
-    input: {first_name: $first_name, last_name: $last_name, country: $country, selected_language: $selected_language}
+    input: {first_name: $first_name, last_name: $last_name, country: $country}
   ) {
     ...CurrentUser
   }
 }
     ${CurrentUserFragmentDoc}`;
 
-export const useMeEditMutation = <
+export const useMeProfileEditMutation = <
       TError = unknown,
       TContext = unknown
     >(
       client: GraphQLClient,
-      options?: UseMutationOptions<MeEditMutation, TError, MeEditMutationVariables, TContext>,
+      options?: UseMutationOptions<MeProfileEditMutation, TError, MeProfileEditMutationVariables, TContext>,
       headers?: RequestInit['headers']
     ) => {
     
-    return useMutation<MeEditMutation, TError, MeEditMutationVariables, TContext>(
+    return useMutation<MeProfileEditMutation, TError, MeProfileEditMutationVariables, TContext>(
       {
-    mutationKey: ['MeEdit'],
-    mutationFn: (variables?: MeEditMutationVariables) => fetcher<MeEditMutation, MeEditMutationVariables>(client, MeEditDocument, variables, headers)(),
+    mutationKey: ['MeProfileEdit'],
+    mutationFn: (variables?: MeProfileEditMutationVariables) => fetcher<MeProfileEditMutation, MeProfileEditMutationVariables>(client, MeProfileEditDocument, variables, headers)(),
     ...options
   }
     )};
 
-useMeEditMutation.getKey = () => ['MeEdit'];
-useMeEditMutation.getRootKey = () => ['MeEdit'] as const;
-useMeEditMutation.fetcher = (client: GraphQLClient, variables?: MeEditMutationVariables, headers?: RequestInit['headers']) => fetcher<MeEditMutation, MeEditMutationVariables>(client, MeEditDocument, variables, headers);
+useMeProfileEditMutation.getKey = () => ['MeProfileEdit'];
+useMeProfileEditMutation.getRootKey = () => ['MeProfileEdit'] as const;
+useMeProfileEditMutation.fetcher = (client: GraphQLClient, variables?: MeProfileEditMutationVariables, headers?: RequestInit['headers']) => fetcher<MeProfileEditMutation, MeProfileEditMutationVariables>(client, MeProfileEditDocument, variables, headers);
+
+export const MeLanguageEditDocument = `
+    mutation MeLanguageEdit($selected_language: String!) {
+  editMeUser(input: {selected_language: $selected_language}) {
+    ...CurrentUser
+  }
+}
+    ${CurrentUserFragmentDoc}`;
+
+export const useMeLanguageEditMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<MeLanguageEditMutation, TError, MeLanguageEditMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<MeLanguageEditMutation, TError, MeLanguageEditMutationVariables, TContext>(
+      {
+    mutationKey: ['MeLanguageEdit'],
+    mutationFn: (variables?: MeLanguageEditMutationVariables) => fetcher<MeLanguageEditMutation, MeLanguageEditMutationVariables>(client, MeLanguageEditDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useMeLanguageEditMutation.getKey = () => ['MeLanguageEdit'];
+useMeLanguageEditMutation.getRootKey = () => ['MeLanguageEdit'] as const;
+useMeLanguageEditMutation.fetcher = (client: GraphQLClient, variables: MeLanguageEditMutationVariables, headers?: RequestInit['headers']) => fetcher<MeLanguageEditMutation, MeLanguageEditMutationVariables>(client, MeLanguageEditDocument, variables, headers);
 
 export const MePictureUploadDocument = `
     mutation MePictureUpload($document: Upload!) {

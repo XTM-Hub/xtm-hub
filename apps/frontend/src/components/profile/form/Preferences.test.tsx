@@ -13,7 +13,7 @@ const EDITED_USER = mockUser({ id: 'user-1' });
 
 const mocks = vi.hoisted(() => ({
   setTheme: vi.fn(),
-  useMeEditMutation: vi.fn(),
+  useMeLanguageEditMutation: vi.fn(),
   setUserLocale: vi.fn(),
 }));
 
@@ -30,7 +30,7 @@ vi.mock('next-themes', () => ({
 
 vi.mock('@graphql/generated', async (importOriginal) => ({
   ...(await importOriginal<object>()),
-  useMeEditMutation: mocks.useMeEditMutation,
+  useMeLanguageEditMutation: mocks.useMeLanguageEditMutation,
 }));
 
 vi.mock('@filigran/design-system', async () => {
@@ -69,14 +69,18 @@ vi.mock('@filigran/design-system', async () => {
 });
 
 describe('ProfileFormPreferences', () => {
-  let editMeUser: ReturnType<typeof mockMutationHook>;
+  let editLanguage: ReturnType<typeof mockMutationHook>;
 
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.setUserLocale.mockResolvedValue(undefined);
-    editMeUser = mockMutationHook(mocks.useMeEditMutation, 'success', {
-      data: { editMeUser: EDITED_USER },
-    });
+    editLanguage = mockMutationHook(
+      mocks.useMeLanguageEditMutation,
+      'success',
+      {
+        data: { editMeUser: EDITED_USER },
+      }
+    );
   });
 
   it('should render the preference sections', () => {
@@ -115,10 +119,7 @@ describe('ProfileFormPreferences', () => {
     await user.selectOptions(localeSelect, SELECTED_LANGUAGE);
 
     expect(mocks.setUserLocale).toHaveBeenCalledWith(SELECTED_LANGUAGE);
-    expect(editMeUser).toHaveBeenCalledWith({
-      first_name: null,
-      last_name: null,
-      country: null,
+    expect(editLanguage).toHaveBeenCalledWith({
       selected_language: SELECTED_LANGUAGE,
     });
   });
