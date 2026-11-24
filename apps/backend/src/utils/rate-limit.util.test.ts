@@ -8,6 +8,10 @@ import { once } from 'node:events';
 import type { Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  requestContext,
+  type RequestContext,
+} from '../context/request.context';
 import { MANIFEST_ERRORS } from '../server/endpoints/manifest/manifest-endpoint.errors';
 import { logApp } from './app-logger.util';
 import { parseTrustProxy } from './config-validation.util';
@@ -429,6 +433,56 @@ describe('buildGraphqlAnonymousRateLimiterOptions', () => {
         },
       ],
     });
+  });
+});
+
+describe('buildGraphqlUserRateLimiterOptions for an API token request', () => {
+  const API_TOKEN_USER_ID = 'token-user-1';
+  // A Bearer token leaves the session empty: its user only reaches the request context
+  const apiTokenContext = {
+    apiToken: { userId: API_TOKEN_USER_ID },
+  } as unknown as RequestContext;
+  const withApiToken = <T>(callback: () => T): T =>
+    requestContext.run(apiTokenContext, callback);
+
+  it('should key the user limiter by the token user, whatever the address', async () => {
+    // Given
+    const keyGenerator = buildGraphqlUserRateLimiterOptions().keyGenerator!;
+
+    // When
+    const keys = await withApiToken(() =>
+      Promise.all(
+        [PUBLIC_IP, CLIENT_A].map((ip) =>
+          keyGenerator(buildMockRequest({ ip }), {} as Response)
+        )
+      )
+    );
+
+    // Then
+    expect(keys).toEqual([
+      `user:${API_TOKEN_USER_ID}`,
+      `user:${API_TOKEN_USER_ID}`,
+    ]);
+  });
+
+  it('should count the request in the user limiter and leave the anonymous one', async () => {
+    // When
+    const [userLimiterSkips, anonymousLimiterSkips] = await withApiToken(() =>
+      Promise.all([
+        buildGraphqlUserRateLimiterOptions().skip!(
+          buildMockRequest({}),
+          {} as Response
+        ),
+        buildGraphqlAnonymousRateLimiterOptions().skip!(
+          buildMockRequest({}),
+          {} as Response
+        ),
+      ])
+    );
+
+    // Then
+    expect(userLimiterSkips).toBe(false);
+    expect(anonymousLimiterSkips).toBe(true);
   });
 });
 

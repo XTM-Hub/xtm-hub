@@ -6,6 +6,7 @@ import rateLimit, {
 } from 'express-rate-limit';
 import { createHash } from 'node:crypto';
 import { BlockList, isIP } from 'node:net';
+import { requestContext } from '../context/request.context';
 import {
   MANIFEST_ERRORS,
   sendManifestError,
@@ -63,9 +64,18 @@ export const isPrivateIp = (ip: string | undefined): boolean => {
 export const clientIpKey = (req: Request) =>
   ipKeyGenerator(req.ip ?? 'unknown');
 
+/**
+ * The signed-in user: the owner of the API token the request authenticates with, whose user is not in the session, or
+ * the user of the session. The request context is set by `requestContextMiddleware`, which runs before the limiters.
+ */
+const signedInUserId = (req: Request): string | undefined =>
+  requestContext.get()?.apiToken?.userId ?? req.session?.user?.id;
+
 /** The signed-in user, or the client IP for an anonymous request. */
-export const sessionUserKey = (req: Request) =>
-  req.session?.user ? `user:${req.session.user.id}` : `ip:${clientIpKey(req)}`;
+export const sessionUserKey = (req: Request) => {
+  const userId = signedInUserId(req);
+  return userId ? `user:${userId}` : `ip:${clientIpKey(req)}`;
+};
 
 // endregion
 
@@ -244,7 +254,7 @@ export const buildGraphqlUserRateLimiterOptions = (): Partial<Options> =>
     logLabel: 'GraphQL user',
     sendRateLimitError: sendGraphqlTooManyRequests,
     keyGenerator: sessionUserKey,
-    skip: (req) => isPreflight(req) || !req.session?.user,
+    skip: (req) => isPreflight(req) || !signedInUserId(req),
   });
 
 /**
@@ -260,7 +270,7 @@ export const buildGraphqlAnonymousRateLimiterOptions = (): Partial<Options> =>
     logLabel: 'GraphQL anonymous',
     sendRateLimitError: sendGraphqlTooManyRequests,
     skipPrivateIp: true,
-    skip: (req) => isPreflight(req) || Boolean(req.session?.user),
+    skip: (req) => isPreflight(req) || Boolean(signedInUserId(req)),
   });
 
 /** Built once, so that every GraphQL path shares the same budgets. */
