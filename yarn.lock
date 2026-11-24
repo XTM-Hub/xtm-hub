@@ -13911,12 +13911,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"graphql-sse@npm:2.6.3":
-  version: 2.6.3
-  resolution: "graphql-sse@npm:2.6.3"
+"graphql-sse@npm:2.6.4":
+  version: 2.6.4
+  resolution: "graphql-sse@npm:2.6.4"
   peerDependencies:
     graphql: ">=0.11 <=17"
-  checksum: 10/b68b2484ab268474849664f1e5c526c09edf14094251e0862e11d33f0d85053ee43696f64fd43bcb0697a797410d36e0ee367c9a11697c63a2cf9c8b916b5c7b
+  checksum: 10/a97d80d794316162b4d28543913f876f301b25cabc2918ff6fbfb308b96462b211c1ef495bacff55bd3c05319292981476af7e0ca6bca4e18e98e53b19c9c301
   languageName: node
   linkType: hard
 
