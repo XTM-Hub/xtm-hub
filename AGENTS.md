@@ -82,6 +82,13 @@ Skills in `.claude/skills/` cover the cross-cutting practice: [`change-delivery`
 for scope and how to present a change, [`performance-security-review`](.claude/skills/performance-security-review/SKILL.md)
 to self-check new code, and [`code-review`](.claude/skills/code-review/SKILL.md) before opening a pull request.
 
+Two orchestration skills: `/implement-ticket <issue>` (explicit invocation only) takes one short technical ticket to a
+draft pull request (it needs the Notion connector and `gh`), and `/review-pr <pr>` runs a
+multi-reviewer review of a pull request and posts nothing without a yes. `implement-ticket` calls `review-pr` and
+`xtm-demo`; `review-pr` fans out the `pr-reviewer-*` skills through the `pr-reviewer` agent. Run them from an
+`xtm-hub` checkout, or from a session that also holds the product repository checkout for a ticket that belongs to
+OpenAEV or OpenCTI.
+
 ## Commits and pull requests
 
 `type(scope?)!?: description (#issue)` — [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/).
