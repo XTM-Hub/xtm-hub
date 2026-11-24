@@ -1,11 +1,18 @@
 import { v4 as uuidv4 } from 'uuid';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TestHelper } from '../../../../tests/helper/test.helper';
-import { TEST_ORGANIZATIONS } from '../../../../tests/tests.const';
+import {
+  CAPABILITY_READ_ORGANIZATION_MEMBERS,
+  TEST_ORGANIZATIONS,
+} from '../../../../tests/tests.const';
 import { OrganizationMemberConnection } from '../../../__generated__/resolvers-types';
+import { requestContext } from '../../../context/request.context';
 import Organization, {
   OrganizationId,
 } from '../../../model/kanel/public/Organization';
+import User, { UserId } from '../../../model/kanel/public/User';
+import { CAPABILITY_BYPASS } from '../../../portal.const';
+import { securityGuard } from '../../../security/guard';
 import { ErrorCode } from '../../../utils/error/error.code';
 import { TelemetryApp } from '../../telemetry/telemetry.app';
 import { TelemetrySource } from '../../telemetry/telemetry.const';
@@ -298,6 +305,12 @@ describe('organizationApp', () => {
       domains: null,
       personal_space: false,
     };
+    const CALLER = {
+      id: '5d0c1e7a-8b2f-4c6d-9e3a-1f4b7c8d2e90' as UserId,
+      email: 'caller@admin-hub.test',
+    } as User;
+    // Without READ_ORGANIZATION_MEMBERS: restricted to the organizations the caller belongs to
+    const RESTRICTED_CALLER = TestHelper.caller.build(CALLER, [ORGANIZATION]);
     const AFTER = btoa('2');
     const SEARCH_TERM = 'needle';
     const CONNECTION: OrganizationMemberConnection = {
@@ -310,15 +323,25 @@ describe('organizationApp', () => {
       },
       totalCount: 0,
     };
+    // Every refusal answers exactly this error, so that a refused id cannot be told from a missing one
+    const ORGANIZATION_NOT_FOUND = new Error(ErrorCode.OrganizationNotFound);
 
-    const mockReadableOrganization = (organization: Organization | undefined) =>
+    const mockMembership = (isMember: boolean) =>
       vi
-        .spyOn(OrganizationDomain, 'loadOrganizationWhoseMembersAreReadableBy')
+        .spyOn(securityGuard, 'isUserInOrganization')
+        .mockResolvedValue(isMember);
+    const mockOrganization = (organization: Organization | undefined) =>
+      vi
+        .spyOn(OrganizationDomain, 'loadFirstProfessionalOrganizationBy')
         .mockResolvedValue(organization);
     const mockMemberConnection = () =>
       vi
         .spyOn(UserDomain, 'loadOrganizationMemberConnection')
         .mockResolvedValue(CONNECTION);
+
+    beforeEach(() => {
+      requestContext.set({ user: RESTRICTED_CALLER });
+    });
 
     afterEach(() => {
       vi.restoreAllMocks();
@@ -326,7 +349,8 @@ describe('organizationApp', () => {
 
     it('should refuse an organization id that is not a UUID as an unknown organization, without reading the database', async () => {
       // Given
-      const readableOrganizationSpy = mockReadableOrganization(ORGANIZATION);
+      const membershipSpy = mockMembership(true);
+      const organizationSpy = mockOrganization(ORGANIZATION);
       const memberConnectionSpy = mockMemberConnection();
 
       // When
@@ -336,14 +360,16 @@ describe('organizationApp', () => {
       );
 
       // Then
-      await expect(call).rejects.toThrow(ErrorCode.OrganizationNotFound);
-      expect(readableOrganizationSpy).not.toHaveBeenCalled();
+      await expect(call).rejects.toStrictEqual(ORGANIZATION_NOT_FOUND);
+      expect(membershipSpy).not.toHaveBeenCalled();
+      expect(organizationSpy).not.toHaveBeenCalled();
       expect(memberConnectionSpy).not.toHaveBeenCalled();
     });
 
-    it('should refuse an organization whose members the caller may not read as an unknown organization', async () => {
+    it('should refuse an organization the restricted caller is not a member of as an unknown organization, before loading it', async () => {
       // Given
-      const readableOrganizationSpy = mockReadableOrganization(undefined);
+      const membershipSpy = mockMembership(false);
+      const organizationSpy = mockOrganization(ORGANIZATION);
       const memberConnectionSpy = mockMemberConnection();
 
       // When
@@ -352,10 +378,77 @@ describe('organizationApp', () => {
       });
 
       // Then
-      await expect(call).rejects.toThrow(ErrorCode.OrganizationNotFound);
-      expect(readableOrganizationSpy).toHaveBeenCalledExactlyOnceWith({
+      await expect(call).rejects.toStrictEqual(ORGANIZATION_NOT_FOUND);
+      expect(membershipSpy).toHaveBeenCalledExactlyOnceWith(
+        RESTRICTED_CALLER,
+        ORGANIZATION.id
+      );
+      expect(organizationSpy).not.toHaveBeenCalled();
+      expect(memberConnectionSpy).not.toHaveBeenCalled();
+    });
+
+    it('should load the organization of a restricted caller who is a member of it', async () => {
+      // Given
+      const membershipSpy = mockMembership(true);
+      const organizationSpy = mockOrganization(ORGANIZATION);
+      mockMemberConnection();
+
+      // When
+      await OrganizationApp.loadOrganizationMembers(ORGANIZATION.id, {
+        first: 20,
+      });
+
+      // Then
+      expect(membershipSpy).toHaveBeenCalledExactlyOnceWith(
+        RESTRICTED_CALLER,
+        ORGANIZATION.id
+      );
+      expect(organizationSpy).toHaveBeenCalledExactlyOnceWith({
         id: ORGANIZATION.id,
       });
+    });
+
+    it.each([
+      ['READ_ORGANIZATION_MEMBERS', CAPABILITY_READ_ORGANIZATION_MEMBERS],
+      ['BYPASS', CAPABILITY_BYPASS],
+    ])(
+      'should load the organization of a %s holder without checking their membership',
+      async (_, capability) => {
+        // Given
+        requestContext.set({
+          user: TestHelper.caller.build(CALLER, [], [capability]),
+        });
+        const membershipSpy = mockMembership(false);
+        const organizationSpy = mockOrganization(ORGANIZATION);
+        const memberConnectionSpy = mockMemberConnection();
+
+        // When
+        await OrganizationApp.loadOrganizationMembers(ORGANIZATION.id, {
+          first: 20,
+        });
+
+        // Then
+        expect(membershipSpy).not.toHaveBeenCalled();
+        expect(organizationSpy).toHaveBeenCalledExactlyOnceWith({
+          id: ORGANIZATION.id,
+        });
+        expect(memberConnectionSpy).toHaveBeenCalledOnce();
+      }
+    );
+
+    it('should refuse an organization that is not loaded, unknown or a personal space, as an unknown organization', async () => {
+      // Given
+      mockMembership(true);
+      mockOrganization(undefined);
+      const memberConnectionSpy = mockMemberConnection();
+
+      // When
+      const call = OrganizationApp.loadOrganizationMembers(ORGANIZATION.id, {
+        first: 20,
+      });
+
+      // Then
+      await expect(call).rejects.toStrictEqual(ORGANIZATION_NOT_FOUND);
       expect(memberConnectionSpy).not.toHaveBeenCalled();
     });
 
@@ -370,7 +463,8 @@ describe('organizationApp', () => {
       'should load a page of %i members as a page of %i',
       async (first, expectedFirst) => {
         // Given
-        mockReadableOrganization(ORGANIZATION);
+        mockMembership(true);
+        mockOrganization(ORGANIZATION);
         const memberConnectionSpy = mockMemberConnection();
 
         // When
@@ -390,7 +484,8 @@ describe('organizationApp', () => {
       'should refuse a page of %i members before reading the database',
       async (first) => {
         // Given
-        const readableOrganizationSpy = mockReadableOrganization(ORGANIZATION);
+        const membershipSpy = mockMembership(true);
+        const organizationSpy = mockOrganization(ORGANIZATION);
         const memberConnectionSpy = mockMemberConnection();
 
         // When
@@ -400,14 +495,16 @@ describe('organizationApp', () => {
 
         // Then
         await expect(call).rejects.toThrow(ErrorCode.InvalidPageSize);
-        expect(readableOrganizationSpy).not.toHaveBeenCalled();
+        expect(membershipSpy).not.toHaveBeenCalled();
+        expect(organizationSpy).not.toHaveBeenCalled();
         expect(memberConnectionSpy).not.toHaveBeenCalled();
       }
     );
 
-    it('should load the members of the readable organization with the cursor and the search term', async () => {
+    it('should load the members of the loaded organization with the cursor and the search term', async () => {
       // Given
-      mockReadableOrganization(ORGANIZATION);
+      mockMembership(true);
+      mockOrganization(ORGANIZATION);
       const memberConnectionSpy = mockMemberConnection();
 
       // When

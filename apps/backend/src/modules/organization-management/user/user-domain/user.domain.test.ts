@@ -21,15 +21,16 @@ import {
   UserOrdering,
 } from '../../../../__generated__/resolvers-types';
 import { requestContext } from '../../../../context/request.context';
+import CapabilityPortal from '../../../../model/kanel/public/CapabilityPortal';
 import { DeploymentRequestId } from '../../../../model/kanel/public/DeploymentRequest';
 import Organization, {
   OrganizationId,
 } from '../../../../model/kanel/public/Organization';
+import { RolePortalId } from '../../../../model/kanel/public/RolePortal';
 import { ServiceGroupId } from '../../../../model/kanel/public/ServiceGroup';
 import User, { UserId, UserMutator } from '../../../../model/kanel/public/User';
 import UserOrganization from '../../../../model/kanel/public/UserOrganization';
 import { CAPABILITY_BYPASS, ROLE_ADMIN } from '../../../../portal.const';
-import { narrowUserToToken } from '../../../api-token/api-token.auth';
 import { TelemetryApp } from '../../../telemetry/telemetry.app';
 import { TelemetrySource } from '../../../telemetry/telemetry.const';
 import { UserOrganizationDomain } from '../user-organization/user-organization.domain';
@@ -599,6 +600,7 @@ describe('users domain', () => {
     const PAGE_SIZE = 100;
     const createdUserIds: UserId[] = [];
     const createdOrganizationIds: OrganizationId[] = [];
+    const createdRolePortalIds: RolePortalId[] = [];
     let organizationA: Organization;
     let organizationB: Organization;
     // Member of no organization, made BYPASS by the tests that need it
@@ -634,6 +636,27 @@ describe('users domain', () => {
       }
     };
 
+    // In the database, where an API token reads the capabilities of its user from
+    const grantPortalCapability = async (
+      user: User,
+      capability: CapabilityPortal
+    ) => {
+      const rolePortal = await TestHelper.rolePortal.create({});
+      createdRolePortalIds.push(rolePortal.id);
+      await TestHelper.rolePortal_CapabilityPortal.create({
+        role_portal_id: rolePortal.id,
+        capability_portal_id: capability.id,
+      });
+      await TestHelper.user_RolePortal.create({
+        user_id: user.id,
+        role_portal_id: rolePortal.id,
+      });
+    };
+
+    // The request context of a call with a token of the user on organization A, through the real middlewares
+    const actAsTokenOnOrganizationA = (user: User, scope: ApiTokenScope) =>
+      TestHelper.apiToken.actAs(user.id, organizationA.id, scope);
+
     const setBypassCaller = () =>
       requestContext.set({
         user: TestHelper.caller.build(bypassUser, [], [CAPABILITY_BYPASS]),
@@ -658,6 +681,10 @@ describe('users domain', () => {
       }
       for (const id of createdOrganizationIds.splice(0)) {
         await TestHelper.organization.delete({ id });
+      }
+      // Deleting the roles cascades to their capabilities
+      for (const id of createdRolePortalIds.splice(0)) {
+        await TestHelper.rolePortal.delete({ id });
       }
     });
 
@@ -1014,7 +1041,7 @@ describe('users domain', () => {
         expect(Number(connection.totalCount)).toBe(0);
       });
 
-      it('should not return the members of another organization of the user to an API token restricted to one', async () => {
+      it('should return the members of the organization of an API token, and none of another organization of its user', async () => {
         // Given
         const { user: caller } = await addMember(organizationA);
         await TestHelper.user_Organization.create({
@@ -1022,25 +1049,22 @@ describe('users domain', () => {
           organization_id: organizationB.id,
         });
         await addMember(organizationB);
-        requestContext.set({
-          user: narrowUserToToken(
-            TestHelper.caller.build(caller, [organizationA, organizationB]),
-            {
-              scope: ApiTokenScope.ReadWrite,
-              organization_id: organizationA.id,
-            }
-          ),
-        });
+        await actAsTokenOnOrganizationA(caller, ApiTokenScope.ReadWrite);
 
         // When
-        const connection = await UserDomain.loadOrganizationMemberConnection(
+        const connectionA = await UserDomain.loadOrganizationMemberConnection(
+          organizationA.id,
+          { first: PAGE_SIZE }
+        );
+        const connectionB = await UserDomain.loadOrganizationMemberConnection(
           organizationB.id,
           { first: PAGE_SIZE }
         );
 
         // Then
-        expect(connection.edges).toEqual([]);
-        expect(Number(connection.totalCount)).toBe(0);
+        expect(memberIds(connectionA)).toEqual([caller.id]);
+        expect(connectionB.edges).toEqual([]);
+        expect(Number(connectionB.totalCount)).toBe(0);
       });
 
       it('should not return the members of an organization the user was removed from since the session was written', async () => {
@@ -1058,6 +1082,59 @@ describe('users domain', () => {
         // When
         const connection = await UserDomain.loadOrganizationMemberConnection(
           organizationA.id,
+          { first: PAGE_SIZE }
+        );
+
+        // Then
+        expect(connection.edges).toEqual([]);
+        expect(Number(connection.totalCount)).toBe(0);
+      });
+
+      it('should return the members of an organization they do not belong to, to a READ_ORGANIZATION_MEMBERS holder in session', async () => {
+        // Given
+        const { user: holder } = await addMember(organizationA);
+        const { user: memberOfB } = await addMember(organizationB);
+        requestContext.set({
+          user: TestHelper.caller.build(
+            holder,
+            [organizationA],
+            [CAPABILITY_READ_ORGANIZATION_MEMBERS]
+          ),
+        });
+
+        // When
+        const connection = await UserDomain.loadOrganizationMemberConnection(
+          organizationB.id,
+          { first: PAGE_SIZE }
+        );
+
+        // Then
+        expect(memberIds(connection)).toEqual([memberOfB.id]);
+        expect(Number(connection.totalCount)).toBe(1);
+      });
+
+      it('should not return the member of their own personal space to its owner without portal capability', async () => {
+        // Given
+        const owner = await TestHelper.user.insert({
+          email: `owner-${uuidv4()}@admin-hub.test`,
+        });
+        createdUserIds.push(owner.id);
+        const personalSpace = await createOrganization({
+          id: owner.id as unknown as OrganizationId,
+          name: owner.email,
+          personal_space: true,
+        });
+        await TestHelper.user_Organization.create({
+          user_id: owner.id,
+          organization_id: personalSpace.id,
+        });
+        requestContext.set({
+          user: TestHelper.caller.build(owner, [personalSpace]),
+        });
+
+        // When
+        const connection = await UserDomain.loadOrganizationMemberConnection(
+          personalSpace.id,
           { first: PAGE_SIZE }
         );
 
@@ -1110,16 +1187,11 @@ describe('users domain', () => {
         // Given
         const { user: holder } = await addMember(organizationA);
         const { user: memberOfB } = await addMember(organizationB);
-        requestContext.set({
-          user: narrowUserToToken(
-            TestHelper.caller.build(
-              holder,
-              [organizationA],
-              [CAPABILITY_READ_ORGANIZATION_MEMBERS]
-            ),
-            { scope: ApiTokenScope.Admin, organization_id: organizationA.id }
-          ),
-        });
+        await grantPortalCapability(
+          holder,
+          CAPABILITY_READ_ORGANIZATION_MEMBERS
+        );
+        await actAsTokenOnOrganizationA(holder, ApiTokenScope.Admin);
 
         // When
         const connection = await UserDomain.loadOrganizationMemberConnection(
@@ -1137,16 +1209,8 @@ describe('users domain', () => {
         const { user: caller } = await addMember(organizationA);
         const { user: colleague } = await addMember(organizationA);
         await addMember(organizationB);
-        requestContext.set({
-          user: narrowUserToToken(
-            TestHelper.caller.build(
-              caller,
-              [organizationA],
-              [CAPABILITY_BYPASS]
-            ),
-            { scope: ApiTokenScope.Admin, organization_id: organizationA.id }
-          ),
-        });
+        await grantPortalCapability(caller, CAPABILITY_BYPASS);
+        await actAsTokenOnOrganizationA(caller, ApiTokenScope.Admin);
 
         // When
         const connectionA = await UserDomain.loadOrganizationMemberConnection(

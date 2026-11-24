@@ -7,6 +7,7 @@ import {
 import { requestContext } from '../../../context/request.context';
 import { OrganizationId } from '../../../model/kanel/public/Organization';
 import { dispatch } from '../../../pub';
+import { securityGuard } from '../../../security/guard';
 import { logApp } from '../../../utils/app-logger.util';
 import { ErrorCode, UnknownErrorCode } from '../../../utils/error/error.code';
 import { isUuid } from '../../../utils/uuid.util';
@@ -19,6 +20,7 @@ import {
   organizationWouldLoseLastMember,
 } from './organization-membership.util';
 import { OrganizationDomain } from './organization.domain';
+import { isUserRestrictedToOwnOrganizationMembers } from './organization.security';
 
 // Each page is one query: the size a caller asks for is bounded so it cannot make it list every member at once.
 const ORGANIZATION_MEMBERS_MAX_PAGE_SIZE = 100;
@@ -40,17 +42,27 @@ export const OrganizationApp = {
     if (first < 0) {
       throw new Error(ErrorCode.InvalidPageSize);
     }
-    // A malformed id would make PostgreSQL fail on the uuid cast: refuse it before any query
+    // A malformed id would make PostgreSQL fail on the uuid cast, membership check included: refuse it before any query
     if (!isUuid(organizationId)) {
       throw new Error(ErrorCode.OrganizationNotFound);
     }
+    // Security: without READ_ORGANIZATION_MEMBERS, the caller reads the members of their own organizations only
+    const user = requestContext.requireUser();
+    if (
+      isUserRestrictedToOwnOrganizationMembers(user) &&
+      !(await securityGuard.isUserInOrganization(user, organizationId))
+    ) {
+      throw new Error(ErrorCode.OrganizationNotFound);
+    }
+    // Data: the organization itself, a personal space for BYPASS only
     const organization =
-      await OrganizationDomain.loadOrganizationWhoseMembersAreReadableBy({
+      await OrganizationDomain.loadFirstProfessionalOrganizationBy({
         id: organizationId,
       });
     if (!organization) {
       throw new Error(ErrorCode.OrganizationNotFound);
     }
+    // Feature: the page of members, restricted again in the query
     return UserDomain.loadOrganizationMemberConnection(organization.id, {
       first: Math.min(first, ORGANIZATION_MEMBERS_MAX_PAGE_SIZE),
       after,

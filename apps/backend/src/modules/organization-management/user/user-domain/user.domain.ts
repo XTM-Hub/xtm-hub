@@ -55,7 +55,6 @@ import { isEmpty } from '../../../../utils/utils';
 import { RolePortalDomain } from '../../../role-portal/role-portal.domain';
 import { TelemetryApp } from '../../../telemetry/telemetry.app';
 import { TelemetryHelper } from '../../../telemetry/telemetry.helper';
-import { isUserRestrictedToOwnOrganizationMembers } from '../../organization/organization.security';
 
 export type UserToSyncAccountStatus = User & {
   status: UserAccountStatus.Waiting | UserAccountStatus.Invited;
@@ -379,12 +378,8 @@ export const UserDomain = {
         'memberCapability.user_organization_id',
         'memberUserOrganization.id'
       )
-      .tap(restrictOrganizationToProfessionalSpace);
-    if (
-      isUserRestrictedToOwnOrganizationMembers(requestContext.requireUser())
-    ) {
-      query.tap(restrictOrganizationToMembersReadable);
-    }
+      .tap(restrictOrganizationToProfessionalSpace)
+      .tap(restrictOrganizationToMembersReadable);
     if (searchTerm) {
       // Grouped, so that an OR never escapes the organization filter or the restrictions
       query.where((search) =>
