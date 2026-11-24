@@ -345,7 +345,7 @@ describe('user contact app', () => {
       // Given
       const platformId = uuidv4();
       requestContext.set(requestContextRegistererUserSecondOrga);
-      const token = await RegistrationApp.registerPlatform({
+      const { token } = await RegistrationApp.registerPlatform({
         organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
         platform: {
           id: platformId,
