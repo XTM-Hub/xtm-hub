@@ -24,10 +24,8 @@ import {
   organizationWouldLoseLastMember,
 } from './organization-membership.util';
 import { OrganizationDomain } from './organization.domain';
+import { OrganizationHelper } from './organization.helper';
 import { isUserRestrictedToOwnOrganizationMembers } from './organization.security';
-
-// Each page is one query: the size a caller asks for is bounded so it cannot make it list every member at once.
-const ORGANIZATION_MEMBERS_MAX_PAGE_SIZE = 100;
 
 export const OrganizationApp = {
   /**
@@ -65,8 +63,7 @@ export const OrganizationApp = {
     }
     // Feature: the page of members, restricted again in the query
     return UserDomain.loadOrganizationMemberConnection(organization.id, {
-      // 0 is a valid page size: no member, but the totalCount. A negative one is brought to 0
-      first: Math.min(Math.max(0, first), ORGANIZATION_MEMBERS_MAX_PAGE_SIZE),
+      first: OrganizationHelper.boundMembersPageSize(first),
       after,
       searchTerm,
     });
