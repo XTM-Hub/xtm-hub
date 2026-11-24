@@ -64,11 +64,7 @@ export const doesPlatformSupportGithubReleaseNewsFeed = (
   const requiredVersions = isLtsVersion(version)
     ? RequiredPlatformVersions.NewsFeedGithubReleaseLtsSupport
     : RequiredPlatformVersions.NewsFeedGithubReleaseSupport;
-  // compareVersions reads the accepted inline suffix (-lts1) as part of the patch: compared as -lts.1
-  return isPlatformVersionAtLeast(
-    requiredVersions[identifier],
-    version.replace(/-lts(\d+)$/, '-lts.$1')
-  );
+  return isPlatformVersionAtLeast(requiredVersions[identifier], version);
 };
 
 export const NewsFeedHelper = {
