@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { TestHelper } from '../../../tests/helper/test.helper';
 import { SERVICES } from '../../../tests/tests.const';
 import {
@@ -15,12 +15,27 @@ const REGISTERED_PLATFORMS_GAUGE = 'xtm_hub_registered_platforms_by_identity';
 
 const collectRegisteredPlatforms = async () => {
   const gauge = GAUGES.find(({ name }) => name === REGISTERED_PLATFORMS_GAUGE);
-  expect(gauge).toBeDefined();
-  return gauge!.collect();
+  if (!gauge) {
+    throw new Error(`Gauge ${REGISTERED_PLATFORMS_GAUGE} is not registered`);
+  }
+  return gauge.collect();
+};
+
+const loadXtmOneDefinitionId = async (): Promise<ServiceDefinitionId> => {
+  const definition = await TestHelper.serviceDefinition.load({
+    identifier: ServiceDefinitionIdentifier.XtmoneRegistration,
+  });
+  if (!definition) {
+    throw new Error(
+      `ServiceDefinition ${ServiceDefinitionIdentifier.XtmoneRegistration} is missing from the test database (is it migrated?)`
+    );
+  }
+  return definition.id;
 };
 
 describe('xtm_hub_registered_platforms_by_identity gauge', () => {
   const createdServiceInstanceIds: ServiceInstanceId[] = [];
+  let xtmOneDefinitionId: ServiceDefinitionId;
 
   const registerPlatform = async (
     serviceDefinitionId: ServiceDefinitionId,
@@ -40,6 +55,10 @@ describe('xtm_hub_registered_platforms_by_identity gauge', () => {
     });
   };
 
+  beforeAll(async () => {
+    xtmOneDefinitionId = await loadXtmOneDefinitionId();
+  });
+
   beforeEach(async () => {
     await TestHelper.platformConfiguration.delete({});
   });
@@ -58,10 +77,7 @@ describe('xtm_hub_registered_platforms_by_identity gauge', () => {
   });
 
   it('should count an XTM One registration under the xtmone product', async () => {
-    const xtmOneDefinition = await TestHelper.serviceDefinition.load({
-      identifier: ServiceDefinitionIdentifier.XtmoneRegistration,
-    });
-    await registerPlatform(xtmOneDefinition!.id);
+    await registerPlatform(xtmOneDefinitionId);
 
     const observations = await collectRegisteredPlatforms();
 
@@ -78,16 +94,13 @@ describe('xtm_hub_registered_platforms_by_identity gauge', () => {
   });
 
   it('should break registrations down by product, contract and status', async () => {
-    const xtmOneDefinition = await TestHelper.serviceDefinition.load({
-      identifier: ServiceDefinitionIdentifier.XtmoneRegistration,
-    });
     await registerPlatform(SERVICES.DEFINITIONS.OPENCTI_REGISTRATION.ID);
     await registerPlatform(SERVICES.DEFINITIONS.OPENAEV_REGISTRATION.ID, {
       contract: PlatformContract.Ce,
     });
-    await registerPlatform(xtmOneDefinition!.id);
-    await registerPlatform(xtmOneDefinition!.id);
-    await registerPlatform(xtmOneDefinition!.id, {
+    await registerPlatform(xtmOneDefinitionId);
+    await registerPlatform(xtmOneDefinitionId);
+    await registerPlatform(xtmOneDefinitionId, {
       status: PlatformConfigurationStatus.Inactive,
     });
 
