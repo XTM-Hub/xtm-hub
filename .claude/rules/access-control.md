@@ -103,7 +103,7 @@ Type the arguments with an explicit generic (`orgGuard<MutationXArgs>(…)`), so
   organization; anything for `BYPASS`. One missing, foreign or malformed id refuses the whole request with `NOT_FOUND`;
   an empty list is allowed. `serviceInstance` says where the request names the service instance, so the ids must be on
   it. Use it whenever a guard checks an organization or a service from one argument and the operation acts on other ids.
-- Add an entry to the ownership map (`src/security/guarded/ownership.ts`) before using `belongTo` on a table.
+- Add an entry to the ownership map (`src/security/guarded/ownership.domain.ts`) before using `belongTo` on a table.
 
 ## Filtering data
 

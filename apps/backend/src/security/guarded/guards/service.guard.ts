@@ -21,6 +21,13 @@ export const serviceGuard = <Args = unknown>({
     if (user.isBypassUser) {
       return allow({ kind: 'admin' });
     }
+    // The access row stays when a member leaves the organization, so the membership is checked apart from it
+    const isMember = user.memberships.some(
+      ({ organization }) => organization.id === user.selectedOrganizationId
+    );
+    if (!isMember) {
+      return deny(NotFoundErrorCode.NotFound);
+    }
     const serviceInstanceId = serviceInstance(user, args);
     // A malformed id would reach the query as a Postgres error
     if (!serviceInstanceId || !isUuid(serviceInstanceId)) {

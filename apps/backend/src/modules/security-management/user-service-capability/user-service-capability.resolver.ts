@@ -23,7 +23,7 @@ class UserServiceCapabilityMutations {
     MutationResolvers['addCapabilitiesToUserServices']
   > = async (_, { input }) => {
     try {
-      return UserServiceCapabilityApp.addCapabilitiesToUserServices(
+      return await UserServiceCapabilityApp.addCapabilitiesToUserServices(
         input.userServiceIds,
         input.capabilities
       );

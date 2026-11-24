@@ -21,7 +21,7 @@ import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { SubscriptionId } from '../../model/kanel/public/Subscription';
 import { UserServiceId } from '../../model/kanel/public/UserService';
 import { UserWithOrganizationsAndRole } from '../../model/user';
-import { OwnershipDomain } from '../../security/guarded/ownership';
+import { OwnershipDomain } from '../../security/guarded/ownership.domain';
 import {
   ForbiddenErrorCode,
   NotFoundErrorCode,

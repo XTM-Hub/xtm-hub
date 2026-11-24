@@ -18,11 +18,15 @@ import { serviceGuard } from './service.guard';
 const {
   ANONYMOUS,
   ORGANIZATION_ID,
+  OTHER_ORGANIZATION_ID,
   USER_ID,
   buildRegistrationPlatformPrincipal,
   buildSystemPrincipal,
   buildUserPrincipal,
 } = TestHelper.guardFixtures;
+
+const buildMember = () =>
+  buildUserPrincipal({ memberships: { [ORGANIZATION_ID]: [] } });
 
 const SERVICE_INSTANCE_ID =
   '11111111-1111-4111-8111-111111111111' as ServiceInstanceId;
@@ -97,15 +101,45 @@ describe('serviceGuard', () => {
     expect(load).not.toHaveBeenCalled();
   });
 
+  it.each([
+    { label: 'no membership', memberships: {} },
+    {
+      label: 'a membership on another organization only',
+      memberships: { [OTHER_ORGANIZATION_ID]: [] },
+    },
+  ])(
+    'should refuse with NOT_FOUND, without reading the service instance nor querying, a user with $label',
+    async ({ memberships }) => {
+      // Given
+      const load = vi.spyOn(AuthHelper, 'loadCapabilitiesByServiceId');
+      const serviceInstance = vi.fn(fromInstanceArg);
+      const guard = serviceGuard<InstanceArgs>({
+        serviceInstance,
+        capabilities: [ServiceRestriction.ManageAccess],
+      });
+
+      // When
+      const result = await guard.check(
+        buildUserPrincipal({ memberships }),
+        ARGS_WITH_INSTANCE
+      );
+
+      // Then
+      expect(result).toEqual({
+        allowed: false,
+        code: NotFoundErrorCode.NotFound,
+      });
+      expect(serviceInstance).not.toHaveBeenCalled();
+      expect(load).not.toHaveBeenCalled();
+    }
+  );
+
   it('should refuse with NOT_FOUND without querying when the source gives no service instance', async () => {
     // Given
     const load = vi.spyOn(AuthHelper, 'loadCapabilitiesByServiceId');
 
     // When
-    const result = await buildGuard().check(
-      buildUserPrincipal(),
-      {} as InstanceArgs
-    );
+    const result = await buildGuard().check(buildMember(), {} as InstanceArgs);
 
     // Then
     expect(result).toEqual({
@@ -128,10 +162,7 @@ describe('serviceGuard', () => {
     );
 
     // When
-    const result = await buildGuard().check(
-      buildUserPrincipal(),
-      ARGS_WITH_INSTANCE
-    );
+    const result = await buildGuard().check(buildMember(), ARGS_WITH_INSTANCE);
 
     // Then
     expect(result).toEqual({
@@ -154,7 +185,7 @@ describe('serviceGuard', () => {
 
       // When
       const result = await buildGuard().check(
-        buildUserPrincipal(),
+        buildMember(),
         ARGS_WITH_INSTANCE
       );
 
@@ -174,7 +205,7 @@ describe('serviceGuard', () => {
       .mockImplementation(() => undefined);
 
     // When
-    const result = await buildGuard().check(buildUserPrincipal(), {
+    const result = await buildGuard().check(buildMember(), {
       instanceId: 'not-a-uuid' as ServiceInstanceId,
     });
 
@@ -197,10 +228,7 @@ describe('serviceGuard', () => {
       });
 
     // When
-    const result = await buildGuard().check(
-      buildUserPrincipal(),
-      ARGS_WITH_INSTANCE
-    );
+    const result = await buildGuard().check(buildMember(), ARGS_WITH_INSTANCE);
 
     // Then
     expect(result).toEqual({
@@ -232,7 +260,7 @@ describe('serviceGuard', () => {
     });
 
     // When
-    const result = await guard.check(buildUserPrincipal(), ARGS_WITH_INSTANCE);
+    const result = await guard.check(buildMember(), ARGS_WITH_INSTANCE);
 
     // Then
     expect(result).toMatchObject({ allowed: true });
