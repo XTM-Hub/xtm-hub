@@ -6,7 +6,6 @@ import rateLimit, {
 } from 'express-rate-limit';
 import { createHash } from 'node:crypto';
 import { BlockList, isIP } from 'node:net';
-import { PLATFORM_ID_HEADER } from '../modules/security-management/token/platform-token.util';
 import {
   MANIFEST_ERRORS,
   sendManifestError,
@@ -301,8 +300,10 @@ const DOWNLOAD_USER_RATE_LIMIT = 10;
 const DOWNLOAD_IP_RATE_LIMIT = 100;
 
 /**
- * The user who downloads: from their Hub session, or from the user token a platform sends with its own id. The token
- * is hashed so that the limiter does not keep it in memory. Without either, the caller's IP.
+ * The user who downloads: from their Hub session, or from the user token a platform sends. The token is hashed so that
+ * the limiter does not keep it in memory. It is the only part of the key taken from the headers: the platform id is not
+ * checked for an old OpenCTI that sends no platform token, so a caller could change it to get a fresh budget. Without
+ * a session or a token, the caller's IP.
  */
 const downloadUserKey = (req: Request) => {
   const userPlatformToken = req.header(USER_PLATFORM_TOKEN_HEADER);
@@ -312,7 +313,7 @@ const downloadUserKey = (req: Request) => {
   const tokenHash = createHash('sha256')
     .update(userPlatformToken)
     .digest('hex');
-  return `platform:${req.header(PLATFORM_ID_HEADER) ?? ''}|user:${tokenHash}`;
+  return `platform-user:${tokenHash}`;
 };
 
 export const buildDocumentDownloadUserRateLimiterOptions =

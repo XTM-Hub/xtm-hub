@@ -463,8 +463,26 @@ describe('buildDocumentDownloadUserRateLimiterOptions', () => {
 
     // Then
     expect(first).not.toBe(second);
-    expect(first).toMatch(new RegExp(`^platform:${PLATFORM_ID}\\|user:`));
+    expect(first).toMatch(/^platform-user:/);
     expect(first).not.toContain(USER_TOKEN);
+  });
+
+  it('should keep the key of a platform user when the platform id header changes', async () => {
+    // Given: the header is not checked for an old OpenCTI that sends no platform token
+    const withPlatformId = (platformId: string) =>
+      buildMockRequest({
+        headers: {
+          'XTM-Hub-Platform-Id': platformId,
+          'XTM-Hub-User-Platform-Token': USER_TOKEN,
+        },
+      });
+
+    // When
+    const first = await keyOf(withPlatformId(PLATFORM_ID));
+    const second = await keyOf(withPlatformId('another-platform-id'));
+
+    // Then
+    expect(second).toBe(first);
   });
 
   it('should keep the key of a platform user when the address changes', async () => {
