@@ -1,5 +1,6 @@
 import { fetchServiceInstanceById } from '@/components/service/service-instance.server';
 import { BreadcrumbNav } from '@/components/ui/BreadcrumbNav';
+import { getTranslate } from '@/hooks/get-translate';
 import { APP_PATH } from '@/utils/path/constant';
 import PageLoader from './page-loader';
 
@@ -10,6 +11,7 @@ interface ServiceCustomDashboardsPageProps {
 const Page = async ({ params }: ServiceCustomDashboardsPageProps) => {
   const { serviceInstanceId } = await params;
   const decodedServiceInstanceId = decodeURIComponent(serviceInstanceId);
+  const t = await getTranslate();
   const serviceInstance = await fetchServiceInstanceById(
     decodedServiceInstanceId
   );
@@ -33,7 +35,7 @@ const Page = async ({ params }: ServiceCustomDashboardsPageProps) => {
           <PageLoader serviceInstance={serviceInstance} />
         </>
       ) : (
-        <h1>Service not found</h1>
+        <h1>{t('Utils.ServiceNotFound')}</h1>
       )}
     </>
   );

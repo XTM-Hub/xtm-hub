@@ -54,6 +54,7 @@ const withDocuments = (
   },
   isLoading: false,
   isError: false,
+  isSuccess: true,
   refetch: testState.refetch,
 });
 

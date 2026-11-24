@@ -64,8 +64,6 @@ export const TrialsManageUsersForm = ({
         : null,
     },
     {
-      // Like Relay, a failed load reaches the error page; a failed background
-      // refetch keeps the users shown.
       throwOnError: (_error, query) => query.state.data === undefined,
     }
   );
@@ -107,8 +105,6 @@ export const TrialsManageUsersForm = ({
     setOpenedServiceGroups(serviceGroups);
   }
 
-  // The form waits for the users and the groups, as it did when the Relay
-  // query suspended it: its default values are the loaded groups.
   if (!availableUsers || !openedServiceGroups) {
     return <Loader />;
   }

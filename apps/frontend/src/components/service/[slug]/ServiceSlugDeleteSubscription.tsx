@@ -1,8 +1,8 @@
-import { invalidateSubscriptionQueries } from '@/components/subcription/subscription.invalidation';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
+import { invalidateSubscriptionQueries } from '@/utils/query-invalidation/subscription.invalidation';
 import {
   SubscriptionItemFragment,
   useDeleteSubscriptionsMutation,

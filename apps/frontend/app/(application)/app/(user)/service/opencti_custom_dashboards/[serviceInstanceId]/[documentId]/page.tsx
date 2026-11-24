@@ -1,4 +1,5 @@
 import { fetchServiceInstanceById } from '@/components/service/service-instance.server';
+import { getTranslate } from '@/hooks/get-translate';
 import PageLoader from './page-loader';
 
 interface ServiceCustomDashboardsPageProps {
@@ -9,7 +10,7 @@ const Page = async ({ params }: ServiceCustomDashboardsPageProps) => {
   const { serviceInstanceId, documentId } = await params;
   const decodedServiceInstanceId = decodeURIComponent(serviceInstanceId);
   const decodedDocumentId = decodeURIComponent(documentId);
-
+  const t = await getTranslate();
   const serviceInstance = await fetchServiceInstanceById(
     decodedServiceInstanceId
   );
@@ -21,7 +22,7 @@ const Page = async ({ params }: ServiceCustomDashboardsPageProps) => {
           serviceInstance={serviceInstance}
         />
       ) : (
-        <h1>Document not found</h1>
+        <h1>{t('Utils.DocumentNotFound')}</h1>
       )}
     </>
   );

@@ -13,12 +13,13 @@ import { getDataTableLabels } from '@/utils/design-system/data-table';
 import { Button, Chip } from '@filigran/design-system';
 import { AddIcon, DeleteIcon, MoreVertIcon } from '@filigran/icon';
 import {
+  OrderingMode,
   OrganizationCapability,
   ServiceInstanceItemFragment,
-  ServiceInstanceWithCapabilitiesItemFragment,
   ServiceRestriction,
   SubscriptionByIdQuery,
   UserServiceItemFragment,
+  UserServiceOrdering,
   useServiceUserCapabilitiesQuery,
   useSubscriptionByIdQuery,
   useUserServicesFromSubscriptionQuery,
@@ -63,6 +64,8 @@ interface SubscriptionSlugContentProps {
   totalCount: number;
   pagination: PaginationState;
   onPaginationChange: (updater: Updater<PaginationState>) => void;
+  orderBy: UserServiceOrdering;
+  orderMode: OrderingMode;
   serviceInstance?: ServiceInstanceItemFragment;
 }
 
@@ -72,12 +75,31 @@ const emptySelectionState = (): SelectionState => ({
   excludedIds: new Set<string>(),
 });
 
+// The users of a selection that the new rows still list, by id: "select all"
+// stands for the previous rows, never for the new ones.
+const keepListedSelection = (
+  selection: SelectionState,
+  previousRowIds: string[],
+  rowIds: Set<string>
+): SelectionState => {
+  const selectedIds = selection.selectAll
+    ? previousRowIds.filter((id) => !selection.excludedIds.has(id))
+    : Array.from(selection.selectedIds);
+  return {
+    selectAll: false,
+    selectedIds: new Set(selectedIds.filter((id) => rowIds.has(id))),
+    excludedIds: new Set<string>(),
+  };
+};
+
 const SubscriptionSlugContent = ({
   queryDataSubscription,
   userData,
   totalCount,
   pagination,
   onPaginationChange,
+  orderBy,
+  orderMode,
   serviceInstance,
 }: SubscriptionSlugContentProps) => {
   const t = useTranslate();
@@ -91,17 +113,39 @@ const SubscriptionSlugContent = ({
   const [selection, setSelection] =
     useState<SelectionState>(emptySelectionState);
 
-  // A page change or a refetch can swap the rows under a selection, and "select
-  // all" would then reach users the admin never saw. New rows start from an
-  // empty selection with the bulk dialogs closed, reset during the render so
-  // no render pairs them with the previous selection.
-  const rowIds = userData.map(({ id }) => id).join(',');
-  const [selectionRowIds, setSelectionRowIds] = useState(rowIds);
-  if (selectionRowIds !== rowIds) {
-    setSelectionRowIds(rowIds);
+  // Both checks run during the render, so no render pairs the rows with a
+  // selection made on others.
+  // Another page, page size or ordering shows other users: their selection
+  // starts empty with the bulk dialogs closed.
+  const viewKey = `${pagination.pageIndex}:${pagination.pageSize}:${orderBy}:${orderMode}`;
+  const [selectionViewKey, setSelectionViewKey] = useState(viewKey);
+  // A refetch on the same view (another admin's change, the window regaining
+  // focus, the page arriving after its placeholder) can swap the rows under
+  // the selection: it keeps only the users the admin selected and still sees,
+  // so "select all" never reaches a user who just arrived, and leaves an open
+  // dialog as it is.
+  const rowIds = userData.map(({ id }) => id);
+  const rowIdsKey = rowIds.join(',');
+  const [selectionRowIdsKey, setSelectionRowIdsKey] = useState(rowIdsKey);
+  if (selectionViewKey !== viewKey) {
+    setSelectionViewKey(viewKey);
+    setSelectionRowIdsKey(rowIdsKey);
     setSelection(emptySelectionState());
     setOpenAddCapabilities(false);
     setDeleteUserServices(undefined);
+  } else if (selectionRowIdsKey !== rowIdsKey) {
+    setSelectionRowIdsKey(rowIdsKey);
+    const keptSelection = keepListedSelection(
+      selection,
+      selectionRowIdsKey.split(','),
+      new Set(rowIds)
+    );
+    setSelection(keptSelection);
+    // The bulk capabilities dialog acts on the selection: it closes once none
+    // of its users is left. The delete confirmation already holds its users.
+    if (keptSelection.selectedIds.size === 0) {
+      setOpenAddCapabilities(false);
+    }
   }
 
   const { hasOrganizationCapability } = useContext(PortalContext);
@@ -320,24 +364,22 @@ const SubscriptionSlugContent = ({
 
   // The manage page heads with its own service instance, which carries neither
   // tags nor capabilities; the admin page with the subscription's.
-  const headerServiceInstance:
-    ServiceInstanceWithCapabilitiesItemFragment | undefined = serviceInstance
-    ? {
-        id: serviceInstance.id,
-        name: serviceInstance.name,
-        description: serviceInstance.description,
-        tags: null,
-        service_definition: null,
-      }
-    : queryDataSubscription.subscriptionById?.service_instance;
+  const subscriptionServiceInstance =
+    queryDataSubscription.subscriptionById.service_instance;
+  const headerServiceInstance = serviceInstance ?? subscriptionServiceInstance;
 
   return (
     <>
       <BreadcrumbNav value={breadcrumbValue} />
 
-      {headerServiceInstance && (
-        <ServiceSlugHeader serviceInstance={headerServiceInstance} />
-      )}
+      <ServiceSlugHeader
+        serviceInstance={headerServiceInstance}
+        capabilities={
+          serviceInstance
+            ? undefined
+            : subscriptionServiceInstance.service_definition?.service_capability
+        }
+      />
 
       <DataTable
         {...getDataTableLabels(t)}
@@ -411,7 +453,7 @@ const SubscriptionSlugContent = ({
         open={openAddCapabilities}
         setOpen={setOpenAddCapabilities}
         onCompleted={() => setSelection(emptySelectionState())}
-        serviceInstanceId={headerServiceInstance?.id ?? ''}
+        serviceInstanceId={headerServiceInstance.id}
       />
     </>
   );
@@ -431,10 +473,11 @@ const SubscriptionSlug = ({
     useUserServiceListLocalstorage();
   // The users are read page by page, so each of them stays reachable once a
   // write invalidates the list, wherever the ordering puts them.
-  const { pagination, cursor, onPaginationChange } = useTablePagination({
-    pageSize,
-    setPageSize,
-  });
+  const { pagination, cursor, onPaginationChange, stepBackToLastPage } =
+    useTablePagination({
+      pageSize,
+      setPageSize,
+    });
   const userServicesVariables = useMemo(
     () => ({
       subscriptionId,
@@ -468,20 +511,8 @@ const SubscriptionSlug = ({
     [userServicesData]
   );
   const totalCount = userServicesData?.userServiceFromSubscription?.totalCount;
-  if (
-    isSuccess &&
-    !isFetching &&
-    !isPlaceholderData &&
-    totalCount !== undefined
-  ) {
-    const lastPageIndex = Math.max(
-      0,
-      Math.ceil(totalCount / pagination.pageSize) - 1
-    );
-    if (pagination.pageIndex > lastPageIndex) {
-      onPaginationChange({ ...pagination, pageIndex: lastPageIndex });
-    }
-  }
+  // Removing the last users of the last page refetches that page empty.
+  stepBackToLastPage({ totalCount, isSuccess, isFetching, isPlaceholderData });
 
   if (!data || !userServicesData) {
     return <Loader />;
@@ -494,6 +525,8 @@ const SubscriptionSlug = ({
       totalCount={totalCount ?? 0}
       pagination={pagination}
       onPaginationChange={onPaginationChange}
+      orderBy={orderBy}
+      orderMode={orderMode}
       serviceInstance={serviceInstance}
     />
   );

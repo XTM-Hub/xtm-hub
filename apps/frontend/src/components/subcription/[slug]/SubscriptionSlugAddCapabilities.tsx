@@ -1,9 +1,9 @@
-import { invalidateUserServiceQueries } from '@/components/subcription/user-service.invalidation';
 import { BadgeOverflow } from '@/components/ui/BadgeOverflowCounter';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { portalGraphqlClient } from '@/lib/graphql-client';
+import { invalidateUserServiceQueries } from '@/utils/query-invalidation/user-service.invalidation';
 import {
   Button,
   Checkbox,

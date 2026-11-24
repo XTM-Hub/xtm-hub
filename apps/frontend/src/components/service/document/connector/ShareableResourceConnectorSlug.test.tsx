@@ -24,9 +24,14 @@ vi.mock('@/components/service/components/ServiceContext', () => ({
   }),
 }));
 
-const SERVICE_INSTANCE = {
+const SERVICE_INSTANCE: ServiceInstanceItemFragment = {
   id: 'service-instance-1',
-} as unknown as ServiceInstanceItemFragment;
+  name: 'Service',
+  description: null,
+  slug: null,
+  capabilities: [],
+  service_definition: null,
+};
 
 const buildConnector = (id: string, shareNumber: number) =>
   ({

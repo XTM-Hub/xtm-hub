@@ -2,7 +2,7 @@
 import Loader from '@/components/Loader';
 import AdminServiceTab, {
   ADMIN_SERVICE_TAB_SERVICE_DEFINITION_IDENTIFIERS,
-  AdminServiceListRefetch,
+  AdminServiceListVariablesChange,
 } from '@/components/service/AdminServiceTab';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { throwOnFirstLoadError } from '@/lib/query-client';
@@ -17,8 +17,10 @@ import { adminServiceInstancesKeys } from '@graphql/service-instances/service-in
 import { keepPreviousData } from '@tanstack/react-query';
 import { useCallback, useMemo, useState } from 'react';
 
+const DEFAULT_PAGE_SIZE = 50;
+
 const INITIAL_VARIABLES: AdminServiceInstancesListQueryVariables = {
-  count: 50,
+  count: DEFAULT_PAGE_SIZE,
   orderBy: ServiceInstanceOrdering.Name,
   orderMode: OrderingMode.Asc,
   searchTerm: '',
@@ -44,8 +46,7 @@ const AdminServiceList = () => {
     }
   );
 
-  // Like the Relay refetch it replaces, a change keeps the other variables.
-  const refetch = useCallback<AdminServiceListRefetch>(
+  const onVariablesChange = useCallback<AdminServiceListVariablesChange>(
     (change) => setVariables((current) => ({ ...current, ...change })),
     []
   );
@@ -63,7 +64,7 @@ const AdminServiceList = () => {
   return (
     <AdminServiceTab
       serviceData={serviceData}
-      onVariablesChange={refetch}
+      onVariablesChange={onVariablesChange}
     />
   );
 };

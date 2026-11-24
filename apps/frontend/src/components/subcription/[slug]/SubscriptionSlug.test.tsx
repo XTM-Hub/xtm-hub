@@ -16,6 +16,7 @@ import {
 } from '@graphql/generated';
 import type { PaginationState, Updater } from '@tanstack/react-table';
 import { act, screen } from '@testing-library/react';
+import type { UserEvent } from '@testing-library/user-event';
 import { notFound } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -238,6 +239,48 @@ const openPage = (pageIndex: number) =>
 const lastAddCapabilitiesProps = () =>
   mocks.addCapabilities.mock.lastCall?.[0] as AddCapabilitiesProps;
 
+const lastSelection = () =>
+  lastDataTableProps().selectionOptions!.selectionState.state;
+
+const selectRows = ({
+  selectAll = false,
+  selectedIds = [],
+}: {
+  selectAll?: boolean;
+  selectedIds?: string[];
+}) =>
+  act(() =>
+    lastDataTableProps().selectionOptions!.selectionState.onSelectionChange({
+      selectAll,
+      selectedIds: new Set(selectedIds),
+      excludedIds: new Set(),
+    })
+  );
+
+const openBulkCapabilitiesDialog = async (user: UserEvent) => {
+  await user.click(
+    screen.getByRole('button', {
+      name: 'Service.Management.AddUserServiceCapabilities.Button',
+    })
+  );
+  expect(lastAddCapabilitiesProps().open).toBe(true);
+};
+
+const mockUserServicesRows = (userServices: UserServiceItemFragment[]) =>
+  mocks.useUserServicesFromSubscriptionQuery.mockReturnValue({
+    data: {
+      userServiceFromSubscription: {
+        totalCount: USER_SERVICES_TOTAL_COUNT,
+        edges: userServices.map((node) => ({ node })),
+      },
+    },
+  });
+
+const renderAsServiceAdministrator = () =>
+  testRender(<SubscriptionSlug subscriptionId={SUBSCRIPTION.id} />, {
+    me: { capabilities: [{ name: PortalCapability.Bypass }] },
+  });
+
 const lastQueryOptions = () =>
   mocks.useSubscriptionByIdQuery.mock.lastCall?.[2] as SubscriptionQueryOptions;
 
@@ -453,50 +496,96 @@ describe('SubscriptionSlug', () => {
     });
   });
 
-  it('should drop the selection and close the bulk capabilities dialog when the next page replaces the rows', async () => {
-    // Given an admin who selected all the rows still shown while the next
-    // page loads, and opened the bulk capabilities dialog
-    mockSubscriptionQuery(SUBSCRIPTION);
-    const { user, rerender } = testRender(
-      <SubscriptionSlug subscriptionId={SUBSCRIPTION.id} />,
-      { me: { capabilities: [{ name: PortalCapability.Bypass }] } }
-    );
-    act(() =>
-      lastDataTableProps().selectionOptions!.selectionState.onSelectionChange({
-        selectAll: true,
+  it.each([
+    { change: 'the next page is opened', pageIndex: 1, pageSize: PAGE_SIZE },
+    { change: 'the page size changes', pageIndex: 0, pageSize: 100 },
+  ])(
+    'should drop the selection and close the bulk capabilities dialog when $change',
+    async ({ pageIndex, pageSize }) => {
+      // Given an admin who selected all the rows and opened the bulk
+      // capabilities dialog
+      mockSubscriptionQuery(SUBSCRIPTION);
+      const { user } = renderAsServiceAdministrator();
+      selectRows({ selectAll: true });
+      await openBulkCapabilitiesDialog(user);
+
+      // When
+      act(() =>
+        lastDataTableProps().tableOptions.onPaginationChange({
+          pageIndex,
+          pageSize,
+        })
+      );
+
+      // Then no user of the new view is selected behind the admin's back
+      expect(lastAddCapabilitiesProps().open).toBe(false);
+      expect(lastSelection()).toEqual({
+        selectAll: false,
         selectedIds: new Set(),
         excludedIds: new Set(),
-      })
-    );
-    await user.click(
-      screen.getByRole('button', {
-        name: 'Service.Management.AddUserServiceCapabilities.Button',
-      })
-    );
+      });
+    }
+  );
+
+  it('should keep the bulk capabilities dialog open on the users the admin selected when a refetch brings new users', async () => {
+    // Given an admin who selected all the rows and opened the bulk
+    // capabilities dialog
+    mockSubscriptionQuery(SUBSCRIPTION);
+    const { user, rerender } = renderAsServiceAdministrator();
+    selectRows({ selectAll: true });
+    await openBulkCapabilitiesDialog(user);
+
+    // When a background refetch brings a user added by another admin
+    mockUserServicesRows([USER_SERVICE, NEXT_PAGE_USER_SERVICE]);
+    rerender(<SubscriptionSlug subscriptionId={SUBSCRIPTION.id} />);
+
+    // Then
     expect(lastAddCapabilitiesProps()).toEqual({
       open: true,
       selectedUserServices: [USER_SERVICE],
     });
-
-    // When the next page arrives
-    mocks.useUserServicesFromSubscriptionQuery.mockReturnValue({
-      data: {
-        userServiceFromSubscription: {
-          totalCount: USER_SERVICES_TOTAL_COUNT,
-          edges: [{ node: NEXT_PAGE_USER_SERVICE }],
-        },
-      },
+    expect(lastSelection()).toEqual({
+      selectAll: false,
+      selectedIds: new Set([USER_SERVICE.id]),
+      excludedIds: new Set(),
     });
+  });
+
+  it('should close the bulk capabilities dialog when a refetch removes every selected user', async () => {
+    // Given an admin who selected all the rows and opened the bulk
+    // capabilities dialog
+    mockSubscriptionQuery(SUBSCRIPTION);
+    const { user, rerender } = renderAsServiceAdministrator();
+    selectRows({ selectAll: true });
+    await openBulkCapabilitiesDialog(user);
+
+    // When a refetch replaces the rows, as the page arriving after its
+    // placeholder does
+    mockUserServicesRows([NEXT_PAGE_USER_SERVICE]);
     rerender(<SubscriptionSlug subscriptionId={SUBSCRIPTION.id} />);
 
-    // Then no user of the new page is selected behind the admin's back
+    // Then
     expect(lastAddCapabilitiesProps()).toEqual({
       open: false,
       selectedUserServices: [],
     });
-    expect(
-      lastDataTableProps().selectionOptions!.selectionState.state.selectAll
-    ).toBe(false);
+    expect(lastSelection().selectAll).toBe(false);
+  });
+
+  it('should keep the removal confirmation open when a refetch brings new users', async () => {
+    // Given an admin who selected a user and asked to remove their access
+    mockSubscriptionQuery(SUBSCRIPTION);
+    const { user, rerender } = renderAsServiceAdministrator();
+    selectRows({ selectedIds: [USER_SERVICE.id] });
+    await user.click(screen.getByRole('button', { name: 'Utils.Delete' }));
+    expect(screen.getByRole('alertdialog')).toBeInTheDocument();
+
+    // When a background refetch brings a user added by another admin
+    mockUserServicesRows([USER_SERVICE, NEXT_PAGE_USER_SERVICE]);
+    rerender(<SubscriptionSlug subscriptionId={SUBSCRIPTION.id} />);
+
+    // Then
+    expect(screen.getByRole('alertdialog')).toBeInTheDocument();
   });
 
   it('should read the capabilities of the user on the service of the subscription', () => {

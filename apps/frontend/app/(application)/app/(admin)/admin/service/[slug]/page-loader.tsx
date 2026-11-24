@@ -15,6 +15,8 @@ import { serviceInstanceWithCapabilitiesKeys } from '@graphql/service-instances/
 import { subscriptionKeys } from '@graphql/subscription/subscription.keys';
 import { useMemo } from 'react';
 
+const SERVICE_SUBSCRIPTIONS_PAGE_SIZE = 50;
+
 // Component interface
 interface PreloaderProps {
   id: string;
@@ -40,7 +42,7 @@ const PageLoader = ({ id }: PreloaderProps) => {
 
   const variables = useMemo(
     () => ({
-      count: 50,
+      count: SERVICE_SUBSCRIPTIONS_PAGE_SIZE,
       cursor: null,
       orderBy: SubscriptionOrdering.StartDate,
       orderMode: OrderingMode.Asc,

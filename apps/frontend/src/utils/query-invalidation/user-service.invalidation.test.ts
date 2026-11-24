@@ -1,4 +1,4 @@
-import { invalidateUserServiceQueries } from '@/components/subcription/user-service.invalidation';
+import { invalidateUserServiceQueries } from '@/utils/query-invalidation/user-service.invalidation';
 import { serviceUserCapabilitiesKeys } from '@graphql/service-instances/service-instances.keys';
 import { userServicesKeys } from '@graphql/user-service/user-service.keys';
 import { QueryClient } from '@tanstack/react-query';

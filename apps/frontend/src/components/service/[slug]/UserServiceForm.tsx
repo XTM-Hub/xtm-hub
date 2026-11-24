@@ -15,7 +15,6 @@ import { useContext, useEffect, useMemo, useState } from 'react';
 import { useUserListLocalstorage } from '@/components/admin/user/user-list-localstorage';
 import Loader from '@/components/Loader';
 import { PortalContext } from '@/components/me/AppPortalContext';
-import { invalidateUserServiceQueries } from '@/components/subcription/user-service.invalidation';
 import { Form, FormField } from '@/components/ui/form';
 import { SheetFooter } from '@/components/ui/sheet';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
@@ -25,6 +24,7 @@ import { useTranslate } from '@/hooks/use-translate';
 import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { toComboboxOptionIds } from '@/utils/design-system/combobox';
+import { invalidateUserServiceQueries } from '@/utils/query-invalidation/user-service.invalidation';
 import {
   Button,
   Checkbox,

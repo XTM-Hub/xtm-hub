@@ -2,7 +2,6 @@ import {
   useOrganizations,
   useUnsubscribedOrganizations,
 } from '@/components/organization/Organization.service';
-import { invalidateSubscriptionQueries } from '@/components/subcription/subscription.invalidation';
 import { AppCombobox } from '@/components/ui/AppCombobox';
 import { SheetFooter } from '@/components/ui/sheet';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
@@ -13,6 +12,7 @@ import {
   getDatePickerLabels,
   toDatePickerValue,
 } from '@/utils/design-system/date-picker';
+import { invalidateSubscriptionQueries } from '@/utils/query-invalidation/subscription.invalidation';
 import {
   ServiceInstanceWithCapabilitiesItemFragment,
   SubscriptionItemFragment,

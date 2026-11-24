@@ -7,30 +7,44 @@ import { Chip } from '@filigran/design-system';
 import { ServiceInstanceWithCapabilitiesItemFragment } from '@graphql/generated';
 import { useMemo } from 'react';
 
+type ServiceCapabilities = NonNullable<
+  ServiceInstanceWithCapabilitiesItemFragment['service_definition']
+>['service_capability'];
+
 interface ServiceSlugHeaderProps {
-  serviceInstance: ServiceInstanceWithCapabilitiesItemFragment;
+  // Tags are optional: the manage page heads with a service instance read
+  // without them.
+  serviceInstance: Pick<
+    ServiceInstanceWithCapabilitiesItemFragment,
+    'name' | 'description'
+  > &
+    Partial<Pick<ServiceInstanceWithCapabilitiesItemFragment, 'tags'>>;
+  // Given apart from the service instance: the manage page's instance reads a
+  // service definition without its capabilities.
+  capabilities?: ServiceCapabilities;
 }
 
-const ServiceSlugHeader = ({ serviceInstance }: ServiceSlugHeaderProps) => {
+const ServiceSlugHeader = ({
+  serviceInstance,
+  capabilities,
+}: ServiceSlugHeaderProps) => {
   const t = useTranslate();
 
   const availableCapabilities: BadgeOverflow[] = useMemo(
     () =>
-      (serviceInstance.service_definition?.service_capability ?? []).flatMap(
-        (capability) => {
-          if (!capability?.id || !capability.name) {
-            return [];
-          }
-
-          return [
-            {
-              id: capability.id,
-              name: capability.name,
-            },
-          ];
+      (capabilities ?? []).flatMap((capability) => {
+        if (!capability?.id || !capability.name) {
+          return [];
         }
-      ),
-    [serviceInstance.service_definition?.service_capability]
+
+        return [
+          {
+            id: capability.id,
+            name: capability.name,
+          },
+        ];
+      }),
+    [capabilities]
   );
 
   const serviceTags = useMemo(

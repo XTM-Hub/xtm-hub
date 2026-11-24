@@ -50,10 +50,14 @@ vi.mock('@/components/service/document/document-query-invalidation', () => ({
   invalidateDocumentQueriesAfterDelete: vi.fn(),
 }));
 
-const serviceInstance = {
+const serviceInstance: ServiceInstanceItemFragment = {
   id: SERVICE_INSTANCE_ID,
+  name: 'Service',
+  description: null,
   slug: SERVICE_INSTANCE_SLUG,
-} as ServiceInstanceItemFragment;
+  capabilities: [],
+  service_definition: null,
+};
 
 const existingDocument = {
   id: DOCUMENT_ID,

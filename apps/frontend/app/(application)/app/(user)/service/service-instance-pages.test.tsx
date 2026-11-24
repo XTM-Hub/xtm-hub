@@ -103,12 +103,12 @@ const LIST_PAGES = [
   {
     page: 'OpenAEV scenarios',
     load: () => import('./openaev_scenarios/[serviceInstanceId]/page'),
-    notFound: 'Service not found',
+    notFound: SERVICE_NOT_FOUND_KEY,
   },
   {
     page: 'OpenCTI custom dashboards',
     load: () => import('./opencti_custom_dashboards/[serviceInstanceId]/page'),
-    notFound: 'Service not found',
+    notFound: SERVICE_NOT_FOUND_KEY,
   },
   {
     page: 'OpenCTI custom views',
@@ -118,7 +118,7 @@ const LIST_PAGES = [
   {
     page: 'OpenCTI integrations',
     load: () => import('./opencti_integrations/[serviceInstanceId]/page'),
-    notFound: 'Service not found',
+    notFound: SERVICE_NOT_FOUND_KEY,
   },
   {
     page: 'OpenCTI playbooks',
@@ -132,13 +132,13 @@ const DOCUMENT_PAGES = [
     page: 'OpenAEV scenario',
     load: () =>
       import('./openaev_scenarios/[serviceInstanceId]/[documentId]/page'),
-    notFound: 'Document not found',
+    notFound: DOCUMENT_NOT_FOUND_KEY,
   },
   {
     page: 'OpenCTI custom dashboard',
     load: () =>
       import('./opencti_custom_dashboards/[serviceInstanceId]/[documentId]/page'),
-    notFound: 'Document not found',
+    notFound: DOCUMENT_NOT_FOUND_KEY,
   },
   {
     page: 'OpenCTI custom view',
@@ -150,7 +150,7 @@ const DOCUMENT_PAGES = [
     page: 'OpenCTI integration',
     load: () =>
       import('./opencti_integrations/[serviceInstanceId]/[documentId]/page'),
-    notFound: 'Document not found',
+    notFound: DOCUMENT_NOT_FOUND_KEY,
   },
   {
     page: 'OpenCTI playbook',

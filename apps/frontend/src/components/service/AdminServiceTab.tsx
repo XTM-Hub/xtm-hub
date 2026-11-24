@@ -24,7 +24,7 @@ import { MoreVertIcon } from '@filigran/icon';
 import { ColumnDef, getSortedRowModel } from '@tanstack/react-table';
 import { useState } from 'react';
 
-export type AdminServiceListRefetch = (
+export type AdminServiceListVariablesChange = (
   change: Partial<
     Pick<AdminServiceInstancesListQueryVariables, 'searchTerm' | 'filters'>
   >
@@ -32,7 +32,7 @@ export type AdminServiceListRefetch = (
 
 interface AdminServiceTabProps {
   serviceData: AdminServiceInstanceItemFragment[];
-  onVariablesChange: AdminServiceListRefetch;
+  onVariablesChange: AdminServiceListVariablesChange;
 }
 
 export const ADMIN_SERVICE_TAB_SERVICE_DEFINITION_IDENTIFIERS = Object.values(

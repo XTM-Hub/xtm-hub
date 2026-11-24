@@ -1,8 +1,8 @@
-import { invalidateUserServiceQueries } from '@/components/subcription/user-service.invalidation';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
+import { invalidateUserServiceQueries } from '@/utils/query-invalidation/user-service.invalidation';
 import {
   type UserServiceItemFragment,
   useDeleteUserServicesMutation,

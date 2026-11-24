@@ -334,10 +334,14 @@ describe('EpicList', () => {
 
   it('should pass detailed service instance to capability hooks when capabilities exist', () => {
     // Given
-    const detailedServiceInstance = {
+    const detailedServiceInstance: ServiceInstanceItemFragment = {
       id: SERVICE_INSTANCE_ID,
+      name: 'Service',
+      description: null,
+      slug: null,
       capabilities: [ServiceRestriction.ManageAccess],
-    } as ServiceInstanceItemFragment;
+      service_definition: null,
+    };
 
     // When
     renderEpicList({ serviceInstance: detailedServiceInstance });

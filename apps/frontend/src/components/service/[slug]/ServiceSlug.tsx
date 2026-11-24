@@ -247,7 +247,10 @@ const ServiceSlug = ({ subscriptions, serviceInstance }: ServiceSlugProps) => {
       <BreadcrumbNav value={breadcrumbValue} />
 
       <div>
-        <ServiceSlugHeader serviceInstance={serviceInstance} />
+        <ServiceSlugHeader
+          serviceInstance={serviceInstance}
+          capabilities={serviceInstance.service_definition?.service_capability}
+        />
         <div className="layer-1 border rounded bg-elevation-default p-3">
           <h2 className="">{t('Service.Management.Description') + ':'}</h2>
 
