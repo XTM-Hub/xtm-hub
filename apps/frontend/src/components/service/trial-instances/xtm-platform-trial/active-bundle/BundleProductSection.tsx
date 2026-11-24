@@ -13,13 +13,7 @@ import { analyticsProduct } from '@/lib/analytics/analytics.context';
 import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { useDateFormatter } from '@/utils/date';
 import { toExternalHref } from '@/utils/external-url';
-import {
-  Button,
-  Card,
-  CardContent,
-  Chip,
-  IconButton,
-} from '@filigran/design-system';
+import { Button, Chip, IconButton, Paper } from '@filigran/design-system';
 import { EditIcon } from '@filigran/icon';
 import { xtmPlatformBundleKeys } from '@graphql/deployment/deployment.keys';
 import {
@@ -32,17 +26,17 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
 
-interface BundleProductCardProps {
+interface BundleProductSectionProps {
   product: XtmPlatformBundleProductFragment;
   xtmoneStatus: XtmoneStatusState;
   canManage: boolean;
 }
 
-export const BundleProductCard = ({
+export const BundleProductSection = ({
   product,
   xtmoneStatus,
   canManage,
-}: BundleProductCardProps) => {
+}: BundleProductSectionProps) => {
   const t = useTranslate();
   const formatDate = useDateFormatter();
   const queryClient = useQueryClient();
@@ -100,14 +94,13 @@ export const BundleProductCard = ({
   );
 
   return (
-    <Card
-      {...analyticsProduct(product.platform_identifier)}
-      padding={16}
-      className="h-full">
-      <CardContent
-        clamp={0}
-        className="flex flex-col gap-3 h-full">
-        <div className="flex gap-2 items-center min-w-0">
+    <>
+      <Paper
+        as="section"
+        {...analyticsProduct(product.platform_identifier)}
+        padding={16}
+        className="flex flex-col gap-3">
+        <h2 className="flex min-w-0 items-center gap-2">
           <Image
             src={darkTextLogo}
             alt={name}
@@ -118,7 +111,7 @@ export const BundleProductCard = ({
             alt={name}
             className="block h-9 w-auto shrink-0 dark:hidden"
           />
-        </div>
+        </h2>
         {isXtmone ? (
           <div className="flex flex-col">
             {productNameRow}
@@ -214,7 +207,7 @@ export const BundleProductCard = ({
             </Button>
           )}
         </div>
-      </CardContent>
+      </Paper>
       {canManage && (
         <PlatformUpdateSheet
           serviceInstanceId={product.service_instance_id}
@@ -232,6 +225,6 @@ export const BundleProductCard = ({
           }
         />
       )}
-    </Card>
+    </>
   );
 };

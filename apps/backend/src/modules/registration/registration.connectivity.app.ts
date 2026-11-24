@@ -21,23 +21,87 @@ import {
   PlatformConfigurationDomain,
   PlatformUrlSchema,
 } from './platform-configuration/platform-configuration.domain';
+import { RegistrationDomain } from './registration.domain';
 import { RegistrationHelper } from './registration.helper';
 
 const HOUR_IN_MS = 60 * 60 * 1000;
 
-interface RefreshResult {
+type ServiceInstanceId = PlatformConfiguration['service_instance_id'];
+
+interface ConnectivityStatus {
   status: PlatformRegistrationConnectivityStatus;
   // Null when no registration matches the platform id and token.
   commercialModel: CommercialModel | null;
 }
 
-interface RefreshOutcome extends RefreshResult {
+interface RefreshOutcome extends ConnectivityStatus {
+  // Service instance of the registration the platform id and token matched, whatever its status; null when none
+  // matches.
+  serviceInstanceId: ServiceInstanceId | null;
   // True when the platform id and token matched an active registration: an unregistered one authenticates nothing.
   isTokenValid: boolean;
 }
 
+interface RefreshResult extends ConnectivityStatus {
+  // Organization the platform is registered in; null when no registration matches the platform id and token.
+  organizationName: string | null;
+}
+
 const isValidPlatformUrl = (url: string): boolean =>
   PlatformUrlSchema.safeParse(url).success;
+
+// One query for every service instance, whatever their number. The platform is already refreshed when it runs: a
+// failed lookup leaves the organization names empty rather than failing the refresh.
+const loadOwnerOrganizationNames = async (
+  platformId: string,
+  serviceInstanceIds: ServiceInstanceId[]
+): Promise<Map<ServiceInstanceId, string>> => {
+  if (serviceInstanceIds.length === 0) {
+    return new Map();
+  }
+  try {
+    const ownerOrganizations =
+      await RegistrationDomain.loadPlatformOwnerOrganizationsByServiceInstanceIds(
+        serviceInstanceIds
+      );
+    return new Map(
+      ownerOrganizations.map((organization) => [
+        organization.service_instance_id,
+        organization.name,
+      ])
+    );
+  } catch (error) {
+    logApp.error('Failed to load the organizations of the refreshed platform', {
+      platformId,
+      error,
+    });
+    return new Map();
+  }
+};
+
+const findOrganizationName = (
+  organizationNames: Map<ServiceInstanceId, string>,
+  serviceInstanceId: ServiceInstanceId | null
+): string | null =>
+  serviceInstanceId ? (organizationNames.get(serviceInstanceId) ?? null) : null;
+
+const withOwnerOrganizationName = async (
+  platformId: string,
+  { status, commercialModel, serviceInstanceId }: RefreshOutcome
+): Promise<RefreshResult> => {
+  const organizationNames = await loadOwnerOrganizationNames(
+    platformId,
+    serviceInstanceId ? [serviceInstanceId] : []
+  );
+  return {
+    status,
+    commercialModel,
+    organizationName: findOrganizationName(
+      organizationNames,
+      serviceInstanceId
+    ),
+  };
+};
 
 // Only a legacy OpenAEV registration, made before tenants were required, can move to a tenant. The platform type
 // comes from the stored registration, never from the request.
@@ -253,6 +317,7 @@ const refreshConnectivityStatus = async ({
         platform_version,
       }),
       commercialModel: null,
+      serviceInstanceId: null,
       isTokenValid: false,
     };
   }
@@ -267,6 +332,7 @@ const refreshConnectivityStatus = async ({
     return {
       status: PlatformRegistrationConnectivityStatus.Inactive,
       commercialModel: platformConfiguration.commercial_model,
+      serviceInstanceId: platformConfiguration.service_instance_id,
       isTokenValid: false,
     };
   }
@@ -283,6 +349,7 @@ const refreshConnectivityStatus = async ({
   return {
     status: PlatformRegistrationConnectivityStatus.Active,
     commercialModel: platformConfiguration.commercial_model,
+    serviceInstanceId: platformConfiguration.service_instance_id,
     isTokenValid: true,
   };
 };
@@ -290,32 +357,34 @@ const refreshConnectivityStatus = async ({
 export const RegistrationConnectivityApp = {
   refreshPlatformRegistrationConnectivityStatus: async (
     input: RefreshPlatformRegistrationConnectivityStatusInput
-  ): Promise<RefreshResult> => {
-    const { status, commercialModel } = await refreshConnectivityStatus({
-      platform_identifier: input.platformIdentifier ?? undefined,
-      platform_version: input.platformVersion,
-      platform_id: input.platformId,
-      token: input.token,
-      platform_contract: input.platformContract ?? undefined,
-    });
-    return { status, commercialModel };
-  },
+  ): Promise<RefreshResult> =>
+    withOwnerOrganizationName(
+      input.platformId,
+      await refreshConnectivityStatus({
+        platform_identifier: input.platformIdentifier ?? undefined,
+        platform_version: input.platformVersion,
+        platform_id: input.platformId,
+        token: input.token,
+        platform_contract: input.platformContract ?? undefined,
+      })
+    ),
 
   refreshPlatformRegistrationConnectivityStatusSingleTenant: async (
     input: RefreshPlatformRegistrationConnectivityStatusSingleTenantInput
-  ): Promise<RefreshResult> => {
-    const { status, commercialModel } = await refreshConnectivityStatus({
-      platform_identifier: input.platformIdentifier,
-      platform_version: input.platformVersion,
-      platform_id: input.platformId,
-      token: input.token,
-      url: input.url,
-      tenant_id: input.tenantId,
-      tenant_name: input.tenantName,
-      platform_contract: input.platformContract ?? undefined,
-    });
-    return { status, commercialModel };
-  },
+  ): Promise<RefreshResult> =>
+    withOwnerOrganizationName(
+      input.platformId,
+      await refreshConnectivityStatus({
+        platform_identifier: input.platformIdentifier,
+        platform_version: input.platformVersion,
+        platform_id: input.platformId,
+        token: input.token,
+        url: input.url,
+        tenant_id: input.tenantId,
+        tenant_name: input.tenantName,
+        platform_contract: input.platformContract ?? undefined,
+      })
+    ),
 
   refreshPlatformRegistrationConnectivityStatusAllTenants: async (
     input: RefreshPlatformRegistrationConnectivityStatusAllTenantsInput
@@ -334,6 +403,14 @@ export const RegistrationConnectivityApp = {
         })
       )
     );
+    const organizationNames = await loadOwnerOrganizationNames(
+      input.platformId,
+      results.flatMap((result) =>
+        result.status === 'fulfilled' && result.value.serviceInstanceId
+          ? [result.value.serviceInstanceId]
+          : []
+      )
+    );
     const statuses = results.map((result, index) => {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const tenant = input.tenants[index]!;
@@ -342,6 +419,10 @@ export const RegistrationConnectivityApp = {
           tenantId: tenant.tenantId,
           status: result.value.status,
           commercialModel: result.value.commercialModel,
+          organizationName: findOrganizationName(
+            organizationNames,
+            result.value.serviceInstanceId
+          ),
         };
       }
       logApp.error(
@@ -352,6 +433,7 @@ export const RegistrationConnectivityApp = {
         tenantId: tenant.tenantId,
         status: PlatformRegistrationConnectivityStatus.Inactive,
         commercialModel: null,
+        organizationName: null,
       };
     });
 

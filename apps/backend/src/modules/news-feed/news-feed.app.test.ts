@@ -64,6 +64,18 @@ vi.mock('config', async (importOriginal) => {
 
 const mockConfigGet = vi.mocked(config.get);
 
+const loadConsumeInput = async (platformId: string, token: string) => {
+  const registration =
+    await PlatformConfigurationDomain.loadResolvedConfigurationByPlatformAndToken(
+      {
+        platform_id: platformId,
+        token,
+      }
+    );
+  expect(registration).toBeDefined();
+  return { registration: registration! };
+};
+
 describe('newsFeedApp', () => {
   const createdServiceInstanceIds: ServiceInstanceId[] = [];
 
@@ -167,64 +179,10 @@ describe('newsFeedApp', () => {
       });
     });
 
-    it('should throw when platformId is null', async () => {
-      await expect(
-        NewsFeedApp.consumeProvisionedNewsFeedItems({
-          platformId: null,
-          token,
-        })
-      ).rejects.toThrow(ErrorCode.InvalidPlatformId);
-    });
-
-    it('should throw when token is null', async () => {
-      await expect(
-        NewsFeedApp.consumeProvisionedNewsFeedItems({
-          platformId,
-          token: null,
-        })
-      ).rejects.toThrow(ErrorCode.InvalidPlatformId);
-    });
-
-    it('should throw when no service configuration matches platformId and token', async () => {
-      await expect(
-        NewsFeedApp.consumeProvisionedNewsFeedItems({
-          platformId: uuidv4(),
-          token: uuidv4(),
-        })
-      ).rejects.toThrow(ErrorCode.PlatformNotRegistered);
-    });
-
-    it('should refuse an unregistered platform and keep its provisioned items', async () => {
-      // Given
-      const item = await TestHelper.newsFeed.createItem({
-        type: NewsFeedItemType.ResourceCustomDashboard,
-        platform_identifier: PlatformIdentifier.Opencti,
-        title: 'Dashboard of an unregistered platform',
-        creation_date: new Date(),
-        tags: [],
-      });
-      await NewsFeedDomain.provisionNewsFeedItem(item.id, [platformId]);
-      await PlatformConfigurationDomain.deactivateConfiguration(
-        registrationServiceInstanceId
-      );
-
-      // When
-      const call = NewsFeedApp.consumeProvisionedNewsFeedItems({
-        platformId,
-        token,
-      });
-
-      // Then
-      await expect(call).rejects.toThrow(ErrorCode.PlatformNotRegistered);
-      const remaining = await TestHelper.newsFeed.loadProvisioned({});
-      expect(remaining).toHaveLength(1);
-    });
-
     it('should return empty news feed items and available types when nothing is provisioned', async () => {
-      const result = await NewsFeedApp.consumeProvisionedNewsFeedItems({
-        platformId,
-        token,
-      });
+      const result = await NewsFeedApp.consumeProvisionedNewsFeedItems(
+        await loadConsumeInput(platformId, token)
+      );
 
       expect(result.news_feed_items).toHaveLength(0);
       expect(result.available_news_feed_types).toContain(
@@ -251,10 +209,9 @@ describe('newsFeedApp', () => {
       await NewsFeedDomain.provisionNewsFeedItem(item.id, [platformId]);
       await NewsFeedDomain.provisionNewsFeedItem(item2.id, [platformId]);
 
-      const result = await NewsFeedApp.consumeProvisionedNewsFeedItems({
-        platformId,
-        token,
-      });
+      const result = await NewsFeedApp.consumeProvisionedNewsFeedItems(
+        await loadConsumeInput(platformId, token)
+      );
 
       expect(result.news_feed_items).toHaveLength(2);
       expect(result.news_feed_items.map((i) => i.title)).toEqual(
@@ -275,10 +232,9 @@ describe('newsFeedApp', () => {
       });
       await NewsFeedDomain.provisionNewsFeedItem(item.id, [platformId]);
 
-      const result = await NewsFeedApp.consumeProvisionedNewsFeedItems({
-        platformId,
-        token,
-      });
+      const result = await NewsFeedApp.consumeProvisionedNewsFeedItems(
+        await loadConsumeInput(platformId, token)
+      );
 
       expect(result.news_feed_items).toHaveLength(1);
       expect(result.news_feed_items[0]).toMatchObject({
@@ -312,10 +268,9 @@ describe('newsFeedApp', () => {
         platformId,
       ]);
 
-      const result = await NewsFeedApp.consumeProvisionedNewsFeedItems({
-        platformId,
-        token,
-      });
+      const result = await NewsFeedApp.consumeProvisionedNewsFeedItems(
+        await loadConsumeInput(platformId, token)
+      );
 
       expect(result.news_feed_items).toHaveLength(1);
       expect(result.news_feed_items[0]?.title).toBe(
@@ -329,10 +284,9 @@ describe('newsFeedApp', () => {
     });
 
     it('should return available_news_feed_types for the OpenCTI platform', async () => {
-      const result = await NewsFeedApp.consumeProvisionedNewsFeedItems({
-        platformId,
-        token,
-      });
+      const result = await NewsFeedApp.consumeProvisionedNewsFeedItems(
+        await loadConsumeInput(platformId, token)
+      );
 
       expect(result.available_news_feed_types).toEqual(
         expect.arrayContaining([
@@ -371,10 +325,37 @@ describe('newsFeedApp', () => {
           );
 
           // When
-          const result = await NewsFeedApp.consumeProvisionedNewsFeedItems({
-            platformId: gatedPlatformId,
-            token: gatedToken,
-          });
+          const result = await NewsFeedApp.consumeProvisionedNewsFeedItems(
+            await loadConsumeInput(gatedPlatformId, gatedToken)
+          );
+
+          // Then
+          expect(
+            result.available_news_feed_types.includes(NewsFeedItemType.BlogPost)
+          ).toBe(expected);
+        }
+      );
+
+      it.each`
+        description                 | version         | expected
+        ${'below the shipped gate'} | ${'3.261117.0'} | ${false}
+        ${'at the shipped gate'}    | ${'3.261118.0'} | ${true}
+      `(
+        'should list BLOG_POST with the shipped gate only when the OpenAEV version is $description ($version): $expected',
+        async ({ version, expected }) => {
+          // Given the shipped required version, left untouched
+          const gatedPlatformId = uuidv4();
+          const gatedToken = uuidv4();
+          await createOpenAEVPlatformForOrganization(
+            gatedPlatformId,
+            TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+            { token: gatedToken, platform_version: version }
+          );
+
+          // When
+          const result = await NewsFeedApp.consumeProvisionedNewsFeedItems(
+            await loadConsumeInput(gatedPlatformId, gatedToken)
+          );
 
           // Then
           expect(
@@ -408,10 +389,9 @@ describe('newsFeedApp', () => {
           );
 
           // When
-          const result = await NewsFeedApp.consumeProvisionedNewsFeedItems({
-            platformId: gatedPlatformId,
-            token: gatedToken,
-          });
+          const result = await NewsFeedApp.consumeProvisionedNewsFeedItems(
+            await loadConsumeInput(gatedPlatformId, gatedToken)
+          );
 
           // Then
           expect(
@@ -437,10 +417,9 @@ describe('newsFeedApp', () => {
         });
         await NewsFeedDomain.provisionNewsFeedItem(item.id, [platformId]);
 
-        const result = await NewsFeedApp.consumeProvisionedNewsFeedItems({
-          platformId,
-          token,
-        });
+        const result = await NewsFeedApp.consumeProvisionedNewsFeedItems(
+          await loadConsumeInput(platformId, token)
+        );
 
         expect(result.news_feed_items).toHaveLength(1);
         expect(result.news_feed_items[0]?.metadata).toEqual(
@@ -484,10 +463,9 @@ describe('newsFeedApp', () => {
       });
       await NewsFeedDomain.provisionNewsFeedItem(item.id, [platformId]);
 
-      const result = await NewsFeedApp.consumeProvisionedNewsFeedItems({
-        platformId,
-        token,
-      });
+      const result = await NewsFeedApp.consumeProvisionedNewsFeedItems(
+        await loadConsumeInput(platformId, token)
+      );
 
       expect(result.news_feed_items[0]?.metadata.map((m) => m.key)).toEqual([
         NewsFeedItemMetadataKey.UrlPath,
@@ -528,10 +506,9 @@ describe('newsFeedApp', () => {
       });
       await NewsFeedDomain.provisionNewsFeedItem(item.id, [platformId]);
 
-      const result = await NewsFeedApp.consumeProvisionedNewsFeedItems({
-        platformId,
-        token,
-      });
+      const result = await NewsFeedApp.consumeProvisionedNewsFeedItems(
+        await loadConsumeInput(platformId, token)
+      );
 
       expect(result.news_feed_items).toHaveLength(1);
       expect(result.news_feed_items[0]?.metadata).toHaveLength(
@@ -560,10 +537,9 @@ describe('newsFeedApp', () => {
         });
         await NewsFeedDomain.provisionNewsFeedItem(item.id, [platformId]);
 
-        const result = await NewsFeedApp.consumeProvisionedNewsFeedItems({
-          platformId,
-          token,
-        });
+        const result = await NewsFeedApp.consumeProvisionedNewsFeedItems(
+          await loadConsumeInput(platformId, token)
+        );
 
         const urlPath = result.news_feed_items[0]?.metadata.find(
           (m) => m.key === NewsFeedItemMetadataKey.UrlPath
@@ -2892,10 +2868,9 @@ describe('newsFeedApp', () => {
         await NewsFeedApp.syncBlogposts();
 
         // When
-        const result = await NewsFeedApp.consumeProvisionedNewsFeedItems({
-          platformId: openAevPlatformId,
-          token,
-        });
+        const result = await NewsFeedApp.consumeProvisionedNewsFeedItems(
+          await loadConsumeInput(openAevPlatformId, token)
+        );
 
         // Then
         expect(result.available_news_feed_types).toContain(

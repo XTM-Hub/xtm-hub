@@ -1,6 +1,5 @@
 import cors from 'cors';
 import { Express, Request } from 'express';
-import rateLimit from 'express-rate-limit';
 import { Readable } from 'stream';
 import { requestContext } from '../../../context/request.context';
 import { DocumentId } from '../../../model/kanel/public/Document';
@@ -19,13 +18,12 @@ import { MinIOClient } from '../../../thirdparty/minio/client';
 import { logApp } from '../../../utils/app-logger.util';
 import { ErrorCode } from '../../../utils/error/error.code';
 import { NotFoundError } from '../../../utils/error/error.util';
+import {
+  documentDownloadIpRateLimiter,
+  documentDownloadUserRateLimiter,
+  USER_PLATFORM_TOKEN_HEADER,
+} from '../../../utils/rate-limit.util';
 import { extractId } from '../../../utils/utils';
-const documentDownloadRateLimiter = rateLimit({
-  windowMs: 180 * 1000, // 3 minutes
-  max: 10, // max 10 request per minute per IP
-  standardHeaders: true,
-  legacyHeaders: false,
-});
 
 const loadUser = async (
   req: Request
@@ -38,7 +36,7 @@ const loadUser = async (
     return { user: userLoadFromCookie };
   }
 
-  const user_platform_token = req.header('XTM-Hub-User-Platform-Token');
+  const user_platform_token = req.header(USER_PLATFORM_TOKEN_HEADER);
   if (!user_platform_token) {
     return { user: null };
   }
@@ -58,7 +56,8 @@ export const documentDownloadEndpoint = (app: Express) => {
     .get(
       `/document/get/:serviceInstanceId/:filename`,
       cors(),
-      documentDownloadRateLimiter,
+      documentDownloadIpRateLimiter,
+      documentDownloadUserRateLimiter,
       async (req: Request, res) => {
         const { attach } = req.query;
         const { user, isLoadedFromUserPlatformToken } = await loadUser(req);

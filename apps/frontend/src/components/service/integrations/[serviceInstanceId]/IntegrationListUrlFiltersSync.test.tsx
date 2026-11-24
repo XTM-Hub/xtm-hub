@@ -1,6 +1,8 @@
 import { IntegrationListUrlFiltersSync } from '@/components/service/integrations/[serviceInstanceId]/IntegrationListUrlFiltersSync';
 import { INTEGRATION_TYPE_PARAM } from '@/components/service/integrations/[serviceInstanceId]/integration-list-url-filters.utils';
 import { useIntegrationListStorage } from '@/components/service/integrations/[serviceInstanceId]/use-integration-list-storage';
+import { useServiceListStorage } from '@/hooks/use-service-list-storage';
+import { ServiceListStorageKey } from '@/utils/filters-storage.utils';
 import testRender from '@/utils/test/test-render';
 import { IntegrationType } from '@graphql/generated';
 import { act, renderHook } from '@testing-library/react';
@@ -74,5 +76,24 @@ describe('IntegrationListUrlFiltersSync', () => {
     expect(window.location.search).toBe(
       `?${INTEGRATION_TYPE_PARAM}=${IntegrationType.Connector}`
     );
+  });
+
+  it('should remove every filter from the url when the stored filters are cleared', () => {
+    // Given
+    testRender(<IntegrationListUrlFiltersSync />);
+    const { result } = renderHook(() =>
+      useServiceListStorage(ServiceListStorageKey.OpenCTIIntegrationFeeds)
+    );
+    act(() => {
+      result.current.setIntegrationTypes({ [IntegrationType.Connector]: [] });
+      result.current.setLabels({ 'use-case-id': [] });
+      result.current.setVerified({ true: [] });
+    });
+
+    // When
+    act(() => result.current.clearFilters());
+
+    // Then
+    expect(window.location.search).toBe('');
   });
 });

@@ -1,7 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
 import {
   ApiTokenScope,
-  OrganizationCapability,
   PortalCapability,
 } from '../../__generated__/resolvers-types';
 import { ApiTokenId } from '../../model/kanel/public/ApiToken';
@@ -10,13 +9,17 @@ import { UserLoadUserBy } from '../../model/user';
 import { ROLE_ADMIN } from '../../portal.const';
 import { logApp } from '../../utils/app-logger.util';
 import { getErrorMessage } from '../../utils/error/error-guard.util';
-import {
-  ErrorCode,
-  UnauthenticatedErrorCode,
-  UnknownErrorCode,
-} from '../../utils/error/error.code';
+import { ErrorCode } from '../../utils/error/error.code';
 import { UserDomain } from '../organization-management/user/user-domain/user.domain';
 import { ApiTokenDomain } from './api-token.domain';
+import { API_TOKEN_ERRORS, sendApiTokenError } from './api-token.errors';
+import {
+  admitApiTokenLookup,
+  countRefusedApiToken,
+  type LookupReservation,
+  recentApiTokens,
+  releaseApiTokenLookup,
+} from './api-token.failure-limit';
 import { ApiTokenHelper } from './api-token.helper';
 
 // What a request authenticated by an API token knows about it
@@ -49,8 +52,9 @@ export const getApiTokenAuthentication = (
  * The user a token acts as: the token's user as loaded now, so a right removed, a disabled account or a membership
  * ended takes effect on the next call, narrowed to what the token may do.
  * - Only the token's organization: it is pinned as the selected one, the others are hidden.
- * - Without the admin scope: no portal capability, and no ADMINISTRATE_ORGANIZATION (which implies every
- *   organization capability).
+ * - Without the admin scope: no portal capability and no organization capability. Every organization capability
+ *   administers the organization (its members and their rights, its subscriptions, its platforms), and read_write is
+ *   not administration.
  * - With the admin scope: the user's portal capabilities, BYPASS excepted. A token never carries BYPASS.
  */
 export const narrowUserToToken = (
@@ -64,12 +68,7 @@ export const narrowUserToToken = (
     return undefined;
   }
   const isAdmin = token.scope === ApiTokenScope.Admin;
-  const organizationCapabilities = isAdmin
-    ? membership.capabilities
-    : membership.capabilities.filter(
-        (capability) =>
-          capability !== OrganizationCapability.AdministrateOrganization
-      );
+  const organizationCapabilities = isAdmin ? membership.capabilities : [];
   return {
     ...user,
     selected_organization_id: token.organization_id,
@@ -170,8 +169,10 @@ const recordUse = ({ id, last_used_at }: ApiTokenCaller, now: Date) => {
 /**
  * `Authorization: Bearer xhp_...` authenticates the request as the token's user. Any other request goes on unchanged
  * (session cookie, system token, platform token). A refused token answers 401 whatever the route: the caller asked
- * for the token's identity, it never falls back to a session. A failure while checking the token answers 500 with no
- * detail: the error only goes to the logs.
+ * for the token's identity, it never falls back to a session. Refused tokens are counted per client IP: over the
+ * limit, the client gets 429 and its tokens are no longer looked up until the window ends, except the tokens accepted
+ * recently, which are still looked up and checked as usual. A token that was looked up and refused always gets 401.
+ * A failure while checking the token answers 500 with no detail, and is not counted: the error only goes to the logs.
  */
 export const apiTokenMiddleware = async (
   req: Request,
@@ -185,27 +186,67 @@ export const apiTokenMiddleware = async (
     next();
     return;
   }
+  const tokenHash = ApiTokenHelper.hash(secret);
+  // A token not accepted recently reserves a hit before its lookup and, over the limit, is answered 429 without one
+  let reservation: LookupReservation | undefined;
+  if (!recentApiTokens.has(tokenHash)) {
+    reservation = admitApiTokenLookup(req, res);
+    if (!reservation) {
+      return;
+    }
+  }
   const now = new Date();
   let resolution: Resolution;
   try {
     resolution = await resolveApiToken(secret, now);
   } catch (error) {
+    // Not a refused token: an outage must not use up the allowance of every client
+    if (reservation) {
+      releaseApiTokenLookup(reservation);
+    }
     // Never the secret: only the error, whose query carries the token hash at most
     logApp.error('API token authentication failed', { error });
     // The same code Apollo gives an internal error on the GraphQL routes
-    ApiTokenHelper.sendError(res, 500, UnknownErrorCode.UnknownError);
+    sendApiTokenError(res, API_TOKEN_ERRORS.UnknownError);
     return;
   }
   if (!resolution.authenticated) {
+    recentApiTokens.forget(tokenHash);
+    // A reserved hit stays as the refusal; a token accepted recently had none
+    if (!reservation) {
+      countRefusedApiToken(req);
+    }
     logApp.warn('API token refused', { reason: resolution.reason });
-    ApiTokenHelper.sendError(
-      res,
-      401,
-      UnauthenticatedErrorCode.Unauthenticated
-    );
+    sendApiTokenError(res, API_TOKEN_ERRORS.Unauthenticated);
     return;
   }
+  if (reservation) {
+    releaseApiTokenLookup(reservation);
+  }
+  recentApiTokens.remember(tokenHash, now.getTime());
   authentications.set(req, resolution.authentication);
   recordUse(resolution.authentication.token, now);
   next();
+};
+
+/**
+ * A token authenticates the GraphQL API only, where apiTokenPlugin enforces its scope and denylist. Any other route
+ * (`/graphql-sse`, REST, `/auth`) authorizes the session while the request context runs as the token's user: the
+ * token is refused there rather than ignored.
+ */
+export const refuseApiTokenMiddleware = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const authentication = getApiTokenAuthentication(req);
+  if (!authentication) {
+    next();
+    return;
+  }
+  logApp.warn('API token refused outside the GraphQL API', {
+    api_token_id: authentication.token.id,
+    path: req.path,
+  });
+  sendApiTokenError(res, API_TOKEN_ERRORS.NotAllowedWithApiToken);
 };

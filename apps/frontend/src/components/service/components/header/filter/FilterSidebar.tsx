@@ -1,5 +1,10 @@
+import { ClearAllFiltersButton } from '@/components/service/components/header/filter/ClearAllFiltersButton';
 import { ServiceListFilterSection } from '@/components/service/components/header/filter/ServiceListFilterSection';
+import { useClearAllFilters } from '@/components/service/components/header/filter/use-clear-all-filters';
 import { ServiceListFilterMap } from '@/components/service/components/header/ServiceListHeader';
+import { useTranslate } from '@/hooks/use-translate';
+import { Text } from '@filigran/design-system';
+import { useIsClient } from 'usehooks-ts';
 
 interface FilterSidebarProps {
   filters: ServiceListFilterMap;
@@ -23,8 +28,27 @@ interface FilterSidebarProps {
  * sidebar is taller than the page content. Fallbacks cover the first
  * paint before the observer publishes.
  */
-export const FilterSidebar = ({ filters }: FilterSidebarProps) => (
-  <div className="shrink-0 grow-0 basis-[250px] self-start sticky top-[var(--list-header-height,64px)] max-h-[calc(var(--list-scroll-height,100dvh)-var(--list-header-height,64px))] overflow-y-auto rounded p-3 layer-1 bg-elevation-default max-sm:hidden">
-    <ServiceListFilterSection filters={filters} />
-  </div>
-);
+export const FilterSidebar = ({ filters }: FilterSidebarProps) => {
+  const t = useTranslate();
+  const { headingRef, hasActiveFilters, clearAll } = useClearAllFilters();
+  const isClient = useIsClient();
+
+  return (
+    <div className="shrink-0 grow-0 basis-[250px] self-start sticky top-[var(--list-header-height,64px)] max-h-[calc(var(--list-scroll-height,100dvh)-var(--list-header-height,64px))] overflow-y-auto rounded p-3 layer-1 bg-elevation-default max-sm:hidden">
+      <div className="flex min-h-8 items-center justify-between px-2 pb-1">
+        <Text
+          ref={headingRef}
+          as="h2"
+          variant="title-sm"
+          tabIndex={-1}>
+          {t('Service.List.Filters')}
+        </Text>
+        {/* The server cannot read the stored filters: render the button after mount. */}
+        {isClient && hasActiveFilters && (
+          <ClearAllFiltersButton onClick={clearAll} />
+        )}
+      </div>
+      <ServiceListFilterSection filters={filters} />
+    </div>
+  );
+};

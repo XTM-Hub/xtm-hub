@@ -2614,6 +2614,7 @@ export type RefreshPlatformRegistrationConnectivityStatusInput = {
 export type RefreshPlatformRegistrationConnectivityStatusResponse = {
   __typename?: 'RefreshPlatformRegistrationConnectivityStatusResponse';
   commercialModel: Maybe<CommercialModel>;
+  organizationName: Maybe<Scalars['String']['output']>;
   status: PlatformRegistrationConnectivityStatus;
 };
 
@@ -2705,6 +2706,7 @@ export type RegisteredSaasPlatformDataInput = {
 
 export type RegistrationResponse = {
   __typename?: 'RegistrationResponse';
+  organizationName: Maybe<Scalars['String']['output']>;
   token: Scalars['String']['output'];
 };
 
@@ -3287,6 +3289,7 @@ export type TenantDetails = {
 export type TenantStatus = {
   __typename?: 'TenantStatus';
   commercialModel: Maybe<CommercialModel>;
+  organizationName: Maybe<Scalars['String']['output']>;
   status: PlatformRegistrationConnectivityStatus;
   tenantId: Scalars['String']['output'];
 };
@@ -4196,6 +4199,50 @@ export type IntegrationProductVersionFilterQueryVariables = Exact<{
 
 export type IntegrationProductVersionFilterQuery = { __typename?: 'Query', registeredProductVersions: Array<{ __typename?: 'RegisteredProductVersion', version: string }> };
 
+export type MeProfileEditMutationVariables = Exact<{
+  first_name: InputMaybe<Scalars['String']['input']>;
+  last_name: InputMaybe<Scalars['String']['input']>;
+  country: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type MeProfileEditMutation = { __typename?: 'Mutation', editMeUser: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, country: string | null, picture: string | null, selected_organization_id: any | null, selected_org_capabilities: Array<OrganizationCapability> | null, has_replied_satisfaction: HasRepliedSatisfaction | null, capabilities: Array<{ __typename?: 'Capability', name: PortalCapability }> | null, organizations: Array<{ __typename?: 'Organization', id: string, name: string, personal_space: boolean }> | null } };
+
+export type MeLanguageEditMutationVariables = Exact<{
+  selected_language: Scalars['String']['input'];
+}>;
+
+
+export type MeLanguageEditMutation = { __typename?: 'Mutation', editMeUser: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, country: string | null, picture: string | null, selected_organization_id: any | null, selected_org_capabilities: Array<OrganizationCapability> | null, has_replied_satisfaction: HasRepliedSatisfaction | null, capabilities: Array<{ __typename?: 'Capability', name: PortalCapability }> | null, organizations: Array<{ __typename?: 'Organization', id: string, name: string, personal_space: boolean }> | null } };
+
+export type MePictureUploadMutationVariables = Exact<{
+  document: Scalars['Upload']['input'];
+}>;
+
+
+export type MePictureUploadMutation = { __typename?: 'Mutation', uploadUserPicture: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, country: string | null, picture: string | null, selected_organization_id: any | null, selected_org_capabilities: Array<OrganizationCapability> | null, has_replied_satisfaction: HasRepliedSatisfaction | null, capabilities: Array<{ __typename?: 'Capability', name: PortalCapability }> | null, organizations: Array<{ __typename?: 'Organization', id: string, name: string, personal_space: boolean }> | null } };
+
+export type MePasswordResetMutationVariables = Exact<{ [key: string]: never; }>;
+
+
+export type MePasswordResetMutation = { __typename?: 'Mutation', resetPassword: { __typename?: 'Success', success: boolean } };
+
+export type MePersonalSpaceTransferRequestMutationVariables = Exact<{
+  new_email: Scalars['String']['input'];
+}>;
+
+
+export type MePersonalSpaceTransferRequestMutation = { __typename?: 'Mutation', requestTransferPersonalSpace: { __typename?: 'Success', success: boolean } };
+
+export type MePersonalSpaceTransferMutationVariables = Exact<{
+  requestId: Scalars['ID']['input'];
+}>;
+
+
+export type MePersonalSpaceTransferMutation = { __typename?: 'Mutation', transferPersonalSpace: { __typename?: 'Success', success: boolean } };
+
+export type CurrentUserFragment = { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, country: string | null, picture: string | null, selected_organization_id: any | null, selected_org_capabilities: Array<OrganizationCapability> | null, has_replied_satisfaction: HasRepliedSatisfaction | null, capabilities: Array<{ __typename?: 'Capability', name: PortalCapability }> | null, organizations: Array<{ __typename?: 'Organization', id: string, name: string, personal_space: boolean }> | null };
+
 export type MeCheckQueryVariables = Exact<{ [key: string]: never; }>;
 
 
@@ -4220,6 +4267,16 @@ export type MeAnalyticsQueryVariables = Exact<{ [key: string]: never; }>;
 
 
 export type MeAnalyticsQuery = { __typename?: 'Query', me: { __typename?: 'User', email: string, selected_organization_id: any | null, selected_org_capabilities: Array<OrganizationCapability> | null, organizations: Array<{ __typename?: 'Organization', id: string, personal_space: boolean }> | null, capabilities: Array<{ __typename?: 'Capability', name: PortalCapability }> | null } | null };
+
+export type MeQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type MeQuery = { __typename?: 'Query', me: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, country: string | null, picture: string | null, selected_organization_id: any | null, selected_org_capabilities: Array<OrganizationCapability> | null, has_replied_satisfaction: HasRepliedSatisfaction | null, capabilities: Array<{ __typename?: 'Capability', name: PortalCapability }> | null, organizations: Array<{ __typename?: 'Organization', id: string, name: string, personal_space: boolean }> | null } | null };
+
+export type MeUserEventsSubscriptionVariables = Exact<{ [key: string]: never; }>;
+
+
+export type MeUserEventsSubscription = { __typename?: 'Subscription', MeUser: { __typename?: 'MeUserSubscription', delete: { __typename?: 'User', id: string } | null, edit: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, country: string | null, picture: string | null, selected_organization_id: any | null, selected_org_capabilities: Array<OrganizationCapability> | null, has_replied_satisfaction: HasRepliedSatisfaction | null, capabilities: Array<{ __typename?: 'Capability', name: PortalCapability }> | null, organizations: Array<{ __typename?: 'Organization', id: string, name: string, personal_space: boolean }> | null } | null } | null };
 
 export type NewsFeedDeleteItemMutationVariables = Exact<{
   id: Scalars['NewsFeedItemId']['input'];
@@ -4337,7 +4394,7 @@ export type RegisterPlatformMutationVariables = Exact<{
 }>;
 
 
-export type RegisterPlatformMutation = { __typename?: 'Mutation', registerPlatform: { __typename?: 'RegistrationResponse', token: string } };
+export type RegisterPlatformMutation = { __typename?: 'Mutation', registerPlatform: { __typename?: 'RegistrationResponse', token: string, organizationName: string | null } };
 
 export type RegisteredPlatformsQueryVariables = Exact<{
   input: RegisteredPlatformsInput;
@@ -5399,6 +5456,27 @@ export const VotableFeaturePublicFragmentDoc = `
   illustration_document_id
   position
   has_my_vote
+}
+    `;
+export const CurrentUserFragmentDoc = `
+    fragment CurrentUser on User {
+  id
+  email
+  first_name
+  last_name
+  country
+  picture
+  selected_organization_id
+  capabilities {
+    name
+  }
+  organizations {
+    id
+    name
+    personal_space
+  }
+  selected_org_capabilities
+  has_replied_satisfaction
 }
     `;
 export const NewsFeedItemRowFragmentDoc = `
@@ -7698,6 +7776,182 @@ useInfiniteIntegrationProductVersionFilterQuery.getKey = (variables: Integration
 useInfiniteIntegrationProductVersionFilterQuery.getRootKey = () => ['IntegrationProductVersionFilter.infinite'] as const;
 useIntegrationProductVersionFilterQuery.fetcher = (client: GraphQLClient, variables: IntegrationProductVersionFilterQueryVariables, headers?: RequestInit['headers']) => fetcher<IntegrationProductVersionFilterQuery, IntegrationProductVersionFilterQueryVariables>(client, IntegrationProductVersionFilterDocument, variables, headers);
 
+export const MeProfileEditDocument = `
+    mutation MeProfileEdit($first_name: String, $last_name: String, $country: String) {
+  editMeUser(
+    input: {first_name: $first_name, last_name: $last_name, country: $country}
+  ) {
+    ...CurrentUser
+  }
+}
+    ${CurrentUserFragmentDoc}`;
+
+export const useMeProfileEditMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<MeProfileEditMutation, TError, MeProfileEditMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<MeProfileEditMutation, TError, MeProfileEditMutationVariables, TContext>(
+      {
+    mutationKey: ['MeProfileEdit'],
+    mutationFn: (variables?: MeProfileEditMutationVariables) => fetcher<MeProfileEditMutation, MeProfileEditMutationVariables>(client, MeProfileEditDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useMeProfileEditMutation.getKey = () => ['MeProfileEdit'];
+useMeProfileEditMutation.getRootKey = () => ['MeProfileEdit'] as const;
+useMeProfileEditMutation.fetcher = (client: GraphQLClient, variables?: MeProfileEditMutationVariables, headers?: RequestInit['headers']) => fetcher<MeProfileEditMutation, MeProfileEditMutationVariables>(client, MeProfileEditDocument, variables, headers);
+
+export const MeLanguageEditDocument = `
+    mutation MeLanguageEdit($selected_language: String!) {
+  editMeUser(input: {selected_language: $selected_language}) {
+    ...CurrentUser
+  }
+}
+    ${CurrentUserFragmentDoc}`;
+
+export const useMeLanguageEditMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<MeLanguageEditMutation, TError, MeLanguageEditMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<MeLanguageEditMutation, TError, MeLanguageEditMutationVariables, TContext>(
+      {
+    mutationKey: ['MeLanguageEdit'],
+    mutationFn: (variables?: MeLanguageEditMutationVariables) => fetcher<MeLanguageEditMutation, MeLanguageEditMutationVariables>(client, MeLanguageEditDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useMeLanguageEditMutation.getKey = () => ['MeLanguageEdit'];
+useMeLanguageEditMutation.getRootKey = () => ['MeLanguageEdit'] as const;
+useMeLanguageEditMutation.fetcher = (client: GraphQLClient, variables: MeLanguageEditMutationVariables, headers?: RequestInit['headers']) => fetcher<MeLanguageEditMutation, MeLanguageEditMutationVariables>(client, MeLanguageEditDocument, variables, headers);
+
+export const MePictureUploadDocument = `
+    mutation MePictureUpload($document: Upload!) {
+  uploadUserPicture(document: $document) {
+    ...CurrentUser
+  }
+}
+    ${CurrentUserFragmentDoc}`;
+
+export const useMePictureUploadMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<MePictureUploadMutation, TError, MePictureUploadMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<MePictureUploadMutation, TError, MePictureUploadMutationVariables, TContext>(
+      {
+    mutationKey: ['MePictureUpload'],
+    mutationFn: (variables?: MePictureUploadMutationVariables) => fetcher<MePictureUploadMutation, MePictureUploadMutationVariables>(client, MePictureUploadDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useMePictureUploadMutation.getKey = () => ['MePictureUpload'];
+useMePictureUploadMutation.getRootKey = () => ['MePictureUpload'] as const;
+useMePictureUploadMutation.fetcher = (client: GraphQLClient, variables: MePictureUploadMutationVariables, headers?: RequestInit['headers']) => fetcher<MePictureUploadMutation, MePictureUploadMutationVariables>(client, MePictureUploadDocument, variables, headers);
+
+export const MePasswordResetDocument = `
+    mutation MePasswordReset {
+  resetPassword {
+    success
+  }
+}
+    `;
+
+export const useMePasswordResetMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<MePasswordResetMutation, TError, MePasswordResetMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<MePasswordResetMutation, TError, MePasswordResetMutationVariables, TContext>(
+      {
+    mutationKey: ['MePasswordReset'],
+    mutationFn: (variables?: MePasswordResetMutationVariables) => fetcher<MePasswordResetMutation, MePasswordResetMutationVariables>(client, MePasswordResetDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useMePasswordResetMutation.getKey = () => ['MePasswordReset'];
+useMePasswordResetMutation.getRootKey = () => ['MePasswordReset'] as const;
+useMePasswordResetMutation.fetcher = (client: GraphQLClient, variables?: MePasswordResetMutationVariables, headers?: RequestInit['headers']) => fetcher<MePasswordResetMutation, MePasswordResetMutationVariables>(client, MePasswordResetDocument, variables, headers);
+
+export const MePersonalSpaceTransferRequestDocument = `
+    mutation MePersonalSpaceTransferRequest($new_email: String!) {
+  requestTransferPersonalSpace(new_email: $new_email) {
+    success
+  }
+}
+    `;
+
+export const useMePersonalSpaceTransferRequestMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<MePersonalSpaceTransferRequestMutation, TError, MePersonalSpaceTransferRequestMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<MePersonalSpaceTransferRequestMutation, TError, MePersonalSpaceTransferRequestMutationVariables, TContext>(
+      {
+    mutationKey: ['MePersonalSpaceTransferRequest'],
+    mutationFn: (variables?: MePersonalSpaceTransferRequestMutationVariables) => fetcher<MePersonalSpaceTransferRequestMutation, MePersonalSpaceTransferRequestMutationVariables>(client, MePersonalSpaceTransferRequestDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useMePersonalSpaceTransferRequestMutation.getKey = () => ['MePersonalSpaceTransferRequest'];
+useMePersonalSpaceTransferRequestMutation.getRootKey = () => ['MePersonalSpaceTransferRequest'] as const;
+useMePersonalSpaceTransferRequestMutation.fetcher = (client: GraphQLClient, variables: MePersonalSpaceTransferRequestMutationVariables, headers?: RequestInit['headers']) => fetcher<MePersonalSpaceTransferRequestMutation, MePersonalSpaceTransferRequestMutationVariables>(client, MePersonalSpaceTransferRequestDocument, variables, headers);
+
+export const MePersonalSpaceTransferDocument = `
+    mutation MePersonalSpaceTransfer($requestId: ID!) {
+  transferPersonalSpace(requestId: $requestId) {
+    success
+  }
+}
+    `;
+
+export const useMePersonalSpaceTransferMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<MePersonalSpaceTransferMutation, TError, MePersonalSpaceTransferMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<MePersonalSpaceTransferMutation, TError, MePersonalSpaceTransferMutationVariables, TContext>(
+      {
+    mutationKey: ['MePersonalSpaceTransfer'],
+    mutationFn: (variables?: MePersonalSpaceTransferMutationVariables) => fetcher<MePersonalSpaceTransferMutation, MePersonalSpaceTransferMutationVariables>(client, MePersonalSpaceTransferDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useMePersonalSpaceTransferMutation.getKey = () => ['MePersonalSpaceTransfer'];
+useMePersonalSpaceTransferMutation.getRootKey = () => ['MePersonalSpaceTransfer'] as const;
+useMePersonalSpaceTransferMutation.fetcher = (client: GraphQLClient, variables: MePersonalSpaceTransferMutationVariables, headers?: RequestInit['headers']) => fetcher<MePersonalSpaceTransferMutation, MePersonalSpaceTransferMutationVariables>(client, MePersonalSpaceTransferDocument, variables, headers);
+
 export const MeCheckDocument = `
     query meCheck {
   me {
@@ -7981,6 +8235,71 @@ useInfiniteMeAnalyticsQuery.getKey = (variables?: MeAnalyticsQueryVariables) => 
 useInfiniteMeAnalyticsQuery.getRootKey = () => ['MeAnalytics.infinite'] as const;
 useMeAnalyticsQuery.fetcher = (client: GraphQLClient, variables?: MeAnalyticsQueryVariables, headers?: RequestInit['headers']) => fetcher<MeAnalyticsQuery, MeAnalyticsQueryVariables>(client, MeAnalyticsDocument, variables, headers);
 
+export const MeDocument = `
+    query Me {
+  me {
+    ...CurrentUser
+  }
+}
+    ${CurrentUserFragmentDoc}`;
+
+export const useMeQuery = <
+      TData = MeQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables?: MeQueryVariables,
+      options?: Omit<UseQueryOptions<MeQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<MeQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<MeQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['Me'] : ['Me', variables],
+    queryFn: fetcher<MeQuery, MeQueryVariables>(client, MeDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useMeQuery.getKey = (variables?: MeQueryVariables) => variables === undefined ? ['Me'] : ['Me', variables];
+useMeQuery.getRootKey = () => ['Me'] as const;
+export const useInfiniteMeQuery = <
+      TData = InfiniteData<MeQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: MeQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<MeQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<MeQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<MeQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['Me.infinite'] : ['Me.infinite', variables],
+      queryFn: (metaData) => fetcher<MeQuery, MeQueryVariables>(client, MeDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteMeQuery.getKey = (variables?: MeQueryVariables) => variables === undefined ? ['Me.infinite'] : ['Me.infinite', variables];
+useInfiniteMeQuery.getRootKey = () => ['Me.infinite'] as const;
+useMeQuery.fetcher = (client: GraphQLClient, variables?: MeQueryVariables, headers?: RequestInit['headers']) => fetcher<MeQuery, MeQueryVariables>(client, MeDocument, variables, headers);
+
+export const MeUserEventsDocument = `
+    subscription MeUserEvents {
+  MeUser {
+    delete {
+      id
+    }
+    edit {
+      ...CurrentUser
+    }
+  }
+}
+    ${CurrentUserFragmentDoc}`;
 export const NewsFeedDeleteItemDocument = `
     mutation NewsFeedDeleteItem($id: NewsFeedItemId!) {
   deleteNewsFeedItem(id: $id)
@@ -8660,6 +8979,7 @@ export const RegisterPlatformDocument = `
     mutation RegisterPlatform($input: RegisterPlatformInput!) {
   registerPlatform(input: $input) {
     token
+    organizationName
   }
 }
     `;

@@ -27,7 +27,7 @@ mkdocs-get-deps==0.2.2
 mkdocs-git-authors-plugin==0.10.0
 mkdocs-git-revision-date-localized-plugin==1.7.0
 mkdocs-glightbox==0.5.3
-mkdocs-material==9.8.1
+mkdocs-material==9.8.2
 mkdocs-material-extensions==1.3.1
 numpy==2.5.5
 packaging==24.2
@@ -35,13 +35,13 @@ paginate==0.5.7
 pandas==2.3.3
 pathspec==0.12.1
 pillow==12.3.0
-platformdirs==4.14.5
+platformdirs==4.14.8
 Pygments==2.21.0
 pymdown-extensions==11.0.2
 pyparsing==3.3.3
 python-dateutil==2.9.0.post0
 pytz==2024.2
-PyYAML==6.0.3
+PyYAML==6.0.4
 pyyaml_env_tag==0.1
 regex==2024.11.6
 requests==2.34.2

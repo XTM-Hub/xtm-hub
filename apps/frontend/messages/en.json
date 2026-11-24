@@ -459,6 +459,7 @@
       "TENANT_ID_MANDATORY": "Tenant id is mandatory",
       "TENANT_ID_NOT_SUPPORTED": "This platform does not support tenants",
       "TOO_MANY_EMAILS": "You can invite at most 50 emails at once",
+      "TOO_MANY_REQUESTS": "Too many requests. Please try again later.",
       "TRANSFER_ME_ERROR": "Error while requesting personal space transfer.",
       "TRIAL_PLATFORM_CANNOT_BE_UNREGISTERED": "A trial platform cannot be unregistered",
       "UNAUTHENTICATED": "You must be signed in to do this",
@@ -1028,7 +1029,7 @@
     },
     "ScopeHelp": {
       "admin": "Admin: your organization and platform administration rights, as you have them today. Give it only to a tool you trust.",
-      "read": "Read: queries only, nothing can be changed.",
+      "read": "Read: queries only, without organization administration. Nothing can be changed.",
       "read_write": "Read and write: queries and changes, without organization administration or platform administration."
     },
     "Status": {
@@ -1039,7 +1040,7 @@
     "Title": "API tokens",
     "ScopeOption": {
       "admin": "Your administration rights too, as you have them.",
-      "read": "Queries only, nothing can be changed.",
+      "read": "Queries only, without administration. Nothing can be changed.",
       "read_write": "Queries and changes, without administration."
     },
     "Toolbar": {
@@ -1672,6 +1673,7 @@
       "Retry": "Retry",
       "ViewTab": "Select tab view",
       "ViewList": "Select list view",
+      "ClearAllFilters": "Clear all",
       "Filters": "Filters",
       "FilterInformation": "About this filter",
       "Tab": {

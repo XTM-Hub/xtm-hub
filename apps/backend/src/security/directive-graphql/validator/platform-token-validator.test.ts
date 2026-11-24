@@ -1,16 +1,17 @@
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { describe, expect, it, vi } from 'vitest';
-import { PlatformConfigurationStatus } from '../../../__generated__/resolvers-types';
 import { requestContext } from '../../../context/request.context';
 import DeploymentRequest from '../../../model/kanel/public/DeploymentRequest';
 import Organization from '../../../model/kanel/public/Organization';
-import PlatformConfiguration from '../../../model/kanel/public/PlatformConfiguration';
 import type { PortalContext } from '../../../model/portal-context';
 import type { UserLoadUserBy } from '../../../model/user';
 import { DeploymentRequestDomain } from '../../../modules/deployment/deployment.domain';
 import { OrganizationDomain } from '../../../modules/organization-management/organization/organization.domain';
-import { PlatformConfigurationDomain } from '../../../modules/registration/platform-configuration/platform-configuration.domain';
+import {
+  FullPlatformConfiguration,
+  PlatformConfigurationDomain,
+} from '../../../modules/registration/platform-configuration/platform-configuration.domain';
 import {
   PLATFORM_ID_HEADER,
   PLATFORM_TOKEN_HEADER,
@@ -121,11 +122,10 @@ describe('createPlatformTokenResolver', () => {
 
       vi.spyOn(
         PlatformConfigurationDomain,
-        'loadConfigurationByPlatformAndToken'
+        'loadResolvedConfigurationByPlatformAndToken'
       ).mockResolvedValue({
-        service_instance_id: serviceInstanceId,
-        status: PlatformConfigurationStatus.Active,
-      } as PlatformConfiguration);
+        platformConfiguration: { service_instance_id: serviceInstanceId },
+      } as FullPlatformConfiguration);
 
       vi.spyOn(
         OrganizationDomain,
@@ -151,7 +151,7 @@ describe('createPlatformTokenResolver', () => {
       ).mockResolvedValue(undefined);
       vi.spyOn(
         PlatformConfigurationDomain,
-        'loadConfigurationByPlatformAndToken'
+        'loadResolvedConfigurationByPlatformAndToken'
       ).mockResolvedValue(undefined);
 
       const resolver = createPlatformTokenResolver(vi.fn());
@@ -171,7 +171,7 @@ describe('createPlatformTokenResolver', () => {
       const loadConfigurationSpy = vi
         .spyOn(
           PlatformConfigurationDomain,
-          'loadConfigurationByPlatformAndToken'
+          'loadResolvedConfigurationByPlatformAndToken'
         )
         .mockResolvedValue(undefined);
       const subscribedOrganizationSpy = vi.spyOn(
@@ -201,7 +201,7 @@ describe('createPlatformTokenResolver', () => {
       const orgId = uuidv4();
       vi.spyOn(
         PlatformConfigurationDomain,
-        'loadConfigurationByPlatformAndToken'
+        'loadResolvedConfigurationByPlatformAndToken'
       ).mockResolvedValue(undefined);
       vi.spyOn(
         DeploymentRequestDomain,
@@ -224,7 +224,7 @@ describe('createPlatformTokenResolver', () => {
       expect(result.selected_organization_id).toBe(orgId);
     });
 
-    it('should throw an organization not found error when the deployment request organization no longer exists', async () => {
+    it('should throw an invalid platform token error when the deployment request organization no longer exists', async () => {
       // Given
       vi.spyOn(
         DeploymentRequestDomain,
@@ -243,9 +243,7 @@ describe('createPlatformTokenResolver', () => {
       const call = runResolver(resolver, context);
 
       // Then
-      await expect(call).rejects.toMatchObject({
-        message: ErrorCode.OrganizationNotFound,
-      });
+      await expect(call).rejects.toMatchObject(INVALID_PLATFORM_TOKEN_ERROR);
     });
   });
 });

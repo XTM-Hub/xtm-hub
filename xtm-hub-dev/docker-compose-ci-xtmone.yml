@@ -1,0 +1,91 @@
+# Adds a real XTM One (rolling image) to docker-compose-ci.yml for the platform registration e2e tests.
+# Usage: docker compose -f docker-compose-ci.yml -f docker-compose-ci-xtmone.yml run e2e ...
+#
+# XTM One sends its platform token only to an https XTM Hub, or to a plain-http one on localhost. So XTM One and the
+# browser of the tests join the network namespace of the Hub frontend: from both, the Hub is http://localhost:3000 and
+# XTM One is http://localhost:4000. The Hub must call itself by that same address (BASE_URL_FRONT): its register page
+# posts the token to XTM One from that origin, and XTM One reads only a message from the origin of the Hub it opened.
+services:
+  backend:
+    environment:
+      - BASE_URL_FRONT=http://localhost:3000
+
+  xtmone:
+    container_name: xtmone
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    image: xtmone/platform:rolling
+    network_mode: service:frontend
+    depends_on:
+      xtmone-postgres:
+        condition: service_healthy
+      xtmone-redis:
+        condition: service_healthy
+      portal-minio:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://xtmone:xtmone@xtmone-postgres:5432/xtmone
+      - REDIS_URL=redis://xtmone-redis:6379
+      - SECRET_KEY=e2e-xtmone-secret-key-not-for-production-0123456789abcdef
+      - ADMIN_EMAIL=admin@xtmone.io
+      - ADMIN_PASSWORD=xtmone-e2e-admin
+      - BASE_URL=http://localhost:4000
+      - FRONTEND_URL=http://localhost:4000
+      - PLATFORM_MODE=xtm_one
+      - PLATFORM_REGISTRATION_TOKEN=e2e-xtmone-registration-token
+      # The Hub the Settings card proposes: the tests keep it, so they type no URL.
+      - XTM_HUB_DEFAULT_URL=http://localhost:3000
+      - TERMS_OF_USE_ENABLED=false
+      - TELEMETRY_ENABLED=false
+      - RUNNERS_ENABLED=false
+      - RELAYS_ENABLED=false
+      - S3_ENDPOINT=portal-minio:9000
+      - S3_ACCESS_KEY=portal
+      - S3_SECRET_KEY=changeme
+      - S3_BUCKET=xtmone
+      - S3_USE_SSL=false
+    healthcheck:
+      # Ready, not only up: XTM One runs its migrations and seeds after it starts listening.
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:4000/api/health/ready')\""]
+      interval: 10s
+      timeout: 10s
+      retries: 60
+      start_period: 60s
+
+  xtmone-postgres:
+    container_name: xtmone-postgres
+    image: pgvector/pgvector:pg17
+    environment:
+      - POSTGRES_USER=xtmone
+      - POSTGRES_PASSWORD=xtmone
+      - POSTGRES_DB=xtmone
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U xtmone -d xtmone"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  xtmone-redis:
+    container_name: xtmone-redis
+    image: redis:8.6.7
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  e2e:
+    network_mode: service:frontend
+    depends_on:
+      xtmone:
+        condition: service_healthy
+    environment:
+      - E2E_BASE_URL=http://localhost:3000
+      - XTMONE_URL=http://localhost:4000
+      - XTMONE_ADMIN_EMAIL=admin@xtmone.io
+      - XTMONE_ADMIN_PASSWORD=xtmone-e2e-admin

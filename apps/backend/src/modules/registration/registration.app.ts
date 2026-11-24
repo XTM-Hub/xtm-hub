@@ -6,7 +6,6 @@ import {
   AutoRegisterPlatformInput,
   CanUnregisterPlatformInput,
   CommercialModel,
-  DeploymentRequestHubStatus,
   IsPlatformRegisteredInput,
   IsPlatformRegisteredResponse,
   OpenCtiPlatformRegistrationStatusInput,
@@ -41,6 +40,7 @@ import PlatformConfiguration, {
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { UserId } from '../../model/kanel/public/User';
 import { securityGuard } from '../../security/guard';
+import { PLATFORM_ACCEPTED_HUB_STATUSES } from '../../security/platform-credential';
 import { sendMail } from '../../server/mail-service';
 import { PgBossProducer } from '../../thirdparty/pgboss/producer';
 import {
@@ -61,7 +61,6 @@ import { DeploymentRequestDomain } from '../deployment/deployment.domain';
 import { NewsFeedApp } from '../news-feed/news-feed.app';
 import { OrganizationDomain } from '../organization-management/organization/organization.domain';
 import { UserDomain } from '../organization-management/user/user-domain/user.domain';
-import { UserOrganizationDomain } from '../organization-management/user/user-organization/user-organization.domain';
 import { AuthHelper } from '../security-management/capability/auth.helper';
 import { ServiceDefinitionDomain } from '../service/definition/service-definition.domain';
 import { ServiceInstanceDomain } from '../service/instance/service-instance.domain';
@@ -288,15 +287,10 @@ export const RegistrationApp = {
       throw new Error(ErrorCode.SubscriptionNotFound);
     }
 
-    const [userOrganization] =
-      await UserOrganizationDomain.loadUserOrganization({
-        organization_id: subscription.organization_id,
-        user_id: user.id,
-      });
-
-    if (!userOrganization) {
-      throw new Error(ErrorCode.UserIsNotInOrganization);
-    }
+    await securityGuard.assertUserIsInOrganization(
+      user,
+      subscription.organization_id
+    );
 
     const orga = await OrganizationDomain.loadOrganizationBy({
       id: subscription.organization_id,
@@ -388,7 +382,10 @@ export const RegistrationApp = {
     organizationId,
     platform,
     identifier,
-  }: RegisterPlatformInput): Promise<string> => {
+  }: RegisterPlatformInput): Promise<{
+    token: string;
+    organizationName: string | null;
+  }> => {
     const user = requestContext.requireUser();
     const token = uuidv4();
 
@@ -445,6 +442,11 @@ export const RegistrationApp = {
       throw new Error(BadRequestErrorCode.TenantIdMandatory);
     }
 
+    // Loaded before the registration is saved: a failed read must not lose the token of a saved registration.
+    const selectedOrga = await OrganizationDomain.loadOrganizationBy({
+      id: organizationId as OrganizationId,
+    });
+
     const serviceInstanceId = await withTransaction(async () => {
       if (platformConfiguration) {
         await RegistrationDomain.refreshExistingPlatform({
@@ -496,9 +498,6 @@ export const RegistrationApp = {
     );
 
     try {
-      const selectedOrga = await OrganizationDomain.loadOrganizationBy({
-        id: organizationId as OrganizationId,
-      });
       if (!selectedOrga) {
         throw new Error(NotFoundErrorCode.OrganizationNotFound);
       }
@@ -521,7 +520,7 @@ export const RegistrationApp = {
       });
     }
 
-    return token;
+    return { token, organizationName: selectedOrga?.name ?? null };
   },
 
   unregisterPlatform: async ({
@@ -676,15 +675,14 @@ export const RegistrationApp = {
     // Anyone signed in may ask about a platform_id: only the owner organization's members learn who owns it.
     // Bypass users too, so they refresh the platform in its owner organization instead of moving it.
     const user = requestContext.requireUser();
-    if (!AuthHelper.userHasBypassCapability(user)) {
-      const [userOrganization] =
-        await UserOrganizationDomain.loadUserOrganization({
-          user_id: user.id,
-          organization_id: subscription.organization_id,
-        });
-      if (!userOrganization) {
-        return { status };
-      }
+    if (
+      !AuthHelper.userHasBypassCapability(user) &&
+      !(await securityGuard.isUserInOrganization(
+        user,
+        subscription.organization_id
+      ))
+    ) {
+      return { status };
     }
 
     return {
@@ -945,13 +943,7 @@ const assertValidDeploymentRequest = (
   ) {
     throw new Error(BadRequestErrorCode.InvalidPlatformId);
   }
-  if (
-    ![
-      DeploymentRequestHubStatus.Active,
-      DeploymentRequestHubStatus.Pending,
-      DeploymentRequestHubStatus.Provisioning,
-    ].includes(deploymentRequest.hub_status)
-  ) {
+  if (!PLATFORM_ACCEPTED_HUB_STATUSES.includes(deploymentRequest.hub_status)) {
     throw new Error(ForbiddenErrorCode.NotAllowedByDeploymentStatus);
   }
 };

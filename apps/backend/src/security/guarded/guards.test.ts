@@ -4,16 +4,20 @@ import {
   OrganizationCapability,
   PortalCapability,
 } from '../../__generated__/resolvers-types';
-import { OrganizationId } from '../../model/kanel/public/Organization';
+import type DeploymentRequest from '../../model/kanel/public/DeploymentRequest';
+import Organization, {
+  OrganizationId,
+} from '../../model/kanel/public/Organization';
 import { UserId } from '../../model/kanel/public/User';
 import { OrganizationHelper } from '../../modules/organization-management/organization/organization.helper';
-import { SYSTEM_USER_UUID } from '../../portal.const';
+import type { FullPlatformConfiguration } from '../../modules/registration/platform-configuration/platform-configuration.domain';
+import { PLATFORM_USER_UUID, SYSTEM_USER_UUID } from '../../portal.const';
 import {
   ForbiddenErrorCode,
   NotFoundErrorCode,
   UnauthenticatedErrorCode,
 } from '../../utils/error/error.code';
-import { callerGuard } from './guards/caller.guard';
+import { platformCallerGuard, systemCallerGuard } from './guards/caller.guard';
 import { orgGuard, selectedOrganization } from './guards/organization.guard';
 import {
   bypassOnlyGuard,
@@ -60,6 +64,26 @@ const buildSystemPrincipal = (
   portalCapabilities: new Set(capabilities),
 });
 
+const PLATFORM_ID = 'platform-id';
+
+const buildRegistrationPlatformPrincipal = (): Principal => ({
+  kind: 'platform',
+  actorId: PLATFORM_USER_UUID,
+  platformId: PLATFORM_ID,
+  organization: { id: ORGANIZATION_ID } as Organization,
+  credential: 'registration',
+  registration: {} as FullPlatformConfiguration,
+});
+
+const buildDeploymentRequestPlatformPrincipal = (): Principal => ({
+  kind: 'platform',
+  actorId: PLATFORM_USER_UUID,
+  platformId: PLATFORM_ID,
+  organization: { id: ORGANIZATION_ID } as Organization,
+  credential: 'deploymentRequest',
+  deploymentRequest: {} as DeploymentRequest,
+});
+
 describe('publicAccess guard', () => {
   it.each([
     { label: 'an anonymous visitor', principal: ANONYMOUS },
@@ -72,7 +96,7 @@ describe('publicAccess guard', () => {
     // Given the public guard
 
     // When
-    const result = await publicAccess(principal);
+    const result = await publicAccess.check(principal);
 
     // Then
     expect(result).toEqual({ allowed: true });
@@ -114,12 +138,17 @@ describe('bypassOnlyGuard', () => {
       principal: buildSystemPrincipal([PortalCapability.Bypass]),
       expected: { allowed: false, code: ForbiddenErrorCode.ForbiddenAccess },
     },
+    {
+      label: 'a platform caller',
+      principal: buildRegistrationPlatformPrincipal(),
+      expected: { allowed: false, code: ForbiddenErrorCode.ForbiddenAccess },
+    },
   ])('should answer $label', async ({ principal, expected }) => {
     // Given
     const guard = bypassOnlyGuard();
 
     // When
-    const result = await guard(principal);
+    const result = await guard.check(principal);
 
     // Then
     expect(result).toEqual(expected);
@@ -154,12 +183,17 @@ describe('loggedInGuard', () => {
       principal: buildSystemPrincipal([PortalCapability.Bypass]),
       expected: { allowed: false, code: ForbiddenErrorCode.ForbiddenAccess },
     },
+    {
+      label: 'a platform caller',
+      principal: buildRegistrationPlatformPrincipal(),
+      expected: { allowed: false, code: ForbiddenErrorCode.ForbiddenAccess },
+    },
   ])('should answer $label', async ({ principal, expected }) => {
     // Given
     const guard = loggedInGuard();
 
     // When
-    const result = await guard(principal);
+    const result = await guard.check(principal);
 
     // Then
     expect(result).toEqual(expected);
@@ -208,6 +242,11 @@ describe('portalCapabilityGuard', () => {
       principal: buildSystemPrincipal([PortalCapability.ManageDeployment]),
       expected: { allowed: false, code: ForbiddenErrorCode.ForbiddenAccess },
     },
+    {
+      label: 'a platform caller',
+      principal: buildRegistrationPlatformPrincipal(),
+      expected: { allowed: false, code: ForbiddenErrorCode.ForbiddenAccess },
+    },
   ])(
     'should answer $label for the ManageDeployment capability',
     async ({ principal, expected }) => {
@@ -215,7 +254,7 @@ describe('portalCapabilityGuard', () => {
       const guard = portalCapabilityGuard([PortalCapability.ManageDeployment]);
 
       // When
-      const result = await guard(principal);
+      const result = await guard.check(principal);
 
       // Then
       expect(result).toEqual(expected);
@@ -233,14 +272,14 @@ describe('portalCapabilityGuard', () => {
     });
 
     // When
-    const result = await guard(principal);
+    const result = await guard.check(principal);
 
     // Then
     expect(result).toEqual({ allowed: true });
   });
 });
 
-describe('callerGuard for a system caller', () => {
+describe('systemCallerGuard', () => {
   it.each([
     {
       label: 'an anonymous visitor',
@@ -280,14 +319,19 @@ describe('callerGuard for a system caller', () => {
       principal: buildSystemPrincipal([PortalCapability.GenerateManifest]),
       expected: { allowed: true },
     },
+    {
+      label: 'a platform caller',
+      principal: buildRegistrationPlatformPrincipal(),
+      expected: { allowed: false, code: ForbiddenErrorCode.ForbiddenAccess },
+    },
   ])(
     'should answer $label for the GenerateManifest scope',
     async ({ principal, expected }) => {
       // Given
-      const guard = callerGuard('system', [PortalCapability.GenerateManifest]);
+      const guard = systemCallerGuard([PortalCapability.GenerateManifest]);
 
       // When
-      const result = await guard(principal);
+      const result = await guard.check(principal);
 
       // Then
       expect(result).toEqual(expected);
@@ -296,14 +340,14 @@ describe('callerGuard for a system caller', () => {
 
   it('should refuse a system caller when it misses one of the declared scopes', async () => {
     // Given
-    const guard = callerGuard('system', [
+    const guard = systemCallerGuard([
       PortalCapability.GenerateManifest,
       PortalCapability.ManageDeployment,
     ]);
     const principal = buildSystemPrincipal([PortalCapability.GenerateManifest]);
 
     // When
-    const result = await guard(principal);
+    const result = await guard.check(principal);
 
     // Then
     expect(result).toEqual({
@@ -326,6 +370,11 @@ describe('orgGuard on the selected organization', () => {
     {
       label: 'a system caller',
       principal: buildSystemPrincipal([PortalCapability.Bypass]),
+      expected: { allowed: false, code: ForbiddenErrorCode.ForbiddenAccess },
+    },
+    {
+      label: 'a platform caller',
+      principal: buildRegistrationPlatformPrincipal(),
       expected: { allowed: false, code: ForbiddenErrorCode.ForbiddenAccess },
     },
     {
@@ -388,7 +437,7 @@ describe('orgGuard on the selected organization', () => {
       });
 
       // When
-      const result = await guard(principal);
+      const result = await guard.check(principal);
 
       // Then
       expect(result).toEqual(expected);
@@ -411,7 +460,7 @@ describe('orgGuard on the selected organization', () => {
     });
 
     // When
-    const result = await guard(principal);
+    const result = await guard.check(principal);
 
     // Then
     expect(result).toEqual({ allowed: true });
@@ -446,7 +495,7 @@ describe('orgGuard on the selected organization', () => {
       });
 
       // When
-      const result = await guard(
+      const result = await guard.check(
         buildUserPrincipal({ selectedOrganizationId, memberships })
       );
 
@@ -469,12 +518,57 @@ describe('orgGuard on the selected organization', () => {
     });
 
     // When
-    const result = await guard(principal);
+    const result = await guard.check(principal);
 
     // Then
     expect(result).toEqual({
       allowed: false,
       code: NotFoundErrorCode.NotFound,
     });
+  });
+});
+
+describe('platformCallerGuard', () => {
+  it.each([
+    {
+      label: 'an anonymous visitor',
+      principal: ANONYMOUS,
+      expected: {
+        allowed: false,
+        code: UnauthenticatedErrorCode.Unauthenticated,
+      },
+    },
+    {
+      label: 'a BYPASS user',
+      principal: buildUserPrincipal({
+        isBypassUser: true,
+        capabilities: [PortalCapability.Bypass],
+      }),
+      expected: { allowed: false, code: ForbiddenErrorCode.ForbiddenAccess },
+    },
+    {
+      label: 'a system caller',
+      principal: buildSystemPrincipal([PortalCapability.GenerateManifest]),
+      expected: { allowed: false, code: ForbiddenErrorCode.ForbiddenAccess },
+    },
+    {
+      label: 'a platform caller with a registration',
+      principal: buildRegistrationPlatformPrincipal(),
+      expected: { allowed: true },
+    },
+    {
+      label: 'a platform caller with a deployment request',
+      principal: buildDeploymentRequestPlatformPrincipal(),
+      expected: { allowed: true },
+    },
+  ])('should answer $label', async ({ principal, expected }) => {
+    // Given
+    const guard = platformCallerGuard({ credential: 'registration' });
+
+    // When
+    const result = await guard.check(principal);
+
+    // Then
+    expect(result).toEqual(expected);
   });
 });

@@ -2,10 +2,17 @@ import { Page, Request } from '@playwright/test';
 import { expect } from '../../fixtures/baseFixtures';
 import { XtmHubRegistrationTab } from '../register.pageModel';
 
-// A real OpenCTI or OpenAEV instance, started by xtm-hub-dev/docker-compose-ci-{opencti,openaev}.yml.
-export interface XtmPlatform {
-  name: 'OpenCTI' | 'OpenAEV';
+// Any real platform the tests run against (OpenCTI, OpenAEV, XTM One), started by
+// xtm-hub-dev/docker-compose-ci-{opencti,openaev,xtmone}.yml.
+export interface RunningPlatform {
+  name: string;
   // Set by the CI compose override that starts the platform.
+  urlVariable: string;
+}
+
+// A real OpenCTI or OpenAEV instance, connected to XTM Hub from its Filigran Experience settings.
+export interface XtmPlatform extends RunningPlatform {
+  name: 'OpenCTI' | 'OpenAEV';
   urlVariable: 'OPENCTI_URL' | 'OPENAEV_URL';
   adminEmail: string;
   adminPassword: string;
@@ -59,11 +66,11 @@ export const OPENAEV: XtmPlatform = {
     request.url().endsWith('/xtmhub/refresh-connectivity'),
 };
 
-export const isPlatformRunning = (platform: XtmPlatform) =>
+export const isPlatformRunning = (platform: RunningPlatform) =>
   !!process.env[platform.urlVariable];
 
 // The platform's URL, as the browser of the tests reaches it.
-export const getPlatformUrl = (platform: XtmPlatform): string => {
+export const getPlatformUrl = (platform: RunningPlatform): string => {
   const url = process.env[platform.urlVariable];
   if (!url) {
     throw new Error(

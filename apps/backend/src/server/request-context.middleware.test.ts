@@ -3,9 +3,16 @@ import { once } from 'node:events';
 import type { Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  contextAdminSecondOrga,
+  TEST_ORGANIZATIONS,
+} from '../../tests/tests.const';
 import { requestContext } from '../context/request.context';
 import { parseTrustProxy } from '../utils/config-validation.util';
-import { requestContextMiddleware } from './request-context.middleware';
+import {
+  buildRequestContext,
+  requestContextMiddleware,
+} from './request-context.middleware';
 
 const CLIENT_IP = '198.51.100.20';
 const FORGED_IP = '203.0.113.7';
@@ -52,6 +59,25 @@ describe('requestContextMiddleware', () => {
 
     // Then
     expect(next).toHaveReturnedWith(expect.objectContaining({ ip: CLIENT_IP }));
+  });
+
+  it('should run a session request as the session user, without the reach of an API token', () => {
+    // Given
+    const req = {
+      ip: CLIENT_IP,
+      headers: {},
+      session: { user: contextAdminSecondOrga.user },
+    } as unknown as Request;
+
+    // When
+    const context = buildRequestContext(req);
+
+    // Then
+    expect(context).toMatchObject({
+      user: contextAdminSecondOrga.user,
+      organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+    });
+    expect(context).not.toHaveProperty('apiToken');
   });
 
   describe('behind one trusted proxy', () => {

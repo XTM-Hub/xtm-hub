@@ -169,6 +169,72 @@ describe('OrganizationForm', () => {
     expect(handleSubmit).not.toHaveBeenCalled();
   });
 
+  it('should submit the domain left in the input when the user validates a new organization without pressing Enter', async () => {
+    // Given
+    const handleSubmit = vi.fn();
+    const { user } = testRender(
+      <OrganizationForm handleSubmit={handleSubmit} />
+    );
+    await user.type(
+      screen.getByRole('textbox', { name: 'OrganizationForm.Name' }),
+      NEW_NAME
+    );
+    await user.type(getDomainsInput(), NEW_DOMAIN);
+
+    // When
+    await user.click(getValidateButton());
+
+    // Then
+    await waitFor(() =>
+      expect(handleSubmit).toHaveBeenCalledWith({
+        name: NEW_NAME,
+        domains: [NEW_DOMAIN],
+      })
+    );
+  });
+
+  it('should keep the typed text, show the error and not submit when the user validates with an invalid domain left in the input', async () => {
+    // Given
+    const handleSubmit = vi.fn();
+    const { user } = testRender(
+      <OrganizationForm
+        organization={ORGANIZATION}
+        handleSubmit={handleSubmit}
+      />
+    );
+    const nameInput = screen.getByRole('textbox', {
+      name: 'OrganizationForm.Name',
+    });
+    await user.clear(nameInput);
+    await user.type(nameInput, NEW_NAME);
+    await user.type(getDomainsInput(), INVALID_DOMAIN);
+
+    // When
+    await user.click(getValidateButton());
+
+    // Then
+    expect(getDomainsInput()).toHaveValue(INVALID_DOMAIN);
+    expect(screen.getByText(INVALID)).toBeInTheDocument();
+    expect(handleSubmit).not.toHaveBeenCalled();
+  });
+
+  it('should not show the invalid domain error when the user leaves the domains input empty', async () => {
+    // Given
+    const { user } = testRender(
+      <OrganizationForm
+        organization={ORGANIZATION}
+        handleSubmit={vi.fn()}
+      />
+    );
+    await user.click(getDomainsInput());
+
+    // When
+    await user.tab();
+
+    // Then
+    expect(screen.queryByText(INVALID)).not.toBeInTheDocument();
+  });
+
   it('should disable Validate when the changed values are being saved', async () => {
     // Given
     const { user } = testRender(

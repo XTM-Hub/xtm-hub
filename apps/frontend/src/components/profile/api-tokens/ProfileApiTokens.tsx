@@ -30,8 +30,8 @@ import {
   Button,
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
-  CardSubtitle,
   CardTitle,
   Chip,
   ChipSeverity,
@@ -210,8 +210,8 @@ export const ProfileApiTokens = () => {
           </Button>
         }>
         <CardTitle as="h3">{t('ApiTokens.Title')}</CardTitle>
-        <CardSubtitle>{t('ApiTokens.Description')}</CardSubtitle>
       </CardHeader>
+      <CardDescription clamp={0}>{t('ApiTokens.Description')}</CardDescription>
       <CardContent clamp={0}>
         {!isLoading && tokens.length === 0 ? (
           <p className="text-default-secondary">{t('ApiTokens.Empty')}</p>

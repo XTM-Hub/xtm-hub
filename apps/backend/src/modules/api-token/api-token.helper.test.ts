@@ -14,6 +14,9 @@ const ORGANIZATION = 'a1d4c0de-0000-4000-8000-000000000001' as OrganizationId;
 const OTHER_ORGANIZATION =
   'a1d4c0de-0000-4000-8000-000000000002' as OrganizationId;
 
+// Each one administers the organization
+const ORGANIZATION_CAPABILITIES = Object.values(OrganizationCapability);
+
 const user = {
   id: 'a1d4c0de-0000-4000-8000-000000000003',
   selected_organization_id: OTHER_ORGANIZATION,
@@ -27,10 +30,7 @@ const user = {
     {
       id: 'membership',
       organization: { id: ORGANIZATION },
-      capabilities: [
-        OrganizationCapability.AdministrateOrganization,
-        OrganizationCapability.ManageAccess,
-      ],
+      capabilities: ORGANIZATION_CAPABILITIES,
     },
     {
       id: 'other-membership',
@@ -80,17 +80,23 @@ describe('narrowUserToToken', () => {
     expect(narrowed?.organization_capabilities).toHaveLength(1);
   });
 
-  it('should drop every portal capability and the organization administration without the admin scope', () => {
-    const narrowed = narrowUserToToken(user, {
-      scope: ApiTokenScope.ReadWrite,
-      organization_id: ORGANIZATION,
-    });
-    expect(narrowed?.capabilities).toEqual([]);
-    expect(narrowed?.selected_org_capabilities).toEqual([
-      OrganizationCapability.ManageAccess,
-    ]);
-    expect(narrowed?.roles_portal).toEqual([]);
-  });
+  it.each([ApiTokenScope.Read, ApiTokenScope.ReadWrite])(
+    'should drop every portal and every organization capability with the %s scope',
+    (scope) => {
+      const narrowed = narrowUserToToken(user, {
+        scope,
+        organization_id: ORGANIZATION,
+      });
+      expect(narrowed).toMatchObject({
+        capabilities: [],
+        selected_org_capabilities: [],
+        organization_capabilities: [
+          { organization: { id: ORGANIZATION }, capabilities: [] },
+        ],
+        roles_portal: [],
+      });
+    }
+  );
 
   it('should keep the user rights but never BYPASS with the admin scope', () => {
     const narrowed = narrowUserToToken(user, {
@@ -100,10 +106,16 @@ describe('narrowUserToToken', () => {
     expect(narrowed?.capabilities.map(({ name }) => name)).toEqual([
       PortalCapability.ReadTrials,
     ]);
-    expect(narrowed?.selected_org_capabilities).toContain(
-      OrganizationCapability.AdministrateOrganization
-    );
-    expect(narrowed?.roles_portal).toEqual([]);
+    expect(narrowed).toMatchObject({
+      selected_org_capabilities: ORGANIZATION_CAPABILITIES,
+      organization_capabilities: [
+        {
+          organization: { id: ORGANIZATION },
+          capabilities: ORGANIZATION_CAPABILITIES,
+        },
+      ],
+      roles_portal: [],
+    });
   });
 
   it('should refuse a user no longer in the token organization', () => {
