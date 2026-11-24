@@ -116,7 +116,9 @@ type Query {
 
   """
   The members of an organization, administrators first, then by email. Pending requests are not members.
-  An organization whose members the caller may not read is refused with ORGANIZATION_NOT_FOUND, as an unknown one.
+  A caller without BYPASS or READ_ORGANIZATION_MEMBERS who is not a member of the organization is refused with
+  NOT_FOUND, an unknown organization included; otherwise an unknown organization, or a personal space they may not
+  read, answers ORGANIZATION_NOT_FOUND.
   """
   organizationMembers(
     organizationId: OrganizationId!

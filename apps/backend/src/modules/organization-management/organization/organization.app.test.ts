@@ -13,7 +13,7 @@ import Organization, {
 import User, { UserId } from '../../../model/kanel/public/User';
 import { CAPABILITY_BYPASS } from '../../../portal.const';
 import { securityGuard } from '../../../security/guard';
-import { ErrorCode } from '../../../utils/error/error.code';
+import { ErrorCode, NotFoundErrorCode } from '../../../utils/error/error.code';
 import { TelemetryApp } from '../../telemetry/telemetry.app';
 import { TelemetrySource } from '../../telemetry/telemetry.const';
 import { TelemetryEventType } from '../../telemetry/telemetry.types';
@@ -323,7 +323,9 @@ describe('organizationApp', () => {
       },
       totalCount: 0,
     };
-    // Every refusal answers exactly this error, so that a refused id cannot be told from a missing one
+    // A restricted caller who is not a member is refused with NOT_FOUND, as by orgGuard, whether the organization
+    // exists or not; a malformed id and an organization that is not loaded answer ORGANIZATION_NOT_FOUND
+    const NOT_FOUND = new Error(NotFoundErrorCode.NotFound);
     const ORGANIZATION_NOT_FOUND = new Error(ErrorCode.OrganizationNotFound);
 
     const mockMembership = (isMember: boolean) =>
@@ -366,7 +368,7 @@ describe('organizationApp', () => {
       expect(memberConnectionSpy).not.toHaveBeenCalled();
     });
 
-    it('should refuse an organization the restricted caller is not a member of as an unknown organization, before loading it', async () => {
+    it('should refuse an organization the restricted caller is not a member of with NOT_FOUND, before loading it', async () => {
       // Given
       const membershipSpy = mockMembership(false);
       const organizationSpy = mockOrganization(ORGANIZATION);
@@ -378,7 +380,7 @@ describe('organizationApp', () => {
       });
 
       // Then
-      await expect(call).rejects.toStrictEqual(ORGANIZATION_NOT_FOUND);
+      await expect(call).rejects.toStrictEqual(NOT_FOUND);
       expect(membershipSpy).toHaveBeenCalledExactlyOnceWith(
         RESTRICTED_CALLER,
         ORGANIZATION.id

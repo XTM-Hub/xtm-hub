@@ -9,7 +9,11 @@ import { OrganizationId } from '../../../model/kanel/public/Organization';
 import { dispatch } from '../../../pub';
 import { securityGuard } from '../../../security/guard';
 import { logApp } from '../../../utils/app-logger.util';
-import { ErrorCode, UnknownErrorCode } from '../../../utils/error/error.code';
+import {
+  ErrorCode,
+  NotFoundErrorCode,
+  UnknownErrorCode,
+} from '../../../utils/error/error.code';
 import { isUuid } from '../../../utils/uuid.util';
 import { PlatformConfigurationDomain } from '../../registration/platform-configuration/platform-configuration.domain';
 import { TelemetryApp } from '../../telemetry/telemetry.app';
@@ -27,8 +31,9 @@ const ORGANIZATION_MEMBERS_MAX_PAGE_SIZE = 100;
 
 export const OrganizationApp = {
   /**
-   * An organization the caller may not read the members of answers ORGANIZATION_NOT_FOUND, exactly as an unknown or
-   * malformed id, so that a refused id cannot be told from a missing one.
+   * A caller without READ_ORGANIZATION_MEMBERS who is not a member of the organization is refused with NOT_FOUND, as
+   * orgGuard refuses a non-member, whether the organization exists or not. A malformed id and an organization that is
+   * not loaded (unknown, or a personal space without BYPASS) answer ORGANIZATION_NOT_FOUND.
    */
   async loadOrganizationMembers(
     organizationId: OrganizationId,
@@ -48,7 +53,7 @@ export const OrganizationApp = {
       isUserRestrictedToOwnOrganizationMembers(user) &&
       !(await securityGuard.isUserInOrganization(user, organizationId))
     ) {
-      throw new Error(ErrorCode.OrganizationNotFound);
+      throw new Error(NotFoundErrorCode.NotFound);
     }
     // Data: the organization itself, a personal space for BYPASS only
     const organization =
