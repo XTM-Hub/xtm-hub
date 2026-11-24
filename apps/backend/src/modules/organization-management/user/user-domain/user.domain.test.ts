@@ -886,6 +886,23 @@ describe('users domain', () => {
         expect(pagedIds).toEqual(memberIds(singlePage));
       });
 
+      it('should return no member but the exact totalCount for a page of 0', async () => {
+        // Given
+        setBypassCaller();
+        await addMember(organizationA);
+        await addMember(organizationA);
+
+        // When
+        const connection = await UserDomain.loadOrganizationMemberConnection(
+          organizationA.id,
+          { first: 0 }
+        );
+
+        // Then
+        expect(connection.edges).toEqual([]);
+        expect(Number(connection.totalCount)).toBe(2);
+      });
+
       it('should search the email, the first name and the last name, ignoring case', async () => {
         // Given
         setBypassCaller();
@@ -1087,6 +1104,66 @@ describe('users domain', () => {
         expect(readerConnection.edges).toEqual([]);
         expect(Number(readerConnection.totalCount)).toBe(0);
         expect(memberIds(bypassConnection)).toEqual([owner.id]);
+      });
+
+      it('should return the members of an organization they do not belong to, to a READ_ORGANIZATION_MEMBERS holder through an admin API key', async () => {
+        // Given
+        const { user: holder } = await addMember(organizationA);
+        const { user: memberOfB } = await addMember(organizationB);
+        requestContext.set({
+          user: narrowUserToToken(
+            TestHelper.caller.build(
+              holder,
+              [organizationA],
+              [CAPABILITY_READ_ORGANIZATION_MEMBERS]
+            ),
+            { scope: ApiTokenScope.Admin, organization_id: organizationA.id }
+          ),
+        });
+
+        // When
+        const connection = await UserDomain.loadOrganizationMemberConnection(
+          organizationB.id,
+          { first: PAGE_SIZE }
+        );
+
+        // Then
+        expect(memberIds(connection)).toEqual([memberOfB.id]);
+        expect(Number(connection.totalCount)).toBe(1);
+      });
+
+      it('should return the members of the organization of an admin API key to a BYPASS user, and none of another', async () => {
+        // Given
+        const { user: caller } = await addMember(organizationA);
+        const { user: colleague } = await addMember(organizationA);
+        await addMember(organizationB);
+        requestContext.set({
+          user: narrowUserToToken(
+            TestHelper.caller.build(
+              caller,
+              [organizationA],
+              [CAPABILITY_BYPASS]
+            ),
+            { scope: ApiTokenScope.Admin, organization_id: organizationA.id }
+          ),
+        });
+
+        // When
+        const connectionA = await UserDomain.loadOrganizationMemberConnection(
+          organizationA.id,
+          { first: PAGE_SIZE }
+        );
+        const connectionB = await UserDomain.loadOrganizationMemberConnection(
+          organizationB.id,
+          { first: PAGE_SIZE }
+        );
+
+        // Then
+        expect(memberIds(connectionA).sort()).toEqual(
+          [caller.id, colleague.id].sort()
+        );
+        expect(connectionB.edges).toEqual([]);
+        expect(Number(connectionB.totalCount)).toBe(0);
       });
     });
   });
