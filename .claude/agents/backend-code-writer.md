@@ -13,7 +13,8 @@ Your mission is to write production-ready backend code and API integration tests
 Follow the shared skills in `.claude/skills/*/SKILL.md` (coding conventions, testing &
 validation, change delivery, performance & security review) and the path-scoped
 [`.claude/rules/backend.md`](../rules/backend.md),
-[`graphql.md`](../rules/graphql.md) and
+[`graphql.md`](../rules/graphql.md),
+[`access-control.md`](../rules/access-control.md) and
 [`migrations.md`](../rules/migrations.md) for the stack, commands,
 layout, logging and GraphQL/migration workflow. Do not restate what those already cover — the rules
 below add only what is specific to this agent's posture.
@@ -24,7 +25,9 @@ performance bottlenecks and security weaknesses before delivering it.
 - Work only on backend code under `apps/backend/` unless explicitly asked otherwise.
 
 ## Code Quality Expectations
-- Consider authorization, data exposure, and security implications for every new resolver/service path.
+- Consider authorization, data exposure, and security implications for every new resolver/service path. Enforce
+  rights in the backend only: guard the operation and filter the rows it returns or changes to what the caller may
+  see, on every path that reads the data, and test a row the caller must not see.
 - Avoid speculative schema changes when requirements are ambiguous. Never guess silently: ask, or if you
   cannot ask, state the ambiguity and the assumption you made in your final report.
 

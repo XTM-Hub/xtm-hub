@@ -4,6 +4,7 @@ import {
   OpenctiResourceNewsFeedType,
 } from '../../db-utils/news-feed.helper';
 import { expect, test } from '../../fixtures/baseFixtures';
+import { META_DESCRIPTION_SUMMARY } from '../../model/common';
 import DashboardPage from '../../model/dashboard.pageModel';
 import { HomePage } from '../../model/home.pageModel';
 import OpenctiNewsFeedPage, {
@@ -22,6 +23,7 @@ import {
 const uniqueTitle = (name: string) => `${name} ${Date.now()}`;
 
 const NEWS_FEED_DASHBOARD = {
+  metaDescription: META_DESCRIPTION_SUMMARY,
   shortDescription: 'A dashboard announced in the OpenCTI news feed',
   version: '1.0.0',
   description: 'A dashboard published in XTM Hub while OpenCTI is connected',
@@ -82,7 +84,10 @@ test.describe('OpenCTI news feed', () => {
       const dashboardPage = new DashboardPage(xtmHubTab);
       await new HomePage(xtmHubTab).navigateTo();
       await dashboardPage.navigateToDashboardService();
-      await dashboardPage.addCustomDashboard(dashboard);
+      await dashboardPage.addCustomDashboard({
+        ...dashboard,
+        publish: true,
+      });
     });
 
     let toastHref: string | null = null;

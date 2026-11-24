@@ -20,7 +20,7 @@ import { MARKETING_USER_CONTEXT } from '../../../portal.const';
 import {
   isValidSystemToken,
   SYSTEM_TOKEN_HEADER,
-} from '../../../security/directive-graphql/validator/system-token.validator';
+} from '../../../security/system-token';
 import { logApp } from '../../../utils/app-logger.util';
 import { csvExportRateLimiter } from '../../../utils/rate-limit.util';
 import { extractId } from '../../../utils/utils';

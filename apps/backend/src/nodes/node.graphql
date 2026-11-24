@@ -21,6 +21,7 @@ enum PortalCapability {
   MANAGE_MANIFEST_INGESTIONS
   GENERATE_MANIFEST
   READ_SAAS_METRICS
+  READ_ORGANIZATION_MEMBERS
 }
 
 enum OrganizationCapability {

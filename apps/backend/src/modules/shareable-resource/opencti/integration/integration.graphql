@@ -17,9 +17,9 @@ interface Integration implements Node & Document {
   uploader_organization: Organization
   name: String!
   short_description: String
+  meta_description: String
   description: String
   file_name: String @auth
-  active: Boolean @deprecated(reason: "Use status")
   status: DocumentStatus!
   created_at: Date!
   updated_at: Date
@@ -54,9 +54,9 @@ type IntegrationHack implements Node & Document & Integration {
   uploader_organization: Organization
   name: String!
   short_description: String
+  meta_description: String
   description: String
   file_name: String @auth
-  active: Boolean @deprecated(reason: "Use status")
   status: DocumentStatus!
   created_at: Date!
   updated_at: Date
@@ -90,9 +90,9 @@ type CsvFeed implements Node & Document & Integration {
   uploader_organization: Organization
   name: String!
   short_description: String
+  meta_description: String
   description: String
   file_name: String @auth
-  active: Boolean @deprecated(reason: "Use status")
   status: DocumentStatus!
   created_at: Date!
   updated_at: Date
@@ -127,9 +127,9 @@ type Connector implements Node & Document & Integration {
   uploader_organization: Organization
   name: String!
   short_description: String
+  meta_description: String
   description: String
   file_name: String @auth
-  active: Boolean @deprecated(reason: "Use status")
   status: DocumentStatus!
   created_at: Date!
   updated_at: Date
@@ -172,9 +172,9 @@ type TaxiiFeed implements Node & Document & Integration {
   uploader_organization: Organization
   name: String!
   short_description: String
+  meta_description: String
   description: String
   file_name: String @auth
-  active: Boolean @deprecated(reason: "Use status")
   status: DocumentStatus!
   created_at: Date!
   updated_at: Date
@@ -208,9 +208,9 @@ type RssFeed implements Node & Document & Integration {
   uploader_organization: Organization
   name: String!
   short_description: String
+  meta_description: String
   description: String
   file_name: String @auth
-  active: Boolean @deprecated(reason: "Use status")
   status: DocumentStatus!
   created_at: Date!
   updated_at: Date
@@ -245,9 +245,9 @@ type Stream implements Node & Document & Integration {
   uploader_organization: Organization
   name: String!
   short_description: String
+  meta_description: String
   description: String
   file_name: String @auth
-  active: Boolean @deprecated(reason: "Use status")
   status: DocumentStatus!
   created_at: Date!
   updated_at: Date
@@ -282,9 +282,9 @@ type ThirdPartyIntegration implements Node & Document & Integration {
   uploader_organization: Organization
   name: String!
   short_description: String
+  meta_description: String
   description: String
   file_name: String @auth
-  active: Boolean @deprecated(reason: "Use status")
   status: DocumentStatus!
   created_at: Date!
   updated_at: Date

@@ -13,6 +13,8 @@ vi.mock('@/lib/graphql-upload-client', () => ({
   requestGraphqlWithUploads: vi.fn(),
 }));
 
+const META_DESCRIPTION = 'Every ransomware campaign in one dashboard';
+
 const buildValues = (
   overrides: Record<string, unknown> = {}
 ): DocumentFormValues =>
@@ -22,10 +24,10 @@ const buildValues = (
     uploader_id: 'user-1',
     uploader_organization_id: 'org-1',
     short_description: 'short',
+    meta_description: META_DESCRIPTION,
     description: 'long',
     product_version: '6.0.0',
     use_cases: ['use-case-1'],
-    active: true,
     ...overrides,
   }) as DocumentFormValues;
 
@@ -34,7 +36,9 @@ const buildFile = (name: string) => new File(['content'], name);
 describe('toCreateDocumentInput', () => {
   it('should keep the document columns and leave out the organization', () => {
     // When
-    const input = toCreateDocumentInput(buildValues());
+    const input = toCreateDocumentInput(
+      buildValues({ status: DocumentStatus.InValidation })
+    );
 
     // Then
     expect(input).toEqual({
@@ -42,12 +46,13 @@ describe('toCreateDocumentInput', () => {
       slug: 'my-dashboard',
       uploader_id: 'user-1',
       short_description: 'short',
+      meta_description: META_DESCRIPTION,
       description: 'long',
       use_cases: ['use-case-1'],
       solution_categories: [],
       entity_types: null,
       license_type: null,
-      status: DocumentStatus.Published,
+      status: DocumentStatus.InValidation,
     });
   });
 
@@ -55,7 +60,6 @@ describe('toCreateDocumentInput', () => {
     // When
     const input = toCreateDocumentInput(
       buildValues({
-        active: undefined,
         use_cases: undefined,
         uploader_id: undefined,
       })
@@ -69,19 +73,48 @@ describe('toCreateDocumentInput', () => {
       uploader_id: '',
     });
   });
+
+  it('should send an empty meta-description, which the API refuses, when the values carry none', () => {
+    // When
+    const input = toCreateDocumentInput(
+      buildValues({ meta_description: undefined })
+    );
+
+    // Then
+    expect(input.meta_description).toBe('');
+  });
+});
+
+describe('toCreateDocumentInput status', () => {
+  it.each`
+    requestedStatus                | expectedStatus
+    ${DocumentStatus.Draft}        | ${DocumentStatus.Draft}
+    ${DocumentStatus.InValidation} | ${DocumentStatus.InValidation}
+    ${DocumentStatus.Published}    | ${DocumentStatus.Draft}
+    ${undefined}                   | ${DocumentStatus.Draft}
+  `(
+    'should create the resource as $expectedStatus when $requestedStatus is requested',
+    ({ requestedStatus, expectedStatus }) => {
+      // When
+      const input = toCreateDocumentInput(
+        buildValues({ status: requestedStatus })
+      );
+
+      // Then
+      expect(input.status).toBe(expectedStatus);
+    }
+  );
 });
 
 describe('toUpdateDocumentInput', () => {
   it('should leave out the slug, which is never updated', () => {
-    expect(toUpdateDocumentInput(buildValues(), 'draft')).not.toHaveProperty(
-      'slug'
-    );
+    expect(toUpdateDocumentInput(buildValues())).not.toHaveProperty('slug');
   });
 
   it('should send nothing for the fields the form does not carry', () => {
     // When
     const serialized = JSON.parse(
-      JSON.stringify(toUpdateDocumentInput(buildValues(), 'draft'))
+      JSON.stringify(toUpdateDocumentInput(buildValues()))
     );
 
     // Then
@@ -90,32 +123,41 @@ describe('toUpdateDocumentInput', () => {
       uploader_id: 'user-1',
       uploader_organization_id: 'org-1',
       short_description: 'short',
+      meta_description: META_DESCRIPTION,
       description: 'long',
       use_cases: ['use-case-1'],
-      status: DocumentStatus.Published,
     });
   });
 
-  it.each`
-    active   | currentStatus      | expectedStatus
-    ${false} | ${'published'}     | ${DocumentStatus.Draft}
-    ${true}  | ${'draft'}         | ${DocumentStatus.Published}
-    ${true}  | ${'in_validation'} | ${DocumentStatus.Published}
-    ${true}  | ${'published'}     | ${undefined}
-    ${false} | ${'draft'}         | ${undefined}
-    ${false} | ${'in_validation'} | ${undefined}
-  `(
-    'should send the status $expectedStatus when the switch is $active and the resource is $currentStatus',
-    ({ active, currentStatus, expectedStatus }) => {
+  it.each([undefined, null])(
+    'should not default the meta-description when the edited values carry %s',
+    (metaDescription) => {
       // When
       const input = toUpdateDocumentInput(
-        buildValues({ active }),
-        currentStatus
+        buildValues({ meta_description: metaDescription })
+      );
+
+      // Then
+      expect(input.meta_description).toBe(metaDescription);
+    }
+  );
+
+  it.each`
+    requestedStatus                | expectedStatus
+    ${DocumentStatus.Draft}        | ${DocumentStatus.Draft}
+    ${DocumentStatus.InValidation} | ${DocumentStatus.InValidation}
+    ${DocumentStatus.Published}    | ${DocumentStatus.Published}
+    ${undefined}                   | ${undefined}
+  `(
+    'should send the status $expectedStatus when $requestedStatus is requested',
+    ({ requestedStatus, expectedStatus }) => {
+      // When
+      const input = toUpdateDocumentInput(
+        buildValues({ status: requestedStatus })
       );
 
       // Then
       expect(input.status).toBe(expectedStatus);
-      expect(input).not.toHaveProperty('active');
     }
   );
 });

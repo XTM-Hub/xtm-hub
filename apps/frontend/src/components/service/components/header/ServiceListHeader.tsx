@@ -37,6 +37,7 @@ export enum ServiceListFilterKey {
 export interface ServiceListFilter {
   node: React.ReactNode;
   title?: React.ReactNode;
+  description?: string;
   noAccordion?: boolean;
 }
 

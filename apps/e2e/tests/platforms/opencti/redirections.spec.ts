@@ -1,5 +1,6 @@
 import { Page } from '@playwright/test';
 import { expect, test } from '../../fixtures/baseFixtures';
+import { META_DESCRIPTION_SUMMARY } from '../../model/common';
 import { HomePage } from '../../model/home.pageModel';
 import IntegrationPage, {
   DEPLOYABLE_INTEGRATIONS,
@@ -40,6 +41,7 @@ const deployIntegration = async (
   await integrationPage.navigateToIntegrationsService();
   await integrationPage.addDeployableIntegration(kind, {
     name: `e2e deployable ${kind} integration`,
+    metaDescription: META_DESCRIPTION_SUMMARY,
     shortDescription,
     description: `A ${kind} integration deployed in a real OpenCTI`,
   });
@@ -111,10 +113,12 @@ test.describe('OpenCTI one-click deploy of each resource type', () => {
     await customViewPage.navigateToService();
     await customViewPage.addResource({
       name: 'e2e deployable custom view',
+      metaDescription: META_DESCRIPTION_SUMMARY,
       shortDescription,
       version: '1.0.0',
       description: 'A custom view deployed in a real OpenCTI',
       entityType: 'Intrusion Set',
+      publish: true,
     });
     await customViewPage.navigateToResource(shortDescription);
 
@@ -140,9 +144,11 @@ test.describe('OpenCTI one-click deploy of each resource type', () => {
     await playbookPage.navigateToService();
     await playbookPage.addResource({
       name: 'e2e playbook',
+      metaDescription: META_DESCRIPTION_SUMMARY,
       shortDescription,
       version: '1.0.0',
       description: 'A playbook XTM Hub cannot deploy in a Community Edition',
+      publish: true,
     });
     await playbookPage.navigateToResource(shortDescription);
 

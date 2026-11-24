@@ -44,7 +44,7 @@ const OneClickDeploy = ({
 }: OneClickDeployProps) => {
   const t = useTranslate();
   const platformIdentifier = getPlatformIdentifier(documentData.type);
-  const { platforms } = useRegisteredPlatforms(platformIdentifier, {
+  const { platforms, isPending } = useRegisteredPlatforms(platformIdentifier, {
     onlyActive: true,
   });
 
@@ -151,15 +151,36 @@ const OneClickDeploy = ({
     );
   }, [eeBlocked, platforms, incompatiblePlatformsCount]);
 
+  const deployLabel = t('Service.ShareableResources.Deploy.DeployPlatform', {
+    platformName: PlatformMetadataMapping[platformIdentifier].name ?? 'OpenCTI',
+  });
+
+  // Until the platforms are known, the button could offer to connect a product the user already has:
+  // it stays in place, disabled, so nothing shifts when they arrive.
+  if (isPending) {
+    return (
+      <Button
+        {...analyticsId('resource_deploy')}
+        disabled>
+        {deployLabel}
+      </Button>
+    );
+  }
+
   if (platforms.length === 0) {
     return (
-      <ConnectProductFromHubModal
-        isOpen={isOpen}
-        onOpenChange={(isOpen) => {
-          setIsOpen(isOpen);
-        }}
-        origin={ConnectProductOrigin.library}
-      />
+      <>
+        <Button
+          {...analyticsId('resource_deploy')}
+          onClick={() => setIsOpen(true)}>
+          {deployLabel}
+        </Button>
+        <ConnectProductFromHubModal
+          isOpen={isOpen}
+          onOpenChange={setIsOpen}
+          origin={ConnectProductOrigin.library}
+        />
+      </>
     );
   }
   const button = (
@@ -167,10 +188,7 @@ const OneClickDeploy = ({
       {...analyticsId('resource_deploy')}
       disabled={isDeploymentDisabled || eeBlocked}
       onClick={() => setIsOpen(true)}>
-      {t('Service.ShareableResources.Deploy.DeployPlatform', {
-        platformName:
-          PlatformMetadataMapping[platformIdentifier].name ?? 'OpenCTI',
-      })}
+      {deployLabel}
     </Button>
   );
 

@@ -1,12 +1,14 @@
 import type { PgBoss } from 'pg-boss';
+import { SYSTEM_USER_CONTEXT } from '../../portal.const';
 import { sendMailDirect } from '../../server/mail-service';
 import { logApp } from '../../utils/app-logger.util';
 import { MAIL_QUEUES, type MailJobData } from './mail.jobs';
 import { RETRY_STRATEGIES } from './retry-strategies';
 import { createBatchHandler } from './workers';
 
-const handleMailJob = createBatchHandler<MailJobData>(async (job) =>
-  sendMailDirect(job.data)
+const handleMailJob = createBatchHandler<MailJobData>(
+  SYSTEM_USER_CONTEXT,
+  async (job) => sendMailDirect(job.data)
 );
 
 export const MailWorkers = {

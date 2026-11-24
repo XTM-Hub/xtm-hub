@@ -24,15 +24,19 @@ import {
 } from '@/utils/generate-metadata';
 import { PUBLIC_CYBERSECURITY_SOLUTIONS_PATH } from '@/utils/path/constant';
 import { fetchSeoServiceInstanceBySlug } from '@/utils/seo-service-instance/utils/seo-service-instance.server.utils';
+import { buildResourceMetaDescription } from '@/utils/shareable-resources/meta-description.utils';
 import { localeMap } from '@/utils/shareable-resources/shareable-resources.consts';
 import {
   isConnectorResource,
+  PublicDocumentByServiceSlugItem,
+  SERVICE_SLUG_SHAREABLE_RESOURCE_MAPPING,
   ServiceSlug,
 } from '@/utils/shareable-resources/shareable-resources.types';
 import {
   fetchSingleDocument,
   isPublicDocumentSlug,
 } from '@/utils/shareable-resources/utils/shareable-resources.server.utils';
+import { Paper } from '@filigran/design-system';
 import { LogoFiligranIcon } from '@filigran/icon';
 import { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
@@ -51,6 +55,23 @@ const FALLBACK_DESCRIPTION_KEYS: Record<ServiceSlug, string> = {
   [ServiceSlug.OPEN_CTI_PLAYBOOKS]:
     'Metadata.DocumentFallbackDescriptionGeneric',
 };
+
+/**
+ * The SEO description of a resource, shared by its meta tag and its JSON-LD: the meta-description generated from the
+ * summary its author entered, else the default text of the resource type. Never derived from the short description or
+ * the body.
+ */
+const describeDocument = (
+  document: Pick<PublicDocumentByServiceSlugItem, 'meta_description'>,
+  serviceSlug: ServiceSlug,
+  fallbackDescription: string
+) =>
+  document.meta_description?.trim()
+    ? buildResourceMetaDescription(
+        SERVICE_SLUG_SHAREABLE_RESOURCE_MAPPING[serviceSlug],
+        document.meta_description
+      )
+    : fallbackDescription;
 
 /**
  * Fetch the data for the page with caching to avoid multiple requests
@@ -105,7 +126,11 @@ export async function generateMetadata({
       'Metadata.DocumentFallbackDescriptionGeneric'
   );
 
-  const description = document.short_description || fallbackDescription;
+  const description = describeDocument(
+    document,
+    serviceInstance.slug as ServiceSlug,
+    fallbackDescription
+  );
   const serviceLabel = t(
     `Service.ServiceDefinitionIdentifier.${serviceInstance.service_definition.identifier}`
   );
@@ -178,7 +203,11 @@ const Page = async ({
     '@context': 'https://schema.org',
     '@type': 'TechArticle',
     headline: `${document.name} | ${t(`Service.ServiceDefinitionIdentifier.${serviceInstance.service_definition.identifier}`)} | XTM Hub`,
-    description: document.short_description || fallbackDescription,
+    description: describeDocument(
+      document,
+      serviceInstance.slug as ServiceSlug,
+      fallbackDescription
+    ),
     articleBody: document.description,
     author: document.uploader
       ? {
@@ -288,7 +317,6 @@ const Page = async ({
             <RelayProvider>
               <PublicResourceActions
                 documentData={document}
-                serviceInstance={serviceInstance}
                 pageUrl={pageUrl}
                 shareTooltipText={`Service.${localeMap[serviceInstance.slug as ServiceSlug]}.Actions.Share`}
               />
@@ -311,20 +339,26 @@ const Page = async ({
         />
       )}
       <div className="flex flex-col-reverse lg:flex-row w-full mt-4 gap-6">
-        <div className="flex-[3_3_0%]">
-          <h2 className="py-2 title-xs uppercase truncate text-default-secondary">
-            {t('PublicResourcePage.Overview')}
-          </h2>
-          <section className="rounded layer-1 bg-elevation-default">
-            <p className="p-4 content-base">{document?.short_description}</p>
-            <ResourceMarkdownRenderer
-              source={document?.description ?? ''}
-              className="p-4"
-              filigranWebsiteUtm={getResourcePageFiligranWebsiteUtm(
-                serviceInstance.service_definition.identifier
-              )}
-            />
-          </section>
+        <div className="flex-[3_3_0%] min-w-0">
+          <Paper
+            as="section"
+            padding={16}
+            className="overflow-x-auto"
+            title={
+              <h2 className="[font:inherit] tracking-[inherit]">
+                {t('PublicResourcePage.Overview')}
+              </h2>
+            }>
+            <div className="flex flex-col gap-8">
+              <p className="content-base">{document?.short_description}</p>
+              <ResourceMarkdownRenderer
+                source={document?.description ?? ''}
+                filigranWebsiteUtm={getResourcePageFiligranWebsiteUtm(
+                  serviceInstance.service_definition.identifier
+                )}
+              />
+            </div>
+          </Paper>
         </div>
         {document && (
           <ShareableResourceDetails

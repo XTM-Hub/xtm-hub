@@ -4,6 +4,20 @@ import {
 } from '@/lib/analytics/analytics.ids';
 
 export const ANALYTICS_ELEMENT_IDS = {
+  account_api_token_cancel: { action: 'Cancel API token creation' },
+  account_api_token_close: { action: 'Close new API token' },
+  account_api_token_copy: { action: 'Copy new API token' },
+  account_api_token_create: { action: 'Create API token' },
+  account_api_token_open: { action: 'Open API token creation' },
+  account_api_token_organization_filter: {
+    action: 'Filter API tokens by organization',
+  },
+  account_api_token_remove: { action: 'Revoke API token' },
+  account_api_token_revocation_confirm: {
+    action: 'Confirm API token revocation',
+  },
+  account_api_token_scope_filter: { action: 'Filter API tokens by scope' },
+  account_api_token_status_filter: { action: 'Filter API tokens by status' },
   account_change_notice_close: { action: 'Dismiss account change notice' },
   account_languages_open: { action: 'Show language choices' },
   account_local_login_open: { action: 'Log in with local account' },
@@ -332,7 +346,21 @@ export const ANALYTICS_ELEMENT_IDS = {
   platform_disconnection_confirm: { action: 'Confirm platform disconnection' },
   platform_hostname_copy: { action: 'Copy platform host name' },
   platform_instance_open: { action: 'Open connected platform' },
+  platform_metrics_access_contact: {
+    action: 'Ask admin for platform metrics access',
+  },
+  platform_metrics_access_documentation_open: {
+    action: 'Open metrics access documentation',
+  },
   platform_metrics_period_select: { action: 'Change platform metrics period' },
+  platform_metrics_tour_close: { action: 'Close platform metrics tour' },
+  platform_metrics_tour_next_step_open: {
+    action: 'Go to next platform metrics tour step',
+  },
+  platform_metrics_tour_open: { action: 'Start platform metrics tour' },
+  platform_metrics_tour_previous_step_open: {
+    action: 'Go to previous platform metrics tour step',
+  },
   platform_name_cancel: { action: 'Cancel platform rename' },
   platform_name_edit: { action: 'Rename connected platform' },
   platform_name_submit: { action: 'Save platform name' },
@@ -364,12 +392,17 @@ export const ANALYTICS_ELEMENT_IDS = {
     action: 'Confirm resource file replacement',
   },
   resource_file_replacement_open: { action: 'Replace resource file' },
+  resource_filter_info_open: { action: 'Show filter information' },
   resource_filter_section_toggle: {
     action: 'Expand or collapse filter section',
   },
   resource_filters_open: { action: 'Open filters' },
+  resource_filters_remove: { action: 'Remove all resource filters' },
   resource_form_cancel: { action: 'Cancel resource form' },
+  resource_form_draft_submit: { action: 'Save resource as draft' },
+  resource_form_publication_submit: { action: 'Publish resource' },
   resource_form_submit: { action: 'Save resource' },
+  resource_form_validation_submit: { action: 'Request resource validation' },
   resource_image_removal_cancel: { action: 'Restore resource image' },
   resource_image_remove: { action: 'Remove resource image' },
   resource_image_upload: { action: 'Add resource image' },

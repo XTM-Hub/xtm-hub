@@ -1,9 +1,9 @@
 import ShareableResourceSlug from '@/components/service/document/ShareableResourceSlug';
+import { PortalSettings } from '@/components/settings/EnvPortalContext';
 import { readTrackedEvents, startAnalytics } from '@/utils/test/analytics';
 import { mswServer } from '@/utils/test/msw/server';
 import testRender from '@/utils/test/test-render';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
-import { settingsContext_fragment$data } from '@generated/settingsContext_fragment.graphql';
 import {
   DocumentItemFragment,
   DocumentStatus,
@@ -32,7 +32,7 @@ vi.mock('./one-click-deploy/OneClickDeploy', () => ({
   default: () => <div>OneClickDeployComponentMock</div>,
 }));
 
-const mockSettings: Partial<settingsContext_fragment$data> = {
+const mockSettings: Partial<PortalSettings> = {
   base_url_front: 'https://test.com',
 };
 

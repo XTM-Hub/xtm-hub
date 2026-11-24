@@ -1,6 +1,6 @@
 import { PortalContext } from '@/components/me/AppPortalContext';
+import { PortalUser } from '@/components/me/portal-user.utils';
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import { meContext_fragment$data } from '@generated/meContext_fragment.graphql';
 import {
   MeOrganizationsQuery,
   useMeOrganizationsQuery,
@@ -9,9 +9,7 @@ import { meOrganizationsKeys } from '@graphql/me/me.keys';
 import { useQueryClient } from '@tanstack/react-query';
 import { useContext, useEffect, useMemo, useRef } from 'react';
 
-const toMeOrganizationsQuery = (
-  me: meContext_fragment$data
-): MeOrganizationsQuery => ({
+const toMeOrganizationsQuery = (me: PortalUser): MeOrganizationsQuery => ({
   me: {
     id: me.id,
     selected_organization_id: me.selected_organization_id,

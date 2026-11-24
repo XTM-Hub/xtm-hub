@@ -1,6 +1,8 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { TestHelper } from '../../../../tests/helper/test.helper';
+import { TEST_META_DESCRIPTIONS } from '../../../../tests/tests.const';
 import {
+  DocumentMetadataKeyCode,
   ManifestType,
   PlatformIdentifier,
   PortalCapability,
@@ -12,9 +14,12 @@ import type { DocumentId } from '../../../model/kanel/public/Document';
 import { SYSTEM_USER_CONTEXT } from '../../../portal.const';
 import { minioInit } from '../../../server/initialize';
 import * as FeatureFlagUtil from '../../../utils/feature-flag.util';
+import { DocumentApp } from '../../document/document.app';
 import { ManifestRebuildQueueStatus } from '../manifest/manifest.consts';
 import { ManifestHelper } from '../manifest/manifest.helper';
+import { INTEGRATION_SERVICE_INSTANCE_ID } from '../opencti/integration/integration.model';
 import { ManifestFragmentApp } from './manifest-fragment.app';
+import { TAG_LATEST } from './manifest-fragment.helper';
 
 describe('manifestFragmentApp', () => {
   beforeAll(async () => {
@@ -332,6 +337,104 @@ describe('manifestFragmentApp', () => {
         slug: 'misp-mixed-lts',
       });
       expect(createdDocument).toBeUndefined();
+    });
+  });
+
+  describe('meta description carry-forward', () => {
+    // What the connector form sends on an update: the connector metadata it edits.
+    const connectorFormMetadata = (fragment: ManifestFragmentInput) => [
+      { key: DocumentMetadataKeyCode.IntegrationType, value: 'connector' },
+      { key: DocumentMetadataKeyCode.ProductVersion, value: fragment.version },
+      {
+        key: DocumentMetadataKeyCode.ContainerImage,
+        value: fragment.image_name,
+      },
+      {
+        key: DocumentMetadataKeyCode.Verified,
+        value: String(fragment.verified),
+      },
+      { key: DocumentMetadataKeyCode.SourceCode, value: fragment.source_code },
+      {
+        key: DocumentMetadataKeyCode.ManagerSupported,
+        value: String(fragment.manager_supported),
+      },
+      { key: DocumentMetadataKeyCode.PlaybookSupported, value: 'false' },
+    ];
+
+    beforeEach(() => {
+      requestContext.set({ user: manifestIngestionUser });
+      vi.spyOn(ManifestHelper, 'scheduleDebouncedRebuild').mockResolvedValue(
+        undefined
+      );
+    });
+
+    it('creates a brand-new connector family without meta description', async () => {
+      // Given
+      const slug = 'misp-meta-description-new-family';
+
+      // When
+      await ManifestFragmentApp.ingestManifestFragments(buildArgs({ slug }));
+
+      // Then
+      const createdDocument = await TestHelper.document.load({ slug });
+      createdDocumentIds.push(createdDocument!.id);
+      expect(createdDocument).toMatchObject({
+        slug,
+        meta_description: null,
+      });
+    });
+
+    it('keeps the meta description an admin entered when a newer version becomes the latest', async () => {
+      // Given a connector whose meta description an admin entered in the connector form
+      const slug = 'misp-meta-description-carried';
+      const firstFragment = buildManifestFragment({
+        slug,
+        version: '7.260308.0',
+      });
+      await ManifestFragmentApp.ingestManifestFragments({
+        manifestFragments: [firstFragment],
+      });
+      const firstDocument = await TestHelper.document.load({
+        slug,
+        version: firstFragment.version,
+      });
+      createdDocumentIds.push(firstDocument!.id);
+      await DocumentApp.updateDocument({
+        parentDocumentId: firstDocument!.id,
+        serviceInstanceId: INTEGRATION_SERVICE_INSTANCE_ID,
+        metadata: connectorFormMetadata(firstFragment),
+        input: { meta_description: TEST_META_DESCRIPTIONS.DEFAULT },
+        existingImageIds: [],
+      });
+
+      // When a newer version is published
+      const newerFragment = buildManifestFragment({
+        slug,
+        version: '7.260309.0',
+      });
+      await ManifestFragmentApp.ingestManifestFragments({
+        manifestFragments: [newerFragment],
+      });
+
+      // Then the new latest version carries the same meta description
+      const newerDocument = await TestHelper.document.load({
+        slug,
+        version: newerFragment.version,
+      });
+      createdDocumentIds.push(newerDocument!.id);
+      expect(newerDocument).toMatchObject({
+        slug,
+        version: newerFragment.version,
+        tags: expect.arrayContaining([TAG_LATEST]),
+        meta_description: TEST_META_DESCRIPTIONS.DEFAULT,
+      });
+      const previousDocument = await TestHelper.document.load({
+        id: firstDocument!.id,
+      });
+      expect(previousDocument).toMatchObject({
+        tags: expect.not.arrayContaining([TAG_LATEST]),
+        meta_description: TEST_META_DESCRIPTIONS.DEFAULT,
+      });
     });
   });
 

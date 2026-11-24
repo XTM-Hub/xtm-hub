@@ -17,7 +17,7 @@ export interface ServiceFormReplaceFileTexts {
 
 interface ServiceFormReplaceFileFieldProps {
   field: ControllerRenderProps<FieldValues, string>;
-  setIsDirty: (isDirty: boolean) => void;
+  setUploadsDirty: (uploadsDirty: boolean) => void;
   document?: DocumentItemFragment;
   texts: ServiceFormReplaceFileTexts;
   accept: string;
@@ -25,7 +25,7 @@ interface ServiceFormReplaceFileFieldProps {
 
 export const ServiceFormReplaceFileField = ({
   field,
-  setIsDirty,
+  setUploadsDirty,
   document,
   texts,
   accept,
@@ -40,7 +40,7 @@ export const ServiceFormReplaceFileField = ({
       </FormLabel>
       <FormControl>
         {/* eslint-disable-next-line no-restricted-syntax -- container whose children carry the IDs */}
-        <div onClick={() => setIsDirty(true)}>
+        <div onClick={() => setUploadsDirty(true)}>
           <FileInputWithPrevent
             field={field}
             texts={{

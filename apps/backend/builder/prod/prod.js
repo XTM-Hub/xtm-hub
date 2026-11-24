@@ -9,6 +9,8 @@ await esbuild.build({
   outdir: 'dist',
   format: 'esm',
   packages: 'external',
+  // es2022 lowers the TC39 decorators (@Guarded, @Public): Node cannot parse them
+  target: 'es2022',
 });
 
 await esbuild.build({
@@ -20,4 +22,5 @@ await esbuild.build({
   outdir: 'dist/src/es-migrations',
   format: 'esm',
   packages: 'external',
+  target: 'es2022',
 });

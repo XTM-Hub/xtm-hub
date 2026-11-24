@@ -4,6 +4,7 @@ import {
   BadRequestErrorCode,
   ForbiddenErrorCode,
   NotFoundErrorCode,
+  UnauthenticatedErrorCode,
   UnknownErrorCode,
 } from './error.code';
 import { CustomApolloError } from './error.type';
@@ -13,8 +14,13 @@ import {
   ErrorBuilder,
   ForbiddenAccess,
   NotFoundError,
+  UnauthenticatedAccess,
   UnknownError,
 } from './error.util';
+
+const unauthenticatedErrorSet: Set<string> = new Set(
+  Object.values(UnauthenticatedErrorCode)
+);
 
 const forbiddenErrorSet: Set<string> = new Set(
   Object.values(ForbiddenErrorCode)
@@ -33,10 +39,19 @@ const notFoundErrorsSet: Set<string> = new Set(
 );
 
 const errorSetMapping: Map<Set<string>, ErrorBuilder> = new Map();
+errorSetMapping.set(unauthenticatedErrorSet, UnauthenticatedAccess);
 errorSetMapping.set(forbiddenErrorSet, ForbiddenAccess);
 errorSetMapping.set(badRequestErrorsSet, BadRequestError);
 errorSetMapping.set(alreadyExistsErrorSet, AlreadyExistsError);
 errorSetMapping.set(notFoundErrorsSet, NotFoundError);
+
+// The codes mapToGraphQLError turns into a client error, any other one becoming an unknown error
+export const isClientErrorCode = (code: string) => {
+  for (const errorSet of errorSetMapping.keys()) {
+    if (errorSet.has(code)) return true;
+  }
+  return false;
+};
 
 export const mapToGraphQLError = (
   error: unknown,

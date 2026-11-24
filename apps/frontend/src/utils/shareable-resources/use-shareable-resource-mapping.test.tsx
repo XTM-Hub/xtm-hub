@@ -66,6 +66,16 @@ describe('useShareableResourceMapping', () => {
     expect(titles).toEqual(expectedTitles);
   });
 
+  it('should tell that the status filter only applies to connectors', () => {
+    // Given / When
+    const { filters } = renderMapping(ServiceSlug.OPEN_CTI_INTEGRATIONS);
+
+    // Then
+    expect(filters[ServiceListFilterKey.Verified]?.description).toBe(
+      'Service.OpenctiIntegrations.Filter.Verified.Description'
+    );
+  });
+
   it.each([
     ['a public', PUBLIC_PATHNAME, IntegrationProductVersionFilter],
     ['a private', PRIVATE_PATHNAME, PrivateIntegrationProductVersionFilter],

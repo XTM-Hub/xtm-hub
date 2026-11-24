@@ -1,14 +1,14 @@
 import { AdminUserUpdateForm } from '@/components/admin/user/forms/admin/AdminUserUpdateForm';
 import { UserUpdateForm } from '@/components/admin/user/forms/UserUpdateForm';
+import { UsersListUser } from '@/components/admin/user/user-list.types';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
 import useAdminPath from '@/hooks/use-admin-path';
 import { useSheetOpenState } from '@/hooks/use-sheet-open-state';
 import { useTranslate } from '@/hooks/use-translate';
-import { UserList_fragment$data } from '@generated/UserList_fragment.graphql';
 import { ReactNode } from 'react';
 
 interface EditUserProps {
-  user: UserList_fragment$data;
+  user: UsersListUser;
   trigger?: ReactNode;
   onCloseSheet?: () => void;
   defaultStateOpen?: boolean;

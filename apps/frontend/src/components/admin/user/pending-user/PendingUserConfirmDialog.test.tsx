@@ -1,4 +1,4 @@
-import { UserList_fragment$data } from '@generated/UserList_fragment.graphql';
+import { PendingUser } from '@/components/admin/user/pending-user/pending-user-list.types';
 import { screen } from '@testing-library/react';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
@@ -33,12 +33,12 @@ vi.mock('@/components/ui/ConfirmDialog', () => ({
     ) : null,
 }));
 
-const pendingUser = {
+const pendingUser: PendingUser = {
   id: 'user-1',
   email: 'pending.user@filigran.io',
   first_name: 'Pending',
   last_name: 'User',
-} as UserList_fragment$data;
+};
 
 describe('PendingUserConfirmDialog', () => {
   beforeEach(() => {

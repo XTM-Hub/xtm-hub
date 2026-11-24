@@ -1,15 +1,15 @@
 import type { ChipSeverity } from '@filigran/design-system';
 
-// Decimal steps, to match the Intl unit names (a kilobyte is 1000 bytes).
+// Binary steps (a kibibyte is 1024 bytes). Intl has no binary units, so each one is a translation key.
 const BYTE_UNITS = [
-  'byte',
-  'kilobyte',
-  'megabyte',
-  'gigabyte',
-  'terabyte',
-  'petabyte',
+  'Byte',
+  'Kibibyte',
+  'Mebibyte',
+  'Gibibyte',
+  'Tebibyte',
+  'Pebibyte',
 ] as const;
-const BYTE_UNIT_STEP = 1000;
+const BYTE_UNIT_STEP = 1024;
 
 export type ByteUnit = (typeof BYTE_UNITS)[number];
 
@@ -17,7 +17,7 @@ export const splitByteSize = (
   bytes: number
 ): { value: number; unit: ByteUnit } => {
   let value = bytes;
-  let unit: ByteUnit = 'byte';
+  let unit: ByteUnit = 'Byte';
   for (const largerUnit of BYTE_UNITS.slice(1)) {
     if (Math.abs(value) < BYTE_UNIT_STEP) {
       break;

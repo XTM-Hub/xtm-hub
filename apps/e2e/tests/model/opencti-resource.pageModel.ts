@@ -1,5 +1,10 @@
 import { Page } from '@playwright/test';
-import { selectUseCase, waitForDrawerToClose } from './common';
+import {
+  fillMetaDescription,
+  publishResource,
+  selectUseCase,
+  waitForDrawerToClose,
+} from './common';
 import { TEST_IMAGE_FILE } from './dashboard.pageModel';
 
 // OpenCTI resources of XTM Hub other than dashboards and integrations, with the exports OpenCTI accepts to import.
@@ -38,21 +43,26 @@ export default class OpenctiResourcePage {
 
   async addResource({
     name,
+    metaDescription,
     shortDescription,
     version,
     description,
     entityType,
+    publish = false,
   }: {
     name: string;
+    metaDescription: string;
     shortDescription: string;
     version: string;
     description: string;
     // Custom views only: the entity type OpenCTI attaches the view to.
     entityType?: string;
+    publish?: boolean;
   }) {
     const resource = OPENCTI_RESOURCES[this.kind];
     await this.page.getByRole('button', { name: resource.addButton }).click();
     await this.page.getByPlaceholder(resource.namePlaceholder).fill(name);
+    await fillMetaDescription(this.page, metaDescription);
     await this.page
       .getByPlaceholder('This is some catchphrases to')
       .fill(shortDescription);
@@ -60,7 +70,6 @@ export default class OpenctiResourcePage {
     await this.page
       .getByPlaceholder('This is a paragraph to')
       .fill(description);
-    await this.page.getByLabel('Publish').click();
     await this.page
       .locator('input[type="file"][accept*="application/json"]')
       .setInputFiles(resource.path);
@@ -77,8 +86,11 @@ export default class OpenctiResourcePage {
         .click();
       await this.page.keyboard.press('Escape');
     }
-    await this.page.getByRole('button', { name: 'Validate' }).click();
+    await this.page.getByRole('button', { name: 'Request validation' }).click();
     await waitForDrawerToClose(this.page);
+    if (publish) {
+      await publishResource(this.page, name);
+    }
   }
 
   async navigateToResource(shortDescription: string) {

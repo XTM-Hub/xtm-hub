@@ -1,9 +1,15 @@
 import OneClickDeploy from '@/components/service/document/one-click-deploy/OneClickDeploy';
-import { useRegisteredPlatforms } from '@/hooks/use-registered-platforms';
+import {
+  RegisteredPlatformsListItem,
+  useRegisteredPlatforms,
+} from '@/hooks/use-registered-platforms';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 import testRender from '@/utils/test/test-render';
-import { useRegisteredPlatformsFragment$data } from '@generated/useRegisteredPlatformsFragment.graphql';
-import { DocumentItemFragment, PlatformIdentifier } from '@graphql/generated';
+import {
+  DocumentItemFragment,
+  OrganizationCapability,
+  PlatformIdentifier,
+} from '@graphql/generated';
 import { screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -16,12 +22,18 @@ const PLATFORM_URL = 'https://platform-1.example.com';
 const mocks = vi.hoisted(() => ({
   sendTelemetry: vi.fn(),
   openTab: vi.fn(),
+  useUsersWithCapabilitiesInOrganizationQuery: vi.fn(),
 }));
 
-vi.mock('@graphql/generated', async (importOriginal) => ({
-  ...(await importOriginal<object>()),
-  useOneClickDeployMutation: () => ({ mutate: mocks.sendTelemetry }),
-}));
+vi.mock('@graphql/generated', async (importOriginal) => {
+  const { mockGeneratedQueryHooks } =
+    await import('@/utils/test/mock-generated-query');
+  return mockGeneratedQueryHooks(importOriginal, {
+    useOneClickDeployMutation: () => ({ mutate: mocks.sendTelemetry }),
+    useUsersWithCapabilitiesInOrganizationQuery:
+      mocks.useUsersWithCapabilitiesInOrganizationQuery,
+  });
+});
 
 vi.mock(
   '@/components/service/document/one-click-deploy/UseOneClickDeployTab',
@@ -36,13 +48,21 @@ const documentData = {
   service_instance: { id: SERVICE_INSTANCE_ID, slug: 'opencti-integrations' },
 } as unknown as DocumentItemFragment;
 
+const ADMIN_EMAIL = 'admin@example.com';
+
+const playbookData = {
+  ...documentData,
+  __typename: 'OpenctiPlaybook',
+  type: ShareableResourceType.OPENCTI_PLAYBOOK,
+} as unknown as DocumentItemFragment;
+
 const platform = {
   id: PLATFORM_ID,
   title: 'Platform',
   url: PLATFORM_URL,
   version: '6.0.0',
   contract: 'EE',
-} as unknown as useRegisteredPlatformsFragment$data;
+} as unknown as RegisteredPlatformsListItem;
 
 describe('OneClickDeploy', () => {
   beforeEach(() => {
@@ -50,6 +70,7 @@ describe('OneClickDeploy', () => {
     mocks.openTab.mockReset();
     vi.mocked(useRegisteredPlatforms).mockReturnValue({
       platforms: [platform],
+      isPending: false,
     } as unknown as ReturnType<typeof useRegisteredPlatforms>);
   });
 
@@ -92,5 +113,108 @@ describe('OneClickDeploy', () => {
 
     // Then
     expect(mocks.sendTelemetry).not.toHaveBeenCalled();
+  });
+
+  it('should keep the deploy button disabled until the platforms are loaded', () => {
+    // Given
+    vi.mocked(useRegisteredPlatforms).mockReturnValue({
+      platforms: [],
+      isPending: true,
+    });
+
+    // When
+    testRender(<OneClickDeploy documentData={documentData} />);
+
+    // Then
+    expect(
+      screen.getByRole('button', {
+        name: 'Service.ShareableResources.Deploy.DeployPlatform',
+      })
+    ).toBeDisabled();
+  });
+
+  describe('when no product is connected', () => {
+    beforeEach(() => {
+      vi.mocked(useRegisteredPlatforms).mockReturnValue({
+        platforms: [],
+        isPending: false,
+      } as unknown as ReturnType<typeof useRegisteredPlatforms>);
+      mocks.useUsersWithCapabilitiesInOrganizationQuery.mockReturnValue({
+        data: {
+          usersWithCapabilitiesInOrganization: [
+            { id: 'admin-1', email: ADMIN_EMAIL },
+          ],
+        },
+      });
+    });
+
+    it.each([
+      { name: 'an integration', document: documentData },
+      { name: 'an Enterprise Edition playbook', document: playbookData },
+    ])('should keep the deploy button enabled for $name', ({ document }) => {
+      // Given / When
+      testRender(<OneClickDeploy documentData={document} />);
+
+      // Then
+      expect(
+        screen.getByRole('button', {
+          name: 'Service.ShareableResources.Deploy.DeployPlatform',
+        })
+      ).toBeEnabled();
+    });
+
+    it('should open the connection form when the user can register a product', async () => {
+      // Given
+      const { user } = testRender(
+        <OneClickDeploy documentData={documentData} />,
+        {
+          me: {
+            selected_org_capabilities: [
+              OrganizationCapability.ManagePlatformRegistration,
+            ],
+          },
+        }
+      );
+
+      // When
+      await user.click(
+        screen.getByRole('button', {
+          name: 'Service.ShareableResources.Deploy.DeployPlatform',
+        })
+      );
+
+      // Then
+      expect(
+        screen.getByText('Register.ConnectFromHub.ConnectProduct')
+      ).toBeInTheDocument();
+      expect(
+        screen.getByPlaceholderText('Register.Details.ProductURL')
+      ).toBeInTheDocument();
+      expect(mocks.sendTelemetry).not.toHaveBeenCalled();
+    });
+
+    it('should list the administrators when the user cannot register a product', async () => {
+      // Given
+      const { user } = testRender(
+        <OneClickDeploy documentData={documentData} />,
+        { me: { selected_org_capabilities: [] } }
+      );
+
+      // When
+      await user.click(
+        screen.getByRole('button', {
+          name: 'Service.ShareableResources.Deploy.DeployPlatform',
+        })
+      );
+
+      // Then
+      expect(
+        screen.getByText('Register.ConnectFromHub.PermissionRequired')
+      ).toBeInTheDocument();
+      expect(screen.getByText(ADMIN_EMAIL)).toBeInTheDocument();
+      expect(
+        screen.queryByPlaceholderText('Register.Details.ProductURL')
+      ).not.toBeInTheDocument();
+    });
   });
 });

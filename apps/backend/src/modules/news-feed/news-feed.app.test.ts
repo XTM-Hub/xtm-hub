@@ -17,6 +17,7 @@ import {
 } from '../../../tests/tests.const';
 import {
   DocumentStatus,
+  FiligranProduct,
   IntegrationType,
   NewsFeedItemMetadataKey,
   NewsFeedItemType,
@@ -32,6 +33,7 @@ import { ObjectUseCaseObjectId } from '../../model/kanel/public/ObjectUseCase';
 import { OrganizationId } from '../../model/kanel/public/Organization';
 import PlatformConfigurationModel from '../../model/kanel/public/PlatformConfiguration';
 import { ProvisionedNewsFeedItemPlatformId } from '../../model/kanel/public/ProvisionedNewsFeedItem';
+import { ServiceDefinitionId } from '../../model/kanel/public/ServiceDefinition';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { BlogApiClient } from '../../thirdparty/blog-api/client';
 import {
@@ -42,11 +44,13 @@ import type { BlogFeedItem } from '../../thirdparty/blog-api/schema';
 import { logApp } from '../../utils/app-logger.util';
 import { ErrorCode } from '../../utils/error/error.code';
 import { RequiredPlatformVersions } from '../../utils/required-platform-version';
+import { PlatformConfigurationDomain } from '../registration/platform-configuration/platform-configuration.domain';
 import { objectUseCaseDomain } from '../use-case/object-use-case/object-use-case.domain';
 import { useCaseDomain } from '../use-case/use-case.domain';
 import { NewsFeedApp } from './news-feed.app';
 import { NewsFeedDomain } from './news-feed.domain';
 import { NewsFeedHelper } from './news-feed.helper';
+import { BlogpostProduct, blogpostProductMapping } from './news-feed.model';
 
 vi.mock('config', async (importOriginal) => {
   const mod = await importOriginal<{ default: typeof config }>();
@@ -60,6 +64,18 @@ vi.mock('config', async (importOriginal) => {
 
 const mockConfigGet = vi.mocked(config.get);
 
+const loadConsumeInput = async (platformId: string, token: string) => {
+  const registration =
+    await PlatformConfigurationDomain.loadResolvedConfigurationByPlatformAndToken(
+      {
+        platform_id: platformId,
+        token,
+      }
+    );
+  expect(registration).toBeDefined();
+  return { registration: registration! };
+};
+
 describe('newsFeedApp', () => {
   const createdServiceInstanceIds: ServiceInstanceId[] = [];
 
@@ -70,13 +86,14 @@ describe('newsFeedApp', () => {
     });
   };
 
-  const createOpenCTIPlatformForOrganization = async (
+  const createPlatformForOrganization = async (
+    serviceDefinitionId: ServiceDefinitionId,
     platformId: string,
     organizationId: OrganizationId,
     configOverrides: Partial<PlatformConfigurationModel> = {}
   ) => {
     const serviceInstance = await TestHelper.serviceInstance.create({
-      service_definition_id: SERVICES.DEFINITIONS.OPENCTI_REGISTRATION.ID,
+      service_definition_id: serviceDefinitionId,
     });
     createdServiceInstanceIds.push(serviceInstance.id);
     await TestHelper.platformConfiguration.create({
@@ -91,6 +108,30 @@ describe('newsFeedApp', () => {
     });
     return serviceInstance;
   };
+
+  const createOpenCTIPlatformForOrganization = (
+    platformId: string,
+    organizationId: OrganizationId,
+    configOverrides: Partial<PlatformConfigurationModel> = {}
+  ) =>
+    createPlatformForOrganization(
+      SERVICES.DEFINITIONS.OPENCTI_REGISTRATION.ID,
+      platformId,
+      organizationId,
+      configOverrides
+    );
+
+  const createOpenAEVPlatformForOrganization = (
+    platformId: string,
+    organizationId: OrganizationId,
+    configOverrides: Partial<PlatformConfigurationModel> = {}
+  ) =>
+    createPlatformForOrganization(
+      SERVICES.DEFINITIONS.OPENAEV_REGISTRATION.ID,
+      platformId,
+      organizationId,
+      configOverrides
+    );
 
   const subscribeToPlaybooks = async () => {
     await TestHelper.subscription.create({
@@ -138,38 +179,10 @@ describe('newsFeedApp', () => {
       });
     });
 
-    it('should throw when platformId is null', async () => {
-      await expect(
-        NewsFeedApp.consumeProvisionedNewsFeedItems({
-          platformId: null,
-          token,
-        })
-      ).rejects.toThrow(ErrorCode.InvalidPlatformId);
-    });
-
-    it('should throw when token is null', async () => {
-      await expect(
-        NewsFeedApp.consumeProvisionedNewsFeedItems({
-          platformId,
-          token: null,
-        })
-      ).rejects.toThrow(ErrorCode.InvalidPlatformId);
-    });
-
-    it('should throw when no service configuration matches platformId and token', async () => {
-      await expect(
-        NewsFeedApp.consumeProvisionedNewsFeedItems({
-          platformId: uuidv4(),
-          token: uuidv4(),
-        })
-      ).rejects.toThrow(ErrorCode.PlatformNotRegistered);
-    });
-
     it('should return empty news feed items and available types when nothing is provisioned', async () => {
-      const result = await NewsFeedApp.consumeProvisionedNewsFeedItems({
-        platformId,
-        token,
-      });
+      const result = await NewsFeedApp.consumeProvisionedNewsFeedItems(
+        await loadConsumeInput(platformId, token)
+      );
 
       expect(result.news_feed_items).toHaveLength(0);
       expect(result.available_news_feed_types).toContain(
@@ -196,10 +209,9 @@ describe('newsFeedApp', () => {
       await NewsFeedDomain.provisionNewsFeedItem(item.id, [platformId]);
       await NewsFeedDomain.provisionNewsFeedItem(item2.id, [platformId]);
 
-      const result = await NewsFeedApp.consumeProvisionedNewsFeedItems({
-        platformId,
-        token,
-      });
+      const result = await NewsFeedApp.consumeProvisionedNewsFeedItems(
+        await loadConsumeInput(platformId, token)
+      );
 
       expect(result.news_feed_items).toHaveLength(2);
       expect(result.news_feed_items.map((i) => i.title)).toEqual(
@@ -220,10 +232,9 @@ describe('newsFeedApp', () => {
       });
       await NewsFeedDomain.provisionNewsFeedItem(item.id, [platformId]);
 
-      const result = await NewsFeedApp.consumeProvisionedNewsFeedItems({
-        platformId,
-        token,
-      });
+      const result = await NewsFeedApp.consumeProvisionedNewsFeedItems(
+        await loadConsumeInput(platformId, token)
+      );
 
       expect(result.news_feed_items).toHaveLength(1);
       expect(result.news_feed_items[0]).toMatchObject({
@@ -257,10 +268,9 @@ describe('newsFeedApp', () => {
         platformId,
       ]);
 
-      const result = await NewsFeedApp.consumeProvisionedNewsFeedItems({
-        platformId,
-        token,
-      });
+      const result = await NewsFeedApp.consumeProvisionedNewsFeedItems(
+        await loadConsumeInput(platformId, token)
+      );
 
       expect(result.news_feed_items).toHaveLength(1);
       expect(result.news_feed_items[0]?.title).toBe(
@@ -274,10 +284,9 @@ describe('newsFeedApp', () => {
     });
 
     it('should return available_news_feed_types for the OpenCTI platform', async () => {
-      const result = await NewsFeedApp.consumeProvisionedNewsFeedItems({
-        platformId,
-        token,
-      });
+      const result = await NewsFeedApp.consumeProvisionedNewsFeedItems(
+        await loadConsumeInput(platformId, token)
+      );
 
       expect(result.available_news_feed_types).toEqual(
         expect.arrayContaining([
@@ -316,10 +325,37 @@ describe('newsFeedApp', () => {
           );
 
           // When
-          const result = await NewsFeedApp.consumeProvisionedNewsFeedItems({
-            platformId: gatedPlatformId,
-            token: gatedToken,
-          });
+          const result = await NewsFeedApp.consumeProvisionedNewsFeedItems(
+            await loadConsumeInput(gatedPlatformId, gatedToken)
+          );
+
+          // Then
+          expect(
+            result.available_news_feed_types.includes(NewsFeedItemType.BlogPost)
+          ).toBe(expected);
+        }
+      );
+
+      it.each`
+        description                 | version         | expected
+        ${'below the shipped gate'} | ${'3.261117.0'} | ${false}
+        ${'at the shipped gate'}    | ${'3.261118.0'} | ${true}
+      `(
+        'should list BLOG_POST with the shipped gate only when the OpenAEV version is $description ($version): $expected',
+        async ({ version, expected }) => {
+          // Given the shipped required version, left untouched
+          const gatedPlatformId = uuidv4();
+          const gatedToken = uuidv4();
+          await createOpenAEVPlatformForOrganization(
+            gatedPlatformId,
+            TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+            { token: gatedToken, platform_version: version }
+          );
+
+          // When
+          const result = await NewsFeedApp.consumeProvisionedNewsFeedItems(
+            await loadConsumeInput(gatedPlatformId, gatedToken)
+          );
 
           // Then
           expect(
@@ -353,10 +389,9 @@ describe('newsFeedApp', () => {
           );
 
           // When
-          const result = await NewsFeedApp.consumeProvisionedNewsFeedItems({
-            platformId: gatedPlatformId,
-            token: gatedToken,
-          });
+          const result = await NewsFeedApp.consumeProvisionedNewsFeedItems(
+            await loadConsumeInput(gatedPlatformId, gatedToken)
+          );
 
           // Then
           expect(
@@ -382,10 +417,9 @@ describe('newsFeedApp', () => {
         });
         await NewsFeedDomain.provisionNewsFeedItem(item.id, [platformId]);
 
-        const result = await NewsFeedApp.consumeProvisionedNewsFeedItems({
-          platformId,
-          token,
-        });
+        const result = await NewsFeedApp.consumeProvisionedNewsFeedItems(
+          await loadConsumeInput(platformId, token)
+        );
 
         expect(result.news_feed_items).toHaveLength(1);
         expect(result.news_feed_items[0]?.metadata).toEqual(
@@ -429,10 +463,9 @@ describe('newsFeedApp', () => {
       });
       await NewsFeedDomain.provisionNewsFeedItem(item.id, [platformId]);
 
-      const result = await NewsFeedApp.consumeProvisionedNewsFeedItems({
-        platformId,
-        token,
-      });
+      const result = await NewsFeedApp.consumeProvisionedNewsFeedItems(
+        await loadConsumeInput(platformId, token)
+      );
 
       expect(result.news_feed_items[0]?.metadata.map((m) => m.key)).toEqual([
         NewsFeedItemMetadataKey.UrlPath,
@@ -473,10 +506,9 @@ describe('newsFeedApp', () => {
       });
       await NewsFeedDomain.provisionNewsFeedItem(item.id, [platformId]);
 
-      const result = await NewsFeedApp.consumeProvisionedNewsFeedItems({
-        platformId,
-        token,
-      });
+      const result = await NewsFeedApp.consumeProvisionedNewsFeedItems(
+        await loadConsumeInput(platformId, token)
+      );
 
       expect(result.news_feed_items).toHaveLength(1);
       expect(result.news_feed_items[0]?.metadata).toHaveLength(
@@ -505,10 +537,9 @@ describe('newsFeedApp', () => {
         });
         await NewsFeedDomain.provisionNewsFeedItem(item.id, [platformId]);
 
-        const result = await NewsFeedApp.consumeProvisionedNewsFeedItems({
-          platformId,
-          token,
-        });
+        const result = await NewsFeedApp.consumeProvisionedNewsFeedItems(
+          await loadConsumeInput(platformId, token)
+        );
 
         const urlPath = result.news_feed_items[0]?.metadata.find(
           (m) => m.key === NewsFeedItemMetadataKey.UrlPath
@@ -1178,7 +1209,10 @@ describe('newsFeedApp', () => {
 
         // When
         await NewsFeedApp.upsertResourceNewsFeed({
-          documentBeforeUpdate: undefined,
+          documentBeforeUpdate: {
+            ...document,
+            status: DocumentStatus.InValidation,
+          },
           updatedDocument: { ...document, status: DocumentStatus.Published },
           serviceDefinitionIdentifier:
             ServiceDefinitionIdentifier.OpenctiIntegrations,
@@ -1186,42 +1220,6 @@ describe('newsFeedApp', () => {
 
         // Then
         expect(createResourceNewsFeedItemSpy).not.toHaveBeenCalled();
-        expect(updateResourceNewsFeedItemSpy).not.toHaveBeenCalled();
-      });
-
-      it('should create a news feed item when document is created as published', async () => {
-        // Given
-        vi.spyOn(NewsFeedHelper, 'getNewsFeedConfiguration').mockReturnValue({
-          newsFeedType: NewsFeedItemType.ResourceCustomDashboard,
-          platformIdentifier: PlatformIdentifier.Opencti,
-        });
-        const createResourceNewsFeedItemSpy = vi
-          .spyOn(NewsFeedApp, 'createResourceNewsFeedItem')
-          .mockResolvedValue();
-        const updateResourceNewsFeedItemSpy = vi
-          .spyOn(NewsFeedApp, 'updateResourceNewsFeedItem')
-          .mockResolvedValue();
-
-        const updatedDocument = {
-          ...document,
-          status: DocumentStatus.Published,
-        };
-
-        // When
-        await NewsFeedApp.upsertResourceNewsFeed({
-          documentBeforeUpdate: undefined,
-          updatedDocument,
-          serviceDefinitionIdentifier:
-            ServiceDefinitionIdentifier.OpenctiCustomDashboards,
-        });
-
-        // Then
-        expect(createResourceNewsFeedItemSpy).toHaveBeenCalledOnce();
-        expect(createResourceNewsFeedItemSpy).toHaveBeenCalledWith({
-          document: updatedDocument,
-          serviceDefinitionIdentifier:
-            ServiceDefinitionIdentifier.OpenctiCustomDashboards,
-        });
         expect(updateResourceNewsFeedItemSpy).not.toHaveBeenCalled();
       });
 
@@ -1264,7 +1262,7 @@ describe('newsFeedApp', () => {
         expect(createResourceNewsFeedItemSpy).not.toHaveBeenCalled();
       });
 
-      it('should do nothing when updated document stays inactive', async () => {
+      it('should do nothing when updated document stays a draft', async () => {
         // Given
         vi.spyOn(NewsFeedHelper, 'getNewsFeedConfiguration').mockReturnValue({
           newsFeedType: NewsFeedItemType.ResourceCustomDashboard,
@@ -1294,40 +1292,7 @@ describe('newsFeedApp', () => {
         expect(deleteResourceNewsFeedSpy).not.toHaveBeenCalled();
       });
 
-      it('should delete the news feed item when the document is unpublished', async () => {
-        // Given
-        vi.spyOn(NewsFeedHelper, 'getNewsFeedConfiguration').mockReturnValue({
-          newsFeedType: NewsFeedItemType.ResourceScenario,
-          platformIdentifier: PlatformIdentifier.Openaev,
-        });
-        const updateResourceNewsFeedItemSpy = vi
-          .spyOn(NewsFeedApp, 'updateResourceNewsFeedItem')
-          .mockResolvedValue();
-        const deleteResourceNewsFeedSpy = vi
-          .spyOn(NewsFeedApp, 'deleteResourceNewsFeed')
-          .mockResolvedValue();
-
-        // When
-        await NewsFeedApp.upsertResourceNewsFeed({
-          documentBeforeUpdate: {
-            ...document,
-            status: DocumentStatus.Published,
-          },
-          updatedDocument: { ...document, status: DocumentStatus.Draft },
-          serviceDefinitionIdentifier:
-            ServiceDefinitionIdentifier.OpenaevScenarios,
-        });
-
-        // Then
-        expect(deleteResourceNewsFeedSpy).toHaveBeenCalledOnce();
-        expect(deleteResourceNewsFeedSpy).toHaveBeenCalledWith({
-          documentId: document.id,
-        });
-        expect(updateResourceNewsFeedItemSpy).not.toHaveBeenCalled();
-      });
-
       it.each([
-        [undefined, DocumentStatus.InValidation],
         [DocumentStatus.Draft, DocumentStatus.InValidation],
         [DocumentStatus.InValidation, DocumentStatus.InValidation],
       ])(
@@ -1350,7 +1315,7 @@ describe('newsFeedApp', () => {
 
           // When
           await NewsFeedApp.upsertResourceNewsFeed({
-            documentBeforeUpdate: statusBeforeUpdate && {
+            documentBeforeUpdate: {
               ...document,
               status: statusBeforeUpdate,
             },
@@ -1416,7 +1381,10 @@ describe('newsFeedApp', () => {
 
         // When
         await NewsFeedApp.upsertResourceNewsFeed({
-          documentBeforeUpdate: undefined,
+          documentBeforeUpdate: {
+            ...document,
+            status: DocumentStatus.InValidation,
+          },
           updatedDocument: { ...document, status: DocumentStatus.Published },
           serviceDefinitionIdentifier:
             ServiceDefinitionIdentifier.OpenctiCustomDashboards,
@@ -1428,7 +1396,7 @@ describe('newsFeedApp', () => {
           {
             error,
             documentId: document.id,
-            source: 'creation',
+            source: 'update',
           }
         );
       });
@@ -1732,15 +1700,18 @@ describe('newsFeedApp', () => {
       slug,
       isDeleted = false,
       type = NewsFeedItemType.BlogPost,
+      platformIdentifier = PlatformIdentifier.Opencti,
     }: {
       slug?: string;
       isDeleted?: boolean;
       type?: NewsFeedItemType;
+      platformIdentifier?: PlatformIdentifier;
     } = {}) => {
       const item = await TestHelper.newsFeed.createItem({
         type,
         title: 'Blog post',
         is_deleted: isDeleted,
+        platform_identifier: platformIdentifier,
       });
       if (slug !== undefined) {
         await TestHelper.newsFeed.createMetadata({
@@ -1756,24 +1727,31 @@ describe('newsFeedApp', () => {
       await TestHelper.newsFeed.deleteItem();
     });
 
-    it('should resolve the blog destination of a blog post item', async () => {
-      // Given
-      const item = await createBlogPostItem({ slug: BLOG_POST_SLUG });
+    it.each([PlatformIdentifier.Opencti, PlatformIdentifier.Openaev])(
+      'should resolve the blog destination of a blog post item of %s, with the product of the item',
+      async (platformIdentifier) => {
+        // Given
+        const item = await createBlogPostItem({
+          slug: BLOG_POST_SLUG,
+          platformIdentifier,
+        });
 
-      // When
-      const result = await NewsFeedApp.resolveExternalRedirect({
-        newsFeedItemId: item.id,
-        query: {},
-      });
+        // When
+        const result = await NewsFeedApp.resolveExternalRedirect({
+          newsFeedItemId: item.id,
+          query: {},
+        });
 
-      // Then
-      expect(result).toEqual({
-        newsFeedItemId: item.id,
-        newsFeedItemType: NewsFeedItemType.BlogPost,
-        host: new URL(config.get<string>('blog_api.base_url')).hostname,
-        url: BLOG_POST_URL,
-      });
-    });
+        // Then
+        expect(result).toEqual({
+          newsFeedItemId: item.id,
+          newsFeedItemType: NewsFeedItemType.BlogPost,
+          platformIdentifier,
+          host: new URL(config.get<string>('blog_api.base_url')).hostname,
+          url: BLOG_POST_URL,
+        });
+      }
+    );
 
     it('should forward the utm parameters only, never platform_id nor any other parameter', async () => {
       // Given
@@ -1883,13 +1861,23 @@ describe('newsFeedApp', () => {
     const buildFeed = (...numbers: number[]): BlogFeedItem[] =>
       numbers.map((number) => buildPost(number));
 
+    const NO_CHANGE = {
+      created: 0,
+      updated: 0,
+      dropped: 0,
+      provisionedPlatforms: 0,
+    };
+
     // Saved once and restored in afterEach, so that a failing test cannot leak the override
     const originalBlogpostSupport =
       RequiredPlatformVersions.NewsFeedBlogpostSupport;
-    const setRequiredBlogpostVersion = (requiredVersion: string | null) => {
+    const setRequiredBlogpostVersion = (
+      requiredVersion: string | null,
+      openaevRequiredVersion: string | null = null
+    ) => {
       RequiredPlatformVersions.NewsFeedBlogpostSupport = {
         [PlatformIdentifier.Opencti]: requiredVersion,
-        [PlatformIdentifier.Openaev]: null,
+        [PlatformIdentifier.Openaev]: openaevRequiredVersion,
         [PlatformIdentifier.Xtmone]: null,
       };
     };
@@ -1898,8 +1886,22 @@ describe('newsFeedApp', () => {
     let provisionSpy:
       MockInstance<typeof NewsFeedDomain.provisionNewsFeedItem> | undefined;
 
-    const mockFeed = (posts: BlogFeedItem[]) =>
-      fetchBlogFeedSpy.mockResolvedValue(posts);
+    // What the blog API answers for each product: the posts, or the error that it fails with. A product that is not
+    // given has an empty feed.
+    type ProductFeed = BlogFeedItem[] | Error;
+    const mockFeeds = ({
+      opencti = [],
+      openaev = [],
+    }: Partial<Record<BlogpostProduct, ProductFeed>>) =>
+      fetchBlogFeedSpy.mockImplementation(async ({ product }) => {
+        const feed = product === FiligranProduct.Openaev ? openaev : opencti;
+        if (feed instanceof Error) {
+          throw feed;
+        }
+        return feed;
+      });
+    // The posts of OpenCTI, the feed of OpenAEV being empty
+    const mockFeed = (posts: BlogFeedItem[]) => mockFeeds({ opencti: posts });
 
     const loadBlogpostItem = async (slug: string) => {
       const [slugMetadata] = await TestHelper.newsFeed.loadMetadata({
@@ -1957,7 +1959,7 @@ describe('newsFeedApp', () => {
       await cleanupCreatedServiceInstances();
     });
 
-    it('should ask the blog API for the newest posts of the mapped product', async () => {
+    it('should ask the blog API for the newest posts of each mapped product', async () => {
       // Given
       mockFeed([]);
 
@@ -1965,9 +1967,13 @@ describe('newsFeedApp', () => {
       await NewsFeedApp.syncBlogposts();
 
       // Then
-      expect(fetchBlogFeedSpy).toHaveBeenCalledTimes(1);
+      expect(fetchBlogFeedSpy).toHaveBeenCalledTimes(2);
       expect(fetchBlogFeedSpy).toHaveBeenCalledWith({
         product: 'opencti',
+        limit: 6,
+      });
+      expect(fetchBlogFeedSpy).toHaveBeenCalledWith({
+        product: 'openaev',
         limit: 6,
       });
     });
@@ -1985,6 +1991,15 @@ describe('newsFeedApp', () => {
         updated: 0,
         dropped: 0,
         provisionedPlatforms: 0,
+        products: {
+          opencti: {
+            created: 3,
+            updated: 0,
+            dropped: 0,
+            provisionedPlatforms: 0,
+          },
+          openaev: NO_CHANGE,
+        },
       });
       expect(await TestHelper.newsFeed.loadItems()).toHaveLength(3);
       const firstPost = buildPost(1);
@@ -2253,12 +2268,30 @@ describe('newsFeedApp', () => {
         updated: 0,
         dropped: 0,
         provisionedPlatforms: 2,
+        products: {
+          opencti: {
+            created: 6,
+            updated: 0,
+            dropped: 0,
+            provisionedPlatforms: 2,
+          },
+          openaev: NO_CHANGE,
+        },
       });
       expect(secondResult).toEqual({
         created: 0,
         updated: 6,
         dropped: 0,
         provisionedPlatforms: 2,
+        products: {
+          opencti: {
+            created: 0,
+            updated: 6,
+            dropped: 0,
+            provisionedPlatforms: 2,
+          },
+          openaev: NO_CHANGE,
+        },
       });
       expect(await loadBlogpostState()).toEqual(stateAfterFirstCall);
     });
@@ -2323,6 +2356,15 @@ describe('newsFeedApp', () => {
         updated: 0,
         dropped: 0,
         provisionedPlatforms: 0,
+        products: {
+          opencti: {
+            created: 2,
+            updated: 0,
+            dropped: 0,
+            provisionedPlatforms: 0,
+          },
+          openaev: NO_CHANGE,
+        },
       });
       expect(await TestHelper.newsFeed.loadProvisioned({})).toHaveLength(0);
     });
@@ -2420,15 +2462,16 @@ describe('newsFeedApp', () => {
         platform_identifier: PlatformIdentifier.Opencti,
         title: 'A dashboard',
       });
-      const openAevBlogpostItem = await TestHelper.newsFeed.createItem({
+      const otherProductBlogpostItem = await TestHelper.newsFeed.createItem({
         type: NewsFeedItemType.BlogPost,
-        platform_identifier: PlatformIdentifier.Openaev,
-        title: 'An OpenAEV blogpost',
+        platform_identifier: PlatformIdentifier.Xtmone,
+        title: 'An XTM One blogpost',
+        key: 'xtmone-blog-post',
       });
       await TestHelper.newsFeed.createMetadata({
-        news_feed_item_id: openAevBlogpostItem.id,
+        news_feed_item_id: otherProductBlogpostItem.id,
         key: NewsFeedItemMetadataKey.BlogPostSlug,
-        value: 'openaev-blog-post',
+        value: 'xtmone-blog-post',
       });
       mockFeed(buildFeed(1));
 
@@ -2441,8 +2484,10 @@ describe('newsFeedApp', () => {
         await TestHelper.newsFeed.loadFirstItem({ id: dashboardItem.id })
       ).toMatchObject({ title: 'A dashboard', is_deleted: false });
       expect(
-        await TestHelper.newsFeed.loadFirstItem({ id: openAevBlogpostItem.id })
-      ).toMatchObject({ title: 'An OpenAEV blogpost', is_deleted: false });
+        await TestHelper.newsFeed.loadFirstItem({
+          id: otherProductBlogpostItem.id,
+        })
+      ).toMatchObject({ title: 'An XTM One blogpost', is_deleted: false });
       expect(
         await TestHelper.newsFeed.loadProvisioned({
           platform_id: openAevPlatformId,
@@ -2465,7 +2510,11 @@ describe('newsFeedApp', () => {
       const sync = NewsFeedApp.syncBlogposts();
 
       // Then
-      await expect(sync).rejects.toThrow(ErrorCode.NewsFeedBlogpostEmptyFeed);
+      await expect(sync).rejects.toThrow(ErrorCode.NewsFeedBlogpostSyncFailed);
+      await expect(sync).rejects.toHaveProperty(
+        'cause.message',
+        ErrorCode.NewsFeedBlogpostEmptyFeed
+      );
       expect(await loadBlogpostState()).toEqual(stateBefore);
     });
 
@@ -2492,6 +2541,15 @@ describe('newsFeedApp', () => {
         updated: 0,
         dropped: 0,
         provisionedPlatforms: 0,
+        products: {
+          opencti: {
+            created: 0,
+            updated: 0,
+            dropped: 0,
+            provisionedPlatforms: 0,
+          },
+          openaev: NO_CHANGE,
+        },
       });
       expect(
         await TestHelper.newsFeed.loadFirstItem({ id: droppedItem.id })
@@ -2511,7 +2569,11 @@ describe('newsFeedApp', () => {
       const sync = NewsFeedApp.syncBlogposts();
 
       // Then
-      await expect(sync).rejects.toThrow('Blog API unreachable');
+      await expect(sync).rejects.toThrow(ErrorCode.NewsFeedBlogpostSyncFailed);
+      await expect(sync).rejects.toHaveProperty(
+        'cause.message',
+        'Blog API unreachable'
+      );
       expect(await loadBlogpostState()).toEqual(stateBefore);
     });
 
@@ -2534,7 +2596,7 @@ describe('newsFeedApp', () => {
       const sync = NewsFeedApp.syncBlogposts();
 
       // Then
-      await expect(sync).rejects.toThrow();
+      await expect(sync).rejects.toThrow(ErrorCode.NewsFeedBlogpostSyncFailed);
       expect(await loadBlogpostItem('blog-post-3')).toBeUndefined();
       expect(await loadBlogpostState()).toEqual(stateBefore);
     });
@@ -2567,9 +2629,496 @@ describe('newsFeedApp', () => {
       const sync = NewsFeedApp.syncBlogposts();
 
       // Then
-      await expect(sync).rejects.toThrow('provisioning failed');
+      await expect(sync).rejects.toThrow(ErrorCode.NewsFeedBlogpostSyncFailed);
+      await expect(sync).rejects.toHaveProperty(
+        'cause.message',
+        'provisioning failed'
+      );
       expect(await loadBlogpostItem('blog-post-0')).toBeUndefined();
       expect(await loadBlogpostState()).toEqual(stateBefore);
+    });
+
+    describe('several products', () => {
+      const OPENCTI = FiligranProduct.Opencti as BlogpostProduct;
+      const OPENAEV = FiligranProduct.Openaev as BlogpostProduct;
+      const BOTH_PRODUCTS = [FiligranProduct.Opencti, FiligranProduct.Openaev];
+      const buildSharedPost = (number: number) =>
+        buildPost(number, { products: BOTH_PRODUCTS });
+      const buildOpenAevPost = (number: number) =>
+        buildPost(number, { products: [FiligranProduct.Openaev] });
+
+      const loadItemOfProduct = (product: BlogpostProduct, slug: string) =>
+        TestHelper.newsFeed.loadFirstItem({
+          platform_identifier: blogpostProductMapping[product],
+          type: NewsFeedItemType.BlogPost,
+          key: slug,
+        });
+
+      const loadKeysOfProduct = async (product: BlogpostProduct) =>
+        (
+          await TestHelper.newsFeed.loadItems({
+            platform_identifier: blogpostProductMapping[product],
+            type: NewsFeedItemType.BlogPost,
+          })
+        )
+          .map(({ key }) => key)
+          .sort();
+
+      const loadProvisionedItemIds = async (platformId: string) =>
+        (await TestHelper.newsFeed.loadProvisioned({ platform_id: platformId }))
+          .map(({ news_feed_item_id }) => news_feed_item_id)
+          .sort();
+
+      it('should give two items to a post tagged for both products, one for each of them', async () => {
+        // Given
+        const sharedPost = buildSharedPost(1);
+        mockFeeds({ opencti: [sharedPost], openaev: [sharedPost] });
+
+        // When
+        const result = await NewsFeedApp.syncBlogposts();
+
+        // Then
+        const openCtiItem = await loadItemOfProduct(OPENCTI, sharedPost.slug);
+        const openAevItem = await loadItemOfProduct(OPENAEV, sharedPost.slug);
+        expect(openCtiItem).toMatchObject({
+          platform_identifier: PlatformIdentifier.Opencti,
+          type: NewsFeedItemType.BlogPost,
+          key: 'blog-post-1',
+          title: 'Blog post 1',
+        });
+        expect(openAevItem).toMatchObject({
+          platform_identifier: PlatformIdentifier.Openaev,
+          type: NewsFeedItemType.BlogPost,
+          key: 'blog-post-1',
+          title: 'Blog post 1',
+        });
+        expect(openAevItem!.id).not.toBe(openCtiItem!.id);
+        expect(await loadMetadataValues(openAevItem!.id)).toMatchObject({
+          [NewsFeedItemMetadataKey.UrlPath]:
+            NewsFeedHelper.buildRedirectUrlPath(openAevItem!.id),
+          [NewsFeedItemMetadataKey.BlogPostSlug]: 'blog-post-1',
+        });
+        expect(result.created).toBe(2);
+      });
+
+      it.each([
+        [
+          'an OpenCTI post never reaches OpenAEV',
+          { opencti: [buildPost(1)], openaev: [] },
+          { opencti: ['blog-post-1'], openaev: [] },
+        ],
+        [
+          'an OpenAEV post never reaches OpenCTI',
+          { opencti: [], openaev: [buildOpenAevPost(2)] },
+          { opencti: [], openaev: ['blog-post-2'] },
+        ],
+        [
+          'each product only keeps the posts of its own feed',
+          { opencti: [buildPost(1)], openaev: [buildOpenAevPost(2)] },
+          { opencti: ['blog-post-1'], openaev: ['blog-post-2'] },
+        ],
+      ])(
+        'should make sure %s',
+        async (_description, feeds, expectedKeysByProduct) => {
+          // Given
+          mockFeeds(feeds);
+
+          // When
+          await NewsFeedApp.syncBlogposts();
+
+          // Then
+          expect({
+            opencti: await loadKeysOfProduct(OPENCTI),
+            openaev: await loadKeysOfProduct(OPENAEV),
+          }).toEqual(expectedKeysByProduct);
+        }
+      );
+
+      it('should answer the totals and the counts of each product', async () => {
+        // Given
+        mockFeeds({
+          opencti: buildFeed(1, 2, 3),
+          openaev: [buildOpenAevPost(4), buildOpenAevPost(5)],
+        });
+        await NewsFeedApp.syncBlogposts();
+        mockFeeds({
+          opencti: buildFeed(1, 2),
+          openaev: [
+            buildOpenAevPost(4),
+            buildOpenAevPost(5),
+            buildOpenAevPost(6),
+          ],
+        });
+
+        // When
+        const result = await NewsFeedApp.syncBlogposts();
+
+        // Then
+        expect(result).toEqual({
+          created: 1,
+          updated: 4,
+          dropped: 1,
+          provisionedPlatforms: 0,
+          products: {
+            opencti: {
+              created: 0,
+              updated: 2,
+              dropped: 1,
+              provisionedPlatforms: 0,
+            },
+            openaev: {
+              created: 1,
+              updated: 2,
+              dropped: 0,
+              provisionedPlatforms: 0,
+            },
+          },
+        });
+      });
+
+      it('should drop a post for one product only when it leaves the feed of that product', async () => {
+        // Given
+        const sharedPost = buildSharedPost(1);
+        mockFeeds({ opencti: [sharedPost], openaev: [sharedPost] });
+        await NewsFeedApp.syncBlogposts();
+        mockFeeds({ opencti: [buildPost(2)], openaev: [sharedPost] });
+
+        // When
+        const result = await NewsFeedApp.syncBlogposts();
+
+        // Then
+        expect(await loadItemOfProduct(OPENCTI, sharedPost.slug)).toMatchObject(
+          { is_deleted: true }
+        );
+        expect(await loadItemOfProduct(OPENAEV, sharedPost.slug)).toMatchObject(
+          { is_deleted: false }
+        );
+        expect(result.products).toMatchObject({
+          opencti: { created: 1, dropped: 1 },
+          openaev: { created: 0, updated: 1, dropped: 0 },
+        });
+      });
+
+      it('should provision the items of a product to its own platforms only', async () => {
+        // Given
+        setRequiredBlogpostVersion(SUPPORTED_VERSION, SUPPORTED_VERSION);
+        const openCtiPlatformId = uuidv4();
+        const openAevPlatformId = uuidv4();
+        await createOpenCTIPlatformForOrganization(
+          openCtiPlatformId,
+          TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID
+        );
+        await createOpenAEVPlatformForOrganization(
+          openAevPlatformId,
+          TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID
+        );
+        mockFeeds({
+          opencti: buildFeed(1, 2),
+          openaev: [buildOpenAevPost(3)],
+        });
+
+        // When
+        const result = await NewsFeedApp.syncBlogposts();
+
+        // Then
+        const openCtiItems = await TestHelper.newsFeed.loadItems({
+          platform_identifier: PlatformIdentifier.Opencti,
+          type: NewsFeedItemType.BlogPost,
+        });
+        const openAevItems = await TestHelper.newsFeed.loadItems({
+          platform_identifier: PlatformIdentifier.Openaev,
+          type: NewsFeedItemType.BlogPost,
+        });
+        expect(openCtiItems).toHaveLength(2);
+        expect(openAevItems).toHaveLength(1);
+        expect(await loadProvisionedItemIds(openCtiPlatformId)).toEqual(
+          openCtiItems.map(({ id }) => id).sort()
+        );
+        expect(await loadProvisionedItemIds(openAevPlatformId)).toEqual(
+          openAevItems.map(({ id }) => id).sort()
+        );
+        expect(result).toMatchObject({
+          provisionedPlatforms: 2,
+          products: {
+            opencti: { provisionedPlatforms: 1 },
+            openaev: { provisionedPlatforms: 1 },
+          },
+        });
+      });
+
+      it('should give an OpenAEV platform that consumes the news feed the items of OpenAEV only', async () => {
+        // Given
+        setRequiredBlogpostVersion(SUPPORTED_VERSION, SUPPORTED_VERSION);
+        const openAevPlatformId = uuidv4();
+        await createOpenCTIPlatformForOrganization(
+          uuidv4(),
+          TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID
+        );
+        await createOpenAEVPlatformForOrganization(
+          openAevPlatformId,
+          TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID
+        );
+        const { token } = (await TestHelper.platformConfiguration.load({
+          platform_id: openAevPlatformId,
+        }))!;
+        mockFeeds({
+          opencti: buildFeed(1),
+          openaev: [buildOpenAevPost(2)],
+        });
+        await NewsFeedApp.syncBlogposts();
+
+        // When
+        const result = await NewsFeedApp.consumeProvisionedNewsFeedItems(
+          await loadConsumeInput(openAevPlatformId, token)
+        );
+
+        // Then
+        expect(result.available_news_feed_types).toContain(
+          NewsFeedItemType.BlogPost
+        );
+        expect(result.news_feed_items).toMatchObject([
+          {
+            title: 'Blog post 2',
+            type: NewsFeedItemType.BlogPost,
+            metadata: expect.arrayContaining([
+              {
+                key: NewsFeedItemMetadataKey.UrlPath,
+                value: expect.stringMatching(
+                  /utm_source=openaev&utm_medium=newsfeed&utm_campaign=blog_posts/
+                ),
+              },
+            ]),
+          },
+        ]);
+      });
+
+      it.each([
+        [
+          'the blog API of OpenAEV fails',
+          OPENAEV,
+          OPENCTI,
+          (healthyFeed: BlogFeedItem[]) => ({
+            opencti: healthyFeed,
+            openaev: new BlogApiError(
+              BlogApiErrorCode.Unreachable,
+              'Blog API unreachable'
+            ),
+          }),
+        ],
+        [
+          'the blog API of OpenCTI fails',
+          OPENCTI,
+          OPENAEV,
+          (healthyFeed: BlogFeedItem[]) => ({
+            opencti: new BlogApiError(
+              BlogApiErrorCode.Timeout,
+              'Blog API timed out'
+            ),
+            openaev: healthyFeed,
+          }),
+        ],
+        [
+          'the feed of OpenAEV holds an invalid item',
+          OPENAEV,
+          OPENCTI,
+          (healthyFeed: BlogFeedItem[]) => ({
+            opencti: healthyFeed,
+            openaev: new BlogApiError(
+              BlogApiErrorCode.InvalidItem,
+              'Blog API item post-614 is invalid',
+              { postId: 'post-614' }
+            ),
+          }),
+        ],
+        [
+          'the feed of OpenAEV is empty while it holds active items',
+          OPENAEV,
+          OPENCTI,
+          (healthyFeed: BlogFeedItem[]) => ({
+            opencti: healthyFeed,
+            openaev: [],
+          }),
+        ],
+        [
+          'the feed of OpenCTI is empty while it holds active items',
+          OPENCTI,
+          OPENAEV,
+          (healthyFeed: BlogFeedItem[]) => ({
+            opencti: [],
+            openaev: healthyFeed,
+          }),
+        ],
+      ])(
+        'should keep the other product applied and report the failure when %s',
+        async (_description, failingProduct, healthyProduct, buildFeeds) => {
+          // Given
+          mockFeeds({
+            opencti: [buildSharedPost(1), buildSharedPost(2)],
+            openaev: [buildSharedPost(1), buildSharedPost(2)],
+          });
+          await NewsFeedApp.syncBlogposts();
+          const failingItemsBefore = await TestHelper.newsFeed.loadItems({
+            platform_identifier: blogpostProductMapping[failingProduct],
+          });
+          // The healthy product gets a new post and drops the post 2
+          mockFeeds(buildFeeds([buildSharedPost(0), buildSharedPost(1)]));
+          const logError = vi
+            .spyOn(logApp, 'error')
+            .mockImplementation(() => logApp);
+
+          // When
+          const sync = NewsFeedApp.syncBlogposts();
+
+          // Then
+          await expect(sync).rejects.toThrow(
+            ErrorCode.NewsFeedBlogpostSyncFailed
+          );
+          expect(
+            await loadItemOfProduct(healthyProduct, 'blog-post-0')
+          ).toMatchObject({ is_deleted: false });
+          expect(
+            await loadItemOfProduct(healthyProduct, 'blog-post-2')
+          ).toMatchObject({ is_deleted: true });
+          expect(
+            await TestHelper.newsFeed.loadItems({
+              platform_identifier: blogpostProductMapping[failingProduct],
+            })
+          ).toEqual(failingItemsBefore);
+          expect(logError).toHaveBeenCalledWith(
+            'Unable to synchronize the blog posts of a product',
+            expect.objectContaining({ product: failingProduct })
+          );
+        }
+      );
+
+      it('should accept an empty feed when the product only holds active items without key', async () => {
+        // Given
+        const itemWithoutKey = await TestHelper.newsFeed.createItem({
+          type: NewsFeedItemType.BlogPost,
+          platform_identifier: PlatformIdentifier.Openaev,
+          title: 'A blog post without key',
+        });
+        mockFeeds({ opencti: [], openaev: [] });
+
+        // When
+        const result = await NewsFeedApp.syncBlogposts();
+
+        // Then
+        expect(result).toMatchObject({
+          created: 0,
+          dropped: 0,
+          products: { openaev: { created: 0, dropped: 0 } },
+        });
+        expect(
+          await TestHelper.newsFeed.loadFirstItem({ id: itemWithoutKey.id })
+        ).toMatchObject({ is_deleted: false, key: null });
+      });
+
+      it('should log the post id of the invalid item with the failing product', async () => {
+        // Given
+        mockFeeds({
+          opencti: buildFeed(1),
+          openaev: new BlogApiError(
+            BlogApiErrorCode.InvalidItem,
+            'Blog API item post-614 is invalid',
+            { postId: 'post-614' }
+          ),
+        });
+        const logError = vi
+          .spyOn(logApp, 'error')
+          .mockImplementation(() => logApp);
+
+        // When
+        const sync = NewsFeedApp.syncBlogposts();
+
+        // Then
+        await expect(sync).rejects.toThrow(
+          ErrorCode.NewsFeedBlogpostSyncFailed
+        );
+        expect(logError).toHaveBeenCalledWith(
+          'Unable to synchronize the blog posts of a product',
+          expect.objectContaining({ product: 'openaev', postId: 'post-614' })
+        );
+      });
+
+      it('should throw the sync failure with the first failure as cause, and name the failing products in the logs', async () => {
+        // Given
+        const failure = new Error('blog down');
+        mockFeeds({
+          opencti: buildFeed(1),
+          openaev: failure,
+        });
+        const logError = vi
+          .spyOn(logApp, 'error')
+          .mockImplementation(() => logApp);
+        const logWarn = vi
+          .spyOn(logApp, 'warn')
+          .mockImplementation(() => logApp);
+
+        // When
+        const sync = NewsFeedApp.syncBlogposts();
+
+        // Then
+        await expect(sync).rejects.toThrow(
+          ErrorCode.NewsFeedBlogpostSyncFailed
+        );
+        await expect(sync).rejects.toHaveProperty('cause', failure);
+        expect(logError).toHaveBeenCalledWith(
+          'Unable to synchronize the blog posts of a product',
+          expect.objectContaining({ product: 'openaev', error: failure })
+        );
+        expect(logWarn).toHaveBeenCalledWith(
+          'Synchronized the blog posts of some products only',
+          expect.objectContaining({ failedProducts: ['openaev'] })
+        );
+      });
+
+      it('should roll back only the product whose provisioning fails', async () => {
+        // Given
+        setRequiredBlogpostVersion(SUPPORTED_VERSION, SUPPORTED_VERSION);
+        await createOpenCTIPlatformForOrganization(
+          uuidv4(),
+          TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID
+        );
+        await createOpenAEVPlatformForOrganization(
+          uuidv4(),
+          TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID
+        );
+        mockFeeds({
+          opencti: buildFeed(1),
+          openaev: [buildOpenAevPost(2)],
+        });
+        // The items of OpenAEV fail to be provisioned, the ones of OpenCTI are provisioned for real
+        const provisionNewsFeedItem = NewsFeedDomain.provisionNewsFeedItem;
+        provisionSpy = vi
+          .spyOn(NewsFeedDomain, 'provisionNewsFeedItem')
+          .mockImplementation(async (newsFeedItemId, platformIds) => {
+            const item = await TestHelper.newsFeed.loadFirstItem({
+              id: newsFeedItemId,
+            });
+            if (item?.platform_identifier === PlatformIdentifier.Openaev) {
+              throw new Error('provisioning failed');
+            }
+            await provisionNewsFeedItem(newsFeedItemId, platformIds);
+          });
+        vi.spyOn(logApp, 'error').mockImplementation(() => logApp);
+
+        // When
+        const sync = NewsFeedApp.syncBlogposts();
+
+        // Then
+        await expect(sync).rejects.toThrow(
+          ErrorCode.NewsFeedBlogpostSyncFailed
+        );
+        await expect(sync).rejects.toHaveProperty(
+          'cause.message',
+          'provisioning failed'
+        );
+        expect(await loadItemOfProduct(OPENCTI, 'blog-post-1')).toMatchObject({
+          is_deleted: false,
+        });
+        expect(await loadItemOfProduct(OPENAEV, 'blog-post-2')).toBeUndefined();
+      });
     });
   });
 
@@ -2593,14 +3142,17 @@ describe('newsFeedApp', () => {
     };
 
     // The blogpost number 1 is the newest one
-    const createBlogposts = async (count: number) => {
+    const createBlogposts = async (
+      count: number,
+      platformIdentifier: PlatformIdentifier = PlatformIdentifier.Opencti
+    ) => {
       const blogposts = [];
       for (let number = 1; number <= count; number++) {
         blogposts.push(
           await TestHelper.newsFeed.createItem({
             title: `Blogpost ${number}`,
             type: NewsFeedItemType.BlogPost,
-            platform_identifier: PlatformIdentifier.Opencti,
+            platform_identifier: platformIdentifier,
             creation_date: new Date(Date.now() - number * 24 * 60 * 60 * 1000),
           })
         );
@@ -2714,14 +3266,61 @@ describe('newsFeedApp', () => {
       it('should not provision anything to a platform of a product without blogposts', async () => {
         // Given
         enableBlogpostGate();
+        RequiredPlatformVersions.NewsFeedBlogpostSupport = {
+          ...RequiredPlatformVersions.NewsFeedBlogpostSupport,
+          [PlatformIdentifier.Xtmone]: BLOGPOST_REQUIRED_VERSION,
+        };
         await createBlogposts(2);
         const platformId = uuidv4();
 
         // When
         await NewsFeedApp.backfillBlogpostsForPlatform({
           platformId,
-          platformIdentifier: PlatformIdentifier.Openaev,
+          platformIdentifier: PlatformIdentifier.Xtmone,
           platformVersion: ABOVE_VERSION,
+        });
+
+        // Then
+        expect(await loadProvisionedItemIds(platformId)).toEqual([]);
+      });
+
+      it.each([
+        [PlatformIdentifier.Opencti, PlatformIdentifier.Openaev],
+        [PlatformIdentifier.Openaev, PlatformIdentifier.Opencti],
+      ])(
+        'should provision the blogposts of %s to its platform and not the ones of %s',
+        async (platformIdentifier, otherPlatformIdentifier) => {
+          // Given
+          enableBlogpostGate();
+          const ownBlogposts = await createBlogposts(2, platformIdentifier);
+          await createBlogposts(3, otherPlatformIdentifier);
+          const platformId = uuidv4();
+
+          // When
+          await NewsFeedApp.backfillBlogpostsForPlatform({
+            platformId,
+            platformIdentifier,
+            platformVersion: ABOVE_VERSION,
+          });
+
+          // Then
+          expect(await loadProvisionedItemIds(platformId)).toEqual(
+            ownBlogposts.map(({ id }) => id).sort()
+          );
+        }
+      );
+
+      it('should not provision the blogposts of OpenAEV to a platform below its required version', async () => {
+        // Given
+        enableBlogpostGate();
+        await createBlogposts(2, PlatformIdentifier.Openaev);
+        const platformId = uuidv4();
+
+        // When
+        await NewsFeedApp.backfillBlogpostsForPlatform({
+          platformId,
+          platformIdentifier: PlatformIdentifier.Openaev,
+          platformVersion: BELOW_VERSION,
         });
 
         // Then
@@ -2817,6 +3416,35 @@ describe('newsFeedApp', () => {
           );
         }
       );
+
+      it('should backfill the blogposts of OpenAEV when the platform of OpenAEV reaches its required version', async () => {
+        // Given
+        enableBlogpostGate();
+        const openAevBlogposts = await createBlogposts(
+          2,
+          PlatformIdentifier.Openaev
+        );
+        await createBlogposts(2, PlatformIdentifier.Opencti);
+        const platformId = uuidv4();
+        const serviceInstance = await createOpenAEVPlatformForOrganization(
+          platformId,
+          TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+          { platform_version: ABOVE_VERSION }
+        );
+
+        // When
+        await NewsFeedApp.backfillBlogpostsOnVersionChange({
+          serviceInstanceId: serviceInstance.id,
+          platformId,
+          previousVersion: BELOW_VERSION,
+          newVersion: ABOVE_VERSION,
+        });
+
+        // Then
+        expect(await loadProvisionedItemIds(platformId)).toEqual(
+          openAevBlogposts.map(({ id }) => id).sort()
+        );
+      });
 
       it('should use the platform identifier given by the caller instead of resolving it', async () => {
         // Given

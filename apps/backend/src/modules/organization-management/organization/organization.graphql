@@ -14,7 +14,13 @@ type Organization implements Node {
   domains: [String!]
   personal_space: Boolean!
   capabilityUser: [Capability]
-  administrator_emails: [String!] @auth(portalCapa: [BYPASS, READ_SAAS_METRICS])
+  administrator_emails: [String!]
+    @auth(portalCapa: [BYPASS, READ_SAAS_METRICS, READ_ORGANIZATION_MEMBERS])
+  """
+  Members of the organization, invited and disabled users included, pending requests excluded.
+  Nullable: a refused read answers null without failing the whole query.
+  """
+  members_count: Int @auth(portalCapa: [BYPASS, READ_ORGANIZATION_MEMBERS])
 }
 
 type OrganizationEdge {
@@ -29,14 +35,16 @@ type OrganizationConnection {
 }
 
 type Query {
-  organization(id: ID!): Organization @auth(portalCapa: [BYPASS])
+  organization(id: ID!): Organization
+    @auth(portalCapa: [BYPASS, READ_ORGANIZATION_MEMBERS])
   organizations(
     first: Int = 50
     after: ID
     orderBy: OrganizationOrdering!
     orderMode: OrderingMode!
     searchTerm: String
-  ): OrganizationConnection! @auth(portalCapa: [BYPASS])
+  ): OrganizationConnection!
+    @auth(portalCapa: [BYPASS, READ_ORGANIZATION_MEMBERS])
   userOrganizations: [Organization!]! @auth
 }
 

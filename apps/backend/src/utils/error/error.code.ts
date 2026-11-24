@@ -1,4 +1,11 @@
+export enum UnauthenticatedErrorCode {
+  Unauthenticated = 'UNAUTHENTICATED',
+}
+
 export enum ForbiddenErrorCode {
+  ForbiddenAccess = 'FORBIDDEN_ACCESS',
+  ReadOnlyApiToken = 'READ_ONLY_API_TOKEN',
+  NotAllowedWithApiToken = 'NOT_ALLOWED_WITH_API_TOKEN',
   MissingCapabilityOnOrganization = 'MISSING_CAPABILITY_ON_ORGANIZATION',
   MissingCapabilityOnService = 'MISSING_CAPABILITY_ON_SERVICE',
   ServiceInstanceNotPublic = 'SERVICE_INSTANCE_NOT_PUBLIC',
@@ -53,6 +60,7 @@ export enum ForbiddenErrorCode {
 }
 
 export enum BadRequestErrorCode {
+  InvalidApiToken = 'INVALID_API_TOKEN',
   InvalidImageUrl = 'INVALID_IMAGE_URL',
   InvalidPlatformConfiguration = 'INVALID_PLATFORM_CONFIGURATION',
   PlatformNotRegistered = 'PLATFORM_NOT_REGISTERED',
@@ -73,6 +81,7 @@ export enum BadRequestErrorCode {
   MissingAutoRegisterPlatformArgument = 'MISSING_AUTO_REGISTER_PLATFORM_ARGUMENT',
   DocumentFileMissing = 'DOCUMENT_FILE_MISSING',
   NewsFeedBlogpostEmptyFeed = 'NEWS_FEED_BLOGPOST_EMPTY_FEED',
+  NewsFeedBlogpostSyncFailed = 'NEWS_FEED_BLOGPOST_SYNC_FAILED',
   TenantIdMandatory = 'TENANT_ID_MANDATORY',
   TenantIdNotSupported = 'TENANT_ID_NOT_SUPPORTED',
   NewsFeedItemMissingTitle = 'NEWS_FEED_ITEM_MISSING_TITLE',
@@ -91,6 +100,12 @@ export enum BadRequestErrorCode {
   TooManyRequests = 'TOO_MANY_REQUESTS',
   VotableFeatureProductNotVotable = 'VOTABLE_FEATURE_PRODUCT_NOT_VOTABLE',
   InvalidDocumentStatusTransition = 'INVALID_DOCUMENT_STATUS_TRANSITION',
+  MetaDescriptionRequired = 'META_DESCRIPTION_REQUIRED',
+  MetaDescriptionTooShort = 'META_DESCRIPTION_TOO_SHORT',
+  MetaDescriptionTooLong = 'META_DESCRIPTION_TOO_LONG',
+  MetaDescriptionInvalidDash = 'META_DESCRIPTION_INVALID_DASH',
+  MetaDescriptionMatchesTitle = 'META_DESCRIPTION_MATCHES_TITLE',
+  InvalidDocumentCreationStatus = 'INVALID_DOCUMENT_CREATION_STATUS',
 }
 
 export enum UnknownErrorCode {
@@ -150,6 +165,7 @@ export enum AlreadyExistsErrorCode {
 }
 
 export enum NotFoundErrorCode {
+  NotFound = 'NOT_FOUND',
   ServiceInstanceNotFound = 'SERVICE_INSTANCE_NOT_FOUND',
   SeoServiceInstanceNotFound = 'SEO_SERVICE_INSTANCE_NOT_FOUND',
   ServiceDefinitionNotFound = 'SERVICE_DEFINITION_NOT_FOUND',
@@ -175,6 +191,7 @@ export enum NotFoundErrorCode {
 }
 
 export const ErrorCode = {
+  ...UnauthenticatedErrorCode,
   ...ForbiddenErrorCode,
   ...BadRequestErrorCode,
   ...AlreadyExistsErrorCode,

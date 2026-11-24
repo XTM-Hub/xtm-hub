@@ -1,6 +1,5 @@
 import config from 'config';
 import { toGlobalId } from 'graphql-relay/node/node.js';
-import { FileUpload } from 'graphql-upload/processRequest.mjs';
 import { v4 as uuidv4 } from 'uuid';
 import {
   afterAll,
@@ -12,7 +11,7 @@ import {
   vi,
 } from 'vitest';
 import { TestHelper } from '../../../tests/helper/test.helper';
-import { TEST_ORGANIZATIONS } from '../../../tests/tests.const';
+import { TEST_META_DESCRIPTIONS } from '../../../tests/tests.const';
 import {
   DocumentMetadataKeyCode,
   DocumentStatus,
@@ -30,17 +29,15 @@ import { MinioFile } from '../../thirdparty/minio/types';
 import { ErrorCode, UnknownErrorCode } from '../../utils/error/error.code';
 import { OPENAEV_SCENARIO_DOCUMENT_TYPE } from '../shareable-resource/openaev/scenario/scenario.model';
 import { OPENCTI_CUSTOM_DASHBOARD_DOCUMENT_TYPE } from '../shareable-resource/opencti/custom-dashboard/custom-dashboard.model';
-import {
-  INTEGRATION_SERVICE_INSTANCE_ID,
-  OPENCTI_INTEGRATION_DOCUMENT_TYPE,
-} from '../shareable-resource/opencti/integration/integration.model';
+import { OPENCTI_INTEGRATION_DOCUMENT_TYPE } from '../shareable-resource/opencti/integration/integration.model';
 import { TelemetryApp } from '../telemetry/telemetry.app';
 import { TelemetryEventType } from '../telemetry/telemetry.types';
-import { DocumentApp } from './document.app';
 import {
   type Document,
   DocumentHelper,
   ManageableServiceDefinitionIdentifier,
+  META_DESCRIPTION_MAX_LENGTH,
+  META_DESCRIPTION_MIN_LENGTH,
 } from './document.helper';
 import { DocumentUploadsHelper } from './document.uploads.helper';
 import { DocumentDomain } from './domain/document.domain';
@@ -51,18 +48,6 @@ describe('documentHelper', () => {
     mimeType: 'mimeType',
     fileName: 'csvfilename',
   };
-  const mockFileUpload: FileUpload = {
-    filename: 'test-image.png',
-    mimetype: 'image/png',
-    encoding: '7bit',
-    createReadStream: vi.fn(),
-  };
-
-  const mockUpload = {
-    file: mockFileUpload,
-    promise: Promise.resolve(mockFileUpload),
-  };
-
   beforeEach(() => {
     vi.spyOn(DocumentUploadsHelper, 'processUploads').mockResolvedValue([
       minioFileMock,
@@ -79,31 +64,9 @@ describe('documentHelper', () => {
     });
 
     it('should return the document with elastic search counters', async () => {
-      const document = await DocumentApp.createDocument({
-        input: {
-          uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
-          name: 'myCsvFeed',
-          description: 'description',
-          short_description: 'short_description',
-          slug: 'slug',
-          status: DocumentStatus.Published,
-        },
-        metadata: [
-          {
-            key: DocumentMetadataKeyCode.IntegrationType,
-            value: IntegrationType.CsvFeed,
-          },
-          {
-            key: DocumentMetadataKeyCode.FeedUrl,
-            value: 'https://example.com',
-          },
-        ],
-        serviceInstanceId: INTEGRATION_SERVICE_INSTANCE_ID,
-        sourceDocument: mockUpload,
-      });
-      expect(document).toBeDefined();
+      const document = await TestHelper.document.createWholeDocument({});
 
-      const documentId = document!.id;
+      const documentId = document.id;
 
       vi.spyOn(TelemetryApp, 'countEventsByDocumentId').mockImplementation(
         async (eventType: TelemetryEventType, eventDocumentId: string) => {
@@ -276,9 +239,7 @@ describe('documentHelper', () => {
     it.each`
       from                           | to
       ${DocumentStatus.Draft}        | ${DocumentStatus.InValidation}
-      ${DocumentStatus.Draft}        | ${DocumentStatus.Published}
       ${DocumentStatus.InValidation} | ${DocumentStatus.Published}
-      ${DocumentStatus.Published}    | ${DocumentStatus.Draft}
       ${DocumentStatus.Draft}        | ${DocumentStatus.Draft}
       ${DocumentStatus.InValidation} | ${DocumentStatus.InValidation}
       ${DocumentStatus.Published}    | ${DocumentStatus.Published}
@@ -298,7 +259,9 @@ describe('documentHelper', () => {
 
     it.each`
       from                           | to
+      ${DocumentStatus.Draft}        | ${DocumentStatus.Published}
       ${DocumentStatus.InValidation} | ${DocumentStatus.Draft}
+      ${DocumentStatus.Published}    | ${DocumentStatus.Draft}
       ${DocumentStatus.Published}    | ${DocumentStatus.InValidation}
     `(
       'should reject the transition when the status goes from $from to $to',
@@ -313,6 +276,408 @@ describe('documentHelper', () => {
         expect(transition).toThrow(ErrorCode.InvalidDocumentStatusTransition);
       }
     );
+  });
+
+  describe('meta description', () => {
+    const SUMMARY = TEST_META_DESCRIPTIONS.DEFAULT;
+    const DASHBOARD = ServiceDefinitionIdentifier.OpenctiCustomDashboards;
+    const DASHBOARD_PREFIX = 'OpenCTI Dashboard: ';
+    const NAME = 'Ransomware tracker';
+    // A custom dashboard summary whose generated meta description, prefix and final period included, has this length.
+    const summaryForLength = (length: number) =>
+      'a'.repeat(length - DASHBOARD_PREFIX.length - '.'.length);
+    const generatedOfLength = (length: number) =>
+      `${DASHBOARD_PREFIX}${summaryForLength(length)}.`;
+
+    describe('getProductName', () => {
+      it.each`
+        identifier                                             | product
+        ${ServiceDefinitionIdentifier.OpenctiCustomDashboards} | ${'OpenCTI'}
+        ${ServiceDefinitionIdentifier.OpenctiCustomViews}      | ${'OpenCTI'}
+        ${ServiceDefinitionIdentifier.OpenctiIntegrations}     | ${'OpenCTI'}
+        ${ServiceDefinitionIdentifier.OpenctiPlaybooks}        | ${'OpenCTI'}
+        ${ServiceDefinitionIdentifier.OpenaevScenarios}        | ${'OpenAEV'}
+      `(
+        'should return $product when the service definition identifier is $identifier',
+        ({ identifier, product }) => {
+          // When
+          const result = DocumentHelper.getProductName(identifier);
+
+          // Then
+          expect(result).toBe(product);
+        }
+      );
+
+      it('should throw when the service is not manageable', () => {
+        // When
+        const call = () =>
+          DocumentHelper.getProductName(
+            ServiceDefinitionIdentifier.Link as ManageableServiceDefinitionIdentifier
+          );
+
+        // Then
+        expect(call).toThrow(ErrorCode.ServiceNotManageable);
+      });
+    });
+
+    describe('buildMetaDescription', () => {
+      it.each`
+        identifier                                             | expected
+        ${ServiceDefinitionIdentifier.OpenctiCustomDashboards} | ${`OpenCTI Dashboard: ${SUMMARY}.`}
+        ${ServiceDefinitionIdentifier.OpenaevScenarios}        | ${`OpenAEV Scenario: ${SUMMARY}.`}
+        ${ServiceDefinitionIdentifier.OpenctiCustomViews}      | ${`OpenCTI Custom View: ${SUMMARY}.`}
+        ${ServiceDefinitionIdentifier.OpenctiIntegrations}     | ${`OpenCTI Integration: ${SUMMARY}.`}
+        ${ServiceDefinitionIdentifier.OpenctiPlaybooks}        | ${`OpenCTI Playbook: ${SUMMARY}.`}
+      `(
+        'should prefix the summary with the product and type of $identifier',
+        ({ identifier, expected }) => {
+          // When
+          const result = DocumentHelper.buildMetaDescription({
+            serviceDefinitionIdentifier: identifier,
+            summary: SUMMARY,
+          });
+
+          // Then
+          expect(result).toBe(expected);
+        }
+      );
+
+      it.each([
+        ['surrounded by spaces', `  ${SUMMARY}  `],
+        ['already ending with a period', `${SUMMARY}.`],
+        ['ending with a period and spaces', `${SUMMARY}. `],
+      ])(
+        'should end with a single period when the summary is %s',
+        (_label, summary) => {
+          // When
+          const result = DocumentHelper.buildMetaDescription({
+            serviceDefinitionIdentifier: DASHBOARD,
+            summary,
+          });
+
+          // Then
+          expect(result).toBe(`${DASHBOARD_PREFIX}${SUMMARY}.`);
+        }
+      );
+    });
+
+    describe('validateGeneratedMetaDescription', () => {
+      it.each([
+        [
+          'exactly at the minimum',
+          generatedOfLength(META_DESCRIPTION_MIN_LENGTH),
+        ],
+        [
+          'exactly at the limit',
+          generatedOfLength(META_DESCRIPTION_MAX_LENGTH),
+        ],
+        [
+          'holding a hyphen',
+          `${DASHBOARD_PREFIX}A ready-made ${summaryForLength(130)}.`,
+        ],
+        [
+          'holding the title after its start',
+          `${DASHBOARD_PREFIX}${NAME} ${summaryForLength(130)}.`,
+        ],
+      ])('should accept a meta description %s', (_label, metaDescription) => {
+        // When
+        const validate = () =>
+          DocumentHelper.validateGeneratedMetaDescription({
+            metaDescription,
+            title: NAME,
+          });
+
+        // Then
+        expect(validate).not.toThrow();
+      });
+
+      it.each([null, '', '   '])(
+        'should not compare against a title that is %j',
+        (title) => {
+          // When
+          const validate = () =>
+            DocumentHelper.validateGeneratedMetaDescription({
+              metaDescription: generatedOfLength(META_DESCRIPTION_MIN_LENGTH),
+              title,
+            });
+
+          // Then
+          expect(validate).not.toThrow();
+        }
+      );
+
+      it.each([
+        [
+          'one character under the minimum',
+          generatedOfLength(META_DESCRIPTION_MIN_LENGTH - 1),
+          NAME,
+          ErrorCode.MetaDescriptionTooShort,
+        ],
+        [
+          'one character over the limit',
+          generatedOfLength(META_DESCRIPTION_MAX_LENGTH + 1),
+          NAME,
+          ErrorCode.MetaDescriptionTooLong,
+        ],
+        [
+          'holding an em dash',
+          `${DASHBOARD_PREFIX}Threats — ${summaryForLength(130)}.`,
+          NAME,
+          ErrorCode.MetaDescriptionInvalidDash,
+        ],
+        [
+          'holding an en dash',
+          `${DASHBOARD_PREFIX}2024–2025 ${summaryForLength(130)}.`,
+          NAME,
+          ErrorCode.MetaDescriptionInvalidDash,
+        ],
+        [
+          'equal to the title',
+          generatedOfLength(META_DESCRIPTION_MIN_LENGTH),
+          generatedOfLength(META_DESCRIPTION_MIN_LENGTH),
+          ErrorCode.MetaDescriptionMatchesTitle,
+        ],
+        [
+          'starting with the title',
+          generatedOfLength(META_DESCRIPTION_MIN_LENGTH),
+          DASHBOARD_PREFIX,
+          ErrorCode.MetaDescriptionMatchesTitle,
+        ],
+        [
+          'starting with the title in another case, surrounded by spaces',
+          generatedOfLength(META_DESCRIPTION_MIN_LENGTH),
+          '  openCTI DASHBOARD  ',
+          ErrorCode.MetaDescriptionMatchesTitle,
+        ],
+      ])(
+        'should reject a meta description %s',
+        (_label, metaDescription, title, expectedError) => {
+          // When
+          const validate = () =>
+            DocumentHelper.validateGeneratedMetaDescription({
+              metaDescription,
+              title,
+            });
+
+          // Then
+          expect(validate).toThrow(expectedError);
+        }
+      );
+    });
+
+    describe('validateMetaDescription', () => {
+      it.each([
+        ['a regular value', SUMMARY],
+        ['surrounded by spaces', `  ${SUMMARY}  `],
+      ])(
+        'should return the trimmed summary when it is %s',
+        (_label, summary) => {
+          // When
+          const result = DocumentHelper.validateMetaDescription({
+            serviceDefinitionIdentifier: DASHBOARD,
+            summary,
+            name: NAME,
+          });
+
+          // Then
+          expect(result).toBe(SUMMARY);
+        }
+      );
+
+      it.each([
+        ['empty', '', ErrorCode.MetaDescriptionRequired],
+        ['blank', ' \t\n ', ErrorCode.MetaDescriptionRequired],
+        [
+          'too short once prefixed',
+          summaryForLength(META_DESCRIPTION_MIN_LENGTH - 1),
+          ErrorCode.MetaDescriptionTooShort,
+        ],
+        [
+          'within the bounds alone but too long once prefixed',
+          'a'.repeat(META_DESCRIPTION_MAX_LENGTH - 10),
+          ErrorCode.MetaDescriptionTooLong,
+        ],
+        [
+          'holding an em dash',
+          `${SUMMARY.slice(0, 100)} — more`,
+          ErrorCode.MetaDescriptionInvalidDash,
+        ],
+      ])(
+        'should reject the summary when it is %s',
+        (_label, summary, expectedError) => {
+          // When
+          const validate = () =>
+            DocumentHelper.validateMetaDescription({
+              serviceDefinitionIdentifier: DASHBOARD,
+              summary,
+              name: NAME,
+            });
+
+          // Then
+          expect(validate).toThrow(expectedError);
+        }
+      );
+
+      it('should reject a name the generated meta description starts with', () => {
+        // When
+        const validate = () =>
+          DocumentHelper.validateMetaDescription({
+            serviceDefinitionIdentifier: DASHBOARD,
+            summary: SUMMARY,
+            name: 'OpenCTI Dashboard',
+          });
+
+        // Then
+        expect(validate).toThrow(ErrorCode.MetaDescriptionMatchesTitle);
+      });
+    });
+
+    describe('validateUpdatedMetaDescription', () => {
+      const STORED_DOCUMENT = { meta_description: SUMMARY, name: NAME };
+
+      it.each([
+        ['omitted', undefined],
+        ['null', null],
+        ['empty', ''],
+        ['blank', '   '],
+      ])(
+        'should return undefined when the summary is %s',
+        (_label, summary) => {
+          // When
+          const result = DocumentHelper.validateUpdatedMetaDescription({
+            serviceDefinitionIdentifier: DASHBOARD,
+            summary,
+            name: undefined,
+            storedDocument: STORED_DOCUMENT,
+          });
+
+          // Then
+          expect(result).toBeUndefined();
+        }
+      );
+
+      it('should return the trimmed summary when one is given', () => {
+        // When
+        const result = DocumentHelper.validateUpdatedMetaDescription({
+          serviceDefinitionIdentifier: DASHBOARD,
+          summary: `  ${TEST_META_DESCRIPTIONS.UPDATED} `,
+          name: NAME,
+          storedDocument: STORED_DOCUMENT,
+        });
+
+        // Then
+        expect(result).toBe(TEST_META_DESCRIPTIONS.UPDATED);
+      });
+
+      it.each([
+        [
+          'too short once prefixed',
+          summaryForLength(META_DESCRIPTION_MIN_LENGTH - 1),
+          ErrorCode.MetaDescriptionTooShort,
+        ],
+        [
+          'too long once prefixed',
+          summaryForLength(META_DESCRIPTION_MAX_LENGTH + 1),
+          ErrorCode.MetaDescriptionTooLong,
+        ],
+        [
+          'holding an en dash',
+          `${SUMMARY.slice(0, 100)} – more`,
+          ErrorCode.MetaDescriptionInvalidDash,
+        ],
+      ])('should reject a summary %s', (_label, summary, expectedError) => {
+        // When
+        const validate = () =>
+          DocumentHelper.validateUpdatedMetaDescription({
+            serviceDefinitionIdentifier: DASHBOARD,
+            summary,
+            name: undefined,
+            storedDocument: STORED_DOCUMENT,
+          });
+
+        // Then
+        expect(validate).toThrow(expectedError);
+      });
+
+      it('should validate the stored summary against a new name', () => {
+        // When
+        const validate = () =>
+          DocumentHelper.validateUpdatedMetaDescription({
+            serviceDefinitionIdentifier: DASHBOARD,
+            summary: undefined,
+            name: 'OpenCTI dashboard',
+            storedDocument: STORED_DOCUMENT,
+          });
+
+        // Then
+        expect(validate).toThrow(ErrorCode.MetaDescriptionMatchesTitle);
+      });
+
+      it('should validate a new summary against the stored name', () => {
+        // When
+        const validate = () =>
+          DocumentHelper.validateUpdatedMetaDescription({
+            serviceDefinitionIdentifier: DASHBOARD,
+            summary: SUMMARY,
+            name: undefined,
+            storedDocument: { meta_description: null, name: 'OpenCTI' },
+          });
+
+        // Then
+        expect(validate).toThrow(ErrorCode.MetaDescriptionMatchesTitle);
+      });
+
+      it('should not validate a document left without summary when its name changes', () => {
+        // When
+        const result = DocumentHelper.validateUpdatedMetaDescription({
+          serviceDefinitionIdentifier: DASHBOARD,
+          summary: '',
+          name: 'OpenCTI Dashboard',
+          storedDocument: { meta_description: null, name: NAME },
+        });
+
+        // Then
+        expect(result).toBeUndefined();
+      });
+
+      it('should not validate again a summary and a name the update leaves unchanged', () => {
+        // Given a stored summary the current rules refuse
+        const storedDocument = { meta_description: 'too short', name: NAME };
+
+        // When
+        const result = DocumentHelper.validateUpdatedMetaDescription({
+          serviceDefinitionIdentifier: DASHBOARD,
+          summary: 'too short',
+          name: NAME,
+          storedDocument,
+        });
+
+        // Then
+        expect(result).toBe('too short');
+      });
+    });
+  });
+
+  describe('assertCreationStatus', () => {
+    it.each([[DocumentStatus.Draft], [DocumentStatus.InValidation]])(
+      'should accept a document created as %s',
+      (status) => {
+        // When
+        const creation = () => DocumentHelper.assertCreationStatus(status);
+
+        // Then
+        expect(creation).not.toThrow();
+      }
+    );
+
+    it('should reject a document created as published', () => {
+      // When
+      const creation = () =>
+        DocumentHelper.assertCreationStatus(DocumentStatus.Published);
+
+      // Then
+      expect(creation).toThrow(ErrorCode.InvalidDocumentCreationStatus);
+    });
   });
 
   describe('buildInValidationPayload', () => {

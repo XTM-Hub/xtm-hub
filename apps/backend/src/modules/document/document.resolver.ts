@@ -1,5 +1,4 @@
 import {
-  DocumentStatus,
   IntegrationType,
   Resolvers,
   ServiceInstance as ServiceInstanceModel,
@@ -21,9 +20,6 @@ import { OPENCTI_INTEGRATION_DOCUMENT_TYPE } from '../shareable-resource/opencti
 import { OPENCTI_PLAYBOOK_DOCUMENT_TYPE } from '../shareable-resource/opencti/playbook/playbook.model';
 import { DocumentApp } from './document.app';
 import { subscriptionByServiceInstanceLoaderKey } from './document.dataloader';
-
-const isPublished = ({ status }: { status: DocumentStatus }) =>
-  status === DocumentStatus.Published;
 
 const resolvers: Resolvers = {
   DocumentId: createRelayIdScalar<DocumentId>('Document'),
@@ -84,11 +80,7 @@ const resolvers: Resolvers = {
       }
     },
   },
-  ShareableResource: {
-    active: isPublished,
-  },
   Document: {
-    active: isPublished,
     async __resolveType(document, context) {
       const TYPE_MAPPINGS = {
         [OPENCTI_CUSTOM_DASHBOARD_DOCUMENT_TYPE]: 'CustomDashboard',

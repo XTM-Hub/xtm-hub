@@ -699,9 +699,7 @@ describe('SaasList', () => {
     const { user } = renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
 
     // When the user opens the documentation
-    await user.click(
-      screen.getByRole('button', { name: 'CSMBoard.Tour.GuidedTour' })
-    );
+    await user.click(screen.getByRole('button', { name: 'Tour.GuidedTour' }));
 
     // Then the tour shows its first step
     expect(await screen.findByText('CSMBoard.Tour.Table')).toBeVisible();
@@ -712,19 +710,17 @@ describe('SaasList', () => {
     const { user } = renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
 
     // When the user opens the documentation
-    await user.click(
-      screen.getByRole('button', { name: 'CSMBoard.Tour.GuidedTour' })
-    );
+    await user.click(screen.getByRole('button', { name: 'Tour.GuidedTour' }));
 
     // Then the previous, next and step buttons of the tour are labelled in the user's language
     expect(
-      await screen.findByRole('button', { name: 'CSMBoard.Tour.PreviousStep' })
+      await screen.findByRole('button', { name: 'Tour.PreviousStep' })
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: 'CSMBoard.Tour.NextStep' })
+      screen.getByRole('button', { name: 'Tour.NextStep' })
     ).toBeInTheDocument();
     expect(
-      screen.getAllByRole('button', { name: 'CSMBoard.Tour.GoToStep' })
+      screen.getAllByRole('button', { name: 'Tour.GoToStep' })
     ).toHaveLength(
       getSaasListTourSteps(
         ((key: string) => key) as unknown as ReturnType<typeof useTranslate>
@@ -756,15 +752,11 @@ describe('SaasList', () => {
       const { user, container } = renderWithCapabilities([
         PortalCapability.ReadSaasMetrics,
       ]);
-      await user.click(
-        screen.getByRole('button', { name: 'CSMBoard.Tour.GuidedTour' })
-      );
+      await user.click(screen.getByRole('button', { name: 'Tour.GuidedTour' }));
 
       // When the user goes to the step
       for (let step = 0; step < nextStepCount; step++) {
-        await user.click(
-          screen.getByRole('button', { name: 'CSMBoard.Tour.NextStep' })
-        );
+        await user.click(screen.getByRole('button', { name: 'Tour.NextStep' }));
       }
       await screen.findByText(stepContent);
 
@@ -789,18 +781,14 @@ describe('SaasList', () => {
     // Given the tour opened on the list of saas platforms
     mockSaasPlatforms([buildSaasPlatform()]);
     const { user } = renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
-    await user.click(
-      screen.getByRole('button', { name: 'CSMBoard.Tour.GuidedTour' })
-    );
+    await user.click(screen.getByRole('button', { name: 'Tour.GuidedTour' }));
 
     // When the user goes to the last step
     const stepCount = getSaasListTourSteps(
       ((key: string) => key) as unknown as ReturnType<typeof useTranslate>
     ).length;
     for (let step = 1; step < stepCount; step++) {
-      await user.click(
-        screen.getByRole('button', { name: 'CSMBoard.Tour.NextStep' })
-      );
+      await user.click(screen.getByRole('button', { name: 'Tour.NextStep' }));
     }
 
     // Then the tour points to the full documentation
@@ -832,9 +820,7 @@ describe('SaasList', () => {
     await hideColumn(user, SaasPlatformOrdering.CustomerName);
 
     // When the user opens the documentation
-    await user.click(
-      screen.getByRole('button', { name: 'CSMBoard.Tour.GuidedTour' })
-    );
+    await user.click(screen.getByRole('button', { name: 'Tour.GuidedTour' }));
 
     // Then the customer column is shown
     expect(getColumnHeader(SaasPlatformOrdering.CustomerName)).toBeVisible();
@@ -845,15 +831,11 @@ describe('SaasList', () => {
     mockSaasPlatforms([buildSaasPlatform()]);
     const { user } = renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
     await hideColumn(user, SaasPlatformOrdering.CustomerName);
-    await user.click(
-      screen.getByRole('button', { name: 'CSMBoard.Tour.GuidedTour' })
-    );
+    await user.click(screen.getByRole('button', { name: 'Tour.GuidedTour' }));
     expect(getColumnHeader(SaasPlatformOrdering.CustomerName)).toBeVisible();
 
     // When the user closes the tour
-    await user.click(
-      await screen.findByRole('button', { name: 'CSMBoard.Tour.Close' })
-    );
+    await user.click(await screen.findByRole('button', { name: 'Tour.Close' }));
 
     // Then the customer column is hidden again
     await waitFor(() =>

@@ -20,6 +20,12 @@ const SERVICE_LIST_FILTER_NAMES = [
   'verified',
 ] as const;
 
+// The filters a user can clear: the search text is not one of them.
+export type ServiceListFilterName = Exclude<
+  (typeof SERVICE_LIST_FILTER_NAMES)[number],
+  'search'
+>;
+
 // Every list setting must be declared here: filter names are cleared on logout, the others are kept.
 export type ServiceListStorageName =
   | (typeof SERVICE_LIST_FILTER_NAMES)[number]

@@ -1,3 +1,4 @@
+import { ApolloServer } from '@apollo/server';
 import { v4 as uuidv4 } from 'uuid';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -25,18 +26,13 @@ import {
 import { requestContext } from '../../context/request.context';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { PortalContext } from '../../model/portal-context';
+import createSchema from '../../server/graphql-schema';
 import { SaasManagerClient } from '../../thirdparty/saasmanager/client';
-import { isFeatureEnabled } from '../../utils/feature-flag.util';
 import { PlatformConfigurationDomain } from '../registration/platform-configuration/platform-configuration.domain';
 import { RegistrationDomain } from '../registration/registration.domain';
 import { ServiceInstanceDomain } from '../service/instance/service-instance.domain';
 import { ProductInformationApp } from './product-information.app';
 import productInformationResolver from './product-information.resolver';
-
-// isFeatureEnabled is mocked so that tests are deterministic and independent of the local `enabled_features` config.
-vi.mock('../../utils/feature-flag.util', () => ({
-  isFeatureEnabled: vi.fn(),
-}));
 
 describe('query.registeredSaasPlatformData', () => {
   it('should pass the service_instance_id to productInformationApp and return its data', async () => {
@@ -121,7 +117,6 @@ describe('query.registeredSaasPlatformData', () => {
       // The days asked to the SaaS Manager depend on the current date.
       vi.useFakeTimers({ toFake: ['Date'] });
       vi.setSystemTime('2026-10-27T09:00:00.000Z');
-      vi.mocked(isFeatureEnabled).mockReturnValue(true);
       requestContext.set(requestContextRegistererUserSecondOrga);
       platformId = uuidv4();
       serviceInstanceId = await RegistrationDomain.registerNewPlatform({
@@ -207,6 +202,76 @@ describe('query.registeredSaasPlatformData', () => {
       // Then
       expect(result).toBeNull();
       expect(callSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('through the schema', () => {
+    const REGISTERED_SAAS_PLATFORM_DATA_QUERY = `
+      query ($input: RegisteredSaasPlatformDataInput!) {
+        registeredSaasPlatformData(input: $input) {
+          metadata { hostname }
+        }
+      }
+    `;
+    const HOSTNAME = 'my-platform.example.com';
+
+    const server = new ApolloServer<Partial<PortalContext>>({
+      schema: createSchema(),
+    });
+
+    const executeQuery = async (contextValue: Partial<PortalContext>) => {
+      const response = await server.executeOperation(
+        {
+          query: REGISTERED_SAAS_PLATFORM_DATA_QUERY,
+          variables: {
+            input: {
+              service_instance_id: uuidv4(),
+              metrics_period: SaasPlatformMetricsPeriod.Last_90Days,
+            },
+          },
+        },
+        { contextValue }
+      );
+      if (response.body.kind !== 'single') {
+        throw new Error('Expected a single GraphQL response');
+      }
+      return response.body.singleResult;
+    };
+
+    beforeEach(() => {
+      vi.spyOn(
+        ProductInformationApp,
+        'loadRegisteredSaasPlatformData'
+      ).mockResolvedValue({ metadata: { hostname: HOSTNAME } });
+    });
+
+    it('should return the data to a user without the BYPASS or READ_SAAS_METRICS capability', async () => {
+      // Given a user who holds neither capability; the secure resolver loads its capabilities onto the user
+      const contextValue = {
+        ...contextRegistererUserSecondOrga,
+        user: { ...contextRegistererUserSecondOrga.user },
+      };
+
+      // When
+      const result = await executeQuery(contextValue);
+
+      // Then
+      expect(result.errors).toBeUndefined();
+      expect(result.data).toEqual({
+        registeredSaasPlatformData: { metadata: { hostname: HOSTNAME } },
+      });
+    });
+
+    it('should refuse an unauthenticated user', async () => {
+      // Given / When
+      const result = await executeQuery({});
+
+      // Then
+      expect(result.errors).toHaveLength(1);
+      expect(result.data).toEqual({ registeredSaasPlatformData: null });
+      expect(
+        ProductInformationApp.loadRegisteredSaasPlatformData
+      ).not.toHaveBeenCalled();
     });
   });
 });

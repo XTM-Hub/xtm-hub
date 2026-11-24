@@ -1,8 +1,6 @@
 import { PrefetchedFeatureVotingList } from '@/components/feature-voting/PrefetchedFeatureVotingList';
-import { getFeatureVotingPrivatePath } from '@/components/feature-voting/feature-voting-path';
 import type { PublicLocale } from '@/i18n/config';
 import { buildSeoPageMetadata, getBaseUrl } from '@/utils/generate-metadata';
-import { loadCurrentUser } from '@/utils/load-me-user';
 import {
   PUBLIC_CYBERSECURITY_SOLUTIONS_PATH,
   XTM_PLATFORM_ROADMAP_SLUG,
@@ -10,7 +8,7 @@ import {
 import { fetchSeoServiceInstanceBySlug } from '@/utils/seo-service-instance/utils/seo-service-instance.server.utils';
 import { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { notFound, redirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { cache } from 'react';
 
 const ROADMAP_PATH = `/${PUBLIC_CYBERSECURITY_SOLUTIONS_PATH}/${XTM_PLATFORM_ROADMAP_SLUG}`;
@@ -47,18 +45,9 @@ const Page = async ({
   const { locale } = await params;
   setRequestLocale(locale);
 
-  // Independent lookups: loadCurrentUser resolves to null on failure, so it is
-  // harmless to call it even when the service instance turns out to be missing.
-  const [serviceInstance, user] = await Promise.all([
-    getRoadmapServiceInstance(),
-    loadCurrentUser(),
-  ]);
+  const serviceInstance = await getRoadmapServiceInstance();
   if (!serviceInstance) {
     notFound();
-  }
-
-  if (user) {
-    redirect(getFeatureVotingPrivatePath(serviceInstance.id));
   }
 
   return (

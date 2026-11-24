@@ -1,20 +1,27 @@
 import { PortalContext } from '@/components/me/AppPortalContext';
+import {
+  optionalMetaDescriptionSchema,
+  withMetaDescriptionRule,
+} from '@/components/service/form/meta-description.schema';
 import { ServiceFormSheetFooter } from '@/components/service/form/SheetFooter';
 import { useServiceFormFields } from '@/components/service/form/UseServiceFormFields';
 import { AutoForm } from '@/components/ui/auto-form';
 import { FormItem } from '@/components/ui/form';
-import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
+import { useTranslate } from '@/hooks/use-translate';
 import {
   fileListCheck,
-  isDocumentPublished,
   optionalFileListCheck,
   transformToFileList,
 } from '@/utils/documents';
-import { isConnectorResource } from '@/utils/shareable-resources/shareable-resources.types';
+import {
+  isConnectorResource,
+  ShareableResourceType,
+} from '@/utils/shareable-resources/shareable-resources.types';
 import { semanticVersionRegex, validLtsVersionRegex } from '@/utils/versioning';
 import {
   DocumentImageType,
   DocumentItemFragment,
+  DocumentStatus,
   IntegrationType,
 } from '@graphql/generated';
 import { useContext, useMemo } from 'react';
@@ -23,7 +30,10 @@ import { z } from 'zod';
 const connectorSchema = z.object({
   name: z.string().min(1, 'Required'),
   slug: z.string().min(1, 'Required'),
+  status: z.enum(DocumentStatus).optional(),
   uploader_id: z.string().optional(),
+  // Connectors are only edited here, and the existing ones have no meta-description.
+  meta_description: optionalMetaDescriptionSchema,
   short_description: z.string().min(1, 'Required').max(250),
   description: z.string().min(1, 'Required'),
   product_version: z
@@ -55,7 +65,6 @@ const connectorSchema = z.object({
   use_cases: z.array(z.string()).optional(),
   solution_categories: z.array(z.string()).min(1, 'Required'),
   license_type: z.enum(['Free', 'Commercial']).optional(),
-  active: z.boolean().optional(),
   verified: z.boolean().optional(),
   manager_supported: z.boolean().optional(),
   playbook_supported: z.boolean().optional(),
@@ -78,7 +87,6 @@ export const ConnectorForm = ({
   document,
 }: ConnectorFormProps) => {
   const { me } = useContext(PortalContext);
-  const { handleCloseSheet } = useDialogContext();
 
   const onSubmit = (values: ConnectorFormValues) => {
     const finalImages = images.filter(
@@ -104,7 +112,6 @@ export const ConnectorForm = ({
     () =>
       ({
         ...document,
-        active: document ? isDocumentPublished(document.status) : undefined,
         images: transformToFileList(DocumentImageType.Image, document),
         logo: transformToFileList(DocumentImageType.Logo, document),
         use_cases: document?.use_cases?.map((label) => label.id),
@@ -119,18 +126,23 @@ export const ConnectorForm = ({
     [me, document, connector]
   );
 
+  const t = useTranslate();
   const formSchema = useMemo(
     () =>
-      connector?.manager_supported
-        ? connectorSchema
-        : connectorSchema.extend({
-            minimum_deployable_version: z.string().nullish(),
-          }),
-    [connector?.manager_supported]
+      withMetaDescriptionRule(
+        connector?.manager_supported
+          ? connectorSchema
+          : connectorSchema.extend({
+              minimum_deployable_version: z.string().nullish(),
+            }),
+        ShareableResourceType.OPENCTI_INTEGRATION,
+        t
+      ),
+    [connector?.manager_supported, t]
   );
 
   const {
-    active,
+    meta_description,
     short_description,
     slug,
     name,
@@ -156,6 +168,7 @@ export const ConnectorForm = ({
     imagesToDelete,
     logo,
     minimum_deployable_version,
+    status,
   } = useServiceFormFields({
     documentType: 'Connector',
     platform: 'OpenCTI',
@@ -170,7 +183,6 @@ export const ConnectorForm = ({
       'use_cases',
       'solution_categories',
       'license_type',
-      'active',
       'product_version',
       'container_image',
       'source_code',
@@ -203,7 +215,7 @@ export const ConnectorForm = ({
           },
           uploader_id,
           uploader_organization_id,
-          active,
+          meta_description,
           short_description,
           slug,
           name,
@@ -223,9 +235,10 @@ export const ConnectorForm = ({
           subscription_link,
           logo,
           images: imagesField,
+          status,
           document: { fieldType: () => <FormItem hidden={true} /> },
         }}>
-        <ServiceFormSheetFooter handleCloseSheet={handleCloseSheet} />
+        <ServiceFormSheetFooter status={document?.status} />
       </AutoForm>
     </>
   );

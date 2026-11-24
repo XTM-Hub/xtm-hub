@@ -39,7 +39,7 @@ export const IntegrationDeployableFilter = ({
           value: 'false',
         },
       ]}
-      initialValue={deployable}
+      value={deployable}
       noResultString={t('Utils.NotFound')}
       onValueChange={setDeployable}
       analyticsFilter={{

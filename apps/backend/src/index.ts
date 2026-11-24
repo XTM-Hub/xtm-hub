@@ -15,6 +15,12 @@ import portalConfig from './config';
 import { initCronJobs, stopCronJobs } from './crons';
 import { PortalContext } from './model/portal-context';
 import { UserLoadUserBy } from './model/user';
+import {
+  apiTokenMiddleware,
+  getApiTokenAuthentication,
+  refuseApiTokenMiddleware,
+} from './modules/api-token/api-token.auth';
+import { apiTokenRateLimiter } from './modules/api-token/api-token.plugin';
 import { DeploymentRequestDataLoader } from './modules/deployment/deployment.dataloader';
 import { DocumentDataLoader } from './modules/document/document.dataloader';
 import { FeatureVotingDataLoader } from './modules/feature-voting/feature-voting.dataloader';
@@ -253,6 +259,14 @@ if (
   fs.writeFileSync('../frontend/schema.graphql', printedSchema);
 }
 
+// CORS of the GraphQL endpoints before the API token middleware, which may answer 401 or 429 itself: a browser client
+// must be able to read those answers
+app.use(
+  [PORTAL_GRAPHQL_PATH, PORTAL_WEBSOCKET_PATH],
+  cors<cors.CorsRequest>(PORTAL_CORS_OPTIONS)
+);
+// Before the request context: a Bearer API token sets the user every later layer reads
+app.use(apiTokenMiddleware);
 app.use(requestContextMiddleware);
 
 const server = createApolloServer({
@@ -280,13 +294,13 @@ declare module 'express-session' {
 
 const middlewareExpress = expressMiddleware(server, {
   context: async ({ req, res }) => {
-    const { user } = req.session;
+    // A Bearer API token (apiTokenMiddleware) runs the request as its user, narrowed to the token's organization
+    // and scope; otherwise the session user
+    const user = getApiTokenAuthentication(req)?.user ?? req.session.user;
     // extract id, only done for request with id directly
     if (req?.body?.variables?.id) {
       req.body.variables.id = extractId(req.body.variables.id);
     }
-
-    // TODO Add build session from request authorization
 
     // user may be undefined for unauthenticated requests;
     // the @auth directive enforces authentication before any resolver accesses it.
@@ -344,20 +358,17 @@ const handler = createHandler({
 
 const graphqlRateLimiters = createGraphqlRateLimiters();
 app.use(
-  PORTAL_WEBSOCKET_PATH,
-  cors<cors.CorsRequest>(PORTAL_CORS_OPTIONS),
-  ...graphqlRateLimiters,
-  json(),
-  handler
-);
-app.use(
   PORTAL_GRAPHQL_PATH,
   sessionMiddleware,
-  cors<cors.CorsRequest>(PORTAL_CORS_OPTIONS),
   ...graphqlRateLimiters,
   json(),
+  apiTokenRateLimiter,
   middlewareExpress
 );
+// An API token authenticates PORTAL_GRAPHQL_PATH only: every route mounted from here on refuses it. CORS of both
+// GraphQL endpoints is applied before the API token middleware, so a browser client can read the refusal
+app.use(refuseApiTokenMiddleware);
+app.use(PORTAL_WEBSOCKET_PATH, ...graphqlRateLimiters, json(), handler);
 
 // endregion
 

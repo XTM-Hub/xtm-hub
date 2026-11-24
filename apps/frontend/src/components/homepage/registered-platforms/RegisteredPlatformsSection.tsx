@@ -1,6 +1,7 @@
 import { mapRegisteredPlatformsToHomepageCards } from '@/components/homepage/Homepage.utils';
 import RegisteredPlatformCard from '@/components/homepage/registered-platforms/RegisteredPlatformCard';
 import { getTranslate } from '@/hooks/get-translate';
+import { Paper } from '@filigran/design-system';
 import { RegisteredPlatformsQuery } from '@graphql/generated';
 
 interface RegisteredPlatformsSectionProps {
@@ -23,7 +24,11 @@ export const RegisteredPlatformsSection = async ({
   }
 
   return (
-    <section className="w-full xl:w-3/8 layer-1 bg-elevation-default p-4 rounded xl:max-h-96 xl:overflow-y-auto">
+    <Paper
+      as="section"
+      elevation={1}
+      padding={16}
+      className="relative w-full xl:w-3/8 xl:max-h-96 xl:overflow-y-auto">
       <div className="flex flex-col">
         <span className="title-xs text-filigran-brand-primary">
           {welcomeName
@@ -48,6 +53,6 @@ export const RegisteredPlatformsSection = async ({
           ))}
         </div>
       </div>
-    </section>
+    </Paper>
   );
 };

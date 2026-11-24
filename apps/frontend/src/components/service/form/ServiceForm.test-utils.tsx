@@ -3,29 +3,41 @@ import {
   ServiceContextProps,
 } from '@/components/service/components/ServiceContext';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
+import {
+  META_DESCRIPTION_MAX_LENGTH,
+  META_DESCRIPTION_MIN_LENGTH,
+} from '@/utils/shareable-resources/meta-description.utils';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 import { DocumentOverrides } from '@/utils/test/document-overrides';
+import {
+  mockTranslations,
+  translateWithValues,
+} from '@/utils/test/mock-translations';
 import testRender from '@/utils/test/test-render';
 import {
   DocumentImageType,
   DocumentItemFragment,
   DocumentSourceType,
+  DocumentStatus,
   FiligranProduct,
   IntegrationType,
   LicenseType,
   useSolutionCategoriesListQuery,
   useUseCasesListQuery,
+  useUsersQuery,
 } from '@graphql/generated';
 import '@testing-library/jest-dom/vitest';
 import { screen, waitFor, within } from '@testing-library/react';
+// eslint-disable-next-line no-restricted-imports -- mocks the next-intl hook that useTranslate wraps, no text is rendered with it
+import { useTranslations } from 'next-intl';
 import { ComponentType } from 'react';
-import { createMockEnvironment, MockPayloadGenerator } from 'relay-test-utils';
-import { beforeEach, expect, it, vi } from 'vitest';
+import { beforeEach, expect, it, onTestFinished, vi } from 'vitest';
 
 const SHEET_TITLE = 'Service form';
 const NAME_LABEL = 'Service.Form.NameLabel';
 const SLUG_LABEL = 'Service.Form.SlugLabel';
 const SHORT_DESCRIPTION_LABEL = 'Service.Form.ShortDescriptionLabel';
+const META_DESCRIPTION_LABEL = 'Service.Form.MetaDescriptionLabel';
 export const PRODUCT_VERSION_LABEL = 'Service.Form.ProductVersionLabel';
 const USE_CASES_LABEL = 'Service.Form.UseCasesLabel';
 const SOLUTION_CATEGORIES_LABEL = 'Service.Form.SolutionCategoriesLabel';
@@ -33,6 +45,7 @@ const DELETE_IMAGE_LABEL = 'Service.Form.DeleteImage';
 const PRODUCT_VERSION_ERROR = 'Product version must be X.Y.Z';
 export const DESCRIPTION_PLACEHOLDER = 'Service.Form.DescriptionPlaceholder';
 export const VALIDATE_LABEL = 'Utils.Validate';
+export const REQUEST_VALIDATION_LABEL = 'Service.Form.RequestValidation';
 
 export const CURRENT_USER_ID = 'current-user';
 const CURRENT_USER_EMAIL = 'current.user@filigran.io';
@@ -68,9 +81,13 @@ export const DOCUMENT_SLUG = 'ransomware-overview';
 export const DOCUMENT_SHORT_DESCRIPTION = 'Track ransomware activity';
 export const DOCUMENT_DESCRIPTION = 'Every ransomware campaign at a glance';
 export const DOCUMENT_PRODUCT_VERSION = '6.4.0';
+const DOCUMENT_META_DESCRIPTION =
+  'Ransomware campaigns tracked in OpenCTI, with the threat actors, targeted sectors, victims and indicators behind each one of them.';
 export const NEW_NAME = 'Threat Intel: APT-28 (v2)';
 export const NEW_SLUG = 'threat-intel-apt-28-v2';
 export const NEW_SHORT_DESCRIPTION = 'Follow APT-28';
+export const NEW_META_DESCRIPTION =
+  'Indicators, campaigns, malware and attack patterns of APT-28, gathered in OpenCTI to follow the activity of this threat actor.';
 const NEW_PRODUCT_VERSION = '6.5.1';
 export const NEW_DESCRIPTION = 'Everything about APT-28';
 
@@ -174,16 +191,6 @@ type ServiceFormComponent<Values> = ComponentType<{
 
 export type ServiceFormUser = ReturnType<typeof testRender>['user'];
 
-const createUsersEnvironment = () => {
-  const environment = createMockEnvironment();
-  environment.mock.queueOperationResolver((operation) =>
-    MockPayloadGenerator.generate(operation, {
-      Query: () => ({ users: { edges: [] } }),
-    })
-  );
-  return environment;
-};
-
 export const renderServiceForm = <Values,>(
   Form: ServiceFormComponent<Values>,
   document?: DocumentItemFragment
@@ -197,6 +204,10 @@ export const renderServiceForm = <Values,>(
       },
     },
   } as ReturnType<typeof useUseCasesListQuery>);
+  // The users offered as authors.
+  vi.mocked(useUsersQuery).mockReturnValue({
+    data: { users: { edges: [] } },
+  } as unknown as ReturnType<typeof useUsersQuery>);
 
   return {
     handleSubmit,
@@ -213,7 +224,6 @@ export const renderServiceForm = <Values,>(
         </SheetWithPreventingDialog>
       </AppServiceContext>,
       {
-        relayConfig: createUsersEnvironment(),
         me: {
           id: CURRENT_USER_ID,
           email: CURRENT_USER_EMAIL,
@@ -225,11 +235,15 @@ export const renderServiceForm = <Values,>(
   };
 };
 
-const typeNewNameAndShortDescription = async (user: ServiceFormUser) => {
+const typeNewNameAndDescriptions = async (user: ServiceFormUser) => {
   await user.type(screen.getByRole('textbox', { name: NAME_LABEL }), NEW_NAME);
   await user.type(
     screen.getByRole('textbox', { name: SHORT_DESCRIPTION_LABEL }),
     NEW_SHORT_DESCRIPTION
+  );
+  await user.type(
+    screen.getByRole('textbox', { name: META_DESCRIPTION_LABEL }),
+    NEW_META_DESCRIPTION
   );
 };
 
@@ -245,7 +259,7 @@ const selectOption = async (
 export const fillCustomContentCreationFields = async (
   user: ServiceFormUser
 ) => {
-  await typeNewNameAndShortDescription(user);
+  await typeNewNameAndDescriptions(user);
   await user.type(
     screen.getByRole('textbox', { name: PRODUCT_VERSION_LABEL }),
     NEW_PRODUCT_VERSION
@@ -279,10 +293,15 @@ export const givenSolutionCategories = () =>
   } as ReturnType<typeof useSolutionCategoriesListQuery>);
 
 export const fillIntegrationCreationFields = async (user: ServiceFormUser) => {
-  await typeNewNameAndShortDescription(user);
+  await typeNewNameAndDescriptions(user);
   await typeNewDescription(user);
   await selectOption(user, USE_CASES_LABEL, USE_CASE.name);
   await selectOption(user, SOLUTION_CATEGORIES_LABEL, SOLUTION_CATEGORY.name);
+};
+
+export const fillIntegrationCreationForm = async (user: ServiceFormUser) => {
+  await fillIntegrationCreationFields(user);
+  await uploadFile(user, JSON_FILE_FIELD);
 };
 
 interface ServiceFormTestTarget<Values> {
@@ -516,6 +535,283 @@ export const defineShortDescriptionLengthTests = <Values,>({
   });
 };
 
+const fillMetaDescription = async (
+  user: ServiceFormUser,
+  metaDescription: string
+) => {
+  const metaDescriptionField = screen.getByRole('textbox', {
+    name: META_DESCRIPTION_LABEL,
+  });
+  await user.clear(metaDescriptionField);
+  await user.click(metaDescriptionField);
+  await user.paste(metaDescription);
+  return metaDescriptionField;
+};
+
+/** What the published meta-description puts before the summary, per resource. */
+const META_DESCRIPTION_PREFIXES: Record<ServiceFormResource, string> = {
+  [ServiceFormResource.CUSTOM_DASHBOARD]: 'OpenCTI Dashboard: ',
+  [ServiceFormResource.CUSTOM_VIEW]: 'OpenCTI Custom View: ',
+  [ServiceFormResource.PLAYBOOK]: 'OpenCTI Playbook: ',
+  [ServiceFormResource.SCENARIO]: 'OpenAEV Scenario: ',
+  [ServiceFormResource.CSV_FEED]: 'OpenCTI Integration: ',
+  [ServiceFormResource.RSS_FEED]: 'OpenCTI Integration: ',
+  [ServiceFormResource.STREAM]: 'OpenCTI Integration: ',
+  [ServiceFormResource.TAXII_FEED]: 'OpenCTI Integration: ',
+  [ServiceFormResource.THIRD_PARTY_INTEGRATION]: 'OpenCTI Integration: ',
+  [ServiceFormResource.CONNECTOR]: 'OpenCTI Integration: ',
+};
+
+/** A summary whose meta-description, prefix and final period included, has exactly `length` characters. */
+const summaryOfGeneratedLength = (
+  resourceName: ServiceFormResource,
+  length: number
+) =>
+  'a'.repeat(
+    length - META_DESCRIPTION_PREFIXES[resourceName].length - '.'.length
+  );
+
+// Within the bounds, with room for a few more words.
+const VALID_GENERATED_LENGTH = 140;
+
+/** A name the meta-description of the resource starts with, in another case. */
+const titleStartingMetaDescription = (resourceName: ServiceFormResource) =>
+  META_DESCRIPTION_PREFIXES[resourceName].replace(/: $/, '').toUpperCase();
+
+// The translated messages: the same Error.Server keys as the backend, with the generated length for a length rule.
+const CURRENT_LENGTH_KEY = 'Service.Form.MetaDescriptionCurrentLength';
+const lengthErrorMessage = (error: string, length: number) =>
+  translateWithValues(CURRENT_LENGTH_KEY, {
+    error: `Error.Server.${error}`,
+    length,
+  });
+const INVALID_DASH_ERROR = 'Error.Server.META_DESCRIPTION_INVALID_DASH';
+const MATCHES_TITLE_ERROR = 'Error.Server.META_DESCRIPTION_MATCHES_TITLE';
+
+/**
+ * Lets the test read the values the length message is interpolated with, until it ends. Every other key stays bare,
+ * so the placeholders the form fields are found by do not change.
+ */
+const translateMessagesWithValues = () => {
+  vi.mocked(useTranslations).mockReturnValue(
+    mockTranslations({
+      translate: (key, values) =>
+        key === CURRENT_LENGTH_KEY ? translateWithValues(key, values) : key,
+    })
+  );
+  onTestFinished(() => {
+    vi.mocked(useTranslations).mockImplementation(() => mockTranslations());
+  });
+};
+
+const metaDescriptionLengthCases = (resourceName: ServiceFormResource) => [
+  {
+    context: `${META_DESCRIPTION_MIN_LENGTH - 1} characters`,
+    metaDescription: summaryOfGeneratedLength(
+      resourceName,
+      META_DESCRIPTION_MIN_LENGTH - 1
+    ),
+    message: lengthErrorMessage(
+      'META_DESCRIPTION_TOO_SHORT',
+      META_DESCRIPTION_MIN_LENGTH - 1
+    ),
+  },
+  {
+    context: `${META_DESCRIPTION_MAX_LENGTH + 1} characters`,
+    metaDescription: summaryOfGeneratedLength(
+      resourceName,
+      META_DESCRIPTION_MAX_LENGTH + 1
+    ),
+    message: lengthErrorMessage(
+      'META_DESCRIPTION_TOO_LONG',
+      META_DESCRIPTION_MAX_LENGTH + 1
+    ),
+  },
+];
+
+interface MetaDescriptionCreationTestsOptions<
+  Values,
+> extends ServiceFormTestTarget<Values> {
+  /**
+   * Fills every required field, files included: zod checks the generated meta-description once no field aborts the
+   * parsing, and a missing file does.
+   */
+  fillCreationForm: (user: ServiceFormUser) => Promise<void>;
+}
+
+export const defineMetaDescriptionCreationTests = <Values,>({
+  Form,
+  resourceName,
+  fillCreationForm,
+}: MetaDescriptionCreationTestsOptions<Values>) => {
+  it.each([
+    { context: 'without it', metaDescription: '' },
+    { context: 'with blanks only', metaDescription: '   ' },
+  ])(
+    `should reject the meta-description when the user creates a ${resourceName} $context`,
+    async ({ metaDescription }) => {
+      // Given
+      const { user } = renderServiceForm(Form);
+      await fillCreationForm(user);
+      const metaDescriptionField = await fillMetaDescription(
+        user,
+        metaDescription
+      );
+
+      // When
+      await user.click(
+        screen.getByRole('button', { name: REQUEST_VALIDATION_LABEL })
+      );
+
+      // Then: an empty field fails the native constraint, a blank one fails zod
+      await waitFor(() => expect(metaDescriptionField).toBeInvalid());
+    }
+  );
+
+  it.each(metaDescriptionLengthCases(resourceName))(
+    `should reject the meta-description when the user creates a ${resourceName} whose generated meta-description has $context`,
+    async ({ metaDescription, message }) => {
+      // Given
+      translateMessagesWithValues();
+      const { user } = renderServiceForm(Form);
+      await fillCreationForm(user);
+      await fillMetaDescription(user, metaDescription);
+
+      // When
+      await user.click(
+        screen.getByRole('button', { name: REQUEST_VALIDATION_LABEL })
+      );
+
+      // Then
+      expect(await screen.findByText(message)).toBeInTheDocument();
+    }
+  );
+
+  it(`should reject the meta-description when the user renames a new ${resourceName} like the start of it`, async () => {
+    // Given
+    const { user } = renderServiceForm(Form);
+    await fillCreationForm(user);
+    const nameField = screen.getByRole('textbox', { name: NAME_LABEL });
+    await user.clear(nameField);
+    await user.type(nameField, titleStartingMetaDescription(resourceName));
+
+    // When
+    await user.click(
+      screen.getByRole('button', { name: REQUEST_VALIDATION_LABEL })
+    );
+
+    // Then
+    expect(await screen.findByText(MATCHES_TITLE_ERROR)).toBeInTheDocument();
+  });
+};
+
+export const defineMetaDescriptionEditionTests = <Values,>({
+  Form,
+  resourceName,
+  buildEditedDocument,
+}: EditedServiceFormTestsOptions<Values>) => {
+  it(`should show the stored meta-description when the user edits the ${resourceName}`, () => {
+    // Given / When
+    renderServiceForm(Form, {
+      ...buildEditedDocument(),
+      meta_description: DOCUMENT_META_DESCRIPTION,
+    });
+
+    // Then
+    expect(
+      screen.getByRole('textbox', { name: META_DESCRIPTION_LABEL })
+    ).toHaveValue(DOCUMENT_META_DESCRIPTION);
+  });
+
+  it(`should save the ${resourceName} when the user edits one stored without a meta-description`, async () => {
+    // Given
+    const { user, handleSubmit } = renderServiceForm(Form, {
+      ...buildEditedDocument(),
+      meta_description: null,
+    });
+
+    // When
+    await user.click(screen.getByRole('button', { name: VALIDATE_LABEL }));
+
+    // Then
+    await waitFor(() => expect(handleSubmit).toHaveBeenCalledOnce());
+  });
+
+  it.each([META_DESCRIPTION_MIN_LENGTH, META_DESCRIPTION_MAX_LENGTH])(
+    `should save a meta-description whose generated text has %i characters when the user edits the ${resourceName}`,
+    async (length) => {
+      // Given
+      const { user, handleSubmit } = renderServiceForm(
+        Form,
+        buildEditedDocument()
+      );
+      const metaDescription = summaryOfGeneratedLength(resourceName, length);
+      await fillMetaDescription(user, metaDescription);
+
+      // When
+      await user.click(screen.getByRole('button', { name: VALIDATE_LABEL }));
+
+      // Then
+      await waitFor(() =>
+        expect(handleSubmit).toHaveBeenCalledWith(
+          expect.objectContaining({ meta_description: metaDescription })
+        )
+      );
+    }
+  );
+
+  it.each([
+    ...metaDescriptionLengthCases(resourceName).map((lengthCase) => ({
+      ...lengthCase,
+      context: `whose generated text has ${lengthCase.context}`,
+    })),
+    {
+      context: 'holding an em dash',
+      metaDescription: `${summaryOfGeneratedLength(resourceName, VALID_GENERATED_LENGTH)} \u2014 APT-28`,
+      message: INVALID_DASH_ERROR,
+    },
+    {
+      context: 'holding an en dash',
+      metaDescription: `${summaryOfGeneratedLength(resourceName, VALID_GENERATED_LENGTH)} \u2013 APT-28`,
+      message: INVALID_DASH_ERROR,
+    },
+  ])(
+    `should reject a meta-description $context when the user edits the ${resourceName}`,
+    async ({ metaDescription, message }) => {
+      // Given
+      translateMessagesWithValues();
+      const { user, handleSubmit } = renderServiceForm(
+        Form,
+        buildEditedDocument()
+      );
+      await fillMetaDescription(user, metaDescription);
+
+      // When
+      await user.click(screen.getByRole('button', { name: VALIDATE_LABEL }));
+
+      // Then
+      expect(await screen.findByText(message)).toBeInTheDocument();
+      expect(handleSubmit).not.toHaveBeenCalled();
+    }
+  );
+
+  it(`should reject the stored meta-description when the user edits a ${resourceName} named like the start of it`, async () => {
+    // Given
+    const { user, handleSubmit } = renderServiceForm(Form, {
+      ...buildEditedDocument(),
+      name: titleStartingMetaDescription(resourceName),
+      meta_description: DOCUMENT_META_DESCRIPTION,
+    });
+
+    // When
+    await user.click(screen.getByRole('button', { name: VALIDATE_LABEL }));
+
+    // Then
+    expect(await screen.findByText(MATCHES_TITLE_ERROR)).toBeInTheDocument();
+    expect(handleSubmit).not.toHaveBeenCalled();
+  });
+};
+
 interface RequiredFileTestOptions<
   Values,
 > extends ServiceFormTestTarget<Values> {
@@ -535,7 +831,9 @@ export const defineRequiredFileTest = <Values,>({
     await fillCreationFields(user);
 
     // When
-    await user.click(screen.getByRole('button', { name: VALIDATE_LABEL }));
+    await user.click(
+      screen.getByRole('button', { name: REQUEST_VALIDATION_LABEL })
+    );
 
     // Then
     await waitFor(() =>
@@ -576,7 +874,9 @@ export const defineServiceFormTests = <Values,>({
     await uploadFile(user, fileField);
 
     // When
-    await user.click(screen.getByRole('button', { name: VALIDATE_LABEL }));
+    await user.click(
+      screen.getByRole('button', { name: REQUEST_VALIDATION_LABEL })
+    );
 
     // Then
     await waitFor(() =>
@@ -585,10 +885,12 @@ export const defineServiceFormTests = <Values,>({
         slug: NEW_SLUG,
         uploader_id: CURRENT_USER_ID,
         short_description: NEW_SHORT_DESCRIPTION,
+        meta_description: NEW_META_DESCRIPTION,
         product_version: NEW_PRODUCT_VERSION,
         uploader_organization_id: CURRENT_ORGANIZATION.id,
         use_cases: [USE_CASE.id],
         document: [fileField.file],
+        status: DocumentStatus.InValidation,
         logo: [],
         images: [],
         ...creationValues,
@@ -597,6 +899,21 @@ export const defineServiceFormTests = <Values,>({
   });
 
   defineRequiredFileTest({ Form, resourceName, fileField, fillCreationFields });
+
+  defineMetaDescriptionCreationTests({
+    Form,
+    resourceName,
+    fillCreationForm: async (user) => {
+      await fillCreationFields(user);
+      await uploadFile(user, fileField);
+    },
+  });
+
+  defineMetaDescriptionEditionTests({
+    Form,
+    resourceName,
+    buildEditedDocument,
+  });
 
   defineReplaceFileConfirmationTest({ Form, fileField, buildEditedDocument });
 
@@ -621,7 +938,7 @@ export const defineServiceFormTests = <Values,>({
         product_version: DOCUMENT_PRODUCT_VERSION,
         uploader_organization_id: DOCUMENT_ORGANIZATION.id,
         use_cases: [USE_CASE.id],
-        active: true,
+        status: DocumentStatus.Published,
         logo: [],
         images: [DELETED_IMAGE, KEPT_IMAGE],
         ...editionValues,
@@ -673,7 +990,9 @@ export const defineIntegrationFormTests = <Values,>({
     await uploadFile(user, JSON_FILE_FIELD);
 
     // When
-    await user.click(screen.getByRole('button', { name: VALIDATE_LABEL }));
+    await user.click(
+      screen.getByRole('button', { name: REQUEST_VALIDATION_LABEL })
+    );
 
     // Then
     await waitFor(() =>
@@ -682,12 +1001,14 @@ export const defineIntegrationFormTests = <Values,>({
         slug: NEW_SLUG,
         uploader_id: CURRENT_USER_ID,
         short_description: NEW_SHORT_DESCRIPTION,
+        meta_description: NEW_META_DESCRIPTION,
         description: NEW_DESCRIPTION,
         uploader_organization_id: CURRENT_ORGANIZATION.id,
         integration_type: integrationType,
         use_cases: [USE_CASE.id],
         solution_categories: [SOLUTION_CATEGORY.id],
         document: [JSON_FILE_FIELD.file],
+        status: DocumentStatus.InValidation,
         logo: [],
         images: [],
         ...creationValues,
@@ -700,6 +1021,18 @@ export const defineIntegrationFormTests = <Values,>({
     resourceName,
     fileField: JSON_FILE_FIELD,
     fillCreationFields: fillIntegrationCreationFields,
+  });
+
+  defineMetaDescriptionCreationTests({
+    Form,
+    resourceName,
+    fillCreationForm: fillIntegrationCreationForm,
+  });
+
+  defineMetaDescriptionEditionTests({
+    Form,
+    resourceName,
+    buildEditedDocument: buildIntegrationDocument,
   });
 
   it(`should save the ${resourceName} without a new ${JSON_FILE_FIELD.name} when the user edits it`, async () => {
@@ -725,7 +1058,7 @@ export const defineIntegrationFormTests = <Values,>({
         use_cases: [USE_CASE.id],
         solution_categories: [SOLUTION_CATEGORY.id],
         license_type: LicenseType.Commercial,
-        active: true,
+        status: DocumentStatus.Published,
         logo: [],
         images: [DELETED_IMAGE, KEPT_IMAGE],
       })

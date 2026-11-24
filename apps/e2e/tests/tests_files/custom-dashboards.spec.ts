@@ -6,11 +6,16 @@ import DashboardPage, {
   TEST_3_IMAGE_FILE,
   TEST_JSON_FILE,
 } from '../model/dashboard.pageModel';
-import { waitForDrawerToClose } from '../model/common';
+import {
+  META_DESCRIPTION_SUMMARY,
+  publishResource,
+  waitForDrawerToClose,
+} from '../model/common';
 import { waitForAllImageLoaded } from '../utils/wait-for-all-image-loaded';
 
 const DASHBOARD_TEST = {
   name: 'e2e dashboard name',
+  metaDescription: META_DESCRIPTION_SUMMARY,
   shortDescription: 'This is a short description',
   version: '1.0.0',
   description: 'This is a dashboard description markdown',
@@ -44,6 +49,7 @@ test.describe('Custom dashboards', () => {
   });
 
   test('Should see the custom dashboard on public page', async ({ page }) => {
+    await publishResource(page, DASHBOARD_TEST.name);
     await page.goto('/');
 
     await dashboardPage.navigateToPublicCustomDashboard();
@@ -84,10 +90,7 @@ test.describe('Custom dashboards', () => {
       await page
         .getByPlaceholder('This is a paragraph to')
         .fill(UPDATED_DASHBOARD_TEST.description);
-      await page
-        .getByRole('checkbox', { name: 'Is the Custom Dashboard published?' })
-        .click();
-      await page.getByRole('button', { name: 'Validate' }).click();
+      await page.getByRole('button', { name: 'Save', exact: true }).click();
       await waitForDrawerToClose(page);
       await expect(
         page.getByText(`${UPDATED_DASHBOARD_TEST.name} // ${test_step}`, {
@@ -103,7 +106,7 @@ test.describe('Custom dashboards', () => {
         .getByRole('textbox', { name: 'Name', exact: true })
         .fill(`${UPDATED_DASHBOARD_TEST.name} // ${test_step}`);
       await dashboardPage.uploadImageDocument(TEST_2_IMAGE_FILE.path);
-      await page.getByRole('button', { name: 'Validate' }).click();
+      await page.getByRole('button', { name: 'Save', exact: true }).click();
       await waitForDrawerToClose(page);
       await expect(
         page.getByText(`${UPDATED_DASHBOARD_TEST.name} // ${test_step}`, {
@@ -122,7 +125,7 @@ test.describe('Custom dashboards', () => {
 
       await dashboardPage.uploadImageDocument(TEST_3_IMAGE_FILE.path);
 
-      await page.getByRole('button', { name: 'Validate' }).click();
+      await page.getByRole('button', { name: 'Save', exact: true }).click();
       await waitForDrawerToClose(page);
       await expect(
         page.getByText(`${UPDATED_DASHBOARD_TEST.name} // ${test_step}`, {
@@ -141,7 +144,7 @@ test.describe('Custom dashboards', () => {
 
       await dashboardPage.uploadImageDocument(TEST_3_IMAGE_FILE.path);
 
-      await page.getByRole('button', { name: 'Validate' }).click();
+      await page.getByRole('button', { name: 'Save', exact: true }).click();
       await waitForDrawerToClose(page);
       await expect(
         page.getByText(`${UPDATED_DASHBOARD_TEST.name} // ${test_step}`, {
@@ -160,7 +163,7 @@ test.describe('Custom dashboards', () => {
 
       await dashboardPage.uploadImageDocument(TEST_3_IMAGE_FILE.path);
 
-      await page.getByRole('button', { name: 'Validate' }).click();
+      await page.getByRole('button', { name: 'Save', exact: true }).click();
       await waitForDrawerToClose(page);
       await expect(
         page.getByText(`${UPDATED_DASHBOARD_TEST.name} // ${test_step}`, {
@@ -182,7 +185,7 @@ test.describe('Custom dashboards', () => {
 
       await dashboardPage.uploadJsonDocument(TEST_2_JSON_FILE.path);
 
-      await page.getByRole('button', { name: 'Validate' }).click();
+      await page.getByRole('button', { name: 'Save', exact: true }).click();
       await waitForDrawerToClose(page);
       await expect(
         page.getByText(`${UPDATED_DASHBOARD_TEST.name} // ${test_step}`, {

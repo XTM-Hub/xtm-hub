@@ -229,6 +229,29 @@ export const UserOrganizationDomain = {
     return Number(result?.count ?? 0);
   },
 
+  // Memberships of several organizations in one query, invited and disabled
+  // users included. Pending requests live in User_Organization_Pending, and a
+  // (user, organization) pair is unique, so COUNT(*) counts members. An
+  // organization without member has no row.
+  countUsersInOrganizations: async (
+    organizationIds: OrganizationId[]
+  ): Promise<{ organization_id: OrganizationId; count: number }[]> => {
+    if (!organizationIds.length) {
+      return [];
+    }
+    const rows = await db<UserOrganization>('User_Organization')
+      .whereIn('organization_id', organizationIds)
+      .groupBy('organization_id')
+      .select('organization_id')
+      .count<{ organization_id: OrganizationId; count: string }[]>(
+        '* as count'
+      );
+    return rows.map(({ organization_id, count }) => ({
+      organization_id,
+      count: Number(count),
+    }));
+  },
+
   // Locks the organization's membership rows for the lifetime of the current
   // transaction, so a concurrent request touching the same organization's
   // memberships (e.g. another user deletion) is serialized behind this one.

@@ -6,6 +6,7 @@ import { analyticsResource } from '@/lib/analytics/analytics.context';
 import { type AnalyticsElementId } from '@/lib/analytics/analytics.ids';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 import testRender from '@/utils/test/test-render';
+import { DocumentStatus } from '@graphql/generated';
 import type {
   ColumnDef,
   PaginationState,
@@ -148,6 +149,7 @@ const getRowAnalyticsResource = ({ original }: Row<Person>) =>
     id: original.id,
     name: original.name,
     type: ShareableResourceType.OPENCTI_CUSTOM_DASHBOARD,
+    status: DocumentStatus.Published,
   });
 
 const getRowAnalyticsId = () => ROW_ANALYTICS_ID;
@@ -750,6 +752,30 @@ describe('DataTable', () => {
         EMAIL_HEADER,
         ACTIONS_HEADER,
       ]);
+    });
+
+    it('should keep a right-pinned column in view while the table scrolls', () => {
+      // Given
+      const columns: ColumnDef<Person>[] = [
+        ...COLUMNS,
+        { id: ACTIONS_COLUMN_ID, header: ACTIONS_HEADER },
+      ];
+
+      // When
+      renderTable({
+        columns,
+        tableState: { columnPinning: { right: [ACTIONS_COLUMN_ID] } },
+      });
+
+      // Then
+      const pinned = document.querySelectorAll(
+        `[data-column-id="${ACTIONS_COLUMN_ID}"]`
+      );
+      expect(pinned.length).toBe(PEOPLE.length + 1);
+      pinned.forEach((cell) => expect(cell).toHaveClass('sticky', 'right-0'));
+      document
+        .querySelectorAll(`[data-column-id="${NAME_COLUMN_ID}"]`)
+        .forEach((cell) => expect(cell).not.toHaveClass('sticky'));
     });
 
     it.each([

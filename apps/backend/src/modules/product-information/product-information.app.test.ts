@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   CAPABILITY_READ_SAAS_METRICS,
+  requestContextAdminSecondOrga,
   requestContextRegistererUserSecondOrga,
   requestContextSimpleUserFiligran2,
   SERVICES,
@@ -9,7 +10,6 @@ import {
 } from '../../../tests/tests.const';
 import {
   CommercialModel,
-  FeatureFlag,
   OrderingMode,
   PlatformContract,
   PlatformIdentifier,
@@ -21,16 +21,10 @@ import { requestContext } from '../../context/request.context';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { CAPABILITY_BYPASS } from '../../portal.const';
 import { SaasManagerClient } from '../../thirdparty/saasmanager/client';
-import { isFeatureEnabled } from '../../utils/feature-flag.util';
 import { PlatformConfigurationDomain } from '../registration/platform-configuration/platform-configuration.domain';
 import { RegistrationDomain } from '../registration/registration.domain';
 import { ServiceInstanceDomain } from '../service/instance/service-instance.domain';
 import { ProductInformationApp } from './product-information.app';
-
-// isFeatureEnabled is mocked so that tests are deterministic and independent of the local `enabled_features` config.
-vi.mock('../../utils/feature-flag.util', () => ({
-  isFeatureEnabled: vi.fn(),
-}));
 
 describe('product information app', () => {
   describe('loadRegisteredSaasPlatformData', () => {
@@ -59,7 +53,6 @@ describe('product information app', () => {
       // The days asked to the SaaS Manager depend on the current date.
       vi.useFakeTimers({ toFake: ['Date'] });
       vi.setSystemTime('2026-10-27T09:00:00.000Z');
-      vi.mocked(isFeatureEnabled).mockReturnValue(true);
       requestContext.set(requestContextRegistererUserSecondOrga);
       platformId = uuidv4();
       serviceInstanceId = await RegistrationDomain.registerNewPlatform({
@@ -300,23 +293,6 @@ describe('product information app', () => {
       expect(data).toBeNull();
     });
 
-    it('should return null without asking the SaaS Manager when the SaaS metrics feature flag is disabled', async () => {
-      // Given
-      const callSpy = mockSaasManagerFullMetadata();
-      vi.mocked(isFeatureEnabled).mockReturnValue(false);
-
-      // When
-      const data = await ProductInformationApp.loadRegisteredSaasPlatformData(
-        serviceInstanceId,
-        metricsPeriod
-      );
-
-      // Then
-      expect(data).toBeNull();
-      expect(callSpy).not.toHaveBeenCalled();
-      expect(isFeatureEnabled).toHaveBeenCalledWith(FeatureFlag.SaasMetrics);
-    });
-
     it('should return null without asking the SaaS Manager when the service instance is unknown', async () => {
       // Given
       const callSpy = mockSaasManagerFullMetadata();
@@ -346,6 +322,55 @@ describe('product information app', () => {
       // Then
       expect(data).toBeNull();
       expect(callSpy).not.toHaveBeenCalled();
+    });
+
+    it.each([['ADMINISTRATE_ORGANIZATION'], ['MANAGE_PLATFORM_REGISTRATION']])(
+      "should return null without asking the SaaS Manager for a platform of another organization, even with %s in the user's own organization",
+      async (organizationCapability) => {
+        // Given
+        const callSpy = mockSaasManagerFullMetadata();
+        requestContext.set({
+          ...requestContextSimpleUserFiligran2,
+          user: {
+            ...requestContextSimpleUserFiligran2.user,
+            selected_org_capabilities: [organizationCapability],
+          },
+        });
+
+        // When
+        const data = await ProductInformationApp.loadRegisteredSaasPlatformData(
+          serviceInstanceId,
+          metricsPeriod
+        );
+
+        // Then
+        expect(data).toBeNull();
+        expect(callSpy).not.toHaveBeenCalled();
+      }
+    );
+
+    it('should return the data to an administrator of the owning organization without any portal capability', async () => {
+      // Given
+      const callSpy = mockSaasManagerFullMetadata();
+      requestContext.set(requestContextAdminSecondOrga);
+
+      // When
+      const data = await ProductInformationApp.loadRegisteredSaasPlatformData(
+        serviceInstanceId,
+        metricsPeriod
+      );
+
+      // Then
+      expect(data).toEqual({
+        metadata: fullMetadata,
+        metrics: null,
+        storage: null,
+        sla: null,
+      });
+      expect(callSpy).toHaveBeenCalledExactlyOnceWith({
+        platform_id: platformId,
+        include_metrics: 95,
+      });
     });
 
     it.each([
@@ -531,10 +556,6 @@ describe('product information app', () => {
       orderMode: OrderingMode.Asc,
     };
 
-    beforeEach(() => {
-      vi.mocked(isFeatureEnabled).mockReturnValue(true);
-    });
-
     const mockSaasManagerPage = (count = 1) =>
       vi.spyOn(SaasManagerClient, 'callInstanceListApi').mockResolvedValue({
         ok: true,
@@ -628,21 +649,6 @@ describe('product information app', () => {
 
       // Then
       expect(platformPage).toBeNull();
-    });
-
-    it('should return null without asking the SaaS Manager when the SaaS metrics feature flag is disabled', async () => {
-      // Given
-      const callSpy = mockSaasManagerPage();
-      vi.mocked(isFeatureEnabled).mockReturnValue(false);
-
-      // When
-      const platformPage =
-        await ProductInformationApp.loadSaasManagerPlatforms(args);
-
-      // Then
-      expect(platformPage).toBeNull();
-      expect(callSpy).not.toHaveBeenCalled();
-      expect(isFeatureEnabled).toHaveBeenCalledWith(FeatureFlag.SaasMetrics);
     });
   });
 });

@@ -2,12 +2,13 @@
 
 By default, the first user who logs in to the XTM Hub becomes the **Organization Administrator**.
 
-This user is automatically granted the **ADMINISTRATE ORGANIZATION** capability, which provides full access to all organization features and permissions.
-
+This user is automatically granted the **ADMINISTRATE ORGANIZATION** capability, which provides full access to all
+organization features and permissions.
 
 ## Manage Team Members
 
-As an Organization Administrator, you can manage users, their access rights, and their membership within the organization.
+As an Organization Administrator, you can manage users, their access rights, and their membership within the
+organization.
 
 ### Access the Users Page
 
@@ -47,7 +48,7 @@ Administrators can update capabilities for any team member. They cannot update t
   Allows the user to invite new members to the organization.
 
 - **MANAGE PLATFORM REGISTRATION**  
-  Allows the user to connect and disconnect platforms.
+  Allows the user to connect and disconnect products. Allows the user to see metrics of the connected product.
 
 - **MANAGE SUBSCRIPTION**  
   Allows the user to manage and subscribe the organization to services.
@@ -70,10 +71,10 @@ They may still have access to their personal space or other organizations.
 
 ![Remove user illustration](../assets/images/remove-user.png)
 
-
 ## Approve New Team Members
 
-When a new user logs in to the XTM Hub and their email domain matches the administrator’s domain, they are marked as a **Pending User**.
+When a new user logs in to the XTM Hub and their email domain matches the administrator’s domain, they are marked as a
+**Pending User**.
 
 The Organization Administrator must approve their request before they can join the organization.
 
@@ -88,9 +89,11 @@ The Organization Administrator must approve their request before they can join t
 
 You can click user by user if you're not sure, but don't hesitate to click them all!
 
-Every Monday at 9:00 AM (Europe/Paris), a summary email is sent to Organization Administrators (users with the **ADMINISTRATE ORGANIZATION** capability) when there is at least one pending user request.
+Every Monday at 9:00 AM (Europe/Paris), a summary email is sent to Organization Administrators (users with the
+**ADMINISTRATE ORGANIZATION** capability) when there is at least one pending user request.
 
-This digest lists all users who are still pending at the time of sending. If requests remain pending, they continue to appear in the Monday digest until approved or denied.
+This digest lists all users who are still pending at the time of sending. If requests remain pending, they continue to
+appear in the Monday digest until approved or denied.
 
 ![Pending user digest email illustration](../assets/images/pending-user-digest-email.png)
 
@@ -116,4 +119,5 @@ However, it is fully configurable and intended to give you flexibility for perso
 To go on this personal space, click on your organization top left and select the one you want to work on.
 ![Personal space illustration](../assets/images/switch-to-personal-space.png)
 
-If you need to move your personal space's subscriptions to a different account, see [Transfer Your Personal Space](transfer-personal-space.md).
+If you need to move your personal space's subscriptions to a different account,
+see [Transfer Your Personal Space](transfer-personal-space.md).
