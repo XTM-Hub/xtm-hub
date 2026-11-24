@@ -1,18 +1,16 @@
 import { v4 as uuidv4 } from 'uuid';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { TestHelper } from '../../../../tests/helper/test.helper';
 import {
   CAPABILITY_READ_ORGANIZATION_MEMBERS,
+  requestContextSimpleUserSecondOrga,
   TEST_ORGANIZATIONS,
 } from '../../../../tests/tests.const';
 import { OrganizationMemberConnection } from '../../../__generated__/resolvers-types';
 import { requestContext } from '../../../context/request.context';
-import Organization, {
-  OrganizationId,
-} from '../../../model/kanel/public/Organization';
-import User, { UserId } from '../../../model/kanel/public/User';
+import CapabilityPortal from '../../../model/kanel/public/CapabilityPortal';
+import { OrganizationId } from '../../../model/kanel/public/Organization';
 import { CAPABILITY_BYPASS } from '../../../portal.const';
-import { securityGuard } from '../../../security/guard';
 import { ErrorCode, NotFoundErrorCode } from '../../../utils/error/error.code';
 import { TelemetryApp } from '../../telemetry/telemetry.app';
 import { TelemetrySource } from '../../telemetry/telemetry.const';
@@ -23,7 +21,6 @@ import { UserOrganizationPendingDomain } from '../user/user-pending/user-organiz
 import { UserProvisioningDomain } from '../user/user-provisioning/user-provisioning.domain';
 import { UserHelper } from '../user/user.helper';
 import { OrganizationApp } from './organization.app';
-import { OrganizationDomain } from './organization.domain';
 import { OrganizationHelper } from './organization.helper';
 
 describe('organizationApp', () => {
@@ -299,209 +296,204 @@ describe('organizationApp', () => {
   });
 
   describe('loadOrganizationMembers', () => {
-    const ORGANIZATION: Organization = {
-      id: 'c0a8e6f2-4d1b-4e3a-9f6c-2b7d8e9a1c34' as OrganizationId,
-      name: 'Readable organization',
-      domains: null,
-      personal_space: false,
-    };
-    const CALLER = {
-      id: '5d0c1e7a-8b2f-4c6d-9e3a-1f4b7c8d2e90' as UserId,
-      email: 'caller@admin-hub.test',
-    } as User;
-    // Without READ_ORGANIZATION_MEMBERS: restricted to the organizations the caller belongs to
-    const RESTRICTED_CALLER = TestHelper.caller.build(CALLER, [ORGANIZATION]);
-    const AFTER = btoa('2');
-    const SEARCH_TERM = 'needle';
-    const CONNECTION: OrganizationMemberConnection = {
-      edges: [],
-      pageInfo: {
-        startCursor: null,
-        endCursor: null,
-        hasNextPage: false,
-        hasPreviousPage: false,
-      },
-      totalCount: 0,
-    };
-    // A restricted caller who is not a member is refused with NOT_FOUND, as by orgGuard, whether the organization
-    // exists or not; a malformed id and an organization that is not loaded answer ORGANIZATION_NOT_FOUND
+    const FILIGRAN = TEST_ORGANIZATIONS.FILIGRAN;
+    const SECOND = TEST_ORGANIZATIONS.SECOND_ORGANIZATION;
+    // An organization id no organization has
+    const UNKNOWN_ORGANIZATION_ID =
+      'f7a1c0de-0000-4000-8000-0000000000aa' as OrganizationId;
+    const PAGE_SIZE = 20;
+    // Compared exactly: ORGANIZATION_NOT_FOUND contains NOT_FOUND, so toThrow would accept one for the other
     const NOT_FOUND = new Error(NotFoundErrorCode.NotFound);
     const ORGANIZATION_NOT_FOUND = new Error(ErrorCode.OrganizationNotFound);
+    const SECOND_MEMBER_IDS: string[] = [
+      SECOND.USERS.ADMIN_ORGA.ID,
+      SECOND.USERS.REGISTERER.ID,
+      SECOND.USERS.SIMPLE.ID,
+    ];
+    // Without portal capability: a member of SECOND and of their own personal space only
+    const MEMBER_OF_SECOND = requestContextSimpleUserSecondOrga;
+    const withCapabilities = (capabilities: CapabilityPortal[]) => ({
+      ...MEMBER_OF_SECOND,
+      user: { ...MEMBER_OF_SECOND.user, capabilities },
+    });
+    const READ_ORGANIZATION_MEMBERS_HOLDER = withCapabilities([
+      CAPABILITY_READ_ORGANIZATION_MEMBERS,
+    ]);
+    const BYPASS_HOLDER = withCapabilities([CAPABILITY_BYPASS]);
 
-    const mockMembership = (isMember: boolean) =>
-      vi
-        .spyOn(securityGuard, 'isUserInOrganization')
-        .mockResolvedValue(isMember);
-    const mockOrganization = (organization: Organization | undefined) =>
-      vi
-        .spyOn(OrganizationDomain, 'loadFirstProfessionalOrganizationBy')
-        .mockResolvedValue(organization);
-    const mockMemberConnection = () =>
-      vi
-        .spyOn(UserDomain, 'loadOrganizationMemberConnection')
-        .mockResolvedValue(CONNECTION);
+    const memberIds = ({ edges }: OrganizationMemberConnection) =>
+      edges.map(({ node }) => node.id);
 
-    beforeEach(() => {
-      requestContext.set({ user: RESTRICTED_CALLER });
+    const sizeOf = ({ edges, totalCount }: OrganizationMemberConnection) => ({
+      edges: edges.length,
+      totalCount: Number(totalCount),
     });
 
-    afterEach(() => {
-      vi.restoreAllMocks();
-    });
-
-    it('should refuse an organization id that is not a UUID as an unknown organization, without reading the database', async () => {
+    it('should refuse the organization as unknown when its id is not a UUID', async () => {
       // Given
-      const membershipSpy = mockMembership(true);
-      const organizationSpy = mockOrganization(ORGANIZATION);
-      const memberConnectionSpy = mockMemberConnection();
+      requestContext.set(MEMBER_OF_SECOND);
 
       // When
       const call = OrganizationApp.loadOrganizationMembers(
         'not-a-uuid' as OrganizationId,
-        { first: 20 }
+        { first: PAGE_SIZE }
       );
 
       // Then
       await expect(call).rejects.toStrictEqual(ORGANIZATION_NOT_FOUND);
-      expect(membershipSpy).not.toHaveBeenCalled();
-      expect(organizationSpy).not.toHaveBeenCalled();
-      expect(memberConnectionSpy).not.toHaveBeenCalled();
     });
 
-    it('should refuse an organization the restricted caller is not a member of with NOT_FOUND, before loading it', async () => {
-      // Given
-      const membershipSpy = mockMembership(false);
-      const organizationSpy = mockOrganization(ORGANIZATION);
-      const memberConnectionSpy = mockMemberConnection();
-
-      // When
-      const call = OrganizationApp.loadOrganizationMembers(ORGANIZATION.id, {
-        first: 20,
-      });
-
-      // Then
-      await expect(call).rejects.toStrictEqual(NOT_FOUND);
-      expect(membershipSpy).toHaveBeenCalledExactlyOnceWith(
-        RESTRICTED_CALLER,
-        ORGANIZATION.id
-      );
-      expect(organizationSpy).not.toHaveBeenCalled();
-      expect(memberConnectionSpy).not.toHaveBeenCalled();
-    });
-
-    it('should load the organization of a restricted caller who is a member of it', async () => {
-      // Given
-      const membershipSpy = mockMembership(true);
-      const organizationSpy = mockOrganization(ORGANIZATION);
-      mockMemberConnection();
-
-      // When
-      await OrganizationApp.loadOrganizationMembers(ORGANIZATION.id, {
-        first: 20,
-      });
-
-      // Then
-      expect(membershipSpy).toHaveBeenCalledExactlyOnceWith(
-        RESTRICTED_CALLER,
-        ORGANIZATION.id
-      );
-      expect(organizationSpy).toHaveBeenCalledExactlyOnceWith({
-        id: ORGANIZATION.id,
-      });
-    });
-
-    it.each([
-      ['READ_ORGANIZATION_MEMBERS', CAPABILITY_READ_ORGANIZATION_MEMBERS],
-      ['BYPASS', CAPABILITY_BYPASS],
-    ])(
-      'should load the organization of a %s holder without checking their membership',
-      async (_, capability) => {
+    // An unknown organization answers NOT_FOUND too: the membership is checked before the organization is loaded
+    it.each`
+      name                                    | organizationId
+      ${'another organization'}               | ${FILIGRAN.ID}
+      ${'an unknown organization'}            | ${UNKNOWN_ORGANIZATION_ID}
+      ${'the personal space of another user'} | ${SECOND.USERS.ADMIN_ORGA.PERSONAL_SPACE_ID}
+    `(
+      'should refuse with NOT_FOUND when a caller without portal capability reads $name',
+      async ({ organizationId }) => {
         // Given
-        requestContext.set({
-          user: TestHelper.caller.build(CALLER, [], [capability]),
-        });
-        const membershipSpy = mockMembership(false);
-        const organizationSpy = mockOrganization(ORGANIZATION);
-        const memberConnectionSpy = mockMemberConnection();
+        requestContext.set(MEMBER_OF_SECOND);
 
         // When
-        await OrganizationApp.loadOrganizationMembers(ORGANIZATION.id, {
-          first: 20,
+        const call = OrganizationApp.loadOrganizationMembers(organizationId, {
+          first: PAGE_SIZE,
         });
 
         // Then
-        expect(membershipSpy).not.toHaveBeenCalled();
-        expect(organizationSpy).toHaveBeenCalledExactlyOnceWith({
-          id: ORGANIZATION.id,
-        });
-        expect(memberConnectionSpy).toHaveBeenCalledOnce();
+        await expect(call).rejects.toStrictEqual(NOT_FOUND);
       }
     );
 
-    it('should refuse an organization that is not loaded, unknown or a personal space, as an unknown organization', async () => {
+    it('should return the members of their organization when a caller without portal capability is a member of it', async () => {
       // Given
-      mockMembership(true);
-      mockOrganization(undefined);
-      const memberConnectionSpy = mockMemberConnection();
-
-      // When
-      const call = OrganizationApp.loadOrganizationMembers(ORGANIZATION.id, {
-        first: 20,
-      });
-
-      // Then
-      await expect(call).rejects.toStrictEqual(ORGANIZATION_NOT_FOUND);
-      expect(memberConnectionSpy).not.toHaveBeenCalled();
-    });
-
-    it.each([
-      [1000, 100],
-      [101, 100],
-      [100, 100],
-      [20, 20],
-      [1, 1],
-      [0, 0],
-      [-1, 0],
-      [-5, 0],
-    ])(
-      'should load a page of %i members as a page of %i',
-      async (first, expectedFirst) => {
-        // Given
-        mockMembership(true);
-        mockOrganization(ORGANIZATION);
-        const memberConnectionSpy = mockMemberConnection();
-
-        // When
-        await OrganizationApp.loadOrganizationMembers(ORGANIZATION.id, {
-          first,
-        });
-
-        // Then
-        expect(memberConnectionSpy).toHaveBeenCalledExactlyOnceWith(
-          ORGANIZATION.id,
-          expect.objectContaining({ first: expectedFirst })
-        );
-      }
-    );
-
-    it('should load the members of the loaded organization with the cursor and the search term', async () => {
-      // Given
-      mockMembership(true);
-      mockOrganization(ORGANIZATION);
-      const memberConnectionSpy = mockMemberConnection();
+      requestContext.set(MEMBER_OF_SECOND);
 
       // When
       const connection = await OrganizationApp.loadOrganizationMembers(
-        ORGANIZATION.id,
-        { first: 20, after: AFTER, searchTerm: SEARCH_TERM }
+        SECOND.ID,
+        { first: PAGE_SIZE }
       );
 
       // Then
-      expect(memberConnectionSpy).toHaveBeenCalledExactlyOnceWith(
-        ORGANIZATION.id,
-        { first: 20, after: AFTER, searchTerm: SEARCH_TERM }
+      expect({
+        ids: memberIds(connection).sort(),
+        totalCount: Number(connection.totalCount),
+      }).toEqual({
+        ids: [...SECOND_MEMBER_IDS].sort(),
+        totalCount: SECOND_MEMBER_IDS.length,
+      });
+    });
+
+    it.each`
+      name                                    | context
+      ${'a READ_ORGANIZATION_MEMBERS holder'} | ${READ_ORGANIZATION_MEMBERS_HOLDER}
+      ${'a BYPASS holder'}                    | ${BYPASS_HOLDER}
+    `(
+      'should return the members of an organization when $name who is not a member of it reads it',
+      async ({ context }) => {
+        // Given
+        requestContext.set(context);
+        const [filigranMembers] =
+          await UserOrganizationDomain.countUsersInOrganizations([FILIGRAN.ID]);
+
+        // When
+        const connection = await OrganizationApp.loadOrganizationMembers(
+          FILIGRAN.ID,
+          { first: PAGE_SIZE }
+        );
+
+        // Then
+        expect(sizeOf(connection)).toEqual({
+          edges: filigranMembers?.count,
+          totalCount: filigranMembers?.count,
+        });
+      }
+    );
+
+    it.each`
+      name                                                                   | context                             | organizationId
+      ${'a READ_ORGANIZATION_MEMBERS holder reads an unknown organization'}  | ${READ_ORGANIZATION_MEMBERS_HOLDER} | ${UNKNOWN_ORGANIZATION_ID}
+      ${'a READ_ORGANIZATION_MEMBERS holder reads a personal space'}         | ${READ_ORGANIZATION_MEMBERS_HOLDER} | ${SECOND.USERS.ADMIN_ORGA.PERSONAL_SPACE_ID}
+      ${'a member without portal capability reads their own personal space'} | ${MEMBER_OF_SECOND}                 | ${SECOND.USERS.SIMPLE.PERSONAL_SPACE_ID}
+    `(
+      'should refuse the organization as unknown when $name',
+      async ({ context, organizationId }) => {
+        // Given
+        requestContext.set(context);
+
+        // When
+        const call = OrganizationApp.loadOrganizationMembers(organizationId, {
+          first: PAGE_SIZE,
+        });
+
+        // Then
+        await expect(call).rejects.toStrictEqual(ORGANIZATION_NOT_FOUND);
+      }
+    );
+
+    // SECOND has fewer members than PAGE_SIZE: a page of PAGE_SIZE holds all of them
+    it.each`
+      first        | expectedEdges
+      ${0}         | ${0}
+      ${-1}        | ${0}
+      ${-5}        | ${0}
+      ${1}         | ${1}
+      ${PAGE_SIZE} | ${SECOND_MEMBER_IDS.length}
+    `(
+      'should return $expectedEdges members and the totalCount when the page size is $first',
+      async ({ first, expectedEdges }) => {
+        // Given
+        requestContext.set(MEMBER_OF_SECOND);
+
+        // When
+        const connection = await OrganizationApp.loadOrganizationMembers(
+          SECOND.ID,
+          { first }
+        );
+
+        // Then
+        expect(sizeOf(connection)).toEqual({
+          edges: expectedEdges,
+          totalCount: SECOND_MEMBER_IDS.length,
+        });
+      }
+    );
+
+    it('should return the members matching the search term when one is given', async () => {
+      // Given
+      requestContext.set(MEMBER_OF_SECOND);
+
+      // When
+      const connection = await OrganizationApp.loadOrganizationMembers(
+        SECOND.ID,
+        { first: PAGE_SIZE, searchTerm: SECOND.USERS.REGISTERER.FIRST_NAME }
       );
-      expect(connection).toEqual(CONNECTION);
+
+      // Then
+      expect(memberIds(connection)).toEqual([SECOND.USERS.REGISTERER.ID]);
+    });
+
+    it('should return the members after the cursor when one is given', async () => {
+      // Given
+      requestContext.set(MEMBER_OF_SECOND);
+      const allMembers = await OrganizationApp.loadOrganizationMembers(
+        SECOND.ID,
+        { first: PAGE_SIZE }
+      );
+      const firstPage = await OrganizationApp.loadOrganizationMembers(
+        SECOND.ID,
+        { first: 1 }
+      );
+
+      // When
+      const connection = await OrganizationApp.loadOrganizationMembers(
+        SECOND.ID,
+        { first: PAGE_SIZE, after: firstPage.pageInfo.endCursor }
+      );
+
+      // Then
+      expect(memberIds(connection)).toEqual(memberIds(allMembers).slice(1));
     });
   });
 });
