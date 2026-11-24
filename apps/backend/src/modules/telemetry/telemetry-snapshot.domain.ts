@@ -31,6 +31,10 @@ const RegistrationIdentifierToProduct = new Map<string, TelemetryTargetProduct>(
       ServiceDefinitionIdentifier.OpenaevRegistration,
       TelemetryTargetProduct.OPEN_AEV,
     ],
+    [
+      ServiceDefinitionIdentifier.XtmoneRegistration,
+      TelemetryTargetProduct.XTM_ONE,
+    ],
   ]
 );
 
@@ -123,6 +127,7 @@ export const GAUGES: GaugeDefinition[] = [
         .whereIn('sd.identifier', [
           ServiceDefinitionIdentifier.OpenctiRegistration,
           ServiceDefinitionIdentifier.OpenaevRegistration,
+          ServiceDefinitionIdentifier.XtmoneRegistration,
         ])
         .select('sd.identifier', 'pc.platform_contract', 'pc.status')
         .groupBy('sd.identifier', 'pc.platform_contract', 'pc.status')
