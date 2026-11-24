@@ -1921,7 +1921,6 @@ export type OrganizationInput = {
 /** A member of an organization, whatever their status: invited, expired, waiting for validation or disabled. */
 export type OrganizationMember = {
   __typename?: 'OrganizationMember';
-  /** Their capabilities in this organization, empty when they hold none. */
   capabilities: Array<OrganizationCapability>;
   email: Scalars['String']['output'];
   first_name?: Maybe<Scalars['String']['output']>;

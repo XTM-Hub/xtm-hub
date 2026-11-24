@@ -42,7 +42,6 @@ type OrganizationMember {
   email: String!
   first_name: String
   last_name: String
-  "Their capabilities in this organization, empty when they hold none."
   capabilities: [OrganizationCapability!]!
 }
 
@@ -75,7 +74,7 @@ type Query {
   """
   organizationMembers(
     organizationId: OrganizationId!
-    "The page size, brought down to 100. 0 returns no member but the totalCount; a negative one is refused with INVALID_PAGE_SIZE."
+    "The page size, brought between 0 and 100. 0 returns no member but the totalCount."
     first: Int!
     after: ID
     "Matches the email, the first name or the last name, ignoring case."

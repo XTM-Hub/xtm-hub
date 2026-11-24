@@ -459,6 +459,8 @@ describe('organizationApp', () => {
       [20, 20],
       [1, 1],
       [0, 0],
+      [-1, 0],
+      [-5, 0],
     ])(
       'should load a page of %i members as a page of %i',
       async (first, expectedFirst) => {
@@ -477,27 +479,6 @@ describe('organizationApp', () => {
           ORGANIZATION.id,
           expect.objectContaining({ first: expectedFirst })
         );
-      }
-    );
-
-    it.each([-1, -5])(
-      'should refuse a page of %i members before reading the database',
-      async (first) => {
-        // Given
-        const membershipSpy = mockMembership(true);
-        const organizationSpy = mockOrganization(ORGANIZATION);
-        const memberConnectionSpy = mockMemberConnection();
-
-        // When
-        const call = OrganizationApp.loadOrganizationMembers(ORGANIZATION.id, {
-          first,
-        });
-
-        // Then
-        await expect(call).rejects.toThrow(ErrorCode.InvalidPageSize);
-        expect(membershipSpy).not.toHaveBeenCalled();
-        expect(organizationSpy).not.toHaveBeenCalled();
-        expect(memberConnectionSpy).not.toHaveBeenCalled();
       }
     );
 
