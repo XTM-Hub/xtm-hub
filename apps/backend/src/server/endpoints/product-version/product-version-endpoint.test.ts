@@ -17,10 +17,7 @@ vi.mock('../../../utils/app-logger.util', () => ({
 }));
 
 import { PlatformIdentifier } from '../../../__generated__/resolvers-types';
-import {
-  buildProductVersionRateLimiterOptions,
-  ProductVersionEndpoint,
-} from './product-version-endpoint';
+import { ProductVersionEndpoint } from './product-version-endpoint';
 
 const buildResponse = () => ({
   status: vi.fn().mockReturnThis(),
@@ -82,36 +79,5 @@ describe('listRegisteredVersions', () => {
     );
 
     expect(res.status).toHaveBeenCalledWith(500);
-  });
-});
-
-const buildRateLimitRequest = (ip: string) =>
-  ({
-    ip,
-    path: '/opencti/versions',
-  }) as unknown as Request;
-
-const buildRateLimitResponse = () => {
-  const json = vi.fn();
-  const status = vi.fn().mockReturnValue({ json });
-  return {
-    res: { status } as unknown as Response,
-    status,
-    json,
-  };
-};
-
-describe('product version rate limit handler', () => {
-  it('returns a body matching the error contract when the limit is reached', () => {
-    const handler = buildProductVersionRateLimiterOptions().handler!;
-    const { res, status, json } = buildRateLimitResponse();
-
-    handler(buildRateLimitRequest('10.0.1.1'), res, vi.fn(), {} as never);
-
-    expect(status).toHaveBeenCalledWith(429);
-    expect(json).toHaveBeenCalledWith({
-      code: 429,
-      message: 'Too many requests, please try again later',
-    });
   });
 });

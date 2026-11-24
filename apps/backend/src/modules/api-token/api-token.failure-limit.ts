@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
-import { ipRateLimitKey } from '../../server/endpoints/shared/ip-rate-limit.util';
 import { logApp } from '../../utils/app-logger.util';
+import { clientIpKey } from '../../utils/rate-limit.util';
 import { API_TOKEN_ERRORS, sendApiTokenError } from './api-token.errors';
 
 const SECOND_MS = 1000;
@@ -112,7 +112,7 @@ export const admitApiTokenLookup = (
   res: Response
 ): LookupReservation | undefined => {
   const now = Date.now();
-  const result = failures.reserve(ipRateLimitKey(req), now);
+  const result = failures.reserve(clientIpKey(req), now);
   if (result.admitted) {
     return result.reservation;
   }
@@ -140,7 +140,7 @@ export const releaseApiTokenLookup = (reservation: LookupReservation): void => {
 
 // A refused token that was looked up without a reservation, because it had been accepted recently
 export const countRefusedApiToken = (req: Request): void => {
-  failures.count(ipRateLimitKey(req));
+  failures.count(clientIpKey(req));
 };
 
 const RECENT_API_TOKEN_TTL_MS = 60 * 60 * SECOND_MS;
