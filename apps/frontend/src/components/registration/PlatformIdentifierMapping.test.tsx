@@ -39,7 +39,8 @@ describe('translateServiceDefinitionIdentifier', () => {
 
   it('should not label the service as OpenAEV when the identifier is not mapped', () => {
     // Given a service definition identifier that has no platform mapping
-    const unmappedIdentifier = ServiceDefinitionIdentifier.XtmPlatformRoadmap;
+    // (a plain link is not a platform registration, so it is never mapped)
+    const unmappedIdentifier = ServiceDefinitionIdentifier.Link;
 
     // When translating it
     const label = translateServiceDefinitionIdentifier(unmappedIdentifier);
