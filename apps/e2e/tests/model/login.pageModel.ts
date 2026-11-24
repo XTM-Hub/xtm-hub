@@ -49,6 +49,15 @@ export default class LoginPage {
     await this.page.waitForURL('/en');
   }
 
+  // Signs the current user out and another one in. The embedded registration pages have no user menu, so it goes
+  // through the application first.
+  async switchUser(userEmail: string) {
+    await this.page.goto('/app');
+    await this.logout();
+    await this.navigateToAndLogin(userEmail);
+    await this.page.waitForURL('/app');
+  }
+
   async assertCurrentPage() {
     await this.page.waitForURL('**/login**', { timeout: 3000 });
   }

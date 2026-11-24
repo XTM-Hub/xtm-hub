@@ -10,6 +10,9 @@ import baseConfig from './playwright.config';
  *
  * Usage: yarn test:e2e:demo tests/tests_files/demo/<spec>.spec.ts
  */
+// Demo specs skip themselves without it, so a regular run never replays their captions.
+process.env.E2E_DEMO = '1';
+
 export default defineConfig({
   ...baseConfig,
   retries: 0,

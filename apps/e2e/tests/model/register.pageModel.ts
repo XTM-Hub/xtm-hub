@@ -30,6 +30,20 @@ export default class RegisterPage {
     await this.page.goto(`/redirect/${redirectionKey}?${params.toString()}`);
   }
 
+  // Picks one of the user's organizations by name, ignoring its personal-space twin.
+  async selectOrganization(organizationName: string) {
+    const escapedName = organizationName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    await this.page
+      .getByRole('radio', {
+        name: new RegExp(`^${escapedName} \\(Organizational workspace\\)`),
+      })
+      .check();
+  }
+
+  async connect() {
+    await this.page.getByRole('button', { name: 'Connect' }).click();
+  }
+
   async navigateToAndRegister(redirectionKey: string) {
     await this.navigateTo(redirectionKey, OPENCTI_PLATFORM_URL);
     await this.page.getByRole('button', { name: 'Connect' }).click();

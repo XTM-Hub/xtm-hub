@@ -25,3 +25,9 @@ export const THALES_USER = {
 
   EMAIL: 'user@thales.com',
 };
+
+// Seeded in backend/tests/seeds/03-insert-new-organization.js: its registerer holds MANAGE_PLATFORM_REGISTRATION.
+export const SECOND_ORGA = {
+  NAME: 'SECOND ORGA',
+  REGISTERER_EMAIL: 'user.registerer@second-orga.com',
+};
