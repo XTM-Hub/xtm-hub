@@ -264,19 +264,21 @@ describe('increment share number document rate limit', () => {
   const OTHER_VISITOR_IP = '198.51.100.20';
 
   // The request context middleware sets `ip` from the Express request on every route, GraphQL transports included.
+  // `set` rather than `run`: the test setup's `run` restores the previous context when its callback returns, which is
+  // before the first `await` of the resolver.
   const shareFrom = (
     ip: string,
     documentId: DocumentId,
     graphqlContext = contextSimpleUserFiligran2
-  ) =>
-    requestContext.run({ user: contextSimpleUserFiligran2.user, ip }, () =>
-      documentResolver.Mutation!.incrementShareNumberDocument!(
-        {},
-        { documentId },
-        graphqlContext,
-        GRAPHQL_RESOLVE_INFO
-      )
+  ) => {
+    requestContext.set({ user: contextSimpleUserFiligran2.user, ip });
+    return documentResolver.Mutation!.incrementShareNumberDocument!(
+      {},
+      { documentId },
+      graphqlContext,
+      GRAPHQL_RESOLVE_INFO
     );
+  };
 
   const givenSharableDocument = () => {
     const documentId = uuidv4() as DocumentId;
