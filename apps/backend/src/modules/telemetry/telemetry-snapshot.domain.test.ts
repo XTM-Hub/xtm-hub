@@ -1,10 +1,9 @@
-import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { TestHelper } from '../../../tests/helper/test.helper';
 import { SERVICES } from '../../../tests/tests.const';
 import {
   PlatformConfigurationStatus,
   PlatformContract,
-  ServiceDefinitionIdentifier,
 } from '../../__generated__/resolvers-types';
 import { ServiceDefinitionId } from '../../model/kanel/public/ServiceDefinition';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
@@ -21,21 +20,8 @@ const collectRegisteredPlatforms = async () => {
   return gauge.collect();
 };
 
-const loadXtmOneDefinitionId = async (): Promise<ServiceDefinitionId> => {
-  const definition = await TestHelper.serviceDefinition.load({
-    identifier: ServiceDefinitionIdentifier.XtmoneRegistration,
-  });
-  if (!definition) {
-    throw new Error(
-      `ServiceDefinition ${ServiceDefinitionIdentifier.XtmoneRegistration} is missing from the test database (is it migrated?)`
-    );
-  }
-  return definition.id;
-};
-
 describe('xtm_hub_registered_platforms_by_identity gauge', () => {
   const createdServiceInstanceIds: ServiceInstanceId[] = [];
-  let xtmOneDefinitionId: ServiceDefinitionId;
 
   const registerPlatform = async (
     serviceDefinitionId: ServiceDefinitionId,
@@ -55,10 +41,6 @@ describe('xtm_hub_registered_platforms_by_identity gauge', () => {
     });
   };
 
-  beforeAll(async () => {
-    xtmOneDefinitionId = await loadXtmOneDefinitionId();
-  });
-
   beforeEach(async () => {
     await TestHelper.platformConfiguration.delete({});
   });
@@ -77,7 +59,7 @@ describe('xtm_hub_registered_platforms_by_identity gauge', () => {
   });
 
   it('should count an XTM One registration under the xtmone product', async () => {
-    await registerPlatform(xtmOneDefinitionId);
+    await registerPlatform(SERVICES.DEFINITIONS.XTMONE_REGISTRATION.ID);
 
     const observations = await collectRegisteredPlatforms();
 
@@ -98,9 +80,9 @@ describe('xtm_hub_registered_platforms_by_identity gauge', () => {
     await registerPlatform(SERVICES.DEFINITIONS.OPENAEV_REGISTRATION.ID, {
       contract: PlatformContract.Ce,
     });
-    await registerPlatform(xtmOneDefinitionId);
-    await registerPlatform(xtmOneDefinitionId);
-    await registerPlatform(xtmOneDefinitionId, {
+    await registerPlatform(SERVICES.DEFINITIONS.XTMONE_REGISTRATION.ID);
+    await registerPlatform(SERVICES.DEFINITIONS.XTMONE_REGISTRATION.ID);
+    await registerPlatform(SERVICES.DEFINITIONS.XTMONE_REGISTRATION.ID, {
       status: PlatformConfigurationStatus.Inactive,
     });
 
