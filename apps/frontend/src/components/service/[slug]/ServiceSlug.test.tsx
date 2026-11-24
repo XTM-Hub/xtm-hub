@@ -1,62 +1,70 @@
 import ServiceSlug from '@/components/service/[slug]/ServiceSlug';
+import { ServiceInstanceByIdQuery } from '@/components/service/service.graphql';
 import testRender from '@/utils/test/test-render';
-import { serviceInstanceByIdQuery } from '@generated/serviceInstanceByIdQuery.graphql';
-import { screen } from '@testing-library/react';
-import { PreloadedQuery } from 'react-relay';
-import { describe, expect, it, vi } from 'vitest';
+import { act, screen } from '@testing-library/react';
+import { loadQuery } from 'react-relay';
+import { MockPayloadGenerator, createMockEnvironment } from 'relay-test-utils';
+import { describe, expect, it } from 'vitest';
 
 const DESCRIPTION_TITLE = 'Service.Management.Description';
 const SERVICE_NAME = 'OpenAEV Scenarios Library';
+const SERVICE_INSTANCE_ID = 'service-instance-1';
 
-const SERVICE_INSTANCE = {
-  id: 'service-instance-1',
-  name: SERVICE_NAME,
-  description: 'A service description',
-  tags: [],
-  service_definition: { service_capability: [] },
-};
-
-vi.mock('react-relay', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('react-relay')>()),
-  usePreloadedQuery: () => ({ serviceInstanceById: SERVICE_INSTANCE }),
-  readInlineData: (_fragment: unknown, data: unknown) => data,
-}));
-
-const renderServiceSlug = () =>
-  testRender(
+const renderServiceSlug = () => {
+  const environment = createMockEnvironment();
+  const queryRef = loadQuery(environment, ServiceInstanceByIdQuery, {
+    service_instance_id: SERVICE_INSTANCE_ID,
+  });
+  const rendered = testRender(
     <ServiceSlug
       subscriptions={[]}
-      queryRefServiceInstance={
-        {} as unknown as PreloadedQuery<serviceInstanceByIdQuery>
-      }
-    />
+      queryRefServiceInstance={queryRef}
+    />,
+    { relayConfig: environment }
   );
+  act(() => {
+    environment.mock.resolveMostRecentOperation((operation) =>
+      MockPayloadGenerator.generate(operation, {
+        ServiceInstance: () => ({
+          id: SERVICE_INSTANCE_ID,
+          name: SERVICE_NAME,
+          description: 'A service description',
+          tags: [],
+          service_definition: { service_capability: [] },
+        }),
+      })
+    );
+  });
 
-const getDescriptionTitle = () =>
-  screen.getByRole('heading', { level: 2, name: DESCRIPTION_TITLE });
+  return rendered;
+};
+
+const findDescriptionTitle = () =>
+  screen.findByRole('heading', { level: 2, name: DESCRIPTION_TITLE });
 
 describe('ServiceSlug', () => {
-  it('should display the joined organizations title as a level 2 heading without a trailing colon', () => {
+  it('should display the joined organizations title as a level 2 heading without a trailing colon', async () => {
     // Given / When
     renderServiceSlug();
 
     // Then
-    expect(getDescriptionTitle()).toHaveTextContent(
+    expect(await findDescriptionTitle()).toHaveTextContent(
       /^Service.Management.Description$/
     );
   });
 
-  it('should render the organizations table on the design system Paper surface, with the title above it', () => {
+  it('should render the organizations table on the design system Paper surface, with the title above it', async () => {
     // Given / When
     renderServiceSlug();
 
     // Then
+    const title = await findDescriptionTitle();
     const surface = screen.getByRole('table').closest('section');
     // The surface carries the design system radius and padding classes. These
     // pin the design system's class names on purpose, as jsdom does no layout:
     // a rename in the design system needs this test updated.
     expect(surface).toHaveClass('rounded-sm', 'p-4');
-    expect(surface).not.toContainElement(getDescriptionTitle());
-    expect(surface?.parentElement).toContainElement(getDescriptionTitle());
+    expect(surface).not.toContainElement(title);
+    expect(surface?.parentElement).toContainElement(title);
   });
 });
