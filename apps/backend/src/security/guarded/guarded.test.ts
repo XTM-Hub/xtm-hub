@@ -1,3 +1,4 @@
+import type { Request } from 'express';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { TestHelper } from '../../../tests/helper/test.helper';
 import {
@@ -419,6 +420,13 @@ describe('buildPrincipal', () => {
 });
 
 describe('buildPrincipal for an API token', () => {
+  // Makes the context of the test the one the request middleware builds for the request
+  const setRequestContextOf = (req: Request) => {
+    const context = buildRequestContext(req);
+    requestContext.set(context);
+    return context;
+  };
+
   it.each(Object.values(ApiTokenScope))(
     'should hold the token and its scope when the request carries a valid %s token',
     async (scope) => {
@@ -430,11 +438,10 @@ describe('buildPrincipal for an API token', () => {
       });
 
       try {
+        const { user } = setRequestContextOf(sent.req);
+
         // When
-        const principal = await buildPrincipal({
-          user: buildRequestContext(sent.req).user,
-          req: sent.req,
-        });
+        const principal = await buildPrincipal({ user });
 
         // Then
         expect(principal).toMatchObject({
@@ -459,11 +466,10 @@ describe('buildPrincipal for an API token', () => {
     });
 
     try {
+      const { user } = setRequestContextOf(sent.req);
+
       // When
-      const principal = await buildPrincipal({
-        user: buildRequestContext(sent.req).user,
-        req: sent.req,
-      });
+      const principal = await buildPrincipal({ user });
 
       // Then
       expect(principal).toMatchObject({
@@ -477,43 +483,16 @@ describe('buildPrincipal for an API token', () => {
     }
   });
 
-  it.each([
-    { label: 'no request', req: undefined },
-    { label: 'a request without a token', req: { headers: {} } },
-  ])('should hold no token when the context has $label', async ({ req }) => {
+  it('should hold no token when the request context carries none', async () => {
     // Given
     const user = buildUser({ capabilities: [] });
 
     // When
-    const principal = await buildPrincipal({ user, req });
+    const principal = await buildPrincipal({ user });
 
     // Then
     expect(principal).toMatchObject({ kind: 'user', actorId: user.id });
     expect(principal).not.toHaveProperty('apiToken');
-  });
-
-  it('should hold no token for an SSE context, whose request is not the one the middleware authenticated', async () => {
-    // Given
-    const sent = await TestHelper.apiToken.send({
-      userId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.ADMIN_ORGA.ID,
-      organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
-      scope: ApiTokenScope.Admin,
-    });
-    const user = buildUser({ capabilities: [] });
-
-    try {
-      // When
-      const principal = await buildPrincipal({
-        user,
-        req: { headers: sent.req.headers },
-      });
-
-      // Then
-      expect(principal).toMatchObject({ kind: 'user', actorId: user.id });
-      expect(principal).not.toHaveProperty('apiToken');
-    } finally {
-      await sent.cleanup();
-    }
   });
 });
 

@@ -193,11 +193,11 @@ organization and right of that user, so anything that reads them again must appl
   `UserOrganizationDomain.loadUserOrganization` directly: a token of organization A would pass for organization B.
 - The token user's own organizations, portal capabilities and roles are filtered in the query by
   `src/security/restriction/api-token.ts`. Reading them for another user, or for an invariant check, is unchanged.
-- A guard reads the token from the principal: `apiToken?: { id, scope }`, set when an API token authenticated the
-  request. The principal comes from `context.user`, already narrowed to the token's organization, so `orgGuard` and
-  `serviceGuard` are token-safe as they are: the token's memberships hold its organization only, and only an `admin`
-  token keeps organization capabilities. `requestContext.get()?.apiToken` stays what the restrictions and
-  `securityGuard` read.
+- A guard reads the token from the principal: `apiToken?: { id, scope }`, built from `requestContext.get()?.apiToken`,
+  which the request middleware sets when an API token authenticated the request; the restrictions and `securityGuard`
+  read the same value. The principal's user is `context.user`, already narrowed to the token's organization, so
+  `orgGuard` and `serviceGuard` are token-safe as they are: the token's memberships hold its organization only, and
+  only an `admin` token keeps organization capabilities.
 - A mutation that acts on the account itself (session, credentials, profile, personal space) is declared
   `@Guarded(allOf(sessionCallerGuard(), …))`. Put `sessionCallerGuard()` first and inside `allOf`: inside `anyOf` its
   denial would be ranked as `NOT_FOUND`. A module not migrated yet lists its mutation in `API_TOKEN_DENIED_FIELDS`
