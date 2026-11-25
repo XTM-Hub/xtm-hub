@@ -1,23 +1,15 @@
 import { expect, test } from '../fixtures/baseFixtures';
-import { SECOND_ORGA } from '../db-utils/const';
+import {
+  ADMIN_USER,
+  OTHER_ORGA_MEMBER,
+  PLATFORM_TO_UNREGISTER as PLATFORM,
+  SECOND_ORGA,
+} from '../db-utils/const';
 import { getPlatformRegistration } from '../db-utils/platform-configuration.helper';
 import { createOrganizationMember } from '../db-utils/user.helper';
 import AdminRegisteredPlatformsPage from '../model/admin-registered-platforms.pageModel';
 import LoginPage from '../model/login.pageModel';
-import RegisterPage, { PlatformDetails } from '../model/register.pageModel';
-
-const PLATFORM: PlatformDetails = {
-  url: 'http://localhost:3000',
-  title: 'Platform To Unregister',
-  id: '0b8d2f1c-6a52-4d54-9f5b-3a3d0a1e7c11',
-  contract: 'EE',
-};
-
-// Belongs to a new organization where it may manage registrations, and to none of the organization that owns the
-// platform.
-const TAKEOVER_ORGANIZATION = 'Takeover Org';
-const TAKEOVER_USER_EMAIL = 'takeover@takeover-org.com';
-const ADMIN_EMAIL = 'admin@filigran.io';
+import RegisterPage from '../model/register.pageModel';
 
 test.describe('Admin unregister of a registered platform', () => {
   let loginPage: LoginPage;
@@ -30,8 +22,8 @@ test.describe('Admin unregister of a registered platform', () => {
     adminPage = new AdminRegisteredPlatformsPage(page);
 
     await createOrganizationMember({
-      email: TAKEOVER_USER_EMAIL,
-      organizationName: TAKEOVER_ORGANIZATION,
+      email: OTHER_ORGA_MEMBER.EMAIL,
+      organizationName: OTHER_ORGA_MEMBER.ORGANIZATION_NAME,
       capabilities: ['MANAGE_PLATFORM_REGISTRATION'],
     });
 
@@ -58,9 +50,9 @@ test.describe('Admin unregister of a registered platform', () => {
     });
 
     // When a user of another organization connects the same platform
-    await loginPage.switchUser(TAKEOVER_USER_EMAIL);
+    await loginPage.switchUser(OTHER_ORGA_MEMBER.EMAIL);
     await registerPage.navigateTo('register-opencti', PLATFORM);
-    await registerPage.selectOrganization(TAKEOVER_ORGANIZATION);
+    await registerPage.selectOrganization(OTHER_ORGA_MEMBER.ORGANIZATION_NAME);
     await registerPage.connect();
 
     // Then it is refused and nothing changed
@@ -73,13 +65,13 @@ test.describe('Admin unregister of a registered platform', () => {
     expect(await getPlatformRegistration(PLATFORM.id)).toEqual(before);
   });
 
-  test('an admin unregisters a platform and a user of another organization connects it again', async ({
+  test('an admin unregisters a platform and its organization connects it again', async ({
     page,
   }) => {
     const connected = await getPlatformRegistration(PLATFORM.id);
 
     await test.step('the platform admin unregisters it, without being in its organization', async () => {
-      await loginPage.switchUser(ADMIN_EMAIL);
+      await loginPage.switchUser(ADMIN_USER.EMAIL);
       await adminPage.navigateTo();
       await adminPage.search(PLATFORM.title);
       await expect(adminPage.getStatus(PLATFORM.title, 'Active')).toBeVisible();
@@ -104,10 +96,27 @@ test.describe('Admin unregister of a registered platform', () => {
       });
     });
 
-    await test.step('a user of another organization connects it, with a new token', async () => {
-      await loginPage.switchUser(TAKEOVER_USER_EMAIL);
+    await test.step('a user of another organization still cannot take it', async () => {
+      await loginPage.switchUser(OTHER_ORGA_MEMBER.EMAIL);
       await registerPage.navigateTo('register-opencti', PLATFORM);
-      await registerPage.selectOrganization(TAKEOVER_ORGANIZATION);
+      await registerPage.selectOrganization(
+        OTHER_ORGA_MEMBER.ORGANIZATION_NAME
+      );
+      await registerPage.connect();
+      await expect(
+        page.getByRole('heading', { name: 'Registration failed' })
+      ).toBeVisible();
+      expect(await getPlatformRegistration(PLATFORM.id)).toMatchObject({
+        status: 'inactive',
+        organizationName: SECOND_ORGA.NAME,
+        token: connected.token,
+      });
+    });
+
+    await test.step('a member of its organization connects it again, with a new token', async () => {
+      await loginPage.switchUser(SECOND_ORGA.REGISTERER_EMAIL);
+      await registerPage.navigateTo('register-opencti', PLATFORM);
+      await registerPage.selectOrganization(SECOND_ORGA.NAME);
       await registerPage.connect();
       await expect(
         page.getByRole('heading', {
@@ -118,19 +127,16 @@ test.describe('Admin unregister of a registered platform', () => {
       const reconnected = await getPlatformRegistration(PLATFORM.id);
       expect(reconnected).toMatchObject({
         status: 'active',
-        organizationName: TAKEOVER_ORGANIZATION,
+        organizationName: SECOND_ORGA.NAME,
       });
       expect(reconnected.token).not.toBe(connected.token);
     });
 
-    await test.step('the admin sees it active in its new organization, and may unregister it again', async () => {
-      await loginPage.switchUser(ADMIN_EMAIL);
+    await test.step('the admin sees it active again, and may unregister it again', async () => {
+      await loginPage.switchUser(ADMIN_USER.EMAIL);
       await adminPage.navigateTo();
       await adminPage.search(PLATFORM.title);
       await expect(adminPage.getStatus(PLATFORM.title, 'Active')).toBeVisible();
-      await expect(adminPage.getRow(PLATFORM.title)).toContainText(
-        TAKEOVER_ORGANIZATION
-      );
       await expect(adminPage.getUnregisterButton(PLATFORM.title)).toBeVisible();
     });
   });
