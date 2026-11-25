@@ -943,6 +943,64 @@ describe('registration domain', () => {
       // Then
       expect(result).toHaveLength(0);
     });
+
+    describe('with a release track', () => {
+      const LTS_VERSION = '7.260309.0-lts.8';
+      const LTS_VERSION_WITHOUT_PATCH = '7.260309.0-lts';
+      const createdServiceInstanceIds: ServiceInstanceId[] = [];
+
+      const createOpenCTIPlatform = async (platformVersion: string | null) => {
+        const serviceInstance = await TestHelper.serviceInstance.create({
+          service_definition_id: serviceDefinitionId,
+        });
+        createdServiceInstanceIds.push(serviceInstance.id);
+        await TestHelper.platformConfiguration.create({
+          service_instance_id: serviceInstance.id,
+          platform_version: platformVersion,
+        });
+      };
+
+      beforeEach(async () => {
+        await createOpenCTIPlatform(LTS_VERSION);
+        await createOpenCTIPlatform(LTS_VERSION_WITHOUT_PATCH);
+        await createOpenCTIPlatform(null);
+      });
+
+      afterEach(async () => {
+        for (const id of createdServiceInstanceIds) {
+          await TestHelper.platformConfiguration.delete({
+            service_instance_id: id,
+          });
+          await TestHelper.serviceInstance.delete({ id });
+        }
+        createdServiceInstanceIds.length = 0;
+      });
+
+      it.each<[string, boolean | undefined, (string | null)[]]>([
+        ['the LTS track', true, [LTS_VERSION_WITHOUT_PATCH, LTS_VERSION]],
+        ['the non-LTS track', false, [platformOpenCTI]],
+        [
+          'any track',
+          undefined,
+          [platformOpenCTI, LTS_VERSION_WITHOUT_PATCH, LTS_VERSION, null],
+        ],
+      ])(
+        'should only return the platforms of %s, a platform without a version being on no track',
+        async (_description, isLts, expectedVersions) => {
+          // When
+          const result =
+            await RegistrationDomain.loadAllActiveRegisteredPlatformsByPlatformIdentifier(
+              PlatformIdentifier.Opencti,
+              { isLts }
+            );
+
+          // Then
+          expect(
+            result.map((platform) => platform.platform_version).sort()
+          ).toEqual(expectedVersions);
+        }
+      );
+    });
   });
 
   describe('loadRegisteredPlatforms', () => {
