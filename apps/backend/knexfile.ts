@@ -106,7 +106,8 @@ type BaseDatabaseType =
   | 'FeatureVote'
   | 'ContentTranslation'
   | 'ContentTranslationDraft'
-  | 'ApiToken';
+  | 'ApiToken'
+  | 'SaasManagerInstance';
 
 export type DatabaseType =
   | BaseDatabaseType
@@ -249,6 +250,9 @@ const searchAttributes = [
   'last_name',
   'country',
   'title',
+  'customer_name',
+  'customer_techname',
+  'hostname',
 ];
 
 const columnInfoCache = new Map<DatabaseType, Promise<string[]>>();

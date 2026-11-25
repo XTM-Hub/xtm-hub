@@ -29,12 +29,9 @@ const PRODUCT_NAME_BY_SAAS_PRODUCT: Record<SaasProduct, string> = {
   [SaasProduct.One]: PlatformMetadataMapping[PlatformIdentifier.Xtmone].name,
 };
 
-// In the order the Hub lists its products.
-export const SAAS_PRODUCTS = [
-  SaasProduct.Octi,
-  SaasProduct.Oaev,
-  SaasProduct.One,
-];
+// The products to filter on, in the order the Hub lists them. Not ONE: the Hub does not store ONE instances from SaaS
+// Manager.
+export const SAAS_PRODUCTS = [SaasProduct.Octi, SaasProduct.Oaev];
 
 export const getSaasProductName = (product: SaasProduct): string =>
   PRODUCT_NAME_BY_SAAS_PRODUCT[product];

@@ -99,6 +99,13 @@ describe('registration connectivity app', () => {
   });
 
   describe('refreshPlatformRegistrationConnectivityStatus', () => {
+    let pushedInstanceIds: string[] = [];
+
+    afterEach(async () => {
+      await TestHelper.saasManagerInstance.delete(pushedInstanceIds);
+      pushedInstanceIds = [];
+    });
+
     it('should throw an error when version is not formatted as a semantic version', async () => {
       const call =
         RegistrationConnectivityApp.refreshPlatformRegistrationConnectivityStatus(
@@ -264,6 +271,56 @@ describe('registration connectivity app', () => {
         organizationName: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.NAME,
       });
     });
+
+    it.each([
+      [
+        'SAAS when the SaaS Manager pushed it as PROD',
+        'PROD',
+        CommercialModel.Saas,
+      ],
+      [
+        'OTHER when the SaaS Manager pushed it as another model',
+        'DEV',
+        CommercialModel.Other,
+      ],
+    ])(
+      'should return the commercial model of a platform stored as OTHER as %s',
+      async (_, pushedCommercialModel, expectedCommercialModel) => {
+        // Given
+        const platformId = uuidv4();
+        const { token } = await RegistrationApp.registerPlatform({
+          organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+          platform: {
+            id: platformId,
+            url: 'http://example.com',
+            contract: PlatformContract.Ee,
+            title: 'Fake title',
+            version: '6.7.18',
+          },
+          identifier: PlatformIdentifier.Opencti,
+        });
+        pushedInstanceIds.push(
+          await TestHelper.saasManagerInstance.create({
+            id: platformId,
+            data: { commercial_model: pushedCommercialModel },
+          })
+        );
+
+        // When
+        const result =
+          await RegistrationConnectivityApp.refreshPlatformRegistrationConnectivityStatus(
+            {
+              platformId,
+              token,
+              platformVersion: '6.7.18',
+              platformIdentifier: PlatformIdentifier.Opencti,
+            }
+          );
+
+        // Then
+        expect(result.commercialModel).toBe(expectedCommercialModel);
+      }
+    );
 
     it('should return no commercial model when the platform is not registered', async () => {
       // When

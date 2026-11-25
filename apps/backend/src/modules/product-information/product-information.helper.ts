@@ -1,6 +1,7 @@
 import {
   MetricType,
   SaasPlatform,
+  SaasPlatformConnection,
   SaasPlatformContractStatus,
   SaasPlatformDailySla,
   SaasPlatformData,
@@ -17,11 +18,8 @@ import {
   SaasPlatformStorageUsage,
   SaasProduct,
 } from '../../__generated__/resolvers-types';
+import type { SaasManagerInstanceId } from '../../model/kanel/public/SaasManagerInstance';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
-import {
-  SaasManagerClient,
-  type SaasManagerInstanceListRequest,
-} from '../../thirdparty/saasmanager/client';
 import { logApp } from '../../utils/app-logger.util';
 import {
   percentToRatio,
@@ -30,10 +28,18 @@ import {
   toUtcDayStart,
   toUtcMonthStart,
 } from '../../utils/format';
-import { isRecord } from '../../utils/typescript';
+import { isRecord, readNonEmptyString } from '../../utils/typescript';
+import {
+  SaasManagerInstanceDomain,
+  type SaasManagerInstancePagination,
+} from '../saas-manager-instance/saas-manager-instance.domain';
+import {
+  isSaasManagerInstanceStale,
+  toSaasProduct,
+} from '../saas-manager-instance/saas-manager-instance.helper';
 
-// The SaaS Manager only takes some numbers of days back from now: each period asks for the smallest one that covers
-// its first SLA month from its midnight, at most 32, 95 and 187 days back, and shows only its own days.
+// The SaaS Manager pushes the metrics of some numbers of days back from now: each period reads the smallest one that
+// covers its first SLA month from its midnight, at most 32, 95 and 187 days back, and shows only its own days.
 const SAAS_PLATFORM_METRICS_PERIODS: Record<
   SaasPlatformMetricsPeriod,
   { days: number; includeMetrics: number; slaMonths: number }
@@ -70,14 +76,6 @@ const SAAS_PLATFORM_CONTRACT_ENDING_SOON_DAYS = 90;
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
-// An error body can be a whole HTML page from a gateway: the log keeps only its start.
-const MAX_LOGGED_BODY_LENGTH = 256;
-
-interface SaasPlatformsPage {
-  totalCount: number;
-  platforms: SaasPlatform[];
-}
-
 const METRIC_TYPES: ReadonlySet<string> = new Set(Object.values(MetricType));
 
 const isMetricType = (value: unknown): value is MetricType =>
@@ -90,30 +88,17 @@ const RESOLUTIONS: ReadonlySet<string> = new Set(
 const isResolution = (value: unknown): value is SaasPlatformResolution =>
   typeof value === 'string' && RESOLUTIONS.has(value);
 
-const SAAS_PRODUCTS: ReadonlySet<string> = new Set(Object.values(SaasProduct));
-
-const isSaasProduct = (value: unknown): value is SaasProduct =>
-  typeof value === 'string' && SAAS_PRODUCTS.has(value);
-
-const readString = (
-  body: Record<string, unknown>,
-  key: string
-): string | null => {
-  const value = body[key];
-  return typeof value === 'string' && value !== '' ? value : null;
-};
-
 const readMetadataDate = (
   body: Record<string, unknown>,
   key: 'start_date' | 'end_date'
 ): string | null => {
-  const value = readString(body, key);
+  const value = readNonEmptyString(body, key);
   if (value === null) {
     return null;
   }
   const date = toIsoDate(value);
   if (date === null) {
-    logApp.warn('The SaaS Manager returned an unparseable platform date', {
+    logApp.warn('The SaaS Manager pushed an unparseable platform date', {
       field: key,
     });
   }
@@ -158,7 +143,7 @@ const parseSaasPlatformMetrics = (
   const resolution = metrics.resolution;
   // GraphQL rejects a value outside the enum: without a known resolution, the points cannot be read.
   if (start === null || end === null || !isResolution(resolution)) {
-    logApp.warn('The SaaS Manager returned incomplete platform metrics');
+    logApp.warn('The SaaS Manager pushed incomplete platform metrics');
     return null;
   }
   return {
@@ -293,11 +278,11 @@ const parseSaasPlatformStorage = (
 const parseSaasPlatformMetadata = (
   fields: Record<string, unknown>
 ): SaasPlatformMetadata => ({
-  hostname: readString(fields, 'hostname'),
-  plan: readString(fields, 'plan'),
+  hostname: readNonEmptyString(fields, 'hostname'),
+  plan: readNonEmptyString(fields, 'plan'),
   start_date: readMetadataDate(fields, 'start_date'),
   end_date: readMetadataDate(fields, 'end_date'),
-  region: readString(fields, 'region'),
+  region: readNonEmptyString(fields, 'region'),
 });
 
 const parseSaasPlatformData = (
@@ -388,28 +373,26 @@ const parseSaasPlatformContractStatus = (
 const readSaasProduct = (
   platform: Record<string, unknown>
 ): SaasProduct | null => {
-  const product = readString(platform, 'product');
-  if (product === null) {
-    return null;
+  const product = readNonEmptyString(platform, 'product');
+  const code = toSaasProduct(product);
+  if (product !== null && code === null) {
+    logApp.warn('The SaaS Manager pushed an unknown product', { product });
   }
-  const code = product.toUpperCase();
-  if (isSaasProduct(code)) {
-    return code;
-  }
-  logApp.warn('The SaaS Manager returned an unknown product', { product });
-  return null;
+  return code;
 };
 
-// Null for a platform that cannot be read, left out of its page.
+// Null for a platform that cannot be read, left out of its page. The customer is its name, which the list orders on:
+// the row only carries its techname.
 const parseSaasPlatform = (
   platform: unknown,
+  customerName: string,
   now: Date
 ): SaasPlatform | null => {
   if (!isRecord(platform)) {
     return null;
   }
   // Without an id, the platform cannot be told apart from the others.
-  const id = readString(platform, 'id');
+  const id = readNonEmptyString(platform, 'id');
   if (id === null) {
     return null;
   }
@@ -429,10 +412,10 @@ const parseSaasPlatform = (
   const metadata = parseSaasPlatformMetadata(platform);
   return {
     id,
-    status: readString(platform, 'status'),
+    status: readNonEmptyString(platform, 'status'),
     product: readSaasProduct(platform),
-    customer: readString(platform, 'customer'),
-    commercial_model: readString(platform, 'commercial_model'),
+    customer: customerName,
+    commercial_model: readNonEmptyString(platform, 'commercial_model'),
     sla_cmtd: availability,
     metadata,
     storage,
@@ -442,98 +425,65 @@ const parseSaasPlatform = (
 };
 
 export const ProductInformationHelper = {
-  fetchSaasPlatformData: async (
+  loadSaasPlatformData: async (
     serviceInstanceId: ServiceInstanceId,
     platformId: string,
     metricsPeriod: SaasPlatformMetricsPeriod
   ): Promise<SaasPlatformData | null> => {
     const { days, includeMetrics, slaMonths } =
       SAAS_PLATFORM_METRICS_PERIODS[metricsPeriod];
-    const now = new Date();
-    const firstSlaMonth = toUtcMonthStart(now, 1 - slaMonths);
-    try {
-      const response = await SaasManagerClient.callInstanceApi({
-        platform_id: platformId,
-        include_metrics: includeMetrics,
-      });
-
-      if (response.status !== 200) {
-        logApp.error('Unable to load the platform data from the SaaS Manager', {
-          serviceInstanceId,
-          platformId,
-          status: response.status,
-          body: (await response.text()).slice(0, MAX_LOGGED_BODY_LENGTH),
-        });
-        return null;
-      }
-      return parseSaasPlatformData(
-        await response.json(),
-        now.getTime() - days * MS_PER_DAY,
-        {
-          firstMonth: firstSlaMonth,
-          now,
-        }
-      );
-    } catch (error) {
-      logApp.error('Unable to load the platform data from the SaaS Manager', {
+    const instance = await SaasManagerInstanceDomain.loadInstance(
+      platformId as SaasManagerInstanceId
+    );
+    if (!instance) {
+      logApp.warn('The SaaS Manager has not pushed the platform', {
         serviceInstanceId,
         platformId,
-        error,
       });
       return null;
     }
+    const now = new Date();
+    if (isSaasManagerInstanceStale(instance.generated_at, now)) {
+      logApp.error('The SaaS Manager has stopped pushing the platform', {
+        serviceInstanceId,
+        platformId,
+        generatedAt: instance.generated_at.toISOString(),
+      });
+    }
+    const metrics = isRecord(instance.metrics)
+      ? (instance.metrics[String(includeMetrics)] ?? null)
+      : null;
+    return parseSaasPlatformData(
+      { ...(isRecord(instance.data) ? instance.data : {}), metrics },
+      now.getTime() - days * MS_PER_DAY,
+      { firstMonth: toUtcMonthStart(now, 1 - slaMonths), now }
+    );
   },
 
-  fetchSaasPlatforms: async (
-    request: SaasManagerInstanceListRequest
-  ): Promise<SaasPlatformsPage | null> => {
-    try {
-      const response = await SaasManagerClient.callInstanceListApi(request);
-
-      if (response.status !== 200) {
-        logApp.error('Unable to load the platforms from the SaaS Manager', {
-          page: request.page,
-          status: response.status,
-        });
-        return null;
-      }
-      const body: unknown = await response.json();
-      // Without its list of results, the page cannot be told empty: it is as unreadable as a failed call.
-      if (!isRecord(body) || !Array.isArray(body.results)) {
-        logApp.error(
-          'The SaaS Manager returned an unreadable page of platforms',
-          {
-            page: request.page,
-          }
-        );
-        return null;
-      }
-      const now = new Date();
-      const platforms = body.results.flatMap((platform) => {
-        const parsed = parseSaasPlatform(platform, now);
-        return parsed ? [parsed] : [];
+  loadSaasPlatforms: async (
+    pagination: SaasManagerInstancePagination
+  ): Promise<SaasPlatformConnection> => {
+    const connection =
+      await SaasManagerInstanceDomain.loadInServiceInstances(pagination);
+    const now = new Date();
+    const staleGeneratedAts = connection.edges
+      .map(({ node }) => node.generated_at)
+      .filter((generatedAt) => isSaasManagerInstanceStale(generatedAt, now));
+    // Once per page, not per platform: a SaaS Manager that stops pushing leaves every platform stale.
+    if (staleGeneratedAts.length > 0) {
+      logApp.error('The SaaS Manager has stopped pushing listed platforms', {
+        stale: staleGeneratedAts.length,
+        oldestGeneratedAt: new Date(
+          Math.min(...staleGeneratedAts.map((date) => date.getTime()))
+        ).toISOString(),
       });
-      const totalCount = toFiniteNumber(body.count);
-      if (
-        totalCount === null ||
-        !Number.isInteger(totalCount) ||
-        totalCount < 0
-      ) {
-        logApp.error('The SaaS Manager returned an unreadable platform count', {
-          page: request.page,
-        });
-        return null;
-      }
-      return {
-        totalCount,
-        platforms,
-      };
-    } catch (error) {
-      logApp.error('Unable to load the platforms from the SaaS Manager', {
-        page: request.page,
-        error,
-      });
-      return null;
     }
+    return {
+      ...connection,
+      edges: connection.edges.flatMap(({ cursor, node }) => {
+        const platform = parseSaasPlatform(node.data, node.customer_name, now);
+        return platform ? [{ cursor, node: platform }] : [];
+      }),
+    };
   },
 };

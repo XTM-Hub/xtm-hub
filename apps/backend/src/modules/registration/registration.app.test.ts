@@ -54,9 +54,6 @@ import ServiceInstance, {
 } from '../../model/kanel/public/ServiceInstance';
 import { SubscriptionId } from '../../model/kanel/public/Subscription';
 import * as MailService from '../../server/mail-service';
-import { PgBossProducer } from '../../thirdparty/pgboss/producer';
-import { REGISTRATION_QUEUES } from '../../thirdparty/pgboss/registration.jobs';
-import { SaasManagerClient } from '../../thirdparty/saasmanager/client';
 import { logApp } from '../../utils/app-logger.util';
 import { ServiceInstanceDomain } from '../service/instance/service-instance.domain';
 
@@ -71,6 +68,7 @@ import { DeploymentRequestDomain } from '../deployment/deployment.domain';
 import { NewsFeedApp } from '../news-feed/news-feed.app';
 import { NewsFeedDomain } from '../news-feed/news-feed.domain';
 import { OrganizationDomain } from '../organization-management/organization/organization.domain';
+import { SaasManagerInstanceDomain } from '../saas-manager-instance/saas-manager-instance.domain';
 import { AuthHelper } from '../security-management/capability/auth.helper';
 import { SubscriptionDomain } from '../subscription/subscription.domain';
 import { TelemetryApp } from '../telemetry/telemetry.app';
@@ -770,8 +768,7 @@ describe('registration app', () => {
 
       it('should register the platform without waiting for the SaaS Manager', async () => {
         // Given
-        vi.spyOn(PgBossProducer, 'send').mockResolvedValue(null);
-        const callSpy = vi.spyOn(SaasManagerClient, 'callInstanceApi');
+        const callSpy = vi.spyOn(SaasManagerInstanceDomain, 'loadInstance');
 
         // When
         const configuration = await registerNewPlatform();
@@ -779,38 +776,6 @@ describe('registration app', () => {
         // Then
         expect(callSpy).not.toHaveBeenCalled();
         expect(configuration?.commercial_model).toBe(CommercialModel.Other);
-      });
-
-      it('should enqueue the commercial model refresh of the registered platform', async () => {
-        // Given
-        const sendSpy = vi
-          .spyOn(PgBossProducer, 'send')
-          .mockResolvedValue(null);
-
-        // When
-        const configuration = await registerNewPlatform();
-
-        // Then
-        expect(sendSpy).toHaveBeenCalledWith(
-          REGISTRATION_QUEUES.COMMERCIAL_MODEL,
-          {
-            serviceInstanceId: configuration?.service_instance_id,
-            platformId: configuration?.platform_id,
-          }
-        );
-      });
-
-      it('should register the platform when the commercial model refresh cannot be enqueued', async () => {
-        // Given
-        vi.spyOn(PgBossProducer, 'send').mockRejectedValue(
-          new Error('PgBoss has not been started')
-        );
-
-        // When
-        const configuration = await registerNewPlatform();
-
-        // Then
-        expect(configuration).toBeDefined();
       });
     });
 
@@ -1477,98 +1442,16 @@ describe('registration app', () => {
     });
   });
 
-  describe('refreshCommercialModel', () => {
-    const createPlatform = async (commercialModel: CommercialModel) => {
-      const serviceInstanceId = uuidv4() as ServiceInstanceId;
-      const platformId = uuidv4();
-      await TestHelper.serviceInstance.create({
-        id: serviceInstanceId,
-        name: 'test',
-        service_definition_id: SERVICES.DEFINITIONS.OPENCTI_REGISTRATION.ID,
-      });
-      await TestHelper.platformConfiguration.create({
-        service_instance_id: serviceInstanceId,
-        platform_id: platformId,
-        status: PlatformConfigurationStatus.Active,
-        commercial_model: commercialModel,
-      });
-      return { serviceInstanceId, platformId };
-    };
-
-    const refreshCommercialModel = async (
-      commercialModel: CommercialModel,
-      response: () => Promise<Response>
-    ) => {
-      const platform = await createPlatform(commercialModel);
-      vi.spyOn(SaasManagerClient, 'callInstanceApi').mockImplementation(
-        response
-      );
-      await RegistrationApp.refreshCommercialModel(platform);
-      return PlatformConfigurationDomain.loadConfigurationByPlatform(
-        platform.platformId
-      );
-    };
-
-    it('should set the SaaS commercial model when the SaaS Manager returns PROD', async () => {
-      // When
-      const configuration = await refreshCommercialModel(
-        CommercialModel.Other,
-        async () =>
-          ({
-            ok: true,
-            status: 200,
-            json: async () => ({ commercial_model: 'PROD' }),
-          }) as Response
-      );
-
-      // Then
-      expect(configuration?.commercial_model).toBe(CommercialModel.Saas);
-    });
-
-    it.each`
-      case                       | response
-      ${'the call fails'}        | ${() => Promise.reject(new Error('fetch failed'))}
-      ${'it returns 204'}        | ${async () => ({ ok: true, status: 204, json: async () => ({ commercial_model: 'TRIAL' }) }) as Response}
-      ${'it returns 401'}        | ${async () => ({ ok: false, status: 401 }) as Response}
-      ${'it returns 500'}        | ${async () => ({ ok: false, status: 500 }) as Response}
-      ${'the body is malformed'} | ${async () => ({ ok: true, status: 200, json: async () => Promise.reject(new SyntaxError('Unexpected token')) }) as Response}
-      ${'the model is missing'}  | ${async () => ({ ok: true, status: 200, json: async () => ({}) }) as Response}
-    `(
-      'should keep the SaaS commercial model when $case',
-      async ({ response }) => {
-        // When
-        const configuration = await refreshCommercialModel(
-          CommercialModel.Saas,
-          response
-        );
-
-        // Then
-        expect(configuration?.commercial_model).toBe(CommercialModel.Saas);
-      }
-    );
-
-    it.each`
-      case                               | response
-      ${'it returns a non PROD model'}   | ${async () => ({ ok: true, status: 200, json: async () => ({ commercial_model: 'TRIAL' }) }) as Response}
-      ${'it does not know the platform'} | ${async () => ({ ok: false, status: 404 }) as Response}
-    `(
-      'should switch to the other commercial model when $case',
-      async ({ response }) => {
-        // When
-        const configuration = await refreshCommercialModel(
-          CommercialModel.Saas,
-          response
-        );
-
-        // Then
-        expect(configuration?.commercial_model).toBe(CommercialModel.Other);
-      }
-    );
-  });
-
   describe('loadRegisteredPlatform', () => {
+    let pushedInstanceIds: string[] = [];
+
     beforeEach(() => {
       requestContext.set(requestContextRegistererUserSecondOrga);
+    });
+
+    afterEach(async () => {
+      await TestHelper.saasManagerInstance.delete(pushedInstanceIds);
+      pushedInstanceIds = [];
     });
 
     it.each([CommercialModel.Saas, CommercialModel.Other])(
@@ -1598,6 +1481,54 @@ describe('registration app', () => {
 
         // Then
         expect(platform?.commercial_model).toBe(commercialModel);
+      }
+    );
+
+    it.each([
+      [
+        'SAAS when the SaaS Manager pushed it as PROD',
+        'PROD',
+        CommercialModel.Saas,
+      ],
+      [
+        'OTHER when the SaaS Manager pushed it as another model',
+        'DEV',
+        CommercialModel.Other,
+      ],
+    ])(
+      'should return a platform stored as OTHER as %s',
+      async (_, pushedCommercialModel, expectedCommercialModel) => {
+        // Given
+        const platformId = uuidv4();
+        const serviceInstanceId = await RegistrationDomain.registerNewPlatform({
+          organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+          serviceDefinitionId: SERVICES.DEFINITIONS.OPENCTI_REGISTRATION.ID,
+          configuration: {
+            registerer_id:
+              TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.ID,
+            platform_id: platformId,
+            platform_url: 'http://example.com',
+            platform_title: 'My OpenCTI platform',
+            platform_contract: PlatformContract.Ee,
+            platform_version: '6.7.17',
+            token: uuidv4(),
+            commercial_model: CommercialModel.Other,
+          },
+          platformIdentifier: PlatformIdentifier.Opencti,
+        });
+        pushedInstanceIds.push(
+          await TestHelper.saasManagerInstance.create({
+            id: platformId,
+            data: { commercial_model: pushedCommercialModel },
+          })
+        );
+
+        // When
+        const platform =
+          await RegistrationApp.loadRegisteredPlatform(serviceInstanceId);
+
+        // Then
+        expect(platform?.commercial_model).toBe(expectedCommercialModel);
       }
     );
 

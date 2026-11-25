@@ -1258,6 +1258,7 @@ export type Mutation = {
   logout: Scalars['ID']['output'];
   newProductVersion: Success;
   publishContentTranslationDrafts: Array<ContentTranslationEntry>;
+  purgeSaasManagerInstances: SaasManagerSyncResult;
   refreshPlatformRegistrationConnectivityStatus: RefreshPlatformRegistrationConnectivityStatusResponse;
   refreshPlatformRegistrationConnectivityStatusAllTenants: RefreshPlatformRegistrationConnectivityStatusAllTenantsResponse;
   refreshPlatformRegistrationConnectivityStatusSingleTenant: RefreshPlatformRegistrationConnectivityStatusResponse;
@@ -1290,6 +1291,7 @@ export type Mutation = {
   updateVotableFeature: VotableFeature;
   updateVotingRound: VotingRound;
   uploadUserPicture: User;
+  upsertSaasManagerInstances: SaasManagerSyncResult;
   voteForFeature: Array<VotableFeature>;
 };
 
@@ -1617,6 +1619,11 @@ export type MutationNewProductVersionArgs = {
 };
 
 
+export type MutationPurgeSaasManagerInstancesArgs = {
+  before: Scalars['Date']['input'];
+};
+
+
 export type MutationRefreshPlatformRegistrationConnectivityStatusArgs = {
   input: RefreshPlatformRegistrationConnectivityStatusInput;
 };
@@ -1774,6 +1781,12 @@ export type MutationUpdateVotingRoundArgs = {
 
 export type MutationUploadUserPictureArgs = {
   document: Scalars['Upload']['input'];
+};
+
+
+export type MutationUpsertSaasManagerInstancesArgs = {
+  generatedAt: Scalars['Date']['input'];
+  instances: Array<SaasManagerInstanceInput>;
 };
 
 
@@ -2135,6 +2148,7 @@ export enum PortalCapability {
   ManageConnectorsIngestions = 'MANAGE_CONNECTORS_INGESTIONS',
   ManageDeployment = 'MANAGE_DEPLOYMENT',
   ManageManifestIngestions = 'MANAGE_MANIFEST_INGESTIONS',
+  ManageSaasManagerInstances = 'MANAGE_SAAS_MANAGER_INSTANCES',
   ModifyCompetitors = 'MODIFY_COMPETITORS',
   ModifyServiceMetadata = 'MODIFY_SERVICE_METADATA',
   ModifyTrials = 'MODIFY_TRIALS',
@@ -2229,7 +2243,7 @@ export type Query = {
   registeredProductVersions: Array<RegisteredProductVersion>;
   registeredSaasPlatformData?: Maybe<SaasPlatformData>;
   rolePortals: Array<RolePortal>;
-  saasManagerPlatforms?: Maybe<SaasPlatformPage>;
+  saasManagerPlatforms: SaasPlatformConnection;
   seoServiceInstance: SeoServiceInstance;
   seoServiceInstanceMetadata: Array<SeoServiceInstanceMetadata>;
   seoServiceInstances: Array<SeoServiceInstance>;
@@ -2488,10 +2502,10 @@ export type QueryRegisteredSaasPlatformDataArgs = {
 
 
 export type QuerySaasManagerPlatformsArgs = {
+  after?: InputMaybe<Scalars['ID']['input']>;
+  first: Scalars['Int']['input'];
   orderBy: SaasPlatformOrdering;
   orderMode: OrderingMode;
-  page: Scalars['Int']['input'];
-  pageSize: Scalars['Int']['input'];
   product?: InputMaybe<SaasProduct>;
   searchTerm?: InputMaybe<Scalars['String']['input']>;
 };
@@ -2798,6 +2812,28 @@ export type SsoGroupRolePortal = {
   ssoGroup: Scalars['String']['output'];
 };
 
+export type SaasManagerInstanceIndexInput = {
+  customer_name: Scalars['String']['input'];
+  customer_techname?: InputMaybe<Scalars['String']['input']>;
+  /** @deprecated Ignored, the list orders on data.plan */
+  plan_code?: InputMaybe<Scalars['String']['input']>;
+  status_family?: InputMaybe<Scalars['String']['input']>;
+  upgrade_group?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type SaasManagerInstanceInput = {
+  data: Scalars['JSON']['input'];
+  index: SaasManagerInstanceIndexInput;
+  metrics?: InputMaybe<Scalars['JSON']['input']>;
+};
+
+export type SaasManagerSyncResult = {
+  __typename?: 'SaasManagerSyncResult';
+  applied: Scalars['Int']['output'];
+  removed: Scalars['Int']['output'];
+  skipped: Scalars['Int']['output'];
+};
+
 export type SaasPlatform = {
   __typename?: 'SaasPlatform';
   commercial_model?: Maybe<Scalars['String']['output']>;
@@ -2811,6 +2847,13 @@ export type SaasPlatform = {
   sla_cmtd?: Maybe<Scalars['Float']['output']>;
   status?: Maybe<Scalars['String']['output']>;
   storage?: Maybe<SaasPlatformStorage>;
+};
+
+export type SaasPlatformConnection = {
+  __typename?: 'SaasPlatformConnection';
+  edges: Array<SaasPlatformEdge>;
+  pageInfo: PageInfo;
+  totalCount: Scalars['Int']['output'];
 };
 
 export enum SaasPlatformContractStatus {
@@ -2831,6 +2874,12 @@ export type SaasPlatformData = {
   metrics?: Maybe<SaasPlatformMetrics>;
   sla?: Maybe<SaasPlatformSla>;
   storage?: Maybe<SaasPlatformStorage>;
+};
+
+export type SaasPlatformEdge = {
+  __typename?: 'SaasPlatformEdge';
+  cursor: Scalars['String']['output'];
+  node: SaasPlatform;
 };
 
 export enum SaasPlatformHealthIssue {
@@ -2882,17 +2931,11 @@ export type SaasPlatformMonthlySla = {
 };
 
 export enum SaasPlatformOrdering {
-  CustomerName = 'customer__name',
+  CustomerName = 'customer_name',
   EndDate = 'end_date',
   Plan = 'plan',
   Product = 'product'
 }
-
-export type SaasPlatformPage = {
-  __typename?: 'SaasPlatformPage';
-  platforms: Array<SaasPlatform>;
-  totalCount: Scalars['Int']['output'];
-};
 
 export enum SaasPlatformResolution {
   Day = 'day',
@@ -4016,10 +4059,15 @@ export type ResolversTypes = ResolversObject<{
   RolePortal: ResolverTypeWrapper<RolePortal>;
   RssFeed: ResolverTypeWrapper<RssFeed>;
   SSOGroupRolePortal: ResolverTypeWrapper<SsoGroupRolePortal>;
+  SaasManagerInstanceIndexInput: SaasManagerInstanceIndexInput;
+  SaasManagerInstanceInput: SaasManagerInstanceInput;
+  SaasManagerSyncResult: ResolverTypeWrapper<SaasManagerSyncResult>;
   SaasPlatform: ResolverTypeWrapper<SaasPlatform>;
+  SaasPlatformConnection: ResolverTypeWrapper<SaasPlatformConnection>;
   SaasPlatformContractStatus: SaasPlatformContractStatus;
   SaasPlatformDailySla: ResolverTypeWrapper<SaasPlatformDailySla>;
   SaasPlatformData: ResolverTypeWrapper<SaasPlatformData>;
+  SaasPlatformEdge: ResolverTypeWrapper<SaasPlatformEdge>;
   SaasPlatformHealthIssue: SaasPlatformHealthIssue;
   SaasPlatformMetadata: ResolverTypeWrapper<SaasPlatformMetadata>;
   SaasPlatformMetricPoint: ResolverTypeWrapper<SaasPlatformMetricPoint>;
@@ -4028,7 +4076,6 @@ export type ResolversTypes = ResolversObject<{
   SaasPlatformMetricsPeriod: SaasPlatformMetricsPeriod;
   SaasPlatformMonthlySla: ResolverTypeWrapper<SaasPlatformMonthlySla>;
   SaasPlatformOrdering: SaasPlatformOrdering;
-  SaasPlatformPage: ResolverTypeWrapper<SaasPlatformPage>;
   SaasPlatformResolution: SaasPlatformResolution;
   SaasPlatformSla: ResolverTypeWrapper<SaasPlatformSla>;
   SaasPlatformStorage: ResolverTypeWrapper<SaasPlatformStorage>;
@@ -4289,15 +4336,19 @@ export type ResolversParentTypes = ResolversObject<{
   RolePortal: RolePortal;
   RssFeed: RssFeed;
   SSOGroupRolePortal: SsoGroupRolePortal;
+  SaasManagerInstanceIndexInput: SaasManagerInstanceIndexInput;
+  SaasManagerInstanceInput: SaasManagerInstanceInput;
+  SaasManagerSyncResult: SaasManagerSyncResult;
   SaasPlatform: SaasPlatform;
+  SaasPlatformConnection: SaasPlatformConnection;
   SaasPlatformDailySla: SaasPlatformDailySla;
   SaasPlatformData: SaasPlatformData;
+  SaasPlatformEdge: SaasPlatformEdge;
   SaasPlatformMetadata: SaasPlatformMetadata;
   SaasPlatformMetricPoint: SaasPlatformMetricPoint;
   SaasPlatformMetricSeries: SaasPlatformMetricSeries;
   SaasPlatformMetrics: SaasPlatformMetrics;
   SaasPlatformMonthlySla: SaasPlatformMonthlySla;
-  SaasPlatformPage: SaasPlatformPage;
   SaasPlatformSla: SaasPlatformSla;
   SaasPlatformStorage: SaasPlatformStorage;
   SaasPlatformStorageUsage: SaasPlatformStorageUsage;
@@ -5041,6 +5092,7 @@ export type MutationResolvers<ContextType = PortalContext, ParentType extends Re
   logout?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   newProductVersion?: Resolver<ResolversTypes['Success'], ParentType, ContextType, RequireFields<MutationNewProductVersionArgs, 'product' | 'version'>>;
   publishContentTranslationDrafts?: Resolver<Array<ResolversTypes['ContentTranslationEntry']>, ParentType, ContextType>;
+  purgeSaasManagerInstances?: Resolver<ResolversTypes['SaasManagerSyncResult'], ParentType, ContextType, RequireFields<MutationPurgeSaasManagerInstancesArgs, 'before'>>;
   refreshPlatformRegistrationConnectivityStatus?: Resolver<ResolversTypes['RefreshPlatformRegistrationConnectivityStatusResponse'], ParentType, ContextType, RequireFields<MutationRefreshPlatformRegistrationConnectivityStatusArgs, 'input'>>;
   refreshPlatformRegistrationConnectivityStatusAllTenants?: Resolver<ResolversTypes['RefreshPlatformRegistrationConnectivityStatusAllTenantsResponse'], ParentType, ContextType, RequireFields<MutationRefreshPlatformRegistrationConnectivityStatusAllTenantsArgs, 'input'>>;
   refreshPlatformRegistrationConnectivityStatusSingleTenant?: Resolver<ResolversTypes['RefreshPlatformRegistrationConnectivityStatusResponse'], ParentType, ContextType, RequireFields<MutationRefreshPlatformRegistrationConnectivityStatusSingleTenantArgs, 'input'>>;
@@ -5072,6 +5124,7 @@ export type MutationResolvers<ContextType = PortalContext, ParentType extends Re
   updateVotableFeature?: Resolver<ResolversTypes['VotableFeature'], ParentType, ContextType, RequireFields<MutationUpdateVotableFeatureArgs, 'id' | 'input'>>;
   updateVotingRound?: Resolver<ResolversTypes['VotingRound'], ParentType, ContextType, RequireFields<MutationUpdateVotingRoundArgs, 'id' | 'input'>>;
   uploadUserPicture?: Resolver<ResolversTypes['User'], ParentType, ContextType, RequireFields<MutationUploadUserPictureArgs, 'document'>>;
+  upsertSaasManagerInstances?: Resolver<ResolversTypes['SaasManagerSyncResult'], ParentType, ContextType, RequireFields<MutationUpsertSaasManagerInstancesArgs, 'generatedAt' | 'instances'>>;
   voteForFeature?: Resolver<Array<ResolversTypes['VotableFeature']>, ParentType, ContextType, RequireFields<MutationVoteForFeatureArgs, 'feature_id'>>;
 }>;
 
@@ -5366,7 +5419,7 @@ export type QueryResolvers<ContextType = PortalContext, ParentType extends Resol
   registeredProductVersions?: Resolver<Array<ResolversTypes['RegisteredProductVersion']>, ParentType, ContextType, RequireFields<QueryRegisteredProductVersionsArgs, 'product'>>;
   registeredSaasPlatformData?: Resolver<Maybe<ResolversTypes['SaasPlatformData']>, ParentType, ContextType, RequireFields<QueryRegisteredSaasPlatformDataArgs, 'input'>>;
   rolePortals?: Resolver<Array<ResolversTypes['RolePortal']>, ParentType, ContextType>;
-  saasManagerPlatforms?: Resolver<Maybe<ResolversTypes['SaasPlatformPage']>, ParentType, ContextType, RequireFields<QuerySaasManagerPlatformsArgs, 'orderBy' | 'orderMode' | 'page' | 'pageSize'>>;
+  saasManagerPlatforms?: Resolver<ResolversTypes['SaasPlatformConnection'], ParentType, ContextType, RequireFields<QuerySaasManagerPlatformsArgs, 'first' | 'orderBy' | 'orderMode'>>;
   seoServiceInstance?: Resolver<ResolversTypes['SeoServiceInstance'], ParentType, ContextType, RequireFields<QuerySeoServiceInstanceArgs, 'slug'>>;
   seoServiceInstanceMetadata?: Resolver<Array<ResolversTypes['SeoServiceInstanceMetadata']>, ParentType, ContextType, RequireFields<QuerySeoServiceInstanceMetadataArgs, 'service_instance_id'>>;
   seoServiceInstances?: Resolver<Array<ResolversTypes['SeoServiceInstance']>, ParentType, ContextType>;
@@ -5496,6 +5549,13 @@ export type SsoGroupRolePortalResolvers<ContextType = PortalContext, ParentType 
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type SaasManagerSyncResultResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['SaasManagerSyncResult'] = ResolversParentTypes['SaasManagerSyncResult']> = ResolversObject<{
+  applied?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  removed?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  skipped?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type SaasPlatformResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['SaasPlatform'] = ResolversParentTypes['SaasPlatform']> = ResolversObject<{
   commercial_model?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   contract_status?: Resolver<Maybe<ResolversTypes['SaasPlatformContractStatus']>, ParentType, ContextType>;
@@ -5511,6 +5571,13 @@ export type SaasPlatformResolvers<ContextType = PortalContext, ParentType extend
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type SaasPlatformConnectionResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['SaasPlatformConnection'] = ResolversParentTypes['SaasPlatformConnection']> = ResolversObject<{
+  edges?: Resolver<Array<ResolversTypes['SaasPlatformEdge']>, ParentType, ContextType>;
+  pageInfo?: Resolver<ResolversTypes['PageInfo'], ParentType, ContextType>;
+  totalCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type SaasPlatformDailySlaResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['SaasPlatformDailySla'] = ResolversParentTypes['SaasPlatformDailySla']> = ResolversObject<{
   availability?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
   day?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
@@ -5522,6 +5589,12 @@ export type SaasPlatformDataResolvers<ContextType = PortalContext, ParentType ex
   metrics?: Resolver<Maybe<ResolversTypes['SaasPlatformMetrics']>, ParentType, ContextType>;
   sla?: Resolver<Maybe<ResolversTypes['SaasPlatformSla']>, ParentType, ContextType>;
   storage?: Resolver<Maybe<ResolversTypes['SaasPlatformStorage']>, ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type SaasPlatformEdgeResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['SaasPlatformEdge'] = ResolversParentTypes['SaasPlatformEdge']> = ResolversObject<{
+  cursor?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  node?: Resolver<ResolversTypes['SaasPlatform'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -5558,12 +5631,6 @@ export type SaasPlatformMonthlySlaResolvers<ContextType = PortalContext, ParentT
   availability?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
   days?: Resolver<Array<ResolversTypes['SaasPlatformDailySla']>, ParentType, ContextType>;
   month?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-}>;
-
-export type SaasPlatformPageResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['SaasPlatformPage'] = ResolversParentTypes['SaasPlatformPage']> = ResolversObject<{
-  platforms?: Resolver<Array<ResolversTypes['SaasPlatform']>, ParentType, ContextType>;
-  totalCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -6217,15 +6284,17 @@ export type Resolvers<ContextType = PortalContext> = ResolversObject<{
   RolePortal?: RolePortalResolvers<ContextType>;
   RssFeed?: RssFeedResolvers<ContextType>;
   SSOGroupRolePortal?: SsoGroupRolePortalResolvers<ContextType>;
+  SaasManagerSyncResult?: SaasManagerSyncResultResolvers<ContextType>;
   SaasPlatform?: SaasPlatformResolvers<ContextType>;
+  SaasPlatformConnection?: SaasPlatformConnectionResolvers<ContextType>;
   SaasPlatformDailySla?: SaasPlatformDailySlaResolvers<ContextType>;
   SaasPlatformData?: SaasPlatformDataResolvers<ContextType>;
+  SaasPlatformEdge?: SaasPlatformEdgeResolvers<ContextType>;
   SaasPlatformMetadata?: SaasPlatformMetadataResolvers<ContextType>;
   SaasPlatformMetricPoint?: SaasPlatformMetricPointResolvers<ContextType>;
   SaasPlatformMetricSeries?: SaasPlatformMetricSeriesResolvers<ContextType>;
   SaasPlatformMetrics?: SaasPlatformMetricsResolvers<ContextType>;
   SaasPlatformMonthlySla?: SaasPlatformMonthlySlaResolvers<ContextType>;
-  SaasPlatformPage?: SaasPlatformPageResolvers<ContextType>;
   SaasPlatformSla?: SaasPlatformSlaResolvers<ContextType>;
   SaasPlatformStorage?: SaasPlatformStorageResolvers<ContextType>;
   SaasPlatformStorageUsage?: SaasPlatformStorageUsageResolvers<ContextType>;

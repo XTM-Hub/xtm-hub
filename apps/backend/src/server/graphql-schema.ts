@@ -19,6 +19,7 @@ import userResolver from '../modules/organization-management/user/user.resolver'
 import productInformationResolver from '../modules/product-information/product-information.resolver';
 import registrationResolver from '../modules/registration/registration.resolver';
 import rolePortalResolver from '../modules/role-portal/role-portal.resolver';
+import saasManagerInstanceResolver from '../modules/saas-manager-instance/saas-manager-instance.resolver';
 import serviceCapabilityResolver from '../modules/security-management/service-capability/service-capability.resolver';
 import subscriptionCapabilityResolver from '../modules/security-management/subscription-capability/subscription-capability.resolver';
 import userServiceCapabilityResolver from '../modules/security-management/user-service-capability/user-service-capability.resolver';
@@ -91,6 +92,7 @@ const resolvers = mergeResolvers([
   manageProductVersionResolver,
   featureVotingResolver,
   rolePortalResolver,
+  saasManagerInstanceResolver,
 ]);
 
 const createSchema = () => {

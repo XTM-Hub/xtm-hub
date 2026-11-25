@@ -135,7 +135,7 @@ type Query {
   users(first: Int!, after: ID, orderBy: UserOrdering!, orderMode: OrderingMode!, searchTerm: String, filters: [Filter!]): UserConnection!
   pendingUsers(first: Int!, after: ID, orderBy: UserOrdering!, orderMode: OrderingMode!, searchTerm: String, filters: [Filter!]): UserConnection!
   registeredSaasPlatformData(input: RegisteredSaasPlatformDataInput!): SaasPlatformData
-  saasManagerPlatforms(page: Int!, pageSize: Int!, orderBy: SaasPlatformOrdering!, orderMode: OrderingMode!, searchTerm: String, product: SaasProduct): SaasPlatformPage
+  saasManagerPlatforms(first: Int!, after: ID, orderBy: SaasPlatformOrdering!, orderMode: OrderingMode!, searchTerm: String, product: SaasProduct): SaasPlatformConnection!
   openCTIPlatformRegistrationStatus(input: OpenCTIPlatformRegistrationStatusInput!): OpenCTIPlatformRegistrationStatusResponse! @deprecated(reason: "Use `refreshPlatformRegistrationConnectivityStatus` instead. This field is no longer used in the OpenCTI platform due to refactoring and the addition of a version value in the endpoint.")
   isPlatformRegistered(input: IsPlatformRegisteredInput!): IsPlatformRegisteredResponse!
   canUnregisterPlatform(input: CanUnregisterPlatformInput!): CanUnregisterResponse!
@@ -254,6 +254,8 @@ type Mutation {
   addRolePortal(input: AddRolePortalInput!): RolePortal!
   updateRolePortal(name: String!, input: UpdateRolePortalInput!): RolePortal!
   deleteRolePortal(name: String!): RolePortal!
+  upsertSaasManagerInstances(generatedAt: Date!, instances: [SaasManagerInstanceInput!]!): SaasManagerSyncResult!
+  purgeSaasManagerInstances(before: Date!): SaasManagerSyncResult!
   addSubscriptionCapability(input: AddSubscriptionCapabilityInput!): [SubscriptionModel!]!
   addCapabilitiesToUserServices(input: UserServicesAddCapabilitiesInput!, service_instance_id: ServiceInstanceId!): [UserService]
   editSeoServiceInstance(service_instance_id: ServiceInstanceId!, language: Locale!, input: EditSeoServiceInstanceInput!): SeoServiceInstanceMetadata!
@@ -1496,13 +1498,19 @@ enum SaasPlatformContractStatus {
   ended
 }
 
-type SaasPlatformPage {
+type SaasPlatformEdge {
+  cursor: String!
+  node: SaasPlatform!
+}
+
+type SaasPlatformConnection {
   totalCount: Int!
-  platforms: [SaasPlatform!]!
+  edges: [SaasPlatformEdge!]!
+  pageInfo: PageInfo!
 }
 
 enum SaasPlatformOrdering {
-  customer__name
+  customer_name
   product
   plan
   end_date
@@ -1826,6 +1834,26 @@ input UpdateRolePortalInput {
 input DeleteSSOGroupRolePortalInput {
   ssoGroup: String!
   rolePortal: String!
+}
+
+input SaasManagerInstanceInput {
+  data: JSON!
+  index: SaasManagerInstanceIndexInput!
+  metrics: JSON
+}
+
+input SaasManagerInstanceIndexInput {
+  customer_name: String!
+  customer_techname: String
+  plan_code: String @deprecated(reason: "Ignored, the list orders on data.plan")
+  status_family: String
+  upgrade_group: String
+}
+
+type SaasManagerSyncResult {
+  applied: Int!
+  skipped: Int!
+  removed: Int!
 }
 
 """
@@ -2778,6 +2806,7 @@ enum PortalCapability {
   MANAGE_CONNECTORS_INGESTIONS
   MANAGE_MANIFEST_INGESTIONS
   GENERATE_MANIFEST
+  MANAGE_SAAS_MANAGER_INSTANCES
   READ_SAAS_METRICS
   READ_ORGANIZATION_MEMBERS
 }

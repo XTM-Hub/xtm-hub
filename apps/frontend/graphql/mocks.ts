@@ -1204,6 +1204,7 @@ export const mockMutation = (overrides?: Partial<Mutation>, _relationshipsToOmit
         logout: overrides && overrides.hasOwnProperty('logout') ? overrides.logout! : 'c0bb04f3-5940-42c4-b3b3-6d3927041bab',
         newProductVersion: overrides && overrides.hasOwnProperty('newProductVersion') ? overrides.newProductVersion! : relationshipsToOmit.has('Success') ? {} as Success : mockSuccess({}, relationshipsToOmit),
         publishContentTranslationDrafts: overrides && overrides.hasOwnProperty('publishContentTranslationDrafts') ? overrides.publishContentTranslationDrafts! : [relationshipsToOmit.has('ContentTranslationEntry') ? {} as ContentTranslationEntry : mockContentTranslationEntry({}, relationshipsToOmit)],
+        purgeSaasManagerInstances: overrides && overrides.hasOwnProperty('purgeSaasManagerInstances') ? overrides.purgeSaasManagerInstances! : relationshipsToOmit.has('SaasManagerSyncResult') ? {} as SaasManagerSyncResult : mockSaasManagerSyncResult({}, relationshipsToOmit),
         refreshPlatformRegistrationConnectivityStatus: overrides && overrides.hasOwnProperty('refreshPlatformRegistrationConnectivityStatus') ? overrides.refreshPlatformRegistrationConnectivityStatus! : relationshipsToOmit.has('RefreshPlatformRegistrationConnectivityStatusResponse') ? {} as RefreshPlatformRegistrationConnectivityStatusResponse : mockRefreshPlatformRegistrationConnectivityStatusResponse({}, relationshipsToOmit),
         refreshPlatformRegistrationConnectivityStatusAllTenants: overrides && overrides.hasOwnProperty('refreshPlatformRegistrationConnectivityStatusAllTenants') ? overrides.refreshPlatformRegistrationConnectivityStatusAllTenants! : relationshipsToOmit.has('RefreshPlatformRegistrationConnectivityStatusAllTenantsResponse') ? {} as RefreshPlatformRegistrationConnectivityStatusAllTenantsResponse : mockRefreshPlatformRegistrationConnectivityStatusAllTenantsResponse({}, relationshipsToOmit),
         refreshPlatformRegistrationConnectivityStatusSingleTenant: overrides && overrides.hasOwnProperty('refreshPlatformRegistrationConnectivityStatusSingleTenant') ? overrides.refreshPlatformRegistrationConnectivityStatusSingleTenant! : relationshipsToOmit.has('RefreshPlatformRegistrationConnectivityStatusResponse') ? {} as RefreshPlatformRegistrationConnectivityStatusResponse : mockRefreshPlatformRegistrationConnectivityStatusResponse({}, relationshipsToOmit),
@@ -1235,6 +1236,7 @@ export const mockMutation = (overrides?: Partial<Mutation>, _relationshipsToOmit
         updateVotableFeature: overrides && overrides.hasOwnProperty('updateVotableFeature') ? overrides.updateVotableFeature! : relationshipsToOmit.has('VotableFeature') ? {} as VotableFeature : mockVotableFeature({}, relationshipsToOmit),
         updateVotingRound: overrides && overrides.hasOwnProperty('updateVotingRound') ? overrides.updateVotingRound! : relationshipsToOmit.has('VotingRound') ? {} as VotingRound : mockVotingRound({}, relationshipsToOmit),
         uploadUserPicture: overrides && overrides.hasOwnProperty('uploadUserPicture') ? overrides.uploadUserPicture! : relationshipsToOmit.has('User') ? {} as User : mockUser({}, relationshipsToOmit),
+        upsertSaasManagerInstances: overrides && overrides.hasOwnProperty('upsertSaasManagerInstances') ? overrides.upsertSaasManagerInstances! : relationshipsToOmit.has('SaasManagerSyncResult') ? {} as SaasManagerSyncResult : mockSaasManagerSyncResult({}, relationshipsToOmit),
         voteForFeature: overrides && overrides.hasOwnProperty('voteForFeature') ? overrides.voteForFeature! : [relationshipsToOmit.has('VotableFeature') ? {} as VotableFeature : mockVotableFeature({}, relationshipsToOmit)],
     };
 };
@@ -1700,7 +1702,7 @@ export const mockQuery = (overrides?: Partial<Query>, _relationshipsToOmit: Set<
         registeredProductVersions: overrides && overrides.hasOwnProperty('registeredProductVersions') ? overrides.registeredProductVersions! : [relationshipsToOmit.has('RegisteredProductVersion') ? {} as RegisteredProductVersion : mockRegisteredProductVersion({}, relationshipsToOmit)],
         registeredSaasPlatformData: overrides && overrides.hasOwnProperty('registeredSaasPlatformData') ? overrides.registeredSaasPlatformData! : relationshipsToOmit.has('SaasPlatformData') ? {} as SaasPlatformData : mockSaasPlatformData({}, relationshipsToOmit),
         rolePortals: overrides && overrides.hasOwnProperty('rolePortals') ? overrides.rolePortals! : [relationshipsToOmit.has('RolePortal') ? {} as RolePortal : mockRolePortal({}, relationshipsToOmit)],
-        saasManagerPlatforms: overrides && overrides.hasOwnProperty('saasManagerPlatforms') ? overrides.saasManagerPlatforms! : relationshipsToOmit.has('SaasPlatformPage') ? {} as SaasPlatformPage : mockSaasPlatformPage({}, relationshipsToOmit),
+        saasManagerPlatforms: overrides && overrides.hasOwnProperty('saasManagerPlatforms') ? overrides.saasManagerPlatforms! : relationshipsToOmit.has('SaasPlatformConnection') ? {} as SaasPlatformConnection : mockSaasPlatformConnection({}, relationshipsToOmit),
         seoServiceInstance: overrides && overrides.hasOwnProperty('seoServiceInstance') ? overrides.seoServiceInstance! : relationshipsToOmit.has('SeoServiceInstance') ? {} as SeoServiceInstance : mockSeoServiceInstance({}, relationshipsToOmit),
         seoServiceInstanceMetadata: overrides && overrides.hasOwnProperty('seoServiceInstanceMetadata') ? overrides.seoServiceInstanceMetadata! : [relationshipsToOmit.has('SeoServiceInstanceMetadata') ? {} as SeoServiceInstanceMetadata : mockSeoServiceInstanceMetadata({}, relationshipsToOmit)],
         seoServiceInstances: overrides && overrides.hasOwnProperty('seoServiceInstances') ? overrides.seoServiceInstances! : [relationshipsToOmit.has('SeoServiceInstance') ? {} as SeoServiceInstance : mockSeoServiceInstance({}, relationshipsToOmit)],
@@ -1967,6 +1969,39 @@ export const mockSsoGroupRolePortal = (overrides?: Partial<SsoGroupRolePortal>, 
     };
 };
 
+export const mockSaasManagerInstanceIndexInput = (overrides?: Partial<SaasManagerInstanceIndexInput>, _relationshipsToOmit: Set<string> = new Set()): SaasManagerInstanceIndexInput => {
+    const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+    relationshipsToOmit.add('SaasManagerInstanceIndexInput');
+    return {
+        customer_name: overrides && overrides.hasOwnProperty('customer_name') ? overrides.customer_name! : 'consuasor',
+        customer_techname: overrides && overrides.hasOwnProperty('customer_techname') ? overrides.customer_techname! : 'studio',
+        plan_code: overrides && overrides.hasOwnProperty('plan_code') ? overrides.plan_code! : 'adduco',
+        status_family: overrides && overrides.hasOwnProperty('status_family') ? overrides.status_family! : 'fugit',
+        upgrade_group: overrides && overrides.hasOwnProperty('upgrade_group') ? overrides.upgrade_group! : 'deficio',
+    };
+};
+
+export const mockSaasManagerInstanceInput = (overrides?: Partial<SaasManagerInstanceInput>, _relationshipsToOmit: Set<string> = new Set()): SaasManagerInstanceInput => {
+    const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+    relationshipsToOmit.add('SaasManagerInstanceInput');
+    return {
+        data: overrides && overrides.hasOwnProperty('data') ? overrides.data! : 'atrox',
+        index: overrides && overrides.hasOwnProperty('index') ? overrides.index! : relationshipsToOmit.has('SaasManagerInstanceIndexInput') ? {} as SaasManagerInstanceIndexInput : mockSaasManagerInstanceIndexInput({}, relationshipsToOmit),
+        metrics: overrides && overrides.hasOwnProperty('metrics') ? overrides.metrics! : 'occaecati',
+    };
+};
+
+export const mockSaasManagerSyncResult = (overrides?: Partial<SaasManagerSyncResult>, _relationshipsToOmit: Set<string> = new Set()): { __typename: 'SaasManagerSyncResult' } & SaasManagerSyncResult => {
+    const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+    relationshipsToOmit.add('SaasManagerSyncResult');
+    return {
+        __typename: 'SaasManagerSyncResult',
+        applied: overrides && overrides.hasOwnProperty('applied') ? overrides.applied! : 3872,
+        removed: overrides && overrides.hasOwnProperty('removed') ? overrides.removed! : 8571,
+        skipped: overrides && overrides.hasOwnProperty('skipped') ? overrides.skipped! : 6390,
+    };
+};
+
 export const mockSaasPlatform = (overrides?: Partial<SaasPlatform>, _relationshipsToOmit: Set<string> = new Set()): { __typename: 'SaasPlatform' } & SaasPlatform => {
     const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
     relationshipsToOmit.add('SaasPlatform');
@@ -1983,6 +2018,17 @@ export const mockSaasPlatform = (overrides?: Partial<SaasPlatform>, _relationshi
         sla_cmtd: overrides && overrides.hasOwnProperty('sla_cmtd') ? overrides.sla_cmtd! : 7.3,
         status: overrides && overrides.hasOwnProperty('status') ? overrides.status! : 'vitium',
         storage: overrides && overrides.hasOwnProperty('storage') ? overrides.storage! : relationshipsToOmit.has('SaasPlatformStorage') ? {} as SaasPlatformStorage : mockSaasPlatformStorage({}, relationshipsToOmit),
+    };
+};
+
+export const mockSaasPlatformConnection = (overrides?: Partial<SaasPlatformConnection>, _relationshipsToOmit: Set<string> = new Set()): { __typename: 'SaasPlatformConnection' } & SaasPlatformConnection => {
+    const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+    relationshipsToOmit.add('SaasPlatformConnection');
+    return {
+        __typename: 'SaasPlatformConnection',
+        edges: overrides && overrides.hasOwnProperty('edges') ? overrides.edges! : [relationshipsToOmit.has('SaasPlatformEdge') ? {} as SaasPlatformEdge : mockSaasPlatformEdge({}, relationshipsToOmit)],
+        pageInfo: overrides && overrides.hasOwnProperty('pageInfo') ? overrides.pageInfo! : relationshipsToOmit.has('PageInfo') ? {} as PageInfo : mockPageInfo({}, relationshipsToOmit),
+        totalCount: overrides && overrides.hasOwnProperty('totalCount') ? overrides.totalCount! : 2322,
     };
 };
 
@@ -2005,6 +2051,16 @@ export const mockSaasPlatformData = (overrides?: Partial<SaasPlatformData>, _rel
         metrics: overrides && overrides.hasOwnProperty('metrics') ? overrides.metrics! : relationshipsToOmit.has('SaasPlatformMetrics') ? {} as SaasPlatformMetrics : mockSaasPlatformMetrics({}, relationshipsToOmit),
         sla: overrides && overrides.hasOwnProperty('sla') ? overrides.sla! : relationshipsToOmit.has('SaasPlatformSla') ? {} as SaasPlatformSla : mockSaasPlatformSla({}, relationshipsToOmit),
         storage: overrides && overrides.hasOwnProperty('storage') ? overrides.storage! : relationshipsToOmit.has('SaasPlatformStorage') ? {} as SaasPlatformStorage : mockSaasPlatformStorage({}, relationshipsToOmit),
+    };
+};
+
+export const mockSaasPlatformEdge = (overrides?: Partial<SaasPlatformEdge>, _relationshipsToOmit: Set<string> = new Set()): { __typename: 'SaasPlatformEdge' } & SaasPlatformEdge => {
+    const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+    relationshipsToOmit.add('SaasPlatformEdge');
+    return {
+        __typename: 'SaasPlatformEdge',
+        cursor: overrides && overrides.hasOwnProperty('cursor') ? overrides.cursor! : 'comptus',
+        node: overrides && overrides.hasOwnProperty('node') ? overrides.node! : relationshipsToOmit.has('SaasPlatform') ? {} as SaasPlatform : mockSaasPlatform({}, relationshipsToOmit),
     };
 };
 
@@ -2061,16 +2117,6 @@ export const mockSaasPlatformMonthlySla = (overrides?: Partial<SaasPlatformMonth
         availability: overrides && overrides.hasOwnProperty('availability') ? overrides.availability! : 4.9,
         days: overrides && overrides.hasOwnProperty('days') ? overrides.days! : [relationshipsToOmit.has('SaasPlatformDailySla') ? {} as SaasPlatformDailySla : mockSaasPlatformDailySla({}, relationshipsToOmit)],
         month: overrides && overrides.hasOwnProperty('month') ? overrides.month! : '2021-12-11T09:22:08.674Z',
-    };
-};
-
-export const mockSaasPlatformPage = (overrides?: Partial<SaasPlatformPage>, _relationshipsToOmit: Set<string> = new Set()): { __typename: 'SaasPlatformPage' } & SaasPlatformPage => {
-    const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
-    relationshipsToOmit.add('SaasPlatformPage');
-    return {
-        __typename: 'SaasPlatformPage',
-        platforms: overrides && overrides.hasOwnProperty('platforms') ? overrides.platforms! : [relationshipsToOmit.has('SaasPlatform') ? {} as SaasPlatform : mockSaasPlatform({}, relationshipsToOmit)],
-        totalCount: overrides && overrides.hasOwnProperty('totalCount') ? overrides.totalCount! : 7080,
     };
 };
 
