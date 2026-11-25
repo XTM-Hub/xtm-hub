@@ -25,6 +25,7 @@ fragment AdminRegisteredPlatformRow on AdminRegisteredPlatform {
     kind
     has_token
   }
+  is_trial
 }
 
 query AdminRegisteredPlatforms(

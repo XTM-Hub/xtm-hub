@@ -17,7 +17,6 @@ import {
   ServiceInstanceCreationStatus,
 } from '../../__generated__/resolvers-types';
 import { requestContext } from '../../context/request.context';
-import DeploymentRequest from '../../model/kanel/public/DeploymentRequest';
 import { DocumentId } from '../../model/kanel/public/Document';
 import Organization, {
   OrganizationId,
@@ -85,6 +84,7 @@ export interface AdminRegisteredPlatformRow {
   registerer_first_name: string | null;
   registerer_last_name: string | null;
   has_token: boolean;
+  is_trial: boolean;
 }
 
 export interface AdminRegisteredPlatformsFilters {
@@ -237,6 +237,19 @@ const applyAdminRegisteredPlatformsFilters = (
   return query;
 };
 
+// A trial is only ended through its own lifecycle, never unregistered by an admin: its contract is trial, or a trial
+// deployment request is linked to its service instance, whatever its hub_status or counts_in_orga_quota. The admin
+// list and the unregister refusal both use this definition.
+const selectIsTrialRegistration = () =>
+  dbRaw(
+    `("PlatformConfiguration"."platform_contract" = ? OR EXISTS (
+      SELECT 1 FROM "DeploymentRequest"
+      WHERE "DeploymentRequest"."service_instance_id" = "PlatformConfiguration"."service_instance_id"
+        AND "DeploymentRequest"."type" = ?
+    )) as is_trial`,
+    [PlatformContract.Trial, DeploymentRequestDeploymentType.Trial]
+  );
+
 const selectAdminRegisteredPlatformColumns = (query: Knex.QueryBuilder) =>
   query.select<AdminRegisteredPlatformRow[]>([
     'PlatformConfiguration.service_instance_id',
@@ -258,6 +271,7 @@ const selectAdminRegisteredPlatformColumns = (query: Knex.QueryBuilder) =>
     'User.first_name as registerer_first_name',
     'User.last_name as registerer_last_name',
     dbRaw('("PlatformConfiguration"."token" IS NOT NULL) as has_token'),
+    selectIsTrialRegistration(),
   ]);
 
 const RegisteredPlatformsSelectColumns = [
@@ -525,18 +539,18 @@ export const RegistrationDomain = {
     );
   },
 
-  // Whatever its hub_status or counts_in_orga_quota: a trial request linked to the instance makes it a trial.
-  hasTrialDeploymentRequest: async (
+  isTrialRegistration: async (
     serviceInstanceId: ServiceInstanceId
   ): Promise<boolean> => {
-    const deploymentRequest = await db<DeploymentRequest>('DeploymentRequest')
-      .where({
-        service_instance_id: serviceInstanceId,
-        type: DeploymentRequestDeploymentType.Trial,
-      })
-      .select('id')
+    const row = await db<PlatformConfigurationModel>('PlatformConfiguration')
+      .where(
+        'PlatformConfiguration.service_instance_id',
+        '=',
+        serviceInstanceId
+      )
+      .select<{ is_trial: boolean }[]>(selectIsTrialRegistration())
       .first();
-    return !!deploymentRequest;
+    return !!row?.is_trial;
   },
 
   loadAdminRegisteredPlatform: async (

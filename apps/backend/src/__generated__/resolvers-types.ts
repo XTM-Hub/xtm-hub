@@ -127,6 +127,8 @@ export type AdminRegisteredPlatform = {
   contract: PlatformContract;
   credential: RegisteredPlatformCredential;
   identifier: PlatformIdentifier;
+  /** A trial: its contract is trial, or a trial deployment request is linked to it. An admin cannot unregister it. */
+  is_trial: Scalars['Boolean']['output'];
   last_connectivity_check?: Maybe<Scalars['Date']['output']>;
   /** The organization owning the registration: the one of its newest subscription. */
   organization?: Maybe<AdminRegisteredPlatformOrganization>;
@@ -4373,6 +4375,7 @@ export type AdminRegisteredPlatformResolvers<ContextType = PortalContext, Parent
   contract?: Resolver<ResolversTypes['PlatformContract'], ParentType, ContextType>;
   credential?: Resolver<ResolversTypes['RegisteredPlatformCredential'], ParentType, ContextType>;
   identifier?: Resolver<ResolversTypes['PlatformIdentifier'], ParentType, ContextType>;
+  is_trial?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   last_connectivity_check?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
   organization?: Resolver<Maybe<ResolversTypes['AdminRegisteredPlatformOrganization']>, ParentType, ContextType>;
   platform_id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;

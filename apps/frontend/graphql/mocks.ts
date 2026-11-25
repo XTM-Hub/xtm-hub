@@ -113,6 +113,7 @@ export const mockAdminRegisteredPlatform = (overrides?: Partial<AdminRegisteredP
         contract: overrides && overrides.hasOwnProperty('contract') ? overrides.contract! : PlatformContract.Ce,
         credential: overrides && overrides.hasOwnProperty('credential') ? overrides.credential! : relationshipsToOmit.has('RegisteredPlatformCredential') ? {} as RegisteredPlatformCredential : mockRegisteredPlatformCredential({}, relationshipsToOmit),
         identifier: overrides && overrides.hasOwnProperty('identifier') ? overrides.identifier! : PlatformIdentifier.Openaev,
+        is_trial: overrides && overrides.hasOwnProperty('is_trial') ? overrides.is_trial! : true,
         last_connectivity_check: overrides && overrides.hasOwnProperty('last_connectivity_check') ? overrides.last_connectivity_check! : '2021-03-20T08:31:37.431Z',
         organization: overrides && overrides.hasOwnProperty('organization') ? overrides.organization! : relationshipsToOmit.has('AdminRegisteredPlatformOrganization') ? {} as AdminRegisteredPlatformOrganization : mockAdminRegisteredPlatformOrganization({}, relationshipsToOmit),
         platform_id: overrides && overrides.hasOwnProperty('platform_id') ? overrides.platform_id! : 'demergo',

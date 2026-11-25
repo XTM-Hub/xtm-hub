@@ -54,8 +54,15 @@ const unregisteredPlatformResponse: AdminUnregisterPlatformMutation = {
   }),
 };
 
-const openDialog = async (queryClient?: QueryClient) => {
-  const rendered = testRender(<AdminUnregisterPlatform platform={PLATFORM} />, {
+const openDialog = async (
+  queryClient?: QueryClient,
+  platform:
+    | typeof PLATFORM
+    | (Omit<typeof PLATFORM, 'organization'> & {
+        organization: null;
+      }) = PLATFORM
+) => {
+  const rendered = testRender(<AdminUnregisterPlatform platform={platform} />, {
     queryClient,
   });
   await rendered.user.click(
@@ -89,6 +96,20 @@ describe('AdminUnregisterPlatform', () => {
       })
     ).toHaveTextContent('AdminRegisteredPlatforms.UnregisterDialog.Text');
     expect(mocks.mutate).not.toHaveBeenCalled();
+  });
+
+  it('should say nobody is notified when the platform belongs to no organization', async () => {
+    // Given / When
+    await openDialog(undefined, { ...PLATFORM, organization: null });
+
+    // Then
+    const dialog = screen.getByRole('alertdialog');
+    expect(dialog).toHaveTextContent(
+      'AdminRegisteredPlatforms.UnregisterDialog.TextWithoutOrganization'
+    );
+    expect(dialog).not.toHaveTextContent(
+      /UnregisterDialog\.Text(?!WithoutOrganization)/
+    );
   });
 
   it('should unregister the platform by its service instance when the admin confirms', async () => {

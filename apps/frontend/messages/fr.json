@@ -2714,7 +2714,8 @@
     "UnregisterSuccess": "La plateforme « {title} » a été désinscrite",
     "UnregisterDialog": {
       "Title": "Désinscrire la plateforme « {title} » ?",
-      "Text": "La plateforme {product} « {title} » sera déconnectée de l'organisation {organization} sur XTM Hub. Les administrateurs de l'organisation seront prévenus par e-mail. Pour la reconnecter, la plateforme devra refaire le processus de connexion. La plateforme ne pourra plus utiliser ses identifiants avec XTM Hub, sauf pour apprendre qu'elle est désinscrite."
+      "Text": "La plateforme {product} « {title} » sera déconnectée de l'organisation {organization} sur XTM Hub. Les administrateurs de l'organisation seront prévenus par e-mail. Pour la reconnecter, la plateforme devra refaire le processus de connexion. La plateforme ne pourra plus utiliser ses identifiants avec XTM Hub, sauf pour apprendre qu'elle est désinscrite.",
+      "TextWithoutOrganization": "La plateforme {product} « {title} » sera déconnectée de XTM Hub. Elle n'appartient à aucune organisation : personne ne sera prévenu par e-mail. Pour la reconnecter, la plateforme devra refaire le processus de connexion. La plateforme ne pourra plus utiliser ses identifiants avec XTM Hub, sauf pour apprendre qu'elle est désinscrite."
     }
   },
   "Tour": {

@@ -581,12 +581,12 @@ export const RegistrationApp = {
       return;
     }
 
-    // For now, a trial is only ended through its own lifecycle: an admin cannot disconnect it.
+    // For now, a trial is only ended through its own lifecycle: an admin cannot disconnect it. The admin list flags
+    // the same registrations with is_trial.
     if (
-      platformConfiguration.platform_contract === PlatformContract.Trial ||
-      (await RegistrationDomain.hasTrialDeploymentRequest(
+      await RegistrationDomain.isTrialRegistration(
         platformConfiguration.service_instance_id
-      ))
+      )
     ) {
       throw new Error(ErrorCode.TrialPlatformCannotBeUnregistered);
     }
@@ -891,6 +891,7 @@ const mapAdminRegisteredPlatformRowToGraphQL = (
         : RegisteredPlatformCredentialKind.None,
       has_token: row.has_token,
     },
+    is_trial: row.is_trial,
   };
 };
 

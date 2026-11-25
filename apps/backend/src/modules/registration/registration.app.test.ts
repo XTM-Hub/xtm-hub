@@ -3177,6 +3177,7 @@ describe('registration app, platform admin', () => {
           kind: RegisteredPlatformCredentialKind.Token,
           has_token: true,
         },
+        is_trial: false,
       });
     });
 
@@ -3593,6 +3594,54 @@ describe('registration app, platform admin', () => {
             TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.ID,
         });
       });
+
+      it.each([
+        {
+          name: 'a trial contract',
+          contract: PlatformContract.Trial,
+          deploymentType: undefined,
+          expected: true,
+        },
+        {
+          name: 'an EE contract linked to a trial deployment request',
+          contract: PlatformContract.Ee,
+          deploymentType: DeploymentRequestDeploymentType.Trial,
+          expected: true,
+        },
+        {
+          name: 'an EE contract linked to a bundle deployment request',
+          contract: PlatformContract.Ee,
+          deploymentType: DeploymentRequestDeploymentType.Bundle,
+          expected: false,
+        },
+      ])(
+        'should flag $name as a trial in the admin list: $expected',
+        async ({ contract, deploymentType, expected }) => {
+          // Given
+          const title = `Trial flag ${uuidv4()}`;
+          const configuration = await createAdminFixture({ title, contract });
+          if (deploymentType) {
+            await TestHelper.deploymentRequest.create({
+              service_instance_id: configuration.service_instance_id,
+              organization_requester_id:
+                TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+              user_requester_id:
+                TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.ID,
+              type: deploymentType,
+            });
+          }
+
+          // When
+          const connection = await RegistrationApp.loadAdminRegisteredPlatforms(
+            { first: 10, searchTerm: title }
+          );
+
+          // Then the list flags exactly the registrations the unregister refuses
+          expect(connection.edges.map(({ node }) => node.is_trial)).toEqual([
+            expected,
+          ]);
+        }
+      );
 
       it('should refuse to unregister a registration whose contract is a trial', async () => {
         // Given

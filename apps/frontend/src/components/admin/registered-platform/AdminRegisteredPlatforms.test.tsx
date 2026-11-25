@@ -67,6 +67,7 @@ const buildPlatform = (
     last_name: 'Lovelace',
   },
   credential: { kind: RegisteredPlatformCredentialKind.Token, has_token: true },
+  is_trial: false,
   ...overrides,
 });
 
@@ -220,13 +221,15 @@ describe('AdminRegisteredPlatforms', () => {
   );
 
   it.each([
-    [PlatformContract.Trial, 0],
-    [PlatformContract.Ee, 1],
+    [true, 0],
+    [false, 1],
   ])(
-    'should offer to unregister an active platform under the contract %s %i time(s)',
-    (contract, expectedButtons) => {
-      // Given
-      mockPlatforms([buildPlatform({ contract })]);
+    'should offer to unregister an active platform flagged as a trial %s %i time(s)',
+    (is_trial, expectedButtons) => {
+      // Given an EE contract: the server flag decides, whatever the contract
+      mockPlatforms([
+        buildPlatform({ contract: PlatformContract.Ee, is_trial }),
+      ]);
 
       // When
       testRender(<AdminRegisteredPlatforms />);
@@ -240,7 +243,7 @@ describe('AdminRegisteredPlatforms', () => {
     }
   );
 
-  it('should not offer to unregister an active platform that belongs to no organization', () => {
+  it('should offer to unregister an active platform that belongs to no organization', () => {
     // Given
     mockPlatforms([buildPlatform({ organization: null })]);
 
@@ -249,10 +252,10 @@ describe('AdminRegisteredPlatforms', () => {
 
     // Then
     expect(
-      within(getPlatformRow()).queryByRole('button', {
+      within(getPlatformRow()).getByRole('button', {
         name: 'AdminRegisteredPlatforms.Unregister',
       })
-    ).not.toBeInTheDocument();
+    ).toBeInTheDocument();
   });
 
   it('should list the platforms from the most recently checked one, without filter, when the admin opens the page', () => {

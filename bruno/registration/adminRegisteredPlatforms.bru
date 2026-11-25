@@ -64,6 +64,7 @@ body:graphql {
             kind
             has_token
           }
+          is_trial
         }
       }
     }
@@ -93,4 +94,5 @@ settings {
 docs {
   Platform admin (BYPASS) only. Every platform registration, whatever its organization.
   The credential says whether a platform token exists, never its value.
+  is_trial flags the registrations adminUnregisterPlatform refuses: a trial contract, or a linked trial deployment request.
 }

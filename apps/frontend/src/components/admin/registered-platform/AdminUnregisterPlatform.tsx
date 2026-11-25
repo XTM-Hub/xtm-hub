@@ -1,6 +1,6 @@
 import {
+  type AdminRegisteredPlatformRow,
   getPlatformProductName,
-  type UnregistrablePlatformRow,
 } from '@/components/admin/registered-platform/admin-registered-platforms.utils';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
@@ -16,7 +16,7 @@ import { useState } from 'react';
 
 interface AdminUnregisterPlatformProps {
   platform: Pick<
-    UnregistrablePlatformRow,
+    AdminRegisteredPlatformRow,
     'service_instance_id' | 'title' | 'identifier' | 'organization'
   >;
 }
@@ -88,11 +88,20 @@ export const AdminUnregisterPlatform = ({
           serviceInstanceId: platform.service_instance_id,
         });
       }}>
-      {t('AdminRegisteredPlatforms.UnregisterDialog.Text', {
-        title: platform.title,
-        product: productName,
-        organization: platform.organization.name,
-      })}
+      {/* Without an owner organization, nobody is emailed: the API deactivates the registration all the same. */}
+      {platform.organization
+        ? t('AdminRegisteredPlatforms.UnregisterDialog.Text', {
+            title: platform.title,
+            product: productName,
+            organization: platform.organization.name,
+          })
+        : t(
+            'AdminRegisteredPlatforms.UnregisterDialog.TextWithoutOrganization',
+            {
+              title: platform.title,
+              product: productName,
+            }
+          )}
     </ConfirmDialog>
   );
 };

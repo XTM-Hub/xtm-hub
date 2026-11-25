@@ -164,18 +164,12 @@ export type AdminRegisteredPlatformRow = AdminRegisteredPlatformRowFragment & {
   id: string;
 };
 
-export type UnregistrablePlatformRow = AdminRegisteredPlatformRow & {
-  organization: NonNullable<AdminRegisteredPlatformRow['organization']>;
-};
-
-// Only an active registration can be unregistered, and the API needs its organization to email the administrators.
-// A trial cannot be unregistered for now: the API refuses it with TRIAL_PLATFORM_CANNOT_BE_UNREGISTERED.
+// Only an active registration can be unregistered, with or without an owner organization. A trial cannot be
+// unregistered for now: the API flags it with is_trial and refuses it with TRIAL_PLATFORM_CANNOT_BE_UNREGISTERED.
 export const canUnregisterPlatform = (
-  platform: AdminRegisteredPlatformRow
-): platform is UnregistrablePlatformRow =>
-  platform.status === PlatformConfigurationStatus.Active &&
-  platform.organization !== null &&
-  platform.contract !== PlatformContract.Trial;
+  platform: Pick<AdminRegisteredPlatformRow, 'status' | 'is_trial'>
+): boolean =>
+  platform.status === PlatformConfigurationStatus.Active && !platform.is_trial;
 
 export const toAdminRegisteredPlatformRows = (
   data: AdminRegisteredPlatformsQuery | undefined

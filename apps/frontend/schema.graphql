@@ -1722,6 +1722,11 @@ type AdminRegisteredPlatform {
   organization: AdminRegisteredPlatformOrganization
   registerer: AdminRegisteredPlatformRegisterer
   credential: RegisteredPlatformCredential!
+
+  """
+  A trial: its contract is trial, or a trial deployment request is linked to it. An admin cannot unregister it.
+  """
+  is_trial: Boolean!
 }
 
 type AdminRegisteredPlatformEdge {

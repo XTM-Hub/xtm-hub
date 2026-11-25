@@ -20,7 +20,6 @@ import {
   CommercialModel,
   OrderingMode,
   PlatformConfigurationStatus,
-  PlatformContract,
   PlatformIdentifier,
   RegisteredPlatformCredentialKind,
 } from '@graphql/generated';
@@ -241,38 +240,17 @@ describe('getRegistererName', () => {
 
 describe('canUnregisterPlatform', () => {
   it.each([
-    [
-      PlatformConfigurationStatus.Active,
-      ORGANIZATION,
-      PlatformContract.Ee,
-      true,
-    ],
-    [
-      PlatformConfigurationStatus.Active,
-      ORGANIZATION,
-      PlatformContract.Ce,
-      true,
-    ],
-    [
-      PlatformConfigurationStatus.Inactive,
-      ORGANIZATION,
-      PlatformContract.Ee,
-      false,
-    ],
-    [PlatformConfigurationStatus.Active, null, PlatformContract.Ee, false],
-    [
-      PlatformConfigurationStatus.Active,
-      ORGANIZATION,
-      PlatformContract.Trial,
-      false,
-    ],
+    [PlatformConfigurationStatus.Active, ORGANIZATION, false, true],
+    [PlatformConfigurationStatus.Active, null, false, true],
+    [PlatformConfigurationStatus.Inactive, ORGANIZATION, false, false],
+    [PlatformConfigurationStatus.Active, ORGANIZATION, true, false],
   ])(
-    'should tell a %s platform of the organization %j under the contract %s can be unregistered: %s',
-    (status, organization, contract, expected) => {
+    'should tell a %s platform of the organization %j, trial %s, can be unregistered: %s',
+    (status, organization, is_trial, expected) => {
       // Given / When / Then
       expect(
         canUnregisterPlatform(
-          mockAdminRegisteredPlatform({ status, organization, contract })
+          mockAdminRegisteredPlatform({ status, organization, is_trial })
         )
       ).toBe(expected);
     }
