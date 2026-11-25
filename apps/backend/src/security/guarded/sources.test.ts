@@ -3,7 +3,6 @@ import { TestHelper } from '../../../tests/helper/test.helper';
 import { PortalCapability } from '../../__generated__/resolvers-types';
 import { OrganizationId } from '../../model/kanel/public/Organization';
 import { NotFoundErrorCode } from '../../utils/error/error.code';
-import { CallerOf } from './guard.types';
 import { orgGuard } from './guards/organization.guard';
 import { fromArg, fromRecord } from './sources';
 
@@ -105,7 +104,7 @@ describe('sources', () => {
 describe('fromRecord', () => {
   type Args = { id: string };
   type Row = { organizationId: string; ownerId: string };
-  const caller = buildUserPrincipal() as CallerOf<'user'>;
+  const caller = buildUserPrincipal();
 
   it('should load the record once for the sources picked from it with the same arguments', async () => {
     // Given

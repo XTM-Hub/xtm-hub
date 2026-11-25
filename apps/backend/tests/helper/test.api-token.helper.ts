@@ -84,7 +84,7 @@ const send = async ({
   // Like a real call, the token is resolved outside any request context: one left by an earlier call would narrow
   // the rights its user is loaded with
   requestContext.set(undefined);
-  const { secret, apiToken: api_token } = await create({
+  const { secret, apiToken, cleanup } = await create({
     userId,
     organizationId,
     scope,
@@ -95,9 +95,9 @@ const send = async ({
   } as unknown as Request;
   return {
     req,
-    tokenId: api_token.id,
+    tokenId: apiToken.id,
     authenticated: await runMiddleware(req),
-    cleanup: () => remove(api_token.id),
+    cleanup,
   };
 };
 
@@ -122,6 +122,5 @@ export const TestApiTokenHelper = {
     actAs,
     create,
     send,
-    delete: remove,
   },
 };

@@ -210,16 +210,6 @@ describe('createApiToken mutation', () => {
 });
 
 describe('revokeApiToken mutation', () => {
-  // A token of SECOND ORGA owned by SIMPLE of SECOND ORGA: the otherOrganization row is its owner, tokenAdmin
-  // administers its organization, tokenReadWrite belongs to it without administering it, and nobody else is a member
-  const prepareToken = async () => {
-    const { apiToken, cleanup } = await TestHelper.apiToken.create({
-      userId: SECOND.USERS.SIMPLE.ID,
-      organizationId: SECOND.ID,
-    });
-    return { apiToken, cleanup };
-  };
-
   TestHelper.expectAccessMatrix({
     operation: `mutation ($id: ApiTokenId!) { revokeApiToken(id: $id) { id } }`,
     guarded: () => vi.spyOn(ApiTokenApp, 'revoke'),
@@ -236,7 +226,12 @@ describe('revokeApiToken mutation', () => {
       tokenOtherOrganization: NotFoundErrorCode.NotFound,
     },
     prepare: async () => {
-      const { apiToken, cleanup } = await prepareToken();
+      // A token of SECOND ORGA owned by SIMPLE of SECOND ORGA: the otherOrganization row is its owner, tokenAdmin
+      // administers its organization, tokenReadWrite belongs to it without administering it, and nobody else is a member
+      const { apiToken, cleanup } = await TestHelper.apiToken.create({
+        userId: SECOND.USERS.SIMPLE.ID,
+        organizationId: SECOND.ID,
+      });
       return {
         variables: { id: apiToken.id },
         expectedData: {

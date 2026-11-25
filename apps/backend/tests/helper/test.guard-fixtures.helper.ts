@@ -12,6 +12,7 @@ import { UserId } from '../../src/model/kanel/public/User';
 import { OrganizationHelper } from '../../src/modules/organization-management/organization/organization.helper';
 import type { FullPlatformConfiguration } from '../../src/modules/registration/platform-configuration/platform-configuration.domain';
 import { PLATFORM_USER_UUID, SYSTEM_USER_UUID } from '../../src/portal.const';
+import type { CallerOf } from '../../src/security/guarded/guard.types';
 import { Principal } from '../../src/security/guarded/principal';
 
 const USER_ID = 'user-id' as UserId;
@@ -31,7 +32,7 @@ const buildUserPrincipal = (
     // A caller authenticated by an API token of this scope
     apiTokenScope?: ApiTokenScope;
   } = {}
-): Principal => ({
+): CallerOf<'user'> => ({
   kind: 'user',
   actorId: USER_ID,
   isBypassUser: overrides.isBypassUser ?? false,

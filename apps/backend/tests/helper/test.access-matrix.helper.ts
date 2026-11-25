@@ -354,14 +354,13 @@ export const TestAccessMatrixHelper = {
   }: AccessMatrixOptions) => {
     const execute = useGraphqlServer();
 
-    const outcomeOf = (row: AccessRow) => expected[row];
     const refusedRows = ROWS.flatMap((row) => {
-      const outcome = outcomeOf(row);
+      const outcome = expected[row];
       return outcome === undefined || outcome === 'allowed'
         ? []
         : [{ row, code: outcome, family: ERROR_FAMILY[outcome] }];
     });
-    const allowedRows = ROWS.filter((row) => outcomeOf(row) === 'allowed').map(
+    const allowedRows = ROWS.filter((row) => expected[row] === 'allowed').map(
       (row) => ({ row })
     );
 

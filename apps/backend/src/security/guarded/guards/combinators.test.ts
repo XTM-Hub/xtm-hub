@@ -168,7 +168,7 @@ describe('anyOf', () => {
     const build = () => anyOf(userGuard, machineGuard);
 
     // Then
-    expect(build).toThrow('anyOf needs guards that build the same principal');
+    expect(build).toThrow('must build the same principal');
   });
 
   it('should refuse an anonymous visitor with UNAUTHENTICATED without running any source', async () => {
@@ -283,7 +283,7 @@ describe('allOf', () => {
     const build = () => allOf(userGuard, machineGuard);
 
     // Then
-    expect(build).toThrow('allOf needs guards that build the same principal');
+    expect(build).toThrow('must build the same principal');
   });
 
   it('should pass what the last guard checked to the checks of its targets', async () => {

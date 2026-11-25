@@ -8,7 +8,6 @@ import {
   Resolvers,
 } from '../../__generated__/resolvers-types';
 import { ApiTokenId } from '../../model/kanel/public/ApiToken';
-import { OrganizationId } from '../../model/kanel/public/Organization';
 import { UserLoadUserBy } from '../../model/user';
 import { Guarded } from '../../security/guarded/guarded.decorator';
 import {
@@ -48,9 +47,7 @@ const toGraphql = (token: ApiTokenWithNames): GraphqlApiToken => ({
 
 // A malformed id would reach the query as a Postgres error
 export const loadApiTokenOfArgs = ({ id }: MutationRevokeApiTokenArgs) =>
-  isUuid(id)
-    ? ApiTokenDomain.loadById(id as ApiTokenId)
-    : Promise.resolve(undefined);
+  isUuid(id) ? ApiTokenDomain.loadById(id) : Promise.resolve(undefined);
 
 const tokenOfId = fromRecord(loadApiTokenOfArgs);
 const organizationOfTokenId = tokenOfId.pick(
@@ -128,7 +125,7 @@ class ApiTokenMutations {
     allOf(
       sessionCallerGuard(),
       orgGuard<MutationCreateApiTokenArgs>({
-        organization: (_, { input }) => input.organization_id as OrganizationId,
+        organization: (_, { input }) => input.organization_id,
         capabilities: [],
         bypass: false,
       })
@@ -140,7 +137,7 @@ class ApiTokenMutations {
     run(async () => {
       const { token, api_token } = await ApiTokenApp.create(
         context.user as UserLoadUserBy,
-        { ...input, organization_id: input.organization_id as OrganizationId }
+        input
       );
       return { token, api_token: toGraphql(api_token) };
     });
@@ -170,12 +167,7 @@ class ApiTokenMutations {
     MutationResolvers['revokeApiToken']
   > = (_, { id }, context) =>
     run(async () =>
-      toGraphql(
-        await ApiTokenApp.revoke(
-          context.user as UserLoadUserBy,
-          id as ApiTokenId
-        )
-      )
+      toGraphql(await ApiTokenApp.revoke(context.user as UserLoadUserBy, id))
     );
 }
 

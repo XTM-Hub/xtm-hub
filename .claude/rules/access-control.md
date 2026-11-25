@@ -96,8 +96,9 @@ themselves, others leave it to their caller, so read the filter before calling i
 Type the arguments with an explicit generic (`orgGuard<MutationXArgs>(…)`), so a wrong key fails `check-ts`.
 
 - **Sources.** `organization` of `orgGuard`, `serviceInstance` of `serviceGuard` and `user` of `callerIsGuard` take
-  `selectedOrganization`, `fromArg('key')` or an inline function `(caller, args) => id`; `orgGuard` and `callerIsGuard`
-  also take an `AsyncSource`, such as `fromRecord` below. A missing id answers `NOT_FOUND`.
+  `fromArg('key')` or an inline function `(caller, args) => id` that returns an id of their own type; `organization`
+  also takes `selectedOrganization`. `orgGuard` and `callerIsGuard` also take an `AsyncSource`, such as `fromRecord`
+  below. A missing id answers `NOT_FOUND`.
 - **`anyOf(guardA, guardB)`** allows when one guard allows. It refuses with `UNAUTHENTICATED`, else the first
   `MISSING_CAPABILITY_*`, else `FORBIDDEN_ACCESS`, else `NOT_FOUND`. The guards must share one principal builder: a user
   guard cannot be combined with a system or platform guard.
