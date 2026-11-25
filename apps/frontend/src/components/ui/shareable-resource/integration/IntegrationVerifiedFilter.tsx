@@ -35,7 +35,7 @@ export const IntegrationVerifiedFilter = ({
           value: 'false',
         },
       ]}
-      initialValue={verified}
+      value={verified}
       noResultString={t('Utils.NotFound')}
       onValueChange={setVerified}
       analyticsFilter={{

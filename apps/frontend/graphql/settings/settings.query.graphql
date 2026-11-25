@@ -1,0 +1,22 @@
+query Settings {
+  settings {
+    platform_providers {
+      name
+      provider
+      type
+    }
+    environment
+    base_url_front
+    platform_feature_flags
+  }
+}
+
+query ServerSettings {
+  settings {
+    platform_providers {
+      provider
+    }
+    base_url_front
+    platform_feature_flags
+  }
+}

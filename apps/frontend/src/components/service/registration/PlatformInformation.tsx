@@ -5,11 +5,13 @@ import { RegistrationMetadata } from '@/components/service/registration/Registra
 import { Separator } from '@/components/ui/separator';
 import { useTranslate } from '@/hooks/use-translate';
 import { Paper } from '@filigran/design-system';
-import { registeredPlatformByServiceInstanceId_fragment$key } from '@generated/registeredPlatformByServiceInstanceId_fragment.graphql';
-import { SaasPlatformMetadata } from '@graphql/generated';
+import {
+  RegisteredPlatformDetailsFragment,
+  SaasPlatformMetadata,
+} from '@graphql/generated';
 
 interface PlatformInformationProps {
-  registeredPlatform: registeredPlatformByServiceInstanceId_fragment$key;
+  registeredPlatform: RegisteredPlatformDetailsFragment;
   showMetadata: boolean;
   metadata?: SaasPlatformMetadata | null;
   isMetadataLoading: boolean;
@@ -26,9 +28,9 @@ export const PlatformInformation = ({
   return (
     <Paper className="my-3">
       <h2>{t('Register.Details.PlatformInformation')}</h2>
-      <Separator className="my-3" />
-      <div className="grid grid-cols-2">
-        <RegistrationDetails registeredPlatform={registeredPlatform} />
+      <Separator className="mr-3 my-3" />
+      <div className="grid lg:grid-cols-2">
+        <RegistrationDetails platform={registeredPlatform} />
         {showMetadata && (
           <RegistrationMetadata
             metadata={metadata}

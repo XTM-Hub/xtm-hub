@@ -811,6 +811,13 @@ export const DocumentDomain = {
         'ServiceInstance.service_definition_id'
       )
       .whereIn('Document.status', notPublished)
+      .whereNotExists(function () {
+        this.select(dbRaw('1'))
+          .from('Document_Children')
+          .whereRaw(
+            '"Document_Children"."child_document_id" = "Document"."id"'
+          );
+      })
       .select(
         'Document.*',
         'ServiceDefinition.id as service_definition_id',

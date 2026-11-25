@@ -40,9 +40,10 @@ describe('mutation.registerPlatform', () => {
         platform: platformInput,
         identifier: PlatformIdentifier.Opencti,
       };
-      vi.spyOn(RegistrationApp, 'registerPlatform').mockResolvedValue(
-        generatedToken
-      );
+      vi.spyOn(RegistrationApp, 'registerPlatform').mockResolvedValue({
+        token: generatedToken,
+        organizationName: TEST_ORGANIZATIONS.FILIGRAN.NAME,
+      });
 
       // When
       const result = await registrationResolver.Mutation!.registerPlatform!(
@@ -57,7 +58,10 @@ describe('mutation.registerPlatform', () => {
         ...input,
         organizationId: rawOrgId,
       });
-      expect(result).toMatchObject({ token: generatedToken });
+      expect(result).toEqual({
+        token: generatedToken,
+        organizationName: TEST_ORGANIZATIONS.FILIGRAN.NAME,
+      });
     }
   );
 
@@ -77,9 +81,10 @@ describe('mutation.registerPlatform', () => {
       platform: platformInput,
       identifier: PlatformIdentifier.Opencti,
     };
-    vi.spyOn(RegistrationApp, 'registerPlatform').mockResolvedValue(
-      generatedToken
-    );
+    vi.spyOn(RegistrationApp, 'registerPlatform').mockResolvedValue({
+      token: generatedToken,
+      organizationName: TEST_ORGANIZATIONS.FILIGRAN.NAME,
+    });
 
     // When
     const result = await registrationResolver.Mutation!.registerPlatform!(

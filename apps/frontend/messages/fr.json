@@ -15,6 +15,11 @@
     "Enabled": "Activé",
     "Published": "Publié"
   },
+  "DocumentStatus": {
+    "Draft": "Brouillon",
+    "InValidation": "En validation",
+    "Published": "Publié"
+  },
   "CapabilityDescription": {
     "Capabilities": {
       "ADMINISTRATE_ORGANIZATION": "Possibilité d'effectuer toutes les actions au sein d'une organisation",
@@ -51,11 +56,6 @@
     "SearchPlatform": "Rechercher une plateforme",
     "ClearSearch": "Effacer la recherche",
     "Tour": {
-      "GuidedTour": "Visite guidée",
-      "Close": "Fermer la visite",
-      "PreviousStep": "Aller à l'étape précédente",
-      "NextStep": "Aller à l'étape suivante",
-      "GoToStep": "Aller à l'étape {step}",
       "Table": "Ce tableau liste toutes les plateformes SaaS du SaaS Manager, avec les données qu'il remonte.",
       "Search": "Recherchez une plateforme par nom de client.",
       "ProductFilter": "N'affichez que les plateformes d'un produit.",
@@ -399,6 +399,7 @@
       "INTEGRATION_TYPE_NOT_RECOGNIZED": "Ce type d'intégration n'est pas reconnu",
       "INVALID_ACTION_SIZE": "Une erreur inconnue s'est produite",
       "INVALID_CONTENT_TRANSLATION_KEY": "Clé de contenu invalide",
+      "INVALID_DOCUMENT_CREATION_STATUS": "Une ressource ne peut être créée qu'en brouillon ou en validation",
       "INVALID_DOCUMENT_STATUS_TRANSITION": "Ce changement de statut n'est pas autorisé pour cette ressource",
       "INVALID_EMAIL": "L'email doit être dans un format valide.",
       "INVALID_IMAGE_URL": "L'URL de l'image n'est pas valide",
@@ -412,6 +413,11 @@
       "IS_PLATFORM_REGISTERED_UNKNOWN_ERROR": "Une erreur inconnue s'est produite lors de la connexion avec le produit",
       "LOAD_CAPABILITIES_ERROR": "Une erreur s'est produite lors du chargement des capacités",
       "LIST_FACET_ERROR": "Une erreur inconnue s'est produite lors de l'affichage des facettes.",
+      "META_DESCRIPTION_INVALID_DASH": "La méta-description doit utiliser des tirets simples (-), pas de tirets longs (— ou –)",
+      "META_DESCRIPTION_MATCHES_TITLE": "La méta-description générée ne doit pas commencer par le nom de la ressource",
+      "META_DESCRIPTION_REQUIRED": "La méta-description est obligatoire",
+      "META_DESCRIPTION_TOO_SHORT": "La méta-description générée, produit et type compris, doit contenir au moins 120 caractères",
+      "META_DESCRIPTION_TOO_LONG": "La méta-description générée, produit et type compris, ne doit pas dépasser 160 caractères",
       "MISSING_AUTO_REGISTER_PLATFORM_ARGUMENT": "Argument de connexion automatique du produit manquant",
       "MISSING_CAPABILITY_ON_ORGANIZATION": "Permissions manquantes",
       "MISSING_CAPABILITY_ON_SERVICE": "Permissions manquantes",
@@ -423,6 +429,7 @@
       "NEWS_FEED_ITEM_NOT_FOUND": "L'article du fil d'actualité n'a pas été trouvé",
       "NO_ASYNC_CONTEXT_AVAILABLE": "Une erreur inconnue s'est produite",
       "NOT_ALLOWED_BY_DEPLOYMENT_STATUS": "Une erreur inconnue s'est produite",
+      "NOT_FOUND": "La ressource demandée est introuvable",
       "ORGANIZATION_NOT_FOUND": "Organisation introuvable",
       "ORGANIZATION_SAME_DOMAIN_EXISTS": "Une organisation ayant le même domaine existe déjà",
       "ORGANIZATION_SAME_NAME_EXISTS": "Une organisation portant le même nom existe déjà",
@@ -452,6 +459,7 @@
       "TENANT_ID_MANDATORY": "L'identifiant du locataire est obligatoire",
       "TENANT_ID_NOT_SUPPORTED": "Cette plateforme ne prend pas en charge les locataires",
       "TOO_MANY_EMAILS": "Vous pouvez inviter au maximum 50 emails à la fois",
+      "TOO_MANY_REQUESTS": "Trop de requêtes. Veuillez réessayer plus tard.",
       "TRANSFER_ME_ERROR": "Une erreur s'est produite lors de la demande de transfert de l'espace personnel.",
       "UNAUTHENTICATED": "Vous devez être connecté pour effectuer cette action",
       "UNKNOWN_ERROR": "Une erreur inconnue s'est produite",
@@ -476,7 +484,10 @@
       "VOTABLE_FEATURE_PRODUCT_LOCKED": "Cette fonctionnalité a déjà des votes, son produit ne peut plus être modifié",
       "VOTABLE_FEATURE_PRODUCT_NOT_VOTABLE": "Ce produit n'est pas ouvert au vote",
       "COPY_FEATURES_FROM_ANOTHER_ROADMAP": "Les fonctionnalités ne peuvent être copiées que depuis un round de la même roadmap",
-      "VOTABLE_FEATURE_MUTATION_ERROR": "Une erreur est survenue lors de l'enregistrement de la fonctionnalité"
+      "VOTABLE_FEATURE_MUTATION_ERROR": "Une erreur est survenue lors de l'enregistrement de la fonctionnalité",
+      "INVALID_API_TOKEN": "Le nom ou la date d’expiration du jeton n’est pas valide",
+      "NOT_ALLOWED_WITH_API_TOKEN": "Cette action n’est pas autorisée avec un jeton d’API",
+      "READ_ONLY_API_TOKEN": "Ce jeton d’API ne peut que lire"
     },
     "SomethingWentWrong": "Une erreur est survenue",
     "YouAreNotAuthorized": "Vous n'êtes pas autorisé à accéder à cette page."
@@ -955,6 +966,90 @@
     "xtmhub": "XTM Hub",
     "xtmone": "XTM One"
   },
+  "ApiTokens": {
+    "Column": {
+      "Expires": "Expire le",
+      "LastUsed": "Dernière utilisation",
+      "Name": "Nom",
+      "Organization": "Organisation",
+      "Scope": "Portée",
+      "Status": "Statut"
+    },
+    "Create": {
+      "Description": "Le jeton agit en votre nom dans l’organisation choisie, avec la portée choisie.",
+      "Open": "Créer un jeton",
+      "Submit": "Créer le jeton",
+      "Title": "Créer un jeton d’API"
+    },
+    "Created": {
+      "Copied": "Jeton copié",
+      "Copy": "Copier le jeton",
+      "CopyFailed": "Le jeton n’a pas pu être copié : sélectionnez-le et copiez-le à la main.",
+      "Description": "C’est la seule fois où le jeton {name} est affiché. Conservez-le dans un gestionnaire de secrets ; si vous le perdez, révoquez-le et créez-en un nouveau.",
+      "Done": "Terminé",
+      "Helper": "Envoyez-le dans l’en-tête Authorization : Bearer suivi du jeton.",
+      "Title": "Copiez votre jeton d’API maintenant",
+      "Token": "Jeton d’API"
+    },
+    "Description": "Un jeton permet à un script ou à une intégration comme Filigran Copilot d’appeler l’API XTM Hub en votre nom, dans une organisation. Un jeton n’a jamais plus de droits que vous.",
+    "Empty": "Aucun jeton d’API pour l’instant. Créez-en un pour connecter un script ou une intégration.",
+    "Field": {
+      "Expiration": "Expiration",
+      "ExpiresOn": "Expire le {date}",
+      "Name": "Nom",
+      "NameError": "Saisissez un nom de 100 caractères au plus",
+      "NameHelper": "Ce qui utilise ce jeton, pour le reconnaître plus tard.",
+      "NamePlaceholder": "Filigran Copilot",
+      "Organization": "Organisation",
+      "OrganizationError": "Choisissez une organisation",
+      "Scope": "Portée",
+      "ExpirationInfo": "Après cette date, l’API refuse le jeton et vous en créez un nouveau. Exemple : 90 jours pour une intégration. Une durée courte limite les dégâts d’un jeton divulgué.",
+      "InfoLabel": "À propos de {field}",
+      "NameInfo": "Un libellé pour vous seul, l’API ne le lit jamais. Exemple : Filigran Copilot. Il ne peut pas être modifié ensuite : révoquez le jeton et créez-en un nouveau.",
+      "OrganizationHelper": "Le jeton ne peut pas passer dans une autre organisation.",
+      "OrganizationInfo": "Le jeton fonctionne uniquement dans cette organisation, avec vos droits dans celle-ci. Exemple : l’organisation de votre entreprise. Pour une autre organisation, créez un autre jeton.",
+      "ScopeInfo": "Jusqu’où le jeton peut aller, jamais au-delà de vos propres droits. Exemple : Lecture pour un tableau de bord, Lecture et écriture pour une intégration qui crée du contenu."
+    },
+    "Lifetime": "{count, plural, one {# jour} other {# jours}}",
+    "NeverUsed": "Jamais utilisé",
+    "PersonalSpace": "Espace personnel",
+    "Revoke": "Révoquer",
+    "RevokeDialog": {
+      "Text": "Tout script ou intégration qui utilise {name} perd l’accès immédiatement. Cette action est irréversible.",
+      "Title": "Révoquer ce jeton d’API ?"
+    },
+    "RevokeNamed": "Révoquer le jeton {name}",
+    "Revoked": "Jeton {name} révoqué",
+    "Scope": {
+      "admin": "Administration",
+      "read": "Lecture",
+      "read_write": "Lecture et écriture"
+    },
+    "ScopeHelp": {
+      "admin": "Administration : vos droits d’administration de l’organisation et de la plateforme, tels que vous les avez aujourd’hui. À réserver à un outil de confiance.",
+      "read": "Lecture : requêtes uniquement, sans l’administration de l’organisation. Rien ne peut être modifié.",
+      "read_write": "Lecture et écriture : requêtes et modifications, sans l’administration de l’organisation ni de la plateforme."
+    },
+    "Status": {
+      "active": "Actif",
+      "expired": "Expiré",
+      "revoked": "Révoqué"
+    },
+    "Title": "Jetons d’API",
+    "ScopeOption": {
+      "admin": "Vos droits d’administration aussi, tels que vous les avez.",
+      "read": "Requêtes uniquement, sans administration. Rien ne peut être modifié.",
+      "read_write": "Requêtes et modifications, sans administration."
+    },
+    "Toolbar": {
+      "AllOrganizations": "Toutes les organisations",
+      "AllScopes": "Toutes les portées",
+      "AllStatuses": "Tous les statuts",
+      "NoMatch": "Aucun jeton ne correspond à la recherche ou aux filtres.",
+      "Search": "Rechercher par nom ou préfixe",
+      "Total": "{count, plural, one {# jeton} other {# jetons}}"
+    }
+  },
   "ProfilePage": {
     "Picture": "Photo de profil",
     "Preferences": {
@@ -1016,6 +1111,7 @@
         "NotConnected": "Connexion perdue",
         "NotConnectedDetails": "Vous devez à nouveau connecter votre produit."
       },
+      "OrganizationName": "Organisation : {name}",
       "ProductName": "Nom du produit",
       "Product": "Produit",
       "ProductURL": "URL du produit",
@@ -1092,8 +1188,24 @@
         "Approaching": "Capacité bientôt atteinte",
         "Over": "Capacité dépassée"
       },
+      "ByteSize": {
+        "Byte": "{value} o",
+        "Kibibyte": "{value} Kio",
+        "Mebibyte": "{value} Mio",
+        "Gibibyte": "{value} Gio",
+        "Tebibyte": "{value} Tio",
+        "Pebibyte": "{value} Pio"
+      },
       "MaxCapacity": "Capacité maximale",
-      "UsedOfLimit": "<highlight>{used}</highlight> <secondary>sur {limit}</secondary>"
+      "UsedOfLimit": "<highlight>{used}</highlight> <secondary>sur {limit}</secondary>",
+      "GuidedTourAvailability": "Visite guidée disponible uniquement pour les CSM",
+      "Tour": {
+        "Source": "Ces métriques viennent du SaaS Manager. XTM Hub les affiche telles quelles, sans les retraiter.",
+        "Database": "Ce graphique montre l'utilisation de {database} par la plateforme, comparée à ce que l'offre du client autorise. Ce n'est pas le tableau de bord Grafana : Grafana compare l'utilisation brute à la taille de disque allouée à la plateforme, une marge de sécurité qui l'empêche de planter, et ne peut donc jamais dépasser 100 %. Ici, l'utilisation est comparée à ce que le client paie, et peut dépasser 100 %.",
+        "FileStorage": "Ce graphique montre l'utilisation du stockage de fichiers S3 par la plateforme, comparée à ce que l'offre du client autorise. Comme pour la base de données, ce n'est pas le tableau de bord Grafana : Grafana compare l'utilisation brute à la taille de disque allouée à la plateforme, une marge de sécurité qui l'empêche de planter, et ne peut donc jamais dépasser 100 %. Ici, l'utilisation est comparée à ce que le client paie, et peut dépasser 100 %.",
+        "ChartAxes": "Sur chaque graphique, l'axe horizontal montre le temps et l'axe vertical l'espace utilisé, en GiB. Changez la période affichée en cliquant sur 30, 90 ou 180 jours en haut.",
+        "Sla": "Ce graphique montre la disponibilité SLA de la plateforme, jour par jour. Les barres vertes sont au niveau ou au-dessus du taux contractuel ({target}), les orange en dessous. Les barres grises n'ont pas de données, ou pas encore."
+      }
     },
     "Error": {
       "Capability": {
@@ -1352,6 +1464,9 @@
       "LogoLabel": "Logo",
       "ManagerSupportedLabel": "Gestionnaire pris en charge",
       "ManageAccessCapabilityLabel": "Gérer les accès : l'utilisateur peut inviter d'autres utilisateurs de son organisation à ce service",
+      "MetaDescriptionCurrentLength": "{error} (actuellement {length} caractères)",
+      "MetaDescriptionLabel": "Méta-description",
+      "MetaDescriptionPlaceholder": "Pour le SEO : la phrase entière doit compter entre 120 et 160 caractères, avec des tirets simples (-) uniquement, sans tirets longs (— ou –).",
       "MinimumDeployableVersionLabel": "Version minimale pour déployer sur {platform}",
       "MinimumDeployableVersionPlaceholder": "1.0.0",
       "NameLabel": "Nom",
@@ -1359,7 +1474,6 @@
       "PlaybookSupportedLabel": "Playbook pris en charge",
       "ProductVersionLabel": "Version de compatibilité de {platform}",
       "ProductVersionPlaceholder": "1.0.0",
-      "PublishedPlaceholder": "Le {documentType} est-il publié ?",
       "LicenseTypeLabel": "Type de licence",
       "Restore": "Restaurer",
       "SelectImage": "Sélectionner une ou plusieurs image(s)",
@@ -1380,7 +1494,11 @@
       "VendorUrlLabel": "URL du fournisseur",
       "VerifiedLabel": "Vérifié",
       "EntityTypesLabel": "Types d'entités",
-      "EntityTypesPlaceholder": "Ajouter des types d'entités"
+      "EntityTypesPlaceholder": "Ajouter des types d'entités",
+      "SaveAsDraft": "Enregistrer comme brouillon",
+      "RequestValidation": "Demander la validation",
+      "Save": "Enregistrer",
+      "Publish": "Publier"
     },
     "OpenctiIntegrations": {
       "Actions": {
@@ -1416,6 +1534,7 @@
         },
         "Verified": {
           "Label": "Statut",
+          "Description": "Filtre applicable aux connecteurs uniquement",
           "Placeholder": "Statut...",
           "Verified": "Pris en charge par Filigran",
           "Unverified": "Pris en charge par la communauté"
@@ -1437,10 +1556,8 @@
         "Share": "Partager le flux CSV",
         "Updated": "{name} a été modifié"
       },
-      "Active": "Publié",
       "AddService": "Ajouter un flux CSV",
       "DeleteService": "Supprimer le flux CSV {name}",
-      "NonActive": "Brouillon",
       "SureDeleteService": "Êtes-vous sûr de vouloir supprimer le flux CSV {name} ?",
       "UpdateService": "Modifier le flux CSV {name}"
     },
@@ -1451,10 +1568,8 @@
         "Share": "Partager le flux RSS",
         "Updated": "{name} a été modifié"
       },
-      "Active": "Publié",
       "AddService": "Ajouter un flux RSS",
       "DeleteService": "Supprimer le flux RSS {name}",
-      "NonActive": "Brouillon",
       "SureDeleteService": "Êtes-vous sûr de vouloir supprimer le flux RSS {name} ?",
       "UpdateService": "Modifier le flux RSS {name}"
     },
@@ -1465,10 +1580,8 @@
         "Share": "Partager le flux TAXII",
         "Updated": "Le flux TAXII {name} a été modifié avec succès"
       },
-      "Active": "Publié",
       "AddService": "Ajouter un nouveau flux TAXII",
       "DeleteService": "Supprimer le flux TAXII {name}",
-      "NonActive": "Brouillon",
       "SureDeleteService": "Êtes-vous sûr de vouloir supprimer le flux TAXII {name} ?",
       "UpdateService": "Mettre à jour le flux TAXII {name}"
     },
@@ -1479,10 +1592,8 @@
         "Share": "Partager le connecteur",
         "Updated": "Le connecteur {name} a été modifié avec succès"
       },
-      "Active": "Publié",
       "AddService": "Ajouter un nouveau connecteur",
       "DeleteService": "Supprimer le connecteur {name}",
-      "NonActive": "Brouillon",
       "SureDeleteService": "Êtes-vous sûr de vouloir supprimer le connecteur {name} ?",
       "UpdateService": "Mettre à jour le connecteur {name}"
     },
@@ -1493,10 +1604,8 @@
         "Share": "Partager le stream",
         "Updated": "Le stream {name} a été modifié avec succès"
       },
-      "Active": "Publié",
       "AddService": "Ajouter un nouveau stream",
       "DeleteService": "Supprimer le stream {name}",
-      "NonActive": "Brouillon",
       "SureDeleteService": "Êtes-vous sûr de vouloir supprimer le stream {name} ?",
       "UpdateService": "Mettre à jour le stream {name}"
     },
@@ -1507,10 +1616,8 @@
         "Share": "Partager l'intégration tierce",
         "Updated": "L'intégration tierce {name} a été modifiée avec succès"
       },
-      "Active": "Publié",
       "AddService": "Ajouter une nouvelle intégration tierce",
       "DeleteService": "Supprimer l'intégration tierce {name}",
-      "NonActive": "Brouillon",
       "SureDeleteService": "Êtes-vous sûr de vouloir supprimer l'intégration tierce {name} ?",
       "UpdateService": "Mettre à jour l'intégration tierce {name}"
     },
@@ -1521,10 +1628,8 @@
         "Share": "Partager le tableau de bord personnalisé",
         "Updated": "Le tableau de bord personnalisé {name} a été modifié avec succès"
       },
-      "Active": "Publié",
       "AddService": "Ajouter un nouveau tableau de bord",
       "DeleteService": "Supprimer le tableau de bord personnalisé {name}",
-      "NonActive": "Brouillon",
       "SureDeleteService": "Êtes-vous sûr de vouloir supprimer le tableau de bord {name} ?",
       "UpdateService": "Mettre à jour le tableau de bord"
     },
@@ -1544,9 +1649,7 @@
       "AddService": "Ajouter un nouveau scénario",
       "UpdateService": "Mettre à jour le scénario {name}",
       "DeleteService": "Supprimer le scénario {name}",
-      "SureDeleteService": "Êtes-vous sûr de vouloir supprimer le scénario {name} ?",
-      "NonActive": "Brouillon",
-      "Active": "Publié"
+      "SureDeleteService": "Êtes-vous sûr de vouloir supprimer le scénario {name} ?"
     },
     "OpenCTIPlaybook": {
       "Actions": {
@@ -1558,9 +1661,7 @@
       "AddService": "Ajouter un nouveau playbook",
       "UpdateService": "Mettre à jour le playbook {name}",
       "DeleteService": "Supprimer le playbook {name}",
-      "SureDeleteService": "Êtes-vous sûr de vouloir supprimer le playbook {name} ?",
-      "NonActive": "Brouillon",
-      "Active": "Publié"
+      "SureDeleteService": "Êtes-vous sûr de vouloir supprimer le playbook {name} ?"
     },
     "Description": "Description",
     "GoTo": "Aller au service",
@@ -1570,7 +1671,9 @@
       "Retry": "Réessayer",
       "ViewTab": "Sélectionner l'affichage par onglets",
       "ViewList": "Sélectionner l'affichage sous forme de liste",
+      "ClearAllFilters": "Tout effacer",
       "Filters": "Filtres",
+      "FilterInformation": "À propos de ce filtre",
       "Tab": {
         "Name": "Nom",
         "Description": "Description",
@@ -2062,9 +2165,7 @@
       "AddService": "Ajouter une nouvelle vue personnalisée",
       "UpdateService": "Mettre à jour la vue personnalisée {name}",
       "DeleteService": "Supprimer la vue personnalisée {name}",
-      "SureDeleteService": "Êtes-vous sûr de vouloir supprimer la vue personnalisée {name} ?",
-      "NonActive": "Brouillon",
-      "Active": "Publié"
+      "SureDeleteService": "Êtes-vous sûr de vouloir supprimer la vue personnalisée {name} ?"
     },
     "Bundle": {
       "ManageTrial": {
@@ -2564,5 +2665,12 @@
     "Title": "Bienvenue sur XTM Hub",
     "Subtitle": "Le point d'entrée unifié de l'écosystème Filigran.",
     "Instructions": "Utilisez « Modifier les traductions » dans la barre latérale pour activer le mode édition (réservé aux utilisateurs avec la capacité BYPASS), puis cliquez sur le titre ou le sous-titre encadré ci-dessous. L’enregistrement crée un brouillon à publier depuis le bandeau du mode édition."
+  },
+  "Tour": {
+    "GuidedTour": "Visite guidée",
+    "Close": "Fermer la visite",
+    "PreviousStep": "Aller à l'étape précédente",
+    "NextStep": "Aller à l'étape suivante",
+    "GoToStep": "Aller à l'étape {step}"
   }
 }

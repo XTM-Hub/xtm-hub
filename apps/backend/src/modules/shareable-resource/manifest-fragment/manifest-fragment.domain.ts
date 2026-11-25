@@ -28,7 +28,10 @@ import {
   OPENCTI_INTEGRATION_DOCUMENT_TYPE,
   type ConnectorV2,
 } from '../opencti/integration/integration.model';
-import { ManifestFragmentHelper } from './manifest-fragment.helper';
+import {
+  ManifestFragmentHelper,
+  type ConnectorMetadataSnapshot,
+} from './manifest-fragment.helper';
 
 type ConnectorWithMetadata = Document & {
   version_padded?: string;
@@ -85,10 +88,7 @@ const createConnectorDocument = async ({
   fragment: ManifestFragmentInput;
   formattedVersion: string;
   tags: string[];
-  metadataFromExisting?: Pick<
-    ConnectorWithMetadata,
-    'datasheet_url' | 'blogpost_url' | 'demo_url'
-  >;
+  metadataFromExisting?: ConnectorMetadataSnapshot;
   licenseType?: LicenseType;
   contact?: string;
 }): Promise<ConnectorV2> => {
@@ -126,6 +126,8 @@ const createConnectorDocument = async ({
         datasheet_url: metadataFromExisting?.datasheet_url,
         blogpost_url: metadataFromExisting?.blogpost_url,
         demo_url: metadataFromExisting?.demo_url,
+        // Null for a brand-new family: the admin adds it afterwards, in the connector form.
+        meta_description: metadataFromExisting?.meta_description ?? null,
         additional_properties: JSON.stringify(fragment.additional_properties),
         config_schema: JSON.stringify(fragment.config_schema),
       },

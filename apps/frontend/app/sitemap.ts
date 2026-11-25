@@ -1,11 +1,10 @@
 import { defaultLocale, publicLocales } from '@/i18n/config';
-import { serverFetchGraphQL } from '@/relay/server-portal-api-fetch';
 import { PUBLIC_CYBERSECURITY_SOLUTIONS_PATH } from '@/utils/path/constant';
 import { fetchSeoServiceInstances } from '@/utils/seo-service-instance/utils/seo-service-instance.server.utils';
 import { isExternalService } from '@/utils/services';
+import { fetchServerSettings } from '@/utils/settings.service';
 import { ServiceSlug } from '@/utils/shareable-resources/shareable-resources.types';
 import { fetchPublicDocumentSlugs } from '@/utils/shareable-resources/utils/shareable-resources.server.utils';
-import SettingsQuery, { settingsQuery } from '@generated/settingsQuery.graphql';
 import { ServiceDefinitionIdentifier } from '@graphql/generated';
 import type { MetadataRoute } from 'next';
 
@@ -41,9 +40,7 @@ const pushPerLocale = (
 };
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const settingsResponse =
-    await serverFetchGraphQL<settingsQuery>(SettingsQuery);
-  const baseURI = settingsResponse.data.settings.base_url_front;
+  const { base_url_front: baseURI } = await fetchServerSettings();
 
   const seoServiceInstancesData = await fetchSeoServiceInstances();
   const routableSeoServiceInstances = seoServiceInstancesData.filter(

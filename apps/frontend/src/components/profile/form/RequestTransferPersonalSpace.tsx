@@ -1,12 +1,12 @@
 'use client';
 
-import { MeRequestTransferPersonalSpaceMutation } from '@/components/me/me.graphql';
 import { AutoForm } from '@/components/ui/auto-form';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Separator } from '@/components/ui/separator';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { analyticsId } from '@/lib/analytics/analytics.ids';
+import { portalGraphqlClient } from '@/lib/graphql-client';
 import {
   Button,
   Card,
@@ -14,9 +14,9 @@ import {
   CardHeader,
   CardTitle,
 } from '@filigran/design-system';
+import { useMePersonalSpaceTransferRequestMutation } from '@graphql/generated';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { useMutation } from 'react-relay';
 import { z } from 'zod';
 
 const formSchema = z.object({
@@ -30,21 +30,8 @@ export const RequestTransferPersonalSpace = () => {
   const [pendingValues, setPendingValues] =
     useState<RequestTransferPersonalSpaceSchema>();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [commitTransferPersonalSpaceMutation] = useMutation(
-    MeRequestTransferPersonalSpaceMutation
-  );
-
-  const onSubmit = (values: RequestTransferPersonalSpaceSchema) => {
-    setIsDialogOpen(true);
-    setPendingValues(values);
-  };
-
-  const confirmEdition = () => {
-    setIsDialogOpen(false);
-    commitTransferPersonalSpaceMutation({
-      variables: {
-        new_email: pendingValues?.new_email,
-      },
+  const { mutate: requestTransferPersonalSpace } =
+    useMePersonalSpaceTransferRequestMutation<Error>(portalGraphqlClient, {
       onError(error) {
         showSnackbar({
           severity: 'error',
@@ -52,7 +39,7 @@ export const RequestTransferPersonalSpace = () => {
           description: t(`Error.Server.${error.message}`),
         });
       },
-      onCompleted() {
+      onSuccess() {
         showSnackbar({
           severity: 'success',
           title: t('Utils.Success'),
@@ -61,6 +48,19 @@ export const RequestTransferPersonalSpace = () => {
         router.push('/app');
       },
     });
+
+  const onSubmit = (values: RequestTransferPersonalSpaceSchema) => {
+    setIsDialogOpen(true);
+    setPendingValues(values);
+  };
+
+  const confirmEdition = () => {
+    setIsDialogOpen(false);
+    if (!pendingValues) {
+      return;
+    }
+
+    requestTransferPersonalSpace({ new_email: pendingValues.new_email });
   };
   return (
     <>

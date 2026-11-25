@@ -9,14 +9,14 @@ import { describe, expect, it } from 'vitest';
 
 describe('splitByteSize', () => {
   it.each`
-    bytes                | value    | unit
-    ${0}                 | ${0}     | ${'byte'}
-    ${999}               | ${999}   | ${'byte'}
-    ${1_000}             | ${1}     | ${'kilobyte'}
-    ${1_500_000}         | ${1.5}   | ${'megabyte'}
-    ${12_300_000_000}    | ${12.3}  | ${'gigabyte'}
-    ${4_000_000_000_000} | ${4}     | ${'terabyte'}
-    ${2e18}              | ${2_000} | ${'petabyte'}
+    bytes                 | value    | unit
+    ${0}                  | ${0}     | ${'Byte'}
+    ${1_023}              | ${1_023} | ${'Byte'}
+    ${1_024}              | ${1}     | ${'Kibibyte'}
+    ${1_572_864}          | ${1.5}   | ${'Mebibyte'}
+    ${13_207_024_435}     | ${12.3}  | ${'Gibibyte'}
+    ${4 * 1_024 ** 4}     | ${4}     | ${'Tebibyte'}
+    ${2_000 * 1_024 ** 5} | ${2_000} | ${'Pebibyte'}
   `('should express $bytes bytes as $value $unit', ({ bytes, value, unit }) => {
     const result = splitByteSize(bytes);
 

@@ -5,6 +5,7 @@ import { UnknownErrorCode } from '../../../utils/error/error.code';
 import { mapToGraphQLError } from '../../../utils/error/error.mapping';
 import { StillReferencedError } from '../../../utils/error/error.util';
 import { createRelayIdScalar } from '../../../utils/scalar.util';
+import { UserDomain } from '../user/user-domain/user.domain';
 import { OrganizationApp } from './organization.app';
 import { OrganizationDomain } from './organization.domain';
 
@@ -15,16 +16,22 @@ const resolvers: Resolvers = {
       context.dataLoaders.organization.administratorEmailsByOrganizationIdLoader.load(
         id as OrganizationId
       ),
+    members_count: async ({ id }, _, context) =>
+      context.dataLoaders.organization.membersCountByOrganizationIdLoader.load(
+        id as OrganizationId
+      ),
   },
   Query: {
     organization: async (_, { id }) =>
-      OrganizationDomain.loadOrganizationBy({ id: id as OrganizationId }),
+      OrganizationDomain.loadFirstProfessionalOrganizationBy({
+        id: id as OrganizationId,
+      }),
     organizations: async (_, opts) => {
       return OrganizationDomain.loadOrganizations(opts);
     },
-    userOrganizations: async (_, __, context) => {
-      return OrganizationDomain.loadOrganizationsByUser(context.user.id);
-    },
+    // The caller's organizations, read like User.organizations: an API token lists its own only
+    userOrganizations: async (_, __, context) =>
+      UserDomain.getOrganizations(context.user.id),
   },
   Mutation: {
     addOrganization: async (_, { input }) => {

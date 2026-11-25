@@ -118,8 +118,7 @@ const resolvers: Resolvers = {
           // type may not be an OrganizationId, but can be a IsPlatformRegisteredOrganization
           organizationId,
         };
-        const token = await RegistrationApp.registerPlatform(payload);
-        return { token };
+        return await RegistrationApp.registerPlatform(payload);
       } catch (error) {
         throw mapToGraphQLError(
           error,

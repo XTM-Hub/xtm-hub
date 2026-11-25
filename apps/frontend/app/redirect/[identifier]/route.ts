@@ -2,6 +2,7 @@ import { PlatformIdentifier } from '@graphql/generated';
 import { NextRequest } from 'next/server';
 import { redirectToFreeTrial } from './free-trial';
 import { redirectToHandlePendingUser } from './handle-pending-user';
+import { redirectToPrivateCounterpart } from './private-counterpart';
 import { redirectToRegisteredPlatform } from './registered-platform';
 import { redirectToRegistration } from './registration';
 import { redirectToResource } from './resource';
@@ -63,6 +64,8 @@ export async function GET(
       return redirectToTransferPersoSpace(request);
     case 'handle-pending-user':
       return redirectToHandlePendingUser(request);
+    case 'private-counterpart':
+      return redirectToPrivateCounterpart(request);
     case 'free-trial':
     case 'create-free-trial':
     case 'create-openaev-free-trial':

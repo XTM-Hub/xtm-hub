@@ -1,4 +1,5 @@
 import { expect, test } from '../fixtures/baseFixtures';
+import { META_DESCRIPTION_SUMMARY } from '../model/common';
 import LoginPage from '../model/login.pageModel';
 
 import IntegrationPage from '../model/integration.pageModel';
@@ -7,6 +8,7 @@ import { HomePage } from '../model/home.pageModel';
 
 const CSV_FEED_TEST = {
   name: 'e2e CSV Feed name',
+  metaDescription: META_DESCRIPTION_SUMMARY,
   shortDescription: 'This is a short description',
   description: 'This is a CSV description markdown',
   csvFeedsServiceInstanceId: '0f4aad4b-bdd6-4084-8b1f-82c9c66578cc',
@@ -30,7 +32,7 @@ test.describe('One Click Deploy', () => {
 
     await homePage.navigateTo();
     await csvFeedPage.navigateToIntegrationsService();
-    await csvFeedPage.fillCsvFeed(CSV_FEED_TEST);
+    await csvFeedPage.fillCsvFeed(CSV_FEED_TEST, { publish: true });
   });
 
   test('should send telemetry event', async ({ page }) => {

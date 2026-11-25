@@ -1,5 +1,7 @@
 import { MockInstance } from '@vitest/spy';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { v4 as uuidv4 } from 'uuid';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { TestHelper } from '../../tests/helper/test.helper';
 import {
   CAPABILITY_MODIFY_TRIALS,
   // eslint-disable-next-line no-restricted-imports
@@ -10,16 +12,25 @@ import {
   TEST_ORGANIZATIONS,
 } from '../../tests/tests.const';
 import {
+  ApiTokenScope,
   OrganizationCapability,
   PortalCapability,
   ServiceRestriction,
 } from '../__generated__/resolvers-types';
 import { requestContext } from '../context/request.context';
+import Organization, {
+  OrganizationId,
+} from '../model/kanel/public/Organization';
+import User from '../model/kanel/public/User';
 import { OrganizationDomain } from '../modules/organization-management/organization/organization.domain';
+import { UserDomain } from '../modules/organization-management/user/user-domain/user.domain';
+import { UserProvisioningDomain } from '../modules/organization-management/user/user-provisioning/user-provisioning.domain';
+import { UserHelper } from '../modules/organization-management/user/user.helper';
 import { AuthHelper } from '../modules/security-management/capability/auth.helper';
 import { SubscriptionDomain } from '../modules/subscription/subscription.domain';
 import { UserServiceDomain } from '../modules/user-service/user-service.domain';
 import { ErrorCode } from '../utils/error/error.code';
+import { ErrorType } from '../utils/error/error.type';
 import { assertUserHasCapaOnService, securityGuard } from './guard';
 
 describe('security Guard', () => {
@@ -371,6 +382,307 @@ describe('security Guard', () => {
         requestContextAdminSecondOrga.user,
         SERVICES.INSTANCES.EPIC.ID,
         [ServiceRestriction.Upsert, ServiceRestriction.Delete]
+      );
+
+      // Then
+      await expect(call).resolves.toBeUndefined();
+    });
+  });
+});
+
+describe('security Guard with an API token', () => {
+  // The user holds the same capabilities in two organizations: a token pinned to one must not reach the other
+  const CAPABILITIES = [
+    OrganizationCapability.ManageAccess,
+    OrganizationCapability.ManagePlatformRegistration,
+  ];
+  let tokenOrganization: Organization;
+  let otherOrganization: Organization;
+  let user: User;
+
+  const addMember = async (
+    organizationId: OrganizationId,
+    capabilities: OrganizationCapability[]
+  ) => {
+    const userOrganization = await TestHelper.user_Organization.create({
+      user_id: user.id,
+      organization_id: organizationId,
+    });
+    await Promise.all(
+      capabilities.map((name) =>
+        TestHelper.user_OrganizationCapability.create({
+          user_organization_id: userOrganization!.id,
+          name,
+        })
+      )
+    );
+  };
+
+  // The admin scope keeps the user's organization capabilities: a refusal then comes from the organization pin alone
+  const actAsToken = (scope: ApiTokenScope = ApiTokenScope.Admin) =>
+    TestHelper.apiToken.actAs(user.id, tokenOrganization.id, scope);
+
+  // A session with the token organization selected, the same user as the token's
+  const actAsSession = async () => {
+    await TestHelper.user.update(
+      { id: user.id },
+      { selected_organization_id: tokenOrganization.id }
+    );
+    requestContext.set({
+      user: (await UserDomain.loadUserBy({ 'User.id': user.id }))!,
+    });
+  };
+
+  beforeEach(async () => {
+    tokenOrganization = await TestHelper.organization.create();
+    otherOrganization = await TestHelper.organization.create();
+    user = await UserProvisioningDomain.createUser(
+      { email: `api-token-guard-${uuidv4()}@api-token-guard-test.io` },
+      { sendWelcomeEmail: false }
+    );
+    await addMember(tokenOrganization.id, CAPABILITIES);
+    await addMember(otherOrganization.id, CAPABILITIES);
+  });
+
+  afterEach(async () => {
+    await UserHelper.removeUser({ id: user.id });
+    await TestHelper.organization.delete({ id: tokenOrganization.id });
+    await TestHelper.organization.delete({ id: otherOrganization.id });
+  });
+
+  describe('assertUserCapabilities', () => {
+    it('should refuse an organization other than the token one with FORBIDDEN', async () => {
+      // Given
+      await actAsToken();
+
+      // When
+      const call = securityGuard.assertUserCapabilities(
+        [OrganizationCapability.ManageAccess],
+        otherOrganization.id
+      );
+
+      // Then
+      await expect(call).rejects.toMatchObject({
+        message: ErrorCode.MissingCapabilityOnOrganization,
+        extensions: { code: ErrorType.ForbiddenAccess },
+      });
+    });
+
+    it('should allow the token organization with a capability the token kept', async () => {
+      // Given
+      await actAsToken();
+
+      // When
+      const call = securityGuard.assertUserCapabilities(
+        [OrganizationCapability.ManageAccess],
+        tokenOrganization.id
+      );
+
+      // Then
+      await expect(call).resolves.toBeUndefined();
+    });
+
+    it('should refuse a capability the token took away, even in the token organization', async () => {
+      // Given a user administering the token organization, whose read_write token has no ADMINISTRATE_ORGANIZATION
+      const membership = await TestHelper.user_Organization.load({
+        user_id: user.id,
+        organization_id: tokenOrganization.id,
+      });
+      await TestHelper.user_OrganizationCapability.create({
+        user_organization_id: membership.id,
+        name: OrganizationCapability.AdministrateOrganization,
+      });
+      await actAsToken(ApiTokenScope.ReadWrite);
+
+      // When
+      const call = securityGuard.assertUserCapabilities(
+        [OrganizationCapability.AdministrateOrganization],
+        tokenOrganization.id
+      );
+
+      // Then
+      await expect(call).rejects.toThrow(
+        ErrorCode.MissingCapabilityOnOrganization
+      );
+    });
+
+    it.each([ApiTokenScope.Read, ApiTokenScope.ReadWrite])(
+      'should refuse a capability its user holds to a %s token, even in the token organization',
+      async (scope) => {
+        // Given
+        await actAsToken(scope);
+
+        // When
+        const call = securityGuard.assertUserCapabilities(
+          [OrganizationCapability.ManageAccess],
+          tokenOrganization.id
+        );
+
+        // Then
+        await expect(call).rejects.toThrow(
+          ErrorCode.MissingCapabilityOnOrganization
+        );
+      }
+    );
+
+    it('should let a session user reach every organization where they hold the capability', async () => {
+      // Given
+      await actAsSession();
+
+      // When
+      const call = securityGuard.assertUserCapabilities(
+        [OrganizationCapability.ManageAccess],
+        otherOrganization.id
+      );
+
+      // Then
+      await expect(call).resolves.toBeUndefined();
+    });
+  });
+
+  describe('assertUserIsAllowedOnOrganization', () => {
+    it('should refuse an organization other than the token one as if the user were not a member', async () => {
+      // Given
+      await actAsToken();
+
+      // When
+      const call = securityGuard.assertUserIsAllowedOnOrganization(
+        requestContext.requireUser(),
+        {
+          organizationId: otherOrganization.id,
+          requiredCapability: OrganizationCapability.ManagePlatformRegistration,
+        }
+      );
+
+      // Then
+      await expect(call).rejects.toThrow(ErrorCode.UserIsNotInOrganization);
+    });
+
+    it('should refuse ADMINISTRATE_ORGANIZATION as an implied capability once the token took it away', async () => {
+      // Given a user who administers the token organization without MANAGE_ACCESS
+      const membership = await TestHelper.user_Organization.load({
+        user_id: user.id,
+        organization_id: tokenOrganization.id,
+      });
+      await TestHelper.user_OrganizationCapability.delete({
+        user_organization_id: membership.id,
+      });
+      await TestHelper.user_OrganizationCapability.create({
+        user_organization_id: membership.id,
+        name: OrganizationCapability.AdministrateOrganization,
+      });
+      await actAsToken(ApiTokenScope.ReadWrite);
+
+      // When
+      const call = securityGuard.assertUserIsAllowedOnOrganization(
+        requestContext.requireUser(),
+        {
+          organizationId: tokenOrganization.id,
+          requiredCapability: OrganizationCapability.ManageAccess,
+        }
+      );
+
+      // Then
+      await expect(call).rejects.toThrow(
+        ErrorCode.MissingCapabilityOnOrganization
+      );
+    });
+
+    it.each([ApiTokenScope.Read, ApiTokenScope.ReadWrite])(
+      'should refuse a capability its user holds to a %s token, even in the token organization',
+      async (scope) => {
+        // Given
+        await actAsToken(scope);
+
+        // When
+        const call = securityGuard.assertUserIsAllowedOnOrganization(
+          requestContext.requireUser(),
+          {
+            organizationId: tokenOrganization.id,
+            requiredCapability:
+              OrganizationCapability.ManagePlatformRegistration,
+          }
+        );
+
+        // Then
+        await expect(call).rejects.toThrow(
+          ErrorCode.MissingCapabilityOnOrganization
+        );
+      }
+    );
+
+    it('should allow the token organization with a capability the token kept', async () => {
+      // Given
+      await actAsToken();
+
+      // When
+      const call = securityGuard.assertUserIsAllowedOnOrganization(
+        requestContext.requireUser(),
+        {
+          organizationId: tokenOrganization.id,
+          requiredCapability: OrganizationCapability.ManagePlatformRegistration,
+        }
+      );
+
+      // Then
+      await expect(call).resolves.toBeUndefined();
+    });
+
+    it('should let a session user reach every organization where they hold the capability', async () => {
+      // Given
+      await actAsSession();
+
+      // When
+      const call = securityGuard.assertUserIsAllowedOnOrganization(
+        requestContext.requireUser(),
+        {
+          organizationId: otherOrganization.id,
+          requiredCapability: OrganizationCapability.ManagePlatformRegistration,
+        }
+      );
+
+      // Then
+      await expect(call).resolves.toBeUndefined();
+    });
+  });
+
+  describe('assertUserIsInOrganization', () => {
+    it('should refuse an organization other than the token one as if the user were not a member', async () => {
+      // Given
+      await actAsToken(ApiTokenScope.Read);
+
+      // When
+      const call = securityGuard.assertUserIsInOrganization(
+        requestContext.requireUser(),
+        otherOrganization.id
+      );
+
+      // Then
+      await expect(call).rejects.toThrow(ErrorCode.UserIsNotInOrganization);
+    });
+
+    it('should allow the token organization', async () => {
+      // Given
+      await actAsToken(ApiTokenScope.Read);
+
+      // When
+      const call = securityGuard.assertUserIsInOrganization(
+        requestContext.requireUser(),
+        tokenOrganization.id
+      );
+
+      // Then
+      await expect(call).resolves.toBeUndefined();
+    });
+
+    it('should let a session user reach every organization they belong to', async () => {
+      // Given
+      await actAsSession();
+
+      // When
+      const call = securityGuard.assertUserIsInOrganization(
+        requestContext.requireUser(),
+        otherOrganization.id
       );
 
       // Then

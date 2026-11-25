@@ -3,17 +3,15 @@ import { PlatformMetadataMapping } from '@/components/registration/PlatformIdent
 import { Register } from '@/components/registration/register';
 import * as SnackbarStore from '@/components/ui/snackbar/snackbar-store';
 import testRender from '@/utils/test/test-render';
-import { registerIsPlatformRegisteredFragment$data } from '@generated/registerIsPlatformRegisteredFragment.graphql';
-import { registerIsPlatformRegisteredQuery } from '@generated/registerIsPlatformRegisteredQuery.graphql';
-import { PlatformInput } from '@generated/registerPlatformMutation.graphql';
 import {
+  IsPlatformRegisteredQuery,
   PlatformIdentifier,
+  PlatformInput,
   PlatformRegistrationStatus,
   UserOrganizationsQuery,
 } from '@graphql/generated';
-import { screen, waitFor } from '@testing-library/react';
+import { act, screen, waitFor } from '@testing-library/react';
 import { Suspense } from 'react';
-import { PreloadedQuery } from 'react-relay';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const testState = vi.hoisted(() => ({
@@ -21,45 +19,52 @@ const testState = vi.hoisted(() => ({
     status: 'never_registered',
     platformTitle: null,
     organization: null,
-  } as registerIsPlatformRegisteredFragment$data,
+  } as IsPlatformRegisteredQuery['isPlatformRegistered'],
   userOrganizations: [
     { id: 'org-1', name: 'Org One', personal_space: false },
     { id: 'org-2', name: 'Org Two', personal_space: true },
   ] as UserOrganizationsQuery['userOrganizations'],
   fetchUserOrganizations: null as
     (() => Promise<UserOrganizationsQuery>) | null,
-  mutationMode: 'success' as 'success' | 'missing-capability' | 'error',
+  mutationMode: 'success' as
+    'success' | 'missing-capability' | 'error' | 'pending',
+  pendingRegistrations: [] as {
+    onSuccess: (data: unknown) => void;
+    onError: (error: Error) => void;
+  }[],
   token: 'a-token',
+  organizationName: 'Org One' as string | null,
   errorMessage: 'SOME_ERROR',
   lastRegisterVariables: null as Record<string, unknown> | null,
 }));
 
-vi.mock('react-relay', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('react-relay')>()),
-  usePreloadedQuery: () => ({
-    isPlatformRegistered: testState.isPlatformRegistered,
-  }),
-  useFragment: (_doc: unknown, ref: unknown) => ref,
-  useMutation: () => [
-    (opts: {
-      variables: Record<string, unknown>;
-      onCompleted?: (data: unknown) => void;
-      onError?: (error: Error) => void;
-    }) => {
-      testState.lastRegisterVariables = opts.variables;
-      if (testState.mutationMode === 'missing-capability') {
-        opts.onError?.(new Error('MISSING_CAPABILITY_ON_ORGANIZATION'));
-        return;
-      }
-      if (testState.mutationMode === 'error') {
-        opts.onError?.(new Error(testState.errorMessage));
-        return;
-      }
-      opts.onCompleted?.({ registerPlatform: { token: testState.token } });
+const registerPlatform = (
+  variables: Record<string, unknown>,
+  options: {
+    onSuccess: (data: unknown) => void;
+    onError: (error: Error) => void;
+  }
+) => {
+  testState.lastRegisterVariables = variables;
+  if (testState.mutationMode === 'pending') {
+    testState.pendingRegistrations.push(options);
+    return;
+  }
+  if (testState.mutationMode === 'missing-capability') {
+    options.onError(new Error('MISSING_CAPABILITY_ON_ORGANIZATION'));
+    return;
+  }
+  if (testState.mutationMode === 'error') {
+    options.onError(new Error(testState.errorMessage));
+    return;
+  }
+  options.onSuccess({
+    registerPlatform: {
+      token: testState.token,
+      organizationName: testState.organizationName,
     },
-    {},
-  ],
-}));
+  });
+};
 
 // The component suspends on the real query key, with a fetch the tests control.
 vi.mock('@graphql/generated', async (importOriginal) => {
@@ -71,6 +76,7 @@ vi.mock('@graphql/generated', async (importOriginal) => {
         testState.fetchUserOrganizations?.() ??
         Promise.resolve({ userOrganizations: testState.userOrganizations }),
     }),
+    useRegisterPlatformMutation: () => ({ mutate: registerPlatform }),
   });
 });
 
@@ -114,7 +120,6 @@ vi.mock('@/components/registration/register/OrganizationForm', () => ({
 const PLATFORM_ORIGIN = 'https://opencti.example.com';
 const OTHER_ORIGIN = 'https://other.example.com';
 
-const mockQueryRef = {} as PreloadedQuery<registerIsPlatformRegisteredQuery>;
 const mockPlatform: PlatformInput = {
   url: `${PLATFORM_ORIGIN}/dashboard`,
 };
@@ -134,7 +139,7 @@ const renderRegisterSuspended = (
       }}>
       <Suspense fallback={<div data-testid={USER_ORGANIZATIONS_LOADING} />}>
         <Register
-          queryRef={mockQueryRef}
+          isPlatformRegistered={testState.isPlatformRegistered}
           platform={mockPlatform}
           platformOrigin={platformOrigin}
           state={state}
@@ -162,13 +167,15 @@ describe('Register', () => {
       status: 'never_registered',
       platformTitle: null,
       organization: null,
-    } as registerIsPlatformRegisteredFragment$data;
+    } as IsPlatformRegisteredQuery['isPlatformRegistered'];
     testState.userOrganizations = [
       { id: 'org-1', name: 'Org One', personal_space: false },
       { id: 'org-2', name: 'Org Two', personal_space: true },
     ];
     testState.mutationMode = 'success';
+    testState.pendingRegistrations = [];
     testState.token = 'a-token';
+    testState.organizationName = 'Org One';
     testState.errorMessage = 'SOME_ERROR';
     testState.lastRegisterVariables = null;
     testState.fetchUserOrganizations = null;
@@ -180,7 +187,7 @@ describe('Register', () => {
       status: PlatformRegistrationStatus.NeverRegistered,
       platformTitle: null,
       organization: null,
-    } as registerIsPlatformRegisteredFragment$data;
+    } as IsPlatformRegisteredQuery['isPlatformRegistered'];
     await renderRegister();
     expect(screen.getByTestId('organization-form')).toBeInTheDocument();
     expect(screen.getByText('2')).toBeInTheDocument();
@@ -191,7 +198,7 @@ describe('Register', () => {
       status: PlatformRegistrationStatus.Unregistered,
       platformTitle: null,
       organization: null,
-    } as registerIsPlatformRegisteredFragment$data;
+    } as IsPlatformRegisteredQuery['isPlatformRegistered'];
     await renderRegister();
     expect(screen.getByTestId('organization-form')).toBeInTheDocument();
   });
@@ -201,7 +208,7 @@ describe('Register', () => {
       status: PlatformRegistrationStatus.NeverRegistered,
       platformTitle: null,
       organization: null,
-    } as registerIsPlatformRegisteredFragment$data;
+    } as IsPlatformRegisteredQuery['isPlatformRegistered'];
     const postMessage = vi.fn();
     Object.defineProperty(window, 'opener', {
       value: { postMessage },
@@ -224,7 +231,7 @@ describe('Register', () => {
       status: PlatformRegistrationStatus.NeverRegistered,
       platformTitle: null,
       organization: null,
-    } as registerIsPlatformRegisteredFragment$data;
+    } as IsPlatformRegisteredQuery['isPlatformRegistered'];
     testState.token = 'my-token';
     const postMessage = vi.fn();
     Object.defineProperty(window, 'opener', {
@@ -243,7 +250,7 @@ describe('Register', () => {
     // Then
     await waitFor(() => {
       expect(postMessage).toHaveBeenCalledWith(
-        { action: 'register', token: 'my-token' },
+        { action: 'register', token: 'my-token', organizationName: 'Org One' },
         OTHER_ORIGIN
       );
     });
@@ -255,7 +262,7 @@ describe('Register', () => {
       status: PlatformRegistrationStatus.Unregistered,
       platformTitle: 'My Platform',
       organization: { id: 'org-3' },
-    } as registerIsPlatformRegisteredFragment$data;
+    } as IsPlatformRegisteredQuery['isPlatformRegistered'];
     testState.userOrganizations = [
       { id: 'org-1', name: 'Org One', personal_space: false },
       { id: 'org-2', name: 'Org Two', personal_space: false },
@@ -289,7 +296,7 @@ describe('Register', () => {
       status: PlatformRegistrationStatus.NeverRegistered,
       platformTitle: null,
       organization: null,
-    } as registerIsPlatformRegisteredFragment$data;
+    } as IsPlatformRegisteredQuery['isPlatformRegistered'];
     testState.mutationMode = 'success';
     testState.token = 'my-token';
     const postMessage = vi.fn();
@@ -303,10 +310,79 @@ describe('Register', () => {
 
     await waitFor(() => {
       expect(postMessage).toHaveBeenCalledWith(
-        { action: 'register', token: 'my-token' },
+        { action: 'register', token: 'my-token', organizationName: 'Org One' },
         PLATFORM_ORIGIN
       );
     });
+  });
+
+  it('should forward a null organization name in the register message when the API returns none', async () => {
+    // Given
+    testState.isPlatformRegistered = {
+      status: PlatformRegistrationStatus.NeverRegistered,
+      platformTitle: null,
+      organization: null,
+    } as IsPlatformRegisteredQuery['isPlatformRegistered'];
+    testState.token = 'my-token';
+    testState.organizationName = null;
+    const postMessage = vi.fn();
+    Object.defineProperty(window, 'opener', {
+      value: { postMessage },
+      writable: true,
+    });
+    const { user } = await renderRegister();
+
+    // When
+    await user.click(screen.getByRole('button', { name: 'mock-confirm' }));
+
+    // Then
+    await waitFor(() => {
+      expect(postMessage).toHaveBeenCalledWith(
+        { action: 'register', token: 'my-token', organizationName: null },
+        PLATFORM_ORIGIN
+      );
+    });
+    expect(
+      screen.getByRole('heading', { name: 'Register.Succeeded.Title' })
+    ).toBeInTheDocument();
+  });
+
+  it('should start a single registration when the confirm button is clicked twice before the server answers', async () => {
+    // Given
+    testState.isPlatformRegistered = {
+      status: PlatformRegistrationStatus.NeverRegistered,
+      platformTitle: null,
+      organization: null,
+    } as IsPlatformRegisteredQuery['isPlatformRegistered'];
+    testState.mutationMode = 'pending';
+    const postMessage = vi.fn();
+    Object.defineProperty(window, 'opener', {
+      value: { postMessage },
+      writable: true,
+    });
+    const { user } = await renderRegister();
+    const confirm = screen.getByRole('button', { name: 'mock-confirm' });
+
+    // When
+    await user.click(confirm);
+    await user.click(confirm);
+    act(() =>
+      testState.pendingRegistrations[0]?.onSuccess({
+        registerPlatform: { token: 'my-token', organizationName: 'Org One' },
+      })
+    );
+
+    // Then
+    expect(testState.pendingRegistrations).toHaveLength(1);
+    await waitFor(() => {
+      expect(postMessage).toHaveBeenCalledWith(
+        { action: 'register', token: 'my-token', organizationName: 'Org One' },
+        PLATFORM_ORIGIN
+      );
+    });
+    expect(
+      screen.getByRole('heading', { name: 'Register.Succeeded.Title' })
+    ).toBeInTheDocument();
   });
 
   it('automatically registers when the platform is already registered with an organization', async () => {
@@ -314,7 +390,7 @@ describe('Register', () => {
       status: PlatformRegistrationStatus.Registered,
       platformTitle: 'My Platform',
       organization: { id: 'org-auto' },
-    } as registerIsPlatformRegisteredFragment$data;
+    } as IsPlatformRegisteredQuery['isPlatformRegistered'];
     const postMessage = vi.fn();
     Object.defineProperty(window, 'opener', {
       value: { postMessage },
@@ -333,7 +409,11 @@ describe('Register', () => {
     });
     await waitFor(() => {
       expect(postMessage).toHaveBeenCalledWith(
-        { action: 'register', token: testState.token },
+        {
+          action: 'register',
+          token: testState.token,
+          organizationName: testState.organizationName,
+        },
         PLATFORM_ORIGIN
       );
     });
@@ -347,7 +427,7 @@ describe('Register', () => {
       status: PlatformRegistrationStatus.NeverRegistered,
       platformTitle: null,
       organization: null,
-    } as registerIsPlatformRegisteredFragment$data;
+    } as IsPlatformRegisteredQuery['isPlatformRegistered'];
     testState.mutationMode = 'error';
     testState.errorMessage = 'SOME_ERROR';
     const { user } = await renderRegister();
@@ -371,7 +451,7 @@ describe('Register', () => {
       status: PlatformRegistrationStatus.NeverRegistered,
       platformTitle: null,
       organization: null,
-    } as registerIsPlatformRegisteredFragment$data;
+    } as IsPlatformRegisteredQuery['isPlatformRegistered'];
     testState.mutationMode = 'missing-capability';
     const { user } = await renderRegister();
 
@@ -394,7 +474,7 @@ describe('Register', () => {
       status: PlatformRegistrationStatus.NeverRegistered,
       platformTitle: null,
       organization: null,
-    } as registerIsPlatformRegisteredFragment$data;
+    } as IsPlatformRegisteredQuery['isPlatformRegistered'];
     testState.mutationMode = 'missing-capability';
     const postMessage = vi.fn();
     Object.defineProperty(window, 'opener', {
@@ -421,7 +501,7 @@ describe('Register', () => {
       status: PlatformRegistrationStatus.Registered,
       platformTitle: null,
       organization: null,
-    } as registerIsPlatformRegisteredFragment$data;
+    } as IsPlatformRegisteredQuery['isPlatformRegistered'];
 
     // When
     await renderRegister();
@@ -437,7 +517,7 @@ describe('Register', () => {
       status: PlatformRegistrationStatus.Unregistered,
       platformTitle: null,
       organization: null,
-    } as registerIsPlatformRegisteredFragment$data;
+    } as IsPlatformRegisteredQuery['isPlatformRegistered'];
     testState.userOrganizations = [
       { id: 'org-1', name: 'Org One', personal_space: false },
       { id: 'org-2', name: 'Org Two', personal_space: false },
@@ -481,7 +561,7 @@ describe('Register', () => {
         status: PlatformRegistrationStatus.NeverRegistered,
         platformTitle: null,
         organization: null,
-      } as registerIsPlatformRegisteredFragment$data;
+      } as IsPlatformRegisteredQuery['isPlatformRegistered'];
       testState.token = 'my-token';
     });
 
@@ -500,7 +580,12 @@ describe('Register', () => {
       // Then
       await waitFor(() => {
         expect(postMessage).toHaveBeenCalledWith(
-          { action: 'register', token: 'my-token', state: 's-1' },
+          {
+            action: 'register',
+            token: 'my-token',
+            organizationName: 'Org One',
+            state: 's-1',
+          },
           PLATFORM_ORIGIN
         );
       });
@@ -540,7 +625,11 @@ describe('Register', () => {
       // Then
       await waitFor(() => {
         expect(postMessage).toHaveBeenCalledWith(
-          { action: 'register', token: 'my-token' },
+          {
+            action: 'register',
+            token: 'my-token',
+            organizationName: 'Org One',
+          },
           PLATFORM_ORIGIN
         );
       });

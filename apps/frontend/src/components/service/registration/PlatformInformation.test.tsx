@@ -1,17 +1,18 @@
 import { PlatformInformation } from '@/components/service/registration/PlatformInformation';
 import { basePlatform } from '@/components/service/registration/registered-platform.fixtures';
 import testRender from '@/utils/test/test-render';
-import { registeredPlatformByServiceInstanceId_fragment$data } from '@generated/registeredPlatformByServiceInstanceId_fragment.graphql';
-import { SaasPlatformMetadata } from '@graphql/generated';
+import {
+  RegisteredPlatformDetailsFragment,
+  SaasPlatformMetadata,
+} from '@graphql/generated';
 import { screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
 const HOSTNAME = 'my-platform.filigran.io';
 
-const platform: registeredPlatformByServiceInstanceId_fragment$data =
-  basePlatform;
+const platform: RegisteredPlatformDetailsFragment = basePlatform;
 
 const metadata: SaasPlatformMetadata = {
   hostname: HOSTNAME,
@@ -20,11 +21,6 @@ const metadata: SaasPlatformMetadata = {
   end_date: null,
   region: null,
 };
-
-vi.mock('react-relay', async (importOriginal) => ({
-  ...(await importOriginal()),
-  useFragment: () => platform,
-}));
 
 const renderInformation = ({
   showMetadata = true,

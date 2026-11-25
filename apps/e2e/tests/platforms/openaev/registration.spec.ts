@@ -1,4 +1,5 @@
 import { expect, test } from '../../fixtures/baseFixtures';
+import { META_DESCRIPTION_SUMMARY } from '../../model/common';
 import { HomePage } from '../../model/home.pageModel';
 import OneClickDeployPage from '../../model/one-click-deploy.pageModel';
 import OpenaevScenarioPage, {
@@ -15,6 +16,7 @@ describePlatformRegistration(OPENAEV);
 
 const SCENARIO = {
   name: 'e2e deployable scenario',
+  metaDescription: META_DESCRIPTION_SUMMARY,
   shortDescription: 'A scenario to deploy in OpenAEV',
   version: '1.0.0',
   description: 'A scenario deployed in a real OpenAEV',
@@ -31,7 +33,7 @@ test.describe('OpenAEV one-click deploy', () => {
     await test.step('publish a scenario in XTM Hub', async () => {
       await new HomePage(page).navigateTo();
       await scenarioPage.navigateToScenarioService();
-      await scenarioPage.addScenario(SCENARIO);
+      await scenarioPage.addScenario({ ...SCENARIO, publish: true });
     });
 
     await test.step('deploy it in OpenAEV', async () => {

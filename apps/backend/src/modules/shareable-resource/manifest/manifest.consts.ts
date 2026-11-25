@@ -3,9 +3,6 @@ import {
   PlatformIdentifier,
 } from '../../../__generated__/resolvers-types';
 
-export const MANIFEST_RATE_WINDOW_MS = 60 * 1000;
-export const MANIFEST_RATE_MAX = 300;
-
 export enum ManifestRebuildQueueStatus {
   Pending = 'pending',
   Processing = 'processing',

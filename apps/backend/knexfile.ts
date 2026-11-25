@@ -104,7 +104,8 @@ type BaseDatabaseType =
   | 'VotableFeature_UseCase'
   | 'FeatureVote'
   | 'ContentTranslation'
-  | 'ContentTranslationDraft';
+  | 'ContentTranslationDraft'
+  | 'ApiToken';
 
 export type DatabaseType =
   | BaseDatabaseType

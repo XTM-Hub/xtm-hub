@@ -13,6 +13,7 @@ import Document, { DocumentId } from '../../model/kanel/public/Document';
 import { NewsFeedItemId } from '../../model/kanel/public/NewsFeedItem';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { BlogApiClient } from '../../thirdparty/blog-api/client';
+import { BlogApiError } from '../../thirdparty/blog-api/errors';
 import { logApp } from '../../utils/app-logger.util';
 import { ErrorCode } from '../../utils/error/error.code';
 import {
@@ -20,7 +21,7 @@ import {
   IntervalHelper,
   IntervalUnit,
 } from '../common/interval.helper';
-import { PlatformConfigurationDomain } from '../registration/platform-configuration/platform-configuration.domain';
+import type { FullPlatformConfiguration } from '../registration/platform-configuration/platform-configuration.domain';
 import { RegistrationDomain } from '../registration/registration.domain';
 import { platformIdentifierMappedByServiceDefinitionIdentifier } from '../registration/registration.mapping';
 import { ServiceDefinitionDomain } from '../service/definition/service-definition.domain';
@@ -37,6 +38,7 @@ import {
   NewsFeedHelper,
 } from './news-feed.helper';
 import {
+  BlogpostProduct,
   blogpostProductMapping,
   NEWS_FEED_INTERNAL_METADATA_KEYS,
   newsFeedConfigurationMapping,
@@ -108,13 +110,24 @@ const provisionNewsFeedItemsForPlatformsMatching = async ({
   return platformIds.length;
 };
 
-export interface BlogpostSyncResult {
+export interface BlogpostSyncCounts {
   created: number;
   // Includes the items that come back after having been dropped
   updated: number;
   dropped: number;
   provisionedPlatforms: number;
 }
+
+// The totals of all the products, and the same counts for each of them
+export interface BlogpostSyncResult extends BlogpostSyncCounts {
+  products: Record<BlogpostProduct, BlogpostSyncCounts>;
+}
+
+// Object.entries loses the keys type: the mapping is a closed Record, so its keys are exactly the BlogpostProduct
+const BLOGPOST_PRODUCTS = Object.entries(blogpostProductMapping) as [
+  BlogpostProduct,
+  PlatformIdentifier,
+][];
 
 const resolvePlatformIdentifier = async (
   serviceInstanceId: ServiceInstanceId
@@ -133,11 +146,78 @@ const resolvePlatformIdentifier = async (
 export interface NewsFeedExternalRedirect {
   newsFeedItemId: NewsFeedItemId;
   newsFeedItemType: NewsFeedItemType;
+  // The product the item was given to, reported in telemetry
+  platformIdentifier: PlatformIdentifier;
   url: string;
   host: string;
 }
 
 const NEWS_FEED_ITEM_ID_SCHEMA = z.uuid();
+
+const buildBlogpostSyncResult = (
+  products: Record<BlogpostProduct, BlogpostSyncCounts>
+): BlogpostSyncResult => {
+  const sum = (field: keyof BlogpostSyncCounts): number =>
+    Object.values(products).reduce((total, counts) => total + counts[field], 0);
+  return {
+    created: sum('created'),
+    updated: sum('updated'),
+    dropped: sum('dropped'),
+    provisionedPlatforms: sum('provisionedPlatforms'),
+    products,
+  };
+};
+
+// Fetches the blog API first, outside any transaction: nothing is applied unless the whole response is valid.
+// Then reconciles and provisions the items of the product in a single transaction.
+const syncBlogpostsOfProduct = async ({
+  product,
+  platformIdentifier,
+  limit,
+}: {
+  product: BlogpostProduct;
+  platformIdentifier: PlatformIdentifier;
+  limit: number;
+}): Promise<BlogpostSyncCounts> => {
+  const posts = await BlogApiClient.fetchBlogFeed({ product, limit });
+
+  return withTransaction(async () => {
+    // Safeguard: an empty answer must not empty the news feed of the product
+    if (
+      posts.length === 0 &&
+      (await NewsFeedDomain.countActiveBlogpostItems(platformIdentifier)) > 0
+    ) {
+      throw new Error(ErrorCode.NewsFeedBlogpostEmptyFeed);
+    }
+
+    const { created, updated, dropped, restored } =
+      await NewsFeedDomain.reconcileBlogposts({
+        platformIdentifier,
+        posts,
+      });
+
+    // The dropped items are provisioned too, so that the platforms delete them
+    const provisionedPlatforms =
+      await provisionNewsFeedItemsForPlatformsMatching({
+        newsFeedItemIds: [
+          ...new Set([...created, ...updated, ...restored, ...dropped]),
+        ],
+        platformIdentifier,
+        isPlatformSupported: (platform) =>
+          doesPlatformSupportBlogpostNewsFeed(
+            platformIdentifier,
+            platform.platform_version
+          ),
+      });
+
+    return {
+      created: created.length,
+      updated: updated.length + restored.length,
+      dropped: dropped.length,
+      provisionedPlatforms,
+    };
+  });
+};
 
 export const NewsFeedApp = {
   // The destination only depends on the item (its type and metadata): nothing from the request decides it,
@@ -173,6 +253,7 @@ export const NewsFeedApp = {
     return {
       newsFeedItemId: newsFeedItem.id,
       newsFeedItemType: newsFeedItem.type,
+      platformIdentifier: newsFeedItem.platform_identifier,
       host: destination.host,
       url: destination.forwardUtmParams
         ? NewsFeedRedirectHelper.appendUtmParams(destination.url, query)
@@ -180,94 +261,67 @@ export const NewsFeedApp = {
     };
   },
 
-  // Fetches the blog API first, outside any transaction: nothing is applied unless the whole response is valid.
-  // Then reconciles and provisions in a single transaction, so any failure rolls everything back, provisioning included.
+  // Each product is synchronized on its own, one after the other: it fetches the blog API first, outside any
+  // transaction, then reconciles and provisions in a single transaction of its own. A failing product rolls back
+  // only itself, provisioning included, and does not stop the others. Each failure is logged with its product, and a
+  // NewsFeedBlogpostSyncFailed error is thrown once all of them have been tried, so that the caller knows that
+  // something is left to fix.
   syncBlogposts: async (): Promise<BlogpostSyncResult> => {
     const limit = NewsFeedHelper.getBlogpostLimit();
-    const feeds = await Promise.all(
-      Object.entries(blogpostProductMapping).map(
-        async ([product, platformIdentifier]) => ({
-          platformIdentifier,
-          posts: await BlogApiClient.fetchBlogFeed({ product, limit }),
-        })
-      )
-    );
+    const succeeded: [BlogpostProduct, BlogpostSyncCounts][] = [];
+    const failures: { product: BlogpostProduct; error: unknown }[] = [];
 
-    const result = await withTransaction(async () => {
-      const total: BlogpostSyncResult = {
-        created: 0,
-        updated: 0,
-        dropped: 0,
-        provisionedPlatforms: 0,
-      };
-
-      for (const { platformIdentifier, posts } of feeds) {
-        // Safeguard: an empty answer must not empty the news feed
-        if (
-          posts.length === 0 &&
-          (await NewsFeedDomain.countActiveBlogpostItems(platformIdentifier)) >
-            0
-        ) {
-          throw new Error(ErrorCode.NewsFeedBlogpostEmptyFeed);
-        }
-
-        const { created, updated, dropped, restored } =
-          await NewsFeedDomain.reconcileBlogposts({
+    for (const [product, platformIdentifier] of BLOGPOST_PRODUCTS) {
+      try {
+        succeeded.push([
+          product,
+          await syncBlogpostsOfProduct({
+            product,
             platformIdentifier,
-            posts,
-          });
-
-        // The dropped items are provisioned too, so that the platforms delete them
-        const provisionedPlatforms =
-          await provisionNewsFeedItemsForPlatformsMatching({
-            newsFeedItemIds: [
-              ...new Set([...created, ...updated, ...restored, ...dropped]),
-            ],
-            platformIdentifier,
-            isPlatformSupported: (platform) =>
-              doesPlatformSupportBlogpostNewsFeed(
-                platformIdentifier,
-                platform.platform_version
-              ),
-          });
-
-        total.created += created.length;
-        total.updated += updated.length + restored.length;
-        total.dropped += dropped.length;
-        total.provisionedPlatforms += provisionedPlatforms;
+            limit,
+          }),
+        ]);
+      } catch (error) {
+        failures.push({ product, error });
+        logApp.error('Unable to synchronize the blog posts of a product', {
+          error,
+          product,
+          postId: error instanceof BlogApiError ? error.postId : undefined,
+        });
       }
+    }
 
-      return total;
-    });
+    if (failures.length > 0) {
+      logApp.warn('Synchronized the blog posts of some products only', {
+        synchronized: Object.fromEntries(succeeded),
+        failedProducts: failures.map(({ product }) => product),
+      });
+      // The other products are already applied. The failed products and the reasons are in the logs above.
+      throw new Error(ErrorCode.NewsFeedBlogpostSyncFailed, {
+        cause: failures[0]?.error,
+      });
+    }
 
+    // Object.fromEntries loses the keys type: without any failure, every mapped product has succeeded
+    const result = buildBlogpostSyncResult(
+      Object.fromEntries(succeeded) as Record<
+        BlogpostProduct,
+        BlogpostSyncCounts
+      >
+    );
     logApp.info('Synchronized blog posts', { ...result });
     return result;
   },
 
   consumeProvisionedNewsFeedItems: async ({
-    platformId,
-    token,
+    registration,
   }: {
-    platformId: string | null;
-    token: string | null;
+    registration: FullPlatformConfiguration;
   }): Promise<ConsumeProvisionedNewsFeedItemsResponse> => {
-    if (!platformId || !token) {
-      throw new Error(ErrorCode.InvalidPlatformId);
-    }
-
-    const resolvedConfiguration =
-      await PlatformConfigurationDomain.loadResolvedConfigurationByPlatformAndToken(
-        {
-          platform_id: platformId,
-          token,
-        }
-      );
-    if (!resolvedConfiguration) {
-      throw new Error(ErrorCode.PlatformNotRegistered);
-    }
-
     const rawItems =
-      await NewsFeedDomain.loadAndConsumeProvisionedNewsFeedItems(platformId);
+      await NewsFeedDomain.loadAndConsumeProvisionedNewsFeedItems(
+        registration.platformConfiguration.platform_id
+      );
 
     const newsFeedItems = rawItems.map((item) => ({
       ...item,
@@ -285,8 +339,8 @@ export const NewsFeedApp = {
               ? NewsFeedHelper.addUtmToUrlPath({
                   urlPath: m.value,
                   type: item.type,
-                  // The consuming platform is where the link is clicked, resolved from its id and token
-                  platformIdentifier: resolvedConfiguration.platformIdentifier,
+                  // The consuming platform is where the link is clicked
+                  platformIdentifier: registration.platformIdentifier,
                 })
               : m.value,
         })),
@@ -295,8 +349,8 @@ export const NewsFeedApp = {
     return {
       news_feed_items: newsFeedItems,
       available_news_feed_types: NewsFeedDomain.loadAvailableNewsFeedTypes(
-        resolvedConfiguration.platformIdentifier,
-        resolvedConfiguration.platformConfiguration.platform_version
+        registration.platformIdentifier,
+        registration.platformConfiguration.platform_version
       ),
     };
   },
@@ -455,7 +509,7 @@ export const NewsFeedApp = {
     updatedDocument,
     serviceDefinitionIdentifier,
   }: {
-    documentBeforeUpdate?: Document;
+    documentBeforeUpdate: Document;
     updatedDocument: Document;
     serviceDefinitionIdentifier: ServiceDefinitionIdentifier;
   }): Promise<void> => {
@@ -469,16 +523,11 @@ export const NewsFeedApp = {
     }
 
     if (updatedDocument.status !== DocumentStatus.Published) {
-      if (documentBeforeUpdate?.status === DocumentStatus.Published) {
-        await NewsFeedApp.deleteResourceNewsFeed({
-          documentId: updatedDocument.id,
-        });
-      }
       return;
     }
 
     const shouldCreateNewsFeedItem =
-      documentBeforeUpdate?.status !== DocumentStatus.Published;
+      documentBeforeUpdate.status !== DocumentStatus.Published;
     if (shouldCreateNewsFeedItem) {
       await NewsFeedApp.createResourceNewsFeedItem({
         document: updatedDocument,
@@ -487,7 +536,7 @@ export const NewsFeedApp = {
         logApp.error('Unable to create news feed item', {
           error,
           documentId: updatedDocument.id,
-          source: documentBeforeUpdate ? 'update' : 'creation',
+          source: 'update',
         })
       );
       return;

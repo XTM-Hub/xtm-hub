@@ -1,6 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  // eslint-disable-next-line no-restricted-imports
+  contextBypassUser,
   contextSimpleUserFiligran2,
   GRAPHQL_RESOLVE_INFO,
   SERVICES,
@@ -230,6 +232,19 @@ describe('subscription resolver - unit tests', () => {
       // Then
       expect(result).toBeUndefined();
     });
+
+    it('should return undefined when the subscription id is null', async () => {
+      // When
+      const result = await subscriptionResolver.Query!.subscriptionById!(
+        {},
+        { subscription_id: null },
+        contextSimpleUserFiligran2,
+        GRAPHQL_RESOLVE_INFO
+      );
+
+      // Then
+      expect(result).toBeUndefined();
+    });
   });
 
   describe('query.subscriptions', () => {
@@ -292,7 +307,7 @@ describe('subscription resolver - unit tests', () => {
               capability_ids: capabilityIds,
             },
           },
-          contextSimpleUserFiligran2,
+          contextBypassUser,
           GRAPHQL_RESOLVE_INFO
         );
 
@@ -324,7 +339,7 @@ describe('subscription resolver - unit tests', () => {
       const result = await subscriptionResolver.Mutation!.deleteSubscriptions!(
         {},
         { subscription_ids: [subscriptionId] },
-        contextSimpleUserFiligran2,
+        contextBypassUser,
         GRAPHQL_RESOLVE_INFO
       );
 
@@ -361,7 +376,7 @@ describe('subscription resolver - unit tests', () => {
             capability_ids: capabilityIds,
           },
         },
-        contextSimpleUserFiligran2,
+        contextBypassUser,
         GRAPHQL_RESOLVE_INFO
       );
 
@@ -378,7 +393,7 @@ describe('subscription resolver - unit tests', () => {
 
   describe('mutation error mapping', () => {
     it.each`
-      mutationName             | runMutation                                                                                                                                                            | setupAppMock                                                                                   | expectedCode
+      mutationName             | runMutation                                                                                                                                                   | setupAppMock                                                                                   | expectedCode
       ${'createSubscriptions'} | ${() =>
         subscriptionResolver.Mutation!.createSubscriptions!(
           {},
@@ -391,10 +406,10 @@ describe('subscription resolver - unit tests', () => {
               capability_ids: [SERVICES.INSTANCES.INTEGRATIONS.CAPABILITIES.UPLOAD.ID],
             },
           },
-          contextSimpleUserFiligran2,
+          contextBypassUser,
           GRAPHQL_RESOLVE_INFO
         )} | ${() => vi.spyOn(subscriptionApp, 'subscribeOrganizationsToService').mockRejectedValue(new Error('boom'))} | ${UnknownErrorCode.ServiceSubscriptionError}
-      ${'deleteSubscriptions'} | ${() => subscriptionResolver.Mutation!.deleteSubscriptions!({}, { subscription_ids: [uuidv4() as SubscriptionId] }, contextSimpleUserFiligran2, GRAPHQL_RESOLVE_INFO)} | ${() => vi.spyOn(subscriptionApp, 'deleteSubscriptions').mockRejectedValue(new Error('boom'))} | ${UnknownErrorCode.DeleteSubscriptionError}
+      ${'deleteSubscriptions'} | ${() => subscriptionResolver.Mutation!.deleteSubscriptions!({}, { subscription_ids: [uuidv4() as SubscriptionId] }, contextBypassUser, GRAPHQL_RESOLVE_INFO)} | ${() => vi.spyOn(subscriptionApp, 'deleteSubscriptions').mockRejectedValue(new Error('boom'))} | ${UnknownErrorCode.DeleteSubscriptionError}
       ${'updateSubscription'} | ${() =>
         subscriptionResolver.Mutation!.updateSubscription!(
           {},
@@ -406,7 +421,7 @@ describe('subscription resolver - unit tests', () => {
               capability_ids: [SERVICES.INSTANCES.INTEGRATIONS.CAPABILITIES.UPLOAD.ID],
             },
           },
-          contextSimpleUserFiligran2,
+          contextBypassUser,
           GRAPHQL_RESOLVE_INFO
         )} | ${() => vi.spyOn(subscriptionApp, 'updateSubscription').mockRejectedValue(new Error('boom'))} | ${UnknownErrorCode.ServiceSubscriptionError}
     `(

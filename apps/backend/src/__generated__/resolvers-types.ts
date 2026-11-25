@@ -1,3 +1,4 @@
+import type { ApiTokenId } from '../model/kanel/public/ApiToken.js';
 import type { CompetitorId } from '../model/kanel/public/Competitor.js';
 import type { DeploymentRequestId } from '../model/kanel/public/DeploymentRequest.js';
 import type { DocumentId } from '../model/kanel/public/Document.js';
@@ -31,6 +32,7 @@ export type Scalars = {
   Boolean: { input: boolean; output: boolean; }
   Int: { input: number; output: number; }
   Float: { input: number; output: number; }
+  ApiTokenId: { input: ApiTokenId; output: ApiTokenId; }
   CompetitorId: { input: CompetitorId; output: CompetitorId; }
   Date: { input: any; output: any; }
   DeploymentRequestId: { input: DeploymentRequestId; output: DeploymentRequestId; }
@@ -119,6 +121,33 @@ export type AdminEditUserInput = {
   password?: InputMaybe<Scalars['String']['input']>;
 };
 
+export type ApiToken = Node & {
+  __typename?: 'ApiToken';
+  created_at: Scalars['Date']['output'];
+  expires_at: Scalars['Date']['output'];
+  id: Scalars['ID']['output'];
+  last_used_at?: Maybe<Scalars['Date']['output']>;
+  name: Scalars['String']['output'];
+  organization_id: Scalars['ID']['output'];
+  organization_name: Scalars['String']['output'];
+  revoked_at?: Maybe<Scalars['Date']['output']>;
+  scope: ApiTokenScope;
+  /** The first characters of the token, to tell tokens apart */
+  token_prefix: Scalars['String']['output'];
+  user_email: Scalars['String']['output'];
+};
+
+/**
+ * What a personal API token may do. read: queries only. read_write: queries and mutations, without the organization
+ * administration and without any portal capability. admin: the user's organization and portal capabilities, BYPASS
+ * excepted. A token never exceeds its user's live rights.
+ */
+export enum ApiTokenScope {
+  Admin = 'admin',
+  Read = 'read',
+  ReadWrite = 'read_write'
+}
+
 export type AutoRegisterPlatformInput = {
   existing_users_count?: InputMaybe<Scalars['Int']['input']>;
   platform: PlatformInput;
@@ -202,8 +231,6 @@ export enum CompetitorTier {
 
 export type Connector = Document & Integration & Node & {
   __typename?: 'Connector';
-  /** @deprecated Use status */
-  active?: Maybe<Scalars['Boolean']['output']>;
   blogpost_url?: Maybe<Scalars['String']['output']>;
   children_documents?: Maybe<Array<ShareableResource>>;
   contact?: Maybe<Scalars['String']['output']>;
@@ -218,6 +245,7 @@ export type Connector = Document & Integration & Node & {
   integration_type: IntegrationType;
   license_type?: Maybe<LicenseType>;
   manager_supported: Scalars['Boolean']['output'];
+  meta_description?: Maybe<Scalars['String']['output']>;
   minimum_deployable_version?: Maybe<Scalars['String']['output']>;
   name: Scalars['String']['output'];
   playbook_supported: Scalars['Boolean']['output'];
@@ -262,6 +290,13 @@ export type ContentTranslationValueInput = {
   value: Scalars['String']['input'];
 };
 
+export type CreateApiTokenInput = {
+  expires_at: Scalars['Date']['input'];
+  name: Scalars['String']['input'];
+  organization_id: Scalars['OrganizationId']['input'];
+  scope: ApiTokenScope;
+};
+
 export type CreateCompetitorInput = {
   domain: Scalars['String']['input'];
   name: Scalars['String']['input'];
@@ -280,6 +315,7 @@ export type CreateDocumentInput = {
   description: Scalars['String']['input'];
   entity_types?: InputMaybe<Array<Scalars['String']['input']>>;
   license_type?: InputMaybe<LicenseType>;
+  meta_description: Scalars['String']['input'];
   name: Scalars['String']['input'];
   short_description: Scalars['String']['input'];
   slug: Scalars['String']['input'];
@@ -331,10 +367,15 @@ export type CreateVotingRoundInput = {
   theme?: InputMaybe<VotingRoundTheme>;
 };
 
+/** The token is shown here once: only its hash is kept */
+export type CreatedApiToken = {
+  __typename?: 'CreatedApiToken';
+  api_token: ApiToken;
+  token: Scalars['String']['output'];
+};
+
 export type CsvFeed = Document & Integration & Node & {
   __typename?: 'CsvFeed';
-  /** @deprecated Use status */
-  active?: Maybe<Scalars['Boolean']['output']>;
   blogpost_url?: Maybe<Scalars['String']['output']>;
   children_documents?: Maybe<Array<ShareableResource>>;
   created_at: Scalars['Date']['output'];
@@ -347,6 +388,7 @@ export type CsvFeed = Document & Integration & Node & {
   id: Scalars['ID']['output'];
   integration_type: IntegrationType;
   license_type?: Maybe<LicenseType>;
+  meta_description?: Maybe<Scalars['String']['output']>;
   name: Scalars['String']['output'];
   remover_id?: Maybe<Scalars['ID']['output']>;
   service_instance?: Maybe<ServiceInstance>;
@@ -365,16 +407,27 @@ export type CsvFeed = Document & Integration & Node & {
   use_cases?: Maybe<Array<UseCase>>;
 };
 
+/** The token that authenticates the current request */
+export type CurrentApiToken = {
+  __typename?: 'CurrentApiToken';
+  expires_at: Scalars['Date']['output'];
+  id: Scalars['ID']['output'];
+  last_used_at?: Maybe<Scalars['Date']['output']>;
+  name: Scalars['String']['output'];
+  organization_id: Scalars['ID']['output'];
+  organization_name: Scalars['String']['output'];
+  scope: ApiTokenScope;
+};
+
 export type CustomDashboard = Document & Node & {
   __typename?: 'CustomDashboard';
-  /** @deprecated Use status */
-  active?: Maybe<Scalars['Boolean']['output']>;
   children_documents?: Maybe<Array<ShareableResource>>;
   created_at: Scalars['Date']['output'];
   description?: Maybe<Scalars['String']['output']>;
   download_number?: Maybe<Scalars['Int']['output']>;
   file_name: Scalars['String']['output'];
   id: Scalars['ID']['output'];
+  meta_description?: Maybe<Scalars['String']['output']>;
   name: Scalars['String']['output'];
   product_version?: Maybe<Scalars['String']['output']>;
   service_instance?: Maybe<ServiceInstance>;
@@ -394,8 +447,6 @@ export type CustomDashboard = Document & Node & {
 
 export type CustomView = Document & Node & {
   __typename?: 'CustomView';
-  /** @deprecated Use status */
-  active?: Maybe<Scalars['Boolean']['output']>;
   children_documents?: Maybe<Array<ShareableResource>>;
   created_at: Scalars['Date']['output'];
   description?: Maybe<Scalars['String']['output']>;
@@ -403,6 +454,7 @@ export type CustomView = Document & Node & {
   entity_types?: Maybe<Array<Scalars['String']['output']>>;
   file_name: Scalars['String']['output'];
   id: Scalars['ID']['output'];
+  meta_description?: Maybe<Scalars['String']['output']>;
   name: Scalars['String']['output'];
   product_version?: Maybe<Scalars['String']['output']>;
   service_instance?: Maybe<ServiceInstance>;
@@ -426,14 +478,13 @@ export type CustomView = Document & Node & {
  */
 export type DefaultDocument = Document & Node & {
   __typename?: 'DefaultDocument';
-  /** @deprecated Use status */
-  active?: Maybe<Scalars['Boolean']['output']>;
   children_documents?: Maybe<Array<ShareableResource>>;
   created_at: Scalars['Date']['output'];
   description?: Maybe<Scalars['String']['output']>;
   download_number?: Maybe<Scalars['Int']['output']>;
   file_name?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
+  meta_description?: Maybe<Scalars['String']['output']>;
   name?: Maybe<Scalars['String']['output']>;
   service_instance?: Maybe<ServiceInstance>;
   service_instance_id?: Maybe<Scalars['ServiceInstanceId']['output']>;
@@ -661,14 +712,13 @@ export enum DeploymentRequestUseCase {
 }
 
 export type Document = {
-  /** @deprecated Use status */
-  active?: Maybe<Scalars['Boolean']['output']>;
   children_documents?: Maybe<Array<ShareableResource>>;
   created_at: Scalars['Date']['output'];
   description?: Maybe<Scalars['String']['output']>;
   download_number?: Maybe<Scalars['Int']['output']>;
   file_name?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
+  meta_description?: Maybe<Scalars['String']['output']>;
   name?: Maybe<Scalars['String']['output']>;
   service_instance?: Maybe<ServiceInstance>;
   service_instance_id?: Maybe<Scalars['ServiceInstanceId']['output']>;
@@ -858,8 +908,7 @@ export type FacetBucket = {
 
 export enum FeatureFlag {
   DecouplingConnectors = 'DECOUPLING_CONNECTORS',
-  Dummy = 'DUMMY',
-  SaasMetrics = 'SAAS_METRICS'
+  Dummy = 'DUMMY'
 }
 
 export enum FiligranProduct {
@@ -909,8 +958,6 @@ export enum HasRepliedSatisfaction {
 }
 
 export type Integration = {
-  /** @deprecated Use status */
-  active?: Maybe<Scalars['Boolean']['output']>;
   blogpost_url?: Maybe<Scalars['String']['output']>;
   children_documents?: Maybe<Array<ShareableResource>>;
   created_at: Scalars['Date']['output'];
@@ -922,6 +969,7 @@ export type Integration = {
   id: Scalars['ID']['output'];
   integration_type: IntegrationType;
   license_type?: Maybe<LicenseType>;
+  meta_description?: Maybe<Scalars['String']['output']>;
   name: Scalars['String']['output'];
   remover_id?: Maybe<Scalars['ID']['output']>;
   service_instance?: Maybe<ServiceInstance>;
@@ -942,8 +990,6 @@ export type Integration = {
 
 export type IntegrationHack = Document & Integration & Node & {
   __typename?: 'IntegrationHack';
-  /** @deprecated Use status */
-  active?: Maybe<Scalars['Boolean']['output']>;
   blogpost_url?: Maybe<Scalars['String']['output']>;
   children_documents?: Maybe<Array<ShareableResource>>;
   created_at: Scalars['Date']['output'];
@@ -955,6 +1001,7 @@ export type IntegrationHack = Document & Integration & Node & {
   id: Scalars['ID']['output'];
   integration_type: IntegrationType;
   license_type?: Maybe<LicenseType>;
+  meta_description?: Maybe<Scalars['String']['output']>;
   name: Scalars['String']['output'];
   remover_id?: Maybe<Scalars['ID']['output']>;
   service_instance?: Maybe<ServiceInstance>;
@@ -1012,8 +1059,6 @@ export enum LicenseType {
 export type LoadDocumentFacetInput = {
   documentType?: InputMaybe<Scalars['String']['input']>;
   logicalFilters?: InputMaybe<LogicalFilterInput>;
-  /** @deprecated Use restrictToPublishedDocuments */
-  restrictToActiveDocuments?: InputMaybe<Scalars['Boolean']['input']>;
   restrictToPublishedDocuments?: InputMaybe<Scalars['Boolean']['input']>;
   searchTerm?: InputMaybe<Scalars['String']['input']>;
   serviceInstanceId: Scalars['ServiceInstanceId']['input'];
@@ -1111,6 +1156,7 @@ export type Mutation = {
   changeSelectedOrganization?: Maybe<User>;
   consumeProvisionedNewsFeedItems: ConsumeProvisionedNewsFeedItemsResponse;
   contactUs: Success;
+  createApiToken: CreatedApiToken;
   createCompetitor: Competitor;
   createDeploymentRequest: DeploymentRequest;
   createDocument: Document;
@@ -1160,6 +1206,8 @@ export type Mutation = {
   reorderDeploymentRequestInQueue: Success;
   requestTransferPersonalSpace: Success;
   resetPassword: Success;
+  /** The owner, or an administrator of the token's organization, revokes it */
+  revokeApiToken: ApiToken;
   saveContentTranslationDraft: Array<ContentTranslationEntry>;
   sendTelemetryEvent?: Maybe<SendTelemetryMutation>;
   setVotingRoundStatus: Array<VotingRound>;
@@ -1300,6 +1348,11 @@ export type MutationContactUsArgs = {
 };
 
 
+export type MutationCreateApiTokenArgs = {
+  input: CreateApiTokenInput;
+};
+
+
 export type MutationCreateCompetitorArgs = {
   input: CreateCompetitorInput;
 };
@@ -1348,7 +1401,6 @@ export type MutationDeleteCompetitorArgs = {
 
 export type MutationDeleteDocumentArgs = {
   documentId: Scalars['DocumentId']['input'];
-  forceDelete?: InputMaybe<Scalars['Boolean']['input']>;
   service_instance_id: Scalars['ServiceInstanceId']['input'];
 };
 
@@ -1542,6 +1594,11 @@ export type MutationReorderDeploymentRequestInQueueArgs = {
 
 export type MutationRequestTransferPersonalSpaceArgs = {
   new_email: Scalars['String']['input'];
+};
+
+
+export type MutationRevokeApiTokenArgs = {
+  id: Scalars['ApiTokenId']['input'];
 };
 
 
@@ -1742,14 +1799,13 @@ export type OneClickDeployInput = {
 
 export type OpenAevScenario = Document & Node & {
   __typename?: 'OpenAEVScenario';
-  /** @deprecated Use status */
-  active?: Maybe<Scalars['Boolean']['output']>;
   children_documents?: Maybe<Array<ShareableResource>>;
   created_at: Scalars['Date']['output'];
   description?: Maybe<Scalars['String']['output']>;
   download_number?: Maybe<Scalars['Int']['output']>;
   file_name: Scalars['String']['output'];
   id: Scalars['ID']['output'];
+  meta_description?: Maybe<Scalars['String']['output']>;
   name: Scalars['String']['output'];
   product_version?: Maybe<Scalars['String']['output']>;
   service_instance?: Maybe<ServiceInstance>;
@@ -1779,14 +1835,13 @@ export type OpenCtiPlatformRegistrationStatusResponse = {
 
 export type OpenCtiPlaybook = Document & Node & {
   __typename?: 'OpenCTIPlaybook';
-  /** @deprecated Use status */
-  active?: Maybe<Scalars['Boolean']['output']>;
   children_documents?: Maybe<Array<ShareableResource>>;
   created_at: Scalars['Date']['output'];
   description?: Maybe<Scalars['String']['output']>;
   download_number?: Maybe<Scalars['Int']['output']>;
   file_name: Scalars['String']['output'];
   id: Scalars['ID']['output'];
+  meta_description?: Maybe<Scalars['String']['output']>;
   name: Scalars['String']['output'];
   product_version?: Maybe<Scalars['String']['output']>;
   service_instance?: Maybe<ServiceInstance>;
@@ -1815,6 +1870,11 @@ export type Organization = Node & {
   capabilityUser?: Maybe<Array<Maybe<Capability>>>;
   domains?: Maybe<Array<Scalars['String']['output']>>;
   id: Scalars['ID']['output'];
+  /**
+   * Members of the organization, invited and disabled users included, pending requests excluded.
+   * Nullable: a refused read answers null without failing the whole query.
+   */
+  members_count?: Maybe<Scalars['Int']['output']>;
   name: Scalars['String']['output'];
   personal_space: Scalars['Boolean']['output'];
 };
@@ -1986,6 +2046,7 @@ export enum PortalCapability {
   ModifyServiceMetadata = 'MODIFY_SERVICE_METADATA',
   ModifyTrials = 'MODIFY_TRIALS',
   ModifyTrialsQuota = 'MODIFY_TRIALS_QUOTA',
+  ReadOrganizationMembers = 'READ_ORGANIZATION_MEMBERS',
   ReadSaasMetrics = 'READ_SAAS_METRICS',
   ReadTrials = 'READ_TRIALS'
 }
@@ -2015,6 +2076,8 @@ export type PublicDocumentSlugInfo = {
 
 export type Query = {
   __typename?: 'Query';
+  /** The current user's API tokens, revoked and expired ones included */
+  apiTokens: Array<ApiToken>;
   bundleProducts: Array<PlatformIdentifier>;
   bundleUserServiceGroups: Array<BundleUserServiceGroup>;
   canUnregisterPlatform: CanUnregisterResponse;
@@ -2022,6 +2085,8 @@ export type Query = {
   contentTranslationDrafts: Array<ContentTranslationEntry>;
   contentTranslations: Array<ContentTranslationEntry>;
   countEpicsPerTimeline: Array<EpicCountPerTimeline>;
+  /** The token of the current request, null for a session */
+  currentApiToken?: Maybe<CurrentApiToken>;
   /**
    * The round currently collecting votes on a service instance, if any.
    * Publicly readable, like the roadmap the round belongs to.
@@ -2043,6 +2108,8 @@ export type Query = {
   /** @deprecated Use `refreshPlatformRegistrationConnectivityStatus` instead. This field is no longer used in the OpenCTI platform due to refactoring and the addition of a version value in the endpoint. */
   openCTIPlatformRegistrationStatus: OpenCtiPlatformRegistrationStatusResponse;
   organization?: Maybe<Organization>;
+  /** The API tokens of the selected organization, for its administrators */
+  organizationApiTokens: Array<ApiToken>;
   organizations: OrganizationConnection;
   pendingUsers: UserConnection;
   platformAssociatedOrganization?: Maybe<Organization>;
@@ -2462,6 +2529,7 @@ export type RefreshPlatformRegistrationConnectivityStatusInput = {
 export type RefreshPlatformRegistrationConnectivityStatusResponse = {
   __typename?: 'RefreshPlatformRegistrationConnectivityStatusResponse';
   commercialModel?: Maybe<CommercialModel>;
+  organizationName?: Maybe<Scalars['String']['output']>;
   status: PlatformRegistrationConnectivityStatus;
 };
 
@@ -2540,6 +2608,7 @@ export type RegisteredSaasPlatformDataInput = {
 
 export type RegistrationResponse = {
   __typename?: 'RegistrationResponse';
+  organizationName?: Maybe<Scalars['String']['output']>;
   token: Scalars['String']['output'];
 };
 
@@ -2562,8 +2631,6 @@ export type RolePortal = Node & {
 
 export type RssFeed = Document & Integration & Node & {
   __typename?: 'RssFeed';
-  /** @deprecated Use status */
-  active?: Maybe<Scalars['Boolean']['output']>;
   blogpost_url?: Maybe<Scalars['String']['output']>;
   children_documents?: Maybe<Array<ShareableResource>>;
   created_at: Scalars['Date']['output'];
@@ -2576,6 +2643,7 @@ export type RssFeed = Document & Integration & Node & {
   id: Scalars['ID']['output'];
   integration_type: IntegrationType;
   license_type?: Maybe<LicenseType>;
+  meta_description?: Maybe<Scalars['String']['output']>;
   name: Scalars['String']['output'];
   remover_id?: Maybe<Scalars['ID']['output']>;
   service_instance?: Maybe<ServiceInstance>;
@@ -2906,15 +2974,19 @@ export enum ServiceRestriction {
 export type Settings = {
   __typename?: 'Settings';
   base_url_front: Scalars['String']['output'];
+  capabilities: Array<SettingsCapability>;
   environment: Scalars['String']['output'];
   platform_feature_flags: Array<FeatureFlag>;
   platform_providers: Array<PlatformProvider>;
 };
 
+/** What this Hub accepts, for API clients that detect a feature before using it */
+export enum SettingsCapability {
+  ApiTokens = 'API_TOKENS'
+}
+
 export type ShareableResource = {
   __typename?: 'ShareableResource';
-  /** @deprecated Use status */
-  active?: Maybe<Scalars['Boolean']['output']>;
   created_at: Scalars['Date']['output'];
   description?: Maybe<Scalars['String']['output']>;
   download_number?: Maybe<Scalars['Int']['output']>;
@@ -2952,8 +3024,6 @@ export enum SolutionCategoryOrdering {
 
 export type Stream = Document & Integration & Node & {
   __typename?: 'Stream';
-  /** @deprecated Use status */
-  active?: Maybe<Scalars['Boolean']['output']>;
   blogpost_url?: Maybe<Scalars['String']['output']>;
   children_documents?: Maybe<Array<ShareableResource>>;
   created_at: Scalars['Date']['output'];
@@ -2966,6 +3036,7 @@ export type Stream = Document & Integration & Node & {
   id: Scalars['ID']['output'];
   integration_type: IntegrationType;
   license_type?: Maybe<LicenseType>;
+  meta_description?: Maybe<Scalars['String']['output']>;
   name: Scalars['String']['output'];
   remover_id?: Maybe<Scalars['ID']['output']>;
   service_instance?: Maybe<ServiceInstance>;
@@ -3073,8 +3144,6 @@ export type Success = {
 
 export type TaxiiFeed = Document & Integration & Node & {
   __typename?: 'TaxiiFeed';
-  /** @deprecated Use status */
-  active?: Maybe<Scalars['Boolean']['output']>;
   blogpost_url?: Maybe<Scalars['String']['output']>;
   children_documents?: Maybe<Array<ShareableResource>>;
   created_at: Scalars['Date']['output'];
@@ -3087,6 +3156,7 @@ export type TaxiiFeed = Document & Integration & Node & {
   id: Scalars['ID']['output'];
   integration_type: IntegrationType;
   license_type?: Maybe<LicenseType>;
+  meta_description?: Maybe<Scalars['String']['output']>;
   name: Scalars['String']['output'];
   remover_id?: Maybe<Scalars['ID']['output']>;
   service_instance?: Maybe<ServiceInstance>;
@@ -3121,14 +3191,13 @@ export type TenantDetails = {
 export type TenantStatus = {
   __typename?: 'TenantStatus';
   commercialModel?: Maybe<CommercialModel>;
+  organizationName?: Maybe<Scalars['String']['output']>;
   status: PlatformRegistrationConnectivityStatus;
   tenantId: Scalars['String']['output'];
 };
 
 export type ThirdPartyIntegration = Document & Integration & Node & {
   __typename?: 'ThirdPartyIntegration';
-  /** @deprecated Use status */
-  active?: Maybe<Scalars['Boolean']['output']>;
   blogpost_url?: Maybe<Scalars['String']['output']>;
   children_documents?: Maybe<Array<ShareableResource>>;
   created_at: Scalars['Date']['output'];
@@ -3141,6 +3210,7 @@ export type ThirdPartyIntegration = Document & Integration & Node & {
   id: Scalars['ID']['output'];
   integration_type: IntegrationType;
   license_type?: Maybe<LicenseType>;
+  meta_description?: Maybe<Scalars['String']['output']>;
   name: Scalars['String']['output'];
   product_version?: Maybe<Scalars['String']['output']>;
   remover_id?: Maybe<Scalars['ID']['output']>;
@@ -3211,6 +3281,7 @@ export type UpdateDocumentInput = {
   description?: InputMaybe<Scalars['String']['input']>;
   entity_types?: InputMaybe<Array<Scalars['String']['input']>>;
   license_type?: InputMaybe<LicenseType>;
+  meta_description?: InputMaybe<Scalars['String']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
   short_description?: InputMaybe<Scalars['String']['input']>;
   solution_categories?: InputMaybe<Array<Scalars['SolutionCategoryId']['input']>>;
@@ -3616,7 +3687,7 @@ export type DirectiveResolverFn<TResult = {}, TParent = {}, TContext = {}, TArgs
 export type ResolversInterfaceTypes<_RefType extends Record<string, unknown>> = ResolversObject<{
   Document: ( Connector ) | ( CsvFeed ) | ( CustomDashboard ) | ( CustomView ) | ( DefaultDocument ) | ( IntegrationHack ) | ( OpenAevScenario ) | ( OpenCtiPlaybook ) | ( RssFeed ) | ( Stream ) | ( TaxiiFeed ) | ( ThirdPartyIntegration );
   Integration: ( Connector ) | ( CsvFeed ) | ( IntegrationHack ) | ( RssFeed ) | ( Stream ) | ( TaxiiFeed ) | ( ThirdPartyIntegration );
-  Node: ( Capability ) | ( Competitor ) | ( Connector ) | ( CsvFeed ) | ( CustomDashboard ) | ( CustomView ) | ( DefaultDocument ) | ( DeploymentRequest ) | ( Epic ) | ( GenericServiceCapability ) | ( IntegrationHack ) | ( IsPlatformRegisteredOrganization ) | ( MergeEvent ) | ( NewsFeedItem ) | ( OpenAevScenario ) | ( OpenCtiPlaybook ) | ( Organization ) | ( OrganizationCapabilities ) | ( OrganizationRef ) | ( ProvisionedNewsFeedItem ) | ( RegisteredPlatform ) | ( RolePortal ) | ( RssFeed ) | ( SeoServiceInstance ) | ( ServiceCapability ) | ( ServiceDefinition ) | ( ServiceGroup ) | ( ServiceInstance ) | ( ServiceLink ) | ( SolutionCategory ) | ( Stream ) | ( SubscriptionCapability ) | ( SubscriptionModel ) | ( TaxiiFeed ) | ( ThirdPartyIntegration ) | ( UseCase ) | ( User ) | ( UserService ) | ( UserServiceCapability ) | ( UserServiceDeleted ) | ( VotableFeatureModel ) | ( VotingRoundModel );
+  Node: ( ApiToken ) | ( Capability ) | ( Competitor ) | ( Connector ) | ( CsvFeed ) | ( CustomDashboard ) | ( CustomView ) | ( DefaultDocument ) | ( DeploymentRequest ) | ( Epic ) | ( GenericServiceCapability ) | ( IntegrationHack ) | ( IsPlatformRegisteredOrganization ) | ( MergeEvent ) | ( NewsFeedItem ) | ( OpenAevScenario ) | ( OpenCtiPlaybook ) | ( Organization ) | ( OrganizationCapabilities ) | ( OrganizationRef ) | ( ProvisionedNewsFeedItem ) | ( RegisteredPlatform ) | ( RolePortal ) | ( RssFeed ) | ( SeoServiceInstance ) | ( ServiceCapability ) | ( ServiceDefinition ) | ( ServiceGroup ) | ( ServiceInstance ) | ( ServiceLink ) | ( SolutionCategory ) | ( Stream ) | ( SubscriptionCapability ) | ( SubscriptionModel ) | ( TaxiiFeed ) | ( ThirdPartyIntegration ) | ( UseCase ) | ( User ) | ( UserService ) | ( UserServiceCapability ) | ( UserServiceDeleted ) | ( VotableFeatureModel ) | ( VotingRoundModel );
 }>;
 
 /** Mapping between all available schema types and the resolvers types */
@@ -3631,6 +3702,9 @@ export type ResolversTypes = ResolversObject<{
   AddUsersToBundleGroupsInput: AddUsersToBundleGroupsInput;
   AdminAddUserInput: AdminAddUserInput;
   AdminEditUserInput: AdminEditUserInput;
+  ApiToken: ResolverTypeWrapper<ApiToken>;
+  ApiTokenId: ResolverTypeWrapper<Scalars['ApiTokenId']['output']>;
+  ApiTokenScope: ApiTokenScope;
   AutoRegisterPlatformInput: AutoRegisterPlatformInput;
   Boolean: ResolverTypeWrapper<Scalars['Boolean']['output']>;
   BulkPendingUserFromOrganizationInput: BulkPendingUserFromOrganizationInput;
@@ -3650,6 +3724,7 @@ export type ResolversTypes = ResolversObject<{
   ConsumeProvisionedNewsFeedItemsResponse: ResolverTypeWrapper<ConsumeProvisionedNewsFeedItemsResponse>;
   ContentTranslationEntry: ResolverTypeWrapper<ContentTranslationEntry>;
   ContentTranslationValueInput: ContentTranslationValueInput;
+  CreateApiTokenInput: CreateApiTokenInput;
   CreateCompetitorInput: CreateCompetitorInput;
   CreateDeploymentRequestInput: CreateDeploymentRequestInput;
   CreateDocumentInput: CreateDocumentInput;
@@ -3657,7 +3732,9 @@ export type ResolversTypes = ResolversObject<{
   CreateSubscriptionsInput: CreateSubscriptionsInput;
   CreateVotableFeatureInput: CreateVotableFeatureInput;
   CreateVotingRoundInput: CreateVotingRoundInput;
+  CreatedApiToken: ResolverTypeWrapper<CreatedApiToken>;
   CsvFeed: ResolverTypeWrapper<CsvFeed>;
+  CurrentApiToken: ResolverTypeWrapper<CurrentApiToken>;
   CustomDashboard: ResolverTypeWrapper<CustomDashboard>;
   CustomView: ResolverTypeWrapper<CustomView>;
   Date: ResolverTypeWrapper<Scalars['Date']['output']>;
@@ -3838,6 +3915,7 @@ export type ResolversTypes = ResolversObject<{
   ServiceLink: ResolverTypeWrapper<ServiceLink>;
   ServiceRestriction: ServiceRestriction;
   Settings: ResolverTypeWrapper<Settings>;
+  SettingsCapability: SettingsCapability;
   ShareableResource: ResolverTypeWrapper<ShareableResource>;
   SolutionCategory: ResolverTypeWrapper<SolutionCategory>;
   SolutionCategoryConnection: ResolverTypeWrapper<SolutionCategoryConnection>;
@@ -3933,6 +4011,8 @@ export type ResolversParentTypes = ResolversObject<{
   AddUsersToBundleGroupsInput: AddUsersToBundleGroupsInput;
   AdminAddUserInput: AdminAddUserInput;
   AdminEditUserInput: AdminEditUserInput;
+  ApiToken: ApiToken;
+  ApiTokenId: Scalars['ApiTokenId']['output'];
   AutoRegisterPlatformInput: AutoRegisterPlatformInput;
   Boolean: Scalars['Boolean']['output'];
   BulkPendingUserFromOrganizationInput: BulkPendingUserFromOrganizationInput;
@@ -3949,6 +4029,7 @@ export type ResolversParentTypes = ResolversObject<{
   ConsumeProvisionedNewsFeedItemsResponse: ConsumeProvisionedNewsFeedItemsResponse;
   ContentTranslationEntry: ContentTranslationEntry;
   ContentTranslationValueInput: ContentTranslationValueInput;
+  CreateApiTokenInput: CreateApiTokenInput;
   CreateCompetitorInput: CreateCompetitorInput;
   CreateDeploymentRequestInput: CreateDeploymentRequestInput;
   CreateDocumentInput: CreateDocumentInput;
@@ -3956,7 +4037,9 @@ export type ResolversParentTypes = ResolversObject<{
   CreateSubscriptionsInput: CreateSubscriptionsInput;
   CreateVotableFeatureInput: CreateVotableFeatureInput;
   CreateVotingRoundInput: CreateVotingRoundInput;
+  CreatedApiToken: CreatedApiToken;
   CsvFeed: CsvFeed;
+  CurrentApiToken: CurrentApiToken;
   CustomDashboard: CustomDashboard;
   CustomView: CustomView;
   Date: Scalars['Date']['output'];
@@ -4178,6 +4261,25 @@ export type System_TokenDirectiveArgs = {
 
 export type System_TokenDirectiveResolver<Result, Parent, ContextType = PortalContext, Args = System_TokenDirectiveArgs> = DirectiveResolverFn<Result, Parent, ContextType, Args>;
 
+export type ApiTokenResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['ApiToken'] = ResolversParentTypes['ApiToken']> = ResolversObject<{
+  created_at?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  expires_at?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  last_used_at?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  organization_id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  organization_name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  revoked_at?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
+  scope?: Resolver<ResolversTypes['ApiTokenScope'], ParentType, ContextType>;
+  token_prefix?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  user_email?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export interface ApiTokenIdScalarConfig extends GraphQLScalarTypeConfig<ResolversTypes['ApiTokenId'], any> {
+  name: 'ApiTokenId';
+}
+
 export type BundleUserServiceGroupResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['BundleUserServiceGroup'] = ResolversParentTypes['BundleUserServiceGroup']> = ResolversObject<{
   groups?: Resolver<Array<ResolversTypes['UserPlatformGroup']>, ParentType, ContextType>;
   user?: Resolver<ResolversTypes['User'], ParentType, ContextType>;
@@ -4225,7 +4327,6 @@ export interface CompetitorIdScalarConfig extends GraphQLScalarTypeConfig<Resolv
 }
 
 export type ConnectorResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['Connector'] = ResolversParentTypes['Connector']> = ResolversObject<{
-  active?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   blogpost_url?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   children_documents?: Resolver<Maybe<Array<ResolversTypes['ShareableResource']>>, ParentType, ContextType>;
   contact?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
@@ -4240,6 +4341,7 @@ export type ConnectorResolvers<ContextType = PortalContext, ParentType extends R
   integration_type?: Resolver<ResolversTypes['IntegrationType'], ParentType, ContextType>;
   license_type?: Resolver<Maybe<ResolversTypes['LicenseType']>, ParentType, ContextType>;
   manager_supported?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  meta_description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   minimum_deployable_version?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   playbook_supported?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
@@ -4280,8 +4382,13 @@ export type ContentTranslationEntryResolvers<ContextType = PortalContext, Parent
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type CreatedApiTokenResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['CreatedApiToken'] = ResolversParentTypes['CreatedApiToken']> = ResolversObject<{
+  api_token?: Resolver<ResolversTypes['ApiToken'], ParentType, ContextType>;
+  token?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type CsvFeedResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['CsvFeed'] = ResolversParentTypes['CsvFeed']> = ResolversObject<{
-  active?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   blogpost_url?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   children_documents?: Resolver<Maybe<Array<ResolversTypes['ShareableResource']>>, ParentType, ContextType>;
   created_at?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
@@ -4294,6 +4401,7 @@ export type CsvFeedResolvers<ContextType = PortalContext, ParentType extends Res
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   integration_type?: Resolver<ResolversTypes['IntegrationType'], ParentType, ContextType>;
   license_type?: Resolver<Maybe<ResolversTypes['LicenseType']>, ParentType, ContextType>;
+  meta_description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   remover_id?: Resolver<Maybe<ResolversTypes['ID']>, ParentType, ContextType>;
   service_instance?: Resolver<Maybe<ResolversTypes['ServiceInstance']>, ParentType, ContextType>;
@@ -4313,14 +4421,25 @@ export type CsvFeedResolvers<ContextType = PortalContext, ParentType extends Res
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type CurrentApiTokenResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['CurrentApiToken'] = ResolversParentTypes['CurrentApiToken']> = ResolversObject<{
+  expires_at?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  last_used_at?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  organization_id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  organization_name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  scope?: Resolver<ResolversTypes['ApiTokenScope'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type CustomDashboardResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['CustomDashboard'] = ResolversParentTypes['CustomDashboard']> = ResolversObject<{
-  active?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   children_documents?: Resolver<Maybe<Array<ResolversTypes['ShareableResource']>>, ParentType, ContextType>;
   created_at?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
   description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   download_number?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
   file_name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  meta_description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   product_version?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   service_instance?: Resolver<Maybe<ResolversTypes['ServiceInstance']>, ParentType, ContextType>;
@@ -4340,7 +4459,6 @@ export type CustomDashboardResolvers<ContextType = PortalContext, ParentType ext
 }>;
 
 export type CustomViewResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['CustomView'] = ResolversParentTypes['CustomView']> = ResolversObject<{
-  active?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   children_documents?: Resolver<Maybe<Array<ResolversTypes['ShareableResource']>>, ParentType, ContextType>;
   created_at?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
   description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
@@ -4348,6 +4466,7 @@ export type CustomViewResolvers<ContextType = PortalContext, ParentType extends 
   entity_types?: Resolver<Maybe<Array<ResolversTypes['String']>>, ParentType, ContextType>;
   file_name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  meta_description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   product_version?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   service_instance?: Resolver<Maybe<ResolversTypes['ServiceInstance']>, ParentType, ContextType>;
@@ -4371,13 +4490,13 @@ export interface DateScalarConfig extends GraphQLScalarTypeConfig<ResolversTypes
 }
 
 export type DefaultDocumentResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['DefaultDocument'] = ResolversParentTypes['DefaultDocument']> = ResolversObject<{
-  active?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   children_documents?: Resolver<Maybe<Array<ResolversTypes['ShareableResource']>>, ParentType, ContextType>;
   created_at?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
   description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   download_number?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
   file_name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  meta_description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   service_instance?: Resolver<Maybe<ResolversTypes['ServiceInstance']>, ParentType, ContextType>;
   service_instance_id?: Resolver<Maybe<ResolversTypes['ServiceInstanceId']>, ParentType, ContextType>;
@@ -4460,13 +4579,13 @@ export interface DeploymentRequestIdScalarConfig extends GraphQLScalarTypeConfig
 
 export type DocumentResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['Document'] = ResolversParentTypes['Document']> = ResolversObject<{
   __resolveType: TypeResolveFn<'Connector' | 'CsvFeed' | 'CustomDashboard' | 'CustomView' | 'DefaultDocument' | 'IntegrationHack' | 'OpenAEVScenario' | 'OpenCTIPlaybook' | 'RssFeed' | 'Stream' | 'TaxiiFeed' | 'ThirdPartyIntegration', ParentType, ContextType>;
-  active?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   children_documents?: Resolver<Maybe<Array<ResolversTypes['ShareableResource']>>, ParentType, ContextType>;
   created_at?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
   description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   download_number?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
   file_name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  meta_description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   service_instance?: Resolver<Maybe<ResolversTypes['ServiceInstance']>, ParentType, ContextType>;
   service_instance_id?: Resolver<Maybe<ResolversTypes['ServiceInstanceId']>, ParentType, ContextType>;
@@ -4564,7 +4683,6 @@ export type GenericServiceCapabilityResolvers<ContextType = PortalContext, Paren
 
 export type IntegrationResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['Integration'] = ResolversParentTypes['Integration']> = ResolversObject<{
   __resolveType: TypeResolveFn<'Connector' | 'CsvFeed' | 'IntegrationHack' | 'RssFeed' | 'Stream' | 'TaxiiFeed' | 'ThirdPartyIntegration', ParentType, ContextType>;
-  active?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   blogpost_url?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   children_documents?: Resolver<Maybe<Array<ResolversTypes['ShareableResource']>>, ParentType, ContextType>;
   created_at?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
@@ -4576,6 +4694,7 @@ export type IntegrationResolvers<ContextType = PortalContext, ParentType extends
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   integration_type?: Resolver<ResolversTypes['IntegrationType'], ParentType, ContextType>;
   license_type?: Resolver<Maybe<ResolversTypes['LicenseType']>, ParentType, ContextType>;
+  meta_description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   remover_id?: Resolver<Maybe<ResolversTypes['ID']>, ParentType, ContextType>;
   service_instance?: Resolver<Maybe<ResolversTypes['ServiceInstance']>, ParentType, ContextType>;
@@ -4595,7 +4714,6 @@ export type IntegrationResolvers<ContextType = PortalContext, ParentType extends
 }>;
 
 export type IntegrationHackResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['IntegrationHack'] = ResolversParentTypes['IntegrationHack']> = ResolversObject<{
-  active?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   blogpost_url?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   children_documents?: Resolver<Maybe<Array<ResolversTypes['ShareableResource']>>, ParentType, ContextType>;
   created_at?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
@@ -4607,6 +4725,7 @@ export type IntegrationHackResolvers<ContextType = PortalContext, ParentType ext
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   integration_type?: Resolver<ResolversTypes['IntegrationType'], ParentType, ContextType>;
   license_type?: Resolver<Maybe<ResolversTypes['LicenseType']>, ParentType, ContextType>;
+  meta_description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   remover_id?: Resolver<Maybe<ResolversTypes['ID']>, ParentType, ContextType>;
   service_instance?: Resolver<Maybe<ResolversTypes['ServiceInstance']>, ParentType, ContextType>;
@@ -4683,6 +4802,7 @@ export type MutationResolvers<ContextType = PortalContext, ParentType extends Re
   changeSelectedOrganization?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType, RequireFields<MutationChangeSelectedOrganizationArgs, 'organization_id'>>;
   consumeProvisionedNewsFeedItems?: Resolver<ResolversTypes['ConsumeProvisionedNewsFeedItemsResponse'], ParentType, ContextType>;
   contactUs?: Resolver<ResolversTypes['Success'], ParentType, ContextType, Partial<MutationContactUsArgs>>;
+  createApiToken?: Resolver<ResolversTypes['CreatedApiToken'], ParentType, ContextType, RequireFields<MutationCreateApiTokenArgs, 'input'>>;
   createCompetitor?: Resolver<ResolversTypes['Competitor'], ParentType, ContextType, RequireFields<MutationCreateCompetitorArgs, 'input'>>;
   createDeploymentRequest?: Resolver<ResolversTypes['DeploymentRequest'], ParentType, ContextType, RequireFields<MutationCreateDeploymentRequestArgs, 'input'>>;
   createDocument?: Resolver<ResolversTypes['Document'], ParentType, ContextType, RequireFields<MutationCreateDocumentArgs, 'input' | 'metadata' | 'serviceInstanceId'>>;
@@ -4732,6 +4852,7 @@ export type MutationResolvers<ContextType = PortalContext, ParentType extends Re
   reorderDeploymentRequestInQueue?: Resolver<ResolversTypes['Success'], ParentType, ContextType, RequireFields<MutationReorderDeploymentRequestInQueueArgs, 'input'>>;
   requestTransferPersonalSpace?: Resolver<ResolversTypes['Success'], ParentType, ContextType, RequireFields<MutationRequestTransferPersonalSpaceArgs, 'new_email'>>;
   resetPassword?: Resolver<ResolversTypes['Success'], ParentType, ContextType>;
+  revokeApiToken?: Resolver<ResolversTypes['ApiToken'], ParentType, ContextType, RequireFields<MutationRevokeApiTokenArgs, 'id'>>;
   saveContentTranslationDraft?: Resolver<Array<ResolversTypes['ContentTranslationEntry']>, ParentType, ContextType, RequireFields<MutationSaveContentTranslationDraftArgs, 'input'>>;
   sendTelemetryEvent?: Resolver<Maybe<ResolversTypes['SendTelemetryMutation']>, ParentType, ContextType>;
   setVotingRoundStatus?: Resolver<Array<ResolversTypes['VotingRound']>, ParentType, ContextType, RequireFields<MutationSetVotingRoundStatusArgs, 'id' | 'status'>>;
@@ -4789,18 +4910,18 @@ export type NewsFeedItemMetadataResolvers<ContextType = PortalContext, ParentTyp
 }>;
 
 export type NodeResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['Node'] = ResolversParentTypes['Node']> = ResolversObject<{
-  __resolveType: TypeResolveFn<'Capability' | 'Competitor' | 'Connector' | 'CsvFeed' | 'CustomDashboard' | 'CustomView' | 'DefaultDocument' | 'DeploymentRequest' | 'Epic' | 'GenericServiceCapability' | 'IntegrationHack' | 'IsPlatformRegisteredOrganization' | 'MergeEvent' | 'NewsFeedItem' | 'OpenAEVScenario' | 'OpenCTIPlaybook' | 'Organization' | 'OrganizationCapabilities' | 'OrganizationRef' | 'ProvisionedNewsFeedItem' | 'RegisteredPlatform' | 'RolePortal' | 'RssFeed' | 'SeoServiceInstance' | 'ServiceCapability' | 'ServiceDefinition' | 'ServiceGroup' | 'ServiceInstance' | 'ServiceLink' | 'SolutionCategory' | 'Stream' | 'SubscriptionCapability' | 'SubscriptionModel' | 'TaxiiFeed' | 'ThirdPartyIntegration' | 'UseCase' | 'User' | 'UserService' | 'UserServiceCapability' | 'UserServiceDeleted' | 'VotableFeature' | 'VotingRound', ParentType, ContextType>;
+  __resolveType: TypeResolveFn<'ApiToken' | 'Capability' | 'Competitor' | 'Connector' | 'CsvFeed' | 'CustomDashboard' | 'CustomView' | 'DefaultDocument' | 'DeploymentRequest' | 'Epic' | 'GenericServiceCapability' | 'IntegrationHack' | 'IsPlatformRegisteredOrganization' | 'MergeEvent' | 'NewsFeedItem' | 'OpenAEVScenario' | 'OpenCTIPlaybook' | 'Organization' | 'OrganizationCapabilities' | 'OrganizationRef' | 'ProvisionedNewsFeedItem' | 'RegisteredPlatform' | 'RolePortal' | 'RssFeed' | 'SeoServiceInstance' | 'ServiceCapability' | 'ServiceDefinition' | 'ServiceGroup' | 'ServiceInstance' | 'ServiceLink' | 'SolutionCategory' | 'Stream' | 'SubscriptionCapability' | 'SubscriptionModel' | 'TaxiiFeed' | 'ThirdPartyIntegration' | 'UseCase' | 'User' | 'UserService' | 'UserServiceCapability' | 'UserServiceDeleted' | 'VotableFeature' | 'VotingRound', ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
 }>;
 
 export type OpenAevScenarioResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['OpenAEVScenario'] = ResolversParentTypes['OpenAEVScenario']> = ResolversObject<{
-  active?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   children_documents?: Resolver<Maybe<Array<ResolversTypes['ShareableResource']>>, ParentType, ContextType>;
   created_at?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
   description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   download_number?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
   file_name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  meta_description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   product_version?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   service_instance?: Resolver<Maybe<ResolversTypes['ServiceInstance']>, ParentType, ContextType>;
@@ -4825,13 +4946,13 @@ export type OpenCtiPlatformRegistrationStatusResponseResolvers<ContextType = Por
 }>;
 
 export type OpenCtiPlaybookResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['OpenCTIPlaybook'] = ResolversParentTypes['OpenCTIPlaybook']> = ResolversObject<{
-  active?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   children_documents?: Resolver<Maybe<Array<ResolversTypes['ShareableResource']>>, ParentType, ContextType>;
   created_at?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
   description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   download_number?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
   file_name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  meta_description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   product_version?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   service_instance?: Resolver<Maybe<ResolversTypes['ServiceInstance']>, ParentType, ContextType>;
@@ -4855,6 +4976,7 @@ export type OrganizationResolvers<ContextType = PortalContext, ParentType extend
   capabilityUser?: Resolver<Maybe<Array<Maybe<ResolversTypes['Capability']>>>, ParentType, ContextType>;
   domains?: Resolver<Maybe<Array<ResolversTypes['String']>>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  members_count?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   personal_space?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
@@ -4980,6 +5102,7 @@ export type PublicDocumentSlugInfoResolvers<ContextType = PortalContext, ParentT
 }>;
 
 export type QueryResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['Query'] = ResolversParentTypes['Query']> = ResolversObject<{
+  apiTokens?: Resolver<Array<ResolversTypes['ApiToken']>, ParentType, ContextType>;
   bundleProducts?: Resolver<Array<ResolversTypes['PlatformIdentifier']>, ParentType, ContextType, RequireFields<QueryBundleProductsArgs, 'serviceInstanceId'>>;
   bundleUserServiceGroups?: Resolver<Array<ResolversTypes['BundleUserServiceGroup']>, ParentType, ContextType, RequireFields<QueryBundleUserServiceGroupsArgs, 'serviceInstanceId'>>;
   canUnregisterPlatform?: Resolver<ResolversTypes['CanUnregisterResponse'], ParentType, ContextType, RequireFields<QueryCanUnregisterPlatformArgs, 'input'>>;
@@ -4987,6 +5110,7 @@ export type QueryResolvers<ContextType = PortalContext, ParentType extends Resol
   contentTranslationDrafts?: Resolver<Array<ResolversTypes['ContentTranslationEntry']>, ParentType, ContextType, Partial<QueryContentTranslationDraftsArgs>>;
   contentTranslations?: Resolver<Array<ResolversTypes['ContentTranslationEntry']>, ParentType, ContextType, Partial<QueryContentTranslationsArgs>>;
   countEpicsPerTimeline?: Resolver<Array<ResolversTypes['EpicCountPerTimeline']>, ParentType, ContextType>;
+  currentApiToken?: Resolver<Maybe<ResolversTypes['CurrentApiToken']>, ParentType, ContextType>;
   currentVotingRound?: Resolver<Maybe<ResolversTypes['VotingRound']>, ParentType, ContextType, RequireFields<QueryCurrentVotingRoundArgs, 'service_instance_id'>>;
   deploymentRequests?: Resolver<ResolversTypes['PlatformDeploymentRequestConnection'], ParentType, ContextType, RequireFields<QueryDeploymentRequestsArgs, 'first'>>;
   deploymentRequestsAvailable?: Resolver<Array<ResolversTypes['DeploymentAvailability']>, ParentType, ContextType>;
@@ -5003,6 +5127,7 @@ export type QueryResolvers<ContextType = PortalContext, ParentType extends Resol
   newsFeedItems?: Resolver<ResolversTypes['NewsFeedItemConnection'], ParentType, ContextType, RequireFields<QueryNewsFeedItemsArgs, 'first'>>;
   openCTIPlatformRegistrationStatus?: Resolver<ResolversTypes['OpenCTIPlatformRegistrationStatusResponse'], ParentType, ContextType, RequireFields<QueryOpenCtiPlatformRegistrationStatusArgs, 'input'>>;
   organization?: Resolver<Maybe<ResolversTypes['Organization']>, ParentType, ContextType, RequireFields<QueryOrganizationArgs, 'id'>>;
+  organizationApiTokens?: Resolver<Array<ResolversTypes['ApiToken']>, ParentType, ContextType>;
   organizations?: Resolver<ResolversTypes['OrganizationConnection'], ParentType, ContextType, RequireFields<QueryOrganizationsArgs, 'first' | 'orderBy' | 'orderMode'>>;
   pendingUsers?: Resolver<ResolversTypes['UserConnection'], ParentType, ContextType, RequireFields<QueryPendingUsersArgs, 'first' | 'orderBy' | 'orderMode'>>;
   platformAssociatedOrganization?: Resolver<Maybe<ResolversTypes['Organization']>, ParentType, ContextType, RequireFields<QueryPlatformAssociatedOrganizationArgs, 'platformId'>>;
@@ -5051,6 +5176,7 @@ export type RefreshPlatformRegistrationConnectivityStatusAllTenantsResponseResol
 
 export type RefreshPlatformRegistrationConnectivityStatusResponseResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['RefreshPlatformRegistrationConnectivityStatusResponse'] = ResolversParentTypes['RefreshPlatformRegistrationConnectivityStatusResponse']> = ResolversObject<{
   commercialModel?: Resolver<Maybe<ResolversTypes['CommercialModel']>, ParentType, ContextType>;
+  organizationName?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   status?: Resolver<ResolversTypes['PlatformRegistrationConnectivityStatus'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
@@ -5090,6 +5216,7 @@ export type RegisteredProductVersionResolvers<ContextType = PortalContext, Paren
 }>;
 
 export type RegistrationResponseResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['RegistrationResponse'] = ResolversParentTypes['RegistrationResponse']> = ResolversObject<{
+  organizationName?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   token?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
@@ -5102,7 +5229,6 @@ export type RolePortalResolvers<ContextType = PortalContext, ParentType extends 
 }>;
 
 export type RssFeedResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['RssFeed'] = ResolversParentTypes['RssFeed']> = ResolversObject<{
-  active?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   blogpost_url?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   children_documents?: Resolver<Maybe<Array<ResolversTypes['ShareableResource']>>, ParentType, ContextType>;
   created_at?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
@@ -5115,6 +5241,7 @@ export type RssFeedResolvers<ContextType = PortalContext, ParentType extends Res
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   integration_type?: Resolver<ResolversTypes['IntegrationType'], ParentType, ContextType>;
   license_type?: Resolver<Maybe<ResolversTypes['LicenseType']>, ParentType, ContextType>;
+  meta_description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   remover_id?: Resolver<Maybe<ResolversTypes['ID']>, ParentType, ContextType>;
   service_instance?: Resolver<Maybe<ResolversTypes['ServiceInstance']>, ParentType, ContextType>;
@@ -5346,6 +5473,7 @@ export type ServiceLinkResolvers<ContextType = PortalContext, ParentType extends
 
 export type SettingsResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['Settings'] = ResolversParentTypes['Settings']> = ResolversObject<{
   base_url_front?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  capabilities?: Resolver<Array<ResolversTypes['SettingsCapability']>, ParentType, ContextType>;
   environment?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   platform_feature_flags?: Resolver<Array<ResolversTypes['FeatureFlag']>, ParentType, ContextType>;
   platform_providers?: Resolver<Array<ResolversTypes['PlatformProvider']>, ParentType, ContextType>;
@@ -5353,7 +5481,6 @@ export type SettingsResolvers<ContextType = PortalContext, ParentType extends Re
 }>;
 
 export type ShareableResourceResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['ShareableResource'] = ResolversParentTypes['ShareableResource']> = ResolversObject<{
-  active?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   created_at?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
   description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   download_number?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
@@ -5391,7 +5518,6 @@ export interface SolutionCategoryIdScalarConfig extends GraphQLScalarTypeConfig<
 }
 
 export type StreamResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['Stream'] = ResolversParentTypes['Stream']> = ResolversObject<{
-  active?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   blogpost_url?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   children_documents?: Resolver<Maybe<Array<ResolversTypes['ShareableResource']>>, ParentType, ContextType>;
   created_at?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
@@ -5404,6 +5530,7 @@ export type StreamResolvers<ContextType = PortalContext, ParentType extends Reso
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   integration_type?: Resolver<ResolversTypes['IntegrationType'], ParentType, ContextType>;
   license_type?: Resolver<Maybe<ResolversTypes['LicenseType']>, ParentType, ContextType>;
+  meta_description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   remover_id?: Resolver<Maybe<ResolversTypes['ID']>, ParentType, ContextType>;
   service_instance?: Resolver<Maybe<ResolversTypes['ServiceInstance']>, ParentType, ContextType>;
@@ -5483,7 +5610,6 @@ export type SuccessResolvers<ContextType = PortalContext, ParentType extends Res
 }>;
 
 export type TaxiiFeedResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['TaxiiFeed'] = ResolversParentTypes['TaxiiFeed']> = ResolversObject<{
-  active?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   blogpost_url?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   children_documents?: Resolver<Maybe<Array<ResolversTypes['ShareableResource']>>, ParentType, ContextType>;
   created_at?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
@@ -5496,6 +5622,7 @@ export type TaxiiFeedResolvers<ContextType = PortalContext, ParentType extends R
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   integration_type?: Resolver<ResolversTypes['IntegrationType'], ParentType, ContextType>;
   license_type?: Resolver<Maybe<ResolversTypes['LicenseType']>, ParentType, ContextType>;
+  meta_description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   remover_id?: Resolver<Maybe<ResolversTypes['ID']>, ParentType, ContextType>;
   service_instance?: Resolver<Maybe<ResolversTypes['ServiceInstance']>, ParentType, ContextType>;
@@ -5523,13 +5650,13 @@ export type TelemetryResponseResolvers<ContextType = PortalContext, ParentType e
 
 export type TenantStatusResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['TenantStatus'] = ResolversParentTypes['TenantStatus']> = ResolversObject<{
   commercialModel?: Resolver<Maybe<ResolversTypes['CommercialModel']>, ParentType, ContextType>;
+  organizationName?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   status?: Resolver<ResolversTypes['PlatformRegistrationConnectivityStatus'], ParentType, ContextType>;
   tenantId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type ThirdPartyIntegrationResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['ThirdPartyIntegration'] = ResolversParentTypes['ThirdPartyIntegration']> = ResolversObject<{
-  active?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   blogpost_url?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   children_documents?: Resolver<Maybe<Array<ResolversTypes['ShareableResource']>>, ParentType, ContextType>;
   created_at?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
@@ -5542,6 +5669,7 @@ export type ThirdPartyIntegrationResolvers<ContextType = PortalContext, ParentTy
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   integration_type?: Resolver<ResolversTypes['IntegrationType'], ParentType, ContextType>;
   license_type?: Resolver<Maybe<ResolversTypes['LicenseType']>, ParentType, ContextType>;
+  meta_description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   product_version?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   remover_id?: Resolver<Maybe<ResolversTypes['ID']>, ParentType, ContextType>;
@@ -5772,6 +5900,8 @@ export type XtmoneIntegrationStatusEntryResolvers<ContextType = PortalContext, P
 }>;
 
 export type Resolvers<ContextType = PortalContext> = ResolversObject<{
+  ApiToken?: ApiTokenResolvers<ContextType>;
+  ApiTokenId?: GraphQLScalarType;
   BundleUserServiceGroup?: BundleUserServiceGroupResolvers<ContextType>;
   CanUnregisterResponse?: CanUnregisterResponseResolvers<ContextType>;
   Capability?: CapabilityResolvers<ContextType>;
@@ -5782,7 +5912,9 @@ export type Resolvers<ContextType = PortalContext> = ResolversObject<{
   Connector?: ConnectorResolvers<ContextType>;
   ConsumeProvisionedNewsFeedItemsResponse?: ConsumeProvisionedNewsFeedItemsResponseResolvers<ContextType>;
   ContentTranslationEntry?: ContentTranslationEntryResolvers<ContextType>;
+  CreatedApiToken?: CreatedApiTokenResolvers<ContextType>;
   CsvFeed?: CsvFeedResolvers<ContextType>;
+  CurrentApiToken?: CurrentApiTokenResolvers<ContextType>;
   CustomDashboard?: CustomDashboardResolvers<ContextType>;
   CustomView?: CustomViewResolvers<ContextType>;
   Date?: GraphQLScalarType;

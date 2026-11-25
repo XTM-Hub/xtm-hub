@@ -10,6 +10,7 @@ import { useTranslate } from '@/hooks/use-translate';
 import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import {
+  Alert,
   Button,
   Dialog,
   DialogBody,
@@ -18,7 +19,6 @@ import {
   DialogFooter,
   DialogTitle,
 } from '@filigran/design-system';
-import { WarningIcon } from '@filigran/icon';
 import { xtmPlatformBundleKeys } from '@graphql/deployment/deployment.keys';
 import { useTrialsCancelDeploymentRequestMutation } from '@graphql/generated';
 import { useQueryClient } from '@tanstack/react-query';
@@ -188,12 +188,13 @@ export const BundleCancelSheet = ({
                 fieldType: cancellationReasonFieldType,
               },
             }}>
-            <div className="mt-4 flex items-center gap-1 rounded border border-solid border-alert-error p-2">
-              <WarningIcon className="size-4 shrink-0 text-icon-error" />
-              <div className="content-compact text-default-primary">
-                <span>{t('XtmPlatformTrial.CancelDialog.Warning')}</span>
-              </div>
-            </div>
+            <Alert
+              severity="warning"
+              className="mt-4"
+              // The dialog content is a layer-2 surface.
+              elevation={1}
+              title={t('XtmPlatformTrial.CancelDialog.Warning')}
+            />
             <DialogFooter>
               <Button
                 {...analyticsId('trial_cancellation_close')}

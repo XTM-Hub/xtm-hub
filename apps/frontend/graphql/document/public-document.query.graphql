@@ -42,6 +42,7 @@ fragment PublicDocumentByServiceSlugItem on Document {
   name
   description
   short_description
+  meta_description
   created_at
   updated_at
   slug

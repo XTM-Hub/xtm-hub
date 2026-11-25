@@ -1,6 +1,7 @@
 import {
   buildIntegrationDocument,
   defineDeletedImagesTest,
+  defineMetaDescriptionEditionTests,
   DELETED_IMAGE,
   DOCUMENT_DESCRIPTION,
   DOCUMENT_NAME,
@@ -22,13 +23,18 @@ import {
   ConnectorFormValues,
 } from '@/components/service/integrations/forms/ConnectorForm';
 import { DocumentOverrides } from '@/utils/test/document-overrides';
-import { IntegrationType, LicenseType } from '@graphql/generated';
+import {
+  DocumentStatus,
+  IntegrationType,
+  LicenseType,
+} from '@graphql/generated';
 import { screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('@graphql/generated', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@graphql/generated')>()),
   useUseCasesListQuery: vi.fn(),
+  useUsersQuery: vi.fn(),
   useSolutionCategoriesListQuery: vi.fn(() => ({ data: undefined })),
 }));
 
@@ -95,10 +101,10 @@ describe('ConnectorForm', () => {
         use_cases: [USE_CASE.id],
         solution_categories: [SOLUTION_CATEGORY.id],
         license_type: LicenseType.Commercial,
-        active: true,
         verified: 'true',
         manager_supported: 'true',
         playbook_supported: 'false',
+        status: DocumentStatus.Published,
         logo: [],
         images: [DELETED_IMAGE, KEPT_IMAGE],
       } satisfies ExpectedValues)
@@ -263,6 +269,12 @@ describe('ConnectorForm', () => {
   );
 
   defineDeletedImagesTest({
+    Form: ConnectorForm,
+    resourceName: ServiceFormResource.CONNECTOR,
+    buildEditedDocument: buildConnector,
+  });
+
+  defineMetaDescriptionEditionTests({
     Form: ConnectorForm,
     resourceName: ServiceFormResource.CONNECTOR,
     buildEditedDocument: buildConnector,

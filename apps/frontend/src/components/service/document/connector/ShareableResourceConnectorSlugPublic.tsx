@@ -17,6 +17,7 @@ import {
   ConnectorFields,
   PublicDocumentByServiceSlugItem,
 } from '@/utils/shareable-resources/shareable-resources.types';
+import { Paper } from '@filigran/design-system';
 import {
   LogoFiligranIcon,
   MotionPlayIcon,
@@ -101,7 +102,6 @@ const ShareableResourceConnectorSlugPublic = async ({
 
             <PublicResourceActions
               documentData={documentData}
-              serviceInstance={serviceInstance}
               pageUrl={pageUrl}
               shareTooltipText="Service.OpenctiIntegrations.Actions.Share"
             />
@@ -124,21 +124,25 @@ const ShareableResourceConnectorSlugPublic = async ({
 
       <div className="flex flex-col-reverse lg:flex-row w-full mt-4 gap-6">
         <div className="flex-[3_3_0%] min-w-0">
-          <h2 className="py-2 title-xs uppercase truncate text-default-secondary">
-            {t('PublicResourcePage.Overview')}
-          </h2>
-          <section className="rounded layer-1 bg-elevation-default overflow-x-auto">
-            <p className="p-4 content-base">
-              {documentData?.short_description}
-            </p>
-            <ResourceMarkdownRenderer
-              source={documentData?.description ?? ''}
-              className="p-4"
-              filigranWebsiteUtm={getResourcePageFiligranWebsiteUtm(
-                serviceInstance.service_definition?.identifier
-              )}
-            />
-          </section>
+          <Paper
+            as="section"
+            padding={16}
+            className="overflow-x-auto"
+            title={
+              <h2 className="[font:inherit] tracking-[inherit]">
+                {t('PublicResourcePage.Overview')}
+              </h2>
+            }>
+            <div className="flex flex-col gap-8">
+              <p className="content-base">{documentData?.short_description}</p>
+              <ResourceMarkdownRenderer
+                source={documentData?.description ?? ''}
+                filigranWebsiteUtm={getResourcePageFiligranWebsiteUtm(
+                  serviceInstance.service_definition?.identifier
+                )}
+              />
+            </div>
+          </Paper>
         </div>
         <ShareableResourceConnectorDetails
           connectorDetails={{ ...documentData, name: documentData.name ?? '' }}

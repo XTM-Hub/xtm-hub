@@ -2,6 +2,7 @@ import { expect, test } from '../../fixtures/baseFixtures';
 import DashboardPage, {
   DEPLOYABLE_JSON_FILE,
 } from '../../model/dashboard.pageModel';
+import { META_DESCRIPTION_SUMMARY } from '../../model/common';
 import { HomePage } from '../../model/home.pageModel';
 import OneClickDeployPage from '../../model/one-click-deploy.pageModel';
 import { OPENCTI } from '../../model/platforms/xtm-platform.pageModel';
@@ -15,6 +16,7 @@ describePlatformRegistration(OPENCTI);
 
 const DASHBOARD = {
   name: 'e2e deployable dashboard',
+  metaDescription: META_DESCRIPTION_SUMMARY,
   shortDescription: 'A dashboard to deploy in OpenCTI',
   version: '1.0.0',
   description: 'A dashboard deployed in a real OpenCTI',
@@ -32,7 +34,7 @@ test.describe('OpenCTI one-click deploy', () => {
     await test.step('publish a dashboard in XTM Hub', async () => {
       await new HomePage(page).navigateTo();
       await dashboardPage.navigateToDashboardService();
-      await dashboardPage.addCustomDashboard(DASHBOARD);
+      await dashboardPage.addCustomDashboard({ ...DASHBOARD, publish: true });
     });
 
     await test.step('deploy it in OpenCTI', async () => {

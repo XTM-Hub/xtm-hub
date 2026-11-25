@@ -21,6 +21,8 @@ export default interface NewsFeedItem {
   tags: string[];
 
   is_deleted: boolean;
+
+  key: string | null;
 }
 
 /** Represents the initializer for the table public.NewsFeedItem */
@@ -42,6 +44,8 @@ export interface NewsFeedItemInitializer {
 
   /** Default value: false */
   is_deleted?: boolean;
+
+  key?: string | null;
 }
 
 /** Represents the mutator for the table public.NewsFeedItem */
@@ -59,4 +63,6 @@ export interface NewsFeedItemMutator {
   tags?: string[];
 
   is_deleted?: boolean;
+
+  key?: string | null;
 }

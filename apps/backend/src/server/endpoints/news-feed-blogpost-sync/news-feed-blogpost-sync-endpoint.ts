@@ -1,45 +1,38 @@
 import { Express, Request, Response } from 'express';
-import rateLimit, { type Options } from 'express-rate-limit';
 import { requestContext } from '../../../context/request.context';
-import { NewsFeedApp } from '../../../modules/news-feed/news-feed.app';
+import {
+  BlogpostSyncCounts,
+  NewsFeedApp,
+} from '../../../modules/news-feed/news-feed.app';
 import { SYSTEM_USER_CONTEXT } from '../../../portal.const';
 import {
   isValidSystemToken,
   SYSTEM_TOKEN_HEADER,
-} from '../../../security/directive-graphql/validator/system-token.validator';
-import { BlogApiError } from '../../../thirdparty/blog-api/errors';
+} from '../../../security/system-token';
 import { logApp } from '../../../utils/app-logger.util';
-import { buildIpRateLimiterOptions } from '../shared/ip-rate-limit.util';
+import { newsFeedBlogpostSyncRateLimiter } from '../../../utils/rate-limit.util';
 
 const NEWS_FEED_BLOGPOST_SYNC_PATH = '/webhooks/news-feed/blogposts';
-// Called by n8n on every blog post change, a few times a minute at most
-const NEWS_FEED_BLOGPOST_SYNC_RATE_WINDOW_MS = 60 * 1000;
-const NEWS_FEED_BLOGPOST_SYNC_RATE_MAX = 30;
-
 // Nothing about the failure is revealed to the caller: the details stay in the logs
 const SYNC_FAILURE_MESSAGE = 'Unable to synchronize blog posts';
-
-export const buildNewsFeedBlogpostSyncRateLimiterOptions =
-  (): Partial<Options> =>
-    buildIpRateLimiterOptions({
-      windowMs: NEWS_FEED_BLOGPOST_SYNC_RATE_WINDOW_MS,
-      limit: NEWS_FEED_BLOGPOST_SYNC_RATE_MAX,
-      logLabel: 'News feed blogpost sync',
-      sendRateLimitError: (res) => {
-        res.status(429).json({
-          message: 'Too many requests, please try again later',
-        });
-      },
-    });
-
-const newsFeedBlogpostSyncRateLimiter = rateLimit(
-  buildNewsFeedBlogpostSyncRateLimiterOptions()
-);
 
 // A missing and a wrong token get the same answer, without any body
 const sendUnauthorized = (res: Response): void => {
   res.status(401).end();
 };
+
+// The one allowlist of what leaves the Hub: the counts, nothing else of the app result
+const toCounts = ({
+  created,
+  updated,
+  dropped,
+  provisionedPlatforms,
+}: BlogpostSyncCounts): BlogpostSyncCounts => ({
+  created,
+  updated,
+  dropped,
+  provisionedPlatforms,
+});
 
 export const NewsFeedBlogpostSyncEndpoint = {
   sync: async (req: Request, res: Response): Promise<void> => {
@@ -55,17 +48,18 @@ export const NewsFeedBlogpostSyncEndpoint = {
         NewsFeedApp.syncBlogposts()
       );
       res.status(200).json({
-        created: result.created,
-        updated: result.updated,
-        dropped: result.dropped,
-        provisionedPlatforms: result.provisionedPlatforms,
+        ...toCounts(result),
+        products: Object.fromEntries(
+          Object.entries(result.products).map(([product, counts]) => [
+            product,
+            toCounts(counts),
+          ])
+        ),
       });
     } catch (error) {
-      // The post id of an invalid item stays in the logs, it is never sent back to the caller
-      logApp.error('Error while synchronizing blog posts', {
-        error,
-        postId: error instanceof BlogApiError ? error.postId : undefined,
-      });
+      // The caller only gets a generic message. When a product fails, the app has already logged the failure with its
+      // product and post id, and the error carries the first failure as its cause.
+      logApp.error('Error while synchronizing blog posts', { error });
       res.status(500).json({ message: SYNC_FAILURE_MESSAGE });
     }
   },

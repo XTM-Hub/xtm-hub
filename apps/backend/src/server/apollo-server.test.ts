@@ -1,11 +1,36 @@
 import { ApolloServer } from '@apollo/server';
 import { makeExecutableSchema } from '@graphql-tools/schema';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { ErrorCode, UnknownErrorCode } from '../utils/error/error.code';
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
+import { contextSimpleUserFiligran2 } from '../../tests/tests.const';
+import { ApiTokenScope } from '../__generated__/resolvers-types';
+import {
+  type ApiTokenAuthentication,
+  getApiTokenAuthentication,
+} from '../modules/api-token/api-token.auth';
+import {
+  ErrorCode,
+  ForbiddenErrorCode,
+  UnknownErrorCode,
+} from '../utils/error/error.code';
 import { ForbiddenAccess } from '../utils/error/error.util';
 import { Context } from './apollo-plugins/log';
 import { createApolloServer } from './apollo-server';
 import createSchema from './graphql-schema';
+
+vi.mock('../modules/api-token/api-token.auth', async (importOriginal) => ({
+  ...(await importOriginal<
+    typeof import('../modules/api-token/api-token.auth')
+  >()),
+  getApiTokenAuthentication: vi.fn(),
+}));
 
 const DID_YOU_MEAN = 'Did you mean';
 const AUTO_REGISTER_PLATFORM_INPUT = `{
@@ -286,6 +311,56 @@ describe('createApolloServer', () => {
 
         // Then
         expect(result.errors?.[0]).toMatchObject({ message });
+      }
+    );
+  });
+
+  describe('when an API token is refused before any resolver', () => {
+    const server = createApolloServer({ schema, exposeSchemaDetails: false });
+
+    beforeAll(async () => {
+      await server.start();
+    });
+
+    afterEach(() => {
+      vi.mocked(getApiTokenAuthentication).mockReset();
+    });
+
+    afterAll(async () => {
+      await server.stop();
+    });
+
+    it.each([
+      {
+        scope: ApiTokenScope.Admin,
+        query: 'mutation { logout }',
+        code: ForbiddenErrorCode.NotAllowedWithApiToken,
+      },
+      {
+        scope: ApiTokenScope.Read,
+        query:
+          'mutation { revokeApiToken(id: "f7a1c0de-0000-4000-8000-000000000001") { id } }',
+        code: ForbiddenErrorCode.ReadOnlyApiToken,
+      },
+    ])(
+      'should answer $code to a $scope token, not an unknown error',
+      async ({ scope, query, code }) => {
+        // Given
+        vi.mocked(getApiTokenAuthentication).mockReturnValue({
+          token: { scope },
+          user: contextSimpleUserFiligran2.user,
+        } as ApiTokenAuthentication);
+
+        // When
+        const result = await execute(server, query);
+
+        // Then
+        expect(result.errors).toHaveLength(1);
+        expect(result.errors?.[0]).toMatchObject({
+          message: code,
+          extensions: { code: ForbiddenErrorCode.ForbiddenAccess },
+        });
+        expect(result.errors?.[0].path).toBeUndefined();
       }
     );
   });

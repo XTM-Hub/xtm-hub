@@ -80,12 +80,10 @@ type NewsFeedItemConnection {
 
 extend type Query {
   newsFeedItems(first: Int!, after: ID): NewsFeedItemConnection!
-    @auth(portalCapa: BYPASS)
 }
 
 type Mutation {
-  # Warning ! Used by OpenCTI
+  # Warning ! Used by OpenCTI and OpenAEV
   consumeProvisionedNewsFeedItems: ConsumeProvisionedNewsFeedItemsResponse!
-    @platform_token
-  deleteNewsFeedItem(id: NewsFeedItemId!): Boolean! @auth(portalCapa: BYPASS)
+  deleteNewsFeedItem(id: NewsFeedItemId!): Boolean!
 }

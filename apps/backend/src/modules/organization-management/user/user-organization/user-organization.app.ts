@@ -158,6 +158,11 @@ export const UserOrganizationApp = {
       });
       emailsToProvision.push(email);
     }
+    // A token reaches existing members only: a new membership would outlive it, as addUser would
+    // (API_TOKEN_DENIED_FIELDS)
+    if (emailsToProvision.length > 0 && requestContext.get()?.apiToken) {
+      throw new Error(ForbiddenErrorCode.NotAllowedWithApiToken);
+    }
 
     const provisionedUserIds: UserId[] = [];
     for (const email of emailsToProvision) {

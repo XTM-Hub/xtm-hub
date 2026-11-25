@@ -1,9 +1,9 @@
 import { AppPortalContext } from '@/components/me/AppPortalContext';
+import type { PortalUser } from '@/components/me/portal-user.utils';
 import HeaderOrganizationSwitcher from '@/components/menu/organization-switcher/HeaderOrganizationSwitcher';
 import { invalidateOrganizationQueries } from '@/components/organization/organization-query-invalidation';
 import { AppSnackbars } from '@/components/ui/snackbar/AppSnackbars';
 import testRender, { generateMockUser } from '@/utils/test/test-render';
-import type { meContext_fragment$data } from '@generated/meContext_fragment.graphql';
 import type { MeOrganizationsQuery } from '@graphql/generated';
 import {
   focusManager,
@@ -76,7 +76,7 @@ const ORGANIZATIONS = [
   },
 ];
 // The user the server loaded into the portal context.
-const PORTAL_ME: Partial<meContext_fragment$data> = {
+const PORTAL_ME: Partial<PortalUser> = {
   id: 'user-1',
   selected_organization_id: SELECTED_ORGANIZATION_ID,
   organizations: ORGANIZATIONS,
@@ -104,13 +104,13 @@ const RENAMED_ME_ORGANIZATIONS: MeOrganizationsQuery = {
   },
 };
 
-// Stands for the Relay store, which a MeUser.edit event updates: the portal
-// context then holds the updated user.
+// Stands for the current user query, which a MeUser.edit event updates: the
+// portal context then holds the updated user.
 const LivePortalUser = ({
   update,
   children,
 }: {
-  update?: Partial<meContext_fragment$data>;
+  update?: Partial<PortalUser>;
   children: ReactNode;
 }) => {
   const [me, setMe] = useState(() => generateMockUser(PORTAL_ME));
@@ -146,7 +146,7 @@ const OrganizationsLoading = () => {
   );
 };
 
-const renderSwitcher = (portalUserUpdate?: Partial<meContext_fragment$data>) =>
+const renderSwitcher = (portalUserUpdate?: Partial<PortalUser>) =>
   testRender(
     <LivePortalUser update={portalUserUpdate}>
       <HeaderOrganizationSwitcher />

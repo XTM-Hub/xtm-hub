@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { findPeakValue, toChartData } from './time-series-bar-chart.utils';
+import {
+  findPeakValue,
+  toChartData,
+  yAxisMaxWithHeadroom,
+} from './time-series-bar-chart.utils';
 
 const basePoints = [
   { timestamp: '2026-09-22T09:00:00.000Z', value: 1_000 },
@@ -31,4 +35,18 @@ describe('findPeakValue', () => {
   `('should return $expected when $case', ({ points, expected }) => {
     expect(findPeakValue(points)).toBe(expected);
   });
+});
+
+describe('yAxisMaxWithHeadroom', () => {
+  it.each`
+    case                                    | highestBarValue  | limitValue       | expected
+    ${'the highest bar is below the limit'} | ${1_000_000_000} | ${2_000_000_000} | ${2_200_000_000}
+    ${'the highest bar is above the limit'} | ${2_500_000_000} | ${2_000_000_000} | ${2_750_000_000}
+    ${'the highest bar reaches the limit'}  | ${2_000_000_000} | ${2_000_000_000} | ${2_200_000_000}
+  `(
+    'should leave 10 % above the higher line when $case',
+    ({ highestBarValue, limitValue, expected }) => {
+      expect(yAxisMaxWithHeadroom(highestBarValue, limitValue)).toBe(expected);
+    }
+  );
 });

@@ -31,10 +31,13 @@ import {
 import { logApp } from '../../utils/app-logger.util';
 import { ErrorCode, UnknownErrorCode } from '../../utils/error/error.code';
 import { ForbiddenAccess } from '../../utils/error/error.util';
+import { shareCountRateLimiter } from '../../utils/rate-limit.util';
 import { NewsFeedApp } from '../news-feed/news-feed.app';
+import { OrganizationDomain } from '../organization-management/organization/organization.domain';
 import { UserDomain } from '../organization-management/user/user-domain/user.domain';
 import { RegistrationApp } from '../registration/registration.app';
 import { ServiceDefinitionDomain } from '../service/definition/service-definition.domain';
+import { ServiceInstanceDomain } from '../service/instance/service-instance.domain';
 import { OPENCTI_INTEGRATION_DOCUMENT_TYPE } from '../shareable-resource/opencti/integration/integration.model';
 import { objectSolutionCategoryDomain } from '../solution-category/object-solution-category/object-solution-category.domain';
 import { solutionCategoryApp } from '../solution-category/solution-category.app';
@@ -134,6 +137,8 @@ export const DocumentApp = {
     logo?: Upload;
     images?: Upload[];
   }) => {
+    DocumentHelper.assertCreationStatus(input.status);
+
     const serviceDefinition =
       await ServiceDefinitionDomain.loadServiceDefinitionByServiceInstance(
         serviceInstanceId
@@ -141,6 +146,13 @@ export const DocumentApp = {
     if (!serviceDefinition) {
       throw new Error(ErrorCode.ServiceDefinitionNotFound);
     }
+
+    const metaDescription = DocumentHelper.validateMetaDescription({
+      serviceDefinitionIdentifier:
+        serviceDefinition.identifier as ManageableServiceDefinitionIdentifier,
+      summary: input.meta_description,
+      name: input.name,
+    });
 
     const [sourceDocumentFile] = await DocumentUploadsHelper.processUploads(
       sourceDocument,
@@ -202,6 +214,7 @@ export const DocumentApp = {
     } = input;
     const documentData: DocumentData<Document> = {
       ...documentColumnInput,
+      meta_description: metaDescription,
       use_cases: input.use_cases ?? undefined,
       solution_categories: input.solution_categories ?? undefined,
       service_instance_id: serviceInstanceId,
@@ -287,12 +300,6 @@ export const DocumentApp = {
       });
     }
 
-    void NewsFeedApp.upsertResourceNewsFeed({
-      documentBeforeUpdate: undefined,
-      updatedDocument: createdDocument,
-      serviceDefinitionIdentifier: serviceDefinition.identifier,
-    });
-
     return createdDocument;
   },
 
@@ -334,6 +341,14 @@ export const DocumentApp = {
     if (documentBeforeUpdate.service_instance_id !== serviceInstanceId) {
       throw new Error(ErrorCode.DocumentNotFound);
     }
+
+    const metaDescription = DocumentHelper.validateUpdatedMetaDescription({
+      serviceDefinitionIdentifier:
+        serviceDefinition.identifier as ManageableServiceDefinitionIdentifier,
+      summary: input.meta_description,
+      name: input.name,
+      storedDocument: documentBeforeUpdate,
+    });
 
     // Not atomic with the update below: two editors saving at once can skip
     // the rule. Accepted, editors are few and the status shows in the list.
@@ -425,15 +440,21 @@ export const DocumentApp = {
         : undefined;
 
       // entity_types and license_type are persisted as metadata (see above), not as Document columns.
+      // meta_description is a column, but only its validated, trimmed value is written, and a
+      // missing or blank one keeps the stored value.
       const {
         entity_types: _entityTypes,
         license_type: _licenseType,
+        meta_description: _metaDescription,
         ...documentColumnData
       } = input;
       const doc = await DocumentDomain.updateDocument({
         parentDocumentId,
         document: {
-          data: documentColumnData,
+          data: {
+            ...documentColumnData,
+            ...(metaDescription ? { meta_description: metaDescription } : {}),
+          },
           file,
           type: documentType,
         },
@@ -995,6 +1016,59 @@ export const DocumentApp = {
       documentId,
       ALL_METADATA_KEYS
     );
+  },
+
+  /**
+   * Records a share of the document and returns it with its counters. The share counter is public and the mutation
+   * needs no session, so an address counts one share per document per hour: later calls return the document without
+   * counting. The address comes from the request context, which holds the Express `req.ip` on `/graphql-api` and
+   * `/graphql-sse` alike.
+   */
+  shareDocument: async (documentId: DocumentId) => {
+    const document = await DocumentDomain.loadDocumentWithMetadataById(
+      documentId,
+      []
+    );
+    const documentWithCounters =
+      await DocumentHelper.updateDocumentWithCounters(document);
+    const { user, ip } = requestContext.get() ?? {};
+    if (!(await shareCountRateLimiter.tryConsumeForIp(ip, documentId))) {
+      return documentWithCounters;
+    }
+    try {
+      if (!document.service_instance_id) {
+        throw new Error(ErrorCode.ServiceInstanceNotFound);
+      }
+      const serviceDefinition =
+        await ServiceInstanceDomain.loadServiceDefinitionByServiceInstance(
+          document.service_instance_id
+        );
+      if (!serviceDefinition) {
+        throw new Error(ErrorCode.ServiceDefinitionNotFound);
+      }
+      if (
+        TelemetryHelper.shouldSendEventForService(serviceDefinition.identifier)
+      ) {
+        const selectedOrga = user
+          ? await OrganizationDomain.loadOrganizationBy({
+              id: user.selected_organization_id,
+            })
+          : undefined;
+        const shareEvent = await TelemetryHelper.buildShareEvent(
+          selectedOrga,
+          user?.id,
+          serviceDefinition.identifier,
+          document.id,
+          document.name ?? ''
+        );
+        await TelemetryApp.sendTelemetryEvent(shareEvent);
+      }
+    } catch (error) {
+      logApp.error('Unable to send telemetry event', {
+        error,
+      });
+    }
+    return documentWithCounters;
   },
 };
 

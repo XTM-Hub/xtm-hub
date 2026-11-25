@@ -47,6 +47,7 @@ const LIBRARY = 'Playbooks';
 const OPENCTI = 'OpenCTI';
 const OPENAEV = 'OpenAEV';
 const USE_CASE = 'Threat hunting';
+const RESOURCE_STATUS = 'in_validation';
 const SECTION = 'Resource actions';
 const EPIC_NAME = 'Epic name';
 const FEATURE_NAME = 'Feature name';
@@ -69,6 +70,7 @@ const playbook = analyticsResource({
   id: RESOURCE_UUID,
   name: RESOURCE_NAME,
   type: ShareableResourceType.OPENCTI_PLAYBOOK,
+  status: RESOURCE_STATUS,
 });
 
 const renderWithCapture = (
@@ -289,6 +291,33 @@ describe('AnalyticsClickCapture', () => {
     expect(readTrackedEvents('ui_click')).toEqual([downloadClick]);
   });
 
+  it('should send the status of the resource when a registered element is clicked inside it', () => {
+    // Given
+    renderWithCapture(
+      <div
+        {...analyticsResource({
+          id: btoa(`Document:${RESOURCE_UUID}`),
+          name: RESOURCE_NAME,
+          type: ShareableResourceType.OPENCTI_PLAYBOOK,
+          status: RESOURCE_STATUS,
+        })}>
+        <button {...tagged(ELEMENTS.share.id)}>{TARGET}</button>
+      </div>
+    );
+
+    // When
+    fireEvent.click(screen.getByText(TARGET));
+
+    // Then
+    expect(readTrackedEvents('ui_click')).toEqual([
+      expect.objectContaining({
+        element_id: ELEMENTS.share.id,
+        resource_id: RESOURCE_UUID,
+        resource_status: RESOURCE_STATUS,
+      }),
+    ]);
+  });
+
   it('should send the context of the annotated containers when a registered element is clicked', () => {
     // Given
     renderWithCapture(
@@ -299,6 +328,7 @@ describe('AnalyticsClickCapture', () => {
               id: btoa(`Document:${RESOURCE_UUID}`),
               name: RESOURCE_NAME,
               type: ShareableResourceType.OPENCTI_PLAYBOOK,
+              status: RESOURCE_STATUS,
               useCases: [{ name: USE_CASE }],
             })}>
             <div
@@ -323,6 +353,7 @@ describe('AnalyticsClickCapture', () => {
         page_type: PAGE_TYPE,
         resource_id: RESOURCE_UUID,
         resource_name: RESOURCE_NAME,
+        resource_status: RESOURCE_STATUS,
         library: LIBRARY,
         use_cases: USE_CASE,
         product: OPENCTI,

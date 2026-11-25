@@ -34,13 +34,13 @@ import { portalGraphqlClient } from '@/lib/graphql-client';
 import { daysUntil, useDateFormatter } from '@/utils/date';
 import { getDataTableLabels } from '@/utils/design-system/data-table';
 import {
+  Alert,
   SearchField,
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@filigran/design-system';
-import { CheckIndeterminateIcon } from '@filigran/icon';
 import { trialsKeys } from '@graphql/deployment/deployment.keys';
 import {
   DeploymentRequestOrdering,
@@ -389,10 +389,11 @@ const TrialsTab = ({ type }: TrialsTabProps) => {
             }
             actions={<DataTableHeadBarOptions />}
           />
-          <div className="border border-solid border-alert-warning rounded text-feedback-warning-primary flex items-center gap-1 p-2 text-sm mt-4">
-            <CheckIndeterminateIcon className="shrink-0 h-4 w-4 mr-1" />
-            {t('TrialsDashboard.WarningCancellation')}
-          </div>
+          <Alert
+            severity="warning"
+            className="mt-4"
+            title={t('TrialsDashboard.WarningCancellation')}
+          />
         </div>
       }
       onResetTable={resetAll}

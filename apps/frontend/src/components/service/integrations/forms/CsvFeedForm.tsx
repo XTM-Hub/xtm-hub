@@ -1,4 +1,9 @@
 import { PortalContext } from '@/components/me/AppPortalContext';
+import {
+  metaDescriptionSchema,
+  optionalMetaDescriptionSchema,
+  withMetaDescriptionRule,
+} from '@/components/service/form/meta-description.schema';
 import { ServiceFormSheetFooter } from '@/components/service/form/SheetFooter';
 import {
   JSON_DOCUMENT_FILE,
@@ -6,17 +11,20 @@ import {
 } from '@/components/service/form/UseDocumentFileField';
 import { useServiceFormFields } from '@/components/service/form/UseServiceFormFields';
 import { AutoForm } from '@/components/ui/auto-form';
-import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
+import { useTranslate } from '@/hooks/use-translate';
 import {
   fileListCheck,
-  isDocumentPublished,
   optionalFileListCheck,
   transformToFileList,
 } from '@/utils/documents';
-import { isIntegrationItem } from '@/utils/shareable-resources/shareable-resources.types';
+import {
+  isIntegrationItem,
+  ShareableResourceType,
+} from '@/utils/shareable-resources/shareable-resources.types';
 import {
   DocumentImageType,
   DocumentItemFragment,
+  DocumentStatus,
   IntegrationType,
 } from '@graphql/generated';
 import { useContext, useMemo } from 'react';
@@ -26,7 +34,9 @@ import { z } from 'zod';
 const csvFeedFormSchema = z.object({
   name: z.string().min(1, 'Required'),
   slug: z.string().min(1, 'Required'),
+  status: z.enum(DocumentStatus).optional(),
   uploader_id: z.string().optional(),
+  meta_description: metaDescriptionSchema,
   short_description: z.string().min(1, 'Required').max(250),
   description: z.string().min(1, 'Required'),
   uploader_organization_id: z.string().min(1, 'Required'),
@@ -34,7 +44,6 @@ const csvFeedFormSchema = z.object({
   use_cases: z.array(z.string()).min(1, 'Required'),
   solution_categories: z.array(z.string()).min(1, 'Required'),
   license_type: z.enum(['Free', 'Commercial']).optional(),
-  active: z.boolean().optional(),
   datasheet_url: z.url().or(z.literal('')).nullish(),
   blogpost_url: z.url().or(z.literal('')).nullish(),
   demo_url: z.url().or(z.literal('')).nullish(),
@@ -51,7 +60,6 @@ interface CsvFeedFormProps {
 
 export const CsvFeedForm = ({ handleSubmit, document }: CsvFeedFormProps) => {
   const { me } = useContext(PortalContext);
-  const { handleCloseSheet } = useDialogContext();
 
   const isCreation = !document;
 
@@ -78,7 +86,6 @@ export const CsvFeedForm = ({ handleSubmit, document }: CsvFeedFormProps) => {
     () =>
       ({
         ...document,
-        active: document ? isDocumentPublished(document.status) : undefined,
         images: transformToFileList(DocumentImageType.Image, document),
         logo: transformToFileList(DocumentImageType.Logo, document),
         use_cases: document?.use_cases?.map((label) => label.id),
@@ -95,20 +102,26 @@ export const CsvFeedForm = ({ handleSubmit, document }: CsvFeedFormProps) => {
       }) as CsvFeedFormValues,
     [me, document, isCreation, integration]
   );
+  const t = useTranslate();
   const formSchema = useMemo(
     () =>
-      document
-        ? csvFeedFormSchema.extend({
-            document: z.custom<FileList>(fileListCheck).optional(),
-            images: z.custom<FileList>(optionalFileListCheck).optional(),
-            logo: z.custom<FileList>(optionalFileListCheck).optional(),
-          })
-        : csvFeedFormSchema,
-    [document]
+      withMetaDescriptionRule(
+        document
+          ? csvFeedFormSchema.extend({
+              meta_description: optionalMetaDescriptionSchema,
+              document: z.custom<FileList>(fileListCheck).optional(),
+              images: z.custom<FileList>(optionalFileListCheck).optional(),
+              logo: z.custom<FileList>(optionalFileListCheck).optional(),
+            })
+          : csvFeedFormSchema,
+        ShareableResourceType.OPENCTI_INTEGRATION,
+        t
+      ),
+    [document, t]
   );
 
   const {
-    active,
+    meta_description,
     short_description,
     slug,
     name,
@@ -126,6 +139,7 @@ export const CsvFeedForm = ({ handleSubmit, document }: CsvFeedFormProps) => {
     images,
     imagesToDelete,
     logo,
+    status,
   } = useServiceFormFields({
     documentType: 'CSV Feed',
     platform: 'OpenCTI',
@@ -166,7 +180,8 @@ export const CsvFeedForm = ({ handleSubmit, document }: CsvFeedFormProps) => {
           document: documentField,
           logo,
           images: imagesField,
-          active,
+          status,
+          meta_description,
           short_description,
           slug,
           name,
@@ -175,7 +190,7 @@ export const CsvFeedForm = ({ handleSubmit, document }: CsvFeedFormProps) => {
           blogpost_url,
           demo_url,
         }}>
-        <ServiceFormSheetFooter handleCloseSheet={handleCloseSheet} />
+        <ServiceFormSheetFooter status={document?.status} />
       </AutoForm>
     </>
   );

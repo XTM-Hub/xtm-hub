@@ -26,7 +26,7 @@ flowchart LR
   C --> E[run-front-unit-tests-shards<br/>8 shards]
   C --> F[run-api-unit-tests-shards<br/>8 shards]
   C --> G[deploy-feature-branch]
-  C --> P[run-e2e-platform-tests<br/>opencti · openaev]
+  C --> P[run-e2e-platform-tests<br/>opencti · openaev · xtmone]
   C --> S[run-elasticsearch-tests<br/>elasticsearch8 · elasticsearch9]
   D --> H[run-e2e-tests]
   E --> I[run-front-unit-tests]
@@ -49,14 +49,15 @@ flowchart LR
 - The three test suites each fan out over **8 shards**; the unsharded `run-*-tests` jobs are `always()` aggregators
   that collect the shard results, and they are what `build-images-prod` actually depends on. Unit test jobs are
   skipped on tag builds.
-- **run-e2e-platform-tests** runs `tests/platforms/` against the `opencti/platform:rolling` and
-  `openaev/platform:rolling` images, one matrix leg per platform, on pull requests and manual runs only. It is
-  **non-blocking**: nothing depends on it, it runs with `continue-on-error`, and the "Ready to merge" automation of
-  `pr-issue-automation.yml` ignores its checks, so a broken rolling image warns before a release without blocking a
-  merge.
-  Its compose files are `xtm-hub-dev/docker-compose-ci-opencti.yml` and `docker-compose-ci-openaev.yml`, layered on
-  `docker-compose-ci.yml`. Each leg posts its own pull request report ("OpenCTI e2e", "OpenAEV e2e", told apart by a
-  `comment-tag`), next to the "XTM Hub e2e" report of the shards, which run the `chromium` Playwright project only.
+- **run-e2e-platform-tests** runs `tests/platforms/` against the `opencti/platform:rolling`,
+  `openaev/platform:rolling` and `xtmone/platform:rolling` images, one matrix leg per platform, on pull requests and
+  manual runs only. It is **non-blocking**: nothing depends on it, it runs with `continue-on-error`, and the "Ready to
+  merge" automation of `pr-issue-automation.yml` ignores its checks, so a broken rolling image warns before a release
+  without blocking a merge.
+  Its compose files are `xtm-hub-dev/docker-compose-ci-opencti.yml`, `docker-compose-ci-openaev.yml` and
+  `docker-compose-ci-xtmone.yml`, layered on `docker-compose-ci.yml`. Each leg posts its own pull request report
+  ("OpenCTI e2e", "OpenAEV e2e", "XTM One e2e", told apart by a `comment-tag`), next to the "XTM Hub e2e" report of
+  the shards, which run the `chromium` Playwright project only.
 - **run-elasticsearch-tests** ("Elasticsearch tests") runs once per supported Elasticsearch major, the image set
   through `ELASTICSEARCH_IMAGE` (`portal-elasticsearch` of `docker-compose-ci.yml` defaults to the Elasticsearch 8
   one the other jobs use). It boots the `portal-api` image on it, checks the client it detected, then runs the

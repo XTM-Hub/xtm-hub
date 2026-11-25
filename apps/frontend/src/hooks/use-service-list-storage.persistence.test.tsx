@@ -25,8 +25,12 @@ const DISPLAY_KEY_PREFIXES = [
   'orderMode',
   'displayMode',
 ];
-const toPrivateKeys = (prefixes: string[]) =>
-  prefixes.map((prefix) => `${prefix}PrivateOpenCTIIntegrationFeedsList`);
+const SELECTION_FILTER_KEY_PREFIXES = FILTER_KEY_PREFIXES.filter(
+  (prefix) => prefix !== 'search'
+);
+const toPrivateKey = (prefix: string) =>
+  `${prefix}PrivateOpenCTIIntegrationFeedsList`;
+const toPrivateKeys = (prefixes: string[]) => prefixes.map(toPrivateKey);
 const filterKeys = toPrivateKeys(FILTER_KEY_PREFIXES);
 const displayKeys = toPrivateKeys(DISPLAY_KEY_PREFIXES);
 
@@ -127,5 +131,58 @@ describe('useServiceListStorage persistence', () => {
     for (const key of displayKeys) {
       expect(window.localStorage.getItem(key)).toBeNull();
     }
+  });
+
+  it('should report no active filters when nothing is stored', () => {
+    // Given / When
+    const { result } = renderStorage();
+
+    // Then
+    expect(result.current.hasActiveFilters).toBe(false);
+  });
+
+  it.each(SELECTION_FILTER_KEY_PREFIXES)(
+    'should report active filters when the %s filter has a selection',
+    (prefix) => {
+      // Given
+      window.sessionStorage.setItem(
+        toPrivateKey(prefix),
+        JSON.stringify({ [LABEL]: [] })
+      );
+
+      // When
+      const { result } = renderStorage();
+
+      // Then
+      expect(result.current.hasActiveFilters).toBe(true);
+    }
+  );
+
+  it('should remove every filter and keep the search and display settings when clearFilters is called', () => {
+    // Given
+    for (const key of filterKeys) {
+      window.sessionStorage.setItem(key, JSON.stringify({ [LABEL]: [] }));
+    }
+    for (const key of displayKeys) {
+      window.localStorage.setItem(key, JSON.stringify({ [LABEL]: [] }));
+    }
+    const { result } = renderStorage();
+
+    // When
+    act(() => {
+      result.current.clearFilters();
+    });
+
+    // Then
+    for (const prefix of SELECTION_FILTER_KEY_PREFIXES) {
+      expect(window.sessionStorage.getItem(toPrivateKey(prefix))).toBeNull();
+    }
+    expect(
+      window.sessionStorage.getItem(toPrivateKey('search'))
+    ).not.toBeNull();
+    for (const key of displayKeys) {
+      expect(window.localStorage.getItem(key)).not.toBeNull();
+    }
+    expect(result.current.hasActiveFilters).toBe(false);
   });
 });

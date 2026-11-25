@@ -1,9 +1,11 @@
-import { settingsContext_fragment$data } from '@generated/settingsContext_fragment.graphql';
+import { SettingsQuery } from '@graphql/generated';
 import * as React from 'react';
 import { createContext } from 'react';
 
+export type PortalSettings = SettingsQuery['settings'];
+
 export interface Settings {
-  settings?: settingsContext_fragment$data | null;
+  settings?: PortalSettings | null;
 }
 
 export interface SettingsProps extends Settings {
@@ -13,7 +15,7 @@ export interface SettingsProps extends Settings {
 export const SettingsContext = createContext<Settings>({});
 
 export const generateSettingsContext = (
-  settings?: settingsContext_fragment$data | null
+  settings?: PortalSettings | null
 ): Settings => {
   return { settings };
 };

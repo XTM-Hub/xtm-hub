@@ -1,5 +1,6 @@
 import { UnauthenticatedError } from '@/lib/graphql-fetch.utils';
 import { buildSignupRedirect } from '@/utils/redirect';
+import { fetchServerSettings } from '@/utils/settings.service';
 import {
   PlatformAssociatedOrganizationDocument,
   PlatformIdentifier,
@@ -7,10 +8,12 @@ import {
   ServiceDefinitionIdentifier,
   ServiceInstancesListDocument,
 } from '@graphql/generated';
+import { mockSettings } from '@graphql/mocks';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  loadBaseUrlFront,
   loadPlatformOrganizationId,
   loadRegisteredPlatformRedirectTarget,
   loadServiceInstances,
@@ -22,11 +25,31 @@ vi.mock('@/lib/graphql-client', () => ({
   getAuthenticatedGraphqlClient: vi.fn(async () => ({ request })),
 }));
 
+vi.mock('@/utils/settings.service', () => ({
+  fetchServerSettings: vi.fn(),
+}));
+
+const BASE_URL_FRONT = 'https://hub.filigran.io';
 const PLATFORM_ID = 'platform-1';
 const TENANT_ID = 'tenant-1';
 const ORGANIZATION_ID = 'organization-1';
 const REDIRECT_PATHNAME = '/redirect/openaev_scenarios';
 const REDIRECT_SENTINEL = new Error('NEXT_REDIRECT');
+
+describe('loadBaseUrlFront', () => {
+  it('should return the front base URL of the platform settings', async () => {
+    // Given
+    vi.mocked(fetchServerSettings).mockResolvedValue(
+      mockSettings({ base_url_front: BASE_URL_FRONT })
+    );
+
+    // When
+    const result = await loadBaseUrlFront();
+
+    // Then
+    expect(result).toBe(BASE_URL_FRONT);
+  });
+});
 
 describe('loadPlatformOrganizationId', () => {
   beforeEach(() => {

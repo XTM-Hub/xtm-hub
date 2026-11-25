@@ -1,8 +1,6 @@
 import { getAuthenticatedGraphqlClient } from '@/lib/graphql-client';
 import { redirectToSignupOnUnauthenticated } from '@/lib/server-unauthenticated-redirect';
-import serverPortalApiFetch from '@/relay/server-portal-api-fetch';
-import { SettingsResponse } from '@/utils/settings.service';
-import SettingsQuery, { settingsQuery } from '@generated/settingsQuery.graphql';
+import { fetchServerSettings } from '@/utils/settings.service';
 import {
   OrderingMode,
   PlatformIdentifier,
@@ -13,13 +11,8 @@ import {
   useServiceInstancesListQuery,
 } from '@graphql/generated';
 
-export const loadBaseUrlFront = async () => {
-  const settingsResponse = (await serverPortalApiFetch<
-    typeof SettingsQuery,
-    settingsQuery
-  >(SettingsQuery)) as SettingsResponse;
-  return settingsResponse.data.settings.base_url_front;
-};
+export const loadBaseUrlFront = async () =>
+  (await fetchServerSettings()).base_url_front;
 
 export const loadPlatformOrganizationId = async (
   platformId?: string | null,

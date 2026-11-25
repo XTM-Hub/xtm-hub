@@ -9,9 +9,11 @@ import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin
 import { isInstance as isCustomApolloError } from 'apollo-errors';
 import type { GraphQLFormattedError, GraphQLSchema } from 'graphql';
 import { Server } from 'http';
+import { apiTokenPlugin } from '../modules/api-token/api-token.plugin';
 import { ErrorCode, UnknownErrorCode } from '../utils/error/error.code';
 import { Context, errorLoggingPlugin } from './apollo-plugins/log';
 import { operationMetricsPlugin } from './apollo-plugins/metrics';
+import { QUERY_LIMIT_RULES } from './graphql-query-limits';
 import { removeSuggestionHint } from './schema-details';
 
 const REQUEST_ERROR_CODES = new Set<string>(
@@ -24,19 +26,29 @@ const CLIENT_ERROR_MESSAGES = new Set<string>([
   ...Object.values(UnknownErrorCode),
 ]);
 
+const isKnownClientError = (error: unknown) =>
+  isCustomApolloError(error) ||
+  (error instanceof Error && CLIENT_ERROR_MESSAGES.has(error.message));
+
+// Not `instanceof GraphQLError`: graphql ships a CommonJS and an ESM build, and Apollo may load the other one
+const wrappedErrorOf = (error: unknown) =>
+  error instanceof Error && 'originalError' in error
+    ? error.originalError
+    : undefined;
+
 const isClientSafeError = (
   formattedError: GraphQLFormattedError,
   originalError: unknown
 ) => {
   if (!formattedError.path) {
     const code = formattedError.extensions?.code;
-    return typeof code === 'string' && REQUEST_ERROR_CODES.has(code);
+    if (typeof code === 'string' && REQUEST_ERROR_CODES.has(code)) {
+      return true;
+    }
+    // A plugin refusal before any resolver (apiTokenPlugin) has no path: Apollo wraps it, keeping ours as the cause
+    return isKnownClientError(wrappedErrorOf(originalError));
   }
-  return (
-    isCustomApolloError(originalError) ||
-    (originalError instanceof Error &&
-      CLIENT_ERROR_MESSAGES.has(originalError.message))
-  );
+  return isKnownClientError(originalError);
 };
 
 interface CreateApolloServerOptions {
@@ -54,6 +66,7 @@ export const createApolloServer = ({
   new ApolloServer<Context>({
     schema,
     csrfPrevention: true,
+    validationRules: QUERY_LIMIT_RULES,
     introspection: exposeSchemaDetails,
     includeStacktraceInErrorResponses: exposeSchemaDetails,
     formatError: (formattedError, error) => {
@@ -93,5 +106,6 @@ export const createApolloServer = ({
         : ApolloServerPluginLandingPageDisabled(),
       errorLoggingPlugin(),
       operationMetricsPlugin,
+      apiTokenPlugin,
     ],
   });

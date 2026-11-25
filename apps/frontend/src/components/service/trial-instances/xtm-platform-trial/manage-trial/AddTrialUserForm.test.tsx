@@ -1,8 +1,8 @@
+import { PortalUser } from '@/components/me/portal-user.utils';
 import { AddTrialUserForm } from '@/components/service/trial-instances/xtm-platform-trial/manage-trial/AddTrialUserForm';
 import { mockGraphqlQuery } from '@/utils/test/msw/graphql-api';
 import { mswServer } from '@/utils/test/msw/server';
 import testRender from '@/utils/test/test-render';
-import { meContext_fragment$data } from '@generated/meContext_fragment.graphql';
 import {
   AddUsersToBundleGroupsMutationVariables,
   BundleUserServiceGroupsQuery,
@@ -321,7 +321,7 @@ const setupSearchableQueryMocks = () => {
 };
 
 const renderForm = (
-  me: Partial<meContext_fragment$data> = userManagerMe,
+  me: Partial<PortalUser> = userManagerMe,
   onCompleted = vi.fn()
 ) =>
   testRender(
@@ -483,11 +483,9 @@ describe('AddTrialUserForm user search and invitations', () => {
     const { searchedTerms } = setupSearchableQueryMocks();
     const { user } = renderForm(platformRegistrationManagerMe);
 
-    expect(
-      await screen.findByText(
-        'Service.Bundle.ManageTrial.AddUserDialog.NoPermissionToInvite'
-      )
-    ).toBeInTheDocument();
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Service.Bundle.ManageTrial.AddUserDialog.NoPermissionToInvite'
+    );
 
     await openEmailDropdown(user);
     await screen.findByText('active@filigran.io');
@@ -513,11 +511,9 @@ describe('AddTrialUserForm user search and invitations', () => {
       )
     );
 
-    expect(
-      screen.getByText(
-        'Service.Bundle.ManageTrial.AddUserDialog.ExpiredUsersReinvited'
-      )
-    ).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Service.Bundle.ManageTrial.AddUserDialog.ExpiredUsersReinvited'
+    );
   });
 
   it('does not show the re-invitation notice when no expired user is selected', async () => {

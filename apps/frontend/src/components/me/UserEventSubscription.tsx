@@ -1,58 +1,60 @@
 'use client';
 
-import { LogoutMutation } from '@/components/logout.graphql';
+import { useGraphqlSubscription } from '@/hooks/use-graphql-subscription';
 import { useTranslate } from '@/hooks/use-translate';
 import { refreshAnalyticsUser } from '@/lib/analytics/analytics.user';
+import { portalGraphqlClient } from '@/lib/graphql-client';
 import { clearFiltersStorage } from '@/utils/filters-storage.utils';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { GraphQLSubscriptionConfig } from 'relay-runtime';
 
-import { userMeSubscription } from '@/components/admin/user/user.graphql';
+import { setCurrentUser } from '@/components/me/current-user-query';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import {
-  userMeSubscription$data,
-  userMeSubscription as userMeSubscriptionType,
-} from '@generated/userMeSubscription.graphql';
-import { useMutation, useSubscription } from 'react-relay';
+  MeUserEventsDocument,
+  MeUserEventsSubscription,
+  useLogoutMutation,
+} from '@graphql/generated';
+import { useQueryClient } from '@tanstack/react-query';
+import { commitLocalUpdate, useRelayEnvironment } from 'react-relay';
 
 // Component
 const UserEventSubscription = () => {
-  const [commitLogoutMutation] = useMutation(LogoutMutation);
   const t = useTranslate();
-
   const router = useRouter();
+  const environment = useRelayEnvironment();
+  const queryClient = useQueryClient();
+
+  const { mutate: commitLogout } = useLogoutMutation(portalGraphqlClient, {
+    onSuccess() {
+      commitLocalUpdate(environment, (store) => store.invalidateStore());
+      refreshAnalyticsUser().then(() => {
+        router.push('/?error=account-deleted');
+        router.refresh();
+      });
+    },
+  });
 
   const logout = () => {
     clearFiltersStorage();
-    commitLogoutMutation({
-      variables: {},
-      updater: (store) => {
-        store.invalidateStore();
-      },
-      onCompleted() {
-        refreshAnalyticsUser().then(() => {
-          router.push('/?error=account-deleted');
-          router.refresh();
-        });
-      },
-    });
+    commitLogout({});
   };
 
   const [isOpen, setIsOpen] = useState(false);
-  const subscriptionConfig: GraphQLSubscriptionConfig<userMeSubscriptionType> =
+  useGraphqlSubscription<MeUserEventsSubscription>(
+    MeUserEventsDocument,
+    {},
     {
-      subscription: userMeSubscription,
-      variables: {},
-      onNext: (data: userMeSubscription$data | null | undefined) => {
-        if (data?.MeUser?.edit) {
+      onNext: ({ MeUser }) => {
+        if (MeUser?.edit) {
+          setCurrentUser(queryClient, MeUser.edit);
           setIsOpen(true);
-        } else if (data?.MeUser?.delete) {
+        } else if (MeUser?.delete) {
           logout();
         }
       },
-    };
-  useSubscription(subscriptionConfig);
+    }
+  );
   return (
     <ConfirmDialog
       confirmAnalyticsId="account_change_notice_close"

@@ -1,5 +1,4 @@
 import type { PgBoss } from 'pg-boss';
-import { requestContext } from '../../context/request.context';
 import { ManifestApp } from '../../modules/shareable-resource/manifest/manifest.app';
 import { SYSTEM_USER_CONTEXT } from '../../portal.const';
 import { logApp } from '../../utils/app-logger.util';
@@ -8,11 +7,8 @@ import { RETRY_STRATEGIES } from './retry-strategies';
 import { createBatchHandler } from './workers';
 
 const handleManifestRebuildJob = createBatchHandler<ManifestRebuildJobData>(
-  async (job) => {
-    await requestContext.run(SYSTEM_USER_CONTEXT, async () => {
-      await ManifestApp.processManifestQueue(job.data);
-    });
-  }
+  SYSTEM_USER_CONTEXT,
+  async (job) => ManifestApp.processManifestQueue(job.data)
 );
 
 export const ManifestWorkers = {

@@ -70,9 +70,11 @@ export const translateServiceDefinitionIdentifier = (
   const platformIdentifier =
     ServiceDefinitionIdentifierToPlatformIdentifier[
       serviceDefinitionIdentifier
-    ] ?? PlatformIdentifier.Openaev;
+    ];
 
-  return PlatformMetadataMapping[platformIdentifier].name;
+  return platformIdentifier
+    ? PlatformMetadataMapping[platformIdentifier].name
+    : serviceDefinitionIdentifier;
 };
 
 export const ServiceDefinitionIdentifierToPlatformIdentifier: Partial<

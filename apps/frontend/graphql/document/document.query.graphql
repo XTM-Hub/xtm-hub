@@ -6,6 +6,7 @@ fragment DocumentItem on Document {
   created_at
   name
   short_description
+  meta_description
   description
   download_number
   share_number

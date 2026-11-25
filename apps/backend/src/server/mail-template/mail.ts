@@ -2,6 +2,7 @@ import {
   PlatformIdentifier,
   ServiceDefinitionIdentifier,
 } from '../../__generated__/resolvers-types';
+import { PlatformIdentifierToString } from '../../utils/platform';
 
 export interface GenericServiceMailModel {
   name: string;
@@ -82,12 +83,6 @@ export interface PlatformUnregisteredModel {
   adminName: string;
   platformIdentifier: PlatformIdentifier;
 }
-
-export const PlatformIdentifierToString: Record<PlatformIdentifier, string> = {
-  [PlatformIdentifier.Opencti]: 'OpenCTI',
-  [PlatformIdentifier.Openaev]: 'OpenAEV',
-  [PlatformIdentifier.Xtmone]: 'XTM One',
-};
 
 export const BUNDLE_PLATFORM_NAME = 'XTM Platform';
 

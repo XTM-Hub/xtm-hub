@@ -12,7 +12,6 @@ export const FacetDomain = {
     const user = requestContext.get()?.user;
     const restrictToPublished =
       input.restrictToPublishedDocuments === true ||
-      input.restrictToActiveDocuments === true ||
       !user ||
       (await isUserRestrictedToPublishedDocument(
         user,

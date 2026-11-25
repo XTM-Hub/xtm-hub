@@ -1,25 +1,16 @@
-import { useRegisteredPlatformsFragment$key } from '@generated/useRegisteredPlatformsFragment.graphql';
-import { useRegisteredPlatformsFragmentQuery } from '@generated/useRegisteredPlatformsFragmentQuery.graphql';
-import { PlatformIdentifier } from '@graphql/generated';
-import { graphql, useFragment, useLazyLoadQuery } from 'react-relay';
+import { portalGraphqlClient } from '@/lib/graphql-client';
+import { throwOnFirstLoadError } from '@/lib/query-client';
+import {
+  PlatformIdentifier,
+  RegisteredPlatformsListQuery,
+  useRegisteredPlatformsListQuery,
+} from '@graphql/generated';
+import { registeredPlatformsKeys } from '@graphql/registered-platforms/registered-platforms.keys';
 
-export const UseRegisteredPlatformsFragment = graphql`
-  fragment useRegisteredPlatformsFragment on RegisteredPlatform {
-    id
-    version
-    title
-    url
-    contract
-  }
-`;
+export type RegisteredPlatformsListItem =
+  RegisteredPlatformsListQuery['registeredPlatforms'][number];
 
-export const UseRegisteredPlatformsQuery = graphql`
-  query useRegisteredPlatformsFragmentQuery($input: RegisteredPlatformsInput!) {
-    registeredPlatforms(input: $input) {
-      ...useRegisteredPlatformsFragment
-    }
-  }
-`;
+const NO_PLATFORMS: RegisteredPlatformsListItem[] = [];
 
 interface UseRegisteredPlatformsOptions {
   onlyActive?: boolean;
@@ -30,23 +21,27 @@ export const useRegisteredPlatforms = (
   options: UseRegisteredPlatformsOptions = {}
 ) => {
   const { onlyActive = false } = options;
-  const queryData = useLazyLoadQuery<useRegisteredPlatformsFragmentQuery>(
-    UseRegisteredPlatformsQuery,
+  // Same variables as the other callers of the list, so they share its cache entry.
+  const variables = {
+    input: {
+      identifier: platformIdentifier,
+      onlyActive,
+      onlyTrial: null,
+      hasDeployedResources: null,
+    },
+  };
+  const { data, isPending } = useRegisteredPlatformsListQuery(
+    portalGraphqlClient,
+    variables,
     {
-      input: {
-        identifier: platformIdentifier,
-        onlyActive,
-      },
+      queryKey: registeredPlatformsKeys.list(variables),
+      throwOnError: throwOnFirstLoadError,
     }
-  );
-  const platforms = queryData.registeredPlatforms.map((instanceRef) =>
-    useFragment<useRegisteredPlatformsFragment$key>(
-      UseRegisteredPlatformsFragment,
-      instanceRef
-    )
   );
 
   return {
-    platforms,
+    platforms: data?.registeredPlatforms ?? NO_PLATFORMS,
+    /** True until the first answer: an empty list then means "not known yet", not "none". */
+    isPending,
   };
 };

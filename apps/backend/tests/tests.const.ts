@@ -5,6 +5,7 @@ import {
   DeploymentRequestPlatformRegion,
   DeploymentRequestSource,
   DeploymentRequestUseCase,
+  OrganizationCapability,
   PlatformIdentifier,
   PortalCapability,
 } from '../src/__generated__/resolvers-types';
@@ -31,6 +32,7 @@ import {
   PLATFORM_ORGANIZATION_UUID,
   SYSTEM_USER_CONTEXT,
 } from '../src/portal.const';
+import { SYSTEM_TOKEN_HEADER } from '../src/security/system-token';
 
 export const GRAPHQL_RESOLVE_INFO = {} as GraphQLResolveInfo;
 
@@ -108,6 +110,9 @@ export const SERVICES = {
     OPENCTI_REGISTRATION: {
       ID: '5f769173-5ace-4ef3-b04f-2c95609c5b59' as ServiceDefinitionId,
     },
+    XTMONE_REGISTRATION: {
+      ID: '9b1f6a9e-2c3d-4e3a-8a4a-2b7c4d9f1a01' as ServiceDefinitionId,
+    },
   },
   INSTANCES: {
     INTEGRATIONS: {
@@ -153,6 +158,16 @@ export const TEST_SUBSCRIPTIONS = {
     SERVICE_INSTANCE_ID:
       'b382537e-1cfd-4316-bd1d-ec83f4e1ef54' as ServiceInstanceId,
   },
+};
+
+// Document summaries (meta_description). Prefixed with the longest product and type, "OpenCTI Integration: " or
+// "OpenCTI Custom View: " (21 characters), and followed by a period, they still fit between
+// META_DESCRIPTION_MIN_LENGTH and META_DESCRIPTION_MAX_LENGTH, as a generated meta description must.
+export const TEST_META_DESCRIPTIONS = {
+  DEFAULT:
+    'Monitor ransomware activity in OpenCTI with a ready-made dashboard that tracks threat actors, targeted sectors, victims and indicators',
+  UPDATED:
+    'Track phishing campaigns in OpenCTI with a dashboard that maps sender domains, lures, targeted organizations and related indicators',
 };
 
 // Reusable use cases seeded in tests/seeds/04-insert-use-cases.js, to avoid
@@ -389,6 +404,21 @@ export const contextSimpleUserSecondOrga: PortalContext = {
     ],
     capabilities: [],
     roles_portal: [],
+    organization_capabilities: [
+      {
+        id: 'simple-second-organization',
+        organization: { id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID },
+        capabilities: [],
+      },
+      {
+        id: 'simple-second-organization-personal-space',
+        organization: {
+          id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.SIMPLE
+            .PERSONAL_SPACE_ID,
+        },
+        capabilities: [],
+      },
+    ],
   },
 } as unknown as PortalContext;
 
@@ -426,6 +456,24 @@ export const contextSimpleUserFiligran2: PortalContext = {
     ],
     capabilities: [],
     roles_portal: [],
+    organization_capabilities: [
+      {
+        id: 'access-subscription-filigran',
+        organization: { id: TEST_ORGANIZATIONS.FILIGRAN.ID },
+        capabilities: [
+          OrganizationCapability.ManageAccess,
+          OrganizationCapability.ManageSubscription,
+        ],
+      },
+      {
+        id: 'access-subscription-personal-space',
+        organization: {
+          id: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2
+            .ID as unknown as OrganizationId,
+        },
+        capabilities: [OrganizationCapability.AdministrateOrganization],
+      },
+    ],
   },
   dataLoaders: {
     deploymentRequest: {
@@ -494,3 +542,16 @@ export const requestContextSimpleUserFiligran2 = {
   user: contextSimpleUserFiligran2.user,
   portalContext: contextSimpleUserFiligran2,
 };
+
+// Matches system_token_hash in config/default.json
+export const TEST_SYSTEM_TOKEN = 'changeMe';
+
+// A machine request has no session, and the resolvers under test read neither res nor dataLoaders
+const systemTokenContext = (token: string): PortalContext =>
+  ({
+    req: { headers: { [SYSTEM_TOKEN_HEADER]: token } },
+  }) as unknown as PortalContext;
+
+export const contextSystemToken = systemTokenContext(TEST_SYSTEM_TOKEN);
+
+export const contextInvalidSystemToken = systemTokenContext('invalid-token');
