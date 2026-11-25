@@ -41,7 +41,7 @@ const loadOrganizationFromPlatformIdAndTokenHeaders = async (
   // through its deployment request.
   const match = await loadPlatformCredentialMatch({
     ...extractedAuth,
-    activeRegistrationOnly: true,
+    activeOnly: true,
   });
   if (!match) {
     throw buildInvalidPlatformTokenError();

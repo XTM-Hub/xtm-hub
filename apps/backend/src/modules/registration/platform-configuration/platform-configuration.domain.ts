@@ -215,18 +215,6 @@ export const PlatformConfigurationDomain = {
     return row ? resolvePlatformFromJoinedRow(row) : undefined;
   },
 
-  // Locks the registration until the transaction ends, so that a check made after it reads what a concurrent
-  // takeover committed. It must run inside withTransaction, or the lock is released at once. FOR NO KEY UPDATE also
-  // makes a concurrent UPDATE of the row wait, without blocking the inserts of rows that reference it.
-  lockConfiguration: async (
-    serviceInstanceId: ServiceInstanceId
-  ): Promise<void> => {
-    await db<PlatformConfiguration>('PlatformConfiguration')
-      .select('service_instance_id')
-      .where('service_instance_id', '=', serviceInstanceId)
-      .forNoKeyUpdate();
-  },
-
   // Only an active registration moves to inactive, so of two concurrent calls only the first gets true.
   deactivateConfiguration: async (
     serviceInstanceId: ServiceInstanceId

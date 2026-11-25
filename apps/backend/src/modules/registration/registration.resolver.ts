@@ -28,7 +28,13 @@ class RegistrationAdminQueries {
   @Guarded(bypassOnlyGuard())
   static readonly adminRegisteredPlatforms: NonNullable<
     QueryResolvers['adminRegisteredPlatforms']
-  > = (_, args) => RegistrationApp.loadAdminRegisteredPlatforms(args);
+  > = async (_, args) => {
+    try {
+      return await RegistrationApp.loadAdminRegisteredPlatforms(args);
+    } catch (error) {
+      throw mapToGraphQLError(error, UnknownErrorCode.UnknownError);
+    }
+  };
 }
 
 class RegistrationAdminMutations {
@@ -38,9 +44,7 @@ class RegistrationAdminMutations {
   > = async (_, { serviceInstanceId }) => {
     try {
       await RegistrationApp.adminUnregisterPlatform(serviceInstanceId);
-      return await RegistrationApp.loadAdminRegisteredPlatform(
-        serviceInstanceId
-      );
+      return { success: true };
     } catch (error) {
       throw mapToGraphQLError(
         error,

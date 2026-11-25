@@ -794,6 +794,55 @@ describe('registration connectivity app', () => {
       });
     });
 
+    it('should answer inactive, not not found, when an unregistered legacy platform upgrades to a version that requires a tenant', async () => {
+      // Given OpenAEV deletes its registration on NOT_FOUND, and keeps it on INACTIVE
+      const platformId = uuidv4();
+      const tenantId = uuidv4();
+      const { token } = await RegistrationApp.registerPlatform({
+        organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        platform: {
+          id: platformId,
+          url: 'http://example.com',
+          contract: PlatformContract.Ee,
+          title: 'Fake title',
+          version: '1.0.0',
+        },
+        identifier: PlatformIdentifier.Openaev,
+      });
+      const legacyConfig =
+        await PlatformConfigurationDomain.loadConfigurationByPlatform(
+          platformId
+        );
+      await PlatformConfigurationDomain.updateConfiguration(
+        legacyConfig!.service_instance_id,
+        { status: PlatformConfigurationStatus.Inactive }
+      );
+
+      // When
+      const result =
+        await RegistrationConnectivityApp.refreshPlatformRegistrationConnectivityStatusSingleTenant(
+          {
+            platformId,
+            token,
+            platformVersion: '2.4.0',
+            url: 'http://example.com/tenantId',
+            tenantId,
+            tenantName: 'My tenant',
+            platformIdentifier: PlatformIdentifier.Openaev,
+          }
+        );
+
+      // Then
+      expect(result.status).toBe(
+        PlatformRegistrationConnectivityStatus.Inactive
+      );
+      const config =
+        await PlatformConfigurationDomain.loadConfigurationByPlatform(
+          platformId
+        );
+      expect(config?.status).toBe(PlatformConfigurationStatus.Inactive);
+    });
+
     it('should not attach a tenant id to an OpenCTI registration, whatever platform identifier the request sends', async () => {
       // Given
       const platformId = uuidv4();
@@ -1461,6 +1510,45 @@ describe('registration connectivity app', () => {
         omittedTenantId
       );
       expect(omitted?.status).toBe(PlatformConfigurationStatus.Active);
+    });
+
+    it('should deactivate an omitted tenant when an unregistered tenant is submitted with an active one', async () => {
+      // Given the platform still sends the token of a tenant unregistered on the Hub
+      const platformId = uuidv4();
+      const unregisteredTenantId = uuidv4();
+      const activeTenantId = uuidv4();
+      const omittedTenantId = uuidv4();
+      const unregisteredToken = await registerOpenaevTenant(
+        platformId,
+        unregisteredTenantId
+      );
+      const activeToken = await registerOpenaevTenant(
+        platformId,
+        activeTenantId
+      );
+      await registerOpenaevTenant(platformId, omittedTenantId);
+      const unregistered = await loadTenantConfiguration(
+        platformId,
+        unregisteredTenantId
+      );
+      await PlatformConfigurationDomain.updateConfiguration(
+        unregistered!.service_instance_id,
+        { status: PlatformConfigurationStatus.Inactive }
+      );
+      await ageLastConnectivityCheck(platformId, omittedTenantId, 4);
+
+      // When
+      await refreshAllTenants(platformId, [
+        { tenantId: unregisteredTenantId, token: unregisteredToken },
+        { tenantId: activeTenantId, token: activeToken },
+      ]);
+
+      // Then
+      const omitted = await loadTenantConfiguration(
+        platformId,
+        omittedTenantId
+      );
+      expect(omitted?.status).toBe(PlatformConfigurationStatus.Inactive);
     });
 
     it('should keep an omitted tenant active when its instance refreshed it within the silence threshold', async () => {

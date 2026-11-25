@@ -126,7 +126,6 @@ const handleTenantUpgrade = async ({
         platform_id,
         token,
         withoutTenantId: true,
-        activeOnly: true,
       }
     );
 
@@ -437,17 +436,23 @@ export const RegistrationConnectivityApp = {
       };
     });
 
-    // A tenant token speaks only for its tenant: deactivating the tenants a call omits needs every submitted token
-    // to be valid, and only reaches tenants their own instance has stopped refreshing.
-    const areAllTokensValid =
-      results.length > 0 &&
-      results.every(
-        (result) => result.status === 'fulfilled' && result.value.isTokenValid
-      );
-    if (!areAllTokensValid) {
+    // A tenant token speaks only for its tenant: deactivating the tenants a call omits needs every submitted token to
+    // match a registration, and only reaches tenants their own instance has stopped refreshing. The platform keeps
+    // sending the token of a tenant unregistered on the Hub, so an unregistered tenant does not block the cleanup,
+    // but at least one token must be of an active registration: an unregistered one alone vouches for nothing.
+    const fulfilledOutcomes = results.flatMap((result) =>
+      result.status === 'fulfilled' ? [result.value] : []
+    );
+    const canDeactivateOmittedTenants =
+      fulfilledOutcomes.length === results.length &&
+      fulfilledOutcomes.every(
+        (outcome) => outcome.serviceInstanceId !== null
+      ) &&
+      fulfilledOutcomes.some((outcome) => outcome.isTokenValid);
+    if (!canDeactivateOmittedTenants) {
       if (results.length > 0) {
         logApp.warn(
-          'Skipped the deactivation of omitted tenants: not every submitted tenant token is valid',
+          'Skipped the deactivation of omitted tenants: a submitted tenant token matches no registration, or none is active',
           { platformId: input.platformId }
         );
       }

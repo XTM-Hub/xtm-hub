@@ -194,17 +194,35 @@ export function db<T extends object>(
   return queryContext;
 }
 
+// The cursor of a node is its 1-based position in the whole list, so the cursor of a page's last node is the offset
+// of the next page.
+export const encodeOffsetCursor = (position: number): string =>
+  btoa(String(position));
+
+// Anything unreadable starts from the first page.
+export const decodeOffsetCursor = (cursor?: string | null): number => {
+  if (!cursor) {
+    return 0;
+  }
+  try {
+    const offset = Number(atob(cursor));
+    return Number.isSafeInteger(offset) && offset > 0 ? offset : 0;
+  } catch {
+    return 0;
+  }
+};
+
 export const dbConnections = <T>(
   nodes: T[],
   offset: string | undefined,
   limit: number | undefined,
   totalCount: number
 ) => {
-  const currentOffset = offset ? Number(atob(offset)) : 0;
+  const currentOffset = decodeOffsetCursor(offset);
   const edges: { cursor: string; node: T }[] = nodes.map((n, index) => {
     const nextIndex = index + 1;
     return {
-      cursor: btoa(String(currentOffset + nextIndex)),
+      cursor: encodeOffsetCursor(currentOffset + nextIndex),
       node: n,
     };
   });
@@ -665,7 +683,7 @@ export const paginate = async <T extends object, U>(
     logicalFilters,
     searchTerm,
   } = pagination;
-  const currentOffset = after ? Number(atob(after)) : 0;
+  const currentOffset = decodeOffsetCursor(after);
   queryContext.queryContext({
     ...queryContext.queryContext(),
     ...pagination,

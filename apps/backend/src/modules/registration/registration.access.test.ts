@@ -50,7 +50,7 @@ describe('adminRegisteredPlatforms query', () => {
     operation: `query ($searchTerm: String) {
       adminRegisteredPlatforms(first: 10, searchTerm: $searchTerm) {
         totalCount
-        edges { node { title status credential { kind has_token } } }
+        edges { node { title status credential { kind } } }
       }
     }`,
     guarded: () => vi.spyOn(RegistrationDomain, 'loadAdminRegisteredPlatforms'),
@@ -68,7 +68,7 @@ describe('adminRegisteredPlatforms query', () => {
                 node: {
                   title,
                   status: PlatformConfigurationStatus.Active,
-                  credential: { kind: 'token', has_token: true },
+                  credential: { kind: 'token' },
                 },
               },
             ],
@@ -84,8 +84,7 @@ describe('adminUnregisterPlatform mutation', () => {
   TestHelper.expectAccessMatrix({
     operation: `mutation ($serviceInstanceId: ServiceInstanceId!) {
       adminUnregisterPlatform(serviceInstanceId: $serviceInstanceId) {
-        title
-        status
+        success
       }
     }`,
     guarded: () => vi.spyOn(RegistrationApp, 'adminUnregisterPlatform'),
@@ -101,10 +100,7 @@ describe('adminUnregisterPlatform mutation', () => {
           ),
         },
         expectedData: {
-          adminUnregisterPlatform: {
-            title,
-            status: PlatformConfigurationStatus.Inactive,
-          },
+          adminUnregisterPlatform: { success: true },
         },
         cleanup,
       };

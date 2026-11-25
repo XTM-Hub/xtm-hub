@@ -308,7 +308,7 @@ export const TelemetryHelper = {
   },
 
   buildUnregisterEvent: (
-    organization: Organization | undefined,
+    organization: Organization,
     user_id: UserId,
     platform_identifier: PlatformIdentifier,
     platform_id: string,

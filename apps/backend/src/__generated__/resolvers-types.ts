@@ -1211,7 +1211,7 @@ export type Mutation = {
   adminCancelDeploymentRequest?: Maybe<DeploymentRequest>;
   adminEditUser: User;
   /** Unregisters a platform without being a member of its organization. Does nothing on an inactive registration. */
-  adminUnregisterPlatform: AdminRegisteredPlatform;
+  adminUnregisterPlatform: Success;
   autoRegisterPlatform: Success;
   bulkAcceptPendingUserInOrganization?: Maybe<Success>;
   bulkRemovePendingUserFromOrganization?: Maybe<Success>;
@@ -2666,7 +2666,6 @@ export type RegisteredPlatformByPlatformIdInput = {
 /** The current credential of a registration. It says which credential exists, never its value. */
 export type RegisteredPlatformCredential = {
   __typename?: 'RegisteredPlatformCredential';
-  has_token: Scalars['Boolean']['output'];
   kind: RegisteredPlatformCredentialKind;
 };
 
@@ -4951,7 +4950,7 @@ export type MutationResolvers<ContextType = PortalContext, ParentType extends Re
   adminAddUser?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType, RequireFields<MutationAdminAddUserArgs, 'input'>>;
   adminCancelDeploymentRequest?: Resolver<Maybe<ResolversTypes['DeploymentRequest']>, ParentType, ContextType, RequireFields<MutationAdminCancelDeploymentRequestArgs, 'deploymentRequestId'>>;
   adminEditUser?: Resolver<ResolversTypes['User'], ParentType, ContextType, RequireFields<MutationAdminEditUserArgs, 'id' | 'input'>>;
-  adminUnregisterPlatform?: Resolver<ResolversTypes['AdminRegisteredPlatform'], ParentType, ContextType, RequireFields<MutationAdminUnregisterPlatformArgs, 'serviceInstanceId'>>;
+  adminUnregisterPlatform?: Resolver<ResolversTypes['Success'], ParentType, ContextType, RequireFields<MutationAdminUnregisterPlatformArgs, 'serviceInstanceId'>>;
   autoRegisterPlatform?: Resolver<ResolversTypes['Success'], ParentType, ContextType, Partial<MutationAutoRegisterPlatformArgs>>;
   bulkAcceptPendingUserInOrganization?: Resolver<Maybe<ResolversTypes['Success']>, ParentType, ContextType, RequireFields<MutationBulkAcceptPendingUserInOrganizationArgs, 'input'>>;
   bulkRemovePendingUserFromOrganization?: Resolver<Maybe<ResolversTypes['Success']>, ParentType, ContextType, RequireFields<MutationBulkRemovePendingUserFromOrganizationArgs, 'input'>>;
@@ -5367,7 +5366,6 @@ export type RegisteredPlatformResolvers<ContextType = PortalContext, ParentType 
 }>;
 
 export type RegisteredPlatformCredentialResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['RegisteredPlatformCredential'] = ResolversParentTypes['RegisteredPlatformCredential']> = ResolversObject<{
-  has_token?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   kind?: Resolver<ResolversTypes['RegisteredPlatformCredentialKind'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;

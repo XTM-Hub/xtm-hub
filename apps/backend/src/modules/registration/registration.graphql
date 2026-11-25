@@ -188,7 +188,6 @@ The current credential of a registration. It says which credential exists, never
 """
 type RegisteredPlatformCredential {
   kind: RegisteredPlatformCredentialKind!
-  has_token: Boolean!
 }
 
 type AdminRegisteredPlatformOrganization {
@@ -280,9 +279,7 @@ type Mutation {
   registerPlatform(input: RegisterPlatformInput!): RegistrationResponse! @auth
   unregisterPlatform(input: UnregisterPlatformInput!): Success! @auth
   "Unregisters a platform without being a member of its organization. Does nothing on an inactive registration."
-  adminUnregisterPlatform(
-    serviceInstanceId: ServiceInstanceId!
-  ): AdminRegisteredPlatform!
+  adminUnregisterPlatform(serviceInstanceId: ServiceInstanceId!): Success!
   refreshUserPlatformToken: RefreshUserPlatformTokenResponse! @auth
   # Warning ! Used by OpenCTI
   refreshPlatformRegistrationConnectivityStatus(

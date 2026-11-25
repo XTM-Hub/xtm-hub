@@ -34,7 +34,6 @@ import {
   DeploymentRequestUseCase,
   NewsFeedItemType,
   OrderingMode,
-  OrganizationCapability,
   PlatformConfigurationStatus,
   PlatformContract,
   PlatformIdentifier,
@@ -49,13 +48,11 @@ import { requestContext } from '../../context/request.context';
 import DeploymentRequest, {
   DeploymentRequestId,
 } from '../../model/kanel/public/DeploymentRequest';
-import { OrganizationId } from '../../model/kanel/public/Organization';
 import PlatformConfiguration from '../../model/kanel/public/PlatformConfiguration';
 import ServiceInstance, {
   ServiceInstanceId,
 } from '../../model/kanel/public/ServiceInstance';
 import { SubscriptionId } from '../../model/kanel/public/Subscription';
-import { UserId } from '../../model/kanel/public/User';
 import * as MailService from '../../server/mail-service';
 import { PgBossProducer } from '../../thirdparty/pgboss/producer';
 import { REGISTRATION_QUEUES } from '../../thirdparty/pgboss/registration.jobs';
@@ -1480,314 +1477,6 @@ describe('registration app', () => {
     });
   });
 
-  describe('registerPlatform, taking over a platform of another organization', () => {
-    const OWNER_ORGANIZATION_ID = TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID;
-    let platformId: string;
-    let ownerToken: string;
-    let serviceInstanceId: ServiceInstanceId;
-    let createdOrganizationIds: OrganizationId[];
-    let createdUserIds: UserId[];
-
-    const buildPlatform = (): PlatformInput => ({
-      id: platformId,
-      title: 'My OpenCTI platform',
-      url: 'http://example.com',
-      contract: PlatformContract.Ee,
-      version: '6.8.0',
-    });
-
-    // A member of a new organization, which is not the owner one, acting as the request user
-    const createCallerOfAnotherOrganization = async ({
-      capabilities,
-      extraOrganizations = 0,
-    }: {
-      capabilities: OrganizationCapability[];
-      extraOrganizations?: number;
-    }) => {
-      const { id: organizationId } = await TestHelper.organization.create();
-      createdOrganizationIds.push(organizationId);
-      const { user, userOrganization } =
-        await TestHelper.user.insertInOrganization(organizationId);
-      createdUserIds.push(user.id);
-      for (const name of capabilities) {
-        await TestHelper.user_OrganizationCapability.create({
-          user_organization_id: userOrganization.id,
-          name,
-        });
-      }
-      for (let index = 0; index < extraOrganizations; index++) {
-        const { id: extraOrganizationId } =
-          await TestHelper.organization.create();
-        createdOrganizationIds.push(extraOrganizationId);
-        await TestHelper.user_Organization.create({
-          user_id: user.id,
-          organization_id: extraOrganizationId,
-        });
-      }
-      const callerContext = {
-        user: {
-          ...requestContextRegistererUserSecondOrga.user,
-          id: user.id,
-          email: user.email,
-          selected_organization_id: organizationId,
-        },
-      };
-      requestContext.set(callerContext);
-      return { organizationId, userId: user.id, callerContext };
-    };
-
-    const loadOwnerOrganizationId = async () =>
-      (
-        await TestHelper.subscription.load({
-          service_instance_id: serviceInstanceId,
-        })
-      )?.organization_id;
-
-    beforeEach(async () => {
-      createdOrganizationIds = [];
-      createdUserIds = [];
-      platformId = uuidv4();
-
-      // Given a platform registered by the owner organization
-      requestContext.set(requestContextRegistererUserSecondOrga);
-      ({ token: ownerToken } = await RegistrationApp.registerPlatform({
-        organizationId: OWNER_ORGANIZATION_ID,
-        platform: buildPlatform(),
-        identifier: PlatformIdentifier.Opencti,
-      }));
-      const registration =
-        await PlatformConfigurationDomain.loadConfigurationByPlatform(
-          platformId
-        );
-      serviceInstanceId = registration!.service_instance_id;
-    });
-
-    afterEach(async () => {
-      await TestHelper.subscription.delete({
-        service_instance_id: serviceInstanceId,
-      });
-      await PlatformConfigurationDomain.deleteConfigurationBy({
-        service_instance_id: serviceInstanceId,
-      });
-      await ServiceInstanceDomain.deleteServiceInstanceBy({
-        id: serviceInstanceId,
-      });
-      for (const id of createdUserIds) {
-        await TestHelper.user.delete({ id });
-      }
-      for (const id of createdOrganizationIds) {
-        await TestHelper.organization.delete({ id });
-      }
-    });
-
-    describe('when the registration was unregistered', () => {
-      beforeEach(async () => {
-        await RegistrationApp.unregisterPlatform({
-          platformId,
-          identifier: PlatformIdentifier.Opencti,
-        });
-      });
-
-      it('should let a user of another organization, who only manages platform registrations on it, take the platform over', async () => {
-        // Given
-        const { organizationId, userId } =
-          await createCallerOfAnotherOrganization({
-            capabilities: [OrganizationCapability.ManagePlatformRegistration],
-          });
-
-        // When
-        const { token } = await RegistrationApp.registerPlatform({
-          organizationId,
-          platform: { ...buildPlatform(), title: 'Taken over' },
-          identifier: PlatformIdentifier.Opencti,
-        });
-
-        // Then
-        expect(await loadOwnerOrganizationId()).toBe(organizationId);
-        expect(token).not.toBe(ownerToken);
-        const registration =
-          await PlatformConfigurationDomain.loadConfigurationByPlatform(
-            platformId
-          );
-        expect(registration).toMatchObject({
-          service_instance_id: serviceInstanceId,
-          status: PlatformConfigurationStatus.Active,
-          token,
-          registerer_id: userId,
-          platform_title: 'Taken over',
-        });
-      });
-
-      it('should let only one of two users of other organizations take it over when they do it at the same time', async () => {
-        // Given two users, each managing platform registrations in their own organization only
-        const first = await createCallerOfAnotherOrganization({
-          capabilities: [OrganizationCapability.ManagePlatformRegistration],
-        });
-        const second = await createCallerOfAnotherOrganization({
-          capabilities: [OrganizationCapability.ManagePlatformRegistration],
-        });
-        // The test setup keeps one request context per test: each concurrent call needs the real one to act as its
-        // own user. The next test gets the test setup's context back.
-        Object.assign(
-          requestContext,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (globalThis as any).__originalRequestContext
-        );
-        // Both have read the unregistered registration before either takes it over: without this, the first could
-        // commit before the second starts, and the test would not race
-        const loadOrganizationBy = OrganizationDomain.loadOrganizationBy;
-        let arrivedCallers = 0;
-        let releaseCallers = () => {};
-        const bothCallersArrived = new Promise<void>((resolve) => {
-          releaseCallers = resolve;
-        });
-        vi.spyOn(OrganizationDomain, 'loadOrganizationBy').mockImplementation(
-          async (field) => {
-            arrivedCallers += 1;
-            if (arrivedCallers === 2) {
-              releaseCallers();
-            }
-            await bothCallersArrived;
-            return loadOrganizationBy(field);
-          }
-        );
-        const takeOver = (caller: typeof first) =>
-          requestContext.run(caller.callerContext, () =>
-            RegistrationApp.registerPlatform({
-              organizationId: caller.organizationId,
-              platform: buildPlatform(),
-              identifier: PlatformIdentifier.Opencti,
-            })
-          );
-
-        // When
-        const results = await Promise.allSettled([
-          takeOver(first),
-          takeOver(second),
-        ]);
-
-        // Then the second one finds the platform active in the organization of the first one
-        const fulfilled = results.flatMap((result, index) =>
-          result.status === 'fulfilled'
-            ? [
-                {
-                  caller: index === 0 ? first : second,
-                  token: result.value.token,
-                },
-              ]
-            : []
-        );
-        const rejected = results.flatMap((result) =>
-          result.status === 'rejected' ? [result.reason] : []
-        );
-        expect(fulfilled).toHaveLength(1);
-        expect(rejected).toEqual([
-          expect.objectContaining({
-            message: ErrorCode.UserIsNotInOrganization,
-          }),
-        ]);
-        const [winner] = fulfilled;
-        expect(await loadOwnerOrganizationId()).toBe(
-          winner!.caller.organizationId
-        );
-        expect(
-          await PlatformConfigurationDomain.loadConfigurationByPlatform(
-            platformId
-          )
-        ).toMatchObject({
-          status: PlatformConfigurationStatus.Active,
-          token: winner!.token,
-          registerer_id: winner!.caller.userId,
-        });
-      });
-
-      it('should refuse a user of another organization who cannot manage platform registrations on it', async () => {
-        // Given
-        const { organizationId } = await createCallerOfAnotherOrganization({
-          capabilities: [],
-        });
-
-        // When
-        const call = RegistrationApp.registerPlatform({
-          organizationId,
-          platform: buildPlatform(),
-          identifier: PlatformIdentifier.Opencti,
-        });
-
-        // Then
-        await expect(call).rejects.toThrow(
-          ErrorCode.MissingCapabilityOnOrganization
-        );
-        expect(await loadOwnerOrganizationId()).toBe(OWNER_ORGANIZATION_ID);
-        expect(
-          await PlatformConfigurationDomain.loadConfigurationByPlatform(
-            platformId
-          )
-        ).toMatchObject({
-          status: PlatformConfigurationStatus.Inactive,
-          token: ownerToken,
-        });
-      });
-
-      it('should still refuse a user who belongs to more than 2 organizations', async () => {
-        // Given
-        const { organizationId } = await createCallerOfAnotherOrganization({
-          capabilities: [OrganizationCapability.ManagePlatformRegistration],
-          extraOrganizations: 2,
-        });
-
-        // When
-        const call = RegistrationApp.registerPlatform({
-          organizationId,
-          platform: buildPlatform(),
-          identifier: PlatformIdentifier.Opencti,
-        });
-
-        // Then
-        await expect(call).rejects.toThrow(
-          ErrorCode.RegistrationOnAnotherOrganizationForbidden
-        );
-        expect(await loadOwnerOrganizationId()).toBe(OWNER_ORGANIZATION_ID);
-        expect(
-          await PlatformConfigurationDomain.loadConfigurationByPlatform(
-            platformId
-          )
-        ).toMatchObject({
-          status: PlatformConfigurationStatus.Inactive,
-          token: ownerToken,
-        });
-      });
-    });
-
-    describe('when the registration is still active', () => {
-      it('should refuse a user of another organization who does not manage the owner organization', async () => {
-        // Given
-        const { organizationId } = await createCallerOfAnotherOrganization({
-          capabilities: [OrganizationCapability.ManagePlatformRegistration],
-        });
-
-        // When
-        const call = RegistrationApp.registerPlatform({
-          organizationId,
-          platform: buildPlatform(),
-          identifier: PlatformIdentifier.Opencti,
-        });
-
-        // Then
-        await expect(call).rejects.toThrow(ErrorCode.UserIsNotInOrganization);
-        expect(await loadOwnerOrganizationId()).toBe(OWNER_ORGANIZATION_ID);
-        expect(
-          await PlatformConfigurationDomain.loadConfigurationByPlatform(
-            platformId
-          )
-        ).toMatchObject({
-          status: PlatformConfigurationStatus.Active,
-          token: ownerToken,
-        });
-      });
-    });
-  });
-
   describe('refreshCommercialModel', () => {
     const createPlatform = async (commercialModel: CommercialModel) => {
       const serviceInstanceId = uuidv4() as ServiceInstanceId;
@@ -2115,6 +1804,44 @@ describe('registration app', () => {
 
       await expect(call).rejects.toThrow(
         ErrorCode.MissingCapabilityOnOrganization
+      );
+    });
+
+    it.each([
+      {
+        name: 'a member of the owner organization who manages platform registrations',
+        context: requestContextRegistererUserSecondOrga,
+      },
+      {
+        name: 'an administrator of the owner organization',
+        context: requestContextAdminSecondOrga,
+      },
+      {
+        name: 'a platform admin outside the owner organization',
+        context: requestContextAdminUser,
+      },
+    ])('should let $name unregister the platform', async ({ context }) => {
+      // Given a platform registered in SECOND ORGA
+      await RegistrationApp.registerPlatform({
+        organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        platform,
+        identifier: PlatformIdentifier.Opencti,
+      });
+      requestContext.set(context);
+
+      // When
+      await RegistrationApp.unregisterPlatform({
+        platformId,
+        identifier: PlatformIdentifier.Opencti,
+      });
+
+      // Then
+      const platformConfiguration =
+        await PlatformConfigurationDomain.loadConfigurationByPlatform(
+          platformId
+        );
+      expect(platformConfiguration?.status).toBe(
+        PlatformConfigurationStatus.Inactive
       );
     });
 
@@ -3175,7 +2902,6 @@ describe('registration app, platform admin', () => {
         },
         credential: {
           kind: RegisteredPlatformCredentialKind.Token,
-          has_token: true,
         },
         is_trial: false,
       });
@@ -3389,6 +3115,15 @@ describe('registration app, platform admin', () => {
       vi.useRealTimers();
     });
 
+    // The row the admin list shows for a service instance.
+    const loadListedPlatform = async (serviceInstanceId: ServiceInstanceId) =>
+      (
+        await RegistrationApp.loadAdminRegisteredPlatforms({
+          first: 1,
+          searchTerm: serviceInstanceId,
+        })
+      ).edges[0]?.node;
+
     it('should set the status to inactive, tell the organization admins and send telemetry', async () => {
       // Given
       const configuration = await createAdminFixture({
@@ -3502,7 +3237,7 @@ describe('registration app, platform admin', () => {
       const telemetrySpy = vi
         .spyOn(TelemetryApp, 'sendTelemetryEvent')
         .mockResolvedValue();
-      const listed = await RegistrationApp.loadAdminRegisteredPlatform(
+      const listed = await loadListedPlatform(
         configuration.service_instance_id
       );
 
@@ -3522,7 +3257,7 @@ describe('registration app, platform admin', () => {
       );
     });
 
-    it('should unregister a platform without owner organization, mail nobody and send telemetry without organization', async () => {
+    it('should unregister a platform without owner organization, mail nobody and send no telemetry', async () => {
       // Given the list shows a registration with no subscription, without its organization
       const serviceInstance = await TestHelper.serviceInstance.create({
         service_definition_id: SERVICES.DEFINITIONS.OPENCTI_REGISTRATION.ID,
@@ -3535,7 +3270,7 @@ describe('registration app, platform admin', () => {
       const telemetrySpy = vi
         .spyOn(TelemetryApp, 'sendTelemetryEvent')
         .mockResolvedValue();
-      const listed = await RegistrationApp.loadAdminRegisteredPlatform(
+      const listed = await loadListedPlatform(
         configuration.service_instance_id
       );
 
@@ -3545,21 +3280,35 @@ describe('registration app, platform admin', () => {
       );
 
       // Then
-      expect(listed.organization).toBeNull();
+      expect(listed?.organization).toBeNull();
       const stored = await TestHelper.platformConfiguration.load({
         service_instance_id: configuration.service_instance_id,
       });
       expect(stored?.status).toBe(PlatformConfigurationStatus.Inactive);
       expect(sendMailSpy).not.toHaveBeenCalled();
-      expect(telemetrySpy).toHaveBeenCalledOnce();
-      const [event] = telemetrySpy.mock.calls[0] ?? [];
-      expect(event).toMatchObject({
-        event_type: TelemetryEventType.UNREGISTER,
-        organization_type: TelemetryOrganizationType.PUBLIC,
-        user_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
-        platform_id: configuration.platform_id,
+      expect(telemetrySpy).not.toHaveBeenCalled();
+    });
+
+    it('should refuse a registration the admin list hides, and leave it active', async () => {
+      // Given a registration of a disabled service instance
+      const configuration = await createAdminFixture({
+        title: 'Disabled instance',
+        creationStatus: ServiceInstanceCreationStatus.Disabled,
       });
-      expect(event?.organization_id).toBeUndefined();
+      const sendMailSpy = vi.spyOn(MailService, 'sendMail').mockResolvedValue();
+
+      // When
+      const call = RegistrationApp.adminUnregisterPlatform(
+        configuration.service_instance_id
+      );
+
+      // Then
+      await expect(call).rejects.toThrow(ErrorCode.PlatformNotRegistered);
+      const stored = await TestHelper.platformConfiguration.load({
+        service_instance_id: configuration.service_instance_id,
+      });
+      expect(stored?.status).toBe(PlatformConfigurationStatus.Active);
+      expect(sendMailSpy).not.toHaveBeenCalled();
     });
 
     it('should do nothing on an inactive registration', async () => {
