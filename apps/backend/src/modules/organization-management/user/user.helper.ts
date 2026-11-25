@@ -5,7 +5,10 @@ import {
   RolePortal,
   UserAccountStatus,
 } from '../../../__generated__/resolvers-types';
-import { withTransaction } from '../../../context/database.context';
+import {
+  runAfterCommit,
+  withTransaction,
+} from '../../../context/database.context';
 import { OrganizationId } from '../../../model/kanel/public/Organization';
 import User, { UserId, UserMutator } from '../../../model/kanel/public/User';
 import {
@@ -13,7 +16,6 @@ import {
   UserWithOrganizationsAndRole,
 } from '../../../model/user';
 import { dispatch } from '../../../pub';
-import { updateUserSession } from '../../../session-store-manager';
 import { MinIOClient } from '../../../thirdparty/minio/client';
 import { logApp } from '../../../utils/app-logger.util';
 import { ErrorCode, NotFoundErrorCode } from '../../../utils/error/error.code';
@@ -21,6 +23,7 @@ import { NotFoundError } from '../../../utils/error/error.util';
 import { OrganizationDomain } from '../organization/organization.domain';
 import { UserDomain } from './user-domain/user.domain';
 import { UserOrganizationDomain } from './user-organization/user-organization.domain';
+import { UserSessionHelper } from './user-session/user-session.helper';
 
 const countOrganizationAdministrators = async (
   organizationId: OrganizationId
@@ -68,12 +71,9 @@ const updateUserCapabilities = async ({
       orgCapabilities,
     });
 
-    const user = await UserDomain.loadUserDetails({
+    return UserDomain.loadUserDetails({
       'User.id': user_id,
     });
-
-    updateUserSession(user);
-    return user;
   });
   const userMapped = UserHelper.mapUserToGraphqlUser(user);
   return { user, userMapped };
@@ -246,16 +246,20 @@ export const UserHelper = {
         orgCapabilities,
       });
     });
+    // Both wait for the outermost transaction to commit, in this order: the user's
+    // browser reacts to MeUser with queries that must find the session refreshed
+    await UserSessionHelper.updateUserSession(user_id);
+    await runAfterCommit(async () => {
+      await dispatch('User', 'edit', user);
+      await dispatch('MeUser', 'edit', userMapped, 'User');
+      const userPendingPayload: GraphqlUser = {
+        ...userMapped,
+        pending_organization_id: organization_id,
+      };
 
-    await dispatch('User', 'edit', user);
-    await dispatch('MeUser', 'edit', userMapped, 'User');
-    const userPendingPayload: GraphqlUser = {
-      ...userMapped,
-      pending_organization_id: organization_id,
-    };
-
-    await dispatch('UserPending', 'delete', userPendingPayload, 'User');
-    await dispatch('User', 'add', user);
+      await dispatch('UserPending', 'delete', userPendingPayload, 'User');
+      await dispatch('User', 'add', user);
+    });
     return user;
   },
 
@@ -273,9 +277,13 @@ export const UserHelper = {
       organization_id,
       orgCapabilities,
     });
-
-    await dispatch('User', 'edit', user);
-    await dispatch('MeUser', 'edit', userMapped, 'User');
+    // Both wait for the outermost transaction to commit, in this order: the user's
+    // browser reacts to MeUser with queries that must find the session refreshed
+    await UserSessionHelper.updateUserSession(user_id);
+    await runAfterCommit(async () => {
+      await dispatch('User', 'edit', user);
+      await dispatch('MeUser', 'edit', userMapped, 'User');
+    });
 
     return user;
   },
@@ -287,9 +295,12 @@ export const UserHelper = {
     if (!user) {
       throw NotFoundError(NotFoundErrorCode.UserNotFound);
     }
-    await updateUserSession(user);
+    // Reloads the user under the per-user session lock: the user loaded above may be
+    // overtaken by a concurrent change before the sessions are written
+    await UserSessionHelper.updateUserSession(userId);
     const mappedUser = UserHelper.mapUserToGraphqlUser(user);
-    await dispatch('User', 'edit', mappedUser);
+    // After the session refresh, which waits for the outermost transaction to commit
+    await runAfterCommit(() => dispatch('User', 'edit', mappedUser));
     return mappedUser;
   },
 };

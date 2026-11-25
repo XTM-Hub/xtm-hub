@@ -21,7 +21,6 @@ import Organization, {
 } from '../../../../model/kanel/public/Organization';
 import User, { UserId } from '../../../../model/kanel/public/User';
 import * as MailService from '../../../../server/mail-service';
-import * as sessionStoreManager from '../../../../session-store-manager';
 import { ErrorCode } from '../../../../utils/error/error.code';
 import { OrganizationHelper } from '../../organization/organization.helper';
 import { UserDomain } from '../user-domain/user.domain';
@@ -824,9 +823,6 @@ describe('usersOrganizationApp', () => {
     });
 
     it('should select the personal space in the user sessions when the selected organization is removed', async () => {
-      const updateUserSessionSpy = vi
-        .spyOn(sessionStoreManager, 'updateUserSession')
-        .mockResolvedValue(undefined);
       const caller = await createUser();
       await addMember(caller, [
         OrganizationCapability.AdministrateOrganization,
@@ -834,6 +830,9 @@ describe('usersOrganizationApp', () => {
       const target = await createUser();
       await addMember(target, []);
       await selectOrganization(target, organization.id);
+      const sessionId = await TestHelper.session.create({
+        user: (await UserDomain.loadUserBy({ 'User.id': target.id }))!,
+      });
       await actAs(caller);
 
       await UserOrganizationApp.removeUserFromOrganization({
@@ -841,16 +840,15 @@ describe('usersOrganizationApp', () => {
         organizationId: organization.id,
       });
 
-      expect(updateUserSessionSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          id: target.id,
-          selected_organization_id:
-            OrganizationHelper.personalSpaceIdOf(target),
-          organizations: expect.not.arrayContaining([
-            expect.objectContaining({ id: organization.id }),
-          ]),
-        })
-      );
+      const session = await TestHelper.session.load(sessionId);
+      await TestHelper.session.delete(sessionId);
+      expect(session?.user).toMatchObject({
+        id: target.id,
+        selected_organization_id: OrganizationHelper.personalSpaceIdOf(target),
+        organizations: expect.not.arrayContaining([
+          expect.objectContaining({ id: organization.id }),
+        ]),
+      });
     });
 
     it('should keep the selected organization when another organization is removed', async () => {

@@ -78,6 +78,7 @@ import {
   TestPlatformConfigurationHelper,
 } from './test-platform-configuration.helper';
 import { TestAccessMatrixHelper } from './test.access-matrix.helper';
+import { TestAdvisoryLockHelper } from './test.advisory-lock.helper';
 import { TestApiTokenHelper } from './test.api-token.helper';
 import { TestAuth0Helper } from './test.auth0.helper';
 import { TestContentTranslationHelper } from './test.content-translation.helper';
@@ -113,6 +114,7 @@ export const TestHelper = {
   ...TestSessionHelper,
   ...TestAccessMatrixHelper,
   ...TestApiTokenHelper,
+  ...TestAdvisoryLockHelper,
   subscription: {
     create: async (data?: Partial<Subscription>): Promise<Subscription> => {
       const [subscription] = await db<Subscription>('Subscription')

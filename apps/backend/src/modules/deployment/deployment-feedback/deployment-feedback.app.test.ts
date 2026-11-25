@@ -10,8 +10,8 @@ import { requestContext } from '../../../context/request.context';
 import { DeploymentRequestId } from '../../../model/kanel/public/DeploymentRequest';
 import { OrganizationId } from '../../../model/kanel/public/Organization';
 import { UserId } from '../../../model/kanel/public/User';
+import { UserLoadUserBy } from '../../../model/user';
 import * as pub from '../../../pub';
-import * as sessionStoreManager from '../../../session-store-manager';
 import {
   AlreadyExistsErrorCode,
   ErrorCode,
@@ -28,6 +28,20 @@ const CURRENT_USER = TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2;
 const JUSTIFICATION = 'Deployment took too long';
 const DEPLOYMENT_REQUEST_ID = uuidv4() as DeploymentRequestId;
 
+const createdSessionIds: string[] = [];
+
+// An active session of the current user, holding a snapshot taken before the feedback
+const createCurrentUserSession = async () => {
+  const sessionId = await TestHelper.session.create({
+    user: {
+      id: CURRENT_USER.ID,
+      has_replied_satisfaction: null,
+    } as UserLoadUserBy,
+  });
+  createdSessionIds.push(sessionId);
+  return sessionId;
+};
+
 const createDeploymentRequest = (
   organizationRequesterId: OrganizationId,
   userRequesterId: UserId
@@ -42,13 +56,15 @@ describe('deploymentFeedbackApp', () => {
   describe('giveDeploymentFeedback', () => {
     beforeEach(() => {
       vi.spyOn(TelemetryApp, 'sendTelemetryEvent').mockResolvedValue();
-      vi.spyOn(sessionStoreManager, 'updateUserSession').mockResolvedValue();
       vi.spyOn(pub, 'dispatch').mockResolvedValue();
     });
 
     afterEach(async () => {
       vi.useRealTimers();
       vi.restoreAllMocks();
+      await Promise.all(
+        createdSessionIds.splice(0).map(TestHelper.session.delete)
+      );
       await TestHelper.deploymentRequest.deleteBundle(DEPLOYMENT_REQUEST_ID);
       await TestHelper.user.update(
         { id: CURRENT_USER.ID },
@@ -117,6 +133,7 @@ describe('deploymentFeedbackApp', () => {
           TEST_ORGANIZATIONS.FILIGRAN.ID,
           CURRENT_USER.ID
         );
+        const sessionId = await createCurrentUserSession();
 
         // When
         await DeploymentFeedbackApp.giveDeploymentFeedback({
@@ -125,10 +142,8 @@ describe('deploymentFeedbackApp', () => {
         });
 
         // Then
-        expect(sessionStoreManager.updateUserSession).toHaveBeenCalledOnce();
-        expect(
-          vi.mocked(sessionStoreManager.updateUserSession).mock.calls[0]![0]
-        ).toMatchObject({
+        const session = await TestHelper.session.load(sessionId);
+        expect(session?.user).toMatchObject({
           id: CURRENT_USER.ID,
           email: CURRENT_USER.EMAIL,
           selected_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
@@ -161,6 +176,7 @@ describe('deploymentFeedbackApp', () => {
           { id: CURRENT_USER.ID },
           { has_replied_satisfaction: storedAnswer }
         );
+        const sessionId = await createCurrentUserSession();
         requestContext.update({
           user: {
             ...contextSimpleUserFiligran2.user,
@@ -182,9 +198,8 @@ describe('deploymentFeedbackApp', () => {
         const user = await TestHelper.user.load({ id: CURRENT_USER.ID });
         expect(user).toMatchObject({ has_replied_satisfaction: storedAnswer });
         expect(TelemetryApp.sendTelemetryEvent).not.toHaveBeenCalled();
-        expect(
-          vi.mocked(sessionStoreManager.updateUserSession).mock.calls[0]![0]
-        ).toMatchObject({
+        const session = await TestHelper.session.load(sessionId);
+        expect(session?.user).toMatchObject({
           id: CURRENT_USER.ID,
           has_replied_satisfaction: storedAnswer,
         });

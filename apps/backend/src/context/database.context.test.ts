@@ -1,5 +1,13 @@
 import { Knex } from 'knex';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
 import { database, db } from '../../knexfile';
 import { databaseContext } from './database.context';
 
@@ -316,6 +324,60 @@ describe('databaseContext Tests', () => {
 
       expect(lockedTx).toBe(outerTx);
       expect(lockedTx).toBeDefined();
+    });
+  });
+
+  describe('runAfterCommit', () => {
+    it('should run the callback at once outside a transaction', async () => {
+      // Given
+      const callback = vi.fn().mockResolvedValue(undefined);
+
+      // When
+      await databaseContext.runAfterCommit(callback);
+
+      // Then
+      expect(callback).toHaveBeenCalledOnce();
+    });
+
+    it('should run the callback once the outermost transaction commits, outside of it', async () => {
+      // Given
+      let calledBeforeCommit = false;
+      let itemsSeenByCallback: number | undefined;
+      let inTransactionInCallback: boolean | undefined;
+      const callback = vi.fn(async () => {
+        itemsSeenByCallback = await countItems();
+        inTransactionInCallback = databaseContext.isInTransaction();
+      });
+
+      // When
+      await databaseContext.withTransaction(async () => {
+        await databaseContext.withTransaction(async () => {
+          await createItem('committed');
+          await databaseContext.runAfterCommit(callback);
+        });
+        calledBeforeCommit = callback.mock.calls.length > 0;
+      });
+
+      // Then
+      expect(calledBeforeCommit).toBe(false);
+      expect(callback).toHaveBeenCalledOnce();
+      expect(itemsSeenByCallback).toBe(1);
+      expect(inTransactionInCallback).toBe(false);
+    });
+
+    it('should drop the callback when the transaction rolls back', async () => {
+      // Given
+      const callback = vi.fn().mockResolvedValue(undefined);
+
+      // When
+      const call = databaseContext.withTransaction(async () => {
+        await databaseContext.runAfterCommit(callback);
+        throw new Error('rolled back');
+      });
+
+      // Then
+      await expect(call).rejects.toThrow('rolled back');
+      expect(callback).not.toHaveBeenCalled();
     });
   });
 });

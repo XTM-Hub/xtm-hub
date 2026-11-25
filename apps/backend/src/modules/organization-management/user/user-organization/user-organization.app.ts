@@ -17,7 +17,6 @@ import {
   buildPendingUserActionLink,
   sendMail,
 } from '../../../../server/mail-service';
-import { updateUserSession } from '../../../../session-store-manager';
 import { logApp } from '../../../../utils/app-logger.util';
 import {
   ErrorCode,
@@ -30,6 +29,7 @@ import { OrganizationHelper } from '../../organization/organization.helper';
 import { UserDomain } from '../user-domain/user.domain';
 import { UserOrganizationPendingDomain } from '../user-pending/user-organization-pending.domain';
 import { UserProvisioningApp } from '../user-provisioning/user-provisioning.app';
+import { UserSessionHelper } from '../user-session/user-session.helper';
 import { UserHelper } from '../user.helper';
 import { UserOrganizationDomain } from './user-organization.domain';
 
@@ -271,7 +271,7 @@ export const UserOrganizationApp = {
     if (!updatedUser) {
       throw new Error(ErrorCode.UserNotFound);
     }
-    await updateUserSession(updatedUser);
+    await UserSessionHelper.updateUserSession(userId);
     await dispatch(
       'MeUser',
       'edit',

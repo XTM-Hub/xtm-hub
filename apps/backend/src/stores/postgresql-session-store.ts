@@ -1,4 +1,5 @@
 import { SessionData, Store } from 'express-session';
+import { Knex } from 'knex';
 import { database } from '../../knexfile';
 import { logApp } from '../utils/app-logger.util';
 
@@ -64,6 +65,61 @@ export class PostgreSQLSessionStore extends Store {
   }
 
   /**
+   * The active sessions of a user, looked up through `idx_sessions_user_id`
+   * rather than by loading and parsing every session as `all` does.
+   * With a transaction, the statement runs inside it rather than on a connection of its own.
+   */
+  private activeSessionsOfUser(userId: string, trx?: Knex.Transaction) {
+    const query = database(this.tableName)
+      .whereRaw(`sess->'user'->>'id' = ?`, [userId])
+      .where('expire', '>', new Date());
+    return trx ? query.transacting(trx) : query;
+  }
+
+  /**
+   * Whether the user holds at least one active session.
+   */
+  async hasSessionsOfUser(
+    userId: string,
+    trx?: Knex.Transaction
+  ): Promise<boolean> {
+    const session = await this.activeSessionsOfUser(userId, trx)
+      .select('sid')
+      .first();
+    return !!session;
+  }
+
+  /**
+   * Replace the user stored in every active session of that user, in one statement.
+   * Only the `user` key changes: unlike `set`, it never re-inserts a session destroyed
+   * meanwhile, nor rewrites the cookie or the expiry from a stale snapshot.
+   * Resolves to the number of sessions updated.
+   */
+  updateSessionsUser(
+    userId: string,
+    user: { id: string },
+    trx?: Knex.Transaction
+  ): Promise<number> {
+    return this.activeSessionsOfUser(userId, trx).update({
+      sess: database.raw(`jsonb_set(sess, '{user}', ?::jsonb)`, [
+        JSON.stringify(user),
+      ]),
+      updated_at: new Date(),
+    });
+  }
+
+  /**
+   * Destroy every active session of a user, in one statement.
+   * Resolves to the number of sessions destroyed.
+   */
+  destroySessionsOfUser(
+    userId: string,
+    trx?: Knex.Transaction
+  ): Promise<number> {
+    return this.activeSessionsOfUser(userId, trx).del();
+  }
+
+  /**
    * Destroy a session
    */
   override destroy(sid: string, callback?: (err?: unknown) => void): void {
@@ -80,7 +136,7 @@ export class PostgreSQLSessionStore extends Store {
   }
 
   /**
-   * Get all sessions (required for updateUserSession function)
+   * Get all sessions (part of the express-session store API)
    */
   override all(
     callback: (

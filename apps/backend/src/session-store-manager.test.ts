@@ -1,31 +1,20 @@
-import { MemoryStore, SessionData } from 'express-session';
-import { Knex } from 'knex';
+import { SessionData } from 'express-session';
 import { v4 as uuidv4 } from 'uuid';
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import { getDbTestConnection } from '../tests/config-test';
-import { UserId } from './model/kanel/public/User';
-import { UserWithOrganizationsAndRole } from './model/user';
+import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
+import { TestHelper } from '../tests/helper/test.helper';
+import { UserLoadUserBy } from './model/user';
 import {
   destroyUserSessions,
   getSessionStoreInstance,
-  updateUserSession,
+  hasActiveUserSessions,
+  refreshUserSessions,
 } from './session-store-manager';
-
-type SessionDataWithUser = SessionData & {
-  user?: UserWithOrganizationsAndRole;
-};
+import { MemorySessionStore } from './stores/memory-session-store';
+import { PostgreSQLSessionStore } from './stores/postgresql-session-store';
 
 describe('sessionStoreManager - Configuration-based Store Selection', () => {
-  let db: Knex;
-
-  beforeAll(async () => {
-    db = getDbTestConnection();
-    await db.migrate.latest();
-  });
-
   afterAll(async () => {
-    // eslint-disable-next-line no-restricted-syntax
-    await db('sessions').del();
+    await TestHelper.session.clear();
   });
 
   describe('store Instance', () => {
@@ -53,223 +42,235 @@ describe('sessionStoreManager - Configuration-based Store Selection', () => {
       expect(store).toHaveProperty('destroy');
       expect(store).toHaveProperty('all');
 
-      // Should be either MemoryStore or PostgreSQLSessionStore
+      // Should be either MemorySessionStore or PostgreSQLSessionStore
       const isValidStore =
-        store.constructor.name === 'MemoryStore' ||
-        store.constructor.name === 'PostgreSQLSessionStore';
+        store instanceof MemorySessionStore ||
+        store instanceof PostgreSQLSessionStore;
       expect(isValidStore).toBe(true);
     });
   });
 
-  describe('updateUserSession functionality', () => {
-    it('should handle updateUserSession without errors', async () => {
-      const testUser: UserWithOrganizationsAndRole = {
-        id: 'test-user-' + uuidv4(),
-        email: 'test@example.com',
-        first_name: 'Test',
-        last_name: 'User',
-        organizations: [],
-        role: { id: 'role-id', name: 'USER' },
-      } as unknown as UserWithOrganizationsAndRole;
+  describe('destroyUserSessions', () => {
+    const createdSessionIds: string[] = [];
 
-      // Should not throw any errors
-      await expect(updateUserSession(testUser)).resolves.toBeUndefined();
+    const createSession = async (userId: string) => {
+      const sessionId = await TestHelper.session.create({
+        user: { id: userId } as UserLoadUserBy,
+      });
+      createdSessionIds.push(sessionId);
+      return sessionId;
+    };
+
+    afterEach(async () => {
+      vi.restoreAllMocks();
+      await Promise.all(
+        createdSessionIds.splice(0).map(TestHelper.session.delete)
+      );
     });
 
-    describe('destroyUserSessions functionality', () => {
-      it('should destroy all active sessions for the given user', async () => {
-        const userId = 'destroy-target-' + uuidv4();
-        const store = getSessionStoreInstance();
-        const allSpy = vi
-          .spyOn(store, 'all')
-          .mockImplementation(
-            (
-              callback: (
-                err: unknown,
-                sessions?: Record<string, SessionData> | null
-              ) => void
-            ) => {
-              callback(null, {
-                sessionA: { user: { id: userId } },
-                sessionB: { user: { id: 'another-user' } },
-                sessionC: { user: { id: userId } },
-              } as unknown as Record<string, SessionData>);
-            }
-          );
-        const destroySpy = vi
-          .spyOn(store, 'destroy')
-          .mockImplementation(
-            (_sessionId: string, callback?: (err?: unknown) => void) => {
-              callback?.();
-            }
-          );
+    it('should destroy every active session of the user and only those', async () => {
+      // Given
+      const userId = uuidv4();
+      const firstSessionId = await createSession(userId);
+      const secondSessionId = await createSession(userId);
+      const otherSessionId = await createSession(uuidv4());
 
-        await destroyUserSessions(userId);
+      // When
+      await destroyUserSessions(userId);
 
-        expect(destroySpy).toHaveBeenCalledTimes(2);
-        expect(destroySpy).toHaveBeenCalledWith(
-          'sessionA',
-          expect.any(Function)
-        );
-        expect(destroySpy).toHaveBeenCalledWith(
-          'sessionC',
-          expect.any(Function)
-        );
-        allSpy.mockRestore();
-        destroySpy.mockRestore();
-      });
-
-      it('should resolve gracefully when session listing fails', async () => {
-        const store = getSessionStoreInstance();
-        const allSpy = vi
-          .spyOn(store, 'all')
-          .mockImplementation(
-            (
-              callback: (
-                err: unknown,
-                sessions?: Record<string, SessionData> | null
-              ) => void
-            ) => {
-              callback(new Error('cannot list sessions'), null);
-            }
-          );
-        const destroySpy = vi.spyOn(store, 'destroy');
-
-        await expect(
-          destroyUserSessions('error-user-' + uuidv4())
-        ).resolves.toBeUndefined();
-        expect(destroySpy).not.toHaveBeenCalled();
-        allSpy.mockRestore();
-        destroySpy.mockRestore();
-      });
-
-      it('should resolve without destroying sessions when none match the user', async () => {
-        const store = getSessionStoreInstance();
-        const allSpy = vi
-          .spyOn(store, 'all')
-          .mockImplementation(
-            (
-              callback: (
-                err: unknown,
-                sessions?: Record<string, SessionData> | null
-              ) => void
-            ) => {
-              callback(null, {
-                sessionA: { user: { id: 'different-user' } },
-              } as unknown as Record<string, SessionData>);
-            }
-          );
-        const destroySpy = vi.spyOn(store, 'destroy');
-
-        await expect(
-          destroyUserSessions('missing-user-' + uuidv4())
-        ).resolves.toBeUndefined();
-        expect(destroySpy).not.toHaveBeenCalled();
-        allSpy.mockRestore();
-        destroySpy.mockRestore();
-      });
+      // Then
+      expect(await TestHelper.session.load(firstSessionId)).toBeNull();
+      expect(await TestHelper.session.load(secondSessionId)).toBeNull();
+      expect(await TestHelper.session.load(otherSessionId)).not.toBeNull();
     });
 
-    it('should work with actual session data in PostgreSQL store', async () => {
-      const store = getSessionStoreInstance();
+    it('should look the sessions of the user up without scanning every session', async () => {
+      // Given
+      const userId = uuidv4();
+      await createSession(userId);
+      const allSpy = vi.spyOn(getSessionStoreInstance(), 'all');
 
-      // Only test if it's PostgreSQL store (has cleanup method)
-      if ('cleanup' in store) {
-        // eslint-disable-next-line no-restricted-syntax
-        await db('sessions').del();
+      // When
+      await destroyUserSessions(userId);
 
-        const userId = 'update-test-' + uuidv4();
-        const sessionId = 'session-' + uuidv4();
+      // Then
+      expect(allSpy).not.toHaveBeenCalled();
+    });
 
-        const sessionData = {
-          cookie: {
-            maxAge: 3600000,
-            expires: new Date(Date.now() + 3600000),
-            originalMaxAge: 3600000,
-          },
-          user: { id: userId as UserId, first_name: 'Original Name' },
-        } as unknown as SessionDataWithUser;
+    it('should resolve and keep the sessions when the store fails', async () => {
+      // Given
+      const userId = uuidv4();
+      const sessionId = await createSession(userId);
+      vi.spyOn(
+        PostgreSQLSessionStore.prototype,
+        'destroySessionsOfUser'
+      ).mockRejectedValueOnce(new Error('database unavailable'));
 
-        // Create session
-        await new Promise<void>((resolve, reject) => {
-          store.set(sessionId, sessionData, (err) => {
-            if (err) reject(err);
-            else resolve();
-          });
+      // When
+      await expect(destroyUserSessions(userId)).resolves.toBeUndefined();
+
+      // Then
+      expect(await TestHelper.session.load(sessionId)).not.toBeNull();
+    });
+  });
+
+  describe('hasActiveUserSessions', () => {
+    const createdSessionIds: string[] = [];
+
+    afterEach(async () => {
+      vi.restoreAllMocks();
+      await Promise.all(
+        createdSessionIds.splice(0).map(TestHelper.session.delete)
+      );
+    });
+
+    it.each([
+      { context: 'the user holds an active session', hasSession: true },
+      { context: 'the user holds no session', hasSession: false },
+    ])(
+      'should resolve to $hasSession when $context',
+      async ({ hasSession }) => {
+        // Given
+        const userId = uuidv4();
+        if (hasSession) {
+          createdSessionIds.push(
+            await TestHelper.session.create({
+              user: { id: userId } as UserLoadUserBy,
+            })
+          );
+        }
+
+        // When
+        const result = await hasActiveUserSessions(userId);
+
+        // Then
+        expect(result).toBe(hasSession);
+      }
+    );
+
+    it('should resolve to true when the store fails, so the refresh still runs', async () => {
+      // Given
+      vi.spyOn(
+        PostgreSQLSessionStore.prototype,
+        'hasSessionsOfUser'
+      ).mockRejectedValueOnce(new Error('database unavailable'));
+
+      // When
+      const result = await hasActiveUserSessions(uuidv4());
+
+      // Then
+      expect(result).toBe(true);
+    });
+  });
+
+  describe('refreshUserSessions', () => {
+    const createdSessionIds: string[] = [];
+
+    const createSession = async (userId: string) => {
+      const sessionId = await TestHelper.session.create({
+        user: { id: userId, first_name: 'Original' } as UserLoadUserBy,
+        referer: '/redirect-after-login',
+      });
+      createdSessionIds.push(sessionId);
+      return sessionId;
+    };
+
+    const buildUser = (userId: string) =>
+      ({ id: userId, first_name: 'Updated' }) as UserLoadUserBy;
+
+    afterEach(async () => {
+      vi.restoreAllMocks();
+      await Promise.all(
+        createdSessionIds.splice(0).map(TestHelper.session.delete)
+      );
+    });
+
+    it('should only replace the user of every active session of the user', async () => {
+      // Given
+      const userId = uuidv4();
+      const sessionIds = [
+        await createSession(userId),
+        await createSession(userId),
+      ];
+      const sessionsBefore = await Promise.all(
+        sessionIds.map(TestHelper.session.load)
+      );
+      const user = buildUser(userId);
+
+      // When
+      await refreshUserSessions(user);
+
+      // Then
+      for (const [index, sessionId] of sessionIds.entries()) {
+        expect(await TestHelper.session.load(sessionId)).toStrictEqual({
+          ...sessionsBefore[index],
+          user,
         });
-
-        // Update user
-        const updatedUser: UserWithOrganizationsAndRole = {
-          id: userId,
-          email: 'updated@example.com',
-          first_name: 'Updated Name',
-          last_name: 'User',
-          organizations: [],
-          role: { id: 'role-id', name: 'USER' },
-        } as unknown as UserWithOrganizationsAndRole;
-
-        await updateUserSession(updatedUser);
-
-        // Verify update
-        const updatedSession = await new Promise<SessionDataWithUser | null>(
-          (resolve, reject) => {
-            store.get(sessionId, (err, session) => {
-              if (err || !session) reject(err);
-              else resolve(session);
-            });
-          }
-        );
-
-        expect(updatedSession?.user?.first_name).toBe('Updated Name');
       }
     });
 
-    it('should work with Memory store if configured', async () => {
-      const store = getSessionStoreInstance();
+    it('should leave the sessions of other users untouched', async () => {
+      // Given
+      const userId = uuidv4();
+      await createSession(userId);
+      const otherSessionId = await createSession(uuidv4());
+      const otherSessionBefore = await TestHelper.session.load(otherSessionId);
 
-      // Only test if it's Memory store
-      if (store instanceof MemoryStore) {
-        const userId = 'memory-test-' + uuidv4();
-        const sessionId = 'memory-session-' + uuidv4();
+      // When
+      await refreshUserSessions(buildUser(userId));
 
-        const sessionData = {
-          cookie: {
-            maxAge: 3600000,
-            expires: new Date(Date.now() + 3600000),
-            originalMaxAge: 3600000,
-          },
-          user: { id: userId, first_name: 'Memory Original' },
-        } as unknown as SessionDataWithUser;
+      // Then
+      expect(await TestHelper.session.load(otherSessionId)).toStrictEqual(
+        otherSessionBefore
+      );
+    });
 
-        await new Promise<void>((resolve, reject) => {
-          store.set(sessionId, sessionData, (err) => {
-            if (err) reject(err);
-            else resolve();
-          });
-        });
+    it('should not re-insert a destroyed session', async () => {
+      // Given
+      const userId = uuidv4();
+      const sessionId = await createSession(userId);
+      // A logout, or an admin disabling the user, lands before the refresh
+      await TestHelper.session.delete(sessionId);
 
-        const updatedUser: UserWithOrganizationsAndRole = {
-          id: userId,
-          email: 'memory@example.com',
-          first_name: 'Memory Updated',
-          organizations: [],
-          role: { id: 'role-id', name: 'USER' },
-        } as unknown as UserWithOrganizationsAndRole;
+      // When
+      await refreshUserSessions(buildUser(userId));
 
-        await updateUserSession(updatedUser);
+      // Then
+      expect(await TestHelper.session.load(sessionId)).toBeNull();
+    });
 
-        const updatedSession = await new Promise<SessionDataWithUser | null>(
-          (resolve, reject) => {
-            store.get(sessionId, (err, session) => {
-              if (err) reject(err);
-              else resolve(session ?? null);
-            });
-          }
-        );
+    it('should refresh the sessions of the user without scanning every session', async () => {
+      // Given
+      const userId = uuidv4();
+      await createSession(userId);
+      const allSpy = vi.spyOn(getSessionStoreInstance(), 'all');
 
-        expect(updatedSession?.user?.first_name).toBe('Memory Updated');
-      }
-      // Skip if not Memory store - test passes automatically
+      // When
+      await refreshUserSessions(buildUser(userId));
+
+      // Then
+      expect(allSpy).not.toHaveBeenCalled();
+    });
+
+    it('should resolve and keep the sessions unchanged when the store fails', async () => {
+      // Given
+      const userId = uuidv4();
+      const sessionId = await createSession(userId);
+      const sessionBefore = await TestHelper.session.load(sessionId);
+      vi.spyOn(
+        PostgreSQLSessionStore.prototype,
+        'updateSessionsUser'
+      ).mockRejectedValueOnce(new Error('database unavailable'));
+
+      // When
+      await expect(
+        refreshUserSessions(buildUser(userId))
+      ).resolves.toBeUndefined();
+
+      // Then
+      expect(await TestHelper.session.load(sessionId)).toStrictEqual(
+        sessionBefore
+      );
     });
   });
 
@@ -355,8 +356,8 @@ describe('sessionStoreManager - Configuration-based Store Selection', () => {
 
       // The store should be one of the valid types based on configuration
       const isValidStoreType =
-        store.constructor.name === 'PostgreSQLSessionStore' ||
-        store.constructor.name === 'MemoryStore';
+        store instanceof PostgreSQLSessionStore ||
+        store instanceof MemorySessionStore;
 
       expect(isValidStoreType).toBe(true);
     });
@@ -380,34 +381,6 @@ describe('sessionStoreManager - Configuration-based Store Selection', () => {
 
       // Should return an object (even if empty) or null
       expect(typeof allSessions === 'object').toBe(true);
-    });
-  });
-
-  describe('error handling', () => {
-    it('should handle updateUserSession with invalid user gracefully', () => {
-      const invalidUser = null;
-
-      expect(() => {
-        updateUserSession(
-          invalidUser as unknown as UserWithOrganizationsAndRole
-        );
-      }).not.toThrow();
-    });
-
-    it('should handle session store errors without crashing the application', () => {
-      const testUser: UserWithOrganizationsAndRole = {
-        id: 'error-user-' + uuidv4(),
-        email: 'error@example.com',
-        first_name: 'Error',
-        last_name: 'Test',
-        organizations: [],
-        role: { id: 'role-id', name: 'USER' },
-      } as unknown as UserWithOrganizationsAndRole;
-
-      // This should not throw even if there are internal errors
-      expect(() => {
-        updateUserSession(testUser);
-      }).not.toThrow();
     });
   });
 });

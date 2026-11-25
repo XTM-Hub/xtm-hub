@@ -1,10 +1,11 @@
-import { MemoryStore, SessionData } from 'express-session';
 import portalConfig from './config';
-import { UserLoadUserBy, UserWithOrganizationsAndRole } from './model/user';
+import { databaseContext } from './context/database.context';
+import { UserLoadUserBy } from './model/user';
+import { MemorySessionStore } from './stores/memory-session-store';
 import { PostgreSQLSessionStore } from './stores/postgresql-session-store';
 import { logApp } from './utils/app-logger.util';
 
-let memoryStore: MemoryStore | undefined = undefined;
+let memoryStore: MemorySessionStore | undefined = undefined;
 let postgresStore: PostgreSQLSessionStore | undefined = undefined;
 
 /**
@@ -12,7 +13,7 @@ let postgresStore: PostgreSQLSessionStore | undefined = undefined;
  */
 const getMemoryStoreInstance = () => {
   if (!memoryStore) {
-    memoryStore = new MemoryStore({});
+    memoryStore = new MemorySessionStore();
   }
   return memoryStore;
 };
@@ -48,136 +49,69 @@ export const getSessionStoreInstance = () => {
   }
 };
 
-const getSessionsForUser = (
-  sessions: Record<string, SessionData> | null | undefined,
-  userId: string
-): string[] => {
-  if (!sessions) return [];
-
-  return Object.keys(sessions).filter((id) => {
-    const session = sessions[id] as SessionData & { user?: UserLoadUserBy };
-    return session.user?.id === userId;
-  });
-};
-
 /**
  * Destroy every active session belonging to a user
  * This function works with both PostgreSQL and Memory stores
+ * Inside a transaction, the PostgreSQL store deletes through it.
  */
-export const destroyUserSessions = (userId: string): Promise<void> => {
-  const storeInstance = getSessionStoreInstance();
-
-  return new Promise((resolve) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    storeInstance.all((err: any, sessions: any) => {
-      if (err) {
-        logApp.error('Error retrieving sessions for user deletion:', {
-          error: err,
-        });
-        resolve();
-        return;
-      }
-
-      const sessionIds = getSessionsForUser(
-        sessions as Record<string, SessionData> | null | undefined,
-        userId
-      );
-
-      if (sessionIds.length === 0) {
-        logApp.debug(`No active sessions found for user ${userId}`);
-        resolve();
-        return;
-      }
-
-      logApp.info(`Destroying ${sessionIds.length} sessions for user`, {
+export const destroyUserSessions = async (userId: string): Promise<void> => {
+  try {
+    const destroyedCount =
+      await getSessionStoreInstance().destroySessionsOfUser(
         userId,
-      });
-
-      let remaining = sessionIds.length;
-      sessionIds.forEach((sessionId) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        storeInstance.destroy(sessionId, (error?: any) => {
-          if (error) {
-            logApp.error(`Error destroying session ${sessionId}:`, { error });
-          }
-          remaining -= 1;
-          if (remaining === 0) {
-            resolve();
-          }
-        });
-      });
-    });
-  });
+        databaseContext.getTransaction()
+      );
+    logApp.info(`Destroyed ${destroyedCount} sessions for user`, { userId });
+  } catch (error) {
+    logApp.error('Error destroying sessions for user:', { error, userId });
+  }
 };
 
 /**
- * Update user session data across all active sessions
- * This function works with both PostgreSQL and Memory stores
+ * Whether the user holds at least one active session.
+ * Resolves to true when the store cannot be read (the error is logged): the caller then
+ * goes on with the refresh rather than leaving stale sessions behind.
  */
-export const updateUserSession = (
-  user: UserWithOrganizationsAndRole
-): Promise<void> => {
-  const storeInstance = getSessionStoreInstance();
-
-  return new Promise((resolve) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    storeInstance.all((err: any, sessions: any) => {
-      if (err) {
-        logApp.error('Error retrieving sessions for user update:', {
-          error: err,
-        });
-        resolve();
-        return;
-      }
-
-      if (!sessions) {
-        logApp.debug('No sessions found for user update');
-        resolve();
-        return;
-      }
-
-      if (!user?.id) {
-        logApp.warn('Cannot update sessions: user is missing or has no id');
-        resolve();
-        return;
-      }
-
-      // Handle sessions as object
-      const typedSessions = sessions as Record<string, SessionData>;
-      const sessionIds = getSessionsForUser(typedSessions, user.id);
-
-      if (sessionIds.length === 0) {
-        logApp.debug(`No active sessions found for user ${user.id}`);
-        resolve();
-        return;
-      }
-
-      logApp.info(`Updating ${sessionIds.length} sessions for user ${user.id}`);
-
-      let remaining = sessionIds.length;
-      sessionIds.forEach((sessionId) => {
-        const sessionToUpdate = typedSessions[sessionId] as SessionData & {
-          user?: UserLoadUserBy;
-        };
-        sessionToUpdate.user = user as UserLoadUserBy;
-
-        storeInstance.set(
-          sessionId,
-          sessionToUpdate as SessionData,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (error?: any) => {
-            if (error) {
-              logApp.error(`Error updating session ${sessionId}:`, { error });
-            } else {
-              logApp.debug(`USER_SESSION_UPDATED for session ${sessionId}`);
-            }
-            remaining -= 1;
-            if (remaining === 0) {
-              resolve();
-            }
-          }
-        );
-      });
+export const hasActiveUserSessions = async (
+  userId: string
+): Promise<boolean> => {
+  try {
+    return await getSessionStoreInstance().hasSessionsOfUser(
+      userId,
+      databaseContext.getTransaction()
+    );
+  } catch (error) {
+    logApp.error('Error looking up the sessions of the user:', {
+      error,
+      userId,
     });
-  });
+    return true;
+  }
+};
+
+/**
+ * Write the given user into every active session of that user, at once.
+ * The user must come from `UserDomain.loadUserBy`: the session keeps the login shape,
+ * with the selected organization capabilities the @auth directive reads.
+ * Both stores update the existing sessions in place, never through `set`: a session destroyed
+ * meanwhile (logout, disabled user) must not be re-inserted.
+ * Store errors are logged, never thrown: the sessions are then left as they are.
+ * Inside a transaction, the PostgreSQL store writes through it.
+ * Callers go through `UserSessionHelper.updateUserSession`, which reloads the user under a lock
+ * once the data is committed: a user loaded earlier may already be stale.
+ */
+export const refreshUserSessions = async (
+  user: UserLoadUserBy
+): Promise<void> => {
+  const userId = user.id;
+  try {
+    const updatedCount = await getSessionStoreInstance().updateSessionsUser(
+      userId,
+      user,
+      databaseContext.getTransaction()
+    );
+    logApp.info(`Updated ${updatedCount} sessions for user ${userId}`);
+  } catch (error) {
+    logApp.error('Error updating sessions for user:', { error, userId });
+  }
 };

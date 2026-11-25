@@ -3,8 +3,11 @@ import { Knex } from 'knex';
 import { database } from '../../knexfile';
 import { UnknownErrorCode } from '../utils/error/error.code';
 
+type AfterCommitCallback = () => Promise<void>;
+
 interface DatabaseContext {
   transaction?: Knex.Transaction;
+  afterCommitCallbacks?: AfterCommitCallback[];
 }
 
 const dbAsyncLocalStorage = new AsyncLocalStorage<DatabaseContext>();
@@ -18,14 +21,39 @@ export const databaseContext = {
     }
 
     // Create a new transaction
-    return database.transaction(async (trx) => {
-      const context: DatabaseContext = { transaction: trx };
+    const afterCommitCallbacks: AfterCommitCallback[] = [];
+    const result = await database.transaction(async (trx) => {
+      const context: DatabaseContext = {
+        transaction: trx,
+        afterCommitCallbacks,
+      };
 
-      return dbAsyncLocalStorage.run(context, async () => {
-        const result = await callback();
-        return result;
-      });
+      return dbAsyncLocalStorage.run(context, callback);
     });
+
+    // Committed: run the deferred callbacks outside the transaction context,
+    // so they read committed data through their own connection
+    await dbAsyncLocalStorage.run({}, async () => {
+      for (const afterCommitCallback of afterCommitCallbacks) {
+        await afterCommitCallback();
+      }
+    });
+    return result;
+  },
+
+  /**
+   * Run a side effect outside the database (a session store write, for instance) only once
+   * the data it relies on is committed. Inside a transaction, the callback is deferred until the
+   * outermost transaction commits, and dropped if it rolls back. Outside a transaction, it runs at once.
+   * A deferred callback that throws makes the outermost `withTransaction` throw, after the commit.
+   */
+  runAfterCommit: async (callback: AfterCommitCallback): Promise<void> => {
+    const context = dbAsyncLocalStorage.getStore();
+    if (context?.transaction && context.afterCommitCallbacks) {
+      context.afterCommitCallbacks.push(callback);
+      return;
+    }
+    await callback();
   },
 
   withAdvisoryLock: async <T>(
@@ -61,4 +89,5 @@ export const databaseContext = {
   },
 };
 
-export const { withAdvisoryLock, withTransaction } = databaseContext;
+export const { withAdvisoryLock, withTransaction, runAfterCommit } =
+  databaseContext;

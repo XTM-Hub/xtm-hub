@@ -196,6 +196,45 @@ describe('users admin app', () => {
       });
     });
 
+    describe('sessions', () => {
+      const createdUsers: User[] = [];
+      const createdSessionIds: string[] = [];
+
+      afterEach(async () => {
+        await Promise.all(
+          createdSessionIds.splice(0).map(TestHelper.session.delete)
+        );
+        await Promise.all(
+          createdUsers
+            .splice(0)
+            .map((user) => UserHelper.removeUser({ id: user.id }))
+        );
+      });
+
+      it('should destroy the sessions of the user when the user is disabled', async () => {
+        // Given
+        const user = await UserProvisioningDomain.createUser(
+          { email: `disable-user-${uuidv4()}@disable-user-test.io` },
+          { sendWelcomeEmail: false }
+        );
+        createdUsers.push(user);
+        const sessionId = await TestHelper.session.create({
+          user: (await UserDomain.loadUserBy({ 'User.id': user.id }))!,
+        });
+        createdSessionIds.push(sessionId);
+        requestContext.set(requestContextAdminUser);
+
+        // When
+        await UserAdminApp.editUser({
+          userId: user.id,
+          input: { disabled: true },
+        });
+
+        // Then
+        expect(await TestHelper.session.load(sessionId)).toBeNull();
+      });
+    });
+
     describe('last administrator protection', () => {
       it('should prevent deletion of the last organization administrator', async () => {
         requestContext.set(requestContextAdminUser);
@@ -402,6 +441,71 @@ describe('users admin app', () => {
       });
 
       await expect(call).rejects.toThrow(ErrorCode.CantAddUserToPersonalSpace);
+    });
+
+    describe('session refresh', () => {
+      const createdSessionIds: string[] = [];
+
+      afterEach(async () => {
+        await Promise.all(
+          createdSessionIds.splice(0).map(TestHelper.session.delete)
+        );
+      });
+
+      it.each([
+        {
+          context: 'a pending user is accepted',
+          joinOrganization: async (userId: UserId) => {
+            await TestHelper.user_OrganizationPending.create({
+              user_id: userId,
+              organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+            });
+          },
+        },
+        {
+          context: 'the capabilities of a member are edited',
+          joinOrganization: async (userId: UserId) => {
+            await TestHelper.user_Organization.create({
+              user_id: userId,
+              organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+            });
+          },
+        },
+      ])(
+        'should store the new selected organization capabilities in the user sessions when $context',
+        async ({ joinOrganization }) => {
+          // Given
+          const user = await UserProvisioningDomain.createUser(
+            {
+              email: `edit-capabilities-${uuidv4()}@edit-capabilities-test.io`,
+              selected_organization_id:
+                TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+            },
+            { sendWelcomeEmail: false }
+          );
+          createdUsers.push(user);
+          await joinOrganization(user.id);
+          const sessionId = await TestHelper.session.create({
+            user: (await UserDomain.loadUserBy({ 'User.id': user.id }))!,
+          });
+          createdSessionIds.push(sessionId);
+          requestContext.set(requestContextAdminSecondOrga);
+
+          // When
+          await UserAdminApp.editUserCapabilities({
+            userId: user.id,
+            input: { capabilities: [OrganizationCapability.ManageAccess] },
+          });
+
+          // Then
+          const session = await TestHelper.session.load(sessionId);
+          expect(session?.user).toMatchObject({
+            id: user.id,
+            selected_organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+            selected_org_capabilities: [OrganizationCapability.ManageAccess],
+          });
+        }
+      );
     });
   });
 

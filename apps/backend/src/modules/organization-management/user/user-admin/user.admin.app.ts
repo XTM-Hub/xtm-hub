@@ -15,10 +15,7 @@ import { PROTECTED_USER_UUIDS } from '../../../../portal.const';
 import { dispatch } from '../../../../pub';
 import { isUserAdminPlatform } from '../../../../security/access';
 import { securityGuard } from '../../../../security/guard';
-import {
-  destroyUserSessions,
-  updateUserSession,
-} from '../../../../session-store-manager';
+import { destroyUserSessions } from '../../../../session-store-manager';
 import { auth0Client } from '../../../../thirdparty/auth0/client';
 import { logApp } from '../../../../utils/app-logger.util';
 import { toError } from '../../../../utils/error/error-guard.util';
@@ -34,6 +31,7 @@ import { UserOrganizationApp } from '../user-organization/user-organization.app'
 import { UserOrganizationDomain } from '../user-organization/user-organization.domain';
 import { UserOrganizationPendingDomain } from '../user-pending/user-organization-pending.domain';
 import { UserProvisioningApp } from '../user-provisioning/user-provisioning.app';
+import { UserSessionHelper } from '../user-session/user-session.helper';
 import { UserHelper } from '../user.helper';
 import { UserAdminGuard } from './user.admin.guard';
 
@@ -173,7 +171,7 @@ export const UserAdminApp = {
         UserHelper.removePendingAndDispatch(user, orgCapa.organization_id)
       )
     );
-    updateUserSession(user);
+    await UserSessionHelper.updateUserSession(userId);
 
     const userMapped = UserHelper.mapUserToGraphqlUser(user);
 
