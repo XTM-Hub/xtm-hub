@@ -1,5 +1,9 @@
 import { useAnalyticsEnabled } from '@/hooks/use-analytics-enabled';
-import { deferSearchEvent, trackEvent } from '@/lib/analytics/analytics.client';
+import {
+  cancelPendingSearch,
+  deferSearchEvent,
+  trackEvent,
+} from '@/lib/analytics/analytics.client';
 import {
   type ResourceListResults,
   type ResourceListSnapshot,
@@ -32,6 +36,12 @@ export const useResourceListAnalytics = ({
     if (!isAnalyticsEnabled) {
       previousSnapshot.current = null;
       return;
+    }
+    if (
+      previousSnapshot.current &&
+      previousSnapshot.current.searchTerm !== searchTerm
+    ) {
+      cancelPendingSearch();
     }
     if (!enabled) {
       return;

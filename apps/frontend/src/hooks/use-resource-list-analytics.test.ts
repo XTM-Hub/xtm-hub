@@ -13,8 +13,12 @@ import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const SEARCH_TERM = 'phishing';
+const PREFIX_SEARCH_TERM = 'phish';
 const LOGICAL_FILTERS: LogicalFilterInput = {
   leaf: { key: 'label', value: ['use-case-1'] },
+};
+const OTHER_FILTERS: LogicalFilterInput = {
+  leaf: { key: 'label', value: ['use-case-2'] },
 };
 const FIRST_PAGE = [{ id: 'resource-1', name: 'Phishing connector' }];
 const SECOND_PAGE = [{ id: 'resource-2', name: 'Ransomware connector' }];
@@ -99,6 +103,58 @@ describe('useResourceListAnalytics', () => {
           searchTerm: ` ${SEARCH_TERM} `,
           logicalFilters: LOGICAL_FILTERS,
         },
+      })
+    );
+    act(() => vi.advanceTimersByTime(SEARCH_IDLE_MS));
+
+    // Then
+    expect(readTrackedEvents('search')).toEqual([
+      expect.objectContaining({ search_term: SEARCH_TERM }),
+    ]);
+  });
+
+  it('should send only the full term when the visitor goes on typing while the results of the new term are loading', () => {
+    // Given
+    vi.useFakeTimers();
+    const { rerender } = renderListAnalytics();
+    rerender(
+      makeParams({
+        variables: {
+          searchTerm: PREFIX_SEARCH_TERM,
+          logicalFilters: LOGICAL_FILTERS,
+        },
+      })
+    );
+    const fullTermParams = makeParams({
+      variables: { searchTerm: SEARCH_TERM, logicalFilters: LOGICAL_FILTERS },
+    });
+
+    // When
+    rerender({ ...fullTermParams, enabled: false });
+    act(() => vi.advanceTimersByTime(SEARCH_IDLE_MS));
+    rerender(fullTermParams);
+    act(() => vi.advanceTimersByTime(SEARCH_IDLE_MS));
+
+    // Then
+    expect(readTrackedEvents('search')).toEqual([
+      expect.objectContaining({ search_term: SEARCH_TERM }),
+    ]);
+  });
+
+  it('should keep the pending search when the filters change before the visitor stops typing', () => {
+    // Given
+    vi.useFakeTimers();
+    const { rerender } = renderListAnalytics();
+    rerender(
+      makeParams({
+        variables: { searchTerm: SEARCH_TERM, logicalFilters: LOGICAL_FILTERS },
+      })
+    );
+
+    // When
+    rerender(
+      makeParams({
+        variables: { searchTerm: SEARCH_TERM, logicalFilters: OTHER_FILTERS },
       })
     );
     act(() => vi.advanceTimersByTime(SEARCH_IDLE_MS));
