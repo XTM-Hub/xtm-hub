@@ -1,6 +1,8 @@
 import AnalyticsTracker from '@/components/analytics/AnalyticsTracker';
+import { deferSearchEvent } from '@/lib/analytics/analytics.client';
 import { USER_PROPERTIES_WAIT_MS } from '@/lib/analytics/analytics.consts';
 import {
+  makeSearchEventParams,
   readGtagCommands,
   readTrackedEvents,
   resetAnalyticsEnvironment,
@@ -82,6 +84,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.useRealTimers();
+  vi.restoreAllMocks();
   window.history.replaceState({}, '', '/');
 });
 
@@ -242,6 +245,46 @@ describe('AnalyticsTracker', () => {
       })
     );
   });
+
+  it('should send the pending search before the context of the next page when the visitor navigates during the wait', () => {
+    // Given
+    const { rerender } = renderTracker();
+    deferSearchEvent(makeSearchEventParams());
+    navigateTo(PROFILE_PATHNAME, {});
+
+    // When
+    rerender(<AnalyticsTracker measurementId={MEASUREMENT_ID} />);
+
+    // Then
+    expect(
+      readGtagCommands()
+        .slice(-3)
+        .map(([command, target]) => (command === 'event' ? target : command))
+    ).toEqual(['search', 'set', 'page_view']);
+  });
+
+  it.each([
+    ['send', 'hidden', 1],
+    ['keep', 'visible', 0],
+  ] as const)(
+    'should %s the pending search when the page becomes %s during the wait',
+    (_outcome, visibilityState, sentCount) => {
+      // Given
+      renderTracker();
+      deferSearchEvent(makeSearchEventParams());
+      vi.spyOn(document, 'visibilityState', 'get').mockReturnValue(
+        visibilityState
+      );
+
+      // When
+      act(() => {
+        document.dispatchEvent(new Event('visibilitychange'));
+      });
+
+      // Then
+      expect(readTrackedEvents('search')).toHaveLength(sentCount);
+    }
+  );
 
   it('should not send another page view when only the route params object changes', () => {
     // Given
