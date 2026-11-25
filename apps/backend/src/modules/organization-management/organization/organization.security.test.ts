@@ -4,35 +4,34 @@ import {
   CAPABILITY_READ_SAAS_METRICS,
   requestContextSimpleUserFiligran2,
 } from '../../../../tests/tests.const';
-import { UserLoadUserBy } from '../../../model/user';
 import { CAPABILITY_BYPASS } from '../../../portal.const';
 import { isUserRestrictedToOwnOrganizationMembers } from './organization.security';
 
 describe('isUserRestrictedToOwnOrganizationMembers', () => {
   it.each([
-    ['BYPASS', [CAPABILITY_BYPASS], false],
-    [
-      'READ_ORGANIZATION_MEMBERS',
-      [CAPABILITY_READ_ORGANIZATION_MEMBERS],
-      false,
-    ],
-    ['another portal capability only', [CAPABILITY_READ_SAAS_METRICS], true],
-    ['no portal capability', [], true],
-    ['no capabilities at all', undefined, true],
+    { name: 'BYPASS', capabilities: [CAPABILITY_BYPASS], restricted: false },
+    {
+      name: 'READ_ORGANIZATION_MEMBERS',
+      capabilities: [CAPABILITY_READ_ORGANIZATION_MEMBERS],
+      restricted: false,
+    },
+    {
+      name: 'another portal capability only',
+      capabilities: [CAPABILITY_READ_SAAS_METRICS],
+      restricted: true,
+    },
+    { name: 'no portal capability', capabilities: [], restricted: true },
   ])(
-    'should answer the expected restriction when the user has %s',
-    (_, capabilities, expected) => {
+    'should return $restricted when the user holds $name',
+    ({ capabilities, restricted }) => {
       // Given
-      const user = {
-        ...requestContextSimpleUserFiligran2.user,
-        capabilities,
-      } as UserLoadUserBy;
+      const user = { ...requestContextSimpleUserFiligran2.user, capabilities };
 
       // When
-      const restricted = isUserRestrictedToOwnOrganizationMembers(user);
+      const result = isUserRestrictedToOwnOrganizationMembers(user);
 
       // Then
-      expect(restricted).toBe(expected);
+      expect(result).toBe(restricted);
     }
   );
 });

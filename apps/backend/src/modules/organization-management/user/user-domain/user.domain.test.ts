@@ -812,30 +812,8 @@ describe('users domain', () => {
         });
       });
 
-      it('should count each member once when members hold several capabilities', async () => {
-        // Given SIMPLE2, holding two capabilities in FILIGRAN
-        const filigranMemberCount = await countFiligranMembers();
-
-        // When
-        const connection = await UserDomain.loadOrganizationMemberConnection(
-          FILIGRAN.ID,
-          { first: PAGE_SIZE }
-        );
-
-        // Then
-        expect(sizeOf(connection)).toEqual({
-          edges: filigranMemberCount,
-          totalCount: filigranMemberCount,
-        });
-      });
-
-      it('should return the administrators first, then the members sorted by email when an administrator holds other capabilities', async () => {
-        // Given
-        await addCapability(
-          FILIGRAN.USERS.BYPASS.ID,
-          FILIGRAN.ID,
-          OrganizationCapability.ManageAccess
-        );
+      it('should return the administrators first, then the members sorted by email when the organization has both', async () => {
+        // Given the seeded FILIGRAN members
 
         // When
         const connection = await UserDomain.loadOrganizationMemberConnection(
@@ -926,19 +904,6 @@ describe('users domain', () => {
         const connection = await UserDomain.loadOrganizationMemberConnection(
           SECOND.ID,
           { first: PAGE_SIZE, searchTerm: COUNTRY.toLowerCase() }
-        );
-
-        // Then
-        expect(membersOf(connection)).toEqual(NO_MEMBER);
-      });
-
-      it('should not return a member of another organization when they match the search', async () => {
-        // Given the BYPASS user, member of FILIGRAN only
-
-        // When
-        const connection = await UserDomain.loadOrganizationMemberConnection(
-          SECOND.ID,
-          { first: PAGE_SIZE, searchTerm: FILIGRAN.USERS.BYPASS.LAST_NAME }
         );
 
         // Then

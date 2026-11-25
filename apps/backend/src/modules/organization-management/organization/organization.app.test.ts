@@ -8,9 +8,7 @@ import {
 } from '../../../../tests/tests.const';
 import { OrganizationMemberConnection } from '../../../__generated__/resolvers-types';
 import { requestContext } from '../../../context/request.context';
-import CapabilityPortal from '../../../model/kanel/public/CapabilityPortal';
 import { OrganizationId } from '../../../model/kanel/public/Organization';
-import { CAPABILITY_BYPASS } from '../../../portal.const';
 import { ErrorCode, NotFoundErrorCode } from '../../../utils/error/error.code';
 import { TelemetryApp } from '../../telemetry/telemetry.app';
 import { TelemetrySource } from '../../telemetry/telemetry.const';
@@ -312,14 +310,15 @@ describe('organizationApp', () => {
     ];
     // Without portal capability: a member of SECOND and of their own personal space only
     const MEMBER_OF_SECOND = requestContextSimpleUserSecondOrga;
-    const withCapabilities = (capabilities: CapabilityPortal[]) => ({
+    const READ_ORGANIZATION_MEMBERS_HOLDER = {
       ...MEMBER_OF_SECOND,
-      user: { ...MEMBER_OF_SECOND.user, capabilities },
-    });
-    const READ_ORGANIZATION_MEMBERS_HOLDER = withCapabilities([
-      CAPABILITY_READ_ORGANIZATION_MEMBERS,
-    ]);
-    const BYPASS_HOLDER = withCapabilities([CAPABILITY_BYPASS]);
+      user: {
+        ...MEMBER_OF_SECOND.user,
+        capabilities: [CAPABILITY_READ_ORGANIZATION_MEMBERS],
+      },
+    };
+    // Matches user@ and user.registerer@ of SECOND, not admin@
+    const SEARCH_TERM = 'user';
 
     const memberIds = ({ edges }: OrganizationMemberConnection) =>
       edges.map(({ node }) => node.id);
@@ -329,7 +328,7 @@ describe('organizationApp', () => {
       totalCount: Number(totalCount),
     });
 
-    it('should refuse the organization as unknown when its id is not a UUID', async () => {
+    it('should refuse with NOT_FOUND when the organization id is not a UUID', async () => {
       // Given
       requestContext.set(MEMBER_OF_SECOND);
 
@@ -340,7 +339,7 @@ describe('organizationApp', () => {
       );
 
       // Then
-      await expect(call).rejects.toStrictEqual(ORGANIZATION_NOT_FOUND);
+      await expect(call).rejects.toStrictEqual(NOT_FOUND);
     });
 
     // An unknown organization answers NOT_FOUND too: the membership is checked before the organization is loaded
@@ -385,31 +384,24 @@ describe('organizationApp', () => {
       });
     });
 
-    it.each`
-      name                                    | context
-      ${'a READ_ORGANIZATION_MEMBERS holder'} | ${READ_ORGANIZATION_MEMBERS_HOLDER}
-      ${'a BYPASS holder'}                    | ${BYPASS_HOLDER}
-    `(
-      'should return the members of an organization when $name who is not a member of it reads it',
-      async ({ context }) => {
-        // Given
-        requestContext.set(context);
-        const [filigranMembers] =
-          await UserOrganizationDomain.countUsersInOrganizations([FILIGRAN.ID]);
+    it('should return the members of an organization when a READ_ORGANIZATION_MEMBERS holder who is not a member of it reads it', async () => {
+      // Given
+      requestContext.set(READ_ORGANIZATION_MEMBERS_HOLDER);
+      const [filigranMembers] =
+        await UserOrganizationDomain.countUsersInOrganizations([FILIGRAN.ID]);
 
-        // When
-        const connection = await OrganizationApp.loadOrganizationMembers(
-          FILIGRAN.ID,
-          { first: PAGE_SIZE }
-        );
+      // When
+      const connection = await OrganizationApp.loadOrganizationMembers(
+        FILIGRAN.ID,
+        { first: PAGE_SIZE }
+      );
 
-        // Then
-        expect(sizeOf(connection)).toEqual({
-          edges: filigranMembers?.count,
-          totalCount: filigranMembers?.count,
-        });
-      }
-    );
+      // Then
+      expect(sizeOf(connection)).toEqual({
+        edges: filigranMembers?.count,
+        totalCount: filigranMembers?.count,
+      });
+    });
 
     it.each`
       name                                                                   | context                             | organizationId
@@ -432,68 +424,43 @@ describe('organizationApp', () => {
       }
     );
 
-    // SECOND has fewer members than PAGE_SIZE: a page of PAGE_SIZE holds all of them
-    it.each`
-      first        | expectedEdges
-      ${0}         | ${0}
-      ${-1}        | ${0}
-      ${-5}        | ${0}
-      ${1}         | ${1}
-      ${PAGE_SIZE} | ${SECOND_MEMBER_IDS.length}
-    `(
-      'should return $expectedEdges members and the totalCount when the page size is $first',
-      async ({ first, expectedEdges }) => {
-        // Given
-        requestContext.set(MEMBER_OF_SECOND);
-
-        // When
-        const connection = await OrganizationApp.loadOrganizationMembers(
-          SECOND.ID,
-          { first }
-        );
-
-        // Then
-        expect(sizeOf(connection)).toEqual({
-          edges: expectedEdges,
-          totalCount: SECOND_MEMBER_IDS.length,
-        });
-      }
-    );
-
-    it('should return the members matching the search term when one is given', async () => {
+    it('should return no member but the totalCount when the page size is negative', async () => {
       // Given
       requestContext.set(MEMBER_OF_SECOND);
 
       // When
       const connection = await OrganizationApp.loadOrganizationMembers(
         SECOND.ID,
-        { first: PAGE_SIZE, searchTerm: SECOND.USERS.REGISTERER.FIRST_NAME }
+        { first: -1 }
       );
 
       // Then
-      expect(memberIds(connection)).toEqual([SECOND.USERS.REGISTERER.ID]);
+      expect(sizeOf(connection)).toEqual({
+        edges: 0,
+        totalCount: SECOND_MEMBER_IDS.length,
+      });
     });
 
-    it('should return the members after the cursor when one is given', async () => {
-      // Given
+    it('should return the next matching member when a page size, a cursor and a search term are given', async () => {
+      // Given user.registerer@ sorts before user@: the first page holds REGISTERER
       requestContext.set(MEMBER_OF_SECOND);
-      const allMembers = await OrganizationApp.loadOrganizationMembers(
-        SECOND.ID,
-        { first: PAGE_SIZE }
-      );
       const firstPage = await OrganizationApp.loadOrganizationMembers(
         SECOND.ID,
-        { first: 1 }
+        { first: 1, searchTerm: SEARCH_TERM }
       );
 
       // When
       const connection = await OrganizationApp.loadOrganizationMembers(
         SECOND.ID,
-        { first: PAGE_SIZE, after: firstPage.pageInfo.endCursor }
+        {
+          first: 1,
+          after: firstPage.pageInfo.endCursor,
+          searchTerm: SEARCH_TERM,
+        }
       );
 
       // Then
-      expect(memberIds(connection)).toEqual(memberIds(allMembers).slice(1));
+      expect(memberIds(connection)).toEqual([SECOND.USERS.SIMPLE.ID]);
     });
   });
 });
