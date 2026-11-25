@@ -15,7 +15,10 @@ import {
 } from '../../../tests/tests.const';
 import { PlatformIdentifier } from '../../__generated__/resolvers-types';
 import { logApp } from '../../utils/app-logger.util';
-import { BadRequestErrorCode } from '../../utils/error/error.code';
+import {
+  BadRequestErrorCode,
+  UnknownErrorCode,
+} from '../../utils/error/error.code';
 import { NewsFeedApp } from '../news-feed/news-feed.app';
 import { ManifestFragmentHelper } from '../shareable-resource/manifest-fragment/manifest-fragment.helper';
 import { ManifestApp } from '../shareable-resource/manifest/manifest.app';
@@ -85,7 +88,7 @@ describe('manageProductVersionResolver', () => {
           contextSystemToken,
           GRAPHQL_RESOLVE_INFO
         )
-      ).rejects.toThrow('manifest generation failed');
+      ).rejects.toThrow(UnknownErrorCode.UnknownError);
 
       const rows = await TestHelper.productVersion.loadAll({
         product: PlatformIdentifier.Opencti,
