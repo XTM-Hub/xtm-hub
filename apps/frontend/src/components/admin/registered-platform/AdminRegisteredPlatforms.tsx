@@ -7,22 +7,25 @@ import {
   ALL_FILTER_VALUE,
   buildAdminRegisteredPlatformsVariables,
   canUnregisterPlatform,
+  CREDENTIAL_KIND_LABEL_BY_CREDENTIAL_KIND,
   EMPTY_ADMIN_REGISTERED_PLATFORMS_FILTERS,
-  getCommercialModelLabelKey,
-  getContractLabelKey,
-  getCredentialKindLabelKey,
-  getPlatformProductName,
+  getLastPageIndex,
   getRegistererName,
-  getStatusLabelKey,
   normalizeAdminRegisteredPlatformsPageSize,
   parseIdentifierFilterValue,
   parseStatusFilterValue,
   toAdminRegisteredPlatformRows,
-  translateOrRaw,
 } from '@/components/admin/registered-platform/admin-registered-platforms.utils';
 import { AdminRegisteredPlatformsSelectFilter } from '@/components/admin/registered-platform/AdminRegisteredPlatformsSelectFilter';
 import { AdminUnregisterPlatform } from '@/components/admin/registered-platform/AdminUnregisterPlatform';
+import { ExternalLink } from '@/components/ExternalLink';
 import { OrganizationFilter } from '@/components/organization/OrganizationFilter';
+import {
+  COMMERCIAL_MODEL_LABEL_BY_COMMERCIAL_MODEL,
+  CONTRACT_LABEL_BY_CONTRACT,
+  PlatformMetadataMapping,
+  STATUS_LABEL_BY_STATUS,
+} from '@/components/registration/PlatformIdentifierMapping';
 import {
   DataTable,
   DataTableHeadBarOptions,
@@ -35,12 +38,10 @@ import {
 import { TruncatedText } from '@/components/ui/truncated-text';
 import { useTablePagination } from '@/hooks/use-table-pagination';
 import { useTranslate } from '@/hooks/use-translate';
-import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { DEBOUNCE_TIME } from '@/utils/constant';
 import { useDateFormatter } from '@/utils/date';
 import { getDataTableLabels } from '@/utils/design-system/data-table';
-import { isHttpUrl } from '@/utils/external-url';
 import { Chip, SearchField, TooltipProvider } from '@filigran/design-system';
 import { adminRegisteredPlatformsKeys } from '@graphql/admin-registered-platforms/admin-registered-platforms.keys';
 import {
@@ -48,11 +49,12 @@ import {
   OrderingMode,
   PlatformConfigurationStatus,
   PlatformIdentifier,
+  RegisteredPlatformCredentialKind,
   useAdminRegisteredPlatformsQuery,
 } from '@graphql/generated';
 import { keepPreviousData } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
-import { ChangeEvent, ReactNode, useMemo, useState } from 'react';
+import { ChangeEvent, ReactNode, useEffect, useMemo, useState } from 'react';
 import { useDebounceCallback } from 'usehooks-ts';
 
 const SecondaryText = ({ children }: { children: ReactNode }) => (
@@ -98,18 +100,32 @@ export const AdminRegisteredPlatforms = () => {
     [filters, pagination.pageSize, cursor, orderBy, orderMode]
   );
 
-  const { data, isLoading } = useAdminRegisteredPlatformsQuery(
-    portalGraphqlClient,
-    variables,
-    {
+  const { data, isLoading, isPlaceholderData } =
+    useAdminRegisteredPlatformsQuery(portalGraphqlClient, variables, {
       queryKey: adminRegisteredPlatformsKeys.list(variables),
       placeholderData: keepPreviousData,
       // A failed load reaches the admin error page; a failed background refetch keeps the rows shown.
       throwOnError: (_error, query) => query.state.data === undefined,
-    }
-  );
+    });
 
   const platforms = useMemo(() => toAdminRegisteredPlatformRows(data), [data]);
+
+  // Unregistering the only platform of the last page leaves that page empty: move back to the new last page.
+  const totalCount = isPlaceholderData
+    ? undefined
+    : data?.adminRegisteredPlatforms.totalCount;
+  useEffect(() => {
+    if (totalCount === undefined) {
+      return;
+    }
+    const lastPageIndex = getLastPageIndex(totalCount, pagination.pageSize);
+    if (pagination.pageIndex > lastPageIndex) {
+      setPagination((previousPagination) => ({
+        ...previousPagination,
+        pageIndex: lastPageIndex,
+      }));
+    }
+  }, [totalCount, pagination.pageIndex, pagination.pageSize, setPagination]);
 
   const resetToFirstPage = () =>
     setPagination((previousPagination) => ({
@@ -126,7 +142,7 @@ export const AdminRegisteredPlatforms = () => {
 
   const onSearchChange = useDebounceCallback(
     (event: ChangeEvent<HTMLInputElement>) =>
-      updateFilters({ searchTerm: event.target.value.trim() || null }),
+      updateFilters({ searchTerm: event.target.value }),
     DEBOUNCE_TIME
   );
 
@@ -158,18 +174,12 @@ export const AdminRegisteredPlatforms = () => {
         <div className="flex min-w-0 flex-col">
           <TruncatedText text={row.original.title} />
           {/* The URL is sent by the platform itself: only a web address is made a link. */}
-          {isHttpUrl(row.original.url) ? (
-            <a
-              {...analyticsId('admin_registered_platform_url_open')}
-              href={row.original.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="truncate text-sm text-filigran-brand-primary underline">
-              {row.original.url}
-            </a>
-          ) : (
-            <SecondaryText>{row.original.url}</SecondaryText>
-          )}
+          <ExternalLink
+            url={row.original.url}
+            analyticsId="admin_registered_platform_url_open"
+            className="block truncate text-sm text-default-secondary"
+            linkClassName="text-filigran-brand-primary"
+          />
         </div>
       ),
     },
@@ -181,7 +191,7 @@ export const AdminRegisteredPlatforms = () => {
       cell: ({ row }) => (
         <div className="flex min-w-0 flex-col">
           <span className="truncate">
-            {getPlatformProductName(row.original.identifier)}
+            {PlatformMetadataMapping[row.original.identifier].name}
           </span>
           {row.original.version && (
             <SecondaryText>{row.original.version}</SecondaryText>
@@ -218,17 +228,13 @@ export const AdminRegisteredPlatforms = () => {
       cell: ({ row }) => (
         <div className="flex min-w-0 flex-col">
           <span className="truncate">
-            {translateOrRaw(
-              t,
-              getContractLabelKey(row.original.contract),
-              row.original.contract
-            )}
+            {t(CONTRACT_LABEL_BY_CONTRACT[row.original.contract])}
           </span>
           <SecondaryText>
-            {translateOrRaw(
-              t,
-              getCommercialModelLabelKey(row.original.commercial_model),
-              row.original.commercial_model
+            {t(
+              COMMERCIAL_MODEL_LABEL_BY_COMMERCIAL_MODEL[
+                row.original.commercial_model
+              ]
             )}
           </SecondaryText>
         </div>
@@ -240,13 +246,7 @@ export const AdminRegisteredPlatforms = () => {
       size: 100,
       enableSorting: false,
       cell: ({ row }) => (
-        <Chip
-          label={translateOrRaw(
-            t,
-            getStatusLabelKey(row.original.status),
-            row.original.status
-          )}
-        />
+        <Chip label={t(STATUS_LABEL_BY_STATUS[row.original.status])} />
       ),
     },
     {
@@ -289,14 +289,12 @@ export const AdminRegisteredPlatforms = () => {
       size: 130,
       enableSorting: false,
       cell: ({ row }) => {
-        const { kind, has_token } = row.original.credential;
+        const { kind } = row.original.credential;
         return (
           <div className="flex min-w-0 flex-col items-start gap-0.5">
-            <Chip
-              label={translateOrRaw(t, getCredentialKindLabelKey(kind), kind)}
-            />
+            <Chip label={t(CREDENTIAL_KIND_LABEL_BY_CREDENTIAL_KIND[kind])} />
             <SecondaryText>
-              {has_token
+              {kind === RegisteredPlatformCredentialKind.Token
                 ? t('AdminRegisteredPlatforms.Credential.TokenStored')
                 : t('AdminRegisteredPlatforms.Credential.NoTokenStored')}
             </SecondaryText>
@@ -353,13 +351,13 @@ export const AdminRegisteredPlatforms = () => {
   const productOptions = Object.values(PlatformIdentifier).map(
     (identifier) => ({
       value: identifier,
-      label: getPlatformProductName(identifier),
+      label: PlatformMetadataMapping[identifier].name,
     })
   );
   const statusOptions = Object.values(PlatformConfigurationStatus).map(
     (status) => ({
       value: status,
-      label: translateOrRaw(t, getStatusLabelKey(status), status),
+      label: t(STATUS_LABEL_BY_STATUS[status]),
     })
   );
 
@@ -415,7 +413,7 @@ export const AdminRegisteredPlatforms = () => {
                       identifier: parseIdentifierFilterValue(value),
                     })
                   }
-                  triggerAnalyticsId="admin_registered_platform_products_open"
+                  analyticsId="admin_registered_platform_products_open"
                 />
                 <AdminRegisteredPlatformsSelectFilter
                   label={t('AdminRegisteredPlatforms.Filters.Status')}
@@ -425,7 +423,7 @@ export const AdminRegisteredPlatforms = () => {
                   onValueChange={(value) =>
                     updateFilters({ status: parseStatusFilterValue(value) })
                   }
-                  triggerAnalyticsId="admin_registered_platform_statuses_open"
+                  analyticsId="admin_registered_platform_statuses_open"
                 />
                 <OrganizationFilter
                   analyticsId="admin_registered_platform_organizations_open"

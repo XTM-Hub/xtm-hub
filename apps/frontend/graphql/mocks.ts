@@ -1157,7 +1157,7 @@ export const mockMutation = (overrides?: Partial<Mutation>, _relationshipsToOmit
         adminAddUser: overrides && overrides.hasOwnProperty('adminAddUser') ? overrides.adminAddUser! : relationshipsToOmit.has('User') ? {} as User : mockUser({}, relationshipsToOmit),
         adminCancelDeploymentRequest: overrides && overrides.hasOwnProperty('adminCancelDeploymentRequest') ? overrides.adminCancelDeploymentRequest! : relationshipsToOmit.has('DeploymentRequest') ? {} as DeploymentRequest : mockDeploymentRequest({}, relationshipsToOmit),
         adminEditUser: overrides && overrides.hasOwnProperty('adminEditUser') ? overrides.adminEditUser! : relationshipsToOmit.has('User') ? {} as User : mockUser({}, relationshipsToOmit),
-        adminUnregisterPlatform: overrides && overrides.hasOwnProperty('adminUnregisterPlatform') ? overrides.adminUnregisterPlatform! : relationshipsToOmit.has('AdminRegisteredPlatform') ? {} as AdminRegisteredPlatform : mockAdminRegisteredPlatform({}, relationshipsToOmit),
+        adminUnregisterPlatform: overrides && overrides.hasOwnProperty('adminUnregisterPlatform') ? overrides.adminUnregisterPlatform! : relationshipsToOmit.has('Success') ? {} as Success : mockSuccess({}, relationshipsToOmit),
         autoRegisterPlatform: overrides && overrides.hasOwnProperty('autoRegisterPlatform') ? overrides.autoRegisterPlatform! : relationshipsToOmit.has('Success') ? {} as Success : mockSuccess({}, relationshipsToOmit),
         bulkAcceptPendingUserInOrganization: overrides && overrides.hasOwnProperty('bulkAcceptPendingUserInOrganization') ? overrides.bulkAcceptPendingUserInOrganization! : relationshipsToOmit.has('Success') ? {} as Success : mockSuccess({}, relationshipsToOmit),
         bulkRemovePendingUserFromOrganization: overrides && overrides.hasOwnProperty('bulkRemovePendingUserFromOrganization') ? overrides.bulkRemovePendingUserFromOrganization! : relationshipsToOmit.has('Success') ? {} as Success : mockSuccess({}, relationshipsToOmit),
@@ -1812,7 +1812,6 @@ export const mockRegisteredPlatformCredential = (overrides?: Partial<RegisteredP
     relationshipsToOmit.add('RegisteredPlatformCredential');
     return {
         __typename: 'RegisteredPlatformCredential',
-        has_token: overrides && overrides.hasOwnProperty('has_token') ? overrides.has_token! : false,
         kind: overrides && overrides.hasOwnProperty('kind') ? overrides.kind! : RegisteredPlatformCredentialKind.None,
     };
 };

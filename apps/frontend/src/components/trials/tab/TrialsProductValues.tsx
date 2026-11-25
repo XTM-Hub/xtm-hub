@@ -1,5 +1,5 @@
 'use client';
-import { TrialsExternalLink } from '@/components/trials/tab/TrialsExternalLink';
+import { ExternalLink } from '@/components/ExternalLink';
 import {
   Tooltip,
   TooltipContent,
@@ -43,8 +43,9 @@ export const TrialsProductValues = ({
                     {product.platform_identifier?.toUpperCase()}
                   </span>
                   {asLink ? (
-                    <TrialsExternalLink
+                    <ExternalLink
                       url={value}
+                      analyticsId="admin_trial_platform_open"
                       className="truncate"
                     />
                   ) : (

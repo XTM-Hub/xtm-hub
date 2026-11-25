@@ -39,7 +39,3 @@ export const getUrlOrigin = (url: string | null | undefined): string | null => {
     return null;
   }
 };
-
-// True for an absolute http(s) URL only: never a javascript: or data: one, and no scheme is guessed.
-export const isHttpUrl = (url: string | null | undefined): boolean =>
-  getUrlOrigin(url) !== null;

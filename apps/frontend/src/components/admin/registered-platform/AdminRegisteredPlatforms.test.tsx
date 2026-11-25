@@ -1,9 +1,12 @@
 import { AdminRegisteredPlatforms } from '@/components/admin/registered-platform/AdminRegisteredPlatforms';
+import { toCursor } from '@/hooks/use-table-pagination';
 import testRender from '@/utils/test/test-render';
 import {
+  AdminRegisteredPlatformOrdering,
   type AdminRegisteredPlatformRowFragment,
   type AdminRegisteredPlatformsQueryVariables,
   CommercialModel,
+  OrderingMode,
   PlatformConfigurationStatus,
   PlatformContract,
   PlatformIdentifier,
@@ -22,8 +25,10 @@ const VERSION = '6.8.1';
 const ORGANIZATION_ID = 'organization-id';
 const ORGANIZATION_NAME = 'Filigran';
 const REGISTERER_EMAIL = 'ada@filigran.io';
-const UNKNOWN_CREDENTIAL_KIND = 'key';
 const SEARCH_TERM = 'filigran';
+const PAGE_SIZE = 50;
+const FIRST_PAGE_CURSOR = toCursor(PAGE_SIZE, 0);
+const SECOND_PAGE_CURSOR = toCursor(PAGE_SIZE, 1);
 
 const mocks = vi.hoisted(() => ({
   useAdminRegisteredPlatformsQuery: vi.fn(),
@@ -66,16 +71,19 @@ const buildPlatform = (
     first_name: 'Ada',
     last_name: 'Lovelace',
   },
-  credential: { kind: RegisteredPlatformCredentialKind.Token, has_token: true },
+  credential: { kind: RegisteredPlatformCredentialKind.Token },
   is_trial: false,
   ...overrides,
 });
 
-const mockPlatforms = (platforms: AdminRegisteredPlatformRowFragment[]) =>
+const mockPlatforms = (
+  platforms: AdminRegisteredPlatformRowFragment[],
+  totalCount = platforms.length
+) =>
   mocks.useAdminRegisteredPlatformsQuery.mockReturnValue({
     data: {
       adminRegisteredPlatforms: {
-        totalCount: platforms.length,
+        totalCount,
         edges: platforms.map((node) => ({ node })),
       },
     },
@@ -97,6 +105,11 @@ const pickOption = async (
   await user.click(screen.getByRole('combobox', { name: filterLabel }));
   await user.click(screen.getByRole('option', { name: optionLabel }));
 };
+
+const goToNextPage = (user: ReturnType<typeof testRender>['user']) =>
+  user.click(
+    screen.getByRole('button', { name: 'DesignSystem.DataTable.NextPage' })
+  );
 
 describe('AdminRegisteredPlatforms', () => {
   beforeEach(() => {
@@ -141,8 +154,8 @@ describe('AdminRegisteredPlatforms', () => {
       ORGANIZATION_NAME,
       TENANT_NAME,
       'Contracts.EE',
-      'AdminRegisteredPlatforms.CommercialModel.SAAS',
-      'AdminRegisteredPlatforms.Status.active',
+      'CommercialModels.SAAS',
+      'PlatformStatuses.active',
       REGISTERER_EMAIL,
       SERVICE_INSTANCE_ID,
       PLATFORM_ID,
@@ -156,7 +169,7 @@ describe('AdminRegisteredPlatforms', () => {
 
     // Then
     const link = within(getPlatformRow()).getByRole('link', { name: URL });
-    expect(link).toHaveAttribute('href', URL);
+    expect(link).toHaveAttribute('href', `${URL}/`);
     expect(link).toHaveAttribute('target', '_blank');
     expect(link).toHaveAttribute('rel', 'noopener noreferrer');
   });
@@ -164,23 +177,14 @@ describe('AdminRegisteredPlatforms', () => {
   it.each([
     [
       'a token',
-      { kind: RegisteredPlatformCredentialKind.Token, has_token: true },
+      { kind: RegisteredPlatformCredentialKind.Token },
       'AdminRegisteredPlatforms.Credential.Kind.token',
       'AdminRegisteredPlatforms.Credential.TokenStored',
     ],
     [
       'no credential',
-      { kind: RegisteredPlatformCredentialKind.None, has_token: false },
+      { kind: RegisteredPlatformCredentialKind.None },
       'AdminRegisteredPlatforms.Credential.Kind.none',
-      'AdminRegisteredPlatforms.Credential.NoTokenStored',
-    ],
-    [
-      'a credential kind this client does not know yet',
-      {
-        kind: UNKNOWN_CREDENTIAL_KIND as RegisteredPlatformCredentialKind,
-        has_token: false,
-      },
-      UNKNOWN_CREDENTIAL_KIND,
       'AdminRegisteredPlatforms.Credential.NoTokenStored',
     ],
   ])(
@@ -294,7 +298,7 @@ describe('AdminRegisteredPlatforms', () => {
     ],
     [
       'AdminRegisteredPlatforms.Filters.Status',
-      'AdminRegisteredPlatforms.Status.inactive',
+      'PlatformStatuses.inactive',
       { status: PlatformConfigurationStatus.Inactive },
     ],
   ])(
@@ -350,5 +354,84 @@ describe('AdminRegisteredPlatforms', () => {
 
     // Then
     expect(lastQueryVariables().filter).toBeNull();
+  });
+
+  it('should fetch the first page when the admin picks a filter while on another page', async () => {
+    // Given
+    mockPlatforms([buildPlatform()], PAGE_SIZE * 3);
+    const { user } = testRender(<AdminRegisteredPlatforms />);
+    await goToNextPage(user);
+    expect(lastQueryVariables().after).toBe(SECOND_PAGE_CURSOR);
+
+    // When
+    await pickOption(
+      user,
+      'AdminRegisteredPlatforms.Filters.Status',
+      'PlatformStatuses.inactive'
+    );
+
+    // Then
+    expect(lastQueryVariables()).toMatchObject({
+      after: FIRST_PAGE_CURSOR,
+      filter: { status: PlatformConfigurationStatus.Inactive },
+    });
+  });
+
+  it('should fetch the first page when the admin searches while on another page', async () => {
+    // Given
+    mockPlatforms([buildPlatform()], PAGE_SIZE * 3);
+    const { user } = testRender(<AdminRegisteredPlatforms />);
+    await goToNextPage(user);
+    expect(lastQueryVariables().after).toBe(SECOND_PAGE_CURSOR);
+
+    // When
+    fireEvent.change(screen.getByLabelText('AdminRegisteredPlatforms.Search'), {
+      target: { value: SEARCH_TERM },
+    });
+
+    // Then
+    await waitFor(() =>
+      expect(lastQueryVariables()).toMatchObject({
+        after: FIRST_PAGE_CURSOR,
+        searchTerm: SEARCH_TERM,
+      })
+    );
+  });
+
+  it('should fetch the platforms sorted on the column whose header the admin clicks', async () => {
+    // Given
+    const { user } = testRender(<AdminRegisteredPlatforms />);
+
+    // When
+    await user.click(
+      within(
+        screen.getByRole('columnheader', {
+          name: /AdminRegisteredPlatforms\.Columns\.Platform/,
+        })
+      ).getByText('AdminRegisteredPlatforms.Columns.Platform')
+    );
+
+    // Then
+    expect(lastQueryVariables()).toMatchObject({
+      orderBy: AdminRegisteredPlatformOrdering.Title,
+      orderMode: OrderingMode.Asc,
+    });
+  });
+
+  it('should fetch the new last page when the only platform of the last page is gone', async () => {
+    // Given the admin is on the second page, which holds a single platform
+    mockPlatforms([buildPlatform()], PAGE_SIZE + 1);
+    const { user, rerender } = testRender(<AdminRegisteredPlatforms />);
+    await goToNextPage(user);
+    expect(lastQueryVariables().after).toBe(SECOND_PAGE_CURSOR);
+
+    // When that platform is unregistered
+    mockPlatforms([], PAGE_SIZE);
+    rerender(<AdminRegisteredPlatforms />);
+
+    // Then
+    await waitFor(() =>
+      expect(lastQueryVariables().after).toBe(FIRST_PAGE_CURSOR)
+    );
   });
 });

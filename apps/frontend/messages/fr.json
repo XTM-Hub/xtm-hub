@@ -111,6 +111,14 @@
     "EE": "Enterprise Edition",
     "TRIAL": "Essai gratuit"
   },
+  "PlatformStatuses": {
+    "active": "Active",
+    "inactive": "Inactive"
+  },
+  "CommercialModels": {
+    "SAAS": "SaaS",
+    "OTHER": "Autre"
+  },
   "XtmPlatformTrial": {
     "BundleInfo": {
       "OrganizationName": "Organisation",
@@ -2687,14 +2695,6 @@
       "ServiceInstance": "Instance de service",
       "Platform": "Plateforme",
       "Tenant": "Tenant"
-    },
-    "Status": {
-      "active": "Active",
-      "inactive": "Inactive"
-    },
-    "CommercialModel": {
-      "SAAS": "SaaS",
-      "OTHER": "Autre"
     },
     "Credential": {
       "Kind": {

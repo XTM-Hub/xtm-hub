@@ -22,7 +22,7 @@ interface AdminRegisteredPlatformsSelectFilterProps {
   value: string;
   options: AdminRegisteredPlatformsSelectFilterOption[];
   onValueChange: (value: string) => void;
-  triggerAnalyticsId: AnalyticsElementId;
+  analyticsId: AnalyticsElementId;
 }
 
 // A filter of the registered platforms list: its first choice, ALL_FILTER_VALUE, keeps every platform.
@@ -32,13 +32,13 @@ export const AdminRegisteredPlatformsSelectFilter = ({
   value,
   options,
   onValueChange,
-  triggerAnalyticsId,
+  analyticsId: elementId,
 }: AdminRegisteredPlatformsSelectFilterProps) => (
   <Select
     value={value}
     onValueChange={onValueChange}>
     <SelectTrigger
-      {...analyticsId(triggerAnalyticsId)}
+      {...analyticsId(elementId)}
       aria-label={label}
       className="w-full">
       <SelectValue />

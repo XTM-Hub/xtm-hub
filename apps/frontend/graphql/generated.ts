@@ -1218,7 +1218,7 @@ export type Mutation = {
   adminCancelDeploymentRequest: Maybe<DeploymentRequest>;
   adminEditUser: User;
   /** Unregisters a platform without being a member of its organization. Does nothing on an inactive registration. */
-  adminUnregisterPlatform: AdminRegisteredPlatform;
+  adminUnregisterPlatform: Success;
   autoRegisterPlatform: Success;
   bulkAcceptPendingUserInOrganization: Maybe<Success>;
   bulkRemovePendingUserFromOrganization: Maybe<Success>;
@@ -2673,7 +2673,6 @@ export type RegisteredPlatformByPlatformIdInput = {
 /** The current credential of a registration. It says which credential exists, never its value. */
 export type RegisteredPlatformCredential = {
   __typename?: 'RegisteredPlatformCredential';
-  has_token: Scalars['Boolean']['output'];
   kind: RegisteredPlatformCredentialKind;
 };
 
@@ -3723,9 +3722,9 @@ export type AdminUnregisterPlatformMutationVariables = Exact<{
 }>;
 
 
-export type AdminUnregisterPlatformMutation = { __typename?: 'Mutation', adminUnregisterPlatform: { __typename?: 'AdminRegisteredPlatform', service_instance_id: any, platform_id: string, title: string, url: string, identifier: PlatformIdentifier, version: string | null, contract: PlatformContract, commercial_model: CommercialModel, tenant_id: string | null, tenant_name: string | null, status: PlatformConfigurationStatus, last_connectivity_check: any | null, is_trial: boolean, organization: { __typename?: 'AdminRegisteredPlatformOrganization', id: any, name: string } | null, registerer: { __typename?: 'AdminRegisteredPlatformRegisterer', id: any, email: string, first_name: string | null, last_name: string | null } | null, credential: { __typename?: 'RegisteredPlatformCredential', kind: RegisteredPlatformCredentialKind, has_token: boolean } } };
+export type AdminUnregisterPlatformMutation = { __typename?: 'Mutation', adminUnregisterPlatform: { __typename?: 'Success', success: boolean } };
 
-export type AdminRegisteredPlatformRowFragment = { __typename?: 'AdminRegisteredPlatform', service_instance_id: any, platform_id: string, title: string, url: string, identifier: PlatformIdentifier, version: string | null, contract: PlatformContract, commercial_model: CommercialModel, tenant_id: string | null, tenant_name: string | null, status: PlatformConfigurationStatus, last_connectivity_check: any | null, is_trial: boolean, organization: { __typename?: 'AdminRegisteredPlatformOrganization', id: any, name: string } | null, registerer: { __typename?: 'AdminRegisteredPlatformRegisterer', id: any, email: string, first_name: string | null, last_name: string | null } | null, credential: { __typename?: 'RegisteredPlatformCredential', kind: RegisteredPlatformCredentialKind, has_token: boolean } };
+export type AdminRegisteredPlatformRowFragment = { __typename?: 'AdminRegisteredPlatform', service_instance_id: any, platform_id: string, title: string, url: string, identifier: PlatformIdentifier, version: string | null, contract: PlatformContract, commercial_model: CommercialModel, tenant_id: string | null, tenant_name: string | null, status: PlatformConfigurationStatus, last_connectivity_check: any | null, is_trial: boolean, organization: { __typename?: 'AdminRegisteredPlatformOrganization', id: any, name: string } | null, registerer: { __typename?: 'AdminRegisteredPlatformRegisterer', id: any, email: string, first_name: string | null, last_name: string | null } | null, credential: { __typename?: 'RegisteredPlatformCredential', kind: RegisteredPlatformCredentialKind } };
 
 export type AdminRegisteredPlatformsQueryVariables = Exact<{
   first: Scalars['Int']['input'];
@@ -3737,7 +3736,7 @@ export type AdminRegisteredPlatformsQueryVariables = Exact<{
 }>;
 
 
-export type AdminRegisteredPlatformsQuery = { __typename?: 'Query', adminRegisteredPlatforms: { __typename?: 'AdminRegisteredPlatformConnection', totalCount: number, edges: Array<{ __typename?: 'AdminRegisteredPlatformEdge', node: { __typename?: 'AdminRegisteredPlatform', service_instance_id: any, platform_id: string, title: string, url: string, identifier: PlatformIdentifier, version: string | null, contract: PlatformContract, commercial_model: CommercialModel, tenant_id: string | null, tenant_name: string | null, status: PlatformConfigurationStatus, last_connectivity_check: any | null, is_trial: boolean, organization: { __typename?: 'AdminRegisteredPlatformOrganization', id: any, name: string } | null, registerer: { __typename?: 'AdminRegisteredPlatformRegisterer', id: any, email: string, first_name: string | null, last_name: string | null } | null, credential: { __typename?: 'RegisteredPlatformCredential', kind: RegisteredPlatformCredentialKind, has_token: boolean } } }> } };
+export type AdminRegisteredPlatformsQuery = { __typename?: 'Query', adminRegisteredPlatforms: { __typename?: 'AdminRegisteredPlatformConnection', totalCount: number, edges: Array<{ __typename?: 'AdminRegisteredPlatformEdge', node: { __typename?: 'AdminRegisteredPlatform', service_instance_id: any, platform_id: string, title: string, url: string, identifier: PlatformIdentifier, version: string | null, contract: PlatformContract, commercial_model: CommercialModel, tenant_id: string | null, tenant_name: string | null, status: PlatformConfigurationStatus, last_connectivity_check: any | null, is_trial: boolean, organization: { __typename?: 'AdminRegisteredPlatformOrganization', id: any, name: string } | null, registerer: { __typename?: 'AdminRegisteredPlatformRegisterer', id: any, email: string, first_name: string | null, last_name: string | null } | null, credential: { __typename?: 'RegisteredPlatformCredential', kind: RegisteredPlatformCredentialKind } } }> } };
 
 export type ApiTokenCreateMutationVariables = Exact<{
   input: CreateApiTokenInput;
@@ -5074,7 +5073,6 @@ export const AdminRegisteredPlatformRowFragmentDoc = `
   }
   credential {
     kind
-    has_token
   }
   is_trial
 }
@@ -5714,10 +5712,10 @@ export const EpicFieldsFragmentDoc = `
 export const AdminUnregisterPlatformDocument = `
     mutation AdminUnregisterPlatform($serviceInstanceId: ServiceInstanceId!) {
   adminUnregisterPlatform(serviceInstanceId: $serviceInstanceId) {
-    ...AdminRegisteredPlatformRow
+    success
   }
 }
-    ${AdminRegisteredPlatformRowFragmentDoc}`;
+    `;
 
 export const useAdminUnregisterPlatformMutation = <
       TError = unknown,

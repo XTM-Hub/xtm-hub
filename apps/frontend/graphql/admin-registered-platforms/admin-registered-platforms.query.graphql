@@ -23,7 +23,6 @@ fragment AdminRegisteredPlatformRow on AdminRegisteredPlatform {
   }
   credential {
     kind
-    has_token
   }
   is_trial
 }

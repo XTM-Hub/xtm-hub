@@ -111,6 +111,14 @@
     "EE": "Enterprise Edition",
     "TRIAL": "無料トライアル"
   },
+  "PlatformStatuses": {
+    "active": "有効",
+    "inactive": "無効"
+  },
+  "CommercialModels": {
+    "SAAS": "SaaS",
+    "OTHER": "その他"
+  },
   "XtmPlatformTrial": {
     "BundleInfo": {
       "OrganizationName": "組織",
@@ -2687,14 +2695,6 @@
       "ServiceInstance": "サービスインスタンス",
       "Platform": "プラットフォーム",
       "Tenant": "テナント"
-    },
-    "Status": {
-      "active": "有効",
-      "inactive": "無効"
-    },
-    "CommercialModel": {
-      "SAAS": "SaaS",
-      "OTHER": "その他"
     },
     "Credential": {
       "Kind": {

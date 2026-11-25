@@ -1,7 +1,5 @@
-import {
-  type AdminRegisteredPlatformRow,
-  getPlatformProductName,
-} from '@/components/admin/registered-platform/admin-registered-platforms.utils';
+import { type AdminRegisteredPlatformRow } from '@/components/admin/registered-platform/admin-registered-platforms.utils';
+import { PlatformMetadataMapping } from '@/components/registration/PlatformIdentifierMapping';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
@@ -59,7 +57,7 @@ export const AdminUnregisterPlatform = ({
       },
     });
 
-  const productName = getPlatformProductName(platform.identifier);
+  const productName = PlatformMetadataMapping[platform.identifier].name;
 
   return (
     <ConfirmDialog

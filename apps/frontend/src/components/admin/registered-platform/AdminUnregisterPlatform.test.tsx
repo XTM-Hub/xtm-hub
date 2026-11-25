@@ -5,7 +5,7 @@ import {
   type AdminUnregisterPlatformMutation,
   PlatformIdentifier,
 } from '@graphql/generated';
-import { mockAdminRegisteredPlatform } from '@graphql/mocks';
+import { registeredPlatformsKeys } from '@graphql/registered-platforms/registered-platforms.keys';
 import { QueryClient } from '@tanstack/react-query';
 import { act, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -48,10 +48,7 @@ const mutationOptions = () =>
     .lastCall?.[1] as MutationOptions;
 
 const unregisteredPlatformResponse: AdminUnregisterPlatformMutation = {
-  adminUnregisterPlatform: mockAdminRegisteredPlatform({
-    service_instance_id: SERVICE_INSTANCE_ID,
-    title: TITLE,
-  }),
+  adminUnregisterPlatform: { success: true },
 };
 
 const openDialog = async (
@@ -153,6 +150,36 @@ describe('AdminUnregisterPlatform', () => {
     await waitFor(() =>
       expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
     );
+  });
+
+  it('should refresh the platforms listed in the navigation of the admin when the platform is unregistered', async () => {
+    // Given
+    const queryClient = new QueryClient();
+    const invalidateQueries = vi.spyOn(queryClient, 'invalidateQueries');
+    const { user } = await openDialog(queryClient);
+    await user.click(getConfirmButton());
+
+    // When
+    await act(() => mutationOptions().onSuccess(unregisteredPlatformResponse));
+
+    // Then
+    expect(invalidateQueries).toHaveBeenCalledWith({
+      queryKey: registeredPlatformsKeys.all(),
+    });
+  });
+
+  it('should not let the admin confirm again while the platform is being unregistered', async () => {
+    // Given
+    mocks.useAdminUnregisterPlatformMutation.mockReturnValue({
+      mutate: mocks.mutate,
+      isPending: true,
+    });
+
+    // When
+    await openDialog();
+
+    // Then
+    expect(getConfirmButton()).toBeDisabled();
   });
 
   it('should tell the admin the platform is unregistered when the request succeeds', async () => {

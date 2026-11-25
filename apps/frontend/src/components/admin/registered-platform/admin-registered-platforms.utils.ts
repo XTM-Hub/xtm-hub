@@ -1,7 +1,3 @@
-import {
-  CONTRACT_LABEL_BY_CONTRACT,
-  PlatformMetadataMapping,
-} from '@/components/registration/PlatformIdentifierMapping';
 import { isValueInEnum } from '@/utils/is-value-in-enum';
 import {
   AdminRegisteredPlatformOrdering,
@@ -9,16 +5,14 @@ import {
   type AdminRegisteredPlatformsFilter,
   type AdminRegisteredPlatformsQuery,
   type AdminRegisteredPlatformsQueryVariables,
-  CommercialModel,
   OrderingMode,
   PlatformConfigurationStatus,
-  PlatformContract,
   PlatformIdentifier,
   RegisteredPlatformCredentialKind,
 } from '@graphql/generated';
 
-// Mirrors ADMIN_REGISTERED_PLATFORMS_MAX_PAGE in apps/backend/src/modules/registration/registration.app.ts, which
-// clamps `first`. A page size above it would make the cursor (page size x page index) skip rows between two pages.
+// The API clamps the page size to 100. The client computes the cursor of a page from its own page size (page size x
+// page index): asking for more than 100 would make the next page start past rows the API never returned.
 export const ADMIN_REGISTERED_PLATFORMS_MAX_PAGE_SIZE = 100;
 export const ADMIN_REGISTERED_PLATFORMS_DEFAULT_PAGE_SIZE = 50;
 
@@ -47,6 +41,12 @@ export const EMPTY_ADMIN_REGISTERED_PLATFORMS_FILTERS: AdminRegisteredPlatformsF
 export const normalizeAdminRegisteredPlatformsPageSize = (
   pageSize: number
 ): number => Math.min(pageSize, ADMIN_REGISTERED_PLATFORMS_MAX_PAGE_SIZE);
+
+// The index of the last page that holds a platform, 0 when there is none.
+export const getLastPageIndex = (
+  totalCount: number,
+  pageSize: number
+): number => Math.max(Math.ceil(totalCount / pageSize) - 1, 0);
 
 // null when no filter is set, so the query keeps the same variables as an unfiltered list.
 export const toAdminRegisteredPlatformsFilter = ({
@@ -92,62 +92,15 @@ export const parseStatusFilterValue = (
 ): PlatformConfigurationStatus | null =>
   isValueInEnum(value, PlatformConfigurationStatus) ? value : null;
 
-// Brand names are never translated.
-export const getPlatformProductName = (identifier: string): string =>
-  isValueInEnum(identifier, PlatformIdentifier)
-    ? PlatformMetadataMapping[identifier].name
-    : identifier;
-
-const CREDENTIAL_KIND_LABEL_KEYS: Partial<Record<string, string>> = {
+export const CREDENTIAL_KIND_LABEL_BY_CREDENTIAL_KIND: Record<
+  RegisteredPlatformCredentialKind,
+  string
+> = {
   [RegisteredPlatformCredentialKind.Token]:
     'AdminRegisteredPlatforms.Credential.Kind.token',
   [RegisteredPlatformCredentialKind.None]:
     'AdminRegisteredPlatforms.Credential.Kind.none',
 };
-
-// More credential kinds are expected: a kind this client does not know yet has no label key, and is shown as is.
-export const getCredentialKindLabelKey = (kind: string): string | undefined =>
-  CREDENTIAL_KIND_LABEL_KEYS[kind];
-
-export const getContractLabelKey = (contract: string): string | undefined =>
-  isValueInEnum(contract, PlatformContract)
-    ? CONTRACT_LABEL_BY_CONTRACT[contract]
-    : undefined;
-
-const COMMERCIAL_MODEL_LABEL_KEY_BY_COMMERCIAL_MODEL: Record<
-  CommercialModel,
-  string
-> = {
-  [CommercialModel.Saas]: 'AdminRegisteredPlatforms.CommercialModel.SAAS',
-  [CommercialModel.Other]: 'AdminRegisteredPlatforms.CommercialModel.OTHER',
-};
-
-export const getCommercialModelLabelKey = (
-  commercialModel: string
-): string | undefined =>
-  isValueInEnum(commercialModel, CommercialModel)
-    ? COMMERCIAL_MODEL_LABEL_KEY_BY_COMMERCIAL_MODEL[commercialModel]
-    : undefined;
-
-const STATUS_LABEL_KEY_BY_STATUS: Record<PlatformConfigurationStatus, string> =
-  {
-    [PlatformConfigurationStatus.Active]:
-      'AdminRegisteredPlatforms.Status.active',
-    [PlatformConfigurationStatus.Inactive]:
-      'AdminRegisteredPlatforms.Status.inactive',
-  };
-
-export const getStatusLabelKey = (status: string): string | undefined =>
-  isValueInEnum(status, PlatformConfigurationStatus)
-    ? STATUS_LABEL_KEY_BY_STATUS[status]
-    : undefined;
-
-// A value the API sends that this client does not know yet is shown as is.
-export const translateOrRaw = (
-  translate: (labelKey: string) => string,
-  labelKey: string | undefined,
-  value: string
-): string => (labelKey ? translate(labelKey) : value);
 
 export const getRegistererName = (
   registerer: AdminRegisteredPlatformRowFragment['registerer']
