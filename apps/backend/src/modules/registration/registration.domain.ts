@@ -321,6 +321,10 @@ export const RegistrationDomain = {
     targetOrganizationId: OrganizationId;
   }) => {
     const user = requestContext.requireUser();
+    // Locked before the owner and the status are read: two users taking over the same unregistered platform would
+    // otherwise both skip the owner check, and the last one would take it from the first. The caller runs this in a
+    // transaction; the second takeover waits, then finds the platform active in another organization.
+    await PlatformConfigurationDomain.lockConfiguration(serviceInstanceId);
     await securityGuard.assertUserIsAllowedOnOrganization(user, {
       organizationId: targetOrganizationId,
       requiredCapability: OrganizationCapability.ManagePlatformRegistration,

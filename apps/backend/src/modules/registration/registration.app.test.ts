@@ -1524,15 +1524,16 @@ describe('registration app', () => {
           organization_id: extraOrganizationId,
         });
       }
-      requestContext.set({
+      const callerContext = {
         user: {
           ...requestContextRegistererUserSecondOrga.user,
           id: user.id,
           email: user.email,
           selected_organization_id: organizationId,
         },
-      });
-      return { organizationId, userId: user.id };
+      };
+      requestContext.set(callerContext);
+      return { organizationId, userId: user.id, callerContext };
     };
 
     const loadOwnerOrganizationId = async () =>
@@ -1614,6 +1615,89 @@ describe('registration app', () => {
           token,
           registerer_id: userId,
           platform_title: 'Taken over',
+        });
+      });
+
+      it('should let only one of two users of other organizations take it over when they do it at the same time', async () => {
+        // Given two users, each managing platform registrations in their own organization only
+        const first = await createCallerOfAnotherOrganization({
+          capabilities: [OrganizationCapability.ManagePlatformRegistration],
+        });
+        const second = await createCallerOfAnotherOrganization({
+          capabilities: [OrganizationCapability.ManagePlatformRegistration],
+        });
+        // The test setup keeps one request context per test: each concurrent call needs the real one to act as its
+        // own user. The next test gets the test setup's context back.
+        Object.assign(
+          requestContext,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (globalThis as any).__originalRequestContext
+        );
+        // Both have read the unregistered registration before either takes it over: without this, the first could
+        // commit before the second starts, and the test would not race
+        const loadOrganizationBy = OrganizationDomain.loadOrganizationBy;
+        let arrivedCallers = 0;
+        let releaseCallers = () => {};
+        const bothCallersArrived = new Promise<void>((resolve) => {
+          releaseCallers = resolve;
+        });
+        vi.spyOn(OrganizationDomain, 'loadOrganizationBy').mockImplementation(
+          async (field) => {
+            arrivedCallers += 1;
+            if (arrivedCallers === 2) {
+              releaseCallers();
+            }
+            await bothCallersArrived;
+            return loadOrganizationBy(field);
+          }
+        );
+        const takeOver = (caller: typeof first) =>
+          requestContext.run(caller.callerContext, () =>
+            RegistrationApp.registerPlatform({
+              organizationId: caller.organizationId,
+              platform: buildPlatform(),
+              identifier: PlatformIdentifier.Opencti,
+            })
+          );
+
+        // When
+        const results = await Promise.allSettled([
+          takeOver(first),
+          takeOver(second),
+        ]);
+
+        // Then the second one finds the platform active in the organization of the first one
+        const fulfilled = results.flatMap((result, index) =>
+          result.status === 'fulfilled'
+            ? [
+                {
+                  caller: index === 0 ? first : second,
+                  token: result.value.token,
+                },
+              ]
+            : []
+        );
+        const rejected = results.flatMap((result) =>
+          result.status === 'rejected' ? [result.reason] : []
+        );
+        expect(fulfilled).toHaveLength(1);
+        expect(rejected).toEqual([
+          expect.objectContaining({
+            message: ErrorCode.UserIsNotInOrganization,
+          }),
+        ]);
+        const [winner] = fulfilled;
+        expect(await loadOwnerOrganizationId()).toBe(
+          winner!.caller.organizationId
+        );
+        expect(
+          await PlatformConfigurationDomain.loadConfigurationByPlatform(
+            platformId
+          )
+        ).toMatchObject({
+          status: PlatformConfigurationStatus.Active,
+          token: winner!.token,
+          registerer_id: winner!.caller.userId,
         });
       });
 
