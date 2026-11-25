@@ -9,7 +9,7 @@ you, without your session. A token belongs to you and to one of your organizatio
 |--------------|-------------------------------------------------------------------------------------------------------------------|
 | `read`       | Queries only, without the administration of the organization. Every mutation is refused (`READ_ONLY_API_TOKEN`). |
 | `read_write` | Queries and mutations, without the administration of the organization and without any platform capability.       |
-| `admin`      | Your rights in the organization, organization administration included, and your platform capabilities, `BYPASS` excepted. |
+| `admin`      | Your rights in the organization, organization administration included, and your [platform capabilities](#platform-capabilities), `BYPASS` excepted. |
 
 Without the `admin` scope, a token holds none of your rights in the organization: managing its members and their
 rights, its subscriptions and its platforms is refused, and so is any query or subscription that needs one of those
@@ -22,6 +22,20 @@ obtain a credential that would outlive it (`NOT_ALLOWED_WITH_API_TOKEN`): change
 out, add a user to the organization, create another token, refresh your platform token, register a platform, reset
 your password, edit your profile or picture, or transfer your personal space. Adding users to bundle groups by email
 reaches the existing members of the organization only. A `read_write` or `admin` token may still revoke a token.
+
+## Platform capabilities
+
+Platform capabilities administer the Hub itself: trials, the service catalogue, deployments, manifests and the SaaS
+metrics, for example. They are for Filigran staff. They do not come from the Hub but from Filigran's identity provider
+(Auth0): at every sign-in, the Hub replaces them with the ones matching the roles and groups the identity provider
+sends. Only an account in the Filigran group of the identity provider receives any. A Filigran email address outside
+that group is refused sign-in and loses the platform capabilities it held.
+
+Organization capabilities, such as `ADMINISTRATE_ORGANIZATION`, are a different thing: an administrator of the
+organization grants them in the Hub, see [Manage your organization](manage-organization.md).
+
+Only an `admin` token carries platform capabilities: the ones your account holds when the token is used, never
+`BYPASS` nor the platform administrator role. A `read` or `read_write` token carries none.
 
 ## Create a token
 
