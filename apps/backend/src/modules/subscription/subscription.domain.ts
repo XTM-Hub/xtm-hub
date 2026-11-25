@@ -17,7 +17,8 @@ import SubscriptionCapability, {
 import UserService from '../../model/kanel/public/UserService';
 import { restrictSubscriptionToUserOrganization } from '../../security/restriction/subscription';
 import { restrictUserServiceToUserOrganization } from '../../security/restriction/user-service';
-import { UnknownErrorCode } from '../../utils/error/error.code';
+import { logApp } from '../../utils/app-logger.util';
+import { ErrorCode } from '../../utils/error/error.code';
 import { formatRawObject } from '../../utils/query-raw.util';
 
 export const SubscriptionDomain = {
@@ -130,9 +131,18 @@ export const SubscriptionDomain = {
   ): Promise<Subscription> => {
     const [createdSubscription] = await db<Subscription>('Subscription')
       .insert(data)
+      .onConflict(['organization_id', 'service_instance_id'])
+      .ignore()
       .returning('*');
     if (!createdSubscription) {
-      throw new Error(UnknownErrorCode.ServiceSubscriptionError);
+      logApp.warn(
+        'Subscription already exists for this organization and service instance',
+        {
+          organizationId: data.organization_id,
+          serviceInstanceId: data.service_instance_id,
+        }
+      );
+      throw new Error(ErrorCode.AlreadySubscribed);
     }
     return createdSubscription;
   },

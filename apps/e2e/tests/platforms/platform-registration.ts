@@ -47,7 +47,7 @@ export const expectPlatformListedInXtmHub = async (
 };
 
 // Signs in to XTM Hub and to the platform, in the same browser context, and opens the platform's Filigran
-// Experience settings, where it shows "Not connected".
+// Experience settings, where it offers to connect to XTM Hub.
 export const signInToXtmHubAndPlatform = async (
   page: Page,
   platform: XtmPlatform
@@ -58,7 +58,7 @@ export const signInToXtmHubAndPlatform = async (
   await platformPage.login();
   await platformPage.navigateToExperience();
   // XTM Hub forgot any previous registration when its database was reset: the platform resets itself too.
-  await expect(platformPage.getConnectionStatus('Not connected')).toBeVisible();
+  await platformPage.expectNotConnected();
   return platformPage;
 };
 
@@ -86,9 +86,7 @@ export const describePlatformRegistration = (platform: XtmPlatform) => {
         await xtmHubTab.connect(displayedName);
 
         await expect(page.getByText(platform.connectedToast)).toBeVisible();
-        await expect(
-          platformPage.getConnectionStatus('Connected')
-        ).toBeVisible();
+        await expect(platformPage.getConnectedStatus()).toBeVisible();
       });
 
       await test.step('platform is listed in XTM Hub', async () => {
@@ -97,9 +95,7 @@ export const describePlatformRegistration = (platform: XtmPlatform) => {
 
       await test.step('disconnect from the platform', async () => {
         await platformPage.navigateToExperience();
-        await expect(
-          platformPage.getConnectionStatus('Connected')
-        ).toBeVisible();
+        await expect(platformPage.getConnectedStatus()).toBeVisible();
         const xtmHubTab = new XtmHubRegistrationTab(
           await platformPage.openDisconnectionTab()
         );
@@ -109,9 +105,7 @@ export const describePlatformRegistration = (platform: XtmPlatform) => {
         await xtmHubTab.confirmDisconnection();
 
         await expect(page.getByText(platform.disconnectedToast)).toBeVisible();
-        await expect(
-          platformPage.getConnectionStatus('Not connected')
-        ).toBeVisible();
+        await platformPage.expectNotConnected();
       });
     });
 

@@ -113,8 +113,19 @@ export default class XtmPlatformPage {
     return this.page.getByTestId('experience-xtm-hub-card');
   }
 
-  getConnectionStatus(status: 'Connected' | 'Not connected') {
-    return this.getXtmHubCard().getByText(status, { exact: true }).first();
+  getConnectedStatus() {
+    return this.getXtmHubCard().getByText('Connected', { exact: true }).first();
+  }
+
+  // Not every platform labels the "not connected" state (OpenCTI dropped its label), but each one offers to connect.
+  async expectNotConnected() {
+    await expect(
+      this.getXtmHubCard().getByRole('button', { name: 'Connect to XTM Hub' })
+    ).toBeVisible();
+    await expect(this.getConnectedStatus()).toBeHidden();
+    await expect(
+      this.getXtmHubCard().getByText('Connectivity lost', { exact: true })
+    ).toBeHidden();
   }
 
   // Starts the connection or disconnection process and returns the XTM Hub tab it opens.
@@ -140,7 +151,7 @@ export default class XtmPlatformPage {
   async connectToXtmHub(displayedName: string) {
     const xtmHubTab = new XtmHubRegistrationTab(await this.openConnectionTab());
     await xtmHubTab.connect(displayedName);
-    await expect(this.getConnectionStatus('Connected')).toBeVisible();
+    await expect(this.getConnectedStatus()).toBeVisible();
   }
 
   openDisconnectionTab() {

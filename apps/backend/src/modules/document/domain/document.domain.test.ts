@@ -2559,6 +2559,12 @@ describe('document domain', () => {
       await TestHelper.document.delete({});
     });
 
+    afterEach(async () => {
+      await TestHelper.subscription.delete({
+        service_instance_id: privateServiceInstanceId,
+      });
+    });
+
     afterAll(async () => {
       requestContext.set(undefined);
       await TestHelper.subscription.delete({});
