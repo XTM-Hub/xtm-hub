@@ -28,7 +28,7 @@
     "graphql": "catalog:",
     "graphql-tag": "2.12.7",
     "monocart-reporter": "catalog:",
-    "playwright-ctrf-json-reporter": "0.2.0",
+    "playwright-ctrf-json-reporter": "0.3.0",
     "prettier": "catalog:",
     "typescript-eslint": "catalog:"
   },
