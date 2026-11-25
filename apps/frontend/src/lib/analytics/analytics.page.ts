@@ -58,6 +58,15 @@ const PAGE_TYPE_RULES: ReadonlyArray<[RegExp, AnalyticsPageType]> = [
     ),
     'Resource page',
   ],
+  [/^\/sign-up$/, 'Sign up'],
+  [/^\/login$/, 'Log in'],
+  [/^\/app\/manage\/user$/, 'Organization users'],
+  [
+    /^\/app\/manage\/service\/\[serviceInstanceId\]\/subscription\/\[subscriptionId\]$/,
+    'Service access',
+  ],
+  [/^\/\[locale\]\/editable-text$/, 'Demo'],
+  [/^\/app\/editable-text-demo$/, 'Demo'],
 ];
 
 const RELAY_GLOBAL_ID_PATTERN =
