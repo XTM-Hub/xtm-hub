@@ -1,5 +1,6 @@
 import { useResourceListAnalytics } from '@/hooks/use-resource-list-analytics';
 import { revokeAnalyticsConsent } from '@/lib/analytics/analytics.client';
+import { SEARCH_IDLE_MS } from '@/lib/analytics/analytics.consts';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 import {
   readGtagCommands,
@@ -9,7 +10,7 @@ import {
 } from '@/utils/test/analytics';
 import { type LogicalFilterInput } from '@graphql/generated';
 import { act, renderHook } from '@testing-library/react';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const SEARCH_TERM = 'phishing';
 const LOGICAL_FILTERS: LogicalFilterInput = {
@@ -35,6 +36,10 @@ const renderListAnalytics = () =>
 
 beforeEach(() => {
   startAnalytics();
+});
+
+afterEach(() => {
+  vi.useRealTimers();
 });
 
 describe('useResourceListAnalytics', () => {
@@ -84,6 +89,7 @@ describe('useResourceListAnalytics', () => {
 
   it('should send the trimmed term when the search changes', () => {
     // Given
+    vi.useFakeTimers();
     const { rerender } = renderListAnalytics();
 
     // When
@@ -95,6 +101,7 @@ describe('useResourceListAnalytics', () => {
         },
       })
     );
+    act(() => vi.advanceTimersByTime(SEARCH_IDLE_MS));
 
     // Then
     expect(readTrackedEvents('search')).toEqual([

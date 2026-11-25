@@ -1,4 +1,6 @@
 import {
+  deferSearchEvent,
+  flushPendingSearch,
   initializeAnalytics,
   releaseAnalyticsEvents,
   revokeAnalyticsConsent,
@@ -13,6 +15,7 @@ import {
   MAX_PARAM_VALUE_LENGTH,
   MAX_PARAM_VALUE_LENGTHS,
   REDACTED_VALUE,
+  SEARCH_IDLE_MS,
 } from '@/lib/analytics/analytics.consts';
 import {
   type AnalyticsEventName,
@@ -21,6 +24,7 @@ import {
   type AnalyticsPageContext,
 } from '@/lib/analytics/analytics.types';
 import {
+  makeSearchEventParams,
   readGtagCommands,
   readTrackedEvents,
   resetAnalyticsEnvironment,
@@ -34,6 +38,7 @@ const RESOURCE_ID = 'resource-id';
 const RESOURCE_NAME = 'Ransomware playbook';
 const USE_CASE = 'Threat hunting';
 const RESULT_COUNT = 42;
+const PREFIX_SEARCH_TERM = 'waz';
 
 type TrackedEvent = {
   [Name in AnalyticsEventName]: [Name, AnalyticsEvents[Name]];
@@ -46,6 +51,12 @@ const useCaseParams: AnalyticsEvents['view_item_use_case'] = {
   product: 'OpenCTI',
   use_case: USE_CASE,
 };
+
+const searchParams = makeSearchEventParams();
+
+const prefixSearchParams = makeSearchEventParams({
+  search_term: PREFIX_SEARCH_TERM,
+});
 
 const item: AnalyticsItem = {
   item_id: RESOURCE_ID,
@@ -305,6 +316,53 @@ describe('trackEvent', () => {
   });
 });
 
+describe('deferSearchEvent', () => {
+  it('should send only the last search when a search is deferred again before the delay', () => {
+    // Given
+    vi.useFakeTimers();
+    startAnalytics();
+    deferSearchEvent(prefixSearchParams);
+    deferSearchEvent(searchParams);
+
+    // When
+    vi.advanceTimersByTime(SEARCH_IDLE_MS);
+
+    // Then
+    expect(readTrackedEvents('search')).toEqual([searchParams]);
+  });
+
+  it('should restart the delay when a search is deferred again before the delay', () => {
+    // Given
+    vi.useFakeTimers();
+    startAnalytics();
+    deferSearchEvent(prefixSearchParams);
+    vi.advanceTimersByTime(SEARCH_IDLE_MS - 1);
+    deferSearchEvent(searchParams);
+
+    // When
+    vi.advanceTimersByTime(1);
+
+    // Then
+    expect(readTrackedEvents('search')).toEqual([]);
+  });
+});
+
+describe('flushPendingSearch', () => {
+  it('should not send the search again when the delay ends after it was flushed', () => {
+    // Given
+    vi.useFakeTimers();
+    startAnalytics();
+    deferSearchEvent(searchParams);
+    flushPendingSearch();
+
+    // When
+    vi.advanceTimersByTime(SEARCH_IDLE_MS);
+
+    // Then
+    expect(readTrackedEvents('search')).toHaveLength(1);
+  });
+});
+
 describe('releaseAnalyticsEvents', () => {
   it('should send nothing when the held events are not released yet', () => {
     // Given
@@ -439,6 +497,21 @@ describe('revokeAnalyticsConsent', () => {
       'update',
       { analytics_storage: 'denied' },
     ]);
+  });
+
+  it('should drop the pending search when consent is withdrawn and given back before the delay', () => {
+    // Given
+    vi.useFakeTimers();
+    startAnalytics();
+    deferSearchEvent(searchParams);
+
+    // When
+    revokeAnalyticsConsent();
+    startAnalytics();
+    vi.advanceTimersByTime(SEARCH_IDLE_MS);
+
+    // Then
+    expect(readTrackedEvents('search')).toEqual([]);
   });
 });
 

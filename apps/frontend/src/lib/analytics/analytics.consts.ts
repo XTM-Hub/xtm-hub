@@ -36,6 +36,8 @@ export const MAX_ITEMS_PER_EVENT = 25;
 
 export const MIN_TRACKED_SEARCH_TERM_LENGTH = 3;
 
+export const SEARCH_IDLE_MS = 2_000;
+
 export const FILTER_NAME_LABELS = {
   label: 'Use case',
   entity_type: 'Entity type',

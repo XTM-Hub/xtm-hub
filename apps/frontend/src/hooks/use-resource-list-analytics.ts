@@ -1,5 +1,5 @@
 import { useAnalyticsEnabled } from '@/hooks/use-analytics-enabled';
-import { trackEvent } from '@/lib/analytics/analytics.client';
+import { deferSearchEvent, trackEvent } from '@/lib/analytics/analytics.client';
 import {
   type ResourceListResults,
   type ResourceListSnapshot,
@@ -47,7 +47,7 @@ export const useResourceListAnalytics = ({
       trackEvent('view_item_list', viewItemList);
     }
     if (search) {
-      trackEvent('search', search);
+      deferSearchEvent(search);
     }
   }, [
     isAnalyticsEnabled,
