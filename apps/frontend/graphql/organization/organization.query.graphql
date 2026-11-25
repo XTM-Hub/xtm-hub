@@ -35,3 +35,28 @@ query UserOrganizations {
     personal_space
   }
 }
+
+query OrganizationMembers(
+  $organizationId: OrganizationId!
+  $first: Int!
+  $after: ID
+  $searchTerm: String
+) {
+  organizationMembers(
+    organizationId: $organizationId
+    first: $first
+    after: $after
+    searchTerm: $searchTerm
+  ) {
+    totalCount
+    edges {
+      node {
+        id
+        email
+        first_name
+        last_name
+        capabilities
+      }
+    }
+  }
+}
