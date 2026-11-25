@@ -2424,6 +2424,8 @@
     "InvitationStatus": "Invitation status",
     "LastLogin": "Last login",
     "LastName": "Last name",
+    "Member": "Member",
+    "Members": "Members",
     "NoUsers": "No users found",
     "Organizations": "Organizations",
     "ResendInvite": "Re-send Invite",
