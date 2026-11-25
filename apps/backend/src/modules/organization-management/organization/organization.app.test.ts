@@ -322,7 +322,10 @@ describe('organizationApp', () => {
     // An unknown organization answers NOT_FOUND too: the membership is checked before the organization is loaded
     const NON_MEMBER_CASES = [
       { name: 'another organization', organizationId: FILIGRAN.ID },
-      { name: 'an unknown organization', organizationId: UNKNOWN_ORGANIZATION_ID },
+      {
+        name: 'an unknown organization',
+        organizationId: UNKNOWN_ORGANIZATION_ID,
+      },
       {
         name: 'the personal space of another user',
         organizationId: SECOND.USERS.ADMIN_ORGA.PERSONAL_SPACE_ID,
