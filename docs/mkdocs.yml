@@ -112,7 +112,7 @@ nav:
           - Transfer your personal space: user/transfer-personal-space.md
           - Access public roadmap: user/roadmap.md
           - Personal API tokens: user/api-tokens.md
-          - Download limits: user/download-limits.md
+          - Rate limits: user/rate-limits.md
       - OpenCTI:
         - News Feed: user/opencti-news-feed.md
         - Connection: user/opencti-connection.md

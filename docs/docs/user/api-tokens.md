@@ -75,8 +75,8 @@ The request runs as you, in the token's organization. A revoked, expired or unkn
 never falls back to a session. After 30 refused tokens in 15 minutes from the same address, the API answers `429` to
 every token from that address until the 15 minutes are over. The tokens it accepted in the last hour usually keep
 working, but not always: each API server only knows the tokens it accepted itself, and forgets them when it restarts.
-Calls are limited to 300 per minute per token, and every call is logged with the token and the operation it
-ran. A token works on `/graphql-api` only: the `/graphql-sse` subscription endpoint, the REST endpoints and the
+Calls are limited to 300 per minute per token, and count as well against the [limit of your user](rate-limits.md).
+Every call is logged with the token and the operation it ran. A token works on `/graphql-api` only: the `/graphql-sse` subscription endpoint, the REST endpoints and the
 sign-in routes answer it `403` (`NOT_ALLOWED_WITH_API_TOKEN`).
 
 `settings { capabilities }` lists `API_TOKENS` when the Hub accepts personal API tokens.
