@@ -6,7 +6,11 @@ import {
 } from '../../../utils/error/error.code';
 import type { PlatformCredential } from '../../platform-credential';
 import { allow, deny, forCaller, Guard } from '../guard.types';
-import { buildPlatformPrincipal, buildSystemPrincipal } from '../principal';
+import {
+  buildPlatformPrincipal,
+  buildPrincipal,
+  buildSystemPrincipal,
+} from '../principal';
 import { AsyncSource, Source } from '../sources';
 
 export const systemCallerGuard = (
@@ -29,8 +33,12 @@ export const platformCallerGuard = ({
   forCaller('platform', () => allow(), buildPlatformPrincipal(credential));
 
 export const sessionCallerGuard = (): Guard =>
-  forCaller('user', (user) =>
-    user.apiToken ? deny(ForbiddenErrorCode.NotAllowedWithApiToken) : allow()
+  forCaller(
+    'user',
+    (user) =>
+      user.apiToken ? deny(ForbiddenErrorCode.NotAllowedWithApiToken) : allow(),
+    buildPrincipal,
+    true
   );
 
 // NOT_FOUND, not FORBIDDEN_ACCESS: a refusal must not tell a non-owner that the record exists

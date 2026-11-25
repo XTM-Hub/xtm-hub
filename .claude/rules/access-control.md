@@ -101,7 +101,8 @@ Type the arguments with an explicit generic (`orgGuard<MutationXArgs>(…)`), so
   below. A missing id answers `NOT_FOUND`.
 - **`anyOf(guardA, guardB)`** allows when one guard allows. It refuses with `UNAUTHENTICATED`, else the first
   `MISSING_CAPABILITY_*`, else `FORBIDDEN_ACCESS`, else `NOT_FOUND`. The guards must share one principal builder: a user
-  guard cannot be combined with a system or platform guard.
+  guard cannot be combined with a system or platform guard. It throws when it contains a guard it does not support,
+  such as `sessionCallerGuard()`.
 - **`allOf(guardA, guardB)`** allows when every guard allows. Guards run in written order and the first denial wins, so
   write the one that needs no query first: it spares the queries of the next ones, and the code does not depend on a
   ranking. The result is the last guard's, which `.targets()` reads: write the `orgGuard` or `serviceGuard` last. Same
@@ -199,8 +200,9 @@ organization and right of that user, so anything that reads them again must appl
   `orgGuard` and `serviceGuard` are token-safe as they are: the token's memberships hold its organization only, and
   only an `admin` token keeps organization capabilities.
 - A mutation that acts on the account itself (session, credentials, profile, personal space) is declared
-  `@Guarded(allOf(sessionCallerGuard(), …))`. Put `sessionCallerGuard()` first and inside `allOf`: inside `anyOf` its
-  denial would be ranked as `NOT_FOUND`. A module not migrated yet lists its mutation in `API_TOKEN_DENIED_FIELDS`
+  `@Guarded(allOf(sessionCallerGuard(), …))`, with `sessionCallerGuard()` first. `anyOf` throws when it is built with
+  it, directly or through an `allOf`. A module not migrated yet lists its
+  mutation in `API_TOKEN_DENIED_FIELDS`
   (`src/modules/api-token/api-token.plugin.ts`) instead, and never in both: the plugin refuses it before any
   resolver runs.
 - A read token is refused any mutation before the guard runs (`READ_ONLY_API_TOKEN`).

@@ -94,17 +94,6 @@ describe('anyOf', () => {
     },
     {
       label:
-        'NOT_ALLOWED_WITH_API_TOKEN over MISSING_CAPABILITY_*, FORBIDDEN_ACCESS and NOT_FOUND',
-      codes: [
-        NotFoundErrorCode.NotFound,
-        ForbiddenErrorCode.ForbiddenAccess,
-        ForbiddenErrorCode.MissingCapabilityOnOrganization,
-        ForbiddenErrorCode.NotAllowedWithApiToken,
-      ],
-      expected: ForbiddenErrorCode.NotAllowedWithApiToken,
-    },
-    {
-      label:
         'the first MISSING_CAPABILITY_* over FORBIDDEN_ACCESS and NOT_FOUND',
       codes: [
         NotFoundErrorCode.NotFound,
@@ -170,6 +159,44 @@ describe('anyOf', () => {
     // Then
     expect(build).toThrow('must build the same principal');
   });
+
+  it.each([
+    {
+      label: 'directly',
+      unsupported: () => sessionCallerGuard(),
+    },
+    {
+      label: 'through an allOf',
+      unsupported: () =>
+        allOf(
+          sessionCallerGuard(),
+          orgGuard({ organization: selectedOrganization, capabilities: [] })
+        ),
+    },
+    {
+      label: 'through the targets of an allOf',
+      unsupported: () =>
+        allOf(
+          sessionCallerGuard(),
+          orgGuard({ organization: selectedOrganization, capabilities: [] })
+        ).targets(() => allow()),
+    },
+  ])(
+    'should throw at construction when sessionCallerGuard is in it, $label',
+    ({ unsupported }) => {
+      // Given
+      const other = orgGuard({
+        organization: selectedOrganization,
+        capabilities: [],
+      });
+
+      // When
+      const build = () => anyOf(unsupported(), other);
+
+      // Then
+      expect(build).toThrow('anyOf contains a guard it does not support');
+    }
+  );
 
   it('should refuse an anonymous visitor with UNAUTHENTICATED without running any source', async () => {
     // Given
