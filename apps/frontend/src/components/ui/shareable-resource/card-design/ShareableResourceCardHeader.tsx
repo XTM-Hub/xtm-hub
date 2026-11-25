@@ -1,4 +1,5 @@
 import { ShareableResourceCardImage } from '@/components/ui/shareable-resource/card-design/ShareableResourceCardImage';
+import { ShareableResourceCardOverview } from '@/components/ui/shareable-resource/card-design/ShareableResourceCardOverview';
 import { ShareableResourceCardTags } from '@/components/ui/shareable-resource/card-design/ShareableResourceCardTags';
 import { PublicDocumentData } from '@/utils/shareable-resources/shareable-resources.types';
 import { Text } from '@filigran/design-system';
@@ -13,13 +14,14 @@ export const ShareableResourceCardHeader = ({
   serviceInstanceId,
 }: ShareableResourceCardHeaderProps) => {
   return (
-    <div className="flex shrink-0 flex-col gap-6">
+    <div className="flex shrink-0 flex-col gap-4">
       <div className="flex items-start gap-4">
         <ShareableResourceCardImage
           document={document}
           serviceInstanceId={serviceInstanceId}
         />
-        <div className="flex min-h-12 min-w-0 flex-1 items-center">
+        <div className="flex min-h-12 min-w-0 flex-1 flex-col justify-center">
+          <ShareableResourceCardOverview document={document} />
           <Text
             as="h3"
             variant="title-sm"
