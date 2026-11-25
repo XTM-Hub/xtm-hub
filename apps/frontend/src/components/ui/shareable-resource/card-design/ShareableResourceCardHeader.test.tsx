@@ -38,3 +38,38 @@ describe('ShareableResourceCardHeader', () => {
     expect(screen.queryByText(ENTITY_TYPE)).not.toBeInTheDocument();
   });
 });
+
+describe('ShareableResourceCardHeader overview', () => {
+  const renderWithType = (showOverview?: boolean) =>
+    testRender(
+      <ShareableResourceCardHeader
+        document={
+          {
+            name: NAME,
+            type: 'opencti_integration',
+            use_cases: [],
+          } as unknown as DocumentItemFragment
+        }
+        serviceInstanceId="svc-id"
+        showOverview={showOverview}
+      />
+    );
+
+  it('should hide the platform and library line when the card is in a library', () => {
+    // Given / When
+    renderWithType();
+
+    // Then
+    expect(
+      screen.queryByText('OpenCTI - Menu.Integrations')
+    ).not.toBeInTheDocument();
+  });
+
+  it('should show the platform and library line when the overview is requested', () => {
+    // Given / When
+    renderWithType(true);
+
+    // Then
+    expect(screen.getByText('OpenCTI - Menu.Integrations')).toBeInTheDocument();
+  });
+});

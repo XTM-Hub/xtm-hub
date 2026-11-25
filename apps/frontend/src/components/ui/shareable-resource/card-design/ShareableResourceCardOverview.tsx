@@ -22,7 +22,8 @@ const LIBRARY_LABEL_KEYS: Record<ShareableResourceType, string> = {
 /**
  * Platform and library the resource belongs to (e.g. "OpenCTI - Integrations"),
  * shown above the title so a card is self-explanatory outside of its library
- * (home page) and looks the same inside it (service pages).
+ * (home page). Inside a library the context is already known, so the card
+ * leaves it out (see `showOverview` on `ShareableResourceCard`).
  */
 export const ShareableResourceCardOverview = ({
   document,

@@ -47,6 +47,19 @@ const buildHomeDocument = (
   }) as HomepageResourceDocumentFragment;
 
 describe('HomepageResourceList with the library card', () => {
+  it('shows the platform and library of each resource above its title', () => {
+    testRender(
+      <HomepageResourceList
+        title="Resources"
+        baseUrl={BASE_URL}
+        paramsLocale="en"
+        documents={[buildHomeDocument()]}
+      />
+    );
+
+    expect(screen.getByText('OpenCTI - Menu.Integrations')).toBeInTheDocument();
+  });
+
   it('renders the home document fields through the real library card', () => {
     testRender(
       <HomepageResourceList

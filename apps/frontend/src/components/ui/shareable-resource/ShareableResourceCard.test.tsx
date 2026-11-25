@@ -15,6 +15,39 @@ vi.mock('@/hooks/use-scroll-position', () => ({
 describe('ShareableResourceCard', () => {
   const serviceInstance = { id: 'service-id' };
 
+  it.each([
+    [undefined, false],
+    [true, true],
+  ])(
+    'should show the platform and library line only when showOverview is %s',
+    (showOverview, expected) => {
+      // Given / When
+      testRender(
+        <ShareableResourceCard
+          document={
+            {
+              id: 'doc-overview',
+              name: 'Overview connector',
+              type: 'opencti_integration',
+              short_description: 'A description',
+              integration_type: IntegrationType.Connector,
+              use_cases: [],
+            } as DocumentItemFragment
+          }
+          detailUrl="/details"
+          shareLinkUrl="/share"
+          serviceInstance={serviceInstance}
+          showOverview={showOverview}
+        />
+      );
+
+      // Then
+      expect(screen.queryByText('OpenCTI - Menu.Integrations') !== null).toBe(
+        expected
+      );
+    }
+  );
+
   it('renders connector card with document name and description', () => {
     vi.mocked(useIsFeatureEnabled).mockReturnValue(true);
 

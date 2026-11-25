@@ -60,6 +60,7 @@ const HomepageResourceList = ({
               shareLinkUrl={`${baseUrl}/${publicPath}`}
               serviceInstance={{ id: resource.service_instance_id ?? '' }}
               publicPath={!isAuthenticated}
+              showOverview
             />
           );
         })}

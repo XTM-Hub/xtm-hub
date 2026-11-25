@@ -8,10 +8,12 @@ import { DocumentItemFragment } from '@graphql/generated';
 interface ShareableResourceCardHeaderProps {
   document: DocumentItemFragment | PublicDocumentData;
   serviceInstanceId: string;
+  showOverview?: boolean;
 }
 export const ShareableResourceCardHeader = ({
   document,
   serviceInstanceId,
+  showOverview = false,
 }: ShareableResourceCardHeaderProps) => {
   return (
     <div className="flex shrink-0 flex-col gap-4">
@@ -21,7 +23,9 @@ export const ShareableResourceCardHeader = ({
           serviceInstanceId={serviceInstanceId}
         />
         <div className="flex min-h-12 min-w-0 flex-1 flex-col justify-center">
-          <ShareableResourceCardOverview document={document} />
+          {showOverview && (
+            <ShareableResourceCardOverview document={document} />
+          )}
           <Text
             as="h3"
             variant="title-sm"
