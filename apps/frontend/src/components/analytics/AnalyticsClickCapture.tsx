@@ -5,7 +5,10 @@ import {
   buildSelectItemParams,
   findTrackedElement,
 } from '@/lib/analytics/analytics.click';
-import { trackEvent } from '@/lib/analytics/analytics.client';
+import {
+  flushPendingSearch,
+  trackEvent,
+} from '@/lib/analytics/analytics.client';
 import { type AnalyticsPageType } from '@/lib/analytics/analytics.types';
 import { useEffect, useLayoutEffect, useRef } from 'react';
 
@@ -26,8 +29,11 @@ const AnalyticsClickCapture = ({ pageType }: AnalyticsClickCaptureProps) => {
       if (!tracked) {
         return;
       }
-      trackEvent('ui_click', buildClickParams(tracked, pageTypeRef.current));
       const selectItem = buildSelectItemParams(tracked, pageTypeRef.current);
+      if (selectItem) {
+        flushPendingSearch();
+      }
+      trackEvent('ui_click', buildClickParams(tracked, pageTypeRef.current));
       if (selectItem) {
         trackEvent('select_item', selectItem);
       }
