@@ -46,8 +46,11 @@ export default class IntegrationPage {
 
   async navigateToIntegrationsService() {
     await this.page.getByRole('button', { name: 'OpenCTI' }).click();
+    // Exact: the home cards are links too, and their name contains
+    // "OpenCTI - Integrations".
     const integrationsLink = this.page.getByRole('link', {
       name: 'Integrations',
+      exact: true,
     });
     await integrationsLink.waitFor({ state: 'visible' });
     await integrationsLink.click();
