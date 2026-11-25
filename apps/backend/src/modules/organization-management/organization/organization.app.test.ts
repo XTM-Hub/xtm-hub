@@ -300,7 +300,7 @@ describe('organizationApp', () => {
     const UNKNOWN_ORGANIZATION_ID =
       'f7a1c0de-0000-4000-8000-0000000000aa' as OrganizationId;
     const PAGE_SIZE = 20;
-    // Compared exactly: ORGANIZATION_NOT_FOUND contains NOT_FOUND, so toThrow would accept one for the other
+    // Error objects, not strings: toThrow would accept NOT_FOUND inside ORGANIZATION_NOT_FOUND
     const NOT_FOUND = new Error(NotFoundErrorCode.NotFound);
     const ORGANIZATION_NOT_FOUND = new Error(ErrorCode.OrganizationNotFound);
     const SECOND_MEMBER_IDS: string[] = [
@@ -368,7 +368,7 @@ describe('organizationApp', () => {
       );
 
       // Then
-      await expect(call).rejects.toStrictEqual(NOT_FOUND);
+      await expect(call).rejects.toThrow(NOT_FOUND);
     });
 
     it.each(NON_MEMBER_CASES)(
@@ -383,7 +383,7 @@ describe('organizationApp', () => {
         });
 
         // Then
-        await expect(call).rejects.toStrictEqual(NOT_FOUND);
+        await expect(call).rejects.toThrow(NOT_FOUND);
       }
     );
 
@@ -438,7 +438,7 @@ describe('organizationApp', () => {
         });
 
         // Then
-        await expect(call).rejects.toStrictEqual(ORGANIZATION_NOT_FOUND);
+        await expect(call).rejects.toThrow(ORGANIZATION_NOT_FOUND);
       }
     );
 
