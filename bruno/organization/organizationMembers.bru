@@ -63,5 +63,5 @@ settings {
 }
 
 docs {
-  Lists the members of an organization, administrators first, then by email: invited, expired, waiting and disabled users included, pending requests excluded. Set organizationId to the id of the organization, raw or global. first is brought between 0 and 100, 0 returns no member but the totalCount; pass the endCursor of a page as after to get the next one. searchTerm matches the email, the first name or the last name, ignoring case. A logged-in user reads the members of the organizations they belong to (a personal space excepted); BYPASS reads those of any organization; READ_ORGANIZATION_MEMBERS those of any organization except a personal space. An id that is not a UUID answers NOT_FOUND. Any other organization answers NOT_FOUND to a caller without BYPASS or READ_ORGANIZATION_MEMBERS who is not a member of it, an unknown one included; otherwise an unknown organization, or a personal space they may not read, answers ORGANIZATION_NOT_FOUND.
+  Pages the members of organizationId (pass the endCursor of a page as after for the next one); access, order and error codes are in the organizationMembers description of organization.graphql.
 }

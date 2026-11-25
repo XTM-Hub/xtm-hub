@@ -7,21 +7,23 @@ import {
 import { CAPABILITY_BYPASS } from '../../../portal.const';
 import { isUserRestrictedToOwnOrganizationMembers } from './organization.security';
 
+const CAPABILITY_CASES = [
+  { name: 'BYPASS', capabilities: [CAPABILITY_BYPASS], restricted: false },
+  {
+    name: 'READ_ORGANIZATION_MEMBERS',
+    capabilities: [CAPABILITY_READ_ORGANIZATION_MEMBERS],
+    restricted: false,
+  },
+  {
+    name: 'another portal capability only',
+    capabilities: [CAPABILITY_READ_SAAS_METRICS],
+    restricted: true,
+  },
+  { name: 'no portal capability', capabilities: [], restricted: true },
+];
+
 describe('isUserRestrictedToOwnOrganizationMembers', () => {
-  it.each([
-    { name: 'BYPASS', capabilities: [CAPABILITY_BYPASS], restricted: false },
-    {
-      name: 'READ_ORGANIZATION_MEMBERS',
-      capabilities: [CAPABILITY_READ_ORGANIZATION_MEMBERS],
-      restricted: false,
-    },
-    {
-      name: 'another portal capability only',
-      capabilities: [CAPABILITY_READ_SAAS_METRICS],
-      restricted: true,
-    },
-    { name: 'no portal capability', capabilities: [], restricted: true },
-  ])(
+  it.each(CAPABILITY_CASES)(
     'should return $restricted when the user holds $name',
     ({ capabilities, restricted }) => {
       // Given

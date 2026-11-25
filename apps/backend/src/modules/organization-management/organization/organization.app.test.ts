@@ -319,6 +319,32 @@ describe('organizationApp', () => {
     };
     // Matches user@ and user.registerer@ of SECOND, not admin@
     const SEARCH_TERM = 'user';
+    // An unknown organization answers NOT_FOUND too: the membership is checked before the organization is loaded
+    const NON_MEMBER_CASES = [
+      { name: 'another organization', organizationId: FILIGRAN.ID },
+      { name: 'an unknown organization', organizationId: UNKNOWN_ORGANIZATION_ID },
+      {
+        name: 'the personal space of another user',
+        organizationId: SECOND.USERS.ADMIN_ORGA.PERSONAL_SPACE_ID,
+      },
+    ];
+    const UNKNOWN_ORGANIZATION_CASES = [
+      {
+        name: 'a READ_ORGANIZATION_MEMBERS holder reads an unknown organization',
+        context: READ_ORGANIZATION_MEMBERS_HOLDER,
+        organizationId: UNKNOWN_ORGANIZATION_ID,
+      },
+      {
+        name: 'a READ_ORGANIZATION_MEMBERS holder reads a personal space',
+        context: READ_ORGANIZATION_MEMBERS_HOLDER,
+        organizationId: SECOND.USERS.ADMIN_ORGA.PERSONAL_SPACE_ID,
+      },
+      {
+        name: 'a member without portal capability reads their own personal space',
+        context: MEMBER_OF_SECOND,
+        organizationId: SECOND.USERS.SIMPLE.PERSONAL_SPACE_ID,
+      },
+    ];
 
     const memberIds = ({ edges }: OrganizationMemberConnection) =>
       edges.map(({ node }) => node.id);
@@ -342,13 +368,7 @@ describe('organizationApp', () => {
       await expect(call).rejects.toStrictEqual(NOT_FOUND);
     });
 
-    // An unknown organization answers NOT_FOUND too: the membership is checked before the organization is loaded
-    it.each`
-      name                                    | organizationId
-      ${'another organization'}               | ${FILIGRAN.ID}
-      ${'an unknown organization'}            | ${UNKNOWN_ORGANIZATION_ID}
-      ${'the personal space of another user'} | ${SECOND.USERS.ADMIN_ORGA.PERSONAL_SPACE_ID}
-    `(
+    it.each(NON_MEMBER_CASES)(
       'should refuse with NOT_FOUND when a caller without portal capability reads $name',
       async ({ organizationId }) => {
         // Given
@@ -403,12 +423,7 @@ describe('organizationApp', () => {
       });
     });
 
-    it.each`
-      name                                                                   | context                             | organizationId
-      ${'a READ_ORGANIZATION_MEMBERS holder reads an unknown organization'}  | ${READ_ORGANIZATION_MEMBERS_HOLDER} | ${UNKNOWN_ORGANIZATION_ID}
-      ${'a READ_ORGANIZATION_MEMBERS holder reads a personal space'}         | ${READ_ORGANIZATION_MEMBERS_HOLDER} | ${SECOND.USERS.ADMIN_ORGA.PERSONAL_SPACE_ID}
-      ${'a member without portal capability reads their own personal space'} | ${MEMBER_OF_SECOND}                 | ${SECOND.USERS.SIMPLE.PERSONAL_SPACE_ID}
-    `(
+    it.each(UNKNOWN_ORGANIZATION_CASES)(
       'should refuse the organization as unknown when $name',
       async ({ context, organizationId }) => {
         // Given

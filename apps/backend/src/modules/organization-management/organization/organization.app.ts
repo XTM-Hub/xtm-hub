@@ -55,7 +55,7 @@ export const OrganizationApp = {
     if (!organization) {
       throw new Error(ErrorCode.OrganizationNotFound);
     }
-    // Restricted again in the query, as every read of protected rows must be (access-control.md)
+    // Restricted again in the query: the domain may be called without this check
     return UserDomain.loadOrganizationMemberConnection(organization.id, {
       first: OrganizationHelper.boundMembersPageSize(first),
       after,

@@ -909,6 +909,22 @@ describe('users domain', () => {
         // Then
         expect(membersOf(connection)).toEqual(NO_MEMBER);
       });
+
+      it('should return the member of a personal space when the caller is a BYPASS user', async () => {
+        // Given the seeded personal space of SIMPLE of SECOND
+
+        // When
+        const connection = await UserDomain.loadOrganizationMemberConnection(
+          SECOND.USERS.SIMPLE.PERSONAL_SPACE_ID,
+          { first: PAGE_SIZE }
+        );
+
+        // Then
+        expect(membersOf(connection)).toEqual({
+          ids: [SECOND.USERS.SIMPLE.ID],
+          totalCount: 1,
+        });
+      });
     });
 
     describe('restricted to the organizations whose members the caller can read', () => {
@@ -1040,33 +1056,20 @@ describe('users domain', () => {
         expect(membersOf(connection)).toEqual(NO_MEMBER);
       });
 
-      it('should return the member of a personal space to a BYPASS user but not to a READ_ORGANIZATION_MEMBERS holder when both read it', async () => {
+      it('should not return the member of a personal space when the caller holds READ_ORGANIZATION_MEMBERS', async () => {
         // Given
         setSimpleUserOfSecondCaller({
           capabilities: [CAPABILITY_READ_ORGANIZATION_MEMBERS],
         });
 
         // When
-        const readerConnection =
-          await UserDomain.loadOrganizationMemberConnection(
-            SECOND.USERS.SIMPLE.PERSONAL_SPACE_ID,
-            { first: PAGE_SIZE }
-          );
-        requestContext.set(requestContextAdminUser);
-        const bypassConnection =
-          await UserDomain.loadOrganizationMemberConnection(
-            SECOND.USERS.SIMPLE.PERSONAL_SPACE_ID,
-            { first: PAGE_SIZE }
-          );
+        const connection = await UserDomain.loadOrganizationMemberConnection(
+          SECOND.USERS.SIMPLE.PERSONAL_SPACE_ID,
+          { first: PAGE_SIZE }
+        );
 
         // Then
-        expect({
-          reader: membersOf(readerConnection),
-          bypass: membersOf(bypassConnection),
-        }).toEqual({
-          reader: NO_MEMBER,
-          bypass: { ids: [SECOND.USERS.SIMPLE.ID], totalCount: 1 },
-        });
+        expect(membersOf(connection)).toEqual(NO_MEMBER);
       });
     });
   });

@@ -2136,10 +2136,8 @@ export type Query = {
   /** The API tokens of the selected organization, for its administrators */
   organizationApiTokens: Array<ApiToken>;
   /**
-   * The members of an organization, administrators first, then by email. Pending requests are not members.
-   * An id that is not a UUID answers NOT_FOUND. A caller without BYPASS or READ_ORGANIZATION_MEMBERS who is not a
-   * member of the organization is refused with NOT_FOUND, an unknown organization included; otherwise an unknown
-   * organization, or a personal space they may not read, answers ORGANIZATION_NOT_FOUND.
+   * The members of an organization, administrators first, then by email.
+   * NOT_FOUND to a malformed id or a non-member without BYPASS or READ_ORGANIZATION_MEMBERS, else ORGANIZATION_NOT_FOUND.
    */
   organizationMembers: OrganizationMemberConnection;
   organizations: OrganizationConnection;
