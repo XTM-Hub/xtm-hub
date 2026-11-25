@@ -349,9 +349,7 @@ export const UserDomain = {
       .orderBy('User.email', 'asc');
   },
 
-  // Every member of the organization, whatever their status (invited, expired, waiting, disabled); pending requests
-  // live in User_Organization_Pending and are not members. An organization whose members the caller may not read
-  // gives an empty connection.
+  // No status filter: an invited, expired, waiting or disabled user is still a member, a pending request is not
   loadOrganizationMemberConnection: (
     organizationId: OrganizationId,
     {
@@ -407,9 +405,7 @@ export const UserDomain = {
           'User',
         ]
       );
-    // No searchTerm nor orderBy for paginate: its applySearch would add country, and the order is set above.
-    // Its count clears the select, the order and the group by and counts distinct User.id, so neither the
-    // capability join nor the grouping inflates totalCount
+    // searchTerm not passed to paginate: its applySearch would also match the country
     return paginate<OrganizationMember, OrganizationMemberConnection>(
       'User',
       { first, after },

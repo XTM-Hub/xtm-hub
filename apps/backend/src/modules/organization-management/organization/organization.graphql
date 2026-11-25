@@ -70,9 +70,9 @@ type Query {
   userOrganizations: [Organization!]! @auth
   """
   The members of an organization, administrators first, then by email. Pending requests are not members.
-  A caller without BYPASS or READ_ORGANIZATION_MEMBERS who is not a member of the organization is refused with
-  NOT_FOUND, an unknown organization included; otherwise an unknown organization, or a personal space they may not
-  read, answers ORGANIZATION_NOT_FOUND.
+  An id that is not a UUID answers NOT_FOUND. A caller without BYPASS or READ_ORGANIZATION_MEMBERS who is not a
+  member of the organization is refused with NOT_FOUND, an unknown organization included; otherwise an unknown
+  organization, or a personal space they may not read, answers ORGANIZATION_NOT_FOUND.
   """
   organizationMembers(
     organizationId: OrganizationId!

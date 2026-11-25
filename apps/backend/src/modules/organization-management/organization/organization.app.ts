@@ -28,11 +28,7 @@ import { OrganizationHelper } from './organization.helper';
 import { isUserRestrictedToOwnOrganizationMembers } from './organization.security';
 
 export const OrganizationApp = {
-  /**
-   * A caller without READ_ORGANIZATION_MEMBERS who is not a member of the organization is refused with NOT_FOUND, as
-   * orgGuard refuses a non-member, whether the organization exists or not. A malformed id and an organization that is
-   * not loaded (unknown, or a personal space without BYPASS) answer ORGANIZATION_NOT_FOUND.
-   */
+  // A non-member gets orgGuard's generic NOT_FOUND, existing organization or not, so the id reveals nothing
   async loadOrganizationMembers(
     organizationId: OrganizationId,
     {
@@ -41,11 +37,10 @@ export const OrganizationApp = {
       searchTerm,
     }: Omit<QueryOrganizationMembersArgs, 'organizationId'>
   ): Promise<OrganizationMemberConnection> {
-    // A malformed id would make PostgreSQL fail on the uuid cast, membership check included: refuse it before any query
+    // Before any query: PostgreSQL would fail on the uuid cast
     if (!isUuid(organizationId)) {
-      throw new Error(ErrorCode.OrganizationNotFound);
+      throw new Error(NotFoundErrorCode.NotFound);
     }
-    // Security: without READ_ORGANIZATION_MEMBERS, the caller reads the members of their own organizations only
     const user = requestContext.requireUser();
     if (
       isUserRestrictedToOwnOrganizationMembers(user) &&
@@ -53,7 +48,6 @@ export const OrganizationApp = {
     ) {
       throw new Error(NotFoundErrorCode.NotFound);
     }
-    // Data: the organization itself, a personal space for BYPASS only
     const organization =
       await OrganizationDomain.loadFirstProfessionalOrganizationBy({
         id: organizationId,
@@ -61,7 +55,7 @@ export const OrganizationApp = {
     if (!organization) {
       throw new Error(ErrorCode.OrganizationNotFound);
     }
-    // Feature: the page of members, restricted again in the query
+    // Restricted again in the query, as every read of protected rows must be (access-control.md)
     return UserDomain.loadOrganizationMemberConnection(organization.id, {
       first: OrganizationHelper.boundMembersPageSize(first),
       after,
