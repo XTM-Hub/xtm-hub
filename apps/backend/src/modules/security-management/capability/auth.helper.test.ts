@@ -49,7 +49,7 @@ describe('authHelper', () => {
 
     it('should return false for a UserService from a subscription on a different instance', async () => {
       const secondSub = await TestHelper.subscription.create({
-        service_instance_id: SERVICES.INSTANCES.OPENAEV_SCENARIOS.ID,
+        service_instance_id: SERVICES.INSTANCES.OPENCTI_PLAYBOOKS.ID,
         organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
         start_date: new Date(),
         end_date: undefined,
