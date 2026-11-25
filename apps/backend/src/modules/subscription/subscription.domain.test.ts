@@ -20,6 +20,7 @@ import {
 } from '../../model/kanel/public/Subscription';
 import { SubscriptionCapabilityId } from '../../model/kanel/public/SubscriptionCapability';
 import { UserServiceId } from '../../model/kanel/public/UserService';
+import { ErrorCode } from '../../utils/error/error.code';
 import { SubscriptionCapabilityDomain } from '../security-management/subscription-capability/subscription-capability.domain';
 import { SubscriptionDomain } from './subscription.domain';
 
@@ -70,6 +71,35 @@ describe('subscription domain', () => {
 
       expect(result.id).toBe(id);
       expect(result.end_date).toBeNull();
+    });
+
+    it('should throw ALREADY_SUBSCRIBED when the organization already holds the service instance', async () => {
+      const existingId = uuidv4() as SubscriptionId;
+      await SubscriptionDomain.createSubscription({
+        id: existingId,
+        organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+        service_instance_id: serviceInstanceId,
+        start_date: new Date('2025-01-01'),
+        end_date: new Date('2026-01-01'),
+      });
+
+      const call = SubscriptionDomain.createSubscription({
+        id: uuidv4() as SubscriptionId,
+        organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+        service_instance_id: serviceInstanceId,
+        start_date: new Date(),
+        end_date: null,
+      });
+
+      await expect(call).rejects.toThrow(ErrorCode.AlreadySubscribed);
+      const subscriptions =
+        await SubscriptionDomain.loadSubscriptionsByOrganizationAndServiceInstanceIds(
+          {
+            organizationIds: [TEST_ORGANIZATIONS.FILIGRAN.ID],
+            serviceInstanceIds: [serviceInstanceId],
+          }
+        );
+      expect(subscriptions).toMatchObject([{ id: existingId }]);
     });
   });
 
@@ -265,10 +295,15 @@ describe('subscription domain', () => {
         start_date: new Date(),
         end_date: null,
       });
+      const otherServiceInstanceId = uuidv4() as ServiceInstanceId;
+      await TestHelper.serviceInstance.create({
+        id: otherServiceInstanceId,
+        name: 'domain-test-other-instance',
+      });
       await SubscriptionDomain.createSubscription({
         id: otherFiligranSubscriptionId,
         organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
-        service_instance_id: serviceInstanceId,
+        service_instance_id: otherServiceInstanceId,
         start_date: new Date(),
         end_date: null,
       });
@@ -345,7 +380,7 @@ describe('subscription domain', () => {
       await SubscriptionDomain.createSubscription({
         id: subscriptionId,
         organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
-        service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
+        service_instance_id: serviceInstanceId,
         start_date: new Date(),
         end_date: null,
       });

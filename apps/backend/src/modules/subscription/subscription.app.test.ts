@@ -66,20 +66,50 @@ describe('subscription app', () => {
       expect(secondOrganizationSubscription).toBeDefined();
     });
 
+    it('should return the created subscriptions in the order of the given organization ids', async () => {
+      const organizationIds = [
+        TEST_ORGANIZATIONS.FILIGRAN.ID,
+        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+      ];
+      expect([...organizationIds].sort()).not.toEqual(organizationIds);
+
+      const result = await subscriptionApp.subscribeOrganizationsToService({
+        organizationIds,
+        serviceInstanceId,
+        startDate: new Date(),
+        endDate: new Date(),
+        capabilityIds: [],
+      });
+
+      expect(result).toMatchObject([
+        {
+          organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+          service_instance_id: serviceInstanceId,
+        },
+        {
+          organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+          service_instance_id: serviceInstanceId,
+        },
+      ]);
+    });
+
     it('should rollback all creations when one organization is already subscribed', async () => {
+      const insertedFirst = TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID;
+      const alreadySubscribed = TEST_ORGANIZATIONS.FILIGRAN.ID;
+      expect([insertedFirst, alreadySubscribed].sort()).toEqual([
+        insertedFirst,
+        alreadySubscribed,
+      ]);
       await SubscriptionDomain.createSubscription({
         id: uuidv4() as SubscriptionId,
-        organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        organization_id: alreadySubscribed,
         service_instance_id: serviceInstanceId,
         start_date: new Date(),
         end_date: new Date(),
       });
 
       const call = subscriptionApp.subscribeOrganizationsToService({
-        organizationIds: [
-          TEST_ORGANIZATIONS.FILIGRAN.ID,
-          TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
-        ],
+        organizationIds: [insertedFirst, alreadySubscribed],
         serviceInstanceId,
         startDate: new Date(),
         endDate: new Date(),
@@ -88,12 +118,12 @@ describe('subscription app', () => {
 
       await expect(call).rejects.toThrow(ErrorCode.AlreadySubscribed);
 
-      const filigranSubscription = await TestHelper.subscription.load({
-        organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+      const insertedFirstSubscription = await TestHelper.subscription.load({
+        organization_id: insertedFirst,
         service_instance_id: serviceInstanceId,
       });
 
-      expect(filigranSubscription).toBeUndefined();
+      expect(insertedFirstSubscription).toBeUndefined();
     });
   });
 
