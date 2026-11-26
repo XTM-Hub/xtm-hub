@@ -1,7 +1,10 @@
 import { describe, vi } from 'vitest';
 import { TestHelper } from '../../../tests/helper/test.helper';
 import { PlatformIdentifier } from '../../__generated__/resolvers-types';
-import { UnauthenticatedErrorCode } from '../../utils/error/error.code';
+import {
+  ForbiddenErrorCode,
+  UnauthenticatedErrorCode,
+} from '../../utils/error/error.code';
 import { ManifestApp } from '../shareable-resource/manifest/manifest.app';
 import { ManageProductVersionApp } from './manage-product-version.app';
 
@@ -23,6 +26,10 @@ describe('newProductVersion mutation', () => {
       admin: UnauthenticatedErrorCode.Unauthenticated,
       system: 'allowed',
       invalidSystemToken: UnauthenticatedErrorCode.Unauthenticated,
+      // A Bearer token is not the system token: the caller is anonymous, a read token is refused first
+      tokenRead: ForbiddenErrorCode.ReadOnlyApiToken,
+      tokenReadWrite: UnauthenticatedErrorCode.Unauthenticated,
+      tokenAdmin: UnauthenticatedErrorCode.Unauthenticated,
     },
     prepare: async () => {
       // Mocked: it queues a manifest build

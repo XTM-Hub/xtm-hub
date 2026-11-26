@@ -1,5 +1,9 @@
 import { AsyncLocalStorage } from 'async_hooks';
-import { OrganizationCapability } from '../__generated__/resolvers-types';
+import {
+  ApiTokenScope,
+  OrganizationCapability,
+} from '../__generated__/resolvers-types';
+import { ApiTokenId } from '../model/kanel/public/ApiToken';
 import { OrganizationId } from '../model/kanel/public/Organization';
 import { UserId } from '../model/kanel/public/User';
 import { UserLoadUserBy } from '../model/user';
@@ -10,6 +14,8 @@ import { UnknownErrorCode } from '../utils/error/error.code';
  * with the organization capabilities, portal capabilities and portal roles the token kept.
  */
 export interface RequestApiToken {
+  id: ApiTokenId;
+  scope: ApiTokenScope;
   userId: UserId;
   organizationId: OrganizationId;
   organizationCapabilities: readonly OrganizationCapability[];

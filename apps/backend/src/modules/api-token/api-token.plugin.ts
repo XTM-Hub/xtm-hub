@@ -21,8 +21,9 @@ import { API_TOKEN_ERRORS, sendApiTokenError } from './api-token.errors';
 
 /**
  * Mutations no token runs, whatever its scope: they act on the caller's own account, or issue a credential that would
- * outlive the token. Add any new mutation of that kind here. `revokeApiToken` and `unregisterPlatform` stay allowed:
- * they only ever reduce access. Typed with the generated Mutation fields, so a misspelled name does not compile.
+ * outlive the token. Only for the mutations of modules not yet migrated to `sessionCallerGuard`, which declares it on
+ * the operation. `revokeApiToken` and `unregisterPlatform` stay allowed: they only ever reduce access. Typed with the
+ * generated Mutation fields, so a misspelled name does not compile.
  */
 export const API_TOKEN_DENIED_FIELDS: ReadonlySet<string> = new Set<
   Exclude<keyof Mutation, '__typename'>
@@ -33,7 +34,6 @@ export const API_TOKEN_DENIED_FIELDS: ReadonlySet<string> = new Set<
   'logout',
   // Credentials
   'addUser', // its password creates a local login that outlives the token
-  'createApiToken',
   'refreshUserPlatformToken',
   'registerPlatform',
   'resetPassword',

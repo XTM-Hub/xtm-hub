@@ -1,4 +1,6 @@
+import type { Request } from 'express';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { TestHelper } from '../../../tests/helper/test.helper';
 import {
   // eslint-disable-next-line no-restricted-imports
   contextBypassUser,
@@ -7,6 +9,7 @@ import {
   TEST_SYSTEM_TOKEN,
 } from '../../../tests/tests.const';
 import {
+  ApiTokenScope,
   DeploymentRequestHubStatus,
   OrganizationCapability,
   PlatformConfigurationStatus,
@@ -32,6 +35,7 @@ import {
   PLATFORM_USER_UUID,
   SYSTEM_USER_UUID,
 } from '../../portal.const';
+import { buildRequestContext } from '../../server/request-context.middleware';
 import { logApp } from '../../utils/app-logger.util';
 import {
   ForbiddenErrorCode,
@@ -413,6 +417,83 @@ describe('buildPrincipal', () => {
       expect(logWarn).not.toHaveBeenCalled();
     }
   );
+});
+
+describe('buildPrincipal for an API token', () => {
+  // Makes the context of the test the one the request middleware builds for the request
+  const setRequestContextOf = (req: Request) => {
+    const context = buildRequestContext(req);
+    requestContext.set(context);
+    return context;
+  };
+
+  it.each(Object.values(ApiTokenScope))(
+    'should hold the token and its scope when the request carries a valid %s token',
+    async (scope) => {
+      // Given
+      const sent = await TestHelper.apiToken.send({
+        userId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.ADMIN_ORGA.ID,
+        organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        scope,
+      });
+
+      try {
+        const { user } = setRequestContextOf(sent.req);
+
+        // When
+        const principal = await buildPrincipal({ user });
+
+        // Then
+        expect(principal).toMatchObject({
+          kind: 'user',
+          actorId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.ADMIN_ORGA.ID,
+          selectedOrganizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+          apiToken: { id: sent.tokenId, scope },
+        });
+      } finally {
+        await sent.cleanup();
+      }
+    }
+  );
+
+  it('should hold the token and the token user when the request carries a session cookie too', async () => {
+    // Given
+    const sent = await TestHelper.apiToken.send({
+      userId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.ADMIN_ORGA.ID,
+      organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+      scope: ApiTokenScope.Read,
+      sessionUser: buildUser({ capabilities: [CAPABILITY_BYPASS] }),
+    });
+
+    try {
+      const { user } = setRequestContextOf(sent.req);
+
+      // When
+      const principal = await buildPrincipal({ user });
+
+      // Then
+      expect(principal).toMatchObject({
+        kind: 'user',
+        actorId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.ADMIN_ORGA.ID,
+        isBypassUser: false,
+        apiToken: { id: sent.tokenId, scope: ApiTokenScope.Read },
+      });
+    } finally {
+      await sent.cleanup();
+    }
+  });
+
+  it('should hold no token when the request context carries none', async () => {
+    // Given
+    const user = buildUser({ capabilities: [] });
+
+    // When
+    const principal = await buildPrincipal({ user });
+
+    // Then
+    expect(principal).toMatchObject({ kind: 'user', actorId: user.id });
+    expect(principal).not.toHaveProperty('apiToken');
+  });
 });
 
 describe('buildSystemPrincipal', () => {

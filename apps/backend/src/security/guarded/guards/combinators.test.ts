@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { TestHelper } from '../../../../tests/helper/test.helper';
 import {
+  ApiTokenScope,
   OrganizationCapability,
   PortalCapability,
   ServiceRestriction,
@@ -15,12 +16,13 @@ import {
 import { allow, DenialCode, deny, Guard } from '../guard.types';
 import { buildPrincipal } from '../principal';
 import { fromArg } from '../sources';
-import { systemCallerGuard } from './caller.guard';
-import { anyOf } from './combinators';
+import { sessionCallerGuard, systemCallerGuard } from './caller.guard';
+import { allOf, anyOf } from './combinators';
 import { orgGuard, selectedOrganization } from './organization.guard';
 import { serviceGuard } from './service.guard';
 
-const { ANONYMOUS, buildUserPrincipal } = TestHelper.guardFixtures;
+const { ANONYMOUS, ORGANIZATION_ID, buildUserPrincipal } =
+  TestHelper.guardFixtures;
 
 const SERVICE_INSTANCE_ID =
   '11111111-1111-4111-8111-111111111111' as ServiceInstanceId;
@@ -155,8 +157,46 @@ describe('anyOf', () => {
     const build = () => anyOf(userGuard, machineGuard);
 
     // Then
-    expect(build).toThrow('anyOf needs guards that build the same principal');
+    expect(build).toThrow('must build the same principal');
   });
+
+  it.each([
+    {
+      label: 'directly',
+      unsupported: () => sessionCallerGuard(),
+    },
+    {
+      label: 'through an allOf',
+      unsupported: () =>
+        allOf(
+          sessionCallerGuard(),
+          orgGuard({ organization: selectedOrganization, capabilities: [] })
+        ),
+    },
+    {
+      label: 'through the targets of an allOf',
+      unsupported: () =>
+        allOf(
+          sessionCallerGuard(),
+          orgGuard({ organization: selectedOrganization, capabilities: [] })
+        ).targets(() => allow()),
+    },
+  ])(
+    'should throw at construction when sessionCallerGuard is in it, $label',
+    ({ unsupported }) => {
+      // Given
+      const other = orgGuard({
+        organization: selectedOrganization,
+        capabilities: [],
+      });
+
+      // When
+      const build = () => anyOf(unsupported(), other);
+
+      // Then
+      expect(build).toThrow('anyOf contains a guard it does not support');
+    }
+  );
 
   it('should refuse an anonymous visitor with UNAUTHENTICATED without running any source', async () => {
     // Given
@@ -183,5 +223,141 @@ describe('anyOf', () => {
       code: UnauthenticatedErrorCode.Unauthenticated,
     });
     expect(serviceInstance).not.toHaveBeenCalled();
+  });
+});
+
+describe('allOf', () => {
+  const allowing = (organizationId: string): Guard => ({
+    check: vi.fn(() =>
+      allow({
+        kind: 'organization',
+        organizationId: organizationId as OrganizationId,
+      })
+    ),
+    principalFrom: buildPrincipal,
+  });
+  const denying = (code: DenialCode): Guard => ({
+    check: vi.fn(() => deny(code)),
+    principalFrom: buildPrincipal,
+  });
+
+  it('should return the result of the last guard when every guard allows, each one run in written order', async () => {
+    // Given
+    const first = allowing('first');
+    const second = allowing('second');
+    const guard = allOf(first, second);
+
+    // When
+    const result = await guard.check(buildUserPrincipal(), {});
+
+    // Then
+    expect(result).toEqual({
+      allowed: true,
+      checked: { kind: 'organization', organizationId: 'second' },
+    });
+    expect(first.check).toHaveBeenCalledOnce();
+    expect(second.check).toHaveBeenCalledOnce();
+  });
+
+  it('should refuse with the code of the first denial and not run the next guards', async () => {
+    // Given
+    const next = allowing('next');
+    const guard = allOf(
+      allowing('first'),
+      denying(ForbiddenErrorCode.NotAllowedWithApiToken),
+      denying(UnauthenticatedErrorCode.Unauthenticated),
+      next
+    );
+
+    // When
+    const result = await guard.check(buildUserPrincipal(), {});
+
+    // Then
+    expect(result).toEqual({
+      allowed: false,
+      code: ForbiddenErrorCode.NotAllowedWithApiToken,
+    });
+    expect(next.check).not.toHaveBeenCalled();
+  });
+
+  it('should refuse a guard that returns nothing as FORBIDDEN_ACCESS', async () => {
+    // Given
+    const malformed: Guard = {
+      check: vi.fn().mockReturnValue(undefined),
+      principalFrom: buildPrincipal,
+    };
+    const guard = allOf(allowing('first'), malformed);
+
+    // When
+    const result = await guard.check(buildUserPrincipal(), {});
+
+    // Then
+    expect(result).toEqual({
+      allowed: false,
+      code: ForbiddenErrorCode.ForbiddenAccess,
+    });
+  });
+
+  it('should throw at construction when the guards do not build the same principal', () => {
+    // Given
+    const userGuard = orgGuard({
+      organization: selectedOrganization,
+      capabilities: [],
+    });
+    const machineGuard = systemCallerGuard([PortalCapability.GenerateManifest]);
+
+    // When
+    const build = () => allOf(userGuard, machineGuard);
+
+    // Then
+    expect(build).toThrow('must build the same principal');
+  });
+
+  it('should pass what the last guard checked to the checks of its targets', async () => {
+    // Given
+    const check = vi.fn(() => allow());
+    const guard = allOf(
+      sessionCallerGuard(),
+      orgGuard({ organization: selectedOrganization, capabilities: [] })
+    ).targets(check);
+    const principal = buildUserPrincipal({
+      memberships: { [ORGANIZATION_ID]: [] },
+    });
+
+    // When
+    await guard.check(principal, {});
+
+    // Then
+    expect(check).toHaveBeenCalledExactlyOnceWith(
+      principal,
+      {},
+      {
+        kind: 'organization',
+        organizationId: ORGANIZATION_ID,
+      }
+    );
+  });
+
+  it('should refuse an API token with NOT_ALLOWED_WITH_API_TOKEN before its organization is read', async () => {
+    // Given
+    const organization = vi.fn(selectedOrganization);
+    const guard = allOf(
+      sessionCallerGuard(),
+      orgGuard({ organization, capabilities: [] })
+    );
+    const principal = buildUserPrincipal({
+      memberships: { [ORGANIZATION_ID]: [] },
+      apiTokenScope: ApiTokenScope.Admin,
+    });
+
+    // When
+    const result = await guard.check(principal, {});
+
+    // Then
+    expect(result).toEqual({
+      allowed: false,
+      code: ForbiddenErrorCode.NotAllowedWithApiToken,
+    });
+    expect(organization).not.toHaveBeenCalled();
   });
 });

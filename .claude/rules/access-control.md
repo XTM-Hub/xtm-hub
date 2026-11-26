@@ -25,7 +25,7 @@ mechanisms coexist while modules migrate:
 
 | Mechanism | Where | Used by |
 | --- | --- | --- |
-| `@Public()` / `@Guarded(guard)` on the resolver | `src/security/guarded/` | Migrated modules (`solution-category`, `telemetry`, `manage-product-version`, `subscription`, `news-feed`, `user-service`, `user-service-capability`) |
+| `@Public()` / `@Guarded(guard)` on the resolver | `src/security/guarded/` | Migrated modules (`solution-category`, `telemetry`, `manage-product-version`, `subscription`, `news-feed`, `user-service`, `user-service-capability`, `api-token`) |
 | `@auth`, `@service_capa`, `@system_token`, `@platform_token` in the `.graphql` file | `src/security/directive-graphql/` | Every other module. A field with no directive is public there |
 
 **An operation has a directive or a decorator, never both.** Migrating an operation removes its directive in the same
@@ -77,8 +77,10 @@ export default resolvers;
 | `@Guarded(bypassOnlyGuard())` | A `BYPASS` user only. Use it for admin-only operations rather than listing `BYPASS` | `UNAUTHENTICATED` (anonymous or disabled user), `FORBIDDEN_ACCESS` (not `BYPASS`) |
 | `@Guarded(portalCapabilityGuard([PortalCapability.X, …]))` | A user holding one of the portal capabilities; `BYPASS` always. The list cannot be empty | `UNAUTHENTICATED` (anonymous or disabled user), `FORBIDDEN_ACCESS` (capability missing) |
 | `@Guarded(systemCallerGuard([PortalCapability.X, …]))` | A machine with a valid `x-xtm-hub-token` holding every listed scope. The list cannot be empty | `UNAUTHENTICATED` (no or invalid token, session ignored), `FORBIDDEN_ACCESS` (scope missing) |
-| `@Guarded(orgGuard({ organization: selectedOrganization, capabilities: [OrganizationCapability.X, …] }))` | A member of the selected organization holding one of the capabilities (`ADMINISTRATE_ORGANIZATION` implies them all, `[]` requires the membership only); `BYPASS` always | `UNAUTHENTICATED` (anonymous or disabled user), `NOT_FOUND` (not a member, or no organization from the source), `MISSING_CAPABILITY_ON_ORGANIZATION` (capability missing) |
+| `@Guarded(orgGuard({ organization: selectedOrganization, capabilities: [OrganizationCapability.X, …] }))` | A member of the selected organization holding one of the capabilities (`ADMINISTRATE_ORGANIZATION` implies them all, `[]` requires the membership only); `BYPASS` always, unless `bypass: false` | `UNAUTHENTICATED` (anonymous or disabled user), `NOT_FOUND` (not a member, or no organization from the source), `MISSING_CAPABILITY_ON_ORGANIZATION` (capability missing) |
 | `@Guarded(serviceGuard({ serviceInstance: fromArg('service_instance_id'), capabilities: [ServiceRestriction.X, …] }))` | A user with an access row on the selected organization's subscription to the service instance, holding one of the service capabilities; `BYPASS` always. The list cannot be empty | `UNAUTHENTICATED` (anonymous or disabled user), `NOT_FOUND` (no such service instance, or no access row on it), `MISSING_CAPABILITY_ON_SERVICE` (capability missing) |
+| `@Guarded(allOf(sessionCallerGuard(), …))` | A caller who is not authenticated by an API token. Only inside `allOf`: see [Personal API tokens](#personal-api-tokens) | `UNAUTHENTICATED` (anonymous or disabled user), `NOT_ALLOWED_WITH_API_TOKEN` (API token caller) |
+| `@Guarded(callerIsGuard({ user: source }))` | The user the source names and nobody else: `BYPASS` does not pass | `UNAUTHENTICATED` (anonymous or disabled user), `NOT_FOUND` (another user, or no user from the source) |
 | `@Guarded(platformCallerGuard({ credential: 'registration' \| 'deploymentRequest' }))` | A platform sending valid `xtm-hub-platform-id` and `xtm-hub-platform-token` headers for the required credential: an `Active` registration with a subscribed organization, or a deployment request token in the `Active`, `Pending` or `Provisioning` hub status | `UNAUTHENTICATED` (missing, invalid or unknown credentials, other credential, inactive registration or other hub status, session ignored) |
 
 A guard returns `allow()` or `deny(code)`. An exception from the guard, or anything else it returns, is a denial.
@@ -93,16 +95,33 @@ themselves, others leave it to their caller, so read the filter before calling i
 
 Type the arguments with an explicit generic (`orgGuard<MutationXArgs>(…)`), so a wrong key fails `check-ts`.
 
-- **Sources.** `organization` of `orgGuard` and `serviceInstance` of `serviceGuard` take `selectedOrganization` or
-  `fromArg('key')`; a missing id answers `NOT_FOUND`.
+- **Sources.** `organization` of `orgGuard`, `serviceInstance` of `serviceGuard` and `user` of `callerIsGuard` take
+  `fromArg('key')` or an inline function `(caller, args) => id` that returns an id of their own type; `organization`
+  also takes `selectedOrganization`. `orgGuard` and `callerIsGuard` also take an `AsyncSource`, such as `fromRecord`
+  below. A missing id answers `NOT_FOUND`.
 - **`anyOf(guardA, guardB)`** allows when one guard allows. It refuses with `UNAUTHENTICATED`, else the first
   `MISSING_CAPABILITY_*`, else `FORBIDDEN_ACCESS`, else `NOT_FOUND`. The guards must share one principal builder: a user
-  guard cannot be combined with a system or platform guard.
-- **`.targets(belongTo(table, args => ids, { serviceInstance? }))`** on `orgGuard`, `serviceGuard` or `anyOf` checks that
-  every id the arguments name belongs to what the guard checked: the organization, or the service instance and the
-  organization; anything for `BYPASS`. One missing, foreign or malformed id refuses the whole request with `NOT_FOUND`;
-  an empty list is allowed. `serviceInstance` says where the request names the service instance, so the ids must be on
+  guard cannot be combined with a system or platform guard. It throws when it contains a guard it does not support,
+  such as `sessionCallerGuard()`.
+- **`allOf(guardA, guardB)`** allows when every guard allows. Guards run in written order and the first denial wins, so
+  write the one that needs no query first: it spares the queries of the next ones, and the code does not depend on a
+  ranking. The result is the last guard's, which `.targets()` reads: write the `orgGuard` or `serviceGuard` last. Same
+  principal builder rule as `anyOf`.
+- **`orgGuard({ …, bypass: false })`** treats a `BYPASS` user as any member: use it when the operation acts as a member
+  of the organization, whatever the platform rights (a platform admin who is not a member gets `NOT_FOUND`).
+- **Sources of a record.** A source reads the id from the arguments; `fromRecord(load)` reads it from a record the
+  arguments name: `const tokenOfId = fromRecord(loadTokenOfArgs)`, then
+  `tokenOfId.pick(({ organization_id }) => organization_id)` is an `AsyncSource`. The record is loaded once per call of
+  the operation, whatever the number of guards that read it. The loader returns `undefined` for an id it cannot use (a
+  malformed uuid), which the guards answer with `NOT_FOUND`: it never lets a database error through.
+- **`.targets(belongTo(table, args => ids, { serviceInstance? }))`** on `orgGuard`, `serviceGuard`, `anyOf` or `allOf`
+  checks that every id the arguments name belongs to what the guard checked: the organization, or the service instance
+  and the organization; anything for `BYPASS`. One missing, foreign or malformed id refuses the whole request with
+  `NOT_FOUND`; an empty list is allowed. `serviceInstance` says where the request names the service instance, so the ids must be on
   it. Use it whenever a guard checks an organization or a service from one argument and the operation acts on other ids.
+  A guard that can answer through a `callerIsGuard` (an `anyOf` that contains one, or an `allOf` that ends with it) takes
+  no `.targets()`: `callerIsGuard` allows without what it checked, so the check refuses as soon as the request names an
+  id.
 - Add an entry to the ownership map (`src/security/guarded/ownership.domain.ts`) before using `belongTo` on a table.
 
 ## Filtering data
@@ -175,8 +194,19 @@ organization and right of that user, so anything that reads them again must appl
   `UserOrganizationDomain.loadUserOrganization` directly: a token of organization A would pass for organization B.
 - The token user's own organizations, portal capabilities and roles are filtered in the query by
   `src/security/restriction/api-token.ts`. Reading them for another user, or for an invariant check, is unchanged.
-- A mutation that acts on the account itself (session, credentials, profile, personal space) goes in
-  `API_TOKEN_DENIED_FIELDS` (`src/modules/api-token/api-token.plugin.ts`).
+- A guard reads the token from the principal: `apiToken?: { id, scope }`, built from `requestContext.get()?.apiToken`,
+  which the request middleware sets when an API token authenticated the request; the restrictions and `securityGuard`
+  read the same value. The principal's user is `context.user`, already narrowed to the token's organization, so
+  `orgGuard` and `serviceGuard` are token-safe as they are: the token's memberships hold its organization only, and
+  only an `admin` token keeps organization capabilities.
+- A mutation that acts on the account itself (session, credentials, profile, personal space) is declared
+  `@Guarded(allOf(sessionCallerGuard(), …))`, with `sessionCallerGuard()` first. `anyOf` throws when it is built with
+  it, directly or through an `allOf`. A module not migrated yet lists its
+  mutation in `API_TOKEN_DENIED_FIELDS`
+  (`src/modules/api-token/api-token.plugin.ts`) instead, and never in both: the plugin refuses it before any
+  resolver runs.
+- A read token is refused any mutation before the guard runs (`READ_ONLY_API_TOKEN`).
+- An expired, revoked or disabled-user token is answered 401 by the middleware: it never reaches GraphQL.
 
 ## Errors
 
@@ -212,7 +242,13 @@ Rows are `anonymous`, `user` (a member with no portal capability) and `admin` (a
 `serviceManager`, `serviceMember` and `serviceStranger` (organization members without organization capability, whose
 access to the service the fixture grants through `TestHelper.serviceRowUserIds`); one a system caller calls lists
 `system` and `invalidSystemToken`; one a platform calls lists `platform`, `invalidPlatformToken` and `unknownPlatform`
-(the fixture returns the `platformCredentials` of a registered platform, from `TestHelper.platformCaller.create()`).
+(the fixture returns the `platformCredentials` of a registered platform, from `TestHelper.platformCaller.create()`);
+one a token may call lists the token rows: `tokenRead`, `tokenReadWrite` and `tokenAdmin` (tokens of an organization
+administrator of SECOND ORGA, one per scope), `tokenOtherOrganization` (a `read_write` token of a member of Filigran),
+and, behind a `serviceGuard`, `tokenServiceManager` and `tokenServiceMember` (`read_write` tokens of the users of the
+`serviceManager` and `serviceMember` rows). A token row creates its token and runs it through the real middleware, so the
+plugin, the principal and the restrictions all see it. A mutation answers a `read` token `READ_ONLY_API_TOKEN` whatever
+its guard says.
 `guarded` returns a spy on the function behind the operation: refused rows assert it was not called, allowed rows that
 it was called once and answered `expectedData`, or `expectedDataByRow[row]` for a row that sees different data. Wrap
 the call in a `describe` with a literal name, and use `TestHelper`, never the helper file directly.

@@ -33,6 +33,18 @@ const MANAGE_USER_SERVICES = {
   serviceStranger: ForbiddenErrorCode.MissingCapabilityOnOrganization,
 } as const;
 
+// A token has no organization capability below the admin scope: the organization guard refuses it, and only the
+// access row of its user on the service can let it in. The admin token of SECOND ORGA passes the organization guard
+// but not the check that the subscription is its organization's
+const ADD_USER_SERVICE_TOKENS = {
+  tokenRead: ForbiddenErrorCode.ReadOnlyApiToken,
+  tokenReadWrite: ForbiddenErrorCode.MissingCapabilityOnOrganization,
+  tokenAdmin: NotFoundErrorCode.NotFound,
+  tokenOtherOrganization: ForbiddenErrorCode.MissingCapabilityOnOrganization,
+  tokenServiceManager: 'allowed',
+  tokenServiceMember: ForbiddenErrorCode.MissingCapabilityOnOrganization,
+} as const;
+
 afterEach(() => {
   vi.restoreAllMocks();
 });
@@ -44,7 +56,7 @@ describe('addUserService mutation', () => {
     }`,
     guarded: () =>
       vi.spyOn(UserServiceApp, 'addUserService').mockResolvedValue([]),
-    expected: MANAGE_USER_SERVICES,
+    expected: { ...MANAGE_USER_SERVICES, ...ADD_USER_SERVICE_TOKENS },
     prepare: async () => {
       const scene = await buildScene();
       return {

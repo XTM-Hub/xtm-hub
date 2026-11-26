@@ -12,6 +12,7 @@ export const DENIAL_CODES = [
   ForbiddenErrorCode.ForbiddenAccess,
   ForbiddenErrorCode.MissingCapabilityOnOrganization,
   ForbiddenErrorCode.MissingCapabilityOnService,
+  ForbiddenErrorCode.NotAllowedWithApiToken,
   NotFoundErrorCode.NotFound,
 ] as const;
 
@@ -34,6 +35,8 @@ export type GuardResult =
 export type Guard<Args = unknown> = {
   check(principal: Principal, args: Args): GuardResult | Promise<GuardResult>;
   principalFrom: PrincipalBuilder;
+  // `anyOf` cannot include this guard
+  unsupportedByAnyOf?: true;
 };
 
 export type TargetCheck<Args = unknown> = (
@@ -92,9 +95,11 @@ export const forCaller = <Kind extends CallerKind, Args = unknown>(
     caller: CallerOf<Kind>,
     args: Args
   ) => GuardResult | Promise<GuardResult>,
-  principalFrom: PrincipalBuilder = buildPrincipal
+  principalFrom: PrincipalBuilder = buildPrincipal,
+  unsupportedByAnyOf?: true
 ): TargetedGuard<Args> =>
   withTargets<Args>({
+    ...(unsupportedByAnyOf && { unsupportedByAnyOf }),
     check: (principal, args) => {
       if (principal.kind === 'anonymous') {
         return deny(UnauthenticatedErrorCode.Unauthenticated);

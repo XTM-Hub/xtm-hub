@@ -20,6 +20,10 @@ describe('consumeProvisionedNewsFeedItems mutation', () => {
       platform: 'allowed',
       invalidPlatformToken: UnauthenticatedErrorCode.Unauthenticated,
       unknownPlatform: UnauthenticatedErrorCode.Unauthenticated,
+      // A Bearer token is not a platform credential: the caller is anonymous, a read token is refused first
+      tokenRead: ForbiddenErrorCode.ReadOnlyApiToken,
+      tokenReadWrite: UnauthenticatedErrorCode.Unauthenticated,
+      tokenAdmin: UnauthenticatedErrorCode.Unauthenticated,
     },
     prepare: async () => {
       const platformCaller = await TestHelper.platformCaller.create();
