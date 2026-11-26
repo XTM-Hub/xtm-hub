@@ -1,0 +1,141 @@
+# gatewayApi.mode: which paths are rendered (nginx Ingress, kgateway objects) and which one
+# external-dns publishes the IP of.
+suite: gateway API mode
+templates:
+  - templates/gateway.yaml
+  - templates/ingress.yaml
+release:
+  name: rel
+  namespace: ns
+capabilities:
+  apiVersions:
+    - gateway.networking.k8s.io/v1
+    - gateway.kgateway.dev/v1alpha1
+tests:
+  - it: renders only the Ingress in nginx mode
+    set:
+      gatewayApi.mode: nginx
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: templates/gateway.yaml
+      - hasDocuments:
+          count: 1
+        template: templates/ingress.yaml
+      - notExists:
+          path: metadata.annotations["external-dns.alpha.kubernetes.io/controller"]
+        template: templates/ingress.yaml
+
+  - it: renders only the Ingress when gatewayApi is not set
+    set:
+      gatewayApi: null
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: templates/gateway.yaml
+      - hasDocuments:
+          count: 1
+        template: templates/ingress.yaml
+
+  - it: renders both paths in dual mode, with the DNS on nginx by default
+    set:
+      gatewayApi.mode: dual
+    asserts:
+      - hasDocuments:
+          count: 1
+        template: templates/ingress.yaml
+      - notExists:
+          path: metadata.annotations["external-dns.alpha.kubernetes.io/controller"]
+        template: templates/ingress.yaml
+      - equal:
+          path: metadata.annotations["external-dns.alpha.kubernetes.io/controller"]
+          value: ignore
+        template: templates/gateway.yaml
+        documentSelector:
+          path: metadata.name
+          value: ns-rel-route
+
+  - it: switches the DNS to kgateway in dual mode with dnsOwner kgateway
+    set:
+      gatewayApi.mode: dual
+      gatewayApi.dnsOwner: kgateway
+    asserts:
+      - equal:
+          path: metadata.annotations["external-dns.alpha.kubernetes.io/controller"]
+          value: ignore
+        template: templates/ingress.yaml
+      - notExists:
+          path: metadata.annotations["external-dns.alpha.kubernetes.io/controller"]
+        template: templates/gateway.yaml
+        documentSelector:
+          path: metadata.name
+          value: ns-rel-route
+
+  - it: keeps the DNS on nginx in dual mode when dnsOwner is unknown
+    set:
+      gatewayApi.mode: dual
+      gatewayApi.dnsOwner: haproxy
+    template: templates/ingress.yaml
+    asserts:
+      - notExists:
+          path: metadata.annotations["external-dns.alpha.kubernetes.io/controller"]
+
+  - it: renders only the gateway objects in kgateway mode, whatever dnsOwner is
+    set:
+      gatewayApi.mode: kgateway
+      gatewayApi.dnsOwner: nginx
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: templates/ingress.yaml
+      - notExists:
+          path: metadata.annotations["external-dns.alpha.kubernetes.io/controller"]
+        template: templates/gateway.yaml
+        documentSelector:
+          path: metadata.name
+          value: ns-rel-route
+
+  - it: never lets the redirect route own the DNS
+    set:
+      gatewayApi.mode: kgateway
+    template: templates/gateway.yaml
+    asserts:
+      - equal:
+          path: metadata.annotations["external-dns.alpha.kubernetes.io/controller"]
+          value: ignore
+        documentSelector:
+          path: metadata.name
+          value: ns-rel-redirect
+
+  - it: falls back to nginx when the mode is unknown
+    set:
+      gatewayApi.mode: cutover
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: templates/gateway.yaml
+      - hasDocuments:
+          count: 1
+        template: templates/ingress.yaml
+
+  - it: leaves the Certificate to the Ingress cert-manager shim while the Ingress exists
+    set:
+      gatewayApi.mode: dual
+    template: templates/gateway.yaml
+    asserts:
+      - containsDocument:
+          kind: Certificate
+          apiVersion: cert-manager.io/v1
+          name: xtmhub-cert
+        not: true
+
+  - it: requests the Certificate explicitly once the Ingress is gone
+    set:
+      gatewayApi.mode: kgateway
+    template: templates/gateway.yaml
+    asserts:
+      - isKind:
+          of: Certificate
+        documentSelector:
+          path: metadata.name
+          value: xtmhub-cert

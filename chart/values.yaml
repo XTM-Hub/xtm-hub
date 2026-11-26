@@ -1,12 +1,20 @@
 tls_issuer: le-staging
 ingressClass: nginx
-# Gateway API migration state machine (platform#3074):
-#   off     -> nginx Ingress only (default, no gateway resources)
-#   dual    -> both paths live, DNS stays on nginx
-#   cutover -> both paths live, DNS moves to the gateway pool
-#   only    -> gateway only, the Ingress is removed
+# -- Gateway API migration mode: "nginx" (Ingress only) | "dual" (Ingress and kgateway) |
+# "kgateway" (kgateway only, no Ingress). Any other value is "nginx".
+# The DNS of the gateway path needs external-dns started with --gateway-listener-sets
+# (the HTTPS routes are parented by a ListenerSet).
 gatewayApi:
-  mode: "off"
+  mode: "nginx"
+  # -- Which IP external-dns publishes in "dual" mode: "nginx" (default) or "kgateway" to switch
+  # the DNS to kgateway. Ignored in the other modes (always nginx in "nginx" mode, always kgateway
+  # in "kgateway" mode).
+  dnsOwner: "nginx"
+  # -- Also move the minio, pgadmin and kibana interfaces to the gateway. The elasticsearch Ingress
+  # stays on nginx.
+  migrateManagement: false
+  # -- Optional minimum TLS version enforced on the listeners (e.g. "1.3").
+  # Empty = platform default (1.2+).
   minTlsVersion: ""
   pool:
     name: gateway-pool

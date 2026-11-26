@@ -1,12 +1,12 @@
-{{- if ne ((.Values.gatewayApi).mode | default "off") "only" }}
+{{- if include "gatewayApi.ingressEnabled" $ }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: {{ .Release.Namespace}}-{{ .Release.Name }}-ingress
   annotations:
     cert-manager.io/cluster-issuer: {{ .Values.tls_issuer }}
-    {{- if eq ((.Values.gatewayApi).mode | default "off") "cutover" }}
-    # cutover: the gateway redirect route owns DNS, the Ingress must let go
+    {{- if include "gatewayApi.dnsOnGateway" $ }}
+    # the DNS is on the gateway routes, the Ingress must let go
     external-dns.alpha.kubernetes.io/controller: ignore
     {{- end }}
     external-dns.alpha.kubernetes.io/hostname: {{ tpl .Values.xtmhub.host . }}

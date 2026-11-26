@@ -1,0 +1,255 @@
+# The minio, pgadmin and kibana interfaces follow the gateway with gatewayApi.migrateManagement.
+suite: gateway API management
+templates:
+  - templates/gateway-management.yaml
+  - templates/minio-ingress.yaml
+  - templates/pgadmin-ingress.yaml
+  - templates/kibana-ingress.yaml
+  - templates/elasticsearch-ingress.yaml
+release:
+  name: rel
+  namespace: ns
+capabilities:
+  apiVersions:
+    - gateway.networking.k8s.io/v1
+    - gateway.kgateway.dev/v1alpha1
+set:
+  xtmhub.host: hub.example.io
+  elasticsearch.ingress.enabled: true
+tests:
+  - it: renders no management resource before the management migration
+    set:
+      gatewayApi.mode: kgateway
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: templates/gateway-management.yaml
+      - hasDocuments:
+          count: 1
+        template: templates/minio-ingress.yaml
+      - hasDocuments:
+          count: 1
+        template: templates/pgadmin-ingress.yaml
+      - hasDocuments:
+          count: 1
+        template: templates/kibana-ingress.yaml
+
+  - it: keeps the management Ingresses in dual mode, ignored by external-dns once the DNS is on kgateway
+    set:
+      gatewayApi.mode: dual
+      gatewayApi.dnsOwner: kgateway
+      gatewayApi.migrateManagement: true
+    asserts:
+      - equal:
+          path: metadata.annotations["external-dns.alpha.kubernetes.io/controller"]
+          value: ignore
+        template: templates/minio-ingress.yaml
+      - equal:
+          path: metadata.annotations["external-dns.alpha.kubernetes.io/controller"]
+          value: ignore
+        template: templates/pgadmin-ingress.yaml
+      - equal:
+          path: metadata.annotations["external-dns.alpha.kubernetes.io/controller"]
+          value: ignore
+        template: templates/kibana-ingress.yaml
+
+  - it: leaves the DNS to the management Ingresses in dual mode by default
+    set:
+      gatewayApi.mode: dual
+      gatewayApi.migrateManagement: true
+    asserts:
+      - notExists:
+          path: metadata.annotations["external-dns.alpha.kubernetes.io/controller"]
+        template: templates/minio-ingress.yaml
+      - equal:
+          path: metadata.annotations["external-dns.alpha.kubernetes.io/controller"]
+          value: ignore
+        template: templates/gateway-management.yaml
+        documentSelector:
+          path: metadata.name
+          value: ns-rel-minio-route
+
+  - it: removes the management Ingresses in kgateway mode, but not the elasticsearch one
+    set:
+      gatewayApi.mode: kgateway
+      gatewayApi.migrateManagement: true
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: templates/minio-ingress.yaml
+      - hasDocuments:
+          count: 0
+        template: templates/pgadmin-ingress.yaml
+      - hasDocuments:
+          count: 0
+        template: templates/kibana-ingress.yaml
+      - hasDocuments:
+          count: 1
+        template: templates/elasticsearch-ingress.yaml
+
+  - it: serves each interface from its own listener and certificate
+    set:
+      gatewayApi.mode: kgateway
+      gatewayApi.migrateManagement: true
+      gatewayApi.minTlsVersion: "1.3"
+    template: templates/gateway-management.yaml
+    asserts:
+      - equal:
+          path: spec.listeners[0].hostname
+          value: s3.hub.example.io
+        documentSelector:
+          path: kind
+          value: ListenerSet
+      - equal:
+          path: spec.listeners[1].hostname
+          value: pgadmin.hub.example.io
+        documentSelector:
+          path: kind
+          value: ListenerSet
+      - equal:
+          path: spec.listeners[2].hostname
+          value: kibana.hub.example.io
+        documentSelector:
+          path: kind
+          value: ListenerSet
+      - equal:
+          path: spec.listeners[2].tls.options["kgateway.dev/min-tls-version"]
+          value: "1.3"
+        documentSelector:
+          path: kind
+          value: ListenerSet
+      - isKind:
+          of: Certificate
+        documentSelector:
+          path: metadata.name
+          value: xtmhub-cert-minio
+      - isKind:
+          of: Certificate
+        documentSelector:
+          path: metadata.name
+          value: xtmhub-cert-kibana
+
+  - it: leaves the Certificates to the Ingress shim in dual mode
+    set:
+      gatewayApi.mode: dual
+      gatewayApi.migrateManagement: true
+    template: templates/gateway-management.yaml
+    asserts:
+      - containsDocument:
+          kind: Certificate
+          apiVersion: cert-manager.io/v1
+          name: xtmhub-cert-minio
+        not: true
+
+  - it: restricts each route to the whitelist of its interface
+    set:
+      gatewayApi.mode: kgateway
+      gatewayApi.migrateManagement: true
+      minio.ingressWhitelistSourceRange: "10.0.0.0/8, 192.168.0.0/16"
+      postgres.pgadmin.whitelistSourceRange: 172.16.0.0/12
+    template: templates/gateway-management.yaml
+    asserts:
+      - equal:
+          path: spec.acl.rules[0].cidrs
+          value:
+            - 10.0.0.0/8
+            - 192.168.0.0/16
+        documentSelector:
+          path: metadata.name
+          value: ns-rel-minio-policy
+      - equal:
+          path: spec.acl.rules[0].cidrs
+          value:
+            - 172.16.0.0/12
+        documentSelector:
+          path: metadata.name
+          value: ns-rel-pgadmin-policy
+      - equal:
+          path: spec.acl.defaultAction
+          value: deny
+        documentSelector:
+          path: metadata.name
+          value: ns-rel-kibana-policy
+
+  - it: takes the kibana whitelist from its annotation when it overrides the value
+    set:
+      gatewayApi.mode: kgateway
+      gatewayApi.migrateManagement: true
+      kibana.ingress.annotations:
+        nginx.ingress.kubernetes.io/whitelist-source-range: 203.0.113.0/24
+    template: templates/gateway-management.yaml
+    asserts:
+      - equal:
+          path: spec.acl.rules[0].cidrs
+          value:
+            - 203.0.113.0/24
+        documentSelector:
+          path: metadata.name
+          value: ns-rel-kibana-policy
+
+  - it: gives every route its backend, and kibana its long timeouts
+    set:
+      gatewayApi.mode: kgateway
+      gatewayApi.migrateManagement: true
+    template: templates/gateway-management.yaml
+    asserts:
+      - equal:
+          path: spec.rules[0].backendRefs[0].name
+          value: minio
+        documentSelector:
+          path: metadata.name
+          value: ns-rel-minio-route
+      - equal:
+          path: spec.rules[0].backendRefs[0].name
+          value: rel-pgadmin
+        documentSelector:
+          path: metadata.name
+          value: ns-rel-pgadmin-route
+      - equal:
+          path: spec.rules[0].timeouts.request
+          value: 1800s
+        documentSelector:
+          path: metadata.name
+          value: ns-rel-kibana-route
+      - equal:
+          path: spec.timeouts.streamIdle
+          value: 1800s
+        documentSelector:
+          path: metadata.name
+          value: ns-rel-kibana-policy
+
+  - it: leaves kibana out when it is disabled
+    set:
+      gatewayApi.mode: kgateway
+      gatewayApi.migrateManagement: true
+      kibana.enabled: false
+    template: templates/gateway-management.yaml
+    asserts:
+      - lengthEqual:
+          path: spec.listeners
+          count: 2
+        documentSelector:
+          path: kind
+          value: ListenerSet
+      - containsDocument:
+          kind: HTTPRoute
+          apiVersion: gateway.networking.k8s.io/v1
+          name: ns-rel-kibana-route
+        not: true
+
+  - it: ignores the kibana annotation of the controller once the chart ignores the Ingress
+    set:
+      gatewayApi.mode: dual
+      gatewayApi.dnsOwner: kgateway
+      gatewayApi.migrateManagement: true
+      kibana.ingress.annotations:
+        external-dns.alpha.kubernetes.io/controller: dns-controller
+        custom.io/keep: "yes"
+    template: templates/kibana-ingress.yaml
+    asserts:
+      - equal:
+          path: metadata.annotations["external-dns.alpha.kubernetes.io/controller"]
+          value: ignore
+      - equal:
+          path: metadata.annotations["custom.io/keep"]
+          value: "yes"

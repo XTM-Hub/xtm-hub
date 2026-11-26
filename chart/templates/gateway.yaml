@@ -1,10 +1,11 @@
-{{- if has ((.Values.gatewayApi).mode | default "off") (list "dual" "cutover" "only") }}
+{{- if include "gatewayApi.enabled" $ }}
 {{- if not (.Capabilities.APIVersions.Has "gateway.networking.k8s.io/v1") }}
-{{- fail "gatewayApi.mode requires the Gateway API CRDs (gateway.networking.k8s.io/v1) on the target cluster" }}
+{{- fail "gatewayApi.mode (dual/kgateway) requires the Gateway API CRDs (gateway.networking.k8s.io/v1) on the target cluster" }}
 {{- end }}
 {{- if not (.Capabilities.APIVersions.Has "gateway.kgateway.dev/v1alpha1") }}
-{{- fail "gatewayApi.mode requires kgateway (gateway.kgateway.dev/v1alpha1) on the target cluster" }}
+{{- fail "gatewayApi.mode (dual/kgateway) requires kgateway (gateway.kgateway.dev/v1alpha1) on the target cluster" }}
 {{- end }}
+{{- include "gatewayApi.validate" $ }}
 {{- $host := tpl .Values.xtmhub.host . }}
 apiVersion: gateway.networking.k8s.io/v1
 kind: ListenerSet
@@ -33,9 +34,10 @@ spec:
         namespaces:
           from: Same
 ---
-{{- if eq ((.Values.gatewayApi).mode | default "off") "only" }}
-# in dual/cutover the Ingress cert-manager shim maintains this secret; once the
-# Ingress is gone ("only"), this explicit Certificate takes over the same secret
+{{- if not (include "gatewayApi.ingressEnabled" $) }}
+# cert-manager does not watch ListenerSets: the certificate is requested explicitly. While the
+# Ingress exists, its cert-manager shim already creates a Certificate for this secret
+# (chart/docs/gateway-api-migration.md describes the handover of an existing Certificate).
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
@@ -54,9 +56,12 @@ kind: HTTPRoute
 metadata:
   name: {{ .Release.Namespace }}-{{ .Release.Name }}-route
   annotations:
-    # ListenerSet-parented routes are invisible to external-dns (it only resolves
-    # Gateway parents) — DNS rides the redirect route; keep this one out permanently
+    # external-dns reads the Gateway and ListenerSet parents (enableGatewayListenerSets): this route
+    # is the DNS source, unless the DNS is on nginx (gatewayApi.dnsOwner, rollback in dual mode).
+    {{- if not (include "gatewayApi.dnsOnGateway" $) }}
     external-dns.alpha.kubernetes.io/controller: ignore
+    {{- end }}
+    external-dns.alpha.kubernetes.io/ttl: "120"
     prometheus.io/probe: "true"
 spec:
   hostnames:
@@ -67,36 +72,20 @@ spec:
       name: {{ .Release.Namespace }}-{{ .Release.Name }}-listeners
       sectionName: https
   rules:
-    # static assets cache headers (nginx configuration-snippet equivalent)
-    - matches:
-        - path:
-            type: RegularExpression
-            value: ".*\\.(js|css|gif|jpe?g|png|svg|ico)$"
-      filters:
-        - type: ResponseHeaderModifier
-          responseHeaderModifier:
-            set:
-              - name: Cache-Control
-                value: "public, max-age=2592000"
-      backendRefs:
-        - name: xtmhub-front
-          port: 3000
+    # no overall deadline (nginx only limits the idle time): kgateway would apply Envoy's 15 s default
     - backendRefs:
         - name: xtmhub-front
           port: 3000
+      timeouts:
+        request: 0s
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
   name: {{ .Release.Namespace }}-{{ .Release.Name }}-redirect
   annotations:
-    # the redirect route is the gateway-side DNS source: it is the only route
-    # external-dns can resolve an address from (Gateway parent). Ignored in dual
-    # so the nginx Ingress stays the single DNS owner until cutover.
-    {{- if eq ((.Values.gatewayApi).mode | default "off") "dual" }}
+    # redirect routes never own DNS: the HTTPS route is the single DNS source
     external-dns.alpha.kubernetes.io/controller: ignore
-    {{- end }}
-    external-dns.alpha.kubernetes.io/ttl: "120"
 spec:
   hostnames:
     - {{ $host }}
@@ -122,6 +111,7 @@ spec:
     - group: gateway.networking.k8s.io
       kind: HTTPRoute
       name: {{ .Release.Namespace }}-{{ .Release.Name }}-route
+  # nginx parity: proxy-body-size 256m, proxy-next-upstream retries
   buffer:
     maxRequestSize: 256Mi
   retry:
