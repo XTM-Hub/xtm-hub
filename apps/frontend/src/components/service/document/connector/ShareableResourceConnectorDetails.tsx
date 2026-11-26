@@ -11,10 +11,8 @@ import {
   FiligranWebsiteUtm,
   withFiligranWebsiteUtm,
 } from '@/utils/filigran-website-utm';
-import { Button } from '@filigran/design-system';
-import { LogoGitIcon, OpenInNewIcon } from '@filigran/icon';
+import { Text } from '@filigran/design-system';
 import { PlatformIdentifier } from '@graphql/generated';
-import Link from 'next/link';
 import * as React from 'react';
 
 export interface ShareableResourceConnectorDetailsProps {
@@ -51,49 +49,34 @@ export const ShareableResourceConnectorDetails = ({
       {connectorDetails.source_code && (
         <ShareableResourceDetailItem
           label={t('Service.Connectors.IntegrationDocumentationAndCode')}>
-          <Button
-            className="p-0 underline"
-            priority="tertiary"
-            asChild>
-            <Link
-              {...analyticsId('resource_source_code_open')}
-              href={connectorDetails.source_code}
-              target="_blank">
-              <LogoGitIcon
-                aria-hidden={true}
-                className="h-4 w-4 mr-2"
-              />
-              {connectorDetails.name}
-            </Link>
-          </Button>
+          <Text
+            {...analyticsId('resource_source_code_open')}
+            variant="content-compact-link"
+            href={connectorDetails.source_code}
+            target="_blank"
+            rel="noopener noreferrer">
+            {connectorDetails.name}
+          </Text>
         </ShareableResourceDetailItem>
       )}
       {connectorDetails.subscription_link && (
         <ShareableResourceDetailItem
           label={t('Service.Connectors.VisitVendor')}>
-          <Button
-            className="p-0 uppercase underline"
-            priority="tertiary"
-            asChild>
-            <Link
-              {...analyticsId('resource_vendor_open')}
-              href={
-                filigranWebsiteUtm
-                  ? withFiligranWebsiteUtm(
-                      connectorDetails.subscription_link,
-                      filigranWebsiteUtm
-                    )
-                  : connectorDetails.subscription_link
-              }
-              rel="noopener noreferrer"
-              target="_blank">
-              <OpenInNewIcon
-                aria-hidden={true}
-                className="h-4 w-4 mr-2"
-              />
-              {t('Service.Connectors.VendorContact')}
-            </Link>
-          </Button>
+          <Text
+            {...analyticsId('resource_vendor_open')}
+            variant="content-compact-link"
+            href={
+              filigranWebsiteUtm
+                ? withFiligranWebsiteUtm(
+                    connectorDetails.subscription_link,
+                    filigranWebsiteUtm
+                  )
+                : connectorDetails.subscription_link
+            }
+            target="_blank"
+            rel="noopener noreferrer">
+            {t('Service.Connectors.VendorContact')}
+          </Text>
         </ShareableResourceDetailItem>
       )}
       {connectorDetails.integration_type && (

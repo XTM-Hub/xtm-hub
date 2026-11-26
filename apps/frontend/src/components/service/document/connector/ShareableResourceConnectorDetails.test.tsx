@@ -8,6 +8,7 @@ const CONTACT_LABEL = 'Service.ShareableResources.Details.ContributorContact';
 const CONTACT_VALUE = 'contributor@example.com';
 const CONNECTOR_NAME = 'MISP Intel';
 const FILIGRAN_DATASHEET_URL = 'https://filigran.io/media/datasheet.pdf';
+const SOURCE_CODE_URL = 'https://github.com/example/connector';
 const VENDOR_URL = 'https://vendor.example.com/contact';
 const RESOURCE_PAGE_UTM = {
   campaign: FiligranWebsiteUtmCampaign.RESOURCE_PAGE,
@@ -42,23 +43,64 @@ describe('ShareableResourceConnectorDetails', () => {
     expect(screen.queryByText(CONTACT_LABEL)).not.toBeInTheDocument();
   });
 
-  it('should hide the decorative icons of the source code and vendor links from assistive technology', () => {
+  it.each([
+    {
+      case: 'source code',
+      name: CONNECTOR_NAME,
+      href: SOURCE_CODE_URL,
+      analyticsId: 'resource_source_code_open',
+    },
+    {
+      case: 'vendor',
+      name: 'Service.Connectors.VendorContact',
+      href: VENDOR_URL,
+      analyticsId: 'resource_vendor_open',
+    },
+  ])(
+    'should render the $case link as an external anchor and not as a button',
+    ({ name, href, analyticsId }) => {
+      // Given a connector with a source code link and a vendor link
+      testRender(
+        <ShareableResourceConnectorDetails
+          connectorDetails={{
+            name: CONNECTOR_NAME,
+            source_code: SOURCE_CODE_URL,
+            subscription_link: VENDOR_URL,
+          }}
+        />
+      );
+
+      // When the details panel is rendered
+      const link = screen.getByRole('link', { name });
+
+      // Then it is an anchor opening the external page safely in a new tab, tagged for analytics
+      expect(link.tagName).toBe('A');
+      expect(link).toHaveAttribute('href', href);
+      expect(link).toHaveAttribute('target', '_blank');
+      expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+      expect(link).toHaveAttribute('data-analytics-id', analyticsId);
+      expect(screen.queryByRole('button', { name })).not.toBeInTheDocument();
+    }
+  );
+
+  it('should not draw an icon inside the source code and vendor links', () => {
     // Given a connector with a source code link and a vendor link
     testRender(
       <ShareableResourceConnectorDetails
         connectorDetails={{
           name: CONNECTOR_NAME,
-          source_code: 'https://github.com/example/connector',
+          source_code: SOURCE_CODE_URL,
           subscription_link: VENDOR_URL,
         }}
       />
     );
 
     // When the details panel is rendered
-    // Then the icon next to each link text is hidden, the link keeps its text as name
+    // Then the links are plain text, with no hand-placed icon
     [CONNECTOR_NAME, 'Service.Connectors.VendorContact'].forEach((name) => {
-      const icon = screen.getByRole('link', { name }).querySelector('svg');
-      expect(icon).toHaveAttribute('aria-hidden', 'true');
+      expect(
+        screen.getByRole('link', { name }).querySelector('svg')
+      ).not.toBeInTheDocument();
     });
   });
 

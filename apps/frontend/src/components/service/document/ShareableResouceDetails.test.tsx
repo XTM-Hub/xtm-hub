@@ -67,7 +67,7 @@ describe('ShareableResourceDetails', () => {
     expect(screen.getByText('+1k')).toBeInTheDocument();
   });
 
-  it('should hide the decorative icons of the organization and documentation link from assistive technology', () => {
+  it('should hide the decorative organization icon from assistive technology and draw no icon in the documentation link', () => {
     // Given
     testRender(
       <ShareableResourceDetails
@@ -88,7 +88,7 @@ describe('ShareableResourceDetails', () => {
 
     // Then
     expect(organizationLogo).toHaveAttribute('aria-hidden', 'true');
-    expect(documentationLinkIcon).toHaveAttribute('aria-hidden', 'true');
+    expect(documentationLinkIcon).not.toBeInTheDocument();
   });
 
   it('should hide downloads for third-party integrations', () => {
