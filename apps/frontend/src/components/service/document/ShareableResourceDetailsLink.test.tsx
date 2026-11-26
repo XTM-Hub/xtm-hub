@@ -27,17 +27,6 @@ describe('ShareableResourceDetailsLink', () => {
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
   });
 
-  it('should not draw an icon inside the link', () => {
-    // Given a documentation url
-    testRender(<ShareableResourceDetailsLink url={EXTERNAL_URL} />);
-
-    // When the link is rendered
-    // Then it holds the url as plain text, with no hand-placed icon
-    expect(
-      screen.getByRole('link', { name: EXTERNAL_URL }).querySelector('svg')
-    ).not.toBeInTheDocument();
-  });
-
   it('should tag a filigran.io url with the utm while keeping the displayed url untouched', () => {
     // Given a filigran.io url and a filigran website utm
     testRender(

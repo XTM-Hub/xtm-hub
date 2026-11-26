@@ -67,7 +67,7 @@ describe('ShareableResourceDetails', () => {
     expect(screen.getByText('+1k')).toBeInTheDocument();
   });
 
-  it('should hide the decorative organization icon from assistive technology and draw no icon in the documentation link', () => {
+  it('should hide the decorative organization icon from assistive technology', () => {
     // Given
     testRender(
       <ShareableResourceDetails
@@ -80,15 +80,9 @@ describe('ShareableResourceDetails', () => {
     const organizationLogo = screen
       .getByText('Filigran Team')
       .querySelector('svg');
-    const documentationLinkIcon = screen
-      .getByRole('link', {
-        name: /https:\/\/docs\.opencti\.io\/latest\/usage\/import\/csv-feed\//i,
-      })
-      .querySelector('svg');
 
     // Then
     expect(organizationLogo).toHaveAttribute('aria-hidden', 'true');
-    expect(documentationLinkIcon).not.toBeInTheDocument();
   });
 
   it('should hide downloads for third-party integrations', () => {

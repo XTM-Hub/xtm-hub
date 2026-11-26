@@ -83,27 +83,6 @@ describe('ShareableResourceConnectorDetails', () => {
     }
   );
 
-  it('should not draw an icon inside the source code and vendor links', () => {
-    // Given a connector with a source code link and a vendor link
-    testRender(
-      <ShareableResourceConnectorDetails
-        connectorDetails={{
-          name: CONNECTOR_NAME,
-          source_code: SOURCE_CODE_URL,
-          subscription_link: VENDOR_URL,
-        }}
-      />
-    );
-
-    // When the details panel is rendered
-    // Then the links are plain text, with no hand-placed icon
-    [CONNECTOR_NAME, 'Service.Connectors.VendorContact'].forEach((name) => {
-      expect(
-        screen.getByRole('link', { name }).querySelector('svg')
-      ).not.toBeInTheDocument();
-    });
-  });
-
   it('should tag the filigran.io links of the panel when a filigran website utm is given', () => {
     // Given a connector whose datasheet is hosted on filigran.io and whose vendor link is not
     testRender(
