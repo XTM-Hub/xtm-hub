@@ -2,6 +2,7 @@ import { useOrganizations } from '@/components/organization/Organization.service
 import { AppCombobox } from '@/components/ui/AppCombobox';
 import { useKeepSelectedOptions } from '@/hooks/use-keep-selected-options';
 import { useTranslate } from '@/hooks/use-translate';
+import { type AnalyticsElementId } from '@/lib/analytics/analytics.ids';
 import { useMemo, useState } from 'react';
 
 interface OrganizationFilterOption {
@@ -12,15 +13,18 @@ interface OrganizationFilterOption {
 
 const getOrganizationId = ({ id }: OrganizationFilterOption) => id;
 
-interface UserOrganizationFilterProps {
+interface OrganizationFilterProps {
   value?: string;
   onChange: (organizationId: string | undefined) => void;
+  // Each list that filters by organization tracks its own choices.
+  analyticsId: AnalyticsElementId;
 }
 
-export const UserOrganizationFilter = ({
+export const OrganizationFilter = ({
   value,
   onChange,
-}: UserOrganizationFilterProps) => {
+  analyticsId,
+}: OrganizationFilterProps) => {
   const t = useTranslate();
   const [searchTerm, setSearchTerm] = useState('');
   const {
@@ -61,7 +65,7 @@ export const UserOrganizationFilter = ({
 
   return (
     <AppCombobox<OrganizationFilterOption>
-      analyticsId="admin_user_organizations_open"
+      analyticsId={analyticsId}
       label={label}
       labelPosition="none"
       placeholder={label}

@@ -25,3 +25,24 @@ export const THALES_USER = {
 
   EMAIL: 'user@thales.com',
 };
+
+// Seeded by the backend test seeds: its registerer holds MANAGE_PLATFORM_REGISTRATION.
+export const SECOND_ORGA = {
+  NAME: 'SECOND ORGA',
+  REGISTERER_EMAIL: 'user.registerer@second-orga.com',
+};
+
+// The platform the admin registered platforms specs connect, then unregister.
+export const PLATFORM_TO_UNREGISTER = {
+  url: 'http://localhost:3000',
+  title: 'Platform To Unregister',
+  id: '0b8d2f1c-6a52-4d54-9f5b-3a3d0a1e7c11',
+  contract: 'EE',
+};
+
+// Created by those specs: a member who may manage registrations in its own organization, and is in none of SECOND
+// ORGA.
+export const OTHER_ORGA_MEMBER = {
+  ORGANIZATION_NAME: 'Other Org',
+  EMAIL: 'member@other-org.com',
+};

@@ -11,8 +11,8 @@ import {
   toAdminResendInviteInput,
   toResendInviteInput,
 } from '@/components/admin/user/user-list.utils';
-import { UserOrganizationFilter } from '@/components/admin/user/UserOrganizationFilter';
 import { PortalContext } from '@/components/me/AppPortalContext';
+import { OrganizationFilter } from '@/components/organization/OrganizationFilter';
 import BadgeOverflowCounter, {
   BadgeOverflow,
 } from '@/components/ui/BadgeOverflowCounter';
@@ -559,7 +559,8 @@ const UserList = ({ organization }: UserListProps) => {
             }
             filters={
               isAdminPath && (
-                <UserOrganizationFilter
+                <OrganizationFilter
+                  analyticsId="admin_user_organizations_open"
                   value={filter.organization}
                   onChange={handleOrganizationChange}
                 />

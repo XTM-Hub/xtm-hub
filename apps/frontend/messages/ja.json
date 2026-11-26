@@ -111,6 +111,14 @@
     "EE": "Enterprise Edition",
     "TRIAL": "無料トライアル"
   },
+  "PlatformStatuses": {
+    "active": "有効",
+    "inactive": "無効"
+  },
+  "CommercialModels": {
+    "SAAS": "SaaS",
+    "OTHER": "その他"
+  },
   "XtmPlatformTrial": {
     "BundleInfo": {
       "OrganizationName": "組織",
@@ -461,6 +469,7 @@
       "TOO_MANY_EMAILS": "一度に招待できるメールアドレスは最大50件です",
       "TOO_MANY_REQUESTS": "リクエストが多すぎます。しばらくしてから再度お試しください。",
       "TRANSFER_ME_ERROR": "個人スペースの転送要求中にエラーが発生しました。",
+      "TRIAL_PLATFORM_CANNOT_BE_UNREGISTERED": "トライアルのプラットフォームは登録解除できません",
       "UNAUTHENTICATED": "この操作を行うにはサインインが必要です",
       "UNKNOWN_ERROR": "不明なエラーが発生",
       "UNREGISTER_PLATFORM_UNKNOWN_ERROR": "プラットフォーム登録解除中に不明なエラーが発生した",
@@ -743,7 +752,8 @@
     "SettingsAccess": "アクセス",
     "SettingsCommunity": "コミュニティ",
     "SettingsManagement": "管理",
-    "ServiceCatalog": "サービスカタログ"
+    "ServiceCatalog": "サービスカタログ",
+    "RegisteredPlatforms": "登録済みプラットフォーム"
   },
   "NewsFeedAdminPage": {
     "Title": "タイトル",
@@ -2665,6 +2675,48 @@
     "Title": "XTM Hub へようこそ",
     "Subtitle": "Filigran エコシステムの統合エントリーポイント。",
     "Instructions": "サイドバーの「翻訳を編集」で編集モードを有効にしてください(BYPASS 権限を持つユーザーのみ)。その後、下の枠で囲まれたタイトルまたはサブタイトルをクリックしてください。保存すると下書きが作成され、編集モードのバナーから公開できます。"
+  },
+  "AdminRegisteredPlatforms": {
+    "Search": "タイトル、URL、組織、メール、IDで検索",
+    "ClearSearch": "検索をクリア",
+    "Columns": {
+      "Platform": "プラットフォーム",
+      "Product": "製品",
+      "Organization": "組織",
+      "Tenant": "テナント",
+      "Contract": "契約",
+      "Status": "ステータス",
+      "LastConnectivityCheck": "最終接続確認",
+      "Registerer": "登録者",
+      "Credential": "認証情報",
+      "Identifiers": "識別子"
+    },
+    "Identifiers": {
+      "ServiceInstance": "サービスインスタンス",
+      "Platform": "プラットフォーム",
+      "Tenant": "テナント"
+    },
+    "Credential": {
+      "Kind": {
+        "token": "トークン",
+        "none": "なし"
+      },
+      "TokenStored": "トークン保存済み",
+      "NoTokenStored": "トークン未保存"
+    },
+    "Filters": {
+      "Product": "製品",
+      "AllProducts": "すべての製品",
+      "Status": "ステータス",
+      "AllStatuses": "すべてのステータス"
+    },
+    "Unregister": "登録解除",
+    "UnregisterSuccess": "プラットフォーム「{title}」の登録を解除しました",
+    "UnregisterDialog": {
+      "Title": "プラットフォーム「{title}」の登録を解除しますか？",
+      "Text": "{product} プラットフォーム「{title}」は、XTM Hub 上の {organization} 組織から切断されます。組織の管理者にはメールで通知されます。再接続するには、プラットフォームで接続プロセスをもう一度行う必要があります。登録解除後、プラットフォームは登録解除されたことの確認以外に、XTM Hub で認証情報を使用できなくなります。",
+      "TextWithoutOrganization": "{product} プラットフォーム「{title}」は XTM Hub から切断されます。どの組織にも属していないため、メールで通知される人はいません。再接続するには、プラットフォームで接続プロセスをもう一度行う必要があります。登録解除後、プラットフォームは登録解除されたことの確認以外に、XTM Hub で認証情報を使用できなくなります。"
+    }
   },
   "Tour": {
     "GuidedTour": "ガイド付きツアー",

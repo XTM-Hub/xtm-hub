@@ -1,6 +1,9 @@
 import { defineConfig, devices } from '@playwright/test';
 import baseConfig from './playwright.config';
 
+// Demo specs skip themselves without it, so a regular run never replays their captions.
+process.env.E2E_DEMO = '1';
+
 /**
  * Config dedicated to recording demo videos against the local stack.
  * Reuses the base config (webServer, setup/teardown projects, baseURL) but:

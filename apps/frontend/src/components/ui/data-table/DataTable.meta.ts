@@ -12,7 +12,7 @@ export const DataTableMeta: ComponentMeta = {
   sizes: [],
   examples: [
     '<DataTable columns={columns} data={users} tableOptions={{ manualPagination: true, manualSorting: true, rowCount: total, onPaginationChange, onSortingChange }} tableState={{ pagination, sorting }} onClickRow={(row) => router.push(`/users/${row.original.id}`)} />',
-    '<DataTable columns={columns} data={pendingUsers} selectionOptions={{ selectionState: { state: selection, onSelectionChange: setSelection }, selectionHeader: { actions: ({ selectionState }) => <Button onClick={() => approve(selectionState)}>Approve</Button> } }} toolbar={<DataTableToolbar search={<SearchField fullWidth />} filters={<UserOrganizationFilter />} actions={<DataTableHeadBarOptions />} />} />',
+    '<DataTable columns={columns} data={pendingUsers} selectionOptions={{ selectionState: { state: selection, onSelectionChange: setSelection }, selectionHeader: { actions: ({ selectionState }) => <Button onClick={() => approve(selectionState)}>Approve</Button> } }} toolbar={<DataTableToolbar search={<SearchField fullWidth />} filters={<OrganizationFilter />} actions={<DataTableHeadBarOptions />} />} />',
     '<DataTable columns={columns} data={rows} isLoading={isLoading} previousPageLabel={t("DesignSystem.DataTable.PreviousPage")} nextPageLabel={t("DesignSystem.DataTable.NextPage")} selectedCountLabel={(count) => t("DesignSystem.DataTable.SelectedCount", { count })} />',
   ],
   props: {

@@ -5,6 +5,8 @@ import {
 } from '@filigran/icon';
 import { ServiceDefinitionIdentifier as ServiceDefinitionIdentifierFragment } from '@generated/serviceInstance_fragment.graphql';
 import {
+  CommercialModel,
+  PlatformConfigurationStatus,
   PlatformContract,
   PlatformIdentifier,
   ServiceDefinitionIdentifier,
@@ -62,6 +64,22 @@ export const CONTRACT_LABEL_BY_CONTRACT: Record<PlatformContract, string> = {
   [PlatformContract.Ce]: 'Contracts.CE',
   [PlatformContract.Ee]: 'Contracts.EE',
   [PlatformContract.Trial]: 'Contracts.TRIAL',
+};
+
+export const STATUS_LABEL_BY_STATUS: Record<
+  PlatformConfigurationStatus,
+  string
+> = {
+  [PlatformConfigurationStatus.Active]: 'PlatformStatuses.active',
+  [PlatformConfigurationStatus.Inactive]: 'PlatformStatuses.inactive',
+};
+
+export const COMMERCIAL_MODEL_LABEL_BY_COMMERCIAL_MODEL: Record<
+  CommercialModel,
+  string
+> = {
+  [CommercialModel.Saas]: 'CommercialModels.SAAS',
+  [CommercialModel.Other]: 'CommercialModels.OTHER',
 };
 
 export const translateServiceDefinitionIdentifier = (

@@ -35,8 +35,11 @@ interface ConnectivityStatus {
 }
 
 interface RefreshOutcome extends ConnectivityStatus {
-  // Service instance of the registration the platform id and token matched; null when the token is not valid.
+  // Service instance of the registration the platform id and token matched, whatever its status; null when none
+  // matches.
   serviceInstanceId: ServiceInstanceId | null;
+  // True when the platform id and token matched an active registration: an unregistered one authenticates nothing.
+  isTokenValid: boolean;
 }
 
 interface RefreshResult extends ConnectivityStatus {
@@ -84,14 +87,15 @@ const findOrganizationName = (
 
 const withOwnerOrganizationName = async (
   platformId: string,
-  { serviceInstanceId, ...connectivityStatus }: RefreshOutcome
+  { status, commercialModel, serviceInstanceId }: RefreshOutcome
 ): Promise<RefreshResult> => {
   const organizationNames = await loadOwnerOrganizationNames(
     platformId,
     serviceInstanceId ? [serviceInstanceId] : []
   );
   return {
-    ...connectivityStatus,
+    status,
+    commercialModel,
     organizationName: findOrganizationName(
       organizationNames,
       serviceInstanceId
@@ -313,6 +317,22 @@ const refreshConnectivityStatus = async ({
       }),
       commercialModel: null,
       serviceInstanceId: null,
+      isTokenValid: false,
+    };
+  }
+
+  // An unregistered (inactive) registration only learns its status: what the platform sends no longer changes it, and
+  // its token no longer vouches for the platform. It is loaded without activeOnly to answer inactive, not not-found.
+  if (platformConfiguration.status !== PlatformConfigurationStatus.Active) {
+    await PlatformConfigurationDomain.updateConfiguration(
+      platformConfiguration.service_instance_id,
+      { last_connectivity_check: new Date() }
+    );
+    return {
+      status: PlatformRegistrationConnectivityStatus.Inactive,
+      commercialModel: platformConfiguration.commercial_model,
+      serviceInstanceId: platformConfiguration.service_instance_id,
+      isTokenValid: false,
     };
   }
 
@@ -326,12 +346,10 @@ const refreshConnectivityStatus = async ({
   });
 
   return {
-    status:
-      platformConfiguration.status === PlatformConfigurationStatus.Active
-        ? PlatformRegistrationConnectivityStatus.Active
-        : PlatformRegistrationConnectivityStatus.Inactive,
+    status: PlatformRegistrationConnectivityStatus.Active,
     commercialModel: platformConfiguration.commercial_model,
     serviceInstanceId: platformConfiguration.service_instance_id,
+    isTokenValid: true,
   };
 };
 
@@ -418,19 +436,23 @@ export const RegistrationConnectivityApp = {
       };
     });
 
-    // A tenant token speaks only for its tenant: deactivating the tenants a call omits needs every submitted token
-    // to be valid, and only reaches tenants their own instance has stopped refreshing.
-    const areAllTokensValid =
-      results.length > 0 &&
-      results.every(
-        (result) =>
-          result.status === 'fulfilled' &&
-          result.value.serviceInstanceId !== null
-      );
-    if (!areAllTokensValid) {
+    // A tenant token speaks only for its tenant: deactivating the tenants a call omits needs every submitted token to
+    // match a registration, and only reaches tenants their own instance has stopped refreshing. The platform keeps
+    // sending the token of a tenant unregistered on the Hub, so an unregistered tenant does not block the cleanup,
+    // but at least one token must be of an active registration: an unregistered one alone vouches for nothing.
+    const fulfilledOutcomes = results.flatMap((result) =>
+      result.status === 'fulfilled' ? [result.value] : []
+    );
+    const canDeactivateOmittedTenants =
+      fulfilledOutcomes.length === results.length &&
+      fulfilledOutcomes.every(
+        (outcome) => outcome.serviceInstanceId !== null
+      ) &&
+      fulfilledOutcomes.some((outcome) => outcome.isTokenValid);
+    if (!canDeactivateOmittedTenants) {
       if (results.length > 0) {
         logApp.warn(
-          'Skipped the deactivation of omitted tenants: not every submitted tenant token is valid',
+          'Skipped the deactivation of omitted tenants: a submitted tenant token matches no registration, or none is active',
           { platformId: input.platformId }
         );
       }

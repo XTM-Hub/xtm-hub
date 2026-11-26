@@ -34,3 +34,34 @@ export const setCommercialModel = async (
     commercial_model: commercialModel,
   });
 };
+
+export type PlatformRegistration = {
+  status: string;
+  token: string | null;
+  organizationName: string;
+};
+
+// The registration of a platform as the Hub stores it: its status, its token and the organization that owns it (the
+// one of its subscription).
+export const getPlatformRegistration = async (
+  platformId: string
+): Promise<PlatformRegistration> => {
+  const registration = await db('PlatformConfiguration')
+    .join(
+      'Subscription',
+      'Subscription.service_instance_id',
+      'PlatformConfiguration.service_instance_id'
+    )
+    .join('Organization', 'Organization.id', 'Subscription.organization_id')
+    .where('PlatformConfiguration.platform_id', '=', platformId)
+    .select(
+      'PlatformConfiguration.status',
+      'PlatformConfiguration.token',
+      'Organization.name as organizationName'
+    )
+    .first();
+  if (!registration) {
+    throw new Error(`No registration for the platform ${platformId}`);
+  }
+  return registration;
+};

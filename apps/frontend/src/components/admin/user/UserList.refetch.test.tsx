@@ -24,8 +24,8 @@ vi.mock('@/components/admin/user/forms/admin/AdminAddUser', () => ({
   AdminAddUser: () => null,
 }));
 
-vi.mock('@/components/admin/user/UserOrganizationFilter', () => ({
-  UserOrganizationFilter: () => null,
+vi.mock('@/components/organization/OrganizationFilter', () => ({
+  OrganizationFilter: () => null,
 }));
 
 // The table is not under test: it shows the users and moves between pages.

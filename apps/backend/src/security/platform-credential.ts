@@ -34,16 +34,20 @@ export const PLATFORM_ACCEPTED_HUB_STATUSES: readonly DeploymentRequestHubStatus
     DeploymentRequestHubStatus.Provisioning,
   ];
 
+// activeOnly: an unregistered (inactive) registration matches nothing, so its token can only fall back
+// to a deployment request. Without it, the registration matches whatever its status and the caller judges the status.
 export const loadPlatformCredentialMatch = async ({
   platform_id,
   token,
+  activeOnly,
 }: {
   platform_id: string;
   token: string;
+  activeOnly?: boolean;
 }): Promise<PlatformCredentialMatch | undefined> => {
   const registration =
     await PlatformConfigurationDomain.loadResolvedConfigurationByPlatformAndToken(
-      { platform_id, token }
+      { platform_id, token, activeOnly }
     );
   if (registration) {
     const { platformConfiguration } = registration;

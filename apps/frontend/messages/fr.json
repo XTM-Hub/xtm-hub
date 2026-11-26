@@ -111,6 +111,14 @@
     "EE": "Enterprise Edition",
     "TRIAL": "Essai gratuit"
   },
+  "PlatformStatuses": {
+    "active": "Active",
+    "inactive": "Inactive"
+  },
+  "CommercialModels": {
+    "SAAS": "SaaS",
+    "OTHER": "Autre"
+  },
   "XtmPlatformTrial": {
     "BundleInfo": {
       "OrganizationName": "Organisation",
@@ -461,6 +469,7 @@
       "TOO_MANY_EMAILS": "Vous pouvez inviter au maximum 50 emails à la fois",
       "TOO_MANY_REQUESTS": "Trop de requêtes. Veuillez réessayer plus tard.",
       "TRANSFER_ME_ERROR": "Une erreur s'est produite lors de la demande de transfert de l'espace personnel.",
+      "TRIAL_PLATFORM_CANNOT_BE_UNREGISTERED": "Une plateforme d'essai ne peut pas être désinscrite",
       "UNAUTHENTICATED": "Vous devez être connecté pour effectuer cette action",
       "UNKNOWN_ERROR": "Une erreur inconnue s'est produite",
       "UNREGISTER_PLATFORM_UNKNOWN_ERROR": "Une erreur inconnue s'est produite lors de la désinscription de la plateforme",
@@ -743,7 +752,8 @@
     "SettingsAccess": "Accès",
     "SettingsCommunity": "Communauté",
     "SettingsManagement": "Gestion",
-    "ServiceCatalog": "Catalogue de services"
+    "ServiceCatalog": "Catalogue de services",
+    "RegisteredPlatforms": "Plateformes enregistrées"
   },
   "NewsFeedAdminPage": {
     "Title": "Titre",
@@ -2665,6 +2675,48 @@
     "Title": "Bienvenue sur XTM Hub",
     "Subtitle": "Le point d'entrée unifié de l'écosystème Filigran.",
     "Instructions": "Utilisez « Modifier les traductions » dans la barre latérale pour activer le mode édition (réservé aux utilisateurs avec la capacité BYPASS), puis cliquez sur le titre ou le sous-titre encadré ci-dessous. L’enregistrement crée un brouillon à publier depuis le bandeau du mode édition."
+  },
+  "AdminRegisteredPlatforms": {
+    "Search": "Rechercher par titre, URL, organisation, e-mail ou ID",
+    "ClearSearch": "Effacer la recherche",
+    "Columns": {
+      "Platform": "Plateforme",
+      "Product": "Produit",
+      "Organization": "Organisation",
+      "Tenant": "Tenant",
+      "Contract": "Contrat",
+      "Status": "Statut",
+      "LastConnectivityCheck": "Dernière vérification de connectivité",
+      "Registerer": "Enregistrée par",
+      "Credential": "Identifiant de connexion",
+      "Identifiers": "Identifiants"
+    },
+    "Identifiers": {
+      "ServiceInstance": "Instance de service",
+      "Platform": "Plateforme",
+      "Tenant": "Tenant"
+    },
+    "Credential": {
+      "Kind": {
+        "token": "Jeton",
+        "none": "Aucun"
+      },
+      "TokenStored": "Jeton enregistré",
+      "NoTokenStored": "Aucun jeton enregistré"
+    },
+    "Filters": {
+      "Product": "Produit",
+      "AllProducts": "Tous les produits",
+      "Status": "Statut",
+      "AllStatuses": "Tous les statuts"
+    },
+    "Unregister": "Désinscrire",
+    "UnregisterSuccess": "La plateforme « {title} » a été désinscrite",
+    "UnregisterDialog": {
+      "Title": "Désinscrire la plateforme « {title} » ?",
+      "Text": "La plateforme {product} « {title} » sera déconnectée de l'organisation {organization} sur XTM Hub. Les administrateurs de l'organisation seront prévenus par e-mail. Pour la reconnecter, la plateforme devra refaire le processus de connexion. La plateforme ne pourra plus utiliser ses identifiants avec XTM Hub, sauf pour apprendre qu'elle est désinscrite.",
+      "TextWithoutOrganization": "La plateforme {product} « {title} » sera déconnectée de XTM Hub. Elle n'appartient à aucune organisation : personne ne sera prévenu par e-mail. Pour la reconnecter, la plateforme devra refaire le processus de connexion. La plateforme ne pourra plus utiliser ses identifiants avec XTM Hub, sauf pour apprendre qu'elle est désinscrite."
+    }
   },
   "Tour": {
     "GuidedTour": "Visite guidée",
