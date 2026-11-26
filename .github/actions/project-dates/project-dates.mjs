@@ -3,7 +3,7 @@
 //   node project-dates.mjs --event release --tag v3.261126.0 --previous-tag v3.261124.0
 // `--dry-run` reads everything and writes nothing. Failures on one issue never stop the others.
 import { parseArgs } from 'node:util';
-import { FIELDS, extractIssueNumbers, plannedEtaWarning, planUpdate, today } from './project-dates-lib.mjs';
+import { FIELDS, buildAlert, extractIssueNumbers, planUpdate, today } from './project-dates-lib.mjs';
 
 const { values: args } = parseArgs({
   options: {
@@ -24,7 +24,10 @@ const [owner, repo] = (repository || '').split('/');
 const organization = process.env.ORGANIZATION || owner;
 const projectNumber = parseInt(process.env.PROJECT_NUMBER || '1', 10);
 const apiUrl = process.env.GITHUB_API_URL || 'https://api.github.com';
-const webhookUrl = process.env.PLANNED_ETA_WEBHOOK_URL || '';
+const webhookUrl = process.env.ALERT_WEBHOOK_URL || '';
+const runUrl = process.env.GITHUB_RUN_ID
+  ? `${process.env.GITHUB_SERVER_URL || 'https://github.com'}/${repository}/actions/runs/${process.env.GITHUB_RUN_ID}`
+  : '';
 const dryRun = args['dry-run'];
 
 if (!token || !repository || !['start', 'merge', 'release'].includes(args.event)) {
@@ -32,7 +35,35 @@ if (!token || !repository || !['start', 'merge', 'release'].includes(args.event)
   process.exit(1);
 }
 
-const warn = (message) => console.log(`::warning::${message}`);
+// Every alert is shown as a workflow annotation and sent to the n8n webhook at the end of the run.
+const alerts = [];
+function alert(type, message, issues = []) {
+  console.log(`::warning::${message}`);
+  alerts.push({ type, message, issues });
+}
+
+async function sendAlerts() {
+  if (alerts.length === 0) return;
+  if (!webhookUrl) {
+    console.log('ALERT_WEBHOOK_URL is not set, no alert sent to n8n');
+    return;
+  }
+  if (dryRun) return;
+  const pullRequest = args['pr-number']
+    ? { number: args['pr-number'], url: args['pr-url'], author: args['pr-author'] }
+    : null;
+  const release = args.event === 'release' ? { tag: args.tag, previous_tag: args['previous-tag'] || null } : null;
+  for (const { type, message, issues } of alerts) {
+    try {
+      const body = buildAlert({ type, message, issues, event: args.event, repository, runUrl, pullRequest, release });
+      await request(webhookUrl, { method: 'POST', body: JSON.stringify(body) });
+      console.log(`Alert "${type}" sent to n8n`);
+    } catch (error) {
+      // An alert never fails the workflow, and the URL may carry a secret: do not print it.
+      console.log(`::warning::Alert "${type}" not sent: ${error.message.replace(webhookUrl, '[webhook]')}`);
+    }
+  }
+}
 
 async function request(url, options = {}) {
   const response = await fetch(url, {
@@ -45,7 +76,13 @@ async function request(url, options = {}) {
     },
   });
   if (!response.ok) throw new Error(`${options.method || 'GET'} ${url} failed with ${response.status}`);
-  return response.json();
+  // GitHub answers JSON. A webhook may answer text or nothing, which is not an error.
+  const text = await response.text();
+  try {
+    return text ? JSON.parse(text) : null;
+  } catch {
+    return null;
+  }
 }
 
 async function graphql(query, variables) {
@@ -150,7 +187,7 @@ async function main() {
   let issueNumbers = args.issues.split(',').filter(Boolean);
   if (args.event === 'release') {
     if (!args.tag || !args['previous-tag']) {
-      warn('No previous release tag, the Prod date is not set for the first release');
+      alert('previous_tag_missing', `No release tag before ${args.tag || 'this release'}, no Prod date written`);
       return;
     }
     issueNumbers = await issuesOfRelease(args.tag, args['previous-tag']);
@@ -181,7 +218,7 @@ async function main() {
       for (const { field: name, date } of plan.set) {
         const field = project.fields.get(name);
         if (!field) {
-          warn(`Project field "${name}" not found, #${issueNumber} not updated`);
+          alert('project_field_not_found', `Project field "${name}" not found, #${issueNumber} not updated`, [{ number: issueNumber }]);
           continue;
         }
         console.log(`#${issueNumber}: ${name} = ${date}`);
@@ -192,7 +229,7 @@ async function main() {
         const field = project.fields.get('Status');
         const option = field?.options?.find((o) => o.name.toLowerCase() === plan.status.toLowerCase());
         if (!option) {
-          warn(`Status "${plan.status}" not found, #${issueNumber} not updated`);
+          alert('status_not_found', `Status "${plan.status}" not found, #${issueNumber} not moved`, [{ number: issueNumber }]);
         } else {
           console.log(`#${issueNumber}: Status = ${plan.status}`);
           if (!dryRun) await writeField(project, item.id, field, { singleSelectOptionId: option.id });
@@ -206,30 +243,20 @@ async function main() {
     } catch (error) {
       // A "#123" in a pull request can be a pull request or an issue of another repository.
       if (/Could not resolve to an Issue/.test(error.message)) console.log(`#${issueNumber} is not an issue of ${repository}, skipping`);
-      else warn(`#${issueNumber} not updated: ${error.message}`);
+      else alert('update_failed', `#${issueNumber} not updated: ${error.message}`, [{ number: issueNumber }]);
     }
   }
 
-  if (missingPlannedEta.length === 0) return;
-  const issues = missingPlannedEta.map((issue) => `#${issue.number}`).join(', ');
-  warn(`Planned ETA missing on ${issues}`);
-  if (!webhookUrl) {
-    console.log('PLANNED_ETA_WEBHOOK_URL is not set, no Teams warning sent');
-    return;
-  }
-  if (dryRun) return;
-  const payload = plannedEtaWarning({
-    repository,
-    pullRequest: { number: args['pr-number'], url: args['pr-url'], author: args['pr-author'] },
-    issues: missingPlannedEta,
-  });
-  try {
-    await request(webhookUrl, { method: 'POST', body: JSON.stringify(payload) });
-    console.log('Teams warning sent through n8n');
-  } catch (error) {
-    // The notification never fails the workflow, and the URL may carry a secret: do not print it.
-    warn(`Teams warning not sent: ${error.message.replace(webhookUrl, '[webhook]')}`);
+  if (missingPlannedEta.length > 0) {
+    const list = missingPlannedEta.map((issue) => `#${issue.number} ${issue.title}`).join(', ');
+    alert('planned_eta_missing', `Development started without a Planned ETA: ${list}. Set the Planned ETA in the XTM Hub project.`, missingPlannedEta);
   }
 }
 
-await main();
+try {
+  await main();
+} catch (error) {
+  alert('script_failed', `project-dates failed: ${error.message}`);
+  process.exitCode = 1;
+}
+await sendAlerts();

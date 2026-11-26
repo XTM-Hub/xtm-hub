@@ -55,9 +55,11 @@ jobs:
 
       - name: Set Prod date and move the tasks to Done
         if: steps.tags.outputs.release == 'true'
+        continue-on-error: true
         uses: ./.github/actions/project-dates
         with:
           event: release
           token: ${{ steps.app-token.outputs.token }}
           tag: ${{ steps.tags.outputs.tag }}
           previous-tag: ${{ steps.previous.outputs.previous }}
+          webhook-url: ${{ secrets.N8N_NOTIF_DEPLOYMENT_WEBHOOK }}

@@ -83,16 +83,32 @@ export function previousTag(tagsNewestFirst, current) {
   return tagsNewestFirst[index + 1] ?? null;
 }
 
-/** Body posted to n8n, which forwards it to Teams. `message` is ready to display. */
-export function plannedEtaWarning({ repository, pullRequest, issues }) {
-  const list = issues.map((issue) => `#${issue.number} ${issue.title}`).join(', ');
+export const ALERT_TYPES = [
+  'planned_eta_missing', // development started on tasks without a Planned ETA
+  'project_field_not_found', // a project field this script writes was renamed or removed
+  'status_not_found', // the Done status is not an option of the project any more
+  'update_failed', // the GitHub API refused to read or write a task
+  'previous_tag_missing', // a release without a previous release tag: no Prod date written
+  'script_failed', // the script itself crashed
+];
+
+/**
+ * Body posted to the n8n webhook for one alert. n8n owns what happens next (Teams, routing, formatting), so the body
+ * carries everything it may need: what happened, on which tasks, and where to look. `message` is ready to display.
+ */
+export function buildAlert({ type, message, issues = [], event, repository, runUrl, pullRequest = null, release = null, now = new Date() }) {
+  if (!ALERT_TYPES.includes(type)) throw new Error(`Unknown alert type "${type}"`);
   return {
-    type: 'planned_eta_missing',
+    source: 'xtm-hub/project-dates',
+    type,
+    severity: 'warning',
+    event,
     repository,
-    pull_request_number: pullRequest.number,
-    pull_request_url: pullRequest.url,
-    author: pullRequest.author,
+    occurred_at: now.toISOString(),
+    run_url: runUrl || null,
+    pull_request: pullRequest,
+    release,
     issues,
-    message: `Development started without a Planned ETA: ${list}. Set the Planned ETA in the XTM Hub project.`,
+    message,
   };
 }

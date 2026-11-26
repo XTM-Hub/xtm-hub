@@ -1,7 +1,7 @@
 name: 'Project dates'
 description: >
   Writes the task tracking dates on the XTM Hub project items of the issues a pull request or a release carries:
-  `start` sets Dev start date when it is empty and warns on Teams, through n8n, when Planned ETA is empty; `merge`
+  `start` sets Dev start date when it is empty and alerts when Planned ETA is empty; `merge`
   sets Adjusted ETA (the latest merge wins); `release` sets Prod date and moves the tasks in Ready to Deploy to Done.
   Needs a token able to write the organization project (the project GitHub App token), and a checkout of
   `.github/actions/project-dates` from the default branch.
@@ -17,15 +17,15 @@ inputs:
     required: false
     default: ''
   pr-number:
-    description: 'Pull request number, quoted in the Teams warning (start).'
+    description: 'Pull request number, sent with the alerts (start and merge).'
     required: false
     default: ''
   pr-url:
-    description: 'Pull request URL, quoted in the Teams warning (start).'
+    description: 'Pull request URL, sent with the alerts (start and merge).'
     required: false
     default: ''
   pr-author:
-    description: 'Pull request author, quoted in the Teams warning (start).'
+    description: 'Pull request author, sent with the alerts (start and merge).'
     required: false
     default: ''
   tag:
@@ -36,8 +36,10 @@ inputs:
     description: 'Release tag before it (release).'
     required: false
     default: ''
-  planned-eta-webhook-url:
-    description: 'n8n webhook that forwards the missing Planned ETA warning to Teams. Empty means no warning.'
+  webhook-url:
+    description: >
+      n8n webhook that receives every alert (missing Planned ETA, field or status not found, update failed...) as a
+      JSON body. n8n decides what to do with it, Teams included. Empty means alerts only show as annotations.
     required: false
     default: ''
   organization:
@@ -62,7 +64,7 @@ runs:
         GH_TOKEN: ${{ inputs.token }}
         ORGANIZATION: ${{ inputs.organization }}
         PROJECT_NUMBER: ${{ inputs.project-number }}
-        PLANNED_ETA_WEBHOOK_URL: ${{ inputs.planned-eta-webhook-url }}
+        ALERT_WEBHOOK_URL: ${{ inputs.webhook-url }}
         EVENT: ${{ inputs.event }}
         ISSUES: ${{ inputs.issues }}
         PR_NUMBER: ${{ inputs.pr-number }}

@@ -33,12 +33,14 @@ jobs:
           private-key: ${{ secrets.FILIGRANHQ_PROJECT_APP_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
 
-      # Only the default branch version of the project-dates action runs, never code from the pull request.
+      # A pull request of this repository runs its own project-dates action: its author already controls this
+      # workflow file, so that adds no access, and it lets a change to the action run on its own pull request.
+      # A pull request from a fork runs the default branch version, never code from the fork.
       - name: Checkout the project dates action
         if: github.event_name == 'pull_request'
         uses: actions/checkout@v6
         with:
-          ref: ${{ github.event.repository.default_branch }}
+          ref: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.sha || github.event.repository.default_branch }}
           sparse-checkout: |
             .github/actions/project-dates
             .nvmrc
@@ -542,9 +544,11 @@ jobs:
             }
 
       # Development started (draft PR) or PR opened: write Dev start date once. When that sets the start date and
-      # Planned ETA is empty, a warning goes to Teams through the n8n webhook already used for deployment notifications.
-      - name: Set Dev start date and warn when Planned ETA is missing
+      # Planned ETA is empty, an alert goes to the n8n webhook already used for deployment notifications, which
+      # decides what to do with it. A failure of this step never blocks the rest of the automation.
+      - name: Set Dev start date and alert when Planned ETA is missing
         if: github.event_name == 'pull_request' && github.event.action != 'closed' && steps.extract_issues.outputs.issue_numbers != ''
+        continue-on-error: true
         uses: ./.github/actions/project-dates
         with:
           event: start
@@ -553,7 +557,7 @@ jobs:
           pr-number: ${{ github.event.pull_request.number }}
           pr-url: ${{ github.event.pull_request.html_url }}
           pr-author: ${{ github.event.pull_request.user.login }}
-          planned-eta-webhook-url: ${{ secrets.N8N_NOTIF_DEPLOYMENT_WEBHOOK }}
+          webhook-url: ${{ secrets.N8N_NOTIF_DEPLOYMENT_WEBHOOK }}
 
       - name: Update issues status to Ready to Deploy on merge
         if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true && steps.extract_issues.outputs.issue_numbers != ''
@@ -739,11 +743,16 @@ jobs:
       # a task with several PRs, overwrites it: the latest merge wins.
       - name: Set Adjusted ETA on merge
         if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true && steps.extract_issues.outputs.issue_numbers != ''
+        continue-on-error: true
         uses: ./.github/actions/project-dates
         with:
           event: merge
           token: ${{ steps.app-token.outputs.token }}
           issues: ${{ steps.extract_issues.outputs.issue_numbers }}
+          pr-number: ${{ github.event.pull_request.number }}
+          pr-url: ${{ github.event.pull_request.html_url }}
+          pr-author: ${{ github.event.pull_request.user.login }}
+          webhook-url: ${{ secrets.N8N_NOTIF_DEPLOYMENT_WEBHOOK }}
 
       - name: Check for approval and label
         if: github.event_name == 'pull_request_review' || github.event_name == 'pull_request_target' || github.event_name == 'workflow_run'
