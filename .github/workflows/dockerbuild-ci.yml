@@ -96,6 +96,10 @@ jobs:
         if: matrix.label == 'backend'
         run: node --test .github/actions/coverage/coverage.test.mjs
 
+      - name: Test the project dates script
+        if: matrix.label == 'backend'
+        run: node --test .github/actions/project-dates/project-dates.test.mjs
+
       - name: Check formatting
         working-directory: ${{ matrix.working-directory }}
         run: yarn format:check

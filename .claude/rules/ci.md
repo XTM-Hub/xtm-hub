@@ -156,6 +156,33 @@ be installed explicitly.
 `copilot-setup-steps.yml` preinstalls the toolchain for the Copilot coding agent, and `auto-delete-feature-env.yml` /
 `delete-feature-branch.yml` handle cleanup.
 
+## Task tracking dates
+
+Each task of the XTM Hub project (organization project 1) carries four date fields. Planned ETA is set by a person at
+planning; the other three are written by CI, through the composite action `.github/actions/project-dates`, on the
+issues a pull request refers to (`#123` in its title or body, outside a "Release notes" section).
+
+| Field | Set when | Rule |
+| --- | --- | --- |
+| Planned ETA | Planning, by a person | Mandatory, never written by CI |
+| Dev start date | `pr-issue-automation.yml`: a draft pull request is opened (status Development) or a pull request is opened or ready for review (status Code review) | Written only when empty. When it is written and Planned ETA is empty, a warning goes to Teams |
+| Adjusted ETA | `pr-issue-automation.yml`: the pull request is merged | Overwritten on every merge, so the latest merge wins (a reopened pull request, or the last pull request of a task) |
+| Prod date | `release-project-sync.yml`: "Run XTM Hub CI/CD" succeeded for a `vX.Y.Z` tag | Written only when empty, together with the status Done, for the tasks in Ready to Deploy of the pull requests merged since the previous tag |
+
+The Teams warning is a POST of a JSON body (`type: planned_eta_missing`, the pull request and the issues) to the n8n
+webhook of the `N8N_NOTIF_DEPLOYMENT_WEBHOOK` secret, the one the deployment notifications use. It is skipped when the
+secret is empty, as on a pull request from a fork, and it never fails the workflow. The n8n flow behind that URL must
+route the `type` field to Teams.
+
+The rules live in `.github/actions/project-dates/project-dates-lib.mjs`, covered by `project-dates.test.mjs` (Node's
+built-in runner, run by the `backend` leg of `run-lint`). Run it with
+`node --test .github/actions/project-dates/project-dates.test.mjs` after changing the script. The script reads the
+project fields by name (`Dev start date`, `Planned ETA`, `Adjusted ETA`, `Prod date`, `Status`): renaming one in the
+project turns that update into a warning. `--dry-run` reads everything and writes nothing.
+
+CI sees a pull request being opened, not a status dragged on the board: a task moved to Development by hand gets its
+Dev start date at its first pull request event.
+
 ## Local infrastructure
 
 ```bash
