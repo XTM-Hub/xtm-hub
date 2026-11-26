@@ -509,6 +509,10 @@ describe('useGraphqlSubscription', () => {
         message: TRANSPORT_ERROR_MESSAGE,
       },
     ];
+    // A transport error is a closing connection: handed to onError, never reported.
+    const reportedErrorCases = errorCases.filter(
+      ({ channel }) => channel !== 'a transport error'
+    );
 
     it.each(errorCases)(
       'should hand $channel to onError',
@@ -527,7 +531,7 @@ describe('useGraphqlSubscription', () => {
       }
     );
 
-    it.each(errorCases)(
+    it.each(reportedErrorCases)(
       'should report $channel to the API through portalGraphqlClient when there is no onError',
       ({ emit, message }) => {
         // Given
@@ -546,6 +550,24 @@ describe('useGraphqlSubscription', () => {
           }
         );
         expect(sendReport).toHaveBeenCalledTimes(1);
+      }
+    );
+
+    it.each([
+      new NetworkError(TRANSPORT_ERROR_MESSAGE),
+      new TypeError('Failed to fetch'),
+    ])(
+      'should not report a transport error to the API when there is no onError: %s',
+      (error) => {
+        // Given
+        renderSubscription({ variables: VARIABLES, onNext: vi.fn() });
+
+        // When
+        lastSubscription().sink.error(error);
+
+        // Then
+        expect(useFrontendErrorLogMutation.fetcher).not.toHaveBeenCalled();
+        expect(sendReport).not.toHaveBeenCalled();
       }
     );
 
@@ -596,7 +618,7 @@ describe('useGraphqlSubscription', () => {
       }
     );
 
-    it.each(errorCases)(
+    it.each(reportedErrorCases)(
       'should swallow a failed report of $channel without throwing or leaving an unhandled rejection',
       async ({ emit }) => {
         // Given
