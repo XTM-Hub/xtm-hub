@@ -3,13 +3,15 @@ import useAdminPath from '@/hooks/use-admin-path';
 import { useTranslate } from '@/hooks/use-translate';
 import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { Button } from '@filigran/design-system';
-import { serviceInstanceForSubscriptions_fragment$data } from '@generated/serviceInstanceForSubscriptions_fragment.graphql';
-import { SubscriptionItemFragment } from '@graphql/generated';
+import {
+  ServiceInstanceWithCapabilitiesItemFragment,
+  SubscriptionItemFragment,
+} from '@graphql/generated';
 import { FunctionComponent, useState } from 'react';
 import { ServiceSlugOrgaForm } from './ServiceSlugOrgaForm';
 
 interface ServiceSlugAddSubscriptionActionProps {
-  serviceInstance: serviceInstanceForSubscriptions_fragment$data;
+  serviceInstance: ServiceInstanceWithCapabilitiesItemFragment;
   subscriptions: SubscriptionItemFragment[];
   subscriptionToEdit?: SubscriptionItemFragment;
   openEdit?: boolean;

@@ -2,11 +2,11 @@ import ShareableResourceServiceList from '@/components/service/components/Sharea
 import { useIntegrationListStorage } from '@/components/service/integrations/[serviceInstanceId]/use-integration-list-storage';
 import { LogicalFilters } from '@/hooks/use-logical-filters-from-storage';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
-import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
+import { ServiceInstanceItemFragment } from '@graphql/generated';
 
 interface IntegrationsListProps {
   logicalFilters: LogicalFilters;
-  serviceInstance: serviceInstance_fragment$data;
+  serviceInstance: ServiceInstanceItemFragment;
   search: string;
   onSearchChange: (v: string) => void;
 }

@@ -5,8 +5,8 @@ import {
   PUBLIC_CYBERSECURITY_SOLUTIONS_PATH,
 } from '@/utils/path/constant';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
-import { serviceList_fragment$data } from '@generated/serviceList_fragment.graphql';
 import {
+  AdminServiceInstanceItemFragment,
   PlatformIdentifier,
   SeoServiceInstanceItemFragment,
   ServiceDefinitionIdentifier,
@@ -42,7 +42,7 @@ const buildDocumentUrl = (
 };
 
 const computeUrl = (
-  instance: serviceList_fragment$data | SeoServiceInstanceItemFragment,
+  instance: AdminServiceInstanceItemFragment | SeoServiceInstanceItemFragment,
   seo?: boolean
 ) => {
   const instanceLink = instance.links?.[0]?.url;

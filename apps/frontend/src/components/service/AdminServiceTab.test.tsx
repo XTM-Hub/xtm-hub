@@ -27,20 +27,20 @@ const PICKED_SERVICE_LABEL = `Service.ServiceDefinitionIdentifier.${PICKED_SERVI
 const SEARCH_TERM = 'playbook';
 
 const renderAdminServiceTab = () => {
-  const refetch = vi.fn();
+  const onVariablesChange = vi.fn();
   const { user } = testRender(
     <AdminServiceTab
       serviceData={[]}
-      refetch={refetch}
+      onVariablesChange={onVariablesChange}
     />
   );
-  return { refetch, user };
+  return { onVariablesChange, user };
 };
 
 describe('AdminServiceTab', () => {
   it('should refetch the services of the picked service definition', async () => {
     // Given
-    const { refetch, user } = renderAdminServiceTab();
+    const { onVariablesChange, user } = renderAdminServiceTab();
 
     // When
     await user.click(screen.getByRole('combobox', { name: FILTER_LABEL }));
@@ -49,7 +49,7 @@ describe('AdminServiceTab', () => {
     );
 
     // Then
-    expect(refetch).toHaveBeenLastCalledWith({
+    expect(onVariablesChange).toHaveBeenLastCalledWith({
       filters: [
         {
           key: ServiceInstanceFilterKey.ServiceDefinitionIdentifier,
@@ -87,7 +87,7 @@ describe('AdminServiceTab', () => {
 
   it('should refetch every administrable service when the picked service definition is cleared', async () => {
     // Given
-    const { refetch, user } = renderAdminServiceTab();
+    const { onVariablesChange, user } = renderAdminServiceTab();
     await user.click(screen.getByRole('combobox', { name: FILTER_LABEL }));
     await user.click(
       screen.getByRole('option', { name: PICKED_SERVICE_LABEL })
@@ -97,7 +97,7 @@ describe('AdminServiceTab', () => {
     await user.click(screen.getByRole('button', { name: CLEAR_LABEL }));
 
     // Then
-    expect(refetch).toHaveBeenLastCalledWith({
+    expect(onVariablesChange).toHaveBeenLastCalledWith({
       filters: [
         {
           key: ServiceInstanceFilterKey.ServiceDefinitionIdentifier,
@@ -109,7 +109,7 @@ describe('AdminServiceTab', () => {
 
   it('should refetch with the typed term once typing pauses', async () => {
     // Given
-    const { refetch, user } = renderAdminServiceTab();
+    const { onVariablesChange, user } = renderAdminServiceTab();
 
     // When
     await user.type(
@@ -119,7 +119,9 @@ describe('AdminServiceTab', () => {
 
     // Then
     await waitFor(() =>
-      expect(refetch).toHaveBeenCalledWith({ searchTerm: SEARCH_TERM })
+      expect(onVariablesChange).toHaveBeenCalledWith({
+        searchTerm: SEARCH_TERM,
+      })
     );
   });
 });

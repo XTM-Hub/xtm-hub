@@ -106,4 +106,92 @@ describe('useTablePagination', () => {
     expect(result.current.pagination.pageSize).toBe(60);
     expect(setPageSize).toHaveBeenCalledWith(60);
   });
+  describe('stepBackToLastPage', () => {
+    const SETTLED = {
+      isSuccess: true,
+      isFetching: false,
+      isPlaceholderData: false,
+    };
+
+    // 120 rows read 50 by 50 end on the third page.
+    const renderOnThirdPage = () => {
+      const hook = renderHook(() =>
+        useTablePagination({ pageSize: 50, setPageSize: vi.fn() })
+      );
+      act(() => {
+        hook.result.current.onPaginationChange({ pageIndex: 2, pageSize: 50 });
+      });
+      return hook;
+    };
+
+    it.each([
+      { totalCount: 60, expectedPageIndex: 1 },
+      { totalCount: 0, expectedPageIndex: 0 },
+    ])(
+      'should step back to page $expectedPageIndex when a settled list holds $totalCount rows',
+      ({ totalCount, expectedPageIndex }) => {
+        // Given
+        const { result } = renderOnThirdPage();
+
+        // When
+        act(() => {
+          result.current.stepBackToLastPage({ totalCount, ...SETTLED });
+        });
+
+        // Then
+        expect(result.current.pagination.pageIndex).toBe(expectedPageIndex);
+        expect(result.current.cursor).toBe(toCursor(50, expectedPageIndex));
+      }
+    );
+
+    it('should stay on the page when it still exists', () => {
+      // Given
+      const { result } = renderOnThirdPage();
+
+      // When
+      act(() => {
+        result.current.stepBackToLastPage({ totalCount: 101, ...SETTLED });
+      });
+
+      // Then
+      expect(result.current.pagination.pageIndex).toBe(2);
+    });
+
+    it.each([
+      { state: 'loading', change: { isSuccess: false } },
+      { state: 'refetching', change: { isFetching: true } },
+      { state: 'a placeholder', change: { isPlaceholderData: true } },
+    ])('should stay on the page while the list is $state', ({ change }) => {
+      // Given
+      const { result } = renderOnThirdPage();
+
+      // When
+      act(() => {
+        result.current.stepBackToLastPage({
+          totalCount: 0,
+          ...SETTLED,
+          ...change,
+        });
+      });
+
+      // Then
+      expect(result.current.pagination.pageIndex).toBe(2);
+    });
+
+    it('should stay on the page when the list has no count', () => {
+      // Given
+      const { result } = renderOnThirdPage();
+
+      // When
+      act(() => {
+        result.current.stepBackToLastPage({
+          totalCount: undefined,
+          ...SETTLED,
+        });
+      });
+
+      // Then
+      expect(result.current.pagination.pageIndex).toBe(2);
+    });
+  });
 });

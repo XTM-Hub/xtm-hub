@@ -1,8 +1,9 @@
-import { UserServicesAddCapabilitiesMutation } from '@/components/service/user_service.graphql';
 import { BadgeOverflow } from '@/components/ui/BadgeOverflowCounter';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { analyticsId } from '@/lib/analytics/analytics.ids';
+import { portalGraphqlClient } from '@/lib/graphql-client';
+import { invalidateUserServiceQueries } from '@/utils/query-invalidation/user-service.invalidation';
 import {
   Button,
   Checkbox,
@@ -12,13 +13,15 @@ import {
   DialogFooter,
   DialogTitle,
 } from '@filigran/design-system';
-import { userServices_fragment$data } from '@generated/userServices_fragment.graphql';
-import { userServicesAddCapabilitiesMutation } from '@generated/userServicesAddCapabilitiesMutation.graphql';
+import {
+  type UserServiceItemFragment,
+  useAddCapabilitiesToUserServicesMutation,
+} from '@graphql/generated';
+import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { useMutation } from 'react-relay';
 
 interface SubscriptionSlugAddCapabilitiesProps {
-  selectedUserServices: userServices_fragment$data[];
+  selectedUserServices: UserServiceItemFragment[];
   availableCapabilities: BadgeOverflow[];
   open: boolean;
   setOpen: (open: boolean) => void;
@@ -39,10 +42,24 @@ export const SubscriptionSlugAddCapabilities = ({
     Set<string>
   >(new Set());
 
-  const [commitAddCapabilities] =
-    useMutation<userServicesAddCapabilitiesMutation>(
-      UserServicesAddCapabilitiesMutation
-    );
+  const queryClient = useQueryClient();
+  const { mutate: addCapabilities } = useAddCapabilitiesToUserServicesMutation(
+    portalGraphqlClient,
+    {
+      onSuccess: async () => {
+        await invalidateUserServiceQueries(queryClient);
+        resetAndClose();
+        onCompleted?.();
+      },
+      onError: (error: Error) => {
+        showSnackbar({
+          severity: 'error',
+          title: t('Utils.Error'),
+          description: <>{t(`Error.Server.${error.message}`)}</>,
+        });
+      },
+    }
+  );
 
   const toggleCapability = (id: string) => {
     setSelectedCapabilityIds((prev) => {
@@ -64,25 +81,12 @@ export const SubscriptionSlugAddCapabilities = ({
   const handleSubmit = () => {
     const capabilities = Array.from(selectedCapabilityIds);
 
-    commitAddCapabilities({
-      variables: {
-        input: {
-          userServiceIds: selectedUserServices.map((us) => us.id),
-          capabilities,
-        },
-        service_instance_id: serviceInstanceId,
+    addCapabilities({
+      input: {
+        userServiceIds: selectedUserServices.map((us) => us.id),
+        capabilities,
       },
-      onCompleted: () => {
-        resetAndClose();
-        onCompleted?.();
-      },
-      onError: (error: Error) => {
-        showSnackbar({
-          severity: 'error',
-          title: t('Utils.Error'),
-          description: <>{t(`Error.Server.${error.message}`)}</>,
-        });
-      },
+      service_instance_id: serviceInstanceId,
     });
   };
 

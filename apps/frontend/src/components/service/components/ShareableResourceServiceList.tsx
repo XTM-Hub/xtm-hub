@@ -20,13 +20,16 @@ import {
   ShareableResourceType,
 } from '@/utils/shareable-resources/shareable-resources.types';
 import { useShareableResourceMapping } from '@/utils/shareable-resources/use-shareable-resource-mapping';
-import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
-import { ServiceRestriction, useDocumentsListQuery } from '@graphql/generated';
+import {
+  ServiceInstanceItemFragment,
+  ServiceRestriction,
+  useDocumentsListQuery,
+} from '@graphql/generated';
 import { keepPreviousData } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 
 export interface ShareableResourceServiceListProps {
-  serviceInstance: serviceInstance_fragment$data;
+  serviceInstance: ServiceInstanceItemFragment;
   logicalFilters: LogicalFilters;
   search: string;
   onSearchChange: (v: string) => void;
@@ -71,8 +74,13 @@ const ShareableResourceServiceList = ({
     orderMode,
   } = useServiceListStorage(storageKey);
 
-  const { pagination, setPagination, cursor, onPaginationChange } =
-    useTablePagination({ pageSize, setPageSize });
+  const {
+    pagination,
+    setPagination,
+    cursor,
+    onPaginationChange,
+    stepBackToLastPage,
+  } = useTablePagination({ pageSize, setPageSize });
 
   // Reset the page on search/filter/sort change. Done while rendering, not in an
   // effect, so the stale cursor of the previous page is never sent with the new filters.
@@ -96,39 +104,37 @@ const ShareableResourceServiceList = ({
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
   }
 
-  const { data, isLoading, isError, isFetching, isPlaceholderData, refetch } =
-    useDocumentsListQuery(
-      portalGraphqlClient,
-      {
-        count: pagination.pageSize,
-        cursor,
-        orderBy,
-        orderMode,
-        serviceInstanceId: serviceInstance.id,
-        searchTerm: search,
-        parentsOnly: null,
-        logicalFilters,
-      },
-      { placeholderData: keepPreviousData }
-    );
-
-  // Deleting the last document of the last page refetches that page empty. Step
-  // back to the new last one, the same way as a filter change resets the page.
-  // Only once the page has settled: an invalidated page that was cached while
-  // inactive is served stale while it refetches, and its count is out of date.
-  const lastPageIndex = Math.max(
-    0,
-    Math.ceil((data?.documents.totalCount ?? 0) / pagination.pageSize) - 1
+  const {
+    data,
+    isLoading,
+    isError,
+    isSuccess,
+    isFetching,
+    isPlaceholderData,
+    refetch,
+  } = useDocumentsListQuery(
+    portalGraphqlClient,
+    {
+      count: pagination.pageSize,
+      cursor,
+      orderBy,
+      orderMode,
+      serviceInstanceId: serviceInstance.id,
+      searchTerm: search,
+      parentsOnly: null,
+      logicalFilters,
+    },
+    { placeholderData: keepPreviousData }
   );
-  if (
-    data &&
-    !isPlaceholderData &&
-    !isFetching &&
-    !isError &&
-    pagination.pageIndex > lastPageIndex
-  ) {
-    setPagination((prev) => ({ ...prev, pageIndex: lastPageIndex }));
-  }
+
+  // Deleting the last document of the last page refetches that page empty: step
+  // back to the new last one, the same way as a filter change resets the page.
+  stepBackToLastPage({
+    totalCount: data?.documents.totalCount,
+    isSuccess,
+    isFetching,
+    isPlaceholderData,
+  });
 
   const { draft, inValidation, published } = useMemo(
     () =>

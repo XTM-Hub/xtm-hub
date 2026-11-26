@@ -39,15 +39,18 @@ import {
   MotionPlayIcon,
   ThreatActorGroupIcon,
 } from '@filigran/icon';
-import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
-import { DocumentItemFragment, PlatformIdentifier } from '@graphql/generated';
+import {
+  DocumentItemFragment,
+  PlatformIdentifier,
+  ServiceInstanceItemFragment,
+} from '@graphql/generated';
 import Image from 'next/image';
 import Link from 'next/link';
 
 // Component interface
 interface ShareableResourceConnectorSlugProps {
   documentData: DocumentItemFragment & ConnectorFields;
-  serviceInstance: serviceInstance_fragment$data;
+  serviceInstance: ServiceInstanceItemFragment;
   breadcrumbValue: BreadcrumbNavLink[];
   shareUrl: string;
 }

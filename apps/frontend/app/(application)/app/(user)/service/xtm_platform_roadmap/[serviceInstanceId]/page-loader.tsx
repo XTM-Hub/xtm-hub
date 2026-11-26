@@ -3,10 +3,10 @@ import { EpicPage } from '@/components/epic/EpicPage';
 import { BreadcrumbNav } from '@/components/ui/BreadcrumbNav';
 import { useTranslate } from '@/hooks/use-translate';
 import { APP_PATH } from '@/utils/path/constant';
-import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
+import { ServiceInstanceItemFragment } from '@graphql/generated';
 
 interface PreloaderProps {
-  serviceInstance: serviceInstance_fragment$data;
+  serviceInstance: ServiceInstanceItemFragment;
 }
 
 const PageLoader = ({ serviceInstance }: PreloaderProps) => {

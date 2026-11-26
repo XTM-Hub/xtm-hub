@@ -1,8 +1,4 @@
 import ServiceSlugHeader from '@/components/service/[slug]/ServiceSlugHeader';
-import {
-  ServiceInstanceByIdQuery,
-  serviceInstanceForSubscriptionsFragment,
-} from '@/components/service/service.graphql';
 import BadgeOverflowCounter, {
   BadgeOverflow,
 } from '@/components/ui/BadgeOverflowCounter';
@@ -29,19 +25,19 @@ import { getDataTableLabels } from '@/utils/design-system/data-table';
 import { ADMIN_SERVICE_CATALOG_PATH, APP_PATH } from '@/utils/path/constant';
 import { Button, Paper, SearchField, Switch } from '@filigran/design-system';
 import { AddIcon, DeleteIcon, MoreVertIcon } from '@filigran/icon';
-import { serviceInstanceByIdQuery } from '@generated/serviceInstanceByIdQuery.graphql';
-import { serviceInstanceForSubscriptions_fragment$key } from '@generated/serviceInstanceForSubscriptions_fragment.graphql';
-import { SubscriptionItemFragment } from '@graphql/generated';
+import {
+  ServiceInstanceWithCapabilitiesItemFragment,
+  SubscriptionItemFragment,
+} from '@graphql/generated';
 import { ColumnDef, PaginationState } from '@tanstack/react-table';
 import { useMemo, useState } from 'react';
-import { PreloadedQuery, readInlineData, usePreloadedQuery } from 'react-relay';
 import { ServiceSlugAddCapabilities } from './ServiceSlugAddCapabilities';
 import { ServiceSlugDeleteSubscription } from './ServiceSlugDeleteSubscription';
 import { ServiceSlugSubscription } from './ServiceSlugSubscription';
 
 interface ServiceSlugProps {
   subscriptions: SubscriptionItemFragment[];
-  queryRefServiceInstance: PreloadedQuery<serviceInstanceByIdQuery>;
+  serviceInstance: ServiceInstanceWithCapabilitiesItemFragment;
 }
 
 const emptySelectionState = (): SelectionState => ({
@@ -50,27 +46,8 @@ const emptySelectionState = (): SelectionState => ({
   excludedIds: new Set<string>(),
 });
 
-const ServiceSlug = ({
-  subscriptions,
-  queryRefServiceInstance,
-}: ServiceSlugProps) => {
+const ServiceSlug = ({ subscriptions, serviceInstance }: ServiceSlugProps) => {
   const [searchTerm, setSearchTerm] = useState('');
-
-  const queryDataRequest = usePreloadedQuery<serviceInstanceByIdQuery>(
-    ServiceInstanceByIdQuery,
-    queryRefServiceInstance
-  );
-  const serviceInstanceRef = queryDataRequest.serviceInstanceById;
-
-  if (!serviceInstanceRef) {
-    return null;
-  }
-
-  const serviceInstance =
-    readInlineData<serviceInstanceForSubscriptions_fragment$key>(
-      serviceInstanceForSubscriptionsFragment,
-      serviceInstanceRef
-    );
   const [shouldDisplayPersonalSpaces, setShouldDisplayPersonalSpaces] =
     useState(false);
   const [deleteSubscriptions, setDeleteSubscriptions] = useState<
@@ -270,7 +247,10 @@ const ServiceSlug = ({
       <BreadcrumbNav value={breadcrumbValue} />
 
       <div>
-        <ServiceSlugHeader serviceInstance={serviceInstance} />
+        <ServiceSlugHeader
+          serviceInstance={serviceInstance}
+          capabilities={serviceInstance.service_definition?.service_capability}
+        />
         <Paper
           as="section"
           padding={16}

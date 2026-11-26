@@ -3,11 +3,11 @@
 import Loader from '@/components/Loader';
 import DocumentDetailLoader from '@/components/service/document/DocumentDetailLoader';
 import OpenctiPlaybookSlug from '@/components/service/opencti-playbooks/[slug]/OpenctiPlaybookSlug';
-import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
+import { ServiceInstanceItemFragment } from '@graphql/generated';
 
 interface PreloaderProps {
   documentId: string;
-  serviceInstance: serviceInstance_fragment$data;
+  serviceInstance: ServiceInstanceItemFragment;
 }
 
 const PageLoader = ({ documentId, serviceInstance }: PreloaderProps) => {

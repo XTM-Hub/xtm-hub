@@ -36,6 +36,22 @@ export interface UseTablePaginationResult {
   cursor: string;
   /** Pass directly to `DataTable`/`PaginationControls` table options. */
   onPaginationChange: (updater: Updater<PaginationState>) => void;
+  /**
+   * Steps back to the last page when the list shrank under the current one (the last row
+   * of the last page removed). Call it while rendering, right after the list query, so
+   * the emptied page's cursor is never sent again. It moves the page through
+   * `setPagination`, without calling the `onPaginationChange` option: the query must
+   * read `cursor`.
+   */
+  stepBackToLastPage: (list: ListQueryState) => void;
+}
+
+/** What `stepBackToLastPage` reads of the list query. */
+export interface ListQueryState {
+  totalCount: number | undefined;
+  isSuccess: boolean;
+  isFetching: boolean;
+  isPlaceholderData: boolean;
 }
 
 /**
@@ -83,10 +99,36 @@ export const useTablePagination = ({
     [normalizePageSize, onPaginationChange, pageSize, pagination, setPageSize]
   );
 
+  // Only a settled response is trusted: a placeholder holds the previous page's count,
+  // and an invalidated page cached while inactive is served stale while it refetches.
+  const stepBackToLastPage = ({
+    totalCount,
+    isSuccess,
+    isFetching,
+    isPlaceholderData,
+  }: ListQueryState) => {
+    if (
+      !isSuccess ||
+      isFetching ||
+      isPlaceholderData ||
+      totalCount === undefined
+    ) {
+      return;
+    }
+    const lastPageIndex = Math.max(
+      0,
+      Math.ceil(totalCount / pagination.pageSize) - 1
+    );
+    if (pagination.pageIndex > lastPageIndex) {
+      setPagination((prev) => ({ ...prev, pageIndex: lastPageIndex }));
+    }
+  };
+
   return {
     pagination,
     setPagination,
     cursor,
     onPaginationChange: handlePaginationChange,
+    stepBackToLastPage,
   };
 };

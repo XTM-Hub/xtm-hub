@@ -4,6 +4,9 @@ import {
   FilterKey,
   ServiceRestriction,
   SubscriptionByIdQuery,
+  useAddUserServiceMutation,
+  useEditUserServiceMutation,
+  type UserServiceItemFragment,
   UsersQueryVariables,
   useUsersQuery,
 } from '@graphql/generated';
@@ -12,10 +15,6 @@ import { useContext, useEffect, useMemo, useState } from 'react';
 import { useUserListLocalstorage } from '@/components/admin/user/user-list-localstorage';
 import Loader from '@/components/Loader';
 import { PortalContext } from '@/components/me/AppPortalContext';
-import {
-  UserServiceCreateMutation,
-  UserServiceEditMutation,
-} from '@/components/service/user_service.graphql';
 import { Form, FormField } from '@/components/ui/form';
 import { SheetFooter } from '@/components/ui/sheet';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
@@ -25,6 +24,7 @@ import { useTranslate } from '@/hooks/use-translate';
 import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { toComboboxOptionIds } from '@/utils/design-system/combobox';
+import { invalidateUserServiceQueries } from '@/utils/query-invalidation/user-service.invalidation';
 import {
   Button,
   Checkbox,
@@ -34,37 +34,71 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@filigran/design-system';
-import { userServiceCreateMutation } from '@generated/userServiceCreateMutation.graphql';
-import { userServiceEditMutation } from '@generated/userServiceEditMutation.graphql';
-import { userServices_fragment$data } from '@generated/userServices_fragment.graphql';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { keepPreviousData } from '@tanstack/react-query';
+import { keepPreviousData, useQueryClient } from '@tanstack/react-query';
 import { useForm, useWatch } from 'react-hook-form';
-import { useMutation } from 'react-relay';
 import { useDebounceCallback } from 'usehooks-ts';
 import { z } from 'zod';
 
 interface UserServiceFormProps {
-  connectionId: string;
-  userService?: userServices_fragment$data;
+  userService?: UserServiceItemFragment;
   subscription: SubscriptionByIdQuery;
 }
 
 const getUserOptionValue = ({ value }: { value: string }) => value;
 
 export const UserServiceForm = ({
-  connectionId,
   userService,
   subscription,
 }: UserServiceFormProps) => {
   const { handleCloseSheet, setIsDirty, setOpenSheet } = useDialogContext();
   const { me } = useContext(PortalContext);
 
-  const [commitUserServiceEditMutation, isEditInFlight] =
-    useMutation<userServiceEditMutation>(UserServiceEditMutation);
-  const [commitUserServiceMutation, isCreateInFlight] =
-    useMutation<userServiceCreateMutation>(UserServiceCreateMutation);
+  const queryClient = useQueryClient();
   const t = useTranslate();
+  const { mutate: editUserService, isPending: isEditInFlight } =
+    useEditUserServiceMutation(portalGraphqlClient, {
+      onSuccess: async () => {
+        await invalidateUserServiceQueries(queryClient);
+        showSnackbar({
+          severity: 'success',
+          title: t('Utils.Success'),
+          description: t('ServiceActions.UserCapabilitiesModified', {
+            email: userService!.user!.email,
+          }),
+        });
+        setOpenSheet(false);
+      },
+      onError: (error: Error) => {
+        showSnackbar({
+          severity: 'error',
+          title: t('Utils.Error'),
+          description: t(`Error.Server.${error.message}`),
+        });
+      },
+    });
+  const { mutate: addUserService, isPending: isCreateInFlight } =
+    useAddUserServiceMutation(portalGraphqlClient, {
+      onSuccess: async (_data, { input }) => {
+        await invalidateUserServiceQueries(queryClient);
+        showSnackbar({
+          severity: 'success',
+          title: t('Utils.Success'),
+          description: t('ServiceActions.UserServiceAdded', {
+            email: input.email.join(', '),
+            serviceName: subscription.subscriptionById!.service_instance!.name,
+          }),
+        });
+        setOpenSheet(false);
+      },
+      onError: (error: Error) => {
+        showSnackbar({
+          severity: 'error',
+          title: t('Utils.Error'),
+          description: <>{t(`Error.Server.${error.message}`)}</>,
+        });
+      },
+    });
   const isUserCreation = !userService?.id;
 
   const organizationId = subscription.subscriptionById?.organization?.id;
@@ -152,32 +186,12 @@ export const UserServiceForm = ({
     const editCapaValues = {
       capabilities: values.capabilities,
     };
-    commitUserServiceEditMutation({
-      variables: {
-        input: {
-          userServiceId: userService.id,
-          ...editCapaValues,
-        },
-        service_instance_id:
-          subscription.subscriptionById!.service_instance!.id,
+    editUserService({
+      input: {
+        userServiceId: userService.id,
+        ...editCapaValues,
       },
-      onCompleted() {
-        showSnackbar({
-          severity: 'success',
-          title: t('Utils.Success'),
-          description: t('ServiceActions.UserCapabilitiesModified', {
-            email: userService!.user!.email,
-          }),
-        });
-        setOpenSheet(false);
-      },
-      onError(error) {
-        showSnackbar({
-          severity: 'error',
-          title: t('Utils.Error'),
-          description: t(`Error.Server.${error.message}`),
-        });
-      },
+      service_instance_id: subscription.subscriptionById!.service_instance!.id,
     });
   };
 
@@ -188,35 +202,13 @@ export const UserServiceForm = ({
     ) {
       return;
     }
-    commitUserServiceMutation({
-      variables: {
-        connections: [connectionId ?? ''],
-        input: {
-          email: values.email,
-          capabilities: values.capabilities,
-          subscription_id: subscription.subscriptionById.id,
-        },
-        service_instance_id: subscription.subscriptionById.service_instance.id,
+    addUserService({
+      input: {
+        email: values.email,
+        capabilities: values.capabilities,
+        subscription_id: subscription.subscriptionById.id,
       },
-      onCompleted() {
-        showSnackbar({
-          severity: 'success',
-          title: t('Utils.Success'),
-          description: t('ServiceActions.UserServiceAdded', {
-            email: values.email.join(', '),
-            serviceName: subscription.subscriptionById!.service_instance!.name,
-          }),
-        });
-        setOpenSheet(false);
-      },
-
-      onError(error) {
-        showSnackbar({
-          severity: 'error',
-          title: t('Utils.Error'),
-          description: <>{t(`Error.Server.${error.message}`)}</>,
-        });
-      },
+      service_instance_id: subscription.subscriptionById.service_instance.id,
     });
   };
 

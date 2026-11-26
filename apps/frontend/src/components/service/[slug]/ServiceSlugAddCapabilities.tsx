@@ -1,9 +1,9 @@
-import { invalidateSubscriptionQueries } from '@/components/subcription/subscription.invalidation';
 import { BadgeOverflow } from '@/components/ui/BadgeOverflowCounter';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { portalGraphqlClient } from '@/lib/graphql-client';
+import { invalidateSubscriptionQueries } from '@/utils/query-invalidation/subscription.invalidation';
 import {
   Button,
   Checkbox,

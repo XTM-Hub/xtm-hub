@@ -1,8 +1,10 @@
 import {
   type BundleProductsQueryVariables,
   type BundleUserServiceGroupsQueryVariables,
+  type ServiceGroupsQueryVariables,
   useBundleProductsQuery,
   useBundleUserServiceGroupsQuery,
+  useServiceGroupsQuery,
 } from '@graphql/generated';
 
 export const bundleUserServiceGroupsKeys = {
@@ -15,4 +17,10 @@ export const bundleProductsKeys = {
   all: useBundleProductsQuery.getRootKey,
   list: (variables: BundleProductsQueryVariables) =>
     useBundleProductsQuery.getKey(variables),
+};
+
+export const serviceGroupsKeys = {
+  all: useServiceGroupsQuery.getRootKey,
+  list: (variables: ServiceGroupsQueryVariables) =>
+    useServiceGroupsQuery.getKey(variables),
 };

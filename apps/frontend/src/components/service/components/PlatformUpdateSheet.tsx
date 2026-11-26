@@ -14,8 +14,10 @@ import { analyticsProduct } from '@/lib/analytics/analytics.context';
 import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { Button, Input } from '@filigran/design-system';
-import { ServiceDefinitionIdentifier } from '@generated/serviceInstance_fragment.graphql';
-import { useUpdatePlatformServiceMetadataMutation } from '@graphql/generated';
+import {
+  ServiceDefinitionIdentifier,
+  useUpdatePlatformServiceMetadataMutation,
+} from '@graphql/generated';
 import { registrationKeys } from '@graphql/registration/registration.keys';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
