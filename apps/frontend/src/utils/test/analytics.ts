@@ -3,6 +3,7 @@ import {
   releaseAnalyticsEvents,
   resetAnalyticsState,
 } from '@/lib/analytics/analytics.client';
+import { type AnalyticsEvents } from '@/lib/analytics/analytics.types';
 
 export const resetAnalyticsEnvironment = (): void => {
   delete window.dataLayer;
@@ -33,3 +34,14 @@ export const startAnalytics = (): void => {
   initializeAnalytics('G-TEST');
   releaseAnalyticsEvents();
 };
+
+export const makeSearchEventParams = (
+  overrides: Partial<AnalyticsEvents['search']> = {}
+): AnalyticsEvents['search'] => ({
+  library: 'Integrations',
+  product: 'OpenCTI',
+  search_term: 'wazuh',
+  result_count: 1,
+  has_results: 'Yes',
+  ...overrides,
+});

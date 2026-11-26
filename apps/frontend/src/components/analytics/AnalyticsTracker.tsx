@@ -3,6 +3,7 @@
 import AnalyticsClickCapture from '@/components/analytics/AnalyticsClickCapture';
 import GoogleAnalytics from '@/components/external/GoogleAnalytics';
 import {
+  flushPendingSearch,
   initializeAnalytics,
   releaseAnalyticsEvents,
   setAnalyticsPageContext,
@@ -21,7 +22,7 @@ import { portalGraphqlClient } from '@/lib/graphql-client';
 import { useMeAnalyticsQuery } from '@graphql/generated';
 import { meAnalyticsKeys } from '@graphql/me/me.keys';
 import { useParams, usePathname } from 'next/navigation';
-import { useLayoutEffect, useMemo, useRef } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 
 interface AnalyticsTrackerProps {
   measurementId: string;
@@ -70,6 +71,7 @@ const AnalyticsTracker = ({ measurementId }: AnalyticsTrackerProps) => {
       return;
     }
     trackedPathname.current = pathname;
+    flushPendingSearch();
     const pageLocation = toAnalyticsPageLocation(
       window.location,
       page.page_template
@@ -90,6 +92,17 @@ const AnalyticsTracker = ({ measurementId }: AnalyticsTrackerProps) => {
       product: resolveAnalyticsPageProduct(page.page_template),
     });
   }, [pathname, page]);
+
+  useEffect(() => {
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        flushPendingSearch();
+      }
+    };
+    window.addEventListener('visibilitychange', onVisibilityChange, true);
+    return () =>
+      window.removeEventListener('visibilitychange', onVisibilityChange, true);
+  }, []);
 
   return (
     <>

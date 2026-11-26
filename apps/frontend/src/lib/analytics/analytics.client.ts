@@ -9,6 +9,7 @@ import {
   MAX_PARAM_VALUE_LENGTH,
   MAX_PARAM_VALUE_LENGTHS,
   REDACTED_VALUE,
+  SEARCH_IDLE_MS,
   UNLIMITED_EVENT_NAMES,
 } from '@/lib/analytics/analytics.consts';
 import {
@@ -30,7 +31,18 @@ let enabledMeasurementId: string | null = null;
 let pageContext: AnalyticsPageContext | null = null;
 let recentEventTimestamps: number[] = [];
 let heldEvents: [AnalyticsEventName, AnalyticsParams][] | null = null;
+let pendingSearch: {
+  params: AnalyticsEvents['search'];
+  timeout: number;
+} | null = null;
 const enabledListeners = new Set<() => void>();
+
+export const cancelPendingSearch = (): void => {
+  if (pendingSearch) {
+    window.clearTimeout(pendingSearch.timeout);
+  }
+  pendingSearch = null;
+};
 
 export const resetAnalyticsState = (): void => {
   configuredMeasurementId = null;
@@ -38,6 +50,7 @@ export const resetAnalyticsState = (): void => {
   pageContext = null;
   recentEventTimestamps = [];
   heldEvents = null;
+  cancelPendingSearch();
 };
 
 export const isAnalyticsEnabled = (): boolean => enabledMeasurementId !== null;
@@ -154,6 +167,7 @@ export const revokeAnalyticsConsent = (): void => {
   window[`ga-disable-${enabledMeasurementId}`] = true;
   enabledMeasurementId = null;
   heldEvents = null;
+  cancelPendingSearch();
   notifyAnalyticsEnabled();
 };
 
@@ -173,6 +187,22 @@ export const trackEvent = <Name extends AnalyticsEventName>(
     return;
   }
   sendEvent(name, { ...params });
+};
+
+export const flushPendingSearch = (): void => {
+  const params = pendingSearch?.params;
+  cancelPendingSearch();
+  if (params) {
+    trackEvent('search', params);
+  }
+};
+
+export const deferSearchEvent = (params: AnalyticsEvents['search']): void => {
+  cancelPendingSearch();
+  pendingSearch = {
+    params,
+    timeout: window.setTimeout(flushPendingSearch, SEARCH_IDLE_MS),
+  };
 };
 
 export const releaseAnalyticsEvents = (): void => {

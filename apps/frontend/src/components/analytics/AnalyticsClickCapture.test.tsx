@@ -1,5 +1,6 @@
 import AnalyticsClickCapture from '@/components/analytics/AnalyticsClickCapture';
 import {
+  deferSearchEvent,
   initializeAnalytics,
   releaseAnalyticsEvents,
 } from '@/lib/analytics/analytics.client';
@@ -15,6 +16,8 @@ import {
 import { type AnalyticsPageType } from '@/lib/analytics/analytics.types';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 import {
+  makeSearchEventParams,
+  readGtagCommands,
   readTrackedEvents,
   resetAnalyticsEnvironment,
 } from '@/utils/test/analytics';
@@ -576,6 +579,30 @@ describe('AnalyticsClickCapture', () => {
       ]);
     }
   );
+
+  it('should send the pending search before the resource when a resource is opened during the wait', () => {
+    // Given
+    deferSearchEvent(makeSearchEventParams());
+    renderWithCapture(
+      <div {...playbook}>
+        <a
+          href="#resource"
+          {...tagged(ELEMENTS.open.id)}>
+          {TARGET}
+        </a>
+      </div>
+    );
+
+    // When
+    fireEvent.click(screen.getByText(TARGET));
+
+    // Then
+    expect(
+      readGtagCommands()
+        .filter(([command]) => command === 'event')
+        .map(([, name]) => name)
+    ).toEqual(['search', 'ui_click', 'select_item']);
+  });
 
   it('should send no select_item when another element of a resource is clicked', () => {
     // Given
