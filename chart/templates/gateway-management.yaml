@@ -1,7 +1,13 @@
 {{- if and (include "gatewayApi.enabled" $) .Values.gatewayApi.migrateManagement }}
 {{- include "gatewayApi.validate" $ }}
 {{- $host := tpl .Values.xtmhub.host . }}
-{{- $kibanaWhitelist := index (.Values.kibana.ingress.annotations | default dict) "nginx.ingress.kubernetes.io/whitelist-source-range" | default .Values.kibana.ingress.whitelistSourceRange }}
+{{- $kibanaAnnotations := .Values.kibana.ingress.annotations | default dict }}
+{{- $kibanaWhitelist := .Values.kibana.ingress.whitelistSourceRange }}
+{{- if hasKey $kibanaAnnotations "nginx.ingress.kubernetes.io/allowlist-source-range" }}
+{{- $kibanaWhitelist = index $kibanaAnnotations "nginx.ingress.kubernetes.io/allowlist-source-range" | default "" }}
+{{- else if hasKey $kibanaAnnotations "nginx.ingress.kubernetes.io/whitelist-source-range" }}
+{{- $kibanaWhitelist = index $kibanaAnnotations "nginx.ingress.kubernetes.io/whitelist-source-range" | default "" }}
+{{- end }}
 {{- /* The elasticsearch Ingress stays on nginx: its backend is HTTPS and its annotations carry the mTLS settings. */ -}}
 {{- $services := list
       (dict "key" "minio"   "enabled" true "host" (printf "s3.%s" $host)      "secret" "xtmhub-cert-minio"   "backend" "minio"                             "port" 80   "whitelist" .Values.minio.ingressWhitelistSourceRange     "ttl" "120" "probePath" "minio/health/live" "buffer" "256Mi" "timeout" "0s")
