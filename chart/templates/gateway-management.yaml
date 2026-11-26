@@ -12,7 +12,7 @@
 {{- $services := list
       (dict "key" "minio"   "enabled" true "host" (printf "s3.%s" $host)      "secret" "xtmhub-cert-minio"   "backend" "minio"                             "port" 80   "whitelist" .Values.minio.ingressWhitelistSourceRange     "ttl" "120" "probePath" "minio/health/live" "buffer" "256Mi" "timeout" "0s")
       (dict "key" "pgadmin" "enabled" true "host" (printf "pgadmin.%s" $host) "secret" "xtmhub-cert-pgadmin" "backend" (printf "%s-pgadmin" .Release.Name) "port" 80   "whitelist" .Values.postgres.pgadmin.whitelistSourceRange "ttl" "120" "buffer" "256Mi" "timeout" "0s")
-      (dict "key" "kibana"  "enabled" (and .Values.kibana.enabled .Values.kibana.ingress.enabled) "host" (printf "kibana.%s" $host) "secret" "xtmhub-cert-kibana" "backend" "kibana-kb-http" "port" 5601 "whitelist" $kibanaWhitelist "buffer" "512Mi" "timeout" "1800s" "streamIdle" "1800s") }}
+      (dict "key" "kibana"  "enabled" (and .Values.kibana.enabled .Values.kibana.ingress.enabled) "host" (printf "kibana.%s" $host) "secret" "xtmhub-cert-kibana" "backend" "kibana-kb-http" "port" 5601 "whitelist" $kibanaWhitelist "buffer" "512Mi" "timeout" "0s" "streamIdle" "1800s") }}
 {{- $root := . }}
 {{- range $svc := $services }}
 {{- if and $svc.enabled (not (trim ($svc.whitelist | toString))) }}
