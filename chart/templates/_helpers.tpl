@@ -29,8 +29,8 @@ Rejects the settings the gateway path cannot honour yet, instead of silently dro
 access control at cutover. Input: root.
 */ -}}
 {{- define "gatewayApi.validate" -}}
-{{- if and (eq (include "gatewayApi.mode" .) "kgateway") .Values.xtmhub.wwwRedirect -}}
-{{- fail "xtmhub.wwwRedirect relies on ingress-nginx and is not supported in kgateway mode yet: unset it" -}}
+{{- if and (include "gatewayApi.dnsOnGateway" .) .Values.xtmhub.wwwRedirect -}}
+{{- fail "xtmhub.wwwRedirect relies on ingress-nginx and is not supported while DNS is on kgateway: unset it" -}}
 {{- end -}}
 {{- if and .Values.gatewayApi.migrateManagement .Values.kibana.enabled .Values.kibana.ingress.enabled -}}
 {{- range $key, $_ := (.Values.kibana.ingress.annotations | default dict) -}}
