@@ -2079,6 +2079,7 @@ describe('newsFeedApp', () => {
       expect(item).toMatchObject({
         type: NewsFeedItemType.GithubRelease,
         platform_identifier: PlatformIdentifier.Opencti,
+        key: NON_LTS_RELEASE_VERSION,
         title: `OpenCTI ${NON_LTS_RELEASE_VERSION}`,
         tags: [],
         creation_date: NOW,
@@ -2417,6 +2418,7 @@ describe('newsFeedApp', () => {
         expect(item).toMatchObject({
           type: NewsFeedItemType.GithubRelease,
           platform_identifier: PlatformIdentifier.Openaev,
+          key: OPENAEV_VERSION,
           title: `OpenAEV ${OPENAEV_VERSION}`,
           tags: [],
           is_deleted: false,
@@ -2474,18 +2476,21 @@ describe('newsFeedApp', () => {
         const items = await loadGithubReleaseItems();
         expect(items).toHaveLength(2);
         expect(
-          items.map(({ platform_identifier, title }) => ({
+          items.map(({ platform_identifier, key, title }) => ({
             platform_identifier,
+            key,
             title,
           }))
         ).toEqual(
           expect.arrayContaining([
             {
               platform_identifier: PlatformIdentifier.Opencti,
+              key: OPENAEV_VERSION,
               title: `OpenCTI ${OPENAEV_VERSION}`,
             },
             {
               platform_identifier: PlatformIdentifier.Openaev,
+              key: OPENAEV_VERSION,
               title: `OpenAEV ${OPENAEV_VERSION}`,
             },
           ])
@@ -2542,6 +2547,7 @@ describe('newsFeedApp', () => {
         const [item] = await loadGithubReleaseItems();
         expect(item).toMatchObject({
           platform_identifier: PlatformIdentifier.Openaev,
+          key: OPENAEV_LTS_VERSION,
         });
         expect(await loadProvisionedPlatformIds(item!.id)).toEqual([
           ltsPlatformId,
@@ -2567,6 +2573,7 @@ describe('newsFeedApp', () => {
         const [item] = await loadGithubReleaseItems();
         expect(item).toMatchObject({
           platform_identifier: PlatformIdentifier.Openaev,
+          key: OPENAEV_VERSION,
         });
         expect(await loadProvisionedPlatformIds(item!.id)).toEqual([]);
       });

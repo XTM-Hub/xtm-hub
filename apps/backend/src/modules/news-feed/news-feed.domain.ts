@@ -12,6 +12,7 @@ import { withTransaction } from '../../context/database.context';
 import Document from '../../model/kanel/public/Document';
 import NewsFeedItem, {
   NewsFeedItemId,
+  NewsFeedItemInitializer,
 } from '../../model/kanel/public/NewsFeedItem';
 import NewsFeedItemMetadata from '../../model/kanel/public/NewsFeedItemMetadata';
 import type { BlogFeedItem } from '../../thirdparty/blog-api/schema';
@@ -95,7 +96,10 @@ const insertNewsFeedItem = async ({
   item,
   buildMetadata,
 }: {
-  item: Pick<NewsFeedItem, 'type' | 'platform_identifier' | 'title' | 'tags'>;
+  item: Pick<
+    NewsFeedItemInitializer,
+    'type' | 'platform_identifier' | 'title' | 'tags' | 'key'
+  >;
   buildMetadata: (
     id: NewsFeedItemId
   ) => { key: NewsFeedItemMetadataKey; value: string }[];
@@ -260,21 +264,15 @@ export const NewsFeedDomain = {
     productVersion: string;
   }): Promise<NewsFeedItem | undefined> =>
     db<NewsFeedItem>('NewsFeedItem')
-      .innerJoin(
-        'NewsFeedItemMetadata',
-        'NewsFeedItemMetadata.news_feed_item_id',
-        'NewsFeedItem.id'
-      )
       .where({
-        'NewsFeedItem.type': NewsFeedItemType.GithubRelease,
-        'NewsFeedItem.platform_identifier': platformIdentifier,
-        'NewsFeedItemMetadata.key': NewsFeedItemMetadataKey.ProductVersion,
-        'NewsFeedItemMetadata.value': productVersion,
+        type: NewsFeedItemType.GithubRelease,
+        platform_identifier: platformIdentifier,
+        key: productVersion,
       })
-      .select('NewsFeedItem.*')
       .first(),
 
-  // Runs in the current transaction, the caller owns it
+  // Runs in the current transaction, the caller owns it. The key is the identity of the release (lookup, unique index);
+  // product_version is what the consumers display and what the redirect reads.
   createGithubReleaseNewsFeedItem: ({
     platformIdentifier,
     title,
@@ -288,6 +286,7 @@ export const NewsFeedDomain = {
       item: {
         type: NewsFeedItemType.GithubRelease,
         platform_identifier: platformIdentifier,
+        key: productVersion,
         title,
         tags: [],
       },

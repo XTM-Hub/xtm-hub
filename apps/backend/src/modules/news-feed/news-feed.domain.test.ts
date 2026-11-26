@@ -572,6 +572,7 @@ describe('newsFeedDomain', () => {
 
   describe('loadGithubReleaseItemByProductVersion', () => {
     const PRODUCT_VERSION = '7.261201.0';
+    const METADATA_ONLY_VERSION = '7.261299.0';
 
     afterEach(async () => {
       await TestHelper.newsFeed.deleteItem();
@@ -588,18 +589,13 @@ describe('newsFeedDomain', () => {
       productVersion?: string;
       isDeleted?: boolean;
     } = {}) => {
-      const item = await TestHelper.newsFeed.createItem({
+      return TestHelper.newsFeed.createItem({
         type,
         platform_identifier: platformIdentifier,
         title: `OpenCTI ${productVersion}`,
+        key: productVersion,
         is_deleted: isDeleted,
       });
-      await TestHelper.newsFeed.createMetadata({
-        news_feed_item_id: item.id,
-        key: NewsFeedItemMetadataKey.ProductVersion,
-        value: productVersion,
-      });
-      return item;
     };
 
     it.each([
@@ -655,6 +651,118 @@ describe('newsFeedDomain', () => {
         expect(result).toBeUndefined();
       }
     );
+
+    it('should look the item up by its key, not by its product_version metadata', async () => {
+      // Given
+      const item = await createGithubReleaseItem();
+      await TestHelper.newsFeed.createMetadata({
+        news_feed_item_id: item.id,
+        key: NewsFeedItemMetadataKey.ProductVersion,
+        value: METADATA_ONLY_VERSION,
+      });
+
+      // When
+      const result = await NewsFeedDomain.loadGithubReleaseItemByProductVersion(
+        {
+          platformIdentifier: PlatformIdentifier.Opencti,
+          productVersion: METADATA_ONLY_VERSION,
+        }
+      );
+
+      // Then
+      expect(result).toBeUndefined();
+    });
+  });
+
+  describe('createGithubReleaseNewsFeedItem', () => {
+    const PRODUCT_VERSION = '3.261104.0';
+    const UNIQUE_VIOLATION = '23505';
+
+    afterEach(async () => {
+      await TestHelper.newsFeed.deleteItem();
+    });
+
+    it('should create the item with the version as its key and the redirect url_path', async () => {
+      // Given
+      const releaseInput = {
+        platformIdentifier: PlatformIdentifier.Openaev,
+        title: `OpenAEV ${PRODUCT_VERSION}`,
+        productVersion: PRODUCT_VERSION,
+      };
+
+      // When
+      const item =
+        await NewsFeedDomain.createGithubReleaseNewsFeedItem(releaseInput);
+
+      // Then
+      expect(item).toMatchObject({
+        type: NewsFeedItemType.GithubRelease,
+        platform_identifier: PlatformIdentifier.Openaev,
+        key: PRODUCT_VERSION,
+        title: `OpenAEV ${PRODUCT_VERSION}`,
+      });
+      expect(
+        await TestHelper.newsFeed.loadFirstMetadata({
+          news_feed_item_id: item.id,
+          key: NewsFeedItemMetadataKey.UrlPath,
+        })
+      ).toMatchObject({ value: `redirect/news-feed/${item.id}` });
+      expect(
+        await TestHelper.newsFeed.loadFirstMetadata({
+          news_feed_item_id: item.id,
+          key: NewsFeedItemMetadataKey.ProductVersion,
+        })
+      ).toMatchObject({ value: PRODUCT_VERSION });
+    });
+
+    it('should refuse a second item with the same platform identifier and version', async () => {
+      // Given
+      await NewsFeedDomain.createGithubReleaseNewsFeedItem({
+        platformIdentifier: PlatformIdentifier.Openaev,
+        title: `OpenAEV ${PRODUCT_VERSION}`,
+        productVersion: PRODUCT_VERSION,
+      });
+
+      // When
+      const secondItem = NewsFeedDomain.createGithubReleaseNewsFeedItem({
+        platformIdentifier: PlatformIdentifier.Openaev,
+        title: `OpenAEV ${PRODUCT_VERSION} again`,
+        productVersion: PRODUCT_VERSION,
+      });
+
+      // Then
+      await expect(secondItem).rejects.toMatchObject({
+        code: UNIQUE_VIOLATION,
+      });
+      expect(
+        await TestHelper.newsFeed.loadItems({ key: PRODUCT_VERSION })
+      ).toMatchObject([{ title: `OpenAEV ${PRODUCT_VERSION}` }]);
+    });
+
+    it('should accept the same version for another platform identifier', async () => {
+      // Given
+      await NewsFeedDomain.createGithubReleaseNewsFeedItem({
+        platformIdentifier: PlatformIdentifier.Openaev,
+        title: `OpenAEV ${PRODUCT_VERSION}`,
+        productVersion: PRODUCT_VERSION,
+      });
+
+      // When
+      const secondItem = await NewsFeedDomain.createGithubReleaseNewsFeedItem({
+        platformIdentifier: PlatformIdentifier.Opencti,
+        title: `OpenCTI ${PRODUCT_VERSION}`,
+        productVersion: PRODUCT_VERSION,
+      });
+
+      // Then
+      expect(secondItem).toMatchObject({
+        platform_identifier: PlatformIdentifier.Opencti,
+        key: PRODUCT_VERSION,
+      });
+      expect(
+        await TestHelper.newsFeed.loadItems({ key: PRODUCT_VERSION })
+      ).toHaveLength(2);
+    });
   });
 
   describe('loadNewsFeedItemTypeById', () => {
