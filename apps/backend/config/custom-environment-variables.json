@@ -58,10 +58,6 @@
   "hubspot_webhook_url": "HUBSPOT_WEBHOOK_URL",
   "teams_notification_webhook_url": "TEAMS_NOTIFICATION_WEBHOOK_URL",
   "teams_notification_webhook_token": "TEAMS_NOTIFICATION_WEBHOOK_TOKEN",
-  "saas_manager": {
-    "client_id": "SAAS_MANAGER_CLIENT_ID",
-    "client_secret": "SAAS_MANAGER_CLIENT_SECRET"
-  },
   "blog_api": {
     "base_url": "BLOG_API_BASE_URL",
     "timeout_ms": {

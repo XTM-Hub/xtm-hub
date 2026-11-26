@@ -82,7 +82,7 @@ export const SaasList = () => {
       id: 'organization',
       header: t('CSMBoard.Organization'),
       size: 120,
-      // The SaaS Manager cannot order by an organization of the Hub
+      // The platforms cannot be ordered by an organization of the Hub
       enableSorting: false,
       cell: ({ row }) => {
         const organization = row.original.registered_platform?.organization;
@@ -199,7 +199,7 @@ export const SaasList = () => {
       id: 'database',
       header: t('CSMBoard.Database'),
       size: 100,
-      // The SaaS Manager cannot order by the usage of a storage
+      // The platforms cannot be ordered by the usage of a storage
       enableSorting: false,
       cell: ({ row }) => (
         <SaasStorageUsage
@@ -256,7 +256,7 @@ export const SaasList = () => {
       id: 'version',
       header: t('CSMBoard.Version'),
       size: 90,
-      // The version is the one the platform reports to the Hub: the SaaS Manager cannot order by it
+      // The version is the one the platform reports to the Hub: the platforms cannot be ordered by it
       enableSorting: false,
       cell: ({ row }) => (
         <span className="truncate">
@@ -268,7 +268,7 @@ export const SaasList = () => {
       id: 'health',
       header: t('CSMBoard.Health'),
       size: 170,
-      // The health of each platform is rated by the Hub: the SaaS Manager cannot order by it
+      // The health of each platform is rated by the Hub: the platforms cannot be ordered by it
       enableSorting: false,
       cell: ({ row }) => <SaasPlatformHealth platform={row.original} />,
     },
@@ -292,29 +292,22 @@ export const SaasList = () => {
   } = useSaasListLocalstorage(columns);
   const [searchTerm, setSearchTerm] = useState<string | null>(null);
   const [product, setProduct] = useState<SaasProduct | null>(null);
-  const { pagination, setPagination, onPaginationChange } = useTablePagination({
-    pageSize,
-    setPageSize,
-  });
+  const { pagination, cursor, setPagination, onPaginationChange } =
+    useTablePagination({
+      pageSize,
+      setPageSize,
+    });
 
   const variables = useMemo<SaasManagerPlatformsListQueryVariables>(
     () => ({
-      // The SaaS Manager counts its pages from 1
-      page: pagination.pageIndex + 1,
-      pageSize: pagination.pageSize,
+      first: pagination.pageSize,
+      after: cursor,
       orderBy,
       orderMode,
       searchTerm,
       product,
     }),
-    [
-      pagination.pageIndex,
-      pagination.pageSize,
-      orderBy,
-      orderMode,
-      searchTerm,
-      product,
-    ]
+    [pagination.pageSize, cursor, orderBy, orderMode, searchTerm, product]
   );
 
   const { data, isLoading, isError } = useSaasManagerPlatformsListQuery(
@@ -327,7 +320,7 @@ export const SaasList = () => {
   );
 
   const saasPlatforms = useMemo<SaasPlatformRowFragment[]>(
-    () => data?.saasManagerPlatforms?.platforms ?? [],
+    () => data?.saasManagerPlatforms.edges.map(({ node }) => node) ?? [],
     [data]
   );
 
@@ -376,8 +369,7 @@ export const SaasList = () => {
       {/* One provider for every tooltip of the table, rather than one per cell. */}
       <TooltipProvider>
         <SaasListTourArea>
-          {/* null when the SaaS Manager cannot be reached */}
-          {(isError || data?.saasManagerPlatforms === null) && (
+          {isError && (
             <div className="mb-2 text-sm text-feedback-error-primary">
               {t('Utils.Error')}
             </div>
@@ -393,7 +385,7 @@ export const SaasList = () => {
               onPaginationChange,
               manualSorting: true,
               manualPagination: true,
-              rowCount: data?.saasManagerPlatforms?.totalCount ?? 0,
+              rowCount: data?.saasManagerPlatforms.totalCount ?? 0,
               onColumnOrderChange: setColumnOrder,
               onColumnVisibilityChange: setColumnVisibility,
               onColumnSizingChange: setColumnSizing,

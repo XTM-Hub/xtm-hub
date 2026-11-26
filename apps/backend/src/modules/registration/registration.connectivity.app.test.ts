@@ -99,6 +99,13 @@ describe('registration connectivity app', () => {
   });
 
   describe('refreshPlatformRegistrationConnectivityStatus', () => {
+    let pushedInstanceIds: string[] = [];
+
+    afterEach(async () => {
+      await TestHelper.saasManagerInstance.delete(pushedInstanceIds);
+      pushedInstanceIds = [];
+    });
+
     it('should throw an error when version is not formatted as a semantic version', async () => {
       const call =
         RegistrationConnectivityApp.refreshPlatformRegistrationConnectivityStatus(
@@ -264,6 +271,56 @@ describe('registration connectivity app', () => {
         organizationName: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.NAME,
       });
     });
+
+    it.each([
+      [
+        'SAAS when the SaaS Manager pushed it as PROD',
+        'PROD',
+        CommercialModel.Saas,
+      ],
+      [
+        'OTHER when the SaaS Manager pushed it as another model',
+        'DEV',
+        CommercialModel.Other,
+      ],
+    ])(
+      'should return the commercial model of a platform stored as OTHER as %s',
+      async (_, pushedCommercialModel, expectedCommercialModel) => {
+        // Given
+        const platformId = uuidv4();
+        const { token } = await RegistrationApp.registerPlatform({
+          organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+          platform: {
+            id: platformId,
+            url: 'http://example.com',
+            contract: PlatformContract.Ee,
+            title: 'Fake title',
+            version: '6.7.18',
+          },
+          identifier: PlatformIdentifier.Opencti,
+        });
+        pushedInstanceIds.push(
+          await TestHelper.saasManagerInstance.create({
+            id: platformId,
+            data: { commercial_model: pushedCommercialModel },
+          })
+        );
+
+        // When
+        const result =
+          await RegistrationConnectivityApp.refreshPlatformRegistrationConnectivityStatus(
+            {
+              platformId,
+              token,
+              platformVersion: '6.7.18',
+              platformIdentifier: PlatformIdentifier.Opencti,
+            }
+          );
+
+        // Then
+        expect(result.commercialModel).toBe(expectedCommercialModel);
+      }
+    );
 
     it('should return no commercial model when the platform is not registered', async () => {
       // When
@@ -579,6 +636,49 @@ describe('registration connectivity app', () => {
       });
     });
 
+    it('should only record the check of an unregistered tenant, never what it sends', async () => {
+      // Given
+      const platformId = uuidv4();
+      const tenantId = uuidv4();
+      const token = await registerOpenaevTenant(platformId, tenantId);
+      await ageLastConnectivityCheck(platformId, tenantId, 1);
+      const registered = await loadTenantConfiguration(platformId, tenantId);
+      await PlatformConfigurationDomain.deactivateConfiguration(
+        registered!.service_instance_id
+      );
+
+      // When
+      const result =
+        await RegistrationConnectivityApp.refreshPlatformRegistrationConnectivityStatusSingleTenant(
+          {
+            platformId,
+            token,
+            platformVersion: '2.5.0',
+            url: 'http://example.com/elsewhere',
+            tenantId,
+            tenantName: 'Renamed tenant',
+            platformIdentifier: PlatformIdentifier.Openaev,
+            platformContract: PlatformContract.Ce,
+          }
+        );
+
+      // Then
+      expect(result.status).toBe(
+        PlatformRegistrationConnectivityStatus.Inactive
+      );
+      const stored = await loadTenantConfiguration(platformId, tenantId);
+      expect(stored).toMatchObject({
+        status: PlatformConfigurationStatus.Inactive,
+        platform_version: registered!.platform_version,
+        platform_url: registered!.platform_url,
+        tenant_name: registered!.tenant_name,
+        platform_contract: registered!.platform_contract,
+      });
+      expect(stored!.last_connectivity_check!.getTime()).toBeGreaterThan(
+        registered!.last_connectivity_check!.getTime()
+      );
+    });
+
     it('should return no commercial model when the tenant is not registered', async () => {
       // When
       const result =
@@ -749,6 +849,55 @@ describe('registration connectivity app', () => {
         tenant_id: tenantId,
         tenant_name: tenantName,
       });
+    });
+
+    it('should answer inactive, not not found, when an unregistered legacy platform upgrades to a version that requires a tenant', async () => {
+      // Given OpenAEV deletes its registration on NOT_FOUND, and keeps it on INACTIVE
+      const platformId = uuidv4();
+      const tenantId = uuidv4();
+      const { token } = await RegistrationApp.registerPlatform({
+        organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        platform: {
+          id: platformId,
+          url: 'http://example.com',
+          contract: PlatformContract.Ee,
+          title: 'Fake title',
+          version: '1.0.0',
+        },
+        identifier: PlatformIdentifier.Openaev,
+      });
+      const legacyConfig =
+        await PlatformConfigurationDomain.loadConfigurationByPlatform(
+          platformId
+        );
+      await PlatformConfigurationDomain.updateConfiguration(
+        legacyConfig!.service_instance_id,
+        { status: PlatformConfigurationStatus.Inactive }
+      );
+
+      // When
+      const result =
+        await RegistrationConnectivityApp.refreshPlatformRegistrationConnectivityStatusSingleTenant(
+          {
+            platformId,
+            token,
+            platformVersion: '2.4.0',
+            url: 'http://example.com/tenantId',
+            tenantId,
+            tenantName: 'My tenant',
+            platformIdentifier: PlatformIdentifier.Openaev,
+          }
+        );
+
+      // Then
+      expect(result.status).toBe(
+        PlatformRegistrationConnectivityStatus.Inactive
+      );
+      const config =
+        await PlatformConfigurationDomain.loadConfigurationByPlatform(
+          platformId
+        );
+      expect(config?.status).toBe(PlatformConfigurationStatus.Inactive);
     });
 
     it('should not attach a tenant id to an OpenCTI registration, whatever platform identifier the request sends', async () => {
@@ -1377,6 +1526,86 @@ describe('registration connectivity app', () => {
       // Then
       const config = await loadTenantConfiguration(platformId, omittedTenantId);
       expect(config?.status).toBe(PlatformConfigurationStatus.Active);
+    });
+
+    it('should deactivate nothing when the only submitted tenant is unregistered', async () => {
+      // Given
+      const platformId = uuidv4();
+      const unregisteredTenantId = uuidv4();
+      const omittedTenantId = uuidv4();
+      const unregisteredToken = await registerOpenaevTenant(
+        platformId,
+        unregisteredTenantId
+      );
+      await registerOpenaevTenant(platformId, omittedTenantId);
+      const unregistered = await loadTenantConfiguration(
+        platformId,
+        unregisteredTenantId
+      );
+      await PlatformConfigurationDomain.updateConfiguration(
+        unregistered!.service_instance_id,
+        { status: PlatformConfigurationStatus.Inactive }
+      );
+      await ageLastConnectivityCheck(platformId, omittedTenantId, 4);
+
+      // When
+      const result = await refreshAllTenants(platformId, [
+        { tenantId: unregisteredTenantId, token: unregisteredToken },
+      ]);
+
+      // Then
+      expect(result.statuses).toEqual([
+        {
+          tenantId: unregisteredTenantId,
+          status: PlatformRegistrationConnectivityStatus.Inactive,
+          commercialModel: CommercialModel.Other,
+          organizationName: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.NAME,
+        },
+      ]);
+      const omitted = await loadTenantConfiguration(
+        platformId,
+        omittedTenantId
+      );
+      expect(omitted?.status).toBe(PlatformConfigurationStatus.Active);
+    });
+
+    it('should deactivate an omitted tenant when an unregistered tenant is submitted with an active one', async () => {
+      // Given the platform still sends the token of a tenant unregistered on the Hub
+      const platformId = uuidv4();
+      const unregisteredTenantId = uuidv4();
+      const activeTenantId = uuidv4();
+      const omittedTenantId = uuidv4();
+      const unregisteredToken = await registerOpenaevTenant(
+        platformId,
+        unregisteredTenantId
+      );
+      const activeToken = await registerOpenaevTenant(
+        platformId,
+        activeTenantId
+      );
+      await registerOpenaevTenant(platformId, omittedTenantId);
+      const unregistered = await loadTenantConfiguration(
+        platformId,
+        unregisteredTenantId
+      );
+      await PlatformConfigurationDomain.updateConfiguration(
+        unregistered!.service_instance_id,
+        { status: PlatformConfigurationStatus.Inactive }
+      );
+      await ageLastConnectivityCheck(platformId, omittedTenantId, 4);
+
+      // When
+      await refreshAllTenants(platformId, [
+        { tenantId: unregisteredTenantId, token: unregisteredToken },
+        { tenantId: activeTenantId, token: activeToken },
+      ]);
+
+      // Then
+      const omitted = await loadTenantConfiguration(
+        platformId,
+        omittedTenantId
+      );
+      expect(omitted?.status).toBe(PlatformConfigurationStatus.Inactive);
     });
 
     it('should keep an omitted tenant active when its instance refreshed it within the silence threshold', async () => {

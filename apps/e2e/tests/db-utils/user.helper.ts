@@ -76,3 +76,43 @@ export const addPendingUserToOrganization = async (
 
   return { userId: user.id, organizationId: organization.id };
 };
+
+// A user with a personal space who belongs to an organization, created if missing, holding the given capabilities
+// there. It signs in with the password of the seeded users.
+export const createOrganizationMember = async ({
+  email,
+  organizationName,
+  capabilities,
+}: {
+  email: string;
+  organizationName: string;
+  capabilities: string[];
+}) => {
+  const { userId } = await createUserWithPersonalSpace(email);
+
+  let organization = await db('Organization')
+    .select('id')
+    .where('name', '=', organizationName)
+    .first();
+  if (!organization) {
+    organization = { id: uuidv4() };
+    await db('Organization').insert({
+      id: organization.id,
+      name: organizationName,
+    });
+  }
+
+  const [userOrganization] = await db('User_Organization')
+    .insert({ user_id: userId, organization_id: organization.id })
+    .returning('id');
+  if (capabilities.length > 0) {
+    await db('UserOrganization_Capability').insert(
+      capabilities.map((name) => ({
+        user_organization_id: userOrganization.id,
+        name,
+      }))
+    );
+  }
+
+  return { userId, organizationId: organization.id };
+};

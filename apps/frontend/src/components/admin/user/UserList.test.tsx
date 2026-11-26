@@ -183,14 +183,14 @@ vi.mock('@/components/admin/user/forms/admin/AdminAddUser', () => ({
   AdminAddUser: () => <div>AdminAddUser</div>,
 }));
 
-vi.mock('@/components/admin/user/UserOrganizationFilter', () => ({
-  UserOrganizationFilter: ({
+vi.mock('@/components/organization/OrganizationFilter', () => ({
+  OrganizationFilter: ({
     onChange,
   }: {
     onChange: (organizationId: string | undefined) => void;
   }) => {
     mocks.capturedOrganizationChange = onChange;
-    return <div>UserOrganizationFilter</div>;
+    return <div>OrganizationFilter</div>;
   },
 }));
 

@@ -737,6 +737,9 @@ describe('registration domain', () => {
     });
 
     afterEach(async () => {
+      await TestHelper.saasManagerInstance.delete([
+        nonSaasRegistration.platformId,
+      ]);
       for (const { serviceInstanceId } of registrations) {
         await TestHelper.subscription.delete({
           service_instance_id: serviceInstanceId,
@@ -788,6 +791,47 @@ describe('registration domain', () => {
       const platforms =
         await RegistrationDomain.loadSaasRegisteredPlatformsByPlatformIds([
           platformId,
+        ]);
+
+      // Then
+      expect(platforms).toEqual([]);
+    });
+
+    it('should return a registration stored as OTHER, as SAAS, when the SaaS Manager pushed its platform as PROD', async () => {
+      // Given
+      await TestHelper.saasManagerInstance.create({
+        id: nonSaasRegistration.platformId,
+        data: { commercial_model: 'PROD' },
+      });
+
+      // When
+      const platforms =
+        await RegistrationDomain.loadSaasRegisteredPlatformsByPlatformIds([
+          nonSaasRegistration.platformId,
+        ]);
+
+      // Then
+      expect(
+        platforms.map(({ id, commercial_model }) => ({ id, commercial_model }))
+      ).toEqual([
+        {
+          id: nonSaasRegistration.serviceInstanceId,
+          commercial_model: CommercialModel.Saas,
+        },
+      ]);
+    });
+
+    it('should not return a registration stored as OTHER when the SaaS Manager pushed its platform as another model than PROD', async () => {
+      // Given
+      await TestHelper.saasManagerInstance.create({
+        id: nonSaasRegistration.platformId,
+        data: { commercial_model: 'DEV' },
+      });
+
+      // When
+      const platforms =
+        await RegistrationDomain.loadSaasRegisteredPlatformsByPlatformIds([
+          nonSaasRegistration.platformId,
         ]);
 
       // Then

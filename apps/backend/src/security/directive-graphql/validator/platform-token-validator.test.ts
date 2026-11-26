@@ -162,6 +162,68 @@ describe('createPlatformTokenResolver', () => {
       );
     });
 
+    it('should only look for an active registration, so the token of an unregistered one is refused', async () => {
+      // Given the loader finds no active registration for the credentials
+      vi.spyOn(
+        DeploymentRequestDomain,
+        'loadDeploymentRequestBy'
+      ).mockResolvedValue(undefined);
+      const loadConfigurationSpy = vi
+        .spyOn(
+          PlatformConfigurationDomain,
+          'loadResolvedConfigurationByPlatformAndToken'
+        )
+        .mockResolvedValue(undefined);
+      const subscribedOrganizationSpy = vi.spyOn(
+        OrganizationDomain,
+        'loadOrganizationSubscribedToServiceInstance'
+      );
+      const resolverSpy = vi.fn();
+      const resolver = createPlatformTokenResolver(resolverSpy);
+      const context = makePortalContext(validHeaders);
+
+      // When
+      const call = runResolver(resolver, context);
+
+      // Then
+      await expect(call).rejects.toMatchObject(INVALID_PLATFORM_TOKEN_ERROR);
+      expect(loadConfigurationSpy).toHaveBeenCalledExactlyOnceWith({
+        platform_id: platformId,
+        token: platformToken,
+        activeOnly: true,
+      });
+      expect(subscribedOrganizationSpy).not.toHaveBeenCalled();
+      expect(resolverSpy).not.toHaveBeenCalled();
+    });
+
+    it('should still accept an unregistered trial through its deployment request', async () => {
+      // Given
+      const orgId = uuidv4();
+      vi.spyOn(
+        PlatformConfigurationDomain,
+        'loadResolvedConfigurationByPlatformAndToken'
+      ).mockResolvedValue(undefined);
+      vi.spyOn(
+        DeploymentRequestDomain,
+        'loadDeploymentRequestBy'
+      ).mockResolvedValue({
+        platform_id: platformId,
+        organization_requester_id: orgId,
+      } as unknown as DeploymentRequest);
+      vi.spyOn(OrganizationDomain, 'loadOrganizationBy').mockResolvedValue({
+        id: orgId,
+      } as Organization);
+      const resolverSpy = vi.fn(async (_s, _a, ctx: PortalContext) => ctx.user);
+      const resolver = createPlatformTokenResolver(resolverSpy);
+      const context = makePortalContext(validHeaders);
+
+      // When
+      const result = await runResolver(resolver, context);
+
+      // Then
+      expect(result.selected_organization_id).toBe(orgId);
+    });
+
     it('should throw an invalid platform token error when the deployment request organization no longer exists', async () => {
       // Given
       vi.spyOn(

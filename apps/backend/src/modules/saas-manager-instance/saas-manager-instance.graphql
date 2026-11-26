@@ -1,0 +1,48 @@
+# An instance SaaS Manager pushes to the Hub, which serves its SaaS platform pages from this copy.
+input SaasManagerInstanceInput {
+  # The row of SaaS Manager's instance list, stored and served as is: data.id is the id of the instance, data.plan the
+  # name of its plan, which the list shows and orders on.
+  data: JSON!
+  index: SaasManagerInstanceIndexInput!
+  # The metrics of the instance detail, keyed by the number of days asked ("7", "32", "95", "187"). Absent, the
+  # metrics already stored are kept.
+  metrics: JSON
+}
+
+# What the instance list filters, searches and orders on that its row does not carry, named as SaaS Manager sends it.
+input SaasManagerInstanceIndexInput {
+  customer_name: String!
+  customer_techname: String
+  # Ignored: the list orders on the name of the plan, data.plan. Accepted until SaaS Manager stops sending it.
+  plan_code: String @deprecated(reason: "Ignored, the list orders on data.plan")
+  # __in_service_family__, __unprovisionned_family__, __disabled_family__ or __removed_family__: the list shows only
+  # the instances in service.
+  status_family: String
+  upgrade_group: String
+}
+
+type SaasManagerSyncResult {
+  # The instances written.
+  applied: Int!
+  # The valid instances not written: the Hub stores a copy generated later, or the call sends it again further on.
+  skipped: Int!
+  # The instances deleted.
+  removed: Int!
+}
+
+type Mutation {
+  # Writes each instance, unless the Hub stores a copy generated after generatedAt. A call carries at most 1000
+  # instances and fits in the 7 MB request body, which instances with their metrics fill long before: a larger
+  # snapshot is pushed in several calls with the same generatedAt. The call is refused as a whole, and none of its
+  # instances written, for an invalid instance, an invalid generatedAt, more than 1000 instances, or a failure: the
+  # Hub keeps the copies it stores, and the snapshot is not purged.
+  upsertSaasManagerInstances(
+    generatedAt: Date!
+    instances: [SaasManagerInstanceInput!]!
+  ): SaasManagerSyncResult!
+  # Deletes the instances generated before the given date: after a full snapshot, those SaaS Manager no longer has.
+  # Called last, with the generatedAt of the snapshot, once every call of it has succeeded: called earlier, it deletes
+  # the instances the remaining calls have not written yet; called after a failed call, those that call would have
+  # kept.
+  purgeSaasManagerInstances(before: Date!): SaasManagerSyncResult!
+}

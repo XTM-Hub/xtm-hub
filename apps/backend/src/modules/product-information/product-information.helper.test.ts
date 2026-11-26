@@ -1,19 +1,21 @@
 import { v4 as uuidv4 } from 'uuid';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  OrderingMode,
   SaasPlatformContractStatus,
   SaasPlatformHealthIssue,
   SaasPlatformMetricsPeriod,
+  SaasPlatformOrdering,
   SaasProduct,
 } from '../../__generated__/resolvers-types';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
-import { SaasManagerClient } from '../../thirdparty/saasmanager/client';
 import { logApp } from '../../utils/app-logger.util';
+import { SaasManagerInstanceDomain } from '../saas-manager-instance/saas-manager-instance.domain';
 import { ProductInformationHelper } from './product-information.helper';
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
-// The SLA grid and the days asked to the SaaS Manager depend on the current date.
+// The SLA grid and the metrics window read depend on the current date.
 const NOW = '2026-10-27T09:00:00.000Z';
 
 /** The expected SLA of a month: every day of it, null unless given an availability by day of the month. */
@@ -37,7 +39,7 @@ const slaMonth = (
 };
 
 describe('product information helper', () => {
-  describe('fetchSaasPlatformData', () => {
+  describe('loadSaasPlatformData', () => {
     beforeEach(() => {
       vi.useFakeTimers({ toFake: ['Date'] });
       vi.setSystemTime(NOW);
@@ -67,37 +69,44 @@ describe('product information helper', () => {
       region: null,
     };
 
-    const mockSaasManagerResponse = (response: () => Promise<Response>) =>
-      vi
-        .spyOn(SaasManagerClient, 'callInstanceApi')
-        .mockImplementation(response);
-
-    const mockSaasManagerBody = (body: unknown) =>
-      mockSaasManagerResponse(
-        async () =>
-          ({
-            ok: true,
-            status: 200,
-            json: async () => body,
-          }) as Response
+    // The platform as the SaaS Manager pushed it, its metrics in every window
+    const mockSaasManagerBody = (
+      body: Record<string, unknown> | null,
+      generatedAt = new Date()
+    ) =>
+      vi.spyOn(SaasManagerInstanceDomain, 'loadInstance').mockResolvedValue(
+        body === null
+          ? undefined
+          : {
+              data: body,
+              metrics:
+                body.metrics === undefined
+                  ? null
+                  : { 32: body.metrics, 95: body.metrics, 187: body.metrics },
+              generated_at: generatedAt,
+            }
       );
 
-    it('should ask the SaaS Manager for the given platform_id', async () => {
+    const metricsWindow = {
+      start: NOW,
+      end: NOW,
+      resolution: 'day',
+      series: [],
+    };
+
+    it('should read the platform pushed with the given platform_id', async () => {
       // Given
       const callSpy = mockSaasManagerBody(fullMetadata);
 
       // When
-      await ProductInformationHelper.fetchSaasPlatformData(
+      await ProductInformationHelper.loadSaasPlatformData(
         serviceInstanceId,
         platformId,
         metricsPeriod
       );
 
       // Then
-      expect(callSpy).toHaveBeenCalledExactlyOnceWith({
-        platform_id: platformId,
-        include_metrics: 95,
-      });
+      expect(callSpy).toHaveBeenCalledExactlyOnceWith(platformId);
     });
 
     it.each`
@@ -106,25 +115,45 @@ describe('product information helper', () => {
       ${SaasPlatformMetricsPeriod.Last_90Days}  | ${95}
       ${SaasPlatformMetricsPeriod.Last_180Days} | ${187}
     `(
-      'should ask the SaaS Manager for $days days of metrics when the period is $period',
+      'should return the metrics of $days days when the period is $period',
       async ({ period, days }) => {
         // Given
-        const callSpy = mockSaasManagerBody(fullMetadata);
+        vi.spyOn(SaasManagerInstanceDomain, 'loadInstance').mockResolvedValue({
+          data: fullMetadata,
+          metrics: { [days]: metricsWindow },
+          generated_at: new Date(),
+        });
 
         // When
-        await ProductInformationHelper.fetchSaasPlatformData(
+        const data = await ProductInformationHelper.loadSaasPlatformData(
           serviceInstanceId,
           platformId,
           period
         );
 
         // Then
-        expect(callSpy).toHaveBeenCalledExactlyOnceWith({
-          platform_id: platformId,
-          include_metrics: days,
-        });
+        expect(data?.metrics).toEqual(metricsWindow);
       }
     );
+
+    it('should return no metrics when the window of the period is not stored', async () => {
+      // Given
+      vi.spyOn(SaasManagerInstanceDomain, 'loadInstance').mockResolvedValue({
+        data: fullMetadata,
+        metrics: { 32: metricsWindow },
+        generated_at: new Date(),
+      });
+
+      // When
+      const data = await ProductInformationHelper.loadSaasPlatformData(
+        serviceInstanceId,
+        platformId,
+        metricsPeriod
+      );
+
+      // Then
+      expect(data?.metrics).toBeNull();
+    });
 
     it('should return the metadata sent by the SaaS Manager without the unknown fields', async () => {
       // Given
@@ -135,7 +164,7 @@ describe('product information helper', () => {
       });
 
       // When
-      const data = await ProductInformationHelper.fetchSaasPlatformData(
+      const data = await ProductInformationHelper.loadSaasPlatformData(
         serviceInstanceId,
         platformId,
         metricsPeriod
@@ -151,9 +180,6 @@ describe('product information helper', () => {
     });
 
     it.each([
-      ['the body is null', null],
-      ['the body is a string', 'my-platform.example.com'],
-      ['the body is an array', [fullMetadata]],
       ['the body is empty', {}],
       ['the fields are explicitly null', emptyMetadata],
     ])('should return null fields when %s', async (_, body) => {
@@ -161,7 +187,7 @@ describe('product information helper', () => {
       mockSaasManagerBody(body);
 
       // When
-      const data = await ProductInformationHelper.fetchSaasPlatformData(
+      const data = await ProductInformationHelper.loadSaasPlatformData(
         serviceInstanceId,
         platformId,
         metricsPeriod
@@ -181,7 +207,7 @@ describe('product information helper', () => {
       mockSaasManagerBody({ hostname: fullMetadata.hostname });
 
       // When
-      const data = await ProductInformationHelper.fetchSaasPlatformData(
+      const data = await ProductInformationHelper.loadSaasPlatformData(
         serviceInstanceId,
         platformId,
         metricsPeriod
@@ -208,7 +234,7 @@ describe('product information helper', () => {
         mockSaasManagerBody({ ...fullMetadata, ...fields });
 
         // When
-        const data = await ProductInformationHelper.fetchSaasPlatformData(
+        const data = await ProductInformationHelper.loadSaasPlatformData(
           serviceInstanceId,
           platformId,
           metricsPeriod
@@ -241,7 +267,7 @@ describe('product information helper', () => {
         mockSaasManagerBody({ ...fullMetadata, start_date: sent });
 
         // When
-        const data = await ProductInformationHelper.fetchSaasPlatformData(
+        const data = await ProductInformationHelper.loadSaasPlatformData(
           serviceInstanceId,
           platformId,
           metricsPeriod
@@ -258,7 +284,7 @@ describe('product information helper', () => {
       mockSaasManagerBody({ ...fullMetadata, end_date: 'not a date' });
 
       // When
-      await ProductInformationHelper.fetchSaasPlatformData(
+      await ProductInformationHelper.loadSaasPlatformData(
         serviceInstanceId,
         platformId,
         metricsPeriod
@@ -266,9 +292,48 @@ describe('product information helper', () => {
 
       // Then
       expect(warnSpy).toHaveBeenCalledExactlyOnceWith(
-        'The SaaS Manager returned an unparseable platform date',
+        'The SaaS Manager pushed an unparseable platform date',
         { field: 'end_date' }
       );
+    });
+
+    it('should log an error when the SaaS Manager pushed the platform more than 12 hours ago', async () => {
+      // Given
+      const errorSpy = vi.spyOn(logApp, 'error');
+      mockSaasManagerBody(fullMetadata, new Date('2026-10-26T20:59:59.999Z'));
+
+      // When
+      await ProductInformationHelper.loadSaasPlatformData(
+        serviceInstanceId,
+        platformId,
+        metricsPeriod
+      );
+
+      // Then
+      expect(errorSpy).toHaveBeenCalledExactlyOnceWith(
+        'The SaaS Manager has stopped pushing the platform',
+        {
+          serviceInstanceId,
+          platformId,
+          generatedAt: '2026-10-26T20:59:59.999Z',
+        }
+      );
+    });
+
+    it('should not log an error when the SaaS Manager pushed the platform 12 hours ago', async () => {
+      // Given
+      const errorSpy = vi.spyOn(logApp, 'error');
+      mockSaasManagerBody(fullMetadata, new Date('2026-10-26T21:00:00.000Z'));
+
+      // When
+      await ProductInformationHelper.loadSaasPlatformData(
+        serviceInstanceId,
+        platformId,
+        metricsPeriod
+      );
+
+      // Then
+      expect(errorSpy).not.toHaveBeenCalled();
     });
 
     describe('metrics', () => {
@@ -307,7 +372,7 @@ describe('product information helper', () => {
         mockSaasManagerBody({ ...fullMetadata, metrics });
 
         // When
-        const data = await ProductInformationHelper.fetchSaasPlatformData(
+        const data = await ProductInformationHelper.loadSaasPlatformData(
           serviceInstanceId,
           platformId,
           metricsPeriod
@@ -358,7 +423,7 @@ describe('product information helper', () => {
         });
 
         // When
-        const data = await ProductInformationHelper.fetchSaasPlatformData(
+        const data = await ProductInformationHelper.loadSaasPlatformData(
           serviceInstanceId,
           platformId,
           metricsPeriod
@@ -394,7 +459,7 @@ describe('product information helper', () => {
         mockSaasManagerBody({ ...fullMetadata, metrics: sent });
 
         // When
-        const data = await ProductInformationHelper.fetchSaasPlatformData(
+        const data = await ProductInformationHelper.loadSaasPlatformData(
           serviceInstanceId,
           platformId,
           metricsPeriod
@@ -427,7 +492,7 @@ describe('product information helper', () => {
           });
 
           // When
-          const data = await ProductInformationHelper.fetchSaasPlatformData(
+          const data = await ProductInformationHelper.loadSaasPlatformData(
             serviceInstanceId,
             platformId,
             metricsPeriod
@@ -436,7 +501,7 @@ describe('product information helper', () => {
           // Then
           expect(data?.metrics).toBeNull();
           expect(warnSpy).toHaveBeenCalledExactlyOnceWith(
-            'The SaaS Manager returned incomplete platform metrics'
+            'The SaaS Manager pushed incomplete platform metrics'
           );
         }
       );
@@ -449,7 +514,7 @@ describe('product information helper', () => {
         });
 
         // When
-        const data = await ProductInformationHelper.fetchSaasPlatformData(
+        const data = await ProductInformationHelper.loadSaasPlatformData(
           serviceInstanceId,
           platformId,
           metricsPeriod
@@ -476,7 +541,7 @@ describe('product information helper', () => {
         });
 
         // When
-        const data = await ProductInformationHelper.fetchSaasPlatformData(
+        const data = await ProductInformationHelper.loadSaasPlatformData(
           serviceInstanceId,
           platformId,
           metricsPeriod
@@ -504,7 +569,7 @@ describe('product information helper', () => {
         });
 
         // When
-        const data = await ProductInformationHelper.fetchSaasPlatformData(
+        const data = await ProductInformationHelper.loadSaasPlatformData(
           serviceInstanceId,
           platformId,
           metricsPeriod
@@ -542,7 +607,7 @@ describe('product information helper', () => {
         });
 
         // When
-        const data = await ProductInformationHelper.fetchSaasPlatformData(
+        const data = await ProductInformationHelper.loadSaasPlatformData(
           serviceInstanceId,
           platformId,
           metricsPeriod
@@ -584,7 +649,7 @@ describe('product information helper', () => {
         period: SaasPlatformMetricsPeriod = metricsPeriod
       ) => {
         mockSaasManagerBody({ ...fullMetadata, metrics });
-        const data = await ProductInformationHelper.fetchSaasPlatformData(
+        const data = await ProductInformationHelper.loadSaasPlatformData(
           serviceInstanceId,
           platformId,
           period
@@ -772,7 +837,7 @@ describe('product information helper', () => {
         });
 
         // When
-        const data = await ProductInformationHelper.fetchSaasPlatformData(
+        const data = await ProductInformationHelper.loadSaasPlatformData(
           serviceInstanceId,
           platformId,
           metricsPeriod
@@ -796,7 +861,7 @@ describe('product information helper', () => {
         mockSaasManagerBody({ ...fullMetadata, storage: sent });
 
         // When
-        const data = await ProductInformationHelper.fetchSaasPlatformData(
+        const data = await ProductInformationHelper.loadSaasPlatformData(
           serviceInstanceId,
           platformId,
           metricsPeriod
@@ -819,7 +884,7 @@ describe('product information helper', () => {
         });
 
         // When
-        const data = await ProductInformationHelper.fetchSaasPlatformData(
+        const data = await ProductInformationHelper.loadSaasPlatformData(
           serviceInstanceId,
           platformId,
           metricsPeriod
@@ -844,7 +909,7 @@ describe('product information helper', () => {
         });
 
         // When
-        const data = await ProductInformationHelper.fetchSaasPlatformData(
+        const data = await ProductInformationHelper.loadSaasPlatformData(
           serviceInstanceId,
           platformId,
           metricsPeriod
@@ -859,59 +924,49 @@ describe('product information helper', () => {
       });
     });
 
-    it.each`
-      case                       | response
-      ${'the call fails'}        | ${() => Promise.reject(new Error('fetch failed'))}
-      ${'it returns 204'}        | ${async () => ({ ok: true, status: 204, json: async () => fullMetadata }) as Response}
-      ${'it returns 401'}        | ${async () => ({ ok: false, status: 401, json: async () => fullMetadata }) as Response}
-      ${'it returns 404'}        | ${async () => ({ ok: false, status: 404, json: async () => fullMetadata }) as Response}
-      ${'it returns 500'}        | ${async () => ({ ok: false, status: 500, json: async () => fullMetadata }) as Response}
-      ${'the body is malformed'} | ${async () => ({ ok: true, status: 200, json: async () => Promise.reject(new SyntaxError('Unexpected token')) }) as Response}
-    `('should return null when $case', async ({ response }) => {
+    it('should let a failed read through', async () => {
       // Given
-      mockSaasManagerResponse(response);
+      vi.spyOn(SaasManagerInstanceDomain, 'loadInstance').mockRejectedValue(
+        new Error('connection refused')
+      );
 
       // When
-      const data = await ProductInformationHelper.fetchSaasPlatformData(
+      const data = ProductInformationHelper.loadSaasPlatformData(
         serviceInstanceId,
         platformId,
         metricsPeriod
       );
 
       // Then
-      expect(data).toBeNull();
+      await expect(data).rejects.toThrow('connection refused');
     });
 
-    it('should log only the start of the body when the SaaS Manager returns an error', async () => {
+    it('should warn and return null when the SaaS Manager has not pushed the platform', async () => {
       // Given
-      const errorSpy = vi.spyOn(logApp, 'error');
-      const body = `<html>${'x'.repeat(1000)}</html>`;
-      mockSaasManagerResponse(
-        async () =>
-          ({ ok: false, status: 502, text: async () => body }) as Response
-      );
+      mockSaasManagerBody(null);
+      const warnSpy = vi.spyOn(logApp, 'warn');
 
       // When
-      await ProductInformationHelper.fetchSaasPlatformData(
+      const data = await ProductInformationHelper.loadSaasPlatformData(
         serviceInstanceId,
         platformId,
         metricsPeriod
       );
 
       // Then
-      expect(errorSpy).toHaveBeenCalledExactlyOnceWith(
-        'Unable to load the platform data from the SaaS Manager',
-        {
-          serviceInstanceId,
-          platformId,
-          status: 502,
-          body: body.slice(0, 256),
-        }
-      );
+      expect({ data, warnings: warnSpy.mock.calls }).toEqual({
+        data: null,
+        warnings: [
+          [
+            'The SaaS Manager has not pushed the platform',
+            { serviceInstanceId, platformId },
+          ],
+        ],
+      });
     });
   });
 
-  describe('fetchSaasPlatforms', () => {
+  describe('loadSaasPlatforms', () => {
     const platform = {
       id: uuidv4(),
       status: 'active',
@@ -941,15 +996,17 @@ describe('product information helper', () => {
       end_date: '2027-01-01',
       hostname: 'my-platform.example.com',
       commercial_model: 'INTERNAL',
-      customer: 'Filigran',
+      // The techname of the customer: the platform shows its name.
+      customer: 'cust-filigran',
       region: 'eu-west',
       product: 'OCTI',
     };
+    const customerName = 'Filigran';
     const parsedPlatform = {
       id: platform.id,
       status: 'active',
       product: 'OCTI',
-      customer: 'Filigran',
+      customer: customerName,
       commercial_model: 'INTERNAL',
       sla_cmtd: 0.999,
       metadata: {
@@ -979,36 +1036,61 @@ describe('product information helper', () => {
       vi.useRealTimers();
     });
 
-    const request = {
-      page: 2,
-      page_size: 25,
-      search: 'filigran',
-      ordering: '-customer',
+    const pagination = {
+      first: 25,
+      after: btoa('25'),
+      orderBy: SaasPlatformOrdering.CustomerName,
+      orderMode: OrderingMode.Desc,
+      searchTerm: 'filigran',
     };
 
-    const page = (results: unknown[], count = 26) => ({
-      count,
-      next: null,
-      previous: 'https://saasmanager.test/api/hub/instance/?page=1',
-      results,
+    const pageInfo = {
+      startCursor: 'cursor-0',
+      endCursor: 'cursor-0',
+      hasNextPage: false,
+      hasPreviousPage: false,
+    };
+
+    // The page of the stored rows, the data of each as the SaaS Manager pushed it
+    const page = (
+      rows: unknown[],
+      totalCount = 26,
+      generatedAts: Date[] = []
+    ) => ({
+      totalCount,
+      pageInfo,
+      edges: rows.map((data, index) => ({
+        cursor: `cursor-${index}`,
+        node: {
+          id: platform.id,
+          data,
+          customer_name: customerName,
+          generated_at: generatedAts[index] ?? new Date(),
+        },
+      })),
     });
 
-    const mockSaasManagerBody = (body: unknown) =>
-      vi.spyOn(SaasManagerClient, 'callInstanceListApi').mockResolvedValue({
-        ok: true,
-        status: 200,
-        json: async () => body,
-      } as Response);
+    const mockSaasManagerBody = (connection: ReturnType<typeof page>) =>
+      vi
+        .spyOn(SaasManagerInstanceDomain, 'loadInServiceInstances')
+        .mockResolvedValue(
+          connection as Awaited<
+            ReturnType<typeof SaasManagerInstanceDomain.loadInServiceInstances>
+          >
+        );
 
-    it('should ask the SaaS Manager for the given page, search and ordering', async () => {
+    const platformsOf = <T>(result: { edges: { node: T }[] }) =>
+      result.edges.map(({ node }) => node);
+
+    it('should read the page asked for', async () => {
       // Given
       const callSpy = mockSaasManagerBody(page([platform]));
 
       // When
-      await ProductInformationHelper.fetchSaasPlatforms(request);
+      await ProductInformationHelper.loadSaasPlatforms(pagination);
 
       // Then
-      expect(callSpy).toHaveBeenCalledExactlyOnceWith(request);
+      expect(callSpy).toHaveBeenCalledExactlyOnceWith(pagination);
     });
 
     it('should return the platforms sent by the SaaS Manager without the unknown fields, with the total count', async () => {
@@ -1016,54 +1098,27 @@ describe('product information helper', () => {
       mockSaasManagerBody(page([platform]));
 
       // When
-      const result = await ProductInformationHelper.fetchSaasPlatforms(request);
+      const result =
+        await ProductInformationHelper.loadSaasPlatforms(pagination);
 
       // Then
-      expect(result).toEqual({ totalCount: 26, platforms: [parsedPlatform] });
+      expect(result).toEqual({
+        totalCount: 26,
+        pageInfo,
+        edges: [{ cursor: 'cursor-0', node: parsedPlatform }],
+      });
     });
 
-    it('should return null when the SaaS Manager sends no count', async () => {
-      // Given
-      mockSaasManagerBody({ results: [platform] });
-
-      // When
-      const result = await ProductInformationHelper.fetchSaasPlatforms(request);
-
-      // Then
-      expect(result).toBeNull();
-    });
-
-    it('should return no platform when the SaaS Manager sends an empty page', async () => {
+    it('should return no platform for an empty page', async () => {
       // Given
       mockSaasManagerBody(page([], 0));
 
       // When
-      const result = await ProductInformationHelper.fetchSaasPlatforms(request);
+      const result =
+        await ProductInformationHelper.loadSaasPlatforms(pagination);
 
       // Then
-      expect(result).toEqual({ totalCount: 0, platforms: [] });
-    });
-
-    it.each`
-      case                          | body
-      ${'the body is null'}         | ${null}
-      ${'the body is an array'}     | ${[platform]}
-      ${'the results are missing'}  | ${{ count: 0, next: null }}
-      ${'the results are a string'} | ${{ count: 0, next: null, results: 'platforms' }}
-    `('should log an error and return null when $case', async ({ body }) => {
-      // Given
-      mockSaasManagerBody(body);
-      const errorSpy = vi.spyOn(logApp, 'error');
-
-      // When
-      const result = await ProductInformationHelper.fetchSaasPlatforms(request);
-
-      // Then
-      expect(result).toBeNull();
-      expect(errorSpy).toHaveBeenCalledExactlyOnceWith(
-        'The SaaS Manager returned an unreadable page of platforms',
-        { page: request.page }
-      );
+      expect(result).toEqual({ totalCount: 0, pageInfo, edges: [] });
     });
 
     it.each`
@@ -1077,26 +1132,28 @@ describe('product information helper', () => {
       mockSaasManagerBody(page([sent, platform]));
 
       // When
-      const result = await ProductInformationHelper.fetchSaasPlatforms(request);
+      const result =
+        await ProductInformationHelper.loadSaasPlatforms(pagination);
 
       // Then
-      expect(result?.platforms).toEqual([parsedPlatform]);
+      expect(platformsOf(result)).toEqual([parsedPlatform]);
     });
 
-    it('should return null fields when the SaaS Manager sends only the id of a platform', async () => {
+    it('should return null fields but the customer when the SaaS Manager sends only the id of a platform', async () => {
       // Given
       mockSaasManagerBody(page([{ id: platform.id }]));
 
       // When
-      const result = await ProductInformationHelper.fetchSaasPlatforms(request);
+      const result =
+        await ProductInformationHelper.loadSaasPlatforms(pagination);
 
       // Then
-      expect(result?.platforms).toEqual([
+      expect(platformsOf(result)).toEqual([
         {
           id: platform.id,
           status: null,
           product: null,
-          customer: null,
+          customer: customerName,
           commercial_model: null,
           sla_cmtd: null,
           metadata: {
@@ -1126,10 +1183,10 @@ describe('product information helper', () => {
 
         // When
         const result =
-          await ProductInformationHelper.fetchSaasPlatforms(request);
+          await ProductInformationHelper.loadSaasPlatforms(pagination);
 
         // Then
-        expect(result?.platforms[0]?.product).toBe(expected);
+        expect(platformsOf(result)[0]?.product).toBe(expected);
       }
     );
 
@@ -1139,12 +1196,13 @@ describe('product information helper', () => {
       const warnSpy = vi.spyOn(logApp, 'warn');
 
       // When
-      const result = await ProductInformationHelper.fetchSaasPlatforms(request);
+      const result =
+        await ProductInformationHelper.loadSaasPlatforms(pagination);
 
       // Then
-      expect(result?.platforms[0]?.product).toBeNull();
+      expect(platformsOf(result)[0]?.product).toBeNull();
       expect(warnSpy).toHaveBeenCalledExactlyOnceWith(
-        'The SaaS Manager returned an unknown product',
+        'The SaaS Manager pushed an unknown product',
         { product: 'OTHER' }
       );
     });
@@ -1164,10 +1222,10 @@ describe('product information helper', () => {
 
         // When
         const result =
-          await ProductInformationHelper.fetchSaasPlatforms(request);
+          await ProductInformationHelper.loadSaasPlatforms(pagination);
 
         // Then
-        expect(result?.platforms[0]?.contract_status).toBe(contract_status);
+        expect(platformsOf(result)[0]?.contract_status).toBe(contract_status);
       }
     );
 
@@ -1204,10 +1262,10 @@ describe('product information helper', () => {
 
         // When
         const result =
-          await ProductInformationHelper.fetchSaasPlatforms(request);
+          await ProductInformationHelper.loadSaasPlatforms(pagination);
 
         // Then
-        expect(result?.platforms[0]?.health_issues).toEqual(health_issues);
+        expect(platformsOf(result)[0]?.health_issues).toEqual(health_issues);
       }
     );
 
@@ -1226,10 +1284,10 @@ describe('product information helper', () => {
 
         // When
         const result =
-          await ProductInformationHelper.fetchSaasPlatforms(request);
+          await ProductInformationHelper.loadSaasPlatforms(pagination);
 
         // Then
-        expect(result?.platforms[0]?.health_issues).toEqual(health_issues);
+        expect(platformsOf(result)[0]?.health_issues).toEqual(health_issues);
       }
     );
 
@@ -1245,10 +1303,11 @@ describe('product information helper', () => {
       );
 
       // When
-      const result = await ProductInformationHelper.fetchSaasPlatforms(request);
+      const result =
+        await ProductInformationHelper.loadSaasPlatforms(pagination);
 
       // Then
-      expect(result?.platforms[0]).toMatchObject({
+      expect(platformsOf(result)[0]).toMatchObject({
         sla_cmtd: null,
         health_issues: [SaasPlatformHealthIssue.Database],
       });
@@ -1259,30 +1318,63 @@ describe('product information helper', () => {
       mockSaasManagerBody(page([{ id: platform.id, sla_cmtd: 99.95 }]));
 
       // When
-      const result = await ProductInformationHelper.fetchSaasPlatforms(request);
+      const result =
+        await ProductInformationHelper.loadSaasPlatforms(pagination);
 
       // Then
-      expect(result?.platforms[0]?.sla_cmtd).toBe(0.9995);
+      expect(platformsOf(result)[0]?.sla_cmtd).toBe(0.9995);
     });
 
-    it.each`
-      case                       | response
-      ${'the call fails'}        | ${() => Promise.reject(new Error('fetch failed'))}
-      ${'it returns 401'}        | ${async () => ({ ok: false, status: 401, json: async () => page([platform]) }) as Response}
-      ${'it returns 404'}        | ${async () => ({ ok: false, status: 404, json: async () => ({ detail: 'Invalid page.' }) }) as Response}
-      ${'it returns 500'}        | ${async () => ({ ok: false, status: 500, json: async () => page([platform]) }) as Response}
-      ${'the body is malformed'} | ${async () => ({ ok: true, status: 200, json: async () => Promise.reject(new SyntaxError('Unexpected token')) }) as Response}
-    `('should return null when $case', async ({ response }) => {
+    it('should log one error with the oldest date when the SaaS Manager pushed listed platforms more than 12 hours ago', async () => {
       // Given
-      vi.spyOn(SaasManagerClient, 'callInstanceListApi').mockImplementation(
-        response
+      mockSaasManagerBody(
+        page([platform, platform, platform], 26, [
+          new Date('2026-10-28T00:00:00.000Z'),
+          new Date('2026-10-27T23:59:59.999Z'),
+          new Date('2026-10-20T12:00:00.000Z'),
+        ])
       );
+      const errorSpy = vi.spyOn(logApp, 'error');
 
       // When
-      const result = await ProductInformationHelper.fetchSaasPlatforms(request);
+      await ProductInformationHelper.loadSaasPlatforms(pagination);
 
       // Then
-      expect(result).toBeNull();
+      expect(errorSpy).toHaveBeenCalledExactlyOnceWith(
+        'The SaaS Manager has stopped pushing listed platforms',
+        { stale: 2, oldestGeneratedAt: '2026-10-20T12:00:00.000Z' }
+      );
+    });
+
+    it('should not log an error when the SaaS Manager pushed every listed platform within 12 hours', async () => {
+      // Given
+      mockSaasManagerBody(
+        page([platform, platform], 26, [
+          new Date('2026-10-28T00:00:00.000Z'),
+          new Date('2026-10-28T12:00:00.000Z'),
+        ])
+      );
+      const errorSpy = vi.spyOn(logApp, 'error');
+
+      // When
+      await ProductInformationHelper.loadSaasPlatforms(pagination);
+
+      // Then
+      expect(errorSpy).not.toHaveBeenCalled();
+    });
+
+    it('should let a failed read through', async () => {
+      // Given
+      vi.spyOn(
+        SaasManagerInstanceDomain,
+        'loadInServiceInstances'
+      ).mockRejectedValue(new Error('connection refused'));
+
+      // When
+      const result = ProductInformationHelper.loadSaasPlatforms(pagination);
+
+      // Then
+      await expect(result).rejects.toThrow('connection refused');
     });
   });
 });

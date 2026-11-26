@@ -59,6 +59,22 @@ export const ANALYTICS_ELEMENT_IDS = {
   admin_organization_services_open: {
     action: 'Open organization subscribed services',
   },
+  admin_registered_platform_organizations_open: {
+    action: 'Show registered platform organization choices',
+  },
+  admin_registered_platform_products_open: {
+    action: 'Show registered platform product choices',
+  },
+  admin_registered_platform_remove: { action: 'Unregister platform' },
+  admin_registered_platform_removal_confirm: {
+    action: 'Confirm platform unregistration',
+  },
+  admin_registered_platform_statuses_open: {
+    action: 'Show registered platform status choices',
+  },
+  admin_registered_platform_url_open: {
+    action: 'Open registered platform URL',
+  },
   admin_role_capabilities_select: { action: 'Show role capabilities' },
   admin_role_create: { action: 'Add role' },
   admin_role_delete: { action: 'Delete role' },
@@ -262,6 +278,9 @@ export const ANALYTICS_ELEMENT_IDS = {
   nav_admin_news_feed_open: { action: 'Open news feed administration' },
   nav_admin_organizations_open: { action: 'Open organization administration' },
   nav_admin_parameters_open: { action: 'Open platform parameters' },
+  nav_admin_registered_platforms_open: {
+    action: 'Open registered platform administration',
+  },
   nav_admin_roles_open: { action: 'Open role administration' },
   nav_admin_services_open: {
     action: 'Open service administration from navigation',

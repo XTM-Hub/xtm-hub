@@ -281,6 +281,50 @@ describe('platformConfigurationDomain', () => {
       // Then
       await expect(call).resolves.toBeUndefined();
     });
+
+    it('should load an unregistered configuration unless only the active ones are asked for', async () => {
+      // Given
+      await PlatformConfigurationDomain.updateConfiguration(
+        SERVICES.INSTANCES.INTEGRATIONS.ID,
+        { status: PlatformConfigurationStatus.Inactive }
+      );
+
+      // When
+      const any =
+        await PlatformConfigurationDomain.loadConfigurationByPlatformAndToken({
+          platform_id: platformId,
+          token,
+        });
+      const activeOnly =
+        await PlatformConfigurationDomain.loadConfigurationByPlatformAndToken({
+          platform_id: platformId,
+          token,
+          activeOnly: true,
+        });
+
+      // Then
+      expect(any).toMatchObject({
+        service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
+        status: PlatformConfigurationStatus.Inactive,
+      });
+      expect(activeOnly).toBeUndefined();
+    });
+
+    it('should load an active configuration when only the active ones are asked for', async () => {
+      // When
+      const configuration =
+        await PlatformConfigurationDomain.loadConfigurationByPlatformAndToken({
+          platform_id: platformId,
+          token,
+          activeOnly: true,
+        });
+
+      // Then
+      expect(configuration).toMatchObject({
+        service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
+        status: PlatformConfigurationStatus.Active,
+      });
+    });
   });
 
   describe('loadConfigurationByPlatform', () => {
@@ -516,6 +560,64 @@ describe('platformConfigurationDomain', () => {
         );
 
       expect(resolved).toBeUndefined();
+    });
+
+    it('should load an unregistered configuration unless only the active ones are asked for', async () => {
+      // Given
+      await TestHelper.serviceInstance.create({
+        id: serviceInstanceId,
+        service_definition_id: SERVICES.DEFINITIONS.OPENCTI_REGISTRATION.ID,
+      });
+      await TestHelper.platformConfiguration.create({
+        service_instance_id: serviceInstanceId,
+        status: PlatformConfigurationStatus.Inactive,
+        platform_id: platformId,
+        token,
+      });
+
+      // When
+      const any =
+        await PlatformConfigurationDomain.loadResolvedConfigurationByPlatformAndToken(
+          { platform_id: platformId, token }
+        );
+      const activeOnly =
+        await PlatformConfigurationDomain.loadResolvedConfigurationByPlatformAndToken(
+          { platform_id: platformId, token, activeOnly: true }
+        );
+
+      // Then
+      expect(any?.platformConfiguration).toMatchObject({
+        service_instance_id: serviceInstanceId,
+        status: PlatformConfigurationStatus.Inactive,
+      });
+      expect(activeOnly).toBeUndefined();
+    });
+
+    it('should load an active configuration when only the active ones are asked for', async () => {
+      // Given
+      await TestHelper.serviceInstance.create({
+        id: serviceInstanceId,
+        service_definition_id: SERVICES.DEFINITIONS.OPENCTI_REGISTRATION.ID,
+      });
+      await TestHelper.platformConfiguration.create({
+        service_instance_id: serviceInstanceId,
+        status: PlatformConfigurationStatus.Active,
+        platform_id: platformId,
+        token,
+      });
+
+      // When
+      const resolved =
+        await PlatformConfigurationDomain.loadResolvedConfigurationByPlatformAndToken(
+          { platform_id: platformId, token, activeOnly: true }
+        );
+
+      // Then
+      expect(resolved?.platformConfiguration).toMatchObject({
+        service_instance_id: serviceInstanceId,
+        status: PlatformConfigurationStatus.Active,
+      });
+      expect(resolved?.platformIdentifier).toBe(PlatformIdentifier.Opencti);
     });
 
     it('should return undefined when withoutTenantId is true and config has a tenant_id', async () => {

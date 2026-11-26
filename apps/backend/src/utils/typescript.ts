@@ -7,6 +7,15 @@ export type addPrefixToObject<T, P extends string> = {
 export const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
+/** The value of the key when it is a non-empty string, null otherwise. */
+export const readNonEmptyString = (
+  record: Record<string, unknown>,
+  key: string
+): string | null => {
+  const value = record[key];
+  return typeof value === 'string' && value !== '' ? value : null;
+};
+
 export const stripNulls = <T extends object>(
   obj: T
 ): {

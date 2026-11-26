@@ -174,6 +174,13 @@ export const usePrivateNavigation = (): NavigationConfig => {
       restriction: [PortalCapability.ReadSaasMetrics],
     },
     {
+      href: `/${APP_PATH}/admin/registered-platforms`,
+      analyticsId: 'nav_admin_registered_platforms_open',
+      label: tMenuLinks('RegisteredPlatforms'),
+      group: managementGroupLabel,
+      restriction: [PortalCapability.Bypass],
+    },
+    {
       href: ADMIN_SERVICE_CATALOG_PATH,
       analyticsId: 'nav_admin_services_open',
       label: tMenuLinks('ServiceCatalog'),

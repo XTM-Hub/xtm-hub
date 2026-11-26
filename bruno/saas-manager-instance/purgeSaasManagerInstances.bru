@@ -1,0 +1,38 @@
+meta {
+  name: purgeSaasManagerInstances
+  type: graphql
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/graphql-api
+  body: graphql
+  auth: inherit
+}
+
+headers {
+  x-xtm-hub-token: {{xtm-hub-token}}
+}
+
+body:graphql {
+  mutation ($before: Date!) {
+    purgeSaasManagerInstances(before: $before) { applied skipped removed }
+  }
+}
+
+body:graphql:vars {
+  {
+    "before": "2026-11-25T10:00:00+00:00"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+
+docs {
+  Sent by SaaS Manager after a full snapshot: ensure xtm-hub-token is defined in environment.
+
+  Deletes every stored instance generated before the date (counted in removed).
+}

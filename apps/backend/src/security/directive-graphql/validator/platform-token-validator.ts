@@ -37,7 +37,12 @@ const loadOrganizationFromPlatformIdAndTokenHeaders = async (
     throw buildInvalidPlatformTokenError();
   }
 
-  const match = await loadPlatformCredentialMatch(extractedAuth);
+  // An unregistered (inactive) registration no longer authenticates its platform. A Hub-deployed trial still does
+  // through its deployment request.
+  const match = await loadPlatformCredentialMatch({
+    ...extractedAuth,
+    activeOnly: true,
+  });
   if (!match) {
     throw buildInvalidPlatformTokenError();
   }
