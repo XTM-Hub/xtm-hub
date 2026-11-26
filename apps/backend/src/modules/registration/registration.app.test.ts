@@ -66,6 +66,7 @@ import { RequiredPlatformVersions } from '../../utils/required-platform-version'
 import { DeploymentRequestDomain } from '../deployment/deployment.domain';
 import { NewsFeedApp } from '../news-feed/news-feed.app';
 import { NewsFeedDomain } from '../news-feed/news-feed.domain';
+import { OrganizationDomain } from '../organization-management/organization/organization.domain';
 import { AuthHelper } from '../security-management/capability/auth.helper';
 import { SubscriptionDomain } from '../subscription/subscription.domain';
 import { TelemetryApp } from '../telemetry/telemetry.app';
@@ -555,13 +556,55 @@ describe('registration app', () => {
     it('return token when platform is registered', async () => {
       requestContext.set(requestContextRegistererUserSecondOrga);
 
-      const token = await RegistrationApp.registerPlatform({
+      const { token } = await RegistrationApp.registerPlatform({
         organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
         platform,
         identifier: PlatformIdentifier.Opencti,
       });
 
       expect(token).toBeDefined();
+    });
+
+    it('should return the name of the organization the platform is registered in', async () => {
+      // Given
+      requestContext.set(requestContextRegistererUserSecondOrga);
+
+      // When
+      const { organizationName } = await RegistrationApp.registerPlatform({
+        organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        platform: { ...platform, id: uuidv4() },
+        identifier: PlatformIdentifier.Opencti,
+      });
+
+      // Then
+      expect(organizationName).toBe(
+        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.NAME
+      );
+    });
+
+    it('should not register the platform when its organization cannot be loaded', async () => {
+      // Given
+      requestContext.set(requestContextRegistererUserSecondOrga);
+      const platformId = uuidv4();
+      const loadOrganizationSpy = vi
+        .spyOn(OrganizationDomain, 'loadOrganizationBy')
+        .mockRejectedValueOnce(new Error('database unavailable'));
+
+      // When
+      const call = RegistrationApp.registerPlatform({
+        organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        platform: { ...platform, id: platformId },
+        identifier: PlatformIdentifier.Opencti,
+      });
+
+      // Then
+      await expect(call).rejects.toThrow('database unavailable');
+      loadOrganizationSpy.mockRestore();
+      expect(
+        await PlatformConfigurationDomain.loadConfigurationByPlatform(
+          platformId
+        )
+      ).toBeUndefined();
     });
 
     describe('blogpost backfill', () => {
@@ -663,7 +706,7 @@ describe('registration app', () => {
         vi.spyOn(logApp, 'error').mockImplementation(() => logApp);
 
         // When
-        const token = await registerOpenCtiPlatform(
+        const { token } = await registerOpenCtiPlatform(
           platformId,
           BLOGPOST_REQUIRED_VERSION
         );
@@ -2127,7 +2170,7 @@ describe('registration app', () => {
 
     it('should return active when platform is registered', async () => {
       const platformId = uuidv4();
-      const token = await RegistrationApp.registerPlatform({
+      const { token } = await RegistrationApp.registerPlatform({
         organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
         platform: {
           id: platformId,
@@ -2149,7 +2192,7 @@ describe('registration app', () => {
 
     it('should return inactive when platform is unregistered', async () => {
       const platformId = uuidv4();
-      const token = await RegistrationApp.registerPlatform({
+      const { token } = await RegistrationApp.registerPlatform({
         organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
         platform: {
           id: platformId,

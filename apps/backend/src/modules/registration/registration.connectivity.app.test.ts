@@ -12,6 +12,7 @@ import {
 import { TestHelper } from '../../../tests/helper/test.helper';
 import {
   requestContextRegistererUserSecondOrga,
+  requestContextSimpleUserFiligran2,
   TEST_ORGANIZATIONS,
 } from '../../../tests/tests.const';
 import {
@@ -31,11 +32,12 @@ import { NewsFeedDomain } from '../news-feed/news-feed.domain';
 import { PlatformConfigurationDomain } from './platform-configuration/platform-configuration.domain';
 import { RegistrationApp } from './registration.app';
 import { RegistrationConnectivityApp } from './registration.connectivity.app';
+import { RegistrationDomain } from './registration.domain';
 
 const HOUR_IN_MS = 60 * 60 * 1000;
 
-const registerOpenaevTenant = (platformId: string, tenantId: string) =>
-  RegistrationApp.registerPlatform({
+const registerOpenaevTenant = async (platformId: string, tenantId: string) => {
+  const { token } = await RegistrationApp.registerPlatform({
     organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
     platform: {
       id: platformId,
@@ -48,6 +50,8 @@ const registerOpenaevTenant = (platformId: string, tenantId: string) =>
     },
     identifier: PlatformIdentifier.Openaev,
   });
+  return token;
+};
 
 const loadTenantConfiguration = (platformId: string, tenantId: string) =>
   PlatformConfigurationDomain.loadConfigurationByPlatform(platformId, {
@@ -192,7 +196,7 @@ describe('registration connectivity app', () => {
     it('should return active when an XTM One platform is registered', async () => {
       // Given
       const platformId = uuidv4();
-      const token = await RegistrationApp.registerPlatform({
+      const { token } = await RegistrationApp.registerPlatform({
         organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
         platform: {
           id: platformId,
@@ -222,7 +226,7 @@ describe('registration connectivity app', () => {
     it('should return the stored commercial model when the platform is registered', async () => {
       // Given
       const platformId = uuidv4();
-      const token = await RegistrationApp.registerPlatform({
+      const { token } = await RegistrationApp.registerPlatform({
         organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
         platform: {
           id: platformId,
@@ -257,6 +261,7 @@ describe('registration connectivity app', () => {
       expect(result).toEqual({
         status: PlatformRegistrationConnectivityStatus.Active,
         commercialModel: CommercialModel.Saas,
+        organizationName: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.NAME,
       });
     });
 
@@ -276,12 +281,46 @@ describe('registration connectivity app', () => {
       expect(result).toEqual({
         status: PlatformRegistrationConnectivityStatus.NotFound,
         commercialModel: null,
+        organizationName: null,
       });
+    });
+
+    it('should return the name of the organization the platform is registered in, not the one of the caller', async () => {
+      // Given
+      const platformId = uuidv4();
+      const { token } = await RegistrationApp.registerPlatform({
+        organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        platform: {
+          id: platformId,
+          url: 'http://example.com',
+          contract: PlatformContract.Ee,
+          title: 'Fake title',
+          version: '6.7.18',
+        },
+        identifier: PlatformIdentifier.Opencti,
+      });
+      requestContext.set(requestContextSimpleUserFiligran2);
+
+      // When
+      const result =
+        await RegistrationConnectivityApp.refreshPlatformRegistrationConnectivityStatus(
+          {
+            platformId,
+            token,
+            platformVersion: '6.7.18',
+            platformIdentifier: PlatformIdentifier.Opencti,
+          }
+        );
+
+      // Then
+      expect(result.organizationName).toBe(
+        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.NAME
+      );
     });
 
     it('should return active when platform is registered and update version', async () => {
       const platformId = uuidv4();
-      const token = await RegistrationApp.registerPlatform({
+      const { token } = await RegistrationApp.registerPlatform({
         organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
         platform: {
           id: platformId,
@@ -312,6 +351,56 @@ describe('registration connectivity app', () => {
       expect(result.status).toBe(PlatformRegistrationConnectivityStatus.Active);
     });
 
+    describe('when the organization lookup fails', () => {
+      afterEach(() => {
+        vi.restoreAllMocks();
+      });
+
+      it('should refresh the platform and return no organization name', async () => {
+        // Given
+        const platformId = uuidv4();
+        const { token } = await RegistrationApp.registerPlatform({
+          organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+          platform: {
+            id: platformId,
+            url: 'http://example.com',
+            contract: PlatformContract.Ee,
+            title: 'Fake title',
+            version: '1.0.0',
+          },
+          identifier: PlatformIdentifier.Opencti,
+        });
+        vi.spyOn(
+          RegistrationDomain,
+          'loadPlatformOwnerOrganizationsByServiceInstanceIds'
+        ).mockRejectedValue(new Error('database unavailable'));
+        const logError = vi
+          .spyOn(logApp, 'error')
+          .mockImplementation(() => logApp);
+
+        // When
+        const result =
+          await RegistrationConnectivityApp.refreshPlatformRegistrationConnectivityStatus(
+            { platformId, token, platformVersion: '6.7.18' }
+          );
+
+        // Then
+        expect(result).toMatchObject({
+          status: PlatformRegistrationConnectivityStatus.Active,
+          organizationName: null,
+        });
+        const configuration =
+          await PlatformConfigurationDomain.loadConfigurationByPlatform(
+            platformId
+          );
+        expect(configuration?.platform_version).toBe('6.7.18');
+        expect(logError).toHaveBeenCalledWith(
+          'Failed to load the organizations of the refreshed platform',
+          expect.objectContaining({ platformId })
+        );
+      });
+    });
+
     it.each([
       [PlatformContract.Ee, PlatformContract.Ce, PlatformContract.Ee],
       [PlatformContract.Ce, PlatformContract.Ee, PlatformContract.Ce],
@@ -323,7 +412,7 @@ describe('registration connectivity app', () => {
         // Given
         const platformId = uuidv4();
         const platformVersion = '6.7.18';
-        const token = await RegistrationApp.registerPlatform({
+        const { token } = await RegistrationApp.registerPlatform({
           organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
           platform: {
             id: platformId,
@@ -377,7 +466,7 @@ describe('registration connectivity app', () => {
       const platformId = uuidv4();
       const tenantId = uuidv4();
       const tenantName = 'My tenant';
-      const token = await RegistrationApp.registerPlatform({
+      const { token } = await RegistrationApp.registerPlatform({
         organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
         platform: {
           id: platformId,
@@ -436,6 +525,57 @@ describe('registration connectivity app', () => {
       expect(result).toEqual({
         status: PlatformRegistrationConnectivityStatus.Active,
         commercialModel: CommercialModel.Saas,
+        organizationName: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.NAME,
+      });
+    });
+
+    describe('when the organization lookup fails', () => {
+      afterEach(() => {
+        vi.restoreAllMocks();
+      });
+
+      it('should refresh the tenant and return no organization name', async () => {
+        // Given
+        const platformId = uuidv4();
+        const tenantId = uuidv4();
+        const token = await registerOpenaevTenant(platformId, tenantId);
+        vi.spyOn(
+          RegistrationDomain,
+          'loadPlatformOwnerOrganizationsByServiceInstanceIds'
+        ).mockRejectedValue(new Error('database unavailable'));
+        const logError = vi
+          .spyOn(logApp, 'error')
+          .mockImplementation(() => logApp);
+
+        // When
+        const result =
+          await RegistrationConnectivityApp.refreshPlatformRegistrationConnectivityStatusSingleTenant(
+            {
+              platformId,
+              token,
+              platformVersion: '2.5.0',
+              url: `http://example.com/${tenantId}`,
+              tenantId,
+              tenantName: `Tenant ${tenantId}`,
+              platformIdentifier: PlatformIdentifier.Openaev,
+            }
+          );
+
+        // Then
+        expect(result).toEqual({
+          status: PlatformRegistrationConnectivityStatus.Active,
+          commercialModel: CommercialModel.Other,
+          organizationName: null,
+        });
+        const configuration = await loadTenantConfiguration(
+          platformId,
+          tenantId
+        );
+        expect(configuration?.platform_version).toBe('2.5.0');
+        expect(logError).toHaveBeenCalledWith(
+          'Failed to load the organizations of the refreshed platform',
+          expect.objectContaining({ platformId })
+        );
       });
     });
 
@@ -462,7 +602,7 @@ describe('registration connectivity app', () => {
       const platformId = uuidv4();
       const tenantId = uuidv4();
       const tenantName = 'My tenant';
-      const token = await RegistrationApp.registerPlatform({
+      const { token } = await RegistrationApp.registerPlatform({
         organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
         platform: {
           id: platformId,
@@ -500,7 +640,7 @@ describe('registration connectivity app', () => {
     it('should update the tenant_name in the configuration when tenant_name changes', async () => {
       const platformId = uuidv4();
       const tenantId = uuidv4();
-      const token = await RegistrationApp.registerPlatform({
+      const { token } = await RegistrationApp.registerPlatform({
         organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
         platform: {
           id: platformId,
@@ -538,7 +678,7 @@ describe('registration connectivity app', () => {
     it('should return not found when platform is registered with tenant_id but wrong tenant_id is provided', async () => {
       const platformId = uuidv4();
       const tenantId = uuidv4();
-      const token = await RegistrationApp.registerPlatform({
+      const { token } = await RegistrationApp.registerPlatform({
         organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
         platform: {
           id: platformId,
@@ -574,7 +714,7 @@ describe('registration connectivity app', () => {
       const platformId = uuidv4();
       const tenantId = uuidv4();
       const tenantName = 'My tenant';
-      const token = await RegistrationApp.registerPlatform({
+      const { token } = await RegistrationApp.registerPlatform({
         organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
         platform: {
           id: platformId,
@@ -614,7 +754,7 @@ describe('registration connectivity app', () => {
     it('should not attach a tenant id to an OpenCTI registration, whatever platform identifier the request sends', async () => {
       // Given
       const platformId = uuidv4();
-      const token = await RegistrationApp.registerPlatform({
+      const { token } = await RegistrationApp.registerPlatform({
         organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
         platform: {
           id: platformId,
@@ -661,7 +801,7 @@ describe('registration connectivity app', () => {
         const platformId = uuidv4();
         const tenantId = uuidv4();
         const tenantName = 'My tenant';
-        const token = await RegistrationApp.registerPlatform({
+        const { token } = await RegistrationApp.registerPlatform({
           organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
           platform: {
             id: platformId,
@@ -709,7 +849,7 @@ describe('registration connectivity app', () => {
       const otherTenantId = uuidv4();
       const refreshedTenantName = 'Refreshed tenant';
       const refreshedTenantUrl = 'http://example.com/refreshed';
-      const token = await RegistrationApp.registerPlatform({
+      const { token } = await RegistrationApp.registerPlatform({
         organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
         platform: {
           id: platformId,
@@ -771,7 +911,7 @@ describe('registration connectivity app', () => {
     it('should not attach a non-UUID tenant id to a legacy platform that upgrades to a version that requires one', async () => {
       // Given
       const platformId = uuidv4();
-      const token = await RegistrationApp.registerPlatform({
+      const { token } = await RegistrationApp.registerPlatform({
         organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
         platform: {
           id: platformId,
@@ -806,6 +946,10 @@ describe('registration connectivity app', () => {
   });
 
   describe('refreshPlatformRegistrationConnectivityStatusAllTenants', () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
     it('should return inactive for all tenants when version is not formatted as a semantic version', async () => {
       const tenantId = uuidv4();
       const result =
@@ -830,6 +974,7 @@ describe('registration connectivity app', () => {
         tenantId,
         status: PlatformRegistrationConnectivityStatus.Inactive,
         commercialModel: null,
+        organizationName: null,
       });
     });
 
@@ -840,7 +985,7 @@ describe('registration connectivity app', () => {
       const tenantName1 = 'Tenant One';
       const tenantName2 = 'Tenant Two';
 
-      const token1 = await RegistrationApp.registerPlatform({
+      const { token: token1 } = await RegistrationApp.registerPlatform({
         organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
         platform: {
           id: platformId,
@@ -854,7 +999,7 @@ describe('registration connectivity app', () => {
         identifier: PlatformIdentifier.Openaev,
       });
 
-      const token2 = await RegistrationApp.registerPlatform({
+      const { token: token2 } = await RegistrationApp.registerPlatform({
         organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
         platform: {
           id: platformId,
@@ -898,11 +1043,13 @@ describe('registration connectivity app', () => {
             tenantId: tenantId1,
             status: PlatformRegistrationConnectivityStatus.Active,
             commercialModel: CommercialModel.Other,
+            organizationName: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.NAME,
           },
           {
             tenantId: tenantId2,
             status: PlatformRegistrationConnectivityStatus.Active,
             commercialModel: CommercialModel.Other,
+            organizationName: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.NAME,
           },
         ])
       );
@@ -949,6 +1096,63 @@ describe('registration connectivity app', () => {
           tenantId,
           status: PlatformRegistrationConnectivityStatus.NotFound,
           commercialModel: null,
+          organizationName: null,
+        },
+      ]);
+    });
+
+    it('should load the organizations of every refreshed tenant in a single query', async () => {
+      // Given
+      const platformId = uuidv4();
+      const tenantIds = [uuidv4(), uuidv4(), uuidv4()];
+      const tokens = await Promise.all(
+        tenantIds.map((tenantId) => registerOpenaevTenant(platformId, tenantId))
+      );
+      const ownerOrganizationsSpy = vi.spyOn(
+        RegistrationDomain,
+        'loadPlatformOwnerOrganizationsByServiceInstanceIds'
+      );
+
+      // When
+      const result = await refreshAllTenants(
+        platformId,
+        tenantIds.map((tenantId, index) => ({
+          tenantId,
+          token: tokens[index]!,
+        }))
+      );
+
+      // Then
+      expect(ownerOrganizationsSpy).toHaveBeenCalledTimes(1);
+      expect(ownerOrganizationsSpy.mock.calls[0]![0]).toHaveLength(3);
+      expect(result.statuses.map((s) => s.organizationName)).toEqual([
+        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.NAME,
+        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.NAME,
+        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.NAME,
+      ]);
+    });
+
+    it('should keep the tenant statuses without organization names when the organization lookup fails', async () => {
+      // Given
+      const platformId = uuidv4();
+      const tenantId = uuidv4();
+      const token = await registerOpenaevTenant(platformId, tenantId);
+      vi.spyOn(
+        RegistrationDomain,
+        'loadPlatformOwnerOrganizationsByServiceInstanceIds'
+      ).mockRejectedValue(new Error('database unavailable'));
+      vi.spyOn(logApp, 'error').mockImplementation(() => logApp);
+
+      // When
+      const result = await refreshAllTenants(platformId, [{ tenantId, token }]);
+
+      // Then
+      expect(result.statuses).toEqual([
+        {
+          tenantId,
+          status: PlatformRegistrationConnectivityStatus.Active,
+          commercialModel: CommercialModel.Other,
+          organizationName: null,
         },
       ]);
     });
@@ -982,11 +1186,13 @@ describe('registration connectivity app', () => {
             tenantId: saasTenantId,
             status: PlatformRegistrationConnectivityStatus.Active,
             commercialModel: CommercialModel.Saas,
+            organizationName: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.NAME,
           },
           {
             tenantId: otherTenantId,
             status: PlatformRegistrationConnectivityStatus.Active,
             commercialModel: CommercialModel.Other,
+            organizationName: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.NAME,
           },
         ])
       );
@@ -1010,7 +1216,7 @@ describe('registration connectivity app', () => {
       const platformId = uuidv4();
       const tenantId = uuidv4();
 
-      const token = await RegistrationApp.registerPlatform({
+      const { token } = await RegistrationApp.registerPlatform({
         organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
         platform: {
           id: platformId,
@@ -1056,11 +1262,13 @@ describe('registration connectivity app', () => {
             tenantId,
             status: PlatformRegistrationConnectivityStatus.Active,
             commercialModel: CommercialModel.Other,
+            organizationName: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.NAME,
           },
           {
             tenantId: failingTenantId,
             status: PlatformRegistrationConnectivityStatus.NotFound,
             commercialModel: null,
+            organizationName: null,
           },
         ])
       );
@@ -1071,7 +1279,7 @@ describe('registration connectivity app', () => {
       const tenantId1 = uuidv4();
       const tenantId2 = uuidv4();
 
-      const token1 = await RegistrationApp.registerPlatform({
+      const { token: token1 } = await RegistrationApp.registerPlatform({
         organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
         platform: {
           id: platformId,
@@ -1122,6 +1330,7 @@ describe('registration connectivity app', () => {
         tenantId: tenantId1,
         status: PlatformRegistrationConnectivityStatus.Active,
         commercialModel: CommercialModel.Other,
+        organizationName: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.NAME,
       });
 
       const staleConfig =
@@ -1223,6 +1432,7 @@ describe('registration connectivity app', () => {
             tenantId: omittedTenantId,
             status: PlatformRegistrationConnectivityStatus.Inactive,
             commercialModel: CommercialModel.Other,
+            organizationName: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.NAME,
           },
         ])
       );
@@ -1247,7 +1457,7 @@ describe('registration connectivity app', () => {
       ];
       const tenantsWithTokens = [];
       for (const tenant of tenants) {
-        const token = await RegistrationApp.registerPlatform({
+        const { token } = await RegistrationApp.registerPlatform({
           organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
           platform: {
             id: platformId,
@@ -1331,7 +1541,7 @@ describe('registration connectivity app', () => {
       registeredVersion: string
     ) => {
       const platformId = uuidv4();
-      const token = await RegistrationApp.registerPlatform({
+      const { token } = await RegistrationApp.registerPlatform({
         organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
         platform: {
           id: platformId,

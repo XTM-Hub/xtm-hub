@@ -44,6 +44,8 @@ import type { BlogFeedItem } from '../../thirdparty/blog-api/schema';
 import { logApp } from '../../utils/app-logger.util';
 import { ErrorCode } from '../../utils/error/error.code';
 import { RequiredPlatformVersions } from '../../utils/required-platform-version';
+import { PlatformConfigurationDomain } from '../registration/platform-configuration/platform-configuration.domain';
+import { RegistrationDomain } from '../registration/registration.domain';
 import { objectUseCaseDomain } from '../use-case/object-use-case/object-use-case.domain';
 import { useCaseDomain } from '../use-case/use-case.domain';
 import { NewsFeedApp } from './news-feed.app';
@@ -62,6 +64,21 @@ vi.mock('config', async (importOriginal) => {
 });
 
 const mockConfigGet = vi.mocked(config.get);
+
+const loadConsumeInput = async (platformId: string, token: string) => {
+  const registration =
+    await PlatformConfigurationDomain.loadResolvedConfigurationByPlatformAndToken(
+      {
+        platform_id: platformId,
+        token,
+      }
+    );
+  expect(registration).toBeDefined();
+  return { registration: registration! };
+};
+
+const GITHUB_RELEASE_VERSION = '7.261201.0';
+const GITHUB_RELEASE_TITLE = `OpenCTI ${GITHUB_RELEASE_VERSION}`;
 
 describe('newsFeedApp', () => {
   const createdServiceInstanceIds: ServiceInstanceId[] = [];
@@ -166,38 +183,10 @@ describe('newsFeedApp', () => {
       });
     });
 
-    it('should throw when platformId is null', async () => {
-      await expect(
-        NewsFeedApp.consumeProvisionedNewsFeedItems({
-          platformId: null,
-          token,
-        })
-      ).rejects.toThrow(ErrorCode.InvalidPlatformId);
-    });
-
-    it('should throw when token is null', async () => {
-      await expect(
-        NewsFeedApp.consumeProvisionedNewsFeedItems({
-          platformId,
-          token: null,
-        })
-      ).rejects.toThrow(ErrorCode.InvalidPlatformId);
-    });
-
-    it('should throw when no service configuration matches platformId and token', async () => {
-      await expect(
-        NewsFeedApp.consumeProvisionedNewsFeedItems({
-          platformId: uuidv4(),
-          token: uuidv4(),
-        })
-      ).rejects.toThrow(ErrorCode.PlatformNotRegistered);
-    });
-
     it('should return empty news feed items and available types when nothing is provisioned', async () => {
-      const result = await NewsFeedApp.consumeProvisionedNewsFeedItems({
-        platformId,
-        token,
-      });
+      const result = await NewsFeedApp.consumeProvisionedNewsFeedItems(
+        await loadConsumeInput(platformId, token)
+      );
 
       expect(result.news_feed_items).toHaveLength(0);
       expect(result.available_news_feed_types).toContain(
@@ -224,10 +213,9 @@ describe('newsFeedApp', () => {
       await NewsFeedDomain.provisionNewsFeedItem(item.id, [platformId]);
       await NewsFeedDomain.provisionNewsFeedItem(item2.id, [platformId]);
 
-      const result = await NewsFeedApp.consumeProvisionedNewsFeedItems({
-        platformId,
-        token,
-      });
+      const result = await NewsFeedApp.consumeProvisionedNewsFeedItems(
+        await loadConsumeInput(platformId, token)
+      );
 
       expect(result.news_feed_items).toHaveLength(2);
       expect(result.news_feed_items.map((i) => i.title)).toEqual(
@@ -248,10 +236,9 @@ describe('newsFeedApp', () => {
       });
       await NewsFeedDomain.provisionNewsFeedItem(item.id, [platformId]);
 
-      const result = await NewsFeedApp.consumeProvisionedNewsFeedItems({
-        platformId,
-        token,
-      });
+      const result = await NewsFeedApp.consumeProvisionedNewsFeedItems(
+        await loadConsumeInput(platformId, token)
+      );
 
       expect(result.news_feed_items).toHaveLength(1);
       expect(result.news_feed_items[0]).toMatchObject({
@@ -285,10 +272,9 @@ describe('newsFeedApp', () => {
         platformId,
       ]);
 
-      const result = await NewsFeedApp.consumeProvisionedNewsFeedItems({
-        platformId,
-        token,
-      });
+      const result = await NewsFeedApp.consumeProvisionedNewsFeedItems(
+        await loadConsumeInput(platformId, token)
+      );
 
       expect(result.news_feed_items).toHaveLength(1);
       expect(result.news_feed_items[0]?.title).toBe(
@@ -302,10 +288,9 @@ describe('newsFeedApp', () => {
     });
 
     it('should return available_news_feed_types for the OpenCTI platform', async () => {
-      const result = await NewsFeedApp.consumeProvisionedNewsFeedItems({
-        platformId,
-        token,
-      });
+      const result = await NewsFeedApp.consumeProvisionedNewsFeedItems(
+        await loadConsumeInput(platformId, token)
+      );
 
       expect(result.available_news_feed_types).toEqual(
         expect.arrayContaining([
@@ -344,10 +329,37 @@ describe('newsFeedApp', () => {
           );
 
           // When
-          const result = await NewsFeedApp.consumeProvisionedNewsFeedItems({
-            platformId: gatedPlatformId,
-            token: gatedToken,
-          });
+          const result = await NewsFeedApp.consumeProvisionedNewsFeedItems(
+            await loadConsumeInput(gatedPlatformId, gatedToken)
+          );
+
+          // Then
+          expect(
+            result.available_news_feed_types.includes(NewsFeedItemType.BlogPost)
+          ).toBe(expected);
+        }
+      );
+
+      it.each`
+        description                 | version         | expected
+        ${'below the shipped gate'} | ${'3.261117.0'} | ${false}
+        ${'at the shipped gate'}    | ${'3.261118.0'} | ${true}
+      `(
+        'should list BLOG_POST with the shipped gate only when the OpenAEV version is $description ($version): $expected',
+        async ({ version, expected }) => {
+          // Given the shipped required version, left untouched
+          const gatedPlatformId = uuidv4();
+          const gatedToken = uuidv4();
+          await createOpenAEVPlatformForOrganization(
+            gatedPlatformId,
+            TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+            { token: gatedToken, platform_version: version }
+          );
+
+          // When
+          const result = await NewsFeedApp.consumeProvisionedNewsFeedItems(
+            await loadConsumeInput(gatedPlatformId, gatedToken)
+          );
 
           // Then
           expect(
@@ -381,10 +393,9 @@ describe('newsFeedApp', () => {
           );
 
           // When
-          const result = await NewsFeedApp.consumeProvisionedNewsFeedItems({
-            platformId: gatedPlatformId,
-            token: gatedToken,
-          });
+          const result = await NewsFeedApp.consumeProvisionedNewsFeedItems(
+            await loadConsumeInput(gatedPlatformId, gatedToken)
+          );
 
           // Then
           expect(
@@ -410,10 +421,9 @@ describe('newsFeedApp', () => {
         });
         await NewsFeedDomain.provisionNewsFeedItem(item.id, [platformId]);
 
-        const result = await NewsFeedApp.consumeProvisionedNewsFeedItems({
-          platformId,
-          token,
-        });
+        const result = await NewsFeedApp.consumeProvisionedNewsFeedItems(
+          await loadConsumeInput(platformId, token)
+        );
 
         expect(result.news_feed_items).toHaveLength(1);
         expect(result.news_feed_items[0]?.metadata).toEqual(
@@ -457,10 +467,9 @@ describe('newsFeedApp', () => {
       });
       await NewsFeedDomain.provisionNewsFeedItem(item.id, [platformId]);
 
-      const result = await NewsFeedApp.consumeProvisionedNewsFeedItems({
-        platformId,
-        token,
-      });
+      const result = await NewsFeedApp.consumeProvisionedNewsFeedItems(
+        await loadConsumeInput(platformId, token)
+      );
 
       expect(result.news_feed_items[0]?.metadata.map((m) => m.key)).toEqual([
         NewsFeedItemMetadataKey.UrlPath,
@@ -501,10 +510,9 @@ describe('newsFeedApp', () => {
       });
       await NewsFeedDomain.provisionNewsFeedItem(item.id, [platformId]);
 
-      const result = await NewsFeedApp.consumeProvisionedNewsFeedItems({
-        platformId,
-        token,
-      });
+      const result = await NewsFeedApp.consumeProvisionedNewsFeedItems(
+        await loadConsumeInput(platformId, token)
+      );
 
       expect(result.news_feed_items).toHaveLength(1);
       expect(result.news_feed_items[0]?.metadata).toHaveLength(
@@ -514,6 +522,75 @@ describe('newsFeedApp', () => {
         expect.arrayContaining(
           displayMetadata.map((metadata) => expect.objectContaining(metadata))
         )
+      );
+    });
+
+    it('should give the GitHub release url_path without utm parameters while the blog post one keeps them', async () => {
+      // Given
+      const githubReleaseItem =
+        await NewsFeedDomain.createGithubReleaseNewsFeedItem({
+          platformIdentifier: PlatformIdentifier.Opencti,
+          title: GITHUB_RELEASE_TITLE,
+          productVersion: GITHUB_RELEASE_VERSION,
+        });
+      const blogpostItem = await TestHelper.newsFeed.createItem({
+        type: NewsFeedItemType.BlogPost,
+        title: 'Blog post',
+      });
+      await TestHelper.newsFeed.createMetadata({
+        news_feed_item_id: blogpostItem.id,
+        key: NewsFeedItemMetadataKey.UrlPath,
+        value: `redirect/news-feed/${blogpostItem.id}`,
+      });
+      await NewsFeedDomain.provisionNewsFeedItem(githubReleaseItem.id, [
+        platformId,
+      ]);
+      await NewsFeedDomain.provisionNewsFeedItem(blogpostItem.id, [platformId]);
+
+      // When
+      const result = await NewsFeedApp.consumeProvisionedNewsFeedItems(
+        await loadConsumeInput(platformId, token)
+      );
+
+      // Then
+      const urlPathByTitle = Object.fromEntries(
+        result.news_feed_items.map((item) => [
+          item.title,
+          item.metadata.find((m) => m.key === NewsFeedItemMetadataKey.UrlPath)
+            ?.value,
+        ])
+      );
+      expect(urlPathByTitle).toEqual({
+        [GITHUB_RELEASE_TITLE]: `redirect/news-feed/${githubReleaseItem.id}`,
+        'Blog post': `redirect/news-feed/${blogpostItem.id}?utm_source=opencti&utm_medium=newsfeed&utm_campaign=blog_posts&utm_content=blog_posts`,
+      });
+    });
+
+    it('should return the product_version metadata of a GitHub release item', async () => {
+      // Given
+      const githubReleaseItem =
+        await NewsFeedDomain.createGithubReleaseNewsFeedItem({
+          platformIdentifier: PlatformIdentifier.Opencti,
+          title: GITHUB_RELEASE_TITLE,
+          productVersion: GITHUB_RELEASE_VERSION,
+        });
+      await NewsFeedDomain.provisionNewsFeedItem(githubReleaseItem.id, [
+        platformId,
+      ]);
+
+      // When
+      const result = await NewsFeedApp.consumeProvisionedNewsFeedItems(
+        await loadConsumeInput(platformId, token)
+      );
+
+      // Then
+      expect(result.news_feed_items[0]?.metadata).toEqual(
+        expect.arrayContaining([
+          {
+            key: NewsFeedItemMetadataKey.ProductVersion,
+            value: GITHUB_RELEASE_VERSION,
+          },
+        ])
       );
     });
 
@@ -533,10 +610,9 @@ describe('newsFeedApp', () => {
         });
         await NewsFeedDomain.provisionNewsFeedItem(item.id, [platformId]);
 
-        const result = await NewsFeedApp.consumeProvisionedNewsFeedItems({
-          platformId,
-          token,
-        });
+        const result = await NewsFeedApp.consumeProvisionedNewsFeedItems(
+          await loadConsumeInput(platformId, token)
+        );
 
         const urlPath = result.news_feed_items[0]?.metadata.find(
           (m) => m.key === NewsFeedItemMetadataKey.UrlPath
@@ -1750,6 +1826,30 @@ describe('newsFeedApp', () => {
       }
     );
 
+    it('should resolve the GitHub release tag of a GitHub release item without forwarding the utm parameters', async () => {
+      // Given
+      const item = await NewsFeedDomain.createGithubReleaseNewsFeedItem({
+        platformIdentifier: PlatformIdentifier.Opencti,
+        title: GITHUB_RELEASE_TITLE,
+        productVersion: GITHUB_RELEASE_VERSION,
+      });
+
+      // When
+      const result = await NewsFeedApp.resolveExternalRedirect({
+        newsFeedItemId: item.id,
+        query: { utm_source: 'opencti', utm_medium: 'newsfeed' },
+      });
+
+      // Then
+      expect(result).toEqual({
+        newsFeedItemId: item.id,
+        newsFeedItemType: NewsFeedItemType.GithubRelease,
+        platformIdentifier: PlatformIdentifier.Opencti,
+        host: 'github.com',
+        url: `https://github.com/OpenCTI-Platform/opencti/releases/tag/${GITHUB_RELEASE_VERSION}`,
+      });
+    });
+
     it('should forward the utm parameters only, never platform_id nor any other parameter', async () => {
       // Given
       const item = await createBlogPostItem({ slug: BLOG_POST_SLUG });
@@ -1822,6 +1922,402 @@ describe('newsFeedApp', () => {
 
       // Then
       expect(result).toBeUndefined();
+    });
+  });
+
+  describe('createGithubReleaseNewsFeedItem', () => {
+    const GITHUB_RELEASE_REQUIRED_VERSION = '7.261201.0';
+    const GITHUB_RELEASE_LTS_REQUIRED_VERSION = '7.260309.0-lts.8';
+    const LTS_RELEASE_VERSION = '7.260309.0-lts.9';
+    const NON_LTS_RELEASE_VERSION = '7.261202.0';
+    const NOW = new Date('2026-11-18T10:00:00.000Z');
+
+    // Saved once and restored in afterEach, so that a failing test cannot leak the override
+    const originalGithubReleaseSupport =
+      RequiredPlatformVersions.NewsFeedGithubReleaseSupport;
+    const originalGithubReleaseLtsSupport =
+      RequiredPlatformVersions.NewsFeedGithubReleaseLtsSupport;
+    const setRequiredGithubReleaseVersions = ({
+      nonLts,
+      lts,
+    }: {
+      nonLts: string | null;
+      lts: string | null;
+    }) => {
+      RequiredPlatformVersions.NewsFeedGithubReleaseSupport = {
+        [PlatformIdentifier.Opencti]: nonLts,
+        [PlatformIdentifier.Openaev]: null,
+        [PlatformIdentifier.Xtmone]: null,
+      };
+      RequiredPlatformVersions.NewsFeedGithubReleaseLtsSupport = {
+        [PlatformIdentifier.Opencti]: lts,
+        [PlatformIdentifier.Openaev]: null,
+        [PlatformIdentifier.Xtmone]: null,
+      };
+    };
+
+    const createPlatformWithVersion = async (
+      platformVersion: string | null
+    ): Promise<string> => {
+      const platformId = uuidv4();
+      await createOpenCTIPlatformForOrganization(
+        platformId,
+        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        { platform_version: platformVersion }
+      );
+      return platformId;
+    };
+
+    const loadGithubReleaseItems = () =>
+      TestHelper.newsFeed.loadItems({ type: NewsFeedItemType.GithubRelease });
+
+    const loadProvisionedPlatformIds = async (
+      newsFeedItemId: NewsFeedItemId
+    ): Promise<string[]> =>
+      (
+        await TestHelper.newsFeed.loadProvisioned({
+          news_feed_item_id: newsFeedItemId,
+        })
+      ).map(({ platform_id }) => platform_id);
+
+    beforeEach(() => {
+      setRequiredGithubReleaseVersions({
+        nonLts: GITHUB_RELEASE_REQUIRED_VERSION,
+        lts: GITHUB_RELEASE_LTS_REQUIRED_VERSION,
+      });
+    });
+
+    afterEach(async () => {
+      vi.useRealTimers();
+      RequiredPlatformVersions.NewsFeedGithubReleaseSupport =
+        originalGithubReleaseSupport;
+      RequiredPlatformVersions.NewsFeedGithubReleaseLtsSupport =
+        originalGithubReleaseLtsSupport;
+      await TestHelper.newsFeed.deleteItem();
+      await cleanupCreatedServiceInstances();
+    });
+
+    it('should create the OpenCTI release item with its version and redirect url_path when the version has no item yet', async () => {
+      // Given
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(NOW);
+
+      // When
+      await NewsFeedApp.createGithubReleaseNewsFeedItem({
+        product: PlatformIdentifier.Opencti,
+        version: NON_LTS_RELEASE_VERSION,
+      });
+
+      // Then
+      const [item] = await loadGithubReleaseItems();
+      expect(item).toMatchObject({
+        type: NewsFeedItemType.GithubRelease,
+        platform_identifier: PlatformIdentifier.Opencti,
+        title: `OpenCTI ${NON_LTS_RELEASE_VERSION}`,
+        tags: [],
+        creation_date: NOW,
+        is_deleted: false,
+      });
+      const metadata = await TestHelper.newsFeed.loadMetadata({
+        news_feed_item_id: item?.id,
+      });
+      expect(
+        Object.fromEntries(metadata.map(({ key, value }) => [key, value]))
+      ).toEqual({
+        [NewsFeedItemMetadataKey.UrlPath]: `redirect/news-feed/${item?.id}`,
+        [NewsFeedItemMetadataKey.ProductVersion]: NON_LTS_RELEASE_VERSION,
+      });
+    });
+
+    it('should neither duplicate the item nor provision it again when the version is sent twice', async () => {
+      // Given
+      await createPlatformWithVersion(GITHUB_RELEASE_REQUIRED_VERSION);
+      await NewsFeedApp.createGithubReleaseNewsFeedItem({
+        product: PlatformIdentifier.Opencti,
+        version: NON_LTS_RELEASE_VERSION,
+      });
+      const [firstItem] = await loadGithubReleaseItems();
+      // The platform consumed the first provisioning
+      await TestHelper.newsFeed.deleteProvisioned({
+        news_feed_item_id: firstItem?.id,
+      });
+
+      // When
+      await NewsFeedApp.createGithubReleaseNewsFeedItem({
+        product: PlatformIdentifier.Opencti,
+        version: NON_LTS_RELEASE_VERSION,
+      });
+
+      // Then
+      const items = await loadGithubReleaseItems();
+      expect(items.map(({ id }) => id)).toEqual([firstItem?.id]);
+      expect(
+        await TestHelper.newsFeed.loadProvisioned({
+          news_feed_item_id: firstItem?.id,
+        })
+      ).toEqual([]);
+    });
+
+    it('should neither create the item again nor restore it when the item of the version was deleted', async () => {
+      // Given
+      await NewsFeedApp.createGithubReleaseNewsFeedItem({
+        product: PlatformIdentifier.Opencti,
+        version: NON_LTS_RELEASE_VERSION,
+      });
+      const [deletedItem] = await loadGithubReleaseItems();
+      await NewsFeedApp.deleteNewsFeedItem({
+        newsFeedItemId: deletedItem!.id,
+      });
+
+      // When
+      await NewsFeedApp.createGithubReleaseNewsFeedItem({
+        product: PlatformIdentifier.Opencti,
+        version: NON_LTS_RELEASE_VERSION,
+      });
+
+      // Then
+      const items = await loadGithubReleaseItems();
+      expect(items).toHaveLength(1);
+      expect(items[0]).toMatchObject({
+        id: deletedItem?.id,
+        is_deleted: true,
+      });
+    });
+
+    const consumeAs = async (platformId: string) => {
+      const platformConfiguration = await TestHelper.platformConfiguration.load(
+        { platform_id: platformId }
+      );
+      return NewsFeedApp.consumeProvisionedNewsFeedItems(
+        await loadConsumeInput(platformId, platformConfiguration!.token)
+      );
+    };
+
+    it('should give the deletion of a consumed release to its platform after a change of release track', async () => {
+      // Given
+      const platformId = await createPlatformWithVersion(
+        GITHUB_RELEASE_REQUIRED_VERSION
+      );
+      await NewsFeedApp.createGithubReleaseNewsFeedItem({
+        product: PlatformIdentifier.Opencti,
+        version: NON_LTS_RELEASE_VERSION,
+      });
+      const [consumedItem] = (await consumeAs(platformId)).news_feed_items;
+      await TestHelper.platformConfiguration.update(
+        { platform_id: platformId },
+        { platform_version: GITHUB_RELEASE_LTS_REQUIRED_VERSION }
+      );
+
+      // When
+      await NewsFeedApp.deleteNewsFeedItem({
+        newsFeedItemId: consumedItem!.id,
+      });
+
+      // Then
+      expect((await consumeAs(platformId)).news_feed_items).toEqual([
+        expect.objectContaining({ id: consumedItem!.id, is_deleted: true }),
+      ]);
+    });
+
+    it.each([
+      [
+        'its deletion was consumed by every platform',
+        async (platformId: string, newsFeedItemId: NewsFeedItemId) => {
+          await NewsFeedApp.deleteNewsFeedItem({ newsFeedItemId });
+          await consumeAs(platformId);
+        },
+      ],
+      [
+        'the expired items were cleaned',
+        async () => {
+          await NewsFeedDomain.deleteNewsFeedItemsOlderThan(
+            new Date(Date.now() + 60_000)
+          );
+        },
+      ],
+    ])(
+      'should keep the item of the version and create nothing when the version is sent again once %s',
+      async (_description, cleanUp) => {
+        // Given
+        const platformId = await createPlatformWithVersion(
+          GITHUB_RELEASE_REQUIRED_VERSION
+        );
+        await NewsFeedApp.createGithubReleaseNewsFeedItem({
+          product: PlatformIdentifier.Opencti,
+          version: NON_LTS_RELEASE_VERSION,
+        });
+        const [item] = (await consumeAs(platformId)).news_feed_items;
+        await cleanUp(platformId, item!.id);
+
+        // When
+        await NewsFeedApp.createGithubReleaseNewsFeedItem({
+          product: PlatformIdentifier.Opencti,
+          version: NON_LTS_RELEASE_VERSION,
+        });
+
+        // Then
+        const items = await loadGithubReleaseItems();
+        expect(items.map(({ id }) => id)).toEqual([item!.id]);
+        expect(await loadProvisionedPlatformIds(item!.id)).toEqual([]);
+      }
+    );
+
+    it.each([
+      ['an LTS', LTS_RELEASE_VERSION, 'lts'],
+      ['a non-LTS', NON_LTS_RELEASE_VERSION, 'nonLts'],
+    ])(
+      'should only provision the platforms of the release track when %s version is released',
+      async (_description, releaseVersion, expectedTrack) => {
+        // Given
+        const platformIdByTrack: Record<string, string> = {
+          lts: await createPlatformWithVersion(
+            GITHUB_RELEASE_LTS_REQUIRED_VERSION
+          ),
+          nonLts: await createPlatformWithVersion(
+            GITHUB_RELEASE_REQUIRED_VERSION
+          ),
+        };
+
+        // When
+        await NewsFeedApp.createGithubReleaseNewsFeedItem({
+          product: PlatformIdentifier.Opencti,
+          version: releaseVersion,
+        });
+
+        // Then
+        const [item] = await loadGithubReleaseItems();
+        expect(await loadProvisionedPlatformIds(item!.id)).toEqual([
+          platformIdByTrack[expectedTrack],
+        ]);
+      }
+    );
+
+    it.each([
+      [
+        'an LTS platform below the LTS gate',
+        {
+          nonLts: GITHUB_RELEASE_REQUIRED_VERSION,
+          lts: GITHUB_RELEASE_LTS_REQUIRED_VERSION,
+        },
+        '7.260309.0-lts.7',
+        LTS_RELEASE_VERSION,
+        false,
+      ],
+      [
+        'an LTS platform at the LTS gate while the non-LTS gate is null',
+        { nonLts: null, lts: GITHUB_RELEASE_LTS_REQUIRED_VERSION },
+        GITHUB_RELEASE_LTS_REQUIRED_VERSION,
+        LTS_RELEASE_VERSION,
+        true,
+      ],
+    ])(
+      'should apply the gate of the release track for %s',
+      async (
+        _description,
+        requiredVersions,
+        platformVersion,
+        releaseVersion,
+        expectedProvisioned
+      ) => {
+        // Given
+        setRequiredGithubReleaseVersions(requiredVersions);
+        const platformId = await createPlatformWithVersion(platformVersion);
+
+        // When
+        await NewsFeedApp.createGithubReleaseNewsFeedItem({
+          product: PlatformIdentifier.Opencti,
+          version: releaseVersion,
+        });
+
+        // Then
+        const [item] = await loadGithubReleaseItems();
+        expect(
+          (await loadProvisionedPlatformIds(item!.id)).includes(platformId)
+        ).toBe(expectedProvisioned);
+      }
+    );
+
+    it('should create the item but provision no platform when the shipped gates are used', async () => {
+      // Given
+      RequiredPlatformVersions.NewsFeedGithubReleaseSupport =
+        originalGithubReleaseSupport;
+      RequiredPlatformVersions.NewsFeedGithubReleaseLtsSupport =
+        originalGithubReleaseLtsSupport;
+      await createPlatformWithVersion('99.0.0');
+      await createPlatformWithVersion('99.0.0-lts.1');
+
+      // When
+      await NewsFeedApp.createGithubReleaseNewsFeedItem({
+        product: PlatformIdentifier.Opencti,
+        version: NON_LTS_RELEASE_VERSION,
+      });
+
+      // Then
+      const [item] = await loadGithubReleaseItems();
+      expect(await loadProvisionedPlatformIds(item!.id)).toEqual([]);
+    });
+
+    it('should leave no item of the version when the provisioning fails', async () => {
+      // Given
+      await createPlatformWithVersion(GITHUB_RELEASE_REQUIRED_VERSION);
+      vi.spyOn(
+        RegistrationDomain,
+        'loadAllActiveRegisteredPlatformsByPlatformIdentifier'
+      ).mockRejectedValueOnce(new Error('provisioning-failed'));
+
+      // When
+      const creation = NewsFeedApp.createGithubReleaseNewsFeedItem({
+        product: PlatformIdentifier.Opencti,
+        version: NON_LTS_RELEASE_VERSION,
+      });
+
+      // Then
+      await expect(creation).rejects.toThrow('provisioning-failed');
+      expect(await loadGithubReleaseItems()).toEqual([]);
+    });
+
+    it('should create and provision the item when the version is sent again after a failed provisioning', async () => {
+      // Given
+      const platformId = await createPlatformWithVersion(
+        GITHUB_RELEASE_REQUIRED_VERSION
+      );
+      vi.spyOn(
+        RegistrationDomain,
+        'loadAllActiveRegisteredPlatformsByPlatformIdentifier'
+      ).mockRejectedValueOnce(new Error('provisioning-failed'));
+      await expect(
+        NewsFeedApp.createGithubReleaseNewsFeedItem({
+          product: PlatformIdentifier.Opencti,
+          version: NON_LTS_RELEASE_VERSION,
+        })
+      ).rejects.toThrow('provisioning-failed');
+
+      // When
+      await NewsFeedApp.createGithubReleaseNewsFeedItem({
+        product: PlatformIdentifier.Opencti,
+        version: NON_LTS_RELEASE_VERSION,
+      });
+
+      // Then
+      const items = await loadGithubReleaseItems();
+      expect(items).toHaveLength(1);
+      expect(await loadProvisionedPlatformIds(items[0]!.id)).toEqual([
+        platformId,
+      ]);
+    });
+
+    it('should create nothing when the product has no GitHub release mapping', async () => {
+      // Given
+      await createPlatformWithVersion(GITHUB_RELEASE_REQUIRED_VERSION);
+
+      // When
+      await NewsFeedApp.createGithubReleaseNewsFeedItem({
+        product: PlatformIdentifier.Openaev,
+        version: NON_LTS_RELEASE_VERSION,
+      });
+
+      // Then
+      expect(await loadGithubReleaseItems()).toEqual([]);
     });
   });
 
@@ -2865,10 +3361,9 @@ describe('newsFeedApp', () => {
         await NewsFeedApp.syncBlogposts();
 
         // When
-        const result = await NewsFeedApp.consumeProvisionedNewsFeedItems({
-          platformId: openAevPlatformId,
-          token,
-        });
+        const result = await NewsFeedApp.consumeProvisionedNewsFeedItems(
+          await loadConsumeInput(openAevPlatformId, token)
+        );
 
         // Then
         expect(result.available_news_feed_types).toContain(

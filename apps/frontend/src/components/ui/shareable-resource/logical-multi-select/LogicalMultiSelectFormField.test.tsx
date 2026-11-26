@@ -3,14 +3,46 @@ import { ShareableResourceType } from '@/utils/shareable-resources/shareable-res
 import { readTrackedEvents, startAnalytics } from '@/utils/test/analytics';
 import testRender from '@/utils/test/test-render';
 import { screen } from '@testing-library/react';
+import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import {
   isLogicalMultiSelectSelection,
   LogicalMultiSelectFormField,
+  type LogicalMultiSelectSelection,
 } from './LogicalMultiSelectFormField';
 
 const OPTION_LABEL = 'Threat hunting';
 const OPTION_VALUE = 'use-case-id';
+
+const StatefulField = ({
+  onValueChange,
+}: {
+  onValueChange: (value: LogicalMultiSelectSelection) => void;
+}) => {
+  const [value, setValue] = useState<LogicalMultiSelectSelection>({});
+
+  return (
+    <LogicalMultiSelectFormField
+      options={[
+        {
+          label: 'Parent A',
+          value: 'a',
+          children: [
+            { label: 'A1', value: 'a1' },
+            { label: 'A2', value: 'a2' },
+          ],
+        },
+      ]}
+      value={value}
+      noResultString="no-result"
+      optionLabel="label"
+      onValueChange={(next) => {
+        setValue(next);
+        onValueChange(next);
+      }}
+    />
+  );
+};
 
 describe('LogicalMultiSelectFormField', () => {
   it('validates selection objects', () => {
@@ -23,22 +55,7 @@ describe('LogicalMultiSelectFormField', () => {
   it('applies parent/child toggle semantics', async () => {
     const onValueChange = vi.fn();
     const { user } = testRender(
-      <LogicalMultiSelectFormField
-        options={[
-          {
-            label: 'Parent A',
-            value: 'a',
-            children: [
-              { label: 'A1', value: 'a1' },
-              { label: 'A2', value: 'a2' },
-            ],
-          },
-        ]}
-        initialValue={{}}
-        noResultString="no-result"
-        optionLabel="label"
-        onValueChange={onValueChange}
-      />
+      <StatefulField onValueChange={onValueChange} />
     );
 
     await user.click(screen.getByRole('checkbox', { name: 'A1' }));
@@ -65,7 +82,7 @@ describe('LogicalMultiSelectFormField', () => {
     testRender(
       <LogicalMultiSelectFormField
         options={[{ label: 'Use case A', value: globalId }]}
-        initialValue={{}}
+        value={{}}
         noResultString="no-result"
         optionLabel="label"
         onValueChange={vi.fn()}
@@ -80,7 +97,7 @@ describe('LogicalMultiSelectFormField', () => {
     testRender(
       <LogicalMultiSelectFormField
         options={[{ label: 'Unmatched', value: 'unmatched-value' }]}
-        initialValue={{}}
+        value={{}}
         noResultString="no-result"
         optionLabel="label"
         onValueChange={vi.fn()}
@@ -97,7 +114,7 @@ describe('LogicalMultiSelectFormField', () => {
     const { user } = testRender(
       <LogicalMultiSelectFormField
         options={[{ label: OPTION_LABEL, value: OPTION_VALUE }]}
-        initialValue={{}}
+        value={{}}
         noResultString="no-result"
         optionLabel="label"
         onValueChange={vi.fn()}
@@ -115,5 +132,35 @@ describe('LogicalMultiSelectFormField', () => {
     expect(readTrackedEvents('filter_apply')).toEqual([
       expect.objectContaining({ filter_value: OPTION_LABEL }),
     ]);
+  });
+
+  it('should follow the value when it changes', () => {
+    // Given
+    const props = {
+      options: [{ label: OPTION_LABEL, value: OPTION_VALUE }],
+      noResultString: 'no-result',
+      optionLabel: 'label',
+      onValueChange: vi.fn(),
+    };
+    const { rerender } = testRender(
+      <LogicalMultiSelectFormField
+        {...props}
+        value={{ [OPTION_VALUE]: [] }}
+      />
+    );
+    expect(screen.getByRole('checkbox', { name: OPTION_LABEL })).toBeChecked();
+
+    // When
+    rerender(
+      <LogicalMultiSelectFormField
+        {...props}
+        value={{}}
+      />
+    );
+
+    // Then
+    expect(
+      screen.getByRole('checkbox', { name: OPTION_LABEL })
+    ).not.toBeChecked();
   });
 });

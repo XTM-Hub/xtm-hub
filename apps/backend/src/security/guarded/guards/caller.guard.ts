@@ -1,16 +1,24 @@
 import { PortalCapability } from '../../../__generated__/resolvers-types';
 import { ForbiddenErrorCode } from '../../../utils/error/error.code';
+import type { PlatformCredential } from '../../platform-credential';
 import { allow, deny, forCaller, Guard } from '../guard.types';
+import { buildPlatformPrincipal, buildSystemPrincipal } from '../principal';
 
-export const callerGuard = (
-  caller: 'system',
+export const systemCallerGuard = (
   scopes: readonly [PortalCapability, ...PortalCapability[]]
 ): Guard =>
-  Object.assign(
-    forCaller(caller, (system) =>
+  forCaller(
+    'system',
+    (system) =>
       scopes.every((scope) => system.portalCapabilities.has(scope))
         ? allow()
-        : deny(ForbiddenErrorCode.ForbiddenAccess)
-    ),
-    { systemScopes: scopes }
+        : deny(ForbiddenErrorCode.ForbiddenAccess),
+    (context) => buildSystemPrincipal(context, scopes)
   );
+
+export const platformCallerGuard = ({
+  credential,
+}: {
+  credential: PlatformCredential;
+}): Guard =>
+  forCaller('platform', () => allow(), buildPlatformPrincipal(credential));

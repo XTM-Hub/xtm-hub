@@ -256,6 +256,8 @@ describe('increment shared counter', () => {
     const telemetrySpy = vi
       .spyOn(TelemetryApp, 'sendTelemetryEvent')
       .mockResolvedValue();
+    // An anonymous request: the share reads the user from the request context, whose default in tests is a signed-in user
+    requestContext.set({});
 
     await documentResolver.Mutation.incrementShareNumberDocument(
       {},

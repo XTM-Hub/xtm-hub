@@ -73,16 +73,18 @@ export const RegisteredPlatformOverview = ({
       REGISTERED_PLATFORM_ORIGIN_CSM_BOARD && isMetricAdmin;
   const isSaas = platform?.commercial_model === CommercialModel.Saas;
 
-  const canAdministrateOrganization = useGranted(
+  const canAdministrateOrganization = !!useGranted(
     OrganizationCapability.AdministrateOrganization
   );
-  const canManagePlatformRegistration = useGranted(
+  const canManagePlatformRegistration = !!useGranted(
     OrganizationCapability.ManagePlatformRegistration
   );
   const canSeePlatformMetrics =
     isMetricAdmin ||
     canAdministrateOrganization ||
     canManagePlatformRegistration;
+  // Metadata and metrics come from the same query: a user without the right to see them does not load it.
+  const canLoadSaasPlatformData = isSaas && canSeePlatformMetrics;
 
   const [metricsPeriod, setMetricsPeriod] = useState<SaasPlatformMetricsPeriod>(
     SaasPlatformMetricsPeriod.Last_90Days
@@ -104,7 +106,7 @@ export const RegisteredPlatformOverview = ({
       queryKey: productInformationKeys.registeredSaasPlatformData(
         saasPlatformDataVariables
       ),
-      enabled: isSaas,
+      enabled: canLoadSaasPlatformData,
       staleTime: SAAS_PLATFORM_DATA_STALE_TIME,
       // The metadata does not depend on the period: keep it on screen while the metrics of another period load.
       placeholderData: keepPreviousData,
@@ -149,7 +151,7 @@ export const RegisteredPlatformOverview = ({
         ))}
       <PlatformInformation
         registeredPlatform={platform}
-        showMetadata={isSaas}
+        showMetadata={canLoadSaasPlatformData}
         metadata={saasPlatformData?.registeredSaasPlatformData?.metadata}
         isMetadataLoading={isSaasPlatformDataPending}
       />

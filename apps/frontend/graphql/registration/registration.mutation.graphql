@@ -13,5 +13,6 @@ mutation UnregisterPlatform($input: UnregisterPlatformInput!) {
 mutation RegisterPlatform($input: RegisterPlatformInput!) {
   registerPlatform(input: $input) {
     token
+    organizationName
   }
 }

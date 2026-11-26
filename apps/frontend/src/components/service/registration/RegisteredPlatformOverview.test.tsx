@@ -352,16 +352,20 @@ describe('RegisteredPlatformOverview', () => {
     }
   );
 
-  it.each([
-    [[]],
-    [[PortalCapability.ReadTrials]],
-    [[PortalCapability.Bypass]],
-    [[PortalCapability.ReadSaasMetrics]],
-  ])(
-    'should query and display the SaaS platform data whatever the user capabilities, here %j',
-    async (capabilities) => {
+  it.each`
+    description                       | capabilities                          | organizationCapabilities
+    ${'BYPASS'}                       | ${[PortalCapability.Bypass]}          | ${[]}
+    ${'READ_SAAS_METRICS'}            | ${[PortalCapability.ReadSaasMetrics]} | ${[]}
+    ${'ADMINISTRATE_ORGANIZATION'}    | ${[]}                                 | ${[OrganizationCapability.AdministrateOrganization]}
+    ${'MANAGE_PLATFORM_REGISTRATION'} | ${[]}                                 | ${[OrganizationCapability.ManagePlatformRegistration]}
+  `(
+    'should query and display the SaaS platform data when the user has $description',
+    async ({ capabilities, organizationCapabilities }) => {
       // When
-      await renderOverview(saasPlatform, { capabilities });
+      await renderOverview(saasPlatform, {
+        capabilities,
+        organizationCapabilities,
+      });
 
       // Then
       expect(useRegisteredSaasPlatformDataQuery).toHaveBeenLastCalledWith(
@@ -370,6 +374,32 @@ describe('RegisteredPlatformOverview', () => {
         expect.objectContaining({ enabled: true })
       );
       expect(screen.getByText(HOSTNAME)).toBeInTheDocument();
+    }
+  );
+
+  it.each`
+    description                                 | capabilities                     | organizationCapabilities
+    ${'no capability'}                          | ${[]}                            | ${[]}
+    ${'READ_TRIALS only'}                       | ${[PortalCapability.ReadTrials]} | ${[]}
+    ${'only MANAGE_ACCESS in its organization'} | ${[]}                            | ${[OrganizationCapability.ManageAccess]}
+  `(
+    'should neither query nor display the SaaS platform data when the user has $description',
+    async ({ capabilities, organizationCapabilities }) => {
+      // When
+      await renderOverview(saasPlatform, {
+        capabilities,
+        organizationCapabilities,
+      });
+
+      // Then
+      expect(useRegisteredSaasPlatformDataQuery).toHaveBeenLastCalledWith(
+        expect.anything(),
+        expect.anything(),
+        expect.objectContaining({ enabled: false })
+      );
+      expect(
+        screen.queryByText('Register.Metrics.Metadata.Hostname:')
+      ).not.toBeInTheDocument();
     }
   );
 

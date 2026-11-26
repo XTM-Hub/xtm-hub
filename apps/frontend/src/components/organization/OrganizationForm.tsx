@@ -77,6 +77,20 @@ export const OrganizationForm = ({
     return true;
   };
 
+  const addDomain = (domain: string) => {
+    setValue('domains', [...form.getValues('domains'), domain], {
+      shouldDirty: true,
+    });
+    setDomainInput('');
+  };
+
+  const commitTypedDomain = () => {
+    const text = domainInput.trim();
+    if (text && validTagDomain(text)) {
+      addDomain(text);
+    }
+  };
+
   const handleDomainKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key !== 'Enter' && event.key !== ',') {
       return;
@@ -89,10 +103,7 @@ export const OrganizationForm = ({
     }
     if (event.key === ',') {
       event.preventDefault();
-      setValue('domains', [...form.getValues('domains'), text], {
-        shouldDirty: true,
-      });
-      setDomainInput('');
+      addDomain(text);
     }
   };
 
@@ -100,7 +111,13 @@ export const OrganizationForm = ({
     <Form {...form}>
       <form
         className="w-full space-y-6"
-        onSubmit={form.handleSubmit(onSubmit)}>
+        onSubmit={(event) => {
+          if (domainInput.trim()) {
+            event.preventDefault();
+            return;
+          }
+          return form.handleSubmit(onSubmit)(event);
+        }}>
         <FormField
           control={form.control}
           name="name"
@@ -136,7 +153,10 @@ export const OrganizationForm = ({
                 />
                 <ComboboxInput
                   ref={field.ref}
-                  onBlur={field.onBlur}
+                  onBlur={() => {
+                    field.onBlur();
+                    commitTypedDomain();
+                  }}
                   placeholder={t('OrganizationForm.DomainsPlaceholder')}
                   onKeyDown={handleDomainKeyDown}
                   aria-invalid={fieldState.error?.message ? true : undefined}

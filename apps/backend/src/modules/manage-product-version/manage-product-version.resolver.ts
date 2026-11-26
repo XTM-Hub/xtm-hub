@@ -1,13 +1,12 @@
 import {
-  ManifestType,
   MutationResolvers,
   PortalCapability,
   QueryResolvers,
   Resolvers,
 } from '../../__generated__/resolvers-types';
 import { Guarded, Public } from '../../security/guarded/guarded.decorator';
-import { callerGuard } from '../../security/guarded/guards/caller.guard';
-import { ManifestApp } from '../shareable-resource/manifest/manifest.app';
+import { systemCallerGuard } from '../../security/guarded/guards/caller.guard';
+import { mapToGraphQLError } from '../../utils/error/error.mapping';
 import { ManageProductVersionApp } from './manage-product-version.app';
 
 class ManageProductVersionQueries {
@@ -19,24 +18,19 @@ class ManageProductVersionQueries {
 }
 
 class ManageProductVersionMutations {
-  @Guarded(callerGuard('system', [PortalCapability.GenerateManifest]))
+  @Guarded(systemCallerGuard([PortalCapability.GenerateManifest]))
   static readonly newProductVersion: NonNullable<
     MutationResolvers['newProductVersion']
   > = async (_, { product, version }) => {
-    await ManifestApp.requestManifestGeneration({
-      product,
-      version,
-      type: ManifestType.Connector,
-    });
-
-    await ManageProductVersionApp.registerProductVersion({
-      product,
-      version,
-    });
-
-    return {
-      success: true,
-    };
+    try {
+      await ManageProductVersionApp.handleNewProductVersion({
+        product,
+        version,
+      });
+      return { success: true };
+    } catch (error) {
+      throw mapToGraphQLError(error);
+    }
   };
 }
 

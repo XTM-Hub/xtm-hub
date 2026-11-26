@@ -48,7 +48,7 @@ interface MultiSelectFormFieldProps<
   keyLabel?: keyof T;
   keyValue?: keyof T;
   keyChildren?: keyof T;
-  initialValue?: Selection;
+  value: Selection;
   noResultString: string;
   onValueChange: (value: Selection) => void;
   optionLabel: string;
@@ -66,7 +66,7 @@ const LogicalMultiSelectFormField = React.forwardRef<
       keyLabel = 'label',
       keyValue = 'value',
       keyChildren = 'children',
-      initialValue,
+      value: selectedValues,
       onValueChange,
       optionLabel,
       noResultString = 'No results found',
@@ -76,10 +76,6 @@ const LogicalMultiSelectFormField = React.forwardRef<
     },
     ref
   ) => {
-    const [selectedValues, setSelectedValues] = React.useState<Selection>(
-      initialValue || {}
-    );
-
     const flatOptions = useMemo<FlatOption[]>(() => {
       const res: FlatOption[] = [];
       for (const parent of options) {
@@ -116,7 +112,6 @@ const LogicalMultiSelectFormField = React.forwardRef<
           newSelection
         ).forEach((event) => trackEvent('filter_apply', event));
       }
-      setSelectedValues(newSelection);
       onValueChange(newSelection);
     };
 

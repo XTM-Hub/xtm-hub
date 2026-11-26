@@ -459,6 +459,7 @@
       "TENANT_ID_MANDATORY": "L'identifiant du locataire est obligatoire",
       "TENANT_ID_NOT_SUPPORTED": "Cette plateforme ne prend pas en charge les locataires",
       "TOO_MANY_EMAILS": "Vous pouvez inviter au maximum 50 emails à la fois",
+      "TOO_MANY_REQUESTS": "Trop de requêtes. Veuillez réessayer plus tard.",
       "TRANSFER_ME_ERROR": "Une erreur s'est produite lors de la demande de transfert de l'espace personnel.",
       "UNAUTHENTICATED": "Vous devez être connecté pour effectuer cette action",
       "UNKNOWN_ERROR": "Une erreur inconnue s'est produite",
@@ -1026,7 +1027,7 @@
     },
     "ScopeHelp": {
       "admin": "Administration : vos droits d’administration de l’organisation et de la plateforme, tels que vous les avez aujourd’hui. À réserver à un outil de confiance.",
-      "read": "Lecture : requêtes uniquement, rien ne peut être modifié.",
+      "read": "Lecture : requêtes uniquement, sans l’administration de l’organisation. Rien ne peut être modifié.",
       "read_write": "Lecture et écriture : requêtes et modifications, sans l’administration de l’organisation ni de la plateforme."
     },
     "Status": {
@@ -1037,7 +1038,7 @@
     "Title": "Jetons d’API",
     "ScopeOption": {
       "admin": "Vos droits d’administration aussi, tels que vous les avez.",
-      "read": "Requêtes uniquement, rien ne peut être modifié.",
+      "read": "Requêtes uniquement, sans administration. Rien ne peut être modifié.",
       "read_write": "Requêtes et modifications, sans administration."
     },
     "Toolbar": {
@@ -1670,6 +1671,7 @@
       "Retry": "Réessayer",
       "ViewTab": "Sélectionner l'affichage par onglets",
       "ViewList": "Sélectionner l'affichage sous forme de liste",
+      "ClearAllFilters": "Tout effacer",
       "Filters": "Filtres",
       "FilterInformation": "À propos de ce filtre",
       "Tab": {

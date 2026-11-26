@@ -23,7 +23,7 @@ import { useTranslate } from '@/hooks/use-translate';
 import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { getDataTableLabels } from '@/utils/design-system/data-table';
 import { ADMIN_SERVICE_CATALOG_PATH, APP_PATH } from '@/utils/path/constant';
-import { Button, SearchField, Switch } from '@filigran/design-system';
+import { Button, Paper, SearchField, Switch } from '@filigran/design-system';
 import { AddIcon, DeleteIcon, MoreVertIcon } from '@filigran/icon';
 import {
   ServiceInstanceWithCapabilitiesItemFragment,
@@ -251,9 +251,14 @@ const ServiceSlug = ({ subscriptions, serviceInstance }: ServiceSlugProps) => {
           serviceInstance={serviceInstance}
           capabilities={serviceInstance.service_definition?.service_capability}
         />
-        <div className="layer-1 border rounded bg-elevation-default p-3">
-          <h2 className="">{t('Service.Management.Description') + ':'}</h2>
-
+        <Paper
+          as="section"
+          padding={16}
+          title={
+            <h2 className="[font:inherit] tracking-[inherit]">
+              {t('Service.Management.Description')}
+            </h2>
+          }>
           <DataTable
             {...getDataTableLabels(t)}
             columns={columns}
@@ -298,7 +303,7 @@ const ServiceSlug = ({ subscriptions, serviceInstance }: ServiceSlugProps) => {
               columnPinning: { right: ['actions'] },
             }}
           />
-        </div>
+        </Paper>
       </div>
 
       {deleteSubscriptions && deleteSubscriptions.length > 0 && (

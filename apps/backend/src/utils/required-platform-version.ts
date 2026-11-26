@@ -8,6 +8,8 @@ type RequiredPlatformVersionsConfig = {
   TenantIdRequired: Record<PlatformIdentifier, string | null>;
   NewsFeedSupport: Record<PlatformIdentifier, string | null>;
   NewsFeedBlogpostSupport: Record<PlatformIdentifier, string | null>;
+  NewsFeedGithubReleaseSupport: Record<PlatformIdentifier, string | null>;
+  NewsFeedGithubReleaseLtsSupport: Record<PlatformIdentifier, string | null>;
 };
 
 // A null value means the feature is disabled/not required for that identifier.
@@ -30,10 +32,22 @@ export const RequiredPlatformVersions: RequiredPlatformVersionsConfig = {
     [PlatformIdentifier.Openaev]: '1.0.0', // Placeholder until the first OpenAEV version that reads news feed items is released
     [PlatformIdentifier.Xtmone]: null,
   },
-  // OpenCTI 7.261106.0 is the first version to render blogpost items. OpenAEV and XTM One stay null (disabled)
-  // until they ship blogpost support.
+  // OpenCTI 7.261106.0 is the first version to render blogpost items. XTM One stays null (disabled) until it ships
+  // blogpost support.
   NewsFeedBlogpostSupport: {
     [PlatformIdentifier.Opencti]: '7.261106.0',
+    // TODO: 3.261118.0 is a placeholder version. Replace it with the first OpenAEV version that supports news feed
+    // blogposts once it is released.
+    [PlatformIdentifier.Openaev]: '3.261118.0',
+    [PlatformIdentifier.Xtmone]: null,
+  },
+  NewsFeedGithubReleaseSupport: {
+    [PlatformIdentifier.Opencti]: null,
+    [PlatformIdentifier.Openaev]: null,
+    [PlatformIdentifier.Xtmone]: null,
+  },
+  NewsFeedGithubReleaseLtsSupport: {
+    [PlatformIdentifier.Opencti]: null,
     [PlatformIdentifier.Openaev]: null,
     [PlatformIdentifier.Xtmone]: null,
   },

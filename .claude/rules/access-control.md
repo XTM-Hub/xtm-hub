@@ -5,6 +5,7 @@ paths:
   - "apps/backend/src/security/**"
   - "apps/backend/**/*.domain.ts"
   - "apps/backend/tests/helper/test.access-matrix.helper.ts"
+  - "apps/backend/tests/helper/test.platform-caller.helper.ts"
   - "apps/backend/**/*.access.test.ts"
 ---
 
@@ -24,7 +25,7 @@ mechanisms coexist while modules migrate:
 
 | Mechanism | Where | Used by |
 | --- | --- | --- |
-| `@Public()` / `@Guarded(guard)` on the resolver | `src/security/guarded/` | Migrated modules (`solution-category`, `telemetry`, `manage-product-version`, `subscription`) |
+| `@Public()` / `@Guarded(guard)` on the resolver | `src/security/guarded/` | Migrated modules (`solution-category`, `telemetry`, `manage-product-version`, `subscription`, `news-feed`) |
 | `@auth`, `@service_capa`, `@system_token`, `@platform_token` in the `.graphql` file | `src/security/directive-graphql/` | Every other module. A field with no directive is public there |
 
 **An operation has a directive or a decorator, never both.** Migrating an operation removes its directive in the same
@@ -75,11 +76,13 @@ export default resolvers;
 | `@Guarded(loggedInGuard())` | Any logged-in user. Not a substitute for a capability check | `UNAUTHENTICATED` (anonymous or disabled user) |
 | `@Guarded(bypassOnlyGuard())` | A `BYPASS` user only. Use it for admin-only operations rather than listing `BYPASS` | `UNAUTHENTICATED` (anonymous or disabled user), `FORBIDDEN_ACCESS` (not `BYPASS`) |
 | `@Guarded(portalCapabilityGuard([PortalCapability.X, …]))` | A user holding one of the portal capabilities; `BYPASS` always. The list cannot be empty | `UNAUTHENTICATED` (anonymous or disabled user), `FORBIDDEN_ACCESS` (capability missing) |
-| `@Guarded(callerGuard('system', [PortalCapability.X, …]))` | A machine with a valid `x-xtm-hub-token` holding every listed scope. The list cannot be empty | `UNAUTHENTICATED` (no or invalid token, session ignored), `FORBIDDEN_ACCESS` (scope missing) |
+| `@Guarded(systemCallerGuard([PortalCapability.X, …]))` | A machine with a valid `x-xtm-hub-token` holding every listed scope. The list cannot be empty | `UNAUTHENTICATED` (no or invalid token, session ignored), `FORBIDDEN_ACCESS` (scope missing) |
 | `@Guarded(orgGuard({ organization: selectedOrganization, capabilities: [OrganizationCapability.X, …] }))` | A member of the selected organization holding one of the capabilities (`ADMINISTRATE_ORGANIZATION` implies them all, `[]` requires the membership only); `BYPASS` always | `UNAUTHENTICATED` (anonymous or disabled user), `NOT_FOUND` (not a member), `MISSING_CAPABILITY_ON_ORGANIZATION` (capability missing) |
+| `@Guarded(platformCallerGuard({ credential: 'registration' \| 'deploymentRequest' }))` | A platform sending valid `xtm-hub-platform-id` and `xtm-hub-platform-token` headers for the required credential: an `Active` registration with a subscribed organization, or a deployment request token in the `Active`, `Pending` or `Provisioning` hub status | `UNAUTHENTICATED` (missing, invalid or unknown credentials, other credential, inactive registration or other hub status, session ignored) |
 
-A guard returns `allow()` or `deny(code)`. An exception, or anything else, is a denial. Add each new guard to this
-table.
+A guard returns `allow()` or `deny(code)`. An exception from the guard, or anything else it returns, is a denial.
+An exception while building the principal (such as a database error) is not: it propagates and the resolver is not
+called. Add each new guard to this table.
 
 `orgGuard` checks the caller's membership, not that the data belongs to the organization: keep the row filter in
 `src/security/restriction/`. Whether `BYPASS` sees every row depends on the use case: some filters let it through
@@ -112,14 +115,51 @@ same `NOT_FOUND` as for a row that does not exist.
 
 ## Machine callers
 
-`callerGuard('system', scopes)` is for an operation only a machine calls, with the `x-xtm-hub-token` header, such as
+`systemCallerGuard(scopes)` is for an operation only a machine calls, with the `x-xtm-hub-token` header, such as
 `newProductVersion`.
 
-- Only an operation guarded by `callerGuard` reads the header, and it is judged on the token alone, never on the
+- Only an operation guarded by `systemCallerGuard` reads the header, and it is judged on the token alone, never on the
   session: a valid token is a system caller, a missing, empty or invalid one is anonymous. The other guards and
   `@Public()` ignore the header.
 - Until scoped tokens, the system caller holds exactly the declared scopes, and so does the user the resolver gets
   (`context.user`, `requireUser()`).
+
+`platformCallerGuard({ credential })` is for an operation only a platform calls, with its platform headers, such as
+`consumeProvisionedNewsFeedItems`. The credential is required, with no default.
+
+- `registration`: a registered platform. The registration must be `Active` and have a subscribed organization.
+- `deploymentRequest`: a platform being deployed. The deployment request must be in a hub status
+  `PLATFORM_ACCEPTED_HUB_STATUSES` lists (`src/security/platform-credential.ts`).
+- A caller with the other credential, or whose status is not accepted, is anonymous: `UNAUTHENTICATED`, and the
+  resolver is not called. A call without headers is just unauthenticated and logs nothing.
+- The resolver gets a platform `context.user` bound to the matched organization. It reads the caller with
+  `requirePlatformCaller(context, credential)`, which returns the principal narrowed to that credential.
+- The credential lookup is not scoped by tenant: never use `platformCaller` to pick tenant data.
+
+```ts
+@Guarded(platformCallerGuard({ credential: 'registration' }))
+static readonly consumeProvisionedNewsFeedItems: NonNullable<MutationResolvers['consumeProvisionedNewsFeedItems']> =
+  (_, __, context) => {
+    const { registration } = requirePlatformCaller(context, 'registration');
+    return NewsFeedApp.consumeProvisionedNewsFeedItems({ registration });
+  };
+```
+
+## Personal API tokens
+
+A request with `Authorization: Bearer xhp_…` runs as the token's user, narrowed by `narrowUserToToken`
+(`src/modules/api-token/api-token.auth.ts`) to the token's organization and scope. The database still knows every
+organization and right of that user, so anything that reads them again must apply the token:
+
+- `requestContext.get()?.apiToken` holds what the token reaches. It is set for a token request only, and kept apart
+  from `context.user`, which a resolver may replace.
+- Check the caller's membership or capabilities on an organization the client names with `securityGuard` or
+  `AuthHelper`, which apply `ApiTokenReach` (`src/security/api-token-reach.ts`), never with
+  `UserOrganizationDomain.loadUserOrganization` directly: a token of organization A would pass for organization B.
+- The token user's own organizations, portal capabilities and roles are filtered in the query by
+  `src/security/restriction/api-token.ts`. Reading them for another user, or for an invariant check, is unchanged.
+- A mutation that acts on the account itself (session, credentials, profile, personal space) goes in
+  `API_TOKEN_DENIED_FIELDS` (`src/modules/api-token/api-token.plugin.ts`).
 
 ## Errors
 
@@ -151,11 +191,12 @@ describe('addSolutionCategory mutation', () => {
 ```
 
 Rows are `anonymous`, `user` (a member with no portal capability) and `admin` (a platform admin). An operation behind
-`orgGuard` also lists `memberWithoutCapability`, `otherOrganization` and `nonMember`; one a machine calls lists
-`system` and `invalidSystemToken`. `guarded` returns a spy on the function behind the operation: refused rows assert
-it was not called, allowed rows that it was called once and answered `expectedData`, or `expectedDataByRow[row]` for
-a row that sees different data. Wrap the call in a `describe` with a literal name, and use `TestHelper`, never the
-helper file directly.
+`orgGuard` also lists `memberWithoutCapability`, `otherOrganization` and `nonMember`; one a system caller calls lists
+`system` and `invalidSystemToken`; one a platform calls lists `platform`, `invalidPlatformToken` and `unknownPlatform`
+(the fixture returns the `platformCredentials` of a registered platform, from `TestHelper.platformCaller.create()`).
+`guarded` returns a spy on the function behind the operation: refused rows assert it was not called, allowed rows that
+it was called once and answered `expectedData`, or `expectedDataByRow[row]` for a row that sees different data. Wrap
+the call in a `describe` with a literal name, and use `TestHelper`, never the helper file directly.
 
 The matrix proves who may call the operation. **A filter has its own test**: seed one row the caller must not see (a
 `draft` document for a user without `UPLOAD`) next to one they may see, call the operation and every sibling path

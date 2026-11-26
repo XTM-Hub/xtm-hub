@@ -10,7 +10,10 @@ import {
   requestContextAdminUser,
   TEST_ORGANIZATIONS,
 } from '../../../../../tests/tests.const';
-import { OrganizationCapability } from '../../../../__generated__/resolvers-types';
+import {
+  ApiTokenScope,
+  OrganizationCapability,
+} from '../../../../__generated__/resolvers-types';
 import portalConfig from '../../../../config';
 import { requestContext } from '../../../../context/request.context';
 import Organization, {
@@ -870,6 +873,265 @@ describe('usersOrganizationApp', () => {
       expect(
         (await TestHelper.user.load({ id: target.id })).selected_organization_id
       ).toBe(otherOrganization.id);
+    });
+
+    describe('with an API token', () => {
+      // The caller manages access in two organizations: a token pinned to one must not act on the other. The admin
+      // scope keeps the caller's organization capabilities, so a refusal comes from the organization pin alone.
+      let tokenOrganization: Organization;
+      let caller: User;
+      let target: User;
+
+      beforeEach(async () => {
+        tokenOrganization = await createOrganization();
+        caller = await createUser();
+        await addMember(caller, [OrganizationCapability.ManageAccess]);
+        await addMember(
+          caller,
+          [OrganizationCapability.ManageAccess],
+          tokenOrganization.id
+        );
+        target = await createUser();
+        await addMember(target, []);
+      });
+
+      it('should reject the removal from an organization other than the token one', async () => {
+        // Given
+        await TestHelper.apiToken.actAs(
+          caller.id,
+          tokenOrganization.id,
+          ApiTokenScope.Admin
+        );
+
+        // When
+        const call = UserOrganizationApp.removeUserFromOrganization({
+          userId: target.id,
+          organizationId: organization.id,
+        });
+
+        // Then
+        await expect(call).rejects.toThrow(
+          ErrorCode.MissingCapabilityOnOrganization
+        );
+        expect(await loadMembership(target)).toMatchObject({
+          user_id: target.id,
+          organization_id: organization.id,
+        });
+      });
+
+      it('should reject accepting a pending user in an organization other than the token one', async () => {
+        // Given
+        const pendingUser = await createUser();
+        await TestHelper.user_OrganizationPending.create({
+          user_id: pendingUser.id,
+          organization_id: organization.id,
+        });
+        await TestHelper.apiToken.actAs(
+          caller.id,
+          tokenOrganization.id,
+          ApiTokenScope.Admin
+        );
+
+        // When
+        const call = UserOrganizationApp.acceptPendingUserInOrganization({
+          userId: pendingUser.id,
+          organizationId: organization.id,
+        });
+
+        // Then
+        await expect(call).rejects.toThrow(
+          ErrorCode.MissingCapabilityOnOrganization
+        );
+        expect(
+          await TestHelper.user_OrganizationPending.loadAll({
+            user_id: pendingUser.id,
+          })
+        ).toMatchObject([
+          { user_id: pendingUser.id, organization_id: organization.id },
+        ]);
+      });
+
+      it('should reject removing a pending user from an organization other than the token one', async () => {
+        // Given
+        const pendingUser = await createUser();
+        await TestHelper.user_OrganizationPending.create({
+          user_id: pendingUser.id,
+          organization_id: organization.id,
+        });
+        await TestHelper.apiToken.actAs(
+          caller.id,
+          tokenOrganization.id,
+          ApiTokenScope.Admin
+        );
+
+        // When
+        const call = UserOrganizationApp.removePendingUserFromOrganization({
+          userId: pendingUser.id,
+          organizationId: organization.id,
+        });
+
+        // Then
+        await expect(call).rejects.toThrow(
+          ErrorCode.MissingCapabilityOnOrganization
+        );
+        expect(
+          await TestHelper.user_OrganizationPending.loadAll({
+            user_id: pendingUser.id,
+          })
+        ).toMatchObject([
+          { user_id: pendingUser.id, organization_id: organization.id },
+        ]);
+      });
+
+      it('should remove the user from the token organization when the token user manages access there', async () => {
+        // Given
+        await TestHelper.apiToken.actAs(
+          caller.id,
+          organization.id,
+          ApiTokenScope.Admin
+        );
+
+        // When
+        await UserOrganizationApp.removeUserFromOrganization({
+          userId: target.id,
+          organizationId: organization.id,
+        });
+
+        // Then
+        expect(await loadMembership(target)).toBeUndefined();
+      });
+
+      it('should reject the removal when the token took the organization administration away from its user', async () => {
+        // Given an administrator without MANAGE_ACCESS, whose read_write token has no ADMINISTRATE_ORGANIZATION
+        const administrator = await createUser();
+        await addMember(administrator, [
+          OrganizationCapability.AdministrateOrganization,
+        ]);
+        await TestHelper.apiToken.actAs(
+          administrator.id,
+          organization.id,
+          ApiTokenScope.ReadWrite
+        );
+
+        // When
+        const call = UserOrganizationApp.removeUserFromOrganization({
+          userId: target.id,
+          organizationId: organization.id,
+        });
+
+        // Then
+        await expect(call).rejects.toThrow(
+          ErrorCode.MissingCapabilityOnOrganization
+        );
+        expect(await loadMembership(target)).toMatchObject({
+          user_id: target.id,
+          organization_id: organization.id,
+        });
+      });
+
+      it('should let a session user remove from any organization where they manage access, whatever the selected one', async () => {
+        // Given
+        await selectOrganization(caller, tokenOrganization.id);
+        await actAs(caller);
+
+        // When
+        await UserOrganizationApp.removeUserFromOrganization({
+          userId: target.id,
+          organizationId: organization.id,
+        });
+
+        // Then
+        expect(await loadMembership(target)).toBeUndefined();
+      });
+    });
+  });
+
+  describe('resolveOrganizationUserIdsByEmails', () => {
+    let organization: Organization;
+    let domain: string;
+    let caller: User;
+    let member: User;
+    let createdUsers: User[] = [];
+
+    const createUser = async (email: string) => {
+      const user = await UserProvisioningDomain.createUser(
+        { email },
+        { sendWelcomeEmail: false }
+      );
+      createdUsers.push(user);
+      return user;
+    };
+
+    const addMember = async (
+      user: User,
+      capabilities: OrganizationCapability[]
+    ) => {
+      const userOrganization = await TestHelper.user_Organization.create({
+        user_id: user.id,
+        organization_id: organization.id,
+      });
+      await Promise.all(
+        capabilities.map((name) =>
+          TestHelper.user_OrganizationCapability.create({
+            user_organization_id: userOrganization!.id,
+            name,
+          })
+        )
+      );
+    };
+
+    beforeEach(async () => {
+      createdUsers = [];
+      domain = `resolve-emails-${uuidv4()}.io`;
+      organization = await TestHelper.organization.create({
+        domains: [domain],
+      });
+      caller = await createUser(`caller-${uuidv4()}@${domain}`);
+      await addMember(caller, [
+        OrganizationCapability.AdministrateOrganization,
+      ]);
+      member = await createUser(`member-${uuidv4()}@${domain}`);
+      await addMember(member, []);
+      await TestHelper.apiToken.actAs(
+        caller.id,
+        organization.id,
+        ApiTokenScope.Admin
+      );
+    });
+
+    afterEach(async () => {
+      vi.restoreAllMocks();
+      await Promise.all(
+        createdUsers.map((user) => UserHelper.removeUser({ id: user.id }))
+      );
+      await TestHelper.organization.delete({ id: organization.id });
+    });
+
+    it('should refuse to provision a new user to an API token before creating any account', async () => {
+      // Given
+      const email = `new-${uuidv4()}@${domain}`;
+
+      // When
+      const call = UserOrganizationApp.resolveOrganizationUserIdsByEmails({
+        organization,
+        emails: [member.email, email],
+      });
+
+      // Then
+      await expect(call).rejects.toThrow(ErrorCode.NotAllowedWithApiToken);
+      expect(await TestHelper.user.loadAll({ email })).toEqual([]);
+    });
+
+    it('should resolve the existing members to an API token', async () => {
+      // When
+      const userIds =
+        await UserOrganizationApp.resolveOrganizationUserIdsByEmails({
+          organization,
+          emails: [member.email],
+        });
+
+      // Then
+      expect(userIds).toEqual([member.id]);
     });
   });
 });

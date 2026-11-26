@@ -82,16 +82,24 @@ describe('newsFeedDomain', () => {
       }
     );
 
-    it('should not list the blogpost type for OpenAEV, whose gate is disabled', () => {
-      // When
-      const result = NewsFeedDomain.loadAvailableNewsFeedTypes(
-        PlatformIdentifier.Openaev,
-        '99.0.0'
-      );
+    it.each`
+      description                 | version         | expected
+      ${'below the shipped gate'} | ${'3.261117.0'} | ${false}
+      ${'at the shipped gate'}    | ${'3.261118.0'} | ${true}
+      ${'above the shipped gate'} | ${'3.261119.0'} | ${true}
+    `(
+      'should list the blogpost type for OpenAEV $description ($version): $expected',
+      ({ version, expected }) => {
+        // When
+        const result = NewsFeedDomain.loadAvailableNewsFeedTypes(
+          PlatformIdentifier.Openaev,
+          version
+        );
 
-      // Then
-      expect(result).not.toContain(NewsFeedItemType.BlogPost);
-    });
+        // Then
+        expect(result.includes(NewsFeedItemType.BlogPost)).toBe(expected);
+      }
+    );
 
     describe('with a blogpost required version', () => {
       const BLOGPOST_REQUIRED_VERSION = '7.260901.0';
@@ -182,6 +190,97 @@ describe('newsFeedDomain', () => {
           expect(result).toEqual(expected);
         }
       );
+    });
+
+    describe('with GitHub release required versions', () => {
+      const GITHUB_RELEASE_REQUIRED_VERSION = '7.261201.0';
+      const GITHUB_RELEASE_LTS_REQUIRED_VERSION = '7.260309.0-lts.8';
+      const originalGithubReleaseSupport =
+        RequiredPlatformVersions.NewsFeedGithubReleaseSupport;
+      const originalGithubReleaseLtsSupport =
+        RequiredPlatformVersions.NewsFeedGithubReleaseLtsSupport;
+
+      const setRequiredVersions = (requiredVersion: {
+        nonLts: string | null;
+        lts: string | null;
+      }) => {
+        RequiredPlatformVersions.NewsFeedGithubReleaseSupport = {
+          [PlatformIdentifier.Opencti]: requiredVersion.nonLts,
+          [PlatformIdentifier.Openaev]: requiredVersion.nonLts,
+          [PlatformIdentifier.Xtmone]: null,
+        };
+        RequiredPlatformVersions.NewsFeedGithubReleaseLtsSupport = {
+          [PlatformIdentifier.Opencti]: requiredVersion.lts,
+          [PlatformIdentifier.Openaev]: requiredVersion.lts,
+          [PlatformIdentifier.Xtmone]: null,
+        };
+      };
+
+      afterEach(() => {
+        RequiredPlatformVersions.NewsFeedGithubReleaseSupport =
+          originalGithubReleaseSupport;
+        RequiredPlatformVersions.NewsFeedGithubReleaseLtsSupport =
+          originalGithubReleaseLtsSupport;
+      });
+
+      it.each([
+        ['a non-LTS version at the gate', '7.261201.0', true],
+        ['an LTS version below the LTS gate', '7.260309.0-lts.7', false],
+      ])(
+        'should list the GitHub release type for OpenCTI only when the gate of its track passes, for %s',
+        (_description, version, expected) => {
+          // Given
+          setRequiredVersions({
+            nonLts: GITHUB_RELEASE_REQUIRED_VERSION,
+            lts: GITHUB_RELEASE_LTS_REQUIRED_VERSION,
+          });
+
+          // When
+          const result = NewsFeedDomain.loadAvailableNewsFeedTypes(
+            PlatformIdentifier.Opencti,
+            version
+          );
+
+          // Then
+          expect(result.includes(NewsFeedItemType.GithubRelease)).toBe(
+            expected
+          );
+        }
+      );
+
+      it('should not list the GitHub release type for OpenCTI when the gate of its track is null', () => {
+        // Given
+        setRequiredVersions({
+          nonLts: null,
+          lts: GITHUB_RELEASE_LTS_REQUIRED_VERSION,
+        });
+
+        // When
+        const result = NewsFeedDomain.loadAvailableNewsFeedTypes(
+          PlatformIdentifier.Opencti,
+          '99.0.0'
+        );
+
+        // Then
+        expect(result).not.toContain(NewsFeedItemType.GithubRelease);
+      });
+
+      it('should not list the GitHub release type for a platform that is not mapped to a GitHub release product', () => {
+        // Given
+        setRequiredVersions({
+          nonLts: GITHUB_RELEASE_REQUIRED_VERSION,
+          lts: GITHUB_RELEASE_LTS_REQUIRED_VERSION,
+        });
+
+        // When
+        const result = NewsFeedDomain.loadAvailableNewsFeedTypes(
+          PlatformIdentifier.Openaev,
+          '99.0.0'
+        );
+
+        // Then
+        expect(result).not.toContain(NewsFeedItemType.GithubRelease);
+      });
     });
 
     it('should return empty array for a platform with no configured news feed types', () => {
@@ -438,6 +537,93 @@ describe('newsFeedDomain', () => {
         value: `redirect/${ServiceDefinitionIdentifier.OpenctiCustomDashboards}?document_id=${expectedGlobalDocumentId}`,
       });
     });
+  });
+
+  describe('loadGithubReleaseItemByProductVersion', () => {
+    const PRODUCT_VERSION = '7.261201.0';
+
+    afterEach(async () => {
+      await TestHelper.newsFeed.deleteItem();
+    });
+
+    const createGithubReleaseItem = async ({
+      type = NewsFeedItemType.GithubRelease,
+      platformIdentifier = PlatformIdentifier.Opencti,
+      productVersion = PRODUCT_VERSION,
+      isDeleted = false,
+    }: {
+      type?: NewsFeedItemType;
+      platformIdentifier?: PlatformIdentifier;
+      productVersion?: string;
+      isDeleted?: boolean;
+    } = {}) => {
+      const item = await TestHelper.newsFeed.createItem({
+        type,
+        platform_identifier: platformIdentifier,
+        title: `OpenCTI ${productVersion}`,
+        is_deleted: isDeleted,
+      });
+      await TestHelper.newsFeed.createMetadata({
+        news_feed_item_id: item.id,
+        key: NewsFeedItemMetadataKey.ProductVersion,
+        value: productVersion,
+      });
+      return item;
+    };
+
+    it.each([
+      ['active', false],
+      ['deleted', true],
+    ])(
+      'should return the item of the version when it is %s',
+      async (_description, isDeleted) => {
+        // Given
+        const item = await createGithubReleaseItem({ isDeleted });
+
+        // When
+        const result =
+          await NewsFeedDomain.loadGithubReleaseItemByProductVersion({
+            platformIdentifier: PlatformIdentifier.Opencti,
+            productVersion: PRODUCT_VERSION,
+          });
+
+        // Then
+        expect(result).toMatchObject({
+          id: item.id,
+          type: NewsFeedItemType.GithubRelease,
+          title: `OpenCTI ${PRODUCT_VERSION}`,
+          is_deleted: isDeleted,
+        });
+      }
+    );
+
+    it.each([
+      ['only another version has an item', { productVersion: '7.261202.0' }],
+      [
+        'only another platform has an item of the version',
+        { platformIdentifier: PlatformIdentifier.Openaev },
+      ],
+      [
+        'only another type has the version',
+        { type: NewsFeedItemType.BlogPost },
+      ],
+    ])(
+      'should return undefined when %s',
+      async (_description, itemOverrides) => {
+        // Given
+        await createGithubReleaseItem(itemOverrides);
+
+        // When
+        const result =
+          await NewsFeedDomain.loadGithubReleaseItemByProductVersion({
+            platformIdentifier: PlatformIdentifier.Opencti,
+            productVersion: PRODUCT_VERSION,
+          });
+
+        // Then
+        expect(result).toBeUndefined();
+      }
+    );
   });
 
   describe('loadNewsFeedItemTypeById', () => {
@@ -1108,6 +1294,38 @@ describe('newsFeedDomain', () => {
           id: item.id,
         });
         expect(remaining === undefined).toBe(shouldBeDeleted);
+      }
+    );
+
+    it.each([
+      ['live', false],
+      ['deleted', true],
+    ])(
+      'should keep an expired GitHub release item that is %s',
+      async (_description, isDeleted) => {
+        // Given
+        const release = await TestHelper.newsFeed.createItem({
+          type: NewsFeedItemType.GithubRelease,
+          platform_identifier: PlatformIdentifier.Opencti,
+          title: 'OpenCTI 7.240101.0',
+          creation_date: monthsAgo(24),
+          is_deleted: isDeleted,
+        });
+        const expiredResource = await createItemWithAge(24);
+
+        // When
+        const deletedCount = await NewsFeedDomain.deleteNewsFeedItemsOlderThan(
+          monthsAgo(6)
+        );
+
+        // Then
+        expect(deletedCount).toBe(1);
+        expect(
+          await TestHelper.newsFeed.loadFirstItem({ id: release.id })
+        ).toMatchObject({ id: release.id, is_deleted: isDeleted });
+        expect(
+          await TestHelper.newsFeed.loadFirstItem({ id: expiredResource.id })
+        ).toBeUndefined();
       }
     );
 

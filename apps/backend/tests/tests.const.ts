@@ -110,6 +110,9 @@ export const SERVICES = {
     OPENCTI_REGISTRATION: {
       ID: '5f769173-5ace-4ef3-b04f-2c95609c5b59' as ServiceDefinitionId,
     },
+    XTMONE_REGISTRATION: {
+      ID: '9b1f6a9e-2c3d-4e3a-8a4a-2b7c4d9f1a01' as ServiceDefinitionId,
+    },
   },
   INSTANCES: {
     INTEGRATIONS: {

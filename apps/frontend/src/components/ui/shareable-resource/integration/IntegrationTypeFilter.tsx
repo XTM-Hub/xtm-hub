@@ -53,7 +53,7 @@ export const IntegrationTypeFilter = ({
   return (
     <LogicalMultiSelectFormField
       options={options}
-      initialValue={integrationTypes}
+      value={integrationTypes}
       noResultString={t('Utils.NotFound')}
       onValueChange={setIntegrationTypes}
       analyticsFilter={{

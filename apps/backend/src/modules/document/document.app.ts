@@ -31,10 +31,13 @@ import {
 import { logApp } from '../../utils/app-logger.util';
 import { ErrorCode, UnknownErrorCode } from '../../utils/error/error.code';
 import { ForbiddenAccess } from '../../utils/error/error.util';
+import { shareCountRateLimiter } from '../../utils/rate-limit.util';
 import { NewsFeedApp } from '../news-feed/news-feed.app';
+import { OrganizationDomain } from '../organization-management/organization/organization.domain';
 import { UserDomain } from '../organization-management/user/user-domain/user.domain';
 import { RegistrationApp } from '../registration/registration.app';
 import { ServiceDefinitionDomain } from '../service/definition/service-definition.domain';
+import { ServiceInstanceDomain } from '../service/instance/service-instance.domain';
 import { OPENCTI_INTEGRATION_DOCUMENT_TYPE } from '../shareable-resource/opencti/integration/integration.model';
 import { objectSolutionCategoryDomain } from '../solution-category/object-solution-category/object-solution-category.domain';
 import { solutionCategoryApp } from '../solution-category/solution-category.app';
@@ -1013,6 +1016,59 @@ export const DocumentApp = {
       documentId,
       ALL_METADATA_KEYS
     );
+  },
+
+  /**
+   * Records a share of the document and returns it with its counters. The share counter is public and the mutation
+   * needs no session, so an address counts one share per document per hour: later calls return the document without
+   * counting. The address comes from the request context, which holds the Express `req.ip` on `/graphql-api` and
+   * `/graphql-sse` alike.
+   */
+  shareDocument: async (documentId: DocumentId) => {
+    const document = await DocumentDomain.loadDocumentWithMetadataById(
+      documentId,
+      []
+    );
+    const documentWithCounters =
+      await DocumentHelper.updateDocumentWithCounters(document);
+    const { user, ip } = requestContext.get() ?? {};
+    if (!(await shareCountRateLimiter.tryConsumeForIp(ip, documentId))) {
+      return documentWithCounters;
+    }
+    try {
+      if (!document.service_instance_id) {
+        throw new Error(ErrorCode.ServiceInstanceNotFound);
+      }
+      const serviceDefinition =
+        await ServiceInstanceDomain.loadServiceDefinitionByServiceInstance(
+          document.service_instance_id
+        );
+      if (!serviceDefinition) {
+        throw new Error(ErrorCode.ServiceDefinitionNotFound);
+      }
+      if (
+        TelemetryHelper.shouldSendEventForService(serviceDefinition.identifier)
+      ) {
+        const selectedOrga = user
+          ? await OrganizationDomain.loadOrganizationBy({
+              id: user.selected_organization_id,
+            })
+          : undefined;
+        const shareEvent = await TelemetryHelper.buildShareEvent(
+          selectedOrga,
+          user?.id,
+          serviceDefinition.identifier,
+          document.id,
+          document.name ?? ''
+        );
+        await TelemetryApp.sendTelemetryEvent(shareEvent);
+      }
+    } catch (error) {
+      logApp.error('Unable to send telemetry event', {
+        error,
+      });
+    }
+    return documentWithCounters;
   },
 };
 

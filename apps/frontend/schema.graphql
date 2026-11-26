@@ -1063,6 +1063,7 @@ enum NewsFeedItemType {
   RESOURCE_INTEGRATION
   RESOURCE_SCENARIO
   BLOG_POST
+  GITHUB_RELEASE
 }
 
 enum NewsFeedUtmMedium {
@@ -1088,6 +1089,7 @@ enum NewsFeedItemMetadataKey {
   image_alt
   author_names
   read_minutes
+  product_version
 }
 
 type NewsFeedItemMetadata {
@@ -1535,6 +1537,7 @@ input CanUnregisterPlatformInput {
 
 type RegistrationResponse {
   token: String!
+  organizationName: String
 }
 
 enum PlatformRegistrationStatus {
@@ -1615,12 +1618,14 @@ input RefreshPlatformRegistrationConnectivityStatusAllTenantsInput {
 type RefreshPlatformRegistrationConnectivityStatusResponse {
   status: PlatformRegistrationConnectivityStatus!
   commercialModel: CommercialModel
+  organizationName: String
 }
 
 type TenantStatus {
   tenantId: String!
   status: PlatformRegistrationConnectivityStatus!
   commercialModel: CommercialModel
+  organizationName: String
 }
 
 type RefreshPlatformRegistrationConnectivityStatusAllTenantsResponse {

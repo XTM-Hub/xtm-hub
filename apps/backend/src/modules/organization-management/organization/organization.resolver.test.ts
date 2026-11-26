@@ -1,11 +1,13 @@
 import { v4 as uuidv4 } from 'uuid';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { TestHelper } from '../../../../tests/helper/test.helper';
 import {
   contextSimpleUserFiligran2,
   GRAPHQL_RESOLVE_INFO,
   TEST_ORGANIZATIONS,
 } from '../../../../tests/tests.const';
 import {
+  ApiTokenScope,
   OrderingMode,
   Organization,
   OrganizationConnection,
@@ -15,13 +17,18 @@ import {
   OrganizationResolvers,
   PageInfo,
 } from '../../../__generated__/resolvers-types';
-import { OrganizationId } from '../../../model/kanel/public/Organization';
+import { requestContext } from '../../../context/request.context';
+import OrganizationRow, {
+  OrganizationId,
+} from '../../../model/kanel/public/Organization';
+import { UserId } from '../../../model/kanel/public/User';
 import {
   AlreadyExistsErrorCode,
   BadRequestErrorCode,
   ForbiddenErrorCode,
 } from '../../../utils/error/error.code';
 import { ErrorType } from '../../../utils/error/error.type';
+import { UserDomain } from '../user/user-domain/user.domain';
 import { OrganizationApp } from './organization.app';
 import { OrganizationDataLoaders } from './organization.dataloader';
 import { OrganizationDomain } from './organization.domain';
@@ -105,13 +112,11 @@ describe('organizations GraphQL query', () => {
 describe('user organizations GraphQL query', () => {
   it('should load organizations by context user id and return result', async () => {
     // Given
-    const expected = [
-      { id: TEST_ORGANIZATIONS.FILIGRAN.ID, name: 'Filigran' },
-    ] as unknown as Awaited<
-      ReturnType<typeof OrganizationDomain.loadOrganizationsByUser>
-    >;
-    vi.spyOn(OrganizationDomain, 'loadOrganizationsByUser').mockResolvedValue(
-      expected
+    const expected = [{ id: TEST_ORGANIZATIONS.FILIGRAN.ID, name: 'Filigran' }];
+    vi.spyOn(UserDomain, 'getOrganizations').mockReturnValue(
+      Promise.resolve(expected) as unknown as ReturnType<
+        typeof UserDomain.getOrganizations
+      >
     );
 
     // When
@@ -123,11 +128,89 @@ describe('user organizations GraphQL query', () => {
     );
 
     // Then
-    expect(OrganizationDomain.loadOrganizationsByUser).toHaveBeenCalledWith(
+    expect(UserDomain.getOrganizations).toHaveBeenCalledWith(
       contextSimpleUserFiligran2.user.id
     );
     expect(result).toEqual(expected);
   });
+});
+
+describe('user organizations GraphQL query of a user in two organizations', () => {
+  let tokenOrganization: OrganizationRow;
+  let otherOrganization: OrganizationRow;
+  let userId: UserId;
+
+  const loadUserOrganizations = () =>
+    organizationsResolver.Query!.userOrganizations!(
+      {},
+      {},
+      { ...contextSimpleUserFiligran2, user: requestContext.requireUser() },
+      GRAPHQL_RESOLVE_INFO
+    );
+
+  beforeEach(async () => {
+    tokenOrganization = await TestHelper.organization.create();
+    otherOrganization = await TestHelper.organization.create();
+    const { user } = await TestHelper.user.insertInOrganization(
+      tokenOrganization.id,
+      {
+        email: `user-organizations-${uuidv4()}@user-organizations-test.io`,
+        selected_organization_id: tokenOrganization.id,
+      }
+    );
+    userId = user.id;
+    await TestHelper.user_Organization.create({
+      user_id: userId,
+      organization_id: otherOrganization.id,
+    });
+  });
+
+  afterEach(async () => {
+    await TestHelper.user.delete({ id: userId });
+    await TestHelper.organization.delete({ id: tokenOrganization.id });
+    await TestHelper.organization.delete({ id: otherOrganization.id });
+  });
+
+  it('should list both organizations for a session', async () => {
+    // Given
+    requestContext.set({
+      user: (await UserDomain.loadUserBy({ 'User.id': userId }))!,
+    });
+
+    // When
+    const organizations = await loadUserOrganizations();
+
+    // Then
+    expect(organizations).toHaveLength(2);
+    expect(organizations).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: tokenOrganization.id,
+          name: tokenOrganization.name,
+        }),
+        expect.objectContaining({
+          id: otherOrganization.id,
+          name: otherOrganization.name,
+        }),
+      ])
+    );
+  });
+
+  it.each([ApiTokenScope.Read, ApiTokenScope.ReadWrite, ApiTokenScope.Admin])(
+    'should list only the token organization for a %s token',
+    async (scope) => {
+      // Given
+      await TestHelper.apiToken.actAs(userId, tokenOrganization.id, scope);
+
+      // When
+      const organizations = await loadUserOrganizations();
+
+      // Then
+      expect(organizations).toMatchObject([
+        { id: tokenOrganization.id, name: tokenOrganization.name },
+      ]);
+    }
+  );
 });
 
 describe('add organization GraphQL mutation', () => {

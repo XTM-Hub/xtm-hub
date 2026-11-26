@@ -71,6 +71,7 @@ import { objectSolutionCategoryDomain } from '../../solution-category/object-sol
 import { solutionCategoryDomain } from '../../solution-category/solution-category.domain';
 import { DocumentListOptions } from '../document.model';
 import { DocumentUploadsHelper } from '../document.uploads.helper';
+import { DocumentChildrenDomain } from './document.children.domain';
 import { DocumentDomain } from './document.domain';
 
 // isFeatureEnabled is mocked (defaulting to disabled) so that tests are deterministic and
@@ -2558,6 +2559,12 @@ describe('document domain', () => {
       await TestHelper.document.delete({});
     });
 
+    afterEach(async () => {
+      await TestHelper.subscription.delete({
+        service_instance_id: privateServiceInstanceId,
+      });
+    });
+
     afterAll(async () => {
       requestContext.set(undefined);
       await TestHelper.subscription.delete({});
@@ -2977,6 +2984,27 @@ describe('document domain', () => {
       expect(result.slice(0, 2).map(({ document }) => document.id)).toEqual(
         drafts.map(({ id }) => id)
       );
+    });
+
+    it('should ignore the child documents of a resource', async () => {
+      // Given a draft resource with a draft image child
+      const instanceId = SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID;
+      const [parent, child] = await createDocuments(
+        instanceId,
+        DocumentStatus.Draft,
+        2
+      );
+      await DocumentChildrenDomain.insertChildRelationship({
+        parentDocumentId: parent.id,
+        childDocumentId: child.id,
+      });
+
+      // When
+      const result =
+        await DocumentDomain.loadNotPublishedForReminder(LIMIT_PER_STATUS);
+
+      // Then
+      expect(result.map(({ document }) => document.id)).toEqual([parent.id]);
     });
 
     it('should return nothing when every document is published', async () => {

@@ -33,6 +33,7 @@ const testState = vi.hoisted(() => ({
     onError: (error: Error) => void;
   }[],
   token: 'a-token',
+  organizationName: 'Org One' as string | null,
   errorMessage: 'SOME_ERROR',
   lastRegisterVariables: null as Record<string, unknown> | null,
 }));
@@ -57,7 +58,12 @@ const registerPlatform = (
     options.onError(new Error(testState.errorMessage));
     return;
   }
-  options.onSuccess({ registerPlatform: { token: testState.token } });
+  options.onSuccess({
+    registerPlatform: {
+      token: testState.token,
+      organizationName: testState.organizationName,
+    },
+  });
 };
 
 // The component suspends on the real query key, with a fetch the tests control.
@@ -169,6 +175,7 @@ describe('Register', () => {
     testState.mutationMode = 'success';
     testState.pendingRegistrations = [];
     testState.token = 'a-token';
+    testState.organizationName = 'Org One';
     testState.errorMessage = 'SOME_ERROR';
     testState.lastRegisterVariables = null;
     testState.fetchUserOrganizations = null;
@@ -243,7 +250,7 @@ describe('Register', () => {
     // Then
     await waitFor(() => {
       expect(postMessage).toHaveBeenCalledWith(
-        { action: 'register', token: 'my-token' },
+        { action: 'register', token: 'my-token', organizationName: 'Org One' },
         OTHER_ORIGIN
       );
     });
@@ -303,10 +310,41 @@ describe('Register', () => {
 
     await waitFor(() => {
       expect(postMessage).toHaveBeenCalledWith(
-        { action: 'register', token: 'my-token' },
+        { action: 'register', token: 'my-token', organizationName: 'Org One' },
         PLATFORM_ORIGIN
       );
     });
+  });
+
+  it('should forward a null organization name in the register message when the API returns none', async () => {
+    // Given
+    testState.isPlatformRegistered = {
+      status: PlatformRegistrationStatus.NeverRegistered,
+      platformTitle: null,
+      organization: null,
+    } as IsPlatformRegisteredQuery['isPlatformRegistered'];
+    testState.token = 'my-token';
+    testState.organizationName = null;
+    const postMessage = vi.fn();
+    Object.defineProperty(window, 'opener', {
+      value: { postMessage },
+      writable: true,
+    });
+    const { user } = await renderRegister();
+
+    // When
+    await user.click(screen.getByRole('button', { name: 'mock-confirm' }));
+
+    // Then
+    await waitFor(() => {
+      expect(postMessage).toHaveBeenCalledWith(
+        { action: 'register', token: 'my-token', organizationName: null },
+        PLATFORM_ORIGIN
+      );
+    });
+    expect(
+      screen.getByRole('heading', { name: 'Register.Succeeded.Title' })
+    ).toBeInTheDocument();
   });
 
   it('should start a single registration when the confirm button is clicked twice before the server answers', async () => {
@@ -330,7 +368,7 @@ describe('Register', () => {
     await user.click(confirm);
     act(() =>
       testState.pendingRegistrations[0]?.onSuccess({
-        registerPlatform: { token: 'my-token' },
+        registerPlatform: { token: 'my-token', organizationName: 'Org One' },
       })
     );
 
@@ -338,7 +376,7 @@ describe('Register', () => {
     expect(testState.pendingRegistrations).toHaveLength(1);
     await waitFor(() => {
       expect(postMessage).toHaveBeenCalledWith(
-        { action: 'register', token: 'my-token' },
+        { action: 'register', token: 'my-token', organizationName: 'Org One' },
         PLATFORM_ORIGIN
       );
     });
@@ -371,7 +409,11 @@ describe('Register', () => {
     });
     await waitFor(() => {
       expect(postMessage).toHaveBeenCalledWith(
-        { action: 'register', token: testState.token },
+        {
+          action: 'register',
+          token: testState.token,
+          organizationName: testState.organizationName,
+        },
         PLATFORM_ORIGIN
       );
     });
@@ -538,7 +580,12 @@ describe('Register', () => {
       // Then
       await waitFor(() => {
         expect(postMessage).toHaveBeenCalledWith(
-          { action: 'register', token: 'my-token', state: 's-1' },
+          {
+            action: 'register',
+            token: 'my-token',
+            organizationName: 'Org One',
+            state: 's-1',
+          },
           PLATFORM_ORIGIN
         );
       });
@@ -578,7 +625,11 @@ describe('Register', () => {
       // Then
       await waitFor(() => {
         expect(postMessage).toHaveBeenCalledWith(
-          { action: 'register', token: 'my-token' },
+          {
+            action: 'register',
+            token: 'my-token',
+            organizationName: 'Org One',
+          },
           PLATFORM_ORIGIN
         );
       });

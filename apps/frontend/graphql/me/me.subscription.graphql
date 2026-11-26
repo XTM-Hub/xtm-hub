@@ -1,0 +1,10 @@
+subscription MeUserEvents {
+  MeUser {
+    delete {
+      id
+    }
+    edit {
+      ...CurrentUser
+    }
+  }
+}
