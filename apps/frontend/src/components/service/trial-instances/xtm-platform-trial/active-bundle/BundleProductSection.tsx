@@ -83,7 +83,7 @@ export const BundleProductSection = ({
             {...analyticsId('trial_product_name_edit')}
             priority="tertiary"
             size="sm"
-            className="shrink-0 rounded border border-elevation-default text-default-primary"
+            className="shrink-0"
             aria-label={t('XtmPlatformTrial.Products.EditName')}
             icon={<EditIcon className="size-4" />}
             onClick={() => setOpenEditName(true)}

@@ -107,7 +107,7 @@ export const ManageTrialHeader = ({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Button
           priority="secondary"
-          className="gap-2 border-elevation-default"
+          className="gap-2"
           asChild>
           <Link
             {...analyticsId(backAnalyticsId)}
@@ -165,8 +165,7 @@ export const ManageTrialHeader = ({
               )}>
               <Button
                 priority="secondary"
-                disabled
-                className="border-elevation-default">
+                disabled>
                 {t('Service.Bundle.ManageTrial.GroupAction')}
               </Button>
             </DisabledActionTooltip>
@@ -174,7 +173,6 @@ export const ManageTrialHeader = ({
             <Button
               {...analyticsId('trial_users_edit')}
               priority="secondary"
-              className="border-elevation-default"
               onClick={() => setIsEditUsersDialogOpen(true)}>
               {t('Service.Bundle.ManageTrial.GroupAction')}
             </Button>
