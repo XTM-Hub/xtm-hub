@@ -67,7 +67,14 @@ describe('addSolutionCategory mutation', () => {
       addSolutionCategory(input: $input) { name product }
     }`,
     guarded: () => vi.spyOn(solutionCategoryDomain, 'insertSolutionCategory'),
-    expected: ADMIN_ONLY,
+    // A token never carries BYPASS: the admin scope keeps the capabilities of its user, this one included
+    expected: {
+      ...ADMIN_ONLY,
+      tokenRead: ForbiddenErrorCode.ReadOnlyApiToken,
+      tokenReadWrite: ForbiddenErrorCode.ForbiddenAccess,
+      tokenAdmin: ForbiddenErrorCode.ForbiddenAccess,
+      tokenOtherOrganization: ForbiddenErrorCode.ForbiddenAccess,
+    },
     prepare: () => {
       const name = `access-matrix-add-${uuidv4()}`;
       return Promise.resolve({

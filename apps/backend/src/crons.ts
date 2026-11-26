@@ -7,6 +7,7 @@ import { DocumentApp } from './modules/document/document.app';
 import { NewsFeedApp } from './modules/news-feed/news-feed.app';
 import { UserAccountStatusSyncApp } from './modules/organization-management/user/user-account-status-sync/user-account-status-sync.app';
 import { UserOrganizationApp } from './modules/organization-management/user/user-organization/user-organization.app';
+import { PlatformAssertionApp } from './modules/registration/platform-assertion/platform-assertion.app';
 import { EpicApp } from './modules/xtm-platform-roadmap/epic.app';
 import { CRONS_USER_CONTEXT } from './portal.const';
 import { logApp } from './utils/app-logger.util';
@@ -90,6 +91,17 @@ const sendResourceNotPublishedReminder = async (): Promise<void> => {
   });
 };
 
+const purgeExpiredPlatformAssertionIds = async (): Promise<void> => {
+  logApp.info('Running purgeExpiredPlatformAssertionIds job');
+  await requestContext.run(CRONS_USER_CONTEXT, async () => {
+    try {
+      await PlatformAssertionApp.purgeExpiredAssertionIds();
+    } catch (error) {
+      logApp.error('purgeExpiredPlatformAssertionIds job failed:', { error });
+    }
+  });
+};
+
 export const initCronJobs = () => {
   logApp.info('Initializing cron jobs');
   scheduledTasks.push(cron.schedule('0 2 * * *', expireTrials));
@@ -101,6 +113,9 @@ export const initCronJobs = () => {
   );
   scheduledTasks.push(cron.schedule('0 3 * * *', cleanExpiredTrialGroups));
   scheduledTasks.push(cron.schedule('0 4 * * *', cleanExpiredNewsFeedItems));
+  scheduledTasks.push(
+    cron.schedule('0 5 * * *', purgeExpiredPlatformAssertionIds)
+  );
   scheduledTasks.push(
     cron.schedule('0 10 * * 1', sendResourceNotPublishedReminder)
   );

@@ -113,6 +113,23 @@ type Query {
   organization(id: ID!): Organization
   organizations(first: Int = 50, after: ID, orderBy: OrganizationOrdering!, orderMode: OrderingMode!, searchTerm: String): OrganizationConnection!
   userOrganizations: [Organization!]!
+
+  """
+  The members of an organization, administrators first, then by email.
+  NOT_FOUND to a malformed id or a non-member without BYPASS or READ_ORGANIZATION_MEMBERS, else ORGANIZATION_NOT_FOUND.
+  """
+  organizationMembers(
+    organizationId: OrganizationId!
+
+    """
+    The page size, brought between 0 and 100. 0 returns no member but the totalCount.
+    """
+    first: Int!
+    after: ID
+
+    """Matches the email, the first name or the last name, ignoring case."""
+    searchTerm: String
+  ): OrganizationMemberConnection!
   me: User
   usersWithCapabilitiesInOrganization(input: UsersWithCapabilitiesInOrganizationInput!): [OrganizationMemberContact!]!
   users(first: Int!, after: ID, orderBy: UserOrdering!, orderMode: OrderingMode!, searchTerm: String, filters: [Filter!]): UserConnection!
@@ -1063,6 +1080,7 @@ enum NewsFeedItemType {
   RESOURCE_INTEGRATION
   RESOURCE_SCENARIO
   BLOG_POST
+  GITHUB_RELEASE
 }
 
 enum NewsFeedUtmMedium {
@@ -1088,6 +1106,7 @@ enum NewsFeedItemMetadataKey {
   image_alt
   author_names
   read_minutes
+  product_version
 }
 
 type NewsFeedItemMetadata {
@@ -1167,6 +1186,28 @@ type OrganizationEdge {
 type OrganizationConnection {
   totalCount: Int!
   edges: [OrganizationEdge!]!
+  pageInfo: PageInfo!
+}
+
+"""
+A member of an organization, whatever their status: invited, expired, waiting for validation or disabled.
+"""
+type OrganizationMember {
+  id: UserId!
+  email: String!
+  first_name: String
+  last_name: String
+  capabilities: [OrganizationCapability!]!
+}
+
+type OrganizationMemberEdge {
+  cursor: String!
+  node: OrganizationMember!
+}
+
+type OrganizationMemberConnection {
+  totalCount: Int!
+  edges: [OrganizationMemberEdge!]!
   pageInfo: PageInfo!
 }
 

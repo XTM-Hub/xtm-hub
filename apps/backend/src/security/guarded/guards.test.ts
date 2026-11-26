@@ -1,23 +1,23 @@
 import { describe, expect, it } from 'vitest';
+import { TestHelper } from '../../../tests/helper/test.helper';
 import { contextSimpleUserFiligran2 } from '../../../tests/tests.const';
 import {
+  ApiTokenScope,
   OrganizationCapability,
   PortalCapability,
 } from '../../__generated__/resolvers-types';
-import type DeploymentRequest from '../../model/kanel/public/DeploymentRequest';
-import Organization, {
-  OrganizationId,
-} from '../../model/kanel/public/Organization';
 import { UserId } from '../../model/kanel/public/User';
-import { OrganizationHelper } from '../../modules/organization-management/organization/organization.helper';
-import type { FullPlatformConfiguration } from '../../modules/registration/platform-configuration/platform-configuration.domain';
-import { PLATFORM_USER_UUID, SYSTEM_USER_UUID } from '../../portal.const';
 import {
   ForbiddenErrorCode,
   NotFoundErrorCode,
   UnauthenticatedErrorCode,
 } from '../../utils/error/error.code';
-import { platformCallerGuard, systemCallerGuard } from './guards/caller.guard';
+import {
+  callerIsGuard,
+  platformCallerGuard,
+  sessionCallerGuard,
+  systemCallerGuard,
+} from './guards/caller.guard';
 import { orgGuard, selectedOrganization } from './guards/organization.guard';
 import {
   bypassOnlyGuard,
@@ -25,64 +25,19 @@ import {
   portalCapabilityGuard,
 } from './guards/portal.guard';
 import { publicAccess } from './guards/public-access.guard';
-import { buildPrincipal, Principal } from './principal';
+import { buildPrincipal } from './principal';
 
-const USER_ID = 'user-id' as UserId;
-const ORGANIZATION_ID = 'organization-id' as OrganizationId;
-const OTHER_ORGANIZATION_ID = 'other-organization-id' as OrganizationId;
-const PERSONAL_SPACE_ID = OrganizationHelper.personalSpaceIdOf({ id: USER_ID });
-
-const buildUserPrincipal = (
-  overrides: {
-    isBypassUser?: boolean;
-    capabilities?: PortalCapability[];
-    selectedOrganizationId?: OrganizationId;
-    memberships?: Record<string, OrganizationCapability[]>;
-  } = {}
-): Principal => ({
-  kind: 'user',
-  actorId: USER_ID,
-  isBypassUser: overrides.isBypassUser ?? false,
-  portalCapabilities: new Set(overrides.capabilities ?? []),
-  selectedOrganizationId: overrides.selectedOrganizationId ?? ORGANIZATION_ID,
-  memberships: Object.entries(overrides.memberships ?? {}).map(
-    ([organizationId, capabilities]) => ({
-      id: organizationId,
-      organization: { id: organizationId as OrganizationId },
-      capabilities,
-    })
-  ),
-});
-
-const ANONYMOUS: Principal = { kind: 'anonymous' };
-
-const buildSystemPrincipal = (
-  capabilities: PortalCapability[] = []
-): Principal => ({
-  kind: 'system',
-  actorId: SYSTEM_USER_UUID,
-  portalCapabilities: new Set(capabilities),
-});
-
-const PLATFORM_ID = 'platform-id';
-
-const buildRegistrationPlatformPrincipal = (): Principal => ({
-  kind: 'platform',
-  actorId: PLATFORM_USER_UUID,
-  platformId: PLATFORM_ID,
-  organization: { id: ORGANIZATION_ID } as Organization,
-  credential: 'registration',
-  registration: {} as FullPlatformConfiguration,
-});
-
-const buildDeploymentRequestPlatformPrincipal = (): Principal => ({
-  kind: 'platform',
-  actorId: PLATFORM_USER_UUID,
-  platformId: PLATFORM_ID,
-  organization: { id: ORGANIZATION_ID } as Organization,
-  credential: 'deploymentRequest',
-  deploymentRequest: {} as DeploymentRequest,
-});
+const {
+  ANONYMOUS,
+  USER_ID,
+  ORGANIZATION_ID,
+  OTHER_ORGANIZATION_ID,
+  PERSONAL_SPACE_ID,
+  buildDeploymentRequestPlatformPrincipal,
+  buildRegistrationPlatformPrincipal,
+  buildSystemPrincipal,
+  buildUserPrincipal,
+} = TestHelper.guardFixtures;
 
 describe('publicAccess guard', () => {
   it.each([
@@ -96,7 +51,7 @@ describe('publicAccess guard', () => {
     // Given the public guard
 
     // When
-    const result = await publicAccess.check(principal);
+    const result = await publicAccess.check(principal, {});
 
     // Then
     expect(result).toEqual({ allowed: true });
@@ -148,7 +103,7 @@ describe('bypassOnlyGuard', () => {
     const guard = bypassOnlyGuard();
 
     // When
-    const result = await guard.check(principal);
+    const result = await guard.check(principal, {});
 
     // Then
     expect(result).toEqual(expected);
@@ -193,7 +148,7 @@ describe('loggedInGuard', () => {
     const guard = loggedInGuard();
 
     // When
-    const result = await guard.check(principal);
+    const result = await guard.check(principal, {});
 
     // Then
     expect(result).toEqual(expected);
@@ -254,7 +209,7 @@ describe('portalCapabilityGuard', () => {
       const guard = portalCapabilityGuard([PortalCapability.ManageDeployment]);
 
       // When
-      const result = await guard.check(principal);
+      const result = await guard.check(principal, {});
 
       // Then
       expect(result).toEqual(expected);
@@ -272,7 +227,7 @@ describe('portalCapabilityGuard', () => {
     });
 
     // When
-    const result = await guard.check(principal);
+    const result = await guard.check(principal, {});
 
     // Then
     expect(result).toEqual({ allowed: true });
@@ -331,7 +286,7 @@ describe('systemCallerGuard', () => {
       const guard = systemCallerGuard([PortalCapability.GenerateManifest]);
 
       // When
-      const result = await guard.check(principal);
+      const result = await guard.check(principal, {});
 
       // Then
       expect(result).toEqual(expected);
@@ -347,7 +302,7 @@ describe('systemCallerGuard', () => {
     const principal = buildSystemPrincipal([PortalCapability.GenerateManifest]);
 
     // When
-    const result = await guard.check(principal);
+    const result = await guard.check(principal, {});
 
     // Then
     expect(result).toEqual({
@@ -383,7 +338,7 @@ describe('orgGuard on the selected organization', () => {
         isBypassUser: true,
         memberships: {},
       }),
-      expected: { allowed: true },
+      expected: { allowed: true, checked: { kind: 'admin' } },
     },
     {
       label: 'a user who is not a member',
@@ -403,7 +358,10 @@ describe('orgGuard on the selected organization', () => {
           [ORGANIZATION_ID]: [OrganizationCapability.ManageSubscription],
         },
       }),
-      expected: { allowed: true },
+      expected: {
+        allowed: true,
+        checked: { kind: 'organization', organizationId: ORGANIZATION_ID },
+      },
     },
     {
       label: 'a member holding ADMINISTRATE_ORGANIZATION',
@@ -412,7 +370,10 @@ describe('orgGuard on the selected organization', () => {
           [ORGANIZATION_ID]: [OrganizationCapability.AdministrateOrganization],
         },
       }),
-      expected: { allowed: true },
+      expected: {
+        allowed: true,
+        checked: { kind: 'organization', organizationId: ORGANIZATION_ID },
+      },
     },
     {
       label: 'a member holding the capability in another organization only',
@@ -437,7 +398,7 @@ describe('orgGuard on the selected organization', () => {
       });
 
       // When
-      const result = await guard.check(principal);
+      const result = await guard.check(principal, {});
 
       // Then
       expect(result).toEqual(expected);
@@ -460,17 +421,23 @@ describe('orgGuard on the selected organization', () => {
     });
 
     // When
-    const result = await guard.check(principal);
+    const result = await guard.check(principal, {});
 
     // Then
-    expect(result).toEqual({ allowed: true });
+    expect(result).toEqual({
+      allowed: true,
+      checked: { kind: 'organization', organizationId: ORGANIZATION_ID },
+    });
   });
 
   it.each([
     {
       label: 'a member without any capability',
       memberships: { [ORGANIZATION_ID]: [] },
-      expected: { allowed: true },
+      expected: {
+        allowed: true,
+        checked: { kind: 'organization', organizationId: ORGANIZATION_ID },
+      },
     },
     {
       label: 'a user who is not a member',
@@ -483,7 +450,10 @@ describe('orgGuard on the selected organization', () => {
       memberships: {
         [PERSONAL_SPACE_ID]: [OrganizationCapability.AdministrateOrganization],
       },
-      expected: { allowed: true },
+      expected: {
+        allowed: true,
+        checked: { kind: 'organization', organizationId: PERSONAL_SPACE_ID },
+      },
     },
   ])(
     'should answer $label when only the membership is required',
@@ -496,7 +466,8 @@ describe('orgGuard on the selected organization', () => {
 
       // When
       const result = await guard.check(
-        buildUserPrincipal({ selectedOrganizationId, memberships })
+        buildUserPrincipal({ selectedOrganizationId, memberships }),
+        {}
       );
 
       // Then
@@ -518,7 +489,7 @@ describe('orgGuard on the selected organization', () => {
     });
 
     // When
-    const result = await guard.check(principal);
+    const result = await guard.check(principal, {});
 
     // Then
     expect(result).toEqual({
@@ -566,9 +537,203 @@ describe('platformCallerGuard', () => {
     const guard = platformCallerGuard({ credential: 'registration' });
 
     // When
-    const result = await guard.check(principal);
+    const result = await guard.check(principal, {});
 
     // Then
     expect(result).toEqual(expected);
+  });
+});
+
+describe('orgGuard without BYPASS', () => {
+  const guard = () =>
+    orgGuard({
+      organization: selectedOrganization,
+      capabilities: [],
+      bypass: false,
+    });
+
+  it('should refuse with NOT_FOUND a BYPASS user who is not a member', async () => {
+    // Given
+    const principal = buildUserPrincipal({ isBypassUser: true });
+
+    // When
+    const result = await guard().check(principal, {});
+
+    // Then
+    expect(result).toEqual({
+      allowed: false,
+      code: NotFoundErrorCode.NotFound,
+    });
+  });
+
+  it('should allow a BYPASS user who is a member, as an organization member and not as an admin', async () => {
+    // Given
+    const principal = buildUserPrincipal({
+      isBypassUser: true,
+      memberships: { [ORGANIZATION_ID]: [] },
+    });
+
+    // When
+    const result = await guard().check(principal, {});
+
+    // Then
+    expect(result).toEqual({
+      allowed: true,
+      checked: { kind: 'organization', organizationId: ORGANIZATION_ID },
+    });
+  });
+
+  it('should still refuse a BYPASS member who misses the capability', async () => {
+    // Given
+    const principal = buildUserPrincipal({
+      isBypassUser: true,
+      memberships: { [ORGANIZATION_ID]: [] },
+    });
+    const administrators = orgGuard({
+      organization: selectedOrganization,
+      capabilities: [OrganizationCapability.AdministrateOrganization],
+      bypass: false,
+    });
+
+    // When
+    const result = await administrators.check(principal, {});
+
+    // Then
+    expect(result).toEqual({
+      allowed: false,
+      code: ForbiddenErrorCode.MissingCapabilityOnOrganization,
+    });
+  });
+});
+
+describe('sessionCallerGuard', () => {
+  it.each([
+    {
+      label: 'an anonymous visitor',
+      principal: ANONYMOUS,
+      expected: {
+        allowed: false,
+        code: UnauthenticatedErrorCode.Unauthenticated,
+      },
+    },
+    {
+      label: 'a user',
+      principal: buildUserPrincipal(),
+      expected: { allowed: true },
+    },
+    {
+      label: 'a BYPASS user',
+      principal: buildUserPrincipal({ isBypassUser: true }),
+      expected: { allowed: true },
+    },
+    ...Object.values(ApiTokenScope).map((scope) => ({
+      label: `a ${scope} API token`,
+      principal: buildUserPrincipal({ apiTokenScope: scope }),
+      expected: {
+        allowed: false,
+        code: ForbiddenErrorCode.NotAllowedWithApiToken,
+      },
+    })),
+    {
+      label: 'an API token of a BYPASS user',
+      principal: buildUserPrincipal({
+        isBypassUser: true,
+        apiTokenScope: ApiTokenScope.Admin,
+      }),
+      expected: {
+        allowed: false,
+        code: ForbiddenErrorCode.NotAllowedWithApiToken,
+      },
+    },
+    {
+      label: 'a system caller',
+      principal: buildSystemPrincipal([PortalCapability.Bypass]),
+      expected: { allowed: false, code: ForbiddenErrorCode.ForbiddenAccess },
+    },
+  ])('should answer $label', async ({ principal, expected }) => {
+    // Given
+    const guard = sessionCallerGuard();
+
+    // When
+    const result = await guard.check(principal, {});
+
+    // Then
+    expect(result).toEqual(expected);
+  });
+});
+
+describe('callerIsGuard', () => {
+  const OTHER_USER_ID = 'other-user-id' as UserId;
+  type UserArgs = { userId: UserId };
+  const guard = () =>
+    callerIsGuard<UserArgs>({ user: (_caller, { userId }) => userId });
+
+  it('should allow the user the source names', async () => {
+    // When
+    const result = await guard().check(buildUserPrincipal(), {
+      userId: USER_ID,
+    });
+
+    // Then
+    expect(result).toEqual({ allowed: true });
+  });
+
+  it('should allow the user an asynchronous source names', async () => {
+    // Given
+    const asyncGuard = callerIsGuard<UserArgs>({
+      user: (_caller, { userId }) => Promise.resolve(userId),
+    });
+
+    // When
+    const result = await asyncGuard.check(buildUserPrincipal(), {
+      userId: USER_ID,
+    });
+
+    // Then
+    expect(result).toEqual({ allowed: true });
+  });
+
+  it.each([
+    { label: 'another user', principal: buildUserPrincipal() },
+    {
+      label: 'a BYPASS user who is not the named user',
+      principal: buildUserPrincipal({
+        isBypassUser: true,
+        capabilities: [PortalCapability.Bypass],
+      }),
+    },
+  ])('should refuse $label with NOT_FOUND', async ({ principal }) => {
+    // When
+    const result = await guard().check(principal, { userId: OTHER_USER_ID });
+
+    // Then
+    expect(result).toEqual({
+      allowed: false,
+      code: NotFoundErrorCode.NotFound,
+    });
+  });
+
+  it('should refuse with NOT_FOUND when the source names nobody', async () => {
+    // When
+    const result = await callerIsGuard<Partial<UserArgs>>({
+      user: (_caller, { userId }) => userId,
+    }).check(buildUserPrincipal(), {});
+
+    // Then
+    expect(result).toEqual({
+      allowed: false,
+      code: NotFoundErrorCode.NotFound,
+    });
+  });
+
+  it('should refuse an anonymous visitor with UNAUTHENTICATED', async () => {
+    // When
+    const result = await guard().check(ANONYMOUS, { userId: USER_ID });
+
+    // Then
+    expect(result).toEqual({
+      allowed: false,
+      code: UnauthenticatedErrorCode.Unauthenticated,
+    });
   });
 });

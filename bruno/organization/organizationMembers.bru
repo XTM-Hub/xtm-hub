@@ -1,0 +1,67 @@
+meta {
+  name: organizationMembers
+  type: graphql
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/graphql-api
+  body: graphql
+  auth: inherit
+}
+
+headers {
+  cookie: {{cookie}}
+}
+
+body:graphql {
+  query OrganizationMembers(
+    $organizationId: OrganizationId!
+    $first: Int!
+    $after: ID
+    $searchTerm: String
+  ) {
+    organizationMembers(
+      organizationId: $organizationId
+      first: $first
+      after: $after
+      searchTerm: $searchTerm
+    ) {
+      totalCount
+      edges {
+        cursor
+        node {
+          id
+          email
+          first_name
+          last_name
+          capabilities
+        }
+      }
+      pageInfo {
+        startCursor
+        endCursor
+        hasNextPage
+        hasPreviousPage
+      }
+    }
+  }
+}
+
+body:graphql:vars {
+  {
+    "organizationId": "",
+    "first": 25,
+    "after": null,
+    "searchTerm": null
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+
+docs {
+  Pages the members of organizationId (pass the endCursor of a page as after for the next one); access, order and error codes are in the organizationMembers description of organization.graphql.
+}

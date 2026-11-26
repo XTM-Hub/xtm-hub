@@ -60,6 +60,8 @@ export interface PlatformOwnerOrganization extends Organization {
   service_instance_id: ServiceInstanceId;
 }
 
+const LTS_VERSION_PATTERN = '%-lts%';
+
 const RegisteredPlatformsSelectColumns = [
   'ServiceDefinition.identifier as identifier',
   'ServiceInstance.id as id',
@@ -262,7 +264,8 @@ export const RegistrationDomain = {
   },
 
   loadAllActiveRegisteredPlatformsByPlatformIdentifier: async (
-    platformIdentifier: PlatformIdentifier
+    platformIdentifier: PlatformIdentifier,
+    { isLts }: { isLts?: boolean } = {}
   ): Promise<DomainRegisteredPlatform[]> => {
     const serviceDefinitionIdentifier =
       serviceDefinitionIdentifierMappedByPlatformIdentifier[platformIdentifier];
@@ -287,6 +290,16 @@ export const RegistrationDomain = {
         '=',
         PlatformConfigurationStatus.Active
       )
+      .modify((queryBuilder) => {
+        // A platform without a version matches neither LIKE nor NOT LIKE
+        if (isLts !== undefined) {
+          queryBuilder.where(
+            'PlatformConfiguration.platform_version',
+            isLts ? 'like' : 'not like',
+            LTS_VERSION_PATTERN
+          );
+        }
+      })
       .select(RegisteredPlatformsSelectColumns);
   },
 
