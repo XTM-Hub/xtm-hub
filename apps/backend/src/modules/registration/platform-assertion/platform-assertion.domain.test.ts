@@ -65,6 +65,17 @@ describe('platformAssertionDomain', () => {
       // Then
       expect(results.toSorted()).toEqual([false, true]);
     });
+
+    it('should refuse an assertion id longer than 255 characters', async () => {
+      // When
+      const consumption = PlatformAssertionDomain.consumeJti({
+        jti: 'j'.repeat(256),
+        expiresAt: NOT_EXPIRED_AT,
+      });
+
+      // Then
+      await expect(consumption).rejects.toThrow(/violates check constraint/);
+    });
   });
 
   describe('deleteExpiredJtis', () => {

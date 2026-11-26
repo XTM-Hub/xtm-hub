@@ -636,6 +636,24 @@ describe('platformConfigurationDomain', () => {
       }
     );
 
+    it('should not load a tenant registration when the lookup has no tenant', async () => {
+      // Given
+      await TestHelper.platformConfiguration.delete({
+        service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
+      });
+
+      // When
+      const configuration =
+        await PlatformConfigurationDomain.loadConfigurationByPlatformAndKeyId({
+          platform_id: platformId,
+          tenant_id: null,
+          public_key_id: KEY_ID,
+        });
+
+      // Then
+      expect(configuration).toBeUndefined();
+    });
+
     it.each([
       {
         name: 'another key id',

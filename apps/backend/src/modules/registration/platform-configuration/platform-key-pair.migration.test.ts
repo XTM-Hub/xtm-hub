@@ -1,3 +1,4 @@
+import { v4 as uuidv4 } from 'uuid';
 import { afterEach, describe, expect, it } from 'vitest';
 import { TestHelper } from '../../../../tests/helper/test.helper';
 import { SERVICES } from '../../../../tests/tests.const';
@@ -5,6 +6,7 @@ import { isUuid } from '../../../utils/uuid.util';
 
 const MIGRATION = '20261124120000_add_platform_key_pair';
 const SERVICE_INSTANCE_ID = SERVICES.INSTANCES.INTEGRATIONS.ID;
+const OTHER_SERVICE_INSTANCE_ID = SERVICES.INSTANCES.OPENAEV_SCENARIOS.ID;
 const PUBLIC_KEY = {
   kty: 'OKP',
   crv: 'Ed25519',
@@ -40,6 +42,9 @@ describe('add_platform_key_pair migration', () => {
   afterEach(async () => {
     await TestHelper.platformConfiguration.delete({
       service_instance_id: SERVICE_INSTANCE_ID,
+    });
+    await TestHelper.platformConfiguration.delete({
+      service_instance_id: OTHER_SERVICE_INSTANCE_ID,
     });
     // Leave the schema as the other suites expect it, even when a test failed after rolling back.
     if (!(await TestHelper.migration.hasTable('PlatformAssertionJti'))) {
@@ -120,6 +125,22 @@ describe('add_platform_key_pair migration', () => {
           public_key_id: PUBLIC_KEY.kid,
         },
       },
+      {
+        name: 'an empty key id',
+        credentials: {
+          public_key: PUBLIC_KEY,
+          public_key_id: '',
+          key_enrolled_at: new Date(),
+        },
+      },
+      {
+        name: 'a key id longer than 255 characters',
+        credentials: {
+          public_key: PUBLIC_KEY,
+          public_key_id: 'k'.repeat(256),
+          key_enrolled_at: new Date(),
+        },
+      },
     ])('should refuse a registration with $name', async ({ credentials }) => {
       // When
       const creation = TestHelper.platformConfiguration.create({
@@ -130,5 +151,38 @@ describe('add_platform_key_pair migration', () => {
       // Then
       await expect(creation).rejects.toThrow(/violates check constraint/);
     });
+
+    it.each([
+      { name: 'the instance', tenant_id: null },
+      { name: 'a tenant', tenant_id: uuidv4() },
+    ])(
+      'should refuse a second registration of $name with the same platform and key id',
+      async ({ tenant_id }) => {
+        // Given
+        const platformId = uuidv4();
+        const keyedRegistration = {
+          platform_id: platformId,
+          tenant_id,
+          public_key: PUBLIC_KEY,
+          public_key_id: PUBLIC_KEY.kid,
+          key_enrolled_at: new Date(),
+        };
+        await TestHelper.platformConfiguration.create({
+          service_instance_id: SERVICE_INSTANCE_ID,
+          ...keyedRegistration,
+        });
+
+        // When
+        const creation = TestHelper.platformConfiguration.create({
+          service_instance_id: OTHER_SERVICE_INSTANCE_ID,
+          ...keyedRegistration,
+        });
+
+        // Then
+        await expect(creation).rejects.toThrow(
+          /platformconfiguration_platform_tenant_key_unique/
+        );
+      }
+    );
   });
 });
