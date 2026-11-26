@@ -14,10 +14,8 @@ Postgres runs `READ COMMITTED` by default, so a "read, decide, write" sequence c
 commit; `withTransaction` alone does not prevent that. Usual signals: "do this once", "must be unique", "at least one
 remains", a limit, a quota, a counter.
 
-A lookup that authenticates or authorizes a caller ("find the registration for this key") is a uniqueness invariant
-too, though it writes nothing: when two rows match, `.first()` decides whose rights apply, an access risk to flag
-(section 1). The default protection is a unique index in the migration that adds the column, see the `knex-migration`
-skill's "Lookup Columns".
+A query that should only ever find one row is a uniqueness invariant too, though it writes nothing: if two rows match,
+`.first()` picks one arbitrarily. Propose a unique constraint on what it matches (see the `knex-migration` skill).
 
 ## 1. The user decides, you inform
 

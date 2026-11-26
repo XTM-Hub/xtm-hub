@@ -45,34 +45,18 @@ an `alterTable` will do.
   just the one you're changing — Knex/Postgres will silently drop any
   unspecified property (e.g. an existing `defaultTo`) instead of preserving it.
 
-## Lookup Columns
-- A column, or set of columns, that a query uses to find exactly one row (a
-  credential, a key id, an external id) gets a unique index in the migration that
-  adds it (a `UNIQUE` constraint creates one); that index also serves the lookup.
-  Without it, a `.first()` on a match that is not unique picks an arbitrary row,
-  and every lookup scans the table. Leaving it out is a decision to state in the
-  PR (see the `postgres-concurrency` skill), never a gap inherited by default.
-- Copying a precedent copies its gaps. In TDR-34 chunk H1 (#4442), the first draft
-  of `loadConfigurationByPlatformAndKeyId` matched on
-  `(platform_id, tenant_id, public_key_id)` with `.first()` and nothing unique or
-  indexed, because it mirrored `loadConfigurationByPlatformAndToken`, whose `token`
-  column has the same gap. The review asked for a partial unique index. When the
-  precedent has the gap, name it in the PR rather than reproduce it.
-- Two NULLs never collide in a unique index by default. For a nullable part of the
-  key (`tenant_id` above), add `NULLS NOT DISTINCT`, as
-  `20260522072050_add_unique_service_capability_pair.js` does: the columns stay
-  plain, so both `=` and `IS NULL` lookups use the index. A
-  `COALESCE(col, <sentinel>)` expression index also works, but only for queries
-  that repeat the same expression.
-- For the new lookup column itself, when existing rows have no value yet, make the
-  index partial (`WHERE col IS NOT NULL`): it cannot fail on existing rows while
-  every one is null, and rows without a value stay out of it. The two combine, e.g.
-  `CREATE UNIQUE INDEX … (platform_id, tenant_id, public_key_id) NULLS NOT DISTINCT
-  WHERE public_key_id IS NOT NULL`. A partial or expression index must be a
-  `CREATE UNIQUE INDEX`, not a table constraint.
+## Single-Row Lookups
+- When you understand that a query can only ever match one row (a `.first()` on
+  an identifier, a credential, a natural key), propose a unique constraint on the
+  columns it matches, in the migration that adds them when they are new: it
+  enforces the assumption instead of hoping the data respects it, and its index
+  serves the lookup. Do not skip it because the precedent you mirror did.
+- Two NULLs never collide in a unique index by default: when one of those columns
+  is nullable, add `NULLS NOT DISTINCT`, as
+  `20260522072050_add_unique_service_capability_pair.js` does.
 - If existing rows may already collide, merge or remove them in the same migration
-  before adding the index, as
-  `20261124100000_add_unique_subscription_organization_service_instance.js` does.
+  first, as `20261124100000_add_unique_subscription_organization_service_instance.js`
+  does.
 
 ## Backfilling Existing Rows
 - **Derive into a new column, never overwrite the source one.** Mirror
