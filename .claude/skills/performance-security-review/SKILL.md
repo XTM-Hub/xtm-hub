@@ -19,6 +19,9 @@ early.
   operation is guarded and that every query reading protected data filters its rows to what the caller may see
   (list, by-id, count, search, export), as `.claude/rules/access-control.md` describes. A check that exists only in
   the frontend is a finding.
+- For every new query that finds one row by a column or set of columns, check that the migration makes the match
+  unique and indexed, nullable members included, as `.claude/skills/knex-migration/SKILL.md` ("Lookup Columns")
+  describes, or that the PR states why not. A precedent with the same gap is not a justification.
 - Anticipate likely future failures caused by current design choices,
   edge-case gaps, and scalability limits.
 - Recommend optimizations with clear rationale, expected impact, trade-offs,

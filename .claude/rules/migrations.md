@@ -13,7 +13,7 @@ new one.
 
 For how to write and scaffold migrations themselves, follow
 [`.claude/skills/knex-migration/SKILL.md`](../skills/knex-migration/SKILL.md) (Postgres — table naming, `.alter()`
-gotcha, `down` correctness) and
+gotcha, `down` correctness, uniqueness of lookup columns) and
 [`.claude/skills/elasticsearch-migration/SKILL.md`](../skills/elasticsearch-migration/SKILL.md) (Elasticsearch —
 mapping changes, isolation from app code). This file covers the surrounding pieces those skills don't: seeds and the
 CI coupling.
