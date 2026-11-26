@@ -13,9 +13,13 @@ import {
   UserWithOrganizationsAndRole,
 } from '../../../model/user';
 import { dispatch } from '../../../pub';
-import { updateUserSession } from '../../../session-store-manager';
+import {
+  destroyUserSessions,
+  updateUserSession,
+} from '../../../session-store-manager';
 import { MinIOClient } from '../../../thirdparty/minio/client';
 import { logApp } from '../../../utils/app-logger.util';
+import { getErrorMessage } from '../../../utils/error/error-guard.util';
 import { ErrorCode, NotFoundErrorCode } from '../../../utils/error/error.code';
 import { NotFoundError } from '../../../utils/error/error.util';
 import { OrganizationDomain } from '../organization/organization.domain';
@@ -52,6 +56,27 @@ export const isUserLastOrganizationAdministrator = async (
   return administratorsCount <= 1;
 };
 
+/**
+ * Rewrite the user's active sessions from a fresh loadUserBy, the shape the
+ * @auth directive expects (loadUserDetails lacks selected_org_capabilities and
+ * capabilities). A disabled user loses its sessions.
+ */
+const refreshUserSessions = async (userId: UserId): Promise<void> => {
+  let user: UserLoadUserBy | undefined;
+  try {
+    user = await UserDomain.loadUserBy({ 'User.id': userId });
+  } catch (error) {
+    if (getErrorMessage(error) === ErrorCode.UserDisabled) {
+      await destroyUserSessions(userId);
+      return;
+    }
+    throw error;
+  }
+  if (user) {
+    await updateUserSession(user);
+  }
+};
+
 const updateUserCapabilities = async ({
   user_id,
   organization_id,
@@ -68,18 +93,19 @@ const updateUserCapabilities = async ({
       orgCapabilities,
     });
 
-    const user = await UserDomain.loadUserDetails({
+    await refreshUserSessions(user_id);
+
+    return UserDomain.loadUserDetails({
       'User.id': user_id,
     });
-
-    updateUserSession(user);
-    return user;
   });
   const userMapped = UserHelper.mapUserToGraphqlUser(user);
   return { user, userMapped };
 };
 
 export const UserHelper = {
+  refreshUserSessions,
+
   mapUserToGraphqlUser: (
     user: User | UserLoadUserBy | UserWithOrganizationsAndRole
   ): GraphqlUser => {

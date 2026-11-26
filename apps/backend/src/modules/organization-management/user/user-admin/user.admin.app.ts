@@ -15,10 +15,7 @@ import { PROTECTED_USER_UUIDS } from '../../../../portal.const';
 import { dispatch } from '../../../../pub';
 import { isUserAdminPlatform } from '../../../../security/access';
 import { securityGuard } from '../../../../security/guard';
-import {
-  destroyUserSessions,
-  updateUserSession,
-} from '../../../../session-store-manager';
+import { destroyUserSessions } from '../../../../session-store-manager';
 import { auth0Client } from '../../../../thirdparty/auth0/client';
 import { logApp } from '../../../../utils/app-logger.util';
 import { toError } from '../../../../utils/error/error-guard.util';
@@ -173,7 +170,7 @@ export const UserAdminApp = {
         UserHelper.removePendingAndDispatch(user, orgCapa.organization_id)
       )
     );
-    updateUserSession(user);
+    await UserHelper.refreshUserSessions(userId);
 
     const userMapped = UserHelper.mapUserToGraphqlUser(user);
 

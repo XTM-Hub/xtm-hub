@@ -1,14 +1,19 @@
 import { describe, expect, it, vi } from 'vitest';
 import { TestHelper } from '../../../../tests/helper/test.helper';
-import { TEST_ORGANIZATIONS } from '../../../../tests/tests.const';
+import {
+  requestContextAdminSecondOrga,
+  TEST_ORGANIZATIONS,
+} from '../../../../tests/tests.const';
 import {
   OrganizationCapability,
   UserAccountStatus,
 } from '../../../__generated__/resolvers-types';
+import { requestContext } from '../../../context/request.context';
 import { UserId } from '../../../model/kanel/public/User';
 import * as pub from '../../../pub';
 import * as sessionStoreManager from '../../../session-store-manager';
-import { NotFoundErrorCode } from '../../../utils/error/error.code';
+import { ErrorCode, NotFoundErrorCode } from '../../../utils/error/error.code';
+import { UserDomain } from './user-domain/user.domain';
 import { UserHelper } from './user.helper';
 
 describe('userHelper', () => {
@@ -96,6 +101,73 @@ describe('userHelper', () => {
 
       // Then
       await expect(call).rejects.toThrow(NotFoundErrorCode.UserNotFound);
+    });
+  });
+
+  describe('updateUserOrgCapabilitiesAndDispatch', () => {
+    it('should refresh the session with the new selected organization capabilities', async () => {
+      // Given
+      requestContext.set(requestContextAdminSecondOrga);
+      const updateUserSessionSpy = vi
+        .spyOn(sessionStoreManager, 'updateUserSession')
+        .mockResolvedValue();
+      vi.spyOn(pub, 'dispatch').mockResolvedValue();
+      const simpleUserId =
+        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.SIMPLE.ID;
+
+      // When
+      await UserHelper.updateUserOrgCapabilitiesAndDispatch({
+        user_id: simpleUserId,
+        organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        orgCapabilities: [OrganizationCapability.ManageAccess],
+      });
+
+      // Then
+      expect(updateUserSessionSpy).toHaveBeenCalledExactlyOnceWith(
+        expect.objectContaining({
+          id: simpleUserId,
+          selected_org_capabilities: [OrganizationCapability.ManageAccess],
+          capabilities: expect.any(Array),
+        })
+      );
+    });
+  });
+
+  describe('refreshUserSessions', () => {
+    it('should destroy the sessions of a disabled user instead of updating them', async () => {
+      // Given
+      const userId = TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID;
+      vi.spyOn(UserDomain, 'loadUserBy').mockRejectedValue(
+        new Error(ErrorCode.UserDisabled)
+      );
+      const updateUserSessionSpy = vi
+        .spyOn(sessionStoreManager, 'updateUserSession')
+        .mockResolvedValue();
+      const destroyUserSessionsSpy = vi
+        .spyOn(sessionStoreManager, 'destroyUserSessions')
+        .mockResolvedValue();
+
+      // When
+      await UserHelper.refreshUserSessions(userId);
+
+      // Then
+      expect(destroyUserSessionsSpy).toHaveBeenCalledExactlyOnceWith(userId);
+      expect(updateUserSessionSpy).not.toHaveBeenCalled();
+    });
+
+    it('should leave the sessions alone when the user does not exist', async () => {
+      // Given
+      const updateUserSessionSpy = vi
+        .spyOn(sessionStoreManager, 'updateUserSession')
+        .mockResolvedValue();
+
+      // When
+      await UserHelper.refreshUserSessions(
+        '00000000-0000-0000-0000-000000000000' as UserId
+      );
+
+      // Then
+      expect(updateUserSessionSpy).not.toHaveBeenCalled();
     });
   });
 

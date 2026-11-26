@@ -4,7 +4,6 @@ import { requestContext } from '../../../../context/request.context';
 import { UserTransferRequestId } from '../../../../model/kanel/public/UserTransferRequest';
 import { UserLoadUserBy } from '../../../../model/user';
 import { sendMail } from '../../../../server/mail-service';
-import { updateUserSession } from '../../../../session-store-manager';
 import { auth0Client } from '../../../../thirdparty/auth0/client';
 import { MinIOClient } from '../../../../thirdparty/minio/client';
 import { logApp } from '../../../../utils/app-logger.util';
@@ -68,12 +67,6 @@ export const userProfileApp = {
     } catch (err) {
       logApp.error(toError(err));
     }
-
-    const user = await UserDomain.loadUserDetails({
-      'User.id': meUser.id,
-    });
-
-    updateUserSession(user);
 
     return UserHelper.updateAndDispatchUser(meUser.id);
   },
