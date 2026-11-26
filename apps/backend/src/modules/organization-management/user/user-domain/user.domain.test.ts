@@ -1,7 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TestHelper } from '../../../../../tests/helper/test.helper';
 import {
+  CAPABILITY_READ_ORGANIZATION_MEMBERS,
   contextSimpleUserSecondOrga,
   requestContextAdminSecondOrga,
   // eslint-disable-next-line no-restricted-imports
@@ -10,7 +11,10 @@ import {
   TEST_ORGANIZATIONS,
 } from '../../../../../tests/tests.const';
 import {
+  ApiTokenScope,
   OrderingMode,
+  OrganizationCapability,
+  OrganizationMemberConnection,
   PlatformIdentifier,
   ServiceGroupName,
   UserAccountStatus,
@@ -18,11 +22,15 @@ import {
 } from '../../../../__generated__/resolvers-types';
 import { requestContext } from '../../../../context/request.context';
 import { DeploymentRequestId } from '../../../../model/kanel/public/DeploymentRequest';
+import { OrganizationId } from '../../../../model/kanel/public/Organization';
 import { ServiceGroupId } from '../../../../model/kanel/public/ServiceGroup';
-import User, { UserId } from '../../../../model/kanel/public/User';
+import User, { UserId, UserMutator } from '../../../../model/kanel/public/User';
+import { UserOrganizationCapabilityId } from '../../../../model/kanel/public/UserOrganizationCapability';
+import { UserLoadUserBy } from '../../../../model/user';
 import { ROLE_ADMIN } from '../../../../portal.const';
 import { TelemetryApp } from '../../../telemetry/telemetry.app';
 import { TelemetrySource } from '../../../telemetry/telemetry.const';
+import { UserOrganizationDomain } from '../user-organization/user-organization.domain';
 import { UserDomain } from './user.domain';
 
 //Issue with test
@@ -581,6 +589,488 @@ describe('users domain', () => {
 
       // Then
       expect(rows).toEqual([]);
+    });
+  });
+
+  describe('loadOrganizationMemberConnection', () => {
+    // Larger than any organization these tests read: every member fits on one page
+    const PAGE_SIZE = 100;
+    const FILIGRAN = TEST_ORGANIZATIONS.FILIGRAN;
+    const SECOND = TEST_ORGANIZATIONS.SECOND_ORGANIZATION;
+    const SECOND_MEMBER_IDS: string[] = [
+      SECOND.USERS.ADMIN_ORGA.ID,
+      SECOND.USERS.REGISTERER.ID,
+      SECOND.USERS.SIMPLE.ID,
+    ];
+    const SECOND_MEMBERS = {
+      ids: [...SECOND_MEMBER_IDS].sort(),
+      totalCount: SECOND_MEMBER_IDS.length,
+    };
+    const NO_MEMBER = { ids: [], totalCount: 0 };
+    const createdUserIds: UserId[] = [];
+    const createdCapabilityIds: UserOrganizationCapabilityId[] = [];
+
+    const addMember = async (
+      organizationId: OrganizationId,
+      fields: UserMutator = {}
+    ) => {
+      const { user } = await TestHelper.user.insertInOrganization(
+        organizationId,
+        fields
+      );
+      createdUserIds.push(user.id);
+      return user;
+    };
+
+    // On a seeded membership, so the cleanup deletes the capability row by its id only
+    const addCapability = async (
+      userId: UserId,
+      organizationId: OrganizationId,
+      name: OrganizationCapability
+    ) => {
+      const membership = await TestHelper.user_Organization.load({
+        user_id: userId,
+        organization_id: organizationId,
+      });
+      const capability = await TestHelper.user_OrganizationCapability.create({
+        user_organization_id: membership.id,
+        name,
+      });
+      createdCapabilityIds.push(capability!.id);
+    };
+
+    const setSimpleUserOfSecondCaller = (
+      overrides: Partial<UserLoadUserBy> = {}
+    ) =>
+      requestContext.set({
+        ...requestContextSimpleUserSecondOrga,
+        user: { ...requestContextSimpleUserSecondOrga.user, ...overrides },
+      });
+
+    const countFiligranMembers = async () => {
+      const [row] = await UserOrganizationDomain.countUsersInOrganizations([
+        FILIGRAN.ID,
+      ]);
+      return row?.count ?? 0;
+    };
+
+    const memberIds = ({ edges }: OrganizationMemberConnection) =>
+      edges.map(({ node }) => node.id);
+
+    // Order-free, for the organizations whose members the seed fixes
+    const membersOf = (connection: OrganizationMemberConnection) => ({
+      ids: memberIds(connection).sort(),
+      totalCount: Number(connection.totalCount),
+    });
+
+    // For FILIGRAN, whose member count is compared to countUsersInOrganizations
+    const sizeOf = ({ edges, totalCount }: OrganizationMemberConnection) => ({
+      edges: edges.length,
+      totalCount: Number(totalCount),
+    });
+
+    afterEach(async () => {
+      for (const id of createdCapabilityIds.splice(0)) {
+        await TestHelper.user_OrganizationCapability.delete({ id });
+      }
+      // Deleting the users cascades to their memberships, capabilities, pending requests and API tokens
+      for (const id of createdUserIds.splice(0)) {
+        await TestHelper.user.delete({ id });
+      }
+    });
+
+    describe('as a BYPASS user', () => {
+      const SEARCH_CASES = [
+        {
+          field: 'email',
+          searchTerm: 'REGISTERER',
+          expectedId: SECOND.USERS.REGISTERER.ID,
+        },
+        {
+          field: 'first name',
+          searchTerm: SECOND.USERS.REGISTERER.FIRST_NAME.toUpperCase(),
+          expectedId: SECOND.USERS.REGISTERER.ID,
+        },
+        {
+          field: 'last name',
+          searchTerm: SECOND.USERS.SIMPLE.LAST_NAME.toUpperCase(),
+          expectedId: SECOND.USERS.SIMPLE.ID,
+        },
+      ];
+      // Seeded in FILIGRAN: the administrator first, then access-subscription@filigran.io before user15@test.fr
+      const ORDERED_SEEDED_FILIGRAN_IDS: string[] = [
+        FILIGRAN.USERS.BYPASS.ID,
+        FILIGRAN.USERS.SIMPLE2.ID,
+        FILIGRAN.USERS.SIMPLE.ID,
+      ];
+      const COUNTRY = 'Atlantis';
+      const PAGINATION_PAGE_SIZE = 2;
+
+      beforeEach(() => {
+        requestContext.set(requestContextAdminUser);
+      });
+
+      it('should return only the members of the organization when other organizations have members', async () => {
+        // Given the seeded SECOND and FILIGRAN members
+
+        // When
+        const connection = await UserDomain.loadOrganizationMemberConnection(
+          SECOND.ID,
+          { first: PAGE_SIZE }
+        );
+
+        // Then
+        expect(membersOf(connection)).toEqual(SECOND_MEMBERS);
+      });
+
+      it('should return invited, expired, waiting and disabled members but not the pending requests when the organization has both', async () => {
+        // Given
+        const addedMembers = [
+          await addMember(SECOND.ID, { status: UserAccountStatus.Invited }),
+          await addMember(SECOND.ID, { status: UserAccountStatus.Expired }),
+          await addMember(SECOND.ID, { status: UserAccountStatus.Waiting }),
+          await addMember(SECOND.ID, { disabled: true }),
+        ];
+        const pendingUser = await TestHelper.user.insertWithPendingOrganization(
+          { email: `pending-${uuidv4()}@admin-hub.test` },
+          SECOND.ID
+        );
+        createdUserIds.push(pendingUser.id);
+        const expectedIds = [
+          ...SECOND_MEMBER_IDS,
+          ...addedMembers.map(({ id }) => id),
+        ];
+
+        // When
+        const connection = await UserDomain.loadOrganizationMemberConnection(
+          SECOND.ID,
+          { first: PAGE_SIZE }
+        );
+
+        // Then
+        expect(membersOf(connection)).toEqual({
+          ids: expectedIds.sort(),
+          totalCount: expectedIds.length,
+        });
+      });
+
+      it('should return the capabilities of the membership in this organization only when the member holds others elsewhere', async () => {
+        // Given SIMPLE2, ADMINISTRATE_ORGANIZATION in their personal space only
+
+        // When
+        const connection = await UserDomain.loadOrganizationMemberConnection(
+          FILIGRAN.ID,
+          { first: PAGE_SIZE }
+        );
+
+        // Then
+        const member = connection.edges.find(
+          ({ node }) => node.id === FILIGRAN.USERS.SIMPLE2.ID
+        );
+        expect([...(member?.node.capabilities ?? [])].sort()).toEqual([
+          OrganizationCapability.ManageAccess,
+          OrganizationCapability.ManageSubscription,
+        ]);
+      });
+
+      it('should return an empty capability list when the member holds no capability', async () => {
+        // Given the seeded SIMPLE member of SECOND, without capability
+
+        // When
+        const connection = await UserDomain.loadOrganizationMemberConnection(
+          SECOND.ID,
+          { first: PAGE_SIZE }
+        );
+
+        // Then
+        const member = connection.edges.find(
+          ({ node }) => node.id === SECOND.USERS.SIMPLE.ID
+        );
+        expect(member?.node).toMatchObject({ capabilities: [] });
+      });
+
+      it('should return a capability once when it is stored twice', async () => {
+        // Given
+        await addCapability(
+          SECOND.USERS.REGISTERER.ID,
+          SECOND.ID,
+          OrganizationCapability.ManagePlatformRegistration
+        );
+
+        // When
+        const connection = await UserDomain.loadOrganizationMemberConnection(
+          SECOND.ID,
+          { first: PAGE_SIZE }
+        );
+
+        // Then
+        const member = connection.edges.find(
+          ({ node }) => node.id === SECOND.USERS.REGISTERER.ID
+        );
+        expect(member?.node).toMatchObject({
+          capabilities: [OrganizationCapability.ManagePlatformRegistration],
+        });
+      });
+
+      it('should return the administrators first, then the members sorted by email when the organization has both', async () => {
+        // Given the seeded FILIGRAN members
+
+        // When
+        const connection = await UserDomain.loadOrganizationMemberConnection(
+          FILIGRAN.ID,
+          { first: PAGE_SIZE }
+        );
+
+        // Then
+        expect(
+          memberIds(connection).filter((id) =>
+            ORDERED_SEEDED_FILIGRAN_IDS.includes(id)
+          )
+        ).toEqual(ORDERED_SEEDED_FILIGRAN_IDS);
+      });
+
+      it('should return every member once, in the order of a single page, when paging through the organization', async () => {
+        // Given
+        const filigranMemberCount = await countFiligranMembers();
+        const singlePage = await UserDomain.loadOrganizationMemberConnection(
+          FILIGRAN.ID,
+          { first: PAGE_SIZE }
+        );
+
+        // When
+        const pages: OrganizationMemberConnection[] = [];
+        let after: string | null = null;
+        do {
+          const page: OrganizationMemberConnection =
+            await UserDomain.loadOrganizationMemberConnection(FILIGRAN.ID, {
+              first: PAGINATION_PAGE_SIZE,
+              after,
+            });
+          pages.push(page);
+          after = page.pageInfo.hasNextPage ? page.pageInfo.endCursor! : null;
+        } while (after && pages.length <= filigranMemberCount);
+
+        // Then
+        expect({
+          ids: pages.flatMap(memberIds),
+          totalCounts: pages.map(({ totalCount }) => Number(totalCount)),
+        }).toEqual({
+          ids: memberIds(singlePage),
+          totalCounts: pages.map(() => filigranMemberCount),
+        });
+      });
+
+      it('should return no member but the exact totalCount when the page size is 0', async () => {
+        // Given
+        const filigranMemberCount = await countFiligranMembers();
+
+        // When
+        const connection = await UserDomain.loadOrganizationMemberConnection(
+          FILIGRAN.ID,
+          { first: 0 }
+        );
+
+        // Then
+        expect(sizeOf(connection)).toEqual({
+          edges: 0,
+          totalCount: filigranMemberCount,
+        });
+      });
+
+      it.each(SEARCH_CASES)(
+        'should return the member whose $field matches when the search term differs in case',
+        async ({ searchTerm, expectedId }) => {
+          // Given the seeded SECOND members
+
+          // When
+          const connection = await UserDomain.loadOrganizationMemberConnection(
+            SECOND.ID,
+            { first: PAGE_SIZE, searchTerm }
+          );
+
+          // Then
+          expect(membersOf(connection)).toEqual({
+            ids: [expectedId],
+            totalCount: 1,
+          });
+        }
+      );
+
+      it('should return no member when the search term matches the country only', async () => {
+        // Given no seeded member has a country
+        await addMember(SECOND.ID, { country: COUNTRY });
+
+        // When
+        const connection = await UserDomain.loadOrganizationMemberConnection(
+          SECOND.ID,
+          { first: PAGE_SIZE, searchTerm: COUNTRY.toLowerCase() }
+        );
+
+        // Then
+        expect(membersOf(connection)).toEqual(NO_MEMBER);
+      });
+
+      it('should return the member of a personal space when the caller is a BYPASS user', async () => {
+        // Given the seeded personal space of SIMPLE of SECOND
+
+        // When
+        const connection = await UserDomain.loadOrganizationMemberConnection(
+          SECOND.USERS.SIMPLE.PERSONAL_SPACE_ID,
+          { first: PAGE_SIZE }
+        );
+
+        // Then
+        expect(membersOf(connection)).toEqual({
+          ids: [SECOND.USERS.SIMPLE.ID],
+          totalCount: 1,
+        });
+      });
+    });
+
+    describe('restricted to the organizations whose members the caller can read', () => {
+      it('should return the members of their organization and none of another when the caller has no portal capability', async () => {
+        // Given
+        setSimpleUserOfSecondCaller();
+
+        // When
+        const secondConnection =
+          await UserDomain.loadOrganizationMemberConnection(SECOND.ID, {
+            first: PAGE_SIZE,
+          });
+        const filigranConnection =
+          await UserDomain.loadOrganizationMemberConnection(FILIGRAN.ID, {
+            first: PAGE_SIZE,
+          });
+
+        // Then
+        expect({
+          second: membersOf(secondConnection),
+          filigran: membersOf(filigranConnection),
+        }).toEqual({ second: SECOND_MEMBERS, filigran: NO_MEMBER });
+      });
+
+      it('should not return a member of another organization when they match the search and the caller has no portal capability', async () => {
+        // Given
+        setSimpleUserOfSecondCaller();
+
+        // When
+        const connection = await UserDomain.loadOrganizationMemberConnection(
+          FILIGRAN.ID,
+          { first: PAGE_SIZE, searchTerm: FILIGRAN.USERS.BYPASS.LAST_NAME }
+        );
+
+        // Then
+        expect(membersOf(connection)).toEqual(NO_MEMBER);
+      });
+
+      it('should return the members of the token organization and none of another organization of its user when called with an API token', async () => {
+        // Given a created user: deleting them deletes the token in cascade
+        const caller = await addMember(FILIGRAN.ID);
+        await TestHelper.user_Organization.create({
+          user_id: caller.id,
+          organization_id: SECOND.ID,
+        });
+        const filigranMemberCount = await countFiligranMembers();
+        await TestHelper.apiToken.actAs(
+          caller.id,
+          FILIGRAN.ID,
+          ApiTokenScope.ReadWrite
+        );
+
+        // When
+        const filigranConnection =
+          await UserDomain.loadOrganizationMemberConnection(FILIGRAN.ID, {
+            first: PAGE_SIZE,
+          });
+        const secondConnection =
+          await UserDomain.loadOrganizationMemberConnection(SECOND.ID, {
+            first: PAGE_SIZE,
+          });
+
+        // Then
+        expect({
+          filigran: sizeOf(filigranConnection),
+          second: membersOf(secondConnection),
+        }).toEqual({
+          filigran: {
+            edges: filigranMemberCount,
+            totalCount: filigranMemberCount,
+          },
+          second: NO_MEMBER,
+        });
+      });
+
+      it('should not return the members of an organization when the caller was removed from it since the session was written', async () => {
+        // Given a session still listing FILIGRAN, which the database no longer does
+        const filigran = await TestHelper.organization.load({
+          id: FILIGRAN.ID,
+        });
+        setSimpleUserOfSecondCaller({
+          organizations: [
+            ...requestContextSimpleUserSecondOrga.user.organizations,
+            filigran!,
+          ],
+        });
+
+        // When
+        const connection = await UserDomain.loadOrganizationMemberConnection(
+          FILIGRAN.ID,
+          { first: PAGE_SIZE }
+        );
+
+        // Then
+        expect(membersOf(connection)).toEqual(NO_MEMBER);
+      });
+
+      it('should return the members of an organization they do not belong to when the caller holds READ_ORGANIZATION_MEMBERS in session', async () => {
+        // Given
+        setSimpleUserOfSecondCaller({
+          capabilities: [CAPABILITY_READ_ORGANIZATION_MEMBERS],
+        });
+        const filigranMemberCount = await countFiligranMembers();
+
+        // When
+        const connection = await UserDomain.loadOrganizationMemberConnection(
+          FILIGRAN.ID,
+          { first: PAGE_SIZE }
+        );
+
+        // Then
+        expect(sizeOf(connection)).toEqual({
+          edges: filigranMemberCount,
+          totalCount: filigranMemberCount,
+        });
+      });
+
+      it('should not return the member of their own personal space when the owner has no portal capability', async () => {
+        // Given
+        setSimpleUserOfSecondCaller();
+
+        // When
+        const connection = await UserDomain.loadOrganizationMemberConnection(
+          SECOND.USERS.SIMPLE.PERSONAL_SPACE_ID,
+          { first: PAGE_SIZE }
+        );
+
+        // Then
+        expect(membersOf(connection)).toEqual(NO_MEMBER);
+      });
+
+      it('should not return the member of a personal space when the caller holds READ_ORGANIZATION_MEMBERS', async () => {
+        // Given
+        setSimpleUserOfSecondCaller({
+          capabilities: [CAPABILITY_READ_ORGANIZATION_MEMBERS],
+        });
+
+        // When
+        const connection = await UserDomain.loadOrganizationMemberConnection(
+          SECOND.USERS.SIMPLE.PERSONAL_SPACE_ID,
+          { first: PAGE_SIZE }
+        );
+
+        // Then
+        expect(membersOf(connection)).toEqual(NO_MEMBER);
+      });
     });
   });
 });

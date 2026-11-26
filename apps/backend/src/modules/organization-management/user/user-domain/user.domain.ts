@@ -5,7 +5,10 @@ import {
   FilterKey,
   Organization,
   OrganizationCapability,
+  OrganizationMember,
+  OrganizationMemberConnection,
   PlatformIdentifier,
+  QueryOrganizationMembersArgs,
   QueryUsersArgs,
   ServiceGroupName,
   UserAccountStatus,
@@ -34,6 +37,10 @@ import {
   restrictOrganizationToApiToken,
   restrictRolePortalToApiToken,
 } from '../../../../security/restriction/api-token';
+import {
+  restrictOrganizationToMembersReadable,
+  restrictOrganizationToProfessionalSpace,
+} from '../../../../security/restriction/organization';
 import { auth0Client } from '../../../../thirdparty/auth0/client';
 import { hubspotLoginHook } from '../../../../thirdparty/hubspot/hubspot';
 import { logApp } from '../../../../utils/app-logger.util';
@@ -340,6 +347,71 @@ export const UserDomain = {
       .select('User_Organization.organization_id', 'User.email')
       .distinct()
       .orderBy('User.email', 'asc');
+  },
+
+  // No status filter: an invited, expired, waiting or disabled user is still a member, a pending request is not
+  loadOrganizationMemberConnection: (
+    organizationId: OrganizationId,
+    {
+      first,
+      after,
+      searchTerm,
+    }: Omit<QueryOrganizationMembersArgs, 'organizationId'>
+  ) => {
+    const query = db<User>('User')
+      .innerJoin('User_Organization as memberUserOrganization', function () {
+        this.on('memberUserOrganization.user_id', '=', 'User.id').andOnVal(
+          'memberUserOrganization.organization_id',
+          '=',
+          organizationId
+        );
+      })
+      .innerJoin(
+        'Organization',
+        'Organization.id',
+        'memberUserOrganization.organization_id'
+      )
+      .leftJoin(
+        'UserOrganization_Capability as memberCapability',
+        'memberCapability.user_organization_id',
+        'memberUserOrganization.id'
+      )
+      .tap(restrictOrganizationToProfessionalSpace)
+      .tap(restrictOrganizationToMembersReadable);
+    if (searchTerm) {
+      // Grouped, so that an OR never escapes the organization filter or the restrictions
+      query.where((search) =>
+        search
+          .whereILike('User.email', `%${searchTerm}%`)
+          .orWhereILike('User.first_name', `%${searchTerm}%`)
+          .orWhereILike('User.last_name', `%${searchTerm}%`)
+      );
+    }
+    query
+      .select(
+        dbRaw(
+          `COALESCE(array_agg(DISTINCT ??.name) FILTER (WHERE ??.name IS NOT NULL), '{}') AS capabilities`,
+          ['memberCapability', 'memberCapability']
+        )
+      )
+      .groupBy('User.id')
+      // bool_or is NULL for a member without capability: COALESCE keeps them after the administrators
+      .orderByRaw(
+        'COALESCE(bool_or(??.name = ?), false) DESC, ??.email ASC, ??.id ASC',
+        [
+          'memberCapability',
+          OrganizationCapability.AdministrateOrganization,
+          'User',
+          'User',
+        ]
+      );
+    // searchTerm not passed to paginate: its applySearch would also match the country
+    return paginate<OrganizationMember, OrganizationMemberConnection>(
+      'User',
+      { first, after },
+      undefined,
+      query
+    );
   },
 
   loadUserConnection: (opts: QueryUsersArgs) => {

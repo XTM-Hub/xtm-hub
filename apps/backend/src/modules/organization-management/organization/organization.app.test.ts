@@ -1,9 +1,15 @@
 import { v4 as uuidv4 } from 'uuid';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { TestHelper } from '../../../../tests/helper/test.helper';
-import { TEST_ORGANIZATIONS } from '../../../../tests/tests.const';
+import {
+  CAPABILITY_READ_ORGANIZATION_MEMBERS,
+  requestContextSimpleUserSecondOrga,
+  TEST_ORGANIZATIONS,
+} from '../../../../tests/tests.const';
+import { OrganizationMemberConnection } from '../../../__generated__/resolvers-types';
+import { requestContext } from '../../../context/request.context';
 import { OrganizationId } from '../../../model/kanel/public/Organization';
-import { ErrorCode } from '../../../utils/error/error.code';
+import { ErrorCode, NotFoundErrorCode } from '../../../utils/error/error.code';
 import { TelemetryApp } from '../../telemetry/telemetry.app';
 import { TelemetrySource } from '../../telemetry/telemetry.const';
 import { TelemetryEventType } from '../../telemetry/telemetry.types';
@@ -284,6 +290,195 @@ describe('organizationApp', () => {
       expect(
         await TestHelper.organization.load({ id: personalSpaceId })
       ).toBeUndefined();
+    });
+  });
+
+  describe('loadOrganizationMembers', () => {
+    const FILIGRAN = TEST_ORGANIZATIONS.FILIGRAN;
+    const SECOND = TEST_ORGANIZATIONS.SECOND_ORGANIZATION;
+    // An organization id no organization has
+    const UNKNOWN_ORGANIZATION_ID =
+      'f7a1c0de-0000-4000-8000-0000000000aa' as OrganizationId;
+    const PAGE_SIZE = 20;
+    // Error objects, not strings: toThrow would accept NOT_FOUND inside ORGANIZATION_NOT_FOUND
+    const NOT_FOUND = new Error(NotFoundErrorCode.NotFound);
+    const ORGANIZATION_NOT_FOUND = new Error(ErrorCode.OrganizationNotFound);
+    const SECOND_MEMBER_IDS: string[] = [
+      SECOND.USERS.ADMIN_ORGA.ID,
+      SECOND.USERS.REGISTERER.ID,
+      SECOND.USERS.SIMPLE.ID,
+    ];
+    // Without portal capability: a member of SECOND and of their own personal space only
+    const MEMBER_OF_SECOND = requestContextSimpleUserSecondOrga;
+    const READ_ORGANIZATION_MEMBERS_HOLDER = {
+      ...MEMBER_OF_SECOND,
+      user: {
+        ...MEMBER_OF_SECOND.user,
+        capabilities: [CAPABILITY_READ_ORGANIZATION_MEMBERS],
+      },
+    };
+    // Matches user@ and user.registerer@ of SECOND, not admin@
+    const SEARCH_TERM = 'user';
+    // An unknown organization answers NOT_FOUND too: the membership is checked before the organization is loaded
+    const NON_MEMBER_CASES = [
+      { name: 'another organization', organizationId: FILIGRAN.ID },
+      {
+        name: 'an unknown organization',
+        organizationId: UNKNOWN_ORGANIZATION_ID,
+      },
+      {
+        name: 'the personal space of another user',
+        organizationId: SECOND.USERS.ADMIN_ORGA.PERSONAL_SPACE_ID,
+      },
+    ];
+    const UNKNOWN_ORGANIZATION_CASES = [
+      {
+        name: 'a READ_ORGANIZATION_MEMBERS holder reads an unknown organization',
+        context: READ_ORGANIZATION_MEMBERS_HOLDER,
+        organizationId: UNKNOWN_ORGANIZATION_ID,
+      },
+      {
+        name: 'a READ_ORGANIZATION_MEMBERS holder reads a personal space',
+        context: READ_ORGANIZATION_MEMBERS_HOLDER,
+        organizationId: SECOND.USERS.ADMIN_ORGA.PERSONAL_SPACE_ID,
+      },
+      {
+        name: 'a member without portal capability reads their own personal space',
+        context: MEMBER_OF_SECOND,
+        organizationId: SECOND.USERS.SIMPLE.PERSONAL_SPACE_ID,
+      },
+    ];
+
+    const memberIds = ({ edges }: OrganizationMemberConnection) =>
+      edges.map(({ node }) => node.id);
+
+    const sizeOf = ({ edges, totalCount }: OrganizationMemberConnection) => ({
+      edges: edges.length,
+      totalCount: Number(totalCount),
+    });
+
+    it('should refuse with NOT_FOUND when the organization id is not a UUID', async () => {
+      // Given
+      requestContext.set(MEMBER_OF_SECOND);
+
+      // When
+      const call = OrganizationApp.loadOrganizationMembers(
+        'not-a-uuid' as OrganizationId,
+        { first: PAGE_SIZE }
+      );
+
+      // Then
+      await expect(call).rejects.toThrow(NOT_FOUND);
+    });
+
+    it.each(NON_MEMBER_CASES)(
+      'should refuse with NOT_FOUND when a caller without portal capability reads $name',
+      async ({ organizationId }) => {
+        // Given
+        requestContext.set(MEMBER_OF_SECOND);
+
+        // When
+        const call = OrganizationApp.loadOrganizationMembers(organizationId, {
+          first: PAGE_SIZE,
+        });
+
+        // Then
+        await expect(call).rejects.toThrow(NOT_FOUND);
+      }
+    );
+
+    it('should return the members of their organization when a caller without portal capability is a member of it', async () => {
+      // Given
+      requestContext.set(MEMBER_OF_SECOND);
+
+      // When
+      const connection = await OrganizationApp.loadOrganizationMembers(
+        SECOND.ID,
+        { first: PAGE_SIZE }
+      );
+
+      // Then
+      expect({
+        ids: memberIds(connection).sort(),
+        totalCount: Number(connection.totalCount),
+      }).toEqual({
+        ids: [...SECOND_MEMBER_IDS].sort(),
+        totalCount: SECOND_MEMBER_IDS.length,
+      });
+    });
+
+    it('should return the members of an organization when a READ_ORGANIZATION_MEMBERS holder who is not a member of it reads it', async () => {
+      // Given
+      requestContext.set(READ_ORGANIZATION_MEMBERS_HOLDER);
+      const [filigranMembers] =
+        await UserOrganizationDomain.countUsersInOrganizations([FILIGRAN.ID]);
+
+      // When
+      const connection = await OrganizationApp.loadOrganizationMembers(
+        FILIGRAN.ID,
+        { first: PAGE_SIZE }
+      );
+
+      // Then
+      expect(sizeOf(connection)).toEqual({
+        edges: filigranMembers?.count,
+        totalCount: filigranMembers?.count,
+      });
+    });
+
+    it.each(UNKNOWN_ORGANIZATION_CASES)(
+      'should refuse the organization as unknown when $name',
+      async ({ context, organizationId }) => {
+        // Given
+        requestContext.set(context);
+
+        // When
+        const call = OrganizationApp.loadOrganizationMembers(organizationId, {
+          first: PAGE_SIZE,
+        });
+
+        // Then
+        await expect(call).rejects.toThrow(ORGANIZATION_NOT_FOUND);
+      }
+    );
+
+    it('should return no member but the totalCount when the page size is negative', async () => {
+      // Given
+      requestContext.set(MEMBER_OF_SECOND);
+
+      // When
+      const connection = await OrganizationApp.loadOrganizationMembers(
+        SECOND.ID,
+        { first: -1 }
+      );
+
+      // Then
+      expect(sizeOf(connection)).toEqual({
+        edges: 0,
+        totalCount: SECOND_MEMBER_IDS.length,
+      });
+    });
+
+    it('should return the next matching member when a page size, a cursor and a search term are given', async () => {
+      // Given user.registerer@ sorts before user@: the first page holds REGISTERER
+      requestContext.set(MEMBER_OF_SECOND);
+      const firstPage = await OrganizationApp.loadOrganizationMembers(
+        SECOND.ID,
+        { first: 1, searchTerm: SEARCH_TERM }
+      );
+
+      // When
+      const connection = await OrganizationApp.loadOrganizationMembers(
+        SECOND.ID,
+        {
+          first: 1,
+          after: firstPage.pageInfo.endCursor,
+          searchTerm: SEARCH_TERM,
+        }
+      );
+
+      // Then
+      expect(memberIds(connection)).toEqual([SECOND.USERS.SIMPLE.ID]);
     });
   });
 });
