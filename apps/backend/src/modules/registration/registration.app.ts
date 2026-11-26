@@ -126,10 +126,9 @@ type DeactivatedRegistration = Pick<
   | 'tenant_id'
 >;
 
-// Moves an active registration to inactive, then tells the organization admins and telemetry. Returns false, and does
-// nothing else, when the registration was no longer active. A registration without owner organization is still
-// deactivated, but nobody is mailed and no telemetry event is sent.
-const deactivateRegistration = async ({
+// Runs after the commit of the unregistration, never inside its transaction: tells the organization admins and
+// telemetry. A registration without owner organization is mailed to nobody and sends no telemetry event.
+const notifyRegistrationDeactivated = async ({
   registration,
   platformIdentifier,
   organization,
@@ -139,19 +138,12 @@ const deactivateRegistration = async ({
   platformIdentifier: PlatformIdentifier;
   organization: Organization | null;
   actorId: UserId;
-}): Promise<boolean> => {
-  const deactivated = await PlatformConfigurationDomain.deactivateConfiguration(
-    registration.service_instance_id
-  );
-  if (!deactivated) {
-    return false;
-  }
-
+}): Promise<void> => {
   if (!organization) {
     logApp.warn('Unregistered a platform without owner organization', {
       serviceInstanceId: registration.service_instance_id,
     });
-    return true;
+    return;
   }
 
   const users = await UserDomain.loadUsersByCapabilitiesInOrganization(
@@ -200,7 +192,6 @@ const deactivateRegistration = async ({
       error,
     });
   }
-  return true;
 };
 
 export const RegistrationApp = {
@@ -483,12 +474,51 @@ export const RegistrationApp = {
       organizationId: subscription.organization_id,
       requiredCapability: OrganizationCapability.ManagePlatformRegistration,
     });
-    const organization = await OrganizationDomain.loadOrganizationBy({
-      id: subscription.organization_id,
-    });
 
-    await deactivateRegistration({
-      registration: platformConfiguration,
+    // The registration is locked before its status and its owner are read again: an organization may have taken the
+    // platform over since the guard ran, and this user must not deactivate the registration of another organization.
+    const deactivation = await withTransaction(async () => {
+      const registration = await PlatformConfigurationDomain.lockConfiguration(
+        platformConfiguration.service_instance_id
+      );
+      if (registration?.status !== PlatformConfigurationStatus.Active) {
+        return null;
+      }
+      const currentSubscription = await SubscriptionDomain.loadSubscriptionBy({
+        service_instance_id: platformConfiguration.service_instance_id,
+      });
+      if (!currentSubscription) {
+        throw new Error(ErrorCode.SubscriptionNotFound);
+      }
+      if (
+        currentSubscription.organization_id !== subscription.organization_id
+      ) {
+        await securityGuard.assertUserIsAllowedOnOrganization(user, {
+          organizationId: currentSubscription.organization_id,
+          requiredCapability: OrganizationCapability.ManagePlatformRegistration,
+        });
+      }
+      const deactivated =
+        await PlatformConfigurationDomain.deactivateConfiguration(
+          platformConfiguration.service_instance_id,
+          { explicit: true }
+        );
+      return deactivated
+        ? {
+            registration,
+            ownerOrganizationId: currentSubscription.organization_id,
+          }
+        : null;
+    });
+    if (!deactivation) {
+      return;
+    }
+
+    const organization = await OrganizationDomain.loadOrganizationBy({
+      id: deactivation.ownerOrganizationId,
+    });
+    await notifyRegistrationDeactivated({
+      registration: deactivation.registration,
       platformIdentifier: identifier,
       organization: organization ?? null,
       actorId: user.id,
@@ -501,46 +531,61 @@ export const RegistrationApp = {
     serviceInstanceId: ServiceInstanceId
   ): Promise<void> => {
     const admin = requestContext.requireUser();
-    const listed =
-      await RegistrationDomain.loadAdminRegisteredPlatform(serviceInstanceId);
-    const platformIdentifier = listed
-      ? platformIdentifierMappedByServiceDefinitionIdentifier[
-          listed.service_definition_identifier
-        ]
-      : undefined;
-    if (!listed || !platformIdentifier) {
-      throw new Error(ErrorCode.PlatformNotRegistered);
-    }
-    if (listed.status !== PlatformConfigurationStatus.Active) {
+
+    // The registration is locked before its status, its trial flag and its owner are read: a concurrent takeover or
+    // unregistration is then either fully visible or fully applied after this one.
+    const deactivation = await withTransaction(async () => {
+      await PlatformConfigurationDomain.lockConfiguration(serviceInstanceId);
+      const listed =
+        await RegistrationDomain.loadAdminRegisteredPlatform(serviceInstanceId);
+      const platformIdentifier = listed
+        ? platformIdentifierMappedByServiceDefinitionIdentifier[
+            listed.service_definition_identifier
+          ]
+        : undefined;
+      if (!listed || !platformIdentifier) {
+        throw new Error(ErrorCode.PlatformNotRegistered);
+      }
+      if (listed.status !== PlatformConfigurationStatus.Active) {
+        return null;
+      }
+
+      // For now, a trial is only ended through its own lifecycle: an admin cannot disconnect it.
+      if (listed.is_trial) {
+        throw new Error(ErrorCode.TrialPlatformCannotBeUnregistered);
+      }
+
+      // The same owner the admin list and its confirmation dialog show: the organization of the newest subscription.
+      const [owner] =
+        await RegistrationDomain.loadPlatformOwnerOrganizationsByServiceInstanceIds(
+          [serviceInstanceId]
+        );
+
+      const deactivated =
+        await PlatformConfigurationDomain.deactivateConfiguration(
+          serviceInstanceId,
+          { explicit: true }
+        );
+      return deactivated ? { listed, platformIdentifier, owner } : null;
+    });
+    if (!deactivation) {
       return;
     }
 
-    // For now, a trial is only ended through its own lifecycle: an admin cannot disconnect it.
-    if (listed.is_trial) {
-      throw new Error(ErrorCode.TrialPlatformCannotBeUnregistered);
-    }
-
-    // The same owner the admin list and its confirmation dialog show: the organization of the newest subscription.
-    const [owner] =
-      await RegistrationDomain.loadPlatformOwnerOrganizationsByServiceInstanceIds(
-        [serviceInstanceId]
-      );
-
-    const deactivated = await deactivateRegistration({
+    const { listed, platformIdentifier, owner } = deactivation;
+    await notifyRegistrationDeactivated({
       registration: listed,
       platformIdentifier,
       organization: owner ?? null,
       actorId: admin.id,
     });
-    if (deactivated) {
-      logApp.info('Platform unregistered by a platform admin', {
-        adminId: admin.id,
-        serviceInstanceId,
-        platformId: listed.platform_id,
-        tenantId: listed.tenant_id,
-        organizationId: owner?.id ?? null,
-      });
-    }
+    logApp.info('Platform unregistered by a platform admin', {
+      adminId: admin.id,
+      serviceInstanceId,
+      platformId: listed.platform_id,
+      tenantId: listed.tenant_id,
+      organizationId: owner?.id ?? null,
+    });
   },
 
   loadAdminRegisteredPlatforms: async ({

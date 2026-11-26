@@ -1,10 +1,11 @@
 import { v4 as uuidv4 } from 'uuid';
 import { expect } from 'vitest';
-import { db } from '../../knexfile';
+import { database, db } from '../../knexfile';
 import {
   PlatformConfigurationStatus,
   PlatformContract,
 } from '../../src/__generated__/resolvers-types';
+import { OrganizationId } from '../../src/model/kanel/public/Organization';
 import PlatformConfigurationModel, {
   PlatformConfigurationMutator,
 } from '../../src/model/kanel/public/PlatformConfiguration';
@@ -50,6 +51,22 @@ export const TestPlatformConfigurationHelper = {
       await db<PlatformConfigurationModel>('PlatformConfiguration')
         .where(field)
         .update(data);
+    },
+    // Locks the registration in a transaction of its own, as a concurrent request does, until commit() is called. The
+    // subscription change is part of that transaction, so it only becomes visible when it commits.
+    lock: async (serviceInstanceId: ServiceInstanceId) => {
+      const transaction = await database.transaction();
+      await transaction<PlatformConfigurationModel>('PlatformConfiguration')
+        .where('service_instance_id', '=', serviceInstanceId)
+        .forNoKeyUpdate();
+      return {
+        moveSubscription: async (organizationId: OrganizationId) => {
+          await transaction('Subscription')
+            .where('service_instance_id', '=', serviceInstanceId)
+            .update({ organization_id: organizationId });
+        },
+        commit: () => transaction.commit(),
+      };
     },
     delete: async (field: PlatformConfigurationMutator) => {
       await db<PlatformConfigurationModel>('PlatformConfiguration')

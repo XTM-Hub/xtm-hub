@@ -38,6 +38,8 @@ export default interface PlatformConfiguration {
   public_key_id: string | null;
 
   key_enrolled_at: Date | null;
+
+  unregistered_at: Date | null;
 }
 
 /** Represents the initializer for the table public.PlatformConfiguration */
@@ -73,6 +75,8 @@ export interface PlatformConfigurationInitializer {
   public_key_id?: string | null;
 
   key_enrolled_at?: Date | null;
+
+  unregistered_at?: Date | null;
 }
 
 /** Represents the mutator for the table public.PlatformConfiguration */
@@ -108,4 +112,6 @@ export interface PlatformConfigurationMutator {
   public_key_id?: string | null;
 
   key_enrolled_at?: Date | null;
+
+  unregistered_at?: Date | null;
 }

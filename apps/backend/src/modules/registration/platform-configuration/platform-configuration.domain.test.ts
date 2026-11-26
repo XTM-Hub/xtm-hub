@@ -11,8 +11,10 @@ import {
   PlatformIdentifier,
   ServiceDefinitionIdentifier,
 } from '../../../__generated__/resolvers-types';
+import { withTransaction } from '../../../context/database.context';
 import { ServiceInstanceId } from '../../../model/kanel/public/ServiceInstance';
 import { UserId } from '../../../model/kanel/public/User';
+import { UnknownErrorCode } from '../../../utils/error/error.code';
 import {
   PlatformConfigurationDomain,
   PlatformPublicKey,
@@ -346,6 +348,217 @@ describe('platformConfigurationDomain', () => {
           platformId
         );
       expect(configuration?.platform_id).toBe(platformId);
+    });
+  });
+
+  describe('lockConfiguration', () => {
+    const serviceInstanceId = SERVICES.INSTANCES.INTEGRATIONS.ID;
+    const platformId = uuidv4();
+
+    beforeEach(async () => {
+      await TestHelper.platformConfiguration.delete({});
+      await TestHelper.platformConfiguration.create({
+        service_instance_id: serviceInstanceId,
+        platform_id: platformId,
+        status: PlatformConfigurationStatus.Active,
+      });
+    });
+
+    it('should fail outside a transaction, as the lock would be released at once', async () => {
+      // When
+      const call =
+        PlatformConfigurationDomain.lockConfiguration(serviceInstanceId);
+
+      // Then
+      await expect(call).rejects.toThrow(UnknownErrorCode.UnknownError);
+    });
+
+    it('should return the registration as it is once locked', async () => {
+      // When
+      const locked = await withTransaction(() =>
+        PlatformConfigurationDomain.lockConfiguration(serviceInstanceId)
+      );
+
+      // Then
+      expect(locked).toMatchObject({
+        service_instance_id: serviceInstanceId,
+        platform_id: platformId,
+        status: PlatformConfigurationStatus.Active,
+        unregistered_at: null,
+      });
+    });
+
+    it('should return nothing for an unknown registration', async () => {
+      // When
+      const locked = await withTransaction(() =>
+        PlatformConfigurationDomain.lockConfiguration(
+          uuidv4() as ServiceInstanceId
+        )
+      );
+
+      // Then
+      expect(locked).toBeUndefined();
+    });
+  });
+
+  describe('deactivateConfiguration', () => {
+    const serviceInstanceId = SERVICES.INSTANCES.INTEGRATIONS.ID;
+
+    beforeEach(async () => {
+      await TestHelper.platformConfiguration.delete({});
+      await TestHelper.platformConfiguration.create({
+        service_instance_id: serviceInstanceId,
+        status: PlatformConfigurationStatus.Active,
+      });
+    });
+
+    it('should mark an explicit unregistration with its date', async () => {
+      // Given
+      const before = Date.now();
+
+      // When
+      const deactivated =
+        await PlatformConfigurationDomain.deactivateConfiguration(
+          serviceInstanceId,
+          { explicit: true }
+        );
+
+      // Then
+      expect(deactivated).toBe(true);
+      const stored = await TestHelper.platformConfiguration.load({
+        service_instance_id: serviceInstanceId,
+      });
+      expect(stored).toMatchObject({
+        status: PlatformConfigurationStatus.Inactive,
+        unregistered_at: expect.any(Date),
+      });
+      expect(stored?.unregistered_at?.getTime()).toBeGreaterThanOrEqual(before);
+    });
+
+    it('should leave the registration unmarked when the deactivation is not explicit', async () => {
+      // When
+      const deactivated =
+        await PlatformConfigurationDomain.deactivateConfiguration(
+          serviceInstanceId,
+          { explicit: false }
+        );
+
+      // Then
+      expect(deactivated).toBe(true);
+      expect(
+        await TestHelper.platformConfiguration.load({
+          service_instance_id: serviceInstanceId,
+        })
+      ).toMatchObject({
+        status: PlatformConfigurationStatus.Inactive,
+        unregistered_at: null,
+      });
+    });
+
+    it('should do nothing, and keep the first date, on an inactive registration', async () => {
+      // Given
+      await PlatformConfigurationDomain.deactivateConfiguration(
+        serviceInstanceId,
+        { explicit: true }
+      );
+      const unregistered = await TestHelper.platformConfiguration.load({
+        service_instance_id: serviceInstanceId,
+      });
+
+      // When
+      const deactivated =
+        await PlatformConfigurationDomain.deactivateConfiguration(
+          serviceInstanceId,
+          { explicit: true }
+        );
+
+      // Then
+      expect(deactivated).toBe(false);
+      expect(
+        (
+          await TestHelper.platformConfiguration.load({
+            service_instance_id: serviceInstanceId,
+          })
+        )?.unregistered_at
+      ).toEqual(unregistered?.unregistered_at);
+    });
+  });
+
+  describe('updateConfiguration, unregistered_at', () => {
+    const serviceInstanceId = SERVICES.INSTANCES.INTEGRATIONS.ID;
+
+    beforeEach(async () => {
+      await TestHelper.platformConfiguration.delete({});
+      await TestHelper.platformConfiguration.create({
+        service_instance_id: serviceInstanceId,
+        status: PlatformConfigurationStatus.Active,
+      });
+    });
+
+    it('should clear the marker when the registration becomes active again', async () => {
+      // Given an explicitly unregistered registration
+      await PlatformConfigurationDomain.deactivateConfiguration(
+        serviceInstanceId,
+        { explicit: true }
+      );
+
+      // When
+      await PlatformConfigurationDomain.updateConfiguration(serviceInstanceId, {
+        status: PlatformConfigurationStatus.Active,
+      });
+
+      // Then
+      expect(
+        await TestHelper.platformConfiguration.load({
+          service_instance_id: serviceInstanceId,
+        })
+      ).toMatchObject({
+        status: PlatformConfigurationStatus.Active,
+        unregistered_at: null,
+      });
+    });
+
+    it('should keep the marker of an unregistered registration when another field is updated', async () => {
+      // Given
+      await PlatformConfigurationDomain.deactivateConfiguration(
+        serviceInstanceId,
+        { explicit: true }
+      );
+      const unregistered = await TestHelper.platformConfiguration.load({
+        service_instance_id: serviceInstanceId,
+      });
+
+      // When
+      await PlatformConfigurationDomain.updateConfiguration(serviceInstanceId, {
+        last_connectivity_check: new Date(),
+      });
+
+      // Then
+      expect(
+        await TestHelper.platformConfiguration.load({
+          service_instance_id: serviceInstanceId,
+        })
+      ).toMatchObject({
+        status: PlatformConfigurationStatus.Inactive,
+        unregistered_at: unregistered?.unregistered_at,
+      });
+    });
+
+    it('should not mark a registration set to inactive, as the connectivity check does', async () => {
+      // When
+      await PlatformConfigurationDomain.updateConfiguration(serviceInstanceId, {
+        status: PlatformConfigurationStatus.Inactive,
+      });
+
+      // Then
+      expect(
+        await TestHelper.platformConfiguration.load({
+          service_instance_id: serviceInstanceId,
+        })
+      ).toMatchObject({
+        status: PlatformConfigurationStatus.Inactive,
+        unregistered_at: null,
+      });
     });
   });
 
