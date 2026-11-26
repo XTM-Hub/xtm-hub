@@ -2,6 +2,7 @@ import type { ApolloServer } from '@apollo/server';
 import { v4 as uuidv4 } from 'uuid';
 import { afterAll, beforeAll, expect, it, type MockInstance } from 'vitest';
 import { requestContext } from '../../src/context/request.context';
+import type { UserId } from '../../src/model/kanel/public/User';
 import type { UserLoadUserBy } from '../../src/model/user';
 import {
   PLATFORM_ID_HEADER,
@@ -27,10 +28,13 @@ import {
 type SessionRow = 'anonymous' | 'user' | 'admin';
 type OrganizationRow =
   'memberWithoutCapability' | 'otherOrganization' | 'nonMember';
+// Members of the Filigran organization without any organization capability, told apart by their access to a service:
+// the manager holds MANAGE_ACCESS and the member ACCESS on it, the stranger holds nothing
+type ServiceRow = 'serviceManager' | 'serviceMember' | 'serviceStranger';
 type SystemTokenRow = 'system' | 'invalidSystemToken';
 type PlatformRow = 'platform' | 'invalidPlatformToken' | 'unknownPlatform';
 export type AccessRow =
-  SessionRow | OrganizationRow | SystemTokenRow | PlatformRow;
+  SessionRow | OrganizationRow | ServiceRow | SystemTokenRow | PlatformRow;
 export type AccessOutcome = 'allowed' | DenialCode;
 
 export interface AccessMatrixFixture {
@@ -50,7 +54,10 @@ export interface AccessMatrixOptions {
   guarded: () => MockInstance;
   expected: Record<SessionRow, AccessOutcome> &
     Partial<
-      Record<OrganizationRow | SystemTokenRow | PlatformRow, AccessOutcome>
+      Record<
+        OrganizationRow | ServiceRow | SystemTokenRow | PlatformRow,
+        AccessOutcome
+      >
     >;
 }
 
@@ -61,6 +68,9 @@ const ROWS: AccessRow[] = [
   'memberWithoutCapability',
   'otherOrganization',
   'nonMember',
+  'serviceManager',
+  'serviceMember',
+  'serviceStranger',
   'system',
   'invalidSystemToken',
   'platform',
@@ -73,6 +83,7 @@ const ERROR_FAMILY: Record<DenialCode, ErrorType> = {
   [ForbiddenErrorCode.ForbiddenAccess]: ErrorType.ForbiddenAccess,
   [ForbiddenErrorCode.MissingCapabilityOnOrganization]:
     ErrorType.ForbiddenAccess,
+  [ForbiddenErrorCode.MissingCapabilityOnService]: ErrorType.ForbiddenAccess,
   [NotFoundErrorCode.NotFound]: ErrorType.NotFound,
 };
 
@@ -81,8 +92,32 @@ const withSessionUser = (
   overrides: Partial<UserLoadUserBy>
 ): Context => ({ ...context, user: { ...context.user, ...overrides } });
 
+const MEMBER_WITHOUT_CAPABILITY = withSessionUser(contextSimpleUserFiligran2, {
+  organization_capabilities: (
+    contextSimpleUserFiligran2.user.organization_capabilities ?? []
+  ).map((membership) =>
+    membership.organization.id === TEST_ORGANIZATIONS.FILIGRAN.ID
+      ? { ...membership, capabilities: [] }
+      : membership
+  ),
+});
+
+// The service rows are told apart by the user they are, so that a fixture can grant each its own access
+const SERVICE_ROW_USER_IDS: Record<ServiceRow, UserId> = {
+  serviceManager: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
+  serviceMember: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE.ID,
+  serviceStranger: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.ID,
+};
+
+// The manager reuses the id of the BYPASS user: no portal capability, so that it is never a BYPASS caller
+const asServiceUser = (row: ServiceRow): Context =>
+  withSessionUser(MEMBER_WITHOUT_CAPABILITY, {
+    id: SERVICE_ROW_USER_IDS[row],
+    capabilities: [],
+  });
+
 const SESSION_CONTEXTS: Record<
-  SessionRow | OrganizationRow | SystemTokenRow,
+  SessionRow | OrganizationRow | ServiceRow | SystemTokenRow,
   Context
 > = {
   // The API leaves the user undefined for a visitor without session, which Context does not allow
@@ -92,20 +127,15 @@ const SESSION_CONTEXTS: Record<
   } as unknown as Context,
   user: contextSimpleUserFiligran2,
   admin: contextBypassUser,
-  memberWithoutCapability: withSessionUser(contextSimpleUserFiligran2, {
-    organization_capabilities: (
-      contextSimpleUserFiligran2.user.organization_capabilities ?? []
-    ).map((membership) =>
-      membership.organization.id === TEST_ORGANIZATIONS.FILIGRAN.ID
-        ? { ...membership, capabilities: [] }
-        : membership
-    ),
-  }),
+  memberWithoutCapability: MEMBER_WITHOUT_CAPABILITY,
   otherOrganization: contextSimpleUserSecondOrga,
   nonMember: withSessionUser(contextSimpleUserFiligran2, {
     selected_organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
   }),
   system: contextSystemToken,
+  serviceManager: asServiceUser('serviceManager'),
+  serviceMember: asServiceUser('serviceMember'),
+  serviceStranger: asServiceUser('serviceStranger'),
   invalidSystemToken: contextInvalidSystemToken,
 };
 
@@ -170,16 +200,15 @@ const useGraphqlServer = () => {
 
   return async (
     operation: string,
-    fixture: AccessMatrixFixture,
-    row: AccessRow
+    variables: Record<string, unknown>,
+    contextValue: Context
   ) => {
-    const contextValue = contextOf(row, fixture);
     const previousRequestContext = requestContext.get();
     // The restrictions below the guard read the caller from the request context
     requestContext.set({ user: contextValue.user ?? undefined });
     try {
       const response = await server.executeOperation(
-        { query: operation, variables: fixture.variables },
+        { query: operation, variables },
         { contextValue }
       );
       if (response.body.kind !== 'single') {
@@ -193,6 +222,17 @@ const useGraphqlServer = () => {
 };
 
 export const TestAccessMatrixHelper = {
+  serviceRowUserIds: SERVICE_ROW_USER_IDS,
+  // Call inside a describe: runs an operation through the real schema as one of the session rows of the matrix
+  useGraphqlAs: () => {
+    const execute = useGraphqlServer();
+    return (
+      row: SessionRow | OrganizationRow | ServiceRow,
+      operation: string,
+      variables: Record<string, unknown>
+    ) => execute(operation, variables, SESSION_CONTEXTS[row]);
+  },
+
   // Call inside a describe named after the operation. Runs it as an anonymous visitor,
   // a member with no portal capability and a platform admin, plus the organization, system-token and platform rows that expected lists
   expectAccessMatrix: ({
@@ -222,7 +262,11 @@ export const TestAccessMatrixHelper = {
 
         try {
           // When
-          const { errors } = await execute(operation, fixture, row);
+          const { errors } = await execute(
+            operation,
+            fixture.variables,
+            contextOf(row, fixture)
+          );
 
           // Then
           expect(errors).toMatchObject([
@@ -244,7 +288,11 @@ export const TestAccessMatrixHelper = {
 
         try {
           // When
-          const { data, errors } = await execute(operation, fixture, row);
+          const { data, errors } = await execute(
+            operation,
+            fixture.variables,
+            contextOf(row, fixture)
+          );
 
           // Then
           expect(errors).toBeUndefined();
