@@ -15,6 +15,23 @@ import { DeploymentRequestDomain } from './deployment.domain';
 const resolvers: Resolvers = {
   DeploymentRequestId:
     createRelayIdScalar<DeploymentRequestId>('DeploymentRequest'),
+  DeploymentRequest: {
+    children: ({ id }, _, context) =>
+      context.dataLoaders.deploymentRequest.childrenByParentLoader.load(
+        id as DeploymentRequestId
+      ),
+    registered_platform: ({ service_instance_id }, _, context) =>
+      context.dataLoaders.registration.registeredPlatformByServiceInstanceLoader.load(
+        service_instance_id
+      ),
+    service_instance: async ({ service_instance_id }, _, context) => {
+      const serviceInstance =
+        await context.dataLoaders.serviceInstance.serviceInstanceByIdLoader.load(
+          service_instance_id
+        );
+      return serviceInstance ?? null;
+    },
+  },
   Query: {
     deploymentRequests: async (_, args: QueryDeploymentRequestsArgs) => {
       try {
@@ -26,14 +43,11 @@ const resolvers: Resolvers = {
         );
       }
     },
-    deploymentRequestsAvailable: async (
-      _,
-      { platformIdentifier }
-    ): Promise<DeploymentAvailability[]> => {
+    deploymentRequestsAvailable: async (): Promise<
+      DeploymentAvailability[]
+    > => {
       try {
-        return await DeploymentApp.loadAvailableDeploymentRequests(
-          platformIdentifier
-        );
+        return await DeploymentApp.loadAvailableDeploymentRequests();
       } catch (error) {
         throw mapToGraphQLError(
           error,
@@ -56,9 +70,31 @@ const resolvers: Resolvers = {
         );
       }
     },
-    trialDeployments: async (_, { input }) => {
+    platformTrialStatus: async (_, { organizationId }) => {
       try {
-        return await DeploymentApp.loadTrialDeployments(input);
+        return await DeploymentApp.loadPlatformTrialStatus(organizationId);
+      } catch (error) {
+        throw mapToGraphQLError(
+          error,
+          UnknownErrorCode.DeploymentRequestUnknownError
+        );
+      }
+    },
+    xtmPlatformBundle: async () => {
+      try {
+        return await DeploymentApp.loadXtmPlatformBundle();
+      } catch (error) {
+        throw mapToGraphQLError(
+          error,
+          UnknownErrorCode.DeploymentRequestUnknownError
+        );
+      }
+    },
+    xtmonePlatformIntegrationStatus: async (_, { serviceInstanceId }) => {
+      try {
+        return await DeploymentApp.loadXtmonePlatformIntegrationStatus(
+          serviceInstanceId
+        );
       } catch (error) {
         throw mapToGraphQLError(
           error,

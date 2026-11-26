@@ -1,4 +1,5 @@
 import {
+  CreateDeploymentRequestInput,
   DeploymentRequestDeploymentType,
   DeploymentRequestHubStatus,
   DeploymentRequestPlatformState,
@@ -6,7 +7,10 @@ import {
 } from '../../__generated__/resolvers-types';
 import DeploymentRequestModel from '../../model/kanel/public/DeploymentRequest';
 import { OrganizationId } from '../../model/kanel/public/Organization';
-import { AlreadyExistsErrorCode } from '../../utils/error/error.code';
+import {
+  AlreadyExistsErrorCode,
+  BadRequestErrorCode,
+} from '../../utils/error/error.code';
 import { DeploymentRequestDomain } from './deployment.domain';
 
 type HubStatusTransition = {
@@ -17,6 +21,7 @@ type HubStatusTransition = {
 type PlatformStateTransition = {
   from: DeploymentRequestPlatformState;
   to: DeploymentRequestPlatformState;
+  requiredTargetState?: DeploymentRequestPlatformState;
 };
 
 const VALID_HUB_STATUS_TRANSITIONS: HubStatusTransition[] = [
@@ -107,9 +112,17 @@ const VALID_PLATFORM_STATE_TRANSITIONS: PlatformStateTransition[] = [
     from: DeploymentRequestPlatformState.Removing,
     to: DeploymentRequestPlatformState.Removed,
   },
+  // The platform can remove an instance before redeploying it. Removal may complete
+  // between two status polls, so the `removed` state is not always observed.
+  {
+    from: DeploymentRequestPlatformState.Removing,
+    to: DeploymentRequestPlatformState.Provisioning,
+    requiredTargetState: DeploymentRequestPlatformState.Active,
+  },
   {
     from: DeploymentRequestPlatformState.Removed,
     to: DeploymentRequestPlatformState.Provisioning,
+    requiredTargetState: DeploymentRequestPlatformState.Active,
   },
 ];
 
@@ -126,28 +139,28 @@ export const DeploymentHelper = {
 
   isPlatformStateTransitionValid: (
     from: DeploymentRequestPlatformState | null,
-    to: DeploymentRequestPlatformState | null
+    to: DeploymentRequestPlatformState | null,
+    targetState?: DeploymentRequestPlatformState | null
   ): boolean => {
     return (
       from === to ||
       VALID_PLATFORM_STATE_TRANSITIONS.some(
-        (t) => t.from === from && t.to === to
+        (t) =>
+          t.from === from &&
+          t.to === to &&
+          (!t.requiredTargetState || t.requiredTargetState === targetState)
       )
     );
   },
 
-  assertFreeTrialsLimit: async (
-    organizationId: OrganizationId,
-    platformIdentifier: PlatformIdentifier
-  ) => {
-    const freeTrialsRequests =
+  assertFreeTrialsLimit: async (organizationId: OrganizationId) => {
+    const existingBundle =
       await DeploymentRequestDomain.loadDeploymentRequestBy({
         organization_requester_id: organizationId,
-        type: DeploymentRequestDeploymentType.Trial,
+        type: DeploymentRequestDeploymentType.Bundle,
         counts_in_orga_quota: true,
-        platform_identifier: platformIdentifier,
       });
-    if (freeTrialsRequests) {
+    if (existingBundle) {
       throw new Error(AlreadyExistsErrorCode.FreeTrialAlreadyExists);
     }
   },
@@ -228,5 +241,39 @@ export const DeploymentHelper = {
     }
 
     return newHubStatus;
+  },
+
+  validateUseCasesByProduct: (
+    input: CreateDeploymentRequestInput,
+    products: PlatformIdentifier[]
+  ): void => {
+    const productsRequiringUseCase = products.filter(
+      (platformIdentifier) => platformIdentifier !== PlatformIdentifier.Xtmone
+    );
+    const everyProductHasUseCase = productsRequiringUseCase.every(
+      (platformIdentifier) =>
+        input.use_cases_by_product?.some(
+          (entry) => entry.platform_identifier === platformIdentifier
+        )
+    );
+    const everyEntryTargetsAValidProduct =
+      input.use_cases_by_product?.every(
+        (entry) =>
+          entry.platform_identifier !== PlatformIdentifier.Xtmone &&
+          products.includes(entry.platform_identifier)
+      ) ?? true;
+    const targetedProducts =
+      input.use_cases_by_product?.map((entry) => entry.platform_identifier) ??
+      [];
+    const hasDuplicatedEntry =
+      targetedProducts.length !== new Set(targetedProducts).size;
+
+    const areUseCasesForProductsInvalid =
+      !everyEntryTargetsAValidProduct ||
+      !everyProductHasUseCase ||
+      hasDuplicatedEntry;
+    if (areUseCasesForProductsInvalid) {
+      throw new Error(BadRequestErrorCode.InvalidUseCasesForProducts);
+    }
   },
 };

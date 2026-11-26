@@ -381,7 +381,7 @@ describe('manifestHelper', () => {
           'https://github.com/OpenCTI-Platform/connectors'
         );
         expect(contract.manager_supported).toBe(true);
-        expect(contract.support_version).toBe('7.260507.0');
+        expect(contract.min_version).toBe('7.260507.0');
         expect(contract.license_type).toBe(LicenseType.Commercial);
         expect(contract.contact).toBe('https://github.com/some-contributor');
         expect(contract.solution_categories).toEqual([]);
@@ -418,12 +418,12 @@ describe('manifestHelper', () => {
           'license_type',
           'logo',
           'manager_supported',
+          'min_version',
           'short_description',
           'slug',
           'solution_categories',
           'source_code',
           'subscription_link',
-          'support_version',
           'title',
           'use_cases',
           'verified',
@@ -714,7 +714,7 @@ describe('manifestHelper', () => {
         },
         { field: 'source_code' as const, override: { source_code: null } },
         {
-          field: 'support_version' as const,
+          field: 'min_version' as const,
           override: { minimum_deployable_version: undefined },
         },
         {

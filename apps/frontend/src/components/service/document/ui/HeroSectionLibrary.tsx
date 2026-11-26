@@ -38,20 +38,19 @@ export const HeroSectionLibrary = ({
   showLibraryUpdate = false,
 }: HeroSectionLibraryProps) => {
   return (
-    <section className="px-m pt-m pb-xxl text-center">
-      <div className="flex flex-col gap-s">
-        <p className="text-primary font-bold">{eyebrow}</p>
-        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-s">
-          <div />
-          <h1 className="heading-2xl">{name}</h1>
+    <section className="pt-3 pb-8">
+      <div className="flex flex-col gap-2">
+        <p className="text-filigran-brand-primary font-bold">{eyebrow}</p>
+        <div className="flex flex-row items-center">
+          <h1 className="title-2xl">{name}</h1>
           {showLibraryUpdate && (
-            <div className="justify-self-start">
+            <div className="flex items-center">
               <LibraryUpdateMetadata />
             </div>
           )}
         </div>
-        <div className="flex items-center justify-center gap-s">
-          <p className="max-w-lg txt-sub-content">{description}</p>
+        <div className="flex gap-2">
+          <p className="max-w-lg content-compact">{description}</p>
         </div>
       </div>
     </section>

@@ -104,4 +104,30 @@ describe('useCaseDomain', () => {
       expect(Number(result.totalCount)).toBe(2);
     });
   });
+
+  describe('loadUseCaseByNameCaseInsensitive', () => {
+    beforeEach(async () => {
+      await TestHelper.useCase.delete({});
+    });
+
+    it.each`
+      scenario              | fixtureName           | searchName            | expectMatch
+      ${'different casing'} | ${'Existing UseCase'} | ${'existing usecase'} | ${true}
+      ${'% not a wildcard'} | ${'AutomationSuffix'} | ${'Automat%'}         | ${false}
+      ${'_ not a wildcard'} | ${'AutomationX'}      | ${'Automation_'}      | ${false}
+    `(
+      'should resolve "$searchName" correctly ($scenario)',
+      async ({ fixtureName, searchName, expectMatch }) => {
+        const created = await TestHelper.useCase.create({
+          name: fixtureName,
+          color: '#aaaaaa',
+        });
+
+        const found =
+          await useCaseDomain.loadUseCaseByNameCaseInsensitive(searchName);
+
+        expect(found?.id).toBe(expectMatch ? created.id : undefined);
+      }
+    );
+  });
 });

@@ -8,7 +8,7 @@ input ManifestFragmentInput {
   use_cases: [String!]!
   verified: Boolean
   last_verified_date: String
-  subscription_link: String!
+  subscription_link: String
   source_code: String!
   manager_supported: Boolean!
   min_version: String!
@@ -21,7 +21,7 @@ input ManifestFragmentInput {
   config_schema: JSON!
   license_type: LicenseType
   contact: String
-  solution_categories: [String!]
+  solution_categories: [String!]!
 }
 
 type Mutation {

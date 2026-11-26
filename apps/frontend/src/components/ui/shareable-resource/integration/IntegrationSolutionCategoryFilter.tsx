@@ -1,15 +1,22 @@
+import { ServiceListFacetCounts } from '@/components/service/components/header/filter/service-list-facet-counts';
 import { ServiceListFilterKey } from '@/components/service/components/header/ServiceListHeader';
-import { useServiceListLocalStorageKeyContext } from '@/components/service/components/ServiceListLocalStorageKeyContext';
+import { useServiceListStorageKeyContext } from '@/components/service/components/ServiceListStorageKeyContext';
 import { useSolutionCategories } from '@/components/service/form/UseSolutionCategories';
 import { LogicalMultiSelectFormField } from '@/components/ui/shareable-resource/logical-multi-select/LogicalMultiSelectFormField';
-import { useServiceListFilters } from '@/hooks/use-service-list-filters';
-import { useServiceListLocalStorage } from '@/hooks/use-service-list-local-storage';
+import { useServiceListStorage } from '@/hooks/use-service-list-storage';
+import { useTranslate } from '@/hooks/use-translate';
+import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 import { FiligranProduct } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 
-export const IntegrationSolutionCategoryFilter = () => {
-  const t = useTranslations();
+interface IntegrationSolutionCategoryFilterProps {
+  facetCounts?: ServiceListFacetCounts['solutionCategory'];
+}
+
+export const IntegrationSolutionCategoryFilter = ({
+  facetCounts,
+}: IntegrationSolutionCategoryFilterProps) => {
+  const t = useTranslate();
   const categories = useSolutionCategories(FiligranProduct.Opencti);
   const options = useMemo(
     () =>
@@ -20,32 +27,24 @@ export const IntegrationSolutionCategoryFilter = () => {
     [categories]
   );
 
-  const { localStorageKey } = useServiceListLocalStorageKeyContext();
-  const {
-    solutionCategories,
-    setSolutionCategories,
-    removeSolutionCategories,
-  } = useServiceListLocalStorage(localStorageKey);
-
-  const { removeFilter } = useServiceListFilters();
-  const removeSolutionCategoryFilter = () => {
-    removeSolutionCategories();
-    removeFilter(ServiceListFilterKey.SolutionCategory);
-  };
+  const { storageKey } = useServiceListStorageKeyContext();
+  const { solutionCategories, setSolutionCategories } =
+    useServiceListStorage(storageKey);
 
   return (
     <LogicalMultiSelectFormField
       options={options}
-      initialValue={solutionCategories}
-      placeholder={t(
-        'Service.OpenctiIntegrations.Filter.SolutionCategory.Placeholder'
-      )}
+      value={solutionCategories}
       noResultString={t('Utils.NotFound')}
       onValueChange={setSolutionCategories}
-      onRemove={removeSolutionCategoryFilter}
+      analyticsFilter={{
+        filterKey: ServiceListFilterKey.SolutionCategory,
+        resourceType: ShareableResourceType.OPENCTI_INTEGRATION,
+      }}
       optionLabel={t(
         'Service.OpenctiIntegrations.Filter.SolutionCategory.Label'
       )}
+      facetCounts={facetCounts}
     />
   );
 };

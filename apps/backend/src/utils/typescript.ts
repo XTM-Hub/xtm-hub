@@ -4,6 +4,18 @@ export type addPrefixToObject<T, P extends string> = {
   [K in keyof T as K extends string ? `${P}${K}` : never]: T[K];
 };
 
+export const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+/** The value of the key when it is a non-empty string, null otherwise. */
+export const readNonEmptyString = (
+  record: Record<string, unknown>,
+  key: string
+): string | null => {
+  const value = record[key];
+  return typeof value === 'string' && value !== '' ? value : null;
+};
+
 export const stripNulls = <T extends object>(
   obj: T
 ): {
@@ -12,6 +24,34 @@ export const stripNulls = <T extends object>(
   Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== null)) as {
     [K in keyof T]: null extends T[K] ? Exclude<T[K], null> | undefined : T[K];
   };
+
+/** Nulls stripped everywhere, except on the fields declared as clearable. */
+export type UpdateFields<T, K extends keyof T> = {
+  [P in keyof T]: P extends K
+    ? T[P]
+    : null extends T[P]
+      ? Exclude<T[P], null> | undefined
+      : T[P];
+};
+
+/**
+ * `stripNulls` protects non-nullable columns from being overwritten with null,
+ * but it also swallows the explicit null a caller sends to clear a nullable
+ * column. Clearable fields are therefore reapplied afterwards, so `undefined`
+ * still means "leave untouched" while `null` means "clear".
+ */
+export const applyUpdate = <T extends object, K extends keyof T>(
+  input: T,
+  clearableFields: readonly K[]
+): UpdateFields<T, K> => {
+  const fields = stripNulls(input) as UpdateFields<T, K>;
+  for (const field of clearableFields) {
+    if (field in input && input[field] === null) {
+      (fields as Record<K, T[K]>)[field] = input[field];
+    }
+  }
+  return fields;
+};
 
 /**
  * Runs `mapper` over `items` with at most `concurrency` invocations in

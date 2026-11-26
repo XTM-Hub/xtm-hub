@@ -1,37 +1,30 @@
 import { EpicItemCard } from '@/components/epic/epic-item/EpicItemCard';
 import testRender from '@/utils/test/test-render';
-import { epic_fragment$data } from '@generated/epic_fragment.graphql';
 import { EditionType, EpicType, FiligranProduct } from '@graphql/generated';
+import { mockEpic } from '@graphql/mocks';
 import { screen } from '@testing-library/react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { createMockEnvironment } from 'relay-test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const useEpicListContextMock = vi.fn();
-
-vi.mock('@/hooks/use-epic-list-context', () => ({
-  useEpicListContext: () => useEpicListContextMock(),
-}));
-
 describe('EpicItemCard', () => {
-  const epic = {
+  const epic = mockEpic({
     id: 'epic-1',
     title: 'Roadmap epic',
     epic_type: EpicType.Other,
-    product: FiligranProduct.Opencti,
+    products: [FiligranProduct.Opencti],
     edition_type: EditionType.CommunityEdition,
     short_description: 'short description',
     description: 'long description',
-  } as epic_fragment$data;
+    problem_to_solve: 'problem to solve',
+    proposed_solution: 'proposed solution',
+    expected_value: 'expected value',
+  });
 
-  const mockReplace = vi.fn();
+  const mockReplaceState = vi.spyOn(window.history, 'replaceState');
 
   beforeEach(() => {
     vi.clearAllMocks();
-    useEpicListContextMock.mockReturnValue({
-      connectionID: 'connection-id-1',
-      filterByProduct: vi.fn(),
-    });
+    mockReplaceState.mockImplementation(() => {});
 
     vi.mocked(usePathname).mockReturnValue('/epics');
 
@@ -40,7 +33,7 @@ describe('EpicItemCard', () => {
       back: vi.fn(),
       forward: vi.fn(),
       refresh: vi.fn(),
-      replace: mockReplace,
+      replace: vi.fn(),
       prefetch: vi.fn(),
     });
 
@@ -52,17 +45,13 @@ describe('EpicItemCard', () => {
 
   it('renders card content and child components', () => {
     // Given
-    const environment = createMockEnvironment();
-
     // When
     testRender(
       <EpicItemCard
         epic={epic}
-        serviceInstanceId={'service-instance-1'}
         userCanDelete={false}
         userCanUpdate={false}
-      />,
-      { relayConfig: environment }
+      />
     );
 
     // Then
@@ -74,46 +63,40 @@ describe('EpicItemCard', () => {
 
   it('opens details by updating URL when clicking outside admin menu area', async () => {
     // Given
-    const environment = createMockEnvironment();
-
     const { user } = testRender(
       <EpicItemCard
         epic={epic}
-        serviceInstanceId={'service-instance-1'}
         userCanDelete={false}
         userCanUpdate={false}
-      />,
-      { relayConfig: environment }
+      />
     );
 
     // When
     await user.click(screen.getByText(epic.title));
 
     // Then
-    expect(mockReplace).toHaveBeenCalledOnce();
-    expect(mockReplace).toHaveBeenCalledWith('/epics?epicId=epic-1', {
-      scroll: false,
-    });
+    expect(mockReplaceState).toHaveBeenCalledOnce();
+    expect(mockReplaceState).toHaveBeenCalledWith(
+      null,
+      '',
+      '/epics?epicId=epic-1'
+    );
   });
 
   it('does not update URL when clicking in admin menu area', async () => {
     // Given
-    const environment = createMockEnvironment();
-
     const { user } = testRender(
       <EpicItemCard
         epic={epic}
-        serviceInstanceId={'service-instance-1'}
         userCanDelete={true}
         userCanUpdate={true}
-      />,
-      { relayConfig: environment }
+      />
     );
 
     // When
     await user.click(screen.getByRole('button', { name: 'Utils.OpenMenu' }));
 
     // Then
-    expect(mockReplace).not.toHaveBeenCalled();
+    expect(mockReplaceState).not.toHaveBeenCalled();
   });
 });

@@ -1,49 +1,57 @@
 import { useUseCases } from '@/components/admin/use-case/use-use-cases';
-import {
-  FormControl,
-  FormItem,
-  FormLabel,
-  MultiSelectFormField,
-} from '@filigran/ui';
+import { AppCombobox } from '@/components/ui/AppCombobox';
+import { useFormField } from '@/components/ui/form';
+import { useTranslate } from '@/hooks/use-translate';
+import { toComboboxOptionIds } from '@/utils/design-system/combobox';
 import type { FiligranProduct } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
-import { ControllerRenderProps, FieldValues } from 'react-hook-form';
+import { useMemo } from 'react';
+import { ControllerRenderProps, FieldPath, FieldValues } from 'react-hook-form';
 
-interface ServiceFormUseCasesFieldProps {
-  field: ControllerRenderProps<FieldValues, string>;
+interface ServiceFormUseCasesFieldProps<
+  TFieldValues extends FieldValues,
+  TName extends FieldPath<TFieldValues>,
+> {
+  field: ControllerRenderProps<TFieldValues, TName>;
   disabled?: boolean;
   product?: FiligranProduct;
   required?: boolean;
 }
 
-export const ServiceFormUseCasesField = ({
+export const ServiceFormUseCasesField = <
+  TFieldValues extends FieldValues,
+  TName extends FieldPath<TFieldValues>,
+>({
   field,
   disabled,
   product,
   required,
-}: ServiceFormUseCasesFieldProps) => {
-  const t = useTranslations();
+}: ServiceFormUseCasesFieldProps<TFieldValues, TName>) => {
+  const t = useTranslate();
+  const { error } = useFormField();
+  const useCases = useUseCases({ product });
+  const useCaseOptionIds = useMemo(
+    () =>
+      toComboboxOptionIds(
+        useCases,
+        (useCase) => useCase.id,
+        (useCase) => useCase.name
+      ),
+    [useCases]
+  );
+
   return (
-    <FormItem>
-      <FormLabel>
-        {t('Service.Form.UseCasesLabel')}
-        {required ? <span className="text-sm text-destructive"> *</span> : null}
-      </FormLabel>
-      <FormControl>
-        <MultiSelectFormField
-          disabled={disabled}
-          noResultString={t('Utils.NotFound')}
-          options={useUseCases({ product })}
-          keyValue="id"
-          keyLabel="name"
-          defaultValue={field.value}
-          value={field.value}
-          onValueChange={field.onChange}
-          popoverContentClassName="bg-elevation-background-layer-3"
-          placeholder={t('Service.Form.UseCasesPlaceholder')}
-          variant="inverted"
-        />
-      </FormControl>
-    </FormItem>
+    <AppCombobox
+      formField
+      multiple
+      label={t('Service.Form.UseCasesLabel')}
+      required={required}
+      placeholder={t('Service.Form.UseCasesPlaceholder')}
+      error={error?.message}
+      disabled={disabled}
+      options={useCaseOptionIds.ids}
+      value={field.value ?? []}
+      onValueChange={field.onChange}
+      getOptionLabel={useCaseOptionIds.getOptionLabel}
+    />
   );
 };

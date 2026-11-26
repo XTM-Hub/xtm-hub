@@ -1,25 +1,75 @@
 {
+  "UserDisplay": {
+    "DeletedUser": "削除されたユーザー"
+  },
   "AdminBanner": "あなたは現在管理者モードです。",
   "App": {
     "Collapse": "折りたたむ",
     "CollapseSidebar": "サイドバーを折りたたむ",
     "MadeBy": "制作：",
-    "Title": "XTMハブ"
+    "MadeByBrand": "制作：{brand}",
+    "Title": "XTM Hub"
   },
   "Badge": {
     "Disabled": "お断りします",
     "Enabled": "有効",
     "Published": "発行済み"
   },
+  "DocumentStatus": {
+    "Draft": "ドラフト",
+    "InValidation": "検証中",
+    "Published": "発行済み"
+  },
   "CapabilityDescription": {
     "Capabilities": {
-      "ADMINISTRATE_ORGANIZATION": "組織内のすべての能力アクションを許可する",
+      "ADMINISTRATE_ORGANIZATION": "組織内のすべての権限を付与する",
       "MANAGE_ACCESS": "この組織に他のユーザーを招待できる",
-      "MANAGE_PLATFORM_REGISTRATION": "製品の接続と切断を行う機能",
+      "MANAGE_PLATFORM_REGISTRATION": "製品の接続・切断、およびトライアルの開始、キャンセル、管理を行う機能。SaaS顧客の場合は、製品の指標を確認できる機能。",
       "MANAGE_SUBSCRIPTION": "組織を管理し、サービスに登録する機能"
     },
-    "Description": "フィリグランのユーザーに特定の機能を追加できる",
+    "Description": "Filigran のユーザーに特定の機能を追加できる",
     "Title": "利用可能な機能"
+  },
+  "CSMBoard": {
+    "Customer": "顧客",
+    "Organization": "組織",
+    "Administrators": "管理者",
+    "Products": "製品",
+    "ProductVersion": "バージョン: {version}",
+    "AllProducts": "すべての製品",
+    "Plan": "プラン",
+    "Health": "ヘルス",
+    "Healthy": "正常",
+    "HealthSla": "SLA {percent}",
+    "HealthDatabase": "データベース {percent}",
+    "HealthFileStorage": "ファイルストレージ {percent}",
+    "Database": "データベース",
+    "FileStorage": "ファイルストレージ",
+    "Availability": "可用性",
+    "Version": "バージョン",
+    "ContractEnd": "契約終了日",
+    "EndsIn": "あと{days}日",
+    "ContractEnded": "終了",
+    "Link": "SaaS指標",
+    "AskCustomer": "製品を接続するようお客様に依頼してください",
+    "ViewMetrics": "メトリクスを見る",
+    "SearchPlatform": "プラットフォーム検索",
+    "ClearSearch": "検索をクリア",
+    "Tour": {
+      "Table": "この表には、SaaS Manager のすべての SaaS プラットフォームと、そこから取得したデータが表示されます。",
+      "Search": "顧客名でプラットフォームを検索できます。",
+      "ProductFilter": "特定の製品のプラットフォームだけを表示できます。",
+      "HubColumns": "顧客が製品を XTM Hub に接続すると、これらの列に情報が表示されます。「{viewMetrics}」をクリックすると、プラットフォームの詳細なメトリクスを確認できます。",
+      "HoverDetails": "これらの列のセルにカーソルを合わせると、管理者のメールアドレス、製品のバージョン、正確な契約終了日などの詳細が表示されます。",
+      "MetricsLink": "顧客が製品を XTM Hub に接続すると利用できます。リンクから製品の詳細ページが開きます。このページには顧客もアクセスできます。",
+      "Database": "プランで許可された容量に対する Elasticsearch ストレージの使用率です。",
+      "FileStorage": "プランで許可された容量に対する S3 ストレージの使用率です。",
+      "Availability": "プラットフォームの SLA 可用性です。契約上の目標値は 99.98% です。",
+      "Health": "問題のあるプラットフォームと、その原因 (SLA、データベース、ファイルストレージ) をひと目で確認できます。",
+      "ColumnMenu": "列見出しにカーソルを合わせるとメニューが表示され、不要な列を非表示にできます。一部の列見出しは、クリックするとその列で表を並べ替えられます。",
+      "ShowHiddenColumn": "非表示にした列を再表示するには、テーブルメニューを開き、「{columns}」から選択します。",
+      "FullDocumentation": "XTM Hub でのメトリクスの扱いについての詳細は、<link>こちらの Notion ページ</link>にまとめられています。"
+    }
   },
   "CountryComboBox": {
     "Placeholder": "国を選択"
@@ -57,22 +107,57 @@
     }
   },
   "Contracts": {
-    "CE": "コミュニティ版",
-    "EE": "エンタープライズ版",
+    "CE": "Community Edition",
+    "EE": "Enterprise Edition",
     "TRIAL": "無料トライアル"
   },
-  "Datatable": {
-    "Asc": "として",
-    "Columns": "列",
-    "Desc": "Des",
-    "GoFirstPage": "最初のページへ",
-    "GoLastPage": "最後のページへ",
-    "GoNextPage": "次のページへ",
-    "GoPreviousPage": "前のページへ",
-    "Hide": "隠す",
-    "ManageColumnsVisibility": "列の表示管理",
-    "ResetTable": "表のリセット",
-    "RowsPerPage": "ページあたりの行数"
+  "PlatformStatuses": {
+    "active": "有効",
+    "inactive": "無効"
+  },
+  "CommercialModels": {
+    "SAAS": "SaaS",
+    "OTHER": "その他"
+  },
+  "XtmPlatformTrial": {
+    "BundleInfo": {
+      "OrganizationName": "組織",
+      "StartedOn": "開始日",
+      "License": "ライセンス",
+      "Remaining": "残り",
+      "DaysRemaining": "{days} 日",
+      "TrialRequester": "トライアル申請者",
+      "Title": "XTM製品トライアルの詳細:"
+    },
+    "Products": {
+      "ConnectionStatus": "接続ステータス",
+      "LastConnection": "最終接続確認",
+      "Role": "ロール",
+      "NoRole": "なし。",
+      "NoRoleHint": "トライアル申請者にお問い合わせください。",
+      "StatusActive": "接続済み",
+      "StatusNotConnected": "未接続",
+      "AccessProduct": "{productName}にアクセス",
+      "StatusUnavailable": "利用不可",
+      "ProductName": "製品名",
+      "Connection": "{productName}接続",
+      "EditName": "名前を編集",
+      "ConnectionLost": "接続が切断されました。",
+      "ReconnectHint": "製品を再接続してください。"
+    },
+    "CancelTrial": "トライアルをキャンセル",
+    "CancelDialog": {
+      "Title": "トライアルをキャンセル",
+      "Description": "このトライアルをキャンセルしてもよろしいですか？",
+      "Warning": "一度キャンセルすると、新しいトライアルを再申請できなくなります"
+    },
+    "Title": "XTM Platform トライアルへようこそ",
+    "Subtitle": "トライアルに必要なすべてがここにあります。トライアルの詳細と残り時間、製品への直接アクセス、そしてサポートが必要なときや質問があるときにFiligranチームに直接連絡できます。",
+    "Guide": {
+      "Title": "XTM Platform トライアルガイド",
+      "Content": "私たちが構築しているもの、次に登場するもの、そしてXTM Platform が目指す方向をご覧ください。完全な透明性。驚きはありません。",
+      "SeeMore": "詳細を見る"
+    }
   },
   "DeploymentRequestUseCase": {
     "threat_profiling_cti": "脅威プロファイリング（CTI）",
@@ -81,7 +166,7 @@
     "threat_profiling_faml": "脅威のプロファイリング(詐欺とAML)",
     "threat_hunting": "脅威のハンティング",
     "strategic_reporting": "戦略的レポーティング（経営幹部向け）",
-    "technical_reporting": "戦略的レポーティング（アナリスト向け）",
+    "technical_reporting": "技術的レポーティング（アナリスト向け）",
     "incident_response": "インシデント対応の調整",
     "security_stack": "セキュリティ・スタックの統合",
     "detection_engineering": "検知エンジニアリング",
@@ -142,8 +227,24 @@
   "DisableUserDialog": {
     "TextDisableThisUser": "本当にこのユーザー {email} を無効にしますか？"
   },
+  "EpicForm": {
+    "Error": {
+      "Title": "タイトルは必須です",
+      "ShortDescription": "概要は必須です",
+      "ShortDescriptionMax": "概要は215文字以内で入力してください",
+      "DescriptionMax": "説明は500文字以内で入力してください",
+      "ProblemToSolve": "解決する課題は必須です",
+      "ProblemToSolveMax": "解決する課題は500文字以内で入力してください",
+      "ProposedSolution": "提案する解決策は必須です",
+      "ProposedSolutionMax": "提案する解決策は500文字以内で入力してください",
+      "ExpectedValue": "期待される価値は必須です",
+      "ExpectedValueMax": "期待される価値は500文字以内で入力してください",
+      "Product": "少なくとも1つの製品が必要です",
+      "SlackLink": "filigran-community のSlackリンクである必要があります"
+    }
+  },
   "Epic": {
-    "XTMRoadmap": "XTMスイートロードマップ",
+    "XTMRoadmap": "XTM Platform ロードマップ",
     "AllProducts": "すべての製品",
     "ShowFinished": "表示終了",
     "FilterByProduct": "製品で絞り込む",
@@ -165,24 +266,63 @@
       "Epic": "エピック",
       "Title": "タイトル",
       "ShortDesc": "簡単な説明",
-      "Description": "説明文",
+      "Description": "詳細な説明",
+      "ProblemToSolve": "解決する課題",
+      "ProposedSolution": "提案する解決策",
+      "ExpectedValue": "期待される価値",
       "EditionType": "エディション・タイプ",
       "FiligranProduct": "製品名",
-      "FiligranProductPlaceholder": "オープンCTI",
+      "FiligranProductPlaceholder": "OpenCTI",
+      "SlackLink": "Slackリンク",
+      "SlackLinkPlaceholder": "チャンネルを選択するか、Slackリンクを貼り付けてください",
       "Timeline": "タイムライン",
       "IsActive": "このエピックは公開されていますか？(デフォルトでは下書きモードです)",
       "Integration": "統合されているか",
-      "IsLimited": "{maxChars}文字以内",
-      "AutomaticallyAdded": "自動的に追加される（編集不可）"
+      "AutomaticallyAdded": "自動的に追加される（編集不可）",
+      "CharacterCount": "{count} / {maxChars}",
+      "Placeholder": {
+        "Title": "例：ユーザーが有効なトライアルをすべて一覧できる",
+        "ShortDesc": "ロードマップカードに表示される一文",
+        "Description": "エピックの詳細：背景、範囲、制約",
+        "ProblemToSolve": "ユーザーが感じている課題",
+        "ProposedSolution": "どのように解決するか",
+        "ExpectedValue": "リリース後に得られる価値"
+      },
+      "DetailsSection": "エピックの詳細",
+      "PublishNow": "今すぐ公開",
+      "PublishNowHint": "（それ以外は下書きとして保存）",
+      "EditionTypeInfo": "Partial EE：Community Edition で動作しますが、一部のオプションには Enterprise Edition が必要です",
+      "TimelineOption": {
+        "now": "現在",
+        "next": "次",
+        "under_consideration": "検討中",
+        "finished": "完了"
+      }
     },
     "EpicActions": {
       "CreateEpic": "新しい叙事詩を作成する",
       "UpdateEpic": "エピックの更新",
       "DeleteEpic": "{epicName} エピックを削除する",
       "SureDeleteEpic": "本当に {epicName} エピックを削除しますか？",
-      "EpicDeleted": "エピックを削除しました"
+      "EpicDeleted": "エピックを削除しました",
+      "CreateEpicButton": "エピックを作成",
+      "UpdateEpicButton": "エピックを更新"
     },
-    "JoinCommunity": "フィリグランコミュニティの輪に入る"
+    "JoinCommunity": "Filigran コミュニティの輪に入る"
+  },
+  "FeatureVoting": {
+    "Title": "今後の機能に投票",
+    "MetaDescription": "OpenCTI、OpenAEV、XTM One、XTM Hubで次に実現してほしい機能に投票してください。",
+    "Description": "Filigran製品の未来づくりにご協力ください。次に実現してほしい機能に投票できます。投票は製品ごとに1票で、いつでも変更できます。",
+    "OneVotePerProduct": "この製品への投票は1票です。別の機能に投票すると票が移動します。",
+    "Vote": "投票する",
+    "Voted": "投票済み",
+    "VoteRecordedTitle": "投票を受け付けました",
+    "VoteRecordedDescription": "ありがとうございます。投票が反映されました。",
+    "NoOpenRound": "現在、投票は開催されていません。またお越しください。",
+    "CalloutTitle": "ロードマップづくりに参加",
+    "CalloutSubtitle": "現在、機能への投票を受付中です。次に見たい機能をお知らせください。",
+    "CalloutButton": "次の機能に投票する"
   },
   "Error": {
     "AnErrorOccured": "エラーが発生しました",
@@ -199,25 +339,51 @@
       "CAN_UNREGISTER_PLATFORM_UNKNOWN_ERROR": "製品の切断中に不明なエラーが発生しました。",
       "CANT_ADD_DISABLED_USER": "プラットフォームで無効になっているユーザーを追加できない",
       "CANT_ADD_USER_TO_PERSONAL_SPACE": "パーソナルスペースにユーザーを追加することはできません",
+      "CANT_CANCEL_BUNDLE_PRODUCT": "XTM Platform Trial 内の個別の製品はキャンセルできない",
+      "CANT_DELETE_BLOGPOST_NEWS_FEED_ITEM": "ブログ記事は同期によって管理されているため、削除できません",
+      "CANT_DELETE_BUILTIN_USER": "この組み込みユーザーは削除できません",
+      "CANT_DELETE_YOURSELF": "自分のアカウントを削除することはできません",
       "CANT_REMOVE_LAST_ADMINISTRATOR": "組織の最後の管理者を削除することはできない",
+      "CANT_REMOVE_USER_FROM_PERSONAL_SPACE": "パーソナルスペースからユーザーを削除することはできません",
       "CANT_REMOVE_YOURSELF_FROM_ORGA_ERROR": "組織から自分自身を削除することはできない",
       "CANT_REQUEST_FREE_TRIAL": "無料トライアルのリクエストはできない",
       "CANT_REQUEST_FREE_TRIAL_IN_PERSONAL_SPACE": "個人的なスペースで無料体験を申し込むことはできない",
       "CANT_SUBSCRIBE_YOURSELF": "自分を追加することはできません",
+      "CAPABILITY_PORTAL_NOT_FOUND": "不明なケイパビリティです",
+      "SSO_GROUP_ROLE_PORTAL_NOT_FOUND": "SSOグループのマッピングが見つかりません",
+      "SSO_GROUP_ROLE_PORTAL_ALREADY_EXISTS": "このSSOグループはすでにこのロールにマッピングされています",
+      "ROLE_PORTAL_NOT_FOUND": "ロールが見つかりません",
+      "ROLE_PORTAL_ALREADY_EXISTS": "このロールはすでに存在します",
+      "ROLE_PORTAL_PROTECTED": "このロールはプラットフォームで使用されています。名前の変更や削除はできず、ADMINはBYPASSを保持する必要があります",
+      "SET_USER_PASSWORD_NOT_ALLOWED": "このプラットフォームではユーザーのパスワードを設定する権限がありません",
       "COMPETITOR_DOMAIN_ALREADY_EXISTS": "同じドメインの競合がすでに存在する",
+      "DEPLOYMENT_FEEDBACK_ALREADY_EXISTS": "導入に関するフィードバックはすでに存在しています",
       "COMPETITOR_NOT_FOUND": "競合他社が見つかりません",
+      "CONNECTOR_ID_ALREADY_EXISTS": "この識別子を持つコネクタは既に存在します",
       "CONNECTOR_VERSION_ALREADY_EXISTS": "このバージョンのコネクタは既に存在します",
       "CONTACT_TOO_LONG": "連絡先が長すぎます",
       "CREATE_DEPLOYMENT_REQUEST_ERROR": "配備要求の作成中にエラーが発生しました",
       "DELETE_DOCUMENT_ERROR": "ドキュメントの削除中にエラーが発生した",
       "DELETE_EPIC_ERROR": "エピックの削除中にエラーが発生した。",
+      "DELETE_ORGANIZATION_BLOCKED_BY_CONNECTED_PRODUCT": "この組織は接続された製品があるため削除できません。",
       "DELETE_ORGANIZATION_ERROR": "組織削除時のエラー",
+      "DELETE_ORGANIZATION_PENDING_USERS": "この組織には承認待ちのユーザーが残っています。削除する前に承認または拒否してください。",
+      "DELETE_ORGANIZATION_REQUIRES_SINGLE_USER": "この組織には複数のメンバーが残っています。削除する前にメンバーを外してください。",
       "DELETE_SUBSCRIPTION_ERROR": "購読削除時のエラー",
+      "DELETE_USER_BLOCKED_BY_CANCELLATION_RECORD": "このユーザーは、アカウントにまだ紐付けられているデプロイリクエストをキャンセルしたため、削除できません。",
+      "DELETE_USER_BLOCKED_BY_DEPLOYMENT_REQUEST": "このユーザーのアカウントに配備要求が紐づいているため、削除できません。",
+      "DELETE_USER_BLOCKED_BY_LAST_ORGANIZATION_MEMBER": "このユーザーは組織の最後のメンバーであるため、削除できません。",
+      "DELETE_USER_BLOCKED_BY_LINKED_DATA": "このユーザーのアカウントに他のデータが紐づいているため、削除できません。",
+      "DELETE_USER_BLOCKED_BY_PENDING_USERS": "このユーザーが所属する組織に承認待ちのユーザーがいるため、削除できません。",
+      "DELETE_USER_BLOCKED_BY_PLATFORM_REGISTRATION": "このユーザーは製品を登録しているため、削除できません。",
+      "DELETE_USER_BLOCKED_BY_TRANSFER_REQUEST": "パーソナルスペースの移管リクエストが保留中のため、このユーザーは削除できません。",
+      "DELETE_USER_ERROR": "ユーザー削除時のエラー",
       "DEPLOYMENT_REQUEST_HUB_STATUS_NOT_QUEUED": "キューに入れられた配備要求の順番を変更することはできません。",
       "DEPLOYMENT_REQUEST_NOT_FOUND": "不明なエラーが発生しました",
       "DEPLOYMENT_REQUEST_QUOTA_NOT_FOUND": "配備要求のクォータが見つからなかった。",
       "DEPLOYMENT_REQUEST_STATUS_UPDATE_NOT_ALLOWED": "不明なエラーが発生した",
       "DEPLOYMENT_REQUEST_UNKNOWN_ERROR": "不明なエラーが発生した",
+      "DEPLOYMENT_FEEDBACK_UNKNOWN_ERROR": "フィードバックの送信中に不明なエラーが発生しました",
       "DOCUMENT_CREATE_ERROR": "リソースの作成中にエラーが発生しました。",
       "DOCUMENT_FILE_MISSING": "ドキュメントファイルが見つからない",
       "DOCUMENT_MISSING_METADATA": "ドキュメントにメタデータがありません。",
@@ -229,10 +395,10 @@
       "EDIT_ME_USER_ERROR": "プロフィール編集中のエラー",
       "EDIT_ORGANIZATION_ERROR": "組織編集中のエラー",
       "EDIT_USER_ERROR": "ユーザー編集中のエラー",
-      "EDIT_USER_SESSION_ERROR": "不明なエラーが発生しました",
       "EMAIL_OUTSIDE_ORGANIZATION_ERROR": "メールドメインが組織外のユーザーを追加できない",
       "EPIC_CREATE_ERROR": "エピックの作成中にエラーが発生した。",
       "EPIC_UPDATE_ERROR": "叙事詩の更新中にエラーが発生した。",
+      "FORBIDDEN_ACCESS": "このアクションを実行する権限がありません",
       "FREE_TRIAL_ALREADY_EXISTS": "あなたの組織には既に無料トライアルが存在します",
       "GRANT_CAPABILITIES_ON_ORGANIZATION_FIRST": "最初に組織で権限を付与する必要があります",
       "HUBSPOT_ERROR": "お問い合わせ中にエラーが発生しました",
@@ -240,6 +406,9 @@
       "INTEGRATION_TYPE_NOT_MANAGEABLE": "このタイプの統合は管理できません。",
       "INTEGRATION_TYPE_NOT_RECOGNIZED": "このタイプの統合は認識されない",
       "INVALID_ACTION_SIZE": "不明なエラーが発生した",
+      "INVALID_CONTENT_TRANSLATION_KEY": "無効なコンテンツキーです",
+      "INVALID_DOCUMENT_CREATION_STATUS": "リソースは下書きまたは検証中としてのみ作成できます",
+      "INVALID_DOCUMENT_STATUS_TRANSITION": "このリソースではこのステータスの変更は許可されていません",
       "INVALID_EMAIL": "電子メールは有効な形式でなければなりません。",
       "INVALID_IMAGE_URL": "画像のURLが不正",
       "INVALID_MANIFEST_VERSION_FORMAT": "マニフェストのバージョン形式が無効です",
@@ -247,22 +416,33 @@
       "INVALID_PLATFORM_ID": "不明なエラーが発生した",
       "INVALID_PLATFORM_IDENTIFIER": "プラットフォーム識別子が無効",
       "INVALID_PLATFORM_VERSION": "プラットフォームのバージョンが無効です",
-      "INVALID_PRODUCTS_FOR_DEPLOYMENT_TYPE": "選択された製品はこの展開タイプには無効です",
+      "INVALID_SSO_GROUP_ROLE_PORTAL": "SSOグループまたはロールが無効です",
+      "INVALID_ROLE_PORTAL": "ロールが無効です",
       "IS_PLATFORM_REGISTERED_UNKNOWN_ERROR": "製品の接続中に不明なエラーが発生しました",
+      "LOAD_CAPABILITIES_ERROR": "機能の読み込み中にエラーが発生しました",
+      "LIST_FACET_ERROR": "ファセットの一覧表示中に不明なエラーが発生しました",
+      "META_DESCRIPTION_INVALID_DASH": "メタディスクリプションには長いダッシュ（— または –）ではなく、半角ハイフン（-）を使用してください",
+      "META_DESCRIPTION_MATCHES_TITLE": "生成されたメタディスクリプションをリソース名で始めることはできません",
+      "META_DESCRIPTION_REQUIRED": "メタディスクリプションは必須です",
+      "META_DESCRIPTION_TOO_SHORT": "製品名と種類を含めた生成メタディスクリプションは120文字以上にしてください",
+      "META_DESCRIPTION_TOO_LONG": "製品名と種類を含めた生成メタディスクリプションは160文字以内にしてください",
       "MISSING_AUTO_REGISTER_PLATFORM_ARGUMENT": "製品の自動接続引数がありません",
       "MISSING_CAPABILITY_ON_ORGANIZATION": "権限がない",
       "MISSING_CAPABILITY_ON_SERVICE": "パーミッションが見つからない",
       "MISSING_METADATA_MAPPING": "メタデータのマッピングの欠落",
       "MISSING_START_OR_END_DATE": "不明なエラーが発生",
+      "INVALID_USE_CASES_FOR_PRODUCTS": "ユースケースがトライアルの製品と一致しません",
       "MIXED_LTS_MANIFEST_FRAGMENTS": "バッチ内でLTSと非LTSのフラグメントを混在させることはできません",
       "NEWS_FEED_ITEM_MISSING_TITLE": "ニュースフィードにタイトルがありません",
       "NEWS_FEED_ITEM_NOT_FOUND": "ニュースフィード項目が見つかりません",
       "NO_ASYNC_CONTEXT_AVAILABLE": "不明なエラーが発生しました",
       "NOT_ALLOWED_BY_DEPLOYMENT_STATUS": "不明なエラーが発生しました",
+      "NOT_FOUND": "要求されたリソースが見つかりません",
       "ORGANIZATION_NOT_FOUND": "組織が見つかりません",
       "ORGANIZATION_SAME_DOMAIN_EXISTS": "同じドメインの組織が既に存在する",
       "ORGANIZATION_SAME_NAME_EXISTS": "同じ名前の組織がすでに存在する",
       "ORGANIZATIONS_DOES_NOT_MATCH_SELECTED_ORGANIZATION": "こんなことは許されない",
+      "PENDING_USER_NOT_FOUND": "このユーザーには組織への参加リクエストがありません",
       "PLATFORM_CONFIGURATION_NOT_FOUND": "プラットフォーム設定が見つかりません",
       "PLATFORM_NOT_REGISTERED": "製品が接続されていません",
       "PLATFORM_TYPE_NOT_SUPPORTED": "プラットフォームがサポートされていない",
@@ -273,16 +453,24 @@
       "REMOVE_USER_FROM_PENDING_ORGA_ERROR": "保留中の組織からユーザーを削除する際にエラーが発生した",
       "SEO_SERVICE_INSTANCE_NOT_FOUND": "SEOサービスのインスタンスのメタデータが見つかりませんでした",
       "SERVICE_DEFINITION_NOT_FOUND": "サービス定義が見つかりませんでした",
+      "SERVICE_GROUP_NOT_FOUND": "サービスグループが見つかりません",
       "SERVICE_GROUPS_LINKED_TO_MULTIPLE_SERVICE_INSTANCES": "あなたはこれを行うことはできません",
       "SERVICE_INSTANCE_NOT_FOUND": "サービスインスタンスが見つかりません",
+      "SERVICE_INSTANCE_NOT_PUBLIC": "このサービスへのアクセス権がありません",
       "SERVICE_NOT_FOUND": "サービスが見つかりません",
       "SERVICE_NOT_MANAGEABLE": "このサービスは管理できません。",
       "SERVICE_SUBSCRIPTION_ERROR": "サービスにサブスクリプションを追加する際にエラーが発生した",
       "SHORT_DESCRIPTION_TOO_LONG": "短い説明が長すぎます",
+      "SOLUTION_CATEGORIES_REQUIRED": "少なくとも1つのソリューションカテゴリが必要です",
       "SOLUTION_CATEGORY_NOT_FOUND": "ソリューションカテゴリが見つかりません",
       "SUBSCRIPTION_NOT_FOUND": "購読が見つからない",
       "TENANT_ID_MANDATORY": "テナントIDは必須です",
+      "TENANT_ID_NOT_SUPPORTED": "このプラットフォームはテナントに対応していません",
+      "TOO_MANY_EMAILS": "一度に招待できるメールアドレスは最大50件です",
+      "TOO_MANY_REQUESTS": "リクエストが多すぎます。しばらくしてから再度お試しください。",
       "TRANSFER_ME_ERROR": "個人スペースの転送要求中にエラーが発生しました。",
+      "TRIAL_PLATFORM_CANNOT_BE_UNREGISTERED": "トライアルのプラットフォームは登録解除できません",
+      "UNAUTHENTICATED": "この操作を行うにはサインインが必要です",
       "UNKNOWN_ERROR": "不明なエラーが発生",
       "UNREGISTER_PLATFORM_UNKNOWN_ERROR": "プラットフォーム登録解除中に不明なエラーが発生した",
       "UPDATE_PLATFORM_SERVICE_METADATA_ERROR": "プラットフォームサービスのメタデータ更新中にエラーが発生した",
@@ -291,7 +479,24 @@
       "USER_DISABLED": "ユーザーが無効です",
       "USER_IS_NOT_IN_ORGANIZATION": "権限がありません",
       "USER_NOT_FOUND": "ユーザーが見つかりません",
-      "YOU_CAN_NOT_LOGIN": "ログインできません"
+      "XTM_ONE_ROLE_REQUIRED": "XTM One のロールが必要です",
+      "VOTABLE_FEATURE_NOT_FOUND": "この機能は現在投票の対象ではありません",
+      "VOTE_FOR_FEATURE_ERROR": "投票の登録中にエラーが発生しました",
+      "YOU_CAN_NOT_LOGIN": "ログインできません",
+      "VOTING_ROUND_NOT_OPEN": "この投票ラウンドは公開されていません",
+      "VOTING_ROUND_CLOSED": "この投票ラウンドは終了しています",
+      "VOTING_ROUND_NOT_FOUND": "投票ラウンドが見つかりません",
+      "DELETE_VOTING_ROUND_BLOCKED_BY_VOTES": "このラウンドには既に投票があるため削除できません",
+      "DELETE_VOTABLE_FEATURE_BLOCKED_BY_VOTES": "この機能には既に投票があります。無効化してください",
+      "VOTING_ROUND_MUTATION_ERROR": "投票ラウンドの保存中にエラーが発生しました",
+      "OPEN_VOTING_ROUND_WITHOUT_ACTIVE_FEATURE": "このラウンドには有効な機能がないため、開始できません",
+      "VOTABLE_FEATURE_PRODUCT_LOCKED": "この機能には既に投票があるため、製品を変更できません",
+      "VOTABLE_FEATURE_PRODUCT_NOT_VOTABLE": "この製品は投票の対象ではありません",
+      "COPY_FEATURES_FROM_ANOTHER_ROADMAP": "機能は同じロードマップのラウンドからのみコピーできます",
+      "VOTABLE_FEATURE_MUTATION_ERROR": "機能の保存中にエラーが発生しました",
+      "INVALID_API_TOKEN": "トークン名または有効期限が無効です",
+      "NOT_ALLOWED_WITH_API_TOKEN": "この操作はAPIトークンでは許可されていません",
+      "READ_ONLY_API_TOKEN": "このAPIトークンは読み取り専用です"
     },
     "SomethingWentWrong": "何かが間違っている",
     "YouAreNotAuthorized": "このページを表示する権限がありません。"
@@ -319,7 +524,9 @@
       "GoToPlatform": "{title} に移動",
       "Details": "詳細",
       "Documentation": "ドキュメント",
-      "ConnectPlatform": "{platformName} を接続"
+      "ConnectProduct": "製品を接続",
+      "Trial": "トライアル",
+      "EE": "EE"
     }
   },
   "HomePage": {
@@ -338,12 +545,7 @@
     "RegisteredPlatformsCard": {
       "RegisteredOn": "on",
       "Contract": "契約",
-      "Remaining": "残り",
-      "DaysRemaining": "{days, plural, =1 {#日} other {#日}}"
-    },
-    "TryOtherPlatform": {
-      "Title": "XTMプラットフォームを拡張・スケールアップ",
-      "Cta": "{productName}を試してみてください"
+      "DaysRemaining": "残り<badge>{days, plural, =1 {#日} other {#日}}</badge>"
     }
   },
   "PublicHomePage": {
@@ -352,16 +554,16 @@
       "LabelWithName": "ようこそ {name}",
       "ConnectedProducts": "{count, plural, one {コネクテッド製品} other {コネクテッド製品}}",
       "Title": "XTM Platformの機能拡張とスケールアップ",
-      "Description": "OpenCTI または OpenAEV を接続すれば、構築済みコンテンツをワンクリックで展開し、製品ニュースフィードで常に最新情報を把握し、無料トライアルを開始できるなど、XTM プラットフォームでの体験をさらに充実させることができます。"
+      "Description": "OpenCTI または OpenAEV を接続すれば、構築済みコンテンツをワンクリックで展開し、製品ニュースフィードで常に最新情報を把握し、無料トライアルを開始できるなど、XTM Platform での体験をさらに充実させることができます。"
     },
     "XtmRoadmap": {
       "Title": "XTM Platform Roadmap",
       "TitleWithProduct": "{product} Roadmap",
-      "Description": "開発中の機能や今後のリリース予定、XTM プラットフォームの今後の方向性をご紹介します。",
+      "Description": "開発中の機能や今後のリリース予定、XTM Platform の今後の方向性をご紹介します。",
       "SeeMore": "詳細を見る",
       "ImageAlt": "XTM Platformロードマップの宇宙イラスト",
-      "Now": "開発中",
       "Next": "次のリリース予定",
+      "Now": "開発中",
       "UnderConsideration": "検討中"
     }
   },
@@ -373,7 +575,7 @@
     "FiligranWebsite": "Filigranウェブサイト",
     "Documentation": "XTM Hubのドキュメント",
     "PrivacyPolicy": "プライバシーポリシー",
-    "TermsOfServices": "利用規約",
+    "TermsOfService": "利用規約",
     "Licenses": "ライセンス"
   },
   "PublicLayout": {
@@ -407,6 +609,28 @@
     "Name": "名前",
     "Product": "製品"
   },
+  "RoleListPage": {
+    "SsoGroup": "SSOグループ",
+    "SsoGroups": "SSOグループ",
+    "Role": "ロール",
+    "Capabilities": "ケイパビリティ",
+    "AddMapping": "SSOグループを追加",
+    "EditMapping": "SSOグループを編集",
+    "DeleteDialog": {
+      "Title": "SSOグループを削除",
+      "Text": "SSOグループを削除してもよろしいですか？"
+    },
+    "AddRole": "ロールを追加",
+    "EditRole": "ロールを編集",
+    "DeleteRoleDialog": {
+      "Title": "ロールを削除",
+      "Text": "ロール{rolePortal}を削除してもよろしいですか？SSOグループのマッピングとユーザーへの割り当ても削除されます。"
+    },
+    "Error": {
+      "SsoGroup": "SSOグループは必須です",
+      "Role": "ロールは必須です"
+    }
+  },
   "SolutionCategory": {
     "Actions": {
       "Add": "ソリューションカテゴリーを追加"
@@ -437,6 +661,7 @@
     "DontHaveAccount": "Filigranアカウントをお持ちでないですか？",
     "Email": "Eメール",
     "Login": "ログイン",
+    "Logo": "XTM Hub ロゴ",
     "Logout": "ログアウト",
     "Password": "パスワード",
     "SignIn": "サインイン",
@@ -452,7 +677,31 @@
     "LoginWithLocal": "ローカルでログイン",
     "MadeBy": "制作",
     "WelcomeTitle": "XTM Hubへようこそ",
-    "WelcomeSubtitle": "XTMプラットフォームを拡張・スケール"
+    "WelcomeSubtitle": "XTM Platform を拡張・スケール",
+    "EmailNotVerifiedError": {
+      "Title": "メールアドレスが確認されていません",
+      "Description": "お送りしたリンクからメールアドレスを確認してから、再度ログインしてください。"
+    },
+    "ResendVerificationEmail": {
+      "Button": "確認メールを再送信",
+      "Sent": "送信済み",
+      "Success": {
+        "Title": "確認メールを送信しました",
+        "Description": "受信トレイと迷惑メールフォルダをご確認ください。"
+      },
+      "TooManyRequests": {
+        "Title": "リクエストが多すぎます",
+        "Description": "新しい確認メールをリクエストする前に、数分お待ちください。"
+      },
+      "NoPendingVerification": {
+        "Title": "確認メールを再送信できません",
+        "Description": "新しい確認メールを受け取るには、再度ログインしてください。それでも問題が解決しない場合は、お問い合わせください。"
+      },
+      "Failed": {
+        "Title": "確認メールを送信できませんでした",
+        "Description": "エラーが発生しました。しばらくしてから再度お試しください。"
+      }
+    }
   },
   "MenuActions": {
     "Continue": "続けてください",
@@ -462,8 +711,8 @@
     "Update": "更新する"
   },
   "Menu": {
-    "XTMPlatform": "XTMプラットフォーム",
-    "StartFreeTrial": "無料トライアルを開始",
+    "XTMPlatform": "XTM Platform",
+    "XTMPlatformTrial": "XTM Platform トライアル",
     "CustomDashboards": "カスタムダッシュボード",
     "CustomViews": "カスタムビュー",
     "Integrations": "連携機能",
@@ -471,7 +720,8 @@
     "LiveDemo": "ライブデモ",
     "Documentation": "ドキュメント",
     "Scenarios": "ユースケース",
-    "XTMRoadmap": "XTMプラットフォームのロードマップ",
+    "XTMRoadmap": "XTM Platform ロードマップ",
+    "FeatureVoting": "機能への投票",
     "FiligranAcademy": "Filigran Academy",
     "Blog": "ブログ",
     "Slack": "Slack",
@@ -483,29 +733,38 @@
   },
   "MenuLinks": {
     "Home": "ホーム",
-    "UseCase": "使用例",
-    "SolutionCategory": "ソリューションカテゴリー",
-    "Organization": "組織",
-    "Parameter": "パラメーター",
     "Profile": "プロフィール",
     "Security": "セキュリティ",
-    "Service": "サービス",
     "Settings": "設定",
     "SettingsLabel": "設定メニュー",
     "Users": "ユーザー",
-    "OpenCTITrial": "OpenCTI トライアル",
-    "OpenAEVTrial": "OpenAEVトライアル",
-    "Competitor": "競技者",
-    "NewsFeed": "ニュースフィード"
+    "NewsFeed": "ニュースフィード",
+    "VotingRound": "機能への投票",
+    "Roles": "ロール",
+    "CSMBoard": "CSMボード",
+    "Parameters": "パラメーター",
+    "Organization": "組織",
+    "Competitors": "競合他社",
+    "Trials": "トライアル",
+    "UseCases": "ユースケース",
+    "SolutionCategories": "ソリューションカテゴリー",
+    "Services": "サービス",
+    "SettingsAccess": "アクセス",
+    "SettingsCommunity": "コミュニティ",
+    "SettingsManagement": "管理",
+    "ServiceCatalog": "サービスカタログ",
+    "RegisteredPlatforms": "登録済みプラットフォーム"
   },
   "NewsFeedAdminPage": {
     "Title": "タイトル",
     "Library": "ライブラリ",
+    "Blogpost": "ブログ記事",
     "CreationDate": "作成日",
     "Tags": "タグ",
     "IsDeleted": "削除",
     "IsDeletedYes": "削除",
     "Delete": "削除",
+    "DeleteBlogpostDisabled": "ブログ記事は同期によって管理されるため、削除できません",
     "DeleteSuccess": "ニュースフィード項目 \"{title}\" は正常に削除されました。",
     "DeleteError": "ニュースフィードアイテムの削除中にエラーが発生しました。",
     "DeleteDialog": {
@@ -519,7 +778,7 @@
     "Description": "XTM Hubは、リソースへのアクセス、Filigran製品の活用の最適化、そしてコミュニティの活性化を図るための中核となるプラットフォームです。",
     "ShortTitle": "XTM Hub | サイバー脅威インテリジェンス・プラットフォーム",
     "ShortDescription": "XTM HubはFiligranのサイバーセキュリティ・ソリューションへのゲートウェイです。",
-    "SiteName": "XTMハブ by フィリグラン",
+    "SiteName": "XTM Hub by Filigran",
     "ServiceFallbackDescription": "脅威インテリジェンスと保護を強化するサイバーセキュリティソリューションをご覧ください。",
     "DocumentFallbackDescriptionDashboard": "脅威インテリジェンスとモニタリングを強化するこのサイバーセキュリティダッシュボードをご覧ください。",
     "DocumentFallbackDescriptionIntegration": "脅威インテリジェンスとモニタリングを強化するこのサイバーセキュリティ統合をご覧ください。",
@@ -564,6 +823,7 @@
   },
   "OrganizationActions": {
     "ErrorNameAlreadyExists": "組織 {name} は既に存在しています。",
+    "LoadOrganizationsError": "組織を読み込めませんでした。",
     "OrganizationCreated": "組織 {name} が作成されました",
     "OrganizationDeleted": "組織が削除された",
     "OrganizationUpdated": "組織 {name} が変更された",
@@ -607,7 +867,6 @@
       "StartDate": "開始日",
       "EndDate": "終了日",
       "RemainingDays": "残り日数",
-      "Status": "状況",
       "Region": "地域",
       "PlatformId": "プラットフォームID",
       "PlatformUrl": "プラットフォームURL",
@@ -619,7 +878,8 @@
       "CancellationReason": "取消理由",
       "Available": "利用可能",
       "Taken": "可",
-      "Total": "合計"
+      "Total": "合計",
+      "Products": "製品"
     },
     "TabTitle": {
       "Cancelled": "キャンセル",
@@ -629,46 +889,81 @@
       "Quotas": "ノルマ"
     },
     "Toast": {
-      "TrialsReordered": "トライアルリクエストの並び替え"
+      "BundleCancelled": "バンドルトライアルをキャンセルしました。",
+      "BundleReordered": "バンドルの待ち行列の順序を変更しました。"
     },
     "Actions": {
-      "SearchTrials": "電子メールまたは組織で検索",
+      "SearchTrials": "電子メール、組織、または地域で検索",
+      "SearchTrialsPlaceholder": "メール、組織、地域で検索",
       "MoveToTop": "トップへ戻る",
-      "MoveUp": "上に移動"
+      "MoveUp": "上に移動",
+      "CancelBundle": "バンドルトライアルをキャンセル"
     },
     "UpdateQuotasForm": {
-      "Title": "{region}で{platform}のクォータを更新する",
       "QuotasUpdated": "クォータは正常に更新されました",
       "NewCapacityLabel": "新しいクォータ容量",
       "AlertDialog": {
         "ConfirmTitle": "リージョン {region} のクォータ更新",
         "ConfirmDescription": "リージョン {region} のクォータを {oldCapacity} から {newCapacity} に更新しました。",
         "ConfirmSentence": "この変更を保存してもよろしいですか？"
-      }
+      },
+      "BundleTitle": "{region} のバンドルクォータを変更"
     },
     "WarningCancellation": "キャンセルすると、その組織は新しいトライアルを要求できなくなります。",
     "Registered": "接続済み",
-    "NotRegistered": "未接続"
+    "NotRegistered": "未接続",
+    "ProductStatus": {
+      "queued": "待機中",
+      "pending": "保留中",
+      "provisioning": "プロビジョニング中",
+      "active": "アクティブ",
+      "expired": "期限切れ",
+      "cancelled": "キャンセル済み",
+      "failed": "失敗"
+    },
+    "Cancellation": {
+      "Confirmation": "{organizationName} のバンドルトライアルをキャンセルしてもよろしいですか？バンドルのすべての製品がキャンセルされます。"
+    }
   },
   "Parameters": {
     "Version": "バージョン"
   },
   "PendingUserListPage": {
     "TabTitle": "ユーザーリクエスト ({usersCount})",
+    "Reject": "拒否",
+    "Approve": "承認",
+    "ActionSuccessApprove": "{email} のユーザー申請を承認しました",
+    "ActionSuccessDeny": "{email} のユーザー申請を拒否しました",
+    "WarningUserAccept": {
+      "Confirm": "確認",
+      "Description": "<strong>{email}</strong>は、デフォルトでは権限なしで組織に追加されます。左側のメニューにある<strong>ユーザー</strong>タブから、いつでもこのユーザーのアクセス権や権限を管理できます。",
+      "Title": "このユーザーを組織に追加しますか？"
+    },
     "WarningUserRejection": {
       "Confirm": "確認",
-      "Description": "このユーザーを組織から拒否しようとしています。この操作は取り消せません。本当によろしいですか？",
-      "Title": "本当によろしいですか？"
+      "Description": "<strong>{email}</strong> は組織から拒否されます。この操作は元に戻せません。本当に実行しますか？",
+      "Title": "このユーザーを組織から拒否しますか？"
     },
     "WarningUsersRejection": {
       "Confirm": "確認する",
-      "Description": "これらのユーザーを組織から拒否しようとしています。この操作は取り消せません。本当によろしいですか？",
-      "Title": "本気ですか？"
+      "Description": "選択したユーザーは、組織から拒否されます。この操作は元に戻せません。本当に実行しますか？",
+      "Title": "これらのユーザーを組織から拒否しますか？"
     },
     "WarningUsersAccept": {
       "Confirm": "確認する",
-      "Description": "これらのユーザーを組織に受け入れます。デフォルトでは、これらのユーザーには特別な権限はありません。権限を割り当てたり更新したりしたい場合は、[ユーザー]タブにアクセスしてください。よろしいですか？",
-      "Title": "よろしいですか？"
+      "Description": "選択したユーザーは、デフォルトで権限なしで組織に追加されます。左側のメニューにある<strong>ユーザー</strong>タブから、いつでもアクセス権や権限を管理できます。",
+      "Title": "このユーザーを組織に追加しますか？"
+    },
+    "AlreadyProcessed": {
+      "Title": "リクエストはすでに処理されています",
+      "Description": "このユーザーのリクエストは、すでに承認または却下されています。",
+      "Confirm": "OK"
+    }
+  },
+  "PendingUserRedirect": {
+    "Unauthorized": {
+      "Title": "権限が不足しています",
+      "Description": "この組織のユーザーリクエストを管理するために必要な権限がありません。"
     }
   },
   "RegistrationDetails": {
@@ -677,8 +972,93 @@
   },
   "PlatformIdentifier": {
     "openaev": "OpenAEV",
-    "opencti": "オープンCTI",
-    "xtmhub": "XTM ハブ"
+    "opencti": "OpenCTI",
+    "xtmhub": "XTM Hub",
+    "xtmone": "XTM One"
+  },
+  "ApiTokens": {
+    "Column": {
+      "Expires": "有効期限",
+      "LastUsed": "最終使用",
+      "Name": "名前",
+      "Organization": "組織",
+      "Scope": "スコープ",
+      "Status": "ステータス"
+    },
+    "Create": {
+      "Description": "トークンは、選択した組織で選択したスコープにより、あなたとして動作します。",
+      "Open": "トークンを作成",
+      "Submit": "トークンを作成",
+      "Title": "APIトークンを作成"
+    },
+    "Created": {
+      "Copied": "トークンをコピーしました",
+      "Copy": "トークンをコピー",
+      "CopyFailed": "トークンをコピーできませんでした。選択して手動でコピーしてください。",
+      "Description": "トークン {name} が表示されるのは今回だけです。シークレットマネージャーに保存してください。紛失した場合は失効して新しく作成してください。",
+      "Done": "完了",
+      "Helper": "Authorizationヘッダーで、Bearerに続けてトークンを送信します。",
+      "Title": "今すぐAPIトークンをコピーしてください",
+      "Token": "APIトークン"
+    },
+    "Description": "トークンを使うと、スクリプトやFiligran Copilotなどの連携が、1つの組織であなたとしてXTM Hub APIを呼び出せます。トークンの権限があなたの権限を超えることはありません。",
+    "Empty": "APIトークンはまだありません。スクリプトや連携を接続するには作成してください。",
+    "Field": {
+      "Expiration": "有効期限",
+      "ExpiresOn": "{date} に期限切れ",
+      "Name": "名前",
+      "NameError": "100文字以内で名前を入力してください",
+      "NameHelper": "後で識別できるよう、このトークンを使うものを入力します。",
+      "NamePlaceholder": "Filigran Copilot",
+      "Organization": "組織",
+      "OrganizationError": "組織を選択してください",
+      "Scope": "スコープ",
+      "ExpirationInfo": "この日以降、APIはトークンを拒否するため、新しく作成します。例：連携には90日。有効期間を短くすると、漏えいした場合の被害を抑えられます。",
+      "InfoLabel": "{field}について",
+      "NameInfo": "あなた専用のラベルで、APIは読み取りません。例：Filigran Copilot。後から変更できないため、変更するにはトークンを失効させて新しく作成します。",
+      "OrganizationHelper": "トークンは別の組織に切り替えられません。",
+      "OrganizationInfo": "トークンはこの組織内でのみ、その組織でのあなたの権限で動作します。例：会社の組織。別の組織に使うには、別のトークンを作成します。",
+      "ScopeInfo": "トークンができる範囲で、あなた自身の権限を超えることはありません。例：ダッシュボードには読み取り、コンテンツを作成する連携には読み取りと書き込み。"
+    },
+    "Lifetime": "{count, plural, other {#日}}",
+    "NeverUsed": "未使用",
+    "PersonalSpace": "個人スペース",
+    "Revoke": "失効",
+    "RevokeDialog": {
+      "Text": "{name} を使用しているスクリプトや連携は直ちにアクセスを失います。この操作は元に戻せません。",
+      "Title": "このAPIトークンを失効しますか？"
+    },
+    "RevokeNamed": "トークン {name} を失効",
+    "Revoked": "トークン {name} を失効しました",
+    "Scope": {
+      "admin": "管理者",
+      "read": "読み取り",
+      "read_write": "読み取りと書き込み"
+    },
+    "ScopeHelp": {
+      "admin": "管理者：現在あなたが持つ組織とプラットフォームの管理権限。信頼できるツールにのみ付与してください。",
+      "read": "読み取り：クエリのみ。組織の管理は含まず、変更はできません。",
+      "read_write": "読み取りと書き込み：クエリと変更。組織の管理とプラットフォームの管理は含みません。"
+    },
+    "Status": {
+      "active": "有効",
+      "expired": "期限切れ",
+      "revoked": "失効済み"
+    },
+    "Title": "APIトークン",
+    "ScopeOption": {
+      "admin": "あなたの管理権限も、現在のとおりに含みます。",
+      "read": "クエリのみ。管理は含まず、変更はできません。",
+      "read_write": "クエリと変更。管理は含みません。"
+    },
+    "Toolbar": {
+      "AllOrganizations": "すべての組織",
+      "AllScopes": "すべてのスコープ",
+      "AllStatuses": "すべてのステータス",
+      "NoMatch": "検索またはフィルターに一致するトークンはありません。",
+      "Search": "名前またはプレフィックスで検索",
+      "Total": "{count, plural, other {#件のトークン}}"
+    }
   },
   "ProfilePage": {
     "Picture": "写真",
@@ -741,7 +1121,7 @@
         "NotConnected": "接続が切れた",
         "NotConnectedDetails": "プラットフォームを再登録してください。"
       },
-      "Description": "プライベート・プラットフォームへのアクセスはこちらをクリックしてください。",
+      "OrganizationName": "組織：{name}",
       "ProductName": "製品名",
       "Product": "製品",
       "ProductURL": "商品URL",
@@ -753,7 +1133,89 @@
       "Status": "ステータス",
       "PrivatePlatform": "プライベート・プラットフォーム",
       "LastConnectionCheck": "最終接続チェック",
-      "Access": "アクセス"
+      "Access": "アクセス",
+      "PlatformInformation": "プラットフォーム情報",
+      "PlatformVersion": "プラットフォームのバージョン"
+    },
+    "Metrics": {
+      "AccessRequest": {
+        "Title": "SaaSメトリクスへのアクセスをリクエスト",
+        "Description": "SaaSメトリクスには、このプラットフォームのストレージ、可用性、サブスクリプションが表示されます。表示するには「Manage platform registration」権限が必要です。",
+        "AdministratorList": "組織の管理者がこの権限を付与できます：",
+        "SeeDocumentation": "ドキュメントを見る",
+        "EmailSubject": "{platform}のSaaSメトリクスへのアクセス",
+        "EmailBody": "こんにちは。\n\n{platform}のSaaSメトリクスを確認できるよう、「Manage platform registration」権限を付与していただけますか？\n\nよろしくお願いいたします。"
+      },
+      "Title": "使用状況と健全性",
+      "StorageTitle": "ストレージ使用量",
+      "Unavailable": "現在、このメトリクスは利用できません",
+      "Period": {
+        "Label": "メトリクスの期間",
+        "last_30_days": "30日間",
+        "last_90_days": "90日間",
+        "last_180_days": "180日間",
+        "ComingSoon": "近日公開予定"
+      },
+      "Database": {
+        "Title": "データベース",
+        "Subtitle": "知識、関係性、履歴、ログ"
+      },
+      "FileStorage": {
+        "Title": "ファイルの保存",
+        "Subtitle": "インポートされたファイル、レポート、添付ファイル"
+      },
+      "SLA": {
+        "Title": "可用性 (SLA)",
+        "Subtitle": "ご契約どおり、暦月ごとに算出",
+        "MonthRange": "{start}～{end}",
+        "MonthToDate": "{month}（現在まで）",
+        "OnTarget": "{availability}（目標達成）",
+        "BelowTarget": "{availability}（目標未達）",
+        "NoData": "データなし",
+        "NotTrackedYet": "データなし · 指標はまだ測定されていません",
+        "Summary": {
+          "Title": "月次SLA・目標 {target}",
+          "CurrentMonth": "{month}・月初から現在まで",
+          "TargetAndMeasuredDays": "目標 {target}・{total}日中{measured}日測定済み"
+        },
+        "Legend": {
+          "Met": "目標達成",
+          "Missed": "目標未達",
+          "Unknown": "月の残り"
+        }
+      },
+      "Metadata": {
+        "Hostname": "ホスト名",
+        "CopyHostname": "ホスト名をコピー",
+        "SubscribedPlan": "契約プラン",
+        "Contract": "契約",
+        "RegionalArea": "リージョン",
+        "DaysLeft": "{days, plural, =1 {残り#日} other {残り#日}}",
+        "Unavailable": "現在、この情報はご利用いただけません。"
+      },
+      "Capacity": {
+        "Within": "容量内",
+        "Approaching": "容量上限に接近",
+        "Over": "容量超過"
+      },
+      "ByteSize": {
+        "Byte": "{value} B",
+        "Kibibyte": "{value} KiB",
+        "Mebibyte": "{value} MiB",
+        "Gibibyte": "{value} GiB",
+        "Tebibyte": "{value} TiB",
+        "Pebibyte": "{value} PiB"
+      },
+      "MaxCapacity": "最大容量",
+      "UsedOfLimit": "<secondary>{limit} 中</secondary> <highlight>{used}</highlight>",
+      "GuidedTourAvailability": "ガイドツアーはCSMのみ利用できます",
+      "Tour": {
+        "Source": "これらの指標は SaaS Manager から取得したもので、XTM Hub は加工せずにそのまま表示します。",
+        "Database": "このグラフは、顧客のプランで許可された容量に対するプラットフォームの {database} の使用量を示します。Grafana のダッシュボードとは異なります。Grafana は、プラットフォームのクラッシュを防ぐために割り当てたディスク容量に対する実際の使用量を示すため、100% を超えることはありません。ここでは顧客が支払っている容量と比較するため、100% を超えることがあります。",
+        "FileStorage": "このグラフは、顧客のプランで許可された容量に対するプラットフォームの S3 ファイルストレージの使用量を示します。データベースと同様に、Grafana のダッシュボードとは異なります。Grafana は、プラットフォームのクラッシュを防ぐために割り当てたディスク容量に対する実際の使用量を示すため、100% を超えることはありません。ここでは顧客が支払っている容量と比較するため、100% を超えることがあります。",
+        "ChartAxes": "各グラフの横軸は時間、縦軸は使用容量 (GiB) を示します。上部の 30 日、90 日、180 日をクリックすると、表示期間を変更できます。",
+        "Sla": "このグラフは、プラットフォームの SLA 可用性を日ごとに示します。緑のバーは契約上の稼働率 ({target}) 以上、オレンジのバーはそれを下回る日です。グレーのバーはデータがない、またはまだデータがない日です。"
+      }
     },
     "Error": {
       "Capability": {
@@ -864,8 +1326,9 @@
       "opencti_integrations": "OpenCTI 統合",
       "opencti_playbooks": "OpenCTIプレイブック",
       "opencti_registration": "OpenCTI 登録",
-      "vault": "ボールト",
-      "xtm_platform_roadmap": "XTM Platform ロードマップ"
+      "xtm_platform_bundle": "XTM Platform トライアル",
+      "xtm_platform_roadmap": "XTM Platform ロードマップ",
+      "xtmone_registration": "XTM One 登録"
     },
     "Capabilities": {
       "AccessServiceDescription": "サービスへのアクセス",
@@ -874,6 +1337,31 @@
       "ManageAccessDescription": "このサービスにアクセスし、ユーザーを招待することができます。",
       "ManageAccessName": "アクセス管理",
       "SelectCapabilities": "機能を選択"
+    },
+    "CsvExport": {
+      "TriggerButton": "CSVエクスポート",
+      "DialogTitle": "インテグレーションをCSVにエクスポート",
+      "DialogDescription": "エクスポートするCSVファイルに含めるフィールドとフィルターを選択してください。",
+      "ColumnsLabel": "エクスポートするフィールド",
+      "ColumnsPlaceholder": "含めるフィールドを選択してください",
+      "FiltersLabel": "フィルター",
+      "ExportButton": "エクスポート",
+      "SuccessToast": "CSVエクスポートを開始しました。",
+      "ErrorToast": "インテグレーション一覧をエクスポートできませんでした。もう一度お試しください。",
+      "Columns": {
+        "IntegrationType": "インテグレーションタイプ",
+        "UseCase": "ユースケース",
+        "DeploymentType": "デプロイタイプ",
+        "VerificationStatus": "ステータス",
+        "SolutionCategory": "ソリューションカテゴリ",
+        "LicenseType": "ライセンスタイプ",
+        "ShortDescription": "概要",
+        "LongDescription": "詳細説明",
+        "FeedUrl": "フィードURL",
+        "OpenctiDocumentation": "OpenCTIドキュメント",
+        "VendorUrl": "ベンダーURL",
+        "DemoLink": "デモリンク"
+      }
     },
     "Cards": {
       "filigran-academy": {
@@ -935,15 +1423,19 @@
       "xtm-platform-roadmap": {
         "Name": "XTM Platform ロードマップ",
         "Description": "Filigran XTM Platform のロードマップを確認し、フォローしましょう。"
+      },
+      "xtmone-documentation": {
+        "Name": "XTM One ドキュメント",
+        "Description": "プラットフォームの仕組みを理解するための技術ドキュメントとユーザーガイド"
       }
     },
     "LibraryHero": {
       "Eyebrow": "Filigran のリソース",
-      "DefaultDescription": "OpenCTI または OpenAEV 製品を接続すれば、構築済みコンテンツをワンクリックで展開し、製品ニュースフィードで常に最新情報を把握し、無料トライアルを開始できるなど、XTM 製品をより一層ご活用いただけます。"
+      "DefaultDescription": "OpenCTI または OpenAEV 製品を接続すれば、構築済みコンテンツをワンクリックで展開し、製品ニュースフィードで常に最新情報を把握し、無料トライアルを開始できるなど、XTM Platform をより一層ご活用いただけます。"
     },
     "Connectors": {
       "DataImport": "データインポート",
-      "Description": "フィリグランチームが共有するOpenCTIコネクタの数々をご覧ください。",
+      "Description": "Filigran チームが共有するOpenCTIコネクタの数々をご覧ください。",
       "ImproveIntegrationPrefix": "この統合を改善したい場合は、こちらをご確認ください",
       "GithubRepositoryLink": "github リポジトリへのリンク",
       "IntegrationDocumentationAndCode": "統合ドキュメントとコード",
@@ -952,45 +1444,49 @@
       "Search": "名前でコネクタを検索...",
       "VendorContact": "ベンダー連絡先",
       "VisitVendor": "ベンダーのページで詳細を確認し、連絡を取ってください。",
-      "Incompatible": "{platformToBeUpdated} {count, plural, =1 {needs} other {need}} to be updated to deploy this connector.",
+      "CompatibleWith": "このコネクタのバージョンは{compatiblePlatforms}と互換性があります。",
+      "PartiallyCompatible": "このコネクタのバージョンは{compatiblePlatforms}と互換性がありますが、{incompatiblePlatforms}{count, plural, =1 {を更新する必要があります} other {をすべて更新する必要があります}}。",
+      "Incompatible": "このコネクタをデプロイするには、{platformToBeUpdated}{count, plural, =1 {を更新する必要があります} other {をすべて更新する必要があります}}。",
       "UnavailableDeployments": "このコネクタは自動デプロイでは使用できません。"
     },
     "CreationStatus": "作成ステータス",
+    "FilterByService": "サービスで絞り込む",
     "Form": {
+      "AddImage": "画像を追加",
       "Author": "作成者",
       "CapabilityAccessLabel": "{name} アクセス: {description}",
       "ContainerImageLabel": "コンテナイメージ",
       "CurrentLogo": "現在のロゴ",
       "DatasheetUrlLabel": "データシート・リンク（URL）",
       "BlogpostUrlLabel": "ブログ記事リンク (url)",
+      "DeleteImage": "画像を削除",
       "DeleteSentence": "このボタンをクリックした後、VALIDATEをクリックすると、この画像が永久に削除されます。",
       "DemoUrlLabel": "デモリンク (url)",
       "DescriptionLabel": "説明",
       "DescriptionPlaceholder": "これは {documentType} を説明するための段落です。",
       "DescriptionUpdateJSONFile": "あなたは新しいjsonファイルをアップロードしようとしています。前のjsonファイルは削除されます。続行しますか？",
-      "DropDocuments": "ここにドキュメントをドロップしてください。",
       "ExistingJSONFile": "既存のJSONファイル {file_name}",
       "GithubUrlLabel": "Githubリンク (url)",
       "Illustration": "イラスト",
-      "LogoDisclaimer": "フィリグランのロゴはデフォルトで使用",
+      "LogoDisclaimer": "Filigran のロゴはデフォルトで使用",
       "ImagesDisclaimer": "画像はアップロードされたリソースの詳細ページにカルーセルとして追加・表示されます。",
       "ImageLabel": "画像",
       "LogoLabel": "ロゴ",
       "ManagerSupportedLabel": "マネージャー",
       "ManageAccessCapabilityLabel": "アクセス管理: ユーザーは所属組織の他ユーザーをこのサービスに招待できます",
-      "MinimumDeployableVersionLabel": "{platform} ハブのバージョンからデプロイ可能",
+      "MetaDescriptionCurrentLength": "{error}（現在{length}文字）",
+      "MetaDescriptionLabel": "メタディスクリプション",
+      "MetaDescriptionPlaceholder": "SEO用：文全体を120〜160文字にし、長いダッシュ（— または –）ではなく半角ハイフン（-）のみを使用してください。",
+      "MinimumDeployableVersionLabel": "{platform} Hub のバージョンからデプロイ可能",
       "MinimumDeployableVersionPlaceholder": "1.0.0",
       "NameLabel": "名前",
       "NamePlaceholder": "{documentType} 名前",
-      "NoImage": "画像なし",
       "PlaybookSupportedLabel": "対応プレイブック",
       "ProductVersionLabel": "{platform} 互換バージョン",
       "ProductVersionPlaceholder": "1.0.0",
-      "PublishedPlaceholder": "{documentType} は公開されていますか？",
       "LicenseTypeLabel": "ライセンスの種類",
       "Restore": "リストア",
       "SelectImage": "画像を選択",
-      "SelectIntegrationSubType": "サブタイプ",
       "SelectJSONFile": "JSONファイルを選択",
       "ShortDescriptionLabel": "短い説明",
       "ShortDescriptionPlaceholder": "ドキュメントを説明するためのキャッチフレーズです。",
@@ -1001,7 +1497,6 @@
       "SolutionCategoriesPlaceholder": "解答カテゴリを追加",
       "SubscriptionLinkLabel": "購読リンク (url)",
       "UpdateJSONFile": "JSONファイルの更新",
-      "UploadImage": "新しい画像のアップロード",
       "UploadLogo": "新しいロゴのアップロード",
       "UrlPlaceholder": "http://www.example.com",
       "UseCasesLabel": "使用例",
@@ -1009,7 +1504,11 @@
       "VendorUrlLabel": "ベンダーリンク (url)",
       "VerifiedLabel": "検証済み",
       "EntityTypesLabel": "エンティティタイプ",
-      "EntityTypesPlaceholder": "エンティティタイプを追加"
+      "EntityTypesPlaceholder": "エンティティタイプを追加",
+      "SaveAsDraft": "ドラフトとして保存",
+      "RequestValidation": "検証をリクエスト",
+      "Save": "保存",
+      "Publish": "公開"
     },
     "OpenctiIntegrations": {
       "Actions": {
@@ -1018,17 +1517,9 @@
       "AddService": "新しい統合を追加する",
       "IntegrationType": "統合タイプ",
       "Filter": {
-        "IntegrationSubType": {
-          "Label": "サブタイプ",
-          "Placeholder": "サブタイプ..."
-        },
         "Type": {
           "Label": "統合タイプ",
           "Placeholder": "統合タイプ..."
-        },
-        "ProductVersion": {
-          "Label": "接続済み製品",
-          "Placeholder": "接続済み製品..."
         },
         "ManagerSupported": {
           "Label": "配備タイプ",
@@ -1042,15 +1533,21 @@
           "Free": "無料",
           "Commercial": "商用"
         },
+        "ProductVersion": {
+          "Label": "OpenCTI 互換バージョン",
+          "Placeholder": "OpenCTI バージョン...",
+          "RegisteredTooltip": "{count, plural, one {コネクテッド製品} other {コネクテッド製品}}: {names}"
+        },
         "SolutionCategory": {
           "Label": "ソリューションカテゴリ",
           "Placeholder": "ソリューションカテゴリ..."
         },
         "Verified": {
-          "Label": "検証ステータス",
-          "Placeholder": "検証状況...",
-          "Verified": "確認済み",
-          "Unverified": "未確認"
+          "Label": "ステータス",
+          "Description": "コネクタにのみ適用されるフィルター",
+          "Placeholder": "ステータス...",
+          "Verified": "Filigranの提供による",
+          "Unverified": "コミュニティの提供による"
         }
       },
       "Type": {
@@ -1069,10 +1566,8 @@
         "Share": "CSVフィードの共有",
         "Updated": "CSV {name} は正常に変更されました。"
       },
-      "Active": "公開",
       "AddService": "新しいCSVフィードを追加",
       "DeleteService": "CSVフィード {name} を削除する",
-      "NonActive": "ドラフト",
       "SureDeleteService": "CSV フィード {name} を本当に削除しますか？",
       "UpdateService": "CSVフィードを更新 {name}"
     },
@@ -1083,10 +1578,8 @@
         "Share": "RSSフィードを共有する",
         "Updated": "RSS {name} は正常に変更されました"
       },
-      "Active": "公開",
       "AddService": "新しいRSSフィードを追加",
       "DeleteService": "RSSフィードを削除 {name}",
-      "NonActive": "ドラフト",
       "SureDeleteService": "本当にRSSフィード {name} を削除しますか？",
       "UpdateService": "RSSフィード {name} を更新する"
     },
@@ -1097,10 +1590,8 @@
         "Share": "TAXII フィードを共有する",
         "Updated": "TAXII {name} は正常に変更されました。"
       },
-      "Active": "公開",
       "AddService": "新しいTAXIIフィードを追加する",
       "DeleteService": "TAXIIフィード {name} を削除する",
-      "NonActive": "ドラフト",
       "SureDeleteService": "本当にTAXIIフィード {name} を削除しますか？",
       "UpdateService": "TAXIIフィード {name} を更新する"
     },
@@ -1111,10 +1602,8 @@
         "Share": "共有コネクタ",
         "Updated": "コネクタ {name} は正常に変更されました"
       },
-      "Active": "公開",
       "AddService": "新しいコネクタを追加",
       "DeleteService": "コネクターの削除 {name}",
-      "NonActive": "ドラフト",
       "SureDeleteService": "本当にコネクタ {name} を削除しますか？",
       "UpdateService": "コネクタを更新 {name}"
     },
@@ -1125,10 +1614,8 @@
         "Share": "ストリームを共有",
         "Updated": "ストリーム {name} は正常に変更されました"
       },
-      "Active": "公開",
       "AddService": "新しいストリームを追加",
       "DeleteService": "ストリームを削除 {name}",
-      "NonActive": "下書き",
       "SureDeleteService": "本当にストリーム {name} を削除しますか？",
       "UpdateService": "ストリームを更新 {name}"
     },
@@ -1139,10 +1626,8 @@
         "Share": "サードパーティ統合を共有する",
         "Updated": "サードパーティ統合 {name} は正常に変更されました。"
       },
-      "Active": "公開",
       "AddService": "新しいサードパーティインテグレーションを追加する",
       "DeleteService": "サードパーティー統合 {name} を削除する",
-      "NonActive": "ドラフト",
       "SureDeleteService": "本当にサードパーティ統合 {name} を削除しますか？",
       "UpdateService": "サードパーティ統合 {name} を更新しますか？"
     },
@@ -1153,10 +1638,8 @@
         "Share": "カスタムダッシュボードの共有",
         "Updated": "カスタムダッシュボード {name} は正常に変更されました。"
       },
-      "Active": "公開日",
       "AddService": "新しいダッシュボードを追加",
       "DeleteService": "カスタムダッシュボードを削除 {name}",
-      "NonActive": "下書き",
       "SureDeleteService": "本当にダッシュボード {name} を削除しますか？",
       "UpdateService": "ダッシュボードを更新"
     },
@@ -1176,9 +1659,7 @@
       "AddService": "新しいシナリオを追加",
       "UpdateService": "シナリオの更新 {name}",
       "DeleteService": "シナリオの削除 {name}",
-      "SureDeleteService": "本当にシナリオ {name} を削除しますか？",
-      "NonActive": "草案",
-      "Active": "公開"
+      "SureDeleteService": "本当にシナリオ {name} を削除しますか？"
     },
     "OpenCTIPlaybook": {
       "Actions": {
@@ -1190,14 +1671,28 @@
       "AddService": "新しいプレイブックを追加する",
       "UpdateService": "プレイブックを更新する {name}",
       "DeleteService": "プレイブックを削除する {name}",
-      "SureDeleteService": "本当にプレイブック {name} を削除しますか？",
-      "NonActive": "草案",
-      "Active": "公開"
+      "SureDeleteService": "本当にプレイブック {name} を削除しますか？"
     },
     "Description": "出版",
     "GoTo": "サービスページへ",
     "GoToAdminLabel": "管理する",
     "List": {
+      "LoadError": "ドキュメントを読み込めませんでした。",
+      "Retry": "再試行",
+      "ViewTab": "タブ表示を選択",
+      "ViewList": "リスト表示を選択",
+      "ClearAllFilters": "すべてクリア",
+      "Filters": "フィルター",
+      "FilterInformation": "このフィルターについて",
+      "Tab": {
+        "Name": "名前",
+        "Description": "説明",
+        "UseCase": "ユースケース",
+        "Action": "アクション",
+        "Feature": "機能",
+        "Type": "タイプ",
+        "Compatibility": "ご利用の製品との互換性"
+      },
       "Filter": {
         "Add": "フィルターの追加",
         "NoOptions": "オプションなし",
@@ -1208,7 +1703,7 @@
           "license_type": "ライセンス種別",
           "product_version": "接続済み製品",
           "manager_supported": "配備タイプ",
-          "verified": "検証状況",
+          "verified": "ステータス",
           "entity_type": "エンティティタイプ"
         }
       }
@@ -1259,17 +1754,13 @@
       "NoSubscribedServices": "この組織に契約済みサービスはありません。"
     },
     "Organizations": "組織",
-    "RegisteredPlatforms": {
-      "PlatformDetails": "製品の詳細",
-      "GoToMyPlatform": "私の製品へ"
-    },
     "SearchServices": "検索サービス...",
     "ServiceName": "サービス名",
     "ShareableResources": {
       "Copied": "URLをコピーしました！貼り付けて共有できます。",
       "Deploy": {
         "DeployDescriptionNoPlatform": "接続済みの {platformIdentifier} 製品がありません。",
-        "DeployDescriptionNoPlatformIllustration": "XTMハブ接続のイラスト",
+        "DeployDescriptionNoPlatformIllustration": "XTM Hub 接続のイラスト",
         "DeployDescriptionNoPlatformThen": "リソースを配置するには、まず {platformIdentifier} 製品を接続する必要があります。\n\n接続手順\n1. {platformIdentifier} の管理者であることを確認するか、管理者にお問い合わせください。\n2. {platformIdentifier} 製品にログインし、設定 > Filigran Experience に移動します。\n3. 以下のスクリーンショットのように、\"Register\" ボタンをクリックして接続を完了します。",
         "DeployDescriptionOnePlatform": "{platformName} 製品に配置しますか？",
         "DeployPlatform": "{platformName} にデプロイしますか？",
@@ -1278,7 +1769,7 @@
         "DeployIncompatibleVersion": "このリソースは OpenCTI プラットフォームにデプロイできません \"{platformTitle}\" なぜならプラットフォームのバージョンはもうこのリソースと互換性がないからです。先に進む前に、プラットフォームをアップデートするか、互換性のあるリソースのバージョンを使う必要があります。",
         "EE": {
           "Tag": "EE",
-          "HoverTitle": "エンタープライズ版で利用可能",
+          "HoverTitle": "Enterprise Edition で利用可能",
           "HoverSubtitle": "クリックして詳細を見る",
           "PlatformRequiresEE": "プラットフォーム \"{platformTitle}\" は Community Edition です。プレイブックをワンクリックでデプロイするには、OpenCTIのEnterprise Editionが必要です。"
         },
@@ -1286,9 +1777,9 @@
           "Title": "ワンクリックデプロイ",
           "Subtitle": "OpenCTI Enterprise Edition で利用可能",
           "Heading": "ワンクリックでプレイブックを OpenCTI インスタンスに直接デプロイ",
-          "FirstParagraph": "ワンクリックデプロイにより、XTMハブからOpenCTIプラットフォームにプレイブックを即座に直接プッシュできます。手動での設定やファイル操作は必要ありません。",
+          "FirstParagraph": "ワンクリックデプロイにより、XTM Hub からOpenCTIプラットフォームにプレイブックを即座に直接プッシュできます。手動での設定やファイル操作は必要ありません。",
           "SecondParagraph": "プレイブックを選択し、デプロイをクリックすると、数秒以内にインスタンスで実行する準備が整います。",
-          "EnterpriseEditionTitle": "OpenCTI エンタープライズ版 (EE)",
+          "EnterpriseEditionTitle": "OpenCTI Enterprise Edition (EE)",
           "EnterpriseEditionDescription": "OpenCTI Enterprise Editionは、脅威インテリジェンス運用の高度化を目指す企業向けに、高度な機能、エンタープライズグレードの拡張性、専用サポートを提供します。",
           "Link": "詳細はこちら",
           "InterestedTitle": "もっと知りたいですか？",
@@ -1304,14 +1795,13 @@
         "Downloads": "ダウンロード",
         "LastUpdatedAt": "最終更新日",
         "Overview": "概要",
-        "MinimumDeployableVersion": "{platform} ハブバージョンからデプロイ可能",
+        "MinimumDeployableVersion": "{platform} Hub のバージョンからデプロイ可能",
         "ProductVersion": "{platform} 互換バージョン",
         "Shares": "シェア",
         "ContributorContact": "貢献者の連絡先",
         "IntegrationType": "タイプ",
         "IntegrationSolutionCategory": "解答カテゴリ",
         "IntegrationLicenseType": "ライセンスの種類",
-        "IntegrationSubType": "サブタイプ",
         "GithubURL": "Github URL",
         "VendorURL": "ベンダーURL",
         "FeedURL": "フィードURL",
@@ -1330,14 +1820,6 @@
     "SubscribeService": "{serviceName} サービスを購読する",
     "SubscribeSuccessful": "サービスへの登録が完了しました。これで登録したサービスにこのサービスが表示されます。",
     "Trials": {
-      "ExploreBold": "無料トライアル",
-      "ExplorePlatform": "30日間、{platformName} プラットフォームをお試しください。",
-      "ExploreProducts": "OpenCTI または OpenAEV プラットフォームを 30 日間お試しいただけます。",
-      "Active": "OpenCTI 無料トライアルは有効です",
-      "Provisioning": "OpenCTI 無料トライアルは現在プロビジョニング中です。",
-      "Requested": "OpenCTI 無料トライアルがリクエストされました。",
-      "Expired": "OpenCTI 無料トライアルは終了しました。",
-      "Cancelled": "OpenCTI 無料トライアルはキャンセルされました。",
       "CancellationReason": {
         "value": "インテリジェンスには、当社の特定のニーズに対する実用的な洞察が欠けています。",
         "compatibility": "既存のセキュリティ・スタックと互換性がない",
@@ -1345,186 +1827,343 @@
         "legal-security": "社内のセキュリティ・チームまたは法務チームが早急な終結を要求した",
         "expertise": "ツールを効果的に利用するためのアナリストや専門家が社内にいない"
       },
-      "DaysRemaining": "{days, plural, =1 {# 日残り} other {# 日残り}}",
-      "Header": {
-        "ActiveTrial": "アクティブトライアル",
-        "ActiveTrialCount": "{count} 件のアクティブトライアル{count, plural, one {} other {s}}",
-        "DaysRemaining": "残りの日",
-        "OpenInNewTab": "{title} を新しいタブで開く"
-      },
       "LearnMore": {
-        "Link": "もっと詳しく",
-        "openaev": {
-          "WhatCanYouDo": {
-            "Title": "OpenAEVトライアルで何ができる？",
-            "FirstParagraph": "攻撃をシミュレートし、防御を評価し、セキュリティ態勢を改善するために、OpenAEV のすべての機能を 30 日間お試しいただけます。これには、既存の EDR エージェントの使用、自動シナリオ生成、AI を活用した修復ガイダンスなど、OpenAEV SaaS ベースの Enterprise Edition のすべての機能が含まれます。",
-            "SecondParagraph": "攻撃シーケンスのシミュレーション、現実的な卓上演習、セキュリティ態勢の検証、リーダーシップへのサイバー回復力の報告など、特定のニーズに合わせてOpenAEVのすべての機能をテストできます。",
-            "Link": "OpenAEV Enterprise Editionのすべての機能を見る"
-          },
-          "Blocks": {
-            "First": {
-              "Title": "優先順位付け",
-              "Description": "OpenCTI脅威インテリジェンスとMITRE ATT&CKマッピングを活用して、攻撃シミュレーションを構築し、脆弱性と悪用可能な攻撃経路を特定します。"
-            },
-            "Second": {
-              "Title": "テスト",
-              "Description": "アトミックテスト、カスタム攻撃シーケンス、または事前にパッケージ化されたシナリオにより、防御を継続的に検証します。OpenAEVのネイティブEDRまたは主要ベンダーとの事前統合を使用して、卓上演習を実行し、チームの対応をテストします。"
-            },
-            "Third": {
-              "Title": "修正",
-              "Description": "ドリルダウン分析、AI を活用した改善ガイダンス、チームのフィードバックにより、セキュリティ態勢の改善箇所を特定します。"
-            }
-          }
+        "Link": "もっと詳しく"
+      },
+      "XTMPlatform": {
+        "Title": "あなたの eXtended Threat Management (XTM) プラットフォーム",
+        "xtmone": {
+          "Intro": "XTM One は、Filigran のオープンソース XTM プラットフォームのエージェント型 AI 基盤です。XTM プラットフォームは脅威インテリジェンス、継続的なエクスポージャー検証、サイバーリスク低減を統合し、組織が脅威をエンドツーエンドで予測・管理できるよう支援します。",
+          "Tagline": "エージェント型脅威管理への道のりをシンプルに",
+          "Description": "XTM One は、XTM プラットフォーム全体でアシスト型およびエージェント型 AI をオーケストレーションし、脅威シグナルから検証済みのアクションまで、機械のスピードで CTEM プログラムを運用します。"
         },
         "opencti": {
-          "WhatCanYouDo": {
-            "Title": "OpenCTI トライアルで何ができますか？",
-            "FirstParagraph": "OpenCTIの全機能を30日間お試しいただき、脅威インテリジェンスを強化してください。これには、自動化されたプレイブック、優先情報要件（PIR）の設定機能、FINTEL、AIを活用したファイルのインポート、レポート作成、NLP検索機能など、OpenCTI Enterprise Editionの全機能が含まれます。",
-            "SecondParagraph": "OpenCTIが、脅威ハンティング、インシデントレスポンス、ケース管理など、特定のニーズをどのようにサポートし、好みのデータソースと統合して、実用的な脅威インテリジェンスをセキュリティスタック全体に流すことができるかをご覧ください。",
-            "Link": "OpenCTI Enterprise Editionの全機能をご覧ください。"
+          "Intro": "OpenCTI は、Filigran のオープンソースの脅威インテリジェンス、高度な敵対者シミュレーション、戦略的サイバーリスク管理ソリューションの一部であり、組織が脅威をエンドツーエンドで予測・管理できるよう支援します。",
+          "Tagline": "収集、相関、活用",
+          "Description": "実務者によって実務者のために構築されたオープンソースの脅威インテリジェンスプラットフォーム — データのサイロを打破し、脅威インテリジェンスを真に実行可能なものにします。"
+        },
+        "openaev": {
+          "Intro": "OpenAEV は、Filigran のオープンソースの脅威インテリジェンス、高度な敵対者シミュレーション、戦略的サイバーリスク管理ソリューションの一部であり、組織が脅威をエンドツーエンドで予測・管理できるよう支援します。",
+          "Tagline": "優先順位付け、テスト、重要なものの修正",
+          "Description": "Adversarial Exposure Validation (AEV) で脅威に積極的に対抗し、現実の攻撃シナリオをシミュレートしてセキュリティ防御を最適化します。"
+        },
+        "IllustrationAlt": "{platformName} エコシステムのイラスト"
+      },
+      "XtmPlatform": {
+        "NoTrial": {
+          "Text": "30日間の無料トライアルを開始して、XTM Platform のフル体験をお試しください!"
+        },
+        "Active": {
+          "Text": "トライアル期間中は、XTM Platform のフル体験をお楽しみください!"
+        },
+        "Ending": {
+          "Text": "トライアル終了前に、引き続き XTM Platform のフル体験をお楽しみください。"
+        },
+        "DaysLeft": "{days, plural, =1 {残り#日} other {残り#日}}",
+        "Feedback": {
+          "Question": "XTM Platform の体験は今のところ順調ですか？",
+          "Yes": "うん、今のところ順調だね！",
+          "No": "そうでもないんだけど……",
+          "Submit": "送信",
+          "Justification": "それはお気の毒ですね。その理由を教えていただけませんか？"
+        },
+        "Page": {
+          "Breadcrumb": "XTM Platform Trial",
+          "Overline": "XTM Platform 無料トライアル",
+          "Title": "30日間の無料トライアルを開始",
+          "ExpiredTitle": "XTM Platform トライアルが終了しました",
+          "PitchTitle": "XTM Platform のすべてを体験する",
+          "PitchDescription": "30日間、OpenCTI と OpenAEV の SaaS 版エンタープライズエディション、および XTM One のエージェンティックなオーケストレーション機能をご利用いただけます。脅威インテリジェンスを統合し、エージェンティックかつ継続的なエクスポージャー管理とサイバーリスク低減によって防御を検証しましょう。",
+          "Products": {
+            "opencti": {
+              "Tagline": "脅威シグナルを統合し、優先順位を付ける",
+              "Description": "実務者が実務者のために構築したエージェンティックプラットフォーム OpenCTI で、データのサイロを解消し脅威インテリジェンスを実運用に活かします。自動プレイブック、PIR、FINTEL、AI によるインポート・レポート作成・検索に対応。エンタープライズ級のガバナンスとソブリンティを備えています。"
+            },
+            "openaev": {
+              "Tagline": "防御を検証する",
+              "Description": "EDR エージェントを含む既存の防御に対して実際の攻撃をシミュレーションし、シナリオの自動生成と AI による修復ガイダンスで、本当に悪用可能な箇所を明らかにします。机上演習から、posture の全面的な検証、経営層向けのレジリエンスレポートまで対応します。"
+            },
+            "xtmone": {
+              "Tagline": "エージェンティックな脅威管理のコックピット",
+              "Description": "XTM One は、OpenCTI と OpenAEV をまたいでアシスティブ AI とエージェンティック AI を統括する AI レイヤーです。人間が関与しながら、脅威シグナルから検証済みのアクションへとマシンスピードで進み、CTEM のループを完結させます。"
+            }
           },
-          "Blocks": {
-            "First": {
-              "Title": "取り込み",
-              "Description": "商用、オープンソース、社内など、あらゆるフィードからの脅威インテリジェンスを一元化されたプラットフォームに統合し、充実させます。AIが支援するCTIレポートのインポートにより、アナリストの作業時間を大幅に削減します。"
+          "Limitations": {
+            "Title": "トライアルの制限事項",
+            "Intro": "XTM Platform の無料トライアルには Enterprise Edition の SaaS 機能がすべて含まれますが、計算リソースとストレージには制限があります：",
+            "OpenCTI": "OpenCTI：インテリジェンスデータ保存は最大 40GB、ファイル保存は 3GB まで。",
+            "OpenAEV": "OpenAEV：16GB",
+            "Ingestion": "トライアル期間中に大容量のプレミアムフィードや情報量の多いデータセットを取り込むと、ストレージをすぐに消費する可能性があります。",
+            "NoSLA": "本トライアルに SLA は含まれません。クラウドプロバイダーの障害が発生した場合、復旧時間は保証されません。トライアル環境には重要なデータや代替できないデータを保存しないことを推奨します。"
+          },
+          "Form": {
+            "UseCaseFor": "{product} のユースケース",
+            "Submit": "XTM Platform トライアルを申請"
+          },
+          "NotLoggedIn": {
+            "Title": "トライアルを申請するにはログインが必要です。",
+            "Description": "Filigran アカウントを作成するか、既存のアカウントでログインしてください。"
+          },
+          "NotAdmin": {
+            "Title": "トライアルを開始するには「Manage platform registration」権限が必要です。",
+            "Description": "組織の管理者にこの権限の付与を依頼してください。",
+            "AdminListTitle": "{count, plural, =1 {この権限を持つメンバー} other {この権限を持つメンバー}}"
+          },
+          "PersonalSpace": {
+            "Title": "個人スペースではトライアルをご利用いただけません"
+          },
+          "Status": {
+            "RequestedOn": "申請日",
+            "StartedOn": "開始日",
+            "CancelledOn": "キャンセル日",
+            "FinishedOn": "終了日",
+            "CancelTrialRequest": "トライアル申請をキャンセル",
+            "request-in-progress": {
+              "Title": "ありがとうございます。リクエストを受け付けました。",
+              "Description": "担当チームより間もなくご連絡いたします。"
             },
-            "Second": {
-              "Title": "処理",
-              "Description": "強力なダッシュボードの可視化、ナレッジ・ハイパーグラフ、プレイブックにアクセスし、タイムラインと ATT&CK マッピングを使用して脅威アクター間でピボットします。脅威やインシデントの管理ニーズに合わせてダッシュボードをカスタマイズし、あらゆるステップでAIを活用できます。"
+            "cancelled": {
+              "Title": "誠に残念ながら、トライアルはキャンセルされました。",
+              "Description": "トライアル期間を再度申請する資格はなくなりました。\nEnterprise Edition ライセンスを再度ご利用になりたい場合は、営業担当までお問い合わせください。"
             },
-            "Third": {
-              "Title": "出力",
-              "Description": "脅威インテリジェンスをセキュリティ・システム全体に浸透させます。チームやツール間でインテリジェンスを共有・拡散し、役割ベースのアクセス権でタイムリーなアクションを実現します。OpenCTI と完全に統合された OpenAEV を使用して、セキュリティ態勢を検証し、改善します。"
+            "expired": {
+              "Title": "XTM Platform をお試しいただきありがとうございました。ご満足いただけましたら幸いです。",
+              "Description": "トライアル期間が終了しました。引き続き Enterprise Edition ライセンスをご利用になりたい場合は、営業チームまでお問い合わせください。"
+            },
+            "failed": {
+              "Title": "トライアルの申請を完了できませんでした",
+              "Description": "トライアルのプロビジョニング中に問題が発生しました。サポートが必要な場合は営業担当までお問い合わせください。"
+            },
+            "Stepper": {
+              "Pending": "保留中",
+              "Provisioning": "プロビジョニング中",
+              "Active": "アクティブ"
             }
           }
         }
-      },
-      "StartTrial": "無料トライアルを開始する",
-      "StartTrialWithName": "無料 {platformName} トライアルを開始する",
-      "OpenAEVPlatformBreadcrumb": "OpenAEV トライアルプラットフォーム",
-      "OpenCTIPlatformBreadcrumb": "OpenCTI トライアルプラットフォーム",
-      "PageHeader": {
-        "Welcome": "Filigran へようこそ",
-        "Title": "{platformName} の無料トライアルを始めましょう!"
-      },
-      "Storage": {
-        "Title": "トライアル環境のストレージに関する重要なお知らせ",
-        "SaaSFeaturesLink": "Enterprise Edition SaaS 機能",
-        "NoSLA": "<strong>無料トライアル環境には SLA は含まれません。</strong> クラウドプロバイダーの障害が発生した場合、復旧時間は保証されません。トライアル環境には重要なデータや代替不可能なデータを保存しないことを推奨します。",
-        "OpenCTIDescription": "OpenCTI 無料トライアルでは、すべての <link>Enterprise Edition SaaS 機能</link> を含む「small」SaaS インスタンスをユーザーに提供しますが、<strong>計算能力とストレージは制限されます (インテリジェンスデータストレージは最大 40GB、ファイルストレージは 3GB)。</strong> このトライアル中に豊富なデータセットを含む大規模なプレミアムフィードを取り込むと、ストレージがすぐに使い切られる可能性があります。",
-        "OpenAEVDescription": "OpenAEV 無料トライアルでは、すべての <link>Enterprise Edition SaaS 機能</link> を含む「small」インスタンスをユーザーに提供しますが、計算能力は低減され、ストレージは <strong>16GB</strong> に制限されます。"
-      },
-      "XTMPlatform": {
-        "Title": "あなたの eXtended Threat Management (XTM) スイート",
-        "Description": "{platformName} は、Filigran のオープンソースの脅威インテリジェンス、高度な敵対者シミュレーション、戦略的サイバーリスク管理ソリューションの一部であり、組織が脅威をエンドツーエンドで予測・管理できるよう支援します。",
-        "OpenCTITagline": "収集、相関、活用",
-        "OpenCTIDescription": "実務者によって実務者のために構築されたオープンソースの脅威インテリジェンスプラットフォーム — データのサイロを打破し、脅威インテリジェンスを真に実行可能なものにします。",
-        "OpenAEVTagline": "優先順位付け、テスト、重要なものの修正",
-        "OpenAEVDescription": "Adversarial Exposure Validation (AEV) で脅威に積極的に対抗し、現実の攻撃シナリオをシミュレートしてセキュリティ防御を最適化します。",
-        "LogoAlt": "{name} ロゴ",
-        "IllustrationAlt": "無料トライアルサービスのイラスト"
       },
       "QuickStart": {
         "Title": "クイックスタートガイド",
         "Subtitle": "{platformName} 製品を最大限に活用しましょう",
         "Description": "ステップバイステップのガイド、エキスパートのコース、コミュニティのフィードバックを活用して、実際のユースケースを解決し、Filigran チャンピオンになりましょう!"
       },
-      "GoToMyTrial": "私のトライアルへ",
       "InfoPersonalSpace": "個人のスペースではトライアルを開始できません。組織のスペースに移動してください。",
       "ReachOutToSales": "営業に連絡する",
+      "ReachOutToSalesMessageLabel": "メッセージ",
       "ReachOutToSalesMessagePlaceholder": "あなたのメッセージ",
       "NeedSupport": "サポート希望",
       "ReachOutToSalesSuccessTitle": "ありがとうございます",
       "ReachOutToSalesSuccessMessage": "折り返しご連絡いたします。",
-      "ReachOutToSalesDefaultMessage": "メッセージを入力してください。",
       "Cancellation": {
         "Toast": {
-          "NoNewTrialPossible": "OpenCTI無料トライアルは正常にキャンセルされました。新規のOpenCTIトライアルはリクエストできませんのでご注意ください。",
-          "NewTrialPossible": "OpenCTI無料トライアルは正常にキャンセルされました。",
-          "Admin": "OpenCTI 無料トライアルは正常にキャンセルされました。"
+          "NoNewTrialPossible": "OpenCTI無料トライアルは正常にキャンセルされました。新規のOpenCTIトライアルはリクエストできませんのでご注意ください。"
         },
         "ConfirmationForm": {
-          "Title": "OpenCTI 無料トライアルをキャンセルする",
-          "NoNewTrialPossible": "この操作の後、新しい OpenCTI トライアルをリクエストすることはできませんのでご注意ください。",
           "CancellationReason": "キャンセル理由",
           "CancellationReasonPlaceholder": "理由を選択してください",
           "CancellationReasonOther": "その他",
-          "CancellationReasonOtherPlaceholder": "理由をご記入ください"
+          "CancellationReasonOtherPlaceholder": "理由をご記入ください",
+          "CancellationReasonRequired": "キャンセル理由を選択してください"
         },
         "Confirmation": {
-          "Title": "体験キャンセル",
-          "Admin": "本当に {organizationName} からの OpenCTI 無料トライアルをキャンセルしますか？"
+          "Title": "体験キャンセル"
         }
       },
       "Form": {
         "Region": "地域",
-        "RegionPlaceholder": "ご希望のホスティング地域を選択してください。",
-        "AssociatedEmail": "関連Eメール",
+        "RegionPlaceholder": "ホスティング先の希望地域を選択してください",
+        "AssociatedEmail": "関連メールアドレス：",
         "JobTitle": "役職名",
-        "JobTitlePlaceholder": "職種を選択してください",
+        "JobTitlePlaceholder": "役職を選択してください",
         "ActivitySector": "活動分野",
-        "ActivitySectorPlaceholder": "活動セクターを選択してください",
-        "UseCase": "用途",
+        "ActivitySectorPlaceholder": "業種を選択してください",
         "UseCasePlaceholder": "ユースケースを選択してください",
-        "MSSA": "MSSA",
-        "MSSAAgreement": "の試用規約を読み、理解し、同意します。",
-        "FormRequested": "無料トライアルを申し込みました。プラットフォームの準備が整い次第、Eメールをお送りします！"
-      },
-      "Display": {
-        "New": "新しい",
-        "Requested": "リクエスト",
-        "opencti": {
-          "Title": "OpenCTI 30日間無料トライアル",
-          "FreeTrialDescription": "OpenCTI Enterprise Editionの全機能をお試しいただき、脅威インテリジェンスのエンドツーエンドの運用を開始してください！"
+        "Error": {
+          "AcceptTerms": "続行するには試用条件に同意してください",
+          "UseCase": "ユースケースを選択してください",
+          "Region": "地域を選択してください",
+          "JobTitle": "役職を選択してください",
+          "ActivitySector": "業種を選択してください"
         },
-        "openaev": {
-          "Title": "OpenAEV 30日間無料トライアル",
-          "FreeTrialDescription": "OpenAEV を使って、実際の攻撃シナリオをシミュレートし、セキュリティ態勢を評価し、サイバー耐性を向上させましょう。"
-        }
-      },
-      "CapacityWarning": {
-        "Title": "提供開始のお知らせ",
-        "Content": "プラットフォームスロットは現在お住まいの地域ではご利用いただけません。利用可能になった際に通知を受け取りたいですか？",
-        "Continue": "通知する"
+        "TermsAgreement": "<mssa>MSSA</mssa>および<aiterms>AI利用規約</aiterms>の試用条件を読み、理解し、同意します。",
+        "FormRequested": "無料トライアルを申し込みました。プラットフォームの準備が整い次第、Eメールをお送りします！"
       },
       "ManageUsers": {
         "Title": "ユーザーを管理する",
         "Email": "Eメール"
       }
     },
-    "Vault": {
-      "DeleteDocument": "ドキュメント削除",
-      "DropFile": "ここに書類を置く",
-      "File": "送信する文書",
-      "FileExtension": "ドキュメントの拡張子は",
-      "FileForm": {
-        "AddFile": "新しい文書を追加する",
-        "AlreadyExists": "このドキュメントは既に存在します。古いものは消去されます。",
-        "DeleteDialog": "本当に削除しますか？",
-        "DescriptionLabel": "説明",
-        "DescriptionPlaceholder": "この文書について説明してください。",
-        "DropDocuments": "ここにドキュメントをドロップする",
-        "EditFile": "文書を編集する",
-        "File": "ドキュメント",
-        "FileAlreadyExists": "このドキュメントは既に存在します",
-        "FileExistsDialog": "このドキュメントはすでに存在します。このドキュメントは古いものを消去します。本当に続けますか？",
-        "NoDocument": "選択した文書がありません。",
-        "SelectDocument": "ドキュメントを選択",
-        "ShortNameLabel": "短い名前",
-        "ShortNamePlaceholder": "フィリグラン価格",
-        "UploadNewFile": "Vaultに新しい文書をアップロードする"
+    "TrialGuide": {
+      "Breadcrumb": {
+        "TrialPlatform": "XTM Platform トライアル",
+        "TrialGuide": "XTM Platform トライアルガイド"
       },
-      "FileTab": {
-        "Description": "説明",
-        "FileName": "ドキュメント名",
-        "NumberDownload": "ダウンロード",
-        "Search": "文書名で検索...",
-        "UploadDate": "アップロード日"
+      "Eyebrow": "XTM Platform トライアルガイド",
+      "Title": "主なリソース",
+      "Description": "この簡単なガイドでは、XTM Platform のトライアルを最大限に活用するための役立つリソースをご紹介します。",
+      "SeeMore": "詳細を見る",
+      "ReadMore": "詳細を読む",
+      "ChecklistTitle": "推奨アクションチェックリスト",
+      "ChecklistIntro": "どこから始めればよいかお悩みですか？プラットフォームを理解するのに役立つ推奨アクションをいくつかご紹介します。",
+      "Opencti": {
+        "ResourceCards": {
+          "Documentation": {
+            "Title": "OpenCTI ドキュメント",
+            "Description": "プラットフォームの仕組みを理解するのに役立つ技術文書やユーザーガイド"
+          },
+          "Academy": {
+            "Title": "アカデミー：OpenCTI 101-301",
+            "Description": "OpenCTI の使い方を学ぶ実践的なコース"
+          },
+          "Community": {
+            "Title": "OpenCTI コミュニティ",
+            "Description": "OpenCTI コミュニティに、あらゆる質問を投げかけるのに最適な場所です"
+          },
+          "ReleaseNotes": {
+            "Title": "リリースノート",
+            "Description": "最新の更新情報のリスト"
+          }
+        },
+        "ChecklistItems": {
+          "ActivateFeeds": {
+            "Title": "さらに1～2つのフィードを有効にする",
+            "Description": "左側のメニューにある <strong>インテグレーション</strong> に移動します。すでにいくつかのコネクタがデプロイされています。<strong>利用可能</strong>タブをクリックしてください。ワンクリックでデプロイできるコネクタが他にも数多くあることがわかります。左側のメニューを一番下までスクロールし、ライセンスの種類で<strong>無料</strong>を選択します。まだ有効化されていないものをいくつかデプロイしてください。<strong>もっと見る</strong>をクリックすると、ワンクリックデプロイに対応していないものも含め、OpenCTIライブラリのすべての統合を確認できます。"
+          },
+          "ConfigurePir": {
+            "Title": "優先インテリジェンス要件（PIR）の設定",
+            "Description": "<strong>PIR → PIRの作成</strong>に進みます。PIR名、再スキャン間隔、および重要なエンティティの条件/フィルター（例：信頼度 ≥ 60 の「エネルギーセクターを標的とするマルウェア」）を定義します。 これにより、OpenCTIはプラットフォームのアクティビティを継続的に監視し、一致するエンティティを自動的に「注目すべき対象」としてフラグ付けし、各エンティティについてリアルタイムのニュースフィード、関連性のスコア、関連レポートやグラフを表示します。"
+          },
+          "FollowGraph": {
+            "Title": "レポートを開いてインタラクティブなグラフを探索する",
+            "Description": "<strong>分析 → レポート</strong>に移動します。レポートをクリックし、<strong>ナレッジ</strong>タブに移動します。右側のツールバーで<strong>グラフ表示</strong>が選択されていることを確認します。ズームインします。次に、グラフ内のオブジェクトをクリックします。オブジェクトの詳細が右側の列に表示されます。特定のオブジェクトの関係性を確認するには、それを横に移動します。<strong>タイムライン ビュー</strong>をクリックすると、データポイントが時間の経過とともにどのように変化したかを確認できます。MITRE ATT&CKへのマッピングについては、<strong>戦術マトリックスの表示</strong>をクリックしてください。"
+          },
+          "CreateCase": {
+            "Title": "検出されたインジケーターからケースを作成する",
+            "Description": "<strong>事例 → インシデント対応 → ケース インシデントの作成</strong> に移動し、組み込みテンプレートを使用してケースを作成し、先ほど扱ったインジケーターやレポートを添付します。その後、優先度と重大度を割り当て、担当者を指定し、是正措置を追跡するための関連タスクを追加します。 ケースは基となるエンティティとリンクされたままになるため、新たに相関するインテリジェンスがあれば、その文脈に合わせて自動的に表示される点にご注目ください。"
+          },
+          "CreateFintelReport": {
+            "Title": "FINTELレポートの作成",
+            "Description": "<strong>分析 → レポート → レポートを作成</strong> に移動します。 調査してきた脅威アクター、マルウェア、またはキャンペーンに関する分析を要約した「Finished Intelligence（FINTEL）」レポートの下書きを作成します。その際、すでに取り込んだエンティティ、インジケーター、および関係性を参照してください。裏付けとなる観測データを添付し、関連する侵入セットやTTPをグラフから直接リンクさせます。"
+          },
+          "BuildDashboardWidget": {
+            "Title": "カスタムダッシュボードウィジェットの作成",
+            "Description": "<strong>ダッシュボード → カスタムダッシュボード</strong> で、<strong>ダッシュボードの作成</strong>をクリックし、ウィジェット（例：「タイプ別インジケーター」や「経時変化レポート」）を追加します。または、<strong>Hubからインポート</strong>をクリックして、あらかじめ作成されたダッシュボードを選択します。"
+          },
+          "ConnectSecurityStack": {
+            "Title": "セキュリティスタックへの接続",
+            "Description": "<strong>インテグレーション</strong>に移動します。<strong>もっと見る</strong>をクリックします。 すでに運用しているツール（SIEM、EDR、ファイアウォール、TIP、またはSOAR）をいくつか選択し、OpenCTIに接続します。接続が完了したら、コネクタのダッシュボードを監視してデータが正常に流れていることを確認し、新たにプッシュされたインジケーターが下流のツールに表示されることを確認します。"
+          },
+          "CreateNoCodePlaybook": {
+            "Title": "ノーコードのプレイブックを作成する",
+            "Description": "<strong>データ → 処理</strong>に移動します。 <strong>プレイブックを作成する</strong>をクリックします。ビジュアルなドラッグ＆ドロップビルダーを使用して、トリガー、フィルター、アクションを連結します。例えば、新しいインジケーターの自動エンリッチメント、信頼度の高いレポートをケースへ昇格、または一致した観測値をコネクタへ直接プッシュするなどのアクションが可能です。 または、<strong>Hubからインポート</strong>をクリックして、あらかじめ作成されたプレイブックを選択することもできます。"
+          },
+          "CheckSecurityCoverage": {
+            "Title": "OpenAEVでセキュリティカバレッジを確認する",
+            "Description": "<strong>設定 → インテグレーション</strong>の下でOpenAEVインスタンスをリンクし、OpenAEV内で<strong>シナリオ → 作成</strong>に移動して、OpenCTIで調査中の脅威アクターのATT&CK手法に基づいてシナリオを構築します。 各 TTP をインジェクションとして追加し、標的となる資産を割り当てた後、<strong>実行</strong>をクリックして、制御された環境でシミュレーションを実行します。"
+          },
+          "EnableAgent": {
+            "Title": "XTM One でエージェントを有効にする",
+            "Description": "<strong>XTM One → エージェント</strong> を開き、あらかじめパッケージ化されたエージェントのいずれか（例：<strong>CTEM Assistant</strong>）を有効にして、OpenCTI と OpenAEV 間のワークフローをオーケストレーションします。これにより、新しい脅威の自動的な情報補完、要約、検証シナリオの生成などが、手動での引き継ぎを一切行わずに、平易な英語で実行されます。"
+          }
+        }
       },
-      "ManageVault": "保管庫の管理",
-      "UpdateDocument": "ドキュメントの更新",
-      "Vault": "パートナー保管庫",
-      "VaultTitle": "保管庫管理"
+      "Openaev": {
+        "ResourceCards": {
+          "Documentation": {
+            "Title": "OpenAEV ドキュメント",
+            "Description": "プラットフォームの仕組みを理解するための技術文書およびユーザーガイド"
+          },
+          "Academy": {
+            "Title": "アカデミー：OpenAEV 101",
+            "Description": "OpenAEV の使い方を学ぶための、無料で実践的なコース"
+          },
+          "Community": {
+            "Title": "OpenAEV コミュニティ",
+            "Description": "OpenAEV コミュニティにあらゆる質問を投げかけるのに最適な場所"
+          },
+          "ReleaseNotes": {
+            "Title": "リリースノート",
+            "Description": "最新の更新内容のリスト"
+          }
+        },
+        "ChecklistItems": {
+          "InstallStarterPack": {
+            "Title": "OpenAEV スターターパックのインストール",
+            "Description": "使い始めるためのコンテンツが必要ですか？ OpenAEVには、インストール後すぐに最初のシミュレーションを実行できる、すぐに使えるコンテンツが揃ったスターターパックが付属しています。これには、あらかじめ作成されたシナリオ、ダッシュボード、インジェクター、コレクター、エージェントレスエンドポイントなどが含まれています。 スターターパックはXTM Hubから入手可能です。プラットフォームを登録した後、<strong>設定 > XTM Hub</strong> からインポートしてください。"
+          },
+          "RunAtomicTest": {
+            "Title": "アトミックテストの実行",
+            "Description": "「Arsenal」に移動し、1つのテクニックを選択して、それを実行するエンドポイントを選択します。まずOpenAEVエージェントをインストールするか、対応している場合はエージェントレスで実行します。テストを開始し、エンドポイントを確認するか、レポートが表示されるまで待って、何が実行され、何が検知されたかを確認してください。"
+          },
+          "LaunchTimeBasedScenario": {
+            "Title": "AIシナリオアシスタントを活用した時間ベースのシナリオの実行",
+            "Description": "シナリオを作成し、開始時刻と、必要に応じて繰り返し頻度を設定したスケジュールに基づいて、実行したい順序でインジェクトを追加します。選択したターゲットとMITRE ATT&CK手法に基づいて、AIを活用してインジェクトの作成を自動化します。"
+          },
+          "RunAttackChainingScenario": {
+            "Title": "攻撃チェーンシナリオの実行",
+            "Description": "複数の手法を結びつけて現実的な攻撃経路（初期アクセス、横方向の移動、情報漏洩）を構築するシナリオを作成します。オペレーター主導で各ステップを手動でトリガーする方法と、プラットフォームが開始後にチェーン全体を自動的に実行するエージェント主導の方法の2通りで実行できます。 両方の方法を試して、制御性と速度の違いを実感してください。"
+          },
+          "DriveTabletopExercise": {
+            "Title": "フィッシング演習を用いたテーブルトップ演習の実施",
+            "Description": "技術的な要素ではなく、コミュニケーションや意思決定に基づく介入（例：「法務部に通知する」）を用いたテーブルトップシナリオを作成し、参加者を割り当て、ファシリテーターを交えたライブセッションとして実施し、チームの対応を記録します。この機会を活用して、AIで直接生成できるフィッシングインジェクトを取り入れましょう。"
+          },
+          "EvaluateSecurityPosture": {
+            "Title": "セキュリティ態勢の評価",
+            "Description": "ホーム画面のExposure Commander Center（主要な指標を一目で確認できる画面）から始め、特定のセキュリティ領域やダッシュボードを詳しく調べていきます。時間をかけてインジェクトの結果、期待値、および調査結果を確認してください。"
+          },
+          "GenerateDetectionRemediationRules": {
+            "Title": "検知・修復ルールの自動生成",
+            "Description": "AIを活用した修復機能により、実行された技術的インジェクトから検知ルールを生成します。これらはインジェクト結果の修復タブから直接アクセスできます。"
+          },
+          "ConnectOpenctiSecurityCoverage": {
+            "Title": "OpenCTIと連携してセキュリティカバレッジを強化する",
+            "Description": "OpenAEVはXTM Suite製品を介してトリガーされ、望ましい脅威プロファイルに基づいてシナリオを実行できます。シナリオ実行の結果（検知率、防御率など）は、取り込みのためにトリガー元の製品に返されます。"
+          },
+          "EnableAgentXtmOne": {
+            "Title": "XTM Oneでエージェントを有効化する",
+            "Description": "<strong>XTM One → エージェント</strong>を開き、事前にパッケージ化されたエージェント（例：OpenAEV Assistant）のいずれかを有効化して、OpenCTIとOpenAEVを横断するワークフローのオーケストレーションを開始します。例えば、新しい脅威を自動的にエンリッチし、要約し、検証シナリオを生成するといった作業を、手動での引き継ぎなしにすべて平易な言葉で行えます。"
+          },
+          "GenerateReportStakeholders": {
+            "Title": "関係者と共有するレポートを自動生成する",
+            "Description": "シナリオとそのシミュレーション結果を1つのレポートで確認し、ワンクリックでPDFまたはHTML形式で生成して、関係者と迅速に共有し、時間の経過とともにベンチマークできます。"
+          }
+        }
+      },
+      "Xtmone": {
+        "ResourceCards": {
+          "Documentation": {
+            "Title": "XTM One ドキュメント",
+            "Description": "プラットフォームの仕組みを理解するための技術ドキュメントとユーザーガイド"
+          },
+          "Community": {
+            "Title": "XTM One コミュニティ",
+            "Description": "Filigran コミュニティにあらゆる質問を投げかけるのに最適な場所"
+          }
+        },
+        "ChecklistItems": {
+          "ActivateCtemAssistant": {
+            "Title": "CTEM アシスタントの有効化",
+            "Description": "XTM One → エージェント に移動し、プラットフォームへの主要なエントリポイントである CTEM アシスタントを有効にします。これは OpenCTI と OpenAEV の両方に直接接続し、両プラットフォームのエージェントを連携させて、脅威インテリジェンスの処理を OpenAEV でのシナリオ構築および実行へと直接移行させます。これらすべてが、1 つの会話から行われます。"
+          },
+          "AskQuestionPlainEnglish": {
+            "Title": "平易な英語で質問する",
+            "Description": "XTM Oneのチャットインターフェースを開き、「英国の金融セクターが直面している脅威のトップ5は何ですか？」といった質問を投げかけてみてください。XTM Oneは（フィードを追加済みであれば）OpenCTIから関連するエンティティを取得し、基となるデータへのリンクを含む統合された回答を返します。クエリ言語やダッシュボード間の移動は一切必要ありません。"
+          },
+          "BuildThreatHuntingPackage": {
+            "Title": "数分で脅威ハンティングパッケージを作成",
+            "Description": "「Threat Hunting」を検索してOpenCTI Threat Hunt Creatorにアクセスします。信頼度の高いインジケーターのセットをハンティングパッケージに変換するよう依頼します。価値の高いインジケーターを検索し、それらをお使いのプラットフォーム用のネイティブ検出ルールに変換して、すべてをOpenCTIにまとめてグループ化します。これにより、ハンティングの準備時間を大幅に短縮できます。",
+            "ExamplePrompt": "プロンプト例: Lockbitランサムウェアの侵害指標（IoC）を対象に、最新のインジケーターを優先しながらSigmaルールに変換したハンティングパッケージを作成してください"
+          },
+          "IntegrateTools": {
+            "Title": "ツールを統合してより迅速な脅威検知と対応を実現",
+            "Description": "<strong>Tools & Integrations</strong>に移動し、エージェントがあなたに代わって利用できるツールを接続します。XTM Oneの統合マーケットプレイスでは、SIEM、XDR、脅威フィード、脆弱性管理といったセキュリティツールに加え、Notion、Metabase、Concord、MS Teams、Slackなどの業務・コラボレーションツールを含む数百のビルド済み統合を提供しています。インテリジェンスをシームレスに流通させ、アクションを起こせる一元的な場所に集約しましょう。"
+          }
+        }
+      }
+    },
+    "FileForm": {
+      "NoDocument": "選択した文書がありません。",
+      "SelectDocument": "ドキュメントを選択"
     },
     "OpenctiCustomViews": {
       "Actions": {
@@ -1536,12 +2175,104 @@
       "AddService": "新しいカスタムビューを追加する",
       "UpdateService": "カスタムビューを更新する {name}",
       "DeleteService": "カスタムビューを削除する {name}",
-      "SureDeleteService": "本当にカスタムビュー {name} を削除しますか？",
-      "NonActive": "草案",
-      "Active": "公開"
+      "SureDeleteService": "本当にカスタムビュー {name} を削除しますか？"
+    },
+    "Bundle": {
+      "ManageTrial": {
+        "Breadcrumb": {
+          "BundleName": "XTM Platform トライアル",
+          "ManageUsers": "ユーザーを管理"
+        },
+        "Title": "XTM Platform トライアルでチームを管理",
+        "Eyebrow": "XTM Platform 無料トライアル",
+        "Description": "XTM Platform のトライアル期間中、チームを簡単に管理し、共同作業を行いましょう。メンバーを招待し、役割と権限を割り当てて、全員がプラットフォームに適切なレベルでアクセスできるようにします。",
+        "BackButton": "XTM Platform トライアルに戻る",
+        "BackToDashboardButton": "戻る",
+        "GroupAction": "グループアクション",
+        "GroupActionDisabledTooltip": "グループアクションを適用するには、リストからユーザーを選択する必要があります",
+        "BulkDeleteTooltip": "選択したユーザーを削除できます",
+        "AddTrialUser": "トライアルユーザーを追加",
+        "BulkDeleteDialog": {
+          "Title": "トライアルからユーザーを削除",
+          "Text": "{emails} をこのトライアルから削除してもよろしいですか?すべての製品へのアクセス権を失います。",
+          "MoreEmails": "他{count}件"
+        },
+        "Table": {
+          "Email": "メールアドレス",
+          "NoUsers": "ユーザーが見つかりません。",
+          "RoleUpdated": "{email} の{role}が更新されました",
+          "DeleteDialog": {
+            "Title": "トライアルからユーザーを削除",
+            "Text": "{email} をこのトライアルから削除してもよろしいですか?すべての製品へのアクセス権を失います。"
+          }
+        },
+        "AddUserDialog": {
+          "Title": "トライアルユーザーを追加",
+          "EmailPlaceholder": "メールアドレスを追加",
+          "ExpiredUsersReinvited": "期限切れのユーザーは再招待され、新しい招待メールが送信されます。",
+          "InviteEmail": "{email} を招待",
+          "NoPermissionToInvite": "このリストにないユーザーを追加する権限がありません。必要に応じて管理者にお問い合わせください",
+          "Status": {
+            "Expired": "期限切れ",
+            "Invited": "招待済み"
+          }
+        },
+        "EditUsersDialog": {
+          "Title": "ユーザーを編集",
+          "Users": "トライアルユーザーを管理",
+          "UsersPlaceholder": "ユーザーを選択",
+          "MixedRoles": "異なるロールを持つユーザーが選択されています"
+        },
+        "Roles": {
+          "DefaultSuffix": "（デフォルト）",
+          "NoAccess": "アクセス禁止",
+          "opencti": {
+            "Title": "{count, plural, other {OpenCTI ロール}}",
+            "Admin": {
+              "Label": "Admin",
+              "Description": "管理者ロールは、製品の設定、構成、管理に対する完全なアクセス権を持ちます。管理者はユーザー、ロール、システム全体の設定を管理できるほか、データに対する完全な可視性と制御権を持ちます。"
+            },
+            "Analyst": {
+              "Label": "Analyst",
+              "Description": "製品内のすべてのナレッジに完全にアクセスできるロールです。アナリストはエンティティ、関係、調査を作成、編集、管理できますが、製品の設定、管理、構成オプションにはアクセスできません。"
+            },
+            "Reader": {
+              "Label": "Reader",
+              "Description": "製品内のすべてのデータを閲覧できるが、変更はできない読み取り専用のロールです。情報を閲覧するだけでよいユーザーに最適です。"
+            }
+          },
+          "openaev": {
+            "Title": "{count, plural, other {OpenAEV ロール}}",
+            "Admin": {
+              "Label": "Admin",
+              "Description": "管理者ロールは、製品の設定、構成、管理に対する完全なアクセス権を持ちます。管理者はユーザー、ロール、システム全体の設定を管理できるほか、要素に対する完全な可視性と制御権を持ちます。"
+            },
+            "Manager": {
+              "Label": "Manager",
+              "Description": "あらゆる種類のシナリオを管理・実行するための完全な機能を持つロールです。マネージャーは製品内の任意の要素を変更できますが、製品の設定、管理、構成オプションにはアクセスできません。"
+            },
+            "Observer": {
+              "Label": "Observer",
+              "Description": "製品内のすべての要素を閲覧できるが、変更はできない読み取り専用のロールです。情報を閲覧するだけでよいユーザーに最適です。"
+            }
+          },
+          "xtmone": {
+            "Title": "{count, plural, other {XTM One ロール}}",
+            "Admin": {
+              "Label": "Admin",
+              "Description": "管理者ロールは、プラットフォームの設定、構成、管理に対する完全なアクセス権を持ちます。管理者はユーザー、グループ、インテグレーション、システム全体の設定を管理できるほか、組織内で共有される会社管理リソースを含むすべての要素に対する完全な可視性と制御権を持ちます。また、トラブルシューティングのためにユーザーになりすますこともできます。"
+            },
+            "User": {
+              "Label": "User",
+              "Description": "自身のエージェント、フロー、ナレッジベースを作成、構成、実行するための完全な機能を持つロールです。ユーザーは自身が所有する要素や共有された要素を変更できますが、プラットフォームの設定、管理、構成オプションにはアクセスできません。"
+            }
+          }
+        }
+      }
     }
   },
   "ServiceActions": {
+    "DocumentUpdated": "{file_name} は修正されました",
     "OrganizationAdded": "{name} 組織は {serviceName} サービスを購読している。",
     "OrganizationDeleted": "組織 {name} は削除されました。",
     "UserCapabilitiesModified": "{email} の機能が変更されました",
@@ -1556,9 +2287,6 @@
   },
   "ServiceName": {
     "custom_dashboards": "カスタムダッシュボード"
-  },
-  "SelectUsers": {
-    "ClearAllSelections": "すべての選択をクリア"
   },
   "Sort Asc": "ソート",
   "Sort Desc": "降順ソート",
@@ -1586,7 +2314,7 @@
     "Description": "本当に {platformName} 製品を切断しますか？切断すると、{productName} で再度接続プロセスを行う必要があります。",
     "Confirm": {
       "Description": "切断を続行しますか？",
-      "Title": "ハブ上の {name} 組織から {platformIdentifier} 製品を切断しようとしています。"
+      "Title": "Hub 上の {name} 組織から {platformIdentifier} 製品を切断しようとしています。"
     },
     "Error": {
       "Capability": {
@@ -1609,7 +2337,7 @@
     "OpenCTI": {
       "Confirm": {
         "Description": "切断を続行しますか？",
-        "Title": "ハブ上の {name} 組織から OpenCTI 製品を切断しようとしています。"
+        "Title": "Hub 上の {name} 組織から OpenCTI 製品を切断しようとしています。"
       },
       "Error": {
         "Capability": {
@@ -1647,12 +2375,15 @@
     "AddUser": "ユーザーを追加",
     "AllOrganizations": "すべての組織",
     "CreateUser": "新規ユーザー作成",
+    "DeleteUser": "ユーザーを削除",
+    "DeletionBlocked": "削除できません",
     "DetailsUser": "詳細ユーザー",
     "Disable": "無効化",
     "Enable": "有効にする",
     "Organization": "組織",
     "RemoveUser": "ユーザー削除",
     "SearchUser": "ユーザーを検索...",
+    "SureDeleteUser": "{email} を削除してもよろしいですか？この操作は取り消せません。",
     "UpdateUser": "ユーザーを更新する - {email}",
     "UserCreated": "ユーザー {email} が作成されました。",
     "UserDeleted": "ユーザー {email} が削除されました。",
@@ -1674,6 +2405,7 @@
     "OrganizationsCapabilitiesPlaceholder": "その他の能力",
     "OrganizationsPlaceholder": "組織を選ぶ",
     "Password": "パスワード",
+    "PasswordHelper": "現在のパスワードを維持する場合は空欄のままにしてください",
     "Picture": "写真",
     "ResetPassword": {
       "Action": "パスワード再設定",
@@ -1682,13 +2414,20 @@
     }
   },
   "UserListPage": {
+    "Action": "アクション",
     "Country": "国名",
     "Email": "Eメール",
     "FirstName": "ファーストネーム",
+    "InvitationDate": "招待日",
+    "InvitationExpired": "期限切れ",
+    "InvitationPending": "保留中",
+    "InvitationStatus": "招待ステータス",
     "LastLogin": "姓",
     "LastName": "姓",
     "NoUsers": "ユーザーが見つかりません",
     "Organizations": "団体名",
+    "ResendInvite": "招待を再送信",
+    "ResendInviteSuccess": "招待を再送信しました",
     "Roles": "役割",
     "Status": "地位",
     "TabTitle": "ユーザー",
@@ -1738,12 +2477,68 @@
     "And": "そして",
     "Or": "または"
   },
+  "DesignSystem": {
+    "Breadcrumbs": {
+      "Label": "パンくずリスト"
+    },
+    "Carousel": {
+      "GoToSlide": "スライド {slide} へ移動",
+      "Next": "次のスライド",
+      "Previous": "前のスライド"
+    },
+    "Combobox": {
+      "SelectedValues": "選択された値",
+      "ToggleOptions": "選択肢の表示を切り替え"
+    },
+    "DataTable": {
+      "ClearSelection": "選択を解除",
+      "ColumnOptions": "列のオプション",
+      "Columns": "列",
+      "HideColumn": "隠す",
+      "ManageColumns": "列の表示管理",
+      "NextPage": "次のページへ",
+      "PreviousPage": "前のページへ",
+      "ResetTable": "表のリセット",
+      "RowsPerPage": "ページあたりの行数",
+      "SelectAll": "すべて選択",
+      "SelectedCount": "{count} 件選択",
+      "SelectRow": "行を選択",
+      "SortAscending": "昇順",
+      "SortDescending": "降順"
+    },
+    "DatePicker": {
+      "Calendar": "カレンダー",
+      "FieldCalendar": "{label}のカレンダー",
+      "Clear": "日付をクリア",
+      "Confirm": "確定",
+      "Hours": "時",
+      "Minutes": "分",
+      "Month": "月",
+      "NextMonth": "次の月",
+      "OpenCalendar": "カレンダーを開く",
+      "Period": "午前/午後",
+      "PreviousMonth": "前の月",
+      "Seconds": "秒",
+      "Year": "年"
+    },
+    "FileSelect": {
+      "Clear": "すべてのファイルを削除",
+      "FileRejected": "{fileName}は追加されませんでした（{reason, select, accept {サポートされていない形式} other {サイズ上限超過}}）。",
+      "FilesRejected": "{count}件のファイルは追加されませんでした（サポートされていない形式またはサイズ上限超過）。",
+      "Loading": "読み込み中",
+      "Placeholder": "ファイルが選択されていません。",
+      "RemoveFile": "{fileName}を削除",
+      "Trigger": "ファイルを選択"
+    },
+    "SearchField": {
+      "Clear": "検索をクリア"
+    }
+  },
   "Platform": {
     "Update": "更新する",
     "UpdateMetadata": "プラットフォームメタデータの更新",
     "Name": "プラットフォーム名",
     "NamePlaceholder": "プラットフォーム名を入力",
-    "IllustrationImage": "イラストイメージ",
     "Updated": "{platformName} は正常に更新されました"
   },
   "Region": {
@@ -1751,12 +2546,6 @@
     "APAC_SG": "シンガポール",
     "EU_WEST": "西ヨーロッパ",
     "US_EAST": "アメリカ東部"
-  },
-  "VaultActions": {
-    "DocumentAdded": "{file_name} が追加されました",
-    "DocumentDeleted": "{file_name} は削除されました",
-    "DocumentUpdated": "{file_name} は修正されました",
-    "UpdateDocument": "ドキュメントの更新"
   },
   "DeploymentRequestJobTitle": {
     "ceo": "CEO",
@@ -1778,5 +2567,162 @@
     "vulnerability_analyst": "脆弱性アナリスト",
     "consultant": "コンサルタント",
     "other": "その他"
+  },
+  "VotingRound": {
+    "Actions": {
+      "Add": "投票ラウンドを作成",
+      "Edit": "ラウンドを編集",
+      "Open": "投票を開始",
+      "Close": "投票を終了"
+    },
+    "Form": {
+      "Name": "名称",
+      "Description": "説明",
+      "DescriptionPlaceholder": "公開投票ページに表示されます",
+      "CopyFeaturesFrom": "機能のコピー元",
+      "CopyFeaturesNone": "空のラウンドから開始",
+      "Error": {
+        "Name": "名称は必須です",
+        "ServiceInstance": "ロードマップは必須です"
+      },
+      "ServiceInstance": "ロードマップ",
+      "ServiceInstancePlaceholder": "ロードマップを選択",
+      "Theme": "バナースタイル"
+    },
+    "ListPage": {
+      "Name": "名称",
+      "Status": "ステータス",
+      "FeatureCount": "機能数",
+      "ServiceInstance": "ロードマップ"
+    },
+    "Status": {
+      "draft": "下書き",
+      "open": "公開中",
+      "closed": "終了"
+    },
+    "Dialog": {
+      "DeleteRound": "{name} を削除しますか？投票がない場合のみ可能です。",
+      "OpenRound": "{name} の投票を開始しますか？現在公開中のラウンドは終了し、結果は保持されます。",
+      "CloseRound": "{name} の投票を終了しますか？以降は投票できなくなり、結果は保持されます。",
+      "DeleteFeature": "{title} を削除しますか？"
+    },
+    "Feature": {
+      "SectionTitle": "機能",
+      "Title": "タイトル",
+      "Product": "製品",
+      "ShortDescription": "概要",
+      "Description": "説明",
+      "Illustration": "イラスト",
+      "Position": "表示順",
+      "Active": "有効",
+      "ActiveYes": "はい",
+      "ActiveNo": "いいえ",
+      "Actions": {
+        "Add": "機能を追加",
+        "Edit": "機能を編集"
+      },
+      "Error": {
+        "Title": "タイトルは必須です",
+        "ShortDescription": "概要は必須です",
+        "ShortDescriptionMax": "概要は215文字以内で入力してください",
+        "Description": "説明は必須です",
+        "Position": "表示順は0以上の数値で入力してください"
+      },
+      "RemoveIllustration": "イラストを削除",
+      "DescriptionPlaceholder": "ユーザーが機能を開いたときに表示される詳細説明。Markdown に対応しています。"
+    },
+    "Results": {
+      "Title": "結果",
+      "TotalVoters": "投票者数：{count}",
+      "Empty": "このラウンドにはまだ投票がありません。",
+      "InactiveFeature": "無効"
+    },
+    "Theme": {
+      "default": "デフォルト",
+      "thread": "Thread"
+    }
+  },
+  "TimeSeriesBarChart": {
+    "Peak": "ピーク"
+  },
+  "EditableText": {
+    "DialogTitle": "コンテンツを編集",
+    "KeyLabel": "キー: {contentKey}",
+    "ValueLabel": "{locale} の値",
+    "OriginalValue": "元の値: {value}",
+    "SaveDraft": "下書きを保存",
+    "EditionBannerLabel": "編集モードです。枠で囲まれたテキストをクリックすると編集できます。",
+    "EditionBannerHiddenAreasLabel": "編集モードです。テキストを編集するには、編集可能な箇所を表示してください。",
+    "ShowEditableAreas": "編集可能な箇所を表示",
+    "EditionBannerExit": "公開サイトに戻る",
+    "MenuButton": "翻訳を編集",
+    "MenuButtonExit": "編集モードを終了",
+    "DraftHint": "下書きとして保存されます。編集モードのバナーから公開するまで、訪問者には表示されません。",
+    "PendingChanges": "{count, plural, other {未公開の変更 # 件}}",
+    "Publish": "公開",
+    "Discard": "破棄",
+    "PublishConfirmTitle": "{count, plural, other {# 件の変更を公開しますか?}}",
+    "PublishConfirmDescription": "公開したテキストはすべての訪問者に表示されます。",
+    "DiscardConfirmTitle": "{count, plural, other {# 件の変更を破棄しますか?}}",
+    "DiscardConfirmDescription": "下書きはすべての編集者から削除されます。この操作は元に戻せません。",
+    "ExitDialogTitle": "未公開の変更",
+    "ExitDialogDescription": "{count, plural, other {# 件の変更がまだ公開されていません。}}公開するまで、訪問者には現在のテキストが表示されます。",
+    "KeepDraftsAndExit": "下書きを保持して終了",
+    "DiscardAndExit": "破棄して終了",
+    "PublishAndExit": "公開して終了"
+  },
+  "EditableTextDemo": {
+    "Title": "XTM Hub へようこそ",
+    "Subtitle": "Filigran エコシステムの統合エントリーポイント。",
+    "Instructions": "サイドバーの「翻訳を編集」で編集モードを有効にしてください(BYPASS 権限を持つユーザーのみ)。その後、下の枠で囲まれたタイトルまたはサブタイトルをクリックしてください。保存すると下書きが作成され、編集モードのバナーから公開できます。"
+  },
+  "AdminRegisteredPlatforms": {
+    "Search": "タイトル、URL、組織、メール、IDで検索",
+    "ClearSearch": "検索をクリア",
+    "Columns": {
+      "Platform": "プラットフォーム",
+      "Product": "製品",
+      "Organization": "組織",
+      "Tenant": "テナント",
+      "Contract": "契約",
+      "Status": "ステータス",
+      "LastConnectivityCheck": "最終接続確認",
+      "Registerer": "登録者",
+      "Credential": "認証情報",
+      "Identifiers": "識別子"
+    },
+    "Identifiers": {
+      "ServiceInstance": "サービスインスタンス",
+      "Platform": "プラットフォーム",
+      "Tenant": "テナント"
+    },
+    "Credential": {
+      "Kind": {
+        "token": "トークン",
+        "none": "なし"
+      },
+      "TokenStored": "トークン保存済み",
+      "NoTokenStored": "トークン未保存"
+    },
+    "Filters": {
+      "Product": "製品",
+      "AllProducts": "すべての製品",
+      "Status": "ステータス",
+      "AllStatuses": "すべてのステータス"
+    },
+    "Unregister": "登録解除",
+    "UnregisterSuccess": "プラットフォーム「{title}」の登録を解除しました",
+    "UnregisterDialog": {
+      "Title": "プラットフォーム「{title}」の登録を解除しますか？",
+      "Text": "{product} プラットフォーム「{title}」は、XTM Hub 上の {organization} 組織から切断されます。組織の管理者にはメールで通知されます。再接続するには、プラットフォームで接続プロセスをもう一度行う必要があります。登録解除後、プラットフォームは登録解除されたことの確認以外に、XTM Hub で認証情報を使用できなくなります。",
+      "TextWithoutOrganization": "{product} プラットフォーム「{title}」は XTM Hub から切断されます。どの組織にも属していないため、メールで通知される人はいません。再接続するには、プラットフォームで接続プロセスをもう一度行う必要があります。登録解除後、プラットフォームは登録解除されたことの確認以外に、XTM Hub で認証情報を使用できなくなります。"
+    }
+  },
+  "Tour": {
+    "GuidedTour": "ガイド付きツアー",
+    "Close": "ツアーを閉じる",
+    "PreviousStep": "前のステップへ移動",
+    "NextStep": "次のステップへ移動",
+    "GoToStep": "ステップ {step} へ移動"
   }
 }

@@ -1,6 +1,11 @@
 import { findLogoUrl } from '@/components/homepage/Homepage.utils';
 import HomepageResourceCard from '@/components/homepage/resources/HomepageResourceCard';
 import { PublicLocale } from '@/i18n/config';
+import {
+  analyticsResource,
+  toAnalyticsResourceData,
+} from '@/lib/analytics/analytics.context';
+import { isDocumentPublished } from '@/utils/documents';
 import { PUBLIC_CYBERSECURITY_SOLUTIONS_PATH } from '@/utils/path/constant';
 import {
   SHAREABLE_RESOURCE_LIBRARY_MAPPING,
@@ -33,9 +38,9 @@ const HomepageResourceList = ({
   }
 
   return (
-    <section className="flex flex-col gap-s">
-      <h2 className="heading-md">{title}</h2>
-      <ul className="grid grid-cols-[repeat(auto-fit,minmax(16rem,1fr))] gap-xl">
+    <section className="flex flex-col gap-2">
+      <h2 className="title-md">{title}</h2>
+      <ul className="grid grid-cols-[repeat(auto-fit,minmax(16rem,1fr))] gap-6">
         {documents.map((resource) => {
           const resourceType = resource.type as ShareableResourceType;
           const serviceSlug =
@@ -59,19 +64,21 @@ const HomepageResourceList = ({
             docHasMetadata(resource, 'manager_supported') &&
             Boolean(resource.manager_supported);
 
-          const active =
-            resource.active &&
+          const published =
+            isDocumentPublished(resource.status) &&
             resource.type !== ShareableResourceType.OPENCTI_INTEGRATION;
 
           return (
-            <li key={resource.id}>
+            <li
+              key={resource.id}
+              {...analyticsResource(toAnalyticsResourceData(resource))}>
               <HomepageResourceCard
                 key={resource.id}
                 name={resource.name ?? ''}
                 shortDescription={resource.short_description}
                 url={url}
                 logoUrl={logoUrl}
-                active={active}
+                published={published}
                 verified={verified}
                 deployable={deployable}
                 useCases={

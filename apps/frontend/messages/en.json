@@ -1,9 +1,13 @@
 {
+  "UserDisplay": {
+    "DeletedUser": "Deleted user"
+  },
   "AdminBanner": "You are currently in admin mode.",
   "App": {
     "Collapse": "Collapse",
     "CollapseSidebar": "Collapse sidebar",
     "MadeBy": "Made by",
+    "MadeByBrand": "Made by {brand}",
     "Title": "XTM Hub"
   },
   "Badge": {
@@ -11,15 +15,61 @@
     "Enabled": "Enabled",
     "Published": "Published"
   },
+  "DocumentStatus": {
+    "Draft": "Draft",
+    "InValidation": "In validation",
+    "Published": "Published"
+  },
   "CapabilityDescription": {
     "Capabilities": {
-      "ADMINISTRATE_ORGANIZATION": "Allow every capabilities actions within an organization",
+      "ADMINISTRATE_ORGANIZATION": "Grants every capability within the organization",
       "MANAGE_ACCESS": "Ability to invite other users to this organization",
-      "MANAGE_PLATFORM_REGISTRATION": "Ability to connect and disconnect products",
+      "MANAGE_PLATFORM_REGISTRATION": "Ability to connect and disconnect products, and to start, cancel and manage trials. For SaaS customers, ability to see metrics of the product.",
       "MANAGE_SUBSCRIPTION": "Ability to manage and subscribe the organization to services"
     },
     "Description": "You can add specific capabilities to Filigran users",
     "Title": "Available capabilities"
+  },
+  "CSMBoard": {
+    "Customer": "Customer",
+    "Organization": "Organization",
+    "Administrators": "Administrators",
+    "Products": "Products",
+    "ProductVersion": "Version: {version}",
+    "AllProducts": "All products",
+    "Plan": "Plan",
+    "Health": "Health",
+    "Healthy": "Healthy",
+    "HealthSla": "SLA {percent}",
+    "HealthDatabase": "Database {percent}",
+    "HealthFileStorage": "File storage {percent}",
+    "Database": "Database",
+    "FileStorage": "File storage",
+    "Availability": "Availability",
+    "Version": "Version",
+    "ContractEnd": "Contract end",
+    "EndsIn": "in {days} d",
+    "ContractEnded": "Ended",
+    "Link": "SaaS metrics",
+    "AskCustomer": "Ask your customer to connect their product",
+    "ViewMetrics": "View metrics",
+    "SearchPlatform": "Search platform",
+    "ClearSearch": "Clear search",
+    "Tour": {
+      "Table": "This board lists every SaaS platform from the SaaS Manager, with the data it reports.",
+      "Search": "Search for a platform by customer name.",
+      "ProductFilter": "Show only the platforms of one product.",
+      "HubColumns": "These columns fill in once the customer connects their product to XTM Hub. Click \"{viewMetrics}\" for more metrics on the platform.",
+      "HoverDetails": "Hover over a cell in these columns for details: administrator emails, product version and exact contract end date.",
+      "MetricsLink": "Available once the customer connects their product to XTM Hub. The link opens the product's details page, which the customer can access too.",
+      "Database": "Elasticsearch storage used, as a percentage of what the plan allows.",
+      "FileStorage": "S3 storage used, as a percentage of what the plan allows.",
+      "Availability": "The SLA availability of the platform. Contracts set the target at 99.98%.",
+      "Health": "Spot at a glance which platforms have an issue, and what it is: SLA, database or file storage.",
+      "ColumnMenu": "Hover over a column header to open its menu and hide the columns you don't need. Click some headers to sort the table by that column.",
+      "ShowHiddenColumn": "To bring back a hidden column, open the table menu and select it under \"{columns}\".",
+      "FullDocumentation": "Every detail on how XTM Hub handles metrics is in <link>this Notion page</link>."
+    }
   },
   "CountryComboBox": {
     "Placeholder": "Choose a country"
@@ -61,27 +111,62 @@
     "EE": "Enterprise Edition",
     "TRIAL": "Free trial"
   },
-  "Datatable": {
-    "Asc": "Asc",
-    "Columns": "Columns",
-    "Desc": "Desc",
-    "GoFirstPage": "Go to first page",
-    "GoLastPage": "Go to last page",
-    "GoNextPage": "Go to next page",
-    "GoPreviousPage": "Go to previous page",
-    "Hide": "Hide",
-    "ManageColumnsVisibility": "Manage columns visibility",
-    "ResetTable": "Reset table",
-    "RowsPerPage": "Rows per page"
+  "PlatformStatuses": {
+    "active": "Active",
+    "inactive": "Inactive"
+  },
+  "CommercialModels": {
+    "SAAS": "SaaS",
+    "OTHER": "Other"
+  },
+  "XtmPlatformTrial": {
+    "BundleInfo": {
+      "OrganizationName": "Organisation",
+      "StartedOn": "Started on",
+      "License": "License",
+      "Remaining": "Remaining",
+      "DaysRemaining": "{days, plural, =1 {# day} other {# days}}",
+      "TrialRequester": "Trial requester",
+      "Title": "XTM Product Trial details:"
+    },
+    "Products": {
+      "ConnectionStatus": "Connection status",
+      "LastConnection": "Last connection check",
+      "Role": "Role",
+      "NoRole": "None.",
+      "NoRoleHint": "Please contact the trial requester.",
+      "StatusActive": "Connected",
+      "StatusNotConnected": "Not connected",
+      "AccessProduct": "Access {productName}",
+      "StatusUnavailable": "Unavailable",
+      "ProductName": "Product name",
+      "Connection": "Connection {productName}",
+      "EditName": "Edit name",
+      "ConnectionLost": "Connection lost.",
+      "ReconnectHint": "You should connect your product again."
+    },
+    "CancelTrial": "Cancel trial",
+    "CancelDialog": {
+      "Title": "Cancel trial",
+      "Description": "Are you sure you wish to cancel this trial ?",
+      "Warning": "Once cancelled, you will not be able to request a new trial"
+    },
+    "Title": "Welcome to your XTM Platform Trial",
+    "Subtitle": "Everything you need for your trial is right here: your trial details and time remaining, direct access to your products, and a direct line to the Filigran team whenever you need support or have questions.",
+    "Guide": {
+      "Title": "XTM Platform Trial Guide",
+      "Content": "Explore what we're building, what's coming next, and where the XTM Platform is headed. Full transparency. No surprises.",
+      "SeeMore": "See more"
+    }
   },
   "DeploymentRequestUseCase": {
     "threat_profiling_cti": "Threat Profiling (CTI)",
     "threat_profiling_fimi": "Threat Profiling (FIMI)",
-    "threat_profiling_leo": "Threat Profiling (Law enforcement)",
+    "threat_profiling_leo": "Threat Profiling (Law Enforcement)",
     "threat_profiling_faml": "Threat Profiling (Fraud & AML)",
     "threat_hunting": "Threat Hunting",
-    "strategic_reporting": "Strategic Reporting (For Executives)",
-    "technical_reporting": "Strategic Reporting (for Analysts)'",
+    "strategic_reporting": "Strategic Reporting (for Executives)",
+    "technical_reporting": "Technical Reporting (for Analysts)",
     "incident_response": "Coordinating Incident Response",
     "security_stack": "Integrating Security Stack",
     "detection_engineering": "Detection Engineering",
@@ -142,6 +227,22 @@
   "DisableUserDialog": {
     "TextDisableThisUser": "Are you sure you want to disable this user {email} ?"
   },
+  "EpicForm": {
+    "Error": {
+      "Title": "Title is required",
+      "ShortDescription": "Short description is required",
+      "ShortDescriptionMax": "Short description must be 215 characters or fewer",
+      "DescriptionMax": "Description must be 500 characters or fewer",
+      "ProblemToSolve": "Problem to solve is required",
+      "ProblemToSolveMax": "Problem to solve must be 500 characters or fewer",
+      "ProposedSolution": "Proposed solution is required",
+      "ProposedSolutionMax": "Proposed solution must be 500 characters or fewer",
+      "ExpectedValue": "Expected value is required",
+      "ExpectedValueMax": "Expected value must be 500 characters or fewer",
+      "Product": "At least one product is required",
+      "SlackLink": "Must be a filigran-community Slack link"
+    }
+  },
   "Epic": {
     "XTMRoadmap": "XTM Platform Roadmap",
     "AllProducts": "All products",
@@ -165,29 +266,68 @@
       "Epic": "Epic",
       "Title": "Title",
       "ShortDesc": "Short description",
-      "Description": "Description",
+      "Description": "Full description",
+      "ProblemToSolve": "Problem to Solve",
+      "ProposedSolution": "Proposed Solution",
+      "ExpectedValue": "Expected Value",
       "EditionType": "Edition Type",
       "FiligranProduct": "Product",
       "FiligranProductPlaceholder": "OpenCTI",
+      "SlackLink": "Slack link",
+      "SlackLinkPlaceholder": "Pick a channel or paste a Slack link",
       "Timeline": "Timeline",
       "IsActive": "Is this epic published? (By default your epic is in draft mode)",
       "Integration": "Is an integration",
-      "IsLimited": "Limited to {maxChars} chars",
-      "AutomaticallyAdded": "Added automatically (not editable)"
+      "AutomaticallyAdded": "Added automatically (not editable)",
+      "CharacterCount": "{count} / {maxChars}",
+      "Placeholder": {
+        "Title": "e.g. Users can see all their active trials in one place",
+        "ShortDesc": "One sentence shown on the roadmap card",
+        "Description": "Explain the epic in more depth: context, scope, constraints",
+        "ProblemToSolve": "Pain points felt by the user",
+        "ProposedSolution": "How we plan to solve it",
+        "ExpectedValue": "What we gain once it ships"
+      },
+      "DetailsSection": "Epic details",
+      "PublishNow": "Publish now",
+      "PublishNowHint": "(otherwise saved as draft)",
+      "EditionTypeInfo": "Partial EE: works in Community Edition but some options need Enterprise Edition",
+      "TimelineOption": {
+        "now": "Now",
+        "next": "Next",
+        "under_consideration": "Under consideration",
+        "finished": "Finished"
+      }
     },
     "EpicActions": {
       "CreateEpic": "Create a new epic",
       "UpdateEpic": "Update an epic",
       "DeleteEpic": "Delete {epicName} epic",
       "SureDeleteEpic": "Are you sure you want to delete the {epicName} epic?",
-      "EpicDeleted": "The epic was deleted"
+      "EpicDeleted": "The epic was deleted",
+      "CreateEpicButton": "Create epic",
+      "UpdateEpicButton": "Update epic"
     },
     "JoinCommunity": "Stay in the loop on the Filigran Community"
+  },
+  "FeatureVoting": {
+    "Title": "Vote for upcoming features",
+    "MetaDescription": "Vote for the features you want to see next in OpenCTI, OpenAEV, XTM One and XTM Hub.",
+    "Description": "Help us shape the future of Filigran products: vote for the feature you would like to see next. You have one vote per product, and you can change it at any time.",
+    "OneVotePerProduct": "You have one vote for this product. Voting for another feature moves your vote.",
+    "Vote": "Vote",
+    "Voted": "Your vote",
+    "VoteRecordedTitle": "Vote recorded",
+    "VoteRecordedDescription": "Thank you! Your vote has been taken into account.",
+    "NoOpenRound": "No feature vote is open at the moment. Come back soon!",
+    "CalloutTitle": "Help shape the roadmap",
+    "CalloutSubtitle": "A feature vote is open right now: tell us what you want to see next.",
+    "CalloutButton": "Vote for your next feature"
   },
   "Error": {
     "AnErrorOccured": "An error occurred",
     "Login": {
-      "LoginError": "You are not allowed to login"
+      "LoginError": "You are not allowed to log in"
     },
     "Server": {
       "ACCEPT_USER_IN_PENDING_ORGA_ERROR": "Error occurred while accepting users",
@@ -199,25 +339,51 @@
       "CAN_UNREGISTER_PLATFORM_UNKNOWN_ERROR": "An unknown error occurred during platform disconnection",
       "CANT_ADD_DISABLED_USER": "You cannot add a user that is disabled in the platform",
       "CANT_ADD_USER_TO_PERSONAL_SPACE": "You cannot add a user to your personal space",
+      "CANT_CANCEL_BUNDLE_PRODUCT": "A single product of an XTM Platform Trial cannot be cancelled",
+      "CANT_DELETE_BLOGPOST_NEWS_FEED_ITEM": "You cannot delete a blogpost: it is managed by the synchronization",
+      "CANT_DELETE_BUILTIN_USER": "This built-in user cannot be deleted",
+      "CANT_DELETE_YOURSELF": "You cannot delete your own account",
       "CANT_REMOVE_LAST_ADMINISTRATOR": "You cannot remove the last administrator of an organization",
+      "CANT_REMOVE_USER_FROM_PERSONAL_SPACE": "You cannot remove a user from a personal space",
       "CANT_REMOVE_YOURSELF_FROM_ORGA_ERROR": "You cannot remove yourself from organization",
       "CANT_REQUEST_FREE_TRIAL": "You cannot request a free trial",
       "CANT_REQUEST_FREE_TRIAL_IN_PERSONAL_SPACE": "You cannot request a free trial in your personal space",
       "CANT_SUBSCRIBE_YOURSELF": "You cannot add yourself",
+      "CAPABILITY_PORTAL_NOT_FOUND": "Unknown capability",
+      "SSO_GROUP_ROLE_PORTAL_NOT_FOUND": "SSO group mapping not found",
+      "SSO_GROUP_ROLE_PORTAL_ALREADY_EXISTS": "This SSO group is already mapped to this role",
+      "ROLE_PORTAL_NOT_FOUND": "Role not found",
+      "ROLE_PORTAL_ALREADY_EXISTS": "This role already exists",
+      "ROLE_PORTAL_PROTECTED": "This role is used by the platform: it cannot be renamed or deleted, and ADMIN must keep BYPASS",
+      "SET_USER_PASSWORD_NOT_ALLOWED": "You are not allowed to set a user's password on this platform",
       "COMPETITOR_DOMAIN_ALREADY_EXISTS": "A competitor with the same domain already exists",
+      "DEPLOYMENT_FEEDBACK_ALREADY_EXISTS": "Deployment feedback already exists",
       "COMPETITOR_NOT_FOUND": "Competitor not found",
+      "CONNECTOR_ID_ALREADY_EXISTS": "A connector with this identifier already exists",
       "CONNECTOR_VERSION_ALREADY_EXISTS": "A connector with this version already exists",
       "CONTACT_TOO_LONG": "The contact is too long",
-      "CREATE_DEPLOYMENT_REQUEST_ERROR": "Error occured while creating a deployment request",
+      "CREATE_DEPLOYMENT_REQUEST_ERROR": "Error occurred while creating a deployment request",
       "DELETE_DOCUMENT_ERROR": "Error while deleting document",
       "DELETE_EPIC_ERROR": "An error occurred while deleting the epic.",
+      "DELETE_ORGANIZATION_BLOCKED_BY_CONNECTED_PRODUCT": "This organization cannot be deleted because it has a connected product.",
       "DELETE_ORGANIZATION_ERROR": "Error while deleting organization",
+      "DELETE_ORGANIZATION_PENDING_USERS": "This organization still has users waiting for approval. Accept or reject them before deleting it.",
+      "DELETE_ORGANIZATION_REQUIRES_SINGLE_USER": "This organization still has several members. Remove them before deleting it.",
       "DELETE_SUBSCRIPTION_ERROR": "Error while deleting the subscription",
+      "DELETE_USER_BLOCKED_BY_CANCELLATION_RECORD": "This user cannot be deleted because they cancelled a deployment request that is still linked to their account.",
+      "DELETE_USER_BLOCKED_BY_DEPLOYMENT_REQUEST": "This user cannot be deleted because deployment requests are linked to their account.",
+      "DELETE_USER_BLOCKED_BY_LAST_ORGANIZATION_MEMBER": "This user cannot be deleted because they are the last member of an organization.",
+      "DELETE_USER_BLOCKED_BY_LINKED_DATA": "This user cannot be deleted because other data is still linked to their account.",
+      "DELETE_USER_BLOCKED_BY_PENDING_USERS": "This user cannot be deleted while one of their organizations still has users waiting for approval.",
+      "DELETE_USER_BLOCKED_BY_PLATFORM_REGISTRATION": "This user cannot be deleted because they registered a platform.",
+      "DELETE_USER_BLOCKED_BY_TRANSFER_REQUEST": "This user cannot be deleted while a personal space transfer request is pending.",
+      "DELETE_USER_ERROR": "Error while deleting user",
       "DEPLOYMENT_REQUEST_HUB_STATUS_NOT_QUEUED": "You can only reorder queued deployment requests.",
       "DEPLOYMENT_REQUEST_NOT_FOUND": "An unknown error occurred",
       "DEPLOYMENT_REQUEST_QUOTA_NOT_FOUND": "Deployment request quota was not found.",
       "DEPLOYMENT_REQUEST_STATUS_UPDATE_NOT_ALLOWED": "An unknown error occurred",
       "DEPLOYMENT_REQUEST_UNKNOWN_ERROR": "An unknown error occurred",
+      "DEPLOYMENT_FEEDBACK_UNKNOWN_ERROR": "An unknown error occurred while sending the feedback",
       "DOCUMENT_CREATE_ERROR": "An error occurred while creating the resource.",
       "DOCUMENT_FILE_MISSING": "Document file is missing",
       "DOCUMENT_MISSING_METADATA": "Document is missing metadata.",
@@ -229,17 +395,20 @@
       "EDIT_ME_USER_ERROR": "Error while editing your profile",
       "EDIT_ORGANIZATION_ERROR": "Error while editing organization",
       "EDIT_USER_ERROR": "Error while editing user",
-      "EDIT_USER_SESSION_ERROR": "An unknown error occurred",
       "EMAIL_OUTSIDE_ORGANIZATION_ERROR": "You cannot add a user whose email domain is outside your organization",
       "EPIC_CREATE_ERROR": "An error occurred while creating the epic.",
       "EPIC_UPDATE_ERROR": "An error occurred while updating the epic.",
+      "FORBIDDEN_ACCESS": "You are not allowed to perform this action",
       "FREE_TRIAL_ALREADY_EXISTS": "A free trial already exists for your organization",
       "GRANT_CAPABILITIES_ON_ORGANIZATION_FIRST": "You must grant capabilities on organization first",
-      "HUBSPOT_ERROR": "An error occured while contacting us",
+      "HUBSPOT_ERROR": "An error occurred while contacting us",
       "INCREMENT_SHARE_NUMBER": "Error occurred while incrementing share number",
       "INTEGRATION_TYPE_NOT_MANAGEABLE": "This type of integration is not manageable.",
       "INTEGRATION_TYPE_NOT_RECOGNIZED": "This type of integration is not recognized",
       "INVALID_ACTION_SIZE": "An unknown error occurred",
+      "INVALID_CONTENT_TRANSLATION_KEY": "Invalid content key",
+      "INVALID_DOCUMENT_CREATION_STATUS": "A resource can only be created as a draft or in validation",
+      "INVALID_DOCUMENT_STATUS_TRANSITION": "This status change is not allowed for this resource",
       "INVALID_EMAIL": "The email should be in valid format.",
       "INVALID_IMAGE_URL": "The image URL is not valid",
       "INVALID_MANIFEST_VERSION_FORMAT": "The manifest version format is invalid",
@@ -247,22 +416,33 @@
       "INVALID_PLATFORM_ID": "An unknown error occurred",
       "INVALID_PLATFORM_IDENTIFIER": "Platform identifier is invalid",
       "INVALID_PLATFORM_VERSION": "Invalid platform version",
-      "INVALID_PRODUCTS_FOR_DEPLOYMENT_TYPE": "The selected products are not valid for this deployment type",
+      "INVALID_SSO_GROUP_ROLE_PORTAL": "Invalid SSO group or role",
+      "INVALID_ROLE_PORTAL": "Invalid role",
       "IS_PLATFORM_REGISTERED_UNKNOWN_ERROR": "An unknown error occurred during product connection",
+      "LOAD_CAPABILITIES_ERROR": "An error occurred while loading capabilities",
+      "LIST_FACET_ERROR": "An unknown error occurred while listing facets",
+      "META_DESCRIPTION_INVALID_DASH": "The meta-description must use plain hyphens (-), not long dashes (— or –)",
+      "META_DESCRIPTION_MATCHES_TITLE": "The generated meta-description must not start with the name of the resource",
+      "META_DESCRIPTION_REQUIRED": "The meta-description is required",
+      "META_DESCRIPTION_TOO_SHORT": "The generated meta-description, product and type included, must contain at least 120 characters",
+      "META_DESCRIPTION_TOO_LONG": "The generated meta-description, product and type included, must not exceed 160 characters",
       "MISSING_AUTO_REGISTER_PLATFORM_ARGUMENT": "Missing auto connection product argument",
       "MISSING_CAPABILITY_ON_ORGANIZATION": "Missing permissions",
       "MISSING_CAPABILITY_ON_SERVICE": "Missing permissions",
       "MISSING_METADATA_MAPPING": "Missing metadata mapping",
       "MISSING_START_OR_END_DATE": "An unknown error occurred",
+      "INVALID_USE_CASES_FOR_PRODUCTS": "Use cases do not match the trial products",
       "MIXED_LTS_MANIFEST_FRAGMENTS": "A batch cannot mix LTS and non-LTS fragments",
       "NEWS_FEED_ITEM_MISSING_TITLE": "News feed item is missing title",
       "NEWS_FEED_ITEM_NOT_FOUND": "News feed item not found",
       "NO_ASYNC_CONTEXT_AVAILABLE": "An unknown error occurred",
       "NOT_ALLOWED_BY_DEPLOYMENT_STATUS": "An unknown error occurred",
+      "NOT_FOUND": "The requested resource was not found",
       "ORGANIZATION_NOT_FOUND": "Organization not found",
       "ORGANIZATION_SAME_DOMAIN_EXISTS": "An organization with the same domain already exists",
       "ORGANIZATION_SAME_NAME_EXISTS": "An organization with the same name already exists",
       "ORGANIZATIONS_DOES_NOT_MATCH_SELECTED_ORGANIZATION": "You are not allowed to do this",
+      "PENDING_USER_NOT_FOUND": "This user has no pending request to join the organization",
       "PLATFORM_CONFIGURATION_NOT_FOUND": "Platform configuration was not found",
       "PLATFORM_NOT_REGISTERED": "The platform is not connected",
       "PLATFORM_TYPE_NOT_SUPPORTED": "The platform type is not supported",
@@ -273,16 +453,24 @@
       "REMOVE_USER_FROM_PENDING_ORGA_ERROR": "An error occurred while removing user from a pending organization",
       "SEO_SERVICE_INSTANCE_NOT_FOUND": "SEO Service instance metadata was not found",
       "SERVICE_DEFINITION_NOT_FOUND": "Service definition was not found",
+      "SERVICE_GROUP_NOT_FOUND": "Service group was not found",
       "SERVICE_GROUPS_LINKED_TO_MULTIPLE_SERVICE_INSTANCES": "You are not allowed to do this",
       "SERVICE_INSTANCE_NOT_FOUND": "Service instance was not found",
+      "SERVICE_INSTANCE_NOT_PUBLIC": "You do not have access to this service",
       "SERVICE_NOT_FOUND": "Service was not found",
       "SERVICE_NOT_MANAGEABLE": "This service is not manageable.",
       "SERVICE_SUBSCRIPTION_ERROR": "Error while adding a subscription to the service",
       "SHORT_DESCRIPTION_TOO_LONG": "The short description is too long",
+      "SOLUTION_CATEGORIES_REQUIRED": "At least one solution category is required",
       "SOLUTION_CATEGORY_NOT_FOUND": "Solution category not found",
       "SUBSCRIPTION_NOT_FOUND": "Subscription was not found",
       "TENANT_ID_MANDATORY": "Tenant id is mandatory",
+      "TENANT_ID_NOT_SUPPORTED": "This platform does not support tenants",
+      "TOO_MANY_EMAILS": "You can invite at most 50 emails at once",
+      "TOO_MANY_REQUESTS": "Too many requests. Please try again later.",
       "TRANSFER_ME_ERROR": "Error while requesting personal space transfer.",
+      "TRIAL_PLATFORM_CANNOT_BE_UNREGISTERED": "A trial platform cannot be unregistered",
+      "UNAUTHENTICATED": "You must be signed in to do this",
       "UNKNOWN_ERROR": "An unknown error occurred",
       "UNREGISTER_PLATFORM_UNKNOWN_ERROR": "An unknown error occurred during platform unregistration",
       "UPDATE_PLATFORM_SERVICE_METADATA_ERROR": "An error occurred while updating platform service metadata",
@@ -291,7 +479,24 @@
       "USER_DISABLED": "User is disabled",
       "USER_IS_NOT_IN_ORGANIZATION": "Missing permissions",
       "USER_NOT_FOUND": "User is not found",
-      "YOU_CAN_NOT_LOGIN": "You can not login"
+      "XTM_ONE_ROLE_REQUIRED": "An XTM One role is required",
+      "VOTABLE_FEATURE_NOT_FOUND": "This feature is no longer open for voting",
+      "VOTE_FOR_FEATURE_ERROR": "An error occurred while recording your vote",
+      "YOU_CAN_NOT_LOGIN": "You cannot log in",
+      "VOTING_ROUND_NOT_OPEN": "This voting round is not open",
+      "VOTING_ROUND_CLOSED": "This voting round is closed",
+      "VOTING_ROUND_NOT_FOUND": "Voting round not found",
+      "DELETE_VOTING_ROUND_BLOCKED_BY_VOTES": "This round already collected votes and cannot be deleted",
+      "DELETE_VOTABLE_FEATURE_BLOCKED_BY_VOTES": "This feature already collected votes, deactivate it instead",
+      "VOTING_ROUND_MUTATION_ERROR": "An error occurred while saving the voting round",
+      "OPEN_VOTING_ROUND_WITHOUT_ACTIVE_FEATURE": "This round has no active feature and cannot be opened",
+      "VOTABLE_FEATURE_PRODUCT_LOCKED": "This feature already collected votes, its product can no longer be changed",
+      "VOTABLE_FEATURE_PRODUCT_NOT_VOTABLE": "This product is not open to voting",
+      "COPY_FEATURES_FROM_ANOTHER_ROADMAP": "Features can only be copied from a round of the same roadmap",
+      "VOTABLE_FEATURE_MUTATION_ERROR": "An error occurred while saving the feature",
+      "INVALID_API_TOKEN": "The token name or expiration date is not valid",
+      "NOT_ALLOWED_WITH_API_TOKEN": "This action is not allowed with an API token",
+      "READ_ONLY_API_TOKEN": "This API token can only read"
     },
     "SomethingWentWrong": "Something went wrong",
     "YouAreNotAuthorized": "You are not authorized to get this page."
@@ -319,7 +524,9 @@
       "GoToPlatform": "Go to {title}",
       "Details": "Details",
       "Documentation": "Documentation",
-      "ConnectPlatform": "Connect {platformName}"
+      "ConnectProduct": "Connect product",
+      "Trial": "Trial",
+      "EE": "EE"
     }
   },
   "HomePage": {
@@ -338,12 +545,7 @@
     "RegisteredPlatformsCard": {
       "RegisteredOn": "on",
       "Contract": "Contract",
-      "Remaining": "remaining",
-      "DaysRemaining": "{days, plural, =1 {# day} other {# days}}"
-    },
-    "TryOtherPlatform": {
-      "Title": "Extend and scale your XTM Platform",
-      "Cta": "Try {productName}"
+      "DaysRemaining": "<badge>{days, plural, =1 {# day} other {# days}}</badge> remaining"
     }
   },
   "PublicHomePage": {
@@ -369,24 +571,24 @@
     "NotFound": "404 | This page could not be found"
   },
   "AppFooter": {
-    "AllRightsReserved": "All rights reserved",
+    "AllRightsReserved": "All rights reserved.",
     "FiligranWebsite": "Filigran website",
     "Documentation": "XTM Hub documentation",
     "PrivacyPolicy": "Privacy Policy",
-    "TermsOfServices": "Terms of Services",
+    "TermsOfService": "Terms of Service",
     "Licenses": "Licenses"
   },
   "PublicLayout": {
-    "SignIn": "Sign In",
-    "Login": "Login",
-    "SignUp": "Sign Up"
+    "SignIn": "Sign in",
+    "Login": "Log in",
+    "SignUp": "Sign up"
   },
   "PublicResourcePage": {
     "Download": "Download",
     "Overview": "Overview"
   },
   "InviteUserServiceForm": {
-    "Description": "Additional capability: By default, your user invited to a service will have access the service. If you want to grant additional capability, select the capability/ies you want to grant to your user.",
+    "Description": "Additional capability: By default, your user invited to a service will have access to the service. If you want to grant additional capability, select the capability/ies you want to grant to your user.",
     "DisabledCapability": "if you want to give capabilities to your users on this service, first grant the activation on the organization level",
     "Email": "Email",
     "GrantCapability": "Grant capability",
@@ -406,6 +608,28 @@
     "Color": "Color",
     "Name": "Name",
     "Product": "Product"
+  },
+  "RoleListPage": {
+    "SsoGroup": "SSO group",
+    "SsoGroups": "SSO groups",
+    "Role": "Role",
+    "Capabilities": "Capabilities",
+    "AddMapping": "Add SSO Group",
+    "EditMapping": "Edit SSO Group",
+    "DeleteDialog": {
+      "Title": "Delete SSO Group",
+      "Text": "Are you sure you want to delete SSO Group?"
+    },
+    "AddRole": "Add role",
+    "EditRole": "Edit role",
+    "DeleteRoleDialog": {
+      "Title": "Delete role",
+      "Text": "Are you sure you want to delete the role {rolePortal}? Its SSO group mappings and user assignments will be removed too."
+    },
+    "Error": {
+      "SsoGroup": "SSO group is required",
+      "Role": "Role is required"
+    }
   },
   "SolutionCategory": {
     "Actions": {
@@ -436,8 +660,9 @@
   "LoginPage": {
     "DontHaveAccount": "Don't have a Filigran account?",
     "Email": "Email",
-    "Login": "Login",
-    "Logout": "Logout",
+    "Login": "Log in",
+    "Logo": "XTM Hub logo",
+    "Logout": "Log out",
     "Password": "Password",
     "SignIn": "Sign in",
     "SignUp": "Sign up",
@@ -449,10 +674,34 @@
     "Subtitle": "XTM Hub, Filigran Academy and Live Demo.",
     "AlreadyHaveAccount": "Already have an account?",
     "LogIn": "Log in",
-    "LoginWithLocal": "Login with local",
+    "LoginWithLocal": "Log in with local",
     "MadeBy": "Made by",
     "WelcomeTitle": "Welcome to XTM Hub",
-    "WelcomeSubtitle": "Extend and scale your XTM Platform"
+    "WelcomeSubtitle": "Extend and scale your XTM Platform",
+    "EmailNotVerifiedError": {
+      "Title": "Email address not verified",
+      "Description": "Please verify your email address using the link we sent you, then log in again."
+    },
+    "ResendVerificationEmail": {
+      "Button": "Resend verification email",
+      "Sent": "Email sent",
+      "Success": {
+        "Title": "Verification email sent",
+        "Description": "Check your inbox and spam folder."
+      },
+      "TooManyRequests": {
+        "Title": "Too many requests",
+        "Description": "Please wait a few minutes before requesting a new one."
+      },
+      "NoPendingVerification": {
+        "Title": "Unable to resend the verification email",
+        "Description": "Please log in again to receive a new one. If the issue persists, contact us for assistance."
+      },
+      "Failed": {
+        "Title": "Unable to send the verification email",
+        "Description": "Something went wrong. Please try again later."
+      }
+    }
   },
   "MenuActions": {
     "Continue": "Continue",
@@ -463,7 +712,7 @@
   },
   "Menu": {
     "XTMPlatform": "XTM Platform",
-    "StartFreeTrial": "Start Free Trial",
+    "XTMPlatformTrial": "XTM Platform Trial",
     "CustomDashboards": "Custom Dashboards",
     "CustomViews": "Custom Views",
     "Integrations": "Integrations",
@@ -472,6 +721,7 @@
     "Documentation": "Documentation",
     "Scenarios": "Scenarios",
     "XTMRoadmap": "XTM Platform Roadmap",
+    "FeatureVoting": "Feature Voting",
     "FiligranAcademy": "Filigran Academy",
     "Blog": "Blog",
     "Slack": "Slack",
@@ -483,29 +733,38 @@
   },
   "MenuLinks": {
     "Home": "Home",
-    "UseCase": "Use Case",
-    "SolutionCategory": "Solution category",
-    "Organization": "Organization",
-    "Parameter": "Parameter",
     "Profile": "Profile",
     "Security": "Security",
-    "Service": "Service",
     "Settings": "Settings",
     "SettingsLabel": "Settings menu",
     "Users": "Users",
-    "OpenCTITrial": "OpenCTI Trial",
-    "OpenAEVTrial": "OpenAEV Trial",
-    "Competitor": "Competitor",
-    "NewsFeed": "News Feed"
+    "NewsFeed": "News feed",
+    "VotingRound": "Feature voting",
+    "Roles": "Roles",
+    "CSMBoard": "CSM board",
+    "Parameters": "Parameters",
+    "Organization": "Organization",
+    "Competitors": "Competitors",
+    "Trials": "Trials",
+    "UseCases": "Use cases",
+    "SolutionCategories": "Solution categories",
+    "Services": "Services",
+    "SettingsAccess": "Access",
+    "SettingsCommunity": "Community",
+    "SettingsManagement": "Management",
+    "ServiceCatalog": "Service catalog",
+    "RegisteredPlatforms": "Registered platforms"
   },
   "NewsFeedAdminPage": {
     "Title": "Title",
     "Library": "Library",
+    "Blogpost": "Blogpost",
     "CreationDate": "Creation date",
     "Tags": "Tags",
     "IsDeleted": "Deleted",
     "IsDeletedYes": "Deleted",
     "Delete": "Delete",
+    "DeleteBlogpostDisabled": "Blogposts are managed by the synchronization and cannot be deleted",
     "DeleteSuccess": "The news feed item \"{title}\" has been deleted successfully",
     "DeleteError": "An error occurred while deleting the news feed item",
     "DeleteDialog": {
@@ -515,7 +774,7 @@
     }
   },
   "Metadata": {
-    "Title": "XTM Hub | Your Gateway to Cyber Threat Intelligence & Breach & Attack Simulation",
+    "Title": "XTM Hub | Your Gateway to Threat Intelligence & Exposure Validation",
     "Description": "XTM Hub is a central forum to access resources, optimize the use of Filigran’s products, and empower the community.",
     "ShortTitle": "XTM Hub | Cyber Threat Intelligence Platform",
     "ShortDescription": "XTM Hub is your gateway to Filigran's cybersecurity solutions.",
@@ -564,6 +823,7 @@
   },
   "OrganizationActions": {
     "ErrorNameAlreadyExists": "The organization {name} already exists.",
+    "LoadOrganizationsError": "The organizations could not be loaded.",
     "OrganizationCreated": "Organization {name} has been created",
     "OrganizationDeleted": "Organization has been deleted",
     "OrganizationUpdated": "Organization {name} has been modified",
@@ -597,7 +857,7 @@
   "OrganizationSwitcher": {
     "PersonalSpace": "Personal space",
     "SelectOrganization": "Select an organization",
-    "SelectedOrganization": "SelectedOrganization",
+    "SelectedOrganization": "Selected organization",
     "Workspace": "Workspace:"
   },
   "TrialsDashboard": {
@@ -607,7 +867,6 @@
       "StartDate": "Start Date",
       "EndDate": "End Date",
       "RemainingDays": "Days remaining",
-      "Status": "Status",
       "Region": "Region",
       "PlatformId": "Platform ID",
       "PlatformUrl": "Platform URL",
@@ -619,7 +878,8 @@
       "CancellationReason": "Cancellation Reason",
       "Available": "Available",
       "Taken": "Taken",
-      "Total": "Total"
+      "Total": "Total",
+      "Products": "Products"
     },
     "TabTitle": {
       "Cancelled": "Cancelled",
@@ -629,46 +889,81 @@
       "Quotas": "Quotas"
     },
     "Toast": {
-      "TrialsReordered": "Trial requests were reordered"
+      "BundleCancelled": "The bundle trial was cancelled successfully.",
+      "BundleReordered": "The bundle has been reordered in the queue."
     },
     "Actions": {
-      "SearchTrials": "Search by email or organization",
+      "SearchTrials": "Search by email, organization or region",
+      "SearchTrialsPlaceholder": "Email, organization or region",
       "MoveToTop": "Move to top",
-      "MoveUp": "Move up"
+      "MoveUp": "Move up",
+      "CancelBundle": "Cancel the bundle trial"
     },
     "UpdateQuotasForm": {
-      "Title": "Update quotas for {platform} in {region}",
       "QuotasUpdated": "Quota has been updated successfully",
       "NewCapacityLabel": "New quota capacity",
       "AlertDialog": {
         "ConfirmTitle": "Quota Update for Region {region}",
         "ConfirmDescription": "You’ve updated the quotas for Region {region} from {oldCapacity} to {newCapacity}.",
         "ConfirmSentence": "Are you sure you want to save these changes?"
-      }
+      },
+      "BundleTitle": "Update the bundle quota in {region}"
     },
     "WarningCancellation": "Any cancellation will prevent that organization to ask for a new trial",
     "Registered": "Connected",
-    "NotRegistered": "Not Connected"
+    "NotRegistered": "Not Connected",
+    "ProductStatus": {
+      "queued": "Queued",
+      "pending": "Pending",
+      "provisioning": "Provisioning",
+      "active": "Active",
+      "expired": "Expired",
+      "cancelled": "Cancelled",
+      "failed": "Failed"
+    },
+    "Cancellation": {
+      "Confirmation": "Are you sure you want to cancel the bundle trial of {organizationName}? Every product of the bundle will be cancelled."
+    }
   },
   "Parameters": {
     "Version": "Version"
   },
   "PendingUserListPage": {
     "TabTitle": "Users Requests ({usersCount})",
+    "Reject": "Reject",
+    "Approve": "Approve",
+    "ActionSuccessApprove": "User request for {email} has been approved",
+    "ActionSuccessDeny": "User request for {email} has been denied",
+    "WarningUserAccept": {
+      "Confirm": "Confirm",
+      "Description": "<strong>{email}</strong> will be added to your organization without any permissions by default. You can manage their access & permissions anytime from the <strong>Users</strong> tab on the left menu.",
+      "Title": "Add this user to your organization?"
+    },
     "WarningUserRejection": {
       "Confirm": "Confirm",
-      "Description": "You are about to refuse this user from your organization. This action can’t be undone. Are you sure ?",
-      "Title": "Are you sure?"
+      "Description": "<strong>{email}</strong> will be refused from your organization. This action can’t be undone. Are you sure ?",
+      "Title": "Refuse this user from your organization?"
     },
     "WarningUsersRejection": {
       "Confirm": "Confirm",
-      "Description": "You are about to refuse these users from your organization. This action can’t be undone. Are you sure ?",
-      "Title": "Are you sure?"
+      "Description": "Selected users will be refused from your organization. This action can’t be undone. Are you sure ?",
+      "Title": "Refuse these users from your organization?"
     },
     "WarningUsersAccept": {
       "Confirm": "Confirm",
-      "Description": "You are about to accept these users in your organization. These users won’t have any specific permissions by default. If you’d like to assign or update permissions, visit the Users tab. Are you sure ?",
-      "Title": "Are you sure?"
+      "Description": "Selected users will be added to your organization without any permissions by default. You can manage their access & permissions anytime from the <strong>Users</strong> tab on the left menu.",
+      "Title": "Add these users to your organization?"
+    },
+    "AlreadyProcessed": {
+      "Title": "Request already processed",
+      "Description": "This user request has already been approved or denied.",
+      "Confirm": "OK"
+    }
+  },
+  "PendingUserRedirect": {
+    "Unauthorized": {
+      "Title": "Insufficient permissions",
+      "Description": "You do not have the required permissions to manage user requests for this organization."
     }
   },
   "RegistrationDetails": {
@@ -678,7 +973,92 @@
   "PlatformIdentifier": {
     "openaev": "OpenAEV",
     "opencti": "OpenCTI",
-    "xtmhub": "XTM Hub"
+    "xtmhub": "XTM Hub",
+    "xtmone": "XTM One"
+  },
+  "ApiTokens": {
+    "Column": {
+      "Expires": "Expires",
+      "LastUsed": "Last used",
+      "Name": "Name",
+      "Organization": "Organization",
+      "Scope": "Scope",
+      "Status": "Status"
+    },
+    "Create": {
+      "Description": "The token acts as you in the organization you choose, with the scope you choose.",
+      "Open": "Create token",
+      "Submit": "Create token",
+      "Title": "Create an API token"
+    },
+    "Created": {
+      "Copied": "Token copied",
+      "Copy": "Copy token",
+      "CopyFailed": "The token could not be copied: select it and copy it by hand.",
+      "Description": "This is the only time the token {name} is shown. Store it in a secret manager; if you lose it, revoke it and create a new one.",
+      "Done": "Done",
+      "Helper": "Send it in the Authorization header: Bearer followed by the token.",
+      "Title": "Copy your API token now",
+      "Token": "API token"
+    },
+    "Description": "Tokens let a script or an integration such as Filigran Copilot call the XTM Hub API as you, in one organization. A token never has more rights than you.",
+    "Empty": "No API token yet. Create one to connect a script or an integration.",
+    "Field": {
+      "Expiration": "Expiration",
+      "ExpiresOn": "Expires on {date}",
+      "Name": "Name",
+      "NameError": "Enter a name of 100 characters at most",
+      "NameHelper": "What uses this token, so you recognise it later.",
+      "NamePlaceholder": "Filigran Copilot",
+      "Organization": "Organization",
+      "OrganizationError": "Choose an organization",
+      "Scope": "Scope",
+      "ExpirationInfo": "After this date the API refuses the token and you create a new one. Example: 90 days for an integration. A shorter lifetime limits the damage of a leaked token.",
+      "InfoLabel": "About {field}",
+      "NameInfo": "A label for you only, the API never reads it. Example: Filigran Copilot. It cannot be changed later: revoke the token and create a new one.",
+      "OrganizationHelper": "The token cannot switch to another organization.",
+      "OrganizationInfo": "The token works in this organization only, with your rights there. Example: your company's organization. To reach another organization, create another token.",
+      "ScopeInfo": "How far the token can go, never beyond your own rights. Example: Read for a dashboard, Read and write for an integration that creates content."
+    },
+    "Lifetime": "{count, plural, one {# day} other {# days}}",
+    "NeverUsed": "Never used",
+    "PersonalSpace": "Personal space",
+    "Revoke": "Revoke",
+    "RevokeDialog": {
+      "Text": "Every script or integration using {name} loses access at once. This cannot be undone.",
+      "Title": "Revoke this API token?"
+    },
+    "RevokeNamed": "Revoke the token {name}",
+    "Revoked": "Token {name} revoked",
+    "Scope": {
+      "admin": "Admin",
+      "read": "Read",
+      "read_write": "Read and write"
+    },
+    "ScopeHelp": {
+      "admin": "Admin: your organization and platform administration rights, as you have them today. Give it only to a tool you trust.",
+      "read": "Read: queries only, without organization administration. Nothing can be changed.",
+      "read_write": "Read and write: queries and changes, without organization administration or platform administration."
+    },
+    "Status": {
+      "active": "Active",
+      "expired": "Expired",
+      "revoked": "Revoked"
+    },
+    "Title": "API tokens",
+    "ScopeOption": {
+      "admin": "Your administration rights too, as you have them.",
+      "read": "Queries only, without administration. Nothing can be changed.",
+      "read_write": "Queries and changes, without administration."
+    },
+    "Toolbar": {
+      "AllOrganizations": "All organizations",
+      "AllScopes": "All scopes",
+      "AllStatuses": "All statuses",
+      "NoMatch": "No token matches the search or the filters.",
+      "Search": "Search by name or prefix",
+      "Total": "{count, plural, one {# token} other {# tokens}}"
+    }
   },
   "ProfilePage": {
     "Picture": "Picture",
@@ -694,10 +1074,10 @@
     "UpdatePicture": "Update picture",
     "UpdateProfile": "Update profile",
     "PersonalSpace": {
-      "SuccessTransfer": "Personal space successfully transfered",
+      "SuccessTransfer": "Personal space successfully transferred",
       "SuccessRequest": "Personal space transfer request successfully sent",
       "TitleDangerZone": "Transfer of personal space",
-      "TransferPersoSpaceExplanation": "You can request a personal space transfer for all of your subscriptions (the other account must already exists).",
+      "TransferPersoSpaceExplanation": "You can request a personal space transfer for all of your subscriptions (the other account must already exist).",
       "EmailPlaceholder": "email.i.want.to.transfer.to@email.com",
       "TransferPersoSpace": "Transfer personal space",
       "Transfer": "Transfer",
@@ -741,7 +1121,7 @@
         "NotConnected": "Connection lost",
         "NotConnectedDetails": "You should connect your product again."
       },
-      "Description": "Click here to access your Private Product.",
+      "OrganizationName": "Organization: {name}",
       "ProductName": "Product name",
       "Product": "Product",
       "ProductURL": "Product URL",
@@ -753,12 +1133,94 @@
       "Status": "Status",
       "PrivatePlatform": "Private platform",
       "LastConnectionCheck": "Last connection check",
-      "Access": "Access"
+      "Access": "Access",
+      "PlatformInformation": "Platform information",
+      "PlatformVersion": "Platform version"
+    },
+    "Metrics": {
+      "AccessRequest": {
+        "Title": "Ask for access to SaaS metrics",
+        "Description": "SaaS metrics show this platform's storage, availability and subscription. To see them, you need the \"Manage platform registration\" capability.",
+        "AdministratorList": "An organization administrator can grant it to you:",
+        "SeeDocumentation": "See documentation",
+        "EmailSubject": "Access to the SaaS metrics of {platform}",
+        "EmailBody": "Hello,\n\nCould you please grant me the \"Manage platform registration\" capability so that I can see the SaaS metrics of {platform}?\n\nThank you!"
+      },
+      "Title": "Usage & health",
+      "StorageTitle": "Storage consumption",
+      "Unavailable": "The metrics are currently unavailable",
+      "Period": {
+        "Label": "Metrics period",
+        "last_30_days": "30 days",
+        "last_90_days": "90 days",
+        "last_180_days": "180 days",
+        "ComingSoon": "Coming soon"
+      },
+      "Database": {
+        "Title": "Database",
+        "Subtitle": "Knowledge, relationships, history and logs"
+      },
+      "FileStorage": {
+        "Title": "File storage",
+        "Subtitle": "Imported files, reports and attachments"
+      },
+      "SLA": {
+        "Title": "Availability (SLA)",
+        "Subtitle": "Calculated per calendar month, as in your contract",
+        "MonthRange": "{start} – {end}",
+        "MonthToDate": "{month} (to date)",
+        "OnTarget": "{availability} · On target",
+        "BelowTarget": "{availability} · Below target",
+        "NoData": "No data",
+        "NotTrackedYet": "No data · The metrics had not been measured yet",
+        "Summary": {
+          "Title": "Monthly SLA · target {target}",
+          "CurrentMonth": "{month} · month to date",
+          "TargetAndMeasuredDays": "Target {target} · {measured} of {total} days measured"
+        },
+        "Legend": {
+          "Met": "On target",
+          "Missed": "Below target",
+          "Unknown": "Rest of the month"
+        }
+      },
+      "Metadata": {
+        "Hostname": "Host name",
+        "CopyHostname": "Copy host name",
+        "SubscribedPlan": "Subscribed plan",
+        "Contract": "Contract",
+        "RegionalArea": "Regional area",
+        "DaysLeft": "{days, plural, =1 {# day left} other {# days left}}",
+        "Unavailable": "The information is currently unavailable"
+      },
+      "Capacity": {
+        "Within": "Within capacity",
+        "Approaching": "Approaching capacity",
+        "Over": "Over capacity"
+      },
+      "ByteSize": {
+        "Byte": "{value} B",
+        "Kibibyte": "{value} KiB",
+        "Mebibyte": "{value} MiB",
+        "Gibibyte": "{value} GiB",
+        "Tebibyte": "{value} TiB",
+        "Pebibyte": "{value} PiB"
+      },
+      "MaxCapacity": "Max capacity",
+      "UsedOfLimit": "<highlight>{used}</highlight> <secondary>of {limit}</secondary>",
+      "GuidedTourAvailability": "Guided tour only available to CSM",
+      "Tour": {
+        "Source": "These metrics come from the SaaS Manager. XTM Hub shows them as they are, without any processing.",
+        "Database": "This chart shows the {database} usage of the platform compared to what the customer's plan allows. It is not the Grafana dashboard: Grafana compares the raw usage to the disk size allocated to the platform, a safeguard that keeps the platform from crashing, so it can never go above 100%. Here, the usage is compared to what the customer pays for, and can go over 100%.",
+        "FileStorage": "This chart shows the S3 file storage usage of the platform compared to what the customer's plan allows. As for the database, it is not the Grafana dashboard: Grafana compares the raw usage to the disk size allocated to the platform, a safeguard that keeps the platform from crashing, so it can never go above 100%. Here, the usage is compared to what the customer pays for, and can go over 100%.",
+        "ChartAxes": "On each chart, the horizontal axis shows time and the vertical axis the storage used, in GiB. Change the period shown by clicking 30, 90 or 180 days at the top.",
+        "Sla": "This chart shows the SLA availability of the platform, day by day. Green bars are at or above the contractual rate ({target}), orange ones below it. Grey bars have no data, or no data yet."
+      }
     },
     "Error": {
       "Capability": {
         "AdminListTitle": "The administrators of your organization are the following:",
-        "Description": "If you want to proceed with the registration of your {platformIdentifier} platform in XTM Hub, you need to contact an admininistrator from your organization on XTM Hub who has the appropriate permissions to proceed.",
+        "Description": "If you want to proceed with the registration of your {platformIdentifier} platform in XTM Hub, you need to contact an administrator from your organization on XTM Hub who has the appropriate permissions to proceed.",
         "Title": "You do not have the necessary {capability} access on the XTM Hub"
       }
     },
@@ -787,7 +1249,7 @@
       "Error": {
         "Capability": {
           "AdminListTitle": "The administrators of your organization are the following:",
-          "Description": "If you want to proceed with the registration of your OpenCTI platform in XTM Hub, you need to contact an admininistrator from your organization on XTM Hub who has the appropriate permissions to proceed.",
+          "Description": "If you want to proceed with the registration of your OpenCTI platform in XTM Hub, you need to contact an administrator from your organization on XTM Hub who has the appropriate permissions to proceed.",
           "Title": "You do not have the necessary {capability} access on the XTM Hub"
         }
       },
@@ -864,8 +1326,9 @@
       "opencti_integrations": "OpenCTI Integrations",
       "opencti_playbooks": "OpenCTI Playbooks",
       "opencti_registration": "OpenCTI Registration",
-      "vault": "Vault",
-      "xtm_platform_roadmap": "XTM Platform Roadmap"
+      "xtm_platform_bundle": "XTM Platform Trial",
+      "xtm_platform_roadmap": "XTM Platform Roadmap",
+      "xtmone_registration": "XTM One Registration"
     },
     "Capabilities": {
       "AccessServiceDescription": "You just have access to a service",
@@ -874,6 +1337,31 @@
       "ManageAccessDescription": "You can access the service and invite users to this service",
       "ManageAccessName": "Manage access",
       "SelectCapabilities": "Select capabilities"
+    },
+    "CsvExport": {
+      "TriggerButton": "Export CSV",
+      "DialogTitle": "Export integrations to CSV",
+      "DialogDescription": "Choose which fields and filters to include in the exported CSV file.",
+      "ColumnsLabel": "Fields to export",
+      "ColumnsPlaceholder": "Select fields to include",
+      "FiltersLabel": "Filters",
+      "ExportButton": "Export",
+      "SuccessToast": "CSV export started.",
+      "ErrorToast": "We couldn't export the integrations list. Please try again.",
+      "Columns": {
+        "IntegrationType": "Integration type",
+        "UseCase": "Use case",
+        "DeploymentType": "Deployment type",
+        "VerificationStatus": "Status",
+        "SolutionCategory": "Solution category",
+        "LicenseType": "License type",
+        "ShortDescription": "Short description",
+        "LongDescription": "Long description",
+        "FeedUrl": "Feed URL",
+        "OpenctiDocumentation": "OpenCTI documentation",
+        "VendorUrl": "Vendor URL",
+        "DemoLink": "Demo link"
+      }
     },
     "Cards": {
       "filigran-academy": {
@@ -935,11 +1423,15 @@
       "xtm-platform-roadmap": {
         "Name": "XTM Platform Roadmap",
         "Description": "Explore and follow the Filigran XTM Platform roadmap."
+      },
+      "xtmone-documentation": {
+        "Name": "XTM One Documentation",
+        "Description": "Technical docs and user guides to help you understand how the platform works"
       }
     },
     "LibraryHero": {
       "Eyebrow": "Filigran's resources",
-      "DefaultDescription": "Connect your OpenCTI or OpenAEV product to deploy pre-built content in one click, stay up to date with product newsfeeds, start free trials, and simply get more out of your XTM platform experience."
+      "DefaultDescription": "Connect your OpenCTI or OpenAEV product to deploy pre-built content in one click, stay up to date with product newsfeeds, start free trials, and simply get more out of your XTM Platform experience."
     },
     "Connectors": {
       "DataImport": "Data Import",
@@ -952,23 +1444,27 @@
       "Search": "Search a connector with name...",
       "VendorContact": "Vendor Contact",
       "VisitVendor": "Visit the vendor's page to learn more and get in touch",
+      "CompatibleWith": "This connector version is compatible with {compatiblePlatforms}.",
+      "PartiallyCompatible": "This connector version is compatible with {compatiblePlatforms}, but {incompatiblePlatforms} {count, plural, =1 {needs} other {need}} to be updated.",
       "Incompatible": "{platformToBeUpdated} {count, plural, =1 {needs} other {need}} to be updated to deploy this connector.",
       "UnavailableDeployments": "This connector is not available for automatic deployment."
     },
     "CreationStatus": "Creation status",
+    "FilterByService": "Filter by service",
     "Form": {
+      "AddImage": "Add image",
       "Author": "Author",
       "CapabilityAccessLabel": "{name} access: {description}",
       "ContainerImageLabel": "Container image",
       "CurrentLogo": "Current logo",
       "DatasheetUrlLabel": "Datasheet link (url)",
       "BlogpostUrlLabel": "Blogpost link (url)",
+      "DeleteImage": "Delete image",
       "DeleteSentence": "After clicking that button, click VALIDATE to permanently delete this image.",
       "DemoUrlLabel": "Demo link (url)",
       "DescriptionLabel": "Description",
       "DescriptionPlaceholder": "This is a paragraph to describe the {documentType}.",
       "DescriptionUpdateJSONFile": "You're about to upload a new json file. The previous json file will be deleted. Do you want to continue?",
-      "DropDocuments": "Drop documents here",
       "ExistingJSONFile": "Existing JSON file: {file_name}",
       "GithubUrlLabel": "Github link (url)",
       "Illustration": "Illustration",
@@ -978,19 +1474,19 @@
       "LogoLabel": "Logo",
       "ManagerSupportedLabel": "Manager supported",
       "ManageAccessCapabilityLabel": "Manage access: The user can invite other users from his/her organization to this service",
+      "MetaDescriptionCurrentLength": "{error} (currently {length} characters)",
+      "MetaDescriptionLabel": "Meta-description",
+      "MetaDescriptionPlaceholder": "For SEO: the whole sentence needs 120 to 160 characters, with plain hyphens (-) only, no long dashes (— or –).",
       "MinimumDeployableVersionLabel": "{platform} deployable from hub version",
       "MinimumDeployableVersionPlaceholder": "1.0.0",
       "NameLabel": "Name",
       "NamePlaceholder": "{documentType} name",
-      "NoImage": "No image selected",
       "PlaybookSupportedLabel": "Playbook supported",
       "ProductVersionLabel": "{platform} compatibility version",
       "ProductVersionPlaceholder": "1.0.0",
-      "PublishedPlaceholder": "Is the {documentType} published?",
       "LicenseTypeLabel": "License type",
       "Restore": "Restore",
       "SelectImage": "Select image(s)",
-      "SelectIntegrationSubType": "Subtype",
       "SelectJSONFile": "Select JSON file",
       "ShortDescriptionLabel": "Short Description",
       "ShortDescriptionPlaceholder": "This is some catchphrases to describe the document.",
@@ -1001,7 +1497,6 @@
       "SolutionCategoriesPlaceholder": "Add solution categories",
       "SubscriptionLinkLabel": "Subscription link (url)",
       "UpdateJSONFile": "Update JSON file",
-      "UploadImage": "Upload new image(s)",
       "UploadLogo": "Upload new logo",
       "UrlPlaceholder": "http://www.example.com",
       "UseCasesLabel": "Use cases",
@@ -1009,7 +1504,11 @@
       "VendorUrlLabel": "Vendor link (url)",
       "VerifiedLabel": "Verified",
       "EntityTypesLabel": "Entity types",
-      "EntityTypesPlaceholder": "Add entity types"
+      "EntityTypesPlaceholder": "Add entity types",
+      "SaveAsDraft": "Save as draft",
+      "RequestValidation": "Request validation",
+      "Save": "Save",
+      "Publish": "Publish"
     },
     "OpenctiIntegrations": {
       "Actions": {
@@ -1018,17 +1517,9 @@
       "AddService": "Add new Integration",
       "IntegrationType": "Integration type",
       "Filter": {
-        "IntegrationSubType": {
-          "Label": "Subtype",
-          "Placeholder": "Subtype..."
-        },
         "Type": {
           "Label": "Integration type",
           "Placeholder": "Integration type..."
-        },
-        "ProductVersion": {
-          "Label": "Connected products",
-          "Placeholder": "Connected products..."
         },
         "ManagerSupported": {
           "Label": "Deployment type",
@@ -1042,15 +1533,21 @@
           "Free": "Free",
           "Commercial": "Commercial"
         },
+        "ProductVersion": {
+          "Label": "OpenCTI compatibility version",
+          "Placeholder": "OpenCTI version...",
+          "RegisteredTooltip": "{count, plural, one {Connected product} other {Connected products}}: {names}"
+        },
         "SolutionCategory": {
           "Label": "Solution category",
           "Placeholder": "Solution category..."
         },
         "Verified": {
-          "Label": "Verification status",
-          "Placeholder": "Verification status...",
-          "Verified": "Verified",
-          "Unverified": "Unverified"
+          "Label": "Status",
+          "Description": "Filter applicable to connectors only",
+          "Placeholder": "Status...",
+          "Verified": "Supported by Filigran",
+          "Unverified": "Supported by Community"
         }
       },
       "Type": {
@@ -1069,10 +1566,8 @@
         "Share": "Share CSV Feed",
         "Updated": "The CSV {name} has been modified successfully"
       },
-      "Active": "Published",
       "AddService": "Add new CSV Feed",
       "DeleteService": "Delete the CSV Feed {name}",
-      "NonActive": "Draft",
       "SureDeleteService": "Are you sure you want to delete the CSV Feed {name}?",
       "UpdateService": "Update the CSV Feed {name}"
     },
@@ -1083,10 +1578,8 @@
         "Share": "Share RSS Feed",
         "Updated": "The RSS {name} has been modified successfully"
       },
-      "Active": "Published",
       "AddService": "Add new RSS Feed",
       "DeleteService": "Delete the RSS Feed {name}",
-      "NonActive": "Draft",
       "SureDeleteService": "Are you sure you want to delete the RSS Feed {name}?",
       "UpdateService": "Update the RSS Feed {name}"
     },
@@ -1097,10 +1590,8 @@
         "Share": "Share TAXII Feed",
         "Updated": "The TAXII {name} has been modified successfully"
       },
-      "Active": "Published",
       "AddService": "Add new TAXII Feed",
       "DeleteService": "Delete the TAXII Feed {name}",
-      "NonActive": "Draft",
       "SureDeleteService": "Are you sure you want to delete the TAXII Feed {name}?",
       "UpdateService": "Update the TAXII Feed {name}"
     },
@@ -1111,10 +1602,8 @@
         "Share": "Share Connector",
         "Updated": "The Connector {name} has been modified successfully"
       },
-      "Active": "Published",
       "AddService": "Add new Connector",
       "DeleteService": "Delete the Connector {name}",
-      "NonActive": "Draft",
       "SureDeleteService": "Are you sure you want to delete the Connector {name}?",
       "UpdateService": "Update the Connector {name}"
     },
@@ -1125,10 +1614,8 @@
         "Share": "Share Stream",
         "Updated": "The Stream {name} has been modified successfully"
       },
-      "Active": "Published",
       "AddService": "Add new Stream",
       "DeleteService": "Delete the Stream {name}",
-      "NonActive": "Draft",
       "SureDeleteService": "Are you sure you want to delete the Stream {name}?",
       "UpdateService": "Update the Stream {name}"
     },
@@ -1139,10 +1626,8 @@
         "Share": "Share Third Party Integration",
         "Updated": "The Third Party Integration {name} has been modified successfully"
       },
-      "Active": "Published",
       "AddService": "Add new Third Party Integration",
       "DeleteService": "Delete the Third Party Integration {name}",
-      "NonActive": "Draft",
       "SureDeleteService": "Are you sure you want to delete the Third Party Integration {name}?",
       "UpdateService": "Update the Third Party Integration {name}"
     },
@@ -1153,10 +1638,8 @@
         "Share": "Share Custom Dashboard",
         "Updated": "The custom dashboard {name} has been modified successfully"
       },
-      "Active": "Published",
       "AddService": "Add new dashboard",
       "DeleteService": "Delete the custom dashboard {name}",
-      "NonActive": "Draft",
       "SureDeleteService": "Are you sure you want to delete the dashboard {name}?",
       "UpdateService": "Update dashboard"
     },
@@ -1176,9 +1659,7 @@
       "AddService": "Add new scenario",
       "UpdateService": "Update the scenario {name}",
       "DeleteService": "Delete the scenario {name}",
-      "SureDeleteService": "Are you sure you want to delete the scenario {name}?",
-      "NonActive": "Draft",
-      "Active": "Published"
+      "SureDeleteService": "Are you sure you want to delete the scenario {name}?"
     },
     "OpenCTIPlaybook": {
       "Actions": {
@@ -1190,14 +1671,28 @@
       "AddService": "Add new playbook",
       "UpdateService": "Update the playbook {name}",
       "DeleteService": "Delete the playbook {name}",
-      "SureDeleteService": "Are you sure you want to delete the playbook {name}?",
-      "NonActive": "Draft",
-      "Active": "Published"
+      "SureDeleteService": "Are you sure you want to delete the playbook {name}?"
     },
     "Description": "Description",
     "GoTo": "Go to service page",
     "GoToAdminLabel": "Manage",
     "List": {
+      "LoadError": "The documents could not be loaded.",
+      "Retry": "Retry",
+      "ViewTab": "Select tab view",
+      "ViewList": "Select list view",
+      "ClearAllFilters": "Clear all",
+      "Filters": "Filters",
+      "FilterInformation": "About this filter",
+      "Tab": {
+        "Name": "Name",
+        "Description": "Description",
+        "UseCase": "Use case",
+        "Action": "Action",
+        "Feature": "Feature",
+        "Type": "Type",
+        "Compatibility": "Compatibility with your product"
+      },
       "Filter": {
         "Add": "Add filter",
         "NoOptions": "No options",
@@ -1208,7 +1703,7 @@
           "license_type": "License type",
           "product_version": "Connected products",
           "manager_supported": "Deployment type",
-          "verified": "Verification status",
+          "verified": "Status",
           "entity_type": "Entity type"
         }
       }
@@ -1259,10 +1754,6 @@
       "NoSubscribedServices": "No subscribed services found for this organization."
     },
     "Organizations": "Organizations",
-    "RegisteredPlatforms": {
-      "PlatformDetails": "Product details",
-      "GoToMyPlatform": "Go to my product"
-    },
     "SearchServices": "Search service...",
     "ServiceName": "Service name",
     "ShareableResources": {
@@ -1311,7 +1802,6 @@
         "IntegrationType": "Type",
         "IntegrationSolutionCategory": "Solution category",
         "IntegrationLicenseType": "License type",
-        "IntegrationSubType": "Subtype",
         "GithubURL": "Github URL",
         "VendorURL": "Vendor URL",
         "FeedURL": "Feed URL",
@@ -1330,201 +1820,350 @@
     "SubscribeService": "Subscribe to {serviceName} service",
     "SubscribeSuccessful": "You have successfully subscribed to the service. You can now find it in your subscribed services.",
     "Trials": {
-      "ExploreBold": "Free Trial!",
-      "ExplorePlatform": "Explore {platformName} platform with 30 days",
-      "ExploreProducts": "Explore OpenCTI or OpenAEV platform with 30 days",
-      "Active": "Your OpenCTI free trial is active",
-      "Provisioning": "Your OpenCTI free trial is currently being provisioned.",
-      "Requested": "Your OpenCTI free trial has been requested.",
-      "Expired": "Your OpenCTI free trial has expired.",
-      "Cancelled": "Your OpenCTI free trial has been cancelled.",
       "CancellationReason": {
         "value": "Intelligence lacks actionable insight for our specific needs",
         "compatibility": "Incompatible with our existing security stack",
         "complexity": "Configuration is too complex to complete within a reasonable timeframe",
         "legal-security": "Internal security or legal team required immediate termination",
-        "expertise": "We lack the internal analysts/expertise to utilise the tool effectively"
-      },
-      "DaysRemaining": "{days, plural, =1 {# Day remaining} other {# Days remaining}}",
-      "Header": {
-        "ActiveTrial": "Active trial",
-        "ActiveTrialCount": "{count} active trial{count, plural, one {} other {s}}",
-        "DaysRemaining": "remaining day",
-        "OpenInNewTab": "Open {title} in new tab"
+        "expertise": "We lack the internal analysts/expertise to utilize the tool effectively"
       },
       "LearnMore": {
-        "Link": "Learn more",
-        "openaev": {
-          "WhatCanYouDo": {
-            "Title": "What can you do with your OpenAEV trial?",
-            "FirstParagraph": "Get 30 days to explore all OpenAEV functionalities to simulate attacks, evaluate your defenses, and  improve your security posture. This includes all OpenAEV SaaS-based Enterprise Edition features, including the use of your existing EDR agents, automated scenario generation, and AI-powered remediation guidance.",
-            "SecondParagraph": "Whether you want to want to simulate attack sequences, perform realistic tabletop exercises, validate your security posture, or report on your cyber resilience to leadership, you can test all OpenAEV capabilities for your specific needs.",
-            "Link": "Discover all OpenAEV Enterprise Edition features"
-          },
-          "Blocks": {
-            "First": {
-              "Title": "Prioritize",
-              "Description": "Build offensive attack simulations to identify vulnerabilities and exploitable attack paths, leveraging OpenCTI threat intelligence and MITRE ATT&CK mapping to prioritize threats based on your PIRs."
-            },
-            "Second": {
-              "Title": "Test",
-              "Description": "Validate your defenses continuously through atomic testing, custom attack sequences, or pre-packaged scenarios. Run tabletop exercises to test team responses, using OpenAEV's native EDR or pre-built integrations with leading vendors."
-            },
-            "Third": {
-              "Title": "Fix",
-              "Description": "Pinpoint where to improve your security posture with drill-down analytics, AI-powered remediation guidance, and team feedback — then close the loop with AI-assisted scenario creation."
-            }
-          }
+        "Link": "Learn more"
+      },
+      "XTMPlatform": {
+        "Title": "Your eXtended Threat Management (XTM) Platform",
+        "xtmone": {
+          "Intro": "XTM One is the agentic AI foundation of Filigran's open-source XTM Platform, which unifies threat intelligence, continuous exposure validation and cyber risk reduction so your organization can anticipate and manage threats end to end.",
+          "Tagline": "Simplify Your Path Towards Agentic Threat Management",
+          "Description": "XTM One orchestrates assistive and agentic AI across the XTM Platform to run your CTEM program from threat signal to validated action at machine speed."
         },
         "opencti": {
-          "WhatCanYouDo": {
-            "Title": "What can you do with your OpenCTI trial?",
-            "FirstParagraph": "Get 30 days to explore all OpenCTI functionalities and enrich your threat intelligence. This includes all OpenCTI Enterprise Edition features such as automated playbooks, ability to set-up priority intelligence requirements (PIRs), FINTEL, as well as AI-powered files import, report generation, and NLP search functionality.",
-            "SecondParagraph": "Explore how OpenCTI can support your specific needs—whether threat hunting, incident response, or case management—and integrate with your preferred data sources to make actionable threat intelligence flow across your security stack.",
-            "Link": "Discover all OpenCTI Enterprise Edition features"
+          "Intro": "OpenCTI is part of Filigran's open-source threat intelligence, advanced adversary simulation, and strategic cyber risk management solution designed to help your organization anticipate and manage threats end-to-end.",
+          "Tagline": "Collect, correlate and leverage",
+          "Description": "An open-source threat intelligence product built by practitioners for practitioners - to break data silos and make threat intelligence truly actionable."
+        },
+        "openaev": {
+          "Intro": "OpenAEV is part of Filigran's open-source threat intelligence, advanced adversary simulation, and strategic cyber risk management solution designed to help your organization anticipate and manage threats end-to-end.",
+          "Tagline": "Prioritize, test and fix what matters",
+          "Description": "Proactively defend against threats with Adversarial Exposure Validation (AEV), simulating real-life attack scenarios to optimize security defenses."
+        },
+        "IllustrationAlt": "Illustration of the {platformName} ecosystem"
+      },
+      "XtmPlatform": {
+        "NoTrial": {
+          "Text": "Start your 30-day free trial and explore the full XTM Platform experience!"
+        },
+        "Active": {
+          "Text": "Explore the full XTM Platform experience during your trial!"
+        },
+        "Ending": {
+          "Text": "Keep exploring the full XTM Platform experience before your trial ends."
+        },
+        "DaysLeft": "{days, plural, =1 {# day left} other {# days left}}",
+        "Feedback": {
+          "Question": "Is your XTM Platform trial experience going well so far?",
+          "Yes": "Yes, so far so good!",
+          "No": "Not really...",
+          "Submit": "Submit",
+          "Justification": "Sorry to hear that. Would you mind sharing the reason?"
+        },
+        "Page": {
+          "Breadcrumb": "XTM Platform Trial",
+          "Overline": "XTM Platform free trial",
+          "Title": "Start your 30-day free trial",
+          "ExpiredTitle": "You have completed your XTM Platform trial",
+          "PitchTitle": "Explore the full XTM Platform experience",
+          "PitchDescription": "Get 30 days to explore the SaaS-based enterprise editions of OpenCTI and OpenAEV, including XTM One's agentic orchestration capabilities. Unify your threat intelligence and validate your defenses with agentic, continuous exposure management and cyber risk reduction.",
+          "Products": {
+            "opencti": {
+              "Tagline": "Unify and prioritize your threat signals",
+              "Description": "Break data silos and operationalize threat intelligence with OpenCTI, an agentic platform built by practitioners, for practitioners, featuring automated playbooks, PIRs, FINTEL, and AI-powered import, reporting, and search. Enterprise-grade governance and sovereignty included."
+            },
+            "openaev": {
+              "Tagline": "Validate your defenses",
+              "Description": "Simulate real attacks against your existing defenses, EDR agents included, with automated scenario generation and AI-powered remediation guidance to see what's actually exploitable. From tabletop exercises to full posture validation and resilience reporting for leadership."
+            },
+            "xtmone": {
+              "Tagline": "Your agentic threat management cockpit",
+              "Description": "XTM One is the AI layer that orchestrates assistive and agentic AI across OpenCTI and OpenAEV. It takes you from threat signal to validated action at machine speed, with a human in the loop, so you can close the loop on CTEM."
+            }
           },
-          "Blocks": {
-            "First": {
-              "Title": "Ingestion",
-              "Description": "Consolidate and enrich threat intelligence from any feed—commercial, open-source, internal—into a centralized platform, leveraging 300+ integrations and standardized on the STIX 2.1 framework. Use AI-assisted import of CTI reports to save countless analyst hours."
+          "Limitations": {
+            "Title": "Trial limitations",
+            "Intro": "The XTM Platform free trial includes all Enterprise Edition SaaS features, but with limited computing power and storage:",
+            "OpenCTI": "For OpenCTI: up to 40GB in intelligence data storage and 3GB in file storage.",
+            "OpenAEV": "For OpenAEV: 16GB",
+            "Ingestion": "Ingesting large premium feeds with rich data sets during this trial could impact your storage quickly.",
+            "NoSLA": "Note that this trial does not include SLAs. In the event of a cloud provider outage, recovery time is not guaranteed. We recommend not storing critical or irreplaceable data in your trial environment."
+          },
+          "Form": {
+            "UseCaseFor": "{product} use case",
+            "Submit": "Request XTM Platform trial"
+          },
+          "NotLoggedIn": {
+            "Title": "To request a trial you need to be logged in.",
+            "Description": "Please create a Filigran account or log in to an existing one."
+          },
+          "NotAdmin": {
+            "Title": "You need the “Manage platform registration” capability to start a trial.",
+            "Description": "Ask an administrator of your organization to grant it.",
+            "AdminListTitle": "{count, plural, =1 {Member who has this capability} other {Members who have this capability}}"
+          },
+          "PersonalSpace": {
+            "Title": "Trials are not available in a personal space"
+          },
+          "Status": {
+            "RequestedOn": "Requested on",
+            "StartedOn": "Started on",
+            "CancelledOn": "Cancelled on",
+            "FinishedOn": "Finished on",
+            "CancelTrialRequest": "Cancel trial request",
+            "request-in-progress": {
+              "Title": "Thanks! We've received your request.",
+              "Description": "Our team will be in touch shortly."
             },
-            "Second": {
-              "Title": "Processing",
-              "Description": "Access powerful dashboard visualizations, knowledge hypergraphs, and playbooks to pivot across threat actors using timelines and ATT&CK mappings. Tailor your dashboards to meet your threat or incident management needs, and make AI your companion at every step."
+            "cancelled": {
+              "Title": "Unfortunately, your trial has been cancelled.",
+              "Description": "You are not eligible to request a new trial. \nIf you would like to use the Enterprise Edition, please contact sales."
             },
-            "Third": {
-              "Title": "Output",
-              "Description": "Make threat intelligence flow through your entire security system. Share and disseminate intelligence across teams and tools with role-based access for timely action. Use OpenAEV—fully integrated with OpenCTI—to validate and improve your security posture."
+            "expired": {
+              "Title": "Thank you for trying out the XTM platform, we hope you enjoyed your experience.",
+              "Description": "Your trial period has now ended. If you would like to continue using the Enterprise Edition, please contact our sales team."
+            },
+            "failed": {
+              "Title": "Your trial request could not be completed",
+              "Description": "Something went wrong while provisioning your trial. Please reach out to sales for assistance."
+            },
+            "Stepper": {
+              "Pending": "Pending",
+              "Provisioning": "Provisioning",
+              "Active": "Active"
             }
           }
         }
-      },
-      "StartTrial": "Start your free trial",
-      "StartTrialWithName": "Start your free {platformName} trial",
-      "OpenAEVPlatformBreadcrumb": "OpenAEV Trial platform",
-      "OpenCTIPlatformBreadcrumb": "OpenCTI Trial platform",
-      "PageHeader": {
-        "Welcome": "Welcome to Filigran",
-        "Title": "Let's get you started with your {platformName} free trial!"
-      },
-      "Storage": {
-        "Title": "Important note about your trial environment's storage",
-        "SaaSFeaturesLink": "Enterprise Edition SaaS features",
-        "NoSLA": "<strong>The free trial environment does not include SLA.</strong> In the event of a cloud provider outage, recovery time is not guaranteed. We recommend not storing critical or irreplaceable data in your trial environment.",
-        "OpenCTIDescription": "The OpenCTI free trial provides users with a \"small\" SaaS instance, which includes all <link>Enterprise Edition SaaS features</link>, but with <strong>reduced computing power and storage (up to 40GB in intelligence data storage and 3GB in file storage).</strong> Ingesting large, premium feed with rich data sets during this trial could impact your storage quickly.",
-        "OpenAEVDescription": "The OpenAEV free trial provides users with a \"small\" instance, which includes all <link>Enterprise Edition SaaS features</link>, but with a reduced computing power and a limited storage of <strong>16GB</strong>."
-      },
-      "XTMPlatform": {
-        "Title": "Your eXtended Threat Management (XTM) product",
-        "Description": "{platformName} is part of Filigran's open-source threat intelligence, advanced adversary simulation, and strategic cyber risk management solution designed to help your organization anticipate and manage threats end-to-end.",
-        "OpenCTITagline": "Collect, correlate and leverage",
-        "OpenCTIDescription": "An open-source threat intelligence product built by practitioners for practitioners - to break data silos and make threat intelligence truly actionable.",
-        "OpenAEVTagline": "Prioritize, test and fix what matters",
-        "OpenAEVDescription": "Proactively defend against threats with Adversarial Exposure Validation (AEV), simulating real-life attack scenarios to optimize security defenses.",
-        "LogoAlt": "{name} Logo",
-        "IllustrationAlt": "Illustration of free trial service"
       },
       "QuickStart": {
         "Title": "Quick start guide",
         "Subtitle": "Get more out of your {platformName} product!",
         "Description": "Explore step-by-step guides, expert courses, and community feedback to solve real-world use cases and become a Filigran champion!"
       },
-      "GoToMyTrial": "Go to my trial",
       "InfoPersonalSpace": "You can’t start a trial in your personal space—please switch to your organization’s space",
       "ReachOutToSales": "Reach out to Sales",
+      "ReachOutToSalesMessageLabel": "Message",
       "ReachOutToSalesMessagePlaceholder": "Your message",
       "NeedSupport": "Need support",
       "ReachOutToSalesSuccessTitle": "Thank you!",
       "ReachOutToSalesSuccessMessage": "Thank you for reaching out, we'll get back to you shortly.",
-      "ReachOutToSalesDefaultMessage": "Type your message to request help",
       "Cancellation": {
         "Toast": {
-          "NoNewTrialPossible": "Thank you, your OpenCTI free trial was cancelled successfully. Please note that new openCTI trials can’t be requested.",
-          "NewTrialPossible": "Thank you, your OpenCTI free trial was cancelled successfully.",
-          "Admin": "The OpenCTI free trial was cancelled successfully."
+          "NoNewTrialPossible": "Thank you, your OpenCTI free trial was cancelled successfully. Please note that new OpenCTI trials can’t be requested."
         },
         "ConfirmationForm": {
-          "Title": "Cancel your OpenCTI free trial",
-          "NoNewTrialPossible": "Please note that new openCTI trials can’t be requested after this action.",
           "CancellationReason": "Cancellation reason",
           "CancellationReasonPlaceholder": "Select a reason",
           "CancellationReasonOther": "Other",
-          "CancellationReasonOtherPlaceholder": "Write your reason here"
+          "CancellationReasonOtherPlaceholder": "Write your reason here",
+          "CancellationReasonRequired": "Please select a cancellation reason"
         },
         "Confirmation": {
-          "Title": "Trial Cancellation",
-          "Admin": "Are you sure you want to cancel OpenCTI free trial from {organizationName} ?"
+          "Title": "Trial Cancellation"
         }
       },
       "Form": {
         "Region": "Region",
-        "RegionPlaceholder": "Please select your preferred region for hosting",
-        "AssociatedEmail": "Associated Email",
+        "RegionPlaceholder": "Select your preferred region for hosting",
+        "AssociatedEmail": "Associated email:",
         "JobTitle": "Job title",
-        "JobTitlePlaceholder": "Please select your job title",
+        "JobTitlePlaceholder": "Select your job title",
         "ActivitySector": "Activity sector",
-        "ActivitySectorPlaceholder": "Please select your activity sector",
-        "UseCase": "Use case",
-        "UseCasePlaceholder": "Please select your use case",
-        "MSSA": "MSSA",
-        "MSSAAgreement": "I acknowledge that I have read, understand and agree to the trial terms of",
-        "FormRequested": "You have requested a free trial. You will receive an email as soon as the platform is ready!"
-      },
-      "Display": {
-        "New": "New",
-        "Requested": "Requested",
-        "opencti": {
-          "Title": "OpenCTI 30-days Free Trial",
-          "FreeTrialDescription": "Explore all OpenCTI Enterprise Edition functionalities to start operationalizing your threat intelligence end-to-end!"
+        "ActivitySectorPlaceholder": "Select your activity sector",
+        "UseCasePlaceholder": "Select your use case",
+        "Error": {
+          "AcceptTerms": "Please accept the trial terms to continue",
+          "UseCase": "Please select a use case",
+          "Region": "Please select a region",
+          "JobTitle": "Please select your job title",
+          "ActivitySector": "Please select your activity sector"
         },
-        "openaev": {
-          "Title": "OpenAEV 30-days Free Trial",
-          "FreeTrialDescription": "Explore OpenAEV to simulate real-life attack scenarios, evaluate your security posture, and improve cyber resilience - at a technical and human level."
-        }
-      },
-      "CapacityWarning": {
-        "Title": "Availability Notice",
-        "Content": "A platform slot is not available in your region at this time. Would you like to receive a notification when it becomes available?",
-        "Continue": "Notify me"
+        "TermsAgreement": "I acknowledge that I have read, understood and agree to the <mssa>MSSA</mssa> trial terms and the <aiterms>AI terms</aiterms>",
+        "FormRequested": "You have requested a free trial. You will receive an email as soon as the platform is ready!"
       },
       "ManageUsers": {
         "Title": "Manage users",
         "Email": "Email"
       }
     },
-    "Vault": {
-      "DeleteDocument": "Delete document",
-      "DropFile": "Drop the document here",
-      "File": "Document to send",
-      "FileExtension": "The document must have an extension",
-      "FileForm": {
-        "AddFile": "Add new document",
-        "AlreadyExists": "This document already exists. The old one will be erased.",
-        "DeleteDialog": "Are you sure you want to delete this document?",
-        "DescriptionLabel": "Description",
-        "DescriptionPlaceholder": "This is a short paragraph to describe the document.",
-        "DropDocuments": "Drop documents here",
-        "EditFile": "Edit document",
-        "File": "Document",
-        "FileAlreadyExists": "This document already exists",
-        "FileExistsDialog": "This document already exists. This document will erase the old one. Are you sure you want to continue?",
-        "NoDocument": "No document selected",
-        "SelectDocument": "Select document",
-        "ShortNameLabel": "Short name",
-        "ShortNamePlaceholder": "Filigran Pricing",
-        "UploadNewFile": "Upload a new document in Vault"
+    "TrialGuide": {
+      "Breadcrumb": {
+        "TrialPlatform": "XTM Platform Trial",
+        "TrialGuide": "XTM Platform Trial guide"
       },
-      "FileTab": {
-        "Description": "Description",
-        "FileName": "Document name",
-        "NumberDownload": "Downloads",
-        "Search": "Search with document name...",
-        "UploadDate": "Upload date"
+      "Eyebrow": "XTM Platform trial guide",
+      "Title": "Key resources",
+      "Description": "This short guide is here to direct you to helpful resources about how to get the best experience out of your XTM Platform trial",
+      "SeeMore": "See more",
+      "ReadMore": "Read more",
+      "ChecklistTitle": "Suggested Actions Checklist",
+      "ChecklistIntro": "Don’t know where to start? Take a look at some suggested actions.",
+      "Opencti": {
+        "ResourceCards": {
+          "Documentation": {
+            "Title": "OpenCTI Documentation",
+            "Description": "Technical docs and user guides to help you understand how the platform works"
+          },
+          "Academy": {
+            "Title": "Academy: OpenCTI 101-301",
+            "Description": "Practical courses on how to get started with OpenCTI"
+          },
+          "Community": {
+            "Title": "OpenCTI Community",
+            "Description": "The best place to ask any and all questions to the OpenCTI community"
+          },
+          "ReleaseNotes": {
+            "Title": "Release notes",
+            "Description": "List of latest updates"
+          }
+        },
+        "ChecklistItems": {
+          "ActivateFeeds": {
+            "Title": "Enable 1-2 More Feeds",
+            "Description": "Go to <strong>Integrations</strong> in the left menu. A number of connectors have already been deployed. Click on the <strong>Available</strong> tab. You'll see that there are many more connectors that can be deployed with one click. In the left menu, scroll to the bottom and select <strong>Free</strong> in License type. Deploy some that have not yet been enabled. Click <strong>Browse More</strong> to see all integrations in the OpenCTI Library (including those without the one-click deployment option)."
+          },
+          "ConfigurePir": {
+            "Title": "Configure Priority Intelligence Requirements (PIR)",
+            "Description": "Go to <strong>PIR → Create PIR</strong>. Define a PIR name, rescan period, and the entity criteria/filters that matter to you (e.g., \"Malware targeting the Energy sector\" with confidence ≥ 60). OpenCTI will now continuously listen to platform activity and automatically flag any matching entities as \"of interest,\" surfacing a live news feed, scored relevance, and related reports/graphs for each."
+          },
+          "FollowGraph": {
+            "Title": "Open a Report and Explore the Interactive Graph",
+            "Description": "Go to <strong>Analyses → Reports</strong>. Click on a report and go to the <strong>Knowledge</strong> tab. In the toolbar on the right, make sure <strong>Graph View</strong> is selected. Zoom in. Now click on objects in the graph. The details of the object will be displayed in the right column. To see the relationships of a particular object, move it out to the side. Click <strong>Timeline view</strong> to see how data points evolved over time. For MITRE ATT&CK mapping click on <strong>Tactics Matrix View</strong>."
+          },
+          "CreateCase": {
+            "Title": "Create a Case from a Detected Indicator",
+            "Description": "Go to <strong>Cases → Incident Response → Create Incident Response</strong>, spin up a case using a built-in template, and attach the indicator/report you worked with earlier. From there, assign a priority and severity, tag an assignee, and add related tasks to track remediation steps. Notice how the case stays linked to the underlying entities, so any new correlated intel will automatically surface in context."
+          },
+          "CreateFintelReport": {
+            "Title": "Create a FINTEL report",
+            "Description": "Go to <strong>Analyses → Reports → Create Report</strong>. Draft a Finished Intelligence (FINTEL) report summarizing your analysis of the threat actor, malware, or campaign you've been exploring, pulling in the entities, indicators, and relationships you've already ingested. Attach supporting observables and link related intrusion sets or TTPs directly from the graph."
+          },
+          "BuildDashboardWidget": {
+            "Title": "Build a Custom Dashboard Widget",
+            "Description": "Under <strong>Dashboards → Custom Dashboards</strong>, click <strong>Create Dashboard</strong> and add a widget (e.g., \"Indicators by type\" or \"Reports over time\"). Or select a pre-built dashboard by clicking on <strong>Import from Hub</strong>."
+          },
+          "ConnectSecurityStack": {
+            "Title": "Connect to Your Security Stack",
+            "Description": "Go to <strong>Integrations</strong>. Click <strong>Browse More</strong>. Select some of the tools you already run (SIEM, EDR, firewall, TIP, or SOAR) to connect them to OpenCTI. Once connected, monitor the connector dashboard to confirm data is flowing, then verify that newly pushed indicators appear in your downstream tool."
+          },
+          "CreateNoCodePlaybook": {
+            "Title": "Create a No-Code Playbook",
+            "Description": "Go to <strong>Data → Processing</strong>. Click <strong>Create Playbook</strong>. Use the visual, drag-and-drop builder to chain triggers, filters, and actions, such as auto-enriching new indicators, promoting high-confidence reports to a case, or pushing matching observables straight to a connector. Or select a pre-built playbook by clicking on <strong>Import from Hub</strong>."
+          },
+          "CheckSecurityCoverage": {
+            "Title": "Check your Security Coverage with OpenAEV",
+            "Description": "Link your OpenAEV instance under <strong>Settings → Integrations</strong>, then in OpenAEV go to <strong>Scenarios → Create</strong> and build a scenario from the ATT&CK techniques of the threat actor you've been investigating in OpenCTI. Add each TTP as an injection, assigning target assets, and hit <strong>Launch</strong> to execute the simulation in a controlled way."
+          },
+          "EnableAgent": {
+            "Title": "Enable an Agent in XTM One",
+            "Description": "Open <strong>XTM One → Agents</strong> and activate one of the pre-packaged agents (e.g., the <strong>CTEM Assistant</strong>) to orchestrate a workflow across OpenCTI and OpenAEV - such as automatically enriching a new threat, summarizing it, and generating a validation scenario, all in plain English with no manual handoffs."
+          }
+        }
       },
-      "ManageVault": "Manage vault",
-      "UpdateDocument": "Update document",
-      "Vault": "Partner Vault",
-      "VaultTitle": "Vault Administration"
+      "Openaev": {
+        "ResourceCards": {
+          "Documentation": {
+            "Title": "OpenAEV Documentation",
+            "Description": "Technical docs and user guides to help you understand how the platform works"
+          },
+          "Academy": {
+            "Title": "Academy: OpenAEV 101",
+            "Description": "Free, practical courses on how to get started with OpenAEV"
+          },
+          "Community": {
+            "Title": "OpenAEV Community",
+            "Description": "The best place to ask any and all questions to the OpenAEV community"
+          },
+          "ReleaseNotes": {
+            "Title": "Release notes",
+            "Description": "List of latest updates"
+          }
+        },
+        "ChecklistItems": {
+          "InstallStarterPack": {
+            "Title": "Install the OpenAEV Starter Pack",
+            "Description": "Do you need some content to get started? OpenAEV ships with a starter pack that provides ready-to-use content so you can run your first Simulation immediately after installation, including Pre-built Scenarios, dashboards, injectors, collectors, and agentless endpoints. The starter pack is available from the XTM Hub. Import it from <strong>Settings > XTM Hub</strong> after registering your platform."
+          },
+          "RunAtomicTest": {
+            "Title": "Run an Atomic Test",
+            "Description": "Go to the Arsenal, pick a single technique, and select an endpoint to run it against. Install the OpenAEV agent first, or run agentless if supported. Launch the test and check the endpoint or wait for the report to see what executed and what got caught."
+          },
+          "LaunchTimeBasedScenario": {
+            "Title": "Launch a Time-Based Scenario, Leveraging the AI Scenario Assistant",
+            "Description": "Create a scenario and add injects in the order you want them to fire based on a set schedule with a start time and, if required a recurring frequency. Leverage AI to automate Inject creation based on your selected targets and MITRE ATT&CK techniques."
+          },
+          "RunAttackChainingScenario": {
+            "Title": "Run an Attack Chaining Scenario",
+            "Description": "Build a scenario linking several techniques into a realistic attack path (initial access, lateral movement, exfiltration). Run it operator led, manually triggering each step yourself, or agent led, where the platform executes the whole chain automatically once started. Try both to feel the difference in control versus speed."
+          },
+          "DriveTabletopExercise": {
+            "Title": "Drive a Tabletop Exercise with a Phishing Exercise",
+            "Description": "Create a tabletop scenario with communication or decision based injects instead of technical ones (e.g. \"notify legal\"), assign participants and run it as a live, facilitated session, recording how the team responds. Use this opportunity to include Phishing injects, which you can generate with AI directly."
+          },
+          "EvaluateSecurityPosture": {
+            "Title": "Evaluate Your Security Posture",
+            "Description": "Start at home screen Exposure Commander Center (aggregating your key metrics at a glance) and drill down into specific security domains and dashboards. Take the time to investigate inject results, expectations, and findings."
+          },
+          "GenerateDetectionRemediationRules": {
+            "Title": "Automatically Generate Detection and Remediation Rules",
+            "Description": "Generate detection rules from an executed technical Inject using AI-powered remediation. These can be accessed directly in the remediation tab of an inject results."
+          },
+          "ConnectOpenctiSecurityCoverage": {
+            "Title": "Connect to OpenCTI for Security Coverage Enrichment",
+            "Description": "OpenAEV can be triggered via an XTM Suite product to execute a scenario based on a desired threat profile, and results from the scenario execution — such as Detection rate, Prevention rate — are returned to the triggering product for ingestion."
+          },
+          "EnableAgentXtmOne": {
+            "Title": "Enable an Agent in XTM One",
+            "Description": "Open <strong>XTM One → Agents</strong> and activate one of the pre-packaged agents (for example, OpenAEV Assistant) to start orchestrating a workflow across OpenCTI and OpenAEV - such as automatically enriching a new threat, summarizing it, and generating a validation scenario, all in plain English with no manual handoffs."
+          },
+          "GenerateReportStakeholders": {
+            "Title": "Generate a report automatically to share with stakeholders",
+            "Description": "Review scenarios and their simulation results in a single report, generate as PDF or HTML in a single click to rapidly share with relevant stakeholders and benchmark over time."
+          }
+        }
+      },
+      "Xtmone": {
+        "ResourceCards": {
+          "Documentation": {
+            "Title": "XTM One Documentation",
+            "Description": "Technical docs and user guides to help you understand how the platform works"
+          },
+          "Community": {
+            "Title": "XTM One Community",
+            "Description": "The best place to ask any and all questions to the Filigran community"
+          }
+        },
+        "ChecklistItems": {
+          "ActivateCtemAssistant": {
+            "Title": "Activate the CTEM Assistant",
+            "Description": "Go to XTM One → Agents and enable the CTEM Assistant, your primary entry point into the platform. It connects directly to both OpenCTI and OpenAEV, orchestrating agents across both to move threat intelligence processing straight into scenario building and execution in OpenAEV - all from a single conversation."
+          },
+          "AskQuestionPlainEnglish": {
+            "Title": "Ask a Question in Plain English",
+            "Description": "Open the XTM One chat interface and ask something like \"What are the top five threats facing financial sector in the UK?\" XTM One will pull relevant entities from OpenCTI (once you have added some feeds) and return a synthesized answer with links back to the underlying data - no query language or dashboard-hopping required."
+          },
+          "BuildThreatHuntingPackage": {
+            "Title": "Build a Threat Hunting Package in Minutes",
+            "Description": "Search 'Threat Hunting' to access the OpenCTI Threat Hunt Creator. Ask it to turn a set of high-confidence indicators into a hunting package. It searches for high-value indicators, converts them into native detection rules for your platforms, and groups everything together in OpenCTI - cutting hunting prep time significantly.",
+            "ExamplePrompt": "Example prompt: Create a hunt package for Lockbit ransomware IoCs, converted to Sigma rules, prioritizing the most recent indicators"
+          },
+          "IntegrateTools": {
+            "Title": "Integrate Tools for Faster Threat Detection and Response",
+            "Description": "Go to <strong>Tools & Integrations</strong> to connect to tools your agents can use on your behalf. XTM One Integration Marketplace provide hundreds of pre-built integrations including for security tools like SIEMs, XDRs, threat feeds, vulnerability management and also business operations and collaboration tools like Notion, Metabase, Concord, MS Teams and Slack. Make intel flow seamlessly and be available at a central place to take an action."
+          }
+        }
+      }
+    },
+    "FileForm": {
+      "NoDocument": "No document selected",
+      "SelectDocument": "Select document"
     },
     "OpenctiCustomViews": {
       "Actions": {
@@ -1536,12 +2175,104 @@
       "AddService": "Add new custom view",
       "UpdateService": "Update the custom view {name}",
       "DeleteService": "Delete the custom view {name}",
-      "SureDeleteService": "Are you sure you want to delete the custom view {name}?",
-      "NonActive": "Draft",
-      "Active": "Published"
+      "SureDeleteService": "Are you sure you want to delete the custom view {name}?"
+    },
+    "Bundle": {
+      "ManageTrial": {
+        "Breadcrumb": {
+          "BundleName": "XTM Platform Trial",
+          "ManageUsers": "Manage users"
+        },
+        "Title": "Manage your team on XTM Platform trial",
+        "Eyebrow": "XTM Platform free trial",
+        "Description": "Easily manage your team and collaborate throughout your XTM Platform trial. Invite team members, assign roles and permissions, and ensure everyone has the right level of access to the platform.",
+        "BackButton": "Back to XTM Platform Trial",
+        "BackToDashboardButton": "Back",
+        "GroupAction": "Group action",
+        "GroupActionDisabledTooltip": "You need to select users in the list to apply group action",
+        "BulkDeleteTooltip": "You can delete selected users",
+        "AddTrialUser": "Add trial user",
+        "BulkDeleteDialog": {
+          "Title": "Remove users from trial",
+          "Text": "Are you sure you want to remove {emails} from this trial? They will lose access to all products.",
+          "MoreEmails": "+{count} more"
+        },
+        "Table": {
+          "Email": "Email",
+          "NoUsers": "No users found.",
+          "RoleUpdated": "{email} {role} has been updated",
+          "DeleteDialog": {
+            "Title": "Remove user from trial",
+            "Text": "Are you sure you want to remove {email} from this trial? They will lose access to all products."
+          }
+        },
+        "AddUserDialog": {
+          "Title": "Add trial user",
+          "EmailPlaceholder": "Add email",
+          "ExpiredUsersReinvited": "Expired users will be invited again and receive a new invitation email.",
+          "InviteEmail": "Invite {email}",
+          "NoPermissionToInvite": "You do not have permission to add users outside this list. If needed, contact your admin",
+          "Status": {
+            "Expired": "Expired",
+            "Invited": "Invited"
+          }
+        },
+        "EditUsersDialog": {
+          "Title": "Edit users",
+          "Users": "Manage trial users",
+          "UsersPlaceholder": "Select users",
+          "MixedRoles": "Users with different roles are selected"
+        },
+        "Roles": {
+          "DefaultSuffix": "(default)",
+          "NoAccess": "No access",
+          "opencti": {
+            "Title": "{count, plural, one {OpenCTI role} other {OpenCTI roles}}",
+            "Admin": {
+              "Label": "Admin",
+              "Description": "The administrator role with full access to product settings, configuration, and management. Admins can manage users, roles, and system-wide settings, in addition to having full visibility and control over the data."
+            },
+            "Analyst": {
+              "Label": "Analyst",
+              "Description": "A role with full access to all knowledge within the product. Analysts can create, edit, and manage entities, relationships, and investigations, but do not have access to product settings, administration, or configuration options."
+            },
+            "Reader": {
+              "Label": "Reader",
+              "Description": "A read-only role that allows access to view all data in the product without the ability to make any modifications. Ideal for users who only need to consume information."
+            }
+          },
+          "openaev": {
+            "Title": "{count, plural, one {OpenAEV role} other {OpenAEV roles}}",
+            "Admin": {
+              "Label": "Admin",
+              "Description": "The administrator role with full access to product settings, configuration, and management. Admins can manage users, roles, and system-wide settings, in addition to having full visibility and control over the elements."
+            },
+            "Manager": {
+              "Label": "Manager",
+              "Description": "A role with full capabilities to manage and run any type of scenario. Managers can modify any element in the product but do not have access to product settings, administration, or configuration options."
+            },
+            "Observer": {
+              "Label": "Observer",
+              "Description": "A read-only role that allows access to view all elements in the product without the ability to make any modifications. Ideal for users who only need to consume information."
+            }
+          },
+          "xtmone": {
+            "Title": "{count, plural, one {XTM One role} other {XTM One roles}}",
+            "Admin": {
+              "Label": "Admin",
+              "Description": "The administrator role with full access to platform settings, configuration, and management. Admins can manage users, groups, integrations, and system-wide settings, in addition to having full visibility and control over all elements, including company-managed resources shared across the organization. They can impersonate users for troubleshooting."
+            },
+            "User": {
+              "Label": "User",
+              "Description": "A role with full capabilities to create, configure, and run their own agents, flows, and knowledge bases. Users can modify any element they own or that has been shared with them, but do not have access to platform settings, administration, or configuration options."
+            }
+          }
+        }
+      }
     }
   },
   "ServiceActions": {
+    "DocumentUpdated": "{file_name} has been modified",
     "OrganizationAdded": "{name} organization subscribed to the {serviceName} service",
     "OrganizationDeleted": "Organization {name} has been deleted",
     "UserCapabilitiesModified": "{email}'s capabilities have been modified",
@@ -1556,9 +2287,6 @@
   },
   "ServiceName": {
     "custom_dashboards": "Custom Dashboard"
-  },
-  "SelectUsers": {
-    "ClearAllSelections": "Clear all selections"
   },
   "Sort Asc": "Sort Asc",
   "Sort Desc": "Sort Desc",
@@ -1591,7 +2319,7 @@
     "Error": {
       "Capability": {
         "AdminListTitle": "The administrators of your organization are the following:",
-        "Description": "If you want to proceed with the disconnection of your {platformIdentifier} product in XTM Hub, you need to contact an admininistrator from your organization on XTM Hub who has the appropriate permissions to proceed.",
+        "Description": "If you want to proceed with the disconnection of your {platformIdentifier} product in XTM Hub, you need to contact an administrator from your organization on XTM Hub who has the appropriate permissions to proceed.",
         "Title": "You do not have the necessary {capability} access on the XTM Hub."
       },
       "NotInOrganization": {
@@ -1614,7 +2342,7 @@
       "Error": {
         "Capability": {
           "AdminListTitle": "The administrators of your organization are the following:",
-          "Description": "If you want to proceed with the disconnection of your OpenCTI product in XTM Hub, you need to contact an admininistrator from your organization on XTM Hub who has the appropriate permissions to proceed.",
+          "Description": "If you want to proceed with the disconnection of your OpenCTI product in XTM Hub, you need to contact an administrator from your organization on XTM Hub who has the appropriate permissions to proceed.",
           "Title": "You do not have the necessary {capability} access on the XTM Hub."
         },
         "NotInOrganization": {
@@ -1640,19 +2368,22 @@
     }
   },
   "UpdateUserDialog": {
-    "TextUpdatedUser": "Your account has been modified by an administrator. The behaviour of the app may change.",
+    "TextUpdatedUser": "Your account has been modified by an administrator. The behavior of the app may change.",
     "TextUpdatedUserTitle": "Account modified!"
   },
   "UserActions": {
     "AddUser": "Add user",
     "AllOrganizations": "All organizations",
     "CreateUser": "Create a new user",
+    "DeleteUser": "Delete user",
+    "DeletionBlocked": "Deletion not possible",
     "DetailsUser": "Details user",
     "Disable": "Disable",
     "Enable": "Enable",
     "Organization": "Organization",
     "RemoveUser": "Remove user",
     "SearchUser": "Search user...",
+    "SureDeleteUser": "Are you sure you want to delete {email}? This action cannot be undone.",
     "UpdateUser": "Update user - {email}",
     "UserCreated": "User {email} has been created",
     "UserDeleted": "User {email} has been deleted",
@@ -1664,8 +2395,8 @@
     "Country": "Country",
     "Email": "Email",
     "Error": {
-      "FirstName": "First_name is required",
-      "LastName": "Last_name is required"
+      "FirstName": "First name is required",
+      "LastName": "Last name is required"
     },
     "FirstName": "First name",
     "LastName": "Last name",
@@ -1674,6 +2405,7 @@
     "OrganizationsCapabilitiesPlaceholder": "Additional capabilities",
     "OrganizationsPlaceholder": "Select an organization",
     "Password": "Password",
+    "PasswordHelper": "Leave empty to keep the current password",
     "Picture": "Picture",
     "ResetPassword": {
       "Action": "Reset password",
@@ -1682,13 +2414,20 @@
     }
   },
   "UserListPage": {
+    "Action": "Action",
     "Country": "Country",
     "Email": "Email",
     "FirstName": "First name",
+    "InvitationDate": "Invitation date",
+    "InvitationExpired": "Expired",
+    "InvitationPending": "Pending",
+    "InvitationStatus": "Invitation status",
     "LastLogin": "Last login",
     "LastName": "Last name",
     "NoUsers": "No users found",
     "Organizations": "Organizations",
+    "ResendInvite": "Re-send Invite",
+    "ResendInviteSuccess": "Invitation re-sent",
     "Roles": "Roles",
     "Status": "Status",
     "TabTitle": "Users",
@@ -1738,12 +2477,68 @@
     "And": "and",
     "Or": "or"
   },
+  "DesignSystem": {
+    "Breadcrumbs": {
+      "Label": "Breadcrumb"
+    },
+    "Carousel": {
+      "GoToSlide": "Go to slide {slide}",
+      "Next": "Next slide",
+      "Previous": "Previous slide"
+    },
+    "Combobox": {
+      "SelectedValues": "Selected values",
+      "ToggleOptions": "Toggle options"
+    },
+    "DataTable": {
+      "ClearSelection": "Clear selection",
+      "ColumnOptions": "Column options",
+      "Columns": "Columns",
+      "HideColumn": "Hide",
+      "ManageColumns": "Manage columns visibility",
+      "NextPage": "Go to next page",
+      "PreviousPage": "Go to previous page",
+      "ResetTable": "Reset table",
+      "RowsPerPage": "Rows per page",
+      "SelectAll": "Select all",
+      "SelectedCount": "{count} selected",
+      "SelectRow": "Select row",
+      "SortAscending": "Asc",
+      "SortDescending": "Desc"
+    },
+    "DatePicker": {
+      "Calendar": "Calendar",
+      "FieldCalendar": "{label} calendar",
+      "Clear": "Clear date",
+      "Confirm": "OK",
+      "Hours": "Hours",
+      "Minutes": "Minutes",
+      "Month": "Month",
+      "NextMonth": "Next month",
+      "OpenCalendar": "Open calendar",
+      "Period": "AM/PM",
+      "PreviousMonth": "Previous month",
+      "Seconds": "Seconds",
+      "Year": "Year"
+    },
+    "FileSelect": {
+      "Clear": "Remove all files",
+      "FileRejected": "{fileName} was not added ({reason, select, accept {unsupported format} other {over the size limit}}).",
+      "FilesRejected": "{count} files were not added (unsupported format or over the size limit).",
+      "Loading": "Loading",
+      "Placeholder": "No file selected.",
+      "RemoveFile": "Remove {fileName}",
+      "Trigger": "Select your file"
+    },
+    "SearchField": {
+      "Clear": "Clear search"
+    }
+  },
   "Platform": {
     "Update": "Update",
     "UpdateMetadata": "Update Platform Metadata",
     "Name": "Platform Name",
     "NamePlaceholder": "Enter platform name",
-    "IllustrationImage": "Illustration Image",
     "Updated": "{platformName} has been updated successfully"
   },
   "Region": {
@@ -1751,12 +2546,6 @@
     "APAC_SG": "Singapore",
     "EU_WEST": "Europe West",
     "US_EAST": "United States East"
-  },
-  "VaultActions": {
-    "DocumentAdded": "{file_name} has been added",
-    "DocumentDeleted": "{file_name} has been deleted",
-    "DocumentUpdated": "{file_name} has been modified",
-    "UpdateDocument": "Update document"
   },
   "DeploymentRequestJobTitle": {
     "ceo": "CEO",
@@ -1778,5 +2567,162 @@
     "vulnerability_analyst": "Vulnerability Analyst",
     "consultant": "Consultant",
     "other": "Other"
+  },
+  "VotingRound": {
+    "Actions": {
+      "Add": "Create voting round",
+      "Edit": "Edit voting round",
+      "Open": "Open for voting",
+      "Close": "Close voting"
+    },
+    "Form": {
+      "Name": "Name",
+      "Description": "Description",
+      "DescriptionPlaceholder": "Shown to users on the public voting page",
+      "CopyFeaturesFrom": "Copy features from",
+      "CopyFeaturesNone": "Start from an empty round",
+      "Error": {
+        "Name": "Name is required",
+        "ServiceInstance": "A roadmap is required"
+      },
+      "ServiceInstance": "Roadmap",
+      "ServiceInstancePlaceholder": "Select a roadmap",
+      "Theme": "Banner style"
+    },
+    "ListPage": {
+      "Name": "Name",
+      "Status": "Status",
+      "FeatureCount": "Features",
+      "ServiceInstance": "Roadmap"
+    },
+    "Status": {
+      "draft": "Draft",
+      "open": "Open",
+      "closed": "Closed"
+    },
+    "Dialog": {
+      "DeleteRound": "Are you sure you want to delete {name}? This is only possible while it has no vote.",
+      "OpenRound": "Open {name} for voting? The round currently open will be closed and its results kept.",
+      "CloseRound": "Close voting on {name}? Users will no longer be able to vote and the results are kept.",
+      "DeleteFeature": "Are you sure you want to delete {title}?"
+    },
+    "Feature": {
+      "SectionTitle": "Features",
+      "Title": "Title",
+      "Product": "Product",
+      "ShortDescription": "Short description",
+      "Description": "Description",
+      "Illustration": "Illustration",
+      "Position": "Position",
+      "Active": "Active",
+      "ActiveYes": "Yes",
+      "ActiveNo": "No",
+      "Actions": {
+        "Add": "Add feature",
+        "Edit": "Edit feature"
+      },
+      "Error": {
+        "Title": "Title is required",
+        "ShortDescription": "Short description is required",
+        "ShortDescriptionMax": "Short description must be 215 characters or fewer",
+        "Description": "Description is required",
+        "Position": "Position must be a positive number"
+      },
+      "RemoveIllustration": "Remove the illustration",
+      "DescriptionPlaceholder": "Full description shown when a user opens the feature. Markdown is supported."
+    },
+    "Results": {
+      "Title": "Results",
+      "TotalVoters": "{count, plural, =1 {# voter} other {# voters}}",
+      "Empty": "No vote yet for this round.",
+      "InactiveFeature": "Deactivated"
+    },
+    "Theme": {
+      "default": "Default",
+      "thread": "Thread"
+    }
+  },
+  "TimeSeriesBarChart": {
+    "Peak": "Peak"
+  },
+  "EditableText": {
+    "DialogTitle": "Edit content",
+    "KeyLabel": "Key: {contentKey}",
+    "ValueLabel": "{locale} value",
+    "OriginalValue": "Original: {value}",
+    "SaveDraft": "Save draft",
+    "EditionBannerLabel": "You are in edit mode — click an outlined text to edit it.",
+    "EditionBannerHiddenAreasLabel": "You are in edit mode — show the editable areas to edit a text.",
+    "ShowEditableAreas": "Show editable areas",
+    "EditionBannerExit": "Back to live site",
+    "MenuButton": "Edit Translations",
+    "MenuButtonExit": "Exit Edition Mode",
+    "DraftHint": "Saved as a draft: visitors only see it once published from the edit mode banner.",
+    "PendingChanges": "{count, plural, one {# unpublished change} other {# unpublished changes}}",
+    "Publish": "Publish",
+    "Discard": "Discard",
+    "PublishConfirmTitle": "{count, plural, one {Publish # change?} other {Publish # changes?}}",
+    "PublishConfirmDescription": "Every visitor will see the published texts.",
+    "DiscardConfirmTitle": "{count, plural, one {Discard # change?} other {Discard # changes?}}",
+    "DiscardConfirmDescription": "The drafts will be deleted for every editor. This cannot be undone.",
+    "ExitDialogTitle": "Unpublished changes",
+    "ExitDialogDescription": "{count, plural, one {# change is not published yet.} other {# changes are not published yet.}} Visitors keep seeing the current texts until you publish.",
+    "KeepDraftsAndExit": "Keep drafts and exit",
+    "DiscardAndExit": "Discard and exit",
+    "PublishAndExit": "Publish and exit"
+  },
+  "EditableTextDemo": {
+    "Title": "Welcome to XTM Hub",
+    "Subtitle": "The unified entry point for the Filigran ecosystem.",
+    "Instructions": "Use Edit Translations in the sidebar to turn edit mode on (BYPASS-capability users only), then click the outlined title or subtitle below. Saving creates a draft to publish from the edit mode banner."
+  },
+  "AdminRegisteredPlatforms": {
+    "Search": "Search by title, URL, organization, email or ID",
+    "ClearSearch": "Clear search",
+    "Columns": {
+      "Platform": "Platform",
+      "Product": "Product",
+      "Organization": "Organization",
+      "Tenant": "Tenant",
+      "Contract": "Contract",
+      "Status": "Status",
+      "LastConnectivityCheck": "Last connectivity check",
+      "Registerer": "Registered by",
+      "Credential": "Credential",
+      "Identifiers": "Identifiers"
+    },
+    "Identifiers": {
+      "ServiceInstance": "Service instance",
+      "Platform": "Platform",
+      "Tenant": "Tenant"
+    },
+    "Credential": {
+      "Kind": {
+        "token": "Token",
+        "none": "None"
+      },
+      "TokenStored": "Token stored",
+      "NoTokenStored": "No token stored"
+    },
+    "Filters": {
+      "Product": "Product",
+      "AllProducts": "All products",
+      "Status": "Status",
+      "AllStatuses": "All statuses"
+    },
+    "Unregister": "Unregister",
+    "UnregisterSuccess": "The platform \"{title}\" has been unregistered",
+    "UnregisterDialog": {
+      "Title": "Unregister the platform \"{title}\"?",
+      "Text": "The {product} platform \"{title}\" will be disconnected from the {organization} organization on XTM Hub. The administrators of the organization will be notified by email. To reconnect it, the platform has to go through the connection process again. The platform can no longer use its credential with XTM Hub, other than to learn that it is unregistered.",
+      "TextWithoutOrganization": "The {product} platform \"{title}\" will be disconnected from XTM Hub. It belongs to no organization, so nobody will be notified by email. To reconnect it, the platform has to go through the connection process again. The platform can no longer use its credential with XTM Hub, other than to learn that it is unregistered."
+    }
+  },
+  "Tour": {
+    "GuidedTour": "Guided tour",
+    "Close": "Close the tour",
+    "PreviousStep": "Go to previous step",
+    "NextStep": "Go to next step",
+    "GoToStep": "Go to step {step}"
   }
 }

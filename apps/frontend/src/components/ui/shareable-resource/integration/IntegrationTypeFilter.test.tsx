@@ -1,109 +1,58 @@
-import { ServiceListFilterKey } from '@/components/service/components/header/ServiceListHeader';
-import { useIsFeatureEnabled } from '@/hooks/use-is-feature-enabled';
+import { readTrackedEvents, startAnalytics } from '@/utils/test/analytics';
 import testRender from '@/utils/test/test-render';
-import { IntegrationSubType, IntegrationType } from '@graphql/generated';
+import { IntegrationType } from '@graphql/generated';
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { IntegrationTypeFilter } from './IntegrationTypeFilter';
 
-const removeFilterMock = vi.fn();
 const setIntegrationTypesMock = vi.fn();
-const removeIntegrationTypesMock = vi.fn();
 
-vi.mock('@/components/service/integrations/Integration.utils', () => ({
-  availableIntegrationTypes: [IntegrationType.Connector],
-  SubTypesPerIntegrationType: new Map([
-    [IntegrationType.Connector, [IntegrationSubType.ExternalImport]],
-  ]),
-  getIntegrationSubTypeMetadata: () => ({ label: 'External import' }),
-}));
-
-vi.mock('@/hooks/use-service-list-local-storage', () => ({
-  ServiceListLocalStorageKey: {
-    OpenCTIIntegrationFeeds: 'feeds',
-  },
-  useServiceListLocalStorage: () => ({
+vi.mock('@/hooks/use-service-list-storage', () => ({
+  useServiceListStorage: () => ({
     integrationTypes: {},
     setIntegrationTypes: setIntegrationTypesMock,
-    removeIntegrationTypes: removeIntegrationTypesMock,
-  }),
-}));
-
-vi.mock('@/hooks/use-service-list-filters', () => ({
-  useServiceListFilters: () => ({
-    removeFilter: removeFilterMock,
+    removeIntegrationTypes: vi.fn(),
   }),
 }));
 
 describe('IntegrationTypeFilter', () => {
-  it('renders placeholder and shows Connector option with its subtype after opening', async () => {
-    vi.mocked(useIsFeatureEnabled).mockReturnValue(false);
-    const { user } = testRender(<IntegrationTypeFilter />);
+  it('renders integration subfilters as visible checkboxes', () => {
+    testRender(<IntegrationTypeFilter />);
 
-    const placeholder = screen.getByText(
-      'Service.OpenctiIntegrations.Filter.Type.Placeholder'
-    );
-    expect(placeholder).toBeInTheDocument();
-
-    await user.click(placeholder);
-    const listbox = screen.getByRole('listbox');
     expect(
-      within(listbox).getByText(
-        `Service.OpenctiIntegrations.Type.${IntegrationType.Connector}`
-      )
+      screen.getByText('Service.OpenctiIntegrations.Filter.Type.Label')
     ).toBeInTheDocument();
-    expect(within(listbox).getByText('External import')).toBeInTheDocument();
+    expect(
+      screen.getByRole('checkbox', {
+        name: `Service.OpenctiIntegrations.Type.${IntegrationType.Connector}`,
+      })
+    ).toBeInTheDocument();
   });
 
-  it('hides subtype options when solution categories feature is enabled', async () => {
-    vi.mocked(useIsFeatureEnabled).mockReturnValue(true);
-    const { user } = testRender(<IntegrationTypeFilter />);
-
-    await user.click(
-      screen.getByText('Service.OpenctiIntegrations.Filter.Type.Placeholder')
+  it('renders facet count in integration subfilter labels', () => {
+    testRender(
+      <IntegrationTypeFilter
+        facetCounts={{ [IntegrationType.Connector]: 12 }}
+      />
     );
-    const listbox = screen.getByRole('listbox');
+
+    const checkbox = screen.getByRole('checkbox', {
+      name: new RegExp(
+        `Service\\.OpenctiIntegrations\\.Type\\.${IntegrationType.Connector}`
+      ),
+    });
     expect(
-      within(listbox).getByText(
-        `Service.OpenctiIntegrations.Type.${IntegrationType.Connector}`
-      )
+      within(checkbox.closest('label')!).getByText('12')
     ).toBeInTheDocument();
-    expect(
-      within(listbox).queryByText('External import')
-    ).not.toBeInTheDocument();
-  });
-
-  it('hides subtype options when forced by prop', async () => {
-    vi.mocked(useIsFeatureEnabled).mockReturnValue(false);
-    const { user } = testRender(
-      <IntegrationTypeFilter isSolutionCategoriesEnabled />
-    );
-
-    await user.click(
-      screen.getByText('Service.OpenctiIntegrations.Filter.Type.Placeholder')
-    );
-    const listbox = screen.getByRole('listbox');
-    expect(
-      within(listbox).getByText(
-        `Service.OpenctiIntegrations.Type.${IntegrationType.Connector}`
-      )
-    ).toBeInTheDocument();
-    expect(
-      within(listbox).queryByText('External import')
-    ).not.toBeInTheDocument();
   });
 
   it('calls setIntegrationTypes when Connector is selected', async () => {
-    vi.mocked(useIsFeatureEnabled).mockReturnValue(false);
     const { user } = testRender(<IntegrationTypeFilter />);
 
     await user.click(
-      screen.getByText('Service.OpenctiIntegrations.Filter.Type.Placeholder')
-    );
-    await user.click(
-      within(screen.getByRole('listbox')).getByText(
-        `Service.OpenctiIntegrations.Type.${IntegrationType.Connector}`
-      )
+      screen.getByRole('checkbox', {
+        name: `Service.OpenctiIntegrations.Type.${IntegrationType.Connector}`,
+      })
     );
 
     expect(setIntegrationTypesMock).toHaveBeenCalledWith({
@@ -111,15 +60,37 @@ describe('IntegrationTypeFilter', () => {
     });
   });
 
-  it('calls remove callbacks when the remove button is clicked', async () => {
-    vi.mocked(useIsFeatureEnabled).mockReturnValue(false);
+  it('does not render a clickable filter title button', () => {
+    testRender(<IntegrationTypeFilter />);
+
+    expect(
+      screen.queryByRole('button', {
+        name: 'Service.OpenctiIntegrations.Filter.Type.Placeholder',
+      })
+    ).not.toBeInTheDocument();
+  });
+
+  it('should send the English label of the integration type when it is checked', async () => {
+    // Given
+    startAnalytics();
     const { user } = testRender(<IntegrationTypeFilter />);
 
-    await user.click(screen.getByRole('button', { name: 'Remove filter' }));
-
-    expect(removeIntegrationTypesMock).toHaveBeenCalledTimes(1);
-    expect(removeFilterMock).toHaveBeenCalledWith(
-      ServiceListFilterKey.IntegrationType
+    // When
+    await user.click(
+      screen.getByRole('checkbox', {
+        name: `Service.OpenctiIntegrations.Type.${IntegrationType.Connector}`,
+      })
     );
+
+    // Then
+    expect(readTrackedEvents('filter_apply')).toEqual([
+      {
+        filter_name: 'Integration type',
+        filter_value: 'Connectors',
+        filter_action: 'Add',
+        library: 'Integrations',
+        product: 'OpenCTI',
+      },
+    ]);
   });
 });

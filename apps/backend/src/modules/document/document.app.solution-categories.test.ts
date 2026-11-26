@@ -4,25 +4,24 @@ import { TestHelper } from '../../../tests/helper/test.helper';
 import { SERVICES, TEST_ORGANIZATIONS } from '../../../tests/tests.const';
 import {
   DocumentMetadataKeyCode,
+  DocumentStatus,
   FiligranProduct,
+  IntegrationType,
   LicenseType,
 } from '../../__generated__/resolvers-types';
+import { MinIOClient } from '../../thirdparty/minio/client';
 import {
   INTEGRATION_CONNECTOR_METADATA_KEYS,
   OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+  ThirdPartyIntegration,
 } from '../shareable-resource/opencti/integration/integration.model';
 import { solutionCategoryDomain } from '../solution-category/solution-category.domain';
 import { DocumentApp } from './document.app';
-import { DocumentMetadataDomain } from './domain/document.metadata.domain';
-// ... tes imports existants, plus :
-import {
-  IntegrationSubType,
-  IntegrationType,
-} from '../../__generated__/resolvers-types';
-import { MinIOClient } from '../../thirdparty/minio/client';
-import { ThirdPartyIntegration } from '../shareable-resource/opencti/integration/integration.model';
 import { DocumentUploadsHelper } from './document.uploads.helper';
-import { DocumentMetadataKeys } from './domain/document.metadata.domain';
+import {
+  DocumentMetadataDomain,
+  DocumentMetadataKeys,
+} from './domain/document.metadata.domain';
 
 const minioFileMock = {
   minioName: 'minioFile',
@@ -49,7 +48,7 @@ const documentData = {
   uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID,
   name: 'name',
   description: 'description',
-  active: true,
+  status: DocumentStatus.Published,
   use_cases: [],
 };
 
@@ -57,10 +56,6 @@ const metadataKeys = [
   {
     key: DocumentMetadataKeyCode.IntegrationType,
     value: IntegrationType.ThirdPartyIntegration,
-  },
-  {
-    key: DocumentMetadataKeyCode.IntegrationSubtype,
-    value: IntegrationSubType.Orchestration,
   },
   { key: DocumentMetadataKeyCode.VendorUrl, value: 'https://example.com' },
 ] as unknown as DocumentMetadataKeys<ThirdPartyIntegration>;

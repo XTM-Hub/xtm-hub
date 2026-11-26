@@ -1,21 +1,20 @@
-import { ReactNode, useContext, useMemo, useState } from 'react';
+import { ReactNode, useContext, useMemo } from 'react';
 
 import {
   BreadcrumbNav,
   BreadcrumbNavLink,
 } from '@/components/ui/BreadcrumbNav';
-import { DownloadIcon } from '@filigran/icon';
+import { useTranslate } from '@/hooks/use-translate';
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@filigran/ui/clients';
-import { Button } from '@filigran/ui/servers';
-import { useTranslations } from 'next-intl';
+  analyticsResource,
+  toAnalyticsResourceData,
+} from '@/lib/analytics/analytics.context';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
+import { DownloadIcon } from '@filigran/icon';
 
+import { DeployableResourceViewTracker } from '@/components/service/document/DeployableResourceViewTracker';
 import OneClickDeploy from '@/components/service/document/one-click-deploy/OneClickDeploy';
-import { OPENCTI_INTEGRATION_URL_CONFIGS } from '@/components/service/document/one-click-deploy/UseOneClickDeployTab';
+import { ResourceViewTracker } from '@/components/service/document/ResourceViewTracker';
 import ShareableResourceDetails from '@/components/service/document/ShareableResouceDetails';
 import ShareableResourceDescription from '@/components/service/document/ShareableResourceDescription';
 import ShareableResourceCarousel from '@/components/service/document/ui/ShareableResourceCarouselView';
@@ -26,19 +25,34 @@ import BadgeOverflowCounter, {
 } from '@/components/ui/BadgeOverflowCounter';
 import { ShareLinkButton } from '@/components/ui/share-link/ShareLinkButton';
 import useDecodedParams from '@/hooks/use-decoded-params';
+import { useDocumentCounter } from '@/hooks/use-document-counter';
 import { filterDocumentImages, findDocumentLogo } from '@/utils/documents';
+import { getResourcePageFiligranWebsiteUtm } from '@/utils/filigran-website-utm';
 import { PUBLIC_CYBERSECURITY_SOLUTIONS_PATH } from '@/utils/path/constant';
 import { EntityTypeOrFiligranLogo } from '@/utils/shareable-resources/entity-type';
-import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
-import { isResourceDownloadable } from '@/utils/shareable-resources/utils/shareable-resources.client.utils';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
+import {
+  getDocumentEntityTypes,
+  isResourceDeployable,
+  isResourceDownloadable,
+} from '@/utils/shareable-resources/utils/shareable-resources.client.utils';
+import {
+  Button,
+  IconButton,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@filigran/design-system';
+import {
+  DocumentItemFragment,
+  ServiceInstanceItemFragment,
+} from '@graphql/generated';
 import Image from 'next/image';
 
 // Component interface
 interface ShareableResourceSlugProps {
-  documentData: documentItem_fragment$data;
-  serviceInstance: serviceInstance_fragment$data;
+  documentData: DocumentItemFragment;
+  serviceInstance: ServiceInstanceItemFragment;
   breadcrumbValue: BreadcrumbNavLink[];
   children?: ReactNode;
   updateActions?: ReactNode;
@@ -52,30 +66,20 @@ const ShareableResourceSlug = ({
   children,
   updateActions,
 }: ShareableResourceSlugProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const { serviceInstanceId } = useDecodedParams();
   const { settings } = useContext(SettingsContext);
 
-  const [documentDownloadNumber, setDocumentDownloadNumber] = useState(
-    documentData.download_number ?? 0
+  const { count: downloadNumber, increment: incrementDownloadNumber } =
+    useDocumentCounter(documentData.id, documentData.download_number);
+  const { count: shareNumber, increment: incrementShareNumber } =
+    useDocumentCounter(documentData.id, documentData.share_number);
+  const downloadUrl = `/document/get/${serviceInstanceId}/${documentData.id}?attach=1`;
+
+  const shouldShowOneClickDeployComponent = useMemo(
+    () => isResourceDeployable(documentData),
+    [documentData]
   );
-  const incrementDownloadNumber = () =>
-    setDocumentDownloadNumber((prev) => prev + 1);
-
-  const shouldShowOneClickDeployComponent = useMemo(() => {
-    if (!documentData.active) return false;
-
-    if (documentData.integration_type) {
-      return documentData.integration_type in OPENCTI_INTEGRATION_URL_CONFIGS;
-    }
-
-    return [
-      ShareableResourceType.OPENCTI_CUSTOM_DASHBOARD,
-      ShareableResourceType.OPENCTI_CUSTOM_VIEW,
-      ShareableResourceType.OPENAEV_SCENARIO,
-      ShareableResourceType.OPENCTI_PLAYBOOK,
-    ].includes(documentData.type as ShareableResourceType);
-  }, [documentData]);
 
   const carouselImages = useMemo(() => {
     return filterDocumentImages(documentData);
@@ -85,10 +89,22 @@ const ShareableResourceSlug = ({
     return findDocumentLogo(documentData);
   }, [documentData]);
 
+  const resource = toAnalyticsResourceData(documentData);
+
   return (
-    <>
+    <div
+      className="contents"
+      {...analyticsResource(resource)}>
       <BreadcrumbNav value={breadcrumbValue} />
-      <div className="flex gap-s pb-l flex-col md:flex-row">
+      {shouldShowOneClickDeployComponent ? (
+        <DeployableResourceViewTracker resource={documentData} />
+      ) : (
+        <ResourceViewTracker
+          resource={documentData}
+          deployEligibility="Resource not deployable"
+        />
+      )}
+      <div className="flex gap-2 pb-4 flex-col md:flex-row">
         {logo ? (
           <div className="w-24 shrink-0 rounded overflow-hidden">
             <Image
@@ -101,18 +117,22 @@ const ShareableResourceSlug = ({
             />
           </div>
         ) : (
-          <div className="w-24 p-m shrink-0 flex items-center justify-center">
+          <div className="w-24 p-3 shrink-0 flex items-center justify-center">
             <EntityTypeOrFiligranLogo
-              entityTypes={getEntityTypes(documentData)}
+              entityTypes={getEntityTypes({
+                entity_types: getDocumentEntityTypes(documentData),
+              })}
             />
           </div>
         )}
         <div className="flex flex-col justify-center w-full">
           <div className="flex items-start ">
-            <h1 className="whitespace-nowrap mb-s">{documentData.name}</h1>
-            <div className="flex gap-s ml-auto">
+            <h1 className="whitespace-nowrap mb-2">{documentData.name}</h1>
+            <div className="flex gap-2 ml-auto">
               <ShareLinkButton
+                analyticsId="resource_share"
                 documentId={documentData.id}
+                onShare={incrementShareNumber}
                 url={`${settings!.base_url_front}/${PUBLIC_CYBERSECURITY_SOLUTIONS_PATH}/${documentData?.service_instance?.slug}/${documentData?.slug}`}
               />
               {shouldShowOneClickDeployComponent ? (
@@ -123,16 +143,20 @@ const ShareableResourceSlug = ({
                         delayDuration={50}
                         disableHoverableContent={true}>
                         <TooltipTrigger asChild>
-                          <Button
-                            variant="tertiary"
-                            size="icon"
-                            onClick={() => {
-                              incrementDownloadNumber();
-                              window.location.href = `/document/get/${serviceInstanceId}/${documentData?.id}?attach=1`;
-                            }}
-                            className="z-[2] text-primary">
-                            <DownloadIcon className="h-4 w-4" />
-                          </Button>
+                          <IconButton
+                            asChild
+                            priority="tertiary"
+                            className="z-[2]"
+                            aria-label={t(
+                              'Service.ShareableResources.Download'
+                            )}
+                            icon={<DownloadIcon className="h-4 w-4" />}>
+                            <a
+                              {...analyticsId('resource_download')}
+                              href={downloadUrl}
+                              onClick={incrementDownloadNumber}
+                            />
+                          </IconButton>
                         </TooltipTrigger>
                         <TooltipContent>
                           <p>{t('Service.ShareableResources.Download')}</p>
@@ -146,12 +170,13 @@ const ShareableResourceSlug = ({
                 <>
                   {updateActions}
                   {isResourceDownloadable(documentData) && (
-                    <Button
-                      onClick={() => {
-                        incrementDownloadNumber();
-                        window.location.href = `/document/get/${serviceInstanceId}/${documentData?.id}?attach=1`;
-                      }}>
-                      {t('Utils.Download')}
+                    <Button asChild>
+                      <a
+                        {...analyticsId('resource_download')}
+                        href={downloadUrl}
+                        onClick={incrementDownloadNumber}>
+                        {t('Utils.Download')}
+                      </a>
                     </Button>
                   )}
                 </>
@@ -163,6 +188,7 @@ const ShareableResourceSlug = ({
           </div>
           <div>
             <BadgeOverflowCounter
+              formatLabel={false}
               badges={documentData.use_cases as BadgeOverflow[]}
             />
           </div>
@@ -170,22 +196,30 @@ const ShareableResourceSlug = ({
       </div>
       <ShareableResourceCarousel
         serviceInstance={serviceInstance}
+        resource={resource}
         images={carouselImages}
       />
       {children}
-      <div className="flex flex-col-reverse lg:flex-row w-full mt-l gap-xl">
+      <div className="flex flex-col-reverse lg:flex-row w-full mt-4 gap-6">
         <ShareableResourceDescription
           shortDescription={documentData?.short_description ?? ''}
           longDescription={documentData?.description ?? ''}
+          serviceDefinitionIdentifier={
+            serviceInstance.service_definition?.identifier
+          }
         />
         {documentData && (
           <ShareableResourceDetails
             documentData={documentData}
-            downloadNumber={documentDownloadNumber}
+            downloadNumber={downloadNumber}
+            shareNumber={shareNumber}
+            filigranWebsiteUtm={getResourcePageFiligranWebsiteUtm(
+              serviceInstance.service_definition?.identifier
+            )}
           />
         )}
       </div>
-    </>
+    </div>
   );
 };
 

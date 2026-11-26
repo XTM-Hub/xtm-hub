@@ -1,0 +1,68 @@
+name: Copilot setup steps
+
+# Preinstalls the XTM Hub toolchain for the Copilot coding agent.
+# The job MUST be named `copilot-setup-steps` for the agent to pick it up.
+# Pushing/PRing this file also validates it like any other workflow.
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+  pull_request:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+
+jobs:
+  copilot-setup-steps:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+
+      # Must come before any yarn call. Yarn 4 is resolved from the
+      # `packageManager` field in package.json, so never pin a version here.
+      #
+      # Note this is also why `cache: yarn` is NOT set on setup-node above:
+      # that option shells out to the runner's global yarn 1.x to locate the
+      # cache folder, which happens before this step and fails with
+      # "the current global version of Yarn is 1.22.22".
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Locate Yarn cache
+        id: yarn-cache
+        run: echo "dir=$(yarn config get cacheFolder)" >> "$GITHUB_OUTPUT"
+
+      - name: Restore Yarn cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.yarn-cache.outputs.dir }}
+          key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}
+          restore-keys: ${{ runner.os }}-yarn-
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      # GraphQL artifacts are not committed, and both `check-ts` and `test`
+      # fail without them.
+      - name: Generate backend GraphQL types
+        run: yarn workspace @xtm-hub/backend generate:ts
+
+      - name: Generate frontend Relay artifacts
+        run: yarn workspace @xtm-hub/frontend relay
+
+      # Next generates `next-env.d.ts` (which declares the SVG and route
+      # modules) during dev/build only. Without it `check-ts` reports around
+      # twenty phantom "Cannot find module '@public/*.svg'" errors.
+      - name: Generate frontend Next types
+        run: yarn workspace @xtm-hub/frontend next typegen

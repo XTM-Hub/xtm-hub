@@ -1,13 +1,11 @@
 import { defaultLocale, publicLocales } from '@/i18n/config';
-import { serverFetchGraphQL } from '@/relay/server-portal-api-fetch';
 import { PUBLIC_CYBERSECURITY_SOLUTIONS_PATH } from '@/utils/path/constant';
+import { fetchSeoServiceInstances } from '@/utils/seo-service-instance/utils/seo-service-instance.server.utils';
+import { isExternalService } from '@/utils/services';
+import { fetchServerSettings } from '@/utils/settings.service';
 import { ServiceSlug } from '@/utils/shareable-resources/shareable-resources.types';
-import { fetchAllDocuments } from '@/utils/shareable-resources/utils/shareable-resources.server.utils';
-import SeoServiceInstancesQuery, {
-  seoServiceInstancesQuery,
-} from '@generated/seoServiceInstancesQuery.graphql';
-import { serviceList_fragment$data } from '@generated/serviceList_fragment.graphql';
-import SettingsQuery, { settingsQuery } from '@generated/settingsQuery.graphql';
+import { fetchPublicDocumentSlugs } from '@/utils/shareable-resources/utils/shareable-resources.server.utils';
+import { ServiceDefinitionIdentifier } from '@graphql/generated';
 import type { MetadataRoute } from 'next';
 
 export const dynamic = 'force-dynamic';
@@ -42,19 +40,16 @@ const pushPerLocale = (
 };
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const settingsResponse =
-    await serverFetchGraphQL<settingsQuery>(SettingsQuery);
-  const baseURI = settingsResponse.data.settings.base_url_front;
+  const { base_url_front: baseURI } = await fetchServerSettings();
 
-  const seoServiceInstancesResponse =
-    await serverFetchGraphQL<seoServiceInstancesQuery>(
-      SeoServiceInstancesQuery
-    );
-
-  const seoServiceInstancesData = seoServiceInstancesResponse.data
-    .seoServiceInstances as unknown as serviceList_fragment$data[];
+  const seoServiceInstancesData = await fetchSeoServiceInstances();
   const routableSeoServiceInstances = seoServiceInstancesData.filter(
-    (service) => service.slug !== null && service.slug !== undefined
+    (service) =>
+      service.slug !== null &&
+      service.slug !== undefined &&
+      !isExternalService(
+        service.service_definition!.identifier as ServiceDefinitionIdentifier
+      )
   );
 
   const sitemap: MetadataRoute.Sitemap = [];
@@ -76,12 +71,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'monthly',
       priority: 1,
     });
+  }
 
-    if (!documentBearingServiceSlugs.has(service.slug as string)) {
-      continue;
-    }
+  const documentBearingServices = routableSeoServiceInstances.filter(
+    (service) => documentBearingServiceSlugs.has(service.slug as string)
+  );
 
-    const resources = await fetchAllDocuments(service.slug as ServiceSlug);
+  const servicesWithResources = await Promise.all(
+    documentBearingServices.map(async (service) => ({
+      service,
+      resources: await fetchPublicDocumentSlugs(service.slug as ServiceSlug),
+    }))
+  );
+
+  for (const { service, resources } of servicesWithResources) {
+    const servicePath = `/${PUBLIC_CYBERSECURITY_SOLUTIONS_PATH}/${service.slug}`;
     for (const resource of resources) {
       if (!resource.slug) continue;
       const docPath = `${servicePath}/${resource.slug}`;

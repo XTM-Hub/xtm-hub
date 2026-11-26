@@ -1,3 +1,4 @@
+import { cn } from '@/lib/utils';
 import {
   AccountBalanceOutlinedIcon,
   AccountMultipleOutlineIcon,
@@ -141,7 +142,11 @@ interface EntityTypeIconProps extends SVGProps<SVGSVGElement> {
   entityType: string;
 }
 
-/** Renders the OpenCTI icon for an entity type, with a generic fallback. */
+/**
+ * Renders the OpenCTI icon for an entity type, with a generic fallback.
+ * Decorative by default: callers show the entity type name next to it. Pass
+ * `aria-hidden={false}` with an `aria-label` to use it on its own.
+ */
 export const EntityTypeIcon = ({
   entityType,
   style,
@@ -152,6 +157,7 @@ export const EntityTypeIcon = ({
   const color = entityStyle?.color;
   return (
     <Icon
+      aria-hidden={true}
       style={{ color, ...style }}
       {...props}
     />
@@ -160,6 +166,7 @@ export const EntityTypeIcon = ({
 
 interface EntityTypeOrFiligranLogoProps {
   entityTypes?: readonly string[] | null;
+  className?: string;
 }
 
 /**
@@ -168,14 +175,18 @@ interface EntityTypeOrFiligranLogoProps {
  */
 export const EntityTypeOrFiligranLogo = ({
   entityTypes,
+  className = 'size-22',
 }: EntityTypeOrFiligranLogoProps) => {
   const first = entityTypes?.[0];
   return first ? (
     <EntityTypeIcon
       entityType={first}
-      className="size-22 shrink-0"
+      className={cn('shrink-0', className)}
     />
   ) : (
-    <LogoFiligranIcon className="size-22" />
+    <LogoFiligranIcon
+      aria-hidden={true}
+      className={className}
+    />
   );
 };

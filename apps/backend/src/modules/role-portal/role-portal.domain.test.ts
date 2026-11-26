@@ -1,13 +1,39 @@
-import { beforeEach, describe, expect, it } from 'vitest';
-import { db } from '../../../knexfile';
+import { v4 as uuidv4 } from 'uuid';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { TestHelper } from '../../../tests/helper/test.helper';
+import {
+  CAPABILITY_READ_SAAS_METRICS,
+  TEST_ORGANIZATIONS,
+} from '../../../tests/tests.const';
+import { RolePortalId } from '../../model/kanel/public/RolePortal';
+import { UserId } from '../../model/kanel/public/User';
+import { CAPABILITY_BYPASS } from '../../portal.const';
+import { ErrorCode } from '../../utils/error/error.code';
 import { RolePortalDomain } from './role-portal.domain';
 
 describe('role portal domain tests', () => {
+  describe('loadCapabilityPortalsByNames', () => {
+    it('should return the capabilities requested by their name', async () => {
+      // When
+      const capabilities = await RolePortalDomain.loadCapabilityPortalsByNames([
+        CAPABILITY_BYPASS.name,
+        CAPABILITY_READ_SAAS_METRICS.name,
+      ]);
+
+      // Then
+      expect(capabilities).toHaveLength(2);
+      expect(capabilities).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining(CAPABILITY_BYPASS),
+          expect.objectContaining(CAPABILITY_READ_SAAS_METRICS),
+        ])
+      );
+    });
+  });
+
   describe('loadRolePortalsBySSOGroups', () => {
     beforeEach(async () => {
-      // eslint-disable-next-line no-restricted-syntax
-      await db('SSOGroup_RolePortal').del();
+      await TestHelper.ssoGroup_RolePortal.delete({});
       await TestHelper.rolePortal.delete({});
       await TestHelper.rolePortal.create({
         name: 'POTATO_PEELER',
@@ -19,16 +45,22 @@ describe('role portal domain tests', () => {
         name: 'BANANA_INSPECTOR',
       });
 
-      // eslint-disable-next-line no-restricted-syntax
-      await db('SSOGroup_RolePortal').insert([
-        { SSOGroup: 'purple-elephants-club', RolePortal: 'POTATO_PEELER' },
-        { SSOGroup: 'flying-pizza-society', RolePortal: 'POTATO_PEELER' },
-        { SSOGroup: 'moonlight-dancers', RolePortal: 'UNICORN_RIDER' },
-        {
-          SSOGroup: 'coffee-addicts-anonymous',
-          RolePortal: 'BANANA_INSPECTOR',
-        },
-      ]);
+      await TestHelper.ssoGroup_RolePortal.create({
+        SSOGroup: 'purple-elephants-club',
+        RolePortal: 'POTATO_PEELER',
+      });
+      await TestHelper.ssoGroup_RolePortal.create({
+        SSOGroup: 'flying-pizza-society',
+        RolePortal: 'POTATO_PEELER',
+      });
+      await TestHelper.ssoGroup_RolePortal.create({
+        SSOGroup: 'moonlight-dancers',
+        RolePortal: 'UNICORN_RIDER',
+      });
+      await TestHelper.ssoGroup_RolePortal.create({
+        SSOGroup: 'coffee-addicts-anonymous',
+        RolePortal: 'BANANA_INSPECTOR',
+      });
     });
 
     it('should return null when user has no SSO group', async () => {
@@ -53,6 +85,333 @@ describe('role portal domain tests', () => {
 
       expect(result?.roles).toEqual(['POTATO_PEELER']);
       expect(result?.roles).toHaveLength(1);
+    });
+  });
+
+  describe('loadSSOGroupRolePortals', () => {
+    let jugglerId: RolePortalId;
+    let tamerId: RolePortalId;
+
+    beforeEach(async () => {
+      await TestHelper.ssoGroup_RolePortal.delete({});
+      const juggler = await TestHelper.rolePortal.create({
+        name: 'TOMATO_JUGGLER',
+      });
+      const tamer = await TestHelper.rolePortal.create({
+        name: 'DRAGON_TAMER',
+      });
+      jugglerId = juggler.id;
+      tamerId = tamer.id;
+
+      await TestHelper.rolePortal_CapabilityPortal.create({
+        role_portal_id: jugglerId,
+        capability_portal_id: CAPABILITY_BYPASS.id,
+      });
+      await TestHelper.ssoGroup_RolePortal.create({
+        SSOGroup: 'jugglers-guild',
+        RolePortal: 'TOMATO_JUGGLER',
+      });
+      await TestHelper.ssoGroup_RolePortal.create({
+        SSOGroup: 'circus-friends',
+        RolePortal: 'TOMATO_JUGGLER',
+      });
+      await TestHelper.ssoGroup_RolePortal.create({
+        SSOGroup: 'dragon-keepers',
+        RolePortal: 'DRAGON_TAMER',
+      });
+    });
+
+    afterEach(async () => {
+      await TestHelper.ssoGroup_RolePortal.delete({});
+      await TestHelper.rolePortal_CapabilityPortal.delete({
+        role_portal_id: jugglerId,
+      });
+      await TestHelper.rolePortal_CapabilityPortal.delete({
+        role_portal_id: tamerId,
+      });
+      await TestHelper.rolePortal.delete({ id: jugglerId });
+      await TestHelper.rolePortal.delete({ id: tamerId });
+    });
+
+    it('should return each SSO group with its role and the role capabilities', async () => {
+      const result = await RolePortalDomain.loadSSOGroupRolePortals();
+
+      expect(result).toHaveLength(3);
+      expect(result).toEqual(
+        expect.arrayContaining([
+          {
+            ssoGroup: 'jugglers-guild',
+            rolePortal: expect.objectContaining({
+              id: jugglerId,
+              name: 'TOMATO_JUGGLER',
+              capabilities: [expect.objectContaining(CAPABILITY_BYPASS)],
+            }),
+          },
+          {
+            ssoGroup: 'circus-friends',
+            rolePortal: expect.objectContaining({
+              id: jugglerId,
+              capabilities: [expect.objectContaining(CAPABILITY_BYPASS)],
+            }),
+          },
+          {
+            ssoGroup: 'dragon-keepers',
+            rolePortal: expect.objectContaining({
+              id: tamerId,
+              name: 'DRAGON_TAMER',
+              capabilities: [],
+            }),
+          },
+        ])
+      );
+    });
+  });
+
+  describe('loadRolePortals', () => {
+    let jugglerId: RolePortalId;
+    let tamerId: RolePortalId;
+
+    beforeEach(async () => {
+      const juggler = await TestHelper.rolePortal.create({
+        name: 'TOMATO_JUGGLER',
+      });
+      const tamer = await TestHelper.rolePortal.create({
+        name: 'DRAGON_TAMER',
+      });
+      jugglerId = juggler.id;
+      tamerId = tamer.id;
+
+      await TestHelper.rolePortal_CapabilityPortal.create({
+        role_portal_id: jugglerId,
+        capability_portal_id: CAPABILITY_BYPASS.id,
+      });
+    });
+
+    afterEach(async () => {
+      await TestHelper.rolePortal_CapabilityPortal.delete({
+        role_portal_id: jugglerId,
+      });
+      await TestHelper.rolePortal.delete({ id: jugglerId });
+      await TestHelper.rolePortal.delete({ id: tamerId });
+    });
+
+    it('should return each role with its capabilities, even without SSO group', async () => {
+      const result = await RolePortalDomain.loadRolePortals();
+
+      expect(result).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            id: jugglerId,
+            name: 'TOMATO_JUGGLER',
+            capabilities: [expect.objectContaining(CAPABILITY_BYPASS)],
+          }),
+          expect.objectContaining({
+            id: tamerId,
+            name: 'DRAGON_TAMER',
+            capabilities: [],
+          }),
+        ])
+      );
+    });
+
+    it('should return roles sorted by name', async () => {
+      const result = await RolePortalDomain.loadRolePortals();
+
+      const names = result.map(({ name }) => name);
+      expect(names).toEqual([...names].sort());
+    });
+  });
+
+  describe('assignRoleByName', () => {
+    const testUserIds: string[] = [];
+    const testRolePortalIds: string[] = [];
+    let user_id: UserId;
+
+    beforeEach(async () => {
+      user_id = uuidv4() as UserId;
+      testUserIds.push(user_id);
+
+      await TestHelper.user.create({
+        id: user_id,
+        email: `add-role-${user_id}@test-dev.com`,
+        salt: 'test-salt',
+        password: 'test-password',
+        selected_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+      });
+    });
+
+    afterEach(async () => {
+      if (testUserIds.length > 0) {
+        for (const testUserId of testUserIds) {
+          await TestHelper.user_RolePortal.delete({
+            user_id: testUserId as UserId,
+          });
+          await TestHelper.user.delete({ id: testUserId as UserId });
+        }
+      }
+
+      if (testRolePortalIds.length > 0) {
+        for (const testRolePortalId of testRolePortalIds) {
+          await TestHelper.rolePortal.delete({
+            id: testRolePortalId as RolePortalId,
+          });
+        }
+      }
+
+      testUserIds.length = 0;
+      testRolePortalIds.length = 0;
+    });
+
+    it('should add role to user when role exists and user does not have it', async () => {
+      // Given
+      const rolePortalId = uuidv4() as RolePortalId;
+      const roleName = `TEST-ADMIN-${rolePortalId}`.toUpperCase();
+
+      testRolePortalIds.push(rolePortalId);
+
+      await TestHelper.rolePortal.create({
+        id: rolePortalId,
+        name: roleName,
+      });
+
+      // When
+      await RolePortalDomain.assignRoleByName(user_id, roleName);
+
+      // Then
+      const userRole = await TestHelper.user_RolePortal.load({
+        user_id,
+        role_portal_id: rolePortalId,
+      });
+
+      expect(userRole).toMatchObject({
+        user_id,
+        role_portal_id: rolePortalId,
+      });
+    });
+
+    it('should not duplicate role if user already has it', async () => {
+      // Given
+      const rolePortalId = uuidv4() as RolePortalId;
+      const roleName = `TEST-EDITOR-${rolePortalId}`.toUpperCase();
+
+      testRolePortalIds.push(rolePortalId);
+
+      await TestHelper.rolePortal.create({
+        id: rolePortalId,
+        name: roleName,
+      });
+
+      // When
+      await RolePortalDomain.assignRoleByName(user_id, roleName);
+      await RolePortalDomain.assignRoleByName(user_id, roleName);
+
+      // Then
+      const userRoles = await TestHelper.user_RolePortal.loadAll({
+        user_id,
+        role_portal_id: rolePortalId,
+      });
+
+      expect(userRoles).toHaveLength(1);
+      expect(userRoles[0]).toMatchObject({
+        user_id,
+        role_portal_id: rolePortalId,
+      });
+    });
+
+    it('should handle when role does not exist', async () => {
+      // Given
+
+      // When
+      await expect(
+        RolePortalDomain.assignRoleByName(user_id, 'non-existent-role')
+      ).resolves.not.toThrow();
+
+      // Then
+      const userRoles = await TestHelper.user_RolePortal.loadAll({
+        user_id,
+      });
+
+      expect(userRoles).toHaveLength(0);
+    });
+
+    it('should work with existing role names in database', async () => {
+      // Given
+      const existingRole = await TestHelper.rolePortal.load({});
+
+      // When
+      if (existingRole) {
+        await RolePortalDomain.assignRoleByName(user_id, existingRole.name);
+
+        // Then
+        const userRole = await TestHelper.user_RolePortal.load({
+          user_id,
+          role_portal_id: existingRole.id,
+        });
+
+        expect(userRole).toMatchObject({
+          user_id,
+          role_portal_id: existingRole.id,
+        });
+      }
+    });
+  });
+
+  describe('deleteSSOGroupRolePortal', () => {
+    let rolePortalId: RolePortalId;
+
+    beforeEach(async () => {
+      const rolePortal = await TestHelper.rolePortal.create({
+        name: 'PANCAKE_FLIPPER',
+      });
+      rolePortalId = rolePortal.id;
+      await TestHelper.ssoGroup_RolePortal.create({
+        SSOGroup: 'breakfast-club',
+        RolePortal: 'PANCAKE_FLIPPER',
+      });
+      await TestHelper.ssoGroup_RolePortal.create({
+        SSOGroup: 'brunch-club',
+        RolePortal: 'PANCAKE_FLIPPER',
+      });
+    });
+
+    afterEach(async () => {
+      // Cascades to SSOGroup_RolePortal
+      await TestHelper.rolePortal.delete({ id: rolePortalId });
+    });
+
+    it('should delete only the given SSO group mapping, keep the role and return the deleted mapping', async () => {
+      // When
+      const result = await RolePortalDomain.deleteSSOGroupRolePortal({
+        ssoGroup: 'breakfast-club',
+        rolePortalName: 'PANCAKE_FLIPPER',
+      });
+
+      // Then
+      expect(result).toEqual({
+        ssoGroup: 'breakfast-club',
+        rolePortal: expect.objectContaining({
+          id: rolePortalId,
+          name: 'PANCAKE_FLIPPER',
+        }),
+      });
+      const remaining = await RolePortalDomain.loadSSOGroupRolePortals({
+        rolePortalName: 'PANCAKE_FLIPPER',
+      });
+      expect(remaining.map(({ ssoGroup }) => ssoGroup)).toEqual([
+        'brunch-club',
+      ]);
+      expect(
+        await TestHelper.rolePortal.load({ id: rolePortalId })
+      ).toBeDefined();
+    });
+
+    it('should throw when the SSO group mapping does not exist', async () => {
+      await expect(
+        RolePortalDomain.deleteSSOGroupRolePortal({
+          ssoGroup: 'dinner-club',
+          rolePortalName: 'PANCAKE_FLIPPER',
+        })
+      ).rejects.toThrow(ErrorCode.SSOGroupRolePortalNotFound);
     });
   });
 });

@@ -1,29 +1,35 @@
 schema:
-  - "./src/**/*.graphql"
+  - './src/**/*.graphql'
 emitLegacyCommonJSImports: false
 generates:
   ./src/__generated__/resolvers-types.ts:
     plugins:
-      - "typescript"
-      - "typescript-resolvers"
+      - 'typescript'
+      - 'typescript-resolvers'
     config:
       useTypeImports: true
       useIndexSignature: true
       maybeValue: T | null | undefined
       inputMaybeValue: T | null
       makeResolverTypeCallable: true
-      contextType: "../model/portal-context.js#PortalContext"
+      contextType: '../model/portal-context.js#PortalContext'
+      mappers:
+        VotingRound: '../modules/feature-voting/feature-voting.app.js#VotingRoundModel'
+        VotableFeature: '../modules/feature-voting/feature-voting.app.js#VotableFeatureModel'
       scalars:
-        SolutionCategoryId: "../model/kanel/public/SolutionCategory.js#SolutionCategoryId"
-        ServiceInstanceId: "../model/kanel/public/ServiceInstance.js#ServiceInstanceId"
-        OrganizationId: "../model/kanel/public/Organization.js#OrganizationId"
-        CompetitorId: "../model/kanel/public/Competitor.js#CompetitorId"
-        DeploymentRequestId: "../model/kanel/public/DeploymentRequest.js#DeploymentRequestId"
-        DocumentId: "../model/kanel/public/Document.js#DocumentId"
-        UserId: "../model/kanel/public/User.js#UserId"
-        UseCaseId: "../model/kanel/public/UseCase.js#UseCaseId"
-        SubscriptionId: "../model/kanel/public/Subscription.js#SubscriptionId"
-        ServiceCapabilityId: "../model/kanel/public/ServiceCapability.js#ServiceCapabilityId"
-        NewsFeedItemId: "../model/kanel/public/NewsFeedItem.js#NewsFeedItemId"
-        UserServiceId: "../model/kanel/public/UserService.js#UserServiceId"
-        SubscriptionCapabilityId: "../model/kanel/public/SubscriptionCapability.js#SubscriptionCapabilityId"
+        SolutionCategoryId: '../model/kanel/public/SolutionCategory.js#SolutionCategoryId'
+        ServiceInstanceId: '../model/kanel/public/ServiceInstance.js#ServiceInstanceId'
+        OrganizationId: '../model/kanel/public/Organization.js#OrganizationId'
+        CompetitorId: '../model/kanel/public/Competitor.js#CompetitorId'
+        DeploymentRequestId: '../model/kanel/public/DeploymentRequest.js#DeploymentRequestId'
+        DocumentId: '../model/kanel/public/Document.js#DocumentId'
+        UserId: '../model/kanel/public/User.js#UserId'
+        UseCaseId: '../model/kanel/public/UseCase.js#UseCaseId'
+        SubscriptionId: '../model/kanel/public/Subscription.js#SubscriptionId'
+        ServiceCapabilityId: '../model/kanel/public/ServiceCapability.js#ServiceCapabilityId'
+        NewsFeedItemId: '../model/kanel/public/NewsFeedItem.js#NewsFeedItemId'
+        UserServiceId: '../model/kanel/public/UserService.js#UserServiceId'
+        SubscriptionCapabilityId: '../model/kanel/public/SubscriptionCapability.js#SubscriptionCapabilityId'
+        VotableFeatureId: '../model/kanel/public/VotableFeature.js#VotableFeatureId'
+        VotingRoundId: '../model/kanel/public/VotingRound.js#VotingRoundId'
+        ApiTokenId: '../model/kanel/public/ApiToken.js#ApiTokenId'

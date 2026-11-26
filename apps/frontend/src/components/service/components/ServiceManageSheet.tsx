@@ -1,20 +1,26 @@
 'use client';
-import { Button, toast } from '@filigran/ui';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { ServiceRestriction } from '@graphql/generated';
+import { DocumentItemFragment, ServiceRestriction } from '@graphql/generated';
 
+import { DocumentStatusChip } from '@/components/service/components/DocumentStatusChip';
 import { useServiceContext } from '@/components/service/components/ServiceContext';
 import { ServiceFormValues } from '@/components/service/components/subscribable-services.types';
 
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import useServiceCapability from '@/hooks/use-service-capability';
+import { useTranslate } from '@/hooks/use-translate';
+import {
+  analyticsResource,
+  toAnalyticsResourceData,
+} from '@/lib/analytics/analytics.context';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import revalidatePathActions from '@/utils/actions/revalidate-path.actions';
 import { PUBLIC_CYBERSECURITY_SOLUTIONS_PATH } from '@/utils/path/constant';
-import { useTranslations } from 'next-intl';
+import { Button } from '@filigran/design-system';
 import { useState } from 'react';
 
 interface ServiceManageSheetProps {
-  document?: documentItem_fragment$data;
+  document?: DocumentItemFragment;
   variant?: 'menu' | 'button';
   open?: boolean;
   setOpen?: (open: boolean) => void;
@@ -26,7 +32,7 @@ export const ServiceManageSheet = ({
   open: externalOpen,
   setOpen: externalSetOpen,
 }: ServiceManageSheetProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const [internalOpenSheet, setInternalOpenSheet] = useState(false);
 
   // Use external state if provided, otherwise use internal state
@@ -56,16 +62,17 @@ export const ServiceManageSheet = ({
       `/${PUBLIC_CYBERSECURITY_SOLUTIONS_PATH}/${serviceInstance.slug}`,
     ]);
     setOpenSheet(false);
-    toast({
+    showSnackbar({
+      severity: 'success',
       title: t('Utils.Success'),
-      description: t('VaultActions.DocumentUpdated', {
+      description: t('ServiceActions.DocumentUpdated', {
         file_name: serviceName,
       }),
     });
   }
   function onError(error: Error) {
-    toast({
-      variant: 'destructive',
+    showSnackbar({
+      severity: 'error',
       title: t('Utils.Error'),
       description: t(`Error.Server.${error.message}`),
     });
@@ -74,7 +81,8 @@ export const ServiceManageSheet = ({
   function onCreateSuccess(serviceName: string) {
     setOpenSheet(false);
 
-    toast({
+    showSnackbar({
+      severity: 'success',
       title: t('Utils.Success'),
       description: t(`${translationKey}.Actions.Added`, {
         name: serviceName,
@@ -92,20 +100,26 @@ export const ServiceManageSheet = ({
             setOpen={setOpenSheet}
             trigger={
               variant === 'button' ? (
-                <Button variant="secondary">{t('Utils.Update')}</Button>
+                <Button
+                  {...analyticsId('resource_edit')}
+                  priority="secondary">
+                  {t('Utils.Update')}
+                </Button>
               ) : undefined
             }
+            analyticsContext={analyticsResource(
+              toAnalyticsResourceData(document)
+            )}
             title={t(`${translationKey}.UpdateService`, {
               name: document.name ?? '',
-            })}>
-            {
-              <ServiceForm
-                document={document}
-                handleSubmit={(values: ServiceFormValues) =>
-                  handleUpdateSheet(values, document, onUpdateSuccess, onError)
-                }
-              />
-            }
+            })}
+            titleBadge={<DocumentStatusChip status={document.status} />}>
+            <ServiceForm
+              document={document}
+              handleSubmit={(values: ServiceFormValues) =>
+                handleUpdateSheet(values, document, onUpdateSuccess, onError)
+              }
+            />
           </SheetWithPreventingDialog>
         )}
       </>
@@ -121,7 +135,9 @@ export const ServiceManageSheet = ({
           setOpen={setOpenSheet}
           trigger={
             variant === 'button' ? (
-              <Button>{t(`${translationKey}.AddService`)}</Button>
+              <Button {...analyticsId('resource_create')}>
+                {t(`${translationKey}.AddService`)}
+              </Button>
             ) : undefined
           }
           title={t(`${translationKey}.AddService`)}>

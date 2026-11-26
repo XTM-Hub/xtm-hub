@@ -1,0 +1,54 @@
+mutation VotingRoundCreate($input: CreateVotingRoundInput!) {
+  createVotingRound(input: $input) {
+    ...VotingRoundRow
+  }
+}
+
+mutation VotingRoundUpdate(
+  $id: VotingRoundId!
+  $input: UpdateVotingRoundInput!
+) {
+  updateVotingRound(id: $id, input: $input) {
+    ...VotingRoundRow
+  }
+}
+
+mutation VotingRoundSetStatus(
+  $id: VotingRoundId!
+  $status: VotingRoundStatus!
+) {
+  setVotingRoundStatus(id: $id, status: $status) {
+    ...VotingRoundRow
+  }
+}
+
+mutation VotingRoundDelete($id: VotingRoundId!) {
+  deleteVotingRound(id: $id) {
+    id
+  }
+}
+
+mutation VotableFeatureCreate(
+  $input: CreateVotableFeatureInput!
+  $document: [Upload!]
+) {
+  createVotableFeature(input: $input, document: $document) {
+    ...VotableFeatureAdminRow
+  }
+}
+
+mutation VotableFeatureUpdate(
+  $id: VotableFeatureId!
+  $input: UpdateVotableFeatureInput!
+  $document: [Upload!]
+) {
+  updateVotableFeature(id: $id, input: $input, document: $document) {
+    ...VotableFeatureAdminRow
+  }
+}
+
+mutation VotableFeatureDelete($id: VotableFeatureId!) {
+  deleteVotableFeature(id: $id) {
+    id
+  }
+}

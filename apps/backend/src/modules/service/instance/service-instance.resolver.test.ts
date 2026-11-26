@@ -245,32 +245,6 @@ describe('service instance links by tags GraphQL query', () => {
   });
 });
 
-describe('service instance by id GraphQL query', () => {
-  it('should pass user and service_instance_id to ServiceInstanceApp.loadServiceInstanceAndGrantAccess', async () => {
-    const id = SERVICES.INSTANCES.EPIC.ID;
-    const expected = { id } as unknown as Awaited<
-      ReturnType<typeof ServiceInstanceApp.loadServiceInstanceAndGrantAccess>
-    >;
-    vi.spyOn(
-      ServiceInstanceApp,
-      'loadServiceInstanceAndGrantAccess'
-    ).mockResolvedValue(expected);
-
-    const result = await serviceInstanceResolver.Query!
-      .serviceInstanceByIdAndGrantAccess!(
-      {},
-      { service_instance_id: id },
-      contextSimpleUserFiligran2,
-      GRAPHQL_RESOLVE_INFO
-    );
-
-    expect(
-      ServiceInstanceApp.loadServiceInstanceAndGrantAccess
-    ).toHaveBeenCalledWith(id);
-    expect(result).toEqual(expected);
-  });
-});
-
 describe('seo service instances GraphQL query', () => {
   it('should delegate to ServiceInstanceApp.loadSeoServiceInstances', async () => {
     const expected = [] as unknown as Awaited<
@@ -322,7 +296,11 @@ describe('seo service instance GraphQL query', () => {
       GRAPHQL_RESOLVE_INFO
     );
 
-    await expect(call).rejects.toMatchObject({ name: ErrorType.NotFound });
+    // The public SEO pages turn this error code into a 404.
+    await expect(call).rejects.toMatchObject({
+      name: ErrorType.NotFound,
+      extensions: { code: ErrorType.NotFound },
+    });
   });
 
   it('should map to ForbiddenAccess for ServiceNotManageable error', async () => {
@@ -388,7 +366,7 @@ describe('mutation.updatePlatformServiceMetadata', () => {
     const result = await serviceInstanceResolver.Mutation!
       .updatePlatformServiceMetadata!(
       {},
-      { input, document: null },
+      { input },
       contextSimpleUserFiligran2,
       GRAPHQL_RESOLVE_INFO
     );
@@ -398,8 +376,7 @@ describe('mutation.updatePlatformServiceMetadata', () => {
     ).toHaveBeenCalledWith(
       contextSimpleUserFiligran2.user,
       SERVICES.INSTANCES.EPIC.ID,
-      input,
-      null
+      input
     );
     expect(result).toEqual(expected);
   });
@@ -417,7 +394,6 @@ describe('mutation.updatePlatformServiceMetadata', () => {
         input: {
           serviceInstanceId: SERVICES.INSTANCES.EPIC.ID,
         } as unknown as MutationUpdatePlatformServiceMetadataArgs['input'],
-        document: null,
       },
       contextSimpleUserFiligran2,
       GRAPHQL_RESOLVE_INFO

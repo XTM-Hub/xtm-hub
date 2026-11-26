@@ -1,4 +1,5 @@
 import { BadRequestErrorCode } from '../../../utils/error/error.code';
+import { BadRequestError } from '../../../utils/error/error.util';
 import { compareVersions, isLtsVersion } from '../../../utils/versioning';
 
 export const MANIFEST_VERSION_PATTERN = String.raw`(\d+)\.(\d{1,6})\.(\d+)(?:-lts\.(\d+))?`;
@@ -10,10 +11,14 @@ export const TAG_DECOUPLING = 'decoupling';
 export const MAX_SHORT_DESCRIPTION_LENGTH = 250;
 export const MAX_CONTACT_LENGTH = 254;
 
+// What an admin edits on a connector and a manifest fragment does not carry, so that a newer version keeps it.
 export type ConnectorMetadataSnapshot = {
   datasheet_url?: string;
   blogpost_url?: string;
   demo_url?: string;
+  // The summary of the generated meta description, a Document column. Copied as stored: it was validated when the
+  // admin entered it, and ingestion is not a user path.
+  meta_description?: string | null;
 };
 
 export const ManifestFragmentHelper = {
@@ -36,9 +41,27 @@ export const ManifestFragmentHelper = {
     return `${major}.${datePart}.${patch}.LTS.${ltsPatch}`;
   },
 
+  validateProductVersion: (version: string): void => {
+    try {
+      ManifestFragmentHelper.validateAndFormatManifestVersion(version);
+    } catch {
+      throw BadRequestError(BadRequestErrorCode.InvalidPlatformVersion, {
+        detail: `Invalid version format: ${version}`,
+      });
+    }
+  },
+
   validateShortDescriptionLength: (shortDescription: string): void => {
     if (shortDescription.length > MAX_SHORT_DESCRIPTION_LENGTH) {
       throw new Error(BadRequestErrorCode.ShortDescriptionTooLong);
+    }
+  },
+
+  validateSolutionCategories: (
+    solutionCategories: string[] | null | undefined
+  ): void => {
+    if (!solutionCategories || solutionCategories.length === 0) {
+      throw new Error(BadRequestErrorCode.SolutionCategoriesRequired);
     }
   },
 
@@ -77,12 +100,17 @@ export const ManifestFragmentHelper = {
         currentLatestConnector?.demo_url ??
         existingBatchConnectors.find((connector) => connector.demo_url)
           ?.demo_url,
+      meta_description:
+        currentLatestConnector?.meta_description ??
+        existingBatchConnectors.find((connector) => connector.meta_description)
+          ?.meta_description,
     };
 
     if (
       !metadataFromExisting.datasheet_url &&
       !metadataFromExisting.blogpost_url &&
-      !metadataFromExisting.demo_url
+      !metadataFromExisting.demo_url &&
+      !metadataFromExisting.meta_description
     ) {
       return undefined;
     }

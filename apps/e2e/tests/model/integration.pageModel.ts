@@ -1,5 +1,36 @@
 import { Page } from '@playwright/test';
-import { selectSolutionCategories, selectUseCase } from './common';
+import {
+  fillMetaDescription,
+  publishResource,
+  selectSolutionCategories,
+  selectUseCase,
+  waitForDrawerToClose,
+} from './common';
+
+// Integrations a real OpenCTI can deploy in one click, with the exports it accepts to import.
+export const DEPLOYABLE_INTEGRATIONS = {
+  csv: {
+    menuItem: 'CSV Feeds',
+    path: './tests/tests_files/assets/octi_csv_feed_deployable.json',
+    feedName: 'E2E deployed CSV feed',
+  },
+  taxii: {
+    menuItem: 'TAXII Feeds',
+    path: './tests/tests_files/assets/octi_taxii_feed_deployable.json',
+    feedName: 'E2E deployed TAXII feed',
+  },
+  rss: {
+    menuItem: 'RSS Feeds',
+    path: './tests/tests_files/assets/octi_rss_feed_deployable.json',
+    feedName: 'E2E deployed RSS feed',
+  },
+  stream: {
+    menuItem: 'OpenCTI Streams',
+    path: './tests/tests_files/assets/octi_stream_deployable.json',
+    feedName: 'E2E deployed stream',
+  },
+} as const;
+export type DeployableIntegrationKind = keyof typeof DEPLOYABLE_INTEGRATIONS;
 
 const TEST_JSON_FILE = {
   path: './tests/tests_files/assets/octi_csv_feed.json',
@@ -15,11 +46,22 @@ export default class IntegrationPage {
 
   async navigateToIntegrationsService() {
     await this.page.getByRole('button', { name: 'OpenCTI' }).click();
-    await this.page.getByRole('link', { name: 'Integrations' }).click();
+    const integrationsLink = this.page.getByRole('link', {
+      name: 'Integrations',
+    });
+    await integrationsLink.waitFor({ state: 'visible' });
+    await integrationsLink.click();
+    await this.page.waitForURL(/\/app\/service\/opencti_integrations\//);
+  }
+
+  getIntegrationCard(name: string) {
+    return this.page.getByRole('listitem').filter({
+      has: this.page.getByText(name, { exact: true }),
+    });
   }
   async uploadJsonDocument(filePath: string) {
     const fileInput = this.page.locator(
-      'input[type="file"][accept="application/json"]'
+      'input[type="file"][accept*="application/json"]'
     );
     await fileInput.setInputFiles(filePath);
   }
@@ -33,10 +75,12 @@ export default class IntegrationPage {
 
   async fillTaxiiFeed({
     name,
+    metaDescription,
     shortDescription,
     description,
   }: {
     name: string;
+    metaDescription: string;
     shortDescription: string;
     description: string;
   }) {
@@ -44,31 +88,31 @@ export default class IntegrationPage {
       .getByRole('button', { name: 'Add new Integration' })
       .click();
     await this.page.getByRole('menuitem', { name: 'TAXII Feeds' }).click();
-    await this.page.getByRole('textbox', { name: 'Name *' }).fill(name);
     await this.page
-      .getByRole('textbox', { name: 'Short Description *' })
+      .getByRole('textbox', { name: 'Name', exact: true })
+      .fill(name);
+    await fillMetaDescription(this.page, metaDescription);
+    await this.page
+      .getByRole('textbox', { name: 'Short Description' })
       .fill(shortDescription);
     await this.page
-      .getByRole('textbox', { name: 'This is a paragraph to' })
+      .getByPlaceholder('This is a paragraph to')
       .fill(description);
-    await this.page
-      .getByRole('checkbox', { name: 'Is the TAXII Feed published?' })
-      .click();
-    await this.page.getByLabel('Type').click();
-    await this.page.getByLabel('Native').click();
     await this.uploadJsonDocument(TEST_JSON_FILE.path);
     await this.uploadImageDocument(TEST_IMAGE_FILE.path);
     await selectUseCase(this.page);
     await selectSolutionCategories(this.page);
     await this.page.getByRole('radio', { name: 'Commercial' }).click();
-    await this.page.getByRole('button', { name: 'Validate' }).click();
+    await this.page.getByRole('button', { name: 'Request validation' }).click();
   }
   async fillRssFeed({
     name,
+    metaDescription,
     shortDescription,
     description,
   }: {
     name: string;
+    metaDescription: string;
     shortDescription: string;
     description: string;
   }) {
@@ -76,30 +120,32 @@ export default class IntegrationPage {
       .getByRole('button', { name: 'Add new Integration' })
       .click();
     await this.page.getByRole('menuitem', { name: 'RSS Feeds' }).click();
-    await this.page.getByRole('textbox', { name: 'Name *' }).fill(name);
     await this.page
-      .getByRole('textbox', { name: 'Short Description *' })
+      .getByRole('textbox', { name: 'Name', exact: true })
+      .fill(name);
+    await fillMetaDescription(this.page, metaDescription);
+    await this.page
+      .getByRole('textbox', { name: 'Short Description' })
       .fill(shortDescription);
     await this.page
-      .getByRole('textbox', { name: 'This is a paragraph to' })
+      .getByPlaceholder('This is a paragraph to')
       .fill(description);
-
-    await this.page.getByLabel('Type').click();
-    await this.page.getByLabel('Malware').click();
     await this.uploadJsonDocument(TEST_JSON_FILE.path);
     await this.uploadImageDocument(TEST_IMAGE_FILE.path);
     await selectUseCase(this.page);
     await selectSolutionCategories(this.page);
     await this.page.getByRole('radio', { name: 'Commercial' }).click();
-    await this.page.getByRole('button', { name: 'Validate' }).click();
+    await this.page.getByRole('button', { name: 'Request validation' }).click();
   }
 
   async fillStream({
     name,
+    metaDescription,
     shortDescription,
     description,
   }: {
     name: string;
+    metaDescription: string;
     shortDescription: string;
     description: string;
   }) {
@@ -107,62 +153,71 @@ export default class IntegrationPage {
       .getByRole('button', { name: 'Add new Integration' })
       .click();
     await this.page.getByRole('menuitem', { name: 'OpenCTI Streams' }).click();
-    await this.page.getByRole('textbox', { name: 'Name *' }).fill(name);
     await this.page
-      .getByRole('textbox', { name: 'Short Description *' })
+      .getByRole('textbox', { name: 'Name', exact: true })
+      .fill(name);
+    await fillMetaDescription(this.page, metaDescription);
+    await this.page
+      .getByRole('textbox', { name: 'Short Description' })
       .fill(shortDescription);
     await this.page
-      .getByRole('textbox', { name: 'This is a paragraph to' })
+      .getByPlaceholder('This is a paragraph to')
       .fill(description);
-    await this.page
-      .getByRole('checkbox', { name: 'Is the Stream published?' })
-      .click();
-    await this.page.getByLabel('Type').click();
-    await this.page.getByLabel('Native').click();
     await this.uploadJsonDocument(TEST_JSON_FILE.path);
     await this.uploadImageDocument(TEST_IMAGE_FILE.path);
     await selectUseCase(this.page);
     await selectSolutionCategories(this.page);
     await this.page.getByRole('radio', { name: 'Commercial' }).click();
-    await this.page.getByRole('button', { name: 'Validate' }).click();
+    await this.page.getByRole('button', { name: 'Request validation' }).click();
   }
-  async fillCsvFeed({
-    name,
-    shortDescription,
-    description,
-  }: {
-    name: string;
-    shortDescription: string;
-    description: string;
-  }) {
+  async fillCsvFeed(
+    {
+      name,
+      metaDescription,
+      shortDescription,
+      description,
+    }: {
+      name: string;
+      metaDescription: string;
+      shortDescription: string;
+      description: string;
+    },
+    { publish = false }: { publish?: boolean } = {}
+  ) {
     await this.page
       .getByRole('button', { name: 'Add new Integration' })
       .click();
     await this.page.getByRole('menuitem', { name: 'CSV Feeds' }).click();
-    await this.page.getByRole('textbox', { name: 'Name *' }).fill(name);
     await this.page
-      .getByRole('textbox', { name: 'Short Description *' })
+      .getByRole('textbox', { name: 'Name', exact: true })
+      .fill(name);
+    await fillMetaDescription(this.page, metaDescription);
+    await this.page
+      .getByRole('textbox', { name: 'Short Description' })
       .fill(shortDescription);
     await this.page
-      .getByRole('textbox', { name: 'This is a paragraph to' })
+      .getByPlaceholder('This is a paragraph to')
       .fill(description);
-    await this.page
-      .getByRole('checkbox', { name: 'Is the CSV Feed published?' })
-      .click();
     await this.uploadJsonDocument(TEST_JSON_FILE.path);
     await this.uploadImageDocument(TEST_IMAGE_FILE.path);
     await selectUseCase(this.page);
     await selectSolutionCategories(this.page);
     await this.page.getByRole('radio', { name: 'Commercial' }).click();
-    await this.page.getByRole('button', { name: 'Validate' }).click();
+    await this.page.getByRole('button', { name: 'Request validation' }).click();
+    if (publish) {
+      await waitForDrawerToClose(this.page);
+      await publishResource(this.page, name);
+    }
   }
 
   async fillThirdPartyIntegration({
     name,
+    metaDescription,
     shortDescription,
     description,
   }: {
     name: string;
+    metaDescription: string;
     shortDescription: string;
     description: string;
   }) {
@@ -172,20 +227,16 @@ export default class IntegrationPage {
     await this.page
       .getByRole('menuitem', { name: 'Third party integration' })
       .click();
-    await this.page.getByRole('textbox', { name: 'Name *' }).fill(name);
     await this.page
-      .getByRole('textbox', { name: 'Short Description *' })
+      .getByRole('textbox', { name: 'Name', exact: true })
+      .fill(name);
+    await fillMetaDescription(this.page, metaDescription);
+    await this.page
+      .getByRole('textbox', { name: 'Short Description' })
       .fill(shortDescription);
     await this.page
-      .getByRole('textbox', { name: 'This is a paragraph to' })
+      .getByPlaceholder('This is a paragraph to')
       .fill(description);
-    await this.page
-      .getByRole('checkbox', {
-        name: 'Is the Third party integration published?',
-      })
-      .click();
-    await this.page.getByLabel('Type').click();
-    await this.page.getByLabel('Orchestration').click();
     await this.page
       .getByRole('textbox', { name: 'Vendor link (url)' })
       .fill('https://example.com');
@@ -199,7 +250,49 @@ export default class IntegrationPage {
     await selectUseCase(this.page);
     await selectSolutionCategories(this.page);
     await this.page.getByRole('radio', { name: 'Commercial' }).click();
-    await this.page.getByRole('button', { name: 'Validate' }).click();
+    await this.page.getByRole('button', { name: 'Request validation' }).click();
+  }
+
+  // A free integration, published: a Commercial one can only be deployed on an Enterprise Edition platform.
+  async addDeployableIntegration(
+    kind: DeployableIntegrationKind,
+    {
+      name,
+      metaDescription,
+      shortDescription,
+      description,
+    }: {
+      name: string;
+      metaDescription: string;
+      shortDescription: string;
+      description: string;
+    }
+  ) {
+    const integration = DEPLOYABLE_INTEGRATIONS[kind];
+    await this.page
+      .getByRole('button', { name: 'Add new Integration' })
+      .click();
+    await this.page
+      .getByRole('menuitem', { name: integration.menuItem })
+      .click();
+    await this.page
+      .getByRole('textbox', { name: 'Name', exact: true })
+      .fill(name);
+    await fillMetaDescription(this.page, metaDescription);
+    await this.page
+      .getByRole('textbox', { name: 'Short Description' })
+      .fill(shortDescription);
+    await this.page
+      .getByPlaceholder('This is a paragraph to')
+      .fill(description);
+    await this.uploadJsonDocument(integration.path);
+    await this.uploadImageDocument(TEST_IMAGE_FILE.path);
+    await selectUseCase(this.page);
+    await selectSolutionCategories(this.page);
+    await this.page.getByRole('radio', { name: 'Free' }).click();
+    await this.page.getByRole('button', { name: 'Request validation' }).click();
+    await waitForDrawerToClose(this.page);
+    await publishResource(this.page, name);
   }
 
   async navigateToIntegration(shortDescription: string) {
@@ -207,7 +300,17 @@ export default class IntegrationPage {
   }
 
   async deleteIntegration(deleteButtonRole: 'menuitem' | 'button') {
-    await this.page.getByRole(deleteButtonRole, { name: 'Delete' }).click();
-    await this.page.getByRole('button', { name: 'Delete' }).click();
+    if (deleteButtonRole === 'menuitem') {
+      const menu = this.page.getByRole('menu').last();
+      await menu.waitFor({ state: 'visible' });
+      await menu.getByRole('menuitem', { name: 'Delete' }).click();
+    } else {
+      await this.page.getByRole('button', { name: 'Delete' }).first().click();
+    }
+
+    await this.page
+      .getByRole('alertdialog')
+      .getByRole('button', { name: 'Delete' })
+      .click();
   }
 }

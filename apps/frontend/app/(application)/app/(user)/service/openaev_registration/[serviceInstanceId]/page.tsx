@@ -1,6 +1,6 @@
+import { PrefetchedRegisteredPlatformOverview } from '@/components/service/registration/PrefetchedRegisteredPlatformOverview';
 import { RegistrationLearnMore } from '@/components/service/registration/RegistrationLearnMore';
-import { ServiceInstanceTag } from '@graphql/generated';
-import ClientSection from './client-section';
+import { PlatformIdentifier } from '@graphql/generated';
 
 export interface ServiceOpenAEVRegistrationPageProps {
   params: Promise<{ serviceInstanceId: string }>;
@@ -8,8 +8,11 @@ export interface ServiceOpenAEVRegistrationPageProps {
 const Page = ({ params }: ServiceOpenAEVRegistrationPageProps) => {
   return (
     <>
-      <ClientSection params={params} />
-      <RegistrationLearnMore serviceInstanceTag={ServiceInstanceTag.OpenAev} />
+      <PrefetchedRegisteredPlatformOverview
+        params={params}
+        platformIdentifier={PlatformIdentifier.Openaev}
+      />
+      <RegistrationLearnMore platformIdentifier={PlatformIdentifier.Openaev} />
     </>
   );
 };

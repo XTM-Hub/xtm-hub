@@ -1,9 +1,11 @@
 import { expect, test } from '../fixtures/baseFixtures';
+import { META_DESCRIPTION_SUMMARY } from '../model/common';
 import LoginPage from '../model/login.pageModel';
 import IntegrationPage from '../model/integration.pageModel';
 
 const ThirdPartyIntegration_TEST = {
   name: 'e2e Third Party Integration name',
+  metaDescription: META_DESCRIPTION_SUMMARY,
   shortDescription: 'This is a short description',
   description: 'This is a Third party integration description markdown',
   thirdPartyIntegrationFeedsServiceInstanceId:

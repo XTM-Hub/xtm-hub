@@ -207,3 +207,20 @@ describe('needsConsent', () => {
     }
   );
 });
+
+describe('needsConsent with an unreadable timestamp', () => {
+  it('requires consent when the stored timestamp is not a valid date', () => {
+    // Given
+    const stored = {
+      version: CONSENT_VERSION,
+      timestamp: 'not-a-date',
+      services: allGranted,
+    };
+
+    // When
+    const result = needsConsent(stored, now);
+
+    // Then
+    expect(result).toBe(true);
+  });
+});

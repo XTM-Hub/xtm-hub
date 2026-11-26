@@ -40,6 +40,25 @@ export const prependToQueryCache =
     };
   };
 
+export const appendToQueryCache =
+  <TQuery extends object, K extends keyof TQuery & keyof Query>(
+    connectionKey: K,
+    newEdge: EdgeOf<TQuery, K>
+  ) =>
+  (previous: TQuery | undefined): TQuery | undefined => {
+    if (!previous) return previous;
+    const connection = previous[connectionKey] as Connection<EdgeOf<TQuery, K>>;
+    if (!connection) return previous;
+    return {
+      ...previous,
+      [connectionKey]: {
+        ...connection,
+        totalCount: connection.totalCount + 1,
+        edges: [...connection.edges, newEdge],
+      },
+    };
+  };
+
 export const updateInQueryCache =
   <TQuery extends object, K extends keyof TQuery & keyof Query>(
     connectionKey: K,

@@ -1,31 +1,31 @@
+import { EpicListSkeleton } from '@/components/epic/EpicListSkeleton';
+import { EpicPage } from '@/components/epic/EpicPage';
+import { PrefetchedEpicList } from '@/components/epic/PrefetchedEpicList';
 import { BreadcrumbNav } from '@/components/ui/BreadcrumbNav';
 import type { PublicLocale } from '@/i18n/config';
-import { RelayProvider } from '@/relay/relay-provider';
-import { serverFetchGraphQL } from '@/relay/server-portal-api-fetch';
 import {
   buildFiligranOrganizationJsonLd,
   buildSeoPageMetadata,
   getBaseUrl,
   stringifyJsonLd,
 } from '@/utils/generate-metadata';
-import { PUBLIC_CYBERSECURITY_SOLUTIONS_PATH } from '@/utils/path/constant';
-import { seoServiceInstanceFragment$data } from '@generated/seoServiceInstanceFragment.graphql';
-import SeoServiceInstanceQuery, {
-  seoServiceInstanceQuery,
-} from '@generated/seoServiceInstanceQuery.graphql';
+import {
+  PUBLIC_CYBERSECURITY_SOLUTIONS_PATH,
+  XTM_PLATFORM_ROADMAP_SLUG,
+} from '@/utils/path/constant';
+import { fetchSeoServiceInstanceBySlug } from '@/utils/seo-service-instance/utils/seo-service-instance.server.utils';
 import { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { cache } from 'react';
-import { PublicEpicListPageLoader } from './public-epic-list-page-loader';
+import { notFound } from 'next/navigation';
+import { cache, Suspense } from 'react';
 
 const getPageData = cache(async () => {
-  const serviceResponse = await serverFetchGraphQL<seoServiceInstanceQuery>(
-    SeoServiceInstanceQuery,
-    { slug: 'xtm-platform-roadmap' },
-    { cache: undefined, next: { revalidate: 3600 } }
+  const serviceInstance = await fetchSeoServiceInstanceBySlug(
+    XTM_PLATFORM_ROADMAP_SLUG
   );
-  const serviceInstance = serviceResponse.data
-    .seoServiceInstance as unknown as seoServiceInstanceFragment$data;
+  if (!serviceInstance) {
+    notFound();
+  }
   const baseUrl = await getBaseUrl();
   return { baseUrl, serviceInstance };
 });
@@ -105,9 +105,11 @@ const Page = async ({
         dangerouslySetInnerHTML={{ __html: stringifyJsonLd(jsonLd) }}
       />
       <BreadcrumbNav value={breadcrumbs} />
-      <RelayProvider>
-        <PublicEpicListPageLoader serviceInstance={serviceInstance} />
-      </RelayProvider>
+      <Suspense fallback={<EpicListSkeleton />}>
+        <PrefetchedEpicList>
+          <EpicPage serviceInstance={serviceInstance} />
+        </PrefetchedEpicList>
+      </Suspense>
     </>
   );
 };

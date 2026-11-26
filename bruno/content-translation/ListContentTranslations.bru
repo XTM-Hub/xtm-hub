@@ -1,0 +1,34 @@
+meta {
+  name: ListContentTranslations
+  type: graphql
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/graphql-api
+  body: graphql
+  auth: inherit
+}
+
+body:graphql {
+  query ContentTranslations($locale: Locale, $keys: [String!]) {
+    contentTranslations(locale: $locale, keys: $keys) {
+      key
+      locale
+      value
+      updated_at
+      updater_id
+    }
+  }
+}
+
+body:graphql:vars {
+  {
+    "locale": "en"
+  }
+}
+
+docs {
+  Public query: no cookie needed.
+  Omit `keys` to list every override of a locale, omit `locale` to list every locale of the given keys.
+}

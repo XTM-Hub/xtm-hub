@@ -1,68 +1,59 @@
 'use client';
-import { PlatformIdentifier } from '@graphql/generated';
-
 import { TrialsTabQuotasPlatform } from '@/components/trials/tab/quotas/TrialsTabQuotasPlatform';
 import TrialsTab from '@/components/trials/tab/TrialsTab';
 import { TrialsTabType } from '@/components/trials/trials.const';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@filigran/ui';
-import { useTranslations } from 'next-intl';
+import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@filigran/design-system';
 
-interface TrialsListProps {
-  platformIdentifier: PlatformIdentifier;
-}
+const TAB_TITLES: Record<TrialsTabType, string> = {
+  [TrialsTabType.Cancelled]: 'TrialsDashboard.TabTitle.Cancelled',
+  [TrialsTabType.Expired]: 'TrialsDashboard.TabTitle.Expired',
+  [TrialsTabType.Running]: 'TrialsDashboard.TabTitle.Running',
+  [TrialsTabType.Waiting]: 'TrialsDashboard.TabTitle.Waiting',
+};
 
-const TrialsList = ({ platformIdentifier }: TrialsListProps) => {
-  const t = useTranslations();
+const QUOTAS_TAB = 'quotas';
+
+const TrialsList = () => {
+  const t = useTranslate();
 
   return (
-    <>
-      <Tabs defaultValue={'waiting'}>
-        <TabsList>
-          <TabsTrigger value="cancelled">
-            {t('TrialsDashboard.TabTitle.Cancelled')}
+    <Tabs defaultValue={TrialsTabType.Waiting}>
+      <TabsList>
+        {Object.values(TrialsTabType).map((type) => (
+          <TabsTrigger
+            key={type}
+            value={type}
+            {...analyticsId('admin_trial_status_select')}>
+            {t(TAB_TITLES[type])}
           </TabsTrigger>
-          <TabsTrigger value="expired">
-            {t('TrialsDashboard.TabTitle.Expired')}
-          </TabsTrigger>
-          <TabsTrigger value="running">
-            {t('TrialsDashboard.TabTitle.Running')}
-          </TabsTrigger>
-          <TabsTrigger value="waiting">
-            {t('TrialsDashboard.TabTitle.Waiting')}
-          </TabsTrigger>
-          <TabsTrigger value="quotas">
-            {t('TrialsDashboard.TabTitle.Quotas')}
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value="cancelled">
-          <TrialsTab
-            type={TrialsTabType.Cancelled}
-            platformIdentifier={platformIdentifier}
-          />
+        ))}
+        <TabsTrigger
+          value={QUOTAS_TAB}
+          {...analyticsId('admin_trial_quotas_open')}>
+          {t('TrialsDashboard.TabTitle.Quotas')}
+        </TabsTrigger>
+      </TabsList>
+      {Object.values(TrialsTabType).map((type) => (
+        <TabsContent
+          key={type}
+          value={type}
+          className="pt-4">
+          <TrialsTab type={type} />
         </TabsContent>
-        <TabsContent value="expired">
-          <TrialsTab
-            type={TrialsTabType.Expired}
-            platformIdentifier={platformIdentifier}
-          />
-        </TabsContent>
-        <TabsContent value="running">
-          <TrialsTab
-            type={TrialsTabType.Running}
-            platformIdentifier={platformIdentifier}
-          />
-        </TabsContent>
-        <TabsContent value="waiting">
-          <TrialsTab
-            type={TrialsTabType.Waiting}
-            platformIdentifier={platformIdentifier}
-          />
-        </TabsContent>
-        <TabsContent value="quotas">
-          <TrialsTabQuotasPlatform platformIdentifier={platformIdentifier} />
-        </TabsContent>
-      </Tabs>
-    </>
+      ))}
+      <TabsContent
+        value={QUOTAS_TAB}
+        className="pt-4">
+        <TrialsTabQuotasPlatform />
+      </TabsContent>
+    </Tabs>
   );
 };
 

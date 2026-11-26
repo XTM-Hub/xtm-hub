@@ -1,0 +1,113 @@
+# Adds a real OpenAEV (rolling image) to docker-compose-ci.yml for the platform registration e2e tests.
+# Usage: docker compose -f docker-compose-ci.yml -f docker-compose-ci-openaev.yml run e2e ...
+services:
+  openaev:
+    container_name: openaev
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    image: openaev/platform:rolling
+    depends_on:
+      openaev-postgres:
+        condition: service_healthy
+      openaev-elasticsearch:
+        condition: service_healthy
+      openaev-rabbitmq:
+        condition: service_healthy
+      portal-minio:
+        condition: service_healthy
+      # OpenAEV checks once, at startup, that it can reach the Hub: the Hub must be up first.
+      frontend:
+        condition: service_healthy
+    environment:
+      - SERVER_PORT=8080
+      - OPENAEV_BASE-URL=http://openaev:8080
+      - OPENAEV_ADMIN_EMAIL=admin@openaev.io
+      - OPENAEV_ADMIN_PASSWORD=admin
+      - OPENAEV_ADMIN_TOKEN=0d17ce9a-f3a8-4c6d-9721-c98dc3dc023f
+      - OPENAEV_ADMIN_ENCRYPTION_KEY=ThisIsMyUltraSecureEncryptionKey
+      - OPENAEV_ADMIN_ENCRYPTION_SALT=e2esaltforopenaev
+      - OPENAEV_HEALTHCHECK_KEY=e2e-health-key
+      - OPENAEV_RATELIMIT_ENABLED=false
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://openaev-postgres:5432/openaev
+      - SPRING_DATASOURCE_USERNAME=openaev
+      - SPRING_DATASOURCE_PASSWORD=openaev
+      - ENGINE_URL=http://openaev-elasticsearch:9200
+      - MINIO_ENDPOINT=portal-minio
+      - MINIO_PORT=9000
+      - MINIO_ACCESS_KEY=portal
+      - MINIO_ACCESS_SECRET=changeme
+      - MINIO_BUCKET=openaev
+      - OPENAEV_RABBITMQ_HOSTNAME=openaev-rabbitmq
+      - OPENAEV_RABBITMQ_PORT=5672
+      - OPENAEV_RABBITMQ_MANAGEMENT-PORT=15672
+      - OPENAEV_RABBITMQ_USER=guest
+      - OPENAEV_RABBITMQ_PASS=guest
+      # The browser in the e2e container and the OpenAEV backend both reach the Hub on this address.
+      - OPENAEV_XTM_HUB_ENABLE=true
+      - OPENAEV_XTM_HUB_URL=http://frontend:3000
+      - OPENAEV_XTM_HUB_CONNECTIVITY-EMAIL-ENABLE=false
+    healthcheck:
+      # The image has no curl or wget: request the health endpoint over bash's /dev/tcp.
+      test:
+        [
+          "CMD",
+          "bash",
+          "-c",
+          "exec 3<>/dev/tcp/localhost/8080 && printf 'GET /api/health?health_access_key=e2e-health-key HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n' >&3 && head -1 <&3 | grep -q ' 200 '",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 60
+      start_period: 60s
+
+  openaev-postgres:
+    container_name: openaev-postgres
+    image: postgres:17.2-alpine
+    environment:
+      - POSTGRES_USER=openaev
+      - POSTGRES_PASSWORD=openaev
+      - POSTGRES_DB=openaev
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U openaev -d openaev"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  openaev-elasticsearch:
+    container_name: openaev-elasticsearch
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.19.23
+    environment:
+      - discovery.type=single-node
+      - xpack.ml.enabled=false
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl --silent --fail 'localhost:9200/_cluster/health?wait_for_status=yellow&timeout=5s' || exit 1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  openaev-rabbitmq:
+    container_name: openaev-rabbitmq
+    image: rabbitmq:4.3-management
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 20
+
+  e2e:
+    depends_on:
+      openaev:
+        condition: service_healthy
+    environment:
+      - OPENAEV_URL=http://openaev:8080
+      - OPENAEV_ADMIN_EMAIL=admin@openaev.io
+      - OPENAEV_ADMIN_PASSWORD=admin

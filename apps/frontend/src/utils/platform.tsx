@@ -1,14 +1,10 @@
-import { PlatformHoverAction } from '@/components/service/ServiceInstanceCard';
-import { APP_PATH } from '@/utils/path/constant';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
-import { registerRegisteredPlatformListFragment$data } from '@generated/registerRegisteredPlatformListFragment.graphql';
 import {
-  DeploymentRequestDeploymentType,
-  DeploymentRequestHubStatus,
+  DeploymentRequest,
+  LicenseType,
   PlatformContract,
   PlatformIdentifier,
 } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 
 export const getPlatformIdentifier = (type: string): PlatformIdentifier => {
   return type === ShareableResourceType.OPENAEV_SCENARIO
@@ -16,44 +12,20 @@ export const getPlatformIdentifier = (type: string): PlatformIdentifier => {
     : PlatformIdentifier.Opencti;
 };
 
-export const isTrial = (
-  platform: registerRegisteredPlatformListFragment$data['registeredPlatforms'][number]
-) => {
-  return (
-    platform.deployment_request?.type === DeploymentRequestDeploymentType.Trial
-  );
-};
-
 export const isEeCapableContract = (
   contract: PlatformContract | string | null | undefined
 ): boolean =>
   contract === PlatformContract.Ee || contract === PlatformContract.Trial;
 
-export const buildPlatformHoverLinks = (
-  platform: registerRegisteredPlatformListFragment$data['registeredPlatforms'][number],
-  t: ReturnType<typeof useTranslations>
-): PlatformHoverAction[] | undefined => {
-  const isTrialActive =
-    platform.deployment_request?.hub_status ===
-    DeploymentRequestHubStatus.Active;
-  const shouldDisplayPlatformLink = isTrialActive || !isTrial(platform);
+/**
+ * A `Commercial` document (e.g. a connector) only works against an
+ * Enterprise Edition platform. Used to gate one-click deploy so a
+ * Commercial resource isn't proposed on a CE-only platform.
+ */
+export const requiresEnterpriseEdition = (
+  licenseType: LicenseType | string | null | undefined
+): boolean => licenseType === LicenseType.Commercial;
 
-  const actions: PlatformHoverAction[] = [
-    {
-      id: 'platform-details',
-      label: t('Service.RegisteredPlatforms.PlatformDetails'),
-      href: `/${APP_PATH}/service/${platform.identifier}/${platform.subscription?.service_instance?.id}`,
-      variant: 'secondary',
-    },
-  ];
-  if (shouldDisplayPlatformLink) {
-    actions.push({
-      id: 'platform-link',
-      label: t('Service.RegisteredPlatforms.GoToMyPlatform'),
-      href: platform.url,
-      target: '_blank',
-    });
-  }
-
-  return actions;
-};
+export const isBundleProduct = (
+  deploymentRequest: Pick<DeploymentRequest, 'parent_id'> | null | undefined
+): boolean => Boolean(deploymentRequest?.parent_id);

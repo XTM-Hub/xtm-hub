@@ -1,33 +1,30 @@
-import { formatDate, isWithinLastMonths } from '@/utils/date';
+import {
+  computePeriodProgress,
+  isWithinLastMonths,
+  useDateFormatter,
+} from '@/utils/date';
 import { ProvidersWrapperProps, TestWrapper } from '@/utils/test/test-render';
 import { renderHook } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
-describe('date', () => {
+describe('useDateFormatter', () => {
+  const wrapper = ({ children }: ProvidersWrapperProps) => (
+    <TestWrapper>{children}</TestWrapper>
+  );
+
   it('should return formatted date for valid input', () => {
-    expect(true).toBe(true);
-    const wrapper = ({ children }: ProvidersWrapperProps) => {
-      return <TestWrapper>{children}</TestWrapper>;
-    };
-    const { result } = renderHook(
-      () => formatDate('2024-11-08T10:20:30Z', false),
-      {
-        wrapper,
-      }
-    );
-    expect(result.current).toBe('11/8/2024');
+    const { result } = renderHook(() => useDateFormatter(), { wrapper });
+    expect(result.current('2024-11-08T10:20:30Z')).toBe('11/8/2024');
   });
 
-  it('should return null for undefined input', () => {
-    expect(formatDate(undefined)).toBe(null);
-  });
-
-  it('should return null for empty string input', () => {
-    expect(formatDate('')).toBe(null);
-  });
-
-  it('should return null for invalid date input', () => {
-    expect(formatDate(null)).toBe(null);
+  it.each`
+    input        | description
+    ${undefined} | ${'undefined'}
+    ${''}        | ${'empty string'}
+    ${null}      | ${'null'}
+  `('should return null for $description input', ({ input }) => {
+    const { result } = renderHook(() => useDateFormatter(), { wrapper });
+    expect(result.current(input)).toBe(null);
   });
 });
 
@@ -52,4 +49,40 @@ describe('isWithinLastMonths', () => {
       expect(isWithinLastMonths(date, months)).toBe(expected);
     }
   );
+});
+
+describe('computePeriodProgress', () => {
+  const startDate = '2026-01-01T00:00:00.000Z';
+  const endDate = '2026-01-11T00:00:00.000Z';
+
+  it.each`
+    description           | now                           | daysLeft | elapsedPercent
+    ${'before the start'} | ${'2025-12-25T00:00:00.000Z'} | ${10}    | ${0}
+    ${'at the start'}     | ${'2026-01-01T00:00:00.000Z'} | ${10}    | ${0}
+    ${'midway'}           | ${'2026-01-06T00:00:00.000Z'} | ${5}     | ${50}
+    ${'mid-day'}          | ${'2026-01-08T12:00:00.000Z'} | ${3}     | ${70}
+    ${'at the end'}       | ${'2026-01-11T00:00:00.000Z'} | ${0}     | ${100}
+    ${'after the end'}    | ${'2026-02-01T00:00:00.000Z'} | ${0}     | ${100}
+  `(
+    'should return $daysLeft days left and $elapsedPercent% elapsed $description',
+    ({ now, daysLeft, elapsedPercent }) => {
+      expect(computePeriodProgress(startDate, endDate, new Date(now))).toEqual({
+        totalDays: 10,
+        daysLeft,
+        elapsedPercent,
+      });
+    }
+  );
+
+  it('should consider a zero-length period as fully elapsed', () => {
+    expect(
+      computePeriodProgress(startDate, startDate, new Date(startDate))
+    ).toEqual({ totalDays: 0, daysLeft: 0, elapsedPercent: 100 });
+  });
+
+  it('should consider a period ending before it starts as fully elapsed', () => {
+    expect(
+      computePeriodProgress(endDate, startDate, new Date(startDate))
+    ).toEqual({ totalDays: 0, daysLeft: 0, elapsedPercent: 100 });
+  });
 });

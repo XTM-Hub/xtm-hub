@@ -17,11 +17,14 @@ import {
   // eslint-disable-next-line no-restricted-imports
   requestContextAdminUser,
   requestContextRegistererUserSecondOrga,
+  requestContextSimpleUserFiligran2,
   requestContextSimpleUserSecondOrga,
   SERVICES,
   TEST_ORGANIZATIONS,
 } from '../../../tests/tests.const';
 import {
+  AdminRegisteredPlatformOrdering,
+  CommercialModel,
   DeploymentRequestActivitySector,
   DeploymentRequestDeploymentType,
   DeploymentRequestHubStatus,
@@ -29,12 +32,15 @@ import {
   DeploymentRequestPlatformRegion,
   DeploymentRequestPlatformState,
   DeploymentRequestUseCase,
+  NewsFeedItemType,
+  OrderingMode,
   PlatformConfigurationStatus,
   PlatformContract,
   PlatformIdentifier,
   PlatformInput,
   PlatformRegistrationConnectivityStatus,
   PlatformRegistrationStatus,
+  RegisteredPlatformCredentialKind,
   ServiceDefinitionIdentifier,
   ServiceInstanceCreationStatus,
 } from '../../__generated__/resolvers-types';
@@ -42,10 +48,13 @@ import { requestContext } from '../../context/request.context';
 import DeploymentRequest, {
   DeploymentRequestId,
 } from '../../model/kanel/public/DeploymentRequest';
+import PlatformConfiguration from '../../model/kanel/public/PlatformConfiguration';
 import ServiceInstance, {
   ServiceInstanceId,
 } from '../../model/kanel/public/ServiceInstance';
 import { SubscriptionId } from '../../model/kanel/public/Subscription';
+import * as MailService from '../../server/mail-service';
+import { logApp } from '../../utils/app-logger.util';
 import { ServiceInstanceDomain } from '../service/instance/service-instance.domain';
 
 import {
@@ -54,7 +63,12 @@ import {
   ForbiddenErrorCode,
   NotFoundErrorCode,
 } from '../../utils/error/error.code';
+import { RequiredPlatformVersions } from '../../utils/required-platform-version';
 import { DeploymentRequestDomain } from '../deployment/deployment.domain';
+import { NewsFeedApp } from '../news-feed/news-feed.app';
+import { NewsFeedDomain } from '../news-feed/news-feed.domain';
+import { OrganizationDomain } from '../organization-management/organization/organization.domain';
+import { SaasManagerInstanceDomain } from '../saas-manager-instance/saas-manager-instance.domain';
 import { AuthHelper } from '../security-management/capability/auth.helper';
 import { SubscriptionDomain } from '../subscription/subscription.domain';
 import { TelemetryApp } from '../telemetry/telemetry.app';
@@ -66,7 +80,53 @@ import {
 import { TelemetryEventType } from '../telemetry/telemetry.types';
 import { PlatformConfigurationDomain } from './platform-configuration/platform-configuration.domain';
 import { RegistrationApp } from './registration.app';
-import { RegistrationDomain } from './registration.domain';
+import {
+  ADMIN_REGISTERED_PLATFORMS_SEARCH_TERM_MAX_LENGTH,
+  RegistrationDomain,
+} from './registration.domain';
+import { OPENAEV_DEFAULT_TENANT_ID } from './registration.helper';
+
+const BLOGPOST_REQUIRED_VERSION = '7.260901.0';
+const BELOW_BLOGPOST_VERSION = '7.260831.0';
+
+// Returns the function restoring the original required versions
+const enableBlogpostGate = () => {
+  const originalBlogpostSupport =
+    RequiredPlatformVersions.NewsFeedBlogpostSupport;
+  RequiredPlatformVersions.NewsFeedBlogpostSupport = {
+    [PlatformIdentifier.Opencti]: BLOGPOST_REQUIRED_VERSION,
+    [PlatformIdentifier.Openaev]: null,
+    [PlatformIdentifier.Xtmone]: null,
+  };
+  return () => {
+    RequiredPlatformVersions.NewsFeedBlogpostSupport = originalBlogpostSupport;
+  };
+};
+
+// The blogpost number 1 is the newest one
+const createBlogposts = async (count: number) => {
+  const blogposts = [];
+  for (let number = 1; number <= count; number++) {
+    blogposts.push(
+      await TestHelper.newsFeed.createItem({
+        title: `Blogpost ${number}`,
+        type: NewsFeedItemType.BlogPost,
+        platform_identifier: PlatformIdentifier.Opencti,
+        creation_date: new Date(Date.now() - number * 24 * 60 * 60 * 1000),
+      })
+    );
+  }
+  return blogposts;
+};
+
+const loadProvisionedItemIds = async (platformId: string) =>
+  (await TestHelper.newsFeed.loadProvisioned({ platform_id: platformId }))
+    .map((row) => row.news_feed_item_id)
+    .sort();
+
+// The backfill is fire and forget: waits for the ones the registration started
+const waitForBackfills = (backfillSpy: MockInstance) =>
+  Promise.all(backfillSpy.mock.results.map((result) => result.value));
 
 describe('registration app', () => {
   afterAll(async () => {
@@ -233,6 +293,7 @@ describe('registration app', () => {
         organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
         service_instance_id: serviceInstanceId,
       });
+      requestContext.set(requestContextSimpleUserSecondOrga);
 
       const result = await RegistrationApp.isPlatformRegistered({
         platformId,
@@ -267,6 +328,7 @@ describe('registration app', () => {
         organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
         service_instance_id: serviceInstanceId,
       });
+      requestContext.set(requestContextSimpleUserSecondOrga);
 
       const result = await RegistrationApp.isPlatformRegistered({
         platformId,
@@ -278,6 +340,85 @@ describe('registration app', () => {
         TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID
       );
       expect(result.platformTitle).toBe(platformTitle);
+    });
+
+    it.each`
+      description                       | status                                  | expectedStatus
+      ${'registered'}                   | ${PlatformConfigurationStatus.Active}   | ${PlatformRegistrationStatus.Registered}
+      ${'registered then unregistered'} | ${PlatformConfigurationStatus.Inactive} | ${PlatformRegistrationStatus.Unregistered}
+    `(
+      'should return only the status of a platform $description by another organization',
+      async ({
+        status,
+        expectedStatus,
+      }: {
+        status: PlatformConfigurationStatus;
+        expectedStatus: PlatformRegistrationStatus;
+      }) => {
+        // Given — a platform owned by the second organization, asked by a user outside it
+        const platformId = uuidv4();
+        const serviceInstanceId = uuidv4() as ServiceInstanceId;
+        await TestHelper.serviceInstance.create({
+          id: serviceInstanceId,
+          name: 'test',
+        });
+        await TestHelper.platformConfiguration.create({
+          service_instance_id: serviceInstanceId,
+          platform_id: platformId,
+          platform_title: 'Platform title',
+          status,
+        });
+        await TestHelper.subscription.create({
+          id: uuidv4() as SubscriptionId,
+          organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+          service_instance_id: serviceInstanceId,
+        });
+        requestContext.set(requestContextSimpleUserFiligran2);
+
+        // When
+        const result = await RegistrationApp.isPlatformRegistered({
+          platformId,
+        });
+
+        // Then
+        expect(result.status).toBe(expectedStatus);
+        expect(result.organization).toBeUndefined();
+        expect(result.platformTitle).toBeUndefined();
+      }
+    );
+
+    it('should return the owner organization of a platform to a bypass user outside it', async () => {
+      // Given — a platform owned by the second organization, asked by a bypass user outside it
+      const platformId = uuidv4();
+      const serviceInstanceId = uuidv4() as ServiceInstanceId;
+      await TestHelper.serviceInstance.create({
+        id: serviceInstanceId,
+        name: 'test',
+      });
+      await TestHelper.platformConfiguration.create({
+        service_instance_id: serviceInstanceId,
+        platform_id: platformId,
+        platform_title: 'Platform title',
+        status: PlatformConfigurationStatus.Active,
+      });
+      await TestHelper.subscription.create({
+        id: uuidv4() as SubscriptionId,
+        organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        service_instance_id: serviceInstanceId,
+      });
+      requestContext.set(requestContextAdminUser);
+
+      // When
+      const result = await RegistrationApp.isPlatformRegistered({
+        platformId,
+      });
+
+      // Then
+      expect(result.status).toBe(PlatformRegistrationStatus.Registered);
+      expect(result.organization).toEqual({
+        id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+      });
+      expect(result.platformTitle).toBe('Platform title');
     });
 
     describe('with tenantId', () => {
@@ -420,13 +561,222 @@ describe('registration app', () => {
     it('return token when platform is registered', async () => {
       requestContext.set(requestContextRegistererUserSecondOrga);
 
-      const token = await RegistrationApp.registerPlatform({
+      const { token } = await RegistrationApp.registerPlatform({
         organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
         platform,
         identifier: PlatformIdentifier.Opencti,
       });
 
       expect(token).toBeDefined();
+    });
+
+    it('should return the name of the organization the platform is registered in', async () => {
+      // Given
+      requestContext.set(requestContextRegistererUserSecondOrga);
+
+      // When
+      const { organizationName } = await RegistrationApp.registerPlatform({
+        organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        platform: { ...platform, id: uuidv4() },
+        identifier: PlatformIdentifier.Opencti,
+      });
+
+      // Then
+      expect(organizationName).toBe(
+        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.NAME
+      );
+    });
+
+    it('should not register the platform when its organization cannot be loaded', async () => {
+      // Given
+      requestContext.set(requestContextRegistererUserSecondOrga);
+      const platformId = uuidv4();
+      const loadOrganizationSpy = vi
+        .spyOn(OrganizationDomain, 'loadOrganizationBy')
+        .mockRejectedValueOnce(new Error('database unavailable'));
+
+      // When
+      const call = RegistrationApp.registerPlatform({
+        organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        platform: { ...platform, id: platformId },
+        identifier: PlatformIdentifier.Opencti,
+      });
+
+      // Then
+      await expect(call).rejects.toThrow('database unavailable');
+      loadOrganizationSpy.mockRestore();
+      expect(
+        await PlatformConfigurationDomain.loadConfigurationByPlatform(
+          platformId
+        )
+      ).toBeUndefined();
+    });
+
+    describe('blogpost backfill', () => {
+      let restoreBlogpostGate: () => void;
+      let backfillSpy: MockInstance;
+
+      beforeEach(() => {
+        requestContext.set(requestContextRegistererUserSecondOrga);
+        restoreBlogpostGate = enableBlogpostGate();
+        backfillSpy = vi.spyOn(NewsFeedApp, 'backfillBlogpostsForPlatform');
+      });
+
+      afterEach(async () => {
+        vi.restoreAllMocks();
+        restoreBlogpostGate();
+        await TestHelper.newsFeed.deleteItem();
+      });
+
+      const registerOpenCtiPlatform = (
+        platformId: string,
+        version: string | undefined
+      ) =>
+        RegistrationApp.registerPlatform({
+          organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+          platform: { ...platform, id: platformId, version },
+          identifier: PlatformIdentifier.Opencti,
+        });
+
+      it('should backfill the newest blogposts once when a platform with a supported version is registered', async () => {
+        // Given
+        const platformId = uuidv4();
+        const blogposts = await createBlogposts(2);
+
+        // When
+        await registerOpenCtiPlatform(platformId, BLOGPOST_REQUIRED_VERSION);
+        await waitForBackfills(backfillSpy);
+
+        // Then
+        expect(backfillSpy).toHaveBeenCalledExactlyOnceWith({
+          platformId,
+          platformIdentifier: PlatformIdentifier.Opencti,
+          platformVersion: BLOGPOST_REQUIRED_VERSION,
+        });
+        expect(await loadProvisionedItemIds(platformId)).toEqual(
+          blogposts.map(({ id }) => id).sort()
+        );
+      });
+
+      it.each`
+        description                 | version
+        ${'below the required one'} | ${BELOW_BLOGPOST_VERSION}
+        ${'missing'}                | ${undefined}
+      `(
+        'should not provision blogposts when the registered platform version is $description',
+        async ({ version }) => {
+          // Given
+          const platformId = uuidv4();
+          await createBlogposts(2);
+
+          // When
+          await registerOpenCtiPlatform(platformId, version);
+          await waitForBackfills(backfillSpy);
+
+          // Then
+          expect(await loadProvisionedItemIds(platformId)).toEqual([]);
+        }
+      );
+
+      it('should not provision blogposts to an OpenAEV platform', async () => {
+        // Given
+        const platformId = uuidv4();
+        await createBlogposts(2);
+
+        // When
+        await RegistrationApp.registerPlatform({
+          organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+          platform: {
+            ...platform,
+            id: platformId,
+            version: '2.4.0',
+            tenantId: uuidv4(),
+          },
+          identifier: PlatformIdentifier.Openaev,
+        });
+        await waitForBackfills(backfillSpy);
+
+        // Then
+        expect(await loadProvisionedItemIds(platformId)).toEqual([]);
+      });
+
+      it('should register the platform when the backfill fails', async () => {
+        // Given
+        const platformId = uuidv4();
+        await createBlogposts(1);
+        vi.spyOn(
+          NewsFeedDomain,
+          'provisionLatestBlogpostsToPlatform'
+        ).mockRejectedValue(new Error('database unavailable'));
+        vi.spyOn(logApp, 'error').mockImplementation(() => logApp);
+
+        // When
+        const { token } = await registerOpenCtiPlatform(
+          platformId,
+          BLOGPOST_REQUIRED_VERSION
+        );
+        await waitForBackfills(backfillSpy);
+
+        // Then
+        const configuration =
+          await PlatformConfigurationDomain.loadConfigurationByPlatform(
+            platformId
+          );
+        expect(configuration).toMatchObject({
+          platform_id: platformId,
+          token,
+          status: PlatformConfigurationStatus.Active,
+        });
+        expect(await loadProvisionedItemIds(platformId)).toEqual([]);
+      });
+
+      it('should leave the provisioned blogposts unchanged when the platform is registered again', async () => {
+        // Given
+        const platformId = uuidv4();
+        const blogposts = await createBlogposts(2);
+        await registerOpenCtiPlatform(platformId, BLOGPOST_REQUIRED_VERSION);
+        await waitForBackfills(backfillSpy);
+
+        // When
+        await registerOpenCtiPlatform(platformId, BLOGPOST_REQUIRED_VERSION);
+        await waitForBackfills(backfillSpy);
+
+        // Then
+        expect(backfillSpy).toHaveBeenCalledTimes(2);
+        expect(await loadProvisionedItemIds(platformId)).toEqual(
+          blogposts.map(({ id }) => id).sort()
+        );
+      });
+    });
+
+    describe('commercial model', () => {
+      const registerNewPlatform = async () => {
+        const newPlatform = { ...platform, id: uuidv4() };
+        await RegistrationApp.registerPlatform({
+          organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+          platform: newPlatform,
+          identifier: PlatformIdentifier.Opencti,
+        });
+        return PlatformConfigurationDomain.loadConfigurationByPlatform(
+          newPlatform.id
+        );
+      };
+
+      beforeEach(() => {
+        requestContext.set(requestContextRegistererUserSecondOrga);
+      });
+
+      it('should register the platform without waiting for the SaaS Manager', async () => {
+        // Given
+        const callSpy = vi.spyOn(SaasManagerInstanceDomain, 'loadInstance');
+
+        // When
+        const configuration = await registerNewPlatform();
+
+        // Then
+        expect(callSpy).not.toHaveBeenCalled();
+        expect(configuration?.commercial_model).toBe(CommercialModel.Other);
+      });
     });
 
     it.each`
@@ -443,10 +793,12 @@ describe('registration app', () => {
         const telemetrySpy = vi
           .spyOn(TelemetryApp, 'sendTelemetryEvent')
           .mockResolvedValue();
+        // Each product registers its own platform_id: one platform_id cannot be registered as two products.
+        const productPlatform = { ...platform, id: uuidv4() };
 
         await RegistrationApp.registerPlatform({
           organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
-          platform,
+          platform: productPlatform,
           identifier: platformName,
         });
 
@@ -459,7 +811,7 @@ describe('registration app', () => {
           user_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.ID,
           platform_contract: 'EE',
           platform_version: '1.0.0',
-          platform_id: platform.id,
+          platform_id: productPlatform.id,
           platform_url: platform.url,
           target_product: telemetryProduct,
           organization_type: 'Professional',
@@ -479,9 +831,11 @@ describe('registration app', () => {
 
       const tenantId = uuidv4();
       const tenantName = 'My OpenAEV tenant';
+      // An OpenAEV platform_id of its own: the shared one is already registered as OpenCTI.
+      const openaevPlatform = { ...platform, id: uuidv4() };
       await RegistrationApp.registerPlatform({
         organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
-        platform: { ...platform, tenantId, tenantName },
+        platform: { ...openaevPlatform, tenantId, tenantName },
         identifier: PlatformIdentifier.Openaev,
       });
 
@@ -494,7 +848,7 @@ describe('registration app', () => {
         user_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.ID,
         platform_contract: 'EE',
         platform_version: '1.0.0',
-        platform_id: platform.id,
+        platform_id: openaevPlatform.id,
         platform_url: platform.url,
         target_product: TelemetryTargetProduct.OPEN_AEV,
         organization_type: 'Professional',
@@ -833,6 +1187,503 @@ describe('registration app', () => {
     });
   });
 
+  describe('registerPlatform, one owner per platform', () => {
+    const registerOpencti = (platformId: string, tenantId?: string) =>
+      RegistrationApp.registerPlatform({
+        organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        platform: {
+          id: platformId,
+          title: 'My OpenCTI platform',
+          url: 'http://example.com',
+          contract: PlatformContract.Ee,
+          version: '6.8.0',
+          ...(tenantId ? { tenantId, tenantName: 'Injected tenant' } : {}),
+        },
+        identifier: PlatformIdentifier.Opencti,
+      });
+
+    beforeEach(() => {
+      requestContext.set(requestContextRegistererUserSecondOrga);
+    });
+
+    it('should refuse a tenantId for an OpenCTI registration', async () => {
+      // When
+      const call = registerOpencti(uuidv4(), uuidv4());
+
+      // Then
+      await expect(call).rejects.toThrow(
+        BadRequestErrorCode.TenantIdNotSupported
+      );
+    });
+
+    it('should not create a second registration of an OpenCTI platform_id when a made-up tenantId is sent', async () => {
+      // Given
+      const platformId = uuidv4();
+      await registerOpencti(platformId);
+      const injectedTenantId = uuidv4();
+
+      // When
+      const call = registerOpencti(platformId, injectedTenantId);
+
+      // Then
+      await expect(call).rejects.toThrow(
+        BadRequestErrorCode.TenantIdNotSupported
+      );
+      const injectedConfig =
+        await PlatformConfigurationDomain.loadConfigurationByPlatform(
+          platformId,
+          { tenantId: injectedTenantId }
+        );
+      expect(injectedConfig).toBeUndefined();
+    });
+
+    it('should refuse to register an existing platform_id as another product', async () => {
+      // Given
+      const platformId = uuidv4();
+      await registerOpencti(platformId);
+
+      // When
+      const call = RegistrationApp.registerPlatform({
+        organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        platform: {
+          id: platformId,
+          title: 'My OpenAEV platform',
+          url: 'http://example.com',
+          contract: PlatformContract.Ee,
+          version: '2.4.0',
+          tenantId: uuidv4(),
+          tenantName: 'Injected tenant',
+        },
+        identifier: PlatformIdentifier.Openaev,
+      });
+
+      // Then
+      await expect(call).rejects.toThrow(ErrorCode.InvalidPlatformIdentifier);
+    });
+
+    describe('legacy OpenAEV registration', () => {
+      const openaevPlatform = {
+        title: 'My OpenAEV platform',
+        url: 'http://example.com',
+        contract: PlatformContract.Ee,
+      };
+      let platformId: string;
+      let legacyConfig: PlatformConfiguration | undefined;
+
+      const registerOpenaevTenant = (tenantId: string) =>
+        RegistrationApp.registerPlatform({
+          organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+          platform: {
+            ...openaevPlatform,
+            id: platformId,
+            version: '2.4.0',
+            tenantId,
+            tenantName: 'My OpenAEV tenant',
+          },
+          identifier: PlatformIdentifier.Openaev,
+        });
+
+      beforeEach(async () => {
+        // Given an OpenAEV platform registered before it used tenants
+        platformId = uuidv4();
+        await RegistrationApp.registerPlatform({
+          organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+          platform: { ...openaevPlatform, id: platformId, version: '2.3.9' },
+          identifier: PlatformIdentifier.Openaev,
+        });
+        legacyConfig =
+          await PlatformConfigurationDomain.loadConfigurationByPlatform(
+            platformId
+          );
+      });
+
+      it('should move the legacy registration to the default tenant instead of creating a second registration', async () => {
+        // When
+        await registerOpenaevTenant(OPENAEV_DEFAULT_TENANT_ID);
+
+        // Then
+        const tenantConfig =
+          await PlatformConfigurationDomain.loadConfigurationByPlatform(
+            platformId,
+            { tenantId: OPENAEV_DEFAULT_TENANT_ID }
+          );
+        expect(tenantConfig?.service_instance_id).toBe(
+          legacyConfig?.service_instance_id
+        );
+      });
+
+      it('should give another tenant its own registration and keep the legacy one for the default tenant', async () => {
+        // Given
+        const tenantId = uuidv4();
+
+        // When
+        await registerOpenaevTenant(tenantId);
+
+        // Then
+        const tenantConfig =
+          await PlatformConfigurationDomain.loadConfigurationByPlatform(
+            platformId,
+            { tenantId }
+          );
+        expect(tenantConfig?.service_instance_id).not.toBe(
+          legacyConfig?.service_instance_id
+        );
+        const legacyConfigAfter =
+          await PlatformConfigurationDomain.loadConfigurationByPlatform(
+            platformId,
+            { tenant_id: null }
+          );
+        expect(legacyConfigAfter).toMatchObject({
+          tenant_id: null,
+          status: PlatformConfigurationStatus.Active,
+        });
+      });
+
+      it.each`
+        description             | getTenantId                        | expectedStatus
+        ${'the default tenant'} | ${() => OPENAEV_DEFAULT_TENANT_ID} | ${PlatformRegistrationStatus.Registered}
+        ${'another tenant'}     | ${() => uuidv4()}                  | ${PlatformRegistrationStatus.NeverRegistered}
+      `(
+        'should return $expectedStatus from isPlatformRegistered for $description',
+        async ({
+          getTenantId,
+          expectedStatus,
+        }: {
+          getTenantId: () => string;
+          expectedStatus: PlatformRegistrationStatus;
+        }) => {
+          // When
+          const result = await RegistrationApp.isPlatformRegistered({
+            platformId,
+            tenantId: getTenantId(),
+          });
+
+          // Then
+          expect(result).toMatchObject({ status: expectedStatus });
+        }
+      );
+
+      it('should return the organization of the legacy registration to the default tenant', async () => {
+        // When
+        const organization =
+          await RegistrationApp.loadPlatformAssociatedOrganization(
+            platformId,
+            OPENAEV_DEFAULT_TENANT_ID
+          );
+
+        // Then
+        expect(organization?.id).toBe(
+          TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID
+        );
+      });
+
+      it('should not return the organization of the legacy registration to another tenant', async () => {
+        // When
+        const organization =
+          await RegistrationApp.loadPlatformAssociatedOrganization(
+            platformId,
+            uuidv4()
+          );
+
+        // Then
+        expect(organization).toBeNull();
+      });
+
+      it('should let the default tenant unregister the legacy registration', async () => {
+        // When
+        await RegistrationApp.unregisterPlatform({
+          platformId,
+          identifier: PlatformIdentifier.Openaev,
+          tenantId: OPENAEV_DEFAULT_TENANT_ID,
+        });
+
+        // Then
+        const legacyConfigAfter =
+          await PlatformConfigurationDomain.loadConfigurationByPlatform(
+            platformId,
+            { tenant_id: null }
+          );
+        expect(legacyConfigAfter?.status).toBe(
+          PlatformConfigurationStatus.Inactive
+        );
+      });
+
+      it('should not let another tenant unregister the legacy registration', async () => {
+        // When
+        await RegistrationApp.unregisterPlatform({
+          platformId,
+          identifier: PlatformIdentifier.Openaev,
+          tenantId: uuidv4(),
+        });
+
+        // Then
+        const legacyConfigAfter =
+          await PlatformConfigurationDomain.loadConfigurationByPlatform(
+            platformId,
+            { tenant_id: null }
+          );
+        expect(legacyConfigAfter?.status).toBe(
+          PlatformConfigurationStatus.Active
+        );
+      });
+
+      it('should let the default tenant check whether it can unregister the legacy registration', async () => {
+        // When
+        const result = await RegistrationApp.canUnregisterPlatform({
+          platformId,
+          tenantId: OPENAEV_DEFAULT_TENANT_ID,
+        });
+
+        // Then
+        expect(result.organizationId).toBe(
+          TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID
+        );
+      });
+    });
+  });
+
+  describe('loadRegisteredPlatform', () => {
+    let pushedInstanceIds: string[] = [];
+
+    beforeEach(() => {
+      requestContext.set(requestContextRegistererUserSecondOrga);
+    });
+
+    afterEach(async () => {
+      await TestHelper.saasManagerInstance.delete(pushedInstanceIds);
+      pushedInstanceIds = [];
+    });
+
+    it.each([CommercialModel.Saas, CommercialModel.Other])(
+      'should return the %s commercial model of the platform',
+      async (commercialModel) => {
+        // Given
+        const serviceInstanceId = await RegistrationDomain.registerNewPlatform({
+          organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+          serviceDefinitionId: SERVICES.DEFINITIONS.OPENCTI_REGISTRATION.ID,
+          configuration: {
+            registerer_id:
+              TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.ID,
+            platform_id: uuidv4(),
+            platform_url: 'http://example.com',
+            platform_title: 'My OpenCTI platform',
+            platform_contract: PlatformContract.Ee,
+            platform_version: '6.7.17',
+            token: uuidv4(),
+            commercial_model: commercialModel,
+          },
+          platformIdentifier: PlatformIdentifier.Opencti,
+        });
+
+        // When
+        const platform =
+          await RegistrationApp.loadRegisteredPlatform(serviceInstanceId);
+
+        // Then
+        expect(platform?.commercial_model).toBe(commercialModel);
+      }
+    );
+
+    it.each([
+      [
+        'SAAS when the SaaS Manager pushed it as PROD',
+        'PROD',
+        CommercialModel.Saas,
+      ],
+      [
+        'OTHER when the SaaS Manager pushed it as another model',
+        'DEV',
+        CommercialModel.Other,
+      ],
+    ])(
+      'should return a platform stored as OTHER as %s',
+      async (_, pushedCommercialModel, expectedCommercialModel) => {
+        // Given
+        const platformId = uuidv4();
+        const serviceInstanceId = await RegistrationDomain.registerNewPlatform({
+          organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+          serviceDefinitionId: SERVICES.DEFINITIONS.OPENCTI_REGISTRATION.ID,
+          configuration: {
+            registerer_id:
+              TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.ID,
+            platform_id: platformId,
+            platform_url: 'http://example.com',
+            platform_title: 'My OpenCTI platform',
+            platform_contract: PlatformContract.Ee,
+            platform_version: '6.7.17',
+            token: uuidv4(),
+            commercial_model: CommercialModel.Other,
+          },
+          platformIdentifier: PlatformIdentifier.Opencti,
+        });
+        pushedInstanceIds.push(
+          await TestHelper.saasManagerInstance.create({
+            id: platformId,
+            data: { commercial_model: pushedCommercialModel },
+          })
+        );
+
+        // When
+        const platform =
+          await RegistrationApp.loadRegisteredPlatform(serviceInstanceId);
+
+        // Then
+        expect(platform?.commercial_model).toBe(expectedCommercialModel);
+      }
+    );
+
+    it.each([
+      ['6.7.17', '6.7.17'],
+      [undefined, ''],
+    ])(
+      'should return the version reported by the platform when it is %s',
+      async (platformVersion, expectedVersion) => {
+        // Given
+        const serviceInstanceId = await RegistrationDomain.registerNewPlatform({
+          organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+          serviceDefinitionId: SERVICES.DEFINITIONS.OPENCTI_REGISTRATION.ID,
+          configuration: {
+            registerer_id:
+              TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.ID,
+            platform_id: uuidv4(),
+            platform_url: 'http://example.com',
+            platform_title: 'My OpenCTI platform',
+            platform_contract: PlatformContract.Ee,
+            platform_version: platformVersion,
+            token: uuidv4(),
+          },
+          platformIdentifier: PlatformIdentifier.Opencti,
+        });
+
+        // When
+        const platform =
+          await RegistrationApp.loadRegisteredPlatform(serviceInstanceId);
+
+        // Then
+        expect(platform?.version).toBe(expectedVersion);
+      }
+    );
+  });
+
+  describe('loadRegisteredPlatformByPlatformId', () => {
+    let platformId: string;
+
+    beforeEach(async () => {
+      // Given an OpenAEV platform registered before it used tenants
+      requestContext.set(requestContextRegistererUserSecondOrga);
+      platformId = uuidv4();
+      await RegistrationDomain.registerNewPlatform({
+        organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        serviceDefinitionId: SERVICES.DEFINITIONS.OPENAEV_REGISTRATION.ID,
+        configuration: {
+          registerer_id:
+            TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.ID,
+          platform_id: platformId,
+          platform_url: 'http://example.com',
+          platform_title: 'My OpenAEV platform',
+          platform_contract: PlatformContract.Ee,
+          platform_version: '2.3.9',
+          token: uuidv4(),
+        },
+        platformIdentifier: PlatformIdentifier.Openaev,
+      });
+    });
+
+    it('should return the legacy registration to the default tenant', async () => {
+      // When
+      const platform = await RegistrationApp.loadRegisteredPlatformByPlatformId(
+        {
+          identifier: PlatformIdentifier.Openaev,
+          platformId,
+          tenantId: OPENAEV_DEFAULT_TENANT_ID,
+        }
+      );
+
+      // Then
+      expect(platform).toMatchObject({
+        platform_id: platformId,
+        tenant_id: null,
+      });
+    });
+
+    // Without the check, PostgreSQL rejects the value of a uuid column
+    it.each`
+      description          | platformId      | tenantId
+      ${'the platform id'} | ${'not-a-uuid'} | ${null}
+      ${'the tenant id'}   | ${uuidv4()}     | ${'not-a-uuid'}
+    `(
+      'should return nothing when $description is not a UUID',
+      async ({
+        platformId,
+        tenantId,
+      }: {
+        platformId: string;
+        tenantId: string | null;
+      }) => {
+        // When
+        const platform =
+          await RegistrationApp.loadRegisteredPlatformByPlatformId({
+            identifier: PlatformIdentifier.Openaev,
+            platformId,
+            tenantId,
+          });
+
+        // Then
+        expect(platform).toBeNull();
+      }
+    );
+
+    it('should not return the legacy registration to another tenant', async () => {
+      // When
+      const platform = await RegistrationApp.loadRegisteredPlatformByPlatformId(
+        {
+          identifier: PlatformIdentifier.Openaev,
+          platformId,
+          tenantId: uuidv4(),
+        }
+      );
+
+      // Then
+      expect(platform).toBeNull();
+    });
+
+    it('should return the registration of an OpenCTI platform, which has no tenant', async () => {
+      // Given
+      const openctiPlatformId = uuidv4();
+      await RegistrationDomain.registerNewPlatform({
+        organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        serviceDefinitionId: SERVICES.DEFINITIONS.OPENCTI_REGISTRATION.ID,
+        configuration: {
+          registerer_id:
+            TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.ID,
+          platform_id: openctiPlatformId,
+          platform_url: 'http://example.com',
+          platform_title: 'My OpenCTI platform',
+          platform_contract: PlatformContract.Ee,
+          platform_version: '7.260527.0',
+          token: uuidv4(),
+        },
+        platformIdentifier: PlatformIdentifier.Opencti,
+      });
+
+      // When
+      const platform = await RegistrationApp.loadRegisteredPlatformByPlatformId(
+        {
+          identifier: PlatformIdentifier.Opencti,
+          platformId: openctiPlatformId,
+          tenantId: null,
+        }
+      );
+
+      // Then
+      expect(platform).toMatchObject({
+        identifier: ServiceDefinitionIdentifier.OpenctiRegistration,
+        platform_id: openctiPlatformId,
+        tenant_id: null,
+      });
+    });
+  });
+
   describe('unregisterPlatform', () => {
     let platformId: string;
     let platform: PlatformInput;
@@ -884,6 +1735,44 @@ describe('registration app', () => {
 
       await expect(call).rejects.toThrow(
         ErrorCode.MissingCapabilityOnOrganization
+      );
+    });
+
+    it.each([
+      {
+        name: 'a member of the owner organization who manages platform registrations',
+        context: requestContextRegistererUserSecondOrga,
+      },
+      {
+        name: 'an administrator of the owner organization',
+        context: requestContextAdminSecondOrga,
+      },
+      {
+        name: 'a platform admin outside the owner organization',
+        context: requestContextAdminUser,
+      },
+    ])('should let $name unregister the platform', async ({ context }) => {
+      // Given a platform registered in SECOND ORGA
+      await RegistrationApp.registerPlatform({
+        organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        platform,
+        identifier: PlatformIdentifier.Opencti,
+      });
+      requestContext.set(context);
+
+      // When
+      await RegistrationApp.unregisterPlatform({
+        platformId,
+        identifier: PlatformIdentifier.Opencti,
+      });
+
+      // Then
+      const platformConfiguration =
+        await PlatformConfigurationDomain.loadConfigurationByPlatform(
+          platformId
+        );
+      expect(platformConfiguration?.status).toBe(
+        PlatformConfigurationStatus.Inactive
       );
     });
 
@@ -1170,9 +2059,9 @@ describe('registration app', () => {
     });
 
     it('should allow user to register when he has the required capabilities', async () => {
-      const organizationId = uuidv4();
+      const organizationId = TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID;
       isUserAllowedOnOrganizationSpy.mockReturnValue(
-        Promise.resolve({ isAllowed: true })
+        Promise.resolve({ isAllowed: true, isInOrganization: true })
       );
       loadResolvedConfigurationByPlatformSpy.mockReturnValue(
         Promise.resolve(buildResolved())
@@ -1187,10 +2076,13 @@ describe('registration app', () => {
 
       expect(result.isAllowed).toBeTruthy();
       expect(result.organizationId).toBe(organizationId);
+      expect(result.organizationName).toBe(
+        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.NAME
+      );
     });
 
     it('should not allow user to register when he does not have the required capabilities', async () => {
-      const organizationId = uuidv4();
+      const organizationId = TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID;
       loadResolvedConfigurationByPlatformSpy.mockReturnValue(
         Promise.resolve(buildResolved())
       );
@@ -1207,7 +2099,33 @@ describe('registration app', () => {
 
       expect(result.isAllowed).toBeFalsy();
       expect(result.isInOrganization).toBeFalsy();
+      expect(result.organizationId).toBeNull();
+      expect(result.organizationName).toBeNull();
+    });
+
+    it('should return the owner organization to a member without the required capabilities', async () => {
+      // Given — a member of the owner organization who cannot manage platform registrations
+      const organizationId = TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID;
+      loadResolvedConfigurationByPlatformSpy.mockReturnValue(
+        Promise.resolve(buildResolved())
+      );
+      loadSubscriptionBySpy.mockReturnValue(
+        Promise.resolve({ organization_id: organizationId })
+      );
+      isUserAllowedOnOrganizationSpy.mockReturnValue(
+        Promise.resolve({ isAllowed: false, isInOrganization: true })
+      );
+
+      // When
+      const result = await RegistrationApp.canUnregisterPlatform({
+        platformId,
+      });
+
+      // Then
+      expect(result.isAllowed).toBeFalsy();
+      expect(result.isInOrganization).toBeTruthy();
       expect(result.organizationId).toBe(organizationId);
+      expect(result.organizationName).toBeNull();
     });
   });
 
@@ -1228,7 +2146,7 @@ describe('registration app', () => {
 
     it('should return active when platform is registered', async () => {
       const platformId = uuidv4();
-      const token = await RegistrationApp.registerPlatform({
+      const { token } = await RegistrationApp.registerPlatform({
         organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
         platform: {
           id: platformId,
@@ -1250,7 +2168,7 @@ describe('registration app', () => {
 
     it('should return inactive when platform is unregistered', async () => {
       const platformId = uuidv4();
-      const token = await RegistrationApp.registerPlatform({
+      const { token } = await RegistrationApp.registerPlatform({
         organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
         platform: {
           id: platformId,
@@ -1458,6 +2376,84 @@ describe('registration app', () => {
       });
     });
 
+    describe('when the platform was unregistered', () => {
+      const newPlatformConfiguration = {
+        id: uuidv4(),
+        title: 'My New OpenCTI platform',
+        url: 'http://example2.com',
+        contract: PlatformContract.Ee,
+        version: '2.0.0',
+      };
+      let backfillSpy: MockInstance;
+
+      beforeEach(async () => {
+        await RegistrationApp.autoRegisterPlatform(
+          deploymentRequest.platform_token as string,
+          { platform: platformConfiguration }
+        );
+        await PlatformConfigurationDomain.deactivateConfiguration(
+          deploymentRequest.service_instance_id
+        );
+        await ServiceInstanceDomain.updateServiceInstance(
+          deploymentRequest.service_instance_id,
+          { creation_status: ServiceInstanceCreationStatus.Pending }
+        );
+        backfillSpy = vi.spyOn(NewsFeedApp, 'backfillBlogpostsForPlatform');
+      });
+
+      it('should change nothing, send no telemetry and backfill no news', async () => {
+        // Given
+        const telemetrySpy = vi
+          .spyOn(TelemetryApp, 'sendTelemetryEvent')
+          .mockResolvedValue();
+
+        // When
+        await RegistrationApp.autoRegisterPlatform(
+          deploymentRequest.platform_token as string,
+          { platform: newPlatformConfiguration }
+        );
+
+        // Then
+        const configuration =
+          await PlatformConfigurationDomain.loadConfigurationByPlatform(
+            platformConfiguration.id
+          );
+        expect(configuration).toMatchObject({
+          platform_id: platformConfiguration.id,
+          platform_title: platformConfiguration.title,
+          platform_url: platformConfiguration.url,
+          platform_version: platformConfiguration.version,
+          platform_contract: platformConfiguration.contract,
+          status: PlatformConfigurationStatus.Inactive,
+          service_instance_id: deploymentRequest.service_instance_id,
+        });
+        expect(
+          await PlatformConfigurationDomain.loadConfigurationByPlatform(
+            newPlatformConfiguration.id
+          )
+        ).toBeUndefined();
+        const serviceInstance =
+          await ServiceInstanceDomain.loadServiceInstanceBy({
+            id: deploymentRequest.service_instance_id,
+          });
+        expect(serviceInstance.creation_status).toBe(
+          ServiceInstanceCreationStatus.Pending
+        );
+        expect(telemetrySpy).not.toHaveBeenCalled();
+        expect(backfillSpy).not.toHaveBeenCalled();
+      });
+
+      it('should still refuse an unknown token', async () => {
+        const call = RegistrationApp.autoRegisterPlatform(uuidv4(), {
+          platform: newPlatformConfiguration,
+        });
+
+        await expect(call).rejects.toThrow(
+          NotFoundErrorCode.DeploymentRequestNotFound
+        );
+      });
+    });
+
     describe('telemetry', () => {
       it('should send register event when platform is autoregistered', async () => {
         vi.useFakeTimers();
@@ -1614,6 +2610,858 @@ describe('registration app', () => {
         service_instance_id: deploymentRequest.service_instance_id,
         status: PlatformConfigurationStatus.Active,
       });
+    });
+
+    describe('blogpost backfill', () => {
+      let restoreBlogpostGate: () => void;
+      let backfillSpy: MockInstance;
+
+      beforeEach(() => {
+        restoreBlogpostGate = enableBlogpostGate();
+        backfillSpy = vi.spyOn(NewsFeedApp, 'backfillBlogpostsForPlatform');
+      });
+
+      afterEach(async () => {
+        vi.restoreAllMocks();
+        restoreBlogpostGate();
+        await TestHelper.newsFeed.deleteItem();
+      });
+
+      it('should backfill the newest blogposts once after the registration when the version is supported', async () => {
+        // Given
+        const blogposts = await createBlogposts(2);
+
+        // When
+        await RegistrationApp.autoRegisterPlatform(
+          deploymentRequest.platform_token as string,
+          {
+            platform: {
+              ...platformConfiguration,
+              version: BLOGPOST_REQUIRED_VERSION,
+            },
+          }
+        );
+        await waitForBackfills(backfillSpy);
+
+        // Then
+        expect(backfillSpy).toHaveBeenCalledExactlyOnceWith({
+          platformId: platformConfiguration.id,
+          platformIdentifier: PlatformIdentifier.Opencti,
+          platformVersion: BLOGPOST_REQUIRED_VERSION,
+        });
+        expect(await loadProvisionedItemIds(platformConfiguration.id)).toEqual(
+          blogposts.map(({ id }) => id).sort()
+        );
+      });
+
+      it('should not provision blogposts when the version is below the required one', async () => {
+        // Given
+        await createBlogposts(2);
+
+        // When
+        await RegistrationApp.autoRegisterPlatform(
+          deploymentRequest.platform_token as string,
+          {
+            platform: {
+              ...platformConfiguration,
+              version: BELOW_BLOGPOST_VERSION,
+            },
+          }
+        );
+        await waitForBackfills(backfillSpy);
+
+        // Then
+        expect(await loadProvisionedItemIds(platformConfiguration.id)).toEqual(
+          []
+        );
+      });
+
+      it('should not backfill when the registration fails', async () => {
+        // Given
+        await createBlogposts(1);
+
+        // When
+        const call = RegistrationApp.autoRegisterPlatform(uuidv4(), {
+          platform: {
+            ...platformConfiguration,
+            version: BLOGPOST_REQUIRED_VERSION,
+          },
+        });
+
+        // Then
+        await expect(call).rejects.toThrow(
+          NotFoundErrorCode.DeploymentRequestNotFound
+        );
+        expect(backfillSpy).not.toHaveBeenCalled();
+      });
+
+      it('should register the platform when the backfill fails', async () => {
+        // Given
+        await createBlogposts(1);
+        vi.spyOn(
+          NewsFeedDomain,
+          'provisionLatestBlogpostsToPlatform'
+        ).mockRejectedValue(new Error('database unavailable'));
+        vi.spyOn(logApp, 'error').mockImplementation(() => logApp);
+
+        // When
+        await RegistrationApp.autoRegisterPlatform(
+          deploymentRequest.platform_token as string,
+          {
+            platform: {
+              ...platformConfiguration,
+              version: BLOGPOST_REQUIRED_VERSION,
+            },
+          }
+        );
+        await waitForBackfills(backfillSpy);
+
+        // Then
+        const configuration =
+          await PlatformConfigurationDomain.loadConfigurationByPlatform(
+            platformConfiguration.id
+          );
+        expect(configuration).toMatchObject({
+          platform_id: platformConfiguration.id,
+          status: PlatformConfigurationStatus.Active,
+        });
+        expect(await loadProvisionedItemIds(platformConfiguration.id)).toEqual(
+          []
+        );
+      });
+    });
+  });
+});
+
+// A registration of the second organization, which the platform admin is not a member of
+const createAdminFixture = async ({
+  title,
+  identifier = PlatformIdentifier.Opencti,
+  status = PlatformConfigurationStatus.Active,
+  tenantName = null,
+  creationStatus,
+  contract,
+}: {
+  title: string;
+  identifier?: PlatformIdentifier;
+  status?: PlatformConfigurationStatus;
+  tenantName?: string | null;
+  creationStatus?: ServiceInstanceCreationStatus;
+  contract?: PlatformContract;
+}): Promise<PlatformConfiguration> => {
+  const serviceInstance = await TestHelper.serviceInstance.create({
+    ...(creationStatus ? { creation_status: creationStatus } : {}),
+    service_definition_id:
+      identifier === PlatformIdentifier.Openaev
+        ? SERVICES.DEFINITIONS.OPENAEV_REGISTRATION.ID
+        : SERVICES.DEFINITIONS.OPENCTI_REGISTRATION.ID,
+  });
+  await TestHelper.subscription.create({
+    organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+    service_instance_id: serviceInstance.id,
+    start_date: new Date(),
+  });
+  return TestHelper.platformConfiguration.create({
+    service_instance_id: serviceInstance.id,
+    platform_title: title,
+    status,
+    tenant_id: tenantName ? uuidv4() : null,
+    tenant_name: tenantName,
+    ...(contract ? { platform_contract: contract } : {}),
+  });
+};
+
+const loadAdminTitles = async (
+  args: Partial<
+    Parameters<typeof RegistrationApp.loadAdminRegisteredPlatforms>[0]
+  >
+) => {
+  const connection = await RegistrationApp.loadAdminRegisteredPlatforms({
+    first: 50,
+    orderBy: AdminRegisteredPlatformOrdering.Title,
+    orderMode: OrderingMode.Asc,
+    ...args,
+  });
+  return connection.edges.map(({ node }) => node.title);
+};
+
+describe('registration app, platform admin', () => {
+  beforeEach(() => {
+    requestContext.set(requestContextAdminUser);
+  });
+
+  describe('loadAdminRegisteredPlatforms', () => {
+    let marker: string;
+
+    beforeEach(() => {
+      marker = uuidv4();
+    });
+
+    it('should return the registrations of every organization with their owner and registerer', async () => {
+      const configuration = await createAdminFixture({ title: `${marker} A` });
+
+      const connection = await RegistrationApp.loadAdminRegisteredPlatforms({
+        first: 10,
+        searchTerm: marker,
+      });
+
+      expect(connection.totalCount).toBe(1);
+      expect(connection.edges[0]?.node).toEqual({
+        service_instance_id: configuration.service_instance_id,
+        platform_id: configuration.platform_id,
+        title: `${marker} A`,
+        url: configuration.platform_url,
+        identifier: PlatformIdentifier.Opencti,
+        version: configuration.platform_version,
+        contract: configuration.platform_contract,
+        commercial_model: configuration.commercial_model,
+        tenant_id: null,
+        tenant_name: null,
+        status: PlatformConfigurationStatus.Active,
+        last_connectivity_check: configuration.last_connectivity_check,
+        organization: {
+          id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+          name: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.NAME,
+        },
+        registerer: {
+          id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.ID,
+          email: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.EMAIL,
+          first_name:
+            TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.FIRST_NAME,
+          last_name:
+            TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.LAST_NAME,
+        },
+        credential: {
+          kind: RegisteredPlatformCredentialKind.Token,
+        },
+        is_trial: false,
+      });
+    });
+
+    it('should never return the token value', async () => {
+      const configuration = await createAdminFixture({ title: `${marker} A` });
+
+      const connection = await RegistrationApp.loadAdminRegisteredPlatforms({
+        first: 10,
+        searchTerm: marker,
+      });
+
+      expect(JSON.stringify(connection)).not.toContain(configuration.token);
+    });
+
+    it.each([
+      {
+        name: 'product',
+        filter: { identifier: PlatformIdentifier.Openaev },
+        expected: ['OpenAEV inactive'],
+      },
+      {
+        name: 'status',
+        filter: { status: PlatformConfigurationStatus.Active },
+        expected: ['OpenCTI active'],
+      },
+      {
+        name: 'organization',
+        filter: { organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID },
+        expected: ['OpenAEV inactive', 'OpenCTI active'],
+      },
+      {
+        name: 'another organization',
+        filter: { organizationId: TEST_ORGANIZATIONS.FILIGRAN.ID },
+        expected: [],
+      },
+    ])('should filter on $name', async ({ filter, expected }) => {
+      // Given
+      await createAdminFixture({ title: `${marker} OpenCTI active` });
+      await createAdminFixture({
+        title: `${marker} OpenAEV inactive`,
+        identifier: PlatformIdentifier.Openaev,
+        status: PlatformConfigurationStatus.Inactive,
+      });
+
+      // When
+      const titles = await loadAdminTitles({ searchTerm: marker, filter });
+
+      // Then
+      expect(titles).toEqual(expected.map((title) => `${marker} ${title}`));
+    });
+
+    it('should search the tenant name', async () => {
+      await createAdminFixture({
+        title: 'Tenanted platform',
+        identifier: PlatformIdentifier.Openaev,
+        tenantName: `tenant ${marker}`,
+      });
+
+      const titles = await loadAdminTitles({ searchTerm: `TENANT ${marker}` });
+
+      expect(titles).toEqual(['Tenanted platform']);
+    });
+
+    it('should take the LIKE wildcards of the search term literally', async () => {
+      await createAdminFixture({ title: `${marker} A` });
+
+      const titles = await loadAdminTitles({ searchTerm: `${marker}%` });
+
+      expect(titles).toEqual([]);
+    });
+
+    it('should not return the registration of a disabled service instance', async () => {
+      // Given
+      await createAdminFixture({
+        title: `${marker} Disabled`,
+        creationStatus: ServiceInstanceCreationStatus.Disabled,
+      });
+      await createAdminFixture({ title: `${marker} Enabled` });
+
+      // When
+      const titles = await loadAdminTitles({ searchTerm: marker });
+
+      // Then
+      expect(titles).toEqual([`${marker} Enabled`]);
+    });
+
+    it('should cap the length of the search term', async () => {
+      // Given a title the first characters of the term match, and the characters past the cap do not
+      const title = marker.padEnd(
+        ADMIN_REGISTERED_PLATFORMS_SEARCH_TERM_MAX_LENGTH,
+        'x'
+      );
+      await createAdminFixture({ title });
+
+      // When
+      const titles = await loadAdminTitles({
+        searchTerm: `${title}${'b'.repeat(500)}`,
+      });
+
+      // Then
+      expect(titles).toEqual([title]);
+    });
+
+    it('should paginate', async () => {
+      await createAdminFixture({ title: `${marker} A` });
+      await createAdminFixture({ title: `${marker} B` });
+      await createAdminFixture({ title: `${marker} C` });
+
+      const firstPage = await RegistrationApp.loadAdminRegisteredPlatforms({
+        first: 2,
+        searchTerm: marker,
+        orderBy: AdminRegisteredPlatformOrdering.Title,
+        orderMode: OrderingMode.Asc,
+      });
+      const secondPage = await RegistrationApp.loadAdminRegisteredPlatforms({
+        first: 2,
+        after: firstPage.pageInfo.endCursor,
+        searchTerm: marker,
+        orderBy: AdminRegisteredPlatformOrdering.Title,
+        orderMode: OrderingMode.Asc,
+      });
+
+      expect(firstPage.totalCount).toBe(3);
+      expect(firstPage.edges.map(({ node }) => node.title)).toEqual([
+        `${marker} A`,
+        `${marker} B`,
+      ]);
+      expect(firstPage.pageInfo).toEqual({
+        startCursor: btoa('1'),
+        endCursor: btoa('2'),
+        hasNextPage: true,
+        hasPreviousPage: false,
+      });
+      expect(secondPage.edges.map(({ node }) => node.title)).toEqual([
+        `${marker} C`,
+      ]);
+      expect(secondPage.pageInfo).toEqual({
+        startCursor: btoa('3'),
+        endCursor: btoa('3'),
+        hasNextPage: false,
+        hasPreviousPage: true,
+      });
+    });
+
+    it('should return at least one registration when the page size is not positive', async () => {
+      await createAdminFixture({ title: `${marker} A` });
+      await createAdminFixture({ title: `${marker} B` });
+
+      const page = await RegistrationApp.loadAdminRegisteredPlatforms({
+        first: 0,
+        searchTerm: marker,
+        orderBy: AdminRegisteredPlatformOrdering.Title,
+        orderMode: OrderingMode.Asc,
+      });
+
+      expect(page.totalCount).toBe(2);
+      expect(page.edges.map(({ node }) => node.title)).toEqual([`${marker} A`]);
+      expect(page.pageInfo.hasNextPage).toBe(true);
+    });
+
+    it('should return an empty page past the last registration', async () => {
+      await createAdminFixture({ title: `${marker} A` });
+
+      const page = await RegistrationApp.loadAdminRegisteredPlatforms({
+        first: 10,
+        after: btoa('5'),
+        searchTerm: marker,
+      });
+
+      expect(page).toMatchObject({
+        totalCount: 1,
+        edges: [],
+        pageInfo: {
+          startCursor: null,
+          endCursor: null,
+          hasNextPage: false,
+          hasPreviousPage: true,
+        },
+      });
+    });
+
+    it('should report no next page when the last page is exactly full', async () => {
+      await createAdminFixture({ title: `${marker} A` });
+      await createAdminFixture({ title: `${marker} B` });
+
+      const page = await RegistrationApp.loadAdminRegisteredPlatforms({
+        first: 2,
+        searchTerm: marker,
+      });
+
+      expect(page.edges).toHaveLength(2);
+      expect(page.pageInfo.hasNextPage).toBe(false);
+    });
+
+    it('should start from the first page when the cursor is unreadable', async () => {
+      await createAdminFixture({ title: `${marker} A` });
+
+      const titles = await loadAdminTitles({
+        searchTerm: marker,
+        after: 'not a cursor',
+      });
+
+      expect(titles).toEqual([`${marker} A`]);
+    });
+  });
+
+  describe('adminUnregisterPlatform', () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    // The row the admin list shows for a service instance.
+    const loadListedPlatform = async (serviceInstanceId: ServiceInstanceId) =>
+      (
+        await RegistrationApp.loadAdminRegisteredPlatforms({
+          first: 1,
+          searchTerm: serviceInstanceId,
+        })
+      ).edges[0]?.node;
+
+    it('should set the status to inactive, tell the organization admins and send telemetry', async () => {
+      // Given
+      const configuration = await createAdminFixture({
+        title: 'To unregister',
+      });
+      const sendMailSpy = vi.spyOn(MailService, 'sendMail').mockResolvedValue();
+      const telemetrySpy = vi
+        .spyOn(TelemetryApp, 'sendTelemetryEvent')
+        .mockResolvedValue();
+      const logSpy = vi.spyOn(logApp, 'info');
+
+      // When
+      await RegistrationApp.adminUnregisterPlatform(
+        configuration.service_instance_id
+      );
+
+      // Then
+      const stored = await TestHelper.platformConfiguration.load({
+        service_instance_id: configuration.service_instance_id,
+      });
+      expect(stored?.status).toBe(PlatformConfigurationStatus.Inactive);
+      expect(sendMailSpy).toHaveBeenCalledWith({
+        to: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.ADMIN_ORGA.EMAIL,
+        template: 'platform_unregistered',
+        params: expect.objectContaining({
+          platformIdentifier: PlatformIdentifier.Opencti,
+        }),
+      });
+      expect(telemetrySpy).toHaveBeenCalledExactlyOnceWith(
+        expect.objectContaining({
+          event_type: TelemetryEventType.UNREGISTER,
+          organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+          user_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
+          platform_id: configuration.platform_id,
+        })
+      );
+      expect(logSpy).toHaveBeenCalledWith(
+        'Platform unregistered by a platform admin',
+        expect.objectContaining({
+          adminId: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
+          serviceInstanceId: configuration.service_instance_id,
+          organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        })
+      );
+    });
+
+    it('should unregister, mail the other admins and send telemetry when a mail fails', async () => {
+      // Given
+      const configuration = await createAdminFixture({
+        title: 'Mail failure',
+      });
+      const sendMailSpy = vi
+        .spyOn(MailService, 'sendMail')
+        .mockImplementation(async ({ to }) => {
+          if (
+            to === TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.ADMIN_ORGA.EMAIL
+          ) {
+            throw new Error('SMTP down');
+          }
+        });
+      const telemetrySpy = vi
+        .spyOn(TelemetryApp, 'sendTelemetryEvent')
+        .mockResolvedValue();
+      const errorSpy = vi.spyOn(logApp, 'error');
+
+      // When
+      await RegistrationApp.adminUnregisterPlatform(
+        configuration.service_instance_id
+      );
+
+      // Then
+      const stored = await TestHelper.platformConfiguration.load({
+        service_instance_id: configuration.service_instance_id,
+      });
+      expect(stored?.status).toBe(PlatformConfigurationStatus.Inactive);
+      const recipients = sendMailSpy.mock.calls.map(([mail]) => mail.to);
+      expect(recipients).toContain(
+        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.ADMIN_ORGA.EMAIL
+      );
+      expect(recipients.length).toBeGreaterThan(1);
+      expect(errorSpy).toHaveBeenCalledExactlyOnceWith(
+        'Unable to send the platform unregistered mail',
+        expect.objectContaining({
+          userId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.ADMIN_ORGA.ID,
+          serviceInstanceId: configuration.service_instance_id,
+        })
+      );
+      expect(telemetrySpy).toHaveBeenCalledOnce();
+    });
+
+    it('should unregister on behalf of the owner the list shows when the platform has several subscriptions', async () => {
+      // Given an older subscription of another organization, created first
+      const serviceInstance = await TestHelper.serviceInstance.create({
+        service_definition_id: SERVICES.DEFINITIONS.OPENCTI_REGISTRATION.ID,
+      });
+      await TestHelper.subscription.create({
+        organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+        service_instance_id: serviceInstance.id,
+        start_date: new Date('2024-01-01'),
+      });
+      await TestHelper.subscription.create({
+        organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        service_instance_id: serviceInstance.id,
+        start_date: new Date(),
+      });
+      const configuration = await TestHelper.platformConfiguration.create({
+        service_instance_id: serviceInstance.id,
+        platform_title: 'Several subscriptions',
+      });
+      vi.spyOn(MailService, 'sendMail').mockResolvedValue();
+      const telemetrySpy = vi
+        .spyOn(TelemetryApp, 'sendTelemetryEvent')
+        .mockResolvedValue();
+      const listed = await loadListedPlatform(
+        configuration.service_instance_id
+      );
+
+      // When
+      await RegistrationApp.adminUnregisterPlatform(
+        configuration.service_instance_id
+      );
+
+      // Then
+      expect(listed?.organization?.id).toBe(
+        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID
+      );
+      expect(telemetrySpy).toHaveBeenCalledExactlyOnceWith(
+        expect.objectContaining({
+          organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        })
+      );
+    });
+
+    it('should unregister a platform without owner organization, mail nobody and send no telemetry', async () => {
+      // Given the list shows a registration with no subscription, without its organization
+      const serviceInstance = await TestHelper.serviceInstance.create({
+        service_definition_id: SERVICES.DEFINITIONS.OPENCTI_REGISTRATION.ID,
+      });
+      const configuration = await TestHelper.platformConfiguration.create({
+        service_instance_id: serviceInstance.id,
+        platform_title: 'Without owner',
+      });
+      const sendMailSpy = vi.spyOn(MailService, 'sendMail').mockResolvedValue();
+      const telemetrySpy = vi
+        .spyOn(TelemetryApp, 'sendTelemetryEvent')
+        .mockResolvedValue();
+      const listed = await loadListedPlatform(
+        configuration.service_instance_id
+      );
+
+      // When
+      await RegistrationApp.adminUnregisterPlatform(
+        configuration.service_instance_id
+      );
+
+      // Then
+      expect(listed?.organization).toBeNull();
+      const stored = await TestHelper.platformConfiguration.load({
+        service_instance_id: configuration.service_instance_id,
+      });
+      expect(stored?.status).toBe(PlatformConfigurationStatus.Inactive);
+      expect(sendMailSpy).not.toHaveBeenCalled();
+      expect(telemetrySpy).not.toHaveBeenCalled();
+    });
+
+    it('should refuse a registration the admin list hides, and leave it active', async () => {
+      // Given a registration of a disabled service instance
+      const configuration = await createAdminFixture({
+        title: 'Disabled instance',
+        creationStatus: ServiceInstanceCreationStatus.Disabled,
+      });
+      const sendMailSpy = vi.spyOn(MailService, 'sendMail').mockResolvedValue();
+
+      // When
+      const call = RegistrationApp.adminUnregisterPlatform(
+        configuration.service_instance_id
+      );
+
+      // Then
+      await expect(call).rejects.toThrow(ErrorCode.PlatformNotRegistered);
+      const stored = await TestHelper.platformConfiguration.load({
+        service_instance_id: configuration.service_instance_id,
+      });
+      expect(stored?.status).toBe(PlatformConfigurationStatus.Active);
+      expect(sendMailSpy).not.toHaveBeenCalled();
+    });
+
+    it('should do nothing on an inactive registration', async () => {
+      // Given
+      const configuration = await createAdminFixture({
+        title: 'Already unregistered',
+        status: PlatformConfigurationStatus.Inactive,
+      });
+      const sendMailSpy = vi.spyOn(MailService, 'sendMail').mockResolvedValue();
+      const telemetrySpy = vi
+        .spyOn(TelemetryApp, 'sendTelemetryEvent')
+        .mockResolvedValue();
+
+      // When
+      await RegistrationApp.adminUnregisterPlatform(
+        configuration.service_instance_id
+      );
+
+      // Then
+      const stored = await TestHelper.platformConfiguration.load({
+        service_instance_id: configuration.service_instance_id,
+      });
+      expect(stored?.status).toBe(PlatformConfigurationStatus.Inactive);
+      expect(sendMailSpy).not.toHaveBeenCalled();
+      expect(telemetrySpy).not.toHaveBeenCalled();
+    });
+
+    describe('trial', () => {
+      afterEach(async () => {
+        await TestHelper.deploymentRequest.delete({
+          user_requester_id:
+            TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.ID,
+        });
+      });
+
+      it.each([
+        {
+          name: 'a trial contract',
+          contract: PlatformContract.Trial,
+          deploymentType: undefined,
+          expected: true,
+        },
+        {
+          name: 'an EE contract linked to a trial deployment request',
+          contract: PlatformContract.Ee,
+          deploymentType: DeploymentRequestDeploymentType.Trial,
+          expected: true,
+        },
+        {
+          name: 'an EE contract linked to a bundle deployment request',
+          contract: PlatformContract.Ee,
+          deploymentType: DeploymentRequestDeploymentType.Bundle,
+          expected: false,
+        },
+      ])(
+        'should flag $name as a trial in the admin list: $expected',
+        async ({ contract, deploymentType, expected }) => {
+          // Given
+          const title = `Trial flag ${uuidv4()}`;
+          const configuration = await createAdminFixture({ title, contract });
+          if (deploymentType) {
+            await TestHelper.deploymentRequest.create({
+              service_instance_id: configuration.service_instance_id,
+              organization_requester_id:
+                TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+              user_requester_id:
+                TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.ID,
+              type: deploymentType,
+            });
+          }
+
+          // When
+          const connection = await RegistrationApp.loadAdminRegisteredPlatforms(
+            { first: 10, searchTerm: title }
+          );
+
+          // Then the list flags exactly the registrations the unregister refuses
+          expect(connection.edges.map(({ node }) => node.is_trial)).toEqual([
+            expected,
+          ]);
+        }
+      );
+
+      it('should refuse to unregister a registration whose contract is a trial', async () => {
+        // Given
+        const configuration = await createAdminFixture({
+          title: 'Trial contract',
+          contract: PlatformContract.Trial,
+        });
+        const sendMailSpy = vi
+          .spyOn(MailService, 'sendMail')
+          .mockResolvedValue();
+        const telemetrySpy = vi
+          .spyOn(TelemetryApp, 'sendTelemetryEvent')
+          .mockResolvedValue();
+
+        // When
+        const call = RegistrationApp.adminUnregisterPlatform(
+          configuration.service_instance_id
+        );
+
+        // Then
+        await expect(call).rejects.toThrow(
+          ForbiddenErrorCode.TrialPlatformCannotBeUnregistered
+        );
+        const stored = await TestHelper.platformConfiguration.load({
+          service_instance_id: configuration.service_instance_id,
+        });
+        expect(stored).toMatchObject({
+          status: PlatformConfigurationStatus.Active,
+          platform_contract: PlatformContract.Trial,
+        });
+        expect(sendMailSpy).not.toHaveBeenCalled();
+        expect(telemetrySpy).not.toHaveBeenCalled();
+      });
+
+      it('should refuse to unregister a registration linked to a trial deployment request, whatever its contract', async () => {
+        // Given
+        const configuration = await createAdminFixture({
+          title: 'Trial deployment request',
+          contract: PlatformContract.Ee,
+        });
+        await TestHelper.deploymentRequest.create({
+          service_instance_id: configuration.service_instance_id,
+          organization_requester_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+          user_requester_id:
+            TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.ID,
+          type: DeploymentRequestDeploymentType.Trial,
+        });
+        const sendMailSpy = vi
+          .spyOn(MailService, 'sendMail')
+          .mockResolvedValue();
+        const telemetrySpy = vi
+          .spyOn(TelemetryApp, 'sendTelemetryEvent')
+          .mockResolvedValue();
+
+        // When
+        const call = RegistrationApp.adminUnregisterPlatform(
+          configuration.service_instance_id
+        );
+
+        // Then
+        await expect(call).rejects.toThrow(
+          ForbiddenErrorCode.TrialPlatformCannotBeUnregistered
+        );
+        const stored = await TestHelper.platformConfiguration.load({
+          service_instance_id: configuration.service_instance_id,
+        });
+        expect(stored).toMatchObject({
+          status: PlatformConfigurationStatus.Active,
+          platform_contract: PlatformContract.Ee,
+        });
+        expect(sendMailSpy).not.toHaveBeenCalled();
+        expect(telemetrySpy).not.toHaveBeenCalled();
+      });
+
+      it('should unregister a non trial registration linked to a non trial deployment request', async () => {
+        // Given
+        const configuration = await createAdminFixture({
+          title: 'Bundle deployment request',
+          contract: PlatformContract.Ee,
+        });
+        await TestHelper.deploymentRequest.create({
+          service_instance_id: configuration.service_instance_id,
+          organization_requester_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+          user_requester_id:
+            TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.ID,
+          type: DeploymentRequestDeploymentType.Bundle,
+        });
+        vi.spyOn(MailService, 'sendMail').mockResolvedValue();
+        const telemetrySpy = vi
+          .spyOn(TelemetryApp, 'sendTelemetryEvent')
+          .mockResolvedValue();
+
+        // When
+        await RegistrationApp.adminUnregisterPlatform(
+          configuration.service_instance_id
+        );
+
+        // Then
+        const stored = await TestHelper.platformConfiguration.load({
+          service_instance_id: configuration.service_instance_id,
+        });
+        expect(stored?.status).toBe(PlatformConfigurationStatus.Inactive);
+        expect(telemetrySpy).toHaveBeenCalledOnce();
+      });
+
+      it('should do nothing on an inactive trial registration', async () => {
+        // Given
+        const configuration = await createAdminFixture({
+          title: 'Inactive trial',
+          status: PlatformConfigurationStatus.Inactive,
+          contract: PlatformContract.Trial,
+        });
+        const sendMailSpy = vi
+          .spyOn(MailService, 'sendMail')
+          .mockResolvedValue();
+        const telemetrySpy = vi
+          .spyOn(TelemetryApp, 'sendTelemetryEvent')
+          .mockResolvedValue();
+
+        // When
+        await RegistrationApp.adminUnregisterPlatform(
+          configuration.service_instance_id
+        );
+
+        // Then
+        const stored = await TestHelper.platformConfiguration.load({
+          service_instance_id: configuration.service_instance_id,
+        });
+        expect(stored?.status).toBe(PlatformConfigurationStatus.Inactive);
+        expect(sendMailSpy).not.toHaveBeenCalled();
+        expect(telemetrySpy).not.toHaveBeenCalled();
+      });
+    });
+
+    it('should throw when the service instance has no registration', async () => {
+      const call = RegistrationApp.adminUnregisterPlatform(
+        uuidv4() as ServiceInstanceId
+      );
+
+      await expect(call).rejects.toThrow(ErrorCode.PlatformNotRegistered);
     });
   });
 });

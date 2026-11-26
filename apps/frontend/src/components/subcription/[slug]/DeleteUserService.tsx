@@ -1,15 +1,18 @@
-import { UserServiceDeleteMutation } from '@/components/service/user_service.graphql';
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
-import { userServiceDeleteMutation } from '@generated/userServiceDeleteMutation.graphql';
-import { userServices_fragment$data } from '@generated/userServices_fragment.graphql';
-import { useTranslations } from 'next-intl';
-import { useMutation } from 'react-relay';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
+import { useTranslate } from '@/hooks/use-translate';
+import { portalGraphqlClient } from '@/lib/graphql-client';
+import { invalidateUserServiceQueries } from '@/utils/query-invalidation/user-service.invalidation';
+import {
+  type UserServiceItemFragment,
+  useDeleteUserServicesMutation,
+} from '@graphql/generated';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface DeleteUserServiceProps {
-  userServices: userServices_fragment$data[];
+  userServices: UserServiceItemFragment[];
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  connectionId: string;
   onDeleted?: () => void;
 }
 
@@ -17,31 +20,38 @@ export const DeleteUserService = ({
   userServices,
   isOpen,
   onOpenChange,
-  connectionId,
   onDeleted,
 }: DeleteUserServiceProps) => {
-  const t = useTranslations();
-  const [commitUserServiceDeletingMutation] =
-    useMutation<userServiceDeleteMutation>(UserServiceDeleteMutation);
+  const t = useTranslate();
+  const queryClient = useQueryClient();
+  const { mutate: deleteUserServices } = useDeleteUserServicesMutation(
+    portalGraphqlClient,
+    {
+      onSuccess: async () => {
+        await invalidateUserServiceQueries(queryClient);
+        onOpenChange(false);
+        onDeleted?.();
+      },
+      onError: (error: Error) => {
+        showSnackbar({
+          severity: 'error',
+          title: t('Utils.Error'),
+          description: t(`Error.Server.${error.message}`),
+        });
+      },
+    }
+  );
 
   const handleConfirmDelete = () => {
     const userServiceIds = userServices
       .map((userService) => userService.id)
       .filter((id): id is string => !!id);
 
-    commitUserServiceDeletingMutation({
-      variables: {
-        connections: [connectionId],
-        input: {
-          userServiceIds,
-        },
-        service_instance_id:
-          userServices[0]?.subscription?.service_instance?.id,
+    deleteUserServices({
+      input: {
+        userServiceIds,
       },
-      onCompleted: () => {
-        onOpenChange(false);
-        onDeleted?.();
-      },
+      service_instance_id: userServices[0]?.subscription?.service_instance?.id,
     });
   };
 
@@ -50,14 +60,15 @@ export const DeleteUserService = ({
   }
 
   return (
-    <AlertDialogComponent
+    <ConfirmDialog
+      confirmAnalyticsId="subscription_user_access_removal_confirm"
       key={`delete-${userServices.map((userService) => userService.id).join('-')}`}
-      AlertTitle={t('Service.Management.RemoveAccess')}
-      actionButtonText={t('Service.Management.RemoveAccess')}
-      variantName={'destructive'}
-      isOpen={isOpen}
+      title={t('Service.Management.RemoveAccess')}
+      confirmLabel={t('Service.Management.RemoveAccess')}
+      destructive
+      open={isOpen}
       onOpenChange={onOpenChange}
-      onClickContinue={handleConfirmDelete}>
+      onConfirm={handleConfirmDelete}>
       {userServices.length > 1
         ? t('Service.Management.AreYouSureRemoveUsersAccess', {
             count: userServices.length,
@@ -66,6 +77,6 @@ export const DeleteUserService = ({
             firstname: userServices[0]?.user?.first_name ?? '',
             lastname: userServices[0]?.user?.last_name ?? '',
           })}
-    </AlertDialogComponent>
+    </ConfirmDialog>
   );
 };

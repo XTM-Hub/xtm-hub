@@ -1,0 +1,14 @@
+{
+  "openCTI_version": "6.9.6",
+  "type": "openCTI_stream",
+  "configuration": {
+    "name": "E2E deployed stream",
+    "uri": "http://opencti:8080",
+    "stream_id": "live",
+    "current_state_date": null,
+    "listen_deletion": true,
+    "ssl_verify": false,
+    "no_dependencies": false,
+    "synchronized": false
+  }
+}

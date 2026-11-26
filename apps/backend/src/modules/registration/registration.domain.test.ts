@@ -3,12 +3,15 @@ import { v4 as uuidv4 } from 'uuid';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TestHelper } from '../../../tests/helper/test.helper';
 import {
+  CAPABILITY_READ_SAAS_METRICS,
   contextSimpleUserSecondOrga,
   requestContextRegistererUserSecondOrga,
+  requestContextSimpleUserFiligran2,
   SERVICES,
   TEST_ORGANIZATIONS,
 } from '../../../tests/tests.const';
 import {
+  CommercialModel,
   DeploymentRequestDeploymentType,
   DeploymentRequestHubStatus,
   DeploymentRequestPlatformRegion,
@@ -24,6 +27,7 @@ import { OrganizationId } from '../../model/kanel/public/Organization';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { SubscriptionId } from '../../model/kanel/public/Subscription';
 import { PortalContext } from '../../model/portal-context';
+import { CAPABILITY_BYPASS } from '../../portal.const';
 import { securityGuard } from '../../security/guard';
 import { ErrorCode } from '../../utils/error/error.code';
 import { DeploymentRequestDomain } from '../deployment/deployment.domain';
@@ -370,15 +374,199 @@ describe('registration domain', () => {
       expect(platforms).toHaveLength(1);
       expect(platforms[0]?.platform_id).toBe(platformId);
     });
+
+    it('should not return a platform of another organization', async () => {
+      // Given
+      requestContext.set(requestContextSimpleUserFiligran2);
+
+      // When
+      const platforms = await RegistrationDomain.loadRegisteredPlatform(
+        openCTIServiceInstanceId
+      );
+
+      // Then
+      expect(platforms).toHaveLength(0);
+    });
+
+    it.each([
+      ['READ_SAAS_METRICS', CAPABILITY_READ_SAAS_METRICS],
+      ['BYPASS', CAPABILITY_BYPASS],
+    ])(
+      'should return a platform of another organization when the user has %s',
+      async (_, capability) => {
+        // Given
+        requestContext.set({
+          ...requestContextSimpleUserFiligran2,
+          user: {
+            ...requestContextSimpleUserFiligran2.user,
+            capabilities: [capability],
+          },
+        });
+
+        // When
+        const platforms = await RegistrationDomain.loadRegisteredPlatform(
+          openCTIServiceInstanceId
+        );
+
+        // Then
+        expect(platforms).toHaveLength(1);
+        expect(platforms[0]?.platform_id).toBe(platformId);
+      }
+    );
   });
 
-  describe('loadRegisteredPlatformsByOrganizationIds', () => {
-    let serviceInstanceId: ServiceInstanceId;
+  describe('loadRegisteredPlatformByPlatformId', () => {
+    // PlatformConfiguration.tenant_id is a uuid column
+    const firstTenantId = uuidv4();
+    const secondTenantId = uuidv4();
+    const unknownTenantId = uuidv4();
+
+    const registerOpenaevPlatform = (tenantId?: string) =>
+      RegistrationDomain.registerNewPlatform({
+        organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        serviceDefinitionId: SERVICES.DEFINITIONS.OPENAEV_REGISTRATION.ID,
+        configuration: {
+          registerer_id:
+            TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.ID,
+          platform_id: platformId,
+          ...(tenantId ? { tenant_id: tenantId } : {}),
+          platform_url: platformUrl,
+          platform_title: 'My OpenAEV platform',
+          platform_contract: platformContract,
+          platform_version: '2.4.0',
+          token: uuidv4(),
+          last_connectivity_check: new Date(),
+        },
+        platformIdentifier: PlatformIdentifier.Openaev,
+      });
+
+    beforeEach(() => {
+      requestContext.set(requestContextRegistererUserSecondOrga);
+    });
+
+    afterEach(async () => {
+      await PlatformConfigurationDomain.deleteConfigurationBy({});
+      await ServiceInstanceDomain.deleteServiceInstanceBy({});
+    });
+
+    it('should return the registration of the requested tenant', async () => {
+      // Given
+      await registerOpenaevPlatform(firstTenantId);
+      const tenantServiceInstanceId =
+        await registerOpenaevPlatform(secondTenantId);
+
+      // When
+      const platform =
+        await RegistrationDomain.loadRegisteredPlatformByPlatformId({
+          platformIdentifier: PlatformIdentifier.Openaev,
+          platformId,
+          tenantId: secondTenantId,
+        });
+
+      // Then
+      expect(platform?.id).toBe(tenantServiceInstanceId);
+    });
+
+    it('should return only the tenant-less registration when no tenant is given', async () => {
+      // Given
+      await registerOpenaevPlatform(firstTenantId);
+      const legacyServiceInstanceId = await registerOpenaevPlatform();
+
+      // When
+      const platform =
+        await RegistrationDomain.loadRegisteredPlatformByPlatformId({
+          platformIdentifier: PlatformIdentifier.Openaev,
+          platformId,
+          tenantId: null,
+        });
+
+      // Then
+      expect(platform?.id).toBe(legacyServiceInstanceId);
+    });
+
+    it.each`
+      description                                         | platformIdentifier            | tenantId
+      ${'the tenant has no registration'}                 | ${PlatformIdentifier.Openaev} | ${unknownTenantId}
+      ${'the platform is registered for another product'} | ${PlatformIdentifier.Opencti} | ${firstTenantId}
+    `(
+      'should return nothing when $description',
+      async ({
+        platformIdentifier,
+        tenantId,
+      }: {
+        platformIdentifier: PlatformIdentifier;
+        tenantId: string;
+      }) => {
+        // Given
+        await registerOpenaevPlatform(firstTenantId);
+
+        // When
+        const platform =
+          await RegistrationDomain.loadRegisteredPlatformByPlatformId({
+            platformIdentifier,
+            platformId,
+            tenantId,
+          });
+
+        // Then
+        expect(platform).toBeUndefined();
+      }
+    );
+
+    it('should return nothing when the registration is inactive', async () => {
+      // Given
+      const serviceInstanceId = await registerOpenaevPlatform(firstTenantId);
+      await PlatformConfigurationDomain.updateConfiguration(serviceInstanceId, {
+        status: PlatformConfigurationStatus.Inactive,
+      });
+
+      // When
+      const platform =
+        await RegistrationDomain.loadRegisteredPlatformByPlatformId({
+          platformIdentifier: PlatformIdentifier.Openaev,
+          platformId,
+          tenantId: firstTenantId,
+        });
+
+      // Then
+      expect(platform).toBeUndefined();
+    });
+
+    it('should return nothing when the platform is outside the selected organization', async () => {
+      // Given
+      await registerOpenaevPlatform(firstTenantId);
+      requestContext.set(requestContextSimpleUserFiligran2);
+
+      // When
+      const platform =
+        await RegistrationDomain.loadRegisteredPlatformByPlatformId({
+          platformIdentifier: PlatformIdentifier.Openaev,
+          platformId,
+          tenantId: firstTenantId,
+        });
+
+      // Then
+      expect(platform).toBeUndefined();
+    });
+  });
+
+  describe('loadRegisteredPlatformsByServiceInstanceIds', () => {
+    const openAEVPlatformId = uuidv4();
+    const openAEVPlatformTitle = 'My OpenAEV platform';
+    const openAEVPlatformUrl = 'http://openaev.example.com';
+    const openAEVPlatformContract = PlatformContract.Ee;
+    const openAEVPlatformVersion = '1.0.0';
+    const openAEVToken = uuidv4();
+    const openAEVServiceDefinitionId =
+      SERVICES.DEFINITIONS.OPENAEV_REGISTRATION.ID;
+
+    let openCTIServiceInstanceId: ServiceInstanceId;
+    let openAEVServiceInstanceId: ServiceInstanceId;
 
     beforeEach(async () => {
       requestContext.set(requestContextRegistererUserSecondOrga);
 
-      serviceInstanceId = await RegistrationDomain.registerNewPlatform({
+      openCTIServiceInstanceId = await RegistrationDomain.registerNewPlatform({
         organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
         serviceDefinitionId,
         configuration: {
@@ -394,71 +582,283 @@ describe('registration domain', () => {
         },
         platformIdentifier: PlatformIdentifier.Opencti,
       });
-    });
 
+      openAEVServiceInstanceId = await RegistrationDomain.registerNewPlatform({
+        organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        serviceDefinitionId: openAEVServiceDefinitionId,
+        configuration: {
+          registerer_id:
+            TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.ID,
+          platform_id: openAEVPlatformId,
+          platform_url: openAEVPlatformUrl,
+          platform_title: openAEVPlatformTitle,
+          platform_contract: openAEVPlatformContract,
+          platform_version: openAEVPlatformVersion,
+          token: openAEVToken,
+          last_connectivity_check: new Date(),
+        },
+        platformIdentifier: PlatformIdentifier.Openaev,
+      });
+    });
     afterEach(async () => {
+      await TestHelper.deploymentRequest.delete({});
       await PlatformConfigurationDomain.deleteConfigurationBy({});
       await ServiceInstanceDomain.deleteServiceInstanceBy({});
     });
 
-    it('should return an empty array when organizationIds is empty', async () => {
-      // When
-      const result =
-        await RegistrationDomain.loadRegisteredPlatformsByOrganizationIds(
-          [],
-          PlatformIdentifier.Opencti
-        );
+    it('should return the registered platforms linked to the requested service instance ids', async () => {
+      const platforms =
+        await RegistrationDomain.loadRegisteredPlatformsByServiceInstanceIds([
+          openCTIServiceInstanceId,
+          openAEVServiceInstanceId,
+        ]);
 
-      // Then
-      expect(result).toEqual([]);
+      expect(platforms).toHaveLength(2);
+      expect(platforms.map((platform) => platform.platform_id).sort()).toEqual(
+        [platformId, openAEVPlatformId].sort()
+      );
     });
 
-    it('should return platforms for the given organization IDs and platform identifier', async () => {
-      // When
-      const result =
-        await RegistrationDomain.loadRegisteredPlatformsByOrganizationIds(
-          [TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID],
-          PlatformIdentifier.Opencti
+    it('should not return platforms for service instance ids that were not requested', async () => {
+      const platforms =
+        await RegistrationDomain.loadRegisteredPlatformsByServiceInstanceIds([
+          openCTIServiceInstanceId,
+        ]);
+
+      expect(platforms).toHaveLength(1);
+      expect(platforms[0]?.platform_id).toBe(platformId);
+    });
+
+    it('should return an empty array when no service instance ids are requested', async () => {
+      const platforms =
+        await RegistrationDomain.loadRegisteredPlatformsByServiceInstanceIds(
+          []
         );
 
-      // Then
-      expect(result).toHaveLength(1);
-      expect(result[0]).toMatchObject({
-        id: serviceInstanceId,
-        identifier: ServiceDefinitionIdentifier.OpenctiRegistration,
+      expect(platforms).toEqual([]);
+    });
+
+    it('should return an empty array when the requested service instance id does not match a registered platform', async () => {
+      const platforms =
+        await RegistrationDomain.loadRegisteredPlatformsByServiceInstanceIds([
+          uuidv4() as ServiceInstanceId,
+        ]);
+
+      expect(platforms).toEqual([]);
+    });
+
+    it.each([
+      ['READ_SAAS_METRICS', CAPABILITY_READ_SAAS_METRICS],
+      ['BYPASS', CAPABILITY_BYPASS],
+    ])(
+      'should not return a platform of another organization even when the user has %s',
+      async (_, capability) => {
+        // Given
+        requestContext.set({
+          ...requestContextSimpleUserFiligran2,
+          user: {
+            ...requestContextSimpleUserFiligran2.user,
+            capabilities: [capability],
+          },
+        });
+
+        // When
+        const platforms =
+          await RegistrationDomain.loadRegisteredPlatformsByServiceInstanceIds([
+            openCTIServiceInstanceId,
+          ]);
+
+        // Then
+        expect(platforms).toEqual([]);
+      }
+    );
+  });
+
+  describe('loadSaasRegisteredPlatformsByPlatformIds', () => {
+    const saasPlatformId = uuidv4();
+    const latestRegistration = {
+      serviceInstanceId: uuidv4() as ServiceInstanceId,
+      platformId: saasPlatformId,
+      status: PlatformConfigurationStatus.Active,
+      commercialModel: CommercialModel.Saas,
+      lastConnectivityCheck: new Date('2026-10-02T10:00:00.000Z'),
+    };
+    const olderRegistration = {
+      ...latestRegistration,
+      serviceInstanceId: uuidv4() as ServiceInstanceId,
+      lastConnectivityCheck: new Date('2026-10-01T10:00:00.000Z'),
+    };
+    const nonSaasRegistration = {
+      ...latestRegistration,
+      serviceInstanceId: uuidv4() as ServiceInstanceId,
+      platformId: uuidv4(),
+      commercialModel: CommercialModel.Other,
+    };
+    const inactiveRegistration = {
+      ...latestRegistration,
+      serviceInstanceId: uuidv4() as ServiceInstanceId,
+      platformId: uuidv4(),
+      status: PlatformConfigurationStatus.Inactive,
+    };
+    const registrations = [
+      olderRegistration,
+      latestRegistration,
+      nonSaasRegistration,
+      inactiveRegistration,
+    ];
+
+    const setUserCapabilities = (capabilities: string[]) =>
+      requestContext.set({
+        ...requestContextSimpleUserFiligran2,
+        user: { ...requestContextSimpleUserFiligran2.user, capabilities },
       });
+
+    beforeEach(async () => {
+      setUserCapabilities([CAPABILITY_READ_SAAS_METRICS]);
+      // Every registration belongs to another organization than the one of the user.
+      for (const registration of registrations) {
+        await TestHelper.serviceInstance.create({
+          id: registration.serviceInstanceId,
+          service_definition_id: SERVICES.DEFINITIONS.OPENCTI_REGISTRATION.ID,
+          creation_status: ServiceInstanceCreationStatus.Ready,
+        });
+        await TestHelper.platformConfiguration.create({
+          service_instance_id: registration.serviceInstanceId,
+          platform_id: registration.platformId,
+          status: registration.status,
+          commercial_model: registration.commercialModel,
+          last_connectivity_check: registration.lastConnectivityCheck,
+        });
+        await TestHelper.subscription.create({
+          organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+          service_instance_id: registration.serviceInstanceId,
+        });
+      }
     });
 
-    it('should return an empty array when no platform matches the given organization ID', async () => {
-      // Given
-      const randomOrgId = uuidv4() as OrganizationId;
+    afterEach(async () => {
+      await TestHelper.saasManagerInstance.delete([
+        nonSaasRegistration.platformId,
+      ]);
+      for (const { serviceInstanceId } of registrations) {
+        await TestHelper.subscription.delete({
+          service_instance_id: serviceInstanceId,
+        });
+        await TestHelper.platformConfiguration.delete({
+          service_instance_id: serviceInstanceId,
+        });
+        await TestHelper.serviceInstance.delete({ id: serviceInstanceId });
+      }
+    });
 
+    it.each([
+      ['READ_SAAS_METRICS', CAPABILITY_READ_SAAS_METRICS],
+      ['BYPASS', CAPABILITY_BYPASS],
+    ])(
+      'should return the active SaaS registrations of the platform ids, the most recently seen first, whatever their organization, when the user has %s',
+      async (_, capability) => {
+        // Given
+        setUserCapabilities([capability]);
+
+        // When
+        const platforms =
+          await RegistrationDomain.loadSaasRegisteredPlatformsByPlatformIds([
+            saasPlatformId,
+          ]);
+
+        // Then
+        expect(
+          platforms.map(({ id, platform_id }) => ({ id, platform_id }))
+        ).toEqual([
+          {
+            id: latestRegistration.serviceInstanceId,
+            platform_id: saasPlatformId,
+          },
+          {
+            id: olderRegistration.serviceInstanceId,
+            platform_id: saasPlatformId,
+          },
+        ]);
+      }
+    );
+
+    it.each([
+      ['a non-SaaS registration', nonSaasRegistration.platformId],
+      ['an inactive registration', inactiveRegistration.platformId],
+      ['an unknown platform id', uuidv4()],
+    ])('should not return %s', async (_, platformId) => {
       // When
-      const result =
-        await RegistrationDomain.loadRegisteredPlatformsByOrganizationIds(
-          [randomOrgId],
-          PlatformIdentifier.Opencti
-        );
+      const platforms =
+        await RegistrationDomain.loadSaasRegisteredPlatformsByPlatformIds([
+          platformId,
+        ]);
 
       // Then
-      expect(result).toEqual([]);
+      expect(platforms).toEqual([]);
     });
 
-    it('should not return platforms with inactive configuration', async () => {
+    it('should return a registration stored as OTHER, as SAAS, when the SaaS Manager pushed its platform as PROD', async () => {
       // Given
-      await PlatformConfigurationDomain.updateConfiguration(serviceInstanceId, {
-        status: PlatformConfigurationStatus.Inactive,
+      await TestHelper.saasManagerInstance.create({
+        id: nonSaasRegistration.platformId,
+        data: { commercial_model: 'PROD' },
       });
 
       // When
-      const result =
-        await RegistrationDomain.loadRegisteredPlatformsByOrganizationIds(
-          [TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID],
-          PlatformIdentifier.Opencti
-        );
+      const platforms =
+        await RegistrationDomain.loadSaasRegisteredPlatformsByPlatformIds([
+          nonSaasRegistration.platformId,
+        ]);
 
       // Then
-      expect(result).toEqual([]);
+      expect(
+        platforms.map(({ id, commercial_model }) => ({ id, commercial_model }))
+      ).toEqual([
+        {
+          id: nonSaasRegistration.serviceInstanceId,
+          commercial_model: CommercialModel.Saas,
+        },
+      ]);
+    });
+
+    it('should not return a registration stored as OTHER when the SaaS Manager pushed its platform as another model than PROD', async () => {
+      // Given
+      await TestHelper.saasManagerInstance.create({
+        id: nonSaasRegistration.platformId,
+        data: { commercial_model: 'DEV' },
+      });
+
+      // When
+      const platforms =
+        await RegistrationDomain.loadSaasRegisteredPlatformsByPlatformIds([
+          nonSaasRegistration.platformId,
+        ]);
+
+      // Then
+      expect(platforms).toEqual([]);
+    });
+
+    it('should not return a registration of another organization when the user cannot read the SaaS metrics', async () => {
+      // Given
+      setUserCapabilities([]);
+
+      // When
+      const platforms =
+        await RegistrationDomain.loadSaasRegisteredPlatformsByPlatformIds([
+          saasPlatformId,
+        ]);
+
+      // Then
+      expect(platforms).toEqual([]);
+    });
+
+    it('should return an empty array when no platform ids are requested', async () => {
+      // When
+      const platforms =
+        await RegistrationDomain.loadSaasRegisteredPlatformsByPlatformIds([]);
+
+      // Then
+      expect(platforms).toEqual([]);
     });
   });
 
@@ -586,6 +986,64 @@ describe('registration domain', () => {
 
       // Then
       expect(result).toHaveLength(0);
+    });
+
+    describe('with a release track', () => {
+      const LTS_VERSION = '7.260309.0-lts.8';
+      const LTS_VERSION_WITHOUT_PATCH = '7.260309.0-lts';
+      const createdServiceInstanceIds: ServiceInstanceId[] = [];
+
+      const createOpenCTIPlatform = async (platformVersion: string | null) => {
+        const serviceInstance = await TestHelper.serviceInstance.create({
+          service_definition_id: serviceDefinitionId,
+        });
+        createdServiceInstanceIds.push(serviceInstance.id);
+        await TestHelper.platformConfiguration.create({
+          service_instance_id: serviceInstance.id,
+          platform_version: platformVersion,
+        });
+      };
+
+      beforeEach(async () => {
+        await createOpenCTIPlatform(LTS_VERSION);
+        await createOpenCTIPlatform(LTS_VERSION_WITHOUT_PATCH);
+        await createOpenCTIPlatform(null);
+      });
+
+      afterEach(async () => {
+        for (const id of createdServiceInstanceIds) {
+          await TestHelper.platformConfiguration.delete({
+            service_instance_id: id,
+          });
+          await TestHelper.serviceInstance.delete({ id });
+        }
+        createdServiceInstanceIds.length = 0;
+      });
+
+      it.each<[string, boolean | undefined, (string | null)[]]>([
+        ['the LTS track', true, [LTS_VERSION_WITHOUT_PATCH, LTS_VERSION]],
+        ['the non-LTS track', false, [platformOpenCTI]],
+        [
+          'any track',
+          undefined,
+          [platformOpenCTI, LTS_VERSION_WITHOUT_PATCH, LTS_VERSION, null],
+        ],
+      ])(
+        'should only return the platforms of %s, a platform without a version being on no track',
+        async (_description, isLts, expectedVersions) => {
+          // When
+          const result =
+            await RegistrationDomain.loadAllActiveRegisteredPlatformsByPlatformIdentifier(
+              PlatformIdentifier.Opencti,
+              { isLts }
+            );
+
+          // Then
+          expect(
+            result.map((platform) => platform.platform_version).sort()
+          ).toEqual(expectedVersions);
+        }
+      );
     });
   });
 
@@ -724,7 +1182,7 @@ describe('registration domain', () => {
       expect(platforms).toHaveLength(1);
       expect(platforms[0]?.platform_id).toBe(platformId);
     });
-    it('should not return platforms with non-active trials when onlyActiveTrials is true', async () => {
+    it('should not return platforms with non-active trials when onlyActive is true', async () => {
       await DeploymentRequestDomain.insertDeploymentRequest({
         id: uuidv4() as DeploymentRequest['id'],
         service_instance_id: openCTIServiceInstanceId,
@@ -747,7 +1205,30 @@ describe('registration domain', () => {
 
       expect(platforms).toHaveLength(0);
     });
-    it('should return platforms with active trials when onlyActiveTrials is true', async () => {
+    it('should not return platforms with cancelled trials when onlyActive is true', async () => {
+      await DeploymentRequestDomain.insertDeploymentRequest({
+        id: uuidv4() as DeploymentRequest['id'],
+        service_instance_id: openCTIServiceInstanceId,
+        platform_identifier: PlatformIdentifier.Opencti,
+        region: DeploymentRequestPlatformRegion.EuWest,
+        type: DeploymentRequestDeploymentType.Trial,
+        hub_status: DeploymentRequestHubStatus.Cancelled,
+        platform_token: uuidv4(),
+        organization_requester_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        user_requester_id:
+          TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.ID,
+        ordering: 1,
+        request_date: new Date(),
+      });
+
+      const platforms = await RegistrationDomain.loadRegisteredPlatforms({
+        platformIdentifier: PlatformIdentifier.Opencti,
+        onlyActive: true,
+      });
+
+      expect(platforms).toHaveLength(0);
+    });
+    it('should return platforms with active trials when onlyActive is true', async () => {
       await DeploymentRequestDomain.insertDeploymentRequest({
         id: uuidv4() as DeploymentRequest['id'],
         service_instance_id: openCTIServiceInstanceId,
@@ -771,7 +1252,7 @@ describe('registration domain', () => {
       expect(platforms).toHaveLength(1);
       expect(platforms[0]?.platform_id).toBe(platformId);
     });
-    it('should return platforms only active trials when onlyActiveTrials is true AND onlyTrial is true', async () => {
+    it('should return platforms only active trials when onlyActive is true AND onlyTrial is true', async () => {
       await DeploymentRequestDomain.insertDeploymentRequest({
         id: uuidv4() as DeploymentRequest['id'],
         service_instance_id: openCTIServiceInstanceId,

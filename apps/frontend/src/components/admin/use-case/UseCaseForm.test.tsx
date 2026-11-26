@@ -26,11 +26,15 @@ describe('UseCaseForm', () => {
         />
       );
 
-      const colorInput = screen.getByDisplayValue('#FFFFFF');
+      const colorInput = screen.getByRole('textbox', {
+        name: 'UseCaseForm.Color',
+      });
 
       await user.type(screen.getByLabelText(/Name/i), name);
       await user.clear(colorInput);
-      await user.type(colorInput, color);
+      if (color) {
+        await user.type(colorInput, color);
+      }
       await user.click(screen.getByRole('button', { name: 'Utils.Validate' }));
     };
 
@@ -39,7 +43,7 @@ describe('UseCaseForm', () => {
       ${'#12'}
       ${'#12345g'}
       ${'blue'}
-      ${'123456'}
+      ${''}
     `(
       'should reject invalid color "$color"',
       async ({ color }: { color: string }) => {
@@ -49,6 +53,29 @@ describe('UseCaseForm', () => {
         });
 
         expect(mockHandleSubmit).not.toHaveBeenCalled();
+      }
+    );
+
+    it.each`
+      color        | expected
+      ${'123456'}  | ${'#123456'}
+      ${'#abc'}    | ${'#aabbcc'}
+      ${'#ABCDEF'} | ${'#abcdef'}
+      ${'#abcd'}   | ${'#aabbcc'}
+    `(
+      'should submit "$expected" when the color typed is "$color"',
+      async ({ color, expected }: { color: string; expected: string }) => {
+        // Given
+        const name = 'Threat hunting';
+
+        // When
+        await renderAndSubmit({ name, color });
+
+        // Then
+        expect(mockHandleSubmit).toHaveBeenCalledWith(
+          expect.objectContaining({ color: expected }),
+          expect.anything()
+        );
       }
     );
 

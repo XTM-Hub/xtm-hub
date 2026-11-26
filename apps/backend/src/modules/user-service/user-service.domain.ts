@@ -23,7 +23,7 @@ import {
   UserServiceCapabilityInitializer,
 } from '../../model/kanel/public/UserServiceCapability';
 import { isUserAdminPlatform } from '../../security/access';
-import { restrictSubscriptionToUserOrganization } from '../../security/restriction/user-service';
+import { restrictUserServiceToUserOrganization } from '../../security/restriction/user-service';
 import { buildServiceLink, sendMail } from '../../server/mail-service';
 import { ServiceIdentifierToMailTemplate } from '../../server/mail-template/mail';
 import {
@@ -35,7 +35,7 @@ import { formatRawObject } from '../../utils/query-raw.util';
 import { addPrefixToObject } from '../../utils/typescript';
 import { UserDomain } from '../organization-management/user/user-domain/user.domain';
 import { UserOrganizationDomain } from '../organization-management/user/user-organization/user-organization.domain';
-import { UserHelper } from '../organization-management/user/user.helper';
+import { UserProvisioningApp } from '../organization-management/user/user-provisioning/user-provisioning.app';
 import { GenericServiceCapabilityIds } from '../security-management/service-capability/generic-service-capability.const';
 import { UserServiceCapabilityHelper } from '../security-management/user-service-capability/user-service-capability.helper';
 import { ServiceInstanceDomain } from '../service/instance/service-instance.domain';
@@ -50,11 +50,14 @@ export const UserServiceDomain = {
     const userServices: UserService[] = [];
     return withTransaction(async () => {
       for (const email of emails) {
-        const user = await UserHelper.getOrCreateUser({
+        const user = await UserProvisioningApp.getOrProvisionUser({
           email: email,
         });
 
-        await UserHelper.insertUserIntoOrganization(user, subscription.id);
+        await UserOrganizationDomain.linkUserToSubscriptionOrganization(
+          user,
+          subscription.id
+        );
         const userServiceAlreadyExist =
           await UserServiceDomain.doesUserServiceExist(
             user.id as UserId,
@@ -319,7 +322,7 @@ export const UserServiceDomain = {
     id: UserServiceId
   ): Promise<SubscriptionModel | undefined> => {
     return db<DBSubscriptionModel>('User_Service')
-      .tap(restrictSubscriptionToUserOrganization)
+      .tap(restrictUserServiceToUserOrganization)
       .where('User_Service.id', id)
       .leftJoin(
         'Subscription',
@@ -511,7 +514,7 @@ export const UserServiceDomain = {
       ]);
 
     if (!isUserAdminPlatform(user)) {
-      userServiceQuery.tap(restrictSubscriptionToUserOrganization);
+      userServiceQuery.tap(restrictUserServiceToUserOrganization);
     }
 
     return paginate<UserService, UserServiceConnection>(

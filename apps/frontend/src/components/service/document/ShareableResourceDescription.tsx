@@ -1,31 +1,44 @@
-import MarkdownRendererWithTheme from '@/components/ui/MarkdownRendererWithTheme';
-import { useTranslations } from 'next-intl';
+import ResourceMarkdownRenderer from '@/components/service/document/ResourceMarkdownRenderer';
+import { useTranslate } from '@/hooks/use-translate';
+import { getResourcePageFiligranWebsiteUtm } from '@/utils/filigran-website-utm';
+import { Paper } from '@filigran/design-system';
 
 // Component interface
 interface ShareableResourceDescriptionProps {
   shortDescription: string;
   longDescription: string;
+  serviceDefinitionIdentifier?: string;
 }
 
 // Component
 const ShareableResourceDescription = ({
   shortDescription,
   longDescription,
+  serviceDefinitionIdentifier,
 }: ShareableResourceDescriptionProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   return (
     <div className="flex-[3_3_0%] min-w-0">
-      <h2 className="py-s txt-container-title truncate text-muted-foreground">
-        {t('Service.ShareableResources.Details.Overview')}
-      </h2>
-      <section className="rounded bg-elevation-background-layer-1 overflow-x-auto">
-        <h3 className="p-l">{shortDescription}</h3>
-        <MarkdownRendererWithTheme
-          source={longDescription}
-          className="p-l !bg-elevation-background-layer-1 markdown-content"
-        />
-      </section>
+      <Paper
+        as="section"
+        padding={16}
+        className="overflow-x-auto"
+        title={
+          <h2 className="[font:inherit] tracking-[inherit]">
+            {t('Service.ShareableResources.Details.Overview')}
+          </h2>
+        }>
+        <div className="flex flex-col gap-8">
+          <h3>{shortDescription}</h3>
+          <ResourceMarkdownRenderer
+            source={longDescription}
+            filigranWebsiteUtm={getResourcePageFiligranWebsiteUtm(
+              serviceDefinitionIdentifier
+            )}
+          />
+        </div>
+      </Paper>
     </div>
   );
 };

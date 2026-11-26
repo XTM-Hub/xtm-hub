@@ -1,8 +1,9 @@
 import { TrialsTabType } from '@/components/trials/trials.const';
-import { OrderingMode } from '@generated/trialsListQuery.graphql';
-import { DeploymentRequestOrdering } from '@graphql/generated';
+import { DeploymentRequestOrdering, OrderingMode } from '@graphql/generated';
 import { ColumnDef, VisibilityState } from '@tanstack/react-table';
 import { useLocalStorage } from 'usehooks-ts';
+
+const TRIALS_LIST_STORAGE_SCOPE = 'bundle';
 
 export const useTrialsListLocalstorage = <U>(
   columns: ColumnDef<U>[],
@@ -10,39 +11,33 @@ export const useTrialsListLocalstorage = <U>(
   defaultOrder: DeploymentRequestOrdering,
   defaultOrderMode: OrderingMode
 ) => {
-  const [count, setCount, removeCount] = useLocalStorage(
-    `countTrialsList_${type}`,
-    50
-  );
+  const suffix = `${TRIALS_LIST_STORAGE_SCOPE}_${type}`;
   const [orderMode, setOrderMode, removeOrderMode] =
     useLocalStorage<OrderingMode>(
-      `orderModeTrialsList_${type}`,
+      `orderModeTrialsList_${suffix}`,
       defaultOrderMode
     );
   const [orderBy, setOrderBy, removeOrderBy] =
     useLocalStorage<DeploymentRequestOrdering>(
-      `orderByTrialsList_${type}`,
+      `orderByTrialsList_${suffix}`,
       defaultOrder
     );
   const [pageSize, setPageSize, removePageSize] = useLocalStorage(
-    `countTrialsList_${type}`,
+    `countTrialsList_${suffix}`,
     50
   );
-
   const [columnOrder, setColumnOrder, removeColumnOrder] = useLocalStorage(
-    `columnOrderingTrialsList_${type}`,
-    columns.map((c) => c.id!)
+    `columnOrderingTrialsList_${suffix}`,
+    columns.flatMap((column) => (column.id ? [column.id] : []))
   );
-
   const [columnVisibility, setColumnVisibility, removeColumnVisibility] =
-    useLocalStorage<VisibilityState>(`columnVisibilityTrialsList_${type}`, {
+    useLocalStorage<VisibilityState>(`columnVisibilityTrialsList_${suffix}`, {
       registration_status: false,
       platform_url: false,
       platform_id: false,
     });
 
   const resetAll = () => {
-    removeCount();
     removeOrderMode();
     removeOrderBy();
     removePageSize();
@@ -56,8 +51,6 @@ export const useTrialsListLocalstorage = <U>(
   };
 
   return {
-    count,
-    setCount,
     orderMode,
     setOrderMode,
     orderBy,

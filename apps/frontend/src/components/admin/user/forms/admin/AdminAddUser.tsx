@@ -1,57 +1,53 @@
-import { getUserListContext } from '@/components/admin/user/UserListPage';
 import { UserAdminForm } from '@/components/admin/user/forms/admin/UserAdminForm';
 import { userAdminFormSchema } from '@/components/admin/user/forms/user-form.schema';
+import { useRefreshUsersList } from '@/components/admin/user/use-refresh-users-list';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
-import { Button, useToast } from '@filigran/ui';
-import { AdminAddUserMutation as AdminAddUserMutationType } from '@generated/AdminAddUserMutation.graphql';
-import { useTranslations } from 'next-intl';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
+import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
+import { portalGraphqlClient } from '@/lib/graphql-client';
+import { Button } from '@filigran/design-system';
+import { useUserAdminResendInviteMutation } from '@graphql/generated';
 import { useState } from 'react';
-import { graphql, useMutation } from 'react-relay';
 import { z } from 'zod';
 
-export const AdminAddUserMutation = graphql`
-  mutation AdminAddUserMutation(
-    $input: AdminAddUserInput!
-    $connections: [ID!]!
-  ) {
-    adminAddUser(input: $input)
-      @prependNode(connections: $connections, edgeTypeName: "UserEdge") {
-      ...UserList_fragment
-    }
-  }
-`;
-
 export const AdminAddUser = () => {
-  const t = useTranslations();
+  const t = useTranslate();
   const [openSheet, setOpenSheet] = useState(false);
 
-  const { toast } = useToast();
-  const [commitUserMutation] =
-    useMutation<AdminAddUserMutationType>(AdminAddUserMutation);
-
-  const { connectionID } = getUserListContext();
-
-  const handleSubmit = (values: z.infer<typeof userAdminFormSchema>) => {
-    commitUserMutation({
-      variables: {
-        input: {
-          ...values,
-        },
-        connections: [connectionID],
-      },
-      onCompleted: () => {
+  const refreshUsersList = useRefreshUsersList();
+  // The resend operation makes the same adminAddUser call as a creation.
+  const { mutate: createUser } = useUserAdminResendInviteMutation<Error>(
+    portalGraphqlClient,
+    {
+      // On the hook, not on mutate: like Relay, the outcome is handled even if
+      // the form is gone by then.
+      onSuccess: (_data, { input }) => {
+        refreshUsersList();
         setOpenSheet(false);
-        toast({
+        showSnackbar({
+          severity: 'success',
           title: t('Utils.Success'),
-          description: t('UserActions.UserCreated', { email: values.email }),
+          description: t('UserActions.UserCreated', { email: input.email }),
         });
       },
       onError: (error) => {
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: t(`Error.Server.${error.message}`),
         });
+      },
+    }
+  );
+
+  const handleSubmit = (values: z.infer<typeof userAdminFormSchema>) => {
+    createUser({
+      input: {
+        ...values,
+        first_name: values.first_name ?? null,
+        last_name: values.last_name ?? null,
+        password: values.password ?? null,
       },
     });
   };
@@ -61,7 +57,11 @@ export const AdminAddUser = () => {
       title={t('UserActions.AddUser')}
       setOpen={setOpenSheet}
       open={openSheet}
-      trigger={<Button>{t('UserActions.AddUser')}</Button>}>
+      trigger={
+        <Button {...analyticsId('admin_user_create')}>
+          {t('UserActions.AddUser')}
+        </Button>
+      }>
       <UserAdminForm handleSubmit={handleSubmit} />
     </SheetWithPreventingDialog>
   );

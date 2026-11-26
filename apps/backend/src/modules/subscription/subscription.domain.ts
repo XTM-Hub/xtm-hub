@@ -15,8 +15,10 @@ import SubscriptionCapability, {
   SubscriptionCapabilityId,
 } from '../../model/kanel/public/SubscriptionCapability';
 import UserService from '../../model/kanel/public/UserService';
-import { restrictSubscriptionToUserOrganization } from '../../security/restriction/user-service';
-import { UnknownErrorCode } from '../../utils/error/error.code';
+import { restrictSubscriptionToUserOrganization } from '../../security/restriction/subscription';
+import { restrictUserServiceToUserOrganization } from '../../security/restriction/user-service';
+import { logApp } from '../../utils/app-logger.util';
+import { ErrorCode } from '../../utils/error/error.code';
 import { formatRawObject } from '../../utils/query-raw.util';
 
 export const SubscriptionDomain = {
@@ -64,24 +66,40 @@ export const SubscriptionDomain = {
     return db<Subscription>('Subscription').whereIn('id', ids).delete('*');
   },
 
-  getSubscriptionCapability: async (
-    id: SubscriptionId
+  loadSubscriptionCapabilitiesBySubscriptionIds: async (
+    ids: SubscriptionId[]
   ): Promise<SubscriptionCapability[]> => {
+    if (ids.length === 0) {
+      return [];
+    }
+
     return db<SubscriptionCapability>('Subscription_Capability')
-      .where('Subscription_Capability.subscription_id', '=', id)
+      .whereIn('Subscription_Capability.subscription_id', ids)
       .select('Subscription_Capability.*');
   },
 
-  getUserService: (id: SubscriptionId): Promise<UserService[]> => {
+  loadUserServicesBySubscriptionIds: (
+    ids: SubscriptionId[]
+  ): Promise<UserService[]> => {
+    if (ids.length === 0) {
+      return Promise.resolve([]);
+    }
+
     return db<UserService>('User_Service')
-      .tap(restrictSubscriptionToUserOrganization)
-      .where('User_Service.subscription_id', '=', id)
+      .tap(restrictUserServiceToUserOrganization)
+      .whereIn('User_Service.subscription_id', ids)
       .select('User_Service.*');
   },
 
-  getServiceCapability: async (
-    id: SubscriptionCapabilityId
-  ): Promise<ServiceCapability | undefined> => {
+  loadServiceCapabilitiesBySubscriptionCapabilityIds: async (
+    ids: SubscriptionCapabilityId[]
+  ): Promise<
+    (ServiceCapability & { subscription_capability_id: string })[]
+  > => {
+    if (ids.length === 0) {
+      return [];
+    }
+
     return db<ServiceCapability>('Service_Capability')
       .leftJoin(
         'Subscription_Capability',
@@ -89,9 +107,11 @@ export const SubscriptionDomain = {
         '=',
         'Service_Capability.id'
       )
-      .where('Subscription_Capability.id', '=', id)
-      .select('Service_Capability.*')
-      .first();
+      .whereIn('Subscription_Capability.id', ids)
+      .select([
+        'Service_Capability.*',
+        'Subscription_Capability.id as subscription_capability_id',
+      ]);
   },
 
   transferSubscriptionToOrganization: async ({
@@ -111,9 +131,18 @@ export const SubscriptionDomain = {
   ): Promise<Subscription> => {
     const [createdSubscription] = await db<Subscription>('Subscription')
       .insert(data)
+      .onConflict(['organization_id', 'service_instance_id'])
+      .ignore()
       .returning('*');
     if (!createdSubscription) {
-      throw new Error(UnknownErrorCode.ServiceSubscriptionError);
+      logApp.warn(
+        'Subscription already exists for this organization and service instance',
+        {
+          organizationId: data.organization_id,
+          serviceInstanceId: data.service_instance_id,
+        }
+      );
+      throw new Error(ErrorCode.AlreadySubscribed);
     }
     return createdSubscription;
   },
@@ -160,6 +189,7 @@ export const SubscriptionDomain = {
     field: SubscriptionMutator
   ) => {
     return db<Subscription>('Subscription')
+      .tap(restrictSubscriptionToUserOrganization)
       .where(field)
       .leftJoin(
         'Organization',
@@ -263,7 +293,9 @@ const buildLoadSubscriptionsQuery = ({
   shouldJoinOrganization: boolean;
   shouldJoinServiceInstanceAndDefinition: boolean;
 }) => {
-  const queryContext = db<Subscription>('Subscription');
+  const queryContext = db<Subscription>('Subscription').tap(
+    restrictSubscriptionToUserOrganization
+  );
 
   if (shouldJoinOrganization) {
     queryContext.leftJoin(

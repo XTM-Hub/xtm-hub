@@ -1,10 +1,29 @@
 export async function seed(knex) {
+  // Dedicated, unused-elsewhere ServiceInstance so this fixture's Subscription
+  // does not interfere with per-instance subscription-count assertions in
+  // other test files that reuse the shared SERVICES.INSTANCES.* fixtures.
+  await knex('ServiceInstance')
+    .insert([
+      {
+        id: 'b382537e-1cfd-4316-bd1d-ec83f4e1ef54',
+        name: 'community',
+        description: 'short description for community',
+        creation_status: 'READY',
+        public: true,
+        tags: '{others}',
+        service_definition_id: '2634d52b-f061-4ebc-bed2-c6cc94297ad2',
+        ordering: 18,
+      },
+    ])
+    .onConflict('id')
+    .ignore();
+
   await knex('Subscription')
     .insert([
       {
         id: '7f17820c-3a36-4023-ae3c-e2c15613b518',
         organization_id: 'ba091095-418f-4b4f-b150-6c9295e232c4',
-        service_instance_id: 'e88e8f80-ba9e-480b-ab27-8613a1565eff',
+        service_instance_id: 'b382537e-1cfd-4316-bd1d-ec83f4e1ef54',
         start_date: '2024-08-08',
         end_date: null,
       },

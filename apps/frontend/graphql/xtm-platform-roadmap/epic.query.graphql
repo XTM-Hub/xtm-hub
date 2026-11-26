@@ -1,6 +1,45 @@
+fragment EpicFields on Epic {
+  id
+  short_description
+  description
+  problem_to_solve
+  proposed_solution
+  expected_value
+  title
+  timeline
+  edition_type
+  products
+  slack_link
+  active
+  epic_type
+  created_at
+  updated_at
+}
+
 query EpicCountPerTimelineQuery {
   countEpicsPerTimeline {
     timeline
     count
+  }
+}
+
+query Epics(
+  $count: Int!
+  $orderBy: EpicOrdering!
+  $orderMode: OrderingMode!
+  $searchTerm: String
+) {
+  epics(
+    first: $count
+    orderBy: $orderBy
+    orderMode: $orderMode
+    searchTerm: $searchTerm
+  ) {
+    totalCount
+    edges {
+      node {
+        ...EpicFields
+      }
+    }
   }
 }

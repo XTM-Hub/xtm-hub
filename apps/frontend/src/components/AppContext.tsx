@@ -1,10 +1,12 @@
 'use client';
 import { CookieConsent } from '@/components/cookie-consent/CookieConsent';
 import { ManagedScripts } from '@/components/cookie-consent/ManagedScripts';
+import { AppSnackbars } from '@/components/ui/snackbar/AppSnackbars';
+import { useTranslate } from '@/hooks/use-translate';
+import { removeLegacyFiltersLocalStorage } from '@/utils/filters-storage.utils';
 import { APP_PATH } from '@/utils/path/constant';
 import { geologica, ibmPlexSans } from '@app/font';
-import { Toaster } from '@filigran/ui';
-import { useLocale, useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 import { ThemeProvider } from 'next-themes';
 import Head from 'next/head';
 import { usePathname } from 'next/navigation';
@@ -13,6 +15,7 @@ import * as React from 'react';
 // Component interface
 interface AppProps {
   children: React.ReactNode;
+  gaMeasurementId?: string;
 }
 
 const THEME_SWITCHABLE_PATHS = [`/${APP_PATH}`];
@@ -24,11 +27,16 @@ const isThemeSwitchablePath = (pathname: string) => {
 };
 
 // Component
-const AppContext = ({ children }: AppProps) => {
+const AppContext = ({ children, gaMeasurementId }: AppProps) => {
   const locale = useLocale();
   const pathname = usePathname();
-  const t = useTranslations();
+  const t = useTranslate();
   const forcedTheme = isThemeSwitchablePath(pathname) ? undefined : 'dark';
+
+  React.useEffect(() => {
+    removeLegacyFiltersLocalStorage();
+  }, []);
+
   return (
     <html
       suppressHydrationWarning
@@ -54,9 +62,8 @@ const AppContext = ({ children }: AppProps) => {
           forcedTheme={forcedTheme}
           enableSystem
           disableTransitionOnChange>
-          {children}
-          <Toaster />
-          <ManagedScripts />
+          <AppSnackbars>{children}</AppSnackbars>
+          <ManagedScripts gaMeasurementId={gaMeasurementId} />
           <CookieConsent />
         </ThemeProvider>
       </body>

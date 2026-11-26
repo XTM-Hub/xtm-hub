@@ -1,0 +1,41 @@
+mutation MeProfileEdit(
+  $first_name: String
+  $last_name: String
+  $country: String
+) {
+  editMeUser(
+    input: { first_name: $first_name, last_name: $last_name, country: $country }
+  ) {
+    ...CurrentUser
+  }
+}
+
+mutation MeLanguageEdit($selected_language: String!) {
+  editMeUser(input: { selected_language: $selected_language }) {
+    ...CurrentUser
+  }
+}
+
+mutation MePictureUpload($document: Upload!) {
+  uploadUserPicture(document: $document) {
+    ...CurrentUser
+  }
+}
+
+mutation MePasswordReset {
+  resetPassword {
+    success
+  }
+}
+
+mutation MePersonalSpaceTransferRequest($new_email: String!) {
+  requestTransferPersonalSpace(new_email: $new_email) {
+    success
+  }
+}
+
+mutation MePersonalSpaceTransfer($requestId: ID!) {
+  transferPersonalSpace(requestId: $requestId) {
+    success
+  }
+}

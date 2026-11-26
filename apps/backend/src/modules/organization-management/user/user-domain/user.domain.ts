@@ -1,15 +1,23 @@
+import { type Knex } from 'knex';
 import { db, dbRaw, paginate } from '../../../../../knexfile';
 import {
   Filter,
   FilterKey,
   Organization,
   OrganizationCapability,
+  OrganizationMember,
+  OrganizationMemberConnection,
+  PlatformIdentifier,
+  QueryOrganizationMembersArgs,
   QueryUsersArgs,
+  ServiceGroupName,
+  UserAccountStatus,
   UserConnection,
   User as UserGenerated,
 } from '../../../../__generated__/resolvers-types';
 import { requestContext } from '../../../../context/request.context';
 import CapabilityPortal from '../../../../model/kanel/public/CapabilityPortal';
+import { DeploymentRequestId } from '../../../../model/kanel/public/DeploymentRequest';
 import { OrganizationId } from '../../../../model/kanel/public/Organization';
 import User, {
   UserId,
@@ -23,6 +31,16 @@ import {
   UserWithOrganizationsAndRole,
 } from '../../../../model/user';
 import { ADMIN_UUID, CAPABILITY_BYPASS } from '../../../../portal.const';
+import { ApiTokenReach } from '../../../../security/api-token-reach';
+import {
+  restrictCapabilityPortalToApiToken,
+  restrictOrganizationToApiToken,
+  restrictRolePortalToApiToken,
+} from '../../../../security/restriction/api-token';
+import {
+  restrictOrganizationToMembersReadable,
+  restrictOrganizationToProfessionalSpace,
+} from '../../../../security/restriction/organization';
 import { auth0Client } from '../../../../thirdparty/auth0/client';
 import { hubspotLoginHook } from '../../../../thirdparty/hubspot/hubspot';
 import { logApp } from '../../../../utils/app-logger.util';
@@ -38,9 +56,25 @@ import { RolePortalDomain } from '../../../role-portal/role-portal.domain';
 import { TelemetryApp } from '../../../telemetry/telemetry.app';
 import { TelemetryHelper } from '../../../telemetry/telemetry.helper';
 
+export type UserToSyncAccountStatus = User & {
+  status: UserAccountStatus.Waiting | UserAccountStatus.Invited;
+};
+
+export type LoadUserByFilter = (
+  addPrefixToObject<UserMutator, 'User.'> | UserMutator
+) & {
+  'Organization.id'?: OrganizationId;
+};
+
 export const UserDomain = {
   loadUsers: async (userIds: UserId[]): Promise<User[]> => {
     return db<User[]>('User').whereIn('id', userIds);
+  },
+
+  loadEmailsByIds: async (
+    userIds: UserId[]
+  ): Promise<Pick<User, 'id' | 'email'>[]> => {
+    return db<User>('User').whereIn('id', userIds).select('id', 'email');
   },
 
   insertUser: async (initializer: UserInitializer): Promise<User> => {
@@ -70,6 +104,7 @@ export const UserDomain = {
       )
       .leftJoin('User', 'User.id', 'User_Organization.user_id')
       .where('User.id', '=', id)
+      .tap(restrictOrganizationToApiToken(id))
       .groupBy('Organization.id')
       .select('Organization.*');
   },
@@ -92,9 +127,11 @@ export const UserDomain = {
       )
       .leftJoin('User', 'User.id', '=', 'user_RolePortal.user_id')
       .where('User.id', '=', id)
+      .tap(restrictCapabilityPortalToApiToken(id))
       .groupBy('CapabilityPortal.id')
       .select('CapabilityPortal.*');
-    if (id === ADMIN_UUID) {
+    // A token never carries BYPASS, the platform administrator's included
+    if (id === ADMIN_UUID && !ApiTokenReach.overUser(id)) {
       const capabilityIds = capabilities.map((c: CapabilityPortal) => c.id);
       if (!capabilityIds.includes(CAPABILITY_BYPASS.id)) {
         capabilities.push(CAPABILITY_BYPASS);
@@ -113,6 +150,7 @@ export const UserDomain = {
       )
       .leftJoin('User', 'User.id', '=', 'user_RolePortal.user_id')
       .where('User.id', '=', id)
+      .tap(restrictRolePortalToApiToken(id))
       .select('RolePortal.*');
   },
 
@@ -130,9 +168,25 @@ export const UserDomain = {
   },
 
   loadUserBy: async (
-    field: addPrefixToObject<UserMutator, 'User.'> | UserMutator
+    field: LoadUserByFilter
   ): Promise<UserLoadUserBy | undefined> => {
-    const [foundUser] = await db<UserLoadUserBy>('User').where(field);
+    const { 'Organization.id': organizationId, ...userFilter } = field;
+
+    const restrictToOrganization = (queryBuilder: Knex.QueryBuilder) => {
+      if (!organizationId) {
+        return;
+      }
+      queryBuilder.whereExists(function () {
+        this.select(dbRaw('1'))
+          .from('User_Organization')
+          .whereRaw('"User_Organization"."user_id" = "User"."id"')
+          .andWhere('User_Organization.organization_id', '=', organizationId);
+      });
+    };
+
+    const [foundUser] = await db<UserLoadUserBy>('User')
+      .where(userFilter)
+      .modify(restrictToOrganization);
     if (!foundUser) {
       return;
     }
@@ -161,7 +215,8 @@ export const UserDomain = {
       );
 
     const userQuery = db<UserLoadUserBy>('User')
-      .where(field)
+      .where(userFilter)
+      .modify(restrictToOrganization)
       .leftJoin('User_Organization as UserOrg', 'User.id', 'UserOrg.user_id')
       .leftJoin('User_Organization as selected_user_orga', function () {
         this.on(
@@ -252,12 +307,12 @@ export const UserDomain = {
   loadUsersByCapabilitiesInOrganization: async (
     organizationId: string,
     capabilities: OrganizationCapability[]
-  ): Promise<User[]> => {
+  ): Promise<Pick<User, 'id' | 'email' | 'first_name' | 'last_name'>[]> => {
     if (!capabilities.length) {
       return [];
     }
 
-    const users: User[] = await db<User>('User')
+    return db<User>('User')
       .leftJoin('User_Organization', 'User_Organization.user_id', 'User.id')
       .leftJoin(
         'UserOrganization_Capability',
@@ -268,10 +323,95 @@ export const UserDomain = {
       .andWhere((qb) => {
         qb.whereIn('UserOrganization_Capability.name', capabilities);
       })
-      .select('User.*')
+      .select('User.id', 'User.email', 'User.first_name', 'User.last_name')
       .distinct();
+  },
 
-    return users;
+  loadUserEmailsByCapabilityInOrganizations: async (
+    organizationIds: OrganizationId[],
+    capability: OrganizationCapability
+  ): Promise<{ organization_id: OrganizationId; email: string }[]> => {
+    if (!organizationIds.length) {
+      return [];
+    }
+
+    return db<User>('User')
+      .join('User_Organization', 'User_Organization.user_id', 'User.id')
+      .join(
+        'UserOrganization_Capability',
+        'UserOrganization_Capability.user_organization_id',
+        'User_Organization.id'
+      )
+      .whereIn('User_Organization.organization_id', organizationIds)
+      .andWhere('UserOrganization_Capability.name', '=', capability)
+      .select('User_Organization.organization_id', 'User.email')
+      .distinct()
+      .orderBy('User.email', 'asc');
+  },
+
+  // No status filter: an invited, expired, waiting or disabled user is still a member, a pending request is not
+  loadOrganizationMemberConnection: (
+    organizationId: OrganizationId,
+    {
+      first,
+      after,
+      searchTerm,
+    }: Omit<QueryOrganizationMembersArgs, 'organizationId'>
+  ) => {
+    const query = db<User>('User')
+      .innerJoin('User_Organization as memberUserOrganization', function () {
+        this.on('memberUserOrganization.user_id', '=', 'User.id').andOnVal(
+          'memberUserOrganization.organization_id',
+          '=',
+          organizationId
+        );
+      })
+      .innerJoin(
+        'Organization',
+        'Organization.id',
+        'memberUserOrganization.organization_id'
+      )
+      .leftJoin(
+        'UserOrganization_Capability as memberCapability',
+        'memberCapability.user_organization_id',
+        'memberUserOrganization.id'
+      )
+      .tap(restrictOrganizationToProfessionalSpace)
+      .tap(restrictOrganizationToMembersReadable);
+    if (searchTerm) {
+      // Grouped, so that an OR never escapes the organization filter or the restrictions
+      query.where((search) =>
+        search
+          .whereILike('User.email', `%${searchTerm}%`)
+          .orWhereILike('User.first_name', `%${searchTerm}%`)
+          .orWhereILike('User.last_name', `%${searchTerm}%`)
+      );
+    }
+    query
+      .select(
+        dbRaw(
+          `COALESCE(array_agg(DISTINCT ??.name) FILTER (WHERE ??.name IS NOT NULL), '{}') AS capabilities`,
+          ['memberCapability', 'memberCapability']
+        )
+      )
+      .groupBy('User.id')
+      // bool_or is NULL for a member without capability: COALESCE keeps them after the administrators
+      .orderByRaw(
+        'COALESCE(bool_or(??.name = ?), false) DESC, ??.email ASC, ??.id ASC',
+        [
+          'memberCapability',
+          OrganizationCapability.AdministrateOrganization,
+          'User',
+          'User',
+        ]
+      );
+    // searchTerm not passed to paginate: its applySearch would also match the country
+    return paginate<OrganizationMember, OrganizationMemberConnection>(
+      'User',
+      { first, after },
+      undefined,
+      query
+    );
   },
 
   loadUserConnection: (opts: QueryUsersArgs) => {
@@ -349,18 +489,33 @@ export const UserDomain = {
 
   updateUser: async (
     id: UserId,
-    input: UserMutator
+    input: UserMutator,
+    expected: Omit<UserMutator, 'id'> = {}
   ): Promise<User | undefined> => {
     if (isEmpty(input)) {
       return;
     }
 
     const [updatedUser] = await db<User>('User')
-      .where({ id })
+      .where({ ...expected, id })
       .update(input)
       .returning('*');
 
     return updatedUser;
+  },
+
+  loadUsersToSyncAccountStatus: async (
+    limit: number
+  ): Promise<UserToSyncAccountStatus[]> => {
+    const users = await db<User[]>('User')
+      .whereIn('status', [UserAccountStatus.Waiting, UserAccountStatus.Invited])
+      .where((builder) =>
+        builder.whereNull('disabled').orWhere('disabled', false)
+      )
+      .orderByRaw('invitation_date asc nulls last')
+      .limit(limit)
+      .select('*');
+    return users as UserToSyncAccountStatus[];
   },
 
   deleteUserBy: async (field: UserMutator): Promise<User | undefined> => {
@@ -455,9 +610,7 @@ export const UserDomain = {
     await hubspotLoginHook(user.id);
 
     const organizations = user.organizations.filter((o) => !o.personal_space);
-    const fields: UserMutator = {
-      last_login: new Date(),
-    };
+    const fields: UserMutator = { last_login: new Date() };
     if (organizations.length === 1) {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       fields.selected_organization_id = organizations[0]!.id;
@@ -493,4 +646,39 @@ export const UserDomain = {
     }
     return reloadedUser;
   },
+
+  loadUsersWithDeploymentServiceGroups: async (
+    parentDeploymentRequestId: DeploymentRequestId
+  ): Promise<UserServiceGroupRow[]> => {
+    return db<UserServiceGroupRow>('User')
+      .innerJoin(
+        'ServiceGroup_User',
+        'ServiceGroup_User.user_id',
+        '=',
+        'User.id'
+      )
+      .innerJoin(
+        'ServiceGroup',
+        'ServiceGroup.id',
+        '=',
+        'ServiceGroup_User.group_id'
+      )
+      .innerJoin(
+        'DeploymentRequest',
+        'DeploymentRequest.service_instance_id',
+        '=',
+        'ServiceGroup.service_instance_id'
+      )
+      .where('DeploymentRequest.parent_id', '=', parentDeploymentRequestId)
+      .select(
+        'User.*',
+        'DeploymentRequest.platform_identifier as platform_identifier',
+        'ServiceGroup.name as group_name'
+      );
+  },
+};
+
+export type UserServiceGroupRow = User & {
+  platform_identifier: PlatformIdentifier | null;
+  group_name: ServiceGroupName;
 };

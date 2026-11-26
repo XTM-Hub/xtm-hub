@@ -1,0 +1,16 @@
+meta {
+  name: Get registered product versions (REST)
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/opencti/versions
+  body: none
+  auth: none
+}
+
+docs {
+  Returns every registered version for the given product, ordered by version (highest first).
+  Public endpoint, no auth required.
+}

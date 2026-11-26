@@ -1,0 +1,121 @@
+import ShareableResourceConnectorSlugPublic from '@/components/service/document/connector/ShareableResourceConnectorSlugPublic';
+import {
+  ConnectorFields,
+  PublicDocumentByServiceSlugItem,
+  ServiceSlug,
+} from '@/utils/shareable-resources/shareable-resources.types';
+import testRender from '@/utils/test/test-render';
+import { mockSeoServiceInstance } from '@graphql/mocks';
+import { screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+
+vi.mock('next-intl/server', () => ({
+  getTranslations: async () => (key: string) => key,
+}));
+
+const SUPPORTED_BY_FILIGRAN =
+  'Service.ShareableResources.Details.SupportedByFiligran';
+const SUPPORTED_BY_COMMUNITY =
+  'Service.ShareableResources.Details.SupportedByCommunity';
+
+const buildConnector = (
+  overrides: Partial<ConnectorFields> = {}
+): PublicDocumentByServiceSlugItem & ConnectorFields =>
+  ({
+    __typename: 'Connector',
+    id: 'connector-1',
+    name: 'Connector Name',
+    status: 'published',
+    verified: false,
+    manager_supported: false,
+    children_documents: [],
+    use_cases: [],
+    ...overrides,
+  }) as unknown as PublicDocumentByServiceSlugItem & ConnectorFields;
+
+const SERVICE_INSTANCE = mockSeoServiceInstance({
+  id: 'service-instance-1',
+  slug: ServiceSlug.OPEN_CTI_INTEGRATIONS,
+});
+
+const renderConnector = async (
+  documentData: ReturnType<typeof buildConnector>
+) =>
+  testRender(
+    await ShareableResourceConnectorSlugPublic({
+      documentData,
+      serviceInstance: SERVICE_INSTANCE,
+      pageUrl:
+        'https://hub.test/cybersecurity-solutions/integrations/connector',
+    })
+  );
+
+describe('ShareableResourceConnectorSlugPublic', () => {
+  it.each([
+    { support: 'Filigran', verified: true, label: SUPPORTED_BY_FILIGRAN },
+    {
+      support: 'the community',
+      verified: false,
+      label: SUPPORTED_BY_COMMUNITY,
+    },
+  ])(
+    'should show the connector as supported by $support when verified is $verified',
+    async ({ verified, label }) => {
+      // Given
+      const documentData = buildConnector({ verified });
+
+      // When
+      await renderConnector(documentData);
+
+      // Then
+      expect(screen.getByText(label)).toBeInTheDocument();
+    }
+  );
+
+  it.each([
+    { verified: true, label: SUPPORTED_BY_FILIGRAN },
+    { verified: false, label: SUPPORTED_BY_COMMUNITY },
+    { verified: false, label: 'Utils.AutomaticDeploy', managerSupported: true },
+  ])(
+    'should hide the decorative icon of the "$label" badge from assistive technology',
+    async ({ verified, label, managerSupported = false }) => {
+      // Given
+      const documentData = buildConnector({
+        verified,
+        manager_supported: managerSupported,
+      });
+
+      // When
+      await renderConnector(documentData);
+
+      // Then
+      expect(screen.getByText(label).querySelector('svg')).toHaveAttribute(
+        'aria-hidden',
+        'true'
+      );
+    }
+  );
+
+  it('should render the Overview on the design system Paper surface, with its title above it', async () => {
+    // Given
+    const documentData = buildConnector({
+      short_description: 'A short description',
+    } as Partial<ConnectorFields>);
+
+    // When
+    await renderConnector(documentData);
+
+    // Then
+    const title = screen.getByRole('heading', {
+      level: 2,
+      name: 'PublicResourcePage.Overview',
+    });
+    const surface = screen.getByText('A short description').closest('section');
+    // The surface carries the design system radius, padding and overflow
+    // classes. These pin the design system's class names on purpose, as jsdom
+    // does no layout: a rename in the design system needs this test updated.
+    expect(surface).toHaveClass('rounded-sm', 'p-4', 'overflow-x-auto');
+    expect(surface).not.toContainElement(title);
+    expect(surface?.parentElement).toContainElement(title);
+  });
+});

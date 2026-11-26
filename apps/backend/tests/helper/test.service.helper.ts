@@ -2,7 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { expect } from 'vitest';
 import { db } from '../../knexfile';
 import {
-  SeoServiceInstanceLanguage,
+  Locale,
   ServiceDefinitionIdentifier,
 } from '../../src/__generated__/resolvers-types';
 import SEOServiceInstance, {
@@ -27,13 +27,27 @@ import ServiceInstance, {
   ServiceInstanceId,
   ServiceInstanceMutator,
 } from '../../src/model/kanel/public/ServiceInstance';
+import ServiceLink, {
+  ServiceLinkId,
+  ServiceLinkMutator,
+} from '../../src/model/kanel/public/ServiceLink';
 import SubscriptionCapability, {
+  SubscriptionCapabilityId,
+  SubscriptionCapabilityInitializer,
   SubscriptionCapabilityMutator,
 } from '../../src/model/kanel/public/SubscriptionCapability';
 import { SERVICES } from '../tests.const';
 
 export const TestServiceHelper = {
   serviceDefinition: {
+    build: (overrides: Partial<ServiceDefinition> = {}): ServiceDefinition => ({
+      id: 'service-definition-1' as ServiceDefinitionId,
+      name: 'OpenCTI Integrations Library',
+      description: null,
+      public: null,
+      identifier: ServiceDefinitionIdentifier.OpenctiIntegrations,
+      ...overrides,
+    }),
     load: async (
       field: ServiceDefinitionMutator
     ): Promise<ServiceDefinition | undefined> => {
@@ -92,6 +106,7 @@ export const TestServiceHelper = {
           name: 'Default name serviceInstance',
           service_definition_id: SERVICES.DEFINITIONS.OPENCTI_REGISTRATION.ID,
           tags: [],
+          public: true,
           ...data,
         })
         .returning('*')
@@ -111,11 +126,27 @@ export const TestServiceHelper = {
         .first();
     },
   },
+  serviceLink: {
+    create: async (data?: Partial<ServiceLink>): Promise<ServiceLink> => {
+      const [serviceLink] = await db<ServiceLink>('Service_Link')
+        .insert({
+          id: uuidv4() as ServiceLinkId,
+          name: 'Default name serviceLink',
+          url: '/service/default',
+          ...data,
+        })
+        .returning('*');
+      return serviceLink!;
+    },
+    delete: async (field: ServiceLinkMutator) => {
+      await db<ServiceLink>('Service_Link').where(field).del();
+    },
+  },
   seoServiceInstance: {
     create: async (
       data: Partial<SEOServiceInstance> & {
         service_instance_id: ServiceInstanceId;
-        language: SeoServiceInstanceLanguage;
+        language: Locale;
       }
     ): Promise<SEOServiceInstance> => {
       const [seoServiceInstance] = await db<SEOServiceInstance>(
@@ -187,6 +218,19 @@ export const TestServiceHelper = {
     },
   },
   subscriptionCapability: {
+    create: async (
+      data?: Partial<SubscriptionCapabilityInitializer>
+    ): Promise<SubscriptionCapability> => {
+      const [subscriptionCapability] = await db<SubscriptionCapability>(
+        'Subscription_Capability'
+      )
+        .insert({
+          id: uuidv4() as SubscriptionCapabilityId,
+          ...data,
+        })
+        .returning('*');
+      return subscriptionCapability!;
+    },
     delete: async (field: SubscriptionCapabilityMutator) => {
       await db<SubscriptionCapability>('Subscription_Capability')
         .where(field)

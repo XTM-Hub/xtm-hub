@@ -1,24 +1,22 @@
-import { PortalContext } from '@/components/me/AppPortalContext';
+import { useFormField } from '@/components/ui/form';
+import { useMeOrganizations } from '@/hooks/use-me-organizations';
+import { useTranslate } from '@/hooks/use-translate';
 import {
-  FormControl,
-  FormItem,
-  FormLabel,
-  FormMessage,
   Select,
   SelectContent,
+  SelectHelperText,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
-} from '@filigran/ui';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { useTranslations } from 'next-intl';
-import { useContext } from 'react';
+} from '@filigran/design-system';
+import { DocumentItemFragment } from '@graphql/generated';
 import { ControllerRenderProps, FieldValues } from 'react-hook-form';
 
 interface ServiceFormUploaderOrganizationIdFieldProps {
   field: ControllerRenderProps<FieldValues, string>;
   isCreation: boolean;
-  document?: documentItem_fragment$data;
+  document?: DocumentItemFragment;
   disabled?: boolean;
 }
 
@@ -28,11 +26,13 @@ export const ServiceFormUploaderOrganizationIdField = ({
   document,
   disabled,
 }: ServiceFormUploaderOrganizationIdFieldProps) => {
-  const t = useTranslations();
-  const { me } = useContext(PortalContext);
+  const t = useTranslate();
+  const { data } = useMeOrganizations();
+  const me = data?.me;
+  const { error } = useFormField();
+
   return (
-    <FormItem hidden={isCreation}>
-      <FormLabel>{t('OrganizationInServiceAction.Organization')}</FormLabel>
+    <div hidden={isCreation}>
       <Select
         disabled={disabled}
         onValueChange={field.onChange}
@@ -40,16 +40,19 @@ export const ServiceFormUploaderOrganizationIdField = ({
           (isCreation
             ? me?.selected_organization_id
             : document?.uploader_organization?.id) ?? ''
-        }>
-        <FormControl>
-          <SelectTrigger>
-            <SelectValue
-              placeholder={t('OrganizationInServiceAction.SelectOrganization')}
-            />
-          </SelectTrigger>
-        </FormControl>
-        <SelectContent>
-          {me?.organizations.map((node) => {
+        }
+        error={Boolean(error)}>
+        <SelectLabel>
+          {t('OrganizationInServiceAction.Organization')}
+        </SelectLabel>
+        {/* eslint-disable-next-line no-restricted-syntax -- form field sent by its tagged submit button */}
+        <SelectTrigger className="w-full">
+          <SelectValue
+            placeholder={t('OrganizationInServiceAction.SelectOrganization')}
+          />
+        </SelectTrigger>
+        <SelectContent className="layer-1">
+          {me?.organizations?.map((node) => {
             return (
               <SelectItem
                 key={node?.id}
@@ -59,8 +62,8 @@ export const ServiceFormUploaderOrganizationIdField = ({
             );
           })}
         </SelectContent>
+        {error && <SelectHelperText>{error.message}</SelectHelperText>}
       </Select>
-      <FormMessage />
-    </FormItem>
+    </div>
   );
 };

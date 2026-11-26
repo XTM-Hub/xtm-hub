@@ -10,6 +10,12 @@ enum DocumentImageType {
   image
 }
 
+enum DocumentStatus {
+  draft
+  in_validation
+  published
+}
+
 enum LicenseType {
   Commercial
   Free
@@ -18,7 +24,6 @@ enum LicenseType {
 enum DocumentMetadataKeyCode {
   feed_url
   integration_type
-  integration_subtype
   last_verified_date
   datasheet_url
   blogpost_url
@@ -53,7 +58,7 @@ type ShareableResource {
   name: String
   description: String
   download_number: Int
-  active: Boolean!
+  status: DocumentStatus!
   source_type: DocumentSourceType!
   image_type: DocumentImageType
 }
@@ -67,6 +72,12 @@ enum DocumentOrdering {
   name
 }
 
+type PublicDocumentSlugInfo {
+  slug: String
+  created_at: Date!
+  updated_at: Date
+}
+
 """
 /!\ WARNING Do not use this type.
 It exists only to cover cases where we failed to map to a specific Document.
@@ -78,9 +89,10 @@ type DefaultDocument implements Node & Document {
   uploader_organization: Organization
   name: String
   short_description: String
+  meta_description: String
   description: String
   file_name: String @auth
-  active: Boolean!
+  status: DocumentStatus!
   created_at: Date!
   updated_at: Date
   updater_id: String @auth
@@ -101,9 +113,10 @@ interface Document implements Node {
   uploader_organization: Organization
   name: String
   short_description: String
+  meta_description: String
   description: String
   file_name: String @auth
-  active: Boolean!
+  status: DocumentStatus!
   created_at: Date!
   updated_at: Date
   updater_id: String @auth
@@ -126,8 +139,9 @@ input CreateDocumentInput {
   name: String!
   slug: String!
   short_description: String!
+  meta_description: String!
   description: String!
-  active: Boolean!
+  status: DocumentStatus!
   use_cases: [UseCaseId!]!
   solution_categories: [SolutionCategoryId!]!
   license_type: LicenseType
@@ -138,8 +152,9 @@ input CreateDocumentInput {
 input UpdateDocumentInput {
   name: String
   short_description: String
+  meta_description: String
   description: String
-  active: Boolean
+  status: DocumentStatus
   use_cases: [UseCaseId!]
   solution_categories: [SolutionCategoryId!]
   license_type: LicenseType
@@ -181,16 +196,11 @@ type Mutation {
   deleteDocument(
     documentId: DocumentId!
     service_instance_id: ServiceInstanceId!
-    forceDelete: Boolean
   ): Document! @auth @service_capa(requires: [DELETE])
   incrementShareNumberDocument(documentId: DocumentId!): Document!
 }
 
 type Query {
-  documentExists(
-    documentName: String
-    service_instance_id: ServiceInstanceId!
-  ): Boolean @auth @service_capa(requires: [UPLOAD])
   publicDocuments(
     slug: String!
     first: Int!
@@ -202,6 +212,9 @@ type Query {
     serviceInstanceId: ServiceInstanceId!
   ): DocumentConnection!
   publicDocumentsByServiceSlug(serviceInstanceSlug: String!): [Document!]!
+  publicDocumentSlugsByServiceSlug(
+    serviceInstanceSlug: String!
+  ): [PublicDocumentSlugInfo!]!
   publicDocumentBySlug(
     serviceInstanceId: ServiceInstanceId!
     slug: String!

@@ -1,0 +1,27 @@
+fragment CompetitorRow on Competitor {
+  id
+  name
+  domain
+  tier
+}
+
+query CompetitorsList(
+  $count: Int!
+  $cursor: ID
+  $orderBy: CompetitorOrdering!
+  $orderMode: OrderingMode!
+) {
+  competitors(
+    first: $count
+    after: $cursor
+    orderBy: $orderBy
+    orderMode: $orderMode
+  ) {
+    totalCount
+    edges {
+      node {
+        ...CompetitorRow
+      }
+    }
+  }
+}

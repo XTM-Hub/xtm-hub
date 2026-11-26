@@ -1,7 +1,9 @@
 import { PlatformIdentifier } from '@graphql/generated';
 import { NextRequest } from 'next/server';
-import { redirectToCreateFreeTrial } from './create-free-trial';
 import { redirectToFreeTrial } from './free-trial';
+import { redirectToHandlePendingUser } from './handle-pending-user';
+import { redirectToPrivateCounterpart } from './private-counterpart';
+import { redirectToRegisteredPlatform } from './registered-platform';
 import { redirectToRegistration } from './registration';
 import { redirectToResource } from './resource';
 import { redirectToTransferPersoSpace } from './transfer-perso-space';
@@ -42,14 +44,32 @@ export async function GET(
         'unregister',
         PlatformIdentifier.Openaev
       );
+    case 'register-xtmone':
+      return redirectToRegistration(
+        request,
+        'register',
+        PlatformIdentifier.Xtmone
+      );
+    case 'unregister-xtmone':
+      return redirectToRegistration(
+        request,
+        'unregister',
+        PlatformIdentifier.Xtmone
+      );
+    case 'opencti-registration':
+      return redirectToRegisteredPlatform(request, PlatformIdentifier.Opencti);
+    case 'openaev-registration':
+      return redirectToRegisteredPlatform(request, PlatformIdentifier.Openaev);
     case 'transfer-personal-space':
       return redirectToTransferPersoSpace(request);
+    case 'handle-pending-user':
+      return redirectToHandlePendingUser(request);
+    case 'private-counterpart':
+      return redirectToPrivateCounterpart(request);
     case 'free-trial':
-      return redirectToFreeTrial(request);
     case 'create-free-trial':
-      return redirectToCreateFreeTrial(request, PlatformIdentifier.Opencti);
     case 'create-openaev-free-trial':
-      return redirectToCreateFreeTrial(request, PlatformIdentifier.Openaev);
+      return redirectToFreeTrial(request);
   }
   return redirectToResource(awaitedParams, request);
 }

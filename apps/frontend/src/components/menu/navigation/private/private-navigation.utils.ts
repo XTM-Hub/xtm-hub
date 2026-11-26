@@ -1,5 +1,6 @@
 import { getRegisteredPlatformServiceIdentifier } from '@/components/registration/PlatformIdentifierMapping';
 import { APP_PATH } from '@/utils/path/constant';
+import { isBundleProduct } from '@/utils/platform';
 import {
   PlatformIdentifier,
   RegisteredPlatformsListQuery,
@@ -53,6 +54,10 @@ export const getPrivateNavigationRegisteredPlatformsByIdentifier = (
 
   return (queryData?.registeredPlatforms ?? []).flatMap((platform) => {
     if (!platform || platform.identifier !== registeredPlatformIdentifier) {
+      return [];
+    }
+
+    if (isBundleProduct(platform.deployment_request)) {
       return [];
     }
 

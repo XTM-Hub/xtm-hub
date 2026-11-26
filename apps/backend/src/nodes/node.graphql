@@ -20,6 +20,9 @@ enum PortalCapability {
   MANAGE_CONNECTORS_INGESTIONS
   MANAGE_MANIFEST_INGESTIONS
   GENERATE_MANIFEST
+  MANAGE_SAAS_MANAGER_INSTANCES
+  READ_SAAS_METRICS
+  READ_ORGANIZATION_MEMBERS
 }
 
 enum OrganizationCapability {
@@ -64,6 +67,6 @@ type MergeEvent implements Node {
   target: ID!
 }
 
-type Query {
-  node(id: ID!): Node @auth
-}
+# Root type extended by every module. There is deliberately no Relay `node(id:)`
+# field: a generic lookup by global id bypasses each type's own access checks.
+type Query

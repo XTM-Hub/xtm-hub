@@ -1,46 +1,51 @@
-import { getUserListContext } from '@/components/admin/user/UserListPage';
 import { UserForm } from '@/components/admin/user/forms/UserForm';
 import { userFormSchema } from '@/components/admin/user/forms/user-form.schema';
-import { UserListCreateMutation } from '@/components/admin/user/user.graphql';
+import { useRefreshUsersList } from '@/components/admin/user/use-refresh-users-list';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
-import { Button, useToast } from '@filigran/ui';
-import { userListCreateMutation } from '@generated/userListCreateMutation.graphql';
-import { useTranslations } from 'next-intl';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
+import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
+import { portalGraphqlClient } from '@/lib/graphql-client';
+import { Button } from '@filigran/design-system';
+import { useUserResendInviteMutation } from '@graphql/generated';
 import { useState } from 'react';
-import { useMutation } from 'react-relay';
 import { z } from 'zod';
 
 export const AddUser = () => {
-  const t = useTranslations();
+  const t = useTranslate();
   const [openSheet, setOpenSheet] = useState(false);
 
-  const { toast } = useToast();
-  const [commitUserMutation] = useMutation<userListCreateMutation>(
-    UserListCreateMutation
-  );
-
-  const { connectionID } = getUserListContext();
-  const handleSubmit = (values: z.infer<typeof userFormSchema>) => {
-    commitUserMutation({
-      variables: {
-        input: {
-          ...values,
-        },
-        connections: [connectionID],
-      },
-      onCompleted: () => {
+  const refreshUsersList = useRefreshUsersList();
+  // The resend operation makes the same addUser call as a creation.
+  const { mutate: createUser } = useUserResendInviteMutation<Error>(
+    portalGraphqlClient,
+    {
+      // On the hook, not on mutate: like Relay, the outcome is handled even if
+      // the form is gone by then.
+      onSuccess: (_data, { input }) => {
+        refreshUsersList();
         setOpenSheet(false);
-        toast({
+        showSnackbar({
+          severity: 'success',
           title: t('Utils.Success'),
-          description: t('UserActions.UserCreated', { email: values.email }),
+          description: t('UserActions.UserCreated', { email: input.email }),
         });
       },
       onError: (error) => {
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: t(`Error.Server.${error.message}`),
         });
+      },
+    }
+  );
+
+  const handleSubmit = (values: z.infer<typeof userFormSchema>) => {
+    createUser({
+      input: {
+        ...values,
+        password: values.password ?? null,
       },
     });
   };
@@ -50,7 +55,11 @@ export const AddUser = () => {
       title={t('UserActions.AddUser')}
       setOpen={setOpenSheet}
       open={openSheet}
-      trigger={<Button>{t('UserActions.AddUser')}</Button>}>
+      trigger={
+        <Button {...analyticsId('organization_member_create')}>
+          {t('UserActions.AddUser')}
+        </Button>
+      }>
       <UserForm
         handleSubmit={handleSubmit}
         validationSchema={userFormSchema}

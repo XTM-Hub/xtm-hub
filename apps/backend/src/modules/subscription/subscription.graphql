@@ -16,7 +16,6 @@ type SubscriptionModel implements Node {
   start_date: Date
   end_date: Date
   organization: Organization!
-  service_url: String!
   service_instance: ServiceInstance!
   subscription_capability: [SubscriptionCapability]
   user_service: [UserService]!
@@ -42,21 +41,14 @@ input UpdateSubscriptionInput {
 }
 
 type Mutation {
-  addSubscription(service_instance_id: ServiceInstanceId): ServiceInstance
-    @auth(orgaCapa: [ADMINISTRATE_ORGANIZATION, MANAGE_SUBSCRIPTION])
   createSubscriptions(input: CreateSubscriptionsInput!): [SubscriptionModel!]!
-    @auth(portalCapa: [BYPASS])
   updateSubscription(
     subscription_id: SubscriptionId!
     input: UpdateSubscriptionInput!
   ): SubscriptionModel
-    @auth(orgaCapa: [ADMINISTRATE_ORGANIZATION, MANAGE_SUBSCRIPTION])
-    @service_capa(requires: [MANAGE_ACCESS])
   deleteSubscriptions(
     subscription_ids: [SubscriptionId!]!
   ): [SubscriptionModel!]!
-    @auth(orgaCapa: [ADMINISTRATE_ORGANIZATION, MANAGE_SUBSCRIPTION])
-    @service_capa(requires: [MANAGE_ACCESS])
 }
 
 type SubscriptionConnection {
@@ -75,7 +67,7 @@ input SubscriptionFilter {
 }
 
 type Query {
-  subscriptionById(subscription_id: SubscriptionId): SubscriptionModel @auth
+  subscriptionById(subscription_id: SubscriptionId): SubscriptionModel
   subscriptions(
     first: Int!
     after: ID
@@ -83,5 +75,5 @@ type Query {
     orderMode: OrderingMode!
     searchTerm: String
     filters: [SubscriptionFilter!]
-  ): SubscriptionConnection! @auth
+  ): SubscriptionConnection!
 }

@@ -1,9 +1,11 @@
 import { Readable } from 'stream';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TestHelper } from '../../../../tests/helper/test.helper';
+import { TEST_USE_CASES } from '../../../../tests/tests.const';
 import {
   DocumentImageType,
   DocumentMetadataKeyCode,
+  DocumentStatus,
   IntegrationType,
   ManifestType,
   PlatformIdentifier,
@@ -11,13 +13,14 @@ import {
 import type Document from '../../../model/kanel/public/Document';
 import type { DocumentMetadataKey } from '../../../model/kanel/public/DocumentMetadata';
 import type { ObjectUseCaseObjectId } from '../../../model/kanel/public/ObjectUseCase';
-import type { UseCaseId } from '../../../model/kanel/public/UseCase';
 import { MinIOClient } from '../../../thirdparty/minio/client';
 import { logApp } from '../../../utils/app-logger.util';
 import { BadRequestErrorCode } from '../../../utils/error/error.code';
+import * as FeatureFlagUtil from '../../../utils/feature-flag.util';
 import { DocumentChildrenDomain } from '../../document/domain/document.children.domain';
 import { DocumentDomain } from '../../document/domain/document.domain';
 import {
+  ManifestFragmentHelper,
   TAG_DECOUPLING,
   TAG_LATEST,
   TAG_LATEST_LTS,
@@ -43,7 +46,7 @@ const LTS_KEY: ManifestKey = {
 
 const createConnectorDocument = async (tags: string[]): Promise<Document> => {
   const doc = await TestHelper.document.create({
-    active: true,
+    status: DocumentStatus.Published,
     is_decommissioned: false,
     tags: [...tags, TAG_DECOUPLING],
   });
@@ -57,24 +60,27 @@ const createConnectorDocument = async (tags: string[]): Promise<Document> => {
 
 const createConnectorWithFragment = async ({
   manifestFragmentId,
+  slug = `connector-${manifestFragmentId}`,
   minimumDeployableVersionPadded,
   tags = [],
-  version = '007.260309.000',
-  active = true,
+  version = '7.260309.0',
+  status = DocumentStatus.Published,
   isDecommissioned = false,
 }: {
   manifestFragmentId: string;
+  slug?: string;
   minimumDeployableVersionPadded?: string;
   tags?: string[];
   version?: string;
-  active?: boolean;
+  status?: DocumentStatus;
   isDecommissioned?: boolean;
 }): Promise<Document> => {
   const doc = await TestHelper.document.create({
-    active,
+    status,
     is_decommissioned: isDecommissioned,
     tags: tags.length > 0 ? [...tags, TAG_DECOUPLING] : [],
     version,
+    slug,
   });
   await TestHelper.documentMetadata.create({
     document_id: doc.id,
@@ -85,6 +91,11 @@ const createConnectorWithFragment = async ({
     document_id: doc.id,
     key: DocumentMetadataKeyCode.ManifestFragmentId as unknown as DocumentMetadataKey,
     value: manifestFragmentId,
+  });
+  await TestHelper.documentMetadata.create({
+    document_id: doc.id,
+    key: DocumentMetadataKeyCode.VersionPadded as unknown as DocumentMetadataKey,
+    value: ManifestFragmentHelper.validateAndFormatManifestVersion(version),
   });
   if (minimumDeployableVersionPadded) {
     await TestHelper.documentMetadata.create({
@@ -98,12 +109,12 @@ const createConnectorWithFragment = async ({
 
 describe('manifestApp', () => {
   beforeEach(() => {
+    vi.spyOn(FeatureFlagUtil, 'isFeatureEnabled').mockReturnValue(true);
     vi.spyOn(ManifestHelper, 'uploadManifest').mockResolvedValue(undefined);
   });
 
   afterEach(async () => {
     await TestHelper.objectUseCase.delete({});
-    await TestHelper.useCase.delete({});
     await TestHelper.manifest.delete({});
     await TestHelper.manifestRebuildQueue.delete({});
     await TestHelper.documentMetadata.delete({});
@@ -156,27 +167,30 @@ describe('manifestApp', () => {
         expect(links[0]!.document_id).toBe(expected.id);
       });
 
-      it('excludes inactive connectors', async () => {
-        const doc = await TestHelper.document.create({
-          active: false,
-          is_decommissioned: false,
-          tags: [TAG_LATEST, TAG_DECOUPLING],
-        });
-        await TestHelper.documentMetadata.create({
-          document_id: doc.id,
-          key: DocumentMetadataKeyCode.IntegrationType as unknown as DocumentMetadataKey,
-          value: IntegrationType.Connector,
-        });
+      it.each([DocumentStatus.Draft, DocumentStatus.InValidation])(
+        'excludes the connectors whose status is %s',
+        async (status) => {
+          const doc = await TestHelper.document.create({
+            status,
+            is_decommissioned: false,
+            tags: [TAG_LATEST, TAG_DECOUPLING],
+          });
+          await TestHelper.documentMetadata.create({
+            document_id: doc.id,
+            key: DocumentMetadataKeyCode.IntegrationType as unknown as DocumentMetadataKey,
+            value: IntegrationType.Connector,
+          });
 
-        await ManifestApp.generateManifest(MANIFEST_KEY);
+          await ManifestApp.generateManifest(MANIFEST_KEY);
 
-        const links = await TestHelper.manifestDocument.loadAll({});
-        expect(links).toHaveLength(0);
-      });
+          const links = await TestHelper.manifestDocument.loadAll({});
+          expect(links).toHaveLength(0);
+        }
+      );
 
       it('excludes decommissioned connectors', async () => {
         const doc = await TestHelper.document.create({
-          active: true,
+          status: DocumentStatus.Published,
           is_decommissioned: true,
           tags: [TAG_LATEST, TAG_DECOUPLING],
         });
@@ -197,7 +211,7 @@ describe('manifestApp', () => {
       it('includes compatible connectors as-is without querying for fallbacks', async () => {
         const spy = vi.spyOn(
           DocumentDomain,
-          'loadBestCompatibleConnectorsByManifestFragmentIds'
+          'loadBestCompatibleConnectorsBySlugs'
         );
         const doc1 = await createConnectorWithFragment({
           manifestFragmentId: 'fragment-compatible-1',
@@ -219,37 +233,64 @@ describe('manifestApp', () => {
         expect(linkedIds).toContain(doc2.id);
       });
 
-      it('replaces an incompatible connector with its best compatible fallback', async () => {
+      it('replaces an incompatible connector with the best compatible fallback from the same slug', async () => {
+        const slugFallbackSpy = vi.spyOn(
+          DocumentDomain,
+          'loadBestCompatibleConnectorsBySlugs'
+        );
+        const byIdHydrationSpy = vi.spyOn(
+          DocumentDomain,
+          'loadDocumentsWithMetadataByIds'
+        );
         await createConnectorWithFragment({
           manifestFragmentId: 'fragment-a',
+          slug: 'connector-a',
           tags: [TAG_LATEST],
           minimumDeployableVersionPadded: '007.260601.000', // above MANIFEST_KEY padded version
         });
         const fallback = await createConnectorWithFragment({
-          manifestFragmentId: 'fragment-a',
-          version: '007.260101.000',
+          manifestFragmentId: 'fragment-a-legacy',
+          slug: 'connector-a',
+          version: '7.260101.0',
         });
 
         await ManifestApp.generateManifest(MANIFEST_KEY);
 
+        expect(byIdHydrationSpy).not.toHaveBeenCalled();
+        expect(slugFallbackSpy).toHaveBeenCalledWith(
+          ['connector-a'],
+          MANIFEST_KEY.version
+        );
         const links = await TestHelper.manifestDocument.loadAll({});
         expect(links).toHaveLength(1);
         expect(links[0]!.document_id).toBe(fallback.id);
       });
 
       it('excludes an incompatible connector when no compatible fallback exists, keeping the rest of the manifest', async () => {
-        await createConnectorWithFragment({
+        // Given
+        const infoSpy = vi.spyOn(logApp, 'info');
+        const incompatible = await createConnectorWithFragment({
           manifestFragmentId: 'fragment-no-fallback',
+          slug: 'connector-no-fallback',
           tags: [TAG_LATEST],
           minimumDeployableVersionPadded: '007.260601.000', // above MANIFEST_KEY padded version, no fallback created
         });
         const compatible = await createConnectorDocument([TAG_LATEST]);
 
+        // When
         await ManifestApp.generateManifest(MANIFEST_KEY);
 
+        // Then
         const links = await TestHelper.manifestDocument.loadAll({});
         expect(links).toHaveLength(1);
         expect(links[0]!.document_id).toBe(compatible.id);
+        expect(infoSpy).toHaveBeenCalledWith(
+          'No compatible fallback found for some connectors, they will be excluded from the manifest',
+          expect.objectContaining({
+            slugs: ['connector-no-fallback'],
+            connectorIds: expect.arrayContaining([incompatible.id]),
+          })
+        );
       });
     });
 
@@ -375,22 +416,14 @@ describe('manifestApp', () => {
 
       it('populates use_cases from linked use cases for each connector', async () => {
         const doc = await createConnectorDocument([TAG_LATEST]);
-        const useCase1 = await TestHelper.useCase.create({
-          name: 'automation',
-          color: '#0099cc',
-        });
-        const useCase2 = await TestHelper.useCase.create({
-          name: 'integration',
-          color: '#ff6600',
-        });
         await TestHelper.objectUseCase.insert([
           {
             object_id: doc.id as unknown as ObjectUseCaseObjectId,
-            use_case_id: useCase1.id as UseCaseId,
+            use_case_id: TEST_USE_CASES.AUTOMATION.ID,
           },
           {
             object_id: doc.id as unknown as ObjectUseCaseObjectId,
-            use_case_id: useCase2.id as UseCaseId,
+            use_case_id: TEST_USE_CASES.INTEGRATION.ID,
           },
         ]);
 
@@ -399,8 +432,12 @@ describe('manifestApp', () => {
         expect(result).not.toBeNull();
         expect(result!.contracts).toHaveLength(1);
         expect(result!.contracts[0]!.use_cases).toHaveLength(2);
-        expect(result!.contracts[0]!.use_cases).toContain('automation');
-        expect(result!.contracts[0]!.use_cases).toContain('integration');
+        expect(result!.contracts[0]!.use_cases).toContain(
+          TEST_USE_CASES.AUTOMATION.NAME
+        );
+        expect(result!.contracts[0]!.use_cases).toContain(
+          TEST_USE_CASES.INTEGRATION.NAME
+        );
       });
 
       it('sets use_cases to empty array when a connector has no linked use cases', async () => {
@@ -494,6 +531,28 @@ describe('manifestApp', () => {
       expect(enqueueImmediateRebuildSpy).toHaveBeenCalledWith(expectedKey);
     });
 
+    it('should neither queue nor enqueue when decoupled connectors are disabled', async () => {
+      // Given
+      vi.spyOn(FeatureFlagUtil, 'isFeatureEnabled').mockReturnValue(false);
+      const insertIfNotPendingSpy = vi
+        .spyOn(ManifestDomain, 'insertIfNotPending')
+        .mockResolvedValue(undefined);
+      const enqueueImmediateRebuildSpy = vi
+        .spyOn(ManifestHelper, 'enqueueImmediateRebuild')
+        .mockResolvedValue(undefined);
+
+      // When
+      await ManifestApp.requestManifestGeneration({
+        product: PlatformIdentifier.Opencti,
+        version: '6.4.0',
+        type: ManifestType.Connector,
+      });
+
+      // Then
+      expect(insertIfNotPendingSpy).not.toHaveBeenCalled();
+      expect(enqueueImmediateRebuildSpy).not.toHaveBeenCalled();
+    });
+
     it.each`
       version
       ${'not-a-version'}
@@ -540,6 +599,23 @@ describe('manifestApp', () => {
 
     it('does not call generateManifest when the queue is empty', async () => {
       await ManifestApp.processManifestQueue();
+      expect(ManifestApp.generateManifest).not.toHaveBeenCalled();
+    });
+
+    it('does not call generateManifest when decoupled connectors are disabled', async () => {
+      // Given
+      vi.spyOn(FeatureFlagUtil, 'isFeatureEnabled').mockReturnValue(false);
+      await TestHelper.manifestRebuildQueue.create({
+        product: PlatformIdentifier.Opencti,
+        version: '6.4.0',
+        type: ManifestType.Connector,
+        status: ManifestRebuildQueueStatus.Pending,
+      });
+
+      // When
+      await ManifestApp.processManifestQueue();
+
+      // Then
       expect(ManifestApp.generateManifest).not.toHaveBeenCalled();
     });
 

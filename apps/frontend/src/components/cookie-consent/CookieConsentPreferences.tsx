@@ -16,17 +16,18 @@ import {
   setCategoryConsent,
 } from '@/components/cookie-consent/cookie-consent.utils';
 import { useConsent } from '@/components/cookie-consent/CookieConsentProvider';
+import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import {
   Button,
   Dialog,
+  DialogBody,
   DialogContent,
   DialogDescription,
   DialogFooter,
-  DialogHeader,
   DialogTitle,
   Switch,
-} from '@filigran/ui';
-import { useTranslations } from 'next-intl';
+} from '@filigran/design-system';
 import { useState } from 'react';
 
 const VISIBLE_CATEGORIES = CONSENT_CATEGORIES.filter(
@@ -34,7 +35,7 @@ const VISIBLE_CATEGORIES = CONSENT_CATEGORIES.filter(
 );
 
 export const CookieConsentPreferences = () => {
-  const t = useTranslations('CookieConsent');
+  const t = useTranslate('CookieConsent');
   const { consent, isPreferencesOpen, closePreferences, save } = useConsent();
   const [draft, setDraft] = useState<ServiceConsent>(consent);
   const [openDrawers, setOpenDrawers] = useState<Record<string, boolean>>({});
@@ -75,101 +76,121 @@ export const CookieConsentPreferences = () => {
           closePreferences();
         }
       }}>
-      <DialogContent className="border-0 bg-elevation-background-layer-2">
-        <DialogHeader>
-          <DialogTitle>{t('Title')}</DialogTitle>
-          <DialogDescription>{t('PreferencesIntro')}</DialogDescription>
-        </DialogHeader>
+      <DialogContent>
+        <DialogTitle>{t('Title')}</DialogTitle>
+        <DialogDescription>{t('PreferencesIntro')}</DialogDescription>
 
-        <div className="flex items-center justify-between gap-4 border-b border-border pb-4">
-          <span className="body-compact">{t('PreferenceForAllServices')}</span>
-          <Switch
-            checked={allGranted}
-            onCheckedChange={setAll}
-            aria-label={t('PreferenceForAllServices')}
-          />
-        </div>
+        <DialogBody>
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between gap-4 border-b border-elevation-subtle pb-4">
+              <span className="body-compact">
+                {t('PreferenceForAllServices')}
+              </span>
+              {/* eslint-disable-next-line no-restricted-syntax -- form field sent by its tagged submit button */}
+              <Switch
+                checked={allGranted}
+                onCheckedChange={setAll}
+                aria-label={t('PreferenceForAllServices')}
+              />
+            </div>
 
-        <div className="flex flex-col gap-4 pl-xl">
-          {VISIBLE_CATEGORIES.map((category) => {
-            const { required, services } = CONSENT_REGISTRY[category];
-            return (
-              <div
-                key={category}
-                className="flex flex-col gap-3">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex flex-col gap-1">
-                    <span className="body-base-medium">
-                      {t(`Categories.${category}.Title`)}
-                    </span>
-                    <span className="body-base">
-                      {t(`Categories.${category}.Description`)}
-                    </span>
-                    {services.length > 0 ? (
-                      <Button
-                        variant="link"
-                        onClick={() => toggleDrawer(category)}
-                        className="h-auto justify-start p-0 body-compact">
-                        {t('ManageServices', { count: services.length })}
-                      </Button>
+            <div className="flex flex-col gap-4 pl-6">
+              {VISIBLE_CATEGORIES.map((category) => {
+                const { required, services } = CONSENT_REGISTRY[category];
+                return (
+                  <div
+                    key={category}
+                    className="flex flex-col gap-3">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex flex-col gap-1">
+                        <span className="body-base-medium">
+                          {t(`Categories.${category}.Title`)}
+                        </span>
+                        <span className="body-base">
+                          {t(`Categories.${category}.Description`)}
+                        </span>
+                        {services.length > 0 ? (
+                          <Button
+                            {...analyticsId('consent_category_services_toggle')}
+                            priority="tertiary"
+                            onClick={() => toggleDrawer(category)}
+                            className="h-auto justify-start p-0 underline body-compact">
+                            {t('ManageServices', { count: services.length })}
+                          </Button>
+                        ) : null}
+                      </div>
+                      {/* eslint-disable-next-line no-restricted-syntax -- form field sent by its tagged submit button */}
+                      <Switch
+                        checked={isCategoryAllowed(draft, category)}
+                        disabled={required}
+                        onCheckedChange={(value) =>
+                          toggleCategory(category, value)
+                        }
+                        aria-label={t(`Categories.${category}.Title`)}
+                      />
+                    </div>
+
+                    {services.length > 0 && openDrawers[category] ? (
+                      <div className="ml-4 flex flex-col gap-3 border-l border-elevation-subtle pl-4">
+                        {services.map((service) => (
+                          <div
+                            key={service.id}
+                            className="flex items-start justify-between gap-4">
+                            <div className="flex flex-col gap-1">
+                              <span className="body-base-medium">
+                                {service.name}
+                              </span>
+                              <div className="flex gap-3">
+                                {service.readMoreUrl ? (
+                                  <a
+                                    {...analyticsId(
+                                      'consent_service_details_open'
+                                    )}
+                                    href={service.readMoreUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="body-compact-link">
+                                    {t('ReadMore')}
+                                  </a>
+                                ) : null}
+                                {service.officialWebsiteUrl ? (
+                                  <a
+                                    {...analyticsId(
+                                      'consent_service_website_open'
+                                    )}
+                                    href={service.officialWebsiteUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="body-compact-link">
+                                    {t('ViewOfficialWebsite')}
+                                  </a>
+                                ) : null}
+                              </div>
+                            </div>
+                            {/* eslint-disable-next-line no-restricted-syntax -- form field sent by its tagged submit button */}
+                            <Switch
+                              checked={draft[service.id] === true}
+                              disabled={required}
+                              onCheckedChange={() => toggleService(service.id)}
+                              aria-label={service.name}
+                            />
+                          </div>
+                        ))}
+                      </div>
                     ) : null}
                   </div>
-                  <Switch
-                    checked={isCategoryAllowed(draft, category)}
-                    disabled={required}
-                    onCheckedChange={(value) => toggleCategory(category, value)}
-                    aria-label={t(`Categories.${category}.Title`)}
-                  />
-                </div>
-
-                {services.length > 0 && openDrawers[category] ? (
-                  <div className="ml-4 flex flex-col gap-3 border-l border-border pl-4">
-                    {services.map((service) => (
-                      <div
-                        key={service.id}
-                        className="flex items-start justify-between gap-4">
-                        <div className="flex flex-col gap-1">
-                          <span className="body-base-medium">
-                            {service.name}
-                          </span>
-                          <div className="flex gap-3">
-                            {service.readMoreUrl ? (
-                              <a
-                                href={service.readMoreUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="body-compact-link">
-                                {t('ReadMore')}
-                              </a>
-                            ) : null}
-                            {service.officialWebsiteUrl ? (
-                              <a
-                                href={service.officialWebsiteUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="body-compact-link">
-                                {t('ViewOfficialWebsite')}
-                              </a>
-                            ) : null}
-                          </div>
-                        </div>
-                        <Switch
-                          checked={draft[service.id] === true}
-                          disabled={required}
-                          onCheckedChange={() => toggleService(service.id)}
-                          aria-label={service.name}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                ) : null}
-              </div>
-            );
-          })}
-        </div>
+                );
+              })}
+            </div>
+          </div>
+        </DialogBody>
 
         <DialogFooter>
-          <Button onClick={() => save(draft)}>{t('Save')}</Button>
+          <Button
+            {...analyticsId('consent_preferences_submit')}
+            onClick={() => save(draft)}>
+            {t('Save')}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

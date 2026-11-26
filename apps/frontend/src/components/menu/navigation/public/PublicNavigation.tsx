@@ -5,10 +5,15 @@ import { usePublicNavigation } from './use-public-navigation';
 
 interface PublicNavigationProps {
   open: boolean;
+  visibleServiceSlugs: string[];
 }
 
-const PublicNavigation = ({ open }: PublicNavigationProps) => {
-  const { sections, bottomLinks, footerSections } = usePublicNavigation();
+const PublicNavigation = ({
+  open,
+  visibleServiceSlugs,
+}: PublicNavigationProps) => {
+  const { sections, bottomLinks, footerSections } =
+    usePublicNavigation(visibleServiceSlugs);
 
   return (
     <SharedNavigation

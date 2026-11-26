@@ -1,6 +1,12 @@
 import { PublicDocumentData } from '@/utils/shareable-resources/shareable-resources.types';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { DocumentImageType } from '@graphql/generated';
+import {
+  DocumentImageType,
+  DocumentItemFragment,
+  DocumentStatus,
+} from '@graphql/generated';
+
+export const isDocumentPublished = (status?: string | null): boolean =>
+  status === DocumentStatus.Published;
 
 export interface ExistingFile {
   file_name: string;
@@ -24,6 +30,9 @@ export const optionalFileListCheck = (file: unknown) =>
 
 export const isFile = (file: unknown): file is File => file instanceof File;
 
+// `.json` lets through a JSON file the browser reports with an empty MIME type
+export const JSON_FILE_ACCEPT = 'application/json, .json';
+
 export type FormImagesValues = Array<File | ExistingFile>;
 export const splitExistingAndNewImages = (
   images: FormImagesValues
@@ -43,7 +52,7 @@ export const splitExistingAndNewImages = (
 
 export const transformToFileList = (
   filteredImageType: DocumentImageType,
-  document?: documentItem_fragment$data
+  document?: DocumentItemFragment
 ): FileList => {
   return (document?.children_documents ?? []).filter(
     (doc) => doc.image_type === filteredImageType
@@ -51,7 +60,7 @@ export const transformToFileList = (
 };
 
 export const filterDocumentImages = (
-  document?: documentItem_fragment$data | PublicDocumentData
+  document?: DocumentItemFragment | PublicDocumentData
 ) => {
   return (document?.children_documents ?? []).filter(
     (doc) => doc.image_type === DocumentImageType.Image
@@ -59,7 +68,7 @@ export const filterDocumentImages = (
 };
 
 export const findDocumentLogo = (
-  document?: documentItem_fragment$data | PublicDocumentData
+  document?: DocumentItemFragment | PublicDocumentData
 ) => {
   return (document?.children_documents ?? []).find(
     (doc) => doc.image_type === DocumentImageType.Logo

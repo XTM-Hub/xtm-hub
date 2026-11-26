@@ -1,25 +1,31 @@
+import { useTranslate } from '@/hooks/use-translate';
+import {
+  type AnalyticsElementId,
+  analyticsId,
+} from '@/lib/analytics/analytics.ids';
 import {
   Button,
   Dialog,
+  DialogBody,
   DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
-  DialogHeader,
   DialogTitle,
-} from '@filigran/ui';
-import { useTranslations } from 'next-intl';
+} from '@filigran/design-system';
 import { ReactNode } from 'react';
 
 interface DialogInformativeProps {
   isOpen: boolean;
   onClose: () => void;
   onButtonClick?: () => void;
+  analyticsId: AnalyticsElementId;
   title: string;
   description?: string;
   children: ReactNode;
   variant?: 'default' | 'secondary';
   buttonText?: string;
+  isButtonDisabled?: boolean;
   showFooter?: boolean;
 }
 
@@ -27,14 +33,17 @@ export const DialogInformative = ({
   isOpen,
   onClose,
   onButtonClick,
+  analyticsId: elementId,
   title,
   description,
   children,
   variant = 'secondary',
   buttonText = 'Utils.Close',
+  isButtonDisabled = false,
   showFooter = true,
 }: DialogInformativeProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
+  const priority = variant === 'default' ? 'primary' : 'secondary';
 
   return (
     <Dialog
@@ -45,22 +54,24 @@ export const DialogInformative = ({
         }
       }}>
       <DialogContent>
-        <DialogHeader className={'gap-s'}>
-          <DialogTitle>{title}</DialogTitle>
-          {description && (
-            <DialogDescription className="whitespace-pre-line">
-              {description}
-            </DialogDescription>
-          )}
-        </DialogHeader>
-        {children}
+        <DialogTitle>{title}</DialogTitle>
+        {description && (
+          <DialogDescription className="whitespace-pre-line">
+            {description}
+          </DialogDescription>
+        )}
+        {children && (
+          <DialogBody className="flex flex-col gap-4">{children}</DialogBody>
+        )}
         {showFooter && (
-          <DialogFooter className="justify-end">
+          <DialogFooter>
             <DialogClose asChild>
               <Button
+                {...analyticsId(elementId)}
                 className="mt-2 hover:cursor-pointer"
                 type="button"
-                variant={variant}
+                priority={priority}
+                disabled={isButtonDisabled}
                 onClick={onButtonClick ?? onClose}>
                 {t(buttonText)}
               </Button>

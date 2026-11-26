@@ -1,58 +1,47 @@
 'use client';
-import { i18nKey } from '@/utils/datatable';
+import { DataTable, DataTableHeadBarOptions } from '@/components/ui/data-table';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
+import { useTablePagination } from '@/hooks/use-table-pagination';
+import { useTranslate } from '@/hooks/use-translate';
+import { portalGraphqlClient } from '@/lib/graphql-client';
+import { throwOnFirstLoadError } from '@/lib/query-client';
+import { getDataTableLabels } from '@/utils/design-system/data-table';
+import { removeFromQueryCache } from '@/utils/query-cache';
 import { DeleteIcon, EditIcon } from '@filigran/icon';
-import { Button, DataTable, DataTableHeadBarOptions } from '@filigran/ui';
-import { CompetitorTier } from '@graphql/generated';
-import {
-  ColumnDef,
-  PaginationState,
-  SortingState,
-  Updater,
-} from '@tanstack/react-table';
-import { useTranslations } from 'next-intl';
-import { useCallback, useMemo, useState } from 'react';
-import {
-  readInlineData,
-  useLazyLoadQuery,
-  useMutation,
-  useRefetchableFragment,
-} from 'react-relay';
-
+import { competitorListKeys } from '@graphql/competitor/competitor-list.keys';
 import {
   CompetitorDeleteMutation,
-  competitorFragment,
-  competitorListFragment,
-  CompetitorListQuery,
-} from '@/components/competitor/competitor.graphql';
+  CompetitorOrdering,
+  CompetitorRowFragment,
+  CompetitorsListQuery,
+  OrderingMode,
+  useCompetitorDeleteMutation,
+  useCompetitorsListQuery,
+} from '@graphql/generated';
+import { keepPreviousData, useQueryClient } from '@tanstack/react-query';
+import { ColumnDef, SortingState, Updater } from '@tanstack/react-table';
+import { useMemo, useState } from 'react';
 
 import ManageCompetitor from '@/components/competitor/ManageCompetitor';
 import { useCompetitorListLocalstorage } from '@/components/competitor/competitor-localstorage';
 import { formatTier } from '@/components/competitor/competitor.utils';
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import {
   handleSortingChange,
   mapToSortingTableValue,
-  transformSortingValueToParams,
 } from '@/components/ui/handle-sorting.utils';
-import {
-  competitorListQuery,
-  competitorListQuery$variables,
-} from '@generated/competitorListQuery.graphql';
-import {
-  competitor_fragment$data,
-  competitor_fragment$key,
-} from '@generated/competitor_fragment.graphql';
-import { competitor_list_fragment$key } from '@generated/competitor_list_fragment.graphql';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
+import { Button, IconButton } from '@filigran/design-system';
 
 const CompetitorList = () => {
-  const t = useTranslations();
-  const [editRow, setEditRow] = useState<competitor_fragment$data | undefined>(
+  const t = useTranslate();
+  const queryClient = useQueryClient();
+  const [editRow, setEditRow] = useState<CompetitorRowFragment | undefined>(
     undefined
   );
 
   const [openAdd, setOpenAdd] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
-  const [deleteCompetitor] = useMutation(CompetitorDeleteMutation);
 
   const {
     pageSize,
@@ -65,33 +54,61 @@ const CompetitorList = () => {
     removeOrder,
   } = useCompetitorListLocalstorage();
 
-  const queryData = useLazyLoadQuery<competitorListQuery>(CompetitorListQuery, {
-    count: pageSize,
-    orderBy,
-    orderMode,
-  });
-
-  const [pagination, setPagination] = useState<PaginationState>({
-    pageIndex: 0,
+  const { pagination, cursor, onPaginationChange } = useTablePagination({
     pageSize,
+    setPageSize,
   });
 
-  const [data, refetch] = useRefetchableFragment<
-    competitorListQuery,
-    competitor_list_fragment$key
-  >(competitorListFragment, queryData);
-
-  const connectionID = data.competitors.__id;
-
-  const competitorsData = useMemo<competitor_fragment$data[]>(
-    () =>
-      (data?.competitors?.edges || []).map(({ node }) =>
-        readInlineData<competitor_fragment$key>(competitorFragment, node)
-      ),
-    [data]
+  const variables = useMemo(
+    () => ({
+      count: pagination.pageSize,
+      cursor,
+      orderBy,
+      orderMode,
+    }),
+    [orderBy, orderMode, pagination.pageSize, cursor]
   );
 
-  const columns: ColumnDef<competitor_fragment$data>[] = useMemo(
+  const { data: queryData, isLoading } = useCompetitorsListQuery(
+    portalGraphqlClient,
+    variables,
+    {
+      placeholderData: keepPreviousData,
+      throwOnError: throwOnFirstLoadError,
+    }
+  );
+
+  const { mutate: deleteCompetitor } = useCompetitorDeleteMutation<Error>(
+    portalGraphqlClient,
+    {
+      onSuccess: async (data: CompetitorDeleteMutation) => {
+        queryClient.setQueriesData<CompetitorsListQuery>(
+          { queryKey: competitorListKeys.all() },
+          removeFromQueryCache('competitors', data.deleteCompetitor.id)
+        );
+        await queryClient.invalidateQueries({
+          queryKey: competitorListKeys.all(),
+        });
+      },
+      onError: (error: Error) => {
+        const errorMessage =
+          error instanceof Error ? error.message : 'UnknownError';
+        showSnackbar({
+          severity: 'error',
+          title: t('Utils.Error'),
+          description: <>{t(`Error.Server.${errorMessage}`)}</>,
+        });
+      },
+    }
+  );
+
+  const competitorsData = useMemo<CompetitorRowFragment[]>(() => {
+    const edges = queryData?.competitors.edges ?? [];
+    return edges.map(({ node }) => node);
+  }, [queryData]);
+  const totalCount = queryData?.competitors.totalCount ?? 0;
+
+  const columns: ColumnDef<CompetitorRowFragment>[] = useMemo(
     () => [
       {
         accessorKey: 'name',
@@ -106,9 +123,7 @@ const CompetitorList = () => {
         id: 'tier',
         header: t('CompetitorListPage.Tier'),
         cell: ({ row }) => (
-          <span className="truncate">
-            {formatTier(row.original.tier as CompetitorTier)}
-          </span>
+          <span className="truncate">{formatTier(row.original.tier)}</span>
         ),
       },
       {
@@ -123,120 +138,73 @@ const CompetitorList = () => {
         id: 'actions',
         enableSorting: false,
         cell: ({ row }) => (
-          <div className="flex items-center justify-end gap-s">
-            <Button
-              variant="tertiary"
-              size="sm"
+          <div className="flex items-center justify-end gap-2">
+            <IconButton
+              priority="tertiary"
+              {...analyticsId('admin_competitor_edit')}
+              aria-label={t('CompetitorListPage.Edit')}
+              icon={<EditIcon className="h-4 w-4" />}
               onClick={(e) => {
                 e.stopPropagation();
                 setEditRow(row.original);
                 setOpenEdit(true);
-              }}>
-              <EditIcon className="h-4 w-4" />
-              <span className="sr-only">{t('CompetitorListPage.Edit')}</span>
-            </Button>
-            <AlertDialogComponent
-              AlertTitle={t('CompetitorListPage.DeleteDialog.Title')}
-              actionButtonText={t('CompetitorListPage.Delete')}
-              variantName="destructive"
-              triggerElement={
-                <Button
-                  variant="tertiary-destructive"
-                  size="sm">
-                  <DeleteIcon className="h-4 w-4" />
-                  <span className="sr-only">
-                    {t('CompetitorListPage.Delete')}
-                  </span>
-                </Button>
+              }}
+            />
+            <ConfirmDialog
+              confirmAnalyticsId="admin_competitor_deletion_confirm"
+              title={t('CompetitorListPage.DeleteDialog.Title')}
+              confirmLabel={t('CompetitorListPage.Delete')}
+              destructive
+              trigger={
+                <IconButton
+                  variant="destructive"
+                  priority="tertiary"
+                  {...analyticsId('admin_competitor_delete')}
+                  aria-label={t('CompetitorListPage.Delete')}
+                  icon={<DeleteIcon className="h-4 w-4" />}
+                />
               }
-              onClickContinue={(e) => {
+              onConfirm={(e) => {
                 e.stopPropagation();
-                deleteCompetitor({
-                  variables: {
-                    id: row.original.id,
-                    connections: [connectionID ?? ''],
-                  },
-                });
+                deleteCompetitor({ id: row.original.id });
               }}>
               {t('CompetitorListPage.DeleteDialog.Text', {
                 name: row.original.name,
               })}
-            </AlertDialogComponent>
+            </ConfirmDialog>
           </div>
         ),
       },
     ],
-    [t, connectionID, deleteCompetitor]
+    [t, deleteCompetitor]
   );
 
-  const handleRefetchData = useCallback(
-    (args?: Partial<competitorListQuery$variables>) => {
-      const sorting = mapToSortingTableValue(orderBy, orderMode);
-      refetch({
-        count: pagination.pageSize,
-        cursor: btoa(String(pagination.pageSize * pagination.pageIndex)),
-        orderBy,
-        orderMode,
-        ...transformSortingValueToParams(sorting),
-        ...args,
-      });
-    },
-    [orderBy, orderMode, pagination, refetch]
-  );
-
-  const onSortingChange = useCallback(
-    (updater: Updater<SortingState>) => {
-      handleSortingChange({
-        updater,
-        removeOrder,
-        setOrderBy,
-        setOrderMode,
-        orderBy,
-        orderMode,
-        handleRefetchData,
-      });
-    },
-    [
-      handleRefetchData,
+  const onSortingChange = (updater: Updater<SortingState>) => {
+    handleSortingChange<CompetitorOrdering, OrderingMode>({
+      updater,
       orderBy,
       orderMode,
-      removeOrder,
       setOrderBy,
       setOrderMode,
-    ]
-  );
-
-  const onPaginationChange = useCallback(
-    (updater: Updater<PaginationState>) => {
-      const newPaginationValue: PaginationState =
-        updater instanceof Function ? updater(pagination) : updater;
-      handleRefetchData({
-        count: newPaginationValue.pageSize,
-        cursor: btoa(
-          String(newPaginationValue.pageSize * newPaginationValue.pageIndex)
-        ),
-      });
-      setPagination(newPaginationValue);
-      if (newPaginationValue.pageSize !== pageSize) {
-        setPageSize(newPaginationValue.pageSize);
-      }
-    },
-    [handleRefetchData, pageSize, pagination, setPageSize]
-  );
+      removeOrder,
+      handleRefetchData: () => undefined,
+    });
+  };
 
   return (
     <>
       <DataTable
         columns={columns}
         data={competitorsData}
-        i18nKey={i18nKey(t)}
+        isLoading={isLoading}
+        {...getDataTableLabels(t)}
         onResetTable={resetAll}
         tableOptions={{
           onSortingChange,
           onPaginationChange,
           manualSorting: true,
           manualPagination: true,
-          rowCount: data.competitors.totalCount,
+          rowCount: totalCount,
         }}
         tableState={{
           sorting: mapToSortingTableValue(orderBy, orderMode),
@@ -246,23 +214,25 @@ const CompetitorList = () => {
           },
         }}
         toolbar={
-          <div className="flex w-full items-center justify-end gap-s">
+          <div className="flex w-full items-center justify-end gap-2">
             <DataTableHeadBarOptions />
-            <Button onClick={() => setOpenAdd(true)}>
+            <Button
+              {...analyticsId('admin_competitor_create')}
+              onClick={() => setOpenAdd(true)}>
               {t('CompetitorListPage.AddCompetitor')}
             </Button>
           </div>
         }
       />
       <ManageCompetitor
-        connectionId={connectionID}
+        listVariables={variables}
         open={openAdd}
         setOpen={setOpenAdd}
       />
       {editRow && (
         <ManageCompetitor
           competitor={editRow}
-          connectionId={connectionID}
+          listVariables={variables}
           open={openEdit}
           setOpen={setOpenEdit}
         />

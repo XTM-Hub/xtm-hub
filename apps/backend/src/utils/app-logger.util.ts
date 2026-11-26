@@ -81,6 +81,11 @@ const addBasicMetaInformation = (
     ...omit(meta, ['user']),
     user_id: meta.user?.id ?? context?.user?.id,
     correlation_id: context?.correlationId,
+    user_agent: context?.userAgent,
+    ip: context?.ip,
+    referer: context?.referer,
+    organization_id:
+      meta.user?.selected_organization_id ?? context?.organizationId,
   };
 
   if (error) logMeta.errors = buildMetaErrors(error);

@@ -1,14 +1,15 @@
 'use client';
 
+import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import {
+  Button,
   Card,
   CardContent,
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@filigran/ui';
-import { Button } from '@filigran/ui/servers';
-import { useTranslations } from 'next-intl';
+} from '@filigran/design-system';
 
 interface ProfileFormResetPasswordProps {
   onSubmit: () => void;
@@ -17,15 +18,18 @@ interface ProfileFormResetPasswordProps {
 export const ProfileFormResetPassword = ({
   onSubmit,
 }: ProfileFormResetPasswordProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="heading-lg">{t('UserForm.Password')}</CardTitle>
+        <CardTitle as="h3">{t('UserForm.Password')}</CardTitle>
       </CardHeader>
-      <CardContent>{t('UserForm.ResetPassword.Sentence')}</CardContent>
-      <CardFooter className="flex justify-end">
+      <CardContent clamp={0}>
+        {t('UserForm.ResetPassword.Sentence')}
+      </CardContent>
+      <CardFooter className="justify-end">
         <Button
+          {...analyticsId('account_password_reset_submit')}
           aria-label={t('UserForm.ResetPassword.Action')}
           onClick={onSubmit}>
           {t('UserForm.ResetPassword.Action')}

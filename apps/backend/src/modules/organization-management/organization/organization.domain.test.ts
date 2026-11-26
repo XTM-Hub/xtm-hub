@@ -3,11 +3,14 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { TestHelper } from '../../../../tests/helper/test.helper';
 import {
   contextSimpleUserSecondOrga,
+  requestContextSimpleUserSecondOrga,
   TEST_ORGANIZATIONS,
 } from '../../../../tests/tests.const';
+import { requestContext } from '../../../context/request.context';
 import { OrganizationId } from '../../../model/kanel/public/Organization';
 import ServiceInstance from '../../../model/kanel/public/ServiceInstance';
 import { UserId } from '../../../model/kanel/public/User';
+import { CAPABILITY_BYPASS } from '../../../portal.const';
 import { OrganizationDomain } from './organization.domain';
 
 describe('organizationsDomain', () => {
@@ -76,44 +79,115 @@ describe('organizationsDomain', () => {
     });
   });
 
-  describe('loadOrganizationsSubscribedToServiceInstance', () => {
-    it('should return an empty array when no organizations are subscribed to a service instance', async () => {
-      // Given
-      const serviceInstance = await TestHelper.serviceInstance.create();
+  describe('loadOrganizationsByIds', () => {
+    it('should return organizations matching the given ids', async () => {
+      const organizations = await OrganizationDomain.loadOrganizationsByIds([
+        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        TEST_ORGANIZATIONS.FILIGRAN.ID,
+      ]);
 
-      // When
-      const result =
-        await OrganizationDomain.loadOrganizationsSubscribedToServiceInstance(
-          serviceInstance.id
-        );
-
-      // Then
-      expect(result).toEqual([]);
+      expect(organizations.map((organization) => organization.id)).toEqual(
+        expect.arrayContaining([
+          TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+          TEST_ORGANIZATIONS.FILIGRAN.ID,
+        ])
+      );
     });
 
-    it('should return all subscribed organizations', async () => {
+    it('should return an empty array when no ids match', async () => {
+      const organizations = await OrganizationDomain.loadOrganizationsByIds([
+        uuidv4() as OrganizationId,
+      ]);
+
+      expect(organizations).toEqual([]);
+    });
+
+    it('should return an empty array when given no ids', async () => {
+      const organizations = await OrganizationDomain.loadOrganizationsByIds([]);
+
+      expect(organizations).toEqual([]);
+    });
+  });
+
+  describe('loadFirstProfessionalOrganizationBy', () => {
+    it('should return a personal space to a BYPASS user', async () => {
       // Given
-      const serviceInstance = await TestHelper.serviceInstance.create();
-      await TestHelper.subscription.create({
-        service_instance_id: serviceInstance.id,
-        organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+      requestContext.set({
+        ...requestContextSimpleUserSecondOrga,
+        user: {
+          ...requestContextSimpleUserSecondOrga.user,
+          capabilities: [CAPABILITY_BYPASS],
+        },
       });
-      await TestHelper.subscription.create({
-        service_instance_id: serviceInstance.id,
-        organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
-      });
+      const id =
+        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.ADMIN_ORGA
+          .PERSONAL_SPACE_ID;
 
       // When
-      const result =
-        await OrganizationDomain.loadOrganizationsSubscribedToServiceInstance(
-          serviceInstance.id
-        );
+      const organization =
+        await OrganizationDomain.loadFirstProfessionalOrganizationBy({ id });
 
       // Then
-      const orgIds = result.map((org) => org.id);
-      expect(result).toHaveLength(2);
-      expect(orgIds).toContain(TEST_ORGANIZATIONS.FILIGRAN.ID);
-      expect(orgIds).toContain(TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID);
+      expect(organization).toMatchObject({ id, personal_space: true });
+    });
+
+    it('should not return the personal space of someone else to a user without BYPASS', async () => {
+      // Given
+      requestContext.set(requestContextSimpleUserSecondOrga);
+      const id =
+        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.ADMIN_ORGA
+          .PERSONAL_SPACE_ID;
+
+      // When
+      const organization =
+        await OrganizationDomain.loadFirstProfessionalOrganizationBy({ id });
+
+      // Then
+      expect(organization).toBeUndefined();
+    });
+
+    it('should not return their own personal space to a user without BYPASS', async () => {
+      // Given
+      requestContext.set(requestContextSimpleUserSecondOrga);
+      const id =
+        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.SIMPLE.PERSONAL_SPACE_ID;
+
+      // When
+      const organization =
+        await OrganizationDomain.loadFirstProfessionalOrganizationBy({ id });
+
+      // Then
+      expect(organization).toBeUndefined();
+    });
+
+    it('should return a standard organization to a user without BYPASS', async () => {
+      // Given
+      requestContext.set(requestContextSimpleUserSecondOrga);
+      const id = TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID;
+
+      // When
+      const organization =
+        await OrganizationDomain.loadFirstProfessionalOrganizationBy({ id });
+
+      // Then
+      expect(organization).toMatchObject({
+        id,
+        name: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.NAME,
+        personal_space: false,
+      });
+    });
+
+    it('should return undefined for an unknown id', async () => {
+      // Given
+      requestContext.set(requestContextSimpleUserSecondOrga);
+      const id = uuidv4() as OrganizationId;
+
+      // When
+      const organization =
+        await OrganizationDomain.loadFirstProfessionalOrganizationBy({ id });
+
+      // Then
+      expect(organization).toBeUndefined();
     });
   });
 });

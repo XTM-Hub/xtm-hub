@@ -1,5 +1,5 @@
 import { LogicalMultiSelectSelection } from '@/components/ui/shareable-resource/logical-multi-select/LogicalMultiSelectFormField';
-import { IntegrationSubType, IntegrationType } from '@graphql/generated';
+import { IntegrationType } from '@graphql/generated';
 
 export const INTEGRATION_TYPE_PARAM = 'integrationType';
 export const LABEL_PARAM = 'label';
@@ -22,32 +22,25 @@ export const ALL_FILTER_PARAMS = [
 export type FilterParamName = (typeof ALL_FILTER_PARAMS)[number];
 
 const validIntegrationTypes = new Set(Object.values(IntegrationType));
-const validIntegrationSubTypes = new Set(Object.values(IntegrationSubType));
 
 /**
  * Serializes a LogicalMultiSelectSelection to a compact string.
- * Entries are comma-separated; subtypes within an entry are pipe-separated.
+ * Entries are comma-separated.
  *
  * Example: { connector: ['EXTERNAL_IMPORT', 'INTERNAL_ENRICHMENT'], csv_feed: [] }
- *   → 'connector:EXTERNAL_IMPORT|INTERNAL_ENRICHMENT,csv_feed'
+ *   → 'connector,csv_feed'
  */
 export const serializeSelection = (
   selection: LogicalMultiSelectSelection
-): string =>
-  Object.entries(selection)
-    .map(([key, subtypes]) =>
-      subtypes.length > 0 ? `${key}:${[...subtypes].sort().join('|')}` : key
-    )
-    .sort()
-    .join(',');
+): string => Object.keys(selection).sort().join(',');
 
 /**
  * Parses a compact param string into a LogicalMultiSelectSelection.
- * For integrationType, validates types and subtypes against known enums.
+ * For integrationType, validates types against known enums.
  * For other params, accepts any non-empty key.
  *
- * Example: 'connector:EXTERNAL_IMPORT|INTERNAL_ENRICHMENT,csv_feed'
- *   → { connector: ['EXTERNAL_IMPORT', 'INTERNAL_ENRICHMENT'], csv_feed: [] }
+ * Example: 'connector,csv_feed'
+ *   → { connector: [], csv_feed: [] }
  */
 export const parseSelection = (
   raw: string | null,
@@ -58,17 +51,10 @@ export const parseSelection = (
   for (const entry of raw.split(',')) {
     const colonIndex = entry.indexOf(':');
     const key = colonIndex === -1 ? entry : entry.slice(0, colonIndex);
-    const subtypesRaw = colonIndex === -1 ? '' : entry.slice(colonIndex + 1);
 
     if (paramName === INTEGRATION_TYPE_PARAM) {
       if (!validIntegrationTypes.has(key as IntegrationType)) continue;
-      result[key] = subtypesRaw
-        ? subtypesRaw
-            .split('|')
-            .filter((s) =>
-              validIntegrationSubTypes.has(s as IntegrationSubType)
-            )
-        : [];
+      result[key] = [];
     } else {
       if (!key) continue;
       result[key] = [];

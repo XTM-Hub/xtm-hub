@@ -6,10 +6,12 @@ import {
   ServiceDefinitionIdentifierToPlatformIdentifier,
 } from '@/components/registration/PlatformIdentifierMapping';
 import { UseTranslationsProps } from '@/i18n/config';
-import { APP_PATH } from '@/utils/path/constant';
-import { OpenInNewIcon, TextSnippetIcon } from '@filigran/icon';
-import { Button } from '@filigran/ui';
-import Image from 'next/image';
+import { analyticsProduct } from '@/lib/analytics/analytics.context';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
+import { registeredPlatformDetailPath } from '@/utils/path/registered-platform-detail-path';
+import { Chip, IconButton } from '@filigran/design-system';
+import { LinkIcon, TextSnippetIcon } from '@filigran/icon';
+import { PlatformContract } from '@graphql/generated';
 import Link from 'next/link';
 
 interface ConnectedProductItemProps {
@@ -26,58 +28,64 @@ export const ConnectedProductItem = ({
   const platformMeta = platformIdentifier
     ? PlatformMetadataMapping[platformIdentifier]
     : undefined;
-  const serviceInstanceId = platform.subscription?.service_instance?.id;
-  const detailPath = serviceInstanceId
-    ? `/${APP_PATH}/service/${platform.identifier}/${serviceInstanceId}`
-    : undefined;
+  const detailPath = registeredPlatformDetailPath({
+    identifier: platform.identifier,
+    deploymentRequest: platform.deployment_request,
+    serviceInstanceId: platform.subscription?.service_instance?.id,
+  });
 
   return (
-    <div className="hover:cursor-default flex min-h-12 w-full items-center justify-between gap-m px-m py-s">
-      <div className="flex items-center gap-s">
-        {platformMeta?.logoUrl && (
-          <Image
-            src={platformMeta.logoUrl}
-            alt={platformMeta.name}
-            width={20}
-            height={20}
-            className="shrink-0 brightness-0 dark:brightness-0 dark:invert"
-          />
+    <div
+      {...(platformIdentifier && analyticsProduct(platformIdentifier))}
+      className="hover:cursor-default flex min-h-12 w-full items-center gap-3">
+      <div className="flex min-w-0 flex-1 items-center gap-2">
+        {platformMeta?.Icon && (
+          <platformMeta.Icon className="h-6 w-6 shrink-0" />
         )}
-        <span className="text-sm font-medium">
+        <span className="content-base">
           {platform.title ?? platformMeta?.name ?? platform.identifier}
         </span>
       </div>
-      <div className="flex items-center gap-xs">
+      {platform.contract === PlatformContract.Trial && (
+        <Chip label={t('Header.ConnectedProducts.Trial')} />
+      )}
+      {platform.contract === PlatformContract.Ee && (
+        <Chip
+          label={t('Header.ConnectedProducts.EE')}
+          severity="ee"
+        />
+      )}
+      <div className="flex w-16 items-center justify-end gap-1">
         {detailPath && (
-          <Button
-            variant="secondary"
-            size="icon"
-            className="h-7 w-7"
+          <IconButton
+            priority="tertiary"
+            className="h-7 w-7 text-default-primary"
+            aria-label={t('Header.ConnectedProducts.Details')}
+            icon={<TextSnippetIcon className="h-4 w-4 shrink-0" />}
             asChild>
             <Link
+              {...analyticsId('platform_details_open')}
               href={detailPath}
-              aria-label={t('Header.ConnectedProducts.Details')}>
-              <TextSnippetIcon className="h-4 w-4" />
-            </Link>
-          </Button>
+            />
+          </IconButton>
         )}
         {platform.url && (
-          <Button
-            variant="secondary"
-            size="icon"
-            className="h-7 w-7"
+          <IconButton
+            priority="tertiary"
+            className="h-7 w-7 text-default-primary"
+            aria-label={t('Header.ConnectedProducts.GoToPlatform', {
+              title:
+                platform.title ?? platformMeta?.name ?? platform.identifier,
+            })}
+            icon={<LinkIcon className="h-4 w-4 shrink-0" />}
             asChild>
             <Link
+              {...analyticsId('platform_instance_open')}
               href={platform.url}
               target="_blank"
               rel="noopener noreferrer"
-              aria-label={t('Header.ConnectedProducts.GoToPlatform', {
-                title:
-                  platform.title ?? platformMeta?.name ?? platform.identifier,
-              })}>
-              <OpenInNewIcon className="h-4 w-4" />
-            </Link>
-          </Button>
+            />
+          </IconButton>
         )}
       </div>
     </div>

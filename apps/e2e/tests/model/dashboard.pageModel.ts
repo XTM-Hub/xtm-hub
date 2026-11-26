@@ -1,8 +1,19 @@
 import { Page } from '@playwright/test';
-import { selectUseCase, waitForDrawerToClose } from './common';
+import {
+  fillMetaDescription,
+  publishResource,
+  selectUseCase,
+  waitForDrawerToClose,
+} from './common';
 export const TEST_JSON_FILE = {
   path: './tests/tests_files/assets/octi_dashboard.json',
   name: 'octi_dashboard.json',
+};
+// A real OpenCTI dashboard export, that a real OpenCTI accepts to import.
+export const DEPLOYABLE_JSON_FILE = {
+  path: './tests/tests_files/assets/octi_dashboard_deployable.json',
+  name: 'octi_dashboard_deployable.json',
+  dashboardName: 'E2E deployed dashboard',
 };
 export const TEST_2_JSON_FILE = {
   path: './tests/tests_files/assets/octi_dashboard_2.json',
@@ -29,7 +40,7 @@ export default class DashboardPage {
 
   async uploadJsonDocument(filePath: string) {
     const fileInput = this.page.locator(
-      'input[type="file"][accept="application/json"]'
+      'input[type="file"][accept*="application/json"]'
     );
     await fileInput.setInputFiles(filePath);
   }
@@ -48,30 +59,39 @@ export default class DashboardPage {
 
   async addCustomDashboard({
     name,
+    metaDescription,
     shortDescription,
     version,
     description,
+    jsonFilePath = TEST_JSON_FILE.path,
+    publish = false,
   }: {
     name: string;
+    metaDescription: string;
     shortDescription: string;
     version: string;
     description: string;
+    jsonFilePath?: string;
+    publish?: boolean;
   }) {
     await this.page.getByRole('button', { name: 'Add new dashboard' }).click();
     await this.page.getByPlaceholder('Dashboard name').fill(name);
+    await fillMetaDescription(this.page, metaDescription);
     await this.page
       .getByPlaceholder('This is some catchphrases to')
       .fill(shortDescription);
     await this.page.getByPlaceholder('1.0.0').fill(version);
     await this.page
-      .getByRole('textbox', { name: 'This is a paragraph to' })
+      .getByPlaceholder('This is a paragraph to')
       .fill(description);
-    await this.page.getByLabel('Publish').click();
-    await this.uploadJsonDocument(TEST_JSON_FILE.path);
+    await this.uploadJsonDocument(jsonFilePath);
     await this.uploadImageDocument(TEST_IMAGE_FILE.path);
     await selectUseCase(this.page);
-    await this.page.getByRole('button', { name: 'Validate' }).click();
+    await this.page.getByRole('button', { name: 'Request validation' }).click();
     await waitForDrawerToClose(this.page);
+    if (publish) {
+      await publishResource(this.page, name);
+    }
   }
 
   async navigateToDashboard(shortDescription: string) {

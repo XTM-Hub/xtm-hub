@@ -1,5 +1,47 @@
 import { describe, expect, it } from 'vitest';
-import { mapWithConcurrency } from './typescript';
+import {
+  applyUpdate,
+  isRecord,
+  mapWithConcurrency,
+  readNonEmptyString,
+} from './typescript';
+
+describe('isRecord', () => {
+  it.each`
+    case                 | input
+    ${'an empty object'} | ${{}}
+    ${'an object'}       | ${{ key: 'value' }}
+  `('should return true for $case', ({ input }) => {
+    expect(isRecord(input)).toBe(true);
+  });
+
+  it.each`
+    case           | input
+    ${'null'}      | ${null}
+    ${'undefined'} | ${undefined}
+    ${'an array'}  | ${[{ key: 'value' }]}
+    ${'a string'}  | ${'value'}
+    ${'a number'}  | ${1}
+  `('should return false for $case', ({ input }) => {
+    expect(isRecord(input)).toBe(false);
+  });
+});
+
+describe('readNonEmptyString', () => {
+  it('should return the string of the key', () => {
+    expect(readNonEmptyString({ key: 'value' }, 'key')).toBe('value');
+  });
+
+  it.each`
+    case                 | record
+    ${'missing'}         | ${{}}
+    ${'an empty string'} | ${{ key: '' }}
+    ${'a number'}        | ${{ key: 1 }}
+    ${'null'}            | ${{ key: null }}
+  `('should return null when the key is $case', ({ record }) => {
+    expect(readNonEmptyString(record, 'key')).toBeNull();
+  });
+});
 
 describe('mapWithConcurrency', () => {
   it('returns an empty array when given an empty list', async () => {
@@ -66,5 +108,40 @@ describe('mapWithConcurrency', () => {
         return item;
       })
     ).rejects.toThrow('boom');
+  });
+});
+
+describe('applyUpdate', () => {
+  it('should drop a null sent for a field that cannot be cleared', () => {
+    const fields = applyUpdate({ name: null, description: 'kept' }, [
+      'description',
+    ]);
+
+    expect(fields).toEqual({ description: 'kept' });
+  });
+
+  it('should keep a null sent for a clearable field', () => {
+    const fields = applyUpdate({ description: null }, ['description']);
+
+    expect(fields).toEqual({ description: null });
+  });
+
+  // Omitting a field and clearing it are two different intents.
+  it('should leave an omitted clearable field untouched', () => {
+    const fields = applyUpdate(
+      { name: 'kept' } as {
+        name: string;
+        description?: string | null;
+      },
+      ['description']
+    );
+
+    expect('description' in fields).toBe(false);
+  });
+
+  it('should keep the falsy values that are not null', () => {
+    const fields = applyUpdate({ position: 0, active: false, labels: [] }, []);
+
+    expect(fields).toEqual({ position: 0, active: false, labels: [] });
   });
 });

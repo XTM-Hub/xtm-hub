@@ -1,0 +1,47 @@
+mutation AddUsersToBundleGroups(
+  $serviceInstanceId: ServiceInstanceId!
+  $input: AddUsersToBundleGroupsInput!
+) {
+  addUsersToBundleGroups(serviceInstanceId: $serviceInstanceId, input: $input) {
+    user {
+      id
+      email
+    }
+    groups {
+      platformIdentifier
+      name
+    }
+  }
+}
+
+mutation RemoveUsersFromBundleGroups(
+  $serviceInstanceId: ServiceInstanceId!
+  $userIds: [UserId!]!
+) {
+  removeUsersFromBundleGroups(
+    serviceInstanceId: $serviceInstanceId
+    userIds: $userIds
+  )
+}
+
+mutation UpdateBundleUserGroups(
+  $serviceInstanceId: ServiceInstanceId!
+  $input: UpdateBundleUserGroupsInput!
+) {
+  updateBundleUserGroups(serviceInstanceId: $serviceInstanceId, input: $input) {
+    user {
+      id
+      email
+    }
+    groups {
+      platformIdentifier
+      name
+    }
+  }
+}
+
+mutation UpdateServiceGroups($input: UpdateServiceGroupsInput!) {
+  updateServiceGroups(input: $input) {
+    id
+  }
+}

@@ -1,15 +1,21 @@
 'use client';
 
-import { SearchInput } from '@/components/ui/SearchInput';
+import {
+  DataTable,
+  DataTableHeadBarOptions,
+  DataTableToolbar,
+} from '@/components/ui/data-table';
 import {
   handleSortingChange,
   mapToSortingTableValue,
 } from '@/components/ui/handle-sorting.utils';
+import { useDebouncedSearch } from '@/hooks/use-debounced-search';
+import { useTablePagination } from '@/hooks/use-table-pagination';
+import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import { DEBOUNCE_TIME } from '@/utils/constant';
-import { i18nKey } from '@/utils/datatable';
-import { formatDate } from '@/utils/date';
-import { Badge, DataTable, DataTableHeadBarOptions } from '@filigran/ui';
+import { useDateFormatter } from '@/utils/date';
+import { getDataTableLabels } from '@/utils/design-system/data-table';
+import { Chip, SearchField } from '@filigran/design-system';
 import {
   OrderingMode,
   OrganizationSubscribedServiceRowFragment,
@@ -17,10 +23,8 @@ import {
   useOrganizationSubscribedServicesListQuery,
 } from '@graphql/generated';
 import { organizationSubscribedServicesKeys } from '@graphql/organization-subscribed-services/organization-subscribed-services.keys';
-import { ColumnDef, PaginationState } from '@tanstack/react-table';
-import { useTranslations } from 'next-intl';
-import { ChangeEvent, useMemo, useState } from 'react';
-import { useDebounceCallback } from 'usehooks-ts';
+import { ColumnDef } from '@tanstack/react-table';
+import { useMemo, useState } from 'react';
 import {
   normalizeSubscribedServicesPageSize,
   useOrganizationSubscribedServicesLocalstorage,
@@ -33,7 +37,8 @@ interface OrganizationSubscribedServicesProps {
 const OrganizationSubscribedServicesSlug = ({
   organizationId,
 }: OrganizationSubscribedServicesProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
+  const formatDate = useDateFormatter();
   const [searchTerm, setSearchTerm] = useState('');
   const columns = useMemo<
     ColumnDef<OrganizationSubscribedServiceRowFragment>[]
@@ -61,9 +66,9 @@ const OrganizationSubscribedServicesSlug = ({
           const identifier =
             row.original.service_instance?.service_definition?.identifier;
           return identifier ? (
-            <Badge variant="outline">
-              {t(`Service.ServiceDefinitionIdentifier.${identifier}`)}
-            </Badge>
+            <Chip
+              label={t(`Service.ServiceDefinitionIdentifier.${identifier}`)}
+            />
           ) : (
             '—'
           );
@@ -76,7 +81,7 @@ const OrganizationSubscribedServicesSlug = ({
         enableSorting: false,
         cell: ({ row }) => {
           const status = row.original.service_instance?.creation_status;
-          return status ? <Badge>{status}</Badge> : '—';
+          return status ? <Chip label={status} /> : '—';
         },
       },
       {
@@ -98,13 +103,12 @@ const OrganizationSubscribedServicesSlug = ({
         cell: ({ row }) => {
           const tags = row.original.service_instance?.tags;
           return tags?.length ? (
-            <div className="flex gap-xs">
+            <div className="flex gap-1">
               {tags.map((tag) => (
-                <Badge
+                <Chip
                   key={tag}
-                  variant="outline">
-                  {tag}
-                </Badge>
+                  label={tag}
+                />
               ))}
             </div>
           ) : (
@@ -113,7 +117,7 @@ const OrganizationSubscribedServicesSlug = ({
         },
       },
     ],
-    [t]
+    [t, formatDate]
   );
   const {
     pageSize,
@@ -129,14 +133,16 @@ const OrganizationSubscribedServicesSlug = ({
     setColumnVisibility,
     resetAll,
   } = useOrganizationSubscribedServicesLocalstorage(columns);
-  const [pagination, setPagination] = useState<PaginationState>({
-    pageIndex: 0,
-    pageSize,
-  });
+  const { pagination, setPagination, cursor, onPaginationChange } =
+    useTablePagination({
+      pageSize,
+      setPageSize,
+      normalizePageSize: normalizeSubscribedServicesPageSize,
+    });
 
   const variables = {
     count: pagination.pageSize,
-    after: btoa(String(pagination.pageSize * pagination.pageIndex)),
+    after: cursor,
     orderBy,
     orderMode,
     searchTerm: searchTerm.trim() || null,
@@ -182,39 +188,28 @@ const OrganizationSubscribedServicesSlug = ({
     });
   };
 
-  const onPaginationChange = (updater: unknown) => {
-    const newPaginationValue: PaginationState =
-      updater instanceof Function ? updater(pagination) : updater;
-    const normalizedPageSize = normalizeSubscribedServicesPageSize(
-      newPaginationValue.pageSize
-    );
-    setPagination({
-      ...newPaginationValue,
-      pageSize: normalizedPageSize,
-    });
-    if (normalizedPageSize !== pageSize) {
-      setPageSize(normalizedPageSize);
-    }
+  const applySearch = (value: string) => {
+    setSearchTerm(value);
+    setPagination((prevPagination) => ({
+      ...prevPagination,
+      pageIndex: 0,
+    }));
   };
 
-  const onSearchChange = useDebounceCallback(
-    (event: ChangeEvent<HTMLInputElement>) => {
-      setSearchTerm(event.target.value);
-      setPagination((prevPagination) => ({
-        ...prevPagination,
-        pageIndex: 0,
-      }));
-    },
-    DEBOUNCE_TIME
-  );
+  const searchHandlers = useDebouncedSearch({
+    apply: applySearch,
+    appliedTerm: searchTerm,
+  });
 
   return (
     <>
       {isError && (
-        <div className="mb-s text-sm text-destructive">{t('Utils.Error')}</div>
+        <div className="mb-2 text-sm text-feedback-error-primary">
+          {t('Utils.Error')}
+        </div>
       )}
       {!isError && !isLoading && subscribedServicesData.length === 0 && (
-        <div className="mb-s text-sm text-muted-foreground">
+        <div className="mb-2 text-sm text-default-secondary">
           {t('Service.SubscribedServicesList.NoSubscribedServices')}
         </div>
       )}
@@ -222,7 +217,7 @@ const OrganizationSubscribedServicesSlug = ({
         columns={columns}
         data={subscribedServicesData}
         isLoading={isLoading}
-        i18nKey={i18nKey(t)}
+        {...getDataTableLabels(t)}
         onResetTable={resetAll}
         tableState={{
           sorting: mapToSortingTableValue(orderBy, orderMode),
@@ -240,22 +235,19 @@ const OrganizationSubscribedServicesSlug = ({
           rowCount: queryData?.subscriptions.totalCount ?? 0,
         }}
         toolbar={
-          <div className="flex flex-col-reverse items-center justify-between gap-s sm:flex-row">
-            <label
-              htmlFor="subscribed-services-search"
-              className="sr-only">
-              {t('Service.SearchServices')}
-            </label>
-            <SearchInput
-              id="subscribed-services-search"
-              containerClass="w-full sm:w-1/3"
-              placeholder={t('Service.SearchServices')}
-              onChange={onSearchChange}
-            />
-            <div className="flex w-full items-center justify-between gap-s sm:w-auto">
-              <DataTableHeadBarOptions />
-            </div>
-          </div>
+          <DataTableToolbar
+            search={
+              <SearchField
+                fullWidth
+                aria-label={t('Service.SearchServices')}
+                placeholder={t('Service.SearchServices')}
+                clearLabel={t('DesignSystem.SearchField.Clear')}
+                onChange={searchHandlers.onChange}
+                onClear={searchHandlers.onClear}
+              />
+            }
+            actions={<DataTableHeadBarOptions />}
+          />
         }
       />
     </>

@@ -1,0 +1,545 @@
+import { PortalUser } from '@/components/me/portal-user.utils';
+import { AddTrialUserForm } from '@/components/service/trial-instances/xtm-platform-trial/manage-trial/AddTrialUserForm';
+import { mockGraphqlQuery } from '@/utils/test/msw/graphql-api';
+import { mswServer } from '@/utils/test/msw/server';
+import testRender from '@/utils/test/test-render';
+import {
+  AddUsersToBundleGroupsMutationVariables,
+  BundleUserServiceGroupsQuery,
+  MeOrganizationDomainsQuery,
+  OrganizationCapability,
+  PlatformIdentifier,
+  PortalCapability,
+  ServiceGroupName,
+  User,
+  UserAccountStatus,
+  UsersQuery,
+  UsersQueryVariables,
+} from '@graphql/generated';
+import {
+  mockBundleUserServiceGroup,
+  mockOrganization,
+  mockUser,
+  mockUserConnection,
+  mockUserEdge,
+} from '@graphql/mocks';
+import { screen, waitFor } from '@testing-library/react';
+import { graphql, HttpResponse } from 'msw';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const showSnackbarMock = vi.hoisted(() => vi.fn());
+
+vi.mock('@/components/ui/snackbar/snackbar-store', () => ({
+  showSnackbar: showSnackbarMock,
+}));
+
+const GQL_OPERATION_BUNDLE_USER_SERVICE_GROUPS = 'BundleUserServiceGroups';
+const GQL_OPERATION_USERS = 'Users';
+const GQL_OPERATION_ADD_USERS_TO_BUNDLE_GROUPS = 'AddUsersToBundleGroups';
+const GQL_OPERATION_ME_ORGANIZATION_DOMAINS = 'MeOrganizationDomains';
+
+const bundleUserServiceGroupsResponse: BundleUserServiceGroupsQuery = {
+  __typename: 'Query',
+  bundleUserServiceGroups: [],
+};
+
+// mockUser defaults status to Expired; null = active user, labelled by plain email
+const usersResponse: UsersQuery = {
+  __typename: 'Query',
+  users: mockUserConnection({
+    edges: [
+      mockUserEdge({
+        node: mockUser({
+          id: 'user-1',
+          email: 'user1@filigran.io',
+          status: null,
+        }),
+      }),
+      mockUserEdge({
+        node: mockUser({
+          id: 'user-2',
+          email: 'user2@filigran.io',
+          status: null,
+        }),
+      }),
+    ],
+  }),
+};
+
+const setupQueryMocks = () => {
+  mswServer.use(
+    mockGraphqlQuery({
+      queryName: GQL_OPERATION_BUNDLE_USER_SERVICE_GROUPS,
+      data: bundleUserServiceGroupsResponse,
+    }),
+    mockGraphqlQuery({
+      queryName: GQL_OPERATION_USERS,
+      data: usersResponse,
+    })
+  );
+};
+
+const EMAIL_PLACEHOLDER =
+  'Service.Bundle.ManageTrial.AddUserDialog.EmailPlaceholder';
+
+const getEmailCombobox = () =>
+  screen.getByRole('combobox', { name: EMAIL_PLACEHOLDER });
+
+const findEmailCombobox = () =>
+  screen.findByRole('combobox', { name: EMAIL_PLACEHOLDER });
+
+const openEmailDropdown = async (user: { click: (el: Element) => unknown }) => {
+  await user.click(getEmailCombobox());
+};
+
+const getRoleCombobox = (title: string) =>
+  screen.getByRole('combobox', { name: title });
+
+describe('AddTrialUserForm', () => {
+  beforeEach(() => {
+    showSnackbarMock.mockReset();
+  });
+
+  it('renders the email field', async () => {
+    setupQueryMocks();
+
+    testRender(
+      <AddTrialUserForm
+        serviceInstanceId="bundle-1"
+        products={Object.values(PlatformIdentifier)}
+        onCompleted={vi.fn()}
+        onCancel={vi.fn()}
+      />
+    );
+
+    expect(await findEmailCombobox()).toBeInTheDocument();
+  });
+
+  it('excludes users who already have access to this trial from the email dropdown', async () => {
+    mswServer.use(
+      mockGraphqlQuery({
+        queryName: GQL_OPERATION_BUNDLE_USER_SERVICE_GROUPS,
+        data: {
+          __typename: 'Query',
+          bundleUserServiceGroups: [
+            mockBundleUserServiceGroup({
+              user: mockUser({ id: 'user-1', email: 'user1@filigran.io' }),
+            }),
+          ],
+        } satisfies BundleUserServiceGroupsQuery,
+      }),
+      mockGraphqlQuery({
+        queryName: GQL_OPERATION_USERS,
+        data: usersResponse,
+      })
+    );
+
+    const { user } = testRender(
+      <AddTrialUserForm
+        serviceInstanceId="bundle-1"
+        products={Object.values(PlatformIdentifier)}
+        onCompleted={vi.fn()}
+        onCancel={vi.fn()}
+      />
+    );
+
+    await findEmailCombobox();
+
+    await openEmailDropdown(user);
+
+    expect(await screen.findByText('user2@filigran.io')).toBeInTheDocument();
+    expect(screen.queryByText('user1@filigran.io')).not.toBeInTheDocument();
+  });
+
+  it('submits userIds and roles built from selected dropdown options, only including optional platforms when set', async () => {
+    setupQueryMocks();
+
+    let capturedVariables: AddUsersToBundleGroupsMutationVariables | undefined;
+    mswServer.use(
+      graphql.mutation(
+        GQL_OPERATION_ADD_USERS_TO_BUNDLE_GROUPS,
+        async ({ variables }) => {
+          capturedVariables =
+            variables as AddUsersToBundleGroupsMutationVariables;
+          return HttpResponse.json({
+            data: {
+              addUsersToBundleGroups: [],
+            },
+          });
+        }
+      )
+    );
+
+    const onCompleted = vi.fn();
+    const { user } = testRender(
+      <AddTrialUserForm
+        serviceInstanceId="bundle-1"
+        products={Object.values(PlatformIdentifier)}
+        onCompleted={onCompleted}
+        onCancel={vi.fn()}
+      />
+    );
+
+    await findEmailCombobox();
+
+    await openEmailDropdown(user);
+    await user.click(await screen.findByText('user1@filigran.io'));
+
+    await user.click(
+      getRoleCombobox('Service.Bundle.ManageTrial.Roles.opencti.Title')
+    );
+    await user.click(
+      await screen.findByRole('option', {
+        name: 'Service.Bundle.ManageTrial.Roles.opencti.Admin.Label',
+      })
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Utils.Confirm' }));
+
+    await waitFor(() => {
+      expect(onCompleted).toHaveBeenCalledTimes(1);
+    });
+
+    expect(capturedVariables).toEqual({
+      serviceInstanceId: 'bundle-1',
+      input: {
+        userIds: ['user-1'],
+        emails: null,
+        roles: expect.arrayContaining([
+          { product: PlatformIdentifier.Xtmone, role: ServiceGroupName.User },
+          { product: PlatformIdentifier.Opencti, role: ServiceGroupName.Admin },
+        ]),
+      },
+    });
+    expect(capturedVariables?.input.roles).toHaveLength(2);
+  });
+
+  it('shows a destructive toast and does not call onCompleted when the mutation fails', async () => {
+    setupQueryMocks();
+    mswServer.use(
+      graphql.mutation(GQL_OPERATION_ADD_USERS_TO_BUNDLE_GROUPS, () =>
+        HttpResponse.json({ errors: [{ message: 'UNKNOWN_ERROR' }] })
+      )
+    );
+
+    const onCompleted = vi.fn();
+    const { user } = testRender(
+      <AddTrialUserForm
+        serviceInstanceId="bundle-1"
+        products={Object.values(PlatformIdentifier)}
+        onCompleted={onCompleted}
+        onCancel={vi.fn()}
+      />
+    );
+
+    await findEmailCombobox();
+
+    await openEmailDropdown(user);
+    await user.click(await screen.findByText('user1@filigran.io'));
+    await user.click(screen.getByRole('button', { name: 'Utils.Confirm' }));
+
+    await waitFor(() => {
+      expect(showSnackbarMock).toHaveBeenCalledWith({
+        severity: 'error',
+        title: 'Utils.Error',
+        description: <>{'Error.Server.UNKNOWN_ERROR'}</>,
+      });
+    });
+    expect(onCompleted).not.toHaveBeenCalled();
+  });
+});
+
+const organizationUsers: User[] = [
+  mockUser({ id: 'user-1', email: 'active@filigran.io', status: null }),
+  mockUser({
+    id: 'user-2',
+    email: 'waiting@filigran.io',
+    status: UserAccountStatus.Waiting,
+  }),
+  mockUser({
+    id: 'user-3',
+    email: 'expired@filigran.io',
+    status: UserAccountStatus.Expired,
+  }),
+  mockUser({ id: 'member-1', email: 'member@filigran.io', status: null }),
+];
+
+// Selected organization of the user rendered by testRender
+const SELECTED_ORGANIZATION_ID = 'org-test-456';
+const ORGANIZATION_DOMAIN = 'filigran.io';
+const OUTSIDE_EMAIL = 'new@outside.io';
+
+const userManagerMe = {
+  selected_org_capabilities: [OrganizationCapability.AdministrateOrganization],
+};
+const platformRegistrationManagerMe = {
+  selected_org_capabilities: [
+    OrganizationCapability.ManagePlatformRegistration,
+  ],
+};
+
+const setupSearchableQueryMocks = () => {
+  const searchedTerms: (string | null | undefined)[] = [];
+  mswServer.use(
+    mockGraphqlQuery({
+      queryName: GQL_OPERATION_BUNDLE_USER_SERVICE_GROUPS,
+      data: {
+        __typename: 'Query',
+        bundleUserServiceGroups: [
+          mockBundleUserServiceGroup({
+            user: mockUser({ id: 'member-1', email: 'member@filigran.io' }),
+          }),
+        ],
+      } satisfies BundleUserServiceGroupsQuery,
+    }),
+    graphql.query(GQL_OPERATION_USERS, ({ variables }) => {
+      const { searchTerm } = variables as UsersQueryVariables;
+      searchedTerms.push(searchTerm);
+      const edges = organizationUsers
+        .filter(({ email }) => !searchTerm || email.includes(searchTerm))
+        .map((node) => mockUserEdge({ node }));
+      return HttpResponse.json({
+        data: { users: mockUserConnection({ edges }) },
+      });
+    }),
+    mockGraphqlQuery({
+      queryName: GQL_OPERATION_ME_ORGANIZATION_DOMAINS,
+      data: {
+        __typename: 'Query',
+        me: mockUser({
+          organizations: [
+            mockOrganization({
+              id: SELECTED_ORGANIZATION_ID,
+              domains: [ORGANIZATION_DOMAIN],
+            }),
+          ],
+        }),
+      } satisfies MeOrganizationDomainsQuery,
+    })
+  );
+  return { searchedTerms };
+};
+
+const renderForm = (
+  me: Partial<PortalUser> = userManagerMe,
+  onCompleted = vi.fn()
+) =>
+  testRender(
+    <AddTrialUserForm
+      serviceInstanceId="bundle-1"
+      products={Object.values(PlatformIdentifier)}
+      onCompleted={onCompleted}
+      onCancel={vi.fn()}
+    />,
+    { me }
+  );
+
+describe('AddTrialUserForm user search and invitations', () => {
+  beforeEach(() => {
+    showSnackbarMock.mockReset();
+  });
+
+  it('appends the invitation status to the users who are not active yet', async () => {
+    setupSearchableQueryMocks();
+    const { user } = renderForm();
+
+    await openEmailDropdown(user);
+
+    expect(
+      await screen.findByText(
+        'waiting@filigran.io (Service.Bundle.ManageTrial.AddUserDialog.Status.Invited)'
+      )
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'expired@filigran.io (Service.Bundle.ManageTrial.AddUserDialog.Status.Expired)'
+      )
+    ).toBeInTheDocument();
+    expect(screen.getByText('active@filigran.io')).toBeInTheDocument();
+  });
+
+  it('offers to invite a typed email that matches no user of the organization', async () => {
+    setupSearchableQueryMocks();
+    const { user } = renderForm();
+
+    await openEmailDropdown(user);
+    await user.type(getEmailCombobox(), 'new@filigran.io');
+
+    expect(
+      await screen.findByText(
+        'Service.Bundle.ManageTrial.AddUserDialog.InviteEmail'
+      )
+    ).toBeInTheDocument();
+  });
+
+  it.each([
+    { typed: 'active@filigran.io', reason: 'an organization user' },
+    { typed: 'member@filigran.io', reason: 'a user of this trial' },
+    { typed: 'not-an-email', reason: 'not a valid email' },
+    { typed: OUTSIDE_EMAIL, reason: 'outside the organization domains' },
+  ])('does not offer to invite $typed ($reason)', async ({ typed }) => {
+    const { searchedTerms } = setupSearchableQueryMocks();
+    const { user } = renderForm();
+
+    await openEmailDropdown(user);
+    await screen.findByText(/waiting@filigran.io/);
+    await user.type(getEmailCombobox(), typed);
+
+    await waitFor(() => {
+      expect(searchedTerms).toContain(typed);
+      expect(screen.queryByText(/waiting@filigran.io/)).not.toBeInTheDocument();
+    });
+    expect(
+      screen.queryByText('Service.Bundle.ManageTrial.AddUserDialog.InviteEmail')
+    ).not.toBeInTheDocument();
+  });
+
+  it('sends the selected users and the new email to the trial in a single call', async () => {
+    setupSearchableQueryMocks();
+    let addUsersVariables: AddUsersToBundleGroupsMutationVariables | undefined;
+    mswServer.use(
+      graphql.mutation(
+        GQL_OPERATION_ADD_USERS_TO_BUNDLE_GROUPS,
+        ({ variables }) => {
+          addUsersVariables =
+            variables as AddUsersToBundleGroupsMutationVariables;
+          return HttpResponse.json({ data: { addUsersToBundleGroups: [] } });
+        }
+      )
+    );
+    const onCompleted = vi.fn();
+    const { user } = renderForm(userManagerMe, onCompleted);
+
+    await openEmailDropdown(user);
+    await user.click(await screen.findByText('active@filigran.io'));
+    await user.type(getEmailCombobox(), 'new@filigran.io');
+    await user.click(
+      await screen.findByText(
+        'Service.Bundle.ManageTrial.AddUserDialog.InviteEmail'
+      )
+    );
+    await user.click(screen.getByRole('button', { name: 'Utils.Confirm' }));
+
+    await waitFor(() => {
+      expect(onCompleted).toHaveBeenCalledTimes(1);
+    });
+    expect(addUsersVariables?.input).toEqual(
+      expect.objectContaining({
+        userIds: ['user-1'],
+        emails: ['new@filigran.io'],
+      })
+    );
+  });
+
+  it('shows a destructive toast and does not complete when an email is rejected', async () => {
+    setupSearchableQueryMocks();
+    mswServer.use(
+      graphql.mutation(GQL_OPERATION_ADD_USERS_TO_BUNDLE_GROUPS, () =>
+        HttpResponse.json({
+          errors: [{ message: 'USER_DISABLED' }],
+        })
+      )
+    );
+    const onCompleted = vi.fn();
+    const { user } = renderForm(userManagerMe, onCompleted);
+
+    await openEmailDropdown(user);
+    await user.type(getEmailCombobox(), 'new@filigran.io');
+    await user.click(
+      await screen.findByText(
+        'Service.Bundle.ManageTrial.AddUserDialog.InviteEmail'
+      )
+    );
+    await user.click(screen.getByRole('button', { name: 'Utils.Confirm' }));
+
+    await waitFor(() => {
+      expect(showSnackbarMock).toHaveBeenCalledWith({
+        severity: 'error',
+        title: 'Utils.Error',
+        description: <>{'Error.Server.USER_DISABLED'}</>,
+      });
+    });
+    expect(onCompleted).not.toHaveBeenCalled();
+  });
+
+  it('offers to invite an email outside the organization domains to a bypass user', async () => {
+    setupSearchableQueryMocks();
+    const { user } = renderForm({
+      ...userManagerMe,
+      capabilities: [{ name: PortalCapability.Bypass }],
+    });
+
+    await openEmailDropdown(user);
+    await user.type(getEmailCombobox(), OUTSIDE_EMAIL);
+
+    expect(
+      await screen.findByText(
+        'Service.Bundle.ManageTrial.AddUserDialog.InviteEmail'
+      )
+    ).toBeInTheDocument();
+  });
+
+  it('warns users who cannot manage users and does not offer to invite', async () => {
+    const { searchedTerms } = setupSearchableQueryMocks();
+    const { user } = renderForm(platformRegistrationManagerMe);
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Service.Bundle.ManageTrial.AddUserDialog.NoPermissionToInvite'
+    );
+
+    await openEmailDropdown(user);
+    await screen.findByText('active@filigran.io');
+    await user.type(getEmailCombobox(), 'new@filigran.io');
+
+    await waitFor(() => {
+      expect(searchedTerms).toContain('new@filigran.io');
+      expect(screen.queryByText('active@filigran.io')).not.toBeInTheDocument();
+    });
+    expect(
+      screen.queryByText('Service.Bundle.ManageTrial.AddUserDialog.InviteEmail')
+    ).not.toBeInTheDocument();
+  });
+
+  it('warns that expired users will be invited again when one is selected', async () => {
+    setupSearchableQueryMocks();
+    const { user } = renderForm();
+
+    await openEmailDropdown(user);
+    await user.click(
+      await screen.findByText(
+        'expired@filigran.io (Service.Bundle.ManageTrial.AddUserDialog.Status.Expired)'
+      )
+    );
+
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Service.Bundle.ManageTrial.AddUserDialog.ExpiredUsersReinvited'
+    );
+  });
+
+  it('does not show the re-invitation notice when no expired user is selected', async () => {
+    setupSearchableQueryMocks();
+    const { user } = renderForm();
+
+    await openEmailDropdown(user);
+    await user.click(await screen.findByText('active@filigran.io'));
+
+    expect(
+      screen.queryByText(
+        'Service.Bundle.ManageTrial.AddUserDialog.ExpiredUsersReinvited'
+      )
+    ).not.toBeInTheDocument();
+  });
+
+  it('does not warn users who can manage users', async () => {
+    setupSearchableQueryMocks();
+    renderForm();
+
+    await findEmailCombobox();
+
+    expect(
+      screen.queryByText(
+        'Service.Bundle.ManageTrial.AddUserDialog.NoPermissionToInvite'
+      )
+    ).not.toBeInTheDocument();
+  });
+});

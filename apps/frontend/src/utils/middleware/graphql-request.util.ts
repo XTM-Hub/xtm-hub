@@ -5,17 +5,20 @@ export const GRAPHQL_SSE = '/graphql-sse';
 export const SERVER_HTTP_API =
   process.env.SERVER_HTTP_API ?? 'http://localhost:4002';
 const MANIFEST_PATH = /^\/[^/]+\/[^/]+\/[^/]+\/manifests(?:\/|$)/;
+const VERSIONS_MATRIX_PATH = /^\/[^/]+\/versions-matrix(?:\/|$)/;
+const NEWS_FEED_REDIRECT_PATH = /^\/redirect\/news-feed\/[^/]+\/?$/;
+const NEWS_FEED_BLOGPOST_SYNC_PATH = /^\/webhooks\/news-feed\/blogposts\/?$/;
 
 export const manageRequest = async (request: NextRequest) => {
   const { pathname, search } = request.nextUrl;
   if (pathname.startsWith(GRAPHQL_API)) {
     return NextResponse.rewrite(
-      new URL(SERVER_HTTP_API + GRAPHQL_API, request.url)
+      new URL(SERVER_HTTP_API + GRAPHQL_API + search, request.url)
     );
   }
   if (pathname.startsWith(GRAPHQL_SSE)) {
     return NextResponse.rewrite(
-      new URL(SERVER_HTTP_API + GRAPHQL_SSE, request.url)
+      new URL(SERVER_HTTP_API + GRAPHQL_SSE + search, request.url)
     );
   }
 
@@ -36,6 +39,23 @@ export const manageRequest = async (request: NextRequest) => {
     );
   }
   if (MANIFEST_PATH.test(pathname)) {
+    return NextResponse.rewrite(
+      new URL(SERVER_HTTP_API + pathname + search, request.url)
+    );
+  }
+  if (VERSIONS_MATRIX_PATH.test(pathname)) {
+    return NextResponse.rewrite(
+      new URL(SERVER_HTTP_API + pathname + search, request.url)
+    );
+  }
+  // Public route, answered by the backend with a 302 (relayed untouched, no login, no session)
+  if (NEWS_FEED_REDIRECT_PATH.test(pathname)) {
+    return NextResponse.rewrite(
+      new URL(SERVER_HTTP_API + pathname + search, request.url)
+    );
+  }
+  // Webhook called by n8n, answered by the backend (token in the x-xtm-hub-token header, no login, no session)
+  if (NEWS_FEED_BLOGPOST_SYNC_PATH.test(pathname)) {
     return NextResponse.rewrite(
       new URL(SERVER_HTTP_API + pathname + search, request.url)
     );

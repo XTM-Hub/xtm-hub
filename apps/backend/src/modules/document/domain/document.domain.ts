@@ -3,24 +3,30 @@ import { db, dbRaw, paginate } from '../../../../knexfile';
 import {
   DocumentConnection,
   DocumentMetadataKeyCode,
+  DocumentStatus,
+  FeatureFlag,
   IntegrationType,
   Organization,
   QueryDocumentsArgs,
   UpdateDocumentInput,
 } from '../../../__generated__/resolvers-types';
+import { withTransaction } from '../../../context/database.context';
 import {
   DocumentId,
   default as DocumentModel,
   DocumentMutator,
 } from '../../../model/kanel/public/Document';
+import ServiceDefinition from '../../../model/kanel/public/ServiceDefinition';
 import { ServiceInstanceId } from '../../../model/kanel/public/ServiceInstance';
 import User, { UserId } from '../../../model/kanel/public/User';
 import { UnknownErrorCode } from '../../../utils/error/error.code';
+import { isFeatureEnabled } from '../../../utils/feature-flag.util';
 import { omit } from '../../../utils/utils';
 import { isLtsVersion } from '../../../utils/versioning';
 import {
   ConnectorV2,
   INTEGRATION_CONNECTOR_V2_METADATA_KEYS,
+  OPENCTI_INTEGRATION_DOCUMENT_TYPE,
 } from '../../shareable-resource/opencti/integration/integration.model';
 import { Document, DOCUMENT_TYPE, WithDocumentId } from '../document.helper';
 
@@ -29,30 +35,110 @@ import { OrganizationId } from '../../../model/kanel/public/Organization';
 import { SolutionCategoryId } from '../../../model/kanel/public/SolutionCategory';
 import type { UseCaseId } from '../../../model/kanel/public/UseCase';
 import {
-  restrictDocumentToActive,
+  PLATFORM_ORGANIZATION_UUID,
+  SYSTEM_USER_UUID,
+} from '../../../portal.const';
+import {
+  restrictDocumentToAccessibleServiceInstance,
+  restrictDocumentToPublicServiceInstance,
+  restrictDocumentToPublished,
   restrictDocumentToUserOrganization,
 } from '../../../security/restriction/document';
+import { restrictServiceInstanceToPublic } from '../../../security/restriction/service-instance';
 import { MinioFile } from '../../../thirdparty/minio/types';
 import { stripNulls } from '../../../utils/typescript';
 import {
   ManifestFragmentHelper,
   TAG_DECOUPLING,
+  TAG_LATEST,
+  TAG_LATEST_LTS,
 } from '../../shareable-resource/manifest-fragment/manifest-fragment.helper';
-import { isUserRestrictedToActiveDocument } from '../document.security';
+import { DocumentListOptions } from '../document.model';
+import { isUserRestrictedToPublishedDocument } from '../document.security';
 import {
   DocumentMetadataDomain,
   DocumentMetadataKeys,
 } from './document.metadata.domain';
 
+export interface NotPublishedResource {
+  document: DocumentModel;
+  serviceDefinition: Pick<ServiceDefinition, 'id' | 'name' | 'identifier'>;
+}
+
+type NotPublishedRow = DocumentModel & {
+  service_definition_id: ServiceDefinition['id'];
+  service_definition_name: string;
+  service_definition_identifier: ServiceDefinition['identifier'];
+};
+
+type RankedNotPublishedRow = NotPublishedRow & { position: string };
+
 type UseCaseValue = UseCaseId | string;
 type SolutionCategoryValue = SolutionCategoryId | string;
 
-// Excludes documents tagged with TAG_DECOUPLING (case-insensitive), regardless of casing.
+// Hides documents tagged TAG_DECOUPLING. Tags are lowercase, so @> is a safe indexable
+// replacement for ILIKE ANY.
 const excludeDecouplingTag = (query: Knex.QueryBuilder) =>
-  query.whereRaw(
-    `NOT (? ILIKE ANY(COALESCE("Document"."tags", ARRAY[]::text[])))`,
-    [TAG_DECOUPLING]
-  );
+  query.whereRaw(`NOT ("Document"."tags" @> ARRAY[?]::text[])`, [
+    TAG_DECOUPLING,
+  ]);
+
+// Connectors: require TAG_LATEST + TAG_DECOUPLING. Non-connectors: fall back to
+// excludeDecouplingTag. Gated by DECOUPLING_CONNECTORS.
+const restrictConnectorsToLatestDecoupling = (query: Knex.QueryBuilder) =>
+  query
+    // LEFT JOIN instead of two EXISTS subqueries (one negated, one not): computes
+    // "is connector" once per row. Safe from row duplication since (document_id, key)
+    // is Document_Metadata's primary key, so at most one row matches per document.
+    .leftJoin({ dm_integration_type: 'Document_Metadata' }, function () {
+      this.on('dm_integration_type.document_id', '=', 'Document.id').andOnVal(
+        'dm_integration_type.key',
+        DocumentMetadataKeyCode.IntegrationType
+      );
+    })
+    .where((outer) => {
+      outer
+        .where((nonConnectorBuilder) => {
+          nonConnectorBuilder
+            .whereRaw('"dm_integration_type"."value" IS DISTINCT FROM ?', [
+              IntegrationType.Connector,
+            ])
+            .modify(excludeDecouplingTag);
+        })
+        .orWhere((connectorBuilder) => {
+          connectorBuilder
+            .where('dm_integration_type.value', IntegrationType.Connector)
+            .whereRaw(`"Document"."tags" @> ARRAY[?, ?]::text[]`, [
+              TAG_LATEST,
+              TAG_DECOUPLING,
+            ]);
+        });
+    });
+
+// Applies DECOUPLING_CONNECTORS for queries scoped to a single document `type`.
+export const applyDecouplingRestriction =
+  (type: string) => (query: Knex.QueryBuilder) => {
+    if (
+      type === OPENCTI_INTEGRATION_DOCUMENT_TYPE &&
+      isFeatureEnabled(FeatureFlag.DecouplingConnectors)
+    ) {
+      restrictConnectorsToLatestDecoupling(query);
+    } else {
+      excludeDecouplingTag(query);
+    }
+  };
+
+// Same as applyDecouplingRestriction, for mixed-type listings: no single `type` to
+// check, connectors self-select via their Document_Metadata IntegrationType.
+export const applyDecouplingRestrictionForMixedTypes = (
+  query: Knex.QueryBuilder
+) => {
+  if (isFeatureEnabled(FeatureFlag.DecouplingConnectors)) {
+    restrictConnectorsToLatestDecoupling(query);
+  } else {
+    excludeDecouplingTag(query);
+  }
+};
 
 export type DocumentData<
   T extends DocumentModel,
@@ -74,12 +160,23 @@ export type DocumentData<
 };
 
 export const DocumentDomain = {
-  deactivateDocuments: async (documentIds: DocumentId[]) => {
-    const user = requestContext.requireUser();
+  reassignUserDocumentsToSystemUser: async (userId: UserId): Promise<void> => {
+    return withTransaction(async () => {
+      await db<DocumentModel>('Document')
+        .where('uploader_id', '=', userId)
+        .update({
+          uploader_id: SYSTEM_USER_UUID,
+          uploader_organization_id: PLATFORM_ORGANIZATION_UUID,
+        });
 
-    await db<Document>('Document')
-      .whereIn('id', documentIds)
-      .update({ active: false, remover_id: user.id });
+      await db<DocumentModel>('Document')
+        .where('remover_id', '=', userId)
+        .update({ remover_id: SYSTEM_USER_UUID });
+
+      await db<DocumentModel>('Document')
+        .where('updater_id', '=', userId)
+        .update({ updater_id: SYSTEM_USER_UUID });
+    });
   },
 
   createDocument: async <
@@ -99,7 +196,7 @@ export const DocumentDomain = {
           'solution_categories',
           ...metadataKeys,
         ]),
-        active: documentData.active ?? true,
+        status: documentData.status ?? DocumentStatus.Published,
         uploader_id,
         uploader_organization_id: user.selected_organization_id,
       })
@@ -148,15 +245,22 @@ export const DocumentDomain = {
     return DocumentMetadataDomain.hydrateMetadata(documents, include_metadata);
   },
 
-  lockDocumentsByMetadata: async (
-    key: string,
-    value: string
-  ): Promise<void> => {
-    await db<DocumentModel>('Document')
-      .whereIn(
-        'Document.id',
-        db('Document_Metadata').select('document_id').where({ key, value })
-      )
+  lockDocumentsBySlugTypeAndServiceInstance: async ({
+    slug,
+    type,
+    serviceInstanceId,
+  }: {
+    slug: string;
+    type: string;
+    serviceInstanceId: ServiceInstanceId;
+  }): Promise<Pick<DocumentModel, 'id'>[]> => {
+    return db<DocumentModel>('Document')
+      .where({
+        slug,
+        type,
+        service_instance_id: serviceInstanceId,
+      })
+      .select('id')
       .forUpdate();
   },
 
@@ -169,16 +273,15 @@ export const DocumentDomain = {
     const { tags, ...scalarFilters } = documentFilters;
 
     const docQuery = db<DocumentModel>('Document')
-      .leftJoin(
-        'Document_Metadata',
-        'Document.id',
-        'Document_Metadata.document_id'
-      )
-      .where('Document_Metadata.key', key)
-      .andWhere('Document_Metadata.value', value)
-      .andWhere(scalarFilters)
-      .select('Document.*')
-      .groupBy('Document.id');
+      .where(scalarFilters)
+      .whereExists(function () {
+        this.select(dbRaw('1'))
+          .from('Document_Metadata')
+          .whereRaw('"Document_Metadata"."document_id" = "Document"."id"')
+          .andWhere('Document_Metadata.key', key)
+          .andWhere('Document_Metadata.value', value);
+      })
+      .select('Document.*');
 
     if (tags && tags.length > 0) {
       const placeholders = tags.map(() => '?').join(',');
@@ -229,7 +332,9 @@ export const DocumentDomain = {
 
   loadParentDocumentsByServiceInstance: async (
     type: string,
-    input: QueryDocumentsArgs,
+    input: Partial<QueryDocumentsArgs> &
+      DocumentListOptions &
+      Pick<QueryDocumentsArgs, 'serviceInstanceId'>,
     include_metadata?: DocumentMetadataKeyCode[]
   ): Promise<DocumentConnection> => {
     return DocumentDomain.loadDocuments(
@@ -247,7 +352,7 @@ export const DocumentDomain = {
   },
 
   loadDocuments: async (
-    opts: Partial<QueryDocumentsArgs>,
+    opts: Partial<QueryDocumentsArgs> & DocumentListOptions,
     field: Record<string, unknown>,
     include_metadata?: DocumentMetadataKeyCode[]
   ): Promise<DocumentConnection> => {
@@ -256,17 +361,21 @@ export const DocumentDomain = {
     const loadDocumentQuery = db<Document>('Document')
       .select(['Document.*'])
       .tap(restrictDocumentToUserOrganization)
+      .tap(restrictDocumentToAccessibleServiceInstance)
       .where(field)
-      .modify(excludeDecouplingTag);
+      .modify(applyDecouplingRestriction(field['Document.type'] as string))
+      // draft, in_validation, published: the status names sort in that order
+      .orderBy('Document.status', 'asc');
 
     if (
-      field['Document.service_instance_id'] &&
-      (await isUserRestrictedToActiveDocument(
-        user,
-        field['Document.service_instance_id'] as ServiceInstanceId
-      ))
+      opts.publishedOnly ||
+      (field['Document.service_instance_id'] &&
+        (await isUserRestrictedToPublishedDocument(
+          user,
+          field['Document.service_instance_id'] as ServiceInstanceId
+        )))
     ) {
-      loadDocumentQuery.tap(restrictDocumentToActive);
+      loadDocumentQuery.tap(restrictDocumentToPublished);
     }
 
     if (opts.parentsOnly) {
@@ -285,7 +394,7 @@ export const DocumentDomain = {
     const connection = await paginate<Document, DocumentConnection>(
       'Document',
       opts,
-      { normalizeSearchTerm: true },
+      undefined,
       loadDocumentQuery
     );
 
@@ -311,9 +420,10 @@ export const DocumentDomain = {
     const document = await db<Document>('Document')
       .select('Document.*')
       .where('Document.slug', '=', slug)
-      .where('Document.active', '=', true)
+      .where('Document.status', '=', DocumentStatus.Published)
       .where('Document.type', '=', type)
-      .modify(excludeDecouplingTag)
+      .modify(applyDecouplingRestriction(type))
+      .tap(restrictDocumentToPublicServiceInstance)
       .whereNotExists(function () {
         this.select('*')
           .from('Document_Children')
@@ -368,10 +478,11 @@ export const DocumentDomain = {
   buildSeoDocumentsByServiceSlugQuery: (
     type: string,
     serviceSlug: string,
-    orderResults: boolean = true
+    orderResults: boolean = true,
+    columns: string | string[] = 'Document.*'
   ): Knex.QueryBuilder => {
     return db<Document>('Document')
-      .select('Document.*')
+      .select(columns)
       .leftJoin(
         'ServiceInstance',
         'Document.service_instance_id',
@@ -385,9 +496,10 @@ export const DocumentDomain = {
           );
       })
       .where('ServiceInstance.slug', '=', serviceSlug)
-      .where('Document.active', '=', true)
+      .tap(restrictServiceInstanceToPublic)
+      .where('Document.status', '=', DocumentStatus.Published)
       .where('Document.type', '=', type)
-      .modify(excludeDecouplingTag)
+      .modify(applyDecouplingRestriction(type))
       .modify((qb) => {
         if (orderResults) {
           qb.orderBy([
@@ -395,8 +507,7 @@ export const DocumentDomain = {
             { column: 'Document.created_at', order: 'desc' },
           ]);
         }
-      })
-      .groupBy(['Document.id']);
+      });
   },
 
   loadSeoDocumentsByServiceSlug: async (
@@ -413,6 +524,22 @@ export const DocumentDomain = {
       );
 
     return DocumentMetadataDomain.hydrateMetadata(documents, include_metadata);
+  },
+
+  // Sitemap-only projection: selects just slug/created_at/updated_at (skipping the
+  // rest of `Document`'s columns) and skips metadata hydration entirely, since the
+  // sitemap never reads document metadata. See `buildSeoDocumentsByServiceSlugQuery`
+  // for the shared filtering/decoupling logic.
+  loadSeoDocumentSlugsByServiceSlug: async (
+    type: string,
+    serviceSlug: string
+  ): Promise<Pick<Document, 'slug' | 'created_at' | 'updated_at'>[]> => {
+    return DocumentDomain.buildSeoDocumentsByServiceSlugQuery(
+      type,
+      serviceSlug,
+      true,
+      ['Document.slug', 'Document.created_at', 'Document.updated_at']
+    );
   },
 
   updateDocument: async ({
@@ -524,7 +651,7 @@ export const DocumentDomain = {
   ): Promise<Document[]> => {
     const documents = await db<Document>('Document')
       .select('Document.*')
-      .where('Document.active', true)
+      .where('Document.status', DocumentStatus.Published)
       .whereNotExists(function () {
         this.select(dbRaw('1'))
           .from('Document_Children')
@@ -532,7 +659,8 @@ export const DocumentDomain = {
             '"Document_Children"."child_document_id" = "Document"."id"'
           );
       })
-      .modify(excludeDecouplingTag)
+      .modify(applyDecouplingRestrictionForMixedTypes)
+      .tap(restrictDocumentToAccessibleServiceInstance)
       .modify((qb) => {
         if (documentTypes?.length) {
           qb.whereIn('Document.type', documentTypes);
@@ -567,6 +695,7 @@ export const DocumentDomain = {
     const documents = await db<Document>('Document')
       .select('Document.*')
       .join(deployCounts, 'deploy_counts.resource_id', 'Document.id')
+      .tap(restrictDocumentToAccessibleServiceInstance)
       .groupBy(['Document.id'])
       .orderByRaw('MAX("deploy_counts"."deploy_count") DESC')
       .orderBy('Document.id', 'asc')
@@ -576,16 +705,16 @@ export const DocumentDomain = {
   },
 
   /**
-   * For each manifest_fragment_id in the provided list, returns the connector
-   * with the highest product_version that is still compatible with manifestVersion
+   * For each connector slug in the provided list, returns the connector with
+   * the highest product version that is still compatible with manifestVersion
    * (i.e. minimum_deployable_version_padded is absent or <= manifestVersion, padded).
-   * Exactly one row per manifest_fragment_id is returned (or none if no compatible version exists).
+   * Exactly one row per slug is returned (or none if no compatible version exists).
    */
-  loadBestCompatibleConnectorsByManifestFragmentIds: async (
-    manifestFragmentIds: string[],
+  loadBestCompatibleConnectorsBySlugs: async (
+    slugs: string[],
     version: string
   ): Promise<ConnectorV2[]> => {
-    if (manifestFragmentIds.length === 0) return [];
+    if (slugs.length === 0) return [];
 
     const paddedVersion =
       ManifestFragmentHelper.validateAndFormatManifestVersion(version);
@@ -594,16 +723,11 @@ export const DocumentDomain = {
       INTEGRATION_CONNECTOR_V2_METADATA_KEYS as DocumentMetadataKeyCode[];
 
     const connectors: ConnectorV2[] = await db<DocumentModel>('Document')
-      .distinctOn('dm_fragment.value')
+      .distinctOn('Document.slug')
       .join(
         'Document_Metadata as dm_type',
         'Document.id',
         'dm_type.document_id'
-      )
-      .join(
-        'Document_Metadata as dm_fragment',
-        'Document.id',
-        'dm_fragment.document_id'
       )
       .leftJoin({ dm_min: 'Document_Metadata' }, function () {
         this.on('dm_min.document_id', '=', 'Document.id').andOnVal(
@@ -611,23 +735,130 @@ export const DocumentDomain = {
           DocumentMetadataKeyCode.MinimumDeployableVersionPadded
         );
       })
+      .leftJoin({ dm_version: 'Document_Metadata' }, function () {
+        this.on('dm_version.document_id', '=', 'Document.id').andOnVal(
+          'dm_version.key',
+          DocumentMetadataKeyCode.VersionPadded
+        );
+      })
       .where('dm_type.key', DocumentMetadataKeyCode.IntegrationType)
       .andWhere('dm_type.value', IntegrationType.Connector)
-      .andWhere('dm_fragment.key', DocumentMetadataKeyCode.ManifestFragmentId)
-      .whereIn('dm_fragment.value', manifestFragmentIds)
-      .where('Document.active', true)
+      .whereIn('Document.slug', slugs)
+      .where('Document.status', DocumentStatus.Published)
       .where('Document.is_decommissioned', false)
       .select('Document.*')
-      .groupBy('Document.id', 'dm_fragment.value')
+      .groupBy('Document.id', 'Document.slug')
       .havingRaw(
         `(MAX("dm_min"."value") IS NULL OR MAX("dm_min"."value") <= ?)
-         AND "Document"."version" ${isLts ? 'LIKE' : 'NOT LIKE'} '%.LTS.%'`,
+         AND MAX("dm_version"."value") ${isLts ? 'LIKE' : 'NOT LIKE'} '%.LTS.%'`,
         [paddedVersion]
       )
       .orderByRaw(
-        `"dm_fragment"."value" ASC, "Document"."version" DESC NULLS LAST`
+        `"Document"."slug" ASC, MAX("dm_version"."value") DESC NULLS LAST`
       );
 
     return DocumentMetadataDomain.hydrateMetadata(connectors, metadataKeys);
+  },
+
+  /**
+   * Returns the distinct slugs of the connectors currently known as "latest"
+   * for the given product version's track, i.e. published, non-decommissioned
+   * decoupled connector documents tagged TAG_LATEST (or TAG_LATEST_LTS for an
+   * LTS version) + TAG_DECOUPLING.
+   */
+  loadDistinctConnectorSlugs: async (version: string): Promise<string[]> => {
+    const tag = isLtsVersion(version) ? TAG_LATEST_LTS : TAG_LATEST;
+
+    const rows: Pick<DocumentModel, 'slug'>[] = await db<DocumentModel>(
+      'Document'
+    )
+      .where('Document.status', DocumentStatus.Published)
+      .where('Document.is_decommissioned', false)
+      .whereRaw(`"Document"."tags" @> ARRAY[?, ?]::text[]`, [
+        tag,
+        TAG_DECOUPLING,
+      ])
+      .whereNotNull('Document.slug')
+      .whereExists(function () {
+        this.select(dbRaw('1'))
+          .from('Document_Metadata as dm_type')
+          .whereRaw('"dm_type"."document_id" = "Document"."id"')
+          .andWhere('dm_type.key', DocumentMetadataKeyCode.IntegrationType)
+          .andWhere('dm_type.value', IntegrationType.Connector);
+      })
+      .distinct('Document.slug');
+
+    return rows
+      .map((row) => row.slug)
+      .filter((slug): slug is string => slug !== null);
+  },
+
+  loadNotPublishedForReminder: async (
+    limitPerStatus: number
+  ): Promise<NotPublishedResource[]> => {
+    const notPublished = [DocumentStatus.Draft, DocumentStatus.InValidation];
+    const ranked = db<NotPublishedRow>('Document')
+      .join(
+        'ServiceInstance',
+        'ServiceInstance.id',
+        '=',
+        'Document.service_instance_id'
+      )
+      .join(
+        'ServiceDefinition',
+        'ServiceDefinition.id',
+        '=',
+        'ServiceInstance.service_definition_id'
+      )
+      .whereIn('Document.status', notPublished)
+      .whereNotExists(function () {
+        this.select(dbRaw('1'))
+          .from('Document_Children')
+          .whereRaw(
+            '"Document_Children"."child_document_id" = "Document"."id"'
+          );
+      })
+      .select(
+        'Document.*',
+        'ServiceDefinition.id as service_definition_id',
+        'ServiceDefinition.name as service_definition_name',
+        'ServiceDefinition.identifier as service_definition_identifier'
+      )
+      .select(
+        dbRaw(
+          `row_number() over (partition by "ServiceDefinition"."id", "Document"."status" order by "Document"."created_at" asc, "Document"."id") as position`
+        )
+      )
+      .as('ranked');
+
+    const rows: RankedNotPublishedRow[] = await db<RankedNotPublishedRow>(
+      'Document'
+    )
+      .from(ranked)
+      .where('position', '<=', limitPerStatus)
+      .orderBy([
+        'service_definition_name',
+        'service_definition_id',
+        'status',
+        'created_at',
+        'id',
+      ]);
+
+    return rows.map(
+      ({
+        service_definition_id,
+        service_definition_name,
+        service_definition_identifier,
+        position: _position,
+        ...document
+      }) => ({
+        document,
+        serviceDefinition: {
+          id: service_definition_id,
+          name: service_definition_name,
+          identifier: service_definition_identifier,
+        },
+      })
+    );
   },
 };

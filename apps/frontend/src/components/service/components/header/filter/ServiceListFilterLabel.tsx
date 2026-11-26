@@ -1,27 +1,23 @@
 import { useUseCases } from '@/components/admin/use-case/use-use-cases';
-import { useServiceListLocalStorageKeyContext } from '@/components/service/components/ServiceListLocalStorageKeyContext';
+import { useServiceListStorageKeyContext } from '@/components/service/components/ServiceListStorageKeyContext';
 import { ServiceListFilterKey } from '@/components/service/components/header/ServiceListHeader';
+import { ServiceListFacetCounts } from '@/components/service/components/header/filter/service-list-facet-counts';
 import { LogicalMultiSelectFormField } from '@/components/ui/shareable-resource/logical-multi-select/LogicalMultiSelectFormField';
-import { useServiceListFilters } from '@/hooks/use-service-list-filters';
-import { useServiceListLocalStorage } from '@/hooks/use-service-list-local-storage';
-import { useTranslations } from 'next-intl';
+import { useServiceListStorage } from '@/hooks/use-service-list-storage';
+import { useTranslate } from '@/hooks/use-translate';
+import { type ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 
 interface ServiceListFilterLabelProps {
-  type: string;
+  type: ShareableResourceType;
+  facetCounts?: ServiceListFacetCounts['useCase'];
 }
 export const ServiceListFilterLabel = ({
   type,
+  facetCounts,
 }: ServiceListFilterLabelProps) => {
-  const t = useTranslations();
-  const { localStorageKey } = useServiceListLocalStorageKeyContext();
-  const { labels, setLabels, removeLabels } =
-    useServiceListLocalStorage(localStorageKey);
-
-  const { removeFilter } = useServiceListFilters();
-  const removeLabelFilter = () => {
-    removeLabels();
-    removeFilter(ServiceListFilterKey.Label);
-  };
+  const t = useTranslate();
+  const { storageKey } = useServiceListStorageKeyContext();
+  const { labels, setLabels } = useServiceListStorage(storageKey);
 
   const labelOptions = useUseCases({ documentType: type }).map(
     ({ name, id }) => ({
@@ -33,12 +29,15 @@ export const ServiceListFilterLabel = ({
   return (
     <LogicalMultiSelectFormField
       options={labelOptions}
-      initialValue={labels}
-      placeholder={t('GenericActions.FilterUseCases')}
+      value={labels}
       noResultString={t('Utils.NotFound')}
       onValueChange={setLabels}
-      onRemove={removeLabelFilter}
+      analyticsFilter={{
+        filterKey: ServiceListFilterKey.Label,
+        resourceType: type,
+      }}
       optionLabel={t('GenericActions.FilterUseCasesLabel')}
+      facetCounts={facetCounts}
     />
   );
 };

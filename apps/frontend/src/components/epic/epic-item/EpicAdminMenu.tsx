@@ -2,15 +2,15 @@ import { EpicFormSheet } from '@/components/epic/EpicFormSheet';
 import { DeleteEpic } from '@/components/epic/epic-item/DeleteEpic';
 import { IconActions, IconActionsItem } from '@/components/ui/IconActions';
 import { ShareLinkButton } from '@/components/ui/share-link/ShareLinkButton';
-import { useEpicListContext } from '@/hooks/use-epic-list-context';
+import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
+import { Chip } from '@filigran/design-system';
 import { MoreVertIcon } from '@filigran/icon';
-import { Badge } from '@filigran/ui/servers';
-import { epic_fragment$data } from '@generated/epic_fragment.graphql';
-import { useTranslations } from 'next-intl';
+import { EpicFieldsFragment } from '@graphql/generated';
 import { useState } from 'react';
 
 interface EpicAdminMenuProps {
-  epic: epic_fragment$data;
+  epic: EpicFieldsFragment;
   userCanDelete?: boolean;
   userCanUpdate?: boolean;
 }
@@ -19,14 +19,12 @@ export const EpicAdminMenu = ({
   userCanUpdate = false,
   userCanDelete = false,
 }: EpicAdminMenuProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
 
-  const { connectionID } = useEpicListContext();
-
-  const [deleteEpic, setDeleteEpic] = useState<epic_fragment$data | undefined>(
+  const [deleteEpic, setDeleteEpic] = useState<EpicFieldsFragment | undefined>(
     undefined
   );
-  const [updateEpic, setUpdateEpic] = useState<epic_fragment$data | undefined>(
+  const [updateEpic, setUpdateEpic] = useState<EpicFieldsFragment | undefined>(
     undefined
   );
 
@@ -39,39 +37,41 @@ export const EpicAdminMenu = ({
 
   return (
     <>
+      {/* eslint-disable-next-line no-restricted-syntax -- container whose children carry the IDs */}
       <div
         data-no-open-detail
-        className="flex items-center justify-end mt-auto"
+        className="ml-auto flex h-9 shrink-0 items-center justify-end"
         onClick={(e) => {
           e.stopPropagation();
           e.preventDefault();
         }}>
         {!epic.active && (
-          <Badge
-            variant="warning"
-            className="font-semibold mr-s">
-            {t('Epic.Timeline.draft')}
-          </Badge>
+          <Chip
+            label={t('Epic.Timeline.draft')}
+            severity="medium"
+            className="mr-2"
+          />
         )}
         <ShareLinkButton
+          analyticsId="roadmap_epic_share"
           url={shareableUrl}
-          documentId={epic.document_id}
         />
         {(userCanDelete || userCanUpdate) && (
           <IconActions
-            icon={
-              <>
-                <MoreVertIcon className="h-4 w-4 text-primary" />
-                <span className="sr-only">{t('Utils.OpenMenu')}</span>
-              </>
-            }>
+            analyticsId="roadmap_epic_actions_open"
+            aria-label={t('Utils.OpenMenu')}
+            icon={<MoreVertIcon className="h-4 w-4 text-icon-highlight" />}>
             {userCanUpdate && (
-              <IconActionsItem onClick={() => setUpdateEpic(epic)}>
+              <IconActionsItem
+                {...analyticsId('roadmap_epic_edit')}
+                onClick={() => setUpdateEpic(epic)}>
                 {t('Utils.Update')}
               </IconActionsItem>
             )}
             {userCanDelete && (
-              <IconActionsItem onClick={() => setDeleteEpic(epic)}>
+              <IconActionsItem
+                {...analyticsId('roadmap_epic_delete')}
+                onClick={() => setDeleteEpic(epic)}>
                 {t('Utils.Delete')}
               </IconActionsItem>
             )}
@@ -81,7 +81,6 @@ export const EpicAdminMenu = ({
       {deleteEpic && (
         <DeleteEpic
           key={`delete-${deleteEpic.id}`}
-          connectionId={connectionID}
           epic={deleteEpic}
           open={!!deleteEpic}
           setOpen={(open) => setDeleteEpic(open ? deleteEpic : undefined)}

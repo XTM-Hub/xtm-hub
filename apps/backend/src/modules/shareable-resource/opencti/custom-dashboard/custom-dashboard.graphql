@@ -5,9 +5,10 @@ type CustomDashboard implements Document & Node {
   uploader_organization: Organization
   name: String!
   short_description: String
+  meta_description: String
   description: String
   file_name: String! @auth
-  active: Boolean!
+  status: DocumentStatus!
   created_at: Date!
   updated_at: Date
   updater_id: String @auth

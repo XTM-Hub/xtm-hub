@@ -1,0 +1,48 @@
+meta {
+  name: CancelDeploymentRequest
+  type: graphql
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/graphql-api
+  body: graphql
+  auth: inherit
+}
+
+headers {
+  cookie: {{cookie}}
+}
+
+body:graphql {
+  mutation CancelDeploymentRequest($deploymentRequestId: DeploymentRequestId!, $cancellationReason: String) {
+    cancelDeploymentRequest(deploymentRequestId: $deploymentRequestId, cancellationReason: $cancellationReason) {
+      id
+      type
+      platform_identifier
+      parent_id
+      hub_status
+      counts_in_orga_quota
+      cancellation_reason
+      cancellation_date
+    }
+  }
+}
+
+body:graphql:vars {
+  {
+    "deploymentRequestId": "REPLACE",
+    "cancellationReason": "value"
+  }
+}
+
+docs {
+  Ensure cookie is defined in environment
+
+  deploymentRequestId: id of the deployment request to cancel.
+    - a bundle child (parent_id not null) is rejected with CANT_CANCEL_BUNDLE_PRODUCT
+    - cancelling a bundle cascades to all its products
+
+  cancellationReason: keyword from the taxonomy
+    (value, compatibility, complexity, legal-security, expertise, other)
+}

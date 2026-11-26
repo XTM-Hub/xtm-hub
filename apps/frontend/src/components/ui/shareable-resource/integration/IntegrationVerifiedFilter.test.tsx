@@ -1,50 +1,35 @@
-import { ServiceListFilterKey } from '@/components/service/components/header/ServiceListHeader';
+import { readTrackedEvents, startAnalytics } from '@/utils/test/analytics';
 import testRender from '@/utils/test/test-render';
-import { screen, within } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { IntegrationVerifiedFilter } from './IntegrationVerifiedFilter';
 
-const removeFilterMock = vi.fn();
 const setVerifiedMock = vi.fn();
-const removeVerifiedMock = vi.fn();
 
-vi.mock('@/hooks/use-service-list-local-storage', () => ({
-  ServiceListLocalStorageKey: {
-    OpenCTIIntegrationFeeds: 'feeds',
-  },
-  useServiceListLocalStorage: () => ({
+vi.mock('@/hooks/use-service-list-storage', () => ({
+  useServiceListStorage: () => ({
     verified: {},
     setVerified: setVerifiedMock,
-    removeVerified: removeVerifiedMock,
-  }),
-}));
-
-vi.mock('@/hooks/use-service-list-filters', () => ({
-  useServiceListFilters: () => ({
-    removeFilter: removeFilterMock,
+    removeVerified: vi.fn(),
   }),
 }));
 
 describe('IntegrationVerifiedFilter', () => {
-  it('renders placeholder and options after opening the popover', async () => {
-    const { user } = testRender(<IntegrationVerifiedFilter />);
+  it('renders verified subfilters as visible checkboxes', () => {
+    testRender(<IntegrationVerifiedFilter />);
 
-    const placeholder = screen.getByText(
-      'Service.OpenctiIntegrations.Filter.Verified.Placeholder'
-    );
-    expect(placeholder).toBeInTheDocument();
-
-    await user.click(placeholder);
-    const listbox = screen.getByRole('listbox');
     expect(
-      within(listbox).getByText(
-        'Service.OpenctiIntegrations.Filter.Verified.Verified'
-      )
+      screen.getByText('Service.OpenctiIntegrations.Filter.Verified.Label')
     ).toBeInTheDocument();
     expect(
-      within(listbox).getByText(
-        'Service.OpenctiIntegrations.Filter.Verified.Unverified'
-      )
+      screen.getByRole('checkbox', {
+        name: 'Service.OpenctiIntegrations.Filter.Verified.Verified',
+      })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('checkbox', {
+        name: 'Service.OpenctiIntegrations.Filter.Verified.Unverified',
+      })
     ).toBeInTheDocument();
   });
 
@@ -52,27 +37,45 @@ describe('IntegrationVerifiedFilter', () => {
     const { user } = testRender(<IntegrationVerifiedFilter />);
 
     await user.click(
-      screen.getByText(
-        'Service.OpenctiIntegrations.Filter.Verified.Placeholder'
-      )
-    );
-    await user.click(
-      within(screen.getByRole('listbox')).getByText(
-        'Service.OpenctiIntegrations.Filter.Verified.Verified'
-      )
+      screen.getByRole('checkbox', {
+        name: 'Service.OpenctiIntegrations.Filter.Verified.Verified',
+      })
     );
 
     expect(setVerifiedMock).toHaveBeenCalledWith({ true: [] });
   });
 
-  it('calls remove callbacks when the remove button is clicked', async () => {
+  it('does not render a clickable filter title button', () => {
+    testRender(<IntegrationVerifiedFilter />);
+
+    expect(
+      screen.queryByRole('button', {
+        name: 'Service.OpenctiIntegrations.Filter.Verified.Placeholder',
+      })
+    ).not.toBeInTheDocument();
+  });
+
+  it('should send the English label of the support level when it is checked', async () => {
+    // Given
+    startAnalytics();
     const { user } = testRender(<IntegrationVerifiedFilter />);
 
-    await user.click(screen.getByRole('button', { name: 'Remove filter' }));
-
-    expect(removeVerifiedMock).toHaveBeenCalledTimes(1);
-    expect(removeFilterMock).toHaveBeenCalledWith(
-      ServiceListFilterKey.Verified
+    // When
+    await user.click(
+      screen.getByRole('checkbox', {
+        name: 'Service.OpenctiIntegrations.Filter.Verified.Verified',
+      })
     );
+
+    // Then
+    expect(readTrackedEvents('filter_apply')).toEqual([
+      {
+        filter_name: 'Status',
+        filter_value: 'Supported by Filigran',
+        filter_action: 'Add',
+        library: 'Integrations',
+        product: 'OpenCTI',
+      },
+    ]);
   });
 });

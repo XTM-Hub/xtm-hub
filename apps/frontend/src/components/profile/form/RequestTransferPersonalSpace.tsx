@@ -1,21 +1,22 @@
 'use client';
 
-import { MeRequestTransferPersonalSpaceMutation } from '@/components/me/me.graphql';
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { AutoForm } from '@/components/ui/auto-form';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { Separator } from '@/components/ui/separator';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
+import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
+import { portalGraphqlClient } from '@/lib/graphql-client';
 import {
-  AutoForm,
+  Button,
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-  Separator,
-  toast,
-} from '@filigran/ui';
-import { Button } from '@filigran/ui/servers';
-import { useTranslations } from 'next-intl';
+} from '@filigran/design-system';
+import { useMePersonalSpaceTransferRequestMutation } from '@graphql/generated';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { useMutation } from 'react-relay';
 import { z } from 'zod';
 
 const formSchema = z.object({
@@ -25,13 +26,28 @@ export type RequestTransferPersonalSpaceSchema = z.infer<typeof formSchema>;
 
 export const RequestTransferPersonalSpace = () => {
   const router = useRouter();
-  const t = useTranslations();
+  const t = useTranslate();
   const [pendingValues, setPendingValues] =
     useState<RequestTransferPersonalSpaceSchema>();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [commitTransferPersonalSpaceMutation] = useMutation(
-    MeRequestTransferPersonalSpaceMutation
-  );
+  const { mutate: requestTransferPersonalSpace } =
+    useMePersonalSpaceTransferRequestMutation<Error>(portalGraphqlClient, {
+      onError(error) {
+        showSnackbar({
+          severity: 'error',
+          title: t('Utils.Error'),
+          description: t(`Error.Server.${error.message}`),
+        });
+      },
+      onSuccess() {
+        showSnackbar({
+          severity: 'success',
+          title: t('Utils.Success'),
+          description: t('ProfilePage.PersonalSpace.SuccessRequest'),
+        });
+        router.push('/app');
+      },
+    });
 
   const onSubmit = (values: RequestTransferPersonalSpaceSchema) => {
     setIsDialogOpen(true);
@@ -40,40 +56,26 @@ export const RequestTransferPersonalSpace = () => {
 
   const confirmEdition = () => {
     setIsDialogOpen(false);
-    commitTransferPersonalSpaceMutation({
-      variables: {
-        new_email: pendingValues?.new_email,
-      },
-      onError(error) {
-        toast({
-          variant: 'destructive',
-          title: t('Utils.Error'),
-          description: t(`Error.Server.${error.message}`),
-        });
-      },
-      onCompleted() {
-        toast({
-          title: t('Utils.Success'),
-          description: t('ProfilePage.PersonalSpace.SuccessRequest'),
-        });
-        router.push('/app');
-      },
-    });
+    if (!pendingValues) {
+      return;
+    }
+
+    requestTransferPersonalSpace({ new_email: pendingValues.new_email });
   };
   return (
     <>
-      <Separator className="my-s" />
-      <h2 className="text-destructive">{t('Utils.DangerZone')}</h2>
-      <Card className="border-2 border-red">
+      <Separator className="my-2" />
+      <h2 className="text-feedback-error-primary">{t('Utils.DangerZone')}</h2>
+      <Card>
         <CardHeader>
-          <CardTitle className="heading-lg">
+          <CardTitle as="h3">
             {t('ProfilePage.PersonalSpace.TitleDangerZone')}
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent clamp={0}>
           {t('ProfilePage.PersonalSpace.TransferPersoSpaceExplanation')}
           <AutoForm
-            className="mt-xl"
+            className="mt-6"
             onSubmit={(values) => onSubmit(values)}
             formSchema={formSchema}
             fieldConfig={{
@@ -84,9 +86,10 @@ export const RequestTransferPersonalSpace = () => {
                 },
               },
             }}>
-            <div className="mt-xl flex justify-end">
+            <div className="mt-6 flex justify-end">
               <Button
-                variant={'destructive'}
+                {...analyticsId('account_personal_space_submit')}
+                variant="destructive"
                 aria-label={t('ProfilePage.PersonalSpace.TransferPersoSpace')}>
                 {t('ProfilePage.PersonalSpace.Transfer')}
               </Button>
@@ -94,15 +97,16 @@ export const RequestTransferPersonalSpace = () => {
           </AutoForm>
         </CardContent>
       </Card>
-      <AlertDialogComponent
-        isOpen={isDialogOpen}
-        AlertTitle={t('DialogActions.ContinueTitle')}
-        actionButtonText={t('MenuActions.Continue')}
-        variantName={'destructive'}
+      <ConfirmDialog
+        confirmAnalyticsId="account_personal_space_transfer_confirm"
+        open={isDialogOpen}
+        title={t('DialogActions.ContinueTitle')}
+        confirmLabel={t('MenuActions.Continue')}
+        destructive
         onOpenChange={setIsDialogOpen}
-        onClickContinue={confirmEdition}>
+        onConfirm={confirmEdition}>
         {t('ProfilePage.PersonalSpace.TransferConfirmSentence')}
-      </AlertDialogComponent>
+      </ConfirmDialog>
     </>
   );
 };

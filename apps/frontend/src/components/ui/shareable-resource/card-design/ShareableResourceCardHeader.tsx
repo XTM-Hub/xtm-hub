@@ -1,84 +1,35 @@
-import { ShareableResourceEntityTypes } from '@/components/service/document/ui/ShareableResourceEntityTypes';
-import { getIntegrationSubTypeMetadata } from '@/components/service/integrations/Integration.utils';
-import BadgeOverflowCounter, {
-  BadgeOverflow,
-} from '@/components/ui/BadgeOverflowCounter';
-import { ShareableResourceCardIcon } from '@/components/ui/shareable-resource/card-design/ShareableResourceCardIcon';
 import { ShareableResourceCardImage } from '@/components/ui/shareable-resource/card-design/ShareableResourceCardImage';
-import { cn } from '@/lib/utils';
+import { ShareableResourceCardTags } from '@/components/ui/shareable-resource/card-design/ShareableResourceCardTags';
 import { PublicDocumentData } from '@/utils/shareable-resources/shareable-resources.types';
-import { docHasMetadata } from '@/utils/shareable-resources/utils/shareable-resources.client.utils';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { DocumentMetadataKeyCode } from '@graphql/generated';
+import { Text } from '@filigran/design-system';
+import { DocumentItemFragment } from '@graphql/generated';
 
 interface ShareableResourceCardHeaderProps {
-  document: documentItem_fragment$data | PublicDocumentData;
+  document: DocumentItemFragment | PublicDocumentData;
   serviceInstanceId: string;
-  shouldDisplayBothIcons: boolean;
-  isConnector: boolean;
 }
 export const ShareableResourceCardHeader = ({
   document,
   serviceInstanceId,
-  shouldDisplayBothIcons,
-  isConnector,
 }: ShareableResourceCardHeaderProps) => {
-  const documentNameSize = document.name?.length ?? 0;
-
-  let documentMetadata;
-  if (
-    isConnector &&
-    docHasMetadata(document, DocumentMetadataKeyCode.IntegrationSubtype)
-  ) {
-    documentMetadata = getIntegrationSubTypeMetadata(
-      document.integration_subtype
-    );
-  }
-
   return (
-    <div
-      className={cn(
-        'flex gap-m p-m relative',
-        isConnector ? 'items-center' : 'items-stretch'
-      )}>
-      <ShareableResourceCardImage
-        document={document}
-        serviceInstanceId={serviceInstanceId}
-      />
-      <div
-        className={cn('flex-1 min-w-0', isConnector && 'flex flex-col gap-s')}>
-        {documentMetadata && (
-          <p className="text-muted-foreground text-sm">
-            {documentMetadata.label}
-          </p>
-        )}
-        <div className="flex items-center gap-2">
-          <h2
-            className={cn(
-              'text-base font-semibold leading-tight min-w-0 pr-xxl',
-              documentNameSize <= 30 && 'md:text-lg'
-            )}>
+    <div className="flex shrink-0 flex-col gap-6">
+      <div className="flex items-start gap-4">
+        <ShareableResourceCardImage
+          document={document}
+          serviceInstanceId={serviceInstanceId}
+        />
+        <div className="flex min-h-12 min-w-0 flex-1 items-center">
+          <Text
+            as="h2"
+            variant="title-sm"
+            title={document.name ?? undefined}
+            className="min-w-0 break-words line-clamp-2">
             {document.name}
-          </h2>
-          <ShareableResourceCardIcon
-            shouldDisplayBothIcons={shouldDisplayBothIcons}
-            document={document}
-          />
+          </Text>
         </div>
-        {isConnector ? (
-          <ShareableResourceEntityTypes
-            document={document}
-            className="mt-s z-[2]"
-          />
-        ) : (
-          <div className="mt-s flex flex-wrap gap-s">
-            <BadgeOverflowCounter
-              badges={document.use_cases as BadgeOverflow[]}
-              className="z-[2]"
-            />
-          </div>
-        )}
       </div>
+      <ShareableResourceCardTags document={document} />
     </div>
   );
 };

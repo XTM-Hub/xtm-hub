@@ -1,9 +1,15 @@
 import { expect, test } from '../fixtures/baseFixtures';
 import LoginPage from '../model/login.pageModel';
 import IntegrationPage from '../model/integration.pageModel';
+import {
+  META_DESCRIPTION_SUMMARY,
+  openResourceUpdateDrawer,
+  publishResource,
+} from '../model/common';
 
 const CSV_FEED_TEST = {
   name: 'e2e CSV Feed name',
+  metaDescription: META_DESCRIPTION_SUMMARY,
   shortDescription: 'This is a short description',
   description: 'This is a CSV description markdown',
   csvFeedsServiceInstanceId: '0f4aad4b-bdd6-4084-8b1f-82c9c66578cc',
@@ -27,6 +33,32 @@ test.describe('CSV Feeds', () => {
     await expect(
       page.getByRole('heading', { name: CSV_FEED_TEST.name })
     ).toBeVisible();
+  });
+  test('Should move a requested CSV Feed from In validation to published', async ({
+    page,
+  }) => {
+    const inValidationTitle = page.getByText('In validation:', { exact: true });
+    await expect(inValidationTitle).toBeVisible();
+    await expect(
+      page.getByText(CSV_FEED_TEST.name, { exact: true })
+    ).toBeVisible();
+
+    await publishResource(page, CSV_FEED_TEST.name);
+
+    await expect(inValidationTitle).not.toBeVisible();
+    await expect(
+      page.getByText(CSV_FEED_TEST.name, { exact: true })
+    ).toBeVisible();
+
+    await openResourceUpdateDrawer(page, CSV_FEED_TEST.name);
+    const drawer = page.getByRole('dialog');
+    await expect(drawer.getByText('Published', { exact: true })).toBeVisible();
+    await expect(
+      drawer.getByRole('button', { name: 'Validate', exact: true })
+    ).toBeVisible();
+    await expect(
+      drawer.getByRole('button', { name: 'Publish', exact: true })
+    ).not.toBeVisible();
   });
   test('Should delete CSV Feed from the list', async ({ page }) => {
     await expect(

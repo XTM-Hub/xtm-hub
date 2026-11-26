@@ -20,22 +20,50 @@ import DeploymentRequest, {
 import DeploymentRequestQuota, {
   DeploymentRequestQuotaMutator,
 } from '../../src/model/kanel/public/DeploymentRequestQuota';
-import { ServiceInstanceId } from '../../src/model/kanel/public/ServiceInstance';
+import ServiceInstance, {
+  ServiceInstanceId,
+} from '../../src/model/kanel/public/ServiceInstance';
 import Subscription, {
   SubscriptionId,
 } from '../../src/model/kanel/public/Subscription';
+import { UserId } from '../../src/model/kanel/public/User';
 import { DeploymentRequestDomain } from '../../src/modules/deployment/deployment.domain';
 import { serviceInstanceTagMappedByPlatformIdentifier } from '../../src/modules/registration/registration.mapping';
 import { ServiceInstanceDomain } from '../../src/modules/service/instance/service-instance.domain';
 import { SERVICES, TEST_ORGANIZATIONS } from '../tests.const';
+import { TestServiceHelper } from './test.service.helper';
 
 export const TestDeploymentHelper = {
   deploymentRequest: {
     delete: async (field: DeploymentRequestMutator) => {
       await db<DeploymentRequest>('DeploymentRequest').where(field).del();
     },
+    deleteAllWithServiceInstanceAndSubscription: async () => {
+      const deploymentRequests = await db<DeploymentRequest>(
+        'DeploymentRequest'
+      ).select('service_instance_id');
+      const serviceInstanceIds = deploymentRequests.map(
+        ({ service_instance_id }: DeploymentRequest) => service_instance_id
+      );
+
+      await DeploymentRequestDomain.deleteDeploymentRequestBy({});
+      await db<Subscription>('Subscription')
+        .whereIn('service_instance_id', serviceInstanceIds)
+        .del();
+      await db<ServiceInstance>('ServiceInstance')
+        .whereIn('id', serviceInstanceIds)
+        .del();
+    },
     update: async (field: DeploymentRequestMutator) => {
       await db<DeploymentRequest>('DeploymentRequest').update(field);
+    },
+    updateById: async (
+      id: DeploymentRequestId,
+      data: DeploymentRequestMutator
+    ): Promise<void> => {
+      await db<DeploymentRequest>('DeploymentRequest')
+        .where({ id })
+        .update(data);
     },
     loadMany: async (
       field: DeploymentRequestMutator
@@ -112,16 +140,80 @@ export const TestDeploymentHelper = {
         ...deploymentRequest,
       });
     },
+    createBundle: async (data?: {
+      bundle?: Partial<DeploymentRequestInitializer>;
+      children?: Partial<DeploymentRequestInitializer>[];
+    }): Promise<{
+      bundle: DeploymentRequest;
+      children: DeploymentRequest[];
+    }> => {
+      const bundle =
+        await TestDeploymentHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+          {
+            type: DeploymentRequestDeploymentType.Bundle,
+            platform_identifier: null,
+            ...data?.bundle,
+          }
+        );
+
+      const children = await Promise.all(
+        (data?.children ?? []).map((child) =>
+          TestDeploymentHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+            {
+              parent_id: bundle.id,
+              ...child,
+            }
+          )
+        )
+      );
+
+      return { bundle, children };
+    },
+    deleteBundle: async (bundleId: DeploymentRequestId): Promise<void> => {
+      const idFilter: DeploymentRequestMutator = { id: bundleId };
+      const parentIdFilter: DeploymentRequestMutator = {
+        parent_id: bundleId,
+      };
+      const deploymentRequests = await db<DeploymentRequest[]>(
+        'DeploymentRequest'
+      )
+        .where(idFilter)
+        .orWhere(parentIdFilter)
+        .select('*');
+
+      for (const { service_instance_id } of deploymentRequests) {
+        await TestDeploymentHelper.deploymentRequest.delete({
+          service_instance_id,
+        });
+        await db<Subscription>('Subscription')
+          .where({ service_instance_id })
+          .del();
+        await TestServiceHelper.serviceGroup.delete({
+          service_instance_id,
+        });
+        await TestServiceHelper.serviceInstance.delete({
+          id: service_instance_id,
+        });
+      }
+    },
     assertProperties: async (
       id: DeploymentRequestId,
       {
         hub_status,
         target_state,
         ordering,
+        counts_in_orga_quota,
+        cancellation_reason,
+        cancellation_date,
+        cancellation_user_id,
       }: {
         hub_status?: DeploymentRequestHubStatus;
         target_state?: DeploymentRequestPlatformState;
         ordering?: number;
+        counts_in_orga_quota?: boolean;
+        cancellation_reason?: string | null;
+        cancellation_date?: Date | null;
+        cancellation_user_id?: UserId | null;
       }
     ) => {
       const deploymentRequest =
@@ -141,6 +233,28 @@ export const TestDeploymentHelper = {
 
       if (ordering !== undefined) {
         expect(deploymentRequest!.ordering).toBe(ordering);
+      }
+
+      if (counts_in_orga_quota !== undefined) {
+        expect(deploymentRequest!.counts_in_orga_quota).toBe(
+          counts_in_orga_quota
+        );
+      }
+
+      if (cancellation_reason !== undefined) {
+        expect(deploymentRequest!.cancellation_reason).toBe(
+          cancellation_reason
+        );
+      }
+
+      if (cancellation_date !== undefined) {
+        expect(deploymentRequest!.cancellation_date).toEqual(cancellation_date);
+      }
+
+      if (cancellation_user_id !== undefined) {
+        expect(deploymentRequest!.cancellation_user_id).toBe(
+          cancellation_user_id
+        );
       }
     },
   },

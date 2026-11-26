@@ -1,5 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
-import { DocumentMetadataKeyCode } from '../../../src/__generated__/resolvers-types';
+import {
+  DocumentMetadataKeyCode,
+  DocumentStatus,
+} from '../../../src/__generated__/resolvers-types';
 import { DocumentId } from '../../../src/model/kanel/public/Document';
 import type { DocumentMetadataKey } from '../../../src/model/kanel/public/DocumentMetadata';
 import { ServiceInstanceId } from '../../../src/model/kanel/public/ServiceInstance';
@@ -33,7 +36,7 @@ export interface SeedDocumentsResult {
 }
 
 /**
- * Inserts `count` active documents with full metadata using TestHelper.
+ * Inserts `count` published documents with full metadata using TestHelper.
  * Documents are created in parallel batches of 50 to keep setup time short.
  * Returns the IDs of every inserted document and its associated image child,
  * so callers can track them for teardown.
@@ -68,7 +71,7 @@ export async function seedDocuments(
         TestDocumentHelper.document.create({
           type: documentType,
           service_instance_id: serviceInstanceId,
-          active: true,
+          status: DocumentStatus.Published,
           slug: `${runPrefix}-${groupTag}-${i}`,
           name: `${namePrefix}-${i}`,
           description: `Performance test document group=${groupTag}`,
@@ -87,17 +90,11 @@ export async function seedDocuments(
 
         if (metadataVariant === 'integration') {
           return [
-            // --- type / subtype ---
+            // --- type ---
             TestDocumentHelper.documentMetadata.create({
               document_id: doc.id,
               key: toMetaKey(DocumentMetadataKeyCode.IntegrationType),
               value: 'connector',
-            }),
-            TestDocumentHelper.documentMetadata.create({
-              document_id: doc.id,
-              key: toMetaKey(DocumentMetadataKeyCode.IntegrationSubtype),
-              value:
-                globalI % 2 === 0 ? 'INTERNAL_IMPORT_FILE' : 'EXTERNAL_IMPORT',
             }),
             // --- version ---
             TestDocumentHelper.documentMetadata.create({
@@ -197,7 +194,7 @@ export async function seedDocuments(
         TestDocumentHelper.document.create({
           type: 'image',
           service_instance_id: serviceInstanceId,
-          active: true,
+          status: DocumentStatus.Published,
           slug: `${runPrefix}-${groupTag}-img-${parentDoc.id.slice(0, 8)}`,
           name: `img-${parentDoc.id.slice(0, 8)}`,
           mime_type: 'image/png',

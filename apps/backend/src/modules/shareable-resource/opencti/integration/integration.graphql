@@ -7,29 +7,6 @@ enum IntegrationType {
   third_party_integration
 }
 
-enum IntegrationSubType {
-  EXTERNAL_IMPORT
-  INTERNAL_ENRICHMENT
-  INTERNAL_EXPORT_FILE
-  INTERNAL_IMPORT_FILE
-  STREAM
-  NATIVE
-  ORCHESTRATION
-  DETECTION
-  CASE_MANAGEMENT
-  THREAT_ACTORS
-  MALWARE
-  CYBER_INDUSTRY
-  PERIODIC_BRIEFING
-  SECURITY_RESEARCHER
-  VENDORS
-  FEDERAL_ORGANIZATION
-  JOURNALISTS
-  NOT_FOR_PROFIT_ORGANIZATION
-  SOCIAL_MEDIA
-  DARKWEB
-}
-
 interface Integration implements Node & Document {
   # Node
   id: ID!
@@ -40,9 +17,10 @@ interface Integration implements Node & Document {
   uploader_organization: Organization
   name: String!
   short_description: String
+  meta_description: String
   description: String
   file_name: String @auth
-  active: Boolean!
+  status: DocumentStatus!
   created_at: Date!
   updated_at: Date
   updater_id: String @auth
@@ -76,9 +54,10 @@ type IntegrationHack implements Node & Document & Integration {
   uploader_organization: Organization
   name: String!
   short_description: String
+  meta_description: String
   description: String
   file_name: String @auth
-  active: Boolean!
+  status: DocumentStatus!
   created_at: Date!
   updated_at: Date
   updater_id: String @auth
@@ -111,9 +90,10 @@ type CsvFeed implements Node & Document & Integration {
   uploader_organization: Organization
   name: String!
   short_description: String
+  meta_description: String
   description: String
   file_name: String @auth
-  active: Boolean!
+  status: DocumentStatus!
   created_at: Date!
   updated_at: Date
   updater_id: String @auth
@@ -147,9 +127,10 @@ type Connector implements Node & Document & Integration {
   uploader_organization: Organization
   name: String!
   short_description: String
+  meta_description: String
   description: String
   file_name: String @auth
-  active: Boolean!
+  status: DocumentStatus!
   created_at: Date!
   updated_at: Date
   updater_id: String @auth
@@ -171,7 +152,6 @@ type Connector implements Node & Document & Integration {
   verified: Boolean!
   source_code: String
   subscription_link: String
-  integration_subtype: IntegrationSubType!
   manager_supported: Boolean!
   playbook_supported: Boolean!
   datasheet_url: String
@@ -192,9 +172,10 @@ type TaxiiFeed implements Node & Document & Integration {
   uploader_organization: Organization
   name: String!
   short_description: String
+  meta_description: String
   description: String
   file_name: String @auth
-  active: Boolean!
+  status: DocumentStatus!
   created_at: Date!
   updated_at: Date
   updater_id: String @auth
@@ -212,7 +193,6 @@ type TaxiiFeed implements Node & Document & Integration {
   remover_id: ID @auth
   feed_url: String
   integration_type: IntegrationType!
-  integration_subtype: IntegrationSubType!
   datasheet_url: String
   blogpost_url: String
   demo_url: String
@@ -228,9 +208,10 @@ type RssFeed implements Node & Document & Integration {
   uploader_organization: Organization
   name: String!
   short_description: String
+  meta_description: String
   description: String
   file_name: String @auth
-  active: Boolean!
+  status: DocumentStatus!
   created_at: Date!
   updated_at: Date
   updater_id: String @auth
@@ -248,7 +229,6 @@ type RssFeed implements Node & Document & Integration {
   remover_id: ID @auth
   feed_url: String
   integration_type: IntegrationType!
-  integration_subtype: IntegrationSubType!
   datasheet_url: String
   blogpost_url: String
   demo_url: String
@@ -265,9 +245,10 @@ type Stream implements Node & Document & Integration {
   uploader_organization: Organization
   name: String!
   short_description: String
+  meta_description: String
   description: String
   file_name: String @auth
-  active: Boolean!
+  status: DocumentStatus!
   created_at: Date!
   updated_at: Date
   updater_id: String @auth
@@ -285,7 +266,6 @@ type Stream implements Node & Document & Integration {
   remover_id: ID @auth
   feed_url: String
   integration_type: IntegrationType!
-  integration_subtype: IntegrationSubType!
   datasheet_url: String
   blogpost_url: String
   demo_url: String
@@ -302,9 +282,10 @@ type ThirdPartyIntegration implements Node & Document & Integration {
   uploader_organization: Organization
   name: String!
   short_description: String
+  meta_description: String
   description: String
   file_name: String @auth
-  active: Boolean!
+  status: DocumentStatus!
   created_at: Date!
   updated_at: Date
   updater_id: String @auth
@@ -321,7 +302,6 @@ type ThirdPartyIntegration implements Node & Document & Integration {
   # Integration
   remover_id: ID @auth
   integration_type: IntegrationType!
-  integration_subtype: IntegrationSubType!
   vendor_url: String!
   product_version: String
   github_url: String

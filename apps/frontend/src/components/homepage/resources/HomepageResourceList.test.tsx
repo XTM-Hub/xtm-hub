@@ -18,7 +18,7 @@ const buildDocument = (
     id: 'doc-1',
     name: 'My Resource',
     type: ShareableResourceType.OPENCTI_CUSTOM_DASHBOARD,
-    active: true,
+    status: 'published',
     slug: 'my-resource',
     short_description: null,
     service_instance_id: null,
@@ -64,12 +64,12 @@ describe('HomepageResourceList — url', () => {
   );
 });
 
-describe('HomepageResourceList — active prop', () => {
+describe('HomepageResourceList — published prop', () => {
   beforeEach(() => {
     mockCard.mockClear();
   });
 
-  it('passes active={false} to the card when document type is OPENCTI_INTEGRATION, even if resource.active is true', () => {
+  it('passes published={false} to the card when document type is OPENCTI_INTEGRATION, even if the resource is published', () => {
     render(
       <HomepageResourceList
         title="Resources"
@@ -77,19 +77,19 @@ describe('HomepageResourceList — active prop', () => {
         documents={[
           buildDocument({
             type: ShareableResourceType.OPENCTI_INTEGRATION,
-            active: true,
+            status: 'published',
           }),
         ]}
       />
     );
 
     expect(mockCard).toHaveBeenCalledWith(
-      expect.objectContaining({ active: false }),
+      expect.objectContaining({ published: false }),
       undefined
     );
   });
 
-  it('passes active={true} to the card for non-integration types when resource.active is true', () => {
+  it('passes published={true} to the card for non-integration types when the resource is published', () => {
     render(
       <HomepageResourceList
         title="Resources"
@@ -97,15 +97,40 @@ describe('HomepageResourceList — active prop', () => {
         documents={[
           buildDocument({
             type: ShareableResourceType.OPENCTI_CUSTOM_DASHBOARD,
-            active: true,
+            status: 'published',
           }),
         ]}
       />
     );
 
     expect(mockCard).toHaveBeenCalledWith(
-      expect.objectContaining({ active: true }),
+      expect.objectContaining({ published: true }),
       undefined
     );
   });
+
+  it.each(['draft', 'in_validation'] as const)(
+    'passes published={false} to the card for non-integration types when the resource is %s',
+    (status) => {
+      // Given
+      render(
+        <HomepageResourceList
+          title="Resources"
+          locale="en"
+          documents={[
+            buildDocument({
+              type: ShareableResourceType.OPENCTI_CUSTOM_DASHBOARD,
+              status,
+            }),
+          ]}
+        />
+      );
+
+      // Then
+      expect(mockCard).toHaveBeenCalledWith(
+        expect.objectContaining({ published: false }),
+        undefined
+      );
+    }
+  );
 });

@@ -1,11 +1,11 @@
 import { UnauthenticatedError } from '@/lib/graphql-fetch.utils';
+import { getSseClient } from '@/lib/sse-client';
+import { Client } from 'graphql-sse';
 import { RequestParameters } from 'relay-runtime';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { networkFetch } from './fetch-fn';
+import { fetchOrSubscribe, networkFetch } from './fetch-fn';
 
-vi.mock('graphql-sse', () => ({
-  createClient: vi.fn(() => ({ subscribe: vi.fn() })),
-}));
+vi.mock('@/lib/sse-client', () => ({ getSseClient: vi.fn() }));
 
 const mockRequest: RequestParameters = {
   id: null,
@@ -78,17 +78,33 @@ describe('networkFetch', () => {
   });
 });
 
-describe('subscriptionsClient', () => {
-  it('should create the graphql-sse client with singleConnection enabled to multiplex all subscriptions over one SSE connection', async () => {
-    vi.resetModules();
-    const { createClient } = await import('graphql-sse');
-    await import('./fetch-fn');
+describe('fetchOrSubscribe', () => {
+  const mockSubscription: RequestParameters = {
+    id: null,
+    name: 'TestSubscription',
+    text: 'subscription TestSubscription { __typename }',
+    operationKind: 'subscription',
+    metadata: {},
+  };
 
-    expect(createClient).toHaveBeenCalledWith(
-      expect.objectContaining({
-        url: '/graphql-sse',
-        singleConnection: true,
-      })
+  it('should subscribe through the shared graphql-sse client', () => {
+    // Given
+    const subscribe = vi.fn(() => () => {});
+    vi.mocked(getSseClient).mockReturnValue({
+      subscribe,
+    } as unknown as Client<true>);
+
+    // When
+    fetchOrSubscribe(mockSubscription, { id: '1' }).subscribe({});
+
+    // Then
+    expect(subscribe).toHaveBeenCalledWith(
+      {
+        operationName: 'TestSubscription',
+        query: 'subscription TestSubscription { __typename }',
+        variables: { id: '1' },
+      },
+      expect.any(Object)
     );
   });
 });

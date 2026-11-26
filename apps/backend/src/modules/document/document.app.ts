@@ -3,12 +3,15 @@ import {
   DocumentImageType,
   DocumentMetadataKeyCode,
   DocumentMetadata as DocumentMetadataResolverType,
+  DocumentSourceType,
+  DocumentStatus,
   FiligranProduct,
   MutationUpdateDocumentArgs as MutationUpdateDocumentArgsResolverType,
   PlatformIdentifier,
   QueryDocumentsArgs,
   QueryPublicDocumentsArgs,
 } from '../../__generated__/resolvers-types';
+import portalConfig from '../../config';
 import { withTransaction } from '../../context/database.context';
 import { requestContext } from '../../context/request.context';
 import Document, {
@@ -20,12 +23,22 @@ import { ObjectUseCaseObjectId } from '../../model/kanel/public/ObjectUseCase';
 import ServiceDefinition from '../../model/kanel/public/ServiceDefinition';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { SolutionCategoryId } from '../../model/kanel/public/SolutionCategory';
+import { PgBossProducer } from '../../thirdparty/pgboss/producer';
+import {
+  TEAMS_NOTIFICATION_QUEUES,
+  type TeamsNotificationJobData,
+} from '../../thirdparty/pgboss/teams-notification.jobs';
 import { logApp } from '../../utils/app-logger.util';
 import { ErrorCode, UnknownErrorCode } from '../../utils/error/error.code';
 import { ForbiddenAccess } from '../../utils/error/error.util';
+import { shareCountRateLimiter } from '../../utils/rate-limit.util';
 import { NewsFeedApp } from '../news-feed/news-feed.app';
+import { OrganizationDomain } from '../organization-management/organization/organization.domain';
+import { UserDomain } from '../organization-management/user/user-domain/user.domain';
 import { RegistrationApp } from '../registration/registration.app';
 import { ServiceDefinitionDomain } from '../service/definition/service-definition.domain';
+import { ServiceInstanceDomain } from '../service/instance/service-instance.domain';
+import { OPENCTI_INTEGRATION_DOCUMENT_TYPE } from '../shareable-resource/opencti/integration/integration.model';
 import { objectSolutionCategoryDomain } from '../solution-category/object-solution-category/object-solution-category.domain';
 import { solutionCategoryApp } from '../solution-category/solution-category.app';
 import { TelemetryApp } from '../telemetry/telemetry.app';
@@ -41,8 +54,12 @@ import {
   ManageableServiceDefinitionIdentifier,
   ServiceDefinitionIdentifiersByPlatformIdentifier,
 } from './document.helper';
+import { DocumentListOptions } from './document.model';
 import { DocumentUploadsHelper, Upload } from './document.uploads.helper';
-import { DocumentChildrenDomain } from './domain/document.children.domain';
+import {
+  DocumentChildrenDomain,
+  ExternalImageFile,
+} from './domain/document.children.domain';
 import { DocumentData, DocumentDomain } from './domain/document.domain';
 import {
   DocumentMetadataDomain,
@@ -67,6 +84,43 @@ const setDocumentMetadataValue = (
   (document as DocumentWithDynamicMetadata)[key] = value;
 };
 
+const toMinioNames = (images: ExternalImageFile[]): string[] =>
+  images.flatMap(({ minio_name }) => (minio_name ? [minio_name] : []));
+
+const notifyInValidation = async (
+  document: DocumentModel,
+  serviceDefinition: ServiceDefinition
+) => {
+  const author = document.uploader_id
+    ? await UserDomain.loadSimpleUserBy({ id: document.uploader_id })
+    : undefined;
+  const integrationType =
+    document.type === OPENCTI_INTEGRATION_DOCUMENT_TYPE
+      ? await DocumentMetadataDomain.loadMetadataValueByKey(
+          document.id,
+          DocumentMetadataKeyCode.IntegrationType
+        )
+      : null;
+
+  await PgBossProducer.send<TeamsNotificationJobData<'resource_in_validation'>>(
+    TEAMS_NOTIFICATION_QUEUES.SEND,
+    {
+      event: 'resource_in_validation',
+      payload: DocumentHelper.buildInValidationPayload({
+        document,
+        serviceDefinition,
+        integrationType: DocumentHelper.toIntegrationType(
+          document.type,
+          integrationType
+        ),
+        authorEmail: author?.email ?? null,
+      }),
+    }
+  );
+};
+
+const NOT_PUBLISHED_REMINDER_LIMIT_PER_STATUS = 5;
+
 export const DocumentApp = {
   createDocument: async ({
     input,
@@ -83,6 +137,8 @@ export const DocumentApp = {
     logo?: Upload;
     images?: Upload[];
   }) => {
+    DocumentHelper.assertCreationStatus(input.status);
+
     const serviceDefinition =
       await ServiceDefinitionDomain.loadServiceDefinitionByServiceInstance(
         serviceInstanceId
@@ -90,6 +146,13 @@ export const DocumentApp = {
     if (!serviceDefinition) {
       throw new Error(ErrorCode.ServiceDefinitionNotFound);
     }
+
+    const metaDescription = DocumentHelper.validateMetaDescription({
+      serviceDefinitionIdentifier:
+        serviceDefinition.identifier as ManageableServiceDefinitionIdentifier,
+      summary: input.meta_description,
+      name: input.name,
+    });
 
     const [sourceDocumentFile] = await DocumentUploadsHelper.processUploads(
       sourceDocument,
@@ -151,6 +214,7 @@ export const DocumentApp = {
     } = input;
     const documentData: DocumentData<Document> = {
       ...documentColumnInput,
+      meta_description: metaDescription,
       use_cases: input.use_cases ?? undefined,
       solution_categories: input.solution_categories ?? undefined,
       service_instance_id: serviceInstanceId,
@@ -218,6 +282,10 @@ export const DocumentApp = {
         );
       }
 
+      if (document.status === DocumentStatus.InValidation) {
+        await notifyInValidation(document, serviceDefinition);
+      }
+
       return document;
     });
 
@@ -231,13 +299,6 @@ export const DocumentApp = {
         documentId: createdDocument.id,
       });
     }
-
-    void NewsFeedApp.upsertResourceNewsFeed({
-      documentBeforeUpdate: undefined,
-      updatedDocument: createdDocument,
-      serviceInstanceId,
-      serviceDefinitionIdentifier: serviceDefinition.identifier,
-    });
 
     return createdDocument;
   },
@@ -279,6 +340,23 @@ export const DocumentApp = {
 
     if (documentBeforeUpdate.service_instance_id !== serviceInstanceId) {
       throw new Error(ErrorCode.DocumentNotFound);
+    }
+
+    const metaDescription = DocumentHelper.validateUpdatedMetaDescription({
+      serviceDefinitionIdentifier:
+        serviceDefinition.identifier as ManageableServiceDefinitionIdentifier,
+      summary: input.meta_description,
+      name: input.name,
+      storedDocument: documentBeforeUpdate,
+    });
+
+    // Not atomic with the update below: two editors saving at once can skip
+    // the rule. Accepted, editors are few and the status shows in the list.
+    if (input.status) {
+      DocumentHelper.assertStatusTransition(
+        documentBeforeUpdate.status,
+        input.status
+      );
     }
 
     const documentType =
@@ -362,15 +440,21 @@ export const DocumentApp = {
         : undefined;
 
       // entity_types and license_type are persisted as metadata (see above), not as Document columns.
+      // meta_description is a column, but only its validated, trimmed value is written, and a
+      // missing or blank one keeps the stored value.
       const {
         entity_types: _entityTypes,
         license_type: _licenseType,
+        meta_description: _metaDescription,
         ...documentColumnData
       } = input;
       const doc = await DocumentDomain.updateDocument({
         parentDocumentId,
         document: {
-          data: documentColumnData,
+          data: {
+            ...documentColumnData,
+            ...(metaDescription ? { meta_description: metaDescription } : {}),
+          },
           file,
           type: documentType,
         },
@@ -453,13 +537,19 @@ export const DocumentApp = {
         );
       }
 
+      if (
+        documentBeforeUpdate.status !== DocumentStatus.InValidation &&
+        doc.status === DocumentStatus.InValidation
+      ) {
+        await notifyInValidation(doc, serviceDefinition);
+      }
+
       return doc;
     });
 
     void NewsFeedApp.upsertResourceNewsFeed({
       documentBeforeUpdate,
       updatedDocument,
-      serviceInstanceId,
       serviceDefinitionIdentifier: serviceDefinition.identifier,
     });
 
@@ -506,6 +596,64 @@ export const DocumentApp = {
     });
   },
 
+  /**
+   * Replaces the external image of `doc` and returns the storage names of the
+   * files it made obsolete. It does not delete them: the caller must do so
+   * once its outermost transaction is committed, so a rollback keeps them.
+   */
+  replaceExternalImage: async <T extends DocumentModel>(
+    doc: T,
+    externalImageUpload: Upload
+  ): Promise<string[]> => {
+    const { service_instance_id } = doc;
+    if (!service_instance_id) {
+      throw new Error(ErrorCode.ServiceInstanceNotFound);
+    }
+
+    const [logoFile] = await DocumentUploadsHelper.processUploads(
+      externalImageUpload,
+      service_instance_id
+    );
+
+    const obsoleteMinioNames = await withTransaction(async () => {
+      if (!logoFile) {
+        const deleted = await DocumentChildrenDomain.deleteExternalImages(
+          doc.id
+        );
+        return toMinioNames(deleted);
+      }
+
+      // Keep the id of the existing external image: its URL is public, indexed
+      // by search engines and shared in link previews, so it must stay valid.
+      const [existingImage] =
+        await DocumentChildrenDomain.loadExternalImageFiles(doc.id);
+      if (!existingImage) {
+        await DocumentChildrenDomain.createImageDocuments(
+          doc.id,
+          service_instance_id,
+          [logoFile],
+          DocumentImageType.Logo,
+          DocumentSourceType.External
+        );
+        return [];
+      }
+
+      await DocumentChildrenDomain.replaceImageFile(existingImage.id, logoFile);
+      const deletedDuplicates =
+        await DocumentChildrenDomain.deleteExternalImages(
+          doc.id,
+          existingImage.id
+        );
+      // The retained image now references the new file: never delete it, even
+      // if the replaced image or a duplicate pointed to the same object.
+      return toMinioNames([existingImage, ...deletedDuplicates]).filter(
+        (minioName) => minioName !== logoFile.minioName
+      );
+    });
+
+    return [...new Set(obsoleteMinioNames)];
+  },
+
   upsertDocumentWithExternalImage: async <T extends DocumentModel>(
     type: string,
     input: DocumentData<T, string>,
@@ -513,7 +661,7 @@ export const DocumentApp = {
     metadataKeys: DocumentMetadataKeys<T>,
     product: FiligranProduct
   ) => {
-    return withTransaction(async () => {
+    const { doc, obsoleteMinioNames } = await withTransaction(async () => {
       const doc = await upsertDocument<T>(
         {
           ...input,
@@ -523,19 +671,87 @@ export const DocumentApp = {
         product
       );
 
-      await DocumentChildrenDomain.upsertExternalImage(
+      const obsoleteMinioNames = await DocumentApp.replaceExternalImage(
         doc,
         externalImageUpload
       );
 
-      return doc;
+      return { doc, obsoleteMinioNames };
     });
+
+    // Only once committed: a rollback keeps the previous files, and readers
+    // never see a reference to a deleted file.
+    await DocumentHelper.deleteObsoleteFiles(obsoleteMinioNames);
+
+    return doc;
+  },
+
+  sendResourceNotPublishedReminder: async (): Promise<void> => {
+    if (
+      !portalConfig.enabled_teams_notifications.resource_not_published_reminder
+    ) {
+      logApp.info('Not published resources Teams reminder is disabled.');
+      return;
+    }
+
+    const notPublished = await DocumentDomain.loadNotPublishedForReminder(
+      NOT_PUBLISHED_REMINDER_LIMIT_PER_STATUS
+    );
+    if (!notPublished.length) {
+      return;
+    }
+
+    const authorIds = [
+      ...new Set(
+        notPublished.flatMap(({ document }) =>
+          document.uploader_id ? [document.uploader_id] : []
+        )
+      ),
+    ];
+    const [authors, integrationTypes] = await Promise.all([
+      UserDomain.loadEmailsByIds(authorIds),
+      DocumentMetadataDomain.buildIntegrationTypeQuery(
+        notPublished.map(({ document }) => document.id)
+      ),
+    ]);
+    const libraries = DocumentHelper.groupNotPublishedByLibrary({
+      notPublished,
+      authors,
+      integrationTypes,
+    });
+
+    let failed = 0;
+    for (const library of libraries) {
+      try {
+        await PgBossProducer.send<
+          TeamsNotificationJobData<'resource_not_published'>
+        >(TEAMS_NOTIFICATION_QUEUES.SEND, {
+          event: 'resource_not_published',
+          payload: DocumentHelper.buildNotPublishedPayload(library),
+        });
+      } catch (error) {
+        failed += 1;
+        logApp.error('Unable to enqueue the not published resources reminder', {
+          error,
+          serviceDefinitionId: library.serviceDefinition.id,
+        });
+      }
+    }
+
+    logApp.info('Not published resources Teams reminder enqueued', {
+      libraries: libraries.length,
+      failed,
+    });
+    if (failed > 0) {
+      throw new Error(
+        `Not published resources reminder failed for ${failed} of ${libraries.length} libraries`
+      );
+    }
   },
 
   deleteDocument: async <T extends DocumentModel>(
     documentId: DocumentId,
-    serviceInstanceId: ServiceInstanceId,
-    hardDelete: boolean
+    serviceInstanceId: ServiceInstanceId
   ): Promise<T> => {
     const documentFromDb = await DocumentDomain.loadDocumentBy({
       id: documentId,
@@ -547,40 +763,42 @@ export const DocumentApp = {
     }
 
     const childIds = await DocumentChildrenDomain.loadChildrenIds(documentId);
-    if (hardDelete) {
-      // Get all minio_name before their deletion
-      const childrenDocumentFromDB = (
-        await Promise.all(
-          childIds.map((id) => DocumentDomain.loadDocumentBy({ id }))
-        )
-      ).filter(
-        (childDocument): childDocument is DocumentModel =>
-          childDocument !== undefined
-      );
-      await withTransaction(async () => {
-        await DocumentChildrenDomain.deleteChildrenByParent(documentId);
+    // Get all minio_name before their deletion
+    const childrenDocumentFromDB = (
+      await Promise.all(
+        childIds.map((id) => DocumentDomain.loadDocumentBy({ id }))
+      )
+    ).filter(
+      (childDocument): childDocument is DocumentModel =>
+        childDocument !== undefined
+    );
+    await withTransaction(async () => {
+      await DocumentChildrenDomain.deleteChildrenByParent(documentId);
 
-        await DocumentDomain.deleteDocuments([...childIds, documentId]);
+      await DocumentDomain.deleteDocuments([...childIds, documentId]);
 
-        // Use Cases
-        await objectUseCaseDomain.deleteObjectUseCaseBy({
-          object_id: toObjectUseCaseObjectId(documentId),
-        });
+      // Use Cases
+      await objectUseCaseDomain.deleteObjectUseCaseBy({
+        object_id: toObjectUseCaseObjectId(documentId),
       });
-      await DocumentHelper.deleteFileFromMinIO(
-        childrenDocumentFromDB,
-        documentFromDb
-      );
-      return documentFromDb as T;
-    }
-
-    // Soft delete => desactivate the document
-    await DocumentDomain.deactivateDocuments([documentId, ...childIds]);
-
+    });
+    void NewsFeedApp.deleteResourceNewsFeed({ documentId });
+    await DocumentHelper.deleteFileFromMinIO(
+      childrenDocumentFromDB,
+      documentFromDb
+    );
     return documentFromDb as T;
   },
 
-  loadDocuments: async (input: QueryDocumentsArgs) => {
+  // `metadataKeysOverride` lets callers (e.g. the CSV export) hydrate a caller-chosen metadata
+  // key list instead of the service definition's default one, avoiding unused metadata. `first`
+  // is optional in the input type so exports aren't row-capped like the paginated GraphQL API.
+  loadDocuments: async (
+    input: Partial<QueryDocumentsArgs> &
+      DocumentListOptions &
+      Pick<QueryDocumentsArgs, 'serviceInstanceId'>,
+    metadataKeysOverride?: DocumentMetadataKeyCode[]
+  ) => {
     const serviceDefinition =
       await ServiceDefinitionDomain.loadServiceDefinitionByServiceInstance(
         input.serviceInstanceId
@@ -595,7 +813,7 @@ export const DocumentApp = {
     return DocumentDomain.loadParentDocumentsByServiceInstance(
       documentType,
       input,
-      metadataKeys
+      metadataKeysOverride ?? metadataKeys
     );
   },
 
@@ -617,6 +835,26 @@ export const DocumentApp = {
       documentType,
       serviceInstanceSlug,
       metadataKeys
+    );
+  },
+
+  loadPublicDocumentSlugsByServiceSlug: async (
+    serviceInstanceSlug: string
+  ): Promise<Pick<Document, 'slug' | 'created_at' | 'updated_at'>[]> => {
+    const serviceDefinition =
+      await ServiceDefinitionDomain.loadServiceDefinitionByServiceInstanceSlug(
+        serviceInstanceSlug
+      );
+    if (!serviceDefinition) {
+      throw new Error(ErrorCode.ServiceDefinitionNotFound);
+    }
+
+    const { documentType } =
+      getMetadataKeysAndDocumentTypeFromServiceDefinition(serviceDefinition);
+
+    return DocumentDomain.loadSeoDocumentSlugsByServiceSlug(
+      documentType,
+      serviceInstanceSlug
     );
   },
 
@@ -704,7 +942,7 @@ export const DocumentApp = {
     const NEWEST_DOCUMENTS_MAX_LIMIT = 20;
 
     // Default to all shareable service definitions so that non-shareable
-    // types (e.g. vault, service_picture) are never exposed when no platform
+    // types (e.g. service_picture) are never exposed when no platform
     // filter is provided.
     const allShareableIdentifiers = [
       ...ServiceDefinitionIdentifiersByPlatformIdentifier.values(),
@@ -778,6 +1016,59 @@ export const DocumentApp = {
       documentId,
       ALL_METADATA_KEYS
     );
+  },
+
+  /**
+   * Records a share of the document and returns it with its counters. The share counter is public and the mutation
+   * needs no session, so an address counts one share per document per hour: later calls return the document without
+   * counting. The address comes from the request context, which holds the Express `req.ip` on `/graphql-api` and
+   * `/graphql-sse` alike.
+   */
+  shareDocument: async (documentId: DocumentId) => {
+    const document = await DocumentDomain.loadDocumentWithMetadataById(
+      documentId,
+      []
+    );
+    const documentWithCounters =
+      await DocumentHelper.updateDocumentWithCounters(document);
+    const { user, ip } = requestContext.get() ?? {};
+    if (!(await shareCountRateLimiter.tryConsumeForIp(ip, documentId))) {
+      return documentWithCounters;
+    }
+    try {
+      if (!document.service_instance_id) {
+        throw new Error(ErrorCode.ServiceInstanceNotFound);
+      }
+      const serviceDefinition =
+        await ServiceInstanceDomain.loadServiceDefinitionByServiceInstance(
+          document.service_instance_id
+        );
+      if (!serviceDefinition) {
+        throw new Error(ErrorCode.ServiceDefinitionNotFound);
+      }
+      if (
+        TelemetryHelper.shouldSendEventForService(serviceDefinition.identifier)
+      ) {
+        const selectedOrga = user
+          ? await OrganizationDomain.loadOrganizationBy({
+              id: user.selected_organization_id,
+            })
+          : undefined;
+        const shareEvent = await TelemetryHelper.buildShareEvent(
+          selectedOrga,
+          user?.id,
+          serviceDefinition.identifier,
+          document.id,
+          document.name ?? ''
+        );
+        await TelemetryApp.sendTelemetryEvent(shareEvent);
+      }
+    } catch (error) {
+      logApp.error('Unable to send telemetry event', {
+        error,
+      });
+    }
+    return documentWithCounters;
   },
 };
 

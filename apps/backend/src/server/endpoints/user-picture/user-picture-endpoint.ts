@@ -1,0 +1,94 @@
+import cors from 'cors';
+import { Express, Request, Response } from 'express';
+import { Readable } from 'stream';
+import { UserDomain } from '../../../modules/organization-management/user/user-domain/user.domain';
+import { MinIOClient } from '../../../thirdparty/minio/client';
+import { logApp } from '../../../utils/app-logger.util';
+import { userPictureRateLimiter } from '../../../utils/rate-limit.util';
+import {
+  setStoredFileSecurityHeaders,
+  toStoredImageContentType,
+} from '../shared/stored-file.util';
+
+// One day, and not immutable: the frontend image optimiser fetches the picture by its path alone, whose
+// content changes when the user uploads a new one, and keeps its resized copy for this long (its own
+// `minimumCacheTTL` is also one day). A replaced picture viewed often stays stale in the optimised views for
+// about two days at most; a rarely viewed one can stay stale until the first request after its copy expired
+// (served at once, refreshed in the background), and that browser then keeps it for one more day (the
+// optimiser sends the full lifetime).
+const USER_PICTURE_CACHE_MAX_AGE_SECONDS = 60 * 60 * 24;
+
+// The one form of the URL the backend writes (a lowercase, hyphenated UUID, no trailing slash). PostgreSQL
+// also reads the upper case, braced or hyphenless forms of the same id, and Express ignores the case of the
+// route and its trailing slash: each of them would be one more URL for the same picture, so one more copy
+// for the frontend image optimiser to fetch and resize. The raw path is tested, so an encoded form fails too.
+const CANONICAL_USER_PICTURE_PATH =
+  /^\/user\/picture\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
+export const getUserPicture = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  if (!CANONICAL_USER_PICTURE_PATH.test(req.path)) {
+    res.status(404).json({ message: 'No picture found' });
+    return;
+  }
+
+  try {
+    const pictureMinio = await UserDomain.loadUserPictureMinio(
+      req.params.userId as string
+    );
+
+    if (!pictureMinio) {
+      res.status(404).json({ message: 'No picture found' });
+      return;
+    }
+
+    const file = await MinIOClient.downloadFileWithMimeType(pictureMinio);
+
+    if (!file) {
+      res.status(404).json({ message: 'Picture not found' });
+      return;
+    }
+
+    const stream = file.body as Readable;
+
+    res.setHeader('Content-Type', toStoredImageContentType(file.mimeType));
+    res.setHeader(
+      'Cache-Control',
+      `public, max-age=${USER_PICTURE_CACHE_MAX_AGE_SECONDS}`
+    );
+    setStoredFileSecurityHeaders(res);
+
+    stream.on('error', (error) => {
+      logApp.error('Error while streaming user picture', { error });
+      if (res.headersSent) {
+        res.destroy(error);
+      } else {
+        res.removeHeader('Cache-Control');
+        res.removeHeader('Content-Type');
+        res.status(404).json({ message: 'Picture not found' });
+      }
+    });
+
+    stream.pipe(res);
+  } catch (error) {
+    logApp.error('Error while retrieving user picture', { error });
+    if (res.headersSent) {
+      res.destroy(error as Error);
+      return;
+    }
+    res.removeHeader('Cache-Control');
+    res.removeHeader('Content-Type');
+    res.status(404).json({ message: 'Picture not found' });
+  }
+};
+
+export const userPictureEndpoint = (app: Express) => {
+  app.get(
+    '/user/picture/:userId',
+    userPictureRateLimiter,
+    cors(),
+    getUserPicture
+  );
+};

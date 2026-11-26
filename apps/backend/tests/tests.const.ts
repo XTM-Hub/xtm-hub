@@ -1,11 +1,11 @@
 import { GraphQLResolveInfo } from 'graphql';
 import {
   DeploymentRequestActivitySector,
-  DeploymentRequestDeploymentType,
   DeploymentRequestJobTitle,
   DeploymentRequestPlatformRegion,
   DeploymentRequestSource,
   DeploymentRequestUseCase,
+  OrganizationCapability,
   PlatformIdentifier,
   PortalCapability,
 } from '../src/__generated__/resolvers-types';
@@ -16,15 +16,23 @@ import { OrganizationId } from '../src/model/kanel/public/Organization';
 import { ServiceCapabilityId } from '../src/model/kanel/public/ServiceCapability';
 import { ServiceDefinitionId } from '../src/model/kanel/public/ServiceDefinition';
 import { ServiceInstanceId } from '../src/model/kanel/public/ServiceInstance';
+import { SubscriptionId } from '../src/model/kanel/public/Subscription';
+import { UseCaseId } from '../src/model/kanel/public/UseCase';
 import { UserId } from '../src/model/kanel/public/User';
 import { PortalContext } from '../src/model/portal-context';
+import type { DeploymentRequestDataLoaders } from '../src/modules/deployment/deployment.dataloader';
 import type { DocumentDataLoaders } from '../src/modules/document/document.dataloader';
+import type { FeatureVotingDataLoaders } from '../src/modules/feature-voting/feature-voting.dataloader';
+import type { NewsFeedDataLoaders } from '../src/modules/news-feed/news-feed.dataloader';
+import type { RegistrationDataLoaders } from '../src/modules/registration/registration.dataloader';
 import type { ServiceInstanceDataLoaders } from '../src/modules/service/instance/service-instance.dataloader';
+import type { SubscriptionDataLoaders } from '../src/modules/subscription/subscription.dataloader';
 import {
   CAPABILITY_BYPASS,
   PLATFORM_ORGANIZATION_UUID,
   SYSTEM_USER_CONTEXT,
 } from '../src/portal.const';
+import { SYSTEM_TOKEN_HEADER } from '../src/security/system-token';
 
 export const GRAPHQL_RESOLVE_INFO = {} as GraphQLResolveInfo;
 
@@ -102,14 +110,11 @@ export const SERVICES = {
     OPENCTI_REGISTRATION: {
       ID: '5f769173-5ace-4ef3-b04f-2c95609c5b59' as ServiceDefinitionId,
     },
-    VAULT: {
-      ID: '2634d52b-f061-4ebc-bed2-c6cc94297ad1' as ServiceDefinitionId,
+    XTMONE_REGISTRATION: {
+      ID: '9b1f6a9e-2c3d-4e3a-8a4a-2b7c4d9f1a01' as ServiceDefinitionId,
     },
   },
   INSTANCES: {
-    VAULT: {
-      ID: 'e88e8f80-ba9e-480b-ab27-8613a1565eff' as ServiceInstanceId,
-    },
     INTEGRATIONS: {
       NAME: 'integrations',
       ID: '0f4aad4b-bdd6-4084-8b1f-82c9c66578cc' as ServiceInstanceId,
@@ -144,6 +149,53 @@ export const SERVICES = {
   },
 };
 
+// Seeded in tests/seeds/02-insert-services-community.js on a ServiceInstance no
+// other fixture uses.
+export const TEST_SUBSCRIPTIONS = {
+  FILIGRAN_COMMUNITY: {
+    ID: '7f17820c-3a36-4023-ae3c-e2c15613b518' as SubscriptionId,
+    ORGANIZATION_ID: TEST_ORGANIZATIONS.FILIGRAN.ID,
+    SERVICE_INSTANCE_ID:
+      'b382537e-1cfd-4316-bd1d-ec83f4e1ef54' as ServiceInstanceId,
+  },
+};
+
+// Document summaries (meta_description). Prefixed with the longest product and type, "OpenCTI Integration: " or
+// "OpenCTI Custom View: " (21 characters), and followed by a period, they still fit between
+// META_DESCRIPTION_MIN_LENGTH and META_DESCRIPTION_MAX_LENGTH, as a generated meta description must.
+export const TEST_META_DESCRIPTIONS = {
+  DEFAULT:
+    'Monitor ransomware activity in OpenCTI with a ready-made dashboard that tracks threat actors, targeted sectors, victims and indicators',
+  UPDATED:
+    'Track phishing campaigns in OpenCTI with a dashboard that maps sender domains, lures, targeted organizations and related indicators',
+};
+
+// Reusable use cases seeded in tests/seeds/04-insert-use-cases.js, to avoid
+// ad hoc creation in every test file. Names are not significant to the
+// features under test.
+export const TEST_USE_CASES = {
+  AUTOMATION: {
+    ID: '9d3a9c3d-3b9a-4b5b-8b0a-1a2b3c4d5e01' as UseCaseId,
+    NAME: 'Automation',
+  },
+  INTEGRATION: {
+    ID: '9d3a9c3d-3b9a-4b5b-8b0a-1a2b3c4d5e02' as UseCaseId,
+    NAME: 'Integration',
+  },
+  MONITORING: {
+    ID: '9d3a9c3d-3b9a-4b5b-8b0a-1a2b3c4d5e03' as UseCaseId,
+    NAME: 'Monitoring',
+  },
+  DETECTION: {
+    ID: '9d3a9c3d-3b9a-4b5b-8b0a-1a2b3c4d5e04' as UseCaseId,
+    NAME: 'Detection',
+  },
+  RESPONSE: {
+    ID: '9d3a9c3d-3b9a-4b5b-8b0a-1a2b3c4d5e05' as UseCaseId,
+    NAME: 'Response',
+  },
+};
+
 export const CAPABILITY_READ_TRIALS: CapabilityPortal = {
   id: 'bb8cadfe-8853-486c-993e-ab0026348fec' as CapabilityPortalId,
   name: PortalCapability.ReadTrials,
@@ -154,6 +206,16 @@ export const CAPABILITY_MODIFY_TRIALS: CapabilityPortal = {
   name: PortalCapability.ModifyTrials,
 };
 
+export const CAPABILITY_READ_SAAS_METRICS: CapabilityPortal = {
+  id: '72dd8594-e8d2-4053-9cef-b51ffb497472' as CapabilityPortalId,
+  name: PortalCapability.ReadSaasMetrics,
+};
+
+export const CAPABILITY_READ_ORGANIZATION_MEMBERS: CapabilityPortal = {
+  id: '4ef3679a-a81e-4068-b3b5-39fee027c972' as CapabilityPortalId,
+  name: PortalCapability.ReadOrganizationMembers,
+};
+
 export const CAPABILITY_MANAGE_DEPLOYMENT: CapabilityPortal = {
   id: 'system-token-MANAGE_DEPLOYMENT' as CapabilityPortalId,
   name: PortalCapability.ManageDeployment,
@@ -162,10 +224,17 @@ export const CAPABILITY_MANAGE_DEPLOYMENT: CapabilityPortal = {
 export const TEST_DEPLOYMENT = {
   activity_sector: DeploymentRequestActivitySector.ComputerNetworkSecurity,
   job_title: DeploymentRequestJobTitle.CLevel,
-  use_case: DeploymentRequestUseCase.ThreatHunting,
-  products: [PlatformIdentifier.Opencti],
+  use_cases_by_product: [
+    {
+      platform_identifier: PlatformIdentifier.Opencti,
+      use_case: DeploymentRequestUseCase.ThreatHunting,
+    },
+    {
+      platform_identifier: PlatformIdentifier.Openaev,
+      use_case: DeploymentRequestUseCase.OaevPurpleTeam,
+    },
+  ],
   region: DeploymentRequestPlatformRegion.UsEast,
-  type: DeploymentRequestDeploymentType.Trial,
   source: DeploymentRequestSource.Xtmhub,
 };
 
@@ -295,6 +364,19 @@ export const contextRegistererUserSecondOrga: PortalContext = {
       },
     ],
   },
+  dataLoaders: {
+    deploymentRequest: {
+      childrenByParentLoader: { load: () => Promise.resolve([]) },
+    } as unknown as DeploymentRequestDataLoaders,
+    registration: {
+      registeredPlatformByServiceInstanceLoader: {
+        load: () => Promise.resolve(null),
+      },
+    } as unknown as RegistrationDataLoaders,
+    serviceInstance: {
+      serviceInstanceByIdLoader: { load: () => Promise.resolve(undefined) },
+    } as unknown as ServiceInstanceDataLoaders,
+  },
 } as unknown as PortalContext;
 
 export const requestContextRegistererUserSecondOrga = {
@@ -327,6 +409,21 @@ export const contextSimpleUserSecondOrga: PortalContext = {
     ],
     capabilities: [],
     roles_portal: [],
+    organization_capabilities: [
+      {
+        id: 'simple-second-organization',
+        organization: { id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID },
+        capabilities: [],
+      },
+      {
+        id: 'simple-second-organization-personal-space',
+        organization: {
+          id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.SIMPLE
+            .PERSONAL_SPACE_ID,
+        },
+        capabilities: [],
+      },
+    ],
   },
 } as unknown as PortalContext;
 
@@ -364,9 +461,31 @@ export const contextSimpleUserFiligran2: PortalContext = {
     ],
     capabilities: [],
     roles_portal: [],
+    organization_capabilities: [
+      {
+        id: 'access-subscription-filigran',
+        organization: { id: TEST_ORGANIZATIONS.FILIGRAN.ID },
+        capabilities: [
+          OrganizationCapability.ManageAccess,
+          OrganizationCapability.ManageSubscription,
+        ],
+      },
+      {
+        id: 'access-subscription-personal-space',
+        organization: {
+          id: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2
+            .ID as unknown as OrganizationId,
+        },
+        capabilities: [OrganizationCapability.AdministrateOrganization],
+      },
+    ],
   },
   dataLoaders: {
+    deploymentRequest: {
+      childrenByParentLoader: { load: () => Promise.resolve([]) },
+    } as unknown as DeploymentRequestDataLoaders,
     document: {
+      documentByIdLoader: { load: () => Promise.resolve(null) },
       uploaderLoader: { load: () => Promise.resolve(null) },
       uploaderOrganizationLoader: { load: () => Promise.resolve(null) },
       childrenDocumentsLoader: { load: () => Promise.resolve([]) },
@@ -379,6 +498,18 @@ export const contextSimpleUserFiligran2: PortalContext = {
         load: () => Promise.resolve(null),
       },
     } as unknown as DocumentDataLoaders,
+    featureVoting: {
+      roundFeaturesByRoundIdLoader: { load: () => Promise.resolve([]) },
+      useCasesByFeatureIdLoader: { load: () => Promise.resolve([]) },
+    } as unknown as FeatureVotingDataLoaders,
+    newsFeed: {
+      metadataByNewsFeedItemIdLoader: { load: () => Promise.resolve([]) },
+    } as unknown as NewsFeedDataLoaders,
+    registration: {
+      registeredPlatformByServiceInstanceLoader: {
+        load: () => Promise.resolve(null),
+      },
+    } as unknown as RegistrationDataLoaders,
     serviceInstance: {
       linksByServiceInstanceLoader: { load: () => Promise.resolve([]) },
       serviceDefinitionByServiceInstanceLoader: {
@@ -390,7 +521,25 @@ export const contextSimpleUserFiligran2: PortalContext = {
       subscriptionsByServiceInstanceLoader: {
         load: () => Promise.resolve([]),
       },
+      serviceInstanceByIdLoader: { load: () => Promise.resolve(undefined) },
     } as unknown as ServiceInstanceDataLoaders,
+    subscription: {
+      serviceInstanceBySubscriptionServiceInstanceIdLoader: {
+        load: () => Promise.resolve(undefined),
+      },
+      organizationBySubscriptionOrganizationIdLoader: {
+        load: () => Promise.resolve(undefined),
+      },
+      subscriptionCapabilitiesBySubscriptionIdLoader: {
+        load: () => Promise.resolve([]),
+      },
+      userServicesBySubscriptionIdLoader: {
+        load: () => Promise.resolve([]),
+      },
+      serviceCapabilityBySubscriptionCapabilityIdLoader: {
+        load: () => Promise.resolve(undefined),
+      },
+    } as unknown as SubscriptionDataLoaders,
   },
 } as unknown as PortalContext;
 
@@ -398,3 +547,16 @@ export const requestContextSimpleUserFiligran2 = {
   user: contextSimpleUserFiligran2.user,
   portalContext: contextSimpleUserFiligran2,
 };
+
+// Matches system_token_hash in config/default.json
+export const TEST_SYSTEM_TOKEN = 'changeMe';
+
+// A machine request has no session, and the resolvers under test read neither res nor dataLoaders
+const systemTokenContext = (token: string): PortalContext =>
+  ({
+    req: { headers: { [SYSTEM_TOKEN_HEADER]: token } },
+  }) as unknown as PortalContext;
+
+export const contextSystemToken = systemTokenContext(TEST_SYSTEM_TOKEN);
+
+export const contextInvalidSystemToken = systemTokenContext('invalid-token');

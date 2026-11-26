@@ -1,18 +1,18 @@
 import AddUseCase from '@/components/admin/use-case/AddUseCase';
 import EditUseCase from '@/components/admin/use-case/EditUseCase';
-import { useExecuteAfterAnimation } from '@/hooks/use-execute-after-animation';
+import { DataTable, DataTableToolbar } from '@/components/ui/data-table';
+import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import { i18nKey } from '@/utils/datatable';
-import { formatName } from '@/utils/format/name';
+import { getDataTableLabels } from '@/utils/design-system/data-table';
 import {
-  Badge,
-  DataTable,
+  Chip,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@filigran/ui';
+} from '@filigran/design-system';
 import {
   FiligranProduct,
   OrderingMode,
@@ -22,11 +22,10 @@ import {
 } from '@graphql/generated';
 import { useCaseListKeys } from '@graphql/use-case/use-case-list.keys';
 import { ColumnDef } from '@tanstack/react-table';
-import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 
 const UseCases = () => {
-  const t = useTranslations();
+  const t = useTranslate();
   const [useCaseEdit, setUseCaseEdit] = useState<
     UseCaseRowFragment | undefined
   >(undefined);
@@ -60,11 +59,10 @@ const UseCases = () => {
       header: t('UseCaseListPage.Name'),
       cell: ({ row }) => {
         return (
-          <Badge
-            variant="outline"
-            color={row.original.color}>
-            {formatName(row.original.name)}
-          </Badge>
+          <Chip
+            label={row.original.name}
+            color={row.original.color}
+          />
         );
       },
     },
@@ -74,13 +72,12 @@ const UseCases = () => {
       header: t('UseCaseListPage.Product'),
       cell: ({ row }) => {
         return (
-          <div className="flex flex-wrap gap-xs">
+          <div className="flex flex-wrap gap-1">
             {row.original.product.map((product) => (
-              <Badge
+              <Chip
                 key={product}
-                variant="outline">
-                {product.toUpperCase()}
-              </Badge>
+                label={product.toUpperCase()}
+              />
             ))}
           </div>
         );
@@ -104,23 +101,25 @@ const UseCases = () => {
   return (
     <>
       {isError && (
-        <div className="mb-s text-sm text-destructive">{t('Utils.Error')}</div>
+        <div className="mb-2 text-sm text-feedback-error-primary">
+          {t('Utils.Error')}
+        </div>
       )}
       <DataTable
         columns={columns}
         data={useCasesData}
-        i18nKey={i18nKey(t)}
+        {...getDataTableLabels(t)}
         tableOptions={{
           enableSorting: false,
           enableColumnResizing: false,
           enableColumnPinning: false,
           enableHiding: false,
         }}
+        getRowAnalyticsId={() => 'admin_use_case_edit'}
         onClickRow={({ original }) => setUseCaseEdit(original)}
         toolbar={
-          <div className="flex flex-col-reverse items-center justify-between gap-s sm:flex-row">
-            <div />
-            <div className="flex w-full items-center justify-between gap-s sm:w-auto">
+          <DataTableToolbar
+            filters={
               <Select
                 value={selectedProduct ?? 'all'}
                 onValueChange={(value) =>
@@ -128,10 +127,13 @@ const UseCases = () => {
                     value === 'all' ? undefined : (value as FiligranProduct)
                   )
                 }>
-                <SelectTrigger className="w-45">
+                <SelectTrigger
+                  {...analyticsId('admin_use_case_products_open')}
+                  aria-label={t('UseCaseListPage.Product')}
+                  className="w-full">
                   <SelectValue placeholder={t('UseCaseListPage.Product')} />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="layer-1">
                   <SelectItem value="all">
                     {t('UseCaseListPage.AllProducts')}
                   </SelectItem>
@@ -144,18 +146,16 @@ const UseCases = () => {
                   ))}
                 </SelectContent>
               </Select>
-              <AddUseCase />
-            </div>
-          </div>
+            }
+            actions={<AddUseCase />}
+          />
         }
       />
       {useCaseEdit && (
         <EditUseCase
           useCase={useCaseEdit}
           open={!!useCaseEdit}
-          onClose={() =>
-            useExecuteAfterAnimation(() => setUseCaseEdit(undefined))
-          }
+          onClose={() => setUseCaseEdit(undefined)}
         />
       )}
     </>

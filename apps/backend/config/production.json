@@ -11,5 +11,14 @@
     "pending_user_digest": true,
     "public_roadmap_monthly_reminder": true
   },
-  "base_url_front": "https://hub.filigran.io"
+  "enabled_teams_notifications": {
+    "resource_not_published_reminder": true
+  },
+  "auth0_sync": {
+    "enabled": true
+  },
+  "base_url_front": "https://hub.filigran.io",
+  "blog_api": {
+    "base_url": "https://filigran.io"
+  }
 }

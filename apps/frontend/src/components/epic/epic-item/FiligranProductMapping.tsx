@@ -3,6 +3,7 @@ import {
   LogoXtmOneIcon,
   OpenAevIconIcon,
   OpenCtiIconIcon,
+  OpenGrcIcon,
 } from '@filigran/icon';
 import { FiligranProduct } from '@graphql/generated';
 import { ReactNode } from 'react';
@@ -10,31 +11,56 @@ import { ReactNode } from 'react';
 export interface FiligranProductMetadata {
   name: string;
   logo: ReactNode;
-  link: string;
 }
 
 export const FiligranProductMapping: Record<
   FiligranProduct,
   FiligranProductMetadata
 > = {
+  [FiligranProduct.Xtmhub]: {
+    name: 'XTM Hub',
+    logo: (
+      <LogoFiligranIcon
+        aria-hidden={true}
+        className="w-5 h-5"
+      />
+    ),
+  },
   [FiligranProduct.Opencti]: {
     name: 'OpenCTI',
-    logo: <OpenCtiIconIcon className="w-5 h-5" />,
-    link: 'https://filigran-community.slack.com/archives/CHZC2D38C',
+    logo: (
+      <OpenCtiIconIcon
+        aria-hidden={true}
+        className="w-5 h-5"
+      />
+    ),
   },
   [FiligranProduct.Openaev]: {
     name: 'OpenAEV',
-    logo: <OpenAevIconIcon className="w-5 h-5" />,
-    link: 'https://filigran-community.slack.com/archives/CJ1PHBHF1',
-  },
-  [FiligranProduct.Xtmhub]: {
-    name: 'XTM Hub',
-    logo: <LogoFiligranIcon className="w-5 h-5" />,
-    link: 'https://filigran-community.slack.com/archives/C08HU35NPD4',
+    logo: (
+      <OpenAevIconIcon
+        aria-hidden={true}
+        className="w-5 h-5"
+      />
+    ),
   },
   [FiligranProduct.Xtmone]: {
     name: 'XTM One',
-    logo: <LogoXtmOneIcon className="w-5 h-5" />,
-    link: 'https://filigran-community.slack.com/archives/CHNEM9NUT',
+    logo: (
+      <LogoXtmOneIcon
+        aria-hidden={true}
+        className="w-5 h-5"
+      />
+    ),
+  },
+  // OpenGRC is OpenCRQ's former name: its icon is still exported as OpenGrcIcon.
+  [FiligranProduct.Opencrq]: {
+    name: 'OpenCRQ',
+    logo: (
+      <OpenGrcIcon
+        aria-hidden={true}
+        className="w-5 h-5"
+      />
+    ),
   },
 };

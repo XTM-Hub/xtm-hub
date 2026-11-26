@@ -16,14 +16,16 @@ concurrency:
 
 jobs:
   deploy-feature-branch:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
-      - name: Install AWX cli
-        run: pip install awxkit
+      - name: Checkout AWX action
+        uses: actions/checkout@v6
+        with:
+          sparse-checkout: .github/actions/awx-launch
       - name: Deploy feature environment
-        run: |
-          awx --conf.host https://awx.filigran.io \
-            --conf.token ${{ secrets.AWX_TOKEN }} \
-            -f human job_templates launch 'Delete XTM Hub feature branch for testing' \
-            --inventory eu-west-staging \
-            --extra_vars "{\"env\":\"Development\",\"xtmhub_version\":\"${{ inputs.pr_number }}\"}"
+        uses: ./.github/actions/awx-launch
+        with:
+          template: Delete XTM Hub feature branch for testing
+          inventory: eu-west-staging
+          extra-vars: '{"env":"Development","xtmhub_version":"${{ inputs.pr_number }}"}'
+          token: ${{ secrets.AWX_TOKEN }}

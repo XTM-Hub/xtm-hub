@@ -1,4 +1,5 @@
 interface Window {
-  dataLayer: unknown[];
-  gtag: (...args: unknown[]) => void;
+  dataLayer?: IArguments[];
+  gtag?: (...args: unknown[]) => void;
+  [gaDisableKey: `ga-disable-${string}`]: boolean | undefined;
 }

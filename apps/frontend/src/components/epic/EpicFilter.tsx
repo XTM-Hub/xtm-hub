@@ -1,19 +1,15 @@
 'use client';
 import { FiligranProductMapping } from '@/components/epic/epic-item/FiligranProductMapping';
-import { SearchInput } from '@/components/ui/SearchInput';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  Switch,
-} from '@filigran/ui';
+import { FILIGRAN_PRODUCTS_ORDER } from '@/components/epic/filigran-products';
+import { AppCombobox } from '@/components/ui/AppCombobox';
+import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
+import { toComboboxOptionIds } from '@/utils/design-system/combobox';
+import { SearchField, Switch } from '@filigran/design-system';
 import { FiligranProduct } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
-import React from 'react';
+import React, { useMemo } from 'react';
 
-export type EpicFilterType = 'all' | FiligranProduct;
+export type EpicFilterType = FiligranProduct[];
 
 interface EpicFilterProps {
   selectedFilter?: EpicFilterType;
@@ -22,6 +18,7 @@ interface EpicFilterProps {
   showFinished: boolean;
   onShowFinishedChange: (show: boolean) => void;
   debounceHandleInput?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onSearchClear?: () => void;
 }
 
 export const EpicFilter = ({
@@ -31,58 +28,56 @@ export const EpicFilter = ({
   showFinished,
   onShowFinishedChange,
   debounceHandleInput,
+  onSearchClear,
 }: EpicFilterProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
 
-  const products = Object.values(FiligranProduct);
-
-  const totalCount = products.reduce(
-    (sum, product) => sum + (countsByProduct[product] ?? 0),
-    0
+  const optionIds = useMemo(
+    () =>
+      toComboboxOptionIds(
+        FILIGRAN_PRODUCTS_ORDER,
+        (product) => product,
+        (product) =>
+          `${FiligranProductMapping[product].name} (${countsByProduct[product] ?? 0})`
+      ),
+    [countsByProduct]
   );
 
   return (
-    <div className="ml-xl pl-m grid grid-cols-1 sm:grid-cols-3 gap-l items-center">
+    <div className="mx-2 grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
       <div className="max-w-full sm:max-w-[100%]">
-        <SearchInput
+        <SearchField
+          fullWidth
+          aria-label={t('GenericActions.Search')}
           placeholder={t('GenericActions.Search')}
+          clearLabel={t('DesignSystem.SearchField.Clear')}
           onChange={debounceHandleInput}
+          onClear={onSearchClear}
         />
       </div>
 
       <div className="max-w-full sm:max-w-[100%]">
-        <Select
-          value={selectedFilter}
-          onValueChange={(value) =>
-            onSelectedFilterChange(value as EpicFilterType)
-          }>
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder={t('Epic.FilterByProduct')} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">
-              {t('Epic.AllProducts')} ({totalCount})
-            </SelectItem>
-            {products.map((product) => {
-              const count = countsByProduct[product] ?? 0;
-
-              return (
-                <SelectItem
-                  key={product}
-                  value={product}>
-                  {FiligranProductMapping[product].name} ({count})
-                </SelectItem>
-              );
-            })}
-          </SelectContent>
-        </Select>
+        <AppCombobox
+          analyticsId="roadmap_products_open"
+          multiple
+          label={t('Epic.FilterByProduct')}
+          labelPosition="none"
+          placeholder={t('Epic.FilterByProduct')}
+          options={optionIds.ids}
+          value={selectedFilter ?? []}
+          onValueChange={(next) =>
+            onSelectedFilterChange(next as EpicFilterType)
+          }
+          getOptionLabel={optionIds.getOptionLabel}
+        />
       </div>
-      <div className="ml-auto flex items-center gap-s">
+      <div className="ml-auto">
         <Switch
+          {...analyticsId('roadmap_delivered_epics_toggle')}
+          label={t('Epic.ShowFinished')}
           checked={showFinished}
           onCheckedChange={onShowFinishedChange}
         />
-        <span className="text-sm">{t('Epic.ShowFinished')}</span>
       </div>
     </div>
   );

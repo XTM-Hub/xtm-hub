@@ -1,0 +1,134 @@
+import { useTranslate } from '@/hooks/use-translate';
+import {
+  analyticsId,
+  type AnalyticsFieldProps,
+} from '@/lib/analytics/analytics.ids';
+import {
+  Combobox,
+  ComboboxChangeMeta,
+  ComboboxChips,
+  ComboboxClear,
+  ComboboxContent,
+  ComboboxControls,
+  ComboboxField,
+  ComboboxHelperText,
+  ComboboxInput,
+  ComboboxInputProps,
+  ComboboxLabel,
+  ComboboxLabelPosition,
+  ComboboxProps,
+  ComboboxTrigger,
+} from '@filigran/design-system';
+import { ReactNode } from 'react';
+
+interface AppComboboxSingleProps<T> {
+  multiple?: false;
+  value: T | null;
+  onValueChange: (value: T | null, meta: ComboboxChangeMeta) => void;
+}
+
+interface AppComboboxMultipleProps<T> {
+  multiple: true;
+  value: T[];
+  onValueChange: (value: T[], meta: ComboboxChangeMeta) => void;
+}
+
+type AppComboboxBaseProps<T> = Omit<
+  ComboboxProps<T>,
+  | 'value'
+  | 'onValueChange'
+  | 'multiple'
+  | 'children'
+  | 'labelPosition'
+  | 'required'
+  | 'error'
+> & {
+  /** Accessible name of the field, shown as its label unless `labelPosition` is `none`. */
+  label: string;
+  labelPosition?: ComboboxLabelPosition;
+  required?: boolean;
+  /** Puts the field in error and shows the message below it. */
+  error?: string;
+  placeholder?: string;
+  inputClassName?: string;
+  onBlur?: ComboboxInputProps['onBlur'];
+  emptyMessage?: ReactNode;
+  /**
+   * Layer of the portalled panel, `layer-1` by default so it never paints the
+   * input colour. A field on a layer-1 surface passes `layer-0`.
+   */
+  contentClassName?: string;
+  'data-testid'?: string;
+};
+
+export type AppComboboxProps<T> = AppComboboxBaseProps<T> &
+  (AppComboboxSingleProps<T> | AppComboboxMultipleProps<T>) &
+  AnalyticsFieldProps;
+
+export const AppCombobox = <T,>({
+  label,
+  labelPosition = 'top',
+  required,
+  error,
+  placeholder,
+  inputClassName,
+  onBlur,
+  emptyMessage,
+  contentClassName = 'layer-1',
+  'data-testid': testId,
+  multiple,
+  value,
+  onValueChange,
+  analyticsId: elementId,
+  formField: _formField,
+  ...comboboxProps
+}: AppComboboxProps<T>) => {
+  const t = useTranslate();
+  const hasVisibleLabel = labelPosition !== 'none';
+
+  return (
+    <Combobox<T>
+      {...comboboxProps}
+      multiple={multiple}
+      labelPosition={labelPosition}
+      error={Boolean(error)}
+      value={value}
+      // The design system hands back the shape `multiple` selects.
+      onValueChange={onValueChange as ComboboxProps<T>['onValueChange']}>
+      {hasVisibleLabel && (
+        <ComboboxLabel required={required}>{label}</ComboboxLabel>
+      )}
+      <ComboboxField data-testid={testId}>
+        {multiple && (
+          <ComboboxChips
+            aria-label={t('DesignSystem.Combobox.SelectedValues')}
+          />
+        )}
+        <ComboboxInput
+          {...(elementId && analyticsId(elementId))}
+          className={inputClassName}
+          aria-label={hasVisibleLabel ? undefined : label}
+          // The input links the helper text but never marks itself invalid.
+          aria-invalid={error ? true : undefined}
+          // The placeholder names the field, which the chips already do once picked.
+          placeholder={multiple && value.length > 0 ? undefined : placeholder}
+          onBlur={onBlur}
+        />
+        <ComboboxControls>
+          <ComboboxClear aria-label={t('Utils.Clear')} />
+          <ComboboxTrigger
+            {...(elementId && analyticsId(elementId))}
+            aria-label={t('DesignSystem.Combobox.ToggleOptions')}
+          />
+        </ComboboxControls>
+      </ComboboxField>
+      {error && <ComboboxHelperText>{error}</ComboboxHelperText>}
+      <ComboboxContent
+        className={contentClassName}
+        emptyMessage={emptyMessage ?? t('Utils.NotFound')}
+        loadingMessage={t('Utils.Loading')}
+        listAriaLabel={label}
+      />
+    </Combobox>
+  );
+};

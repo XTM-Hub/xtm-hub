@@ -1,23 +1,27 @@
-import { AddSubscriptionCapabilityMutation } from '@/components/subcription/subscription.graphql';
 import { BadgeOverflow } from '@/components/ui/BadgeOverflowCounter';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
+import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
+import { portalGraphqlClient } from '@/lib/graphql-client';
+import { invalidateSubscriptionQueries } from '@/utils/query-invalidation/subscription.invalidation';
 import {
   Button,
   Checkbox,
   Dialog,
+  DialogBody,
   DialogContent,
   DialogFooter,
-  DialogHeader,
   DialogTitle,
-  toast,
-} from '@filigran/ui';
-import { subscriptionAddCapabilityMutation } from '@generated/subscriptionAddCapabilityMutation.graphql';
-import { subscription_fragment$data } from '@generated/subscription_fragment.graphql';
-import { useTranslations } from 'next-intl';
+} from '@filigran/design-system';
+import {
+  SubscriptionItemFragment,
+  useAddSubscriptionCapabilityMutation,
+} from '@graphql/generated';
+import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { useMutation } from 'react-relay';
 
 interface ServiceSlugAddCapabilitiesProps {
-  selectedSubscriptions: subscription_fragment$data[];
+  selectedSubscriptions: SubscriptionItemFragment[];
   availableCapabilities: BadgeOverflow[];
   open: boolean;
   setOpen: (open: boolean) => void;
@@ -31,15 +35,30 @@ export const ServiceSlugAddCapabilities = ({
   setOpen,
   onCompleted,
 }: ServiceSlugAddCapabilitiesProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const [selectedCapabilityIds, setSelectedCapabilityIds] = useState<
     Set<string>
   >(new Set());
 
-  const [commitAddCapability, isInFlight] =
-    useMutation<subscriptionAddCapabilityMutation>(
-      AddSubscriptionCapabilityMutation
-    );
+  const queryClient = useQueryClient();
+
+  const { mutate: addCapability, isPending } =
+    useAddSubscriptionCapabilityMutation(portalGraphqlClient, {
+      onSuccess: async () => {
+        await invalidateSubscriptionQueries(queryClient);
+        resetAndClose();
+        onCompleted?.();
+      },
+      onError: (error: unknown) => {
+        const errorMessage =
+          error instanceof Error ? error.message : 'UNKNOWN_ERROR';
+        showSnackbar({
+          severity: 'error',
+          title: t('Utils.Error'),
+          description: <>{t(`Error.Server.${errorMessage}`)}</>,
+        });
+      },
+    });
 
   const toggleCapability = (id: string) => {
     setSelectedCapabilityIds((prev) => {
@@ -61,25 +80,12 @@ export const ServiceSlugAddCapabilities = ({
   const handleSubmit = () => {
     const capabilitiesId = Array.from(selectedCapabilityIds);
 
-    commitAddCapability({
-      variables: {
-        input: {
-          subscriptionsId: selectedSubscriptions.map(
-            (subscription) => subscription.id
-          ),
-          capabilitiesId,
-        },
-      },
-      onCompleted: () => {
-        resetAndClose();
-        onCompleted?.();
-      },
-      onError: (error: Error) => {
-        toast({
-          variant: 'destructive',
-          title: t('Utils.Error'),
-          description: <>{t(`Error.Server.${error.message}`)}</>,
-        });
+    addCapability({
+      input: {
+        subscriptionsId: selectedSubscriptions.map(
+          (subscription) => subscription.id
+        ),
+        capabilitiesId,
       },
     });
   };
@@ -92,46 +98,45 @@ export const ServiceSlugAddCapabilities = ({
         else setOpen(value);
       }}>
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>
-            {t('Service.Management.AddSubscriptionCapabilities.Title')}
-          </DialogTitle>
-        </DialogHeader>
+        <DialogTitle>
+          {t('Service.Management.AddSubscriptionCapabilities.Title')}
+        </DialogTitle>
 
-        <p className="text-sm text-muted-foreground">
-          {t('Service.Management.AddSubscriptionCapabilities.Description', {
-            count: selectedSubscriptions.length,
-          })}
-        </p>
+        <DialogBody>
+          <p className="text-sm text-default-secondary">
+            {t('Service.Management.AddSubscriptionCapabilities.Description', {
+              count: selectedSubscriptions.length,
+            })}
+          </p>
 
-        <div className="flex flex-col gap-s py-m">
-          {availableCapabilities.length === 0 ? (
-            <p className="text-sm text-muted-foreground italic">
-              {t('Service.Management.NoAvailableCapabilities')}
-            </p>
-          ) : (
-            availableCapabilities.map((capability) => (
-              <label
-                key={capability.id}
-                className="flex items-center gap-s cursor-pointer">
+          <div className="flex flex-col gap-2 py-3">
+            {availableCapabilities.length === 0 ? (
+              <p className="text-sm text-default-secondary italic">
+                {t('Service.Management.NoAvailableCapabilities')}
+              </p>
+            ) : (
+              availableCapabilities.map((capability) => (
                 <Checkbox
+                  key={capability.id}
+                  label={capability.name}
                   checked={selectedCapabilityIds.has(capability.id)}
                   onCheckedChange={() => toggleCapability(capability.id)}
                 />
-                <span className="text-sm">{capability.name}</span>
-              </label>
-            ))
-          )}
-        </div>
+              ))
+            )}
+          </div>
+        </DialogBody>
 
         <DialogFooter>
           <Button
-            variant="tertiary"
+            {...analyticsId('admin_form_cancel')}
+            priority="tertiary"
             onClick={() => resetAndClose()}>
             {t('Utils.Cancel')}
           </Button>
           <Button
-            disabled={selectedCapabilityIds.size === 0 || isInFlight}
+            {...analyticsId('admin_subscription_capability_confirm')}
+            disabled={selectedCapabilityIds.size === 0 || isPending}
             onClick={handleSubmit}>
             {t('Utils.Validate')}
           </Button>

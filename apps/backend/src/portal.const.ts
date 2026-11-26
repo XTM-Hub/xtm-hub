@@ -16,8 +16,13 @@ export const SYSTEM_USER_UUID: UserId =
 export const CRONS_USER_EMAIL = 'crons_user@filigran.io';
 export const CRONS_USER_UUID: UserId =
   'a9f49a67-8b37-4f7d-a8bb-c4c0d3c8c7f1' as UserId;
+export const MARKETING_USER_EMAIL = 'marketing_user@filigran.io';
+export const MARKETING_USER_UUID: UserId =
+  '84f72a20-25d3-4cce-b32d-54cb1fb5908f' as UserId;
 export const PLATFORM_NAME = 'Filigran';
 export const PLATFORM_DOMAIN = ['filigran.io'];
+// IdP group carried by the accounts of the Filigran organisation
+export const PLATFORM_IDP_GROUP = 'Filigran';
 export const PLATFORM_ORGANIZATION_UUID: OrganizationId =
   'ba091095-418f-4b4f-b150-6c9295e232c4' as OrganizationId;
 export const ADMIN_UUID: UserId =
@@ -39,6 +44,13 @@ export const ROLE_USER: RolePortal = {
   id: '7a234567-8901-4def-9012-3456789abcde' as RolePortalId,
   name: 'USER',
 };
+
+export const PROTECTED_USER_UUIDS: UserId[] = [
+  ADMIN_UUID,
+  SYSTEM_USER_UUID,
+  PLATFORM_USER_UUID,
+  CRONS_USER_UUID,
+];
 
 export const XTM_HUB_SUPPORT_EMAIL = 'xtm-hub-support@filigran.io';
 export const XTM_HUB_DEV_TEAM_EMAIL = '333b4e48.filigran.io@fr.teams.ms';
@@ -88,5 +100,27 @@ export const CRONS_USER_CONTEXT: PortalContext = {
     ],
     capabilities: [],
     roles_portal: [],
+  },
+} as unknown as PortalContext;
+
+// Identity of token-authenticated marketing exports (e.g. HubSpot), never persisted: no capability, no role, and its own
+// personal space as selected organization, which has no subscription, so it only sees public data.
+export const MARKETING_USER_CONTEXT: PortalContext = {
+  user: {
+    id: MARKETING_USER_UUID,
+    email: MARKETING_USER_EMAIL,
+    selected_organization_id: MARKETING_USER_UUID,
+    organizations: [
+      {
+        id: MARKETING_USER_UUID,
+        name: MARKETING_USER_EMAIL,
+        personal_space: true,
+        domains: [],
+      },
+    ],
+    capabilities: [],
+    roles_portal: [],
+    selected_org_capabilities: [],
+    organization_capabilities: [],
   },
 } as unknown as PortalContext;

@@ -10,6 +10,9 @@ const DEFAULT_IMPORT_PATH = '../../../__generated__/resolvers-types';
  * Nullability is handled automatically by Kanel from the DB schema.
  */
 const COLUMN_ENUM_MAP = {
+  ApiToken: {
+    scope: 'ApiTokenScope',
+  },
   Competitor: {
     tier: 'CompetitorTier',
   },
@@ -26,11 +29,10 @@ const COLUMN_ENUM_MAP = {
     source: 'DeploymentRequestSource',
   },
   DeploymentRequestQuota: {
-    platform_identifier: 'PlatformIdentifier',
     region: 'DeploymentRequestPlatformRegion',
   },
   Epic: {
-    product: 'FiligranProduct',
+    products: 'FiligranProduct',
     timeline: 'Timeline',
     epic_type: 'EpicType',
     edition_type: 'EditionType',
@@ -44,6 +46,9 @@ const COLUMN_ENUM_MAP = {
   SolutionCategory: {
     product: 'FiligranProduct',
   },
+  Document: {
+    status: 'DocumentStatus',
+  },
   ServiceInstance: {
     creation_status: 'ServiceInstanceCreationStatus',
     join_type: 'ServiceInstanceJoinType',
@@ -56,6 +61,7 @@ const COLUMN_ENUM_MAP = {
   PlatformConfiguration: {
     platform_contract: 'PlatformContract',
     status: 'PlatformConfigurationStatus',
+    commercial_model: 'CommercialModel',
   },
   NewsFeedItem: {
     type: 'NewsFeedItemType',
@@ -72,6 +78,22 @@ const COLUMN_ENUM_MAP = {
   },
   Manifest: {
     type: 'ManifestType',
+  },
+  ContentTranslation: {
+    locale: 'Locale',
+  },
+  ContentTranslationDraft: {
+    locale: 'Locale',
+  },
+  ProductVersion: {
+    product: 'PlatformIdentifier',
+  },
+  SEO_ServiceInstance: {
+    language: 'Locale',
+  },
+  User: {
+    status: 'UserAccountStatus',
+    has_replied_satisfaction: 'HasRepliedSatisfaction',
   },
 };
 

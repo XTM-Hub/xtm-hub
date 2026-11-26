@@ -1,25 +1,46 @@
 import { MockInstance } from '@vitest/spy';
 import { toGlobalId } from 'graphql-relay/node/node';
+import { v4 as uuidv4 } from 'uuid';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { TestHelper } from '../../../../../tests/helper/test.helper';
 import {
-  TEST_ORGANIZATIONS,
   requestContextAdminSecondOrga,
   // eslint-disable-next-line no-restricted-imports -- needed to test platform admin bypass behavior in editUser authorization
   requestContextAdminUser,
+  requestContextSimpleUserFiligran2,
   requestContextSimpleUserSecondOrga,
+  TEST_ORGANIZATIONS,
 } from '../../../../../tests/tests.const';
 import {
+  DeploymentRequestHubStatus,
   FilterKey,
   OrganizationCapability,
+  PlatformConfigurationStatus,
 } from '../../../../__generated__/resolvers-types';
+import portalConfig from '../../../../config';
 import { requestContext } from '../../../../context/request.context';
 import { OrganizationId } from '../../../../model/kanel/public/Organization';
-import User from '../../../../model/kanel/public/User';
+import User, { UserId } from '../../../../model/kanel/public/User';
 import { UserLoadUserBy } from '../../../../model/user';
+import {
+  ADMIN_UUID,
+  CRONS_USER_UUID,
+  PLATFORM_ORGANIZATION_UUID,
+  PLATFORM_USER_UUID,
+  SYSTEM_USER_UUID,
+} from '../../../../portal.const';
+import * as pub from '../../../../pub';
+import { validatePassword } from '../../../../security/util/user';
+import * as sessionStoreManager from '../../../../session-store-manager';
+import { auth0ClientMock } from '../../../../thirdparty/auth0/mock';
 import { ErrorCode } from '../../../../utils/error/error.code';
 import { OrganizationDomain } from '../../organization/organization.domain';
+import { OrganizationHelper } from '../../organization/organization.helper';
 import { UserDomain } from '../user-domain/user.domain';
+import { UserOrganizationDomain } from '../user-organization/user-organization.domain';
 import { UserOrganizationPendingDomain } from '../user-pending/user-organization-pending.domain';
+import { UserProvisioningDomain } from '../user-provisioning/user-provisioning.domain';
+import { UserTransferRequestDomain } from '../user-transferRequest/user-transfer-request.domain';
 import { UserHelper } from '../user.helper';
 import { UserAdminApp } from './user.admin.app';
 
@@ -196,6 +217,273 @@ describe('users admin app', () => {
         );
       });
     });
+
+    describe('password', () => {
+      const NEW_PASSWORD = 'development-password-1';
+      let user: User;
+      let originalEnvironment: string;
+
+      const loadStoredUser = async (): Promise<User> => {
+        const [storedUser] = await UserDomain.loadUser({ id: user.id });
+        return storedUser!;
+      };
+
+      beforeEach(async () => {
+        originalEnvironment = portalConfig.environment;
+        portalConfig.environment = 'development';
+        requestContext.set(requestContextAdminUser);
+        user = await UserProvisioningDomain.createUser(
+          {
+            email: `edit-user-password-${uuidv4()}@edit-user-password-test.io`,
+            password: 'initial-password',
+          },
+          { sendWelcomeEmail: false }
+        );
+      });
+
+      afterEach(async () => {
+        portalConfig.environment = originalEnvironment;
+        await UserHelper.removeUser({ id: user.id });
+      });
+
+      it('should let a platform admin set the password in development', async () => {
+        await UserAdminApp.editUser({
+          userId: user.id,
+          input: { password: NEW_PASSWORD },
+        });
+
+        const storedUser = await loadStoredUser();
+        expect(
+          validatePassword(storedUser.salt, NEW_PASSWORD, storedUser.password)
+        ).toBe(true);
+        expect(
+          validatePassword(
+            storedUser.salt,
+            'initial-password',
+            storedUser.password
+          )
+        ).toBe(false);
+        expect(storedUser.salt).not.toBe(user.salt);
+      });
+
+      it('should not send the password to the identity provider nor in the dispatched events', async () => {
+        const auth0Spy = vi.spyOn(auth0ClientMock, 'updateUser');
+        const dispatchSpy = vi.spyOn(pub, 'dispatch');
+
+        await UserAdminApp.editUser({
+          userId: user.id,
+          input: { password: NEW_PASSWORD, first_name: 'Arya' },
+        });
+
+        expect(auth0Spy).toHaveBeenCalledWith({
+          first_name: 'Arya',
+          email: user.email,
+        });
+        expect(JSON.stringify(dispatchSpy.mock.calls)).not.toContain(
+          NEW_PASSWORD
+        );
+      });
+
+      it.each(['production', 'staging', 'prod'])(
+        'should refuse to set the password in %s and keep the current one',
+        async (environment) => {
+          portalConfig.environment = environment;
+
+          const call = UserAdminApp.editUser({
+            userId: user.id,
+            input: { password: NEW_PASSWORD },
+          });
+
+          await expect(call).rejects.toThrow(
+            ErrorCode.SetUserPasswordNotAllowed
+          );
+          expect(await loadStoredUser()).toMatchObject({
+            salt: user.salt,
+            password: user.password,
+          });
+        }
+      );
+
+      it('should refuse a password set by an organization administrator', async () => {
+        requestContext.set(requestContextAdminSecondOrga);
+        const [targetUser] = await UserDomain.loadUser({
+          id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.SIMPLE.ID,
+        });
+
+        const call = UserAdminApp.editUser({
+          userId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.SIMPLE.ID,
+          input: {
+            password: NEW_PASSWORD,
+            organization_capabilities: [
+              {
+                organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+                capabilities: [],
+              },
+            ],
+          },
+        });
+
+        await expect(call).rejects.toThrow(ErrorCode.SetUserPasswordNotAllowed);
+        const [storedTargetUser] = await UserDomain.loadUser({
+          id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.SIMPLE.ID,
+        });
+        expect(storedTargetUser).toMatchObject({
+          salt: targetUser!.salt,
+          password: targetUser!.password,
+        });
+      });
+
+      it.each([
+        { label: 'an empty string', password: '' },
+        { label: 'null', password: null },
+      ])(
+        'should keep the current password when it is $label',
+        async ({ password }) => {
+          await UserAdminApp.editUser({
+            userId: user.id,
+            input: { password, first_name: 'Arya' },
+          });
+
+          expect(await loadStoredUser()).toMatchObject({
+            first_name: 'Arya',
+            salt: user.salt,
+            password: user.password,
+          });
+        }
+      );
+    });
+  });
+
+  describe('editUserCapabilities', () => {
+    const createdUsers: User[] = [];
+
+    afterEach(async () => {
+      await Promise.all(
+        createdUsers
+          .splice(0)
+          .map((user) => UserHelper.removeUser({ id: user.id }))
+      );
+    });
+
+    it('should reject the user when they have no pending request in the selected organization', async () => {
+      requestContext.set(requestContextAdminSecondOrga);
+
+      const call = UserAdminApp.editUserCapabilities({
+        userId: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE.ID,
+        input: {
+          capabilities: [OrganizationCapability.AdministrateOrganization],
+        },
+      });
+
+      await expect(call).rejects.toThrow(ErrorCode.PendingUserNotFound);
+      expect(
+        await UserOrganizationDomain.loadUserOrganization({
+          user_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE.ID,
+          organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        })
+      ).toHaveLength(0);
+    });
+
+    it('should reject the user when the selected organization is the caller personal space', async () => {
+      const caller = await UserProvisioningDomain.createUser(
+        { email: `edit-capabilities-${uuidv4()}@edit-capabilities-test.io` },
+        { sendWelcomeEmail: false }
+      );
+      createdUsers.push(caller);
+      requestContext.set({
+        user: (await UserDomain.loadUserBy({ 'User.id': caller.id }))!,
+      });
+
+      const call = UserAdminApp.editUserCapabilities({
+        userId: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE.ID,
+        input: {
+          capabilities: [OrganizationCapability.AdministrateOrganization],
+        },
+      });
+
+      await expect(call).rejects.toThrow(ErrorCode.CantAddUserToPersonalSpace);
+    });
+  });
+
+  describe('addUser', () => {
+    const createdEmails: string[] = [];
+
+    beforeEach(() => {
+      requestContext.set(requestContextAdminUser);
+    });
+
+    afterEach(async () => {
+      await Promise.all(
+        createdEmails.splice(0).map((email) => UserHelper.removeUser({ email }))
+      );
+    });
+
+    it('should create a new user and grant the given organization capabilities', async () => {
+      const email = `add-user-${uuidv4()}@second-orga.com`;
+      createdEmails.push(email);
+
+      const user = await UserAdminApp.addUser({
+        email,
+        organization_capabilities: [
+          {
+            organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+            capabilities: [OrganizationCapability.ManageAccess],
+          },
+        ],
+      });
+
+      expect(user.email).toBe(email);
+      const { capabilities } =
+        await UserDomain.loadUserCapabilitiesByOrganization(
+          user.id as UserId,
+          TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID
+        );
+      expect(capabilities).toEqual([OrganizationCapability.ManageAccess]);
+    });
+
+    it('should replace prior organization memberships instead of adding to them', async () => {
+      const email = `add-user-${uuidv4()}@second-orga.com`;
+      createdEmails.push(email);
+      const existingUser = await TestHelper.user.insert({ email });
+      const priorOrganization = await TestHelper.organization.create();
+      await TestHelper.user_Organization.create({
+        user_id: existingUser.id,
+        organization_id: priorOrganization.id,
+      });
+
+      await UserAdminApp.addUser({
+        email,
+        organization_capabilities: [
+          {
+            organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+            capabilities: [OrganizationCapability.ManageAccess],
+          },
+        ],
+      });
+
+      const priorMembership = await UserOrganizationDomain.loadUserOrganization(
+        {
+          user_id: existingUser.id,
+          organization_id: priorOrganization.id,
+        }
+      );
+      expect(priorMembership).toHaveLength(0);
+      const newMembership = await UserOrganizationDomain.loadUserOrganization({
+        user_id: existingUser.id,
+        organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+      });
+      expect(newMembership).toHaveLength(1);
+    });
+
+    it('should allow a platform admin to add a user with no organization, keeping only their personal space', async () => {
+      const email = `add-user-${uuidv4()}@no-organization-match.io`;
+      createdEmails.push(email);
+
+      const user = await UserAdminApp.addUser({ email });
+
+      expect(user.organizations).toHaveLength(1);
+      expect(user.organizations[0]).toMatchObject({ personal_space: true });
+    });
   });
 
   describe('pending request cleanup', () => {
@@ -207,9 +495,9 @@ describe('users admin app', () => {
       const secondOrga = (await OrganizationDomain.loadOrganizationBy({
         id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
       }))!;
-      createdUser = await UserHelper.createNewUserWithPendingOrga(
+      createdUser = await TestHelper.user.insertWithPendingOrganization(
         { email, first_name: 'pending', last_name: 'cleanup', picture: null },
-        secondOrga
+        secondOrga.id
       );
     });
 
@@ -219,8 +507,6 @@ describe('users admin app', () => {
     });
 
     it('should remove the pending request when an admin adds the user directly to the organization', async () => {
-      requestContext.set(requestContextAdminSecondOrga);
-
       const pendingBefore =
         await UserOrganizationPendingDomain.loadUserOrganizationPending({
           user_id: createdUser.id,
@@ -277,8 +563,6 @@ describe('users admin app', () => {
     });
 
     it('should not notify the deletion when the transaction rolls back', async () => {
-      requestContext.set(requestContextAdminSecondOrga);
-
       const dispatchSpy = vi.spyOn(UserHelper, 'dispatchPendingDeleted');
       vi.spyOn(UserDomain, 'loadUserBy').mockRejectedValueOnce(
         new Error('boom')
@@ -313,6 +597,7 @@ describe('users admin app', () => {
       typeof UserHelper.acceptPendingUserWithCapabilities
     >;
     beforeEach(async () => {
+      requestContext.set(requestContextAdminSecondOrga);
       createdUsers = [];
       mockAcceptPendingUser = vi.spyOn(
         UserHelper,
@@ -338,21 +623,21 @@ describe('users admin app', () => {
 
       createdUsers = await Promise.all(
         userList.map((user) =>
-          UserHelper.createNewUserWithPendingOrga(user, secondOrga)
+          TestHelper.user.insertWithPendingOrganization(user, secondOrga.id)
         )
       );
 
       const filigranOrga = (await OrganizationDomain.loadOrganizationBy({
         id: TEST_ORGANIZATIONS.FILIGRAN.ID,
       }))!;
-      const filigranUser = await UserHelper.createNewUserWithPendingOrga(
+      const filigranUser = await TestHelper.user.insertWithPendingOrganization(
         {
           email: 'testFiligran@filigran.io',
           first_name: 'test',
           last_name: 'filigran',
           picture: null,
         },
-        filigranOrga
+        filigranOrga.id
       );
       createdUsers.push(filigranUser);
     });
@@ -365,7 +650,6 @@ describe('users admin app', () => {
     });
 
     it('should throw if user is not allowed on orga', async () => {
-      requestContext.set(requestContextAdminSecondOrga);
       const userToRemove = createdUsers[0];
 
       const call = UserAdminApp.bulkAcceptPendingUserInOrganization(
@@ -380,7 +664,6 @@ describe('users admin app', () => {
       );
     });
     it('should accept users by id', async () => {
-      requestContext.set(requestContextAdminSecondOrga);
       const userToRemove = createdUsers[0];
       await UserAdminApp.bulkAcceptPendingUserInOrganization(
         TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
@@ -398,7 +681,6 @@ describe('users admin app', () => {
     });
 
     it('should accept users by filter', async () => {
-      requestContext.set(requestContextAdminSecondOrga);
       await UserAdminApp.bulkAcceptPendingUserInOrganization(
         TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
         [],
@@ -429,7 +711,6 @@ describe('users admin app', () => {
       });
     });
     it('should accept users by filters and excludedIds', async () => {
-      requestContext.set(requestContextAdminSecondOrga);
       const excludedUser = createdUsers[0];
 
       await UserAdminApp.bulkAcceptPendingUserInOrganization(
@@ -457,7 +738,6 @@ describe('users admin app', () => {
       });
     });
     it('should accept users by searchTerm', async () => {
-      requestContext.set(requestContextAdminSecondOrga);
       const acceptedUser = createdUsers.find(
         (user) => user.email === 'testOne@second-orga.com'
       );
@@ -478,7 +758,6 @@ describe('users admin app', () => {
     });
 
     it('should accept users by searchTerm and excludedIds', async () => {
-      requestContext.set(requestContextAdminSecondOrga);
       const acceptedUser = createdUsers.find(
         (user) => user.email === 'testTwo@second-orga.com'
       );
@@ -502,7 +781,6 @@ describe('users admin app', () => {
     });
 
     it('should accept users by filter, searchTerm and excludedIds', async () => {
-      requestContext.set(requestContextAdminSecondOrga);
       const acceptedUser = createdUsers.find(
         (user) => user.email === 'testTwo@second-orga.com'
       );
@@ -534,6 +812,7 @@ describe('users admin app', () => {
       });
     });
     it('should accept only users from the specified organization', async () => {
+      requestContext.set(requestContextAdminUser);
       const acceptedUser = createdUsers.find(
         (user) => user.email === 'testFiligran@filigran.io'
       );
@@ -560,14 +839,14 @@ describe('users admin app', () => {
       const filigranOrga = (await OrganizationDomain.loadOrganizationBy({
         id: TEST_ORGANIZATIONS.FILIGRAN.ID,
       }))!;
-      const filigranUser = await UserHelper.createNewUserWithPendingOrga(
+      const filigranUser = await TestHelper.user.insertWithPendingOrganization(
         {
           email: 'testFiligranRemoveBulk@filigran.io',
           first_name: 'test',
           last_name: 'filigran',
           picture: null,
         },
-        filigranOrga
+        filigranOrga.id
       );
       createdUsers.push(filigranUser);
     });
@@ -582,14 +861,14 @@ describe('users admin app', () => {
       const filigranOrga = (await OrganizationDomain.loadOrganizationBy({
         id: TEST_ORGANIZATIONS.FILIGRAN.ID,
       }))!;
-      const filigranUser = await UserHelper.createNewUserWithPendingOrga(
+      const filigranUser = await TestHelper.user.insertWithPendingOrganization(
         {
           email: 'testFiligran@filigran.io',
           first_name: 'test',
           last_name: 'filigran',
           picture: null,
         },
-        filigranOrga
+        filigranOrga.id
       );
 
       const call = UserAdminApp.bulkRemovePendingUserFromOrganization(
@@ -602,6 +881,642 @@ describe('users admin app', () => {
       await expect(call).rejects.toThrow(
         ErrorCode.MissingCapabilityOnOrganization
       );
+    });
+  });
+
+  describe('deleteUser', () => {
+    beforeEach(() => {
+      requestContext.set(requestContextSimpleUserFiligran2);
+    });
+
+    describe('success', () => {
+      it('should delete the user and its personal space organization', async () => {
+        const user = await UserProvisioningDomain.createUser(
+          { email: `delete-user-${uuidv4()}@delete-user-test.io` },
+          { sendWelcomeEmail: false }
+        );
+
+        const deletedUser = await UserAdminApp.deleteUser(user.id);
+
+        expect(deletedUser.id).toBe(user.id);
+        expect(await UserDomain.loadUser({ id: user.id })).toEqual([]);
+        expect(
+          await TestHelper.organization.load({
+            id: OrganizationHelper.personalSpaceIdOf(user),
+          })
+        ).toBeUndefined();
+      });
+
+      describe('with a non personal organization shared by two users', () => {
+        let user: User;
+        let otherUser: User;
+        let organization: Awaited<
+          ReturnType<typeof TestHelper.organization.create>
+        >;
+
+        beforeEach(async () => {
+          user = await UserProvisioningDomain.createUser(
+            { email: `delete-user-${uuidv4()}@delete-user-test.io` },
+            { sendWelcomeEmail: false }
+          );
+          otherUser = await UserProvisioningDomain.createUser(
+            { email: `delete-user-${uuidv4()}@delete-user-test.io` },
+            { sendWelcomeEmail: false }
+          );
+          organization = await TestHelper.organization.create({
+            personal_space: false,
+          });
+          await TestHelper.user_Organization.create({
+            user_id: user.id,
+            organization_id: organization.id,
+          });
+          await TestHelper.user_Organization.create({
+            user_id: otherUser.id,
+            organization_id: organization.id,
+          });
+        });
+
+        it('should keep a non personal organization and only remove the membership', async () => {
+          await UserAdminApp.deleteUser(user.id);
+
+          expect(
+            await TestHelper.organization.load({ id: organization.id })
+          ).toBeDefined();
+          expect(
+            await UserOrganizationDomain.countUsersInOrganization(
+              organization.id
+            )
+          ).toBe(1);
+        });
+
+        it('should cascade delete the organization capabilities granted to the user', async () => {
+          const userOrganization =
+            await UserOrganizationDomain.loadUserOrganization({
+              user_id: user.id,
+              organization_id: organization.id,
+            });
+          await TestHelper.user_OrganizationCapability.create({
+            user_organization_id: userOrganization[0]!.id,
+            name: OrganizationCapability.ManageAccess,
+          });
+
+          await UserAdminApp.deleteUser(user.id);
+
+          expect(
+            await TestHelper.user_OrganizationCapability.loadAll({
+              user_organization_id: userOrganization[0]!.id,
+            })
+          ).toEqual([]);
+        });
+      });
+
+      it('should cascade delete the RolePortal assignments of the user', async () => {
+        const user = await UserProvisioningDomain.createUser(
+          { email: `delete-user-${uuidv4()}@delete-user-test.io` },
+          { sendWelcomeEmail: false }
+        );
+        const rolePortal = await TestHelper.rolePortal.create({
+          name: `delete-user-role-${uuidv4()}`,
+        });
+        await TestHelper.user_RolePortal.create({
+          user_id: user.id,
+          role_portal_id: rolePortal!.id,
+        });
+
+        await UserAdminApp.deleteUser(user.id);
+
+        expect(
+          await TestHelper.user_RolePortal.loadAll({ user_id: user.id })
+        ).toEqual([]);
+      });
+
+      it('should cascade delete the service capabilities granted through the user service subscription', async () => {
+        const user = await UserProvisioningDomain.createUser(
+          { email: `delete-user-${uuidv4()}@delete-user-test.io` },
+          { sendWelcomeEmail: false }
+        );
+        const serviceInstance = await TestHelper.serviceInstance.create();
+        const subscription = await TestHelper.subscription.create({
+          organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+          service_instance_id: serviceInstance.id,
+        });
+        const userService = await TestHelper.user_Service.create({
+          user_id: user.id,
+          subscription_id: subscription.id,
+        });
+        await TestHelper.user_ServiceCapability.create({
+          user_service_id: userService!.id,
+        });
+
+        await UserAdminApp.deleteUser(user.id);
+
+        expect(
+          await TestHelper.user_ServiceCapability.loadAll({
+            user_service_id: userService!.id,
+          })
+        ).toEqual([]);
+
+        await TestHelper.subscription.delete({ id: subscription.id });
+        await TestHelper.serviceInstance.delete({ id: serviceInstance.id });
+      });
+
+      it('should cascade delete the ServiceGroup membership of the user', async () => {
+        const user = await UserProvisioningDomain.createUser(
+          { email: `delete-user-${uuidv4()}@delete-user-test.io` },
+          { sendWelcomeEmail: false }
+        );
+        const serviceInstance = await TestHelper.serviceInstance.create();
+        const serviceGroup = await TestHelper.serviceGroup.create({
+          service_instance_id: serviceInstance.id,
+        });
+        await TestHelper.serviceGroupUser.create({
+          group_id: serviceGroup.id,
+          user_id: user.id,
+        });
+
+        await UserAdminApp.deleteUser(user.id);
+
+        expect(
+          await TestHelper.serviceGroupUser.load({ user_id: user.id })
+        ).toEqual([]);
+
+        await TestHelper.serviceGroup.delete({ id: serviceGroup.id });
+        await TestHelper.serviceInstance.delete({ id: serviceInstance.id });
+      });
+
+      it('should set user_id to null on the OneClickDeployment rows of the deleted user', async () => {
+        const user = await UserProvisioningDomain.createUser(
+          { email: `delete-user-${uuidv4()}@delete-user-test.io` },
+          { sendWelcomeEmail: false }
+        );
+        const oneClickDeployment = await TestHelper.oneClickDeployment.insert({
+          resource_id: uuidv4(),
+          user_id: user.id,
+        });
+
+        await UserAdminApp.deleteUser(user.id);
+
+        expect(await UserDomain.loadUser({ id: user.id })).toEqual([]);
+        const remainingDeployments =
+          await TestHelper.oneClickDeployment.loadAll({
+            resource_id: oneClickDeployment.resource_id,
+          });
+        expect(remainingDeployments).toHaveLength(1);
+        expect(remainingDeployments[0]).toMatchObject({
+          resource_id: oneClickDeployment.resource_id,
+          user_id: null,
+        });
+
+        await TestHelper.oneClickDeployment.deleteAll();
+      });
+
+      it('should reassign the documents of the user to the system user', async () => {
+        const user = await UserProvisioningDomain.createUser(
+          { email: `delete-user-${uuidv4()}@delete-user-test.io` },
+          { sendWelcomeEmail: false }
+        );
+        const uploaded = await TestHelper.document.create({
+          uploader_id: user.id,
+          uploader_organization_id: OrganizationHelper.personalSpaceIdOf(user),
+        });
+        const touched = await TestHelper.document.create({
+          uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
+          remover_id: user.id,
+          updater_id: user.id,
+        });
+
+        await UserAdminApp.deleteUser(user.id);
+
+        expect(
+          await TestHelper.document.load({ id: uploaded.id })
+        ).toMatchObject({
+          uploader_id: SYSTEM_USER_UUID,
+          uploader_organization_id: PLATFORM_ORGANIZATION_UUID,
+        });
+        expect(
+          await TestHelper.document.load({ id: touched.id })
+        ).toMatchObject({
+          remover_id: SYSTEM_USER_UUID,
+          updater_id: SYSTEM_USER_UUID,
+        });
+
+        await TestHelper.document.delete({ id: uploaded.id });
+        await TestHelper.document.delete({ id: touched.id });
+      });
+
+      it('should reassign the epics of the user to the system user', async () => {
+        const user = await UserProvisioningDomain.createUser(
+          { email: `delete-user-${uuidv4()}@delete-user-test.io` },
+          { sendWelcomeEmail: false }
+        );
+        const epic = await TestHelper.epic.create({
+          uploader_id: user.id,
+          updater_id: user.id,
+        });
+
+        await UserAdminApp.deleteUser(user.id);
+
+        expect(await TestHelper.epic.load({ id: epic!.id })).toMatchObject({
+          uploader_id: SYSTEM_USER_UUID,
+          updater_id: SYSTEM_USER_UUID,
+        });
+
+        await TestHelper.epic.delete({ id: epic!.id });
+      });
+
+      it('should destroy the sessions of the deleted user', async () => {
+        const destroySpy = vi
+          .spyOn(sessionStoreManager, 'destroyUserSessions')
+          .mockResolvedValue(undefined);
+        const user = await UserProvisioningDomain.createUser(
+          { email: `delete-user-${uuidv4()}@delete-user-test.io` },
+          { sendWelcomeEmail: false }
+        );
+
+        await UserAdminApp.deleteUser(user.id);
+
+        expect(destroySpy).toHaveBeenCalledWith(user.id);
+      });
+
+      it('should delete the picture of the deleted user', async () => {
+        const deletePictureSpy = vi.spyOn(UserHelper, 'deleteUserPicture');
+        const user = await UserProvisioningDomain.createUser(
+          { email: `delete-user-${uuidv4()}@delete-user-test.io` },
+          { sendWelcomeEmail: false }
+        );
+
+        await UserAdminApp.deleteUser(user.id);
+
+        expect(deletePictureSpy).toHaveBeenCalledWith(user.picture_minio);
+      });
+
+      it('should dispatch a delete event for the user and its personal space', async () => {
+        const dispatchSpy = vi.spyOn(pub, 'dispatch');
+        const user = await UserProvisioningDomain.createUser(
+          { email: `delete-user-${uuidv4()}@delete-user-test.io` },
+          { sendWelcomeEmail: false }
+        );
+
+        await UserAdminApp.deleteUser(user.id);
+
+        expect(dispatchSpy).toHaveBeenCalledWith(
+          'User',
+          'delete',
+          expect.objectContaining({ id: user.id })
+        );
+        expect(dispatchSpy).toHaveBeenCalledWith(
+          'MeUser',
+          'delete',
+          expect.objectContaining({ id: user.id }),
+          'User'
+        );
+        expect(dispatchSpy).toHaveBeenCalledWith(
+          'Organization',
+          'delete',
+          expect.objectContaining({
+            id: OrganizationHelper.personalSpaceIdOf(user),
+          })
+        );
+      });
+
+      it('should not fail the deletion when dispatching the delete events throws', async () => {
+        const dispatchSpy = vi
+          .spyOn(pub, 'dispatch')
+          .mockRejectedValueOnce(new Error('subscriber unavailable'));
+        const user = await UserProvisioningDomain.createUser(
+          { email: `delete-user-${uuidv4()}@delete-user-test.io` },
+          { sendWelcomeEmail: false }
+        );
+
+        const deletedUser = await UserAdminApp.deleteUser(user.id);
+
+        expect(deletedUser.id).toBe(user.id);
+        expect(await UserDomain.loadUser({ id: user.id })).toEqual([]);
+        expect(dispatchSpy).toHaveBeenCalled();
+      });
+    });
+
+    describe('guards', () => {
+      it('should map foreign key violations to a blocked-by-linked-data error', async () => {
+        const user = await UserProvisioningDomain.createUser(
+          { email: `delete-user-${uuidv4()}@delete-user-test.io` },
+          { sendWelcomeEmail: false }
+        );
+        const deleteUserBySpy = vi
+          .spyOn(UserDomain, 'deleteUserBy')
+          .mockRejectedValueOnce({ code: '23503' } as never);
+
+        await expect(UserAdminApp.deleteUser(user.id)).rejects.toThrow(
+          ErrorCode.DeleteUserBlockedByLinkedData
+        );
+        expect(await UserDomain.loadUser({ id: user.id })).toHaveLength(1);
+
+        deleteUserBySpy.mockRestore();
+        await UserHelper.removeUser({ id: user.id });
+      });
+
+      it('should reject an unknown user', async () => {
+        await expect(
+          UserAdminApp.deleteUser(uuidv4() as UserId)
+        ).rejects.toThrow(ErrorCode.UserNotFound);
+      });
+
+      it('should reject the deletion of the requesting user', async () => {
+        await expect(
+          UserAdminApp.deleteUser(TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID)
+        ).rejects.toThrow(ErrorCode.CantDeleteYourself);
+      });
+
+      it.each`
+        builtinUserId         | description
+        ${ADMIN_UUID}         | ${'the platform administrator'}
+        ${SYSTEM_USER_UUID}   | ${'the system user'}
+        ${PLATFORM_USER_UUID} | ${'the platform user'}
+        ${CRONS_USER_UUID}    | ${'the crons user'}
+      `(
+        'should reject the deletion of $description',
+        async ({ builtinUserId }) => {
+          await expect(UserAdminApp.deleteUser(builtinUserId)).rejects.toThrow(
+            ErrorCode.CantDeleteBuiltinUser
+          );
+        }
+      );
+
+      it.each`
+        direction      | description
+        ${'from_user'} | ${'the user initiated the transfer'}
+        ${'to_user'}   | ${'the user is the transfer target'}
+      `(
+        'should reject when a transfer request exists and $description',
+        async ({ direction }) => {
+          const user = await UserProvisioningDomain.createUser(
+            { email: `delete-user-${uuidv4()}@delete-user-test.io` },
+            { sendWelcomeEmail: false }
+          );
+          const counterpart = await UserProvisioningDomain.createUser(
+            { email: `delete-user-${uuidv4()}@delete-user-test.io` },
+            { sendWelcomeEmail: false }
+          );
+          await UserTransferRequestDomain.insertNewUserTransfer(
+            direction === 'from_user'
+              ? { from_user_id: user.id, to_user_id: counterpart.id }
+              : { from_user_id: counterpart.id, to_user_id: user.id }
+          );
+
+          await expect(UserAdminApp.deleteUser(user.id)).rejects.toThrow(
+            ErrorCode.DeleteUserBlockedByTransferRequest
+          );
+
+          expect(await UserDomain.loadUser({ id: user.id })).toHaveLength(1);
+          expect(
+            await TestHelper.organization.load({
+              id: OrganizationHelper.personalSpaceIdOf(user),
+            })
+          ).toBeDefined();
+        }
+      );
+
+      it.each`
+        hubStatus
+        ${DeploymentRequestHubStatus.Queued}
+        ${DeploymentRequestHubStatus.Pending}
+        ${DeploymentRequestHubStatus.Provisioning}
+        ${DeploymentRequestHubStatus.Active}
+        ${DeploymentRequestHubStatus.Expired}
+        ${DeploymentRequestHubStatus.Failed}
+        ${DeploymentRequestHubStatus.Cancelled}
+      `(
+        'should reject when a $hubStatus deployment request references the user',
+        async ({ hubStatus }) => {
+          const user = await UserProvisioningDomain.createUser(
+            { email: `delete-user-${uuidv4()}@delete-user-test.io` },
+            { sendWelcomeEmail: false }
+          );
+          await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+            {
+              user_requester_id: user.id,
+              organization_requester_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+              hub_status: hubStatus,
+            }
+          );
+
+          await expect(UserAdminApp.deleteUser(user.id)).rejects.toThrow(
+            ErrorCode.DeleteUserBlockedByDeploymentRequest
+          );
+
+          expect(await UserDomain.loadUser({ id: user.id })).toHaveLength(1);
+        }
+      );
+
+      it('should reject when the user cancelled a deployment request on behalf of someone else', async () => {
+        const user = await UserProvisioningDomain.createUser(
+          { email: `delete-user-${uuidv4()}@delete-user-test.io` },
+          { sendWelcomeEmail: false }
+        );
+        const requester = await UserProvisioningDomain.createUser(
+          { email: `delete-user-${uuidv4()}@delete-user-test.io` },
+          { sendWelcomeEmail: false }
+        );
+        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+          {
+            user_requester_id: requester.id,
+            organization_requester_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+            hub_status: DeploymentRequestHubStatus.Cancelled,
+            cancellation_user_id: user.id,
+          }
+        );
+
+        await expect(UserAdminApp.deleteUser(user.id)).rejects.toThrow(
+          ErrorCode.DeleteUserBlockedByCancellationRecord
+        );
+
+        expect(await UserDomain.loadUser({ id: user.id })).toHaveLength(1);
+      });
+
+      it.each`
+        status                                  | description
+        ${PlatformConfigurationStatus.Active}   | ${'an active platform'}
+        ${PlatformConfigurationStatus.Inactive} | ${'an inactive platform'}
+      `(
+        'should reject when the user registered $description',
+        async ({ status }) => {
+          const user = await UserProvisioningDomain.createUser(
+            { email: `delete-user-${uuidv4()}@delete-user-test.io` },
+            { sendWelcomeEmail: false }
+          );
+          const serviceInstance = await TestHelper.serviceInstance.create();
+          await TestHelper.platformConfiguration.create({
+            service_instance_id: serviceInstance.id,
+            registerer_id: user.id,
+            status,
+          });
+
+          await expect(UserAdminApp.deleteUser(user.id)).rejects.toThrow(
+            ErrorCode.DeleteUserBlockedByPlatformRegistration
+          );
+
+          expect(await UserDomain.loadUser({ id: user.id })).toHaveLength(1);
+          expect(
+            await TestHelper.organization.load({
+              id: OrganizationHelper.personalSpaceIdOf(user),
+            })
+          ).toBeDefined();
+        }
+      );
+
+      it('should reject when the user is the last member of a non personal organization', async () => {
+        const user = await UserProvisioningDomain.createUser(
+          { email: `delete-user-${uuidv4()}@delete-user-test.io` },
+          { sendWelcomeEmail: false }
+        );
+        const organization = await TestHelper.organization.create({
+          personal_space: false,
+        });
+        await TestHelper.user_Organization.create({
+          user_id: user.id,
+          organization_id: organization.id,
+        });
+
+        await expect(UserAdminApp.deleteUser(user.id)).rejects.toThrow(
+          ErrorCode.DeleteUserBlockedByLastOrganizationMember
+        );
+
+        expect(await UserDomain.loadUser({ id: user.id })).toHaveLength(1);
+        expect(
+          await TestHelper.organization.load({ id: organization.id })
+        ).toBeDefined();
+        expect(
+          await TestHelper.organization.load({
+            id: OrganizationHelper.personalSpaceIdOf(user),
+          })
+        ).toBeDefined();
+      });
+
+      describe('with a non personal organization shared by two users', () => {
+        let user: User;
+        let otherUser: User;
+        let organization: Awaited<
+          ReturnType<typeof TestHelper.organization.create>
+        >;
+
+        beforeEach(async () => {
+          user = await UserProvisioningDomain.createUser(
+            { email: `delete-user-${uuidv4()}@delete-user-test.io` },
+            { sendWelcomeEmail: false }
+          );
+          otherUser = await UserProvisioningDomain.createUser(
+            { email: `delete-user-${uuidv4()}@delete-user-test.io` },
+            { sendWelcomeEmail: false }
+          );
+          organization = await TestHelper.organization.create({
+            personal_space: false,
+          });
+          await TestHelper.user_Organization.create({
+            user_id: user.id,
+            organization_id: organization.id,
+          });
+          await TestHelper.user_Organization.create({
+            user_id: otherUser.id,
+            organization_id: organization.id,
+          });
+        });
+
+        it('should reject when the user is the last administrator of a non personal organization', async () => {
+          const userOrganization = await TestHelper.user_Organization.load({
+            user_id: user.id,
+            organization_id: organization.id,
+          });
+          await TestHelper.user_OrganizationCapability.create({
+            user_organization_id: userOrganization.id,
+            name: OrganizationCapability.AdministrateOrganization,
+          });
+
+          await expect(UserAdminApp.deleteUser(user.id)).rejects.toThrow(
+            ErrorCode.CantRemoveLastAdministrator
+          );
+
+          expect(await UserDomain.loadUser({ id: user.id })).toHaveLength(1);
+          expect(
+            await TestHelper.organization.load({ id: organization.id })
+          ).toBeDefined();
+        });
+
+        it('should allow deletion when another administrator remains in the organization', async () => {
+          const userOrganization = await TestHelper.user_Organization.load({
+            user_id: user.id,
+            organization_id: organization.id,
+          });
+          await TestHelper.user_OrganizationCapability.create({
+            user_organization_id: userOrganization.id,
+            name: OrganizationCapability.AdministrateOrganization,
+          });
+          const otherUserOrganization = await TestHelper.user_Organization.load(
+            {
+              user_id: otherUser.id,
+              organization_id: organization.id,
+            }
+          );
+          await TestHelper.user_OrganizationCapability.create({
+            user_organization_id: otherUserOrganization.id,
+            name: OrganizationCapability.AdministrateOrganization,
+          });
+
+          await expect(UserAdminApp.deleteUser(user.id)).resolves.toMatchObject(
+            {
+              id: user.id,
+            }
+          );
+        });
+      });
+
+      it('should reject when the personal space organization has pending users', async () => {
+        const user = await UserProvisioningDomain.createUser(
+          { email: `delete-user-${uuidv4()}@delete-user-test.io` },
+          { sendWelcomeEmail: false }
+        );
+        const pendingUser = await UserProvisioningDomain.createUser(
+          { email: `delete-user-${uuidv4()}@delete-user-test.io` },
+          { sendWelcomeEmail: false }
+        );
+        await UserOrganizationPendingDomain.insertNewUserOrganizationPending({
+          user_id: pendingUser.id,
+          organization_id: OrganizationHelper.personalSpaceIdOf(user),
+        });
+
+        await expect(UserAdminApp.deleteUser(user.id)).rejects.toThrow(
+          ErrorCode.DeleteUserBlockedByPendingUsers
+        );
+
+        expect(await UserDomain.loadUser({ id: user.id })).toHaveLength(1);
+      });
+
+      it('should not reassign the documents when the deletion is blocked', async () => {
+        const user = await UserProvisioningDomain.createUser(
+          { email: `delete-user-${uuidv4()}@delete-user-test.io` },
+          { sendWelcomeEmail: false }
+        );
+        const counterpart = await UserProvisioningDomain.createUser(
+          { email: `delete-user-${uuidv4()}@delete-user-test.io` },
+          { sendWelcomeEmail: false }
+        );
+        const document = await TestHelper.document.create({
+          uploader_id: user.id,
+        });
+        await UserTransferRequestDomain.insertNewUserTransfer({
+          from_user_id: user.id,
+          to_user_id: counterpart.id,
+        });
+
+        await expect(UserAdminApp.deleteUser(user.id)).rejects.toThrow(
+          ErrorCode.DeleteUserBlockedByTransferRequest
+        );
+
+        expect(
+          await TestHelper.document.load({ id: document.id })
+        ).toMatchObject({ uploader_id: user.id });
+
+        await TestHelper.document.delete({ id: document.id });
+      });
     });
   });
 });

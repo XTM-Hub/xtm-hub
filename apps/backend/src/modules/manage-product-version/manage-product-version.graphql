@@ -1,4 +1,21 @@
+type RegisteredProductVersion {
+  product: PlatformIdentifier!
+  version: String!
+  created_at: Date!
+}
+
+type Query {
+  """
+  Returns at most the 5 latest registered versions for the given product,
+  most recent first. When `search` is provided, only versions whose string
+  contains it (case-insensitive) are considered.
+  """
+  registeredProductVersions(
+    product: PlatformIdentifier!
+    search: String
+  ): [RegisteredProductVersion!]!
+}
+
 type Mutation {
   newProductVersion(product: PlatformIdentifier!, version: String!): Success!
-    @system_token(portalCapa: [GENERATE_MANIFEST])
 }

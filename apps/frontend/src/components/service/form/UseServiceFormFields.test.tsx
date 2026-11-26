@@ -1,12 +1,11 @@
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { FiligranProduct } from '@graphql/generated';
+import { DocumentItemFragment, FiligranProduct } from '@graphql/generated';
 import { renderHook } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { useServiceFormFields } from './UseServiceFormFields';
 
 vi.mock('../../ui/SheetWithPreventingDialog', () => ({
   useDialogContext: () => ({
-    setIsDirty: vi.fn(),
+    setUploadsDirty: vi.fn(),
   }),
 }));
 
@@ -15,17 +14,17 @@ const existingDocument = {
   slug: 'existing-slug',
   name: 'Existing Document',
   children_documents: [],
-} as unknown as documentItem_fragment$data;
+} as unknown as DocumentItemFragment;
 
 describe('useServiceFormFields', () => {
   describe('slug field', () => {
     it.each`
-      scenario      | document            | expectedReadOnly | expectedClassName
-      ${'creation'} | ${undefined}        | ${false}         | ${''}
-      ${'edition'}  | ${existingDocument} | ${true}          | ${'opacity-50 cursor-not-allowed'}
+      scenario      | document            | expectedReadOnly | expectedDisabled
+      ${'creation'} | ${undefined}        | ${false}         | ${false}
+      ${'edition'}  | ${existingDocument} | ${true}          | ${true}
     `(
       'should have readOnly=$expectedReadOnly in $scenario mode',
-      ({ document, expectedReadOnly, expectedClassName }) => {
+      ({ document, expectedReadOnly, expectedDisabled }) => {
         const { result } = renderHook(() =>
           useServiceFormFields({
             documentType: 'Custom Dashboard',
@@ -35,9 +34,7 @@ describe('useServiceFormFields', () => {
         );
 
         expect(result.current.slug.inputProps.readOnly).toBe(expectedReadOnly);
-        expect(result.current.slug.inputProps.className).toBe(
-          expectedClassName
-        );
+        expect(result.current.slug.inputProps.disabled).toBe(expectedDisabled);
       }
     );
 
@@ -77,7 +74,6 @@ describe('useServiceFormFields', () => {
           useServiceFormFields({
             documentType: 'Custom Dashboard',
             platform: 'OpenCTI',
-            document: existingDocument,
             disabledFields,
           })
         );

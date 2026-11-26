@@ -3,15 +3,21 @@ import EditSolutionCategory from '@/components/admin/solution-category/EditSolut
 import SolutionCategoryProductFilter from '@/components/admin/solution-category/SolutionCategoryProductFilter';
 import { useSolutionCategoryListLocalstorage } from '@/components/admin/solution-category/solution-category-list-localstorage';
 import {
+  DataTable,
+  DataTableHeadBarOptions,
+  DataTableToolbar,
+} from '@/components/ui/data-table';
+import {
   handleSortingChange,
   mapToSortingTableValue,
   OrderingMode as SortingOrderingMode,
 } from '@/components/ui/handle-sorting.utils';
-import { useExecuteAfterAnimation } from '@/hooks/use-execute-after-animation';
+import { useTablePagination } from '@/hooks/use-table-pagination';
+import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import { i18nKey } from '@/utils/datatable';
+import { getDataTableLabels } from '@/utils/design-system/data-table';
 import { formatName } from '@/utils/format/name';
-import { Badge, DataTable, DataTableHeadBarOptions } from '@filigran/ui';
+import { Chip } from '@filigran/design-system';
 import {
   FiligranProduct,
   OrderingMode,
@@ -20,12 +26,11 @@ import {
   useSolutionCategoriesListQuery,
 } from '@graphql/generated';
 import { solutionCategoryListKeys } from '@graphql/solution-category/solution-category-list.keys';
-import { ColumnDef, PaginationState } from '@tanstack/react-table';
-import { useTranslations } from 'next-intl';
+import { ColumnDef } from '@tanstack/react-table';
 import { useMemo, useState } from 'react';
 
 const SolutionCategories = () => {
-  const t = useTranslations();
+  const t = useTranslate();
   const [solutionCategoryEdit, setSolutionCategoryEdit] = useState<
     SolutionCategoryRowFragment | undefined
   >(undefined);
@@ -42,20 +47,18 @@ const SolutionCategories = () => {
     resetAll,
     removeOrder,
   } = useSolutionCategoryListLocalstorage();
-  const [pagination, setPagination] = useState<PaginationState>({
-    pageIndex: 0,
-    pageSize,
-  });
+  const { pagination, setPagination, cursor, onPaginationChange } =
+    useTablePagination({ pageSize, setPageSize });
 
   const variables = useMemo(
     () => ({
       count: pagination.pageSize,
-      cursor: btoa(String(pagination.pageSize * pagination.pageIndex)),
+      cursor,
       orderMode: orderMode as OrderingMode,
       orderBy,
       product: selectedProduct ?? null,
     }),
-    [orderBy, orderMode, pagination, selectedProduct]
+    [orderBy, orderMode, pagination, cursor, selectedProduct]
   );
 
   const { data: queryData, isLoading } = useSolutionCategoriesListQuery(
@@ -81,13 +84,12 @@ const SolutionCategories = () => {
       header: t('SolutionCategory.ListPage.Product'),
       enableSorting: false,
       cell: ({ row }) => (
-        <div className="flex flex-wrap gap-xs">
+        <div className="flex flex-wrap gap-1">
           {row.original.product.map((product) => (
-            <Badge
+            <Chip
               key={product}
-              variant="outline">
-              {product.toUpperCase()}
-            </Badge>
+              label={product.toUpperCase()}
+            />
           ))}
         </div>
       ),
@@ -99,15 +101,6 @@ const SolutionCategories = () => {
     return edges.map(({ node }) => node);
   }, [queryData]);
   const totalCount = queryData?.solutionCategories?.totalCount ?? 0;
-
-  const onPaginationChange = (updater: unknown) => {
-    const newPaginationValue: PaginationState =
-      updater instanceof Function ? updater(pagination) : updater;
-    setPagination(newPaginationValue);
-    if (newPaginationValue.pageSize !== pageSize) {
-      setPageSize(newPaginationValue.pageSize);
-    }
-  };
 
   const handleRefetchData = (args: Record<string, unknown>) => {
     const nextOrderBy = args.orderBy as SolutionCategoryOrdering | undefined;
@@ -153,14 +146,11 @@ const SolutionCategories = () => {
 
   return (
     <>
-      <div className="mb-s flex justify-end">
-        <AddSolutionCategory />
-      </div>
       <DataTable
         columns={columns}
         data={solutionCategories}
         isLoading={isLoading}
-        i18nKey={i18nKey(t)}
+        {...getDataTableLabels(t)}
         onResetTable={resetAll}
         tableOptions={{
           onSortingChange,
@@ -173,28 +163,30 @@ const SolutionCategories = () => {
           sorting: mapToSortingTableValue(orderBy, orderMode),
           pagination,
         }}
+        getRowAnalyticsId={() => 'admin_solution_category_edit'}
         onClickRow={({ original }) => setSolutionCategoryEdit(original)}
         toolbar={
-          <div className="flex flex-col-reverse items-center justify-between gap-s sm:flex-row">
-            <div className="w-full sm:w-1/3">
+          <DataTableToolbar
+            filters={
               <SolutionCategoryProductFilter
                 selectedProduct={selectedProduct}
                 onProductChange={onProductChange}
               />
-            </div>
-            <div className="flex w-full items-center justify-between gap-s sm:w-auto">
-              <DataTableHeadBarOptions />
-            </div>
-          </div>
+            }
+            actions={
+              <>
+                <DataTableHeadBarOptions />
+                <AddSolutionCategory />
+              </>
+            }
+          />
         }
       />
       {solutionCategoryEdit && (
         <EditSolutionCategory
           solutionCategory={solutionCategoryEdit}
           open={!!solutionCategoryEdit}
-          onClose={() =>
-            useExecuteAfterAnimation(() => setSolutionCategoryEdit(undefined))
-          }
+          onClose={() => setSolutionCategoryEdit(undefined)}
         />
       )}
     </>

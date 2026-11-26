@@ -1,24 +1,32 @@
 import {
-  LogoFiligranIcon,
+  LogoXtmOneIcon,
   OpenAevIconIcon,
   OpenCtiIconIcon,
 } from '@filigran/icon';
-import { ServiceDefinitionIdentifier as ServiceDefinitionIdentifierFragment } from '@generated/serviceInstance_fragment.graphql';
 import {
+  CommercialModel,
+  PlatformConfigurationStatus,
   PlatformContract,
   PlatformIdentifier,
   ServiceDefinitionIdentifier,
   ServiceInstanceTag,
 } from '@graphql/generated';
+import openaevTextLogo from '@public/logo_openaev_text.png';
+import openaevTextDarkLogo from '@public/logo_openaev_text_dark.png';
+import openctiTextLogo from '@public/logo_opencti_text.png';
+import openctiTextDarkLogo from '@public/logo_opencti_text_dark.png';
+import xtmoneTextLogo from '@public/logo_xtmone_text.png';
+import xtmoneTextDarkLogo from '@public/logo_xtmone_text_dark.png';
+import { StaticImageData } from 'next/image';
 import { JSX } from 'react';
 
 export interface PlatformMetadata {
   name: string;
-  learnMorePublicUrl: string;
-  learnMorePrivateUrl: string;
-  logoUrl: string;
-  docUrl: string;
+  lightTextLogo: StaticImageData;
+  darkTextLogo: StaticImageData;
   Icon: ({ className }: { className: string }) => JSX.Element;
+  iconClassName: string;
+  serviceInstanceTag: ServiceInstanceTag;
 }
 
 export const PlatformMetadataMapping: Record<
@@ -27,28 +35,27 @@ export const PlatformMetadataMapping: Record<
 > = {
   [PlatformIdentifier.Opencti]: {
     name: 'OpenCTI',
-    learnMorePublicUrl: '/cybersecurity-solutions/opencti-free-trial',
-    learnMorePrivateUrl: '/app/service/opencti-free-trial',
-    logoUrl: '/logo_opencti_dark.png',
-    docUrl: 'https://docs.opencti.io/latest/administration/hub/',
+    lightTextLogo: openctiTextLogo,
+    darkTextLogo: openctiTextDarkLogo,
     Icon: ({ className }) => <OpenCtiIconIcon className={className} />,
+    iconClassName: 'text-filigran-brand-primary',
+    serviceInstanceTag: ServiceInstanceTag.OpenCti,
   },
   [PlatformIdentifier.Openaev]: {
     name: 'OpenAEV',
-    learnMorePublicUrl: '/cybersecurity-solutions/openaev-free-trial',
-    learnMorePrivateUrl: '/app/service/openaev-free-trial',
-    logoUrl: '/logo_openaev_dark.png',
-    docUrl: 'https://docs.openaev.io/latest/administration/hub/',
+    lightTextLogo: openaevTextLogo,
+    darkTextLogo: openaevTextDarkLogo,
     Icon: ({ className }) => <OpenAevIconIcon className={className} />,
+    iconClassName: 'text-filigran-brand-primary',
+    serviceInstanceTag: ServiceInstanceTag.OpenAev,
   },
-  // Placeholder: xtmone has no trial UI yet, replace when built.
   [PlatformIdentifier.Xtmone]: {
     name: 'XTM One',
-    learnMorePublicUrl: '',
-    learnMorePrivateUrl: '',
-    logoUrl: '',
-    docUrl: '',
-    Icon: ({ className }) => <LogoFiligranIcon className={className} />,
+    lightTextLogo: xtmoneTextLogo,
+    darkTextLogo: xtmoneTextDarkLogo,
+    Icon: ({ className }) => <LogoXtmOneIcon className={className} />,
+    iconClassName: 'text-filigran-ia-primary',
+    serviceInstanceTag: ServiceInstanceTag.XtmOne,
   },
 };
 
@@ -58,31 +65,41 @@ export const CONTRACT_LABEL_BY_CONTRACT: Record<PlatformContract, string> = {
   [PlatformContract.Trial]: 'Contracts.TRIAL',
 };
 
+export const STATUS_LABEL_BY_STATUS: Record<
+  PlatformConfigurationStatus,
+  string
+> = {
+  [PlatformConfigurationStatus.Active]: 'PlatformStatuses.active',
+  [PlatformConfigurationStatus.Inactive]: 'PlatformStatuses.inactive',
+};
+
+export const COMMERCIAL_MODEL_LABEL_BY_COMMERCIAL_MODEL: Record<
+  CommercialModel,
+  string
+> = {
+  [CommercialModel.Saas]: 'CommercialModels.SAAS',
+  [CommercialModel.Other]: 'CommercialModels.OTHER',
+};
+
 export const translateServiceDefinitionIdentifier = (
-  serviceDefinitionIdentifier: ServiceDefinitionIdentifierFragment
+  serviceDefinitionIdentifier: ServiceDefinitionIdentifier
 ): string => {
   const platformIdentifier =
     ServiceDefinitionIdentifierToPlatformIdentifier[
       serviceDefinitionIdentifier
-    ] ?? PlatformIdentifier.Openaev;
+    ];
 
-  return PlatformMetadataMapping[platformIdentifier].name;
+  return platformIdentifier
+    ? PlatformMetadataMapping[platformIdentifier].name
+    : serviceDefinitionIdentifier;
 };
 
 export const ServiceDefinitionIdentifierToPlatformIdentifier: Partial<
-  Record<ServiceDefinitionIdentifierFragment, PlatformIdentifier>
+  Record<ServiceDefinitionIdentifier, PlatformIdentifier>
 > = {
   [ServiceDefinitionIdentifier.OpenctiRegistration]: PlatformIdentifier.Opencti,
   [ServiceDefinitionIdentifier.OpenaevRegistration]: PlatformIdentifier.Openaev,
-};
-
-export const serviceInstanceTagByPlatformIdentifier: Record<
-  PlatformIdentifier,
-  ServiceInstanceTag
-> = {
-  [PlatformIdentifier.Opencti]: ServiceInstanceTag.OpenCti,
-  [PlatformIdentifier.Openaev]: ServiceInstanceTag.OpenAev,
-  [PlatformIdentifier.Xtmone]: ServiceInstanceTag.XtmOne,
+  [ServiceDefinitionIdentifier.XtmoneRegistration]: PlatformIdentifier.Xtmone,
 };
 
 export const getRegisteredPlatformServiceIdentifier = (

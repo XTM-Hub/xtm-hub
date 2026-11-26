@@ -1,0 +1,144 @@
+name: Deploy documentation
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to deploy (defaults to the latest v* tag)'
+        required: false
+        type: string
+      force:
+        description: 'Deploy even if docs/ has not changed since the previous tag'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: docs-deploy
+  cancel-in-progress: false
+
+jobs:
+  check-docs-changes:
+    name: Check documentation changes
+    runs-on: ubuntu-26.04
+    outputs:
+      changed: ${{ steps.check.outputs.changed }}
+      tag: ${{ steps.check.outputs.tag }}
+      version: ${{ steps.check.outputs.version }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Resolve tag and detect documentation changes
+        id: check
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+          FORCE: ${{ inputs.force }}
+        run: |
+          set -euo pipefail
+
+          if [ -n "${INPUT_TAG}" ]; then
+            TAG="${INPUT_TAG}"
+          else
+            TAG=$(git tag -l 'v*' --sort=-v:refname | head -1)
+          fi
+
+          if [ -z "${TAG}" ]; then
+            echo "::error::No v* tag found to deploy"
+            exit 1
+          fi
+
+          VERSION="${TAG#v}"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 --match 'v*' "${TAG}^" 2>/dev/null || true)
+
+          if [ "${FORCE}" = "true" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "🔁 Forced deployment of ${TAG}"
+          elif [ -z "${PREVIOUS_TAG}" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "📚 No previous tag found, deploying ${TAG}"
+          elif git diff --quiet "${PREVIOUS_TAG}" "${TAG}" -- docs/; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "⏭️ No documentation change between ${PREVIOUS_TAG} and ${TAG}, skipping deployment"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "📚 Documentation changed between ${PREVIOUS_TAG} and ${TAG}:"
+            git diff --name-only "${PREVIOUS_TAG}" "${TAG}" -- docs/
+          fi
+
+  deploy:
+    name: Build and deploy documentation
+    needs: check-docs-changes
+    if: needs.check-docs-changes.outputs.changed == 'true'
+    runs-on: ubuntu-26.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.check-docs-changes.outputs.tag }}
+          fetch-depth: 0
+
+      - name: Fetch gh-pages branch
+        run: git fetch origin gh-pages:gh-pages || echo "No gh-pages branch yet, mike will create it"
+
+      - name: Setup Python
+        uses: actions/setup-python@v7
+        with:
+          python-version-file: docs/.python-version
+          cache: pip
+          cache-dependency-path: docs/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r docs/requirements.txt
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Build and publish version with mike
+        env:
+          VERSION: ${{ needs.check-docs-changes.outputs.version }}
+        run: |
+          set -euo pipefail
+          mike deploy --config-file docs/mkdocs.yml --branch gh-pages --push --update-aliases "${VERSION}" latest
+          mike set-default --config-file docs/mkdocs.yml --branch gh-pages --push latest
+
+      - name: Export gh-pages content
+        run: |
+          set -euo pipefail
+          mkdir -p _site _gh_pages
+          git archive gh-pages | tar -x -C _gh_pages
+          cp -rL _gh_pages/. _site/
+          touch _site/.nojekyll
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: _site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
+
+      - name: Summary
+        run: |
+          {
+            echo "## Documentation deployed 📚"
+            echo "- **Tag:** ${{ needs.check-docs-changes.outputs.tag }}"
+            echo "- **Version:** ${{ needs.check-docs-changes.outputs.version }} (alias \`latest\`)"
+            echo "- **URL:** ${{ steps.deployment.outputs.page_url }}"
+          } >> "$GITHUB_STEP_SUMMARY"

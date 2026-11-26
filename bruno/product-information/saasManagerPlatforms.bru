@@ -1,0 +1,108 @@
+meta {
+  name: saasManagerPlatforms
+  type: graphql
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/graphql-api
+  body: graphql
+  auth: inherit
+}
+
+headers {
+  cookie: {{cookie}}
+}
+
+body:graphql {
+  query SaasManagerPlatforms(
+    $first: Int!
+    $after: ID
+    $orderBy: SaasPlatformOrdering!
+    $orderMode: OrderingMode!
+    $searchTerm: String
+    $product: SaasProduct
+  ) {
+    saasManagerPlatforms(
+      first: $first
+      after: $after
+      orderBy: $orderBy
+      orderMode: $orderMode
+      searchTerm: $searchTerm
+      product: $product
+    ) {
+      totalCount
+      pageInfo {
+        endCursor
+        hasNextPage
+      }
+      edges {
+        cursor
+        node {
+        id
+        status
+        product
+        customer
+        commercial_model
+        sla_cmtd
+        metadata {
+          hostname
+          plan
+          start_date
+          end_date
+          region
+        }
+        storage {
+          es_used_size {
+            percent
+            used
+            limit
+          }
+          s3_used_size {
+            percent
+            used
+            limit
+          }
+          postgres_used_size {
+            percent
+            used
+            limit
+          }
+        }
+        health_issues
+        contract_status
+        registered_platform {
+          id
+          service_instance_id
+          identifier
+          organization {
+            id
+            name
+            administrator_emails
+          }
+        }
+        }
+      }
+    }
+  }
+}
+
+body:graphql:vars {
+  {
+    "first": 25,
+    "after": null,
+    "orderBy": "customer_name",
+    "orderMode": "asc",
+    "searchTerm": null,
+    "product": null
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+
+docs {
+  Lists the platforms in service the SaaS Manager pushed to the Hub (upsertSaasManagerInstances), paged as the other lists (first, after), searched on the customer name, its technical name and the hostname, filtered on a product (OCTI, OAEV or ONE) and ordered by customer_name, product, plan (by size: XS, S, M, L, XL, then the other plans) or end_date. sla_cmtd is a ratio (1 is 100 %). health_issues lists the measures past their limit, the most severe first: empty when the platform is healthy, null when the SaaS Manager has no measure of it. contract_status is ending_soon under 90 days before the end date, ended from it, null without one. registered_platform is the active SaaS registration of the platform in the Hub, null when the Hub does not know it. Needs the BYPASS or READ_SAAS_METRICS capability.
+}

@@ -1,0 +1,677 @@
+import { ServiceListDisplayMode } from '@/components/service/components/header/ServiceListHeader';
+import PublicDocumentsList from '@/components/service/document/PublicDocumentsList';
+import { ServiceListStorageKey } from '@/utils/filters-storage.utils';
+import { buildSignupRedirect, decodeSafeRedirect } from '@/utils/redirect';
+import testRender from '@/utils/test/test-render';
+import {
+  DocumentOrdering,
+  OrderingMode,
+  SeoServiceInstanceItemFragment,
+} from '@graphql/generated';
+import { screen } from '@testing-library/react';
+import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
+import { useRouter } from 'next/navigation';
+import React from 'react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const BASE_URL = 'https://xtm.local';
+const DOCUMENT_NAME_ONE = 'Doc 1';
+const DOCUMENT_NAME_TWO = 'Doc 2';
+const SERVICE_INSTANCE_ID = 'service-1';
+const SERVICE_INSTANCE_SLUG = 'my-service';
+const OPENCTI_INTEGRATIONS_SLUG = 'opencti-integrations';
+const INTEGRATION_TYPE_VALUE = 'connector';
+const FACET_COUNT = 4;
+const LARGE_TOTAL_COUNT = 144;
+const FILTERED_TOTAL_COUNT = 4;
+const FILTERS_BUTTON_LABEL = 'Service.List.Filters';
+const EMPTY_FACETS = {
+  documentFacets: {
+    integration_type: [],
+    license_type: [],
+    manager_supported: [],
+    verified: [],
+    solution_category: [],
+    use_case: [],
+    entity_type: [],
+  },
+};
+
+// Shared reference so unrelated filters don't look "changed" between renders.
+const EMPTY_SELECTION = {};
+
+// Asserts the pagination range with digit boundaries, so e.g. "1 - 4 / 4" can't
+// false-positive match as a substring of a stale "51 - 4 / 4".
+const expectPaginationRange = (
+  container: HTMLElement,
+  rangeStart: number,
+  rangeEnd: number,
+  total: number
+) => {
+  const pattern = new RegExp(
+    `(?:^|\\D)${rangeStart} - ${rangeEnd} / ${total}(?:\\D|$)`
+  );
+  expect(container.textContent).toMatch(pattern);
+};
+
+const testState = vi.hoisted(() => ({
+  usePublicDocumentsQuery: vi.fn(),
+  useShareableResourceMapping: vi.fn(),
+  useServiceListStorage: vi.fn(),
+  useLogicalFiltersFromStorage: vi.fn(),
+  useDocumentFacetsQuery: vi.fn(),
+  useScrollPosition: vi.fn(),
+  setSearch: vi.fn(),
+  setPageSize: vi.fn(),
+  setDisplayMode: vi.fn(),
+  restore: vi.fn(),
+}));
+
+const withPublicDocuments = (totalCount: number) => ({
+  data: { publicDocuments: { totalCount, edges: [] } },
+});
+
+vi.mock('@/utils/shareable-resources/use-shareable-resource-mapping', () => ({
+  useShareableResourceMapping: testState.useShareableResourceMapping,
+}));
+
+vi.mock('@/hooks/use-service-list-storage', async (importOriginal) => ({
+  ...(await importOriginal<
+    typeof import('@/hooks/use-service-list-storage')
+  >()),
+  useServiceListStorage: testState.useServiceListStorage,
+}));
+
+vi.mock('@/hooks/use-logical-filters-from-storage', async (importOriginal) => ({
+  ...(await importOriginal<
+    typeof import('@/hooks/use-logical-filters-from-storage')
+  >()),
+  useLogicalFiltersFromStorage: testState.useLogicalFiltersFromStorage,
+}));
+
+vi.mock('@graphql/generated', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@graphql/generated')>();
+  return {
+    ...actual,
+    useDocumentFacetsQuery: testState.useDocumentFacetsQuery,
+    usePublicDocumentsQuery: testState.usePublicDocumentsQuery,
+  };
+});
+
+vi.mock('@/lib/graphql-client', () => ({
+  portalGraphqlClient: { _mock: 'portalGraphqlClient' },
+}));
+
+vi.mock(
+  '@/components/service/integrations/[serviceInstanceId]/IntegrationListUrlFiltersSync',
+  () => ({
+    IntegrationListUrlFiltersSync: () => (
+      <div data-testid="integration-url-filters-sync" />
+    ),
+  })
+);
+
+vi.mock('@/hooks/use-scroll-position', () => ({
+  default: testState.useScrollPosition,
+}));
+
+vi.mock('usehooks-ts', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('usehooks-ts')>()),
+  useDebounceCallback: (callback: (value: string) => void) =>
+    Object.assign((value: string) => callback(value), { cancel: () => {} }),
+}));
+
+describe('PublicDocumentsList', () => {
+  const serviceInstance = {
+    id: SERVICE_INSTANCE_ID,
+    slug: SERVICE_INSTANCE_SLUG,
+  } as Partial<SeoServiceInstanceItemFragment>;
+
+  const buildElement = () => (
+    <PublicDocumentsList
+      serviceInstance={serviceInstance}
+      baseUrl={BASE_URL}
+    />
+  );
+
+  const goToSecondPage = async (
+    user: ReturnType<typeof testRender>['user']
+  ) => {
+    await user.click(
+      screen.getByRole('button', { name: 'GenericActions.Paginate.NextPage' })
+    );
+  };
+
+  // Base return value of `useServiceListStorage`; individual tests spread this and
+  // override the one field (search, a filter, or the sort) whose change should reset pagination.
+  const baseStorageState = () => ({
+    search: 'initial-search',
+    setSearch: testState.setSearch,
+    pageSize: 10,
+    setPageSize: testState.setPageSize,
+    displayMode: ServiceListDisplayMode.List,
+    setDisplayMode: testState.setDisplayMode,
+    labels: EMPTY_SELECTION,
+    entityTypes: EMPTY_SELECTION,
+    integrationTypes: EMPTY_SELECTION,
+    deployable: EMPTY_SELECTION,
+    verified: EMPTY_SELECTION,
+    productVersions: EMPTY_SELECTION,
+    licenseTypes: EMPTY_SELECTION,
+    solutionCategories: EMPTY_SELECTION,
+    orderBy: DocumentOrdering.Name,
+    orderMode: OrderingMode.Asc,
+    setOrderBy: vi.fn(),
+    setOrderMode: vi.fn(),
+  });
+
+  beforeEach(() => {
+    testState.usePublicDocumentsQuery.mockReset();
+    testState.setSearch.mockReset();
+    testState.setPageSize.mockReset();
+    testState.setDisplayMode.mockReset();
+    testState.restore.mockReset();
+
+    testState.useShareableResourceMapping.mockReturnValue({
+      storageKey: ServiceListStorageKey.OpenCTIIntegrationFeeds,
+      filters: {},
+    });
+    testState.useServiceListStorage.mockReturnValue(baseStorageState());
+    testState.useLogicalFiltersFromStorage.mockReturnValue(undefined);
+    testState.useDocumentFacetsQuery.mockReturnValue({ data: EMPTY_FACETS });
+    testState.useScrollPosition.mockReturnValue({
+      restore: testState.restore,
+    });
+
+    testState.usePublicDocumentsQuery.mockReturnValue({
+      data: {
+        publicDocuments: {
+          totalCount: 30,
+          edges: [
+            {
+              node: {
+                id: 'doc-1',
+                slug: 'doc-1',
+                name: DOCUMENT_NAME_ONE,
+                type: 'opencti_custom_dashboard',
+                short_description: 'description 1',
+                use_cases: [],
+              },
+            },
+            {
+              node: {
+                id: 'doc-2',
+                slug: 'doc-2',
+                name: DOCUMENT_NAME_TWO,
+                type: 'opencti_custom_dashboard',
+                short_description: 'description 2',
+                use_cases: [],
+              },
+            },
+          ],
+        },
+      },
+    });
+  });
+
+  const mockFacetQuery = () => {
+    testState.useDocumentFacetsQuery.mockReturnValue({
+      data: {
+        documentFacets: {
+          integration_type: [
+            { value: INTEGRATION_TYPE_VALUE, count: FACET_COUNT },
+          ],
+          license_type: [],
+          manager_supported: [],
+          verified: [],
+          solution_category: [],
+          use_case: [],
+          entity_type: [],
+        },
+      },
+    });
+  };
+
+  const mockEmptyFacetQuery = () => {
+    testState.useDocumentFacetsQuery.mockReturnValue({ data: EMPTY_FACETS });
+  };
+
+  it('should render documents and facet filters when the facet query returns counts', () => {
+    // Given
+    testState.useShareableResourceMapping.mockReturnValue({
+      storageKey: ServiceListStorageKey.OpenCTIIntegrationFeeds,
+      filters: {
+        integrationType: {
+          title: 'Service.OpenctiIntegrations.Filter.Type.Label',
+          node: React.createElement(
+            'label',
+            undefined,
+            React.createElement('input', {
+              'aria-label': `Service.OpenctiIntegrations.Type.${INTEGRATION_TYPE_VALUE}`,
+              type: 'checkbox',
+            }),
+            `Service.OpenctiIntegrations.Type.${INTEGRATION_TYPE_VALUE} (${FACET_COUNT})`
+          ),
+        },
+      },
+    });
+    mockFacetQuery();
+    testRender(
+      <PublicDocumentsList
+        serviceInstance={serviceInstance}
+        baseUrl={BASE_URL}
+      />
+    );
+
+    // When
+
+    // Then
+    expect(testState.restore).toHaveBeenCalledOnce();
+    expect(screen.getByText(DOCUMENT_NAME_ONE)).toBeInTheDocument();
+    expect(screen.getByText(DOCUMENT_NAME_TWO)).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', {
+        name: 'Service.OpenctiIntegrations.Filter.Type.Label',
+      })
+    ).toBeInTheDocument();
+  });
+
+  it('should not pass any facet counts to the filters mapping before the facet query has resolved', () => {
+    // Given
+    testState.useDocumentFacetsQuery.mockReturnValue({ data: undefined });
+
+    // When
+    testRender(
+      <PublicDocumentsList
+        serviceInstance={serviceInstance}
+        baseUrl={BASE_URL}
+      />
+    );
+
+    // Then
+    const [, facetCountsArg] =
+      testState.useShareableResourceMapping.mock.calls.at(-1) ?? [];
+    expect(facetCountsArg).toBeUndefined();
+  });
+
+  it('should forward search and display mode changes when header actions are used', async () => {
+    // Given
+    mockEmptyFacetQuery();
+    const { user } = testRender(
+      <PublicDocumentsList
+        serviceInstance={serviceInstance}
+        baseUrl={BASE_URL}
+      />
+    );
+
+    // When
+    const searchInput = screen.getByPlaceholderText('GenericActions.Search');
+    await user.clear(searchInput);
+    await user.type(searchInput, 'search-updated');
+    await user.click(
+      screen.getByRole('button', { name: 'Service.List.ViewTab' })
+    );
+
+    // Then
+    expect(testState.setSearch).toHaveBeenCalledWith('search-updated');
+    expect(testState.setDisplayMode).toHaveBeenCalledWith(
+      ServiceListDisplayMode.Tab
+    );
+  });
+
+  it('should open the filters sheet when the filters button is clicked', async () => {
+    // Given
+    mockEmptyFacetQuery();
+    const { user } = testRender(buildElement());
+
+    // When
+    await user.click(
+      screen.getByRole('button', { name: FILTERS_BUTTON_LABEL })
+    );
+
+    // Then
+    expect(
+      screen.getByRole('dialog', { name: FILTERS_BUTTON_LABEL })
+    ).toBeInTheDocument();
+  });
+
+  it('should keep the header mounted and show a skeleton instead of the list while the first page is loading', () => {
+    // Given
+    mockEmptyFacetQuery();
+    testState.usePublicDocumentsQuery.mockReturnValue({
+      data: undefined,
+      isLoading: true,
+    });
+
+    // When
+    testRender(buildElement());
+
+    // Then
+    expect(screen.queryByText(DOCUMENT_NAME_ONE)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Utils.DocumentNotFound')
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: FILTERS_BUTTON_LABEL })
+    ).toBeInTheDocument();
+  });
+
+  it('should mount the URL filters sync of the integrations page while the first page is loading', () => {
+    // Given
+    mockEmptyFacetQuery();
+    testState.usePublicDocumentsQuery.mockReturnValue({
+      data: undefined,
+      isLoading: true,
+    });
+
+    // When
+    testRender(
+      <PublicDocumentsList
+        serviceInstance={
+          {
+            id: SERVICE_INSTANCE_ID,
+            slug: OPENCTI_INTEGRATIONS_SLUG,
+          } as Partial<SeoServiceInstanceItemFragment> as SeoServiceInstanceItemFragment
+        }
+        baseUrl={BASE_URL}
+      />
+    );
+
+    // Then
+    expect(
+      screen.getByTestId('integration-url-filters-sync')
+    ).toBeInTheDocument();
+  });
+
+  it('should restore the scroll position once the first page has loaded, not while the skeleton is displayed', () => {
+    // Given
+    mockEmptyFacetQuery();
+    testState.usePublicDocumentsQuery.mockReturnValue({
+      data: undefined,
+      isLoading: true,
+    });
+    const { rerender } = testRender(buildElement());
+    expect(testState.restore).not.toHaveBeenCalled();
+
+    // When
+    testState.usePublicDocumentsQuery.mockReturnValue({
+      ...withPublicDocuments(FILTERED_TOTAL_COUNT),
+      isLoading: false,
+    });
+    rerender(buildElement());
+
+    // Then
+    expect(testState.restore).toHaveBeenCalledOnce();
+  });
+
+  it('should show an error with a retry action instead of an empty list when the query failed', async () => {
+    // Given
+    mockEmptyFacetQuery();
+    const refetch = vi.fn();
+    testState.usePublicDocumentsQuery.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+      refetch,
+    });
+    const { user } = testRender(buildElement());
+
+    // When
+    await user.click(
+      screen.getByRole('button', { name: 'Service.List.Retry' })
+    );
+
+    // Then
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Service.List.LoadError'
+    );
+    expect(
+      screen.queryByText('Utils.DocumentNotFound')
+    ).not.toBeInTheDocument();
+    expect(refetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('should keep the documents on screen when a background refetch failed', () => {
+    // Given
+    mockEmptyFacetQuery();
+    testState.usePublicDocumentsQuery.mockReturnValue({
+      data: withPublicDocuments(FILTERED_TOTAL_COUNT).data,
+      isLoading: false,
+      isError: true,
+      refetch: vi.fn(),
+    });
+
+    // When
+    testRender(buildElement());
+
+    // Then
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it('should render the list with no documents instead of a skeleton when the query is not loading and returned no data', () => {
+    // Given
+    mockEmptyFacetQuery();
+    testState.usePublicDocumentsQuery.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+    });
+
+    // When
+    testRender(buildElement());
+
+    // Then
+    expect(
+      screen.getByRole('button', { name: FILTERS_BUTTON_LABEL })
+    ).toBeInTheDocument();
+    expect(screen.getByText('Utils.DocumentNotFound')).toBeInTheDocument();
+  });
+
+  it('should query the next page with an encoded cursor when pagination moves to the next page', async () => {
+    // Given
+    mockEmptyFacetQuery();
+    const { user } = testRender(
+      <PublicDocumentsList
+        serviceInstance={serviceInstance}
+        baseUrl={BASE_URL}
+      />
+    );
+
+    // When
+    await user.click(
+      screen.getByRole('button', { name: 'GenericActions.Paginate.NextPage' })
+    );
+
+    // Then
+    expect(testState.usePublicDocumentsQuery).toHaveBeenLastCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        slug: SERVICE_INSTANCE_SLUG,
+        serviceInstanceId: SERVICE_INSTANCE_ID,
+        count: 10,
+        cursor: btoa('10'),
+      }),
+      expect.anything()
+    );
+  });
+
+  it('should reset the displayed page to the first one when the search term changes after paginating', async () => {
+    // Given
+    mockEmptyFacetQuery();
+    testState.usePublicDocumentsQuery.mockReturnValue(
+      withPublicDocuments(LARGE_TOTAL_COUNT)
+    );
+    const { user, rerender, container } = testRender(buildElement());
+    await goToSecondPage(user);
+    expectPaginationRange(container, 11, 20, LARGE_TOTAL_COUNT);
+
+    // When
+    testState.useServiceListStorage.mockReturnValue({
+      ...baseStorageState(),
+      search: 'narrow-search',
+    });
+    testState.usePublicDocumentsQuery.mockReturnValue(
+      withPublicDocuments(FILTERED_TOTAL_COUNT)
+    );
+    rerender(buildElement());
+
+    // Then
+    expectPaginationRange(
+      container,
+      1,
+      FILTERED_TOTAL_COUNT,
+      FILTERED_TOTAL_COUNT
+    );
+  });
+
+  it('should reset the displayed page to the first one when a filter changes after paginating', async () => {
+    // Given
+    mockEmptyFacetQuery();
+    testState.usePublicDocumentsQuery.mockReturnValue(
+      withPublicDocuments(LARGE_TOTAL_COUNT)
+    );
+    const { user, rerender, container } = testRender(buildElement());
+    await goToSecondPage(user);
+    expectPaginationRange(container, 11, 20, LARGE_TOTAL_COUNT);
+
+    // When
+    testState.useServiceListStorage.mockReturnValue({
+      ...baseStorageState(),
+      labels: { 'label-1': true },
+    });
+    testState.usePublicDocumentsQuery.mockReturnValue(
+      withPublicDocuments(FILTERED_TOTAL_COUNT)
+    );
+    rerender(buildElement());
+
+    // Then
+    expectPaginationRange(
+      container,
+      1,
+      FILTERED_TOTAL_COUNT,
+      FILTERED_TOTAL_COUNT
+    );
+  });
+
+  it('should reset the displayed page to the first one when the sort order changes after paginating', async () => {
+    // Given
+    mockEmptyFacetQuery();
+    testState.usePublicDocumentsQuery.mockReturnValue(
+      withPublicDocuments(LARGE_TOTAL_COUNT)
+    );
+    const { user, rerender, container } = testRender(buildElement());
+    await goToSecondPage(user);
+    expectPaginationRange(container, 11, 20, LARGE_TOTAL_COUNT);
+
+    // When
+    testState.useServiceListStorage.mockReturnValue({
+      ...baseStorageState(),
+      orderBy: DocumentOrdering.CreatedAt,
+      orderMode: OrderingMode.Desc,
+    });
+    testState.usePublicDocumentsQuery.mockReturnValue(
+      withPublicDocuments(FILTERED_TOTAL_COUNT)
+    );
+    rerender(buildElement());
+
+    // Then
+    expectPaginationRange(
+      container,
+      1,
+      FILTERED_TOTAL_COUNT,
+      FILTERED_TOTAL_COUNT
+    );
+  });
+
+  it('should redirect to sign-up with the private integrations page when the CSV export button is clicked on the OpenCTI integrations public page', async () => {
+    // Given
+    mockEmptyFacetQuery();
+    const pushMock = vi.fn();
+    vi.mocked(useRouter).mockReturnValue({
+      push: pushMock,
+    } as unknown as AppRouterInstance);
+    const integrationsServiceInstance = {
+      id: SERVICE_INSTANCE_ID,
+      slug: OPENCTI_INTEGRATIONS_SLUG,
+    } as Partial<SeoServiceInstanceItemFragment>;
+    const { user } = testRender(
+      <PublicDocumentsList
+        serviceInstance={integrationsServiceInstance}
+        baseUrl={BASE_URL}
+      />
+    );
+
+    // When
+    await user.click(
+      screen.getByRole('button', { name: 'Service.CsvExport.TriggerButton' })
+    );
+
+    // Then
+    expect(pushMock).toHaveBeenCalledWith(
+      buildSignupRedirect(
+        `/app/service/opencti_integrations/${SERVICE_INSTANCE_ID}`
+      )
+    );
+    expect(
+      screen.queryByText('Service.CsvExport.DialogTitle')
+    ).not.toBeInTheDocument();
+  });
+
+  it('should not render the CSV export button for a non-integrations public page', () => {
+    // Given
+    mockEmptyFacetQuery();
+    testRender(
+      <PublicDocumentsList
+        serviceInstance={serviceInstance}
+        baseUrl={BASE_URL}
+      />
+    );
+
+    // Then
+    expect(
+      screen.queryByRole('button', { name: 'Service.CsvExport.TriggerButton' })
+    ).not.toBeInTheDocument();
+  });
+
+  it('should percent-encode a service instance id containing + so it survives the signup redirect round-trip', async () => {
+    // Given
+    // Relay global IDs are base64 and can contain `+`; an unescaped `+` in
+    // the redirect path would otherwise be silently read back as a space.
+    const SERVICE_INSTANCE_ID_WITH_PLUS = 'U2VydmljZUluc3RhbmNlOnh4eHg/+/+PT0=';
+    mockEmptyFacetQuery();
+    const pushMock = vi.fn();
+    vi.mocked(useRouter).mockReturnValue({
+      push: pushMock,
+    } as unknown as AppRouterInstance);
+    const integrationsServiceInstance = {
+      id: SERVICE_INSTANCE_ID_WITH_PLUS,
+      slug: OPENCTI_INTEGRATIONS_SLUG,
+    } as Partial<SeoServiceInstanceItemFragment>;
+    const { user } = testRender(
+      <PublicDocumentsList
+        serviceInstance={integrationsServiceInstance}
+        baseUrl={BASE_URL}
+      />
+    );
+
+    // When
+    await user.click(
+      screen.getByRole('button', { name: 'Service.CsvExport.TriggerButton' })
+    );
+
+    // Then
+    const expectedPath = `/app/service/opencti_integrations/${encodeURIComponent(SERVICE_INSTANCE_ID_WITH_PLUS)}`;
+    expect(pushMock).toHaveBeenCalledWith(buildSignupRedirect(expectedPath));
+
+    // The id must round-trip unchanged once the browser parses the pushed URL.
+    const destination = decodeSafeRedirect(
+      new URLSearchParams(pushMock.mock.calls[0][0].split('?')[1]).get(
+        'redirect'
+      )
+    );
+    const redirectedServiceInstanceId = destination?.split('/').pop();
+    expect(
+      redirectedServiceInstanceId &&
+        decodeURIComponent(redirectedServiceInstanceId)
+    ).toBe(SERVICE_INSTANCE_ID_WITH_PLUS);
+  });
+});

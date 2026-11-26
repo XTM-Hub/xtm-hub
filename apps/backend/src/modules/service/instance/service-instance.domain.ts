@@ -11,7 +11,6 @@ import {
   ServiceLink,
 } from '../../../__generated__/resolvers-types';
 import { requestContext } from '../../../context/request.context';
-import { GenericServiceCapabilityId } from '../../../model/kanel/public/GenericServiceCapability';
 import Organization, {
   OrganizationId,
 } from '../../../model/kanel/public/Organization';
@@ -25,30 +24,20 @@ import ServiceInstance, {
   ServiceInstanceInitializer,
   ServiceInstanceMutator,
 } from '../../../model/kanel/public/ServiceInstance';
-import Subscription, {
-  SubscriptionId,
-} from '../../../model/kanel/public/Subscription';
+import Subscription from '../../../model/kanel/public/Subscription';
 import { UserId } from '../../../model/kanel/public/User';
-import { UserServiceId } from '../../../model/kanel/public/UserService';
-import { UserServiceCapabilityId } from '../../../model/kanel/public/UserServiceCapability';
 import { isUserAdminPlatform } from '../../../security/access';
-import { buildServiceLink, sendMail } from '../../../server/mail-service';
-import { ServiceIdentifierToMailTemplate } from '../../../server/mail-template/mail';
-import { logApp } from '../../../utils/app-logger.util';
-import { buildTupleFilter } from '../../../utils/batch-query.util';
 import {
-  NotFoundErrorCode,
-  UnknownErrorCode,
-} from '../../../utils/error/error.code';
+  restrictServiceInstanceToAccessible,
+  restrictServiceInstanceToPublic,
+} from '../../../security/restriction/service-instance';
+import { buildTupleFilter } from '../../../utils/batch-query.util';
+import { UnknownErrorCode } from '../../../utils/error/error.code';
 import { formatRawObject } from '../../../utils/query-raw.util';
-import { UserDomain } from '../../organization-management/user/user-domain/user.domain';
 import {
   serviceInstanceNameMappedByPlatformIdentifier,
   serviceInstanceTagMappedByPlatformIdentifier,
 } from '../../registration/registration.mapping';
-import { ServiceCapabilityHelper } from '../../security-management/service-capability/service-capability.helper';
-import { SubscriptionDomain } from '../../subscription/subscription.domain';
-import { UserServiceDomain } from '../../user-service/user-service.domain';
 
 export const ServiceInstanceDomain = {
   createPlatformServiceInstance: async (
@@ -234,14 +223,29 @@ export const ServiceInstanceDomain = {
       );
   },
 
-  loadServiceInstances: async (opts: QueryOpts) => {
-    const { filters, searchTerm, orderBy } = opts;
-    return paginate<ServiceInstance, ServiceConnection>('ServiceInstance', {
-      ...opts,
-      orderBy: `ServiceInstance.${orderBy}`,
-      filters,
-      searchTerm,
-    });
+  loadServiceInstances: async (
+    opts: QueryOpts & { includeInaccessible?: boolean | null }
+  ) => {
+    const { filters, searchTerm, orderBy, includeInaccessible } = opts;
+    const user = requestContext.get()?.user;
+    const showEveryServiceInstance =
+      !!includeInaccessible && !!user && isUserAdminPlatform(user);
+
+    return paginate<ServiceInstance, ServiceConnection>(
+      'ServiceInstance',
+      {
+        ...opts,
+        orderBy: `ServiceInstance.${orderBy}`,
+        filters,
+        searchTerm,
+      },
+      undefined,
+      db<ServiceInstance>('ServiceInstance').modify((queryBuilder) => {
+        if (!showEveryServiceInstance) {
+          restrictServiceInstanceToAccessible(queryBuilder);
+        }
+      })
+    );
   },
 
   loadServiceInstanceSubscriptionsByIds: async (
@@ -380,6 +384,16 @@ export const ServiceInstanceDomain = {
     return query.select('ServiceInstance.*').first();
   },
 
+  loadAccessibleServiceInstanceBy: async (
+    field: ServiceInstanceMutator
+  ): Promise<ServiceInstance | undefined> => {
+    return db<ServiceInstance>('ServiceInstance')
+      .where(field)
+      .tap(restrictServiceInstanceToAccessible)
+      .select('ServiceInstance.*')
+      .first();
+  },
+
   loadServiceInstancesByIds: async (
     ids: ServiceInstanceId[]
   ): Promise<ServiceInstance[]> => {
@@ -391,53 +405,6 @@ export const ServiceInstanceDomain = {
       'ServiceInstance.id',
       ids
     );
-  },
-
-  grantServiceAccess: async (
-    capabilityId: string,
-    userId: UserId,
-    subscriptionId: SubscriptionId
-  ) => {
-    const dataUserService = {
-      id: uuidv4() as UserServiceId,
-      user_id: userId,
-      subscription_id: subscriptionId,
-    };
-    const [insertedUserService] =
-      await UserServiceDomain.insertUserService(dataUserService);
-    if (!insertedUserService) {
-      throw new Error(UnknownErrorCode.AddUserServiceError);
-    }
-
-    const serviceInstance =
-      await loadServiceInstanceBySubscriptionId(subscriptionId);
-    if (!serviceInstance) {
-      throw new Error(NotFoundErrorCode.ServiceInstanceNotFound);
-    }
-
-    const service_definition =
-      await ServiceInstanceDomain.loadServiceDefinitionByServiceInstance(
-        serviceInstance.id
-      );
-    if (!service_definition) {
-      throw new Error(NotFoundErrorCode.ServiceDefinitionNotFound);
-    }
-
-    await notifyUserServiceAccessGranted(
-      userId,
-      serviceInstance,
-      service_definition.identifier
-    );
-
-    await ServiceCapabilityHelper.insertServiceCapability([
-      {
-        id: uuidv4() as UserServiceCapabilityId,
-        user_service_id: insertedUserService.id,
-        generic_service_capability_id:
-          capabilityId as GenericServiceCapabilityId,
-      },
-    ]);
-    return [insertedUserService];
   },
 
   loadLinksByServiceInstanceIds: async (
@@ -562,6 +529,7 @@ export const ServiceInstanceDomain = {
         dbRaw('json_agg("Service_Link") AS links')
       )
       .where('ServiceInstance.slug', '=', slug)
+      .tap(restrictServiceInstanceToPublic)
       .groupBy('ServiceInstance.id', 'ServiceDefinition.id')
       .first();
   },
@@ -594,6 +562,7 @@ export const ServiceInstanceDomain = {
       .whereIn('ServiceDefinition.identifier', [
         ServiceDefinitionIdentifier.OpenaevRegistration,
         ServiceDefinitionIdentifier.OpenctiRegistration,
+        ServiceDefinitionIdentifier.XtmoneRegistration,
       ])
       .select('ServiceInstance.*')
       .first();
@@ -652,56 +621,4 @@ export const ServiceInstanceDomain = {
       .delete('*');
     return deletedServiceInstance;
   },
-};
-
-const loadServiceInstanceBySubscriptionId = async (
-  subscriptionId: SubscriptionId
-): Promise<ServiceInstance | undefined> => {
-  const subscription = await SubscriptionDomain.loadSubscriptionBy({
-    id: subscriptionId,
-  });
-  if (!subscription) {
-    return undefined;
-  }
-  return ServiceInstanceDomain.loadServiceInstanceBy({
-    id: subscription.service_instance_id,
-  });
-};
-
-const notifyUserServiceAccessGranted = async (
-  userId: UserId,
-  serviceInstance: ServiceInstance,
-  serviceDefinitionIdentifier: ServiceDefinitionIdentifier
-): Promise<void> => {
-  const mailTemplate = ServiceIdentifierToMailTemplate.get(
-    serviceDefinitionIdentifier
-  );
-  if (!mailTemplate) {
-    return;
-  }
-
-  const [user] = await UserDomain.loadUser({ id: userId });
-  if (!user) {
-    logApp.warn(`User ${userId} not found, skipping mail notification`);
-    return;
-  }
-
-  const serviceLink = buildServiceLink({
-    serviceDefinitionIdentifier,
-    serviceInstanceId: serviceInstance.id,
-  });
-
-  try {
-    await sendMail({
-      to: user.email,
-      template: mailTemplate,
-      params: {
-        name: user.email,
-        serviceLink,
-        serviceName: serviceInstance.name,
-      },
-    });
-  } catch (error) {
-    logApp.error('Failed to send service access granted mail', { error });
-  }
 };

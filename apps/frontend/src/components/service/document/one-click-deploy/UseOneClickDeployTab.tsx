@@ -1,19 +1,20 @@
-import { RefreshUserPlatformTokenMutation } from '@/components/registration/register/register.graphql';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import useExternalTab from '@/hooks/use-external-tab';
+import { useTranslate } from '@/hooks/use-translate';
+import { portalGraphqlClient } from '@/lib/graphql-client';
+import { OPENCTI_INTEGRATION_URL_CONFIGS } from '@/utils/shareable-resources/shareable-resources.consts';
 import {
   isConnectorResource,
   ShareableResourceType,
 } from '@/utils/shareable-resources/shareable-resources.types';
-import { docHasMetadata } from '@/utils/shareable-resources/utils/shareable-resources.client.utils';
-import { toast } from '@filigran/ui';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import {
-  registerRefreshUserPlatformTokenMutation,
-  registerRefreshUserPlatformTokenMutation$data,
-} from '@generated/registerRefreshUserPlatformTokenMutation.graphql';
-import { IntegrationType } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
-import { useMutation } from 'react-relay';
+  docHasMetadata,
+  getDocumentEntityTypes,
+} from '@/utils/shareable-resources/utils/shareable-resources.client.utils';
+import {
+  DocumentItemFragment,
+  useRefreshUserPlatformTokenMutation,
+} from '@graphql/generated';
 
 const OPENCTI_URL_CONFIGS = {
   opencti_custom_dashboard: 'deploy-custom-dashboard',
@@ -22,18 +23,9 @@ const OPENCTI_URL_CONFIGS = {
   opencti_playbook: 'deploy-playbook',
 };
 
-export const OPENCTI_INTEGRATION_URL_CONFIGS: Partial<
-  Record<IntegrationType, string>
-> = {
-  [IntegrationType.TaxiiFeed]: 'deploy-taxii-feed',
-  [IntegrationType.CsvFeed]: 'deploy-csv-feed',
-  [IntegrationType.Stream]: 'deploy-sync',
-  [IntegrationType.RssFeed]: 'deploy-rss-feed',
-};
-
 interface Props {
   platformBasePath: string;
-  documentData: documentItem_fragment$data;
+  documentData: DocumentItemFragment;
 }
 
 interface Return {
@@ -41,7 +33,7 @@ interface Return {
 }
 
 function computeDeployUrl(
-  documentData: documentItem_fragment$data,
+  documentData: DocumentItemFragment,
   platformBasePath: string
 ): string {
   const { id, service_instance, type } = documentData;
@@ -67,7 +59,7 @@ function computeDeployUrl(
   const baseUrl = `${platformBasePath}/dashboard/xtm-hub/${urlKey}/${service_instance?.id}/${id}`;
 
   if (type === ShareableResourceType.OPENCTI_CUSTOM_VIEW) {
-    const entityTypes = documentData.entity_types ?? [];
+    const entityTypes = getDocumentEntityTypes(documentData) ?? [];
     if (entityTypes.length > 0) {
       const queryString = entityTypes
         .map(
@@ -85,31 +77,44 @@ export const useOneClickDeployTab = ({
   platformBasePath,
   documentData,
 }: Props): Return => {
-  const t = useTranslations();
-  const [refreshUserPlatformToken] =
-    useMutation<registerRefreshUserPlatformTokenMutation>(
-      RefreshUserPlatformTokenMutation
-    );
+  const t = useTranslate();
+  const { mutate: refreshUserPlatformToken } =
+    useRefreshUserPlatformTokenMutation(portalGraphqlClient, {
+      scope: {
+        id: useRefreshUserPlatformTokenMutation.getRootKey()[0],
+      },
+      // Hook-level, unlike the per-call callbacks that only the latest call of a mounted component runs: every
+      // rotated token reaches the tab, even when a later refresh fails or the page unmounts before the answer.
+      // postToTab is declared below: the tab's message handler needs this mutation, so one of the two must come
+      // first; this callback only runs after render.
+      onSuccess: (response) => {
+        postToTab({
+          action: 'set-token',
+          token: response.refreshUserPlatformToken.token,
+        });
+      },
+    });
 
   const handleMessage = (event: MessageEvent) => {
-    const eventData = event.data;
-    const { action } = eventData;
-    if (action === 'refresh-token') {
-      refreshUserPlatformToken({
-        variables: {},
-        onCompleted,
-        onError: (error) => {
-          toast({
-            variant: 'destructive',
-            title: t('Utils.Error'),
-            description: <>{t(`Error.Server.${error.message}`)}</>,
-          });
-        },
-      });
+    if (event.data?.action === 'refresh-token') {
+      refreshUserPlatformToken(
+        {},
+        {
+          onError: (error) => {
+            const errorMessage =
+              error instanceof Error ? error.message : 'UNKNOWN_ERROR';
+            showSnackbar({
+              severity: 'error',
+              title: t('Utils.Error'),
+              description: <>{t(`Error.Server.${errorMessage}`)}</>,
+            });
+          },
+        }
+      );
     }
   };
   const url = computeDeployUrl(documentData, platformBasePath);
-  const { openTab, postMessage } = useExternalTab({
+  const { openTab, postMessage: postToTab } = useExternalTab({
     url,
     tabName:
       documentData.type === ShareableResourceType.OPENAEV_SCENARIO
@@ -118,15 +123,6 @@ export const useOneClickDeployTab = ({
     onMessage: handleMessage,
     preventUnload: false,
   });
-
-  const onCompleted = (
-    response: registerRefreshUserPlatformTokenMutation$data
-  ) => {
-    postMessage({
-      action: 'set-token',
-      token: response.refreshUserPlatformToken.token,
-    });
-  };
 
   return {
     openTab,

@@ -19,6 +19,8 @@ import {
   needsConsent,
   normalizeConsent,
 } from '@/components/cookie-consent/cookie-consent.utils';
+import { revokeAnalyticsConsent } from '@/lib/analytics/analytics.client';
+import { GA_CONSENT_SERVICE_ID } from '@/lib/analytics/analytics.consts';
 import {
   createContext,
   useCallback,
@@ -56,22 +58,28 @@ export const CookieConsentProvider = ({
   const [stored, setStored] = useState<StoredConsent | null>(initialConsent);
   const [isPreferencesOpen, setIsPreferencesOpen] = useState(false);
 
-  const consent = useMemo(
-    () => (stored ? stored.services : getDefaultConsent()),
-    [stored]
-  );
-
   const showBanner = useMemo(() => needsConsent(stored), [stored]);
+
+  const consent = useMemo(
+    () => (stored && !showBanner ? stored.services : getDefaultConsent()),
+    [stored, showBanner]
+  );
 
   const persist = useCallback(
     (nextServices: ServiceConsent) => {
       const normalized = normalizeConsent(nextServices);
-      const revoked = getRevokedServices(consent, normalized);
+      const revoked = getRevokedServices(
+        stored?.services ?? getDefaultConsent(),
+        normalized
+      );
+      if (revoked.includes(GA_CONSENT_SERVICE_ID)) {
+        revokeAnalyticsConsent();
+      }
       purgeCookies(getCookiePatternsToPurge(revoked));
       setStored(writeClientConsent(normalized));
       setIsPreferencesOpen(false);
     },
-    [consent]
+    [stored]
   );
 
   const value = useMemo<CookieConsentContextValue>(

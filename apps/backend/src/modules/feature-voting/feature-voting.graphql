@@ -1,0 +1,138 @@
+scalar VotableFeatureId
+scalar VotingRoundId
+
+enum VotingRoundStatus {
+  draft
+  open
+  closed
+}
+
+"Visual identity applied to the public banner and voting page of a round."
+enum VotingRoundTheme {
+  default
+  thread
+}
+
+type VotingRound implements Node {
+  id: ID!
+  service_instance_id: ServiceInstanceId!
+  name: String!
+  description: String
+  status: VotingRoundStatus!
+  theme: VotingRoundTheme!
+  opened_at: Date
+  closed_at: Date
+  created_at: Date!
+  updated_at: Date
+  features: [VotableFeature!]!
+  feature_count: Int!
+}
+
+type VotableFeature implements Node {
+  id: ID!
+  voting_round_id: VotingRoundId!
+  title: String!
+  short_description: String!
+  description: String!
+  product: FiligranProduct!
+  use_cases: [UseCase!]!
+  illustration_document_id: DocumentId
+  illustration_document: Document
+  position: Int!
+  active: Boolean!
+  created_at: Date!
+  updated_at: Date
+  has_my_vote: Boolean!
+}
+
+type VotableFeatureResult {
+  feature: VotableFeature!
+  vote_count: Int!
+}
+
+type VotingRoundResults {
+  round: VotingRound!
+  total_voters: Int!
+  results: [VotableFeatureResult!]!
+}
+
+input CreateVotingRoundInput {
+  service_instance_id: ServiceInstanceId!
+  name: String!
+  description: String
+  theme: VotingRoundTheme
+  copy_features_from_round_id: VotingRoundId
+}
+
+input UpdateVotingRoundInput {
+  name: String
+  description: String
+  theme: VotingRoundTheme
+}
+
+input CreateVotableFeatureInput {
+  voting_round_id: VotingRoundId!
+  title: String!
+  short_description: String!
+  description: String!
+  product: FiligranProduct!
+  use_case_ids: [UseCaseId!]
+  position: Int
+  active: Boolean
+}
+
+input UpdateVotableFeatureInput {
+  title: String
+  short_description: String
+  description: String
+  product: FiligranProduct
+  use_case_ids: [UseCaseId!]
+  """
+  Send null to remove the current illustration.
+  """
+  illustration_document_id: DocumentId
+  position: Int
+  active: Boolean
+}
+
+type Query {
+  """
+  The round currently collecting votes on a service instance, if any.
+  Publicly readable, like the roadmap the round belongs to.
+  """
+  currentVotingRound(service_instance_id: ServiceInstanceId!): VotingRound
+  votingRounds(service_instance_id: ServiceInstanceId): [VotingRound!]!
+    @auth(portalCapa: [BYPASS])
+  votingRound(id: VotingRoundId!): VotingRound @auth(portalCapa: [BYPASS])
+  votingRoundResults(id: VotingRoundId!): VotingRoundResults!
+    @auth(portalCapa: [BYPASS])
+}
+
+type Mutation {
+  voteForFeature(feature_id: VotableFeatureId!): [VotableFeature!]! @auth
+
+  createVotingRound(input: CreateVotingRoundInput!): VotingRound!
+    @auth(portalCapa: [BYPASS])
+  updateVotingRound(
+    id: VotingRoundId!
+    input: UpdateVotingRoundInput!
+  ): VotingRound! @auth(portalCapa: [BYPASS])
+  setVotingRoundStatus(
+    id: VotingRoundId!
+    status: VotingRoundStatus!
+  ): [VotingRound!]! @auth(portalCapa: [BYPASS])
+  deleteVotingRound(id: VotingRoundId!): VotingRound!
+    @auth(portalCapa: [BYPASS])
+
+  createVotableFeature(
+    input: CreateVotableFeatureInput!
+    document: [Upload!]
+  ): VotableFeature! @auth(portalCapa: [BYPASS])
+  updateVotableFeature(
+    id: VotableFeatureId!
+    input: UpdateVotableFeatureInput!
+    document: [Upload!]
+  ): VotableFeature! @auth(portalCapa: [BYPASS])
+  deleteVotableFeature(id: VotableFeatureId!): VotableFeature!
+    @auth(portalCapa: [BYPASS])
+}

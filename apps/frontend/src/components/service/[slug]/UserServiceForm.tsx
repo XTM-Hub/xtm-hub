@@ -1,67 +1,104 @@
-import { UserFragment } from '@/components/admin/user/UserList';
+import { AppCombobox } from '@/components/ui/AppCombobox';
 import { DEBOUNCE_TIME } from '@/utils/constant';
-import { ServiceRestriction } from '@graphql/generated';
-import { useContext, useEffect, useMemo } from 'react';
+import {
+  FilterKey,
+  ServiceRestriction,
+  SubscriptionByIdQuery,
+  useAddUserServiceMutation,
+  useEditUserServiceMutation,
+  type UserServiceItemFragment,
+  UsersQueryVariables,
+  useUsersQuery,
+} from '@graphql/generated';
+import { useContext, useEffect, useMemo, useState } from 'react';
 
 import { useUserListLocalstorage } from '@/components/admin/user/user-list-localstorage';
+import Loader from '@/components/Loader';
 import { PortalContext } from '@/components/me/AppPortalContext';
-import {
-  UserServiceCreateMutation,
-  UserServiceEditMutation,
-} from '@/components/service/user_service.graphql';
+import { Form, FormField } from '@/components/ui/form';
+import { SheetFooter } from '@/components/ui/sheet';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
-import { useUsersList } from '@/hooks/use-users-list';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
+import { useKeepSelectedOptions } from '@/hooks/use-keep-selected-options';
+import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
+import { portalGraphqlClient } from '@/lib/graphql-client';
+import { toComboboxOptionIds } from '@/utils/design-system/combobox';
+import { invalidateUserServiceQueries } from '@/utils/query-invalidation/user-service.invalidation';
 import {
   Button,
   Checkbox,
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  SheetFooter,
+  Paper,
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-  useToast,
-} from '@filigran/ui';
-import { MultiSelectFormField } from '@filigran/ui/clients';
-import { subscriptionByIdQuery$data } from '@generated/subscriptionByIdQuery.graphql';
-import { UserList_fragment$key } from '@generated/UserList_fragment.graphql';
-import { userServiceCreateMutation } from '@generated/userServiceCreateMutation.graphql';
-import { userServiceEditMutation } from '@generated/userServiceEditMutation.graphql';
-import { userServices_fragment$data } from '@generated/userServices_fragment.graphql';
+} from '@filigran/design-system';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useTranslations } from 'next-intl';
-import { useForm } from 'react-hook-form';
-import { readInlineData, useMutation } from 'react-relay';
+import { keepPreviousData, useQueryClient } from '@tanstack/react-query';
+import { useForm, useWatch } from 'react-hook-form';
 import { useDebounceCallback } from 'usehooks-ts';
 import { z } from 'zod';
 
 interface UserServiceFormProps {
-  connectionId: string;
-  userService?: userServices_fragment$data;
-  subscription: subscriptionByIdQuery$data;
+  userService?: UserServiceItemFragment;
+  subscription: SubscriptionByIdQuery;
 }
 
+const getUserOptionValue = ({ value }: { value: string }) => value;
+
 export const UserServiceForm = ({
-  connectionId,
   userService,
   subscription,
 }: UserServiceFormProps) => {
   const { handleCloseSheet, setIsDirty, setOpenSheet } = useDialogContext();
   const { me } = useContext(PortalContext);
 
-  const [commitUserServiceEditMutation] = useMutation<userServiceEditMutation>(
-    UserServiceEditMutation
-  );
-  const [commitUserServiceMutation] = useMutation<userServiceCreateMutation>(
-    UserServiceCreateMutation
-  );
-  const { toast } = useToast();
-  const t = useTranslations();
+  const queryClient = useQueryClient();
+  const t = useTranslate();
+  const { mutate: editUserService, isPending: isEditInFlight } =
+    useEditUserServiceMutation(portalGraphqlClient, {
+      onSuccess: async () => {
+        await invalidateUserServiceQueries(queryClient);
+        showSnackbar({
+          severity: 'success',
+          title: t('Utils.Success'),
+          description: t('ServiceActions.UserCapabilitiesModified', {
+            email: userService!.user!.email,
+          }),
+        });
+        setOpenSheet(false);
+      },
+      onError: (error: Error) => {
+        showSnackbar({
+          severity: 'error',
+          title: t('Utils.Error'),
+          description: t(`Error.Server.${error.message}`),
+        });
+      },
+    });
+  const { mutate: addUserService, isPending: isCreateInFlight } =
+    useAddUserServiceMutation(portalGraphqlClient, {
+      onSuccess: async (_data, { input }) => {
+        await invalidateUserServiceQueries(queryClient);
+        showSnackbar({
+          severity: 'success',
+          title: t('Utils.Success'),
+          description: t('ServiceActions.UserServiceAdded', {
+            email: input.email.join(', '),
+            serviceName: subscription.subscriptionById!.service_instance!.name,
+          }),
+        });
+        setOpenSheet(false);
+      },
+      onError: (error: Error) => {
+        showSnackbar({
+          severity: 'error',
+          title: t('Utils.Error'),
+          description: <>{t(`Error.Server.${error.message}`)}</>,
+        });
+      },
+    });
   const isUserCreation = !userService?.id;
 
   const organizationId = subscription.subscriptionById?.organization?.id;
@@ -149,31 +186,12 @@ export const UserServiceForm = ({
     const editCapaValues = {
       capabilities: values.capabilities,
     };
-    commitUserServiceEditMutation({
-      variables: {
-        input: {
-          userServiceId: userService.id,
-          ...editCapaValues,
-        },
-        service_instance_id:
-          subscription.subscriptionById!.service_instance!.id,
+    editUserService({
+      input: {
+        userServiceId: userService.id,
+        ...editCapaValues,
       },
-      onCompleted() {
-        toast({
-          title: t('Utils.Success'),
-          description: t('ServiceActions.UserCapabilitiesModified', {
-            email: userService!.user!.email,
-          }),
-        });
-        setOpenSheet(false);
-      },
-      onError(error) {
-        toast({
-          variant: 'destructive',
-          title: t('Utils.Error'),
-          description: t(`Error.Server.${error.message}`),
-        });
-      },
+      service_instance_id: subscription.subscriptionById!.service_instance!.id,
     });
   };
 
@@ -184,34 +202,13 @@ export const UserServiceForm = ({
     ) {
       return;
     }
-    commitUserServiceMutation({
-      variables: {
-        connections: [connectionId ?? ''],
-        input: {
-          email: values.email,
-          capabilities: values.capabilities,
-          subscription_id: subscription.subscriptionById.id,
-        },
-        service_instance_id: subscription.subscriptionById.service_instance.id,
+    addUserService({
+      input: {
+        email: values.email,
+        capabilities: values.capabilities,
+        subscription_id: subscription.subscriptionById.id,
       },
-      onCompleted() {
-        toast({
-          title: t('Utils.Success'),
-          description: t('ServiceActions.UserServiceAdded', {
-            email: values.email.join(', '),
-            serviceName: subscription.subscriptionById!.service_instance!.name,
-          }),
-        });
-        setOpenSheet(false);
-      },
-
-      onError(error) {
-        toast({
-          variant: 'destructive',
-          title: t('Utils.Error'),
-          description: <>{t(`Error.Server.${error.message}`)}</>,
-        });
-      },
+      service_instance_id: subscription.subscriptionById.service_instance.id,
     });
   };
 
@@ -227,51 +224,72 @@ export const UserServiceForm = ({
     );
   };
 
-  const { data, refetch } = useUsersList({
-    pageSize,
-    orderMode,
-    orderBy,
-    filter: { organization: organizationId },
-  });
-  const handleUsersInputChange = useDebounceCallback((search: string) => {
-    refetch({
-      count: pageSize,
+  const [usersSearchTerm, setUsersSearchTerm] = useState<string | null>(null);
+  const usersVariables = useMemo<UsersQueryVariables>(
+    () => ({
+      first: pageSize,
       orderMode,
       orderBy,
-      searchTerm: search,
+      searchTerm: usersSearchTerm,
       filters: organizationId
-        ? [{ key: 'organization_id', value: [organizationId] }]
-        : undefined,
-    });
+        ? [{ key: FilterKey.OrganizationId, value: [organizationId] }]
+        : null,
+    }),
+    [pageSize, orderMode, orderBy, usersSearchTerm, organizationId]
+  );
+  const { data, isLoading, isPlaceholderData } = useUsersQuery(
+    portalGraphqlClient,
+    usersVariables,
+    {
+      // A search keeps the previous data, so the field never goes back to empty.
+      placeholderData: keepPreviousData,
+      // Like Relay, a failed load reaches the error page; a failed background
+      // refetch keeps the options shown.
+      throwOnError: (_error, query) => query.state.data === undefined,
+    }
+  );
+  const handleUsersInputChange = useDebounceCallback((search: string) => {
+    setUsersSearchTerm(search);
   }, DEBOUNCE_TIME);
 
-  const usersOptions = useMemo(() => {
-    return (
-      data?.users?.edges
-        ?.filter((edge) => {
-          const user = readInlineData<UserList_fragment$key>(
-            UserFragment,
-            edge.node
-          );
-          return user.id !== me?.id;
-        })
-        ?.map((edge) => {
-          const user = readInlineData<UserList_fragment$key>(
-            UserFragment,
-            edge.node
-          );
-          return {
-            label: user.email,
-            value: user.email,
-          };
-        }) ?? []
-    );
-  }, [data?.users?.edges, me?.id]);
+  const usersOptions = useMemo(
+    () =>
+      data?.users.edges
+        .filter(({ node }) => node.id !== me?.id)
+        .map(({ node }) => ({
+          label: node.email,
+          value: node.email,
+        })) ?? [],
+    [data, me?.id]
+  );
+  const selectedEmails = useWatch({
+    control: extendedForm.control,
+    name: 'email',
+  });
+  const keptUsersOptions = useKeepSelectedOptions({
+    options: usersOptions,
+    value: selectedEmails,
+    getId: getUserOptionValue,
+  });
+  const usersOptionIds = useMemo(
+    () =>
+      toComboboxOptionIds(
+        keptUsersOptions,
+        getUserOptionValue,
+        (option) => option.label
+      ),
+    [keptUsersOptions]
+  );
+
+  // The form waits for the users, as it did when the Relay query suspended it.
+  if (!data) {
+    return <Loader />;
+  }
 
   return (
     <Form {...(form as typeof extendedForm)}>
       <form
-        className="space-y-xl"
+        className="space-y-6"
         onSubmit={(e) => {
           e.preventDefault();
           userService?.id
@@ -283,33 +301,35 @@ export const UserServiceForm = ({
             <FormField
               control={extendedForm.control}
               name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('InviteUserServiceForm.Email')}</FormLabel>
-                  <FormControl>
-                    <MultiSelectFormField
-                      popoverContentClassName="bg-elevation-background-layer-3"
-                      shouldFilter={false}
-                      options={usersOptions}
-                      defaultValue={field.value}
-                      value={field.value}
-                      onValueChange={field.onChange}
-                      onInputChange={handleUsersInputChange}
-                      noResultString={t('Utils.NotFound')}
-                      placeholder={t('Service.Management.Email')}
-                      variant="inverted"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+              render={({ field, fieldState }) => (
+                <AppCombobox
+                  formField
+                  multiple
+                  label={t('InviteUserServiceForm.Email')}
+                  placeholder={t('Service.Management.Email')}
+                  error={fieldState.error?.message}
+                  options={usersOptionIds.ids}
+                  value={field.value ?? []}
+                  onValueChange={field.onChange}
+                  onInputChange={(text, meta) => {
+                    if (meta.cause !== 'select') handleUsersInputChange(text);
+                  }}
+                  filterOptions={(options) => options}
+                  getOptionLabel={usersOptionIds.getOptionLabel}
+                  loading={isLoading || isPlaceholderData}
+                />
               )}
             />
           </>
         )}
 
-        <div className="border border-primary rounded-lg p-l">
-          <FormLabel>{t('OrganizationInServiceAction.SelectCapa')}</FormLabel>
-          <p className="txt-sub-content italic">
+        <Paper
+          as="section"
+          elevation={3}
+          className="flex flex-col gap-2"
+          padding={16}
+          title={t('OrganizationInServiceAction.SelectCapa')}>
+          <p className="content-compact italic">
             {t('InviteUserServiceForm.Description')}
           </p>
           {capabilitiesData.map((capability) => (
@@ -318,68 +338,64 @@ export const UserServiceForm = ({
               control={(form as typeof capabilitiesForm).control}
               name="capabilities"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-center">
-                  <FormControl>
-                    <Checkbox
-                      {...field}
-                      disabled={isCapabilityDisabled(capability!.id)}
-                      className="mt-xs"
-                      checked={(field.value as string[]).includes(
-                        capability!.id
-                      )}
-                      onCheckedChange={(checked) => {
-                        const newValue = checked
-                          ? Array.from(
-                              new Set([...(field.value || []), capability!.id])
-                            )
-                          : (field.value || []).filter(
-                              (value) => value !== capability!.id
-                            );
-                        field.onChange(newValue);
-                      }}
-                      id={capability!.id}
-                    />
-                  </FormControl>
-
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <label
-                          htmlFor={capability!.id}
-                          aria-disabled={isCapabilityDisabled(capability!.id)}
-                          className="txt-sub-content cursor-pointer aria-disabled:cursor-not-allowed">
-                          {capability!.name === ServiceRestriction.ManageAccess
-                            ? t('Service.Form.ManageAccessCapabilityLabel')
-                            : t('Service.Form.CapabilityAccessLabel', {
-                                name: capability!.name ?? '',
-                                description: capability!.description ?? '',
-                              })}
-                          {isCapabilityDisabled(capability!.id)}
-                        </label>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>
-                          {isCapabilityDisabled(capability!.id)
-                            ? t('InviteUserServiceForm.DisabledCapability')
-                            : t('InviteUserServiceForm.GrantCapability')}
-                        </p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </FormItem>
+                <TooltipProvider>
+                  <Checkbox
+                    {...field}
+                    disabled={isCapabilityDisabled(capability!.id)}
+                    checked={(field.value as string[]).includes(capability!.id)}
+                    onCheckedChange={(checked) => {
+                      const newValue = checked
+                        ? Array.from(
+                            new Set([...(field.value || []), capability!.id])
+                          )
+                        : (field.value || []).filter(
+                            (value) => value !== capability!.id
+                          );
+                      field.onChange(newValue);
+                    }}
+                    label={
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span>
+                            {capability!.name ===
+                            ServiceRestriction.ManageAccess
+                              ? t('Service.Form.ManageAccessCapabilityLabel')
+                              : t('Service.Form.CapabilityAccessLabel', {
+                                  name: capability!.name ?? '',
+                                  description: capability!.description ?? '',
+                                })}
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>
+                            {isCapabilityDisabled(capability!.id)
+                              ? t('InviteUserServiceForm.DisabledCapability')
+                              : t('InviteUserServiceForm.GrantCapability')}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    }
+                  />
+                </TooltipProvider>
               )}
             />
           ))}
-        </div>
+        </Paper>
 
         <SheetFooter className="pt-2">
           <Button
-            variant="secondary"
+            {...analyticsId('subscription_user_cancel')}
+            priority="secondary"
             type="button"
             onClick={(e) => handleCloseSheet(e)}>
             {t('Utils.Cancel')}
           </Button>
-          <Button type="submit">{t('Utils.Validate')}</Button>
+          <Button
+            {...analyticsId('subscription_user_submit')}
+            type="submit"
+            loading={isEditInFlight || isCreateInFlight}>
+            {t('Utils.Validate')}
+          </Button>
         </SheetFooter>
       </form>
     </Form>

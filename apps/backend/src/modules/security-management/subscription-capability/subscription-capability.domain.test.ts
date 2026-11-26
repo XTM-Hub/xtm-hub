@@ -29,7 +29,7 @@ describe('subscription capability domain', () => {
       service_instance_id: serviceInstance.id,
     });
     subscription2 = await TestHelper.subscription.create({
-      organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+      organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
       service_instance_id: serviceInstance.id,
     });
     capability1 = await TestHelper.serviceCapability.create({

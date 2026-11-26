@@ -1,13 +1,12 @@
 import { ServiceDefinitionIdentifierToPlatformIdentifier } from '@/components/registration/PlatformIdentifierMapping';
 import { daysUntil } from '@/utils/date';
-import { APP_PATH } from '@/utils/path/constant';
+import { registeredPlatformDetailPath } from '@/utils/path/registered-platform-detail-path';
 import {
   DocumentImageType,
   HomepageDocumentFragment,
   PlatformContract,
   PlatformIdentifier,
   RegisteredPlatformsQuery,
-  TrialsDeployments,
 } from '@graphql/generated';
 
 type RegisteredPlatformForHomepage =
@@ -64,8 +63,6 @@ export const mapRegisteredPlatformsToHomepageCards = (
       return [];
     }
 
-    const serviceInstanceId = platform.subscription?.service_instance_id;
-
     return [
       {
         id: platform.id,
@@ -77,36 +74,14 @@ export const mapRegisteredPlatformsToHomepageCards = (
           platform.contract === PlatformContract.Trial
             ? resolveRemainingTrialDays(platform.subscription?.end_date)
             : undefined,
-        href: serviceInstanceId
-          ? `/${APP_PATH}/service/${platform.identifier}/${serviceInstanceId}`
-          : undefined,
+        href: registeredPlatformDetailPath({
+          identifier: platform.identifier,
+          deploymentRequest: platform.deployment_request,
+          serviceInstanceId: platform.subscription?.service_instance_id,
+        }),
       },
     ];
   });
-};
-
-export const resolveHomepageCrossSellProduct = (
-  trialDeploymentsEligibility:
-    Pick<TrialsDeployments, 'availableTrials' | 'isBlacklisted'> | undefined
-): PlatformIdentifier | undefined => {
-  if (
-    !trialDeploymentsEligibility ||
-    trialDeploymentsEligibility.isBlacklisted
-  ) {
-    return undefined;
-  }
-
-  const { availableTrials } = trialDeploymentsEligibility;
-
-  if (availableTrials.includes(PlatformIdentifier.Opencti)) {
-    return PlatformIdentifier.Opencti;
-  }
-
-  if (availableTrials.includes(PlatformIdentifier.Openaev)) {
-    return PlatformIdentifier.Openaev;
-  }
-
-  return undefined;
 };
 
 export const findLogoUrl = (

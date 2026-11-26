@@ -1,0 +1,40 @@
+mutation TrialsAdminCancelDeploymentRequest(
+  $deploymentRequestId: DeploymentRequestId!
+) {
+  adminCancelDeploymentRequest(deploymentRequestId: $deploymentRequestId) {
+    id
+  }
+}
+
+mutation TrialsCancelDeploymentRequest(
+  $deploymentRequestId: DeploymentRequestId!
+  $cancellationReason: String
+) {
+  cancelDeploymentRequest(
+    deploymentRequestId: $deploymentRequestId
+    cancellationReason: $cancellationReason
+  ) {
+    id
+    region
+    type
+    platform_identifier
+    hub_status
+    counts_in_orga_quota
+  }
+}
+
+mutation TrialsReorderDeploymentRequestInQueue(
+  $input: ReorderDeploymentRequestInQueueInput!
+) {
+  reorderDeploymentRequestInQueue(input: $input) {
+    success
+  }
+}
+
+mutation TrialsUpdateDeploymentQuotaCapacity(
+  $input: UpdateDeploymentQuotaCapacityInput!
+) {
+  updateDeploymentQuotaCapacity(input: $input) {
+    success
+  }
+}

@@ -1,16 +1,29 @@
 import { v4 as uuidv4 } from 'uuid';
 import { expect } from 'vitest';
 import { db } from '../../knexfile';
+import { GenericServiceCapabilityId } from '../../src/model/kanel/public/GenericServiceCapability';
 import { OrganizationId } from '../../src/model/kanel/public/Organization';
 import RolePortal, {
   RolePortalId,
   RolePortalMutator,
 } from '../../src/model/kanel/public/RolePortal';
+import RolePortalCapabilityPortal, {
+  RolePortalCapabilityPortalMutator,
+} from '../../src/model/kanel/public/RolePortalCapabilityPortal';
+import SSOGroupRolePortal, {
+  SSOGroupRolePortalMutator,
+  SSOGroupRolePortalRolePortal,
+  SSOGroupRolePortalSSOGroup,
+} from '../../src/model/kanel/public/SSOGroupRolePortal';
+import { SubscriptionId } from '../../src/model/kanel/public/Subscription';
 import User, { UserId, UserMutator } from '../../src/model/kanel/public/User';
 import UserOrganization, {
   UserOrganizationInitializer,
   UserOrganizationMutator,
 } from '../../src/model/kanel/public/UserOrganization';
+import UserOrganizationCapability, {
+  UserOrganizationCapabilityMutator,
+} from '../../src/model/kanel/public/UserOrganizationCapability';
 import UserOrganizationPending, {
   UserOrganizationPendingMutator,
 } from '../../src/model/kanel/public/UserOrganizationPending';
@@ -25,6 +38,7 @@ import UserServiceCapability, {
   UserServiceCapabilityId,
   UserServiceCapabilityMutator,
 } from '../../src/model/kanel/public/UserServiceCapability';
+import { GenericServiceCapabilityIds } from '../../src/modules/security-management/service-capability/generic-service-capability.const';
 import { TEST_ORGANIZATIONS } from '../tests.const';
 
 export const TestUserHelper = {
@@ -46,6 +60,35 @@ export const TestUserHelper = {
           ...data,
         })
         .returning('*');
+      return userService;
+    },
+    // The capabilities are deleted with the row
+    createWithGenericCapabilities: async ({
+      user_id,
+      subscription_id,
+      capabilities,
+    }: {
+      user_id: UserId;
+      subscription_id: SubscriptionId;
+      capabilities: GenericServiceCapabilityIds[];
+    }): Promise<UserService> => {
+      const [userService] = await db<UserService>('User_Service')
+        .insert({ id: uuidv4() as UserServiceId, user_id, subscription_id })
+        .returning('*');
+      if (!userService) {
+        throw new Error('The user service was not created');
+      }
+      // An empty insert makes knex throw
+      if (capabilities.length > 0) {
+        await db<UserServiceCapability>('UserService_Capability').insert(
+          capabilities.map((capability) => ({
+            id: uuidv4() as UserServiceCapabilityId,
+            user_service_id: userService.id,
+            generic_service_capability_id:
+              capability as unknown as GenericServiceCapabilityId,
+          }))
+        );
+      }
       return userService;
     },
     delete: async (field: UserServiceMutator) => {
@@ -85,6 +128,14 @@ export const TestUserHelper = {
     },
   },
   user_RolePortal: {
+    create: async (
+      data: UserRolePortalMutator
+    ): Promise<UserRolePortal | undefined> => {
+      const [userRolePortal] = await db<UserRolePortal>('User_RolePortal')
+        .insert(data)
+        .returning('*');
+      return userRolePortal;
+    },
     delete: async (field: UserRolePortalMutator) => {
       await db<UserRolePortal>('User_RolePortal').where(field).del();
     },
@@ -111,6 +162,33 @@ export const TestUserHelper = {
       return db<UserOrganization>('User_Organization').where(field).first();
     },
   },
+  user_OrganizationCapability: {
+    create: async (
+      data: Partial<UserOrganizationCapability> & {
+        user_organization_id: UserOrganizationCapability['user_organization_id'];
+        name: string;
+      }
+    ): Promise<UserOrganizationCapability | undefined> => {
+      const [userOrganizationCapability] = await db<UserOrganizationCapability>(
+        'UserOrganization_Capability'
+      )
+        .insert(data)
+        .returning('*');
+      return userOrganizationCapability;
+    },
+    loadAll: async (
+      field: UserOrganizationCapabilityMutator
+    ): Promise<UserOrganizationCapability[]> => {
+      return db<UserOrganizationCapability[]>(
+        'UserOrganization_Capability'
+      ).where(field);
+    },
+    delete: async (field: UserOrganizationCapabilityMutator) => {
+      await db<UserOrganizationCapability>('UserOrganization_Capability')
+        .where(field)
+        .del();
+    },
+  },
   user_OrganizationPending: {
     create: async (data: UserOrganizationPendingMutator) => {
       await db<UserOrganizationPending>('User_Organization_Pending').insert(
@@ -121,6 +199,13 @@ export const TestUserHelper = {
       await db<UserOrganizationPending>('User_Organization_Pending')
         .where(field)
         .del();
+    },
+    loadAll: async (
+      field: UserOrganizationPendingMutator
+    ): Promise<UserOrganizationPending[]> => {
+      return db<UserOrganizationPending[]>('User_Organization_Pending')
+        .where(field)
+        .select('*');
     },
     linkUsersToOrganization: async (
       users: User[],
@@ -150,6 +235,9 @@ export const TestUserHelper = {
       const [user] = await db<User>('User').insert(data).returning('*');
       return user;
     },
+    update: async (field: UserMutator, data: UserMutator) => {
+      await db<User>('User').where(field).update(data);
+    },
     insert: async (fields: UserMutator = {}): Promise<User> => {
       // eslint-disable-next-line no-restricted-syntax
       const [createdUser] = await db<User>('User')
@@ -166,6 +254,31 @@ export const TestUserHelper = {
 
       return createdUser!;
     },
+    insertInOrganization: async (
+      organizationId: OrganizationId,
+      fields: UserMutator = {}
+    ) => {
+      const user = await TestUserHelper.user.insert({
+        email: `user-${uuidv4()}@filigran.io`,
+        ...fields,
+      });
+      const userOrganization = await TestUserHelper.user_Organization.create({
+        user_id: user.id,
+        organization_id: organizationId,
+      });
+      return { user, userOrganization: userOrganization! };
+    },
+    insertWithPendingOrganization: async (
+      fields: UserMutator,
+      organizationId: OrganizationId
+    ): Promise<User> => {
+      const user = await TestUserHelper.user.insert(fields);
+      await TestUserHelper.user_OrganizationPending.create({
+        user_id: user.id,
+        organization_id: organizationId,
+      });
+      return user;
+    },
   },
   rolePortal: {
     create: async (data: RolePortalMutator) => {
@@ -173,7 +286,7 @@ export const TestUserHelper = {
       const [userRolePortal] = await db<RolePortal>('RolePortal')
         .insert({
           id: rolePortalId,
-          name: `test-admin-${rolePortalId}`,
+          name: `TEST-ADMIN-${rolePortalId}`.toUpperCase(),
           ...data,
         })
         .returning('*');
@@ -184,6 +297,51 @@ export const TestUserHelper = {
     },
     delete: async (field: RolePortalMutator) => {
       await db<RolePortal>('RolePortal').where(field).del();
+    },
+  },
+  ssoGroup_RolePortal: {
+    create: async (data: {
+      SSOGroup: string;
+      RolePortal: string;
+    }): Promise<SSOGroupRolePortal | undefined> => {
+      const [ssoGroupRolePortal] = await db<SSOGroupRolePortal>(
+        'SSOGroup_RolePortal'
+      )
+        .insert({
+          SSOGroup: data.SSOGroup as SSOGroupRolePortalSSOGroup,
+          RolePortal: data.RolePortal as SSOGroupRolePortalRolePortal,
+        })
+        .returning('*');
+      return ssoGroupRolePortal;
+    },
+    delete: async (field: { SSOGroup?: string; RolePortal?: string }) => {
+      await db<SSOGroupRolePortal>('SSOGroup_RolePortal')
+        .where(field as SSOGroupRolePortalMutator)
+        .del();
+    },
+  },
+  rolePortal_CapabilityPortal: {
+    create: async (
+      data: RolePortalCapabilityPortalMutator
+    ): Promise<RolePortalCapabilityPortal | undefined> => {
+      const [rolePortalCapabilityPortal] = await db<RolePortalCapabilityPortal>(
+        'RolePortal_CapabilityPortal'
+      )
+        .insert(data)
+        .returning('*');
+      return rolePortalCapabilityPortal;
+    },
+    delete: async (field: RolePortalCapabilityPortalMutator) => {
+      await db<RolePortalCapabilityPortal>('RolePortal_CapabilityPortal')
+        .where(field)
+        .del();
+    },
+    loadAll: async (
+      field: RolePortalCapabilityPortalMutator
+    ): Promise<RolePortalCapabilityPortal[]> => {
+      return db<RolePortalCapabilityPortal>(
+        'RolePortal_CapabilityPortal'
+      ).where(field);
     },
   },
 };

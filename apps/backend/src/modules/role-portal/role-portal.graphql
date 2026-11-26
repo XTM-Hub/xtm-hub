@@ -1,4 +1,59 @@
 type RolePortal implements Node {
   id: ID!
   name: String!
+  capabilities: [Capability]
+}
+
+type SSOGroupRolePortal {
+  ssoGroup: String!
+  rolePortal: RolePortal!
+}
+
+input AddSSOGroupRolePortalInput {
+  ssoGroup: String!
+  rolePortal: String!
+}
+
+input UpdateSSOGroupRolePortalInput {
+  ssoGroup: String!
+  rolePortal: String!
+}
+
+input AddRolePortalInput {
+  name: String!
+  capabilities: [PortalCapability!]!
+}
+
+input UpdateRolePortalInput {
+  name: String!
+  capabilities: [PortalCapability!]!
+}
+
+input DeleteSSOGroupRolePortalInput {
+  ssoGroup: String!
+  rolePortal: String!
+}
+
+extend type Query {
+  rolePortals: [RolePortal!]! @auth(portalCapa: BYPASS)
+  ssoGroupRolePortals: [SSOGroupRolePortal!]! @auth(portalCapa: BYPASS)
+}
+
+extend type Mutation {
+  addSSOGroupRolePortal(
+    input: AddSSOGroupRolePortalInput!
+  ): SSOGroupRolePortal! @auth(portalCapa: BYPASS)
+  updateSSOGroupRolePortal(
+    ssoGroup: String!
+    rolePortal: String!
+    input: UpdateSSOGroupRolePortalInput!
+  ): SSOGroupRolePortal! @auth(portalCapa: BYPASS)
+  deleteSSOGroupRolePortal(
+    input: DeleteSSOGroupRolePortalInput!
+  ): SSOGroupRolePortal! @auth(portalCapa: BYPASS)
+  addRolePortal(input: AddRolePortalInput!): RolePortal!
+    @auth(portalCapa: BYPASS)
+  updateRolePortal(name: String!, input: UpdateRolePortalInput!): RolePortal!
+    @auth(portalCapa: BYPASS)
+  deleteRolePortal(name: String!): RolePortal! @auth(portalCapa: BYPASS)
 }

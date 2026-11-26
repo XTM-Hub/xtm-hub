@@ -1,17 +1,28 @@
 import { PortalContext } from '@/components/me/AppPortalContext';
-import { ServiceFormJsonFileField } from '@/components/service/form/JsonFileField';
+import {
+  metaDescriptionSchema,
+  optionalMetaDescriptionSchema,
+  withMetaDescriptionRule,
+} from '@/components/service/form/meta-description.schema';
 import { ServiceFormSheetFooter } from '@/components/service/form/SheetFooter';
+import {
+  JSON_DOCUMENT_FILE,
+  useDocumentFileField,
+} from '@/components/service/form/UseDocumentFileField';
 import { useServiceFormFields } from '@/components/service/form/UseServiceFormFields';
-import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
+import { AutoForm } from '@/components/ui/auto-form';
+import { useTranslate } from '@/hooks/use-translate';
 import {
   fileListCheck,
   optionalFileListCheck,
   transformToFileList,
 } from '@/utils/documents';
-import { AutoForm } from '@filigran/ui';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { DocumentImageType } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
+import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
+import {
+  DocumentImageType,
+  DocumentItemFragment,
+  DocumentStatus,
+} from '@graphql/generated';
 import { useContext, useMemo } from 'react';
 import slugify from 'slugify';
 import { z } from 'zod';
@@ -31,7 +42,9 @@ export const descriptionValue =
 const openCTIPlaybookFormSchema = z.object({
   name: z.string().min(1, 'Required'),
   slug: z.string().min(1, 'Required'),
+  status: z.enum(DocumentStatus).optional(),
   uploader_id: z.string().optional(),
+  meta_description: metaDescriptionSchema,
   short_description: z.string().min(1, 'Required').max(250),
   description: z.string().min(1, 'Required'),
   product_version: z.string().regex(/^\d+\.\d+\.\d+$/, {
@@ -39,7 +52,6 @@ const openCTIPlaybookFormSchema = z.object({
   }),
   uploader_organization_id: z.string().min(1, 'Required'),
   use_cases: z.array(z.string()).min(1, 'Required'),
-  active: z.boolean().optional(),
   document: z.custom<FileList>(fileListCheck),
   logo: z.custom<FileList>(optionalFileListCheck).optional(),
   images: z.custom<FileList>(optionalFileListCheck),
@@ -50,18 +62,16 @@ export type OpenCTIPlaybookFormValues = z.infer<
 
 export interface OpenCTIPlaybookFormProps {
   handleSubmit: (values: OpenCTIPlaybookFormValues) => void;
-  document?: documentItem_fragment$data;
+  document?: DocumentItemFragment;
 }
 
 export const OpenctiPlaybookForm = ({
   handleSubmit,
   document,
 }: OpenCTIPlaybookFormProps) => {
-  const t = useTranslations();
   const { me } = useContext(PortalContext);
 
   const isCreation = !document;
-  const { handleCloseSheet, setIsDirty } = useDialogContext();
   const onSubmit = (values: OpenCTIPlaybookFormValues) => {
     if (isCreation) {
       handleSubmit({ ...values, images: images as unknown as FileList });
@@ -94,21 +104,27 @@ export const OpenctiPlaybookForm = ({
       }) as OpenCTIPlaybookFormValues,
     [me, document, isCreation]
   );
+  const t = useTranslate();
   const formSchema = useMemo(
     () =>
-      document
-        ? openCTIPlaybookFormSchema.extend({
-            document: z.custom<FileList>(fileListCheck).optional(),
-            images: z.custom<FileList>(optionalFileListCheck).optional(),
-          })
-        : openCTIPlaybookFormSchema,
-    [document]
+      withMetaDescriptionRule(
+        document
+          ? openCTIPlaybookFormSchema.extend({
+              meta_description: optionalMetaDescriptionSchema,
+              document: z.custom<FileList>(fileListCheck).optional(),
+              images: z.custom<FileList>(optionalFileListCheck).optional(),
+            })
+          : openCTIPlaybookFormSchema,
+        ShareableResourceType.OPENCTI_PLAYBOOK,
+        t
+      ),
+    [document, t]
   );
 
   const {
-    active,
     slug,
     name,
+    meta_description,
     short_description,
     product_version,
     description,
@@ -119,11 +135,13 @@ export const OpenctiPlaybookForm = ({
     images,
     imagesToDelete,
     logo,
+    status,
   } = useServiceFormFields({
     documentType: 'Playbook',
     platform: 'OpenCTI',
     document,
   });
+  const documentField = useDocumentFileField(JSON_DOCUMENT_FILE, document);
 
   return (
     <AutoForm
@@ -131,7 +149,7 @@ export const OpenctiPlaybookForm = ({
         onSubmit(values as OpenCTIPlaybookFormValues);
       }}
       onValuesChange={(values, form) => {
-        if (isCreation && values.name) {
+        if (isCreation && values.name !== undefined) {
           const generatedSlug = slugify(values.name, {
             lower: true,
             strict: true,
@@ -149,33 +167,17 @@ export const OpenctiPlaybookForm = ({
         use_cases,
         uploader_id,
         uploader_organization_id,
-        document: isCreation
-          ? {
-              label: t('Service.Form.SelectJSONFile'),
-              fieldType: 'file',
-              inputProps: {
-                allowedTypes: 'application/json',
-                multiple: 'multiple',
-              },
-            }
-          : {
-              fieldType: ({ field }) => (
-                <ServiceFormJsonFileField
-                  field={field}
-                  setIsDirty={setIsDirty}
-                  document={document}
-                />
-              ),
-            },
+        document: documentField,
         logo,
         images: imagesField,
-        active,
+        status,
+        meta_description,
         short_description,
         slug,
         name,
         product_version,
       }}>
-      <ServiceFormSheetFooter handleCloseSheet={handleCloseSheet} />
+      <ServiceFormSheetFooter status={document?.status} />
     </AutoForm>
   );
 };

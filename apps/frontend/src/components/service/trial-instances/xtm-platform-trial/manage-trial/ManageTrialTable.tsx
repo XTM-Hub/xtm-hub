@@ -1,0 +1,308 @@
+'use client';
+
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { DataTable, SelectionState } from '@/components/ui/data-table';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
+import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
+import { portalGraphqlClient } from '@/lib/graphql-client';
+import { getDataTableLabels } from '@/utils/design-system/data-table';
+import { IconButton } from '@filigran/design-system';
+import { DeleteIcon } from '@filigran/icon';
+import {
+  BundleUserServiceGroupsQuery,
+  PlatformIdentifier,
+  useBundleUserServiceGroupsQuery,
+  useRemoveUsersFromBundleGroupsMutation,
+  useUpdateBundleUserGroupsMutation,
+} from '@graphql/generated';
+import { bundleUserServiceGroupsKeys } from '@graphql/service-group/service-group.keys';
+import { useQueryClient } from '@tanstack/react-query';
+import { ColumnDef } from '@tanstack/react-table';
+import { Dispatch, SetStateAction, useMemo, useState } from 'react';
+import {
+  getBundleRolePanels,
+  NO_ROLE_VALUE,
+  RoleFormField,
+} from './manage-trial.const';
+import {
+  isServiceGroupName,
+  removeUsersFromBundleCache,
+} from './manage-trial.utils';
+import { RoleSelect } from './RoleSelect';
+
+interface ManageTrialTableProps {
+  serviceInstanceId: string;
+  products: PlatformIdentifier[];
+  selection: SelectionState;
+  onSelectionChange: Dispatch<SetStateAction<SelectionState>>;
+}
+
+interface ManageTrialTableRow {
+  id: string;
+  email: string;
+  openctiRole: string;
+  openaevRole: string;
+  xtmoneRole: string;
+}
+
+interface PendingRoleUpdate {
+  userId: string;
+  platform: PlatformIdentifier;
+}
+
+const findRoleValue = (
+  groups: BundleUserServiceGroupsQuery['bundleUserServiceGroups'][number]['groups'],
+  platform: PlatformIdentifier
+): string => {
+  const role = groups.find(
+    (group) => group.platformIdentifier === platform
+  )?.name;
+  if (role) {
+    return role;
+  }
+  return platform === PlatformIdentifier.Xtmone ? '' : NO_ROLE_VALUE;
+};
+
+export const ManageTrialTable = ({
+  serviceInstanceId,
+  products,
+  selection,
+  onSelectionChange,
+}: ManageTrialTableProps) => {
+  const t = useTranslate();
+  const queryClient = useQueryClient();
+  const [deletingUserId, setDeletingUserId] = useState<string | undefined>(
+    undefined
+  );
+  const [pendingRoleUpdate, setPendingRoleUpdate] = useState<
+    PendingRoleUpdate | undefined
+  >(undefined);
+
+  const variables = { serviceInstanceId };
+  const {
+    data: queryData,
+    isLoading,
+    isError,
+  } = useBundleUserServiceGroupsQuery(portalGraphqlClient, variables, {
+    queryKey: bundleUserServiceGroupsKeys.list(variables),
+  });
+
+  const { mutate: removeUsersFromBundleGroups } =
+    useRemoveUsersFromBundleGroupsMutation(portalGraphqlClient, {
+      onSuccess: (_data, mutationVariables) => {
+        queryClient.setQueryData<BundleUserServiceGroupsQuery>(
+          bundleUserServiceGroupsKeys.list(variables),
+          (previous) =>
+            removeUsersFromBundleCache(previous, mutationVariables.userIds)
+        );
+        showSnackbar({ severity: 'success', title: t('Utils.Success') });
+        setDeletingUserId(undefined);
+      },
+      onError: (error: unknown) => {
+        const errorMessage =
+          error instanceof Error ? error.message : 'UnknownError';
+        showSnackbar({
+          severity: 'error',
+          title: t('Utils.Error'),
+          description: <>{t(`Error.Server.${errorMessage}`)}</>,
+        });
+        setDeletingUserId(undefined);
+      },
+    });
+
+  const { mutate: updateBundleUserGroups } = useUpdateBundleUserGroupsMutation(
+    portalGraphqlClient,
+    {
+      onSuccess: (data, mutationVariables) => {
+        queryClient.setQueryData<BundleUserServiceGroupsQuery>(
+          bundleUserServiceGroupsKeys.list(variables),
+          { bundleUserServiceGroups: data.updateBundleUserGroups }
+        );
+        const userId = mutationVariables.input.userIds[0];
+        const platform = mutationVariables.input.roles[0]?.product;
+        const email = data.updateBundleUserGroups.find(
+          (entry) => entry.user.id === userId
+        )?.user.email;
+        if (email && platform) {
+          showSnackbar({
+            severity: 'success',
+            title: t('Service.Bundle.ManageTrial.Table.RoleUpdated', {
+              email,
+              role: t(`Service.Bundle.ManageTrial.Roles.${platform}.Title`, {
+                count: 1,
+              }),
+            }),
+          });
+        }
+        setPendingRoleUpdate(undefined);
+      },
+      onError: (error: unknown) => {
+        const errorMessage =
+          error instanceof Error ? error.message : 'UnknownError';
+        showSnackbar({
+          severity: 'error',
+          title: t('Utils.Error'),
+          description: <>{t(`Error.Server.${errorMessage}`)}</>,
+        });
+        setPendingRoleUpdate(undefined);
+      },
+    }
+  );
+
+  const handleRoleChange = (
+    userId: string,
+    platform: PlatformIdentifier,
+    value: string
+  ) => {
+    setPendingRoleUpdate({ userId, platform });
+    updateBundleUserGroups({
+      serviceInstanceId,
+      input: {
+        userIds: [userId],
+        roles: [
+          {
+            product: platform,
+            role:
+              value !== NO_ROLE_VALUE && isServiceGroupName(value)
+                ? value
+                : null,
+          },
+        ],
+      },
+    });
+  };
+
+  const rows = useMemo<ManageTrialTableRow[]>(
+    () =>
+      (queryData?.bundleUserServiceGroups ?? [])
+        .map((row) => ({
+          id: row.user.id,
+          email: row.user.email,
+          openctiRole: findRoleValue(row.groups, PlatformIdentifier.Opencti),
+          openaevRole: findRoleValue(row.groups, PlatformIdentifier.Openaev),
+          xtmoneRole: findRoleValue(row.groups, PlatformIdentifier.Xtmone),
+        }))
+        .sort((a, b) => a.email.localeCompare(b.email)),
+    [queryData]
+  );
+
+  const columns = useMemo<ColumnDef<ManageTrialTableRow>[]>(
+    () => [
+      {
+        accessorKey: 'email',
+        id: 'email',
+        header: t('Service.Bundle.ManageTrial.Table.Email'),
+      },
+      ...getBundleRolePanels(products).map(
+        ({ platform, roles }): ColumnDef<ManageTrialTableRow> => {
+          const accessorKey: RoleFormField = `${platform}Role`;
+          const isOptional = platform !== PlatformIdentifier.Xtmone;
+          const namespace = `Service.Bundle.ManageTrial.Roles.${platform}`;
+          const title = t(`${namespace}.Title`, { count: 1 });
+          return {
+            accessorKey,
+            id: `${platform}_role`,
+            header: title,
+            cell: ({ row }) => (
+              <RoleSelect
+                analyticsId="trial_user_roles_open"
+                aria-label={title}
+                value={row.original[accessorKey]}
+                onValueChange={(value) => {
+                  if (value === row.original[accessorKey]) {
+                    return;
+                  }
+                  handleRoleChange(row.original.id, platform, value);
+                }}
+                roles={roles}
+                namespace={namespace}
+                isOptional={isOptional}
+                disabled={
+                  pendingRoleUpdate?.userId === row.original.id &&
+                  pendingRoleUpdate?.platform === platform
+                }
+                triggerClassName="w-[200px] layer-0"
+              />
+            ),
+          };
+        }
+      ),
+      {
+        id: 'actions',
+        enableHiding: false,
+        enableSorting: false,
+        enableResizing: false,
+        size: 48,
+        cell: ({ row }) => (
+          <div className="flex items-center justify-end">
+            <ConfirmDialog
+              confirmAnalyticsId="trial_user_removal_confirm"
+              title={t('Service.Bundle.ManageTrial.Table.DeleteDialog.Title')}
+              confirmLabel={t('Utils.Delete')}
+              destructive
+              confirmDisabled={deletingUserId === row.original.id}
+              trigger={
+                <IconButton
+                  {...analyticsId('trial_user_delete')}
+                  type="button"
+                  priority="tertiary"
+                  aria-label={t('Utils.Delete')}
+                  disabled={deletingUserId === row.original.id}
+                  icon={<DeleteIcon className="h-4 w-4" />}
+                />
+              }
+              onConfirm={() => {
+                setDeletingUserId(row.original.id);
+                removeUsersFromBundleGroups({
+                  serviceInstanceId,
+                  userIds: [row.original.id],
+                });
+              }}>
+              {t('Service.Bundle.ManageTrial.Table.DeleteDialog.Text', {
+                email: row.original.email,
+              })}
+            </ConfirmDialog>
+          </div>
+        ),
+      },
+    ],
+    [
+      t,
+      deletingUserId,
+      removeUsersFromBundleGroups,
+      serviceInstanceId,
+      products,
+      pendingRoleUpdate,
+    ]
+  );
+
+  return (
+    <>
+      {isError && (
+        <div className="text-sm text-feedback-error-primary">
+          {t('Utils.Error')}
+        </div>
+      )}
+      {!isError && !isLoading && rows.length === 0 && (
+        <div className="text-sm">
+          {t('Service.Bundle.ManageTrial.Table.NoUsers')}
+        </div>
+      )}
+      <DataTable
+        columns={columns}
+        data={rows}
+        isLoading={isLoading}
+        {...getDataTableLabels(t)}
+        toolbar={<></>}
+        tableState={{ columnPinning: { right: ['actions'] } }}
+        selectionOptions={{
+          selectionState: {
+            state: selection,
+            onSelectionChange: onSelectionChange,
+          },
+        }}
+      />
+    </>
+  );
+};

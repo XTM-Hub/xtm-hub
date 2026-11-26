@@ -1,48 +1,51 @@
 import testRender from '@/utils/test/test-render';
 import { act, fireEvent, screen } from '@testing-library/react';
-import { createMockEnvironment, MockPayloadGenerator } from 'relay-test-utils';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { TrialsManageUsersDialog } from './TrialsManageUsersDialog';
 
+const SERVICE_INSTANCE_ID = 'service-123';
+
+const mocks = vi.hoisted(() => ({
+  useServiceGroupsQuery: vi.fn(() => ({ data: undefined })),
+}));
+
+vi.mock('@graphql/generated', async (importOriginal) => {
+  const { mockGeneratedQueryHooks } =
+    await import('@/utils/test/mock-generated-query');
+  return mockGeneratedQueryHooks(importOriginal, {
+    useUsersQuery: () => ({ data: { users: { edges: [] } } }),
+    useServiceGroupsQuery: mocks.useServiceGroupsQuery,
+  });
+});
+
 describe('TrialsManageUsersDialog', () => {
-  it('should render the trigger button and not trigger any GraphQL query on mount', () => {
-    const environment = createMockEnvironment();
+  it('should render the trigger button and not load the service groups on mount', () => {
     testRender(
       <TrialsManageUsersDialog
-        serviceInstanceId="service-123"
+        serviceInstanceId={SERVICE_INSTANCE_ID}
         organizationId="org-456"
-      />,
-      { relayConfig: environment }
+      />
     );
     expect(screen.getByRole('button')).toBeInTheDocument();
-    expect(environment.mock.getAllOperations()).toHaveLength(0);
+    expect(mocks.useServiceGroupsQuery).not.toHaveBeenCalled();
   });
 
-  it('should trigger serviceGroupsByServiceInstanceIdQuery when dialog is opened', async () => {
-    const environment = createMockEnvironment();
+  it('should load the service groups of the service instance when the dialog is opened', async () => {
     testRender(
       <TrialsManageUsersDialog
-        serviceInstanceId="service-123"
+        serviceInstanceId={SERVICE_INSTANCE_ID}
         organizationId="org-456"
-      />,
-      { relayConfig: environment }
+      />
     );
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button'));
     });
 
-    await act(async () => {
-      environment.mock.resolveMostRecentOperation((operation) =>
-        MockPayloadGenerator.generate(operation)
-      );
-    });
-
-    const operations = environment.mock.getAllOperations();
-    const serviceGroupsOperation = operations.find(
-      (op) =>
-        op.request.node.params.name === 'serviceGroupsByServiceInstanceIdQuery'
+    expect(mocks.useServiceGroupsQuery).toHaveBeenCalledWith(
+      expect.anything(),
+      { serviceInstanceId: SERVICE_INSTANCE_ID },
+      expect.anything()
     );
-    expect(serviceGroupsOperation).toBeDefined();
   });
 });

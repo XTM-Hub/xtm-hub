@@ -10,17 +10,17 @@ interface ColumnSortValue<T, U> extends ColumnSort {
 
 export type OrderingMode = 'asc' | 'desc';
 
-interface HandleSortingChangeParams<T> {
+interface HandleSortingChangeParams<T, M extends OrderingMode> {
   handleRefetchData: (args: Record<string, unknown>) => void;
   orderBy: string;
-  orderMode: OrderingMode;
+  orderMode: M;
   removeOrder: () => void;
   setOrderBy: Dispatch<SetStateAction<T>>;
-  setOrderMode: (orderMode: OrderingMode) => void;
+  setOrderMode: (orderMode: M) => void;
   updater: unknown;
 }
 
-export const handleSortingChange = <T>({
+export const handleSortingChange = <T, M extends OrderingMode = OrderingMode>({
   updater,
   orderBy,
   orderMode,
@@ -28,7 +28,7 @@ export const handleSortingChange = <T>({
   setOrderMode,
   removeOrder,
   handleRefetchData,
-}: HandleSortingChangeParams<T>) => {
+}: HandleSortingChangeParams<T, M>) => {
   const sorting = mapToSortingTableValue(orderBy, orderMode);
   const newSortingValue =
     updater instanceof Function ? updater(sorting) : updater;
@@ -36,7 +36,7 @@ export const handleSortingChange = <T>({
     removeOrder();
   } else {
     setOrderBy(newSortingValue[0].id);
-    setOrderMode(newSortingValue[0].desc ? 'desc' : 'asc');
+    setOrderMode((newSortingValue[0].desc ? 'desc' : 'asc') as M);
   }
 
   handleRefetchData(

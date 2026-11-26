@@ -45,8 +45,17 @@ export default class LoginPage {
 
   async logout() {
     await this.page.getByRole('button', { name: 'Open menu user' }).click();
-    await this.page.getByRole('menuitem', { name: 'Logout' }).click();
+    await this.page.getByRole('menuitem', { name: 'Log out' }).click();
     await this.page.waitForURL('/en');
+  }
+
+  // Signs the current user out and another one in. The embedded registration pages have no user menu, so it goes
+  // through the application first.
+  async switchUser(userEmail: string) {
+    await this.page.goto('/app');
+    await this.logout();
+    await this.navigateToAndLogin(userEmail);
+    await this.page.waitForURL('/app');
   }
 
   async assertCurrentPage() {

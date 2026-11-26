@@ -1,4 +1,4 @@
-import { IntegrationSubType, IntegrationType } from '@graphql/generated';
+import { IntegrationType } from '@graphql/generated';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
   allFiltersKey,
@@ -15,13 +15,10 @@ import {
 
 describe('serializeSelection', () => {
   it.each`
-    description                   | input                                                                                                          | expected
-    ${'empty'}                    | ${{}}                                                                                                          | ${''}
-    ${'key with no subtypes'}     | ${{ csv_feed: [] }}                                                                                            | ${'csv_feed'}
-    ${'key with one subtype'}     | ${{ [IntegrationType.Connector]: [IntegrationSubType.ExternalImport] }}                                        | ${'connector:EXTERNAL_IMPORT'}
-    ${'subtypes are sorted'}      | ${{ [IntegrationType.Connector]: [IntegrationSubType.InternalEnrichment, IntegrationSubType.ExternalImport] }} | ${'connector:EXTERNAL_IMPORT|INTERNAL_ENRICHMENT'}
-    ${'multiple keys are sorted'} | ${{ rss_feed: [], csv_feed: [] }}                                                                              | ${'csv_feed,rss_feed'}
-    ${'mixed keys and subtypes'}  | ${{ [IntegrationType.Connector]: [IntegrationSubType.ExternalImport], [IntegrationType.CsvFeed]: [] }}         | ${'connector:EXTERNAL_IMPORT,csv_feed'}
+    description                   | input                             | expected
+    ${'empty'}                    | ${{}}                             | ${''}
+    ${'key'}                      | ${{ csv_feed: [] }}               | ${'csv_feed'}
+    ${'multiple keys are sorted'} | ${{ rss_feed: [], csv_feed: [] }} | ${'csv_feed,rss_feed'}
   `('$description', ({ input, expected }) => {
     expect(serializeSelection(input)).toBe(expected);
   });
@@ -29,14 +26,11 @@ describe('serializeSelection', () => {
 
 describe('parseSelection (integrationType)', () => {
   it.each`
-    description                     | raw                                                | expected
-    ${'null'}                       | ${null}                                            | ${{}}
-    ${'single type'}                | ${'csv_feed'}                                      | ${{ [IntegrationType.CsvFeed]: [] }}
-    ${'type with one subtype'}      | ${'connector:EXTERNAL_IMPORT'}                     | ${{ [IntegrationType.Connector]: [IntegrationSubType.ExternalImport] }}
-    ${'type with several subtypes'} | ${'connector:EXTERNAL_IMPORT|INTERNAL_ENRICHMENT'} | ${{ [IntegrationType.Connector]: [IntegrationSubType.ExternalImport, IntegrationSubType.InternalEnrichment] }}
-    ${'multiple types'}             | ${'csv_feed,rss_feed'}                             | ${{ [IntegrationType.CsvFeed]: [], [IntegrationType.RssFeed]: [] }}
-    ${'invalid type is dropped'}    | ${'not_a_type'}                                    | ${{}}
-    ${'invalid subtype is dropped'} | ${'connector:NOT_VALID|EXTERNAL_IMPORT'}           | ${{ [IntegrationType.Connector]: [IntegrationSubType.ExternalImport] }}
+    description                  | raw                    | expected
+    ${'null'}                    | ${null}                | ${{}}
+    ${'single type'}             | ${'csv_feed'}          | ${{ [IntegrationType.CsvFeed]: [] }}
+    ${'multiple types'}          | ${'csv_feed,rss_feed'} | ${{ [IntegrationType.CsvFeed]: [], [IntegrationType.RssFeed]: [] }}
+    ${'invalid type is dropped'} | ${'not_a_type'}        | ${{}}
   `('$description', ({ raw, expected }) => {
     expect(parseSelection(raw, INTEGRATION_TYPE_PARAM)).toEqual(expected);
   });
@@ -63,7 +57,7 @@ describe('buildAllFiltersSearchParams', () => {
     const filters = {
       ...emptyFilters(),
       [INTEGRATION_TYPE_PARAM]: {
-        [IntegrationType.Connector]: [IntegrationSubType.ExternalImport],
+        [IntegrationType.Connector]: [],
         [IntegrationType.CsvFeed]: [],
       },
       [LABEL_PARAM]: { id1: [], id2: [] },
@@ -120,21 +114,6 @@ describe('parseAllFiltersFromWindowSearch', () => {
     });
   });
 
-  it('parses an integration type with subtypes', () => {
-    window.history.pushState(
-      {},
-      '',
-      `?${INTEGRATION_TYPE_PARAM}=connector:EXTERNAL_IMPORT|INTERNAL_ENRICHMENT`
-    );
-    const result = parseAllFiltersFromWindowSearch();
-    expect(result[INTEGRATION_TYPE_PARAM]).toEqual({
-      [IntegrationType.Connector]: [
-        IntegrationSubType.ExternalImport,
-        IntegrationSubType.InternalEnrichment,
-      ],
-    });
-  });
-
   it('parses simple filters alongside integration filter', () => {
     window.history.pushState(
       {},
@@ -166,7 +145,7 @@ describe('parseAllFiltersFromWindowSearch', () => {
     const original = {
       ...emptyFilters(),
       [INTEGRATION_TYPE_PARAM]: {
-        [IntegrationType.Connector]: [IntegrationSubType.ExternalImport],
+        [IntegrationType.Connector]: [],
       },
       [LABEL_PARAM]: { id1: [], id2: [] },
     };

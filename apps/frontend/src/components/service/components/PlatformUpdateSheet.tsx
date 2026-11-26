@@ -1,35 +1,31 @@
 'use client';
 
 import { invalidatePrivateNavigationQueries } from '@/components/menu/navigation/private/private-navigation-query-invalidation';
-import { translateServiceDefinitionIdentifier } from '@/components/registration/PlatformIdentifierMapping';
-import { UpdatePlatformServiceMetadata } from '@/components/service/service.graphql';
-import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
-import { fileListToUploadableMap } from '@/relay/environment/fetch-form-data';
 import {
-  Button,
-  FileInput,
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  Input,
-  SheetFooter,
-  useToast,
-} from '@filigran/ui';
-import { ServiceDefinitionIdentifier } from '@generated/serviceInstance_fragment.graphql';
-import { serviceUpdatePlatformServiceMetadataMutation } from '@generated/serviceUpdatePlatformServiceMetadataMutation.graphql';
+  ServiceDefinitionIdentifierToPlatformIdentifier,
+  translateServiceDefinitionIdentifier,
+} from '@/components/registration/PlatformIdentifierMapping';
+import { Form, FormField } from '@/components/ui/form';
+import { SheetFooter } from '@/components/ui/sheet';
+import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
+import { useTranslate } from '@/hooks/use-translate';
+import { analyticsProduct } from '@/lib/analytics/analytics.context';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
+import { portalGraphqlClient } from '@/lib/graphql-client';
+import { Button, Input } from '@filigran/design-system';
+import {
+  ServiceDefinitionIdentifier,
+  useUpdatePlatformServiceMetadataMutation,
+} from '@graphql/generated';
+import { registrationKeys } from '@graphql/registration/registration.keys';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
-import { useTranslations } from 'next-intl';
 import { useForm } from 'react-hook-form';
-import { useMutation } from 'react-relay';
 import { z } from 'zod';
 
 const platformUpdateSchema = z.object({
   name: z.string().min(1, 'Name is required'),
-  illustration_document: z.custom<FileList>().optional(),
 });
 
 interface PlatformUpdateSheetProps {
@@ -39,6 +35,7 @@ interface PlatformUpdateSheetProps {
   serviceDefinitionIdentifier: ServiceDefinitionIdentifier;
   open: boolean;
   setOpen: (open: boolean) => void;
+  onUpdated?: () => void;
 }
 
 export const PlatformUpdateSheet = ({
@@ -48,63 +45,69 @@ export const PlatformUpdateSheet = ({
   serviceDefinitionIdentifier,
   open,
   setOpen,
+  onUpdated,
 }: PlatformUpdateSheetProps) => {
-  const t = useTranslations();
-  const { toast } = useToast();
+  const t = useTranslate();
   const queryClient = useQueryClient();
+  const platformIdentifier =
+    ServiceDefinitionIdentifierToPlatformIdentifier[
+      serviceDefinitionIdentifier
+    ];
 
-  const [updatePlatformMetadata] =
-    useMutation<serviceUpdatePlatformServiceMetadataMutation>(
-      UpdatePlatformServiceMetadata
-    );
+  // Hook-level callbacks still run when the sheet unmounts before the request
+  // settles, unlike the per-call ones, so the caches never keep the old name.
+  const { mutate: updatePlatformMetadata } =
+    useUpdatePlatformServiceMetadataMutation(portalGraphqlClient, {
+      onSuccess: () => {
+        invalidatePrivateNavigationQueries(queryClient);
+        // The registered platform page shows the name.
+        void queryClient.invalidateQueries({
+          queryKey: registrationKeys.allByServiceInstance(),
+        });
+        onUpdated?.();
+      },
+    });
 
   const form = useForm<z.infer<typeof platformUpdateSchema>>({
     resolver: zodResolver(platformUpdateSchema),
     defaultValues: {
       name: serviceInstanceName,
-      illustration_document: undefined,
     },
   });
 
   const onSubmit = (values: z.infer<typeof platformUpdateSchema>) => {
-    const document = !values.illustration_document
-      ? null
-      : Array.from(values.illustration_document);
-    const uploadables = !document
-      ? undefined
-      : fileListToUploadableMap(document);
-
-    updatePlatformMetadata({
-      variables: {
+    updatePlatformMetadata(
+      {
         input: {
           serviceInstanceId: serviceInstanceId,
           name: values.name,
         },
-        document,
       },
-      uploadables,
-      onCompleted: () => {
-        setOpen(false);
-        invalidatePrivateNavigationQueries(queryClient);
-        toast({
-          title: t('Utils.Success'),
-          description: t('Platform.Updated', {
-            platformName: values.name,
-          }),
-        });
-        form.reset({
-          name: values.name,
-          illustration_document: undefined,
-        });
-      },
-      onError: (error) => {
-        toast({
-          variant: 'destructive',
-          title: t('Utils.Error'),
-          description: t(`Error.Server.${error.message}`),
-        });
-      },
-    });
+      {
+        onSuccess: () => {
+          setOpen(false);
+          showSnackbar({
+            severity: 'success',
+            title: t('Utils.Success'),
+            description: t('Platform.Updated', {
+              platformName: values.name,
+            }),
+          });
+          form.reset({
+            name: values.name,
+          });
+        },
+        onError: (error) => {
+          const errorMessage =
+            error instanceof Error ? error.message : 'UNKNOWN_ERROR';
+          showSnackbar({
+            severity: 'error',
+            title: t('Utils.Error'),
+            description: t(`Error.Server.${errorMessage}`),
+          });
+        },
+      }
+    );
   };
 
   // Get platform name for display
@@ -116,65 +119,43 @@ export const PlatformUpdateSheet = ({
     <SheetWithPreventingDialog
       open={open}
       setOpen={setOpen}
+      analyticsContext={
+        platformIdentifier && analyticsProduct(platformIdentifier)
+      }
       title={t('Platform.UpdateMetadata', { platformName: getPlatformName() })}>
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
-          className="space-y-l">
+          className="space-y-4">
           <FormField
             control={form.control}
             name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('Platform.Name')}</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder={t('Platform.NamePlaceholder')}
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+            render={({ field, fieldState }) => (
+              <Input
+                label={t('Platform.Name')}
+                placeholder={t('Platform.NamePlaceholder')}
+                error={fieldState.error?.message}
+                {...field}
+              />
             )}
           />
 
-          <FormItem>
-            <FormLabel>{t('Register.Details.ProductURL')}</FormLabel>
-            <FormControl>
-              <Input
-                value={platformUrl}
-                disabled
-              />
-            </FormControl>
-          </FormItem>
-
-          <FormField
-            control={form.control}
-            name="illustration_document"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('Platform.IllustrationImage')}</FormLabel>
-                <FormControl>
-                  <FileInput
-                    name="illustration_document"
-                    accept="image/*"
-                    onChange={field.onChange}
-                    className="w-full"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+          <Input
+            label={t('Register.Details.ProductURL')}
+            value={platformUrl}
+            disabled
           />
 
           <SheetFooter>
             <Button
+              {...analyticsId('platform_name_cancel')}
               type="button"
-              variant="secondary"
+              priority="secondary"
               onClick={() => setOpen(false)}>
               {t('Utils.Cancel')}
             </Button>
             <Button
+              {...analyticsId('platform_name_submit')}
               type="submit"
               disabled={form.formState.isSubmitting}>
               {form.formState.isSubmitting

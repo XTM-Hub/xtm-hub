@@ -1,0 +1,23 @@
+fragment NewsFeedItemRow on NewsFeedItem {
+  id
+  title
+  type
+  creation_date
+  tags
+  is_deleted
+  metadata {
+    key
+    value
+  }
+}
+
+query NewsFeedList($count: Int!, $cursor: ID) {
+  newsFeedItems(first: $count, after: $cursor) {
+    totalCount
+    edges {
+      node {
+        ...NewsFeedItemRow
+      }
+    }
+  }
+}

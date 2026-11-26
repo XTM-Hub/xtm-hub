@@ -1,20 +1,28 @@
+import { Knex } from 'knex';
 import z from 'zod';
 import { db, dbRaw } from '../../../../knexfile';
 import {
+  CommercialModel,
   PlatformConfigurationStatus,
   PlatformContract,
   PlatformIdentifier,
 } from '../../../__generated__/resolvers-types';
+import { OrganizationId } from '../../../model/kanel/public/Organization';
 import PlatformConfiguration, {
   PlatformConfigurationMutator,
 } from '../../../model/kanel/public/PlatformConfiguration';
 import ServiceDefinition from '../../../model/kanel/public/ServiceDefinition';
 import { ServiceInstanceId } from '../../../model/kanel/public/ServiceInstance';
+import { UserId } from '../../../model/kanel/public/User';
 import { logApp } from '../../../utils/app-logger.util';
 import { ErrorCode } from '../../../utils/error/error.code';
 import { formatRawObject } from '../../../utils/query-raw.util';
+import { isUuid } from '../../../utils/uuid.util';
 import type { PlatformConfigurationInput } from '../registration.domain';
 import { platformIdentifierMappedByServiceDefinitionIdentifier } from '../registration.mapping';
+
+// A platform URL is stored and rendered as a link: only web schemes, never javascript: or file:.
+export const PlatformUrlSchema = z.url({ protocol: /^https?$/ });
 
 const PlatformConfigurationValidationSchema = z
   .object({
@@ -22,7 +30,7 @@ const PlatformConfigurationValidationSchema = z
     platform_id: z.uuid(),
     tenant_id: z.string().min(1).optional(),
     tenant_name: z.string().min(1).optional(),
-    platform_url: z.url(),
+    platform_url: PlatformUrlSchema,
     platform_title: z.string().min(1),
     platform_version: z.string().min(1).optional(),
     platform_contract: z.enum(PlatformContract),
@@ -63,6 +71,74 @@ const resolvePlatformFromJoinedRow = (
   };
 };
 
+// The public JWK a product enrolls (TDR-34): the Hub never stores a private key.
+export type PlatformPublicKey = {
+  kty: 'OKP';
+  crv: 'Ed25519';
+  x: string;
+  kid: string;
+  alg: 'EdDSA';
+  use: 'sig';
+};
+
+const arePlatformAndTenantUuids = ({
+  platform_id,
+  tenant_id,
+}: {
+  platform_id: string;
+  tenant_id?: string | null;
+}): boolean =>
+  isUuid(platform_id) &&
+  (tenant_id === undefined || tenant_id === null || isUuid(tenant_id));
+
+const areCredentialsUuids = ({
+  platform_id,
+  token,
+  tenant_id,
+}: {
+  platform_id: string;
+  token: string;
+  tenant_id?: string | null;
+}): boolean =>
+  arePlatformAndTenantUuids({ platform_id, tenant_id }) && isUuid(token);
+
+// A null tenant is the registration of the whole instance, never "any tenant": an OpenAEV instance shares one key
+// across all its tenant registrations.
+const whereTenant = (
+  qb: Knex.QueryBuilder,
+  tenantId: string | null
+): Knex.QueryBuilder =>
+  tenantId === null
+    ? qb.whereNull('tenant_id')
+    : qb.where('tenant_id', '=', tenantId);
+
+// The SaaS Manager pushed the platform as a production instance.
+const SAAS_MANAGER_PROD_PLATFORM = `EXISTS (SELECT 1 FROM "SaasManagerInstance" WHERE "SaasManagerInstance"."id" = "PlatformConfiguration"."platform_id" AND "SaasManagerInstance"."data"->>'commercial_model' = 'PROD')`;
+
+/**
+ * The commercial model of the platform, selected as commercial_model after PlatformConfiguration.*, which it replaces:
+ * a platform stored as OTHER is SAAS when the SaaS Manager pushed it as PROD. A platform without a configuration has none.
+ */
+export const selectResolvedCommercialModel = (): Knex.Raw =>
+  dbRaw(
+    `CASE WHEN "PlatformConfiguration"."commercial_model" = ? AND ${SAAS_MANAGER_PROD_PLATFORM} THEN ? ELSE "PlatformConfiguration"."commercial_model" END AS commercial_model`,
+    [CommercialModel.Other, CommercialModel.Saas]
+  );
+
+// Keeps the SaaS platforms: stored as SAAS, or pushed by the SaaS Manager as PROD.
+export const whereSaasCommercialModel = (
+  query: Knex.QueryBuilder
+): Knex.QueryBuilder =>
+  query.where((saas) =>
+    saas
+      .where(
+        'PlatformConfiguration.commercial_model',
+        '=',
+        CommercialModel.Saas
+      )
+      .orWhereRaw(SAAS_MANAGER_PROD_PLATFORM)
+  );
+
 const buildJoinedConfigurationQuery = () =>
   db<PlatformConfiguration>('PlatformConfiguration')
     .leftJoin(
@@ -79,6 +155,7 @@ const buildJoinedConfigurationQuery = () =>
     )
     .select([
       'PlatformConfiguration.*',
+      selectResolvedCommercialModel(),
       dbRaw(
         formatRawObject({
           columnName: 'ServiceDefinition',
@@ -89,6 +166,32 @@ const buildJoinedConfigurationQuery = () =>
     ]);
 
 export const PlatformConfigurationDomain = {
+  countConfigurationsByRegisterer: async (userId: UserId): Promise<number> => {
+    const result = await db<PlatformConfiguration>('PlatformConfiguration')
+      .where('registerer_id', '=', userId)
+      .count<[{ count: string }]>('service_instance_id as count')
+      .first();
+    return Number(result?.count ?? 0);
+  },
+
+  countConfigurationsByOrganization: async (
+    organizationId: OrganizationId
+  ): Promise<number> => {
+    const result = await db<PlatformConfiguration>('PlatformConfiguration')
+      .join(
+        'Subscription',
+        'Subscription.service_instance_id',
+        '=',
+        'PlatformConfiguration.service_instance_id'
+      )
+      .where('Subscription.organization_id', '=', organizationId)
+      .count<[{ count: string }]>(
+        'PlatformConfiguration.service_instance_id as count'
+      )
+      .first();
+    return Number(result?.count ?? 0);
+  },
+
   isPlatformConfigurationValid: async (
     config: Record<string, unknown>
   ): Promise<boolean> => {
@@ -100,20 +203,31 @@ export const PlatformConfigurationDomain = {
     return success;
   },
 
+  // activeOnly: only an active registration authenticates its platform, an unregistered one matches nothing.
   loadConfigurationByPlatformAndToken: async ({
     platform_id,
     token,
     tenant_id,
     withoutTenantId,
+    activeOnly,
   }: {
     platform_id: string;
     token: string;
     tenant_id?: string;
     withoutTenantId?: boolean;
+    activeOnly?: boolean;
   }): Promise<PlatformConfiguration | undefined> => {
+    if (!areCredentialsUuids({ platform_id, token, tenant_id })) {
+      return undefined;
+    }
+
     const qb = db<PlatformConfiguration>('PlatformConfiguration')
       .where('platform_id', '=', platform_id)
       .where('token', '=', token);
+
+    if (activeOnly) {
+      qb.where('status', '=', PlatformConfigurationStatus.Active);
+    }
 
     if (tenant_id) {
       qb.where('tenant_id', '=', tenant_id);
@@ -121,7 +235,60 @@ export const PlatformConfigurationDomain = {
       qb.whereNull('tenant_id');
     }
 
-    return qb.first();
+    return qb.first('PlatformConfiguration.*', selectResolvedCommercialModel());
+  },
+
+  loadConfigurationByPlatformAndKeyId: async ({
+    platform_id,
+    tenant_id,
+    public_key_id,
+  }: {
+    platform_id: string;
+    tenant_id: string | null;
+    public_key_id: string;
+  }): Promise<PlatformConfiguration | undefined> => {
+    if (!arePlatformAndTenantUuids({ platform_id, tenant_id })) {
+      return undefined;
+    }
+
+    const qb = db<PlatformConfiguration>('PlatformConfiguration')
+      .where('platform_id', '=', platform_id)
+      .where('public_key_id', '=', public_key_id);
+
+    return whereTenant(qb, tenant_id).first();
+  },
+
+  // Stores the key and revokes the token in one statement: of two concurrent enrollments with the same token, only
+  // the first matches, so a second key can never replace the first one here.
+  enrollKey: async ({
+    platform_id,
+    tenant_id,
+    token,
+    publicKey,
+  }: {
+    platform_id: string;
+    tenant_id: string | null;
+    token: string;
+    publicKey: PlatformPublicKey;
+  }): Promise<PlatformConfiguration | undefined> => {
+    if (!areCredentialsUuids({ platform_id, token, tenant_id })) {
+      return undefined;
+    }
+
+    const qb = db<PlatformConfiguration>('PlatformConfiguration')
+      .where('platform_id', '=', platform_id)
+      .where('token', '=', token);
+
+    const [enrolled] = await whereTenant(qb, tenant_id)
+      .update({
+        public_key: JSON.stringify(publicKey),
+        public_key_id: publicKey.kid,
+        key_enrolled_at: new Date(),
+        token: null,
+      })
+      .returning('*');
+
+    return enrolled;
   },
 
   loadConfigurationByPlatform: async (
@@ -141,6 +308,34 @@ export const PlatformConfigurationDomain = {
     }
 
     return qb;
+  },
+
+  loadResolvedConfigurationByServiceInstance: async (
+    serviceInstanceId: ServiceInstanceId
+  ): Promise<FullPlatformConfiguration | undefined> => {
+    if (!isUuid(serviceInstanceId)) {
+      return undefined;
+    }
+    const row = (await buildJoinedConfigurationQuery()
+      .where(
+        'PlatformConfiguration.service_instance_id',
+        '=',
+        serviceInstanceId
+      )
+      .first()) as PlatformConfigurationWithDefinition | undefined;
+    return row ? resolvePlatformFromJoinedRow(row) : undefined;
+  },
+
+  // Only an active registration moves to inactive, so of two concurrent calls only the first gets true.
+  deactivateConfiguration: async (
+    serviceInstanceId: ServiceInstanceId
+  ): Promise<boolean> => {
+    const updated = await db<PlatformConfiguration>('PlatformConfiguration')
+      .update({ status: PlatformConfigurationStatus.Inactive })
+      .where('service_instance_id', '=', serviceInstanceId)
+      .where('status', '=', PlatformConfigurationStatus.Active)
+      .returning('service_instance_id');
+    return updated.length > 0;
   },
 
   updateConfiguration: async (
@@ -207,20 +402,35 @@ export const PlatformConfigurationDomain = {
     return row ? resolvePlatformFromJoinedRow(row) : undefined;
   },
 
+  // activeOnly: see loadConfigurationByPlatformAndToken.
   loadResolvedConfigurationByPlatformAndToken: async ({
     platform_id,
     token,
     tenant_id,
     withoutTenantId,
+    activeOnly,
   }: {
     platform_id: string;
     token: string;
     tenant_id?: string;
     withoutTenantId?: boolean;
+    activeOnly?: boolean;
   }): Promise<FullPlatformConfiguration | undefined> => {
+    if (!areCredentialsUuids({ platform_id, token, tenant_id })) {
+      return undefined;
+    }
+
     const qb = buildJoinedConfigurationQuery()
       .where('PlatformConfiguration.platform_id', '=', platform_id)
       .where('PlatformConfiguration.token', '=', token);
+
+    if (activeOnly) {
+      qb.where(
+        'PlatformConfiguration.status',
+        '=',
+        PlatformConfigurationStatus.Active
+      );
+    }
 
     if (tenant_id) {
       qb.where('PlatformConfiguration.tenant_id', '=', tenant_id);
@@ -235,7 +445,8 @@ export const PlatformConfigurationDomain = {
 
   loadActiveConfigurationsByPlatformExcludingTenants: async (
     platformId: string,
-    excludedTenantIds: string[]
+    excludedTenantIds: string[],
+    silentSince?: Date
   ): Promise<PlatformConfiguration[]> => {
     const qb = db<PlatformConfiguration[]>('PlatformConfiguration')
       .where('platform_id', '=', platformId)
@@ -245,6 +456,14 @@ export const PlatformConfigurationDomain = {
 
     if (excludedTenantIds.length > 0) {
       qb.whereNotIn('tenant_id', excludedTenantIds);
+    }
+
+    if (silentSince) {
+      qb.where((silent) =>
+        silent
+          .whereNull('last_connectivity_check')
+          .orWhere('last_connectivity_check', '<', silentSince)
+      );
     }
 
     return qb;

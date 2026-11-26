@@ -19,6 +19,22 @@ const resolvers: Resolvers = {
         throw mapToGraphQLError(error);
       }
     },
+    bundleUserServiceGroups: async (_, { serviceInstanceId }) => {
+      try {
+        return await ServiceGroupApp.loadBundleUserServiceGroups(
+          serviceInstanceId
+        );
+      } catch (error) {
+        throw mapToGraphQLError(error);
+      }
+    },
+    bundleProducts: async (_, { serviceInstanceId }) => {
+      try {
+        return await ServiceGroupApp.loadBundleProducts(serviceInstanceId);
+      } catch (error) {
+        throw mapToGraphQLError(error);
+      }
+    },
   },
   Mutation: {
     updateServiceGroups: async (_, { input }) => {
@@ -30,6 +46,36 @@ const resolvers: Resolvers = {
           };
         });
         return await ServiceGroupApp.updateGroups(parsedInput);
+      } catch (error) {
+        throw mapToGraphQLError(error);
+      }
+    },
+    addUsersToBundleGroups: async (_, { serviceInstanceId, input }) => {
+      try {
+        return await ServiceGroupApp.addUsersToBundleGroups(
+          serviceInstanceId,
+          input
+        );
+      } catch (error) {
+        throw mapToGraphQLError(error);
+      }
+    },
+    removeUsersFromBundleGroups: async (_, { serviceInstanceId, userIds }) => {
+      try {
+        return await ServiceGroupApp.removeUsersFromBundleGroups(
+          serviceInstanceId,
+          userIds
+        );
+      } catch (error) {
+        throw mapToGraphQLError(error);
+      }
+    },
+    updateBundleUserGroups: async (_, { serviceInstanceId, input }) => {
+      try {
+        return await ServiceGroupApp.updateBundleUserGroups(
+          serviceInstanceId,
+          input
+        );
       } catch (error) {
         throw mapToGraphQLError(error);
       }

@@ -1,8 +1,9 @@
 'use client';
 import { TrialsManageUsersForm } from '@/components/service/trial-instances/manage-users/TrialsManageUsersForm';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
-import { Button } from '@filigran/ui';
-import { useTranslations } from 'next-intl';
+import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
+import { Button } from '@filigran/design-system';
 import React, { useState } from 'react';
 
 interface TrialsManageUsersDialogProps {
@@ -18,7 +19,7 @@ export const TrialsManageUsersDialog = ({
   trigger,
   defaultOpen,
 }: TrialsManageUsersDialogProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const [openSheet, setOpenSheet] = useState(defaultOpen ?? false);
 
   return (
@@ -28,7 +29,9 @@ export const TrialsManageUsersDialog = ({
       open={openSheet}
       trigger={
         trigger ?? (
-          <Button variant="secondary">
+          <Button
+            {...analyticsId('trial_users_open')}
+            priority="secondary">
             {t('Service.Trials.ManageUsers.Title')}
           </Button>
         )

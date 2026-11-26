@@ -20,15 +20,15 @@ type Epic implements Node {
   title: String!
   short_description: String!
   description: String!
+  problem_to_solve: String!
+  proposed_solution: String!
+  expected_value: String!
   edition_type: EditionType!
   active: Boolean!
-  product: FiligranProduct!
+  products: [FiligranProduct!]!
+  slack_link: String
   timeline: Timeline!
   epic_type: EpicType!
-  document: Document
-  document_id: DocumentId
-  uploader_id: String!
-  updater_id: String
   created_at: Date!
   updated_at: Date
 }
@@ -37,24 +37,30 @@ input CreateEpicInput {
   title: String!
   short_description: String!
   description: String!
+  problem_to_solve: String!
+  proposed_solution: String!
+  expected_value: String!
   edition_type: EditionType!
   active: Boolean
-  product: FiligranProduct!
+  products: [FiligranProduct!]!
+  slack_link: String
   timeline: Timeline!
   is_integration: Boolean
-  illustration_document: Upload
 }
 
 input UpdateEpicInput {
   title: String
   short_description: String
   description: String
+  problem_to_solve: String
+  proposed_solution: String
+  expected_value: String
   edition_type: EditionType!
   active: Boolean
-  product: FiligranProduct
+  products: [FiligranProduct!]
+  slack_link: String
   timeline: Timeline
   is_integration: Boolean
-  illustration_document: Upload
 }
 
 type EpicCountPerTimeline {
@@ -86,7 +92,7 @@ type Query {
 }
 
 type Mutation {
-  createEpic(input: CreateEpicInput!, document: [Upload!]): Epic! @auth
-  updateEpic(id: ID!, input: UpdateEpicInput!, document: [Upload!]): Epic! @auth
+  createEpic(input: CreateEpicInput!): Epic! @auth
+  updateEpic(id: ID!, input: UpdateEpicInput!): Epic! @auth
   deleteEpic(id: ID!): Epic @auth
 }

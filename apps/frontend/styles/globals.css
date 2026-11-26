@@ -1,44 +1,73 @@
 @import 'tw-animate-css';
 @import 'tailwindcss';
-@import '@filigran/ui/theme.css';
-
-@reference '@filigran/ui/theme.css';
+@import '@filigran/design-system/tokens/theme.css';
+@import '@filigran/design-system/styles/gradient-helpers.css';
+/* The app skips the package's compiled stylesheet, which bundles these keyframes */
+@import '@filigran/design-system/styles/motion.css';
 
 @theme inline {
   --color-filigran-decoration: var(--color-filigran-decoration);
 }
 
 :root {
-  --color-filigran-decoration: hsl(var(--darkblue-700) / 0.3);
-  --hover-background: var(--color-gray-150);
+  /* The design system names its fonts literally; next/font serves them under generated names */
+  --font-sans-plex: var(--font-ibm-plex-sans);
+  --font-sans-geologica: var(--font-geologica);
+  --color-filigran-decoration: color-mix(
+    in srgb,
+    var(--darkblue-700) 30%,
+    transparent
+  );
 }
 
 .dark,
 body[data-theme='dark'],
 body[data-theme='Dark'] {
-  --color-filigran-decoration: hsl(var(--blue-500) / 0.3);
-  --hover-background: var(--color-filigran-brand-primary-transparency);
+  --color-filigran-decoration: color-mix(
+    in srgb,
+    var(--blue-500) 30%,
+    transparent
+  );
 }
-@source '../node_modules/@filigran/ui/dist/**/*.{js,ts,jsx,tsx}';
-@source '../../../node_modules/@filigran/ui/dist/**/*.{js,ts,jsx,tsx}';
+
+/* The design system declares the input tokens on :root only, which freezes them at layer 0:
+   re-declare them per layer so inputs follow the elevation of the surface they sit on */
+.layer-0,
+.layer-1,
+.layer-2,
+.layer-3 {
+  --bg-input-default: var(--bg-elevation-highlight);
+  --bg-input-disabled: var(--bg-elevation-disabled);
+  --bg-input-hover: var(--bg-elevation-hover);
+}
+
+/* Tailwind skips node_modules: scan the design-system bundle so its component classes get generated */
+@source '../../../node_modules/@filigran/design-system/dist/**/*.mjs';
 
 @variant dark (.dark &);
+/* The design system's own light variant (its src/tokens/index.css): its components
+   style light mode with `light:` classes, e.g. Banner's warning ink and Alert's wash */
+@custom-variant light (&:is(.light *), &:is(.light));
 @variant mobile (@media screen and (max-width: 40rem));
 
 @layer base {
   html {
     font-size: 100%;
-    @apply bg-background;
+    @apply bg-elevation-default;
   }
+
   * {
-    @apply border-border;
+    letter-spacing: var(--tracking-normal);
+    @apply border-elevation-subtle;
   }
+
   body {
     font-family: var(--font-ibm-plex-sans), system-ui, sans-serif;
-    font-size: var(--text-content-body-base);
-    font-weight: var(--font-weight-content-body-base);
-    background: var(--gradient-background);
-    color: var(--color-text-default-primary);
+    font-size: var(--text-content-base);
+    font-weight: var(--font-weight-content-base);
+    background: var(--gradient-default);
+    color: var(--text-default-primary);
+    padding-bottom: var(--cookie-banner-height, 0px);
   }
 
   h1,
@@ -51,14 +80,20 @@ body[data-theme='Dark'] {
   }
 
   h1 {
-    @apply txt-title;
+    @apply title-2xl;
   }
+
   h2 {
-    @apply txt-subtitle;
+    @apply title-sm;
   }
 
   ol {
     @apply list-decimal pl-8;
+  }
+
+  .text-logo {
+    font-family: var(--font-geologica), system-ui, sans-serif;
+    @apply text-3xl font-light tracking-tighter;
   }
 }
 
@@ -67,6 +102,7 @@ body[data-theme='Dark'] {
   ul {
     list-style-type: disc;
   }
+
   ol {
     list-style-type: decimal;
   }
@@ -77,14 +113,17 @@ body[data-theme='Dark'] {
   word-wrap: break-word;
 
   h1 {
-    @apply border-border mt-6 mb-4 border-b pb-2 text-2xl font-semibold;
+    @apply border-elevation-subtle mt-6 mb-4 border-b pb-2 text-2xl font-semibold;
   }
+
   h2 {
-    @apply border-border mt-5 mb-3 border-b pb-2 text-xl font-semibold;
+    @apply border-elevation-subtle mt-5 mb-3 border-b pb-2 text-xl font-semibold;
   }
+
   h3 {
     @apply mt-4 mb-2 text-lg font-semibold;
   }
+
   h4,
   h5,
   h6 {
@@ -96,55 +135,62 @@ body[data-theme='Dark'] {
   }
 
   a {
-    @apply text-primary underline hover:no-underline;
+    @apply text-filigran-brand-primary underline hover:no-underline;
   }
 
   ul,
   ol {
     @apply my-3 pl-8;
   }
+
   ul {
     @apply list-disc;
   }
+
   ol {
     @apply list-decimal;
   }
+
   li {
     @apply my-1;
   }
+
   li > ul,
   li > ol {
     @apply my-1;
   }
 
   blockquote {
-    @apply border-border text-muted-foreground my-3 border-l-4 pl-4 italic;
+    @apply border-elevation-subtle text-default-secondary my-3 border-l-4 pl-4 italic;
   }
 
   code:not(pre code) {
-    @apply bg-muted rounded px-1.5 py-0.5 font-mono text-sm;
+    @apply bg-elevation-highlight rounded px-1.5 py-0.5 font-mono text-sm;
   }
 
   pre {
-    @apply bg-muted my-3 overflow-x-auto rounded-md p-4;
+    @apply bg-elevation-highlight my-3 overflow-x-auto rounded-xs p-4;
   }
+
   pre code {
     @apply bg-transparent p-0 font-mono text-sm;
   }
 
   hr {
-    @apply border-border my-6 border-t;
+    @apply border-elevation-subtle my-6 border-t;
   }
 
   table {
     @apply my-3 w-full border-collapse;
   }
+
   th,
   td {
-    @apply border-border border px-3 py-2 text-left;
+    @apply border-elevation-subtle border px-3 py-2 text-left;
   }
+
   th {
-    @apply bg-muted font-semibold;
+    @apply bg-elevation-heading font-semibold;
   }
 
   img {
@@ -154,12 +200,54 @@ body[data-theme='Dark'] {
   strong {
     @apply font-semibold;
   }
+
   em {
     @apply italic;
   }
 }
 
+::-webkit-scrollbar {
+  width: 0.4rem;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 100vh;
+  border: 0.1rem solid var(--bg-elevation-default-layer-0);
+  background: var(--bg-elevation-default-layer-3);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
 /* Allow fullsize textArea in MD editor (https://github.com/uiwjs/react-md-editor/issues/625) */
 .w-md-editor-text {
   min-height: 100% !important;
+}
+
+/* In-context editing: an outline never changes the layout and follows its
+   element when it scrolls, clips or hides. */
+[data-content-editable] {
+  outline: 1px dashed
+    color-mix(in srgb, var(--color-filigran-brand-primary) 50%, transparent);
+  outline-offset: 1px;
+  cursor: pointer;
+}
+
+[data-content-editable]:hover {
+  outline-style: solid;
+  outline-color: var(--color-filigran-brand-primary);
+}
+
+[data-content-editable='overridden'],
+[data-content-editable='overridden']:hover {
+  outline-color: var(--color-feedback-alert-primary);
+}
+
+[data-content-edit-badge='overridden'] svg {
+  color: var(--color-feedback-alert-primary);
 }

@@ -1,71 +1,77 @@
 'use client';
-import { ReachSalesMutation } from '@/components/service/trial-instances/reach-sales.graphql';
 import { ReachSalesDialogForm } from '@/components/service/trial-instances/reach-sales/ReachSalesDialogForm';
-import { DialogInformative } from '@/components/ui/Dialog';
-import { ArrowRightAltIcon } from '@filigran/icon';
-import { toast } from '@filigran/ui';
-import { Button, GradientButton } from '@filigran/ui/servers';
-import { PlatformIdentifier } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
+import { useTranslate } from '@/hooks/use-translate';
+import { trackEvent } from '@/lib/analytics/analytics.client';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
+import { portalGraphqlClient } from '@/lib/graphql-client';
+import { Button } from '@filigran/design-system';
+import {
+  DeploymentRequestDeploymentType,
+  useReachSalesMutation,
+} from '@graphql/generated';
 import { useMemo, useState } from 'react';
-import { useMutation } from 'react-relay';
 
 interface ReachSalesButtonProps {
   variant: 'default' | 'gradient' | 'secondary';
-  platformIdentifier: PlatformIdentifier;
-  platformId?: string;
 }
 
-export const ReachSalesButton = ({
-  variant,
-  platformId,
-  platformIdentifier,
-}: ReachSalesButtonProps) => {
-  const t = useTranslations();
-  const [commitReachSalesMutation, isInFlight] =
-    useMutation(ReachSalesMutation);
+export const ReachSalesButton = ({ variant }: ReachSalesButtonProps) => {
+  const t = useTranslate();
   const [isConfirmationDialogOpen, setIsConfirmationDialogOpen] =
     useState(false);
-  const [isInformationDialogOpen, setIsInformationDialogOpen] = useState(false);
 
-  const handleReachSales = (message: string) => {
-    commitReachSalesMutation({
-      variables: {
-        message,
-        platformId,
-        platformIdentifier,
+  const { mutate: reachSales, isPending: isInFlight } = useReachSalesMutation(
+    portalGraphqlClient,
+    {
+      onSuccess: () => {
+        trackEvent('generate_lead', { lead_source: 'Sales contact' });
+        showSnackbar({
+          severity: 'success',
+          title: t('Service.Trials.ReachOutToSalesSuccessTitle'),
+          description: t('Service.Trials.ReachOutToSalesSuccessMessage'),
+        });
+        setIsConfirmationDialogOpen(false);
       },
-      onError(error) {
-        toast({
-          variant: 'destructive',
+      onError: (error: unknown) => {
+        const errorMessage =
+          error instanceof Error ? error.message : 'UnknownError';
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
-          description: t(`Error.Server.${error.message}`),
+          description: t(`Error.Server.${errorMessage}`),
         });
       },
-      onCompleted() {
-        setIsConfirmationDialogOpen(false);
-        setIsInformationDialogOpen(true);
-      },
+    }
+  );
+
+  const handleReachSales = (message: string) => {
+    reachSales({
+      message,
+      deploymentRequestType: DeploymentRequestDeploymentType.Bundle,
     });
   };
 
   const reachSalesButton = useMemo(() => {
     if ('gradient' === variant) {
       return (
-        <GradientButton
-          className="bg-background dark:bg-none"
+        <Button
+          {...analyticsId('trial_sales_contact')}
+          variant="highlight"
+          priority="secondary"
           onClick={() => setIsConfirmationDialogOpen(true)}
           disabled={isInFlight}>
           {t('Service.Trials.ReachOutToSales')}
-        </GradientButton>
+        </Button>
       );
     }
 
     if ('secondary' === variant) {
       return (
         <Button
+          {...analyticsId('trial_sales_contact')}
           onClick={() => setIsConfirmationDialogOpen(true)}
-          variant="secondary"
+          priority="secondary"
           disabled={isInFlight}>
           {t('Service.Trials.ReachOutToSales')}
         </Button>
@@ -74,11 +80,10 @@ export const ReachSalesButton = ({
 
     return (
       <Button
+        {...analyticsId('trial_sales_contact')}
         onClick={() => setIsConfirmationDialogOpen(true)}
-        className="ml-xl bg-background hover:bg-background text-[12px] px-2 py-0.5 min-h-0 h-auto"
         disabled={isInFlight}>
         {t('Service.Trials.ReachOutToSales')}
-        <ArrowRightAltIcon className="ml-s size-4" />
       </Button>
     );
   }, [variant, setIsConfirmationDialogOpen, isInFlight, t]);
@@ -90,14 +95,7 @@ export const ReachSalesButton = ({
         isDialogOpen={isConfirmationDialogOpen}
         setIsDialogOpen={setIsConfirmationDialogOpen}
         onSubmit={(message) => handleReachSales(message)}
-        platformIdentifier={platformIdentifier}
       />
-      <DialogInformative
-        isOpen={isInformationDialogOpen}
-        onClose={() => setIsInformationDialogOpen(false)}
-        title={t('Service.Trials.ReachOutToSalesSuccessTitle')}>
-        {t('Service.Trials.ReachOutToSalesSuccessMessage')}
-      </DialogInformative>
     </>
   );
 };

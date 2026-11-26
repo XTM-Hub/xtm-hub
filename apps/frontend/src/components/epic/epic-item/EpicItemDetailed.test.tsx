@@ -1,71 +1,119 @@
 import { EpicItemDetailed } from '@/components/epic/epic-item/EpicItemDetailed';
+import { DEFAULT_EPIC_SLACK_LINK } from '@/components/epic/epic-slack-links';
 import testRender from '@/utils/test/test-render';
-import { epic_fragment$data } from '@generated/epic_fragment.graphql';
-import { EditionType, EpicType, FiligranProduct } from '@graphql/generated';
+import {
+  EditionType,
+  EpicFieldsFragment,
+  EpicType,
+  FiligranProduct,
+  Timeline,
+} from '@graphql/generated';
+import { mockEpic } from '@graphql/mocks';
 import { screen } from '@testing-library/react';
-import { createMockEnvironment } from 'relay-test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 describe('EpicItemDetailed', () => {
-  const epic = (product: FiligranProduct) =>
-    ({
+  const epic = (
+    slackLink: string | null,
+    overrides: Partial<EpicFieldsFragment> = {}
+  ) =>
+    mockEpic({
       id: 'epic-1',
       title: 'Roadmap epic',
       epic_type: EpicType.Other,
       edition_type: EditionType.CommunityEdition,
-      product,
+      products: [FiligranProduct.Opencti],
+      slack_link: slackLink,
       short_description: 'short description',
       description: 'long **description**',
-      document_id: null,
+      problem_to_solve: 'the **problem**',
+      proposed_solution: 'the solution',
+      expected_value: 'the value',
       active: true,
-      timeline: 'now',
-    }) as epic_fragment$data;
+      timeline: Timeline.Now,
+      ...overrides,
+    });
 
   const defaultProps = {
-    epic: epic(FiligranProduct.Opencti),
-    serviceInstanceId: 'service-instance-1',
+    epic: epic(null),
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('renders title, markdown description and footer', () => {
-    // Given
-    const environment = createMockEnvironment();
-
+  it('renders the markdown description and the footer', () => {
     // When
-    testRender(<EpicItemDetailed {...defaultProps} />, {
-      relayConfig: environment,
-    });
+    testRender(<EpicItemDetailed {...defaultProps} />);
 
     // Then
-    const heading = screen.getByRole('heading', { level: 2 });
-    expect(heading).toHaveTextContent(defaultProps.epic.title);
     expect(screen.getByText('description')).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: 'Epic.JoinCommunity' })
+    ).toBeInTheDocument();
+  });
+
+  it('renders the problem, solution and value sections as markdown', () => {
+    // When
+    testRender(<EpicItemDetailed {...defaultProps} />);
+
+    // Then
+    expect(
+      screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent)
+    ).toEqual([
+      'Epic.Form.ProblemToSolve',
+      'Epic.Form.ProposedSolution',
+      'Epic.Form.ExpectedValue',
+    ]);
+    expect(screen.getByText('problem').tagName).toBe('STRONG');
+  });
+
+  it('does not render the heading of a section left empty', () => {
+    // When
+    testRender(
+      <EpicItemDetailed
+        {...defaultProps}
+        epic={epic(null, { proposed_solution: '' })}
+      />
+    );
+
+    // Then
+    expect(
+      screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent)
+    ).toEqual(['Epic.Form.ProblemToSolve', 'Epic.Form.ExpectedValue']);
+  });
+
+  it('does not render the description when the epic has none', () => {
+    // When
+    testRender(
+      <EpicItemDetailed
+        {...defaultProps}
+        epic={epic(null, { description: '' })}
+      />
+    );
+
+    // Then
+    expect(screen.queryByText('description')).not.toBeInTheDocument();
+    expect(screen.getByText('the solution')).toBeInTheDocument();
   });
 
   it.each`
-    product                    | expectedLink
-    ${FiligranProduct.Opencti} | ${'https://filigran-community.slack.com/archives/CHZC2D38C'}
-    ${FiligranProduct.Openaev} | ${'https://filigran-community.slack.com/archives/CJ1PHBHF1'}
-    ${FiligranProduct.Xtmone}  | ${'https://filigran-community.slack.com/archives/CHNEM9NUT'}
-    ${FiligranProduct.Xtmhub}  | ${'https://filigran-community.slack.com/archives/C08HU35NPD4'}
+    slackLink                                                      | expectedLink                                                   | description
+    ${'https://filigran-community.slack.com/archives/C08HU35NPD4'} | ${'https://filigran-community.slack.com/archives/C08HU35NPD4'} | ${'the link chosen on the epic'}
+    ${'https://filigran-community.slack.com/archives/CUSTOM12345'} | ${'https://filigran-community.slack.com/archives/CUSTOM12345'} | ${'a link typed by hand'}
+    ${null}                                                        | ${DEFAULT_EPIC_SLACK_LINK}                                     | ${'the default link when the epic has none'}
+    ${''}                                                          | ${DEFAULT_EPIC_SLACK_LINK}                                     | ${'the default link when the epic link is empty'}
+    ${'javascript:alert(1)'}                                       | ${DEFAULT_EPIC_SLACK_LINK}                                     | ${'the default link when the epic link is not a Filigran slack link'}
+    ${'https://evil.example.com/phishing'}                         | ${DEFAULT_EPIC_SLACK_LINK}                                     | ${'the default link when the epic link points to another domain'}
   `(
-    'renders community call-to-action for $product',
-    ({ product, expectedLink }) => {
-      // Given
-      const environment = createMockEnvironment();
-
+    'renders community call-to-action with $description',
+    ({ slackLink, expectedLink }) => {
       // When
       testRender(
         <EpicItemDetailed
           {...defaultProps}
-          epic={epic(product)}
-        />,
-        {
-          relayConfig: environment,
-        }
+          epic={epic(slackLink)}
+        />
       );
 
       // Then

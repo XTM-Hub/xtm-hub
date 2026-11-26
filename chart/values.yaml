@@ -41,7 +41,8 @@ xtmhub:
     livenessProbe: {}
     elasticsearchCAFromSecret:
       enabled: true
-      CASecretName: "elasticsearch-es-http-ca-internal"
+      CASecretName: "elasticsearch-es-http-certs-public"
+      CASecretKey: "ca.crt"
   front:
     repository: "portal-front-prod"
     replicas: 1
@@ -57,6 +58,8 @@ xtmhub:
     environment: dev
   version: master
   host: localhost
+  # Redirects www.<host> to <host> (ingress-nginx only)
+  wwwRedirect: false
 postgres:
   version: "17.2"
   replicas: 2
@@ -87,6 +90,8 @@ postgres:
       initdb:
         database: xtmhub
         owner: xtmhub
+        postInitApplicationSQL:
+          - CREATE EXTENSION IF NOT EXISTS pg_trgm
     # externalClusters:
     # plugins:
   pgadmin:
@@ -96,8 +101,8 @@ postgres:
     password: "CHANGEME--q5Y6NbtbeIu3qyjk0iPthl2hCUkAmB--CHANGEME"
 minio:
   image:
-    repository: quay.io/minio/minio
-    tag: RELEASE.2025-06-13T11-33-47Z
+    repository: pgsty/silo
+    tag: RELEASE.2026-09-03T13-18-01Z
     pullPolicy: IfNotPresent
   ingressWhitelistSourceRange: "149.88.28.168/32,10.0.0.0/8"
   resources:
@@ -153,7 +158,6 @@ elasticsearch:
       cpu: "256m"
     limits:
       memory: 4Gi
-  plugin_prometheus_enabled: true
   reindexRemote:
     enabled: false
     serviceName: opensearch-cluster-master
@@ -166,10 +170,12 @@ elasticsearch:
   ingress:
     enabled: false
     host: localhost
+    whitelistSourceRange: "149.88.28.168/32,10.0.0.0/8"
     annotations: {}
 kibana:
   enabled: true
   priorityClassName: ""
   ingress:
     enabled: true
+    whitelistSourceRange: "149.88.28.168/32,10.0.0.0/8"
     annotations: {}

@@ -4,19 +4,32 @@ import {
   getPrivateNavigationServiceHrefs,
 } from '@/components/menu/navigation/private/private-navigation.utils';
 import {
+  FILIGRAN_BLOG_URL,
+  OPENCRQ_ABOUT_URL,
+  XTM_ONE_ABOUT_URL,
+} from '@/components/menu/navigation/shared/navigation-external-links';
+import {
   BottomLink,
   NavigationConfig,
   SectionConfig,
   SectionLink,
+  SectionSubLink,
 } from '@/components/menu/navigation/shared/navigation.type';
+import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import { APP_PATH } from '@/utils/path/constant';
 import {
+  ADMIN_SERVICE_CATALOG_PATH,
+  APP_PATH,
+  XTM_PLATFORM_TRIAL_PATH,
+} from '@/utils/path/constant';
+import {
+  DiamondOutlinedIcon,
   HomeIcon,
   IndividualIcon,
   LogoXtmOneIcon,
   OpenAevIconIcon,
   OpenCtiIconIcon,
+  OpenGrcIcon,
   PapermapIcon,
   PostIcon,
   SchoolIcon,
@@ -27,26 +40,26 @@ import {
   OrderingMode,
   OrganizationCapability,
   PlatformIdentifier,
+  PlatformTrialStatusQueryVariables,
   PortalCapability,
   ServiceDefinitionIdentifier,
   ServiceInstanceFilterKey,
   ServiceInstanceOrdering,
   ServiceInstancesListQueryVariables,
-  TrialDeploymentsEligibilityQueryVariables,
+  usePlatformTrialStatusQuery,
   useRegisteredPlatformsListQuery,
   useServiceInstancesListQuery,
-  useTrialDeploymentsEligibilityQuery,
 } from '@graphql/generated';
 import { registeredPlatformsKeys } from '@graphql/registered-platforms/registered-platforms.keys';
 import { serviceInstancesKeys } from '@graphql/service-instances/service-instances.keys';
-import { trialKeys } from '@graphql/trial/trial.keys';
-import { useLocale, useTranslations } from 'next-intl';
+import { platformTrialKeys } from '@graphql/trial/trial.keys';
+import { useLocale } from 'next-intl';
 import { useContext, useMemo } from 'react';
 
 const PRIVATE_NAVIGATION_REGISTERED_PLATFORMS_VARIABLES = {
   input: {
     identifier: null,
-    onlyActive: null,
+    onlyActive: true,
     onlyTrial: null,
     hasDeployedResources: null,
   },
@@ -80,17 +93,17 @@ const PRIVATE_NAVIGATION_SERVICE_INSTANCES_VARIABLES: ServiceInstancesListQueryV
     ],
     searchTerm: null,
   };
-interface SettingsLinkConfig extends SectionLink {
+type SettingsLinkConfig = SectionSubLink & {
   restriction?: PortalCapability[];
   isVisible?: boolean;
   skipPortalCapabilityCheck?: boolean;
-}
+};
 
 export const usePrivateNavigation = (): NavigationConfig => {
   const { me, hasCapability, hasOrganizationCapability } =
     useContext(PortalContext);
-  const tMenu = useTranslations('Menu');
-  const tMenuLinks = useTranslations('MenuLinks');
+  const tMenu = useTranslate('Menu');
+  const tMenuLinks = useTranslate('MenuLinks');
   const locale = useLocale();
   const selectedOrganizationId = me?.selected_organization_id;
   const currentOrganization = me?.organizations.find(
@@ -104,50 +117,81 @@ export const usePrivateNavigation = (): NavigationConfig => {
     ) ||
       hasOrganizationCapability(OrganizationCapability.ManageAccess));
   const isBypass = hasCapability?.(PortalCapability.Bypass) ?? false;
+  const accessGroupLabel = tMenuLinks('SettingsAccess');
+  const communityGroupLabel = tMenuLinks('SettingsCommunity');
+  const managementGroupLabel = tMenuLinks('SettingsManagement');
   const settingsLinksConfig: SettingsLinkConfig[] = [
     {
+      href: `/${APP_PATH}/admin/organizations`,
+      analyticsId: 'nav_admin_organizations_open',
+      label: tMenuLinks('Organization'),
+      group: accessGroupLabel,
+    },
+    {
       href: `/${APP_PATH}/admin/parameters`,
-      label: tMenuLinks('Parameter'),
+      analyticsId: 'nav_admin_parameters_open',
+      label: tMenuLinks('Parameters'),
+      group: accessGroupLabel,
+    },
+    {
+      href: `/${APP_PATH}/admin/roles`,
+      analyticsId: 'nav_admin_roles_open',
+      label: tMenuLinks('Roles'),
+      group: accessGroupLabel,
+      restriction: [PortalCapability.Bypass],
     },
     {
       href: `/${APP_PATH}/admin/user`,
+      analyticsId: 'nav_admin_users_open',
       label: tMenuLinks('Security'),
+      group: accessGroupLabel,
     },
     {
-      href: `/${APP_PATH}/admin/use-case`,
-      label: tMenuLinks('UseCase'),
-    },
-    {
-      href: `/${APP_PATH}/admin/solution-category`,
-      label: tMenuLinks('SolutionCategory'),
-    },
-    {
-      href: `/${APP_PATH}/admin/organizations`,
-      label: tMenuLinks('Organization'),
-    },
-    {
-      href: `/${APP_PATH}/admin/service`,
-      label: tMenuLinks('Service'),
-    },
-    {
-      href: `/${APP_PATH}/admin/opencti-trials`,
-      label: tMenuLinks('OpenCTITrial'),
-      restriction: [PortalCapability.ReadTrials],
-    },
-    {
-      href: `/${APP_PATH}/admin/openaev-trials`,
-      label: tMenuLinks('OpenAEVTrial'),
-      restriction: [PortalCapability.ReadTrials],
-    },
-    {
-      href: `/${APP_PATH}/admin/competitors`,
-      label: tMenuLinks('Competitor'),
-      restriction: [PortalCapability.ModifyCompetitors],
+      href: `/${APP_PATH}/admin/voting-rounds`,
+      analyticsId: 'nav_admin_voting_rounds_open',
+      label: tMenuLinks('VotingRound'),
+      group: communityGroupLabel,
     },
     {
       href: `/${APP_PATH}/admin/news-feed`,
+      analyticsId: 'nav_admin_news_feed_open',
       label: tMenuLinks('NewsFeed'),
+      group: communityGroupLabel,
       restriction: [PortalCapability.Bypass],
+    },
+    {
+      href: `/${APP_PATH}/admin/competitors`,
+      analyticsId: 'nav_admin_competitors_open',
+      label: tMenuLinks('Competitors'),
+      group: managementGroupLabel,
+      restriction: [PortalCapability.ModifyCompetitors],
+    },
+    {
+      href: `/${APP_PATH}/admin/csm-board`,
+      analyticsId: 'nav_admin_csm_board_open',
+      label: tMenuLinks('CSMBoard'),
+      group: managementGroupLabel,
+      restriction: [PortalCapability.ReadSaasMetrics],
+    },
+    {
+      href: `/${APP_PATH}/admin/registered-platforms`,
+      analyticsId: 'nav_admin_registered_platforms_open',
+      label: tMenuLinks('RegisteredPlatforms'),
+      group: managementGroupLabel,
+      restriction: [PortalCapability.Bypass],
+    },
+    {
+      href: ADMIN_SERVICE_CATALOG_PATH,
+      analyticsId: 'nav_admin_services_open',
+      label: tMenuLinks('ServiceCatalog'),
+      group: managementGroupLabel,
+    },
+    {
+      href: `/${APP_PATH}/admin/manage-trials`,
+      analyticsId: 'nav_admin_trials_open',
+      label: tMenuLinks('Trials'),
+      group: managementGroupLabel,
+      restriction: [PortalCapability.ReadTrials],
     },
   ];
   const settingsLinks = settingsLinksConfig
@@ -183,16 +227,9 @@ export const usePrivateNavigation = (): NavigationConfig => {
         ...link
       }) => link
     );
-  const privateNavigationTrialEligibilityVariables: TrialDeploymentsEligibilityQueryVariables =
-    {
-      input: {
-        organizationId: selectedOrganizationId ?? '',
-        platformIdentifiers: [
-          PlatformIdentifier.Opencti,
-          PlatformIdentifier.Openaev,
-        ],
-      },
-    };
+  const platformTrialStatusVariables: PlatformTrialStatusQueryVariables = {
+    organizationId: selectedOrganizationId ?? '',
+  };
   const { data: serviceInstancesQueryData } = useServiceInstancesListQuery(
     portalGraphqlClient,
     PRIVATE_NAVIGATION_SERVICE_INSTANCES_VARIABLES,
@@ -212,17 +249,13 @@ export const usePrivateNavigation = (): NavigationConfig => {
         ),
       }
     );
-  const {
-    data: trialEligibilityData,
-    isLoading: isTrialEligibilityLoading,
-    isPending: isTrialEligibilityPending,
-  } = useTrialDeploymentsEligibilityQuery(
+  const { data: platformTrialStatusData } = usePlatformTrialStatusQuery(
     portalGraphqlClient,
-    privateNavigationTrialEligibilityVariables,
+    platformTrialStatusVariables,
     {
       enabled: !!selectedOrganizationId,
-      queryKey: trialKeys.trialDeploymentsEligibility(
-        privateNavigationTrialEligibilityVariables
+      queryKey: platformTrialKeys.platformTrialStatus(
+        platformTrialStatusVariables
       ),
     }
   );
@@ -246,49 +279,31 @@ export const usePrivateNavigation = (): NavigationConfig => {
       ),
     [registeredPlatformsQueryData]
   );
-  const trialDeployments = trialEligibilityData?.trialDeployments;
-  const getStartFreeTrialLinks = (
-    platformIdentifier: PlatformIdentifier,
-    href: string
-  ): SectionLink[] => {
-    if (trialDeployments) {
-      if (trialDeployments.isBlacklisted) {
-        return [];
-      }
-      const availableTrials = trialDeployments.availableTrials.map((trial) =>
-        trial.toLowerCase()
-      );
-      if (!availableTrials.includes(platformIdentifier.toLowerCase())) {
-        return [];
-      }
-      return [
-        {
-          href,
-          label: tMenu('StartFreeTrial'),
-          highlight: true,
-        },
-      ];
-    }
-    if (
-      !selectedOrganizationId ||
-      isTrialEligibilityLoading ||
-      isTrialEligibilityPending
-    ) {
-      return [
-        {
-          label: tMenu('StartFreeTrial'),
-          highlight: true,
-        },
-      ];
-    }
-    return [];
-  };
+  const xtmoneRegisteredPlatforms = useMemo(
+    () =>
+      getPrivateNavigationRegisteredPlatformsByIdentifier(
+        registeredPlatformsQueryData,
+        PlatformIdentifier.Xtmone
+      ),
+    [registeredPlatformsQueryData]
+  );
+  const canShowXtmPlatformTrialLink =
+    !platformTrialStatusData?.platformTrialStatus.isBlacklisted;
   const buildServiceLink = (
     identifier: ServiceDefinitionIdentifier
-  ): SectionLink => ({
-    href: serviceHrefs.get(identifier),
-    label: tMenu(SERVICE_LINK_LABEL_KEYS[identifier] ?? identifier),
-  });
+  ): SectionLink[] => {
+    const href = serviceHrefs.get(identifier);
+    if (!href) {
+      return [];
+    }
+    return [
+      {
+        href,
+        label: tMenu(SERVICE_LINK_LABEL_KEYS[identifier] ?? identifier),
+        analyticsId: 'nav_library_open',
+      },
+    ];
+  };
   const xtmPlatformRoadmapHref = serviceHrefs.get(
     ServiceDefinitionIdentifier.XtmPlatformRoadmap
   );
@@ -299,10 +314,12 @@ export const usePrivateNavigation = (): NavigationConfig => {
       ? [
           {
             label: getMyProductLabel(openctiRegisteredPlatforms.length),
+            analyticsId: 'nav_my_products_section_toggle',
             badge: `${openctiRegisteredPlatforms.length}`,
             subLinks: openctiRegisteredPlatforms.map((platform) => ({
               label: platform.title,
               href: `/${APP_PATH}/service/opencti_registration/${platform.serviceInstanceId}`,
+              analyticsId: 'nav_connected_platform_open',
               tooltip: platform.url,
             })),
           },
@@ -313,10 +330,28 @@ export const usePrivateNavigation = (): NavigationConfig => {
       ? [
           {
             label: getMyProductLabel(openaevRegisteredPlatforms.length),
+            analyticsId: 'nav_my_products_section_toggle',
             badge: `${openaevRegisteredPlatforms.length}`,
             subLinks: openaevRegisteredPlatforms.map((platform) => ({
               label: platform.title,
               href: `/${APP_PATH}/service/openaev_registration/${platform.serviceInstanceId}`,
+              analyticsId: 'nav_connected_platform_open',
+              tooltip: platform.url,
+            })),
+          },
+        ]
+      : [];
+  const xtmoneMyProductLinks: SectionLink[] =
+    xtmoneRegisteredPlatforms.length > 0
+      ? [
+          {
+            label: getMyProductLabel(xtmoneRegisteredPlatforms.length),
+            analyticsId: 'nav_my_products_section_toggle',
+            badge: `${xtmoneRegisteredPlatforms.length}`,
+            subLinks: xtmoneRegisteredPlatforms.map((platform) => ({
+              label: platform.title,
+              href: `/${APP_PATH}/service/xtmone_registration/${platform.serviceInstanceId}`,
+              analyticsId: 'nav_connected_platform_open',
               tooltip: platform.url,
             })),
           },
@@ -325,6 +360,7 @@ export const usePrivateNavigation = (): NavigationConfig => {
   const sections: SectionConfig[] = [
     {
       key: 'xtm-platform',
+      analyticsId: 'nav_xtm_platform_open',
       label: tMenu('XTMPlatform'),
       icon: HomeIcon,
       pathPrefix: `/${APP_PATH}`,
@@ -333,108 +369,146 @@ export const usePrivateNavigation = (): NavigationConfig => {
     },
     {
       key: 'opencti',
+      analyticsId: 'nav_opencti_section_toggle',
+      product: PlatformIdentifier.Opencti,
       label: 'OpenCTI',
       icon: OpenCtiIconIcon,
       pathPrefix: `/${APP_PATH}/service/opencti`,
       links: [
-        ...getStartFreeTrialLinks(
-          PlatformIdentifier.Opencti,
-          `/${APP_PATH}/service/opencti-free-trial`
-        ),
         ...openctiMyProductLinks,
-        buildServiceLink(ServiceDefinitionIdentifier.OpenctiCustomDashboards),
-        buildServiceLink(ServiceDefinitionIdentifier.OpenctiCustomViews),
-        buildServiceLink(ServiceDefinitionIdentifier.OpenctiIntegrations),
-        buildServiceLink(ServiceDefinitionIdentifier.OpenctiPlaybooks),
+        ...buildServiceLink(
+          ServiceDefinitionIdentifier.OpenctiCustomDashboards
+        ),
+        ...buildServiceLink(ServiceDefinitionIdentifier.OpenctiCustomViews),
+        ...buildServiceLink(ServiceDefinitionIdentifier.OpenctiIntegrations),
+        ...buildServiceLink(ServiceDefinitionIdentifier.OpenctiPlaybooks),
         {
           href: 'https://demo.opencti.io',
           label: tMenu('LiveDemo'),
           external: true,
+          analyticsId: 'nav_live_demo_open',
         },
         {
           href: 'https://docs.opencti.io/latest/',
           label: tMenu('Documentation'),
           external: true,
+          analyticsId: 'nav_documentation_open',
         },
       ],
     },
     {
       key: 'openaev',
+      analyticsId: 'nav_openaev_section_toggle',
+      product: PlatformIdentifier.Openaev,
       label: 'OpenAEV',
       icon: OpenAevIconIcon,
       pathPrefix: `/${APP_PATH}/service/openaev`,
       links: [
-        ...getStartFreeTrialLinks(
-          PlatformIdentifier.Openaev,
-          `/${APP_PATH}/service/openaev-free-trial`
-        ),
         ...openaevMyProductLinks,
-        buildServiceLink(ServiceDefinitionIdentifier.OpenaevScenarios),
+        ...buildServiceLink(ServiceDefinitionIdentifier.OpenaevScenarios),
         {
           href: 'https://demo.openaev.io',
           label: tMenu('LiveDemo'),
           external: true,
+          analyticsId: 'nav_live_demo_open',
         },
         {
           href: 'https://docs.openaev.io/latest',
           label: tMenu('Documentation'),
           external: true,
+          analyticsId: 'nav_documentation_open',
         },
       ],
     },
     {
       key: 'xtm-one',
+      analyticsId: 'nav_xtm_one_section_toggle',
+      product: PlatformIdentifier.Xtmone,
       label: 'XTM One',
       icon: LogoXtmOneIcon,
-      pathPrefix: `/${locale}/cybersecurity-solutions/xtm-one`,
+      pathPrefix: `/${APP_PATH}/service/xtmone`,
       links: [
+        ...xtmoneMyProductLinks,
         {
-          href: 'https://filigran.io/platform/xtm-one/',
+          href: 'https://demo.xtmone.io/login',
+          label: tMenu('LiveDemo'),
+          external: true,
+          analyticsId: 'nav_live_demo_open',
+        },
+        {
+          href: 'https://docs.xtmone.io/',
+          label: tMenu('Documentation'),
+          external: true,
+          analyticsId: 'nav_documentation_open',
+        },
+        {
+          href: XTM_ONE_ABOUT_URL,
           label: tMenu('About'),
           external: true,
+          analyticsId: 'nav_product_about_open',
         },
         { label: tMenu('AICatalog'), badge: tMenu('ComingSoon') },
+      ],
+    },
+    {
+      key: 'opencrq',
+      analyticsId: 'nav_opencrq_section_toggle',
+      label: 'OpenCRQ',
+      icon: OpenGrcIcon,
+      pathPrefix: `/${locale}/cybersecurity-solutions/opencrq`,
+      links: [
+        {
+          href: OPENCRQ_ABOUT_URL,
+          label: tMenu('About'),
+          external: true,
+          analyticsId: 'nav_product_about_open',
+          badge: tMenu('ComingSoon'),
+        },
       ],
     },
   ];
   const footerSections: SectionConfig[] = [
     ...(canManageUser
-      ? [
+      ? ([
           {
             key: 'users',
+            analyticsId: 'nav_users_open',
             label: tMenuLinks('Users'),
             icon: IndividualIcon,
             pathPrefix: `/${APP_PATH}/manage/user`,
             href: `/${APP_PATH}/manage/user`,
             links: [],
           },
-        ]
+        ] satisfies SectionConfig[])
       : []),
     ...(settingsLinks.length > 0
-      ? [
+      ? ([
           {
             key: 'settings',
+            analyticsId: 'nav_settings_section_toggle',
             label: tMenuLinks('Settings'),
             icon: SettingsIcon,
             pathPrefix: `/${APP_PATH}/admin/`,
             links: settingsLinks,
           },
-        ]
+        ] satisfies SectionConfig[])
       : []),
   ];
   const bottomLinks: BottomLink[] = [
     ...(xtmPlatformRoadmapHref
-      ? [
+      ? ([
           {
             key: 'xtm-platform-roadmap',
+            analyticsId: 'nav_roadmap_open',
             href: xtmPlatformRoadmapHref,
             icon: PapermapIcon,
             label: tMenu('XTMRoadmap'),
           },
-        ]
+        ] satisfies BottomLink[])
       : []),
     {
       key: 'filigran-academy',
+      analyticsId: 'nav_academy_open',
       href: 'https://academy.filigran.io/',
       icon: SchoolIcon,
       label: tMenu('FiligranAcademy'),
@@ -442,18 +516,32 @@ export const usePrivateNavigation = (): NavigationConfig => {
     },
     {
       key: 'filigran-blog',
-      href: 'https://filigran.io/our-blog/',
+      analyticsId: 'nav_blog_open',
+      href: FILIGRAN_BLOG_URL,
       icon: PostIcon,
       label: tMenu('Blog'),
       external: true,
     },
     {
       key: 'slack',
+      analyticsId: 'nav_slack_join',
       href: 'https://filigran-community.slack.com',
       icon: SlackIcon,
       label: tMenu('Slack'),
       external: true,
     },
+    ...(canShowXtmPlatformTrialLink
+      ? ([
+          {
+            key: 'xtm-platform-trial',
+            analyticsId: 'nav_trial_open',
+            href: XTM_PLATFORM_TRIAL_PATH,
+            icon: DiamondOutlinedIcon,
+            label: tMenu('XTMPlatformTrial'),
+            highlight: true,
+          },
+        ] satisfies BottomLink[])
+      : []),
   ];
   return { sections, bottomLinks, footerSections };
 };

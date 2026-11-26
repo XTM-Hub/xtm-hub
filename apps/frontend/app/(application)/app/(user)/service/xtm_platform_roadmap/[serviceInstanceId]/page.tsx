@@ -1,9 +1,13 @@
-import { serverFetchGraphQL } from '@/relay/server-portal-api-fetch';
-import ServiceByIdQuery, {
-  serviceByIdQuery,
-} from '@generated/serviceByIdQuery.graphql';
-import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
+import { EpicListSkeleton } from '@/components/epic/EpicListSkeleton';
+import {
+  PrefetchedEpicList,
+  prefetchEpicList,
+} from '@/components/epic/PrefetchedEpicList';
+import { fetchServiceInstanceById } from '@/components/service/service-instance.server';
+import { notFound } from 'next/navigation';
+import { Suspense } from 'react';
 import PageLoader from './page-loader';
+
 interface ServiceRoadmapPageProps {
   params: Promise<{ serviceInstanceId: string }>;
 }
@@ -11,19 +15,20 @@ const Page = async ({ params }: ServiceRoadmapPageProps) => {
   const { serviceInstanceId } = await params;
   const decodedServiceInstanceId = decodeURIComponent(serviceInstanceId);
 
-  const response = await serverFetchGraphQL<serviceByIdQuery>(
-    ServiceByIdQuery,
-    {
-      service_instance_id: decodedServiceInstanceId,
-    }
+  // Started before the service instance is awaited, so both requests run at once.
+  const epicListState = prefetchEpicList();
+  const serviceInstance = await fetchServiceInstanceById(
+    decodedServiceInstanceId
   );
+  if (!serviceInstance) {
+    notFound();
+  }
   return (
-    <PageLoader
-      serviceInstance={
-        response.data
-          .serviceInstanceByIdAndGrantAccess as unknown as serviceInstance_fragment$data
-      }
-    />
+    <Suspense fallback={<EpicListSkeleton />}>
+      <PrefetchedEpicList dehydratedState={epicListState}>
+        <PageLoader serviceInstance={serviceInstance} />
+      </PrefetchedEpicList>
+    </Suspense>
   );
 };
 

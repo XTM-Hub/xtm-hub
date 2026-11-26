@@ -142,6 +142,9 @@ type DeploymentRequest implements Node {
   platform_url: String
   parent_id: DeploymentRequestId
   url: String
+  registered_platform: RegisteredPlatform
+  service_instance: ServiceInstance
+  children: [DeploymentRequest!]
 }
 
 type PlatformDeploymentRequest {
@@ -173,13 +176,16 @@ type PlatformDeploymentRequest {
 }
 
 input CreateDeploymentRequestInput {
-  products: [PlatformIdentifier!]!
+  use_cases_by_product: [ProductUseCaseInput!]
   region: DeploymentRequestPlatformRegion!
-  type: DeploymentRequestDeploymentType!
   job_title: DeploymentRequestJobTitle
   activity_sector: DeploymentRequestActivitySector
-  use_case: DeploymentRequestUseCase
   source: DeploymentRequestSource!
+}
+
+input ProductUseCaseInput {
+  platform_identifier: PlatformIdentifier!
+  use_case: DeploymentRequestUseCase!
 }
 
 input UpdateDeploymentRequestInput {
@@ -200,6 +206,7 @@ enum DeploymentRequestFilterKey {
   target_state
   actual_state
   platform_identifier
+  parent_id
 }
 
 input DeploymentRequestFilter {
@@ -229,21 +236,30 @@ type PlatformDeploymentRequestConnection {
 }
 
 type DeploymentAvailability {
+  id: ID!
   region: DeploymentRequestPlatformRegion!
   availableCount: Int!
   capacity: Int!
-  platform_identifier: PlatformIdentifier!
 }
 
-type DeployedPlatform {
-  serviceInstanceId: ServiceInstanceId!
-  platformIdentifier: PlatformIdentifier!
+type XtmoneIntegrationStatusEntry {
+  status: String!
+  connected: Boolean!
+  last_checked_at: String
 }
 
-type TrialsDeployments {
-  availableTrials: [PlatformIdentifier!]!
-  deployed: [DeployedPlatform!]!
+type XtmoneIntegrationStatus {
+  opencti: XtmoneIntegrationStatusEntry!
+  openaev: XtmoneIntegrationStatusEntry!
+  linked: Boolean!
+  last_checked_at: String
+}
+
+type PlatformTrialStatus {
+  deploymentRequestId: DeploymentRequestId
   isBlacklisted: Boolean!
+  hub_status: DeploymentRequestHubStatus
+  end_date: Date
 }
 
 enum DeploymentRequestOrdering {
@@ -271,14 +287,8 @@ input ReorderDeploymentRequestInQueueInput {
 }
 
 input UpdateDeploymentQuotaCapacityInput {
-  platformIdentifier: PlatformIdentifier!
   region: DeploymentRequestPlatformRegion!
   newCapacity: Int!
-}
-
-input TrialDeploymentsInput {
-  organizationId: OrganizationId!
-  platformIdentifiers: [PlatformIdentifier!]
 }
 
 extend type Query {
@@ -288,14 +298,11 @@ extend type Query {
     filters: [DeploymentRequestFilter!]
   ): PlatformDeploymentRequestConnection!
     @system_token(portalCapa: [MANAGE_DEPLOYMENT])
-  deploymentRequestsAvailable(
-    platformIdentifier: PlatformIdentifier!
-  ): [DeploymentAvailability!]!
+  deploymentRequestsAvailable: [DeploymentAvailability!]!
     @auth(
       portalCapa: [BYPASS, READ_TRIALS]
       orgaCapa: [ADMINISTRATE_ORGANIZATION, MANAGE_PLATFORM_REGISTRATION]
     )
-
   deploymentRequestsList(
     first: Int!
     after: ID
@@ -303,8 +310,14 @@ extend type Query {
     orderBy: DeploymentRequestOrdering!
     orderMode: OrderingMode!
     searchTerm: String
+    searchRegions: [DeploymentRequestPlatformRegion!]
   ): DeploymentRequestConnection! @auth(portalCapa: [BYPASS, READ_TRIALS])
-  trialDeployments(input: TrialDeploymentsInput!): TrialsDeployments! @auth
+  platformTrialStatus(organizationId: OrganizationId!): PlatformTrialStatus!
+    @auth
+  xtmPlatformBundle: DeploymentRequest @auth
+  xtmonePlatformIntegrationStatus(
+    serviceInstanceId: ServiceInstanceId!
+  ): XtmoneIntegrationStatus @auth
 }
 
 extend type Mutation {

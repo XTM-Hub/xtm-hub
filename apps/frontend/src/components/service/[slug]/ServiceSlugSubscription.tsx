@@ -1,17 +1,19 @@
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
 import useAdminPath from '@/hooks/use-admin-path';
-import { Button } from '@filigran/ui';
-import { serviceInstanceForSubscriptions_fragment$data } from '@generated/serviceInstanceForSubscriptions_fragment.graphql';
-import { subscription_fragment$data } from '@generated/subscription_fragment.graphql';
-import { useTranslations } from 'next-intl';
+import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
+import { Button } from '@filigran/design-system';
+import {
+  ServiceInstanceWithCapabilitiesItemFragment,
+  SubscriptionItemFragment,
+} from '@graphql/generated';
 import { FunctionComponent, useState } from 'react';
 import { ServiceSlugOrgaForm } from './ServiceSlugOrgaForm';
 
 interface ServiceSlugAddSubscriptionActionProps {
-  serviceInstance: serviceInstanceForSubscriptions_fragment$data;
-  subscriptions: subscription_fragment$data[];
-  subscriptionConnectionId: string;
-  subscriptionToEdit?: subscription_fragment$data;
+  serviceInstance: ServiceInstanceWithCapabilitiesItemFragment;
+  subscriptions: SubscriptionItemFragment[];
+  subscriptionToEdit?: SubscriptionItemFragment;
   openEdit?: boolean;
   setOpenEdit?: (open: boolean) => void;
 }
@@ -21,13 +23,12 @@ export const ServiceSlugSubscription: FunctionComponent<
 > = ({
   serviceInstance,
   subscriptions,
-  subscriptionConnectionId,
   subscriptionToEdit,
   openEdit,
   setOpenEdit,
 }) => {
   const [openSheetAddOrga, setOpenSheetAddOrga] = useState(false);
-  const t = useTranslations();
+  const t = useTranslate();
   const isAdminPath = useAdminPath();
 
   if (!isAdminPath || !serviceInstance) {
@@ -43,7 +44,11 @@ export const ServiceSlugSubscription: FunctionComponent<
     <SheetWithPreventingDialog
       open={sheetOpen}
       setOpen={setSheetOpen}
-      trigger={<Button>{t('Service.SubscribeOrganization')}</Button>}
+      trigger={
+        <Button {...analyticsId('admin_subscription_create')}>
+          {t('Service.SubscribeOrganization')}
+        </Button>
+      }
       title={
         t('OrganizationInServiceAction.AddOrganization') +
         ' ' +
@@ -51,7 +56,6 @@ export const ServiceSlugSubscription: FunctionComponent<
       }>
       <ServiceSlugOrgaForm
         subscriptions={subscriptions}
-        subscriptionConnectionId={subscriptionConnectionId}
         serviceInstance={serviceInstance}
         subscriptionToEdit={subscriptionToEdit}
       />

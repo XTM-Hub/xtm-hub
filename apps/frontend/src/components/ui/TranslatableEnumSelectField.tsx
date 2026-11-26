@@ -1,56 +1,43 @@
-import {
-  FormItem,
-  FormLabel,
-  FormMessage,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@filigran/ui';
-import { useTranslations } from 'next-intl';
-import { ControllerRenderProps } from 'react-hook-form';
+import { SelectField } from '@/components/ui/SelectField';
+import { useTranslate } from '@/hooks/use-translate';
+import { ControllerRenderProps, FieldPath, FieldValues } from 'react-hook-form';
 
-interface TranslatableEnumSelectFieldProps {
-  field: ControllerRenderProps;
+interface TranslatableEnumSelectFieldProps<
+  T extends FieldValues = FieldValues,
+> {
+  field: ControllerRenderProps<T, FieldPath<T>>;
   label: string;
   placeholder: string;
   values: string[];
   translationNamespace: string;
-  className?: string;
+  error?: string;
+  triggerClassName?: string;
 }
 
-export const TranslatableEnumSelectField = ({
+export const TranslatableEnumSelectField = <T extends FieldValues>({
   field,
   label,
   placeholder,
   values,
   translationNamespace,
-  className = 'text-sm text-destructive',
-}: TranslatableEnumSelectFieldProps) => {
-  const t = useTranslations();
+  error,
+  triggerClassName,
+}: TranslatableEnumSelectFieldProps<T>) => {
+  const t = useTranslate();
   return (
-    <FormItem>
-      <FormLabel>
-        {label} <span className={className}>*</span>
-      </FormLabel>
-      <Select
-        value={field.value}
-        onValueChange={field.onChange}>
-        <SelectTrigger>
-          <SelectValue placeholder={placeholder} />
-        </SelectTrigger>
-        <SelectContent>
-          {values.map((value) => (
-            <SelectItem
-              key={value}
-              value={value}>
-              {t(`${translationNamespace}.${value}`)}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <FormMessage className={className} />
-    </FormItem>
+    <SelectField
+      formField
+      label={label}
+      required
+      placeholder={placeholder}
+      options={values.map((value) => ({
+        value,
+        label: t(`${translationNamespace}.${value}`),
+      }))}
+      value={field.value}
+      onValueChange={field.onChange}
+      error={error}
+      triggerClassName={triggerClassName}
+    />
   );
 };

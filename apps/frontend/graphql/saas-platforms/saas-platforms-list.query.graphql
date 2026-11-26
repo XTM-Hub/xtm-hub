@@ -1,0 +1,59 @@
+fragment SaasPlatformRow on SaasPlatform {
+  id
+  product
+  customer
+  metadata {
+    plan
+    end_date
+  }
+  sla_cmtd
+  storage {
+    es_used_size {
+      percent
+    }
+    s3_used_size {
+      percent
+    }
+    postgres_used_size {
+      percent
+    }
+  }
+  health_issues
+  contract_status
+  registered_platform {
+    id
+    service_instance_id
+    identifier
+    version
+    organization {
+      id
+      name
+      administrator_emails
+    }
+  }
+}
+
+query SaasManagerPlatformsList(
+  $first: Int!
+  $after: ID
+  $orderBy: SaasPlatformOrdering!
+  $orderMode: OrderingMode!
+  $searchTerm: String
+  $product: SaasProduct
+) {
+  saasManagerPlatforms(
+    first: $first
+    after: $after
+    orderBy: $orderBy
+    orderMode: $orderMode
+    searchTerm: $searchTerm
+    product: $product
+  ) {
+    totalCount
+    edges {
+      node {
+        ...SaasPlatformRow
+      }
+    }
+  }
+}

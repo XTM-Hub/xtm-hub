@@ -3,8 +3,11 @@ import {
   DeploymentRequestDeploymentType,
   DeploymentRequestHubStatus,
   PlatformIdentifier,
+  ServiceGroupName,
 } from '../../../__generated__/resolvers-types';
-import { DeploymentRequestId } from '../../../model/kanel/public/DeploymentRequest';
+import DeploymentRequest, {
+  DeploymentRequestId,
+} from '../../../model/kanel/public/DeploymentRequest';
 import ServiceGroup, {
   ServiceGroupId,
   ServiceGroupMutator,
@@ -19,14 +22,6 @@ import {
   UnknownErrorCode,
 } from '../../../utils/error/error.code';
 
-export enum ServiceGroupName {
-  Admin = 'Admin',
-  Analyst = 'Analyst',
-  Reader = 'Reader',
-  Manager = 'Manager',
-  Observer = 'Observer',
-}
-
 export const GROUPS_BY_PLATFORM_IDENTIFIER: Partial<
   Record<PlatformIdentifier, readonly ServiceGroupName[]>
 > = {
@@ -40,6 +35,7 @@ export const GROUPS_BY_PLATFORM_IDENTIFIER: Partial<
     ServiceGroupName.Manager,
     ServiceGroupName.Observer,
   ],
+  [PlatformIdentifier.Xtmone]: [ServiceGroupName.Admin, ServiceGroupName.User],
 };
 
 export const ServiceGroupDomain = {
@@ -66,6 +62,18 @@ export const ServiceGroupDomain = {
     field: ServiceGroupMutator
   ): Promise<ServiceGroup[]> => {
     return db<ServiceGroup[]>('ServiceGroup').select('*').where(field);
+  },
+
+  loadServiceGroupsByServiceInstanceIds: async (
+    serviceInstanceIds: ServiceInstanceId[]
+  ): Promise<ServiceGroup[]> => {
+    if (!serviceInstanceIds.length) {
+      return [];
+    }
+
+    return db<ServiceGroup[]>('ServiceGroup')
+      .select('*')
+      .whereIn('service_instance_id', serviceInstanceIds);
   },
 
   loadServiceGroupsByServiceInstanceAndUser: async (
@@ -114,9 +122,12 @@ export const ServiceGroupDomain = {
       .select('User.*');
   },
 
-  addUsersToGroup: async (groupId: ServiceGroupId, userIds: UserId[]) => {
+  addUsersToGroup: async (
+    groupId: ServiceGroupId,
+    userIds: UserId[]
+  ): Promise<UserId[]> => {
     if (!userIds.length) {
-      return;
+      return [];
     }
 
     const data: ServiceGroupUserInitializer[] = userIds.map((userId) => ({
@@ -124,7 +135,13 @@ export const ServiceGroupDomain = {
       group_id: groupId,
     }));
 
-    await db<ServiceGroupUser>('ServiceGroup_User').insert(data);
+    const rows = await db<ServiceGroupUser>('ServiceGroup_User')
+      .insert(data)
+      .onConflict(['group_id', 'user_id'])
+      .ignore()
+      .returning('user_id');
+
+    return rows.map(({ user_id }) => user_id);
   },
 
   removeUsersFromGroups: async (groupIds: ServiceGroupId[]) => {
@@ -133,6 +150,21 @@ export const ServiceGroupDomain = {
     }
 
     await db('ServiceGroup_User').del().whereIn('group_id', groupIds);
+  },
+
+  removeUsersFromServiceGroups: async (
+    userIds: UserId[],
+    groupIds: ServiceGroupId[]
+  ): Promise<{ user_id: UserId; group_id: ServiceGroupId }[]> => {
+    if (!userIds.length || !groupIds.length) {
+      return [];
+    }
+
+    return db<ServiceGroupUser>('ServiceGroup_User')
+      .del()
+      .whereIn('user_id', userIds)
+      .whereIn('group_id', groupIds)
+      .returning(['user_id', 'group_id']);
   },
 
   deleteGroups: async (groupIds: ServiceGroupId[]) => {
@@ -181,6 +213,31 @@ export const ServiceGroupDomain = {
       );
   },
 
+  loadUserDeploymentRequestsWithGroupName: async (
+    userId: UserId
+  ): Promise<DeploymentRequestWithServiceGroupName[]> => {
+    return db<DeploymentRequestWithServiceGroupName>('ServiceGroup_User')
+      .innerJoin(
+        'ServiceGroup',
+        'ServiceGroup.id',
+        '=',
+        'ServiceGroup_User.group_id'
+      )
+      .innerJoin(
+        'DeploymentRequest',
+        'DeploymentRequest.service_instance_id',
+        '=',
+        'ServiceGroup.service_instance_id'
+      )
+      .where('ServiceGroup_User.user_id', '=', userId)
+      .where(
+        'DeploymentRequest.hub_status',
+        '=',
+        DeploymentRequestHubStatus.Active
+      )
+      .select('DeploymentRequest.*', 'ServiceGroup.name as group_name');
+  },
+
   loadServiceInstanceGroupUsers: async (
     serviceInstanceId: ServiceInstanceId
   ): Promise<ServiceGroupUser[]> => {
@@ -221,4 +278,8 @@ export const ServiceGroupDomain = {
       userAdminId,
     ]);
   },
+};
+
+export type DeploymentRequestWithServiceGroupName = DeploymentRequest & {
+  group_name: ServiceGroupName;
 };

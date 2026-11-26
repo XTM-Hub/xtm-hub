@@ -2,6 +2,7 @@ import {
   PlatformIdentifier,
   ServiceDefinitionIdentifier,
 } from '../../__generated__/resolvers-types';
+import { PlatformIdentifierToString } from '../../utils/platform';
 
 export interface GenericServiceMailModel {
   name: string;
@@ -28,12 +29,6 @@ export interface PlatformRegisteredModel {
   adminName: string;
   platformIdentifier: PlatformIdentifier;
 }
-export interface FreeTrialRegistered {
-  firstName: string;
-  platformUrl: string;
-  platformIdentifier: PlatformIdentifier;
-  globalServiceInstanceId: string;
-}
 export interface FreeTrialUserAddedModel {
   firstName: string;
   platformUrl: string;
@@ -41,18 +36,29 @@ export interface FreeTrialUserAddedModel {
   adminEmail: string;
   trialEndDate: string;
 }
-export interface FreeTrialGenericModel {
+export interface FreeTrialBundleModel {
   firstName: string;
-  platformIdentifier: PlatformIdentifier;
+  productNames: string;
+  products: PlatformIdentifier[];
 }
-export interface AdminSaasInstanceRequestedModel {
+export interface FreeTrialBundleActiveModel extends FreeTrialBundleModel {
+  platformUrl: string;
+}
+export interface FreeTrialBundleUserAddedModel extends FreeTrialBundleModel {
+  adminEmail: string;
+  daysLeft: number;
+  platformUrl: string;
+}
+
+export interface AdminSaasBundleRequestedModel {
   organizationName: string;
   userName: string;
   userEmail: string;
   region: string;
   activitySector?: string;
-  useCase?: string;
-  platformIdentifier: string;
+  openCTIUseCase?: string;
+  openAEVUseCase?: string;
+  products: string;
   deploymentType: string;
 }
 
@@ -60,10 +66,13 @@ export interface OrganizationPendingUserDigestUser {
   firstName: string;
   lastName: string;
   email: string;
+  approveLink: string;
+  denyLink: string;
 }
 
 export interface OrganizationPendingUserDigestModel {
   adminName: string;
+  adminEmail: string;
   organizationName: string;
   users: OrganizationPendingUserDigestUser[];
   userCount: number;
@@ -75,11 +84,34 @@ export interface PlatformUnregisteredModel {
   platformIdentifier: PlatformIdentifier;
 }
 
-export const PlatformIdentifierToString: Record<PlatformIdentifier, string> = {
-  [PlatformIdentifier.Opencti]: 'OpenCTI',
-  [PlatformIdentifier.Openaev]: 'OpenAEV',
-  [PlatformIdentifier.Xtmone]: 'XTM One',
-};
+export const BUNDLE_PLATFORM_NAME = 'XTM Platform';
+
+export const MAIL_PRODUCT_ORDER: PlatformIdentifier[] = [
+  PlatformIdentifier.Opencti,
+  PlatformIdentifier.Openaev,
+  PlatformIdentifier.Xtmone,
+];
+
+export const sortProductsForMail = (
+  platformIdentifiers: PlatformIdentifier[]
+): PlatformIdentifier[] =>
+  [...platformIdentifiers].sort(
+    (a, b) => MAIL_PRODUCT_ORDER.indexOf(a) - MAIL_PRODUCT_ORDER.indexOf(b)
+  );
+
+const productListFormatter = new Intl.ListFormat('en', {
+  style: 'long',
+  type: 'conjunction',
+});
+
+export const formatProductNames = (
+  platformIdentifiers: PlatformIdentifier[]
+): string =>
+  productListFormatter.format(
+    sortProductsForMail(platformIdentifiers).map(
+      (identifier) => PlatformIdentifierToString[identifier]
+    )
+  );
 
 export const ServiceIdentifierToMailTemplate = new Map<
   ServiceDefinitionIdentifier,
@@ -93,12 +125,10 @@ export const ServiceIdentifierToMailTemplate = new Map<
   [ServiceDefinitionIdentifier.OpenctiCustomViews, 'opencti_custom_views'],
   [ServiceDefinitionIdentifier.OpenctiIntegrations, 'opencti_integrations'],
   [ServiceDefinitionIdentifier.OpenctiPlaybooks, 'opencti_playbooks'],
-  [ServiceDefinitionIdentifier.Vault, 'vault'],
 ]);
 // ATTENTION, the key should be the same as the template file
 export type MailTemplates = {
   welcome: WelcomeMailModel;
-  vault: GenericServiceMailModel;
   opencti_custom_dashboards: GenericServiceMailModel;
   opencti_custom_views: GenericServiceMailModel;
   opencti_integrations: GenericServiceMailModel;
@@ -108,15 +138,15 @@ export type MailTemplates = {
   request_transfer_personal_space: RequestTransferPersonalSpaceMailModel;
   platform_registered: PlatformRegisteredModel;
   platform_unregistered: PlatformUnregisteredModel;
-  free_trial_registered: FreeTrialRegistered;
-  free_trial_requested: FreeTrialGenericModel;
-  free_trial_queued: FreeTrialGenericModel;
-  free_trial_provisioning: FreeTrialGenericModel;
-  free_trial_cancelled: FreeTrialGenericModel;
-  free_trial_expired: FreeTrialGenericModel;
+  free_trial_bundle_requested: FreeTrialBundleModel;
+  free_trial_bundle_provisioning: FreeTrialBundleModel;
+  free_trial_bundle_active: FreeTrialBundleActiveModel;
+  free_trial_bundle_cancelled: FreeTrialBundleModel;
+  free_trial_bundle_expired: FreeTrialBundleModel;
   free_trial_user_added: FreeTrialUserAddedModel;
+  free_trial_bundle_user_added: FreeTrialBundleUserAddedModel;
   organization_pending_user_digest: OrganizationPendingUserDigestModel;
-  admin_saas_instance_requested: AdminSaasInstanceRequestedModel;
+  admin_saas_bundle_requested: AdminSaasBundleRequestedModel;
   public_roadmap_monthly_reminder: { roadmapLink: string };
 };
 
@@ -124,8 +154,6 @@ export const templateSubjects: {
   [K in keyof MailTemplates]: (params: MailTemplates[K]) => string;
 } = {
   welcome: () => 'Welcome to XTM Hub – Let’s Get Started!',
-  vault: (params: GenericServiceMailModel) =>
-    `XTM Hub - You've been invited to the ${params.serviceName}`,
   opencti_custom_dashboards: (params: GenericServiceMailModel) =>
     `XTM Hub - You've been invited to the ${params.serviceName}`,
   opencti_custom_views: (params: GenericServiceMailModel) =>
@@ -148,34 +176,25 @@ export const templateSubjects: {
     `${
       PlatformIdentifierToString[params.platformIdentifier]
     } Platform Successfully Unregistered from XTM Hub – Integration is Deactivated`,
-  free_trial_registered: (params: FreeTrialGenericModel) =>
-    `Welcome to your ${
-      PlatformIdentifierToString[params.platformIdentifier]
-    } free trial!`,
-  free_trial_requested: (params: FreeTrialGenericModel) =>
-    `Your ${
-      PlatformIdentifierToString[params.platformIdentifier]
-    } Free Trial Request`,
-  free_trial_queued: (params: FreeTrialGenericModel) =>
-    `Your ${
-      PlatformIdentifierToString[params.platformIdentifier]
-    } Free Trial Request`,
-  free_trial_provisioning: (params: FreeTrialGenericModel) =>
-    `Your ${
-      PlatformIdentifierToString[params.platformIdentifier]
-    } Platform Is Being Provisioned`,
-  free_trial_cancelled: (params: FreeTrialGenericModel) =>
-    `Your ${PlatformIdentifierToString[params.platformIdentifier]} Trial Has Been Cancelled`,
-  free_trial_expired: (params: FreeTrialGenericModel) =>
-    `Your ${PlatformIdentifierToString[params.platformIdentifier]} Free Trial Has Expired`,
+  free_trial_bundle_requested: () =>
+    `Your ${BUNDLE_PLATFORM_NAME} Trial Request`,
+  free_trial_bundle_provisioning: () =>
+    `Your ${BUNDLE_PLATFORM_NAME} Trial is Being Provisioned`,
+  free_trial_bundle_active: () => `Your ${BUNDLE_PLATFORM_NAME} Trial is ready`,
+  free_trial_bundle_cancelled: () =>
+    `Your ${BUNDLE_PLATFORM_NAME} Trial Has Been Cancelled`,
+  free_trial_bundle_expired: () =>
+    `Your ${BUNDLE_PLATFORM_NAME} Trial Has Expired`,
   free_trial_user_added: (params: FreeTrialUserAddedModel) =>
     `Welcome to your ${
       PlatformIdentifierToString[params.platformIdentifier]
     } free trial!`,
+  free_trial_bundle_user_added: () =>
+    `You’ve Been Added to an ${BUNDLE_PLATFORM_NAME} Trial`,
   organization_pending_user_digest: () =>
     'XTM Hub - Users Requesting to Join Your Organization',
-  admin_saas_instance_requested: (params: AdminSaasInstanceRequestedModel) => {
-    return `New ${params.platformIdentifier} SaaS ${params.deploymentType} Has Been Launched on XTM Hub by ${params.organizationName}`;
+  admin_saas_bundle_requested: (params: AdminSaasBundleRequestedModel) => {
+    return `New ${BUNDLE_PLATFORM_NAME} Trial Has Been Launched on XTM Hub by ${params.organizationName}`;
   },
   public_roadmap_monthly_reminder: () =>
     'Monthly check-in — Update your XTM Hub Roadmap Epics',

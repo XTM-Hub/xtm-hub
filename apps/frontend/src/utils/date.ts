@@ -1,4 +1,5 @@
 import { DateTimeFormatOptions, useFormatter } from 'next-intl';
+import { useCallback, useMemo } from 'react';
 
 // Define FormatDateStyle as a type instead of an enum
 export type FormatDateStyle =
@@ -42,21 +43,52 @@ export const daysUntil = (targetDate: Date) => {
   return Math.ceil(diffInMs / (1000 * 60 * 60 * 24));
 };
 
-export const formatDate = (
-  date?: Date | string,
-  dateStyle: FormatDateStyle = 'DATE_NUMERIC'
+const MS_PER_DAY = 1000 * 60 * 60 * 24;
+
+export const computePeriodProgress = (
+  startDate: Date | string,
+  endDate: Date | string,
+  now: Date = new Date()
 ) => {
-  if (!date) {
-    return null;
-  }
+  const start = new Date(startDate).getTime();
+  const end = new Date(endDate).getTime();
 
-  const dateObject = new Date(date);
+  const totalDays = Math.max(Math.ceil((end - start) / MS_PER_DAY), 0);
+  const daysLeft = Math.min(
+    Math.max(Math.ceil((end - now.getTime()) / MS_PER_DAY), 0),
+    totalDays
+  );
+  const elapsedPercent =
+    totalDays === 0
+      ? 100
+      : Math.round(((totalDays - daysLeft) / totalDays) * 100);
+
+  return { totalDays, daysLeft, elapsedPercent };
+};
+
+export const useDateFormatter = () => {
   const format = useFormatter();
+  const timeZone = useMemo(
+    () => Intl.DateTimeFormat().resolvedOptions().timeZone,
+    []
+  );
 
-  return format.dateTime(dateObject, {
-    ...DATE_STYLE_FORMAT[dateStyle],
-    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-  });
+  return useCallback(
+    (
+      date?: Date | string | null,
+      dateStyle: FormatDateStyle = 'DATE_NUMERIC'
+    ) => {
+      if (!date) {
+        return null;
+      }
+
+      return format.dateTime(new Date(date), {
+        ...DATE_STYLE_FORMAT[dateStyle],
+        timeZone,
+      });
+    },
+    [format, timeZone]
+  );
 };
 
 export const isWithinLastMonths = (

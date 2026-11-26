@@ -19,7 +19,7 @@ import {
   useSearchParams,
 } from 'next/navigation';
 
-vi.mock('@/components/error-frontend-log.graphql', () => ({
+vi.mock('@/lib/frontend-error-log', () => ({
   logFrontendError: vi.fn(),
 }));
 
@@ -31,9 +31,11 @@ vi.mock('@/hooks/use-is-feature-enabled', () => ({
   useIsFeatureEnabled: vi.fn(),
 }));
 
-vi.mock('next/image', async () => {
+vi.mock('next/image', async (importOriginal) => {
   const React = await import('react');
   return {
+    // getImageProps stays the real one: it only builds the props of an img.
+    ...(await importOriginal<typeof import('next/image')>()),
     __esModule: true,
     default: ({ src, alt }: { src: string; alt: string }) =>
       React.createElement('img', { src, alt }),
@@ -46,12 +48,55 @@ vi.mock('next/navigation', async (importOriginal) => ({
   useRouter: vi.fn(),
   useParams: vi.fn(),
   useSearchParams: vi.fn(),
+  useSelectedLayoutSegment: vi.fn(),
+  redirect: vi.fn(),
+  notFound: vi.fn(),
 }));
 
-vi.mock('next-intl', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('next-intl')>()),
-  useTranslations: () => (key: string) => key,
-  useLocale: () => 'en',
+// cookies() and headers() throw outside a Next.js request scope: an empty jar
+// keeps edit mode off, and tests set the request headers they need through
+// vi.mocked(headers).
+vi.mock('next/headers', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('next/headers')>()),
+  cookies: vi.fn(async () => ({ get: () => undefined })),
+  headers: vi.fn(async () => new Headers()),
+}));
+
+// vi.mock factories are hoisted above the imports, hence the dynamic import.
+vi.mock('next-intl', async (importOriginal) => {
+  const { mockTranslations } = await import('@/utils/test/mock-translations');
+  return {
+    ...(await importOriginal<typeof import('next-intl')>()),
+    useTranslations: vi.fn(() => mockTranslations()),
+    useLocale: vi.fn(() => 'en'),
+  };
+});
+
+// jsdom is a browser, so the real getQueryClient would share one client, and
+// its cache, across every test: hand each call a fresh one that never retries,
+// like the client testRender provides.
+vi.mock('@/lib/query-client', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/query-client')>();
+  return {
+    ...actual,
+    getQueryClient: () => {
+      const client = actual.createQueryClient();
+      client.setDefaultOptions({
+        queries: { ...client.getDefaultOptions().queries, retry: false },
+      });
+      return client;
+    },
+  };
+});
+
+// jsdom is a browser, so the real getSseClient would open a connection to the
+// test origin: hand every subscription a client that never emits.
+vi.mock('@/lib/sse-client', () => ({
+  getSseClient: () => ({
+    subscribe: () => () => {},
+    iterate: () => ({}),
+    dispose: () => {},
+  }),
 }));
 
 const relayRegistryMocks = vi.hoisted(() => ({
@@ -67,7 +112,10 @@ type RegisterClientEnvironment = Parameters<
 >[0];
 
 const setDefaultGlobalMocks = () => {
-  vi.mocked(useRegisteredPlatforms).mockReturnValue({ platforms: [] });
+  vi.mocked(useRegisteredPlatforms).mockReturnValue({
+    platforms: [],
+    isPending: false,
+  });
   vi.mocked(useIsFeatureEnabled).mockReturnValue(false);
   vi.mocked(usePathname).mockReturnValue('/mock');
   vi.mocked(useRouter).mockReturnValue({
@@ -111,6 +159,22 @@ Object.defineProperty(globalThis, 'ResizeObserver', {
 });
 
 Object.defineProperty(window.HTMLElement.prototype, 'scrollIntoView', {
+  writable: true,
+  value: vi.fn(),
+});
+
+// jsdom does not implement the Pointer Capture API, which Radix UI's Select
+// relies on when handling item selection. Without these, clicking a
+// SelectItem throws "target.hasPointerCapture is not a function".
+Object.defineProperty(window.HTMLElement.prototype, 'hasPointerCapture', {
+  writable: true,
+  value: vi.fn(() => false),
+});
+Object.defineProperty(window.HTMLElement.prototype, 'setPointerCapture', {
+  writable: true,
+  value: vi.fn(),
+});
+Object.defineProperty(window.HTMLElement.prototype, 'releasePointerCapture', {
   writable: true,
   value: vi.fn(),
 });

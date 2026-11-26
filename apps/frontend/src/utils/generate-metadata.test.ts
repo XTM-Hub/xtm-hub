@@ -1,9 +1,22 @@
-import { describe, expect, it } from 'vitest';
+import { fetchServerSettings } from '@/utils/settings.service';
+import { mockSettings } from '@graphql/mocks';
+import { getTranslations } from 'next-intl/server';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   buildAlternates,
   buildSeoPageMetadata,
+  getBaseUrl,
+  getDefaultMetadata,
   stringifyJsonLd,
 } from './generate-metadata';
+
+vi.mock('@/utils/settings.service', () => ({
+  fetchServerSettings: vi.fn(),
+}));
+
+vi.mock('next-intl/server', () => ({ getTranslations: vi.fn() }));
+
+const BASE_URL_FRONT = 'https://hub.filigran.io';
 
 describe('stringifyJsonLd', () => {
   it.each`
@@ -23,6 +36,7 @@ describe('buildAlternates', () => {
       canonical: '/ja/cybersecurity-solutions/foo',
       languages: {
         en: '/en/cybersecurity-solutions/foo',
+        fr: '/fr/cybersecurity-solutions/foo',
         ja: '/ja/cybersecurity-solutions/foo',
         'x-default': '/en/cybersecurity-solutions/foo',
       },
@@ -87,7 +101,69 @@ describe('buildSeoPageMetadata', () => {
 
     expect(metadata.openGraph).toMatchObject({
       locale: 'ja_JP',
-      alternateLocale: ['en_US'],
+      alternateLocale: ['en_US', 'fr_FR'],
+    });
+  });
+});
+
+describe('getBaseUrl', () => {
+  it('should return the front URL of the platform settings', async () => {
+    // Given
+    vi.mocked(fetchServerSettings).mockResolvedValue(
+      mockSettings({ base_url_front: BASE_URL_FRONT })
+    );
+
+    // When
+    const baseUrl = await getBaseUrl();
+
+    // Then
+    expect(baseUrl).toBe(BASE_URL_FRONT);
+  });
+});
+
+describe('getDefaultMetadata', () => {
+  beforeEach(() => {
+    vi.mocked(fetchServerSettings).mockResolvedValue(
+      mockSettings({ base_url_front: BASE_URL_FRONT })
+    );
+    vi.mocked(getTranslations).mockResolvedValue(
+      ((key: string) => key) as unknown as Awaited<
+        ReturnType<typeof getTranslations>
+      >
+    );
+  });
+
+  it('should root the metadata at the front URL of the platform settings', async () => {
+    // When
+    const metadata = await getDefaultMetadata('fr', '/cybersecurity-solutions');
+
+    // Then
+    expect(metadata).toMatchObject({
+      metadataBase: new URL(BASE_URL_FRONT),
+      openGraph: {
+        url: `${BASE_URL_FRONT}/fr/cybersecurity-solutions`,
+        images: [
+          expect.objectContaining({
+            url: `${BASE_URL_FRONT}/opengraph-image.png`,
+          }),
+        ],
+      },
+      twitter: { images: [`${BASE_URL_FRONT}/opengraph-image.png`] },
+    });
+  });
+
+  it('should translate the metadata in the requested locale', async () => {
+    // When
+    const metadata = await getDefaultMetadata('ja');
+
+    // Then
+    expect(getTranslations).toHaveBeenCalledWith({
+      locale: 'ja',
+      namespace: 'Metadata',
+    });
+    expect(metadata).toMatchObject({
+      title: 'Title',
+      description: 'Description',
     });
   });
 });

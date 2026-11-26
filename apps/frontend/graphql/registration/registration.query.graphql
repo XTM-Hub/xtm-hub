@@ -4,6 +4,9 @@ query RegisteredPlatforms($input: RegisteredPlatformsInput!) {
     identifier
     title
     contract
+    deployment_request {
+      parent_id
+    }
     subscription {
       start_date
       end_date
@@ -12,13 +15,84 @@ query RegisteredPlatforms($input: RegisteredPlatformsInput!) {
   }
 }
 
-query ConnectProductOrganizationAdmins(
-  $input: UsersWithCapabilitiesInOrganizationInput!
-) {
-  usersWithCapabilitiesInOrganization(input: $input) {
+query PlatformAssociatedOrganization($platformId: String!, $tenantId: String) {
+  platformAssociatedOrganization(platformId: $platformId, tenantId: $tenantId) {
     id
-    email
-    first_name
-    last_name
+  }
+}
+
+query RegisteredPlatformRedirectTarget(
+  $input: RegisteredPlatformByPlatformIdInput!
+) {
+  registeredPlatformByPlatformId(input: $input) {
+    service_instance_id
+    identifier
+    deployment_request {
+      parent_id
+    }
+  }
+}
+
+fragment RegisteredPlatformDetails on RegisteredPlatform {
+  id
+  service_instance_id
+  platform_id
+  last_connectivity_check
+  commercial_model
+  tenant_id
+  title
+  contract
+  url
+  version
+  identifier
+  subscription {
+    start_date
+    end_date
+    service_instance {
+      id
+    }
+    organization {
+      id
+    }
+  }
+  organization {
+    name
+  }
+  deployment_request {
+    id
+    hub_status
+    region
+    counts_in_orga_quota
+    platform_identifier
+    requester_email
+  }
+  myGroups {
+    name
+  }
+}
+
+query RegisteredPlatformByServiceInstance($input: RegisteredPlatformInput!) {
+  registeredPlatform(input: $input) {
+    ...RegisteredPlatformDetails
+  }
+}
+
+query IsPlatformRegistered($input: IsPlatformRegisteredInput!) {
+  isPlatformRegistered(input: $input) {
+    status
+    platformTitle
+    organization {
+      id
+    }
+  }
+}
+
+query CanUnregisterPlatform($input: CanUnregisterPlatformInput!) {
+  canUnregisterPlatform(input: $input) {
+    isPlatformRegistered
+    isAllowed
+    isInOrganization
+    organizationId
+    organizationName
   }
 }

@@ -1,17 +1,11 @@
-import { FileUpload } from 'graphql-upload/processRequest.mjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TestHelper } from '../../../../tests/helper/test.helper';
-import { TEST_ORGANIZATIONS } from '../../../../tests/tests.const';
 import {
   DocumentMetadataKeyCode,
   IntegrationType,
 } from '../../../__generated__/resolvers-types';
 import { DocumentId } from '../../../model/kanel/public/Document';
-import {
-  INTEGRATION_SERVICE_INSTANCE_ID,
-  OPENCTI_INTEGRATION_DOCUMENT_TYPE,
-} from '../../shareable-resource/opencti/integration/integration.model';
-import { DocumentApp } from '../document.app';
+import { OPENCTI_INTEGRATION_DOCUMENT_TYPE } from '../../shareable-resource/opencti/integration/integration.model';
 import { DocumentUploadsHelper } from '../document.uploads.helper';
 import { DocumentMetadataDomain } from './document.metadata.domain';
 
@@ -20,18 +14,6 @@ describe('documentMetadataDomain', () => {
     minioName: 'minioFile',
     mimeType: 'mimeType',
     fileName: 'filename',
-  };
-
-  const mockFileUpload: FileUpload = {
-    filename: 'test-image.png',
-    mimetype: 'image/png',
-    encoding: '7bit',
-    createReadStream: vi.fn(),
-  };
-
-  const mockUpload = {
-    file: mockFileUpload,
-    promise: Promise.resolve(mockFileUpload),
   };
 
   beforeEach(async () => {
@@ -45,15 +27,9 @@ describe('documentMetadataDomain', () => {
 
   describe('loadMetadataValueByKey', () => {
     it('should return the value when the metadata key exists', async () => {
-      const document = await DocumentApp.createDocument({
-        input: {
-          uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
-          name: 'myCsvFeed',
-          description: 'description',
-          short_description: 'short_description',
-          slug: 'my-csv-feed',
-          active: true,
-        },
+      const document = await TestHelper.document.createWholeDocument({
+        name: 'myCsvFeed',
+        slug: 'my-csv-feed',
         metadata: [
           {
             key: DocumentMetadataKeyCode.IntegrationType,
@@ -64,12 +40,10 @@ describe('documentMetadataDomain', () => {
             value: 'https://example.com/feed',
           },
         ],
-        serviceInstanceId: INTEGRATION_SERVICE_INSTANCE_ID,
-        sourceDocument: mockUpload,
       });
 
       const value = await DocumentMetadataDomain.loadMetadataValueByKey(
-        document!.id,
+        document.id,
         DocumentMetadataKeyCode.FeedUrl
       );
 
@@ -77,15 +51,9 @@ describe('documentMetadataDomain', () => {
     });
 
     it('should return null when the key does not exist for the document', async () => {
-      const document = await DocumentApp.createDocument({
-        input: {
-          uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
-          name: 'myCsvFeed',
-          description: 'description',
-          short_description: 'short_description',
-          slug: 'my-csv-feed',
-          active: true,
-        },
+      const document = await TestHelper.document.createWholeDocument({
+        name: 'myCsvFeed',
+        slug: 'my-csv-feed',
         metadata: [
           {
             key: DocumentMetadataKeyCode.IntegrationType,
@@ -96,12 +64,10 @@ describe('documentMetadataDomain', () => {
             value: 'https://example.com/feed',
           },
         ],
-        serviceInstanceId: INTEGRATION_SERVICE_INSTANCE_ID,
-        sourceDocument: mockUpload,
       });
 
       const value = await DocumentMetadataDomain.loadMetadataValueByKey(
-        document!.id,
+        document.id,
         'non_existent_key'
       );
 
@@ -118,15 +84,9 @@ describe('documentMetadataDomain', () => {
     });
 
     it('should return the correct value among multiple metadata keys', async () => {
-      const document = await DocumentApp.createDocument({
-        input: {
-          uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
-          name: 'myTaxiiFeed',
-          description: 'description',
-          short_description: 'short_description',
-          slug: 'my-taxii-feed',
-          active: true,
-        },
+      const document = await TestHelper.document.createWholeDocument({
+        name: 'myTaxiiFeed',
+        slug: 'my-taxii-feed',
         metadata: [
           {
             key: DocumentMetadataKeyCode.IntegrationType,
@@ -136,22 +96,16 @@ describe('documentMetadataDomain', () => {
             key: DocumentMetadataKeyCode.FeedUrl,
             value: 'https://example.com/taxii',
           },
-          {
-            key: DocumentMetadataKeyCode.IntegrationSubtype,
-            value: 'some_subtype',
-          },
         ],
-        serviceInstanceId: INTEGRATION_SERVICE_INSTANCE_ID,
-        sourceDocument: mockUpload,
       });
 
       const feedUrl = await DocumentMetadataDomain.loadMetadataValueByKey(
-        document!.id,
+        document.id,
         DocumentMetadataKeyCode.FeedUrl
       );
       const integrationType =
         await DocumentMetadataDomain.loadMetadataValueByKey(
-          document!.id,
+          document.id,
           DocumentMetadataKeyCode.IntegrationType
         );
 
@@ -160,15 +114,9 @@ describe('documentMetadataDomain', () => {
     });
 
     it('should not return the metadata of a different document with the same key', async () => {
-      const firstDocument = await DocumentApp.createDocument({
-        input: {
-          uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
-          name: 'firstCsvFeed',
-          description: 'description',
-          short_description: 'short_description',
-          slug: 'first-csv-feed',
-          active: true,
-        },
+      const firstDocument = await TestHelper.document.createWholeDocument({
+        name: 'firstCsvFeed',
+        slug: 'first-csv-feed',
         metadata: [
           {
             key: DocumentMetadataKeyCode.IntegrationType,
@@ -179,19 +127,11 @@ describe('documentMetadataDomain', () => {
             value: 'https://first.example.com/feed',
           },
         ],
-        serviceInstanceId: INTEGRATION_SERVICE_INSTANCE_ID,
-        sourceDocument: mockUpload,
       });
 
-      const secondDocument = await DocumentApp.createDocument({
-        input: {
-          uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
-          name: 'secondCsvFeed',
-          description: 'description',
-          short_description: 'short_description',
-          slug: 'second-csv-feed',
-          active: true,
-        },
+      const secondDocument = await TestHelper.document.createWholeDocument({
+        name: 'secondCsvFeed',
+        slug: 'second-csv-feed',
         metadata: [
           {
             key: DocumentMetadataKeyCode.IntegrationType,
@@ -202,16 +142,14 @@ describe('documentMetadataDomain', () => {
             value: 'https://second.example.com/feed',
           },
         ],
-        serviceInstanceId: INTEGRATION_SERVICE_INSTANCE_ID,
-        sourceDocument: mockUpload,
       });
 
       const firstValue = await DocumentMetadataDomain.loadMetadataValueByKey(
-        firstDocument!.id,
+        firstDocument.id,
         DocumentMetadataKeyCode.FeedUrl
       );
       const secondValue = await DocumentMetadataDomain.loadMetadataValueByKey(
-        secondDocument!.id,
+        secondDocument.id,
         DocumentMetadataKeyCode.FeedUrl
       );
 

@@ -2,11 +2,12 @@ import { getEntityTypes } from '@/components/service/document/ui/ShareableResour
 import { findDocumentLogo } from '@/utils/documents';
 import { EntityTypeOrFiligranLogo } from '@/utils/shareable-resources/entity-type';
 import { PublicDocumentData } from '@/utils/shareable-resources/shareable-resources.types';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
+import { getDocumentEntityTypes } from '@/utils/shareable-resources/utils/shareable-resources.client.utils';
+import { DocumentItemFragment } from '@graphql/generated';
 import Image from 'next/image';
 
 interface ShareableResourceCardImageProps {
-  document: documentItem_fragment$data | PublicDocumentData;
+  document: DocumentItemFragment | PublicDocumentData;
   serviceInstanceId: string;
 }
 export const ShareableResourceCardImage = ({
@@ -16,24 +17,24 @@ export const ShareableResourceCardImage = ({
   const logo = findDocumentLogo(document);
 
   return (
-    <>
-      <div className=" items-center self-stretch flex">
-        {logo ? (
-          <Image
-            src={`/document/images/${serviceInstanceId}/${logo.id}`}
-            alt={`${document.name} logo`}
-            width={96}
-            height={96}
-            style={{ minHeight: '96px' }}
-            loading="lazy"
-            className="rounded object-contain"
-          />
-        ) : (
-          <div className="w-24 p-m flex items-center justify-center">
-            <EntityTypeOrFiligranLogo entityTypes={getEntityTypes(document)} />
-          </div>
-        )}
-      </div>
-    </>
+    <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-sm bg-elevation-highlight">
+      {logo ? (
+        <Image
+          src={`/document/images/${serviceInstanceId}/${logo.id}`}
+          alt={`${document.name} logo`}
+          width={48}
+          height={48}
+          loading="lazy"
+          className="size-full object-contain"
+        />
+      ) : (
+        <EntityTypeOrFiligranLogo
+          className="size-8"
+          entityTypes={getEntityTypes({
+            entity_types: getDocumentEntityTypes(document),
+          })}
+        />
+      )}
+    </div>
   );
 };

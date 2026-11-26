@@ -1,50 +1,37 @@
-import { ServiceListFilterKey } from '@/components/service/components/header/ServiceListHeader';
+import { readTrackedEvents, startAnalytics } from '@/utils/test/analytics';
 import testRender from '@/utils/test/test-render';
-import { screen, within } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { IntegrationDeployableFilter } from './IntegrationDeployableFilter';
 
-const removeFilterMock = vi.fn();
 const setDeployableMock = vi.fn();
-const removeDeployableMock = vi.fn();
 
-vi.mock('@/hooks/use-service-list-local-storage', () => ({
-  ServiceListLocalStorageKey: {
-    OpenCTIIntegrationFeeds: 'feeds',
-  },
-  useServiceListLocalStorage: () => ({
+vi.mock('@/hooks/use-service-list-storage', () => ({
+  useServiceListStorage: () => ({
     deployable: {},
     setDeployable: setDeployableMock,
-    removeDeployable: removeDeployableMock,
-  }),
-}));
-
-vi.mock('@/hooks/use-service-list-filters', () => ({
-  useServiceListFilters: () => ({
-    removeFilter: removeFilterMock,
+    removeDeployable: vi.fn(),
   }),
 }));
 
 describe('IntegrationDeployableFilter', () => {
-  it('renders placeholder and options after opening the popover', async () => {
-    const { user } = testRender(<IntegrationDeployableFilter />);
+  it('renders deployable subfilters as visible checkboxes', () => {
+    testRender(<IntegrationDeployableFilter />);
 
-    const placeholder = screen.getByText(
-      'Service.OpenctiIntegrations.Filter.ManagerSupported.Placeholder'
-    );
-    expect(placeholder).toBeInTheDocument();
-
-    await user.click(placeholder);
-    const listbox = screen.getByRole('listbox');
     expect(
-      within(listbox).getByText(
-        'Service.OpenctiIntegrations.Filter.ManagerSupported.AutomaticDeploy'
+      screen.getByText(
+        'Service.OpenctiIntegrations.Filter.ManagerSupported.Label'
       )
     ).toBeInTheDocument();
     expect(
-      within(listbox).getByText(
-        'Service.OpenctiIntegrations.Filter.ManagerSupported.ManualDeploy'
-      )
+      screen.getByRole('checkbox', {
+        name: 'Service.OpenctiIntegrations.Filter.ManagerSupported.AutomaticDeploy',
+      })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('checkbox', {
+        name: 'Service.OpenctiIntegrations.Filter.ManagerSupported.ManualDeploy',
+      })
     ).toBeInTheDocument();
   });
 
@@ -52,27 +39,45 @@ describe('IntegrationDeployableFilter', () => {
     const { user } = testRender(<IntegrationDeployableFilter />);
 
     await user.click(
-      screen.getByText(
-        'Service.OpenctiIntegrations.Filter.ManagerSupported.Placeholder'
-      )
-    );
-    await user.click(
-      within(screen.getByRole('listbox')).getByText(
-        'Service.OpenctiIntegrations.Filter.ManagerSupported.AutomaticDeploy'
-      )
+      screen.getByRole('checkbox', {
+        name: 'Service.OpenctiIntegrations.Filter.ManagerSupported.AutomaticDeploy',
+      })
     );
 
     expect(setDeployableMock).toHaveBeenCalledWith({ true: [] });
   });
 
-  it('calls remove callbacks when the remove button is clicked', async () => {
+  it('does not render a clickable filter title button', () => {
+    testRender(<IntegrationDeployableFilter />);
+
+    expect(
+      screen.queryByRole('button', {
+        name: 'Service.OpenctiIntegrations.Filter.ManagerSupported.Placeholder',
+      })
+    ).not.toBeInTheDocument();
+  });
+
+  it('should send the English label of the deployment type when it is checked', async () => {
+    // Given
+    startAnalytics();
     const { user } = testRender(<IntegrationDeployableFilter />);
 
-    await user.click(screen.getByRole('button', { name: 'Remove filter' }));
-
-    expect(removeDeployableMock).toHaveBeenCalledTimes(1);
-    expect(removeFilterMock).toHaveBeenCalledWith(
-      ServiceListFilterKey.ManagerSupported
+    // When
+    await user.click(
+      screen.getByRole('checkbox', {
+        name: 'Service.OpenctiIntegrations.Filter.ManagerSupported.AutomaticDeploy',
+      })
     );
+
+    // Then
+    expect(readTrackedEvents('filter_apply')).toEqual([
+      {
+        filter_name: 'Deployment type',
+        filter_value: 'Automatic deploy',
+        filter_action: 'Add',
+        library: 'Integrations',
+        product: 'OpenCTI',
+      },
+    ]);
   });
 });

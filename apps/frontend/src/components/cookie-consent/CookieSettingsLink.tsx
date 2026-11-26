@@ -1,23 +1,24 @@
 'use client';
 
 import { useConsent } from '@/components/cookie-consent/CookieConsentProvider';
+import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { cn } from '@/lib/utils';
-import { Button } from '@filigran/ui';
-import { useTranslations } from 'next-intl';
 
+// A native button rather than the design-system Button: it opens a dialog but
+// sits among plain footer links, so it inherits their typography instead of
+// the Button's own size, weight and hover background.
 export const CookieSettingsLink = ({ className }: { className?: string }) => {
-  const t = useTranslations('CookieConsent');
+  const t = useTranslate('CookieConsent');
   const { openPreferences } = useConsent();
 
   return (
-    <Button
-      variant="link"
+    <button
+      {...analyticsId('footer_cookie_settings_open')}
+      type="button"
       onClick={openPreferences}
-      className={cn(
-        'h-auto p-0 no-underline hover:no-underline cursor-pointer text-content-body-compact-link',
-        className
-      )}>
+      className={cn('cursor-pointer', className)}>
       {t('CookieSettingsLink')}
-    </Button>
+    </button>
   );
 };

@@ -12,6 +12,7 @@ import Organization, {
 } from '../../../model/kanel/public/Organization';
 import { ServiceInstanceId } from '../../../model/kanel/public/ServiceInstance';
 import User, { UserId } from '../../../model/kanel/public/User';
+import { restrictOrganizationToProfessionalSpace } from '../../../security/restriction/organization';
 import {
   getErrorMessage,
   getErrorStringProperty,
@@ -67,29 +68,6 @@ export const OrganizationDomain = {
       .first();
   },
 
-  loadOrganizationsSubscribedToServiceInstance: async (
-    serviceInstanceId: ServiceInstanceId
-  ): Promise<Organization[]> => {
-    return db<Organization>('Organization')
-      .leftJoin(
-        'Subscription',
-        'Subscription.organization_id',
-        '=',
-        'Organization.id'
-      )
-      .leftJoin(
-        'ServiceInstance',
-        'Subscription.service_instance_id',
-        '=',
-        'ServiceInstance.id'
-      )
-      .where({
-        'ServiceInstance.id': serviceInstanceId,
-      })
-      .distinct('Organization.id')
-      .select('Organization.*');
-  },
-
   loadOrganizationsByUser: async (userId: UserId): Promise<Organization[]> => {
     return db<Organization>('Organization')
       .leftJoin(
@@ -138,6 +116,26 @@ export const OrganizationDomain = {
       .where(conditions)
       .select('*')
       .first();
+  },
+
+  loadFirstProfessionalOrganizationBy: async (
+    conditions: OrganizationMutator
+  ): Promise<Organization | undefined> => {
+    return db<Organization>('Organization')
+      .where(conditions)
+      .tap(restrictOrganizationToProfessionalSpace)
+      .select('Organization.*')
+      .first();
+  },
+
+  loadOrganizationsByIds: async (
+    ids: OrganizationId[]
+  ): Promise<Organization[]> => {
+    if (ids.length === 0) {
+      return [];
+    }
+
+    return db<Organization>('Organization').whereIn('Organization.id', ids);
   },
 
   loadOrganizations: (opts: QueryOrganizationsArgs) => {

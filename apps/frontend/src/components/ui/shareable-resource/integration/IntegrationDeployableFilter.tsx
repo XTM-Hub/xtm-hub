@@ -1,23 +1,27 @@
+import { ServiceListFacetCounts } from '@/components/service/components/header/filter/service-list-facet-counts';
 import { ServiceListFilterKey } from '@/components/service/components/header/ServiceListHeader';
 import { LogicalMultiSelectFormField } from '@/components/ui/shareable-resource/logical-multi-select/LogicalMultiSelectFormField';
-import { useServiceListFilters } from '@/hooks/use-service-list-filters';
-import {
-  ServiceListLocalStorageKey,
-  useServiceListLocalStorage,
-} from '@/hooks/use-service-list-local-storage';
-import { useTranslations } from 'next-intl';
+import { useServiceListStorage } from '@/hooks/use-service-list-storage';
+import { useTranslate } from '@/hooks/use-translate';
+import { ServiceListStorageKey } from '@/utils/filters-storage.utils';
+import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 
-export const IntegrationDeployableFilter = () => {
-  const { deployable, setDeployable, removeDeployable } =
-    useServiceListLocalStorage(
-      ServiceListLocalStorageKey.OpenCTIIntegrationFeeds
-    );
-  const t = useTranslations();
-  const { removeFilter } = useServiceListFilters();
-  const removeDeployableFilter = () => {
-    removeDeployable();
-    removeFilter(ServiceListFilterKey.ManagerSupported);
-  };
+const ANALYTICS_DEPLOYMENT_TYPE_LABELS: Record<'true' | 'false', string> = {
+  true: 'Automatic deploy',
+  false: 'Manual deploy',
+};
+
+interface IntegrationDeployableFilterProps {
+  facetCounts?: ServiceListFacetCounts['managerSupported'];
+}
+
+export const IntegrationDeployableFilter = ({
+  facetCounts,
+}: IntegrationDeployableFilterProps) => {
+  const { deployable, setDeployable } = useServiceListStorage(
+    ServiceListStorageKey.OpenCTIIntegrationFeeds
+  );
+  const t = useTranslate();
 
   return (
     <LogicalMultiSelectFormField
@@ -35,16 +39,18 @@ export const IntegrationDeployableFilter = () => {
           value: 'false',
         },
       ]}
-      initialValue={deployable}
-      placeholder={t(
-        'Service.OpenctiIntegrations.Filter.ManagerSupported.Placeholder'
-      )}
+      value={deployable}
       noResultString={t('Utils.NotFound')}
       onValueChange={setDeployable}
-      onRemove={removeDeployableFilter}
+      analyticsFilter={{
+        filterKey: ServiceListFilterKey.ManagerSupported,
+        resourceType: ShareableResourceType.OPENCTI_INTEGRATION,
+        valueLabels: ANALYTICS_DEPLOYMENT_TYPE_LABELS,
+      }}
       optionLabel={t(
         'Service.OpenctiIntegrations.Filter.ManagerSupported.Label'
       )}
+      facetCounts={facetCounts}
     />
   );
 };

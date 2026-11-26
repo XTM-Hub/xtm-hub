@@ -1,0 +1,74 @@
+name: 'Launch AWX job template'
+description: >
+  Launches an AWX job template through the AWX REST API, with curl and jq from the runner image: no awxkit, no Python.
+  The template and the inventory are resolved by name, the same way `awx job_templates launch` did. Does not wait for
+  the job to finish. Requests are retried on transient errors only (connection refused, timeouts, 408, 429, 5xx).
+inputs:
+  template:
+    description: 'Name of the job template to launch.'
+    required: true
+  inventory:
+    description: 'Name of the inventory to launch it on. The template must prompt for the inventory on launch.'
+    required: true
+  extra-vars:
+    description: 'Extra variables, as a JSON object.'
+    required: false
+    default: '{}'
+  token:
+    description: 'AWX OAuth2 token.'
+    required: true
+  host:
+    description: 'AWX base URL.'
+    required: false
+    default: 'https://awx.filigran.io'
+outputs:
+  job-id:
+    description: 'ID of the launched job.'
+    value: ${{ steps.launch.outputs.job-id }}
+runs:
+  using: 'composite'
+  steps:
+    - name: Launch job template
+      id: launch
+      shell: bash
+      env:
+        AWX_HOST: ${{ inputs.host }}
+        AWX_TOKEN: ${{ inputs.token }}
+        TEMPLATE: ${{ inputs.template }}
+        INVENTORY: ${{ inputs.inventory }}
+        EXTRA_VARS: ${{ inputs.extra-vars }}
+      run: |
+        set -euo pipefail
+
+        api() {
+          curl --silent --show-error --fail-with-body --retry 5 --retry-connrefused \
+            --header "Authorization: Bearer ${AWX_TOKEN}" \
+            --header 'Content-Type: application/json' \
+            "$@"
+        }
+
+        # Prints the ID of the only resource of that name, fails on none or several.
+        resolve_id() {
+          local resource="$1" name="$2"
+          api --get "${AWX_HOST}/api/v2/${resource}/" --data-urlencode "name=${name}" \
+            | jq --exit-status --raw-output --arg name "${name}" --arg resource "${resource}" '
+                if .count == 1 then .results[0].id
+                else error("expected exactly one \($resource) named \"\($name)\", found \(.count)") end'
+        }
+
+        template_id=$(resolve_id job_templates "${TEMPLATE}")
+        inventory_id=$(resolve_id inventories "${INVENTORY}")
+        body=$(jq --null-input --argjson inventory "${inventory_id}" --argjson extra_vars "${EXTRA_VARS}" \
+          '{inventory: $inventory, extra_vars: $extra_vars}')
+
+        response=$(api --request POST "${AWX_HOST}/api/v2/job_templates/${template_id}/launch/" --data "${body}")
+
+        # AWX drops the fields a template does not prompt for instead of rejecting the launch.
+        ignored=$(jq --compact-output '.ignored_fields // {} | select(length > 0)' <<<"${response}")
+        if [[ -n "${ignored}" ]]; then
+          echo "::warning title=AWX ignored launch fields::${TEMPLATE} ignored ${ignored}"
+        fi
+
+        job_id=$(jq --exit-status --raw-output '.job' <<<"${response}")
+        echo "job-id=${job_id}" >> "${GITHUB_OUTPUT}"
+        echo "Launched '${TEMPLATE}' on ${INVENTORY}: ${AWX_HOST}/#/jobs/playbook/${job_id}/output"

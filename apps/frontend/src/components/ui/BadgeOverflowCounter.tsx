@@ -2,18 +2,19 @@
 import { cn } from '@/lib/utils';
 import { formatName } from '@/utils/format/name';
 import {
+  Chip,
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@filigran/ui';
-import { Badge } from '@filigran/ui/servers';
+} from '@filigran/design-system';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface BadgeOverflowCounterProps {
   badges: Readonly<BadgeOverflow[]>;
   className?: string;
-  badgeClassName?: string;
+  formatLabel?: boolean;
+  variant?: 'badge' | 'chip';
 }
 
 export interface BadgeOverflow {
@@ -22,10 +23,20 @@ export interface BadgeOverflow {
   color?: string;
 }
 
+interface OverflowChipOptions {
+  key: string;
+  label: string;
+  color?: string;
+  counter?: boolean;
+  className?: string;
+  'aria-hidden'?: boolean;
+}
+
 const BadgeOverflowCounter = ({
   badges = [],
   className,
-  badgeClassName,
+  formatLabel = true,
+  variant = 'badge',
 }: BadgeOverflowCounterProps) => {
   const [visibleTags, setVisibleTags] = useState<number>(badges?.length ?? 0);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
@@ -94,69 +105,79 @@ const BadgeOverflowCounter = ({
   }
   const hiddenCount = badges.length - visibleTags;
   const firstBadge = badges[0];
+  const getBadgeLabel = (name: string) =>
+    formatLabel ? formatName(name) : name;
+
+  const renderChip = ({
+    key,
+    label,
+    color,
+    counter = false,
+    ...props
+  }: OverflowChipOptions) => (
+    <Chip
+      key={key}
+      label={label}
+      color={color}
+      severity={variant === 'chip' && counter ? 'info' : 'neutral'}
+      {...props}
+    />
+  );
 
   return (
     <div
       ref={containerRef}
       className={cn(
-        'flex gap-s overflow-hidden flex-1 items-center',
+        'flex gap-2 overflow-hidden flex-1 items-center',
         className
       )}>
-      {firstBadge && (
-        <Badge
-          className={cn('min-w-0 max-w-full', badgeClassName)}
-          key={firstBadge.id}
-          color={firstBadge.color}
-          title={firstBadge.name}>
-          <span className="truncate block">{formatName(firstBadge.name)}</span>
-        </Badge>
+      {firstBadge &&
+        renderChip({
+          key: firstBadge.id,
+          label: getBadgeLabel(firstBadge.name),
+          color: firstBadge.color,
+          className: 'min-w-0 max-w-full',
+        })}
+
+      {badges.slice(1, visibleTags).map(({ id, name, color }, index) =>
+        renderChip({
+          key: id,
+          label: getBadgeLabel(name),
+          color,
+          'aria-hidden': index >= visibleTags,
+          className: 'aria-hidden:invisible aria-hidden:absolute',
+        })
       )}
 
-      {badges.slice(1, visibleTags).map(({ id, name, color }, index) => (
-        <Badge
-          className={cn(
-            'whitespace-nowrap aria-hidden:invisible aria-hidden:absolute',
-            badgeClassName
-          )}
-          aria-hidden={index >= visibleTags}
-          key={id}
-          color={color}>
-          {formatName(name)}
-        </Badge>
-      ))}
-
-      {badges.slice(visibleTags).map(({ id, name, color }) => (
-        <Badge
-          className={cn('whitespace-nowrap invisible absolute', badgeClassName)}
-          aria-hidden={true}
-          key={id}
-          color={color}>
-          {formatName(name)}
-        </Badge>
-      ))}
+      {badges.slice(visibleTags).map(({ id, name, color }) =>
+        renderChip({
+          key: id,
+          label: getBadgeLabel(name),
+          color,
+          'aria-hidden': true,
+          className: 'invisible absolute',
+        })
+      )}
 
       {hiddenCount > 0 && (
         <TooltipProvider delayDuration={0}>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Badge
-                className={cn(
-                  'whitespace-nowrap cursor-pointer shrink-0',
-                  badgeClassName
-                )}>
-                +{hiddenCount}
-              </Badge>
+              <span className="inline-flex shrink-0">
+                {renderChip({
+                  key: 'overflow-counter',
+                  label: `+${hiddenCount}`,
+                  counter: true,
+                })}
+              </span>
             </TooltipTrigger>
             <TooltipContent>
-              <div className="flex flex-wrap gap-s max-w-sm">
-                {badges.slice(visibleTags).map(({ id, name, color }) => (
-                  <Badge
-                    key={id}
-                    color={color}
-                    className={badgeClassName}>
-                    {formatName(name)}
-                  </Badge>
-                ))}
+              <div className="flex flex-wrap gap-2">
+                {badges
+                  .slice(visibleTags)
+                  .map(({ id, name, color }) =>
+                    renderChip({ key: id, label: getBadgeLabel(name), color })
+                  )}
               </div>
             </TooltipContent>
           </Tooltip>

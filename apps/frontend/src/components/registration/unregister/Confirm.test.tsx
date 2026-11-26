@@ -6,10 +6,6 @@ import { PlatformIdentifier } from '@graphql/generated';
 import { screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('../../organization/Organization.service', () => ({
-  getOrganization: vi.fn(() => ({ id: 'org-id', name: 'Test Organization' })),
-}));
-
 const renderConfirm = (
   props: { confirm?: () => void; cancel?: () => void } = {}
 ) =>
@@ -20,7 +16,7 @@ const renderConfirm = (
           PlatformMetadataMapping[PlatformIdentifier.Opencti].name,
       }}>
       <UnregisterConfirm
-        organizationId="org-id"
+        organizationName="Test Organization"
         confirm={props.confirm ?? vi.fn()}
         cancel={props.cancel ?? vi.fn()}
       />

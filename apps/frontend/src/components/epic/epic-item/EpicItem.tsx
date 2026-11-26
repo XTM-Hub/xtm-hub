@@ -1,61 +1,51 @@
 'use client';
 import { EpicItemCard } from '@/components/epic/epic-item/EpicItemCard';
 import { EpicItemDetailed } from '@/components/epic/epic-item/EpicItemDetailed';
-import { Dialog, DialogContent } from '@filigran/ui';
-import { epic_fragment$data } from '@generated/epic_fragment.graphql';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useCallback } from 'react';
+import { useDetailParam } from '@/hooks/use-detail-param';
+import { analyticsEpic } from '@/lib/analytics/analytics.context';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from '@filigran/design-system';
+import { EpicFieldsFragment } from '@graphql/generated';
 
 interface EpicItemProps {
-  epic: epic_fragment$data;
-  serviceInstanceId: string;
+  epic: EpicFieldsFragment;
   userCanUpdate: boolean;
   userCanDelete: boolean;
 }
 
 export const EpicItem = ({
   epic,
-  serviceInstanceId,
   userCanUpdate,
   userCanDelete,
 }: EpicItemProps) => {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-
-  const isOpen = searchParams.get('epicId') === epic.id;
-
-  const handleClose = useCallback(
-    (open: boolean) => {
-      if (!open) {
-        const params = new URLSearchParams(searchParams.toString());
-        params.delete('epicId');
-
-        const queryString = params.toString();
-        const targetUrl = queryString ? `${pathname}?${queryString}` : pathname;
-
-        router.replace(targetUrl, { scroll: false });
-      }
-    },
-    [router, pathname, searchParams]
-  );
+  const { isOpen, close } = useDetailParam('epicId', epic.id);
 
   return (
-    <li className="group overflow-hidden flex flex-col relative rounded hover:cursor-pointer bg-elevation-background-layer-1 h-[183px]">
+    <li
+      {...analyticsEpic(epic.title)}
+      className="h-full">
       <EpicItemCard
         epic={epic}
-        serviceInstanceId={serviceInstanceId}
         userCanDelete={userCanDelete}
         userCanUpdate={userCanUpdate}
       />
       <Dialog
         open={isOpen}
-        onOpenChange={handleClose}>
-        <DialogContent className="p-0 w-full max-w-5xl h-[80vh] max-h-[90vh] flex flex-col overflow-hidden">
-          <EpicItemDetailed
-            epic={epic}
-            serviceInstanceId={serviceInstanceId}
-          />
+        onOpenChange={(open) => !open && close()}>
+        <DialogContent
+          {...analyticsEpic(epic.title)}
+          size="lg">
+          <div className="flex flex-col gap-1">
+            <DialogTitle>{epic.title}</DialogTitle>
+            <DialogDescription className="text-default-secondary">
+              {epic.short_description}
+            </DialogDescription>
+          </div>
+          <EpicItemDetailed epic={epic} />
         </DialogContent>
       </Dialog>
     </li>

@@ -1,13 +1,14 @@
 import { AdminUserUpdateForm } from '@/components/admin/user/forms/admin/AdminUserUpdateForm';
 import { UserUpdateForm } from '@/components/admin/user/forms/UserUpdateForm';
+import { UsersListUser } from '@/components/admin/user/user-list.types';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
 import useAdminPath from '@/hooks/use-admin-path';
-import { UserList_fragment$data } from '@generated/UserList_fragment.graphql';
-import { useTranslations } from 'next-intl';
-import { ReactNode, useState } from 'react';
+import { useSheetOpenState } from '@/hooks/use-sheet-open-state';
+import { useTranslate } from '@/hooks/use-translate';
+import { ReactNode } from 'react';
 
 interface EditUserProps {
-  user: UserList_fragment$data;
+  user: UsersListUser;
   trigger?: ReactNode;
   onCloseSheet?: () => void;
   defaultStateOpen?: boolean;
@@ -20,18 +21,11 @@ export const EditUser = ({
   defaultStateOpen = false,
 }: EditUserProps) => {
   const isAdminPath = useAdminPath();
-  const [openSheet, setOpenSheet] = useState(defaultStateOpen ?? false);
-  const t = useTranslations();
-
-  const handleOpenSheet = (open: boolean) => {
-    setOpenSheet((prevState) => {
-      const sheetIsClosing = prevState !== open && !open;
-      if (sheetIsClosing && onCloseSheet) {
-        onCloseSheet();
-      }
-      return open;
-    });
-  };
+  const [openSheet, handleOpenSheet] = useSheetOpenState(
+    defaultStateOpen,
+    onCloseSheet
+  );
+  const t = useTranslate();
 
   return (
     <SheetWithPreventingDialog

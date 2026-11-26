@@ -1,20 +1,12 @@
 'use client';
 
 import useAdminPath from '@/hooks/use-admin-path';
-import { Callout } from '@filigran/ui';
-import { useTranslations } from 'next-intl';
+import { useTranslate } from '@/hooks/use-translate';
+import { Banner } from '@filigran/design-system';
 
 export const AdminBanner = () => {
-  const t = useTranslations();
+  const t = useTranslate();
   const isAdminPath = useAdminPath();
 
-  return (
-    isAdminPath && (
-      <Callout
-        variant="warning"
-        className="rounded-none justify-center uppercase">
-        {t('AdminBanner')}
-      </Callout>
-    )
-  );
+  return isAdminPath && <Banner variant="warning">{t('AdminBanner')}</Banner>;
 };

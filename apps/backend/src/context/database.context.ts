@@ -1,6 +1,7 @@
 import { AsyncLocalStorage } from 'async_hooks';
 import { Knex } from 'knex';
 import { database } from '../../knexfile';
+import { UnknownErrorCode } from '../utils/error/error.code';
 
 interface DatabaseContext {
   transaction?: Knex.Transaction;
@@ -27,6 +28,23 @@ export const databaseContext = {
     });
   },
 
+  withAdvisoryLock: async <T>(
+    namespace: string,
+    key: string,
+    callback: () => Promise<T>
+  ): Promise<T> =>
+    databaseContext.withTransaction(async () => {
+      const transaction = databaseContext.getTransaction();
+      if (!transaction) {
+        throw new Error(UnknownErrorCode.UnknownError);
+      }
+      await transaction.raw(
+        'SELECT pg_advisory_xact_lock(hashtext(?), hashtext(?))',
+        [namespace, key]
+      );
+      return callback();
+    }),
+
   getTransaction: (): Knex.Transaction | undefined => {
     return dbAsyncLocalStorage.getStore()?.transaction;
   },
@@ -43,4 +61,4 @@ export const databaseContext = {
   },
 };
 
-export const { withTransaction } = databaseContext;
+export const { withAdvisoryLock, withTransaction } = databaseContext;

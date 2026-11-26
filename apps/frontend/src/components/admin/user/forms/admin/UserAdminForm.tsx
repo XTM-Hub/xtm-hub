@@ -6,22 +6,16 @@ import { CapabilityDescription } from '@/components/admin/user/CapabilityDescrip
 import { userAdminFormSchema } from '@/components/admin/user/forms/user-form.schema';
 import { SettingsContext } from '@/components/settings/EnvPortalContext';
 import { CapabilityMultiSelect } from '@/components/ui/capability/MultiSelect';
+import { Form, FormField } from '@/components/ui/form';
+import { Label } from '@/components/ui/label';
+import { SheetFooter } from '@/components/ui/sheet';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
+import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { cn, isEmpty } from '@/lib/utils';
+import { Button, IconButton, Input } from '@filigran/design-system';
 import { DeleteIcon } from '@filigran/icon';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  Label,
-  SheetFooter,
-} from '@filigran/ui/clients';
-import { Button, Input } from '@filigran/ui/servers';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useTranslations } from 'next-intl';
 import { useContext, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -31,7 +25,7 @@ interface UserAdminFormProps {
 }
 export const UserAdminForm = ({ handleSubmit }: UserAdminFormProps) => {
   const { handleCloseSheet, setIsDirty } = useDialogContext();
-  const t = useTranslations();
+  const t = useTranslate();
   const { settings } = useContext(SettingsContext);
   const [userOrganization, setUserOrganization] = useState<
     UserOrganizationFormProps[]
@@ -78,78 +72,62 @@ export const UserAdminForm = ({ handleSubmit }: UserAdminFormProps) => {
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="w-full space-y-xl">
+        className="w-full space-y-6">
         <FormField
           control={form.control}
           name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('UserForm.Email')}</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder={t('UserForm.Email')}
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          render={({ field, fieldState }) => (
+            <Input
+              label={t('UserForm.Email')}
+              placeholder={t('UserForm.Email')}
+              error={fieldState.error?.message}
+              {...field}
+            />
           )}
         />
         <FormField
           control={form.control}
           name="first_name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('UserForm.FirstName')}</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder={t('UserForm.FirstName')}
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          render={({ field, fieldState }) => (
+            <Input
+              label={t('UserForm.FirstName')}
+              placeholder={t('UserForm.FirstName')}
+              error={fieldState.error?.message}
+              {...field}
+            />
           )}
         />
         <FormField
           control={form.control}
           name="last_name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('UserForm.LastName')}</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder={t('UserForm.LastName')}
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          render={({ field, fieldState }) => (
+            <Input
+              label={t('UserForm.LastName')}
+              placeholder={t('UserForm.LastName')}
+              error={fieldState.error?.message}
+              {...field}
+            />
           )}
         />
         {isDevelopmentEnvSetting && (
           <FormField
             control={form.control}
             name="password"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('UserForm.Password')}</FormLabel>
-                <FormControl>
-                  <Input
-                    type="password"
-                    placeholder={t('UserForm.Password')}
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+            render={({ field, fieldState }) => (
+              <Input
+                label={t('UserForm.Password')}
+                type="password"
+                placeholder={t('UserForm.Password')}
+                error={fieldState.error?.message}
+                {...field}
+              />
             )}
           />
         )}
 
         <CapabilityDescription />
 
-        <div className="flex items-center gap-m">
+        <div className="flex items-center gap-3">
           <Label>{t('UserForm.Organizations')}</Label>
           <AutocompleteOrganization
             selectedOrganizationCapabilities={form.getValues(
@@ -161,8 +139,8 @@ export const UserAdminForm = ({ handleSubmit }: UserAdminFormProps) => {
 
         <div
           className={cn(
-            '!mt-m px-l py-s space-y-s',
-            fields.length > 0 && 'border bg-card rounded'
+            '!mt-3 px-4 py-2 space-y-2',
+            fields.length > 0 && 'layer-1 border bg-elevation-default rounded'
           )}>
           {fields.map((field, index) => {
             return (
@@ -170,33 +148,30 @@ export const UserAdminForm = ({ handleSubmit }: UserAdminFormProps) => {
                 control={form.control}
                 key={`organization_capabilities.${index}.capabilities`}
                 name={`organization_capabilities.${index}.capabilities`}
-                render={({ field: formField }) => {
+                render={({ field: formField, fieldState }) => {
+                  const organizationName = userOrganization.find(
+                    ({ id }) => id === field.organization_id
+                  )?.name;
                   return (
-                    <FormItem>
-                      <div className="grid gap-m items-center grid-cols-[1fr_4fr_3rem]">
-                        <Label>
-                          {
-                            userOrganization.find(
-                              ({ id }) => id === field.organization_id
-                            )?.name
-                          }
-                        </Label>
-                        <FormControl>
-                          <CapabilityMultiSelect
-                            value={formField.value}
-                            onChange={formField.onChange}
-                          />
-                        </FormControl>
-                        <Button
-                          type="button"
-                          variant="tertiary"
-                          size="icon"
-                          onClick={() => remove(index)}>
-                          <DeleteIcon className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
+                    <div className="grid gap-3 items-center grid-cols-[1fr_4fr_3rem]">
+                      <Label>{organizationName}</Label>
+                      <CapabilityMultiSelect
+                        accessibleName={organizationName}
+                        value={formField.value}
+                        onChange={formField.onChange}
+                        error={fieldState.error?.message}
+                        // The box is layer 1, where a layer-1 panel paints the input colour.
+                        contentClassName="layer-0"
+                      />
+                      <IconButton
+                        type="button"
+                        priority="tertiary"
+                        {...analyticsId('admin_user_organization_remove')}
+                        aria-label={t('MenuActions.Remove')}
+                        icon={<DeleteIcon className="h-4 w-4" />}
+                        onClick={() => remove(index)}
+                      />
+                    </div>
                   );
                 }}
               />
@@ -206,14 +181,16 @@ export const UserAdminForm = ({ handleSubmit }: UserAdminFormProps) => {
 
         <SheetFooter className="pt-2">
           <Button
-            variant="secondary"
+            priority="secondary"
             type="button"
+            {...analyticsId('admin_form_cancel')}
             onClick={(e) => handleCloseSheet(e)}>
             {t('Utils.Cancel')}
           </Button>
           <Button
             disabled={!form.formState.isDirty}
-            type="submit">
+            type="submit"
+            {...analyticsId('admin_user_submit')}>
             {t('Utils.Validate')}
           </Button>
         </SheetFooter>

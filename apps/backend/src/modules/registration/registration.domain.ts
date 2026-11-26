@@ -1,35 +1,49 @@
 import { Knex } from 'knex';
 import { v4 as uuidv4 } from 'uuid';
-import { db } from '../../../knexfile';
+import { db, dbRaw } from '../../../knexfile';
 import {
+  AdminRegisteredPlatformOrdering,
+  CommercialModel,
   DeploymentRequestDeploymentType,
   DeploymentRequestHubStatus,
+  OrderingMode,
   OrganizationCapability,
   PlatformConfigurationStatus,
   PlatformContract,
   PlatformIdentifier,
+  PortalCapability,
   ServiceDefinitionIdentifier,
   ServiceInstanceCreationStatus,
 } from '../../__generated__/resolvers-types';
 import { requestContext } from '../../context/request.context';
 import { DocumentId } from '../../model/kanel/public/Document';
-import { OrganizationId } from '../../model/kanel/public/Organization';
+import Organization, {
+  OrganizationId,
+} from '../../model/kanel/public/Organization';
 import PlatformConfigurationModel from '../../model/kanel/public/PlatformConfiguration';
 import { ServiceDefinitionId } from '../../model/kanel/public/ServiceDefinition';
 import ServiceInstance, {
   ServiceInstanceId,
 } from '../../model/kanel/public/ServiceInstance';
-import { SubscriptionId } from '../../model/kanel/public/Subscription';
+import Subscription, {
+  SubscriptionId,
+} from '../../model/kanel/public/Subscription';
+import { UserId } from '../../model/kanel/public/User';
 import { securityGuard } from '../../security/guard';
 import { ErrorCode } from '../../utils/error/error.code';
 import { OrganizationDomain } from '../organization-management/organization/organization.domain';
+import { AuthHelper } from '../security-management/capability/auth.helper';
 import { ServiceInstanceDomain } from '../service/instance/service-instance.domain';
 import { SubscriptionDomain } from '../subscription/subscription.domain';
-import { PlatformConfigurationDomain } from './platform-configuration/platform-configuration.domain';
+import {
+  PlatformConfigurationDomain,
+  selectResolvedCommercialModel,
+  whereSaasCommercialModel,
+} from './platform-configuration/platform-configuration.domain';
 import { serviceDefinitionIdentifierMappedByPlatformIdentifier } from './registration.mapping';
 
 export type PlatformConfigurationInput = {
-  registerer_id: string;
+  registerer_id: UserId;
   platform_id: string;
   tenant_id?: string;
   tenant_name?: string;
@@ -39,6 +53,7 @@ export type PlatformConfigurationInput = {
   platform_contract: PlatformContract;
   last_connectivity_check: Date;
   token: string;
+  commercial_model?: CommercialModel;
 };
 
 export interface DomainRegisteredPlatform extends PlatformConfigurationModel {
@@ -47,12 +62,189 @@ export interface DomainRegisteredPlatform extends PlatformConfigurationModel {
   id: string;
 }
 
-const RegisteredPlatformsSelectColumns = [
+export interface PlatformOwnerOrganization extends Organization {
+  service_instance_id: ServiceInstanceId;
+}
+
+// The token value never leaves the database: only whether one exists.
+export interface AdminRegisteredPlatformRow {
+  service_instance_id: ServiceInstanceId;
+  platform_id: string;
+  platform_title: string;
+  platform_url: string;
+  platform_version: string | null;
+  platform_contract: PlatformContract;
+  commercial_model: CommercialModel;
+  tenant_id: string | null;
+  tenant_name: string | null;
+  status: PlatformConfigurationStatus;
+  last_connectivity_check: Date | null;
+  service_definition_identifier: ServiceDefinitionIdentifier;
+  organization_id: OrganizationId | null;
+  organization_name: string | null;
+  registerer_id: UserId;
+  registerer_email: string | null;
+  registerer_first_name: string | null;
+  registerer_last_name: string | null;
+  has_token: boolean;
+  is_trial: boolean;
+}
+
+export interface AdminRegisteredPlatformsFilters {
+  platformIdentifier?: PlatformIdentifier;
+  status?: PlatformConfigurationStatus;
+  organizationId?: OrganizationId;
+  searchTerm?: string;
+}
+
+const ADMIN_REGISTERED_PLATFORM_ORDER_COLUMNS: Record<
+  AdminRegisteredPlatformOrdering,
+  string
+> = {
+  [AdminRegisteredPlatformOrdering.Title]:
+    'PlatformConfiguration.platform_title',
+  [AdminRegisteredPlatformOrdering.LastConnectivityCheck]:
+    'PlatformConfiguration.last_connectivity_check',
+  [AdminRegisteredPlatformOrdering.OrganizationName]: 'Organization.name',
+};
+
+const ADMIN_REGISTERED_PLATFORM_SEARCH_COLUMNS = [
+  'PlatformConfiguration.platform_title',
+  'PlatformConfiguration.platform_url',
+  'PlatformConfiguration.platform_id',
+  'PlatformConfiguration.service_instance_id',
+  'PlatformConfiguration.tenant_id',
+  'PlatformConfiguration.tenant_name',
+  'Organization.name',
+  'User.email',
+];
+
+// The term is matched as %term% over every search column: a longer one cannot match more, it only costs more.
+export const ADMIN_REGISTERED_PLATFORMS_SEARCH_TERM_MAX_LENGTH = 100;
+
+const escapeLikePattern = (value: string) => value.replace(/[\\%_]/g, '\\$&');
+
+// Both the user's and the admin's lists of registered platforms hide a disabled service instance.
+const excludeDisabledServiceInstances = (query: Knex.QueryBuilder) =>
+  query.where(
+    'ServiceInstance.creation_status',
+    '!=',
+    ServiceInstanceCreationStatus.Disabled
+  );
+
+const getAdminRegisteredPlatformsBaseQuery = () =>
+  db<PlatformConfigurationModel>('PlatformConfiguration')
+    .join(
+      'ServiceInstance',
+      'ServiceInstance.id',
+      '=',
+      'PlatformConfiguration.service_instance_id'
+    )
+    .join(
+      'ServiceDefinition',
+      'ServiceDefinition.id',
+      '=',
+      'ServiceInstance.service_definition_id'
+    )
+    .leftJoin(
+      getPlatformOwnerSubscriptionsQuery()
+        .select('service_instance_id', 'organization_id')
+        .as('OwnerSubscription'),
+      'OwnerSubscription.service_instance_id',
+      '=',
+      'PlatformConfiguration.service_instance_id'
+    )
+    .leftJoin(
+      'Organization',
+      'Organization.id',
+      '=',
+      'OwnerSubscription.organization_id'
+    )
+    .leftJoin('User', 'User.id', '=', 'PlatformConfiguration.registerer_id')
+    .modify(excludeDisabledServiceInstances)
+    .whereIn(
+      'ServiceDefinition.identifier',
+      Object.values(serviceDefinitionIdentifierMappedByPlatformIdentifier)
+    );
+
+const applyAdminRegisteredPlatformsFilters = (
+  query: Knex.QueryBuilder,
+  filters: AdminRegisteredPlatformsFilters
+) => {
+  const { platformIdentifier, status, organizationId, searchTerm } = filters;
+  if (platformIdentifier) {
+    query.where(
+      'ServiceDefinition.identifier',
+      '=',
+      serviceDefinitionIdentifierMappedByPlatformIdentifier[platformIdentifier]
+    );
+  }
+  if (status) {
+    query.where('PlatformConfiguration.status', '=', status);
+  }
+  if (organizationId) {
+    query.where('OwnerSubscription.organization_id', '=', organizationId);
+  }
+  const trimmedSearchTerm = searchTerm
+    ?.trim()
+    .slice(0, ADMIN_REGISTERED_PLATFORMS_SEARCH_TERM_MAX_LENGTH);
+  if (trimmedSearchTerm) {
+    const pattern = `%${escapeLikePattern(trimmedSearchTerm)}%`;
+    query.where((search) => {
+      ADMIN_REGISTERED_PLATFORM_SEARCH_COLUMNS.forEach((column) =>
+        search.orWhereRaw('CAST(?? AS text) ILIKE ?', [column, pattern])
+      );
+    });
+  }
+  return query;
+};
+
+// A trial is only ended through its own lifecycle, never unregistered by an admin: its contract is trial, or a trial
+// deployment request is linked to its service instance, whatever its hub_status or counts_in_orga_quota. The admin
+// list and the unregister refusal both use this definition.
+const selectIsTrialRegistration = () =>
+  dbRaw(
+    `("PlatformConfiguration"."platform_contract" = ? OR EXISTS (
+      SELECT 1 FROM "DeploymentRequest"
+      WHERE "DeploymentRequest"."service_instance_id" = "PlatformConfiguration"."service_instance_id"
+        AND "DeploymentRequest"."type" = ?
+    )) as is_trial`,
+    [PlatformContract.Trial, DeploymentRequestDeploymentType.Trial]
+  );
+
+const selectAdminRegisteredPlatformColumns = (query: Knex.QueryBuilder) =>
+  query.select<AdminRegisteredPlatformRow[]>([
+    'PlatformConfiguration.service_instance_id',
+    'PlatformConfiguration.platform_id',
+    'PlatformConfiguration.platform_title',
+    'PlatformConfiguration.platform_url',
+    'PlatformConfiguration.platform_version',
+    'PlatformConfiguration.platform_contract',
+    'PlatformConfiguration.commercial_model',
+    'PlatformConfiguration.tenant_id',
+    'PlatformConfiguration.tenant_name',
+    'PlatformConfiguration.status',
+    'PlatformConfiguration.last_connectivity_check',
+    'PlatformConfiguration.registerer_id',
+    'ServiceDefinition.identifier as service_definition_identifier',
+    'OwnerSubscription.organization_id as organization_id',
+    'Organization.name as organization_name',
+    'User.email as registerer_email',
+    'User.first_name as registerer_first_name',
+    'User.last_name as registerer_last_name',
+    dbRaw('("PlatformConfiguration"."token" IS NOT NULL) as has_token'),
+    selectIsTrialRegistration(),
+  ]);
+
+const LTS_VERSION_PATTERN = '%-lts%';
+
+const registeredPlatformsSelectColumns = () => [
   'ServiceDefinition.identifier as identifier',
   'ServiceInstance.id as id',
   'ServiceInstance.illustration_document_id as illustration_document_id',
   'PlatformConfiguration.*',
-] as const;
+  selectResolvedCommercialModel(),
+];
 
 export const RegistrationDomain = {
   registerNewPlatform: async ({
@@ -146,56 +338,156 @@ export const RegistrationDomain = {
   loadRegisteredPlatform: async (
     serviceInstanceId: ServiceInstanceId
   ): Promise<DomainRegisteredPlatform[]> => {
-    return getRegisteredPlatformsDataQuery().where(
+    const skipOrganizationFilter = AuthHelper.userHasPortalCapability(
+      requestContext.requireUser(),
+      [PortalCapability.Bypass, PortalCapability.ReadSaasMetrics]
+    );
+    return getRegisteredPlatformsDataQuery({ skipOrganizationFilter }).where(
       'ServiceInstance.id',
       '=',
       serviceInstanceId
     );
   },
 
-  loadRegisteredPlatformsByOrganizationIds: async (
-    organizationIds: OrganizationId[],
-    platformIdentifier: PlatformIdentifier
-  ): Promise<DomainRegisteredPlatform[]> => {
-    if (organizationIds.length === 0) {
-      return [];
-    }
-
-    const serviceDefinitionIdentifier =
-      serviceDefinitionIdentifierMappedByPlatformIdentifier[platformIdentifier];
-
-    return db<ServiceInstance>('ServiceInstance')
-      .leftJoin(
-        'PlatformConfiguration',
-        'PlatformConfiguration.service_instance_id',
+  // Active registration of one platform tenant in the selected organization; a null tenant matches only a
+  // registration without tenant.
+  loadRegisteredPlatformByPlatformId: async ({
+    platformIdentifier,
+    platformId,
+    tenantId,
+  }: {
+    platformIdentifier: PlatformIdentifier;
+    platformId: string;
+    tenantId: string | null;
+  }): Promise<DomainRegisteredPlatform | undefined> => {
+    const query = getRegisteredPlatformsDataQuery()
+      .where(
+        'ServiceDefinition.identifier',
         '=',
-        'ServiceInstance.id'
+        serviceDefinitionIdentifierMappedByPlatformIdentifier[
+          platformIdentifier
+        ]
       )
-      .leftJoin(
-        'ServiceDefinition',
-        'ServiceDefinition.id',
-        '=',
-        'ServiceInstance.service_definition_id'
-      )
-      .leftJoin(
-        'Subscription',
-        'Subscription.service_instance_id',
-        '=',
-        'ServiceInstance.id'
-      )
-      .where('ServiceInstance.creation_status', '!=', 'DISABLED')
-      .whereIn('Subscription.organization_id', organizationIds)
-      .where('ServiceDefinition.identifier', '=', serviceDefinitionIdentifier)
+      .where('PlatformConfiguration.platform_id', '=', platformId)
       .where(
         'PlatformConfiguration.status',
         '=',
         PlatformConfigurationStatus.Active
-      )
-      .select(RegisteredPlatformsSelectColumns);
+      );
+    if (tenantId) {
+      query.where('PlatformConfiguration.tenant_id', '=', tenantId);
+    } else {
+      query.whereNull('PlatformConfiguration.tenant_id');
+    }
+    return query.first();
   },
 
+  loadRegisteredPlatformsByServiceInstanceIds: async (
+    serviceInstanceIds: readonly ServiceInstanceId[]
+  ): Promise<DomainRegisteredPlatform[]> => {
+    if (serviceInstanceIds.length === 0) {
+      return [];
+    }
+    return getRegisteredPlatformsDataQuery().whereIn('ServiceInstance.id', [
+      ...serviceInstanceIds,
+    ]);
+  },
+
+  loadSaasRegisteredPlatformsByPlatformIds: async (
+    platformIds: readonly string[]
+  ): Promise<DomainRegisteredPlatform[]> => {
+    if (platformIds.length === 0) {
+      return [];
+    }
+    const skipOrganizationFilter = AuthHelper.userHasPortalCapability(
+      requestContext.requireUser(),
+      [PortalCapability.Bypass, PortalCapability.ReadSaasMetrics]
+    );
+    return getRegisteredPlatformsDataQuery({ skipOrganizationFilter })
+      .whereIn('PlatformConfiguration.platform_id', [...platformIds])
+      .where(
+        'PlatformConfiguration.status',
+        '=',
+        PlatformConfigurationStatus.Active
+      )
+      .modify(whereSaasCommercialModel)
+      .orderBy('PlatformConfiguration.last_connectivity_check', 'desc', 'last');
+  },
+
+  loadPlatformOwnerOrganizationsByServiceInstanceIds: async (
+    serviceInstanceIds: readonly ServiceInstanceId[]
+  ): Promise<PlatformOwnerOrganization[]> => {
+    if (serviceInstanceIds.length === 0) {
+      return [];
+    }
+    return db<Organization>('Organization')
+      .join(
+        getPlatformOwnerSubscriptionsQuery()
+          .select('service_instance_id', 'organization_id')
+          .whereIn('service_instance_id', [...serviceInstanceIds])
+          .as('OwnerSubscription'),
+        'OwnerSubscription.organization_id',
+        '=',
+        'Organization.id'
+      )
+      .select<PlatformOwnerOrganization[]>(
+        'Organization.*',
+        'OwnerSubscription.service_instance_id'
+      );
+  },
+
+  // Every organization: the caller is a platform admin, checked by the resolver guard. first is clamped to a page size
+  // the API allows, after is an offset cursor written by this method.
+  loadAdminRegisteredPlatforms: async ({
+    filters,
+    offset,
+    limit,
+    orderBy,
+    orderMode,
+  }: {
+    filters: AdminRegisteredPlatformsFilters;
+    offset: number;
+    limit: number;
+    orderBy: AdminRegisteredPlatformOrdering;
+    orderMode: OrderingMode;
+  }): Promise<{ rows: AdminRegisteredPlatformRow[]; totalCount: number }> => {
+    const filteredQuery = applyAdminRegisteredPlatformsFilters(
+      getAdminRegisteredPlatformsBaseQuery(),
+      filters
+    );
+    const countQuery = filteredQuery
+      .clone()
+      .count<{ count: string }[]>('PlatformConfiguration.service_instance_id');
+    const rowsQuery = selectAdminRegisteredPlatformColumns(filteredQuery)
+      .orderBy([
+        {
+          column: ADMIN_REGISTERED_PLATFORM_ORDER_COLUMNS[orderBy],
+          order: orderMode,
+          nulls: 'last',
+        },
+        { column: 'PlatformConfiguration.service_instance_id', order: 'asc' },
+      ])
+      .offset(offset)
+      .limit(limit);
+
+    const [rows, [countRow]] = await Promise.all([rowsQuery, countQuery]);
+    return { rows, totalCount: Number(countRow?.count ?? 0) };
+  },
+
+  loadAdminRegisteredPlatform: async (
+    serviceInstanceId: ServiceInstanceId
+  ): Promise<AdminRegisteredPlatformRow | undefined> =>
+    selectAdminRegisteredPlatformColumns(
+      getAdminRegisteredPlatformsBaseQuery().where(
+        'PlatformConfiguration.service_instance_id',
+        '=',
+        serviceInstanceId
+      )
+    ).first(),
+
   loadAllActiveRegisteredPlatformsByPlatformIdentifier: async (
-    platformIdentifier: PlatformIdentifier
+    platformIdentifier: PlatformIdentifier,
+    { isLts }: { isLts?: boolean } = {}
   ): Promise<DomainRegisteredPlatform[]> => {
     const serviceDefinitionIdentifier =
       serviceDefinitionIdentifierMappedByPlatformIdentifier[platformIdentifier];
@@ -213,14 +505,28 @@ export const RegistrationDomain = {
         '=',
         'ServiceInstance.service_definition_id'
       )
-      .where('ServiceInstance.creation_status', '!=', 'DISABLED')
+      .where(
+        'ServiceInstance.creation_status',
+        '!=',
+        ServiceInstanceCreationStatus.Disabled
+      )
       .where('ServiceDefinition.identifier', '=', serviceDefinitionIdentifier)
       .where(
         'PlatformConfiguration.status',
         '=',
         PlatformConfigurationStatus.Active
       )
-      .select(RegisteredPlatformsSelectColumns);
+      .modify((queryBuilder) => {
+        // A platform without a version matches neither LIKE nor NOT LIKE
+        if (isLts !== undefined) {
+          queryBuilder.where(
+            'PlatformConfiguration.platform_version',
+            isLts ? 'like' : 'not like',
+            LTS_VERSION_PATTERN
+          );
+        }
+      })
+      .select(registeredPlatformsSelectColumns());
   },
 
   loadRegisteredPlatforms: async (
@@ -294,13 +600,18 @@ export const RegistrationDomain = {
   },
 };
 
-const getRegisteredPlatformsDataQuery = (): Knex.QueryBuilder<
-  ServiceInstance,
-  DomainRegisteredPlatform[]
-> => {
-  const user = requestContext.requireUser();
-  const userSelectedOrganization = user.selected_organization_id;
-  return db<ServiceInstance>('ServiceInstance')
+// The owner of a platform is the organization of its newest subscription.
+const getPlatformOwnerSubscriptionsQuery = () =>
+  db<Subscription>('Subscription')
+    .distinctOn('service_instance_id')
+    .orderBy([
+      { column: 'service_instance_id' },
+      { column: 'start_date', order: 'desc', nulls: 'last' },
+      { column: 'id', order: 'asc' },
+    ]);
+
+const getRegisteredPlatformsBaseQuery = () =>
+  db<ServiceInstance>('ServiceInstance')
     .leftJoin(
       'PlatformConfiguration',
       'PlatformConfiguration.service_instance_id',
@@ -313,6 +624,17 @@ const getRegisteredPlatformsDataQuery = (): Knex.QueryBuilder<
       '=',
       'ServiceInstance.service_definition_id'
     )
+    .modify(excludeDisabledServiceInstances);
+
+const getRegisteredPlatformsDataQuery = ({
+  skipOrganizationFilter = false,
+}: { skipOrganizationFilter?: boolean } = {}): Knex.QueryBuilder<
+  ServiceInstance,
+  DomainRegisteredPlatform[]
+> => {
+  const user = requestContext.requireUser();
+  const userSelectedOrganization = user.selected_organization_id;
+  const query = getRegisteredPlatformsBaseQuery()
     .leftJoin(
       'Subscription',
       'Subscription.service_instance_id',
@@ -325,7 +647,9 @@ const getRegisteredPlatformsDataQuery = (): Knex.QueryBuilder<
       '=',
       'ServiceInstance.id'
     )
-    .where('ServiceInstance.creation_status', '!=', 'DISABLED')
-    .where('Subscription.organization_id', '=', userSelectedOrganization)
-    .select(RegisteredPlatformsSelectColumns);
+    .select(registeredPlatformsSelectColumns());
+  if (!skipOrganizationFilter) {
+    query.where('Subscription.organization_id', '=', userSelectedOrganization);
+  }
+  return query;
 };

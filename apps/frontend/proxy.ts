@@ -59,7 +59,7 @@ export async function proxy(request: NextRequest, _: NextFetchEvent) {
 export const config = {
   matcher: [
     '/',
-    '/(en|ja)/:path*',
+    '/(en|fr|ja)/:path*',
     '/cybersecurity-solutions',
     '/cybersecurity-solutions/:path*',
     '/graphql-api',
@@ -69,10 +69,14 @@ export const config = {
     '/document/visualize/:serviceInstanceId/:filename*',
     '/document/deploy/:serviceInstanceId/:filename*',
     '/document/images/:documentId*',
+    '/document/csv-export/:serviceInstanceId*',
     '/user/picture/:userId*',
     '/app/:path*',
     '/api/chatbot/:path*',
     '/:product/:version/:integrationType/manifests',
     '/:product/:version/:integrationType/manifests/:path*',
+    '/:product/versions-matrix',
+    '/redirect/news-feed/:itemId',
+    '/webhooks/news-feed/blogposts',
   ],
 };

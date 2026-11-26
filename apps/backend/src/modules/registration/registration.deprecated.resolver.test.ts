@@ -68,7 +68,7 @@ describe('registration query resolver', () => {
       }
 
       const platformId = uuidv4();
-      const token = await RegistrationApp.registerPlatform({
+      const { token } = await RegistrationApp.registerPlatform({
         organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
         platform: {
           id: platformId,

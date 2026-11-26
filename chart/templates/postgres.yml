@@ -23,7 +23,14 @@ spec:
   externalClusters:
     {{- .Values.postgres.spec.externalClusters | toYaml | nindent 4 }}
   {{- end }}
-  {{- if .Values.postgres.spec.plugins }}
   plugins:
-    {{- .Values.postgres.spec.plugins | toYaml | nindent 4 }}
+  {{- if .Values.postgres.backup.enabled }}
+    - enabled: true
+      isWALArchiver: true
+      name: barman-cloud.cloudnative-pg.io
+      parameters:
+        barmanObjectName: "{{ .Release.Name }}-barman-objectstore"
+  {{- end }}
+  {{- with .Values.postgres.spec.plugins }}
+    {{- toYaml . | nindent 4 }}
   {{- end }}

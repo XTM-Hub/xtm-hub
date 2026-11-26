@@ -1,116 +1,80 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { TestHelper } from '../../../../tests/helper/test.helper';
-import {
-  DeploymentRequestPlatformRegion,
-  PlatformIdentifier,
-} from '../../../__generated__/resolvers-types';
+import { DeploymentRequestPlatformRegion } from '../../../__generated__/resolvers-types';
 import { ErrorCode } from '../../../utils/error/error.code';
-import { DeploymentQuotaDomain } from './deployment.quota.domain';
+import {
+  bundleQuotaKey,
+  DeploymentQuotaDomain,
+} from './deployment.quota.domain';
 
 describe('deploymentQuotaDomain', () => {
-  const platformIdentifier = PlatformIdentifier.Opencti;
   const region = DeploymentRequestPlatformRegion.UsEast;
+  const bundleKey = bundleQuotaKey(region);
+  const bundleQuotaFilter = { region };
+  const unknownRegionKey = bundleQuotaKey(
+    'test' as DeploymentRequestPlatformRegion
+  );
 
   describe('reservePlace', () => {
     it('should throw when quota is not found', async () => {
-      const call = DeploymentQuotaDomain.reservePlace(
-        'test' as PlatformIdentifier,
-        DeploymentRequestPlatformRegion.EuWest
-      );
+      const call = DeploymentQuotaDomain.reservePlace(unknownRegionKey);
 
       await expect(call).rejects.toThrow(
         ErrorCode.DeploymentRequestQuotaNotFound
       );
     });
 
-    it('should return that place is not available when availability is equal to 0', async () => {
-      await TestHelper.deploymentRequestQuota.update(
-        {
-          region,
-          platform_identifier: platformIdentifier,
-        },
-        { availability: 0 }
-      );
+    it.each([0, -1])(
+      'should refuse a blocking reservation when availability is %s',
+      async (availability) => {
+        await TestHelper.deploymentRequestQuota.update(bundleQuotaFilter, {
+          availability,
+        });
 
-      const result = await DeploymentQuotaDomain.reservePlace(
-        platformIdentifier,
-        region
-      );
+        const result = await DeploymentQuotaDomain.reservePlace(bundleKey);
 
-      expect(result.isPlaceAvailable).toBe(false);
-    });
+        const updatedRequestQuota =
+          await TestHelper.deploymentRequestQuota.load(bundleQuotaFilter);
 
-    it('should return that place is not available when availability is lower than 0', async () => {
-      await TestHelper.deploymentRequestQuota.update(
-        {
-          region,
-          platform_identifier: platformIdentifier,
-        },
-        { availability: -1 }
-      );
-
-      const result = await DeploymentQuotaDomain.reservePlace(
-        platformIdentifier,
-        region
-      );
-
-      expect(result.isPlaceAvailable).toBe(false);
-    });
-    it('should return that place is available when availability is greater than 0', async () => {
-      await TestHelper.deploymentRequestQuota.update(
-        {
-          region,
-          platform_identifier: platformIdentifier,
-        },
-        { availability: 1 }
-      );
-
-      const result = await DeploymentQuotaDomain.reservePlace(
-        platformIdentifier,
-        region
-      );
-
-      expect(result.isPlaceAvailable).toBe(true);
-    });
-    it('should reserve a place when availability is greater than 0', async () => {
-      await TestHelper.deploymentRequestQuota.update(
-        {
-          region,
-          platform_identifier: platformIdentifier,
-        },
-        { availability: 1 }
-      );
-
-      await DeploymentQuotaDomain.reservePlace(platformIdentifier, region);
-
-      const updatedRequestQuota = await TestHelper.deploymentRequestQuota.load({
-        region,
-        platform_identifier: platformIdentifier,
-      });
-
-      expect(updatedRequestQuota).toBeDefined();
-      expect(updatedRequestQuota!.availability).toBe(0);
-    });
-
-    it.each([[PlatformIdentifier.Xtmone], [null]])(
-      'should return that place is available without a quota row for %s',
-      async (nonQuotaManagedIdentifier) => {
-        const result = await DeploymentQuotaDomain.reservePlace(
-          nonQuotaManagedIdentifier,
-          region
-        );
-
-        expect(result.isPlaceAvailable).toBe(true);
+        expect(result.isPlaceAvailable).toBe(false);
+        expect(updatedRequestQuota!.availability).toBe(availability);
       }
     );
+
+    it('should reserve a place on the bundle quota', async () => {
+      await TestHelper.deploymentRequestQuota.update(bundleQuotaFilter, {
+        availability: 3,
+      });
+
+      const result = await DeploymentQuotaDomain.reservePlace(bundleKey);
+
+      const updatedRequestQuota =
+        await TestHelper.deploymentRequestQuota.load(bundleQuotaFilter);
+
+      expect(result.isPlaceAvailable).toBe(true);
+      expect(updatedRequestQuota!.availability).toBe(2);
+    });
+
+    it('should let a non-blocking reservation drive the bundle quota negative', async () => {
+      await TestHelper.deploymentRequestQuota.update(bundleQuotaFilter, {
+        availability: 0,
+      });
+
+      const result = await DeploymentQuotaDomain.reservePlace(bundleKey, {
+        blocking: false,
+      });
+
+      const updatedRequestQuota =
+        await TestHelper.deploymentRequestQuota.load(bundleQuotaFilter);
+
+      expect(result.isPlaceAvailable).toBe(true);
+      expect(updatedRequestQuota!.availability).toBe(-1);
+    });
   });
 
   describe('freePlace', () => {
     it('should throw when quota is not found', async () => {
-      const call = DeploymentQuotaDomain.freePlace(
-        'test' as PlatformIdentifier,
-        DeploymentRequestPlatformRegion.EuWest
-      );
+      const call = DeploymentQuotaDomain.freePlace(unknownRegionKey);
 
       await expect(call).rejects.toThrow(
         ErrorCode.DeploymentRequestQuotaNotFound
@@ -118,40 +82,36 @@ describe('deploymentQuotaDomain', () => {
     });
 
     it('should free a place', async () => {
-      await TestHelper.deploymentRequestQuota.update(
-        {
-          region,
-          platform_identifier: platformIdentifier,
-        },
-        { availability: 0 }
-      );
-
-      await DeploymentQuotaDomain.freePlace(platformIdentifier, region);
-
-      const updatedRequestQuota = await TestHelper.deploymentRequestQuota.load({
-        region,
-        platform_identifier: platformIdentifier,
+      await TestHelper.deploymentRequestQuota.update(bundleQuotaFilter, {
+        availability: 0,
       });
 
-      expect(updatedRequestQuota).toBeDefined();
+      await DeploymentQuotaDomain.freePlace(bundleKey);
+
+      const updatedRequestQuota =
+        await TestHelper.deploymentRequestQuota.load(bundleQuotaFilter);
+
       expect(updatedRequestQuota!.availability).toBe(1);
     });
 
-    it.each([[PlatformIdentifier.Xtmone], [null]])(
-      'should be a no-op without a quota row for %s',
-      async (nonQuotaManagedIdentifier) => {
-        await expect(
-          DeploymentQuotaDomain.freePlace(nonQuotaManagedIdentifier, region)
-        ).resolves.toBeUndefined();
-      }
-    );
+    it('should free a place on the bundle quota, from a negative availability', async () => {
+      await TestHelper.deploymentRequestQuota.update(bundleQuotaFilter, {
+        availability: -2,
+      });
+
+      await DeploymentQuotaDomain.freePlace(bundleKey);
+
+      const updatedRequestQuota =
+        await TestHelper.deploymentRequestQuota.load(bundleQuotaFilter);
+
+      expect(updatedRequestQuota!.availability).toBe(-1);
+    });
   });
 
   describe('updateQuotaCapacity', () => {
     it('should throw when quota is not found', async () => {
       const call = DeploymentQuotaDomain.updateQuotaCapacity({
-        platformIdentifier: 'test' as PlatformIdentifier,
-        region,
+        key: unknownRegionKey,
         newCapacity: 1,
       });
 
@@ -164,56 +124,33 @@ describe('deploymentQuotaDomain', () => {
       oldCapacity | oldAvailability | newCapacity | expectedAvailability
       ${5}        | ${2}            | ${2}        | ${-1}
       ${5}        | ${2}            | ${10}       | ${7}
+      ${20}       | ${-3}           | ${21}       | ${-2}
     `(
-      'should update capacity by $newCapacity and return $expectedAvailability availability',
+      'should update capacity to $newCapacity and return $expectedAvailability availability',
       async ({
         oldCapacity,
         oldAvailability,
         newCapacity,
         expectedAvailability,
       }) => {
-        await TestHelper.deploymentRequestQuota.update(
-          {
-            region,
-            platform_identifier: platformIdentifier,
-          },
-          { capacity: oldCapacity, availability: oldAvailability }
-        );
+        await TestHelper.deploymentRequestQuota.update(bundleQuotaFilter, {
+          capacity: oldCapacity,
+          availability: oldAvailability,
+        });
 
         const result = await DeploymentQuotaDomain.updateQuotaCapacity({
-          platformIdentifier,
-          region,
-          newCapacity: newCapacity,
+          key: bundleKey,
+          newCapacity,
         });
 
         const updatedRequestQuota =
-          await TestHelper.deploymentRequestQuota.load({
-            region,
-            platform_identifier: platformIdentifier,
-          });
+          await TestHelper.deploymentRequestQuota.load(bundleQuotaFilter);
 
         expect(updatedRequestQuota).toMatchObject({
           capacity: newCapacity,
           availability: expectedAvailability,
         });
         expect(result.newAvailability).toBe(expectedAvailability);
-      }
-    );
-  });
-
-  describe('withLockedQuotaTransaction', () => {
-    it.each([[PlatformIdentifier.Xtmone], [null]])(
-      'should call back with null and not throw without a quota row for %s',
-      async (nonQuotaManagedIdentifier) => {
-        const callback = vi.fn().mockResolvedValue('result');
-
-        const result = await DeploymentQuotaDomain.withLockedQuotaTransaction(
-          { platformIdentifier: nonQuotaManagedIdentifier, region },
-          callback
-        );
-
-        expect(callback).toHaveBeenCalledWith(null);
-        expect(result).toBe('result');
       }
     );
   });

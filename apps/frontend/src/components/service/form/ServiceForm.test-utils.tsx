@@ -1,0 +1,1080 @@
+import {
+  AppServiceContext,
+  ServiceContextProps,
+} from '@/components/service/components/ServiceContext';
+import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
+import {
+  META_DESCRIPTION_MAX_LENGTH,
+  META_DESCRIPTION_MIN_LENGTH,
+} from '@/utils/shareable-resources/meta-description.utils';
+import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
+import { DocumentOverrides } from '@/utils/test/document-overrides';
+import {
+  mockTranslations,
+  translateWithValues,
+} from '@/utils/test/mock-translations';
+import testRender from '@/utils/test/test-render';
+import {
+  DocumentImageType,
+  DocumentItemFragment,
+  DocumentSourceType,
+  DocumentStatus,
+  FiligranProduct,
+  IntegrationType,
+  LicenseType,
+  useSolutionCategoriesListQuery,
+  useUseCasesListQuery,
+  useUsersQuery,
+} from '@graphql/generated';
+import '@testing-library/jest-dom/vitest';
+import { screen, waitFor, within } from '@testing-library/react';
+// eslint-disable-next-line no-restricted-imports -- mocks the next-intl hook that useTranslate wraps, no text is rendered with it
+import { useTranslations } from 'next-intl';
+import { ComponentType } from 'react';
+import { beforeEach, expect, it, onTestFinished, vi } from 'vitest';
+
+const SHEET_TITLE = 'Service form';
+const NAME_LABEL = 'Service.Form.NameLabel';
+const SLUG_LABEL = 'Service.Form.SlugLabel';
+const SHORT_DESCRIPTION_LABEL = 'Service.Form.ShortDescriptionLabel';
+const META_DESCRIPTION_LABEL = 'Service.Form.MetaDescriptionLabel';
+export const PRODUCT_VERSION_LABEL = 'Service.Form.ProductVersionLabel';
+const USE_CASES_LABEL = 'Service.Form.UseCasesLabel';
+const SOLUTION_CATEGORIES_LABEL = 'Service.Form.SolutionCategoriesLabel';
+const DELETE_IMAGE_LABEL = 'Service.Form.DeleteImage';
+const PRODUCT_VERSION_ERROR = 'Product version must be X.Y.Z';
+export const DESCRIPTION_PLACEHOLDER = 'Service.Form.DescriptionPlaceholder';
+export const VALIDATE_LABEL = 'Utils.Validate';
+export const REQUEST_VALIDATION_LABEL = 'Service.Form.RequestValidation';
+
+export const CURRENT_USER_ID = 'current-user';
+const CURRENT_USER_EMAIL = 'current.user@filigran.io';
+export const CURRENT_ORGANIZATION = {
+  id: 'organization-current',
+  name: 'Current Organization',
+  personal_space: false,
+};
+export const DOCUMENT_ORGANIZATION = {
+  id: 'organization-document',
+  name: 'Document Organization',
+  personal_space: false,
+};
+export const UPLOADER = {
+  id: 'uploader-1',
+  email: 'uploader@filigran.io',
+  first_name: null,
+  last_name: null,
+  picture: null,
+};
+export const USE_CASE = {
+  id: 'use-case-threat-hunting',
+  name: 'Threat hunting',
+  color: '#001122',
+};
+export const SOLUTION_CATEGORY = {
+  id: 'solution-category-threat-feeds',
+  name: 'Threat feeds',
+};
+
+export const DOCUMENT_NAME = 'Ransomware overview';
+export const DOCUMENT_SLUG = 'ransomware-overview';
+export const DOCUMENT_SHORT_DESCRIPTION = 'Track ransomware activity';
+export const DOCUMENT_DESCRIPTION = 'Every ransomware campaign at a glance';
+export const DOCUMENT_PRODUCT_VERSION = '6.4.0';
+const DOCUMENT_META_DESCRIPTION =
+  'Ransomware campaigns tracked in OpenCTI, with the threat actors, targeted sectors, victims and indicators behind each one of them.';
+export const NEW_NAME = 'Threat Intel: APT-28 (v2)';
+export const NEW_SLUG = 'threat-intel-apt-28-v2';
+export const NEW_SHORT_DESCRIPTION = 'Follow APT-28';
+export const NEW_META_DESCRIPTION =
+  'Indicators, campaigns, malware and attack patterns of APT-28, gathered in OpenCTI to follow the activity of this threat actor.';
+const NEW_PRODUCT_VERSION = '6.5.1';
+export const NEW_DESCRIPTION = 'Everything about APT-28';
+
+const buildImage = (id: string, fileName: string) => ({
+  id,
+  file_name: fileName,
+  name: null,
+  description: null,
+  status: 'published' as const,
+  created_at: '2026-01-15T10:00:00',
+  download_number: 0,
+  image_type: DocumentImageType.Image,
+  source_type: DocumentSourceType.Internal,
+});
+
+export const KEPT_IMAGE = buildImage('image-kept', 'kept.png');
+export const DELETED_IMAGE = buildImage('image-deleted', 'deleted.png');
+
+/**
+ * One permissive fixture serves every service form: the overrides add the
+ * subtype fields (`entity_types`, `license_type`, `manager_supported`, ...) a
+ * given test needs, so the merged object is cast to the discriminated union.
+ */
+export const buildDocument = (
+  overrides: DocumentOverrides = {}
+): DocumentItemFragment =>
+  ({
+    __typename: 'CustomDashboard',
+    id: 'document-1',
+    type: 'document',
+    name: DOCUMENT_NAME,
+    slug: DOCUMENT_SLUG,
+    short_description: DOCUMENT_SHORT_DESCRIPTION,
+    description: DOCUMENT_DESCRIPTION,
+    product_version: DOCUMENT_PRODUCT_VERSION,
+    status: 'published',
+    file_name: null,
+    created_at: '2026-01-15T10:00:00',
+    updated_at: null,
+    download_number: 0,
+    share_number: 0,
+    service_instance: { id: 'service-instance-1', slug: null },
+    subscription: null,
+    children_documents: [DELETED_IMAGE, KEPT_IMAGE],
+    uploader: UPLOADER,
+    uploader_organization: DOCUMENT_ORGANIZATION,
+    use_cases: [USE_CASE],
+    ...overrides,
+  }) as DocumentItemFragment;
+
+export const buildIntegrationDocument = (
+  overrides: DocumentOverrides = {}
+): DocumentItemFragment =>
+  buildDocument({
+    __typename: 'CsvFeed',
+    type: ShareableResourceType.OPENCTI_INTEGRATION,
+    solution_categories: [SOLUTION_CATEGORY],
+    license_type: LicenseType.Commercial,
+    ...overrides,
+  });
+
+export enum ServiceFormResource {
+  CUSTOM_DASHBOARD = 'dashboard',
+  CUSTOM_VIEW = 'view',
+  PLAYBOOK = 'playbook',
+  SCENARIO = 'scenario',
+  CSV_FEED = 'CSV feed',
+  RSS_FEED = 'RSS feed',
+  STREAM = 'stream',
+  TAXII_FEED = 'TAXII feed',
+  THIRD_PARTY_INTEGRATION = 'third party integration',
+  CONNECTOR = 'connector',
+}
+
+export interface ServiceFormFileField {
+  name: string;
+  label: string;
+  updateLabel: string;
+  file: File;
+}
+
+export const JSON_FILE_FIELD: ServiceFormFileField = {
+  name: 'JSON file',
+  label: 'Service.Form.SelectJSONFile',
+  updateLabel: 'Service.Form.UpdateJSONFile',
+  file: new File(['{}'], 'document.json', { type: 'application/json' }),
+};
+
+export const buildServiceContext = (
+  overrides: Partial<ServiceContextProps> = {}
+): ServiceContextProps =>
+  ({
+    isSubmitting: false,
+    ...overrides,
+  }) as ServiceContextProps;
+
+type ServiceFormComponent<Values> = ComponentType<{
+  document: DocumentItemFragment | undefined;
+  handleSubmit: (values: Values) => void;
+}>;
+
+export type ServiceFormUser = ReturnType<typeof testRender>['user'];
+
+export const renderServiceForm = <Values,>(
+  Form: ServiceFormComponent<Values>,
+  document?: DocumentItemFragment
+) => {
+  const handleSubmit = vi.fn();
+  vi.mocked(useUseCasesListQuery).mockReturnValue({
+    data: {
+      useCases: {
+        totalCount: 1,
+        edges: [{ node: USE_CASE }],
+      },
+    },
+  } as ReturnType<typeof useUseCasesListQuery>);
+  // The users offered as authors.
+  vi.mocked(useUsersQuery).mockReturnValue({
+    data: { users: { edges: [] } },
+  } as unknown as ReturnType<typeof useUsersQuery>);
+
+  return {
+    handleSubmit,
+    ...testRender(
+      <AppServiceContext {...buildServiceContext()}>
+        <SheetWithPreventingDialog
+          open
+          setOpen={vi.fn()}
+          title={SHEET_TITLE}>
+          <Form
+            document={document}
+            handleSubmit={handleSubmit}
+          />
+        </SheetWithPreventingDialog>
+      </AppServiceContext>,
+      {
+        me: {
+          id: CURRENT_USER_ID,
+          email: CURRENT_USER_EMAIL,
+          selected_organization_id: CURRENT_ORGANIZATION.id,
+          organizations: [CURRENT_ORGANIZATION, DOCUMENT_ORGANIZATION],
+        },
+      }
+    ),
+  };
+};
+
+const typeNewNameAndDescriptions = async (user: ServiceFormUser) => {
+  await user.type(screen.getByRole('textbox', { name: NAME_LABEL }), NEW_NAME);
+  await user.type(
+    screen.getByRole('textbox', { name: SHORT_DESCRIPTION_LABEL }),
+    NEW_SHORT_DESCRIPTION
+  );
+  await user.type(
+    screen.getByRole('textbox', { name: META_DESCRIPTION_LABEL }),
+    NEW_META_DESCRIPTION
+  );
+};
+
+const selectOption = async (
+  user: ServiceFormUser,
+  comboboxName: string,
+  optionName: string
+) => {
+  await user.click(screen.getByRole('combobox', { name: comboboxName }));
+  await user.click(screen.getByRole('option', { name: optionName }));
+};
+
+export const fillCustomContentCreationFields = async (
+  user: ServiceFormUser
+) => {
+  await typeNewNameAndDescriptions(user);
+  await user.type(
+    screen.getByRole('textbox', { name: PRODUCT_VERSION_LABEL }),
+    NEW_PRODUCT_VERSION
+  );
+  await selectOption(user, USE_CASES_LABEL, USE_CASE.name);
+};
+
+export const typeNewDescription = (user: ServiceFormUser) =>
+  user.type(
+    screen.getByPlaceholderText(DESCRIPTION_PLACEHOLDER),
+    NEW_DESCRIPTION
+  );
+
+export const uploadFile = (
+  user: ServiceFormUser,
+  { label, file }: ServiceFormFileField
+) => user.upload(screen.getByLabelText(label, { selector: 'input' }), file);
+
+export const givenSolutionCategories = () =>
+  vi.mocked(useSolutionCategoriesListQuery).mockReturnValue({
+    data: {
+      solutionCategories: {
+        totalCount: 1,
+        edges: [
+          {
+            node: { ...SOLUTION_CATEGORY, product: [FiligranProduct.Opencti] },
+          },
+        ],
+      },
+    },
+  } as ReturnType<typeof useSolutionCategoriesListQuery>);
+
+export const fillIntegrationCreationFields = async (user: ServiceFormUser) => {
+  await typeNewNameAndDescriptions(user);
+  await typeNewDescription(user);
+  await selectOption(user, USE_CASES_LABEL, USE_CASE.name);
+  await selectOption(user, SOLUTION_CATEGORIES_LABEL, SOLUTION_CATEGORY.name);
+};
+
+export const fillIntegrationCreationForm = async (user: ServiceFormUser) => {
+  await fillIntegrationCreationFields(user);
+  await uploadFile(user, JSON_FILE_FIELD);
+};
+
+interface ServiceFormTestTarget<Values> {
+  Form: ServiceFormComponent<Values>;
+  resourceName: ServiceFormResource;
+}
+
+export const defineSlugGenerationTests = <Values,>({
+  Form,
+  resourceName,
+}: ServiceFormTestTarget<Values>) => {
+  it.each([
+    { name: 'Threat hunting', slug: 'threat-hunting' },
+    { name: NEW_NAME, slug: NEW_SLUG },
+    { name: 'Été à Paris', slug: 'ete-a-paris' },
+    { name: '--Threat--hunting--', slug: 'threat-hunting' },
+  ])(
+    `should fill the slug with $slug when the user names a new ${resourceName} $name`,
+    async ({ name, slug }) => {
+      // Given
+      const { user } = renderServiceForm(Form);
+
+      // When
+      await user.type(screen.getByRole('textbox', { name: NAME_LABEL }), name);
+
+      // Then
+      expect(screen.getByRole('textbox', { name: SLUG_LABEL })).toHaveValue(
+        slug
+      );
+    }
+  );
+
+  it.each([{ name: '!!!' }, { name: '   ' }])(
+    `should leave the slug empty when the user names a new ${resourceName} $name`,
+    async ({ name }) => {
+      // Given
+      const { user } = renderServiceForm(Form);
+
+      // When
+      await user.type(screen.getByRole('textbox', { name: NAME_LABEL }), name);
+
+      // Then
+      expect(screen.getByRole('textbox', { name: SLUG_LABEL })).toHaveValue('');
+    }
+  );
+
+  it(`should empty the slug when the user clears the name of a new ${resourceName}`, async () => {
+    // Given
+    const { user } = renderServiceForm(Form);
+    const nameField = screen.getByRole('textbox', { name: NAME_LABEL });
+    await user.type(nameField, NEW_NAME);
+
+    // When
+    await user.clear(nameField);
+
+    // Then
+    expect(screen.getByRole('textbox', { name: SLUG_LABEL })).toHaveValue('');
+  });
+};
+
+interface ReplaceFileConfirmationTestOptions<Values> {
+  Form: ServiceFormComponent<Values>;
+  fileField: ServiceFormFileField;
+  buildEditedDocument: () => DocumentItemFragment;
+}
+
+export const defineReplaceFileConfirmationTest = <Values,>({
+  Form,
+  fileField,
+  buildEditedDocument,
+}: ReplaceFileConfirmationTestOptions<Values>) => {
+  it(`should ask to confirm the replacement of the ${fileField.name} when the user clicks to update it`, async () => {
+    // Given
+    const { user } = renderServiceForm(Form, buildEditedDocument());
+
+    // When
+    await user.click(
+      screen.getByRole('button', { name: fileField.updateLabel })
+    );
+
+    // Then
+    expect(
+      screen.getByRole('alertdialog', { name: fileField.updateLabel })
+    ).toBeInTheDocument();
+  });
+};
+
+interface EditedServiceFormTestsOptions<
+  Values,
+> extends ServiceFormTestTarget<Values> {
+  buildEditedDocument: () => DocumentItemFragment;
+}
+
+export const defineSlugKeptOnEditTest = <Values,>({
+  Form,
+  resourceName,
+  buildEditedDocument,
+}: EditedServiceFormTestsOptions<Values>) => {
+  it(`should keep the slug of the ${resourceName} when the user renames it`, async () => {
+    // Given
+    const { user } = renderServiceForm(Form, buildEditedDocument());
+    const nameField = screen.getByRole('textbox', { name: NAME_LABEL });
+
+    // When
+    await user.clear(nameField);
+    await user.type(nameField, NEW_NAME);
+
+    // Then
+    expect(screen.getByRole('textbox', { name: SLUG_LABEL })).toHaveValue(
+      DOCUMENT_SLUG
+    );
+  });
+};
+
+export const defineDeletedImagesTest = <Values,>({
+  Form,
+  resourceName,
+  buildEditedDocument,
+}: EditedServiceFormTestsOptions<Values>) => {
+  it(`should not send the images the user deleted when the user edits the ${resourceName}`, async () => {
+    // Given
+    const { user, handleSubmit } = renderServiceForm(
+      Form,
+      buildEditedDocument()
+    );
+    await user.click(
+      within(
+        screen.getByText(DELETED_IMAGE.file_name).parentElement as HTMLElement
+      ).getByRole('button', { name: DELETE_IMAGE_LABEL })
+    );
+
+    // When
+    await user.click(screen.getByRole('button', { name: VALIDATE_LABEL }));
+
+    // Then
+    await waitFor(() =>
+      expect(handleSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({ images: [KEPT_IMAGE] })
+      )
+    );
+  });
+};
+
+export const defineProductVersionFormatTests = <Values,>({
+  Form,
+  resourceName,
+  buildEditedDocument,
+}: EditedServiceFormTestsOptions<Values>) => {
+  it.each(['6.4', 'v6.4.0', '6.4.0-rc1'])(
+    `should reject the product version %s when the user saves the ${resourceName}`,
+    async (productVersion) => {
+      // Given
+      const { user } = renderServiceForm(Form, buildEditedDocument());
+      const productVersionField = screen.getByRole('textbox', {
+        name: PRODUCT_VERSION_LABEL,
+      });
+      await user.clear(productVersionField);
+      await user.type(productVersionField, productVersion);
+
+      // When
+      await user.click(screen.getByRole('button', { name: VALIDATE_LABEL }));
+
+      // Then
+      expect(
+        await screen.findByText(PRODUCT_VERSION_ERROR)
+      ).toBeInTheDocument();
+    }
+  );
+};
+
+interface ShortDescriptionLengthTestsOptions<
+  Values,
+> extends EditedServiceFormTestsOptions<Values> {
+  shortDescriptionMaxLength: number;
+}
+
+const fillShortDescription = async (
+  user: ServiceFormUser,
+  shortDescription: string
+) => {
+  const shortDescriptionField = screen.getByRole('textbox', {
+    name: SHORT_DESCRIPTION_LABEL,
+  });
+  await user.clear(shortDescriptionField);
+  await user.click(shortDescriptionField);
+  await user.paste(shortDescription);
+  return shortDescriptionField;
+};
+
+export const defineShortDescriptionLengthTests = <Values,>({
+  Form,
+  resourceName,
+  buildEditedDocument,
+  shortDescriptionMaxLength,
+}: ShortDescriptionLengthTestsOptions<Values>) => {
+  it(`should save a short description of ${shortDescriptionMaxLength} characters when the user edits the ${resourceName}`, async () => {
+    // Given
+    const { user, handleSubmit } = renderServiceForm(
+      Form,
+      buildEditedDocument()
+    );
+    const shortDescription = 'a'.repeat(shortDescriptionMaxLength);
+    await fillShortDescription(user, shortDescription);
+
+    // When
+    await user.click(screen.getByRole('button', { name: VALIDATE_LABEL }));
+
+    // Then
+    await waitFor(() =>
+      expect(handleSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({ short_description: shortDescription })
+      )
+    );
+  });
+
+  it(`should reject a short description longer than ${shortDescriptionMaxLength} characters when the user edits the ${resourceName}`, async () => {
+    // Given
+    const { user } = renderServiceForm(Form, buildEditedDocument());
+    const shortDescriptionField = await fillShortDescription(
+      user,
+      'a'.repeat(shortDescriptionMaxLength + 1)
+    );
+
+    // When
+    await user.click(screen.getByRole('button', { name: VALIDATE_LABEL }));
+
+    // Then
+    await waitFor(() =>
+      expect(shortDescriptionField).toHaveAttribute('aria-invalid', 'true')
+    );
+  });
+};
+
+const fillMetaDescription = async (
+  user: ServiceFormUser,
+  metaDescription: string
+) => {
+  const metaDescriptionField = screen.getByRole('textbox', {
+    name: META_DESCRIPTION_LABEL,
+  });
+  await user.clear(metaDescriptionField);
+  await user.click(metaDescriptionField);
+  await user.paste(metaDescription);
+  return metaDescriptionField;
+};
+
+/** What the published meta-description puts before the summary, per resource. */
+const META_DESCRIPTION_PREFIXES: Record<ServiceFormResource, string> = {
+  [ServiceFormResource.CUSTOM_DASHBOARD]: 'OpenCTI Dashboard: ',
+  [ServiceFormResource.CUSTOM_VIEW]: 'OpenCTI Custom View: ',
+  [ServiceFormResource.PLAYBOOK]: 'OpenCTI Playbook: ',
+  [ServiceFormResource.SCENARIO]: 'OpenAEV Scenario: ',
+  [ServiceFormResource.CSV_FEED]: 'OpenCTI Integration: ',
+  [ServiceFormResource.RSS_FEED]: 'OpenCTI Integration: ',
+  [ServiceFormResource.STREAM]: 'OpenCTI Integration: ',
+  [ServiceFormResource.TAXII_FEED]: 'OpenCTI Integration: ',
+  [ServiceFormResource.THIRD_PARTY_INTEGRATION]: 'OpenCTI Integration: ',
+  [ServiceFormResource.CONNECTOR]: 'OpenCTI Integration: ',
+};
+
+/** A summary whose meta-description, prefix and final period included, has exactly `length` characters. */
+const summaryOfGeneratedLength = (
+  resourceName: ServiceFormResource,
+  length: number
+) =>
+  'a'.repeat(
+    length - META_DESCRIPTION_PREFIXES[resourceName].length - '.'.length
+  );
+
+// Within the bounds, with room for a few more words.
+const VALID_GENERATED_LENGTH = 140;
+
+/** A name the meta-description of the resource starts with, in another case. */
+const titleStartingMetaDescription = (resourceName: ServiceFormResource) =>
+  META_DESCRIPTION_PREFIXES[resourceName].replace(/: $/, '').toUpperCase();
+
+// The translated messages: the same Error.Server keys as the backend, with the generated length for a length rule.
+const CURRENT_LENGTH_KEY = 'Service.Form.MetaDescriptionCurrentLength';
+const lengthErrorMessage = (error: string, length: number) =>
+  translateWithValues(CURRENT_LENGTH_KEY, {
+    error: `Error.Server.${error}`,
+    length,
+  });
+const INVALID_DASH_ERROR = 'Error.Server.META_DESCRIPTION_INVALID_DASH';
+const MATCHES_TITLE_ERROR = 'Error.Server.META_DESCRIPTION_MATCHES_TITLE';
+
+/**
+ * Lets the test read the values the length message is interpolated with, until it ends. Every other key stays bare,
+ * so the placeholders the form fields are found by do not change.
+ */
+const translateMessagesWithValues = () => {
+  vi.mocked(useTranslations).mockReturnValue(
+    mockTranslations({
+      translate: (key, values) =>
+        key === CURRENT_LENGTH_KEY ? translateWithValues(key, values) : key,
+    })
+  );
+  onTestFinished(() => {
+    vi.mocked(useTranslations).mockImplementation(() => mockTranslations());
+  });
+};
+
+const metaDescriptionLengthCases = (resourceName: ServiceFormResource) => [
+  {
+    context: `${META_DESCRIPTION_MIN_LENGTH - 1} characters`,
+    metaDescription: summaryOfGeneratedLength(
+      resourceName,
+      META_DESCRIPTION_MIN_LENGTH - 1
+    ),
+    message: lengthErrorMessage(
+      'META_DESCRIPTION_TOO_SHORT',
+      META_DESCRIPTION_MIN_LENGTH - 1
+    ),
+  },
+  {
+    context: `${META_DESCRIPTION_MAX_LENGTH + 1} characters`,
+    metaDescription: summaryOfGeneratedLength(
+      resourceName,
+      META_DESCRIPTION_MAX_LENGTH + 1
+    ),
+    message: lengthErrorMessage(
+      'META_DESCRIPTION_TOO_LONG',
+      META_DESCRIPTION_MAX_LENGTH + 1
+    ),
+  },
+];
+
+interface MetaDescriptionCreationTestsOptions<
+  Values,
+> extends ServiceFormTestTarget<Values> {
+  /**
+   * Fills every required field, files included: zod checks the generated meta-description once no field aborts the
+   * parsing, and a missing file does.
+   */
+  fillCreationForm: (user: ServiceFormUser) => Promise<void>;
+}
+
+export const defineMetaDescriptionCreationTests = <Values,>({
+  Form,
+  resourceName,
+  fillCreationForm,
+}: MetaDescriptionCreationTestsOptions<Values>) => {
+  it.each([
+    { context: 'without it', metaDescription: '' },
+    { context: 'with blanks only', metaDescription: '   ' },
+  ])(
+    `should reject the meta-description when the user creates a ${resourceName} $context`,
+    async ({ metaDescription }) => {
+      // Given
+      const { user } = renderServiceForm(Form);
+      await fillCreationForm(user);
+      const metaDescriptionField = await fillMetaDescription(
+        user,
+        metaDescription
+      );
+
+      // When
+      await user.click(
+        screen.getByRole('button', { name: REQUEST_VALIDATION_LABEL })
+      );
+
+      // Then: an empty field fails the native constraint, a blank one fails zod
+      await waitFor(() => expect(metaDescriptionField).toBeInvalid());
+    }
+  );
+
+  it.each(metaDescriptionLengthCases(resourceName))(
+    `should reject the meta-description when the user creates a ${resourceName} whose generated meta-description has $context`,
+    async ({ metaDescription, message }) => {
+      // Given
+      translateMessagesWithValues();
+      const { user } = renderServiceForm(Form);
+      await fillCreationForm(user);
+      await fillMetaDescription(user, metaDescription);
+
+      // When
+      await user.click(
+        screen.getByRole('button', { name: REQUEST_VALIDATION_LABEL })
+      );
+
+      // Then
+      expect(await screen.findByText(message)).toBeInTheDocument();
+    }
+  );
+
+  it(`should reject the meta-description when the user renames a new ${resourceName} like the start of it`, async () => {
+    // Given
+    const { user } = renderServiceForm(Form);
+    await fillCreationForm(user);
+    const nameField = screen.getByRole('textbox', { name: NAME_LABEL });
+    await user.clear(nameField);
+    await user.type(nameField, titleStartingMetaDescription(resourceName));
+
+    // When
+    await user.click(
+      screen.getByRole('button', { name: REQUEST_VALIDATION_LABEL })
+    );
+
+    // Then
+    expect(await screen.findByText(MATCHES_TITLE_ERROR)).toBeInTheDocument();
+  });
+};
+
+export const defineMetaDescriptionEditionTests = <Values,>({
+  Form,
+  resourceName,
+  buildEditedDocument,
+}: EditedServiceFormTestsOptions<Values>) => {
+  it(`should show the stored meta-description when the user edits the ${resourceName}`, () => {
+    // Given / When
+    renderServiceForm(Form, {
+      ...buildEditedDocument(),
+      meta_description: DOCUMENT_META_DESCRIPTION,
+    });
+
+    // Then
+    expect(
+      screen.getByRole('textbox', { name: META_DESCRIPTION_LABEL })
+    ).toHaveValue(DOCUMENT_META_DESCRIPTION);
+  });
+
+  it(`should save the ${resourceName} when the user edits one stored without a meta-description`, async () => {
+    // Given
+    const { user, handleSubmit } = renderServiceForm(Form, {
+      ...buildEditedDocument(),
+      meta_description: null,
+    });
+
+    // When
+    await user.click(screen.getByRole('button', { name: VALIDATE_LABEL }));
+
+    // Then
+    await waitFor(() => expect(handleSubmit).toHaveBeenCalledOnce());
+  });
+
+  it.each([META_DESCRIPTION_MIN_LENGTH, META_DESCRIPTION_MAX_LENGTH])(
+    `should save a meta-description whose generated text has %i characters when the user edits the ${resourceName}`,
+    async (length) => {
+      // Given
+      const { user, handleSubmit } = renderServiceForm(
+        Form,
+        buildEditedDocument()
+      );
+      const metaDescription = summaryOfGeneratedLength(resourceName, length);
+      await fillMetaDescription(user, metaDescription);
+
+      // When
+      await user.click(screen.getByRole('button', { name: VALIDATE_LABEL }));
+
+      // Then
+      await waitFor(() =>
+        expect(handleSubmit).toHaveBeenCalledWith(
+          expect.objectContaining({ meta_description: metaDescription })
+        )
+      );
+    }
+  );
+
+  it.each([
+    ...metaDescriptionLengthCases(resourceName).map((lengthCase) => ({
+      ...lengthCase,
+      context: `whose generated text has ${lengthCase.context}`,
+    })),
+    {
+      context: 'holding an em dash',
+      metaDescription: `${summaryOfGeneratedLength(resourceName, VALID_GENERATED_LENGTH)} \u2014 APT-28`,
+      message: INVALID_DASH_ERROR,
+    },
+    {
+      context: 'holding an en dash',
+      metaDescription: `${summaryOfGeneratedLength(resourceName, VALID_GENERATED_LENGTH)} \u2013 APT-28`,
+      message: INVALID_DASH_ERROR,
+    },
+  ])(
+    `should reject a meta-description $context when the user edits the ${resourceName}`,
+    async ({ metaDescription, message }) => {
+      // Given
+      translateMessagesWithValues();
+      const { user, handleSubmit } = renderServiceForm(
+        Form,
+        buildEditedDocument()
+      );
+      await fillMetaDescription(user, metaDescription);
+
+      // When
+      await user.click(screen.getByRole('button', { name: VALIDATE_LABEL }));
+
+      // Then
+      expect(await screen.findByText(message)).toBeInTheDocument();
+      expect(handleSubmit).not.toHaveBeenCalled();
+    }
+  );
+
+  it(`should reject the stored meta-description when the user edits a ${resourceName} named like the start of it`, async () => {
+    // Given
+    const { user, handleSubmit } = renderServiceForm(Form, {
+      ...buildEditedDocument(),
+      name: titleStartingMetaDescription(resourceName),
+      meta_description: DOCUMENT_META_DESCRIPTION,
+    });
+
+    // When
+    await user.click(screen.getByRole('button', { name: VALIDATE_LABEL }));
+
+    // Then
+    expect(await screen.findByText(MATCHES_TITLE_ERROR)).toBeInTheDocument();
+    expect(handleSubmit).not.toHaveBeenCalled();
+  });
+};
+
+interface RequiredFileTestOptions<
+  Values,
+> extends ServiceFormTestTarget<Values> {
+  fileField: ServiceFormFileField;
+  fillCreationFields: (user: ServiceFormUser) => Promise<void>;
+}
+
+export const defineRequiredFileTest = <Values,>({
+  Form,
+  resourceName,
+  fileField,
+  fillCreationFields,
+}: RequiredFileTestOptions<Values>) => {
+  it(`should ask for the ${fileField.name} when the user creates a ${resourceName} without it`, async () => {
+    // Given
+    const { user } = renderServiceForm(Form);
+    await fillCreationFields(user);
+
+    // When
+    await user.click(
+      screen.getByRole('button', { name: REQUEST_VALIDATION_LABEL })
+    );
+
+    // Then
+    await waitFor(() =>
+      expect(
+        screen.getByLabelText(fileField.label, { selector: 'input' })
+      ).toHaveAttribute('aria-invalid', 'true')
+    );
+  });
+};
+
+interface ServiceFormTestsOptions<Values>
+  extends
+    ShortDescriptionLengthTestsOptions<Values>,
+    ReplaceFileConfirmationTestOptions<Values>,
+    RequiredFileTestOptions<Values> {
+  creationValues: NoInfer<Partial<Values>>;
+  editionValues?: NoInfer<Partial<Values>>;
+}
+
+export const defineServiceFormTests = <Values,>({
+  Form,
+  resourceName,
+  fileField,
+  shortDescriptionMaxLength,
+  buildEditedDocument,
+  fillCreationFields,
+  creationValues,
+  editionValues = {},
+}: ServiceFormTestsOptions<Values>) => {
+  defineSlugGenerationTests({ Form, resourceName });
+
+  defineSlugKeptOnEditTest({ Form, resourceName, buildEditedDocument });
+
+  it(`should send the filled ${resourceName} when the user creates it`, async () => {
+    // Given
+    const { user, handleSubmit } = renderServiceForm(Form);
+    await fillCreationFields(user);
+    await uploadFile(user, fileField);
+
+    // When
+    await user.click(
+      screen.getByRole('button', { name: REQUEST_VALIDATION_LABEL })
+    );
+
+    // Then
+    await waitFor(() =>
+      expect(handleSubmit).toHaveBeenCalledWith({
+        name: NEW_NAME,
+        slug: NEW_SLUG,
+        uploader_id: CURRENT_USER_ID,
+        short_description: NEW_SHORT_DESCRIPTION,
+        meta_description: NEW_META_DESCRIPTION,
+        product_version: NEW_PRODUCT_VERSION,
+        uploader_organization_id: CURRENT_ORGANIZATION.id,
+        use_cases: [USE_CASE.id],
+        document: [fileField.file],
+        status: DocumentStatus.InValidation,
+        logo: [],
+        images: [],
+        ...creationValues,
+      })
+    );
+  });
+
+  defineRequiredFileTest({ Form, resourceName, fileField, fillCreationFields });
+
+  defineMetaDescriptionCreationTests({
+    Form,
+    resourceName,
+    fillCreationForm: async (user) => {
+      await fillCreationFields(user);
+      await uploadFile(user, fileField);
+    },
+  });
+
+  defineMetaDescriptionEditionTests({
+    Form,
+    resourceName,
+    buildEditedDocument,
+  });
+
+  defineReplaceFileConfirmationTest({ Form, fileField, buildEditedDocument });
+
+  it(`should save the ${resourceName} without a new ${fileField.name} when the user edits it`, async () => {
+    // Given
+    const { user, handleSubmit } = renderServiceForm(
+      Form,
+      buildEditedDocument()
+    );
+
+    // When
+    await user.click(screen.getByRole('button', { name: VALIDATE_LABEL }));
+
+    // Then
+    await waitFor(() =>
+      expect(handleSubmit).toHaveBeenCalledWith({
+        name: DOCUMENT_NAME,
+        slug: DOCUMENT_SLUG,
+        uploader_id: UPLOADER.id,
+        short_description: DOCUMENT_SHORT_DESCRIPTION,
+        description: DOCUMENT_DESCRIPTION,
+        product_version: DOCUMENT_PRODUCT_VERSION,
+        uploader_organization_id: DOCUMENT_ORGANIZATION.id,
+        use_cases: [USE_CASE.id],
+        status: DocumentStatus.Published,
+        logo: [],
+        images: [DELETED_IMAGE, KEPT_IMAGE],
+        ...editionValues,
+      })
+    );
+  });
+
+  defineDeletedImagesTest({ Form, resourceName, buildEditedDocument });
+
+  defineProductVersionFormatTests({ Form, resourceName, buildEditedDocument });
+
+  defineShortDescriptionLengthTests({
+    Form,
+    resourceName,
+    buildEditedDocument,
+    shortDescriptionMaxLength,
+  });
+};
+
+const INTEGRATION_SHORT_DESCRIPTION_MAX_LENGTH = 250;
+
+interface IntegrationFormTestsOptions<
+  Values,
+> extends ServiceFormTestTarget<Values> {
+  integrationType: IntegrationType;
+  creationValues?: NoInfer<Partial<Values>>;
+}
+
+export const defineIntegrationFormTests = <Values,>({
+  Form,
+  resourceName,
+  integrationType,
+  creationValues = {},
+}: IntegrationFormTestsOptions<Values>) => {
+  beforeEach(() => {
+    givenSolutionCategories();
+  });
+
+  defineSlugKeptOnEditTest({
+    Form,
+    resourceName,
+    buildEditedDocument: buildIntegrationDocument,
+  });
+
+  it(`should send the filled ${resourceName} when the user creates it`, async () => {
+    // Given
+    const { user, handleSubmit } = renderServiceForm(Form);
+    await fillIntegrationCreationFields(user);
+    await uploadFile(user, JSON_FILE_FIELD);
+
+    // When
+    await user.click(
+      screen.getByRole('button', { name: REQUEST_VALIDATION_LABEL })
+    );
+
+    // Then
+    await waitFor(() =>
+      expect(handleSubmit).toHaveBeenCalledWith({
+        name: NEW_NAME,
+        slug: NEW_SLUG,
+        uploader_id: CURRENT_USER_ID,
+        short_description: NEW_SHORT_DESCRIPTION,
+        meta_description: NEW_META_DESCRIPTION,
+        description: NEW_DESCRIPTION,
+        uploader_organization_id: CURRENT_ORGANIZATION.id,
+        integration_type: integrationType,
+        use_cases: [USE_CASE.id],
+        solution_categories: [SOLUTION_CATEGORY.id],
+        document: [JSON_FILE_FIELD.file],
+        status: DocumentStatus.InValidation,
+        logo: [],
+        images: [],
+        ...creationValues,
+      })
+    );
+  });
+
+  defineRequiredFileTest({
+    Form,
+    resourceName,
+    fileField: JSON_FILE_FIELD,
+    fillCreationFields: fillIntegrationCreationFields,
+  });
+
+  defineMetaDescriptionCreationTests({
+    Form,
+    resourceName,
+    fillCreationForm: fillIntegrationCreationForm,
+  });
+
+  defineMetaDescriptionEditionTests({
+    Form,
+    resourceName,
+    buildEditedDocument: buildIntegrationDocument,
+  });
+
+  it(`should save the ${resourceName} without a new ${JSON_FILE_FIELD.name} when the user edits it`, async () => {
+    // Given
+    const { user, handleSubmit } = renderServiceForm(
+      Form,
+      buildIntegrationDocument()
+    );
+
+    // When
+    await user.click(screen.getByRole('button', { name: VALIDATE_LABEL }));
+
+    // Then
+    await waitFor(() =>
+      expect(handleSubmit).toHaveBeenCalledWith({
+        name: DOCUMENT_NAME,
+        slug: DOCUMENT_SLUG,
+        uploader_id: UPLOADER.id,
+        short_description: DOCUMENT_SHORT_DESCRIPTION,
+        description: DOCUMENT_DESCRIPTION,
+        uploader_organization_id: DOCUMENT_ORGANIZATION.id,
+        integration_type: integrationType,
+        use_cases: [USE_CASE.id],
+        solution_categories: [SOLUTION_CATEGORY.id],
+        license_type: LicenseType.Commercial,
+        status: DocumentStatus.Published,
+        logo: [],
+        images: [DELETED_IMAGE, KEPT_IMAGE],
+      })
+    );
+  });
+
+  defineDeletedImagesTest({
+    Form,
+    resourceName,
+    buildEditedDocument: buildIntegrationDocument,
+  });
+
+  defineShortDescriptionLengthTests({
+    Form,
+    resourceName,
+    buildEditedDocument: buildIntegrationDocument,
+    shortDescriptionMaxLength: INTEGRATION_SHORT_DESCRIPTION_MAX_LENGTH,
+  });
+};

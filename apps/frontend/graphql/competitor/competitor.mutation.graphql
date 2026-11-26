@@ -1,0 +1,17 @@
+mutation CompetitorAdd($input: CreateCompetitorInput!) {
+  createCompetitor(input: $input) {
+    ...CompetitorRow
+  }
+}
+
+mutation CompetitorEdit($input: UpdateCompetitorInput!) {
+  updateCompetitor(input: $input) {
+    ...CompetitorRow
+  }
+}
+
+mutation CompetitorDelete($id: CompetitorId!) {
+  deleteCompetitor(id: $id) {
+    id
+  }
+}

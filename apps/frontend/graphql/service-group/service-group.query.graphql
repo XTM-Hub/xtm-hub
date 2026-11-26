@@ -1,0 +1,27 @@
+query BundleUserServiceGroups($serviceInstanceId: ServiceInstanceId!) {
+  bundleUserServiceGroups(serviceInstanceId: $serviceInstanceId) {
+    user {
+      id
+      email
+    }
+    groups {
+      platformIdentifier
+      name
+    }
+  }
+}
+
+query BundleProducts($serviceInstanceId: ServiceInstanceId!) {
+  bundleProducts(serviceInstanceId: $serviceInstanceId)
+}
+
+query ServiceGroups($serviceInstanceId: ServiceInstanceId!) {
+  serviceGroups(serviceInstanceId: $serviceInstanceId) {
+    id
+    name
+    users {
+      id
+      email
+    }
+  }
+}

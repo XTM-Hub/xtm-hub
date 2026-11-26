@@ -19,7 +19,10 @@ export default class UserPage {
     await this.page
       .getByRole('button', { name: 'Settings', exact: true })
       .click();
-    await this.page.getByRole('link', { name: 'Users' }).click();
+    await this.page
+      .getByRole('navigation')
+      .getByRole('link', { name: 'Users', exact: true })
+      .click();
 
     await expect(
       this.page.getByRole('heading', { level: 1 }).locator(':scope.sr-only')
@@ -33,7 +36,7 @@ export default class UserPage {
     await this.page.getByRole('combobox').click();
     await this.page.getByRole('option', { name: userOrganizationName }).click();
     await this.page
-      .getByRole('button', { name: 'Additional capabilities' })
+      .getByRole('combobox', { name: userOrganizationName, exact: true })
       .click();
     await this.page.getByRole('option', { name: 'MANAGE ACCESS' }).click();
 
@@ -61,6 +64,18 @@ export default class UserPage {
     ).toBeVisible();
     await this.page.getByRole('button', { name: 'Disable' }).click();
     await this.page.getByRole('button', { name: 'Disable' }).click();
+  }
+
+  async deleteUser(userEmail: string) {
+    await this.page
+      .getByRole('row', { name: userEmail })
+      .getByRole('button', { name: 'Open Menu' })
+      .click();
+    await this.page.getByRole('menuitem', { name: 'Delete' }).click();
+    await this.page
+      .getByRole('alertdialog')
+      .getByRole('button', { name: 'Delete' })
+      .click();
   }
 
   async assertCurrentPage() {

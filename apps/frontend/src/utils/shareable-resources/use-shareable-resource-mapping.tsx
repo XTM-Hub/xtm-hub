@@ -1,4 +1,5 @@
 'use client';
+import { ServiceListFacetCounts } from '@/components/service/components/header/filter/service-list-facet-counts';
 import { ServiceListFilterEntityType } from '@/components/service/components/header/filter/ServiceListFilterEntityType';
 import { ServiceListFilterLabel } from '@/components/service/components/header/filter/ServiceListFilterLabel';
 import {
@@ -6,14 +7,15 @@ import {
   ServiceListFilterMap,
 } from '@/components/service/components/header/ServiceListHeader';
 import { IntegrationDeployableFilter } from '@/components/ui/shareable-resource/integration/IntegrationDeployableFilter';
-import { IntegrationFilters } from '@/components/ui/shareable-resource/integration/IntegrationFilters';
 import { IntegrationLicenseTypeFilter } from '@/components/ui/shareable-resource/integration/IntegrationLicenseTypeFilter';
+import { IntegrationProductVersionFilter } from '@/components/ui/shareable-resource/integration/IntegrationProductVersionFilter';
 import { IntegrationSolutionCategoryFilter } from '@/components/ui/shareable-resource/integration/IntegrationSolutionCategoryFilter';
+import { IntegrationTypeFilter } from '@/components/ui/shareable-resource/integration/IntegrationTypeFilter';
 import { IntegrationVerifiedFilter } from '@/components/ui/shareable-resource/integration/IntegrationVerifiedFilter';
-import {
-  ServiceListLocalStorageKey,
-  useServiceListLocalStorage,
-} from '@/hooks/use-service-list-local-storage';
+import { PrivateIntegrationProductVersionFilter } from '@/components/ui/shareable-resource/integration/PrivateIntegrationProductVersionFilter';
+import usePublicPath from '@/hooks/use-public-path';
+import { useTranslate } from '@/hooks/use-translate';
+import { ServiceListStorageKey } from '@/utils/filters-storage.utils';
 import {
   ServiceSlug,
   ShareableResourceType,
@@ -21,24 +23,21 @@ import {
 
 export const useShareableResourceMapping = (
   slug: ServiceSlug,
-  isSolutionCategoriesEnabled: boolean
+  facetCounts?: ServiceListFacetCounts
 ) => {
-  const localStorageKeyMapping: Record<
-    ServiceSlug,
-    ServiceListLocalStorageKey
-  > = {
+  const t = useTranslate();
+  const isPublicPath = usePublicPath();
+  const storageKeyMapping: Record<ServiceSlug, ServiceListStorageKey> = {
     [ServiceSlug.OPEN_CTI_INTEGRATIONS]:
-      ServiceListLocalStorageKey.OpenCTIIntegrationFeeds,
+      ServiceListStorageKey.OpenCTIIntegrationFeeds,
     [ServiceSlug.OPEN_CTI_CUSTOM_DASHBOARDS]:
-      ServiceListLocalStorageKey.OpenCTICustomDashboards,
+      ServiceListStorageKey.OpenCTICustomDashboards,
     [ServiceSlug.OPEN_CTI_CUSTOM_VIEWS]:
-      ServiceListLocalStorageKey.OpenCTICustomViews,
-    [ServiceSlug.OPEN_AEV_SCENARIOS]:
-      ServiceListLocalStorageKey.OpenAEVScenarios,
-    [ServiceSlug.OPEN_CTI_PLAYBOOKS]:
-      ServiceListLocalStorageKey.OpenCTIPlaybooks,
+      ServiceListStorageKey.OpenCTICustomViews,
+    [ServiceSlug.OPEN_AEV_SCENARIOS]: ServiceListStorageKey.OpenAEVScenarios,
+    [ServiceSlug.OPEN_CTI_PLAYBOOKS]: ServiceListStorageKey.OpenCTIPlaybooks,
   };
-  const localStorageKey = localStorageKeyMapping[slug];
+  const storageKey = storageKeyMapping[slug];
   const typeFeed: Record<ServiceSlug, ShareableResourceType> = {
     [ServiceSlug.OPEN_CTI_INTEGRATIONS]:
       ShareableResourceType.OPENCTI_INTEGRATION,
@@ -49,57 +48,76 @@ export const useShareableResourceMapping = (
     [ServiceSlug.OPEN_AEV_SCENARIOS]: ShareableResourceType.OPENAEV_SCENARIO,
     [ServiceSlug.OPEN_CTI_PLAYBOOKS]: ShareableResourceType.OPENCTI_PLAYBOOK,
   };
-  const {
-    removeLabels,
-    removeIntegrationTypes,
-    removeLicenseTypes,
-    removeSolutionCategories,
-    removeDeployable,
-    removeVerified,
-    removeEntityTypes,
-  } = useServiceListLocalStorage(localStorageKey);
-
   const labelFilter = {
-    node: <ServiceListFilterLabel type={typeFeed[slug]} />,
-    reset: removeLabels,
+    title: t('GenericActions.FilterUseCasesLabel'),
+    node: (
+      <ServiceListFilterLabel
+        type={typeFeed[slug]}
+        facetCounts={facetCounts?.useCase}
+      />
+    ),
   };
 
   const entityTypeFilter = {
-    node: <ServiceListFilterEntityType />,
-    reset: removeEntityTypes,
+    title: t('GenericActions.FilterEntityTypesLabel'),
+    node: (
+      <ServiceListFilterEntityType
+        type={typeFeed[slug]}
+        facetCounts={facetCounts?.entityType}
+      />
+    ),
   };
 
   const filtersMap: Record<ServiceSlug, ServiceListFilterMap> = {
     [ServiceSlug.OPEN_CTI_INTEGRATIONS]: {
+      [ServiceListFilterKey.ProductVersion]: {
+        title: t('Service.OpenctiIntegrations.Filter.ProductVersion.Label'),
+        node: isPublicPath ? (
+          <IntegrationProductVersionFilter />
+        ) : (
+          <PrivateIntegrationProductVersionFilter />
+        ),
+        noAccordion: true,
+      },
       [ServiceListFilterKey.Label]: labelFilter,
       [ServiceListFilterKey.IntegrationType]: {
+        title: t('Service.OpenctiIntegrations.Filter.Type.Label'),
         node: (
-          <IntegrationFilters
-            isSolutionCategoriesEnabled={isSolutionCategoriesEnabled}
-          />
+          <IntegrationTypeFilter facetCounts={facetCounts?.integrationType} />
         ),
-        reset: removeIntegrationTypes,
       },
       [ServiceListFilterKey.ManagerSupported]: {
-        node: <IntegrationDeployableFilter />,
-        reset: removeDeployable,
+        title: t('Service.OpenctiIntegrations.Filter.ManagerSupported.Label'),
+        node: (
+          <IntegrationDeployableFilter
+            facetCounts={facetCounts?.managerSupported}
+          />
+        ),
       },
       [ServiceListFilterKey.Verified]: {
-        node: <IntegrationVerifiedFilter />,
-        reset: removeVerified,
+        title: t('Service.OpenctiIntegrations.Filter.Verified.Label'),
+        description: t(
+          'Service.OpenctiIntegrations.Filter.Verified.Description'
+        ),
+        node: <IntegrationVerifiedFilter facetCounts={facetCounts?.verified} />,
       },
-      ...(isSolutionCategoriesEnabled
-        ? {
-            [ServiceListFilterKey.SolutionCategory]: {
-              node: <IntegrationSolutionCategoryFilter />,
-              reset: removeSolutionCategories,
-            },
-            [ServiceListFilterKey.LicenseType]: {
-              node: <IntegrationLicenseTypeFilter />,
-              reset: removeLicenseTypes,
-            },
-          }
-        : {}),
+
+      [ServiceListFilterKey.SolutionCategory]: {
+        title: t('Service.OpenctiIntegrations.Filter.SolutionCategory.Label'),
+        node: (
+          <IntegrationSolutionCategoryFilter
+            facetCounts={facetCounts?.solutionCategory}
+          />
+        ),
+      },
+      [ServiceListFilterKey.LicenseType]: {
+        title: t('Service.OpenctiIntegrations.Filter.LicenseType.Label'),
+        node: (
+          <IntegrationLicenseTypeFilter
+            facetCounts={facetCounts?.licenseType}
+          />
+        ),
+      },
     },
     [ServiceSlug.OPEN_CTI_CUSTOM_DASHBOARDS]: {
       [ServiceListFilterKey.Label]: labelFilter,
@@ -120,6 +138,6 @@ export const useShareableResourceMapping = (
 
   return {
     filters,
-    localStorageKey,
+    storageKey,
   };
 };

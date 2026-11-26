@@ -1,57 +1,72 @@
 import {
-  APP_PATH,
-  PUBLIC_CYBERSECURITY_SOLUTIONS_PATH,
-} from '@/utils/path/constant';
-import {
-  IntegrationType,
+  DocumentItemFragment,
   PortalCapability,
   ServiceRestriction,
 } from '@graphql/generated';
 
-import { ServiceListFilterLabel } from '@/components/service/components/header/filter/ServiceListFilterLabel';
+import DocumentList from '@/components/service/components/DocumentList';
+import { FilterSidebar } from '@/components/service/components/header/filter/FilterSidebar';
+import { IntegrationsCsvExportButton } from '@/components/service/components/header/IntegrationsCsvExportButton';
 import {
-  ServiceListFilterKey,
+  ServiceListDisplayMode,
   ServiceListFilterMap,
   ServiceListHeader,
 } from '@/components/service/components/header/ServiceListHeader';
 import ServiceListHeaderButtons from '@/components/service/components/header/ServiceListHeaderButtons';
-import ServiceCard from '@/components/service/components/ServiceCard';
 import { useServiceContext } from '@/components/service/components/ServiceContext';
-import { useServiceListLocalStorageKeyContext } from '@/components/service/components/ServiceListLocalStorageKeyContext';
+import { useServiceListStorageKeyContext } from '@/components/service/components/ServiceListStorageKeyContext';
 import {
   getHeroSectionLibraryProps,
   HeroSectionLibrary,
 } from '@/components/service/document/ui/HeroSectionLibrary';
-import { SettingsContext } from '@/components/settings/EnvPortalContext';
 import { useUserHasPortalCapability } from '@/hooks/use-portal-capability';
 import useScrollPosition from '@/hooks/use-scroll-position';
 import useServiceCapability from '@/hooks/use-service-capability';
-import { useServiceListLocalStorage } from '@/hooks/use-service-list-local-storage';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { useTranslations } from 'next-intl';
-import { Fragment, useContext, useLayoutEffect } from 'react';
+import { useServiceListStorage } from '@/hooks/use-service-list-storage';
+import { useStickyHeaderOffset } from '@/hooks/use-sticky-header-offset';
+import { useTranslate } from '@/hooks/use-translate';
+import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
+import { useLayoutEffect, useRef } from 'react';
 
 export interface ServiceListProps {
-  active: documentItem_fragment$data[];
-  draft: documentItem_fragment$data[];
+  published: DocumentItemFragment[];
+  draft: DocumentItemFragment[];
+  inValidation: DocumentItemFragment[];
   search: string;
   onSearchChange: (v: string) => void;
-  additionalFilters?: ServiceListFilterMap;
-  connectionId?: string;
+  additionalFilters: ServiceListFilterMap;
   paginationControls?: React.ReactNode;
 }
+
+const DocumentSection = ({
+  title,
+  documents,
+  displayMode,
+}: {
+  title?: string;
+  documents: DocumentItemFragment[];
+  displayMode: ServiceListDisplayMode;
+}) => (
+  <>
+    {title && <div className="title-xs">{title}:</div>}
+    <DocumentList
+      documents={documents}
+      displayMode={displayMode}
+    />
+  </>
+);
+
 const ServiceList = ({
-  active,
+  published,
   draft,
+  inValidation,
   search,
   onSearchChange,
   additionalFilters,
-  connectionId,
   paginationControls,
 }: ServiceListProps) => {
-  const t = useTranslations();
-  const { settings } = useContext(SettingsContext);
-  const { translationKey, serviceInstance, type } = useServiceContext();
+  const t = useTranslate();
+  const { serviceInstance, type } = useServiceContext();
   const userCanUpdate = useServiceCapability(
     ServiceRestriction.Upload,
     serviceInstance
@@ -61,102 +76,78 @@ const ServiceList = ({
     PortalCapability.Bypass,
   ]);
 
-  const { localStorageKey } = useServiceListLocalStorageKeyContext();
-  const { removeLabels } = useServiceListLocalStorage(localStorageKey);
-
-  const filters = {
-    ...additionalFilters,
-    [ServiceListFilterKey.Label]: {
-      node: <ServiceListFilterLabel type={type} />,
-      reset: removeLabels,
-    },
-  };
+  const { storageKey } = useServiceListStorageKeyContext();
+  const { displayMode: selectedDisplayMode, setDisplayMode } =
+    useServiceListStorage(storageKey);
 
   const { restore } = useScrollPosition();
   useLayoutEffect(() => {
     restore();
   }, [restore]);
 
-  const activeByIntegrationType = active.reduce<
-    Record<string, documentItem_fragment$data[]>
-  >((acc, resource) => {
-    const type = resource.integration_type
-      ? resource.integration_type
-      : resource.type;
-
-    if (!acc[type]) {
-      acc[type] = [];
-    }
-
-    acc[type].push(resource);
-    return acc;
-  }, {});
   const heroSectionProps = getHeroSectionLibraryProps(serviceInstance, t);
 
+  const headerRef = useRef<HTMLDivElement>(null);
+  useStickyHeaderOffset(headerRef);
+
   return (
-    <div className="flex flex-col gap-xl">
+    <div className="flex flex-col gap-6">
       <HeroSectionLibrary
         {...heroSectionProps}
         showLibraryUpdate={userIsMarketingOrBypass}
       />
-      <ServiceListHeader
-        search={search}
-        onSearchChange={onSearchChange}
-        filters={filters}
-        actions={<ServiceListHeaderButtons />}
-        paginationControls={paginationControls}
-      />
-      {userCanUpdate && draft.length > 0 && (
-        <>
-          <div className="txt-category">
-            {t(`${translationKey}.NonActive`)}:
-          </div>
-          <ul
-            className={
-              'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-l'
-            }>
-            {draft.map((document) => (
-              <ServiceCard
-                key={document.id}
-                document={document}
-                connectionId={connectionId}
-                detailUrl={`/${APP_PATH}/service/${serviceInstance.service_definition?.identifier}/${serviceInstance.id}/${document.id}`}
-                shareLinkUrl={`${settings!.base_url_front}/${PUBLIC_CYBERSECURITY_SOLUTIONS_PATH}/${serviceInstance.slug}/${document.slug}`}
+      <div
+        ref={headerRef}
+        className="sticky top-0 py-3 z-11 relative bg-gradient-default">
+        <ServiceListHeader
+          search={search}
+          onSearchChange={onSearchChange}
+          resourceType={type}
+          actions={<ServiceListHeaderButtons />}
+          exportAction={
+            type === ShareableResourceType.OPENCTI_INTEGRATION && (
+              <IntegrationsCsvExportButton
+                serviceInstanceId={serviceInstance.id}
+                isAuthenticated
+                type={type}
               />
-            ))}
-          </ul>
-          {active.length > 0 && (
-            <div className="txt-category">{t(`${translationKey}.Active`)}:</div>
+            )
+          }
+          paginationControls={paginationControls}
+          onDisplayModeChange={setDisplayMode}
+          filters={additionalFilters}
+        />
+      </div>
+      <div className="flex flex-row">
+        <FilterSidebar filters={additionalFilters} />
+        <div className="grow shrink min-w-0 px-3 pb-3 flex flex-col gap-6">
+          {userCanUpdate && draft.length > 0 && (
+            <DocumentSection
+              title={t('DocumentStatus.Draft')}
+              documents={draft}
+              displayMode={selectedDisplayMode}
+            />
           )}
-        </>
-      )}
-
-      {Object.entries(activeByIntegrationType).map(
-        ([integrationType, documents]) => (
-          <Fragment key={integrationType}>
-            {Object.values(IntegrationType).includes(
-              integrationType as IntegrationType
-            ) && (
-              <h2>
-                {t(`Service.OpenctiIntegrations.Type.${integrationType}`)}
-              </h2>
-            )}
-            <ul
-              className={
-                'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-l'
-              }>
-              {documents.map((document) => (
-                <ServiceCard
-                  key={document.id}
-                  document={document}
-                  detailUrl={`/${APP_PATH}/service/${serviceInstance.service_definition?.identifier}/${serviceInstance.id}/${document.id}`}
-                  shareLinkUrl={`${settings!.base_url_front}/${PUBLIC_CYBERSECURITY_SOLUTIONS_PATH}/${serviceInstance.slug}/${document.slug}`}
-                />
-              ))}
-            </ul>
-          </Fragment>
-        )
-      )}
+          {userCanUpdate && inValidation.length > 0 && (
+            <DocumentSection
+              title={t('DocumentStatus.InValidation')}
+              documents={inValidation}
+              displayMode={selectedDisplayMode}
+            />
+          )}
+          {published.length > 0 && (
+            <DocumentSection
+              title={
+                userCanUpdate && (draft.length > 0 || inValidation.length > 0)
+                  ? t('DocumentStatus.Published')
+                  : undefined
+              }
+              documents={published}
+              displayMode={selectedDisplayMode}
+            />
+          )}
+        </div>
+      </div>
     </div>
   );
 };

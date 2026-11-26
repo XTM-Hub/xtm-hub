@@ -19,7 +19,7 @@ Whether you are an organisation or an individual working or studying in the fiel
 
 ## Code of Conduct
 
-XTM Hub has adopted a Code of Conduct that we expect project participants to adhere to. Please read the [full text](https://github.com/FiligranHQ/xtm-hub/blob/main/CODE_OF_CONDUCT.md) so that you can understand which actions will and will not be tolerated.
+XTM Hub has adopted a Code of Conduct that we expect project participants to adhere to. Please read the [full text](https://github.com/XTM-Hub/xtm-hub/blob/main/CODE_OF_CONDUCT.md) so that you can understand which actions will and will not be tolerated.
 
 
 ## How can you contribute?
@@ -28,9 +28,9 @@ Any contribution is appreciated, and many don’t imply coding. Contributions ca
 
 For general suggestions or questions about the project or the documentation, you can open an issue on the repository with the label "question". We will answer as soon as possible. If you do not wish to publish on the repository, please see the section below [**"How can you get in touch for other questions?"**](#howcanyougetintouchforotherquestions).
 
-* Just using XTM Hub and opening issues if everything is not working as expect will be a huge step forward. See our section about opening an issue. To report a bug, please refer to the [bug reporting module](https://github.com/FiligranHQ/xtm-hub/issues/new?template=bug_report.md). To suggest a new feature, please fill in the feature request [form](https://github.com/FiligranHQ/xtm-hub/issues/new?template=feature_request.md).
+* Just using XTM Hub and opening issues if everything is not working as expect will be a huge step forward. See our section about opening an issue. To report a bug, please refer to the [bug reporting module](https://github.com/XTM-Hub/xtm-hub/issues/new?template=1-bug_report.md). To suggest a new feature, please fill in the feature request [form](https://github.com/XTM-Hub/xtm-hub/issues/new?template=2-feature_request.md).
 
-* Don’t hesitate to flag us an issue with the documentation or the templates if you find them incomplete or not clear enough. You can do that either by opening a [bug report](https://github.com/FiligranHQ/xtm-hub/issues/new?template=bug_report.md) or by sending us a message on our [Slack channel](https://community.filigran.io).
+* Don’t hesitate to flag us an issue with the documentation or the templates if you find them incomplete or not clear enough. You can do that either by opening a [bug report](https://github.com/XTM-Hub/xtm-hub/issues/new?template=1-bug_report.md) or by sending us a message on our [Slack channel](https://community.filigran.io).
 
 * You can look through opened issues and help triage them (ask for more information, suggest workarounds, suggest label, flag issues etc.)
 
@@ -83,3 +83,53 @@ in [`.github/LABELS.md`](.github/LABELS.md). In short:
   `feature`. See [`.github/LABELS.md`](.github/LABELS.md) for the shared palette
   ([`.github/labels.yml`](.github/labels.yml)).
 <!-- filigran-conventions:end -->
+
+
+## AI coding agents
+
+The repository is set up for **Claude Code** and **GitHub Copilot** at the same time, from one corpus of guidance.
+You do not have to configure anything: clone the repo and your tool picks up its own entry point.
+
+| | Claude Code | GitHub Copilot |
+| --- | --- | --- |
+| Entry point | `CLAUDE.md`, whose only line is `@AGENTS.md`. With both files present Claude Code reads `CLAUDE.md` and pulls `AGENTS.md` in through that import — so **edit `AGENTS.md`** | [`.github/copilot-instructions.md`](.github/copilot-instructions.md), which `@`-includes `AGENTS.md` too |
+| Per-area rules | [`.claude/rules/*.md`](.claude/rules), loaded only when a file matches their `paths` glob | the same files, `@`-included by `copilot-instructions.md` — all of them, always |
+| Skills | [`.claude/skills/*/SKILL.md`](.claude/skills) | the same directory, which Copilot reads natively |
+| Agents | [`.claude/agents/*.md`](.claude/agents) | [`.github/agents/*.agent.md`](.github/agents) |
+| Shared settings | `.claude/settings.json` | — |
+
+Every rule exists exactly once, in `.claude/rules/`. There are no symlinks, no generated copies and no
+`.github/instructions/` directory. Copilot gets the whole set through eight `@` include lines in
+`copilot-instructions.md`.
+
+**Why Copilot gets them unscoped.** Its path-scoped mechanism cannot be relied on here: the CLI discovers
+`.github/instructions/` files but never applies their `applyTo` glob (measured, not assumed), and Copilot in
+JetBrains does not read `AGENTS.md` at all. An `@` include is expanded in `copilot-instructions.md`, `AGENTS.md`
+and `CLAUDE.md`, but never in a `*.instructions.md` file. Including everything unconditionally is the only shape
+that reaches every Copilot client without duplicating a single line. Claude Code keeps proper scoping.
+
+### Where to make a change
+
+- **A rule that is true in every session** (a command, a mandatory convention, repository etiquette) → `AGENTS.md`.
+  Keep it short: it is loaded into every conversation, and a bloated entry point makes agents ignore the rules that
+  matter.
+- **A rule for one area of the codebase** → the matching `.claude/rules/*.md`, adjusting its `paths` glob if the
+  scope changes. Never copy its content into `AGENTS.md`. A brand-new rule also needs its `@` include line in
+  `copilot-instructions.md`, or Copilot will not see it.
+- **A task playbook** (how to write a migration, how to review) → a skill under `.claude/skills/`.
+- **Agent behaviour** → **both** `.claude/agents/<name>.md` and `.github/agents/<name>.agent.md`. This is the only
+  deliberate duplication in the setup: the two tools name their tools differently, so the files cannot be shared.
+  Their behavioural rules must stay identical; only the frontmatter `tools:` list may differ.
+
+### Local settings
+
+`.claude/settings.json` is committed and shared: it pre-approves the repository's own `yarn` and read-only `git`
+commands, and blocks edits to generated output. Put anything personal in `.claude/settings.local.json`, which is
+gitignored.
+
+### Keeping it honest
+
+This guidance drifts as the code moves. Before changing it — or when reviewing a pull request that touches it —
+run the `hub-review` skill ([`.claude/skills/hub-review/SKILL.md`](.claude/skills/hub-review/SKILL.md)). It audits
+the whole surface for stale references, contradictions, mismatches with the real code, and duplication, and asks
+rather than guessing when something is ambiguous.

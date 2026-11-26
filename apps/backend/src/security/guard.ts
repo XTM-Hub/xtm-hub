@@ -9,26 +9,39 @@ import { requestContext } from '../context/request.context';
 import { OrganizationId } from '../model/kanel/public/Organization';
 import { ServiceInstanceId } from '../model/kanel/public/ServiceInstance';
 import { UserLoadUserBy } from '../model/user';
+import { OrganizationDomain } from '../modules/organization-management/organization/organization.domain';
 import { UserOrganizationDomain } from '../modules/organization-management/user/user-organization/user-organization.domain';
 import { AuthHelper } from '../modules/security-management/capability/auth.helper';
 import { SubscriptionDomain } from '../modules/subscription/subscription.domain';
 import { UserServiceDomain } from '../modules/user-service/user-service.domain';
+import { logApp } from '../utils/app-logger.util';
 import { ErrorCode } from '../utils/error/error.code';
 import { BadRequestError, ForbiddenAccess } from '../utils/error/error.util';
-import { isUserAdminPlatform, isUserGranted } from './access';
+import { isUserAdminPlatform } from './access';
+import { ApiTokenReach } from './api-token-reach';
 
 export const securityGuard = {
-  assertUserIsInOrganization: async (
+  // An API token reaches its own organization only: another one is answered as if the user were not a member
+  isUserInOrganization: async (
     user: UserLoadUserBy,
     organizationId: OrganizationId
-  ) => {
+  ): Promise<boolean> => {
+    if (!ApiTokenReach.allowsOrganization(organizationId)) {
+      return false;
+    }
     const [userOrganization] =
       await UserOrganizationDomain.loadUserOrganization({
         user_id: user.id,
         organization_id: organizationId,
       });
+    return !!userOrganization;
+  },
 
-    if (!userOrganization) {
+  assertUserIsInOrganization: async (
+    user: UserLoadUserBy,
+    organizationId: OrganizationId
+  ) => {
+    if (!(await securityGuard.isUserInOrganization(user, organizationId))) {
       throw new Error(ErrorCode.UserIsNotInOrganization);
     }
   },
@@ -61,10 +74,11 @@ export const securityGuard = {
     user: UserLoadUserBy,
     serviceDefinition: { identifier: ServiceDefinitionIdentifier }
   ) => {
-    // Verify it's an OpenCTI or OpenAEV platform
+    // Verify it's an OpenCTI, OpenAEV or XTM One platform
     const allowedIdentifiers = [
       ServiceDefinitionIdentifier.OpenctiRegistration,
       ServiceDefinitionIdentifier.OpenaevRegistration,
+      ServiceDefinitionIdentifier.XtmoneRegistration,
     ];
 
     if (!allowedIdentifiers.includes(serviceDefinition.identifier)) {
@@ -82,10 +96,19 @@ export const securityGuard = {
     organizationId?: OrganizationId
   ) => {
     const user = requestContext.requireUser();
+    const targetOrgId = organizationId || user.selected_organization_id;
+
+    // Before the platform administrator check: an API token stays in its organization, with its capabilities
+    const reachableCapabilities =
+      ApiTokenReach.narrowCapabilities(requiredCapabilities);
+    if (
+      (targetOrgId && !ApiTokenReach.allowsOrganization(targetOrgId)) ||
+      (requiredCapabilities.length > 0 && reachableCapabilities.length === 0)
+    ) {
+      throw ForbiddenAccess(ErrorCode.MissingCapabilityOnOrganization);
+    }
 
     if (isUserAdminPlatform(user)) return;
-
-    const targetOrgId = organizationId || user.selected_organization_id;
 
     if (!targetOrgId) {
       throw BadRequestError('Organization context required');
@@ -103,11 +126,29 @@ export const securityGuard = {
         'User_Organization.user_id': user.id,
         'User_Organization.organization_id': targetOrgId,
       })
-      .whereIn('UserOrganization_Capability.name', requiredCapabilities)
+      .whereIn('UserOrganization_Capability.name', reachableCapabilities)
       .first();
 
     if (!userCapabilities) {
       throw ForbiddenAccess(ErrorCode.MissingCapabilityOnOrganization);
+    }
+  },
+
+  assertEmailMatchesOrganization: async (
+    user: UserLoadUserBy,
+    email: string,
+    organizationId?: OrganizationId
+  ) => {
+    if (isUserAdminPlatform(user)) return;
+
+    const [organizationFromEmail] =
+      await OrganizationDomain.loadOrganizationsFromEmail(email);
+
+    if (organizationId !== organizationFromEmail?.id) {
+      logApp.warn(
+        'You cannot add a user whose email domain is outside your organization'
+      );
+      throw ForbiddenAccess(ErrorCode.EmailOutsideOrganizationError);
     }
   },
 
@@ -129,37 +170,12 @@ export const securityGuard = {
   },
 };
 
-export const assertUserCanManageService = async (
-  user: UserLoadUserBy,
-  serviceInstanceId: ServiceInstanceId
-) => {
-  if (isUserGranted(user)) return;
-
-  const subscription = await SubscriptionDomain.loadSubscriptionBy({
-    service_instance_id: serviceInstanceId,
-    organization_id: user.selected_organization_id,
-  });
-
-  if (!subscription) {
-    throw ForbiddenAccess(ErrorCode.MissingCapabilityOnService);
-  }
-  const userServiceCapability =
-    await UserServiceDomain.loadUserServiceGenericCapability(
-      user.id,
-      subscription.id,
-      ServiceRestriction.ManageAccess
-    );
-
-  if (!userServiceCapability) {
-    throw ForbiddenAccess(ErrorCode.MissingCapabilityOnService);
-  }
-};
 export const assertUserHasCapaOnService = async (
   user: UserLoadUserBy,
   serviceInstanceId: ServiceInstanceId,
   capabilities: ServiceRestriction[]
 ) => {
-  if (isUserGranted(user)) return;
+  if (isUserAdminPlatform(user)) return;
 
   const subscription = await SubscriptionDomain.loadSubscriptionBy({
     service_instance_id: serviceInstanceId,

@@ -1,57 +1,67 @@
-import { organizationDeletion } from '@/components/organization/organization.graphql';
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
-import { useToast } from '@filigran/ui';
-import { organizationDeletionMutation } from '@generated/organizationDeletionMutation.graphql';
-import { organizationItem_fragment$data } from '@generated/organizationItem_fragment.graphql';
-import { useTranslations } from 'next-intl';
-import { useMutation } from 'react-relay';
+import { invalidateOrganizationQueries } from '@/components/organization/organization-query-invalidation';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
+import { useTranslate } from '@/hooks/use-translate';
+import { portalGraphqlClient } from '@/lib/graphql-client';
+import {
+  OrganizationItemFragment,
+  useOrganizationDeleteMutation,
+} from '@graphql/generated';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface DeleteOrganizationProps {
-  organization: organizationItem_fragment$data;
-  connectionId: string;
+  organization: OrganizationItemFragment;
   open: boolean;
   setOpen: (open: boolean) => void;
 }
 
 export const DeleteOrganization = ({
   organization,
-  connectionId,
   open,
   setOpen,
 }: DeleteOrganizationProps) => {
-  const [deleteOrganizationMutation] =
-    useMutation<organizationDeletionMutation>(organizationDeletion);
-  const t = useTranslations();
-  const { toast } = useToast();
-  const onDeletedOrganization = (deletedOrganizationId: string) => {
-    deleteOrganizationMutation({
-      variables: { id: deletedOrganizationId, connections: [connectionId] },
-      onCompleted: () => {
-        toast({
+  const queryClient = useQueryClient();
+  const t = useTranslate();
+  const { mutate: deleteOrganization, isPending } =
+    useOrganizationDeleteMutation(portalGraphqlClient, {
+      onSuccess: async () => {
+        setOpen(false);
+        showSnackbar({
+          severity: 'success',
           title: t('Utils.Success'),
           description: t('OrganizationActions.OrganizationDeleted'),
         });
+        await invalidateOrganizationQueries(queryClient);
       },
-      onError: (error) => {
-        toast({
-          variant: 'destructive',
+      onError: (error: unknown) => {
+        setOpen(false);
+        const errorMessage =
+          error instanceof Error ? error.message : 'UNKNOWN_ERROR';
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
-          description: <>{t(`Error.Server.${error.message}`)}</>,
+          description: <>{t(`Error.Server.${errorMessage}`)}</>,
         });
       },
     });
-  };
+
   return (
-    <AlertDialogComponent
-      actionButtonText={t('Utils.Delete')}
-      variantName={'destructive'}
-      AlertTitle={t('OrganizationForm.DeleteOrganization')}
-      isOpen={open}
+    <ConfirmDialog
+      confirmAnalyticsId="admin_organization_deletion_confirm"
+      confirmLabel={t('Utils.Delete')}
+      destructive
+      title={t('OrganizationForm.DeleteOrganization')}
+      open={open}
       onOpenChange={setOpen}
-      onClickContinue={() => onDeletedOrganization(organization.id)}>
+      onConfirm={(event) => {
+        // Closing would unmount the dialog: the callbacks close it once the deletion settles.
+        event.preventDefault();
+        deleteOrganization({ id: organization.id });
+      }}
+      confirmDisabled={isPending}>
       {t('OrganizationForm.SureDeleteOrganization', {
         organizationName: organization.name,
       })}
-    </AlertDialogComponent>
+    </ConfirmDialog>
   );
 };

@@ -1,49 +1,40 @@
+import { ServiceListFacetCounts } from '@/components/service/components/header/filter/service-list-facet-counts';
 import { ServiceListFilterKey } from '@/components/service/components/header/ServiceListHeader';
-import {
-  availableIntegrationTypes,
-  getIntegrationSubTypeMetadata,
-  SubTypesPerIntegrationType,
-} from '@/components/service/integrations/Integration.utils';
+import { availableIntegrationTypes } from '@/components/service/integrations/Integration.utils';
 import { LogicalMultiSelectFormField } from '@/components/ui/shareable-resource/logical-multi-select/LogicalMultiSelectFormField';
-import { useIsFeatureEnabled } from '@/hooks/use-is-feature-enabled';
-import { useServiceListFilters } from '@/hooks/use-service-list-filters';
-import {
-  ServiceListLocalStorageKey,
-  useServiceListLocalStorage,
-} from '@/hooks/use-service-list-local-storage';
-import { FeatureFlag, IntegrationType } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
+import { useServiceListStorage } from '@/hooks/use-service-list-storage';
+import { useTranslate } from '@/hooks/use-translate';
+import { ServiceListStorageKey } from '@/utils/filters-storage.utils';
+import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
+import { IntegrationType } from '@graphql/generated';
 import { useMemo } from 'react';
 
+const ANALYTICS_INTEGRATION_TYPE_LABELS: Record<IntegrationType, string> = {
+  [IntegrationType.Connector]: 'Connectors',
+  [IntegrationType.CsvFeed]: 'CSV Feeds',
+  [IntegrationType.RssFeed]: 'RSS Feeds',
+  [IntegrationType.Stream]: 'OpenCTI Streams',
+  [IntegrationType.TaxiiFeed]: 'TAXII Feeds',
+  [IntegrationType.ThirdPartyIntegration]: 'Third party integrations',
+};
+
 interface IntegrationTypeFilterProps {
-  isSolutionCategoriesEnabled?: boolean;
+  facetCounts?: ServiceListFacetCounts['integrationType'];
 }
 
 export const IntegrationTypeFilter = ({
-  isSolutionCategoriesEnabled,
-}: IntegrationTypeFilterProps = {}) => {
-  const { integrationTypes, setIntegrationTypes, removeIntegrationTypes } =
-    useServiceListLocalStorage(
-      ServiceListLocalStorageKey.OpenCTIIntegrationFeeds
-    );
-  const isSolutionCategoriesFeatureEnabled = useIsFeatureEnabled(
-    FeatureFlag.SolutionCategories
+  facetCounts,
+}: IntegrationTypeFilterProps) => {
+  const { integrationTypes, setIntegrationTypes } = useServiceListStorage(
+    ServiceListStorageKey.OpenCTIIntegrationFeeds
   );
-  const shouldHideSubtypes =
-    isSolutionCategoriesEnabled ?? isSolutionCategoriesFeatureEnabled;
-  const { removeFilter } = useServiceListFilters();
-  const t = useTranslations();
+
+  const t = useTranslate();
 
   const options = useMemo(() => {
     const allOptions = Object.values(IntegrationType).map((feedType) => ({
       label: t(`Service.OpenctiIntegrations.Type.${feedType}`),
       value: feedType.toString(),
-      children: shouldHideSubtypes
-        ? undefined
-        : (SubTypesPerIntegrationType.get(feedType)?.map((subtype) => ({
-            label: getIntegrationSubTypeMetadata(subtype)?.label ?? '',
-            value: subtype.toString(),
-          })) ?? undefined),
     }));
     const availableOption = allOptions
       .filter((option) =>
@@ -57,22 +48,21 @@ export const IntegrationTypeFilter = ({
       )
       .sort((a, b) => a.label.localeCompare(b.label));
     return [...availableOption, ...comingSoonOption];
-  }, [shouldHideSubtypes, t]);
-
-  const removeIntegrationFilter = () => {
-    removeIntegrationTypes();
-    removeFilter(ServiceListFilterKey.IntegrationType);
-  };
+  }, [t]);
 
   return (
     <LogicalMultiSelectFormField
       options={options}
-      initialValue={integrationTypes}
-      placeholder={t('Service.OpenctiIntegrations.Filter.Type.Placeholder')}
+      value={integrationTypes}
       noResultString={t('Utils.NotFound')}
       onValueChange={setIntegrationTypes}
+      analyticsFilter={{
+        filterKey: ServiceListFilterKey.IntegrationType,
+        resourceType: ShareableResourceType.OPENCTI_INTEGRATION,
+        valueLabels: ANALYTICS_INTEGRATION_TYPE_LABELS,
+      }}
       optionLabel={t('Service.OpenctiIntegrations.Filter.Type.Label')}
-      onRemove={removeIntegrationFilter}
+      facetCounts={facetCounts}
     />
   );
 };

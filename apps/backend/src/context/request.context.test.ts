@@ -1,5 +1,6 @@
 // lib/Context.test.ts
 import { beforeEach, describe, expect, it } from 'vitest';
+import { OrganizationId } from '../model/kanel/public/Organization';
 import { UserLoadUserBy } from '../model/user';
 import { UnknownErrorCode } from '../utils/error/error.code';
 import { requestContext, RequestContext } from './request.context';
@@ -37,6 +38,26 @@ describe('requestContext', () => {
       const retrievedContext = requestContext.get();
 
       expect(retrievedContext).toBe(testContext);
+    });
+
+    it('should return the current context with request metadata when set', () => {
+      const testContext: RequestContext = {
+        user: mockUser,
+        correlationId: mockCorrelationId,
+        userAgent: 'Mozilla/5.0 (test)',
+        ip: '203.0.113.10',
+        referer: 'https://example.com/page',
+        organizationId: 'org-1' as OrganizationId,
+      };
+
+      requestContext.set(testContext);
+      const retrievedContext = requestContext.get();
+
+      expect(retrievedContext).toBe(testContext);
+      expect(retrievedContext?.userAgent).toBe('Mozilla/5.0 (test)');
+      expect(retrievedContext?.ip).toBe('203.0.113.10');
+      expect(retrievedContext?.referer).toBe('https://example.com/page');
+      expect(retrievedContext?.organizationId).toBe('org-1');
     });
   });
 
@@ -136,6 +157,27 @@ describe('requestContext', () => {
       const updatedContext = requestContext.get();
       expect(updatedContext).toBe(initialContext);
       expect(updatedContext).toStrictEqual({ ...initialContext, ...updates });
+    });
+
+    it('should update existing context with request metadata', () => {
+      const initialContext: RequestContext = {
+        user: mockUser,
+      };
+
+      requestContext.set(initialContext);
+
+      requestContext.update({
+        userAgent: 'Mozilla/5.0 (test)',
+        ip: '203.0.113.10',
+        referer: 'https://example.com/page',
+        organizationId: 'org-1' as OrganizationId,
+      });
+
+      const updatedContext = requestContext.get();
+      expect(updatedContext?.userAgent).toBe('Mozilla/5.0 (test)');
+      expect(updatedContext?.ip).toBe('203.0.113.10');
+      expect(updatedContext?.referer).toBe('https://example.com/page');
+      expect(updatedContext?.organizationId).toBe('org-1');
     });
 
     it('should overwrite existing fields when updating', () => {

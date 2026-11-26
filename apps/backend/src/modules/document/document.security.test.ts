@@ -13,7 +13,7 @@ import * as access from '../../security/access';
 import { ErrorCode } from '../../utils/error/error.code';
 import { UserServiceCapabilityHelper } from '../security-management/user-service-capability/user-service-capability.helper';
 import { ServiceInstanceDomain } from '../service/instance/service-instance.domain';
-import { isUserRestrictedToActiveDocument } from './document.security';
+import { isUserRestrictedToPublishedDocument } from './document.security';
 
 const organizationId = uuidv4() as OrganizationId;
 
@@ -45,9 +45,9 @@ const mockServiceDefinition = (identifier: ServiceDefinitionIdentifier) => ({
 });
 
 describe('document security', () => {
-  describe('isUserRestrictedToActiveDocument', () => {
+  describe('isUserRestrictedToPublishedDocument', () => {
     beforeEach(() => {
-      vi.spyOn(access, 'isUserGranted').mockReturnValue(false);
+      vi.spyOn(access, 'isUserAdminPlatform').mockReturnValue(false);
       vi.spyOn(
         UserServiceCapabilityHelper,
         'loadCapabilities'
@@ -62,9 +62,9 @@ describe('document security', () => {
       );
     });
 
-    it('should return false when user is granted', async () => {
-      vi.spyOn(access, 'isUserGranted').mockReturnValue(true);
-      const result = await isUserRestrictedToActiveDocument(
+    it('should return false when user is a platform admin', async () => {
+      vi.spyOn(access, 'isUserAdminPlatform').mockReturnValue(true);
+      const result = await isUserRestrictedToPublishedDocument(
         mockUser,
         mockServiceInstanceId
       );
@@ -72,12 +72,62 @@ describe('document security', () => {
     });
 
     it('should return true when user lacks Upload capability and service definition is restricted', async () => {
-      const result = await isUserRestrictedToActiveDocument(
+      const result = await isUserRestrictedToPublishedDocument(
         mockUser,
         mockServiceInstanceId
       );
       expect(result).toBe(true);
     });
+
+    it.each([
+      ServiceDefinitionIdentifier.OpenctiIntegrations,
+      ServiceDefinitionIdentifier.OpenctiCustomDashboards,
+      ServiceDefinitionIdentifier.OpenctiCustomViews,
+      ServiceDefinitionIdentifier.OpenctiPlaybooks,
+      ServiceDefinitionIdentifier.OpenaevScenarios,
+    ])(
+      'should return true without Upload capability on %s',
+      async (identifier) => {
+        vi.spyOn(
+          ServiceInstanceDomain,
+          'loadServiceDefinitionByServiceInstance'
+        ).mockResolvedValue(mockServiceDefinition(identifier));
+
+        const result = await isUserRestrictedToPublishedDocument(
+          mockUser,
+          mockServiceInstanceId
+        );
+
+        expect(result).toBe(true);
+      }
+    );
+
+    it.each([
+      ServiceDefinitionIdentifier.OpenctiIntegrations,
+      ServiceDefinitionIdentifier.OpenctiCustomDashboards,
+      ServiceDefinitionIdentifier.OpenctiCustomViews,
+      ServiceDefinitionIdentifier.OpenctiPlaybooks,
+      ServiceDefinitionIdentifier.OpenaevScenarios,
+    ])(
+      'should return false with Upload capability on %s',
+      async (identifier) => {
+        vi.spyOn(
+          UserServiceCapabilityHelper,
+          'loadCapabilities'
+        ).mockResolvedValue([ServiceRestriction.Upload]);
+        vi.spyOn(
+          ServiceInstanceDomain,
+          'loadServiceDefinitionByServiceInstance'
+        ).mockResolvedValue(mockServiceDefinition(identifier));
+
+        const result = await isUserRestrictedToPublishedDocument(
+          mockUser,
+          mockServiceInstanceId
+        );
+
+        expect(result).toBe(false);
+      }
+    );
 
     it('should return false when user lacks Upload capability but service definition is not restricted', async () => {
       vi.spyOn(
@@ -86,7 +136,7 @@ describe('document security', () => {
       ).mockResolvedValue(
         mockServiceDefinition(ServiceDefinitionIdentifier.Link)
       );
-      const result = await isUserRestrictedToActiveDocument(
+      const result = await isUserRestrictedToPublishedDocument(
         mockUser,
         mockServiceInstanceId
       );
@@ -98,7 +148,7 @@ describe('document security', () => {
         UserServiceCapabilityHelper,
         'loadCapabilities'
       ).mockResolvedValue([ServiceRestriction.Upload]);
-      const result = await isUserRestrictedToActiveDocument(
+      const result = await isUserRestrictedToPublishedDocument(
         mockUser,
         mockServiceInstanceId
       );
@@ -110,7 +160,7 @@ describe('document security', () => {
         UserServiceCapabilityHelper,
         'loadCapabilities'
       ).mockResolvedValue(undefined);
-      const result = await isUserRestrictedToActiveDocument(
+      const result = await isUserRestrictedToPublishedDocument(
         mockUser,
         mockServiceInstanceId
       );
@@ -122,7 +172,7 @@ describe('document security', () => {
         ServiceInstanceDomain,
         'loadServiceDefinitionByServiceInstance'
       ).mockResolvedValue(undefined);
-      const call = isUserRestrictedToActiveDocument(
+      const call = isUserRestrictedToPublishedDocument(
         mockUser,
         mockServiceInstanceId
       );

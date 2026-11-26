@@ -1,5 +1,4 @@
 enum ServiceDefinitionIdentifier {
-  vault
   link
   opencti_custom_dashboards
   opencti_custom_views

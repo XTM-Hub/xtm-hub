@@ -2,6 +2,19 @@ import {
   type ConsentCategory,
   type ConsentRegistry,
 } from '@/components/cookie-consent/cookie-consent.types';
+import { GA_CONSENT_SERVICE_ID } from '@/lib/analytics/analytics.consts';
+import {
+  FiligranWebsiteUtmCampaign,
+  withFiligranWebsiteUtm,
+} from '@/utils/filigran-website-utm';
+
+const COOKIE_CONSENT_PRIVACY_POLICY_URL = withFiligranWebsiteUtm(
+  'https://filigran.io/privacy-policy',
+  {
+    campaign: FiligranWebsiteUtmCampaign.OTHER,
+    content: 'cookie_consent_privacy_policy',
+  }
+);
 
 export const CONSENT_CATEGORIES: readonly ConsentCategory[] = [
   'necessary',
@@ -11,6 +24,8 @@ export const CONSENT_CATEGORIES: readonly ConsentCategory[] = [
 ];
 
 export const CONSENT_COOKIE_NAME = 'xtmhub_consent';
+
+export const EMBED_SEGMENT = '(embed)';
 
 export const CONSENT_VERSION = 1;
 
@@ -32,7 +47,7 @@ export const CONSENT_REGISTRY: ConsentRegistry = {
         id: 'hubspot',
         name: 'HubSpot',
         cookies: ['__hstc', '__hssc', '__hssrc', 'hubspotutk'],
-        readMoreUrl: 'https://filigran.io/privacy-policy/',
+        readMoreUrl: COOKIE_CONSENT_PRIVACY_POLICY_URL,
       },
     ],
   },
@@ -40,7 +55,7 @@ export const CONSENT_REGISTRY: ConsentRegistry = {
     required: false,
     services: [
       {
-        id: 'google-analytics',
+        id: GA_CONSENT_SERVICE_ID,
         name: 'Google Analytics (GA4)',
         cookies: [
           '_ga',
@@ -51,7 +66,7 @@ export const CONSENT_REGISTRY: ConsentRegistry = {
           '_gcl_au',
           '_gac_*',
         ],
-        readMoreUrl: 'https://filigran.io/privacy-policy/',
+        readMoreUrl: COOKIE_CONSENT_PRIVACY_POLICY_URL,
       },
     ],
   },

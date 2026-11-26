@@ -1,6 +1,6 @@
 import { registeredPlatformsKeys } from '@graphql/registered-platforms/registered-platforms.keys';
 import { serviceInstancesKeys } from '@graphql/service-instances/service-instances.keys';
-import { trialKeys } from '@graphql/trial/trial.keys';
+import { platformTrialKeys } from '@graphql/trial/trial.keys';
 import type { QueryClient } from '@tanstack/react-query';
 
 export const invalidatePrivateNavigationQueries = (
@@ -11,6 +11,6 @@ export const invalidatePrivateNavigationQueries = (
     queryKey: registeredPlatformsKeys.all(),
   });
   void queryClient.invalidateQueries({
-    queryKey: trialKeys.trialDeploymentsEligibilityAll(),
+    queryKey: platformTrialKeys.platformTrialStatusAll(),
   });
 };

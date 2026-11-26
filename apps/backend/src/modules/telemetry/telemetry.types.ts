@@ -5,11 +5,14 @@ import {
   DeploymentRequestJobTitle,
   DeploymentRequestPlatformRegion,
   DeploymentRequestUseCase,
+  HasRepliedSatisfaction,
+  ServiceGroupName,
 } from '../../__generated__/resolvers-types';
 import { DeploymentRequestId } from '../../model/kanel/public/DeploymentRequest';
 import {
   TelemetryEventService,
   TelemetryEventServiceType,
+  TelemetryNewsFeedItemType,
   TelemetryOrganizationType,
   TelemetrySource,
   TelemetryTargetProduct,
@@ -28,6 +31,11 @@ export enum TelemetryEventType {
   CREATE_ORGANIZATION = 'create_organization',
   CREATE_DEPLOYMENT = 'create_deployment',
   UPDATE_DEPLOYMENT = 'update_deployment',
+  EXPORT = 'export',
+  TRIAL_ACCESS_GRANTED = 'trial_access_granted',
+  TRIAL_ACCESS_REMOVED = 'trial_access_removed',
+  REPLY_SATISFACTION = 'reply_satisfaction',
+  NEWS_FEED_REDIRECT = 'news_feed_redirect',
 }
 
 export interface BaseTelemetryEvent {
@@ -76,6 +84,12 @@ export interface DownloadEvent extends BaseTelemetryEvent {
   resource_title: string;
 }
 
+export interface ExportEvent extends BaseTelemetryEvent {
+  event_type: TelemetryEventType.EXPORT;
+  service: TelemetryEventService;
+  export_format: string;
+}
+
 export interface CreateEvent extends BaseTelemetryEvent {
   event_type: TelemetryEventType.CREATE;
   service: TelemetryEventService;
@@ -118,6 +132,24 @@ export interface OneClickDeployEvent extends BaseTelemetryEvent {
   tenant_id?: string;
 }
 
+/**
+ * A click on a news feed link. Which optional fields are set depends on the route that emits it:
+ * the external redirect sets the item, its type, the target product and the destination host; the resource redirect
+ * sets the service, the resource, the target product and utm_content. The user and the organization are only set when
+ * logged in.
+ */
+export interface NewsFeedRedirectEvent extends BaseTelemetryEvent {
+  event_type: TelemetryEventType.NEWS_FEED_REDIRECT;
+  news_feed_item_id?: string;
+  news_feed_item_type?: TelemetryNewsFeedItemType;
+  destination_host?: string;
+  platform_id?: string;
+  service?: TelemetryEventService;
+  resource_id?: string;
+  target_product?: TelemetryTargetProduct;
+  utm_content?: string;
+}
+
 export interface UpdateOrganizationEvent extends BaseTelemetryEvent {
   event_type: TelemetryEventType.UPDATE_ORGANIZATION;
   domains: string[];
@@ -126,6 +158,14 @@ export interface UpdateOrganizationEvent extends BaseTelemetryEvent {
 export interface CreateOrganizationEvent extends BaseTelemetryEvent {
   event_type: TelemetryEventType.CREATE_ORGANIZATION;
   domains: string[];
+}
+
+export interface ReplySatisfactionEvent extends BaseTelemetryEvent {
+  event_type: TelemetryEventType.REPLY_SATISFACTION;
+  email: string;
+  deployment_id: string;
+  answer: HasRepliedSatisfaction;
+  justification?: string | null;
 }
 
 export interface CreateDeploymentEvent extends BaseTelemetryEvent {
@@ -153,16 +193,34 @@ export interface UpdateDeploymentEvent extends BaseTelemetryEvent {
   cancellation_reason: string | null | undefined;
 }
 
+export interface TrialAccessGrantedEvent extends BaseTelemetryEvent {
+  event_type: TelemetryEventType.TRIAL_ACCESS_GRANTED;
+  deployment_id: string;
+  role: ServiceGroupName;
+  email: string;
+}
+
+export interface TrialAccessRemovedEvent extends BaseTelemetryEvent {
+  event_type: TelemetryEventType.TRIAL_ACCESS_REMOVED;
+  deployment_id: string;
+  email: string;
+}
+
 export type TelemetryEvent =
   | LoginEvent
   | SubscribeEvent
   | ShareEvent
   | DownloadEvent
+  | ExportEvent
   | CreateEvent
   | RegisterPlatformEvent
   | UnregisterPlatformEvent
   | OneClickDeployEvent
+  | NewsFeedRedirectEvent
   | UpdateOrganizationEvent
   | CreateOrganizationEvent
   | CreateDeploymentEvent
-  | UpdateDeploymentEvent;
+  | UpdateDeploymentEvent
+  | TrialAccessGrantedEvent
+  | TrialAccessRemovedEvent
+  | ReplySatisfactionEvent;

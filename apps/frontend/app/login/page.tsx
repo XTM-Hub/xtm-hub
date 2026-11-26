@@ -1,8 +1,7 @@
-import '@filigran/ui/theme.css';
 import '@styles/globals.css';
 
 import Login from '@/components/login/Login';
-import { RelayProvider } from '@/relay/relay-provider';
+import { ReactQueryProvider } from '@/components/ReactQueryProvider';
 import { loadMeUser } from '@/utils/load-me-user';
 import { getMetadataBase } from '@/utils/metadata';
 import { APP_PATH } from '@/utils/path/constant';
@@ -26,9 +25,9 @@ const Page = async () => {
   }
 
   return (
-    <RelayProvider>
+    <ReactQueryProvider>
       <Login />
-    </RelayProvider>
+    </ReactQueryProvider>
   );
 };
 

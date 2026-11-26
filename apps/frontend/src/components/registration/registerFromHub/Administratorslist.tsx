@@ -1,19 +1,19 @@
-import { ConnectProductOrganizationAdminsQuery } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
+import { useTranslate } from '@/hooks/use-translate';
+import { UsersWithCapabilitiesInOrganizationQuery } from '@graphql/generated';
 
 interface AdministratorslistProps {
-  admins?: ConnectProductOrganizationAdminsQuery;
+  admins?: UsersWithCapabilitiesInOrganizationQuery;
 }
 
 export const Administratorslist = ({ admins }: AdministratorslistProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   if (!admins) {
     return null;
   }
   return (
     <div className="space-y-1">
-      <div className="content-body-base">
+      <div className="content-base">
         {t('Register.ConnectFromHub.Administrators', {
           count: admins.usersWithCapabilitiesInOrganization?.length ?? 0,
         })}
@@ -22,7 +22,7 @@ export const Administratorslist = ({ admins }: AdministratorslistProps) => {
       {admins.usersWithCapabilitiesInOrganization?.map((user) => {
         return (
           <div
-            className="content-body-base"
+            className="content-base"
             key={user.id}>
             {user.email}
           </div>

@@ -1,34 +1,33 @@
-import { TrialsUpdateDeploymentQuotaCapacityMutation } from '@/components/trials/trials.graphql';
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { trialsRegionKey } from '@/components/trials/trials.const';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { Form, FormField } from '@/components/ui/form';
+import { SheetFooter } from '@/components/ui/sheet';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
+import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
+import { portalGraphqlClient } from '@/lib/graphql-client';
 import { isEmpty } from '@/lib/utils';
+import { Button, Input } from '@filigran/design-system';
+import { trialsQuotasKeys } from '@graphql/deployment/deployment.keys';
 import {
-  Button,
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  SheetFooter,
-} from '@filigran/ui';
-import { toast } from '@filigran/ui/clients';
-import { Input } from '@filigran/ui/servers';
-import { trialsDeploymentAvailabilityFragment$data } from '@generated/trialsDeploymentAvailabilityFragment.graphql';
+  DeploymentRequestPlatformRegion,
+  TrialsQuotaFragment,
+  useTrialsUpdateDeploymentQuotaCapacityMutation,
+} from '@graphql/generated';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useTranslations } from 'next-intl';
+import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { useMutation } from 'react-relay';
 import { z } from 'zod';
 
 interface TrialsTabQuotasPlatformUpdateFormProps {
-  quota: trialsDeploymentAvailabilityFragment$data;
+  quota: TrialsQuotaFragment;
   callback: () => void;
 }
 
 const formSchema = z.object({
-  region: z.string(),
-  platformIdentifier: z.string(),
+  region: z.enum(DeploymentRequestPlatformRegion),
   newCapacity: z.int().min(0),
 });
 
@@ -36,107 +35,108 @@ export const TrialsTabQuotasPlatformUpdateForm = ({
   quota,
   callback,
 }: TrialsTabQuotasPlatformUpdateFormProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const { handleCloseSheet, setIsDirty } = useDialogContext();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       region: quota.region,
-      platformIdentifier: quota.platform_identifier,
       newCapacity: quota.capacity,
     },
   });
 
   setIsDirty(!isEmpty(form.formState.dirtyFields));
 
-  const [updateQuotaMutation] = useMutation(
-    TrialsUpdateDeploymentQuotaCapacityMutation
-  );
-  const [values, setValues] = useState<z.infer<typeof formSchema>>();
-  const updateQuota = () => {
-    updateQuotaMutation({
-      variables: {
-        input: {
-          ...values,
-        },
-      },
-      onCompleted: () => {
-        toast({
+  const queryClient = useQueryClient();
+  const { mutate: updateQuotaMutation } =
+    useTrialsUpdateDeploymentQuotaCapacityMutation(portalGraphqlClient, {
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({
+          queryKey: trialsQuotasKeys.all(),
+        });
+        showSnackbar({
+          severity: 'success',
           title: t('Utils.Success'),
           description: t('TrialsDashboard.UpdateQuotasForm.QuotasUpdated'),
         });
         callback();
       },
-      onError: (error) => {
-        toast({
-          variant: 'destructive',
+      onError: (error: unknown) => {
+        const errorMessage =
+          error instanceof Error ? error.message : 'UnknownError';
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
-          description: t(`Error.Server.${error.message}`),
+          description: t(`Error.Server.${errorMessage}`),
         });
       },
     });
+  const [values, setValues] = useState<z.infer<typeof formSchema>>();
+  const updateQuota = () => {
+    if (!values) {
+      return;
+    }
+    updateQuotaMutation({ input: values });
   };
 
   const onSubmit = (newValues: z.infer<typeof formSchema>) => {
     setValues(newValues);
   };
-  const translatedRegion = t(`Region.${quota.region.toUpperCase()}`);
+  const translatedRegion = t(trialsRegionKey(quota.region));
 
   return (
     <>
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
-          className="w-full space-y-xl">
+          className="w-full space-y-6">
           <FormField
             control={form.control}
             name="newCapacity"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>
-                  {t('TrialsDashboard.UpdateQuotasForm.NewCapacityLabel')}
-                </FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    placeholder={t(
-                      'TrialsDashboard.UpdateQuotasForm.NewCapacityLabel'
-                    )}
-                    type="number"
-                    min={0}
-                    onChange={(event) =>
-                      field.onChange(Number.parseInt(event.target.value, 10))
-                    }
-                  />
-                </FormControl>
-              </FormItem>
+              <Input
+                label={t('TrialsDashboard.UpdateQuotasForm.NewCapacityLabel')}
+                {...field}
+                value={Number.isFinite(field.value) ? String(field.value) : ''}
+                placeholder={t(
+                  'TrialsDashboard.UpdateQuotasForm.NewCapacityLabel'
+                )}
+                type="number"
+                min={0}
+                onChange={(event) =>
+                  field.onChange(Number.parseInt(event.target.value, 10))
+                }
+              />
             )}
           />
 
           <SheetFooter className="justify-end pb-0">
-            <div className="flex gap-s">
+            <div className="flex gap-2">
               <Button
-                variant="secondary"
+                priority="secondary"
                 type="button"
+                {...analyticsId('admin_form_cancel')}
                 onClick={(e) => handleCloseSheet(e)}>
                 {t('Utils.Cancel')}
               </Button>
-              <AlertDialogComponent
-                AlertTitle={t(
+              <ConfirmDialog
+                confirmAnalyticsId="admin_trial_quota_confirm"
+                title={t(
                   'TrialsDashboard.UpdateQuotasForm.AlertDialog.ConfirmTitle',
                   {
                     region: translatedRegion,
                   }
                 )}
-                actionButtonText={t('Utils.Validate')}
-                triggerElement={
+                confirmLabel={t('Utils.Validate')}
+                trigger={
                   <Button
                     disabled={!form.formState.isValid}
-                    type="submit">
+                    type="submit"
+                    {...analyticsId('admin_trial_quota_submit')}>
                     {t('Utils.Validate')}
                   </Button>
                 }
-                onClickContinue={() => updateQuota()}>
+                onConfirm={() => updateQuota()}>
                 <p>
                   {t(
                     'TrialsDashboard.UpdateQuotasForm.AlertDialog.ConfirmDescription',
@@ -151,7 +151,7 @@ export const TrialsTabQuotasPlatformUpdateForm = ({
                     'TrialsDashboard.UpdateQuotasForm.AlertDialog.ConfirmSentence'
                   )}
                 </p>
-              </AlertDialogComponent>
+              </ConfirmDialog>
             </div>
           </SheetFooter>
         </form>

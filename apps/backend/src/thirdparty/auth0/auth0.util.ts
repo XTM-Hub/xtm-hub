@@ -1,4 +1,5 @@
-import { Management } from 'auth0';
+import { Management, ManagementError } from 'auth0';
+import { logApp } from '../../utils/app-logger.util';
 import { Auth0UpdateUserRBACInstance } from './client';
 
 export const removeEmptyGroups = (
@@ -33,4 +34,88 @@ export const buildUserMetadataUpdate = (
       }),
     },
   };
+};
+
+const MAX_RATE_LIMIT_RETRIES = 3;
+const DEFAULT_RATE_LIMIT_WAIT_MS = 1000;
+const MAX_RATE_LIMIT_WAIT_MS = 60 * 1000;
+
+// Auth0 search reportedly returns 503 above ~72 OR terms and 414 on long URLs: stay well below.
+export const EMAILS_PER_LOOKUP = 50;
+export const USERS_LIST_PAGE_SIZE = 100;
+
+export const isRateLimitError = (error: unknown): boolean =>
+  error instanceof ManagementError && error.statusCode === 429;
+
+const getRateLimitHeader = (error: unknown, name: string): string | null =>
+  error instanceof ManagementError
+    ? (error.rawResponse?.headers?.get(name) ?? null)
+    : null;
+
+// x-ratelimit-reset is the epoch (seconds) at which the limit resets.
+export const getRateLimitWaitMs = (
+  error: unknown,
+  now: number = Date.now()
+): number => {
+  const reset = Number(getRateLimitHeader(error, 'x-ratelimit-reset'));
+  if (!Number.isFinite(reset) || reset <= 0) {
+    return DEFAULT_RATE_LIMIT_WAIT_MS;
+  }
+  return Math.min(Math.max(reset * 1000 - now, 0), MAX_RATE_LIMIT_WAIT_MS);
+};
+
+export const withRateLimitRetry = async <T>(
+  call: () => Promise<T>,
+  sleep: (ms: number) => Promise<void> = (ms) =>
+    new Promise((resolve) => setTimeout(resolve, ms))
+): Promise<T> => {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await call();
+    } catch (error) {
+      if (!isRateLimitError(error) || attempt >= MAX_RATE_LIMIT_RETRIES) {
+        throw error;
+      }
+      const waitMs = getRateLimitWaitMs(error);
+      logApp.debug('Auth0 rate limited, waiting before retry', {
+        waitMs,
+        attempt: attempt + 1,
+      });
+      await sleep(waitMs);
+    }
+  }
+};
+
+const escapeLuceneValue = (value: string): string =>
+  value.replace(/[\\"]/g, '\\$&');
+
+export const buildEmailsQuery = (emails: string[]): string =>
+  `email:(${emails.map((email) => `"${escapeLuceneValue(email)}"`).join(' OR ')})`;
+
+export const groupAccountsByEmail = (
+  accounts: Management.UserResponseSchema[]
+): Map<string, Management.UserResponseSchema[]> => {
+  const byEmail = new Map<string, Management.UserResponseSchema[]>();
+  for (const account of accounts) {
+    if (!account.email) continue;
+    const key = account.email.toLowerCase();
+    const sameEmailAccounts = byEmail.get(key) ?? [];
+    sameEmailAccounts.push(account);
+    byEmail.set(key, sameEmailAccounts);
+  }
+  return byEmail;
+};
+
+// Subject prefix of Auth0's email/password (database) connection
+export const AUTH0_DATABASE_SUBJECT_PREFIX = 'auth0|';
+
+// Auth0 lists the primary identity first.
+export const getPrimaryIdentity = (
+  user: Management.GetUserResponseContent
+): Management.Identity => {
+  const primary = user.identities?.[0];
+  if (primary?.user_id === undefined || !primary.provider) {
+    throw new Error('AUTH0_USER_IDENTITY_NOT_FOUND_ERROR');
+  }
+  return { user_id: String(primary.user_id), provider: primary.provider };
 };

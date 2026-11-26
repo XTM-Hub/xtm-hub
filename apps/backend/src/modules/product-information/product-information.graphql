@@ -1,0 +1,172 @@
+type SaasPlatformData {
+  metadata: SaasPlatformMetadata!
+  metrics: SaasPlatformMetrics
+  storage: SaasPlatformStorage
+  # null without metrics or without any sla_availability series.
+  sla: SaasPlatformSla
+}
+
+type SaasPlatformSla {
+  # The availability the contract commits to, as a ratio (1 is 100 %).
+  target: Float!
+  # The whole calendar months of the period, the oldest first: the last one is the current month, counted to date.
+  months: [SaasPlatformMonthlySla!]!
+}
+
+type SaasPlatformMonthlySla {
+  # First day of the month, at midnight UTC.
+  month: Date!
+  # Mean of the sla_availability points of the month, as a ratio (1 is 100 %); null without any point.
+  availability: Float
+  # Every day of the month, the days to come included, without availability.
+  days: [SaasPlatformDailySla!]!
+}
+
+type SaasPlatformDailySla {
+  # Midnight UTC.
+  day: Date!
+  # Mean of the sla_availability points of the day, as a ratio (1 is 100 %); null without any point.
+  availability: Float
+}
+
+type SaasPlatformMetadata {
+  hostname: String
+  plan: String
+  start_date: Date
+  end_date: Date
+  region: String
+}
+
+type SaasPlatformMetrics {
+  start: Date!
+  end: Date!
+  resolution: SaasPlatformResolution!
+  series: [SaasPlatformMetricSeries!]!
+}
+
+type SaasPlatformMetricSeries {
+  metric_type: MetricType!
+  points: [SaasPlatformMetricPoint!]!
+}
+
+type SaasPlatformMetricPoint {
+  timestamp: Date!
+  value: Float
+}
+
+type SaasPlatformStorage {
+  es_used_size: SaasPlatformStorageUsage
+  s3_used_size: SaasPlatformStorageUsage
+  postgres_used_size: SaasPlatformStorageUsage
+}
+
+type SaasPlatformStorageUsage {
+  percent: Float
+  used: Float
+  limit: Float
+}
+
+enum MetricType {
+  sla_availability
+  sla_response_time
+  es_used_size
+  s3_used_size
+  postgres_used_size
+}
+
+enum SaasPlatformResolution {
+  hour
+  day
+}
+
+enum SaasPlatformMetricsPeriod {
+  last_30_days
+  last_90_days
+  last_180_days
+}
+
+# A platform as listed by the SaaS Manager.
+type SaasPlatform {
+  id: String!
+  status: String
+  # null when the SaaS Manager sends a product the Hub does not know.
+  product: SaasProduct
+  customer: String
+  commercial_model: String
+  # The availability the SaaS Manager measured, as a ratio (1 is 100 %).
+  sla_cmtd: Float
+  metadata: SaasPlatformMetadata!
+  storage: SaasPlatformStorage
+  # The issues of the platform, the most severe first: empty when it is healthy, null when the SaaS Manager has no
+  # measure of it, which then cannot be told healthy.
+  health_issues: [SaasPlatformHealthIssue!]
+  # Where the platform stands in its contract on its end date; null without an end date.
+  contract_status: SaasPlatformContractStatus
+  # The active SaaS registration of the platform in the Hub, matched on its platform_id; null when it is not registered.
+  registered_platform: RegisteredPlatform
+}
+
+# A measure of a platform that breaks its contract, or soon will: the availability under the SLA target, a storage
+# almost full.
+enum SaasPlatformHealthIssue {
+  availability
+  database
+  file_storage
+}
+
+# Within the contract, its renewal due in less than 90 days, or over.
+enum SaasPlatformContractStatus {
+  active
+  ending_soon
+  ended
+}
+
+type SaasPlatformEdge {
+  cursor: String!
+  node: SaasPlatform!
+}
+
+type SaasPlatformConnection {
+  totalCount: Int!
+  edges: [SaasPlatformEdge!]!
+  pageInfo: PageInfo!
+}
+
+# The plan is ordered by size (XS, S, M, L, XL), the plans not named as a size after them.
+enum SaasPlatformOrdering {
+  customer_name
+  product
+  plan
+  end_date
+}
+
+# The products the platforms can be filtered on, named by the codes of the SaaS Manager.
+enum SaasProduct {
+  OCTI
+  OAEV
+  ONE
+}
+
+input RegisteredSaasPlatformDataInput {
+  service_instance_id: ServiceInstanceId!
+  metrics_period: SaasPlatformMetricsPeriod!
+}
+
+type Query {
+  registeredSaasPlatformData(
+    input: RegisteredSaasPlatformDataInput!
+  ): SaasPlatformData
+    @auth(
+      portalCapa: [BYPASS, READ_SAAS_METRICS]
+      orgaCapa: [ADMINISTRATE_ORGANIZATION, MANAGE_PLATFORM_REGISTRATION]
+    )
+  # The platforms in service the SaaS Manager pushed.
+  saasManagerPlatforms(
+    first: Int!
+    after: ID
+    orderBy: SaasPlatformOrdering!
+    orderMode: OrderingMode!
+    searchTerm: String
+    product: SaasProduct
+  ): SaasPlatformConnection! @auth(portalCapa: [BYPASS, READ_SAAS_METRICS])
+}

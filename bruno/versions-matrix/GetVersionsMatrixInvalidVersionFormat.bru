@@ -1,0 +1,26 @@
+meta {
+  name: Get versions matrix - invalid version format
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{baseUrl}}/opencti/versions-matrix?version=not-a-version 
+  body: none
+  auth: none
+}
+
+params:query {
+  version: not-a-version 
+}
+
+assert {
+  res.status: eq 400
+  res.body.code: eq 400
+}
+
+docs {
+  version, when provided, must match OpenCTI's version format
+  (x.y.z or x.y.z-lts.n). A malformed value is rejected before any
+  connector resolution.
+}

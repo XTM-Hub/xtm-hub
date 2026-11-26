@@ -1,0 +1,38 @@
+mutation AddUserService(
+  $input: UserServiceAddInput!
+  $service_instance_id: ServiceInstanceId!
+) {
+  addUserService(input: $input, service_instance_id: $service_instance_id) {
+    id
+  }
+}
+
+mutation EditUserService(
+  $input: UserServiceEditInput!
+  $service_instance_id: ServiceInstanceId!
+) {
+  editUserService(input: $input, service_instance_id: $service_instance_id) {
+    id
+  }
+}
+
+mutation DeleteUserServices(
+  $input: UserServicesDeleteInput!
+  $service_instance_id: ServiceInstanceId!
+) {
+  deleteUserServices(input: $input, service_instance_id: $service_instance_id) {
+    id
+  }
+}
+
+mutation AddCapabilitiesToUserServices(
+  $input: UserServicesAddCapabilitiesInput!
+  $service_instance_id: ServiceInstanceId!
+) {
+  addCapabilitiesToUserServices(
+    input: $input
+    service_instance_id: $service_instance_id
+  ) {
+    id
+  }
+}

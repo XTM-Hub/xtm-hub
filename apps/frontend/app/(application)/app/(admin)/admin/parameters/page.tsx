@@ -2,25 +2,25 @@
 import { Parameters } from '@/components/admin/parameters/Parameters';
 import GuardCapacityComponent from '@/components/AdminGuard';
 import { BreadcrumbNav } from '@/components/ui/BreadcrumbNav';
-import { useTranslations } from 'next-intl';
+import { useTranslate } from '@/hooks/use-translate';
 
 const breadcrumbValue = [
   {
     label: 'MenuLinks.Settings',
   },
   {
-    label: 'MenuLinks.Parameter',
+    label: 'MenuLinks.Parameters',
   },
 ];
 
 // Component
 const Page = () => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   return (
     <GuardCapacityComponent displayError>
       <BreadcrumbNav value={breadcrumbValue} />
-      <h1 className="sr-only">{t('MenuLinks.Parameter')}</h1>
+      <h1 className="sr-only">{t('MenuLinks.Parameters')}</h1>
       <Parameters />
     </GuardCapacityComponent>
   );

@@ -1,25 +1,30 @@
 'use client';
 
 import { PortalContext } from '@/components/me/AppPortalContext';
-import { EditIcon } from '@filigran/icon';
+import { Avatar } from '@/components/ui/avatar';
+import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
+import { getGravatarSizedUrl } from '@/utils/format/gravatar';
 import {
-  Avatar,
   Button,
   Card,
   CardContent,
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@filigran/ui';
-import { useTranslations } from 'next-intl';
+} from '@filigran/design-system';
+import { EditIcon } from '@filigran/icon';
 import React, { useContext, useRef, useState } from 'react';
+
+// Displayed size of the profile picture in px: keep it in step with the size-24 of its wrapper.
+const PROFILE_PICTURE_SIZE = 96;
 
 interface ProfileFormPictureProps {
   onSubmit: (files: (File | null)[]) => void;
 }
 
 export const ProfileFormPicture = ({ onSubmit }: ProfileFormPictureProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const { me } = useContext(PortalContext);
   const inputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -52,9 +57,9 @@ export const ProfileFormPicture = ({ onSubmit }: ProfileFormPictureProps) => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="heading-lg">{t('ProfilePage.Picture')}</CardTitle>
+        <CardTitle as="h3">{t('ProfilePage.Picture')}</CardTitle>
       </CardHeader>
-      <CardContent className="pb-0">
+      <CardContent clamp={0}>
         <input
           ref={inputRef}
           type="file"
@@ -63,22 +68,33 @@ export const ProfileFormPicture = ({ onSubmit }: ProfileFormPictureProps) => {
           onChange={handleFileChange}
         />
         <div
-          className="size-24 cursor-pointer [&_img]:object-cover"
+          {...analyticsId('account_picture_select')}
+          className="size-24 cursor-pointer"
           onClick={() => inputRef.current?.click()}>
-          <Avatar src={preview || me?.picture || undefined} />
+          {/* The stored URL (with its cache-buster), not the optimiser copy: the user sees a new
+              picture at once, while the optimised views catch up within the backend cache lifetime. */}
+          <Avatar
+            src={getGravatarSizedUrl(
+              preview || me?.picture || undefined,
+              PROFILE_PICTURE_SIZE
+            )}
+            size={PROFILE_PICTURE_SIZE}
+            loading="eager"
+          />
         </div>
       </CardContent>
-      <CardFooter className="flex justify-between">
+      <CardFooter>
         <Button
-          variant="tertiary"
+          {...analyticsId('account_picture_select')}
+          priority="tertiary"
           aria-label={t('Utils.Edit')}
-          size="sm"
-          className="ml-s gap-s"
+          className="ml-2"
+          startIcon={<EditIcon className="h-4 w-4" />}
           onClick={() => inputRef.current?.click()}>
-          <EditIcon className="h-4 w-4" />
-          <span>{t('Utils.Edit')}</span>
+          {t('Utils.Edit')}
         </Button>
         <Button
+          {...analyticsId('account_picture_upload')}
           aria-label={t('ProfilePage.UpdatePicture')}
           onClick={handleSubmit}>
           {t('Utils.Update')}

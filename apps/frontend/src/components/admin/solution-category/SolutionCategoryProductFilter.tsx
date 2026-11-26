@@ -1,12 +1,13 @@
+import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@filigran/ui';
+} from '@filigran/design-system';
 import { FiligranProduct } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 
 const SolutionCategoryProductFilter = ({
   selectedProduct,
@@ -15,7 +16,7 @@ const SolutionCategoryProductFilter = ({
   selectedProduct?: FiligranProduct;
   onProductChange: (product?: FiligranProduct) => void;
 }) => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   return (
     <Select
@@ -25,10 +26,13 @@ const SolutionCategoryProductFilter = ({
           value === 'all' ? undefined : (value as FiligranProduct)
         )
       }>
-      <SelectTrigger className="w-full sm:w-45">
+      <SelectTrigger
+        {...analyticsId('admin_solution_category_products_open')}
+        aria-label={t('SolutionCategory.ListPage.Product')}
+        className="w-full">
         <SelectValue placeholder={t('SolutionCategory.ListPage.Product')} />
       </SelectTrigger>
-      <SelectContent>
+      <SelectContent className="layer-1">
         <SelectItem value="all">
           {t('SolutionCategory.ListPage.AllProducts')}
         </SelectItem>

@@ -1,21 +1,21 @@
 import CompetitorList from '@/components/competitor/CompetitorList';
 import { BreadcrumbNav } from '@/components/ui/BreadcrumbNav';
-import { useTranslations } from 'next-intl';
+import { useTranslate } from '@/hooks/use-translate';
 
 const breadcrumbValue = [
   {
     label: 'MenuLinks.Settings',
   },
   {
-    label: 'MenuLinks.Competitor',
+    label: 'MenuLinks.Competitors',
   },
 ];
 const PageLoader = () => {
-  const t = useTranslations();
+  const t = useTranslate();
   return (
     <>
       <BreadcrumbNav value={breadcrumbValue} />
-      <h1 className="sr-only">{t('MenuLinks.Competitor')}</h1>
+      <h1 className="sr-only">{t('MenuLinks.Competitors')}</h1>
       <CompetitorList />
     </>
   );

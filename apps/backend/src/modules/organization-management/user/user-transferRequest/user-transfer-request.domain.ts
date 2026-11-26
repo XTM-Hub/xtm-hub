@@ -1,4 +1,5 @@
 import { db } from '../../../../../knexfile';
+import { UserId } from '../../../../model/kanel/public/User';
 import UserTransferRequest, {
   UserTransferRequestInitializer,
   UserTransferRequestMutator,
@@ -27,5 +28,14 @@ export const UserTransferRequestDomain = {
       .where(field)
       .delete('*')
       .returning('*');
+  },
+
+  countTransferRequestsForUser: async (userId: UserId): Promise<number> => {
+    const result = await db<UserTransferRequest>('User_TransferRequest')
+      .where({ from_user_id: userId })
+      .orWhere({ to_user_id: userId })
+      .count<[{ count: string }]>('id as count')
+      .first();
+    return Number(result?.count ?? 0);
   },
 };

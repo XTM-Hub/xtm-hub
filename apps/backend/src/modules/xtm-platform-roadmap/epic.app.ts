@@ -12,73 +12,56 @@ import {
 import portalConfig from '../../config';
 import { requestContext } from '../../context/request.context';
 import Epic, { EpicId } from '../../model/kanel/public/Epic';
-import User from '../../model/kanel/public/User';
+import { isUserAdminPlatform } from '../../security/access';
 import { assertUserHasCapaOnService } from '../../security/guard';
 import { buildServiceLink, sendMail } from '../../server/mail-service';
-import { MinIOClient } from '../../thirdparty/minio/client';
 import { logApp } from '../../utils/app-logger.util';
-import {
-  NotFoundErrorCode,
-  UnknownErrorCode,
-} from '../../utils/error/error.code';
+import { NotFoundErrorCode } from '../../utils/error/error.code';
 import { isRoadmapReminderDay } from '../../utils/roadmap-reminder.util';
-import { stripNulls } from '../../utils/typescript';
-import {
-  DocumentUploadsHelper,
-  Upload,
-} from '../document/document.uploads.helper';
-import { DocumentDomain } from '../document/domain/document.domain';
+import { applyUpdate, stripNulls } from '../../utils/typescript';
+import { UserServiceCapabilityHelper } from '../security-management/user-service-capability/user-service-capability.helper';
 import { ServiceInstanceDomain } from '../service/instance/service-instance.domain';
 import { EpicDomain } from './epic.domain';
 
-const addImage = async (user: User, uploads: Upload[]) => {
-  if (!uploads || uploads.length === 0) {
-    return undefined;
-  }
-  const [serviceInstance] =
-    await ServiceInstanceDomain.loadSubscribedServiceInstancesByIdentifier(
-      user.id,
-      ServiceDefinitionIdentifier.XtmPlatformRoadmap
-    );
-  if (serviceInstance) {
-    const files = await DocumentUploadsHelper.processUploads(
-      uploads,
-      serviceInstance.service_instance_id
-    );
-    const imageFile = files[0];
-    if (!imageFile) {
-      throw new Error(UnknownErrorCode.UnknownError);
-    }
-    return DocumentDomain.createDocument(
-      {
-        service_instance_id: serviceInstance.service_instance_id,
-        description: 'Epic illustration',
-        file_name: imageFile.fileName,
-        minio_name: imageFile.minioName,
-        active: true,
-        mime_type: imageFile.mimeType,
-        type: 'image',
-        source_type: 'internal',
-      },
-      []
-    );
-  }
-  return undefined;
-};
-
 const PLATFORM_ROADMAP_SLUG = 'xtm-platform-roadmap';
+
+const normalizeSlackLink = <T extends { slack_link?: string | null }>(
+  input: T
+): T => (input.slack_link === '' ? { ...input, slack_link: null } : input);
+
+// Draft epics are only visible to platform admins and to users who can edit the roadmap.
+const canViewInactiveEpics = async (): Promise<boolean> => {
+  const user = requestContext.get()?.user;
+  if (!user) {
+    return false;
+  }
+  if (isUserAdminPlatform(user)) {
+    return true;
+  }
+  const serviceInstance = await ServiceInstanceDomain.loadServiceInstanceBy({
+    slug: PLATFORM_ROADMAP_SLUG,
+  });
+  if (!serviceInstance) {
+    return false;
+  }
+  const capabilities = await UserServiceCapabilityHelper.loadCapabilities(
+    serviceInstance.id,
+    user.id,
+    user.selected_organization_id
+  );
+  return capabilities?.includes(ServiceRestriction.Upsert) ?? false;
+};
 
 export const EpicApp = {
   loadEpics: async (opts: Partial<QueryEpicsArgs>): Promise<EpicConnection> => {
-    return EpicDomain.loadEpics(opts);
+    return EpicDomain.loadEpics(opts, {
+      includeInactive: await canViewInactiveEpics(),
+    });
   },
   countEpicsPerTimeline: async (): Promise<EpicCountPerTimeline[]> => {
     return EpicDomain.countEpicsPerTimeline();
   },
-  createEpic: async (
-    input: CreateEpicInput,
-    uploads: Upload[]
-  ): Promise<Epic> => {
+  createEpic: async (input: CreateEpicInput): Promise<Epic> => {
     const user = requestContext.requireUser();
 
     const serviceInstance = await ServiceInstanceDomain.loadServiceInstanceBy({
@@ -93,19 +76,16 @@ export const EpicApp = {
     ]);
 
     const { is_integration, ...restInput } = input;
-    const createdDocument = await addImage(user, uploads);
-
     const epicData: Partial<Epic> = {
-      ...stripNulls(restInput),
+      ...stripNulls(normalizeSlackLink(restInput)),
       id: uuidv4() as EpicId,
       uploader_id: user.id,
       created_at: new Date(),
       epic_type: is_integration ? EpicType.Integration : EpicType.Other,
-      document_id: createdDocument?.id,
     };
     return EpicDomain.createEpic(epicData);
   },
-  updateEpic: async (id: EpicId, input: UpdateEpicInput, uploads: Upload[]) => {
+  updateEpic: async (id: EpicId, input: UpdateEpicInput) => {
     const user = requestContext.requireUser();
 
     const serviceInstance = await ServiceInstanceDomain.loadServiceInstanceBy({
@@ -120,37 +100,13 @@ export const EpicApp = {
 
     const { is_integration, ...restInput } = input;
 
-    const createdDocument = await addImage(user, uploads);
-
-    let oldEpic: Epic | undefined;
-    if (createdDocument?.id) {
-      const [loadedOldEpic] = await EpicDomain.loadEpicsBy({ id });
-      oldEpic = loadedOldEpic;
-    }
     const epicData: Partial<Epic> = {
-      ...stripNulls(restInput),
+      ...applyUpdate(normalizeSlackLink(restInput), ['slack_link']),
       updater_id: user.id,
       updated_at: new Date(),
       epic_type: is_integration ? EpicType.Integration : EpicType.Other,
-      ...(createdDocument && { document_id: createdDocument.id }),
     };
-    const updatedEpic = await EpicDomain.updateEpic(id, epicData);
-    if (
-      oldEpic &&
-      oldEpic.document_id &&
-      createdDocument?.id !== oldEpic.document_id
-    ) {
-      // Remove old document from MinIO and DB
-      const document = await DocumentDomain.loadDocumentBy({
-        id: oldEpic.document_id,
-      });
-      if (document && document.minio_name) {
-        await MinIOClient.deleteFile(document.minio_name);
-      }
-
-      await DocumentDomain.deleteDocuments([oldEpic.document_id]);
-    }
-    return updatedEpic;
+    return EpicDomain.updateEpic(id, epicData);
   },
 
   deleteEpic: async (id: EpicId) => {
@@ -168,15 +124,6 @@ export const EpicApp = {
 
     const [epic] = await EpicDomain.loadEpicsBy({ id: id });
     await EpicDomain.deleteEpicBy({ id });
-    if (epic && epic.document_id) {
-      const document = await DocumentDomain.loadDocumentBy({
-        id: epic.document_id,
-      });
-      if (document && document.minio_name) {
-        await MinIOClient.deleteFile(document.minio_name);
-      }
-      await DocumentDomain.deleteDocuments([epic.document_id]);
-    }
     return epic;
   },
 

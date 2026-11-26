@@ -7,6 +7,7 @@ import {
 import {
   PlatformIdentifier,
   RegisteredPlatform,
+  RegisteredPlatformByPlatformIdInput,
   RegisteredPlatformsInput,
 } from '../../../../__generated__/resolvers-types';
 import { ServiceInstanceId } from '../../../../model/kanel/public/ServiceInstance';
@@ -60,5 +61,36 @@ describe('query.registeredPlatforms', () => {
     // Then
     expect(RegistrationApp.loadRegisteredPlatforms).toHaveBeenCalledWith(input);
     expect(result).toEqual(platforms);
+  });
+});
+
+describe('query.registeredPlatformByPlatformId', () => {
+  it('should pass the input directly to registrationApp and return its result', async () => {
+    // Given
+    const input: RegisteredPlatformByPlatformIdInput = {
+      identifier: PlatformIdentifier.Openaev,
+      platformId: uuidv4(),
+      tenantId: uuidv4(),
+    };
+    const platform = { id: uuidv4(), title: 'Platform A' };
+    vi.spyOn(
+      RegistrationApp,
+      'loadRegisteredPlatformByPlatformId'
+    ).mockResolvedValue(platform as unknown as RegisteredPlatform);
+
+    // When
+    const result = await registrationResolver.Query!
+      .registeredPlatformByPlatformId!(
+      {},
+      { input },
+      contextSimpleUserFiligran2,
+      GRAPHQL_RESOLVE_INFO
+    );
+
+    // Then
+    expect(
+      RegistrationApp.loadRegisteredPlatformByPlatformId
+    ).toHaveBeenCalledWith(input);
+    expect(result).toEqual(platform);
   });
 });

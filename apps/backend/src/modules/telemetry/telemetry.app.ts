@@ -1,12 +1,21 @@
 import config from 'config';
-import { OneClickDeployInput } from '../../__generated__/resolvers-types';
+import { z } from 'zod';
+import {
+  NewsFeedItemType,
+  NewsFeedRedirectInput,
+  OneClickDeployInput,
+  PlatformIdentifier,
+} from '../../__generated__/resolvers-types';
 import portalConfig from '../../config';
 import { requestContext } from '../../context/request.context';
 import OneClickDeployment, {
   OneClickDeploymentInitializer,
 } from '../../model/kanel/public/OneClickDeployment';
+import Organization from '../../model/kanel/public/Organization';
 import { UserId } from '../../model/kanel/public/User';
+import { UserLoadUserBy } from '../../model/user';
 import { esDbClient } from '../../thirdparty/elasticsearch/client';
+import { withIndexPrefix } from '../../thirdparty/elasticsearch/index-prefix';
 import { PgBossProducer } from '../../thirdparty/pgboss/producer';
 import { TELEMETRY_QUEUES } from '../../thirdparty/pgboss/telemetry.jobs';
 import { logApp } from '../../utils/app-logger.util';
@@ -23,7 +32,52 @@ import {
   TelemetryEventType,
 } from './telemetry.types';
 
-const TELEMETRY_INDEX = 'telemetry';
+const TELEMETRY_INDEX = withIndexPrefix('telemetry');
+
+// The platform id is a UUID. It comes from the query string, so anything else is dropped
+const PLATFORM_ID_SCHEMA = z.uuid();
+
+const parsePlatformId = (platformId: string | null | undefined) => {
+  const parsed = PLATFORM_ID_SCHEMA.safeParse(platformId);
+  return parsed.success ? parsed.data : undefined;
+};
+
+// The event only identifies the user and the organization when a user is logged in
+const loadLoggedInIdentity = async (
+  user: Pick<UserLoadUserBy, 'id' | 'selected_organization_id'> | undefined
+): Promise<{ organization?: Organization; userId?: UserId }> => {
+  if (!user) {
+    return {};
+  }
+  try {
+    const organization = await OrganizationDomain.loadOrganizationBy({
+      id: user.selected_organization_id,
+    });
+    return { organization, userId: user.id };
+  } catch (error) {
+    logApp.error('Unable to load the organization for a telemetry event', {
+      error,
+    });
+    return { userId: user.id };
+  }
+};
+
+type NewsFeedRedirectEventData = Parameters<
+  typeof TelemetryHelper.buildNewsFeedRedirectEvent
+>[2];
+
+const sendNewsFeedRedirectEvent = async (
+  user: Pick<UserLoadUserBy, 'id' | 'selected_organization_id'> | undefined,
+  data: NewsFeedRedirectEventData
+): Promise<void> => {
+  const { organization, userId } = await loadLoggedInIdentity(user);
+  const event = TelemetryHelper.buildNewsFeedRedirectEvent(
+    organization,
+    userId,
+    data
+  );
+  await TelemetryApp.sendTelemetryEvent(event);
+};
 
 const toOneClickDeploymentInitializer = (
   event: OneClickDeployEvent
@@ -224,5 +278,60 @@ export const TelemetryApp = {
         error,
       });
     }
+  },
+
+  // The external one is fire and forget: callers must not await it on the response path.
+  async sendExternalNewsFeedRedirectEvent({
+    user,
+    newsFeedItemId,
+    newsFeedItemType,
+    platformIdentifier,
+    destinationHost,
+    platformId,
+  }: {
+    user: Pick<UserLoadUserBy, 'id' | 'selected_organization_id'> | undefined;
+    newsFeedItemId: string;
+    newsFeedItemType: NewsFeedItemType;
+    // The product the item was given to: buildNewsFeedRedirectEvent turns it into the target_product of the event,
+    // which tells the clicks of OpenAEV and OpenCTI apart
+    platformIdentifier: PlatformIdentifier;
+    destinationHost: string;
+    platformId: unknown;
+  }): Promise<void> {
+    await sendNewsFeedRedirectEvent(user, {
+      news_feed_item_id: newsFeedItemId,
+      news_feed_item_type: newsFeedItemType,
+      platform_identifier: platformIdentifier,
+      destination_host: destinationHost,
+      platform_id: parsePlatformId(
+        typeof platformId === 'string' ? platformId : undefined
+      ),
+    });
+  },
+
+  // The input comes from the query string of a link: it is validated, and a service without telemetry is ignored
+  // (debug only, since anyone logged in can send one) rather than reported as an error
+  async sendResourceNewsFeedRedirectEvent({
+    user,
+    input,
+  }: {
+    user: Pick<UserLoadUserBy, 'id' | 'selected_organization_id'>;
+    input: NewsFeedRedirectInput;
+  }): Promise<void> {
+    if (!TelemetryHelper.shouldSendEventForService(input.service_identifier)) {
+      logApp.debug(
+        'Ignored a news feed redirect event for a service without telemetry',
+        { service: input.service_identifier }
+      );
+      return;
+    }
+
+    await sendNewsFeedRedirectEvent(user, {
+      service: input.service_identifier,
+      resource_id: input.resource_id ?? undefined,
+      platform_id: parsePlatformId(input.platform_id),
+      platform_identifier: input.platform_identifier ?? undefined,
+      utm_content: input.utm_content ?? undefined,
+    });
   },
 };

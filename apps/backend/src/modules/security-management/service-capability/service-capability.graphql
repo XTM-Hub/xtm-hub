@@ -5,14 +5,13 @@ type GenericServiceCapability implements Node {
   name: String
 }
 
-input EditServiceCapabilityInput {
-  user_service_id: UserServiceId
-  capabilities: [String]!
+type UserServiceCapabilitiesResponse {
+  userServiceCapabilities: [UserServiceCapability!]!
+  subscription_id: SubscriptionId
 }
 
-type Mutation {
-  editServiceCapability(
-    input: EditServiceCapabilityInput
-    serviceInstanceId: ServiceInstanceId
-  ): SubscriptionModel @auth
+type Query {
+  userServiceCapabilities(
+    service_instance_id: ServiceInstanceId!
+  ): UserServiceCapabilitiesResponse! @auth
 }

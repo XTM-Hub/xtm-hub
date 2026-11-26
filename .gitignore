@@ -4,6 +4,10 @@
 .zed
 .rules
 
+# Claude Code — the shared config in .claude/settings.json is committed,
+# per-developer overrides are not
+.claude/settings.local.json
+
 # System files
 *~
 .DS_Store
@@ -14,3 +18,7 @@
 
 /node_modules/
 /.nx/
+/test-results/
+
+# MkDocs build cache (created when building docs from the repository root)
+/.cache/

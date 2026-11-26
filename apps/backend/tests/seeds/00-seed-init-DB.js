@@ -53,6 +53,8 @@ export async function seed(knex) {
         organization_id: filigranAdminUserId,
       },
     ])
+    .onConflict(['user_id', 'organization_id'])
+    .ignore()
     .returning('id');
 
   for (const userOrg of adminUserOrganizations) {
@@ -102,6 +104,8 @@ export async function seed(knex) {
         organization_id: filigranAccessSubscriptionUserId,
       },
     ])
+    .onConflict(['user_id', 'organization_id'])
+    .ignore()
     .returning(['id', 'user_id', 'organization_id']);
 
   for (const userOrg of accessSubscriptionUserOrganizations) {
@@ -132,12 +136,15 @@ export async function seed(knex) {
     .onConflict('id')
     .ignore();
 
-  await knex('User_RolePortal').insert([
-    {
-      user_id: filigranAdminUserId,
-      role_portal_id: '6b632cf2-9105-46ec-a463-ad59ab58c770',
-    },
-  ]);
+  await knex('User_RolePortal')
+    .insert([
+      {
+        user_id: filigranAdminUserId,
+        role_portal_id: '6b632cf2-9105-46ec-a463-ad59ab58c770',
+      },
+    ])
+    .onConflict(['user_id', 'role_portal_id'])
+    .ignore();
 
   await knex('CapabilityPortal')
     .insert([{ id: '85c9fe6f-901f-4992-a8aa-b8d56a7e2e09', name: 'BYPASS' }])
@@ -153,13 +160,6 @@ export async function seed(knex) {
 
   await knex('ServiceDefinition')
     .insert([
-      {
-        id: '2634d52b-f061-4ebc-bed2-c6cc94297ad1',
-        name: 'ServiceDef',
-        description: 'myDescription',
-        public: true,
-        identifier: 'vault',
-      },
       {
         id: '2634d52b-f061-4ebc-bed2-c6cc94297ad2',
         name: 'csv feeds',
@@ -209,21 +209,11 @@ export async function seed(knex) {
   await knex('ServiceInstance')
     .insert([
       {
-        id: 'e88e8f80-ba9e-480b-ab27-8613a1565eff',
-        name: 'Vault',
-        description: 'short description for Vault',
-        creation_status: 'READY',
-        public: false,
-        tags: '{others}',
-        service_definition_id: '2634d52b-f061-4ebc-bed2-c6cc94297ad1',
-        ordering: 12,
-      },
-      {
         id: 'ad003d3f-c406-4be8-a650-880d72f952e9',
         name: 'csv feeds',
         description: 'short description for csv feeds',
         creation_status: 'READY',
-        public: false,
+        public: true,
         tags: '{others}',
         service_definition_id: '2634d52b-f061-4ebc-bed2-c6cc94297ad2',
         ordering: 13,
@@ -233,7 +223,7 @@ export async function seed(knex) {
         name: 'open aev scenarios',
         description: 'short description for open aev scenarios',
         creation_status: 'READY',
-        public: false,
+        public: true,
         tags: '{others}',
         service_definition_id: '97280ba3-8587-4a3e-87ad-ed279b0e768f',
         ordering: 14,
@@ -243,7 +233,7 @@ export async function seed(knex) {
         name: 'custom dashboards',
         description: 'short description for custom dashboards',
         creation_status: 'READY',
-        public: false,
+        public: true,
         tags: '{others}',
         service_definition_id: 'e974c9c3-f3c5-4b48-b183-a73ff218dec1',
         ordering: 15,
@@ -264,7 +254,7 @@ export async function seed(knex) {
         name: 'opencti playbooks',
         description: 'short description for opencti playbooks',
         creation_status: 'READY',
-        public: false,
+        public: true,
         tags: '{others}',
         service_definition_id: '3c8e4f4b-9c2a-4e3d-8b5f-7d9a0c1b2e3f',
         ordering: 16,
@@ -274,23 +264,11 @@ export async function seed(knex) {
         name: 'custom views',
         description: 'short description for custom views',
         creation_status: 'READY',
-        public: false,
+        public: true,
         tags: '{others}',
         service_definition_id: '17bda799-12c9-4039-b4d9-a8834494e234',
         ordering: 17,
         slug: 'opencti-custom-views',
-      },
-    ])
-    .onConflict('id')
-    .ignore();
-
-  await knex('Service_Link')
-    .insert([
-      {
-        id: '2baba29b-62f5-4d50-8d68-eb8a25887d9c',
-        service_instance_id: 'e88e8f80-ba9e-480b-ab27-8613a1565eff',
-        url: '/service/vault',
-        name: 'Vault',
       },
     ])
     .onConflict('id')

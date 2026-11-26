@@ -7,7 +7,6 @@ import {
   UpdatePlatformServiceMetadataInput,
 } from '../../../__generated__/resolvers-types';
 import { withTransaction } from '../../../context/database.context';
-import { requestContext } from '../../../context/request.context';
 import {
   ServiceInstanceId,
   ServiceInstanceMutator,
@@ -19,66 +18,24 @@ import { ErrorCode } from '../../../utils/error/error.code';
 import { NotFoundError } from '../../../utils/error/error.util';
 import { DocumentHelper } from '../../document/document.helper';
 import { Upload } from '../../document/document.uploads.helper';
-import { GenericServiceCapabilityIds } from '../../security-management/service-capability/generic-service-capability.const';
-import { subscriptionApp } from '../../subscription/subscription.app';
-import { SubscriptionDomain } from '../../subscription/subscription.domain';
-import { UserServiceDomain } from '../../user-service/user-service.domain';
 import { ServiceInstanceDomain } from './service-instance.domain';
 
 export const ServiceInstanceApp = {
-  loadServiceInstanceAndGrantAccess: async (
-    serviceInstanceId: ServiceInstanceId
-  ): Promise<ServiceInstance> => {
-    const user = requestContext.requireUser();
-
-    const [service, existingSubscription] = await Promise.all([
-      ServiceInstanceDomain.loadServiceInstanceBy({ id: serviceInstanceId }),
-      SubscriptionDomain.loadSubscriptionBy({
-        service_instance_id: serviceInstanceId,
-        organization_id: user.selected_organization_id,
-      }),
-    ]);
-    if (!service) {
-      throw new Error(ErrorCode.ServiceInstanceNotFound);
-    }
-    let subscription = existingSubscription;
-
-    if (!subscription) {
-      const [createdSubscription] =
-        await subscriptionApp.subscribeOrganizationsToService({
-          organizationIds: [user.selected_organization_id],
-          serviceInstanceId: serviceInstanceId,
-          startDate: new Date(),
-          endDate: null,
-          capabilityIds: [],
-        });
-      if (!createdSubscription) {
-        throw NotFoundError(ErrorCode.SubscriptionNotFound);
-      }
-      subscription = createdSubscription;
-    }
-    const userService = await UserServiceDomain.doesUserServiceExist(
-      user.id,
-      subscription.id
-    );
-    if (!userService) {
-      await ServiceInstanceDomain.grantServiceAccess(
-        GenericServiceCapabilityIds.AccessId,
-        user.id,
-        subscription.id
-      );
-    }
-    return service as unknown as ServiceInstance;
-  },
-
   loadServiceInstance: async (
     serviceInstanceId: ServiceInstanceId
   ): Promise<ServiceInstance> => {
-    const service = await ServiceInstanceDomain.loadServiceInstanceBy({
-      id: serviceInstanceId,
-    });
+    const service = await ServiceInstanceDomain.loadAccessibleServiceInstanceBy(
+      { id: serviceInstanceId }
+    );
     if (!service) {
-      throw new Error(ErrorCode.ServiceInstanceNotFound);
+      const existingService = await ServiceInstanceDomain.loadServiceInstanceBy(
+        { id: serviceInstanceId }
+      );
+      throw new Error(
+        existingService
+          ? ErrorCode.ServiceInstanceNotPublic
+          : ErrorCode.ServiceInstanceNotFound
+      );
     }
     return service as unknown as ServiceInstance;
   },
@@ -115,8 +72,7 @@ export const ServiceInstanceApp = {
   updatePlatformServiceMetadata: async (
     user: UserLoadUserBy,
     serviceInstanceId: ServiceInstanceId,
-    input: UpdatePlatformServiceMetadataInput,
-    upload: Upload | null
+    input: UpdatePlatformServiceMetadataInput
   ): Promise<RegisteredPlatform> => {
     const serviceInstance =
       await ServiceInstanceDomain.loadPlatformServiceInstance(
@@ -148,18 +104,6 @@ export const ServiceInstanceApp = {
     // Update ServiceInstance name if provided
     if (input.name) {
       updateData.name = input.name;
-    }
-
-    // Handle illustration image upload if provided
-    if (upload) {
-      const document = await DocumentHelper.uploadNewFile(
-        upload,
-        serviceInstance.id
-      );
-      if (!document) {
-        throw new Error(ErrorCode.DocumentFileMissing);
-      }
-      updateData.illustration_document_id = document.id;
     }
 
     const updatedServiceInstance = await withTransaction(async () => {
@@ -202,6 +146,7 @@ export const ServiceInstanceApp = {
     return {
       __typename: 'RegisteredPlatform',
       id: updatedServiceInstance.id,
+      service_instance_id: updatedServiceInstance.id,
       platform_id: config.platform_id,
       title: config.platform_title,
       url: config.platform_url,

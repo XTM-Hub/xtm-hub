@@ -1,12 +1,12 @@
 import { defaultLocale, type PublicLocale, publicLocales } from '@/i18n/config';
-import { serverFetchGraphQL } from '@/relay/server-portal-api-fetch';
-import SettingsQuery, { settingsQuery } from '@generated/settingsQuery.graphql';
+import { fetchServerSettings } from '@/utils/settings.service';
 import { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { cache } from 'react';
 
 const LOCALE_TAG_MAP: Record<PublicLocale, string> = {
   en: 'en_US',
+  fr: 'fr_FR',
   ja: 'ja_JP',
 };
 
@@ -25,14 +25,9 @@ export const buildFiligranOrganizationJsonLd = (baseUrl: string) =>
 export const stringifyJsonLd = (data: Record<string, unknown>): string =>
   JSON.stringify(data).replace(/</g, '\\u003c');
 
-export const getBaseUrl = cache(async (): Promise<string> => {
-  const settingsResponse = await serverFetchGraphQL<settingsQuery>(
-    SettingsQuery,
-    {},
-    { cache: 'force-cache' }
-  );
-  return settingsResponse.data.settings.base_url_front;
-});
+export const getBaseUrl = cache(
+  async (): Promise<string> => (await fetchServerSettings()).base_url_front
+);
 
 const localizedPath = (locale: PublicLocale, pathname: string) => {
   const path = pathname.startsWith('/') ? pathname : `/${pathname}`;
@@ -120,15 +115,10 @@ export const getDefaultMetadata = async (
   locale: PublicLocale = defaultLocale,
   pathname: string = '/'
 ): Promise<Metadata> => {
-  const [settingsResponse, t] = await Promise.all([
-    serverFetchGraphQL<settingsQuery>(
-      SettingsQuery,
-      {},
-      { cache: 'force-cache' }
-    ),
+  const [baseUrl, t] = await Promise.all([
+    getBaseUrl(),
     getTranslations({ locale, namespace: 'Metadata' }),
   ]);
-  const baseUrl = settingsResponse.data.settings.base_url_front;
   return {
     title: t('Title'),
     description: t('Description'),

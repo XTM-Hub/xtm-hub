@@ -235,7 +235,7 @@ export const ManifestHelper = {
       subscription_link: connector.subscription_link ?? null,
       source_code: connector.source_code ?? null,
       manager_supported: connector.manager_supported,
-      support_version: connector.minimum_deployable_version ?? null,
+      min_version: connector.minimum_deployable_version ?? null,
       license_type: connector.license_type ?? null,
       contact: connector.contact ?? null,
       version: connector.version,

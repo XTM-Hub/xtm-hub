@@ -2,9 +2,11 @@ import UseCaseForm, {
   UseCaseFormModel,
 } from '@/components/admin/use-case/UseCaseForm';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
+import { useSheetOpenState } from '@/hooks/use-sheet-open-state';
+import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { removeFromQueryCache, updateInQueryCache } from '@/utils/query-cache';
-import { toast } from '@filigran/ui';
 import {
   FiligranProduct,
   UseCaseDeleteMutation,
@@ -15,8 +17,6 @@ import {
 } from '@graphql/generated';
 import { useCaseListKeys } from '@graphql/use-case/use-case-list.keys';
 import { useQueryClient } from '@tanstack/react-query';
-import { useTranslations } from 'next-intl';
-import { useState } from 'react';
 
 const EditUseCase = ({
   open,
@@ -27,13 +27,14 @@ const EditUseCase = ({
   onClose: () => void;
   useCase: UseCaseFormModel;
 }) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const queryClient = useQueryClient();
-  const [openSheet, setOpenSheet] = useState<boolean>(open);
+  const [openSheet, handleOpenSheet] = useSheetOpenState(open, onClose);
 
   const { mutate: editUseCase } = useUseCaseEditMutation(portalGraphqlClient, {
     onSuccess: (data: UseCaseEditMutation) => {
-      toast({
+      showSnackbar({
+        severity: 'success',
         title: t('Utils.Success'),
       });
       queryClient.setQueriesData<UseCasesListQuery>(
@@ -45,8 +46,8 @@ const EditUseCase = ({
     onError: (error) => {
       const errorMessage =
         error instanceof Error ? error.message : 'UnknownError';
-      toast({
-        variant: 'destructive',
+      showSnackbar({
+        severity: 'error',
         title: t('Utils.Error'),
         description: <>{t(`Error.Server.${errorMessage}`)}</>,
       });
@@ -57,7 +58,8 @@ const EditUseCase = ({
     portalGraphqlClient,
     {
       onSuccess: (data: UseCaseDeleteMutation) => {
-        toast({
+        showSnackbar({
+          severity: 'success',
           title: t('Utils.Success'),
         });
         queryClient.setQueriesData<UseCasesListQuery>(
@@ -69,24 +71,14 @@ const EditUseCase = ({
       onError: (error) => {
         const errorMessage =
           error instanceof Error ? error.message : 'UnknownError';
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: <>{t(`Error.Server.${errorMessage}`)}</>,
         });
       },
     }
   );
-
-  const handleOpenSheet = (open: boolean) => {
-    setOpenSheet((prevState) => {
-      const sheetIsClosing = prevState !== open && !open;
-      if (sheetIsClosing && onClose) {
-        onClose();
-      }
-      return open;
-    });
-  };
 
   const onDeleteUseCase = () => {
     deleteUseCase({

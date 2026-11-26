@@ -1,6 +1,9 @@
+import config from 'config';
+import { toGlobalId } from 'graphql-relay/node/node.js';
 import {
   DocumentMetadataKeyCode,
   DocumentMetadata as DocumentMetadataResolverType,
+  DocumentStatus,
   IntegrationType,
   PlatformIdentifier,
   ServiceDefinitionIdentifier,
@@ -10,13 +13,20 @@ import {
   DocumentId,
   default as DocumentModel,
 } from '../../model/kanel/public/Document';
+import ServiceDefinition from '../../model/kanel/public/ServiceDefinition';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { UseCaseId } from '../../model/kanel/public/UseCase';
+import User, { UserId } from '../../model/kanel/public/User';
 import { MinIOClient } from '../../thirdparty/minio/client';
 import { MinioFile } from '../../thirdparty/minio/types';
+import type {
+  TeamsNotificationPayloadMap,
+  TeamsResourceItem,
+} from '../../thirdparty/pgboss/teams-notification.jobs';
 import { logApp } from '../../utils/app-logger.util';
 import { ErrorCode, UnknownErrorCode } from '../../utils/error/error.code';
 import { OptionalMetadata } from '../../utils/metadata';
+import { PlatformIdentifierToString } from '../../utils/platform';
 import { WithUseCases } from '../../utils/types';
 import { isValidUrl } from '../../utils/utils';
 import {
@@ -55,7 +65,10 @@ import { TelemetryEventType } from '../telemetry/telemetry.types';
 import { DocumentApp } from './document.app';
 import { DOCUMENT_IMAGE_METADATA_KEYS } from './document.model';
 import { Upload } from './document.uploads.helper';
-import { DocumentDomain } from './domain/document.domain';
+import {
+  DocumentDomain,
+  type NotPublishedResource,
+} from './domain/document.domain';
 
 export const BOOLEAN_METADATA = [
   DocumentMetadataKeyCode.Verified,
@@ -98,23 +111,23 @@ export const ServiceDefinitionIdentifiersByPlatformIdentifier = new Map<
   [PlatformIdentifier.Openaev, [ServiceDefinitionIdentifier.OpenaevScenarios]],
 ]);
 
-export type ManageableServiceDefinitionIdentifier =
-  | ServiceDefinitionIdentifier.OpenctiIntegrations
-  | ServiceDefinitionIdentifier.OpenctiCustomDashboards
-  | ServiceDefinitionIdentifier.OpenctiCustomViews
-  | ServiceDefinitionIdentifier.OpenaevScenarios
-  | ServiceDefinitionIdentifier.OpenctiPlaybooks
-  | ServiceDefinitionIdentifier.Vault;
+export const MANAGEABLE_SERVICE_DEFINITION_IDENTIFIERS = [
+  ServiceDefinitionIdentifier.OpenctiIntegrations,
+  ServiceDefinitionIdentifier.OpenctiCustomDashboards,
+  ServiceDefinitionIdentifier.OpenctiCustomViews,
+  ServiceDefinitionIdentifier.OpenaevScenarios,
+  ServiceDefinitionIdentifier.OpenctiPlaybooks,
+] as const;
 
-export const VAULT_DOCUMENT_TYPE = 'vault';
+export type ManageableServiceDefinitionIdentifier =
+  (typeof MANAGEABLE_SERVICE_DEFINITION_IDENTIFIERS)[number];
 
 export type DOCUMENT_TYPE =
   | typeof OPENCTI_INTEGRATION_DOCUMENT_TYPE
   | typeof OPENCTI_CUSTOM_DASHBOARD_DOCUMENT_TYPE
   | typeof OPENCTI_CUSTOM_VIEW_DOCUMENT_TYPE
   | typeof OPENAEV_SCENARIO_DOCUMENT_TYPE
-  | typeof OPENCTI_PLAYBOOK_DOCUMENT_TYPE
-  | typeof VAULT_DOCUMENT_TYPE;
+  | typeof OPENCTI_PLAYBOOK_DOCUMENT_TYPE;
 
 export const DocumentTypeMappedByServiceDefinition: Record<
   ManageableServiceDefinitionIdentifier,
@@ -130,7 +143,27 @@ export const DocumentTypeMappedByServiceDefinition: Record<
     OPENAEV_SCENARIO_DOCUMENT_TYPE,
   [ServiceDefinitionIdentifier.OpenctiPlaybooks]:
     OPENCTI_PLAYBOOK_DOCUMENT_TYPE,
-  [ServiceDefinitionIdentifier.Vault]: VAULT_DOCUMENT_TYPE,
+};
+
+// Bounds of the meta description generated from the summary (see DocumentHelper.buildMetaDescription), not of the
+// summary itself. Below the minimum, search engines tend to replace the <meta name="description"> with an excerpt of
+// the page; the maximum is the length they display.
+export const META_DESCRIPTION_MIN_LENGTH = 120;
+export const META_DESCRIPTION_MAX_LENGTH = 160;
+
+// The em dash (U+2014) and the en dash (U+2013) are refused in a meta description; the hyphen is allowed.
+const META_DESCRIPTION_FORBIDDEN_DASHES = /[\u2013\u2014]/;
+
+export const META_DESCRIPTION_TYPE_LABELS: Record<
+  ManageableServiceDefinitionIdentifier,
+  string
+> = {
+  [ServiceDefinitionIdentifier.OpenctiCustomDashboards]: 'Dashboard',
+  [ServiceDefinitionIdentifier.OpenaevScenarios]: 'Scenario',
+  [ServiceDefinitionIdentifier.OpenctiCustomViews]: 'Custom View',
+  // Every integration subtype (connector, feeds, stream, third party) shares this label.
+  [ServiceDefinitionIdentifier.OpenctiIntegrations]: 'Integration',
+  [ServiceDefinitionIdentifier.OpenctiPlaybooks]: 'Playbook',
 };
 
 const DocumentMetadataMappedByServiceIdentifier: Record<
@@ -176,10 +209,279 @@ const DocumentMetadataMappedByServiceIdentifier: Record<
     OPENAEV_SCENARIO_METADATA,
   [ServiceDefinitionIdentifier.OpenctiPlaybooks]: () =>
     OPENCTI_PLAYBOOK_METADATA,
-  [ServiceDefinitionIdentifier.Vault]: () => [],
 };
 
+const ALLOWED_STATUS_TRANSITIONS: Record<DocumentStatus, DocumentStatus[]> = {
+  [DocumentStatus.Draft]: [DocumentStatus.InValidation],
+  [DocumentStatus.InValidation]: [DocumentStatus.Published],
+  [DocumentStatus.Published]: [],
+};
+
+const CREATABLE_STATUSES: DocumentStatus[] = [
+  DocumentStatus.Draft,
+  DocumentStatus.InValidation,
+];
+
+const INTEGRATION_TYPE_LABELS: Record<IntegrationType, string> = {
+  [IntegrationType.Connector]: 'Connector',
+  [IntegrationType.CsvFeed]: 'CSV Feed',
+  [IntegrationType.RssFeed]: 'RSS Feed',
+  [IntegrationType.Stream]: 'Stream',
+  [IntegrationType.TaxiiFeed]: 'TAXII Feed',
+  [IntegrationType.ThirdPartyIntegration]: 'Third party integration',
+};
+
+export interface NotPublishedResourceInput {
+  document: DocumentModel;
+  integrationType: IntegrationType | null;
+  authorEmail: string | null;
+}
+
+export interface NotPublishedLibrary {
+  serviceDefinition: NotPublishedResource['serviceDefinition'];
+  resources: NotPublishedResourceInput[];
+}
+
+const buildResourceItem = ({
+  document,
+  status,
+  serviceDefinition,
+  integrationType,
+  authorEmail,
+}: {
+  document: DocumentModel;
+  status: DocumentStatus;
+  serviceDefinition: Pick<ServiceDefinition, 'identifier'>;
+  integrationType: IntegrationType | null;
+  authorEmail: string | null;
+}): TeamsResourceItem => ({
+  name: document.name,
+  type: integrationType ? INTEGRATION_TYPE_LABELS[integrationType] : null,
+  status,
+  short_description: document.short_description,
+  link: `${config.get<string>('base_url_front')}/redirect/${serviceDefinition.identifier}?document_id=${toGlobalId('Document', document.id)}`,
+  author_email: authorEmail,
+});
+
 export const DocumentHelper = {
+  assertCreationStatus: (status: DocumentStatus) => {
+    if (!CREATABLE_STATUSES.includes(status)) {
+      throw new Error(ErrorCode.InvalidDocumentCreationStatus);
+    }
+  },
+
+  assertStatusTransition: (from: DocumentStatus, to: DocumentStatus) => {
+    if (from !== to && !ALLOWED_STATUS_TRANSITIONS[from].includes(to)) {
+      throw new Error(ErrorCode.InvalidDocumentStatusTransition);
+    }
+  },
+
+  /** Name of the product a resource belongs to, e.g. OpenCTI for a custom dashboard. */
+  getProductName: (
+    serviceDefinitionIdentifier: ManageableServiceDefinitionIdentifier
+  ): string => {
+    for (const [
+      platformIdentifier,
+      serviceDefinitionIdentifiers,
+    ] of ServiceDefinitionIdentifiersByPlatformIdentifier) {
+      if (serviceDefinitionIdentifiers.includes(serviceDefinitionIdentifier)) {
+        return PlatformIdentifierToString[platformIdentifier];
+      }
+    }
+    throw new Error(ErrorCode.ServiceNotManageable);
+  },
+
+  /**
+   * The meta description published on the resource page: "{Product} {TypeLabel}: {summary}.", where the summary is
+   * the meta_description stored on the document. A summary that already ends with a period gets no second one, so
+   * that a summary written as a full sentence does not end up with "..".
+   */
+  buildMetaDescription: ({
+    serviceDefinitionIdentifier,
+    summary,
+  }: {
+    serviceDefinitionIdentifier: ManageableServiceDefinitionIdentifier;
+    summary: string;
+  }): string => {
+    const trimmedSummary = summary.trim();
+    const period = trimmedSummary.endsWith('.') ? '' : '.';
+    return `${DocumentHelper.getProductName(serviceDefinitionIdentifier)} ${META_DESCRIPTION_TYPE_LABELS[serviceDefinitionIdentifier]}: ${trimmedSummary}${period}`;
+  },
+
+  /** Throws when the generated meta description breaks a publishing rule; title is the document name (the page h1). */
+  validateGeneratedMetaDescription: ({
+    metaDescription,
+    title,
+  }: {
+    metaDescription: string;
+    title: string | null;
+  }) => {
+    if (metaDescription.length < META_DESCRIPTION_MIN_LENGTH) {
+      throw new Error(ErrorCode.MetaDescriptionTooShort);
+    }
+    if (metaDescription.length > META_DESCRIPTION_MAX_LENGTH) {
+      throw new Error(ErrorCode.MetaDescriptionTooLong);
+    }
+    if (META_DESCRIPTION_FORBIDDEN_DASHES.test(metaDescription)) {
+      throw new Error(ErrorCode.MetaDescriptionInvalidDash);
+    }
+    const normalizedTitle = title?.trim().toLowerCase();
+    // An empty title would prefix every text: there is nothing to compare against.
+    if (
+      normalizedTitle &&
+      metaDescription.trim().toLowerCase().startsWith(normalizedTitle)
+    ) {
+      throw new Error(ErrorCode.MetaDescriptionMatchesTitle);
+    }
+  },
+
+  /** Returns the trimmed summary to store on creation, where it is required. */
+  validateMetaDescription: ({
+    serviceDefinitionIdentifier,
+    summary,
+    name,
+  }: {
+    serviceDefinitionIdentifier: ManageableServiceDefinitionIdentifier;
+    summary: string;
+    name: string;
+  }): string => {
+    const trimmedSummary = summary.trim();
+    if (!trimmedSummary) {
+      throw new Error(ErrorCode.MetaDescriptionRequired);
+    }
+    DocumentHelper.validateGeneratedMetaDescription({
+      metaDescription: DocumentHelper.buildMetaDescription({
+        serviceDefinitionIdentifier,
+        summary: trimmedSummary,
+      }),
+      title: name,
+    });
+    return trimmedSummary;
+  },
+
+  /**
+   * Returns the trimmed summary of an update, or undefined when none is given: the documents created before the field
+   * existed have none and stay editable, so an empty value leaves the stored one untouched.
+   * The generated meta description depends on both the summary and the name, so it is validated again whenever the
+   * update changes either of them, each taken from the input or else from the stored document. A document left without
+   * a summary is not validated.
+   */
+  validateUpdatedMetaDescription: ({
+    serviceDefinitionIdentifier,
+    summary,
+    name,
+    storedDocument,
+  }: {
+    serviceDefinitionIdentifier: ManageableServiceDefinitionIdentifier;
+    summary: string | null | undefined;
+    name: string | null | undefined;
+    storedDocument: Pick<DocumentModel, 'meta_description' | 'name'>;
+  }): string | undefined => {
+    const inputSummary = summary?.trim() || undefined;
+    const nextSummary = inputSummary ?? storedDocument.meta_description;
+    const nextName = name ?? storedDocument.name;
+    const changed =
+      nextSummary !== storedDocument.meta_description ||
+      nextName !== storedDocument.name;
+    if (nextSummary && changed) {
+      DocumentHelper.validateGeneratedMetaDescription({
+        metaDescription: DocumentHelper.buildMetaDescription({
+          serviceDefinitionIdentifier,
+          summary: nextSummary,
+        }),
+        title: nextName,
+      });
+    }
+    return inputSummary;
+  },
+
+  toIntegrationType: (
+    documentType: string,
+    value: unknown
+  ): IntegrationType | null =>
+    documentType === OPENCTI_INTEGRATION_DOCUMENT_TYPE &&
+    typeof value === 'string' &&
+    isIntegrationType(value)
+      ? value
+      : null,
+
+  groupNotPublishedByLibrary: ({
+    notPublished,
+    authors,
+    integrationTypes,
+  }: {
+    notPublished: NotPublishedResource[];
+    authors: Pick<User, 'id' | 'email'>[];
+    integrationTypes: { document_id: string; value: string }[];
+  }): NotPublishedLibrary[] => {
+    const authorEmails = new Map<UserId, string>(
+      authors.map(({ id, email }) => [id, email])
+    );
+    const integrationTypeByDocument = new Map(
+      integrationTypes.map(({ document_id, value }) => [document_id, value])
+    );
+
+    const libraries = new Map<string, NotPublishedLibrary>();
+    for (const { document, serviceDefinition } of notPublished) {
+      const library = libraries.get(serviceDefinition.id) ?? {
+        serviceDefinition,
+        resources: [],
+      };
+      library.resources.push({
+        document,
+        integrationType: DocumentHelper.toIntegrationType(
+          document.type,
+          integrationTypeByDocument.get(document.id)
+        ),
+        authorEmail: document.uploader_id
+          ? (authorEmails.get(document.uploader_id) ?? null)
+          : null,
+      });
+      libraries.set(serviceDefinition.id, library);
+    }
+    return [...libraries.values()];
+  },
+
+  buildInValidationPayload: ({
+    document,
+    serviceDefinition,
+    integrationType,
+    authorEmail,
+  }: {
+    document: DocumentModel;
+    serviceDefinition: Pick<ServiceDefinition, 'name' | 'identifier'>;
+    integrationType: IntegrationType | null;
+    authorEmail: string | null;
+  }): TeamsNotificationPayloadMap['resource_in_validation'] => ({
+    library: serviceDefinition.name,
+    resource: buildResourceItem({
+      document,
+      status: DocumentStatus.InValidation,
+      serviceDefinition,
+      integrationType,
+      authorEmail,
+    }),
+  }),
+
+  buildNotPublishedPayload: ({
+    serviceDefinition,
+    resources,
+  }: {
+    serviceDefinition: Pick<ServiceDefinition, 'name' | 'identifier'>;
+    resources: NotPublishedResourceInput[];
+  }): TeamsNotificationPayloadMap['resource_not_published'] => ({
+    library: serviceDefinition.name,
+    resources: resources.map(({ document, integrationType, authorEmail }) =>
+      buildResourceItem({
+        document,
+        status: document.status,
+        serviceDefinition,
+        integrationType,
+        authorEmail,
+      })
+    ),
+  }),
+
   buildCompleteMetadataFromDocumentFile: ({
     sourceDocumentFile,
     metadata,
@@ -330,6 +632,22 @@ export const DocumentHelper = {
     );
   },
 
+  // Best effort: the data is already committed, so a storage failure is logged
+  // and leaves an orphan file instead of failing the caller.
+  deleteObsoleteFiles: async (minioNames: string[]) => {
+    await Promise.all(
+      minioNames.map(async (minioName) => {
+        try {
+          await MinIOClient.deleteFile(minioName);
+        } catch (error) {
+          logApp.error(`Unable to delete the obsolete file ${minioName}`, {
+            error,
+          });
+        }
+      })
+    );
+  },
+
   getDocumentName: (documentName: string) => {
     const splitName = documentName.split('.');
     const nameWithoutExtension = splitName[0];
@@ -345,18 +663,6 @@ export const DocumentHelper = {
       .replace(/[^a-z0-9\-_.]/g, '-')
       .replace(/-+/g, '-')
       .replace(/^-|-$/g, '');
-  },
-
-  checkDocumentExists: async (
-    documentName: string,
-    serviceInstanceId: ServiceInstanceId
-  ) => {
-    const document = await DocumentDomain.loadDocumentBy({
-      file_name: DocumentHelper.normalizeDocumentName(documentName),
-      active: true,
-      service_instance_id: serviceInstanceId,
-    });
-    return !!document;
   },
 
   uploadNewFile: async (

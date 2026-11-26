@@ -1,17 +1,33 @@
+import config from 'config';
+import { toGlobalId } from 'graphql-relay/node/node.js';
 import { v4 as uuidv4 } from 'uuid';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TestHelper } from '../../../../../tests/helper/test.helper';
 import {
   contextAdminSecondOrga,
   contextSimpleUserSecondOrga,
+  // eslint-disable-next-line no-restricted-imports -- needed to test platform admin bypass behavior in removeUserFromOrganization authorization
+  requestContextAdminUser,
   TEST_ORGANIZATIONS,
 } from '../../../../../tests/tests.const';
+import {
+  ApiTokenScope,
+  OrganizationCapability,
+} from '../../../../__generated__/resolvers-types';
 import portalConfig from '../../../../config';
 import { requestContext } from '../../../../context/request.context';
+import Organization, {
+  OrganizationId,
+} from '../../../../model/kanel/public/Organization';
 import User, { UserId } from '../../../../model/kanel/public/User';
 import * as MailService from '../../../../server/mail-service';
+import * as sessionStoreManager from '../../../../session-store-manager';
 import { ErrorCode } from '../../../../utils/error/error.code';
+import { OrganizationHelper } from '../../organization/organization.helper';
+import { UserDomain } from '../user-domain/user.domain';
 import { UserOrganizationPendingDomain } from '../user-pending/user-organization-pending.domain';
+import { UserProvisioningDomain } from '../user-provisioning/user-provisioning.domain';
+import { UserHelper } from '../user.helper';
 import { UserOrganizationApp } from './user-organization.app';
 import { UserOrganizationDomain } from './user-organization.domain';
 
@@ -25,6 +41,33 @@ describe('usersOrganizationApp', () => {
 
     afterEach(async () => {
       portalConfig.enabled_emails = originalEnabledEmails;
+    });
+
+    const expectedPendingUserLink = (
+      action: 'approve' | 'deny',
+      userId: string
+    ) =>
+      `${config.get('base_url_front')}/redirect/handle-pending-user` +
+      `?action=${action}` +
+      `&organization_id=${encodeURIComponent(toGlobalId('Organization', TEST_ORGANIZATIONS.FILIGRAN.ID))}` +
+      `&user_id=${encodeURIComponent(toGlobalId('User', userId))}`;
+
+    const expectedDigestUser = ({
+      userId,
+      firstName,
+      lastName,
+      email,
+    }: {
+      userId: string;
+      firstName: string;
+      lastName: string;
+      email: string;
+    }) => ({
+      firstName,
+      lastName,
+      email,
+      approveLink: expectedPendingUserLink('approve', userId),
+      denyLink: expectedPendingUserLink('deny', userId),
     });
 
     const mockLoadOrganizationsWithPendingUsers = (users: User[]) => {
@@ -50,15 +93,18 @@ describe('usersOrganizationApp', () => {
         pending_user_digest: true,
       };
 
+      const firstUserId = uuidv4() as UserId;
+      const secondUserId = uuidv4() as UserId;
+
       mockLoadOrganizationsWithPendingUsers([
         {
-          id: uuidv4() as UserId,
+          id: firstUserId,
           email: 'user1@test.com',
           first_name: 'John',
           last_name: 'Doe',
         } as User,
         {
-          id: uuidv4() as UserId,
+          id: secondUserId,
           email: 'user2@test.com',
           first_name: 'Robert',
           last_name: 'Smith',
@@ -72,10 +118,21 @@ describe('usersOrganizationApp', () => {
       expect(sendMailSpy).toHaveBeenCalledWith({
         params: {
           adminName: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.FIRST_NAME,
+          adminEmail: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.EMAIL,
           organizationName: TEST_ORGANIZATIONS.FILIGRAN.NAME,
           users: [
-            { firstName: 'John', lastName: 'Doe', email: 'user1@test.com' },
-            { firstName: 'Robert', lastName: 'Smith', email: 'user2@test.com' },
+            expectedDigestUser({
+              userId: firstUserId,
+              firstName: 'John',
+              lastName: 'Doe',
+              email: 'user1@test.com',
+            }),
+            expectedDigestUser({
+              userId: secondUserId,
+              firstName: 'Robert',
+              lastName: 'Smith',
+              email: 'user2@test.com',
+            }),
           ],
           userCount: 2,
           requestLabel: 'requests',
@@ -91,6 +148,8 @@ describe('usersOrganizationApp', () => {
         pending_user_digest: true,
       };
 
+      const userId = uuidv4() as UserId;
+
       vi.spyOn(
         UserOrganizationPendingDomain,
         'loadOrganizationsWithPendingUsers'
@@ -100,7 +159,7 @@ describe('usersOrganizationApp', () => {
           name: TEST_ORGANIZATIONS.FILIGRAN.NAME,
           users: [
             {
-              id: uuidv4() as UserId,
+              id: userId,
               email: 'user1@test.com',
               first_name: 'John',
               last_name: 'Doe',
@@ -120,9 +179,15 @@ describe('usersOrganizationApp', () => {
       expect(sendMailSpy).toHaveBeenCalledWith({
         params: {
           adminName: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.FIRST_NAME,
+          adminEmail: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.EMAIL,
           organizationName: TEST_ORGANIZATIONS.FILIGRAN.NAME,
           users: [
-            { firstName: 'John', lastName: 'Doe', email: 'user1@test.com' },
+            expectedDigestUser({
+              userId,
+              firstName: 'John',
+              lastName: 'Doe',
+              email: 'user1@test.com',
+            }),
           ],
           userCount: 1,
           requestLabel: 'request',
@@ -138,9 +203,11 @@ describe('usersOrganizationApp', () => {
         pending_user_digest: true,
       };
 
+      const userId = uuidv4() as UserId;
+
       mockLoadOrganizationsWithPendingUsers([
         {
-          id: uuidv4() as UserId,
+          id: userId,
           email: 'user1@test.com',
           first_name: null,
           last_name: 'Smith',
@@ -154,10 +221,16 @@ describe('usersOrganizationApp', () => {
       expect(sendMailSpy).toHaveBeenCalledWith({
         params: {
           adminName: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.FIRST_NAME,
+          adminEmail: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.EMAIL,
           organizationName: TEST_ORGANIZATIONS.FILIGRAN.NAME,
           requestLabel: 'request',
           users: [
-            { firstName: '', lastName: 'Smith', email: 'user1@test.com' },
+            expectedDigestUser({
+              userId,
+              firstName: '',
+              lastName: 'Smith',
+              email: 'user1@test.com',
+            }),
           ],
           userCount: 1,
         },
@@ -172,9 +245,11 @@ describe('usersOrganizationApp', () => {
         pending_user_digest: true,
       };
 
+      const userId = uuidv4() as UserId;
+
       mockLoadOrganizationsWithPendingUsers([
         {
-          id: uuidv4() as UserId,
+          id: userId,
           email: 'user1@test.com',
           first_name: 'John',
           last_name: null,
@@ -188,9 +263,17 @@ describe('usersOrganizationApp', () => {
       expect(sendMailSpy).toHaveBeenCalledWith({
         params: {
           adminName: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.FIRST_NAME,
+          adminEmail: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.EMAIL,
           organizationName: TEST_ORGANIZATIONS.FILIGRAN.NAME,
           requestLabel: 'request',
-          users: [{ firstName: 'John', lastName: '', email: 'user1@test.com' }],
+          users: [
+            expectedDigestUser({
+              userId,
+              firstName: 'John',
+              lastName: '',
+              email: 'user1@test.com',
+            }),
+          ],
           userCount: 1,
         },
         template: 'organization_pending_user_digest',
@@ -305,6 +388,16 @@ describe('usersOrganizationApp', () => {
 
       expect(userShouldBeAdded).toHaveLength(1);
     });
+
+    it('should reject adding a user whose email domain is outside the organization', async () => {
+      const call = UserOrganizationApp.addUserToOrganization({
+        email: 'someone@second-orga.com',
+      });
+
+      await expect(call).rejects.toThrow(
+        ErrorCode.EmailOutsideOrganizationError
+      );
+    });
   });
   describe('changeSelectedOrganization', () => {
     it('should allow user to switch to an organization they belong to', async () => {
@@ -331,6 +424,714 @@ describe('usersOrganizationApp', () => {
           TEST_ORGANIZATIONS.FILIGRAN.ID
         )
       ).rejects.toThrow(ErrorCode.UserIsNotInOrganization);
+    });
+  });
+
+  describe('acceptPendingUserInOrganization', () => {
+    let createdUsers: User[] = [];
+
+    const insertTestUser = async () => {
+      const user = await TestHelper.user.insert({
+        email: `test-${uuidv4()}@filigran.io`,
+      });
+      createdUsers.push(user);
+      return user;
+    };
+
+    beforeEach(() => {
+      createdUsers = [];
+    });
+
+    afterEach(async () => {
+      await Promise.all(
+        createdUsers.map((user) => UserHelper.removeUser({ email: user.email }))
+      );
+    });
+
+    it('should accept pending user and return the user', async () => {
+      requestContext.set({
+        user: contextAdminSecondOrga.user,
+      });
+      const user = await insertTestUser();
+
+      await UserOrganizationPendingDomain.insertNewUserOrganizationPending({
+        user_id: user.id,
+        organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+      });
+
+      const acceptedUser =
+        await UserOrganizationApp.acceptPendingUserInOrganization({
+          userId: user.id,
+          organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        });
+
+      expect(acceptedUser?.id).toBe(user.id);
+
+      const pendingUser =
+        await UserOrganizationPendingDomain.loadUserOrganizationPending({
+          user_id: user.id,
+          organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        });
+      const userOrganization =
+        await UserOrganizationDomain.loadUserOrganization({
+          user_id: user.id,
+          organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        });
+
+      expect(pendingUser).toHaveLength(0);
+      expect(userOrganization).toHaveLength(1);
+    });
+
+    it('should return the user when user is already member of the organization', async () => {
+      requestContext.set({
+        user: contextAdminSecondOrga.user,
+      });
+      const user = await insertTestUser();
+
+      await TestHelper.user_Organization.create({
+        user_id: user.id,
+        organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+      });
+
+      const acceptedUser =
+        await UserOrganizationApp.acceptPendingUserInOrganization({
+          userId: user.id,
+          organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        });
+
+      expect(acceptedUser?.id).toBe(user.id);
+    });
+
+    it('should return null when user is neither pending nor member of the organization', async () => {
+      requestContext.set({
+        user: contextAdminSecondOrga.user,
+      });
+      const user = await insertTestUser();
+
+      const acceptedUser =
+        await UserOrganizationApp.acceptPendingUserInOrganization({
+          userId: user.id,
+          organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        });
+
+      expect(acceptedUser).toBeNull();
+    });
+
+    it('should return null when user is only member of another organization', async () => {
+      requestContext.set({
+        user: contextAdminSecondOrga.user,
+      });
+      const user = await insertTestUser();
+
+      await TestHelper.user_Organization.create({
+        user_id: user.id,
+        organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+      });
+
+      const acceptedUser =
+        await UserOrganizationApp.acceptPendingUserInOrganization({
+          userId: user.id,
+          organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        });
+
+      expect(acceptedUser).toBeNull();
+    });
+
+    it('should reject when user does not have enough capabilities', async () => {
+      requestContext.set({
+        user: contextSimpleUserSecondOrga.user,
+      });
+      const user = await insertTestUser();
+
+      await expect(
+        UserOrganizationApp.acceptPendingUserInOrganization({
+          userId: user.id,
+          organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        })
+      ).rejects.toThrow(ErrorCode.MissingCapabilityOnOrganization);
+    });
+  });
+
+  describe('loadOrganizationMemberContactsByCapabilities', () => {
+    const secondOrganizationAdminContact = {
+      id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.ADMIN_ORGA.ID,
+      email: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.ADMIN_ORGA.EMAIL,
+      first_name: null,
+      last_name: null,
+    };
+    let createdUserIds: UserId[] = [];
+
+    beforeEach(() => {
+      createdUserIds = [];
+    });
+
+    afterEach(async () => {
+      await Promise.all(
+        createdUserIds.map((id) => UserHelper.removeUser({ id }))
+      );
+    });
+
+    it('should return the administrators contacts when the caller is a member of the organization', async () => {
+      requestContext.set({
+        user: (await UserDomain.loadUserBy({
+          'User.id': TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.SIMPLE.ID,
+        }))!,
+      });
+
+      const contacts =
+        await UserOrganizationApp.loadOrganizationMemberContactsByCapabilities({
+          organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+          capabilities: [OrganizationCapability.AdministrateOrganization],
+        });
+
+      expect(contacts).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining(secondOrganizationAdminContact),
+        ])
+      );
+    });
+
+    it('should reject the call when the caller is a non-member with their personal space selected', async () => {
+      const user = await UserProvisioningDomain.createUser(
+        { email: `member-contacts-${uuidv4()}@member-contacts-test.io` },
+        { sendWelcomeEmail: false }
+      );
+      createdUserIds.push(user.id);
+      requestContext.set({
+        user: (await UserDomain.loadUserBy({ 'User.id': user.id }))!,
+      });
+
+      const call =
+        UserOrganizationApp.loadOrganizationMemberContactsByCapabilities({
+          organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+          capabilities: [OrganizationCapability.AdministrateOrganization],
+        });
+
+      await expect(call).rejects.toThrow(ErrorCode.UserIsNotInOrganization);
+    });
+  });
+
+  describe('removeUserFromOrganization', () => {
+    let organization: Organization;
+    let createdOrganizations: Organization[] = [];
+    let createdUsers: User[] = [];
+
+    const createOrganization = async () => {
+      const createdOrganization = await TestHelper.organization.create();
+      createdOrganizations.push(createdOrganization);
+      return createdOrganization;
+    };
+
+    const createUser = async () => {
+      const user = await UserProvisioningDomain.createUser(
+        { email: `remove-user-${uuidv4()}@remove-user-test.io` },
+        { sendWelcomeEmail: false }
+      );
+      createdUsers.push(user);
+      return user;
+    };
+
+    const addMember = async (
+      user: User,
+      capabilities: OrganizationCapability[],
+      organizationId: OrganizationId = organization.id
+    ) => {
+      const userOrganization = await TestHelper.user_Organization.create({
+        user_id: user.id,
+        organization_id: organizationId,
+      });
+      await Promise.all(
+        capabilities.map((name) =>
+          TestHelper.user_OrganizationCapability.create({
+            user_organization_id: userOrganization!.id,
+            name,
+          })
+        )
+      );
+    };
+
+    const selectOrganization = (user: User, organizationId: OrganizationId) =>
+      TestHelper.user.update(
+        { id: user.id },
+        { selected_organization_id: organizationId }
+      );
+
+    const actAs = async (user: User) => {
+      requestContext.set({
+        user: (await UserDomain.loadUserBy({ 'User.id': user.id }))!,
+      });
+    };
+
+    const loadMembership = (user: User) =>
+      TestHelper.user_Organization.load({
+        user_id: user.id,
+        organization_id: organization.id,
+      });
+
+    beforeEach(async () => {
+      createdUsers = [];
+      createdOrganizations = [];
+      organization = await createOrganization();
+    });
+
+    afterEach(async () => {
+      vi.restoreAllMocks();
+      await Promise.all(
+        createdUsers.map((user) => UserHelper.removeUser({ id: user.id }))
+      );
+      await Promise.all(
+        createdOrganizations.map(({ id }) =>
+          TestHelper.organization.delete({ id })
+        )
+      );
+    });
+
+    it('should remove the user when the caller administrates the organization', async () => {
+      const caller = await createUser();
+      await addMember(caller, [
+        OrganizationCapability.AdministrateOrganization,
+      ]);
+      const target = await createUser();
+      await addMember(target, []);
+      await actAs(caller);
+
+      await UserOrganizationApp.removeUserFromOrganization({
+        userId: target.id,
+        organizationId: organization.id,
+      });
+
+      expect(await loadMembership(target)).toBeUndefined();
+    });
+
+    it('should remove the user when the caller is a platform administrator', async () => {
+      const target = await createUser();
+      await addMember(target, []);
+      requestContext.set(requestContextAdminUser);
+
+      await UserOrganizationApp.removeUserFromOrganization({
+        userId: target.id,
+        organizationId: organization.id,
+      });
+
+      expect(await loadMembership(target)).toBeUndefined();
+    });
+
+    it('should reject the removal when the caller administrates another organization', async () => {
+      const otherOrganization = await createOrganization();
+      const caller = await createUser();
+      await addMember(
+        caller,
+        [OrganizationCapability.AdministrateOrganization],
+        otherOrganization.id
+      );
+      await selectOrganization(caller, otherOrganization.id);
+      const target = await createUser();
+      await addMember(target, []);
+      await actAs(caller);
+
+      const call = UserOrganizationApp.removeUserFromOrganization({
+        userId: target.id,
+        organizationId: organization.id,
+      });
+
+      await expect(call).rejects.toThrow(
+        ErrorCode.MissingCapabilityOnOrganization
+      );
+      expect(await loadMembership(target)).toBeDefined();
+    });
+
+    it('should reject the removal when the caller has no capability in the organization', async () => {
+      const caller = await createUser();
+      await addMember(caller, []);
+      const target = await createUser();
+      await addMember(target, []);
+      await actAs(caller);
+
+      const call = UserOrganizationApp.removeUserFromOrganization({
+        userId: target.id,
+        organizationId: organization.id,
+      });
+
+      await expect(call).rejects.toThrow(
+        ErrorCode.MissingCapabilityOnOrganization
+      );
+      expect(await loadMembership(target)).toBeDefined();
+    });
+
+    it('should reject the removal when the organization is a personal space', async () => {
+      const owner = await createUser();
+      const target = await createUser();
+      await TestHelper.user_Organization.create({
+        user_id: target.id,
+        organization_id: OrganizationHelper.personalSpaceIdOf(owner),
+      });
+      await actAs(owner);
+
+      const call = UserOrganizationApp.removeUserFromOrganization({
+        userId: target.id,
+        organizationId: OrganizationHelper.personalSpaceIdOf(owner),
+      });
+
+      await expect(call).rejects.toThrow(
+        ErrorCode.CantRemoveUserFromPersonalSpace
+      );
+    });
+
+    it('should reject the removal when the organization does not exist', async () => {
+      const target = await createUser();
+      requestContext.set(requestContextAdminUser);
+
+      const call = UserOrganizationApp.removeUserFromOrganization({
+        userId: target.id,
+        organizationId: uuidv4() as OrganizationId,
+      });
+
+      await expect(call).rejects.toThrow(ErrorCode.OrganizationNotFound);
+    });
+
+    it('should reject the removal when the user is not a member', async () => {
+      const caller = await createUser();
+      await addMember(caller, [
+        OrganizationCapability.AdministrateOrganization,
+      ]);
+      const target = await createUser();
+      await actAs(caller);
+
+      const call = UserOrganizationApp.removeUserFromOrganization({
+        userId: target.id,
+        organizationId: organization.id,
+      });
+
+      await expect(call).rejects.toThrow(ErrorCode.UserIsNotInOrganization);
+    });
+
+    it('should reject the removal when the user is the last administrator', async () => {
+      const caller = await createUser();
+      await addMember(caller, [OrganizationCapability.ManageAccess]);
+      const target = await createUser();
+      await addMember(target, [
+        OrganizationCapability.AdministrateOrganization,
+      ]);
+      await actAs(caller);
+
+      const call = UserOrganizationApp.removeUserFromOrganization({
+        userId: target.id,
+        organizationId: organization.id,
+      });
+
+      await expect(call).rejects.toThrow(ErrorCode.CantRemoveLastAdministrator);
+      expect(await loadMembership(target)).toBeDefined();
+    });
+
+    it('should select the personal space in the user sessions when the selected organization is removed', async () => {
+      const updateUserSessionSpy = vi
+        .spyOn(sessionStoreManager, 'updateUserSession')
+        .mockResolvedValue(undefined);
+      const caller = await createUser();
+      await addMember(caller, [
+        OrganizationCapability.AdministrateOrganization,
+      ]);
+      const target = await createUser();
+      await addMember(target, []);
+      await selectOrganization(target, organization.id);
+      await actAs(caller);
+
+      await UserOrganizationApp.removeUserFromOrganization({
+        userId: target.id,
+        organizationId: organization.id,
+      });
+
+      expect(updateUserSessionSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: target.id,
+          selected_organization_id:
+            OrganizationHelper.personalSpaceIdOf(target),
+          organizations: expect.not.arrayContaining([
+            expect.objectContaining({ id: organization.id }),
+          ]),
+        })
+      );
+    });
+
+    it('should keep the selected organization when another organization is removed', async () => {
+      const otherOrganization = await createOrganization();
+      const caller = await createUser();
+      await addMember(caller, [
+        OrganizationCapability.AdministrateOrganization,
+      ]);
+      const target = await createUser();
+      await addMember(target, []);
+      await addMember(target, [], otherOrganization.id);
+      await selectOrganization(target, otherOrganization.id);
+      await actAs(caller);
+
+      await UserOrganizationApp.removeUserFromOrganization({
+        userId: target.id,
+        organizationId: organization.id,
+      });
+
+      expect(
+        (await TestHelper.user.load({ id: target.id })).selected_organization_id
+      ).toBe(otherOrganization.id);
+    });
+
+    describe('with an API token', () => {
+      // The caller manages access in two organizations: a token pinned to one must not act on the other. The admin
+      // scope keeps the caller's organization capabilities, so a refusal comes from the organization pin alone.
+      let tokenOrganization: Organization;
+      let caller: User;
+      let target: User;
+
+      beforeEach(async () => {
+        tokenOrganization = await createOrganization();
+        caller = await createUser();
+        await addMember(caller, [OrganizationCapability.ManageAccess]);
+        await addMember(
+          caller,
+          [OrganizationCapability.ManageAccess],
+          tokenOrganization.id
+        );
+        target = await createUser();
+        await addMember(target, []);
+      });
+
+      it('should reject the removal from an organization other than the token one', async () => {
+        // Given
+        await TestHelper.apiToken.actAs(
+          caller.id,
+          tokenOrganization.id,
+          ApiTokenScope.Admin
+        );
+
+        // When
+        const call = UserOrganizationApp.removeUserFromOrganization({
+          userId: target.id,
+          organizationId: organization.id,
+        });
+
+        // Then
+        await expect(call).rejects.toThrow(
+          ErrorCode.MissingCapabilityOnOrganization
+        );
+        expect(await loadMembership(target)).toMatchObject({
+          user_id: target.id,
+          organization_id: organization.id,
+        });
+      });
+
+      it('should reject accepting a pending user in an organization other than the token one', async () => {
+        // Given
+        const pendingUser = await createUser();
+        await TestHelper.user_OrganizationPending.create({
+          user_id: pendingUser.id,
+          organization_id: organization.id,
+        });
+        await TestHelper.apiToken.actAs(
+          caller.id,
+          tokenOrganization.id,
+          ApiTokenScope.Admin
+        );
+
+        // When
+        const call = UserOrganizationApp.acceptPendingUserInOrganization({
+          userId: pendingUser.id,
+          organizationId: organization.id,
+        });
+
+        // Then
+        await expect(call).rejects.toThrow(
+          ErrorCode.MissingCapabilityOnOrganization
+        );
+        expect(
+          await TestHelper.user_OrganizationPending.loadAll({
+            user_id: pendingUser.id,
+          })
+        ).toMatchObject([
+          { user_id: pendingUser.id, organization_id: organization.id },
+        ]);
+      });
+
+      it('should reject removing a pending user from an organization other than the token one', async () => {
+        // Given
+        const pendingUser = await createUser();
+        await TestHelper.user_OrganizationPending.create({
+          user_id: pendingUser.id,
+          organization_id: organization.id,
+        });
+        await TestHelper.apiToken.actAs(
+          caller.id,
+          tokenOrganization.id,
+          ApiTokenScope.Admin
+        );
+
+        // When
+        const call = UserOrganizationApp.removePendingUserFromOrganization({
+          userId: pendingUser.id,
+          organizationId: organization.id,
+        });
+
+        // Then
+        await expect(call).rejects.toThrow(
+          ErrorCode.MissingCapabilityOnOrganization
+        );
+        expect(
+          await TestHelper.user_OrganizationPending.loadAll({
+            user_id: pendingUser.id,
+          })
+        ).toMatchObject([
+          { user_id: pendingUser.id, organization_id: organization.id },
+        ]);
+      });
+
+      it('should remove the user from the token organization when the token user manages access there', async () => {
+        // Given
+        await TestHelper.apiToken.actAs(
+          caller.id,
+          organization.id,
+          ApiTokenScope.Admin
+        );
+
+        // When
+        await UserOrganizationApp.removeUserFromOrganization({
+          userId: target.id,
+          organizationId: organization.id,
+        });
+
+        // Then
+        expect(await loadMembership(target)).toBeUndefined();
+      });
+
+      it('should reject the removal when the token took the organization administration away from its user', async () => {
+        // Given an administrator without MANAGE_ACCESS, whose read_write token has no ADMINISTRATE_ORGANIZATION
+        const administrator = await createUser();
+        await addMember(administrator, [
+          OrganizationCapability.AdministrateOrganization,
+        ]);
+        await TestHelper.apiToken.actAs(
+          administrator.id,
+          organization.id,
+          ApiTokenScope.ReadWrite
+        );
+
+        // When
+        const call = UserOrganizationApp.removeUserFromOrganization({
+          userId: target.id,
+          organizationId: organization.id,
+        });
+
+        // Then
+        await expect(call).rejects.toThrow(
+          ErrorCode.MissingCapabilityOnOrganization
+        );
+        expect(await loadMembership(target)).toMatchObject({
+          user_id: target.id,
+          organization_id: organization.id,
+        });
+      });
+
+      it('should let a session user remove from any organization where they manage access, whatever the selected one', async () => {
+        // Given
+        await selectOrganization(caller, tokenOrganization.id);
+        await actAs(caller);
+
+        // When
+        await UserOrganizationApp.removeUserFromOrganization({
+          userId: target.id,
+          organizationId: organization.id,
+        });
+
+        // Then
+        expect(await loadMembership(target)).toBeUndefined();
+      });
+    });
+  });
+
+  describe('resolveOrganizationUserIdsByEmails', () => {
+    let organization: Organization;
+    let domain: string;
+    let caller: User;
+    let member: User;
+    let createdUsers: User[] = [];
+
+    const createUser = async (email: string) => {
+      const user = await UserProvisioningDomain.createUser(
+        { email },
+        { sendWelcomeEmail: false }
+      );
+      createdUsers.push(user);
+      return user;
+    };
+
+    const addMember = async (
+      user: User,
+      capabilities: OrganizationCapability[]
+    ) => {
+      const userOrganization = await TestHelper.user_Organization.create({
+        user_id: user.id,
+        organization_id: organization.id,
+      });
+      await Promise.all(
+        capabilities.map((name) =>
+          TestHelper.user_OrganizationCapability.create({
+            user_organization_id: userOrganization!.id,
+            name,
+          })
+        )
+      );
+    };
+
+    beforeEach(async () => {
+      createdUsers = [];
+      domain = `resolve-emails-${uuidv4()}.io`;
+      organization = await TestHelper.organization.create({
+        domains: [domain],
+      });
+      caller = await createUser(`caller-${uuidv4()}@${domain}`);
+      await addMember(caller, [
+        OrganizationCapability.AdministrateOrganization,
+      ]);
+      member = await createUser(`member-${uuidv4()}@${domain}`);
+      await addMember(member, []);
+      await TestHelper.apiToken.actAs(
+        caller.id,
+        organization.id,
+        ApiTokenScope.Admin
+      );
+    });
+
+    afterEach(async () => {
+      vi.restoreAllMocks();
+      await Promise.all(
+        createdUsers.map((user) => UserHelper.removeUser({ id: user.id }))
+      );
+      await TestHelper.organization.delete({ id: organization.id });
+    });
+
+    it('should refuse to provision a new user to an API token before creating any account', async () => {
+      // Given
+      const email = `new-${uuidv4()}@${domain}`;
+
+      // When
+      const call = UserOrganizationApp.resolveOrganizationUserIdsByEmails({
+        organization,
+        emails: [member.email, email],
+      });
+
+      // Then
+      await expect(call).rejects.toThrow(ErrorCode.NotAllowedWithApiToken);
+      expect(await TestHelper.user.loadAll({ email })).toEqual([]);
+    });
+
+    it('should resolve the existing members to an API token', async () => {
+      // When
+      const userIds =
+        await UserOrganizationApp.resolveOrganizationUserIdsByEmails({
+          organization,
+          emails: [member.email],
+        });
+
+      // Then
+      expect(userIds).toEqual([member.id]);
     });
   });
 });

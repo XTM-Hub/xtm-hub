@@ -6,12 +6,17 @@ import {
   ManifestType,
   PlatformIdentifier,
   Timeline,
+  VotingRoundStatus,
 } from '../../src/__generated__/resolvers-types';
 import Competitor, {
   CompetitorId,
   CompetitorMutator,
 } from '../../src/model/kanel/public/Competitor';
 import Epic, { EpicId, EpicMutator } from '../../src/model/kanel/public/Epic';
+import FeatureVote, {
+  FeatureVoteInitializer,
+  FeatureVoteMutator,
+} from '../../src/model/kanel/public/FeatureVote';
 import Manifest, {
   ManifestId,
   ManifestInitializer,
@@ -37,8 +42,16 @@ import OneClickDeployment, {
   OneClickDeploymentMutator,
 } from '../../src/model/kanel/public/OneClickDeployment';
 import Organization, {
+  OrganizationId,
+  OrganizationInitializer,
   OrganizationMutator,
 } from '../../src/model/kanel/public/Organization';
+import ProductVersion, {
+  ProductVersionId,
+  ProductVersionInitializer,
+  ProductVersionMutator,
+} from '../../src/model/kanel/public/ProductVersion';
+import { ServiceInstanceId } from '../../src/model/kanel/public/ServiceInstance';
 import Subscription, {
   SubscriptionId,
   SubscriptionMutator,
@@ -47,6 +60,16 @@ import UseCase, {
   UseCaseInitializer,
   UseCaseMutator,
 } from '../../src/model/kanel/public/UseCase';
+import VotableFeature, {
+  VotableFeatureId,
+  VotableFeatureInitializer,
+  VotableFeatureMutator,
+} from '../../src/model/kanel/public/VotableFeature';
+import VotingRound, {
+  VotingRoundId,
+  VotingRoundInitializer,
+  VotingRoundMutator,
+} from '../../src/model/kanel/public/VotingRound';
 import { ManifestFragmentHelper } from '../../src/modules/shareable-resource/manifest-fragment/manifest-fragment.helper';
 import { ManifestRebuildQueueStatus } from '../../src/modules/shareable-resource/manifest/manifest.consts';
 import { TEST_ORGANIZATIONS } from '../tests.const';
@@ -54,10 +77,20 @@ import {
   mockPlatformConfig,
   TestPlatformConfigurationHelper,
 } from './test-platform-configuration.helper';
+import { TestAccessMatrixHelper } from './test.access-matrix.helper';
+import { TestApiTokenHelper } from './test.api-token.helper';
+import { TestAuth0Helper } from './test.auth0.helper';
+import { TestContentTranslationHelper } from './test.content-translation.helper';
 import { TestDeploymentHelper } from './test.deployment.helper';
 import { TestDocumentHelper } from './test.document.helper';
+import { TestGuardFixturesHelper } from './test.guard-fixtures.helper';
 import { TestNewsfeedHelper } from './test.newsfeed.helper';
+import { TestPlatformAssertionHelper } from './test.platform-assertion.helper';
+import { TestPlatformCallerHelper } from './test.platform-caller.helper';
+import { TestSaasManagerInstanceHelper } from './test.saas-manager-instance.helper';
 import { TestServiceHelper } from './test.service.helper';
+import { TestSessionHelper } from './test.session.helper';
+import { TestUserServiceSceneHelper } from './test.user-service-scene.helper';
 import { TestUserHelper } from './test.user.helper';
 
 export { seedDocuments } from './perf/test.document.perf.helper';
@@ -75,9 +108,19 @@ export const TestHelper = {
   ...TestDocumentHelper,
   ...TestServiceHelper,
   ...TestPlatformConfigurationHelper,
+  ...TestPlatformCallerHelper,
+  ...TestPlatformAssertionHelper,
   ...TestUserHelper,
+  ...TestUserServiceSceneHelper,
+  ...TestAuth0Helper,
   ...TestDeploymentHelper,
   ...TestNewsfeedHelper,
+  ...TestContentTranslationHelper,
+  ...TestSessionHelper,
+  ...TestAccessMatrixHelper,
+  ...TestApiTokenHelper,
+  ...TestGuardFixturesHelper,
+  ...TestSaasManagerInstanceHelper,
   subscription: {
     create: async (data?: Partial<Subscription>): Promise<Subscription> => {
       const [subscription] = await db<Subscription>('Subscription')
@@ -101,6 +144,19 @@ export const TestHelper = {
     },
   },
   organization: {
+    create: async (
+      data?: Partial<OrganizationInitializer>
+    ): Promise<Organization> => {
+      const [organization] = await db<Organization>('Organization')
+        .insert({
+          id: uuidv4() as OrganizationId,
+          name: `test-organization-${uuidv4()}`,
+          personal_space: false,
+          ...data,
+        })
+        .returning('*');
+      return organization!;
+    },
     load: async (
       field: OrganizationMutator
     ): Promise<Organization | undefined> => {
@@ -167,8 +223,11 @@ export const TestHelper = {
           title: 'Test Epic',
           short_description: 'Short desc',
           description: 'Long description for the epic',
+          problem_to_solve: 'Problem to solve',
+          proposed_solution: 'Proposed solution',
+          expected_value: 'Expected value',
           active: true,
-          product: FiligranProduct.Opencti,
+          products: [FiligranProduct.Opencti],
           timeline: Timeline.Now,
           ...data,
         })
@@ -288,6 +347,67 @@ export const TestHelper = {
       await db<Manifest>('Manifest').where(field).del();
     },
   },
+  votingRound: {
+    create: async (
+      data: Partial<VotingRoundInitializer> & {
+        service_instance_id: ServiceInstanceId;
+      }
+    ): Promise<VotingRound> => {
+      const [votingRound] = await db<VotingRound>('VotingRound')
+        .insert({
+          id: uuidv4() as VotingRoundId,
+          name: `test-voting-round-${uuidv4()}`,
+          status: VotingRoundStatus.Draft,
+          created_at: new Date(),
+          ...data,
+        })
+        .returning('*');
+      return votingRound!;
+    },
+    load: async (
+      field: VotingRoundMutator
+    ): Promise<VotingRound | undefined> => {
+      return db<VotingRound>('VotingRound').where(field).select('*').first();
+    },
+    delete: async (field: VotingRoundMutator): Promise<void> => {
+      await db<VotingRound>('VotingRound').where(field).del();
+    },
+  },
+  votableFeature: {
+    create: async (
+      data: Partial<VotableFeatureInitializer> & {
+        voting_round_id: VotingRoundId;
+      }
+    ): Promise<VotableFeature> => {
+      const [feature] = await db<VotableFeature>('VotableFeature')
+        .insert({
+          id: uuidv4() as VotableFeatureId,
+          title: `test-feature-${uuidv4()}`,
+          short_description: 'Short',
+          description: 'Long',
+          product: FiligranProduct.Opencti,
+          position: 0,
+          active: true,
+          created_at: new Date(),
+          ...data,
+        })
+        .returning('*');
+      return feature!;
+    },
+    loadAll: async (
+      field: VotableFeatureMutator
+    ): Promise<VotableFeature[]> => {
+      return db<VotableFeature[]>('VotableFeature').where(field).select('*');
+    },
+  },
+  featureVote: {
+    create: async (data: FeatureVoteInitializer): Promise<void> => {
+      await db<FeatureVote>('FeatureVote').insert(data);
+    },
+    loadAll: async (field: FeatureVoteMutator): Promise<FeatureVote[]> => {
+      return db<FeatureVote[]>('FeatureVote').where(field).select('*');
+    },
+  },
   manifestDocument: {
     loadAll: async (
       field: ManifestDocumentMutator
@@ -298,6 +418,40 @@ export const TestHelper = {
     },
     delete: async (field: ManifestDocumentMutator): Promise<void> => {
       await db<ManifestDocument>('Manifest_Document').where(field).del();
+    },
+  },
+  productVersion: {
+    create: async (
+      data?: Partial<ProductVersionInitializer>
+    ): Promise<ProductVersion> => {
+      const version = data?.version ?? '6.4.0';
+      const [row] = await db<ProductVersion>('ProductVersion')
+        .insert({
+          id: uuidv4() as ProductVersionId,
+          product: PlatformIdentifier.Opencti,
+          version,
+          version_padded:
+            ManifestFragmentHelper.validateAndFormatManifestVersion(version),
+          ...data,
+        })
+        .returning('*');
+      return row!;
+    },
+    loadAll: async (
+      field: ProductVersionMutator
+    ): Promise<ProductVersion[]> => {
+      return db<ProductVersion[]>('ProductVersion').where(field).select('*');
+    },
+    load: async (
+      field: ProductVersionMutator
+    ): Promise<ProductVersion | undefined> => {
+      return db<ProductVersion>('ProductVersion')
+        .where(field)
+        .select('*')
+        .first();
+    },
+    delete: async (field: ProductVersionMutator): Promise<void> => {
+      await db<ProductVersion>('ProductVersion').where(field).del();
     },
   },
 };

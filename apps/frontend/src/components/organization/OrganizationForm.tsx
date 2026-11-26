@@ -1,43 +1,46 @@
 import { organizationFormSchema } from '@/components/organization/OrganizationForm.schema';
+import { Form, FormField } from '@/components/ui/form';
+import { SheetFooter } from '@/components/ui/sheet';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
+import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import {
   Button,
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
+  Combobox,
+  ComboboxChips,
+  ComboboxField,
+  ComboboxHelperText,
+  ComboboxInput,
+  ComboboxLabel,
   Input,
-  SheetFooter,
-  Tag,
-  TagInput,
-} from '@filigran/ui';
-import { organizationItem_fragment$data } from '@generated/organizationItem_fragment.graphql';
+} from '@filigran/design-system';
+import { OrganizationItemFragment } from '@graphql/generated';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { KeyboardEvent, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
 interface OrganizationFormSheetProps {
-  organization?: organizationItem_fragment$data;
+  organization?: OrganizationItemFragment;
   handleSubmit: (values: z.infer<typeof organizationFormSchema>) => void;
+  /** Disables Validate while the submitted values are being saved. */
+  isSubmitting?: boolean;
 }
 
 export const OrganizationForm = ({
   organization,
   handleSubmit,
+  isSubmitting = false,
 }: OrganizationFormSheetProps) => {
   const { handleCloseSheet, setIsDirty } = useDialogContext();
 
-  const t = useTranslations();
+  const t = useTranslate();
 
   const form = useForm<z.infer<typeof organizationFormSchema>>({
     resolver: zodResolver(organizationFormSchema),
     defaultValues: {
       name: organization?.name ?? '',
-      domains: (organization?.domains as string[]) ?? [],
+      domains: organization?.domains ?? [],
     },
   });
   setIsDirty(form.formState.isDirty);
@@ -49,12 +52,7 @@ export const OrganizationForm = ({
   };
 
   const { setValue, setError, clearErrors } = form;
-  const [tags, setTags] = useState<Tag[]>(
-    (organization?.domains ?? []).map(
-      (domain) => ({ id: domain, text: domain }) as Tag
-    )
-  );
-  const [activeTagIndex, setActiveTagIndex] = useState<number | null>(null);
+  const [domainInput, setDomainInput] = useState('');
 
   const validTagDomain = (tag: string) => {
     // Exemple of valid domain : example.com, sub.example.com, my-site.co.uk
@@ -79,68 +77,111 @@ export const OrganizationForm = ({
     return true;
   };
 
+  const addDomain = (domain: string) => {
+    setValue('domains', [...form.getValues('domains'), domain], {
+      shouldDirty: true,
+    });
+    setDomainInput('');
+  };
+
+  const commitTypedDomain = () => {
+    const text = domainInput.trim();
+    if (text && validTagDomain(text)) {
+      addDomain(text);
+    }
+  };
+
+  const handleDomainKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key !== 'Enter' && event.key !== ',') {
+      return;
+    }
+    const text = domainInput.trim();
+    if (!validTagDomain(text)) {
+      // Keeps the typed text and stops Enter from submitting the form.
+      event.preventDefault();
+      return;
+    }
+    if (event.key === ',') {
+      event.preventDefault();
+      addDomain(text);
+    }
+  };
+
   return (
     <Form {...form}>
       <form
-        className="w-full space-y-xl"
-        onSubmit={form.handleSubmit(onSubmit)}>
+        className="w-full space-y-6"
+        onSubmit={(event) => {
+          if (domainInput.trim()) {
+            event.preventDefault();
+            return;
+          }
+          return form.handleSubmit(onSubmit)(event);
+        }}>
         <FormField
           control={form.control}
           name="name"
           render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('OrganizationForm.Name')}</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder={t('OrganizationForm.Name')}
-                  {...field}
-                />
-              </FormControl>
-            </FormItem>
+            <Input
+              label={t('OrganizationForm.Name')}
+              placeholder={t('OrganizationForm.Name')}
+              {...field}
+            />
           )}
         />
         <FormField
           control={form.control}
           name="domains"
-          render={({ field }) => (
-            <FormItem className="flex flex-col items-start">
-              <FormLabel className="text-left">
-                {t('OrganizationForm.Domains')}
-              </FormLabel>
-              <FormControl>
-                <TagInput
-                  {...field}
-                  placeholder={t('OrganizationForm.DomainsPlaceholder')}
-                  tags={tags}
-                  validateTag={validTagDomain}
-                  className="sm:min-w-[450px]"
-                  activeTagIndex={activeTagIndex}
-                  setActiveTagIndex={setActiveTagIndex}
-                  setTags={(newTags) => {
-                    const newTagsText: string[] = (newTags as Tag[]).map(
-                      (tag) => tag.text
-                    );
-                    setTags(newTags);
-                    setValue('domains', newTagsText, {
-                      shouldDirty: true,
-                    });
-                  }}
+          render={({ field, fieldState }) => (
+            <Combobox<string>
+              multiple
+              options={[]}
+              value={field.value}
+              onValueChange={(next) =>
+                setValue('domains', next as string[], { shouldDirty: true })
+              }
+              open={false}
+              allowCustomValue
+              createValueFromInput={(input) => input}
+              inputValue={domainInput}
+              onInputChange={setDomainInput}
+              error={Boolean(fieldState.error?.message)}>
+              <ComboboxLabel>{t('OrganizationForm.Domains')}</ComboboxLabel>
+              <ComboboxField>
+                <ComboboxChips
+                  aria-label={t('DesignSystem.Combobox.SelectedValues')}
                 />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+                <ComboboxInput
+                  ref={field.ref}
+                  onBlur={() => {
+                    field.onBlur();
+                    commitTypedDomain();
+                  }}
+                  placeholder={t('OrganizationForm.DomainsPlaceholder')}
+                  onKeyDown={handleDomainKeyDown}
+                  aria-invalid={fieldState.error?.message ? true : undefined}
+                />
+              </ComboboxField>
+              {fieldState.error?.message && (
+                <ComboboxHelperText>
+                  {fieldState.error.message}
+                </ComboboxHelperText>
+              )}
+            </Combobox>
           )}
         />
 
         <SheetFooter className="pt-2">
           <Button
-            variant="secondary"
+            {...analyticsId('admin_form_cancel')}
+            priority="secondary"
             type="button"
             onClick={(e) => handleCloseSheet(e)}>
             {t('Utils.Cancel')}
           </Button>
           <Button
-            disabled={!form.formState.isDirty}
+            {...analyticsId('admin_organization_form_submit')}
+            disabled={!form.formState.isDirty || isSubmitting}
             type="submit">
             {t('Utils.Validate')}
           </Button>

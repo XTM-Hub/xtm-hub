@@ -1,85 +1,65 @@
 'use client';
-import { updateShareNumber } from '@/components/ui/share-link/ShareLinkActions';
-import usePublicPath from '@/hooks/use-public-path';
-import { ShareIcon } from '@filigran/icon';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
+import { useTranslate } from '@/hooks/use-translate';
 import {
-  toast,
+  type AnalyticsElementId,
+  analyticsId,
+} from '@/lib/analytics/analytics.ids';
+import { portalGraphqlClient } from '@/lib/graphql-client';
+import { ShareIcon } from '@filigran/icon';
+import { useIncrementShareNumberDocumentMutation } from '@graphql/generated';
+
+import {
+  IconButton,
+  IconButtonProps,
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@filigran/ui/clients';
-import { Button } from '@filigran/ui/servers';
-import { useTranslations } from 'next-intl';
-import { graphql, useMutation } from 'react-relay';
+} from '@filigran/design-system';
 import { useCopyToClipboard } from 'usehooks-ts';
 
 export interface ShareLinkButtonProps {
   url: string;
-  documentId: string;
+  documentId?: string;
   tooltipText?: string;
+  size?: IconButtonProps['size'];
+  onShare?: () => void;
+  analyticsId: AnalyticsElementId;
 }
 
-export const shareLinkMutation = graphql`
-  mutation ShareLinkButtonMutation($documentId: DocumentId!) {
-    incrementShareNumberDocument(documentId: $documentId) {
-      share_number
-    }
-  }
-`;
-
 export const ShareLinkButton = (props: ShareLinkButtonProps) => {
-  const isPublicPath = usePublicPath();
-  return isPublicPath ? (
-    <ShareLinkServerAction {...props} />
-  ) : (
-    <ShareLinkClientButton {...props} />
-  );
-};
+  const { documentId, onShare, ...buttonProps } = props;
+  const { mutate: incrementShareNumber } =
+    useIncrementShareNumberDocumentMutation(portalGraphqlClient, {
+      onSuccess: () => onShare?.(),
+    });
 
-export const ShareLinkClientButton = (props: ShareLinkButtonProps) => {
-  const [commitMutation] = useMutation(shareLinkMutation);
-
-  const { documentId, ..._ } = props;
   return (
     <ShareLinkCommonButton
-      {...props}
-      onClickAction={() =>
-        commitMutation({
-          variables: {
-            documentId,
-          },
-        })
-      }
-    />
-  );
-};
-
-export const ShareLinkServerAction = (props: ShareLinkButtonProps) => {
-  const { documentId, ..._ } = props;
-  return (
-    <ShareLinkCommonButton
-      {...props}
+      {...buttonProps}
       onClickAction={() => {
-        updateShareNumber({
-          variables: {
-            documentId,
-          },
-        });
+        if (!documentId) return;
+        incrementShareNumber({ documentId });
       }}
     />
   );
 };
 
-type ShareLinkCommonProps = ShareLinkButtonProps & {
+type ShareLinkCommonProps = Omit<
+  ShareLinkButtonProps,
+  'documentId' | 'onShare'
+> & {
   onClickAction: () => void;
 };
 export const ShareLinkCommonButton = ({
   url,
   onClickAction,
   tooltipText,
+  size,
+  analyticsId: elementId,
 }: ShareLinkCommonProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const [_, copy] = useCopyToClipboard();
 
   const handleCopy = (e: React.MouseEvent) => {
@@ -87,12 +67,14 @@ export const ShareLinkCommonButton = ({
     copy(url)
       .then(() => {
         onClickAction();
-        toast({
-          description: t('Service.ShareableResources.Copied'),
+        showSnackbar({
+          severity: 'success',
+          title: t('Service.ShareableResources.Copied'),
         });
       })
       .catch((error) => {
-        toast({
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.FailedToCopy'),
           description: error.message,
         });
@@ -104,13 +86,19 @@ export const ShareLinkCommonButton = ({
         delayDuration={50}
         disableHoverableContent={true}>
         <TooltipTrigger asChild>
-          <Button
-            variant="tertiary"
-            size="icon"
+          <IconButton
+            {...analyticsId(elementId)}
+            priority="tertiary"
+            size={size}
             onClick={handleCopy}
-            className="z-[2] text-primary">
-            <ShareIcon className="h-4 w-4" />
-          </Button>
+            className="z-[2]"
+            aria-label={
+              tooltipText
+                ? t(tooltipText)
+                : t('Service.ShareableResources.Share')
+            }
+            icon={<ShareIcon className="h-4 w-4" />}
+          />
         </TooltipTrigger>
         <TooltipContent>
           <p>

@@ -25,7 +25,7 @@ body:graphql {
 body:graphql:vars {
   {
     "product": "opencti",
-    "version": "6.4.0"
+    "version": "6.260409.0"
   }
 }
 
@@ -36,8 +36,17 @@ settings {
 
 docs {
   Ensure xtm-hub-token is defined in environment (requires GENERATE_MANIFEST capability)
-
+  
   Fill variables:
   product: PlatformIdentifier enum value (e.g. opencti, openaev)
-  version: product version, e.g. 6.4.0
+  version: product version, e.g. 6.4.0, or an LTS version, e.g. 7.260309.0-lts.8
+  
+  Behaviour:
+  - Any invalid version is rejected (INVALID_PLATFORM_VERSION), LTS or not. The LTS suffix must be lowercase (-lts.N).
+  - A non-LTS version requests the connector manifest generation and registers the version.
+  - An LTS version (-lts.N suffix) skips the manifest generation and the registration.
+  - For opencti, every valid version also creates one GITHUB_RELEASE news feed item, once per version (a later call
+    with the same version does nothing, even once the item is deleted), provisioned to the active OpenCTI platforms on the
+    same release track (LTS or not) whose version passes the gate of that track. This step runs in the background
+    and never fails the mutation.
 }

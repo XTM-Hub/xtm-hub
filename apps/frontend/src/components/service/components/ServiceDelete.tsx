@@ -1,9 +1,10 @@
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { IconActionsItem } from '@/components/ui/IconActions';
+import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
-import { Button } from '@filigran/ui';
+import { Button } from '@filigran/design-system';
 import { IntegrationType } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 
 interface ServiceDeleteProps {
   userCanDelete?: boolean;
@@ -34,39 +35,44 @@ export const ServiceDelete = ({
   integrationType,
   type = 'button',
 }: ServiceDeleteProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const translationKey =
     INTEGRATION_TRANSLATION_KEY_MAP[integrationType] ?? 'CsvFeed';
 
   return (
     userCanDelete && (
-      <AlertDialogComponent
-        actionButtonText={t('Utils.Delete')}
-        variantName={'destructive'}
-        AlertTitle={t(`Service.${translationKey}.DeleteService`, {
+      <ConfirmDialog
+        confirmAnalyticsId="resource_deletion_confirm"
+        confirmLabel={t('Utils.Delete')}
+        destructive
+        title={t(`Service.${translationKey}.DeleteService`, {
           name: serviceName,
         })}
-        triggerElement={
+        trigger={
           type === 'menuitem' ? (
             <IconActionsItem
+              {...analyticsId('resource_delete')}
               onSelect={(e) => {
                 e.preventDefault();
               }}>
               {t('Utils.Delete')}
             </IconActionsItem>
           ) : (
-            <Button variant={'secondary-destructive'}>
+            <Button
+              {...analyticsId('resource_delete')}
+              variant="destructive"
+              priority="secondary">
               {t('Utils.Delete')}
             </Button>
           )
         }
-        onClickContinue={() => {
+        onConfirm={() => {
           onDelete?.();
         }}>
         {t(`Service.${translationKey}.SureDeleteService`, {
           name: serviceName,
         })}
-      </AlertDialogComponent>
+      </ConfirmDialog>
     )
   );
 };

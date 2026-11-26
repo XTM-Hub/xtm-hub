@@ -37,15 +37,6 @@ spec:
         {{- if .Values.elasticsearch.priorityClassName }}
         priorityClassName: {{ .Values.elasticsearch.priorityClassName }}
         {{- end }}
-        {{- if .Values.elasticsearch.plugin_prometheus_enabled }}
-        initContainers:
-        - name: install-plugins
-          command:
-          - sh
-          - -c
-          - |
-            (/usr/share/elasticsearch/bin/elasticsearch-plugin list | grep prometheus-exporter) || bin/elasticsearch-plugin install --batch https://github.com/mindw/elasticsearch-prometheus-exporter/releases/download/{{ .Values.elasticsearch.image.tag }}.0/prometheus-exporter-{{ .Values.elasticsearch.image.tag }}.0.zip
-        {{ end }}
         containers:
         - name: elasticsearch
           env:
@@ -83,15 +74,6 @@ spec:
         {{- if .Values.elasticsearch.priorityClassName }}
         priorityClassName: {{ .Values.elasticsearch.priorityClassName }}
         {{- end }}
-        {{- if .Values.elasticsearch.plugin_prometheus_enabled }}
-        initContainers:
-        - name: install-plugins
-          command:
-          - sh
-          - -c
-          - |
-            bin/elasticsearch-plugin install --batch https://github.com/mindw/elasticsearch-prometheus-exporter/releases/download/{{ .Values.elasticsearch.image.tag }}.0/prometheus-exporter-{{ .Values.elasticsearch.image.tag }}.0.zip
-        {{ end }}
         containers:
         - name: elasticsearch
           env:

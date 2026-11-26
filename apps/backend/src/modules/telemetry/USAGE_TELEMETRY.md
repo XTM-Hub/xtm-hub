@@ -28,19 +28,43 @@ The hub has two complementary telemetry pipelines:
 
 All gauges are aggregate counts. Dimensions (OTLP attributes) are low-cardinality only — never per-organization or per-user breakdowns.
 
-| Gauge                                      | Dimensions                                                                                    | Description                                                                                                 |
-| :----------------------------------------- | :-------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------- |
-| `xtm_hub_total_users_count`                | —                                                                                             | Total number of users.                                                                                      |
-| `xtm_hub_active_users_count`               | —                                                                                             | Users with a login in the last 30 days.                                                                     |
-| `xtm_hub_disabled_users_count`             | —                                                                                             | Disabled users.                                                                                             |
-| `xtm_hub_pending_users_count`              | —                                                                                             | Pending organization memberships.                                                                           |
-| `xtm_hub_organizations_count`              | —                                                                                             | Total number of organizations.                                                                              |
-| `xtm_hub_organizations_by_type`            | `org_type` (personal / professional)                                                          | Organizations by type.                                                                                      |
-| `xtm_hub_registered_platforms_by_identity` | `product` (open-cti / open-aev), `contract` (CE / EE / trial), `status` (active / inactive)   | Registered platforms — the current-state registration gauge.                                                |
-| `xtm_hub_trials_by_status`                 | `status` (active / pending / provisioning / queued / cancelled / expired / failed), `product` | Trial deployment requests. Ongoing = non-terminal statuses; rows persist, so the sum is the all-time total. |
-| `xtm_hub_active_subscriptions_by_service`  | `service` (service definition identifier)                                                     | Active (started, not ended) subscriptions.                                                                  |
-| `xtm_hub_service_instances_count`          | —                                                                                             | Total number of service instances.                                                                          |
-| `xtm_hub_shared_resources_by_type`         | `type` (document type)                                                                        | Active, non-decommissioned library documents.                                                               |
+| Gauge                                      | Dimensions                                                                                           | Description                                                                                                 |
+| :----------------------------------------- | :--------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------- |
+| `xtm_hub_total_users_count`                | —                                                                                                    | Total number of users.                                                                                      |
+| `xtm_hub_active_users_count`               | —                                                                                                    | Users with a login in the last 30 days.                                                                     |
+| `xtm_hub_disabled_users_count`             | —                                                                                                    | Disabled users.                                                                                             |
+| `xtm_hub_pending_users_count`              | —                                                                                                    | Pending organization memberships.                                                                           |
+| `xtm_hub_organizations_count`              | —                                                                                                    | Total number of organizations.                                                                              |
+| `xtm_hub_organizations_by_type`            | `org_type` (personal / professional)                                                                 | Organizations by type.                                                                                      |
+| `xtm_hub_registered_platforms_by_identity` | `product` (open-cti / open-aev / xtmone), `contract` (CE / EE / trial), `status` (active / inactive) | Registered platforms — the current-state registration gauge.                                                |
+| `xtm_hub_trials_by_status`                 | `status` (active / pending / provisioning / queued / cancelled / expired / failed), `product`        | Trial deployment requests. Ongoing = non-terminal statuses; rows persist, so the sum is the all-time total. |
+| `xtm_hub_active_subscriptions_by_service`  | `service` (service definition identifier)                                                            | Active (started, not ended) subscriptions.                                                                  |
+| `xtm_hub_service_instances_count`          | —                                                                                                    | Total number of service instances.                                                                          |
+| `xtm_hub_shared_resources_by_type`         | `type` (document type)                                                                               | Active, non-decommissioned library documents.                                                               |
+
+## Events
+
+### `news_feed_redirect`
+
+A click on a news feed link, i.e. a user following a link given to OpenCTI or OpenAEV by the news feed. One event per click, emitted by two routes:
+
+- **External redirect** (`GET /redirect/news-feed/:itemId`, public): emitted each time the endpoint answers a 302 to a destination built from the item (blog post on `filigran.io`, ...). Nothing is emitted for the fallback to the hub root nor for a 429.
+- **Resource redirect** (`/redirect/<serviceDefinitionIdentifier>`, the existing login-gated route, link carrying `utm_medium=newsfeed`): emitted by the frontend through the `sendTelemetryEvent { newsFeedRedirect(input) }` GraphQL mutation, only when the user is sent to the resource page.
+
+Both are fire and forget: a telemetry failure never changes the redirect. The IP and the user agent are never stored. `hub_instance_id` and `hub_environment` are stamped as for every event.
+
+| Field                 | External redirect                                                                | Resource redirect                                                  |
+| :-------------------- | :------------------------------------------------------------------------------- | :----------------------------------------------------------------- |
+| `news_feed_item_id`   | The item clicked.                                                                | Not set (the link carries no item id).                             |
+| `news_feed_item_type` | Item type in lowercase: `blog-post` or `github-release`.                         | Not set.                                                           |
+| `destination_host`    | `filigran.io`, or `github.com` for GitHub releases.                              | Not set.                                                           |
+| `platform_id`         | The platform UUID of the query, when valid. Never forwarded to the destination.  | The platform UUID of the query, when valid.                        |
+| `service`             | Not set.                                                                         | The service (`TelemetryEventService`).                             |
+| `resource_id`         | Not set.                                                                         | The document the link targets.                                     |
+| `target_product`      | The product the item was given to (`open-cti` or `open-aev`), whatever its type. | The product of the link (`utm_source`).                            |
+| `utm_content`         | Not set.                                                                         | Kind of resource (`custom_dashboard`, `playbook`, ... or `other`). |
+
+Who the event identifies: when a user is logged in (the external route reads the existing session read-only, it never creates or modifies one), the event carries `user_id` and the organization (`organization_id`, `organization_name`, `organization_type`) of the selected organization. Otherwise it is anonymous: no `user_id`, no organization, and `organization_type` is `Public`. `platform_id` comes from the query string, so it is validated (UUID) and is best-effort analytics only.
 
 ## Configuration
 

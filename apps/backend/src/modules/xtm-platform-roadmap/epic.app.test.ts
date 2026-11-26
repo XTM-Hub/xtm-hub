@@ -1,22 +1,30 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  MockInstance,
+  vi,
+} from 'vitest';
 import { TestHelper } from '../../../tests/helper/test.helper';
-import { SERVICES, TEST_ORGANIZATIONS } from '../../../tests/tests.const';
+import {
+  // eslint-disable-next-line no-restricted-imports
+  requestContextAdminUser,
+  requestContextSimpleUserFiligran2,
+  TEST_ORGANIZATIONS,
+} from '../../../tests/tests.const';
 import {
   EditionType,
   EpicOrdering,
   EpicType,
   FiligranProduct,
   OrderingMode,
-  ServiceDefinitionIdentifier,
+  ServiceRestriction,
   Timeline,
 } from '../../__generated__/resolvers-types';
-import { DocumentId } from '../../model/kanel/public/Document';
+import { requestContext } from '../../context/request.context';
 import { EpicId } from '../../model/kanel/public/Epic';
-import { OrganizationId } from '../../model/kanel/public/Organization';
-import { MinIOClient } from '../../thirdparty/minio/client';
-import { DocumentApp } from '../document/document.app';
-import { DocumentUploadsHelper } from '../document/document.uploads.helper';
-import { DocumentDomain } from '../document/domain/document.domain';
 
 const guardMock = vi.hoisted(() => ({
   assertUserHasCapaOnService: vi.fn().mockResolvedValue(undefined),
@@ -33,23 +41,20 @@ vi.mock('../../security/guard', async () => {
   };
 });
 
+import { UserServiceCapabilityHelper } from '../security-management/user-service-capability/user-service-capability.helper';
 import { ServiceInstanceDomain } from '../service/instance/service-instance.domain';
 import { EpicApp } from './epic.app';
-import { EpicDomain } from './epic.domain';
 
 describe('epicApp', () => {
-  const minioFileMock = {
-    minioName: 'epic-image.png',
-    mimeType: 'image/png',
-    fileName: 'epic-image.png',
-  };
-
   const basicInput = {
     title: 'Test Epic',
     short_description: 'Short desc',
     description: 'Long description for the epic',
+    problem_to_solve: 'Problem to solve',
+    proposed_solution: 'Proposed solution',
+    expected_value: 'Expected value',
     active: true,
-    product: FiligranProduct.Opencti,
+    products: [FiligranProduct.Opencti],
     timeline: Timeline.Now,
     uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
     edition_type: EditionType.CommunityEdition,
@@ -57,22 +62,17 @@ describe('epicApp', () => {
 
   beforeEach(async () => {
     guardMock.assertUserHasCapaOnService.mockResolvedValue(undefined);
-
-    vi.spyOn(DocumentUploadsHelper, 'processUploads').mockResolvedValue([
-      minioFileMock,
-    ]);
   });
 
   afterEach(async () => {
-    // Clean up the Document and Epic tables before each test
+    // Clean up the Epic table after each test
     await TestHelper.epic.delete({});
-    await TestHelper.document.delete({ file_name: 'epic-image.png' });
   });
 
   describe('createEpic', () => {
     it('should createEpic with correct data and return the created epic', async () => {
       // When
-      const createdEpic = await EpicApp.createEpic(basicInput, []);
+      const createdEpic = await EpicApp.createEpic(basicInput);
 
       // Check in DB
       const dbEpic = await TestHelper.epic.load({
@@ -83,62 +83,16 @@ describe('epicApp', () => {
       expect(createdEpic).toMatchObject({
         id: expect.anything(),
         title: 'Test Epic',
-        product: FiligranProduct.Opencti,
+        products: [FiligranProduct.Opencti],
         active: true,
       });
 
       expect(dbEpic).toMatchObject({
         title: 'Test Epic',
-      });
-    });
-
-    it('should create an image document when upload is provided', async () => {
-      // Given
-      vi.spyOn(
-        ServiceInstanceDomain,
-        'loadSubscribedServiceInstancesByIdentifier'
-      ).mockResolvedValue([
-        {
-          service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
-          organization_id: 'test-org-id',
-          is_personal_space: false,
-          configurations: [],
-        },
-      ] as never);
-
-      const input = {
-        ...basicInput,
-        title: 'Epic with Image',
-      };
-
-      const uploads = [
-        {
-          file: {} as never,
-          promise: Promise.resolve({} as never),
-        },
-      ];
-
-      // When
-      const createdEpic = await EpicApp.createEpic(input, uploads);
-
-      // Verify document was created in DB
-      const dbDocument = await TestHelper.document.load({
-        id: createdEpic!.document_id as DocumentId,
-      });
-
-      // Then
-      expect(createdEpic).toMatchObject({
-        id: expect.anything(),
-        document_id: expect.anything(),
-      });
-      expect(dbDocument).toMatchObject({
-        file_name: 'epic-image.png',
-        minio_name: 'epic-image.png',
-        mime_type: 'image/png',
-        type: 'image',
-        description: 'Epic illustration',
-        active: true,
-        source_type: 'internal',
+        description: 'Long description for the epic',
+        problem_to_solve: 'Problem to solve',
+        proposed_solution: 'Proposed solution',
+        expected_value: 'Expected value',
       });
     });
 
@@ -151,7 +105,7 @@ describe('epicApp', () => {
       };
 
       // When
-      const createdEpic = await EpicApp.createEpic(input, []);
+      const createdEpic = await EpicApp.createEpic(input);
 
       // Check in DB
       const dbEpic = await TestHelper.epic.load({ id: createdEpic.id });
@@ -163,12 +117,96 @@ describe('epicApp', () => {
 
       expect(dbEpic?.epic_type).toBe(EpicType.Integration);
     });
+
+    it('should create an epic with several products', async () => {
+      // Given
+      const input = {
+        ...basicInput,
+        title: 'Multi Product Epic',
+        products: [FiligranProduct.Opencti, FiligranProduct.Openaev],
+      };
+
+      // When
+      const createdEpic = await EpicApp.createEpic(input);
+
+      // Check in DB
+      const dbEpic = await TestHelper.epic.load({ id: createdEpic.id });
+
+      // Then
+      expect(createdEpic.products).toEqual([
+        FiligranProduct.Opencti,
+        FiligranProduct.Openaev,
+      ]);
+
+      expect(dbEpic?.products).toEqual([
+        FiligranProduct.Opencti,
+        FiligranProduct.Openaev,
+      ]);
+    });
+
+    it('should create an epic with a slack link', async () => {
+      // Given
+      const slackLink =
+        'https://filigran-community.slack.com/archives/C08HU35NPD4';
+      const input = {
+        ...basicInput,
+        title: 'Slack Link Epic',
+        slack_link: slackLink,
+      };
+
+      // When
+      const createdEpic = await EpicApp.createEpic(input);
+
+      // Check in DB
+      const dbEpic = await TestHelper.epic.load({ id: createdEpic.id });
+
+      // Then
+      expect(createdEpic.slack_link).toBe(slackLink);
+
+      expect(dbEpic?.slack_link).toBe(slackLink);
+    });
+
+    it('should create an epic without a slack link', async () => {
+      // Given
+      const input = { ...basicInput, title: 'No Slack Link Epic' };
+
+      // When
+      const createdEpic = await EpicApp.createEpic(input);
+
+      // Check in DB
+      const dbEpic = await TestHelper.epic.load({ id: createdEpic.id });
+
+      // Then
+      expect(createdEpic.slack_link).toBeNull();
+
+      expect(dbEpic?.slack_link).toBeNull();
+    });
+
+    it('should create an epic with an empty slack link stored as null', async () => {
+      // Given
+      const input = {
+        ...basicInput,
+        title: 'Empty Slack Link Epic',
+        slack_link: '',
+      };
+
+      // When
+      const createdEpic = await EpicApp.createEpic(input);
+
+      // Check in DB
+      const dbEpic = await TestHelper.epic.load({ id: createdEpic.id });
+
+      // Then
+      expect(createdEpic.slack_link).toBeNull();
+
+      expect(dbEpic?.slack_link).toBeNull();
+    });
   });
 
   describe('updateEpic', () => {
     it('should update the specified epic with the provided data and return the updated epic', async () => {
       // Given
-      const createdEpic = await EpicApp.createEpic(basicInput, []);
+      const createdEpic = await EpicApp.createEpic(basicInput);
       const updateInput = {
         title: 'Updated Title',
         short_description: 'Updated short description',
@@ -179,8 +217,7 @@ describe('epicApp', () => {
       // When
       const updatedEpic = await EpicApp.updateEpic(
         createdEpic.id as EpicId,
-        updateInput,
-        []
+        updateInput
       );
 
       // Check in DB
@@ -199,66 +236,139 @@ describe('epicApp', () => {
         active: true,
       });
     });
-    it('should update the specified epic with uploads and create a document', async () => {
+    it('should replace the products of the specified epic', async () => {
       // Given
-      vi.spyOn(
-        ServiceInstanceDomain,
-        'loadSubscribedServiceInstancesByIdentifier'
-      ).mockResolvedValue([
-        {
-          service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
-          organization_id: 'test-org-id',
-          is_personal_space: false,
-          configurations: [],
-        },
-      ] as never);
-
-      const createdEpic = await EpicApp.createEpic(basicInput, []);
-
-      expect(createdEpic.document_id).toBeNull();
-
+      const createdEpic = await EpicApp.createEpic(basicInput);
       const updateInput = {
-        title: 'Updated Title with Image',
-        short_description: 'Updated short description',
-        active: true,
+        products: [FiligranProduct.Openaev, FiligranProduct.Xtmhub],
         edition_type: EditionType.CommunityEdition,
       };
 
-      const uploads = [
-        {
-          file: {} as never,
-          promise: Promise.resolve({} as never),
-        },
-      ];
-
       // When
       const updatedEpic = await EpicApp.updateEpic(
-        createdEpic.id,
-        updateInput,
-        uploads
+        createdEpic.id as EpicId,
+        updateInput
       );
 
       // Check in DB
-      const dbDocument = await TestHelper.document.load({
-        id: updatedEpic?.document_id as DocumentId,
-      });
+      const dbEpic = await TestHelper.epic.load({ id: createdEpic.id });
 
       // Then
-      expect(updatedEpic).toMatchObject({
-        title: 'Updated Title with Image',
-        document_id: expect.anything(),
-      });
+      expect(updatedEpic.products).toEqual([
+        FiligranProduct.Openaev,
+        FiligranProduct.Xtmhub,
+      ]);
 
-      expect(dbDocument).toMatchObject({
-        file_name: 'epic-image.png',
+      expect(dbEpic?.products).toEqual([
+        FiligranProduct.Openaev,
+        FiligranProduct.Xtmhub,
+      ]);
+    });
+    it('should update the slack link of the specified epic', async () => {
+      // Given
+      const createdEpic = await EpicApp.createEpic(basicInput);
+      const slackLink =
+        'https://filigran-community.slack.com/archives/C0BMANSB4CW';
+      const updateInput = {
+        slack_link: slackLink,
+        edition_type: EditionType.CommunityEdition,
+      };
+
+      // When
+      const updatedEpic = await EpicApp.updateEpic(
+        createdEpic.id as EpicId,
+        updateInput
+      );
+
+      // Check in DB
+      const dbEpic = await TestHelper.epic.load({ id: createdEpic.id });
+
+      // Then
+      expect(updatedEpic.slack_link).toBe(slackLink);
+
+      expect(dbEpic?.slack_link).toBe(slackLink);
+    });
+    it('should clear the slack link of the specified epic', async () => {
+      // Given
+      const createdEpic = await EpicApp.createEpic({
+        ...basicInput,
+        slack_link: 'https://filigran-community.slack.com/archives/C0BMANSB4CW',
       });
+      const updateInput = {
+        slack_link: '',
+        edition_type: EditionType.CommunityEdition,
+      };
+
+      // When
+      const updatedEpic = await EpicApp.updateEpic(
+        createdEpic.id as EpicId,
+        updateInput
+      );
+
+      // Check in DB
+      const dbEpic = await TestHelper.epic.load({ id: createdEpic.id });
+
+      // Then
+      expect(updatedEpic.slack_link).toBeNull();
+
+      expect(dbEpic?.slack_link).toBeNull();
+    });
+    it('should update the description sections of the specified epic', async () => {
+      // Given
+      const createdEpic = await EpicApp.createEpic(basicInput);
+      const updateInput = {
+        description: 'Updated description',
+        problem_to_solve: 'Updated problem',
+        proposed_solution: 'Updated solution',
+        expected_value: 'Updated value',
+        edition_type: EditionType.CommunityEdition,
+      };
+
+      // When
+      const updatedEpic = await EpicApp.updateEpic(
+        createdEpic.id as EpicId,
+        updateInput
+      );
+
+      // Check in DB
+      const dbEpic = await TestHelper.epic.load({ id: createdEpic.id });
+
+      // Then
+      expect(updatedEpic).toMatchObject(updateInput);
+      expect(dbEpic).toMatchObject(updateInput);
+    });
+    it('should keep the slack link when the update does not provide it', async () => {
+      // Given
+      const slackLink =
+        'https://filigran-community.slack.com/archives/C0BMANSB4CW';
+      const createdEpic = await EpicApp.createEpic({
+        ...basicInput,
+        slack_link: slackLink,
+      });
+      const updateInput = {
+        edition_type: EditionType.CommunityEdition,
+      };
+
+      // When
+      const updatedEpic = await EpicApp.updateEpic(
+        createdEpic.id as EpicId,
+        updateInput
+      );
+
+      // Check in DB
+      const dbEpic = await TestHelper.epic.load({ id: createdEpic.id });
+
+      // Then
+      expect(updatedEpic.slack_link).toBe(slackLink);
+
+      expect(dbEpic?.slack_link).toBe(slackLink);
     });
   });
 
   describe('deleteEpic', () => {
     it('should delete the specified epic and return the deleted epic', async () => {
       // Given
-      const createdEpic = await EpicApp.createEpic(basicInput, []);
+      const createdEpic = await EpicApp.createEpic(basicInput);
 
       expect(createdEpic.id).toBeDefined();
 
@@ -269,47 +379,6 @@ describe('epicApp', () => {
       expect(deletedEpic).toMatchObject({
         id: createdEpic.id,
       });
-    });
-    it('should delete, when integration, the document and the minioFile as well', async () => {
-      // Given
-      const mockDeleteFileInMinio = vi
-        .spyOn(MinIOClient, 'deleteFile')
-        .mockResolvedValueOnce();
-
-      const document = await DocumentApp.createDocumentWithChildrenAndMetadata(
-        {
-          id: 'bc348e84-3635-46de-9b56-38db09c35f4d' as DocumentId,
-          uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
-          description: 'description',
-          minio_name: 'minioName',
-          file_name: 'filename',
-          uploader_organization_id:
-            'ba091095-418f-4b4f-b150-6c9295e232c4' as OrganizationId,
-          service_instance_id: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
-          type: ServiceDefinitionIdentifier.OpenctiCustomDashboards,
-        },
-        []
-      );
-      const createdEpic = await EpicDomain.createEpic({
-        ...basicInput,
-        document_id: document.id,
-      });
-
-      // When
-      const deletedEpic = await EpicApp.deleteEpic(createdEpic?.id as EpicId);
-
-      // Check in DB
-      const documentFromDB = await DocumentDomain.loadDocumentBy({
-        file_name: 'filename',
-      });
-
-      // Then
-      expect(deletedEpic).toMatchObject({
-        id: createdEpic?.id,
-      });
-      expect(mockDeleteFileInMinio).toHaveBeenCalledTimes(1);
-
-      expect(documentFromDB).toBeUndefined();
     });
   });
 
@@ -324,22 +393,26 @@ describe('epicApp', () => {
 
     it('should return counts grouped by timeline, excluding finished', async () => {
       // Given
-      await EpicApp.createEpic(
-        { ...basicInput, title: 'Now Epic 1', timeline: Timeline.Now },
-        []
-      );
-      await EpicApp.createEpic(
-        { ...basicInput, title: 'Now Epic 2', timeline: Timeline.Now },
-        []
-      );
-      await EpicApp.createEpic(
-        { ...basicInput, title: 'Next Epic', timeline: Timeline.Next },
-        []
-      );
-      await EpicApp.createEpic(
-        { ...basicInput, title: 'Finished Epic', timeline: Timeline.Finished },
-        []
-      );
+      await EpicApp.createEpic({
+        ...basicInput,
+        title: 'Now Epic 1',
+        timeline: Timeline.Now,
+      });
+      await EpicApp.createEpic({
+        ...basicInput,
+        title: 'Now Epic 2',
+        timeline: Timeline.Now,
+      });
+      await EpicApp.createEpic({
+        ...basicInput,
+        title: 'Next Epic',
+        timeline: Timeline.Next,
+      });
+      await EpicApp.createEpic({
+        ...basicInput,
+        title: 'Finished Epic',
+        timeline: Timeline.Finished,
+      });
 
       // When
       const result = await EpicApp.countEpicsPerTimeline();
@@ -358,14 +431,16 @@ describe('epicApp', () => {
 
     it('should not include finished epics even when they exist', async () => {
       // Given
-      await EpicApp.createEpic(
-        { ...basicInput, title: 'Finished 1', timeline: Timeline.Finished },
-        []
-      );
-      await EpicApp.createEpic(
-        { ...basicInput, title: 'Finished 2', timeline: Timeline.Finished },
-        []
-      );
+      await EpicApp.createEpic({
+        ...basicInput,
+        title: 'Finished 1',
+        timeline: Timeline.Finished,
+      });
+      await EpicApp.createEpic({
+        ...basicInput,
+        title: 'Finished 2',
+        timeline: Timeline.Finished,
+      });
 
       // When
       const result = await EpicApp.countEpicsPerTimeline();
@@ -376,14 +451,11 @@ describe('epicApp', () => {
 
     it('should return correct counts when only under_consideration epics exist', async () => {
       // Given
-      await EpicApp.createEpic(
-        {
-          ...basicInput,
-          title: 'UC Epic',
-          timeline: Timeline.UnderConsideration,
-        },
-        []
-      );
+      await EpicApp.createEpic({
+        ...basicInput,
+        title: 'UC Epic',
+        timeline: Timeline.UnderConsideration,
+      });
 
       // When
       const result = await EpicApp.countEpicsPerTimeline();
@@ -398,19 +470,17 @@ describe('epicApp', () => {
 
     it('should not count inactive epics', async () => {
       // Given
-      await EpicApp.createEpic(
-        { ...basicInput, title: 'Active Now Epic', timeline: Timeline.Now },
-        []
-      );
-      await EpicApp.createEpic(
-        {
-          ...basicInput,
-          title: 'Inactive Now Epic',
-          timeline: Timeline.Now,
-          active: false,
-        },
-        []
-      );
+      await EpicApp.createEpic({
+        ...basicInput,
+        title: 'Active Now Epic',
+        timeline: Timeline.Now,
+      });
+      await EpicApp.createEpic({
+        ...basicInput,
+        title: 'Inactive Now Epic',
+        timeline: Timeline.Now,
+        active: false,
+      });
 
       // When
       const result = await EpicApp.countEpicsPerTimeline();
@@ -424,21 +494,15 @@ describe('epicApp', () => {
   describe('loadEpics', () => {
     it('should return epics with pagination information using first and orderBy parameters', async () => {
       // Given
-      await EpicApp.createEpic(
-        {
-          ...basicInput,
-          title: 'Epic 1',
-        },
-        []
-      );
+      await EpicApp.createEpic({
+        ...basicInput,
+        title: 'Epic 1',
+      });
 
-      await EpicApp.createEpic(
-        {
-          ...basicInput,
-          title: 'Epic 2',
-        },
-        []
-      );
+      await EpicApp.createEpic({
+        ...basicInput,
+        title: 'Epic 2',
+      });
 
       // When
       const epicsConnection = await EpicApp.loadEpics({
@@ -480,21 +544,15 @@ describe('epicApp', () => {
 
     it('should return epics ordered in descending order when orderMode is Desc', async () => {
       // Given
-      await EpicApp.createEpic(
-        {
-          ...basicInput,
-          title: 'Epic A',
-        },
-        []
-      );
+      await EpicApp.createEpic({
+        ...basicInput,
+        title: 'Epic A',
+      });
 
-      await EpicApp.createEpic(
-        {
-          ...basicInput,
-          title: 'Epic B',
-        },
-        []
-      );
+      await EpicApp.createEpic({
+        ...basicInput,
+        title: 'Epic B',
+      });
 
       // When
       const epicsConnection = await EpicApp.loadEpics({
@@ -511,21 +569,15 @@ describe('epicApp', () => {
 
     it('should return only epics matching searchTerm on title', async () => {
       // Given
-      await EpicApp.createEpic(
-        {
-          ...basicInput,
-          title: 'Dashboard feature',
-        },
-        []
-      );
+      await EpicApp.createEpic({
+        ...basicInput,
+        title: 'Dashboard feature',
+      });
 
-      await EpicApp.createEpic(
-        {
-          ...basicInput,
-          title: 'Connector improvement',
-        },
-        []
-      );
+      await EpicApp.createEpic({
+        ...basicInput,
+        title: 'Connector improvement',
+      });
 
       // When
       const epicsConnection = await EpicApp.loadEpics({
@@ -542,23 +594,17 @@ describe('epicApp', () => {
 
     it('should return epics matching searchTerm on epic short_description', async () => {
       // Given
-      await EpicApp.createEpic(
-        {
-          ...basicInput,
-          title: 'Some title',
-          short_description: 'Hello there',
-        },
-        []
-      );
+      await EpicApp.createEpic({
+        ...basicInput,
+        title: 'Some title',
+        short_description: 'Hello there',
+      });
 
-      await EpicApp.createEpic(
-        {
-          ...basicInput,
-          title: 'Other title',
-          short_description: 'Hi team',
-        },
-        []
-      );
+      await EpicApp.createEpic({
+        ...basicInput,
+        title: 'Other title',
+        short_description: 'Hi team',
+      });
 
       // When
       const epicsConnection = await EpicApp.loadEpics({
@@ -575,22 +621,16 @@ describe('epicApp', () => {
 
     it('should return epics matching searchTerm on description', async () => {
       // Given
-      await EpicApp.createEpic(
-        {
-          ...basicInput,
-          title: 'Title A',
-          description: 'threat intelligence',
-        },
-        []
-      );
+      await EpicApp.createEpic({
+        ...basicInput,
+        title: 'Title A',
+        description: 'threat intelligence',
+      });
 
-      await EpicApp.createEpic(
-        {
-          ...basicInput,
-          title: 'Title B',
-        },
-        []
-      );
+      await EpicApp.createEpic({
+        ...basicInput,
+        title: 'Title B',
+      });
 
       // When
       const epicsConnection = await EpicApp.loadEpics({
@@ -605,15 +645,46 @@ describe('epicApp', () => {
       expect(epicsConnection.edges[0]?.node.title).toBe('Title A');
     });
 
+    it.each`
+      field                  | searchTerm
+      ${'problem_to_solve'}  | ${'blind spo'}
+      ${'proposed_solution'} | ${'blind spo'}
+      ${'expected_value'}    | ${'blind spo'}
+    `(
+      'should return epics matching searchTerm on $field',
+      async ({ field, searchTerm }) => {
+        // Given
+        await EpicApp.createEpic({
+          ...basicInput,
+          title: 'Title A',
+          [field]: 'a blind spot in the roadmap',
+        });
+
+        await EpicApp.createEpic({
+          ...basicInput,
+          title: 'Title B',
+        });
+
+        // When
+        const epicsConnection = await EpicApp.loadEpics({
+          first: 10,
+          orderBy: EpicOrdering.Title,
+          orderMode: OrderingMode.Asc,
+          searchTerm,
+        });
+
+        // Then
+        expect(epicsConnection.edges).toHaveLength(1);
+        expect(epicsConnection.edges[0]?.node.title).toBe('Title A');
+      }
+    );
+
     it('should return empty results when searchTerm matches nothing', async () => {
       // Given
-      await EpicApp.createEpic(
-        {
-          ...basicInput,
-          title: 'Some epic',
-        },
-        []
-      );
+      await EpicApp.createEpic({
+        ...basicInput,
+        title: 'Some epic',
+      });
 
       // When
       const epicsConnection = await EpicApp.loadEpics({
@@ -625,6 +696,139 @@ describe('epicApp', () => {
 
       // Then
       expect(epicsConnection.edges).toHaveLength(0);
+    });
+
+    describe('inactive epics visibility', () => {
+      const loadOpts = {
+        first: 10,
+        orderBy: EpicOrdering.Title,
+        orderMode: OrderingMode.Asc,
+      };
+      const loadTitles = async () => {
+        const epicsConnection = await EpicApp.loadEpics(loadOpts);
+        return {
+          titles: epicsConnection.edges.map((e) => e.node.title),
+          totalCount: Number(epicsConnection.totalCount),
+        };
+      };
+      const ACTIVE_ONLY = { titles: ['Active epic'], totalCount: 1 };
+      const ACTIVE_AND_DRAFT = {
+        titles: ['Active epic', 'Draft epic'],
+        totalCount: 2,
+      };
+      let loadCapabilitiesSpy: MockInstance;
+      let loadServiceInstanceSpy: MockInstance;
+
+      beforeEach(async () => {
+        loadCapabilitiesSpy = vi
+          .spyOn(UserServiceCapabilityHelper, 'loadCapabilities')
+          .mockResolvedValue([]);
+        loadServiceInstanceSpy = vi.spyOn(
+          ServiceInstanceDomain,
+          'loadServiceInstanceBy'
+        );
+        await TestHelper.epic.create({
+          title: 'Active epic',
+          active: true,
+          uploader_id: basicInput.uploader_id,
+        });
+        await TestHelper.epic.create({
+          title: 'Draft epic',
+          active: false,
+          uploader_id: basicInput.uploader_id,
+        });
+      });
+
+      afterEach(() => {
+        loadCapabilitiesSpy.mockRestore();
+        loadServiceInstanceSpy.mockRestore();
+      });
+
+      it('should return only active epics, without any lookup, when the caller is anonymous', async () => {
+        // Given
+        requestContext.set({});
+
+        // When
+        const result = await loadTitles();
+
+        // Then
+        expect(result).toEqual(ACTIVE_ONLY);
+        expect(loadServiceInstanceSpy).not.toHaveBeenCalled();
+        expect(loadCapabilitiesSpy).not.toHaveBeenCalled();
+      });
+
+      it('should return inactive epics, without any capability lookup, when the caller is a platform admin', async () => {
+        // Given
+        requestContext.set(requestContextAdminUser);
+
+        // When
+        const result = await loadTitles();
+
+        // Then
+        expect(result).toEqual(ACTIVE_AND_DRAFT);
+        expect(loadCapabilitiesSpy).not.toHaveBeenCalled();
+      });
+
+      it('should return inactive epics when the caller holds the Upsert capability on the roadmap', async () => {
+        // Given
+        loadCapabilitiesSpy.mockResolvedValue([ServiceRestriction.Upsert]);
+        const roadmap = await ServiceInstanceDomain.loadServiceInstanceBy({
+          slug: 'xtm-platform-roadmap',
+        });
+
+        // When
+        const result = await loadTitles();
+
+        // Then
+        expect(result).toEqual(ACTIVE_AND_DRAFT);
+        expect(loadCapabilitiesSpy).toHaveBeenCalledWith(
+          roadmap!.id,
+          requestContextSimpleUserFiligran2.user.id,
+          requestContextSimpleUserFiligran2.user.selected_organization_id
+        );
+      });
+
+      it.each`
+        capabilities                                              | description
+        ${[ServiceRestriction.Upload, ServiceRestriction.Delete]} | ${'holds capabilities other than Upsert'}
+        ${[]}                                                     | ${'holds no capability on the roadmap'}
+        ${undefined}                                              | ${'has no capabilities loaded'}
+      `(
+        'should return only active epics when the caller $description',
+        async ({ capabilities }) => {
+          // Given
+          loadCapabilitiesSpy.mockResolvedValue(capabilities);
+
+          // When
+          const result = await loadTitles();
+
+          // Then
+          expect(result).toEqual(ACTIVE_ONLY);
+        }
+      );
+
+      it('should return only active epics when the caller has no subscription to the roadmap', async () => {
+        // Given
+        loadCapabilitiesSpy.mockRestore();
+
+        // When
+        const result = await loadTitles();
+
+        // Then
+        expect(result).toEqual(ACTIVE_ONLY);
+      });
+
+      it('should return only active epics, without throwing, when the roadmap service instance does not exist', async () => {
+        // Given
+        loadServiceInstanceSpy.mockResolvedValueOnce(undefined);
+
+        // When
+        const result = await loadTitles();
+
+        // Then
+        expect(result).toEqual(ACTIVE_ONLY);
+        expect(loadCapabilitiesSpy).not.toHaveBeenCalled();
+      });
     });
   });
 });

@@ -1,54 +1,18 @@
 import { toGlobalId } from 'graphql-relay/node/node.js';
 import { v4 as uuidv4 } from 'uuid';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
   contextSimpleUserFiligran2,
   GRAPHQL_RESOLVE_INFO,
 } from '../../tests/tests.const';
 import { NodeResolvers } from '../__generated__/resolvers-types';
-import { PortalContext } from '../model/portal-context';
-import { ErrorType } from '../utils/error/error.type';
+import createSchema from '../server/graphql-schema';
 import nodesResolver from './nodes.resolver';
 
-vi.mock('../../knexfile', () => ({
-  db: vi.fn(),
-}));
-
-import { db } from '../../knexfile';
-
 describe('node GraphQL query', () => {
-  it('should throw UNAUTHENTICATED when no user is present in context', async () => {
-    const call = nodesResolver.Query!.node!(
-      {},
-      { id: toGlobalId('Organization', uuidv4()) },
-      {} as unknown as PortalContext,
-      GRAPHQL_RESOLVE_INFO
-    );
-
-    await expect(call).rejects.toMatchObject({
-      name: ErrorType.Unauthenticated,
-    });
-  });
-
-  it('should decode the global ID and query the matching table', async () => {
-    const rawId = uuidv4();
-    const expected = { id: rawId, __typename: 'Organization' };
-    const firstMock = vi.fn().mockResolvedValue(expected);
-    const whereMock = vi.fn().mockReturnValue({ first: firstMock });
-    vi.mocked(db).mockReturnValue({ where: whereMock } as unknown as ReturnType<
-      typeof db
-    >);
-
-    const result = await nodesResolver.Query!.node!(
-      {},
-      { id: toGlobalId('Organization', rawId) },
-      contextSimpleUserFiligran2,
-      GRAPHQL_RESOLVE_INFO
-    );
-
-    expect(db).toHaveBeenCalledWith('Organization');
-    expect(whereMock).toHaveBeenCalledWith({ id: rawId });
-    expect(result).toEqual(expected);
+  it('should not expose a generic node(id) lookup on Query', () => {
+    const queryFields = createSchema().getQueryType()!.getFields();
+    expect(queryFields).not.toHaveProperty('node');
   });
 });
 

@@ -1,95 +1,102 @@
 import Loader from '@/components/Loader';
 import { RegistrationContext } from '@/components/registration/Context';
 import { RegistrationLayout } from '@/components/registration/Layout';
-import {
-  CanUnregisterPlatformFragment,
-  UnregisterPlatform,
-} from '@/components/registration/register/register.graphql';
 import { UnregisterConfirm } from '@/components/registration/unregister/Confirm';
 import { UnregisterMissingCapability } from '@/components/registration/unregister/MissingCapability';
 import { UnregisterPlatformNotRegistered } from '@/components/registration/unregister/PlatformNotRegistered';
-import { toast } from '@filigran/ui/clients';
-import { registerCanUnregisterPlatformFragment$key } from '@generated/registerCanUnregisterPlatformFragment.graphql';
-import RegisterCanUnregisterPlatformQueryGraphql, {
-  registerCanUnregisterPlatformQuery,
-} from '@generated/registerCanUnregisterPlatformQuery.graphql';
-import { registerUnregisterPlatformMutation } from '@generated/registerUnregisterPlatformMutation.graphql';
-import { useTranslations } from 'next-intl';
-import { useContext, useState } from 'react';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
+import { useTranslate } from '@/hooks/use-translate';
+import { portalGraphqlClient } from '@/lib/graphql-client';
 import {
-  PreloadedQuery,
-  useFragment,
-  useMutation,
-  usePreloadedQuery,
-} from 'react-relay';
+  CanUnregisterPlatformQuery,
+  PlatformIdentifier,
+  useUnregisterPlatformMutation,
+} from '@graphql/generated';
+import { useContext, useRef, useState } from 'react';
 
 interface UnregisterProps {
   platformId: string;
   tenantId?: string | null;
-  queryRef: PreloadedQuery<registerCanUnregisterPlatformQuery>;
+  canUnregisterPlatform: CanUnregisterPlatformQuery['canUnregisterPlatform'];
+  /** The nonce XTM One opened the page with, echoed back in its messages. */
+  state?: string;
 }
 
 type UnregistrationStatus = 'idle' | 'succeeded' | 'failed';
 
 export const Unregister = ({
-  queryRef,
+  canUnregisterPlatform,
   platformId,
   tenantId,
+  state,
 }: UnregisterProps) => {
   const { displayedIdentifier, identifier } = useContext(RegistrationContext);
-  const t = useTranslations();
-  const canUnregisterPreloadedQuery =
-    usePreloadedQuery<registerCanUnregisterPlatformQuery>(
-      RegisterCanUnregisterPlatformQueryGraphql,
-      queryRef
-    );
+  const t = useTranslate();
+  const {
+    isAllowed,
+    isPlatformRegistered,
+    isInOrganization,
+    organizationId,
+    organizationName,
+  } = canUnregisterPlatform;
 
-  const { isAllowed, isPlatformRegistered, isInOrganization, organizationId } =
-    useFragment<registerCanUnregisterPlatformFragment$key>(
-      CanUnregisterPlatformFragment,
-      canUnregisterPreloadedQuery.canUnregisterPlatform
-    );
-
-  const [unregisterPlatform] =
-    useMutation<registerUnregisterPlatformMutation>(UnregisterPlatform);
+  const { mutate: unregisterPlatform } =
+    useUnregisterPlatformMutation(portalGraphqlClient);
 
   const [status, setStatus] = useState<UnregistrationStatus>('idle');
-  const cancel = () => {
-    window.opener?.postMessage({ action: 'cancel' }, '*');
+  // Set synchronously so that a confirm called again while the request is pending (the not-registered page calls it
+  // from an effect that each render reruns) cannot start another one: only the latest call runs its callbacks, so a
+  // second call would loop and hide the success the opener waits for. It stays set once the unregistration succeeds.
+  const isUnregisteringRef = useRef(false);
+  // OpenCTI and OpenAEV never receive the state: their messages are unchanged.
+  const echoedState =
+    identifier === PlatformIdentifier.Xtmone ? state : undefined;
+  const postToOpener = (action: 'cancel' | 'unregister') => {
+    window.opener?.postMessage(
+      { action, ...(echoedState && { state: echoedState }) },
+      '*'
+    );
   };
+  const cancel = () => postToOpener('cancel');
 
   const confirm = () => {
-    if (!identifier) {
+    if (!identifier || isUnregisteringRef.current) {
       return;
     }
+    isUnregisteringRef.current = true;
 
-    unregisterPlatform({
-      variables: {
+    unregisterPlatform(
+      {
         input: {
           platformId,
           identifier,
-          tenantId,
+          tenantId: tenantId ?? null,
         },
       },
-      onCompleted: () => {
-        window.opener?.postMessage({ action: 'unregister' }, '*');
-        setStatus('succeeded');
-      },
-      onError: (error) => {
-        setStatus('failed');
-        toast({
-          variant: 'destructive',
-          title: t('Utils.Error'),
-          description: t(`Error.Server.${error.message}`),
-        });
-      },
-    });
+      {
+        onSuccess: () => {
+          postToOpener('unregister');
+          setStatus('succeeded');
+        },
+        onError: (error) => {
+          const errorMessage =
+            error instanceof Error ? error.message : 'UNKNOWN_ERROR';
+          isUnregisteringRef.current = false;
+          setStatus('failed');
+          showSnackbar({
+            severity: 'error',
+            title: t('Utils.Error'),
+            description: t(`Error.Server.${errorMessage}`),
+          });
+        },
+      }
+    );
   };
 
   if (status === 'succeeded') {
     return (
       <RegistrationLayout>
-        <h1>
+        <h1 className="title-sm">
           {t(`Unregister.Succeeded.Title`, {
             platformIdentifier: displayedIdentifier,
           })}
@@ -102,7 +109,7 @@ export const Unregister = ({
   if (status === 'failed') {
     return (
       <RegistrationLayout>
-        <h1>{t(`Unregister.Failed.Title`)}</h1>
+        <h1 className="title-sm">{t(`Unregister.Failed.Title`)}</h1>
         <p>{t(`Unregister.Failed.Description`)}</p>
       </RegistrationLayout>
     );
@@ -115,8 +122,12 @@ export const Unregister = ({
   if (!isAllowed) {
     if (!isInOrganization) {
       return (
-        <RegistrationLayout cancel={cancel}>
-          <h1>{t(`Unregister.Error.NotInOrganization.Title`)}</h1>
+        <RegistrationLayout
+          cancel={cancel}
+          cancelAnalyticsId="platform_disconnection_cancel">
+          <h1 className="title-sm">
+            {t(`Unregister.Error.NotInOrganization.Title`)}
+          </h1>
         </RegistrationLayout>
       );
     }
@@ -131,11 +142,11 @@ export const Unregister = ({
     );
   }
 
-  return organizationId ? (
+  return organizationName ? (
     <UnregisterConfirm
       cancel={cancel}
       confirm={confirm}
-      organizationId={organizationId}
+      organizationName={organizationName}
     />
   ) : (
     <Loader />

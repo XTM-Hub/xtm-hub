@@ -35,6 +35,7 @@ const buildRegisteredPlatform = (
   identifier: ServiceDefinitionIdentifier.OpenctiRegistration,
   title: 'OpenCTI Platform',
   contract: PlatformContract.Ee,
+  deployment_request: null,
   subscription: {
     start_date: null,
     end_date: null,

@@ -16,7 +16,7 @@ env:
   PROJECT_NUMBER: 1
 jobs:
   manage-pr-and-issues:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     outputs:
       pr_number: ${{ steps.extract_issues.outputs.pr_number }}
       should_deploy: ${{ steps.check_feature_env.outputs.result }}
@@ -243,6 +243,10 @@ jobs:
                                     id
                                     name
                                   }
+                                  ... on ProjectV2IterationField {
+                                    id
+                                    name
+                                  }
                                 }
                               }
                             }
@@ -363,6 +367,10 @@ jobs:
                             name
                             dataType
                           }
+                          ... on ProjectV2IterationField {
+                            id
+                            name
+                          }
                         }
                       }
                     }
@@ -382,9 +390,9 @@ jobs:
                 field.name === 'Status' && field.options
               );
 
-              // Find the Start date field using lowercase comparison
+              // Find the start date field using lowercase comparison ("Dev start date", formerly "Start date")
               const startDateField = project.fields.nodes.find(field =>
-                field.name.toLowerCase() === 'start date' && field.dataType === 'DATE'
+                ['dev start date', 'start date'].includes(field.name.toLowerCase()) && field.dataType === 'DATE'
               );
 
               if (!statusField) {
@@ -523,12 +531,12 @@ jobs:
                   });
                   console.log(`✅ Successfully updated issue #${issueNumber} status to "${status}"`);
 
-                  // Update Start date if not already set and status is "dev in progress"
-                  if (status.toLowerCase() === 'dev in progress' && startDateField) {
-                    // Find current start date from field values using lowercase comparison
+                  // Update Start date if not already set and status is "Development"
+                  if (status.toLowerCase() === 'development' && startDateField) {
+                    // Find current start date from field values
                     const currentStartDateField = projectItem.fieldValues.nodes.find(fv =>
                       fv.__typename === 'ProjectV2ItemFieldDateValue' &&
-                      fv.field?.name?.toLowerCase() === 'start date'
+                      fv.field.id === startDateField.id
                     );
                     const currentStartDate = currentStartDateField?.date;
 
@@ -574,7 +582,7 @@ jobs:
               }
             }
 
-      - name: Update issues status to Ready to be deployed and set Effective end date on merge
+      - name: Update issues status to Ready to Deploy on merge
         if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true && steps.extract_issues.outputs.issue_numbers != ''
         uses: actions/github-script@v9
         with:
@@ -595,7 +603,7 @@ jobs:
             ];
 
             const newStatus = 'Ready to Deploy';
-            console.log(`PR merged! Updating ${issueNumbers.length} issue(s) to status: "${newStatus}" and setting Effective end date`);
+            console.log(`PR merged! Updating ${issueNumbers.length} issue(s) to status: "${newStatus}"`);
 
             try {
               // Get project once
@@ -633,19 +641,9 @@ jobs:
               const project = projectData.organization.projectV2;
               const statusField = project.fields.nodes.find(f => f.name === 'Status' && f.options);
 
-              // Find the Effective end date field using lowercase comparison
-              const effectiveEndDateField = project.fields.nodes.find(field =>
-                field.name.toLowerCase() === 'effective end date' && field.dataType === 'DATE'
-              );
-
               if (!statusField) {
                 console.log('Status field not found');
                 return;
-              }
-
-              if (!effectiveEndDateField) {
-                console.log('Effective end date field not found');
-                console.log('Available date fields:', project.fields.nodes.filter(f => f.dataType === 'DATE').map(f => `${f.name} (${f.dataType})`));
               }
 
               const statusOption = statusField.options.find(o =>
@@ -756,37 +754,6 @@ jobs:
 
                   console.log(`✅ Updated issue #${issueNumber} status to "${newStatus}"`);
 
-                  // Set Effective end date
-                  if (effectiveEndDateField) {
-                    const today = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
-                    console.log(`Setting Effective end date for issue #${issueNumber} to ${today}...`);
-
-                    await github.graphql(`
-                      mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $date: Date!) {
-                        updateProjectV2ItemFieldValue(
-                          input: {
-                            projectId: $projectId
-                            itemId: $itemId
-                            fieldId: $fieldId
-                            value: {
-                              date: $date
-                            }
-                          }
-                        ) {
-                          projectV2Item {
-                            id
-                          }
-                        }
-                      }
-                    `, {
-                      projectId: project.id,
-                      itemId: projectItem.id,
-                      fieldId: effectiveEndDateField.id,
-                      date: today
-                    });
-                    console.log(`✅ Successfully set Effective end date for issue #${issueNumber}`);
-                  }
-
                 } catch (error) {
                   console.error(`Error updating issue #${issueNumber}:`, error);
                 }
@@ -844,10 +811,12 @@ jobs:
               ref: pr.head.sha
             });
 
-            // Filter out this workflow and check if all other checks have completed
+            // Filter out this workflow and the advisory platform e2e tests (rolling OpenCTI / OpenAEV / XTM One images),
+            // and check if all other checks have completed
             const relevantChecks = checkRuns.check_runs.filter(check =>
               !check.name.includes('PR and Issue Status Management') &&
-              !check.name.includes('manage-pr-and-issues')
+              !check.name.includes('manage-pr-and-issues') &&
+              !check.name.startsWith('run-e2e-platform-tests')
             );
 
             const allChecksCompleted = relevantChecks.length > 0 &&

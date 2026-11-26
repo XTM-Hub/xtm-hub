@@ -6,11 +6,15 @@ import {
   toError,
 } from '../../utils/error/error-guard.util';
 import ElasticSearchService, { esDbClient } from './client';
+import { withIndexPrefix } from './index-prefix';
 import {
   LOCK_DOC_ID,
   MIGRATION_INDEX,
   MIGRATION_LOCK_INDEX,
 } from './migration.const';
+
+const PREFIXED_MIGRATION_INDEX = withIndexPrefix(MIGRATION_INDEX);
+const PREFIXED_MIGRATION_LOCK_INDEX = withIndexPrefix(MIGRATION_LOCK_INDEX);
 
 interface MigrationObject {
   title: string;
@@ -45,7 +49,7 @@ export function createEsStateStorage(
     load: async (fn) => {
       try {
         const migrations = (await esClient.simpleSearch({
-          index: MIGRATION_INDEX,
+          index: PREFIXED_MIGRATION_INDEX,
           size: 1000,
           sort: [{ timestamp: 'asc' }],
         })) as MigrationObject[];
@@ -89,7 +93,7 @@ export function createEsStateStorage(
               // up migration have the timestamp added
               if (migration.timestamp && !previousMigration) {
                 await esClient.index({
-                  index: MIGRATION_INDEX,
+                  index: PREFIXED_MIGRATION_INDEX,
                   id: migrationName,
                   document: {
                     title: migrationName,
@@ -103,7 +107,7 @@ export function createEsStateStorage(
                 // down migrations have the timestamp removed
               } else if (!migration.timestamp && previousMigration) {
                 await esClient.delete({
-                  index: MIGRATION_INDEX,
+                  index: PREFIXED_MIGRATION_INDEX,
                   id: migrationName,
                 });
                 logApp.info('Rollbacked migration file', {
@@ -126,7 +130,7 @@ export function createEsStateStorage(
       try {
         // Try to create lock - fails if exists
         await esClient.create({
-          index: MIGRATION_LOCK_INDEX,
+          index: PREFIXED_MIGRATION_LOCK_INDEX,
           id: LOCK_DOC_ID,
           document: lockDoc,
           refresh: true,
@@ -144,7 +148,7 @@ export function createEsStateStorage(
     unlock: async () => {
       await esClient
         .delete({
-          index: MIGRATION_LOCK_INDEX,
+          index: PREFIXED_MIGRATION_LOCK_INDEX,
           id: LOCK_DOC_ID,
         })
         .catch((error) => {

@@ -24,13 +24,14 @@ const nextConfig = {
         : []),
 
       {
-        source: '/app/service/free-trial',
-        destination: '/app/service/opencti-free-trial',
+        source:
+          '/app/service/(free-trial|opencti-free-trial|openaev-free-trial)',
+        destination: '/app/service/xtm-platform-trial',
         permanent: true,
       },
       {
-        source: '/app/admin/trials',
-        destination: '/app/admin/opencti-trials',
+        source: '/app/admin/(trials|opencti-trials|openaev-trials)',
+        destination: '/app/admin/manage-trials',
         permanent: true,
       },
 
@@ -71,8 +72,15 @@ const nextConfig = {
         permanent: true,
       },
       {
-        source: '/cybersecurity-solutions/free-trial',
-        destination: '/cybersecurity-solutions/opencti-free-trial',
+        source:
+          '/cybersecurity-solutions/(free-trial|opencti-free-trial|openaev-free-trial)',
+        destination: '/cybersecurity-solutions/xtm-platform-trial',
+        permanent: true,
+      },
+      {
+        source:
+          '/:locale(en|fr|ja)/cybersecurity-solutions/(opencti-free-trial|openaev-free-trial)',
+        destination: '/:locale/cybersecurity-solutions/xtm-platform-trial',
         permanent: true,
       },
       {
@@ -117,6 +125,7 @@ const nextConfig = {
       "'self'",
       "'unsafe-inline'",
       'https://www.googletagmanager.com',
+      'https://snap.licdn.com',
       'https://copilot.filigran.ai',
       ...hubspotScriptHosts,
       ...(isDev ? ["'unsafe-eval'", ...apolloCdnHosts] : []),
@@ -141,8 +150,7 @@ const nextConfig = {
       'https://s.gravatar.com',
       'https://secure.gravatar.com',
       'https://cdn.auth0.com',
-      'https://i1.wp.com',
-      'https://i2.wp.com',
+      'https://*.wp.com',
       'https://track-eu1.hubspot.com',
       'https://*.filigran.io',
       'https://*.filigran.ai',
@@ -192,6 +200,10 @@ const nextConfig = {
             key: 'X-Frame-Options',
             value: 'DENY',
           },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
         ],
       },
     ];
@@ -214,6 +226,8 @@ const nextConfig = {
         search: '',
       },
     ],
+    minimumCacheTTL: 60 * 60 * 24,
+    maximumDiskCacheSize: 100 * 1024 * 1024,
   },
   skipTrailingSlashRedirect: true,
   reactStrictMode: true,

@@ -14,6 +14,13 @@ type Organization implements Node {
   domains: [String!]
   personal_space: Boolean!
   capabilityUser: [Capability]
+  administrator_emails: [String!]
+    @auth(portalCapa: [BYPASS, READ_SAAS_METRICS, READ_ORGANIZATION_MEMBERS])
+  """
+  Members of the organization, invited and disabled users included, pending requests excluded.
+  Nullable: a refused read answers null without failing the whole query.
+  """
+  members_count: Int @auth(portalCapa: [BYPASS, READ_ORGANIZATION_MEMBERS])
 }
 
 type OrganizationEdge {
@@ -27,16 +34,52 @@ type OrganizationConnection {
   pageInfo: PageInfo!
 }
 
+"""
+A member of an organization, whatever their status: invited, expired, waiting for validation or disabled.
+"""
+type OrganizationMember {
+  id: UserId!
+  email: String!
+  first_name: String
+  last_name: String
+  capabilities: [OrganizationCapability!]!
+}
+
+type OrganizationMemberEdge {
+  cursor: String!
+  node: OrganizationMember!
+}
+
+type OrganizationMemberConnection {
+  totalCount: Int!
+  edges: [OrganizationMemberEdge!]!
+  pageInfo: PageInfo!
+}
+
 type Query {
-  organization(id: ID!): Organization @auth
+  organization(id: ID!): Organization
+    @auth(portalCapa: [BYPASS, READ_ORGANIZATION_MEMBERS])
   organizations(
     first: Int = 50
     after: ID
     orderBy: OrganizationOrdering!
     orderMode: OrderingMode!
     searchTerm: String
-  ): OrganizationConnection! @auth
+  ): OrganizationConnection!
+    @auth(portalCapa: [BYPASS, READ_ORGANIZATION_MEMBERS])
   userOrganizations: [Organization!]! @auth
+  """
+  The members of an organization, administrators first, then by email.
+  NOT_FOUND to a malformed id or a non-member without BYPASS or READ_ORGANIZATION_MEMBERS, else ORGANIZATION_NOT_FOUND.
+  """
+  organizationMembers(
+    organizationId: OrganizationId!
+    "The page size, brought between 0 and 100. 0 returns no member but the totalCount."
+    first: Int!
+    after: ID
+    "Matches the email, the first name or the last name, ignoring case."
+    searchTerm: String
+  ): OrganizationMemberConnection! @auth
 }
 
 input OrganizationInput {

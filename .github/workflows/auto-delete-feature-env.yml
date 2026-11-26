@@ -8,16 +8,22 @@ permissions: {}
 
 jobs:
   delete-feature-env:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
+    permissions:
+      contents: read
     steps:
-      - name: Install AWX cli
-        run: pip install awxkit
+      # The merge ref of a closed pull request can be gone, so take the action from the default branch.
+      - name: Checkout AWX action
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          sparse-checkout: .github/actions/awx-launch
 
       - name: Delete
-        run: |
-          awx --conf.host https://awx.filigran.io \
-            --conf.token ${{ secrets.AWX_TOKEN }} \
-            -f human job_templates launch 'Delete XTM Hub feature branch for testing' \
-            --inventory eu-west-staging \
-            --extra_vars "{\"env\":\"Development\",\"xtmhub_version\":\"pr-${{ github.event.pull_request.number }}\"}"
+        uses: ./.github/actions/awx-launch
+        with:
+          template: Delete XTM Hub feature branch for testing
+          inventory: eu-west-staging
+          extra-vars: '{"env":"Development","xtmhub_version":"pr-${{ github.event.pull_request.number }}"}'
+          token: ${{ secrets.AWX_TOKEN }}

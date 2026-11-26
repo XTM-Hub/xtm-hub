@@ -1,15 +1,11 @@
-import { getIntegrationSubTypeMetadata } from '@/components/service/integrations/Integration.utils';
 import { UserDisplay } from '@/components/ui/UserDisplay';
 import { ShareLinkButton } from '@/components/ui/share-link/ShareLinkButton';
 import { PublicDocumentData } from '@/utils/shareable-resources/shareable-resources.types';
-import { docHasMetadata } from '@/utils/shareable-resources/utils/shareable-resources.client.utils';
-import { Badge } from '@filigran/ui/servers';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { DocumentMetadataKeyCode } from '@graphql/generated';
+import { DocumentItemFragment } from '@graphql/generated';
 import { ReactNode } from 'react';
 
 interface ShareableResourceCardFooterAuthorProps {
-  document: documentItem_fragment$data | PublicDocumentData;
+  document: DocumentItemFragment | PublicDocumentData;
   shareLinkUrl: string;
   shouldDisplayAuthor?: boolean;
   extraContent?: ReactNode;
@@ -20,33 +16,25 @@ export const ShareableResourceCardFooterAuthor = ({
   shouldDisplayAuthor = true,
   extraContent,
 }: ShareableResourceCardFooterAuthorProps) => {
-  let documentMetadata;
-  if (docHasMetadata(document, DocumentMetadataKeyCode.IntegrationSubtype)) {
-    documentMetadata = getIntegrationSubTypeMetadata(
-      document.integration_subtype
-    );
-  }
   return (
     <>
-      <div className="flex flex-wrap items-center flex-row gap-s">
-        {documentMetadata && (
-          <Badge
-            className="mr-auto"
-            variant="outline"
-            color={documentMetadata.color}>
-            {documentMetadata.label}
-          </Badge>
-        )}
+      <div className="flex min-w-0 flex-1 items-center gap-2">
         {shouldDisplayAuthor && (
-          <div className="flex items-center gap-s whitespace-nowrap">
-            <UserDisplay uploader={document.uploader} />
+          <div className="flex min-w-0 items-center gap-2 whitespace-nowrap">
+            <UserDisplay
+              uploader={document.uploader}
+              pictureSize={24}
+              className="content-compact-bold"
+            />
           </div>
         )}
       </div>
-      <div className="flex flex-row self-end pr-m">
+      <div className="flex flex-row shrink-0 gap-1">
         <ShareLinkButton
+          analyticsId="resource_share"
           documentId={document.id}
           url={shareLinkUrl}
+          size="sm"
         />
         {extraContent}
       </div>

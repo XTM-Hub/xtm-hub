@@ -7,7 +7,6 @@ import {
   describe,
   expect,
   it,
-  vi,
 } from 'vitest';
 import { TestHelper } from '../../../../tests/helper/test.helper';
 import {
@@ -29,16 +28,11 @@ import PlatformConfiguration from '../../../model/kanel/public/PlatformConfigura
 import ServiceInstance, {
   ServiceInstanceId,
 } from '../../../model/kanel/public/ServiceInstance';
-import { SubscriptionId } from '../../../model/kanel/public/Subscription';
-import { UserServiceId } from '../../../model/kanel/public/UserService';
-import * as mailService from '../../../server/mail-service';
 import { PlatformConfigurationInput } from '../../registration/registration.domain';
-import { GenericServiceCapabilityIds } from '../../security-management/service-capability/generic-service-capability.const';
 import { ServiceInstanceDomain } from './service-instance.domain';
 
 const {
   getUserJoined,
-  grantServiceAccess,
   loadLinks,
   loadLinksByServiceInstanceIds,
   loadIsSubscribedByKeys,
@@ -144,13 +138,24 @@ describe('service instance domain', () => {
   describe('loadLinks', () => {
     // Happy path
     const generateId = uuidv4() as ServiceInstanceId;
+    const instanceWithLinkId = uuidv4() as ServiceInstanceId;
+    beforeAll(async () => {
+      await TestHelper.serviceInstance.create({ id: instanceWithLinkId });
+      await TestHelper.serviceLink.create({
+        service_instance_id: instanceWithLinkId,
+      });
+    });
     afterAll(async () => {
       await TestHelper.serviceInstance.delete({ id: generateId });
+      await TestHelper.serviceLink.delete({
+        service_instance_id: instanceWithLinkId,
+      });
+      await TestHelper.serviceInstance.delete({ id: instanceWithLinkId });
     });
     it('should return the service link when the service instance exists and has links', async () => {
-      const links = await loadLinks(SERVICES.INSTANCES.VAULT.ID);
+      const links = await loadLinks(instanceWithLinkId);
       expect(links).toHaveLength(1);
-      expect(links[0]?.service_instance_id).toBe(SERVICES.INSTANCES.VAULT.ID);
+      expect(links[0]?.service_instance_id).toBe(instanceWithLinkId);
     });
 
     it('should return an empty array when the service instance exists but has no links', async () => {
@@ -175,25 +180,37 @@ describe('service instance domain', () => {
   });
 
   describe('loadLinksByServiceInstanceIds', () => {
+    const instanceWithLinkId = uuidv4() as ServiceInstanceId;
+    beforeAll(async () => {
+      await TestHelper.serviceInstance.create({ id: instanceWithLinkId });
+      await TestHelper.serviceLink.create({
+        service_instance_id: instanceWithLinkId,
+      });
+    });
+    afterAll(async () => {
+      await TestHelper.serviceLink.delete({
+        service_instance_id: instanceWithLinkId,
+      });
+      await TestHelper.serviceInstance.delete({ id: instanceWithLinkId });
+    });
+
     it('should return one row per link tagged with its service instance id and nothing for instances without links', async () => {
       // When
       const results = await loadLinksByServiceInstanceIds([
         SERVICES.INSTANCES.EPIC.ID,
-        SERVICES.INSTANCES.VAULT.ID,
+        instanceWithLinkId,
       ]);
 
       // Then
       const epicLinks = results.filter(
         (link) => link.service_instance_id === SERVICES.INSTANCES.EPIC.ID
       );
-      const vaultLinks = results.filter(
-        (link) => link.service_instance_id === SERVICES.INSTANCES.VAULT.ID
+      const instanceLinks = results.filter(
+        (link) => link.service_instance_id === instanceWithLinkId
       );
       expect(epicLinks).toHaveLength(0);
-      expect(vaultLinks).toHaveLength(1);
-      expect(vaultLinks[0]?.service_instance_id).toBe(
-        SERVICES.INSTANCES.VAULT.ID
-      );
+      expect(instanceLinks).toHaveLength(1);
+      expect(instanceLinks[0]?.service_instance_id).toBe(instanceWithLinkId);
     });
   });
 
@@ -201,16 +218,18 @@ describe('service instance domain', () => {
     it('should return one row per requested service instance id, tagged accordingly', async () => {
       // When
       const results = await loadServiceDefinitionsByServiceInstanceIds([
-        SERVICES.INSTANCES.VAULT.ID,
+        SERVICES.INSTANCES.INTEGRATIONS.ID,
         SERVICES.INSTANCES.EPIC.ID,
       ]);
 
       // Then
       expect(results).toHaveLength(2);
-      const vaultRow = results.find(
-        (row) => row.service_instance_id === SERVICES.INSTANCES.VAULT.ID
+      const integrationsRow = results.find(
+        (row) => row.service_instance_id === SERVICES.INSTANCES.INTEGRATIONS.ID
       );
-      expect(vaultRow?.id).toBe(SERVICES.DEFINITIONS.VAULT.ID);
+      expect(integrationsRow?.id).toBe(
+        SERVICES.DEFINITIONS.OPENCTI_INTEGRATIONS.ID
+      );
     });
   });
 
@@ -407,7 +426,7 @@ describe('service instance domain', () => {
     it('should handle complete configuration replacement', async () => {
       // Given
       const newConfig: PlatformConfigurationInput = {
-        registerer_id: uuidv4(),
+        registerer_id: contextRegistererUserSecondOrga.user.id,
         platform_id: uuidv4(),
         platform_title: 'Completely New Title',
         platform_url: 'https://completelynew.com',
@@ -472,147 +491,6 @@ describe('service instance domain', () => {
 
       // Then
       expect(result).toBeUndefined();
-    });
-  });
-
-  describe('grantServiceAccess', () => {
-    let testServiceInstanceId: ServiceInstanceId;
-    let otherServiceInstanceId: ServiceInstanceId;
-    let filigranSubscriptionId: SubscriptionId;
-    let secondOrgaSubscriptionId: SubscriptionId;
-
-    beforeEach(async () => {
-      vi.spyOn(mailService, 'sendMail').mockResolvedValue();
-      testServiceInstanceId = uuidv4() as ServiceInstanceId;
-      otherServiceInstanceId = uuidv4() as ServiceInstanceId;
-      filigranSubscriptionId = uuidv4() as SubscriptionId;
-      secondOrgaSubscriptionId = uuidv4() as SubscriptionId;
-
-      await TestHelper.serviceInstance.create({
-        id: testServiceInstanceId,
-        service_definition_id: SERVICES.DEFINITIONS.OPENCTI_INTEGRATIONS.ID,
-        name: 'Test Service for Grant Access',
-      });
-
-      await TestHelper.subscription.create({
-        id: filigranSubscriptionId,
-        service_instance_id: testServiceInstanceId,
-        organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
-      });
-      await TestHelper.subscription.create({
-        id: secondOrgaSubscriptionId,
-        service_instance_id: testServiceInstanceId,
-        organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
-      });
-    });
-
-    afterEach(async () => {
-      await TestHelper.user_Service.delete({
-        user_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.SIMPLE.ID,
-      });
-      await TestHelper.platformConfiguration.delete({
-        service_instance_id: testServiceInstanceId,
-      });
-      await TestHelper.platformConfiguration.delete({
-        service_instance_id: otherServiceInstanceId,
-      });
-      await TestHelper.serviceInstance.delete({
-        id: testServiceInstanceId,
-      });
-      await TestHelper.serviceInstance.delete({
-        id: otherServiceInstanceId,
-      });
-    });
-
-    it('should create user_service linked to the correct subscription', async () => {
-      // When
-      const result = await grantServiceAccess(
-        GenericServiceCapabilityIds.AccessId,
-        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.SIMPLE.ID,
-        secondOrgaSubscriptionId
-      );
-
-      // Then
-      // Check the return
-      expect(result).toHaveLength(1);
-      expect(result[0]!.user_id).toBe(
-        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.SIMPLE.ID
-      );
-      expect(result[0]!.subscription_id).toBe(secondOrgaSubscriptionId);
-
-      // Check in DB
-      const userServiceInDb = await TestHelper.user_Service.load({
-        id: result[0]?.id as UserServiceId,
-      });
-
-      expect(userServiceInDb).toBeDefined();
-      expect(userServiceInDb?.subscription_id).toBe(secondOrgaSubscriptionId);
-    });
-
-    it('should not link user_service to a different organization subscription', async () => {
-      // When
-      const result = await grantServiceAccess(
-        GenericServiceCapabilityIds.AccessId,
-        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.SIMPLE.ID,
-        secondOrgaSubscriptionId
-      );
-
-      // Then
-      // Check the return
-      expect(result[0]!.subscription_id).toBe(secondOrgaSubscriptionId);
-
-      // Check in DB
-      const userServicesInDb = await TestHelper.user_Service.load({
-        user_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.SIMPLE.ID,
-      });
-
-      expect(userServicesInDb?.subscription_id).toBe(secondOrgaSubscriptionId);
-    });
-
-    it('should send an email when there is a mail template associated to the service', async () => {
-      // Given
-      const sendMailSpy = vi.spyOn(mailService, 'sendMail').mockResolvedValue();
-      // When
-      await grantServiceAccess(
-        GenericServiceCapabilityIds.AccessId,
-        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.SIMPLE.ID,
-        secondOrgaSubscriptionId
-      );
-
-      // Then
-      expect(sendMailSpy).toHaveBeenCalledWith({
-        params: {
-          name: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.SIMPLE.EMAIL,
-          serviceLink: expect.any(String),
-          serviceName: 'Test Service for Grant Access',
-        },
-        template: 'opencti_integrations',
-        to: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.SIMPLE.EMAIL,
-      });
-    });
-
-    it('should not send an email when there is no mail template associated to the service', async () => {
-      // Given
-      const sendMailSpy = vi.spyOn(mailService, 'sendMail').mockResolvedValue();
-
-      const anyServiceInstance = await TestHelper.serviceInstance.create({
-        id: otherServiceInstanceId,
-        service_definition_id: SERVICES.DEFINITIONS.OPENCTI_REGISTRATION.ID,
-      });
-
-      const subscription = await TestHelper.subscription.create({
-        service_instance_id: anyServiceInstance.id,
-        organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
-      });
-
-      // When
-      await grantServiceAccess(
-        GenericServiceCapabilityIds.AccessId,
-        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.SIMPLE.ID,
-        subscription!.id
-      );
-      // Then
-      expect(sendMailSpy).not.toHaveBeenCalled();
     });
   });
 
@@ -1070,6 +948,111 @@ describe('service instance domain', () => {
 
       // Then
       expect(result).toHaveLength(0);
+    });
+  });
+
+  describe('loadServiceInstances', () => {
+    const publicServiceInstanceId = uuidv4() as ServiceInstanceId;
+    const privateServiceInstanceId = uuidv4() as ServiceInstanceId;
+
+    const loadIds = async (includeInaccessible = false) => {
+      const { edges } = await ServiceInstanceDomain.loadServiceInstances({
+        first: 100,
+        after: null,
+        orderBy: 'ordering',
+        orderMode: 'asc',
+        searchTerm: null,
+        filters: null,
+        includeInaccessible,
+      });
+      return edges.map(({ node }) => node.id);
+    };
+
+    beforeAll(async () => {
+      await TestHelper.serviceInstance.create({
+        id: publicServiceInstanceId,
+        name: 'accessible-public',
+        slug: 'accessible-public',
+        public: true,
+      });
+      await TestHelper.serviceInstance.create({
+        id: privateServiceInstanceId,
+        name: 'accessible-private',
+        slug: 'accessible-private',
+        public: false,
+      });
+    });
+
+    afterAll(async () => {
+      await TestHelper.serviceInstance.delete({ id: publicServiceInstanceId });
+      await TestHelper.serviceInstance.delete({ id: privateServiceInstanceId });
+    });
+
+    it('should hide a non public service instance the organization is not subscribed to', async () => {
+      requestContext.set(requestContextRegistererUserSecondOrga);
+
+      const ids = await loadIds();
+
+      expect(ids).toContain(publicServiceInstanceId);
+      expect(ids).not.toContain(privateServiceInstanceId);
+    });
+
+    it('should return a non public service instance to a subscribed organization', async () => {
+      requestContext.set(requestContextRegistererUserSecondOrga);
+      await TestHelper.subscription.create({
+        service_instance_id: privateServiceInstanceId,
+        organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+      });
+
+      const ids = await loadIds();
+
+      expect(ids).toContain(privateServiceInstanceId);
+    });
+
+    it('should hide a non public service instance from a platform administrator navigation', async () => {
+      requestContext.set(requestContextAdminUser);
+
+      const ids = await loadIds();
+
+      expect(ids).toContain(publicServiceInstanceId);
+      expect(ids).not.toContain(privateServiceInstanceId);
+    });
+
+    it('should return every service instance to a platform administrator asking for the admin listing', async () => {
+      requestContext.set(requestContextAdminUser);
+
+      const ids = await loadIds(true);
+
+      expect(ids).toEqual(
+        expect.arrayContaining([
+          publicServiceInstanceId,
+          privateServiceInstanceId,
+        ])
+      );
+    });
+
+    it('should ignore the admin listing flag for a non administrator', async () => {
+      requestContext.set(requestContextRegistererUserSecondOrga);
+
+      const ids = await loadIds(true);
+
+      expect(ids).not.toContain(privateServiceInstanceId);
+    });
+
+    it('should not expose a non public service instance on the SEO surface', async () => {
+      requestContext.set(requestContextAdminUser);
+
+      const seoInstances =
+        await ServiceInstanceDomain.loadSeoServiceInstances();
+      const bySlug =
+        await ServiceInstanceDomain.loadSeoServiceInstanceBySlug(
+          'accessible-private'
+        );
+
+      expect(seoInstances.map(({ id }) => id)).not.toContain(
+        privateServiceInstanceId
+      );
+      expect(bySlug).toBeUndefined();
     });
   });
 });

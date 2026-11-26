@@ -1,6 +1,6 @@
 mutation EditSeoServiceInstanceMetadata(
   $service_instance_id: ServiceInstanceId!
-  $language: SeoServiceInstanceLanguage!
+  $language: Locale!
   $input: EditSeoServiceInstanceInput!
 ) {
   editSeoServiceInstance(
@@ -12,5 +12,29 @@ mutation EditSeoServiceInstanceMetadata(
     language
     meta_title
     meta_description
+  }
+}
+
+mutation UpdatePlatformServiceMetadata(
+  $input: UpdatePlatformServiceMetadataInput!
+) {
+  updatePlatformServiceMetadata(input: $input) {
+    id
+    title
+  }
+}
+
+mutation AddServicePicture(
+  $serviceInstanceId: ServiceInstanceId!
+  $document: Upload
+  $isLogo: Boolean!
+) {
+  addServicePicture(
+    serviceInstanceId: $serviceInstanceId
+    document: $document
+    isLogo: $isLogo
+  ) {
+    id
+    name
   }
 }

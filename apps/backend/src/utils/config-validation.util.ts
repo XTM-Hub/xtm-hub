@@ -1,4 +1,10 @@
 import { z } from 'zod';
+import {
+  ENGINE_CLIENT_AUTO,
+  ENGINE_CLIENT_SETTINGS,
+  EngineClientSetting,
+  OPENSEARCH_NOT_SUPPORTED_MESSAGE,
+} from '../thirdparty/elasticsearch/engine-detection';
 import { logApp } from './app-logger.util';
 
 // Zod schema for DevUser organization
@@ -184,6 +190,116 @@ export const validateDevUserPartial = (
       errors: ['Unknown validation error'],
     };
   }
+};
+
+/**
+ * Parses the Express `trust proxy` hop count. Only a non-negative integer is
+ * accepted: Express reads `true` as "trust everything" and a raw string such
+ * as "1" (node-config returns env vars as strings) as a list of trusted
+ * addresses. 0 becomes `false` so express-rate-limit still flags an
+ * unexpected X-Forwarded-For header.
+ *
+ * An invalid value logs an error and falls back to `false` (trust no proxy)
+ * instead of failing the boot. Behind the ingress, `false` makes `req.ip` the
+ * front pod IP, so every user then shares one rate-limit key: the error log is
+ * the signal to fix TRUST_PROXY.
+ */
+export const parseTrustProxy = (value: unknown): number | false => {
+  const hops =
+    typeof value === 'string' && /^\d+$/.test(value) ? Number(value) : value;
+  if (typeof hops !== 'number' || !Number.isSafeInteger(hops) || hops < 0) {
+    logApp.error(
+      `[TRUST-PROXY] Invalid trust_proxy configuration (TRUST_PROXY): expected a non-negative integer hop count, got ${JSON.stringify(value)}, falling back to false`
+    );
+    return false;
+  }
+  return hops === 0 ? false : hops;
+};
+
+/**
+ * Resolves the Express `trust proxy` setting. In local dev (LOCAL_DEV=true) there is no
+ * ingress in front of the API, so no hop is trusted and `req.ip` stays the socket peer,
+ * whatever trust_proxy holds.
+ */
+export const resolveTrustProxy = (
+  configured: unknown,
+  localDev: boolean
+): number | false => (localDev ? false : parseTrustProxy(configured));
+
+// Elasticsearch index name rules: lowercase, no leading '-', '_', '+' or '.',
+// none of \ / * ? " < > | , # : or spaces. '_' is also refused, as it separates
+// the prefix from the name: with it, a prefix such as 'hub_telemetry_v2' would
+// make its index template pattern overlap the one of prefix 'hub', which
+// Elasticsearch rejects. The length cap keeps every prefixed name well under
+// the 255 bytes limit of an index name, for the names to come as well.
+const ES_INDEX_PREFIX_MAX_LENGTH = 100;
+const ES_INDEX_PREFIX_PATTERN = new RegExp(
+  `^[a-z0-9][a-z0-9.-]{0,${ES_INDEX_PREFIX_MAX_LENGTH - 1}}$`
+);
+
+/**
+ * Parses the Elasticsearch index prefix (ELASTIC_INDEX_PREFIX). Unset or empty
+ * means no prefix, which keeps the names of existing installations.
+ *
+ * An invalid value fails the boot: falling back to no prefix would make the
+ * instance write into the indices of an unprefixed instance of the same cluster.
+ */
+export const parseEsIndexPrefix = (value: unknown): string => {
+  if (value === undefined || value === null || value === '') {
+    return '';
+  }
+  if (typeof value !== 'string' || !ES_INDEX_PREFIX_PATTERN.test(value)) {
+    throw new Error(
+      `[ELASTICSEARCH] Invalid elasticsearch.index_prefix configuration (ELASTIC_INDEX_PREFIX): expected at most ${ES_INDEX_PREFIX_MAX_LENGTH} lowercase letters, digits, '.' or '-', starting with a letter or a digit, got ${JSON.stringify(value)}`
+    );
+  }
+  return value;
+};
+
+/**
+ * Parses the Elasticsearch client setting (ELASTIC_ENGINE_CLIENT). Unset or
+ * empty means `auto`: the client is detected from the server at startup.
+ */
+export const parseEsEngineClient = (value: unknown): EngineClientSetting => {
+  if (value === undefined || value === null || value === '') {
+    return ENGINE_CLIENT_AUTO;
+  }
+  if (value === 'opensearch') {
+    throw new Error(OPENSEARCH_NOT_SUPPORTED_MESSAGE);
+  }
+  const setting = ENGINE_CLIENT_SETTINGS.find((allowed) => allowed === value);
+  if (!setting) {
+    throw new Error(
+      `[ELASTICSEARCH] Invalid elasticsearch.engine_client configuration (ELASTIC_ENGINE_CLIENT): expected one of ${ENGINE_CLIENT_SETTINGS.join(', ')}, got ${JSON.stringify(value)}`
+    );
+  }
+  return setting;
+};
+
+// The 8.x client's own default: the 9.x client has none and would wait forever
+export const ES_DEFAULT_REQUEST_TIMEOUT_MS = 600_000;
+
+/**
+ * Parses the Elasticsearch request timeout in milliseconds
+ * (ELASTIC_REQUEST_TIMEOUT), given to both client majors. Unset or empty means
+ * the 8.x client's default, 10 minutes.
+ */
+export const parseEsRequestTimeout = (value: unknown): number => {
+  if (value === undefined || value === null || value === '') {
+    return ES_DEFAULT_REQUEST_TIMEOUT_MS;
+  }
+  const timeout =
+    typeof value === 'string' && /^\d+$/.test(value) ? Number(value) : value;
+  if (
+    typeof timeout !== 'number' ||
+    !Number.isSafeInteger(timeout) ||
+    timeout <= 0
+  ) {
+    throw new Error(
+      `[ELASTICSEARCH] Invalid elasticsearch.request_timeout configuration (ELASTIC_REQUEST_TIMEOUT): expected a positive number of milliseconds, got ${JSON.stringify(value)}`
+    );
+  }
+  return timeout;
 };
 
 // Export schemas for potential reuse

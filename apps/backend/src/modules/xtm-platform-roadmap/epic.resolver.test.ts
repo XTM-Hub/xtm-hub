@@ -16,84 +16,11 @@ import {
   Timeline,
   UpdateEpicInput,
 } from '../../__generated__/resolvers-types';
-import { DocumentId } from '../../model/kanel/public/Document';
 import Epic, { EpicId } from '../../model/kanel/public/Epic';
 import { BadRequestErrorCode } from '../../utils/error/error.code';
 import { ErrorType } from '../../utils/error/error.type';
-import { DocumentDomain } from '../document/domain/document.domain';
 import { EpicApp } from './epic.app';
 import epicResolver from './epic.resolver';
-
-describe('epic.document', () => {
-  it('should load document by document_id', async () => {
-    // Given
-    const documentId = uuidv4() as DocumentId;
-    const epicParent = {
-      id: uuidv4() as EpicId,
-      document_id: documentId,
-    } as unknown as Epic;
-    const expectedDocument = { id: documentId, file_name: 'image.png' };
-    vi.spyOn(DocumentDomain, 'loadDocumentBy').mockResolvedValue(
-      expectedDocument as unknown as Awaited<
-        ReturnType<typeof DocumentDomain.loadDocumentBy>
-      >
-    );
-
-    // When
-    const result = await epicResolver.Epic!.document!(
-      epicParent,
-      {},
-      contextSimpleUserFiligran2,
-      GRAPHQL_RESOLVE_INFO
-    );
-
-    // Then
-    expect(DocumentDomain.loadDocumentBy).toHaveBeenCalledWith({
-      id: documentId,
-    });
-    expect(result).toMatchObject({ id: documentId, file_name: 'image.png' });
-  });
-
-  it('should return null when document_id is not set', async () => {
-    // Given
-    const epicParent = {
-      id: uuidv4() as EpicId,
-      document_id: null,
-    } as unknown as Epic;
-
-    // When
-    const result = await epicResolver.Epic!.document!(
-      epicParent,
-      {},
-      contextSimpleUserFiligran2,
-      GRAPHQL_RESOLVE_INFO
-    );
-
-    // Then
-    expect(result).toBeNull();
-  });
-
-  it('should return null when DocumentDomain returns undefined', async () => {
-    // Given
-    const documentId = uuidv4() as DocumentId;
-    const epicParent = {
-      id: uuidv4() as EpicId,
-      document_id: documentId,
-    } as unknown as Epic;
-    vi.spyOn(DocumentDomain, 'loadDocumentBy').mockResolvedValue(undefined);
-
-    // When
-    const result = await epicResolver.Epic!.document!(
-      epicParent,
-      {},
-      contextSimpleUserFiligran2,
-      GRAPHQL_RESOLVE_INFO
-    );
-
-    // Then
-    expect(result).toBeNull();
-  });
-});
 
 describe('epics GraphQL query', () => {
   it('should delegate to EpicApp.loadEpics and return result', async () => {
@@ -111,11 +38,13 @@ describe('epics GraphQL query', () => {
       active: true,
       short_description: 'A short description',
       description: 'A longer description',
-      product: FiligranProduct.Opencti,
+      problem_to_solve: 'A problem to solve',
+      proposed_solution: 'A proposed solution',
+      expected_value: 'An expected value',
+      products: [FiligranProduct.Opencti],
       timeline: Timeline.Now,
       epic_type: EpicType.Other,
       uploader_id: 'uploader-1',
-      document_id: null,
       created_at: new Date('2026-01-01'),
       updated_at: null,
       updater_id: null,
@@ -158,10 +87,12 @@ describe('create epic GraphQL mutation', () => {
       title: 'My Epic',
       short_description: 'A short description',
       description: 'A longer description',
-      product: FiligranProduct.Opencti,
+      problem_to_solve: 'A problem to solve',
+      proposed_solution: 'A proposed solution',
+      expected_value: 'An expected value',
+      products: [FiligranProduct.Opencti],
       timeline: Timeline.Now,
     };
-    const uploads: never[] = [];
     const expected = {
       id: uuidv4() as EpicId,
       title: 'My Epic',
@@ -172,13 +103,13 @@ describe('create epic GraphQL mutation', () => {
     // When
     const result = await epicResolver.Mutation!.createEpic!(
       {},
-      { input, document: uploads },
+      { input },
       contextSimpleUserFiligran2,
       GRAPHQL_RESOLVE_INFO
     );
 
     // Then
-    expect(EpicApp.createEpic).toHaveBeenCalledWith(input, uploads);
+    expect(EpicApp.createEpic).toHaveBeenCalledWith(input);
     expect(result).toMatchObject({ title: 'My Epic' });
   });
 
@@ -188,7 +119,10 @@ describe('create epic GraphQL mutation', () => {
       title: 'My Epic',
       short_description: 'Short',
       description: 'Long',
-      product: FiligranProduct.Opencti,
+      problem_to_solve: 'Problem',
+      proposed_solution: 'Solution',
+      expected_value: 'Value',
+      products: [FiligranProduct.Opencti],
       timeline: Timeline.Now,
     };
     vi.spyOn(EpicApp, 'createEpic').mockRejectedValue(
@@ -198,7 +132,7 @@ describe('create epic GraphQL mutation', () => {
     // When
     const call = epicResolver.Mutation!.createEpic!(
       {},
-      { input, document: [] },
+      { input },
       contextSimpleUserFiligran2,
       GRAPHQL_RESOLVE_INFO
     );
@@ -216,20 +150,19 @@ describe('update epic GraphQL mutation', () => {
       title: 'Updated Epic',
       short_description: 'Updated',
     };
-    const uploads: never[] = [];
     const expected = { id, title: 'Updated Epic' } as Epic;
     vi.spyOn(EpicApp, 'updateEpic').mockResolvedValue(expected);
 
     // When
     const result = await epicResolver.Mutation!.updateEpic!(
       {},
-      { id, input, document: uploads },
+      { id, input },
       contextSimpleUserFiligran2,
       GRAPHQL_RESOLVE_INFO
     );
 
     // Then
-    expect(EpicApp.updateEpic).toHaveBeenCalledWith(id, input, uploads);
+    expect(EpicApp.updateEpic).toHaveBeenCalledWith(id, input);
     expect(result).toMatchObject({ title: 'Updated Epic' });
   });
 
@@ -246,7 +179,6 @@ describe('update epic GraphQL mutation', () => {
       {
         id,
         input: { title: 'Updated', short_description: 'Updated' },
-        document: [],
       },
       contextSimpleUserFiligran2,
       GRAPHQL_RESOLVE_INFO

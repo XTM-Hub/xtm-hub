@@ -1,15 +1,20 @@
 import ShareableResourceConnectorSlugPublic from '@/components/service/document/connector/ShareableResourceConnectorSlugPublic';
+import { PublicResourceActions } from '@/components/service/document/PublicResourceActions';
+import ResourceMarkdownRenderer from '@/components/service/document/ResourceMarkdownRenderer';
 import ShareableResourceDetails from '@/components/service/document/ShareableResouceDetails';
 import ShareableResourceCarousel from '@/components/service/document/ui/ShareableResourceCarouselView';
 import BadgeOverflowCounter, {
   BadgeOverflow,
 } from '@/components/ui/BadgeOverflowCounter';
 import { BreadcrumbNav } from '@/components/ui/BreadcrumbNav';
-import { ShareLinkButton } from '@/components/ui/share-link/ShareLinkButton';
 import type { PublicLocale } from '@/i18n/config';
+import {
+  analyticsResource,
+  toAnalyticsResourceData,
+} from '@/lib/analytics/analytics.context';
 import { RelayProvider } from '@/relay/relay-provider';
-import { serverFetchGraphQL } from '@/relay/server-portal-api-fetch';
 import { filterDocumentImages, findDocumentLogo } from '@/utils/documents';
+import { getResourcePageFiligranWebsiteUtm } from '@/utils/filigran-website-utm';
 import { formatPersonNames } from '@/utils/format/name';
 import {
   buildFiligranOrganizationJsonLd,
@@ -18,27 +23,24 @@ import {
   stringifyJsonLd,
 } from '@/utils/generate-metadata';
 import { PUBLIC_CYBERSECURITY_SOLUTIONS_PATH } from '@/utils/path/constant';
+import { fetchSeoServiceInstanceBySlug } from '@/utils/seo-service-instance/utils/seo-service-instance.server.utils';
+import { buildResourceMetaDescription } from '@/utils/shareable-resources/meta-description.utils';
 import { localeMap } from '@/utils/shareable-resources/shareable-resources.consts';
 import {
   isConnectorResource,
+  PublicDocumentByServiceSlugItem,
+  SERVICE_SLUG_SHAREABLE_RESOURCE_MAPPING,
   ServiceSlug,
 } from '@/utils/shareable-resources/shareable-resources.types';
 import {
-  getServiceInfo,
-  isResourceDownloadable,
-} from '@/utils/shareable-resources/utils/shareable-resources.client.utils';
-import { fetchSingleDocument } from '@/utils/shareable-resources/utils/shareable-resources.server.utils';
+  fetchSingleDocument,
+  isPublicDocumentSlug,
+} from '@/utils/shareable-resources/utils/shareable-resources.server.utils';
+import { Paper } from '@filigran/design-system';
 import { LogoFiligranIcon } from '@filigran/icon';
-import { MarkdownRenderer } from '@filigran/ui/clients';
-import { Button } from '@filigran/ui/servers';
-import { seoServiceInstanceFragment$data } from '@generated/seoServiceInstanceFragment.graphql';
-import SeoServiceInstanceQuery, {
-  seoServiceInstanceQuery,
-} from '@generated/seoServiceInstanceQuery.graphql';
 import { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import Image from 'next/image';
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { cache } from 'react';
 const FALLBACK_DESCRIPTION_KEYS: Record<ServiceSlug, string> = {
@@ -55,26 +57,44 @@ const FALLBACK_DESCRIPTION_KEYS: Record<ServiceSlug, string> = {
 };
 
 /**
+ * The SEO description of a resource, shared by its meta tag and its JSON-LD: the meta-description generated from the
+ * summary its author entered, else the default text of the resource type. Never derived from the short description or
+ * the body.
+ */
+const describeDocument = (
+  document: Pick<PublicDocumentByServiceSlugItem, 'meta_description'>,
+  serviceSlug: ServiceSlug,
+  fallbackDescription: string
+) =>
+  document.meta_description?.trim()
+    ? buildResourceMetaDescription(
+        SERVICE_SLUG_SHAREABLE_RESOURCE_MAPPING[serviceSlug],
+        document.meta_description
+      )
+    : fallbackDescription;
+
+/**
  * Fetch the data for the page with caching to avoid multiple requests
  */
 
 const getPageData = cache(async (serviceSlug: string, docSlug: string) => {
+  if (!(await isPublicDocumentSlug(serviceSlug, docSlug))) {
+    notFound();
+  }
+
   const baseUrl = await getBaseUrl();
 
-  const serviceResponse = await serverFetchGraphQL<seoServiceInstanceQuery>(
-    SeoServiceInstanceQuery,
-    { slug: serviceSlug },
-    { cache: undefined, next: { revalidate: 3600 } }
-  );
-
-  const serviceInstance = serviceResponse.data
-    .seoServiceInstance as unknown as seoServiceInstanceFragment$data;
+  const serviceInstance = await fetchSeoServiceInstanceBySlug(serviceSlug);
 
   if (!serviceInstance) {
     notFound();
   }
 
-  const document = await fetchSingleDocument(serviceInstance.id, docSlug);
+  const document = await fetchSingleDocument(
+    serviceInstance.id,
+    serviceInstance.slug as string,
+    docSlug
+  );
   if (!document) {
     notFound();
   }
@@ -106,7 +126,11 @@ export async function generateMetadata({
       'Metadata.DocumentFallbackDescriptionGeneric'
   );
 
-  const description = document.short_description || fallbackDescription;
+  const description = describeDocument(
+    document,
+    serviceInstance.slug as ServiceSlug,
+    fallbackDescription
+  );
   const serviceLabel = t(
     `Service.ServiceDefinitionIdentifier.${serviceInstance.service_definition.identifier}`
   );
@@ -166,14 +190,6 @@ const Page = async ({
 
   const { baseUrl, serviceInstance, document } = pageData;
 
-  const serviceInformation = getServiceInfo(
-    {
-      id: serviceInstance.id,
-      slug: serviceInstance.slug as ServiceSlug,
-    },
-    document.id
-  );
-
   const servicePath = `/${PUBLIC_CYBERSECURITY_SOLUTIONS_PATH}/${serviceInstance.slug}`;
   const localizedServicePath = `/${locale}${servicePath}`;
   const pageUrl = `${baseUrl}${servicePath}/${document.slug}`;
@@ -187,7 +203,11 @@ const Page = async ({
     '@context': 'https://schema.org',
     '@type': 'TechArticle',
     headline: `${document.name} | ${t(`Service.ServiceDefinitionIdentifier.${serviceInstance.service_definition.identifier}`)} | XTM Hub`,
-    description: document.short_description || fallbackDescription,
+    description: describeDocument(
+      document,
+      serviceInstance.slug as ServiceSlug,
+      fallbackDescription
+    ),
     articleBody: document.description,
     author: document.uploader
       ? {
@@ -260,14 +280,18 @@ const Page = async ({
 
   const carouselImages = filterDocumentImages(document);
 
+  const resource = toAnalyticsResourceData(document);
+
   return (
-    <>
+    <div
+      className="contents"
+      {...analyticsResource(resource)}>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: stringifyJsonLd(jsonLd) }}
       />
       <BreadcrumbNav value={breadcrumbValue} />
-      <div className="flex gap-s pb-l flex-col md:flex-row">
+      <div className="flex gap-2 pb-4 flex-col md:flex-row">
         {logo ? (
           <div className="w-24 shrink-0 rounded overflow-hidden">
             <Image
@@ -280,36 +304,27 @@ const Page = async ({
             />
           </div>
         ) : (
-          <div className="w-24 p-m border border-light shrink-0">
-            <LogoFiligranIcon className="size-18" />
+          <div className="w-24 p-3 border shrink-0">
+            <LogoFiligranIcon
+              aria-hidden={true}
+              className="size-18"
+            />
           </div>
         )}
         <div className="flex flex-col w-full justify-center">
           <div className="flex items-start">
-            <h1 className="whitespace-nowrap mb-s">{document.name}</h1>
-            <div className="flex items-center gap-s ml-auto">
-              {
-                <RelayProvider>
-                  <ShareLinkButton
-                    documentId={document.id}
-                    url={`${pageUrl}`}
-                    tooltipText={`Service.${localeMap[serviceInstance.slug as ServiceSlug]}.Actions.Share`}
-                  />
-                </RelayProvider>
-              }
-              {isResourceDownloadable(document) && (
-                <Button
-                  asChild
-                  className="whitespace-nowrap">
-                  <Link href={serviceInformation?.link ?? ''}>
-                    {t('PublicResourcePage.Download')}
-                  </Link>
-                </Button>
-              )}
-            </div>
+            <h1 className="whitespace-nowrap mb-2">{document.name}</h1>
+            <RelayProvider>
+              <PublicResourceActions
+                documentData={document}
+                pageUrl={pageUrl}
+                shareTooltipText={`Service.${localeMap[serviceInstance.slug as ServiceSlug]}.Actions.Share`}
+              />
+            </RelayProvider>
           </div>
           <div>
             <BadgeOverflowCounter
+              formatLabel={false}
               badges={document?.use_cases as BadgeOverflow[]}
               className="z-[2]"
             />
@@ -319,31 +334,43 @@ const Page = async ({
       {mainChild && (
         <ShareableResourceCarousel
           serviceInstance={serviceInstance}
+          resource={resource}
           images={carouselImages}
         />
       )}
-      <div className="flex flex-col-reverse lg:flex-row w-full mt-l gap-xl">
-        <div className="flex-[3_3_0%]">
-          <h3 className="py-s txt-container-title truncate text-muted-foreground">
-            {t('PublicResourcePage.Overview')}
-          </h3>
-          <section className="rounded bg-elevation-background-layer-1">
-            <h2 className="p-l">{document?.short_description}</h2>
-            <MarkdownRenderer
-              source={document?.description ?? ''}
-              colorMode="dark"
-              className="p-l !bg-elevation-background-layer-1 markdown-content"
-            />
-          </section>
+      <div className="flex flex-col-reverse lg:flex-row w-full mt-4 gap-6">
+        <div className="flex-[3_3_0%] min-w-0">
+          <Paper
+            as="section"
+            padding={16}
+            className="overflow-x-auto"
+            title={
+              <h2 className="[font:inherit] tracking-[inherit]">
+                {t('PublicResourcePage.Overview')}
+              </h2>
+            }>
+            <div className="flex flex-col gap-8">
+              <p className="content-base">{document?.short_description}</p>
+              <ResourceMarkdownRenderer
+                source={document?.description ?? ''}
+                filigranWebsiteUtm={getResourcePageFiligranWebsiteUtm(
+                  serviceInstance.service_definition.identifier
+                )}
+              />
+            </div>
+          </Paper>
         </div>
         {document && (
           <ShareableResourceDetails
             documentData={document}
             downloadNumber={document.download_number}
+            filigranWebsiteUtm={getResourcePageFiligranWebsiteUtm(
+              serviceInstance.service_definition.identifier
+            )}
           />
         )}
       </div>
-    </>
+    </div>
   );
 };
 

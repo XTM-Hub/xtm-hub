@@ -1,13 +1,10 @@
 import { useSolutionCategories } from '@/components/service/form/UseSolutionCategories';
-import {
-  FormControl,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  MultiSelectFormField,
-} from '@filigran/ui';
+import { AppCombobox } from '@/components/ui/AppCombobox';
+import { useFormField } from '@/components/ui/form';
+import { useTranslate } from '@/hooks/use-translate';
+import { toComboboxOptionIds } from '@/utils/design-system/combobox';
 import type { FiligranProduct } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
+import { useMemo } from 'react';
 import { ControllerRenderProps, FieldValues } from 'react-hook-form';
 
 interface ServiceFormSolutionCategoryFieldProps {
@@ -21,27 +18,31 @@ export const ServiceFormSolutionCategoryField = ({
   disabled,
   product,
 }: ServiceFormSolutionCategoryFieldProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
+  const { error } = useFormField();
+  const solutionCategories = useSolutionCategories(product);
+  const solutionCategoryOptionIds = useMemo(
+    () =>
+      toComboboxOptionIds(
+        solutionCategories,
+        (solutionCategory) => solutionCategory.id,
+        (solutionCategory) => solutionCategory.name
+      ),
+    [solutionCategories]
+  );
 
   return (
-    <FormItem>
-      <FormLabel>{t('Service.Form.SolutionCategoriesLabel')}</FormLabel>
-      <FormControl>
-        <MultiSelectFormField
-          disabled={disabled}
-          noResultString={t('Utils.NotFound')}
-          options={useSolutionCategories(product)}
-          keyValue="id"
-          keyLabel="name"
-          defaultValue={field.value}
-          value={field.value}
-          onValueChange={field.onChange}
-          popoverContentClassName="bg-elevation-background-layer-3"
-          placeholder={t('Service.Form.SolutionCategoriesPlaceholder')}
-          variant="inverted"
-        />
-      </FormControl>
-      <FormMessage />
-    </FormItem>
+    <AppCombobox
+      formField
+      multiple
+      label={t('Service.Form.SolutionCategoriesLabel')}
+      placeholder={t('Service.Form.SolutionCategoriesPlaceholder')}
+      error={error?.message}
+      disabled={disabled}
+      options={solutionCategoryOptionIds.ids}
+      value={field.value ?? []}
+      onValueChange={field.onChange}
+      getOptionLabel={solutionCategoryOptionIds.getOptionLabel}
+    />
   );
 };

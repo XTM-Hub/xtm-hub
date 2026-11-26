@@ -1,23 +1,18 @@
 'use client';
 
-import { LoginFormMutation } from '@/components/login/login.graphql';
+import { Form, FormField } from '@/components/ui/form';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import useDecodedQuery from '@/hooks/use-decoded-query';
+import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
+import { refreshAnalyticsUser } from '@/lib/analytics/analytics.user';
+import { portalGraphqlClient } from '@/lib/graphql-client';
 import { decodeSafeRedirect } from '@/utils/redirect';
-import {
-  Button,
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  Input,
-  toast,
-} from '@filigran/ui';
+import { Button, Input } from '@filigran/design-system';
+import { useLoginMutation } from '@graphql/generated';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
-import { useMutation } from 'react-relay';
 import { z } from 'zod';
 
 const formSchema = z.object({
@@ -28,7 +23,7 @@ const formSchema = z.object({
 // Component
 const LoginForm = () => {
   const router = useRouter();
-  const t = useTranslations();
+  const t = useTranslate();
   const { redirect } = useDecodedQuery();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -37,65 +32,57 @@ const LoginForm = () => {
       password: '',
     },
   });
-  const [commitLoginFormMutation] = useMutation(LoginFormMutation);
-  const onSubmit = (variables: z.infer<typeof formSchema>) => {
-    commitLoginFormMutation({
-      variables,
-      onError() {
-        toast({
-          variant: 'destructive',
-          title: t('Utils.Error'),
-          description: t(`Error.Login.LoginError`),
-        });
-      },
-      onCompleted() {
+  const { mutate: login } = useLoginMutation(portalGraphqlClient, {
+    onError() {
+      showSnackbar({
+        severity: 'error',
+        title: t('Utils.Error'),
+        description: t(`Error.Login.LoginError`),
+      });
+    },
+    onSuccess() {
+      refreshAnalyticsUser().then(() => {
         const destination = decodeSafeRedirect(redirect);
         if (destination) {
           router.push(destination);
         }
         // If login succeed, refresh the page
         router.refresh();
-      },
-    });
-  };
+      });
+    },
+  });
+  const onSubmit = (variables: z.infer<typeof formSchema>) => login(variables);
   return (
-    <div className="bg-elevation-background-layer-1 border border-border-light rounded w-full p-l mb-l">
+    <div className="layer-1 bg-elevation-default border border-elevation-subtle rounded w-full p-4 mb-4">
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
-          className="w-full space-y-l">
+          className="w-full space-y-4">
           <FormField
             control={form.control}
             name="email"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('LoginPage.Email')}</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder={t('LoginPage.Email')}
-                    {...field}
-                  />
-                </FormControl>
-              </FormItem>
+              <Input
+                label={t('LoginPage.Email')}
+                placeholder={t('LoginPage.Email')}
+                {...field}
+              />
             )}
           />
           <FormField
             control={form.control}
             name="password"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('LoginPage.Password')}</FormLabel>
-                <FormControl>
-                  <Input
-                    type="password"
-                    placeholder={t('LoginPage.Password')}
-                    {...field}
-                  />
-                </FormControl>
-              </FormItem>
+              <Input
+                label={t('LoginPage.Password')}
+                type="password"
+                placeholder={t('LoginPage.Password')}
+                {...field}
+              />
             )}
           />
           <Button
+            {...analyticsId('account_login_submit')}
             className="w-full"
             type="submit">
             {t('LoginPage.SignIn')}

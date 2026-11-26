@@ -1,45 +1,410 @@
-import { DeploymentRequestDeploymentType } from '../../../__generated__/resolvers-types';
+import type { Management } from 'auth0';
+import {
+  AddUsersToBundleGroupsInput,
+  BundleUserServiceGroup,
+  PlatformIdentifier,
+  ServiceGroupName,
+  ServiceGroup as ServiceGroupResponse,
+  UpdateBundleUserGroupsInput,
+  UserAccountStatus,
+} from '../../../__generated__/resolvers-types';
 import { withTransaction } from '../../../context/database.context';
 import { requestContext } from '../../../context/request.context';
+import DeploymentRequest from '../../../model/kanel/public/DeploymentRequest';
 import ServiceGroup, {
   ServiceGroupId,
 } from '../../../model/kanel/public/ServiceGroup';
-import ServiceGroupUser from '../../../model/kanel/public/ServiceGroupUser';
 import { ServiceInstanceId } from '../../../model/kanel/public/ServiceInstance';
 import User, { UserId } from '../../../model/kanel/public/User';
-import { sendMail } from '../../../server/mail-service';
-import { auth0Client } from '../../../thirdparty/auth0/client';
+import { UserLoadUserBy } from '../../../model/user';
 import { logApp } from '../../../utils/app-logger.util';
+import { getErrorMessage } from '../../../utils/error/error-guard.util';
 import { ErrorCode } from '../../../utils/error/error.code';
-import { formatName } from '../../../utils/format';
+import { normalizeEmails } from '../../../utils/verify-email.util';
 import { OrganizationDomain } from '../../organization-management/organization/organization.domain';
 import { UserDomain } from '../../organization-management/user/user-domain/user.domain';
-import { PlatformConfigurationDomain } from '../../registration/platform-configuration/platform-configuration.domain';
-import { AuthHelper } from '../../security-management/capability/auth.helper';
+import { UserOrganizationApp } from '../../organization-management/user/user-organization/user-organization.app';
+import { UserProvisioningDomain } from '../../organization-management/user/user-provisioning/user-provisioning.domain';
+import { UserHelper } from '../../organization-management/user/user.helper';
 import { DeploymentRequestDomain } from '../deployment.domain';
 import { ServiceGroupDomain } from './service-group.domain';
-import { ServiceGroupHelper } from './service-group.helper';
+import {
+  ServiceGroupHelper,
+  TrialAccessTelemetryContext,
+} from './service-group.helper';
+import { ServiceGroupSecurityHelper } from './service-group.security.helper';
 
 export type UpdateGroupsPayload = { id: ServiceGroupId; userIds: UserId[] }[];
+
+const MAX_INVITED_EMAILS = 50;
 
 export const ServiceGroupApp = {
   loadGroups: async ({
     serviceInstanceId,
   }: {
     serviceInstanceId: ServiceInstanceId;
-  }): Promise<ServiceGroup[]> => {
-    return ServiceGroupDomain.loadServiceGroups({
+  }): Promise<ServiceGroupResponse[]> => {
+    const serviceGroups = await ServiceGroupDomain.loadServiceGroups({
       service_instance_id: serviceInstanceId,
     });
+    return serviceGroups.map(ServiceGroupHelper.toServiceGroupResponse);
   },
 
   loadGroupUsers: async (groupId: ServiceGroupId): Promise<User[]> => {
     return ServiceGroupDomain.loadGroupUsers(groupId);
   },
 
+  loadGroupsByServiceInstanceAndUser: async (
+    serviceInstanceId: ServiceInstanceId,
+    userId: UserId
+  ): Promise<ServiceGroupResponse[]> => {
+    const serviceGroups =
+      await ServiceGroupDomain.loadServiceGroupsByServiceInstanceAndUser(
+        serviceInstanceId,
+        userId
+      );
+    return serviceGroups.map(ServiceGroupHelper.toServiceGroupResponse);
+  },
+
+  loadBundleUserServiceGroups: async (
+    serviceInstanceId: ServiceInstanceId
+  ): Promise<BundleUserServiceGroup[]> => {
+    const { bundleDeploymentRequest } =
+      await ServiceGroupSecurityHelper.assertBundleAccessAndLoad(
+        serviceInstanceId
+      );
+
+    const rows = await UserDomain.loadUsersWithDeploymentServiceGroups(
+      bundleDeploymentRequest.id
+    );
+
+    const bundleUserServiceGroupsByUserId = new Map<
+      UserId,
+      BundleUserServiceGroup
+    >();
+    rows.forEach(({ platform_identifier, group_name, ...rowUser }) => {
+      if (!platform_identifier) {
+        return;
+      }
+      const entry: BundleUserServiceGroup = bundleUserServiceGroupsByUserId.get(
+        rowUser.id
+      ) ?? {
+        user: rowUser,
+        groups: [],
+      };
+      entry.groups.push({
+        platformIdentifier: platform_identifier,
+        name: group_name,
+      });
+      bundleUserServiceGroupsByUserId.set(rowUser.id, entry);
+    });
+
+    return Array.from(bundleUserServiceGroupsByUserId.values());
+  },
+
+  loadBundleProducts: async (
+    serviceInstanceId: ServiceInstanceId
+  ): Promise<PlatformIdentifier[]> => {
+    const { children } =
+      await ServiceGroupSecurityHelper.assertBundleAccessAndLoadChildren(
+        serviceInstanceId
+      );
+
+    return children.flatMap((child) =>
+      child.platform_identifier ? [child.platform_identifier] : []
+    );
+  },
+
+  addUsersToBundleGroups: async (
+    serviceInstanceId: ServiceInstanceId,
+    input: AddUsersToBundleGroupsInput
+  ): Promise<BundleUserServiceGroup[]> => {
+    const user = requestContext.requireUser();
+
+    if (
+      !input.roles.some((role) => role.product === PlatformIdentifier.Xtmone)
+    ) {
+      throw new Error(ErrorCode.XtmOneRoleRequired);
+    }
+
+    const emails = normalizeEmails(input.emails ?? []);
+    if (emails.length > MAX_INVITED_EMAILS) {
+      throw new Error(ErrorCode.TooManyEmails);
+    }
+
+    const { bundleDeploymentRequest, children, bundleOrganizationId } =
+      await ServiceGroupSecurityHelper.assertBundleAccessAndLoadChildren(
+        serviceInstanceId
+      );
+
+    await ServiceGroupSecurityHelper.assertUsersBelongToOrganization(
+      input.userIds,
+      bundleOrganizationId
+    );
+
+    const platformRoleAssignments = ServiceGroupHelper.matchRolesToChildren(
+      children,
+      ServiceGroupHelper.uniqueRolesByProduct(input.roles)
+    );
+
+    const organization = await OrganizationDomain.loadOrganizationBy({
+      id: bundleOrganizationId,
+    });
+
+    const { users, emailByUserId, insertedUserIds } = await withTransaction(
+      async () => {
+        const groupAssignments: {
+          child: DeploymentRequest;
+          role: ServiceGroupName | null;
+          targetGroup: ServiceGroup;
+        }[] = [];
+        for (const { child, role } of platformRoleAssignments) {
+          const groups = await ServiceGroupDomain.loadServiceGroups({
+            service_instance_id: child.service_instance_id,
+          });
+          const targetGroup = groups.find((group) => group.name === role);
+          if (!targetGroup) {
+            throw new Error(ErrorCode.ServiceGroupNotFound);
+          }
+          groupAssignments.push({ child, role, targetGroup });
+        }
+
+        let invitedUserIds: UserId[] = [];
+        if (emails.length > 0) {
+          if (!organization) {
+            throw new Error(ErrorCode.OrganizationNotFound);
+          }
+          invitedUserIds =
+            await UserOrganizationApp.resolveOrganizationUserIdsByEmails({
+              organization,
+              emails,
+            });
+        }
+        const userIds = [...new Set([...input.userIds, ...invitedUserIds])];
+
+        const { users: loadedUsers, emailByUserId } =
+          await ServiceGroupHelper.loadEmailByUserId(userIds);
+        const users: User[] = [];
+        for (const loadedUser of loadedUsers) {
+          users.push(
+            loadedUser.status === UserAccountStatus.Expired
+              ? await UserProvisioningDomain.reinviteExpiredUser(loadedUser)
+              : loadedUser
+          );
+        }
+        const telemetryContext: TrialAccessTelemetryContext = {
+          organization,
+          actorUserId: user.id,
+          emailByUserId,
+        };
+
+        const inserted = new Set<UserId>();
+        for (const { child, role, targetGroup } of groupAssignments) {
+          const insertedInGroup = await ServiceGroupDomain.addUsersToGroup(
+            targetGroup.id,
+            userIds
+          );
+          insertedInGroup.forEach((userId) => inserted.add(userId));
+
+          await ServiceGroupHelper.sendTrialAccessTelemetry(telemetryContext, {
+            deploymentId: child.id,
+            role,
+            userIds: insertedInGroup,
+          });
+        }
+
+        return { users, emailByUserId, insertedUserIds: inserted };
+      }
+    );
+
+    const grantedAssignments = platformRoleAssignments.filter(
+      ({ child, role }) => child.platform_identifier && role
+    );
+    // Users without an Auth0 account get it synced at their first login
+    const usersWithAuth0Account = users.filter(UserHelper.hasAuth0Account);
+
+    await ServiceGroupHelper.syncAuth0GroupsForChildren(
+      grantedAssignments.map(({ child, role }) => ({
+        child,
+        groupNames: role ? [role] : [],
+      })),
+      usersWithAuth0Account.map(({ id }) => id),
+      emailByUserId
+    );
+
+    await ServiceGroupHelper.sendFreeTrialBundleWelcomeEmails({
+      endDate: bundleDeploymentRequest.end_date,
+      products: grantedAssignments.flatMap(({ child }) =>
+        child.platform_identifier ? [child.platform_identifier] : []
+      ),
+      newlyAddedUsers: users.filter(
+        (addedUser) =>
+          UserHelper.hasValidatedAccount(addedUser) &&
+          insertedUserIds.has(addedUser.id)
+      ),
+      adminEmail: user.email,
+    });
+
+    return ServiceGroupApp.loadBundleUserServiceGroups(serviceInstanceId);
+  },
+
+  removeUsersFromBundleGroups: async (
+    serviceInstanceId: ServiceInstanceId,
+    userIds: UserId[]
+  ): Promise<UserId[]> => {
+    const user = requestContext.requireUser();
+
+    const { children, bundleOrganizationId } =
+      await ServiceGroupSecurityHelper.assertBundleAccessAndLoadChildren(
+        serviceInstanceId
+      );
+
+    const groups =
+      await ServiceGroupDomain.loadServiceGroupsByServiceInstanceIds(
+        children.map((child) => child.service_instance_id)
+      );
+    const allGroupIds = groups.map((group) => group.id);
+    const serviceInstanceIdByGroupId = new Map(
+      groups.map((group) => [group.id, group.service_instance_id])
+    );
+
+    const removedMemberships =
+      await ServiceGroupDomain.removeUsersFromServiceGroups(
+        userIds,
+        allGroupIds
+      );
+
+    const { users, emailByUserId } =
+      await ServiceGroupHelper.loadEmailByUserId(userIds);
+    const telemetryContext: TrialAccessTelemetryContext = {
+      organization: await OrganizationDomain.loadOrganizationBy({
+        id: bundleOrganizationId,
+      }),
+      actorUserId: user.id,
+      emailByUserId,
+    };
+
+    for (const child of children) {
+      await ServiceGroupHelper.sendTrialAccessTelemetry(telemetryContext, {
+        deploymentId: child.id,
+        role: null,
+        userIds: [
+          ...new Set(
+            removedMemberships
+              .filter(
+                ({ group_id }) =>
+                  serviceInstanceIdByGroupId.get(group_id) ===
+                  child.service_instance_id
+              )
+              .map(({ user_id }) => user_id)
+          ),
+        ],
+      });
+    }
+
+    await ServiceGroupHelper.syncAuth0GroupsForChildren(
+      children.map((child) => ({ child, groupNames: [] })),
+      users.filter(UserHelper.hasAuth0Account).map(({ id }) => id),
+      emailByUserId
+    );
+
+    return userIds;
+  },
+
+  updateBundleUserGroups: async (
+    serviceInstanceId: ServiceInstanceId,
+    input: UpdateBundleUserGroupsInput
+  ): Promise<BundleUserServiceGroup[]> => {
+    const user = requestContext.requireUser();
+
+    const xtmOneRoleAssignment = input.roles.find(
+      (role) => role.product === PlatformIdentifier.Xtmone
+    );
+    if (xtmOneRoleAssignment && !xtmOneRoleAssignment.role) {
+      throw new Error(ErrorCode.XtmOneRoleRequired);
+    }
+
+    const { children, bundleOrganizationId } =
+      await ServiceGroupSecurityHelper.assertBundleAccessAndLoadChildren(
+        serviceInstanceId
+      );
+
+    await ServiceGroupSecurityHelper.assertUsersBelongToOrganization(
+      input.userIds,
+      bundleOrganizationId
+    );
+
+    const platformRoleAssignments = ServiceGroupHelper.matchRolesToChildren(
+      children,
+      input.roles
+    );
+
+    const { users, emailByUserId } = await ServiceGroupHelper.loadEmailByUserId(
+      input.userIds
+    );
+    const telemetryContext: TrialAccessTelemetryContext = {
+      organization: await OrganizationDomain.loadOrganizationBy({
+        id: bundleOrganizationId,
+      }),
+      actorUserId: user.id,
+      emailByUserId,
+    };
+
+    await withTransaction(async () => {
+      for (const { child, role } of platformRoleAssignments) {
+        const groups = await ServiceGroupDomain.loadServiceGroups({
+          service_instance_id: child.service_instance_id,
+        });
+
+        const targetGroup = role
+          ? groups.find((group) => group.name === role)
+          : undefined;
+        if (role && !targetGroup) {
+          throw new Error(ErrorCode.ServiceGroupNotFound);
+        }
+
+        const removedMemberships =
+          await ServiceGroupDomain.removeUsersFromServiceGroups(
+            input.userIds,
+            groups
+              .map((group) => group.id)
+              .filter((groupId) => groupId !== targetGroup?.id)
+          );
+        const changedUserIds = new Set(
+          removedMemberships.map(({ user_id }) => user_id)
+        );
+
+        if (targetGroup) {
+          const insertedInGroup = await ServiceGroupDomain.addUsersToGroup(
+            targetGroup.id,
+            input.userIds
+          );
+          insertedInGroup.forEach((userId) => changedUserIds.add(userId));
+        }
+
+        await ServiceGroupHelper.sendTrialAccessTelemetry(telemetryContext, {
+          deploymentId: child.id,
+          role,
+          userIds: [...changedUserIds],
+        });
+      }
+    });
+
+    await ServiceGroupHelper.syncAuth0GroupsForChildren(
+      platformRoleAssignments.map(({ child, role }) => ({
+        child,
+        groupNames: role ? [role] : [],
+      })),
+      users.filter(UserHelper.hasAuth0Account).map(({ id }) => id),
+      emailByUserId
+    );
+
+    return ServiceGroupApp.loadBundleUserServiceGroups(serviceInstanceId);
+  },
+
   updateGroups: async (
     groups: UpdateGroupsPayload
-  ): Promise<ServiceGroup[]> => {
+  ): Promise<ServiceGroupResponse[]> => {
     const user = requestContext.requireUser();
     const groupIds = groups.map(({ id }) => id);
 
@@ -54,19 +419,9 @@ export const ServiceGroupApp = {
       firstServiceInstanceId
     );
 
-    const serviceGroupsOrganization =
-      await OrganizationDomain.loadOrganizationSubscribedToServiceInstance(
-        firstServiceInstanceId
-      );
-    if (!serviceGroupsOrganization) {
-      throw new Error(ErrorCode.SubscriptionNotFound);
-    }
-    if (
-      !AuthHelper.userHasBypassCapability(user) &&
-      serviceGroupsOrganization.id !== user.selected_organization_id
-    ) {
-      throw new Error(ErrorCode.OrganizationDoesNotMatchSelectedOrganization);
-    }
+    await ServiceGroupSecurityHelper.assertOrganizationAccess(
+      firstServiceInstanceId
+    );
 
     const oldUserIds = new Set(oldUsers.map((u) => u.user_id));
     const addedUserIds = [
@@ -82,61 +437,35 @@ export const ServiceGroupApp = {
 
       await Promise.all(addUserToGroupPromises);
 
-      await updateAuth0Groups(oldUsers, groups, firstServiceInstanceId);
+      await ServiceGroupHelper.updateAuth0Groups(
+        oldUsers,
+        groups,
+        firstServiceInstanceId
+      );
     });
 
     if (addedUserIds.length > 0) {
-      try {
-        const deploymentRequest =
-          await DeploymentRequestDomain.loadDeploymentRequestBy({
-            service_instance_id: serviceInstanceIds[0],
-          });
-        if (deploymentRequest?.platform_id) {
-          const platformConfiguration =
-            await PlatformConfigurationDomain.loadConfigurationByPlatform(
-              deploymentRequest.platform_id
-            );
-          if (
-            platformConfiguration &&
-            deploymentRequest.type === DeploymentRequestDeploymentType.Trial &&
-            deploymentRequest.platform_identifier &&
-            deploymentRequest.end_date
-          ) {
-            const platformIdentifier = deploymentRequest.platform_identifier;
-            const addedUsers = await UserDomain.loadUsers(addedUserIds);
-            const trialEndDate = deploymentRequest.end_date.toLocaleDateString(
-              'en-US',
-              {
-                year: 'numeric',
-                month: 'long',
-                day: '2-digit',
-              }
-            );
-            await Promise.all(
-              addedUsers.map((addedUser) =>
-                sendMail({
-                  to: addedUser.email,
-                  template: 'free_trial_user_added',
-                  params: {
-                    firstName: formatName(addedUser.first_name),
-                    platformUrl: platformConfiguration.platform_url,
-                    platformIdentifier: platformIdentifier,
-                    adminEmail: user.email,
-                    trialEndDate: trialEndDate,
-                  },
-                })
-              )
-            );
-          }
-        }
-      } catch (error) {
-        logApp.error('Unable to send free_trial_user_added mail', { error });
+      const deploymentRequest =
+        await DeploymentRequestDomain.loadDeploymentRequestBy({
+          service_instance_id: serviceInstanceIds[0],
+        });
+      if (deploymentRequest) {
+        const addedUsers = await UserDomain.loadUsers(addedUserIds);
+        await ServiceGroupHelper.sendFreeTrialWelcomeEmails({
+          platformId: deploymentRequest.platform_id,
+          platformIdentifier: deploymentRequest.platform_identifier,
+          deploymentType: deploymentRequest.type,
+          endDate: deploymentRequest.end_date,
+          newlyAddedUsers: addedUsers,
+          adminEmail: user.email,
+        });
       }
     }
 
-    return ServiceGroupDomain.loadServiceGroups({
+    const serviceGroups = await ServiceGroupDomain.loadServiceGroups({
       service_instance_id: serviceInstanceIds[0],
     });
+    return serviceGroups.map(ServiceGroupHelper.toServiceGroupResponse);
   },
   removeExpiredGroups: async (): Promise<void> => {
     const rows = await ServiceGroupDomain.loadGroupsForExpiredTrials();
@@ -169,7 +498,11 @@ export const ServiceGroupApp = {
           await ServiceGroupDomain.loadServiceInstanceGroupUsers(
             serviceInstanceId
           );
-        await updateAuth0Groups(oldUsers, [], serviceInstanceId);
+        await ServiceGroupHelper.updateAuth0Groups(
+          oldUsers,
+          [],
+          serviceInstanceId
+        );
         await ServiceGroupDomain.deleteGroups(groupIds);
       } catch (error) {
         logApp.error('Failed to clean up expired trial groups', {
@@ -179,66 +512,83 @@ export const ServiceGroupApp = {
       }
     }
   },
-};
 
-const updateAuth0Groups = async (
-  oldUsers: ServiceGroupUser[],
-  newUsers: UpdateGroupsPayload,
-  serviceInstanceId: ServiceInstanceId
-) => {
-  const updatedUsers = ServiceGroupHelper.buildUserGroupsDiff(
-    oldUsers,
-    newUsers
-  );
+  // The Auth0 calls run outside any transaction; the status update and the emails
+  // share one, so a failed status write leaves no email behind (only when
+  // mail_use_queue_processing is on: the queued job then joins the transaction).
+  // A status changed meanwhile throws UserStatusChangedConcurrently.
+  grantUserAccessAndSetStatus: async (
+    user: User,
+    newStatus: UserAccountStatus | null,
+    expectedStatus: UserAccountStatus | null,
+    {
+      syncAuth0,
+      prefetchedAuth0Users,
+    }: {
+      syncAuth0: boolean;
+      prefetchedAuth0Users?: Management.UserResponseSchema[];
+    }
+  ): Promise<void> => {
+    const deploymentRequestsWithGroupName =
+      await ServiceGroupDomain.loadUserDeploymentRequestsWithGroupName(user.id);
 
-  const users = await UserDomain.loadUsers(
-    updatedUsers.map(({ user_id }) => user_id)
-  );
-  const userEmailMap: Map<UserId, string> = users.reduce(
-    (acc, current) => {
-      acc.set(current.id, current.email);
-      return acc;
-    },
+    // Nothing to grant (e.g. every bundle has expired): not a failure.
+    const hasAccessToGrant = deploymentRequestsWithGroupName.length > 0;
+    if (syncAuth0 && hasAccessToGrant) {
+      await ServiceGroupHelper.syncAuth0GroupsForChildren(
+        deploymentRequestsWithGroupName.map((deploymentRequest) => ({
+          child: deploymentRequest,
+          groupNames: [deploymentRequest.group_name],
+        })),
+        [user.id],
+        new Map([[user.id, user.email]]),
+        prefetchedAuth0Users && new Map([[user.id, prefetchedAuth0Users]])
+      );
+    }
 
-    new Map<UserId, string>()
-  );
-
-  const serviceGroups = await ServiceGroupDomain.loadServiceGroups({
-    service_instance_id: serviceInstanceId,
-  });
-
-  const groupNameIndexedByGroupId = serviceGroups.reduce((acc, current) => {
-    acc.set(current.id, current.name);
-    return acc;
-  }, new Map<ServiceGroupId, string>());
-
-  const deploymentRequest =
-    await DeploymentRequestDomain.loadDeploymentRequestBy({
-      service_instance_id: serviceInstanceId,
+    await withTransaction(async () => {
+      const updatedUser = await UserDomain.updateUser(
+        user.id,
+        { status: newStatus },
+        { status: expectedStatus }
+      );
+      if (!updatedUser) {
+        throw new Error(ErrorCode.UserStatusChangedConcurrently);
+      }
+      if (newStatus === null) {
+        await ServiceGroupHelper.sendBundleWelcomeEmailsForGrant(
+          deploymentRequestsWithGroupName,
+          user
+        );
+      }
     });
+  },
 
-  if (!deploymentRequest) {
-    throw new Error(ErrorCode.DeploymentRequestNotFound);
-  }
-  const { platform_id } = deploymentRequest;
-  if (!platform_id) {
-    throw new Error(ErrorCode.InvalidPlatformId);
-  }
+  grantAccessAtLogin: async (user: UserLoadUserBy): Promise<void> => {
+    if (UserHelper.hasValidatedAccount(user)) {
+      return;
+    }
 
-  await Promise.all(
-    updatedUsers.map(async (updatedUser) => {
-      const email = userEmailMap.get(updatedUser.user_id);
-      if (!email) {
+    try {
+      await ServiceGroupApp.grantUserAccessAndSetStatus(
+        user,
+        null,
+        user.status,
+        // An invited user was already synced
+        { syncAuth0: user.status !== UserAccountStatus.Invited }
+      );
+      user.status = null;
+    } catch (error) {
+      if (getErrorMessage(error) === ErrorCode.UserStatusChangedConcurrently) {
+        logApp.info('User status changed concurrently, login grant skipped', {
+          userId: user.id,
+        });
         return;
       }
-
-      await auth0Client.updateUserRBACInstance(email, {
-        [platform_id]: {
-          groups: updatedUser.group_ids.flatMap(
-            (group_id) => groupNameIndexedByGroupId.get(group_id) ?? []
-          ),
-        },
+      logApp.error('Unable to grant service group access at login', {
+        userId: user.id,
+        error,
       });
-    })
-  );
+    }
+  },
 };

@@ -1,76 +1,38 @@
 'use client';
 
-import CustomDashboardsList from '@/components/service/custom-dashboards/[serviceInstanceId]/CustomDashboardsList';
-import { DocumentsListQuery } from '@/components/service/document/document.graphql';
+import ShareableResourceServiceList from '@/components/service/components/ShareableResourceServiceList';
 import { useLogicalFiltersFromStorage } from '@/hooks/use-logical-filters-from-storage';
+import { useServiceListStorage } from '@/hooks/use-service-list-storage';
+import { ServiceListStorageKey } from '@/utils/filters-storage.utils';
 import {
-  ServiceListLocalStorageKey,
-  useServiceListLocalStorage,
-} from '@/hooks/use-service-list-local-storage';
-import { ServiceSlug } from '@/utils/shareable-resources/shareable-resources.types';
-import { Skeleton } from '@filigran/ui';
-import { documentsQuery } from '@generated/documentsQuery.graphql';
-import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
-import { useEffect } from 'react';
-import { useQueryLoader } from 'react-relay';
+  ServiceSlug,
+  ShareableResourceType,
+} from '@/utils/shareable-resources/shareable-resources.types';
+import { ServiceInstanceItemFragment } from '@graphql/generated';
 
 interface PageLoaderProps {
-  serviceInstance: serviceInstance_fragment$data;
+  serviceInstance: ServiceInstanceItemFragment;
 }
 
 const PageLoader = ({ serviceInstance }: PageLoaderProps) => {
-  const [queryRef, loadQuery] =
-    useQueryLoader<documentsQuery>(DocumentsListQuery);
-  const { count, search, setSearch, labels, orderMode, orderBy } =
-    useServiceListLocalStorage(
-      ServiceListLocalStorageKey.OpenCTICustomDashboards
-    );
-
-  const logicalFilters = useLogicalFiltersFromStorage(
-    {
-      serviceInstanceSlug: ServiceSlug.OPEN_CTI_CUSTOM_DASHBOARDS,
-      labels,
-    },
-    false
+  const { search, setSearch, labels } = useServiceListStorage(
+    ServiceListStorageKey.OpenCTICustomDashboards
   );
 
-  useEffect(() => {
-    loadQuery(
-      {
-        count,
-        orderBy,
-        orderMode,
-        serviceInstanceId: serviceInstance.id,
-        searchTerm: search,
-        logicalFilters,
-      },
-      {
-        fetchPolicy: 'store-and-network',
-      }
-    );
-  }, [
-    loadQuery,
-    count,
-    serviceInstance,
-    search,
-    logicalFilters,
-    orderMode,
-    orderBy,
-  ]);
+  const logicalFilters = useLogicalFiltersFromStorage({
+    serviceInstanceSlug: ServiceSlug.OPEN_CTI_CUSTOM_DASHBOARDS,
+    labels,
+  });
 
   return (
-    <>
-      {queryRef ? (
-        <CustomDashboardsList
-          serviceInstance={serviceInstance}
-          queryRef={queryRef}
-          search={search}
-          onSearchChange={setSearch}
-        />
-      ) : (
-        <Skeleton className="w-full inset-1/2" />
-      )}
-    </>
+    <ShareableResourceServiceList
+      serviceInstance={serviceInstance}
+      logicalFilters={logicalFilters}
+      search={search}
+      onSearchChange={setSearch}
+      type={ShareableResourceType.OPENCTI_CUSTOM_DASHBOARD}
+      storageKey={ServiceListStorageKey.OpenCTICustomDashboards}
+    />
   );
 };
 

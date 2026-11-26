@@ -71,6 +71,19 @@ describe('HomepageResourceCard', () => {
     });
   });
 
+  describe('default logo accessibility', () => {
+    it('hides the default Filigran icon from assistive technology', () => {
+      const { container } = testRender(
+        <HomepageResourceCard {...buildProps({ logoUrl: undefined })} />
+      );
+
+      expect(container.querySelector('a svg')).toHaveAttribute(
+        'aria-hidden',
+        'true'
+      );
+    });
+  });
+
   describe('short description', () => {
     it('renders the short description when provided', () => {
       testRender(
@@ -142,9 +155,9 @@ describe('HomepageResourceCard', () => {
         <HomepageResourceCard {...buildProps({ footerTags: [] })} />
       );
 
-      // The footer div should be present but contain no badges
-      const footerBadges = container.querySelectorAll('.pl-m.pb-m > *');
-      expect(footerBadges).toHaveLength(0);
+      const footer = container.querySelector('.pl-3.pb-3');
+      expect(footer).toBeInTheDocument();
+      expect(footer).toBeEmptyDOMElement();
     });
   });
 
@@ -152,7 +165,11 @@ describe('HomepageResourceCard', () => {
     it('renders the matching number of status icons', () => {
       testRender(
         <HomepageResourceCard
-          {...buildProps({ active: true, verified: true, deployable: false })}
+          {...buildProps({
+            published: true,
+            verified: true,
+            deployable: false,
+          })}
         />
       );
 
@@ -166,27 +183,27 @@ describe('HomepageResourceCard', () => {
 
   describe('title padding', () => {
     it.each`
-      active   | verified | deployable | expectedPadding | description
-      ${false} | ${false} | ${false}   | ${8}            | ${'no icons → buffer only'}
-      ${true}  | ${false} | ${false}   | ${32}           | ${'one icon'}
-      ${true}  | ${true}  | ${false}   | ${60}           | ${'two icons'}
-      ${true}  | ${true}  | ${true}    | ${88}           | ${'three icons'}
+      published | verified | deployable | expectedPadding | description
+      ${false}  | ${false} | ${false}   | ${8}            | ${'no icons → buffer only'}
+      ${true}   | ${false} | ${false}   | ${32}           | ${'one icon'}
+      ${true}   | ${true}  | ${false}   | ${60}           | ${'two icons'}
+      ${true}   | ${true}  | ${true}    | ${88}           | ${'three icons'}
     `(
       'applies paddingRight of $expectedPadding px when $description',
       ({
-        active,
+        published,
         verified,
         deployable,
         expectedPadding,
       }: {
-        active: boolean;
+        published: boolean;
         verified: boolean;
         deployable: boolean;
         expectedPadding: number;
       }) => {
         testRender(
           <HomepageResourceCard
-            {...buildProps({ active, verified, deployable })}
+            {...buildProps({ published, verified, deployable })}
           />
         );
 

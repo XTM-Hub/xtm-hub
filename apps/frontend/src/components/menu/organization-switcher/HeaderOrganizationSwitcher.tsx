@@ -1,29 +1,20 @@
 'use client';
 
-import { PortalContext } from '@/components/me/AppPortalContext';
-import { cn } from '@/lib/utils';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
+import { useMeOrganizations } from '@/hooks/use-me-organizations';
+import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
+import { portalGraphqlClient } from '@/lib/graphql-client';
 import { APP_PATH } from '@/utils/path/constant';
-import { ArrowDropDownIcon } from '@filigran/icon';
-import { Button, Popover, PopoverContent, PopoverTrigger } from '@filigran/ui';
-import { OrganizationSwitcherMutation as OrganizationSwitcherMutationType } from '@generated/OrganizationSwitcherMutation.graphql';
-import { useTranslations } from 'next-intl';
-import { useContext, useId, useMemo, useState } from 'react';
-import { graphql, useMutation } from 'react-relay';
-
-export const organizationSwitcherMutation = graphql`
-  mutation OrganizationSwitcherMutation($organization_id: OrganizationId!) {
-    changeSelectedOrganization(organization_id: $organization_id) {
-      id
-      selected_organization_id
-      selected_org_capabilities
-    }
-  }
-`;
-
-interface OrganizationOption {
-  value: string;
-  label: string;
-}
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@filigran/design-system';
+import { useChangeSelectedOrganizationMutation } from '@graphql/generated';
+import { useMemo } from 'react';
 
 interface HeaderOrganizationSwitcherProps {
   fitContainer?: boolean;
@@ -32,115 +23,80 @@ interface HeaderOrganizationSwitcherProps {
 const HeaderOrganizationSwitcher = ({
   fitContainer = false,
 }: HeaderOrganizationSwitcherProps) => {
-  const { me } = useContext(PortalContext);
-  const t = useTranslations();
-  const [openPopover, setOpenPopover] = useState(false);
-  const listboxId = useId();
+  const t = useTranslate();
+  const { data } = useMeOrganizations();
+  const me = data?.me;
 
-  const [commitOrganizationSwitcherMutation] =
-    useMutation<OrganizationSwitcherMutationType>(organizationSwitcherMutation);
+  const { mutate: changeSelectedOrganization } =
+    useChangeSelectedOrganizationMutation(portalGraphqlClient);
+
+  const organizationOptions = useMemo(
+    () =>
+      (me?.organizations ?? []).map((organization) => ({
+        value: organization.id,
+        label: organization.personal_space
+          ? t('OrganizationSwitcher.PersonalSpace')
+          : organization.name,
+      })),
+    [me?.organizations, t]
+  );
 
   if (!me) {
     return null;
   }
 
-  const parsedOrganizations = useMemo(() => {
-    return me.organizations.map((org) => ({
-      ...org,
-      name: org.personal_space
-        ? t('OrganizationSwitcher.PersonalSpace')
-        : org.name,
-    }));
-  }, [me.organizations, t]);
-
-  const organizationOptions = useMemo(() => {
-    return parsedOrganizations.map((organization) => ({
-      value: organization.id,
-      label: organization.name,
-    }));
-  }, [parsedOrganizations]);
-
-  const selectedOrganization = useMemo(() => {
-    return organizationOptions.find(
-      ({ value }) => value === me.selected_organization_id
-    );
-  }, [organizationOptions, me.selected_organization_id]);
-
-  const handleOnValueChange = (selectedValue?: OrganizationOption) => {
-    if (!selectedValue || selectedValue.value === me.selected_organization_id) {
-      setOpenPopover(false);
+  const handleOnValueChange = (organizationId: string) => {
+    if (!organizationId || organizationId === me.selected_organization_id) {
       return;
     }
 
-    commitOrganizationSwitcherMutation({
-      variables: {
-        organization_id: selectedValue.value,
-      },
-      onCompleted: () => {
-        window.location.href = `/${APP_PATH}`;
-      },
-    });
-
-    setOpenPopover(false);
+    changeSelectedOrganization(
+      { organization_id: organizationId },
+      {
+        onSuccess: () => {
+          window.location.href = `/${APP_PATH}`;
+        },
+        onError: (error: unknown) => {
+          const errorMessage =
+            error instanceof Error ? error.message : 'UnknownError';
+          showSnackbar({
+            severity: 'error',
+            title: t('Utils.Error'),
+            description: <>{t(`Error.Server.${errorMessage}`)}</>,
+          });
+        },
+      }
+    );
   };
 
   return (
-    <div className="flex flex-row items-center gap-m text-text-default-primary">
-      <span className="content-body-base whitespace-nowrap">
+    <div className="flex flex-row items-center gap-3 text-default-primary">
+      <span className="content-base whitespace-nowrap">
         {t('OrganizationSwitcher.Workspace')}
       </span>
-      <Popover
-        open={openPopover}
-        onOpenChange={setOpenPopover}>
-        <PopoverTrigger asChild>
-          <Button
-            variant="secondary"
-            role="combobox"
+      <div className={fitContainer ? 'min-w-0 flex-1' : 'w-full sm:w-55'}>
+        <Select
+          value={me.selected_organization_id}
+          onValueChange={handleOnValueChange}>
+          <SelectTrigger
+            {...analyticsId('organization_workspaces_open')}
             aria-label={t('OrganizationSwitcher.SelectOrganization')}
-            aria-controls={listboxId}
-            aria-expanded={openPopover}
-            aria-haspopup="listbox"
-            className={cn(
-              'justify-between border-none bg-elevation-surface-highlight text-text-default-primary',
-              fitContainer ? 'flex-1 min-w-0 py-2 pl-4 pr-2' : 'w-full sm:w-55'
-            )}>
-            <span className="truncate">{selectedOrganization?.label}</span>
-            <ArrowDropDownIcon
-              aria-hidden={true}
-              focusable={false}
-              className="ml-s h-5 w-5 shrink-0 text-text-default-primary"
-            />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent
-          className="w-(--radix-popover-trigger-width) p-s"
-          align="start">
-          <ul
-            id={listboxId}
-            role="listbox"
-            aria-label={t('OrganizationSwitcher.SelectOrganization')}
-            className="flex flex-col gap-xs">
-            {organizationOptions.map((organization) => {
-              const isSelected =
-                organization.value === me.selected_organization_id;
-
-              return (
-                <li key={organization.value}>
-                  <Button
-                    type="button"
-                    variant="tertiary"
-                    role="option"
-                    aria-selected={isSelected}
-                    onClick={() => handleOnValueChange(organization)}
-                    className="w-full justify-start truncate normal-case text-text-default-primary">
-                    {organization.label}
-                  </Button>
-                </li>
-              );
-            })}
-          </ul>
-        </PopoverContent>
-      </Popover>
+            className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent
+            align="start"
+            className="layer-1">
+            {organizationOptions.map((organization) => (
+              <SelectItem
+                key={organization.value}
+                value={organization.value}>
+                {organization.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
     </div>
   );
 };

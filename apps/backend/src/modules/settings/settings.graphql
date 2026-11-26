@@ -1,6 +1,6 @@
 enum FeatureFlag {
   DUMMY
-  SOLUTION_CATEGORIES
+  DECOUPLING_CONNECTORS
 }
 
 type PlatformProvider {
@@ -9,7 +9,13 @@ type PlatformProvider {
   provider: String!
 }
 
+"What this Hub accepts, for API clients that detect a feature before using it"
+enum SettingsCapability {
+  API_TOKENS
+}
+
 type Settings {
+  capabilities: [SettingsCapability!]!
   platform_feature_flags: [FeatureFlag!]!
   platform_providers: [PlatformProvider!]!
   base_url_front: String!

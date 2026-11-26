@@ -1,5 +1,5 @@
 import { RegistrationLayout } from '@/components/registration/Layout';
-import { useTranslations } from 'next-intl';
+import { useTranslate } from '@/hooks/use-translate';
 import { useEffect } from 'react';
 
 interface UnregisterPlatformNotRegisteredProps {
@@ -9,7 +9,7 @@ interface UnregisterPlatformNotRegisteredProps {
 export const UnregisterPlatformNotRegistered = ({
   confirm,
 }: UnregisterPlatformNotRegisteredProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   useEffect(() => {
     confirm();
@@ -17,7 +17,9 @@ export const UnregisterPlatformNotRegistered = ({
 
   return (
     <RegistrationLayout>
-      <h1>{t(`Unregister.Error.PlatformNotRegistered.Title`)}</h1>
+      <h1 className="title-sm">
+        {t(`Unregister.Error.PlatformNotRegistered.Title`)}
+      </h1>
       <p>{t(`Unregister.Error.PlatformNotRegistered.Description`)}</p>
     </RegistrationLayout>
   );

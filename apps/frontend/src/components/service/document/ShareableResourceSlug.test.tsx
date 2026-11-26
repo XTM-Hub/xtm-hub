@@ -1,11 +1,20 @@
 import ShareableResourceSlug from '@/components/service/document/ShareableResourceSlug';
-import { SettingsContext } from '@/components/settings/EnvPortalContext';
+import { PortalSettings } from '@/components/settings/EnvPortalContext';
+import { readTrackedEvents, startAnalytics } from '@/utils/test/analytics';
+import { mswServer } from '@/utils/test/msw/server';
 import testRender from '@/utils/test/test-render';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
-import { IntegrationType } from '@graphql/generated';
-import { screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import {
+  DocumentItemFragment,
+  DocumentStatus,
+  IncrementShareNumberDocumentMutation,
+  IntegrationType,
+  ServiceInstanceItemFragment,
+} from '@graphql/generated';
+import { mockDefaultDocument } from '@graphql/mocks';
+import { screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { graphql, HttpResponse } from 'msw';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////// Mock hooks /////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -23,51 +32,55 @@ vi.mock('./one-click-deploy/OneClickDeploy', () => ({
   default: () => <div>OneClickDeployComponentMock</div>,
 }));
 
-const mockSettings = {
+const SERVICE_INSTANCE: ServiceInstanceItemFragment = {
+  id: 'service-instance-1',
+  name: 'Service',
+  description: null,
+  slug: null,
+  capabilities: [],
+  service_definition: null,
+};
+
+const mockSettings: Partial<PortalSettings> = {
   base_url_front: 'https://test.com',
 };
 
 describe('Component: ShareableResourceSlug - OneClickDeploy Logic', () => {
-  const serviceInstance = {
-    id: 'service-instance-1',
-  } as unknown as serviceInstance_fragment$data;
-
   it.each`
-    shouldShowOneClickComponent | documentType                  | documentActive | integrationType
-    ${true}                     | ${'opencti_custom_dashboard'} | ${true}        | ${false}
-    ${false}                    | ${'opencti_custom_dashboard'} | ${false}       | ${false}
-    ${true}                     | ${'opencti_integration'}      | ${true}        | ${IntegrationType.CsvFeed}
-    ${true}                     | ${'opencti_integration'}      | ${true}        | ${IntegrationType.TaxiiFeed}
-    ${true}                     | ${'opencti_integration'}      | ${true}        | ${IntegrationType.Stream}
-    ${false}                    | ${'opencti_integration'}      | ${true}        | ${IntegrationType.ThirdPartyIntegration}
-    ${false}                    | ${'opencti_integration'}      | ${false}       | ${IntegrationType.CsvFeed}
-    ${true}                     | ${'openaev_scenario'}         | ${true}        | ${false}
-    ${false}                    | ${'openaev_scenario'}         | ${false}       | ${false}
+    shouldShowOneClickComponent | documentType                  | documentStatus | integrationType
+    ${true}                     | ${'opencti_custom_dashboard'} | ${'published'} | ${false}
+    ${false}                    | ${'opencti_custom_dashboard'} | ${'draft'}     | ${false}
+    ${true}                     | ${'opencti_integration'}      | ${'published'} | ${IntegrationType.CsvFeed}
+    ${true}                     | ${'opencti_integration'}      | ${'published'} | ${IntegrationType.TaxiiFeed}
+    ${true}                     | ${'opencti_integration'}      | ${'published'} | ${IntegrationType.Stream}
+    ${false}                    | ${'opencti_integration'}      | ${'published'} | ${IntegrationType.ThirdPartyIntegration}
+    ${false}                    | ${'opencti_integration'}      | ${'draft'}     | ${IntegrationType.CsvFeed}
+    ${true}                     | ${'openaev_scenario'}         | ${'published'} | ${false}
+    ${false}                    | ${'openaev_scenario'}         | ${'draft'}     | ${false}
   `(
-    'should show OneClickDeploy=$shouldShowOneClickComponent when document is $documentType is $documentActive and integration type is $integrationType',
+    'should show OneClickDeploy=$shouldShowOneClickComponent when document is $documentType with status $documentStatus and integration type is $integrationType',
     ({
       shouldShowOneClickComponent,
       documentType,
-      documentActive,
+      documentStatus,
       integrationType,
     }) => {
       const testDocumentData = {
-        active: documentActive,
+        status: documentStatus,
         description: 'description',
         download_number: 1,
         name: 'Test Document',
         type: documentType,
         integration_type: integrationType,
-      } as unknown as documentItem_fragment$data;
+      } as unknown as DocumentItemFragment;
 
       testRender(
-        <SettingsContext.Provider value={{ settings: mockSettings as never }}>
-          <ShareableResourceSlug
-            breadcrumbValue={[]}
-            documentData={testDocumentData}
-            serviceInstance={serviceInstance}
-          />
-        </SettingsContext.Provider>
+        <ShareableResourceSlug
+          breadcrumbValue={[]}
+          documentData={testDocumentData}
+          serviceInstance={SERVICE_INSTANCE}
+        />,
+        { settings: mockSettings }
       );
 
       const oneClickDeploy = screen.queryByText('OneClickDeployComponentMock');
@@ -77,6 +90,380 @@ describe('Component: ShareableResourceSlug - OneClickDeploy Logic', () => {
       } else {
         expect(oneClickDeploy).not.toBeInTheDocument();
       }
+    }
+  );
+});
+
+describe('Component: ShareableResourceSlug - Download', () => {
+  const renderSlug = (
+    documentType: string,
+    documentStatus: 'published' | 'draft'
+  ) =>
+    testRender(
+      <ShareableResourceSlug
+        breadcrumbValue={[]}
+        documentData={
+          {
+            id: 'document-1',
+            status: documentStatus,
+            description: 'description',
+            download_number: 1,
+            name: 'Test Document',
+            type: documentType,
+          } as unknown as DocumentItemFragment
+        }
+        serviceInstance={SERVICE_INSTANCE}
+      />,
+      { settings: mockSettings }
+    );
+
+  it.each`
+    deployable | documentType                  | documentStatus | accessibleName
+    ${false}   | ${'opencti_custom_dashboard'} | ${'draft'}     | ${'Utils.Download'}
+    ${true}    | ${'opencti_custom_dashboard'} | ${'published'} | ${'Service.ShareableResources.Download'}
+  `(
+    'should render the download action as a link to the document file when the resource deployable=$deployable',
+    ({ documentType, documentStatus, accessibleName }) => {
+      // Given a downloadable resource
+      // When the resource page is rendered
+      renderSlug(documentType, documentStatus);
+
+      // Then the download action is a plain link to the backend file route
+      expect(
+        screen.getByRole('link', { name: accessibleName })
+      ).toHaveAttribute(
+        'href',
+        '/document/get/test-service-id/document-1?attach=1'
+      );
+    }
+  );
+
+  it.each`
+    deployable | documentType                  | documentStatus | accessibleName
+    ${false}   | ${'opencti_custom_dashboard'} | ${'draft'}     | ${'Utils.Download'}
+    ${true}    | ${'opencti_custom_dashboard'} | ${'published'} | ${'Service.ShareableResources.Download'}
+  `(
+    'should increment the download count by one when the download link is clicked and the resource deployable=$deployable',
+    async ({ documentType, documentStatus, accessibleName }) => {
+      // Given a downloadable resource downloaded once
+      renderSlug(documentType, documentStatus);
+      const downloadLink = screen.getByRole('link', { name: accessibleName });
+      // Keep jsdom from attempting the file navigation
+      downloadLink.addEventListener('click', (event) => event.preventDefault());
+
+      // When the user clicks the download link
+      await userEvent.click(downloadLink);
+
+      // Then the displayed download count goes from 1 to 2
+      const downloadCount = screen
+        .getByText('Service.ShareableResources.Details.Downloads')
+        .closest('div')?.lastElementChild;
+      expect(downloadCount).toHaveTextContent(/^2$/);
+    }
+  );
+});
+
+describe('Component: ShareableResourceSlug - Share', () => {
+  it('should increment the share count by one once the share link is copied', async () => {
+    // Given a resource shared once
+    mswServer.use(
+      graphql.mutation<IncrementShareNumberDocumentMutation>(
+        'IncrementShareNumberDocument',
+        () =>
+          HttpResponse.json({
+            data: {
+              incrementShareNumberDocument: mockDefaultDocument({
+                share_number: 2,
+              }),
+            },
+          })
+      )
+    );
+    const { user } = testRender(
+      <ShareableResourceSlug
+        breadcrumbValue={[]}
+        documentData={
+          {
+            id: 'document-1',
+            name: 'Test Document',
+            share_number: 1,
+            type: 'opencti_custom_dashboard',
+          } as unknown as DocumentItemFragment
+        }
+        serviceInstance={SERVICE_INSTANCE}
+      />,
+      { settings: mockSettings }
+    );
+
+    // When the user copies the share link
+    await user.click(
+      screen.getByRole('button', { name: 'Service.ShareableResources.Share' })
+    );
+
+    // Then the displayed share count goes from 1 to 2
+    const shareCount = screen
+      .getByText('Service.ShareableResources.Details.Shares')
+      .closest('div')?.lastElementChild;
+    await waitFor(() => expect(shareCount).toHaveTextContent(/^2$/));
+  });
+});
+
+describe('Component: ShareableResourceSlug - Share count refresh', () => {
+  const buildDocument = (id: string, shareNumber: number) =>
+    ({
+      id,
+      name: 'Test Document',
+      share_number: shareNumber,
+      type: 'opencti_custom_dashboard',
+    }) as unknown as DocumentItemFragment;
+
+  const renderSlugElement = (documentData: DocumentItemFragment) => (
+    <ShareableResourceSlug
+      breadcrumbValue={[]}
+      documentData={documentData}
+      serviceInstance={SERVICE_INSTANCE}
+    />
+  );
+
+  const getShareCount = () =>
+    screen.getByText('Service.ShareableResources.Details.Shares').closest('div')
+      ?.lastElementChild;
+
+  const shareLink = async (user: ReturnType<typeof testRender>['user']) =>
+    user.click(
+      screen.getByRole('button', { name: 'Service.ShareableResources.Share' })
+    );
+
+  beforeEach(() => {
+    mswServer.use(
+      graphql.mutation<IncrementShareNumberDocumentMutation>(
+        'IncrementShareNumberDocument',
+        () =>
+          HttpResponse.json({
+            data: {
+              incrementShareNumberDocument: mockDefaultDocument(),
+            },
+          })
+      )
+    );
+  });
+
+  it('should display the network share count once it replaces the cached one', () => {
+    // Given a cached share count of 3
+    const { rerender } = testRender(
+      renderSlugElement(buildDocument('document-1', 3)),
+      { settings: mockSettings }
+    );
+
+    // When the network returns 7
+    rerender(renderSlugElement(buildDocument('document-1', 7)));
+
+    // Then
+    expect(getShareCount()).toHaveTextContent(/^7$/);
+  });
+
+  it('should increment from the network share count when the link is shared after a refresh', async () => {
+    // Given a cached share count of 3 refreshed to 7
+    const { user, rerender } = testRender(
+      renderSlugElement(buildDocument('document-1', 3)),
+      { settings: mockSettings }
+    );
+    rerender(renderSlugElement(buildDocument('document-1', 7)));
+
+    // When the user copies the share link
+    await shareLink(user);
+
+    // Then
+    await waitFor(() => expect(getShareCount()).toHaveTextContent(/^8$/));
+  });
+
+  it.each`
+    refresh                           | refreshedShareNumber | expected
+    ${'predates the local share'}     | ${3}                 | ${/^4$/}
+    ${'already includes the share'}   | ${4}                 | ${/^4$/}
+    ${"includes other users' shares"} | ${7}                 | ${/^7$/}
+  `(
+    'should keep the local share when a refresh $refresh',
+    async ({ refreshedShareNumber, expected }) => {
+      // Given a resource shared from a cached share count of 3
+      const { user, rerender } = testRender(
+        renderSlugElement(buildDocument('document-1', 3)),
+        { settings: mockSettings }
+      );
+      await shareLink(user);
+      await waitFor(() => expect(getShareCount()).toHaveTextContent(/^4$/));
+
+      // When the document data is refreshed
+      rerender(
+        renderSlugElement(buildDocument('document-1', refreshedShareNumber))
+      );
+
+      // Then
+      expect(getShareCount()).toHaveTextContent(expected);
+    }
+  );
+
+  it('should reset the share count when another document is displayed', async () => {
+    // Given a resource shared from a share count of 3
+    const { user, rerender } = testRender(
+      renderSlugElement(buildDocument('document-1', 3)),
+      { settings: mockSettings }
+    );
+    await shareLink(user);
+    await waitFor(() => expect(getShareCount()).toHaveTextContent(/^4$/));
+
+    // When another document with 1 share is displayed
+    rerender(renderSlugElement(buildDocument('document-2', 1)));
+
+    // Then
+    expect(getShareCount()).toHaveTextContent(/^1$/);
+  });
+});
+
+describe('Component: ShareableResourceSlug - Download count refresh', () => {
+  const buildDocument = (id: string, downloadNumber: number) =>
+    ({
+      id,
+      status: 'draft',
+      description: 'description',
+      download_number: downloadNumber,
+      name: 'Test Document',
+      type: 'opencti_custom_dashboard',
+    }) as unknown as DocumentItemFragment;
+
+  const renderSlugElement = (documentData: DocumentItemFragment) => (
+    <ShareableResourceSlug
+      breadcrumbValue={[]}
+      documentData={documentData}
+      serviceInstance={SERVICE_INSTANCE}
+    />
+  );
+
+  const getDownloadCount = () =>
+    screen
+      .getByText('Service.ShareableResources.Details.Downloads')
+      .closest('div')?.lastElementChild;
+
+  const download = async (user: ReturnType<typeof testRender>['user']) => {
+    const downloadLink = screen.getByRole('link', { name: 'Utils.Download' });
+    // Keep jsdom from attempting the file navigation
+    downloadLink.addEventListener('click', (event) => event.preventDefault());
+    await user.click(downloadLink);
+  };
+
+  it('should display the network download count once it replaces the cached one', () => {
+    // Given a cached download count of 3
+    const { rerender } = testRender(
+      renderSlugElement(buildDocument('document-1', 3)),
+      { settings: mockSettings }
+    );
+
+    // When the network returns 7
+    rerender(renderSlugElement(buildDocument('document-1', 7)));
+
+    // Then
+    expect(getDownloadCount()).toHaveTextContent(/^7$/);
+  });
+
+  it('should increment from the network download count when the resource is downloaded after a refresh', async () => {
+    // Given a cached download count of 3 refreshed to 7
+    const { user, rerender } = testRender(
+      renderSlugElement(buildDocument('document-1', 3)),
+      { settings: mockSettings }
+    );
+    rerender(renderSlugElement(buildDocument('document-1', 7)));
+
+    // When the user downloads the resource
+    await download(user);
+
+    // Then
+    expect(getDownloadCount()).toHaveTextContent(/^8$/);
+  });
+
+  it.each`
+    refresh                              | refreshedDownloadNumber | expected
+    ${'predates the local download'}     | ${3}                    | ${/^4$/}
+    ${'already includes the download'}   | ${4}                    | ${/^4$/}
+    ${"includes other users' downloads"} | ${7}                    | ${/^7$/}
+  `(
+    'should keep the local download when a refresh $refresh',
+    async ({ refreshedDownloadNumber, expected }) => {
+      // Given a resource downloaded from a cached download count of 3
+      const { user, rerender } = testRender(
+        renderSlugElement(buildDocument('document-1', 3)),
+        { settings: mockSettings }
+      );
+      await download(user);
+      expect(getDownloadCount()).toHaveTextContent(/^4$/);
+
+      // When the document data is refreshed
+      rerender(
+        renderSlugElement(buildDocument('document-1', refreshedDownloadNumber))
+      );
+
+      // Then
+      expect(getDownloadCount()).toHaveTextContent(expected);
+    }
+  );
+
+  it('should reset the download count when another document is displayed', async () => {
+    // Given a resource downloaded from a download count of 3
+    const { user, rerender } = testRender(
+      renderSlugElement(buildDocument('document-1', 3)),
+      { settings: mockSettings }
+    );
+    await download(user);
+    expect(getDownloadCount()).toHaveTextContent(/^4$/);
+
+    // When another document with 1 download is displayed
+    rerender(renderSlugElement(buildDocument('document-2', 1)));
+
+    // Then
+    expect(getDownloadCount()).toHaveTextContent(/^1$/);
+  });
+});
+
+describe('Component: ShareableResourceSlug - Resource view', () => {
+  const buildDocument = (status: DocumentStatus) =>
+    ({
+      id: 'document-1',
+      status,
+      name: 'Test Document',
+      type: 'opencti_custom_dashboard',
+    }) as unknown as DocumentItemFragment;
+
+  beforeEach(() => {
+    startAnalytics();
+  });
+
+  it.each([
+    [
+      'No platform connected',
+      'a published custom dashboard',
+      DocumentStatus.Published,
+    ],
+    [
+      'Resource not deployable',
+      'a draft custom dashboard',
+      DocumentStatus.Draft,
+    ],
+  ])(
+    'should send %s as the deploy eligibility when the page shows %s',
+    (expected, _context, status) => {
+      // Given / When
+      testRender(
+        <ShareableResourceSlug
+          breadcrumbValue={[]}
+          documentData={buildDocument(status)}
+          serviceInstance={SERVICE_INSTANCE}
+        />,
+        { settings: mockSettings }
+      );
+
+      // Then
+      expect(readTrackedEvents('view_item')).toEqual([
+        expect.objectContaining({ deploy_eligibility: expected }),
+      ]);
     }
   );
 });

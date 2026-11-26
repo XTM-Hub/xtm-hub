@@ -3,10 +3,11 @@ import LoginPage from '../model/login.pageModel';
 import IntegrationPage from '../model/integration.pageModel';
 import { addServiceCapability } from '../db-utils/service.helper';
 import ServicePage from '../model/service.pageModel';
-import { clickRowAction } from '../model/common';
+import { clickRowAction, META_DESCRIPTION_SUMMARY } from '../model/common';
 
 const TEST_INTEGRATION = {
   name: 'e2e integration capability',
+  metaDescription: META_DESCRIPTION_SUMMARY,
   shortDescription: 'e2e integration capability short description',
   description: 'e2e integration capability markdown description',
 };
@@ -80,6 +81,9 @@ test.describe('Capabilities', () => {
         TEST_CAPABILITY.userThalesEmail,
         'UPLOAD access:'
       );
+      await expect(
+        page.getByRole('row', { name: TEST_CAPABILITY.userThalesEmail })
+      ).toContainText(new RegExp(SERVICE_CAPABILITY.nameUpload, 'i'));
       await loginPage.logout();
     });
 
@@ -102,19 +106,26 @@ test.describe('Capabilities', () => {
         TEST_CAPABILITY.userThalesEmail,
         'DELETE access:'
       );
+      await expect(
+        page.getByRole('row', { name: TEST_CAPABILITY.userThalesEmail })
+      ).toContainText(new RegExp(SERVICE_CAPABILITY.nameDelete, 'i'));
       await loginPage.logout();
     });
     await test.step('Simple user can delete integration', async () => {
       await loginPage.navigateToAndLogin(TEST_CAPABILITY.userThalesEmail);
       await integrationPage.navigateToIntegrationsService();
 
-      await page
+      const integrationCard = integrationPage.getIntegrationCard(
+        TEST_INTEGRATION.name
+      );
+      await expect(integrationCard).toBeVisible();
+
+      await integrationCard
         .getByRole('button', { name: 'Open menu', exact: true })
         .click();
       await integrationPage.deleteIntegration('menuitem');
-      await expect(
-        page.getByText(TEST_INTEGRATION.name, { exact: true })
-      ).not.toBeVisible();
+
+      await expect(integrationCard).toHaveCount(0);
     });
   });
 });

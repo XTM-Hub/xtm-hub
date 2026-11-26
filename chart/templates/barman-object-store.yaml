@@ -1,6 +1,5 @@
 {{- if .Values.postgres.backup.enabled }}
-{{- $objectStoreName := printf "%s-barman-objectstore" .Release.Name }}
-{{- $existing := (lookup "barmancloud.cnpg.io/v1" "ObjectStore" .Release.Namespace $objectStoreName) }}
+{{- $existing := (lookup "barmancloud.cnpg.io/v1" "ObjectStore" .Release.Namespace (printf "%s-barman-objectstore" .Release.Name) ) }}
 {{- $defaultPath := printf "s3://%s/backup-%s" .Values.postgres.backup.s3BucketName (now | date "20060102T150405") }}
 {{- $destinationPath := dig "spec" "configuration" "destinationPath" $defaultPath $existing }}
 apiVersion: barmancloud.cnpg.io/v1

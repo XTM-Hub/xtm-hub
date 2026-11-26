@@ -1,5 +1,5 @@
 import { useServiceContext } from '@/components/service/components/ServiceContext';
-import { ServiceRestriction } from '@graphql/generated';
+import { DocumentItemFragment, ServiceRestriction } from '@graphql/generated';
 
 import {
   APP_PATH,
@@ -11,32 +11,30 @@ import {
   ServiceDelete,
 } from '@/components/service/components/ServiceDelete';
 import { useDocumentContext } from '@/components/service/document/use-document-context';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import useServiceCapability from '@/hooks/use-service-capability';
+import { useTranslate } from '@/hooks/use-translate';
 import revalidatePathActions from '@/utils/actions/revalidate-path.actions';
 import {
   isIntegrationItem,
   ShareableResourceType,
 } from '@/utils/shareable-resources/shareable-resources.types';
-import { toast } from '@filigran/ui';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 
 interface DeleteShareableResourceSlugProps {
-  document: documentItem_fragment$data;
+  document: DocumentItemFragment;
 }
 
 const DeleteShareableResourceSlug = ({
   document,
 }: DeleteShareableResourceSlugProps) => {
   const router = useRouter();
-  const t = useTranslations();
+  const t = useTranslate();
 
   const serviceContext = useServiceContext();
 
   const context = useDocumentContext({
     serviceInstance: serviceContext.serviceInstance,
-    connectionId: '',
     type: ShareableResourceType.OPENCTI_INTEGRATION,
   });
   const userCanDelete = useServiceCapability(
@@ -52,7 +50,8 @@ const DeleteShareableResourceSlug = ({
         `/${APP_PATH}/service/${serviceContext.serviceInstance.service_definition!.identifier}/${serviceContext.serviceInstance.id}`
       );
     });
-    toast({
+    showSnackbar({
+      severity: 'success',
       title: t('Utils.Success'),
       description: t(`${serviceContext.translationKey}.Actions.Deleted`, {
         name: document.name ?? '',

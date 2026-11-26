@@ -1,0 +1,308 @@
+import { SelectField } from '@/components/ui/SelectField';
+import testRender from '@/utils/test/test-render';
+import { screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+
+const LABEL = 'Region';
+const PLACEHOLDER = 'Pick a region';
+const ERROR_MESSAGE = 'Region is required';
+const OPTIONS = [
+  { value: 'eu', label: 'Europe' },
+  { value: 'us', label: 'United States' },
+];
+
+describe('SelectField', () => {
+  it('should name the combobox with its label and mark it required when required is set', () => {
+    // Given / When
+    testRender(
+      <SelectField
+        formField
+        label={LABEL}
+        required
+        options={OPTIONS}
+        value={undefined}
+        onValueChange={vi.fn()}
+      />
+    );
+
+    // Then
+    expect(screen.getByRole('combobox', { name: LABEL })).toBeInTheDocument();
+    expect(screen.getByText(LABEL)).toHaveTextContent(`${LABEL}*`);
+  });
+
+  it('should show no required marker when required is not set', () => {
+    // Given / When
+    testRender(
+      <SelectField
+        formField
+        label={LABEL}
+        options={OPTIONS}
+        value={undefined}
+        onValueChange={vi.fn()}
+      />
+    );
+
+    // Then
+    expect(screen.getByText(LABEL)).toHaveTextContent(new RegExp(`^${LABEL}$`));
+  });
+
+  it('should show the placeholder when no value is selected', () => {
+    // Given / When
+    testRender(
+      <SelectField
+        formField
+        label={LABEL}
+        placeholder={PLACEHOLDER}
+        options={OPTIONS}
+        value={undefined}
+        onValueChange={vi.fn()}
+      />
+    );
+
+    // Then
+    expect(screen.getByRole('combobox', { name: LABEL })).toHaveTextContent(
+      PLACEHOLDER
+    );
+  });
+
+  it('should list every option when the select is opened', async () => {
+    // Given
+    const { user } = testRender(
+      <SelectField
+        formField
+        label={LABEL}
+        options={OPTIONS}
+        value={undefined}
+        onValueChange={vi.fn()}
+      />
+    );
+
+    // When
+    await user.click(screen.getByRole('combobox', { name: LABEL }));
+
+    // Then
+    expect(
+      screen.getAllByRole('option').map((option) => option.textContent)
+    ).toEqual(OPTIONS.map((option) => option.label));
+  });
+
+  it('should hand the picked value to onValueChange when an option is selected', async () => {
+    // Given
+    const onValueChange = vi.fn();
+    const { user } = testRender(
+      <SelectField
+        formField
+        label={LABEL}
+        options={OPTIONS}
+        value={undefined}
+        onValueChange={onValueChange}
+      />
+    );
+
+    // When
+    await user.click(screen.getByRole('combobox', { name: LABEL }));
+    await user.click(screen.getByRole('option', { name: 'United States' }));
+
+    // Then
+    expect(onValueChange).toHaveBeenCalledWith('us');
+  });
+
+  it('should describe the combobox with the error message when an error is given', () => {
+    // Given / When
+    testRender(
+      <SelectField
+        formField
+        label={LABEL}
+        options={OPTIONS}
+        value={undefined}
+        onValueChange={vi.fn()}
+        error={ERROR_MESSAGE}
+      />
+    );
+
+    // Then
+    expect(screen.getByText(ERROR_MESSAGE)).toBeInTheDocument();
+    expect(
+      screen.getByRole('combobox', { name: LABEL })
+    ).toHaveAccessibleDescription(ERROR_MESSAGE);
+  });
+
+  it('should show no helper text and no description when no error is given', () => {
+    // Given / When
+    testRender(
+      <SelectField
+        formField
+        label={LABEL}
+        options={OPTIONS}
+        value={undefined}
+        onValueChange={vi.fn()}
+      />
+    );
+
+    // Then
+    expect(screen.queryByText(ERROR_MESSAGE)).not.toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: LABEL })).not.toHaveAttribute(
+      'aria-describedby'
+    );
+  });
+
+  it('should not open the list when the field is disabled', async () => {
+    // Given
+    const { user } = testRender(
+      <SelectField
+        formField
+        label={LABEL}
+        options={OPTIONS}
+        value={undefined}
+        onValueChange={vi.fn()}
+        disabled
+      />
+    );
+
+    // When
+    await user.click(screen.getByRole('combobox', { name: LABEL }));
+
+    // Then
+    expect(screen.getByRole('combobox', { name: LABEL })).toBeDisabled();
+    expect(screen.queryByRole('option')).not.toBeInTheDocument();
+  });
+
+  it.each<[string | undefined, string, string]>([
+    [undefined, 'layer-1', 'layer-0'],
+    ['layer-0', 'layer-0', 'layer-1'],
+  ])(
+    'should open the list in the layer given by contentClassName %s, layer 1 by default',
+    async (contentClassName, expectedLayer, replacedLayer) => {
+      // Given
+      const { user } = testRender(
+        <SelectField
+          formField
+          label={LABEL}
+          options={OPTIONS}
+          value={undefined}
+          onValueChange={vi.fn()}
+          contentClassName={contentClassName}
+        />
+      );
+
+      // When
+      await user.click(screen.getByRole('combobox', { name: LABEL }));
+
+      // Then
+      const list = screen.getByRole('listbox');
+      expect(list.closest(`.${expectedLayer}`)).not.toBeNull();
+      expect(list.closest(`.${replacedLayer}`)).toBeNull();
+    }
+  );
+
+  it('should show the helper text below the field and describe the combobox with it', () => {
+    // Given / When
+    testRender(
+      <SelectField
+        formField
+        label={LABEL}
+        options={OPTIONS}
+        value="eu"
+        onValueChange={vi.fn()}
+        helperText="Where the data is stored"
+      />
+    );
+
+    // Then
+    expect(
+      screen.getByRole('combobox', { name: LABEL })
+    ).toHaveAccessibleDescription('Where the data is stored');
+  });
+
+  it('should let the error replace the helper text', () => {
+    // Given / When
+    testRender(
+      <SelectField
+        formField
+        label={LABEL}
+        options={OPTIONS}
+        value={undefined}
+        onValueChange={vi.fn()}
+        helperText="Where the data is stored"
+        error={ERROR_MESSAGE}
+      />
+    );
+
+    // Then
+    expect(screen.queryByText('Where the data is stored')).toBeNull();
+    expect(screen.getByText(ERROR_MESSAGE)).toBeInTheDocument();
+  });
+
+  it('should place the info bubble beside the label, outside the combobox name', () => {
+    // Given / When
+    testRender(
+      <SelectField
+        formField
+        label={LABEL}
+        options={OPTIONS}
+        value={undefined}
+        onValueChange={vi.fn()}
+        infoTooltip={
+          <span
+            role="img"
+            aria-label="About Region"
+          />
+        }
+      />
+    );
+
+    // Then
+    expect(screen.getByRole('combobox', { name: LABEL })).toBeInTheDocument();
+    expect(
+      screen.getByRole('img', { name: 'About Region' })
+    ).toBeInTheDocument();
+  });
+
+  it('should keep a hidden label as the combobox name', () => {
+    // Given / When
+    testRender(
+      <SelectField
+        formField
+        hideLabel
+        label={LABEL}
+        options={OPTIONS}
+        value="eu"
+        onValueChange={vi.fn()}
+      />
+    );
+
+    // Then
+    expect(screen.getByText(LABEL)).toHaveClass('sr-only');
+    expect(screen.getByRole('combobox', { name: LABEL })).toBeInTheDocument();
+  });
+
+  it('should show each option meaning in the list and the label alone in the trigger', async () => {
+    // Given
+    const { user } = testRender(
+      <SelectField
+        formField
+        label={LABEL}
+        options={[
+          { value: 'eu', label: 'Europe', description: 'Hosted in Paris' },
+          {
+            value: 'us',
+            label: 'United States',
+            description: 'Hosted in Ohio',
+          },
+        ]}
+        value="eu"
+        onValueChange={vi.fn()}
+      />
+    );
+    const trigger = screen.getByRole('combobox', { name: LABEL });
+    expect(trigger).toHaveTextContent(/^Europe$/);
+
+    // When
+    await user.click(trigger);
+
+    // Then
+    expect(
+      screen.getAllByRole('option').map((option) => option.textContent)
+    ).toEqual(['EuropeHosted in Paris', 'United StatesHosted in Ohio']);
+  });
+});

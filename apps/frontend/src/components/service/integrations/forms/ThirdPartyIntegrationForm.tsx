@@ -1,17 +1,28 @@
 import { PortalContext } from '@/components/me/AppPortalContext';
+import {
+  metaDescriptionSchema,
+  optionalMetaDescriptionSchema,
+  withMetaDescriptionRule,
+} from '@/components/service/form/meta-description.schema';
 import { ServiceFormSheetFooter } from '@/components/service/form/SheetFooter';
 import { useServiceFormFields } from '@/components/service/form/UseServiceFormFields';
-import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
+import { AutoForm } from '@/components/ui/auto-form';
+import { FormItem } from '@/components/ui/form';
+import { useTranslate } from '@/hooks/use-translate';
 import {
   fileListCheck,
   optionalFileListCheck,
   transformToFileList,
 } from '@/utils/documents';
-import { AutoForm, FormItem } from '@filigran/ui';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
+import {
+  isThirdPartyIntegrationResource,
+  ShareableResourceType,
+} from '@/utils/shareable-resources/shareable-resources.types';
 import {
   DocumentImageType,
+  DocumentItemFragment,
   DocumentMetadataKeyCode,
+  DocumentStatus,
   IntegrationType,
 } from '@graphql/generated';
 import { useContext, useMemo } from 'react';
@@ -21,15 +32,16 @@ import { z } from 'zod';
 const thirdPartyIntegrationFormSchema = z.object({
   name: z.string().min(1, 'Required'),
   slug: z.string().min(1, 'Required'),
+  status: z.enum(DocumentStatus).optional(),
   uploader_id: z.string().optional(),
+  meta_description: metaDescriptionSchema,
   short_description: z.string().min(1, 'Required').max(250),
   description: z.string().min(1, 'Required'),
   uploader_organization_id: z.string().min(1, 'Required'),
   integration_type: z.string().min(1, 'Required'),
   use_cases: z.array(z.string()).min(1, 'Required'),
   solution_categories: z.array(z.string()).min(1, 'Required'),
-  license_type: z.enum(['Free', 'Commercial']),
-  integration_subtype: z.string().min(1, 'Required'),
+  license_type: z.enum(['Free', 'Commercial']).optional(),
   vendor_url: z.url().min(1, 'Required'),
   github_url: z.url().nullish(),
   product_version: z
@@ -38,13 +50,12 @@ const thirdPartyIntegrationFormSchema = z.object({
       error: 'Product version must be X.Y.Z',
     })
     .nullish(),
-  active: z.boolean().optional(),
   datasheet_url: z.url().or(z.literal('')).nullish(),
   blogpost_url: z.url().or(z.literal('')).nullish(),
   demo_url: z.url().or(z.literal('')).nullish(),
   document: z.custom<FileList>(fileListCheck).optional(), // declared for genericity but not used
   logo: z.custom<FileList>(optionalFileListCheck).optional(),
-  images: z.custom<FileList>(fileListCheck),
+  images: z.custom<FileList>(fileListCheck).optional(),
 });
 
 export type ThirdPartyIntegrationFormValues = z.infer<
@@ -53,7 +64,7 @@ export type ThirdPartyIntegrationFormValues = z.infer<
 
 interface ThirdPartyIntegrationFormProps {
   handleSubmit: (values: ThirdPartyIntegrationFormValues) => void;
-  document: documentItem_fragment$data | undefined;
+  document: DocumentItemFragment | undefined;
 }
 
 export const ThirdPartyIntegrationForm = ({
@@ -61,7 +72,6 @@ export const ThirdPartyIntegrationForm = ({
   document,
 }: ThirdPartyIntegrationFormProps) => {
   const { me } = useContext(PortalContext);
-  const { handleCloseSheet } = useDialogContext();
 
   const isCreation = !document;
 
@@ -81,6 +91,11 @@ export const ThirdPartyIntegrationForm = ({
     }
   };
 
+  const thirdParty =
+    document && isThirdPartyIntegrationResource(document)
+      ? document
+      : undefined;
+
   const values = useMemo(
     () =>
       ({
@@ -88,32 +103,38 @@ export const ThirdPartyIntegrationForm = ({
         images: transformToFileList(DocumentImageType.Image, document),
         logo: transformToFileList(DocumentImageType.Logo, document),
         use_cases: document?.use_cases?.map((useCase) => useCase.id),
-        solution_categories: document?.solution_categories?.map(
+        solution_categories: thirdParty?.solution_categories?.map(
           (category) => category.id
         ),
-        license_type: document?.license_type ?? undefined,
+        license_type: thirdParty?.license_type ?? undefined,
         uploader_id: document?.uploader?.id ?? me!.id,
         uploader_organization_id:
           (isCreation
             ? me?.selected_organization_id
             : document?.uploader_organization?.id) ?? '',
         integration_type: IntegrationType.ThirdPartyIntegration,
-        integration_subtype: document?.integration_subtype ?? '',
-        github_url: document?.github_url,
-        product_version: document?.product_version,
-        vendor_url: document?.vendor_url,
+        github_url: thirdParty?.github_url,
+        product_version: thirdParty?.product_version,
+        vendor_url: thirdParty?.vendor_url,
       }) as ThirdPartyIntegrationFormValues,
-    [me, document, isCreation]
+    [me, document, isCreation, thirdParty]
   );
+  const t = useTranslate();
   const formSchema = useMemo(() => {
     const extendedSchema = document
       ? thirdPartyIntegrationFormSchema.extend({
+          meta_description: optionalMetaDescriptionSchema,
           document: z.custom<FileList>(fileListCheck).optional(),
-          images: z.custom<FileList>(fileListCheck).optional(),
+          // An integration stored without an image can still be edited.
+          images: z.custom<FileList>(optionalFileListCheck).optional(),
         })
       : thirdPartyIntegrationFormSchema;
 
-    return extendedSchema.superRefine((data, ctx) => {
+    return withMetaDescriptionRule(
+      extendedSchema,
+      ShareableResourceType.OPENCTI_INTEGRATION,
+      t
+    ).superRefine((data, ctx) => {
       if (data.github_url && !data.product_version) {
         ctx.addIssue({
           path: [DocumentMetadataKeyCode.ProductVersion],
@@ -130,10 +151,10 @@ export const ThirdPartyIntegrationForm = ({
         });
       }
     });
-  }, [document]);
+  }, [document, t]);
 
   const {
-    active,
+    meta_description,
     short_description,
     slug,
     name,
@@ -147,7 +168,6 @@ export const ThirdPartyIntegrationForm = ({
     uploader_id,
     uploader_organization_id,
     integration_type,
-    integration_subtype,
     datasheet_url,
     blogpost_url,
     demo_url,
@@ -155,6 +175,7 @@ export const ThirdPartyIntegrationForm = ({
     images,
     imagesToDelete,
     logo,
+    status,
   } = useServiceFormFields({
     documentType: 'Third Party Integration',
     platform: 'OpenCTI',
@@ -168,7 +189,7 @@ export const ThirdPartyIntegrationForm = ({
           onSubmit(values as ThirdPartyIntegrationFormValues);
         }}
         onValuesChange={(values, form) => {
-          if (isCreation && values.name) {
+          if (isCreation && values.name !== undefined) {
             const generatedSlug = slugify(values.name, {
               lower: true,
               strict: true,
@@ -200,12 +221,12 @@ export const ThirdPartyIntegrationForm = ({
           document: { fieldType: () => <FormItem hidden={true} /> },
           logo,
           images: imagesField,
-          active,
+          status,
+          meta_description,
           short_description,
           slug,
           name,
           integration_type,
-          integration_subtype,
           vendor_url,
           github_url,
           product_version,
@@ -213,7 +234,7 @@ export const ThirdPartyIntegrationForm = ({
           blogpost_url,
           demo_url,
         }}>
-        <ServiceFormSheetFooter handleCloseSheet={handleCloseSheet} />
+        <ServiceFormSheetFooter status={document?.status} />
       </AutoForm>
     </>
   );

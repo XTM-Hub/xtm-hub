@@ -1,6 +1,7 @@
 'use strict';
 
 import { esDbClient } from '../thirdparty/elasticsearch/client.js';
+import { withIndexPrefix } from '../thirdparty/elasticsearch/index-prefix.js';
 import { logApp } from '../utils/app-logger.util';
 
 export const up = async function (next: () => void) {
@@ -18,7 +19,7 @@ export const up = async function (next: () => void) {
   for (const [label, keyword] of Object.entries(mapping)) {
     try {
       await esDbClient.updateByQuery({
-        index: 'telemetry_v1',
+        index: withIndexPrefix('telemetry_v1'),
         refresh: true,
         conflicts: 'proceed',
         script: {
@@ -54,7 +55,7 @@ export const down = async function (next: () => void) {
   for (const [keyword, label] of Object.entries(reverseMapping)) {
     try {
       await esDbClient.updateByQuery({
-        index: 'telemetry_v1',
+        index: withIndexPrefix('telemetry_v1'),
         refresh: true,
         conflicts: 'proceed',
         script: {

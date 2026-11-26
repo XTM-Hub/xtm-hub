@@ -1,8 +1,13 @@
 // https://github.com/node-config/node-config
 import config from 'config';
+import { EngineClientSetting } from './thirdparty/elasticsearch/engine-detection';
 import {
   DevUser,
   parseAndValidateDevUsers,
+  parseEsEngineClient,
+  parseEsIndexPrefix,
+  parseEsRequestTimeout,
+  resolveTrustProxy,
 } from './utils/config-validation.util';
 
 interface PortalConfig {
@@ -23,12 +28,30 @@ interface PortalConfig {
     pending_user_digest: boolean;
     public_roadmap_monthly_reminder: boolean;
   };
+  enabled_teams_notifications: {
+    resource_not_published_reminder: boolean;
+  };
+  registration: {
+    omitted_tenant_silence_hours: number;
+  };
+  auth0_sync: {
+    enabled: boolean;
+    max_users_per_run: number;
+    concurrency: number;
+    deadline_minutes: number;
+  };
+  user_management: {
+    enforce_idp_subject: boolean;
+  };
   elasticsearch: {
     protocol: string;
     host: string;
     port: number;
     username: string | null;
     password: string | null;
+    index_prefix: string;
+    engine_client: EngineClientSetting;
+    request_timeout: number;
     tls: {
       ca_path: string | null;
       reject_unauthorized: boolean;
@@ -42,10 +65,14 @@ interface PortalConfig {
     name: string;
     secret: string;
   };
+  trust_proxy: number | false;
+  local_dev: boolean;
   environment: string;
   enabled_features: string[];
   dev_users?: DevUser[];
 }
+
+const localDev = process.env.LOCAL_DEV === 'true';
 
 const portalConfig: PortalConfig = {
   port: config.get<number>('port'),
@@ -74,12 +101,41 @@ const portalConfig: PortalConfig = {
       config.get<boolean>('enabled_emails.public_roadmap_monthly_reminder') ??
       false,
   },
+  enabled_teams_notifications: {
+    resource_not_published_reminder:
+      config.get<boolean>(
+        'enabled_teams_notifications.resource_not_published_reminder'
+      ) ?? false,
+  },
+  registration: {
+    omitted_tenant_silence_hours:
+      config.get<number>('registration.omitted_tenant_silence_hours') ?? 3,
+  },
+  auth0_sync: {
+    enabled: config.get<boolean>('auth0_sync.enabled') ?? false,
+    max_users_per_run: config.get<number>('auth0_sync.max_users_per_run'),
+    concurrency: config.get<number>('auth0_sync.concurrency'),
+    deadline_minutes: config.get<number>('auth0_sync.deadline_minutes'),
+  },
+  user_management: {
+    enforce_idp_subject:
+      config.get<boolean>('user_management.enforce_idp_subject') ?? false,
+  },
   elasticsearch: {
     protocol: config.get<string | null>('elasticsearch.protocol') ?? 'https',
     host: config.get<string>('elasticsearch.host'),
     port: config.get<number>('elasticsearch.port'),
     username: config.get<string | null>('elasticsearch.username'),
     password: config.get<string | null>('elasticsearch.password'),
+    index_prefix: parseEsIndexPrefix(
+      config.get<unknown>('elasticsearch.index_prefix')
+    ),
+    engine_client: parseEsEngineClient(
+      config.get<unknown>('elasticsearch.engine_client')
+    ),
+    request_timeout: parseEsRequestTimeout(
+      config.get<unknown>('elasticsearch.request_timeout')
+    ),
     tls: {
       ca_path: config.get<string | null>('elasticsearch.tls.ca_path'),
       reject_unauthorized: config.get<boolean>(
@@ -97,6 +153,8 @@ const portalConfig: PortalConfig = {
     name: config.get<string>('session.name'),
     secret: config.get<string>('session.secret'),
   },
+  local_dev: localDev,
+  trust_proxy: resolveTrustProxy(config.get<unknown>('trust_proxy'), localDev),
   environment: config.get<string>('environment'),
   enabled_features: config.get<string[]>('enabled_features') ?? [],
   dev_users: parseAndValidateDevUsers(),

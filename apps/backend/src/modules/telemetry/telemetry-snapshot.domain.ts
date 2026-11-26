@@ -1,5 +1,6 @@
 import { database } from '../../../knexfile';
 import {
+  DocumentStatus,
   PlatformIdentifier,
   ServiceDefinitionIdentifier,
 } from '../../__generated__/resolvers-types';
@@ -29,6 +30,10 @@ const RegistrationIdentifierToProduct = new Map<string, TelemetryTargetProduct>(
     [
       ServiceDefinitionIdentifier.OpenaevRegistration,
       TelemetryTargetProduct.OPEN_AEV,
+    ],
+    [
+      ServiceDefinitionIdentifier.XtmoneRegistration,
+      TelemetryTargetProduct.XTM_ONE,
     ],
   ]
 );
@@ -122,6 +127,7 @@ export const GAUGES: GaugeDefinition[] = [
         .whereIn('sd.identifier', [
           ServiceDefinitionIdentifier.OpenctiRegistration,
           ServiceDefinitionIdentifier.OpenaevRegistration,
+          ServiceDefinitionIdentifier.XtmoneRegistration,
         ])
         .select('sd.identifier', 'pc.platform_contract', 'pc.status')
         .groupBy('sd.identifier', 'pc.platform_contract', 'pc.status')
@@ -194,10 +200,10 @@ export const GAUGES: GaugeDefinition[] = [
   {
     name: 'xtm_hub_shared_resources_by_type',
     description:
-      'Active, non-decommissioned library documents broken down by type (dashboards, CSV feeds, scenarios, ...)',
+      'Published, non-decommissioned library documents broken down by type (dashboards, CSV feeds, scenarios, ...)',
     collect: async () => {
       const rows = (await database('Document')
-        .where({ active: true, is_decommissioned: false })
+        .where({ status: DocumentStatus.Published, is_decommissioned: false })
         .select('type')
         .groupBy('type')
         .count({ value: '*' })) as unknown as Array<GroupedRow<'type'>>;

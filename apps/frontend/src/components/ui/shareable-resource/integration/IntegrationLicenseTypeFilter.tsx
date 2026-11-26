@@ -1,25 +1,28 @@
+import { ServiceListFacetCounts } from '@/components/service/components/header/filter/service-list-facet-counts';
 import { ServiceListFilterKey } from '@/components/service/components/header/ServiceListHeader';
 import { LogicalMultiSelectFormField } from '@/components/ui/shareable-resource/logical-multi-select/LogicalMultiSelectFormField';
-import { useServiceListFilters } from '@/hooks/use-service-list-filters';
-import {
-  ServiceListLocalStorageKey,
-  useServiceListLocalStorage,
-} from '@/hooks/use-service-list-local-storage';
+import { useServiceListStorage } from '@/hooks/use-service-list-storage';
+import { useTranslate } from '@/hooks/use-translate';
+import { ServiceListStorageKey } from '@/utils/filters-storage.utils';
+import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 import { LicenseType } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 
-export const IntegrationLicenseTypeFilter = () => {
-  const { licenseTypes, setLicenseTypes, removeLicenseTypes } =
-    useServiceListLocalStorage(
-      ServiceListLocalStorageKey.OpenCTIIntegrationFeeds
-    );
-  const t = useTranslations();
-  const { removeFilter } = useServiceListFilters();
+const ANALYTICS_LICENSE_TYPE_LABELS: Record<LicenseType, string> = {
+  [LicenseType.Free]: 'Free',
+  [LicenseType.Commercial]: 'Commercial',
+};
 
-  const removeLicenseTypeFilter = () => {
-    removeLicenseTypes();
-    removeFilter(ServiceListFilterKey.LicenseType);
-  };
+interface IntegrationLicenseTypeFilterProps {
+  facetCounts?: ServiceListFacetCounts['licenseType'];
+}
+
+export const IntegrationLicenseTypeFilter = ({
+  facetCounts,
+}: IntegrationLicenseTypeFilterProps) => {
+  const { licenseTypes, setLicenseTypes } = useServiceListStorage(
+    ServiceListStorageKey.OpenCTIIntegrationFeeds
+  );
+  const t = useTranslate();
 
   return (
     <LogicalMultiSelectFormField
@@ -33,14 +36,16 @@ export const IntegrationLicenseTypeFilter = () => {
           value: LicenseType.Commercial,
         },
       ]}
-      initialValue={licenseTypes}
-      placeholder={t(
-        'Service.OpenctiIntegrations.Filter.LicenseType.Placeholder'
-      )}
+      value={licenseTypes}
       noResultString={t('Utils.NotFound')}
       onValueChange={setLicenseTypes}
-      onRemove={removeLicenseTypeFilter}
+      analyticsFilter={{
+        filterKey: ServiceListFilterKey.LicenseType,
+        resourceType: ShareableResourceType.OPENCTI_INTEGRATION,
+        valueLabels: ANALYTICS_LICENSE_TYPE_LABELS,
+      }}
       optionLabel={t('Service.OpenctiIntegrations.Filter.LicenseType.Label')}
+      facetCounts={facetCounts}
     />
   );
 };

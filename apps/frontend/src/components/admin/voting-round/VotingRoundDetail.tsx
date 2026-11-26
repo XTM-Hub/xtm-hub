@@ -1,0 +1,172 @@
+'use client';
+
+import AddVotableFeature from '@/components/admin/voting-round/AddVotableFeature';
+import EditVotableFeature from '@/components/admin/voting-round/EditVotableFeature';
+import { VotableFeatureFormModel } from '@/components/admin/voting-round/VotableFeatureForm';
+import { VotingRoundResults } from '@/components/admin/voting-round/VotingRoundResults';
+import { VotingRoundStatusActions } from '@/components/admin/voting-round/VotingRoundStatusActions';
+import { VotingRoundStatusBadge } from '@/components/admin/voting-round/VotingRoundStatusBadge';
+import {
+  DataTable,
+  DataTableHeadBarOptions,
+  DataTableToolbar,
+} from '@/components/ui/data-table';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useTranslate } from '@/hooks/use-translate';
+import { portalGraphqlClient } from '@/lib/graphql-client';
+import { getDataTableLabels } from '@/utils/design-system/data-table';
+import { Chip } from '@filigran/design-system';
+import {
+  useVotingRoundDetailQuery,
+  VotableFeatureAdminRowFragment,
+  VotingRoundStatus,
+} from '@graphql/generated';
+import { votingRoundKeys } from '@graphql/voting-round/voting-round.keys';
+import { ColumnDef } from '@tanstack/react-table';
+import { useMemo, useState } from 'react';
+
+export const VotingRoundDetail = ({ roundId }: { roundId: string }) => {
+  const t = useTranslate();
+  const [featureToEdit, setFeatureToEdit] = useState<
+    VotableFeatureFormModel | undefined
+  >(undefined);
+
+  const variables = { id: roundId };
+  const { data, isLoading } = useVotingRoundDetailQuery(
+    portalGraphqlClient,
+    variables,
+    { queryKey: votingRoundKeys.detail(variables) }
+  );
+
+  const round = data?.votingRound;
+  const features = useMemo<VotableFeatureAdminRowFragment[]>(
+    () => round?.features ?? [],
+    [round]
+  );
+
+  const columns: ColumnDef<VotableFeatureAdminRowFragment>[] = [
+    {
+      accessorKey: 'position',
+      id: 'position',
+      header: t('VotingRound.Feature.Position'),
+      cell: ({ row }) => row.original.position,
+    },
+    {
+      accessorKey: 'product',
+      id: 'product',
+      header: t('VotingRound.Feature.Product'),
+      cell: ({ row }) => <Chip label={row.original.product.toUpperCase()} />,
+    },
+    {
+      accessorKey: 'title',
+      id: 'title',
+      header: t('VotingRound.Feature.Title'),
+      cell: ({ row }) => <span className="truncate">{row.original.title}</span>,
+    },
+    {
+      id: 'use_cases',
+      header: t('Service.Form.UseCasesLabel'),
+      enableSorting: false,
+      cell: ({ row }) => (
+        <div className="flex flex-wrap gap-1">
+          {row.original.use_cases.map((useCase) => (
+            <Chip
+              key={useCase.id}
+              label={useCase.name}
+            />
+          ))}
+        </div>
+      ),
+    },
+    {
+      accessorKey: 'active',
+      id: 'active',
+      header: t('VotingRound.Feature.Active'),
+      cell: ({ row }) =>
+        row.original.active
+          ? t('VotingRound.Feature.ActiveYes')
+          : t('VotingRound.Feature.ActiveNo'),
+    },
+  ];
+
+  if (isLoading) {
+    return <Skeleton className="h-64 w-full" />;
+  }
+
+  if (!round) {
+    return <p className="text-default-secondary">{t('Utils.NotFound')}</p>;
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-semibold">{round.name}</h1>
+            <VotingRoundStatusBadge status={round.status} />
+          </div>
+          {round.description && (
+            <p className="text-default-secondary">{round.description}</p>
+          )}
+        </div>
+        <VotingRoundStatusActions
+          roundId={round.id}
+          roundName={round.name}
+          status={round.status}
+          hasFeatures={features.some(({ active }) => active)}
+        />
+      </div>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-xl font-semibold">
+          {t('VotingRound.Feature.SectionTitle')}
+        </h2>
+        <DataTable
+          columns={columns}
+          data={features}
+          {...getDataTableLabels(t)}
+          toolbar={
+            <DataTableToolbar
+              actions={
+                <>
+                  <DataTableHeadBarOptions />
+                  {round.status !== VotingRoundStatus.Closed && (
+                    <AddVotableFeature
+                      roundId={round.id}
+                      serviceInstanceId={round.service_instance_id}
+                    />
+                  )}
+                </>
+              }
+            />
+          }
+          getRowAnalyticsId={() => 'admin_votable_feature_edit'}
+          onClickRow={({ original }) =>
+            setFeatureToEdit({
+              id: original.id,
+              title: original.title,
+              short_description: original.short_description,
+              description: original.description,
+              product: original.product,
+              use_cases: original.use_cases,
+              illustration_document_id: original.illustration_document_id,
+              position: original.position,
+              active: original.active,
+            })
+          }
+        />
+      </section>
+
+      <VotingRoundResults roundId={round.id} />
+
+      {featureToEdit && (
+        <EditVotableFeature
+          feature={featureToEdit}
+          serviceInstanceId={round.service_instance_id}
+          open={!!featureToEdit}
+          onClose={() => setFeatureToEdit(undefined)}
+        />
+      )}
+    </div>
+  );
+};

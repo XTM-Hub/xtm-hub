@@ -1,11 +1,46 @@
 import { isInstance } from 'apollo-errors';
 import { describe, expect, it } from 'vitest';
-import { ErrorCode, UnknownErrorCode } from './error.code';
+import {
+  ErrorCode,
+  ForbiddenErrorCode,
+  UnauthenticatedErrorCode,
+  UnknownErrorCode,
+} from './error.code';
 import { mapToGraphQLError } from './error.mapping';
-import { ErrorCategory } from './error.type';
+import { ErrorCategory, ErrorType } from './error.type';
 
 describe('error mapping', () => {
   describe('mapToGraphQLError', () => {
+    it.each([
+      {
+        code: UnauthenticatedErrorCode.Unauthenticated,
+        extensionsCode: ErrorType.Unauthenticated,
+        httpStatus: 401,
+      },
+      {
+        code: ForbiddenErrorCode.ForbiddenAccess,
+        extensionsCode: ErrorType.ForbiddenAccess,
+        httpStatus: 403,
+      },
+      {
+        code: ForbiddenErrorCode.MissingCapabilityOnOrganization,
+        extensionsCode: ErrorType.ForbiddenAccess,
+        httpStatus: 403,
+      },
+    ])(
+      'should keep $code as message and answer $extensionsCode when the code is $code',
+      ({ code, extensionsCode, httpStatus }) => {
+        // When
+        const builtError = mapToGraphQLError(code);
+
+        // Then
+        expect(isInstance(builtError)).toBeTruthy();
+        expect(builtError.message).toBe(code);
+        expect(builtError.extensions).toEqual({ code: extensionsCode });
+        expect(builtError.data.http_status).toBe(httpStatus);
+      }
+    );
+
     it('should return mapped error when error is known', () => {
       const error = new Error(ErrorCode.InvalidPlatformConfiguration);
 

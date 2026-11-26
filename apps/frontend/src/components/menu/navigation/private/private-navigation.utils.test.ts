@@ -63,16 +63,25 @@ const createRegisteredPlatform = ({
   identifier,
   url = null,
   serviceInstanceId,
+  deploymentParentId,
 }: {
   title: string;
   identifier: ServiceDefinitionIdentifier;
   url?: string | null;
   serviceInstanceId?: string;
+  deploymentParentId?: string | null;
 }): RegisteredPlatform => ({
   __typename: 'RegisteredPlatform',
   title,
   identifier,
   url,
+  deployment_request:
+    deploymentParentId !== undefined
+      ? {
+          __typename: 'DeploymentRequest',
+          parent_id: deploymentParentId,
+        }
+      : null,
   subscription: serviceInstanceId
     ? {
         __typename: 'SubscriptionModel',
@@ -214,5 +223,37 @@ describe('getPrivateNavigationRegisteredPlatformsByIdentifier', () => {
         PlatformIdentifier.Openaev
       )
     ).toEqual([]);
+  });
+
+  it('excludes trial platforms that have a parent deployment request id', () => {
+    const queryData = buildRegisteredPlatformsQuery({
+      registeredPlatforms: [
+        createRegisteredPlatform({
+          title: 'OpenCTI Standalone Trial',
+          identifier: ServiceDefinitionIdentifier.OpenctiRegistration,
+          serviceInstanceId: 'service-instance-opencti-standalone',
+          deploymentParentId: null,
+        }),
+        createRegisteredPlatform({
+          title: 'OpenCTI Child Trial',
+          identifier: ServiceDefinitionIdentifier.OpenctiRegistration,
+          serviceInstanceId: 'service-instance-opencti-child',
+          deploymentParentId: 'deployment-request-bundle-parent-id',
+        }),
+      ],
+    });
+
+    expect(
+      getPrivateNavigationRegisteredPlatformsByIdentifier(
+        queryData,
+        PlatformIdentifier.Opencti
+      )
+    ).toEqual([
+      {
+        serviceInstanceId: 'service-instance-opencti-standalone',
+        title: 'OpenCTI Standalone Trial',
+        url: undefined,
+      },
+    ]);
   });
 });

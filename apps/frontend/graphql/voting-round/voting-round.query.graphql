@@ -1,0 +1,61 @@
+fragment VotableFeatureAdminRow on VotableFeature {
+  id
+  voting_round_id
+  title
+  short_description
+  description
+  product
+  use_cases {
+    id
+    name
+    color
+  }
+  illustration_document_id
+  position
+  active
+}
+
+fragment VotingRoundRow on VotingRound {
+  id
+  service_instance_id
+  name
+  description
+  status
+  theme
+  opened_at
+  closed_at
+  created_at
+}
+
+query VotingRoundsList {
+  votingRounds {
+    ...VotingRoundRow
+    feature_count
+  }
+}
+
+query VotingRoundDetail($id: VotingRoundId!) {
+  votingRound(id: $id) {
+    ...VotingRoundRow
+    features {
+      ...VotableFeatureAdminRow
+    }
+  }
+}
+
+query VotingRoundRanking($id: VotingRoundId!) {
+  votingRoundResults(id: $id) {
+    total_voters
+    round {
+      id
+      name
+      status
+    }
+    results {
+      vote_count
+      feature {
+        ...VotableFeatureAdminRow
+      }
+    }
+  }
+}

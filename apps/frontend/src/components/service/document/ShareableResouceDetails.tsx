@@ -1,3 +1,5 @@
+'use client';
+
 import { PlatformMetadataMapping } from '@/components/registration/PlatformIdentifierMapping';
 import { ShareableResourceDetailsLink } from '@/components/service/document/ShareableResourceDetailsLink';
 import { ShareableResourceBasicInformation } from '@/components/service/document/ui/ShareableResourceBasicInformation';
@@ -7,27 +9,33 @@ import {
   getEntityTypes,
   ShareableResourceEntityTypes,
 } from '@/components/service/document/ui/ShareableResourceEntityTypes';
-import { getIntegrationSubTypeMetadata } from '@/components/service/integrations/Integration.utils';
 import { UserDisplay } from '@/components/ui/UserDisplay';
+import { useTranslate } from '@/hooks/use-translate';
 import { roundToNearest } from '@/lib/utils';
-import { formatDate } from '@/utils/date';
+import { useDateFormatter } from '@/utils/date';
+import { FiligranWebsiteUtm } from '@/utils/filigran-website-utm';
 import { platformIdentifierMappedByShareableResourceType } from '@/utils/services';
 import {
   isIntegrationItem,
-  PublicDocumentDetailsData,
+  PublicDocumentByServiceSlugItem,
   ShareableResourceType,
 } from '@/utils/shareable-resources/shareable-resources.types';
-import { isResourceDownloadable } from '@/utils/shareable-resources/utils/shareable-resources.client.utils';
+import {
+  getDocumentEntityTypes,
+  isResourceDownloadable,
+} from '@/utils/shareable-resources/utils/shareable-resources.client.utils';
 import { LogoFiligranIcon } from '@filigran/icon';
-import { Badge } from '@filigran/ui/servers';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { DocumentMetadataKeyCode, IntegrationType } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
-import { useMemo } from 'react';
+import {
+  DocumentItemFragment,
+  DocumentMetadataKeyCode,
+  IntegrationType,
+} from '@graphql/generated';
 
 interface ShareableResourceDetailsProps {
-  documentData: documentItem_fragment$data | PublicDocumentDetailsData;
+  documentData: DocumentItemFragment | PublicDocumentByServiceSlugItem;
   downloadNumber?: number | null;
+  shareNumber?: number | null;
+  filigranWebsiteUtm?: FiligranWebsiteUtm;
 }
 
 const CSV_FEED_DOCUMENTATION =
@@ -46,8 +54,11 @@ const DOCUMENTATION_URLS: Partial<Record<IntegrationType, string>> = {
 const ShareableResourceDetails = ({
   documentData,
   downloadNumber,
+  shareNumber,
+  filigranWebsiteUtm,
 }: ShareableResourceDetailsProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
+  const formatDate = useDateFormatter();
   const platformIdentifier =
     platformIdentifierMappedByShareableResourceType[
       documentData.type as ShareableResourceType
@@ -55,25 +66,23 @@ const ShareableResourceDetails = ({
   const platformName = PlatformMetadataMapping[platformIdentifier].name;
   const isIntegration = isIntegrationItem(documentData);
 
-  const integrationSubTypeMetadata = useMemo(() => {
-    if (!isIntegration) {
-      return null;
-    }
-
-    return getIntegrationSubTypeMetadata(documentData.integration_subtype);
-  }, [isIntegration, documentData]);
-
   const documentationUrl =
+    isIntegration &&
     documentData.integration_type &&
-    DOCUMENTATION_URLS[documentData.integration_type];
+    DOCUMENTATION_URLS[documentData.integration_type as IntegrationType];
+
+  const entityTypes = getDocumentEntityTypes(documentData);
 
   return (
     <ShareableResourceBasicInformation>
       {!documentData.uploader_organization?.personal_space && (
         <div>
           <ShareableResourceDetailItem label="Organization">
-            <div className="mb-s flex items-center gap-s">
-              <LogoFiligranIcon className="size-8" />
+            <div className="mb-2 flex items-center gap-2">
+              <LogoFiligranIcon
+                aria-hidden={true}
+                className="size-8"
+              />
               {/*By default, if the organization is undefined, we display Filigran*/}
 
               {`${documentData.uploader_organization?.name ?? 'Filigran'}`}
@@ -83,21 +92,23 @@ const ShareableResourceDetails = ({
       )}
       <ShareableResourceDetailItem
         label={t('Service.ShareableResources.Details.Author')}>
-        <div className="flex items-center gap-s whitespace-nowrap">
+        <div className="flex items-center gap-2 whitespace-nowrap">
           <UserDisplay uploader={documentData.uploader} />
         </div>
       </ShareableResourceDetailItem>
-      {getEntityTypes(documentData).length > 0 && (
+      {getEntityTypes({ entity_types: entityTypes }).length > 0 && (
         <ShareableResourceDetailItem
           label={t('Service.ShareableResources.Details.EntityType')}>
-          <ShareableResourceEntityTypes document={documentData} />
+          <ShareableResourceEntityTypes
+            document={{ entity_types: entityTypes }}
+          />
         </ShareableResourceDetailItem>
       )}
       {isIntegration && (
         <>
           <ShareableResourceDetailItem
             label={t('Service.ShareableResources.Details.IntegrationType')}>
-            <div className="flex items-center gap-s">
+            <div className="flex items-center gap-2">
               <span>
                 {t(
                   `Service.OpenctiIntegrations.Type.${documentData.integration_type}`
@@ -110,9 +121,14 @@ const ShareableResourceDetails = ({
               label={t(
                 'Service.ShareableResources.Details.IntegrationSolutionCategory'
               )}>
-              <div className="flex items-center gap-s">
+              <div className="flex items-center gap-2">
                 <span>
-                  {documentData.solution_categories
+                  {(
+                    documentData.solution_categories as ReadonlyArray<{
+                      id: string;
+                      name: string;
+                    }>
+                  )
                     .map((category) => category.name)
                     .join(', ')}
                 </span>
@@ -124,24 +140,9 @@ const ShareableResourceDetails = ({
               label={t(
                 'Service.ShareableResources.Details.IntegrationLicenseType'
               )}>
-              <div className="flex items-center gap-s">
+              <div className="flex items-center gap-2">
                 <span>{documentData.license_type}</span>
               </div>
-            </ShareableResourceDetailItem>
-          )}
-          {integrationSubTypeMetadata && (
-            <ShareableResourceDetailItem
-              label={t(
-                'Service.ShareableResources.Details.IntegrationSubType'
-              )}>
-              <span>
-                <Badge
-                  className="mr-auto"
-                  variant="outline"
-                  color={integrationSubTypeMetadata.color}>
-                  {integrationSubTypeMetadata.label}
-                </Badge>
-              </span>
             </ShareableResourceDetailItem>
           )}
         </>
@@ -151,6 +152,7 @@ const ShareableResourceDetails = ({
         metadataKey={DocumentMetadataKeyCode.FeedUrl}
         translationKey="FeedURL"
         variant="link"
+        filigranWebsiteUtm={filigranWebsiteUtm}
       />
       <ShareableResourceDetailItem
         label={t('Service.ShareableResources.Details.LastUpdatedAt')}>
@@ -166,12 +168,14 @@ const ShareableResourceDetails = ({
         metadataKey={DocumentMetadataKeyCode.VendorUrl}
         translationKey="VendorURL"
         variant="link"
+        filigranWebsiteUtm={filigranWebsiteUtm}
       />
       <ShareableResourceDetailMetadataItem
         documentData={documentData}
         metadataKey={DocumentMetadataKeyCode.GithubUrl}
         translationKey="GithubURL"
         variant="link"
+        filigranWebsiteUtm={filigranWebsiteUtm}
       />
       <ShareableResourceDetailMetadataItem
         documentData={documentData}
@@ -183,7 +187,10 @@ const ShareableResourceDetails = ({
       {documentationUrl && (
         <ShareableResourceDetailItem
           label={t('Service.ShareableResources.Details.OpenCTIDocumentation')}>
-          <ShareableResourceDetailsLink url={documentationUrl} />
+          <ShareableResourceDetailsLink
+            url={documentationUrl}
+            filigranWebsiteUtm={filigranWebsiteUtm}
+          />
         </ShareableResourceDetailItem>
       )}
       <ShareableResourceDetailMetadataItem
@@ -191,18 +198,21 @@ const ShareableResourceDetails = ({
         metadataKey={DocumentMetadataKeyCode.DatasheetUrl}
         translationKey="DatasheetURL"
         variant="link"
+        filigranWebsiteUtm={filigranWebsiteUtm}
       />
       <ShareableResourceDetailMetadataItem
         documentData={documentData}
         metadataKey={DocumentMetadataKeyCode.BlogpostUrl}
         translationKey="BlogpostURL"
         variant="link"
+        filigranWebsiteUtm={filigranWebsiteUtm}
       />
       <ShareableResourceDetailMetadataItem
         documentData={documentData}
         metadataKey={DocumentMetadataKeyCode.DemoUrl}
         translationKey="DemoURL"
         variant="link"
+        filigranWebsiteUtm={filigranWebsiteUtm}
       />
       {isResourceDownloadable(documentData) && (
         <ShareableResourceDetailItem
@@ -212,7 +222,7 @@ const ShareableResourceDetails = ({
       )}
       <ShareableResourceDetailItem
         label={t('Service.ShareableResources.Details.Shares')}>
-        <span>{roundToNearest(documentData.share_number)}</span>
+        <span>{roundToNearest(shareNumber ?? documentData.share_number)}</span>
       </ShareableResourceDetailItem>
     </ShareableResourceBasicInformation>
   );

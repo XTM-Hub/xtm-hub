@@ -1,32 +1,32 @@
-import { getOrganization } from '@/components/organization/Organization.service';
 import { RegistrationContext } from '@/components/registration/Context';
 import { RegistrationLayout } from '@/components/registration/Layout';
-import { useTranslations } from 'next-intl';
+import { useTranslate } from '@/hooks/use-translate';
 import { useContext } from 'react';
 
 interface UnregisterConfirmProps {
   confirm: () => void;
   cancel: () => void;
-  organizationId: string;
+  organizationName: string;
 }
 
 export const UnregisterConfirm = ({
   confirm,
   cancel,
-  organizationId,
+  organizationName,
 }: UnregisterConfirmProps) => {
   const { displayedIdentifier } = useContext(RegistrationContext);
-  const t = useTranslations();
-  const organization = getOrganization(organizationId);
+  const t = useTranslate();
 
   return (
     <RegistrationLayout
       confirm={confirm}
-      cancel={cancel}>
-      <h1>
+      confirmAnalyticsId="platform_disconnection_confirm"
+      cancel={cancel}
+      cancelAnalyticsId="platform_disconnection_cancel">
+      <h1 className="title-sm">
         {t(`Unregister.Confirm.Title`, {
           platformIdentifier: displayedIdentifier,
-          name: organization?.name ?? '',
+          name: organizationName,
         })}
       </h1>
       <p>{t(`Unregister.Confirm.Description`)}</p>

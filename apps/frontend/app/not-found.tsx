@@ -1,7 +1,6 @@
 'use client';
 import PublicPathError from '@/components/PublicPathError';
 import { RelayProvider } from '@/relay/relay-provider';
-import '@filigran/ui/theme.css';
 import { usePathname } from 'next/navigation';
 import '../styles/globals.css';
 

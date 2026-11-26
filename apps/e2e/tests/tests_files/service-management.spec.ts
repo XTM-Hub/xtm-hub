@@ -8,7 +8,7 @@ const TEST_SUBSCRIPTION = {
   organizationId: '681fb117-e2c3-46d3-945a-0e921b5d4b6c',
   adminOrgaEmail: 'admin@second-orga.com',
   userInOrgaEmail: 'user@second-orga.com',
-  vaultServiceInstanceId: 'e88e8f80-ba9e-480b-ab27-8613a1565eff',
+  serviceName: 'OpenCTI Integrations Library',
 };
 
 export const GENERIC_CAPABILITY = {
@@ -59,21 +59,30 @@ test.describe('Service Management', () => {
       await servicePage.editUsersRightsForService(
         TEST_SUBSCRIPTION.userInOrgaEmail
       );
-      await expect(page.getByText(GENERIC_CAPABILITY.access)).toBeVisible();
+      await expect(
+        page.getByRole('main').getByText(GENERIC_CAPABILITY.access)
+      ).toBeVisible();
     });
 
     await test.step('Add user that is not in organization', async () => {
       await page.getByRole('button', { name: 'Invite user' }).click();
-      await page.getByRole('button', { name: 'Email' }).click();
-      await page.getByPlaceholder('Search...').click();
-      await page.getByPlaceholder('Search...').fill('user15');
+      const emailField = page.getByRole('combobox', {
+        name: 'Email',
+        exact: true,
+      });
+      await emailField.click();
+      await emailField.fill('user15');
       await expect(page.getByText('user15')).not.toBeVisible();
       await page.getByRole('button', { name: 'Cancel' }).click();
     });
 
     await test.step("Delete an organization's subscription", async () => {
-      await page.getByRole('link', { name: 'Vault' }).click();
-      await expect(page.getByRole('heading', { name: 'Vault' })).toBeVisible();
+      await page
+        .getByRole('link', { name: TEST_SUBSCRIPTION.serviceName })
+        .click();
+      await expect(
+        page.getByRole('heading', { name: TEST_SUBSCRIPTION.serviceName })
+      ).toBeVisible();
       await waitForReactIdle(page);
 
       await servicePage.deleteOrganizationFromService(

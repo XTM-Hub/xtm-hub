@@ -1,0 +1,87 @@
+name: 'Coverage'
+description: >
+  Pull requests only. Merges the Vitest coverage (`coverage-final.json`) of every shard of each app, writes the app's
+  coverage and the coverage of the lines the pull request changes at the top of the app's Vitest pull request
+  comment, and fails when less than the target of the changed lines of an app are covered or when an app is under
+  the target overall. Run it after `vitest-pr-report`, whose comment it edits. Needs a checkout of the pull request
+  merge commit with its parent (fetch-depth 2) and `pull-requests: write`. Comments with the workflow's own token, so
+  only a comment authored by github-actions[bot] is ever updated.
+inputs:
+  apps:
+    description: >
+      One app per line: id, which is also the `id` of the app's Vitest report and of its `coverage-<id>-shard-*`
+      artifacts, name and workspace (e.g. "frontend Frontend apps/frontend").
+    required: true
+  target:
+    description: 'Coverage, in percent, under which an app fails, overall or on its changed lines.'
+    required: false
+    default: '80'
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Node.js
+      uses: actions/setup-node@v6
+      with:
+        node-version-file: .nvmrc
+
+    - name: Download coverage reports
+      uses: actions/download-artifact@v5
+      with:
+        pattern: coverage-*-shard-*
+        path: ${{ runner.temp }}/coverage-reports
+
+    - name: Check and comment the coverage
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        APPS: ${{ inputs.apps }}
+        TARGET: ${{ inputs.target }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        # A pull request from a fork gets a read-only token: the job summary is the report there.
+        CAN_COMMENT: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+        BLOCK_START: '<!-- coverage:start -->'
+        BLOCK_END: '<!-- coverage:end -->'
+        COMMENT_AUTHOR: 'github-actions[bot]'
+        REPORTS_DIR: ${{ runner.temp }}/coverage-reports
+        WORK_DIR: ${{ runner.temp }}/coverage
+      run: |
+        mkdir -p "$WORK_DIR"
+        # The shards test the merge commit: its first parent is the base branch, so the diff is the pull request.
+        failed=0
+        # The report shows the pull request head: the merge commit is on neither the branch nor the base.
+        node "${GITHUB_ACTION_PATH}/coverage.mjs" --apps "$APPS" --reports "$REPORTS_DIR" --base HEAD^1 --head HEAD \
+          --display-sha "$PR_HEAD_SHA" --target "$TARGET" --summary-file "$GITHUB_STEP_SUMMARY" \
+          --blocks-dir "$WORK_DIR" || failed=1
+
+        # Replaces the coverage block of the app's Vitest comment, or adds it under the comment's title.
+        comment_coverage() {
+          local component=$1 block_file=$2 marker="<!-- vitest-report:$1 -->" comment_ids comment_id body_file
+          comment_ids=$(gh api --paginate "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" \
+            | jq -r --arg marker "$marker" --arg author "$COMMENT_AUTHOR" \
+              '.[] | select(.user.login == $author and (.body | startswith($marker))) | .id')
+          comment_id=${comment_ids%%$'\n'*}
+          if [ -z "$comment_id" ]; then
+            echo "::warning::No ${component} test report comment to add the coverage to."
+            return
+          fi
+          body_file="${WORK_DIR}/${component}-comment.md"
+          gh api "repos/${GITHUB_REPOSITORY}/issues/comments/${comment_id}" --jq '.body' \
+            | awk -v start="$BLOCK_START" -v end="$BLOCK_END" -v block="$block_file" '
+                $0 == start { skipping = 1; next }
+                skipping { if ($0 == end) skipping = 0; next }
+                { print }
+                !added && /^### / { while ((getline line < block) > 0) print line; added = 1 }
+              ' > "$body_file"
+          gh api --method PATCH "repos/${GITHUB_REPOSITORY}/issues/comments/${comment_id}" -F "body=@${body_file}" > /dev/null
+        }
+
+        if [ "$CAN_COMMENT" = "true" ]; then
+          while read -r component _; do
+            block_file="${WORK_DIR}/${component}-block.md"
+            if [ -n "$component" ] && [ -f "$block_file" ]; then
+              comment_coverage "$component" "$block_file"
+            fi
+          done <<<"$APPS"
+        fi
+        exit "$failed"

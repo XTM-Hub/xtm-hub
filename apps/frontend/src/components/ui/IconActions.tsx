@@ -1,12 +1,18 @@
 'use client';
+import {
+  type AnalyticsElementId,
+  analyticsId,
+} from '@/lib/analytics/analytics.ids';
 import { cn } from '@/lib/utils';
 import {
   Button,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@filigran/ui';
+  IconButton,
+  type IconButtonProps,
+  Menu,
+  MenuContent,
+  MenuItem,
+  MenuTrigger,
+} from '@filigran/design-system';
 import Link from 'next/link';
 import {
   type ButtonHTMLAttributes,
@@ -18,12 +24,14 @@ import {
   useState,
 } from 'react';
 
-export { DropdownMenuItem as IconActionsItem } from '@filigran/ui/clients';
+export { MenuItem as IconActionsItem } from '@filigran/design-system';
 
 interface IconActionsProps {
   children: ReactNode;
   icon: ReactNode;
-  label?: ReactNode;
+  'aria-label': string;
+  analyticsId: AnalyticsElementId;
+  size?: IconButtonProps['size'];
   className?: string;
 }
 
@@ -31,52 +39,61 @@ interface IconActionContextProps {
   setMenuOpen: Dispatch<SetStateAction<boolean>>;
 }
 
-type IconActionsButtonProps = ButtonHTMLAttributes<HTMLButtonElement>;
+type IconActionsButtonProps = Omit<
+  ButtonHTMLAttributes<HTMLButtonElement>,
+  'color'
+> & {
+  analyticsId: AnalyticsElementId;
+};
 
 export const IconActionContext = createContext<IconActionContextProps>({
   setMenuOpen: () => {},
 });
 export const IconActions = ({
   children,
-  label,
   icon,
+  'aria-label': ariaLabel,
+  analyticsId: elementId,
+  size,
   className,
 }: IconActionsProps) => {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <DropdownMenu
+    <Menu
       open={menuOpen}
       onOpenChange={setMenuOpen}>
-      <DropdownMenuTrigger asChild>
-        <div className="flex items-center gap-s cursor-pointer">
-          {label}
-          <Button
-            variant="tertiary"
-            className={cn('h-8 w-8 p-0 data-[state=open]:bg-hover', className)}>
-            {icon}
-          </Button>
-        </div>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent
+      <MenuTrigger asChild>
+        <IconButton
+          {...analyticsId(elementId)}
+          priority="tertiary"
+          size={size}
+          className={className}
+          aria-label={ariaLabel}
+          icon={icon}
+        />
+      </MenuTrigger>
+      <MenuContent
         align="end"
-        className="w-[160px] z-[1500]">
+        className="layer-1">
         <IconActionContext.Provider value={{ setMenuOpen }}>
           {children}
         </IconActionContext.Provider>
-      </DropdownMenuContent>
-    </DropdownMenu>
+      </MenuContent>
+    </Menu>
   );
 };
 
 export const IconActionsButton = ({
   children,
   className,
+  analyticsId: elementId,
   ...props
 }: IconActionsButtonProps) => {
   return (
     <Button
-      variant="tertiary"
+      {...analyticsId(elementId)}
+      priority="tertiary"
       className={cn('w-full justify-start normal-case', className)}
       onClick={(e) => e.stopPropagation()}
       {...props}>
@@ -87,19 +104,22 @@ export const IconActionsButton = ({
 
 type IconActionsLinkProps = ComponentProps<typeof Link> & {
   className?: string;
+  analyticsId: AnalyticsElementId;
 };
 export const IconActionsLink = ({
   children,
   className,
+  analyticsId: elementId,
   ...props
 }: IconActionsLinkProps) => {
   return (
-    <DropdownMenuItem asChild>
+    <MenuItem asChild>
       <Link
         {...props}
+        {...analyticsId(elementId)}
         className={className}>
         {children}
       </Link>
-    </DropdownMenuItem>
+    </MenuItem>
   );
 };

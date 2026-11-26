@@ -1,12 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 import { SERVICES } from '../../../../../tests/tests.const';
 import {
-  SeoServiceInstanceLanguage,
+  Locale,
   SeoServiceInstanceMetadata,
 } from '../../../../__generated__/resolvers-types';
-import SEOServiceInstance, {
-  SEOServiceInstanceLanguage,
-} from '../../../../model/kanel/public/SEOServiceInstance';
+import SEOServiceInstance from '../../../../model/kanel/public/SEOServiceInstance';
 import { SeoServiceInstanceApp } from './seo-service-instance.app';
 import { SeoServiceInstanceDomain } from './seo-service-instance.domain';
 
@@ -17,13 +15,13 @@ describe('seo-service-instance.app', () => {
     const domainResponse: SEOServiceInstance[] = [
       {
         service_instance_id: serviceInstanceId,
-        language: 'en' as SEOServiceInstanceLanguage,
+        language: Locale.En,
         meta_title: 'title en',
         meta_description: 'description en',
       },
       {
         service_instance_id: serviceInstanceId,
-        language: 'fr' as SEOServiceInstanceLanguage,
+        language: Locale.Fr,
         meta_title: 'title fr',
         meta_description: 'description fr',
       },
@@ -31,13 +29,13 @@ describe('seo-service-instance.app', () => {
     const expected: SeoServiceInstanceMetadata[] = [
       {
         service_instance_id: serviceInstanceId,
-        language: SeoServiceInstanceLanguage.En,
+        language: Locale.En,
         meta_title: 'title en',
         meta_description: 'description en',
       },
       {
         service_instance_id: serviceInstanceId,
-        language: SeoServiceInstanceLanguage.Fr,
+        language: Locale.Fr,
         meta_title: 'title fr',
         meta_description: 'description fr',
       },
@@ -67,7 +65,7 @@ describe('seo-service-instance.app', () => {
     const domainResponse: SEOServiceInstance[] = [
       {
         service_instance_id: serviceInstanceId,
-        language: 'en' as SEOServiceInstanceLanguage,
+        language: Locale.En,
         meta_title: 'meta title',
         meta_description: 'meta description',
       },
@@ -75,7 +73,7 @@ describe('seo-service-instance.app', () => {
     const expected: SeoServiceInstanceMetadata[] = [
       {
         service_instance_id: serviceInstanceId,
-        language: SeoServiceInstanceLanguage.En,
+        language: Locale.En,
         meta_title: 'meta title',
         meta_description: 'meta description',
       },
@@ -88,7 +86,7 @@ describe('seo-service-instance.app', () => {
     // When
     const result = await SeoServiceInstanceApp.loadSeoServiceInstancesBy({
       service_instance_id: serviceInstanceId,
-      language: SeoServiceInstanceLanguage.En,
+      language: Locale.En,
     });
 
     // Then
@@ -96,7 +94,7 @@ describe('seo-service-instance.app', () => {
       SeoServiceInstanceDomain.loadSeoServiceInstancesBy
     ).toHaveBeenCalledWith({
       service_instance_id: serviceInstanceId,
-      language: SeoServiceInstanceLanguage.En,
+      language: Locale.En,
     });
     expect(result).toEqual(expected);
   });
@@ -106,13 +104,13 @@ describe('seo-service-instance.app', () => {
     const serviceInstanceId = SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID;
     const domainResponse: SEOServiceInstance = {
       service_instance_id: serviceInstanceId,
-      language: 'fr' as SEOServiceInstanceLanguage,
+      language: Locale.Fr,
       meta_title: 'updated',
       meta_description: 'description',
     };
     const expected: SeoServiceInstanceMetadata = {
       service_instance_id: serviceInstanceId,
-      language: SeoServiceInstanceLanguage.Fr,
+      language: Locale.Fr,
       meta_title: 'updated',
       meta_description: 'description',
     };
@@ -124,7 +122,7 @@ describe('seo-service-instance.app', () => {
     // When
     const result = await SeoServiceInstanceApp.editSeoServiceInstanceBy({
       service_instance_id: serviceInstanceId,
-      language: SeoServiceInstanceLanguage.Fr,
+      language: Locale.Fr,
       input: {
         meta_title: 'updated',
         meta_description: 'description',
@@ -134,7 +132,7 @@ describe('seo-service-instance.app', () => {
     // Then
     expect(
       SeoServiceInstanceDomain.upsertSeoServiceInstance
-    ).toHaveBeenCalledWith(serviceInstanceId, SeoServiceInstanceLanguage.Fr, {
+    ).toHaveBeenCalledWith(serviceInstanceId, Locale.Fr, {
       meta_title: 'updated',
       meta_description: 'description',
     });

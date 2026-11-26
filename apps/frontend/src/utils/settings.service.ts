@@ -1,28 +1,36 @@
-import serverPortalApiFetch from '@/relay/server-portal-api-fetch';
-import SettingsQuery, {
-  settingsQuery,
-  settingsQuery$data,
-} from '@generated/settingsQuery.graphql';
-import { FeatureFlag } from '@graphql/generated';
+import {
+  serverGraphqlFetch,
+  ServerGraphqlFetchOptions,
+} from '@/lib/server-graphql-fetch';
+import {
+  FeatureFlag,
+  ServerSettingsDocument,
+  ServerSettingsQuery,
+} from '@graphql/generated';
+
+// The settings are public: one cached response serves every visitor.
+const SETTINGS_CACHE: ServerGraphqlFetchOptions = { cache: 'force-cache' };
 
 let cachedFeatureFlags: string[];
 let cachedProviders: ReadonlyArray<{ provider: string }>;
 
-export interface SettingsResponse {
-  data: settingsQuery$data;
+export async function fetchServerSettings(): Promise<
+  ServerSettingsQuery['settings']
+> {
+  const data = await serverGraphqlFetch<ServerSettingsQuery>(
+    ServerSettingsDocument,
+    {},
+    SETTINGS_CACHE
+  );
+  return data.settings;
 }
 
 async function fetchSettings(): Promise<void> {
   if (cachedFeatureFlags !== undefined) return;
   try {
-    const response = (await serverPortalApiFetch<
-      typeof SettingsQuery,
-      settingsQuery
-    >(SettingsQuery, {}, { cache: 'force-cache' })) as SettingsResponse;
-    cachedFeatureFlags = [
-      ...(response.data?.settings?.platform_feature_flags || []),
-    ];
-    cachedProviders = response.data?.settings?.platform_providers ?? [];
+    const settings = await fetchServerSettings();
+    cachedFeatureFlags = [...settings.platform_feature_flags];
+    cachedProviders = settings.platform_providers;
   } catch (error) {
     console.error('Failed to fetch settings:', error);
     cachedFeatureFlags = [];

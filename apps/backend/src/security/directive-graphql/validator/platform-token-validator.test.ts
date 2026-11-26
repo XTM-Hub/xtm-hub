@@ -4,20 +4,31 @@ import { describe, expect, it, vi } from 'vitest';
 import { requestContext } from '../../../context/request.context';
 import DeploymentRequest from '../../../model/kanel/public/DeploymentRequest';
 import Organization from '../../../model/kanel/public/Organization';
-import PlatformConfiguration from '../../../model/kanel/public/PlatformConfiguration';
 import type { PortalContext } from '../../../model/portal-context';
 import type { UserLoadUserBy } from '../../../model/user';
 import { DeploymentRequestDomain } from '../../../modules/deployment/deployment.domain';
 import { OrganizationDomain } from '../../../modules/organization-management/organization/organization.domain';
-import { PlatformConfigurationDomain } from '../../../modules/registration/platform-configuration/platform-configuration.domain';
+import {
+  FullPlatformConfiguration,
+  PlatformConfigurationDomain,
+} from '../../../modules/registration/platform-configuration/platform-configuration.domain';
 import {
   PLATFORM_ID_HEADER,
   PLATFORM_TOKEN_HEADER,
 } from '../../../modules/security-management/token/platform-token.util';
+import { ErrorCode } from '../../../utils/error/error.code';
+import { ErrorType } from '../../../utils/error/error.type';
 import { createPlatformTokenResolver } from './platform-token-validator';
 
 const platformId = uuidv4();
 const platformToken = uuidv4();
+
+const INVALID_PLATFORM_TOKEN_ERROR = {
+  name: ErrorType.ForbiddenAccess,
+  message: 'Invalid platform token provided',
+  _logLevel: 'warn',
+  extensions: { code: ErrorCode.InvalidPlatformToken },
+};
 
 const validHeaders = {
   [PLATFORM_TOKEN_HEADER]: platformToken,
@@ -57,8 +68,8 @@ describe('createPlatformTokenResolver', () => {
       const resolver = createPlatformTokenResolver(vi.fn());
       const context = makePortalContext({ [PLATFORM_ID_HEADER]: platformId });
 
-      await expect(runResolver(resolver, context)).rejects.toThrow(
-        'Invalid platform token provided'
+      await expect(runResolver(resolver, context)).rejects.toMatchObject(
+        INVALID_PLATFORM_TOKEN_ERROR
       );
     });
 
@@ -68,8 +79,8 @@ describe('createPlatformTokenResolver', () => {
         [PLATFORM_TOKEN_HEADER]: platformToken,
       });
 
-      await expect(runResolver(resolver, context)).rejects.toThrow(
-        'Invalid platform token provided'
+      await expect(runResolver(resolver, context)).rejects.toMatchObject(
+        INVALID_PLATFORM_TOKEN_ERROR
       );
     });
 
@@ -111,10 +122,10 @@ describe('createPlatformTokenResolver', () => {
 
       vi.spyOn(
         PlatformConfigurationDomain,
-        'loadConfigurationByPlatformAndToken'
+        'loadResolvedConfigurationByPlatformAndToken'
       ).mockResolvedValue({
-        service_instance_id: serviceInstanceId,
-      } as PlatformConfiguration);
+        platformConfiguration: { service_instance_id: serviceInstanceId },
+      } as FullPlatformConfiguration);
 
       vi.spyOn(
         OrganizationDomain,
@@ -140,15 +151,99 @@ describe('createPlatformTokenResolver', () => {
       ).mockResolvedValue(undefined);
       vi.spyOn(
         PlatformConfigurationDomain,
-        'loadConfigurationByPlatformAndToken'
+        'loadResolvedConfigurationByPlatformAndToken'
       ).mockResolvedValue(undefined);
 
       const resolver = createPlatformTokenResolver(vi.fn());
       const context = makePortalContext(validHeaders);
 
-      await expect(runResolver(resolver, context)).rejects.toThrow(
-        'Invalid token provided'
+      await expect(runResolver(resolver, context)).rejects.toMatchObject(
+        INVALID_PLATFORM_TOKEN_ERROR
       );
+    });
+
+    it('should only look for an active registration, so the token of an unregistered one is refused', async () => {
+      // Given the loader finds no active registration for the credentials
+      vi.spyOn(
+        DeploymentRequestDomain,
+        'loadDeploymentRequestBy'
+      ).mockResolvedValue(undefined);
+      const loadConfigurationSpy = vi
+        .spyOn(
+          PlatformConfigurationDomain,
+          'loadResolvedConfigurationByPlatformAndToken'
+        )
+        .mockResolvedValue(undefined);
+      const subscribedOrganizationSpy = vi.spyOn(
+        OrganizationDomain,
+        'loadOrganizationSubscribedToServiceInstance'
+      );
+      const resolverSpy = vi.fn();
+      const resolver = createPlatformTokenResolver(resolverSpy);
+      const context = makePortalContext(validHeaders);
+
+      // When
+      const call = runResolver(resolver, context);
+
+      // Then
+      await expect(call).rejects.toMatchObject(INVALID_PLATFORM_TOKEN_ERROR);
+      expect(loadConfigurationSpy).toHaveBeenCalledExactlyOnceWith({
+        platform_id: platformId,
+        token: platformToken,
+        activeOnly: true,
+      });
+      expect(subscribedOrganizationSpy).not.toHaveBeenCalled();
+      expect(resolverSpy).not.toHaveBeenCalled();
+    });
+
+    it('should still accept an unregistered trial through its deployment request', async () => {
+      // Given
+      const orgId = uuidv4();
+      vi.spyOn(
+        PlatformConfigurationDomain,
+        'loadResolvedConfigurationByPlatformAndToken'
+      ).mockResolvedValue(undefined);
+      vi.spyOn(
+        DeploymentRequestDomain,
+        'loadDeploymentRequestBy'
+      ).mockResolvedValue({
+        platform_id: platformId,
+        organization_requester_id: orgId,
+      } as unknown as DeploymentRequest);
+      vi.spyOn(OrganizationDomain, 'loadOrganizationBy').mockResolvedValue({
+        id: orgId,
+      } as Organization);
+      const resolverSpy = vi.fn(async (_s, _a, ctx: PortalContext) => ctx.user);
+      const resolver = createPlatformTokenResolver(resolverSpy);
+      const context = makePortalContext(validHeaders);
+
+      // When
+      const result = await runResolver(resolver, context);
+
+      // Then
+      expect(result.selected_organization_id).toBe(orgId);
+    });
+
+    it('should throw an invalid platform token error when the deployment request organization no longer exists', async () => {
+      // Given
+      vi.spyOn(
+        DeploymentRequestDomain,
+        'loadDeploymentRequestBy'
+      ).mockResolvedValue({
+        platform_id: platformId,
+        organization_requester_id: uuidv4(),
+      } as unknown as DeploymentRequest);
+      vi.spyOn(OrganizationDomain, 'loadOrganizationBy').mockResolvedValue(
+        undefined
+      );
+      const resolver = createPlatformTokenResolver(vi.fn());
+      const context = makePortalContext(validHeaders);
+
+      // When
+      const call = runResolver(resolver, context);
+
+      // Then
+      await expect(call).rejects.toMatchObject(INVALID_PLATFORM_TOKEN_ERROR);
     });
   });
 });

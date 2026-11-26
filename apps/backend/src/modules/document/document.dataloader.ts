@@ -42,6 +42,7 @@ export const subscriptionByServiceInstanceLoaderKey =
   ]);
 
 export interface DocumentDataLoaders {
+  documentByIdLoader: DataLoader<string, Document | null>;
   userLoader: DataLoader<string, User | null>;
   uploaderLoader: DataLoader<string, User | null>;
   uploaderOrganizationLoader: DataLoader<string, Organization | null>;
@@ -58,6 +59,17 @@ export interface DocumentDataLoaders {
 }
 
 export const DocumentDataLoader = {
+  batchLoadDocumentsById: async (
+    ids: readonly string[]
+  ): Promise<(Document | null)[]> => {
+    const documents =
+      await DocumentDomain.loadDocumentsWithMetadataByIds<Document>([...ids]);
+    const map = new Map<string, Document>(
+      documents.map((document) => [document.id, document])
+    );
+    return ids.map((id) => map.get(id) ?? null);
+  },
+
   batchLoadUsers: async (ids: readonly string[]): Promise<(User | null)[]> => {
     const users = await UserDomain.loadUsers(ids as UserId[]);
     const map = new Map<string, User>(users.map((user) => [user.id, user]));
@@ -233,6 +245,9 @@ export const DocumentDataLoader = {
   },
 
   create: (): DocumentDataLoaders => ({
+    documentByIdLoader: new DataLoader(
+      DocumentDataLoader.batchLoadDocumentsById
+    ),
     userLoader: new DataLoader(DocumentDataLoader.batchLoadUsers),
     uploaderLoader: new DataLoader(DocumentDataLoader.batchLoadUploaders),
     uploaderOrganizationLoader: new DataLoader(

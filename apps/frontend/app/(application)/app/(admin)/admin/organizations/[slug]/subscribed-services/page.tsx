@@ -1,3 +1,4 @@
+import GuardCapacityComponent from '@/components/AdminGuard';
 import { notFound } from 'next/navigation';
 import PageLoader from './page-loader';
 
@@ -16,7 +17,11 @@ const Page = async ({ params }: PageProps) => {
   } catch {
     notFound();
   }
-  return <PageLoader id={id} />;
+  return (
+    <GuardCapacityComponent displayError>
+      <PageLoader id={id} />
+    </GuardCapacityComponent>
+  );
 };
 
 export default Page;

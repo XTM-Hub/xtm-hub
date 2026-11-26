@@ -19,6 +19,13 @@ export const isIntegrationType = (
   );
 };
 
+export const isConnectorDocument = (document: Document): boolean => {
+  return (
+    (document as { integration_type?: IntegrationType }).integration_type ===
+    IntegrationType.Connector
+  );
+};
+
 export type Integration = Document & {
   integration_type: IntegrationType;
   datasheet_url?: string;
@@ -32,18 +39,14 @@ export type CsvFeed = Integration & {
 };
 export type TaxiiFeed = Integration & {
   feed_url: string;
-  integration_subtype: string;
 };
 export type RssFeed = Integration & {
   feed_url: string;
-  integration_subtype: string;
 };
 export type Stream = Integration & {
   feed_url: string;
-  integration_subtype: string;
 };
 export type ThirdPartyIntegration = Integration & {
-  integration_subtype: string;
   vendor_url: string;
   github_url?: string;
   product_version?: string;
@@ -54,7 +57,6 @@ export type Connector = Integration & {
   verified: boolean;
   source_code?: string | null; // URL to repository
   subscription_link?: string | null; // URL to subscription page
-  integration_subtype: string;
   manager_supported: boolean;
   playbook_supported: boolean;
   minimum_deployable_version?: string;
@@ -114,7 +116,6 @@ export const INTEGRATION_CSV_FEED_METADATA_KEYS =
 export const INTEGRATION_TAXII_FEED_METADATA: TaxiiFeedMetadata = [
   { key: DocumentMetadataKeyCode.FeedUrl },
   { key: DocumentMetadataKeyCode.IntegrationType },
-  { key: DocumentMetadataKeyCode.IntegrationSubtype },
   { key: DocumentMetadataKeyCode.DatasheetUrl, optional: true },
   { key: DocumentMetadataKeyCode.BlogpostUrl, optional: true },
   { key: DocumentMetadataKeyCode.DemoUrl, optional: true },
@@ -126,7 +127,6 @@ export const INTEGRATION_TAXII_FEED_METADATA_KEYS =
 export const INTEGRATION_RSS_FEED_METADATA: RssFeedMetadata = [
   { key: DocumentMetadataKeyCode.FeedUrl },
   { key: DocumentMetadataKeyCode.IntegrationType },
-  { key: DocumentMetadataKeyCode.IntegrationSubtype },
   { key: DocumentMetadataKeyCode.DatasheetUrl, optional: true },
   { key: DocumentMetadataKeyCode.BlogpostUrl, optional: true },
   { key: DocumentMetadataKeyCode.DemoUrl, optional: true },
@@ -139,7 +139,6 @@ export const INTEGRATION_RSS_FEED_METADATA_KEYS =
 export const INTEGRATION_STREAM_METADATA: StreamFeedMetadata = [
   { key: DocumentMetadataKeyCode.FeedUrl },
   { key: DocumentMetadataKeyCode.IntegrationType },
-  { key: DocumentMetadataKeyCode.IntegrationSubtype },
   { key: DocumentMetadataKeyCode.DatasheetUrl, optional: true },
   { key: DocumentMetadataKeyCode.BlogpostUrl, optional: true },
   { key: DocumentMetadataKeyCode.DemoUrl, optional: true },
@@ -151,7 +150,6 @@ export const INTEGRATION_STREAM_METADATA_KEYS = INTEGRATION_STREAM_METADATA.map(
 
 export const INTEGRATION_THIRD_PARTY_INTEGRATION_METADATA: ThirdPartyIntegrationMetadata =
   [
-    { key: DocumentMetadataKeyCode.IntegrationSubtype },
     { key: DocumentMetadataKeyCode.ProductVersion, optional: true },
     { key: DocumentMetadataKeyCode.VendorUrl },
     { key: DocumentMetadataKeyCode.GithubUrl, optional: true },
@@ -169,7 +167,6 @@ export const INTEGRATION_CONNECTOR_METADATA: ConnectorMetadata = [
   { key: DocumentMetadataKeyCode.Verified },
   { key: DocumentMetadataKeyCode.SourceCode },
   { key: DocumentMetadataKeyCode.SubscriptionLink, optional: true },
-  { key: DocumentMetadataKeyCode.IntegrationSubtype },
   { key: DocumentMetadataKeyCode.IntegrationType },
   { key: DocumentMetadataKeyCode.ManagerSupported },
   { key: DocumentMetadataKeyCode.PlaybookSupported },
@@ -221,3 +218,16 @@ export const INTEGRATION_METADATA_KEYS: DocumentMetadataKeyCode[] = Array.from(
     ...INTEGRATION_THIRD_PARTY_INTEGRATION_METADATA_KEYS,
   ])
 ) as DocumentMetadataKeyCode[];
+
+// The only metadata columns the CSV export reads (see integration-csv-export-endpoint.utils.ts); narrower
+// than INTEGRATION_METADATA_KEYS to avoid hydrating unused metadata for every exported row.
+export const INTEGRATION_CSV_EXPORT_METADATA_KEYS: DocumentMetadataKeyCode[] = [
+  DocumentMetadataKeyCode.IntegrationType,
+  DocumentMetadataKeyCode.ManagerSupported,
+  DocumentMetadataKeyCode.Verified,
+  DocumentMetadataKeyCode.LicenseType,
+  DocumentMetadataKeyCode.FeedUrl,
+  DocumentMetadataKeyCode.VendorUrl,
+  DocumentMetadataKeyCode.DemoUrl,
+  DocumentMetadataKeyCode.DatasheetUrl,
+];

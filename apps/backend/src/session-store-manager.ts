@@ -3,7 +3,6 @@ import portalConfig from './config';
 import { UserLoadUserBy, UserWithOrganizationsAndRole } from './model/user';
 import { PostgreSQLSessionStore } from './stores/postgresql-session-store';
 import { logApp } from './utils/app-logger.util';
-import { UnknownErrorCode } from './utils/error/error.code';
 
 let memoryStore: MemoryStore | undefined = undefined;
 let postgresStore: PostgreSQLSessionStore | undefined = undefined;
@@ -62,33 +61,100 @@ const getSessionsForUser = (
 };
 
 /**
+ * Destroy every active session belonging to a user
+ * This function works with both PostgreSQL and Memory stores
+ */
+export const destroyUserSessions = (userId: string): Promise<void> => {
+  const storeInstance = getSessionStoreInstance();
+
+  return new Promise((resolve) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    storeInstance.all((err: any, sessions: any) => {
+      if (err) {
+        logApp.error('Error retrieving sessions for user deletion:', {
+          error: err,
+        });
+        resolve();
+        return;
+      }
+
+      const sessionIds = getSessionsForUser(
+        sessions as Record<string, SessionData> | null | undefined,
+        userId
+      );
+
+      if (sessionIds.length === 0) {
+        logApp.debug(`No active sessions found for user ${userId}`);
+        resolve();
+        return;
+      }
+
+      logApp.info(`Destroying ${sessionIds.length} sessions for user`, {
+        userId,
+      });
+
+      let remaining = sessionIds.length;
+      sessionIds.forEach((sessionId) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        storeInstance.destroy(sessionId, (error?: any) => {
+          if (error) {
+            logApp.error(`Error destroying session ${sessionId}:`, { error });
+          }
+          remaining -= 1;
+          if (remaining === 0) {
+            resolve();
+          }
+        });
+      });
+    });
+  });
+};
+
+/**
  * Update user session data across all active sessions
  * This function works with both PostgreSQL and Memory stores
  */
-export const updateUserSession = (user: UserWithOrganizationsAndRole) => {
+export const updateUserSession = (
+  user: UserWithOrganizationsAndRole
+): Promise<void> => {
   const storeInstance = getSessionStoreInstance();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  storeInstance.all((err: any, sessions: any) => {
-    if (err) {
-      logApp.error('Error retrieving sessions for user update:', {
-        error: err,
-      });
-      return;
-    }
+  return new Promise((resolve) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    storeInstance.all((err: any, sessions: any) => {
+      if (err) {
+        logApp.error('Error retrieving sessions for user update:', {
+          error: err,
+        });
+        resolve();
+        return;
+      }
 
-    if (!sessions) {
-      logApp.debug('No sessions found for user update');
-      return;
-    }
+      if (!sessions) {
+        logApp.debug('No sessions found for user update');
+        resolve();
+        return;
+      }
 
-    // Handle sessions as object
-    const typedSessions = sessions as Record<string, SessionData>;
-    const sessionIds = getSessionsForUser(typedSessions, user.id);
+      if (!user?.id) {
+        logApp.warn('Cannot update sessions: user is missing or has no id');
+        resolve();
+        return;
+      }
 
-    if (sessionIds.length > 0) {
+      // Handle sessions as object
+      const typedSessions = sessions as Record<string, SessionData>;
+      const sessionIds = getSessionsForUser(typedSessions, user.id);
+
+      if (sessionIds.length === 0) {
+        logApp.debug(`No active sessions found for user ${user.id}`);
+        resolve();
+        return;
+      }
+
       logApp.info(`Updating ${sessionIds.length} sessions for user ${user.id}`);
 
+      let remaining = sessionIds.length;
       sessionIds.forEach((sessionId) => {
         const sessionToUpdate = typedSessions[sessionId] as SessionData & {
           user?: UserLoadUserBy;
@@ -102,14 +168,16 @@ export const updateUserSession = (user: UserWithOrganizationsAndRole) => {
           (error?: any) => {
             if (error) {
               logApp.error(`Error updating session ${sessionId}:`, { error });
-              throw new Error(UnknownErrorCode.EditUserSessionError);
+            } else {
+              logApp.debug(`USER_SESSION_UPDATED for session ${sessionId}`);
             }
-            logApp.debug(`USER_SESSION_UPDATED for session ${sessionId}`);
+            remaining -= 1;
+            if (remaining === 0) {
+              resolve();
+            }
           }
         );
       });
-    } else {
-      logApp.debug(`No active sessions found for user ${user.id}`);
-    }
+    });
   });
 };

@@ -2,12 +2,17 @@ name: Run XTM Hub CI/CD
 
 on:
   workflow_dispatch:
+  merge_group:
+    types:
+      - checks_requested
   push:
     branches:
       - "main"
     paths:
       - "apps/**"
+      - ".github/actions/**"
       - ".github/workflows/dockerbuild-ci.yml"
+      - "xtm-hub-dev/docker-compose-ci*.yml"
       - "package.json"
       - "yarn.lock"
     tags:
@@ -26,9 +31,11 @@ concurrency:
 
 jobs:
   detect-changes:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     outputs:
       code: ${{ steps.filter.outputs.code }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+      backend: ${{ steps.filter.outputs.backend }}
     steps:
       - uses: actions/checkout@v6
       - uses: dorny/paths-filter@v4
@@ -37,15 +44,21 @@ jobs:
           filters: |
             code:
               - "apps/**"
+              - ".github/actions/**"
               - ".github/workflows/dockerbuild-ci.yml"
+              - "xtm-hub-dev/docker-compose-ci*.yml"
               - "package.json"
               - "yarn.lock"
+            frontend:
+              - "apps/frontend/**"
+            backend:
+              - "apps/backend/**"
 
   run-lint:
     name: Check quality ${{ matrix.label }}
     needs: detect-changes
     if: needs.detect-changes.outputs.code == 'true' || github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     strategy:
       fail-fast: false
       matrix:
@@ -66,9 +79,7 @@ jobs:
           node-version-file: .nvmrc
 
       - name: Enable Corepack
-        run: |
-          corepack enable
-          corepack prepare yarn@4.13.0 --activate
+        run: corepack enable
 
       - name: Install dependencies
         run: yarn install --immutable
@@ -76,6 +87,14 @@ jobs:
       - name: Run lint
         working-directory: ${{ matrix.working-directory }}
         run: yarn lint
+
+      - name: Test the Vitest report script
+        if: matrix.label == 'backend'
+        run: node --test .github/actions/vitest-pr-report/report.test.mjs
+
+      - name: Test the coverage script
+        if: matrix.label == 'backend'
+        run: node --test .github/actions/coverage/coverage.test.mjs
 
       - name: Check formatting
         working-directory: ${{ matrix.working-directory }}
@@ -98,7 +117,7 @@ jobs:
     needs:
       - detect-changes
     if: needs.detect-changes.outputs.code == 'true' || github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     permissions:
       contents: read
@@ -126,15 +145,6 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
-
-      - name: Setup Docker layer cache
-        uses: actions/cache@v5
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ matrix.image }}-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-buildx-${{ matrix.image }}-
-            ${{ runner.os }}-buildx-
 
       - name: Login to DockerHub
         uses: docker/login-action@v4
@@ -170,22 +180,10 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             APP_VERSION=0.0.0-e2e
-          cache-from: |
-            type=local,src=/tmp/.buildx-cache
-            type=registry,ref=filigran/${{ matrix.image }}:main
-            type=registry,ref=filigran/${{ matrix.image }}:cache-${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.version'] }}
-          cache-to: |
-            type=local,dest=/tmp/.buildx-cache-new,mode=max
-            type=registry,ref=filigran/${{ matrix.image }}:cache-${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.version'] }},mode=max
-
-      - name: Move cache
-        run: |
-          rm -rf /tmp/.buildx-cache
-          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 
   run-e2e-tests-shards:
     needs: build-images-tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 20
     strategy:
       fail-fast: false
@@ -216,19 +214,21 @@ jobs:
           cp -r ./apps/backend/tests/seeds ./apps/e2e/seeds
           cp ./apps/backend/tests/test-utils.ts ./apps/e2e/test-utils.ts
 
+      - name: Pull docker images
+        uses: ./.github/actions/retry-with-backoff
+        env:
+          IMAGE_TAGS: ${{ needs.build-images-tests.outputs.docker-tags }}
+        with:
+          command: docker compose -f ./xtm-hub-dev/docker-compose-ci.yml pull --include-deps e2e
+
       - name: Launch docker compose
         run: |
           mkdir -p ctrf
           export IMAGE_TAGS="${{ needs.build-images-tests.outputs.docker-tags }}" \
-           TEAMS_WEBHOOK_E2E="${{ secrets.TEAMS_WEBHOOK_E2E }}" \
-           GITHUB_PR_TITLE="${{ github.event.pull_request.title }}" \
-           GITHUB_PR_NUMBER="${{ github.event.pull_request.number }}" \
-           GITHUB_RUN_ID="${{ github.run_id }}" \
            PLAYWRIGHT_SHARD="${{ matrix.shard }}/8"
-          docker compose -f ./xtm-hub-dev/docker-compose-ci.yml pull --include-deps e2e
           docker compose -f ./xtm-hub-dev/docker-compose-ci.yml run \
            -e PLAYWRIGHT_SHARD \
-           e2e sh -lc "yarn test:e2e --shard=${PLAYWRIGHT_SHARD}" || TEST_EXIT_CODE=$?
+           e2e sh -lc "yarn test:e2e --project=chromium --shard=${PLAYWRIGHT_SHARD}" || TEST_EXIT_CODE=$?
           CONTAINER_ID=$(docker ps -a --filter "name=e2e-run" --format "{{.ID}}" | head -1)
           docker cp $CONTAINER_ID:/app/apps/e2e/ctrf/. ./ctrf/
           exit ${TEST_EXIT_CODE:-0}
@@ -261,7 +261,7 @@ jobs:
           echo "=== PostgreSQL Logs ==="
           docker compose -f ./xtm-hub-dev/docker-compose-ci.yml logs --tail=100 portal-postgres || echo "Could not collect portal-postgres logs"
           echo ""
-          echo "=== MinIO Logs ==="
+          echo "=== Silo (S3) Logs ==="
           docker compose -f ./xtm-hub-dev/docker-compose-ci.yml logs --tail=100 portal-minio || echo "Could not collect portal-minio logs"
           echo ""
           echo "=== E2E Tests Logs ==="
@@ -292,7 +292,7 @@ jobs:
 
   run-front-unit-tests-shards:
     needs: build-images-tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     strategy:
       fail-fast: false
@@ -318,16 +318,42 @@ jobs:
       - name: Install docker
         uses: docker/setup-docker-action@v5
 
+      - name: Pull docker image
+        uses: ./.github/actions/retry-with-backoff
+        with:
+          command: docker pull filigran/portal-front-test:${{ needs.build-images-tests.outputs.docker-tags }}
+
       - name: Run front unit tests
         run: |
           export IMAGE_TAGS="${{ needs.build-images-tests.outputs.docker-tags }}" \
             VITEST_SHARD="${{ matrix.shard }}/8"
-          mkdir -p coverage
+          mkdir -p coverage test-reports
           docker run --rm \
             -e VITEST_SHARD \
             -v $(pwd)/coverage:/app/apps/frontend/coverage \
+            -v $(pwd)/test-reports:/app/apps/frontend/test-reports \
             filigran/portal-front-test:${IMAGE_TAGS} \
-            sh -lc "yarn vitest run --shard=${VITEST_SHARD} --coverage --coverage.clean=false"
+            sh -lc "yarn vitest run --shard=${VITEST_SHARD} --coverage --coverage.clean=false --includeTaskLocation --reporter=default --reporter=json --outputFile.json=./test-reports/vitest-shard-${{ matrix.shard }}.json"
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: vitest-frontend-report-shard-${{ matrix.shard }}
+          path: test-reports/
+          retention-days: 7
+          overwrite: true
+
+      # Read by the coverage job, which merges the shards to check the pull request coverage.
+      - name: Upload coverage report
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-frontend-shard-${{ matrix.shard }}
+          path: coverage/coverage-final.json
+          if-no-files-found: error
+          retention-days: 7
+          overwrite: true
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v7
@@ -339,7 +365,7 @@ jobs:
 
   run-api-unit-tests-shards:
     needs: build-images-tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     strategy:
       fail-fast: false
@@ -365,6 +391,13 @@ jobs:
       - name: Install docker
         uses: docker/setup-docker-action@v5
 
+      - name: Pull docker images
+        uses: ./.github/actions/retry-with-backoff
+        env:
+          IMAGE_TAGS: ${{ needs.build-images-tests.outputs.docker-tags }}
+        with:
+          command: docker compose -f ./xtm-hub-dev/docker-compose-ci.yml pull --include-deps backend-test
+
       - name: Run backend type-check
         if: matrix.shard == 1
         run: |
@@ -374,12 +407,33 @@ jobs:
 
       - name: Launch docker compose
         run: |
-          mkdir -p coverage
+          mkdir -p coverage test-reports
           export IMAGE_TAGS="${{ needs.build-images-tests.outputs.docker-tags }}" \
             VITEST_SHARD="${{ matrix.shard }}/8"
           docker compose -f ./xtm-hub-dev/docker-compose-ci.yml run \
             -e VITEST_SHARD \
-            backend-test sh -lc "VITEST_MODE=true yarn vitest run --shard=${VITEST_SHARD} --coverage --coverage.clean=false"
+            -v $(pwd)/test-reports:/app/apps/backend/test-reports \
+            backend-test sh -lc "VITEST_MODE=true yarn vitest run --shard=${VITEST_SHARD} --coverage --coverage.clean=false --includeTaskLocation --reporter=default --reporter=json --outputFile.json=./test-reports/vitest-shard-${{ matrix.shard }}.json"
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: vitest-backend-report-shard-${{ matrix.shard }}
+          path: test-reports/
+          retention-days: 7
+          overwrite: true
+
+      # Read by the coverage job, which merges the shards to check the pull request coverage.
+      - name: Upload coverage report
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-backend-shard-${{ matrix.shard }}
+          path: xtm-hub-dev/coverage/coverage-final.json
+          if-no-files-found: error
+          retention-days: 7
+          overwrite: true
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v7
@@ -389,18 +443,187 @@ jobs:
           name: backend-shard-${{ matrix.shard }}
           token: ${{ secrets.CODECOV_TOKEN }}
 
+  # The backend on each supported Elasticsearch major: the production image boots on it (client detection and
+  # ES migrations, bundled as in production), then the *.es.test.ts suites run every client call against it.
+  # No coverage upload: codecov.yml counts the shard uploads.
+  run-elasticsearch-tests:
+    name: Elasticsearch tests (${{ matrix.engine }})
+    needs: build-images-tests
+    runs-on: ubuntu-26.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - engine: elasticsearch8
+            image: docker.elastic.co/elasticsearch/elasticsearch:8.18.3
+          - engine: elasticsearch9
+            image: docker.elastic.co/elasticsearch/elasticsearch:9.5.5
+    permissions:
+      contents: read
+    if: contains(github.ref , 'refs/tags/') == false
+    env:
+      IMAGE_TAGS: ${{ needs.build-images-tests.outputs.docker-tags }}
+      ELASTICSEARCH_IMAGE: ${{ matrix.image }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Install docker
+        uses: docker/setup-docker-action@v5
+
+      - name: Pull docker images
+        uses: ./.github/actions/retry-with-backoff
+        with:
+          command: docker compose -f ./xtm-hub-dev/docker-compose-ci.yml pull --include-deps backend backend-test
+
+      - name: Start the backend
+        run: docker compose -f ./xtm-hub-dev/docker-compose-ci.yml up --detach --wait backend
+
+      - name: Check the detected Elasticsearch client
+        run: |
+          docker compose -f ./xtm-hub-dev/docker-compose-ci.yml logs backend \
+            | grep -F "Search engine client ${{ matrix.engine }} selected, detected from Elasticsearch"
+
+      # Stopped first: the test setup recreates the database the backend is connected to
+      - name: Run the Elasticsearch tests
+        run: |
+          docker compose -f ./xtm-hub-dev/docker-compose-ci.yml stop backend
+          docker compose -f ./xtm-hub-dev/docker-compose-ci.yml run \
+            -e ELASTIC_HOST=portal-elasticsearch \
+            -e ELASTIC_PORT=9200 \
+            -e ES_TESTS_EXPECTED_CLIENT=${{ matrix.engine }} \
+            backend-test sh -lc "VITEST_MODE=true yarn test:es"
+
+      - name: Collect service logs on failure
+        if: failure()
+        run: |
+          docker compose -f ./xtm-hub-dev/docker-compose-ci.yml logs --tail=200 backend || echo "Could not collect backend logs"
+          docker compose -f ./xtm-hub-dev/docker-compose-ci.yml logs --tail=100 portal-elasticsearch || echo "Could not collect portal-elasticsearch logs"
+
+  # Registration against a real OpenCTI, OpenAEV and XTM One (rolling images). Non-blocking on purpose: a rolling
+  # image can break it without any change on our side, so build-images-prod does not wait for it. It only warns early.
+  run-e2e-platform-tests:
+    name: run-e2e-platform-tests (${{ matrix.platform }})
+    needs: build-images-tests
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 25
+    # Advisory: a failure shows on its check and report, but does not fail the workflow.
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [opencti, openaev, xtmone]
+        include:
+          - platform: opencti
+            title: OpenCTI
+          - platform: openaev
+            title: OpenAEV
+          - platform: xtmone
+            title: XTM One
+    permissions:
+      contents: read
+      pull-requests: write
+    env:
+      COMPOSE_FILES: -f ./xtm-hub-dev/docker-compose-ci.yml -f ./xtm-hub-dev/docker-compose-ci-${{ matrix.platform }}.yml
+      IMAGE_TAGS: ${{ needs.build-images-tests.outputs.docker-tags }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Install docker
+        uses: docker/setup-docker-action@v5
+
+      - name: Pull docker images
+        uses: ./.github/actions/retry-with-backoff
+        with:
+          command: docker compose $COMPOSE_FILES pull --include-deps e2e
+
+      - name: Run the platform registration tests
+        run: |
+          mkdir -p ctrf
+          docker compose $COMPOSE_FILES run e2e sh -lc "yarn test:e2e --project=${{ matrix.platform }}" || TEST_EXIT_CODE=$?
+          CONTAINER_ID=$(docker ps -a --filter "name=e2e-run" --format "{{.ID}}" | head -1)
+          docker cp $CONTAINER_ID:/app/apps/e2e/ctrf/. ./ctrf/ || true
+          mkdir -p test-results
+          docker cp $CONTAINER_ID:/app/apps/e2e/test-results/. ./test-results/ || true
+          exit ${TEST_EXIT_CODE:-0}
+
+      - name: Upload Playwright results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-results-platform-${{ matrix.platform }}
+          path: test-results/
+          retention-days: 7
+
+      - name: Upload CTRF artifact
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ctrf-platform-${{ matrix.platform }}
+          path: ctrf/
+          retention-days: 30
+
+      # One PR comment per platform, apart from the XTM Hub e2e report: the comment tag keeps them separate.
+      - name: Publish Test Report
+        if: always()
+        uses: ctrf-io/github-test-reporter@v1
+        with:
+          title: ${{ matrix.title }} e2e
+          comment-tag: e2e-platform-${{ matrix.platform }}
+          report-path: "./ctrf/**/*.json"
+          pull-request: true
+          summary-report: true
+          failed-report: true
+          flaky-report: true
+          suite-folded-report: true
+          overwrite-comment: true
+          report-order: "summary-report,failed-report,flaky-report,test-report"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Save logs as artifacts
+        if: failure()
+        run: |
+          mkdir -p logs
+          for service in ${{ matrix.platform }} backend frontend e2e; do
+            docker compose $COMPOSE_FILES logs $service > logs/$service.log 2>&1 || true
+          done
+          docker compose $COMPOSE_FILES ps -a > logs/containers.txt 2>&1 || true
+
+      - name: Upload logs
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: service-logs-${{ github.run_id }}-platform-${{ matrix.platform }}
+          path: logs/
+
   run-e2e-tests:
     needs:
       - run-e2e-tests-shards
     if: always()
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
       pull-requests: write
     steps:
       - name: Finalize e2e shards
         run: |
-          if [ "${{ needs.run-e2e-tests-shards.result }}" != "success" ]; then
+          if [ "${{ needs.run-e2e-tests-shards.result }}" != "success" ] && [ "${{ needs.run-e2e-tests-shards.result }}" != "skipped" ]; then
             echo "E2E shard job failed with result: ${{ needs.run-e2e-tests-shards.result }}"
             exit 1
           fi
@@ -417,6 +640,7 @@ jobs:
         if: always() && needs.run-e2e-tests-shards.result != 'skipped'
         uses: ctrf-io/github-test-reporter@v1
         with:
+          title: XTM Hub e2e
           report-path: "./ctrf/**/*.json"
           pull-request: true
           summary-report: true
@@ -432,30 +656,103 @@ jobs:
   run-front-unit-tests:
     needs: run-front-unit-tests-shards
     if: always() && contains(github.ref , 'refs/tags/') == false
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - name: Finalize frontend shards
         run: |
-          if [ "${{ needs.run-front-unit-tests-shards.result }}" != "success" ]; then
+          if [ "${{ needs.run-front-unit-tests-shards.result }}" != "success" ] && [ "${{ needs.run-front-unit-tests-shards.result }}" != "skipped" ]; then
             echo "Frontend shard job failed with result: ${{ needs.run-front-unit-tests-shards.result }}"
             exit 1
           fi
 
+      - name: Checkout repository
+        if: always() && needs.run-front-unit-tests-shards.result != 'skipped'
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 2
+
+      - name: Publish test report
+        if: always() && needs.run-front-unit-tests-shards.result != 'skipped'
+        uses: ./.github/actions/vitest-pr-report
+        continue-on-error: true
+        with:
+          id: frontend
+          title: Frontend unit tests
+          app-dir: apps/frontend
+
   run-api-unit-tests:
     needs: run-api-unit-tests-shards
     if: always() && contains(github.ref , 'refs/tags/') == false
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - name: Finalize backend shards
         run: |
-          if [ "${{ needs.run-api-unit-tests-shards.result }}" != "success" ]; then
+          if [ "${{ needs.run-api-unit-tests-shards.result }}" != "success" ] && [ "${{ needs.run-api-unit-tests-shards.result }}" != "skipped" ]; then
             echo "Backend shard job failed with result: ${{ needs.run-api-unit-tests-shards.result }}"
             exit 1
           fi
 
+      - name: Checkout repository
+        if: always() && needs.run-api-unit-tests-shards.result != 'skipped'
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 2
+
+      - name: Publish test report
+        if: always() && needs.run-api-unit-tests-shards.result != 'skipped'
+        uses: ./.github/actions/vitest-pr-report
+        continue-on-error: true
+        with:
+          id: backend
+          title: Backend unit and integration tests
+          app-dir: apps/backend
+
+  # Vitest coverage of each app on pull requests, merged from the coverage reports of its shards: fails when less than
+  # 80% of the changed lines of an app are covered or when an app is under 80% overall, and adds it at the top of the
+  # app's test report comment, hence the run-*-unit-tests needs. Only checks the apps the pull request changes.
+  # Skipped, so passing, when the shards did not run or when neither app changed.
+  coverage:
+    name: Coverage
+    needs:
+      - detect-changes
+      - run-front-unit-tests-shards
+      - run-api-unit-tests-shards
+      - run-front-unit-tests
+      - run-api-unit-tests
+    if: |
+      always() &&
+      github.event_name == 'pull_request' &&
+      needs.run-front-unit-tests-shards.result == 'success' &&
+      needs.run-api-unit-tests-shards.result == 'success' &&
+      (needs.detect-changes.outputs.frontend == 'true' || needs.detect-changes.outputs.backend == 'true')
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      # The merge commit the shards tested, with its parent to diff the pull request.
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 2
+
+      - name: Check and comment the coverage
+        uses: ./.github/actions/coverage
+        with:
+          apps: |
+            ${{ needs.detect-changes.outputs.frontend == 'true' && 'frontend Frontend apps/frontend' || '' }}
+            ${{ needs.detect-changes.outputs.backend == 'true' && 'backend Backend apps/backend' || '' }}
+
   deploy-feature-branch:
     needs: build-images-tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     permissions:
       contents: read
@@ -463,42 +760,16 @@ jobs:
       github.event_name == 'pull_request' &&
       !contains(github.event.pull_request.labels.*.name, 'skip-feature-env')
     steps:
-      - name: Install AWX cli
-        run: pip install awxkit
-
-      - name: Prepare deployment metadata
-        if: contains(github.ref, 'refs/tags/')
-        id: deployment_metadata
-        run: |
-          NOW=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-          TAG_NAME="${GITHUB_REF_NAME}"
-          VERSION=$(echo "${GITHUB_REF_NAME}" | sed 's/^v//')
-          DEPLOYMENT_KEY="${{ github.repository }}:production:${TAG_NAME}"
-          echo "started_at=$NOW" >> "$GITHUB_OUTPUT"
-          echo "tag_name=$TAG_NAME" >> "$GITHUB_OUTPUT"
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "deployment_key=$DEPLOYMENT_KEY" >> "$GITHUB_OUTPUT"
+      - name: Checkout repository
+        uses: actions/checkout@v6
 
       - name: Deploy
-        run: |
-          max_attempts=5
-          for i in $(seq 1 $max_attempts); do
-            if awx --conf.host https://awx.filigran.io \
-              --conf.token ${{ secrets.AWX_TOKEN }} \
-              -f human job_templates launch 'Deploy XTM Hub feature branch for testing' \
-              --inventory eu-west-staging \
-              --extra_vars "{\"env\":\"Development\",\"xtmhub_version\":\"pr-${{ github.event.number }}\",\"xtmhub_node_env\":\"development\"}"; then
-              echo "✅ Deployment successful"
-              exit 0
-            fi
-            if [ $i -lt $max_attempts ]; then
-              delay=$((2 ** i))
-              echo "⚠️ Attempt $i/$max_attempts failed, retrying in ${delay}s..."
-              sleep $delay
-            fi
-          done
-          echo "❌ All $max_attempts attempts failed"
-          exit 1
+        uses: ./.github/actions/awx-launch
+        with:
+          template: Deploy XTM Hub feature branch for testing
+          inventory: eu-west-staging
+          extra-vars: '{"env":"Development","xtmhub_version":"pr-${{ github.event.number }}","xtmhub_node_env":"development"}'
+          token: ${{ secrets.AWX_TOKEN }}
 
   build-images-prod:
     needs:
@@ -506,7 +777,8 @@ jobs:
       - run-e2e-tests
       - run-front-unit-tests
       - run-api-unit-tests
-    runs-on: ubuntu-latest
+      - run-elasticsearch-tests
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     permissions:
       contents: read
@@ -522,26 +794,18 @@ jobs:
     if: |
       always() &&
       github.event_name != 'pull_request' &&
+      github.event_name != 'merge_group' &&
       (needs.run-lint.result == 'success') &&
       (needs.run-e2e-tests.result == 'success') &&
       (needs.run-front-unit-tests.result == 'skipped' || needs.run-front-unit-tests.result == 'success') &&
-      (needs.run-api-unit-tests.result == 'skipped' || needs.run-api-unit-tests.result == 'success')
+      (needs.run-api-unit-tests.result == 'skipped' || needs.run-api-unit-tests.result == 'success') &&
+      (needs.run-elasticsearch-tests.result == 'skipped' || needs.run-elasticsearch-tests.result == 'success')
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
-
-      - name: Setup Docker layer cache
-        uses: actions/cache@v5
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-prod-${{ matrix.image }}-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-buildx-prod-${{ matrix.image }}-
-            ${{ runner.os }}-buildx-${{ matrix.image }}-
-            ${{ runner.os }}-buildx-
 
       - name: Login to DockerHub
         uses: docker/login-action@v4
@@ -584,31 +848,34 @@ jobs:
           build-args: |
             APP_VERSION=${{ env.VERSION }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: |
-            type=local,src=/tmp/.buildx-cache
-            type=registry,ref=filigran/${{ matrix.image }}:main
-            type=registry,ref=filigran/${{ matrix.image }}:latest
-            type=registry,ref=filigran/${{ matrix.image }}:${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.version'] }}
-          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
-
-      - name: Move cache
-        run: |
-          rm -rf /tmp/.buildx-cache
-          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 
   deploy:
     needs: build-images-prod
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 20
     permissions:
       contents: read
     if: |
       always() &&
       github.event_name != 'pull_request' &&
+      github.event_name != 'merge_group' &&
       (needs.build-images-prod.result == 'success')
     steps:
-      - name: Install AWX cli
-        run: pip install awxkit
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Prepare deployment metadata
+        if: contains(github.ref, 'refs/tags/')
+        id: deployment_metadata
+        run: |
+          NOW=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          TAG_NAME="${GITHUB_REF_NAME}"
+          VERSION=$(echo "${GITHUB_REF_NAME}" | sed 's/^v//')
+          DEPLOYMENT_KEY="${{ github.repository }}:production:${TAG_NAME}"
+          echo "started_at=$NOW" >> "$GITHUB_OUTPUT"
+          echo "tag_name=$TAG_NAME" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "deployment_key=$DEPLOYMENT_KEY" >> "$GITHUB_OUTPUT"
 
       - name: Store deployment started event
         if: contains(github.ref, 'refs/tags/')
@@ -643,26 +910,12 @@ jobs:
       - name: Deploy on Production
         id: awx_production_deploy
         if: contains(github.ref, 'refs/tags/')
-        run: |
-          export VERSION=$(echo "${GITHUB_REF_NAME}" | sed 's/^v//')
-          max_attempts=5
-          for i in $(seq 1 $max_attempts); do
-            if awx --conf.host https://awx.filigran.io \
-              --conf.token ${{ secrets.AWX_TOKEN }} \
-              -f human job_templates launch 'Deploy XTM Hub' \
-              --inventory eu-west-production \
-              --extra_vars "{\"env\":\"Production\",\"xtmhub_version\":\"$VERSION\"}"; then
-              echo "✅ Deployment successful"
-              exit 0
-            fi
-            if [ $i -lt $max_attempts ]; then
-              delay=$((2 ** i))
-              echo "⚠️ Attempt $i/$max_attempts failed, retrying in ${delay}s..."
-              sleep $delay
-            fi
-          done
-          echo "❌ All $max_attempts attempts failed"
-          exit 1
+        uses: ./.github/actions/awx-launch
+        with:
+          template: Deploy XTM Hub
+          inventory: eu-west-production
+          extra-vars: '{"env":"Production","xtmhub_version":"${{ steps.deployment_metadata.outputs.version }}"}'
+          token: ${{ secrets.AWX_TOKEN }}
 
       - name: Send n8n Webhook Notification
         if: contains(github.ref, 'refs/tags/')
@@ -750,44 +1003,107 @@ jobs:
 
       - name: Deploy on Development
         if: github.ref == 'refs/heads/main'
-        run: |
-          max_attempts=5
-          for i in $(seq 1 $max_attempts); do
-            if awx --conf.host https://awx.filigran.io \
-              --conf.token ${{ secrets.AWX_TOKEN }} \
-              -f human job_templates launch 'Deploy XTM Hub' \
-              --inventory eu-west-staging \
-              --extra_vars '{"env":"Development"}'; then
-              echo "✅ Deployment successful"
-              exit 0
-            fi
-            if [ $i -lt $max_attempts ]; then
-              delay=$((2 ** i))
-              echo "⚠️ Attempt $i/$max_attempts failed, retrying in ${delay}s..."
-              sleep $delay
-            fi
-          done
-          echo "❌ All $max_attempts attempts failed"
-          exit 1
+        uses: ./.github/actions/awx-launch
+        with:
+          template: Deploy XTM Hub
+          inventory: eu-west-staging
+          extra-vars: '{"env":"Development"}'
+          token: ${{ secrets.AWX_TOKEN }}
 
       - name: Deploy on Prerelease
         if: github.ref == 'refs/heads/main'
+        uses: ./.github/actions/awx-launch
+        with:
+          template: Deploy XTM Hub
+          inventory: eu-west-staging
+          extra-vars: '{"env":"Prerelease"}'
+          token: ${{ secrets.AWX_TOKEN }}
+
+  # Notifies the team channel when CI fails on a protected branch (main/development)
+  # or in the merge queue. Regular PR-branch CI failures are intentionally excluded,
+  # since those are expected to be worked on by the PR author and don't indicate a
+  # broken mainline/merge-queue state.
+  notify-on-failure:
+    name: Notify team on CI failure (mainline / merge queue)
+    needs:
+      - detect-changes
+      - run-lint
+      - build-images-tests
+      - run-e2e-tests-shards
+      - run-e2e-tests
+      - run-front-unit-tests-shards
+      - run-front-unit-tests
+      - run-api-unit-tests-shards
+      - run-api-unit-tests
+      - build-images-prod
+      - deploy
+    if: |
+      always() &&
+      contains(needs.*.result, 'failure') &&
+      (
+        github.event_name == 'merge_group' ||
+        (github.event_name == 'push' && github.ref == 'refs/heads/main')
+      )
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: read
+    steps:
+      - name: Send Teams notification on CI failure
+        env:
+          TEAMS_WEBHOOK_CI_FAILURE: ${{ secrets.TEAMS_WEBHOOK_CI_FAILURE }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          WORKFLOW_NAME: ${{ github.workflow }}
+          REPO: ${{ github.repository }}
+          REF_NAME: ${{ github.ref_name }}
+          COMMIT_SHA: ${{ github.sha }}
+          EVENT_NAME: ${{ github.event_name }}
         run: |
-          max_attempts=5
-          for i in $(seq 1 $max_attempts); do
-            if awx --conf.host https://awx.filigran.io \
-              --conf.token ${{ secrets.AWX_TOKEN }} \
-              -f human job_templates launch 'Deploy XTM Hub' \
-              --inventory eu-west-staging \
-              --extra_vars '{"env":"Prerelease"}'; then
-              echo "✅ Deployment successful"
-              exit 0
-            fi
-            if [ $i -lt $max_attempts ]; then
-              delay=$((2 ** i))
-              echo "⚠️ Attempt $i/$max_attempts failed, retrying in ${delay}s..."
-              sleep $delay
-            fi
-          done
-          echo "❌ All $max_attempts attempts failed"
-          exit 1
+          if [ -z "$TEAMS_WEBHOOK_CI_FAILURE" ]; then
+            echo "⚠️ TEAMS_WEBHOOK_CI_FAILURE secret is not set, skipping notification"
+            exit 0
+          fi
+
+          if [ "$EVENT_NAME" = "merge_group" ]; then
+            TRIGGER="the merge queue"
+          else
+            TRIGGER="a push to $REF_NAME"
+          fi
+
+          curl -sS -X POST "$TEAMS_WEBHOOK_CI_FAILURE" \
+            -H "Content-Type: application/json" \
+            -d @- <<EOF || true
+          {
+            "type": "message",
+            "attachments": [
+              {
+                "contentType": "application/vnd.microsoft.card.adaptive",
+                "content": {
+                  "type": "AdaptiveCard",
+                  "\$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+                  "version": "1.2",
+                  "body": [
+                    {
+                      "type": "TextBlock",
+                      "size": "medium",
+                      "weight": "bolder",
+                      "color": "attention",
+                      "text": "🚨 CI failed on $TRIGGER",
+                      "wrap": true
+                    },
+                    {
+                      "type": "TextBlock",
+                      "text": "Workflow $WORKFLOW_NAME failed for $REPO (commit $COMMIT_SHA).",
+                      "wrap": true
+                    },
+                    {
+                      "type": "TextBlock",
+                      "text": "[View failed run]($RUN_URL)",
+                      "weight": "bolder",
+                      "wrap": true
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+          EOF

@@ -3,26 +3,27 @@ import { CAPABILITY_BYPASS } from '../../../portal.const';
 
 import {
   OrganizationCapability,
+  PortalCapability,
   ServiceInstance,
 } from '../../../__generated__/resolvers-types';
 import CapabilityPortal from '../../../model/kanel/public/CapabilityPortal';
 import { OrganizationId } from '../../../model/kanel/public/Organization';
-import { ServiceInstanceId } from '../../../model/kanel/public/ServiceInstance';
 import { SubscriptionMutator } from '../../../model/kanel/public/Subscription';
-import { UserServiceId } from '../../../model/kanel/public/UserService';
 import { UserLoadUserBy } from '../../../model/user';
+import { ApiTokenReach } from '../../../security/api-token-reach';
 import { ServiceCapabilityArgs } from '../../../security/directive-graphql/validator/service-capability.validator';
 import { ErrorCode } from '../../../utils/error/error.code';
 import { UserOrganizationDomain } from '../../organization-management/user/user-organization/user-organization.domain';
 import { SubscriptionDomain } from '../../subscription/subscription.domain';
-import { UserServiceDomain } from '../../user-service/user-service.domain';
 import { UserOrganizationCapabilityDomain } from '../user-organization-capability/user-organization-capability.domain';
 
 export const AuthHelper = {
   loadCapabilitiesByServiceId: async (
-    user: UserLoadUserBy,
+    user: Pick<UserLoadUserBy, 'id' | 'selected_organization_id'>,
     serviceId: string
-  ): Promise<{ capabilities: string[] } | undefined> => {
+  ): Promise<
+    { capabilities: string[] | null; is_member: boolean } | undefined
+  > => {
     const userId = user.id;
     const organizationId = user.selected_organization_id;
     return db<ServiceInstance>('ServiceInstance')
@@ -80,24 +81,31 @@ export const AuthHelper = {
           END
         ) FILTER (WHERE "Generic_Service_Capability".id IS NOT NULL OR "Service_Capability".id IS NOT NULL) AS capabilities`
         ),
+        dbRaw('bool_or("userService".id IS NOT NULL) AS is_member'),
       ])
       .where('ServiceInstance.id', '=', dbRaw('?', [serviceId]))
       .groupBy(['ServiceInstance.id', 'subscription.id'])
       .first();
   },
 
-  checkUserServiceIsInServiceInstance: async (
-    userServiceId: UserServiceId,
-    serviceInstanceId: ServiceInstanceId
-  ) => {
-    const userService =
-      await UserServiceDomain.loadUserServiceById(userServiceId);
-    return userService.subscription.service_instance_id === serviceInstanceId;
-  },
-
   userHasBypassCapability: (user: UserLoadUserBy): boolean => {
     return (user.capabilities ?? []).some(
       (c) => c.name === CAPABILITY_BYPASS.name
+    );
+  },
+
+  userHasPortalCapability: (
+    user: UserLoadUserBy | undefined,
+    requiredCapabilities: PortalCapability[]
+  ): boolean => {
+    if (!user) {
+      return false;
+    }
+    if (AuthHelper.userHasBypassCapability(user)) {
+      return true;
+    }
+    return (user.capabilities ?? []).some((c) =>
+      requiredCapabilities.some((capability) => capability === c.name)
     );
   },
 
@@ -152,6 +160,11 @@ export const AuthHelper = {
       requiredCapability: OrganizationCapability;
     }
   ): Promise<{ isAllowed: boolean; isInOrganization: boolean }> => {
+    // An API token reaches its own organization only: another one is answered as if the user were not a member
+    if (!ApiTokenReach.allowsOrganization(organizationId)) {
+      return { isAllowed: false, isInOrganization: false };
+    }
+
     const organizationCapabilities =
       await UserOrganizationCapabilityDomain.loadUserOrganizationCapabilities(
         organizationId
@@ -160,8 +173,12 @@ export const AuthHelper = {
     const isAllowed = AuthHelper.isUserAllowed({
       requiredCapability: requiredCapability,
       userCapabilities: user.capabilities,
-      organizationCapabilities: organizationCapabilities.map(
-        ({ name }) => name as OrganizationCapability
+      // Only the capabilities the token kept: a token without the admin scope keeps none, not even
+      // ADMINISTRATE_ORGANIZATION, which would otherwise allow every capability
+      organizationCapabilities: ApiTokenReach.narrowCapabilities(
+        organizationCapabilities.map(
+          ({ name }) => name as OrganizationCapability
+        )
       ),
     });
 

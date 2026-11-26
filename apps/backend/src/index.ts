@@ -1,53 +1,62 @@
-import { ApolloServer } from '@apollo/server';
-import { unwrapResolverError } from '@apollo/server/errors';
-import { ApolloServerPluginLandingPageDisabled } from '@apollo/server/plugin/disabled';
-import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer';
-import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin/landingPage/default';
 import { expressMiddleware } from '@as-integrations/express5';
 import pkg from 'body-parser';
 import cors from 'cors';
 import express from 'express';
 
 import config from 'config';
-import promBundle from 'express-prom-bundle';
-import expressSession, { SessionData } from 'express-session/index.js';
+import { SessionData } from 'express-session/index.js';
 import { createHandler } from 'graphql-sse/lib/use/express';
 import graphqlUploadExpress from 'graphql-upload/graphqlUploadExpress.mjs';
 import { printSchema } from 'graphql/utilities/index.js';
 import { createServer } from 'http';
 import fs from 'node:fs';
-import { v4 as uuidv4 } from 'uuid';
 import { dbMigration } from '../knexfile';
 import portalConfig from './config';
-import { requestContext } from './context/request.context';
 import { initCronJobs, stopCronJobs } from './crons';
 import { PortalContext } from './model/portal-context';
 import { UserLoadUserBy } from './model/user';
-import { documentDownloadEndpoint } from './modules/document/document-download-endpoint';
+import {
+  apiTokenMiddleware,
+  getApiTokenAuthentication,
+  refuseApiTokenMiddleware,
+} from './modules/api-token/api-token.auth';
+import { apiTokenRateLimiter } from './modules/api-token/api-token.plugin';
+import { DeploymentRequestDataLoader } from './modules/deployment/deployment.dataloader';
 import { DocumentDataLoader } from './modules/document/document.dataloader';
-import { documentVisualizeEndpoint } from './modules/document/visualize-document-endpoint';
+import { FeatureVotingDataLoader } from './modules/feature-voting/feature-voting.dataloader';
+import { NewsFeedDataLoader } from './modules/news-feed/news-feed.dataloader';
+import { OrganizationDataLoader } from './modules/organization-management/organization/organization.dataloader';
+import { RegistrationDataLoader } from './modules/registration/registration.dataloader';
 import { initAuthPlatform } from './modules/security-management/authentication/auth-platform';
 import { ServiceInstanceDataLoader } from './modules/service/instance/service-instance.dataloader';
+import { SubscriptionDataLoader } from './modules/subscription/subscription.dataloader';
 import { TelemetrySnapshotApp } from './modules/telemetry/telemetry-snapshot.app';
-import { errorLoggingPlugin } from './server/apollo-plugins/log';
+import { sseOperationMetrics } from './server/apollo-plugins/metrics';
+import { createApolloServer } from './server/apollo-server';
 import {
-  operationMetricsPlugin,
-  sseActiveConnectionsGauge,
-  sseMessageCounter,
-  sseSubscriptionCounter,
-} from './server/apollo-plugins/metrics';
-import { healthEndpoint } from './server/endpoints/health';
-import { manifestEndpoint } from './server/endpoints/manifest-endpoint';
-import { userPictureEndpoint } from './server/endpoints/user-picture-endpoint';
+  registerEndpoints,
+  registerReadOnlySessionEndpoints,
+} from './server/endpoints';
+import { withQueryLimitRules } from './server/graphql-query-limits';
 import createSchema from './server/graphql-schema';
+import { createHttpMetricsMiddleware } from './server/http-metrics.middleware';
 import platformInit, { minioInit } from './server/initialize';
 import { seedDevelopmentConnectors } from './server/initialize.helper';
+import { requestContextMiddleware } from './server/request-context.middleware';
+import { createSseSchemaDetailsOptions } from './server/schema-details';
+import { securityHeadersMiddleware } from './server/security-headers.middleware';
+import {
+  createSessionMiddlewares,
+  SESSION_MAX_AGE,
+} from './server/session/session.middleware';
 import { getSessionStoreInstance } from './session-store-manager';
 import { initShutdown, registerShutdownHook } from './shutdown';
+import { esDbClient } from './thirdparty/elasticsearch/client';
 import { runESMigrations } from './thirdparty/elasticsearch/migrate';
 import { PgBossApp } from './thirdparty/pgboss/pgboss';
 import { logApp } from './utils/app-logger.util';
 import { getErrorStringProperty } from './utils/error/error-guard.util';
+import { createGraphqlRateLimiters } from './utils/rate-limit.util';
 import {
   startSessionCleanup,
   stopSessionCleanup,
@@ -97,27 +106,29 @@ const PORTAL_CORS_OPTIONS: cors.CorsOptions = {
 };
 
 const app = express();
-const SESSION_MAX_AGE = 24 * 60 * 60 * 1000; // 1 day
-const sessionMiddleware = expressSession({
-  name: portalCookieName,
-  store: getSessionStoreInstance(),
-  secret: portalCookieSecret,
-  saveUninitialized: false,
-  proxy: true,
-  rolling: false,
-  resave: false,
-  cookie: {
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: portalConfig.environment !== 'development',
-    maxAge: SESSION_MAX_AGE,
-  },
+app.set('trust proxy', portalConfig.trust_proxy);
+logApp.info('[TRUST-PROXY] Express trust proxy set', {
+  trustProxy: portalConfig.trust_proxy,
 });
+const { sessionMiddleware, readOnlySessionMiddleware } =
+  createSessionMiddlewares({
+    name: portalCookieName,
+    secret: portalCookieSecret,
+    store: getSessionStoreInstance(),
+  });
+app.use(securityHeadersMiddleware);
 // Default express.json() limit (100kb) is too small for GraphQL mutations
 // carrying an inline base64 payload (e.g. a single connector logo ingested
 // via ingestManifestFragments - some logos alone are several MB), so it is
 // raised here for the whole API.
 app.use(express.json({ limit: '7mb' }));
+// Prometheus metrics. Before the session middleware, so that the routes registered before it are measured too
+const metricsMiddleware = createHttpMetricsMiddleware({
+  mountPaths: [PORTAL_GRAPHQL_PATH, PORTAL_WEBSOCKET_PATH],
+});
+app.use(metricsMiddleware);
+// Before the session middleware, which would renew the session of a logged in user on every request
+registerReadOnlySessionEndpoints(app, readOnlySessionMiddleware);
 app.use(sessionMiddleware);
 // Force maxAge on every request so that sessions created before the maxAge
 // configuration (stored with originalMaxAge: null / expires: null) also
@@ -132,14 +143,6 @@ app.use((req, _res, next) => {
   }
   next();
 });
-
-// Prometheus metrics
-const metricsMiddleware = promBundle({
-  customLabels: {
-    app: 'xtm-hub-api',
-  },
-});
-app.use(metricsMiddleware);
 
 /*
 Encountered an unexpected behavior within the express-session middleware.
@@ -256,60 +259,20 @@ if (
   fs.writeFileSync('../frontend/schema.graphql', printedSchema);
 }
 
-app.use(function (req, res, next) {
-  requestContext.run(
-    {
-      user: req.session.user,
-      correlationId: uuidv4(),
-    },
-    () => {
-      next();
-    }
-  );
-});
+// CORS of the GraphQL endpoints before the API token middleware, which may answer 401 or 429 itself: a browser client
+// must be able to read those answers
+app.use(
+  [PORTAL_GRAPHQL_PATH, PORTAL_WEBSOCKET_PATH],
+  cors<cors.CorsRequest>(PORTAL_CORS_OPTIONS)
+);
+// Before the request context: a Bearer API token sets the user every later layer reads
+app.use(apiTokenMiddleware);
+app.use(requestContextMiddleware);
 
-// The ApolloServer constructor requires two parameters: your schema
-// definition and your set of resolvers.
-// const drainPlugin = {
-//     async serverWillStart() {
-//         return Promise.resolve({
-//             async drainServer() {
-//                 await serverCleanup.dispose();
-//             },
-//         });
-//     },
-// }
-const server = new ApolloServer<PortalContext>({
+const server = createApolloServer({
   schema,
-  csrfPrevention: true,
-  formatError: (formattedError, error) => {
-    // Otherwise Apollo overrides extensions code with INTERNAL_SERVER_ERROR
-    const originalError = unwrapResolverError(error);
-    const code = (originalError as { extensions?: { code?: string } } | null)
-      ?.extensions?.code;
-    if (code) {
-      return {
-        ...formattedError,
-        extensions: { ...formattedError.extensions, code },
-      };
-    }
-    return formattedError;
-  },
-  plugins: [
-    ApolloServerPluginDrainHttpServer({ httpServer }),
-    ...(process.env.NODE_ENV !== 'production'
-      ? [
-          ApolloServerPluginLandingPageLocalDefault({
-            includeCookies: true,
-            variables: {},
-          }),
-        ]
-      : [ApolloServerPluginLandingPageDisabled()]),
-
-    errorLoggingPlugin(),
-    operationMetricsPlugin,
-  ],
-  introspection: process.env.NODE_ENV !== 'production', // Disable introspection in production env
+  httpServer,
+  exposeSchemaDetails: portalConfig.local_dev,
 });
 
 // Note you must call `start()` on the `ApolloServer`
@@ -322,18 +285,22 @@ declare module 'express-session' {
   interface SessionData {
     user: UserLoadUserBy;
     referer: string;
+    // Auth0 account refused for an unverified email, used to resend the email
+    unverifiedIdpSubject: string;
+    // A failed sign-in was started again, which happens once only
+    signInRestarted: boolean;
   }
 }
 
 const middlewareExpress = expressMiddleware(server, {
   context: async ({ req, res }) => {
-    const { user } = req.session;
+    // A Bearer API token (apiTokenMiddleware) runs the request as its user, narrowed to the token's organization
+    // and scope; otherwise the session user
+    const user = getApiTokenAuthentication(req)?.user ?? req.session.user;
     // extract id, only done for request with id directly
     if (req?.body?.variables?.id) {
       req.body.variables.id = extractId(req.body.variables.id);
     }
-
-    // TODO Add build session from request authorization
 
     // user may be undefined for unauthenticated requests;
     // the @auth directive enforces authentication before any resolver accesses it.
@@ -342,16 +309,27 @@ const middlewareExpress = expressMiddleware(server, {
       req,
       res,
       dataLoaders: {
+        deploymentRequest: DeploymentRequestDataLoader.create(),
         document: DocumentDataLoader.create(),
+        featureVoting: FeatureVotingDataLoader.create(),
+        newsFeed: NewsFeedDataLoader.create(),
+        organization: OrganizationDataLoader.create(),
+        registration: RegistrationDataLoader.create(),
         serviceInstance: ServiceInstanceDataLoader.create(),
+        subscription: SubscriptionDataLoader.create(),
       },
     };
 
     return portalContext;
   },
 });
+const sseSchemaDetailsOptions = createSseSchemaDetailsOptions(
+  portalConfig.local_dev
+);
 const handler = createHandler({
   schema,
+  ...sseSchemaDetailsOptions,
+  validate: withQueryLimitRules(sseSchemaDetailsOptions.validate),
   context: async (_req) => {
     const session = await new Promise((resolve) => {
       sessionMiddleware(_req.raw, {} as express.Response, () =>
@@ -361,61 +339,47 @@ const handler = createHandler({
     const { user } = session as SessionData;
     // if (!user) throw new GraphQLError("You must be logged in", { extensions: { code: 'UNAUTHENTICATED' } });
     // TODO Add build session from request authorization
-    return { user, req: _req };
+    // `req` is the Express request on both transports, as `PortalContext` declares: graphql-sse's own request has no
+    // `ip` and keeps the Express one in `raw`.
+    return { user, req: _req.raw };
   },
 
-  onConnect: async (req) => {
-    sseActiveConnectionsGauge.inc({
-      subscription: req.context.res.req.body?.operationName ?? 'Unknown',
-    });
+  onOperation: (ctx, _req, args) => {
+    sseOperationMetrics.onOperation(ctx, args);
   },
-  onComplete: async (_ctx, msg) => {
-    sseActiveConnectionsGauge.dec({
-      subscription: msg.context.res.req.body?.operationName ?? 'Unknown',
-    });
+  onNext: async (ctx, req, result) => {
+    sseOperationMetrics.onNext(ctx);
+    return sseSchemaDetailsOptions.onNext?.(ctx, req, result);
   },
-  onSubscribe: async (_ctx, msg) => {
-    sseSubscriptionCounter.inc({
-      subscription: msg.operationName ?? 'Unknown',
-    });
-  },
-  onNext: async (_ctx, req) => {
-    sseMessageCounter.inc({
-      subscription: req.context.res.req.body?.operationName ?? 'Unknown',
-    });
+  onComplete: (ctx) => {
+    sseOperationMetrics.onComplete(ctx);
   },
 });
 
-app.use(
-  PORTAL_WEBSOCKET_PATH,
-  cors<cors.CorsRequest>(PORTAL_CORS_OPTIONS),
-  json(),
-  handler
-);
+const graphqlRateLimiters = createGraphqlRateLimiters();
 app.use(
   PORTAL_GRAPHQL_PATH,
   sessionMiddleware,
-  cors<cors.CorsRequest>(PORTAL_CORS_OPTIONS),
+  ...graphqlRateLimiters,
   json(),
+  apiTokenRateLimiter,
   middlewareExpress
 );
+// An API token authenticates PORTAL_GRAPHQL_PATH only: every route mounted from here on refuses it. CORS of both
+// GraphQL endpoints is applied before the API token middleware, so a browser client can read the refusal
+app.use(refuseApiTokenMiddleware);
+app.use(PORTAL_WEBSOCKET_PATH, ...graphqlRateLimiters, json(), handler);
 
 // endregion
 
 await initAuthPlatform(app);
-// This /storage/get route is implemented here because the GraphQL resolver cannot return a document directly.
-// It lacks the level of abstraction needed to attach a file to the response (using res.attachment).
-// Therefore, we have to handle it through this route instead.
-documentDownloadEndpoint(app);
-documentVisualizeEndpoint(app);
-healthEndpoint(app);
-userPictureEndpoint(app);
-manifestEndpoint(app);
+registerEndpoints(app);
 // Modified server startup
 if (!process.env.VITEST_MODE || process.env.START_DEV_SERVER) {
   // Ensure migrate the schema
   await dbMigration.migrate();
 
+  await esDbClient.init();
   await runESMigrations();
 
   await platformInit();

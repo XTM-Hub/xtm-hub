@@ -1,0 +1,35 @@
+mutation CreateDeploymentRequest($input: CreateDeploymentRequestInput!) {
+  createDeploymentRequest(input: $input) {
+    id
+    service_instance_id
+  }
+}
+
+mutation GiveDeploymentFeedback($input: GiveDeploymentFeedbackInput!) {
+  giveDeploymentFeedback(input: $input) {
+    success
+  }
+}
+
+mutation ReachSales(
+  $message: String
+  $deploymentRequestType: DeploymentRequestDeploymentType
+) {
+  contactUs(message: $message, deploymentRequestType: $deploymentRequestType) {
+    success
+  }
+}
+
+mutation ReachSalesAboutPlatform(
+  $message: String
+  $platformId: ID
+  $platformIdentifier: PlatformIdentifier
+) {
+  contactUs(
+    message: $message
+    platformId: $platformId
+    platformIdentifier: $platformIdentifier
+  ) {
+    success
+  }
+}

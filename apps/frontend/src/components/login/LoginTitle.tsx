@@ -1,12 +1,15 @@
 'use client';
+import { useTranslate } from '@/hooks/use-translate';
 import LogoXTMDark from '@public/logo_xtm_hub_dark.svg';
-import { useTranslations } from 'next-intl';
 
 const LoginTitleForm = ({}) => {
-  const t = useTranslations();
+  const t = useTranslate();
   return (
     <>
-      <LogoXTMDark />
+      <LogoXTMDark
+        role="img"
+        aria-label={t('LoginPage.Logo')}
+      />
       <h1 className="sr-only">{t('LoginPage.Title')}</h1>
     </>
   );

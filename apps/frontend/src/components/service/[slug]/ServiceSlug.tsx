@@ -1,8 +1,4 @@
 import ServiceSlugHeader from '@/components/service/[slug]/ServiceSlugHeader';
-import {
-  ServiceInstanceByIdQuery,
-  serviceInstanceForSubscriptionsFragment,
-} from '@/components/service/service.graphql';
 import BadgeOverflowCounter, {
   BadgeOverflow,
 } from '@/components/ui/BadgeOverflowCounter';
@@ -11,39 +7,37 @@ import {
   BreadcrumbNavLink,
 } from '@/components/ui/BreadcrumbNav';
 import {
+  DataTable,
+  DataTableHeadBarOptions,
+  DataTableToolbar,
+  SelectionState,
+} from '@/components/ui/data-table';
+import {
   IconActions,
   IconActionsItem,
   IconActionsLink,
 } from '@/components/ui/IconActions';
-import { SearchInput } from '@/components/ui/SearchInput';
 import useAdminPath from '@/hooks/use-admin-path';
-import { DEBOUNCE_TIME } from '@/utils/constant';
-import { i18nKey } from '@/utils/datatable';
-import { APP_PATH } from '@/utils/path/constant';
+import { useDebouncedSearch } from '@/hooks/use-debounced-search';
+import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
+import { getDataTableLabels } from '@/utils/design-system/data-table';
+import { ADMIN_SERVICE_CATALOG_PATH, APP_PATH } from '@/utils/path/constant';
+import { Button, Paper, SearchField, Switch } from '@filigran/design-system';
 import { AddIcon, DeleteIcon, MoreVertIcon } from '@filigran/icon';
 import {
-  DataTable,
-  DataTableHeadBarOptions,
-  SelectionState,
-  Switch,
-} from '@filigran/ui';
-import { Button } from '@filigran/ui/servers';
-import { serviceInstanceByIdQuery } from '@generated/serviceInstanceByIdQuery.graphql';
-import { serviceInstanceForSubscriptions_fragment$key } from '@generated/serviceInstanceForSubscriptions_fragment.graphql';
-import { subscription_fragment$data } from '@generated/subscription_fragment.graphql';
+  ServiceInstanceWithCapabilitiesItemFragment,
+  SubscriptionItemFragment,
+} from '@graphql/generated';
 import { ColumnDef, PaginationState } from '@tanstack/react-table';
-import { useTranslations } from 'next-intl';
-import React, { useMemo, useState } from 'react';
-import { PreloadedQuery, readInlineData, usePreloadedQuery } from 'react-relay';
-import { useDebounceCallback } from 'usehooks-ts';
+import { useMemo, useState } from 'react';
 import { ServiceSlugAddCapabilities } from './ServiceSlugAddCapabilities';
 import { ServiceSlugDeleteSubscription } from './ServiceSlugDeleteSubscription';
 import { ServiceSlugSubscription } from './ServiceSlugSubscription';
 
 interface ServiceSlugProps {
-  subscriptions: subscription_fragment$data[];
-  queryRefServiceInstance: PreloadedQuery<serviceInstanceByIdQuery>;
-  subscriptionConnectionId: string;
+  subscriptions: SubscriptionItemFragment[];
+  serviceInstance: ServiceInstanceWithCapabilitiesItemFragment;
 }
 
 const emptySelectionState = (): SelectionState => ({
@@ -52,47 +46,27 @@ const emptySelectionState = (): SelectionState => ({
   excludedIds: new Set<string>(),
 });
 
-const ServiceSlug = ({
-  subscriptions,
-  queryRefServiceInstance,
-  subscriptionConnectionId,
-}: ServiceSlugProps) => {
+const ServiceSlug = ({ subscriptions, serviceInstance }: ServiceSlugProps) => {
   const [searchTerm, setSearchTerm] = useState('');
-
-  const queryDataRequest = usePreloadedQuery<serviceInstanceByIdQuery>(
-    ServiceInstanceByIdQuery,
-    queryRefServiceInstance
-  );
-  const serviceInstanceRef = queryDataRequest.serviceInstanceById;
-
-  if (!serviceInstanceRef) {
-    return null;
-  }
-
-  const serviceInstance =
-    readInlineData<serviceInstanceForSubscriptions_fragment$key>(
-      serviceInstanceForSubscriptionsFragment,
-      serviceInstanceRef
-    );
   const [shouldDisplayPersonalSpaces, setShouldDisplayPersonalSpaces] =
     useState(false);
   const [deleteSubscriptions, setDeleteSubscriptions] = useState<
-    subscription_fragment$data[] | undefined
+    SubscriptionItemFragment[] | undefined
   >(undefined);
   const [updateSubscription, setUpdateSubscription] = useState<
-    subscription_fragment$data | undefined
+    SubscriptionItemFragment | undefined
   >(undefined);
   const [openEdit, setOpenEdit] = useState(false);
   const [openAddCapabilities, setOpenAddCapabilities] = useState(false);
   const [selection, setSelection] =
     useState<SelectionState>(emptySelectionState);
 
-  const t = useTranslations();
+  const t = useTranslate();
 
-  const debounceHandleInput = useDebounceCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value),
-    DEBOUNCE_TIME
-  );
+  const searchHandlers = useDebouncedSearch({
+    apply: setSearchTerm,
+    appliedTerm: searchTerm,
+  });
 
   const [pagination] = useState<PaginationState>({
     pageIndex: 0,
@@ -106,7 +80,10 @@ const ServiceSlug = ({
       ? [
           { label: 'MenuLinks.Home', href: `/${APP_PATH}` },
           { label: 'MenuLinks.Settings' },
-          { label: 'MenuLinks.Service', href: `/${APP_PATH}/admin/service` },
+          {
+            label: 'MenuLinks.ServiceCatalog',
+            href: ADMIN_SERVICE_CATALOG_PATH,
+          },
         ]
       : [{ label: 'MenuLinks.Home', href: `/${APP_PATH}` }]),
     {
@@ -115,7 +92,7 @@ const ServiceSlug = ({
     },
   ];
 
-  const columns: ColumnDef<subscription_fragment$data>[] = [
+  const columns: ColumnDef<SubscriptionItemFragment>[] = [
     {
       accessorKey: 'organization.name',
       id: 'organizationName',
@@ -151,17 +128,16 @@ const ServiceSlug = ({
         return (
           <div className="flex items-center justify-end">
             <IconActions
-              icon={
-                <>
-                  <MoreVertIcon className="h-4 w-4 text-primary" />
-                  <span className="sr-only">{t('Utils.OpenMenu')}</span>
-                </>
-              }>
+              analyticsId="list_row_actions_open"
+              aria-label={t('Utils.OpenMenu')}
+              icon={<MoreVertIcon className="h-4 w-4 text-icon-highlight" />}>
               <IconActionsLink
+                analyticsId="admin_subscription_users_open"
                 href={`/${APP_PATH}/admin/service/${row.id}/subscription`}>
                 {t('Service.Management.ManageUsers')}
               </IconActionsLink>
               <IconActionsItem
+                {...analyticsId('admin_subscription_edit')}
                 onClick={() => {
                   setUpdateSubscription(row.original);
                   setOpenEdit(true);
@@ -169,6 +145,7 @@ const ServiceSlug = ({
                 {t('Utils.Edit')}
               </IconActionsItem>
               <IconActionsItem
+                {...analyticsId('admin_subscription_delete')}
                 onClick={() => setDeleteSubscriptions([row.original])}>
                 {t('Utils.Delete')}
               </IconActionsItem>
@@ -180,44 +157,43 @@ const ServiceSlug = ({
   ];
 
   const toolbar = (
-    <div className="flex justify-between flex-wrap gap-s pt-s">
-      <div className="flex items-center gap-m ml-l">
-        <div className="flex-1 max-w-sm">
-          <SearchInput
-            id="SearchTerm"
-            placeholder={t('Service.Management.SearchOrganization')}
-            onChange={debounceHandleInput}
-          />
-        </div>
-        <div className="flex items-center">
-          <Switch
-            checked={shouldDisplayPersonalSpaces}
-            onCheckedChange={(value) => setShouldDisplayPersonalSpaces(value)}
-            id="displayPersonalSpaces"
-          />
-          <label
-            htmlFor="displayPersonalSpaces"
-            className="ml-s">
-            {t('Service.Management.ShowPersonalSpaces')}
-          </label>
-        </div>
-      </div>
-
-      <div className="flex gap-s flex-wrap ml-auto">
-        <ServiceSlugSubscription
-          subscriptions={subscriptions}
-          subscriptionToEdit={updateSubscription}
-          serviceInstance={serviceInstance}
-          subscriptionConnectionId={subscriptionConnectionId}
-          openEdit={openEdit}
-          setOpenEdit={(open) => {
-            setOpenEdit(open);
-            if (!open) setUpdateSubscription(undefined);
-          }}
+    <DataTableToolbar
+      className="pt-2"
+      search={
+        <SearchField
+          id="SearchTerm"
+          fullWidth
+          aria-label={t('Service.Management.SearchOrganization')}
+          placeholder={t('Service.Management.SearchOrganization')}
+          clearLabel={t('DesignSystem.SearchField.Clear')}
+          onChange={searchHandlers.onChange}
+          onClear={searchHandlers.onClear}
         />
-        <DataTableHeadBarOptions />
-      </div>
-    </div>
+      }
+      actions={
+        <>
+          <ServiceSlugSubscription
+            subscriptions={subscriptions}
+            subscriptionToEdit={updateSubscription}
+            serviceInstance={serviceInstance}
+            openEdit={openEdit}
+            setOpenEdit={(open) => {
+              setOpenEdit(open);
+              if (!open) setUpdateSubscription(undefined);
+            }}
+          />
+          <DataTableHeadBarOptions />
+        </>
+      }
+      extraControls={
+        <Switch
+          {...analyticsId('admin_subscription_personal_spaces_toggle')}
+          label={t('Service.Management.ShowPersonalSpaces')}
+          checked={shouldDisplayPersonalSpaces}
+          onCheckedChange={(value) => setShouldDisplayPersonalSpaces(value)}
+        />
+      }
+    />
   );
 
   const filteredAndSortedData = useMemo(() => {
@@ -271,12 +247,20 @@ const ServiceSlug = ({
       <BreadcrumbNav value={breadcrumbValue} />
 
       <div>
-        <ServiceSlugHeader serviceInstance={serviceInstance} />
-        <div className="border rounded bg-elevation-background-layer-1 p-m">
-          <h2 className="">{t('Service.Management.Description') + ':'}</h2>
-
+        <ServiceSlugHeader
+          serviceInstance={serviceInstance}
+          capabilities={serviceInstance.service_definition?.service_capability}
+        />
+        <Paper
+          as="section"
+          padding={16}
+          title={
+            <h2 className="[font:inherit] tracking-[inherit]">
+              {t('Service.Management.Description')}
+            </h2>
+          }>
           <DataTable
-            i18nKey={i18nKey(t)}
+            {...getDataTableLabels(t)}
             columns={columns}
             data={filteredAndSortedData}
             toolbar={toolbar}
@@ -289,23 +273,22 @@ const ServiceSlug = ({
                 actions: () => (
                   <>
                     <Button
-                      variant="tertiary"
-                      size="sm"
-                      className="cursor-pointer"
+                      {...analyticsId('admin_subscription_capability_create')}
+                      priority="tertiary"
+                      startIcon={<AddIcon className="h-4 w-4" />}
                       onClick={() => setOpenAddCapabilities(true)}>
-                      <AddIcon className="h-4 w-4 m-s" />
                       {t(
                         'Service.Management.AddSubscriptionCapabilities.Button'
                       )}
                     </Button>
                     <Button
-                      variant="tertiary-destructive"
-                      size="sm"
-                      className="cursor-pointer"
+                      {...analyticsId('admin_subscriptions_delete')}
+                      variant="destructive"
+                      priority="tertiary"
+                      startIcon={<DeleteIcon className="h-4 w-4" />}
                       onClick={() =>
                         setDeleteSubscriptions(selectedSubscriptions)
                       }>
-                      <DeleteIcon className="h-4 w-4 m-s" />
                       {t('Utils.Delete')}
                     </Button>
                   </>
@@ -320,13 +303,12 @@ const ServiceSlug = ({
               columnPinning: { right: ['actions'] },
             }}
           />
-        </div>
+        </Paper>
       </div>
 
       {deleteSubscriptions && deleteSubscriptions.length > 0 && (
         <ServiceSlugDeleteSubscription
           subscriptions={deleteSubscriptions}
-          subscriptionConnectionId={subscriptionConnectionId}
           onDeleted={() => {
             setSelection(emptySelectionState);
           }}

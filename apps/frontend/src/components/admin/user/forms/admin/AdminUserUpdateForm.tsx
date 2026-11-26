@@ -4,51 +4,43 @@ import {
 } from '@/components/admin/user/AutocompleteOrganization';
 import { CapabilityDescription } from '@/components/admin/user/CapabilityDescription';
 import { userEditAdminFormSchema } from '@/components/admin/user/forms/user-form.schema';
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { useRefreshUsersList } from '@/components/admin/user/use-refresh-users-list';
+import { UsersListUser } from '@/components/admin/user/user-list.types';
+import { SettingsContext } from '@/components/settings/EnvPortalContext';
 import { CapabilityMultiSelect } from '@/components/ui/capability/MultiSelect';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { Form, FormField } from '@/components/ui/form';
+import { Label } from '@/components/ui/label';
+import { SheetFooter } from '@/components/ui/sheet';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
+import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
+import { portalGraphqlClient } from '@/lib/graphql-client';
 import { cn, isEmpty } from '@/lib/utils';
+import { Button, IconButton, Input } from '@filigran/design-system';
 import { DeleteIcon } from '@filigran/icon';
-import {
-  Button,
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  Input,
-  SheetFooter,
-  toast,
-} from '@filigran/ui';
-import { Label } from '@filigran/ui/clients';
-import { UserList_fragment$data } from '@generated/UserList_fragment.graphql';
+import { useUserAdminEditMutation } from '@graphql/generated';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useContext, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
-import { graphql, useMutation } from 'react-relay';
 import { z } from 'zod';
 
 interface AdminUserUpdateFormProps {
-  user: UserList_fragment$data;
+  user: UsersListUser;
   callback: () => void;
 }
-
-export const AdminUserUpdateFormMutation = graphql`
-  mutation AdminUserUpdateFormMutation($id: ID!, $input: AdminEditUserInput!) {
-    adminEditUser(id: $id, input: $input) {
-      ...UserList_fragment
-    }
-  }
-`;
 
 export const AdminUserUpdateForm = ({
   user,
   callback,
 }: AdminUserUpdateFormProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const { handleCloseSheet, setIsDirty } = useDialogContext();
+  const { settings } = useContext(SettingsContext);
+
+  // Matches the API, which accepts a password in development only.
+  const isDevelopmentEnvSetting = settings?.environment === 'development';
 
   const [userOrganization, setUserOrganization] = useState<
     UserOrganizationFormProps[]
@@ -78,6 +70,7 @@ export const AdminUserUpdateForm = ({
     defaultValues: {
       first_name: user.first_name ?? '',
       last_name: user.last_name ?? '',
+      password: '',
       organization_capabilities: (user.organization_capabilities ?? [])
         .filter((org) => !org.organization.personal_space)
         .map((o) => ({
@@ -95,53 +88,62 @@ export const AdminUserUpdateForm = ({
   // Some issue with addUser, the formState isDirty without any modification, so for now we check if dirtyFields get any key
   setIsDirty(!isEmpty(form.formState.dirtyFields));
 
-  const [updateUserMutation] = useMutation(AdminUserUpdateFormMutation);
-
-  const updateUser = (values: z.infer<typeof userEditAdminFormSchema>) => {
-    updateUserMutation({
-      variables: {
-        input: {
-          ...values,
-        },
-        id: user.id,
-      },
-      onCompleted: () => {
-        toast({
+  const refreshUsersList = useRefreshUsersList();
+  // One mutation for the update and the status change, as before: both report
+  // the same way.
+  const { mutate: updateUserMutation } = useUserAdminEditMutation<Error>(
+    portalGraphqlClient,
+    {
+      // On the hook, not on mutate: like Relay, the outcome is handled even if
+      // the form is gone by then.
+      onSuccess: () => {
+        refreshUsersList();
+        showSnackbar({
+          severity: 'success',
           title: t('Utils.Success'),
           description: t('UserActions.UserUpdated', { email: user.email }),
         });
         callback();
       },
       onError: (error) => {
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: t(`Error.Server.${error.message}`),
         });
+      },
+    }
+  );
+
+  // The API handles a null field like a field left out, as Relay sent them.
+  const updateUser = ({
+    password,
+    ...values
+  }: z.infer<typeof userEditAdminFormSchema>) => {
+    updateUserMutation({
+      id: user.id,
+      input: {
+        first_name: values.first_name ?? null,
+        last_name: values.last_name ?? null,
+        organization_capabilities: values.organization_capabilities,
+        // An empty password keeps the current one.
+        password: password || null,
+        disabled: null,
+        email: null,
       },
     });
   };
 
-  const disableUser = (values: { disabled: boolean }) => {
-    const input = values;
+  const disableUser = ({ disabled }: { disabled: boolean }) => {
     updateUserMutation({
-      variables: {
-        input,
-        id: user.id,
-      },
-      onCompleted: () => {
-        toast({
-          title: t('Utils.Success'),
-          description: t('UserActions.UserUpdated', { email: user.email }),
-        });
-        callback();
-      },
-      onError: (error) => {
-        toast({
-          variant: 'destructive',
-          title: t('Utils.Error'),
-          description: t(`Error.Server.${error.message}`),
-        });
+      id: user.id,
+      input: {
+        disabled,
+        first_name: null,
+        last_name: null,
+        organization_capabilities: null,
+        password: null,
+        email: null,
       },
     });
   };
@@ -153,41 +155,51 @@ export const AdminUserUpdateForm = ({
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="w-full space-y-xl">
+        className="w-full space-y-6">
         <FormField
           control={form.control}
           name="first_name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('UserForm.FirstName')}</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder={t('UserForm.FirstName')}
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          render={({ field, fieldState }) => (
+            <Input
+              label={t('UserForm.FirstName')}
+              placeholder={t('UserForm.FirstName')}
+              error={fieldState.error?.message}
+              {...field}
+            />
           )}
         />
         <FormField
           control={form.control}
           name="last_name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('UserForm.LastName')}</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder={t('UserForm.LastName')}
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          render={({ field, fieldState }) => (
+            <Input
+              label={t('UserForm.LastName')}
+              placeholder={t('UserForm.LastName')}
+              error={fieldState.error?.message}
+              {...field}
+            />
           )}
         />
+        {isDevelopmentEnvSetting && (
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field, fieldState }) => (
+              <Input
+                label={t('UserForm.Password')}
+                type="password"
+                // Keeps the browser from filling in the administrator's own saved password.
+                autoComplete="new-password"
+                placeholder={t('UserForm.Password')}
+                helperText={t('UserForm.PasswordHelper')}
+                error={fieldState.error?.message}
+                {...field}
+              />
+            )}
+          />
+        )}
         <CapabilityDescription />
-        <div className="flex items-center gap-m">
+        <div className="flex items-center gap-3">
           <Label>{t('UserForm.Organizations')}</Label>
           <AutocompleteOrganization
             selectedOrganizationCapabilities={form.getValues(
@@ -199,8 +211,8 @@ export const AdminUserUpdateForm = ({
 
         <div
           className={cn(
-            '!mt-m px-l py-m space-y-s',
-            fields.length > 0 && 'border bg-card rounded'
+            '!mt-3 px-4 py-3 space-y-2',
+            fields.length > 0 && 'layer-1 border bg-elevation-default rounded'
           )}>
           {fields.map((field, index) => {
             return (
@@ -208,33 +220,30 @@ export const AdminUserUpdateForm = ({
                 control={form.control}
                 key={`organization_capabilities.${index}.capabilities`}
                 name={`organization_capabilities.${index}.capabilities`}
-                render={({ field: formField }) => {
+                render={({ field: formField, fieldState }) => {
+                  const organizationName = userOrganization.find(
+                    ({ id }) => id === field.organization_id
+                  )?.name;
                   return (
-                    <FormItem>
-                      <div className="grid gap-m items-center grid-cols-[1fr_4fr_3rem]">
-                        <Label>
-                          {
-                            userOrganization.find(
-                              ({ id }) => id === field.organization_id
-                            )?.name
-                          }
-                        </Label>
-                        <FormControl>
-                          <CapabilityMultiSelect
-                            value={formField.value}
-                            onChange={formField.onChange}
-                          />
-                        </FormControl>
-                        <Button
-                          type="button"
-                          variant="tertiary"
-                          size="icon"
-                          onClick={() => remove(index)}>
-                          <DeleteIcon className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
+                    <div className="grid gap-3 items-center grid-cols-[1fr_4fr_3rem]">
+                      <Label>{organizationName}</Label>
+                      <CapabilityMultiSelect
+                        accessibleName={organizationName}
+                        value={formField.value}
+                        onChange={formField.onChange}
+                        error={fieldState.error?.message}
+                        // The box is layer 1, where a layer-1 panel paints the input colour.
+                        contentClassName="layer-0"
+                      />
+                      <IconButton
+                        type="button"
+                        priority="tertiary"
+                        {...analyticsId('admin_user_organization_remove')}
+                        aria-label={t('MenuActions.Remove')}
+                        icon={<DeleteIcon className="h-4 w-4" />}
+                        onClick={() => remove(index)}
+                      />
+                    </div>
                   );
                 }}
               />
@@ -245,36 +254,43 @@ export const AdminUserUpdateForm = ({
         <SheetFooter className="justify-between sm:justify-between pb-0">
           {user.disabled ? (
             <Button
-              variant="secondary"
+              priority="secondary"
+              {...analyticsId('admin_user_status_toggle')}
               onClick={() => disableUser({ disabled: false })}>
               {t('UserActions.Enable')}
             </Button>
           ) : (
-            <AlertDialogComponent
-              AlertTitle={t('MenuActions.Disable')}
-              actionButtonText={t('MenuActions.Disable')}
-              variantName={'destructive'}
-              triggerElement={
-                <Button variant="secondary-destructive">
+            <ConfirmDialog
+              confirmAnalyticsId="admin_user_deactivation_confirm"
+              title={t('MenuActions.Disable')}
+              confirmLabel={t('MenuActions.Disable')}
+              destructive
+              trigger={
+                <Button
+                  variant="destructive"
+                  priority="secondary"
+                  {...analyticsId('admin_user_status_toggle')}>
                   {t('UserActions.Disable')}
                 </Button>
               }
-              onClickContinue={() => disableUser({ disabled: true })}>
+              onConfirm={() => disableUser({ disabled: true })}>
               {t('DisableUserDialog.TextDisableThisUser', {
                 email: user.email,
               })}
-            </AlertDialogComponent>
+            </ConfirmDialog>
           )}
-          <div className="flex gap-s">
+          <div className="flex gap-2">
             <Button
-              variant="secondary"
+              priority="secondary"
               type="button"
+              {...analyticsId('admin_form_cancel')}
               onClick={(e) => handleCloseSheet(e)}>
               {t('Utils.Cancel')}
             </Button>
             <Button
               disabled={!form.formState.isValid}
-              type="submit">
+              type="submit"
+              {...analyticsId('admin_user_submit')}>
               {t('Utils.Validate')}
             </Button>
           </div>

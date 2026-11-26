@@ -1,9 +1,28 @@
 scalar ServiceGroupId
 
+enum ServiceGroupName {
+  Admin
+  Analyst
+  Reader
+  Manager
+  Observer
+  User
+}
+
 type ServiceGroup implements Node {
   id: ID!
-  name: String!
+  name: ServiceGroupName!
   users: [User!]
+}
+
+type UserPlatformGroup {
+  platformIdentifier: PlatformIdentifier!
+  name: ServiceGroupName!
+}
+
+type BundleUserServiceGroup {
+  user: User!
+  groups: [UserPlatformGroup!]!
 }
 
 input UpdateServiceGroupsInputGroup {
@@ -15,8 +34,41 @@ input UpdateServiceGroupsInput {
   groups: [UpdateServiceGroupsInputGroup!]!
 }
 
+input BundleUserRoleAssignmentInput {
+  product: PlatformIdentifier!
+  role: ServiceGroupName!
+}
+
+input AddUsersToBundleGroupsInput {
+  userIds: [UserId!]!
+  emails: [String!]
+  roles: [BundleUserRoleAssignmentInput!]!
+}
+
+input UpdateBundleUserGroupsRoleInput {
+  product: PlatformIdentifier!
+  role: ServiceGroupName
+}
+
+input UpdateBundleUserGroupsInput {
+  userIds: [UserId!]!
+  roles: [UpdateBundleUserGroupsRoleInput!]!
+}
+
 type Query {
   serviceGroups(serviceInstanceId: ServiceInstanceId!): [ServiceGroup!]!
+    @auth(
+      portalCapa: [BYPASS]
+      orgaCapa: [ADMINISTRATE_ORGANIZATION, MANAGE_PLATFORM_REGISTRATION]
+    )
+  bundleUserServiceGroups(
+    serviceInstanceId: ServiceInstanceId!
+  ): [BundleUserServiceGroup!]!
+    @auth(
+      portalCapa: [BYPASS]
+      orgaCapa: [ADMINISTRATE_ORGANIZATION, MANAGE_PLATFORM_REGISTRATION]
+    )
+  bundleProducts(serviceInstanceId: ServiceInstanceId!): [PlatformIdentifier!]!
     @auth(
       portalCapa: [BYPASS]
       orgaCapa: [ADMINISTRATE_ORGANIZATION, MANAGE_PLATFORM_REGISTRATION]
@@ -25,6 +77,30 @@ type Query {
 
 type Mutation {
   updateServiceGroups(input: UpdateServiceGroupsInput!): [ServiceGroup!]!
+    @auth(
+      portalCapa: [BYPASS]
+      orgaCapa: [ADMINISTRATE_ORGANIZATION, MANAGE_PLATFORM_REGISTRATION]
+    )
+  addUsersToBundleGroups(
+    serviceInstanceId: ServiceInstanceId!
+    input: AddUsersToBundleGroupsInput!
+  ): [BundleUserServiceGroup!]!
+    @auth(
+      portalCapa: [BYPASS]
+      orgaCapa: [ADMINISTRATE_ORGANIZATION, MANAGE_PLATFORM_REGISTRATION]
+    )
+  removeUsersFromBundleGroups(
+    serviceInstanceId: ServiceInstanceId!
+    userIds: [UserId!]!
+  ): [UserId!]!
+    @auth(
+      portalCapa: [BYPASS]
+      orgaCapa: [ADMINISTRATE_ORGANIZATION, MANAGE_PLATFORM_REGISTRATION]
+    )
+  updateBundleUserGroups(
+    serviceInstanceId: ServiceInstanceId!
+    input: UpdateBundleUserGroupsInput!
+  ): [BundleUserServiceGroup!]!
     @auth(
       portalCapa: [BYPASS]
       orgaCapa: [ADMINISTRATE_ORGANIZATION, MANAGE_PLATFORM_REGISTRATION]

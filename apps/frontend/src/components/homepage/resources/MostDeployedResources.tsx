@@ -1,13 +1,14 @@
 import HomepageResourceList from '@/components/homepage/resources/HomepageResourceList';
+import { getTranslate } from '@/hooks/get-translate';
 import { PublicLocale } from '@/i18n/config';
 import { serverGraphqlFetch } from '@/lib/server-graphql-fetch';
+import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '@/utils/constant';
 import {
   MostDeployedDocumentsQueryDocument,
   MostDeployedDocumentsQueryQuery,
   MostDeployedDocumentsQueryQueryVariables,
   PlatformIdentifier,
 } from '@graphql/generated';
-import { getTranslations } from 'next-intl/server';
 
 const MOST_DEPLOYED_LIMIT = 8;
 
@@ -22,7 +23,7 @@ const MostDeployedResources = async ({
   isAuthenticated = false,
   paramsLocale,
 }: MostDeployedResourcesProps) => {
-  const t = await getTranslations('HomePage.XtmMostDeployedResources');
+  const t = await getTranslate('HomePage.XtmMostDeployedResources');
 
   const data = await serverGraphqlFetch<
     MostDeployedDocumentsQueryQuery,
@@ -33,7 +34,7 @@ const MostDeployedResources = async ({
       limit: MOST_DEPLOYED_LIMIT,
       platformIdentifiers: platformIdentifiers ?? [],
     },
-    { next: { revalidate: 3600 } }
+    { next: { revalidate: PUBLIC_PAGE_REVALIDATE_SECONDS } }
   );
 
   return (

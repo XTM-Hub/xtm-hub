@@ -3,8 +3,9 @@
 import knex from 'knex';
 import { baseConfig } from '../../knexconfig';
 import { esDbClient } from '../thirdparty/elasticsearch/client';
+import { withIndexPrefix } from '../thirdparty/elasticsearch/index-prefix';
 
-const TELEMETRY_INDEX = 'telemetry';
+const TELEMETRY_INDEX = withIndexPrefix('telemetry');
 const ONE_CLICK_DEPLOY_EVENT_TYPE = 'one_click_deploy';
 const BATCH_SIZE = 1000;
 

@@ -1,55 +1,62 @@
-import { DeleteEpicMutation } from '@/components/epic/epic.graphql';
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
-import { useToast } from '@filigran/ui';
-import { epic_fragment$data } from '@generated/epic_fragment.graphql';
-import { epicDeleteMutation } from '@generated/epicDeleteMutation.graphql';
-import { useTranslations } from 'next-intl';
-import { useMutation } from 'react-relay';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
+import { useTranslate } from '@/hooks/use-translate';
+import { analyticsEpic } from '@/lib/analytics/analytics.context';
+import { portalGraphqlClient } from '@/lib/graphql-client';
+import { removeFromQueryCache } from '@/utils/query-cache';
+import {
+  EpicFieldsFragment,
+  EpicsQuery,
+  useEpicDeleteMutation,
+} from '@graphql/generated';
+import { epicKeys } from '@graphql/xtm-platform-roadmap/epic.keys';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface DeleteEpicProps {
-  epic: epic_fragment$data;
-  connectionId: string;
+  epic: EpicFieldsFragment;
   open: boolean;
   setOpen: (open: boolean) => void;
 }
 
-export const DeleteEpic = ({
-  epic,
-  connectionId,
-  open,
-  setOpen,
-}: DeleteEpicProps) => {
-  const [deleteEpicMutation] =
-    useMutation<epicDeleteMutation>(DeleteEpicMutation);
-  const t = useTranslations();
-  const { toast } = useToast();
-  const onDeletedEpic = (deletedEpicId: string) => {
-    deleteEpicMutation({
-      variables: { id: deletedEpicId, connections: [connectionId] },
-      onCompleted: () => {
-        toast({
-          title: t('Utils.Success'),
-          description: t('Epic.EpicActions.EpicDeleted'),
-        });
-      },
-      onError: (error) => {
-        toast({
-          variant: 'destructive',
-          title: t('Utils.Error'),
-          description: <>{t(`Error.Server.${error.message}`)}</>,
-        });
-      },
-    });
-  };
+export const DeleteEpic = ({ epic, open, setOpen }: DeleteEpicProps) => {
+  const t = useTranslate();
+  const queryClient = useQueryClient();
+  const { mutate: deleteEpic } = useEpicDeleteMutation(portalGraphqlClient, {
+    onSuccess: async (_data, { id }) => {
+      showSnackbar({
+        severity: 'success',
+        title: t('Utils.Success'),
+        description: t('Epic.EpicActions.EpicDeleted'),
+      });
+      // Removes the card at once; the refetch then brings the lists in line with the server.
+      queryClient.setQueriesData<EpicsQuery>(
+        { queryKey: epicKeys.all() },
+        removeFromQueryCache('epics', id)
+      );
+      await queryClient.invalidateQueries({ queryKey: epicKeys.all() });
+    },
+    onError: (error: unknown) => {
+      const errorMessage =
+        error instanceof Error ? error.message : 'UNKNOWN_ERROR';
+      showSnackbar({
+        severity: 'error',
+        title: t('Utils.Error'),
+        description: <>{t(`Error.Server.${errorMessage}`)}</>,
+      });
+    },
+  });
+
   return (
-    <AlertDialogComponent
-      actionButtonText={t('Utils.Delete')}
-      variantName={'destructive'}
-      AlertTitle={t('Epic.EpicActions.DeleteEpic', { epicName: epic.title })}
-      isOpen={open}
+    <ConfirmDialog
+      analyticsContext={analyticsEpic(epic.title)}
+      confirmAnalyticsId="roadmap_epic_deletion_confirm"
+      confirmLabel={t('Utils.Delete')}
+      destructive
+      title={t('Epic.EpicActions.DeleteEpic', { epicName: epic.title })}
+      open={open}
       onOpenChange={setOpen}
-      onClickContinue={() => onDeletedEpic(epic.id)}>
+      onConfirm={() => deleteEpic({ id: epic.id })}>
       {t('Epic.EpicActions.SureDeleteEpic', { epicName: epic.title })}
-    </AlertDialogComponent>
+    </ConfirmDialog>
   );
 };

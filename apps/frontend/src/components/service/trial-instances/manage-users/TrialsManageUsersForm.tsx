@@ -1,28 +1,29 @@
 import { useUserListLocalstorage } from '@/components/admin/user/user-list-localstorage';
-import { UserFragment } from '@/components/admin/user/UserList';
-import { serviceGroupFragment } from '@/components/service/service-group.graphql';
-import { useUsersList } from '@/hooks/use-users-list';
+import Loader from '@/components/Loader';
+import { AppCombobox } from '@/components/ui/AppCombobox';
+import { Form, FormField } from '@/components/ui/form';
+import { SheetFooter } from '@/components/ui/sheet';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
+import { useKeepSelectedOptions } from '@/hooks/use-keep-selected-options';
+import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
+import { portalGraphqlClient } from '@/lib/graphql-client';
+import { throwOnFirstLoadError } from '@/lib/query-client';
+import { toComboboxOptionIds } from '@/utils/design-system/combobox';
+import { Button } from '@filigran/design-system';
 import {
-  Button,
-  Form,
-  FormField,
-  FormItem,
-  FormLabel,
-  SheetFooter,
-  toast,
-} from '@filigran/ui';
-import { MultiSelectFormField } from '@filigran/ui/clients';
-import { serviceGroup_fragment$key } from '@generated/serviceGroup_fragment.graphql';
-import ServiceGroupsByServiceInstanceIdQueryGraphql, {
-  serviceGroupsByServiceInstanceIdQuery,
-} from '@generated/serviceGroupsByServiceInstanceIdQuery.graphql';
-import ServiceGroupsUpdateMutationGraphql from '@generated/serviceGroupsUpdateMutation.graphql';
-import { UserList_fragment$key } from '@generated/UserList_fragment.graphql';
+  FilterKey,
+  type ServiceGroupsQuery,
+  type UsersQuery,
+  useServiceGroupsQuery,
+  useUpdateServiceGroupsMutation,
+  useUsersQuery,
+} from '@graphql/generated';
+import { serviceGroupsKeys } from '@graphql/service-group/service-group.keys';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useTranslations } from 'next-intl';
-import { useMemo } from 'react';
-import { useForm } from 'react-hook-form';
-import { readInlineData, useLazyLoadQuery, useMutation } from 'react-relay';
+import { useQueryClient } from '@tanstack/react-query';
+import { useMemo, useState } from 'react';
+import { useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 
 const formSchema = z.object({
@@ -42,132 +43,231 @@ interface TrialsManageUsersFormProps {
   serviceInstanceId: string;
 }
 
+const getUserOptionValue = ({ value }: { value: string }) => value;
+
 export const TrialsManageUsersForm = ({
   onCancel,
   organizationId,
   serviceInstanceId,
   onCompleted,
 }: TrialsManageUsersFormProps) => {
-  const t = useTranslations();
   const { orderMode, orderBy, pageSize } = useUserListLocalstorage();
-  const { data: availableUsers } = useUsersList({
-    orderMode,
-    orderBy,
-    pageSize,
-    filter: { organization: organizationId },
+  const { data: availableUsers } = useUsersQuery(
+    portalGraphqlClient,
+    {
+      first: pageSize,
+      orderMode,
+      orderBy,
+      searchTerm: null,
+      filters: organizationId
+        ? [{ key: FilterKey.OrganizationId, value: [organizationId] }]
+        : null,
+    },
+    {
+      throwOnError: (_error, query) => query.state.data === undefined,
+    }
+  );
+
+  const serviceGroupsVariables = useMemo(
+    () => ({ serviceInstanceId }),
+    [serviceInstanceId]
+  );
+  const {
+    data: serviceGroups,
+    error: serviceGroupsError,
+    isError: isServiceGroupsError,
+    isFetchedAfterMount: isServiceGroupsFetchedAfterMount,
+  } = useServiceGroupsQuery(portalGraphqlClient, serviceGroupsVariables, {
+    queryKey: serviceGroupsKeys.list(serviceGroupsVariables),
+    // Each opening reads the current memberships, even when a cached
+    // snapshot is still fresh: the update replaces them group by group.
+    refetchOnMount: 'always',
+    throwOnError: throwOnFirstLoadError,
   });
 
-  const data = useLazyLoadQuery<serviceGroupsByServiceInstanceIdQuery>(
-    ServiceGroupsByServiceInstanceIdQueryGraphql,
-    { serviceInstanceId: serviceInstanceId }
-  );
+  // The form opens on the groups the fetch of this opening answers, never on a
+  // cached snapshot, and keeps them while it is open: a later refetch (window
+  // focus, invalidation) never reaches the fields, so a group label cannot move
+  // away from the members it shows.
+  const [openedServiceGroups, setOpenedServiceGroups] =
+    useState<ServiceGroupsQuery>();
+  if (
+    !openedServiceGroups &&
+    isServiceGroupsFetchedAfterMount &&
+    serviceGroups
+  ) {
+    // A failed opening fetch reaches the error page even when cached groups
+    // remain, like a failed first load: saving replaces the memberships, so a
+    // stale snapshot must not be edited.
+    if (isServiceGroupsError) {
+      throw serviceGroupsError;
+    }
+    setOpenedServiceGroups(serviceGroups);
+  }
 
-  const [commitUpdateServiceGroups] = useMutation(
-    ServiceGroupsUpdateMutationGraphql
-  );
+  if (!availableUsers || !openedServiceGroups) {
+    return <Loader />;
+  }
 
-  const onSubmit = (input: z.infer<typeof formSchema>) => {
-    commitUpdateServiceGroups({
-      variables: {
-        input: {
-          groups: input.groups.map(({ id, userIds }) => ({ id, userIds })),
-        },
+  return (
+    <TrialsManageUsersFormContent
+      availableUsers={availableUsers}
+      serviceGroups={openedServiceGroups}
+      onCancel={onCancel}
+      onCompleted={onCompleted}
+    />
+  );
+};
+
+interface TrialsManageUsersFormContentProps {
+  availableUsers: UsersQuery;
+  serviceGroups: ServiceGroupsQuery;
+  onCancel: () => void;
+  onCompleted: () => void;
+}
+
+const TrialsManageUsersFormContent = ({
+  availableUsers,
+  serviceGroups,
+  onCancel,
+  onCompleted,
+}: TrialsManageUsersFormContentProps) => {
+  const t = useTranslate();
+  const queryClient = useQueryClient();
+
+  const { mutate: updateServiceGroups, isPending: isInFlight } =
+    useUpdateServiceGroupsMutation(portalGraphqlClient, {
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({
+          queryKey: serviceGroupsKeys.all(),
+        });
+        onCompleted();
+        showSnackbar({
+          severity: 'success',
+          title: t('Utils.Success'),
+        });
       },
-      onError(error) {
-        toast({
-          variant: 'destructive',
+      onError: (error: Error) => {
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: t(`Error.Server.${error.message}`),
         });
       },
-      onCompleted() {
-        onCompleted();
-        toast({
-          title: t('Utils.Success'),
-        });
+    });
+
+  const onSubmit = (input: z.infer<typeof formSchema>) => {
+    updateServiceGroups({
+      input: {
+        groups: input.groups.map(({ id, userIds }) => ({ id, userIds })),
       },
     });
   };
 
-  const options = useMemo(() => {
-    return availableUsers.users.edges.map(({ node }) => {
-      const { email, id } = readInlineData<UserList_fragment$key>(
-        UserFragment,
-        node
-      );
-      return {
-        label: email,
-        value: id,
-      };
-    });
-  }, [availableUsers.users.edges]);
+  const options = useMemo(
+    () =>
+      availableUsers.users.edges.map(({ node }) => ({
+        label: node.email,
+        value: node.id,
+      })),
+    [availableUsers]
+  );
 
-  const groups = useMemo(() => {
-    return data.serviceGroups.map((group) => {
-      const { id, name, users } = readInlineData<serviceGroup_fragment$key>(
-        serviceGroupFragment,
-        group
-      );
-
-      const userIds = (users ?? []).map(
-        ({ email }) => options.find(({ label }) => label === email)?.value
-      );
-
-      return {
+  const groups = useMemo(
+    () =>
+      serviceGroups.serviceGroups.map(({ id, name, users }) => ({
         id,
         name,
-        userIds,
-      };
-    });
-  }, [data.serviceGroups, options]);
+        users: users ?? [],
+      })),
+    [serviceGroups]
+  );
+  const groupUserOptions = useMemo(
+    () =>
+      groups.flatMap(({ users }) =>
+        users.map(({ id, email }) => ({ label: email, value: id }))
+      ),
+    [groups]
+  );
 
+  // The groups never change while the form is open, so each field keeps the
+  // index of its group in the default values.
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      groups,
+      groups: groups.map(({ id, name, users }) => ({
+        id,
+        name,
+        userIds: users.map((user) => user.id),
+      })),
     },
   });
+
+  const watchedGroups = useWatch({ control: form.control, name: 'groups' });
+  const selectedUserIds = useMemo(
+    () => watchedGroups.flatMap(({ userIds }) => userIds),
+    [watchedGroups]
+  );
+  const keptOptions = useKeepSelectedOptions({
+    options,
+    value: selectedUserIds,
+    getId: getUserOptionValue,
+    initialOptions: groupUserOptions,
+  });
+  const optionIds = useMemo(
+    () =>
+      toComboboxOptionIds(
+        keptOptions,
+        getUserOptionValue,
+        (option) => option.label
+      ),
+    [keptOptions]
+  );
+
   const groupFields = useMemo(() => {
     return groups.map((group, index) => (
       <FormField
-        key={group.name}
+        key={group.id}
         control={form.control}
-        render={({ field: { value, onChange } }) => {
+        render={({ field: { value, onChange }, fieldState }) => {
           return (
-            <FormItem>
-              <FormLabel>{group.name}</FormLabel>
-              <MultiSelectFormField
-                options={options}
-                defaultValue={value}
-                placeholder={t('Service.Trials.ManageUsers.Email')}
-                noResultString={t('Utils.NotFound')}
-                onValueChange={onChange}
-                variant="inverted"
-              />
-            </FormItem>
+            <AppCombobox
+              formField
+              multiple
+              label={group.name}
+              placeholder={t('Service.Trials.ManageUsers.Email')}
+              error={fieldState.error?.message}
+              options={optionIds.ids}
+              value={value ?? []}
+              onValueChange={onChange}
+              getOptionLabel={optionIds.getOptionLabel}
+            />
           );
         }}
         name={`groups.${index}.userIds`}
       />
     ));
-  }, [groups, form.control, t, options]);
+  }, [groups, form.control, t, optionIds]);
 
   return (
     <Form {...form}>
       <form
-        className="w-full space-y-xl"
+        className="w-full space-y-6"
         onSubmit={form.handleSubmit(onSubmit)}>
         {groupFields}
         <SheetFooter>
-          <div className="flex gap-s">
+          <div className="flex gap-2">
             <Button
-              variant="secondary"
+              {...analyticsId('trial_users_cancel')}
+              priority="secondary"
               type="button"
               onClick={onCancel}>
               {t('Utils.Cancel')}
             </Button>
             <Button
+              {...analyticsId('trial_users_submit')}
               disabled={!form.formState.isDirty}
+              loading={isInFlight}
               type="submit">
               {t('Utils.Validate')}
             </Button>

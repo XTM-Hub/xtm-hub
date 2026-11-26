@@ -1,12 +1,12 @@
-import { subscription_fragment$data } from '@generated/subscription_fragment.graphql';
+import { SubscriptionItemFragment } from '@graphql/generated';
 import { renderHook } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { useSubscriptionDefaultValues } from './use-subscription-default-values';
 
 export const makeSubscription = (
   orgId: string,
-  overrides: Partial<subscription_fragment$data> = {}
-): subscription_fragment$data =>
+  overrides: Partial<SubscriptionItemFragment> = {}
+): SubscriptionItemFragment =>
   ({
     id: `sub-${orgId}`,
     organization: { id: orgId, name: `Org ${orgId}`, personal_space: false },
@@ -15,7 +15,7 @@ export const makeSubscription = (
     start_date: null,
     end_date: null,
     ...overrides,
-  }) as unknown as subscription_fragment$data;
+  }) as unknown as SubscriptionItemFragment;
 
 describe('useSubscriptionDefaultValues', () => {
   it('should return empty defaults when no subscriptionToEdit is provided', () => {
@@ -88,7 +88,7 @@ describe('useSubscriptionDefaultValues', () => {
             __typename: 'ServiceCapability',
           },
         },
-      ] as unknown as subscription_fragment$data['subscription_capability'],
+      ] as unknown as SubscriptionItemFragment['subscription_capability'],
     });
     const { result } = renderHook(() =>
       useSubscriptionDefaultValues(subscription)
@@ -109,7 +109,7 @@ describe('useSubscriptionDefaultValues', () => {
             __typename: 'ServiceCapability',
           },
         },
-      ] as unknown as subscription_fragment$data['subscription_capability'],
+      ] as unknown as SubscriptionItemFragment['subscription_capability'],
     });
     const { result } = renderHook(() =>
       useSubscriptionDefaultValues(subscription)

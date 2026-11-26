@@ -42,11 +42,12 @@ body:graphql:vars {
     "source_code": "https://github.com/OpenCTI-Platform/connectors/tree/master/external-import/misp",
     "manager_supported": true,
     "min_version": "7.260507.0",
-    "version": "7.260309.0-lts.6",
+    "version": "7.260309.0",
     "image_name": "opencti/connector-misp",
     "image_type": "EXTERNAL_IMPORT",
     "platform": "OpenCTI",
     "integration_type": "connector",
+    "solution_categories": ["Threat Intelligence Feed"],
     "additional_properties": {
       "max_confidence_level": 50
     },
@@ -91,6 +92,8 @@ docs {
   version / min_version: format major.date.patch[-lts.N], e.g. 7.260309.0-lts.5
   last_verified_date: ISO date string
   logo: base64 image, with "data:image/...;base64," prefix
+  solution_categories: required, must match existing SolutionCategory names (see 20260805093524_insert_solution_categories.js)
+  license_type / contact: optional
   
   Notes:
   - All fragments in one batch must be homogeneous (all LTS or all non-LTS).

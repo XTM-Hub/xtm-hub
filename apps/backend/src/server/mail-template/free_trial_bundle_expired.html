@@ -1,0 +1,65 @@
+{{#> layout}}
+<p style="margin: 0; line-height: 24px">
+  Hi {{firstName}},<br />
+  <br />
+  <strong>Your XTM Platform Trial has expired.</strong>
+
+  Thank you for exploring the XTM Platform’s full capabilities — we hope you
+  enjoyed your trial. <br />
+
+  If you'd like to extend your trial, please get in touch with us here: <br />
+</p>
+
+<div style="text-align: center">
+  <a
+    href="mailto:{{ contactEmail }}"
+    style="
+      color: #f4f4f6;
+      background-color: #001bdb;
+      display: inline-block;
+      border-radius: 4px;
+      padding: 16px 24px;
+      font-size: 16px;
+      line-height: 1;
+      font-weight: 600;
+      text-decoration: none;
+    ">
+    <!--[if mso]>
+      <i
+        style="mso-font-width: 150%; mso-text-raise: 30px"
+        hidden
+        >&emsp;</i
+      >
+    <![endif]-->
+    <span style="mso-text-raise: 16px"> Contact us </span>
+    <!--[if mso]>
+      <i
+        hidden
+        style="mso-font-width: 150%"
+        >&emsp;&#8203;</i
+      >
+    <![endif]-->
+  </a>
+</div>
+<br />
+(Please note that your free trial data will only be saved for 7 days.)<br />
+<p style="margin: 0; padding-top: 16px">
+  Best regards, <br />
+  <br />
+  <strong>The Filigran Team</strong>
+</p>
+<div
+  role="separator"
+  style="
+    height: 1px;
+    line-height: 1px;
+    margin: 24px 0;
+    background-color: #cbd5e1;
+  ">
+  &zwj;
+</div>
+<p style="margin: 0; font-size: 14px">
+  If you have any questions or require support, don’t hesitate to reach out at
+  <a href="mailto:{{ contactEmail }}">{{ contactEmail }}</a>.
+</p>
+{{/layout}}

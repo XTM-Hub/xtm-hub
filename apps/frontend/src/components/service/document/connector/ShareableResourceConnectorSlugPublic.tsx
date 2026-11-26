@@ -1,42 +1,56 @@
 import { ShareableResourceConnectorDetails } from '@/components/service/document/connector/ShareableResourceConnectorDetails';
+import { PublicResourceActions } from '@/components/service/document/PublicResourceActions';
+import ResourceMarkdownRenderer from '@/components/service/document/ResourceMarkdownRenderer';
 import ShareableResourceCarousel from '@/components/service/document/ui/ShareableResourceCarouselView';
 import BadgeOverflowCounter, {
   BadgeOverflow,
 } from '@/components/ui/BadgeOverflowCounter';
-import { ShareLinkButton } from '@/components/ui/share-link/ShareLinkButton';
-import { filterDocumentImages, findDocumentLogo } from '@/utils/documents';
-import { PublicDocumentDetailsData } from '@/utils/shareable-resources/shareable-resources.types';
+import { getTranslate } from '@/hooks/get-translate';
 import {
+  analyticsResource,
+  toAnalyticsResourceData,
+} from '@/lib/analytics/analytics.context';
+import { cn } from '@/lib/utils';
+import { filterDocumentImages, findDocumentLogo } from '@/utils/documents';
+import { getResourcePageFiligranWebsiteUtm } from '@/utils/filigran-website-utm';
+import {
+  ConnectorFields,
+  PublicDocumentByServiceSlugItem,
+} from '@/utils/shareable-resources/shareable-resources.types';
+import { Paper } from '@filigran/design-system';
+import {
+  LogoFiligranIcon,
   MotionPlayIcon,
   ThreatActorGroupIcon,
-  VerifiedIcon,
 } from '@filigran/icon';
-import { MarkdownRenderer } from '@filigran/ui/clients';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { seoServiceInstanceFragment$data } from '@generated/seoServiceInstanceFragment.graphql';
-import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
-import { useTranslations } from 'next-intl';
+import {
+  SeoServiceInstanceItemFragment,
+  ServiceInstanceItemFragment,
+} from '@graphql/generated';
 import Image from 'next/image';
 
 interface ShareableResourceConnectorSlugPublicProps {
-  documentData: documentItem_fragment$data | PublicDocumentDetailsData;
-  serviceInstance:
-    seoServiceInstanceFragment$data | serviceInstance_fragment$data;
+  documentData: PublicDocumentByServiceSlugItem & ConnectorFields;
+  serviceInstance: SeoServiceInstanceItemFragment | ServiceInstanceItemFragment;
   pageUrl: string;
 }
 
-const ShareableResourceConnectorSlugPublic = ({
+const ShareableResourceConnectorSlugPublic = async ({
   documentData,
   pageUrl,
   serviceInstance,
 }: ShareableResourceConnectorSlugPublicProps) => {
-  const t = useTranslations();
+  const t = await getTranslate();
   const logo = findDocumentLogo(documentData);
   const carouselImages = filterDocumentImages(documentData);
 
+  const resource = toAnalyticsResourceData(documentData);
+
   return (
-    <>
-      <div className="flex gap-s pb-l flex-col md:flex-row">
+    <div
+      className="contents"
+      {...analyticsResource(resource)}>
+      <div className="flex gap-2 pb-4 flex-col md:flex-row">
         {!!logo && (
           <div className="w-24 shrink-0 rounded overflow-hidden">
             <Image
@@ -50,38 +64,52 @@ const ShareableResourceConnectorSlugPublic = ({
           </div>
         )}
         <div className="flex flex-col flex-1 justify-center">
-          <div className="flex items-center gap-s flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
             <h1 className="whitespace-nowrap">{documentData.name}</h1>
             {documentData.manager_supported && (
-              <div className="flex items-center gap-s py-xs px-l font-semibold bg-green-100 text-alert-success-primary dark:bg-turquoise-900 rounded-lg">
-                <MotionPlayIcon className="h-5 w-5 shrink-0 mr-xs" />
+              <div className="flex items-center gap-2 py-1 px-4 font-semibold bg-feedback-success-secondary-transparency-30 text-feedback-success-primary rounded">
+                <MotionPlayIcon
+                  aria-hidden={true}
+                  className="h-5 w-5 shrink-0 mr-1"
+                />
                 {t('Utils.AutomaticDeploy')}
               </div>
             )}
-            <div className="flex items-center gap-s py-xs px-l font-semibold bg-alert-success-primary text-alert-success-primary dark:bg-turquoise-900 rounded-lg">
+            <div
+              className={cn(
+                'flex items-center gap-2 py-1 px-4 font-semibold rounded text-default-primary',
+                documentData.verified
+                  ? 'bg-[rgba(15,188,255,0.21)]'
+                  : 'bg-feedback-neutral-secondary-transparency-30'
+              )}>
               {documentData.verified ? (
                 <>
-                  <VerifiedIcon className="h-5 w-5 shrink-0 mr-xs" />
+                  <LogoFiligranIcon
+                    aria-hidden={true}
+                    className="h-5 w-5 shrink-0 mr-1 text-icon-default"
+                  />
                   {t('Service.ShareableResources.Details.SupportedByFiligran')}
                 </>
               ) : (
                 <>
-                  <ThreatActorGroupIcon className="h-5 w-5 shrink-0 mr-xs" />
+                  <ThreatActorGroupIcon
+                    aria-hidden={true}
+                    className="h-5 w-5 shrink-0 mr-1 text-feedback-neutral-primary"
+                  />
                   {t('Service.ShareableResources.Details.SupportedByCommunity')}
                 </>
               )}
             </div>
 
-            <div className="ml-auto">
-              <ShareLinkButton
-                documentId={documentData.id}
-                url={pageUrl}
-                tooltipText={`Service.OpenctiIntegrations.Actions.Share`}
-              />
-            </div>
+            <PublicResourceActions
+              documentData={documentData}
+              pageUrl={pageUrl}
+              shareTooltipText="Service.OpenctiIntegrations.Actions.Share"
+            />
           </div>
-          <div className="w-full mt-s mb-xs">
+          <div className="w-full mt-2 mb-1">
             <BadgeOverflowCounter
+              formatLabel={false}
               badges={documentData?.use_cases as BadgeOverflow[]}
               className="z-[2]"
             />
@@ -91,28 +119,40 @@ const ShareableResourceConnectorSlugPublic = ({
 
       <ShareableResourceCarousel
         serviceInstance={serviceInstance}
+        resource={resource}
         images={carouselImages}
       />
 
-      <div className="flex flex-col-reverse lg:flex-row w-full mt-l gap-xl">
+      <div className="flex flex-col-reverse lg:flex-row w-full mt-4 gap-6">
         <div className="flex-[3_3_0%] min-w-0">
-          <h3 className="py-s txt-container-title truncate text-muted-foreground">
-            {t('PublicResourcePage.Overview')}
-          </h3>
-          <section className="rounded bg-elevation-background-layer-1 overflow-x-auto">
-            <h2 className="p-l">{documentData?.short_description}</h2>
-            <MarkdownRenderer
-              source={documentData?.description ?? ''}
-              colorMode="dark"
-              className="p-l !bg-elevation-background-layer-1 markdown-content"
-            />
-          </section>
+          <Paper
+            as="section"
+            padding={16}
+            className="overflow-x-auto"
+            title={
+              <h2 className="[font:inherit] tracking-[inherit]">
+                {t('PublicResourcePage.Overview')}
+              </h2>
+            }>
+            <div className="flex flex-col gap-8">
+              <p className="content-base">{documentData?.short_description}</p>
+              <ResourceMarkdownRenderer
+                source={documentData?.description ?? ''}
+                filigranWebsiteUtm={getResourcePageFiligranWebsiteUtm(
+                  serviceInstance.service_definition?.identifier
+                )}
+              />
+            </div>
+          </Paper>
         </div>
         <ShareableResourceConnectorDetails
           connectorDetails={{ ...documentData, name: documentData.name ?? '' }}
+          filigranWebsiteUtm={getResourcePageFiligranWebsiteUtm(
+            serviceInstance.service_definition?.identifier
+          )}
         />
       </div>
-    </>
+    </div>
   );
 };
 

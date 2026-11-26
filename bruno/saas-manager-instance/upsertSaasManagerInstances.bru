@@ -1,0 +1,68 @@
+meta {
+  name: upsertSaasManagerInstances
+  type: graphql
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/graphql-api
+  body: graphql
+  auth: inherit
+}
+
+headers {
+  x-xtm-hub-token: {{xtm-hub-token}}
+}
+
+body:graphql {
+  mutation ($generatedAt: Date!, $instances: [SaasManagerInstanceInput!]!) {
+    upsertSaasManagerInstances(generatedAt: $generatedAt, instances: $instances) {
+      applied skipped removed
+    }
+  }
+}
+
+body:graphql:vars {
+  {
+    "generatedAt": "2026-11-25T10:00:00+00:00",
+    "instances": [
+      {
+        "data": {
+          "id": "01a2123d-6c9a-7a20-a0bd-31e4bed83f7c",
+          "customer": "cust11",
+          "hostname": "host-13.example.com",
+          "status": "DEPLOYED",
+          "region": "TEST-REGION-10-PRODUCTION",
+          "product": "OCTI",
+          "plan": "test-plan-shared",
+          "commercial_model": "DEV",
+          "start_date": "2026-01-01",
+          "end_date": "2027-01-01",
+          "storage": { "es_used_size": null, "postgres_used_size": null, "s3_used_size": null },
+          "sla_cmtd": null
+        },
+        "index": {
+          "customer_name": "acme",
+          "customer_techname": "cust11",
+          "status_family": "__in_service_family__",
+          "upgrade_group": null
+        },
+        "metrics": null
+      }
+    ]
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+
+docs {
+  Sent by SaaS Manager: ensure xtm-hub-token is defined in environment.
+
+  Writes each instance unless the Hub stores a copy generated after generatedAt (counted in skipped).
+  One invalid instance refuses the call (INVALID_SAAS_MANAGER_INSTANCE) and nothing is written: do not purge the
+  snapshot. The Hub logs which instances and fields were refused.
+  metrics: null or absent keeps the stored metrics; otherwise an object keyed by days ("7", "32", "95", "187").
+}

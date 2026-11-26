@@ -1,41 +1,38 @@
 import { CapabilityDescription } from '@/components/admin/user/CapabilityDescription';
 import { userEditFormSchema } from '@/components/admin/user/forms/user-form.schema';
 import { RemoveUserFromOrga } from '@/components/admin/user/RemoveUserFromOrga';
-import { UserSlugEditMutation } from '@/components/admin/user/user.graphql';
-import { getUserListContext } from '@/components/admin/user/UserListPage';
+import { useRefreshUsersList } from '@/components/admin/user/use-refresh-users-list';
+import { UsersListUser } from '@/components/admin/user/user-list.types';
 import { PortalContext } from '@/components/me/AppPortalContext';
 import { CapabilityMultiSelect } from '@/components/ui/capability/MultiSelect';
+import { Form, FormField } from '@/components/ui/form';
+import { SheetFooter } from '@/components/ui/sheet';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import useAdminPath from '@/hooks/use-admin-path';
+import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
+import { portalGraphqlClient } from '@/lib/graphql-client';
 import { isEmpty } from '@/lib/utils';
+import { Button } from '@filigran/design-system';
 import {
-  Button,
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  SheetFooter,
-  toast,
-} from '@filigran/ui';
-import { UserList_fragment$data } from '@generated/UserList_fragment.graphql';
+  EditUserCapabilitiesInput,
+  useUserCapabilitiesEditMutation,
+} from '@graphql/generated';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useTranslations } from 'next-intl';
 import { useContext } from 'react';
 import { useForm } from 'react-hook-form';
-import { useMutation } from 'react-relay';
 import { z } from 'zod';
 
 interface UserUpdateFormProps {
-  user: UserList_fragment$data;
+  user: UsersListUser;
   callback: () => void;
 }
 
 export const UserUpdateForm = ({ user, callback }: UserUpdateFormProps) => {
   const { handleCloseSheet, setIsDirty } = useDialogContext();
   const { me } = useContext(PortalContext);
-  const t = useTranslations();
+  const t = useTranslate();
   const isAdminPath = useAdminPath();
 
   const userOrg = user.organization_capabilities?.find(
@@ -53,36 +50,36 @@ export const UserUpdateForm = ({ user, callback }: UserUpdateFormProps) => {
   // Some issue with addUser, the formState isDirty without any modification, so for now we check if dirtyFields get any key
   setIsDirty(!isEmpty(form.formState.dirtyFields));
 
-  const [updateUserMutation] = useMutation(UserSlugEditMutation);
-
-  const { connectionID } = getUserListContext();
-  const updateUser = (values: z.infer<typeof userEditFormSchema>) => {
-    const variables = isAdminPath
-      ? values
-      : { capabilities: values.capabilities };
-    updateUserMutation({
-      variables: {
-        input: {
-          ...variables,
-        },
-        id: user.id,
-        userListConnections: [connectionID ?? ''],
-      },
-      onCompleted: () => {
-        toast({
+  const refreshUsersList = useRefreshUsersList();
+  const { mutate: updateUserMutation } = useUserCapabilitiesEditMutation<Error>(
+    portalGraphqlClient,
+    {
+      // On the hook, not on mutate: like Relay, the outcome is handled even if
+      // the form is gone by then.
+      onSuccess: () => {
+        refreshUsersList();
+        showSnackbar({
+          severity: 'success',
           title: t('Utils.Success'),
           description: t('UserActions.UserUpdated', { email: user.email }),
         });
         callback();
       },
       onError: (error) => {
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: t(`Error.Server.${error.message}`),
         });
       },
-    });
+    }
+  );
+
+  const updateUser = (values: z.infer<typeof userEditFormSchema>) => {
+    const input: EditUserCapabilitiesInput = isAdminPath
+      ? values
+      : { capabilities: values.capabilities };
+    updateUserMutation({ input, id: user.id });
   };
 
   const onSubmit = (values: z.infer<typeof userEditFormSchema>) => {
@@ -92,37 +89,35 @@ export const UserUpdateForm = ({ user, callback }: UserUpdateFormProps) => {
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="w-full space-y-xl">
+        className="w-full space-y-6">
         <CapabilityDescription />
         <FormField
           control={form.control}
           name="capabilities"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('UserForm.OrganizationCapabilities')}</FormLabel>
-              <FormControl>
-                <CapabilityMultiSelect
-                  value={field.value}
-                  onChange={field.onChange}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          render={({ field, fieldState }) => (
+            <CapabilityMultiSelect
+              label={t('UserForm.OrganizationCapabilities')}
+              value={field.value}
+              onChange={field.onChange}
+              error={fieldState.error?.message}
+            />
           )}
         />
 
         <SheetFooter className="justify-between sm:justify-between pb-0">
           <RemoveUserFromOrga user={user} />
-          <div className="flex gap-s">
+          <div className="flex gap-2">
             <Button
-              variant="secondary"
+              priority="secondary"
               type="button"
+              {...analyticsId('organization_form_cancel')}
               onClick={(e) => handleCloseSheet(e)}>
               {t('Utils.Cancel')}
             </Button>
             <Button
               disabled={!form.formState.isValid}
-              type="submit">
+              type="submit"
+              {...analyticsId('organization_member_submit')}>
               {t('Utils.Validate')}
             </Button>
           </div>

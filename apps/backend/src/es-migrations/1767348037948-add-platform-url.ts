@@ -3,12 +3,13 @@
 import knex from 'knex';
 import { baseConfig } from '../../knexconfig.js';
 import { esDbClient } from '../thirdparty/elasticsearch/client.js';
+import { withIndexPrefix } from '../thirdparty/elasticsearch/index-prefix.js';
 import { logApp } from '../utils/app-logger.util';
 
 export const up = async function (next: () => void) {
   await esDbClient.getIndices().putIndexTemplate({
-    name: 'telemetry-template',
-    index_patterns: ['telemetry_v*'], // Will match telemetry_v1, telemetry_v2, etc.
+    name: withIndexPrefix('telemetry-template'),
+    index_patterns: [withIndexPrefix('telemetry_v*')], // Will match telemetry_v1, telemetry_v2, etc., after the index prefix
     template: {
       mappings: {
         properties: {
@@ -100,7 +101,7 @@ export const up = async function (next: () => void) {
         },
       },
       aliases: {
-        telemetry: {},
+        [withIndexPrefix('telemetry')]: {},
       },
     },
     priority: 100,
@@ -112,7 +113,7 @@ export const up = async function (next: () => void) {
   });
 
   await esDbClient.getIndices().putMapping({
-    index: 'telemetry_v1',
+    index: withIndexPrefix('telemetry_v1'),
     body: {
       properties: {
         platform_url: {
@@ -140,7 +141,7 @@ export const up = async function (next: () => void) {
     for (const { platform_id, platform_url } of platformData) {
       try {
         await esDbClient.updateByQuery({
-          index: 'telemetry_v1',
+          index: withIndexPrefix('telemetry_v1'),
           refresh: true,
           conflicts: 'proceed',
           script: {
@@ -170,7 +171,7 @@ export const up = async function (next: () => void) {
 
 export const down = async function (next: () => void) {
   await esDbClient.updateByQuery({
-    index: 'telemetry_v1',
+    index: withIndexPrefix('telemetry_v1'),
     refresh: true,
     conflicts: 'proceed',
     script: {
@@ -187,8 +188,8 @@ export const down = async function (next: () => void) {
   });
 
   await esDbClient.getIndices().putIndexTemplate({
-    name: 'telemetry-template',
-    index_patterns: ['telemetry_v*'], // Will match telemetry_v1, telemetry_v2, etc.
+    name: withIndexPrefix('telemetry-template'),
+    index_patterns: [withIndexPrefix('telemetry_v*')], // Will match telemetry_v1, telemetry_v2, etc., after the index prefix
     template: {
       mappings: {
         properties: {
@@ -277,7 +278,7 @@ export const down = async function (next: () => void) {
         },
       },
       aliases: {
-        telemetry: {},
+        [withIndexPrefix('telemetry')]: {},
       },
     },
     priority: 100,

@@ -1,0 +1,281 @@
+import ShareableResourceConnectorSlug from '@/components/service/document/connector/ShareableResourceConnectorSlug';
+import {
+  RegisteredPlatformsListItem,
+  useRegisteredPlatforms,
+} from '@/hooks/use-registered-platforms';
+import { ConnectorFields } from '@/utils/shareable-resources/shareable-resources.types';
+import { readTrackedEvents, startAnalytics } from '@/utils/test/analytics';
+import { mswServer } from '@/utils/test/msw/server';
+import testRender from '@/utils/test/test-render';
+import {
+  DocumentItemFragment,
+  IncrementShareNumberDocumentMutation,
+  ServiceInstanceItemFragment,
+} from '@graphql/generated';
+import { mockDefaultDocument } from '@graphql/mocks';
+import { screen, waitFor } from '@testing-library/react';
+import { graphql, HttpResponse } from 'msw';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+vi.mock('@/components/service/components/ServiceContext', () => ({
+  useServiceContext: () => ({
+    serviceInstance: { id: 'service-instance-1', capabilities: [] },
+    translationKey: 'Service.Connectors',
+  }),
+}));
+
+const SERVICE_INSTANCE: ServiceInstanceItemFragment = {
+  id: 'service-instance-1',
+  name: 'Service',
+  description: null,
+  slug: null,
+  capabilities: [],
+  service_definition: null,
+};
+
+const buildConnector = (id: string, shareNumber: number) =>
+  ({
+    id,
+    name: 'Connector Name',
+    type: 'opencti_integration',
+    share_number: shareNumber,
+    manager_supported: false,
+    verified: false,
+    children_documents: [],
+    use_cases: [],
+  }) as unknown as ConnectorItem;
+
+type ConnectorItem = DocumentItemFragment & ConnectorFields;
+
+const renderSlugElement = (documentData: ConnectorItem) => (
+  <ShareableResourceConnectorSlug
+    breadcrumbValue={[]}
+    documentData={documentData}
+    serviceInstance={SERVICE_INSTANCE}
+    shareUrl="https://hub.test/cybersecurity-solutions/integrations/connector"
+  />
+);
+
+const getShareCount = () =>
+  screen.getByText('Service.ShareableResources.Details.Shares').closest('div')
+    ?.lastElementChild;
+
+const shareLink = async (user: ReturnType<typeof testRender>['user']) =>
+  user.click(
+    screen.getByRole('button', { name: 'Service.ShareableResources.Share' })
+  );
+
+describe('ShareableResourceConnectorSlug - Share count refresh', () => {
+  beforeEach(() => {
+    mswServer.use(
+      graphql.mutation<IncrementShareNumberDocumentMutation>(
+        'IncrementShareNumberDocument',
+        () =>
+          HttpResponse.json({
+            data: {
+              incrementShareNumberDocument: mockDefaultDocument(),
+            },
+          })
+      )
+    );
+  });
+
+  it('should display the network share count once it replaces the cached one', () => {
+    // Given a cached share count of 3
+    const { rerender } = testRender(
+      renderSlugElement(buildConnector('connector-1', 3))
+    );
+
+    // When the network returns 7
+    rerender(renderSlugElement(buildConnector('connector-1', 7)));
+
+    // Then
+    expect(getShareCount()).toHaveTextContent(/^7$/);
+  });
+
+  it('should increment from the network share count when the link is shared after a refresh', async () => {
+    // Given a cached share count of 3 refreshed to 7
+    const { user, rerender } = testRender(
+      renderSlugElement(buildConnector('connector-1', 3))
+    );
+    rerender(renderSlugElement(buildConnector('connector-1', 7)));
+
+    // When the user copies the share link
+    await shareLink(user);
+
+    // Then
+    await waitFor(() => expect(getShareCount()).toHaveTextContent(/^8$/));
+  });
+
+  it.each`
+    refresh                           | refreshedShareNumber | expected
+    ${'predates the local share'}     | ${3}                 | ${/^4$/}
+    ${'already includes the share'}   | ${4}                 | ${/^4$/}
+    ${"includes other users' shares"} | ${7}                 | ${/^7$/}
+  `(
+    'should keep the local share when a refresh $refresh',
+    async ({ refreshedShareNumber, expected }) => {
+      // Given a connector shared from a cached share count of 3
+      const { user, rerender } = testRender(
+        renderSlugElement(buildConnector('connector-1', 3))
+      );
+      await shareLink(user);
+      await waitFor(() => expect(getShareCount()).toHaveTextContent(/^4$/));
+
+      // When the connector data is refreshed
+      rerender(
+        renderSlugElement(buildConnector('connector-1', refreshedShareNumber))
+      );
+
+      // Then
+      expect(getShareCount()).toHaveTextContent(expected);
+    }
+  );
+
+  it('should reset the share count when another connector is displayed', async () => {
+    // Given a connector shared from a share count of 3
+    const { user, rerender } = testRender(
+      renderSlugElement(buildConnector('connector-1', 3))
+    );
+    await shareLink(user);
+    await waitFor(() => expect(getShareCount()).toHaveTextContent(/^4$/));
+
+    // When another connector with 1 share is displayed
+    rerender(renderSlugElement(buildConnector('connector-2', 1)));
+
+    // Then
+    expect(getShareCount()).toHaveTextContent(/^1$/);
+  });
+});
+
+describe('ShareableResourceConnectorSlug - Improve integration callout', () => {
+  const CALLOUT_TEXT = 'Service.Connectors.ImproveIntegrationPrefix';
+
+  it('should invite to improve a verified integration through its repository', () => {
+    // Given
+    const connector = {
+      ...buildConnector('connector-1', 0),
+      verified: true,
+      source_code: 'https://github.com/filigran/connector',
+    };
+
+    // When
+    testRender(renderSlugElement(connector));
+
+    // Then
+    expect(screen.getByRole('status')).toHaveTextContent(CALLOUT_TEXT);
+    expect(
+      screen.getByRole('link', {
+        name: 'Service.Connectors.GithubRepositoryLink',
+      })
+    ).toHaveAttribute(
+      'href',
+      'https://github.com/filigran/connector/__metadata__/connector_manifest.json'
+    );
+  });
+
+  it('should not show the callout for a community integration', () => {
+    // Given
+    const connector = { ...buildConnector('connector-1', 0), verified: false };
+
+    // When
+    testRender(renderSlugElement(connector));
+
+    // Then
+    expect(screen.queryByText(CALLOUT_TEXT, { exact: false })).toBeNull();
+  });
+});
+
+describe('ShareableResourceConnectorSlug - Incompatible platforms warning', () => {
+  const OUTDATED_PLATFORM = {
+    id: 'platform-id',
+    title: 'Production OpenCTI',
+    url: 'https://opencti.acme.com',
+    version: '6.4.0',
+    contract: 'EE',
+    ' $fragmentType': 'useRegisteredPlatformsFragment',
+  } as const;
+
+  const buildIncompatibleConnector = (managerSupported: boolean) => ({
+    ...buildConnector('connector-1', 0),
+    verified: true,
+    manager_supported: managerSupported,
+    minimum_deployable_version: '6.5.0',
+  });
+
+  beforeEach(() => {
+    vi.mocked(useRegisteredPlatforms).mockReturnValue({
+      platforms: [OUTDATED_PLATFORM],
+    });
+  });
+
+  it('should show the warning right under the improve integration callout', () => {
+    // Given
+    const connector = buildIncompatibleConnector(true);
+
+    // When
+    testRender(renderSlugElement(connector));
+
+    // Then
+    const infoAlert = screen.getByRole('status');
+    const warningAlert = screen.getByRole('alert');
+    expect(warningAlert).toHaveTextContent('Service.Connectors.Incompatible');
+    expect(infoAlert.nextElementSibling).toBe(warningAlert);
+  });
+
+  it('should not show the warning when the connector is not deployable by the manager', () => {
+    // Given
+    const connector = buildIncompatibleConnector(false);
+
+    // When
+    testRender(renderSlugElement(connector));
+
+    // Then
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+});
+
+describe('ShareableResourceConnectorSlug - Resource view', () => {
+  beforeEach(() => {
+    startAnalytics();
+    vi.mocked(useRegisteredPlatforms).mockReturnValue({
+      platforms: [
+        {
+          id: 'platform-id',
+          title: 'Production OpenCTI',
+          url: 'https://opencti.acme.com',
+          version: '6.4.0',
+          contract: 'EE',
+        } as RegisteredPlatformsListItem,
+      ],
+      isPending: false,
+    });
+  });
+
+  it.each([
+    ['Resource not deployable', 'the connector has no manager support', false],
+    [
+      'Platform version too old',
+      'the manager supported connector needs a newer platform',
+      true,
+    ],
+  ])(
+    'should send %s as the deploy eligibility when %s',
+    (expected, _context, managerSupported) => {
+      // Given
+      const connector = {
+        ...buildConnector('connector-1', 0),
+        manager_supported: managerSupported,
+        minimum_deployable_version: '6.5.0',
+      };
+
+      // When
+      testRender(renderSlugElement(connector));
+
+      // Then
+      expect(readTrackedEvents('view_item')).toEqual([
+        expect.objectContaining({ deploy_eligibility: expected }),
+      ]);
+    }
+  );
+});

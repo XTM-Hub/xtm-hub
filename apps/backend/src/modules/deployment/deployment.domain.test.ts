@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { TestHelper } from '../../../tests/helper/test.helper';
 import { TEST_ORGANIZATIONS } from '../../../tests/tests.const';
 import {
@@ -13,12 +13,34 @@ import {
   OrderingMode,
   PlatformIdentifier,
 } from '../../__generated__/resolvers-types';
-import { DeploymentRequestId } from '../../model/kanel/public/DeploymentRequest';
+import {
+  DeploymentRequestId,
+  DeploymentRequestInitializer,
+} from '../../model/kanel/public/DeploymentRequest';
 import { UserId } from '../../model/kanel/public/User';
-import { auth0Client } from '../../thirdparty/auth0/client';
-import { ServiceInstanceDomain } from '../service/instance/service-instance.domain';
 import { DeploymentRequestDomain } from './deployment.domain';
-import { ServiceGroupDomain } from './group/service-group.domain';
+import { bundleQuotaKey, QuotaKey } from './quota/deployment.quota.domain';
+
+const BUNDLE_QUEUE_REGION = DeploymentRequestPlatformRegion.UsEast;
+
+const createRankedBundle = async (
+  ordering: number,
+  overrides?: Partial<
+    Pick<DeploymentRequestInitializer, 'region' | 'hub_status'>
+  >
+) => {
+  const { bundle } = await TestHelper.deploymentRequest.createBundle({
+    bundle: {
+      region: BUNDLE_QUEUE_REGION,
+      ordering,
+      hub_status: DeploymentRequestHubStatus.Queued,
+      ...overrides,
+    },
+  });
+  return bundle;
+};
+
+const REGION_ONLY_SEARCH_TERM = 'europe';
 
 describe('deploymentRequestDomain', () => {
   beforeEach(async () => {
@@ -27,9 +49,7 @@ describe('deploymentRequestDomain', () => {
 
   describe('loadDeploymentRequest', () => {
     afterEach(async () => {
-      await DeploymentRequestDomain.deleteDeploymentRequestBy({});
-      await ServiceInstanceDomain.deleteServiceInstanceBy({});
-      await TestHelper.subscription.delete({});
+      await TestHelper.deploymentRequest.deleteAllWithServiceInstanceAndSubscription();
     });
 
     it('should return filtered deployment requests', async () => {
@@ -63,20 +83,12 @@ describe('deploymentRequestDomain', () => {
       );
     });
     it('should expose parent_id and url on returned deployment requests', async () => {
-      const bundle =
-        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-          {
-            type: DeploymentRequestDeploymentType.Bundle,
-            platform_identifier: null,
-          }
-        );
-      const child =
-        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-          {
-            parent_id: bundle.id,
-            url: 'https://xtmone.example.com',
-          }
-        );
+      const {
+        bundle,
+        children: [child],
+      } = await TestHelper.deploymentRequest.createBundle({
+        children: [{ url: 'https://xtmone.example.com' }],
+      });
 
       const deploymentRequests =
         await DeploymentRequestDomain.loadDeploymentRequests<DeploymentRequestConnection>(
@@ -92,6 +104,35 @@ describe('deploymentRequestDomain', () => {
       )?.node;
       expect(childNode?.parent_id).toBe(bundle?.id);
       expect(childNode?.url).toBe('https://xtmone.example.com');
+    });
+    it('should exclude bundle children when filtering on a null parent_id', async () => {
+      await TestHelper.deploymentRequest.createBundle({ children: [{}] });
+      const standalone =
+        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+          {}
+        );
+
+      const deploymentRequests =
+        await DeploymentRequestDomain.loadDeploymentRequests<DeploymentRequestConnection>(
+          {
+            first: 10,
+            orderBy: DeploymentRequestOrdering.Ordering,
+            orderMode: OrderingMode.Asc,
+            filters: [
+              {
+                key: DeploymentRequestFilterKey.Type,
+                value: [DeploymentRequestDeploymentType.Trial],
+              },
+              {
+                key: DeploymentRequestFilterKey.ParentId,
+                value: ['null'],
+              },
+            ],
+          }
+        );
+
+      expect(deploymentRequests.totalCount).toBe('1');
+      expect(deploymentRequests.edges[0]?.node?.id).toBe(standalone.id);
     });
     it('should filter deployment requests when searchTerm is specified ', async () => {
       const deployment =
@@ -183,6 +224,186 @@ describe('deploymentRequestDomain', () => {
       expect(result.totalCount).toBe('1');
       expect(result.edges[0]?.node?.id).toBe(openctiDeployment.id);
     });
+    it('should return deployment request matched only by region when searchRegions contains its region', async () => {
+      // Given
+      const euWestDeployment =
+        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+          { region: DeploymentRequestPlatformRegion.EuWest }
+        );
+      await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+        { region: DeploymentRequestPlatformRegion.UsEast }
+      );
+
+      // When
+      const result =
+        await DeploymentRequestDomain.loadDeploymentRequests<DeploymentRequestConnection>(
+          {
+            first: 10,
+            orderBy: DeploymentRequestOrdering.Ordering,
+            orderMode: OrderingMode.Asc,
+            searchTerm: REGION_ONLY_SEARCH_TERM,
+            searchRegions: [DeploymentRequestPlatformRegion.EuWest],
+          }
+        );
+
+      // Then
+      expect(result).toMatchObject({
+        totalCount: '1',
+        edges: [
+          {
+            node: {
+              id: euWestDeployment.id,
+              region: DeploymentRequestPlatformRegion.EuWest,
+            },
+          },
+        ],
+      });
+    });
+    it('should not return deployment request when its region is not in searchRegions and searchTerm does not match', async () => {
+      // Given
+      await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+        { region: DeploymentRequestPlatformRegion.UsEast }
+      );
+
+      // When
+      const result =
+        await DeploymentRequestDomain.loadDeploymentRequests<DeploymentRequestConnection>(
+          {
+            first: 10,
+            orderBy: DeploymentRequestOrdering.Ordering,
+            orderMode: OrderingMode.Asc,
+            searchTerm: REGION_ONLY_SEARCH_TERM,
+            searchRegions: [
+              DeploymentRequestPlatformRegion.EuWest,
+              DeploymentRequestPlatformRegion.ApacSg,
+            ],
+          }
+        );
+
+      // Then
+      expect(result).toMatchObject({ totalCount: '0', edges: [] });
+    });
+    it('should return deployment requests matched by email or by region when both searchTerm and searchRegions match', async () => {
+      // Given
+      const emailMatchedDeployment =
+        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+          { region: DeploymentRequestPlatformRegion.UsEast, ordering: 1 }
+        );
+      const regionMatchedDeployment =
+        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+          {
+            region: DeploymentRequestPlatformRegion.EuWest,
+            user_requester_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID,
+            ordering: 2,
+          }
+        );
+      await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+        {
+          region: DeploymentRequestPlatformRegion.ApacAu,
+          user_requester_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID,
+          ordering: 3,
+        }
+      );
+
+      // When
+      const result =
+        await DeploymentRequestDomain.loadDeploymentRequests<DeploymentRequestConnection>(
+          {
+            first: 10,
+            orderBy: DeploymentRequestOrdering.Ordering,
+            orderMode: OrderingMode.Asc,
+            searchTerm: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.EMAIL,
+            searchRegions: [DeploymentRequestPlatformRegion.EuWest],
+          }
+        );
+
+      // Then
+      expect(result).toMatchObject({
+        totalCount: '2',
+        edges: [
+          { node: { id: emailMatchedDeployment.id } },
+          { node: { id: regionMatchedDeployment.id } },
+        ],
+      });
+    });
+    it('should not return deployment request with wrong hub_status even if its email or region matches the search', async () => {
+      // Given
+      const activeDeployment =
+        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+          {
+            region: DeploymentRequestPlatformRegion.EuWest,
+            user_requester_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID,
+            hub_status: DeploymentRequestHubStatus.Active,
+          }
+        );
+      await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+        {
+          region: DeploymentRequestPlatformRegion.EuWest,
+          user_requester_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID,
+          hub_status: DeploymentRequestHubStatus.Expired,
+        }
+      );
+      await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+        {
+          region: DeploymentRequestPlatformRegion.UsEast,
+          hub_status: DeploymentRequestHubStatus.Expired,
+        }
+      );
+
+      // When
+      const result =
+        await DeploymentRequestDomain.loadDeploymentRequests<DeploymentRequestConnection>(
+          {
+            first: 10,
+            orderBy: DeploymentRequestOrdering.Ordering,
+            orderMode: OrderingMode.Asc,
+            searchTerm: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.EMAIL,
+            searchRegions: [DeploymentRequestPlatformRegion.EuWest],
+            filters: [
+              {
+                key: DeploymentRequestFilterKey.HubStatus,
+                value: [DeploymentRequestHubStatus.Active],
+              },
+            ],
+          }
+        );
+
+      // Then
+      expect(result).toMatchObject({
+        totalCount: '1',
+        edges: [
+          {
+            node: {
+              id: activeDeployment.id,
+              hub_status: DeploymentRequestHubStatus.Active,
+            },
+          },
+        ],
+      });
+    });
+    it('should ignore searchRegions when searchTerm is not specified', async () => {
+      // Given
+      await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+        { region: DeploymentRequestPlatformRegion.EuWest }
+      );
+      await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+        { region: DeploymentRequestPlatformRegion.UsEast }
+      );
+
+      // When
+      const result =
+        await DeploymentRequestDomain.loadDeploymentRequests<DeploymentRequestConnection>(
+          {
+            first: 10,
+            orderBy: DeploymentRequestOrdering.Ordering,
+            orderMode: OrderingMode.Asc,
+            searchRegions: [DeploymentRequestPlatformRegion.EuWest],
+          }
+        );
+
+      // Then
+      expect(result).toMatchObject({ totalCount: '2' });
+    });
     it('should return ordered deployment requests', async () => {
       const deployment1 =
         await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
@@ -210,27 +431,16 @@ describe('deploymentRequestDomain', () => {
 
   describe('loadDeploymentRequestsBy', () => {
     afterEach(async () => {
-      await DeploymentRequestDomain.deleteDeploymentRequestBy({});
-      await ServiceInstanceDomain.deleteServiceInstanceBy({});
-      await TestHelper.subscription.delete({});
+      await TestHelper.deploymentRequest.deleteAllWithServiceInstanceAndSubscription();
     });
 
     it('should return all deployment requests matching the given conditions', async () => {
-      const bundle =
-        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-          {
-            type: DeploymentRequestDeploymentType.Bundle,
-            platform_identifier: null,
-          }
-        );
-      const child1 =
-        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-          { parent_id: bundle.id }
-        );
-      const child2 =
-        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-          { parent_id: bundle.id }
-        );
+      const {
+        bundle,
+        children: [child1, child2],
+      } = await TestHelper.deploymentRequest.createBundle({
+        children: [{}, {}],
+      });
       await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
         { parent_id: null }
       );
@@ -254,11 +464,177 @@ describe('deploymentRequestDomain', () => {
     });
   });
 
-  describe('loadTrialDeploymentRequestByPlatformIdentifierAndUserId', () => {
+  describe('loadChildrenByParentIds', () => {
     afterEach(async () => {
-      await DeploymentRequestDomain.deleteDeploymentRequestBy({});
-      await ServiceInstanceDomain.deleteServiceInstanceBy({});
-      await TestHelper.subscription.delete({});
+      await TestHelper.deploymentRequest.deleteAllWithServiceInstanceAndSubscription();
+    });
+
+    it('should return the children of the requested bundles only', async () => {
+      // Given
+      const {
+        bundle: firstBundle,
+        children: [firstChild],
+      } = await TestHelper.deploymentRequest.createBundle({
+        children: [{ platform_identifier: PlatformIdentifier.Opencti }],
+      });
+      const {
+        bundle: secondBundle,
+        children: [secondChild],
+      } = await TestHelper.deploymentRequest.createBundle({
+        children: [{ platform_identifier: PlatformIdentifier.Openaev }],
+      });
+      await TestHelper.deploymentRequest.createBundle({
+        children: [{ platform_identifier: PlatformIdentifier.Xtmone }],
+      });
+
+      // When
+      const children = await DeploymentRequestDomain.loadChildrenByParentIds([
+        firstBundle.id,
+        secondBundle.id,
+      ]);
+
+      // Then
+      expect(children).toHaveLength(2);
+      expect(
+        children.find((request) => request.id === firstChild.id)
+      ).toMatchObject({
+        parent_id: firstBundle.id,
+        platform_identifier: PlatformIdentifier.Opencti,
+      });
+      expect(
+        children.find((request) => request.id === secondChild.id)
+      ).toMatchObject({
+        parent_id: secondBundle.id,
+        platform_identifier: PlatformIdentifier.Openaev,
+      });
+    });
+
+    it('should expose the platform url of the children', async () => {
+      // Given
+      const {
+        bundle,
+        children: [child],
+      } = await TestHelper.deploymentRequest.createBundle({
+        children: [{ platform_identifier: PlatformIdentifier.Opencti }],
+      });
+      await TestHelper.platformConfiguration.create({
+        service_instance_id: child.service_instance_id,
+        platform_url: 'https://opencti.example.com',
+      });
+
+      // When
+      const children = await DeploymentRequestDomain.loadChildrenByParentIds([
+        bundle.id,
+      ]);
+
+      // Then
+      expect(children[0]).toMatchObject({
+        id: child.id,
+        platform_url: 'https://opencti.example.com',
+      });
+
+      await TestHelper.platformConfiguration.delete({
+        service_instance_id: child.service_instance_id,
+      });
+    });
+  });
+
+  describe('loadDeploymentRequestWithChildren', () => {
+    afterEach(async () => {
+      await TestHelper.deploymentRequest.deleteAllWithServiceInstanceAndSubscription();
+    });
+
+    it('should return the bundle first, then its children ordered by platform identifier', async () => {
+      const {
+        bundle,
+        children: [childXtmone, childOpencti, childOpenaev],
+      } = await TestHelper.deploymentRequest.createBundle({
+        children: [
+          { platform_identifier: PlatformIdentifier.Xtmone },
+          { platform_identifier: PlatformIdentifier.Opencti },
+          { platform_identifier: PlatformIdentifier.Openaev },
+        ],
+      });
+
+      const family =
+        await DeploymentRequestDomain.loadDeploymentRequestWithChildren(bundle);
+
+      expect(family.map(({ id }) => id)).toEqual([
+        bundle.id,
+        childOpenaev.id,
+        childOpencti.id,
+        childXtmone.id,
+      ]);
+    });
+
+    it('should only return children matching the given hub status', async () => {
+      const {
+        bundle,
+        children: [activeChild],
+      } = await TestHelper.deploymentRequest.createBundle({
+        bundle: { hub_status: DeploymentRequestHubStatus.Active },
+        children: [
+          {
+            platform_identifier: PlatformIdentifier.Opencti,
+            hub_status: DeploymentRequestHubStatus.Active,
+          },
+          {
+            platform_identifier: PlatformIdentifier.Xtmone,
+            hub_status: DeploymentRequestHubStatus.Cancelled,
+          },
+        ],
+      });
+
+      const family =
+        await DeploymentRequestDomain.loadDeploymentRequestWithChildren(
+          bundle,
+          DeploymentRequestHubStatus.Active
+        );
+
+      expect(family.map(({ id }) => id)).toEqual([bundle.id, activeChild.id]);
+    });
+  });
+
+  describe('loadBundlesToExpire', () => {
+    afterEach(async () => {
+      await TestHelper.deploymentRequest.deleteAllWithServiceInstanceAndSubscription();
+    });
+
+    it('should return expired bundles, but not bundle children', async () => {
+      const expiredDate = new Date(Date.UTC(2020, 0, 1));
+      const futureDate = new Date(Date.UTC(2999, 0, 1));
+
+      const { bundle: expiredBundle } =
+        await TestHelper.deploymentRequest.createBundle({
+          bundle: {
+            hub_status: DeploymentRequestHubStatus.Active,
+            end_date: expiredDate,
+          },
+          children: [
+            {
+              hub_status: DeploymentRequestHubStatus.Active,
+              end_date: expiredDate,
+            },
+          ],
+        });
+      await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+        {
+          type: DeploymentRequestDeploymentType.Bundle,
+          platform_identifier: null,
+          hub_status: DeploymentRequestHubStatus.Active,
+          end_date: futureDate,
+        }
+      );
+
+      const toExpire = await DeploymentRequestDomain.loadBundlesToExpire();
+
+      expect(toExpire.map(({ id }) => id)).toEqual([expiredBundle.id]);
+    });
+  });
+
+  describe('loadLatestDeploymentRequestForUser', () => {
+    afterEach(async () => {
+      await TestHelper.deploymentRequest.deleteAllWithServiceInstanceAndSubscription();
     });
 
     it('should return deployment request when Active trial deployment exists for user', async () => {
@@ -276,9 +652,12 @@ describe('deploymentRequestDomain', () => {
         );
 
       const result =
-        await DeploymentRequestDomain.loadTrialDeploymentRequestByPlatformIdentifierAndUserId(
-          platformIdentifier,
-          userId
+        await DeploymentRequestDomain.loadLatestDeploymentRequestForUser(
+          userId,
+          {
+            type: DeploymentRequestDeploymentType.Trial,
+            platform_identifier: platformIdentifier,
+          }
         );
 
       expect(result).toBeDefined();
@@ -302,9 +681,12 @@ describe('deploymentRequestDomain', () => {
         );
 
       const result =
-        await DeploymentRequestDomain.loadTrialDeploymentRequestByPlatformIdentifierAndUserId(
-          platformIdentifier,
-          userId
+        await DeploymentRequestDomain.loadLatestDeploymentRequestForUser(
+          userId,
+          {
+            type: DeploymentRequestDeploymentType.Trial,
+            platform_identifier: platformIdentifier,
+          }
         );
 
       expect(result).toBeDefined();
@@ -327,9 +709,12 @@ describe('deploymentRequestDomain', () => {
         );
 
       const result =
-        await DeploymentRequestDomain.loadTrialDeploymentRequestByPlatformIdentifierAndUserId(
-          platformIdentifier,
-          userId
+        await DeploymentRequestDomain.loadLatestDeploymentRequestForUser(
+          userId,
+          {
+            type: DeploymentRequestDeploymentType.Trial,
+            platform_identifier: platformIdentifier,
+          }
         );
 
       expect(result).toBeDefined();
@@ -353,9 +738,12 @@ describe('deploymentRequestDomain', () => {
       );
 
       const result =
-        await DeploymentRequestDomain.loadTrialDeploymentRequestByPlatformIdentifierAndUserId(
-          platformIdentifier,
-          userNotInOrganization
+        await DeploymentRequestDomain.loadLatestDeploymentRequestForUser(
+          userNotInOrganization,
+          {
+            type: DeploymentRequestDeploymentType.Trial,
+            platform_identifier: platformIdentifier,
+          }
         );
 
       expect(result).toBeUndefined();
@@ -375,20 +763,38 @@ describe('deploymentRequestDomain', () => {
       );
 
       const result =
-        await DeploymentRequestDomain.loadTrialDeploymentRequestByPlatformIdentifierAndUserId(
-          platformIdentifier,
-          userId
+        await DeploymentRequestDomain.loadLatestDeploymentRequestForUser(
+          userId,
+          {
+            type: DeploymentRequestDeploymentType.Trial,
+            platform_identifier: platformIdentifier,
+          }
         );
 
       expect(result).toBeUndefined();
+    });
+
+    it('should return the bundle deployment request for the user when filtering by type Bundle only', async () => {
+      const userId = TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID as UserId;
+
+      const { bundle } = await TestHelper.deploymentRequest.createBundle();
+
+      const result =
+        await DeploymentRequestDomain.loadLatestDeploymentRequestForUser(
+          userId,
+          { type: DeploymentRequestDeploymentType.Bundle }
+        );
+
+      expect(result).toBeDefined();
+      expect(result?.id).toBe(bundle.id);
+
+      await TestHelper.deploymentRequest.deleteBundle(bundle.id);
     });
   });
 
   describe('loadTrialDeploymentRequestByPlatformToken', () => {
     afterEach(async () => {
-      await DeploymentRequestDomain.deleteDeploymentRequestBy({});
-      await ServiceInstanceDomain.deleteServiceInstanceBy({});
-      await TestHelper.subscription.delete({});
+      await TestHelper.deploymentRequest.deleteAllWithServiceInstanceAndSubscription();
     });
 
     it('should return deployment request when Active trial deployment exists with matching token', async () => {
@@ -521,100 +927,78 @@ describe('deploymentRequestDomain', () => {
 
       expect(result).toBeUndefined();
     });
+
+    it('should return the most recent deployment request by request_date when orderBy is provided and multiple rows match', async () => {
+      const region = DeploymentRequestPlatformRegion.UsEast;
+      const older =
+        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+          {
+            hub_status: DeploymentRequestHubStatus.Cancelled,
+            type: DeploymentRequestDeploymentType.Bundle,
+            platform_identifier: null,
+            region,
+            request_date: new Date(Date.UTC(2025, 0, 1)),
+          }
+        );
+      const newer =
+        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+          {
+            hub_status: DeploymentRequestHubStatus.Active,
+            type: DeploymentRequestDeploymentType.Bundle,
+            platform_identifier: null,
+            region,
+            request_date: new Date(Date.UTC(2025, 5, 1)),
+          }
+        );
+
+      const result = await DeploymentRequestDomain.loadFullDeploymentRequest(
+        {
+          type: DeploymentRequestDeploymentType.Bundle,
+          organization_requester_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+        },
+        { orderBy: { column: 'request_date', order: OrderingMode.Desc } }
+      );
+
+      expect(result).toBeDefined();
+      expect(result!.id).toBe(newer.id);
+      expect(result!.id).not.toBe(older.id);
+      expect(result!.hub_status).toBe(DeploymentRequestHubStatus.Active);
+    });
   });
 
   describe('reorderDeploymentRequestUp', () => {
     it('should do nothing when deployment request is the top one', async () => {
-      const topDeploymentRequest =
-        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-          {
-            ordering: 1,
-          }
-        );
-      await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-        {
-          ordering: 2,
-        }
-      );
+      const topDeploymentRequest = await createRankedBundle(1);
+      await createRankedBundle(2);
 
       await DeploymentRequestDomain.reorderDeploymentRequestUp(
-        topDeploymentRequest!
+        topDeploymentRequest
       );
       const resultDeploymentRequest =
         await DeploymentRequestDomain.loadDeploymentRequestBy({
-          id: topDeploymentRequest!.id,
+          id: topDeploymentRequest.id,
         });
 
       expect(resultDeploymentRequest).toBeDefined();
       expect(resultDeploymentRequest!.ordering).toBe(1);
     });
 
-    it('should swap deployment request with the previous one', async () => {
-      await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-        {
-          ordering: 2,
-          hub_status: DeploymentRequestHubStatus.Queued,
-        }
-      );
-      const previousDeploymentRequest =
-        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-          {
-            ordering: 3,
-            hub_status: DeploymentRequestHubStatus.Queued,
-          }
-        );
-      const selectedDeploymentRequest =
-        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-          {
-            ordering: 4,
-            hub_status: DeploymentRequestHubStatus.Queued,
-          }
-        );
-
-      await DeploymentRequestDomain.reorderDeploymentRequestUp(
-        selectedDeploymentRequest!
-      );
-      const resultPreviousDeploymentRequest =
-        await DeploymentRequestDomain.loadDeploymentRequestBy({
-          id: previousDeploymentRequest!.id,
-        });
-      const resultSelectedDeploymentRequest =
-        await DeploymentRequestDomain.loadDeploymentRequestBy({
-          id: selectedDeploymentRequest!.id,
-        });
-      expect(resultPreviousDeploymentRequest).toBeDefined();
-      expect(resultPreviousDeploymentRequest!.ordering).toBe(4);
-
-      expect(resultSelectedDeploymentRequest).toBeDefined();
-      expect(resultSelectedDeploymentRequest!.ordering).toBe(3);
-    });
-
     it('should only reorder queued deployment requests', async () => {
-      const previousDeploymentRequest =
-        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-          {
-            ordering: 3,
-            hub_status: DeploymentRequestHubStatus.Active,
-          }
-        );
-      const selectedDeploymentRequest =
-        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-          {
-            ordering: 4,
-            hub_status: DeploymentRequestHubStatus.Queued,
-          }
-        );
+      const previousDeploymentRequest = await createRankedBundle(3, {
+        hub_status: DeploymentRequestHubStatus.Active,
+      });
+      const selectedDeploymentRequest = await createRankedBundle(4);
 
       await DeploymentRequestDomain.reorderDeploymentRequestUp(
-        selectedDeploymentRequest!
+        selectedDeploymentRequest
       );
       const resultPreviousDeploymentRequest =
         await DeploymentRequestDomain.loadDeploymentRequestBy({
-          id: previousDeploymentRequest!.id,
+          id: previousDeploymentRequest.id,
         });
       const resultSelectedDeploymentRequest =
         await DeploymentRequestDomain.loadDeploymentRequestBy({
-          id: selectedDeploymentRequest!.id,
+          id: selectedDeploymentRequest.id,
         });
 
       expect(resultPreviousDeploymentRequest).toBeDefined();
@@ -624,162 +1008,141 @@ describe('deploymentRequestDomain', () => {
       expect(resultSelectedDeploymentRequest!.ordering).toBe(4);
     });
 
-    it('should only reorder deployment requests from the same platform', async () => {
-      const previousDeploymentRequest =
-        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-          {
-            ordering: 3,
-            hub_status: DeploymentRequestHubStatus.Queued,
-            platform_identifier: PlatformIdentifier.Openaev,
-          }
-        );
-      const selectedDeploymentRequest =
-        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-          {
-            ordering: 4,
-            hub_status: DeploymentRequestHubStatus.Queued,
-          }
-        );
+    it('should swap a bundle with the bundle right above it in its region queue', async () => {
+      // Given
+      const firstBundle = await createRankedBundle(1);
+      const secondBundle = await createRankedBundle(2);
 
-      await DeploymentRequestDomain.reorderDeploymentRequestUp(
-        selectedDeploymentRequest!
+      // When
+      await DeploymentRequestDomain.reorderDeploymentRequestUp(secondBundle);
+
+      // Then
+      await TestHelper.deploymentRequest.assertProperties(secondBundle.id, {
+        ordering: 1,
+      });
+      await TestHelper.deploymentRequest.assertProperties(firstBundle.id, {
+        ordering: 2,
+      });
+    });
+
+    it('should only reorder bundles from the same region', async () => {
+      // Given
+      const euWestBundle = await createRankedBundle(1, {
+        region: DeploymentRequestPlatformRegion.EuWest,
+      });
+      const usEastBundle = await createRankedBundle(2);
+
+      // When
+      await DeploymentRequestDomain.reorderDeploymentRequestUp(usEastBundle);
+
+      // Then
+      await TestHelper.deploymentRequest.assertProperties(usEastBundle.id, {
+        ordering: 2,
+      });
+      await TestHelper.deploymentRequest.assertProperties(euWestBundle.id, {
+        ordering: 1,
+      });
+    });
+  });
+
+  describe('getMaxOrderingInQueue', () => {
+    it('should number each region queue on its own, so two regions can share a rank', async () => {
+      // Given
+      await createRankedBundle(1, {
+        region: DeploymentRequestPlatformRegion.EuWest,
+      });
+      await createRankedBundle(2, {
+        region: DeploymentRequestPlatformRegion.EuWest,
+      });
+
+      // When
+      const euWest = await DeploymentRequestDomain.getMaxOrderingInQueue(
+        bundleQuotaKey(DeploymentRequestPlatformRegion.EuWest),
+        DeploymentRequestHubStatus.Queued
       );
-      const resultPreviousDeploymentRequest =
-        await DeploymentRequestDomain.loadDeploymentRequestBy({
-          id: previousDeploymentRequest!.id,
-        });
-      const resultSelectedDeploymentRequest =
-        await DeploymentRequestDomain.loadDeploymentRequestBy({
-          id: selectedDeploymentRequest!.id,
-        });
+      const usEast = await DeploymentRequestDomain.getMaxOrderingInQueue(
+        bundleQuotaKey(DeploymentRequestPlatformRegion.UsEast),
+        DeploymentRequestHubStatus.Queued
+      );
 
-      expect(resultPreviousDeploymentRequest).toBeDefined();
-      expect(resultPreviousDeploymentRequest!.ordering).toBe(3);
+      // Then
+      expect(euWest).toBe(2);
+      expect(usEast).toBeNull();
+    });
 
-      expect(resultSelectedDeploymentRequest).toBeDefined();
-      expect(resultSelectedDeploymentRequest!.ordering).toBe(4);
+    it('should ignore the bundle products, they follow their bundle instead of holding a rank', async () => {
+      // Given
+      await TestHelper.deploymentRequest.createBundle({
+        bundle: {
+          region: DeploymentRequestPlatformRegion.EuWest,
+          ordering: 1,
+          hub_status: DeploymentRequestHubStatus.Queued,
+        },
+        children: [
+          {
+            type: DeploymentRequestDeploymentType.Trial,
+            platform_identifier: PlatformIdentifier.Opencti,
+            region: DeploymentRequestPlatformRegion.EuWest,
+            ordering: 9,
+            hub_status: DeploymentRequestHubStatus.Queued,
+          },
+        ],
+      });
+
+      // When
+      const maxOrdering = await DeploymentRequestDomain.getMaxOrderingInQueue(
+        bundleQuotaKey(DeploymentRequestPlatformRegion.EuWest),
+        DeploymentRequestHubStatus.Queued
+      );
+
+      // Then
+      expect(maxOrdering).toBe(1);
     });
   });
 
   describe('reorderDeploymentRequestToTop', async () => {
     it('should do nothing when deployment request is the top one', async () => {
-      const topDeploymentRequest =
-        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-          {
-            ordering: 1,
-            hub_status: DeploymentRequestHubStatus.Queued,
-          }
-        );
-      await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-        {
-          ordering: 2,
-          hub_status: DeploymentRequestHubStatus.Queued,
-        }
-      );
+      const topDeploymentRequest = await createRankedBundle(1);
+      await createRankedBundle(2);
 
       await DeploymentRequestDomain.reorderDeploymentRequestToTop(
-        topDeploymentRequest!
+        topDeploymentRequest
       );
       const resultDeploymentRequest =
         await DeploymentRequestDomain.loadDeploymentRequestBy({
-          id: topDeploymentRequest!.id,
+          id: topDeploymentRequest.id,
         });
 
       expect(resultDeploymentRequest).toBeDefined();
       expect(resultDeploymentRequest!.ordering).toBe(1);
     });
 
-    it('should reorder deployment request to top', async () => {
-      const topDeploymentRequest =
-        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-          {
-            ordering: 3,
-            hub_status: DeploymentRequestHubStatus.Queued,
-          }
-        );
-      await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-        {
-          ordering: 4,
-          hub_status: DeploymentRequestHubStatus.Queued,
-        }
-      );
-      await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-        {
-          ordering: 5,
-          hub_status: DeploymentRequestHubStatus.Queued,
-        }
-      );
-      const selectedDeploymentRequest =
-        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-          {
-            ordering: 6,
-            hub_status: DeploymentRequestHubStatus.Queued,
-          }
-        );
-
-      await DeploymentRequestDomain.reorderDeploymentRequestToTop(
-        selectedDeploymentRequest!
-      );
-      const resultSelectedDeploymentRequest =
-        await DeploymentRequestDomain.loadDeploymentRequestBy({
-          id: selectedDeploymentRequest!.id,
-        });
-
-      const resultTopDeploymentRequest =
-        await DeploymentRequestDomain.loadDeploymentRequestBy({
-          id: topDeploymentRequest!.id,
-        });
-
-      expect(resultSelectedDeploymentRequest).toBeDefined();
-      expect(resultSelectedDeploymentRequest!.ordering).toBe(1);
-
-      expect(resultTopDeploymentRequest).toBeDefined();
-      expect(resultTopDeploymentRequest!.ordering).toBe(4);
-    });
-
     it('should only reorder queued deployment requests', async () => {
-      const topDeploymentRequest =
-        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-          {
-            ordering: 3,
-            hub_status: DeploymentRequestHubStatus.Queued,
-          }
-        );
-      const secondDeploymentRequest =
-        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-          {
-            ordering: 4,
-          }
-        );
-      await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-        {
-          ordering: 5,
-        }
-      );
-      const selectedDeploymentRequest =
-        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-          {
-            ordering: 6,
-            hub_status: DeploymentRequestHubStatus.Queued,
-          }
-        );
+      const topDeploymentRequest = await createRankedBundle(3);
+      const secondDeploymentRequest = await createRankedBundle(4, {
+        hub_status: DeploymentRequestHubStatus.Pending,
+      });
+      await createRankedBundle(5, {
+        hub_status: DeploymentRequestHubStatus.Pending,
+      });
+      const selectedDeploymentRequest = await createRankedBundle(6);
 
       await DeploymentRequestDomain.reorderDeploymentRequestToTop(
-        selectedDeploymentRequest!
+        selectedDeploymentRequest
       );
       const resultSelectedDeploymentRequest =
         await DeploymentRequestDomain.loadDeploymentRequestBy({
-          id: selectedDeploymentRequest!.id,
+          id: selectedDeploymentRequest.id,
         });
 
       const resultSecondDeploymentRequest =
         await DeploymentRequestDomain.loadDeploymentRequestBy({
-          id: secondDeploymentRequest!.id,
+          id: secondDeploymentRequest.id,
         });
 
       const resultTopDeploymentRequest =
         await DeploymentRequestDomain.loadDeploymentRequestBy({
-          id: topDeploymentRequest!.id,
+          id: topDeploymentRequest.id,
         });
 
       expect(resultSelectedDeploymentRequest).toBeDefined();
@@ -787,76 +1150,48 @@ describe('deploymentRequestDomain', () => {
 
       expect(resultSecondDeploymentRequest).toBeDefined();
       expect(resultSecondDeploymentRequest!.ordering).toBe(
-        secondDeploymentRequest!.ordering
+        secondDeploymentRequest.ordering
       );
 
       expect(resultTopDeploymentRequest).toBeDefined();
       expect(resultTopDeploymentRequest!.ordering).toBe(4);
     });
 
-    it('should only reorder deployment requests from same platform identifier', async () => {
-      const topDeploymentRequest =
-        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-          {
-            ordering: 3,
-            platform_identifier: PlatformIdentifier.Openaev,
-            hub_status: DeploymentRequestHubStatus.Queued,
-          }
-        );
-      const secondDeploymentRequest =
-        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-          {
-            ordering: 4,
-            hub_status: DeploymentRequestHubStatus.Queued,
-          }
-        );
-      await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-        {
-          ordering: 5,
-          hub_status: DeploymentRequestHubStatus.Queued,
-        }
-      );
-      const selectedDeploymentRequest =
-        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-          {
-            ordering: 6,
-            platform_identifier: PlatformIdentifier.Openaev,
-            hub_status: DeploymentRequestHubStatus.Queued,
-          }
-        );
+    it('should move a bundle to the top and push down the other bundles of its region', async () => {
+      // Given
+      const firstBundle = await createRankedBundle(1);
+      const secondBundle = await createRankedBundle(2);
+      const thirdBundle = await createRankedBundle(3);
 
-      await DeploymentRequestDomain.reorderDeploymentRequestToTop(
-        selectedDeploymentRequest!
-      );
-      const resultSelectedDeploymentRequest =
-        await DeploymentRequestDomain.loadDeploymentRequestBy({
-          id: selectedDeploymentRequest!.id,
-        });
+      // When
+      await DeploymentRequestDomain.reorderDeploymentRequestToTop(thirdBundle);
 
-      const resultSecondDeploymentRequest =
-        await DeploymentRequestDomain.loadDeploymentRequestBy({
-          id: secondDeploymentRequest!.id,
-        });
-
-      const resultTopDeploymentRequest =
-        await DeploymentRequestDomain.loadDeploymentRequestBy({
-          id: topDeploymentRequest!.id,
-        });
-
-      expect(resultSelectedDeploymentRequest).toBeDefined();
-      expect(resultSelectedDeploymentRequest!.ordering).toBe(1);
-
-      expect(resultSecondDeploymentRequest).toBeDefined();
-      expect(resultSecondDeploymentRequest!.ordering).toBe(
-        secondDeploymentRequest!.ordering
-      );
-
-      expect(resultTopDeploymentRequest).toBeDefined();
-      expect(resultTopDeploymentRequest!.ordering).toBe(4);
+      // Then
+      await TestHelper.deploymentRequest.assertProperties(thirdBundle.id, {
+        ordering: 1,
+      });
+      await TestHelper.deploymentRequest.assertProperties(firstBundle.id, {
+        ordering: 2,
+      });
+      await TestHelper.deploymentRequest.assertProperties(secondBundle.id, {
+        ordering: 3,
+      });
     });
   });
-  describe('setLastPendingRequestAsQueued', () => {
-    let platformIdentifier: PlatformIdentifier;
+  describe('loadLastPendingRequest and setRequestAsQueued', () => {
+    const BUNDLE_REQUEST = {
+      type: DeploymentRequestDeploymentType.Bundle,
+    };
+
+    const queueLastPendingRequest = async (key: QuotaKey) => {
+      const request = await DeploymentRequestDomain.loadLastPendingRequest(key);
+      if (!request) {
+        return undefined;
+      }
+
+      return DeploymentRequestDomain.setRequestAsQueued(request);
+    };
+
     let region: DeploymentRequestPlatformRegion;
     let deploymentRequestId1: DeploymentRequestId;
     let deploymentRequestId2: DeploymentRequestId;
@@ -866,18 +1201,19 @@ describe('deploymentRequestDomain', () => {
       const deploymentRequest1 =
         await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
           {
+            ...BUNDLE_REQUEST,
             ordering: 3,
             hub_status: DeploymentRequestHubStatus.Queued,
             target_state: DeploymentRequestPlatformState.Unprovisioned,
           }
         );
       deploymentRequestId1 = deploymentRequest1!.id;
-      platformIdentifier = deploymentRequest1!.platform_identifier;
       region = deploymentRequest1!.region;
 
       const deploymentRequest2 =
         await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
           {
+            ...BUNDLE_REQUEST,
             ordering: 4,
             hub_status: DeploymentRequestHubStatus.Pending,
             target_state: DeploymentRequestPlatformState.Active,
@@ -888,6 +1224,7 @@ describe('deploymentRequestDomain', () => {
       const deploymentRequest3 =
         await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
           {
+            ...BUNDLE_REQUEST,
             ordering: 5,
             hub_status: DeploymentRequestHubStatus.Pending,
             target_state: DeploymentRequestPlatformState.Active,
@@ -898,6 +1235,7 @@ describe('deploymentRequestDomain', () => {
       const deploymentRequest4 =
         await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
           {
+            ...BUNDLE_REQUEST,
             ordering: 6,
             hub_status: DeploymentRequestHubStatus.Queued,
             target_state: DeploymentRequestPlatformState.Unprovisioned,
@@ -906,22 +1244,32 @@ describe('deploymentRequestDomain', () => {
       deploymentRequestId4 = deploymentRequest4!.id;
     });
 
-    it('should update the last request in platform and region', async () => {
-      const openAEVDeploymentRequest =
+    it('should leave the ranks of the other regions untouched', async () => {
+      // Given
+      const euWestQueued =
         await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
           {
-            ordering: 4,
+            ...BUNDLE_REQUEST,
+            ordering: 1,
             hub_status: DeploymentRequestHubStatus.Queued,
             target_state: DeploymentRequestPlatformState.Unprovisioned,
-            platform_identifier: PlatformIdentifier.Openaev,
+            region: DeploymentRequestPlatformRegion.EuWest,
           }
         );
 
-      const updatedRequest =
-        await DeploymentRequestDomain.setLastPendingRequestAsQueued(
-          platformIdentifier,
-          region
-        );
+      // When
+      await queueLastPendingRequest(bundleQuotaKey(region));
+
+      // Then
+      await TestHelper.deploymentRequest.assertProperties(euWestQueued!.id, {
+        ordering: 1,
+      });
+    });
+
+    it('should update the last bundle request in region', async () => {
+      const updatedRequest = await queueLastPendingRequest(
+        bundleQuotaKey(region)
+      );
 
       expect(updatedRequest).toBeDefined();
       expect(updatedRequest!.id).toBe(deploymentRequestId3);
@@ -957,21 +1305,10 @@ describe('deploymentRequestDomain', () => {
           target_state: DeploymentRequestPlatformState.Unprovisioned,
         }
       );
-
-      await TestHelper.deploymentRequest.assertProperties(
-        openAEVDeploymentRequest!.id,
-        {
-          hub_status: DeploymentRequestHubStatus.Queued,
-          ordering: openAEVDeploymentRequest!.ordering,
-        }
-      );
     });
 
     it('should set pending requests in the right order with queued requests', async () => {
-      await DeploymentRequestDomain.setLastPendingRequestAsQueued(
-        platformIdentifier,
-        region
-      );
+      await queueLastPendingRequest(bundleQuotaKey(region));
 
       await TestHelper.deploymentRequest.assertProperties(
         deploymentRequestId1,
@@ -1007,11 +1344,9 @@ describe('deploymentRequestDomain', () => {
         hub_status: DeploymentRequestHubStatus.Queued,
       });
 
-      const updatedRequest =
-        await DeploymentRequestDomain.setLastPendingRequestAsQueued(
-          platformIdentifier,
-          region
-        );
+      const updatedRequest = await queueLastPendingRequest(
+        bundleQuotaKey(region)
+      );
 
       expect(updatedRequest).toBeUndefined();
 
@@ -1045,46 +1380,111 @@ describe('deploymentRequestDomain', () => {
     });
   });
 
-  describe('setFirstQueuedRequestAsPending', () => {
-    it('should move the first request to pending, ordered by ordering', async () => {
+  describe('loadFirstQueuedRequest', () => {
+    const BUNDLE_REQUEST = {
+      type: DeploymentRequestDeploymentType.Bundle,
+    };
+
+    it('should return the queued request with the lowest ordering', async () => {
       const deploymentRequest1 =
         await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
           {
+            ...BUNDLE_REQUEST,
             ordering: 3,
             hub_status: DeploymentRequestHubStatus.Queued,
             target_state: DeploymentRequestPlatformState.Unprovisioned,
           }
         );
-      const deploymentRequest2 =
+      await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+        {
+          ...BUNDLE_REQUEST,
+          ordering: 6,
+          hub_status: DeploymentRequestHubStatus.Queued,
+          target_state: DeploymentRequestPlatformState.Unprovisioned,
+        }
+      );
+      await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+        {
+          ...BUNDLE_REQUEST,
+          ordering: 1,
+          hub_status: DeploymentRequestHubStatus.Pending,
+          target_state: DeploymentRequestPlatformState.Active,
+        }
+      );
+
+      const request = await DeploymentRequestDomain.loadFirstQueuedRequest(
+        bundleQuotaKey(deploymentRequest1!.region)
+      );
+
+      expect(request?.id).toBe(deploymentRequest1!.id);
+    });
+
+    it('should ignore queued requests from another region', async () => {
+      const usEastRequest =
         await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
           {
+            ...BUNDLE_REQUEST,
+            ordering: 3,
+            hub_status: DeploymentRequestHubStatus.Queued,
+            target_state: DeploymentRequestPlatformState.Unprovisioned,
+            region: DeploymentRequestPlatformRegion.UsEast,
+          }
+        );
+      await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+        {
+          ...BUNDLE_REQUEST,
+          ordering: 1,
+          hub_status: DeploymentRequestHubStatus.Queued,
+          target_state: DeploymentRequestPlatformState.Unprovisioned,
+          region: DeploymentRequestPlatformRegion.EuWest,
+        }
+      );
+
+      const request = await DeploymentRequestDomain.loadFirstQueuedRequest(
+        bundleQuotaKey(DeploymentRequestPlatformRegion.UsEast)
+      );
+
+      expect(request?.id).toBe(usEastRequest!.id);
+    });
+  });
+
+  describe('setRequestAsPending', () => {
+    it('should move the request to pending, after the last pending one', async () => {
+      const { bundle: deploymentRequest1 } =
+        await TestHelper.deploymentRequest.createBundle({
+          bundle: {
+            ordering: 3,
+            hub_status: DeploymentRequestHubStatus.Queued,
+            target_state: DeploymentRequestPlatformState.Unprovisioned,
+          },
+        });
+      const { bundle: deploymentRequest2 } =
+        await TestHelper.deploymentRequest.createBundle({
+          bundle: {
             ordering: 4,
             hub_status: DeploymentRequestHubStatus.Pending,
             target_state: DeploymentRequestPlatformState.Active,
-          }
-        );
-      const deploymentRequest3 =
-        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-          {
+          },
+        });
+      const { bundle: deploymentRequest3 } =
+        await TestHelper.deploymentRequest.createBundle({
+          bundle: {
             ordering: 5,
             hub_status: DeploymentRequestHubStatus.Pending,
             target_state: DeploymentRequestPlatformState.Active,
-          }
-        );
-      const deploymentRequest4 =
-        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-          {
+          },
+        });
+      const { bundle: deploymentRequest4 } =
+        await TestHelper.deploymentRequest.createBundle({
+          bundle: {
             ordering: 6,
             hub_status: DeploymentRequestHubStatus.Queued,
             target_state: DeploymentRequestPlatformState.Unprovisioned,
-          }
-        );
+          },
+        });
 
       const updatedDeploymentRequest =
-        await DeploymentRequestDomain.setFirstQueuedRequestAsPending(
-          deploymentRequest1!.platform_identifier,
-          deploymentRequest1!.region
-        );
+        await DeploymentRequestDomain.setRequestAsPending(deploymentRequest1!);
 
       expect(updatedDeploymentRequest).toBeDefined();
       expect(updatedDeploymentRequest!.id).toBe(deploymentRequest1!.id);
@@ -1132,138 +1532,152 @@ describe('deploymentRequestDomain', () => {
       );
     });
 
-    it('should not move requests from another region', async () => {
-      const deploymentRequest1 =
-        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+    it('should cascade to the queued children when the promoted request is a bundle', async () => {
+      const region = DeploymentRequestPlatformRegion.UsEast;
+      const {
+        bundle,
+        children: [queuedChild, cancelledChild],
+      } = await TestHelper.deploymentRequest.createBundle({
+        bundle: {
+          region,
+          ordering: 1,
+          hub_status: DeploymentRequestHubStatus.Queued,
+          target_state: DeploymentRequestPlatformState.Unprovisioned,
+        },
+        children: [
           {
-            ordering: 3,
-            hub_status: DeploymentRequestHubStatus.Queued,
-            target_state: DeploymentRequestPlatformState.Unprovisioned,
             platform_identifier: PlatformIdentifier.Opencti,
-          }
-        );
-      const deploymentRequest2 =
-        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-          {
-            ordering: 4,
+            region,
             hub_status: DeploymentRequestHubStatus.Queued,
             target_state: DeploymentRequestPlatformState.Unprovisioned,
-            platform_identifier: PlatformIdentifier.Openaev,
-          }
-        );
-
-      const updatedDeploymentRequest =
-        await DeploymentRequestDomain.setFirstQueuedRequestAsPending(
-          PlatformIdentifier.Opencti,
-          deploymentRequest1!.region
-        );
-      expect(updatedDeploymentRequest).toBeDefined();
-      await TestHelper.deploymentRequest.assertProperties(
-        deploymentRequest1!.id,
-        {
-          hub_status: DeploymentRequestHubStatus.Pending,
-        }
-      );
-      await TestHelper.deploymentRequest.assertProperties(
-        deploymentRequest2!.id,
-        {
-          hub_status: DeploymentRequestHubStatus.Queued,
-        }
-      );
-    });
-
-    it('should not move request from another platform', async () => {
-      const deploymentRequest1 =
-        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+          },
           {
-            ordering: 3,
-            hub_status: DeploymentRequestHubStatus.Queued,
+            platform_identifier: PlatformIdentifier.Xtmone,
+            region,
+            hub_status: DeploymentRequestHubStatus.Cancelled,
             target_state: DeploymentRequestPlatformState.Unprovisioned,
-            region: DeploymentRequestPlatformRegion.UsEast,
-          }
-        );
-      const deploymentRequest2 =
-        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-          {
-            ordering: 4,
-            hub_status: DeploymentRequestHubStatus.Queued,
-            target_state: DeploymentRequestPlatformState.Unprovisioned,
-            region: DeploymentRequestPlatformRegion.EuWest,
-          }
-        );
+          },
+        ],
+      });
 
-      const updatedDeploymentRequest =
-        await DeploymentRequestDomain.setFirstQueuedRequestAsPending(
-          deploymentRequest1!.platform_identifier,
-          DeploymentRequestPlatformRegion.UsEast
-        );
-      expect(updatedDeploymentRequest).toBeDefined();
-      await TestHelper.deploymentRequest.assertProperties(
-        deploymentRequest1!.id,
-        {
-          hub_status: DeploymentRequestHubStatus.Pending,
-        }
+      const promotedRequest = await DeploymentRequestDomain.setRequestAsPending(
+        bundle!
       );
-      await TestHelper.deploymentRequest.assertProperties(
-        deploymentRequest2!.id,
-        {
-          hub_status: DeploymentRequestHubStatus.Queued,
-        }
-      );
+
+      expect(promotedRequest?.id).toBe(bundle!.id);
+      await TestHelper.deploymentRequest.assertProperties(bundle!.id, {
+        hub_status: DeploymentRequestHubStatus.Pending,
+        target_state: DeploymentRequestPlatformState.Active,
+      });
+      await TestHelper.deploymentRequest.assertProperties(queuedChild!.id, {
+        hub_status: DeploymentRequestHubStatus.Pending,
+        target_state: DeploymentRequestPlatformState.Active,
+      });
+      await TestHelper.deploymentRequest.assertProperties(cancelledChild!.id, {
+        hub_status: DeploymentRequestHubStatus.Cancelled,
+        target_state: DeploymentRequestPlatformState.Unprovisioned,
+      });
     });
   });
 
-  describe('initialiseServiceGroup', () => {
+  describe('countDeploymentRequestsBy', () => {
+    const REQUESTER_ID = TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID;
+    const OTHER_USER_ID = TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE.ID;
+
     afterEach(async () => {
-      vi.restoreAllMocks();
-      await DeploymentRequestDomain.deleteDeploymentRequestBy({});
-      await ServiceInstanceDomain.deleteServiceInstanceBy({});
-      await TestHelper.subscription.delete({});
+      await TestHelper.deploymentRequest.deleteAllWithServiceInstanceAndSubscription();
     });
 
-    const createDeploymentRequest = (platformIdentifier: PlatformIdentifier) =>
-      TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription({
-        platform_identifier: platformIdentifier,
-        platform_id: uuidv4(),
-        hub_status: DeploymentRequestHubStatus.Active,
-        type: DeploymentRequestDeploymentType.Trial,
+    it('should return 0 when no deployment request matches the given conditions', async () => {
+      const count = await DeploymentRequestDomain.countDeploymentRequestsBy({
+        user_requester_id: uuidv4() as UserId,
       });
 
-    const spyOnAuth0AndServiceGroup = () => {
-      const createAudienceSpy = vi
-        .spyOn(auth0Client, 'createAudienceAPI')
-        .mockResolvedValue();
-      vi.spyOn(auth0Client, 'updateUserRBACInstance').mockResolvedValue();
-      vi.spyOn(ServiceGroupDomain, 'initGroupWithAdmin').mockResolvedValue();
-      return { createAudienceSpy };
-    };
-
-    it('should NOT create an Auth0 audience for an OpenAEV instance', async () => {
-      const deployment = await createDeploymentRequest(
-        PlatformIdentifier.Openaev
-      );
-      const { createAudienceSpy } = spyOnAuth0AndServiceGroup();
-
-      await DeploymentRequestDomain.initialiseServiceGroup(
-        deployment!.id,
-        PlatformIdentifier.Openaev
-      );
-
-      expect(createAudienceSpy).not.toHaveBeenCalled();
+      expect(count).toBe(0);
     });
 
-    it('should create an Auth0 audience for an OpenCTI instance', async () => {
-      const deployment = await createDeploymentRequest(
-        PlatformIdentifier.Opencti
+    it('should count only deployment requests matching the given conditions', async () => {
+      await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+        { user_requester_id: REQUESTER_ID, cancellation_user_id: null }
       );
-      const { createAudienceSpy } = spyOnAuth0AndServiceGroup();
-
-      await DeploymentRequestDomain.initialiseServiceGroup(
-        deployment!.id,
-        PlatformIdentifier.Opencti
+      await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+        { user_requester_id: REQUESTER_ID, cancellation_user_id: REQUESTER_ID }
+      );
+      await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+        { user_requester_id: OTHER_USER_ID, cancellation_user_id: REQUESTER_ID }
       );
 
-      expect(createAudienceSpy).toHaveBeenCalledOnce();
+      const countByRequester =
+        await DeploymentRequestDomain.countDeploymentRequestsBy({
+          user_requester_id: REQUESTER_ID,
+        });
+      const countByCanceller =
+        await DeploymentRequestDomain.countDeploymentRequestsBy({
+          cancellation_user_id: REQUESTER_ID,
+        });
+
+      expect(countByRequester).toBe(2);
+      expect(countByCanceller).toBe(2);
+    });
+  });
+
+  describe('updateDeploymentRequestByIdIfTargetState', () => {
+    afterEach(async () => {
+      await TestHelper.deploymentRequest.deleteAllWithServiceInstanceAndSubscription();
+    });
+
+    it('should update the deployment request when the expected target_state still matches', async () => {
+      const deploymentRequest =
+        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+          {
+            target_state: DeploymentRequestPlatformState.Active,
+            hub_status: DeploymentRequestHubStatus.Provisioning,
+          }
+        );
+
+      const updated =
+        await DeploymentRequestDomain.updateDeploymentRequestByIdIfTargetState(
+          deploymentRequest.id,
+          DeploymentRequestPlatformState.Active,
+          { hub_status: DeploymentRequestHubStatus.Active }
+        );
+
+      expect(updated).toMatchObject({
+        id: deploymentRequest.id,
+        hub_status: DeploymentRequestHubStatus.Active,
+      });
+
+      await TestHelper.deploymentRequest.assertProperties(
+        deploymentRequest.id,
+        { hub_status: DeploymentRequestHubStatus.Active }
+      );
+    });
+
+    it('should not update the deployment request when target_state changed concurrently', async () => {
+      const deploymentRequest =
+        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+          {
+            target_state: DeploymentRequestPlatformState.Removed,
+            hub_status: DeploymentRequestHubStatus.Cancelled,
+          }
+        );
+
+      const updated =
+        await DeploymentRequestDomain.updateDeploymentRequestByIdIfTargetState(
+          deploymentRequest.id,
+          DeploymentRequestPlatformState.Active,
+          { hub_status: DeploymentRequestHubStatus.Active }
+        );
+
+      expect(updated).toBeUndefined();
+
+      await TestHelper.deploymentRequest.assertProperties(
+        deploymentRequest.id,
+        {
+          hub_status: DeploymentRequestHubStatus.Cancelled,
+          target_state: DeploymentRequestPlatformState.Removed,
+        }
+      );
     });
   });
 });

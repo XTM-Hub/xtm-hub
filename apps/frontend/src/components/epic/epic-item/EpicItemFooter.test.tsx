@@ -1,37 +1,66 @@
 import { EpicItemFooter } from '@/components/epic/epic-item/EpicItemFooter';
 import testRender from '@/utils/test/test-render';
-import { epic_fragment$data } from '@generated/epic_fragment.graphql';
 import { EditionType, EpicType, FiligranProduct } from '@graphql/generated';
+import { mockEpic } from '@graphql/mocks';
 import { screen } from '@testing-library/react';
-import { createMockEnvironment } from 'relay-test-utils';
 import { describe, expect, it } from 'vitest';
 
 describe('EpicItemFooter', () => {
-  const epic = {
+  const epic = mockEpic({
     id: 'epic-1',
     title: 'Roadmap epic',
     epic_type: EpicType.Other,
     edition_type: EditionType.CommunityEdition,
-    product: FiligranProduct.Opencti,
-    document_id: null,
-  } as epic_fragment$data;
+    products: [FiligranProduct.Opencti],
+  });
 
   const defaultProps = {
     epic,
-    serviceInstanceId: 'service-instance-1',
   };
 
   it('renders product information', () => {
-    // Given
-    const environment = createMockEnvironment();
-
     // When
-    testRender(<EpicItemFooter {...defaultProps} />, {
-      relayConfig: environment,
-    });
+    testRender(<EpicItemFooter {...defaultProps} />);
 
     // Then
     expect(screen.getByText('OpenCTI')).toBeInTheDocument();
+  });
+
+  it('renders every product of the epic', () => {
+    // When
+    testRender(
+      <EpicItemFooter
+        {...defaultProps}
+        epic={{
+          ...epic,
+          products: [FiligranProduct.Opencti, FiligranProduct.Openaev],
+        }}
+      />
+    );
+
+    // Then
+    expect(screen.getByText('OpenCTI')).toBeInTheDocument();
+    expect(screen.getByText('OpenAEV')).toBeInTheDocument();
+  });
+
+  it('renders the products in the expected order', () => {
+    // When
+    const { container } = testRender(
+      <EpicItemFooter
+        {...defaultProps}
+        epic={{
+          ...epic,
+          products: [
+            FiligranProduct.Xtmone,
+            FiligranProduct.Openaev,
+            FiligranProduct.Xtmhub,
+          ],
+        }}
+      />
+    );
+
+    // Then
+    expect(container.textContent).toContain('XTM HubOpenAEVXTM One');
   });
 
   it.each`
@@ -43,7 +72,6 @@ describe('EpicItemFooter', () => {
     'renders edition tag according to edition type (editionType=$editionType)',
     ({ editionType, expectedLabel }) => {
       // Given
-      const environment = createMockEnvironment();
       const resolvedExpectedLabel =
         expectedLabel === '__NO_LABEL__' ? null : expectedLabel;
 
@@ -52,10 +80,7 @@ describe('EpicItemFooter', () => {
         <EpicItemFooter
           {...defaultProps}
           epic={{ ...epic, edition_type: editionType }}
-        />,
-        {
-          relayConfig: environment,
-        }
+        />
       );
 
       // Then
@@ -70,54 +95,28 @@ describe('EpicItemFooter', () => {
     }
   );
 
-  it.each([
-    {
-      epicType: EpicType.Integration,
-      documentId: 'document-image-1',
-      shouldRenderIntegration: true,
-    },
-    {
-      epicType: EpicType.Integration,
-      documentId: null,
-      shouldRenderIntegration: false,
-    },
-    {
-      epicType: EpicType.Other,
-      documentId: 'document-image-1',
-      shouldRenderIntegration: false,
-    },
-  ])(
-    'renders integration block according to type and document id (epicType=$epicType, documentId=$documentId)',
-    ({ epicType, documentId, shouldRenderIntegration }) => {
-      // Given
-      const environment = createMockEnvironment();
-
+  it.each`
+    epicType                | shouldRenderIntegration
+    ${EpicType.Integration} | ${true}
+    ${EpicType.Other}       | ${false}
+  `(
+    'should render the integration badge only when the epic type is integration (epicType=$epicType)',
+    ({ epicType, shouldRenderIntegration }) => {
       // When
-      const { queryByText } = testRender(
+      const { queryByText, container } = testRender(
         <EpicItemFooter
           {...defaultProps}
-          epic={{ ...epic, epic_type: epicType, document_id: documentId }}
-        />,
-        {
-          relayConfig: environment,
-        }
+          epic={{ ...epic, epic_type: epicType }}
+        />
       );
-
-      const integrationBadge = queryByText('integration');
 
       // Then
       if (shouldRenderIntegration) {
-        expect(integrationBadge).toBeInTheDocument();
-        expect(
-          screen.getByRole('img', { name: 'Roadmap epic logo' })
-        ).toHaveAttribute(
-          'src',
-          '/document/images/service-instance-1/document-image-1'
-        );
-        return;
+        expect(queryByText('integration')).toBeInTheDocument();
+      } else {
+        expect(queryByText('integration')).not.toBeInTheDocument();
       }
-
-      expect(integrationBadge).toBeNull();
+      expect(container.querySelector('img')).toBeNull();
     }
   );
 });

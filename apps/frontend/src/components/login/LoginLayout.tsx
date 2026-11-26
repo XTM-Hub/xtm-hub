@@ -3,9 +3,9 @@ import LoginForm from '@/components/login/LoginForm';
 import LoginMessage from '@/components/login/LoginMessage';
 import LoginTitleForm from '@/components/login/LoginTitle';
 import { SettingsContext } from '@/components/settings/EnvPortalContext';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import useDecodedQuery from '@/hooks/use-decoded-query';
-import { useToast } from '@filigran/ui/clients';
-import { useTranslations } from 'next-intl';
+import { useTranslate } from '@/hooks/use-translate';
 import { usePathname, useRouter } from 'next/navigation';
 import { useContext, useEffect } from 'react';
 
@@ -15,8 +15,7 @@ export const LoginLayout = ({}) => {
 
   const { error, redirect } = useDecodedQuery();
   const currentPath = usePathname();
-  const { toast } = useToast();
-  const t = useTranslations();
+  const t = useTranslate();
 
   const localProvider = settings?.platform_providers?.find(
     (p) => p.provider === 'local'
@@ -24,31 +23,33 @@ export const LoginLayout = ({}) => {
 
   useEffect(() => {
     if (!localProvider) {
-      const target = redirect ? `/sign-up?redirect=${redirect}` : '/sign-up';
+      const target = redirect
+        ? `/sign-up?redirect=${encodeURIComponent(redirect)}`
+        : '/sign-up';
       router.replace(target);
     }
   }, [localProvider, redirect, router]);
 
   useEffect(() => {
     if (error) {
-      toast({
-        variant: 'destructive',
+      showSnackbar({
+        severity: 'error',
         title: t('UnexpectedErrorDialog.Title'),
         description: t('UnexpectedErrorDialog.Description'),
       });
     }
-  }, [currentPath, error, t, toast]);
+  }, [currentPath, error, t]);
 
   if (!localProvider) {
     return null;
   }
 
   return (
-    <main className="absolute inset-0 z-0 m-auto flex max-w-[450px] flex-col justify-center">
+    <main className="absolute inset-x-0 top-0 bottom-[var(--cookie-banner-height,0px)] z-0 m-auto flex max-w-[450px] flex-col justify-center">
       <TestEnvBanner />
-      <div className="flex flex-col items-center p-xl sm:p-0">
+      <div className="flex flex-col items-center p-6 sm:p-0">
         <LoginTitleForm />
-        <div className="space-y-l mt-l w-full flex flex-col items-center">
+        <div className="space-y-4 mt-4 w-full flex flex-col items-center">
           <LoginMessage />
           <LoginForm />
         </div>

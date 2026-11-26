@@ -1,15 +1,22 @@
-import { useTranslations } from 'next-intl';
+import useDecodedQuery from '@/hooks/use-decoded-query';
+import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import Link from 'next/link';
 
 const LoginMessage = () => {
-  const t = useTranslations();
+  const t = useTranslate();
+  const { redirect } = useDecodedQuery();
+  const signUpHref = redirect
+    ? `/sign-up?redirect=${encodeURIComponent(redirect)}`
+    : '/sign-up';
 
   return (
-    <div className="bg-elevation-background-layer-1 border border-border-light rounded w-full p-xl text-sm text-center">
+    <div className="layer-1 bg-elevation-default border border-elevation-subtle rounded w-full p-6 text-sm text-center">
       {t('LoginPage.DontHaveAccount')}{' '}
       <Link
-        className="text-primary"
-        href="/sign-up">
+        {...analyticsId('account_signup_open')}
+        className="text-filigran-brand-primary"
+        href={signUpHref}>
         {t('LoginPage.SignUp')}
       </Link>
     </div>

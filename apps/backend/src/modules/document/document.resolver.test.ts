@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   contextSimpleUserFiligran2,
   GRAPHQL_RESOLVE_INFO,
@@ -16,6 +16,7 @@ import {
   QueryPublicDocumentsArgs,
   SubscriptionModel,
 } from '../../__generated__/resolvers-types';
+import { requestContext } from '../../context/request.context';
 import DocumentModel, { DocumentId } from '../../model/kanel/public/Document';
 import ServiceInstance from '../../model/kanel/public/ServiceInstance';
 import UseCase from '../../model/kanel/public/UseCase';
@@ -26,10 +27,13 @@ import {
   NotFoundErrorCode,
 } from '../../utils/error/error.code';
 import { ErrorType } from '../../utils/error/error.type';
+import { shareCountRateLimiter } from '../../utils/rate-limit.util';
 import { ServiceInstanceDomain } from '../service/instance/service-instance.domain';
 import { OPENAEV_SCENARIO_DOCUMENT_TYPE } from '../shareable-resource/openaev/scenario/scenario.model';
 import { OPENCTI_CUSTOM_DASHBOARD_DOCUMENT_TYPE } from '../shareable-resource/opencti/custom-dashboard/custom-dashboard.model';
 import { OPENCTI_INTEGRATION_DOCUMENT_TYPE } from '../shareable-resource/opencti/integration/integration.model';
+import { TelemetryApp } from '../telemetry/telemetry.app';
+import { TelemetryHelper } from '../telemetry/telemetry.helper';
 import { DocumentApp } from './document.app';
 import { subscriptionByServiceInstanceLoaderKey } from './document.dataloader';
 import { DocumentHelper } from './document.helper';
@@ -171,7 +175,6 @@ describe('delete document GraphQL mutation', () => {
       {
         documentId: docId,
         service_instance_id: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
-        forceDelete: false,
       },
       contextSimpleUserFiligran2,
       GRAPHQL_RESOLVE_INFO
@@ -179,8 +182,7 @@ describe('delete document GraphQL mutation', () => {
 
     expect(DocumentApp.deleteDocument).toHaveBeenCalledWith(
       docId,
-      SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
-      false
+      SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID
     );
     expect(result).toEqual(expected);
   });
@@ -195,7 +197,6 @@ describe('delete document GraphQL mutation', () => {
       {
         documentId: uuidv4() as DocumentId,
         service_instance_id: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
-        forceDelete: false,
       },
       contextSimpleUserFiligran2,
       GRAPHQL_RESOLVE_INFO
@@ -258,6 +259,135 @@ describe('increment share number document GraphQL mutation', () => {
   });
 });
 
+describe('increment share number document rate limit', () => {
+  const VISITOR_IP = '203.0.113.7';
+  const OTHER_VISITOR_IP = '198.51.100.20';
+
+  // The request context middleware sets `ip` from the Express request on every route, GraphQL transports included.
+  // `set` rather than `run`: the test setup's `run` restores the previous context when its callback returns, which is
+  // before the first `await` of the resolver.
+  const shareFrom = (
+    ip: string,
+    documentId: DocumentId,
+    graphqlContext = contextSimpleUserFiligran2
+  ) => {
+    requestContext.set({ user: contextSimpleUserFiligran2.user, ip });
+    return documentResolver.Mutation!.incrementShareNumberDocument!(
+      {},
+      { documentId },
+      graphqlContext,
+      GRAPHQL_RESOLVE_INFO
+    );
+  };
+
+  const givenSharableDocument = () => {
+    const documentId = uuidv4() as DocumentId;
+    const document = {
+      id: documentId,
+      service_instance_id: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
+      name: 'doc',
+    } as unknown as Awaited<
+      ReturnType<typeof DocumentDomain.loadDocumentWithMetadataById>
+    >;
+    vi.spyOn(DocumentDomain, 'loadDocumentWithMetadataById').mockResolvedValue(
+      document
+    );
+    vi.spyOn(DocumentHelper, 'updateDocumentWithCounters').mockResolvedValue(
+      document as unknown as Awaited<
+        ReturnType<typeof DocumentHelper.updateDocumentWithCounters>
+      >
+    );
+    return documentId;
+  };
+
+  let sendTelemetryEventSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(async () => {
+    await shareCountRateLimiter.reset();
+    vi.spyOn(
+      ServiceInstanceDomain,
+      'loadServiceDefinitionByServiceInstance'
+    ).mockResolvedValue({ identifier: 'custom_dashboards' } as Awaited<
+      ReturnType<
+        typeof ServiceInstanceDomain.loadServiceDefinitionByServiceInstance
+      >
+    >);
+    vi.spyOn(TelemetryHelper, 'shouldSendEventForService').mockReturnValue(
+      true
+    );
+    vi.spyOn(TelemetryHelper, 'buildShareEvent').mockResolvedValue(
+      {} as Awaited<ReturnType<typeof TelemetryHelper.buildShareEvent>>
+    );
+    sendTelemetryEventSpy = vi
+      .spyOn(TelemetryApp, 'sendTelemetryEvent')
+      .mockResolvedValue(undefined);
+  });
+
+  it('should count a second share of the same document from the same address only once', async () => {
+    // Given
+    const documentId = givenSharableDocument();
+    await shareFrom(VISITOR_IP, documentId);
+
+    // When
+    const result = await shareFrom(VISITOR_IP, documentId);
+
+    // Then
+    expect(result).toMatchObject({ id: documentId });
+    expect(sendTelemetryEventSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('should count a second share sent over /graphql-sse only once, although its GraphQL request has no ip', async () => {
+    // Given
+    const documentId = givenSharableDocument();
+    const sseContext = {
+      ...contextSimpleUserFiligran2,
+      req: { raw: { ip: VISITOR_IP } },
+    } as unknown as typeof contextSimpleUserFiligran2;
+    await shareFrom(VISITOR_IP, documentId, sseContext);
+
+    // When
+    await shareFrom(VISITOR_IP, documentId, sseContext);
+
+    // Then
+    expect(sendTelemetryEventSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('should count the shares of the same document from two addresses', async () => {
+    // Given
+    const documentId = givenSharableDocument();
+    await shareFrom(VISITOR_IP, documentId);
+
+    // When
+    await shareFrom(OTHER_VISITOR_IP, documentId);
+
+    // Then
+    expect(sendTelemetryEventSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it('should count every share from a private address, which does not tell visitors apart', async () => {
+    // Given
+    const documentId = givenSharableDocument();
+    await shareFrom('10.0.3.12', documentId);
+
+    // When
+    await shareFrom('10.0.3.12', documentId);
+
+    // Then
+    expect(sendTelemetryEventSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it('should count the shares of two documents from the same address', async () => {
+    // Given
+    await shareFrom(VISITOR_IP, givenSharableDocument());
+
+    // When
+    await shareFrom(VISITOR_IP, givenSharableDocument());
+
+    // Then
+    expect(sendTelemetryEventSpy).toHaveBeenCalledTimes(2);
+  });
+});
+
 describe('document.__resolveType', () => {
   it.each`
     type                                      | expected
@@ -311,6 +441,29 @@ describe('document.__resolveType', () => {
       documentResolver.Document as unknown as DocumentResolvers
     ).__resolveType(doc, contextSimpleUserFiligran2, GRAPHQL_RESOLVE_INFO);
     expect(result).toBe('DefaultDocument');
+  });
+
+  it('should resolve integration type from an already-hydrated document without querying the dataloader', async () => {
+    // Given a document that already carries `integration_type` (e.g.
+    // hydrated by DocumentMetadataDomain.hydrateMetadata upstream)
+    const doc = {
+      id: uuidv4(),
+      type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+      integration_type: IntegrationType.Connector,
+    } as unknown as DocumentModel;
+    const loadSpy = vi.spyOn(
+      contextSimpleUserFiligran2.dataLoaders.document.integrationTypeLoader,
+      'load'
+    );
+
+    // When resolving its concrete GraphQL type
+    const result = await (
+      documentResolver.Document as unknown as DocumentResolvers
+    ).__resolveType(doc, contextSimpleUserFiligran2, GRAPHQL_RESOLVE_INFO);
+
+    // Then it resolves using the hydrated value, without a dataloader call
+    expect(result).toBe('Connector');
+    expect(loadSpy).not.toHaveBeenCalled();
   });
 });
 
@@ -475,28 +628,6 @@ describe('document field resolvers', () => {
   });
 });
 
-describe('document exists GraphQL query', () => {
-  it('should delegate to checkDocumentExists and return result', async () => {
-    vi.spyOn(DocumentHelper, 'checkDocumentExists').mockResolvedValue(false);
-
-    const result = await documentResolver.Query!.documentExists!(
-      {},
-      {
-        documentName: 'test.md',
-        service_instance_id: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
-      },
-      contextSimpleUserFiligran2,
-      GRAPHQL_RESOLVE_INFO
-    );
-
-    expect(DocumentHelper.checkDocumentExists).toHaveBeenCalledWith(
-      'test.md',
-      SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID
-    );
-    expect(result).toBe(false);
-  });
-});
-
 describe('public documents GraphQL query', () => {
   it('should delegate to DocumentApp.loadPublicDocuments and return result', async () => {
     const expected = [] as unknown as Awaited<
@@ -536,6 +667,31 @@ describe('public documents by service slug GraphQL query', () => {
     expect(DocumentApp.loadPublicDocumentsByServiceSlug).toHaveBeenCalledWith(
       'my-service'
     );
+    expect(result).toEqual(expected);
+  });
+});
+
+describe('public document slugs by service slug GraphQL query', () => {
+  it('should delegate to DocumentApp.loadPublicDocumentSlugsByServiceSlug and return result', async () => {
+    const expected = [] as unknown as Awaited<
+      ReturnType<typeof DocumentApp.loadPublicDocumentSlugsByServiceSlug>
+    >;
+    vi.spyOn(
+      DocumentApp,
+      'loadPublicDocumentSlugsByServiceSlug'
+    ).mockResolvedValue(expected);
+
+    const result = await documentResolver.Query!
+      .publicDocumentSlugsByServiceSlug!(
+      {},
+      { serviceInstanceSlug: 'my-service' },
+      contextSimpleUserFiligran2,
+      GRAPHQL_RESOLVE_INFO
+    );
+
+    expect(
+      DocumentApp.loadPublicDocumentSlugsByServiceSlug
+    ).toHaveBeenCalledWith('my-service');
     expect(result).toEqual(expected);
   });
 });

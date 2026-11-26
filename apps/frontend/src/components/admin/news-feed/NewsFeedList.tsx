@@ -1,129 +1,145 @@
 'use client';
-import {
-  DeleteNewsFeedItemMutation,
-  newsFeedItemFragment,
-  newsFeedListFragment,
-  NewsFeedListQuery,
-} from '@/components/admin/news-feed/news-feed.graphql';
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import BadgeOverflowCounter from '@/components/ui/BadgeOverflowCounter';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { DataTable } from '@/components/ui/data-table';
 import { IconActions, IconActionsItem } from '@/components/ui/IconActions';
-import { i18nKey } from '@/utils/datatable';
-import { formatDate } from '@/utils/date';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
+import { useTablePagination } from '@/hooks/use-table-pagination';
+import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
+import { portalGraphqlClient } from '@/lib/graphql-client';
+import { useDateFormatter } from '@/utils/date';
+import { getDataTableLabels } from '@/utils/design-system/data-table';
 import { localizedCardName } from '@/utils/services';
 import { ServiceSlug } from '@/utils/shareable-resources/shareable-resources.types';
+import {
+  Chip,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@filigran/design-system';
 import { MoreVertIcon } from '@filigran/icon';
-import { DataTable, toast } from '@filigran/ui';
-import { Badge } from '@filigran/ui/servers';
-import { newsFeedDeleteMutation } from '@generated/newsFeedDeleteMutation.graphql';
 import {
-  newsFeedItem_fragment$data,
-  newsFeedItem_fragment$key,
+  NewsFeedItemMetadataKey,
+  NewsFeedItemRowFragment,
   NewsFeedItemType,
-} from '@generated/newsFeedItem_fragment.graphql';
-import { newsFeedList_fragment$key } from '@generated/newsFeedList_fragment.graphql';
-import { newsFeedListQuery } from '@generated/newsFeedListQuery.graphql';
-import { NewsFeedItemMetadataKey } from '@graphql/generated';
-import { ColumnDef, PaginationState } from '@tanstack/react-table';
-import { useTranslations } from 'next-intl';
+  useNewsFeedDeleteItemMutation,
+  useNewsFeedListQuery,
+} from '@graphql/generated';
+import { newsFeedKeys } from '@graphql/news-feed/news-feed.keys';
+import { keepPreviousData, useQueryClient } from '@tanstack/react-query';
+import { ColumnDef } from '@tanstack/react-table';
 import { useRouter } from 'next/navigation';
-import { useMemo, useState } from 'react';
-import {
-  readInlineData,
-  useLazyLoadQuery,
-  useMutation,
-  useRefetchableFragment,
-} from 'react-relay';
+import { useId, useMemo, useState } from 'react';
 
 const DEFAULT_PAGE_SIZE = 25;
 
-const getUrlPath = (item: newsFeedItem_fragment$data): string | undefined =>
+const getUrlPath = (item: NewsFeedItemRowFragment): string | undefined =>
   item.metadata.find((m) => m.key === NewsFeedItemMetadataKey.UrlPath)?.value ??
   undefined;
 
-const NEWS_FEED_TYPE_TO_SERVICE_SLUG: Record<NewsFeedItemType, ServiceSlug> = {
-  RESOURCE_CUSTOM_DASHBOARD: ServiceSlug.OPEN_CTI_CUSTOM_DASHBOARDS,
-  RESOURCE_PLAYBOOK: ServiceSlug.OPEN_CTI_PLAYBOOKS,
-  RESOURCE_CUSTOM_VIEW: ServiceSlug.OPEN_CTI_CUSTOM_VIEWS,
+// A blog post has no library of its own, so it is labelled before this lookup
+const NEWS_FEED_TYPE_TO_SERVICE_SLUG: Partial<
+  Record<NewsFeedItemType, ServiceSlug>
+> = {
+  [NewsFeedItemType.ResourceCustomDashboard]:
+    ServiceSlug.OPEN_CTI_CUSTOM_DASHBOARDS,
+  [NewsFeedItemType.ResourcePlaybook]: ServiceSlug.OPEN_CTI_PLAYBOOKS,
+  [NewsFeedItemType.ResourceCustomView]: ServiceSlug.OPEN_CTI_CUSTOM_VIEWS,
+  [NewsFeedItemType.ResourceIntegration]: ServiceSlug.OPEN_CTI_INTEGRATIONS,
+  [NewsFeedItemType.ResourceScenario]: ServiceSlug.OPEN_AEV_SCENARIOS,
+};
+
+// Not `disabled`: Radix skips disabled items in arrow-key navigation, so keyboard users would
+// never reach the reason. The item stays focusable, opens the tooltip on focus, announces the
+// reason as its description and ignores selection.
+const BlogpostDeleteItem = ({
+  label,
+  reason,
+}: {
+  label: string;
+  reason: string;
+}) => {
+  const reasonId = useId();
+
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <IconActionsItem
+            {...analyticsId('admin_news_feed_item_delete')}
+            aria-disabled="true"
+            aria-describedby={reasonId}
+            className="cursor-not-allowed opacity-50"
+            onSelect={(event) => event.preventDefault()}>
+            {label}
+          </IconActionsItem>
+        </TooltipTrigger>
+        <TooltipContent>{reason}</TooltipContent>
+      </Tooltip>
+      <span
+        id={reasonId}
+        className="sr-only">
+        {reason}
+      </span>
+    </TooltipProvider>
+  );
 };
 
 const NewsFeedList = () => {
-  const t = useTranslations();
+  const t = useTranslate();
+  const formatDate = useDateFormatter();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [deleteTarget, setDeleteTarget] = useState<
-    newsFeedItem_fragment$data | undefined
+    NewsFeedItemRowFragment | undefined
   >(undefined);
-  const [pagination, setPagination] = useState<PaginationState>({
-    pageIndex: 0,
-    pageSize: DEFAULT_PAGE_SIZE,
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+
+  const { pagination, cursor, onPaginationChange } = useTablePagination({
+    pageSize,
+    setPageSize,
   });
 
-  const queryData = useLazyLoadQuery<newsFeedListQuery>(NewsFeedListQuery, {
-    count: DEFAULT_PAGE_SIZE,
-  });
+  const { data } = useNewsFeedListQuery(
+    portalGraphqlClient,
+    { count: pagination.pageSize, cursor },
+    { placeholderData: keepPreviousData }
+  );
 
-  const [data, refetch] = useRefetchableFragment<
-    newsFeedListQuery,
-    newsFeedList_fragment$key
-  >(newsFeedListFragment, queryData);
+  const { mutate: deleteNewsFeedItem, isPending: isDeleteInFlight } =
+    useNewsFeedDeleteItemMutation(portalGraphqlClient);
 
-  const [deleteNewsFeedItem, isDeleteInFlight] =
-    useMutation<newsFeedDeleteMutation>(DeleteNewsFeedItemMutation);
-
-  const newsFeedData = useMemo<newsFeedItem_fragment$data[]>(
-    () =>
-      (data?.newsFeedItems?.edges || []).map(({ node }) =>
-        readInlineData<newsFeedItem_fragment$key>(newsFeedItemFragment, node)
-      ),
+  const newsFeedData = useMemo<NewsFeedItemRowFragment[]>(
+    () => (data?.newsFeedItems.edges ?? []).map(({ node }) => node),
     [data]
   );
 
-  const handleRefetchData = (
-    args?: Partial<{ count: number; cursor: string }>
-  ) => {
-    refetch(
+  const handleDelete = (item: NewsFeedItemRowFragment) => {
+    deleteNewsFeedItem(
+      { id: item.id },
       {
-        count: pagination.pageSize,
-        cursor: btoa(String(pagination.pageSize * pagination.pageIndex)),
-        ...args,
-      },
-      { fetchPolicy: 'store-and-network' }
+        onSuccess: async () => {
+          showSnackbar({
+            severity: 'success',
+            title: t('NewsFeedAdminPage.DeleteSuccess', { title: item.title }),
+          });
+          setDeleteTarget(undefined);
+          await queryClient.invalidateQueries({ queryKey: newsFeedKeys.all() });
+        },
+        onError: () => {
+          showSnackbar({
+            severity: 'error',
+            title: t('NewsFeedAdminPage.DeleteError'),
+          });
+          setDeleteTarget(undefined);
+        },
+      }
     );
   };
 
-  const onPaginationChange = (updater: unknown) => {
-    const newPaginationValue: PaginationState =
-      updater instanceof Function ? updater(pagination) : updater;
-    handleRefetchData({
-      count: newPaginationValue.pageSize,
-      cursor: btoa(
-        String(newPaginationValue.pageSize * newPaginationValue.pageIndex)
-      ),
-    });
-    setPagination(newPaginationValue);
-  };
-
-  const handleDelete = (item: newsFeedItem_fragment$data) => {
-    deleteNewsFeedItem({
-      variables: { id: item.id },
-      onCompleted: () => {
-        toast({
-          title: t('NewsFeedAdminPage.DeleteSuccess', { title: item.title }),
-        });
-        setDeleteTarget(undefined);
-        handleRefetchData();
-      },
-      onError: () => {
-        toast({
-          variant: 'destructive',
-          title: t('NewsFeedAdminPage.DeleteError'),
-        });
-        setDeleteTarget(undefined);
-      },
-    });
-  };
-
-  const columns: ColumnDef<newsFeedItem_fragment$data>[] = useMemo(
+  const columns: ColumnDef<NewsFeedItemRowFragment>[] = useMemo(
     () => [
       {
         accessorKey: 'title',
@@ -138,7 +154,14 @@ const NewsFeedList = () => {
         id: 'library',
         header: t('NewsFeedAdminPage.Library'),
         cell: ({ row }) => {
+          if (row.original.type === NewsFeedItemType.BlogPost) {
+            return <span>{t('NewsFeedAdminPage.Blogpost')}</span>;
+          }
           const slug = NEWS_FEED_TYPE_TO_SERVICE_SLUG[row.original.type];
+          if (!slug) {
+            // Explicit placeholder: an empty cell reads as missing data, not as "not applicable"
+            return <span>—</span>;
+          }
           return <span>{localizedCardName({ slug, name: slug }, t)}</span>;
         },
       },
@@ -169,9 +192,10 @@ const NewsFeedList = () => {
         header: t('NewsFeedAdminPage.IsDeleted'),
         cell: ({ row }) =>
           row.original.is_deleted ? (
-            <Badge variant="destructive">
-              {t('NewsFeedAdminPage.IsDeletedYes')}
-            </Badge>
+            <Chip
+              label={t('NewsFeedAdminPage.IsDeletedYes')}
+              severity="critical"
+            />
           ) : null,
       },
       {
@@ -182,25 +206,33 @@ const NewsFeedList = () => {
         enableResizing: false,
         cell: ({ row }) =>
           row.original.is_deleted ? null : (
+            // eslint-disable-next-line no-restricted-syntax -- container whose children carry the IDs
             <div
               className="flex items-center justify-end"
               onClick={(e) => e.stopPropagation()}>
               <IconActions
-                icon={
-                  <>
-                    <MoreVertIcon className="h-4 w-4 text-primary" />
-                    <span className="sr-only">{t('Utils.OpenMenu')}</span>
-                  </>
-                }>
-                <IconActionsItem onClick={() => setDeleteTarget(row.original)}>
-                  {t('NewsFeedAdminPage.Delete')}
-                </IconActionsItem>
+                analyticsId="list_row_actions_open"
+                aria-label={t('Utils.OpenMenu')}
+                icon={<MoreVertIcon className="h-4 w-4 text-icon-highlight" />}>
+                {row.original.type === NewsFeedItemType.BlogPost ? (
+                  // Live blog items are managed by the synchronization only
+                  <BlogpostDeleteItem
+                    label={t('NewsFeedAdminPage.Delete')}
+                    reason={t('NewsFeedAdminPage.DeleteBlogpostDisabled')}
+                  />
+                ) : (
+                  <IconActionsItem
+                    {...analyticsId('admin_news_feed_item_delete')}
+                    onClick={() => setDeleteTarget(row.original)}>
+                    {t('NewsFeedAdminPage.Delete')}
+                  </IconActionsItem>
+                )}
               </IconActions>
             </div>
           ),
       },
     ],
-    [t]
+    [t, formatDate]
   );
 
   return (
@@ -208,13 +240,16 @@ const NewsFeedList = () => {
       <DataTable
         columns={columns}
         data={newsFeedData}
-        i18nKey={i18nKey(t)}
+        {...getDataTableLabels(t)}
         tableOptions={{
           onPaginationChange,
           manualPagination: true,
-          rowCount: data.newsFeedItems.totalCount,
+          rowCount: data?.newsFeedItems.totalCount ?? 0,
         }}
         tableState={{ pagination, columnPinning: { right: ['actions'] } }}
+        getRowAnalyticsId={({ original }) =>
+          getUrlPath(original) ? 'admin_news_feed_item_open' : undefined
+        }
         onClickRow={(row) => {
           const urlPath = getUrlPath(row.original);
           if (urlPath) {
@@ -223,18 +258,19 @@ const NewsFeedList = () => {
         }}
       />
       {deleteTarget && (
-        <AlertDialogComponent
-          isOpen={!!deleteTarget}
+        <ConfirmDialog
+          confirmAnalyticsId="admin_news_feed_item_deletion_confirm"
+          open={!!deleteTarget}
           onOpenChange={(open) => !open && setDeleteTarget(undefined)}
-          AlertTitle={t('NewsFeedAdminPage.DeleteDialog.Title')}
-          actionButtonText={t('NewsFeedAdminPage.DeleteDialog.Confirm')}
-          variantName="destructive"
-          onClickContinue={() => handleDelete(deleteTarget)}
-          continueButtonDisabled={isDeleteInFlight}>
+          title={t('NewsFeedAdminPage.DeleteDialog.Title')}
+          confirmLabel={t('NewsFeedAdminPage.DeleteDialog.Confirm')}
+          destructive
+          onConfirm={() => handleDelete(deleteTarget)}
+          confirmDisabled={isDeleteInFlight}>
           {t('NewsFeedAdminPage.DeleteDialog.Text', {
             title: deleteTarget.title,
           })}
-        </AlertDialogComponent>
+        </ConfirmDialog>
       )}
     </>
   );

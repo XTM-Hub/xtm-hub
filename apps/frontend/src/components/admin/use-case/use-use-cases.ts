@@ -1,5 +1,4 @@
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import { formatName } from '@/utils/format/name';
 import {
   FiligranProduct,
   OrderingMode,
@@ -30,7 +29,7 @@ export const useUseCases = ({
     () =>
       (data?.useCases?.edges ?? []).map(({ node }) => ({
         id: node.id,
-        name: formatName(node.name),
+        name: node.name,
         color: node.color,
       })),
     [data]

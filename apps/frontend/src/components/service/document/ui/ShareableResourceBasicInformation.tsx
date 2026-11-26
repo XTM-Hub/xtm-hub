@@ -1,4 +1,7 @@
-import { useTranslations } from 'next-intl';
+'use client';
+
+import { useTranslate } from '@/hooks/use-translate';
+import { Paper } from '@filigran/design-system';
 import React from 'react';
 
 interface ShareableResourceBasicInformationProps {
@@ -8,15 +11,19 @@ interface ShareableResourceBasicInformationProps {
 export const ShareableResourceBasicInformation = ({
   children,
 }: ShareableResourceBasicInformationProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   return (
     <div className="flex-1">
-      <h2 className="py-s txt-container-title truncate text-ellipsis text-muted-foreground">
-        {t('Service.ShareableResources.Details.BasicInformation')}
-      </h2>
-      <section className="rounded bg-elevation-background-layer-1 flex space-y-xl p-l">
-        <div className="space-y-xl">{children}</div>
-      </section>
+      <Paper
+        as="section"
+        padding={16}
+        title={
+          <h2 className="[font:inherit] tracking-[inherit]">
+            {t('Service.ShareableResources.Details.BasicInformation')}
+          </h2>
+        }>
+        <div className="space-y-6">{children}</div>
+      </Paper>
     </div>
   );
 };

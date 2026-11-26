@@ -1,39 +1,41 @@
 import { db } from '../../../../knexfile';
-import {
-  DeploymentRequestPlatformRegion,
-  PlatformIdentifier,
-} from '../../../__generated__/resolvers-types';
+import { DeploymentRequestPlatformRegion } from '../../../__generated__/resolvers-types';
 import { withTransaction } from '../../../context/database.context';
+import DeploymentRequestModel from '../../../model/kanel/public/DeploymentRequest';
 import DeploymentRequestQuota, {
   DeploymentRequestQuotaMutator,
 } from '../../../model/kanel/public/DeploymentRequestQuota';
 import { ErrorCode } from '../../../utils/error/error.code';
 
-export const isQuotaManagedPlatform = (
-  platformIdentifier: PlatformIdentifier | null
-): platformIdentifier is Exclude<
-  PlatformIdentifier,
-  PlatformIdentifier.Xtmone
-> =>
-  platformIdentifier !== null &&
-  platformIdentifier !== PlatformIdentifier.Xtmone;
+export type QuotaKey = {
+  region: DeploymentRequestPlatformRegion;
+};
+
+export const bundleQuotaKey = (
+  region: DeploymentRequestPlatformRegion
+): QuotaKey => ({ region });
+
+export const quotaKeysOfRequest = (
+  request: DeploymentRequestModel
+): QuotaKey[] => {
+  if (request.parent_id !== null) {
+    return [];
+  }
+  return [bundleQuotaKey(request.region)];
+};
 
 export const DeploymentQuotaDomain = {
   reservePlace: async (
-    platformIdentifier: PlatformIdentifier | null,
-    region: DeploymentRequestPlatformRegion
+    key: QuotaKey,
+    { blocking = true }: { blocking?: boolean } = {}
   ): Promise<{ isPlaceAvailable: boolean }> => {
-    if (!isQuotaManagedPlatform(platformIdentifier)) {
-      return { isPlaceAvailable: true };
-    }
-
     return DeploymentQuotaDomain.withLockedQuotaTransaction(
-      { platformIdentifier, region },
-      async (quota) => {
+      [key],
+      async ([quota]) => {
         if (!quota) {
           throw new Error(ErrorCode.DeploymentRequestQuotaNotFound);
         }
-        if (quota.availability <= 0) {
+        if (blocking && quota.availability <= 0) {
           return {
             isPlaceAvailable: false,
           };
@@ -49,17 +51,10 @@ export const DeploymentQuotaDomain = {
     );
   },
 
-  freePlace: async (
-    platformIdentifier: PlatformIdentifier | null,
-    region: DeploymentRequestPlatformRegion
-  ): Promise<void> => {
-    if (!isQuotaManagedPlatform(platformIdentifier)) {
-      return;
-    }
-
+  freePlace: async (key: QuotaKey): Promise<void> => {
     await DeploymentQuotaDomain.withLockedQuotaTransaction(
-      { platformIdentifier, region },
-      async (quota) => {
+      [key],
+      async ([quota]) => {
         if (!quota) {
           throw new Error(ErrorCode.DeploymentRequestQuotaNotFound);
         }
@@ -71,17 +66,15 @@ export const DeploymentQuotaDomain = {
   },
 
   updateQuotaCapacity: async ({
-    platformIdentifier,
-    region,
+    key,
     newCapacity,
   }: {
-    platformIdentifier: PlatformIdentifier;
-    region: DeploymentRequestPlatformRegion;
+    key: QuotaKey;
     newCapacity: number;
   }): Promise<{ newAvailability: number }> => {
     return DeploymentQuotaDomain.withLockedQuotaTransaction(
-      { platformIdentifier, region },
-      async (quota) => {
+      [key],
+      async ([quota]) => {
         if (!quota) {
           throw new Error(ErrorCode.DeploymentRequestQuotaNotFound);
         }
@@ -90,7 +83,7 @@ export const DeploymentQuotaDomain = {
         await db<DeploymentRequestQuota>('DeploymentRequestQuota')
           .update({
             capacity: newCapacity,
-            availability: quota.availability + difference,
+            availability: newAvailability,
           })
           .where({ id: quota.id });
 
@@ -106,36 +99,23 @@ export const DeploymentQuotaDomain = {
   },
 
   withLockedQuotaTransaction: async <T>(
-    {
-      platformIdentifier,
-      region,
-    }: {
-      platformIdentifier: PlatformIdentifier | null;
-      region: DeploymentRequestPlatformRegion;
-    },
-    callback: (quota: DeploymentRequestQuota | null) => Promise<T>
+    keys: QuotaKey[],
+    callback: (quotas: DeploymentRequestQuota[]) => Promise<T>
   ) => {
-    if (!isQuotaManagedPlatform(platformIdentifier)) {
-      return withTransaction(() => callback(null));
-    }
-
     return withTransaction(async () => {
-      const quota = await lockQuota(platformIdentifier, region);
+      const quotas: DeploymentRequestQuota[] = [];
+      for (const key of keys) {
+        quotas.push(await lockQuota(key));
+      }
 
-      return callback(quota);
+      return callback(quotas);
     });
   },
 };
 
-const lockQuota = async (
-  platformIdentifier: PlatformIdentifier,
-  region: DeploymentRequestPlatformRegion
-): Promise<DeploymentRequestQuota> => {
+const lockQuota = async (key: QuotaKey): Promise<DeploymentRequestQuota> => {
   const quota = await db<DeploymentRequestQuota>('DeploymentRequestQuota')
-    .where({
-      region: region,
-      platform_identifier: platformIdentifier,
-    })
+    .where({ region: key.region })
     .select('*')
     .forUpdate()
     .first();

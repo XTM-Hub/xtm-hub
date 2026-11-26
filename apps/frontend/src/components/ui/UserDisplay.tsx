@@ -1,43 +1,72 @@
+'use client';
+
+import { Avatar } from '@/components/ui/avatar';
+import { useTranslate } from '@/hooks/use-translate';
 import { cn } from '@/lib/utils';
 import { formatPersonNames } from '@/utils/format/name';
+import { getAvatarPictureSource } from '@/utils/format/user-picture';
 import { PublicDocumentData } from '@/utils/shareable-resources/shareable-resources.types';
 import {
-  Avatar,
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@filigran/ui/clients';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
+} from '@filigran/design-system';
+import { DocumentItemFragment } from '@graphql/generated';
+
+const DEFAULT_PICTURE_SIZE = 32;
 
 interface UserDisplayProps {
   uploader:
-    documentItem_fragment$data['uploader'] | PublicDocumentData['uploader'];
+    | DocumentItemFragment['uploader']
+    | PublicDocumentData['uploader']
+    | null
+    | undefined;
   className?: string;
   withTooltip?: boolean;
+  displayPicture?: boolean;
+  /** Displayed size of the picture in CSS pixels. */
+  pictureSize?: number;
 }
 
 export const UserDisplay = ({
   uploader,
   className,
   withTooltip = false,
+  displayPicture = true,
+  pictureSize = DEFAULT_PICTURE_SIZE,
 }: UserDisplayProps) => {
+  const t = useTranslate('UserDisplay');
   const formattedName = formatPersonNames(uploader);
   const fallbackEmail =
     uploader && 'email' in uploader ? (uploader.email ?? '') : '';
-  const displayedIdentity = formattedName || fallbackEmail;
+  const displayedIdentity = uploader
+    ? formattedName || fallbackEmail
+    : t('DeletedUser');
 
   const nameSpan = (
-    <span className={cn('truncate max-w-[220px]', className)}>
+    <span
+      className={cn(
+        'truncate',
+        !uploader && 'italic text-default-secondary',
+        className
+      )}>
       {displayedIdentity}
     </span>
   );
 
   return (
     <>
-      <div className="size-8 shrink-0 [&_img]:object-cover">
-        <Avatar src={uploader?.picture ?? ''} />
-      </div>
+      {displayPicture && (
+        <div
+          className="shrink-0"
+          style={{ width: pictureSize, height: pictureSize }}>
+          <Avatar
+            {...getAvatarPictureSource(uploader?.picture, pictureSize)}
+            size={pictureSize}
+          />
+        </div>
+      )}
       {withTooltip ? (
         <TooltipProvider>
           <Tooltip>

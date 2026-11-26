@@ -1,20 +1,13 @@
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
-import {
-  Button,
-  ColorPicker,
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  Input,
-  MultiSelectFormField,
-  SheetFooter,
-} from '@filigran/ui';
+import { AppCombobox } from '@/components/ui/AppCombobox';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { Form, FormField } from '@/components/ui/form';
+import { SheetFooter } from '@/components/ui/sheet';
+import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
+import { toComboboxOptionIds } from '@/utils/design-system/combobox';
+import { Button, ColorPicker, Input } from '@filigran/design-system';
 import { FiligranProduct } from '@graphql/generated';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useTranslations } from 'next-intl';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -30,10 +23,11 @@ const productTagValues = Object.values(FiligranProduct) as [
   ...FiligranProduct[],
 ];
 
-const productTagOptions = productTagValues.map((productTag) => ({
-  id: productTag,
-  label: productTag.toUpperCase(),
-}));
+const productTagOptionIds = toComboboxOptionIds(
+  productTagValues,
+  (productTag) => productTag,
+  (productTag) => productTag.toUpperCase()
+);
 
 export const useCaseFormSchema = z.object({
   name: z.string().min(2, {
@@ -56,7 +50,7 @@ const UseCaseForm = ({
   handleSubmit: (values: z.infer<typeof useCaseFormSchema>) => void;
   onClose: () => void;
 }) => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   const form = useForm<z.infer<typeof useCaseFormSchema>>({
     resolver: zodResolver(useCaseFormSchema),
@@ -70,88 +64,83 @@ const UseCaseForm = ({
   return (
     <Form {...form}>
       <form
-        className="w-full space-y-xl"
+        className="w-full space-y-6"
         onSubmit={form.handleSubmit(handleSubmit)}>
         <FormField
           control={form.control}
           name="name"
           render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('UseCaseForm.Name')}</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder={t('UseCaseForm.Name')}
-                  {...field}
-                />
-              </FormControl>
-            </FormItem>
+            <Input
+              label={t('UseCaseForm.Name')}
+              placeholder={t('UseCaseForm.Name')}
+              {...field}
+            />
           )}
         />
         <FormField
           control={form.control}
           name="product"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('UseCaseForm.Product')}</FormLabel>
-              <FormControl>
-                <MultiSelectFormField
-                  options={productTagOptions}
-                  popoverContentClassName="bg-elevation-background-layer-3"
-                  keyValue="id"
-                  keyLabel="label"
-                  defaultValue={field.value}
-                  value={field.value}
-                  onValueChange={field.onChange}
-                  noResultString={t('Utils.NotFound')}
-                  placeholder={t('UseCaseForm.Product')}
-                  variant="inverted"
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          render={({ field, fieldState }) => (
+            <AppCombobox
+              formField
+              multiple
+              label={t('UseCaseForm.Product')}
+              placeholder={t('UseCaseForm.Product')}
+              error={fieldState.error?.message}
+              options={productTagOptionIds.ids}
+              value={field.value ?? []}
+              onValueChange={field.onChange}
+              getOptionLabel={productTagOptionIds.getOptionLabel}
+            />
           )}
         />
         <FormField
           control={form.control}
           name="color"
           render={({ field: { value, onChange } }) => (
-            <FormItem>
-              <FormLabel>{t('UseCaseForm.Color')}</FormLabel>
-              <ColorPicker
-                value={value ?? ''}
-                onChange={onChange}
-              />
-            </FormItem>
+            <ColorPicker
+              label={t('UseCaseForm.Color')}
+              placeholder={t('UseCaseForm.Color')}
+              maxLength={7}
+              value={value ?? ''}
+              onValueChange={onChange}
+            />
           )}
         />
 
         <SheetFooter className={useCase ? 'sm:justify-between pb-0' : 'pt-2'}>
           {useCase && (
-            <AlertDialogComponent
-              AlertTitle={t('MenuActions.Delete')}
-              actionButtonText={t('MenuActions.Delete')}
-              variantName={'destructive'}
-              triggerElement={
-                <Button variant="secondary-destructive">
+            <ConfirmDialog
+              confirmAnalyticsId="admin_use_case_deletion_confirm"
+              title={t('MenuActions.Delete')}
+              confirmLabel={t('MenuActions.Delete')}
+              destructive
+              trigger={
+                <Button
+                  variant="destructive"
+                  priority="secondary"
+                  {...analyticsId('admin_use_case_delete')}>
                   {t('MenuActions.Delete')}
                 </Button>
               }
-              onClickContinue={() => handleDelete!()}>
+              onConfirm={() => handleDelete!()}>
               {t('DeleteUseCaseDialog.TextDeleteUseCase', {
                 name: useCase.name,
               })}
-            </AlertDialogComponent>
+            </ConfirmDialog>
           )}
-          <div className="flex gap-s">
+          <div className="flex gap-2">
             <Button
-              variant="secondary"
+              priority="secondary"
               type="button"
+              {...analyticsId('admin_form_cancel')}
               onClick={onClose}>
               {t('Utils.Cancel')}
             </Button>
             <Button
               disabled={!form.formState.isDirty}
-              type="submit">
+              type="submit"
+              {...analyticsId('admin_use_case_submit')}>
               {t('Utils.Validate')}
             </Button>
           </div>

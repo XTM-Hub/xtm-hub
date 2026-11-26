@@ -1,34 +1,52 @@
 import {
   AddUserInput,
   OrganizationCapability,
+  OrganizationMemberContact,
 } from '../../../../__generated__/resolvers-types';
 import portalConfig from '../../../../config';
 import { withTransaction } from '../../../../context/database.context';
 import { requestContext } from '../../../../context/request.context';
-import { OrganizationId } from '../../../../model/kanel/public/Organization';
+import Organization, {
+  OrganizationId,
+} from '../../../../model/kanel/public/Organization';
 import { UserId } from '../../../../model/kanel/public/User';
 import { UserLoadUserBy } from '../../../../model/user';
-import { isUserAdminPlatform } from '../../../../security/access';
+import { dispatch } from '../../../../pub';
 import { securityGuard } from '../../../../security/guard';
-import { sendMail } from '../../../../server/mail-service';
+import {
+  buildPendingUserActionLink,
+  sendMail,
+} from '../../../../server/mail-service';
+import { updateUserSession } from '../../../../session-store-manager';
 import { logApp } from '../../../../utils/app-logger.util';
-import { ErrorCode } from '../../../../utils/error/error.code';
-import { ForbiddenAccess } from '../../../../utils/error/error.util';
+import {
+  ErrorCode,
+  ForbiddenErrorCode,
+} from '../../../../utils/error/error.code';
 import { formatName } from '../../../../utils/format';
+import { isValidEmail } from '../../../../utils/verify-email.util';
 import { OrganizationDomain } from '../../organization/organization.domain';
+import { OrganizationHelper } from '../../organization/organization.helper';
 import { UserDomain } from '../user-domain/user.domain';
 import { UserOrganizationPendingDomain } from '../user-pending/user-organization-pending.domain';
+import { UserProvisioningApp } from '../user-provisioning/user-provisioning.app';
 import { UserHelper } from '../user.helper';
 import { UserOrganizationDomain } from './user-organization.domain';
+
+const assertIsNotPersonalSpace = (
+  organization: Organization,
+  errorCode: ForbiddenErrorCode
+): void => {
+  if (organization.personal_space) {
+    throw new Error(errorCode);
+  }
+};
 
 export const UserOrganizationApp = {
   addUserToOrganization: async (
     input: AddUserInput
   ): Promise<UserLoadUserBy> => {
     const contextUser = requestContext.requireUser();
-    const [organizationFromEmail] =
-      await OrganizationDomain.loadOrganizationsFromEmail(input.email);
-
     const chosenOrganization = await OrganizationDomain.loadOrganizationBy({
       id: contextUser.selected_organization_id,
     });
@@ -36,60 +54,143 @@ export const UserOrganizationApp = {
     if (!chosenOrganization) {
       throw new Error(ErrorCode.OrganizationNotFound);
     }
-    if (chosenOrganization.personal_space) {
-      logApp.warn('You cannot add a user in your personal space');
-      throw new Error(ErrorCode.CantAddUserToPersonalSpace);
-    }
 
-    // The admin orga should only allow to add users in the same organization and with the same domain.
-    // Only the admin PLTFM can by pass this check
-    const isEmailOutsideOrganization =
-      chosenOrganization.id !== organizationFromEmail?.id;
-    if (isEmailOutsideOrganization && !isUserAdminPlatform(contextUser)) {
-      logApp.warn(
-        'You cannot add a user whose email domain is outside your organization'
-      );
-      throw ForbiddenAccess(ErrorCode.EmailOutsideOrganizationError);
-    }
-
-    const [existingUser] = await UserDomain.loadUser({ email: input.email });
-
-    const { user, pendingRemoved } = await withTransaction(async () => {
-      const user = existingUser
-        ? existingUser
-        : await UserHelper.createUserWithPersonalSpace({
-            email: input.email,
-            password: input.password ?? undefined,
-            selected_organization_id: chosenOrganization.id,
-          });
-
-      await UserOrganizationDomain.createUserOrgCapabilities({
-        user,
-        organization: chosenOrganization,
-        orgCapabilities: input.capabilities ?? [],
-        userExists: !!existingUser,
-      });
-
-      const pendingRemoved = await UserHelper.removePending(
-        user,
-        chosenOrganization.id
-      );
-
-      return { user, pendingRemoved };
+    await UserOrganizationApp.assertUserCanBeAddedToOrganization({
+      organization: chosenOrganization,
+      email: input.email,
     });
-
-    if (pendingRemoved) {
-      await UserHelper.dispatchPendingDeleted(user, chosenOrganization.id);
-    }
-
-    const updatedUser = await UserDomain.loadUserBy({
-      'User.id': user.id,
+    return UserOrganizationApp.provisionOrganizationUser({
+      organization: chosenOrganization,
+      ...input,
     });
-    if (!updatedUser) {
-      throw new Error(ErrorCode.UserNotFound);
-    }
-    return updatedUser;
   },
+
+  assertUserCanBeAddedToOrganization: async ({
+    organization,
+    email,
+  }: {
+    organization: Organization;
+    email: string;
+  }): Promise<void> => {
+    assertIsNotPersonalSpace(
+      organization,
+      ErrorCode.CantAddUserToPersonalSpace
+    );
+
+    await securityGuard.assertEmailMatchesOrganization(
+      requestContext.requireUser(),
+      email,
+      organization.id
+    );
+  },
+
+  assertOrganizationIsNotPersonalSpace: async (
+    organizationId: OrganizationId,
+    personalSpaceErrorCode: ForbiddenErrorCode
+  ): Promise<void> => {
+    const organization = await OrganizationDomain.loadOrganizationBy({
+      id: organizationId,
+    });
+    if (!organization) {
+      throw new Error(ErrorCode.OrganizationNotFound);
+    }
+    assertIsNotPersonalSpace(organization, personalSpaceErrorCode);
+  },
+
+  provisionOrganizationUser: async ({
+    organization,
+    email,
+    password,
+    capabilities,
+  }: AddUserInput & {
+    organization: Organization;
+  }): Promise<UserLoadUserBy> => {
+    return UserProvisioningApp.provisionUserForOrganizations({
+      userData: {
+        email,
+        password,
+        selected_organization_id: organization.id,
+      },
+      orgCapabilities: [
+        {
+          organization_id: organization.id,
+          capabilities: capabilities ?? [],
+        },
+      ],
+      mode: 'add',
+      organizationForWelcomeEmail: organization,
+    });
+  },
+
+  resolveOrganizationUserIdsByEmails: async ({
+    organization,
+    emails,
+  }: {
+    organization: Organization;
+    emails: string[];
+  }): Promise<UserId[]> => {
+    // Every email is checked first: adding a user sends emails a rollback cannot undo
+    const memberIds: UserId[] = [];
+    const emailsToProvision: string[] = [];
+    for (const email of emails) {
+      if (!isValidEmail(email)) {
+        throw new Error(ErrorCode.InvalidEmail);
+      }
+      const [existingUser] = await UserDomain.loadUser({ email });
+      if (existingUser?.disabled) {
+        throw new Error(ErrorCode.UserDisabled);
+      }
+      const [membership] = existingUser
+        ? await UserOrganizationDomain.loadUserOrganization({
+            user_id: existingUser.id,
+            organization_id: organization.id,
+          })
+        : [];
+      if (existingUser && membership) {
+        // Provisioning would reset the member capabilities
+        memberIds.push(existingUser.id);
+        continue;
+      }
+
+      await UserOrganizationApp.assertUserCanBeAddedToOrganization({
+        organization,
+        email,
+      });
+      emailsToProvision.push(email);
+    }
+    // A token reaches existing members only: a new membership would outlive it, as addUser would
+    // (API_TOKEN_DENIED_FIELDS)
+    if (emailsToProvision.length > 0 && requestContext.get()?.apiToken) {
+      throw new Error(ForbiddenErrorCode.NotAllowedWithApiToken);
+    }
+
+    const provisionedUserIds: UserId[] = [];
+    for (const email of emailsToProvision) {
+      const provisionedUser =
+        await UserOrganizationApp.provisionOrganizationUser({
+          organization,
+          email,
+        });
+      provisionedUserIds.push(provisionedUser.id);
+    }
+    return [...memberIds, ...provisionedUserIds];
+  },
+  loadOrganizationMemberContactsByCapabilities: async ({
+    organizationId,
+    capabilities,
+  }: {
+    organizationId: OrganizationId;
+    capabilities: OrganizationCapability[];
+  }): Promise<OrganizationMemberContact[]> => {
+    const user = requestContext.requireUser();
+    await securityGuard.assertUserIsInOrganization(user, organizationId);
+
+    return UserDomain.loadUsersByCapabilitiesInOrganization(
+      organizationId,
+      capabilities
+    );
+  },
+
   changeSelectedOrganization: async (
     organization_id: OrganizationId
   ): Promise<UserLoadUserBy> => {
@@ -126,16 +227,57 @@ export const UserOrganizationApp = {
       throw new Error(ErrorCode.CantRemoveYourselfFromOrgaError);
     }
 
-    await UserOrganizationDomain.removeUserFromOrganization(
+    await securityGuard.assertUserCapabilities(
+      [
+        OrganizationCapability.AdministrateOrganization,
+        OrganizationCapability.ManageAccess,
+      ],
+      organizationId
+    );
+
+    await UserOrganizationApp.assertOrganizationIsNotPersonalSpace(
+      organizationId,
+      ErrorCode.CantRemoveUserFromPersonalSpace
+    );
+
+    // No lock on purpose: two simultaneous removals of the last administrators are unlikely enough to accept the race
+    await UserHelper.preventAdministratorRemovalOfOneOrganization(
       userId,
       organizationId
     );
+    await withTransaction(async () => {
+      const [removedMembership] =
+        await UserOrganizationDomain.removeUserFromOrganization(
+          userId,
+          organizationId
+        );
+      if (!removedMembership) {
+        throw new Error(ErrorCode.UserIsNotInOrganization);
+      }
+      await UserDomain.updateUser(
+        userId,
+        {
+          selected_organization_id: OrganizationHelper.personalSpaceIdOf({
+            id: userId,
+          }),
+        },
+        { selected_organization_id: organizationId }
+      );
+    });
+
     const updatedUser = await UserDomain.loadUserBy({
       'User.id': userId,
     });
     if (!updatedUser) {
       throw new Error(ErrorCode.UserNotFound);
     }
+    await updateUserSession(updatedUser);
+    await dispatch(
+      'MeUser',
+      'edit',
+      UserHelper.mapUserToGraphqlUser(updatedUser),
+      'User'
+    );
     return updatedUser;
   },
 
@@ -157,6 +299,47 @@ export const UserOrganizationApp = {
       throw new Error(ErrorCode.UserNotFound);
     }
     return user;
+  },
+
+  acceptPendingUserInOrganization: async ({
+    userId,
+    organizationId,
+  }: {
+    userId: UserId;
+    organizationId: OrganizationId;
+  }): Promise<UserLoadUserBy | null> => {
+    await securityGuard.assertUserCapabilities(
+      [
+        OrganizationCapability.AdministrateOrganization,
+        OrganizationCapability.ManageAccess,
+      ],
+      organizationId
+    );
+
+    await withTransaction(async () => {
+      const pendingUser =
+        await UserOrganizationPendingDomain.lockUserOrganizationPending(
+          userId,
+          organizationId
+        );
+
+      if (!pendingUser) {
+        return;
+      }
+
+      await UserHelper.acceptPendingUserWithCapabilities({
+        user_id: userId,
+        organization_id: organizationId,
+        orgCapabilities: [],
+      });
+    });
+
+    const user = await UserDomain.loadUserBy({
+      'User.id': userId,
+      'Organization.id': organizationId,
+    });
+
+    return user ?? null;
   },
 
   sendPendingUsersDigest: async (): Promise<void> => {
@@ -193,15 +376,26 @@ export const UserOrganizationApp = {
               template: 'organization_pending_user_digest',
               params: {
                 adminName: formatName(adminUser.first_name ?? ''),
+                adminEmail: adminUser.email,
                 organizationName: organization.name,
                 users: organization.users
                   .sort((a, b) =>
                     (a.first_name ?? '').localeCompare(b.first_name ?? '')
                   )
-                  .map(({ first_name, last_name, email }) => ({
+                  .map(({ id, first_name, last_name, email }) => ({
                     firstName: formatName(first_name),
                     lastName: formatName(last_name),
                     email,
+                    approveLink: buildPendingUserActionLink({
+                      action: 'approve',
+                      organizationId: organization.id,
+                      userId: id,
+                    }),
+                    denyLink: buildPendingUserActionLink({
+                      action: 'deny',
+                      organizationId: organization.id,
+                      userId: id,
+                    }),
                   })),
                 userCount: organization.users.length,
                 requestLabel:

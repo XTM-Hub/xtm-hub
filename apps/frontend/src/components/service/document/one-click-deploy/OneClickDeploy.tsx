@@ -7,21 +7,34 @@ import EeBadge from '@/components/service/document/one-click-deploy/EeBadge';
 import EeLearnMoreSheet from '@/components/service/document/one-click-deploy/EeLearnMoreSheet';
 import OnePlatformDisplay from '@/components/service/document/one-click-deploy/OnePlatformDisplay';
 import { useOneClickDeployTab } from '@/components/service/document/one-click-deploy/UseOneClickDeployTab';
+import { DisabledActionTooltip } from '@/components/ui/DisabledActionTooltip';
 import { useBuildCompatibilityTranslationKey } from '@/hooks/use-build-compatibility-translation-key';
 import { useRegisteredPlatforms } from '@/hooks/use-registered-platforms';
-import { isProduction } from '@/lib/utils';
-import { getPlatformIdentifier, isEeCapableContract } from '@/utils/platform';
-import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
-import { AlertDialog, AlertDialogContent, SimpleTooltip } from '@filigran/ui';
-import { Button } from '@filigran/ui/servers';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { OneClickDeployMutation as OneClickDeployMutationType } from '@generated/OneClickDeployMutation.graphql';
-import { useTranslations } from 'next-intl';
+import { useTranslate } from '@/hooks/use-translate';
+import {
+  analyticsResource,
+  toAnalyticsResourceData,
+} from '@/lib/analytics/analytics.context';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
+import { portalGraphqlClient } from '@/lib/graphql-client';
+import {
+  getPlatformIdentifier,
+  isEeCapableContract,
+  requiresEnterpriseEdition,
+} from '@/utils/platform';
+import {
+  isIntegrationItem,
+  ShareableResourceType,
+} from '@/utils/shareable-resources/shareable-resources.types';
+import { Button, Dialog, DialogContent } from '@filigran/design-system';
+import {
+  DocumentItemFragment,
+  useOneClickDeployMutation,
+} from '@graphql/generated';
 import { useCallback, useMemo, useState } from 'react';
-import { graphql, useMutation } from 'react-relay';
 
 interface OneClickDeployProps {
-  documentData: documentItem_fragment$data;
+  documentData: DocumentItemFragment;
   requiredProductVersion?: string | null;
 }
 
@@ -29,26 +42,14 @@ const OneClickDeploy = ({
   documentData,
   requiredProductVersion,
 }: OneClickDeployProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const platformIdentifier = getPlatformIdentifier(documentData.type);
-  const { platforms } = useRegisteredPlatforms(platformIdentifier, {
+  const { platforms, isPending } = useRegisteredPlatforms(platformIdentifier, {
     onlyActive: true,
   });
 
-  const SendOneClickDeployTelemetryMutation = graphql`
-    mutation OneClickDeployMutation($input: OneClickDeployInput!) {
-      sendTelemetryEvent {
-        oneClickDeploy(input: $input) {
-          result
-          message
-        }
-      }
-    }
-  `;
-
-  const [sendOneClickDeployEvent] = useMutation<OneClickDeployMutationType>(
-    SendOneClickDeployTelemetryMutation
-  );
+  const { mutate: sendOneClickDeployEvent } =
+    useOneClickDeployMutation(portalGraphqlClient);
 
   const [isOpen, setIsOpen] = useState(false);
   const [isEeSheetOpen, setIsEeSheetOpen] = useState(false);
@@ -62,7 +63,10 @@ const OneClickDeploy = ({
     });
 
   const requiresEe =
-    documentData.type === ShareableResourceType.OPENCTI_PLAYBOOK;
+    documentData.type === ShareableResourceType.OPENCTI_PLAYBOOK ||
+    requiresEnterpriseEdition(
+      isIntegrationItem(documentData) ? documentData.license_type : null
+    );
 
   const hasEeCapablePlatform = useMemo(
     () => platforms.some((platform) => isEeCapableContract(platform.contract)),
@@ -77,14 +81,12 @@ const OneClickDeploy = ({
       );
       if (platform) {
         sendOneClickDeployEvent({
-          variables: {
-            input: {
-              platform_identifier: platformIdentifier,
-              service_instance_id: documentData.service_instance!.id,
-              resource_id: documentData.id,
-              resource_title: documentData.name ?? '',
-              platform_service_instance_id: platform!.id,
-            },
+          input: {
+            platform_identifier: platformIdentifier,
+            service_instance_id: documentData.service_instance!.id,
+            resource_id: documentData.id,
+            resource_title: documentData.name ?? '',
+            platform_service_instance_id: platform!.id,
           },
         });
       }
@@ -107,16 +109,6 @@ const OneClickDeploy = ({
     openTab();
     setShouldOpenTab(false);
   }
-
-  const openEeSheet = useCallback(() => {
-    if (isProduction() && typeof window.gtag === 'function') {
-      window.gtag('event', 'ee_badge_playbooks', {
-        resource_id: documentData.id,
-        resource_title: documentData.name ?? '',
-      });
-    }
-    setIsEeSheetOpen(true);
-  }, [documentData.id, documentData.name]);
 
   const alertContent = useMemo(() => {
     if (platforms.length === 1) {
@@ -159,25 +151,44 @@ const OneClickDeploy = ({
     );
   }, [eeBlocked, platforms, incompatiblePlatformsCount]);
 
+  const deployLabel = t('Service.ShareableResources.Deploy.DeployPlatform', {
+    platformName: PlatformMetadataMapping[platformIdentifier].name ?? 'OpenCTI',
+  });
+
+  // Until the platforms are known, the button could offer to connect a product the user already has:
+  // it stays in place, disabled, so nothing shifts when they arrive.
+  if (isPending) {
+    return (
+      <Button
+        {...analyticsId('resource_deploy')}
+        disabled>
+        {deployLabel}
+      </Button>
+    );
+  }
+
   if (platforms.length === 0) {
     return (
-      <ConnectProductFromHubModal
-        isOpen={isOpen}
-        onOpenChange={(isOpen) => {
-          setIsOpen(isOpen);
-        }}
-        origin={ConnectProductOrigin.library}
-      />
+      <>
+        <Button
+          {...analyticsId('resource_deploy')}
+          onClick={() => setIsOpen(true)}>
+          {deployLabel}
+        </Button>
+        <ConnectProductFromHubModal
+          isOpen={isOpen}
+          onOpenChange={setIsOpen}
+          origin={ConnectProductOrigin.library}
+        />
+      </>
     );
   }
   const button = (
     <Button
+      {...analyticsId('resource_deploy')}
       disabled={isDeploymentDisabled || eeBlocked}
       onClick={() => setIsOpen(true)}>
-      {t('Service.ShareableResources.Deploy.DeployPlatform', {
-        platformName:
-          PlatformMetadataMapping[platformIdentifier].name ?? 'OpenCTI',
-      })}
+      {deployLabel}
     </Button>
   );
 
@@ -185,7 +196,7 @@ const OneClickDeploy = ({
     <div className="relative inline-flex items-center mr-6">
       {button}
       <div className="absolute inset-y-0 right-0 flex items-center translate-x-1/2 z-10">
-        <EeBadge onClick={openEeSheet} />
+        <EeBadge onClick={() => setIsEeSheetOpen(true)} />
       </div>
     </div>
   ) : (
@@ -193,32 +204,39 @@ const OneClickDeploy = ({
   );
 
   const container = isDeploymentDisabled ? (
-    <SimpleTooltip
-      title={t('Service.Connectors.Incompatible', {
+    <DisabledActionTooltip
+      reason={t('Service.Connectors.Incompatible', {
         platformToBeUpdated,
         count: incompatiblePlatformsCount,
       })}>
       {buttonWithBadge}
-    </SimpleTooltip>
+    </DisabledActionTooltip>
   ) : (
     buttonWithBadge
   );
 
+  const resource = toAnalyticsResourceData(documentData);
+
   return (
     <>
       {container}
-      <AlertDialog
+      <Dialog
         open={isOpen}
         onOpenChange={setIsOpen}>
-        <AlertDialogContent className="max-w-3xl w-full">
+        <DialogContent
+          {...analyticsResource(resource)}
+          size="lg"
+          role="alertdialog"
+          onInteractOutside={(e) => e.preventDefault()}
+          hideCloseButton>
           {alertContent}
-        </AlertDialogContent>
-      </AlertDialog>
+        </DialogContent>
+      </Dialog>
       <EeLearnMoreSheet
         open={isEeSheetOpen}
         setOpen={setIsEeSheetOpen}
-        serviceInstanceId={documentData.service_instance!.id}
         platformIdentifier={platformIdentifier}
+        resource={resource}
       />
     </>
   );

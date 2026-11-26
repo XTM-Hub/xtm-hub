@@ -1,24 +1,28 @@
 import { isValueInEnum } from '@/utils/is-value-in-enum';
-import { OrderingMode } from '@generated/organizationSelectQuery.graphql';
-import { OrganizationOrdering } from '@graphql/generated';
+import { OrderingMode, OrganizationOrdering } from '@graphql/generated';
 import { ColumnDef } from '@tanstack/react-table';
+import { useEffect } from 'react';
 import { useLocalStorage } from 'usehooks-ts';
 
 export const useOrganizationListLocalstorage = <U>(columns: ColumnDef<U>[]) => {
-  const [count, setCount, removeCount] = useLocalStorage(
-    'countOrganizationList',
-    50
-  );
   const [orderMode, setOrderMode, removeOrderMode] =
-    useLocalStorage<OrderingMode>('orderModeOrganizationList', 'asc');
+    useLocalStorage<OrderingMode>(
+      'orderModeOrganizationList',
+      OrderingMode.Asc
+    );
   const [orderBy, setOrderBy, removeOrderBy] =
     useLocalStorage<OrganizationOrdering>(
       'orderByOrganizationList',
       OrganizationOrdering.Name
     );
-  if (!isValueInEnum(orderBy, OrganizationOrdering)) {
-    setOrderBy(OrganizationOrdering.Name);
-  }
+  const safeOrderBy = isValueInEnum(orderBy, OrganizationOrdering)
+    ? orderBy
+    : OrganizationOrdering.Name;
+  useEffect(() => {
+    if (!isValueInEnum(orderBy, OrganizationOrdering)) {
+      setOrderBy(OrganizationOrdering.Name);
+    }
+  }, [orderBy, setOrderBy]);
   const [pageSize, setPageSize, removePageSize] = useLocalStorage(
     'countOrganizationList',
     50
@@ -26,14 +30,13 @@ export const useOrganizationListLocalstorage = <U>(columns: ColumnDef<U>[]) => {
 
   const [columnOrder, setColumnOrder, removeColumnOrder] = useLocalStorage(
     'columnOrderingOrganizationList',
-    columns.map((c) => c.id!)
+    columns.flatMap((column) => (column.id ? [column.id] : []))
   );
 
   const [columnVisibility, setColumnVisibility, removeColumnVisibility] =
     useLocalStorage('columnVisibilityOrganizationList', {});
 
   const resetAll = () => {
-    removeCount();
     removeOrderMode();
     removeOrderBy();
     removePageSize();
@@ -47,11 +50,9 @@ export const useOrganizationListLocalstorage = <U>(columns: ColumnDef<U>[]) => {
   };
 
   return {
-    count,
-    setCount,
     orderMode,
     setOrderMode,
-    orderBy,
+    orderBy: safeOrderBy,
     setOrderBy,
     removeOrder,
     pageSize,

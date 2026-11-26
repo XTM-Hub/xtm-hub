@@ -1,7 +1,8 @@
+import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
+import { IconButton } from '@filigran/design-system';
 import { ArrowNextIcon, ArrowPreviousIcon } from '@filigran/icon';
-import { Button } from '@filigran/ui/servers';
 import { PaginationState } from '@tanstack/react-table';
-import { useTranslations } from 'next-intl';
 
 interface PaginationArrowButtonsProps {
   totalCount: number;
@@ -16,7 +17,7 @@ export const PaginationArrowButtons = ({
   pageIndex,
   pageSize,
 }: PaginationArrowButtonsProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const safePageSize = pageSize > 0 ? pageSize : 1;
   const pageCount = Math.ceil(totalCount / safePageSize);
   const rangeStart = totalCount > 0 ? pageIndex * safePageSize + 1 : 0;
@@ -49,19 +50,19 @@ export const PaginationArrowButtons = ({
 
   return (
     <>
-      <Button
-        variant="tertiary"
-        size="icon"
+      <IconButton
+        {...analyticsId('list_previous_page_open')}
+        priority="tertiary"
         className="h-9 w-9 rounded-none"
         onClick={() => previousPage()}
         disabled={!canGoToPreviousPage()}
-        aria-label={t('GenericActions.Paginate.PreviousPage')}>
-        <ArrowPreviousIcon className="size-3" />
-      </Button>
+        aria-label={t('GenericActions.Paginate.PreviousPage')}
+        icon={<ArrowPreviousIcon className="size-3" />}
+      />
       <div
-        className="leading-none text-text-secondary txt-sub-content whitespace-nowrap text-center"
+        className="leading-none text-default-secondary content-compact whitespace-nowrap text-center"
         style={{ width: counterWidth }}>
-        <span className="text-foreground">
+        <span className="text-default-primary">
           {rangeStart}
           {' - '}
           {rangeEnd}
@@ -69,15 +70,15 @@ export const PaginationArrowButtons = ({
         {' / '}
         {totalCount}
       </div>
-      <Button
-        variant="tertiary"
-        size="icon"
+      <IconButton
+        {...analyticsId('list_next_page_open')}
+        priority="tertiary"
         className="h-9 w-9 rounded-none"
         onClick={() => nextPage()}
         disabled={!canGoToNextPage()}
-        aria-label={t('GenericActions.Paginate.NextPage')}>
-        <ArrowNextIcon className="size-3" />
-      </Button>
+        aria-label={t('GenericActions.Paginate.NextPage')}
+        icon={<ArrowNextIcon className="size-3" />}
+      />
     </>
   );
 };

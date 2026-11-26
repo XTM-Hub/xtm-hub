@@ -1,40 +1,46 @@
 'use client';
-import { OrganizationOrdering } from '@graphql/generated';
-
 import { CreateOrganization } from '@/components/organization/CreateOrganization';
 import { DeleteOrganization } from '@/components/organization/DeleteOrganization';
 import { EditOrganization } from '@/components/organization/EditOrganization';
-import { getOrganizations } from '@/components/organization/Organization.service';
+import { useOrganizations } from '@/components/organization/Organization.service';
 import { useOrganizationListLocalstorage } from '@/components/organization/organization-list-localstorage';
 import { IconActions, IconActionsItem } from '@/components/ui/IconActions';
-import { SearchInput } from '@/components/ui/SearchInput';
+import {
+  DataTable,
+  DataTableHeadBarOptions,
+  DataTableToolbar,
+} from '@/components/ui/data-table';
 import {
   handleSortingChange,
   mapToSortingTableValue,
-  transformSortingValueToParams,
 } from '@/components/ui/handle-sorting.utils';
-import { DEBOUNCE_TIME } from '@/utils/constant';
-import { i18nKey } from '@/utils/datatable';
+import { useDebouncedSearch } from '@/hooks/use-debounced-search';
+import { useTablePagination } from '@/hooks/use-table-pagination';
+import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
+import { getDataTableLabels } from '@/utils/design-system/data-table';
+import { Chip, SearchField } from '@filigran/design-system';
 import { MoreVertIcon } from '@filigran/icon';
-import { Badge, DataTable, DataTableHeadBarOptions } from '@filigran/ui';
-import { OrganizationsPaginationQuery$variables } from '@generated/OrganizationsPaginationQuery.graphql';
-import { organizationItem_fragment$data } from '@generated/organizationItem_fragment.graphql';
-import { ColumnDef, PaginationState } from '@tanstack/react-table';
-import { useTranslations } from 'next-intl';
+import {
+  OrderingMode,
+  OrganizationItemFragment,
+  OrganizationOrdering,
+} from '@graphql/generated';
+import { ColumnDef } from '@tanstack/react-table';
 import { usePathname, useRouter } from 'next/navigation';
-import { Suspense, useMemo, useState } from 'react';
-import { useDebounceCallback } from 'usehooks-ts';
+import { useEffect, useMemo, useState } from 'react';
+
 const OrganizationList = () => {
-  const t = useTranslations();
+  const t = useTranslate();
   const router = useRouter();
   const pathname = usePathname();
   const [editOrganization, setEditOrganization] = useState<
-    organizationItem_fragment$data | undefined
+    OrganizationItemFragment | undefined
   >(undefined);
   const [deleteOrganization, setDeleteOrganization] = useState<
-    organizationItem_fragment$data | undefined
+    OrganizationItemFragment | undefined
   >(undefined);
-  const columns = useMemo<ColumnDef<organizationItem_fragment$data>[]>(
+  const columns = useMemo<ColumnDef<OrganizationItemFragment>[]>(
     () => [
       {
         accessorKey: 'name',
@@ -51,13 +57,12 @@ const OrganizationList = () => {
         enableSorting: false,
         cell: ({ row }) => {
           return (
-            <div className="flex space-x-s">
+            <div className="flex space-x-2">
               {row.original.domains?.map((domain) => (
-                <Badge
-                  className="truncate"
-                  key={domain}>
-                  {domain}
-                </Badge>
+                <Chip
+                  key={domain}
+                  label={domain}
+                />
               ))}
             </div>
           );
@@ -72,13 +77,11 @@ const OrganizationList = () => {
         cell: ({ row }) => (
           <div className="flex items-center justify-end">
             <IconActions
-              icon={
-                <>
-                  <MoreVertIcon className="h-4 w-4 text-primary" />
-                  <span className="sr-only">{t('Utils.OpenMenu')}</span>
-                </>
-              }>
+              analyticsId="list_row_actions_open"
+              aria-label={t('Utils.OpenMenu')}
+              icon={<MoreVertIcon className="h-4 w-4 text-icon-highlight" />}>
               <IconActionsItem
+                {...analyticsId('admin_organization_services_open')}
                 onClick={() => {
                   router.push(
                     `${pathname}/${encodeURIComponent(row.original.id)}/subscribed-services`
@@ -87,10 +90,12 @@ const OrganizationList = () => {
                 {t('Service.SubscribedServices')}
               </IconActionsItem>
               <IconActionsItem
+                {...analyticsId('admin_organization_edit')}
                 onClick={() => setEditOrganization(row.original)}>
                 {t('Utils.Update')}
               </IconActionsItem>
               <IconActionsItem
+                {...analyticsId('admin_organization_delete')}
                 onClick={() => setDeleteOrganization(row.original)}>
                 {t('Utils.Delete')}
               </IconActionsItem>
@@ -116,130 +121,129 @@ const OrganizationList = () => {
     resetAll,
   } = useOrganizationListLocalstorage(columns);
 
-  const { organizationsData, refetch } = getOrganizations({
-    count: pageSize,
-    orderMode,
-    orderBy,
-  });
-  const organizationDataTable = organizationsData.organizations.edges.map(
-    ({ node }) => node
-  ) as organizationItem_fragment$data[];
+  const [searchTerm, setSearchTerm] = useState('');
 
-  const [pagination, setPagination] = useState<PaginationState>({
-    pageIndex: 0,
-    pageSize,
-  });
-
-  const handleRefetchData = (
-    args?: Partial<OrganizationsPaginationQuery$variables>
-  ) => {
-    const sorting = mapToSortingTableValue(orderBy, orderMode);
-    refetch({
-      count: pagination.pageSize,
-      cursor: btoa(String(pagination.pageSize * pagination.pageIndex)),
-      orderBy,
-      orderMode,
-      searchTerm: undefined,
-      ...transformSortingValueToParams(sorting),
-      ...args,
+  const { pagination, setPagination, cursor, onPaginationChange } =
+    useTablePagination({
+      pageSize,
+      setPageSize,
     });
-  };
+
+  const { organizations, totalCount, isLoading, isError, isPlaceholderData } =
+    useOrganizations({
+      count: pagination.pageSize,
+      cursor,
+      orderMode,
+      orderBy,
+      searchTerm,
+    });
+
+  // Deleting the last row of the last page leaves it empty once the list is fetched again.
+  useEffect(() => {
+    if (
+      !isLoading &&
+      !isError &&
+      !isPlaceholderData &&
+      organizations.length === 0 &&
+      pagination.pageIndex > 0
+    ) {
+      setPagination((previousPagination) => ({
+        ...previousPagination,
+        pageIndex: previousPagination.pageIndex - 1,
+      }));
+    }
+  }, [
+    isLoading,
+    isError,
+    isPlaceholderData,
+    organizations.length,
+    pagination.pageIndex,
+    setPagination,
+  ]);
+
+  const resetToFirstPage = () =>
+    setPagination((previousPagination) => ({
+      ...previousPagination,
+      pageIndex: 0,
+    }));
 
   const onSortingChange = (updater: unknown) => {
-    handleSortingChange<OrganizationOrdering>({
+    handleSortingChange<OrganizationOrdering, OrderingMode>({
       updater,
       orderBy,
       orderMode,
       setOrderMode,
       setOrderBy,
       removeOrder,
-      handleRefetchData,
+      handleRefetchData: resetToFirstPage,
     });
   };
 
-  const onPaginationChange = (updater: unknown) => {
-    const newPaginationValue: PaginationState =
-      updater instanceof Function ? updater(pagination) : updater;
-    handleRefetchData({
-      count: newPaginationValue.pageSize,
-      cursor: btoa(
-        String(newPaginationValue.pageSize * newPaginationValue.pageIndex)
-      ),
-    });
-    setPagination(newPaginationValue);
-    if (newPaginationValue.pageSize !== pageSize) {
-      setPageSize(newPaginationValue.pageSize);
-    }
-  };
-
-  const handleInputChange = (inputValue: string) => {
-    handleRefetchData({ searchTerm: inputValue });
-  };
-
-  const debounceHandleInput = useDebounceCallback(
-    (e) => handleInputChange(e.target.value),
-    DEBOUNCE_TIME
-  );
+  const searchHandlers = useDebouncedSearch({
+    apply: (term) => {
+      setSearchTerm(term);
+      resetToFirstPage();
+    },
+    appliedTerm: searchTerm,
+  });
 
   return (
     <>
-      <Suspense
-        fallback={
-          <DataTable
-            i18nKey={i18nKey(t)}
-            data={[]}
-            columns={columns}
-            isLoading={true}
-          />
-        }>
-        <DataTable
-          columns={columns}
-          data={organizationDataTable}
-          toolbar={
-            <div className="flex flex-col-reverse items-center justify-between gap-s sm:flex-row">
-              <label
-                htmlFor="organization-email"
-                className="sr-only">
-                {t('OrganizationActions.SearchOrganizationWithEmail')}
-              </label>
-              <SearchInput
-                id="organization-email"
-                containerClass="w-full sm:w-1/3"
+      {isError && (
+        <div className="mb-2 text-sm text-feedback-error-primary">
+          {t('OrganizationActions.LoadOrganizationsError')}
+        </div>
+      )}
+      <DataTable
+        columns={columns}
+        data={organizations}
+        // Skeletons replace the previous rows while another page, sort or search loads.
+        isLoading={isLoading || isPlaceholderData}
+        toolbar={
+          <DataTableToolbar
+            search={
+              <SearchField
+                fullWidth
+                aria-label={t(
+                  'OrganizationActions.SearchOrganizationWithEmail'
+                )}
                 placeholder={t(
                   'OrganizationActions.SearchOrganizationWithEmail'
                 )}
-                onChange={debounceHandleInput}
+                clearLabel={t('DesignSystem.SearchField.Clear')}
+                onChange={searchHandlers.onChange}
+                onClear={searchHandlers.onClear}
               />
-              <div className="flex w-full items-center justify-between gap-s sm:w-auto">
+            }
+            actions={
+              <>
                 <DataTableHeadBarOptions />
-                <CreateOrganization
-                  connectionId={organizationsData.organizations.__id}
-                />
-              </div>
-            </div>
-          }
-          onResetTable={resetAll}
-          tableOptions={{
-            onSortingChange: onSortingChange,
-            onPaginationChange: onPaginationChange,
-            manualSorting: true,
-            manualPagination: true,
-            onColumnOrderChange: setColumnOrder,
-            onColumnVisibilityChange: setColumnVisibility,
-            rowCount: organizationsData.organizations.totalCount,
-          }}
-          i18nKey={i18nKey(t)}
-          tableState={{
-            sorting: mapToSortingTableValue(orderBy, orderMode),
-            pagination,
-            columnOrder,
-            columnVisibility,
-            columnPinning: {
-              right: ['actions'],
-            },
-          }}
-        />
-      </Suspense>
+                <CreateOrganization />
+              </>
+            }
+          />
+        }
+        onResetTable={resetAll}
+        tableOptions={{
+          onSortingChange: onSortingChange,
+          onPaginationChange: onPaginationChange,
+          manualSorting: true,
+          manualPagination: true,
+          onColumnOrderChange: setColumnOrder,
+          onColumnVisibilityChange: setColumnVisibility,
+          rowCount: totalCount,
+        }}
+        {...getDataTableLabels(t)}
+        tableState={{
+          sorting: mapToSortingTableValue(orderBy, orderMode),
+          pagination,
+          columnOrder,
+          columnVisibility,
+          columnPinning: {
+            right: ['actions'],
+          },
+        }}
+      />
       {editOrganization && (
         <EditOrganization
           key={`edit-${editOrganization.id}`}
@@ -253,7 +257,6 @@ const OrganizationList = () => {
       {deleteOrganization && (
         <DeleteOrganization
           key={`delete-${deleteOrganization.id}`}
-          connectionId={organizationsData.organizations.__id}
           organization={deleteOrganization}
           open={!!deleteOrganization}
           setOpen={(open) =>

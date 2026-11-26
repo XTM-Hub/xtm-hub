@@ -5,6 +5,10 @@ import {
 import Document from '../../model/kanel/public/Document';
 import { MetadataArray } from '../../utils/metadata';
 
+export type DocumentListOptions = {
+  publishedOnly?: boolean;
+};
+
 export type DocumentImage = Document & {
   image_type: DocumentImageType;
 };

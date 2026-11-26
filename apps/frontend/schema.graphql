@@ -6,6 +6,281 @@ directive @auth(portalCapa: [PortalCapability] = [], orgaCapa: [OrganizationCapa
 
 directive @service_capa(requires: [ServiceRestriction] = []) repeatable on OBJECT | FIELD_DEFINITION
 
+"""
+A Relay global ID for ApiToken, extracted to a branded ApiTokenId string
+"""
+scalar ApiTokenId
+
+"""
+What a personal API token may do. read: queries only. read_write: queries and mutations, without the organization
+administration and without any portal capability. admin: the user's organization and portal capabilities, BYPASS
+excepted. A token never exceeds its user's live rights.
+"""
+enum ApiTokenScope {
+  read
+  read_write
+  admin
+}
+
+type ApiToken implements Node {
+  id: ID!
+  name: String!
+
+  """The first characters of the token, to tell tokens apart"""
+  token_prefix: String!
+  scope: ApiTokenScope!
+  organization_id: ID!
+  organization_name: String!
+  user_email: String!
+  expires_at: Date!
+  last_used_at: Date
+  created_at: Date!
+  revoked_at: Date
+}
+
+"""The token is shown here once: only its hash is kept"""
+type CreatedApiToken {
+  token: String!
+  api_token: ApiToken!
+}
+
+"""The token that authenticates the current request"""
+type CurrentApiToken {
+  id: ID!
+  name: String!
+  scope: ApiTokenScope!
+  organization_id: ID!
+  organization_name: String!
+  expires_at: Date!
+  last_used_at: Date
+}
+
+input CreateApiTokenInput {
+  name: String!
+  scope: ApiTokenScope!
+  organization_id: OrganizationId!
+  expires_at: Date!
+}
+
+type Query {
+  """The current user's API tokens, revoked and expired ones included"""
+  apiTokens: [ApiToken!]!
+
+  """The API tokens of the selected organization, for its administrators"""
+  organizationApiTokens: [ApiToken!]!
+
+  """The token of the current request, null for a session"""
+  currentApiToken: CurrentApiToken
+  contentTranslations(locale: Locale, keys: [String!]): [ContentTranslationEntry!]!
+  contentTranslationDrafts(keys: [String!]): [ContentTranslationEntry!]!
+  competitors(first: Int!, after: ID, orderBy: CompetitorOrdering!, orderMode: OrderingMode!): CompetitorConnection!
+  deploymentRequests(first: Int!, after: ID, filters: [DeploymentRequestFilter!]): PlatformDeploymentRequestConnection!
+  deploymentRequestsAvailable: [DeploymentAvailability!]!
+  deploymentRequestsList(first: Int!, after: ID, filters: [DeploymentRequestFilter!], orderBy: DeploymentRequestOrdering!, orderMode: OrderingMode!, searchTerm: String, searchRegions: [DeploymentRequestPlatformRegion!]): DeploymentRequestConnection!
+  platformTrialStatus(organizationId: OrganizationId!): PlatformTrialStatus!
+  xtmPlatformBundle: DeploymentRequest
+  xtmonePlatformIntegrationStatus(serviceInstanceId: ServiceInstanceId!): XtmoneIntegrationStatus
+  serviceGroups(serviceInstanceId: ServiceInstanceId!): [ServiceGroup!]!
+  bundleUserServiceGroups(serviceInstanceId: ServiceInstanceId!): [BundleUserServiceGroup!]!
+  bundleProducts(serviceInstanceId: ServiceInstanceId!): [PlatformIdentifier!]!
+  publicDocuments(slug: String!, first: Int!, after: ID, orderBy: DocumentOrdering!, orderMode: OrderingMode!, searchTerm: String, logicalFilters: LogicalFilterInput, serviceInstanceId: ServiceInstanceId!): DocumentConnection!
+  publicDocumentsByServiceSlug(serviceInstanceSlug: String!): [Document!]!
+  publicDocumentSlugsByServiceSlug(serviceInstanceSlug: String!): [PublicDocumentSlugInfo!]!
+  publicDocumentBySlug(serviceInstanceId: ServiceInstanceId!, slug: String!): Document
+  documents(first: Int!, after: ID, orderBy: DocumentOrdering!, orderMode: OrderingMode!, searchTerm: String, logicalFilters: LogicalFilterInput, serviceInstanceId: ServiceInstanceId!, parentsOnly: Boolean): DocumentConnection!
+  document(documentId: DocumentId!, serviceInstanceId: ServiceInstanceId!): Document
+  mostDeployedDocuments(limit: Int!, platformIdentifiers: [PlatformIdentifier!]): [Document!]!
+  newestDocuments(limit: Int!, platformIdentifiers: [PlatformIdentifier!]): [Document!]!
+  lastDeployedOverview(limit: Int!, serviceInstanceId: ServiceInstanceId!): LastDeployedOverview!
+  documentFacets(input: LoadDocumentFacetInput!): Facet
+
+  """
+  The round currently collecting votes on a service instance, if any.
+  Publicly readable, like the roadmap the round belongs to.
+  """
+  currentVotingRound(service_instance_id: ServiceInstanceId!): VotingRound
+  votingRounds(service_instance_id: ServiceInstanceId): [VotingRound!]!
+  votingRound(id: VotingRoundId!): VotingRound
+  votingRoundResults(id: VotingRoundId!): VotingRoundResults!
+
+  """
+  Returns at most the 5 latest registered versions for the given product,
+  most recent first. When `search` is provided, only versions whose string
+  contains it (case-insensitive) are considered.
+  """
+  registeredProductVersions(product: PlatformIdentifier!, search: String): [RegisteredProductVersion!]!
+  newsFeedItems(first: Int!, after: ID): NewsFeedItemConnection!
+  organization(id: ID!): Organization
+  organizations(first: Int = 50, after: ID, orderBy: OrganizationOrdering!, orderMode: OrderingMode!, searchTerm: String): OrganizationConnection!
+  userOrganizations: [Organization!]!
+
+  """
+  The members of an organization, administrators first, then by email.
+  NOT_FOUND to a malformed id or a non-member without BYPASS or READ_ORGANIZATION_MEMBERS, else ORGANIZATION_NOT_FOUND.
+  """
+  organizationMembers(
+    organizationId: OrganizationId!
+
+    """
+    The page size, brought between 0 and 100. 0 returns no member but the totalCount.
+    """
+    first: Int!
+    after: ID
+
+    """Matches the email, the first name or the last name, ignoring case."""
+    searchTerm: String
+  ): OrganizationMemberConnection!
+  me: User
+  usersWithCapabilitiesInOrganization(input: UsersWithCapabilitiesInOrganizationInput!): [OrganizationMemberContact!]!
+  users(first: Int!, after: ID, orderBy: UserOrdering!, orderMode: OrderingMode!, searchTerm: String, filters: [Filter!]): UserConnection!
+  pendingUsers(first: Int!, after: ID, orderBy: UserOrdering!, orderMode: OrderingMode!, searchTerm: String, filters: [Filter!]): UserConnection!
+  registeredSaasPlatformData(input: RegisteredSaasPlatformDataInput!): SaasPlatformData
+  saasManagerPlatforms(first: Int!, after: ID, orderBy: SaasPlatformOrdering!, orderMode: OrderingMode!, searchTerm: String, product: SaasProduct): SaasPlatformConnection!
+  openCTIPlatformRegistrationStatus(input: OpenCTIPlatformRegistrationStatusInput!): OpenCTIPlatformRegistrationStatusResponse! @deprecated(reason: "Use `refreshPlatformRegistrationConnectivityStatus` instead. This field is no longer used in the OpenCTI platform due to refactoring and the addition of a version value in the endpoint.")
+  isPlatformRegistered(input: IsPlatformRegisteredInput!): IsPlatformRegisteredResponse!
+  canUnregisterPlatform(input: CanUnregisterPlatformInput!): CanUnregisterResponse!
+  registeredPlatform(input: RegisteredPlatformInput!): RegisteredPlatform
+  registeredPlatformByPlatformId(input: RegisteredPlatformByPlatformIdInput!): RegisteredPlatform
+  registeredPlatforms(input: RegisteredPlatformsInput!): [RegisteredPlatform!]!
+  platformAssociatedOrganization(platformId: String!, tenantId: String): Organization
+
+  """
+  Every platform registration, whatever its organization. searchTerm matches the title, URL, ids, tenant, organization and registerer.
+  """
+  adminRegisteredPlatforms(
+    """Page size, at most 100: a larger value is clamped to 100."""
+    first: Int!
+    after: ID
+    orderBy: AdminRegisteredPlatformOrdering
+    orderMode: OrderingMode
+    searchTerm: String
+    filter: AdminRegisteredPlatformsFilter
+  ): AdminRegisteredPlatformConnection!
+  rolePortals: [RolePortal!]!
+  ssoGroupRolePortals: [SSOGroupRolePortal!]!
+  userServiceCapabilities(service_instance_id: ServiceInstanceId!): UserServiceCapabilitiesResponse!
+  seoServiceInstanceMetadata(service_instance_id: ServiceInstanceId!, language: Locale): [SeoServiceInstanceMetadata!]!
+  serviceInstances(first: Int!, after: ID, orderBy: ServiceInstanceOrdering!, orderMode: OrderingMode!, searchTerm: String, filters: [ServiceInstanceFilter!], includeInaccessible: Boolean): ServiceConnection!
+  serviceInstanceLinksByTags(tags: [ServiceInstanceTag!]!): [SeoServiceInstance!]!
+  serviceInstanceById(service_instance_id: ServiceInstanceId!): ServiceInstance
+  seoServiceInstances: [SeoServiceInstance!]!
+  seoServiceInstance(slug: String!): SeoServiceInstance!
+  settings: Settings!
+  updateOpenCTIManifest(tag: String!): Success!
+  solutionCategories(first: Int!, after: ID, orderBy: SolutionCategoryOrdering!, orderMode: OrderingMode!, searchTerm: String, product: FiligranProduct): SolutionCategoryConnection
+  subscriptionById(subscription_id: SubscriptionId): SubscriptionModel
+  subscriptions(first: Int!, after: ID, orderBy: SubscriptionOrdering!, orderMode: OrderingMode!, searchTerm: String, filters: [SubscriptionFilter!]): SubscriptionConnection!
+  useCases(first: Int!, after: ID, orderBy: UseCaseOrdering!, orderMode: OrderingMode!, searchTerm: String, documentType: String, product: FiligranProduct): UseCaseConnection
+  userServiceFromSubscription(first: Int!, after: ID, orderBy: UserServiceOrdering!, orderMode: OrderingMode!, subscription_id: SubscriptionId!): UserServiceConnection
+  epics(first: Int!, after: ID, orderBy: EpicOrdering!, orderMode: OrderingMode!, searchTerm: String): EpicConnection
+  countEpicsPerTimeline: [EpicCountPerTimeline!]!
+}
+
+type Mutation {
+  createApiToken(input: CreateApiTokenInput!): CreatedApiToken!
+
+  """The owner, or an administrator of the token's organization, revokes it"""
+  revokeApiToken(id: ApiTokenId!): ApiToken!
+  saveContentTranslationDraft(input: UpsertContentTranslationInput!): [ContentTranslationEntry!]!
+  publishContentTranslationDrafts: [ContentTranslationEntry!]!
+  discardContentTranslationDrafts: Int!
+  createCompetitor(input: CreateCompetitorInput!): Competitor!
+  updateCompetitor(input: UpdateCompetitorInput!): Competitor!
+  deleteCompetitor(id: CompetitorId!): Competitor!
+  giveDeploymentFeedback(input: GiveDeploymentFeedbackInput!): Success!
+  createDeploymentRequest(input: CreateDeploymentRequestInput!): DeploymentRequest!
+  updateDeploymentRequest(input: UpdateDeploymentRequestInput!): PlatformDeploymentRequest!
+  reorderDeploymentRequestInQueue(input: ReorderDeploymentRequestInQueueInput!): Success!
+  cancelDeploymentRequest(deploymentRequestId: DeploymentRequestId!, cancellationReason: String): DeploymentRequest
+  adminCancelDeploymentRequest(deploymentRequestId: DeploymentRequestId!): DeploymentRequest
+  updateDeploymentQuotaCapacity(input: UpdateDeploymentQuotaCapacityInput!): Success!
+  updateServiceGroups(input: UpdateServiceGroupsInput!): [ServiceGroup!]!
+  addUsersToBundleGroups(serviceInstanceId: ServiceInstanceId!, input: AddUsersToBundleGroupsInput!): [BundleUserServiceGroup!]!
+  removeUsersFromBundleGroups(serviceInstanceId: ServiceInstanceId!, userIds: [UserId!]!): [UserId!]!
+  updateBundleUserGroups(serviceInstanceId: ServiceInstanceId!, input: UpdateBundleUserGroupsInput!): [BundleUserServiceGroup!]!
+  createDocument(input: CreateDocumentInput!, metadata: [DocumentMetadata!]!, serviceInstanceId: ServiceInstanceId!, sourceDocument: Upload, logo: Upload, images: [Upload!]): Document!
+  updateDocument(documentId: DocumentId!, input: UpdateDocumentInput!, metadata: [DocumentMetadata!]!, serviceInstanceId: ServiceInstanceId!, sourceDocument: Upload, logo: Upload, images: [Upload!], existingImageIds: [DocumentId!]): Document!
+  deleteDocument(documentId: DocumentId!, service_instance_id: ServiceInstanceId!): Document!
+  incrementShareNumberDocument(documentId: DocumentId!): Document!
+  voteForFeature(feature_id: VotableFeatureId!): [VotableFeature!]!
+  createVotingRound(input: CreateVotingRoundInput!): VotingRound!
+  updateVotingRound(id: VotingRoundId!, input: UpdateVotingRoundInput!): VotingRound!
+  setVotingRoundStatus(id: VotingRoundId!, status: VotingRoundStatus!): [VotingRound!]!
+  deleteVotingRound(id: VotingRoundId!): VotingRound!
+  createVotableFeature(input: CreateVotableFeatureInput!, document: [Upload!]): VotableFeature!
+  updateVotableFeature(id: VotableFeatureId!, input: UpdateVotableFeatureInput!, document: [Upload!]): VotableFeature!
+  deleteVotableFeature(id: VotableFeatureId!): VotableFeature!
+  frontendErrorLog(message: String!, codeStack: String, componentStack: String): Boolean
+  newProductVersion(product: PlatformIdentifier!, version: String!): Success!
+  consumeProvisionedNewsFeedItems: ConsumeProvisionedNewsFeedItemsResponse!
+  deleteNewsFeedItem(id: NewsFeedItemId!): Boolean!
+  addOrganization(input: OrganizationInput!): Organization
+  editOrganization(id: ID!, input: OrganizationInput!): Organization
+  deleteOrganization(id: ID!): Organization
+  adminAddUser(input: AdminAddUserInput!): User
+  adminEditUser(id: ID!, input: AdminEditUserInput!): User!
+  deleteUser(id: ID!): User!
+  addUser(input: AddUserInput!): User
+  editUserCapabilities(id: ID!, input: EditUserCapabilitiesInput!): User!
+  changeSelectedOrganization(organization_id: OrganizationId!): User
+  bulkRemovePendingUserFromOrganization(input: BulkPendingUserFromOrganizationInput!): Success
+  bulkAcceptPendingUserInOrganization(input: BulkPendingUserFromOrganizationInput!): Success
+  acceptPendingUserInOrganization(user_id: UserId!, organization_id: OrganizationId!): User
+  removePendingUserFromOrganization(user_id: UserId!, organization_id: OrganizationId!): User
+  removeUserFromOrganization(user_id: UserId!, organization_id: OrganizationId!): User
+  editMeUser(input: EditMeUserInput!): User!
+  uploadUserPicture(document: Upload!): User!
+  resetPassword: Success!
+  requestTransferPersonalSpace(new_email: String!): Success!
+  transferPersonalSpace(requestId: ID!): Success!
+  login(email: String!, password: String): User
+  logout: ID!
+  contactUs(message: String, platformId: ID, platformIdentifier: PlatformIdentifier, deploymentRequestType: DeploymentRequestDeploymentType): Success!
+  registerPlatform(input: RegisterPlatformInput!): RegistrationResponse!
+  unregisterPlatform(input: UnregisterPlatformInput!): Success!
+
+  """
+  Unregisters a platform without being a member of its organization. Does nothing on an inactive registration.
+  """
+  adminUnregisterPlatform(serviceInstanceId: ServiceInstanceId!): Success!
+  refreshUserPlatformToken: RefreshUserPlatformTokenResponse!
+  refreshPlatformRegistrationConnectivityStatus(input: RefreshPlatformRegistrationConnectivityStatusInput!): RefreshPlatformRegistrationConnectivityStatusResponse!
+  refreshPlatformRegistrationConnectivityStatusSingleTenant(input: RefreshPlatformRegistrationConnectivityStatusSingleTenantInput!): RefreshPlatformRegistrationConnectivityStatusResponse!
+  refreshPlatformRegistrationConnectivityStatusAllTenants(input: RefreshPlatformRegistrationConnectivityStatusAllTenantsInput!): RefreshPlatformRegistrationConnectivityStatusAllTenantsResponse!
+  autoRegisterPlatform(platform: PlatformInput @deprecated(reason: "Use input instead"), input: AutoRegisterPlatformInput): Success!
+  addSSOGroupRolePortal(input: AddSSOGroupRolePortalInput!): SSOGroupRolePortal!
+  updateSSOGroupRolePortal(ssoGroup: String!, rolePortal: String!, input: UpdateSSOGroupRolePortalInput!): SSOGroupRolePortal!
+  deleteSSOGroupRolePortal(input: DeleteSSOGroupRolePortalInput!): SSOGroupRolePortal!
+  addRolePortal(input: AddRolePortalInput!): RolePortal!
+  updateRolePortal(name: String!, input: UpdateRolePortalInput!): RolePortal!
+  deleteRolePortal(name: String!): RolePortal!
+  upsertSaasManagerInstances(generatedAt: Date!, instances: [SaasManagerInstanceInput!]!): SaasManagerSyncResult!
+  purgeSaasManagerInstances(before: Date!): SaasManagerSyncResult!
+  addSubscriptionCapability(input: AddSubscriptionCapabilityInput!): [SubscriptionModel!]!
+  addCapabilitiesToUserServices(input: UserServicesAddCapabilitiesInput!, service_instance_id: ServiceInstanceId!): [UserService]
+  editSeoServiceInstance(service_instance_id: ServiceInstanceId!, language: Locale!, input: EditSeoServiceInstanceInput!): SeoServiceInstanceMetadata!
+  addServicePicture(serviceInstanceId: ServiceInstanceId!, document: Upload, isLogo: Boolean!): ServiceInstance
+  updatePlatformServiceMetadata(input: UpdatePlatformServiceMetadataInput!): RegisteredPlatform
+  ingestManifestFragments(manifestFragments: [ManifestFragmentInput!]!): Success!
+  generateManifest(product: PlatformIdentifier!, version: String!, type: ManifestType!): Success!
+  addSolutionCategory(input: AddSolutionCategoryInput!): SolutionCategory!
+  editSolutionCategory(id: ID!, input: EditSolutionCategoryInput!): SolutionCategory!
+  deleteSolutionCategory(id: ID!): SolutionCategory!
+  createSubscriptions(input: CreateSubscriptionsInput!): [SubscriptionModel!]!
+  updateSubscription(subscription_id: SubscriptionId!, input: UpdateSubscriptionInput!): SubscriptionModel
+  deleteSubscriptions(subscription_ids: [SubscriptionId!]!): [SubscriptionModel!]!
+  sendTelemetryEvent: SendTelemetryMutation
+  addUseCase(input: AddUseCaseInput!): UseCase!
+  editUseCase(id: ID!, input: EditUseCaseInput!): UseCase!
+  deleteUseCase(id: ID!): UseCase!
+  addUserService(input: UserServiceAddInput!, service_instance_id: ServiceInstanceId!): [UserService]
+  editUserService(input: UserServiceEditInput!, service_instance_id: ServiceInstanceId!): UserService
+  deleteUserServices(input: UserServicesDeleteInput!, service_instance_id: ServiceInstanceId!): [UserService]
+  createEpic(input: CreateEpicInput!): Epic!
+  updateEpic(id: ID!, input: UpdateEpicInput!): Epic!
+  deleteEpic(id: ID!): Epic
+}
+
 scalar JSON
 
 scalar Date
@@ -17,6 +292,7 @@ enum FiligranProduct {
   openaev
   xtmone
   xtmhub
+  opencrq
 }
 
 enum FilterKey {
@@ -24,7 +300,6 @@ enum FilterKey {
   organization_id
   personal_space
   integration_type
-  integration_subtype
   slug
   product_version
   manager_supported
@@ -33,6 +308,12 @@ enum FilterKey {
   entity_type
   license_type
   solution_category
+}
+
+enum Locale {
+  en
+  fr
+  ja
 }
 
 enum LogicalOperator {
@@ -53,6 +334,24 @@ input LogicalFilterInput {
 
 type Success {
   success: Boolean!
+}
+
+type ContentTranslationEntry {
+  key: String!
+  locale: Locale!
+  value: String!
+  updated_at: Date!
+  updater_id: UserId
+}
+
+input ContentTranslationValueInput {
+  locale: Locale!
+  value: String!
+}
+
+input UpsertContentTranslationInput {
+  key: String!
+  values: [ContentTranslationValueInput!]!
 }
 
 """
@@ -103,126 +402,10 @@ input UpdateCompetitorInput {
   domain: String
 }
 
-type Query {
-  competitors(first: Int!, after: ID, orderBy: CompetitorOrdering!, orderMode: OrderingMode!): CompetitorConnection!
-  deploymentRequests(first: Int!, after: ID, filters: [DeploymentRequestFilter!]): PlatformDeploymentRequestConnection!
-  deploymentRequestsAvailable(platformIdentifier: PlatformIdentifier!): [DeploymentAvailability!]!
-  deploymentRequestsList(first: Int!, after: ID, filters: [DeploymentRequestFilter!], orderBy: DeploymentRequestOrdering!, orderMode: OrderingMode!, searchTerm: String): DeploymentRequestConnection!
-  trialDeployments(input: TrialDeploymentsInput!): TrialsDeployments!
-  serviceGroups(serviceInstanceId: ServiceInstanceId!): [ServiceGroup!]!
-  documentExists(documentName: String, service_instance_id: ServiceInstanceId!): Boolean
-  publicDocuments(slug: String!, first: Int!, after: ID, orderBy: DocumentOrdering!, orderMode: OrderingMode!, searchTerm: String, logicalFilters: LogicalFilterInput, serviceInstanceId: ServiceInstanceId!): DocumentConnection!
-  publicDocumentsByServiceSlug(serviceInstanceSlug: String!): [Document!]!
-  publicDocumentBySlug(serviceInstanceId: ServiceInstanceId!, slug: String!): Document
-  documents(first: Int!, after: ID, orderBy: DocumentOrdering!, orderMode: OrderingMode!, searchTerm: String, logicalFilters: LogicalFilterInput, serviceInstanceId: ServiceInstanceId!, parentsOnly: Boolean): DocumentConnection!
-  document(documentId: DocumentId!, serviceInstanceId: ServiceInstanceId!): Document
-  mostDeployedDocuments(limit: Int!, platformIdentifiers: [PlatformIdentifier!]): [Document!]!
-  newestDocuments(limit: Int!, platformIdentifiers: [PlatformIdentifier!]): [Document!]!
-  lastDeployedOverview(limit: Int!, serviceInstanceId: ServiceInstanceId!): LastDeployedOverview!
-  newsFeedItems(first: Int!, after: ID): NewsFeedItemConnection!
-  organization(id: ID!): Organization
-  organizations(first: Int = 50, after: ID, orderBy: OrganizationOrdering!, orderMode: OrderingMode!, searchTerm: String): OrganizationConnection!
-  userOrganizations: [Organization!]!
-  me: User
-  usersWithCapabilitiesInOrganization(input: UsersWithCapabilitiesInOrganizationInput!): [User!]!
-  users(first: Int!, after: ID, orderBy: UserOrdering!, orderMode: OrderingMode!, searchTerm: String, filters: [Filter!]): UserConnection!
-  pendingUsers(first: Int!, after: ID, orderBy: UserOrdering!, orderMode: OrderingMode!, searchTerm: String, filters: [Filter!]): UserConnection!
-  openCTIPlatformRegistrationStatus(input: OpenCTIPlatformRegistrationStatusInput!): OpenCTIPlatformRegistrationStatusResponse! @deprecated(reason: "Use `refreshPlatformRegistrationConnectivityStatus` instead. This field is no longer used in the OpenCTI platform due to refactoring and the addition of a version value in the endpoint.")
-  isPlatformRegistered(input: IsPlatformRegisteredInput!): IsPlatformRegisteredResponse!
-  canUnregisterPlatform(input: CanUnregisterPlatformInput!): CanUnregisterResponse!
-  registeredPlatform(input: RegisteredPlatformInput!): RegisteredPlatform
-  registeredPlatforms(input: RegisteredPlatformsInput!): [RegisteredPlatform!]!
-  platformAssociatedOrganization(platformId: String!, tenantId: String): Organization
-  seoServiceInstanceMetadata(service_instance_id: ServiceInstanceId!, language: SeoServiceInstanceLanguage): [SeoServiceInstanceMetadata!]!
-  serviceInstances(first: Int!, after: ID, orderBy: ServiceInstanceOrdering!, orderMode: OrderingMode!, searchTerm: String, filters: [ServiceInstanceFilter!]): ServiceConnection!
-  serviceInstanceLinksByTags(tags: [ServiceInstanceTag!]!): [SeoServiceInstance!]!
-  serviceInstanceById(service_instance_id: ServiceInstanceId!): ServiceInstance
-  serviceInstanceByIdAndGrantAccess(service_instance_id: ServiceInstanceId!): ServiceInstance
-  seoServiceInstances: [SeoServiceInstance!]!
-  seoServiceInstance(slug: String!): SeoServiceInstance!
-  settings: Settings!
-  updateOpenCTIManifest(tag: String!): Success!
-  solutionCategories(first: Int!, after: ID, orderBy: SolutionCategoryOrdering!, orderMode: OrderingMode!, searchTerm: String, product: FiligranProduct): SolutionCategoryConnection
-  subscriptionById(subscription_id: SubscriptionId): SubscriptionModel
-  subscriptions(first: Int!, after: ID, orderBy: SubscriptionOrdering!, orderMode: OrderingMode!, searchTerm: String, filters: [SubscriptionFilter!]): SubscriptionConnection!
-  useCases(first: Int!, after: ID, orderBy: UseCaseOrdering!, orderMode: OrderingMode!, searchTerm: String, documentType: String, product: FiligranProduct): UseCaseConnection
-  userServiceFromSubscription(first: Int!, after: ID, orderBy: UserServiceOrdering!, orderMode: OrderingMode!, subscription_id: SubscriptionId!): UserServiceConnection
-  epics(first: Int!, after: ID, orderBy: EpicOrdering!, orderMode: OrderingMode!, searchTerm: String): EpicConnection
-  countEpicsPerTimeline: [EpicCountPerTimeline!]!
-  node(id: ID!): Node
-}
-
-type Mutation {
-  createCompetitor(input: CreateCompetitorInput!): Competitor!
-  updateCompetitor(input: UpdateCompetitorInput!): Competitor!
-  deleteCompetitor(id: CompetitorId!): Competitor!
-  createDeploymentRequest(input: CreateDeploymentRequestInput!): DeploymentRequest!
-  updateDeploymentRequest(input: UpdateDeploymentRequestInput!): PlatformDeploymentRequest!
-  reorderDeploymentRequestInQueue(input: ReorderDeploymentRequestInQueueInput!): Success!
-  cancelDeploymentRequest(deploymentRequestId: DeploymentRequestId!, cancellationReason: String): DeploymentRequest
-  adminCancelDeploymentRequest(deploymentRequestId: DeploymentRequestId!): DeploymentRequest
-  updateDeploymentQuotaCapacity(input: UpdateDeploymentQuotaCapacityInput!): Success!
-  updateServiceGroups(input: UpdateServiceGroupsInput!): [ServiceGroup!]!
-  createDocument(input: CreateDocumentInput!, metadata: [DocumentMetadata!]!, serviceInstanceId: ServiceInstanceId!, sourceDocument: Upload, logo: Upload, images: [Upload!]): Document!
-  updateDocument(documentId: DocumentId!, input: UpdateDocumentInput!, metadata: [DocumentMetadata!]!, serviceInstanceId: ServiceInstanceId!, sourceDocument: Upload, logo: Upload, images: [Upload!], existingImageIds: [DocumentId!]): Document!
-  deleteDocument(documentId: DocumentId!, service_instance_id: ServiceInstanceId!, forceDelete: Boolean): Document!
-  incrementShareNumberDocument(documentId: DocumentId!): Document!
-  frontendErrorLog(message: String!, codeStack: String, componentStack: String): Boolean
-  newProductVersion(product: PlatformIdentifier!, version: String!): Success!
-  consumeProvisionedNewsFeedItems: ConsumeProvisionedNewsFeedItemsResponse!
-  deleteNewsFeedItem(id: NewsFeedItemId!): Boolean!
-  addOrganization(input: OrganizationInput!): Organization
-  editOrganization(id: ID!, input: OrganizationInput!): Organization
-  deleteOrganization(id: ID!): Organization
-  adminAddUser(input: AdminAddUserInput!): User
-  adminEditUser(id: ID!, input: AdminEditUserInput!): User!
-  addUser(input: AddUserInput!): User
-  editUserCapabilities(id: ID!, input: EditUserCapabilitiesInput!): User!
-  changeSelectedOrganization(organization_id: OrganizationId!): User
-  bulkRemovePendingUserFromOrganization(input: BulkPendingUserFromOrganizationInput!): Success
-  bulkAcceptPendingUserInOrganization(input: BulkPendingUserFromOrganizationInput!): Success
-  removePendingUserFromOrganization(user_id: UserId!, organization_id: OrganizationId!): User
-  removeUserFromOrganization(user_id: UserId!, organization_id: OrganizationId!): User
-  editMeUser(input: EditMeUserInput!): User!
-  uploadUserPicture(document: Upload!): User!
-  resetPassword: Success!
-  requestTransferPersonalSpace(new_email: String!): Success!
-  transferPersonalSpace(requestId: ID!): Success!
-  login(email: String!, password: String): User
-  logout: ID!
-  contactUs(message: String, platformId: ID, platformIdentifier: PlatformIdentifier): Success!
-  registerPlatform(input: RegisterPlatformInput!): RegistrationResponse!
-  unregisterPlatform(input: UnregisterPlatformInput!): Success!
-  refreshUserPlatformToken: RefreshUserPlatformTokenResponse!
-  refreshPlatformRegistrationConnectivityStatus(input: RefreshPlatformRegistrationConnectivityStatusInput!): RefreshPlatformRegistrationConnectivityStatusResponse!
-  refreshPlatformRegistrationConnectivityStatusSingleTenant(input: RefreshPlatformRegistrationConnectivityStatusSingleTenantInput!): RefreshPlatformRegistrationConnectivityStatusResponse!
-  refreshPlatformRegistrationConnectivityStatusAllTenants(input: RefreshPlatformRegistrationConnectivityStatusAllTenantsInput!): RefreshPlatformRegistrationConnectivityStatusAllTenantsResponse!
-  autoRegisterPlatform(platform: PlatformInput @deprecated(reason: "Use input instead"), input: AutoRegisterPlatformInput): Success!
-  editServiceCapability(input: EditServiceCapabilityInput, serviceInstanceId: ServiceInstanceId): SubscriptionModel
-  addSubscriptionCapability(input: AddSubscriptionCapabilityInput!): [SubscriptionModel!]!
-  addCapabilitiesToUserServices(input: UserServicesAddCapabilitiesInput!, service_instance_id: ServiceInstanceId!): [UserService]
-  editSeoServiceInstance(service_instance_id: ServiceInstanceId!, language: SeoServiceInstanceLanguage!, input: EditSeoServiceInstanceInput!): SeoServiceInstanceMetadata!
-  addServicePicture(serviceInstanceId: ServiceInstanceId!, document: Upload, isLogo: Boolean!): ServiceInstance
-  updatePlatformServiceMetadata(input: UpdatePlatformServiceMetadataInput!, document: Upload): RegisteredPlatform
-  ingestManifestFragments(manifestFragments: [ManifestFragmentInput!]!): Success!
-  generateManifest(product: PlatformIdentifier!, version: String!, type: ManifestType!): Success!
-  addSolutionCategory(input: AddSolutionCategoryInput!): SolutionCategory!
-  editSolutionCategory(id: ID!, input: EditSolutionCategoryInput!): SolutionCategory!
-  deleteSolutionCategory(id: ID!): SolutionCategory!
-  addSubscription(service_instance_id: ServiceInstanceId): ServiceInstance
-  createSubscriptions(input: CreateSubscriptionsInput!): [SubscriptionModel!]!
-  updateSubscription(subscription_id: SubscriptionId!, input: UpdateSubscriptionInput!): SubscriptionModel
-  deleteSubscriptions(subscription_ids: [SubscriptionId!]!): [SubscriptionModel!]!
-  sendTelemetryEvent: SendTelemetryMutation
-  addUseCase(input: AddUseCaseInput!): UseCase!
-  editUseCase(id: ID!, input: EditUseCaseInput!): UseCase!
-  deleteUseCase(id: ID!): UseCase!
-  addUserService(input: UserServiceAddInput!, service_instance_id: ServiceInstanceId!): [UserService]
-  editUserService(input: UserServiceEditInput!, service_instance_id: ServiceInstanceId!): UserService
-  deleteUserServices(input: UserServicesDeleteInput!, service_instance_id: ServiceInstanceId!): [UserService]
-  createEpic(input: CreateEpicInput!, document: [Upload!]): Epic!
-  updateEpic(id: ID!, input: UpdateEpicInput!, document: [Upload!]): Epic!
-  deleteEpic(id: ID!): Epic
+input GiveDeploymentFeedbackInput {
+  deploymentRequestId: DeploymentRequestId!
+  answer: HasRepliedSatisfaction!
+  justification: String
 }
 
 """
@@ -372,6 +555,9 @@ type DeploymentRequest implements Node {
   platform_url: String
   parent_id: DeploymentRequestId
   url: String
+  registered_platform: RegisteredPlatform
+  service_instance: ServiceInstance
+  children: [DeploymentRequest!]
 }
 
 type PlatformDeploymentRequest {
@@ -402,13 +588,16 @@ type PlatformDeploymentRequest {
 }
 
 input CreateDeploymentRequestInput {
-  products: [PlatformIdentifier!]!
+  use_cases_by_product: [ProductUseCaseInput!]
   region: DeploymentRequestPlatformRegion!
-  type: DeploymentRequestDeploymentType!
   job_title: DeploymentRequestJobTitle
   activity_sector: DeploymentRequestActivitySector
-  use_case: DeploymentRequestUseCase
   source: DeploymentRequestSource!
+}
+
+input ProductUseCaseInput {
+  platform_identifier: PlatformIdentifier!
+  use_case: DeploymentRequestUseCase!
 }
 
 input UpdateDeploymentRequestInput {
@@ -429,6 +618,7 @@ enum DeploymentRequestFilterKey {
   target_state
   actual_state
   platform_identifier
+  parent_id
 }
 
 input DeploymentRequestFilter {
@@ -459,21 +649,30 @@ type PlatformDeploymentRequestConnection {
 }
 
 type DeploymentAvailability {
+  id: ID!
   region: DeploymentRequestPlatformRegion!
   availableCount: Int!
   capacity: Int!
-  platform_identifier: PlatformIdentifier!
 }
 
-type DeployedPlatform {
-  serviceInstanceId: ServiceInstanceId!
-  platformIdentifier: PlatformIdentifier!
+type XtmoneIntegrationStatusEntry {
+  status: String!
+  connected: Boolean!
+  last_checked_at: String
 }
 
-type TrialsDeployments {
-  availableTrials: [PlatformIdentifier!]!
-  deployed: [DeployedPlatform!]!
+type XtmoneIntegrationStatus {
+  opencti: XtmoneIntegrationStatusEntry!
+  openaev: XtmoneIntegrationStatusEntry!
+  linked: Boolean!
+  last_checked_at: String
+}
+
+type PlatformTrialStatus {
+  deploymentRequestId: DeploymentRequestId
   isBlacklisted: Boolean!
+  hub_status: DeploymentRequestHubStatus
+  end_date: Date
 }
 
 enum DeploymentRequestOrdering {
@@ -501,14 +700,8 @@ input ReorderDeploymentRequestInQueueInput {
 }
 
 input UpdateDeploymentQuotaCapacityInput {
-  platformIdentifier: PlatformIdentifier!
   region: DeploymentRequestPlatformRegion!
   newCapacity: Int!
-}
-
-input TrialDeploymentsInput {
-  organizationId: OrganizationId!
-  platformIdentifiers: [PlatformIdentifier!]
 }
 
 """
@@ -516,10 +709,29 @@ A Relay global ID for ServiceGroup, extracted to a branded ServiceGroupId string
 """
 scalar ServiceGroupId
 
+enum ServiceGroupName {
+  Admin
+  Analyst
+  Reader
+  Manager
+  Observer
+  User
+}
+
 type ServiceGroup implements Node {
   id: ID!
-  name: String!
+  name: ServiceGroupName!
   users: [User!]
+}
+
+type UserPlatformGroup {
+  platformIdentifier: PlatformIdentifier!
+  name: ServiceGroupName!
+}
+
+type BundleUserServiceGroup {
+  user: User!
+  groups: [UserPlatformGroup!]!
 }
 
 input UpdateServiceGroupsInputGroup {
@@ -529,6 +741,27 @@ input UpdateServiceGroupsInputGroup {
 
 input UpdateServiceGroupsInput {
   groups: [UpdateServiceGroupsInputGroup!]!
+}
+
+input BundleUserRoleAssignmentInput {
+  product: PlatformIdentifier!
+  role: ServiceGroupName!
+}
+
+input AddUsersToBundleGroupsInput {
+  userIds: [UserId!]!
+  emails: [String!]
+  roles: [BundleUserRoleAssignmentInput!]!
+}
+
+input UpdateBundleUserGroupsRoleInput {
+  product: PlatformIdentifier!
+  role: ServiceGroupName
+}
+
+input UpdateBundleUserGroupsInput {
+  userIds: [UserId!]!
+  roles: [UpdateBundleUserGroupsRoleInput!]!
 }
 
 """
@@ -546,6 +779,12 @@ enum DocumentImageType {
   image
 }
 
+enum DocumentStatus {
+  draft
+  in_validation
+  published
+}
+
 enum LicenseType {
   Commercial
   Free
@@ -554,7 +793,6 @@ enum LicenseType {
 enum DocumentMetadataKeyCode {
   feed_url
   integration_type
-  integration_subtype
   last_verified_date
   datasheet_url
   blogpost_url
@@ -589,7 +827,7 @@ type ShareableResource {
   name: String
   description: String
   download_number: Int
-  active: Boolean!
+  status: DocumentStatus!
   source_type: DocumentSourceType!
   image_type: DocumentImageType
 }
@@ -603,6 +841,12 @@ enum DocumentOrdering {
   name
 }
 
+type PublicDocumentSlugInfo {
+  slug: String
+  created_at: Date!
+  updated_at: Date
+}
+
 """
 /!\ WARNING Do not use this type.
 It exists only to cover cases where we failed to map to a specific Document.
@@ -614,9 +858,10 @@ type DefaultDocument implements Node & Document {
   uploader_organization: Organization
   name: String
   short_description: String
+  meta_description: String
   description: String
   file_name: String
-  active: Boolean!
+  status: DocumentStatus!
   created_at: Date!
   updated_at: Date
   updater_id: String
@@ -637,9 +882,10 @@ interface Document implements Node {
   uploader_organization: Organization
   name: String
   short_description: String
+  meta_description: String
   description: String
   file_name: String
-  active: Boolean!
+  status: DocumentStatus!
   created_at: Date!
   updated_at: Date
   updater_id: String
@@ -662,8 +908,9 @@ input CreateDocumentInput {
   name: String!
   slug: String!
   short_description: String!
+  meta_description: String!
   description: String!
-  active: Boolean!
+  status: DocumentStatus!
   use_cases: [UseCaseId!]!
   solution_categories: [SolutionCategoryId!]!
   license_type: LicenseType
@@ -674,8 +921,9 @@ input CreateDocumentInput {
 input UpdateDocumentInput {
   name: String
   short_description: String
+  meta_description: String
   description: String
-  active: Boolean
+  status: DocumentStatus
   use_cases: [UseCaseId!]
   solution_categories: [SolutionCategoryId!]
   license_type: LicenseType
@@ -705,6 +953,141 @@ type LastDeployedOverview {
   resources: [DeployedResource!]!
 }
 
+type FacetBucket {
+  value: String!
+  count: Int!
+}
+
+type Facet {
+  integration_type: [FacetBucket!]!
+  license_type: [FacetBucket!]!
+  manager_supported: [FacetBucket!]!
+  verified: [FacetBucket!]!
+  product_version: [FacetBucket!]!
+  solution_category: [FacetBucket!]!
+  use_case: [FacetBucket!]!
+  entity_type: [FacetBucket!]!
+}
+
+input LoadDocumentFacetInput {
+  serviceInstanceId: ServiceInstanceId!
+  searchTerm: String
+  documentType: String
+  logicalFilters: LogicalFilterInput
+  restrictToPublishedDocuments: Boolean
+}
+
+"""
+A Relay global ID for VotableFeature, extracted to a branded VotableFeatureId string
+"""
+scalar VotableFeatureId
+
+"""
+A Relay global ID for VotingRound, extracted to a branded VotingRoundId string
+"""
+scalar VotingRoundId
+
+enum VotingRoundStatus {
+  draft
+  open
+  closed
+}
+
+"""
+Visual identity applied to the public banner and voting page of a round.
+"""
+enum VotingRoundTheme {
+  default
+  thread
+}
+
+type VotingRound implements Node {
+  id: ID!
+  service_instance_id: ServiceInstanceId!
+  name: String!
+  description: String
+  status: VotingRoundStatus!
+  theme: VotingRoundTheme!
+  opened_at: Date
+  closed_at: Date
+  created_at: Date!
+  updated_at: Date
+  features: [VotableFeature!]!
+  feature_count: Int!
+}
+
+type VotableFeature implements Node {
+  id: ID!
+  voting_round_id: VotingRoundId!
+  title: String!
+  short_description: String!
+  description: String!
+  product: FiligranProduct!
+  use_cases: [UseCase!]!
+  illustration_document_id: DocumentId
+  illustration_document: Document
+  position: Int!
+  active: Boolean!
+  created_at: Date!
+  updated_at: Date
+  has_my_vote: Boolean!
+}
+
+type VotableFeatureResult {
+  feature: VotableFeature!
+  vote_count: Int!
+}
+
+type VotingRoundResults {
+  round: VotingRound!
+  total_voters: Int!
+  results: [VotableFeatureResult!]!
+}
+
+input CreateVotingRoundInput {
+  service_instance_id: ServiceInstanceId!
+  name: String!
+  description: String
+  theme: VotingRoundTheme
+  copy_features_from_round_id: VotingRoundId
+}
+
+input UpdateVotingRoundInput {
+  name: String
+  description: String
+  theme: VotingRoundTheme
+}
+
+input CreateVotableFeatureInput {
+  voting_round_id: VotingRoundId!
+  title: String!
+  short_description: String!
+  description: String!
+  product: FiligranProduct!
+  use_case_ids: [UseCaseId!]
+  position: Int
+  active: Boolean
+}
+
+input UpdateVotableFeatureInput {
+  title: String
+  short_description: String
+  description: String
+  product: FiligranProduct
+  use_case_ids: [UseCaseId!]
+
+  """Send null to remove the current illustration."""
+  illustration_document_id: DocumentId
+  position: Int
+  active: Boolean
+}
+
+type RegisteredProductVersion {
+  product: PlatformIdentifier!
+  version: String!
+  created_at: Date!
+}
+
 """
 A Relay global ID for NewsFeedItem, extracted to a branded NewsFeedItemId string
 """
@@ -714,11 +1097,36 @@ enum NewsFeedItemType {
   RESOURCE_CUSTOM_DASHBOARD
   RESOURCE_PLAYBOOK
   RESOURCE_CUSTOM_VIEW
+  RESOURCE_INTEGRATION
+  RESOURCE_SCENARIO
+  BLOG_POST
+  GITHUB_RELEASE
+}
+
+enum NewsFeedUtmMedium {
+  newsfeed
+}
+
+enum NewsFeedUtmContent {
+  blog_posts
+  custom_dashboard
+  custom_view
+  integration
+  playbook
+  scenario
+  other
 }
 
 enum NewsFeedItemMetadataKey {
   url_path
   document_id
+  blog_post_slug
+  description
+  image_url
+  image_alt
+  author_names
+  read_minutes
+  product_version
 }
 
 type NewsFeedItemMetadata {
@@ -781,6 +1189,13 @@ type Organization implements Node {
   domains: [String!]
   personal_space: Boolean!
   capabilityUser: [Capability]
+  administrator_emails: [String!]
+
+  """
+  Members of the organization, invited and disabled users included, pending requests excluded.
+  Nullable: a refused read answers null without failing the whole query.
+  """
+  members_count: Int
 }
 
 type OrganizationEdge {
@@ -794,6 +1209,28 @@ type OrganizationConnection {
   pageInfo: PageInfo!
 }
 
+"""
+A member of an organization, whatever their status: invited, expired, waiting for validation or disabled.
+"""
+type OrganizationMember {
+  id: UserId!
+  email: String!
+  first_name: String
+  last_name: String
+  capabilities: [OrganizationCapability!]!
+}
+
+type OrganizationMemberEdge {
+  cursor: String!
+  node: OrganizationMember!
+}
+
+type OrganizationMemberConnection {
+  totalCount: Int!
+  edges: [OrganizationMemberEdge!]!
+  pageInfo: PageInfo!
+}
+
 input OrganizationInput {
   name: String!
   domains: [String!]
@@ -802,6 +1239,12 @@ input OrganizationInput {
 """A Relay global ID for User, extracted to a branded UserId string"""
 scalar UserId
 
+enum UserAccountStatus {
+  waiting
+  invited
+  expired
+}
+
 enum UserOrdering {
   email
   first_name
@@ -809,6 +1252,13 @@ enum UserOrdering {
   disabled
   country
   last_login
+  invitation_date
+}
+
+enum HasRepliedSatisfaction {
+  yes
+  no
+  closed
 }
 
 type Capability implements Node {
@@ -839,6 +1289,16 @@ type User implements Node {
   selected_org_capabilities: [OrganizationCapability!]
   last_login: Date
   pending_organization_id: OrganizationId
+  status: UserAccountStatus
+  invitation_date: Date
+  has_replied_satisfaction: HasRepliedSatisfaction
+}
+
+type OrganizationMemberContact {
+  id: ID!
+  email: String!
+  first_name: String
+  last_name: String
 }
 
 type UserEdge {
@@ -862,6 +1322,12 @@ input AdminEditUserInput {
   first_name: String
   last_name: String
   email: String
+
+  """
+  Sets the password of a local account. Platform administrators only, in development environments only.
+  An empty or null value leaves the password unchanged.
+  """
+  password: String
   organization_capabilities: [OrganizationCapabilitiesInput!]
 }
 
@@ -920,15 +1386,155 @@ type UserPendingSubscription {
 }
 
 type Subscription {
-  User(organizationId: ID): UserSubscription
+  User(organizationId: ID!): UserSubscription
+  AdminUser: UserSubscription
   MeUser: MeUserSubscription
   UserPending(organizationId: ID!): UserPendingSubscription
   ServiceInstance: ServiceInstanceSubscription
 }
 
+type SaasPlatformData {
+  metadata: SaasPlatformMetadata!
+  metrics: SaasPlatformMetrics
+  storage: SaasPlatformStorage
+  sla: SaasPlatformSla
+}
+
+type SaasPlatformSla {
+  target: Float!
+  months: [SaasPlatformMonthlySla!]!
+}
+
+type SaasPlatformMonthlySla {
+  month: Date!
+  availability: Float
+  days: [SaasPlatformDailySla!]!
+}
+
+type SaasPlatformDailySla {
+  day: Date!
+  availability: Float
+}
+
+type SaasPlatformMetadata {
+  hostname: String
+  plan: String
+  start_date: Date
+  end_date: Date
+  region: String
+}
+
+type SaasPlatformMetrics {
+  start: Date!
+  end: Date!
+  resolution: SaasPlatformResolution!
+  series: [SaasPlatformMetricSeries!]!
+}
+
+type SaasPlatformMetricSeries {
+  metric_type: MetricType!
+  points: [SaasPlatformMetricPoint!]!
+}
+
+type SaasPlatformMetricPoint {
+  timestamp: Date!
+  value: Float
+}
+
+type SaasPlatformStorage {
+  es_used_size: SaasPlatformStorageUsage
+  s3_used_size: SaasPlatformStorageUsage
+  postgres_used_size: SaasPlatformStorageUsage
+}
+
+type SaasPlatformStorageUsage {
+  percent: Float
+  used: Float
+  limit: Float
+}
+
+enum MetricType {
+  sla_availability
+  sla_response_time
+  es_used_size
+  s3_used_size
+  postgres_used_size
+}
+
+enum SaasPlatformResolution {
+  hour
+  day
+}
+
+enum SaasPlatformMetricsPeriod {
+  last_30_days
+  last_90_days
+  last_180_days
+}
+
+type SaasPlatform {
+  id: String!
+  status: String
+  product: SaasProduct
+  customer: String
+  commercial_model: String
+  sla_cmtd: Float
+  metadata: SaasPlatformMetadata!
+  storage: SaasPlatformStorage
+  health_issues: [SaasPlatformHealthIssue!]
+  contract_status: SaasPlatformContractStatus
+  registered_platform: RegisteredPlatform
+}
+
+enum SaasPlatformHealthIssue {
+  availability
+  database
+  file_storage
+}
+
+enum SaasPlatformContractStatus {
+  active
+  ending_soon
+  ended
+}
+
+type SaasPlatformEdge {
+  cursor: String!
+  node: SaasPlatform!
+}
+
+type SaasPlatformConnection {
+  totalCount: Int!
+  edges: [SaasPlatformEdge!]!
+  pageInfo: PageInfo!
+}
+
+enum SaasPlatformOrdering {
+  customer_name
+  product
+  plan
+  end_date
+}
+
+enum SaasProduct {
+  OCTI
+  OAEV
+  ONE
+}
+
+input RegisteredSaasPlatformDataInput {
+  service_instance_id: ServiceInstanceId!
+  metrics_period: SaasPlatformMetricsPeriod!
+}
+
 enum PlatformConfigurationStatus {
   active
   inactive
+}
+
+enum CommercialModel {
+  SAAS
+  OTHER
 }
 
 input OpenCTIPlatformRegistrationStatusInput {
@@ -948,6 +1554,7 @@ enum PlatformContract {
 
 type RegisteredPlatform implements Node {
   id: ID!
+  service_instance_id: ServiceInstanceId!
   url: String!
   title: String!
   contract: PlatformContract!
@@ -959,8 +1566,11 @@ type RegisteredPlatform implements Node {
   illustration_document_id: DocumentId
   deployment_request: DeploymentRequest
   last_connectivity_check: Date
+  status: PlatformConfigurationStatus
+  commercial_model: CommercialModel
   subscription: SubscriptionModel
   myGroups: [ServiceGroup!]
+  organization: Organization
 }
 
 input PlatformInput {
@@ -992,6 +1602,7 @@ input CanUnregisterPlatformInput {
 
 type RegistrationResponse {
   token: String!
+  organizationName: String
 }
 
 enum PlatformRegistrationStatus {
@@ -1020,6 +1631,7 @@ type CanUnregisterResponse {
   isAllowed: Boolean
   isInOrganization: Boolean
   organizationId: OrganizationId
+  organizationName: String
 }
 
 input UnregisterPlatformInput {
@@ -1039,6 +1651,7 @@ input RefreshPlatformRegistrationConnectivityStatusInput {
   token: String!
   platformVersion: String!
   platformIdentifier: PlatformIdentifier
+  platformContract: PlatformContract
 }
 
 input RefreshPlatformRegistrationConnectivityStatusSingleTenantInput {
@@ -1049,6 +1662,7 @@ input RefreshPlatformRegistrationConnectivityStatusSingleTenantInput {
   tenantId: String!
   tenantName: String!
   platformIdentifier: PlatformIdentifier!
+  platformContract: PlatformContract
 }
 
 input TenantDetails {
@@ -1062,16 +1676,21 @@ input RefreshPlatformRegistrationConnectivityStatusAllTenantsInput {
   platformId: String!
   platformVersion: String!
   platformIdentifier: PlatformIdentifier!
+  platformContract: PlatformContract
   tenants: [TenantDetails!]!
 }
 
 type RefreshPlatformRegistrationConnectivityStatusResponse {
   status: PlatformRegistrationConnectivityStatus!
+  commercialModel: CommercialModel
+  organizationName: String
 }
 
 type TenantStatus {
   tenantId: String!
   status: PlatformRegistrationConnectivityStatus!
+  commercialModel: CommercialModel
+  organizationName: String
 }
 
 type RefreshPlatformRegistrationConnectivityStatusAllTenantsResponse {
@@ -1093,14 +1712,148 @@ input RegisteredPlatformInput {
   service_instance_id: ServiceInstanceId!
 }
 
+input RegisteredPlatformByPlatformIdInput {
+  identifier: PlatformIdentifier!
+  platformId: String!
+  tenantId: String
+}
+
 input AutoRegisterPlatformInput {
   platform: PlatformInput!
   existing_users_count: Int
 }
 
+"""
+How a registration authenticates to the Hub. More kinds are expected, so a client must accept a value it does not know.
+"""
+enum RegisteredPlatformCredentialKind {
+  token
+  none
+}
+
+"""
+The current credential of a registration. It says which credential exists, never its value.
+"""
+type RegisteredPlatformCredential {
+  kind: RegisteredPlatformCredentialKind!
+}
+
+type AdminRegisteredPlatformOrganization {
+  id: OrganizationId!
+  name: String!
+}
+
+type AdminRegisteredPlatformRegisterer {
+  id: UserId!
+  email: String!
+  first_name: String
+  last_name: String
+}
+
+type AdminRegisteredPlatform {
+  service_instance_id: ServiceInstanceId!
+  platform_id: String!
+  title: String!
+  url: String!
+  identifier: PlatformIdentifier!
+  version: String
+  contract: PlatformContract!
+  commercial_model: CommercialModel!
+  tenant_id: String
+  tenant_name: String
+  status: PlatformConfigurationStatus!
+  last_connectivity_check: Date
+
+  """
+  The organization owning the registration: the one of its newest subscription.
+  """
+  organization: AdminRegisteredPlatformOrganization
+  registerer: AdminRegisteredPlatformRegisterer
+  credential: RegisteredPlatformCredential!
+
+  """
+  A trial: its contract is trial, or a trial deployment request is linked to it. An admin cannot unregister it.
+  """
+  is_trial: Boolean!
+}
+
+type AdminRegisteredPlatformEdge {
+  cursor: String!
+  node: AdminRegisteredPlatform!
+}
+
+type AdminRegisteredPlatformConnection {
+  totalCount: Int!
+  edges: [AdminRegisteredPlatformEdge!]!
+  pageInfo: PageInfo!
+}
+
+enum AdminRegisteredPlatformOrdering {
+  title
+  last_connectivity_check
+  organization_name
+}
+
+input AdminRegisteredPlatformsFilter {
+  identifier: PlatformIdentifier
+  status: PlatformConfigurationStatus
+  organizationId: OrganizationId
+}
+
 type RolePortal implements Node {
   id: ID!
   name: String!
+  capabilities: [Capability]
+}
+
+type SSOGroupRolePortal {
+  ssoGroup: String!
+  rolePortal: RolePortal!
+}
+
+input AddSSOGroupRolePortalInput {
+  ssoGroup: String!
+  rolePortal: String!
+}
+
+input UpdateSSOGroupRolePortalInput {
+  ssoGroup: String!
+  rolePortal: String!
+}
+
+input AddRolePortalInput {
+  name: String!
+  capabilities: [PortalCapability!]!
+}
+
+input UpdateRolePortalInput {
+  name: String!
+  capabilities: [PortalCapability!]!
+}
+
+input DeleteSSOGroupRolePortalInput {
+  ssoGroup: String!
+  rolePortal: String!
+}
+
+input SaasManagerInstanceInput {
+  data: JSON!
+  index: SaasManagerInstanceIndexInput!
+  metrics: JSON
+}
+
+input SaasManagerInstanceIndexInput {
+  customer_name: String!
+  customer_techname: String
+  plan_code: String @deprecated(reason: "Ignored, the list orders on data.plan")
+  status_family: String
+  upgrade_group: String
+}
+
+type SaasManagerSyncResult {
+  applied: Int!
+  skipped: Int!
+  removed: Int!
 }
 
 """
@@ -1113,9 +1866,9 @@ type GenericServiceCapability implements Node {
   name: String
 }
 
-input EditServiceCapabilityInput {
-  user_service_id: User_ServiceId
-  capabilities: [String]!
+type UserServiceCapabilitiesResponse {
+  userServiceCapabilities: [UserServiceCapability!]!
+  subscription_id: SubscriptionId
 }
 
 input AddSubscriptionCapabilityInput {
@@ -1155,7 +1908,6 @@ type ServiceLink implements Node {
 }
 
 enum ServiceDefinitionIdentifier {
-  vault
   link
   opencti_custom_dashboards
   opencti_custom_views
@@ -1178,15 +1930,9 @@ type ServiceDefinition implements Node {
   service_capability: [ServiceCapability]
 }
 
-enum SeoServiceInstanceLanguage {
-  en
-  fr
-  ja
-}
-
 type SeoServiceInstanceMetadata {
   service_instance_id: ServiceInstanceId!
-  language: SeoServiceInstanceLanguage!
+  language: Locale!
   meta_title: String!
   meta_description: String!
 }
@@ -1308,7 +2054,7 @@ type ServiceInstanceSubscription {
 
 enum FeatureFlag {
   DUMMY
-  SOLUTION_CATEGORIES
+  DECOUPLING_CONNECTORS
 }
 
 type PlatformProvider {
@@ -1317,7 +2063,15 @@ type PlatformProvider {
   provider: String!
 }
 
+"""
+What this Hub accepts, for API clients that detect a feature before using it
+"""
+enum SettingsCapability {
+  API_TOKENS
+}
+
 type Settings {
+  capabilities: [SettingsCapability!]!
   platform_feature_flags: [FeatureFlag!]!
   platform_providers: [PlatformProvider!]!
   base_url_front: String!
@@ -1334,7 +2088,7 @@ input ManifestFragmentInput {
   use_cases: [String!]!
   verified: Boolean
   last_verified_date: String
-  subscription_link: String!
+  subscription_link: String
   source_code: String!
   manager_supported: Boolean!
   min_version: String!
@@ -1347,7 +2101,7 @@ input ManifestFragmentInput {
   config_schema: JSON!
   license_type: LicenseType
   contact: String
-  solution_categories: [String!]
+  solution_categories: [String!]!
 }
 
 enum ManifestType {
@@ -1361,9 +2115,10 @@ type OpenAEVScenario implements Document & Node {
   uploader_organization: Organization
   name: String!
   short_description: String
+  meta_description: String
   description: String
   file_name: String!
-  active: Boolean!
+  status: DocumentStatus!
   created_at: Date!
   updated_at: Date
   updater_id: String
@@ -1385,9 +2140,10 @@ type CustomDashboard implements Document & Node {
   uploader_organization: Organization
   name: String!
   short_description: String
+  meta_description: String
   description: String
   file_name: String!
-  active: Boolean!
+  status: DocumentStatus!
   created_at: Date!
   updated_at: Date
   updater_id: String
@@ -1409,9 +2165,10 @@ type CustomView implements Document & Node {
   uploader_organization: Organization
   name: String!
   short_description: String
+  meta_description: String
   description: String
   file_name: String!
-  active: Boolean!
+  status: DocumentStatus!
   created_at: Date!
   updated_at: Date
   updater_id: String
@@ -1436,29 +2193,6 @@ enum IntegrationType {
   third_party_integration
 }
 
-enum IntegrationSubType {
-  EXTERNAL_IMPORT
-  INTERNAL_ENRICHMENT
-  INTERNAL_EXPORT_FILE
-  INTERNAL_IMPORT_FILE
-  STREAM
-  NATIVE
-  ORCHESTRATION
-  DETECTION
-  CASE_MANAGEMENT
-  THREAT_ACTORS
-  MALWARE
-  CYBER_INDUSTRY
-  PERIODIC_BRIEFING
-  SECURITY_RESEARCHER
-  VENDORS
-  FEDERAL_ORGANIZATION
-  JOURNALISTS
-  NOT_FOR_PROFIT_ORGANIZATION
-  SOCIAL_MEDIA
-  DARKWEB
-}
-
 interface Integration implements Node & Document {
   id: ID!
   type: String!
@@ -1466,9 +2200,10 @@ interface Integration implements Node & Document {
   uploader_organization: Organization
   name: String!
   short_description: String
+  meta_description: String
   description: String
   file_name: String
-  active: Boolean!
+  status: DocumentStatus!
   created_at: Date!
   updated_at: Date
   updater_id: String
@@ -1496,9 +2231,10 @@ type IntegrationHack implements Node & Document & Integration {
   uploader_organization: Organization
   name: String!
   short_description: String
+  meta_description: String
   description: String
   file_name: String
-  active: Boolean!
+  status: DocumentStatus!
   created_at: Date!
   updated_at: Date
   updater_id: String
@@ -1526,9 +2262,10 @@ type CsvFeed implements Node & Document & Integration {
   uploader_organization: Organization
   name: String!
   short_description: String
+  meta_description: String
   description: String
   file_name: String
-  active: Boolean!
+  status: DocumentStatus!
   created_at: Date!
   updated_at: Date
   updater_id: String
@@ -1557,9 +2294,10 @@ type Connector implements Node & Document & Integration {
   uploader_organization: Organization
   name: String!
   short_description: String
+  meta_description: String
   description: String
   file_name: String
-  active: Boolean!
+  status: DocumentStatus!
   created_at: Date!
   updated_at: Date
   updater_id: String
@@ -1579,7 +2317,6 @@ type Connector implements Node & Document & Integration {
   verified: Boolean!
   source_code: String
   subscription_link: String
-  integration_subtype: IntegrationSubType!
   manager_supported: Boolean!
   playbook_supported: Boolean!
   datasheet_url: String
@@ -1597,9 +2334,10 @@ type TaxiiFeed implements Node & Document & Integration {
   uploader_organization: Organization
   name: String!
   short_description: String
+  meta_description: String
   description: String
   file_name: String
-  active: Boolean!
+  status: DocumentStatus!
   created_at: Date!
   updated_at: Date
   updater_id: String
@@ -1615,7 +2353,6 @@ type TaxiiFeed implements Node & Document & Integration {
   remover_id: ID
   feed_url: String
   integration_type: IntegrationType!
-  integration_subtype: IntegrationSubType!
   datasheet_url: String
   blogpost_url: String
   demo_url: String
@@ -1629,9 +2366,10 @@ type RssFeed implements Node & Document & Integration {
   uploader_organization: Organization
   name: String!
   short_description: String
+  meta_description: String
   description: String
   file_name: String
-  active: Boolean!
+  status: DocumentStatus!
   created_at: Date!
   updated_at: Date
   updater_id: String
@@ -1647,7 +2385,6 @@ type RssFeed implements Node & Document & Integration {
   remover_id: ID
   feed_url: String
   integration_type: IntegrationType!
-  integration_subtype: IntegrationSubType!
   datasheet_url: String
   blogpost_url: String
   demo_url: String
@@ -1661,9 +2398,10 @@ type Stream implements Node & Document & Integration {
   uploader_organization: Organization
   name: String!
   short_description: String
+  meta_description: String
   description: String
   file_name: String
-  active: Boolean!
+  status: DocumentStatus!
   created_at: Date!
   updated_at: Date
   updater_id: String
@@ -1679,7 +2417,6 @@ type Stream implements Node & Document & Integration {
   remover_id: ID
   feed_url: String
   integration_type: IntegrationType!
-  integration_subtype: IntegrationSubType!
   datasheet_url: String
   blogpost_url: String
   demo_url: String
@@ -1693,9 +2430,10 @@ type ThirdPartyIntegration implements Node & Document & Integration {
   uploader_organization: Organization
   name: String!
   short_description: String
+  meta_description: String
   description: String
   file_name: String
-  active: Boolean!
+  status: DocumentStatus!
   created_at: Date!
   updated_at: Date
   updater_id: String
@@ -1710,7 +2448,6 @@ type ThirdPartyIntegration implements Node & Document & Integration {
   children_documents: [ShareableResource!]
   remover_id: ID
   integration_type: IntegrationType!
-  integration_subtype: IntegrationSubType!
   vendor_url: String!
   product_version: String
   github_url: String
@@ -1727,9 +2464,10 @@ type OpenCTIPlaybook implements Document & Node {
   uploader_organization: Organization
   name: String!
   short_description: String
+  meta_description: String
   description: String
   file_name: String!
-  active: Boolean!
+  status: DocumentStatus!
   created_at: Date!
   updated_at: Date
   updater_id: String
@@ -1802,7 +2540,6 @@ type SubscriptionModel implements Node {
   start_date: Date
   end_date: Date
   organization: Organization!
-  service_url: String!
   service_instance: ServiceInstance!
   subscription_capability: [SubscriptionCapability]
   user_service: [UserService]!
@@ -1857,8 +2594,17 @@ input OneClickDeployInput {
   platform_service_instance_id: ID!
 }
 
+input NewsFeedRedirectInput {
+  service_identifier: ServiceDefinitionIdentifier!
+  resource_id: DocumentId
+  platform_id: String
+  platform_identifier: PlatformIdentifier
+  utm_content: NewsFeedUtmContent
+}
+
 type SendTelemetryMutation {
   oneClickDeploy(input: OneClickDeployInput!): TelemetryResponse
+  newsFeedRedirect(input: NewsFeedRedirectInput!): TelemetryResponse
 }
 
 """A Relay global ID for UseCase, extracted to a branded UseCaseId string"""
@@ -1986,15 +2732,15 @@ type Epic implements Node {
   title: String!
   short_description: String!
   description: String!
+  problem_to_solve: String!
+  proposed_solution: String!
+  expected_value: String!
   edition_type: EditionType!
   active: Boolean!
-  product: FiligranProduct!
+  products: [FiligranProduct!]!
+  slack_link: String
   timeline: Timeline!
   epic_type: EpicType!
-  document: Document
-  document_id: DocumentId
-  uploader_id: String!
-  updater_id: String
   created_at: Date!
   updated_at: Date
 }
@@ -2003,24 +2749,30 @@ input CreateEpicInput {
   title: String!
   short_description: String!
   description: String!
+  problem_to_solve: String!
+  proposed_solution: String!
+  expected_value: String!
   edition_type: EditionType!
   active: Boolean
-  product: FiligranProduct!
+  products: [FiligranProduct!]!
+  slack_link: String
   timeline: Timeline!
   is_integration: Boolean
-  illustration_document: Upload
 }
 
 input UpdateEpicInput {
   title: String
   short_description: String
   description: String
+  problem_to_solve: String
+  proposed_solution: String
+  expected_value: String
   edition_type: EditionType!
   active: Boolean
-  product: FiligranProduct
+  products: [FiligranProduct!]
+  slack_link: String
   timeline: Timeline
   is_integration: Boolean
-  illustration_document: Upload
 }
 
 type EpicCountPerTimeline {
@@ -2054,6 +2806,9 @@ enum PortalCapability {
   MANAGE_CONNECTORS_INGESTIONS
   MANAGE_MANIFEST_INGESTIONS
   GENERATE_MANIFEST
+  MANAGE_SAAS_MANAGER_INSTANCES
+  READ_SAAS_METRICS
+  READ_ORGANIZATION_MEMBERS
 }
 
 enum OrganizationCapability {

@@ -1,4 +1,4 @@
-import { Label } from '@filigran/ui/clients';
+import { Label } from '@/components/ui/label';
 import React from 'react';
 
 interface ShareableResourceDetailItemProps {
@@ -12,7 +12,7 @@ export const ShareableResourceDetailItem = ({
 }: ShareableResourceDetailItemProps) => {
   return (
     <div>
-      <Label className="block pb-s">{label}</Label>
+      <Label className="block pb-2">{label}</Label>
       {children}
     </div>
   );

@@ -1,4 +1,5 @@
 import { loadMeUser } from '@/utils/load-me-user';
+import { XTM_PLATFORM_TRIAL_PATH } from '@/utils/path/constant';
 import { NextRequest, NextResponse } from 'next/server';
 import { loadBaseUrlFront } from './utils/load';
 import { getLoginRedirectionURL } from './utils/url';
@@ -12,11 +13,9 @@ export const redirectToFreeTrial = async (request: NextRequest) => {
       return NextResponse.redirect(redirectionUrl);
     }
 
-    const registrationUrl = new URL(
-      `/app/service/opencti-free-trial`,
-      baseUrlFront
+    return NextResponse.redirect(
+      new URL(XTM_PLATFORM_TRIAL_PATH, baseUrlFront)
     );
-    return NextResponse.redirect(registrationUrl);
   } catch (error) {
     if ((error as Error).message === 'UNAUTHENTICATED') {
       return NextResponse.redirect(redirectionUrl);

@@ -39,6 +39,32 @@ const s3Client = new S3Client({
   tls: config.get('minio.useSsl') === 'true' ? true : false,
 });
 
+const getStoredObject = async (minioName: string) => {
+  try {
+    return await s3Client.send(
+      new s3.GetObjectCommand({
+        Bucket: config.get('minio.bucketName'),
+        Key: minioName,
+      })
+    );
+  } catch (err) {
+    if (isObjectNotFoundError(err)) {
+      logApp.info('[FILE STORAGE] Object not found in S3', {
+        key: minioName,
+      });
+      return null;
+    }
+    logApp.error('[FILE STORAGE] Cannot retrieve file from S3', {
+      key: minioName,
+      error: getErrorMessage(err),
+    });
+    throw new StorageUnavailableError(
+      `Cannot retrieve ${minioName} from storage`,
+      { cause: err }
+    );
+  }
+};
+
 export const MinIOClient = {
   initializeBucket: async (): Promise<boolean> => {
     try {
@@ -163,30 +189,17 @@ export const MinIOClient = {
   },
 
   downloadFile: async (minioName: string) => {
-    try {
-      const object = await s3Client.send(
-        new s3.GetObjectCommand({
-          Bucket: config.get('minio.bucketName'),
-          Key: minioName,
-        })
-      );
-      return object.Body;
-    } catch (err) {
-      if (isObjectNotFoundError(err)) {
-        logApp.info('[FILE STORAGE] Object not found in S3', {
-          key: minioName,
-        });
-        return null;
-      }
-      logApp.error('[FILE STORAGE] Cannot retrieve file from S3', {
-        key: minioName,
-        error: getErrorMessage(err),
-      });
-      throw new StorageUnavailableError(
-        `Cannot retrieve ${minioName} from storage`,
-        { cause: err }
-      );
+    const object = await getStoredObject(minioName);
+    return object ? object.Body : null;
+  },
+
+  // Also returns the MIME type the uploader declared, kept in the object metadata
+  downloadFileWithMimeType: async (minioName: string) => {
+    const object = await getStoredObject(minioName);
+    if (!object?.Body) {
+      return null;
     }
+    return { body: object.Body, mimeType: object.Metadata?.mimetype };
   },
 
   deleteFile: async (minioName: string) => {

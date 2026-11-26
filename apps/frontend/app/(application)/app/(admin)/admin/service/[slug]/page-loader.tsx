@@ -1,29 +1,21 @@
 'use client';
-import { SubscriptionFilterKey } from '@graphql/generated';
+import {
+  OrderingMode,
+  SubscriptionFilterKey,
+  SubscriptionOrdering,
+  useServiceInstanceWithCapabilitiesByIdQuery,
+  useSubscriptionsListQuery,
+} from '@graphql/generated';
 
 import Loader from '@/components/Loader';
 import ServiceSlug from '@/components/service/[slug]/ServiceSlug';
+import { portalGraphqlClient } from '@/lib/graphql-client';
+import { throwOnFirstLoadError } from '@/lib/query-client';
+import { serviceInstanceWithCapabilitiesKeys } from '@graphql/service-instances/service-instances.keys';
+import { subscriptionKeys } from '@graphql/subscription/subscription.keys';
+import { useMemo } from 'react';
 
-import { ServiceInstanceByIdQuery } from '@/components/service/service.graphql';
-import {
-  subscriptionFragment,
-  subscriptionListFragment,
-  SubscriptionListQuery,
-} from '@/components/subcription/subscription.graphql';
-import useMountingLoader from '@/hooks/use-mounting-loader';
-import { serviceInstanceByIdQuery } from '@generated/serviceInstanceByIdQuery.graphql';
-import { subscriptionListQuery } from '@generated/subscriptionListQuery.graphql';
-import { subscriptionList_fragment$key } from '@generated/subscriptionList_fragment.graphql';
-import {
-  subscription_fragment$data,
-  subscription_fragment$key,
-} from '@generated/subscription_fragment.graphql';
-import {
-  readInlineData,
-  useLazyLoadQuery,
-  useQueryLoader,
-  useRefetchableFragment,
-} from 'react-relay';
+const SERVICE_SUBSCRIPTIONS_PAGE_SIZE = 50;
 
 // Component interface
 interface PreloaderProps {
@@ -32,16 +24,28 @@ interface PreloaderProps {
 
 // Component
 const PageLoader = ({ id }: PreloaderProps) => {
-  const [queryRefServiceInstance, loadQuery] =
-    useQueryLoader<serviceInstanceByIdQuery>(ServiceInstanceByIdQuery);
-  useMountingLoader(loadQuery, { service_instance_id: id });
+  const serviceInstanceVariables = useMemo(
+    () => ({ service_instance_id: id }),
+    [id]
+  );
+  const { data: serviceInstanceData } =
+    useServiceInstanceWithCapabilitiesByIdQuery(
+      portalGraphqlClient,
+      serviceInstanceVariables,
+      {
+        queryKey: serviceInstanceWithCapabilitiesKeys.byId(
+          serviceInstanceVariables
+        ),
+        throwOnError: throwOnFirstLoadError,
+      }
+    );
 
-  const queryDataSubscription = useLazyLoadQuery<subscriptionListQuery>(
-    SubscriptionListQuery,
-    {
-      count: 50,
-      orderBy: 'start_date',
-      orderMode: 'asc',
+  const variables = useMemo(
+    () => ({
+      count: SERVICE_SUBSCRIPTIONS_PAGE_SIZE,
+      cursor: null,
+      orderBy: SubscriptionOrdering.StartDate,
+      orderMode: OrderingMode.Asc,
       searchTerm: '',
       filters: [
         {
@@ -49,27 +53,30 @@ const PageLoader = ({ id }: PreloaderProps) => {
           value: [id],
         },
       ],
-    }
+    }),
+    [id]
   );
-  const [data] = useRefetchableFragment<
-    subscriptionListQuery,
-    subscriptionList_fragment$key
-  >(subscriptionListFragment, queryDataSubscription);
-  const subscriptionsData = data?.subscriptions?.edges.map(({ node }) =>
-    readInlineData<subscription_fragment$key>(subscriptionFragment, node)
-  ) as subscription_fragment$data[];
+  const { data } = useSubscriptionsListQuery(portalGraphqlClient, variables, {
+    queryKey: subscriptionKeys.list(variables),
+    throwOnError: throwOnFirstLoadError,
+  });
+
+  const subscriptions = useMemo(
+    () => data?.subscriptions.edges.map(({ node }) => node),
+    [data]
+  );
+
+  // The API answers an unknown service instance with an error, never `null`.
+  const serviceInstance = serviceInstanceData?.serviceInstanceById;
+  if (!serviceInstance || !subscriptions) {
+    return <Loader />;
+  }
+
   return (
-    <>
-      {queryRefServiceInstance ? (
-        <ServiceSlug
-          subscriptions={subscriptionsData}
-          queryRefServiceInstance={queryRefServiceInstance}
-          subscriptionConnectionId={data?.subscriptions?.__id}
-        />
-      ) : (
-        <Loader />
-      )}
-    </>
+    <ServiceSlug
+      subscriptions={subscriptions}
+      serviceInstance={serviceInstance}
+    />
   );
 };
 

@@ -1,29 +1,34 @@
-import { useMemo } from 'react';
-import { readInlineData } from 'react-relay';
-import { GraphQLTaggedNode } from 'relay-runtime';
-import { KeyType } from 'relay-runtime/lib/store/FragmentTypes';
+import { isDocumentPublished } from '@/utils/documents';
+import { DocumentStatus } from '@graphql/generated';
 
-export function useActiveAndDraftSplit<
-  TFragmentData extends { active: boolean },
-  TFragmentKey extends KeyType<TFragmentData>,
->(
-  edges: ReadonlyArray<{ readonly node: TFragmentKey }> | undefined,
-  fragment: GraphQLTaggedNode
-): [TFragmentData[], TFragmentData[]] {
-  return useMemo(() => {
-    if (!edges) return [[], []];
-
-    return edges.reduce<[TFragmentData[], TFragmentData[]]>(
-      (acc, { node }) => {
-        const item = readInlineData<TFragmentKey>(fragment, node);
-        if ((item as TFragmentData).active) {
-          acc[0].push(item as TFragmentData);
-        } else {
-          acc[1].push(item as TFragmentData);
-        }
-        return acc;
-      },
-      [[], []]
-    );
-  }, [edges, fragment]);
+export interface DocumentsByStatus<TDocument> {
+  draft: TDocument[];
+  inValidation: TDocument[];
+  published: TDocument[];
 }
+
+/**
+ * Splits documents by status, keeping their order. A status other than
+ * published or in validation counts as draft.
+ */
+export const splitDocumentsByStatus = <TDocument extends { status: string }>(
+  documents: readonly TDocument[]
+): DocumentsByStatus<TDocument> => {
+  const result: DocumentsByStatus<TDocument> = {
+    draft: [],
+    inValidation: [],
+    published: [],
+  };
+
+  for (const document of documents) {
+    if (isDocumentPublished(document.status)) {
+      result.published.push(document);
+    } else if (document.status === DocumentStatus.InValidation) {
+      result.inValidation.push(document);
+    } else {
+      result.draft.push(document);
+    }
+  }
+
+  return result;
+};

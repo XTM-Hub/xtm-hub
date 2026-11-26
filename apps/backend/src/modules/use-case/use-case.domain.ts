@@ -80,9 +80,11 @@ export const useCaseDomain = {
     return db<UseCase>('UseCase').where(field).first();
   },
 
-  loadUseCaseByLikeName: (name: string): Promise<UseCase | undefined> => {
+  loadUseCaseByNameCaseInsensitive: (
+    name: string
+  ): Promise<UseCase | undefined> => {
     return db<UseCase>('UseCase')
-      .where('name', 'ILIKE', name)
+      .whereRaw('LOWER(name) = LOWER(?)', [name])
       .select('*')
       .first();
   },

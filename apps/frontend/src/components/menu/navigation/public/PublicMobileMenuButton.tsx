@@ -1,24 +1,30 @@
 'use client';
 
 import PublicNavigation from '@/components/menu/navigation/public/PublicNavigation';
-import { CloseIcon, MenuIcon } from '@filigran/icon';
 import {
   Sheet,
-  SheetClose,
   SheetContent,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from '@filigran/ui/clients';
+} from '@/components/ui/sheet';
+import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
+import { MenuIcon } from '@filigran/icon';
 import Logo from '@public/logo.svg';
-import { useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-export const PublicMobileMenuButton = () => {
+interface PublicMobileMenuButtonProps {
+  visibleServiceSlugs: string[];
+}
+
+export const PublicMobileMenuButton = ({
+  visibleServiceSlugs,
+}: PublicMobileMenuButtonProps) => {
   const [open, setOpen] = useState(false);
   const currentPath = usePathname();
-  const t = useTranslations();
+  const t = useTranslate();
   // Legitimate effect: close the menu on route change.
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => setOpen(false), [currentPath]);
@@ -27,7 +33,7 @@ export const PublicMobileMenuButton = () => {
     <Sheet
       open={open}
       onOpenChange={setOpen}>
-      <SheetTrigger>
+      <SheetTrigger {...analyticsId('nav_mobile_menu_open')}>
         <span className="sr-only">{t('Header.OpenMenu')}</span>
         <MenuIcon
           aria-hidden={true}
@@ -37,31 +43,28 @@ export const PublicMobileMenuButton = () => {
       </SheetTrigger>
       <SheetContent
         side="left"
-        className="bg-gradient-layer-0-white">
-        <SheetHeader className="flex flex-row justify-between pl-l bg-gradient-layer-0-white border-elevation-border-strong">
-          <div className="flex items-center gap-s">
+        closeLabel={t('Header.CloseMenu')}
+        className="bg-gradient-default">
+        <SheetHeader className="flex flex-row pl-4 bg-gradient-default">
+          <div className="flex items-center gap-2">
             <Logo
               className="h-8 w-8"
               aria-hidden={true}
             />
             <SheetTitle>{t('Header.BrandName')}</SheetTitle>
           </div>
-          <SheetClose>
-            <CloseIcon
-              aria-hidden={true}
-              focusable={false}
-              className="h-4 w-4 mr-xl"
-            />
-            <span className="sr-only">{t('Header.CloseMenu')}</span>
-          </SheetClose>
         </SheetHeader>
+        {/* eslint-disable-next-line no-restricted-syntax -- container whose children carry the IDs */}
         <div
           onClick={(e) => {
             if ((e.target as HTMLElement).closest('a')) {
               setOpen(false);
             }
           }}>
-          <PublicNavigation open={true} />
+          <PublicNavigation
+            open={true}
+            visibleServiceSlugs={visibleServiceSlugs}
+          />
         </div>
       </SheetContent>
     </Sheet>

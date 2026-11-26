@@ -1,5 +1,4 @@
-import { logFrontendError } from '@/components/error-frontend-log.graphql';
-import { getClientEnvironment } from '@/relay/environment/registry';
+import { logFrontendError } from '@/lib/frontend-error-log';
 
 export const isSafeRedirect = (url: string): boolean => {
   // Browsers normalise a backslash to a forward slash, so `/\evil.com` would
@@ -10,33 +9,58 @@ export const isSafeRedirect = (url: string): boolean => {
 };
 
 /**
- * Builds a safe login redirect URL with the current pathname base64-encoded
- * as a query param. Returns '/login' when no pathname is provided.
- * Single canonical way to produce a login redirect URL on the frontend.
+ * Encodes a dynamic value (e.g. a Relay global ID, which is base64 and can
+ * contain `+`, `/`, `=`) before interpolating it into a redirect `pathname`.
+ * Without this, an unescaped `+`/`/` gets corrupted once the browser/Next.js
+ * re-parses the decoded pathname as a real URL (e.g. `+` read back as a space).
  */
-export const buildLoginRedirect = (
+export const encodeRedirectValue = (value: string): string =>
+  encodeURIComponent(value);
+
+// Canonical builder for the auth redirect URLs. Encodes the pathname as a
+// `redirect` query param, or returns `base` unchanged when none is given.
+const buildAuthRedirect = (
+  base: string,
   pathname: string | null | undefined
 ): string => {
-  if (!pathname) return '/login';
-  return `/login?redirect=${encodeURIComponent(btoa(pathname))}`;
+  if (!pathname) return base;
+  return `${base}?redirect=${encodeURIComponent(btoa(pathname))}`;
 };
 
-/**
- * Builds a safe signup redirect URL with the current pathname base64-encoded
- * as a query param.
- * Returns '/sign-up' when no pathname is provided.
- */
+export const buildLoginRedirect = (
+  pathname: string | null | undefined
+): string => buildAuthRedirect('/login', pathname);
+
+export const redirectToLogin = (): void => {
+  const { pathname, search, hash } = window.location;
+  window.location.href = buildLoginRedirect(`${pathname}${search}${hash}`);
+};
+
 export const buildSignupRedirect = (
   pathname: string | null | undefined
-): string => {
-  if (!pathname) return '/sign-up';
-  return `/sign-up?redirect=${encodeURIComponent(btoa(pathname))}`;
+): string => buildAuthRedirect('/sign-up', pathname);
+
+/**
+ * Post-sign-in target for a public page: `/redirect/private-counterpart` resolves it to the
+ * page's private counterpart (see `resolvePrivatePath`).
+ */
+export const buildPrivateCounterpartTarget = (pathname: string): string =>
+  `/redirect/private-counterpart?path=${encodeURIComponent(pathname)}`;
+
+export const buildOidcRedirect = (
+  pathname: string | null | undefined
+): string => buildAuthRedirect('/auth/oidc', pathname);
+
+// Only the browser reports: the server-side callers have no visitor to blame.
+const reportUnsafeRedirect = (message: string): void => {
+  if (typeof window === 'undefined') return;
+  logFrontendError(message);
 };
 
 /**
  * Decodes a base64-encoded redirect parameter and validates it is a safe
  * relative path to prevent open redirect attacks (CWE-601).
- * Logs a warning when the param is unsafe or malformed.
+ * Logs a warning from the browser when the param is unsafe or malformed.
  * Returns the decoded path if safe, null otherwise.
  */
 export const decodeSafeRedirect = (
@@ -48,16 +72,10 @@ export const decodeSafeRedirect = (
     if (isSafeRedirect(decoded)) {
       return decoded;
     }
-    const env = getClientEnvironment();
-    if (env) {
-      logFrontendError(env, `Unsafe redirect param detected: ${decoded}`);
-    }
+    reportUnsafeRedirect(`Unsafe redirect param detected: ${decoded}`);
     return null;
   } catch {
-    const env = getClientEnvironment();
-    if (env) {
-      logFrontendError(env, 'Malformed base64 redirect param');
-    }
+    reportUnsafeRedirect('Malformed base64 redirect param');
     return null;
   }
 };

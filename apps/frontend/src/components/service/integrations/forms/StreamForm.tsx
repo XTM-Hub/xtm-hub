@@ -1,17 +1,32 @@
 import { PortalContext } from '@/components/me/AppPortalContext';
-import { ServiceFormJsonFileField } from '@/components/service/form/JsonFileField';
+import {
+  metaDescriptionSchema,
+  optionalMetaDescriptionSchema,
+  withMetaDescriptionRule,
+} from '@/components/service/form/meta-description.schema';
 import { ServiceFormSheetFooter } from '@/components/service/form/SheetFooter';
+import {
+  JSON_DOCUMENT_FILE,
+  useDocumentFileField,
+} from '@/components/service/form/UseDocumentFileField';
 import { useServiceFormFields } from '@/components/service/form/UseServiceFormFields';
-import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
+import { AutoForm } from '@/components/ui/auto-form';
+import { useTranslate } from '@/hooks/use-translate';
 import {
   fileListCheck,
   optionalFileListCheck,
   transformToFileList,
 } from '@/utils/documents';
-import { AutoForm } from '@filigran/ui';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { DocumentImageType, IntegrationType } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
+import {
+  isIntegrationItem,
+  ShareableResourceType,
+} from '@/utils/shareable-resources/shareable-resources.types';
+import {
+  DocumentImageType,
+  DocumentItemFragment,
+  DocumentStatus,
+  IntegrationType,
+} from '@graphql/generated';
 import { useContext, useMemo } from 'react';
 import slugify from 'slugify';
 import { z } from 'zod';
@@ -19,16 +34,16 @@ import { z } from 'zod';
 const streamFormSchema = z.object({
   name: z.string().min(1, 'Required'),
   slug: z.string().min(1, 'Required'),
+  status: z.enum(DocumentStatus).optional(),
   uploader_id: z.string().optional(),
+  meta_description: metaDescriptionSchema,
   short_description: z.string().min(1, 'Required').max(250),
   description: z.string().min(1, 'Required'),
   uploader_organization_id: z.string().min(1, 'Required'),
   integration_type: z.string().min(1, 'Required'),
   use_cases: z.array(z.string()).min(1, 'Required'),
   solution_categories: z.array(z.string()).min(1, 'Required'),
-  license_type: z.enum(['Free', 'Commercial']),
-  integration_subtype: z.string().min(1, 'Required'),
-  active: z.boolean().optional(),
+  license_type: z.enum(['Free', 'Commercial']).optional(),
   datasheet_url: z.url().or(z.literal('')).nullish(),
   blogpost_url: z.url().or(z.literal('')).nullish(),
   demo_url: z.url().or(z.literal('')).nullish(),
@@ -40,13 +55,11 @@ export type StreamFormValues = z.infer<typeof streamFormSchema>;
 
 interface StreamFormProps {
   handleSubmit: (values: StreamFormValues) => void;
-  document: documentItem_fragment$data | undefined;
+  document: DocumentItemFragment | undefined;
 }
 
 export const StreamForm = ({ handleSubmit, document }: StreamFormProps) => {
-  const t = useTranslations();
   const { me } = useContext(PortalContext);
-  const { handleCloseSheet, setIsDirty } = useDialogContext();
 
   const isCreation = !document;
 
@@ -66,6 +79,9 @@ export const StreamForm = ({ handleSubmit, document }: StreamFormProps) => {
     }
   };
 
+  const integration =
+    document && isIntegrationItem(document) ? document : undefined;
+
   const values = useMemo(
     () =>
       ({
@@ -73,35 +89,40 @@ export const StreamForm = ({ handleSubmit, document }: StreamFormProps) => {
         images: transformToFileList(DocumentImageType.Image, document),
         logo: transformToFileList(DocumentImageType.Logo, document),
         use_cases: document?.use_cases?.map((label) => label.id),
-        solution_categories: document?.solution_categories?.map(
+        solution_categories: integration?.solution_categories?.map(
           (category) => category.id
         ),
-        license_type: document?.license_type ?? undefined,
+        license_type: integration?.license_type ?? undefined,
         uploader_id: document?.uploader?.id ?? me!.id,
         uploader_organization_id:
           (isCreation
             ? me?.selected_organization_id
             : document?.uploader_organization?.id) ?? '',
         integration_type: IntegrationType.Stream,
-        integration_subtype: document?.integration_subtype ?? '',
       }) as StreamFormValues,
-    [me, document, isCreation]
+    [me, document, isCreation, integration]
   );
+  const t = useTranslate();
   const formSchema = useMemo(
     () =>
-      document
-        ? streamFormSchema.extend({
-            document: z.custom<FileList>(fileListCheck).optional(),
-            images: z.custom<FileList>(optionalFileListCheck).optional(),
-          })
-        : streamFormSchema,
-    [document]
+      withMetaDescriptionRule(
+        document
+          ? streamFormSchema.extend({
+              meta_description: optionalMetaDescriptionSchema,
+              document: z.custom<FileList>(fileListCheck).optional(),
+              images: z.custom<FileList>(optionalFileListCheck).optional(),
+            })
+          : streamFormSchema,
+        ShareableResourceType.OPENCTI_INTEGRATION,
+        t
+      ),
+    [document, t]
   );
 
   const {
-    active,
     slug,
     name,
+    meta_description,
     short_description,
     description,
     uploader_organization_id,
@@ -109,7 +130,6 @@ export const StreamForm = ({ handleSubmit, document }: StreamFormProps) => {
     use_cases,
     solution_categories,
     license_type,
-    integration_subtype,
     integration_type,
     datasheet_url,
     blogpost_url,
@@ -118,11 +138,13 @@ export const StreamForm = ({ handleSubmit, document }: StreamFormProps) => {
     images,
     imagesToDelete,
     logo,
+    status,
   } = useServiceFormFields({
     documentType: 'Stream',
     platform: 'OpenCTI',
     document,
   });
+  const documentField = useDocumentFileField(JSON_DOCUMENT_FILE, document);
 
   return (
     <>
@@ -131,7 +153,7 @@ export const StreamForm = ({ handleSubmit, document }: StreamFormProps) => {
           onSubmit(values as StreamFormValues);
         }}
         onValuesChange={(values, form) => {
-          if (isCreation && values.name) {
+          if (isCreation && values.name !== undefined) {
             const generatedSlug = slugify(values.name, {
               lower: true,
               strict: true,
@@ -154,36 +176,20 @@ export const StreamForm = ({ handleSubmit, document }: StreamFormProps) => {
           },
           uploader_id,
           uploader_organization_id,
-          document: isCreation
-            ? {
-                label: t('Service.Form.SelectJSONFile'),
-                fieldType: 'file',
-                inputProps: {
-                  accept: 'application/json',
-                },
-              }
-            : {
-                fieldType: ({ field }) => (
-                  <ServiceFormJsonFileField
-                    field={field}
-                    setIsDirty={setIsDirty}
-                    document={document}
-                  />
-                ),
-              },
+          document: documentField,
           logo,
           images: imagesField,
-          active,
+          status,
+          meta_description,
           short_description,
           slug,
           name,
           integration_type,
-          integration_subtype,
           datasheet_url,
           blogpost_url,
           demo_url,
         }}>
-        <ServiceFormSheetFooter handleCloseSheet={handleCloseSheet} />
+        <ServiceFormSheetFooter status={document?.status} />
       </AutoForm>
     </>
   );

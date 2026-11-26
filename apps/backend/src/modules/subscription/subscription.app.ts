@@ -9,8 +9,7 @@ import Subscription, {
   SubscriptionId,
 } from '../../model/kanel/public/Subscription';
 import { UserLoadUserBy } from '../../model/user';
-import { logApp } from '../../utils/app-logger.util';
-import { ErrorCode, NotFoundErrorCode } from '../../utils/error/error.code';
+import { NotFoundErrorCode } from '../../utils/error/error.code';
 import { SubscriptionCapabilityDomain } from '../security-management/subscription-capability/subscription-capability.domain';
 import { SubscriptionDomain } from './subscription.domain';
 
@@ -40,14 +39,10 @@ export const subscriptionApp = {
     endDate: Date | null;
     capabilityIds: ServiceCapabilityId[];
   }): Promise<Subscription[]> => {
-    const createdSubscriptions: Subscription[] = [];
     return withTransaction(async () => {
-      for (const organizationId of organizationIds) {
-        await assertOrganizationIsNotAlreadySubscribed({
-          serviceInstanceId,
-          organizationId,
-        });
-
+      const createdByOrganizationId = new Map<OrganizationId, Subscription>();
+      // Sorted so that concurrent bulk calls wait on the unique key in the same order.
+      for (const organizationId of [...organizationIds].sort()) {
         const createdSubscription = await SubscriptionDomain.createSubscription(
           {
             id: uuidv4() as SubscriptionId,
@@ -62,10 +57,13 @@ export const subscriptionApp = {
           createdSubscription.id,
           capabilityIds
         );
-        createdSubscriptions.push(createdSubscription);
+        createdByOrganizationId.set(organizationId, createdSubscription);
       }
 
-      return createdSubscriptions;
+      return organizationIds.flatMap((organizationId) => {
+        const createdSubscription = createdByOrganizationId.get(organizationId);
+        return createdSubscription ? [createdSubscription] : [];
+      });
     });
   },
 
@@ -121,25 +119,4 @@ export const subscriptionApp = {
   loadSubscriptions: async (opts: QueryOpts) => {
     return SubscriptionDomain.loadSubscriptions(opts);
   },
-};
-
-const assertOrganizationIsNotAlreadySubscribed = async ({
-  serviceInstanceId,
-  organizationId,
-}: {
-  serviceInstanceId: ServiceInstanceId;
-  organizationId: OrganizationId;
-}) => {
-  const subscription = await SubscriptionDomain.loadSubscriptionBy({
-    organization_id: organizationId,
-    service_instance_id: serviceInstanceId,
-  });
-
-  if (subscription) {
-    logApp.warn(
-      'Forbidden access while adding subscription: you have already subscribed this service.'
-    );
-
-    throw new Error(ErrorCode.AlreadySubscribed);
-  }
 };

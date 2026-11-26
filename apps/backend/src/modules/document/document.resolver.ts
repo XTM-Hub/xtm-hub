@@ -13,19 +13,13 @@ import { mapToGraphQLError } from '../../utils/error/error.mapping';
 import { AlreadyExistsError } from '../../utils/error/error.util';
 import { createRelayIdScalar } from '../../utils/scalar.util';
 import { stripNulls } from '../../utils/typescript';
-import { OrganizationDomain } from '../organization-management/organization/organization.domain';
-import { ServiceInstanceDomain } from '../service/instance/service-instance.domain';
 import { OPENAEV_SCENARIO_DOCUMENT_TYPE } from '../shareable-resource/openaev/scenario/scenario.model';
 import { OPENCTI_CUSTOM_DASHBOARD_DOCUMENT_TYPE } from '../shareable-resource/opencti/custom-dashboard/custom-dashboard.model';
 import { OPENCTI_CUSTOM_VIEW_DOCUMENT_TYPE } from '../shareable-resource/opencti/custom-view/custom-view.model';
 import { OPENCTI_INTEGRATION_DOCUMENT_TYPE } from '../shareable-resource/opencti/integration/integration.model';
 import { OPENCTI_PLAYBOOK_DOCUMENT_TYPE } from '../shareable-resource/opencti/playbook/playbook.model';
-import { TelemetryApp } from '../telemetry/telemetry.app';
-import { TelemetryHelper } from '../telemetry/telemetry.helper';
 import { DocumentApp } from './document.app';
 import { subscriptionByServiceInstanceLoaderKey } from './document.dataloader';
-import { DocumentHelper } from './document.helper';
-import { DocumentDomain } from './domain/document.domain';
 
 const resolvers: Resolvers = {
   DocumentId: createRelayIdScalar<DocumentId>('Document'),
@@ -65,66 +59,19 @@ const resolvers: Resolvers = {
         throw mapToGraphQLError(error, UnknownErrorCode.DocumentUpdateError);
       }
     },
-    deleteDocument: async (
-      _,
-      { documentId, forceDelete, service_instance_id }
-    ) => {
+    deleteDocument: async (_, { documentId, service_instance_id }) => {
       try {
         return await DocumentApp.deleteDocument(
           documentId,
-          service_instance_id,
-          forceDelete ?? false
+          service_instance_id
         );
       } catch (error) {
         throw mapToGraphQLError(error, UnknownErrorCode.DeleteDocumentError);
       }
     },
-    incrementShareNumberDocument: async (_, { documentId }, context) => {
+    incrementShareNumberDocument: async (_, { documentId }) => {
       try {
-        const document = await DocumentDomain.loadDocumentWithMetadataById(
-          documentId,
-          []
-        );
-        const documentWithCounters =
-          await DocumentHelper.updateDocumentWithCounters(document);
-        try {
-          if (!document.service_instance_id) {
-            throw new Error(ErrorCode.ServiceInstanceNotFound);
-          }
-          const serviceDefinition =
-            await ServiceInstanceDomain.loadServiceDefinitionByServiceInstance(
-              document.service_instance_id
-            );
-          if (!serviceDefinition) {
-            throw new Error(ErrorCode.ServiceDefinitionNotFound);
-          }
-
-          if (
-            TelemetryHelper.shouldSendEventForService(
-              serviceDefinition.identifier
-            )
-          ) {
-            const selectedOrga = context.user
-              ? await OrganizationDomain.loadOrganizationBy({
-                  id: context.user.selected_organization_id,
-                })
-              : undefined;
-
-            const shareEvent = await TelemetryHelper.buildShareEvent(
-              selectedOrga,
-              context.user?.id,
-              serviceDefinition.identifier,
-              document.id,
-              document.name ?? ''
-            );
-            await TelemetryApp.sendTelemetryEvent(shareEvent);
-          }
-        } catch (error) {
-          logApp.error('Unable to send telemetry event', {
-            error,
-          });
-        }
-        return documentWithCounters;
+        return await DocumentApp.shareDocument(documentId);
       } catch (error) {
         throw mapToGraphQLError(
           error,
@@ -154,10 +101,14 @@ const resolvers: Resolvers = {
       if (mappedType) {
         return mappedType;
       } else if (document.type === OPENCTI_INTEGRATION_DOCUMENT_TYPE) {
+        const hydratedIntegrationType = (
+          document as { integration_type?: IntegrationType }
+        ).integration_type;
         const integrationType =
-          await context.dataLoaders.document.integrationTypeLoader.load(
+          hydratedIntegrationType ??
+          (await context.dataLoaders.document.integrationTypeLoader.load(
             document.id
-          );
+          ));
         if (integrationType) {
           const responseType =
             INTEGRATION_MAPPINGS[
@@ -216,16 +167,6 @@ const resolvers: Resolvers = {
     },
   },
   Query: {
-    documentExists: async (_, input) => {
-      try {
-        return await DocumentHelper.checkDocumentExists(
-          input.documentName ?? '',
-          input.service_instance_id
-        );
-      } catch (error) {
-        throw mapToGraphQLError(error);
-      }
-    },
     publicDocuments: async (_, input) => {
       try {
         return await DocumentApp.loadPublicDocuments(input);
@@ -236,6 +177,15 @@ const resolvers: Resolvers = {
     publicDocumentsByServiceSlug: async (_, { serviceInstanceSlug }) => {
       try {
         return await DocumentApp.loadPublicDocumentsByServiceSlug(
+          serviceInstanceSlug
+        );
+      } catch (error) {
+        throw mapToGraphQLError(error);
+      }
+    },
+    publicDocumentSlugsByServiceSlug: async (_, { serviceInstanceSlug }) => {
+      try {
+        return await DocumentApp.loadPublicDocumentSlugsByServiceSlug(
           serviceInstanceSlug
         );
       } catch (error) {

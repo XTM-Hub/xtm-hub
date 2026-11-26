@@ -1,0 +1,78 @@
+fragment SubscriptionItem on SubscriptionModel {
+  id
+  organization {
+    name
+    id
+    personal_space
+  }
+  subscription_capability {
+    id
+    service_capability {
+      id
+      description
+      name
+    }
+  }
+  service_instance {
+    id
+    name
+  }
+  start_date
+  end_date
+}
+
+query SubscriptionsList(
+  $count: Int!
+  $cursor: ID
+  $orderBy: SubscriptionOrdering!
+  $orderMode: OrderingMode!
+  $filters: [SubscriptionFilter!]
+  $searchTerm: String
+) {
+  subscriptions(
+    first: $count
+    after: $cursor
+    orderBy: $orderBy
+    orderMode: $orderMode
+    searchTerm: $searchTerm
+    filters: $filters
+  ) {
+    totalCount
+    edges {
+      node {
+        ...SubscriptionItem
+      }
+    }
+  }
+}
+
+query SubscriptionById($subscriptionId: SubscriptionId) {
+  subscriptionById(subscription_id: $subscriptionId) {
+    id
+    organization {
+      id
+      name
+    }
+    service_instance {
+      id
+      name
+      description
+      tags
+      service_definition {
+        service_capability {
+          id
+          name
+          description
+        }
+      }
+    }
+    subscription_capability {
+      id
+      service_capability {
+        id
+        name
+        description
+      }
+    }
+  }
+}

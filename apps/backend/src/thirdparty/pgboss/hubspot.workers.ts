@@ -1,4 +1,5 @@
 import type { PgBoss } from 'pg-boss';
+import { SYSTEM_USER_CONTEXT } from '../../portal.const';
 import { logApp } from '../../utils/app-logger.util';
 import { hubspotWebhookSend } from '../hubspot/hubspot';
 import {
@@ -9,8 +10,9 @@ import {
 import { RETRY_STRATEGIES } from './retry-strategies';
 import { createBatchHandler } from './workers';
 
-const handleHubspotJob = createBatchHandler<HubspotJobData>(async (job) =>
-  hubspotWebhookSend(job.data.type, job.data.payload)
+const handleHubspotJob = createBatchHandler<HubspotJobData>(
+  SYSTEM_USER_CONTEXT,
+  async (job) => hubspotWebhookSend(job.data.type, job.data.payload)
 );
 
 export const HubspotWorkers = {

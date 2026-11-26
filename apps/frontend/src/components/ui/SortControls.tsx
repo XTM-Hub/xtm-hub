@@ -1,15 +1,16 @@
+import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { cn } from '@/lib/utils';
-import { ArrowDownwardIcon, ArrowUpwardIcon } from '@filigran/icon';
 import {
+  IconButton,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@filigran/ui';
-import { Button } from '@filigran/ui/servers';
+} from '@filigran/design-system';
+import { ArrowDownwardIcon, ArrowUpwardIcon } from '@filigran/icon';
 import { OrderingMode } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 
 interface SortControlsProps {
   orderByOptions: { label: string; value: string }[];
@@ -28,20 +29,22 @@ export const SortControls = ({
   selectedOrderBy,
   className,
 }: SortControlsProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   return (
-    <div className={cn(className, 'flex gap-s items-center')}>
+    <div className={cn(className, 'flex gap-2 items-center')}>
       <span className="whitespace-nowrap text-sm">
         {t('SortControls.SortBy')}
       </span>
       <Select
         onValueChange={onOrderByChange}
         defaultValue={selectedOrderBy}>
-        <SelectTrigger>
+        <SelectTrigger
+          {...analyticsId('list_sort_field_select')}
+          aria-label={t('SortControls.SortBy')}>
           <SelectValue placeholder={t('SortControls.SortBy')} />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="layer-1">
           {orderByOptions.map((option) => (
             <SelectItem
               key={option.value}
@@ -51,24 +54,26 @@ export const SortControls = ({
           ))}
         </SelectContent>
       </Select>
-      <Button
-        size="icon"
+      <IconButton
+        {...analyticsId('list_sort_order_toggle')}
         className="flex-none basis-9"
-        variant="tertiary"
+        priority="tertiary"
         aria-label={`${t('SortControls.SortBy')} ${selectedOrderMode}`}
+        icon={
+          selectedOrderMode === OrderingMode.Desc ? (
+            <ArrowUpwardIcon className="h-4 w-4" />
+          ) : (
+            <ArrowDownwardIcon className="h-4 w-4" />
+          )
+        }
         onClick={() =>
           onOrderModeChange(
             selectedOrderMode === OrderingMode.Asc
               ? OrderingMode.Desc
               : OrderingMode.Asc
           )
-        }>
-        {selectedOrderMode === OrderingMode.Desc ? (
-          <ArrowUpwardIcon className="h-4 w-4" />
-        ) : (
-          <ArrowDownwardIcon className="h-4 w-4" />
-        )}
-      </Button>
+        }
+      />
     </div>
   );
 };

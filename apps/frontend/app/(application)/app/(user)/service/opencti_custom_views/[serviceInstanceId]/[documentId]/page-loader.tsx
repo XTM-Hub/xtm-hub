@@ -2,30 +2,26 @@
 
 import Loader from '@/components/Loader';
 import CustomViewSlug from '@/components/service/custom-views/[slug]/CustomViewSlug';
-import { DocumentsItemQuery } from '@/components/service/document/document.graphql';
-import useMountingLoader from '@/hooks/use-mounting-loader';
-import { documentQuery } from '@generated/documentQuery.graphql';
-import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
-import { useQueryLoader } from 'react-relay';
+import DocumentDetailLoader from '@/components/service/document/DocumentDetailLoader';
+import { ServiceInstanceItemFragment } from '@graphql/generated';
 
 interface PreloaderProps {
   documentId: string;
-  serviceInstance: serviceInstance_fragment$data;
+  serviceInstance: ServiceInstanceItemFragment;
 }
 
 const PageLoader = ({ documentId, serviceInstance }: PreloaderProps) => {
-  const [queryRef, loadQuery] =
-    useQueryLoader<documentQuery>(DocumentsItemQuery);
-  useMountingLoader(loadQuery, {
-    documentId,
-    serviceInstanceId: serviceInstance?.id,
-  });
-
-  return queryRef && serviceInstance ? (
-    <CustomViewSlug
-      serviceInstance={serviceInstance}
-      queryRef={queryRef}
-    />
+  return serviceInstance ? (
+    <DocumentDetailLoader
+      documentId={documentId}
+      serviceInstanceId={serviceInstance.id}>
+      {(documentData) => (
+        <CustomViewSlug
+          serviceInstance={serviceInstance}
+          documentData={documentData}
+        />
+      )}
+    </DocumentDetailLoader>
   ) : (
     <Loader />
   );

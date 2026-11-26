@@ -1,6 +1,6 @@
 import type { GraphQLClient, RequestOptions } from "graphql-request";
 type GraphQLClientRequestHeaders = RequestOptions["requestHeaders"];
-import { useQuery, useInfiniteQuery, useMutation, UseQueryOptions, UseInfiniteQueryOptions, InfiniteData, UseMutationOptions } from '@tanstack/react-query';
+import { useMutation, useQuery, useInfiniteQuery, UseMutationOptions, UseQueryOptions, UseInfiniteQueryOptions, InfiniteData } from '@tanstack/react-query';
 export type Maybe<T> = T | null;
 export type InputMaybe<T> = Maybe<T>;
 export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
@@ -23,6 +23,8 @@ export type Scalars = {
   Boolean: { input: boolean; output: boolean; }
   Int: { input: number; output: number; }
   Float: { input: number; output: number; }
+  /** A Relay global ID for ApiToken, extracted to a branded ApiTokenId string */
+  ApiTokenId: { input: any; output: any; }
   /** A Relay global ID for Competitor, extracted to a branded CompetitorId string */
   CompetitorId: { input: any; output: any; }
   Date: { input: any; output: any; }
@@ -52,6 +54,20 @@ export type Scalars = {
   UserId: { input: any; output: any; }
   /** A Relay global ID for User_Service, extracted to a branded User_ServiceId string */
   User_ServiceId: { input: any; output: any; }
+  /** A Relay global ID for VotableFeature, extracted to a branded VotableFeatureId string */
+  VotableFeatureId: { input: any; output: any; }
+  /** A Relay global ID for VotingRound, extracted to a branded VotingRoundId string */
+  VotingRoundId: { input: any; output: any; }
+};
+
+export type AddRolePortalInput = {
+  capabilities: Array<PortalCapability>;
+  name: Scalars['String']['input'];
+};
+
+export type AddSsoGroupRolePortalInput = {
+  rolePortal: Scalars['String']['input'];
+  ssoGroup: Scalars['String']['input'];
 };
 
 export type AddServiceInput = {
@@ -85,6 +101,12 @@ export type AddUserInput = {
   password: InputMaybe<Scalars['String']['input']>;
 };
 
+export type AddUsersToBundleGroupsInput = {
+  emails: InputMaybe<Array<Scalars['String']['input']>>;
+  roles: Array<BundleUserRoleAssignmentInput>;
+  userIds: Array<Scalars['UserId']['input']>;
+};
+
 export type AdminAddUserInput = {
   email: Scalars['String']['input'];
   first_name: InputMaybe<Scalars['String']['input']>;
@@ -99,7 +121,100 @@ export type AdminEditUserInput = {
   first_name: InputMaybe<Scalars['String']['input']>;
   last_name: InputMaybe<Scalars['String']['input']>;
   organization_capabilities: InputMaybe<Array<OrganizationCapabilitiesInput>>;
+  /**
+   * Sets the password of a local account. Platform administrators only, in development environments only.
+   * An empty or null value leaves the password unchanged.
+   */
+  password: InputMaybe<Scalars['String']['input']>;
 };
+
+export type AdminRegisteredPlatform = {
+  __typename?: 'AdminRegisteredPlatform';
+  commercial_model: CommercialModel;
+  contract: PlatformContract;
+  credential: RegisteredPlatformCredential;
+  identifier: PlatformIdentifier;
+  /** A trial: its contract is trial, or a trial deployment request is linked to it. An admin cannot unregister it. */
+  is_trial: Scalars['Boolean']['output'];
+  last_connectivity_check: Maybe<Scalars['Date']['output']>;
+  /** The organization owning the registration: the one of its newest subscription. */
+  organization: Maybe<AdminRegisteredPlatformOrganization>;
+  platform_id: Scalars['String']['output'];
+  registerer: Maybe<AdminRegisteredPlatformRegisterer>;
+  service_instance_id: Scalars['ServiceInstanceId']['output'];
+  status: PlatformConfigurationStatus;
+  tenant_id: Maybe<Scalars['String']['output']>;
+  tenant_name: Maybe<Scalars['String']['output']>;
+  title: Scalars['String']['output'];
+  url: Scalars['String']['output'];
+  version: Maybe<Scalars['String']['output']>;
+};
+
+export type AdminRegisteredPlatformConnection = {
+  __typename?: 'AdminRegisteredPlatformConnection';
+  edges: Array<AdminRegisteredPlatformEdge>;
+  pageInfo: PageInfo;
+  totalCount: Scalars['Int']['output'];
+};
+
+export type AdminRegisteredPlatformEdge = {
+  __typename?: 'AdminRegisteredPlatformEdge';
+  cursor: Scalars['String']['output'];
+  node: AdminRegisteredPlatform;
+};
+
+export enum AdminRegisteredPlatformOrdering {
+  LastConnectivityCheck = 'last_connectivity_check',
+  OrganizationName = 'organization_name',
+  Title = 'title'
+}
+
+export type AdminRegisteredPlatformOrganization = {
+  __typename?: 'AdminRegisteredPlatformOrganization';
+  id: Scalars['OrganizationId']['output'];
+  name: Scalars['String']['output'];
+};
+
+export type AdminRegisteredPlatformRegisterer = {
+  __typename?: 'AdminRegisteredPlatformRegisterer';
+  email: Scalars['String']['output'];
+  first_name: Maybe<Scalars['String']['output']>;
+  id: Scalars['UserId']['output'];
+  last_name: Maybe<Scalars['String']['output']>;
+};
+
+export type AdminRegisteredPlatformsFilter = {
+  identifier: InputMaybe<PlatformIdentifier>;
+  organizationId: InputMaybe<Scalars['OrganizationId']['input']>;
+  status: InputMaybe<PlatformConfigurationStatus>;
+};
+
+export type ApiToken = Node & {
+  __typename?: 'ApiToken';
+  created_at: Scalars['Date']['output'];
+  expires_at: Scalars['Date']['output'];
+  id: Scalars['ID']['output'];
+  last_used_at: Maybe<Scalars['Date']['output']>;
+  name: Scalars['String']['output'];
+  organization_id: Scalars['ID']['output'];
+  organization_name: Scalars['String']['output'];
+  revoked_at: Maybe<Scalars['Date']['output']>;
+  scope: ApiTokenScope;
+  /** The first characters of the token, to tell tokens apart */
+  token_prefix: Scalars['String']['output'];
+  user_email: Scalars['String']['output'];
+};
+
+/**
+ * What a personal API token may do. read: queries only. read_write: queries and mutations, without the organization
+ * administration and without any portal capability. admin: the user's organization and portal capabilities, BYPASS
+ * excepted. A token never exceeds its user's live rights.
+ */
+export enum ApiTokenScope {
+  Admin = 'admin',
+  Read = 'read',
+  ReadWrite = 'read_write'
+}
 
 export type AutoRegisterPlatformInput = {
   existing_users_count: InputMaybe<Scalars['Int']['input']>;
@@ -113,6 +228,17 @@ export type BulkPendingUserFromOrganizationInput = {
   searchTerm: InputMaybe<Scalars['String']['input']>;
 };
 
+export type BundleUserRoleAssignmentInput = {
+  product: PlatformIdentifier;
+  role: ServiceGroupName;
+};
+
+export type BundleUserServiceGroup = {
+  __typename?: 'BundleUserServiceGroup';
+  groups: Array<UserPlatformGroup>;
+  user: User;
+};
+
 export type CanUnregisterPlatformInput = {
   platformId: Scalars['String']['input'];
   tenantId: InputMaybe<Scalars['String']['input']>;
@@ -124,6 +250,7 @@ export type CanUnregisterResponse = {
   isInOrganization: Maybe<Scalars['Boolean']['output']>;
   isPlatformRegistered: Scalars['Boolean']['output'];
   organizationId: Maybe<Scalars['OrganizationId']['output']>;
+  organizationName: Maybe<Scalars['String']['output']>;
 };
 
 export type Capability = Node & {
@@ -131,6 +258,11 @@ export type Capability = Node & {
   id: Scalars['ID']['output'];
   name: PortalCapability;
 };
+
+export enum CommercialModel {
+  Other = 'OTHER',
+  Saas = 'SAAS'
+}
 
 export type Competitor = Node & {
   __typename?: 'Competitor';
@@ -167,7 +299,6 @@ export enum CompetitorTier {
 
 export type Connector = Document & Integration & Node & {
   __typename?: 'Connector';
-  active: Scalars['Boolean']['output'];
   blogpost_url: Maybe<Scalars['String']['output']>;
   children_documents: Maybe<Array<ShareableResource>>;
   contact: Maybe<Scalars['String']['output']>;
@@ -179,10 +310,10 @@ export type Connector = Document & Integration & Node & {
   download_number: Maybe<Scalars['Int']['output']>;
   file_name: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
-  integration_subtype: IntegrationSubType;
   integration_type: IntegrationType;
   license_type: Maybe<LicenseType>;
   manager_supported: Scalars['Boolean']['output'];
+  meta_description: Maybe<Scalars['String']['output']>;
   minimum_deployable_version: Maybe<Scalars['String']['output']>;
   name: Scalars['String']['output'];
   playbook_supported: Scalars['Boolean']['output'];
@@ -195,6 +326,7 @@ export type Connector = Document & Integration & Node & {
   slug: Scalars['String']['output'];
   solution_categories: Maybe<Array<SolutionCategory>>;
   source_code: Maybe<Scalars['String']['output']>;
+  status: DocumentStatus;
   subscription: Maybe<SubscriptionModel>;
   subscription_link: Maybe<Scalars['String']['output']>;
   type: Scalars['String']['output'];
@@ -212,6 +344,27 @@ export type ConsumeProvisionedNewsFeedItemsResponse = {
   news_feed_items: Array<ProvisionedNewsFeedItem>;
 };
 
+export type ContentTranslationEntry = {
+  __typename?: 'ContentTranslationEntry';
+  key: Scalars['String']['output'];
+  locale: Locale;
+  updated_at: Scalars['Date']['output'];
+  updater_id: Maybe<Scalars['UserId']['output']>;
+  value: Scalars['String']['output'];
+};
+
+export type ContentTranslationValueInput = {
+  locale: Locale;
+  value: Scalars['String']['input'];
+};
+
+export type CreateApiTokenInput = {
+  expires_at: Scalars['Date']['input'];
+  name: Scalars['String']['input'];
+  organization_id: Scalars['OrganizationId']['input'];
+  scope: ApiTokenScope;
+};
+
 export type CreateCompetitorInput = {
   domain: Scalars['String']['input'];
   name: Scalars['String']['input'];
@@ -221,22 +374,21 @@ export type CreateCompetitorInput = {
 export type CreateDeploymentRequestInput = {
   activity_sector: InputMaybe<DeploymentRequestActivitySector>;
   job_title: InputMaybe<DeploymentRequestJobTitle>;
-  products: Array<PlatformIdentifier>;
   region: DeploymentRequestPlatformRegion;
   source: DeploymentRequestSource;
-  type: DeploymentRequestDeploymentType;
-  use_case: InputMaybe<DeploymentRequestUseCase>;
+  use_cases_by_product: InputMaybe<Array<ProductUseCaseInput>>;
 };
 
 export type CreateDocumentInput = {
-  active: Scalars['Boolean']['input'];
   description: Scalars['String']['input'];
   entity_types: InputMaybe<Array<Scalars['String']['input']>>;
   license_type: InputMaybe<LicenseType>;
+  meta_description: Scalars['String']['input'];
   name: Scalars['String']['input'];
   short_description: Scalars['String']['input'];
   slug: Scalars['String']['input'];
   solution_categories: Array<Scalars['SolutionCategoryId']['input']>;
+  status: DocumentStatus;
   uploader_id: Scalars['UserId']['input'];
   use_cases: Array<Scalars['UseCaseId']['input']>;
 };
@@ -245,10 +397,13 @@ export type CreateEpicInput = {
   active: InputMaybe<Scalars['Boolean']['input']>;
   description: Scalars['String']['input'];
   edition_type: EditionType;
-  illustration_document: InputMaybe<Scalars['Upload']['input']>;
+  expected_value: Scalars['String']['input'];
   is_integration: InputMaybe<Scalars['Boolean']['input']>;
-  product: FiligranProduct;
+  problem_to_solve: Scalars['String']['input'];
+  products: Array<FiligranProduct>;
+  proposed_solution: Scalars['String']['input'];
   short_description: Scalars['String']['input'];
+  slack_link: InputMaybe<Scalars['String']['input']>;
   timeline: Timeline;
   title: Scalars['String']['input'];
 };
@@ -261,9 +416,34 @@ export type CreateSubscriptionsInput = {
   start_date: Scalars['Date']['input'];
 };
 
+export type CreateVotableFeatureInput = {
+  active: InputMaybe<Scalars['Boolean']['input']>;
+  description: Scalars['String']['input'];
+  position: InputMaybe<Scalars['Int']['input']>;
+  product: FiligranProduct;
+  short_description: Scalars['String']['input'];
+  title: Scalars['String']['input'];
+  use_case_ids: InputMaybe<Array<Scalars['UseCaseId']['input']>>;
+  voting_round_id: Scalars['VotingRoundId']['input'];
+};
+
+export type CreateVotingRoundInput = {
+  copy_features_from_round_id: InputMaybe<Scalars['VotingRoundId']['input']>;
+  description: InputMaybe<Scalars['String']['input']>;
+  name: Scalars['String']['input'];
+  service_instance_id: Scalars['ServiceInstanceId']['input'];
+  theme: InputMaybe<VotingRoundTheme>;
+};
+
+/** The token is shown here once: only its hash is kept */
+export type CreatedApiToken = {
+  __typename?: 'CreatedApiToken';
+  api_token: ApiToken;
+  token: Scalars['String']['output'];
+};
+
 export type CsvFeed = Document & Integration & Node & {
   __typename?: 'CsvFeed';
-  active: Scalars['Boolean']['output'];
   blogpost_url: Maybe<Scalars['String']['output']>;
   children_documents: Maybe<Array<ShareableResource>>;
   created_at: Scalars['Date']['output'];
@@ -276,6 +456,7 @@ export type CsvFeed = Document & Integration & Node & {
   id: Scalars['ID']['output'];
   integration_type: IntegrationType;
   license_type: Maybe<LicenseType>;
+  meta_description: Maybe<Scalars['String']['output']>;
   name: Scalars['String']['output'];
   remover_id: Maybe<Scalars['ID']['output']>;
   service_instance: Maybe<ServiceInstance>;
@@ -284,6 +465,7 @@ export type CsvFeed = Document & Integration & Node & {
   short_description: Maybe<Scalars['String']['output']>;
   slug: Scalars['String']['output'];
   solution_categories: Maybe<Array<SolutionCategory>>;
+  status: DocumentStatus;
   subscription: Maybe<SubscriptionModel>;
   type: Scalars['String']['output'];
   updated_at: Maybe<Scalars['Date']['output']>;
@@ -293,15 +475,27 @@ export type CsvFeed = Document & Integration & Node & {
   use_cases: Maybe<Array<UseCase>>;
 };
 
+/** The token that authenticates the current request */
+export type CurrentApiToken = {
+  __typename?: 'CurrentApiToken';
+  expires_at: Scalars['Date']['output'];
+  id: Scalars['ID']['output'];
+  last_used_at: Maybe<Scalars['Date']['output']>;
+  name: Scalars['String']['output'];
+  organization_id: Scalars['ID']['output'];
+  organization_name: Scalars['String']['output'];
+  scope: ApiTokenScope;
+};
+
 export type CustomDashboard = Document & Node & {
   __typename?: 'CustomDashboard';
-  active: Scalars['Boolean']['output'];
   children_documents: Maybe<Array<ShareableResource>>;
   created_at: Scalars['Date']['output'];
   description: Maybe<Scalars['String']['output']>;
   download_number: Maybe<Scalars['Int']['output']>;
   file_name: Scalars['String']['output'];
   id: Scalars['ID']['output'];
+  meta_description: Maybe<Scalars['String']['output']>;
   name: Scalars['String']['output'];
   product_version: Maybe<Scalars['String']['output']>;
   service_instance: Maybe<ServiceInstance>;
@@ -309,6 +503,7 @@ export type CustomDashboard = Document & Node & {
   share_number: Maybe<Scalars['Int']['output']>;
   short_description: Maybe<Scalars['String']['output']>;
   slug: Scalars['String']['output'];
+  status: DocumentStatus;
   subscription: Maybe<SubscriptionModel>;
   type: Scalars['String']['output'];
   updated_at: Maybe<Scalars['Date']['output']>;
@@ -320,7 +515,6 @@ export type CustomDashboard = Document & Node & {
 
 export type CustomView = Document & Node & {
   __typename?: 'CustomView';
-  active: Scalars['Boolean']['output'];
   children_documents: Maybe<Array<ShareableResource>>;
   created_at: Scalars['Date']['output'];
   description: Maybe<Scalars['String']['output']>;
@@ -328,6 +522,7 @@ export type CustomView = Document & Node & {
   entity_types: Maybe<Array<Scalars['String']['output']>>;
   file_name: Scalars['String']['output'];
   id: Scalars['ID']['output'];
+  meta_description: Maybe<Scalars['String']['output']>;
   name: Scalars['String']['output'];
   product_version: Maybe<Scalars['String']['output']>;
   service_instance: Maybe<ServiceInstance>;
@@ -335,6 +530,7 @@ export type CustomView = Document & Node & {
   share_number: Maybe<Scalars['Int']['output']>;
   short_description: Maybe<Scalars['String']['output']>;
   slug: Scalars['String']['output'];
+  status: DocumentStatus;
   subscription: Maybe<SubscriptionModel>;
   type: Scalars['String']['output'];
   updated_at: Maybe<Scalars['Date']['output']>;
@@ -350,19 +546,20 @@ export type CustomView = Document & Node & {
  */
 export type DefaultDocument = Document & Node & {
   __typename?: 'DefaultDocument';
-  active: Scalars['Boolean']['output'];
   children_documents: Maybe<Array<ShareableResource>>;
   created_at: Scalars['Date']['output'];
   description: Maybe<Scalars['String']['output']>;
   download_number: Maybe<Scalars['Int']['output']>;
   file_name: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
+  meta_description: Maybe<Scalars['String']['output']>;
   name: Maybe<Scalars['String']['output']>;
   service_instance: Maybe<ServiceInstance>;
   service_instance_id: Maybe<Scalars['ServiceInstanceId']['output']>;
   share_number: Maybe<Scalars['Int']['output']>;
   short_description: Maybe<Scalars['String']['output']>;
   slug: Maybe<Scalars['String']['output']>;
+  status: DocumentStatus;
   subscription: Maybe<SubscriptionModel>;
   type: Scalars['String']['output'];
   updated_at: Maybe<Scalars['Date']['output']>;
@@ -372,10 +569,9 @@ export type DefaultDocument = Document & Node & {
   use_cases: Maybe<Array<UseCase>>;
 };
 
-export type DeployedPlatform = {
-  __typename?: 'DeployedPlatform';
-  platformIdentifier: PlatformIdentifier;
-  serviceInstanceId: Scalars['ServiceInstanceId']['output'];
+export type DeleteSsoGroupRolePortalInput = {
+  rolePortal: Scalars['String']['input'];
+  ssoGroup: Scalars['String']['input'];
 };
 
 export type DeployedResource = {
@@ -389,7 +585,7 @@ export type DeploymentAvailability = {
   __typename?: 'DeploymentAvailability';
   availableCount: Scalars['Int']['output'];
   capacity: Scalars['Int']['output'];
-  platform_identifier: PlatformIdentifier;
+  id: Scalars['ID']['output'];
   region: DeploymentRequestPlatformRegion;
 };
 
@@ -399,6 +595,7 @@ export type DeploymentRequest = Node & {
   cancellation_date: Maybe<Scalars['Date']['output']>;
   cancellation_reason: Maybe<Scalars['String']['output']>;
   cancellation_user_email: Maybe<Scalars['String']['output']>;
+  children: Maybe<Array<DeploymentRequest>>;
   counts_in_orga_quota: Scalars['Boolean']['output'];
   end_date: Maybe<Scalars['Date']['output']>;
   hub_status: DeploymentRequestHubStatus;
@@ -412,8 +609,10 @@ export type DeploymentRequest = Node & {
   platform_identifier: Maybe<PlatformIdentifier>;
   platform_url: Maybe<Scalars['String']['output']>;
   region: DeploymentRequestPlatformRegion;
+  registered_platform: Maybe<RegisteredPlatform>;
   request_date: Scalars['Date']['output'];
   requester_email: Maybe<Scalars['String']['output']>;
+  service_instance: Maybe<ServiceInstance>;
   service_instance_id: Scalars['ServiceInstanceId']['output'];
   start_date: Maybe<Scalars['Date']['output']>;
   type: DeploymentRequestDeploymentType;
@@ -479,6 +678,7 @@ export type DeploymentRequestFilter = {
 export enum DeploymentRequestFilterKey {
   ActualState = 'actual_state',
   HubStatus = 'hub_status',
+  ParentId = 'parent_id',
   PlatformIdentifier = 'platform_identifier',
   Region = 'region',
   TargetState = 'target_state',
@@ -580,19 +780,20 @@ export enum DeploymentRequestUseCase {
 }
 
 export type Document = {
-  active: Scalars['Boolean']['output'];
   children_documents: Maybe<Array<ShareableResource>>;
   created_at: Scalars['Date']['output'];
   description: Maybe<Scalars['String']['output']>;
   download_number: Maybe<Scalars['Int']['output']>;
   file_name: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
+  meta_description: Maybe<Scalars['String']['output']>;
   name: Maybe<Scalars['String']['output']>;
   service_instance: Maybe<ServiceInstance>;
   service_instance_id: Maybe<Scalars['ServiceInstanceId']['output']>;
   share_number: Maybe<Scalars['Int']['output']>;
   short_description: Maybe<Scalars['String']['output']>;
   slug: Maybe<Scalars['String']['output']>;
+  status: DocumentStatus;
   subscription: Maybe<SubscriptionModel>;
   type: Scalars['String']['output'];
   updated_at: Maybe<Scalars['Date']['output']>;
@@ -638,7 +839,6 @@ export enum DocumentMetadataKeyCode {
   GithubUrl = 'github_url',
   ImageName = 'image_name',
   ImageType = 'image_type',
-  IntegrationSubtype = 'integration_subtype',
   IntegrationType = 'integration_type',
   LastVerifiedDate = 'last_verified_date',
   LicenseType = 'license_type',
@@ -670,6 +870,12 @@ export enum DocumentSourceType {
   Internal = 'internal'
 }
 
+export enum DocumentStatus {
+  Draft = 'draft',
+  InValidation = 'in_validation',
+  Published = 'published'
+}
+
 export type EditMeUserInput = {
   country: InputMaybe<Scalars['String']['input']>;
   first_name: InputMaybe<Scalars['String']['input']>;
@@ -680,11 +886,6 @@ export type EditMeUserInput = {
 export type EditSeoServiceInstanceInput = {
   meta_description: Scalars['String']['input'];
   meta_title: Scalars['String']['input'];
-};
-
-export type EditServiceCapabilityInput = {
-  capabilities: Array<InputMaybe<Scalars['String']['input']>>;
-  user_service_id: InputMaybe<Scalars['User_ServiceId']['input']>;
 };
 
 export type EditSolutionCategoryInput = {
@@ -713,18 +914,18 @@ export type Epic = Node & {
   active: Scalars['Boolean']['output'];
   created_at: Scalars['Date']['output'];
   description: Scalars['String']['output'];
-  document: Maybe<Document>;
-  document_id: Maybe<Scalars['DocumentId']['output']>;
   edition_type: EditionType;
   epic_type: EpicType;
+  expected_value: Scalars['String']['output'];
   id: Scalars['ID']['output'];
-  product: FiligranProduct;
+  problem_to_solve: Scalars['String']['output'];
+  products: Array<FiligranProduct>;
+  proposed_solution: Scalars['String']['output'];
   short_description: Scalars['String']['output'];
+  slack_link: Maybe<Scalars['String']['output']>;
   timeline: Timeline;
   title: Scalars['String']['output'];
   updated_at: Maybe<Scalars['Date']['output']>;
-  updater_id: Maybe<Scalars['String']['output']>;
-  uploader_id: Scalars['String']['output'];
 };
 
 export type EpicConnection = {
@@ -755,13 +956,32 @@ export enum EpicType {
   Other = 'other'
 }
 
+export type Facet = {
+  __typename?: 'Facet';
+  entity_type: Array<FacetBucket>;
+  integration_type: Array<FacetBucket>;
+  license_type: Array<FacetBucket>;
+  manager_supported: Array<FacetBucket>;
+  product_version: Array<FacetBucket>;
+  solution_category: Array<FacetBucket>;
+  use_case: Array<FacetBucket>;
+  verified: Array<FacetBucket>;
+};
+
+export type FacetBucket = {
+  __typename?: 'FacetBucket';
+  count: Scalars['Int']['output'];
+  value: Scalars['String']['output'];
+};
+
 export enum FeatureFlag {
-  Dummy = 'DUMMY',
-  SolutionCategories = 'SOLUTION_CATEGORIES'
+  DecouplingConnectors = 'DECOUPLING_CONNECTORS',
+  Dummy = 'DUMMY'
 }
 
 export enum FiligranProduct {
   Openaev = 'openaev',
+  Opencrq = 'opencrq',
   Opencti = 'opencti',
   Xtmhub = 'xtmhub',
   Xtmone = 'xtmone'
@@ -775,7 +995,6 @@ export type Filter = {
 export enum FilterKey {
   EntityType = 'entity_type',
   FeedUrl = 'feed_url',
-  IntegrationSubtype = 'integration_subtype',
   IntegrationType = 'integration_type',
   Label = 'label',
   LicenseType = 'license_type',
@@ -794,8 +1013,19 @@ export type GenericServiceCapability = Node & {
   name: Maybe<Scalars['String']['output']>;
 };
 
+export type GiveDeploymentFeedbackInput = {
+  answer: HasRepliedSatisfaction;
+  deploymentRequestId: Scalars['DeploymentRequestId']['input'];
+  justification: InputMaybe<Scalars['String']['input']>;
+};
+
+export enum HasRepliedSatisfaction {
+  Closed = 'closed',
+  No = 'no',
+  Yes = 'yes'
+}
+
 export type Integration = {
-  active: Scalars['Boolean']['output'];
   blogpost_url: Maybe<Scalars['String']['output']>;
   children_documents: Maybe<Array<ShareableResource>>;
   created_at: Scalars['Date']['output'];
@@ -807,6 +1037,7 @@ export type Integration = {
   id: Scalars['ID']['output'];
   integration_type: IntegrationType;
   license_type: Maybe<LicenseType>;
+  meta_description: Maybe<Scalars['String']['output']>;
   name: Scalars['String']['output'];
   remover_id: Maybe<Scalars['ID']['output']>;
   service_instance: Maybe<ServiceInstance>;
@@ -815,6 +1046,7 @@ export type Integration = {
   short_description: Maybe<Scalars['String']['output']>;
   slug: Scalars['String']['output'];
   solution_categories: Maybe<Array<SolutionCategory>>;
+  status: DocumentStatus;
   subscription: Maybe<SubscriptionModel>;
   type: Scalars['String']['output'];
   updated_at: Maybe<Scalars['Date']['output']>;
@@ -826,7 +1058,6 @@ export type Integration = {
 
 export type IntegrationHack = Document & Integration & Node & {
   __typename?: 'IntegrationHack';
-  active: Scalars['Boolean']['output'];
   blogpost_url: Maybe<Scalars['String']['output']>;
   children_documents: Maybe<Array<ShareableResource>>;
   created_at: Scalars['Date']['output'];
@@ -838,6 +1069,7 @@ export type IntegrationHack = Document & Integration & Node & {
   id: Scalars['ID']['output'];
   integration_type: IntegrationType;
   license_type: Maybe<LicenseType>;
+  meta_description: Maybe<Scalars['String']['output']>;
   name: Scalars['String']['output'];
   remover_id: Maybe<Scalars['ID']['output']>;
   service_instance: Maybe<ServiceInstance>;
@@ -846,6 +1078,7 @@ export type IntegrationHack = Document & Integration & Node & {
   short_description: Maybe<Scalars['String']['output']>;
   slug: Scalars['String']['output'];
   solution_categories: Maybe<Array<SolutionCategory>>;
+  status: DocumentStatus;
   subscription: Maybe<SubscriptionModel>;
   type: Scalars['String']['output'];
   updated_at: Maybe<Scalars['Date']['output']>;
@@ -854,29 +1087,6 @@ export type IntegrationHack = Document & Integration & Node & {
   uploader_organization: Maybe<Organization>;
   use_cases: Maybe<Array<UseCase>>;
 };
-
-export enum IntegrationSubType {
-  CaseManagement = 'CASE_MANAGEMENT',
-  CyberIndustry = 'CYBER_INDUSTRY',
-  Darkweb = 'DARKWEB',
-  Detection = 'DETECTION',
-  ExternalImport = 'EXTERNAL_IMPORT',
-  FederalOrganization = 'FEDERAL_ORGANIZATION',
-  InternalEnrichment = 'INTERNAL_ENRICHMENT',
-  InternalExportFile = 'INTERNAL_EXPORT_FILE',
-  InternalImportFile = 'INTERNAL_IMPORT_FILE',
-  Journalists = 'JOURNALISTS',
-  Malware = 'MALWARE',
-  Native = 'NATIVE',
-  NotForProfitOrganization = 'NOT_FOR_PROFIT_ORGANIZATION',
-  Orchestration = 'ORCHESTRATION',
-  PeriodicBriefing = 'PERIODIC_BRIEFING',
-  SecurityResearcher = 'SECURITY_RESEARCHER',
-  SocialMedia = 'SOCIAL_MEDIA',
-  Stream = 'STREAM',
-  ThreatActors = 'THREAT_ACTORS',
-  Vendors = 'VENDORS'
-}
 
 export enum IntegrationType {
   Connector = 'connector',
@@ -914,6 +1124,20 @@ export enum LicenseType {
   Free = 'Free'
 }
 
+export type LoadDocumentFacetInput = {
+  documentType: InputMaybe<Scalars['String']['input']>;
+  logicalFilters: InputMaybe<LogicalFilterInput>;
+  restrictToPublishedDocuments: InputMaybe<Scalars['Boolean']['input']>;
+  searchTerm: InputMaybe<Scalars['String']['input']>;
+  serviceInstanceId: Scalars['ServiceInstanceId']['input'];
+};
+
+export enum Locale {
+  En = 'en',
+  Fr = 'fr',
+  Ja = 'ja'
+}
+
 export type LogicalFilterInput = {
   children: InputMaybe<Array<LogicalFilterInput>>;
   leaf: InputMaybe<Filter>;
@@ -934,7 +1158,7 @@ export type ManifestFragmentInput = {
   image_name: Scalars['String']['input'];
   image_type: Scalars['String']['input'];
   integration_type: Scalars['String']['input'];
-  last_verified_date: Scalars['String']['input'];
+  last_verified_date: InputMaybe<Scalars['String']['input']>;
   license_type: InputMaybe<LicenseType>;
   logo: Scalars['String']['input'];
   manager_supported: Scalars['Boolean']['input'];
@@ -942,9 +1166,9 @@ export type ManifestFragmentInput = {
   platform: Scalars['String']['input'];
   short_description: Scalars['String']['input'];
   slug: Scalars['String']['input'];
-  solution_categories: InputMaybe<Array<Scalars['String']['input']>>;
+  solution_categories: Array<Scalars['String']['input']>;
   source_code: Scalars['String']['input'];
-  subscription_link: Scalars['String']['input'];
+  subscription_link: InputMaybe<Scalars['String']['input']>;
   title: Scalars['String']['input'];
   use_cases: Array<Scalars['String']['input']>;
   verified: InputMaybe<Scalars['Boolean']['input']>;
@@ -968,20 +1192,33 @@ export type MergeEvent = Node & {
   target: Scalars['ID']['output'];
 };
 
+export enum MetricType {
+  EsUsedSize = 'es_used_size',
+  PostgresUsedSize = 'postgres_used_size',
+  S3UsedSize = 's3_used_size',
+  SlaAvailability = 'sla_availability',
+  SlaResponseTime = 'sla_response_time'
+}
+
 export type Mutation = {
   __typename?: 'Mutation';
+  acceptPendingUserInOrganization: Maybe<User>;
   addCapabilitiesToUserServices: Maybe<Array<Maybe<UserService>>>;
   addOrganization: Maybe<Organization>;
+  addRolePortal: RolePortal;
+  addSSOGroupRolePortal: SsoGroupRolePortal;
   addServicePicture: Maybe<ServiceInstance>;
   addSolutionCategory: SolutionCategory;
-  addSubscription: Maybe<ServiceInstance>;
   addSubscriptionCapability: Array<SubscriptionModel>;
   addUseCase: UseCase;
   addUser: Maybe<User>;
   addUserService: Maybe<Array<Maybe<UserService>>>;
+  addUsersToBundleGroups: Array<BundleUserServiceGroup>;
   adminAddUser: Maybe<User>;
   adminCancelDeploymentRequest: Maybe<DeploymentRequest>;
   adminEditUser: User;
+  /** Unregisters a platform without being a member of its organization. Does nothing on an inactive registration. */
+  adminUnregisterPlatform: Success;
   autoRegisterPlatform: Success;
   bulkAcceptPendingUserInOrganization: Maybe<Success>;
   bulkRemovePendingUserFromOrganization: Maybe<Success>;
@@ -989,35 +1226,46 @@ export type Mutation = {
   changeSelectedOrganization: Maybe<User>;
   consumeProvisionedNewsFeedItems: ConsumeProvisionedNewsFeedItemsResponse;
   contactUs: Success;
+  createApiToken: CreatedApiToken;
   createCompetitor: Competitor;
   createDeploymentRequest: DeploymentRequest;
   createDocument: Document;
   createEpic: Epic;
   createSubscriptions: Array<SubscriptionModel>;
+  createVotableFeature: VotableFeature;
+  createVotingRound: VotingRound;
   deleteCompetitor: Competitor;
   deleteDocument: Document;
   deleteEpic: Maybe<Epic>;
   deleteNewsFeedItem: Scalars['Boolean']['output'];
   deleteOrganization: Maybe<Organization>;
+  deleteRolePortal: RolePortal;
+  deleteSSOGroupRolePortal: SsoGroupRolePortal;
   deleteSolutionCategory: SolutionCategory;
   deleteSubscriptions: Array<SubscriptionModel>;
   deleteUseCase: UseCase;
+  deleteUser: User;
   deleteUserServices: Maybe<Array<Maybe<UserService>>>;
+  deleteVotableFeature: VotableFeature;
+  deleteVotingRound: VotingRound;
+  discardContentTranslationDrafts: Scalars['Int']['output'];
   editMeUser: User;
   editOrganization: Maybe<Organization>;
   editSeoServiceInstance: SeoServiceInstanceMetadata;
-  editServiceCapability: Maybe<SubscriptionModel>;
   editSolutionCategory: SolutionCategory;
   editUseCase: UseCase;
   editUserCapabilities: User;
   editUserService: Maybe<UserService>;
   frontendErrorLog: Maybe<Scalars['Boolean']['output']>;
   generateManifest: Success;
+  giveDeploymentFeedback: Success;
   incrementShareNumberDocument: Document;
   ingestManifestFragments: Success;
   login: Maybe<User>;
   logout: Scalars['ID']['output'];
   newProductVersion: Success;
+  publishContentTranslationDrafts: Array<ContentTranslationEntry>;
+  purgeSaasManagerInstances: SaasManagerSyncResult;
   refreshPlatformRegistrationConnectivityStatus: RefreshPlatformRegistrationConnectivityStatusResponse;
   refreshPlatformRegistrationConnectivityStatusAllTenants: RefreshPlatformRegistrationConnectivityStatusAllTenantsResponse;
   refreshPlatformRegistrationConnectivityStatusSingleTenant: RefreshPlatformRegistrationConnectivityStatusResponse;
@@ -1025,21 +1273,39 @@ export type Mutation = {
   registerPlatform: RegistrationResponse;
   removePendingUserFromOrganization: Maybe<User>;
   removeUserFromOrganization: Maybe<User>;
+  removeUsersFromBundleGroups: Array<Scalars['UserId']['output']>;
   reorderDeploymentRequestInQueue: Success;
   requestTransferPersonalSpace: Success;
   resetPassword: Success;
+  /** The owner, or an administrator of the token's organization, revokes it */
+  revokeApiToken: ApiToken;
+  saveContentTranslationDraft: Array<ContentTranslationEntry>;
   sendTelemetryEvent: Maybe<SendTelemetryMutation>;
+  setVotingRoundStatus: Array<VotingRound>;
   transferPersonalSpace: Success;
   unregisterPlatform: Success;
+  updateBundleUserGroups: Array<BundleUserServiceGroup>;
   updateCompetitor: Competitor;
   updateDeploymentQuotaCapacity: Success;
   updateDeploymentRequest: PlatformDeploymentRequest;
   updateDocument: Document;
   updateEpic: Epic;
   updatePlatformServiceMetadata: Maybe<RegisteredPlatform>;
+  updateRolePortal: RolePortal;
+  updateSSOGroupRolePortal: SsoGroupRolePortal;
   updateServiceGroups: Array<ServiceGroup>;
   updateSubscription: Maybe<SubscriptionModel>;
+  updateVotableFeature: VotableFeature;
+  updateVotingRound: VotingRound;
   uploadUserPicture: User;
+  upsertSaasManagerInstances: SaasManagerSyncResult;
+  voteForFeature: Array<VotableFeature>;
+};
+
+
+export type MutationAcceptPendingUserInOrganizationArgs = {
+  organization_id: Scalars['OrganizationId']['input'];
+  user_id: Scalars['UserId']['input'];
 };
 
 
@@ -1054,6 +1320,16 @@ export type MutationAddOrganizationArgs = {
 };
 
 
+export type MutationAddRolePortalArgs = {
+  input: AddRolePortalInput;
+};
+
+
+export type MutationAddSsoGroupRolePortalArgs = {
+  input: AddSsoGroupRolePortalInput;
+};
+
+
 export type MutationAddServicePictureArgs = {
   document: InputMaybe<Scalars['Upload']['input']>;
   isLogo: Scalars['Boolean']['input'];
@@ -1063,11 +1339,6 @@ export type MutationAddServicePictureArgs = {
 
 export type MutationAddSolutionCategoryArgs = {
   input: AddSolutionCategoryInput;
-};
-
-
-export type MutationAddSubscriptionArgs = {
-  service_instance_id: InputMaybe<Scalars['ServiceInstanceId']['input']>;
 };
 
 
@@ -1092,6 +1363,12 @@ export type MutationAddUserServiceArgs = {
 };
 
 
+export type MutationAddUsersToBundleGroupsArgs = {
+  input: AddUsersToBundleGroupsInput;
+  serviceInstanceId: Scalars['ServiceInstanceId']['input'];
+};
+
+
 export type MutationAdminAddUserArgs = {
   input: AdminAddUserInput;
 };
@@ -1105,6 +1382,11 @@ export type MutationAdminCancelDeploymentRequestArgs = {
 export type MutationAdminEditUserArgs = {
   id: Scalars['ID']['input'];
   input: AdminEditUserInput;
+};
+
+
+export type MutationAdminUnregisterPlatformArgs = {
+  serviceInstanceId: Scalars['ServiceInstanceId']['input'];
 };
 
 
@@ -1136,9 +1418,15 @@ export type MutationChangeSelectedOrganizationArgs = {
 
 
 export type MutationContactUsArgs = {
+  deploymentRequestType: InputMaybe<DeploymentRequestDeploymentType>;
   message: InputMaybe<Scalars['String']['input']>;
   platformId: InputMaybe<Scalars['ID']['input']>;
   platformIdentifier: InputMaybe<PlatformIdentifier>;
+};
+
+
+export type MutationCreateApiTokenArgs = {
+  input: CreateApiTokenInput;
 };
 
 
@@ -1163,13 +1451,23 @@ export type MutationCreateDocumentArgs = {
 
 
 export type MutationCreateEpicArgs = {
-  document: InputMaybe<Array<Scalars['Upload']['input']>>;
   input: CreateEpicInput;
 };
 
 
 export type MutationCreateSubscriptionsArgs = {
   input: CreateSubscriptionsInput;
+};
+
+
+export type MutationCreateVotableFeatureArgs = {
+  document: InputMaybe<Array<Scalars['Upload']['input']>>;
+  input: CreateVotableFeatureInput;
+};
+
+
+export type MutationCreateVotingRoundArgs = {
+  input: CreateVotingRoundInput;
 };
 
 
@@ -1180,7 +1478,6 @@ export type MutationDeleteCompetitorArgs = {
 
 export type MutationDeleteDocumentArgs = {
   documentId: Scalars['DocumentId']['input'];
-  forceDelete: InputMaybe<Scalars['Boolean']['input']>;
   service_instance_id: Scalars['ServiceInstanceId']['input'];
 };
 
@@ -1200,6 +1497,16 @@ export type MutationDeleteOrganizationArgs = {
 };
 
 
+export type MutationDeleteRolePortalArgs = {
+  name: Scalars['String']['input'];
+};
+
+
+export type MutationDeleteSsoGroupRolePortalArgs = {
+  input: DeleteSsoGroupRolePortalInput;
+};
+
+
 export type MutationDeleteSolutionCategoryArgs = {
   id: Scalars['ID']['input'];
 };
@@ -1215,9 +1522,24 @@ export type MutationDeleteUseCaseArgs = {
 };
 
 
+export type MutationDeleteUserArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
 export type MutationDeleteUserServicesArgs = {
   input: UserServicesDeleteInput;
   service_instance_id: Scalars['ServiceInstanceId']['input'];
+};
+
+
+export type MutationDeleteVotableFeatureArgs = {
+  id: Scalars['VotableFeatureId']['input'];
+};
+
+
+export type MutationDeleteVotingRoundArgs = {
+  id: Scalars['VotingRoundId']['input'];
 };
 
 
@@ -1234,14 +1556,8 @@ export type MutationEditOrganizationArgs = {
 
 export type MutationEditSeoServiceInstanceArgs = {
   input: EditSeoServiceInstanceInput;
-  language: SeoServiceInstanceLanguage;
+  language: Locale;
   service_instance_id: Scalars['ServiceInstanceId']['input'];
-};
-
-
-export type MutationEditServiceCapabilityArgs = {
-  input: InputMaybe<EditServiceCapabilityInput>;
-  serviceInstanceId: InputMaybe<Scalars['ServiceInstanceId']['input']>;
 };
 
 
@@ -1283,6 +1599,11 @@ export type MutationGenerateManifestArgs = {
 };
 
 
+export type MutationGiveDeploymentFeedbackArgs = {
+  input: GiveDeploymentFeedbackInput;
+};
+
+
 export type MutationIncrementShareNumberDocumentArgs = {
   documentId: Scalars['DocumentId']['input'];
 };
@@ -1302,6 +1623,11 @@ export type MutationLoginArgs = {
 export type MutationNewProductVersionArgs = {
   product: PlatformIdentifier;
   version: Scalars['String']['input'];
+};
+
+
+export type MutationPurgeSaasManagerInstancesArgs = {
+  before: Scalars['Date']['input'];
 };
 
 
@@ -1337,6 +1663,12 @@ export type MutationRemoveUserFromOrganizationArgs = {
 };
 
 
+export type MutationRemoveUsersFromBundleGroupsArgs = {
+  serviceInstanceId: Scalars['ServiceInstanceId']['input'];
+  userIds: Array<Scalars['UserId']['input']>;
+};
+
+
 export type MutationReorderDeploymentRequestInQueueArgs = {
   input: ReorderDeploymentRequestInQueueInput;
 };
@@ -1347,6 +1679,22 @@ export type MutationRequestTransferPersonalSpaceArgs = {
 };
 
 
+export type MutationRevokeApiTokenArgs = {
+  id: Scalars['ApiTokenId']['input'];
+};
+
+
+export type MutationSaveContentTranslationDraftArgs = {
+  input: UpsertContentTranslationInput;
+};
+
+
+export type MutationSetVotingRoundStatusArgs = {
+  id: Scalars['VotingRoundId']['input'];
+  status: VotingRoundStatus;
+};
+
+
 export type MutationTransferPersonalSpaceArgs = {
   requestId: Scalars['ID']['input'];
 };
@@ -1354,6 +1702,12 @@ export type MutationTransferPersonalSpaceArgs = {
 
 export type MutationUnregisterPlatformArgs = {
   input: UnregisterPlatformInput;
+};
+
+
+export type MutationUpdateBundleUserGroupsArgs = {
+  input: UpdateBundleUserGroupsInput;
+  serviceInstanceId: Scalars['ServiceInstanceId']['input'];
 };
 
 
@@ -1385,15 +1739,26 @@ export type MutationUpdateDocumentArgs = {
 
 
 export type MutationUpdateEpicArgs = {
-  document: InputMaybe<Array<Scalars['Upload']['input']>>;
   id: Scalars['ID']['input'];
   input: UpdateEpicInput;
 };
 
 
 export type MutationUpdatePlatformServiceMetadataArgs = {
-  document: InputMaybe<Scalars['Upload']['input']>;
   input: UpdatePlatformServiceMetadataInput;
+};
+
+
+export type MutationUpdateRolePortalArgs = {
+  input: UpdateRolePortalInput;
+  name: Scalars['String']['input'];
+};
+
+
+export type MutationUpdateSsoGroupRolePortalArgs = {
+  input: UpdateSsoGroupRolePortalInput;
+  rolePortal: Scalars['String']['input'];
+  ssoGroup: Scalars['String']['input'];
 };
 
 
@@ -1408,8 +1773,32 @@ export type MutationUpdateSubscriptionArgs = {
 };
 
 
+export type MutationUpdateVotableFeatureArgs = {
+  document: InputMaybe<Array<Scalars['Upload']['input']>>;
+  id: Scalars['VotableFeatureId']['input'];
+  input: UpdateVotableFeatureInput;
+};
+
+
+export type MutationUpdateVotingRoundArgs = {
+  id: Scalars['VotingRoundId']['input'];
+  input: UpdateVotingRoundInput;
+};
+
+
 export type MutationUploadUserPictureArgs = {
   document: Scalars['Upload']['input'];
+};
+
+
+export type MutationUpsertSaasManagerInstancesArgs = {
+  generatedAt: Scalars['Date']['input'];
+  instances: Array<SaasManagerInstanceInput>;
+};
+
+
+export type MutationVoteForFeatureArgs = {
+  feature_id: Scalars['VotableFeatureId']['input'];
 };
 
 export type NewsFeedItem = Node & {
@@ -1443,14 +1832,47 @@ export type NewsFeedItemMetadata = {
 };
 
 export enum NewsFeedItemMetadataKey {
+  AuthorNames = 'author_names',
+  BlogPostSlug = 'blog_post_slug',
+  Description = 'description',
   DocumentId = 'document_id',
+  ImageAlt = 'image_alt',
+  ImageUrl = 'image_url',
+  ProductVersion = 'product_version',
+  ReadMinutes = 'read_minutes',
   UrlPath = 'url_path'
 }
 
 export enum NewsFeedItemType {
+  BlogPost = 'BLOG_POST',
+  GithubRelease = 'GITHUB_RELEASE',
   ResourceCustomDashboard = 'RESOURCE_CUSTOM_DASHBOARD',
   ResourceCustomView = 'RESOURCE_CUSTOM_VIEW',
-  ResourcePlaybook = 'RESOURCE_PLAYBOOK'
+  ResourceIntegration = 'RESOURCE_INTEGRATION',
+  ResourcePlaybook = 'RESOURCE_PLAYBOOK',
+  ResourceScenario = 'RESOURCE_SCENARIO'
+}
+
+export type NewsFeedRedirectInput = {
+  platform_id: InputMaybe<Scalars['String']['input']>;
+  platform_identifier: InputMaybe<PlatformIdentifier>;
+  resource_id: InputMaybe<Scalars['DocumentId']['input']>;
+  service_identifier: ServiceDefinitionIdentifier;
+  utm_content: InputMaybe<NewsFeedUtmContent>;
+};
+
+export enum NewsFeedUtmContent {
+  BlogPosts = 'blog_posts',
+  CustomDashboard = 'custom_dashboard',
+  CustomView = 'custom_view',
+  Integration = 'integration',
+  Other = 'other',
+  Playbook = 'playbook',
+  Scenario = 'scenario'
+}
+
+export enum NewsFeedUtmMedium {
+  Newsfeed = 'newsfeed'
 }
 
 export type Node = {
@@ -1467,13 +1889,13 @@ export type OneClickDeployInput = {
 
 export type OpenAevScenario = Document & Node & {
   __typename?: 'OpenAEVScenario';
-  active: Scalars['Boolean']['output'];
   children_documents: Maybe<Array<ShareableResource>>;
   created_at: Scalars['Date']['output'];
   description: Maybe<Scalars['String']['output']>;
   download_number: Maybe<Scalars['Int']['output']>;
   file_name: Scalars['String']['output'];
   id: Scalars['ID']['output'];
+  meta_description: Maybe<Scalars['String']['output']>;
   name: Scalars['String']['output'];
   product_version: Maybe<Scalars['String']['output']>;
   service_instance: Maybe<ServiceInstance>;
@@ -1481,6 +1903,7 @@ export type OpenAevScenario = Document & Node & {
   share_number: Maybe<Scalars['Int']['output']>;
   short_description: Maybe<Scalars['String']['output']>;
   slug: Scalars['String']['output'];
+  status: DocumentStatus;
   subscription: Maybe<SubscriptionModel>;
   type: Scalars['String']['output'];
   updated_at: Maybe<Scalars['Date']['output']>;
@@ -1502,13 +1925,13 @@ export type OpenCtiPlatformRegistrationStatusResponse = {
 
 export type OpenCtiPlaybook = Document & Node & {
   __typename?: 'OpenCTIPlaybook';
-  active: Scalars['Boolean']['output'];
   children_documents: Maybe<Array<ShareableResource>>;
   created_at: Scalars['Date']['output'];
   description: Maybe<Scalars['String']['output']>;
   download_number: Maybe<Scalars['Int']['output']>;
   file_name: Scalars['String']['output'];
   id: Scalars['ID']['output'];
+  meta_description: Maybe<Scalars['String']['output']>;
   name: Scalars['String']['output'];
   product_version: Maybe<Scalars['String']['output']>;
   service_instance: Maybe<ServiceInstance>;
@@ -1516,6 +1939,7 @@ export type OpenCtiPlaybook = Document & Node & {
   share_number: Maybe<Scalars['Int']['output']>;
   short_description: Maybe<Scalars['String']['output']>;
   slug: Scalars['String']['output'];
+  status: DocumentStatus;
   subscription: Maybe<SubscriptionModel>;
   type: Scalars['String']['output'];
   updated_at: Maybe<Scalars['Date']['output']>;
@@ -1532,9 +1956,15 @@ export enum OrderingMode {
 
 export type Organization = Node & {
   __typename?: 'Organization';
+  administrator_emails: Maybe<Array<Scalars['String']['output']>>;
   capabilityUser: Maybe<Array<Maybe<Capability>>>;
   domains: Maybe<Array<Scalars['String']['output']>>;
   id: Scalars['ID']['output'];
+  /**
+   * Members of the organization, invited and disabled users included, pending requests excluded.
+   * Nullable: a refused read answers null without failing the whole query.
+   */
+  members_count: Maybe<Scalars['Int']['output']>;
   name: Scalars['String']['output'];
   personal_space: Scalars['Boolean']['output'];
 };
@@ -1574,6 +2004,37 @@ export type OrganizationEdge = {
 export type OrganizationInput = {
   domains: InputMaybe<Array<Scalars['String']['input']>>;
   name: Scalars['String']['input'];
+};
+
+/** A member of an organization, whatever their status: invited, expired, waiting for validation or disabled. */
+export type OrganizationMember = {
+  __typename?: 'OrganizationMember';
+  capabilities: Array<OrganizationCapability>;
+  email: Scalars['String']['output'];
+  first_name: Maybe<Scalars['String']['output']>;
+  id: Scalars['UserId']['output'];
+  last_name: Maybe<Scalars['String']['output']>;
+};
+
+export type OrganizationMemberConnection = {
+  __typename?: 'OrganizationMemberConnection';
+  edges: Array<OrganizationMemberEdge>;
+  pageInfo: PageInfo;
+  totalCount: Scalars['Int']['output'];
+};
+
+export type OrganizationMemberContact = {
+  __typename?: 'OrganizationMemberContact';
+  email: Scalars['String']['output'];
+  first_name: Maybe<Scalars['String']['output']>;
+  id: Scalars['ID']['output'];
+  last_name: Maybe<Scalars['String']['output']>;
+};
+
+export type OrganizationMemberEdge = {
+  __typename?: 'OrganizationMemberEdge';
+  cursor: Scalars['String']['output'];
+  node: OrganizationMember;
 };
 
 export enum OrganizationOrdering {
@@ -1680,18 +2141,34 @@ export enum PlatformRegistrationStatus {
   Unregistered = 'unregistered'
 }
 
+export type PlatformTrialStatus = {
+  __typename?: 'PlatformTrialStatus';
+  deploymentRequestId: Maybe<Scalars['DeploymentRequestId']['output']>;
+  end_date: Maybe<Scalars['Date']['output']>;
+  hub_status: Maybe<DeploymentRequestHubStatus>;
+  isBlacklisted: Scalars['Boolean']['output'];
+};
+
 export enum PortalCapability {
   Bypass = 'BYPASS',
   GenerateManifest = 'GENERATE_MANIFEST',
   ManageConnectorsIngestions = 'MANAGE_CONNECTORS_INGESTIONS',
   ManageDeployment = 'MANAGE_DEPLOYMENT',
   ManageManifestIngestions = 'MANAGE_MANIFEST_INGESTIONS',
+  ManageSaasManagerInstances = 'MANAGE_SAAS_MANAGER_INSTANCES',
   ModifyCompetitors = 'MODIFY_COMPETITORS',
   ModifyServiceMetadata = 'MODIFY_SERVICE_METADATA',
   ModifyTrials = 'MODIFY_TRIALS',
   ModifyTrialsQuota = 'MODIFY_TRIALS_QUOTA',
+  ReadOrganizationMembers = 'READ_ORGANIZATION_MEMBERS',
+  ReadSaasMetrics = 'READ_SAAS_METRICS',
   ReadTrials = 'READ_TRIALS'
 }
+
+export type ProductUseCaseInput = {
+  platform_identifier: PlatformIdentifier;
+  use_case: DeploymentRequestUseCase;
+};
 
 export type ProvisionedNewsFeedItem = Node & {
   __typename?: 'ProvisionedNewsFeedItem';
@@ -1704,16 +2181,38 @@ export type ProvisionedNewsFeedItem = Node & {
   type: NewsFeedItemType;
 };
 
+export type PublicDocumentSlugInfo = {
+  __typename?: 'PublicDocumentSlugInfo';
+  created_at: Scalars['Date']['output'];
+  slug: Maybe<Scalars['String']['output']>;
+  updated_at: Maybe<Scalars['Date']['output']>;
+};
+
 export type Query = {
   __typename?: 'Query';
+  /** Every platform registration, whatever its organization. searchTerm matches the title, URL, ids, tenant, organization and registerer. */
+  adminRegisteredPlatforms: AdminRegisteredPlatformConnection;
+  /** The current user's API tokens, revoked and expired ones included */
+  apiTokens: Array<ApiToken>;
+  bundleProducts: Array<PlatformIdentifier>;
+  bundleUserServiceGroups: Array<BundleUserServiceGroup>;
   canUnregisterPlatform: CanUnregisterResponse;
   competitors: CompetitorConnection;
+  contentTranslationDrafts: Array<ContentTranslationEntry>;
+  contentTranslations: Array<ContentTranslationEntry>;
   countEpicsPerTimeline: Array<EpicCountPerTimeline>;
+  /** The token of the current request, null for a session */
+  currentApiToken: Maybe<CurrentApiToken>;
+  /**
+   * The round currently collecting votes on a service instance, if any.
+   * Publicly readable, like the roadmap the round belongs to.
+   */
+  currentVotingRound: Maybe<VotingRound>;
   deploymentRequests: PlatformDeploymentRequestConnection;
   deploymentRequestsAvailable: Array<DeploymentAvailability>;
   deploymentRequestsList: DeploymentRequestConnection;
   document: Maybe<Document>;
-  documentExists: Maybe<Scalars['Boolean']['output']>;
+  documentFacets: Maybe<Facet>;
   documents: DocumentConnection;
   epics: Maybe<EpicConnection>;
   isPlatformRegistered: IsPlatformRegisteredResponse;
@@ -1722,37 +2221,80 @@ export type Query = {
   mostDeployedDocuments: Array<Document>;
   newestDocuments: Array<Document>;
   newsFeedItems: NewsFeedItemConnection;
-  node: Maybe<Node>;
   /** @deprecated Use `refreshPlatformRegistrationConnectivityStatus` instead. This field is no longer used in the OpenCTI platform due to refactoring and the addition of a version value in the endpoint. */
   openCTIPlatformRegistrationStatus: OpenCtiPlatformRegistrationStatusResponse;
   organization: Maybe<Organization>;
+  /** The API tokens of the selected organization, for its administrators */
+  organizationApiTokens: Array<ApiToken>;
+  /**
+   * The members of an organization, administrators first, then by email.
+   * NOT_FOUND to a malformed id or a non-member without BYPASS or READ_ORGANIZATION_MEMBERS, else ORGANIZATION_NOT_FOUND.
+   */
+  organizationMembers: OrganizationMemberConnection;
   organizations: OrganizationConnection;
   pendingUsers: UserConnection;
   platformAssociatedOrganization: Maybe<Organization>;
+  platformTrialStatus: PlatformTrialStatus;
   publicDocumentBySlug: Maybe<Document>;
+  publicDocumentSlugsByServiceSlug: Array<PublicDocumentSlugInfo>;
   publicDocuments: DocumentConnection;
   publicDocumentsByServiceSlug: Array<Document>;
   registeredPlatform: Maybe<RegisteredPlatform>;
+  registeredPlatformByPlatformId: Maybe<RegisteredPlatform>;
   registeredPlatforms: Array<RegisteredPlatform>;
+  /**
+   * Returns at most the 5 latest registered versions for the given product,
+   * most recent first. When `search` is provided, only versions whose string
+   * contains it (case-insensitive) are considered.
+   */
+  registeredProductVersions: Array<RegisteredProductVersion>;
+  registeredSaasPlatformData: Maybe<SaasPlatformData>;
+  rolePortals: Array<RolePortal>;
+  saasManagerPlatforms: SaasPlatformConnection;
   seoServiceInstance: SeoServiceInstance;
   seoServiceInstanceMetadata: Array<SeoServiceInstanceMetadata>;
   seoServiceInstances: Array<SeoServiceInstance>;
   serviceGroups: Array<ServiceGroup>;
   serviceInstanceById: Maybe<ServiceInstance>;
-  serviceInstanceByIdAndGrantAccess: Maybe<ServiceInstance>;
   serviceInstanceLinksByTags: Array<SeoServiceInstance>;
   serviceInstances: ServiceConnection;
   settings: Settings;
   solutionCategories: Maybe<SolutionCategoryConnection>;
+  ssoGroupRolePortals: Array<SsoGroupRolePortal>;
   subscriptionById: Maybe<SubscriptionModel>;
   subscriptions: SubscriptionConnection;
-  trialDeployments: TrialsDeployments;
   updateOpenCTIManifest: Success;
   useCases: Maybe<UseCaseConnection>;
   userOrganizations: Array<Organization>;
+  userServiceCapabilities: UserServiceCapabilitiesResponse;
   userServiceFromSubscription: Maybe<UserServiceConnection>;
   users: UserConnection;
-  usersWithCapabilitiesInOrganization: Array<User>;
+  usersWithCapabilitiesInOrganization: Array<OrganizationMemberContact>;
+  votingRound: Maybe<VotingRound>;
+  votingRoundResults: VotingRoundResults;
+  votingRounds: Array<VotingRound>;
+  xtmPlatformBundle: Maybe<DeploymentRequest>;
+  xtmonePlatformIntegrationStatus: Maybe<XtmoneIntegrationStatus>;
+};
+
+
+export type QueryAdminRegisteredPlatformsArgs = {
+  after: InputMaybe<Scalars['ID']['input']>;
+  filter: InputMaybe<AdminRegisteredPlatformsFilter>;
+  first: Scalars['Int']['input'];
+  orderBy: InputMaybe<AdminRegisteredPlatformOrdering>;
+  orderMode: InputMaybe<OrderingMode>;
+  searchTerm: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type QueryBundleProductsArgs = {
+  serviceInstanceId: Scalars['ServiceInstanceId']['input'];
+};
+
+
+export type QueryBundleUserServiceGroupsArgs = {
+  serviceInstanceId: Scalars['ServiceInstanceId']['input'];
 };
 
 
@@ -1769,15 +2311,26 @@ export type QueryCompetitorsArgs = {
 };
 
 
+export type QueryContentTranslationDraftsArgs = {
+  keys: InputMaybe<Array<Scalars['String']['input']>>;
+};
+
+
+export type QueryContentTranslationsArgs = {
+  keys: InputMaybe<Array<Scalars['String']['input']>>;
+  locale: InputMaybe<Locale>;
+};
+
+
+export type QueryCurrentVotingRoundArgs = {
+  service_instance_id: Scalars['ServiceInstanceId']['input'];
+};
+
+
 export type QueryDeploymentRequestsArgs = {
   after: InputMaybe<Scalars['ID']['input']>;
   filters: InputMaybe<Array<DeploymentRequestFilter>>;
   first: Scalars['Int']['input'];
-};
-
-
-export type QueryDeploymentRequestsAvailableArgs = {
-  platformIdentifier: PlatformIdentifier;
 };
 
 
@@ -1787,6 +2340,7 @@ export type QueryDeploymentRequestsListArgs = {
   first: Scalars['Int']['input'];
   orderBy: DeploymentRequestOrdering;
   orderMode: OrderingMode;
+  searchRegions: InputMaybe<Array<DeploymentRequestPlatformRegion>>;
   searchTerm: InputMaybe<Scalars['String']['input']>;
 };
 
@@ -1797,9 +2351,8 @@ export type QueryDocumentArgs = {
 };
 
 
-export type QueryDocumentExistsArgs = {
-  documentName: InputMaybe<Scalars['String']['input']>;
-  service_instance_id: Scalars['ServiceInstanceId']['input'];
+export type QueryDocumentFacetsArgs = {
+  input: LoadDocumentFacetInput;
 };
 
 
@@ -1853,11 +2406,6 @@ export type QueryNewsFeedItemsArgs = {
 };
 
 
-export type QueryNodeArgs = {
-  id: Scalars['ID']['input'];
-};
-
-
 export type QueryOpenCtiPlatformRegistrationStatusArgs = {
   input: OpenCtiPlatformRegistrationStatusInput;
 };
@@ -1865,6 +2413,14 @@ export type QueryOpenCtiPlatformRegistrationStatusArgs = {
 
 export type QueryOrganizationArgs = {
   id: Scalars['ID']['input'];
+};
+
+
+export type QueryOrganizationMembersArgs = {
+  after: InputMaybe<Scalars['ID']['input']>;
+  first: Scalars['Int']['input'];
+  organizationId: Scalars['OrganizationId']['input'];
+  searchTerm: InputMaybe<Scalars['String']['input']>;
 };
 
 
@@ -1893,9 +2449,19 @@ export type QueryPlatformAssociatedOrganizationArgs = {
 };
 
 
+export type QueryPlatformTrialStatusArgs = {
+  organizationId: Scalars['OrganizationId']['input'];
+};
+
+
 export type QueryPublicDocumentBySlugArgs = {
   serviceInstanceId: Scalars['ServiceInstanceId']['input'];
   slug: Scalars['String']['input'];
+};
+
+
+export type QueryPublicDocumentSlugsByServiceSlugArgs = {
+  serviceInstanceSlug: Scalars['String']['input'];
 };
 
 
@@ -1921,8 +2487,34 @@ export type QueryRegisteredPlatformArgs = {
 };
 
 
+export type QueryRegisteredPlatformByPlatformIdArgs = {
+  input: RegisteredPlatformByPlatformIdInput;
+};
+
+
 export type QueryRegisteredPlatformsArgs = {
   input: RegisteredPlatformsInput;
+};
+
+
+export type QueryRegisteredProductVersionsArgs = {
+  product: PlatformIdentifier;
+  search: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type QueryRegisteredSaasPlatformDataArgs = {
+  input: RegisteredSaasPlatformDataInput;
+};
+
+
+export type QuerySaasManagerPlatformsArgs = {
+  after: InputMaybe<Scalars['ID']['input']>;
+  first: Scalars['Int']['input'];
+  orderBy: SaasPlatformOrdering;
+  orderMode: OrderingMode;
+  product: InputMaybe<SaasProduct>;
+  searchTerm: InputMaybe<Scalars['String']['input']>;
 };
 
 
@@ -1932,7 +2524,7 @@ export type QuerySeoServiceInstanceArgs = {
 
 
 export type QuerySeoServiceInstanceMetadataArgs = {
-  language: InputMaybe<SeoServiceInstanceLanguage>;
+  language: InputMaybe<Locale>;
   service_instance_id: Scalars['ServiceInstanceId']['input'];
 };
 
@@ -1947,11 +2539,6 @@ export type QueryServiceInstanceByIdArgs = {
 };
 
 
-export type QueryServiceInstanceByIdAndGrantAccessArgs = {
-  service_instance_id: Scalars['ServiceInstanceId']['input'];
-};
-
-
 export type QueryServiceInstanceLinksByTagsArgs = {
   tags: Array<ServiceInstanceTag>;
 };
@@ -1961,6 +2548,7 @@ export type QueryServiceInstancesArgs = {
   after: InputMaybe<Scalars['ID']['input']>;
   filters: InputMaybe<Array<ServiceInstanceFilter>>;
   first: Scalars['Int']['input'];
+  includeInaccessible: InputMaybe<Scalars['Boolean']['input']>;
   orderBy: ServiceInstanceOrdering;
   orderMode: OrderingMode;
   searchTerm: InputMaybe<Scalars['String']['input']>;
@@ -1992,11 +2580,6 @@ export type QuerySubscriptionsArgs = {
 };
 
 
-export type QueryTrialDeploymentsArgs = {
-  input: TrialDeploymentsInput;
-};
-
-
 export type QueryUpdateOpenCtiManifestArgs = {
   tag: Scalars['String']['input'];
 };
@@ -2010,6 +2593,11 @@ export type QueryUseCasesArgs = {
   orderMode: OrderingMode;
   product: InputMaybe<FiligranProduct>;
   searchTerm: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type QueryUserServiceCapabilitiesArgs = {
+  service_instance_id: Scalars['ServiceInstanceId']['input'];
 };
 
 
@@ -2036,7 +2624,28 @@ export type QueryUsersWithCapabilitiesInOrganizationArgs = {
   input: UsersWithCapabilitiesInOrganizationInput;
 };
 
+
+export type QueryVotingRoundArgs = {
+  id: Scalars['VotingRoundId']['input'];
+};
+
+
+export type QueryVotingRoundResultsArgs = {
+  id: Scalars['VotingRoundId']['input'];
+};
+
+
+export type QueryVotingRoundsArgs = {
+  service_instance_id: InputMaybe<Scalars['ServiceInstanceId']['input']>;
+};
+
+
+export type QueryXtmonePlatformIntegrationStatusArgs = {
+  serviceInstanceId: Scalars['ServiceInstanceId']['input'];
+};
+
 export type RefreshPlatformRegistrationConnectivityStatusAllTenantsInput = {
+  platformContract: InputMaybe<PlatformContract>;
   platformId: Scalars['String']['input'];
   platformIdentifier: PlatformIdentifier;
   platformVersion: Scalars['String']['input'];
@@ -2049,6 +2658,7 @@ export type RefreshPlatformRegistrationConnectivityStatusAllTenantsResponse = {
 };
 
 export type RefreshPlatformRegistrationConnectivityStatusInput = {
+  platformContract: InputMaybe<PlatformContract>;
   platformId: Scalars['String']['input'];
   platformIdentifier: InputMaybe<PlatformIdentifier>;
   platformVersion: Scalars['String']['input'];
@@ -2057,10 +2667,13 @@ export type RefreshPlatformRegistrationConnectivityStatusInput = {
 
 export type RefreshPlatformRegistrationConnectivityStatusResponse = {
   __typename?: 'RefreshPlatformRegistrationConnectivityStatusResponse';
+  commercialModel: Maybe<CommercialModel>;
+  organizationName: Maybe<Scalars['String']['output']>;
   status: PlatformRegistrationConnectivityStatus;
 };
 
 export type RefreshPlatformRegistrationConnectivityStatusSingleTenantInput = {
+  platformContract: InputMaybe<PlatformContract>;
   platformId: Scalars['String']['input'];
   platformIdentifier: PlatformIdentifier;
   platformVersion: Scalars['String']['input'];
@@ -2083,6 +2696,7 @@ export type RegisterPlatformInput = {
 
 export type RegisteredPlatform = Node & {
   __typename?: 'RegisteredPlatform';
+  commercial_model: Maybe<CommercialModel>;
   contract: PlatformContract;
   deployment_request: Maybe<DeploymentRequest>;
   id: Scalars['ID']['output'];
@@ -2090,7 +2704,10 @@ export type RegisteredPlatform = Node & {
   illustration_document_id: Maybe<Scalars['DocumentId']['output']>;
   last_connectivity_check: Maybe<Scalars['Date']['output']>;
   myGroups: Maybe<Array<ServiceGroup>>;
+  organization: Maybe<Organization>;
   platform_id: Scalars['String']['output'];
+  service_instance_id: Scalars['ServiceInstanceId']['output'];
+  status: Maybe<PlatformConfigurationStatus>;
   subscription: Maybe<SubscriptionModel>;
   tenant_id: Maybe<Scalars['String']['output']>;
   tenant_name: Maybe<Scalars['String']['output']>;
@@ -2098,6 +2715,24 @@ export type RegisteredPlatform = Node & {
   url: Scalars['String']['output'];
   version: Maybe<Scalars['String']['output']>;
 };
+
+export type RegisteredPlatformByPlatformIdInput = {
+  identifier: PlatformIdentifier;
+  platformId: Scalars['String']['input'];
+  tenantId: InputMaybe<Scalars['String']['input']>;
+};
+
+/** The current credential of a registration. It says which credential exists, never its value. */
+export type RegisteredPlatformCredential = {
+  __typename?: 'RegisteredPlatformCredential';
+  kind: RegisteredPlatformCredentialKind;
+};
+
+/** How a registration authenticates to the Hub. More kinds are expected, so a client must accept a value it does not know. */
+export enum RegisteredPlatformCredentialKind {
+  None = 'none',
+  Token = 'token'
+}
 
 export type RegisteredPlatformInput = {
   service_instance_id: Scalars['ServiceInstanceId']['input'];
@@ -2110,8 +2745,21 @@ export type RegisteredPlatformsInput = {
   onlyTrial: InputMaybe<Scalars['Boolean']['input']>;
 };
 
+export type RegisteredProductVersion = {
+  __typename?: 'RegisteredProductVersion';
+  created_at: Scalars['Date']['output'];
+  product: PlatformIdentifier;
+  version: Scalars['String']['output'];
+};
+
+export type RegisteredSaasPlatformDataInput = {
+  metrics_period: SaasPlatformMetricsPeriod;
+  service_instance_id: Scalars['ServiceInstanceId']['input'];
+};
+
 export type RegistrationResponse = {
   __typename?: 'RegistrationResponse';
+  organizationName: Maybe<Scalars['String']['output']>;
   token: Scalars['String']['output'];
 };
 
@@ -2127,13 +2775,13 @@ export type ReorderDeploymentRequestInQueueInput = {
 
 export type RolePortal = Node & {
   __typename?: 'RolePortal';
+  capabilities: Maybe<Array<Maybe<Capability>>>;
   id: Scalars['ID']['output'];
   name: Scalars['String']['output'];
 };
 
 export type RssFeed = Document & Integration & Node & {
   __typename?: 'RssFeed';
-  active: Scalars['Boolean']['output'];
   blogpost_url: Maybe<Scalars['String']['output']>;
   children_documents: Maybe<Array<ShareableResource>>;
   created_at: Scalars['Date']['output'];
@@ -2144,9 +2792,9 @@ export type RssFeed = Document & Integration & Node & {
   feed_url: Maybe<Scalars['String']['output']>;
   file_name: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
-  integration_subtype: IntegrationSubType;
   integration_type: IntegrationType;
   license_type: Maybe<LicenseType>;
+  meta_description: Maybe<Scalars['String']['output']>;
   name: Scalars['String']['output'];
   remover_id: Maybe<Scalars['ID']['output']>;
   service_instance: Maybe<ServiceInstance>;
@@ -2155,6 +2803,7 @@ export type RssFeed = Document & Integration & Node & {
   short_description: Maybe<Scalars['String']['output']>;
   slug: Scalars['String']['output'];
   solution_categories: Maybe<Array<SolutionCategory>>;
+  status: DocumentStatus;
   subscription: Maybe<SubscriptionModel>;
   type: Scalars['String']['output'];
   updated_at: Maybe<Scalars['Date']['output']>;
@@ -2164,9 +2813,177 @@ export type RssFeed = Document & Integration & Node & {
   use_cases: Maybe<Array<UseCase>>;
 };
 
+export type SsoGroupRolePortal = {
+  __typename?: 'SSOGroupRolePortal';
+  rolePortal: RolePortal;
+  ssoGroup: Scalars['String']['output'];
+};
+
+export type SaasManagerInstanceIndexInput = {
+  customer_name: Scalars['String']['input'];
+  customer_techname: InputMaybe<Scalars['String']['input']>;
+  /** @deprecated Ignored, the list orders on data.plan */
+  plan_code: InputMaybe<Scalars['String']['input']>;
+  status_family: InputMaybe<Scalars['String']['input']>;
+  upgrade_group: InputMaybe<Scalars['String']['input']>;
+};
+
+export type SaasManagerInstanceInput = {
+  data: Scalars['JSON']['input'];
+  index: SaasManagerInstanceIndexInput;
+  metrics: InputMaybe<Scalars['JSON']['input']>;
+};
+
+export type SaasManagerSyncResult = {
+  __typename?: 'SaasManagerSyncResult';
+  applied: Scalars['Int']['output'];
+  removed: Scalars['Int']['output'];
+  skipped: Scalars['Int']['output'];
+};
+
+export type SaasPlatform = {
+  __typename?: 'SaasPlatform';
+  commercial_model: Maybe<Scalars['String']['output']>;
+  contract_status: Maybe<SaasPlatformContractStatus>;
+  customer: Maybe<Scalars['String']['output']>;
+  health_issues: Maybe<Array<SaasPlatformHealthIssue>>;
+  id: Scalars['String']['output'];
+  metadata: SaasPlatformMetadata;
+  product: Maybe<SaasProduct>;
+  registered_platform: Maybe<RegisteredPlatform>;
+  sla_cmtd: Maybe<Scalars['Float']['output']>;
+  status: Maybe<Scalars['String']['output']>;
+  storage: Maybe<SaasPlatformStorage>;
+};
+
+export type SaasPlatformConnection = {
+  __typename?: 'SaasPlatformConnection';
+  edges: Array<SaasPlatformEdge>;
+  pageInfo: PageInfo;
+  totalCount: Scalars['Int']['output'];
+};
+
+export enum SaasPlatformContractStatus {
+  Active = 'active',
+  Ended = 'ended',
+  EndingSoon = 'ending_soon'
+}
+
+export type SaasPlatformDailySla = {
+  __typename?: 'SaasPlatformDailySla';
+  availability: Maybe<Scalars['Float']['output']>;
+  day: Scalars['Date']['output'];
+};
+
+export type SaasPlatformData = {
+  __typename?: 'SaasPlatformData';
+  metadata: SaasPlatformMetadata;
+  metrics: Maybe<SaasPlatformMetrics>;
+  sla: Maybe<SaasPlatformSla>;
+  storage: Maybe<SaasPlatformStorage>;
+};
+
+export type SaasPlatformEdge = {
+  __typename?: 'SaasPlatformEdge';
+  cursor: Scalars['String']['output'];
+  node: SaasPlatform;
+};
+
+export enum SaasPlatformHealthIssue {
+  Availability = 'availability',
+  Database = 'database',
+  FileStorage = 'file_storage'
+}
+
+export type SaasPlatformMetadata = {
+  __typename?: 'SaasPlatformMetadata';
+  end_date: Maybe<Scalars['Date']['output']>;
+  hostname: Maybe<Scalars['String']['output']>;
+  plan: Maybe<Scalars['String']['output']>;
+  region: Maybe<Scalars['String']['output']>;
+  start_date: Maybe<Scalars['Date']['output']>;
+};
+
+export type SaasPlatformMetricPoint = {
+  __typename?: 'SaasPlatformMetricPoint';
+  timestamp: Scalars['Date']['output'];
+  value: Maybe<Scalars['Float']['output']>;
+};
+
+export type SaasPlatformMetricSeries = {
+  __typename?: 'SaasPlatformMetricSeries';
+  metric_type: MetricType;
+  points: Array<SaasPlatformMetricPoint>;
+};
+
+export type SaasPlatformMetrics = {
+  __typename?: 'SaasPlatformMetrics';
+  end: Scalars['Date']['output'];
+  resolution: SaasPlatformResolution;
+  series: Array<SaasPlatformMetricSeries>;
+  start: Scalars['Date']['output'];
+};
+
+export enum SaasPlatformMetricsPeriod {
+  Last_30Days = 'last_30_days',
+  Last_90Days = 'last_90_days',
+  Last_180Days = 'last_180_days'
+}
+
+export type SaasPlatformMonthlySla = {
+  __typename?: 'SaasPlatformMonthlySla';
+  availability: Maybe<Scalars['Float']['output']>;
+  days: Array<SaasPlatformDailySla>;
+  month: Scalars['Date']['output'];
+};
+
+export enum SaasPlatformOrdering {
+  CustomerName = 'customer_name',
+  EndDate = 'end_date',
+  Plan = 'plan',
+  Product = 'product'
+}
+
+export enum SaasPlatformResolution {
+  Day = 'day',
+  Hour = 'hour'
+}
+
+export type SaasPlatformSla = {
+  __typename?: 'SaasPlatformSla';
+  months: Array<SaasPlatformMonthlySla>;
+  target: Scalars['Float']['output'];
+};
+
+export type SaasPlatformStorage = {
+  __typename?: 'SaasPlatformStorage';
+  es_used_size: Maybe<SaasPlatformStorageUsage>;
+  postgres_used_size: Maybe<SaasPlatformStorageUsage>;
+  s3_used_size: Maybe<SaasPlatformStorageUsage>;
+};
+
+export type SaasPlatformStorageUsage = {
+  __typename?: 'SaasPlatformStorageUsage';
+  limit: Maybe<Scalars['Float']['output']>;
+  percent: Maybe<Scalars['Float']['output']>;
+  used: Maybe<Scalars['Float']['output']>;
+};
+
+export enum SaasProduct {
+  Oaev = 'OAEV',
+  Octi = 'OCTI',
+  One = 'ONE'
+}
+
 export type SendTelemetryMutation = {
   __typename?: 'SendTelemetryMutation';
+  newsFeedRedirect: Maybe<TelemetryResponse>;
   oneClickDeploy: Maybe<TelemetryResponse>;
+};
+
+
+export type SendTelemetryMutationNewsFeedRedirectArgs = {
+  input: NewsFeedRedirectInput;
 };
 
 
@@ -2187,15 +3004,9 @@ export type SeoServiceInstance = Node & {
   tags: Maybe<Array<ServiceInstanceTag>>;
 };
 
-export enum SeoServiceInstanceLanguage {
-  En = 'en',
-  Fr = 'fr',
-  Ja = 'ja'
-}
-
 export type SeoServiceInstanceMetadata = {
   __typename?: 'SeoServiceInstanceMetadata';
-  language: SeoServiceInstanceLanguage;
+  language: Locale;
   meta_description: Scalars['String']['output'];
   meta_title: Scalars['String']['output'];
   service_instance_id: Scalars['ServiceInstanceId']['output'];
@@ -2235,7 +3046,6 @@ export enum ServiceDefinitionIdentifier {
   OpenctiIntegrations = 'opencti_integrations',
   OpenctiPlaybooks = 'opencti_playbooks',
   OpenctiRegistration = 'opencti_registration',
-  Vault = 'vault',
   XtmPlatformBundle = 'xtm_platform_bundle',
   XtmPlatformRoadmap = 'xtm_platform_roadmap',
   XtmoneRegistration = 'xtmone_registration'
@@ -2244,9 +3054,18 @@ export enum ServiceDefinitionIdentifier {
 export type ServiceGroup = Node & {
   __typename?: 'ServiceGroup';
   id: Scalars['ID']['output'];
-  name: Scalars['String']['output'];
+  name: ServiceGroupName;
   users: Maybe<Array<User>>;
 };
+
+export enum ServiceGroupName {
+  Admin = 'Admin',
+  Analyst = 'Analyst',
+  Manager = 'Manager',
+  Observer = 'Observer',
+  Reader = 'Reader',
+  User = 'User'
+}
 
 export type ServiceInstance = Node & {
   __typename?: 'ServiceInstance';
@@ -2335,14 +3154,19 @@ export enum ServiceRestriction {
 export type Settings = {
   __typename?: 'Settings';
   base_url_front: Scalars['String']['output'];
+  capabilities: Array<SettingsCapability>;
   environment: Scalars['String']['output'];
   platform_feature_flags: Array<FeatureFlag>;
   platform_providers: Array<PlatformProvider>;
 };
 
+/** What this Hub accepts, for API clients that detect a feature before using it */
+export enum SettingsCapability {
+  ApiTokens = 'API_TOKENS'
+}
+
 export type ShareableResource = {
   __typename?: 'ShareableResource';
-  active: Scalars['Boolean']['output'];
   created_at: Scalars['Date']['output'];
   description: Maybe<Scalars['String']['output']>;
   download_number: Maybe<Scalars['Int']['output']>;
@@ -2351,6 +3175,7 @@ export type ShareableResource = {
   image_type: Maybe<DocumentImageType>;
   name: Maybe<Scalars['String']['output']>;
   source_type: DocumentSourceType;
+  status: DocumentStatus;
 };
 
 export type SolutionCategory = Node & {
@@ -2379,7 +3204,6 @@ export enum SolutionCategoryOrdering {
 
 export type Stream = Document & Integration & Node & {
   __typename?: 'Stream';
-  active: Scalars['Boolean']['output'];
   blogpost_url: Maybe<Scalars['String']['output']>;
   children_documents: Maybe<Array<ShareableResource>>;
   created_at: Scalars['Date']['output'];
@@ -2390,9 +3214,9 @@ export type Stream = Document & Integration & Node & {
   feed_url: Maybe<Scalars['String']['output']>;
   file_name: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
-  integration_subtype: IntegrationSubType;
   integration_type: IntegrationType;
   license_type: Maybe<LicenseType>;
+  meta_description: Maybe<Scalars['String']['output']>;
   name: Scalars['String']['output'];
   remover_id: Maybe<Scalars['ID']['output']>;
   service_instance: Maybe<ServiceInstance>;
@@ -2401,6 +3225,7 @@ export type Stream = Document & Integration & Node & {
   short_description: Maybe<Scalars['String']['output']>;
   slug: Scalars['String']['output'];
   solution_categories: Maybe<Array<SolutionCategory>>;
+  status: DocumentStatus;
   subscription: Maybe<SubscriptionModel>;
   type: Scalars['String']['output'];
   updated_at: Maybe<Scalars['Date']['output']>;
@@ -2422,6 +3247,7 @@ export type SubscribedServiceInstanceConfiguration = {
 
 export type Subscription = {
   __typename?: 'Subscription';
+  AdminUser: Maybe<UserSubscription>;
   MeUser: Maybe<MeUserSubscription>;
   ServiceInstance: Maybe<ServiceInstanceSubscription>;
   User: Maybe<UserSubscription>;
@@ -2430,7 +3256,7 @@ export type Subscription = {
 
 
 export type SubscriptionUserArgs = {
-  organizationId: InputMaybe<Scalars['ID']['input']>;
+  organizationId: Scalars['ID']['input'];
 };
 
 
@@ -2476,7 +3302,6 @@ export type SubscriptionModel = Node & {
   organization_id: Scalars['OrganizationId']['output'];
   service_instance: ServiceInstance;
   service_instance_id: Scalars['ServiceInstanceId']['output'];
-  service_url: Scalars['String']['output'];
   start_date: Maybe<Scalars['Date']['output']>;
   subscription_capability: Maybe<Array<Maybe<SubscriptionCapability>>>;
   user_service: Array<Maybe<UserService>>;
@@ -2499,7 +3324,6 @@ export type Success = {
 
 export type TaxiiFeed = Document & Integration & Node & {
   __typename?: 'TaxiiFeed';
-  active: Scalars['Boolean']['output'];
   blogpost_url: Maybe<Scalars['String']['output']>;
   children_documents: Maybe<Array<ShareableResource>>;
   created_at: Scalars['Date']['output'];
@@ -2510,9 +3334,9 @@ export type TaxiiFeed = Document & Integration & Node & {
   feed_url: Maybe<Scalars['String']['output']>;
   file_name: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
-  integration_subtype: IntegrationSubType;
   integration_type: IntegrationType;
   license_type: Maybe<LicenseType>;
+  meta_description: Maybe<Scalars['String']['output']>;
   name: Scalars['String']['output'];
   remover_id: Maybe<Scalars['ID']['output']>;
   service_instance: Maybe<ServiceInstance>;
@@ -2521,6 +3345,7 @@ export type TaxiiFeed = Document & Integration & Node & {
   short_description: Maybe<Scalars['String']['output']>;
   slug: Scalars['String']['output'];
   solution_categories: Maybe<Array<SolutionCategory>>;
+  status: DocumentStatus;
   subscription: Maybe<SubscriptionModel>;
   type: Scalars['String']['output'];
   updated_at: Maybe<Scalars['Date']['output']>;
@@ -2545,13 +3370,14 @@ export type TenantDetails = {
 
 export type TenantStatus = {
   __typename?: 'TenantStatus';
+  commercialModel: Maybe<CommercialModel>;
+  organizationName: Maybe<Scalars['String']['output']>;
   status: PlatformRegistrationConnectivityStatus;
   tenantId: Scalars['String']['output'];
 };
 
 export type ThirdPartyIntegration = Document & Integration & Node & {
   __typename?: 'ThirdPartyIntegration';
-  active: Scalars['Boolean']['output'];
   blogpost_url: Maybe<Scalars['String']['output']>;
   children_documents: Maybe<Array<ShareableResource>>;
   created_at: Scalars['Date']['output'];
@@ -2562,9 +3388,9 @@ export type ThirdPartyIntegration = Document & Integration & Node & {
   file_name: Maybe<Scalars['String']['output']>;
   github_url: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
-  integration_subtype: IntegrationSubType;
   integration_type: IntegrationType;
   license_type: Maybe<LicenseType>;
+  meta_description: Maybe<Scalars['String']['output']>;
   name: Scalars['String']['output'];
   product_version: Maybe<Scalars['String']['output']>;
   remover_id: Maybe<Scalars['ID']['output']>;
@@ -2574,6 +3400,7 @@ export type ThirdPartyIntegration = Document & Integration & Node & {
   short_description: Maybe<Scalars['String']['output']>;
   slug: Scalars['String']['output'];
   solution_categories: Maybe<Array<SolutionCategory>>;
+  status: DocumentStatus;
   subscription: Maybe<SubscriptionModel>;
   type: Scalars['String']['output'];
   updated_at: Maybe<Scalars['Date']['output']>;
@@ -2591,22 +3418,20 @@ export enum Timeline {
   UnderConsideration = 'under_consideration'
 }
 
-export type TrialDeploymentsInput = {
-  organizationId: Scalars['OrganizationId']['input'];
-  platformIdentifiers: InputMaybe<Array<PlatformIdentifier>>;
-};
-
-export type TrialsDeployments = {
-  __typename?: 'TrialsDeployments';
-  availableTrials: Array<PlatformIdentifier>;
-  deployed: Array<DeployedPlatform>;
-  isBlacklisted: Scalars['Boolean']['output'];
-};
-
 export type UnregisterPlatformInput = {
   identifier: PlatformIdentifier;
   platformId: Scalars['String']['input'];
   tenantId: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateBundleUserGroupsInput = {
+  roles: Array<UpdateBundleUserGroupsRoleInput>;
+  userIds: Array<Scalars['UserId']['input']>;
+};
+
+export type UpdateBundleUserGroupsRoleInput = {
+  product: PlatformIdentifier;
+  role: InputMaybe<ServiceGroupName>;
 };
 
 export type UpdateCompetitorInput = {
@@ -2618,7 +3443,6 @@ export type UpdateCompetitorInput = {
 
 export type UpdateDeploymentQuotaCapacityInput = {
   newCapacity: Scalars['Int']['input'];
-  platformIdentifier: PlatformIdentifier;
   region: DeploymentRequestPlatformRegion;
 };
 
@@ -2634,13 +3458,14 @@ export type UpdateDeploymentRequestInput = {
 };
 
 export type UpdateDocumentInput = {
-  active: InputMaybe<Scalars['Boolean']['input']>;
   description: InputMaybe<Scalars['String']['input']>;
   entity_types: InputMaybe<Array<Scalars['String']['input']>>;
   license_type: InputMaybe<LicenseType>;
+  meta_description: InputMaybe<Scalars['String']['input']>;
   name: InputMaybe<Scalars['String']['input']>;
   short_description: InputMaybe<Scalars['String']['input']>;
   solution_categories: InputMaybe<Array<Scalars['SolutionCategoryId']['input']>>;
+  status: InputMaybe<DocumentStatus>;
   uploader_id: InputMaybe<Scalars['UserId']['input']>;
   uploader_organization_id: InputMaybe<Scalars['OrganizationId']['input']>;
   use_cases: InputMaybe<Array<Scalars['UseCaseId']['input']>>;
@@ -2650,10 +3475,13 @@ export type UpdateEpicInput = {
   active: InputMaybe<Scalars['Boolean']['input']>;
   description: InputMaybe<Scalars['String']['input']>;
   edition_type: EditionType;
-  illustration_document: InputMaybe<Scalars['Upload']['input']>;
+  expected_value: InputMaybe<Scalars['String']['input']>;
   is_integration: InputMaybe<Scalars['Boolean']['input']>;
-  product: InputMaybe<FiligranProduct>;
+  problem_to_solve: InputMaybe<Scalars['String']['input']>;
+  products: InputMaybe<Array<FiligranProduct>>;
+  proposed_solution: InputMaybe<Scalars['String']['input']>;
   short_description: InputMaybe<Scalars['String']['input']>;
+  slack_link: InputMaybe<Scalars['String']['input']>;
   timeline: InputMaybe<Timeline>;
   title: InputMaybe<Scalars['String']['input']>;
 };
@@ -2661,6 +3489,16 @@ export type UpdateEpicInput = {
 export type UpdatePlatformServiceMetadataInput = {
   name: InputMaybe<Scalars['String']['input']>;
   serviceInstanceId: Scalars['ServiceInstanceId']['input'];
+};
+
+export type UpdateRolePortalInput = {
+  capabilities: Array<PortalCapability>;
+  name: Scalars['String']['input'];
+};
+
+export type UpdateSsoGroupRolePortalInput = {
+  rolePortal: Scalars['String']['input'];
+  ssoGroup: Scalars['String']['input'];
 };
 
 export type UpdateServiceGroupsInput = {
@@ -2676,6 +3514,29 @@ export type UpdateSubscriptionInput = {
   capability_ids: InputMaybe<Array<Scalars['Service_CapabilityId']['input']>>;
   end_date: InputMaybe<Scalars['Date']['input']>;
   start_date: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type UpdateVotableFeatureInput = {
+  active: InputMaybe<Scalars['Boolean']['input']>;
+  description: InputMaybe<Scalars['String']['input']>;
+  /** Send null to remove the current illustration. */
+  illustration_document_id: InputMaybe<Scalars['DocumentId']['input']>;
+  position: InputMaybe<Scalars['Int']['input']>;
+  product: InputMaybe<FiligranProduct>;
+  short_description: InputMaybe<Scalars['String']['input']>;
+  title: InputMaybe<Scalars['String']['input']>;
+  use_case_ids: InputMaybe<Array<Scalars['UseCaseId']['input']>>;
+};
+
+export type UpdateVotingRoundInput = {
+  description: InputMaybe<Scalars['String']['input']>;
+  name: InputMaybe<Scalars['String']['input']>;
+  theme: InputMaybe<VotingRoundTheme>;
+};
+
+export type UpsertContentTranslationInput = {
+  key: Scalars['String']['input'];
+  values: Array<ContentTranslationValueInput>;
 };
 
 export type UseCase = Node & {
@@ -2711,7 +3572,9 @@ export type User = Node & {
   disabled: Maybe<Scalars['Boolean']['output']>;
   email: Scalars['String']['output'];
   first_name: Maybe<Scalars['String']['output']>;
+  has_replied_satisfaction: Maybe<HasRepliedSatisfaction>;
   id: Scalars['ID']['output'];
+  invitation_date: Maybe<Scalars['Date']['output']>;
   last_login: Maybe<Scalars['Date']['output']>;
   last_name: Maybe<Scalars['String']['output']>;
   organization_capabilities: Maybe<Array<OrganizationCapabilities>>;
@@ -2722,7 +3585,14 @@ export type User = Node & {
   selected_language: Maybe<Scalars['String']['output']>;
   selected_org_capabilities: Maybe<Array<OrganizationCapability>>;
   selected_organization_id: Maybe<Scalars['OrganizationId']['output']>;
+  status: Maybe<UserAccountStatus>;
 };
+
+export enum UserAccountStatus {
+  Expired = 'expired',
+  Invited = 'invited',
+  Waiting = 'waiting'
+}
 
 export type UserConnection = {
   __typename?: 'UserConnection';
@@ -2742,6 +3612,7 @@ export enum UserOrdering {
   Disabled = 'disabled',
   Email = 'email',
   FirstName = 'first_name',
+  InvitationDate = 'invitation_date',
   LastLogin = 'last_login',
   LastName = 'last_name'
 }
@@ -2750,6 +3621,12 @@ export type UserPendingSubscription = {
   __typename?: 'UserPendingSubscription';
   delete: Maybe<User>;
   invalidate: Maybe<OrganizationRef>;
+};
+
+export type UserPlatformGroup = {
+  __typename?: 'UserPlatformGroup';
+  name: ServiceGroupName;
+  platformIdentifier: PlatformIdentifier;
 };
 
 export type UserService = Node & {
@@ -2772,6 +3649,12 @@ export type UserServiceAddInput = {
 export type UserServiceAddYourselfInput = {
   email: Array<Scalars['String']['input']>;
   serviceInstanceId: InputMaybe<Scalars['ServiceInstanceId']['input']>;
+};
+
+export type UserServiceCapabilitiesResponse = {
+  __typename?: 'UserServiceCapabilitiesResponse';
+  subscription_id: Maybe<Scalars['SubscriptionId']['output']>;
+  userServiceCapabilities: Array<UserServiceCapability>;
 };
 
 export type UserServiceCapability = Node & {
@@ -2841,29 +3724,386 @@ export type UsersWithCapabilitiesInOrganizationInput = {
   organizationId: Scalars['OrganizationId']['input'];
 };
 
-type HomepageDocument_Connector_Fragment = { __typename?: 'Connector', verified: boolean, manager_supported: boolean, id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null };
+export type VotableFeature = Node & {
+  __typename?: 'VotableFeature';
+  active: Scalars['Boolean']['output'];
+  created_at: Scalars['Date']['output'];
+  description: Scalars['String']['output'];
+  has_my_vote: Scalars['Boolean']['output'];
+  id: Scalars['ID']['output'];
+  illustration_document: Maybe<Document>;
+  illustration_document_id: Maybe<Scalars['DocumentId']['output']>;
+  position: Scalars['Int']['output'];
+  product: FiligranProduct;
+  short_description: Scalars['String']['output'];
+  title: Scalars['String']['output'];
+  updated_at: Maybe<Scalars['Date']['output']>;
+  use_cases: Array<UseCase>;
+  voting_round_id: Scalars['VotingRoundId']['output'];
+};
 
-type HomepageDocument_CsvFeed_Fragment = { __typename?: 'CsvFeed', id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null };
+export type VotableFeatureResult = {
+  __typename?: 'VotableFeatureResult';
+  feature: VotableFeature;
+  vote_count: Scalars['Int']['output'];
+};
 
-type HomepageDocument_CustomDashboard_Fragment = { __typename?: 'CustomDashboard', id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null };
+export type VotingRound = Node & {
+  __typename?: 'VotingRound';
+  closed_at: Maybe<Scalars['Date']['output']>;
+  created_at: Scalars['Date']['output'];
+  description: Maybe<Scalars['String']['output']>;
+  feature_count: Scalars['Int']['output'];
+  features: Array<VotableFeature>;
+  id: Scalars['ID']['output'];
+  name: Scalars['String']['output'];
+  opened_at: Maybe<Scalars['Date']['output']>;
+  service_instance_id: Scalars['ServiceInstanceId']['output'];
+  status: VotingRoundStatus;
+  theme: VotingRoundTheme;
+  updated_at: Maybe<Scalars['Date']['output']>;
+};
 
-type HomepageDocument_CustomView_Fragment = { __typename?: 'CustomView', id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null };
+export type VotingRoundResults = {
+  __typename?: 'VotingRoundResults';
+  results: Array<VotableFeatureResult>;
+  round: VotingRound;
+  total_voters: Scalars['Int']['output'];
+};
 
-type HomepageDocument_DefaultDocument_Fragment = { __typename?: 'DefaultDocument', id: string, name: string | null, short_description: string | null, type: string, active: boolean, slug: string | null, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null };
+export enum VotingRoundStatus {
+  Closed = 'closed',
+  Draft = 'draft',
+  Open = 'open'
+}
 
-type HomepageDocument_IntegrationHack_Fragment = { __typename?: 'IntegrationHack', id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null };
+/** Visual identity applied to the public banner and voting page of a round. */
+export enum VotingRoundTheme {
+  Default = 'default',
+  Thread = 'thread'
+}
 
-type HomepageDocument_OpenAevScenario_Fragment = { __typename?: 'OpenAEVScenario', id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null };
+export type XtmoneIntegrationStatus = {
+  __typename?: 'XtmoneIntegrationStatus';
+  last_checked_at: Maybe<Scalars['String']['output']>;
+  linked: Scalars['Boolean']['output'];
+  openaev: XtmoneIntegrationStatusEntry;
+  opencti: XtmoneIntegrationStatusEntry;
+};
 
-type HomepageDocument_OpenCtiPlaybook_Fragment = { __typename?: 'OpenCTIPlaybook', id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null };
+export type XtmoneIntegrationStatusEntry = {
+  __typename?: 'XtmoneIntegrationStatusEntry';
+  connected: Scalars['Boolean']['output'];
+  last_checked_at: Maybe<Scalars['String']['output']>;
+  status: Scalars['String']['output'];
+};
 
-type HomepageDocument_RssFeed_Fragment = { __typename?: 'RssFeed', id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null };
+export type AdminUnregisterPlatformMutationVariables = Exact<{
+  serviceInstanceId: Scalars['ServiceInstanceId']['input'];
+}>;
 
-type HomepageDocument_Stream_Fragment = { __typename?: 'Stream', id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null };
 
-type HomepageDocument_TaxiiFeed_Fragment = { __typename?: 'TaxiiFeed', id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null };
+export type AdminUnregisterPlatformMutation = { __typename?: 'Mutation', adminUnregisterPlatform: { __typename?: 'Success', success: boolean } };
 
-type HomepageDocument_ThirdPartyIntegration_Fragment = { __typename?: 'ThirdPartyIntegration', id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null };
+export type AdminRegisteredPlatformRowFragment = { __typename?: 'AdminRegisteredPlatform', service_instance_id: any, platform_id: string, title: string, url: string, identifier: PlatformIdentifier, version: string | null, contract: PlatformContract, commercial_model: CommercialModel, tenant_id: string | null, tenant_name: string | null, status: PlatformConfigurationStatus, last_connectivity_check: any | null, is_trial: boolean, organization: { __typename?: 'AdminRegisteredPlatformOrganization', id: any, name: string } | null, registerer: { __typename?: 'AdminRegisteredPlatformRegisterer', id: any, email: string, first_name: string | null, last_name: string | null } | null, credential: { __typename?: 'RegisteredPlatformCredential', kind: RegisteredPlatformCredentialKind } };
+
+export type AdminRegisteredPlatformsQueryVariables = Exact<{
+  first: Scalars['Int']['input'];
+  after: InputMaybe<Scalars['ID']['input']>;
+  orderBy: AdminRegisteredPlatformOrdering;
+  orderMode: OrderingMode;
+  searchTerm: InputMaybe<Scalars['String']['input']>;
+  filter: InputMaybe<AdminRegisteredPlatformsFilter>;
+}>;
+
+
+export type AdminRegisteredPlatformsQuery = { __typename?: 'Query', adminRegisteredPlatforms: { __typename?: 'AdminRegisteredPlatformConnection', totalCount: number, edges: Array<{ __typename?: 'AdminRegisteredPlatformEdge', node: { __typename?: 'AdminRegisteredPlatform', service_instance_id: any, platform_id: string, title: string, url: string, identifier: PlatformIdentifier, version: string | null, contract: PlatformContract, commercial_model: CommercialModel, tenant_id: string | null, tenant_name: string | null, status: PlatformConfigurationStatus, last_connectivity_check: any | null, is_trial: boolean, organization: { __typename?: 'AdminRegisteredPlatformOrganization', id: any, name: string } | null, registerer: { __typename?: 'AdminRegisteredPlatformRegisterer', id: any, email: string, first_name: string | null, last_name: string | null } | null, credential: { __typename?: 'RegisteredPlatformCredential', kind: RegisteredPlatformCredentialKind } } }> } };
+
+export type ApiTokenCreateMutationVariables = Exact<{
+  input: CreateApiTokenInput;
+}>;
+
+
+export type ApiTokenCreateMutation = { __typename?: 'Mutation', createApiToken: { __typename?: 'CreatedApiToken', token: string, api_token: { __typename?: 'ApiToken', id: string, name: string, token_prefix: string, scope: ApiTokenScope, organization_id: string, organization_name: string, expires_at: any, last_used_at: any | null, created_at: any, revoked_at: any | null } } };
+
+export type ApiTokenRevokeMutationVariables = Exact<{
+  id: Scalars['ApiTokenId']['input'];
+}>;
+
+
+export type ApiTokenRevokeMutation = { __typename?: 'Mutation', revokeApiToken: { __typename?: 'ApiToken', id: string, name: string, token_prefix: string, scope: ApiTokenScope, organization_id: string, organization_name: string, expires_at: any, last_used_at: any | null, created_at: any, revoked_at: any | null } };
+
+export type ApiTokenRowFragment = { __typename?: 'ApiToken', id: string, name: string, token_prefix: string, scope: ApiTokenScope, organization_id: string, organization_name: string, expires_at: any, last_used_at: any | null, created_at: any, revoked_at: any | null };
+
+export type ApiTokensQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type ApiTokensQuery = { __typename?: 'Query', apiTokens: Array<{ __typename?: 'ApiToken', id: string, name: string, token_prefix: string, scope: ApiTokenScope, organization_id: string, organization_name: string, expires_at: any, last_used_at: any | null, created_at: any, revoked_at: any | null }> };
+
+export type LoginMutationVariables = Exact<{
+  email: Scalars['String']['input'];
+  password: Scalars['String']['input'];
+}>;
+
+
+export type LoginMutation = { __typename?: 'Mutation', login: { __typename?: 'User', id: string } | null };
+
+export type LogoutMutationVariables = Exact<{ [key: string]: never; }>;
+
+
+export type LogoutMutation = { __typename?: 'Mutation', logout: string };
+
+export type CompetitorAddMutationVariables = Exact<{
+  input: CreateCompetitorInput;
+}>;
+
+
+export type CompetitorAddMutation = { __typename?: 'Mutation', createCompetitor: { __typename?: 'Competitor', id: string, name: string, domain: string, tier: CompetitorTier } };
+
+export type CompetitorEditMutationVariables = Exact<{
+  input: UpdateCompetitorInput;
+}>;
+
+
+export type CompetitorEditMutation = { __typename?: 'Mutation', updateCompetitor: { __typename?: 'Competitor', id: string, name: string, domain: string, tier: CompetitorTier } };
+
+export type CompetitorDeleteMutationVariables = Exact<{
+  id: Scalars['CompetitorId']['input'];
+}>;
+
+
+export type CompetitorDeleteMutation = { __typename?: 'Mutation', deleteCompetitor: { __typename?: 'Competitor', id: string } };
+
+export type CompetitorRowFragment = { __typename?: 'Competitor', id: string, name: string, domain: string, tier: CompetitorTier };
+
+export type CompetitorsListQueryVariables = Exact<{
+  count: Scalars['Int']['input'];
+  cursor: InputMaybe<Scalars['ID']['input']>;
+  orderBy: CompetitorOrdering;
+  orderMode: OrderingMode;
+}>;
+
+
+export type CompetitorsListQuery = { __typename?: 'Query', competitors: { __typename?: 'CompetitorConnection', totalCount: number, edges: Array<{ __typename?: 'CompetitorEdge', node: { __typename?: 'Competitor', id: string, name: string, domain: string, tier: CompetitorTier } }> } };
+
+export type SaveContentTranslationDraftMutationVariables = Exact<{
+  input: UpsertContentTranslationInput;
+}>;
+
+
+export type SaveContentTranslationDraftMutation = { __typename?: 'Mutation', saveContentTranslationDraft: Array<{ __typename?: 'ContentTranslationEntry', key: string, locale: Locale, value: string }> };
+
+export type PublishContentTranslationDraftsMutationVariables = Exact<{ [key: string]: never; }>;
+
+
+export type PublishContentTranslationDraftsMutation = { __typename?: 'Mutation', publishContentTranslationDrafts: Array<{ __typename?: 'ContentTranslationEntry', key: string, locale: Locale }> };
+
+export type DiscardContentTranslationDraftsMutationVariables = Exact<{ [key: string]: never; }>;
+
+
+export type DiscardContentTranslationDraftsMutation = { __typename?: 'Mutation', discardContentTranslationDrafts: number };
+
+export type ContentTranslationsByLocaleQueryVariables = Exact<{
+  locale: InputMaybe<Locale>;
+}>;
+
+
+export type ContentTranslationsByLocaleQuery = { __typename?: 'Query', contentTranslations: Array<{ __typename?: 'ContentTranslationEntry', key: string, value: string }> };
+
+export type ContentTranslationKeysQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type ContentTranslationKeysQuery = { __typename?: 'Query', contentTranslations: Array<{ __typename?: 'ContentTranslationEntry', key: string }> };
+
+export type ContentTranslationForKeyQueryVariables = Exact<{
+  keys: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
+}>;
+
+
+export type ContentTranslationForKeyQuery = { __typename?: 'Query', contentTranslations: Array<{ __typename?: 'ContentTranslationEntry', key: string, locale: Locale, value: string }>, contentTranslationDrafts: Array<{ __typename?: 'ContentTranslationEntry', key: string, locale: Locale, value: string }> };
+
+export type ContentTranslationDraftsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type ContentTranslationDraftsQuery = { __typename?: 'Query', contentTranslationDrafts: Array<{ __typename?: 'ContentTranslationEntry', key: string, locale: Locale, value: string }> };
+
+export type TrialsAdminCancelDeploymentRequestMutationVariables = Exact<{
+  deploymentRequestId: Scalars['DeploymentRequestId']['input'];
+}>;
+
+
+export type TrialsAdminCancelDeploymentRequestMutation = { __typename?: 'Mutation', adminCancelDeploymentRequest: { __typename?: 'DeploymentRequest', id: string } | null };
+
+export type TrialsCancelDeploymentRequestMutationVariables = Exact<{
+  deploymentRequestId: Scalars['DeploymentRequestId']['input'];
+  cancellationReason: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type TrialsCancelDeploymentRequestMutation = { __typename?: 'Mutation', cancelDeploymentRequest: { __typename?: 'DeploymentRequest', id: string, region: DeploymentRequestPlatformRegion, type: DeploymentRequestDeploymentType, platform_identifier: PlatformIdentifier | null, hub_status: DeploymentRequestHubStatus, counts_in_orga_quota: boolean } | null };
+
+export type TrialsReorderDeploymentRequestInQueueMutationVariables = Exact<{
+  input: ReorderDeploymentRequestInQueueInput;
+}>;
+
+
+export type TrialsReorderDeploymentRequestInQueueMutation = { __typename?: 'Mutation', reorderDeploymentRequestInQueue: { __typename?: 'Success', success: boolean } };
+
+export type TrialsUpdateDeploymentQuotaCapacityMutationVariables = Exact<{
+  input: UpdateDeploymentQuotaCapacityInput;
+}>;
+
+
+export type TrialsUpdateDeploymentQuotaCapacityMutation = { __typename?: 'Mutation', updateDeploymentQuotaCapacity: { __typename?: 'Success', success: boolean } };
+
+export type TrialsProductFragment = { __typename?: 'DeploymentRequest', id: string, platform_identifier: PlatformIdentifier | null, hub_status: DeploymentRequestHubStatus, platform_id: string | null, platform_url: string | null, url: string | null };
+
+export type TrialsRowFragment = { __typename?: 'DeploymentRequest', id: string, service_instance_id: any, ordering: number, hub_status: DeploymentRequestHubStatus, requester_email: string | null, organization_name: string | null, region: DeploymentRequestPlatformRegion, request_date: any, start_date: any | null, end_date: any | null, cancellation_date: any | null, cancellation_user_email: string | null, cancellation_reason: string | null, children: Array<{ __typename?: 'DeploymentRequest', id: string, platform_identifier: PlatformIdentifier | null, hub_status: DeploymentRequestHubStatus, platform_id: string | null, platform_url: string | null, url: string | null }> | null };
+
+export type TrialsQuotaFragment = { __typename?: 'DeploymentAvailability', id: string, region: DeploymentRequestPlatformRegion, availableCount: number, capacity: number };
+
+export type TrialsListQueryVariables = Exact<{
+  count: Scalars['Int']['input'];
+  cursor: InputMaybe<Scalars['ID']['input']>;
+  orderBy: DeploymentRequestOrdering;
+  orderMode: OrderingMode;
+  filters: InputMaybe<Array<DeploymentRequestFilter> | DeploymentRequestFilter>;
+  searchTerm: InputMaybe<Scalars['String']['input']>;
+  searchRegions: InputMaybe<Array<DeploymentRequestPlatformRegion> | DeploymentRequestPlatformRegion>;
+}>;
+
+
+export type TrialsListQuery = { __typename?: 'Query', deploymentRequestsList: { __typename?: 'DeploymentRequestConnection', totalCount: number, edges: Array<{ __typename?: 'DeploymentRequestEdge', node: { __typename?: 'DeploymentRequest', id: string, service_instance_id: any, ordering: number, hub_status: DeploymentRequestHubStatus, requester_email: string | null, organization_name: string | null, region: DeploymentRequestPlatformRegion, request_date: any, start_date: any | null, end_date: any | null, cancellation_date: any | null, cancellation_user_email: string | null, cancellation_reason: string | null, children: Array<{ __typename?: 'DeploymentRequest', id: string, platform_identifier: PlatformIdentifier | null, hub_status: DeploymentRequestHubStatus, platform_id: string | null, platform_url: string | null, url: string | null }> | null } }> } };
+
+export type TrialsQuotasQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type TrialsQuotasQuery = { __typename?: 'Query', deploymentRequestsAvailable: Array<{ __typename?: 'DeploymentAvailability', id: string, region: DeploymentRequestPlatformRegion, availableCount: number, capacity: number }> };
+
+export type XtmPlatformBundleProductFragment = { __typename?: 'DeploymentRequest', platform_identifier: PlatformIdentifier | null, service_instance_id: any, url: string | null, service_instance: { __typename?: 'ServiceInstance', name: string } | null, registered_platform: { __typename?: 'RegisteredPlatform', status: PlatformConfigurationStatus | null, last_connectivity_check: any | null, url: string, myGroups: Array<{ __typename?: 'ServiceGroup', id: string, name: ServiceGroupName }> | null } | null };
+
+export type XtmPlatformBundleDetailsFragment = { __typename?: 'DeploymentRequest', id: string, service_instance_id: any, organization_name: string | null, start_date: any | null, end_date: any | null, hub_status: DeploymentRequestHubStatus, requester_email: string | null, request_date: any, cancellation_date: any | null, children: Array<{ __typename?: 'DeploymentRequest', platform_identifier: PlatformIdentifier | null, service_instance_id: any, url: string | null, service_instance: { __typename?: 'ServiceInstance', name: string } | null, registered_platform: { __typename?: 'RegisteredPlatform', status: PlatformConfigurationStatus | null, last_connectivity_check: any | null, url: string, myGroups: Array<{ __typename?: 'ServiceGroup', id: string, name: ServiceGroupName }> | null } | null }> | null };
+
+export type XtmPlatformBundleQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type XtmPlatformBundleQuery = { __typename?: 'Query', xtmPlatformBundle: { __typename?: 'DeploymentRequest', id: string, service_instance_id: any, organization_name: string | null, start_date: any | null, end_date: any | null, hub_status: DeploymentRequestHubStatus, requester_email: string | null, request_date: any, cancellation_date: any | null, children: Array<{ __typename?: 'DeploymentRequest', platform_identifier: PlatformIdentifier | null, service_instance_id: any, url: string | null, service_instance: { __typename?: 'ServiceInstance', name: string } | null, registered_platform: { __typename?: 'RegisteredPlatform', status: PlatformConfigurationStatus | null, last_connectivity_check: any | null, url: string, myGroups: Array<{ __typename?: 'ServiceGroup', id: string, name: ServiceGroupName }> | null } | null }> | null } | null };
+
+export type XtmoneIntegrationStatusEntryFragment = { __typename?: 'XtmoneIntegrationStatusEntry', status: string, connected: boolean, last_checked_at: string | null };
+
+export type XtmoneIntegrationStatusFragment = { __typename?: 'XtmoneIntegrationStatus', linked: boolean, last_checked_at: string | null, opencti: { __typename?: 'XtmoneIntegrationStatusEntry', status: string, connected: boolean, last_checked_at: string | null }, openaev: { __typename?: 'XtmoneIntegrationStatusEntry', status: string, connected: boolean, last_checked_at: string | null } };
+
+export type XtmonePlatformIntegrationStatusQueryVariables = Exact<{
+  serviceInstanceId: Scalars['ServiceInstanceId']['input'];
+}>;
+
+
+export type XtmonePlatformIntegrationStatusQuery = { __typename?: 'Query', xtmonePlatformIntegrationStatus: { __typename?: 'XtmoneIntegrationStatus', linked: boolean, last_checked_at: string | null, opencti: { __typename?: 'XtmoneIntegrationStatusEntry', status: string, connected: boolean, last_checked_at: string | null }, openaev: { __typename?: 'XtmoneIntegrationStatusEntry', status: string, connected: boolean, last_checked_at: string | null } } | null };
+
+export type DocumentFacetsQueryVariables = Exact<{
+  input: LoadDocumentFacetInput;
+}>;
+
+
+export type DocumentFacetsQuery = { __typename?: 'Query', documentFacets: { __typename?: 'Facet', integration_type: Array<{ __typename?: 'FacetBucket', value: string, count: number }>, license_type: Array<{ __typename?: 'FacetBucket', value: string, count: number }>, manager_supported: Array<{ __typename?: 'FacetBucket', value: string, count: number }>, verified: Array<{ __typename?: 'FacetBucket', value: string, count: number }>, solution_category: Array<{ __typename?: 'FacetBucket', value: string, count: number }>, use_case: Array<{ __typename?: 'FacetBucket', value: string, count: number }>, entity_type: Array<{ __typename?: 'FacetBucket', value: string, count: number }> } | null };
+
+export type IncrementShareNumberDocumentMutationVariables = Exact<{
+  documentId: Scalars['DocumentId']['input'];
+}>;
+
+
+export type IncrementShareNumberDocumentMutation = { __typename?: 'Mutation', incrementShareNumberDocument: { __typename?: 'Connector', share_number: number | null } | { __typename?: 'CsvFeed', share_number: number | null } | { __typename?: 'CustomDashboard', share_number: number | null } | { __typename?: 'CustomView', share_number: number | null } | { __typename?: 'DefaultDocument', share_number: number | null } | { __typename?: 'IntegrationHack', share_number: number | null } | { __typename?: 'OpenAEVScenario', share_number: number | null } | { __typename?: 'OpenCTIPlaybook', share_number: number | null } | { __typename?: 'RssFeed', share_number: number | null } | { __typename?: 'Stream', share_number: number | null } | { __typename?: 'TaxiiFeed', share_number: number | null } | { __typename?: 'ThirdPartyIntegration', share_number: number | null } };
+
+export type DocumentCreateMutationVariables = Exact<{
+  input: CreateDocumentInput;
+  metadata: Array<DocumentMetadata> | DocumentMetadata;
+  serviceInstanceId: Scalars['ServiceInstanceId']['input'];
+  sourceDocument: InputMaybe<Scalars['Upload']['input']>;
+  logo: InputMaybe<Scalars['Upload']['input']>;
+  images: InputMaybe<Array<Scalars['Upload']['input']> | Scalars['Upload']['input']>;
+}>;
+
+
+export type DocumentCreateMutation = { __typename?: 'Mutation', createDocument: { __typename: 'Connector', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, product_version: string | null, container_image: string | null, verified: boolean, source_code: string | null, subscription_link: string | null, manager_supported: boolean, playbook_supported: boolean, minimum_deployable_version: string | null, contact: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'CsvFeed', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'CustomDashboard', product_version: string | null, id: string, type: string, file_name: string, created_at: any, name: string, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'CustomView', product_version: string | null, entity_types: Array<string> | null, id: string, type: string, file_name: string, created_at: any, name: string, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'DefaultDocument', id: string, type: string, file_name: string | null, created_at: any, name: string | null, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'IntegrationHack', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'OpenAEVScenario', product_version: string | null, id: string, type: string, file_name: string, created_at: any, name: string, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'OpenCTIPlaybook', product_version: string | null, id: string, type: string, file_name: string, created_at: any, name: string, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'RssFeed', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'Stream', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'TaxiiFeed', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'ThirdPartyIntegration', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, product_version: string | null, vendor_url: string, github_url: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } };
+
+export type DocumentUpdateMutationVariables = Exact<{
+  documentId: Scalars['DocumentId']['input'];
+  input: UpdateDocumentInput;
+  metadata: Array<DocumentMetadata> | DocumentMetadata;
+  serviceInstanceId: Scalars['ServiceInstanceId']['input'];
+  sourceDocument: InputMaybe<Scalars['Upload']['input']>;
+  logo: InputMaybe<Scalars['Upload']['input']>;
+  images: InputMaybe<Array<Scalars['Upload']['input']> | Scalars['Upload']['input']>;
+  existingImageIds: InputMaybe<Array<Scalars['DocumentId']['input']> | Scalars['DocumentId']['input']>;
+}>;
+
+
+export type DocumentUpdateMutation = { __typename?: 'Mutation', updateDocument: { __typename: 'Connector', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, product_version: string | null, container_image: string | null, verified: boolean, source_code: string | null, subscription_link: string | null, manager_supported: boolean, playbook_supported: boolean, minimum_deployable_version: string | null, contact: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'CsvFeed', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'CustomDashboard', product_version: string | null, id: string, type: string, file_name: string, created_at: any, name: string, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'CustomView', product_version: string | null, entity_types: Array<string> | null, id: string, type: string, file_name: string, created_at: any, name: string, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'DefaultDocument', id: string, type: string, file_name: string | null, created_at: any, name: string | null, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'IntegrationHack', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'OpenAEVScenario', product_version: string | null, id: string, type: string, file_name: string, created_at: any, name: string, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'OpenCTIPlaybook', product_version: string | null, id: string, type: string, file_name: string, created_at: any, name: string, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'RssFeed', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'Stream', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'TaxiiFeed', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'ThirdPartyIntegration', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, product_version: string | null, vendor_url: string, github_url: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } };
+
+export type DocumentDeleteMutationVariables = Exact<{
+  documentId: Scalars['DocumentId']['input'];
+  serviceInstanceId: Scalars['ServiceInstanceId']['input'];
+}>;
+
+
+export type DocumentDeleteMutation = { __typename?: 'Mutation', deleteDocument: { __typename?: 'Connector', id: string } | { __typename?: 'CsvFeed', id: string } | { __typename?: 'CustomDashboard', id: string } | { __typename?: 'CustomView', id: string } | { __typename?: 'DefaultDocument', id: string } | { __typename?: 'IntegrationHack', id: string } | { __typename?: 'OpenAEVScenario', id: string } | { __typename?: 'OpenCTIPlaybook', id: string } | { __typename?: 'RssFeed', id: string } | { __typename?: 'Stream', id: string } | { __typename?: 'TaxiiFeed', id: string } | { __typename?: 'ThirdPartyIntegration', id: string } };
+
+export type OneClickDeployMutationVariables = Exact<{
+  input: OneClickDeployInput;
+}>;
+
+
+export type OneClickDeployMutation = { __typename?: 'Mutation', sendTelemetryEvent: { __typename?: 'SendTelemetryMutation', oneClickDeploy: { __typename?: 'TelemetryResponse', result: boolean, message: string | null } | null } | null };
+
+type DocumentItem_Connector_Fragment = { __typename: 'Connector', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, product_version: string | null, container_image: string | null, verified: boolean, source_code: string | null, subscription_link: string | null, manager_supported: boolean, playbook_supported: boolean, minimum_deployable_version: string | null, contact: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null };
+
+type DocumentItem_CsvFeed_Fragment = { __typename: 'CsvFeed', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null };
+
+type DocumentItem_CustomDashboard_Fragment = { __typename: 'CustomDashboard', product_version: string | null, id: string, type: string, file_name: string, created_at: any, name: string, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null };
+
+type DocumentItem_CustomView_Fragment = { __typename: 'CustomView', product_version: string | null, entity_types: Array<string> | null, id: string, type: string, file_name: string, created_at: any, name: string, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null };
+
+type DocumentItem_DefaultDocument_Fragment = { __typename: 'DefaultDocument', id: string, type: string, file_name: string | null, created_at: any, name: string | null, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null };
+
+type DocumentItem_IntegrationHack_Fragment = { __typename: 'IntegrationHack', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null };
+
+type DocumentItem_OpenAevScenario_Fragment = { __typename: 'OpenAEVScenario', product_version: string | null, id: string, type: string, file_name: string, created_at: any, name: string, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null };
+
+type DocumentItem_OpenCtiPlaybook_Fragment = { __typename: 'OpenCTIPlaybook', product_version: string | null, id: string, type: string, file_name: string, created_at: any, name: string, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null };
+
+type DocumentItem_RssFeed_Fragment = { __typename: 'RssFeed', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null };
+
+type DocumentItem_Stream_Fragment = { __typename: 'Stream', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null };
+
+type DocumentItem_TaxiiFeed_Fragment = { __typename: 'TaxiiFeed', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null };
+
+type DocumentItem_ThirdPartyIntegration_Fragment = { __typename: 'ThirdPartyIntegration', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, product_version: string | null, vendor_url: string, github_url: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null };
+
+export type DocumentItemFragment = DocumentItem_Connector_Fragment | DocumentItem_CsvFeed_Fragment | DocumentItem_CustomDashboard_Fragment | DocumentItem_CustomView_Fragment | DocumentItem_DefaultDocument_Fragment | DocumentItem_IntegrationHack_Fragment | DocumentItem_OpenAevScenario_Fragment | DocumentItem_OpenCtiPlaybook_Fragment | DocumentItem_RssFeed_Fragment | DocumentItem_Stream_Fragment | DocumentItem_TaxiiFeed_Fragment | DocumentItem_ThirdPartyIntegration_Fragment;
+
+type HomepageDocument_Connector_Fragment = { __typename?: 'Connector', verified: boolean, manager_supported: boolean, id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null };
+
+type HomepageDocument_CsvFeed_Fragment = { __typename?: 'CsvFeed', id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null };
+
+type HomepageDocument_CustomDashboard_Fragment = { __typename?: 'CustomDashboard', id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null };
+
+type HomepageDocument_CustomView_Fragment = { __typename?: 'CustomView', id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null };
+
+type HomepageDocument_DefaultDocument_Fragment = { __typename?: 'DefaultDocument', id: string, name: string | null, short_description: string | null, type: string, status: DocumentStatus, slug: string | null, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null };
+
+type HomepageDocument_IntegrationHack_Fragment = { __typename?: 'IntegrationHack', id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null };
+
+type HomepageDocument_OpenAevScenario_Fragment = { __typename?: 'OpenAEVScenario', id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null };
+
+type HomepageDocument_OpenCtiPlaybook_Fragment = { __typename?: 'OpenCTIPlaybook', id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null };
+
+type HomepageDocument_RssFeed_Fragment = { __typename?: 'RssFeed', id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null };
+
+type HomepageDocument_Stream_Fragment = { __typename?: 'Stream', id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null };
+
+type HomepageDocument_TaxiiFeed_Fragment = { __typename?: 'TaxiiFeed', id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null };
+
+type HomepageDocument_ThirdPartyIntegration_Fragment = { __typename?: 'ThirdPartyIntegration', id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null };
 
 export type HomepageDocumentFragment = HomepageDocument_Connector_Fragment | HomepageDocument_CsvFeed_Fragment | HomepageDocument_CustomDashboard_Fragment | HomepageDocument_CustomView_Fragment | HomepageDocument_DefaultDocument_Fragment | HomepageDocument_IntegrationHack_Fragment | HomepageDocument_OpenAevScenario_Fragment | HomepageDocument_OpenCtiPlaybook_Fragment | HomepageDocument_RssFeed_Fragment | HomepageDocument_Stream_Fragment | HomepageDocument_TaxiiFeed_Fragment | HomepageDocument_ThirdPartyIntegration_Fragment;
 
@@ -2873,7 +4113,7 @@ export type MostDeployedDocumentsQueryQueryVariables = Exact<{
 }>;
 
 
-export type MostDeployedDocumentsQueryQuery = { __typename?: 'Query', mostDeployedDocuments: Array<{ __typename?: 'Connector', verified: boolean, manager_supported: boolean, id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'CsvFeed', id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'CustomDashboard', id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'CustomView', id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'DefaultDocument', id: string, name: string | null, short_description: string | null, type: string, active: boolean, slug: string | null, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'IntegrationHack', id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'OpenAEVScenario', id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'OpenCTIPlaybook', id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'RssFeed', id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'Stream', id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'TaxiiFeed', id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'ThirdPartyIntegration', id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null }> };
+export type MostDeployedDocumentsQueryQuery = { __typename?: 'Query', mostDeployedDocuments: Array<{ __typename?: 'Connector', verified: boolean, manager_supported: boolean, id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'CsvFeed', id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'CustomDashboard', id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'CustomView', id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'DefaultDocument', id: string, name: string | null, short_description: string | null, type: string, status: DocumentStatus, slug: string | null, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'IntegrationHack', id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'OpenAEVScenario', id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'OpenCTIPlaybook', id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'RssFeed', id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'Stream', id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'TaxiiFeed', id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'ThirdPartyIntegration', id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null }> };
 
 export type NewestDocumentsQueryQueryVariables = Exact<{
   limit: Scalars['Int']['input'];
@@ -2881,7 +4121,7 @@ export type NewestDocumentsQueryQueryVariables = Exact<{
 }>;
 
 
-export type NewestDocumentsQueryQuery = { __typename?: 'Query', newestDocuments: Array<{ __typename?: 'Connector', verified: boolean, manager_supported: boolean, id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'CsvFeed', id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'CustomDashboard', id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'CustomView', id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'DefaultDocument', id: string, name: string | null, short_description: string | null, type: string, active: boolean, slug: string | null, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'IntegrationHack', id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'OpenAEVScenario', id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'OpenCTIPlaybook', id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'RssFeed', id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'Stream', id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'TaxiiFeed', id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'ThirdPartyIntegration', id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null }> };
+export type NewestDocumentsQueryQuery = { __typename?: 'Query', newestDocuments: Array<{ __typename?: 'Connector', verified: boolean, manager_supported: boolean, id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'CsvFeed', id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'CustomDashboard', id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'CustomView', id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'DefaultDocument', id: string, name: string | null, short_description: string | null, type: string, status: DocumentStatus, slug: string | null, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'IntegrationHack', id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'OpenAEVScenario', id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'OpenCTIPlaybook', id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'RssFeed', id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'Stream', id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'TaxiiFeed', id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'ThirdPartyIntegration', id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null }> };
 
 export type LastDeployedOverviewQueryQueryVariables = Exact<{
   limit: Scalars['Int']['input'];
@@ -2889,7 +4129,201 @@ export type LastDeployedOverviewQueryQueryVariables = Exact<{
 }>;
 
 
-export type LastDeployedOverviewQueryQuery = { __typename?: 'Query', lastDeployedOverview: { __typename?: 'LastDeployedOverview', resources: Array<{ __typename?: 'DeployedResource', deployedAt: any, document: { __typename?: 'Connector', verified: boolean, manager_supported: boolean, id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'CsvFeed', id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'CustomDashboard', id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'CustomView', id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'DefaultDocument', id: string, name: string | null, short_description: string | null, type: string, active: boolean, slug: string | null, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'IntegrationHack', id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'OpenAEVScenario', id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'OpenCTIPlaybook', id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'RssFeed', id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'Stream', id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'TaxiiFeed', id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'ThirdPartyIntegration', id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null }, deployedBy: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, email: string, picture: string | null } | null }> } };
+export type LastDeployedOverviewQueryQuery = { __typename?: 'Query', lastDeployedOverview: { __typename?: 'LastDeployedOverview', resources: Array<{ __typename?: 'DeployedResource', deployedAt: any, document: { __typename?: 'Connector', verified: boolean, manager_supported: boolean, id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'CsvFeed', id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'CustomDashboard', id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'CustomView', id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'DefaultDocument', id: string, name: string | null, short_description: string | null, type: string, status: DocumentStatus, slug: string | null, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'IntegrationHack', id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'OpenAEVScenario', id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'OpenCTIPlaybook', id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'RssFeed', id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'Stream', id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'TaxiiFeed', id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'ThirdPartyIntegration', id: string, name: string, short_description: string | null, type: string, status: DocumentStatus, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null }, deployedBy: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, email: string, picture: string | null } | null }> } };
+
+export type DocumentsListQueryVariables = Exact<{
+  count: Scalars['Int']['input'];
+  cursor: InputMaybe<Scalars['ID']['input']>;
+  orderBy: DocumentOrdering;
+  orderMode: OrderingMode;
+  logicalFilters: InputMaybe<LogicalFilterInput>;
+  searchTerm: InputMaybe<Scalars['String']['input']>;
+  serviceInstanceId: Scalars['ServiceInstanceId']['input'];
+  parentsOnly: InputMaybe<Scalars['Boolean']['input']>;
+}>;
+
+
+export type DocumentsListQuery = { __typename?: 'Query', documents: { __typename?: 'DocumentConnection', totalCount: number, edges: Array<{ __typename?: 'DocumentEdge', node: { __typename: 'Connector', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, product_version: string | null, container_image: string | null, verified: boolean, source_code: string | null, subscription_link: string | null, manager_supported: boolean, playbook_supported: boolean, minimum_deployable_version: string | null, contact: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'CsvFeed', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'CustomDashboard', product_version: string | null, id: string, type: string, file_name: string, created_at: any, name: string, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'CustomView', product_version: string | null, entity_types: Array<string> | null, id: string, type: string, file_name: string, created_at: any, name: string, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'DefaultDocument', id: string, type: string, file_name: string | null, created_at: any, name: string | null, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'IntegrationHack', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'OpenAEVScenario', product_version: string | null, id: string, type: string, file_name: string, created_at: any, name: string, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'OpenCTIPlaybook', product_version: string | null, id: string, type: string, file_name: string, created_at: any, name: string, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'RssFeed', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'Stream', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'TaxiiFeed', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'ThirdPartyIntegration', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, product_version: string | null, vendor_url: string, github_url: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } }> } };
+
+export type DocumentDetailQueryVariables = Exact<{
+  documentId: Scalars['DocumentId']['input'];
+  serviceInstanceId: Scalars['ServiceInstanceId']['input'];
+}>;
+
+
+export type DocumentDetailQuery = { __typename?: 'Query', document: { __typename: 'Connector', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, product_version: string | null, container_image: string | null, verified: boolean, source_code: string | null, subscription_link: string | null, manager_supported: boolean, playbook_supported: boolean, minimum_deployable_version: string | null, contact: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'CsvFeed', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'CustomDashboard', product_version: string | null, id: string, type: string, file_name: string, created_at: any, name: string, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'CustomView', product_version: string | null, entity_types: Array<string> | null, id: string, type: string, file_name: string, created_at: any, name: string, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'DefaultDocument', id: string, type: string, file_name: string | null, created_at: any, name: string | null, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'IntegrationHack', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'OpenAEVScenario', product_version: string | null, id: string, type: string, file_name: string, created_at: any, name: string, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'OpenCTIPlaybook', product_version: string | null, id: string, type: string, file_name: string, created_at: any, name: string, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'RssFeed', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'Stream', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'TaxiiFeed', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | { __typename: 'ThirdPartyIntegration', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, product_version: string | null, vendor_url: string, github_url: string | null, id: string, type: string, file_name: string | null, created_at: any, name: string, short_description: string | null, meta_description: string | null, description: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, updated_at: any | null, slug: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, file_name: string, created_at: any, name: string | null, description: string | null, download_number: number | null, status: DocumentStatus, source_type: DocumentSourceType, image_type: DocumentImageType | null }> | null, service_instance: { __typename?: 'ServiceInstance', id: string, slug: string | null } | null, subscription: { __typename?: 'SubscriptionModel', id: string } | null } | null };
+
+type PublicDocumentListItem_Connector_Fragment = { __typename: 'Connector', integration_type: IntegrationType, product_version: string | null, verified: boolean, manager_supported: boolean, id: string, name: string, short_description: string | null, slug: string, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null };
+
+type PublicDocumentListItem_CsvFeed_Fragment = { __typename: 'CsvFeed', integration_type: IntegrationType, id: string, name: string, short_description: string | null, slug: string, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null };
+
+type PublicDocumentListItem_CustomDashboard_Fragment = { __typename: 'CustomDashboard', id: string, name: string, short_description: string | null, slug: string, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null };
+
+type PublicDocumentListItem_CustomView_Fragment = { __typename: 'CustomView', entity_types: Array<string> | null, id: string, name: string, short_description: string | null, slug: string, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null };
+
+type PublicDocumentListItem_DefaultDocument_Fragment = { __typename: 'DefaultDocument', id: string, name: string | null, short_description: string | null, slug: string | null, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null };
+
+type PublicDocumentListItem_IntegrationHack_Fragment = { __typename: 'IntegrationHack', integration_type: IntegrationType, id: string, name: string, short_description: string | null, slug: string, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null };
+
+type PublicDocumentListItem_OpenAevScenario_Fragment = { __typename: 'OpenAEVScenario', id: string, name: string, short_description: string | null, slug: string, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null };
+
+type PublicDocumentListItem_OpenCtiPlaybook_Fragment = { __typename: 'OpenCTIPlaybook', id: string, name: string, short_description: string | null, slug: string, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null };
+
+type PublicDocumentListItem_RssFeed_Fragment = { __typename: 'RssFeed', integration_type: IntegrationType, id: string, name: string, short_description: string | null, slug: string, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null };
+
+type PublicDocumentListItem_Stream_Fragment = { __typename: 'Stream', integration_type: IntegrationType, id: string, name: string, short_description: string | null, slug: string, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null };
+
+type PublicDocumentListItem_TaxiiFeed_Fragment = { __typename: 'TaxiiFeed', integration_type: IntegrationType, id: string, name: string, short_description: string | null, slug: string, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null };
+
+type PublicDocumentListItem_ThirdPartyIntegration_Fragment = { __typename: 'ThirdPartyIntegration', integration_type: IntegrationType, id: string, name: string, short_description: string | null, slug: string, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null };
+
+export type PublicDocumentListItemFragment = PublicDocumentListItem_Connector_Fragment | PublicDocumentListItem_CsvFeed_Fragment | PublicDocumentListItem_CustomDashboard_Fragment | PublicDocumentListItem_CustomView_Fragment | PublicDocumentListItem_DefaultDocument_Fragment | PublicDocumentListItem_IntegrationHack_Fragment | PublicDocumentListItem_OpenAevScenario_Fragment | PublicDocumentListItem_OpenCtiPlaybook_Fragment | PublicDocumentListItem_RssFeed_Fragment | PublicDocumentListItem_Stream_Fragment | PublicDocumentListItem_TaxiiFeed_Fragment | PublicDocumentListItem_ThirdPartyIntegration_Fragment;
+
+type PublicDocumentByServiceSlugItem_Connector_Fragment = { __typename: 'Connector', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, product_version: string | null, container_image: string | null, verified: boolean, source_code: string | null, subscription_link: string | null, manager_supported: boolean, playbook_supported: boolean, minimum_deployable_version: string | null, contact: string | null, id: string, name: string, description: string | null, short_description: string | null, meta_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null };
+
+type PublicDocumentByServiceSlugItem_CsvFeed_Fragment = { __typename: 'CsvFeed', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, name: string, description: string | null, short_description: string | null, meta_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null };
+
+type PublicDocumentByServiceSlugItem_CustomDashboard_Fragment = { __typename: 'CustomDashboard', product_version: string | null, id: string, name: string, description: string | null, short_description: string | null, meta_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null };
+
+type PublicDocumentByServiceSlugItem_CustomView_Fragment = { __typename: 'CustomView', product_version: string | null, entity_types: Array<string> | null, id: string, name: string, description: string | null, short_description: string | null, meta_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null };
+
+type PublicDocumentByServiceSlugItem_DefaultDocument_Fragment = { __typename: 'DefaultDocument', id: string, name: string | null, description: string | null, short_description: string | null, meta_description: string | null, created_at: any, updated_at: any | null, slug: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null };
+
+type PublicDocumentByServiceSlugItem_IntegrationHack_Fragment = { __typename: 'IntegrationHack', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, id: string, name: string, description: string | null, short_description: string | null, meta_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null };
+
+type PublicDocumentByServiceSlugItem_OpenAevScenario_Fragment = { __typename: 'OpenAEVScenario', product_version: string | null, id: string, name: string, description: string | null, short_description: string | null, meta_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null };
+
+type PublicDocumentByServiceSlugItem_OpenCtiPlaybook_Fragment = { __typename: 'OpenCTIPlaybook', id: string, name: string, description: string | null, short_description: string | null, meta_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null };
+
+type PublicDocumentByServiceSlugItem_RssFeed_Fragment = { __typename: 'RssFeed', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, name: string, description: string | null, short_description: string | null, meta_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null };
+
+type PublicDocumentByServiceSlugItem_Stream_Fragment = { __typename: 'Stream', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, name: string, description: string | null, short_description: string | null, meta_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null };
+
+type PublicDocumentByServiceSlugItem_TaxiiFeed_Fragment = { __typename: 'TaxiiFeed', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, name: string, description: string | null, short_description: string | null, meta_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null };
+
+type PublicDocumentByServiceSlugItem_ThirdPartyIntegration_Fragment = { __typename: 'ThirdPartyIntegration', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, product_version: string | null, vendor_url: string, github_url: string | null, id: string, name: string, description: string | null, short_description: string | null, meta_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null };
+
+export type PublicDocumentByServiceSlugItemFragment = PublicDocumentByServiceSlugItem_Connector_Fragment | PublicDocumentByServiceSlugItem_CsvFeed_Fragment | PublicDocumentByServiceSlugItem_CustomDashboard_Fragment | PublicDocumentByServiceSlugItem_CustomView_Fragment | PublicDocumentByServiceSlugItem_DefaultDocument_Fragment | PublicDocumentByServiceSlugItem_IntegrationHack_Fragment | PublicDocumentByServiceSlugItem_OpenAevScenario_Fragment | PublicDocumentByServiceSlugItem_OpenCtiPlaybook_Fragment | PublicDocumentByServiceSlugItem_RssFeed_Fragment | PublicDocumentByServiceSlugItem_Stream_Fragment | PublicDocumentByServiceSlugItem_TaxiiFeed_Fragment | PublicDocumentByServiceSlugItem_ThirdPartyIntegration_Fragment;
+
+export type PublicDocumentsByServiceSlugQueryQueryVariables = Exact<{
+  serviceInstanceSlug: Scalars['String']['input'];
+}>;
+
+
+export type PublicDocumentsByServiceSlugQueryQuery = { __typename?: 'Query', publicDocumentsByServiceSlug: Array<{ __typename: 'Connector', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, product_version: string | null, container_image: string | null, verified: boolean, source_code: string | null, subscription_link: string | null, manager_supported: boolean, playbook_supported: boolean, minimum_deployable_version: string | null, contact: string | null, id: string, name: string, description: string | null, short_description: string | null, meta_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | { __typename: 'CsvFeed', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, name: string, description: string | null, short_description: string | null, meta_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | { __typename: 'CustomDashboard', product_version: string | null, id: string, name: string, description: string | null, short_description: string | null, meta_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | { __typename: 'CustomView', product_version: string | null, entity_types: Array<string> | null, id: string, name: string, description: string | null, short_description: string | null, meta_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | { __typename: 'DefaultDocument', id: string, name: string | null, description: string | null, short_description: string | null, meta_description: string | null, created_at: any, updated_at: any | null, slug: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | { __typename: 'IntegrationHack', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, id: string, name: string, description: string | null, short_description: string | null, meta_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | { __typename: 'OpenAEVScenario', product_version: string | null, id: string, name: string, description: string | null, short_description: string | null, meta_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | { __typename: 'OpenCTIPlaybook', id: string, name: string, description: string | null, short_description: string | null, meta_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | { __typename: 'RssFeed', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, name: string, description: string | null, short_description: string | null, meta_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | { __typename: 'Stream', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, name: string, description: string | null, short_description: string | null, meta_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | { __typename: 'TaxiiFeed', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, name: string, description: string | null, short_description: string | null, meta_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | { __typename: 'ThirdPartyIntegration', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, product_version: string | null, vendor_url: string, github_url: string | null, id: string, name: string, description: string | null, short_description: string | null, meta_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null }> };
+
+export type PublicDocumentsByServiceSlugSitemapQueryQueryVariables = Exact<{
+  serviceInstanceSlug: Scalars['String']['input'];
+}>;
+
+
+export type PublicDocumentsByServiceSlugSitemapQueryQuery = { __typename?: 'Query', publicDocumentSlugsByServiceSlug: Array<{ __typename?: 'PublicDocumentSlugInfo', slug: string | null, created_at: any, updated_at: any | null }> };
+
+export type PublicDocumentsQueryVariables = Exact<{
+  slug: Scalars['String']['input'];
+  count: Scalars['Int']['input'];
+  cursor: InputMaybe<Scalars['ID']['input']>;
+  orderBy: DocumentOrdering;
+  orderMode: OrderingMode;
+  logicalFilters: InputMaybe<LogicalFilterInput>;
+  searchTerm: InputMaybe<Scalars['String']['input']>;
+  serviceInstanceId: Scalars['ServiceInstanceId']['input'];
+}>;
+
+
+export type PublicDocumentsQuery = { __typename?: 'Query', publicDocuments: { __typename?: 'DocumentConnection', totalCount: number, edges: Array<{ __typename?: 'DocumentEdge', node: { __typename: 'Connector', integration_type: IntegrationType, product_version: string | null, verified: boolean, manager_supported: boolean, id: string, name: string, short_description: string | null, slug: string, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null } | { __typename: 'CsvFeed', integration_type: IntegrationType, id: string, name: string, short_description: string | null, slug: string, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null } | { __typename: 'CustomDashboard', id: string, name: string, short_description: string | null, slug: string, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null } | { __typename: 'CustomView', entity_types: Array<string> | null, id: string, name: string, short_description: string | null, slug: string, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null } | { __typename: 'DefaultDocument', id: string, name: string | null, short_description: string | null, slug: string | null, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null } | { __typename: 'IntegrationHack', integration_type: IntegrationType, id: string, name: string, short_description: string | null, slug: string, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null } | { __typename: 'OpenAEVScenario', id: string, name: string, short_description: string | null, slug: string, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null } | { __typename: 'OpenCTIPlaybook', id: string, name: string, short_description: string | null, slug: string, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null } | { __typename: 'RssFeed', integration_type: IntegrationType, id: string, name: string, short_description: string | null, slug: string, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null } | { __typename: 'Stream', integration_type: IntegrationType, id: string, name: string, short_description: string | null, slug: string, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null } | { __typename: 'TaxiiFeed', integration_type: IntegrationType, id: string, name: string, short_description: string | null, slug: string, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null } | { __typename: 'ThirdPartyIntegration', integration_type: IntegrationType, id: string, name: string, short_description: string | null, slug: string, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null } }> } };
+
+export type PublicDocumentBySlugQueryVariables = Exact<{
+  serviceInstanceId: Scalars['ServiceInstanceId']['input'];
+  slug: Scalars['String']['input'];
+}>;
+
+
+export type PublicDocumentBySlugQuery = { __typename?: 'Query', publicDocumentBySlug: { __typename: 'Connector', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, product_version: string | null, container_image: string | null, verified: boolean, source_code: string | null, subscription_link: string | null, manager_supported: boolean, playbook_supported: boolean, minimum_deployable_version: string | null, contact: string | null, id: string, name: string, description: string | null, short_description: string | null, meta_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | { __typename: 'CsvFeed', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, name: string, description: string | null, short_description: string | null, meta_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | { __typename: 'CustomDashboard', product_version: string | null, id: string, name: string, description: string | null, short_description: string | null, meta_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | { __typename: 'CustomView', product_version: string | null, entity_types: Array<string> | null, id: string, name: string, description: string | null, short_description: string | null, meta_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | { __typename: 'DefaultDocument', id: string, name: string | null, description: string | null, short_description: string | null, meta_description: string | null, created_at: any, updated_at: any | null, slug: string | null, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | { __typename: 'IntegrationHack', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, id: string, name: string, description: string | null, short_description: string | null, meta_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | { __typename: 'OpenAEVScenario', product_version: string | null, id: string, name: string, description: string | null, short_description: string | null, meta_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | { __typename: 'OpenCTIPlaybook', id: string, name: string, description: string | null, short_description: string | null, meta_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | { __typename: 'RssFeed', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, name: string, description: string | null, short_description: string | null, meta_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | { __typename: 'Stream', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, name: string, description: string | null, short_description: string | null, meta_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | { __typename: 'TaxiiFeed', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, feed_url: string | null, id: string, name: string, description: string | null, short_description: string | null, meta_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | { __typename: 'ThirdPartyIntegration', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, product_version: string | null, vendor_url: string, github_url: string | null, id: string, name: string, description: string | null, short_description: string | null, meta_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, status: DocumentStatus, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null } | null };
+
+export type FeatureVoteMutationVariables = Exact<{
+  feature_id: Scalars['VotableFeatureId']['input'];
+}>;
+
+
+export type FeatureVoteMutation = { __typename?: 'Mutation', voteForFeature: Array<{ __typename?: 'VotableFeature', id: string, has_my_vote: boolean }> };
+
+export type VotableFeaturePublicFragment = { __typename?: 'VotableFeature', id: string, title: string, short_description: string, description: string, product: FiligranProduct, illustration_document_id: any | null, position: number, has_my_vote: boolean, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> };
+
+export type CurrentVotingRoundQueryVariables = Exact<{
+  service_instance_id: Scalars['ServiceInstanceId']['input'];
+}>;
+
+
+export type CurrentVotingRoundQuery = { __typename?: 'Query', me: { __typename?: 'User', id: string } | null, currentVotingRound: { __typename?: 'VotingRound', id: string, service_instance_id: any, name: string, description: string | null, features: Array<{ __typename?: 'VotableFeature', id: string, title: string, short_description: string, description: string, product: FiligranProduct, illustration_document_id: any | null, position: number, has_my_vote: boolean, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> }> } | null };
+
+export type CurrentVotingRoundCalloutQueryVariables = Exact<{
+  service_instance_id: Scalars['ServiceInstanceId']['input'];
+}>;
+
+
+export type CurrentVotingRoundCalloutQuery = { __typename?: 'Query', currentVotingRound: { __typename?: 'VotingRound', id: string, name: string, description: string | null, theme: VotingRoundTheme } | null };
+
+export type FrontendErrorLogMutationVariables = Exact<{
+  message: Scalars['String']['input'];
+  codeStack: InputMaybe<Scalars['String']['input']>;
+  componentStack: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type FrontendErrorLogMutation = { __typename?: 'Mutation', frontendErrorLog: boolean | null };
+
+export type IntegrationProductVersionFilterQueryVariables = Exact<{
+  product: PlatformIdentifier;
+  search: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type IntegrationProductVersionFilterQuery = { __typename?: 'Query', registeredProductVersions: Array<{ __typename?: 'RegisteredProductVersion', version: string }> };
+
+export type MeProfileEditMutationVariables = Exact<{
+  first_name: InputMaybe<Scalars['String']['input']>;
+  last_name: InputMaybe<Scalars['String']['input']>;
+  country: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type MeProfileEditMutation = { __typename?: 'Mutation', editMeUser: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, country: string | null, picture: string | null, selected_organization_id: any | null, selected_org_capabilities: Array<OrganizationCapability> | null, has_replied_satisfaction: HasRepliedSatisfaction | null, capabilities: Array<{ __typename?: 'Capability', name: PortalCapability }> | null, organizations: Array<{ __typename?: 'Organization', id: string, name: string, personal_space: boolean }> | null } };
+
+export type MeLanguageEditMutationVariables = Exact<{
+  selected_language: Scalars['String']['input'];
+}>;
+
+
+export type MeLanguageEditMutation = { __typename?: 'Mutation', editMeUser: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, country: string | null, picture: string | null, selected_organization_id: any | null, selected_org_capabilities: Array<OrganizationCapability> | null, has_replied_satisfaction: HasRepliedSatisfaction | null, capabilities: Array<{ __typename?: 'Capability', name: PortalCapability }> | null, organizations: Array<{ __typename?: 'Organization', id: string, name: string, personal_space: boolean }> | null } };
+
+export type MePictureUploadMutationVariables = Exact<{
+  document: Scalars['Upload']['input'];
+}>;
+
+
+export type MePictureUploadMutation = { __typename?: 'Mutation', uploadUserPicture: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, country: string | null, picture: string | null, selected_organization_id: any | null, selected_org_capabilities: Array<OrganizationCapability> | null, has_replied_satisfaction: HasRepliedSatisfaction | null, capabilities: Array<{ __typename?: 'Capability', name: PortalCapability }> | null, organizations: Array<{ __typename?: 'Organization', id: string, name: string, personal_space: boolean }> | null } };
+
+export type MePasswordResetMutationVariables = Exact<{ [key: string]: never; }>;
+
+
+export type MePasswordResetMutation = { __typename?: 'Mutation', resetPassword: { __typename?: 'Success', success: boolean } };
+
+export type MePersonalSpaceTransferRequestMutationVariables = Exact<{
+  new_email: Scalars['String']['input'];
+}>;
+
+
+export type MePersonalSpaceTransferRequestMutation = { __typename?: 'Mutation', requestTransferPersonalSpace: { __typename?: 'Success', success: boolean } };
+
+export type MePersonalSpaceTransferMutationVariables = Exact<{
+  requestId: Scalars['ID']['input'];
+}>;
+
+
+export type MePersonalSpaceTransferMutation = { __typename?: 'Mutation', transferPersonalSpace: { __typename?: 'Success', success: boolean } };
+
+export type CurrentUserFragment = { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, country: string | null, picture: string | null, selected_organization_id: any | null, selected_org_capabilities: Array<OrganizationCapability> | null, has_replied_satisfaction: HasRepliedSatisfaction | null, capabilities: Array<{ __typename?: 'Capability', name: PortalCapability }> | null, organizations: Array<{ __typename?: 'Organization', id: string, name: string, personal_space: boolean }> | null };
 
 export type MeCheckQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -2900,6 +4334,55 @@ export type MeFirstNameQueryVariables = Exact<{ [key: string]: never; }>;
 
 
 export type MeFirstNameQuery = { __typename?: 'Query', me: { __typename?: 'User', first_name: string | null } | null };
+
+export type MeOrganizationDomainsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type MeOrganizationDomainsQuery = { __typename?: 'Query', me: { __typename?: 'User', organizations: Array<{ __typename?: 'Organization', id: string, domains: Array<string> | null }> | null } | null };
+
+export type MeOrganizationsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type MeOrganizationsQuery = { __typename?: 'Query', me: { __typename?: 'User', id: string, selected_organization_id: any | null, organizations: Array<{ __typename?: 'Organization', id: string, name: string, personal_space: boolean }> | null } | null };
+
+export type MeAnalyticsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type MeAnalyticsQuery = { __typename?: 'Query', me: { __typename?: 'User', email: string, selected_organization_id: any | null, selected_org_capabilities: Array<OrganizationCapability> | null, organizations: Array<{ __typename?: 'Organization', id: string, personal_space: boolean }> | null, capabilities: Array<{ __typename?: 'Capability', name: PortalCapability }> | null } | null };
+
+export type MeQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type MeQuery = { __typename?: 'Query', me: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, country: string | null, picture: string | null, selected_organization_id: any | null, selected_org_capabilities: Array<OrganizationCapability> | null, has_replied_satisfaction: HasRepliedSatisfaction | null, capabilities: Array<{ __typename?: 'Capability', name: PortalCapability }> | null, organizations: Array<{ __typename?: 'Organization', id: string, name: string, personal_space: boolean }> | null } | null };
+
+export type MeUserEventsSubscriptionVariables = Exact<{ [key: string]: never; }>;
+
+
+export type MeUserEventsSubscription = { __typename?: 'Subscription', MeUser: { __typename?: 'MeUserSubscription', delete: { __typename?: 'User', id: string } | null, edit: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null, country: string | null, picture: string | null, selected_organization_id: any | null, selected_org_capabilities: Array<OrganizationCapability> | null, has_replied_satisfaction: HasRepliedSatisfaction | null, capabilities: Array<{ __typename?: 'Capability', name: PortalCapability }> | null, organizations: Array<{ __typename?: 'Organization', id: string, name: string, personal_space: boolean }> | null } | null } | null };
+
+export type NewsFeedDeleteItemMutationVariables = Exact<{
+  id: Scalars['NewsFeedItemId']['input'];
+}>;
+
+
+export type NewsFeedDeleteItemMutation = { __typename?: 'Mutation', deleteNewsFeedItem: boolean };
+
+export type SendNewsFeedRedirectTelemetryMutationVariables = Exact<{
+  input: NewsFeedRedirectInput;
+}>;
+
+
+export type SendNewsFeedRedirectTelemetryMutation = { __typename?: 'Mutation', sendTelemetryEvent: { __typename?: 'SendTelemetryMutation', newsFeedRedirect: { __typename?: 'TelemetryResponse', result: boolean, message: string | null } | null } | null };
+
+export type NewsFeedItemRowFragment = { __typename?: 'NewsFeedItem', id: string, title: string, type: NewsFeedItemType, creation_date: any, tags: Array<string>, is_deleted: boolean, metadata: Array<{ __typename?: 'NewsFeedItemMetadata', key: NewsFeedItemMetadataKey, value: string | null }> };
+
+export type NewsFeedListQueryVariables = Exact<{
+  count: Scalars['Int']['input'];
+  cursor: InputMaybe<Scalars['ID']['input']>;
+}>;
+
+
+export type NewsFeedListQuery = { __typename?: 'Query', newsFeedItems: { __typename?: 'NewsFeedItemConnection', totalCount: number, edges: Array<{ __typename?: 'NewsFeedItemEdge', node: { __typename?: 'NewsFeedItem', id: string, title: string, type: NewsFeedItemType, creation_date: any, tags: Array<string>, is_deleted: boolean, metadata: Array<{ __typename?: 'NewsFeedItemMetadata', key: NewsFeedItemMetadataKey, value: string | null }> } }> } };
 
 export type OrganizationSubscribedServicesBreadcrumbQueryVariables = Exact<{
   id: Scalars['ID']['input'];
@@ -2922,26 +4405,244 @@ export type OrganizationSubscribedServicesListQueryVariables = Exact<{
 
 export type OrganizationSubscribedServicesListQuery = { __typename?: 'Query', subscriptions: { __typename?: 'SubscriptionConnection', totalCount: number, edges: Array<{ __typename?: 'SubscriptionEdge', node: { __typename?: 'SubscriptionModel', id: string, start_date: any | null, service_instance: { __typename?: 'ServiceInstance', id: string, name: string, creation_status: ServiceInstanceCreationStatus | null, tags: Array<ServiceInstanceTag> | null, service_definition: { __typename?: 'ServiceDefinition', id: string, name: string, identifier: ServiceDefinitionIdentifier } | null } } }>, pageInfo: { __typename?: 'PageInfo', hasNextPage: boolean, hasPreviousPage: boolean, startCursor: string | null, endCursor: string | null } } };
 
+export type OrganizationCreateMutationVariables = Exact<{
+  input: OrganizationInput;
+}>;
+
+
+export type OrganizationCreateMutation = { __typename?: 'Mutation', addOrganization: { __typename?: 'Organization', id: string, name: string, domains: Array<string> | null, personal_space: boolean } | null };
+
+export type OrganizationEditMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+  input: OrganizationInput;
+}>;
+
+
+export type OrganizationEditMutation = { __typename?: 'Mutation', editOrganization: { __typename?: 'Organization', id: string, name: string, domains: Array<string> | null, personal_space: boolean } | null };
+
+export type OrganizationDeleteMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type OrganizationDeleteMutation = { __typename?: 'Mutation', deleteOrganization: { __typename?: 'Organization', id: string } | null };
+
+export type OrganizationItemFragment = { __typename?: 'Organization', id: string, name: string, domains: Array<string> | null, personal_space: boolean };
+
+export type OrganizationsListQueryVariables = Exact<{
+  count: InputMaybe<Scalars['Int']['input']>;
+  cursor: InputMaybe<Scalars['ID']['input']>;
+  orderBy: OrganizationOrdering;
+  orderMode: OrderingMode;
+  searchTerm: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type OrganizationsListQuery = { __typename?: 'Query', organizations: { __typename?: 'OrganizationConnection', totalCount: number, edges: Array<{ __typename?: 'OrganizationEdge', node: { __typename?: 'Organization', id: string, name: string, domains: Array<string> | null, personal_space: boolean } }> } };
+
+export type UserOrganizationsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type UserOrganizationsQuery = { __typename?: 'Query', userOrganizations: Array<{ __typename?: 'Organization', id: string, name: string, personal_space: boolean }> };
+
+export type RegisteredSaasPlatformDataQueryVariables = Exact<{
+  input: RegisteredSaasPlatformDataInput;
+}>;
+
+
+export type RegisteredSaasPlatformDataQuery = { __typename?: 'Query', registeredSaasPlatformData: { __typename?: 'SaasPlatformData', metadata: { __typename?: 'SaasPlatformMetadata', hostname: string | null, plan: string | null, start_date: any | null, end_date: any | null, region: string | null }, metrics: { __typename?: 'SaasPlatformMetrics', start: any, end: any, resolution: SaasPlatformResolution, series: Array<{ __typename?: 'SaasPlatformMetricSeries', metric_type: MetricType, points: Array<{ __typename?: 'SaasPlatformMetricPoint', timestamp: any, value: number | null }> }> } | null, storage: { __typename?: 'SaasPlatformStorage', es_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null, used: number | null, limit: number | null } | null, s3_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null, used: number | null, limit: number | null } | null, postgres_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null, used: number | null, limit: number | null } | null } | null, sla: { __typename?: 'SaasPlatformSla', target: number, months: Array<{ __typename?: 'SaasPlatformMonthlySla', month: any, availability: number | null, days: Array<{ __typename?: 'SaasPlatformDailySla', day: any, availability: number | null }> }> } | null } | null };
+
 export type RegisteredPlatformsListQueryVariables = Exact<{
   input: RegisteredPlatformsInput;
 }>;
 
 
-export type RegisteredPlatformsListQuery = { __typename?: 'Query', registeredPlatforms: Array<{ __typename?: 'RegisteredPlatform', id: string, platform_id: string, title: string, url: string, contract: PlatformContract, identifier: ServiceDefinitionIdentifier, subscription: { __typename?: 'SubscriptionModel', end_date: any | null, start_date: any | null, service_instance: { __typename?: 'ServiceInstance', id: string, name: string } } | null }> };
+export type RegisteredPlatformsListQuery = { __typename?: 'Query', registeredPlatforms: Array<{ __typename?: 'RegisteredPlatform', id: string, platform_id: string, title: string, url: string, contract: PlatformContract, version: string | null, identifier: ServiceDefinitionIdentifier, deployment_request: { __typename?: 'DeploymentRequest', parent_id: any | null } | null, subscription: { __typename?: 'SubscriptionModel', end_date: any | null, start_date: any | null, service_instance: { __typename?: 'ServiceInstance', id: string, name: string } } | null }> };
+
+export type RefreshUserPlatformTokenMutationVariables = Exact<{ [key: string]: never; }>;
+
+
+export type RefreshUserPlatformTokenMutation = { __typename?: 'Mutation', refreshUserPlatformToken: { __typename?: 'RefreshUserPlatformTokenResponse', token: string } };
+
+export type UnregisterPlatformMutationVariables = Exact<{
+  input: UnregisterPlatformInput;
+}>;
+
+
+export type UnregisterPlatformMutation = { __typename?: 'Mutation', unregisterPlatform: { __typename?: 'Success', success: boolean } };
+
+export type RegisterPlatformMutationVariables = Exact<{
+  input: RegisterPlatformInput;
+}>;
+
+
+export type RegisterPlatformMutation = { __typename?: 'Mutation', registerPlatform: { __typename?: 'RegistrationResponse', token: string, organizationName: string | null } };
 
 export type RegisteredPlatformsQueryVariables = Exact<{
   input: RegisteredPlatformsInput;
 }>;
 
 
-export type RegisteredPlatformsQuery = { __typename?: 'Query', registeredPlatforms: Array<{ __typename?: 'RegisteredPlatform', id: string, identifier: ServiceDefinitionIdentifier, title: string, contract: PlatformContract, subscription: { __typename?: 'SubscriptionModel', start_date: any | null, end_date: any | null, service_instance_id: any } | null }> };
+export type RegisteredPlatformsQuery = { __typename?: 'Query', registeredPlatforms: Array<{ __typename?: 'RegisteredPlatform', id: string, identifier: ServiceDefinitionIdentifier, title: string, contract: PlatformContract, deployment_request: { __typename?: 'DeploymentRequest', parent_id: any | null } | null, subscription: { __typename?: 'SubscriptionModel', start_date: any | null, end_date: any | null, service_instance_id: any } | null }> };
 
-export type ConnectProductOrganizationAdminsQueryVariables = Exact<{
-  input: UsersWithCapabilitiesInOrganizationInput;
+export type PlatformAssociatedOrganizationQueryVariables = Exact<{
+  platformId: Scalars['String']['input'];
+  tenantId: InputMaybe<Scalars['String']['input']>;
 }>;
 
 
-export type ConnectProductOrganizationAdminsQuery = { __typename?: 'Query', usersWithCapabilitiesInOrganization: Array<{ __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null }> };
+export type PlatformAssociatedOrganizationQuery = { __typename?: 'Query', platformAssociatedOrganization: { __typename?: 'Organization', id: string } | null };
+
+export type RegisteredPlatformRedirectTargetQueryVariables = Exact<{
+  input: RegisteredPlatformByPlatformIdInput;
+}>;
+
+
+export type RegisteredPlatformRedirectTargetQuery = { __typename?: 'Query', registeredPlatformByPlatformId: { __typename?: 'RegisteredPlatform', service_instance_id: any, identifier: ServiceDefinitionIdentifier, deployment_request: { __typename?: 'DeploymentRequest', parent_id: any | null } | null } | null };
+
+export type RegisteredPlatformDetailsFragment = { __typename?: 'RegisteredPlatform', id: string, service_instance_id: any, platform_id: string, last_connectivity_check: any | null, commercial_model: CommercialModel | null, tenant_id: string | null, title: string, contract: PlatformContract, url: string, version: string | null, identifier: ServiceDefinitionIdentifier, subscription: { __typename?: 'SubscriptionModel', start_date: any | null, end_date: any | null, service_instance: { __typename?: 'ServiceInstance', id: string }, organization: { __typename?: 'Organization', id: string } } | null, organization: { __typename?: 'Organization', name: string } | null, deployment_request: { __typename?: 'DeploymentRequest', id: string, hub_status: DeploymentRequestHubStatus, region: DeploymentRequestPlatformRegion, counts_in_orga_quota: boolean, platform_identifier: PlatformIdentifier | null, requester_email: string | null } | null, myGroups: Array<{ __typename?: 'ServiceGroup', name: ServiceGroupName }> | null };
+
+export type RegisteredPlatformByServiceInstanceQueryVariables = Exact<{
+  input: RegisteredPlatformInput;
+}>;
+
+
+export type RegisteredPlatformByServiceInstanceQuery = { __typename?: 'Query', registeredPlatform: { __typename?: 'RegisteredPlatform', id: string, service_instance_id: any, platform_id: string, last_connectivity_check: any | null, commercial_model: CommercialModel | null, tenant_id: string | null, title: string, contract: PlatformContract, url: string, version: string | null, identifier: ServiceDefinitionIdentifier, subscription: { __typename?: 'SubscriptionModel', start_date: any | null, end_date: any | null, service_instance: { __typename?: 'ServiceInstance', id: string }, organization: { __typename?: 'Organization', id: string } } | null, organization: { __typename?: 'Organization', name: string } | null, deployment_request: { __typename?: 'DeploymentRequest', id: string, hub_status: DeploymentRequestHubStatus, region: DeploymentRequestPlatformRegion, counts_in_orga_quota: boolean, platform_identifier: PlatformIdentifier | null, requester_email: string | null } | null, myGroups: Array<{ __typename?: 'ServiceGroup', name: ServiceGroupName }> | null } | null };
+
+export type IsPlatformRegisteredQueryVariables = Exact<{
+  input: IsPlatformRegisteredInput;
+}>;
+
+
+export type IsPlatformRegisteredQuery = { __typename?: 'Query', isPlatformRegistered: { __typename?: 'IsPlatformRegisteredResponse', status: PlatformRegistrationStatus, platformTitle: string | null, organization: { __typename?: 'IsPlatformRegisteredOrganization', id: string } | null } };
+
+export type CanUnregisterPlatformQueryVariables = Exact<{
+  input: CanUnregisterPlatformInput;
+}>;
+
+
+export type CanUnregisterPlatformQuery = { __typename?: 'Query', canUnregisterPlatform: { __typename?: 'CanUnregisterResponse', isPlatformRegistered: boolean, isAllowed: boolean | null, isInOrganization: boolean | null, organizationId: any | null, organizationName: string | null } };
+
+export type AddRolePortalMutationVariables = Exact<{
+  input: AddRolePortalInput;
+}>;
+
+
+export type AddRolePortalMutation = { __typename?: 'Mutation', addRolePortal: { __typename?: 'RolePortal', id: string, name: string, capabilities: Array<{ __typename?: 'Capability', id: string, name: PortalCapability } | null> | null } };
+
+export type UpdateRolePortalMutationVariables = Exact<{
+  name: Scalars['String']['input'];
+  input: UpdateRolePortalInput;
+}>;
+
+
+export type UpdateRolePortalMutation = { __typename?: 'Mutation', updateRolePortal: { __typename?: 'RolePortal', id: string, name: string, capabilities: Array<{ __typename?: 'Capability', id: string, name: PortalCapability } | null> | null } };
+
+export type DeleteRolePortalMutationVariables = Exact<{
+  name: Scalars['String']['input'];
+}>;
+
+
+export type DeleteRolePortalMutation = { __typename?: 'Mutation', deleteRolePortal: { __typename?: 'RolePortal', id: string, name: string } };
+
+export type AddSsoGroupRolePortalMutationVariables = Exact<{
+  input: AddSsoGroupRolePortalInput;
+}>;
+
+
+export type AddSsoGroupRolePortalMutation = { __typename?: 'Mutation', addSSOGroupRolePortal: { __typename?: 'SSOGroupRolePortal', ssoGroup: string, rolePortal: { __typename?: 'RolePortal', id: string, name: string } } };
+
+export type UpdateSsoGroupRolePortalMutationVariables = Exact<{
+  ssoGroup: Scalars['String']['input'];
+  rolePortal: Scalars['String']['input'];
+  input: UpdateSsoGroupRolePortalInput;
+}>;
+
+
+export type UpdateSsoGroupRolePortalMutation = { __typename?: 'Mutation', updateSSOGroupRolePortal: { __typename?: 'SSOGroupRolePortal', ssoGroup: string, rolePortal: { __typename?: 'RolePortal', id: string, name: string } } };
+
+export type DeleteSsoGroupRolePortalMutationVariables = Exact<{
+  input: DeleteSsoGroupRolePortalInput;
+}>;
+
+
+export type DeleteSsoGroupRolePortalMutation = { __typename?: 'Mutation', deleteSSOGroupRolePortal: { __typename?: 'SSOGroupRolePortal', ssoGroup: string, rolePortal: { __typename?: 'RolePortal', id: string, name: string } } };
+
+export type RolePortalsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type RolePortalsQuery = { __typename?: 'Query', rolePortals: Array<{ __typename?: 'RolePortal', id: string, name: string, capabilities: Array<{ __typename?: 'Capability', id: string, name: PortalCapability } | null> | null }> };
+
+export type SsoGroupRolePortalsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type SsoGroupRolePortalsQuery = { __typename?: 'Query', ssoGroupRolePortals: Array<{ __typename?: 'SSOGroupRolePortal', ssoGroup: string, rolePortal: { __typename?: 'RolePortal', id: string, name: string } }> };
+
+export type SaasPlatformRowFragment = { __typename?: 'SaasPlatform', id: string, product: SaasProduct | null, customer: string | null, sla_cmtd: number | null, health_issues: Array<SaasPlatformHealthIssue> | null, contract_status: SaasPlatformContractStatus | null, metadata: { __typename?: 'SaasPlatformMetadata', plan: string | null, end_date: any | null }, storage: { __typename?: 'SaasPlatformStorage', es_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null } | null, s3_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null } | null, postgres_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null } | null } | null, registered_platform: { __typename?: 'RegisteredPlatform', id: string, service_instance_id: any, identifier: ServiceDefinitionIdentifier, version: string | null, organization: { __typename?: 'Organization', id: string, name: string, administrator_emails: Array<string> | null } | null } | null };
+
+export type SaasManagerPlatformsListQueryVariables = Exact<{
+  first: Scalars['Int']['input'];
+  after: InputMaybe<Scalars['ID']['input']>;
+  orderBy: SaasPlatformOrdering;
+  orderMode: OrderingMode;
+  searchTerm: InputMaybe<Scalars['String']['input']>;
+  product: InputMaybe<SaasProduct>;
+}>;
+
+
+export type SaasManagerPlatformsListQuery = { __typename?: 'Query', saasManagerPlatforms: { __typename?: 'SaasPlatformConnection', totalCount: number, edges: Array<{ __typename?: 'SaasPlatformEdge', node: { __typename?: 'SaasPlatform', id: string, product: SaasProduct | null, customer: string | null, sla_cmtd: number | null, health_issues: Array<SaasPlatformHealthIssue> | null, contract_status: SaasPlatformContractStatus | null, metadata: { __typename?: 'SaasPlatformMetadata', plan: string | null, end_date: any | null }, storage: { __typename?: 'SaasPlatformStorage', es_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null } | null, s3_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null } | null, postgres_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null } | null } | null, registered_platform: { __typename?: 'RegisteredPlatform', id: string, service_instance_id: any, identifier: ServiceDefinitionIdentifier, version: string | null, organization: { __typename?: 'Organization', id: string, name: string, administrator_emails: Array<string> | null } | null } | null } }> } };
+
+export type AddUsersToBundleGroupsMutationVariables = Exact<{
+  serviceInstanceId: Scalars['ServiceInstanceId']['input'];
+  input: AddUsersToBundleGroupsInput;
+}>;
+
+
+export type AddUsersToBundleGroupsMutation = { __typename?: 'Mutation', addUsersToBundleGroups: Array<{ __typename?: 'BundleUserServiceGroup', user: { __typename?: 'User', id: string, email: string }, groups: Array<{ __typename?: 'UserPlatformGroup', platformIdentifier: PlatformIdentifier, name: ServiceGroupName }> }> };
+
+export type RemoveUsersFromBundleGroupsMutationVariables = Exact<{
+  serviceInstanceId: Scalars['ServiceInstanceId']['input'];
+  userIds: Array<Scalars['UserId']['input']> | Scalars['UserId']['input'];
+}>;
+
+
+export type RemoveUsersFromBundleGroupsMutation = { __typename?: 'Mutation', removeUsersFromBundleGroups: Array<any> };
+
+export type UpdateBundleUserGroupsMutationVariables = Exact<{
+  serviceInstanceId: Scalars['ServiceInstanceId']['input'];
+  input: UpdateBundleUserGroupsInput;
+}>;
+
+
+export type UpdateBundleUserGroupsMutation = { __typename?: 'Mutation', updateBundleUserGroups: Array<{ __typename?: 'BundleUserServiceGroup', user: { __typename?: 'User', id: string, email: string }, groups: Array<{ __typename?: 'UserPlatformGroup', platformIdentifier: PlatformIdentifier, name: ServiceGroupName }> }> };
+
+export type UpdateServiceGroupsMutationVariables = Exact<{
+  input: UpdateServiceGroupsInput;
+}>;
+
+
+export type UpdateServiceGroupsMutation = { __typename?: 'Mutation', updateServiceGroups: Array<{ __typename?: 'ServiceGroup', id: string }> };
+
+export type BundleUserServiceGroupsQueryVariables = Exact<{
+  serviceInstanceId: Scalars['ServiceInstanceId']['input'];
+}>;
+
+
+export type BundleUserServiceGroupsQuery = { __typename?: 'Query', bundleUserServiceGroups: Array<{ __typename?: 'BundleUserServiceGroup', user: { __typename?: 'User', id: string, email: string }, groups: Array<{ __typename?: 'UserPlatformGroup', platformIdentifier: PlatformIdentifier, name: ServiceGroupName }> }> };
+
+export type BundleProductsQueryVariables = Exact<{
+  serviceInstanceId: Scalars['ServiceInstanceId']['input'];
+}>;
+
+
+export type BundleProductsQuery = { __typename?: 'Query', bundleProducts: Array<PlatformIdentifier> };
+
+export type ServiceGroupsQueryVariables = Exact<{
+  serviceInstanceId: Scalars['ServiceInstanceId']['input'];
+}>;
+
+
+export type ServiceGroupsQuery = { __typename?: 'Query', serviceGroups: Array<{ __typename?: 'ServiceGroup', id: string, name: ServiceGroupName, users: Array<{ __typename?: 'User', id: string, email: string }> | null }> };
 
 export type ServiceInstancesListQueryVariables = Exact<{
   count: Scalars['Int']['input'];
@@ -2954,21 +4655,109 @@ export type ServiceInstancesListQueryVariables = Exact<{
 
 export type ServiceInstancesListQuery = { __typename?: 'Query', serviceInstances: { __typename?: 'ServiceConnection', edges: Array<{ __typename?: 'ServiceInstanceEdge', node: { __typename?: 'ServiceInstance', id: string, name: string, service_definition: { __typename?: 'ServiceDefinition', identifier: ServiceDefinitionIdentifier } | null } | null }> } };
 
+export type SeoServiceInstanceItemFragment = { __typename?: 'SeoServiceInstance', id: string, name: string, slug: string | null, description: string | null, logo_document_id: any | null, illustration_document_id: any | null, tags: Array<ServiceInstanceTag> | null, service_definition: { __typename?: 'ServiceDefinition', identifier: ServiceDefinitionIdentifier }, links: Array<{ __typename?: 'ServiceLink', url: string | null, name: string | null } | null> | null };
+
+export type SeoServiceInstancesQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type SeoServiceInstancesQuery = { __typename?: 'Query', seoServiceInstances: Array<{ __typename?: 'SeoServiceInstance', id: string, name: string, slug: string | null, description: string | null, logo_document_id: any | null, illustration_document_id: any | null, tags: Array<ServiceInstanceTag> | null, service_definition: { __typename?: 'ServiceDefinition', identifier: ServiceDefinitionIdentifier }, links: Array<{ __typename?: 'ServiceLink', url: string | null, name: string | null } | null> | null }> };
+
+export type SeoServiceInstanceBySlugQueryVariables = Exact<{
+  slug: Scalars['String']['input'];
+}>;
+
+
+export type SeoServiceInstanceBySlugQuery = { __typename?: 'Query', seoServiceInstance: { __typename?: 'SeoServiceInstance', id: string, name: string, slug: string | null, description: string | null, logo_document_id: any | null, illustration_document_id: any | null, tags: Array<ServiceInstanceTag> | null, service_definition: { __typename?: 'ServiceDefinition', identifier: ServiceDefinitionIdentifier }, links: Array<{ __typename?: 'ServiceLink', url: string | null, name: string | null } | null> | null } };
+
+export type ServiceInstanceLinksByTagsQueryVariables = Exact<{
+  tags: Array<ServiceInstanceTag> | ServiceInstanceTag;
+}>;
+
+
+export type ServiceInstanceLinksByTagsQuery = { __typename?: 'Query', serviceInstanceLinksByTags: Array<{ __typename?: 'SeoServiceInstance', id: string, name: string, slug: string | null, description: string | null, logo_document_id: any | null, illustration_document_id: any | null, tags: Array<ServiceInstanceTag> | null, service_definition: { __typename?: 'ServiceDefinition', identifier: ServiceDefinitionIdentifier }, links: Array<{ __typename?: 'ServiceLink', url: string | null, name: string | null } | null> | null }> };
+
+export type SeoServiceInstanceMetadataItemFragment = { __typename?: 'SeoServiceInstanceMetadata', service_instance_id: any, language: Locale, meta_title: string, meta_description: string };
+
 export type ServiceInstanceSeoMetadataByIdQueryVariables = Exact<{
   service_instance_id: Scalars['ServiceInstanceId']['input'];
 }>;
 
 
-export type ServiceInstanceSeoMetadataByIdQuery = { __typename?: 'Query', seoServiceInstanceMetadata: Array<{ __typename?: 'SeoServiceInstanceMetadata', service_instance_id: any, language: SeoServiceInstanceLanguage, meta_title: string, meta_description: string }> };
+export type ServiceInstanceSeoMetadataByIdQuery = { __typename?: 'Query', seoServiceInstanceMetadata: Array<{ __typename?: 'SeoServiceInstanceMetadata', service_instance_id: any, language: Locale, meta_title: string, meta_description: string }> };
+
+export type ServiceInstanceItemFragment = { __typename?: 'ServiceInstance', id: string, name: string, description: string | null, slug: string | null, capabilities: Array<string | null>, service_definition: { __typename?: 'ServiceDefinition', identifier: ServiceDefinitionIdentifier } | null };
+
+export type ServiceInstanceByIdQueryVariables = Exact<{
+  service_instance_id: Scalars['ServiceInstanceId']['input'];
+}>;
+
+
+export type ServiceInstanceByIdQuery = { __typename?: 'Query', serviceInstanceById: { __typename?: 'ServiceInstance', id: string, name: string, description: string | null, slug: string | null, capabilities: Array<string | null>, service_definition: { __typename?: 'ServiceDefinition', identifier: ServiceDefinitionIdentifier } | null } | null };
+
+export type ServiceInstanceWithCapabilitiesItemFragment = { __typename?: 'ServiceInstance', id: string, name: string, description: string | null, tags: Array<ServiceInstanceTag> | null, service_definition: { __typename?: 'ServiceDefinition', service_capability: Array<{ __typename?: 'ServiceCapability', id: string, description: string | null, name: string | null } | null> | null } | null };
+
+export type ServiceInstanceWithCapabilitiesByIdQueryVariables = Exact<{
+  service_instance_id: Scalars['ServiceInstanceId']['input'];
+}>;
+
+
+export type ServiceInstanceWithCapabilitiesByIdQuery = { __typename?: 'Query', serviceInstanceById: { __typename?: 'ServiceInstance', id: string, name: string, description: string | null, tags: Array<ServiceInstanceTag> | null, service_definition: { __typename?: 'ServiceDefinition', service_capability: Array<{ __typename?: 'ServiceCapability', id: string, description: string | null, name: string | null } | null> | null } | null } | null };
+
+export type AdminServiceInstanceItemFragment = { __typename?: 'ServiceInstance', id: string, name: string, description: string | null, creation_status: ServiceInstanceCreationStatus | null, capabilities: Array<string | null>, public: boolean | null, tags: Array<ServiceInstanceTag> | null, logo_document_id: any | null, illustration_document_id: any | null, slug: string | null, ordering: number, links: Array<{ __typename?: 'ServiceLink', name: string | null, url: string | null } | null> | null, service_definition: { __typename?: 'ServiceDefinition', id: string, name: string, identifier: ServiceDefinitionIdentifier } | null };
+
+export type AdminServiceInstancesListQueryVariables = Exact<{
+  count: Scalars['Int']['input'];
+  orderBy: ServiceInstanceOrdering;
+  orderMode: OrderingMode;
+  filters: InputMaybe<Array<ServiceInstanceFilter> | ServiceInstanceFilter>;
+  searchTerm: InputMaybe<Scalars['String']['input']>;
+  includeInaccessible: InputMaybe<Scalars['Boolean']['input']>;
+}>;
+
+
+export type AdminServiceInstancesListQuery = { __typename?: 'Query', serviceInstances: { __typename?: 'ServiceConnection', edges: Array<{ __typename?: 'ServiceInstanceEdge', node: { __typename?: 'ServiceInstance', id: string, name: string, description: string | null, creation_status: ServiceInstanceCreationStatus | null, capabilities: Array<string | null>, public: boolean | null, tags: Array<ServiceInstanceTag> | null, logo_document_id: any | null, illustration_document_id: any | null, slug: string | null, ordering: number, links: Array<{ __typename?: 'ServiceLink', name: string | null, url: string | null } | null> | null, service_definition: { __typename?: 'ServiceDefinition', id: string, name: string, identifier: ServiceDefinitionIdentifier } | null } | null }> } };
 
 export type EditSeoServiceInstanceMetadataMutationVariables = Exact<{
   service_instance_id: Scalars['ServiceInstanceId']['input'];
-  language: SeoServiceInstanceLanguage;
+  language: Locale;
   input: EditSeoServiceInstanceInput;
 }>;
 
 
-export type EditSeoServiceInstanceMetadataMutation = { __typename?: 'Mutation', editSeoServiceInstance: { __typename?: 'SeoServiceInstanceMetadata', service_instance_id: any, language: SeoServiceInstanceLanguage, meta_title: string, meta_description: string } };
+export type EditSeoServiceInstanceMetadataMutation = { __typename?: 'Mutation', editSeoServiceInstance: { __typename?: 'SeoServiceInstanceMetadata', service_instance_id: any, language: Locale, meta_title: string, meta_description: string } };
+
+export type UpdatePlatformServiceMetadataMutationVariables = Exact<{
+  input: UpdatePlatformServiceMetadataInput;
+}>;
+
+
+export type UpdatePlatformServiceMetadataMutation = { __typename?: 'Mutation', updatePlatformServiceMetadata: { __typename?: 'RegisteredPlatform', id: string, title: string } | null };
+
+export type AddServicePictureMutationVariables = Exact<{
+  serviceInstanceId: Scalars['ServiceInstanceId']['input'];
+  document: InputMaybe<Scalars['Upload']['input']>;
+  isLogo: Scalars['Boolean']['input'];
+}>;
+
+
+export type AddServicePictureMutation = { __typename?: 'Mutation', addServicePicture: { __typename?: 'ServiceInstance', id: string, name: string } | null };
+
+export type ServiceUserCapabilitiesQueryVariables = Exact<{
+  service_instance_id: Scalars['ServiceInstanceId']['input'];
+}>;
+
+
+export type ServiceUserCapabilitiesQuery = { __typename?: 'Query', userServiceCapabilities: { __typename?: 'UserServiceCapabilitiesResponse', subscription_id: any | null, userServiceCapabilities: Array<{ __typename?: 'UserServiceCapability', id: string, user_service_id: string, generic_service_capability: { __typename?: 'GenericServiceCapability', id: string, name: string | null } | null, subscription_capability: { __typename?: 'SubscriptionCapability', id: string, service_capability: { __typename?: 'ServiceCapability', name: string | null, id: string } | null } | null }> } };
+
+export type SettingsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type SettingsQuery = { __typename?: 'Query', settings: { __typename?: 'Settings', environment: string, base_url_front: string, platform_feature_flags: Array<FeatureFlag>, platform_providers: Array<{ __typename?: 'PlatformProvider', name: string, provider: string, type: string }> } };
+
+export type ServerSettingsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type ServerSettingsQuery = { __typename?: 'Query', settings: { __typename?: 'Settings', base_url_front: string, platform_feature_flags: Array<FeatureFlag>, platform_providers: Array<{ __typename?: 'PlatformProvider', provider: string }> } };
 
 export type SolutionCategoryAddMutationVariables = Exact<{
   input: AddSolutionCategoryInput;
@@ -3005,12 +4794,93 @@ export type SolutionCategoriesListQueryVariables = Exact<{
 
 export type SolutionCategoriesListQuery = { __typename?: 'Query', solutionCategories: { __typename?: 'SolutionCategoryConnection', totalCount: number, edges: Array<{ __typename?: 'SolutionCategoryEdge', node: { __typename?: 'SolutionCategory', id: string, name: string, product: Array<FiligranProduct> } }> } | null };
 
-export type TrialDeploymentsEligibilityQueryVariables = Exact<{
-  input: TrialDeploymentsInput;
+export type CreateSubscriptionsMutationVariables = Exact<{
+  input: CreateSubscriptionsInput;
 }>;
 
 
-export type TrialDeploymentsEligibilityQuery = { __typename?: 'Query', trialDeployments: { __typename?: 'TrialsDeployments', availableTrials: Array<PlatformIdentifier>, isBlacklisted: boolean } };
+export type CreateSubscriptionsMutation = { __typename?: 'Mutation', createSubscriptions: Array<{ __typename?: 'SubscriptionModel', id: string }> };
+
+export type UpdateSubscriptionMutationVariables = Exact<{
+  subscription_id: Scalars['SubscriptionId']['input'];
+  input: UpdateSubscriptionInput;
+}>;
+
+
+export type UpdateSubscriptionMutation = { __typename?: 'Mutation', updateSubscription: { __typename?: 'SubscriptionModel', id: string } | null };
+
+export type DeleteSubscriptionsMutationVariables = Exact<{
+  subscription_ids: Array<Scalars['SubscriptionId']['input']> | Scalars['SubscriptionId']['input'];
+}>;
+
+
+export type DeleteSubscriptionsMutation = { __typename?: 'Mutation', deleteSubscriptions: Array<{ __typename?: 'SubscriptionModel', id: string }> };
+
+export type AddSubscriptionCapabilityMutationVariables = Exact<{
+  input: AddSubscriptionCapabilityInput;
+}>;
+
+
+export type AddSubscriptionCapabilityMutation = { __typename?: 'Mutation', addSubscriptionCapability: Array<{ __typename?: 'SubscriptionModel', id: string }> };
+
+export type SubscriptionItemFragment = { __typename?: 'SubscriptionModel', id: string, start_date: any | null, end_date: any | null, organization: { __typename?: 'Organization', name: string, id: string, personal_space: boolean }, subscription_capability: Array<{ __typename?: 'SubscriptionCapability', id: string, service_capability: { __typename?: 'ServiceCapability', id: string, description: string | null, name: string | null } | null } | null> | null, service_instance: { __typename?: 'ServiceInstance', id: string, name: string } };
+
+export type SubscriptionsListQueryVariables = Exact<{
+  count: Scalars['Int']['input'];
+  cursor: InputMaybe<Scalars['ID']['input']>;
+  orderBy: SubscriptionOrdering;
+  orderMode: OrderingMode;
+  filters: InputMaybe<Array<SubscriptionFilter> | SubscriptionFilter>;
+  searchTerm: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type SubscriptionsListQuery = { __typename?: 'Query', subscriptions: { __typename?: 'SubscriptionConnection', totalCount: number, edges: Array<{ __typename?: 'SubscriptionEdge', node: { __typename?: 'SubscriptionModel', id: string, start_date: any | null, end_date: any | null, organization: { __typename?: 'Organization', name: string, id: string, personal_space: boolean }, subscription_capability: Array<{ __typename?: 'SubscriptionCapability', id: string, service_capability: { __typename?: 'ServiceCapability', id: string, description: string | null, name: string | null } | null } | null> | null, service_instance: { __typename?: 'ServiceInstance', id: string, name: string } } }> } };
+
+export type SubscriptionByIdQueryVariables = Exact<{
+  subscriptionId: InputMaybe<Scalars['SubscriptionId']['input']>;
+}>;
+
+
+export type SubscriptionByIdQuery = { __typename?: 'Query', subscriptionById: { __typename?: 'SubscriptionModel', id: string, organization: { __typename?: 'Organization', id: string, name: string }, service_instance: { __typename?: 'ServiceInstance', id: string, name: string, description: string | null, tags: Array<ServiceInstanceTag> | null, service_definition: { __typename?: 'ServiceDefinition', service_capability: Array<{ __typename?: 'ServiceCapability', id: string, name: string | null, description: string | null } | null> | null } | null }, subscription_capability: Array<{ __typename?: 'SubscriptionCapability', id: string, service_capability: { __typename?: 'ServiceCapability', id: string, name: string | null, description: string | null } | null } | null> | null } | null };
+
+export type CreateDeploymentRequestMutationVariables = Exact<{
+  input: CreateDeploymentRequestInput;
+}>;
+
+
+export type CreateDeploymentRequestMutation = { __typename?: 'Mutation', createDeploymentRequest: { __typename?: 'DeploymentRequest', id: string, service_instance_id: any } };
+
+export type GiveDeploymentFeedbackMutationVariables = Exact<{
+  input: GiveDeploymentFeedbackInput;
+}>;
+
+
+export type GiveDeploymentFeedbackMutation = { __typename?: 'Mutation', giveDeploymentFeedback: { __typename?: 'Success', success: boolean } };
+
+export type ReachSalesMutationVariables = Exact<{
+  message: InputMaybe<Scalars['String']['input']>;
+  deploymentRequestType: InputMaybe<DeploymentRequestDeploymentType>;
+}>;
+
+
+export type ReachSalesMutation = { __typename?: 'Mutation', contactUs: { __typename?: 'Success', success: boolean } };
+
+export type ReachSalesAboutPlatformMutationVariables = Exact<{
+  message: InputMaybe<Scalars['String']['input']>;
+  platformId: InputMaybe<Scalars['ID']['input']>;
+  platformIdentifier: InputMaybe<PlatformIdentifier>;
+}>;
+
+
+export type ReachSalesAboutPlatformMutation = { __typename?: 'Mutation', contactUs: { __typename?: 'Success', success: boolean } };
+
+export type PlatformTrialStatusQueryVariables = Exact<{
+  organizationId: Scalars['OrganizationId']['input'];
+}>;
+
+
+export type PlatformTrialStatusQuery = { __typename?: 'Query', platformTrialStatus: { __typename?: 'PlatformTrialStatus', deploymentRequestId: any | null, isBlacklisted: boolean, hub_status: DeploymentRequestHubStatus | null, end_date: any | null } };
 
 export type UseCaseAddMutationVariables = Exact<{
   input: AddUseCaseInput;
@@ -3047,19 +4917,573 @@ export type UseCasesListQueryVariables = Exact<{
 
 export type UseCasesListQuery = { __typename?: 'Query', useCases: { __typename?: 'UseCaseConnection', totalCount: number, edges: Array<{ __typename?: 'UseCaseEdge', node: { __typename?: 'UseCase', id: string, name: string, color: string, product: Array<FiligranProduct> } }> } | null };
 
+export type AddUserServiceMutationVariables = Exact<{
+  input: UserServiceAddInput;
+  service_instance_id: Scalars['ServiceInstanceId']['input'];
+}>;
+
+
+export type AddUserServiceMutation = { __typename?: 'Mutation', addUserService: Array<{ __typename?: 'UserService', id: string } | null> | null };
+
+export type EditUserServiceMutationVariables = Exact<{
+  input: UserServiceEditInput;
+  service_instance_id: Scalars['ServiceInstanceId']['input'];
+}>;
+
+
+export type EditUserServiceMutation = { __typename?: 'Mutation', editUserService: { __typename?: 'UserService', id: string } | null };
+
+export type DeleteUserServicesMutationVariables = Exact<{
+  input: UserServicesDeleteInput;
+  service_instance_id: Scalars['ServiceInstanceId']['input'];
+}>;
+
+
+export type DeleteUserServicesMutation = { __typename?: 'Mutation', deleteUserServices: Array<{ __typename?: 'UserService', id: string } | null> | null };
+
+export type AddCapabilitiesToUserServicesMutationVariables = Exact<{
+  input: UserServicesAddCapabilitiesInput;
+  service_instance_id: Scalars['ServiceInstanceId']['input'];
+}>;
+
+
+export type AddCapabilitiesToUserServicesMutation = { __typename?: 'Mutation', addCapabilitiesToUserServices: Array<{ __typename?: 'UserService', id: string } | null> | null };
+
+export type UserServiceItemFragment = { __typename?: 'UserService', id: string, user: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, email: string } | null, subscription: { __typename?: 'SubscriptionModel', service_instance: { __typename?: 'ServiceInstance', id: string, name: string, service_definition: { __typename?: 'ServiceDefinition', identifier: ServiceDefinitionIdentifier } | null } } | null, user_service_capability: Array<{ __typename?: 'UserServiceCapability', id: string, generic_service_capability: { __typename?: 'GenericServiceCapability', id: string, name: string | null } | null, subscription_capability: { __typename?: 'SubscriptionCapability', id: string, service_capability: { __typename?: 'ServiceCapability', id: string, name: string | null } | null } | null } | null> | null };
+
+export type UserServicesFromSubscriptionQueryVariables = Exact<{
+  count: Scalars['Int']['input'];
+  cursor: InputMaybe<Scalars['ID']['input']>;
+  orderBy: UserServiceOrdering;
+  orderMode: OrderingMode;
+  subscriptionId: Scalars['SubscriptionId']['input'];
+}>;
+
+
+export type UserServicesFromSubscriptionQuery = { __typename?: 'Query', userServiceFromSubscription: { __typename?: 'UserServiceConnection', totalCount: number, edges: Array<{ __typename?: 'UserServiceEdge', node: { __typename?: 'UserService', id: string, user: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, email: string } | null, subscription: { __typename?: 'SubscriptionModel', service_instance: { __typename?: 'ServiceInstance', id: string, name: string, service_definition: { __typename?: 'ServiceDefinition', identifier: ServiceDefinitionIdentifier } | null } } | null, user_service_capability: Array<{ __typename?: 'UserServiceCapability', id: string, generic_service_capability: { __typename?: 'GenericServiceCapability', id: string, name: string | null } | null, subscription_capability: { __typename?: 'SubscriptionCapability', id: string, service_capability: { __typename?: 'ServiceCapability', id: string, name: string | null } | null } | null } | null> | null } | null }> } | null };
+
+export type UserDeleteMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type UserDeleteMutation = { __typename?: 'Mutation', deleteUser: { __typename?: 'User', id: string } };
+
+export type ChangeSelectedOrganizationMutationVariables = Exact<{
+  organization_id: Scalars['OrganizationId']['input'];
+}>;
+
+
+export type ChangeSelectedOrganizationMutation = { __typename?: 'Mutation', changeSelectedOrganization: { __typename?: 'User', id: string, selected_organization_id: any | null, selected_org_capabilities: Array<OrganizationCapability> | null } | null };
+
+export type UserResendInviteMutationVariables = Exact<{
+  input: AddUserInput;
+}>;
+
+
+export type UserResendInviteMutation = { __typename?: 'Mutation', addUser: { __typename?: 'User', id: string } | null };
+
+export type UserAdminResendInviteMutationVariables = Exact<{
+  input: AdminAddUserInput;
+}>;
+
+
+export type UserAdminResendInviteMutation = { __typename?: 'Mutation', adminAddUser: { __typename?: 'User', id: string } | null };
+
+export type PendingUserAcceptMutationVariables = Exact<{
+  user_id: Scalars['UserId']['input'];
+  organization_id: Scalars['OrganizationId']['input'];
+}>;
+
+
+export type PendingUserAcceptMutation = { __typename?: 'Mutation', acceptPendingUserInOrganization: { __typename?: 'User', id: string } | null };
+
+export type PendingUserRemoveMutationVariables = Exact<{
+  user_id: Scalars['UserId']['input'];
+  organization_id: Scalars['OrganizationId']['input'];
+}>;
+
+
+export type PendingUserRemoveMutation = { __typename?: 'Mutation', removePendingUserFromOrganization: { __typename?: 'User', id: string } | null };
+
+export type PendingUsersBulkAcceptMutationVariables = Exact<{
+  ids: InputMaybe<Array<Scalars['UserId']['input']> | Scalars['UserId']['input']>;
+  searchTerm: InputMaybe<Scalars['String']['input']>;
+  filters: InputMaybe<Array<Filter> | Filter>;
+  excludedIds: InputMaybe<Array<Scalars['UserId']['input']> | Scalars['UserId']['input']>;
+}>;
+
+
+export type PendingUsersBulkAcceptMutation = { __typename?: 'Mutation', bulkAcceptPendingUserInOrganization: { __typename?: 'Success', success: boolean } | null };
+
+export type PendingUsersBulkRemoveMutationVariables = Exact<{
+  ids: InputMaybe<Array<Scalars['UserId']['input']> | Scalars['UserId']['input']>;
+  searchTerm: InputMaybe<Scalars['String']['input']>;
+  filters: InputMaybe<Array<Filter> | Filter>;
+  excludedIds: InputMaybe<Array<Scalars['UserId']['input']> | Scalars['UserId']['input']>;
+}>;
+
+
+export type PendingUsersBulkRemoveMutation = { __typename?: 'Mutation', bulkRemovePendingUserFromOrganization: { __typename?: 'Success', success: boolean } | null };
+
+export type UserCapabilitiesEditMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+  input: EditUserCapabilitiesInput;
+}>;
+
+
+export type UserCapabilitiesEditMutation = { __typename?: 'Mutation', editUserCapabilities: { __typename?: 'User', id: string } };
+
+export type UserAdminEditMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+  input: AdminEditUserInput;
+}>;
+
+
+export type UserAdminEditMutation = { __typename?: 'Mutation', adminEditUser: { __typename?: 'User', id: string } };
+
+export type UserOrganizationRemoveMutationVariables = Exact<{
+  user_id: Scalars['UserId']['input'];
+  organization_id: Scalars['OrganizationId']['input'];
+}>;
+
+
+export type UserOrganizationRemoveMutation = { __typename?: 'Mutation', removeUserFromOrganization: { __typename?: 'User', id: string } | null };
+
+export type PendingUserEventsSubscriptionVariables = Exact<{
+  organizationId: Scalars['ID']['input'];
+}>;
+
+
+export type PendingUserEventsSubscription = { __typename?: 'Subscription', UserPending: { __typename?: 'UserPendingSubscription', delete: { __typename?: 'User', id: string } | null, invalidate: { __typename?: 'OrganizationRef', id: string } | null } | null };
+
+export type OrganizationUserEventsSubscriptionVariables = Exact<{
+  organizationId: Scalars['ID']['input'];
+}>;
+
+
+export type OrganizationUserEventsSubscription = { __typename?: 'Subscription', User: { __typename?: 'UserSubscription', add: { __typename?: 'User', id: string } | null } | null };
+
+export type AdminUserEventsSubscriptionVariables = Exact<{ [key: string]: never; }>;
+
+
+export type AdminUserEventsSubscription = { __typename?: 'Subscription', AdminUser: { __typename?: 'UserSubscription', add: { __typename?: 'User', id: string } | null } | null };
+
+export type UsersWithCapabilitiesInOrganizationQueryVariables = Exact<{
+  input: UsersWithCapabilitiesInOrganizationInput;
+}>;
+
+
+export type UsersWithCapabilitiesInOrganizationQuery = { __typename?: 'Query', usersWithCapabilitiesInOrganization: Array<{ __typename?: 'OrganizationMemberContact', id: string, email: string, first_name: string | null, last_name: string | null }> };
+
+export type UsersQueryVariables = Exact<{
+  first: Scalars['Int']['input'];
+  orderBy: UserOrdering;
+  orderMode: OrderingMode;
+  filters: InputMaybe<Array<Filter> | Filter>;
+  searchTerm: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type UsersQuery = { __typename?: 'Query', users: { __typename?: 'UserConnection', edges: Array<{ __typename?: 'UserEdge', node: { __typename?: 'User', id: string, email: string, status: UserAccountStatus | null } }> } };
+
+export type PendingUsersQueryVariables = Exact<{
+  first: Scalars['Int']['input'];
+  after: InputMaybe<Scalars['ID']['input']>;
+  orderBy: UserOrdering;
+  orderMode: OrderingMode;
+  filters: InputMaybe<Array<Filter> | Filter>;
+  searchTerm: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type PendingUsersQuery = { __typename?: 'Query', pendingUsers: { __typename?: 'UserConnection', totalCount: number, edges: Array<{ __typename?: 'UserEdge', node: { __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null } }> } };
+
+export type UsersListQueryVariables = Exact<{
+  first: Scalars['Int']['input'];
+  after: InputMaybe<Scalars['ID']['input']>;
+  orderBy: UserOrdering;
+  orderMode: OrderingMode;
+  filters: InputMaybe<Array<Filter> | Filter>;
+  searchTerm: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type UsersListQuery = { __typename?: 'Query', users: { __typename?: 'UserConnection', totalCount: number, edges: Array<{ __typename?: 'UserEdge', node: { __typename?: 'User', id: string, email: string, last_name: string | null, first_name: string | null, disabled: boolean | null, last_login: any | null, country: string | null, status: UserAccountStatus | null, invitation_date: any | null, organization_capabilities: Array<{ __typename?: 'OrganizationCapabilities', id: string, capabilities: Array<OrganizationCapability> | null, organization: { __typename?: 'Organization', id: string, name: string, personal_space: boolean } }> | null } }> } };
+
+export type VotingRoundCreateMutationVariables = Exact<{
+  input: CreateVotingRoundInput;
+}>;
+
+
+export type VotingRoundCreateMutation = { __typename?: 'Mutation', createVotingRound: { __typename?: 'VotingRound', id: string, service_instance_id: any, name: string, description: string | null, status: VotingRoundStatus, theme: VotingRoundTheme, opened_at: any | null, closed_at: any | null, created_at: any } };
+
+export type VotingRoundUpdateMutationVariables = Exact<{
+  id: Scalars['VotingRoundId']['input'];
+  input: UpdateVotingRoundInput;
+}>;
+
+
+export type VotingRoundUpdateMutation = { __typename?: 'Mutation', updateVotingRound: { __typename?: 'VotingRound', id: string, service_instance_id: any, name: string, description: string | null, status: VotingRoundStatus, theme: VotingRoundTheme, opened_at: any | null, closed_at: any | null, created_at: any } };
+
+export type VotingRoundSetStatusMutationVariables = Exact<{
+  id: Scalars['VotingRoundId']['input'];
+  status: VotingRoundStatus;
+}>;
+
+
+export type VotingRoundSetStatusMutation = { __typename?: 'Mutation', setVotingRoundStatus: Array<{ __typename?: 'VotingRound', id: string, service_instance_id: any, name: string, description: string | null, status: VotingRoundStatus, theme: VotingRoundTheme, opened_at: any | null, closed_at: any | null, created_at: any }> };
+
+export type VotingRoundDeleteMutationVariables = Exact<{
+  id: Scalars['VotingRoundId']['input'];
+}>;
+
+
+export type VotingRoundDeleteMutation = { __typename?: 'Mutation', deleteVotingRound: { __typename?: 'VotingRound', id: string } };
+
+export type VotableFeatureCreateMutationVariables = Exact<{
+  input: CreateVotableFeatureInput;
+  document: InputMaybe<Array<Scalars['Upload']['input']> | Scalars['Upload']['input']>;
+}>;
+
+
+export type VotableFeatureCreateMutation = { __typename?: 'Mutation', createVotableFeature: { __typename?: 'VotableFeature', id: string, voting_round_id: any, title: string, short_description: string, description: string, product: FiligranProduct, illustration_document_id: any | null, position: number, active: boolean, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> } };
+
+export type VotableFeatureUpdateMutationVariables = Exact<{
+  id: Scalars['VotableFeatureId']['input'];
+  input: UpdateVotableFeatureInput;
+  document: InputMaybe<Array<Scalars['Upload']['input']> | Scalars['Upload']['input']>;
+}>;
+
+
+export type VotableFeatureUpdateMutation = { __typename?: 'Mutation', updateVotableFeature: { __typename?: 'VotableFeature', id: string, voting_round_id: any, title: string, short_description: string, description: string, product: FiligranProduct, illustration_document_id: any | null, position: number, active: boolean, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> } };
+
+export type VotableFeatureDeleteMutationVariables = Exact<{
+  id: Scalars['VotableFeatureId']['input'];
+}>;
+
+
+export type VotableFeatureDeleteMutation = { __typename?: 'Mutation', deleteVotableFeature: { __typename?: 'VotableFeature', id: string } };
+
+export type VotableFeatureAdminRowFragment = { __typename?: 'VotableFeature', id: string, voting_round_id: any, title: string, short_description: string, description: string, product: FiligranProduct, illustration_document_id: any | null, position: number, active: boolean, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> };
+
+export type VotingRoundRowFragment = { __typename?: 'VotingRound', id: string, service_instance_id: any, name: string, description: string | null, status: VotingRoundStatus, theme: VotingRoundTheme, opened_at: any | null, closed_at: any | null, created_at: any };
+
+export type VotingRoundsListQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type VotingRoundsListQuery = { __typename?: 'Query', votingRounds: Array<{ __typename?: 'VotingRound', feature_count: number, id: string, service_instance_id: any, name: string, description: string | null, status: VotingRoundStatus, theme: VotingRoundTheme, opened_at: any | null, closed_at: any | null, created_at: any }> };
+
+export type VotingRoundDetailQueryVariables = Exact<{
+  id: Scalars['VotingRoundId']['input'];
+}>;
+
+
+export type VotingRoundDetailQuery = { __typename?: 'Query', votingRound: { __typename?: 'VotingRound', id: string, service_instance_id: any, name: string, description: string | null, status: VotingRoundStatus, theme: VotingRoundTheme, opened_at: any | null, closed_at: any | null, created_at: any, features: Array<{ __typename?: 'VotableFeature', id: string, voting_round_id: any, title: string, short_description: string, description: string, product: FiligranProduct, illustration_document_id: any | null, position: number, active: boolean, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> }> } | null };
+
+export type VotingRoundRankingQueryVariables = Exact<{
+  id: Scalars['VotingRoundId']['input'];
+}>;
+
+
+export type VotingRoundRankingQuery = { __typename?: 'Query', votingRoundResults: { __typename?: 'VotingRoundResults', total_voters: number, round: { __typename?: 'VotingRound', id: string, name: string, status: VotingRoundStatus }, results: Array<{ __typename?: 'VotableFeatureResult', vote_count: number, feature: { __typename?: 'VotableFeature', id: string, voting_round_id: any, title: string, short_description: string, description: string, product: FiligranProduct, illustration_document_id: any | null, position: number, active: boolean, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> } }> } };
+
+export type EpicCreateMutationVariables = Exact<{
+  input: CreateEpicInput;
+}>;
+
+
+export type EpicCreateMutation = { __typename?: 'Mutation', createEpic: { __typename?: 'Epic', id: string, short_description: string, description: string, problem_to_solve: string, proposed_solution: string, expected_value: string, title: string, timeline: Timeline, edition_type: EditionType, products: Array<FiligranProduct>, slack_link: string | null, active: boolean, epic_type: EpicType, created_at: any, updated_at: any | null } };
+
+export type EpicUpdateMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+  input: UpdateEpicInput;
+}>;
+
+
+export type EpicUpdateMutation = { __typename?: 'Mutation', updateEpic: { __typename?: 'Epic', id: string, short_description: string, description: string, problem_to_solve: string, proposed_solution: string, expected_value: string, title: string, timeline: Timeline, edition_type: EditionType, products: Array<FiligranProduct>, slack_link: string | null, active: boolean, epic_type: EpicType, created_at: any, updated_at: any | null } };
+
+export type EpicDeleteMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type EpicDeleteMutation = { __typename?: 'Mutation', deleteEpic: { __typename?: 'Epic', id: string } | null };
+
+export type EpicFieldsFragment = { __typename?: 'Epic', id: string, short_description: string, description: string, problem_to_solve: string, proposed_solution: string, expected_value: string, title: string, timeline: Timeline, edition_type: EditionType, products: Array<FiligranProduct>, slack_link: string | null, active: boolean, epic_type: EpicType, created_at: any, updated_at: any | null };
+
 export type EpicCountPerTimelineQueryQueryVariables = Exact<{ [key: string]: never; }>;
 
 
 export type EpicCountPerTimelineQueryQuery = { __typename?: 'Query', countEpicsPerTimeline: Array<{ __typename?: 'EpicCountPerTimeline', timeline: Timeline, count: number }> };
 
+export type EpicsQueryVariables = Exact<{
+  count: Scalars['Int']['input'];
+  orderBy: EpicOrdering;
+  orderMode: OrderingMode;
+  searchTerm: InputMaybe<Scalars['String']['input']>;
+}>;
 
+
+export type EpicsQuery = { __typename?: 'Query', epics: { __typename?: 'EpicConnection', totalCount: number, edges: Array<{ __typename?: 'EpicEdge', node: { __typename?: 'Epic', id: string, short_description: string, description: string, problem_to_solve: string, proposed_solution: string, expected_value: string, title: string, timeline: Timeline, edition_type: EditionType, products: Array<FiligranProduct>, slack_link: string | null, active: boolean, epic_type: EpicType, created_at: any, updated_at: any | null } }> } | null };
+
+
+export const AdminRegisteredPlatformRowFragmentDoc = `
+    fragment AdminRegisteredPlatformRow on AdminRegisteredPlatform {
+  service_instance_id
+  platform_id
+  title
+  url
+  identifier
+  version
+  contract
+  commercial_model
+  tenant_id
+  tenant_name
+  status
+  last_connectivity_check
+  organization {
+    id
+    name
+  }
+  registerer {
+    id
+    email
+    first_name
+    last_name
+  }
+  credential {
+    kind
+  }
+  is_trial
+}
+    `;
+export const ApiTokenRowFragmentDoc = `
+    fragment ApiTokenRow on ApiToken {
+  id
+  name
+  token_prefix
+  scope
+  organization_id
+  organization_name
+  expires_at
+  last_used_at
+  created_at
+  revoked_at
+}
+    `;
+export const CompetitorRowFragmentDoc = `
+    fragment CompetitorRow on Competitor {
+  id
+  name
+  domain
+  tier
+}
+    `;
+export const TrialsProductFragmentDoc = `
+    fragment TrialsProduct on DeploymentRequest {
+  id
+  platform_identifier
+  hub_status
+  platform_id
+  platform_url
+  url
+}
+    `;
+export const TrialsRowFragmentDoc = `
+    fragment TrialsRow on DeploymentRequest {
+  id
+  service_instance_id
+  ordering
+  hub_status
+  requester_email
+  organization_name
+  region
+  request_date
+  start_date
+  end_date
+  cancellation_date
+  cancellation_user_email
+  cancellation_reason
+  children {
+    ...TrialsProduct
+  }
+}
+    ${TrialsProductFragmentDoc}`;
+export const TrialsQuotaFragmentDoc = `
+    fragment TrialsQuota on DeploymentAvailability {
+  id
+  region
+  availableCount
+  capacity
+}
+    `;
+export const XtmPlatformBundleProductFragmentDoc = `
+    fragment XtmPlatformBundleProduct on DeploymentRequest {
+  platform_identifier
+  service_instance_id
+  url
+  service_instance {
+    name
+  }
+  registered_platform {
+    status
+    last_connectivity_check
+    url
+    myGroups {
+      id
+      name
+    }
+  }
+}
+    `;
+export const XtmPlatformBundleDetailsFragmentDoc = `
+    fragment XtmPlatformBundleDetails on DeploymentRequest {
+  id
+  service_instance_id
+  organization_name
+  start_date
+  end_date
+  hub_status
+  requester_email
+  request_date
+  cancellation_date
+  children {
+    ...XtmPlatformBundleProduct
+  }
+}
+    ${XtmPlatformBundleProductFragmentDoc}`;
+export const XtmoneIntegrationStatusEntryFragmentDoc = `
+    fragment XtmoneIntegrationStatusEntry on XtmoneIntegrationStatusEntry {
+  status
+  connected
+  last_checked_at
+}
+    `;
+export const XtmoneIntegrationStatusFragmentDoc = `
+    fragment XtmoneIntegrationStatus on XtmoneIntegrationStatus {
+  opencti {
+    ...XtmoneIntegrationStatusEntry
+  }
+  openaev {
+    ...XtmoneIntegrationStatusEntry
+  }
+  linked
+  last_checked_at
+}
+    ${XtmoneIntegrationStatusEntryFragmentDoc}`;
+export const DocumentItemFragmentDoc = `
+    fragment DocumentItem on Document {
+  __typename
+  id
+  type
+  file_name
+  created_at
+  name
+  short_description
+  meta_description
+  description
+  download_number
+  share_number
+  status
+  updated_at
+  use_cases {
+    id
+    name
+    color
+  }
+  uploader {
+    id
+    email
+    first_name
+    last_name
+    picture
+  }
+  uploader_organization {
+    id
+    name
+    personal_space
+  }
+  children_documents {
+    id
+    file_name
+    created_at
+    name
+    description
+    download_number
+    status
+    source_type
+    image_type
+  }
+  slug
+  service_instance {
+    id
+    slug
+  }
+  subscription {
+    id
+  }
+  ... on CustomDashboard {
+    product_version
+  }
+  ... on Integration {
+    integration_type
+    datasheet_url
+    blogpost_url
+    demo_url
+    solution_categories {
+      id
+      name
+    }
+    license_type
+  }
+  ... on CsvFeed {
+    feed_url
+  }
+  ... on TaxiiFeed {
+    feed_url
+  }
+  ... on RssFeed {
+    feed_url
+  }
+  ... on Stream {
+    feed_url
+  }
+  ... on ThirdPartyIntegration {
+    product_version
+    vendor_url
+    github_url
+  }
+  ... on Connector {
+    product_version
+    container_image
+    verified
+    source_code
+    subscription_link
+    manager_supported
+    playbook_supported
+    minimum_deployable_version
+    contact
+  }
+  ... on OpenAEVScenario {
+    product_version
+  }
+  ... on OpenCTIPlaybook {
+    product_version
+  }
+  ... on CustomView {
+    product_version
+    entity_types
+  }
+}
+    `;
 export const HomepageDocumentFragmentDoc = `
     fragment HomepageDocument on Document {
   id
   name
   short_description
   type
-  active
+  status
   slug
   service_instance_id
   children_documents {
@@ -3073,6 +5497,181 @@ export const HomepageDocumentFragmentDoc = `
   ... on Connector {
     verified
     manager_supported
+  }
+}
+    `;
+export const PublicDocumentListItemFragmentDoc = `
+    fragment PublicDocumentListItem on Document {
+  __typename
+  id
+  name
+  short_description
+  slug
+  children_documents {
+    id
+    image_type
+  }
+  use_cases {
+    id
+    name
+    color
+  }
+  uploader {
+    first_name
+    last_name
+    picture
+  }
+  status
+  type
+  ... on Integration {
+    integration_type
+  }
+  ... on Connector {
+    product_version
+    verified
+    manager_supported
+  }
+  ... on CustomView {
+    entity_types
+  }
+}
+    `;
+export const PublicDocumentByServiceSlugItemFragmentDoc = `
+    fragment PublicDocumentByServiceSlugItem on Document {
+  __typename
+  id
+  name
+  description
+  short_description
+  meta_description
+  created_at
+  updated_at
+  slug
+  download_number
+  share_number
+  children_documents {
+    id
+    image_type
+    source_type
+  }
+  use_cases {
+    id
+    name
+    color
+  }
+  uploader {
+    id
+    first_name
+    last_name
+    picture
+  }
+  status
+  type
+  uploader_organization {
+    id
+    personal_space
+    name
+  }
+  ... on Integration {
+    integration_type
+    datasheet_url
+    blogpost_url
+    demo_url
+    solution_categories {
+      id
+      name
+    }
+    license_type
+  }
+  ... on CustomDashboard {
+    product_version
+  }
+  ... on CsvFeed {
+    feed_url
+  }
+  ... on TaxiiFeed {
+    feed_url
+  }
+  ... on RssFeed {
+    feed_url
+  }
+  ... on Stream {
+    feed_url
+  }
+  ... on ThirdPartyIntegration {
+    product_version
+    vendor_url
+    github_url
+  }
+  ... on Connector {
+    product_version
+    container_image
+    verified
+    source_code
+    subscription_link
+    manager_supported
+    playbook_supported
+    minimum_deployable_version
+    contact
+  }
+  ... on OpenAEVScenario {
+    product_version
+  }
+  ... on CustomView {
+    product_version
+    entity_types
+  }
+}
+    `;
+export const VotableFeaturePublicFragmentDoc = `
+    fragment VotableFeaturePublic on VotableFeature {
+  id
+  title
+  short_description
+  description
+  product
+  use_cases {
+    id
+    name
+    color
+  }
+  illustration_document_id
+  position
+  has_my_vote
+}
+    `;
+export const CurrentUserFragmentDoc = `
+    fragment CurrentUser on User {
+  id
+  email
+  first_name
+  last_name
+  country
+  picture
+  selected_organization_id
+  capabilities {
+    name
+  }
+  organizations {
+    id
+    name
+    personal_space
+  }
+  selected_org_capabilities
+  has_replied_satisfaction
+}
+    `;
+export const NewsFeedItemRowFragmentDoc = `
+    fragment NewsFeedItemRow on NewsFeedItem {
+  id
+  title
+  type
+  creation_date
+  tags
+  is_deleted
+  metadata {
+    key
+    value
   }
 }
     `;
@@ -3093,11 +5692,195 @@ export const OrganizationSubscribedServiceRowFragmentDoc = `
   }
 }
     `;
+export const OrganizationItemFragmentDoc = `
+    fragment OrganizationItem on Organization {
+  id
+  name
+  domains
+  personal_space
+}
+    `;
+export const RegisteredPlatformDetailsFragmentDoc = `
+    fragment RegisteredPlatformDetails on RegisteredPlatform {
+  id
+  service_instance_id
+  platform_id
+  last_connectivity_check
+  commercial_model
+  tenant_id
+  title
+  contract
+  url
+  version
+  identifier
+  subscription {
+    start_date
+    end_date
+    service_instance {
+      id
+    }
+    organization {
+      id
+    }
+  }
+  organization {
+    name
+  }
+  deployment_request {
+    id
+    hub_status
+    region
+    counts_in_orga_quota
+    platform_identifier
+    requester_email
+  }
+  myGroups {
+    name
+  }
+}
+    `;
+export const SaasPlatformRowFragmentDoc = `
+    fragment SaasPlatformRow on SaasPlatform {
+  id
+  product
+  customer
+  metadata {
+    plan
+    end_date
+  }
+  sla_cmtd
+  storage {
+    es_used_size {
+      percent
+    }
+    s3_used_size {
+      percent
+    }
+    postgres_used_size {
+      percent
+    }
+  }
+  health_issues
+  contract_status
+  registered_platform {
+    id
+    service_instance_id
+    identifier
+    version
+    organization {
+      id
+      name
+      administrator_emails
+    }
+  }
+}
+    `;
+export const SeoServiceInstanceItemFragmentDoc = `
+    fragment SeoServiceInstanceItem on SeoServiceInstance {
+  id
+  name
+  slug
+  description
+  logo_document_id
+  illustration_document_id
+  service_definition {
+    identifier
+  }
+  tags
+  links {
+    url
+    name
+  }
+}
+    `;
+export const SeoServiceInstanceMetadataItemFragmentDoc = `
+    fragment SeoServiceInstanceMetadataItem on SeoServiceInstanceMetadata {
+  service_instance_id
+  language
+  meta_title
+  meta_description
+}
+    `;
+export const ServiceInstanceItemFragmentDoc = `
+    fragment ServiceInstanceItem on ServiceInstance {
+  id
+  name
+  description
+  slug
+  capabilities
+  service_definition {
+    identifier
+  }
+}
+    `;
+export const ServiceInstanceWithCapabilitiesItemFragmentDoc = `
+    fragment ServiceInstanceWithCapabilitiesItem on ServiceInstance {
+  id
+  name
+  description
+  tags
+  service_definition {
+    service_capability {
+      id
+      description
+      name
+    }
+  }
+}
+    `;
+export const AdminServiceInstanceItemFragmentDoc = `
+    fragment AdminServiceInstanceItem on ServiceInstance {
+  id
+  name
+  description
+  creation_status
+  capabilities
+  public
+  tags
+  links {
+    name
+    url
+  }
+  service_definition {
+    id
+    name
+    identifier
+  }
+  logo_document_id
+  illustration_document_id
+  slug
+  ordering
+}
+    `;
 export const SolutionCategoryRowFragmentDoc = `
     fragment SolutionCategoryRow on SolutionCategory {
   id
   name
   product
+}
+    `;
+export const SubscriptionItemFragmentDoc = `
+    fragment SubscriptionItem on SubscriptionModel {
+  id
+  organization {
+    name
+    id
+    personal_space
+  }
+  subscription_capability {
+    id
+    service_capability {
+      id
+      description
+      name
+    }
+  }
+  service_instance {
+    id
+    name
+  }
+  start_date
+  end_date
 }
     `;
 export const UseCaseRowFragmentDoc = `
@@ -3108,6 +5891,1407 @@ export const UseCaseRowFragmentDoc = `
   product
 }
     `;
+export const UserServiceItemFragmentDoc = `
+    fragment UserServiceItem on UserService {
+  id
+  user {
+    id
+    first_name
+    last_name
+    email
+  }
+  subscription {
+    service_instance {
+      id
+      name
+      service_definition {
+        identifier
+      }
+    }
+  }
+  user_service_capability {
+    id
+    generic_service_capability {
+      id
+      name
+    }
+    subscription_capability {
+      id
+      service_capability {
+        id
+        name
+      }
+    }
+  }
+}
+    `;
+export const VotableFeatureAdminRowFragmentDoc = `
+    fragment VotableFeatureAdminRow on VotableFeature {
+  id
+  voting_round_id
+  title
+  short_description
+  description
+  product
+  use_cases {
+    id
+    name
+    color
+  }
+  illustration_document_id
+  position
+  active
+}
+    `;
+export const VotingRoundRowFragmentDoc = `
+    fragment VotingRoundRow on VotingRound {
+  id
+  service_instance_id
+  name
+  description
+  status
+  theme
+  opened_at
+  closed_at
+  created_at
+}
+    `;
+export const EpicFieldsFragmentDoc = `
+    fragment EpicFields on Epic {
+  id
+  short_description
+  description
+  problem_to_solve
+  proposed_solution
+  expected_value
+  title
+  timeline
+  edition_type
+  products
+  slack_link
+  active
+  epic_type
+  created_at
+  updated_at
+}
+    `;
+export const AdminUnregisterPlatformDocument = `
+    mutation AdminUnregisterPlatform($serviceInstanceId: ServiceInstanceId!) {
+  adminUnregisterPlatform(serviceInstanceId: $serviceInstanceId) {
+    success
+  }
+}
+    `;
+
+export const useAdminUnregisterPlatformMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<AdminUnregisterPlatformMutation, TError, AdminUnregisterPlatformMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<AdminUnregisterPlatformMutation, TError, AdminUnregisterPlatformMutationVariables, TContext>(
+      {
+    mutationKey: ['AdminUnregisterPlatform'],
+    mutationFn: (variables?: AdminUnregisterPlatformMutationVariables) => fetcher<AdminUnregisterPlatformMutation, AdminUnregisterPlatformMutationVariables>(client, AdminUnregisterPlatformDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useAdminUnregisterPlatformMutation.getKey = () => ['AdminUnregisterPlatform'];
+useAdminUnregisterPlatformMutation.getRootKey = () => ['AdminUnregisterPlatform'] as const;
+useAdminUnregisterPlatformMutation.fetcher = (client: GraphQLClient, variables: AdminUnregisterPlatformMutationVariables, headers?: RequestInit['headers']) => fetcher<AdminUnregisterPlatformMutation, AdminUnregisterPlatformMutationVariables>(client, AdminUnregisterPlatformDocument, variables, headers);
+
+export const AdminRegisteredPlatformsDocument = `
+    query AdminRegisteredPlatforms($first: Int!, $after: ID, $orderBy: AdminRegisteredPlatformOrdering!, $orderMode: OrderingMode!, $searchTerm: String, $filter: AdminRegisteredPlatformsFilter) {
+  adminRegisteredPlatforms(
+    first: $first
+    after: $after
+    orderBy: $orderBy
+    orderMode: $orderMode
+    searchTerm: $searchTerm
+    filter: $filter
+  ) {
+    totalCount
+    edges {
+      node {
+        ...AdminRegisteredPlatformRow
+      }
+    }
+  }
+}
+    ${AdminRegisteredPlatformRowFragmentDoc}`;
+
+export const useAdminRegisteredPlatformsQuery = <
+      TData = AdminRegisteredPlatformsQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: AdminRegisteredPlatformsQueryVariables,
+      options?: Omit<UseQueryOptions<AdminRegisteredPlatformsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<AdminRegisteredPlatformsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<AdminRegisteredPlatformsQuery, TError, TData>(
+      {
+    queryKey: ['AdminRegisteredPlatforms', variables],
+    queryFn: fetcher<AdminRegisteredPlatformsQuery, AdminRegisteredPlatformsQueryVariables>(client, AdminRegisteredPlatformsDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useAdminRegisteredPlatformsQuery.getKey = (variables: AdminRegisteredPlatformsQueryVariables) => ['AdminRegisteredPlatforms', variables];
+useAdminRegisteredPlatformsQuery.getRootKey = () => ['AdminRegisteredPlatforms'] as const;
+export const useInfiniteAdminRegisteredPlatformsQuery = <
+      TData = InfiniteData<AdminRegisteredPlatformsQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: AdminRegisteredPlatformsQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<AdminRegisteredPlatformsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<AdminRegisteredPlatformsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<AdminRegisteredPlatformsQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['AdminRegisteredPlatforms.infinite', variables],
+      queryFn: (metaData) => fetcher<AdminRegisteredPlatformsQuery, AdminRegisteredPlatformsQueryVariables>(client, AdminRegisteredPlatformsDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteAdminRegisteredPlatformsQuery.getKey = (variables: AdminRegisteredPlatformsQueryVariables) => ['AdminRegisteredPlatforms.infinite', variables];
+useInfiniteAdminRegisteredPlatformsQuery.getRootKey = () => ['AdminRegisteredPlatforms.infinite'] as const;
+useAdminRegisteredPlatformsQuery.fetcher = (client: GraphQLClient, variables: AdminRegisteredPlatformsQueryVariables, headers?: RequestInit['headers']) => fetcher<AdminRegisteredPlatformsQuery, AdminRegisteredPlatformsQueryVariables>(client, AdminRegisteredPlatformsDocument, variables, headers);
+
+export const ApiTokenCreateDocument = `
+    mutation ApiTokenCreate($input: CreateApiTokenInput!) {
+  createApiToken(input: $input) {
+    token
+    api_token {
+      ...ApiTokenRow
+    }
+  }
+}
+    ${ApiTokenRowFragmentDoc}`;
+
+export const useApiTokenCreateMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<ApiTokenCreateMutation, TError, ApiTokenCreateMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<ApiTokenCreateMutation, TError, ApiTokenCreateMutationVariables, TContext>(
+      {
+    mutationKey: ['ApiTokenCreate'],
+    mutationFn: (variables?: ApiTokenCreateMutationVariables) => fetcher<ApiTokenCreateMutation, ApiTokenCreateMutationVariables>(client, ApiTokenCreateDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useApiTokenCreateMutation.getKey = () => ['ApiTokenCreate'];
+useApiTokenCreateMutation.getRootKey = () => ['ApiTokenCreate'] as const;
+useApiTokenCreateMutation.fetcher = (client: GraphQLClient, variables: ApiTokenCreateMutationVariables, headers?: RequestInit['headers']) => fetcher<ApiTokenCreateMutation, ApiTokenCreateMutationVariables>(client, ApiTokenCreateDocument, variables, headers);
+
+export const ApiTokenRevokeDocument = `
+    mutation ApiTokenRevoke($id: ApiTokenId!) {
+  revokeApiToken(id: $id) {
+    ...ApiTokenRow
+  }
+}
+    ${ApiTokenRowFragmentDoc}`;
+
+export const useApiTokenRevokeMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<ApiTokenRevokeMutation, TError, ApiTokenRevokeMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<ApiTokenRevokeMutation, TError, ApiTokenRevokeMutationVariables, TContext>(
+      {
+    mutationKey: ['ApiTokenRevoke'],
+    mutationFn: (variables?: ApiTokenRevokeMutationVariables) => fetcher<ApiTokenRevokeMutation, ApiTokenRevokeMutationVariables>(client, ApiTokenRevokeDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useApiTokenRevokeMutation.getKey = () => ['ApiTokenRevoke'];
+useApiTokenRevokeMutation.getRootKey = () => ['ApiTokenRevoke'] as const;
+useApiTokenRevokeMutation.fetcher = (client: GraphQLClient, variables: ApiTokenRevokeMutationVariables, headers?: RequestInit['headers']) => fetcher<ApiTokenRevokeMutation, ApiTokenRevokeMutationVariables>(client, ApiTokenRevokeDocument, variables, headers);
+
+export const ApiTokensDocument = `
+    query ApiTokens {
+  apiTokens {
+    ...ApiTokenRow
+  }
+}
+    ${ApiTokenRowFragmentDoc}`;
+
+export const useApiTokensQuery = <
+      TData = ApiTokensQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables?: ApiTokensQueryVariables,
+      options?: Omit<UseQueryOptions<ApiTokensQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<ApiTokensQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<ApiTokensQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['ApiTokens'] : ['ApiTokens', variables],
+    queryFn: fetcher<ApiTokensQuery, ApiTokensQueryVariables>(client, ApiTokensDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useApiTokensQuery.getKey = (variables?: ApiTokensQueryVariables) => variables === undefined ? ['ApiTokens'] : ['ApiTokens', variables];
+useApiTokensQuery.getRootKey = () => ['ApiTokens'] as const;
+export const useInfiniteApiTokensQuery = <
+      TData = InfiniteData<ApiTokensQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: ApiTokensQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<ApiTokensQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<ApiTokensQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<ApiTokensQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['ApiTokens.infinite'] : ['ApiTokens.infinite', variables],
+      queryFn: (metaData) => fetcher<ApiTokensQuery, ApiTokensQueryVariables>(client, ApiTokensDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteApiTokensQuery.getKey = (variables?: ApiTokensQueryVariables) => variables === undefined ? ['ApiTokens.infinite'] : ['ApiTokens.infinite', variables];
+useInfiniteApiTokensQuery.getRootKey = () => ['ApiTokens.infinite'] as const;
+useApiTokensQuery.fetcher = (client: GraphQLClient, variables?: ApiTokensQueryVariables, headers?: RequestInit['headers']) => fetcher<ApiTokensQuery, ApiTokensQueryVariables>(client, ApiTokensDocument, variables, headers);
+
+export const LoginDocument = `
+    mutation Login($email: String!, $password: String!) {
+  login(email: $email, password: $password) {
+    id
+  }
+}
+    `;
+
+export const useLoginMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<LoginMutation, TError, LoginMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<LoginMutation, TError, LoginMutationVariables, TContext>(
+      {
+    mutationKey: ['Login'],
+    mutationFn: (variables?: LoginMutationVariables) => fetcher<LoginMutation, LoginMutationVariables>(client, LoginDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useLoginMutation.getKey = () => ['Login'];
+useLoginMutation.getRootKey = () => ['Login'] as const;
+useLoginMutation.fetcher = (client: GraphQLClient, variables: LoginMutationVariables, headers?: RequestInit['headers']) => fetcher<LoginMutation, LoginMutationVariables>(client, LoginDocument, variables, headers);
+
+export const LogoutDocument = `
+    mutation Logout {
+  logout
+}
+    `;
+
+export const useLogoutMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<LogoutMutation, TError, LogoutMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<LogoutMutation, TError, LogoutMutationVariables, TContext>(
+      {
+    mutationKey: ['Logout'],
+    mutationFn: (variables?: LogoutMutationVariables) => fetcher<LogoutMutation, LogoutMutationVariables>(client, LogoutDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useLogoutMutation.getKey = () => ['Logout'];
+useLogoutMutation.getRootKey = () => ['Logout'] as const;
+useLogoutMutation.fetcher = (client: GraphQLClient, variables?: LogoutMutationVariables, headers?: RequestInit['headers']) => fetcher<LogoutMutation, LogoutMutationVariables>(client, LogoutDocument, variables, headers);
+
+export const CompetitorAddDocument = `
+    mutation CompetitorAdd($input: CreateCompetitorInput!) {
+  createCompetitor(input: $input) {
+    ...CompetitorRow
+  }
+}
+    ${CompetitorRowFragmentDoc}`;
+
+export const useCompetitorAddMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<CompetitorAddMutation, TError, CompetitorAddMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<CompetitorAddMutation, TError, CompetitorAddMutationVariables, TContext>(
+      {
+    mutationKey: ['CompetitorAdd'],
+    mutationFn: (variables?: CompetitorAddMutationVariables) => fetcher<CompetitorAddMutation, CompetitorAddMutationVariables>(client, CompetitorAddDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useCompetitorAddMutation.getKey = () => ['CompetitorAdd'];
+useCompetitorAddMutation.getRootKey = () => ['CompetitorAdd'] as const;
+useCompetitorAddMutation.fetcher = (client: GraphQLClient, variables: CompetitorAddMutationVariables, headers?: RequestInit['headers']) => fetcher<CompetitorAddMutation, CompetitorAddMutationVariables>(client, CompetitorAddDocument, variables, headers);
+
+export const CompetitorEditDocument = `
+    mutation CompetitorEdit($input: UpdateCompetitorInput!) {
+  updateCompetitor(input: $input) {
+    ...CompetitorRow
+  }
+}
+    ${CompetitorRowFragmentDoc}`;
+
+export const useCompetitorEditMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<CompetitorEditMutation, TError, CompetitorEditMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<CompetitorEditMutation, TError, CompetitorEditMutationVariables, TContext>(
+      {
+    mutationKey: ['CompetitorEdit'],
+    mutationFn: (variables?: CompetitorEditMutationVariables) => fetcher<CompetitorEditMutation, CompetitorEditMutationVariables>(client, CompetitorEditDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useCompetitorEditMutation.getKey = () => ['CompetitorEdit'];
+useCompetitorEditMutation.getRootKey = () => ['CompetitorEdit'] as const;
+useCompetitorEditMutation.fetcher = (client: GraphQLClient, variables: CompetitorEditMutationVariables, headers?: RequestInit['headers']) => fetcher<CompetitorEditMutation, CompetitorEditMutationVariables>(client, CompetitorEditDocument, variables, headers);
+
+export const CompetitorDeleteDocument = `
+    mutation CompetitorDelete($id: CompetitorId!) {
+  deleteCompetitor(id: $id) {
+    id
+  }
+}
+    `;
+
+export const useCompetitorDeleteMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<CompetitorDeleteMutation, TError, CompetitorDeleteMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<CompetitorDeleteMutation, TError, CompetitorDeleteMutationVariables, TContext>(
+      {
+    mutationKey: ['CompetitorDelete'],
+    mutationFn: (variables?: CompetitorDeleteMutationVariables) => fetcher<CompetitorDeleteMutation, CompetitorDeleteMutationVariables>(client, CompetitorDeleteDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useCompetitorDeleteMutation.getKey = () => ['CompetitorDelete'];
+useCompetitorDeleteMutation.getRootKey = () => ['CompetitorDelete'] as const;
+useCompetitorDeleteMutation.fetcher = (client: GraphQLClient, variables: CompetitorDeleteMutationVariables, headers?: RequestInit['headers']) => fetcher<CompetitorDeleteMutation, CompetitorDeleteMutationVariables>(client, CompetitorDeleteDocument, variables, headers);
+
+export const CompetitorsListDocument = `
+    query CompetitorsList($count: Int!, $cursor: ID, $orderBy: CompetitorOrdering!, $orderMode: OrderingMode!) {
+  competitors(
+    first: $count
+    after: $cursor
+    orderBy: $orderBy
+    orderMode: $orderMode
+  ) {
+    totalCount
+    edges {
+      node {
+        ...CompetitorRow
+      }
+    }
+  }
+}
+    ${CompetitorRowFragmentDoc}`;
+
+export const useCompetitorsListQuery = <
+      TData = CompetitorsListQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: CompetitorsListQueryVariables,
+      options?: Omit<UseQueryOptions<CompetitorsListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<CompetitorsListQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<CompetitorsListQuery, TError, TData>(
+      {
+    queryKey: ['CompetitorsList', variables],
+    queryFn: fetcher<CompetitorsListQuery, CompetitorsListQueryVariables>(client, CompetitorsListDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useCompetitorsListQuery.getKey = (variables: CompetitorsListQueryVariables) => ['CompetitorsList', variables];
+useCompetitorsListQuery.getRootKey = () => ['CompetitorsList'] as const;
+export const useInfiniteCompetitorsListQuery = <
+      TData = InfiniteData<CompetitorsListQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: CompetitorsListQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<CompetitorsListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<CompetitorsListQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<CompetitorsListQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['CompetitorsList.infinite', variables],
+      queryFn: (metaData) => fetcher<CompetitorsListQuery, CompetitorsListQueryVariables>(client, CompetitorsListDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteCompetitorsListQuery.getKey = (variables: CompetitorsListQueryVariables) => ['CompetitorsList.infinite', variables];
+useInfiniteCompetitorsListQuery.getRootKey = () => ['CompetitorsList.infinite'] as const;
+useCompetitorsListQuery.fetcher = (client: GraphQLClient, variables: CompetitorsListQueryVariables, headers?: RequestInit['headers']) => fetcher<CompetitorsListQuery, CompetitorsListQueryVariables>(client, CompetitorsListDocument, variables, headers);
+
+export const SaveContentTranslationDraftDocument = `
+    mutation SaveContentTranslationDraft($input: UpsertContentTranslationInput!) {
+  saveContentTranslationDraft(input: $input) {
+    key
+    locale
+    value
+  }
+}
+    `;
+
+export const useSaveContentTranslationDraftMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<SaveContentTranslationDraftMutation, TError, SaveContentTranslationDraftMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<SaveContentTranslationDraftMutation, TError, SaveContentTranslationDraftMutationVariables, TContext>(
+      {
+    mutationKey: ['SaveContentTranslationDraft'],
+    mutationFn: (variables?: SaveContentTranslationDraftMutationVariables) => fetcher<SaveContentTranslationDraftMutation, SaveContentTranslationDraftMutationVariables>(client, SaveContentTranslationDraftDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useSaveContentTranslationDraftMutation.getKey = () => ['SaveContentTranslationDraft'];
+useSaveContentTranslationDraftMutation.getRootKey = () => ['SaveContentTranslationDraft'] as const;
+useSaveContentTranslationDraftMutation.fetcher = (client: GraphQLClient, variables: SaveContentTranslationDraftMutationVariables, headers?: RequestInit['headers']) => fetcher<SaveContentTranslationDraftMutation, SaveContentTranslationDraftMutationVariables>(client, SaveContentTranslationDraftDocument, variables, headers);
+
+export const PublishContentTranslationDraftsDocument = `
+    mutation PublishContentTranslationDrafts {
+  publishContentTranslationDrafts {
+    key
+    locale
+  }
+}
+    `;
+
+export const usePublishContentTranslationDraftsMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<PublishContentTranslationDraftsMutation, TError, PublishContentTranslationDraftsMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<PublishContentTranslationDraftsMutation, TError, PublishContentTranslationDraftsMutationVariables, TContext>(
+      {
+    mutationKey: ['PublishContentTranslationDrafts'],
+    mutationFn: (variables?: PublishContentTranslationDraftsMutationVariables) => fetcher<PublishContentTranslationDraftsMutation, PublishContentTranslationDraftsMutationVariables>(client, PublishContentTranslationDraftsDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+usePublishContentTranslationDraftsMutation.getKey = () => ['PublishContentTranslationDrafts'];
+usePublishContentTranslationDraftsMutation.getRootKey = () => ['PublishContentTranslationDrafts'] as const;
+usePublishContentTranslationDraftsMutation.fetcher = (client: GraphQLClient, variables?: PublishContentTranslationDraftsMutationVariables, headers?: RequestInit['headers']) => fetcher<PublishContentTranslationDraftsMutation, PublishContentTranslationDraftsMutationVariables>(client, PublishContentTranslationDraftsDocument, variables, headers);
+
+export const DiscardContentTranslationDraftsDocument = `
+    mutation DiscardContentTranslationDrafts {
+  discardContentTranslationDrafts
+}
+    `;
+
+export const useDiscardContentTranslationDraftsMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<DiscardContentTranslationDraftsMutation, TError, DiscardContentTranslationDraftsMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<DiscardContentTranslationDraftsMutation, TError, DiscardContentTranslationDraftsMutationVariables, TContext>(
+      {
+    mutationKey: ['DiscardContentTranslationDrafts'],
+    mutationFn: (variables?: DiscardContentTranslationDraftsMutationVariables) => fetcher<DiscardContentTranslationDraftsMutation, DiscardContentTranslationDraftsMutationVariables>(client, DiscardContentTranslationDraftsDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useDiscardContentTranslationDraftsMutation.getKey = () => ['DiscardContentTranslationDrafts'];
+useDiscardContentTranslationDraftsMutation.getRootKey = () => ['DiscardContentTranslationDrafts'] as const;
+useDiscardContentTranslationDraftsMutation.fetcher = (client: GraphQLClient, variables?: DiscardContentTranslationDraftsMutationVariables, headers?: RequestInit['headers']) => fetcher<DiscardContentTranslationDraftsMutation, DiscardContentTranslationDraftsMutationVariables>(client, DiscardContentTranslationDraftsDocument, variables, headers);
+
+export const ContentTranslationsByLocaleDocument = `
+    query ContentTranslationsByLocale($locale: Locale) {
+  contentTranslations(locale: $locale) {
+    key
+    value
+  }
+}
+    `;
+
+export const useContentTranslationsByLocaleQuery = <
+      TData = ContentTranslationsByLocaleQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables?: ContentTranslationsByLocaleQueryVariables,
+      options?: Omit<UseQueryOptions<ContentTranslationsByLocaleQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<ContentTranslationsByLocaleQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<ContentTranslationsByLocaleQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['ContentTranslationsByLocale'] : ['ContentTranslationsByLocale', variables],
+    queryFn: fetcher<ContentTranslationsByLocaleQuery, ContentTranslationsByLocaleQueryVariables>(client, ContentTranslationsByLocaleDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useContentTranslationsByLocaleQuery.getKey = (variables?: ContentTranslationsByLocaleQueryVariables) => variables === undefined ? ['ContentTranslationsByLocale'] : ['ContentTranslationsByLocale', variables];
+useContentTranslationsByLocaleQuery.getRootKey = () => ['ContentTranslationsByLocale'] as const;
+export const useInfiniteContentTranslationsByLocaleQuery = <
+      TData = InfiniteData<ContentTranslationsByLocaleQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: ContentTranslationsByLocaleQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<ContentTranslationsByLocaleQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<ContentTranslationsByLocaleQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<ContentTranslationsByLocaleQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['ContentTranslationsByLocale.infinite'] : ['ContentTranslationsByLocale.infinite', variables],
+      queryFn: (metaData) => fetcher<ContentTranslationsByLocaleQuery, ContentTranslationsByLocaleQueryVariables>(client, ContentTranslationsByLocaleDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteContentTranslationsByLocaleQuery.getKey = (variables?: ContentTranslationsByLocaleQueryVariables) => variables === undefined ? ['ContentTranslationsByLocale.infinite'] : ['ContentTranslationsByLocale.infinite', variables];
+useInfiniteContentTranslationsByLocaleQuery.getRootKey = () => ['ContentTranslationsByLocale.infinite'] as const;
+useContentTranslationsByLocaleQuery.fetcher = (client: GraphQLClient, variables?: ContentTranslationsByLocaleQueryVariables, headers?: RequestInit['headers']) => fetcher<ContentTranslationsByLocaleQuery, ContentTranslationsByLocaleQueryVariables>(client, ContentTranslationsByLocaleDocument, variables, headers);
+
+export const ContentTranslationKeysDocument = `
+    query ContentTranslationKeys {
+  contentTranslations {
+    key
+  }
+}
+    `;
+
+export const useContentTranslationKeysQuery = <
+      TData = ContentTranslationKeysQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables?: ContentTranslationKeysQueryVariables,
+      options?: Omit<UseQueryOptions<ContentTranslationKeysQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<ContentTranslationKeysQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<ContentTranslationKeysQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['ContentTranslationKeys'] : ['ContentTranslationKeys', variables],
+    queryFn: fetcher<ContentTranslationKeysQuery, ContentTranslationKeysQueryVariables>(client, ContentTranslationKeysDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useContentTranslationKeysQuery.getKey = (variables?: ContentTranslationKeysQueryVariables) => variables === undefined ? ['ContentTranslationKeys'] : ['ContentTranslationKeys', variables];
+useContentTranslationKeysQuery.getRootKey = () => ['ContentTranslationKeys'] as const;
+export const useInfiniteContentTranslationKeysQuery = <
+      TData = InfiniteData<ContentTranslationKeysQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: ContentTranslationKeysQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<ContentTranslationKeysQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<ContentTranslationKeysQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<ContentTranslationKeysQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['ContentTranslationKeys.infinite'] : ['ContentTranslationKeys.infinite', variables],
+      queryFn: (metaData) => fetcher<ContentTranslationKeysQuery, ContentTranslationKeysQueryVariables>(client, ContentTranslationKeysDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteContentTranslationKeysQuery.getKey = (variables?: ContentTranslationKeysQueryVariables) => variables === undefined ? ['ContentTranslationKeys.infinite'] : ['ContentTranslationKeys.infinite', variables];
+useInfiniteContentTranslationKeysQuery.getRootKey = () => ['ContentTranslationKeys.infinite'] as const;
+useContentTranslationKeysQuery.fetcher = (client: GraphQLClient, variables?: ContentTranslationKeysQueryVariables, headers?: RequestInit['headers']) => fetcher<ContentTranslationKeysQuery, ContentTranslationKeysQueryVariables>(client, ContentTranslationKeysDocument, variables, headers);
+
+export const ContentTranslationForKeyDocument = `
+    query ContentTranslationForKey($keys: [String!]) {
+  contentTranslations(keys: $keys) {
+    key
+    locale
+    value
+  }
+  contentTranslationDrafts(keys: $keys) {
+    key
+    locale
+    value
+  }
+}
+    `;
+
+export const useContentTranslationForKeyQuery = <
+      TData = ContentTranslationForKeyQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables?: ContentTranslationForKeyQueryVariables,
+      options?: Omit<UseQueryOptions<ContentTranslationForKeyQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<ContentTranslationForKeyQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<ContentTranslationForKeyQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['ContentTranslationForKey'] : ['ContentTranslationForKey', variables],
+    queryFn: fetcher<ContentTranslationForKeyQuery, ContentTranslationForKeyQueryVariables>(client, ContentTranslationForKeyDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useContentTranslationForKeyQuery.getKey = (variables?: ContentTranslationForKeyQueryVariables) => variables === undefined ? ['ContentTranslationForKey'] : ['ContentTranslationForKey', variables];
+useContentTranslationForKeyQuery.getRootKey = () => ['ContentTranslationForKey'] as const;
+export const useInfiniteContentTranslationForKeyQuery = <
+      TData = InfiniteData<ContentTranslationForKeyQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: ContentTranslationForKeyQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<ContentTranslationForKeyQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<ContentTranslationForKeyQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<ContentTranslationForKeyQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['ContentTranslationForKey.infinite'] : ['ContentTranslationForKey.infinite', variables],
+      queryFn: (metaData) => fetcher<ContentTranslationForKeyQuery, ContentTranslationForKeyQueryVariables>(client, ContentTranslationForKeyDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteContentTranslationForKeyQuery.getKey = (variables?: ContentTranslationForKeyQueryVariables) => variables === undefined ? ['ContentTranslationForKey.infinite'] : ['ContentTranslationForKey.infinite', variables];
+useInfiniteContentTranslationForKeyQuery.getRootKey = () => ['ContentTranslationForKey.infinite'] as const;
+useContentTranslationForKeyQuery.fetcher = (client: GraphQLClient, variables?: ContentTranslationForKeyQueryVariables, headers?: RequestInit['headers']) => fetcher<ContentTranslationForKeyQuery, ContentTranslationForKeyQueryVariables>(client, ContentTranslationForKeyDocument, variables, headers);
+
+export const ContentTranslationDraftsDocument = `
+    query ContentTranslationDrafts {
+  contentTranslationDrafts {
+    key
+    locale
+    value
+  }
+}
+    `;
+
+export const useContentTranslationDraftsQuery = <
+      TData = ContentTranslationDraftsQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables?: ContentTranslationDraftsQueryVariables,
+      options?: Omit<UseQueryOptions<ContentTranslationDraftsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<ContentTranslationDraftsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<ContentTranslationDraftsQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['ContentTranslationDrafts'] : ['ContentTranslationDrafts', variables],
+    queryFn: fetcher<ContentTranslationDraftsQuery, ContentTranslationDraftsQueryVariables>(client, ContentTranslationDraftsDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useContentTranslationDraftsQuery.getKey = (variables?: ContentTranslationDraftsQueryVariables) => variables === undefined ? ['ContentTranslationDrafts'] : ['ContentTranslationDrafts', variables];
+useContentTranslationDraftsQuery.getRootKey = () => ['ContentTranslationDrafts'] as const;
+export const useInfiniteContentTranslationDraftsQuery = <
+      TData = InfiniteData<ContentTranslationDraftsQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: ContentTranslationDraftsQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<ContentTranslationDraftsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<ContentTranslationDraftsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<ContentTranslationDraftsQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['ContentTranslationDrafts.infinite'] : ['ContentTranslationDrafts.infinite', variables],
+      queryFn: (metaData) => fetcher<ContentTranslationDraftsQuery, ContentTranslationDraftsQueryVariables>(client, ContentTranslationDraftsDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteContentTranslationDraftsQuery.getKey = (variables?: ContentTranslationDraftsQueryVariables) => variables === undefined ? ['ContentTranslationDrafts.infinite'] : ['ContentTranslationDrafts.infinite', variables];
+useInfiniteContentTranslationDraftsQuery.getRootKey = () => ['ContentTranslationDrafts.infinite'] as const;
+useContentTranslationDraftsQuery.fetcher = (client: GraphQLClient, variables?: ContentTranslationDraftsQueryVariables, headers?: RequestInit['headers']) => fetcher<ContentTranslationDraftsQuery, ContentTranslationDraftsQueryVariables>(client, ContentTranslationDraftsDocument, variables, headers);
+
+export const TrialsAdminCancelDeploymentRequestDocument = `
+    mutation TrialsAdminCancelDeploymentRequest($deploymentRequestId: DeploymentRequestId!) {
+  adminCancelDeploymentRequest(deploymentRequestId: $deploymentRequestId) {
+    id
+  }
+}
+    `;
+
+export const useTrialsAdminCancelDeploymentRequestMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<TrialsAdminCancelDeploymentRequestMutation, TError, TrialsAdminCancelDeploymentRequestMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<TrialsAdminCancelDeploymentRequestMutation, TError, TrialsAdminCancelDeploymentRequestMutationVariables, TContext>(
+      {
+    mutationKey: ['TrialsAdminCancelDeploymentRequest'],
+    mutationFn: (variables?: TrialsAdminCancelDeploymentRequestMutationVariables) => fetcher<TrialsAdminCancelDeploymentRequestMutation, TrialsAdminCancelDeploymentRequestMutationVariables>(client, TrialsAdminCancelDeploymentRequestDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useTrialsAdminCancelDeploymentRequestMutation.getKey = () => ['TrialsAdminCancelDeploymentRequest'];
+useTrialsAdminCancelDeploymentRequestMutation.getRootKey = () => ['TrialsAdminCancelDeploymentRequest'] as const;
+useTrialsAdminCancelDeploymentRequestMutation.fetcher = (client: GraphQLClient, variables: TrialsAdminCancelDeploymentRequestMutationVariables, headers?: RequestInit['headers']) => fetcher<TrialsAdminCancelDeploymentRequestMutation, TrialsAdminCancelDeploymentRequestMutationVariables>(client, TrialsAdminCancelDeploymentRequestDocument, variables, headers);
+
+export const TrialsCancelDeploymentRequestDocument = `
+    mutation TrialsCancelDeploymentRequest($deploymentRequestId: DeploymentRequestId!, $cancellationReason: String) {
+  cancelDeploymentRequest(
+    deploymentRequestId: $deploymentRequestId
+    cancellationReason: $cancellationReason
+  ) {
+    id
+    region
+    type
+    platform_identifier
+    hub_status
+    counts_in_orga_quota
+  }
+}
+    `;
+
+export const useTrialsCancelDeploymentRequestMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<TrialsCancelDeploymentRequestMutation, TError, TrialsCancelDeploymentRequestMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<TrialsCancelDeploymentRequestMutation, TError, TrialsCancelDeploymentRequestMutationVariables, TContext>(
+      {
+    mutationKey: ['TrialsCancelDeploymentRequest'],
+    mutationFn: (variables?: TrialsCancelDeploymentRequestMutationVariables) => fetcher<TrialsCancelDeploymentRequestMutation, TrialsCancelDeploymentRequestMutationVariables>(client, TrialsCancelDeploymentRequestDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useTrialsCancelDeploymentRequestMutation.getKey = () => ['TrialsCancelDeploymentRequest'];
+useTrialsCancelDeploymentRequestMutation.getRootKey = () => ['TrialsCancelDeploymentRequest'] as const;
+useTrialsCancelDeploymentRequestMutation.fetcher = (client: GraphQLClient, variables: TrialsCancelDeploymentRequestMutationVariables, headers?: RequestInit['headers']) => fetcher<TrialsCancelDeploymentRequestMutation, TrialsCancelDeploymentRequestMutationVariables>(client, TrialsCancelDeploymentRequestDocument, variables, headers);
+
+export const TrialsReorderDeploymentRequestInQueueDocument = `
+    mutation TrialsReorderDeploymentRequestInQueue($input: ReorderDeploymentRequestInQueueInput!) {
+  reorderDeploymentRequestInQueue(input: $input) {
+    success
+  }
+}
+    `;
+
+export const useTrialsReorderDeploymentRequestInQueueMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<TrialsReorderDeploymentRequestInQueueMutation, TError, TrialsReorderDeploymentRequestInQueueMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<TrialsReorderDeploymentRequestInQueueMutation, TError, TrialsReorderDeploymentRequestInQueueMutationVariables, TContext>(
+      {
+    mutationKey: ['TrialsReorderDeploymentRequestInQueue'],
+    mutationFn: (variables?: TrialsReorderDeploymentRequestInQueueMutationVariables) => fetcher<TrialsReorderDeploymentRequestInQueueMutation, TrialsReorderDeploymentRequestInQueueMutationVariables>(client, TrialsReorderDeploymentRequestInQueueDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useTrialsReorderDeploymentRequestInQueueMutation.getKey = () => ['TrialsReorderDeploymentRequestInQueue'];
+useTrialsReorderDeploymentRequestInQueueMutation.getRootKey = () => ['TrialsReorderDeploymentRequestInQueue'] as const;
+useTrialsReorderDeploymentRequestInQueueMutation.fetcher = (client: GraphQLClient, variables: TrialsReorderDeploymentRequestInQueueMutationVariables, headers?: RequestInit['headers']) => fetcher<TrialsReorderDeploymentRequestInQueueMutation, TrialsReorderDeploymentRequestInQueueMutationVariables>(client, TrialsReorderDeploymentRequestInQueueDocument, variables, headers);
+
+export const TrialsUpdateDeploymentQuotaCapacityDocument = `
+    mutation TrialsUpdateDeploymentQuotaCapacity($input: UpdateDeploymentQuotaCapacityInput!) {
+  updateDeploymentQuotaCapacity(input: $input) {
+    success
+  }
+}
+    `;
+
+export const useTrialsUpdateDeploymentQuotaCapacityMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<TrialsUpdateDeploymentQuotaCapacityMutation, TError, TrialsUpdateDeploymentQuotaCapacityMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<TrialsUpdateDeploymentQuotaCapacityMutation, TError, TrialsUpdateDeploymentQuotaCapacityMutationVariables, TContext>(
+      {
+    mutationKey: ['TrialsUpdateDeploymentQuotaCapacity'],
+    mutationFn: (variables?: TrialsUpdateDeploymentQuotaCapacityMutationVariables) => fetcher<TrialsUpdateDeploymentQuotaCapacityMutation, TrialsUpdateDeploymentQuotaCapacityMutationVariables>(client, TrialsUpdateDeploymentQuotaCapacityDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useTrialsUpdateDeploymentQuotaCapacityMutation.getKey = () => ['TrialsUpdateDeploymentQuotaCapacity'];
+useTrialsUpdateDeploymentQuotaCapacityMutation.getRootKey = () => ['TrialsUpdateDeploymentQuotaCapacity'] as const;
+useTrialsUpdateDeploymentQuotaCapacityMutation.fetcher = (client: GraphQLClient, variables: TrialsUpdateDeploymentQuotaCapacityMutationVariables, headers?: RequestInit['headers']) => fetcher<TrialsUpdateDeploymentQuotaCapacityMutation, TrialsUpdateDeploymentQuotaCapacityMutationVariables>(client, TrialsUpdateDeploymentQuotaCapacityDocument, variables, headers);
+
+export const TrialsListDocument = `
+    query TrialsList($count: Int!, $cursor: ID, $orderBy: DeploymentRequestOrdering!, $orderMode: OrderingMode!, $filters: [DeploymentRequestFilter!], $searchTerm: String, $searchRegions: [DeploymentRequestPlatformRegion!]) {
+  deploymentRequestsList(
+    first: $count
+    after: $cursor
+    orderBy: $orderBy
+    orderMode: $orderMode
+    filters: $filters
+    searchTerm: $searchTerm
+    searchRegions: $searchRegions
+  ) {
+    totalCount
+    edges {
+      node {
+        ...TrialsRow
+      }
+    }
+  }
+}
+    ${TrialsRowFragmentDoc}`;
+
+export const useTrialsListQuery = <
+      TData = TrialsListQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: TrialsListQueryVariables,
+      options?: Omit<UseQueryOptions<TrialsListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<TrialsListQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<TrialsListQuery, TError, TData>(
+      {
+    queryKey: ['TrialsList', variables],
+    queryFn: fetcher<TrialsListQuery, TrialsListQueryVariables>(client, TrialsListDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useTrialsListQuery.getKey = (variables: TrialsListQueryVariables) => ['TrialsList', variables];
+useTrialsListQuery.getRootKey = () => ['TrialsList'] as const;
+export const useInfiniteTrialsListQuery = <
+      TData = InfiniteData<TrialsListQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: TrialsListQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<TrialsListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<TrialsListQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<TrialsListQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['TrialsList.infinite', variables],
+      queryFn: (metaData) => fetcher<TrialsListQuery, TrialsListQueryVariables>(client, TrialsListDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteTrialsListQuery.getKey = (variables: TrialsListQueryVariables) => ['TrialsList.infinite', variables];
+useInfiniteTrialsListQuery.getRootKey = () => ['TrialsList.infinite'] as const;
+useTrialsListQuery.fetcher = (client: GraphQLClient, variables: TrialsListQueryVariables, headers?: RequestInit['headers']) => fetcher<TrialsListQuery, TrialsListQueryVariables>(client, TrialsListDocument, variables, headers);
+
+export const TrialsQuotasDocument = `
+    query TrialsQuotas {
+  deploymentRequestsAvailable {
+    ...TrialsQuota
+  }
+}
+    ${TrialsQuotaFragmentDoc}`;
+
+export const useTrialsQuotasQuery = <
+      TData = TrialsQuotasQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables?: TrialsQuotasQueryVariables,
+      options?: Omit<UseQueryOptions<TrialsQuotasQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<TrialsQuotasQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<TrialsQuotasQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['TrialsQuotas'] : ['TrialsQuotas', variables],
+    queryFn: fetcher<TrialsQuotasQuery, TrialsQuotasQueryVariables>(client, TrialsQuotasDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useTrialsQuotasQuery.getKey = (variables?: TrialsQuotasQueryVariables) => variables === undefined ? ['TrialsQuotas'] : ['TrialsQuotas', variables];
+useTrialsQuotasQuery.getRootKey = () => ['TrialsQuotas'] as const;
+export const useInfiniteTrialsQuotasQuery = <
+      TData = InfiniteData<TrialsQuotasQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: TrialsQuotasQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<TrialsQuotasQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<TrialsQuotasQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<TrialsQuotasQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['TrialsQuotas.infinite'] : ['TrialsQuotas.infinite', variables],
+      queryFn: (metaData) => fetcher<TrialsQuotasQuery, TrialsQuotasQueryVariables>(client, TrialsQuotasDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteTrialsQuotasQuery.getKey = (variables?: TrialsQuotasQueryVariables) => variables === undefined ? ['TrialsQuotas.infinite'] : ['TrialsQuotas.infinite', variables];
+useInfiniteTrialsQuotasQuery.getRootKey = () => ['TrialsQuotas.infinite'] as const;
+useTrialsQuotasQuery.fetcher = (client: GraphQLClient, variables?: TrialsQuotasQueryVariables, headers?: RequestInit['headers']) => fetcher<TrialsQuotasQuery, TrialsQuotasQueryVariables>(client, TrialsQuotasDocument, variables, headers);
+
+export const XtmPlatformBundleDocument = `
+    query XtmPlatformBundle {
+  xtmPlatformBundle {
+    ...XtmPlatformBundleDetails
+  }
+}
+    ${XtmPlatformBundleDetailsFragmentDoc}`;
+
+export const useXtmPlatformBundleQuery = <
+      TData = XtmPlatformBundleQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables?: XtmPlatformBundleQueryVariables,
+      options?: Omit<UseQueryOptions<XtmPlatformBundleQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<XtmPlatformBundleQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<XtmPlatformBundleQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['XtmPlatformBundle'] : ['XtmPlatformBundle', variables],
+    queryFn: fetcher<XtmPlatformBundleQuery, XtmPlatformBundleQueryVariables>(client, XtmPlatformBundleDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useXtmPlatformBundleQuery.getKey = (variables?: XtmPlatformBundleQueryVariables) => variables === undefined ? ['XtmPlatformBundle'] : ['XtmPlatformBundle', variables];
+useXtmPlatformBundleQuery.getRootKey = () => ['XtmPlatformBundle'] as const;
+export const useInfiniteXtmPlatformBundleQuery = <
+      TData = InfiniteData<XtmPlatformBundleQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: XtmPlatformBundleQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<XtmPlatformBundleQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<XtmPlatformBundleQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<XtmPlatformBundleQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['XtmPlatformBundle.infinite'] : ['XtmPlatformBundle.infinite', variables],
+      queryFn: (metaData) => fetcher<XtmPlatformBundleQuery, XtmPlatformBundleQueryVariables>(client, XtmPlatformBundleDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteXtmPlatformBundleQuery.getKey = (variables?: XtmPlatformBundleQueryVariables) => variables === undefined ? ['XtmPlatformBundle.infinite'] : ['XtmPlatformBundle.infinite', variables];
+useInfiniteXtmPlatformBundleQuery.getRootKey = () => ['XtmPlatformBundle.infinite'] as const;
+useXtmPlatformBundleQuery.fetcher = (client: GraphQLClient, variables?: XtmPlatformBundleQueryVariables, headers?: RequestInit['headers']) => fetcher<XtmPlatformBundleQuery, XtmPlatformBundleQueryVariables>(client, XtmPlatformBundleDocument, variables, headers);
+
+export const XtmonePlatformIntegrationStatusDocument = `
+    query XtmonePlatformIntegrationStatus($serviceInstanceId: ServiceInstanceId!) {
+  xtmonePlatformIntegrationStatus(serviceInstanceId: $serviceInstanceId) {
+    ...XtmoneIntegrationStatus
+  }
+}
+    ${XtmoneIntegrationStatusFragmentDoc}`;
+
+export const useXtmonePlatformIntegrationStatusQuery = <
+      TData = XtmonePlatformIntegrationStatusQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: XtmonePlatformIntegrationStatusQueryVariables,
+      options?: Omit<UseQueryOptions<XtmonePlatformIntegrationStatusQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<XtmonePlatformIntegrationStatusQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<XtmonePlatformIntegrationStatusQuery, TError, TData>(
+      {
+    queryKey: ['XtmonePlatformIntegrationStatus', variables],
+    queryFn: fetcher<XtmonePlatformIntegrationStatusQuery, XtmonePlatformIntegrationStatusQueryVariables>(client, XtmonePlatformIntegrationStatusDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useXtmonePlatformIntegrationStatusQuery.getKey = (variables: XtmonePlatformIntegrationStatusQueryVariables) => ['XtmonePlatformIntegrationStatus', variables];
+useXtmonePlatformIntegrationStatusQuery.getRootKey = () => ['XtmonePlatformIntegrationStatus'] as const;
+export const useInfiniteXtmonePlatformIntegrationStatusQuery = <
+      TData = InfiniteData<XtmonePlatformIntegrationStatusQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: XtmonePlatformIntegrationStatusQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<XtmonePlatformIntegrationStatusQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<XtmonePlatformIntegrationStatusQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<XtmonePlatformIntegrationStatusQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['XtmonePlatformIntegrationStatus.infinite', variables],
+      queryFn: (metaData) => fetcher<XtmonePlatformIntegrationStatusQuery, XtmonePlatformIntegrationStatusQueryVariables>(client, XtmonePlatformIntegrationStatusDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteXtmonePlatformIntegrationStatusQuery.getKey = (variables: XtmonePlatformIntegrationStatusQueryVariables) => ['XtmonePlatformIntegrationStatus.infinite', variables];
+useInfiniteXtmonePlatformIntegrationStatusQuery.getRootKey = () => ['XtmonePlatformIntegrationStatus.infinite'] as const;
+useXtmonePlatformIntegrationStatusQuery.fetcher = (client: GraphQLClient, variables: XtmonePlatformIntegrationStatusQueryVariables, headers?: RequestInit['headers']) => fetcher<XtmonePlatformIntegrationStatusQuery, XtmonePlatformIntegrationStatusQueryVariables>(client, XtmonePlatformIntegrationStatusDocument, variables, headers);
+
+export const DocumentFacetsDocument = `
+    query DocumentFacets($input: LoadDocumentFacetInput!) {
+  documentFacets(input: $input) {
+    integration_type {
+      value
+      count
+    }
+    license_type {
+      value
+      count
+    }
+    manager_supported {
+      value
+      count
+    }
+    verified {
+      value
+      count
+    }
+    solution_category {
+      value
+      count
+    }
+    use_case {
+      value
+      count
+    }
+    entity_type {
+      value
+      count
+    }
+  }
+}
+    `;
+
+export const useDocumentFacetsQuery = <
+      TData = DocumentFacetsQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: DocumentFacetsQueryVariables,
+      options?: Omit<UseQueryOptions<DocumentFacetsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<DocumentFacetsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<DocumentFacetsQuery, TError, TData>(
+      {
+    queryKey: ['DocumentFacets', variables],
+    queryFn: fetcher<DocumentFacetsQuery, DocumentFacetsQueryVariables>(client, DocumentFacetsDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useDocumentFacetsQuery.getKey = (variables: DocumentFacetsQueryVariables) => ['DocumentFacets', variables];
+useDocumentFacetsQuery.getRootKey = () => ['DocumentFacets'] as const;
+export const useInfiniteDocumentFacetsQuery = <
+      TData = InfiniteData<DocumentFacetsQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: DocumentFacetsQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<DocumentFacetsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<DocumentFacetsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<DocumentFacetsQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['DocumentFacets.infinite', variables],
+      queryFn: (metaData) => fetcher<DocumentFacetsQuery, DocumentFacetsQueryVariables>(client, DocumentFacetsDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteDocumentFacetsQuery.getKey = (variables: DocumentFacetsQueryVariables) => ['DocumentFacets.infinite', variables];
+useInfiniteDocumentFacetsQuery.getRootKey = () => ['DocumentFacets.infinite'] as const;
+useDocumentFacetsQuery.fetcher = (client: GraphQLClient, variables: DocumentFacetsQueryVariables, headers?: RequestInit['headers']) => fetcher<DocumentFacetsQuery, DocumentFacetsQueryVariables>(client, DocumentFacetsDocument, variables, headers);
+
+export const IncrementShareNumberDocumentDocument = `
+    mutation IncrementShareNumberDocument($documentId: DocumentId!) {
+  incrementShareNumberDocument(documentId: $documentId) {
+    share_number
+  }
+}
+    `;
+
+export const useIncrementShareNumberDocumentMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<IncrementShareNumberDocumentMutation, TError, IncrementShareNumberDocumentMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<IncrementShareNumberDocumentMutation, TError, IncrementShareNumberDocumentMutationVariables, TContext>(
+      {
+    mutationKey: ['IncrementShareNumberDocument'],
+    mutationFn: (variables?: IncrementShareNumberDocumentMutationVariables) => fetcher<IncrementShareNumberDocumentMutation, IncrementShareNumberDocumentMutationVariables>(client, IncrementShareNumberDocumentDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useIncrementShareNumberDocumentMutation.getKey = () => ['IncrementShareNumberDocument'];
+useIncrementShareNumberDocumentMutation.getRootKey = () => ['IncrementShareNumberDocument'] as const;
+useIncrementShareNumberDocumentMutation.fetcher = (client: GraphQLClient, variables: IncrementShareNumberDocumentMutationVariables, headers?: RequestInit['headers']) => fetcher<IncrementShareNumberDocumentMutation, IncrementShareNumberDocumentMutationVariables>(client, IncrementShareNumberDocumentDocument, variables, headers);
+
+export const DocumentCreateDocument = `
+    mutation DocumentCreate($input: CreateDocumentInput!, $metadata: [DocumentMetadata!]!, $serviceInstanceId: ServiceInstanceId!, $sourceDocument: Upload, $logo: Upload, $images: [Upload!]) {
+  createDocument(
+    input: $input
+    metadata: $metadata
+    serviceInstanceId: $serviceInstanceId
+    sourceDocument: $sourceDocument
+    logo: $logo
+    images: $images
+  ) {
+    ...DocumentItem
+  }
+}
+    ${DocumentItemFragmentDoc}`;
+
+export const useDocumentCreateMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<DocumentCreateMutation, TError, DocumentCreateMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<DocumentCreateMutation, TError, DocumentCreateMutationVariables, TContext>(
+      {
+    mutationKey: ['DocumentCreate'],
+    mutationFn: (variables?: DocumentCreateMutationVariables) => fetcher<DocumentCreateMutation, DocumentCreateMutationVariables>(client, DocumentCreateDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useDocumentCreateMutation.getKey = () => ['DocumentCreate'];
+useDocumentCreateMutation.getRootKey = () => ['DocumentCreate'] as const;
+useDocumentCreateMutation.fetcher = (client: GraphQLClient, variables: DocumentCreateMutationVariables, headers?: RequestInit['headers']) => fetcher<DocumentCreateMutation, DocumentCreateMutationVariables>(client, DocumentCreateDocument, variables, headers);
+
+export const DocumentUpdateDocument = `
+    mutation DocumentUpdate($documentId: DocumentId!, $input: UpdateDocumentInput!, $metadata: [DocumentMetadata!]!, $serviceInstanceId: ServiceInstanceId!, $sourceDocument: Upload, $logo: Upload, $images: [Upload!], $existingImageIds: [DocumentId!]) {
+  updateDocument(
+    documentId: $documentId
+    input: $input
+    metadata: $metadata
+    serviceInstanceId: $serviceInstanceId
+    sourceDocument: $sourceDocument
+    logo: $logo
+    images: $images
+    existingImageIds: $existingImageIds
+  ) {
+    ...DocumentItem
+  }
+}
+    ${DocumentItemFragmentDoc}`;
+
+export const useDocumentUpdateMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<DocumentUpdateMutation, TError, DocumentUpdateMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<DocumentUpdateMutation, TError, DocumentUpdateMutationVariables, TContext>(
+      {
+    mutationKey: ['DocumentUpdate'],
+    mutationFn: (variables?: DocumentUpdateMutationVariables) => fetcher<DocumentUpdateMutation, DocumentUpdateMutationVariables>(client, DocumentUpdateDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useDocumentUpdateMutation.getKey = () => ['DocumentUpdate'];
+useDocumentUpdateMutation.getRootKey = () => ['DocumentUpdate'] as const;
+useDocumentUpdateMutation.fetcher = (client: GraphQLClient, variables: DocumentUpdateMutationVariables, headers?: RequestInit['headers']) => fetcher<DocumentUpdateMutation, DocumentUpdateMutationVariables>(client, DocumentUpdateDocument, variables, headers);
+
+export const DocumentDeleteDocument = `
+    mutation DocumentDelete($documentId: DocumentId!, $serviceInstanceId: ServiceInstanceId!) {
+  deleteDocument(documentId: $documentId, service_instance_id: $serviceInstanceId) {
+    id
+  }
+}
+    `;
+
+export const useDocumentDeleteMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<DocumentDeleteMutation, TError, DocumentDeleteMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<DocumentDeleteMutation, TError, DocumentDeleteMutationVariables, TContext>(
+      {
+    mutationKey: ['DocumentDelete'],
+    mutationFn: (variables?: DocumentDeleteMutationVariables) => fetcher<DocumentDeleteMutation, DocumentDeleteMutationVariables>(client, DocumentDeleteDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useDocumentDeleteMutation.getKey = () => ['DocumentDelete'];
+useDocumentDeleteMutation.getRootKey = () => ['DocumentDelete'] as const;
+useDocumentDeleteMutation.fetcher = (client: GraphQLClient, variables: DocumentDeleteMutationVariables, headers?: RequestInit['headers']) => fetcher<DocumentDeleteMutation, DocumentDeleteMutationVariables>(client, DocumentDeleteDocument, variables, headers);
+
+export const OneClickDeployDocument = `
+    mutation OneClickDeploy($input: OneClickDeployInput!) {
+  sendTelemetryEvent {
+    oneClickDeploy(input: $input) {
+      result
+      message
+    }
+  }
+}
+    `;
+
+export const useOneClickDeployMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<OneClickDeployMutation, TError, OneClickDeployMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<OneClickDeployMutation, TError, OneClickDeployMutationVariables, TContext>(
+      {
+    mutationKey: ['OneClickDeploy'],
+    mutationFn: (variables?: OneClickDeployMutationVariables) => fetcher<OneClickDeployMutation, OneClickDeployMutationVariables>(client, OneClickDeployDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useOneClickDeployMutation.getKey = () => ['OneClickDeploy'];
+useOneClickDeployMutation.getRootKey = () => ['OneClickDeploy'] as const;
+useOneClickDeployMutation.fetcher = (client: GraphQLClient, variables: OneClickDeployMutationVariables, headers?: RequestInit['headers']) => fetcher<OneClickDeployMutation, OneClickDeployMutationVariables>(client, OneClickDeployDocument, variables, headers);
+
 export const MostDeployedDocumentsQueryDocument = `
     query MostDeployedDocumentsQuery($limit: Int!, $platformIdentifiers: [PlatformIdentifier!]) {
   mostDeployedDocuments(limit: $limit, platformIdentifiers: $platformIdentifiers) {
@@ -3279,6 +7463,762 @@ useInfiniteLastDeployedOverviewQueryQuery.getKey = (variables: LastDeployedOverv
 useInfiniteLastDeployedOverviewQueryQuery.getRootKey = () => ['LastDeployedOverviewQuery.infinite'] as const;
 useLastDeployedOverviewQueryQuery.fetcher = (client: GraphQLClient, variables: LastDeployedOverviewQueryQueryVariables, headers?: RequestInit['headers']) => fetcher<LastDeployedOverviewQueryQuery, LastDeployedOverviewQueryQueryVariables>(client, LastDeployedOverviewQueryDocument, variables, headers);
 
+export const DocumentsListDocument = `
+    query DocumentsList($count: Int!, $cursor: ID, $orderBy: DocumentOrdering!, $orderMode: OrderingMode!, $logicalFilters: LogicalFilterInput, $searchTerm: String, $serviceInstanceId: ServiceInstanceId!, $parentsOnly: Boolean) {
+  documents(
+    first: $count
+    after: $cursor
+    orderBy: $orderBy
+    orderMode: $orderMode
+    searchTerm: $searchTerm
+    logicalFilters: $logicalFilters
+    serviceInstanceId: $serviceInstanceId
+    parentsOnly: $parentsOnly
+  ) {
+    totalCount
+    edges {
+      node {
+        ...DocumentItem
+      }
+    }
+  }
+}
+    ${DocumentItemFragmentDoc}`;
+
+export const useDocumentsListQuery = <
+      TData = DocumentsListQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: DocumentsListQueryVariables,
+      options?: Omit<UseQueryOptions<DocumentsListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<DocumentsListQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<DocumentsListQuery, TError, TData>(
+      {
+    queryKey: ['DocumentsList', variables],
+    queryFn: fetcher<DocumentsListQuery, DocumentsListQueryVariables>(client, DocumentsListDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useDocumentsListQuery.getKey = (variables: DocumentsListQueryVariables) => ['DocumentsList', variables];
+useDocumentsListQuery.getRootKey = () => ['DocumentsList'] as const;
+export const useInfiniteDocumentsListQuery = <
+      TData = InfiniteData<DocumentsListQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: DocumentsListQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<DocumentsListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<DocumentsListQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<DocumentsListQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['DocumentsList.infinite', variables],
+      queryFn: (metaData) => fetcher<DocumentsListQuery, DocumentsListQueryVariables>(client, DocumentsListDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteDocumentsListQuery.getKey = (variables: DocumentsListQueryVariables) => ['DocumentsList.infinite', variables];
+useInfiniteDocumentsListQuery.getRootKey = () => ['DocumentsList.infinite'] as const;
+useDocumentsListQuery.fetcher = (client: GraphQLClient, variables: DocumentsListQueryVariables, headers?: RequestInit['headers']) => fetcher<DocumentsListQuery, DocumentsListQueryVariables>(client, DocumentsListDocument, variables, headers);
+
+export const DocumentDetailDocument = `
+    query DocumentDetail($documentId: DocumentId!, $serviceInstanceId: ServiceInstanceId!) {
+  document(documentId: $documentId, serviceInstanceId: $serviceInstanceId) {
+    ...DocumentItem
+  }
+}
+    ${DocumentItemFragmentDoc}`;
+
+export const useDocumentDetailQuery = <
+      TData = DocumentDetailQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: DocumentDetailQueryVariables,
+      options?: Omit<UseQueryOptions<DocumentDetailQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<DocumentDetailQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<DocumentDetailQuery, TError, TData>(
+      {
+    queryKey: ['DocumentDetail', variables],
+    queryFn: fetcher<DocumentDetailQuery, DocumentDetailQueryVariables>(client, DocumentDetailDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useDocumentDetailQuery.getKey = (variables: DocumentDetailQueryVariables) => ['DocumentDetail', variables];
+useDocumentDetailQuery.getRootKey = () => ['DocumentDetail'] as const;
+export const useInfiniteDocumentDetailQuery = <
+      TData = InfiniteData<DocumentDetailQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: DocumentDetailQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<DocumentDetailQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<DocumentDetailQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<DocumentDetailQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['DocumentDetail.infinite', variables],
+      queryFn: (metaData) => fetcher<DocumentDetailQuery, DocumentDetailQueryVariables>(client, DocumentDetailDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteDocumentDetailQuery.getKey = (variables: DocumentDetailQueryVariables) => ['DocumentDetail.infinite', variables];
+useInfiniteDocumentDetailQuery.getRootKey = () => ['DocumentDetail.infinite'] as const;
+useDocumentDetailQuery.fetcher = (client: GraphQLClient, variables: DocumentDetailQueryVariables, headers?: RequestInit['headers']) => fetcher<DocumentDetailQuery, DocumentDetailQueryVariables>(client, DocumentDetailDocument, variables, headers);
+
+export const PublicDocumentsByServiceSlugQueryDocument = `
+    query PublicDocumentsByServiceSlugQuery($serviceInstanceSlug: String!) {
+  publicDocumentsByServiceSlug(serviceInstanceSlug: $serviceInstanceSlug) {
+    ...PublicDocumentByServiceSlugItem
+  }
+}
+    ${PublicDocumentByServiceSlugItemFragmentDoc}`;
+
+export const usePublicDocumentsByServiceSlugQueryQuery = <
+      TData = PublicDocumentsByServiceSlugQueryQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: PublicDocumentsByServiceSlugQueryQueryVariables,
+      options?: Omit<UseQueryOptions<PublicDocumentsByServiceSlugQueryQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<PublicDocumentsByServiceSlugQueryQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<PublicDocumentsByServiceSlugQueryQuery, TError, TData>(
+      {
+    queryKey: ['PublicDocumentsByServiceSlugQuery', variables],
+    queryFn: fetcher<PublicDocumentsByServiceSlugQueryQuery, PublicDocumentsByServiceSlugQueryQueryVariables>(client, PublicDocumentsByServiceSlugQueryDocument, variables, headers),
+    ...options
+  }
+    )};
+
+usePublicDocumentsByServiceSlugQueryQuery.getKey = (variables: PublicDocumentsByServiceSlugQueryQueryVariables) => ['PublicDocumentsByServiceSlugQuery', variables];
+usePublicDocumentsByServiceSlugQueryQuery.getRootKey = () => ['PublicDocumentsByServiceSlugQuery'] as const;
+export const useInfinitePublicDocumentsByServiceSlugQueryQuery = <
+      TData = InfiniteData<PublicDocumentsByServiceSlugQueryQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: PublicDocumentsByServiceSlugQueryQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<PublicDocumentsByServiceSlugQueryQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<PublicDocumentsByServiceSlugQueryQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<PublicDocumentsByServiceSlugQueryQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['PublicDocumentsByServiceSlugQuery.infinite', variables],
+      queryFn: (metaData) => fetcher<PublicDocumentsByServiceSlugQueryQuery, PublicDocumentsByServiceSlugQueryQueryVariables>(client, PublicDocumentsByServiceSlugQueryDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfinitePublicDocumentsByServiceSlugQueryQuery.getKey = (variables: PublicDocumentsByServiceSlugQueryQueryVariables) => ['PublicDocumentsByServiceSlugQuery.infinite', variables];
+useInfinitePublicDocumentsByServiceSlugQueryQuery.getRootKey = () => ['PublicDocumentsByServiceSlugQuery.infinite'] as const;
+usePublicDocumentsByServiceSlugQueryQuery.fetcher = (client: GraphQLClient, variables: PublicDocumentsByServiceSlugQueryQueryVariables, headers?: RequestInit['headers']) => fetcher<PublicDocumentsByServiceSlugQueryQuery, PublicDocumentsByServiceSlugQueryQueryVariables>(client, PublicDocumentsByServiceSlugQueryDocument, variables, headers);
+
+export const PublicDocumentsByServiceSlugSitemapQueryDocument = `
+    query PublicDocumentsByServiceSlugSitemapQuery($serviceInstanceSlug: String!) {
+  publicDocumentSlugsByServiceSlug(serviceInstanceSlug: $serviceInstanceSlug) {
+    slug
+    created_at
+    updated_at
+  }
+}
+    `;
+
+export const usePublicDocumentsByServiceSlugSitemapQueryQuery = <
+      TData = PublicDocumentsByServiceSlugSitemapQueryQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: PublicDocumentsByServiceSlugSitemapQueryQueryVariables,
+      options?: Omit<UseQueryOptions<PublicDocumentsByServiceSlugSitemapQueryQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<PublicDocumentsByServiceSlugSitemapQueryQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<PublicDocumentsByServiceSlugSitemapQueryQuery, TError, TData>(
+      {
+    queryKey: ['PublicDocumentsByServiceSlugSitemapQuery', variables],
+    queryFn: fetcher<PublicDocumentsByServiceSlugSitemapQueryQuery, PublicDocumentsByServiceSlugSitemapQueryQueryVariables>(client, PublicDocumentsByServiceSlugSitemapQueryDocument, variables, headers),
+    ...options
+  }
+    )};
+
+usePublicDocumentsByServiceSlugSitemapQueryQuery.getKey = (variables: PublicDocumentsByServiceSlugSitemapQueryQueryVariables) => ['PublicDocumentsByServiceSlugSitemapQuery', variables];
+usePublicDocumentsByServiceSlugSitemapQueryQuery.getRootKey = () => ['PublicDocumentsByServiceSlugSitemapQuery'] as const;
+export const useInfinitePublicDocumentsByServiceSlugSitemapQueryQuery = <
+      TData = InfiniteData<PublicDocumentsByServiceSlugSitemapQueryQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: PublicDocumentsByServiceSlugSitemapQueryQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<PublicDocumentsByServiceSlugSitemapQueryQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<PublicDocumentsByServiceSlugSitemapQueryQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<PublicDocumentsByServiceSlugSitemapQueryQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['PublicDocumentsByServiceSlugSitemapQuery.infinite', variables],
+      queryFn: (metaData) => fetcher<PublicDocumentsByServiceSlugSitemapQueryQuery, PublicDocumentsByServiceSlugSitemapQueryQueryVariables>(client, PublicDocumentsByServiceSlugSitemapQueryDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfinitePublicDocumentsByServiceSlugSitemapQueryQuery.getKey = (variables: PublicDocumentsByServiceSlugSitemapQueryQueryVariables) => ['PublicDocumentsByServiceSlugSitemapQuery.infinite', variables];
+useInfinitePublicDocumentsByServiceSlugSitemapQueryQuery.getRootKey = () => ['PublicDocumentsByServiceSlugSitemapQuery.infinite'] as const;
+usePublicDocumentsByServiceSlugSitemapQueryQuery.fetcher = (client: GraphQLClient, variables: PublicDocumentsByServiceSlugSitemapQueryQueryVariables, headers?: RequestInit['headers']) => fetcher<PublicDocumentsByServiceSlugSitemapQueryQuery, PublicDocumentsByServiceSlugSitemapQueryQueryVariables>(client, PublicDocumentsByServiceSlugSitemapQueryDocument, variables, headers);
+
+export const PublicDocumentsDocument = `
+    query PublicDocuments($slug: String!, $count: Int!, $cursor: ID, $orderBy: DocumentOrdering!, $orderMode: OrderingMode!, $logicalFilters: LogicalFilterInput, $searchTerm: String, $serviceInstanceId: ServiceInstanceId!) {
+  publicDocuments(
+    slug: $slug
+    first: $count
+    after: $cursor
+    orderBy: $orderBy
+    orderMode: $orderMode
+    logicalFilters: $logicalFilters
+    searchTerm: $searchTerm
+    serviceInstanceId: $serviceInstanceId
+  ) {
+    totalCount
+    edges {
+      node {
+        ...PublicDocumentListItem
+      }
+    }
+  }
+}
+    ${PublicDocumentListItemFragmentDoc}`;
+
+export const usePublicDocumentsQuery = <
+      TData = PublicDocumentsQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: PublicDocumentsQueryVariables,
+      options?: Omit<UseQueryOptions<PublicDocumentsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<PublicDocumentsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<PublicDocumentsQuery, TError, TData>(
+      {
+    queryKey: ['PublicDocuments', variables],
+    queryFn: fetcher<PublicDocumentsQuery, PublicDocumentsQueryVariables>(client, PublicDocumentsDocument, variables, headers),
+    ...options
+  }
+    )};
+
+usePublicDocumentsQuery.getKey = (variables: PublicDocumentsQueryVariables) => ['PublicDocuments', variables];
+usePublicDocumentsQuery.getRootKey = () => ['PublicDocuments'] as const;
+export const useInfinitePublicDocumentsQuery = <
+      TData = InfiniteData<PublicDocumentsQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: PublicDocumentsQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<PublicDocumentsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<PublicDocumentsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<PublicDocumentsQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['PublicDocuments.infinite', variables],
+      queryFn: (metaData) => fetcher<PublicDocumentsQuery, PublicDocumentsQueryVariables>(client, PublicDocumentsDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfinitePublicDocumentsQuery.getKey = (variables: PublicDocumentsQueryVariables) => ['PublicDocuments.infinite', variables];
+useInfinitePublicDocumentsQuery.getRootKey = () => ['PublicDocuments.infinite'] as const;
+usePublicDocumentsQuery.fetcher = (client: GraphQLClient, variables: PublicDocumentsQueryVariables, headers?: RequestInit['headers']) => fetcher<PublicDocumentsQuery, PublicDocumentsQueryVariables>(client, PublicDocumentsDocument, variables, headers);
+
+export const PublicDocumentBySlugDocument = `
+    query PublicDocumentBySlug($serviceInstanceId: ServiceInstanceId!, $slug: String!) {
+  publicDocumentBySlug(serviceInstanceId: $serviceInstanceId, slug: $slug) {
+    ...PublicDocumentByServiceSlugItem
+  }
+}
+    ${PublicDocumentByServiceSlugItemFragmentDoc}`;
+
+export const usePublicDocumentBySlugQuery = <
+      TData = PublicDocumentBySlugQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: PublicDocumentBySlugQueryVariables,
+      options?: Omit<UseQueryOptions<PublicDocumentBySlugQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<PublicDocumentBySlugQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<PublicDocumentBySlugQuery, TError, TData>(
+      {
+    queryKey: ['PublicDocumentBySlug', variables],
+    queryFn: fetcher<PublicDocumentBySlugQuery, PublicDocumentBySlugQueryVariables>(client, PublicDocumentBySlugDocument, variables, headers),
+    ...options
+  }
+    )};
+
+usePublicDocumentBySlugQuery.getKey = (variables: PublicDocumentBySlugQueryVariables) => ['PublicDocumentBySlug', variables];
+usePublicDocumentBySlugQuery.getRootKey = () => ['PublicDocumentBySlug'] as const;
+export const useInfinitePublicDocumentBySlugQuery = <
+      TData = InfiniteData<PublicDocumentBySlugQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: PublicDocumentBySlugQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<PublicDocumentBySlugQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<PublicDocumentBySlugQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<PublicDocumentBySlugQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['PublicDocumentBySlug.infinite', variables],
+      queryFn: (metaData) => fetcher<PublicDocumentBySlugQuery, PublicDocumentBySlugQueryVariables>(client, PublicDocumentBySlugDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfinitePublicDocumentBySlugQuery.getKey = (variables: PublicDocumentBySlugQueryVariables) => ['PublicDocumentBySlug.infinite', variables];
+useInfinitePublicDocumentBySlugQuery.getRootKey = () => ['PublicDocumentBySlug.infinite'] as const;
+usePublicDocumentBySlugQuery.fetcher = (client: GraphQLClient, variables: PublicDocumentBySlugQueryVariables, headers?: RequestInit['headers']) => fetcher<PublicDocumentBySlugQuery, PublicDocumentBySlugQueryVariables>(client, PublicDocumentBySlugDocument, variables, headers);
+
+export const FeatureVoteDocument = `
+    mutation FeatureVote($feature_id: VotableFeatureId!) {
+  voteForFeature(feature_id: $feature_id) {
+    id
+    has_my_vote
+  }
+}
+    `;
+
+export const useFeatureVoteMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<FeatureVoteMutation, TError, FeatureVoteMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<FeatureVoteMutation, TError, FeatureVoteMutationVariables, TContext>(
+      {
+    mutationKey: ['FeatureVote'],
+    mutationFn: (variables?: FeatureVoteMutationVariables) => fetcher<FeatureVoteMutation, FeatureVoteMutationVariables>(client, FeatureVoteDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useFeatureVoteMutation.getKey = () => ['FeatureVote'];
+useFeatureVoteMutation.getRootKey = () => ['FeatureVote'] as const;
+useFeatureVoteMutation.fetcher = (client: GraphQLClient, variables: FeatureVoteMutationVariables, headers?: RequestInit['headers']) => fetcher<FeatureVoteMutation, FeatureVoteMutationVariables>(client, FeatureVoteDocument, variables, headers);
+
+export const CurrentVotingRoundDocument = `
+    query CurrentVotingRound($service_instance_id: ServiceInstanceId!) {
+  me {
+    id
+  }
+  currentVotingRound(service_instance_id: $service_instance_id) {
+    id
+    service_instance_id
+    name
+    description
+    features {
+      ...VotableFeaturePublic
+    }
+  }
+}
+    ${VotableFeaturePublicFragmentDoc}`;
+
+export const useCurrentVotingRoundQuery = <
+      TData = CurrentVotingRoundQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: CurrentVotingRoundQueryVariables,
+      options?: Omit<UseQueryOptions<CurrentVotingRoundQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<CurrentVotingRoundQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<CurrentVotingRoundQuery, TError, TData>(
+      {
+    queryKey: ['CurrentVotingRound', variables],
+    queryFn: fetcher<CurrentVotingRoundQuery, CurrentVotingRoundQueryVariables>(client, CurrentVotingRoundDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useCurrentVotingRoundQuery.getKey = (variables: CurrentVotingRoundQueryVariables) => ['CurrentVotingRound', variables];
+useCurrentVotingRoundQuery.getRootKey = () => ['CurrentVotingRound'] as const;
+export const useInfiniteCurrentVotingRoundQuery = <
+      TData = InfiniteData<CurrentVotingRoundQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: CurrentVotingRoundQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<CurrentVotingRoundQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<CurrentVotingRoundQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<CurrentVotingRoundQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['CurrentVotingRound.infinite', variables],
+      queryFn: (metaData) => fetcher<CurrentVotingRoundQuery, CurrentVotingRoundQueryVariables>(client, CurrentVotingRoundDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteCurrentVotingRoundQuery.getKey = (variables: CurrentVotingRoundQueryVariables) => ['CurrentVotingRound.infinite', variables];
+useInfiniteCurrentVotingRoundQuery.getRootKey = () => ['CurrentVotingRound.infinite'] as const;
+useCurrentVotingRoundQuery.fetcher = (client: GraphQLClient, variables: CurrentVotingRoundQueryVariables, headers?: RequestInit['headers']) => fetcher<CurrentVotingRoundQuery, CurrentVotingRoundQueryVariables>(client, CurrentVotingRoundDocument, variables, headers);
+
+export const CurrentVotingRoundCalloutDocument = `
+    query CurrentVotingRoundCallout($service_instance_id: ServiceInstanceId!) {
+  currentVotingRound(service_instance_id: $service_instance_id) {
+    id
+    name
+    description
+    theme
+  }
+}
+    `;
+
+export const useCurrentVotingRoundCalloutQuery = <
+      TData = CurrentVotingRoundCalloutQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: CurrentVotingRoundCalloutQueryVariables,
+      options?: Omit<UseQueryOptions<CurrentVotingRoundCalloutQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<CurrentVotingRoundCalloutQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<CurrentVotingRoundCalloutQuery, TError, TData>(
+      {
+    queryKey: ['CurrentVotingRoundCallout', variables],
+    queryFn: fetcher<CurrentVotingRoundCalloutQuery, CurrentVotingRoundCalloutQueryVariables>(client, CurrentVotingRoundCalloutDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useCurrentVotingRoundCalloutQuery.getKey = (variables: CurrentVotingRoundCalloutQueryVariables) => ['CurrentVotingRoundCallout', variables];
+useCurrentVotingRoundCalloutQuery.getRootKey = () => ['CurrentVotingRoundCallout'] as const;
+export const useInfiniteCurrentVotingRoundCalloutQuery = <
+      TData = InfiniteData<CurrentVotingRoundCalloutQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: CurrentVotingRoundCalloutQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<CurrentVotingRoundCalloutQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<CurrentVotingRoundCalloutQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<CurrentVotingRoundCalloutQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['CurrentVotingRoundCallout.infinite', variables],
+      queryFn: (metaData) => fetcher<CurrentVotingRoundCalloutQuery, CurrentVotingRoundCalloutQueryVariables>(client, CurrentVotingRoundCalloutDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteCurrentVotingRoundCalloutQuery.getKey = (variables: CurrentVotingRoundCalloutQueryVariables) => ['CurrentVotingRoundCallout.infinite', variables];
+useInfiniteCurrentVotingRoundCalloutQuery.getRootKey = () => ['CurrentVotingRoundCallout.infinite'] as const;
+useCurrentVotingRoundCalloutQuery.fetcher = (client: GraphQLClient, variables: CurrentVotingRoundCalloutQueryVariables, headers?: RequestInit['headers']) => fetcher<CurrentVotingRoundCalloutQuery, CurrentVotingRoundCalloutQueryVariables>(client, CurrentVotingRoundCalloutDocument, variables, headers);
+
+export const FrontendErrorLogDocument = `
+    mutation FrontendErrorLog($message: String!, $codeStack: String, $componentStack: String) {
+  frontendErrorLog(
+    message: $message
+    codeStack: $codeStack
+    componentStack: $componentStack
+  )
+}
+    `;
+
+export const useFrontendErrorLogMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<FrontendErrorLogMutation, TError, FrontendErrorLogMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<FrontendErrorLogMutation, TError, FrontendErrorLogMutationVariables, TContext>(
+      {
+    mutationKey: ['FrontendErrorLog'],
+    mutationFn: (variables?: FrontendErrorLogMutationVariables) => fetcher<FrontendErrorLogMutation, FrontendErrorLogMutationVariables>(client, FrontendErrorLogDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useFrontendErrorLogMutation.getKey = () => ['FrontendErrorLog'];
+useFrontendErrorLogMutation.getRootKey = () => ['FrontendErrorLog'] as const;
+useFrontendErrorLogMutation.fetcher = (client: GraphQLClient, variables: FrontendErrorLogMutationVariables, headers?: RequestInit['headers']) => fetcher<FrontendErrorLogMutation, FrontendErrorLogMutationVariables>(client, FrontendErrorLogDocument, variables, headers);
+
+export const IntegrationProductVersionFilterDocument = `
+    query IntegrationProductVersionFilter($product: PlatformIdentifier!, $search: String) {
+  registeredProductVersions(product: $product, search: $search) {
+    version
+  }
+}
+    `;
+
+export const useIntegrationProductVersionFilterQuery = <
+      TData = IntegrationProductVersionFilterQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: IntegrationProductVersionFilterQueryVariables,
+      options?: Omit<UseQueryOptions<IntegrationProductVersionFilterQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<IntegrationProductVersionFilterQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<IntegrationProductVersionFilterQuery, TError, TData>(
+      {
+    queryKey: ['IntegrationProductVersionFilter', variables],
+    queryFn: fetcher<IntegrationProductVersionFilterQuery, IntegrationProductVersionFilterQueryVariables>(client, IntegrationProductVersionFilterDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useIntegrationProductVersionFilterQuery.getKey = (variables: IntegrationProductVersionFilterQueryVariables) => ['IntegrationProductVersionFilter', variables];
+useIntegrationProductVersionFilterQuery.getRootKey = () => ['IntegrationProductVersionFilter'] as const;
+export const useInfiniteIntegrationProductVersionFilterQuery = <
+      TData = InfiniteData<IntegrationProductVersionFilterQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: IntegrationProductVersionFilterQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<IntegrationProductVersionFilterQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<IntegrationProductVersionFilterQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<IntegrationProductVersionFilterQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['IntegrationProductVersionFilter.infinite', variables],
+      queryFn: (metaData) => fetcher<IntegrationProductVersionFilterQuery, IntegrationProductVersionFilterQueryVariables>(client, IntegrationProductVersionFilterDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteIntegrationProductVersionFilterQuery.getKey = (variables: IntegrationProductVersionFilterQueryVariables) => ['IntegrationProductVersionFilter.infinite', variables];
+useInfiniteIntegrationProductVersionFilterQuery.getRootKey = () => ['IntegrationProductVersionFilter.infinite'] as const;
+useIntegrationProductVersionFilterQuery.fetcher = (client: GraphQLClient, variables: IntegrationProductVersionFilterQueryVariables, headers?: RequestInit['headers']) => fetcher<IntegrationProductVersionFilterQuery, IntegrationProductVersionFilterQueryVariables>(client, IntegrationProductVersionFilterDocument, variables, headers);
+
+export const MeProfileEditDocument = `
+    mutation MeProfileEdit($first_name: String, $last_name: String, $country: String) {
+  editMeUser(
+    input: {first_name: $first_name, last_name: $last_name, country: $country}
+  ) {
+    ...CurrentUser
+  }
+}
+    ${CurrentUserFragmentDoc}`;
+
+export const useMeProfileEditMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<MeProfileEditMutation, TError, MeProfileEditMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<MeProfileEditMutation, TError, MeProfileEditMutationVariables, TContext>(
+      {
+    mutationKey: ['MeProfileEdit'],
+    mutationFn: (variables?: MeProfileEditMutationVariables) => fetcher<MeProfileEditMutation, MeProfileEditMutationVariables>(client, MeProfileEditDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useMeProfileEditMutation.getKey = () => ['MeProfileEdit'];
+useMeProfileEditMutation.getRootKey = () => ['MeProfileEdit'] as const;
+useMeProfileEditMutation.fetcher = (client: GraphQLClient, variables?: MeProfileEditMutationVariables, headers?: RequestInit['headers']) => fetcher<MeProfileEditMutation, MeProfileEditMutationVariables>(client, MeProfileEditDocument, variables, headers);
+
+export const MeLanguageEditDocument = `
+    mutation MeLanguageEdit($selected_language: String!) {
+  editMeUser(input: {selected_language: $selected_language}) {
+    ...CurrentUser
+  }
+}
+    ${CurrentUserFragmentDoc}`;
+
+export const useMeLanguageEditMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<MeLanguageEditMutation, TError, MeLanguageEditMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<MeLanguageEditMutation, TError, MeLanguageEditMutationVariables, TContext>(
+      {
+    mutationKey: ['MeLanguageEdit'],
+    mutationFn: (variables?: MeLanguageEditMutationVariables) => fetcher<MeLanguageEditMutation, MeLanguageEditMutationVariables>(client, MeLanguageEditDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useMeLanguageEditMutation.getKey = () => ['MeLanguageEdit'];
+useMeLanguageEditMutation.getRootKey = () => ['MeLanguageEdit'] as const;
+useMeLanguageEditMutation.fetcher = (client: GraphQLClient, variables: MeLanguageEditMutationVariables, headers?: RequestInit['headers']) => fetcher<MeLanguageEditMutation, MeLanguageEditMutationVariables>(client, MeLanguageEditDocument, variables, headers);
+
+export const MePictureUploadDocument = `
+    mutation MePictureUpload($document: Upload!) {
+  uploadUserPicture(document: $document) {
+    ...CurrentUser
+  }
+}
+    ${CurrentUserFragmentDoc}`;
+
+export const useMePictureUploadMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<MePictureUploadMutation, TError, MePictureUploadMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<MePictureUploadMutation, TError, MePictureUploadMutationVariables, TContext>(
+      {
+    mutationKey: ['MePictureUpload'],
+    mutationFn: (variables?: MePictureUploadMutationVariables) => fetcher<MePictureUploadMutation, MePictureUploadMutationVariables>(client, MePictureUploadDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useMePictureUploadMutation.getKey = () => ['MePictureUpload'];
+useMePictureUploadMutation.getRootKey = () => ['MePictureUpload'] as const;
+useMePictureUploadMutation.fetcher = (client: GraphQLClient, variables: MePictureUploadMutationVariables, headers?: RequestInit['headers']) => fetcher<MePictureUploadMutation, MePictureUploadMutationVariables>(client, MePictureUploadDocument, variables, headers);
+
+export const MePasswordResetDocument = `
+    mutation MePasswordReset {
+  resetPassword {
+    success
+  }
+}
+    `;
+
+export const useMePasswordResetMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<MePasswordResetMutation, TError, MePasswordResetMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<MePasswordResetMutation, TError, MePasswordResetMutationVariables, TContext>(
+      {
+    mutationKey: ['MePasswordReset'],
+    mutationFn: (variables?: MePasswordResetMutationVariables) => fetcher<MePasswordResetMutation, MePasswordResetMutationVariables>(client, MePasswordResetDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useMePasswordResetMutation.getKey = () => ['MePasswordReset'];
+useMePasswordResetMutation.getRootKey = () => ['MePasswordReset'] as const;
+useMePasswordResetMutation.fetcher = (client: GraphQLClient, variables?: MePasswordResetMutationVariables, headers?: RequestInit['headers']) => fetcher<MePasswordResetMutation, MePasswordResetMutationVariables>(client, MePasswordResetDocument, variables, headers);
+
+export const MePersonalSpaceTransferRequestDocument = `
+    mutation MePersonalSpaceTransferRequest($new_email: String!) {
+  requestTransferPersonalSpace(new_email: $new_email) {
+    success
+  }
+}
+    `;
+
+export const useMePersonalSpaceTransferRequestMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<MePersonalSpaceTransferRequestMutation, TError, MePersonalSpaceTransferRequestMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<MePersonalSpaceTransferRequestMutation, TError, MePersonalSpaceTransferRequestMutationVariables, TContext>(
+      {
+    mutationKey: ['MePersonalSpaceTransferRequest'],
+    mutationFn: (variables?: MePersonalSpaceTransferRequestMutationVariables) => fetcher<MePersonalSpaceTransferRequestMutation, MePersonalSpaceTransferRequestMutationVariables>(client, MePersonalSpaceTransferRequestDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useMePersonalSpaceTransferRequestMutation.getKey = () => ['MePersonalSpaceTransferRequest'];
+useMePersonalSpaceTransferRequestMutation.getRootKey = () => ['MePersonalSpaceTransferRequest'] as const;
+useMePersonalSpaceTransferRequestMutation.fetcher = (client: GraphQLClient, variables: MePersonalSpaceTransferRequestMutationVariables, headers?: RequestInit['headers']) => fetcher<MePersonalSpaceTransferRequestMutation, MePersonalSpaceTransferRequestMutationVariables>(client, MePersonalSpaceTransferRequestDocument, variables, headers);
+
+export const MePersonalSpaceTransferDocument = `
+    mutation MePersonalSpaceTransfer($requestId: ID!) {
+  transferPersonalSpace(requestId: $requestId) {
+    success
+  }
+}
+    `;
+
+export const useMePersonalSpaceTransferMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<MePersonalSpaceTransferMutation, TError, MePersonalSpaceTransferMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<MePersonalSpaceTransferMutation, TError, MePersonalSpaceTransferMutationVariables, TContext>(
+      {
+    mutationKey: ['MePersonalSpaceTransfer'],
+    mutationFn: (variables?: MePersonalSpaceTransferMutationVariables) => fetcher<MePersonalSpaceTransferMutation, MePersonalSpaceTransferMutationVariables>(client, MePersonalSpaceTransferDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useMePersonalSpaceTransferMutation.getKey = () => ['MePersonalSpaceTransfer'];
+useMePersonalSpaceTransferMutation.getRootKey = () => ['MePersonalSpaceTransfer'] as const;
+useMePersonalSpaceTransferMutation.fetcher = (client: GraphQLClient, variables: MePersonalSpaceTransferMutationVariables, headers?: RequestInit['headers']) => fetcher<MePersonalSpaceTransferMutation, MePersonalSpaceTransferMutationVariables>(client, MePersonalSpaceTransferDocument, variables, headers);
+
 export const MeCheckDocument = `
     query meCheck {
   me {
@@ -3384,6 +8324,365 @@ export const useInfiniteMeFirstNameQuery = <
 useInfiniteMeFirstNameQuery.getKey = (variables?: MeFirstNameQueryVariables) => variables === undefined ? ['MeFirstName.infinite'] : ['MeFirstName.infinite', variables];
 useInfiniteMeFirstNameQuery.getRootKey = () => ['MeFirstName.infinite'] as const;
 useMeFirstNameQuery.fetcher = (client: GraphQLClient, variables?: MeFirstNameQueryVariables, headers?: RequestInit['headers']) => fetcher<MeFirstNameQuery, MeFirstNameQueryVariables>(client, MeFirstNameDocument, variables, headers);
+
+export const MeOrganizationDomainsDocument = `
+    query MeOrganizationDomains {
+  me {
+    organizations {
+      id
+      domains
+    }
+  }
+}
+    `;
+
+export const useMeOrganizationDomainsQuery = <
+      TData = MeOrganizationDomainsQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables?: MeOrganizationDomainsQueryVariables,
+      options?: Omit<UseQueryOptions<MeOrganizationDomainsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<MeOrganizationDomainsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<MeOrganizationDomainsQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['MeOrganizationDomains'] : ['MeOrganizationDomains', variables],
+    queryFn: fetcher<MeOrganizationDomainsQuery, MeOrganizationDomainsQueryVariables>(client, MeOrganizationDomainsDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useMeOrganizationDomainsQuery.getKey = (variables?: MeOrganizationDomainsQueryVariables) => variables === undefined ? ['MeOrganizationDomains'] : ['MeOrganizationDomains', variables];
+useMeOrganizationDomainsQuery.getRootKey = () => ['MeOrganizationDomains'] as const;
+export const useInfiniteMeOrganizationDomainsQuery = <
+      TData = InfiniteData<MeOrganizationDomainsQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: MeOrganizationDomainsQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<MeOrganizationDomainsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<MeOrganizationDomainsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<MeOrganizationDomainsQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['MeOrganizationDomains.infinite'] : ['MeOrganizationDomains.infinite', variables],
+      queryFn: (metaData) => fetcher<MeOrganizationDomainsQuery, MeOrganizationDomainsQueryVariables>(client, MeOrganizationDomainsDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteMeOrganizationDomainsQuery.getKey = (variables?: MeOrganizationDomainsQueryVariables) => variables === undefined ? ['MeOrganizationDomains.infinite'] : ['MeOrganizationDomains.infinite', variables];
+useInfiniteMeOrganizationDomainsQuery.getRootKey = () => ['MeOrganizationDomains.infinite'] as const;
+useMeOrganizationDomainsQuery.fetcher = (client: GraphQLClient, variables?: MeOrganizationDomainsQueryVariables, headers?: RequestInit['headers']) => fetcher<MeOrganizationDomainsQuery, MeOrganizationDomainsQueryVariables>(client, MeOrganizationDomainsDocument, variables, headers);
+
+export const MeOrganizationsDocument = `
+    query MeOrganizations {
+  me {
+    id
+    selected_organization_id
+    organizations {
+      id
+      name
+      personal_space
+    }
+  }
+}
+    `;
+
+export const useMeOrganizationsQuery = <
+      TData = MeOrganizationsQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables?: MeOrganizationsQueryVariables,
+      options?: Omit<UseQueryOptions<MeOrganizationsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<MeOrganizationsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<MeOrganizationsQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['MeOrganizations'] : ['MeOrganizations', variables],
+    queryFn: fetcher<MeOrganizationsQuery, MeOrganizationsQueryVariables>(client, MeOrganizationsDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useMeOrganizationsQuery.getKey = (variables?: MeOrganizationsQueryVariables) => variables === undefined ? ['MeOrganizations'] : ['MeOrganizations', variables];
+useMeOrganizationsQuery.getRootKey = () => ['MeOrganizations'] as const;
+export const useInfiniteMeOrganizationsQuery = <
+      TData = InfiniteData<MeOrganizationsQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: MeOrganizationsQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<MeOrganizationsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<MeOrganizationsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<MeOrganizationsQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['MeOrganizations.infinite'] : ['MeOrganizations.infinite', variables],
+      queryFn: (metaData) => fetcher<MeOrganizationsQuery, MeOrganizationsQueryVariables>(client, MeOrganizationsDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteMeOrganizationsQuery.getKey = (variables?: MeOrganizationsQueryVariables) => variables === undefined ? ['MeOrganizations.infinite'] : ['MeOrganizations.infinite', variables];
+useInfiniteMeOrganizationsQuery.getRootKey = () => ['MeOrganizations.infinite'] as const;
+useMeOrganizationsQuery.fetcher = (client: GraphQLClient, variables?: MeOrganizationsQueryVariables, headers?: RequestInit['headers']) => fetcher<MeOrganizationsQuery, MeOrganizationsQueryVariables>(client, MeOrganizationsDocument, variables, headers);
+
+export const MeAnalyticsDocument = `
+    query MeAnalytics {
+  me {
+    email
+    selected_organization_id
+    organizations {
+      id
+      personal_space
+    }
+    capabilities {
+      name
+    }
+    selected_org_capabilities
+  }
+}
+    `;
+
+export const useMeAnalyticsQuery = <
+      TData = MeAnalyticsQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables?: MeAnalyticsQueryVariables,
+      options?: Omit<UseQueryOptions<MeAnalyticsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<MeAnalyticsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<MeAnalyticsQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['MeAnalytics'] : ['MeAnalytics', variables],
+    queryFn: fetcher<MeAnalyticsQuery, MeAnalyticsQueryVariables>(client, MeAnalyticsDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useMeAnalyticsQuery.getKey = (variables?: MeAnalyticsQueryVariables) => variables === undefined ? ['MeAnalytics'] : ['MeAnalytics', variables];
+useMeAnalyticsQuery.getRootKey = () => ['MeAnalytics'] as const;
+export const useInfiniteMeAnalyticsQuery = <
+      TData = InfiniteData<MeAnalyticsQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: MeAnalyticsQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<MeAnalyticsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<MeAnalyticsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<MeAnalyticsQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['MeAnalytics.infinite'] : ['MeAnalytics.infinite', variables],
+      queryFn: (metaData) => fetcher<MeAnalyticsQuery, MeAnalyticsQueryVariables>(client, MeAnalyticsDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteMeAnalyticsQuery.getKey = (variables?: MeAnalyticsQueryVariables) => variables === undefined ? ['MeAnalytics.infinite'] : ['MeAnalytics.infinite', variables];
+useInfiniteMeAnalyticsQuery.getRootKey = () => ['MeAnalytics.infinite'] as const;
+useMeAnalyticsQuery.fetcher = (client: GraphQLClient, variables?: MeAnalyticsQueryVariables, headers?: RequestInit['headers']) => fetcher<MeAnalyticsQuery, MeAnalyticsQueryVariables>(client, MeAnalyticsDocument, variables, headers);
+
+export const MeDocument = `
+    query Me {
+  me {
+    ...CurrentUser
+  }
+}
+    ${CurrentUserFragmentDoc}`;
+
+export const useMeQuery = <
+      TData = MeQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables?: MeQueryVariables,
+      options?: Omit<UseQueryOptions<MeQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<MeQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<MeQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['Me'] : ['Me', variables],
+    queryFn: fetcher<MeQuery, MeQueryVariables>(client, MeDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useMeQuery.getKey = (variables?: MeQueryVariables) => variables === undefined ? ['Me'] : ['Me', variables];
+useMeQuery.getRootKey = () => ['Me'] as const;
+export const useInfiniteMeQuery = <
+      TData = InfiniteData<MeQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: MeQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<MeQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<MeQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<MeQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['Me.infinite'] : ['Me.infinite', variables],
+      queryFn: (metaData) => fetcher<MeQuery, MeQueryVariables>(client, MeDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteMeQuery.getKey = (variables?: MeQueryVariables) => variables === undefined ? ['Me.infinite'] : ['Me.infinite', variables];
+useInfiniteMeQuery.getRootKey = () => ['Me.infinite'] as const;
+useMeQuery.fetcher = (client: GraphQLClient, variables?: MeQueryVariables, headers?: RequestInit['headers']) => fetcher<MeQuery, MeQueryVariables>(client, MeDocument, variables, headers);
+
+export const MeUserEventsDocument = `
+    subscription MeUserEvents {
+  MeUser {
+    delete {
+      id
+    }
+    edit {
+      ...CurrentUser
+    }
+  }
+}
+    ${CurrentUserFragmentDoc}`;
+export const NewsFeedDeleteItemDocument = `
+    mutation NewsFeedDeleteItem($id: NewsFeedItemId!) {
+  deleteNewsFeedItem(id: $id)
+}
+    `;
+
+export const useNewsFeedDeleteItemMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<NewsFeedDeleteItemMutation, TError, NewsFeedDeleteItemMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<NewsFeedDeleteItemMutation, TError, NewsFeedDeleteItemMutationVariables, TContext>(
+      {
+    mutationKey: ['NewsFeedDeleteItem'],
+    mutationFn: (variables?: NewsFeedDeleteItemMutationVariables) => fetcher<NewsFeedDeleteItemMutation, NewsFeedDeleteItemMutationVariables>(client, NewsFeedDeleteItemDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useNewsFeedDeleteItemMutation.getKey = () => ['NewsFeedDeleteItem'];
+useNewsFeedDeleteItemMutation.getRootKey = () => ['NewsFeedDeleteItem'] as const;
+useNewsFeedDeleteItemMutation.fetcher = (client: GraphQLClient, variables: NewsFeedDeleteItemMutationVariables, headers?: RequestInit['headers']) => fetcher<NewsFeedDeleteItemMutation, NewsFeedDeleteItemMutationVariables>(client, NewsFeedDeleteItemDocument, variables, headers);
+
+export const SendNewsFeedRedirectTelemetryDocument = `
+    mutation SendNewsFeedRedirectTelemetry($input: NewsFeedRedirectInput!) {
+  sendTelemetryEvent {
+    newsFeedRedirect(input: $input) {
+      result
+      message
+    }
+  }
+}
+    `;
+
+export const useSendNewsFeedRedirectTelemetryMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<SendNewsFeedRedirectTelemetryMutation, TError, SendNewsFeedRedirectTelemetryMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<SendNewsFeedRedirectTelemetryMutation, TError, SendNewsFeedRedirectTelemetryMutationVariables, TContext>(
+      {
+    mutationKey: ['SendNewsFeedRedirectTelemetry'],
+    mutationFn: (variables?: SendNewsFeedRedirectTelemetryMutationVariables) => fetcher<SendNewsFeedRedirectTelemetryMutation, SendNewsFeedRedirectTelemetryMutationVariables>(client, SendNewsFeedRedirectTelemetryDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useSendNewsFeedRedirectTelemetryMutation.getKey = () => ['SendNewsFeedRedirectTelemetry'];
+useSendNewsFeedRedirectTelemetryMutation.getRootKey = () => ['SendNewsFeedRedirectTelemetry'] as const;
+useSendNewsFeedRedirectTelemetryMutation.fetcher = (client: GraphQLClient, variables: SendNewsFeedRedirectTelemetryMutationVariables, headers?: RequestInit['headers']) => fetcher<SendNewsFeedRedirectTelemetryMutation, SendNewsFeedRedirectTelemetryMutationVariables>(client, SendNewsFeedRedirectTelemetryDocument, variables, headers);
+
+export const NewsFeedListDocument = `
+    query NewsFeedList($count: Int!, $cursor: ID) {
+  newsFeedItems(first: $count, after: $cursor) {
+    totalCount
+    edges {
+      node {
+        ...NewsFeedItemRow
+      }
+    }
+  }
+}
+    ${NewsFeedItemRowFragmentDoc}`;
+
+export const useNewsFeedListQuery = <
+      TData = NewsFeedListQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: NewsFeedListQueryVariables,
+      options?: Omit<UseQueryOptions<NewsFeedListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<NewsFeedListQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<NewsFeedListQuery, TError, TData>(
+      {
+    queryKey: ['NewsFeedList', variables],
+    queryFn: fetcher<NewsFeedListQuery, NewsFeedListQueryVariables>(client, NewsFeedListDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useNewsFeedListQuery.getKey = (variables: NewsFeedListQueryVariables) => ['NewsFeedList', variables];
+useNewsFeedListQuery.getRootKey = () => ['NewsFeedList'] as const;
+export const useInfiniteNewsFeedListQuery = <
+      TData = InfiniteData<NewsFeedListQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: NewsFeedListQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<NewsFeedListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<NewsFeedListQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<NewsFeedListQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['NewsFeedList.infinite', variables],
+      queryFn: (metaData) => fetcher<NewsFeedListQuery, NewsFeedListQueryVariables>(client, NewsFeedListDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteNewsFeedListQuery.getKey = (variables: NewsFeedListQueryVariables) => ['NewsFeedList.infinite', variables];
+useInfiniteNewsFeedListQuery.getRootKey = () => ['NewsFeedList.infinite'] as const;
+useNewsFeedListQuery.fetcher = (client: GraphQLClient, variables: NewsFeedListQueryVariables, headers?: RequestInit['headers']) => fetcher<NewsFeedListQuery, NewsFeedListQueryVariables>(client, NewsFeedListDocument, variables, headers);
 
 export const OrganizationSubscribedServicesBreadcrumbDocument = `
     query OrganizationSubscribedServicesBreadcrumb($id: ID!) {
@@ -3510,6 +8809,311 @@ useInfiniteOrganizationSubscribedServicesListQuery.getKey = (variables: Organiza
 useInfiniteOrganizationSubscribedServicesListQuery.getRootKey = () => ['OrganizationSubscribedServicesList.infinite'] as const;
 useOrganizationSubscribedServicesListQuery.fetcher = (client: GraphQLClient, variables: OrganizationSubscribedServicesListQueryVariables, headers?: RequestInit['headers']) => fetcher<OrganizationSubscribedServicesListQuery, OrganizationSubscribedServicesListQueryVariables>(client, OrganizationSubscribedServicesListDocument, variables, headers);
 
+export const OrganizationCreateDocument = `
+    mutation OrganizationCreate($input: OrganizationInput!) {
+  addOrganization(input: $input) {
+    ...OrganizationItem
+  }
+}
+    ${OrganizationItemFragmentDoc}`;
+
+export const useOrganizationCreateMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<OrganizationCreateMutation, TError, OrganizationCreateMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<OrganizationCreateMutation, TError, OrganizationCreateMutationVariables, TContext>(
+      {
+    mutationKey: ['OrganizationCreate'],
+    mutationFn: (variables?: OrganizationCreateMutationVariables) => fetcher<OrganizationCreateMutation, OrganizationCreateMutationVariables>(client, OrganizationCreateDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useOrganizationCreateMutation.getKey = () => ['OrganizationCreate'];
+useOrganizationCreateMutation.getRootKey = () => ['OrganizationCreate'] as const;
+useOrganizationCreateMutation.fetcher = (client: GraphQLClient, variables: OrganizationCreateMutationVariables, headers?: RequestInit['headers']) => fetcher<OrganizationCreateMutation, OrganizationCreateMutationVariables>(client, OrganizationCreateDocument, variables, headers);
+
+export const OrganizationEditDocument = `
+    mutation OrganizationEdit($id: ID!, $input: OrganizationInput!) {
+  editOrganization(id: $id, input: $input) {
+    ...OrganizationItem
+  }
+}
+    ${OrganizationItemFragmentDoc}`;
+
+export const useOrganizationEditMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<OrganizationEditMutation, TError, OrganizationEditMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<OrganizationEditMutation, TError, OrganizationEditMutationVariables, TContext>(
+      {
+    mutationKey: ['OrganizationEdit'],
+    mutationFn: (variables?: OrganizationEditMutationVariables) => fetcher<OrganizationEditMutation, OrganizationEditMutationVariables>(client, OrganizationEditDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useOrganizationEditMutation.getKey = () => ['OrganizationEdit'];
+useOrganizationEditMutation.getRootKey = () => ['OrganizationEdit'] as const;
+useOrganizationEditMutation.fetcher = (client: GraphQLClient, variables: OrganizationEditMutationVariables, headers?: RequestInit['headers']) => fetcher<OrganizationEditMutation, OrganizationEditMutationVariables>(client, OrganizationEditDocument, variables, headers);
+
+export const OrganizationDeleteDocument = `
+    mutation OrganizationDelete($id: ID!) {
+  deleteOrganization(id: $id) {
+    id
+  }
+}
+    `;
+
+export const useOrganizationDeleteMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<OrganizationDeleteMutation, TError, OrganizationDeleteMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<OrganizationDeleteMutation, TError, OrganizationDeleteMutationVariables, TContext>(
+      {
+    mutationKey: ['OrganizationDelete'],
+    mutationFn: (variables?: OrganizationDeleteMutationVariables) => fetcher<OrganizationDeleteMutation, OrganizationDeleteMutationVariables>(client, OrganizationDeleteDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useOrganizationDeleteMutation.getKey = () => ['OrganizationDelete'];
+useOrganizationDeleteMutation.getRootKey = () => ['OrganizationDelete'] as const;
+useOrganizationDeleteMutation.fetcher = (client: GraphQLClient, variables: OrganizationDeleteMutationVariables, headers?: RequestInit['headers']) => fetcher<OrganizationDeleteMutation, OrganizationDeleteMutationVariables>(client, OrganizationDeleteDocument, variables, headers);
+
+export const OrganizationsListDocument = `
+    query OrganizationsList($count: Int, $cursor: ID, $orderBy: OrganizationOrdering!, $orderMode: OrderingMode!, $searchTerm: String) {
+  organizations(
+    first: $count
+    after: $cursor
+    orderBy: $orderBy
+    orderMode: $orderMode
+    searchTerm: $searchTerm
+  ) {
+    totalCount
+    edges {
+      node {
+        ...OrganizationItem
+      }
+    }
+  }
+}
+    ${OrganizationItemFragmentDoc}`;
+
+export const useOrganizationsListQuery = <
+      TData = OrganizationsListQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: OrganizationsListQueryVariables,
+      options?: Omit<UseQueryOptions<OrganizationsListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<OrganizationsListQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<OrganizationsListQuery, TError, TData>(
+      {
+    queryKey: ['OrganizationsList', variables],
+    queryFn: fetcher<OrganizationsListQuery, OrganizationsListQueryVariables>(client, OrganizationsListDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useOrganizationsListQuery.getKey = (variables: OrganizationsListQueryVariables) => ['OrganizationsList', variables];
+useOrganizationsListQuery.getRootKey = () => ['OrganizationsList'] as const;
+export const useInfiniteOrganizationsListQuery = <
+      TData = InfiniteData<OrganizationsListQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: OrganizationsListQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<OrganizationsListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<OrganizationsListQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<OrganizationsListQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['OrganizationsList.infinite', variables],
+      queryFn: (metaData) => fetcher<OrganizationsListQuery, OrganizationsListQueryVariables>(client, OrganizationsListDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteOrganizationsListQuery.getKey = (variables: OrganizationsListQueryVariables) => ['OrganizationsList.infinite', variables];
+useInfiniteOrganizationsListQuery.getRootKey = () => ['OrganizationsList.infinite'] as const;
+useOrganizationsListQuery.fetcher = (client: GraphQLClient, variables: OrganizationsListQueryVariables, headers?: RequestInit['headers']) => fetcher<OrganizationsListQuery, OrganizationsListQueryVariables>(client, OrganizationsListDocument, variables, headers);
+
+export const UserOrganizationsDocument = `
+    query UserOrganizations {
+  userOrganizations {
+    id
+    name
+    personal_space
+  }
+}
+    `;
+
+export const useUserOrganizationsQuery = <
+      TData = UserOrganizationsQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables?: UserOrganizationsQueryVariables,
+      options?: Omit<UseQueryOptions<UserOrganizationsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<UserOrganizationsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<UserOrganizationsQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['UserOrganizations'] : ['UserOrganizations', variables],
+    queryFn: fetcher<UserOrganizationsQuery, UserOrganizationsQueryVariables>(client, UserOrganizationsDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useUserOrganizationsQuery.getKey = (variables?: UserOrganizationsQueryVariables) => variables === undefined ? ['UserOrganizations'] : ['UserOrganizations', variables];
+useUserOrganizationsQuery.getRootKey = () => ['UserOrganizations'] as const;
+export const useInfiniteUserOrganizationsQuery = <
+      TData = InfiniteData<UserOrganizationsQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: UserOrganizationsQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<UserOrganizationsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<UserOrganizationsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<UserOrganizationsQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['UserOrganizations.infinite'] : ['UserOrganizations.infinite', variables],
+      queryFn: (metaData) => fetcher<UserOrganizationsQuery, UserOrganizationsQueryVariables>(client, UserOrganizationsDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteUserOrganizationsQuery.getKey = (variables?: UserOrganizationsQueryVariables) => variables === undefined ? ['UserOrganizations.infinite'] : ['UserOrganizations.infinite', variables];
+useInfiniteUserOrganizationsQuery.getRootKey = () => ['UserOrganizations.infinite'] as const;
+useUserOrganizationsQuery.fetcher = (client: GraphQLClient, variables?: UserOrganizationsQueryVariables, headers?: RequestInit['headers']) => fetcher<UserOrganizationsQuery, UserOrganizationsQueryVariables>(client, UserOrganizationsDocument, variables, headers);
+
+export const RegisteredSaasPlatformDataDocument = `
+    query RegisteredSaasPlatformData($input: RegisteredSaasPlatformDataInput!) {
+  registeredSaasPlatformData(input: $input) {
+    metadata {
+      hostname
+      plan
+      start_date
+      end_date
+      region
+    }
+    metrics {
+      start
+      end
+      resolution
+      series {
+        metric_type
+        points {
+          timestamp
+          value
+        }
+      }
+    }
+    storage {
+      es_used_size {
+        percent
+        used
+        limit
+      }
+      s3_used_size {
+        percent
+        used
+        limit
+      }
+      postgres_used_size {
+        percent
+        used
+        limit
+      }
+    }
+    sla {
+      target
+      months {
+        month
+        availability
+        days {
+          day
+          availability
+        }
+      }
+    }
+  }
+}
+    `;
+
+export const useRegisteredSaasPlatformDataQuery = <
+      TData = RegisteredSaasPlatformDataQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: RegisteredSaasPlatformDataQueryVariables,
+      options?: Omit<UseQueryOptions<RegisteredSaasPlatformDataQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<RegisteredSaasPlatformDataQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<RegisteredSaasPlatformDataQuery, TError, TData>(
+      {
+    queryKey: ['RegisteredSaasPlatformData', variables],
+    queryFn: fetcher<RegisteredSaasPlatformDataQuery, RegisteredSaasPlatformDataQueryVariables>(client, RegisteredSaasPlatformDataDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useRegisteredSaasPlatformDataQuery.getKey = (variables: RegisteredSaasPlatformDataQueryVariables) => ['RegisteredSaasPlatformData', variables];
+useRegisteredSaasPlatformDataQuery.getRootKey = () => ['RegisteredSaasPlatformData'] as const;
+export const useInfiniteRegisteredSaasPlatformDataQuery = <
+      TData = InfiniteData<RegisteredSaasPlatformDataQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: RegisteredSaasPlatformDataQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<RegisteredSaasPlatformDataQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<RegisteredSaasPlatformDataQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<RegisteredSaasPlatformDataQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['RegisteredSaasPlatformData.infinite', variables],
+      queryFn: (metaData) => fetcher<RegisteredSaasPlatformDataQuery, RegisteredSaasPlatformDataQueryVariables>(client, RegisteredSaasPlatformDataDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteRegisteredSaasPlatformDataQuery.getKey = (variables: RegisteredSaasPlatformDataQueryVariables) => ['RegisteredSaasPlatformData.infinite', variables];
+useInfiniteRegisteredSaasPlatformDataQuery.getRootKey = () => ['RegisteredSaasPlatformData.infinite'] as const;
+useRegisteredSaasPlatformDataQuery.fetcher = (client: GraphQLClient, variables: RegisteredSaasPlatformDataQueryVariables, headers?: RequestInit['headers']) => fetcher<RegisteredSaasPlatformDataQuery, RegisteredSaasPlatformDataQueryVariables>(client, RegisteredSaasPlatformDataDocument, variables, headers);
+
 export const RegisteredPlatformsListDocument = `
     query RegisteredPlatformsList($input: RegisteredPlatformsInput!) {
   registeredPlatforms(input: $input) {
@@ -3518,7 +9122,11 @@ export const RegisteredPlatformsListDocument = `
     title
     url
     contract
+    version
     identifier
+    deployment_request {
+      parent_id
+    }
     subscription {
       end_date
       start_date
@@ -3576,6 +9184,94 @@ useInfiniteRegisteredPlatformsListQuery.getKey = (variables: RegisteredPlatforms
 useInfiniteRegisteredPlatformsListQuery.getRootKey = () => ['RegisteredPlatformsList.infinite'] as const;
 useRegisteredPlatformsListQuery.fetcher = (client: GraphQLClient, variables: RegisteredPlatformsListQueryVariables, headers?: RequestInit['headers']) => fetcher<RegisteredPlatformsListQuery, RegisteredPlatformsListQueryVariables>(client, RegisteredPlatformsListDocument, variables, headers);
 
+export const RefreshUserPlatformTokenDocument = `
+    mutation RefreshUserPlatformToken {
+  refreshUserPlatformToken {
+    token
+  }
+}
+    `;
+
+export const useRefreshUserPlatformTokenMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<RefreshUserPlatformTokenMutation, TError, RefreshUserPlatformTokenMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<RefreshUserPlatformTokenMutation, TError, RefreshUserPlatformTokenMutationVariables, TContext>(
+      {
+    mutationKey: ['RefreshUserPlatformToken'],
+    mutationFn: (variables?: RefreshUserPlatformTokenMutationVariables) => fetcher<RefreshUserPlatformTokenMutation, RefreshUserPlatformTokenMutationVariables>(client, RefreshUserPlatformTokenDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useRefreshUserPlatformTokenMutation.getKey = () => ['RefreshUserPlatformToken'];
+useRefreshUserPlatformTokenMutation.getRootKey = () => ['RefreshUserPlatformToken'] as const;
+useRefreshUserPlatformTokenMutation.fetcher = (client: GraphQLClient, variables?: RefreshUserPlatformTokenMutationVariables, headers?: RequestInit['headers']) => fetcher<RefreshUserPlatformTokenMutation, RefreshUserPlatformTokenMutationVariables>(client, RefreshUserPlatformTokenDocument, variables, headers);
+
+export const UnregisterPlatformDocument = `
+    mutation UnregisterPlatform($input: UnregisterPlatformInput!) {
+  unregisterPlatform(input: $input) {
+    success
+  }
+}
+    `;
+
+export const useUnregisterPlatformMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<UnregisterPlatformMutation, TError, UnregisterPlatformMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<UnregisterPlatformMutation, TError, UnregisterPlatformMutationVariables, TContext>(
+      {
+    mutationKey: ['UnregisterPlatform'],
+    mutationFn: (variables?: UnregisterPlatformMutationVariables) => fetcher<UnregisterPlatformMutation, UnregisterPlatformMutationVariables>(client, UnregisterPlatformDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useUnregisterPlatformMutation.getKey = () => ['UnregisterPlatform'];
+useUnregisterPlatformMutation.getRootKey = () => ['UnregisterPlatform'] as const;
+useUnregisterPlatformMutation.fetcher = (client: GraphQLClient, variables: UnregisterPlatformMutationVariables, headers?: RequestInit['headers']) => fetcher<UnregisterPlatformMutation, UnregisterPlatformMutationVariables>(client, UnregisterPlatformDocument, variables, headers);
+
+export const RegisterPlatformDocument = `
+    mutation RegisterPlatform($input: RegisterPlatformInput!) {
+  registerPlatform(input: $input) {
+    token
+    organizationName
+  }
+}
+    `;
+
+export const useRegisterPlatformMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<RegisterPlatformMutation, TError, RegisterPlatformMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<RegisterPlatformMutation, TError, RegisterPlatformMutationVariables, TContext>(
+      {
+    mutationKey: ['RegisterPlatform'],
+    mutationFn: (variables?: RegisterPlatformMutationVariables) => fetcher<RegisterPlatformMutation, RegisterPlatformMutationVariables>(client, RegisterPlatformDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useRegisterPlatformMutation.getKey = () => ['RegisterPlatform'];
+useRegisterPlatformMutation.getRootKey = () => ['RegisterPlatform'] as const;
+useRegisterPlatformMutation.fetcher = (client: GraphQLClient, variables: RegisterPlatformMutationVariables, headers?: RequestInit['headers']) => fetcher<RegisterPlatformMutation, RegisterPlatformMutationVariables>(client, RegisterPlatformDocument, variables, headers);
+
 export const RegisteredPlatformsDocument = `
     query RegisteredPlatforms($input: RegisteredPlatformsInput!) {
   registeredPlatforms(input: $input) {
@@ -3583,6 +9279,9 @@ export const RegisteredPlatformsDocument = `
     identifier
     title
     contract
+    deployment_request {
+      parent_id
+    }
     subscription {
       start_date
       end_date
@@ -3637,61 +9336,963 @@ useInfiniteRegisteredPlatformsQuery.getKey = (variables: RegisteredPlatformsQuer
 useInfiniteRegisteredPlatformsQuery.getRootKey = () => ['RegisteredPlatforms.infinite'] as const;
 useRegisteredPlatformsQuery.fetcher = (client: GraphQLClient, variables: RegisteredPlatformsQueryVariables, headers?: RequestInit['headers']) => fetcher<RegisteredPlatformsQuery, RegisteredPlatformsQueryVariables>(client, RegisteredPlatformsDocument, variables, headers);
 
-export const ConnectProductOrganizationAdminsDocument = `
-    query ConnectProductOrganizationAdmins($input: UsersWithCapabilitiesInOrganizationInput!) {
-  usersWithCapabilitiesInOrganization(input: $input) {
+export const PlatformAssociatedOrganizationDocument = `
+    query PlatformAssociatedOrganization($platformId: String!, $tenantId: String) {
+  platformAssociatedOrganization(platformId: $platformId, tenantId: $tenantId) {
     id
-    email
-    first_name
-    last_name
   }
 }
     `;
 
-export const useConnectProductOrganizationAdminsQuery = <
-      TData = ConnectProductOrganizationAdminsQuery,
+export const usePlatformAssociatedOrganizationQuery = <
+      TData = PlatformAssociatedOrganizationQuery,
       TError = unknown
     >(
       client: GraphQLClient,
-      variables: ConnectProductOrganizationAdminsQueryVariables,
-      options?: Omit<UseQueryOptions<ConnectProductOrganizationAdminsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<ConnectProductOrganizationAdminsQuery, TError, TData>['queryKey'] },
+      variables: PlatformAssociatedOrganizationQueryVariables,
+      options?: Omit<UseQueryOptions<PlatformAssociatedOrganizationQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<PlatformAssociatedOrganizationQuery, TError, TData>['queryKey'] },
       headers?: RequestInit['headers']
     ) => {
     
-    return useQuery<ConnectProductOrganizationAdminsQuery, TError, TData>(
+    return useQuery<PlatformAssociatedOrganizationQuery, TError, TData>(
       {
-    queryKey: ['ConnectProductOrganizationAdmins', variables],
-    queryFn: fetcher<ConnectProductOrganizationAdminsQuery, ConnectProductOrganizationAdminsQueryVariables>(client, ConnectProductOrganizationAdminsDocument, variables, headers),
+    queryKey: ['PlatformAssociatedOrganization', variables],
+    queryFn: fetcher<PlatformAssociatedOrganizationQuery, PlatformAssociatedOrganizationQueryVariables>(client, PlatformAssociatedOrganizationDocument, variables, headers),
     ...options
   }
     )};
 
-useConnectProductOrganizationAdminsQuery.getKey = (variables: ConnectProductOrganizationAdminsQueryVariables) => ['ConnectProductOrganizationAdmins', variables];
-useConnectProductOrganizationAdminsQuery.getRootKey = () => ['ConnectProductOrganizationAdmins'] as const;
-export const useInfiniteConnectProductOrganizationAdminsQuery = <
-      TData = InfiniteData<ConnectProductOrganizationAdminsQuery>,
+usePlatformAssociatedOrganizationQuery.getKey = (variables: PlatformAssociatedOrganizationQueryVariables) => ['PlatformAssociatedOrganization', variables];
+usePlatformAssociatedOrganizationQuery.getRootKey = () => ['PlatformAssociatedOrganization'] as const;
+export const useInfinitePlatformAssociatedOrganizationQuery = <
+      TData = InfiniteData<PlatformAssociatedOrganizationQuery>,
       TError = unknown
     >(
       client: GraphQLClient,
-      variables: ConnectProductOrganizationAdminsQueryVariables,
-      options: Omit<UseInfiniteQueryOptions<ConnectProductOrganizationAdminsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<ConnectProductOrganizationAdminsQuery, TError, TData>['queryKey'] },
+      variables: PlatformAssociatedOrganizationQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<PlatformAssociatedOrganizationQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<PlatformAssociatedOrganizationQuery, TError, TData>['queryKey'] },
       headers?: RequestInit['headers']
     ) => {
     
-    return useInfiniteQuery<ConnectProductOrganizationAdminsQuery, TError, TData>(
+    return useInfiniteQuery<PlatformAssociatedOrganizationQuery, TError, TData>(
       (() => {
     const { queryKey: optionsQueryKey, ...restOptions } = options;
     return {
-      queryKey: optionsQueryKey ?? ['ConnectProductOrganizationAdmins.infinite', variables],
-      queryFn: (metaData) => fetcher<ConnectProductOrganizationAdminsQuery, ConnectProductOrganizationAdminsQueryVariables>(client, ConnectProductOrganizationAdminsDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      queryKey: optionsQueryKey ?? ['PlatformAssociatedOrganization.infinite', variables],
+      queryFn: (metaData) => fetcher<PlatformAssociatedOrganizationQuery, PlatformAssociatedOrganizationQueryVariables>(client, PlatformAssociatedOrganizationDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
       ...restOptions
     }
   })()
     )};
 
-useInfiniteConnectProductOrganizationAdminsQuery.getKey = (variables: ConnectProductOrganizationAdminsQueryVariables) => ['ConnectProductOrganizationAdmins.infinite', variables];
-useInfiniteConnectProductOrganizationAdminsQuery.getRootKey = () => ['ConnectProductOrganizationAdmins.infinite'] as const;
-useConnectProductOrganizationAdminsQuery.fetcher = (client: GraphQLClient, variables: ConnectProductOrganizationAdminsQueryVariables, headers?: RequestInit['headers']) => fetcher<ConnectProductOrganizationAdminsQuery, ConnectProductOrganizationAdminsQueryVariables>(client, ConnectProductOrganizationAdminsDocument, variables, headers);
+useInfinitePlatformAssociatedOrganizationQuery.getKey = (variables: PlatformAssociatedOrganizationQueryVariables) => ['PlatformAssociatedOrganization.infinite', variables];
+useInfinitePlatformAssociatedOrganizationQuery.getRootKey = () => ['PlatformAssociatedOrganization.infinite'] as const;
+usePlatformAssociatedOrganizationQuery.fetcher = (client: GraphQLClient, variables: PlatformAssociatedOrganizationQueryVariables, headers?: RequestInit['headers']) => fetcher<PlatformAssociatedOrganizationQuery, PlatformAssociatedOrganizationQueryVariables>(client, PlatformAssociatedOrganizationDocument, variables, headers);
+
+export const RegisteredPlatformRedirectTargetDocument = `
+    query RegisteredPlatformRedirectTarget($input: RegisteredPlatformByPlatformIdInput!) {
+  registeredPlatformByPlatformId(input: $input) {
+    service_instance_id
+    identifier
+    deployment_request {
+      parent_id
+    }
+  }
+}
+    `;
+
+export const useRegisteredPlatformRedirectTargetQuery = <
+      TData = RegisteredPlatformRedirectTargetQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: RegisteredPlatformRedirectTargetQueryVariables,
+      options?: Omit<UseQueryOptions<RegisteredPlatformRedirectTargetQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<RegisteredPlatformRedirectTargetQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<RegisteredPlatformRedirectTargetQuery, TError, TData>(
+      {
+    queryKey: ['RegisteredPlatformRedirectTarget', variables],
+    queryFn: fetcher<RegisteredPlatformRedirectTargetQuery, RegisteredPlatformRedirectTargetQueryVariables>(client, RegisteredPlatformRedirectTargetDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useRegisteredPlatformRedirectTargetQuery.getKey = (variables: RegisteredPlatformRedirectTargetQueryVariables) => ['RegisteredPlatformRedirectTarget', variables];
+useRegisteredPlatformRedirectTargetQuery.getRootKey = () => ['RegisteredPlatformRedirectTarget'] as const;
+export const useInfiniteRegisteredPlatformRedirectTargetQuery = <
+      TData = InfiniteData<RegisteredPlatformRedirectTargetQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: RegisteredPlatformRedirectTargetQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<RegisteredPlatformRedirectTargetQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<RegisteredPlatformRedirectTargetQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<RegisteredPlatformRedirectTargetQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['RegisteredPlatformRedirectTarget.infinite', variables],
+      queryFn: (metaData) => fetcher<RegisteredPlatformRedirectTargetQuery, RegisteredPlatformRedirectTargetQueryVariables>(client, RegisteredPlatformRedirectTargetDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteRegisteredPlatformRedirectTargetQuery.getKey = (variables: RegisteredPlatformRedirectTargetQueryVariables) => ['RegisteredPlatformRedirectTarget.infinite', variables];
+useInfiniteRegisteredPlatformRedirectTargetQuery.getRootKey = () => ['RegisteredPlatformRedirectTarget.infinite'] as const;
+useRegisteredPlatformRedirectTargetQuery.fetcher = (client: GraphQLClient, variables: RegisteredPlatformRedirectTargetQueryVariables, headers?: RequestInit['headers']) => fetcher<RegisteredPlatformRedirectTargetQuery, RegisteredPlatformRedirectTargetQueryVariables>(client, RegisteredPlatformRedirectTargetDocument, variables, headers);
+
+export const RegisteredPlatformByServiceInstanceDocument = `
+    query RegisteredPlatformByServiceInstance($input: RegisteredPlatformInput!) {
+  registeredPlatform(input: $input) {
+    ...RegisteredPlatformDetails
+  }
+}
+    ${RegisteredPlatformDetailsFragmentDoc}`;
+
+export const useRegisteredPlatformByServiceInstanceQuery = <
+      TData = RegisteredPlatformByServiceInstanceQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: RegisteredPlatformByServiceInstanceQueryVariables,
+      options?: Omit<UseQueryOptions<RegisteredPlatformByServiceInstanceQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<RegisteredPlatformByServiceInstanceQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<RegisteredPlatformByServiceInstanceQuery, TError, TData>(
+      {
+    queryKey: ['RegisteredPlatformByServiceInstance', variables],
+    queryFn: fetcher<RegisteredPlatformByServiceInstanceQuery, RegisteredPlatformByServiceInstanceQueryVariables>(client, RegisteredPlatformByServiceInstanceDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useRegisteredPlatformByServiceInstanceQuery.getKey = (variables: RegisteredPlatformByServiceInstanceQueryVariables) => ['RegisteredPlatformByServiceInstance', variables];
+useRegisteredPlatformByServiceInstanceQuery.getRootKey = () => ['RegisteredPlatformByServiceInstance'] as const;
+export const useInfiniteRegisteredPlatformByServiceInstanceQuery = <
+      TData = InfiniteData<RegisteredPlatformByServiceInstanceQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: RegisteredPlatformByServiceInstanceQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<RegisteredPlatformByServiceInstanceQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<RegisteredPlatformByServiceInstanceQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<RegisteredPlatformByServiceInstanceQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['RegisteredPlatformByServiceInstance.infinite', variables],
+      queryFn: (metaData) => fetcher<RegisteredPlatformByServiceInstanceQuery, RegisteredPlatformByServiceInstanceQueryVariables>(client, RegisteredPlatformByServiceInstanceDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteRegisteredPlatformByServiceInstanceQuery.getKey = (variables: RegisteredPlatformByServiceInstanceQueryVariables) => ['RegisteredPlatformByServiceInstance.infinite', variables];
+useInfiniteRegisteredPlatformByServiceInstanceQuery.getRootKey = () => ['RegisteredPlatformByServiceInstance.infinite'] as const;
+useRegisteredPlatformByServiceInstanceQuery.fetcher = (client: GraphQLClient, variables: RegisteredPlatformByServiceInstanceQueryVariables, headers?: RequestInit['headers']) => fetcher<RegisteredPlatformByServiceInstanceQuery, RegisteredPlatformByServiceInstanceQueryVariables>(client, RegisteredPlatformByServiceInstanceDocument, variables, headers);
+
+export const IsPlatformRegisteredDocument = `
+    query IsPlatformRegistered($input: IsPlatformRegisteredInput!) {
+  isPlatformRegistered(input: $input) {
+    status
+    platformTitle
+    organization {
+      id
+    }
+  }
+}
+    `;
+
+export const useIsPlatformRegisteredQuery = <
+      TData = IsPlatformRegisteredQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: IsPlatformRegisteredQueryVariables,
+      options?: Omit<UseQueryOptions<IsPlatformRegisteredQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<IsPlatformRegisteredQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<IsPlatformRegisteredQuery, TError, TData>(
+      {
+    queryKey: ['IsPlatformRegistered', variables],
+    queryFn: fetcher<IsPlatformRegisteredQuery, IsPlatformRegisteredQueryVariables>(client, IsPlatformRegisteredDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useIsPlatformRegisteredQuery.getKey = (variables: IsPlatformRegisteredQueryVariables) => ['IsPlatformRegistered', variables];
+useIsPlatformRegisteredQuery.getRootKey = () => ['IsPlatformRegistered'] as const;
+export const useInfiniteIsPlatformRegisteredQuery = <
+      TData = InfiniteData<IsPlatformRegisteredQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: IsPlatformRegisteredQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<IsPlatformRegisteredQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<IsPlatformRegisteredQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<IsPlatformRegisteredQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['IsPlatformRegistered.infinite', variables],
+      queryFn: (metaData) => fetcher<IsPlatformRegisteredQuery, IsPlatformRegisteredQueryVariables>(client, IsPlatformRegisteredDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteIsPlatformRegisteredQuery.getKey = (variables: IsPlatformRegisteredQueryVariables) => ['IsPlatformRegistered.infinite', variables];
+useInfiniteIsPlatformRegisteredQuery.getRootKey = () => ['IsPlatformRegistered.infinite'] as const;
+useIsPlatformRegisteredQuery.fetcher = (client: GraphQLClient, variables: IsPlatformRegisteredQueryVariables, headers?: RequestInit['headers']) => fetcher<IsPlatformRegisteredQuery, IsPlatformRegisteredQueryVariables>(client, IsPlatformRegisteredDocument, variables, headers);
+
+export const CanUnregisterPlatformDocument = `
+    query CanUnregisterPlatform($input: CanUnregisterPlatformInput!) {
+  canUnregisterPlatform(input: $input) {
+    isPlatformRegistered
+    isAllowed
+    isInOrganization
+    organizationId
+    organizationName
+  }
+}
+    `;
+
+export const useCanUnregisterPlatformQuery = <
+      TData = CanUnregisterPlatformQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: CanUnregisterPlatformQueryVariables,
+      options?: Omit<UseQueryOptions<CanUnregisterPlatformQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<CanUnregisterPlatformQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<CanUnregisterPlatformQuery, TError, TData>(
+      {
+    queryKey: ['CanUnregisterPlatform', variables],
+    queryFn: fetcher<CanUnregisterPlatformQuery, CanUnregisterPlatformQueryVariables>(client, CanUnregisterPlatformDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useCanUnregisterPlatformQuery.getKey = (variables: CanUnregisterPlatformQueryVariables) => ['CanUnregisterPlatform', variables];
+useCanUnregisterPlatformQuery.getRootKey = () => ['CanUnregisterPlatform'] as const;
+export const useInfiniteCanUnregisterPlatformQuery = <
+      TData = InfiniteData<CanUnregisterPlatformQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: CanUnregisterPlatformQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<CanUnregisterPlatformQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<CanUnregisterPlatformQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<CanUnregisterPlatformQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['CanUnregisterPlatform.infinite', variables],
+      queryFn: (metaData) => fetcher<CanUnregisterPlatformQuery, CanUnregisterPlatformQueryVariables>(client, CanUnregisterPlatformDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteCanUnregisterPlatformQuery.getKey = (variables: CanUnregisterPlatformQueryVariables) => ['CanUnregisterPlatform.infinite', variables];
+useInfiniteCanUnregisterPlatformQuery.getRootKey = () => ['CanUnregisterPlatform.infinite'] as const;
+useCanUnregisterPlatformQuery.fetcher = (client: GraphQLClient, variables: CanUnregisterPlatformQueryVariables, headers?: RequestInit['headers']) => fetcher<CanUnregisterPlatformQuery, CanUnregisterPlatformQueryVariables>(client, CanUnregisterPlatformDocument, variables, headers);
+
+export const AddRolePortalDocument = `
+    mutation AddRolePortal($input: AddRolePortalInput!) {
+  addRolePortal(input: $input) {
+    id
+    name
+    capabilities {
+      id
+      name
+    }
+  }
+}
+    `;
+
+export const useAddRolePortalMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<AddRolePortalMutation, TError, AddRolePortalMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<AddRolePortalMutation, TError, AddRolePortalMutationVariables, TContext>(
+      {
+    mutationKey: ['AddRolePortal'],
+    mutationFn: (variables?: AddRolePortalMutationVariables) => fetcher<AddRolePortalMutation, AddRolePortalMutationVariables>(client, AddRolePortalDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useAddRolePortalMutation.getKey = () => ['AddRolePortal'];
+useAddRolePortalMutation.getRootKey = () => ['AddRolePortal'] as const;
+useAddRolePortalMutation.fetcher = (client: GraphQLClient, variables: AddRolePortalMutationVariables, headers?: RequestInit['headers']) => fetcher<AddRolePortalMutation, AddRolePortalMutationVariables>(client, AddRolePortalDocument, variables, headers);
+
+export const UpdateRolePortalDocument = `
+    mutation UpdateRolePortal($name: String!, $input: UpdateRolePortalInput!) {
+  updateRolePortal(name: $name, input: $input) {
+    id
+    name
+    capabilities {
+      id
+      name
+    }
+  }
+}
+    `;
+
+export const useUpdateRolePortalMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<UpdateRolePortalMutation, TError, UpdateRolePortalMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<UpdateRolePortalMutation, TError, UpdateRolePortalMutationVariables, TContext>(
+      {
+    mutationKey: ['UpdateRolePortal'],
+    mutationFn: (variables?: UpdateRolePortalMutationVariables) => fetcher<UpdateRolePortalMutation, UpdateRolePortalMutationVariables>(client, UpdateRolePortalDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useUpdateRolePortalMutation.getKey = () => ['UpdateRolePortal'];
+useUpdateRolePortalMutation.getRootKey = () => ['UpdateRolePortal'] as const;
+useUpdateRolePortalMutation.fetcher = (client: GraphQLClient, variables: UpdateRolePortalMutationVariables, headers?: RequestInit['headers']) => fetcher<UpdateRolePortalMutation, UpdateRolePortalMutationVariables>(client, UpdateRolePortalDocument, variables, headers);
+
+export const DeleteRolePortalDocument = `
+    mutation DeleteRolePortal($name: String!) {
+  deleteRolePortal(name: $name) {
+    id
+    name
+  }
+}
+    `;
+
+export const useDeleteRolePortalMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<DeleteRolePortalMutation, TError, DeleteRolePortalMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<DeleteRolePortalMutation, TError, DeleteRolePortalMutationVariables, TContext>(
+      {
+    mutationKey: ['DeleteRolePortal'],
+    mutationFn: (variables?: DeleteRolePortalMutationVariables) => fetcher<DeleteRolePortalMutation, DeleteRolePortalMutationVariables>(client, DeleteRolePortalDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useDeleteRolePortalMutation.getKey = () => ['DeleteRolePortal'];
+useDeleteRolePortalMutation.getRootKey = () => ['DeleteRolePortal'] as const;
+useDeleteRolePortalMutation.fetcher = (client: GraphQLClient, variables: DeleteRolePortalMutationVariables, headers?: RequestInit['headers']) => fetcher<DeleteRolePortalMutation, DeleteRolePortalMutationVariables>(client, DeleteRolePortalDocument, variables, headers);
+
+export const AddSsoGroupRolePortalDocument = `
+    mutation AddSSOGroupRolePortal($input: AddSSOGroupRolePortalInput!) {
+  addSSOGroupRolePortal(input: $input) {
+    ssoGroup
+    rolePortal {
+      id
+      name
+    }
+  }
+}
+    `;
+
+export const useAddSsoGroupRolePortalMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<AddSsoGroupRolePortalMutation, TError, AddSsoGroupRolePortalMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<AddSsoGroupRolePortalMutation, TError, AddSsoGroupRolePortalMutationVariables, TContext>(
+      {
+    mutationKey: ['AddSSOGroupRolePortal'],
+    mutationFn: (variables?: AddSsoGroupRolePortalMutationVariables) => fetcher<AddSsoGroupRolePortalMutation, AddSsoGroupRolePortalMutationVariables>(client, AddSsoGroupRolePortalDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useAddSsoGroupRolePortalMutation.getKey = () => ['AddSSOGroupRolePortal'];
+useAddSsoGroupRolePortalMutation.getRootKey = () => ['AddSSOGroupRolePortal'] as const;
+useAddSsoGroupRolePortalMutation.fetcher = (client: GraphQLClient, variables: AddSsoGroupRolePortalMutationVariables, headers?: RequestInit['headers']) => fetcher<AddSsoGroupRolePortalMutation, AddSsoGroupRolePortalMutationVariables>(client, AddSsoGroupRolePortalDocument, variables, headers);
+
+export const UpdateSsoGroupRolePortalDocument = `
+    mutation UpdateSSOGroupRolePortal($ssoGroup: String!, $rolePortal: String!, $input: UpdateSSOGroupRolePortalInput!) {
+  updateSSOGroupRolePortal(
+    ssoGroup: $ssoGroup
+    rolePortal: $rolePortal
+    input: $input
+  ) {
+    ssoGroup
+    rolePortal {
+      id
+      name
+    }
+  }
+}
+    `;
+
+export const useUpdateSsoGroupRolePortalMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<UpdateSsoGroupRolePortalMutation, TError, UpdateSsoGroupRolePortalMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<UpdateSsoGroupRolePortalMutation, TError, UpdateSsoGroupRolePortalMutationVariables, TContext>(
+      {
+    mutationKey: ['UpdateSSOGroupRolePortal'],
+    mutationFn: (variables?: UpdateSsoGroupRolePortalMutationVariables) => fetcher<UpdateSsoGroupRolePortalMutation, UpdateSsoGroupRolePortalMutationVariables>(client, UpdateSsoGroupRolePortalDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useUpdateSsoGroupRolePortalMutation.getKey = () => ['UpdateSSOGroupRolePortal'];
+useUpdateSsoGroupRolePortalMutation.getRootKey = () => ['UpdateSSOGroupRolePortal'] as const;
+useUpdateSsoGroupRolePortalMutation.fetcher = (client: GraphQLClient, variables: UpdateSsoGroupRolePortalMutationVariables, headers?: RequestInit['headers']) => fetcher<UpdateSsoGroupRolePortalMutation, UpdateSsoGroupRolePortalMutationVariables>(client, UpdateSsoGroupRolePortalDocument, variables, headers);
+
+export const DeleteSsoGroupRolePortalDocument = `
+    mutation DeleteSSOGroupRolePortal($input: DeleteSSOGroupRolePortalInput!) {
+  deleteSSOGroupRolePortal(input: $input) {
+    ssoGroup
+    rolePortal {
+      id
+      name
+    }
+  }
+}
+    `;
+
+export const useDeleteSsoGroupRolePortalMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<DeleteSsoGroupRolePortalMutation, TError, DeleteSsoGroupRolePortalMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<DeleteSsoGroupRolePortalMutation, TError, DeleteSsoGroupRolePortalMutationVariables, TContext>(
+      {
+    mutationKey: ['DeleteSSOGroupRolePortal'],
+    mutationFn: (variables?: DeleteSsoGroupRolePortalMutationVariables) => fetcher<DeleteSsoGroupRolePortalMutation, DeleteSsoGroupRolePortalMutationVariables>(client, DeleteSsoGroupRolePortalDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useDeleteSsoGroupRolePortalMutation.getKey = () => ['DeleteSSOGroupRolePortal'];
+useDeleteSsoGroupRolePortalMutation.getRootKey = () => ['DeleteSSOGroupRolePortal'] as const;
+useDeleteSsoGroupRolePortalMutation.fetcher = (client: GraphQLClient, variables: DeleteSsoGroupRolePortalMutationVariables, headers?: RequestInit['headers']) => fetcher<DeleteSsoGroupRolePortalMutation, DeleteSsoGroupRolePortalMutationVariables>(client, DeleteSsoGroupRolePortalDocument, variables, headers);
+
+export const RolePortalsDocument = `
+    query RolePortals {
+  rolePortals {
+    id
+    name
+    capabilities {
+      id
+      name
+    }
+  }
+}
+    `;
+
+export const useRolePortalsQuery = <
+      TData = RolePortalsQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables?: RolePortalsQueryVariables,
+      options?: Omit<UseQueryOptions<RolePortalsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<RolePortalsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<RolePortalsQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['RolePortals'] : ['RolePortals', variables],
+    queryFn: fetcher<RolePortalsQuery, RolePortalsQueryVariables>(client, RolePortalsDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useRolePortalsQuery.getKey = (variables?: RolePortalsQueryVariables) => variables === undefined ? ['RolePortals'] : ['RolePortals', variables];
+useRolePortalsQuery.getRootKey = () => ['RolePortals'] as const;
+export const useInfiniteRolePortalsQuery = <
+      TData = InfiniteData<RolePortalsQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: RolePortalsQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<RolePortalsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<RolePortalsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<RolePortalsQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['RolePortals.infinite'] : ['RolePortals.infinite', variables],
+      queryFn: (metaData) => fetcher<RolePortalsQuery, RolePortalsQueryVariables>(client, RolePortalsDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteRolePortalsQuery.getKey = (variables?: RolePortalsQueryVariables) => variables === undefined ? ['RolePortals.infinite'] : ['RolePortals.infinite', variables];
+useInfiniteRolePortalsQuery.getRootKey = () => ['RolePortals.infinite'] as const;
+useRolePortalsQuery.fetcher = (client: GraphQLClient, variables?: RolePortalsQueryVariables, headers?: RequestInit['headers']) => fetcher<RolePortalsQuery, RolePortalsQueryVariables>(client, RolePortalsDocument, variables, headers);
+
+export const SsoGroupRolePortalsDocument = `
+    query SSOGroupRolePortals {
+  ssoGroupRolePortals {
+    ssoGroup
+    rolePortal {
+      id
+      name
+    }
+  }
+}
+    `;
+
+export const useSsoGroupRolePortalsQuery = <
+      TData = SsoGroupRolePortalsQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables?: SsoGroupRolePortalsQueryVariables,
+      options?: Omit<UseQueryOptions<SsoGroupRolePortalsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<SsoGroupRolePortalsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<SsoGroupRolePortalsQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['SSOGroupRolePortals'] : ['SSOGroupRolePortals', variables],
+    queryFn: fetcher<SsoGroupRolePortalsQuery, SsoGroupRolePortalsQueryVariables>(client, SsoGroupRolePortalsDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSsoGroupRolePortalsQuery.getKey = (variables?: SsoGroupRolePortalsQueryVariables) => variables === undefined ? ['SSOGroupRolePortals'] : ['SSOGroupRolePortals', variables];
+useSsoGroupRolePortalsQuery.getRootKey = () => ['SSOGroupRolePortals'] as const;
+export const useInfiniteSsoGroupRolePortalsQuery = <
+      TData = InfiniteData<SsoGroupRolePortalsQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: SsoGroupRolePortalsQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<SsoGroupRolePortalsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<SsoGroupRolePortalsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<SsoGroupRolePortalsQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['SSOGroupRolePortals.infinite'] : ['SSOGroupRolePortals.infinite', variables],
+      queryFn: (metaData) => fetcher<SsoGroupRolePortalsQuery, SsoGroupRolePortalsQueryVariables>(client, SsoGroupRolePortalsDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteSsoGroupRolePortalsQuery.getKey = (variables?: SsoGroupRolePortalsQueryVariables) => variables === undefined ? ['SSOGroupRolePortals.infinite'] : ['SSOGroupRolePortals.infinite', variables];
+useInfiniteSsoGroupRolePortalsQuery.getRootKey = () => ['SSOGroupRolePortals.infinite'] as const;
+useSsoGroupRolePortalsQuery.fetcher = (client: GraphQLClient, variables?: SsoGroupRolePortalsQueryVariables, headers?: RequestInit['headers']) => fetcher<SsoGroupRolePortalsQuery, SsoGroupRolePortalsQueryVariables>(client, SsoGroupRolePortalsDocument, variables, headers);
+
+export const SaasManagerPlatformsListDocument = `
+    query SaasManagerPlatformsList($first: Int!, $after: ID, $orderBy: SaasPlatformOrdering!, $orderMode: OrderingMode!, $searchTerm: String, $product: SaasProduct) {
+  saasManagerPlatforms(
+    first: $first
+    after: $after
+    orderBy: $orderBy
+    orderMode: $orderMode
+    searchTerm: $searchTerm
+    product: $product
+  ) {
+    totalCount
+    edges {
+      node {
+        ...SaasPlatformRow
+      }
+    }
+  }
+}
+    ${SaasPlatformRowFragmentDoc}`;
+
+export const useSaasManagerPlatformsListQuery = <
+      TData = SaasManagerPlatformsListQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: SaasManagerPlatformsListQueryVariables,
+      options?: Omit<UseQueryOptions<SaasManagerPlatformsListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<SaasManagerPlatformsListQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<SaasManagerPlatformsListQuery, TError, TData>(
+      {
+    queryKey: ['SaasManagerPlatformsList', variables],
+    queryFn: fetcher<SaasManagerPlatformsListQuery, SaasManagerPlatformsListQueryVariables>(client, SaasManagerPlatformsListDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSaasManagerPlatformsListQuery.getKey = (variables: SaasManagerPlatformsListQueryVariables) => ['SaasManagerPlatformsList', variables];
+useSaasManagerPlatformsListQuery.getRootKey = () => ['SaasManagerPlatformsList'] as const;
+export const useInfiniteSaasManagerPlatformsListQuery = <
+      TData = InfiniteData<SaasManagerPlatformsListQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: SaasManagerPlatformsListQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<SaasManagerPlatformsListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<SaasManagerPlatformsListQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<SaasManagerPlatformsListQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['SaasManagerPlatformsList.infinite', variables],
+      queryFn: (metaData) => fetcher<SaasManagerPlatformsListQuery, SaasManagerPlatformsListQueryVariables>(client, SaasManagerPlatformsListDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteSaasManagerPlatformsListQuery.getKey = (variables: SaasManagerPlatformsListQueryVariables) => ['SaasManagerPlatformsList.infinite', variables];
+useInfiniteSaasManagerPlatformsListQuery.getRootKey = () => ['SaasManagerPlatformsList.infinite'] as const;
+useSaasManagerPlatformsListQuery.fetcher = (client: GraphQLClient, variables: SaasManagerPlatformsListQueryVariables, headers?: RequestInit['headers']) => fetcher<SaasManagerPlatformsListQuery, SaasManagerPlatformsListQueryVariables>(client, SaasManagerPlatformsListDocument, variables, headers);
+
+export const AddUsersToBundleGroupsDocument = `
+    mutation AddUsersToBundleGroups($serviceInstanceId: ServiceInstanceId!, $input: AddUsersToBundleGroupsInput!) {
+  addUsersToBundleGroups(serviceInstanceId: $serviceInstanceId, input: $input) {
+    user {
+      id
+      email
+    }
+    groups {
+      platformIdentifier
+      name
+    }
+  }
+}
+    `;
+
+export const useAddUsersToBundleGroupsMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<AddUsersToBundleGroupsMutation, TError, AddUsersToBundleGroupsMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<AddUsersToBundleGroupsMutation, TError, AddUsersToBundleGroupsMutationVariables, TContext>(
+      {
+    mutationKey: ['AddUsersToBundleGroups'],
+    mutationFn: (variables?: AddUsersToBundleGroupsMutationVariables) => fetcher<AddUsersToBundleGroupsMutation, AddUsersToBundleGroupsMutationVariables>(client, AddUsersToBundleGroupsDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useAddUsersToBundleGroupsMutation.getKey = () => ['AddUsersToBundleGroups'];
+useAddUsersToBundleGroupsMutation.getRootKey = () => ['AddUsersToBundleGroups'] as const;
+useAddUsersToBundleGroupsMutation.fetcher = (client: GraphQLClient, variables: AddUsersToBundleGroupsMutationVariables, headers?: RequestInit['headers']) => fetcher<AddUsersToBundleGroupsMutation, AddUsersToBundleGroupsMutationVariables>(client, AddUsersToBundleGroupsDocument, variables, headers);
+
+export const RemoveUsersFromBundleGroupsDocument = `
+    mutation RemoveUsersFromBundleGroups($serviceInstanceId: ServiceInstanceId!, $userIds: [UserId!]!) {
+  removeUsersFromBundleGroups(
+    serviceInstanceId: $serviceInstanceId
+    userIds: $userIds
+  )
+}
+    `;
+
+export const useRemoveUsersFromBundleGroupsMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<RemoveUsersFromBundleGroupsMutation, TError, RemoveUsersFromBundleGroupsMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<RemoveUsersFromBundleGroupsMutation, TError, RemoveUsersFromBundleGroupsMutationVariables, TContext>(
+      {
+    mutationKey: ['RemoveUsersFromBundleGroups'],
+    mutationFn: (variables?: RemoveUsersFromBundleGroupsMutationVariables) => fetcher<RemoveUsersFromBundleGroupsMutation, RemoveUsersFromBundleGroupsMutationVariables>(client, RemoveUsersFromBundleGroupsDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useRemoveUsersFromBundleGroupsMutation.getKey = () => ['RemoveUsersFromBundleGroups'];
+useRemoveUsersFromBundleGroupsMutation.getRootKey = () => ['RemoveUsersFromBundleGroups'] as const;
+useRemoveUsersFromBundleGroupsMutation.fetcher = (client: GraphQLClient, variables: RemoveUsersFromBundleGroupsMutationVariables, headers?: RequestInit['headers']) => fetcher<RemoveUsersFromBundleGroupsMutation, RemoveUsersFromBundleGroupsMutationVariables>(client, RemoveUsersFromBundleGroupsDocument, variables, headers);
+
+export const UpdateBundleUserGroupsDocument = `
+    mutation UpdateBundleUserGroups($serviceInstanceId: ServiceInstanceId!, $input: UpdateBundleUserGroupsInput!) {
+  updateBundleUserGroups(serviceInstanceId: $serviceInstanceId, input: $input) {
+    user {
+      id
+      email
+    }
+    groups {
+      platformIdentifier
+      name
+    }
+  }
+}
+    `;
+
+export const useUpdateBundleUserGroupsMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<UpdateBundleUserGroupsMutation, TError, UpdateBundleUserGroupsMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<UpdateBundleUserGroupsMutation, TError, UpdateBundleUserGroupsMutationVariables, TContext>(
+      {
+    mutationKey: ['UpdateBundleUserGroups'],
+    mutationFn: (variables?: UpdateBundleUserGroupsMutationVariables) => fetcher<UpdateBundleUserGroupsMutation, UpdateBundleUserGroupsMutationVariables>(client, UpdateBundleUserGroupsDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useUpdateBundleUserGroupsMutation.getKey = () => ['UpdateBundleUserGroups'];
+useUpdateBundleUserGroupsMutation.getRootKey = () => ['UpdateBundleUserGroups'] as const;
+useUpdateBundleUserGroupsMutation.fetcher = (client: GraphQLClient, variables: UpdateBundleUserGroupsMutationVariables, headers?: RequestInit['headers']) => fetcher<UpdateBundleUserGroupsMutation, UpdateBundleUserGroupsMutationVariables>(client, UpdateBundleUserGroupsDocument, variables, headers);
+
+export const UpdateServiceGroupsDocument = `
+    mutation UpdateServiceGroups($input: UpdateServiceGroupsInput!) {
+  updateServiceGroups(input: $input) {
+    id
+  }
+}
+    `;
+
+export const useUpdateServiceGroupsMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<UpdateServiceGroupsMutation, TError, UpdateServiceGroupsMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<UpdateServiceGroupsMutation, TError, UpdateServiceGroupsMutationVariables, TContext>(
+      {
+    mutationKey: ['UpdateServiceGroups'],
+    mutationFn: (variables?: UpdateServiceGroupsMutationVariables) => fetcher<UpdateServiceGroupsMutation, UpdateServiceGroupsMutationVariables>(client, UpdateServiceGroupsDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useUpdateServiceGroupsMutation.getKey = () => ['UpdateServiceGroups'];
+useUpdateServiceGroupsMutation.getRootKey = () => ['UpdateServiceGroups'] as const;
+useUpdateServiceGroupsMutation.fetcher = (client: GraphQLClient, variables: UpdateServiceGroupsMutationVariables, headers?: RequestInit['headers']) => fetcher<UpdateServiceGroupsMutation, UpdateServiceGroupsMutationVariables>(client, UpdateServiceGroupsDocument, variables, headers);
+
+export const BundleUserServiceGroupsDocument = `
+    query BundleUserServiceGroups($serviceInstanceId: ServiceInstanceId!) {
+  bundleUserServiceGroups(serviceInstanceId: $serviceInstanceId) {
+    user {
+      id
+      email
+    }
+    groups {
+      platformIdentifier
+      name
+    }
+  }
+}
+    `;
+
+export const useBundleUserServiceGroupsQuery = <
+      TData = BundleUserServiceGroupsQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: BundleUserServiceGroupsQueryVariables,
+      options?: Omit<UseQueryOptions<BundleUserServiceGroupsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<BundleUserServiceGroupsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<BundleUserServiceGroupsQuery, TError, TData>(
+      {
+    queryKey: ['BundleUserServiceGroups', variables],
+    queryFn: fetcher<BundleUserServiceGroupsQuery, BundleUserServiceGroupsQueryVariables>(client, BundleUserServiceGroupsDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useBundleUserServiceGroupsQuery.getKey = (variables: BundleUserServiceGroupsQueryVariables) => ['BundleUserServiceGroups', variables];
+useBundleUserServiceGroupsQuery.getRootKey = () => ['BundleUserServiceGroups'] as const;
+export const useInfiniteBundleUserServiceGroupsQuery = <
+      TData = InfiniteData<BundleUserServiceGroupsQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: BundleUserServiceGroupsQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<BundleUserServiceGroupsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<BundleUserServiceGroupsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<BundleUserServiceGroupsQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['BundleUserServiceGroups.infinite', variables],
+      queryFn: (metaData) => fetcher<BundleUserServiceGroupsQuery, BundleUserServiceGroupsQueryVariables>(client, BundleUserServiceGroupsDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteBundleUserServiceGroupsQuery.getKey = (variables: BundleUserServiceGroupsQueryVariables) => ['BundleUserServiceGroups.infinite', variables];
+useInfiniteBundleUserServiceGroupsQuery.getRootKey = () => ['BundleUserServiceGroups.infinite'] as const;
+useBundleUserServiceGroupsQuery.fetcher = (client: GraphQLClient, variables: BundleUserServiceGroupsQueryVariables, headers?: RequestInit['headers']) => fetcher<BundleUserServiceGroupsQuery, BundleUserServiceGroupsQueryVariables>(client, BundleUserServiceGroupsDocument, variables, headers);
+
+export const BundleProductsDocument = `
+    query BundleProducts($serviceInstanceId: ServiceInstanceId!) {
+  bundleProducts(serviceInstanceId: $serviceInstanceId)
+}
+    `;
+
+export const useBundleProductsQuery = <
+      TData = BundleProductsQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: BundleProductsQueryVariables,
+      options?: Omit<UseQueryOptions<BundleProductsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<BundleProductsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<BundleProductsQuery, TError, TData>(
+      {
+    queryKey: ['BundleProducts', variables],
+    queryFn: fetcher<BundleProductsQuery, BundleProductsQueryVariables>(client, BundleProductsDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useBundleProductsQuery.getKey = (variables: BundleProductsQueryVariables) => ['BundleProducts', variables];
+useBundleProductsQuery.getRootKey = () => ['BundleProducts'] as const;
+export const useInfiniteBundleProductsQuery = <
+      TData = InfiniteData<BundleProductsQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: BundleProductsQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<BundleProductsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<BundleProductsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<BundleProductsQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['BundleProducts.infinite', variables],
+      queryFn: (metaData) => fetcher<BundleProductsQuery, BundleProductsQueryVariables>(client, BundleProductsDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteBundleProductsQuery.getKey = (variables: BundleProductsQueryVariables) => ['BundleProducts.infinite', variables];
+useInfiniteBundleProductsQuery.getRootKey = () => ['BundleProducts.infinite'] as const;
+useBundleProductsQuery.fetcher = (client: GraphQLClient, variables: BundleProductsQueryVariables, headers?: RequestInit['headers']) => fetcher<BundleProductsQuery, BundleProductsQueryVariables>(client, BundleProductsDocument, variables, headers);
+
+export const ServiceGroupsDocument = `
+    query ServiceGroups($serviceInstanceId: ServiceInstanceId!) {
+  serviceGroups(serviceInstanceId: $serviceInstanceId) {
+    id
+    name
+    users {
+      id
+      email
+    }
+  }
+}
+    `;
+
+export const useServiceGroupsQuery = <
+      TData = ServiceGroupsQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: ServiceGroupsQueryVariables,
+      options?: Omit<UseQueryOptions<ServiceGroupsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<ServiceGroupsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<ServiceGroupsQuery, TError, TData>(
+      {
+    queryKey: ['ServiceGroups', variables],
+    queryFn: fetcher<ServiceGroupsQuery, ServiceGroupsQueryVariables>(client, ServiceGroupsDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useServiceGroupsQuery.getKey = (variables: ServiceGroupsQueryVariables) => ['ServiceGroups', variables];
+useServiceGroupsQuery.getRootKey = () => ['ServiceGroups'] as const;
+export const useInfiniteServiceGroupsQuery = <
+      TData = InfiniteData<ServiceGroupsQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: ServiceGroupsQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<ServiceGroupsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<ServiceGroupsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<ServiceGroupsQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['ServiceGroups.infinite', variables],
+      queryFn: (metaData) => fetcher<ServiceGroupsQuery, ServiceGroupsQueryVariables>(client, ServiceGroupsDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteServiceGroupsQuery.getKey = (variables: ServiceGroupsQueryVariables) => ['ServiceGroups.infinite', variables];
+useInfiniteServiceGroupsQuery.getRootKey = () => ['ServiceGroups.infinite'] as const;
+useServiceGroupsQuery.fetcher = (client: GraphQLClient, variables: ServiceGroupsQueryVariables, headers?: RequestInit['headers']) => fetcher<ServiceGroupsQuery, ServiceGroupsQueryVariables>(client, ServiceGroupsDocument, variables, headers);
 
 export const ServiceInstancesListDocument = `
     query ServiceInstancesList($count: Int!, $orderBy: ServiceInstanceOrdering!, $orderMode: OrderingMode!, $filters: [ServiceInstanceFilter!], $searchTerm: String) {
@@ -3760,16 +10361,172 @@ useInfiniteServiceInstancesListQuery.getKey = (variables: ServiceInstancesListQu
 useInfiniteServiceInstancesListQuery.getRootKey = () => ['ServiceInstancesList.infinite'] as const;
 useServiceInstancesListQuery.fetcher = (client: GraphQLClient, variables: ServiceInstancesListQueryVariables, headers?: RequestInit['headers']) => fetcher<ServiceInstancesListQuery, ServiceInstancesListQueryVariables>(client, ServiceInstancesListDocument, variables, headers);
 
+export const SeoServiceInstancesDocument = `
+    query SeoServiceInstances {
+  seoServiceInstances {
+    ...SeoServiceInstanceItem
+  }
+}
+    ${SeoServiceInstanceItemFragmentDoc}`;
+
+export const useSeoServiceInstancesQuery = <
+      TData = SeoServiceInstancesQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables?: SeoServiceInstancesQueryVariables,
+      options?: Omit<UseQueryOptions<SeoServiceInstancesQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<SeoServiceInstancesQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<SeoServiceInstancesQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['SeoServiceInstances'] : ['SeoServiceInstances', variables],
+    queryFn: fetcher<SeoServiceInstancesQuery, SeoServiceInstancesQueryVariables>(client, SeoServiceInstancesDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSeoServiceInstancesQuery.getKey = (variables?: SeoServiceInstancesQueryVariables) => variables === undefined ? ['SeoServiceInstances'] : ['SeoServiceInstances', variables];
+useSeoServiceInstancesQuery.getRootKey = () => ['SeoServiceInstances'] as const;
+export const useInfiniteSeoServiceInstancesQuery = <
+      TData = InfiniteData<SeoServiceInstancesQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: SeoServiceInstancesQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<SeoServiceInstancesQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<SeoServiceInstancesQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<SeoServiceInstancesQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['SeoServiceInstances.infinite'] : ['SeoServiceInstances.infinite', variables],
+      queryFn: (metaData) => fetcher<SeoServiceInstancesQuery, SeoServiceInstancesQueryVariables>(client, SeoServiceInstancesDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteSeoServiceInstancesQuery.getKey = (variables?: SeoServiceInstancesQueryVariables) => variables === undefined ? ['SeoServiceInstances.infinite'] : ['SeoServiceInstances.infinite', variables];
+useInfiniteSeoServiceInstancesQuery.getRootKey = () => ['SeoServiceInstances.infinite'] as const;
+useSeoServiceInstancesQuery.fetcher = (client: GraphQLClient, variables?: SeoServiceInstancesQueryVariables, headers?: RequestInit['headers']) => fetcher<SeoServiceInstancesQuery, SeoServiceInstancesQueryVariables>(client, SeoServiceInstancesDocument, variables, headers);
+
+export const SeoServiceInstanceBySlugDocument = `
+    query SeoServiceInstanceBySlug($slug: String!) {
+  seoServiceInstance(slug: $slug) {
+    ...SeoServiceInstanceItem
+  }
+}
+    ${SeoServiceInstanceItemFragmentDoc}`;
+
+export const useSeoServiceInstanceBySlugQuery = <
+      TData = SeoServiceInstanceBySlugQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: SeoServiceInstanceBySlugQueryVariables,
+      options?: Omit<UseQueryOptions<SeoServiceInstanceBySlugQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<SeoServiceInstanceBySlugQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<SeoServiceInstanceBySlugQuery, TError, TData>(
+      {
+    queryKey: ['SeoServiceInstanceBySlug', variables],
+    queryFn: fetcher<SeoServiceInstanceBySlugQuery, SeoServiceInstanceBySlugQueryVariables>(client, SeoServiceInstanceBySlugDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSeoServiceInstanceBySlugQuery.getKey = (variables: SeoServiceInstanceBySlugQueryVariables) => ['SeoServiceInstanceBySlug', variables];
+useSeoServiceInstanceBySlugQuery.getRootKey = () => ['SeoServiceInstanceBySlug'] as const;
+export const useInfiniteSeoServiceInstanceBySlugQuery = <
+      TData = InfiniteData<SeoServiceInstanceBySlugQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: SeoServiceInstanceBySlugQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<SeoServiceInstanceBySlugQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<SeoServiceInstanceBySlugQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<SeoServiceInstanceBySlugQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['SeoServiceInstanceBySlug.infinite', variables],
+      queryFn: (metaData) => fetcher<SeoServiceInstanceBySlugQuery, SeoServiceInstanceBySlugQueryVariables>(client, SeoServiceInstanceBySlugDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteSeoServiceInstanceBySlugQuery.getKey = (variables: SeoServiceInstanceBySlugQueryVariables) => ['SeoServiceInstanceBySlug.infinite', variables];
+useInfiniteSeoServiceInstanceBySlugQuery.getRootKey = () => ['SeoServiceInstanceBySlug.infinite'] as const;
+useSeoServiceInstanceBySlugQuery.fetcher = (client: GraphQLClient, variables: SeoServiceInstanceBySlugQueryVariables, headers?: RequestInit['headers']) => fetcher<SeoServiceInstanceBySlugQuery, SeoServiceInstanceBySlugQueryVariables>(client, SeoServiceInstanceBySlugDocument, variables, headers);
+
+export const ServiceInstanceLinksByTagsDocument = `
+    query ServiceInstanceLinksByTags($tags: [ServiceInstanceTag!]!) {
+  serviceInstanceLinksByTags(tags: $tags) {
+    ...SeoServiceInstanceItem
+  }
+}
+    ${SeoServiceInstanceItemFragmentDoc}`;
+
+export const useServiceInstanceLinksByTagsQuery = <
+      TData = ServiceInstanceLinksByTagsQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: ServiceInstanceLinksByTagsQueryVariables,
+      options?: Omit<UseQueryOptions<ServiceInstanceLinksByTagsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<ServiceInstanceLinksByTagsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<ServiceInstanceLinksByTagsQuery, TError, TData>(
+      {
+    queryKey: ['ServiceInstanceLinksByTags', variables],
+    queryFn: fetcher<ServiceInstanceLinksByTagsQuery, ServiceInstanceLinksByTagsQueryVariables>(client, ServiceInstanceLinksByTagsDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useServiceInstanceLinksByTagsQuery.getKey = (variables: ServiceInstanceLinksByTagsQueryVariables) => ['ServiceInstanceLinksByTags', variables];
+useServiceInstanceLinksByTagsQuery.getRootKey = () => ['ServiceInstanceLinksByTags'] as const;
+export const useInfiniteServiceInstanceLinksByTagsQuery = <
+      TData = InfiniteData<ServiceInstanceLinksByTagsQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: ServiceInstanceLinksByTagsQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<ServiceInstanceLinksByTagsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<ServiceInstanceLinksByTagsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<ServiceInstanceLinksByTagsQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['ServiceInstanceLinksByTags.infinite', variables],
+      queryFn: (metaData) => fetcher<ServiceInstanceLinksByTagsQuery, ServiceInstanceLinksByTagsQueryVariables>(client, ServiceInstanceLinksByTagsDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteServiceInstanceLinksByTagsQuery.getKey = (variables: ServiceInstanceLinksByTagsQueryVariables) => ['ServiceInstanceLinksByTags.infinite', variables];
+useInfiniteServiceInstanceLinksByTagsQuery.getRootKey = () => ['ServiceInstanceLinksByTags.infinite'] as const;
+useServiceInstanceLinksByTagsQuery.fetcher = (client: GraphQLClient, variables: ServiceInstanceLinksByTagsQueryVariables, headers?: RequestInit['headers']) => fetcher<ServiceInstanceLinksByTagsQuery, ServiceInstanceLinksByTagsQueryVariables>(client, ServiceInstanceLinksByTagsDocument, variables, headers);
+
 export const ServiceInstanceSeoMetadataByIdDocument = `
     query ServiceInstanceSeoMetadataById($service_instance_id: ServiceInstanceId!) {
   seoServiceInstanceMetadata(service_instance_id: $service_instance_id) {
-    service_instance_id
-    language
-    meta_title
-    meta_description
+    ...SeoServiceInstanceMetadataItem
   }
 }
-    `;
+    ${SeoServiceInstanceMetadataItemFragmentDoc}`;
 
 export const useServiceInstanceSeoMetadataByIdQuery = <
       TData = ServiceInstanceSeoMetadataByIdQuery,
@@ -3816,8 +10573,178 @@ useInfiniteServiceInstanceSeoMetadataByIdQuery.getKey = (variables: ServiceInsta
 useInfiniteServiceInstanceSeoMetadataByIdQuery.getRootKey = () => ['ServiceInstanceSeoMetadataById.infinite'] as const;
 useServiceInstanceSeoMetadataByIdQuery.fetcher = (client: GraphQLClient, variables: ServiceInstanceSeoMetadataByIdQueryVariables, headers?: RequestInit['headers']) => fetcher<ServiceInstanceSeoMetadataByIdQuery, ServiceInstanceSeoMetadataByIdQueryVariables>(client, ServiceInstanceSeoMetadataByIdDocument, variables, headers);
 
+export const ServiceInstanceByIdDocument = `
+    query ServiceInstanceById($service_instance_id: ServiceInstanceId!) {
+  serviceInstanceById(service_instance_id: $service_instance_id) {
+    ...ServiceInstanceItem
+  }
+}
+    ${ServiceInstanceItemFragmentDoc}`;
+
+export const useServiceInstanceByIdQuery = <
+      TData = ServiceInstanceByIdQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: ServiceInstanceByIdQueryVariables,
+      options?: Omit<UseQueryOptions<ServiceInstanceByIdQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<ServiceInstanceByIdQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<ServiceInstanceByIdQuery, TError, TData>(
+      {
+    queryKey: ['ServiceInstanceById', variables],
+    queryFn: fetcher<ServiceInstanceByIdQuery, ServiceInstanceByIdQueryVariables>(client, ServiceInstanceByIdDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useServiceInstanceByIdQuery.getKey = (variables: ServiceInstanceByIdQueryVariables) => ['ServiceInstanceById', variables];
+useServiceInstanceByIdQuery.getRootKey = () => ['ServiceInstanceById'] as const;
+export const useInfiniteServiceInstanceByIdQuery = <
+      TData = InfiniteData<ServiceInstanceByIdQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: ServiceInstanceByIdQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<ServiceInstanceByIdQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<ServiceInstanceByIdQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<ServiceInstanceByIdQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['ServiceInstanceById.infinite', variables],
+      queryFn: (metaData) => fetcher<ServiceInstanceByIdQuery, ServiceInstanceByIdQueryVariables>(client, ServiceInstanceByIdDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteServiceInstanceByIdQuery.getKey = (variables: ServiceInstanceByIdQueryVariables) => ['ServiceInstanceById.infinite', variables];
+useInfiniteServiceInstanceByIdQuery.getRootKey = () => ['ServiceInstanceById.infinite'] as const;
+useServiceInstanceByIdQuery.fetcher = (client: GraphQLClient, variables: ServiceInstanceByIdQueryVariables, headers?: RequestInit['headers']) => fetcher<ServiceInstanceByIdQuery, ServiceInstanceByIdQueryVariables>(client, ServiceInstanceByIdDocument, variables, headers);
+
+export const ServiceInstanceWithCapabilitiesByIdDocument = `
+    query ServiceInstanceWithCapabilitiesById($service_instance_id: ServiceInstanceId!) {
+  serviceInstanceById(service_instance_id: $service_instance_id) {
+    ...ServiceInstanceWithCapabilitiesItem
+  }
+}
+    ${ServiceInstanceWithCapabilitiesItemFragmentDoc}`;
+
+export const useServiceInstanceWithCapabilitiesByIdQuery = <
+      TData = ServiceInstanceWithCapabilitiesByIdQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: ServiceInstanceWithCapabilitiesByIdQueryVariables,
+      options?: Omit<UseQueryOptions<ServiceInstanceWithCapabilitiesByIdQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<ServiceInstanceWithCapabilitiesByIdQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<ServiceInstanceWithCapabilitiesByIdQuery, TError, TData>(
+      {
+    queryKey: ['ServiceInstanceWithCapabilitiesById', variables],
+    queryFn: fetcher<ServiceInstanceWithCapabilitiesByIdQuery, ServiceInstanceWithCapabilitiesByIdQueryVariables>(client, ServiceInstanceWithCapabilitiesByIdDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useServiceInstanceWithCapabilitiesByIdQuery.getKey = (variables: ServiceInstanceWithCapabilitiesByIdQueryVariables) => ['ServiceInstanceWithCapabilitiesById', variables];
+useServiceInstanceWithCapabilitiesByIdQuery.getRootKey = () => ['ServiceInstanceWithCapabilitiesById'] as const;
+export const useInfiniteServiceInstanceWithCapabilitiesByIdQuery = <
+      TData = InfiniteData<ServiceInstanceWithCapabilitiesByIdQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: ServiceInstanceWithCapabilitiesByIdQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<ServiceInstanceWithCapabilitiesByIdQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<ServiceInstanceWithCapabilitiesByIdQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<ServiceInstanceWithCapabilitiesByIdQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['ServiceInstanceWithCapabilitiesById.infinite', variables],
+      queryFn: (metaData) => fetcher<ServiceInstanceWithCapabilitiesByIdQuery, ServiceInstanceWithCapabilitiesByIdQueryVariables>(client, ServiceInstanceWithCapabilitiesByIdDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteServiceInstanceWithCapabilitiesByIdQuery.getKey = (variables: ServiceInstanceWithCapabilitiesByIdQueryVariables) => ['ServiceInstanceWithCapabilitiesById.infinite', variables];
+useInfiniteServiceInstanceWithCapabilitiesByIdQuery.getRootKey = () => ['ServiceInstanceWithCapabilitiesById.infinite'] as const;
+useServiceInstanceWithCapabilitiesByIdQuery.fetcher = (client: GraphQLClient, variables: ServiceInstanceWithCapabilitiesByIdQueryVariables, headers?: RequestInit['headers']) => fetcher<ServiceInstanceWithCapabilitiesByIdQuery, ServiceInstanceWithCapabilitiesByIdQueryVariables>(client, ServiceInstanceWithCapabilitiesByIdDocument, variables, headers);
+
+export const AdminServiceInstancesListDocument = `
+    query AdminServiceInstancesList($count: Int!, $orderBy: ServiceInstanceOrdering!, $orderMode: OrderingMode!, $filters: [ServiceInstanceFilter!], $searchTerm: String, $includeInaccessible: Boolean) {
+  serviceInstances(
+    first: $count
+    orderBy: $orderBy
+    orderMode: $orderMode
+    filters: $filters
+    searchTerm: $searchTerm
+    includeInaccessible: $includeInaccessible
+  ) {
+    edges {
+      node {
+        ...AdminServiceInstanceItem
+      }
+    }
+  }
+}
+    ${AdminServiceInstanceItemFragmentDoc}`;
+
+export const useAdminServiceInstancesListQuery = <
+      TData = AdminServiceInstancesListQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: AdminServiceInstancesListQueryVariables,
+      options?: Omit<UseQueryOptions<AdminServiceInstancesListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<AdminServiceInstancesListQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<AdminServiceInstancesListQuery, TError, TData>(
+      {
+    queryKey: ['AdminServiceInstancesList', variables],
+    queryFn: fetcher<AdminServiceInstancesListQuery, AdminServiceInstancesListQueryVariables>(client, AdminServiceInstancesListDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useAdminServiceInstancesListQuery.getKey = (variables: AdminServiceInstancesListQueryVariables) => ['AdminServiceInstancesList', variables];
+useAdminServiceInstancesListQuery.getRootKey = () => ['AdminServiceInstancesList'] as const;
+export const useInfiniteAdminServiceInstancesListQuery = <
+      TData = InfiniteData<AdminServiceInstancesListQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: AdminServiceInstancesListQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<AdminServiceInstancesListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<AdminServiceInstancesListQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<AdminServiceInstancesListQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['AdminServiceInstancesList.infinite', variables],
+      queryFn: (metaData) => fetcher<AdminServiceInstancesListQuery, AdminServiceInstancesListQueryVariables>(client, AdminServiceInstancesListDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteAdminServiceInstancesListQuery.getKey = (variables: AdminServiceInstancesListQueryVariables) => ['AdminServiceInstancesList.infinite', variables];
+useInfiniteAdminServiceInstancesListQuery.getRootKey = () => ['AdminServiceInstancesList.infinite'] as const;
+useAdminServiceInstancesListQuery.fetcher = (client: GraphQLClient, variables: AdminServiceInstancesListQueryVariables, headers?: RequestInit['headers']) => fetcher<AdminServiceInstancesListQuery, AdminServiceInstancesListQueryVariables>(client, AdminServiceInstancesListDocument, variables, headers);
+
 export const EditSeoServiceInstanceMetadataDocument = `
-    mutation EditSeoServiceInstanceMetadata($service_instance_id: ServiceInstanceId!, $language: SeoServiceInstanceLanguage!, $input: EditSeoServiceInstanceInput!) {
+    mutation EditSeoServiceInstanceMetadata($service_instance_id: ServiceInstanceId!, $language: Locale!, $input: EditSeoServiceInstanceInput!) {
   editSeoServiceInstance(
     service_instance_id: $service_instance_id
     language: $language
@@ -3851,6 +10778,255 @@ export const useEditSeoServiceInstanceMetadataMutation = <
 useEditSeoServiceInstanceMetadataMutation.getKey = () => ['EditSeoServiceInstanceMetadata'];
 useEditSeoServiceInstanceMetadataMutation.getRootKey = () => ['EditSeoServiceInstanceMetadata'] as const;
 useEditSeoServiceInstanceMetadataMutation.fetcher = (client: GraphQLClient, variables: EditSeoServiceInstanceMetadataMutationVariables, headers?: RequestInit['headers']) => fetcher<EditSeoServiceInstanceMetadataMutation, EditSeoServiceInstanceMetadataMutationVariables>(client, EditSeoServiceInstanceMetadataDocument, variables, headers);
+
+export const UpdatePlatformServiceMetadataDocument = `
+    mutation UpdatePlatformServiceMetadata($input: UpdatePlatformServiceMetadataInput!) {
+  updatePlatformServiceMetadata(input: $input) {
+    id
+    title
+  }
+}
+    `;
+
+export const useUpdatePlatformServiceMetadataMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<UpdatePlatformServiceMetadataMutation, TError, UpdatePlatformServiceMetadataMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<UpdatePlatformServiceMetadataMutation, TError, UpdatePlatformServiceMetadataMutationVariables, TContext>(
+      {
+    mutationKey: ['UpdatePlatformServiceMetadata'],
+    mutationFn: (variables?: UpdatePlatformServiceMetadataMutationVariables) => fetcher<UpdatePlatformServiceMetadataMutation, UpdatePlatformServiceMetadataMutationVariables>(client, UpdatePlatformServiceMetadataDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useUpdatePlatformServiceMetadataMutation.getKey = () => ['UpdatePlatformServiceMetadata'];
+useUpdatePlatformServiceMetadataMutation.getRootKey = () => ['UpdatePlatformServiceMetadata'] as const;
+useUpdatePlatformServiceMetadataMutation.fetcher = (client: GraphQLClient, variables: UpdatePlatformServiceMetadataMutationVariables, headers?: RequestInit['headers']) => fetcher<UpdatePlatformServiceMetadataMutation, UpdatePlatformServiceMetadataMutationVariables>(client, UpdatePlatformServiceMetadataDocument, variables, headers);
+
+export const AddServicePictureDocument = `
+    mutation AddServicePicture($serviceInstanceId: ServiceInstanceId!, $document: Upload, $isLogo: Boolean!) {
+  addServicePicture(
+    serviceInstanceId: $serviceInstanceId
+    document: $document
+    isLogo: $isLogo
+  ) {
+    id
+    name
+  }
+}
+    `;
+
+export const useAddServicePictureMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<AddServicePictureMutation, TError, AddServicePictureMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<AddServicePictureMutation, TError, AddServicePictureMutationVariables, TContext>(
+      {
+    mutationKey: ['AddServicePicture'],
+    mutationFn: (variables?: AddServicePictureMutationVariables) => fetcher<AddServicePictureMutation, AddServicePictureMutationVariables>(client, AddServicePictureDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useAddServicePictureMutation.getKey = () => ['AddServicePicture'];
+useAddServicePictureMutation.getRootKey = () => ['AddServicePicture'] as const;
+useAddServicePictureMutation.fetcher = (client: GraphQLClient, variables: AddServicePictureMutationVariables, headers?: RequestInit['headers']) => fetcher<AddServicePictureMutation, AddServicePictureMutationVariables>(client, AddServicePictureDocument, variables, headers);
+
+export const ServiceUserCapabilitiesDocument = `
+    query ServiceUserCapabilities($service_instance_id: ServiceInstanceId!) {
+  userServiceCapabilities(service_instance_id: $service_instance_id) {
+    subscription_id
+    userServiceCapabilities {
+      id
+      user_service_id
+      generic_service_capability {
+        id
+        name
+      }
+      subscription_capability {
+        id
+        service_capability {
+          name
+          id
+        }
+      }
+    }
+  }
+}
+    `;
+
+export const useServiceUserCapabilitiesQuery = <
+      TData = ServiceUserCapabilitiesQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: ServiceUserCapabilitiesQueryVariables,
+      options?: Omit<UseQueryOptions<ServiceUserCapabilitiesQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<ServiceUserCapabilitiesQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<ServiceUserCapabilitiesQuery, TError, TData>(
+      {
+    queryKey: ['ServiceUserCapabilities', variables],
+    queryFn: fetcher<ServiceUserCapabilitiesQuery, ServiceUserCapabilitiesQueryVariables>(client, ServiceUserCapabilitiesDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useServiceUserCapabilitiesQuery.getKey = (variables: ServiceUserCapabilitiesQueryVariables) => ['ServiceUserCapabilities', variables];
+useServiceUserCapabilitiesQuery.getRootKey = () => ['ServiceUserCapabilities'] as const;
+export const useInfiniteServiceUserCapabilitiesQuery = <
+      TData = InfiniteData<ServiceUserCapabilitiesQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: ServiceUserCapabilitiesQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<ServiceUserCapabilitiesQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<ServiceUserCapabilitiesQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<ServiceUserCapabilitiesQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['ServiceUserCapabilities.infinite', variables],
+      queryFn: (metaData) => fetcher<ServiceUserCapabilitiesQuery, ServiceUserCapabilitiesQueryVariables>(client, ServiceUserCapabilitiesDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteServiceUserCapabilitiesQuery.getKey = (variables: ServiceUserCapabilitiesQueryVariables) => ['ServiceUserCapabilities.infinite', variables];
+useInfiniteServiceUserCapabilitiesQuery.getRootKey = () => ['ServiceUserCapabilities.infinite'] as const;
+useServiceUserCapabilitiesQuery.fetcher = (client: GraphQLClient, variables: ServiceUserCapabilitiesQueryVariables, headers?: RequestInit['headers']) => fetcher<ServiceUserCapabilitiesQuery, ServiceUserCapabilitiesQueryVariables>(client, ServiceUserCapabilitiesDocument, variables, headers);
+
+export const SettingsDocument = `
+    query Settings {
+  settings {
+    platform_providers {
+      name
+      provider
+      type
+    }
+    environment
+    base_url_front
+    platform_feature_flags
+  }
+}
+    `;
+
+export const useSettingsQuery = <
+      TData = SettingsQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables?: SettingsQueryVariables,
+      options?: Omit<UseQueryOptions<SettingsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<SettingsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<SettingsQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['Settings'] : ['Settings', variables],
+    queryFn: fetcher<SettingsQuery, SettingsQueryVariables>(client, SettingsDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSettingsQuery.getKey = (variables?: SettingsQueryVariables) => variables === undefined ? ['Settings'] : ['Settings', variables];
+useSettingsQuery.getRootKey = () => ['Settings'] as const;
+export const useInfiniteSettingsQuery = <
+      TData = InfiniteData<SettingsQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: SettingsQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<SettingsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<SettingsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<SettingsQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['Settings.infinite'] : ['Settings.infinite', variables],
+      queryFn: (metaData) => fetcher<SettingsQuery, SettingsQueryVariables>(client, SettingsDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteSettingsQuery.getKey = (variables?: SettingsQueryVariables) => variables === undefined ? ['Settings.infinite'] : ['Settings.infinite', variables];
+useInfiniteSettingsQuery.getRootKey = () => ['Settings.infinite'] as const;
+useSettingsQuery.fetcher = (client: GraphQLClient, variables?: SettingsQueryVariables, headers?: RequestInit['headers']) => fetcher<SettingsQuery, SettingsQueryVariables>(client, SettingsDocument, variables, headers);
+
+export const ServerSettingsDocument = `
+    query ServerSettings {
+  settings {
+    platform_providers {
+      provider
+    }
+    base_url_front
+    platform_feature_flags
+  }
+}
+    `;
+
+export const useServerSettingsQuery = <
+      TData = ServerSettingsQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables?: ServerSettingsQueryVariables,
+      options?: Omit<UseQueryOptions<ServerSettingsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<ServerSettingsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<ServerSettingsQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['ServerSettings'] : ['ServerSettings', variables],
+    queryFn: fetcher<ServerSettingsQuery, ServerSettingsQueryVariables>(client, ServerSettingsDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useServerSettingsQuery.getKey = (variables?: ServerSettingsQueryVariables) => variables === undefined ? ['ServerSettings'] : ['ServerSettings', variables];
+useServerSettingsQuery.getRootKey = () => ['ServerSettings'] as const;
+export const useInfiniteServerSettingsQuery = <
+      TData = InfiniteData<ServerSettingsQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: ServerSettingsQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<ServerSettingsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<ServerSettingsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<ServerSettingsQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['ServerSettings.infinite'] : ['ServerSettings.infinite', variables],
+      queryFn: (metaData) => fetcher<ServerSettingsQuery, ServerSettingsQueryVariables>(client, ServerSettingsDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteServerSettingsQuery.getKey = (variables?: ServerSettingsQueryVariables) => variables === undefined ? ['ServerSettings.infinite'] : ['ServerSettings.infinite', variables];
+useInfiniteServerSettingsQuery.getRootKey = () => ['ServerSettings.infinite'] as const;
+useServerSettingsQuery.fetcher = (client: GraphQLClient, variables?: ServerSettingsQueryVariables, headers?: RequestInit['headers']) => fetcher<ServerSettingsQuery, ServerSettingsQueryVariables>(client, ServerSettingsDocument, variables, headers);
 
 export const SolutionCategoryAddDocument = `
     mutation SolutionCategoryAdd($input: AddSolutionCategoryInput!) {
@@ -4005,59 +11181,441 @@ useInfiniteSolutionCategoriesListQuery.getKey = (variables: SolutionCategoriesLi
 useInfiniteSolutionCategoriesListQuery.getRootKey = () => ['SolutionCategoriesList.infinite'] as const;
 useSolutionCategoriesListQuery.fetcher = (client: GraphQLClient, variables: SolutionCategoriesListQueryVariables, headers?: RequestInit['headers']) => fetcher<SolutionCategoriesListQuery, SolutionCategoriesListQueryVariables>(client, SolutionCategoriesListDocument, variables, headers);
 
-export const TrialDeploymentsEligibilityDocument = `
-    query TrialDeploymentsEligibility($input: TrialDeploymentsInput!) {
-  trialDeployments(input: $input) {
-    availableTrials
-    isBlacklisted
+export const CreateSubscriptionsDocument = `
+    mutation CreateSubscriptions($input: CreateSubscriptionsInput!) {
+  createSubscriptions(input: $input) {
+    id
   }
 }
     `;
 
-export const useTrialDeploymentsEligibilityQuery = <
-      TData = TrialDeploymentsEligibilityQuery,
-      TError = unknown
+export const useCreateSubscriptionsMutation = <
+      TError = unknown,
+      TContext = unknown
     >(
       client: GraphQLClient,
-      variables: TrialDeploymentsEligibilityQueryVariables,
-      options?: Omit<UseQueryOptions<TrialDeploymentsEligibilityQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<TrialDeploymentsEligibilityQuery, TError, TData>['queryKey'] },
+      options?: UseMutationOptions<CreateSubscriptionsMutation, TError, CreateSubscriptionsMutationVariables, TContext>,
       headers?: RequestInit['headers']
     ) => {
     
-    return useQuery<TrialDeploymentsEligibilityQuery, TError, TData>(
+    return useMutation<CreateSubscriptionsMutation, TError, CreateSubscriptionsMutationVariables, TContext>(
       {
-    queryKey: ['TrialDeploymentsEligibility', variables],
-    queryFn: fetcher<TrialDeploymentsEligibilityQuery, TrialDeploymentsEligibilityQueryVariables>(client, TrialDeploymentsEligibilityDocument, variables, headers),
+    mutationKey: ['CreateSubscriptions'],
+    mutationFn: (variables?: CreateSubscriptionsMutationVariables) => fetcher<CreateSubscriptionsMutation, CreateSubscriptionsMutationVariables>(client, CreateSubscriptionsDocument, variables, headers)(),
     ...options
   }
     )};
 
-useTrialDeploymentsEligibilityQuery.getKey = (variables: TrialDeploymentsEligibilityQueryVariables) => ['TrialDeploymentsEligibility', variables];
-useTrialDeploymentsEligibilityQuery.getRootKey = () => ['TrialDeploymentsEligibility'] as const;
-export const useInfiniteTrialDeploymentsEligibilityQuery = <
-      TData = InfiniteData<TrialDeploymentsEligibilityQuery>,
-      TError = unknown
+useCreateSubscriptionsMutation.getKey = () => ['CreateSubscriptions'];
+useCreateSubscriptionsMutation.getRootKey = () => ['CreateSubscriptions'] as const;
+useCreateSubscriptionsMutation.fetcher = (client: GraphQLClient, variables: CreateSubscriptionsMutationVariables, headers?: RequestInit['headers']) => fetcher<CreateSubscriptionsMutation, CreateSubscriptionsMutationVariables>(client, CreateSubscriptionsDocument, variables, headers);
+
+export const UpdateSubscriptionDocument = `
+    mutation UpdateSubscription($subscription_id: SubscriptionId!, $input: UpdateSubscriptionInput!) {
+  updateSubscription(subscription_id: $subscription_id, input: $input) {
+    id
+  }
+}
+    `;
+
+export const useUpdateSubscriptionMutation = <
+      TError = unknown,
+      TContext = unknown
     >(
       client: GraphQLClient,
-      variables: TrialDeploymentsEligibilityQueryVariables,
-      options: Omit<UseInfiniteQueryOptions<TrialDeploymentsEligibilityQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<TrialDeploymentsEligibilityQuery, TError, TData>['queryKey'] },
+      options?: UseMutationOptions<UpdateSubscriptionMutation, TError, UpdateSubscriptionMutationVariables, TContext>,
       headers?: RequestInit['headers']
     ) => {
     
-    return useInfiniteQuery<TrialDeploymentsEligibilityQuery, TError, TData>(
+    return useMutation<UpdateSubscriptionMutation, TError, UpdateSubscriptionMutationVariables, TContext>(
+      {
+    mutationKey: ['UpdateSubscription'],
+    mutationFn: (variables?: UpdateSubscriptionMutationVariables) => fetcher<UpdateSubscriptionMutation, UpdateSubscriptionMutationVariables>(client, UpdateSubscriptionDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useUpdateSubscriptionMutation.getKey = () => ['UpdateSubscription'];
+useUpdateSubscriptionMutation.getRootKey = () => ['UpdateSubscription'] as const;
+useUpdateSubscriptionMutation.fetcher = (client: GraphQLClient, variables: UpdateSubscriptionMutationVariables, headers?: RequestInit['headers']) => fetcher<UpdateSubscriptionMutation, UpdateSubscriptionMutationVariables>(client, UpdateSubscriptionDocument, variables, headers);
+
+export const DeleteSubscriptionsDocument = `
+    mutation DeleteSubscriptions($subscription_ids: [SubscriptionId!]!) {
+  deleteSubscriptions(subscription_ids: $subscription_ids) {
+    id
+  }
+}
+    `;
+
+export const useDeleteSubscriptionsMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<DeleteSubscriptionsMutation, TError, DeleteSubscriptionsMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<DeleteSubscriptionsMutation, TError, DeleteSubscriptionsMutationVariables, TContext>(
+      {
+    mutationKey: ['DeleteSubscriptions'],
+    mutationFn: (variables?: DeleteSubscriptionsMutationVariables) => fetcher<DeleteSubscriptionsMutation, DeleteSubscriptionsMutationVariables>(client, DeleteSubscriptionsDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useDeleteSubscriptionsMutation.getKey = () => ['DeleteSubscriptions'];
+useDeleteSubscriptionsMutation.getRootKey = () => ['DeleteSubscriptions'] as const;
+useDeleteSubscriptionsMutation.fetcher = (client: GraphQLClient, variables: DeleteSubscriptionsMutationVariables, headers?: RequestInit['headers']) => fetcher<DeleteSubscriptionsMutation, DeleteSubscriptionsMutationVariables>(client, DeleteSubscriptionsDocument, variables, headers);
+
+export const AddSubscriptionCapabilityDocument = `
+    mutation AddSubscriptionCapability($input: AddSubscriptionCapabilityInput!) {
+  addSubscriptionCapability(input: $input) {
+    id
+  }
+}
+    `;
+
+export const useAddSubscriptionCapabilityMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<AddSubscriptionCapabilityMutation, TError, AddSubscriptionCapabilityMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<AddSubscriptionCapabilityMutation, TError, AddSubscriptionCapabilityMutationVariables, TContext>(
+      {
+    mutationKey: ['AddSubscriptionCapability'],
+    mutationFn: (variables?: AddSubscriptionCapabilityMutationVariables) => fetcher<AddSubscriptionCapabilityMutation, AddSubscriptionCapabilityMutationVariables>(client, AddSubscriptionCapabilityDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useAddSubscriptionCapabilityMutation.getKey = () => ['AddSubscriptionCapability'];
+useAddSubscriptionCapabilityMutation.getRootKey = () => ['AddSubscriptionCapability'] as const;
+useAddSubscriptionCapabilityMutation.fetcher = (client: GraphQLClient, variables: AddSubscriptionCapabilityMutationVariables, headers?: RequestInit['headers']) => fetcher<AddSubscriptionCapabilityMutation, AddSubscriptionCapabilityMutationVariables>(client, AddSubscriptionCapabilityDocument, variables, headers);
+
+export const SubscriptionsListDocument = `
+    query SubscriptionsList($count: Int!, $cursor: ID, $orderBy: SubscriptionOrdering!, $orderMode: OrderingMode!, $filters: [SubscriptionFilter!], $searchTerm: String) {
+  subscriptions(
+    first: $count
+    after: $cursor
+    orderBy: $orderBy
+    orderMode: $orderMode
+    searchTerm: $searchTerm
+    filters: $filters
+  ) {
+    totalCount
+    edges {
+      node {
+        ...SubscriptionItem
+      }
+    }
+  }
+}
+    ${SubscriptionItemFragmentDoc}`;
+
+export const useSubscriptionsListQuery = <
+      TData = SubscriptionsListQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: SubscriptionsListQueryVariables,
+      options?: Omit<UseQueryOptions<SubscriptionsListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<SubscriptionsListQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<SubscriptionsListQuery, TError, TData>(
+      {
+    queryKey: ['SubscriptionsList', variables],
+    queryFn: fetcher<SubscriptionsListQuery, SubscriptionsListQueryVariables>(client, SubscriptionsListDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSubscriptionsListQuery.getKey = (variables: SubscriptionsListQueryVariables) => ['SubscriptionsList', variables];
+useSubscriptionsListQuery.getRootKey = () => ['SubscriptionsList'] as const;
+export const useInfiniteSubscriptionsListQuery = <
+      TData = InfiniteData<SubscriptionsListQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: SubscriptionsListQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<SubscriptionsListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<SubscriptionsListQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<SubscriptionsListQuery, TError, TData>(
       (() => {
     const { queryKey: optionsQueryKey, ...restOptions } = options;
     return {
-      queryKey: optionsQueryKey ?? ['TrialDeploymentsEligibility.infinite', variables],
-      queryFn: (metaData) => fetcher<TrialDeploymentsEligibilityQuery, TrialDeploymentsEligibilityQueryVariables>(client, TrialDeploymentsEligibilityDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      queryKey: optionsQueryKey ?? ['SubscriptionsList.infinite', variables],
+      queryFn: (metaData) => fetcher<SubscriptionsListQuery, SubscriptionsListQueryVariables>(client, SubscriptionsListDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
       ...restOptions
     }
   })()
     )};
 
-useInfiniteTrialDeploymentsEligibilityQuery.getKey = (variables: TrialDeploymentsEligibilityQueryVariables) => ['TrialDeploymentsEligibility.infinite', variables];
-useInfiniteTrialDeploymentsEligibilityQuery.getRootKey = () => ['TrialDeploymentsEligibility.infinite'] as const;
-useTrialDeploymentsEligibilityQuery.fetcher = (client: GraphQLClient, variables: TrialDeploymentsEligibilityQueryVariables, headers?: RequestInit['headers']) => fetcher<TrialDeploymentsEligibilityQuery, TrialDeploymentsEligibilityQueryVariables>(client, TrialDeploymentsEligibilityDocument, variables, headers);
+useInfiniteSubscriptionsListQuery.getKey = (variables: SubscriptionsListQueryVariables) => ['SubscriptionsList.infinite', variables];
+useInfiniteSubscriptionsListQuery.getRootKey = () => ['SubscriptionsList.infinite'] as const;
+useSubscriptionsListQuery.fetcher = (client: GraphQLClient, variables: SubscriptionsListQueryVariables, headers?: RequestInit['headers']) => fetcher<SubscriptionsListQuery, SubscriptionsListQueryVariables>(client, SubscriptionsListDocument, variables, headers);
+
+export const SubscriptionByIdDocument = `
+    query SubscriptionById($subscriptionId: SubscriptionId) {
+  subscriptionById(subscription_id: $subscriptionId) {
+    id
+    organization {
+      id
+      name
+    }
+    service_instance {
+      id
+      name
+      description
+      tags
+      service_definition {
+        service_capability {
+          id
+          name
+          description
+        }
+      }
+    }
+    subscription_capability {
+      id
+      service_capability {
+        id
+        name
+        description
+      }
+    }
+  }
+}
+    `;
+
+export const useSubscriptionByIdQuery = <
+      TData = SubscriptionByIdQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables?: SubscriptionByIdQueryVariables,
+      options?: Omit<UseQueryOptions<SubscriptionByIdQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<SubscriptionByIdQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<SubscriptionByIdQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['SubscriptionById'] : ['SubscriptionById', variables],
+    queryFn: fetcher<SubscriptionByIdQuery, SubscriptionByIdQueryVariables>(client, SubscriptionByIdDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSubscriptionByIdQuery.getKey = (variables?: SubscriptionByIdQueryVariables) => variables === undefined ? ['SubscriptionById'] : ['SubscriptionById', variables];
+useSubscriptionByIdQuery.getRootKey = () => ['SubscriptionById'] as const;
+export const useInfiniteSubscriptionByIdQuery = <
+      TData = InfiniteData<SubscriptionByIdQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: SubscriptionByIdQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<SubscriptionByIdQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<SubscriptionByIdQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<SubscriptionByIdQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['SubscriptionById.infinite'] : ['SubscriptionById.infinite', variables],
+      queryFn: (metaData) => fetcher<SubscriptionByIdQuery, SubscriptionByIdQueryVariables>(client, SubscriptionByIdDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteSubscriptionByIdQuery.getKey = (variables?: SubscriptionByIdQueryVariables) => variables === undefined ? ['SubscriptionById.infinite'] : ['SubscriptionById.infinite', variables];
+useInfiniteSubscriptionByIdQuery.getRootKey = () => ['SubscriptionById.infinite'] as const;
+useSubscriptionByIdQuery.fetcher = (client: GraphQLClient, variables?: SubscriptionByIdQueryVariables, headers?: RequestInit['headers']) => fetcher<SubscriptionByIdQuery, SubscriptionByIdQueryVariables>(client, SubscriptionByIdDocument, variables, headers);
+
+export const CreateDeploymentRequestDocument = `
+    mutation CreateDeploymentRequest($input: CreateDeploymentRequestInput!) {
+  createDeploymentRequest(input: $input) {
+    id
+    service_instance_id
+  }
+}
+    `;
+
+export const useCreateDeploymentRequestMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<CreateDeploymentRequestMutation, TError, CreateDeploymentRequestMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<CreateDeploymentRequestMutation, TError, CreateDeploymentRequestMutationVariables, TContext>(
+      {
+    mutationKey: ['CreateDeploymentRequest'],
+    mutationFn: (variables?: CreateDeploymentRequestMutationVariables) => fetcher<CreateDeploymentRequestMutation, CreateDeploymentRequestMutationVariables>(client, CreateDeploymentRequestDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useCreateDeploymentRequestMutation.getKey = () => ['CreateDeploymentRequest'];
+useCreateDeploymentRequestMutation.getRootKey = () => ['CreateDeploymentRequest'] as const;
+useCreateDeploymentRequestMutation.fetcher = (client: GraphQLClient, variables: CreateDeploymentRequestMutationVariables, headers?: RequestInit['headers']) => fetcher<CreateDeploymentRequestMutation, CreateDeploymentRequestMutationVariables>(client, CreateDeploymentRequestDocument, variables, headers);
+
+export const GiveDeploymentFeedbackDocument = `
+    mutation GiveDeploymentFeedback($input: GiveDeploymentFeedbackInput!) {
+  giveDeploymentFeedback(input: $input) {
+    success
+  }
+}
+    `;
+
+export const useGiveDeploymentFeedbackMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<GiveDeploymentFeedbackMutation, TError, GiveDeploymentFeedbackMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<GiveDeploymentFeedbackMutation, TError, GiveDeploymentFeedbackMutationVariables, TContext>(
+      {
+    mutationKey: ['GiveDeploymentFeedback'],
+    mutationFn: (variables?: GiveDeploymentFeedbackMutationVariables) => fetcher<GiveDeploymentFeedbackMutation, GiveDeploymentFeedbackMutationVariables>(client, GiveDeploymentFeedbackDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useGiveDeploymentFeedbackMutation.getKey = () => ['GiveDeploymentFeedback'];
+useGiveDeploymentFeedbackMutation.getRootKey = () => ['GiveDeploymentFeedback'] as const;
+useGiveDeploymentFeedbackMutation.fetcher = (client: GraphQLClient, variables: GiveDeploymentFeedbackMutationVariables, headers?: RequestInit['headers']) => fetcher<GiveDeploymentFeedbackMutation, GiveDeploymentFeedbackMutationVariables>(client, GiveDeploymentFeedbackDocument, variables, headers);
+
+export const ReachSalesDocument = `
+    mutation ReachSales($message: String, $deploymentRequestType: DeploymentRequestDeploymentType) {
+  contactUs(message: $message, deploymentRequestType: $deploymentRequestType) {
+    success
+  }
+}
+    `;
+
+export const useReachSalesMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<ReachSalesMutation, TError, ReachSalesMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<ReachSalesMutation, TError, ReachSalesMutationVariables, TContext>(
+      {
+    mutationKey: ['ReachSales'],
+    mutationFn: (variables?: ReachSalesMutationVariables) => fetcher<ReachSalesMutation, ReachSalesMutationVariables>(client, ReachSalesDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useReachSalesMutation.getKey = () => ['ReachSales'];
+useReachSalesMutation.getRootKey = () => ['ReachSales'] as const;
+useReachSalesMutation.fetcher = (client: GraphQLClient, variables?: ReachSalesMutationVariables, headers?: RequestInit['headers']) => fetcher<ReachSalesMutation, ReachSalesMutationVariables>(client, ReachSalesDocument, variables, headers);
+
+export const ReachSalesAboutPlatformDocument = `
+    mutation ReachSalesAboutPlatform($message: String, $platformId: ID, $platformIdentifier: PlatformIdentifier) {
+  contactUs(
+    message: $message
+    platformId: $platformId
+    platformIdentifier: $platformIdentifier
+  ) {
+    success
+  }
+}
+    `;
+
+export const useReachSalesAboutPlatformMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<ReachSalesAboutPlatformMutation, TError, ReachSalesAboutPlatformMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<ReachSalesAboutPlatformMutation, TError, ReachSalesAboutPlatformMutationVariables, TContext>(
+      {
+    mutationKey: ['ReachSalesAboutPlatform'],
+    mutationFn: (variables?: ReachSalesAboutPlatformMutationVariables) => fetcher<ReachSalesAboutPlatformMutation, ReachSalesAboutPlatformMutationVariables>(client, ReachSalesAboutPlatformDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useReachSalesAboutPlatformMutation.getKey = () => ['ReachSalesAboutPlatform'];
+useReachSalesAboutPlatformMutation.getRootKey = () => ['ReachSalesAboutPlatform'] as const;
+useReachSalesAboutPlatformMutation.fetcher = (client: GraphQLClient, variables?: ReachSalesAboutPlatformMutationVariables, headers?: RequestInit['headers']) => fetcher<ReachSalesAboutPlatformMutation, ReachSalesAboutPlatformMutationVariables>(client, ReachSalesAboutPlatformDocument, variables, headers);
+
+export const PlatformTrialStatusDocument = `
+    query PlatformTrialStatus($organizationId: OrganizationId!) {
+  platformTrialStatus(organizationId: $organizationId) {
+    deploymentRequestId
+    isBlacklisted
+    hub_status
+    end_date
+  }
+}
+    `;
+
+export const usePlatformTrialStatusQuery = <
+      TData = PlatformTrialStatusQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: PlatformTrialStatusQueryVariables,
+      options?: Omit<UseQueryOptions<PlatformTrialStatusQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<PlatformTrialStatusQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<PlatformTrialStatusQuery, TError, TData>(
+      {
+    queryKey: ['PlatformTrialStatus', variables],
+    queryFn: fetcher<PlatformTrialStatusQuery, PlatformTrialStatusQueryVariables>(client, PlatformTrialStatusDocument, variables, headers),
+    ...options
+  }
+    )};
+
+usePlatformTrialStatusQuery.getKey = (variables: PlatformTrialStatusQueryVariables) => ['PlatformTrialStatus', variables];
+usePlatformTrialStatusQuery.getRootKey = () => ['PlatformTrialStatus'] as const;
+export const useInfinitePlatformTrialStatusQuery = <
+      TData = InfiniteData<PlatformTrialStatusQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: PlatformTrialStatusQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<PlatformTrialStatusQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<PlatformTrialStatusQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<PlatformTrialStatusQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['PlatformTrialStatus.infinite', variables],
+      queryFn: (metaData) => fetcher<PlatformTrialStatusQuery, PlatformTrialStatusQueryVariables>(client, PlatformTrialStatusDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfinitePlatformTrialStatusQuery.getKey = (variables: PlatformTrialStatusQueryVariables) => ['PlatformTrialStatus.infinite', variables];
+useInfinitePlatformTrialStatusQuery.getRootKey = () => ['PlatformTrialStatus.infinite'] as const;
+usePlatformTrialStatusQuery.fetcher = (client: GraphQLClient, variables: PlatformTrialStatusQueryVariables, headers?: RequestInit['headers']) => fetcher<PlatformTrialStatusQuery, PlatformTrialStatusQueryVariables>(client, PlatformTrialStatusDocument, variables, headers);
 
 export const UseCaseAddDocument = `
     mutation UseCaseAdd($input: AddUseCaseInput!) {
@@ -4213,6 +11771,1286 @@ useInfiniteUseCasesListQuery.getKey = (variables: UseCasesListQueryVariables) =>
 useInfiniteUseCasesListQuery.getRootKey = () => ['UseCasesList.infinite'] as const;
 useUseCasesListQuery.fetcher = (client: GraphQLClient, variables: UseCasesListQueryVariables, headers?: RequestInit['headers']) => fetcher<UseCasesListQuery, UseCasesListQueryVariables>(client, UseCasesListDocument, variables, headers);
 
+export const AddUserServiceDocument = `
+    mutation AddUserService($input: UserServiceAddInput!, $service_instance_id: ServiceInstanceId!) {
+  addUserService(input: $input, service_instance_id: $service_instance_id) {
+    id
+  }
+}
+    `;
+
+export const useAddUserServiceMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<AddUserServiceMutation, TError, AddUserServiceMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<AddUserServiceMutation, TError, AddUserServiceMutationVariables, TContext>(
+      {
+    mutationKey: ['AddUserService'],
+    mutationFn: (variables?: AddUserServiceMutationVariables) => fetcher<AddUserServiceMutation, AddUserServiceMutationVariables>(client, AddUserServiceDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useAddUserServiceMutation.getKey = () => ['AddUserService'];
+useAddUserServiceMutation.getRootKey = () => ['AddUserService'] as const;
+useAddUserServiceMutation.fetcher = (client: GraphQLClient, variables: AddUserServiceMutationVariables, headers?: RequestInit['headers']) => fetcher<AddUserServiceMutation, AddUserServiceMutationVariables>(client, AddUserServiceDocument, variables, headers);
+
+export const EditUserServiceDocument = `
+    mutation EditUserService($input: UserServiceEditInput!, $service_instance_id: ServiceInstanceId!) {
+  editUserService(input: $input, service_instance_id: $service_instance_id) {
+    id
+  }
+}
+    `;
+
+export const useEditUserServiceMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<EditUserServiceMutation, TError, EditUserServiceMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<EditUserServiceMutation, TError, EditUserServiceMutationVariables, TContext>(
+      {
+    mutationKey: ['EditUserService'],
+    mutationFn: (variables?: EditUserServiceMutationVariables) => fetcher<EditUserServiceMutation, EditUserServiceMutationVariables>(client, EditUserServiceDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useEditUserServiceMutation.getKey = () => ['EditUserService'];
+useEditUserServiceMutation.getRootKey = () => ['EditUserService'] as const;
+useEditUserServiceMutation.fetcher = (client: GraphQLClient, variables: EditUserServiceMutationVariables, headers?: RequestInit['headers']) => fetcher<EditUserServiceMutation, EditUserServiceMutationVariables>(client, EditUserServiceDocument, variables, headers);
+
+export const DeleteUserServicesDocument = `
+    mutation DeleteUserServices($input: UserServicesDeleteInput!, $service_instance_id: ServiceInstanceId!) {
+  deleteUserServices(input: $input, service_instance_id: $service_instance_id) {
+    id
+  }
+}
+    `;
+
+export const useDeleteUserServicesMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<DeleteUserServicesMutation, TError, DeleteUserServicesMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<DeleteUserServicesMutation, TError, DeleteUserServicesMutationVariables, TContext>(
+      {
+    mutationKey: ['DeleteUserServices'],
+    mutationFn: (variables?: DeleteUserServicesMutationVariables) => fetcher<DeleteUserServicesMutation, DeleteUserServicesMutationVariables>(client, DeleteUserServicesDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useDeleteUserServicesMutation.getKey = () => ['DeleteUserServices'];
+useDeleteUserServicesMutation.getRootKey = () => ['DeleteUserServices'] as const;
+useDeleteUserServicesMutation.fetcher = (client: GraphQLClient, variables: DeleteUserServicesMutationVariables, headers?: RequestInit['headers']) => fetcher<DeleteUserServicesMutation, DeleteUserServicesMutationVariables>(client, DeleteUserServicesDocument, variables, headers);
+
+export const AddCapabilitiesToUserServicesDocument = `
+    mutation AddCapabilitiesToUserServices($input: UserServicesAddCapabilitiesInput!, $service_instance_id: ServiceInstanceId!) {
+  addCapabilitiesToUserServices(
+    input: $input
+    service_instance_id: $service_instance_id
+  ) {
+    id
+  }
+}
+    `;
+
+export const useAddCapabilitiesToUserServicesMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<AddCapabilitiesToUserServicesMutation, TError, AddCapabilitiesToUserServicesMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<AddCapabilitiesToUserServicesMutation, TError, AddCapabilitiesToUserServicesMutationVariables, TContext>(
+      {
+    mutationKey: ['AddCapabilitiesToUserServices'],
+    mutationFn: (variables?: AddCapabilitiesToUserServicesMutationVariables) => fetcher<AddCapabilitiesToUserServicesMutation, AddCapabilitiesToUserServicesMutationVariables>(client, AddCapabilitiesToUserServicesDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useAddCapabilitiesToUserServicesMutation.getKey = () => ['AddCapabilitiesToUserServices'];
+useAddCapabilitiesToUserServicesMutation.getRootKey = () => ['AddCapabilitiesToUserServices'] as const;
+useAddCapabilitiesToUserServicesMutation.fetcher = (client: GraphQLClient, variables: AddCapabilitiesToUserServicesMutationVariables, headers?: RequestInit['headers']) => fetcher<AddCapabilitiesToUserServicesMutation, AddCapabilitiesToUserServicesMutationVariables>(client, AddCapabilitiesToUserServicesDocument, variables, headers);
+
+export const UserServicesFromSubscriptionDocument = `
+    query UserServicesFromSubscription($count: Int!, $cursor: ID, $orderBy: UserServiceOrdering!, $orderMode: OrderingMode!, $subscriptionId: SubscriptionId!) {
+  userServiceFromSubscription(
+    first: $count
+    after: $cursor
+    orderBy: $orderBy
+    orderMode: $orderMode
+    subscription_id: $subscriptionId
+  ) {
+    totalCount
+    edges {
+      node {
+        ...UserServiceItem
+      }
+    }
+  }
+}
+    ${UserServiceItemFragmentDoc}`;
+
+export const useUserServicesFromSubscriptionQuery = <
+      TData = UserServicesFromSubscriptionQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: UserServicesFromSubscriptionQueryVariables,
+      options?: Omit<UseQueryOptions<UserServicesFromSubscriptionQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<UserServicesFromSubscriptionQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<UserServicesFromSubscriptionQuery, TError, TData>(
+      {
+    queryKey: ['UserServicesFromSubscription', variables],
+    queryFn: fetcher<UserServicesFromSubscriptionQuery, UserServicesFromSubscriptionQueryVariables>(client, UserServicesFromSubscriptionDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useUserServicesFromSubscriptionQuery.getKey = (variables: UserServicesFromSubscriptionQueryVariables) => ['UserServicesFromSubscription', variables];
+useUserServicesFromSubscriptionQuery.getRootKey = () => ['UserServicesFromSubscription'] as const;
+export const useInfiniteUserServicesFromSubscriptionQuery = <
+      TData = InfiniteData<UserServicesFromSubscriptionQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: UserServicesFromSubscriptionQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<UserServicesFromSubscriptionQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<UserServicesFromSubscriptionQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<UserServicesFromSubscriptionQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['UserServicesFromSubscription.infinite', variables],
+      queryFn: (metaData) => fetcher<UserServicesFromSubscriptionQuery, UserServicesFromSubscriptionQueryVariables>(client, UserServicesFromSubscriptionDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteUserServicesFromSubscriptionQuery.getKey = (variables: UserServicesFromSubscriptionQueryVariables) => ['UserServicesFromSubscription.infinite', variables];
+useInfiniteUserServicesFromSubscriptionQuery.getRootKey = () => ['UserServicesFromSubscription.infinite'] as const;
+useUserServicesFromSubscriptionQuery.fetcher = (client: GraphQLClient, variables: UserServicesFromSubscriptionQueryVariables, headers?: RequestInit['headers']) => fetcher<UserServicesFromSubscriptionQuery, UserServicesFromSubscriptionQueryVariables>(client, UserServicesFromSubscriptionDocument, variables, headers);
+
+export const UserDeleteDocument = `
+    mutation UserDelete($id: ID!) {
+  deleteUser(id: $id) {
+    id
+  }
+}
+    `;
+
+export const useUserDeleteMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<UserDeleteMutation, TError, UserDeleteMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<UserDeleteMutation, TError, UserDeleteMutationVariables, TContext>(
+      {
+    mutationKey: ['UserDelete'],
+    mutationFn: (variables?: UserDeleteMutationVariables) => fetcher<UserDeleteMutation, UserDeleteMutationVariables>(client, UserDeleteDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useUserDeleteMutation.getKey = () => ['UserDelete'];
+useUserDeleteMutation.getRootKey = () => ['UserDelete'] as const;
+useUserDeleteMutation.fetcher = (client: GraphQLClient, variables: UserDeleteMutationVariables, headers?: RequestInit['headers']) => fetcher<UserDeleteMutation, UserDeleteMutationVariables>(client, UserDeleteDocument, variables, headers);
+
+export const ChangeSelectedOrganizationDocument = `
+    mutation ChangeSelectedOrganization($organization_id: OrganizationId!) {
+  changeSelectedOrganization(organization_id: $organization_id) {
+    id
+    selected_organization_id
+    selected_org_capabilities
+  }
+}
+    `;
+
+export const useChangeSelectedOrganizationMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<ChangeSelectedOrganizationMutation, TError, ChangeSelectedOrganizationMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<ChangeSelectedOrganizationMutation, TError, ChangeSelectedOrganizationMutationVariables, TContext>(
+      {
+    mutationKey: ['ChangeSelectedOrganization'],
+    mutationFn: (variables?: ChangeSelectedOrganizationMutationVariables) => fetcher<ChangeSelectedOrganizationMutation, ChangeSelectedOrganizationMutationVariables>(client, ChangeSelectedOrganizationDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useChangeSelectedOrganizationMutation.getKey = () => ['ChangeSelectedOrganization'];
+useChangeSelectedOrganizationMutation.getRootKey = () => ['ChangeSelectedOrganization'] as const;
+useChangeSelectedOrganizationMutation.fetcher = (client: GraphQLClient, variables: ChangeSelectedOrganizationMutationVariables, headers?: RequestInit['headers']) => fetcher<ChangeSelectedOrganizationMutation, ChangeSelectedOrganizationMutationVariables>(client, ChangeSelectedOrganizationDocument, variables, headers);
+
+export const UserResendInviteDocument = `
+    mutation UserResendInvite($input: AddUserInput!) {
+  addUser(input: $input) {
+    id
+  }
+}
+    `;
+
+export const useUserResendInviteMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<UserResendInviteMutation, TError, UserResendInviteMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<UserResendInviteMutation, TError, UserResendInviteMutationVariables, TContext>(
+      {
+    mutationKey: ['UserResendInvite'],
+    mutationFn: (variables?: UserResendInviteMutationVariables) => fetcher<UserResendInviteMutation, UserResendInviteMutationVariables>(client, UserResendInviteDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useUserResendInviteMutation.getKey = () => ['UserResendInvite'];
+useUserResendInviteMutation.getRootKey = () => ['UserResendInvite'] as const;
+useUserResendInviteMutation.fetcher = (client: GraphQLClient, variables: UserResendInviteMutationVariables, headers?: RequestInit['headers']) => fetcher<UserResendInviteMutation, UserResendInviteMutationVariables>(client, UserResendInviteDocument, variables, headers);
+
+export const UserAdminResendInviteDocument = `
+    mutation UserAdminResendInvite($input: AdminAddUserInput!) {
+  adminAddUser(input: $input) {
+    id
+  }
+}
+    `;
+
+export const useUserAdminResendInviteMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<UserAdminResendInviteMutation, TError, UserAdminResendInviteMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<UserAdminResendInviteMutation, TError, UserAdminResendInviteMutationVariables, TContext>(
+      {
+    mutationKey: ['UserAdminResendInvite'],
+    mutationFn: (variables?: UserAdminResendInviteMutationVariables) => fetcher<UserAdminResendInviteMutation, UserAdminResendInviteMutationVariables>(client, UserAdminResendInviteDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useUserAdminResendInviteMutation.getKey = () => ['UserAdminResendInvite'];
+useUserAdminResendInviteMutation.getRootKey = () => ['UserAdminResendInvite'] as const;
+useUserAdminResendInviteMutation.fetcher = (client: GraphQLClient, variables: UserAdminResendInviteMutationVariables, headers?: RequestInit['headers']) => fetcher<UserAdminResendInviteMutation, UserAdminResendInviteMutationVariables>(client, UserAdminResendInviteDocument, variables, headers);
+
+export const PendingUserAcceptDocument = `
+    mutation PendingUserAccept($user_id: UserId!, $organization_id: OrganizationId!) {
+  acceptPendingUserInOrganization(
+    user_id: $user_id
+    organization_id: $organization_id
+  ) {
+    id
+  }
+}
+    `;
+
+export const usePendingUserAcceptMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<PendingUserAcceptMutation, TError, PendingUserAcceptMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<PendingUserAcceptMutation, TError, PendingUserAcceptMutationVariables, TContext>(
+      {
+    mutationKey: ['PendingUserAccept'],
+    mutationFn: (variables?: PendingUserAcceptMutationVariables) => fetcher<PendingUserAcceptMutation, PendingUserAcceptMutationVariables>(client, PendingUserAcceptDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+usePendingUserAcceptMutation.getKey = () => ['PendingUserAccept'];
+usePendingUserAcceptMutation.getRootKey = () => ['PendingUserAccept'] as const;
+usePendingUserAcceptMutation.fetcher = (client: GraphQLClient, variables: PendingUserAcceptMutationVariables, headers?: RequestInit['headers']) => fetcher<PendingUserAcceptMutation, PendingUserAcceptMutationVariables>(client, PendingUserAcceptDocument, variables, headers);
+
+export const PendingUserRemoveDocument = `
+    mutation PendingUserRemove($user_id: UserId!, $organization_id: OrganizationId!) {
+  removePendingUserFromOrganization(
+    user_id: $user_id
+    organization_id: $organization_id
+  ) {
+    id
+  }
+}
+    `;
+
+export const usePendingUserRemoveMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<PendingUserRemoveMutation, TError, PendingUserRemoveMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<PendingUserRemoveMutation, TError, PendingUserRemoveMutationVariables, TContext>(
+      {
+    mutationKey: ['PendingUserRemove'],
+    mutationFn: (variables?: PendingUserRemoveMutationVariables) => fetcher<PendingUserRemoveMutation, PendingUserRemoveMutationVariables>(client, PendingUserRemoveDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+usePendingUserRemoveMutation.getKey = () => ['PendingUserRemove'];
+usePendingUserRemoveMutation.getRootKey = () => ['PendingUserRemove'] as const;
+usePendingUserRemoveMutation.fetcher = (client: GraphQLClient, variables: PendingUserRemoveMutationVariables, headers?: RequestInit['headers']) => fetcher<PendingUserRemoveMutation, PendingUserRemoveMutationVariables>(client, PendingUserRemoveDocument, variables, headers);
+
+export const PendingUsersBulkAcceptDocument = `
+    mutation PendingUsersBulkAccept($ids: [UserId!], $searchTerm: String, $filters: [Filter!], $excludedIds: [UserId!]) {
+  bulkAcceptPendingUserInOrganization(
+    input: {ids: $ids, searchTerm: $searchTerm, filters: $filters, excludedIds: $excludedIds}
+  ) {
+    success
+  }
+}
+    `;
+
+export const usePendingUsersBulkAcceptMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<PendingUsersBulkAcceptMutation, TError, PendingUsersBulkAcceptMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<PendingUsersBulkAcceptMutation, TError, PendingUsersBulkAcceptMutationVariables, TContext>(
+      {
+    mutationKey: ['PendingUsersBulkAccept'],
+    mutationFn: (variables?: PendingUsersBulkAcceptMutationVariables) => fetcher<PendingUsersBulkAcceptMutation, PendingUsersBulkAcceptMutationVariables>(client, PendingUsersBulkAcceptDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+usePendingUsersBulkAcceptMutation.getKey = () => ['PendingUsersBulkAccept'];
+usePendingUsersBulkAcceptMutation.getRootKey = () => ['PendingUsersBulkAccept'] as const;
+usePendingUsersBulkAcceptMutation.fetcher = (client: GraphQLClient, variables?: PendingUsersBulkAcceptMutationVariables, headers?: RequestInit['headers']) => fetcher<PendingUsersBulkAcceptMutation, PendingUsersBulkAcceptMutationVariables>(client, PendingUsersBulkAcceptDocument, variables, headers);
+
+export const PendingUsersBulkRemoveDocument = `
+    mutation PendingUsersBulkRemove($ids: [UserId!], $searchTerm: String, $filters: [Filter!], $excludedIds: [UserId!]) {
+  bulkRemovePendingUserFromOrganization(
+    input: {ids: $ids, searchTerm: $searchTerm, filters: $filters, excludedIds: $excludedIds}
+  ) {
+    success
+  }
+}
+    `;
+
+export const usePendingUsersBulkRemoveMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<PendingUsersBulkRemoveMutation, TError, PendingUsersBulkRemoveMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<PendingUsersBulkRemoveMutation, TError, PendingUsersBulkRemoveMutationVariables, TContext>(
+      {
+    mutationKey: ['PendingUsersBulkRemove'],
+    mutationFn: (variables?: PendingUsersBulkRemoveMutationVariables) => fetcher<PendingUsersBulkRemoveMutation, PendingUsersBulkRemoveMutationVariables>(client, PendingUsersBulkRemoveDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+usePendingUsersBulkRemoveMutation.getKey = () => ['PendingUsersBulkRemove'];
+usePendingUsersBulkRemoveMutation.getRootKey = () => ['PendingUsersBulkRemove'] as const;
+usePendingUsersBulkRemoveMutation.fetcher = (client: GraphQLClient, variables?: PendingUsersBulkRemoveMutationVariables, headers?: RequestInit['headers']) => fetcher<PendingUsersBulkRemoveMutation, PendingUsersBulkRemoveMutationVariables>(client, PendingUsersBulkRemoveDocument, variables, headers);
+
+export const UserCapabilitiesEditDocument = `
+    mutation UserCapabilitiesEdit($id: ID!, $input: EditUserCapabilitiesInput!) {
+  editUserCapabilities(id: $id, input: $input) {
+    id
+  }
+}
+    `;
+
+export const useUserCapabilitiesEditMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<UserCapabilitiesEditMutation, TError, UserCapabilitiesEditMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<UserCapabilitiesEditMutation, TError, UserCapabilitiesEditMutationVariables, TContext>(
+      {
+    mutationKey: ['UserCapabilitiesEdit'],
+    mutationFn: (variables?: UserCapabilitiesEditMutationVariables) => fetcher<UserCapabilitiesEditMutation, UserCapabilitiesEditMutationVariables>(client, UserCapabilitiesEditDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useUserCapabilitiesEditMutation.getKey = () => ['UserCapabilitiesEdit'];
+useUserCapabilitiesEditMutation.getRootKey = () => ['UserCapabilitiesEdit'] as const;
+useUserCapabilitiesEditMutation.fetcher = (client: GraphQLClient, variables: UserCapabilitiesEditMutationVariables, headers?: RequestInit['headers']) => fetcher<UserCapabilitiesEditMutation, UserCapabilitiesEditMutationVariables>(client, UserCapabilitiesEditDocument, variables, headers);
+
+export const UserAdminEditDocument = `
+    mutation UserAdminEdit($id: ID!, $input: AdminEditUserInput!) {
+  adminEditUser(id: $id, input: $input) {
+    id
+  }
+}
+    `;
+
+export const useUserAdminEditMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<UserAdminEditMutation, TError, UserAdminEditMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<UserAdminEditMutation, TError, UserAdminEditMutationVariables, TContext>(
+      {
+    mutationKey: ['UserAdminEdit'],
+    mutationFn: (variables?: UserAdminEditMutationVariables) => fetcher<UserAdminEditMutation, UserAdminEditMutationVariables>(client, UserAdminEditDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useUserAdminEditMutation.getKey = () => ['UserAdminEdit'];
+useUserAdminEditMutation.getRootKey = () => ['UserAdminEdit'] as const;
+useUserAdminEditMutation.fetcher = (client: GraphQLClient, variables: UserAdminEditMutationVariables, headers?: RequestInit['headers']) => fetcher<UserAdminEditMutation, UserAdminEditMutationVariables>(client, UserAdminEditDocument, variables, headers);
+
+export const UserOrganizationRemoveDocument = `
+    mutation UserOrganizationRemove($user_id: UserId!, $organization_id: OrganizationId!) {
+  removeUserFromOrganization(user_id: $user_id, organization_id: $organization_id) {
+    id
+  }
+}
+    `;
+
+export const useUserOrganizationRemoveMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<UserOrganizationRemoveMutation, TError, UserOrganizationRemoveMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<UserOrganizationRemoveMutation, TError, UserOrganizationRemoveMutationVariables, TContext>(
+      {
+    mutationKey: ['UserOrganizationRemove'],
+    mutationFn: (variables?: UserOrganizationRemoveMutationVariables) => fetcher<UserOrganizationRemoveMutation, UserOrganizationRemoveMutationVariables>(client, UserOrganizationRemoveDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useUserOrganizationRemoveMutation.getKey = () => ['UserOrganizationRemove'];
+useUserOrganizationRemoveMutation.getRootKey = () => ['UserOrganizationRemove'] as const;
+useUserOrganizationRemoveMutation.fetcher = (client: GraphQLClient, variables: UserOrganizationRemoveMutationVariables, headers?: RequestInit['headers']) => fetcher<UserOrganizationRemoveMutation, UserOrganizationRemoveMutationVariables>(client, UserOrganizationRemoveDocument, variables, headers);
+
+export const PendingUserEventsDocument = `
+    subscription PendingUserEvents($organizationId: ID!) {
+  UserPending(organizationId: $organizationId) {
+    delete {
+      id
+    }
+    invalidate {
+      id
+    }
+  }
+}
+    `;
+export const OrganizationUserEventsDocument = `
+    subscription OrganizationUserEvents($organizationId: ID!) {
+  User(organizationId: $organizationId) {
+    add {
+      id
+    }
+  }
+}
+    `;
+export const AdminUserEventsDocument = `
+    subscription AdminUserEvents {
+  AdminUser {
+    add {
+      id
+    }
+  }
+}
+    `;
+export const UsersWithCapabilitiesInOrganizationDocument = `
+    query UsersWithCapabilitiesInOrganization($input: UsersWithCapabilitiesInOrganizationInput!) {
+  usersWithCapabilitiesInOrganization(input: $input) {
+    id
+    email
+    first_name
+    last_name
+  }
+}
+    `;
+
+export const useUsersWithCapabilitiesInOrganizationQuery = <
+      TData = UsersWithCapabilitiesInOrganizationQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: UsersWithCapabilitiesInOrganizationQueryVariables,
+      options?: Omit<UseQueryOptions<UsersWithCapabilitiesInOrganizationQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<UsersWithCapabilitiesInOrganizationQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<UsersWithCapabilitiesInOrganizationQuery, TError, TData>(
+      {
+    queryKey: ['UsersWithCapabilitiesInOrganization', variables],
+    queryFn: fetcher<UsersWithCapabilitiesInOrganizationQuery, UsersWithCapabilitiesInOrganizationQueryVariables>(client, UsersWithCapabilitiesInOrganizationDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useUsersWithCapabilitiesInOrganizationQuery.getKey = (variables: UsersWithCapabilitiesInOrganizationQueryVariables) => ['UsersWithCapabilitiesInOrganization', variables];
+useUsersWithCapabilitiesInOrganizationQuery.getRootKey = () => ['UsersWithCapabilitiesInOrganization'] as const;
+export const useInfiniteUsersWithCapabilitiesInOrganizationQuery = <
+      TData = InfiniteData<UsersWithCapabilitiesInOrganizationQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: UsersWithCapabilitiesInOrganizationQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<UsersWithCapabilitiesInOrganizationQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<UsersWithCapabilitiesInOrganizationQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<UsersWithCapabilitiesInOrganizationQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['UsersWithCapabilitiesInOrganization.infinite', variables],
+      queryFn: (metaData) => fetcher<UsersWithCapabilitiesInOrganizationQuery, UsersWithCapabilitiesInOrganizationQueryVariables>(client, UsersWithCapabilitiesInOrganizationDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteUsersWithCapabilitiesInOrganizationQuery.getKey = (variables: UsersWithCapabilitiesInOrganizationQueryVariables) => ['UsersWithCapabilitiesInOrganization.infinite', variables];
+useInfiniteUsersWithCapabilitiesInOrganizationQuery.getRootKey = () => ['UsersWithCapabilitiesInOrganization.infinite'] as const;
+useUsersWithCapabilitiesInOrganizationQuery.fetcher = (client: GraphQLClient, variables: UsersWithCapabilitiesInOrganizationQueryVariables, headers?: RequestInit['headers']) => fetcher<UsersWithCapabilitiesInOrganizationQuery, UsersWithCapabilitiesInOrganizationQueryVariables>(client, UsersWithCapabilitiesInOrganizationDocument, variables, headers);
+
+export const UsersDocument = `
+    query Users($first: Int!, $orderBy: UserOrdering!, $orderMode: OrderingMode!, $filters: [Filter!], $searchTerm: String) {
+  users(
+    first: $first
+    orderBy: $orderBy
+    orderMode: $orderMode
+    filters: $filters
+    searchTerm: $searchTerm
+  ) {
+    edges {
+      node {
+        id
+        email
+        status
+      }
+    }
+  }
+}
+    `;
+
+export const useUsersQuery = <
+      TData = UsersQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: UsersQueryVariables,
+      options?: Omit<UseQueryOptions<UsersQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<UsersQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<UsersQuery, TError, TData>(
+      {
+    queryKey: ['Users', variables],
+    queryFn: fetcher<UsersQuery, UsersQueryVariables>(client, UsersDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useUsersQuery.getKey = (variables: UsersQueryVariables) => ['Users', variables];
+useUsersQuery.getRootKey = () => ['Users'] as const;
+export const useInfiniteUsersQuery = <
+      TData = InfiniteData<UsersQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: UsersQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<UsersQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<UsersQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<UsersQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['Users.infinite', variables],
+      queryFn: (metaData) => fetcher<UsersQuery, UsersQueryVariables>(client, UsersDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteUsersQuery.getKey = (variables: UsersQueryVariables) => ['Users.infinite', variables];
+useInfiniteUsersQuery.getRootKey = () => ['Users.infinite'] as const;
+useUsersQuery.fetcher = (client: GraphQLClient, variables: UsersQueryVariables, headers?: RequestInit['headers']) => fetcher<UsersQuery, UsersQueryVariables>(client, UsersDocument, variables, headers);
+
+export const PendingUsersDocument = `
+    query PendingUsers($first: Int!, $after: ID, $orderBy: UserOrdering!, $orderMode: OrderingMode!, $filters: [Filter!], $searchTerm: String) {
+  pendingUsers(
+    first: $first
+    after: $after
+    orderBy: $orderBy
+    orderMode: $orderMode
+    filters: $filters
+    searchTerm: $searchTerm
+  ) {
+    totalCount
+    edges {
+      node {
+        id
+        email
+        first_name
+        last_name
+      }
+    }
+  }
+}
+    `;
+
+export const usePendingUsersQuery = <
+      TData = PendingUsersQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: PendingUsersQueryVariables,
+      options?: Omit<UseQueryOptions<PendingUsersQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<PendingUsersQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<PendingUsersQuery, TError, TData>(
+      {
+    queryKey: ['PendingUsers', variables],
+    queryFn: fetcher<PendingUsersQuery, PendingUsersQueryVariables>(client, PendingUsersDocument, variables, headers),
+    ...options
+  }
+    )};
+
+usePendingUsersQuery.getKey = (variables: PendingUsersQueryVariables) => ['PendingUsers', variables];
+usePendingUsersQuery.getRootKey = () => ['PendingUsers'] as const;
+export const useInfinitePendingUsersQuery = <
+      TData = InfiniteData<PendingUsersQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: PendingUsersQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<PendingUsersQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<PendingUsersQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<PendingUsersQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['PendingUsers.infinite', variables],
+      queryFn: (metaData) => fetcher<PendingUsersQuery, PendingUsersQueryVariables>(client, PendingUsersDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfinitePendingUsersQuery.getKey = (variables: PendingUsersQueryVariables) => ['PendingUsers.infinite', variables];
+useInfinitePendingUsersQuery.getRootKey = () => ['PendingUsers.infinite'] as const;
+usePendingUsersQuery.fetcher = (client: GraphQLClient, variables: PendingUsersQueryVariables, headers?: RequestInit['headers']) => fetcher<PendingUsersQuery, PendingUsersQueryVariables>(client, PendingUsersDocument, variables, headers);
+
+export const UsersListDocument = `
+    query UsersList($first: Int!, $after: ID, $orderBy: UserOrdering!, $orderMode: OrderingMode!, $filters: [Filter!], $searchTerm: String) {
+  users(
+    first: $first
+    after: $after
+    orderBy: $orderBy
+    orderMode: $orderMode
+    filters: $filters
+    searchTerm: $searchTerm
+  ) {
+    totalCount
+    edges {
+      node {
+        id
+        email
+        last_name
+        first_name
+        disabled
+        last_login
+        country
+        status
+        invitation_date
+        organization_capabilities {
+          id
+          organization {
+            id
+            name
+            personal_space
+          }
+          capabilities
+        }
+      }
+    }
+  }
+}
+    `;
+
+export const useUsersListQuery = <
+      TData = UsersListQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: UsersListQueryVariables,
+      options?: Omit<UseQueryOptions<UsersListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<UsersListQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<UsersListQuery, TError, TData>(
+      {
+    queryKey: ['UsersList', variables],
+    queryFn: fetcher<UsersListQuery, UsersListQueryVariables>(client, UsersListDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useUsersListQuery.getKey = (variables: UsersListQueryVariables) => ['UsersList', variables];
+useUsersListQuery.getRootKey = () => ['UsersList'] as const;
+export const useInfiniteUsersListQuery = <
+      TData = InfiniteData<UsersListQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: UsersListQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<UsersListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<UsersListQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<UsersListQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['UsersList.infinite', variables],
+      queryFn: (metaData) => fetcher<UsersListQuery, UsersListQueryVariables>(client, UsersListDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteUsersListQuery.getKey = (variables: UsersListQueryVariables) => ['UsersList.infinite', variables];
+useInfiniteUsersListQuery.getRootKey = () => ['UsersList.infinite'] as const;
+useUsersListQuery.fetcher = (client: GraphQLClient, variables: UsersListQueryVariables, headers?: RequestInit['headers']) => fetcher<UsersListQuery, UsersListQueryVariables>(client, UsersListDocument, variables, headers);
+
+export const VotingRoundCreateDocument = `
+    mutation VotingRoundCreate($input: CreateVotingRoundInput!) {
+  createVotingRound(input: $input) {
+    ...VotingRoundRow
+  }
+}
+    ${VotingRoundRowFragmentDoc}`;
+
+export const useVotingRoundCreateMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<VotingRoundCreateMutation, TError, VotingRoundCreateMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<VotingRoundCreateMutation, TError, VotingRoundCreateMutationVariables, TContext>(
+      {
+    mutationKey: ['VotingRoundCreate'],
+    mutationFn: (variables?: VotingRoundCreateMutationVariables) => fetcher<VotingRoundCreateMutation, VotingRoundCreateMutationVariables>(client, VotingRoundCreateDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useVotingRoundCreateMutation.getKey = () => ['VotingRoundCreate'];
+useVotingRoundCreateMutation.getRootKey = () => ['VotingRoundCreate'] as const;
+useVotingRoundCreateMutation.fetcher = (client: GraphQLClient, variables: VotingRoundCreateMutationVariables, headers?: RequestInit['headers']) => fetcher<VotingRoundCreateMutation, VotingRoundCreateMutationVariables>(client, VotingRoundCreateDocument, variables, headers);
+
+export const VotingRoundUpdateDocument = `
+    mutation VotingRoundUpdate($id: VotingRoundId!, $input: UpdateVotingRoundInput!) {
+  updateVotingRound(id: $id, input: $input) {
+    ...VotingRoundRow
+  }
+}
+    ${VotingRoundRowFragmentDoc}`;
+
+export const useVotingRoundUpdateMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<VotingRoundUpdateMutation, TError, VotingRoundUpdateMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<VotingRoundUpdateMutation, TError, VotingRoundUpdateMutationVariables, TContext>(
+      {
+    mutationKey: ['VotingRoundUpdate'],
+    mutationFn: (variables?: VotingRoundUpdateMutationVariables) => fetcher<VotingRoundUpdateMutation, VotingRoundUpdateMutationVariables>(client, VotingRoundUpdateDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useVotingRoundUpdateMutation.getKey = () => ['VotingRoundUpdate'];
+useVotingRoundUpdateMutation.getRootKey = () => ['VotingRoundUpdate'] as const;
+useVotingRoundUpdateMutation.fetcher = (client: GraphQLClient, variables: VotingRoundUpdateMutationVariables, headers?: RequestInit['headers']) => fetcher<VotingRoundUpdateMutation, VotingRoundUpdateMutationVariables>(client, VotingRoundUpdateDocument, variables, headers);
+
+export const VotingRoundSetStatusDocument = `
+    mutation VotingRoundSetStatus($id: VotingRoundId!, $status: VotingRoundStatus!) {
+  setVotingRoundStatus(id: $id, status: $status) {
+    ...VotingRoundRow
+  }
+}
+    ${VotingRoundRowFragmentDoc}`;
+
+export const useVotingRoundSetStatusMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<VotingRoundSetStatusMutation, TError, VotingRoundSetStatusMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<VotingRoundSetStatusMutation, TError, VotingRoundSetStatusMutationVariables, TContext>(
+      {
+    mutationKey: ['VotingRoundSetStatus'],
+    mutationFn: (variables?: VotingRoundSetStatusMutationVariables) => fetcher<VotingRoundSetStatusMutation, VotingRoundSetStatusMutationVariables>(client, VotingRoundSetStatusDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useVotingRoundSetStatusMutation.getKey = () => ['VotingRoundSetStatus'];
+useVotingRoundSetStatusMutation.getRootKey = () => ['VotingRoundSetStatus'] as const;
+useVotingRoundSetStatusMutation.fetcher = (client: GraphQLClient, variables: VotingRoundSetStatusMutationVariables, headers?: RequestInit['headers']) => fetcher<VotingRoundSetStatusMutation, VotingRoundSetStatusMutationVariables>(client, VotingRoundSetStatusDocument, variables, headers);
+
+export const VotingRoundDeleteDocument = `
+    mutation VotingRoundDelete($id: VotingRoundId!) {
+  deleteVotingRound(id: $id) {
+    id
+  }
+}
+    `;
+
+export const useVotingRoundDeleteMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<VotingRoundDeleteMutation, TError, VotingRoundDeleteMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<VotingRoundDeleteMutation, TError, VotingRoundDeleteMutationVariables, TContext>(
+      {
+    mutationKey: ['VotingRoundDelete'],
+    mutationFn: (variables?: VotingRoundDeleteMutationVariables) => fetcher<VotingRoundDeleteMutation, VotingRoundDeleteMutationVariables>(client, VotingRoundDeleteDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useVotingRoundDeleteMutation.getKey = () => ['VotingRoundDelete'];
+useVotingRoundDeleteMutation.getRootKey = () => ['VotingRoundDelete'] as const;
+useVotingRoundDeleteMutation.fetcher = (client: GraphQLClient, variables: VotingRoundDeleteMutationVariables, headers?: RequestInit['headers']) => fetcher<VotingRoundDeleteMutation, VotingRoundDeleteMutationVariables>(client, VotingRoundDeleteDocument, variables, headers);
+
+export const VotableFeatureCreateDocument = `
+    mutation VotableFeatureCreate($input: CreateVotableFeatureInput!, $document: [Upload!]) {
+  createVotableFeature(input: $input, document: $document) {
+    ...VotableFeatureAdminRow
+  }
+}
+    ${VotableFeatureAdminRowFragmentDoc}`;
+
+export const useVotableFeatureCreateMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<VotableFeatureCreateMutation, TError, VotableFeatureCreateMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<VotableFeatureCreateMutation, TError, VotableFeatureCreateMutationVariables, TContext>(
+      {
+    mutationKey: ['VotableFeatureCreate'],
+    mutationFn: (variables?: VotableFeatureCreateMutationVariables) => fetcher<VotableFeatureCreateMutation, VotableFeatureCreateMutationVariables>(client, VotableFeatureCreateDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useVotableFeatureCreateMutation.getKey = () => ['VotableFeatureCreate'];
+useVotableFeatureCreateMutation.getRootKey = () => ['VotableFeatureCreate'] as const;
+useVotableFeatureCreateMutation.fetcher = (client: GraphQLClient, variables: VotableFeatureCreateMutationVariables, headers?: RequestInit['headers']) => fetcher<VotableFeatureCreateMutation, VotableFeatureCreateMutationVariables>(client, VotableFeatureCreateDocument, variables, headers);
+
+export const VotableFeatureUpdateDocument = `
+    mutation VotableFeatureUpdate($id: VotableFeatureId!, $input: UpdateVotableFeatureInput!, $document: [Upload!]) {
+  updateVotableFeature(id: $id, input: $input, document: $document) {
+    ...VotableFeatureAdminRow
+  }
+}
+    ${VotableFeatureAdminRowFragmentDoc}`;
+
+export const useVotableFeatureUpdateMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<VotableFeatureUpdateMutation, TError, VotableFeatureUpdateMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<VotableFeatureUpdateMutation, TError, VotableFeatureUpdateMutationVariables, TContext>(
+      {
+    mutationKey: ['VotableFeatureUpdate'],
+    mutationFn: (variables?: VotableFeatureUpdateMutationVariables) => fetcher<VotableFeatureUpdateMutation, VotableFeatureUpdateMutationVariables>(client, VotableFeatureUpdateDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useVotableFeatureUpdateMutation.getKey = () => ['VotableFeatureUpdate'];
+useVotableFeatureUpdateMutation.getRootKey = () => ['VotableFeatureUpdate'] as const;
+useVotableFeatureUpdateMutation.fetcher = (client: GraphQLClient, variables: VotableFeatureUpdateMutationVariables, headers?: RequestInit['headers']) => fetcher<VotableFeatureUpdateMutation, VotableFeatureUpdateMutationVariables>(client, VotableFeatureUpdateDocument, variables, headers);
+
+export const VotableFeatureDeleteDocument = `
+    mutation VotableFeatureDelete($id: VotableFeatureId!) {
+  deleteVotableFeature(id: $id) {
+    id
+  }
+}
+    `;
+
+export const useVotableFeatureDeleteMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<VotableFeatureDeleteMutation, TError, VotableFeatureDeleteMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<VotableFeatureDeleteMutation, TError, VotableFeatureDeleteMutationVariables, TContext>(
+      {
+    mutationKey: ['VotableFeatureDelete'],
+    mutationFn: (variables?: VotableFeatureDeleteMutationVariables) => fetcher<VotableFeatureDeleteMutation, VotableFeatureDeleteMutationVariables>(client, VotableFeatureDeleteDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useVotableFeatureDeleteMutation.getKey = () => ['VotableFeatureDelete'];
+useVotableFeatureDeleteMutation.getRootKey = () => ['VotableFeatureDelete'] as const;
+useVotableFeatureDeleteMutation.fetcher = (client: GraphQLClient, variables: VotableFeatureDeleteMutationVariables, headers?: RequestInit['headers']) => fetcher<VotableFeatureDeleteMutation, VotableFeatureDeleteMutationVariables>(client, VotableFeatureDeleteDocument, variables, headers);
+
+export const VotingRoundsListDocument = `
+    query VotingRoundsList {
+  votingRounds {
+    ...VotingRoundRow
+    feature_count
+  }
+}
+    ${VotingRoundRowFragmentDoc}`;
+
+export const useVotingRoundsListQuery = <
+      TData = VotingRoundsListQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables?: VotingRoundsListQueryVariables,
+      options?: Omit<UseQueryOptions<VotingRoundsListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<VotingRoundsListQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<VotingRoundsListQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['VotingRoundsList'] : ['VotingRoundsList', variables],
+    queryFn: fetcher<VotingRoundsListQuery, VotingRoundsListQueryVariables>(client, VotingRoundsListDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useVotingRoundsListQuery.getKey = (variables?: VotingRoundsListQueryVariables) => variables === undefined ? ['VotingRoundsList'] : ['VotingRoundsList', variables];
+useVotingRoundsListQuery.getRootKey = () => ['VotingRoundsList'] as const;
+export const useInfiniteVotingRoundsListQuery = <
+      TData = InfiniteData<VotingRoundsListQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: VotingRoundsListQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<VotingRoundsListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<VotingRoundsListQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<VotingRoundsListQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['VotingRoundsList.infinite'] : ['VotingRoundsList.infinite', variables],
+      queryFn: (metaData) => fetcher<VotingRoundsListQuery, VotingRoundsListQueryVariables>(client, VotingRoundsListDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteVotingRoundsListQuery.getKey = (variables?: VotingRoundsListQueryVariables) => variables === undefined ? ['VotingRoundsList.infinite'] : ['VotingRoundsList.infinite', variables];
+useInfiniteVotingRoundsListQuery.getRootKey = () => ['VotingRoundsList.infinite'] as const;
+useVotingRoundsListQuery.fetcher = (client: GraphQLClient, variables?: VotingRoundsListQueryVariables, headers?: RequestInit['headers']) => fetcher<VotingRoundsListQuery, VotingRoundsListQueryVariables>(client, VotingRoundsListDocument, variables, headers);
+
+export const VotingRoundDetailDocument = `
+    query VotingRoundDetail($id: VotingRoundId!) {
+  votingRound(id: $id) {
+    ...VotingRoundRow
+    features {
+      ...VotableFeatureAdminRow
+    }
+  }
+}
+    ${VotingRoundRowFragmentDoc}
+${VotableFeatureAdminRowFragmentDoc}`;
+
+export const useVotingRoundDetailQuery = <
+      TData = VotingRoundDetailQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: VotingRoundDetailQueryVariables,
+      options?: Omit<UseQueryOptions<VotingRoundDetailQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<VotingRoundDetailQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<VotingRoundDetailQuery, TError, TData>(
+      {
+    queryKey: ['VotingRoundDetail', variables],
+    queryFn: fetcher<VotingRoundDetailQuery, VotingRoundDetailQueryVariables>(client, VotingRoundDetailDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useVotingRoundDetailQuery.getKey = (variables: VotingRoundDetailQueryVariables) => ['VotingRoundDetail', variables];
+useVotingRoundDetailQuery.getRootKey = () => ['VotingRoundDetail'] as const;
+export const useInfiniteVotingRoundDetailQuery = <
+      TData = InfiniteData<VotingRoundDetailQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: VotingRoundDetailQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<VotingRoundDetailQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<VotingRoundDetailQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<VotingRoundDetailQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['VotingRoundDetail.infinite', variables],
+      queryFn: (metaData) => fetcher<VotingRoundDetailQuery, VotingRoundDetailQueryVariables>(client, VotingRoundDetailDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteVotingRoundDetailQuery.getKey = (variables: VotingRoundDetailQueryVariables) => ['VotingRoundDetail.infinite', variables];
+useInfiniteVotingRoundDetailQuery.getRootKey = () => ['VotingRoundDetail.infinite'] as const;
+useVotingRoundDetailQuery.fetcher = (client: GraphQLClient, variables: VotingRoundDetailQueryVariables, headers?: RequestInit['headers']) => fetcher<VotingRoundDetailQuery, VotingRoundDetailQueryVariables>(client, VotingRoundDetailDocument, variables, headers);
+
+export const VotingRoundRankingDocument = `
+    query VotingRoundRanking($id: VotingRoundId!) {
+  votingRoundResults(id: $id) {
+    total_voters
+    round {
+      id
+      name
+      status
+    }
+    results {
+      vote_count
+      feature {
+        ...VotableFeatureAdminRow
+      }
+    }
+  }
+}
+    ${VotableFeatureAdminRowFragmentDoc}`;
+
+export const useVotingRoundRankingQuery = <
+      TData = VotingRoundRankingQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: VotingRoundRankingQueryVariables,
+      options?: Omit<UseQueryOptions<VotingRoundRankingQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<VotingRoundRankingQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<VotingRoundRankingQuery, TError, TData>(
+      {
+    queryKey: ['VotingRoundRanking', variables],
+    queryFn: fetcher<VotingRoundRankingQuery, VotingRoundRankingQueryVariables>(client, VotingRoundRankingDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useVotingRoundRankingQuery.getKey = (variables: VotingRoundRankingQueryVariables) => ['VotingRoundRanking', variables];
+useVotingRoundRankingQuery.getRootKey = () => ['VotingRoundRanking'] as const;
+export const useInfiniteVotingRoundRankingQuery = <
+      TData = InfiniteData<VotingRoundRankingQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: VotingRoundRankingQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<VotingRoundRankingQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<VotingRoundRankingQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<VotingRoundRankingQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['VotingRoundRanking.infinite', variables],
+      queryFn: (metaData) => fetcher<VotingRoundRankingQuery, VotingRoundRankingQueryVariables>(client, VotingRoundRankingDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteVotingRoundRankingQuery.getKey = (variables: VotingRoundRankingQueryVariables) => ['VotingRoundRanking.infinite', variables];
+useInfiniteVotingRoundRankingQuery.getRootKey = () => ['VotingRoundRanking.infinite'] as const;
+useVotingRoundRankingQuery.fetcher = (client: GraphQLClient, variables: VotingRoundRankingQueryVariables, headers?: RequestInit['headers']) => fetcher<VotingRoundRankingQuery, VotingRoundRankingQueryVariables>(client, VotingRoundRankingDocument, variables, headers);
+
+export const EpicCreateDocument = `
+    mutation EpicCreate($input: CreateEpicInput!) {
+  createEpic(input: $input) {
+    ...EpicFields
+  }
+}
+    ${EpicFieldsFragmentDoc}`;
+
+export const useEpicCreateMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<EpicCreateMutation, TError, EpicCreateMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<EpicCreateMutation, TError, EpicCreateMutationVariables, TContext>(
+      {
+    mutationKey: ['EpicCreate'],
+    mutationFn: (variables?: EpicCreateMutationVariables) => fetcher<EpicCreateMutation, EpicCreateMutationVariables>(client, EpicCreateDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useEpicCreateMutation.getKey = () => ['EpicCreate'];
+useEpicCreateMutation.getRootKey = () => ['EpicCreate'] as const;
+useEpicCreateMutation.fetcher = (client: GraphQLClient, variables: EpicCreateMutationVariables, headers?: RequestInit['headers']) => fetcher<EpicCreateMutation, EpicCreateMutationVariables>(client, EpicCreateDocument, variables, headers);
+
+export const EpicUpdateDocument = `
+    mutation EpicUpdate($id: ID!, $input: UpdateEpicInput!) {
+  updateEpic(id: $id, input: $input) {
+    ...EpicFields
+  }
+}
+    ${EpicFieldsFragmentDoc}`;
+
+export const useEpicUpdateMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<EpicUpdateMutation, TError, EpicUpdateMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<EpicUpdateMutation, TError, EpicUpdateMutationVariables, TContext>(
+      {
+    mutationKey: ['EpicUpdate'],
+    mutationFn: (variables?: EpicUpdateMutationVariables) => fetcher<EpicUpdateMutation, EpicUpdateMutationVariables>(client, EpicUpdateDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useEpicUpdateMutation.getKey = () => ['EpicUpdate'];
+useEpicUpdateMutation.getRootKey = () => ['EpicUpdate'] as const;
+useEpicUpdateMutation.fetcher = (client: GraphQLClient, variables: EpicUpdateMutationVariables, headers?: RequestInit['headers']) => fetcher<EpicUpdateMutation, EpicUpdateMutationVariables>(client, EpicUpdateDocument, variables, headers);
+
+export const EpicDeleteDocument = `
+    mutation EpicDelete($id: ID!) {
+  deleteEpic(id: $id) {
+    id
+  }
+}
+    `;
+
+export const useEpicDeleteMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<EpicDeleteMutation, TError, EpicDeleteMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<EpicDeleteMutation, TError, EpicDeleteMutationVariables, TContext>(
+      {
+    mutationKey: ['EpicDelete'],
+    mutationFn: (variables?: EpicDeleteMutationVariables) => fetcher<EpicDeleteMutation, EpicDeleteMutationVariables>(client, EpicDeleteDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useEpicDeleteMutation.getKey = () => ['EpicDelete'];
+useEpicDeleteMutation.getRootKey = () => ['EpicDelete'] as const;
+useEpicDeleteMutation.fetcher = (client: GraphQLClient, variables: EpicDeleteMutationVariables, headers?: RequestInit['headers']) => fetcher<EpicDeleteMutation, EpicDeleteMutationVariables>(client, EpicDeleteDocument, variables, headers);
+
 export const EpicCountPerTimelineQueryDocument = `
     query EpicCountPerTimelineQuery {
   countEpicsPerTimeline {
@@ -4266,3 +13104,66 @@ export const useInfiniteEpicCountPerTimelineQueryQuery = <
 useInfiniteEpicCountPerTimelineQueryQuery.getKey = (variables?: EpicCountPerTimelineQueryQueryVariables) => variables === undefined ? ['EpicCountPerTimelineQuery.infinite'] : ['EpicCountPerTimelineQuery.infinite', variables];
 useInfiniteEpicCountPerTimelineQueryQuery.getRootKey = () => ['EpicCountPerTimelineQuery.infinite'] as const;
 useEpicCountPerTimelineQueryQuery.fetcher = (client: GraphQLClient, variables?: EpicCountPerTimelineQueryQueryVariables, headers?: RequestInit['headers']) => fetcher<EpicCountPerTimelineQueryQuery, EpicCountPerTimelineQueryQueryVariables>(client, EpicCountPerTimelineQueryDocument, variables, headers);
+
+export const EpicsDocument = `
+    query Epics($count: Int!, $orderBy: EpicOrdering!, $orderMode: OrderingMode!, $searchTerm: String) {
+  epics(
+    first: $count
+    orderBy: $orderBy
+    orderMode: $orderMode
+    searchTerm: $searchTerm
+  ) {
+    totalCount
+    edges {
+      node {
+        ...EpicFields
+      }
+    }
+  }
+}
+    ${EpicFieldsFragmentDoc}`;
+
+export const useEpicsQuery = <
+      TData = EpicsQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: EpicsQueryVariables,
+      options?: Omit<UseQueryOptions<EpicsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<EpicsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<EpicsQuery, TError, TData>(
+      {
+    queryKey: ['Epics', variables],
+    queryFn: fetcher<EpicsQuery, EpicsQueryVariables>(client, EpicsDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useEpicsQuery.getKey = (variables: EpicsQueryVariables) => ['Epics', variables];
+useEpicsQuery.getRootKey = () => ['Epics'] as const;
+export const useInfiniteEpicsQuery = <
+      TData = InfiniteData<EpicsQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: EpicsQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<EpicsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<EpicsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<EpicsQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['Epics.infinite', variables],
+      queryFn: (metaData) => fetcher<EpicsQuery, EpicsQueryVariables>(client, EpicsDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteEpicsQuery.getKey = (variables: EpicsQueryVariables) => ['Epics.infinite', variables];
+useInfiniteEpicsQuery.getRootKey = () => ['Epics.infinite'] as const;
+useEpicsQuery.fetcher = (client: GraphQLClient, variables: EpicsQueryVariables, headers?: RequestInit['headers']) => fetcher<EpicsQuery, EpicsQueryVariables>(client, EpicsDocument, variables, headers);

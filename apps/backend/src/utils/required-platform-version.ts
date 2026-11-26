@@ -7,15 +7,20 @@ type RequiredPlatformVersionsConfig = {
   >;
   TenantIdRequired: Record<PlatformIdentifier, string | null>;
   NewsFeedSupport: Record<PlatformIdentifier, string | null>;
+  NewsFeedBlogpostSupport: Record<PlatformIdentifier, string | null>;
+  NewsFeedGithubReleaseSupport: Record<PlatformIdentifier, string | null>;
+  NewsFeedGithubReleaseLtsSupport: Record<PlatformIdentifier, string | null>;
 };
 
 // A null value means the feature is disabled/not required for that identifier.
-// Xtmone is null everywhere: not registrable yet.
+// For NewsFeedSupport and NewsFeedBlogpostSupport, null means the news feed is disabled: no item is provisioned,
+// whatever the platform version. Xtmone: every version handles the not_found status. News feed and tenants
+// are not supported by XTM One, hence null.
 export const RequiredPlatformVersions: RequiredPlatformVersionsConfig = {
   RefreshConnectivityStatusSendsNotFound: {
     [PlatformIdentifier.Opencti]: '6.8.16',
     [PlatformIdentifier.Openaev]: '2.0.6',
-    [PlatformIdentifier.Xtmone]: null,
+    [PlatformIdentifier.Xtmone]: '0.0.0',
   },
   TenantIdRequired: {
     [PlatformIdentifier.Opencti]: null,
@@ -24,6 +29,25 @@ export const RequiredPlatformVersions: RequiredPlatformVersionsConfig = {
   },
   NewsFeedSupport: {
     [PlatformIdentifier.Opencti]: '7.260527.0', // OpenCTI 7.260527.0 is the first version to support news feed
+    [PlatformIdentifier.Openaev]: '1.0.0', // Placeholder until the first OpenAEV version that reads news feed items is released
+    [PlatformIdentifier.Xtmone]: null,
+  },
+  // OpenCTI 7.261106.0 is the first version to render blogpost items. XTM One stays null (disabled) until it ships
+  // blogpost support.
+  NewsFeedBlogpostSupport: {
+    [PlatformIdentifier.Opencti]: '7.261106.0',
+    // TODO: 3.261118.0 is a placeholder version. Replace it with the first OpenAEV version that supports news feed
+    // blogposts once it is released.
+    [PlatformIdentifier.Openaev]: '3.261118.0',
+    [PlatformIdentifier.Xtmone]: null,
+  },
+  NewsFeedGithubReleaseSupport: {
+    [PlatformIdentifier.Opencti]: null,
+    [PlatformIdentifier.Openaev]: null,
+    [PlatformIdentifier.Xtmone]: null,
+  },
+  NewsFeedGithubReleaseLtsSupport: {
+    [PlatformIdentifier.Opencti]: null,
     [PlatformIdentifier.Openaev]: null,
     [PlatformIdentifier.Xtmone]: null,
   },

@@ -49,7 +49,9 @@ describe('AddUseCase', () => {
       screen.getByRole('button', { name: 'UseCaseActions.AddUseCase' })
     );
 
-    const colorInput = screen.getByDisplayValue('#FFFFFF');
+    const colorInput = screen.getByRole('textbox', {
+      name: 'UseCaseForm.Color',
+    });
     await user.type(
       screen.getByLabelText(/UseCaseForm.Name/i),
       'Threat Hunting'
@@ -78,7 +80,9 @@ describe('AddUseCase', () => {
       screen.getByRole('button', { name: 'UseCaseActions.AddUseCase' })
     );
 
-    const colorInput = screen.getByDisplayValue('#FFFFFF');
+    const colorInput = screen.getByRole('textbox', {
+      name: 'UseCaseForm.Color',
+    });
     await user.type(
       screen.getByLabelText(/UseCaseForm.Name/i),
       'Threat Hunting'
@@ -89,5 +93,23 @@ describe('AddUseCase', () => {
     expect(
       await screen.findByLabelText(/UseCaseForm.Name/i)
     ).toBeInTheDocument();
+  });
+
+  it('should close the sheet when the admin cancels the creation', async () => {
+    // Given
+    const { user } = testRender(<AddUseCase />);
+    await user.click(
+      screen.getByRole('button', { name: 'UseCaseActions.AddUseCase' })
+    );
+
+    // When
+    await user.click(screen.getByRole('button', { name: 'Utils.Cancel' }));
+
+    // Then
+    await waitFor(() => {
+      expect(
+        screen.queryByLabelText('UseCaseForm.Name')
+      ).not.toBeInTheDocument();
+    });
   });
 });

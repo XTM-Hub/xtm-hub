@@ -1,0 +1,17 @@
+mutation EpicCreate($input: CreateEpicInput!) {
+  createEpic(input: $input) {
+    ...EpicFields
+  }
+}
+
+mutation EpicUpdate($id: ID!, $input: UpdateEpicInput!) {
+  updateEpic(id: $id, input: $input) {
+    ...EpicFields
+  }
+}
+
+mutation EpicDelete($id: ID!) {
+  deleteEpic(id: $id) {
+    id
+  }
+}

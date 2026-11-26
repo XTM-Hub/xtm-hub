@@ -1,0 +1,10 @@
+query UsersWithCapabilitiesInOrganization(
+  $input: UsersWithCapabilitiesInOrganizationInput!
+) {
+  usersWithCapabilitiesInOrganization(input: $input) {
+    id
+    email
+    first_name
+    last_name
+  }
+}

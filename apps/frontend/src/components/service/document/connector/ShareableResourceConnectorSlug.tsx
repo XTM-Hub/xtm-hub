@@ -4,37 +4,53 @@ import {
   BreadcrumbNav,
   BreadcrumbNavLink,
 } from '@/components/ui/BreadcrumbNav';
-import { useTranslations } from 'next-intl';
+import { useBuildCompatibilityTranslationKey } from '@/hooks/use-build-compatibility-translation-key';
+import { useDocumentCounter } from '@/hooks/use-document-counter';
+import { useRegisteredPlatforms } from '@/hooks/use-registered-platforms';
+import { useTranslate } from '@/hooks/use-translate';
 
 import { PlatformMetadataMapping } from '@/components/registration/PlatformIdentifierMapping';
 import { ServiceManageSheet } from '@/components/service/components/ServiceManageSheet';
 import { ShareableResourceConnectorPrivateDetails } from '@/components/service/document/connector/ShareableResourceConnectorPrivateDetails';
+import { DeployableResourceViewTracker } from '@/components/service/document/DeployableResourceViewTracker';
 import OneClickDeploy from '@/components/service/document/one-click-deploy/OneClickDeploy';
+import { ResourceViewTracker } from '@/components/service/document/ResourceViewTracker';
 import ShareableResourceDescription from '@/components/service/document/ShareableResourceDescription';
+import { ShareableResourceIncompatibleWarning } from '@/components/service/document/ShareableResourceIncompatibleWarning';
 import ShareableResourceCarousel from '@/components/service/document/ui/ShareableResourceCarouselView';
 import BadgeOverflowCounter, {
   BadgeOverflow,
 } from '@/components/ui/BadgeOverflowCounter';
+import { DisabledActionTooltip } from '@/components/ui/DisabledActionTooltip';
 import { ShareLinkButton } from '@/components/ui/share-link/ShareLinkButton';
-import { filterDocumentImages, findDocumentLogo } from '@/utils/documents';
-import { getPlatformIdentifier } from '@/utils/platform';
 import {
-  InfoIcon,
+  analyticsResource,
+  toAnalyticsResourceData,
+} from '@/lib/analytics/analytics.context';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
+import { cn } from '@/lib/utils';
+import { filterDocumentImages, findDocumentLogo } from '@/utils/documents';
+import { getResourcePageFiligranWebsiteUtm } from '@/utils/filigran-website-utm';
+import { getPlatformIdentifier } from '@/utils/platform';
+import { ConnectorFields } from '@/utils/shareable-resources/shareable-resources.types';
+import { Alert, Button } from '@filigran/design-system';
+import {
+  LogoFiligranIcon,
   MotionPlayIcon,
   ThreatActorGroupIcon,
-  VerifiedIcon,
 } from '@filigran/icon';
-import { SimpleTooltip } from '@filigran/ui';
-import { Button } from '@filigran/ui/servers';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
+import {
+  DocumentItemFragment,
+  PlatformIdentifier,
+  ServiceInstanceItemFragment,
+} from '@graphql/generated';
 import Image from 'next/image';
 import Link from 'next/link';
 
 // Component interface
 interface ShareableResourceConnectorSlugProps {
-  documentData: documentItem_fragment$data;
-  serviceInstance: serviceInstance_fragment$data;
+  documentData: DocumentItemFragment & ConnectorFields;
+  serviceInstance: ServiceInstanceItemFragment;
   breadcrumbValue: BreadcrumbNavLink[];
   shareUrl: string;
 }
@@ -46,7 +62,7 @@ const ShareableResourceConnectorSlug = ({
   shareUrl,
   serviceInstance,
 }: ShareableResourceConnectorSlugProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const platformIdentifier = getPlatformIdentifier(documentData.type);
   const canClickOnDeployButton = documentData.manager_supported;
 
@@ -54,13 +70,40 @@ const ShareableResourceConnectorSlug = ({
     ? `${documentData.source_code}/__metadata__/connector_manifest.json`
     : '';
 
+  const { platforms } = useRegisteredPlatforms(PlatformIdentifier.Opencti, {
+    onlyActive: true,
+  });
+  const { platformToBeUpdated, incompatiblePlatformsCount } =
+    useBuildCompatibilityTranslationKey({
+      platforms,
+      requiredProductVersion: documentData.minimum_deployable_version,
+    });
+
+  const { count: shareNumber, increment: incrementShareNumber } =
+    useDocumentCounter(documentData.id, documentData.share_number);
+
   const carouselImages = filterDocumentImages(documentData);
   const logo = findDocumentLogo(documentData);
 
+  const resource = toAnalyticsResourceData(documentData);
+
   return (
-    <>
+    <div
+      className="contents"
+      {...analyticsResource(resource)}>
       <BreadcrumbNav value={breadcrumbValue} />
-      <div className="flex gap-s flex-col md:flex-row">
+      {canClickOnDeployButton ? (
+        <DeployableResourceViewTracker
+          resource={documentData}
+          requiredProductVersion={documentData.minimum_deployable_version}
+        />
+      ) : (
+        <ResourceViewTracker
+          resource={documentData}
+          deployEligibility="Resource not deployable"
+        />
+      )}
+      <div className="flex gap-2 flex-col md:flex-row">
         {!!logo && (
           <div className="w-24 shrink-0 rounded overflow-hidden">
             <Image
@@ -74,32 +117,40 @@ const ShareableResourceConnectorSlug = ({
           </div>
         )}
         <div className="flex flex-col flex-1 justify-center">
-          <div className="flex items-center gap-s flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
             <h1 className="whitespace-nowrap">{documentData.name}</h1>
             {documentData.manager_supported && (
-              <div className="flex items-center gap-s py-xs px-l font-semibold bg-green-100 text-alert-success-primary dark:bg-turquoise-900 rounded-lg">
-                <MotionPlayIcon className="h-5 w-5 shrink-0 mr-xs" />
+              <div className="flex items-center gap-2 py-1 px-4 font-semibold bg-feedback-success-secondary-transparency-30 text-feedback-success-primary rounded">
+                <MotionPlayIcon className="h-5 w-5 shrink-0 mr-1" />
                 {t('Utils.AutomaticDeploy')}
               </div>
             )}
 
-            <div className="flex items-center gap-s py-xs px-l font-semibold bg-green-100 text-alert-success-primary dark:bg-turquoise-900 rounded-lg">
+            <div
+              className={cn(
+                'flex items-center gap-2 py-1 px-4 font-semibold rounded text-default-primary',
+                documentData.verified
+                  ? 'bg-[rgba(15,188,255,0.21)]'
+                  : 'bg-feedback-neutral-secondary-transparency-30'
+              )}>
               {documentData.verified ? (
                 <>
-                  <VerifiedIcon className="h-5 w-5 shrink-0 mr-xs" />
+                  <LogoFiligranIcon className="h-5 w-5 shrink-0 mr-1 text-icon-default" />
                   {t('Service.ShareableResources.Details.SupportedByFiligran')}
                 </>
               ) : (
                 <>
-                  <ThreatActorGroupIcon className="h-5 w-5 shrink-0 mr-xs" />
+                  <ThreatActorGroupIcon className="h-5 w-5 shrink-0 mr-1 text-feedback-neutral-primary" />
                   {t('Service.ShareableResources.Details.SupportedByCommunity')}
                 </>
               )}
             </div>
 
-            <div className="ml-auto flex gap-s">
+            <div className="ml-auto flex gap-2">
               <ShareLinkButton
+                analyticsId="resource_share"
                 documentId={documentData.id}
+                onShare={incrementShareNumber}
                 url={shareUrl}
               />
               <ServiceManageSheet
@@ -114,8 +165,8 @@ const ShareableResourceConnectorSlug = ({
                   }
                 />
               ) : (
-                <SimpleTooltip
-                  title={t('Service.Connectors.UnavailableDeployments')}>
+                <DisabledActionTooltip
+                  reason={t('Service.Connectors.UnavailableDeployments')}>
                   <Button disabled={true}>
                     {t('Service.ShareableResources.Deploy.DeployPlatform', {
                       platformName:
@@ -123,12 +174,13 @@ const ShareableResourceConnectorSlug = ({
                         'OpenCTI',
                     })}
                   </Button>
-                </SimpleTooltip>
+                </DisabledActionTooltip>
               )}
             </div>
           </div>
-          <div className="w-full mt-s mb-xs">
+          <div className="w-full mt-2 mb-1">
             <BadgeOverflowCounter
+              formatLabel={false}
               badges={documentData.use_cases as BadgeOverflow[]}
             />
           </div>
@@ -136,31 +188,58 @@ const ShareableResourceConnectorSlug = ({
       </div>
       <ShareableResourceCarousel
         serviceInstance={serviceInstance}
+        resource={resource}
         images={carouselImages}
         className="mt-4"
       />
       {documentData.verified && (
-        <div className="border border-solid border-blue rounded flex items-center gap-xs p-s text-sm mt-4">
-          <InfoIcon className="shrink-0 h-4 w-4 mr-xs text-primary" />
-          {t('Service.Connectors.ImproveIntegrationPrefix')}
-          <Link
-            href={manifest_url}
-            target="_blank"
-            className="underline">
-            {t('Service.Connectors.GithubRepositoryLink')}
-          </Link>
-        </div>
+        <Alert
+          severity="info"
+          className="mt-4"
+          title={
+            <>
+              {t('Service.Connectors.ImproveIntegrationPrefix')}{' '}
+              <Link
+                {...analyticsId('resource_repository_open')}
+                href={manifest_url}
+                target="_blank"
+                className="underline">
+                {t('Service.Connectors.GithubRepositoryLink')}
+              </Link>
+            </>
+          }
+        />
       )}
-      <div className="flex flex-col-reverse lg:flex-row w-full mt-l gap-xl">
+      {incompatiblePlatformsCount > 0 && documentData.manager_supported && (
+        <ShareableResourceIncompatibleWarning
+          className="mt-4"
+          message={t('Service.Connectors.Incompatible', {
+            count: incompatiblePlatformsCount,
+            platformToBeUpdated,
+          })}
+        />
+      )}
+      <div className="flex flex-col-reverse lg:flex-row w-full mt-4 gap-6">
         <ShareableResourceDescription
           shortDescription={documentData?.short_description ?? ''}
           longDescription={documentData?.description ?? ''}
+          serviceDefinitionIdentifier={
+            serviceInstance.service_definition?.identifier
+          }
         />
         <ShareableResourceConnectorPrivateDetails
-          connectorDetails={{ ...documentData, name: documentData.name ?? '' }}
+          incompatiblePlatformsCount={incompatiblePlatformsCount}
+          connectorDetails={{
+            ...documentData,
+            name: documentData.name ?? '',
+            share_number: shareNumber,
+          }}
+          filigranWebsiteUtm={getResourcePageFiligranWebsiteUtm(
+            serviceInstance.service_definition?.identifier
+          )}
         />
       </div>
-    </>
+    </div>
   );
 };
 

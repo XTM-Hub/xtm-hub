@@ -1,16 +1,16 @@
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { Form, FormField } from '@/components/ui/form';
+import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
+  Button,
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogFooter,
+  DialogTitle,
   Textarea,
-} from '@filigran/ui';
-import { PlatformIdentifier } from '@graphql/generated';
+} from '@filigran/design-system';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useTranslations } from 'next-intl';
 import { useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -18,7 +18,6 @@ interface ReachSalesDialogFormProps {
   isDialogOpen: boolean;
   setIsDialogOpen: (isOpen: boolean) => void;
   onSubmit: (message: string) => void;
-  platformIdentifier: PlatformIdentifier;
 }
 
 const reachSalesSchema = z.object({
@@ -29,9 +28,8 @@ export const ReachSalesDialogForm = ({
   isDialogOpen,
   setIsDialogOpen,
   onSubmit,
-  platformIdentifier: _platformIdentifier,
 }: ReachSalesDialogFormProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   const form = useForm<z.infer<typeof reachSalesSchema>>({
     resolver: zodResolver(reachSalesSchema),
@@ -51,36 +49,52 @@ export const ReachSalesDialogForm = ({
   };
 
   return (
-    <AlertDialogComponent
-      AlertTitle={t('Service.Trials.ReachOutToSales')}
-      onClickContinue={form.handleSubmit(handleSubmit)}
-      onOpenChange={setIsDialogOpen}
-      isOpen={isDialogOpen}
-      continueButtonDisabled={!message?.trim()}>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleSubmit)}>
-          <FormField
-            control={form.control}
-            name="message"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>
-                  {t('Service.Trials.ReachOutToSalesMessagePlaceholder')}
-                </FormLabel>
-                <FormControl>
+    <Dialog
+      open={isDialogOpen}
+      onOpenChange={setIsDialogOpen}>
+      <DialogContent>
+        <DialogTitle>{t('Service.Trials.ReachOutToSales')}</DialogTitle>
+        <DialogBody>
+          <Form {...form}>
+            <form
+              id="reach-sales-form"
+              noValidate
+              onSubmit={form.handleSubmit(handleSubmit)}>
+              <FormField
+                control={form.control}
+                name="message"
+                render={({ field, fieldState }) => (
                   <Textarea
+                    label={t('Service.Trials.ReachOutToSalesMessageLabel')}
+                    required
                     placeholder={t(
-                      'Service.Trials.ReachOutToSalesDefaultMessage'
+                      'Service.Trials.ReachOutToSalesMessagePlaceholder'
                     )}
+                    error={fieldState.error?.message}
                     {...field}
                   />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </form>
-      </Form>
-    </AlertDialogComponent>
+                )}
+              />
+            </form>
+          </Form>
+        </DialogBody>
+        <DialogFooter>
+          <Button
+            {...analyticsId('trial_sales_request_cancel')}
+            priority="secondary"
+            type="button"
+            onClick={() => setIsDialogOpen(false)}>
+            {t('Utils.Cancel')}
+          </Button>
+          <Button
+            {...analyticsId('trial_sales_request_submit')}
+            type="submit"
+            form="reach-sales-form"
+            disabled={!message?.trim()}>
+            {t('Service.Trials.ReachOutToSales')}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };

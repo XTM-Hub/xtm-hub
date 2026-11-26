@@ -3,7 +3,6 @@ import { ShareableResourceType } from '@/utils/shareable-resources/shareable-res
 import testRender from '@/utils/test/test-render';
 import { IntegrationType } from '@graphql/generated';
 import { screen, within } from '@testing-library/react';
-import { createMockEnvironment } from 'relay-test-utils';
 import { describe, expect, it, vi } from 'vitest';
 
 describe('ServiceDelete', () => {
@@ -16,15 +15,12 @@ describe('ServiceDelete', () => {
     'renders delete trigger according to userCanDelete=$userCanDelete',
     ({ userCanDelete, shouldRender }) => {
       // Given
-      const environment = createMockEnvironment();
-
       const { queryByRole } = testRender(
         <ServiceDelete
           userCanDelete={userCanDelete}
           serviceName={'My service'}
           integrationType={IntegrationType.CsvFeed}
-        />,
-        { relayConfig: environment }
+        />
       );
 
       // Then
@@ -53,15 +49,13 @@ describe('ServiceDelete', () => {
     'maps deletion texts for shareableResourceType=shareableResourceType',
     async ({ shareableResourceType, expectedTextKey }) => {
       // Given
-      const environment = createMockEnvironment();
       const serviceName = 'another service name';
       const { user } = testRender(
         <ServiceDelete
           userCanDelete={true}
           serviceName={serviceName}
           integrationType={shareableResourceType}
-        />,
-        { relayConfig: environment }
+        />
       );
 
       // When
@@ -74,7 +68,6 @@ describe('ServiceDelete', () => {
 
   it('calls onDelete when confirming deletion', async () => {
     // Given
-    const environment = createMockEnvironment();
     const onDelete = vi.fn();
     const { user } = testRender(
       <ServiceDelete
@@ -82,8 +75,7 @@ describe('ServiceDelete', () => {
         serviceName={'Connector A'}
         integrationType={IntegrationType.Connector}
         onDelete={onDelete}
-      />,
-      { relayConfig: environment }
+      />
     );
 
     // When

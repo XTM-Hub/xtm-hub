@@ -73,6 +73,13 @@
       "allowedVersions": "<7"
     },
     {
+      "description": "Keep selectolax on 1.0.0: 1.0.1 makes mkdocs-glightbox drop every documentation image",
+      "matchPackageNames": [
+        "selectolax"
+      ],
+      "allowedVersions": "1.0.0"
+    },
+    {
       "description": "Allow only major version 8 for @elastic/elasticsearch",
       "matchPackageNames": [
         "@elastic/elasticsearch"

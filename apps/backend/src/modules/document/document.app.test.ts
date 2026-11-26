@@ -1,5 +1,8 @@
+import config from 'config';
+import { toGlobalId } from 'graphql-relay/node/node.js';
 import { FileUpload } from 'graphql-upload/processRequest.mjs';
 import { v4 as uuidv4 } from 'uuid';
+import type { MockInstance } from 'vitest';
 import {
   afterAll,
   afterEach,
@@ -10,24 +13,41 @@ import {
   vi,
 } from 'vitest';
 import { TestHelper } from '../../../tests/helper/test.helper';
-import { SERVICES, TEST_ORGANIZATIONS } from '../../../tests/tests.const';
+import {
+  requestContextSimpleUserFiligran2,
+  SERVICES,
+  TEST_META_DESCRIPTIONS,
+  TEST_ORGANIZATIONS,
+  TEST_USE_CASES,
+} from '../../../tests/tests.const';
 import {
   DocumentImageType,
   DocumentMetadataKeyCode,
   DocumentSourceType,
+  DocumentStatus,
   FiligranProduct,
-  IntegrationSubType,
   IntegrationType,
   PlatformIdentifier,
   QueryPublicDocumentsArgs,
   ServiceDefinitionIdentifier,
 } from '../../__generated__/resolvers-types';
-import Document from '../../model/kanel/public/Document';
+import portalConfig from '../../config';
+import { databaseContext } from '../../context/database.context';
+import Document, { DocumentId } from '../../model/kanel/public/Document';
+import { OrganizationId } from '../../model/kanel/public/Organization';
 import ServiceDefinition from '../../model/kanel/public/ServiceDefinition';
-import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
+import ServiceInstance, {
+  ServiceInstanceId,
+} from '../../model/kanel/public/ServiceInstance';
+import { UserId } from '../../model/kanel/public/User';
+import { ADMIN_UUID } from '../../portal.const';
 import { MinIOClient } from '../../thirdparty/minio/client';
+import { PgBossProducer } from '../../thirdparty/pgboss/producer';
+import { TEAMS_NOTIFICATION_QUEUES } from '../../thirdparty/pgboss/teams-notification.jobs';
+import { logApp } from '../../utils/app-logger.util';
 import { ErrorCode } from '../../utils/error/error.code';
 import { NewsFeedApp } from '../news-feed/news-feed.app';
+import { UserDomain } from '../organization-management/user/user-domain/user.domain';
 import { RegistrationApp } from '../registration/registration.app';
 import { ServiceDefinitionDomain } from '../service/definition/service-definition.domain';
 import { OPENAEV_SCENARIO_DOCUMENT_TYPE } from '../shareable-resource/openaev/scenario/scenario.model';
@@ -46,14 +66,11 @@ import {
   TelemetrySource,
 } from '../telemetry/telemetry.const';
 import { TelemetryEventType } from '../telemetry/telemetry.types';
-import { useCaseApp } from '../use-case/use-case.app';
-import { useCaseDomain } from '../use-case/use-case.domain';
 import { DocumentApp } from './document.app';
 import {
   ALL_METADATA_KEYS,
   DocumentTypeMappedByServiceDefinition,
   ServiceDefinitionIdentifiersByPlatformIdentifier,
-  VAULT_DOCUMENT_TYPE,
 } from './document.helper';
 import { DOCUMENT_IMAGE_METADATA_KEYS, DocumentImage } from './document.model';
 import { DocumentUploadsHelper } from './document.uploads.helper';
@@ -63,6 +80,8 @@ import {
   DocumentMetadataDomain,
   DocumentMetadataKeys,
 } from './domain/document.metadata.domain';
+
+const UPDATED_META_DESCRIPTION = TEST_META_DESCRIPTIONS.UPDATED;
 
 describe('documentApp', () => {
   const minioFileMock = {
@@ -86,13 +105,19 @@ describe('documentApp', () => {
 
   const documentData = {
     short_description: 'short_description',
+    meta_description: TEST_META_DESCRIPTIONS.DEFAULT,
     slug: 'slug',
     uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID,
     name: 'name',
     description: 'description',
-    active: true,
+    status: DocumentStatus.Draft,
     use_cases: [],
     solution_categories: [],
+  };
+
+  const baseDocumentData = {
+    ...documentData,
+    status: DocumentStatus.Published,
   };
 
   const documentUpdateData = {
@@ -100,17 +125,13 @@ describe('documentApp', () => {
     uploader_id: documentData.uploader_id,
     name: documentData.name,
     description: documentData.description,
-    active: documentData.active,
+    status: DocumentStatus.Published,
   };
 
   const integrationMetadata = [
     {
       key: DocumentMetadataKeyCode.IntegrationType,
       value: IntegrationType.ThirdPartyIntegration,
-    },
-    {
-      key: DocumentMetadataKeyCode.IntegrationSubtype,
-      value: IntegrationSubType.Orchestration,
     },
     {
       key: DocumentMetadataKeyCode.VendorUrl,
@@ -184,7 +205,6 @@ describe('documentApp', () => {
       expect(result).toMatchObject({
         ...expected,
         integration_type: IntegrationType.ThirdPartyIntegration,
-        integration_subtype: IntegrationSubType.Orchestration,
         vendor_url: 'https://example.com',
         service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
       });
@@ -194,11 +214,12 @@ describe('documentApp', () => {
       // Given
       const input = {
         short_description: 'created short description',
+        meta_description: TEST_META_DESCRIPTIONS.DEFAULT,
         slug: `persisted-data-create-${uuidv4()}`,
         uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID,
         name: 'created name',
         description: 'created description',
-        active: false,
+        status: DocumentStatus.Draft,
         license_type: 'Commercial',
       };
 
@@ -225,12 +246,11 @@ describe('documentApp', () => {
       expect(result.uploader_id).toBe(input.uploader_id);
       expect(result.name).toBe(input.name);
       expect(result.description).toBe(input.description);
-      expect(result.active).toBe(input.active);
+      expect(result.status).toBe(input.status);
       expect(result.license_type).toBe(input.license_type);
       expect(result.integration_type).toBe(
         IntegrationType.ThirdPartyIntegration
       );
-      expect(result.integration_subtype).toBe(IntegrationSubType.Orchestration);
       expect(result.vendor_url).toBe('https://example.com');
 
       expect(persistedDocument).toMatchObject({
@@ -239,9 +259,29 @@ describe('documentApp', () => {
         uploader_id: input.uploader_id,
         name: input.name,
         description: input.description,
-        active: input.active,
+        status: input.status,
       });
       expect(licenseTypeFromDb).toBe(input.license_type);
+    });
+
+    it('should persist the trimmed meta description when creating a document', async () => {
+      // When
+      const result = await DocumentApp.createDocument({
+        input: {
+          ...documentData,
+          meta_description: `  ${documentData.meta_description}  `,
+        },
+        metadata: integrationMetadata,
+        serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
+      });
+
+      // Then
+      const persistedDocument = await DocumentDomain.loadDocumentBy({
+        id: result.id,
+      });
+      expect(persistedDocument).toMatchObject({
+        meta_description: documentData.meta_description,
+      });
     });
 
     it('should link all provided solution categories when multiple are provided on create', async () => {
@@ -354,20 +394,44 @@ describe('documentApp', () => {
         service: TelemetryEventService.CUSTOM_DASHBOARDS_LIBRARY,
         resource_id: expect.any(String),
         resource_title: documentData.name,
-        status: 'published',
+        status: 'draft',
         service_type: undefined,
       });
     });
 
-    it('should delegate news feed synchronization to NewsFeedApp.upsertResourceNewsFeed on document creation', async () => {
+    it('should throw InvalidDocumentCreationStatus and write or upload nothing when the status is published', async () => {
+      // Given
+      const processUploadsSpy = vi.spyOn(
+        DocumentUploadsHelper,
+        'processUploads'
+      );
+      const slug = `published-creation-${uuidv4()}`;
+
+      // When
+      const call = DocumentApp.createDocument({
+        input: { ...documentData, slug, status: DocumentStatus.Published },
+        metadata: integrationMetadata,
+        serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
+        sourceDocument: mockUpload,
+      });
+
+      // Then
+      await expect(call).rejects.toThrow(
+        ErrorCode.InvalidDocumentCreationStatus
+      );
+      expect(processUploadsSpy).not.toHaveBeenCalled();
+      expect(await TestHelper.document.load({ slug })).toBeUndefined();
+    });
+
+    it('should not synchronize the news feed on document creation', async () => {
       // Given
       const upsertResourceNewsFeedSpy = vi
         .spyOn(NewsFeedApp, 'upsertResourceNewsFeed')
         .mockResolvedValue();
 
       // When
-      const result = await DocumentApp.createDocument({
-        input: { ...documentData, active: true, slug: 'news-feed-active-slug' },
+      await DocumentApp.createDocument({
+        input: { ...documentData, slug: 'news-feed-creation-slug' },
         metadata: [
           { key: DocumentMetadataKeyCode.ProductVersion, value: '1.0.0' },
         ],
@@ -376,17 +440,7 @@ describe('documentApp', () => {
       });
 
       // Then
-      expect(upsertResourceNewsFeedSpy).toHaveBeenCalledOnce();
-      expect(upsertResourceNewsFeedSpy).toHaveBeenCalledWith({
-        documentBeforeUpdate: undefined,
-        updatedDocument: expect.objectContaining({
-          id: result!.id,
-          active: true,
-        }),
-        serviceInstanceId: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
-        serviceDefinitionIdentifier:
-          ServiceDefinitionIdentifier.OpenctiCustomDashboards,
-      });
+      expect(upsertResourceNewsFeedSpy).not.toHaveBeenCalled();
     });
   });
 
@@ -394,8 +448,8 @@ describe('documentApp', () => {
     let createdDocument: Document | undefined;
     beforeEach(async () => {
       await TestHelper.document.delete({});
-      createdDocument = await DocumentApp.createDocument({
-        input: documentData,
+      createdDocument = await TestHelper.document.createInStatus({
+        input: baseDocumentData,
         metadata: integrationMetadata,
         serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
       });
@@ -406,7 +460,7 @@ describe('documentApp', () => {
         parentDocumentId: createdDocument!.id,
         serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
         metadata: [],
-        input: documentData,
+        input: baseDocumentData,
         existingImageIds: [],
       });
 
@@ -426,7 +480,7 @@ describe('documentApp', () => {
         parentDocumentId: createdDocument!.id,
         serviceInstanceId: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
         metadata: integrationMetadata,
-        input: documentData,
+        input: baseDocumentData,
         existingImageIds: [],
       });
 
@@ -443,7 +497,7 @@ describe('documentApp', () => {
         parentDocumentId: randomDocumentId,
         serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
         metadata: integrationMetadata,
-        input: documentData,
+        input: baseDocumentData,
         existingImageIds: [],
       });
 
@@ -457,7 +511,7 @@ describe('documentApp', () => {
         parentDocumentId: createdDocument!.id,
         serviceInstanceId: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
         metadata: integrationMetadata,
-        input: documentData,
+        input: baseDocumentData,
         existingImageIds: [],
       });
 
@@ -476,15 +530,11 @@ describe('documentApp', () => {
             value: IntegrationType.ThirdPartyIntegration,
           },
           {
-            key: DocumentMetadataKeyCode.IntegrationSubtype,
-            value: IntegrationSubType.Orchestration,
-          },
-          {
             key: DocumentMetadataKeyCode.VendorUrl,
             value: 'https://changed.com',
           },
         ],
-        input: documentData,
+        input: baseDocumentData,
         existingImageIds: [],
       });
 
@@ -495,9 +545,29 @@ describe('documentApp', () => {
       });
     });
 
+    it('should persist the meta description when updating a document', async () => {
+      // When
+      await DocumentApp.updateDocument({
+        parentDocumentId: createdDocument!.id,
+        serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
+        metadata: integrationMetadata,
+        input: { meta_description: UPDATED_META_DESCRIPTION },
+        existingImageIds: [],
+      });
+
+      // Then
+      const persistedDocument = await DocumentDomain.loadDocumentBy({
+        id: createdDocument!.id,
+      });
+      expect(persistedDocument).toMatchObject({
+        meta_description: UPDATED_META_DESCRIPTION,
+      });
+    });
+
     it('should persist provided data and validate each field in it', async () => {
       // Given
-      const customDashboardDocument = await DocumentApp.createDocument({
+      vi.spyOn(PgBossProducer, 'send').mockResolvedValue('job-id');
+      const customDashboardDocument = await TestHelper.document.createInStatus({
         input: {
           ...documentData,
           slug: `persisted-data-update-${uuidv4()}`,
@@ -514,7 +584,7 @@ describe('documentApp', () => {
         uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID,
         name: 'updated name',
         description: 'updated description',
-        active: false,
+        status: DocumentStatus.InValidation,
         license_type: 'Commercial',
       };
 
@@ -548,7 +618,7 @@ describe('documentApp', () => {
       expect(result.uploader_id).toBe(input.uploader_id);
       expect(result.name).toBe(input.name);
       expect(result.description).toBe(input.description);
-      expect(result.active).toBe(input.active);
+      expect(result.status).toBe(input.status);
       expect(result.license_type).toBe(input.license_type);
       expect(result.product_version).toBe('1.1.0');
 
@@ -557,7 +627,7 @@ describe('documentApp', () => {
         uploader_id: input.uploader_id,
         name: input.name,
         description: input.description,
-        active: input.active,
+        status: input.status,
       });
 
       expect(licenseTypeFromDb).toBe(input.license_type);
@@ -577,7 +647,7 @@ describe('documentApp', () => {
         ],
         sourceDocument: mockUpload,
         existingImageIds: [],
-        input: documentData,
+        input: baseDocumentData,
       });
 
       // Then
@@ -596,7 +666,7 @@ describe('documentApp', () => {
         metadata: integrationMetadata,
         sourceDocument: mockUpload,
         existingImageIds: [],
-        input: documentData,
+        input: baseDocumentData,
       });
 
       // Then
@@ -615,7 +685,7 @@ describe('documentApp', () => {
         metadata: integrationMetadata,
         sourceDocument: mockUpload,
         existingImageIds: [],
-        input: documentData,
+        input: baseDocumentData,
         logo: mockUpload,
       });
 
@@ -637,33 +707,19 @@ describe('documentApp', () => {
     });
 
     it.each`
-      label          | integrationType              | integrationSubtype
-      ${'CsvFeed'}   | ${IntegrationType.CsvFeed}   | ${null}
-      ${'TaxiiFeed'} | ${IntegrationType.TaxiiFeed} | ${IntegrationSubType.Native}
-      ${'Stream'}    | ${IntegrationType.Stream}    | ${IntegrationSubType.Native}
+      label          | integrationType
+      ${'CsvFeed'}   | ${IntegrationType.CsvFeed}
+      ${'TaxiiFeed'} | ${IntegrationType.TaxiiFeed}
+      ${'Stream'}    | ${IntegrationType.Stream}
     `(
       'should preserve the existing feed_url when no document is uploaded for $label',
-      async ({
-        integrationType,
-        integrationSubtype,
-      }: {
-        integrationType: IntegrationType;
-        integrationSubtype: IntegrationSubType | null;
-      }) => {
+      async ({ integrationType }: { integrationType: IntegrationType }) => {
         // Given
         const metadata = [
           {
             key: DocumentMetadataKeyCode.IntegrationType,
             value: integrationType,
           },
-          ...(integrationSubtype
-            ? [
-                {
-                  key: DocumentMetadataKeyCode.IntegrationSubtype,
-                  value: integrationSubtype,
-                },
-              ]
-            : []),
         ];
 
         // When
@@ -688,19 +744,13 @@ describe('documentApp', () => {
     );
 
     it.each`
-      label          | integrationType              | integrationSubtype
-      ${'CsvFeed'}   | ${IntegrationType.CsvFeed}   | ${null}
-      ${'TaxiiFeed'} | ${IntegrationType.TaxiiFeed} | ${IntegrationSubType.Native}
-      ${'Stream'}    | ${IntegrationType.Stream}    | ${IntegrationSubType.Native}
+      label          | integrationType
+      ${'CsvFeed'}   | ${IntegrationType.CsvFeed}
+      ${'TaxiiFeed'} | ${IntegrationType.TaxiiFeed}
+      ${'Stream'}    | ${IntegrationType.Stream}
     `(
       'should preserve the existing feed_url when an image file is uploaded instead of a json file for $label',
-      async ({
-        integrationType,
-        integrationSubtype,
-      }: {
-        integrationType: IntegrationType;
-        integrationSubtype: IntegrationSubType | null;
-      }) => {
+      async ({ integrationType }: { integrationType: IntegrationType }) => {
         // Given
         const slug = 'integration-slug';
         const metadata = [
@@ -708,18 +758,10 @@ describe('documentApp', () => {
             key: DocumentMetadataKeyCode.IntegrationType,
             value: integrationType,
           },
-          ...(integrationSubtype
-            ? [
-                {
-                  key: DocumentMetadataKeyCode.IntegrationSubtype,
-                  value: integrationSubtype,
-                },
-              ]
-            : []),
         ];
 
-        const createdDocument = await DocumentApp.createDocument({
-          input: { ...documentData, slug },
+        const createdDocument = await TestHelper.document.createInStatus({
+          input: { ...baseDocumentData, slug },
           metadata,
           serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
           sourceDocument: mockUpload,
@@ -761,7 +803,6 @@ describe('documentApp', () => {
           key: DocumentMetadataKeyCode.IntegrationType,
           value: IntegrationType.Connector,
         },
-        { key: DocumentMetadataKeyCode.IntegrationSubtype, value: 'native' },
         { key: DocumentMetadataKeyCode.ProductVersion, value: '1.0.0' },
         { key: DocumentMetadataKeyCode.Verified, value: 'false' },
         { key: DocumentMetadataKeyCode.ManagerSupported, value: 'false' },
@@ -777,8 +818,8 @@ describe('documentApp', () => {
         },
       ];
       const slug = 'connector-slug';
-      const createdDocument = await DocumentApp.createDocument({
-        input: { ...documentData, slug },
+      const createdDocument = await TestHelper.document.createInStatus({
+        input: { ...baseDocumentData, slug },
         metadata: connectorMetadata,
         serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
         sourceDocument: mockUpload,
@@ -790,7 +831,6 @@ describe('documentApp', () => {
           key: DocumentMetadataKeyCode.IntegrationType,
           value: IntegrationType.Connector,
         },
-        { key: DocumentMetadataKeyCode.IntegrationSubtype, value: 'native' },
         { key: DocumentMetadataKeyCode.ProductVersion, value: '2.0.0' },
         { key: DocumentMetadataKeyCode.Verified, value: 'true' },
         { key: DocumentMetadataKeyCode.ManagerSupported, value: 'true' },
@@ -827,8 +867,8 @@ describe('documentApp', () => {
     it('should preserve slug when updating a document', async () => {
       // Given
       const originalSlug = 'my-original-slug';
-      const documentWithSlug = await DocumentApp.createDocument({
-        input: { ...documentData, slug: originalSlug },
+      const documentWithSlug = await TestHelper.document.createInStatus({
+        input: { ...baseDocumentData, slug: originalSlug },
         metadata: integrationMetadata,
         serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
       });
@@ -995,14 +1035,290 @@ describe('documentApp', () => {
       });
     });
 
+    describe('status transitions', () => {
+      const METADATA = [
+        { key: DocumentMetadataKeyCode.ProductVersion, value: '1.0.0' },
+      ];
+
+      const createDocumentWithStatus = (status: DocumentStatus, slug: string) =>
+        TestHelper.document.createInStatus({
+          input: { ...baseDocumentData, status, slug },
+          metadata: METADATA,
+          serviceInstanceId: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
+          sourceDocument: mockUpload,
+        });
+
+      const updateDocumentStatus = (id: DocumentId, status: DocumentStatus) =>
+        DocumentApp.updateDocument({
+          parentDocumentId: id,
+          serviceInstanceId: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
+          metadata: METADATA,
+          input: { status },
+          existingImageIds: [],
+        });
+
+      beforeEach(() => {
+        vi.spyOn(NewsFeedApp, 'upsertResourceNewsFeed').mockResolvedValue();
+        vi.spyOn(PgBossProducer, 'send').mockResolvedValue('job-id');
+      });
+
+      it.each`
+        from                           | to
+        ${DocumentStatus.Draft}        | ${DocumentStatus.InValidation}
+        ${DocumentStatus.InValidation} | ${DocumentStatus.Published}
+      `(
+        'should save the new status when the document goes from $from to $to',
+        async ({ from, to }: { from: DocumentStatus; to: DocumentStatus }) => {
+          // Given
+          const document = await createDocumentWithStatus(
+            from,
+            `status-transition-${from}-to-${to}`
+          );
+
+          // When
+          await updateDocumentStatus(document.id, to);
+
+          // Then
+          const savedDocument = await TestHelper.document.load({
+            id: document.id,
+          });
+          expect(savedDocument?.status).toBe(to);
+        }
+      );
+
+      it.each`
+        from                           | to
+        ${DocumentStatus.Draft}        | ${DocumentStatus.Published}
+        ${DocumentStatus.InValidation} | ${DocumentStatus.Draft}
+        ${DocumentStatus.Published}    | ${DocumentStatus.Draft}
+        ${DocumentStatus.Published}    | ${DocumentStatus.InValidation}
+      `(
+        'should keep the status and throw when the document goes from $from to $to',
+        async ({ from, to }: { from: DocumentStatus; to: DocumentStatus }) => {
+          // Given
+          const document = await createDocumentWithStatus(
+            from,
+            `status-transition-${from}-to-${to}`
+          );
+
+          // When
+          const update = updateDocumentStatus(document.id, to);
+
+          // Then
+          await expect(update).rejects.toThrow(
+            ErrorCode.InvalidDocumentStatusTransition
+          );
+          const savedDocument = await TestHelper.document.load({
+            id: document.id,
+          });
+          expect(savedDocument?.status).toBe(from);
+        }
+      );
+    });
+
+    describe('teams notification', () => {
+      const METADATA = [
+        { key: DocumentMetadataKeyCode.ProductVersion, value: '1.0.0' },
+      ];
+      const AUTHOR = TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2;
+      const OTHER_AUTHOR = TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS;
+
+      let sendSpy: MockInstance;
+      let customDashboardsLibrary: string;
+      let integrationsLibrary: string;
+
+      beforeAll(async () => {
+        const [customDashboards, integrations] = await Promise.all([
+          ServiceDefinitionDomain.loadServiceDefinitionByServiceInstance(
+            SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID
+          ),
+          ServiceDefinitionDomain.loadServiceDefinitionByServiceInstance(
+            SERVICES.INSTANCES.INTEGRATIONS.ID
+          ),
+        ]);
+        customDashboardsLibrary = customDashboards!.name;
+        integrationsLibrary = integrations!.name;
+      });
+
+      const teamsNotificationCalls = () =>
+        sendSpy.mock.calls.filter(
+          ([queueName]) => queueName === TEAMS_NOTIFICATION_QUEUES.SEND
+        );
+
+      const createDashboard = (status: DocumentStatus, slug: string) =>
+        TestHelper.document.createInStatus({
+          input: { ...baseDocumentData, status, slug },
+          metadata: METADATA,
+          serviceInstanceId: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
+          sourceDocument: mockUpload,
+        });
+
+      const updateDashboard = (
+        id: DocumentId,
+        input: { status: DocumentStatus; uploader_id?: UserId }
+      ) =>
+        DocumentApp.updateDocument({
+          parentDocumentId: id,
+          serviceInstanceId: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
+          metadata: METADATA,
+          input,
+          existingImageIds: [],
+        });
+
+      beforeEach(() => {
+        vi.spyOn(NewsFeedApp, 'upsertResourceNewsFeed').mockResolvedValue();
+        sendSpy = vi.spyOn(PgBossProducer, 'send').mockResolvedValue('job-id');
+      });
+
+      it('should enqueue one teams notification with the resource payload when a document is created in validation', async () => {
+        // Given
+        const input = {
+          ...baseDocumentData,
+          status: DocumentStatus.InValidation,
+          slug: 'teams-notification-create',
+        };
+
+        // When
+        const document = await DocumentApp.createDocument({
+          input,
+          metadata: METADATA,
+          serviceInstanceId: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
+          sourceDocument: mockUpload,
+        });
+
+        // Then
+        expect(teamsNotificationCalls()).toHaveLength(1);
+        expect(teamsNotificationCalls()[0]).toEqual([
+          TEAMS_NOTIFICATION_QUEUES.SEND,
+          {
+            event: 'resource_in_validation',
+            payload: {
+              library: customDashboardsLibrary,
+              resource: {
+                name: baseDocumentData.name,
+                type: null,
+                status: DocumentStatus.InValidation,
+                short_description: baseDocumentData.short_description,
+                link: `${config.get<string>('base_url_front')}/redirect/${ServiceDefinitionIdentifier.OpenctiCustomDashboards}?document_id=${toGlobalId('Document', document.id)}`,
+                author_email: AUTHOR.EMAIL,
+              },
+            },
+          },
+        ]);
+      });
+
+      it('should label the resource with its integration type when an integration is created in validation', async () => {
+        // When
+        await TestHelper.document.createInStatus({
+          input: {
+            ...baseDocumentData,
+            status: DocumentStatus.InValidation,
+            slug: 'teams-notification-integration',
+          },
+          metadata: integrationMetadata,
+          serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
+          sourceDocument: mockUpload,
+        });
+
+        // Then
+        expect(teamsNotificationCalls()).toHaveLength(1);
+        expect(teamsNotificationCalls()[0][1]).toMatchObject({
+          event: 'resource_in_validation',
+          payload: {
+            library: integrationsLibrary,
+            resource: { type: 'Third party integration' },
+          },
+        });
+      });
+
+      it('should not enqueue any teams notification when a document is created as draft', async () => {
+        // When
+        await createDashboard(
+          DocumentStatus.Draft,
+          'teams-notification-create-draft'
+        );
+
+        // Then
+        expect(teamsNotificationCalls()).toHaveLength(0);
+      });
+
+      it('should send the email of the uploader saved by the update as author', async () => {
+        // Given
+        const document = await createDashboard(
+          DocumentStatus.Draft,
+          'teams-notification-author'
+        );
+
+        // When
+        await updateDashboard(document.id, {
+          status: DocumentStatus.InValidation,
+          uploader_id: OTHER_AUTHOR.ID,
+        });
+
+        // Then
+        expect(teamsNotificationCalls()[0][1]).toMatchObject({
+          payload: { resource: { author_email: OTHER_AUTHOR.EMAIL } },
+        });
+      });
+
+      it.each`
+        from                           | to                             | notifications
+        ${DocumentStatus.Draft}        | ${DocumentStatus.InValidation} | ${1}
+        ${DocumentStatus.InValidation} | ${DocumentStatus.InValidation} | ${0}
+        ${DocumentStatus.InValidation} | ${DocumentStatus.Published}    | ${0}
+      `(
+        'should enqueue $notifications teams notification when the document goes from $from to $to',
+        async ({
+          from,
+          to,
+          notifications,
+        }: {
+          from: DocumentStatus;
+          to: DocumentStatus;
+          notifications: number;
+        }) => {
+          // Given
+          const document = await createDashboard(
+            from,
+            `teams-notification-${from}-to-${to}`
+          );
+          sendSpy.mockClear();
+
+          // When
+          await updateDashboard(document.id, { status: to });
+
+          // Then
+          expect(teamsNotificationCalls()).toHaveLength(notifications);
+        }
+      );
+
+      it('should not save the document when the teams notification cannot be enqueued', async () => {
+        // Given
+        sendSpy.mockRejectedValue(new Error('enqueue failed'));
+        const slug = 'teams-notification-enqueue-failure';
+
+        // When
+        const creation = createDashboard(DocumentStatus.InValidation, slug);
+
+        // Then
+        await expect(creation).rejects.toThrow('enqueue failed');
+        expect(await TestHelper.document.load({ slug })).toBeUndefined();
+      });
+    });
+
     it('should delegate news feed synchronization to NewsFeedApp.upsertResourceNewsFeed', async () => {
       // Given
       const upsertResourceNewsFeedSpy = vi
         .spyOn(NewsFeedApp, 'upsertResourceNewsFeed')
         .mockResolvedValue();
+      vi.spyOn(PgBossProducer, 'send').mockResolvedValue('job-id');
 
-      const inactiveDoc = await DocumentApp.createDocument({
-        input: { ...documentData, active: false, slug: 'inactive-to-active' },
+      const unpublishedDoc = await TestHelper.document.createInStatus({
+        input: {
+          ...baseDocumentData,
+          status: DocumentStatus.InValidation,
+          slug: 'in-validation-to-published',
+        },
         metadata: [
           { key: DocumentMetadataKeyCode.ProductVersion, value: '1.0.0' },
         ],
@@ -1013,12 +1329,12 @@ describe('documentApp', () => {
 
       // When
       const updatedDocument = await DocumentApp.updateDocument({
-        parentDocumentId: inactiveDoc!.id,
+        parentDocumentId: unpublishedDoc!.id,
         serviceInstanceId: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
         metadata: [
           { key: DocumentMetadataKeyCode.ProductVersion, value: '1.0.0' },
         ],
-        input: { active: true },
+        input: { status: DocumentStatus.Published },
         existingImageIds: [],
       });
 
@@ -1026,16 +1342,378 @@ describe('documentApp', () => {
       expect(upsertResourceNewsFeedSpy).toHaveBeenCalledOnce();
       expect(upsertResourceNewsFeedSpy).toHaveBeenCalledWith({
         documentBeforeUpdate: expect.objectContaining({
-          id: inactiveDoc!.id,
-          active: false,
+          id: unpublishedDoc!.id,
+          status: DocumentStatus.InValidation,
         }),
         updatedDocument: expect.objectContaining({
           id: updatedDocument.id,
-          active: true,
+          status: DocumentStatus.Published,
         }),
-        serviceInstanceId: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
         serviceDefinitionIdentifier:
           ServiceDefinitionIdentifier.OpenctiCustomDashboards,
+      });
+    });
+  });
+
+  describe('sendResourceNotPublishedReminder', () => {
+    const AUTHOR = TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2;
+    const OTHER_AUTHOR = TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS;
+
+    let originalFlag: boolean;
+    let sendSpy: MockInstance;
+
+    const linkOf = (identifier: string, id: DocumentId) =>
+      `${config.get<string>('base_url_front')}/redirect/${identifier}?document_id=${toGlobalId('Document', id)}`;
+
+    const createNotPublished = async ({
+      name,
+      status,
+      serviceInstanceId,
+      type,
+      uploaderId,
+      shortDescription,
+      createdAt,
+      integrationType,
+    }: {
+      name: string;
+      status: DocumentStatus;
+      serviceInstanceId: ServiceInstanceId;
+      type: string;
+      uploaderId?: UserId;
+      shortDescription?: string;
+      createdAt: Date;
+      integrationType?: IntegrationType;
+    }) => {
+      const document = await TestHelper.document.create({
+        name,
+        status,
+        service_instance_id: serviceInstanceId,
+        type,
+        uploader_id: uploaderId,
+        short_description: shortDescription,
+        created_at: createdAt,
+      });
+      if (integrationType) {
+        await TestHelper.documentMetadata.create({
+          document_id: document.id,
+          key: DocumentMetadataKeyCode.IntegrationType,
+          value: integrationType,
+        });
+      }
+      return document;
+    };
+
+    beforeEach(async () => {
+      await TestHelper.document.delete({});
+      originalFlag =
+        portalConfig.enabled_teams_notifications
+          .resource_not_published_reminder;
+      portalConfig.enabled_teams_notifications.resource_not_published_reminder = true;
+      sendSpy = vi.spyOn(PgBossProducer, 'send').mockResolvedValue('job-id');
+    });
+
+    afterEach(async () => {
+      portalConfig.enabled_teams_notifications.resource_not_published_reminder =
+        originalFlag;
+      await TestHelper.documentMetadata.delete({});
+    });
+
+    it('should not enqueue anything when the reminder is disabled', async () => {
+      // Given a draft document and the reminder switched off
+      portalConfig.enabled_teams_notifications.resource_not_published_reminder = false;
+      await createNotPublished({
+        name: 'draft',
+        status: DocumentStatus.Draft,
+        serviceInstanceId: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
+        type: OPENCTI_CUSTOM_DASHBOARD_DOCUMENT_TYPE,
+        createdAt: new Date('2026-01-01T00:00:00Z'),
+      });
+
+      // When
+      await DocumentApp.sendResourceNotPublishedReminder();
+
+      // Then
+      expect(sendSpy).not.toHaveBeenCalled();
+    });
+
+    it('should not enqueue anything when every document is published', async () => {
+      // Given only a published document
+      await createNotPublished({
+        name: 'published',
+        status: DocumentStatus.Published,
+        serviceInstanceId: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
+        type: OPENCTI_CUSTOM_DASHBOARD_DOCUMENT_TYPE,
+        createdAt: new Date('2026-01-01T00:00:00Z'),
+      });
+
+      // When
+      await DocumentApp.sendResourceNotPublishedReminder();
+
+      // Then
+      expect(sendSpy).not.toHaveBeenCalled();
+    });
+
+    it('should enqueue one job per library listing its draft and in validation resources', async () => {
+      // Given two libraries holding drafts and resources in validation
+      const [integrationsDefinition, dashboardsDefinition] = await Promise.all([
+        ServiceDefinitionDomain.loadServiceDefinitionByServiceInstance(
+          SERVICES.INSTANCES.INTEGRATIONS.ID
+        ),
+        ServiceDefinitionDomain.loadServiceDefinitionByServiceInstance(
+          SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID
+        ),
+      ]);
+      const feedDraft = await createNotPublished({
+        name: 'Feed draft',
+        status: DocumentStatus.Draft,
+        serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        uploaderId: AUTHOR.ID,
+        shortDescription: 'Feed description',
+        createdAt: new Date('2026-01-01T00:00:00Z'),
+        integrationType: IntegrationType.CsvFeed,
+      });
+      const taxiiFeed = await createNotPublished({
+        name: 'TAXII feed in validation',
+        status: DocumentStatus.InValidation,
+        serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        createdAt: new Date('2026-01-02T00:00:00Z'),
+        integrationType: IntegrationType.TaxiiFeed,
+      });
+      const dashboard = await createNotPublished({
+        name: 'Dashboard in validation',
+        status: DocumentStatus.InValidation,
+        serviceInstanceId: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
+        type: OPENCTI_CUSTOM_DASHBOARD_DOCUMENT_TYPE,
+        uploaderId: OTHER_AUTHOR.ID,
+        createdAt: new Date('2026-01-03T00:00:00Z'),
+      });
+
+      // When
+      await DocumentApp.sendResourceNotPublishedReminder();
+
+      // Then
+      expect(sendSpy).toHaveBeenCalledTimes(2);
+      expect(sendSpy).toHaveBeenCalledWith(TEAMS_NOTIFICATION_QUEUES.SEND, {
+        event: 'resource_not_published',
+        payload: {
+          library: integrationsDefinition!.name,
+          resources: [
+            {
+              name: 'Feed draft',
+              type: 'CSV Feed',
+              status: 'draft',
+              short_description: 'Feed description',
+              link: linkOf(integrationsDefinition!.identifier, feedDraft.id),
+              author_email: AUTHOR.EMAIL,
+            },
+            {
+              name: 'TAXII feed in validation',
+              type: 'TAXII Feed',
+              status: 'in_validation',
+              short_description: null,
+              link: linkOf(integrationsDefinition!.identifier, taxiiFeed.id),
+              author_email: null,
+            },
+          ],
+        },
+      });
+      expect(sendSpy).toHaveBeenCalledWith(TEAMS_NOTIFICATION_QUEUES.SEND, {
+        event: 'resource_not_published',
+        payload: {
+          library: dashboardsDefinition!.name,
+          resources: [
+            {
+              name: 'Dashboard in validation',
+              type: null,
+              status: 'in_validation',
+              short_description: null,
+              link: linkOf(dashboardsDefinition!.identifier, dashboard.id),
+              author_email: OTHER_AUTHOR.EMAIL,
+            },
+          ],
+        },
+      });
+    });
+
+    it('should keep enqueuing the other libraries and fail at the end when one library cannot be enqueued', async () => {
+      // Given two libraries, the first send rejecting
+      const errorSpy = vi.spyOn(logApp, 'error').mockImplementation(() => {});
+      sendSpy
+        .mockRejectedValueOnce(new Error('queue unavailable'))
+        .mockResolvedValueOnce('job-id');
+      await createNotPublished({
+        name: 'integration draft',
+        status: DocumentStatus.Draft,
+        serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        createdAt: new Date('2026-01-01T00:00:00Z'),
+        integrationType: IntegrationType.CsvFeed,
+      });
+      await createNotPublished({
+        name: 'dashboard draft',
+        status: DocumentStatus.Draft,
+        serviceInstanceId: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
+        type: OPENCTI_CUSTOM_DASHBOARD_DOCUMENT_TYPE,
+        createdAt: new Date('2026-01-01T00:00:00Z'),
+      });
+
+      // When
+      const reminder = DocumentApp.sendResourceNotPublishedReminder();
+
+      // Then
+      await expect(reminder).rejects.toThrow(
+        'Not published resources reminder failed for 1 of 2 libraries'
+      );
+      expect(sendSpy).toHaveBeenCalledTimes(2);
+      expect(errorSpy).toHaveBeenCalledWith(
+        'Unable to enqueue the not published resources reminder',
+        {
+          error: new Error('queue unavailable'),
+          serviceDefinitionId: expect.any(String),
+        }
+      );
+    });
+
+    it('should leave the author email empty when the uploader cannot be loaded', async () => {
+      // Given a document whose uploader is not returned by the user query
+      vi.spyOn(UserDomain, 'loadEmailsByIds').mockResolvedValue([]);
+      await createNotPublished({
+        name: 'orphan author',
+        status: DocumentStatus.Draft,
+        serviceInstanceId: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
+        type: OPENCTI_CUSTOM_DASHBOARD_DOCUMENT_TYPE,
+        uploaderId: AUTHOR.ID,
+        createdAt: new Date('2026-01-01T00:00:00Z'),
+      });
+
+      // When
+      await DocumentApp.sendResourceNotPublishedReminder();
+
+      // Then
+      expect(sendSpy.mock.calls[0]?.[1]).toMatchObject({
+        payload: {
+          resources: [{ name: 'orphan author', author_email: null }],
+        },
+      });
+    });
+
+    it('should leave the type empty when an integration has a missing or unrecognized integration type', async () => {
+      // Given an integration without type metadata and one with an unknown type
+      await createNotPublished({
+        name: 'no type',
+        status: DocumentStatus.Draft,
+        serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        createdAt: new Date('2026-01-01T00:00:00Z'),
+      });
+      const unknownType = await createNotPublished({
+        name: 'unknown type',
+        status: DocumentStatus.Draft,
+        serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        createdAt: new Date('2026-01-02T00:00:00Z'),
+      });
+      await TestHelper.documentMetadata.create({
+        document_id: unknownType.id,
+        key: DocumentMetadataKeyCode.IntegrationType,
+        value: 'not_an_integration_type',
+      });
+
+      // When
+      await DocumentApp.sendResourceNotPublishedReminder();
+
+      // Then
+      expect(sendSpy.mock.calls[0]?.[1]).toMatchObject({
+        payload: {
+          resources: [
+            { name: 'no type', type: null },
+            { name: 'unknown type', type: null },
+          ],
+        },
+      });
+    });
+
+    it('should load the authors and the integration types in batches, not once per document', async () => {
+      // Given several documents of different authors
+      const loadEmailsSpy = vi.spyOn(UserDomain, 'loadEmailsByIds');
+      const integrationTypeSpy = vi.spyOn(
+        DocumentMetadataDomain,
+        'buildIntegrationTypeQuery'
+      );
+      await Promise.all(
+        [AUTHOR.ID, OTHER_AUTHOR.ID, AUTHOR.ID].map((uploaderId, index) =>
+          createNotPublished({
+            name: `batch-${index}`,
+            status: DocumentStatus.Draft,
+            serviceInstanceId: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
+            type: OPENCTI_CUSTOM_DASHBOARD_DOCUMENT_TYPE,
+            uploaderId,
+            createdAt: new Date('2026-01-01T00:00:00Z'),
+          })
+        )
+      );
+
+      // When
+      await DocumentApp.sendResourceNotPublishedReminder();
+
+      // Then
+      expect(loadEmailsSpy).toHaveBeenCalledTimes(1);
+      expect(loadEmailsSpy.mock.calls[0]?.[0]).toHaveLength(2);
+      expect(integrationTypeSpy).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('deleteDocument', () => {
+    it('should delegate the news feed item deletion to NewsFeedApp.deleteResourceNewsFeed', async () => {
+      // Given
+      const deleteResourceNewsFeedSpy = vi
+        .spyOn(NewsFeedApp, 'deleteResourceNewsFeed')
+        .mockResolvedValue();
+      const document = await TestHelper.document.create({
+        name: 'document to delete',
+        service_instance_id: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
+      });
+
+      // When
+      await DocumentApp.deleteDocument(
+        document.id,
+        SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID
+      );
+
+      // Then
+      expect(deleteResourceNewsFeedSpy).toHaveBeenCalledOnce();
+      expect(deleteResourceNewsFeedSpy).toHaveBeenCalledWith({
+        documentId: document.id,
+      });
+    });
+
+    it('should delegate the news feed item deletion when the file cleanup fails', async () => {
+      // Given
+      const deleteResourceNewsFeedSpy = vi
+        .spyOn(NewsFeedApp, 'deleteResourceNewsFeed')
+        .mockResolvedValue();
+      vi.spyOn(MinIOClient, 'deleteFile').mockRejectedValue(
+        new Error('cleanup-failed')
+      );
+      const document = await TestHelper.document.create({
+        name: 'document to delete',
+        minio_name: minioFileMock.minioName,
+        service_instance_id: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
+      });
+
+      // When
+      await expect(
+        DocumentApp.deleteDocument(
+          document.id,
+          SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID
+        )
+      ).rejects.toThrow('cleanup-failed');
+
+      // Then
+      expect(deleteResourceNewsFeedSpy).toHaveBeenCalledWith({
+        documentId: document.id,
       });
     });
   });
@@ -1043,14 +1721,15 @@ describe('documentApp', () => {
   describe('loadDocument', () => {
     it('should return the document with elastic search counters', async () => {
       // Given
-      const document = await DocumentApp.createDocument({
+      const document = await TestHelper.document.createInStatus({
         input: {
           uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
           name: 'myCustomDashboard',
           description: 'description',
           short_description: 'short_description',
+          meta_description: TEST_META_DESCRIPTIONS.DEFAULT,
           slug: 'slug',
-          active: true,
+          status: DocumentStatus.Published,
         },
         metadata: [
           { key: DocumentMetadataKeyCode.ProductVersion, value: '1.2.3' },
@@ -1100,14 +1779,15 @@ describe('documentApp', () => {
 
     it('should return the document with elastic search counters', async () => {
       // Given
-      const document = await DocumentApp.createDocument({
+      const document = await TestHelper.document.createInStatus({
         input: {
           uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
           name: 'myCustomDashboard',
           description: 'description',
           short_description: 'short_description',
+          meta_description: TEST_META_DESCRIPTIONS.DEFAULT,
           slug: 'slug',
-          active: true,
+          status: DocumentStatus.Published,
         },
         metadata: [
           { key: DocumentMetadataKeyCode.ProductVersion, value: '1.2.3' },
@@ -1175,6 +1855,128 @@ describe('documentApp', () => {
     });
   });
 
+  describe('loadPublicDocumentSlugsByServiceSlug', () => {
+    it('should throw when service definition is not found', async () => {
+      // When
+      const call =
+        DocumentApp.loadPublicDocumentSlugsByServiceSlug('unknown-slug');
+
+      // Then
+      await expect(call).rejects.toThrow(ErrorCode.ServiceDefinitionNotFound);
+    });
+
+    it('should return the document slugs without hydrating metadata', async () => {
+      // Given
+      const loadSeoDocumentSlugsByServiceSlugSpy = vi
+        .spyOn(DocumentDomain, 'loadSeoDocumentSlugsByServiceSlug')
+        .mockResolvedValue([{}]);
+
+      // When
+      await DocumentApp.loadPublicDocumentSlugsByServiceSlug(
+        SERVICES.INSTANCES.CUSTOM_DASHBOARDS.SLUG
+      );
+
+      // Then
+      expect(loadSeoDocumentSlugsByServiceSlugSpy).toHaveBeenCalledWith(
+        OPENCTI_CUSTOM_DASHBOARD_DOCUMENT_TYPE,
+        SERVICES.INSTANCES.CUSTOM_DASHBOARDS.SLUG
+      );
+    });
+  });
+
+  describe('loadDocuments visibility', () => {
+    let privateServiceInstance: ServiceInstance;
+
+    beforeEach(async () => {
+      const seededInstance = await TestHelper.serviceInstance.load({
+        id: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
+      });
+      privateServiceInstance = await TestHelper.serviceInstance.create({
+        service_definition_id: seededInstance!.service_definition_id,
+        public: false,
+        slug: `private-${uuidv4()}`,
+      });
+      await TestHelper.document.createWholeDocument({
+        serviceInstanceId: privateServiceInstance.id,
+        metadata: [
+          { key: DocumentMetadataKeyCode.ProductVersion, value: '1.2.3' },
+        ],
+      });
+    });
+
+    afterEach(async () => {
+      await TestHelper.subscription.delete({
+        service_instance_id: privateServiceInstance.id,
+      });
+      await TestHelper.serviceInstance.delete({
+        id: privateServiceInstance.id,
+      });
+    });
+
+    it('should not return documents of a private service instance the organization is not subscribed to', async () => {
+      const result = await DocumentApp.loadDocuments({
+        serviceInstanceId: privateServiceInstance.id,
+      });
+
+      expect(result.edges).toHaveLength(0);
+    });
+
+    it('should return documents of a private service instance the organization is subscribed to', async () => {
+      await TestHelper.subscription.create({
+        service_instance_id: privateServiceInstance.id,
+        organization_id: requestContextSimpleUserFiligran2.user
+          .selected_organization_id as OrganizationId,
+      });
+
+      const result = await DocumentApp.loadDocuments({
+        serviceInstanceId: privateServiceInstance.id,
+      });
+
+      expect(result.edges).toHaveLength(1);
+    });
+  });
+
+  describe('loadDocuments with metadataKeysOverride', () => {
+    it('should throw when service definition is not found', async () => {
+      // When
+      const call = DocumentApp.loadDocuments(
+        {
+          serviceInstanceId:
+            '00000000-0000-0000-0000-000000000000' as ServiceInstanceId,
+        },
+        [DocumentMetadataKeyCode.IntegrationType]
+      );
+
+      // Then
+      await expect(call).rejects.toThrow(ErrorCode.ServiceDefinitionNotFound);
+    });
+
+    it('should load documents with the caller-provided metadata keys instead of the service definition default', async () => {
+      // Given
+      const loadParentDocumentsByServiceInstanceSpy = vi
+        .spyOn(DocumentDomain, 'loadParentDocumentsByServiceInstance')
+        .mockResolvedValue({
+          edges: [],
+          pageInfo: { hasNextPage: false, hasPreviousPage: false },
+          totalCount: 0,
+        });
+      const input = {
+        serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
+      };
+      const metadataKeys = [DocumentMetadataKeyCode.IntegrationType];
+
+      // When
+      await DocumentApp.loadDocuments(input, metadataKeys);
+
+      // Then
+      expect(loadParentDocumentsByServiceInstanceSpy).toHaveBeenCalledWith(
+        OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        input,
+        metadataKeys
+      );
+    });
+  });
+
   describe('loadPublicDocuments', () => {
     it('should throw if service definition is not found', async () => {
       // Given
@@ -1232,7 +2034,6 @@ describe('documentApp', () => {
   describe('createDocumentWithChildrenAndMetadata', () => {
     beforeEach(async () => {
       await TestHelper.objectUseCase.delete({});
-      await TestHelper.useCase.delete({});
     });
 
     it('should create a document without linking any use case when use_cases is omitted', async () => {
@@ -1243,7 +2044,7 @@ describe('documentApp', () => {
           description: 'description',
           service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
           type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
-          active: true,
+          status: DocumentStatus.Published,
         },
         []
       );
@@ -1263,8 +2064,11 @@ describe('documentApp', () => {
           description: 'description',
           service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
           type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
-          active: true,
-          use_cases: ['Detection', 'Response'],
+          status: DocumentStatus.Published,
+          use_cases: [
+            TEST_USE_CASES.DETECTION.NAME,
+            TEST_USE_CASES.RESPONSE.NAME,
+          ],
         },
         []
       );
@@ -1274,25 +2078,15 @@ describe('documentApp', () => {
         object_id: document.id,
       });
       expect(links).toHaveLength(2);
-
-      const detectionUseCase = await useCaseDomain.loadUseCaseBy({
-        name: 'Detection',
-      });
-      const responseUseCase = await useCaseDomain.loadUseCaseBy({
-        name: 'Response',
-      });
       expect(links?.map((link) => link.use_case_id)).toEqual(
-        expect.arrayContaining([detectionUseCase?.id, responseUseCase?.id])
+        expect.arrayContaining([
+          TEST_USE_CASES.DETECTION.ID,
+          TEST_USE_CASES.RESPONSE.ID,
+        ])
       );
     });
 
     it('should reuse an existing use case by name (case-insensitive) rather than duplicating it', async () => {
-      // Given
-      const existingUseCase = await useCaseApp.loadOrCreateUseCase({
-        name: 'Detection',
-        color: '#0099cc',
-      });
-
       // When
       const document = await DocumentApp.createDocumentWithChildrenAndMetadata(
         {
@@ -1300,15 +2094,17 @@ describe('documentApp', () => {
           description: 'description',
           service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
           type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
-          active: true,
+          status: DocumentStatus.Published,
           use_cases: ['detection'],
         },
         []
       );
 
-      // Then
-      const allUseCases = await TestHelper.useCase.loadAll({});
-      expect(allUseCases).toHaveLength(1);
+      // Then — no duplicate "Detection" use case was created
+      const detectionUseCases = await TestHelper.useCase.loadAll({
+        name: TEST_USE_CASES.DETECTION.NAME,
+      });
+      expect(detectionUseCases).toHaveLength(1);
 
       const links = await TestHelper.objectUseCase.load({
         object_id: document.id,
@@ -1316,7 +2112,7 @@ describe('documentApp', () => {
       expect(links).toHaveLength(1);
       expect(links?.[0]).toMatchObject({
         object_id: document.id,
-        use_case_id: existingUseCase.id,
+        use_case_id: TEST_USE_CASES.DETECTION.ID,
       });
     });
   });
@@ -1326,10 +2122,6 @@ describe('documentApp', () => {
       {
         key: DocumentMetadataKeyCode.IntegrationType,
         value: IntegrationType.ThirdPartyIntegration,
-      },
-      {
-        key: DocumentMetadataKeyCode.IntegrationSubtype,
-        value: IntegrationSubType.Orchestration,
       },
       { key: DocumentMetadataKeyCode.VendorUrl, value: 'https://example.com' },
     ] as unknown as DocumentMetadataKeys<ThirdPartyIntegration>;
@@ -1415,10 +2207,86 @@ describe('documentApp', () => {
       });
     });
 
+    describe('obsolete external image files', () => {
+      const input = {
+        ...documentData,
+        uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
+        slug: 'obsolete-files-slug',
+        service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
+      };
+
+      const upsertWithFile = async (minioName: string) => {
+        vi.spyOn(DocumentUploadsHelper, 'processUploads').mockResolvedValue([
+          { ...minioFileMock, minioName },
+        ]);
+        return DocumentApp.upsertDocumentWithExternalImage(
+          'integration',
+          input,
+          mockUpload,
+          metadataKeys,
+          FiligranProduct.Opencti
+        );
+      };
+
+      it('should delete the replaced file once the transaction is committed', async () => {
+        // Given
+        await upsertWithFile('first-file');
+        const inTransactionOnDelete: boolean[] = [];
+        vi.spyOn(MinIOClient, 'deleteFile').mockImplementation(async () => {
+          inTransactionOnDelete.push(databaseContext.isInTransaction());
+        });
+
+        // When
+        const doc = await upsertWithFile('second-file');
+
+        // Then
+        expect(MinIOClient.deleteFile).toHaveBeenCalledTimes(1);
+        expect(MinIOClient.deleteFile).toHaveBeenCalledWith('first-file');
+        expect(inTransactionOnDelete).toEqual([false]);
+        const children = await DocumentChildrenDomain.loadChildrenDocuments(
+          doc.id
+        );
+        expect(children[0]).toMatchObject({ minio_name: 'second-file' });
+      });
+
+      it('should keep the replaced file when the upsert fails', async () => {
+        // Given
+        await upsertWithFile('first-file');
+        vi.spyOn(MinIOClient, 'deleteFile').mockClear();
+        vi.spyOn(DocumentApp, 'replaceExternalImage').mockRejectedValueOnce(
+          new Error('upsert failed')
+        );
+
+        // When
+        await expect(upsertWithFile('second-file')).rejects.toThrow(
+          'upsert failed'
+        );
+
+        // Then
+        expect(MinIOClient.deleteFile).not.toHaveBeenCalled();
+      });
+
+      it('should not fail the upsert when deleting the replaced file fails', async () => {
+        // Given
+        await upsertWithFile('first-file');
+        vi.spyOn(MinIOClient, 'deleteFile').mockRejectedValue(
+          new Error('storage down')
+        );
+
+        // When
+        const doc = await upsertWithFile('second-file');
+
+        // Then
+        const children = await DocumentChildrenDomain.loadChildrenDocuments(
+          doc.id
+        );
+        expect(children[0]).toMatchObject({ minio_name: 'second-file' });
+      });
+    });
+
     describe('use_cases linking', () => {
       beforeEach(async () => {
         await TestHelper.objectUseCase.delete({});
-        await TestHelper.useCase.delete({});
       });
 
       it('should link use cases by name when creating a new document', async () => {
@@ -1428,7 +2296,7 @@ describe('documentApp', () => {
           uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
           slug: 'use-case-create-slug',
           service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
-          use_cases: ['Detection'],
+          use_cases: [TEST_USE_CASES.DETECTION.NAME],
         };
 
         // When
@@ -1445,12 +2313,9 @@ describe('documentApp', () => {
           object_id: doc.id,
         });
         expect(links).toHaveLength(1);
-        const detectionUseCase = await useCaseDomain.loadUseCaseBy({
-          name: 'Detection',
-        });
         expect(links?.[0]).toMatchObject({
           object_id: doc.id,
-          use_case_id: detectionUseCase?.id,
+          use_case_id: TEST_USE_CASES.DETECTION.ID,
         });
       });
 
@@ -1461,7 +2326,7 @@ describe('documentApp', () => {
           uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
           slug: 'use-case-update-slug',
           service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
-          use_cases: ['Detection'],
+          use_cases: [TEST_USE_CASES.DETECTION.NAME],
         };
         const doc1 = await DocumentApp.upsertDocumentWithExternalImage(
           OPENCTI_INTEGRATION_DOCUMENT_TYPE,
@@ -1474,7 +2339,7 @@ describe('documentApp', () => {
         // When — update with "Response" instead
         const doc2 = await DocumentApp.upsertDocumentWithExternalImage(
           OPENCTI_INTEGRATION_DOCUMENT_TYPE,
-          { ...input, use_cases: ['Response'] },
+          { ...input, use_cases: [TEST_USE_CASES.RESPONSE.NAME] },
           mockUpload,
           metadataKeys,
           FiligranProduct.Opencti
@@ -1486,12 +2351,9 @@ describe('documentApp', () => {
           object_id: doc2.id,
         });
         expect(links).toHaveLength(1);
-        const responseUseCase = await useCaseDomain.loadUseCaseBy({
-          name: 'Response',
-        });
         expect(links?.[0]).toMatchObject({
           object_id: doc2.id,
-          use_case_id: responseUseCase?.id,
+          use_case_id: TEST_USE_CASES.RESPONSE.ID,
         });
       });
 
@@ -1502,7 +2364,7 @@ describe('documentApp', () => {
           uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
           slug: 'use-case-unchanged-slug',
           service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
-          use_cases: ['Detection'],
+          use_cases: [TEST_USE_CASES.DETECTION.NAME],
         };
         const doc1 = await DocumentApp.upsertDocumentWithExternalImage(
           OPENCTI_INTEGRATION_DOCUMENT_TYPE,
@@ -1532,14 +2394,232 @@ describe('documentApp', () => {
           object_id: doc2.id,
         });
         expect(links).toHaveLength(1);
-        const detectionUseCase = await useCaseDomain.loadUseCaseBy({
-          name: 'Detection',
-        });
         expect(links?.[0]).toMatchObject({
           object_id: doc2.id,
-          use_case_id: detectionUseCase?.id,
+          use_case_id: TEST_USE_CASES.DETECTION.ID,
         });
       });
+    });
+  });
+
+  describe('replaceExternalImage', () => {
+    let parentId: DocumentId;
+    let oldExternalId: DocumentId;
+    let oldInternalId: DocumentId;
+
+    const insertImage = async (
+      source_type: DocumentSourceType,
+      minio_name: string
+    ) => {
+      const id = uuidv4() as DocumentId;
+      await TestHelper.document.create({
+        id,
+        type: 'image',
+        source_type,
+        minio_name,
+        mime_type: 'image/png',
+        name: 'Test Image',
+        uploader_id: ADMIN_UUID,
+        service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
+      });
+      await TestHelper.documentChildren.create({
+        parent_document_id: parentId,
+        child_document_id: id,
+      });
+      return id;
+    };
+
+    const loadParent = () => TestHelper.document.load({ id: parentId });
+
+    const mockNewLogo = (minioName: string) =>
+      vi.spyOn(DocumentUploadsHelper, 'processUploads').mockResolvedValue([
+        {
+          minioName,
+          mimeType: 'image/png',
+          fileName: 'new-image.png',
+        },
+      ]);
+
+    beforeEach(async () => {
+      parentId = uuidv4() as DocumentId;
+      await TestHelper.document.create({
+        id: parentId,
+        type: 'folder',
+        source_type: DocumentSourceType.Internal,
+        minio_name: 'parent-folder',
+        name: 'Parent',
+        uploader_id: ADMIN_UUID,
+        service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
+      });
+      oldExternalId = await insertImage(
+        DocumentSourceType.External,
+        'old-external'
+      );
+      oldInternalId = await insertImage(
+        DocumentSourceType.Internal,
+        'old-internal'
+      );
+      mockNewLogo('new-minio');
+    });
+
+    afterEach(async () => {
+      await TestHelper.documentChildren.delete({});
+    });
+
+    it('should replace the external image file in place, keeping its id, and return the old file as obsolete', async () => {
+      // When
+      const obsoleteMinioNames = await DocumentApp.replaceExternalImage(
+        await loadParent(),
+        mockUpload
+      );
+
+      // Then
+      const externalImages =
+        await DocumentChildrenDomain.loadExternalImageFiles(parentId);
+      expect(externalImages).toMatchObject([
+        { id: oldExternalId, minio_name: 'new-minio' },
+      ]);
+      const internalImage = await TestHelper.document.load({
+        id: oldInternalId,
+      });
+      expect(internalImage.minio_name).toBe('old-internal');
+      expect(obsoleteMinioNames).toEqual(['old-external']);
+    });
+
+    it('should not return the file as obsolete when the new upload points to the same file', async () => {
+      // Given
+      mockNewLogo('old-external');
+
+      // When
+      const obsoleteMinioNames = await DocumentApp.replaceExternalImage(
+        await loadParent(),
+        mockUpload
+      );
+
+      // Then
+      expect(obsoleteMinioNames).toEqual([]);
+    });
+
+    it('should keep the oldest external image and return the duplicates as obsolete', async () => {
+      // Given
+      await insertImage(DocumentSourceType.External, 'duplicate-external');
+
+      // When
+      const obsoleteMinioNames = await DocumentApp.replaceExternalImage(
+        await loadParent(),
+        mockUpload
+      );
+
+      // Then
+      const externalImages =
+        await DocumentChildrenDomain.loadExternalImageFiles(parentId);
+      expect(externalImages).toHaveLength(1);
+      expect(externalImages[0]!.id).toBe(oldExternalId);
+      expect(obsoleteMinioNames).toHaveLength(2);
+      expect(obsoleteMinioNames).toEqual(
+        expect.arrayContaining(['duplicate-external', 'old-external'])
+      );
+    });
+
+    it('should not return the file of a duplicate that shares the new upload key as obsolete', async () => {
+      // Given
+      mockNewLogo('shared-key');
+      await insertImage(DocumentSourceType.External, 'shared-key');
+
+      // When
+      const obsoleteMinioNames = await DocumentApp.replaceExternalImage(
+        await loadParent(),
+        mockUpload
+      );
+
+      // Then
+      const externalImages =
+        await DocumentChildrenDomain.loadExternalImageFiles(parentId);
+      expect(externalImages).toHaveLength(1);
+      expect(externalImages[0]!.minio_name).toBe('shared-key');
+      expect(obsoleteMinioNames).toEqual(['old-external']);
+    });
+
+    it('should delete the external images when there is no new logo', async () => {
+      // Given
+      vi.spyOn(DocumentUploadsHelper, 'processUploads').mockResolvedValue([]);
+
+      // When
+      const obsoleteMinioNames = await DocumentApp.replaceExternalImage(
+        await loadParent(),
+        mockUpload
+      );
+
+      // Then
+      expect(
+        await DocumentChildrenDomain.loadExternalImageFiles(parentId)
+      ).toEqual([]);
+      expect(obsoleteMinioNames).toEqual(['old-external']);
+    });
+
+    it('should create the external image when there is none yet', async () => {
+      // Given
+      await TestHelper.document.update(
+        { id: oldExternalId },
+        { source_type: DocumentSourceType.Internal }
+      );
+
+      // When
+      const obsoleteMinioNames = await DocumentApp.replaceExternalImage(
+        await loadParent(),
+        mockUpload
+      );
+
+      // Then
+      const externalImages =
+        await DocumentChildrenDomain.loadExternalImageFiles(parentId);
+      expect(externalImages).toHaveLength(1);
+      expect(externalImages[0]!.minio_name).toBe('new-minio');
+      expect(obsoleteMinioNames).toEqual([]);
+    });
+
+    it('should not affect the external image of another parent', async () => {
+      // Given
+      const otherParentId = uuidv4() as DocumentId;
+      await TestHelper.document.create({
+        id: otherParentId,
+        type: 'folder',
+        source_type: DocumentSourceType.Internal,
+        name: 'Other parent',
+        uploader_id: ADMIN_UUID,
+      });
+      const otherChildId = uuidv4() as DocumentId;
+      await TestHelper.document.create({
+        id: otherChildId,
+        type: 'image',
+        source_type: DocumentSourceType.External,
+        minio_name: 'other-minio',
+        name: 'Other image',
+        uploader_id: ADMIN_UUID,
+        service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
+      });
+      await TestHelper.documentChildren.create({
+        parent_document_id: otherParentId,
+        child_document_id: otherChildId,
+      });
+
+      // When
+      await DocumentApp.replaceExternalImage(await loadParent(), mockUpload);
+
+      // Then
+      expect(
+        await DocumentChildrenDomain.loadExternalImageFiles(otherParentId)
+      ).toMatchObject([{ id: otherChildId, minio_name: 'other-minio' }]);
+    });
+
+    it('should throw when the document has no service instance', async () => {
+      // Given
+      const doc = { ...(await loadParent()), service_instance_id: null };
+
+      // When / Then
+      await expect(
+        DocumentApp.replaceExternalImage(doc, mockUpload)
+      ).rejects.toThrow(ErrorCode.ServiceInstanceNotFound);
     });
   });
 
@@ -1551,7 +2631,7 @@ describe('documentApp', () => {
           description: 'description',
           service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
           type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
-          active: true,
+          status: DocumentStatus.Published,
         },
         []
       );
@@ -1561,7 +2641,7 @@ describe('documentApp', () => {
           description: 'description',
           service_instance_id: SERVICES.INSTANCES.OPENAEV_SCENARIOS.ID,
           type: OPENAEV_SCENARIO_DOCUMENT_TYPE,
-          active: true,
+          status: DocumentStatus.Published,
         },
         []
       );
@@ -1586,28 +2666,6 @@ describe('documentApp', () => {
       expect(result).toHaveLength(2);
     });
 
-    it('should not include vault documents when no platformIdentifiers are given', async () => {
-      // Given — a vault document alongside the shareable ones created in beforeEach
-      await DocumentApp.createDocumentWithChildrenAndMetadata(
-        {
-          name: 'Vault document',
-          description: 'description',
-          service_instance_id: SERVICES.INSTANCES.VAULT.ID,
-          type: VAULT_DOCUMENT_TYPE,
-          active: true,
-        },
-        []
-      );
-
-      // When — no platform filter provided (homepage / unauthenticated caller scenario)
-      const result = await DocumentApp.loadNewestDocuments(10);
-
-      // Then — only the 2 shareable docs from beforeEach should be returned;
-      // the vault document must not leak through the unfiltered query
-      expect(result.map((d) => d.name)).not.toContain('Vault document');
-      expect(result).toHaveLength(2);
-    });
-
     it('should not include service_picture documents when no platformIdentifiers are given', async () => {
       // Given — a service picture (logo) document alongside the shareable ones created in beforeEach
       await DocumentApp.createDocumentWithChildrenAndMetadata(
@@ -1616,7 +2674,7 @@ describe('documentApp', () => {
           description: 'description',
           service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
           type: 'service_picture',
-          active: true,
+          status: DocumentStatus.Published,
         },
         []
       );

@@ -1,10 +1,7 @@
-import { serverMutateGraphQL } from '@/relay/server-portal-api-fetch';
 import { isValueInEnum } from '@/utils/is-value-in-enum';
 import { loadMeUser } from '@/utils/load-me-user';
 import { APP_PATH } from '@/utils/path/constant';
-import OrganizationSwitcherMutation, {
-  OrganizationSwitcherMutation as OrganizationSwitcherMutationType,
-} from '@generated/OrganizationSwitcherMutation.graphql';
+import { encodeRedirectValue } from '@/utils/redirect';
 import { ServiceDefinitionIdentifier } from '@graphql/generated';
 import { NextRequest, NextResponse } from 'next/server';
 import {
@@ -12,16 +9,10 @@ import {
   loadPlatformOrganizationId,
   loadServiceInstances,
 } from './utils/load';
+import { trackNewsFeedRedirect } from './utils/news-feed-telemetry';
+import { switchOrganization } from './utils/switch-organization';
 import { getLoginRedirectionURL } from './utils/url';
 
-async function switchOrganization(organization_id: string) {
-  await serverMutateGraphQL<OrganizationSwitcherMutationType>(
-    OrganizationSwitcherMutation,
-    {
-      organization_id,
-    }
-  );
-}
 export const redirectToResource = async (
   params: { identifier: string },
   request: NextRequest
@@ -85,6 +76,9 @@ export const redirectToResource = async (
     return NextResponse.redirect(new URL(`/${APP_PATH}`, baseUrlFront));
   }
 
-  const targetPath = `/${APP_PATH}/service/${identifier}/${serviceInstances[0].id}${queryString ? `?${queryString}` : ''}${document_id ? `/${document_id}` : ''}`;
+  // Final redirect to the resource page: the only place where a news feed click is counted
+  trackNewsFeedRedirect(identifier, request);
+
+  const targetPath = `/${APP_PATH}/service/${identifier}/${encodeRedirectValue(serviceInstances[0].id)}${document_id ? `/${encodeRedirectValue(document_id)}` : ''}${queryString ? `?${queryString}` : ''}`;
   return NextResponse.redirect(new URL(targetPath, baseUrlFront));
 };

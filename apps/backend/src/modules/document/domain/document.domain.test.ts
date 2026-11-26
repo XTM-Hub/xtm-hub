@@ -1,3 +1,5 @@
+import { toGlobalId } from 'graphql-relay/node/node.js';
+import { v4 as uuidv4 } from 'uuid';
 import {
   afterAll,
   afterEach,
@@ -12,14 +14,23 @@ import {
   DocumentConnection,
   DocumentMetadataKeyCode,
   DocumentOrdering,
+  DocumentStatus,
   FilterKey,
   Integration,
-  IntegrationSubType,
   IntegrationType,
+  LogicalFilterInput,
   LogicalOperator,
   OrderingMode,
+  ServiceRestriction,
 } from '../../../__generated__/resolvers-types';
 import type { DocumentMetadataKey } from '../../../model/kanel/public/DocumentMetadata';
+import { PgBossProducer } from '../../../thirdparty/pgboss/producer';
+import {
+  ManifestFragmentHelper,
+  TAG_DECOUPLING,
+  TAG_LATEST,
+  TAG_LATEST_LTS,
+} from '../../shareable-resource/manifest-fragment/manifest-fragment.helper';
 import { OPENAEV_SCENARIO_DOCUMENT_TYPE } from '../../shareable-resource/openaev/scenario/scenario.model';
 import { OPENCTI_CUSTOM_VIEW_DOCUMENT_TYPE } from '../../shareable-resource/opencti/custom-view/custom-view.model';
 import { IngestManifestDomain } from '../../shareable-resource/opencti/integration/ingest-manifest/ingest-manifest.domain';
@@ -34,14 +45,41 @@ import {
 } from '../../shareable-resource/opencti/integration/integration.model';
 
 import { TestHelper } from '../../../../tests/helper/test.helper';
-import { SERVICES, TEST_ORGANIZATIONS } from '../../../../tests/tests.const';
+import {
+  // eslint-disable-next-line no-restricted-imports
+  requestContextAdminUser,
+  requestContextRegistererUserSecondOrga,
+  SERVICES,
+  TEST_ORGANIZATIONS,
+} from '../../../../tests/tests.const';
+import { requestContext } from '../../../context/request.context';
 import Document from '../../../model/kanel/public/Document';
+import { ObjectSolutionCategoryObjectId } from '../../../model/kanel/public/ObjectSolutionCategory';
 import { ObjectUseCaseObjectId } from '../../../model/kanel/public/ObjectUseCase';
 import { ServiceInstanceId } from '../../../model/kanel/public/ServiceInstance';
+import { SolutionCategoryId } from '../../../model/kanel/public/SolutionCategory';
 import { UseCaseId } from '../../../model/kanel/public/UseCase';
-import { ADMIN_UUID } from '../../../portal.const';
+import {
+  ADMIN_UUID,
+  PLATFORM_ORGANIZATION_UUID,
+  SYSTEM_USER_UUID,
+} from '../../../portal.const';
+import { isFeatureEnabled } from '../../../utils/feature-flag.util';
+import { UserServiceCapabilityHelper } from '../../security-management/user-service-capability/user-service-capability.helper';
+import { ServiceDefinitionDomain } from '../../service/definition/service-definition.domain';
+import { objectSolutionCategoryDomain } from '../../solution-category/object-solution-category/object-solution-category.domain';
+import { solutionCategoryDomain } from '../../solution-category/solution-category.domain';
+import { DocumentListOptions } from '../document.model';
 import { DocumentUploadsHelper } from '../document.uploads.helper';
+import { DocumentChildrenDomain } from './document.children.domain';
 import { DocumentDomain } from './document.domain';
+
+// isFeatureEnabled is mocked (defaulting to disabled) so that tests are deterministic and
+// independent of the local `enabled_features` config (which may enable everything, e.g. via a
+// wildcard in a developer's local.json).
+vi.mock('../../../utils/feature-flag.util', () => ({
+  isFeatureEnabled: vi.fn(() => false),
+}));
 
 describe('document domain', () => {
   const minioFileMock = {
@@ -57,36 +95,219 @@ describe('document domain', () => {
     await TestHelper.document.delete({});
   });
 
-  describe('deactivateDocuments', () => {
-    let createdDocument: Document;
+  describe('reassignUserDocumentsToSystemUser', () => {
+    it('should reassign every user reference of the documents to the system user', async () => {
+      const userId = TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID;
+      const uploaded = await DocumentDomain.createDocument(
+        {
+          name: 'reassign-uploaded',
+          slug: 'reassign-uploaded',
+          type: 'test-type',
+          uploader_id: userId,
+          uploader_organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        },
+        []
+      );
+      const touched = await DocumentDomain.createDocument(
+        {
+          name: 'reassign-touched',
+          slug: 'reassign-touched',
+          type: 'test-type',
+          uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
+          remover_id: userId,
+          updater_id: userId,
+        },
+        []
+      );
+
+      await DocumentDomain.reassignUserDocumentsToSystemUser(userId);
+
+      expect(await TestHelper.document.load({ id: uploaded.id })).toMatchObject(
+        {
+          uploader_id: SYSTEM_USER_UUID,
+          uploader_organization_id: PLATFORM_ORGANIZATION_UUID,
+        }
+      );
+      expect(await TestHelper.document.load({ id: touched.id })).toMatchObject({
+        uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
+        remover_id: SYSTEM_USER_UUID,
+        updater_id: SYSTEM_USER_UUID,
+      });
+    });
+
+    it('should leave documents of other users untouched', async () => {
+      const otherDocument = await DocumentDomain.createDocument(
+        {
+          name: 'reassign-other',
+          slug: 'reassign-other',
+          type: 'test-type',
+          uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
+        },
+        []
+      );
+
+      await DocumentDomain.reassignUserDocumentsToSystemUser(
+        TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID
+      );
+
+      expect(
+        await TestHelper.document.load({ id: otherDocument.id })
+      ).toMatchObject({
+        uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
+      });
+    });
+  });
+
+  describe('loadParentDocumentsByServiceInstance with draft documents', () => {
+    const PAGE_SIZE = 3;
+    const DRAFT_NAME = 'm-draft';
+    const IN_VALIDATION_NAME = 'n-in-validation';
+    const PUBLISHED_NAMES = [
+      'a-published',
+      'b-published',
+      'y-published',
+      'z-published',
+    ];
+
     beforeEach(async () => {
-      createdDocument = await TestHelper.document.createWholeDocument({});
+      vi.spyOn(PgBossProducer, 'send').mockResolvedValue('job-id');
+      await TestHelper.document.delete({
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+      });
+
+      for (const name of [...PUBLISHED_NAMES, DRAFT_NAME]) {
+        await TestHelper.document.createWholeDocument({
+          name,
+          slug: name,
+          status:
+            name === DRAFT_NAME
+              ? DocumentStatus.Draft
+              : DocumentStatus.Published,
+        });
+      }
+      await TestHelper.document.createWholeDocument({
+        name: IN_VALIDATION_NAME,
+        slug: IN_VALIDATION_NAME,
+        status: DocumentStatus.InValidation,
+      });
+      requestContext.set(requestContextAdminUser);
     });
 
-    it('should do nothing when the document ids is an empty array', async () => {
-      await DocumentDomain.deactivateDocuments([]);
-
-      const document = await TestHelper.document.load({
-        id: createdDocument.id,
-      });
-
-      expect(document).toMatchObject({
-        active: true,
-      });
+    afterEach(() => {
+      vi.restoreAllMocks();
+      requestContext.set(undefined);
     });
 
-    it('should deactivate document and set remover id', async () => {
-      await DocumentDomain.deactivateDocuments([createdDocument.id]);
+    const loadPage = (pageIndex: number, orderMode: OrderingMode) =>
+      DocumentDomain.loadParentDocumentsByServiceInstance(
+        OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        {
+          orderBy: DocumentOrdering.Name,
+          orderMode,
+          first: PAGE_SIZE,
+          after: pageIndex > 0 ? btoa(String(PAGE_SIZE * pageIndex)) : null,
+          serviceInstanceId: INTEGRATION_SERVICE_INSTANCE_ID,
+        },
+        INTEGRATION_METADATA_KEYS
+      );
 
-      const document = await TestHelper.document.load({
-        id: createdDocument.id,
-      });
+    const namesOf = (connection: DocumentConnection) =>
+      connection.edges.map(({ node }) => node.name);
 
-      expect(document).toMatchObject({
-        active: false,
-        remover_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID,
-      });
+    const loadAll = (options: DocumentListOptions = {}) =>
+      DocumentDomain.loadParentDocumentsByServiceInstance(
+        OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        {
+          orderBy: DocumentOrdering.Name,
+          orderMode: OrderingMode.Asc,
+          first: 10,
+          serviceInstanceId: INTEGRATION_SERVICE_INSTANCE_ID,
+          ...options,
+        },
+        INTEGRATION_METADATA_KEYS
+      );
+
+    it.each`
+      orderMode            | expectedNames
+      ${OrderingMode.Asc}  | ${['m-draft', 'n-in-validation', 'a-published', 'b-published', 'y-published', 'z-published']}
+      ${OrderingMode.Desc} | ${['m-draft', 'n-in-validation', 'z-published', 'y-published', 'b-published', 'a-published']}
+    `(
+      'should put the draft and in validation documents first, then follow the requested $orderMode order',
+      async ({
+        orderMode,
+        expectedNames,
+      }: {
+        orderMode: OrderingMode;
+        expectedNames: string[];
+      }) => {
+        const firstPage = await loadPage(0, orderMode);
+
+        expect(namesOf(firstPage)).toEqual(expectedNames.slice(0, PAGE_SIZE));
+      }
+    );
+
+    it('should page through every document exactly once with the draft first', async () => {
+      const pages = await Promise.all(
+        [0, 1].map((pageIndex) => loadPage(pageIndex, OrderingMode.Asc))
+      );
+
+      expect(pages.flatMap(namesOf)).toEqual([
+        DRAFT_NAME,
+        IN_VALIDATION_NAME,
+        ...PUBLISHED_NAMES,
+      ]);
+      pages.forEach((page) => expect(Number(page.totalCount)).toBe(6));
     });
+
+    it.each`
+      description                                                         | options                    | expectedNames                                                                                 | expectedTotal
+      ${'drops the draft and in validation documents when publishedOnly'} | ${{ publishedOnly: true }} | ${['a-published', 'b-published', 'y-published', 'z-published']}                               | ${4}
+      ${'keeps the draft and in validation documents otherwise'}          | ${{}}                      | ${['m-draft', 'n-in-validation', 'a-published', 'b-published', 'y-published', 'z-published']} | ${6}
+    `(
+      'should $description',
+      async ({
+        options,
+        expectedNames,
+        expectedTotal,
+      }: {
+        options: DocumentListOptions;
+        expectedNames: string[];
+        expectedTotal: number;
+      }) => {
+        const connection = await loadAll(options);
+
+        expect(namesOf(connection)).toEqual(expectedNames);
+        expect(Number(connection.totalCount)).toBe(expectedTotal);
+      }
+    );
+
+    it.each`
+      description                                                                           | serviceCapabilities            | expectedNames                                                                                 | expectedTotal
+      ${'hide the draft and in validation documents from a user without upload capability'} | ${[]}                          | ${['a-published', 'b-published', 'y-published', 'z-published']}                               | ${4}
+      ${'return the draft and in validation documents to a user with upload capability'}    | ${[ServiceRestriction.Upload]} | ${['m-draft', 'n-in-validation', 'a-published', 'b-published', 'y-published', 'z-published']} | ${6}
+    `(
+      'should $description',
+      async ({
+        serviceCapabilities,
+        expectedNames,
+        expectedTotal,
+      }: {
+        serviceCapabilities: ServiceRestriction[];
+        expectedNames: string[];
+        expectedTotal: number;
+      }) => {
+        requestContext.set(undefined);
+        vi.spyOn(
+          UserServiceCapabilityHelper,
+          'loadCapabilities'
+        ).mockResolvedValue(serviceCapabilities);
+
+        const connection = await loadAll();
+
+        expect(namesOf(connection)).toEqual(expectedNames);
+        expect(Number(connection.totalCount)).toBe(expectedTotal);
+      }
+    );
   });
 
   describe(`loadParentDocumentsByServiceInstance`, () => {
@@ -273,7 +494,7 @@ describe('document domain', () => {
         });
       });
 
-      it('should handle type and subtype', async () => {
+      it('should handle type', async () => {
         const connectors = await IngestManifestDomain.upsertConnectors(
           sampleExtractedManifest as ManifestInformation[]
         );
@@ -301,12 +522,6 @@ describe('document domain', () => {
                           value: [IntegrationType.Connector],
                         },
                       },
-                      {
-                        leaf: {
-                          key: FilterKey.IntegrationSubtype,
-                          value: [IntegrationSubType.ExternalImport],
-                        },
-                      },
                     ],
                   },
                   {
@@ -321,7 +536,7 @@ describe('document domain', () => {
             INTEGRATION_METADATA_KEYS
           );
 
-        expect(connectorConnection.edges).toHaveLength(2);
+        expect(connectorConnection.edges).toHaveLength(3);
 
         expect(connectorConnection.edges).toEqual(
           expect.arrayContaining([
@@ -333,11 +548,66 @@ describe('document domain', () => {
             expect.objectContaining({
               node: expect.objectContaining({
                 integration_type: IntegrationType.Connector,
-                integration_subtype: IntegrationSubType.ExternalImport,
               }),
             }),
           ])
         );
+      });
+    });
+
+    describe('decoupling connectors feature flag', () => {
+      beforeEach(() => {
+        vi.mocked(isFeatureEnabled).mockReturnValue(true);
+      });
+
+      afterEach(() => {
+        vi.mocked(isFeatureEnabled).mockReturnValue(false);
+      });
+
+      let connectorSlugCounter = 0;
+      const createConnector = async (tags: string[]): Promise<Document> => {
+        connectorSlugCounter += 1;
+        const doc = await TestHelper.document.create({
+          type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+          service_instance_id: INTEGRATION_SERVICE_INSTANCE_ID,
+          slug: `decoupling-connector-${connectorSlugCounter}`,
+          status: DocumentStatus.Published,
+          tags,
+        });
+        await TestHelper.documentMetadata.create({
+          document_id: doc.id,
+          key: DocumentMetadataKeyCode.IntegrationType as unknown as DocumentMetadataKey,
+          value: IntegrationType.Connector,
+        });
+        return doc;
+      };
+
+      it('should only return connectors tagged with both latest and decoupling when the flag is enabled, leaving other integration types untouched', async () => {
+        const latestDecoupledConnector = await createConnector([
+          TAG_LATEST,
+          TAG_DECOUPLING,
+        ]);
+        const decoupledOnlyConnector = await createConnector([TAG_DECOUPLING]);
+        const legacyConnector = await createConnector([]);
+
+        const connection =
+          await DocumentDomain.loadParentDocumentsByServiceInstance(
+            OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+            {
+              orderBy: DocumentOrdering.CreatedAt,
+              orderMode: OrderingMode.Desc,
+              first: 10,
+              serviceInstanceId: INTEGRATION_SERVICE_INSTANCE_ID,
+            },
+            INTEGRATION_METADATA_KEYS
+          );
+
+        const ids = connection.edges.map((edge) => edge.node.id);
+        expect(ids).toContain(latestDecoupledConnector.id);
+        expect(ids).not.toContain(decoupledOnlyConnector.id);
+        expect(ids).not.toContain(legacyConnector.id);
+        // Non-connector integration types are unaffected by the flag.
+        expect(ids).toContain(csvFeed.id);
       });
     });
 
@@ -428,7 +698,7 @@ describe('document domain', () => {
           name,
           type: OPENCTI_CUSTOM_VIEW_DOCUMENT_TYPE,
           service_instance_id: CUSTOM_VIEW_SERVICE_INSTANCE_ID,
-          active: true,
+          status: DocumentStatus.Published,
         });
         await TestHelper.documentMetadata.create({
           document_id: document.id,
@@ -511,10 +781,11 @@ describe('document domain', () => {
 
   describe('createDocument', () => {
     it.each`
-      typeOfDocument      | overwriteField                                                   | expected
-      ${'minimal fields'} | ${{}}                                                            | ${{}}
-      ${'uploader id'}    | ${{ uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID }} | ${{ uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID }}
-      ${'inactive'}       | ${{ active: false }}                                             | ${{ active: false }}
+      typeOfDocument            | overwriteField                                                   | expected
+      ${'minimal fields'}       | ${{}}                                                            | ${{}}
+      ${'uploader id'}          | ${{ uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID }} | ${{ uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID }}
+      ${'draft status'}         | ${{ status: DocumentStatus.Draft }}                              | ${{ status: DocumentStatus.Draft }}
+      ${'in validation status'} | ${{ status: DocumentStatus.InValidation }}                       | ${{ status: DocumentStatus.InValidation }}
     `(
       'it should create a document with $typeOfDocument',
       async ({ typeOfDocument, overwriteField, expected }) => {
@@ -539,7 +810,7 @@ describe('document domain', () => {
           slug: docData.slug,
           uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID,
           uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
-          active: true,
+          status: DocumentStatus.Published,
         };
 
         const expectedDocument = {
@@ -564,7 +835,7 @@ describe('document domain', () => {
         slug: 'doc-meta2',
         uploader_id: ADMIN_UUID,
         uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
-        active: true,
+        status: DocumentStatus.Published,
       });
 
       await TestHelper.documentMetadata.create({
@@ -607,21 +878,21 @@ describe('document domain', () => {
         slug: 'doc-one',
         uploader_id: ADMIN_UUID,
         uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
-        active: true,
+        status: DocumentStatus.Published,
       });
       doc2 = await TestHelper.document.create({
         name: 'Doc Two',
         slug: 'doc-two',
         uploader_id: ADMIN_UUID,
         uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
-        active: true,
+        status: DocumentStatus.Published,
       });
       doc3 = await TestHelper.document.create({
         name: 'Doc Three',
         slug: 'doc-three',
         uploader_id: ADMIN_UUID,
         uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
-        active: true,
+        status: DocumentStatus.Published,
       });
 
       await TestHelper.documentMetadata.create({
@@ -699,7 +970,7 @@ describe('document domain', () => {
         slug: 'doc-meta2',
         uploader_id: ADMIN_UUID,
         uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
-        active: true,
+        status: DocumentStatus.Published,
       });
 
       const uploader = await DocumentDomain.loadUploader(inserted.id);
@@ -745,7 +1016,8 @@ describe('document domain', () => {
 
     let parentDoc: Document;
     let childDoc: Document;
-    let inactiveDoc: Document;
+    let unpublishedDoc: Document;
+    let inValidationDoc: Document;
     let otherServiceDoc: Document;
 
     beforeEach(async () => {
@@ -760,7 +1032,7 @@ describe('document domain', () => {
         uploader_id: ADMIN_UUID,
         uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
         service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
-        active: true,
+        status: DocumentStatus.Published,
         created_at: new Date('2023-01-01T10:00:00Z'),
         updated_at: new Date('2023-01-02T10:00:00Z'),
       });
@@ -771,7 +1043,7 @@ describe('document domain', () => {
         uploader_id: ADMIN_UUID,
         uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
         service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
-        active: true,
+        status: DocumentStatus.Published,
         created_at: new Date('2023-01-01T11:00:00Z'),
         updated_at: new Date('2023-01-02T11:00:00Z'),
       });
@@ -780,16 +1052,28 @@ describe('document domain', () => {
         child_document_id: childDoc.id,
       });
 
-      inactiveDoc = await TestHelper.document.create({
-        name: 'Inactive SEO Doc',
+      unpublishedDoc = await TestHelper.document.create({
+        name: 'Unpublished SEO Doc',
         type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
-        slug: 'inactive-seo',
+        slug: 'unpublished-seo',
         uploader_id: ADMIN_UUID,
         uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
         service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
-        active: false,
+        status: DocumentStatus.Draft,
         created_at: new Date('2023-01-01T12:00:00Z'),
         updated_at: new Date('2023-01-02T12:00:00Z'),
+      });
+
+      inValidationDoc = await TestHelper.document.create({
+        name: 'In validation SEO Doc',
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        slug: 'in-validation-seo',
+        uploader_id: ADMIN_UUID,
+        uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+        service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
+        status: DocumentStatus.InValidation,
+        created_at: new Date('2023-01-01T12:30:00Z'),
+        updated_at: new Date('2023-01-02T12:30:00Z'),
       });
 
       otherServiceDoc = await TestHelper.document.create({
@@ -799,7 +1083,7 @@ describe('document domain', () => {
         uploader_id: ADMIN_UUID,
         uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
         service_instance_id: SERVICES.INSTANCES.EPIC.ID,
-        active: true,
+        status: DocumentStatus.Published,
         created_at: new Date('2023-01-01T13:00:00Z'),
         updated_at: new Date('2023-01-02T13:00:00Z'),
       });
@@ -811,7 +1095,7 @@ describe('document domain', () => {
       });
     });
 
-    it('should return only active parent documents for the given service slug and type', async () => {
+    it('should return only published parent documents for the given service slug and type', async () => {
       const docs = await DocumentDomain.loadSeoDocumentsByServiceSlug(
         OPENCTI_INTEGRATION_DOCUMENT_TYPE,
         TEST_SERVICE_SLUG
@@ -820,20 +1104,33 @@ describe('document domain', () => {
       expect(docs).toHaveLength(1);
       expect(docs[0]).toMatchObject({
         id: parentDoc.id,
-        active: true,
+        status: DocumentStatus.Published,
         type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
         service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
       });
     });
 
-    it('should not return child, inactive, or other-service documents', async () => {
+    it('should not return in validation documents when loading the SEO documents', async () => {
+      // Given a published parent and an in validation document of the same service
+
+      // When
+      const docs = await DocumentDomain.loadSeoDocumentsByServiceSlug(
+        OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        TEST_SERVICE_SLUG
+      );
+
+      // Then
+      expect(docs.map((d: Document) => d.id)).not.toContain(inValidationDoc.id);
+    });
+
+    it('should not return child, unpublished, or other-service documents', async () => {
       const docs = await DocumentDomain.loadSeoDocumentsByServiceSlug(
         OPENCTI_INTEGRATION_DOCUMENT_TYPE,
         TEST_SERVICE_SLUG
       );
       const ids = docs.map((d: Document) => d.id);
       expect(ids).not.toContain(childDoc.id);
-      expect(ids).not.toContain(inactiveDoc.id);
+      expect(ids).not.toContain(unpublishedDoc.id);
       expect(ids).not.toContain(otherServiceDoc.id);
     });
 
@@ -846,7 +1143,7 @@ describe('document domain', () => {
         uploader_id: ADMIN_UUID,
         uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
         service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
-        active: true,
+        status: DocumentStatus.Published,
         created_at: new Date('2023-01-01T14:00:00Z'),
         updated_at: new Date('2023-01-03T10:00:00Z'),
       });
@@ -873,6 +1170,138 @@ describe('document domain', () => {
 
     it('should return empty array if no documents match', async () => {
       const docs = await DocumentDomain.loadSeoDocumentsByServiceSlug(
+        'nonexistent-type',
+        'nonexistent-slug'
+      );
+      expect(Array.isArray(docs)).toBe(true);
+      expect(docs).toHaveLength(0);
+    });
+  });
+
+  describe('loadSeoDocumentSlugsByServiceSlug', () => {
+    const TEST_SERVICE_SLUG = 'opencti-integrations';
+
+    let parentDoc: Document;
+    let childDoc: Document;
+    let unpublishedDoc: Document;
+    let inValidationDoc: Document;
+    let otherServiceDoc: Document;
+
+    beforeEach(async () => {
+      await TestHelper.documentChildren.delete({});
+      await TestHelper.documentMetadata.delete({});
+      await TestHelper.document.delete({});
+
+      parentDoc = await TestHelper.document.create({
+        name: 'Parent SEO Doc',
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        slug: 'parent-seo',
+        uploader_id: ADMIN_UUID,
+        uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+        service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
+        status: DocumentStatus.Published,
+        created_at: new Date('2023-01-01T10:00:00Z'),
+        updated_at: new Date('2023-01-02T10:00:00Z'),
+      });
+      childDoc = await TestHelper.document.create({
+        name: 'Child SEO Doc',
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        slug: 'child-seo',
+        uploader_id: ADMIN_UUID,
+        uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+        service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
+        status: DocumentStatus.Published,
+        created_at: new Date('2023-01-01T11:00:00Z'),
+        updated_at: new Date('2023-01-02T11:00:00Z'),
+      });
+      await TestHelper.documentChildren.create({
+        parent_document_id: parentDoc.id,
+        child_document_id: childDoc.id,
+      });
+
+      unpublishedDoc = await TestHelper.document.create({
+        name: 'Unpublished SEO Doc',
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        slug: 'unpublished-seo',
+        uploader_id: ADMIN_UUID,
+        uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+        service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
+        status: DocumentStatus.Draft,
+        created_at: new Date('2023-01-01T12:00:00Z'),
+        updated_at: new Date('2023-01-02T12:00:00Z'),
+      });
+
+      inValidationDoc = await TestHelper.document.create({
+        name: 'In validation SEO Doc',
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        slug: 'in-validation-seo',
+        uploader_id: ADMIN_UUID,
+        uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+        service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
+        status: DocumentStatus.InValidation,
+        created_at: new Date('2023-01-01T12:30:00Z'),
+        updated_at: new Date('2023-01-02T12:30:00Z'),
+      });
+
+      otherServiceDoc = await TestHelper.document.create({
+        name: 'Other Service Doc',
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        slug: 'other-service-doc',
+        uploader_id: ADMIN_UUID,
+        uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+        service_instance_id: SERVICES.INSTANCES.EPIC.ID,
+        status: DocumentStatus.Published,
+        created_at: new Date('2023-01-01T13:00:00Z'),
+        updated_at: new Date('2023-01-02T13:00:00Z'),
+      });
+    });
+
+    it('should return only slug/created_at/updated_at of published parent documents', async () => {
+      const docs = await DocumentDomain.loadSeoDocumentSlugsByServiceSlug(
+        OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        TEST_SERVICE_SLUG
+      );
+
+      expect(docs).toHaveLength(1);
+      // `__typename` is injected by the shared `db()` helper's postProcessResponse
+      // regardless of the selected columns; assert it alongside the projected
+      // fields to confirm no other Document columns (e.g. name, description) leak in.
+      expect(Object.keys(docs[0]).sort()).toEqual(
+        ['__typename', 'created_at', 'slug', 'updated_at'].sort()
+      );
+      expect(docs[0]).toMatchObject({
+        slug: parentDoc.slug,
+        created_at: parentDoc.created_at,
+        updated_at: parentDoc.updated_at,
+      });
+    });
+
+    it('should not return in validation documents when loading the SEO slugs', async () => {
+      // Given a published parent and an in validation document of the same service
+
+      // When
+      const docs = await DocumentDomain.loadSeoDocumentSlugsByServiceSlug(
+        OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        TEST_SERVICE_SLUG
+      );
+
+      // Then
+      expect(docs.map(({ slug }) => slug)).not.toContain(inValidationDoc.slug);
+    });
+
+    it('should not return child, unpublished, or other-service documents', async () => {
+      const docs = await DocumentDomain.loadSeoDocumentSlugsByServiceSlug(
+        OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        TEST_SERVICE_SLUG
+      );
+      const slugs = docs.map((d) => d.slug);
+      expect(slugs).not.toContain(childDoc.slug);
+      expect(slugs).not.toContain(unpublishedDoc.slug);
+      expect(slugs).not.toContain(otherServiceDoc.slug);
+    });
+
+    it('should return empty array if no documents match', async () => {
+      const docs = await DocumentDomain.loadSeoDocumentSlugsByServiceSlug(
         'nonexistent-type',
         'nonexistent-slug'
       );
@@ -958,10 +1387,11 @@ describe('document domain', () => {
 
     describe('when documentFilters are provided', () => {
       it.each`
-        description                             | filters                        | expectedCount
-        ${'active: true — matches'}             | ${{ active: true }}            | ${1}
-        ${'active: false — excludes'}           | ${{ active: false }}           | ${0}
-        ${'is_decommissioned: true — excludes'} | ${{ is_decommissioned: true }} | ${0}
+        description                             | filters                                    | expectedCount
+        ${'status: published — matches'}        | ${{ status: DocumentStatus.Published }}    | ${1}
+        ${'status: draft — excludes'}           | ${{ status: DocumentStatus.Draft }}        | ${0}
+        ${'status: in_validation — excludes'}   | ${{ status: DocumentStatus.InValidation }} | ${0}
+        ${'is_decommissioned: true — excludes'} | ${{ is_decommissioned: true }}             | ${0}
       `(
         'should apply scalar filter: $description',
         async ({
@@ -1007,36 +1437,37 @@ describe('document domain', () => {
       });
 
       it.each`
-        doc1Tags          | doc1Active | filterTags    | filterActive | expectedCount | description
-        ${['latest']}     | ${true}    | ${['latest']} | ${true}      | ${1}          | ${'tag matches, active matches'}
-        ${['latest']}     | ${false}   | ${['latest']} | ${true}      | ${0}          | ${'tag matches, active does not match'}
-        ${['latest_lts']} | ${true}    | ${['latest']} | ${true}      | ${0}          | ${'tag does not match, active matches'}
-        ${['latest_lts']} | ${false}   | ${['latest']} | ${true}      | ${0}          | ${'nothing matches'}
+        doc1Tags          | doc1Status                     | filterTags    | filterStatus                | expectedCount | description
+        ${['latest']}     | ${DocumentStatus.Published}    | ${['latest']} | ${DocumentStatus.Published} | ${1}          | ${'tag matches, status matches'}
+        ${['latest']}     | ${DocumentStatus.Draft}        | ${['latest']} | ${DocumentStatus.Published} | ${0}          | ${'tag matches, status does not match'}
+        ${['latest_lts']} | ${DocumentStatus.Published}    | ${['latest']} | ${DocumentStatus.Published} | ${0}          | ${'tag does not match, status matches'}
+        ${['latest']}     | ${DocumentStatus.InValidation} | ${['latest']} | ${DocumentStatus.Published} | ${0}          | ${'tag matches, status in validation does not match'}
+        ${['latest_lts']} | ${DocumentStatus.Draft}        | ${['latest']} | ${DocumentStatus.Published} | ${0}          | ${'nothing matches'}
       `(
         'should combine tag and scalar filters: $description',
         async ({
           doc1Tags,
-          doc1Active,
+          doc1Status,
           filterTags,
-          filterActive,
+          filterStatus,
           expectedCount,
         }: {
           doc1Tags: string[];
-          doc1Active: boolean;
+          doc1Status: DocumentStatus;
           filterTags: string[];
-          filterActive: boolean;
+          filterStatus: DocumentStatus;
           expectedCount: number;
         }) => {
           await TestHelper.document.update(
             { id: doc1.id },
-            { tags: doc1Tags, active: doc1Active }
+            { tags: doc1Tags, status: doc1Status }
           );
 
           const docs = await DocumentDomain.loadDocumentsByMetadata(
             TEST_KEY,
             TEST_VALUE,
             [],
-            { active: filterActive, tags: filterTags }
+            { status: filterStatus, tags: filterTags }
           );
           expect(docs).toHaveLength(expectedCount);
         }
@@ -1071,16 +1502,18 @@ describe('document domain', () => {
 
     it('should filter by multiple fields', async () => {
       // Given
-      const doc = await TestHelper.document.create({ active: true });
+      const doc = await TestHelper.document.create({
+        status: DocumentStatus.Published,
+      });
 
       // When
       const resultFound = await DocumentDomain.loadDocumentBy({
         id: doc.id,
-        active: true,
+        status: DocumentStatus.Published,
       });
       const resultNotFound = await DocumentDomain.loadDocumentBy({
         id: doc.id,
-        active: false,
+        status: DocumentStatus.Draft,
       });
 
       // Then
@@ -1096,7 +1529,7 @@ describe('document domain', () => {
       await TestHelper.document.delete({});
     });
 
-    it('should return active documents sorted by creation date newest first', async () => {
+    it('should return published documents sorted by creation date newest first', async () => {
       // Given
       const olderDoc = await TestHelper.document.create({
         name: 'Older document',
@@ -1105,7 +1538,7 @@ describe('document domain', () => {
         uploader_id: ADMIN_UUID,
         uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
         service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
-        active: true,
+        status: DocumentStatus.Published,
         created_at: new Date('2024-01-01T10:00:00Z'),
       });
       const newerDoc = await TestHelper.document.create({
@@ -1115,7 +1548,7 @@ describe('document domain', () => {
         uploader_id: ADMIN_UUID,
         uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
         service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
-        active: true,
+        status: DocumentStatus.Published,
         created_at: new Date('2025-01-01T10:00:00Z'),
       });
 
@@ -1127,25 +1560,25 @@ describe('document domain', () => {
       expect(result[1]?.id).toBe(olderDoc.id);
     });
 
-    it('should exclude inactive documents', async () => {
+    it('should exclude unpublished documents', async () => {
       // Given
-      const activeDoc = await TestHelper.document.create({
-        name: 'Active document',
+      const publishedDoc = await TestHelper.document.create({
+        name: 'Published document',
         type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
-        slug: 'active-document',
+        slug: 'published-document',
         uploader_id: ADMIN_UUID,
         uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
         service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
-        active: true,
+        status: DocumentStatus.Published,
       });
       await TestHelper.document.create({
-        name: 'Inactive document',
+        name: 'Draft document',
         type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
-        slug: 'inactive-document',
+        slug: 'draft-document',
         uploader_id: ADMIN_UUID,
         uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
         service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
-        active: false,
+        status: DocumentStatus.Draft,
       });
 
       // When
@@ -1153,7 +1586,35 @@ describe('document domain', () => {
 
       // Then
       expect(result).toHaveLength(1);
-      expect(result[0]?.id).toBe(activeDoc.id);
+      expect(result[0]?.id).toBe(publishedDoc.id);
+    });
+
+    it('should not return in validation documents when loading the newest documents', async () => {
+      // Given
+      const publishedDoc = await TestHelper.document.create({
+        name: 'Published document',
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        slug: 'published-document',
+        uploader_id: ADMIN_UUID,
+        uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+        service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
+        status: DocumentStatus.Published,
+      });
+      await TestHelper.document.create({
+        name: 'In validation document',
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        slug: 'in-validation-document',
+        uploader_id: ADMIN_UUID,
+        uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+        service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
+        status: DocumentStatus.InValidation,
+      });
+
+      // When
+      const result = await DocumentDomain.loadNewestDocuments(10);
+
+      // Then
+      expect(result.map(({ id }) => id)).toEqual([publishedDoc.id]);
     });
 
     it('should filter documents by documentTypes', async () => {
@@ -1165,7 +1626,7 @@ describe('document domain', () => {
         uploader_id: ADMIN_UUID,
         uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
         service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
-        active: true,
+        status: DocumentStatus.Published,
       });
       await TestHelper.document.create({
         name: 'Scenario document',
@@ -1174,7 +1635,7 @@ describe('document domain', () => {
         uploader_id: ADMIN_UUID,
         uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
         service_instance_id: SERVICES.INSTANCES.OPENAEV_SCENARIOS.ID,
-        active: true,
+        status: DocumentStatus.Published,
       });
 
       // When
@@ -1198,7 +1659,7 @@ describe('document domain', () => {
         uploader_id: ADMIN_UUID,
         uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
         service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
-        active: true,
+        status: DocumentStatus.Published,
       });
       await TestHelper.document.create({
         name: 'Service logo',
@@ -1207,7 +1668,7 @@ describe('document domain', () => {
         uploader_id: ADMIN_UUID,
         uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
         service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
-        active: true,
+        status: DocumentStatus.Published,
       });
 
       // When
@@ -1231,7 +1692,7 @@ describe('document domain', () => {
         uploader_id: ADMIN_UUID,
         uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
         service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
-        active: true,
+        status: DocumentStatus.Published,
         tags: [],
       });
       await TestHelper.document.create({
@@ -1241,7 +1702,7 @@ describe('document domain', () => {
         uploader_id: ADMIN_UUID,
         uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
         service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
-        active: true,
+        status: DocumentStatus.Published,
         tags: ['decoupling'],
       });
 
@@ -1278,14 +1739,14 @@ describe('document domain', () => {
       docWithThreatHunting = await TestHelper.document.create({
         slug: 'doc-alpha-uc-search',
         name: 'doc-alpha-uc-search',
-        active: true,
+        status: DocumentStatus.Published,
         uploader_id: ADMIN_UUID,
         uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
       });
       docWithIncidentResponse = await TestHelper.document.create({
         slug: 'doc-beta-uc-search',
         name: 'doc-beta-uc-search',
-        active: true,
+        status: DocumentStatus.Published,
         uploader_id: ADMIN_UUID,
         uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
       });
@@ -1352,25 +1813,87 @@ describe('document domain', () => {
     );
   });
 
-  describe('loadBestCompatibleConnectorsByManifestFragmentIds', () => {
+  describe('search by document name', () => {
+    const MULTI_WORD_DOCUMENT_NAME = 'Google Safe Browsing';
+    const OTHER_MULTI_WORD_DOCUMENT_NAME = 'Google Cloud Storage';
+    let document: Document;
+
+    beforeEach(async () => {
+      document = await TestHelper.document.create({
+        slug: 'google-safe-browsing-search',
+        name: MULTI_WORD_DOCUMENT_NAME,
+        status: DocumentStatus.Published,
+        uploader_id: ADMIN_UUID,
+        uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+      });
+      await TestHelper.document.create({
+        slug: 'google-cloud-storage-search',
+        name: OTHER_MULTI_WORD_DOCUMENT_NAME,
+        status: DocumentStatus.Published,
+        uploader_id: ADMIN_UUID,
+        uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+      });
+    });
+
+    it.each`
+      description                    | searchTerm                  | getExpectedIds
+      ${'full name with spaces'}     | ${MULTI_WORD_DOCUMENT_NAME} | ${() => [document.id]}
+      ${'partial name with spaces'}  | ${'safe browsing'}          | ${() => [document.id]}
+      ${'no name match with spaces'} | ${'safe storage'}           | ${() => []}
+    `(
+      'should return only the matching documents when searching "$searchTerm" ($description)',
+      async ({
+        searchTerm,
+        getExpectedIds,
+      }: {
+        searchTerm: string;
+        getExpectedIds: () => string[];
+      }) => {
+        // Given
+        const input = {
+          searchTerm,
+          first: 100,
+          orderBy: DocumentOrdering.CreatedAt,
+          orderMode: OrderingMode.Desc,
+        };
+
+        // When
+        const result = await DocumentDomain.loadDocuments(input, {});
+
+        // Then
+        expect(result.edges.map((e) => e.node.id)).toStrictEqual(
+          getExpectedIds()
+        );
+      }
+    );
+  });
+
+  describe('loadBestCompatibleConnectorsBySlugs', () => {
+    // Mirrors the real ingestion path (manifest-fragment.domain.ts): `Document.version`
+    // stores the raw manifest version (e.g. `7.260309.0-lts.1`), while the zero-padded,
+    // uppercased form used for filtering/ordering is written separately as
+    // `Document_Metadata.version_padded`.
     const createConnector = async ({
       manifestFragmentId,
+      slug,
       version,
       minimumDeployableVersionPadded,
-      active = true,
+      status = DocumentStatus.Published,
       isDecommissioned = false,
       integrationType = IntegrationType.Connector,
     }: {
       manifestFragmentId: string;
+      slug: string;
       version: string;
       minimumDeployableVersionPadded?: string;
-      active?: boolean;
+      status?: DocumentStatus;
       isDecommissioned?: boolean;
       integrationType?: IntegrationType;
     }) => {
       const doc = await TestHelper.document.create({
-        active,
+        status,
         is_decommissioned: isDecommissioned,
+        slug,
         version,
       });
       await TestHelper.documentMetadata.create({
@@ -1382,6 +1905,11 @@ describe('document domain', () => {
         document_id: doc.id,
         key: DocumentMetadataKeyCode.ManifestFragmentId as unknown as DocumentMetadataKey,
         value: manifestFragmentId,
+      });
+      await TestHelper.documentMetadata.create({
+        document_id: doc.id,
+        key: DocumentMetadataKeyCode.VersionPadded as unknown as DocumentMetadataKey,
+        value: ManifestFragmentHelper.validateAndFormatManifestVersion(version),
       });
       if (minimumDeployableVersionPadded) {
         await TestHelper.documentMetadata.create({
@@ -1398,12 +1926,11 @@ describe('document domain', () => {
       await TestHelper.document.delete({});
     });
 
-    it('returns an empty array when the id list is empty', async () => {
-      const result =
-        await DocumentDomain.loadBestCompatibleConnectorsByManifestFragmentIds(
-          [],
-          '7.260309.0'
-        );
+    it('returns an empty array when the slug list is empty', async () => {
+      const result = await DocumentDomain.loadBestCompatibleConnectorsBySlugs(
+        [],
+        '7.260309.0'
+      );
       expect(result).toHaveLength(0);
     });
 
@@ -1435,15 +1962,15 @@ describe('document domain', () => {
       }) => {
         const doc = await createConnector({
           manifestFragmentId: 'fragment-a',
-          version: '007.260309.000',
+          slug: 'connector-a',
+          version: '7.260309.0',
           minimumDeployableVersionPadded,
         });
 
-        const result =
-          await DocumentDomain.loadBestCompatibleConnectorsByManifestFragmentIds(
-            ['fragment-a'],
-            manifestVersion
-          );
+        const result = await DocumentDomain.loadBestCompatibleConnectorsBySlugs(
+          ['connector-a'],
+          manifestVersion
+        );
 
         expect(result).toHaveLength(1);
         expect(result[0]!.id).toBe(doc.id);
@@ -1453,47 +1980,50 @@ describe('document domain', () => {
     it('excludes the connector when minimum_deployable_version_padded is above manifestVersion', async () => {
       await createConnector({
         manifestFragmentId: 'fragment-a',
-        version: '007.260309.000',
+        slug: 'connector-a',
+        version: '7.260309.0',
         minimumDeployableVersionPadded: '007.260601.000',
       });
 
-      const result =
-        await DocumentDomain.loadBestCompatibleConnectorsByManifestFragmentIds(
-          ['fragment-a'],
-          '7.260309.0'
-        );
+      const result = await DocumentDomain.loadBestCompatibleConnectorsBySlugs(
+        ['connector-a'],
+        '7.260309.0'
+      );
 
       expect(result).toHaveLength(0);
     });
 
-    it('excludes inactive connectors', async () => {
-      await createConnector({
-        manifestFragmentId: 'fragment-a',
-        version: '007.260309.000',
-        active: false,
-      });
+    it.each([DocumentStatus.Draft, DocumentStatus.InValidation])(
+      'excludes the connectors whose status is %s',
+      async (status) => {
+        await createConnector({
+          manifestFragmentId: 'fragment-a',
+          slug: 'connector-a',
+          version: '7.260309.0',
+          status,
+        });
 
-      const result =
-        await DocumentDomain.loadBestCompatibleConnectorsByManifestFragmentIds(
-          ['fragment-a'],
+        const result = await DocumentDomain.loadBestCompatibleConnectorsBySlugs(
+          ['connector-a'],
           '7.260309.0'
         );
 
-      expect(result).toHaveLength(0);
-    });
+        expect(result).toHaveLength(0);
+      }
+    );
 
     it('excludes decommissioned connectors', async () => {
       await createConnector({
         manifestFragmentId: 'fragment-a',
-        version: '007.260309.000',
+        slug: 'connector-a',
+        version: '7.260309.0',
         isDecommissioned: true,
       });
 
-      const result =
-        await DocumentDomain.loadBestCompatibleConnectorsByManifestFragmentIds(
-          ['fragment-a'],
-          '7.260309.0'
-        );
+      const result = await DocumentDomain.loadBestCompatibleConnectorsBySlugs(
+        ['connector-a'],
+        '7.260309.0'
+      );
 
       expect(result).toHaveLength(0);
     });
@@ -1501,80 +2031,111 @@ describe('document domain', () => {
     it('excludes documents whose integration_type is not connector', async () => {
       await createConnector({
         manifestFragmentId: 'fragment-a',
-        version: '007.260309.000',
+        slug: 'connector-a',
+        version: '7.260309.0',
         integrationType: IntegrationType.CsvFeed,
       });
 
-      const result =
-        await DocumentDomain.loadBestCompatibleConnectorsByManifestFragmentIds(
-          ['fragment-a'],
-          '7.260309.0'
-        );
+      const result = await DocumentDomain.loadBestCompatibleConnectorsBySlugs(
+        ['connector-a'],
+        '7.260309.0'
+      );
 
       expect(result).toHaveLength(0);
     });
 
-    it('only returns connectors whose manifest_fragment_id is in the provided list', async () => {
+    it('only returns connectors whose slug is in the provided list', async () => {
       await createConnector({
         manifestFragmentId: 'fragment-a',
-        version: '007.260309.000',
+        slug: 'connector-a',
+        version: '7.260309.0',
       });
       await createConnector({
         manifestFragmentId: 'fragment-b',
-        version: '007.260309.000',
+        slug: 'connector-b',
+        version: '7.260309.0',
       });
 
-      const result =
-        await DocumentDomain.loadBestCompatibleConnectorsByManifestFragmentIds(
-          ['fragment-a'],
-          '7.260309.0'
-        );
+      const result = await DocumentDomain.loadBestCompatibleConnectorsBySlugs(
+        ['connector-a'],
+        '7.260309.0'
+      );
 
       expect(result).toHaveLength(1);
-      expect(result[0]!.manifest_fragment_id).toBe('fragment-a');
+      expect(result[0]!.slug).toBe('connector-a');
     });
 
-    it('returns one compatible result per manifest_fragment_id and skips incompatible ones', async () => {
+    it('returns one compatible result per slug and skips incompatible ones', async () => {
       await createConnector({
         manifestFragmentId: 'fragment-a',
-        version: '007.260309.000',
+        slug: 'connector-a',
+        version: '7.260309.0',
         minimumDeployableVersionPadded: '007.260101.000',
       });
       await createConnector({
         manifestFragmentId: 'fragment-b',
-        version: '007.260309.000',
+        slug: 'connector-b',
+        version: '7.260309.0',
         minimumDeployableVersionPadded: '007.260601.000',
       });
       await createConnector({
         manifestFragmentId: 'fragment-c',
-        version: '007.260101.000',
+        slug: 'connector-c',
+        version: '7.260101.0',
       });
 
-      const result =
-        await DocumentDomain.loadBestCompatibleConnectorsByManifestFragmentIds(
-          ['fragment-a', 'fragment-b', 'fragment-c'],
-          '7.260309.0'
-        );
+      const result = await DocumentDomain.loadBestCompatibleConnectorsBySlugs(
+        ['connector-a', 'connector-b', 'connector-c'],
+        '7.260309.0'
+      );
 
       expect(result).toHaveLength(2);
-      const fragmentIds = result.map((r) => r.manifest_fragment_id);
-      expect(fragmentIds).toContain('fragment-a');
-      expect(fragmentIds).toContain('fragment-c');
-      expect(fragmentIds).not.toContain('fragment-b');
+      const slugs = result.map((r) => r.slug);
+      expect(slugs).toContain('connector-a');
+      expect(slugs).toContain('connector-c');
+      expect(slugs).not.toContain('connector-b');
+    });
+
+    it('returns the highest compatible connector version for a slug', async () => {
+      await createConnector({
+        manifestFragmentId: 'fragment-a-newest-incompatible',
+        slug: 'connector-a',
+        version: '7.260701.0',
+        minimumDeployableVersionPadded: '007.260601.000',
+      });
+      const expected = await createConnector({
+        manifestFragmentId: 'fragment-a-newest-compatible',
+        slug: 'connector-a',
+        version: '7.260401.0',
+        minimumDeployableVersionPadded: '007.260101.000',
+      });
+      await createConnector({
+        manifestFragmentId: 'fragment-a-older-compatible',
+        slug: 'connector-a',
+        version: '7.260101.0',
+      });
+
+      const result = await DocumentDomain.loadBestCompatibleConnectorsBySlugs(
+        ['connector-a'],
+        '7.260309.0'
+      );
+
+      expect(result).toHaveLength(1);
+      expect(result[0]).toMatchObject({ id: expected.id, slug: 'connector-a' });
     });
 
     it('excludes LTS connectors when manifest version is not LTS', async () => {
       await createConnector({
         manifestFragmentId: 'fragment-a',
-        version: '007.260309.000.LTS.005',
+        slug: 'connector-a',
+        version: '7.260309.0-lts.5',
         minimumDeployableVersionPadded: '007.260101.000.LTS.001',
       });
 
-      const result =
-        await DocumentDomain.loadBestCompatibleConnectorsByManifestFragmentIds(
-          ['fragment-a'],
-          '7.260309.0'
-        );
+      const result = await DocumentDomain.loadBestCompatibleConnectorsBySlugs(
+        ['connector-a'],
+        '7.260309.0'
+      );
 
       expect(result).toHaveLength(0);
     });
@@ -1582,14 +2143,14 @@ describe('document domain', () => {
     it('excludes non-LTS connectors when manifest version is LTS', async () => {
       await createConnector({
         manifestFragmentId: 'fragment-a',
-        version: '007.260309.000',
+        slug: 'connector-a',
+        version: '7.260309.0',
       });
 
-      const result =
-        await DocumentDomain.loadBestCompatibleConnectorsByManifestFragmentIds(
-          ['fragment-a'],
-          '7.260309.0-lts.5'
-        );
+      const result = await DocumentDomain.loadBestCompatibleConnectorsBySlugs(
+        ['connector-a'],
+        '7.260309.0-lts.5'
+      );
 
       expect(result).toHaveLength(0);
     });
@@ -1597,18 +2158,254 @@ describe('document domain', () => {
     it('returns LTS connector when manifest version is LTS and connector is compatible', async () => {
       const doc = await createConnector({
         manifestFragmentId: 'fragment-a',
-        version: '007.260101.000.LTS.001',
+        slug: 'connector-a',
+        version: '7.260101.0-lts.1',
         minimumDeployableVersionPadded: '007.260101.000.LTS.001',
       });
 
-      const result =
-        await DocumentDomain.loadBestCompatibleConnectorsByManifestFragmentIds(
-          ['fragment-a'],
-          '7.260309.0-lts.5'
-        );
+      const result = await DocumentDomain.loadBestCompatibleConnectorsBySlugs(
+        ['connector-a'],
+        '7.260309.0-lts.5'
+      );
 
       expect(result).toHaveLength(1);
       expect(result[0]!.id).toBe(doc.id);
+    });
+
+    // LTS versions must only ever be ranked against other LTS versions (and
+    // vice versa for non-LTS): the LTS filter partitions the set before
+    // ordering, so a newer non-LTS build must never outrank an older LTS one
+    // when the requested manifest version is LTS.
+    it('returns the latest LTS version among several compatible LTS versions of the same slug', async () => {
+      const expected = await createConnector({
+        manifestFragmentId: 'fragment-a-lts-newer',
+        slug: 'connector-a',
+        version: '7.260207.0-lts.2',
+      });
+      await createConnector({
+        manifestFragmentId: 'fragment-a-lts-older',
+        slug: 'connector-a',
+        version: '7.260101.0-lts.1',
+      });
+
+      // Newer than both LTS builds, but not LTS: must not win an LTS request.
+      await createConnector({
+        manifestFragmentId: 'fragment-a-non-lts-newest',
+        slug: 'connector-a',
+        version: '7.260904.0',
+      });
+
+      const result = await DocumentDomain.loadBestCompatibleConnectorsBySlugs(
+        ['connector-a'],
+        '7.260309.0-lts.5'
+      );
+
+      expect(result).toHaveLength(1);
+      expect(result[0]!.id).toBe(expected.id);
+    });
+
+    it('excludes a raw lowercase-suffixed LTS connector when manifest version is not LTS', async () => {
+      await createConnector({
+        manifestFragmentId: 'fragment-a',
+        slug: 'connector-a',
+        version: '7.260309.0-lts.5',
+      });
+
+      const result = await DocumentDomain.loadBestCompatibleConnectorsBySlugs(
+        ['connector-a'],
+        '7.260904.0'
+      );
+
+      expect(result).toHaveLength(0);
+    });
+
+    // Regression test for #3575: ordering used to be lexicographic over the
+    // raw, unpadded `Document.version` column, so `7.260309.9` (a string)
+    // sorted above `7.260309.10`. Comparing the zero-padded `version_padded`
+    // metadata instead makes the ordering numeric.
+    it('returns the highest padded version even when the raw patch has fewer digits (10 vs 9)', async () => {
+      const expected = await createConnector({
+        manifestFragmentId: 'fragment-a-patch-10',
+        slug: 'connector-a',
+        version: '7.260309.10',
+      });
+
+      await createConnector({
+        manifestFragmentId: 'fragment-a-patch-9',
+        slug: 'connector-a',
+        version: '7.260309.9',
+      });
+
+      await createConnector({
+        manifestFragmentId: 'fragment-a-lts-older',
+        slug: 'connector-a',
+        version: '7.260401.0-lts.1',
+      });
+
+      const result = await DocumentDomain.loadBestCompatibleConnectorsBySlugs(
+        ['connector-a'],
+        '7.260309.10'
+      );
+
+      expect(result).toHaveLength(1);
+      expect(result[0]!.id).toBe(expected.id);
+    });
+  });
+
+  describe('loadDistinctConnectorSlugs', () => {
+    const REQUESTED_VERSION = '7.260904.0';
+    const REQUESTED_LTS_VERSION = '7.260309.0-lts.5';
+    const REQUESTED_PADDED_VERSION = '007.260309.000';
+
+    const createConnector = async ({
+      slug,
+      version,
+      status = DocumentStatus.Published,
+      isDecommissioned = false,
+      integrationType = IntegrationType.Connector,
+      tags = [TAG_LATEST, TAG_DECOUPLING],
+    }: {
+      slug: string;
+      version: string;
+      status?: DocumentStatus;
+      isDecommissioned?: boolean;
+      integrationType?: IntegrationType;
+      tags?: string[];
+    }) => {
+      const doc = await TestHelper.document.create({
+        status,
+        is_decommissioned: isDecommissioned,
+        slug,
+        version,
+        tags,
+      });
+      await TestHelper.documentMetadata.create({
+        document_id: doc.id,
+        key: DocumentMetadataKeyCode.IntegrationType as unknown as DocumentMetadataKey,
+        value: integrationType,
+      });
+      return doc;
+    };
+
+    afterEach(async () => {
+      await TestHelper.documentMetadata.delete({});
+      await TestHelper.document.delete({});
+    });
+
+    it('returns an empty array when there are no connectors', async () => {
+      const result =
+        await DocumentDomain.loadDistinctConnectorSlugs(REQUESTED_VERSION);
+      expect(result).toHaveLength(0);
+    });
+
+    it('returns the distinct slugs of the TAG_LATEST connectors', async () => {
+      await createConnector({
+        slug: 'connector-a',
+        version: REQUESTED_PADDED_VERSION,
+      });
+      await createConnector({
+        slug: 'connector-b',
+        version: REQUESTED_PADDED_VERSION,
+      });
+      // An older version of the same connector, no longer tagged TAG_LATEST,
+      // must not surface as a separate/duplicate slug.
+      await createConnector({
+        slug: 'connector-a',
+        version: '007.260101.000',
+        tags: [TAG_DECOUPLING],
+      });
+
+      const result =
+        await DocumentDomain.loadDistinctConnectorSlugs(REQUESTED_VERSION);
+
+      expect(result.sort()).toEqual(['connector-a', 'connector-b']);
+    });
+
+    it('uses TAG_LATEST_LTS instead of TAG_LATEST when the requested version is LTS', async () => {
+      await createConnector({
+        slug: 'connector-a',
+        version: '007.260309.000.LTS.5',
+        tags: [TAG_LATEST_LTS, TAG_DECOUPLING],
+      });
+      // Regular (non-LTS) latest connector must not be considered known for an LTS request.
+      await createConnector({
+        slug: 'connector-b',
+        version: REQUESTED_PADDED_VERSION,
+      });
+
+      const result = await DocumentDomain.loadDistinctConnectorSlugs(
+        REQUESTED_LTS_VERSION
+      );
+
+      expect(result).toEqual(['connector-a']);
+    });
+
+    it.each([DocumentStatus.Draft, DocumentStatus.InValidation])(
+      'excludes the connectors whose status is %s',
+      async (status) => {
+        await createConnector({
+          slug: 'connector-a',
+          version: REQUESTED_PADDED_VERSION,
+          status,
+        });
+
+        const result =
+          await DocumentDomain.loadDistinctConnectorSlugs(REQUESTED_VERSION);
+
+        expect(result).toHaveLength(0);
+      }
+    );
+
+    it('excludes decommissioned connectors', async () => {
+      await createConnector({
+        slug: 'connector-a',
+        version: REQUESTED_PADDED_VERSION,
+        isDecommissioned: true,
+      });
+
+      const result =
+        await DocumentDomain.loadDistinctConnectorSlugs(REQUESTED_VERSION);
+
+      expect(result).toHaveLength(0);
+    });
+
+    it('excludes connectors that are not tagged as decoupled', async () => {
+      await createConnector({
+        slug: 'connector-a',
+        version: REQUESTED_PADDED_VERSION,
+        tags: [TAG_LATEST],
+      });
+
+      const result =
+        await DocumentDomain.loadDistinctConnectorSlugs(REQUESTED_VERSION);
+
+      expect(result).toHaveLength(0);
+    });
+
+    it('excludes connectors that are not tagged as latest', async () => {
+      await createConnector({
+        slug: 'connector-a',
+        version: REQUESTED_PADDED_VERSION,
+        tags: [TAG_DECOUPLING],
+      });
+
+      const result =
+        await DocumentDomain.loadDistinctConnectorSlugs(REQUESTED_VERSION);
+
+      expect(result).toHaveLength(0);
+    });
+
+    it('excludes documents whose integration_type is not connector', async () => {
+      await createConnector({
+        slug: 'connector-a',
+        version: REQUESTED_PADDED_VERSION,
+        integrationType: IntegrationType.CsvFeed,
+      });
+
+      const result =
+        await DocumentDomain.loadDistinctConnectorSlugs(REQUESTED_VERSION);
+
+      expect(result).toHaveLength(0);
     });
   });
 
@@ -1731,6 +2528,499 @@ describe('document domain', () => {
 
       const expected = [docA.id, docB.id].sort();
       expect(result.map((d) => d.id)).toEqual(expected);
+    });
+  });
+
+  describe('service instance visibility', () => {
+    const privateServiceInstanceId = uuidv4() as ServiceInstanceId;
+
+    const createDocumentIn = (serviceInstanceId: ServiceInstanceId) =>
+      TestHelper.document.create({
+        name: `doc-${uuidv4()}`,
+        type: OPENCTI_CUSTOM_VIEW_DOCUMENT_TYPE,
+        slug: `doc-${uuidv4()}`,
+        uploader_id: ADMIN_UUID,
+        service_instance_id: serviceInstanceId,
+        status: DocumentStatus.Published,
+      });
+
+    beforeAll(async () => {
+      await TestHelper.serviceInstance.create({
+        id: privateServiceInstanceId,
+        name: 'private-library',
+        slug: 'private-library',
+        public: false,
+      });
+    });
+
+    beforeEach(async () => {
+      requestContext.set(undefined);
+      await TestHelper.oneClickDeployment.deleteAll();
+      await TestHelper.document.delete({});
+    });
+
+    afterEach(async () => {
+      await TestHelper.subscription.delete({
+        service_instance_id: privateServiceInstanceId,
+      });
+    });
+
+    afterAll(async () => {
+      requestContext.set(undefined);
+      await TestHelper.subscription.delete({});
+      await TestHelper.serviceInstance.delete({ id: privateServiceInstanceId });
+    });
+
+    it('should hide newest documents of a non public service instance', async () => {
+      const visible = await createDocumentIn(
+        SERVICES.INSTANCES.CUSTOM_VIEWS.ID
+      );
+      const hidden = await createDocumentIn(privateServiceInstanceId);
+
+      const ids = (await DocumentDomain.loadNewestDocuments(50)).map(
+        ({ id }) => id
+      );
+
+      expect(ids).toContain(visible.id);
+      expect(ids).not.toContain(hidden.id);
+    });
+
+    it('should hide most deployed documents of a non public service instance', async () => {
+      const hidden = await createDocumentIn(privateServiceInstanceId);
+      await TestHelper.oneClickDeployment.insert({ resource_id: hidden.id });
+
+      const ids = (await DocumentDomain.loadMostDeployedDocuments(50)).map(
+        ({ id }) => id
+      );
+
+      expect(ids).not.toContain(hidden.id);
+    });
+
+    it('should expose documents of a non public service instance to a subscribed organization', async () => {
+      const hidden = await createDocumentIn(privateServiceInstanceId);
+      await TestHelper.subscription.create({
+        service_instance_id: privateServiceInstanceId,
+        organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+      });
+      requestContext.set(requestContextRegistererUserSecondOrga);
+
+      const ids = (await DocumentDomain.loadNewestDocuments(50)).map(
+        ({ id }) => id
+      );
+
+      expect(ids).toContain(hidden.id);
+    });
+
+    it('should keep hiding documents on the anonymous SEO surface even when an organization is subscribed', async () => {
+      const hidden = await createDocumentIn(privateServiceInstanceId);
+      await TestHelper.subscription.create({
+        service_instance_id: privateServiceInstanceId,
+        organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+      });
+      requestContext.set(requestContextRegistererUserSecondOrga);
+
+      const result = await DocumentDomain.loadSeoDocumentBySlug(
+        OPENCTI_CUSTOM_VIEW_DOCUMENT_TYPE,
+        hidden.slug as string
+      );
+
+      expect(result).toBeUndefined();
+    });
+
+    it('should keep documents that belong to no service instance', async () => {
+      const orphan = await TestHelper.document.create({
+        name: 'orphan',
+        type: OPENCTI_CUSTOM_VIEW_DOCUMENT_TYPE,
+        slug: `orphan-${uuidv4()}`,
+        uploader_id: ADMIN_UUID,
+        status: DocumentStatus.Published,
+      });
+
+      const ids = (await DocumentDomain.loadNewestDocuments(50)).map(
+        ({ id }) => id
+      );
+
+      expect(ids).toContain(orphan.id);
+    });
+  });
+
+  describe('loadPaginatedSeoDocumentsByServiceSlug - relation filters without duplicate edges', () => {
+    type UseCaseKey = 'A' | 'B';
+    type SolutionCategoryKey = 'X' | 'Y';
+
+    let useCaseIds: Record<UseCaseKey, UseCaseId>;
+    let solutionCategoryIds: Record<SolutionCategoryKey, SolutionCategoryId>;
+    let visibleDocument: Document;
+    let controlDocument: Document;
+
+    beforeAll(async () => {
+      const [useCaseA, useCaseB] = await Promise.all([
+        TestHelper.useCase.create({
+          name: `dup-edges-use-case-a-${uuidv4()}`,
+          color: '#ff0000',
+        }),
+        TestHelper.useCase.create({
+          name: `dup-edges-use-case-b-${uuidv4()}`,
+          color: '#00ff00',
+        }),
+      ]);
+      useCaseIds = { A: useCaseA.id, B: useCaseB.id };
+
+      const [solutionCategoryX, solutionCategoryY] = await Promise.all([
+        solutionCategoryDomain.insertSolutionCategory({
+          name: `dup-edges-solution-category-x-${uuidv4()}`,
+        }),
+        solutionCategoryDomain.insertSolutionCategory({
+          name: `dup-edges-solution-category-y-${uuidv4()}`,
+        }),
+      ]);
+      solutionCategoryIds = {
+        X: solutionCategoryX.id,
+        Y: solutionCategoryY.id,
+      };
+    });
+
+    beforeEach(async () => {
+      const publicIntegrationFields = {
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        uploader_id: ADMIN_UUID,
+        uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+        service_instance_id: INTEGRATION_SERVICE_INSTANCE_ID,
+        status: DocumentStatus.Published,
+        tags: [],
+      };
+
+      visibleDocument = await TestHelper.document.create({
+        ...publicIntegrationFields,
+        name: 'dup-edges-visible',
+        slug: `dup-edges-visible-${uuidv4()}`,
+      });
+      controlDocument = await TestHelper.document.create({
+        ...publicIntegrationFields,
+        name: 'dup-edges-control',
+        slug: `dup-edges-control-${uuidv4()}`,
+      });
+
+      const visibleObjectId =
+        visibleDocument.id as unknown as ObjectUseCaseObjectId;
+      const visibleSolutionCategoryObjectId =
+        visibleDocument.id as unknown as ObjectSolutionCategoryObjectId;
+      await TestHelper.objectUseCase.insert([
+        { object_id: visibleObjectId, use_case_id: useCaseIds.A },
+        { object_id: visibleObjectId, use_case_id: useCaseIds.B },
+      ]);
+      await objectSolutionCategoryDomain.insertObjectSolutionCategory([
+        {
+          object_id: visibleSolutionCategoryObjectId,
+          solution_category_id: solutionCategoryIds.X,
+        },
+        {
+          object_id: visibleSolutionCategoryObjectId,
+          solution_category_id: solutionCategoryIds.Y,
+        },
+      ]);
+    });
+
+    afterEach(async () => {
+      await TestHelper.objectUseCase.delete({
+        object_id: visibleDocument.id as unknown as ObjectUseCaseObjectId,
+      });
+      await TestHelper.objectSolutionCategory.delete({
+        object_id:
+          visibleDocument.id as unknown as ObjectSolutionCategoryObjectId,
+      });
+    });
+
+    afterAll(async () => {
+      await Promise.all([
+        TestHelper.useCase.delete({ id: useCaseIds.A }),
+        TestHelper.useCase.delete({ id: useCaseIds.B }),
+        solutionCategoryDomain.deleteSolutionCategory({
+          id: solutionCategoryIds.X,
+        }),
+        solutionCategoryDomain.deleteSolutionCategory({
+          id: solutionCategoryIds.Y,
+        }),
+      ]);
+    });
+
+    const buildIntegrationsLogicalFilters = (
+      useCaseKeys: UseCaseKey[],
+      solutionCategoryKeys: SolutionCategoryKey[]
+    ): LogicalFilterInput => ({
+      operator: LogicalOperator.And,
+      children: [
+        {
+          leaf: {
+            key: FilterKey.Label,
+            value: useCaseKeys.map((k) => toGlobalId('UseCase', useCaseIds[k])),
+          },
+        },
+        { leaf: { key: FilterKey.ManagerSupported, value: [] } },
+        { leaf: { key: FilterKey.Verified, value: [] } },
+        { leaf: { key: FilterKey.IntegrationType, value: [] } },
+        { leaf: { key: FilterKey.ProductVersion, value: [] } },
+        {
+          leaf: {
+            key: FilterKey.SolutionCategory,
+            value: solutionCategoryKeys.map((k) =>
+              toGlobalId('SolutionCategory', solutionCategoryIds[k])
+            ),
+          },
+        },
+        { leaf: { key: FilterKey.LicenseType, value: [] } },
+      ],
+    });
+
+    it.each<{
+      description: string;
+      useCaseKeys: UseCaseKey[];
+      solutionCategoryKeys: SolutionCategoryKey[];
+      controlVisible: boolean;
+    }>([
+      {
+        description: 'all leaves empty (production case)',
+        useCaseKeys: [],
+        solutionCategoryKeys: [],
+        controlVisible: true,
+      },
+      {
+        description: 'use case filter matching two use cases',
+        useCaseKeys: ['A', 'B'],
+        solutionCategoryKeys: [],
+        controlVisible: false,
+      },
+      {
+        description: 'use case filter with empty solution category leaf',
+        useCaseKeys: ['A'],
+        solutionCategoryKeys: [],
+        controlVisible: false,
+      },
+      {
+        description: 'use case and solution category filters both narrowed',
+        useCaseKeys: ['A'],
+        solutionCategoryKeys: ['X'],
+        controlVisible: false,
+      },
+    ])(
+      'should return each matching document exactly once ($description)',
+      async ({ useCaseKeys, solutionCategoryKeys, controlVisible }) => {
+        const result =
+          await DocumentDomain.loadPaginatedSeoDocumentsByServiceSlug(
+            OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+            'opencti-integrations',
+            {
+              first: 100,
+              logicalFilters: buildIntegrationsLogicalFilters(
+                useCaseKeys,
+                solutionCategoryKeys
+              ),
+            }
+          );
+
+        const edgeIds = result.edges.map(({ node }) => node.id);
+
+        expect(edgeIds).toContain(visibleDocument.id);
+
+        const expectedTotalCount = controlVisible ? 2 : 1;
+        expect(Number(result.totalCount)).toBe(expectedTotalCount);
+        expect(edgeIds).toHaveLength(expectedTotalCount);
+
+        expect(new Set(edgeIds).size).toBe(edgeIds.length);
+
+        if (controlVisible) {
+          expect(edgeIds).toContain(controlDocument.id);
+        } else {
+          expect(edgeIds).not.toContain(controlDocument.id);
+        }
+      }
+    );
+  });
+
+  describe('loadNotPublishedForReminder', () => {
+    const LIMIT_PER_STATUS = 5;
+    const FIRST_CREATION = new Date('2026-01-01T00:00:00Z').getTime();
+    const ONE_DAY = 24 * 60 * 60 * 1000;
+
+    const createDocuments = (
+      serviceInstanceId: ServiceInstanceId,
+      status: DocumentStatus,
+      count: number
+    ) =>
+      Promise.all(
+        Array.from({ length: count }, (_, index) =>
+          TestHelper.document.create({
+            name: `${serviceInstanceId}-${status}-${index}`,
+            status,
+            service_instance_id: serviceInstanceId,
+            created_at: new Date(FIRST_CREATION + index * ONE_DAY),
+          })
+        )
+      );
+
+    beforeEach(async () => {
+      await TestHelper.document.delete({});
+    });
+
+    afterEach(async () => {
+      await TestHelper.document.delete({});
+    });
+
+    it('should keep the oldest 5 documents of each status for a library', async () => {
+      // Given 7 drafts and 6 documents in validation in the integrations library
+      const instanceId = SERVICES.INSTANCES.INTEGRATIONS.ID;
+      await createDocuments(instanceId, DocumentStatus.Draft, 7);
+      await createDocuments(instanceId, DocumentStatus.InValidation, 6);
+
+      // When
+      const result =
+        await DocumentDomain.loadNotPublishedForReminder(LIMIT_PER_STATUS);
+
+      // Then
+      const names = (status: DocumentStatus) =>
+        result
+          .filter(({ document }) => document.status === status)
+          .map(({ document }) => document.name);
+      expect(names(DocumentStatus.Draft)).toEqual(
+        [0, 1, 2, 3, 4].map(
+          (index) => `${instanceId}-${DocumentStatus.Draft}-${index}`
+        )
+      );
+      expect(names(DocumentStatus.InValidation)).toEqual(
+        [0, 1, 2, 3, 4].map(
+          (index) => `${instanceId}-${DocumentStatus.InValidation}-${index}`
+        )
+      );
+      expect(result).toHaveLength(10);
+    });
+
+    it('should ignore published documents and group the documents by library with its definition', async () => {
+      // Given not published documents in two libraries and a published one
+      const integrations = SERVICES.INSTANCES.INTEGRATIONS.ID;
+      const dashboards = SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID;
+      await createDocuments(integrations, DocumentStatus.Draft, 2);
+      await createDocuments(integrations, DocumentStatus.Published, 1);
+      await createDocuments(dashboards, DocumentStatus.InValidation, 2);
+      const [integrationsDefinition, dashboardsDefinition] = await Promise.all([
+        ServiceDefinitionDomain.loadServiceDefinitionByServiceInstance(
+          integrations
+        ),
+        ServiceDefinitionDomain.loadServiceDefinitionByServiceInstance(
+          dashboards
+        ),
+      ]);
+
+      // When
+      const result =
+        await DocumentDomain.loadNotPublishedForReminder(LIMIT_PER_STATUS);
+
+      // Then
+      expect(result).toHaveLength(4);
+      expect(result.map(({ document }) => document.status)).not.toContain(
+        DocumentStatus.Published
+      );
+      const libraryIds = result.map(
+        ({ serviceDefinition }) => serviceDefinition.id
+      );
+      expect(new Set(libraryIds).size).toBe(2);
+      expect(
+        libraryIds.filter((id, index) => id !== libraryIds[index - 1])
+      ).toHaveLength(2);
+      expect(result).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            document: expect.objectContaining({
+              service_instance_id: integrations,
+              status: DocumentStatus.Draft,
+            }),
+            serviceDefinition: {
+              id: integrationsDefinition!.id,
+              name: integrationsDefinition!.name,
+              identifier: integrationsDefinition!.identifier,
+            },
+          }),
+          expect.objectContaining({
+            document: expect.objectContaining({
+              service_instance_id: dashboards,
+              status: DocumentStatus.InValidation,
+            }),
+            serviceDefinition: {
+              id: dashboardsDefinition!.id,
+              name: dashboardsDefinition!.name,
+              identifier: dashboardsDefinition!.identifier,
+            },
+          }),
+        ])
+      );
+    });
+
+    it('should list drafts before documents in validation even when the latter are older', async () => {
+      // Given documents in validation created before the drafts
+      const instanceId = SERVICES.INSTANCES.INTEGRATIONS.ID;
+      const inValidation = await createDocuments(
+        instanceId,
+        DocumentStatus.InValidation,
+        2
+      );
+      const drafts = await createDocuments(instanceId, DocumentStatus.Draft, 2);
+      const olderThanDrafts = new Date(FIRST_CREATION - 10 * ONE_DAY);
+      await Promise.all(
+        inValidation.map(({ id }) =>
+          TestHelper.document.update({ id }, { created_at: olderThanDrafts })
+        )
+      );
+
+      // When
+      const result =
+        await DocumentDomain.loadNotPublishedForReminder(LIMIT_PER_STATUS);
+
+      // Then
+      expect(result.map(({ document }) => document.status)).toEqual([
+        DocumentStatus.Draft,
+        DocumentStatus.Draft,
+        DocumentStatus.InValidation,
+        DocumentStatus.InValidation,
+      ]);
+      expect(result.slice(0, 2).map(({ document }) => document.id)).toEqual(
+        drafts.map(({ id }) => id)
+      );
+    });
+
+    it('should ignore the child documents of a resource', async () => {
+      // Given a draft resource with a draft image child
+      const instanceId = SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID;
+      const [parent, child] = await createDocuments(
+        instanceId,
+        DocumentStatus.Draft,
+        2
+      );
+      await DocumentChildrenDomain.insertChildRelationship({
+        parentDocumentId: parent.id,
+        childDocumentId: child.id,
+      });
+
+      // When
+      const result =
+        await DocumentDomain.loadNotPublishedForReminder(LIMIT_PER_STATUS);
+
+      // Then
+      expect(result.map(({ document }) => document.id)).toEqual([parent.id]);
+    });
+
+    it('should return nothing when every document is published', async () => {
+      // Given only a published document
+      await createDocuments(
+        SERVICES.INSTANCES.INTEGRATIONS.ID,
+        DocumentStatus.Published,
+        1
+      );
+
+      // When
+      const result =
+        await DocumentDomain.loadNotPublishedForReminder(LIMIT_PER_STATUS);
+
+      // Then
+      expect(result).toEqual([]);
     });
   });
 });

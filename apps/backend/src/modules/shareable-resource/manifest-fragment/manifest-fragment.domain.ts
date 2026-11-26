@@ -3,6 +3,7 @@ import {
   DocumentImageType,
   DocumentMetadataKeyCode,
   DocumentSourceType,
+  DocumentStatus,
   IntegrationType,
   LicenseType,
   ManifestType,
@@ -27,7 +28,10 @@ import {
   OPENCTI_INTEGRATION_DOCUMENT_TYPE,
   type ConnectorV2,
 } from '../opencti/integration/integration.model';
-import { ManifestFragmentHelper } from './manifest-fragment.helper';
+import {
+  ManifestFragmentHelper,
+  type ConnectorMetadataSnapshot,
+} from './manifest-fragment.helper';
 
 type ConnectorWithMetadata = Document & {
   version_padded?: string;
@@ -84,10 +88,7 @@ const createConnectorDocument = async ({
   fragment: ManifestFragmentInput;
   formattedVersion: string;
   tags: string[];
-  metadataFromExisting?: Pick<
-    ConnectorWithMetadata,
-    'datasheet_url' | 'blogpost_url' | 'demo_url'
-  >;
+  metadataFromExisting?: ConnectorMetadataSnapshot;
   licenseType?: LicenseType;
   contact?: string;
 }): Promise<ConnectorV2> => {
@@ -102,6 +103,7 @@ const createConnectorDocument = async ({
         service_instance_id: INTEGRATION_SERVICE_INSTANCE_ID,
         tags,
         source_type: DocumentSourceType.External,
+        status: DocumentStatus.Published,
         type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
         version: fragment.version,
         version_padded: formattedVersion,
@@ -124,6 +126,8 @@ const createConnectorDocument = async ({
         datasheet_url: metadataFromExisting?.datasheet_url,
         blogpost_url: metadataFromExisting?.blogpost_url,
         demo_url: metadataFromExisting?.demo_url,
+        // Null for a brand-new family: the admin adds it afterwards, in the connector form.
+        meta_description: metadataFromExisting?.meta_description ?? null,
         additional_properties: JSON.stringify(fragment.additional_properties),
         config_schema: JSON.stringify(fragment.config_schema),
       },
@@ -169,6 +173,9 @@ export const ManifestFragmentDomain = {
     ManifestFragmentHelper.validateShortDescriptionLength(
       fragment.short_description
     );
+    ManifestFragmentHelper.validateSolutionCategories(
+      fragment.solution_categories
+    );
     const licenseType = fragment.license_type ?? undefined;
     const contact = ManifestFragmentHelper.parseContact(fragment.contact);
     const formattedVersion =
@@ -177,16 +184,52 @@ export const ManifestFragmentDomain = {
       ManifestFragmentHelper.getLatestTagForConnectorVersion(formattedVersion);
 
     await withTransaction(async () => {
-      // Serializes concurrent ingestions for the same manifest_fragment_id.
-      await DocumentDomain.lockDocumentsByMetadata(
-        DocumentMetadataKeyCode.ManifestFragmentId,
-        fragment.id
+      // Serializes concurrent ingestions for the same connector slug.
+
+      await DocumentDomain.lockDocumentsBySlugTypeAndServiceInstance({
+        slug: fragment.slug,
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        serviceInstanceId: INTEGRATION_SERVICE_INSTANCE_ID,
+      });
+
+      // Re-read the whole family after the lock statement so this transaction
+      // uses a fresh snapshot that includes connectors inserted by prior
+      // concurrent transactions.
+      const existingBatchConnectorRows: Pick<Document, 'id'>[] =
+        await db<Document>('Document')
+          .where({
+            slug: fragment.slug,
+            type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+            service_instance_id: INTEGRATION_SERVICE_INSTANCE_ID,
+          })
+          .select('id');
+
+      const existingBatchConnectorIds = existingBatchConnectorRows.map(
+        (connector) => connector.id
       );
 
-      const existingBatchConnectors =
-        (await DocumentDomain.loadDocumentsByMetadata(
+      const existingConnectorsWithSameId =
+        await DocumentDomain.loadDocumentsByMetadata(
           DocumentMetadataKeyCode.ManifestFragmentId,
           fragment.id,
+          [],
+          {
+            type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+            service_instance_id: INTEGRATION_SERVICE_INSTANCE_ID,
+          }
+        );
+
+      const conflictingConnector = existingConnectorsWithSameId.find(
+        (connector) => connector.slug !== fragment.slug
+      );
+
+      if (conflictingConnector) {
+        throw new Error(BadRequestErrorCode.ConnectorIdAlreadyExists);
+      }
+
+      const existingBatchConnectors =
+        (await DocumentDomain.loadDocumentsWithMetadataByIds(
+          existingBatchConnectorIds,
           [
             DocumentMetadataKeyCode.VersionPadded,
             DocumentMetadataKeyCode.DatasheetUrl,
@@ -245,7 +288,7 @@ export const ManifestFragmentDomain = {
         if (isFiligranProduct(platform)) {
           await solutionCategoryApp.linkSolutionCategoriesByNameToObject({
             objectId: toObjectSolutionCategoryObjectId(connector.id),
-            names: fragment.solution_categories ?? [],
+            names: fragment.solution_categories,
             product: platform,
           });
         } else {

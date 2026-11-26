@@ -1,4 +1,3 @@
-import { toGlobalId } from 'graphql-relay/node/node.js';
 import { v4 as uuidv4 } from 'uuid';
 import {
   CreateDeploymentRequestInput,
@@ -22,17 +21,22 @@ import {
   ServiceInstanceCreationStatus,
   ServiceInstanceTag,
   Success,
-  TrialDeploymentsInput,
   UpdateDeploymentRequestInput,
+  XtmoneIntegrationStatus,
 } from '../../__generated__/resolvers-types';
 import portalConfig from '../../config';
-import { withTransaction } from '../../context/database.context';
+import {
+  withAdvisoryLock,
+  withTransaction,
+} from '../../context/database.context';
 import { requestContext } from '../../context/request.context';
 import DeploymentRequestModel, {
   DeploymentRequestId,
   DeploymentRequestMutator,
 } from '../../model/kanel/public/DeploymentRequest';
-import Organization from '../../model/kanel/public/Organization';
+import Organization, {
+  OrganizationId,
+} from '../../model/kanel/public/Organization';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { SubscriptionId } from '../../model/kanel/public/Subscription';
 import { UserId } from '../../model/kanel/public/User';
@@ -43,10 +47,14 @@ import {
   XTM_HUB_SUPPORT_EMAIL,
 } from '../../portal.const';
 import { securityGuard } from '../../security/guard';
-import { sendMail } from '../../server/mail-service';
-import { auth0Client } from '../../thirdparty/auth0/client';
+import { buildXtmPlatformTrialLink, sendMail } from '../../server/mail-service';
+import {
+  formatProductNames,
+  FreeTrialBundleModel,
+  sortProductsForMail,
+} from '../../server/mail-template/mail';
+import { fetchXtmoneIntegrationStatus } from '../../thirdparty/xtmone/xtmone';
 import { logApp } from '../../utils/app-logger.util';
-import { getErrorNumberProperty } from '../../utils/error/error-guard.util';
 import {
   BadRequestErrorCode,
   ErrorCode,
@@ -59,24 +67,33 @@ import { OrganizationDomain } from '../organization-management/organization/orga
 import { UserDomain } from '../organization-management/user/user-domain/user.domain';
 import { PlatformConfigurationDomain } from '../registration/platform-configuration/platform-configuration.domain';
 import { RegistrationDomain } from '../registration/registration.domain';
-import {
-  REGISTRABLE_PLATFORM_IDENTIFIERS,
-  serviceInstanceTagMappedByPlatformIdentifier,
-} from '../registration/registration.mapping';
+import { serviceInstanceTagMappedByPlatformIdentifier } from '../registration/registration.mapping';
 import { ServiceDefinitionDomain } from '../service/definition/service-definition.domain';
 import { ServiceInstanceDomain } from '../service/instance/service-instance.domain';
 import { SubscriptionDomain } from '../subscription/subscription.domain';
 import { TelemetryApp } from '../telemetry/telemetry.app';
 import { TelemetryHelper } from '../telemetry/telemetry.helper';
 import { CompetitorApp } from './competitor/competitor.app';
-import {
-  DeploymentRequestDomain,
-  FullyQualifiedDeploymentRequest,
-} from './deployment.domain';
+import { DeploymentCancellationApp } from './deployment-cancellation.app';
+import { DeploymentRequestDomain, isBundleChild } from './deployment.domain';
 import { DeploymentHelper } from './deployment.helper';
-import { DeploymentQuotaDomain } from './quota/deployment.quota.domain';
+import { DeploymentQuotaApp } from './quota/deployment.quota.app';
+import {
+  bundleQuotaKey,
+  DeploymentQuotaDomain,
+  quotaKeysOfRequest,
+} from './quota/deployment.quota.domain';
 
 export const XTM_PLATFORM_BUNDLE_SERVICE_INSTANCE_NAME = 'XTM Platform Bundle';
+
+// Every XTM Platform trial embarks these products
+const XTM_PLATFORM_BUNDLE_PRODUCTS = [
+  PlatformIdentifier.Xtmone,
+  PlatformIdentifier.Opencti,
+  PlatformIdentifier.Openaev,
+];
+
+const DEPLOYMENT_REQUEST_LOCK_NAMESPACE = 'deployment_request';
 
 export const DeploymentApp = {
   createDeploymentRequest: async (
@@ -84,7 +101,10 @@ export const DeploymentApp = {
   ): Promise<DeploymentRequest> => {
     const user = requestContext.requireUser();
 
-    const validatedProducts = validateDeploymentRequestProducts(input);
+    DeploymentHelper.validateUseCasesByProduct(
+      input,
+      XTM_PLATFORM_BUNDLE_PRODUCTS
+    );
 
     const chosenOrganization = await OrganizationDomain.loadOrganizationBy({
       id: user.selected_organization_id,
@@ -107,45 +127,26 @@ export const DeploymentApp = {
     }
 
     try {
-      if (validatedProducts.type === DeploymentRequestDeploymentType.Bundle) {
-        return await createBundleDeploymentRequest({
-          user,
-          chosenOrganization,
-          input,
-          products: validatedProducts.products,
-        });
-      }
-
-      const { platformIdentifier } = validatedProducts;
-
       await DeploymentHelper.assertFreeTrialsLimit(
-        user.selected_organization_id,
-        platformIdentifier
+        user.selected_organization_id
       );
 
-      const createdDeploymentRequest = await createSingleDeploymentRequest({
-        user,
-        input,
-        platformIdentifier,
-        type: DeploymentRequestDeploymentType.Trial,
-        parentId: null,
-      });
+      return await withAdvisoryLock(
+        DEPLOYMENT_REQUEST_LOCK_NAMESPACE,
+        user.selected_organization_id,
+        async () => {
+          await DeploymentHelper.assertFreeTrialsLimit(
+            user.selected_organization_id
+          );
 
-      await sendDeploymentRequestCreatedNotifications({
-        user,
-        chosenOrganization,
-        input,
-        platformIdentifier,
-        deploymentRequest: createdDeploymentRequest,
-      });
-
-      return DeploymentRequestDomain.loadDeploymentRequestBy({
-        id: createdDeploymentRequest.id,
-      }).then((result) => {
-        if (!result)
-          throw new Error(NotFoundErrorCode.DeploymentRequestNotFound);
-        return result;
-      });
+          return createBundleDeploymentRequest({
+            user,
+            chosenOrganization,
+            input,
+            products: XTM_PLATFORM_BUNDLE_PRODUCTS,
+          });
+        }
+      );
     } catch (error) {
       logApp.error('unable to create deployment request', { error });
       throw error;
@@ -182,9 +183,11 @@ export const DeploymentApp = {
         newStatus,
       });
 
-      if (!isBundle && deploymentRequest.parent_id) {
-        await recomputeBundleDates(deploymentRequest.parent_id);
+      if (isBundle || !isBundleChild(deploymentRequest)) {
+        return;
       }
+
+      await recomputeBundleDates(deploymentRequest.parent_id);
     });
 
     const updatedDeploymentRequest =
@@ -196,23 +199,14 @@ export const DeploymentApp = {
       throw new Error(NotFoundErrorCode.DeploymentRequestNotFound);
     }
 
-    await sendUpdateDeploymentTelemetryEvent(
+    await DeploymentCancellationApp.sendUpdateDeploymentTelemetryEvent(
       updatedDeploymentRequest,
       updatedDeploymentRequest.user_requester_id,
       deploymentRequest
     );
 
-    if (
-      newStatus === DeploymentRequestHubStatus.Provisioning &&
-      newStatus !== deploymentRequest.hub_status
-    ) {
-      await sendProvisioningPlatformEmail(updatedDeploymentRequest);
-    }
-    if (
-      newStatus === DeploymentRequestHubStatus.Active &&
-      newStatus !== deploymentRequest.hub_status
-    ) {
-      await sendActivePlatformEmail(updatedDeploymentRequest);
+    if (isBundle && newStatus !== deploymentRequest.hub_status) {
+      await sendStatusPlatformEmail(updatedDeploymentRequest, newStatus);
     }
 
     return updatedDeploymentRequest;
@@ -248,18 +242,16 @@ export const DeploymentApp = {
     );
   },
 
-  loadAvailableDeploymentRequests: async (
-    platformIdentifier: PlatformIdentifier
-  ): Promise<DeploymentAvailability[]> => {
-    const quotas = await DeploymentQuotaDomain.loadQuotas({
-      platform_identifier: platformIdentifier,
-    });
+  loadAvailableDeploymentRequests: async (): Promise<
+    DeploymentAvailability[]
+  > => {
+    const quotas = await DeploymentQuotaDomain.loadQuotas({});
 
     return quotas.map((quota) => ({
+      id: quota.id,
       region: quota.region,
       availableCount: quota.availability,
       capacity: quota.capacity,
-      platform_identifier: quota.platform_identifier,
     }));
   },
 
@@ -271,7 +263,10 @@ export const DeploymentApp = {
     direction: ReorderDeploymentRequestInQueueDirection;
   }): Promise<Success> => {
     const deploymentRequest =
-      await DeploymentRequestDomain.loadDeploymentRequestBy({ id });
+      await DeploymentRequestDomain.loadDeploymentRequestBy({
+        id,
+        type: DeploymentRequestDeploymentType.Bundle,
+      });
     if (!deploymentRequest) {
       throw new Error(ErrorCode.DeploymentRequestNotFound);
     }
@@ -300,60 +295,23 @@ export const DeploymentApp = {
   },
 
   updateDeploymentQuotaCapacity: async ({
-    platformIdentifier,
     region,
     newCapacity,
   }: {
-    platformIdentifier: PlatformIdentifier;
     region: DeploymentRequestPlatformRegion;
     newCapacity: number;
   }): Promise<{ success: boolean }> => {
     const user = requestContext.requireUser();
-    await DeploymentQuotaDomain.withLockedQuotaTransaction(
-      { platformIdentifier, region },
-      async () => {
-        const { newAvailability } =
-          await DeploymentQuotaDomain.updateQuotaCapacity({
-            platformIdentifier,
-            region,
-            newCapacity,
-          });
 
-        if (newAvailability < 0) {
-          for (let i = 0; i < -newAvailability; i++) {
-            const updatedRequest =
-              await DeploymentRequestDomain.setLastPendingRequestAsQueued(
-                platformIdentifier,
-                region
-              );
-
-            if (!updatedRequest) {
-              break;
-            }
-
-            void sendUpdateDeploymentTelemetryEvent(updatedRequest, user.id);
-            await DeploymentQuotaDomain.freePlace(platformIdentifier, region);
-          }
-        } else if (newAvailability > 0) {
-          for (let i = 0; i < newAvailability; i++) {
-            const updatedRequest =
-              await DeploymentRequestDomain.setFirstQueuedRequestAsPending(
-                platformIdentifier,
-                region
-              );
-            if (!updatedRequest) {
-              break;
-            }
-
-            void sendUpdateDeploymentTelemetryEvent(updatedRequest, user.id);
-            await DeploymentQuotaDomain.reservePlace(
-              platformIdentifier,
-              region
-            );
-          }
-        }
-      }
-    );
+    await DeploymentQuotaApp.applyQuotaCapacityChange({
+      region,
+      newCapacity,
+      onRequestMoved: (movedRequest) =>
+        DeploymentCancellationApp.sendUpdateDeploymentTelemetryEvent(
+          movedRequest,
+          user.id
+        ),
+    });
 
     return { success: true };
   },
@@ -373,7 +331,13 @@ export const DeploymentApp = {
       throw new Error(NotFoundErrorCode.DeploymentRequestNotFound);
     }
 
-    const previousHubStatus = deploymentRequest.hub_status;
+    if (isBundleChild(deploymentRequest)) {
+      throw new Error(ForbiddenErrorCode.CantCancelBundleProduct);
+    }
+
+    if (deploymentRequest.type !== DeploymentRequestDeploymentType.Bundle) {
+      throw new Error(NotFoundErrorCode.DeploymentRequestNotFound);
+    }
 
     if (
       !isAdmin &&
@@ -383,105 +347,36 @@ export const DeploymentApp = {
       throw new Error(ForbiddenErrorCode.UserIsNotInOrganization);
     }
 
-    const countsInOrgaQuota =
-      isAdmin ||
-      ![
-        DeploymentRequestPlatformState.Unprovisioned,
-        DeploymentRequestPlatformState.Provisioning,
-      ].includes(
-        deploymentRequest.actual_state ??
-          DeploymentRequestPlatformState.Unprovisioned
+    const family =
+      await DeploymentRequestDomain.loadDeploymentRequestWithChildren(
+        deploymentRequest
       );
 
-    const target_state =
-      deploymentRequest.actual_state ===
-      DeploymentRequestPlatformState.Unprovisioned
-        ? DeploymentRequestPlatformState.Unprovisioned
-        : DeploymentRequestPlatformState.Removed;
+    const updatedFamily = await withTransaction(async () => {
+      const updated: DeploymentRequestModel[] = [];
 
-    await DeploymentQuotaDomain.withLockedQuotaTransaction(
-      {
-        platformIdentifier: deploymentRequest.platform_identifier,
-        region: deploymentRequest.region,
-      },
-      async () => {
-        await DeploymentRequestDomain.updateDeploymentRequestById(
-          deploymentRequestId,
-          {
-            hub_status: DeploymentRequestHubStatus.Cancelled,
-            target_state: target_state,
-            cancellation_date: new Date(),
-            cancellation_user_id: user.id,
-            cancellation_reason: cancellationReason,
-            counts_in_orga_quota: countsInOrgaQuota,
-          }
-        );
-        if (!countsInOrgaQuota) {
-          await ServiceInstanceDomain.updateServiceInstance(
-            deploymentRequest.service_instance_id,
-            {
-              creation_status: ServiceInstanceCreationStatus.Disabled,
-            }
-          );
-        }
-        await DeploymentApp.releaseDeploymentRequestPlace(
-          previousHubStatus,
-          deploymentRequest.platform_identifier,
-          deploymentRequest.region
+      for (const request of family) {
+        const updatedRequest =
+          await DeploymentCancellationApp.applyCancellationToDeploymentRequest({
+            deploymentRequest: request,
+            userId: user.id,
+            isAdmin,
+            cancellationReason,
+          });
+        updated.push(updatedRequest);
+
+        await sendDeploymentRequestCancelledNotifications(
+          updatedRequest,
+          user.id
         );
       }
-    );
 
-    const updatedDeploymentRequest =
-      await DeploymentRequestDomain.loadDeploymentRequestBy({
-        id: deploymentRequestId,
-      });
+      return updated;
+    });
 
+    const [updatedDeploymentRequest] = updatedFamily;
     if (!updatedDeploymentRequest) {
       throw new Error(NotFoundErrorCode.DeploymentRequestNotFound);
-    }
-
-    await sendUpdateDeploymentTelemetryEvent(updatedDeploymentRequest, user.id);
-
-    try {
-      const [requester] = await UserDomain.loadUser({
-        id: updatedDeploymentRequest.user_requester_id,
-      });
-      if (requester && updatedDeploymentRequest.platform_identifier) {
-        await sendMail({
-          to: requester.email,
-          template: 'free_trial_cancelled',
-          params: {
-            firstName: formatName(requester.first_name ?? ''),
-            platformIdentifier: updatedDeploymentRequest.platform_identifier,
-          },
-        });
-      } else if (!requester) {
-        logApp.warn('Requester not found for trial cancellation mail', {
-          deploymentRequestId: updatedDeploymentRequest.id,
-        });
-      }
-    } catch (error) {
-      logApp.error('Unable to send mail for trial cancellation', {
-        error,
-        deploymentRequestId: updatedDeploymentRequest.id,
-      });
-    }
-
-    try {
-      if (deploymentRequest.platform_id) {
-        await auth0Client.deleteAudienceAPI(
-          deploymentRequest.organization_requester_id,
-          deploymentRequest.platform_id
-        );
-      } else {
-        logApp.error('Unable to delete audience', {
-          error: 'missing platform_id',
-          deploymentRequestId: deploymentRequest.id,
-        });
-      }
-    } catch (error) {
-      logDeleteAudienceError(error, deploymentRequest);
     }
 
     return updatedDeploymentRequest;
@@ -489,228 +384,118 @@ export const DeploymentApp = {
 
   expireTrials: async () => {
     const expiredTrials: DeploymentRequestModel[] =
-      await DeploymentRequestDomain.loadTrialsToExpire();
+      await DeploymentRequestDomain.loadBundlesToExpire();
 
     for (const trial of expiredTrials) {
-      const previousHubStatus = trial.hub_status;
       logApp.info('expiring trial', { deploymentRequestId: trial.id });
 
-      try {
-        await DeploymentQuotaDomain.withLockedQuotaTransaction(
-          {
-            platformIdentifier: trial.platform_identifier,
-            region: trial.region,
-          },
-          async () => {
-            const updatedDeploymentRequest =
-              await DeploymentRequestDomain.updateDeploymentRequestById(
-                trial.id,
-                {
-                  hub_status: DeploymentRequestHubStatus.Expired,
-                  target_state: DeploymentRequestPlatformState.Removed,
-                }
-              );
-
-            if (!updatedDeploymentRequest) {
-              throw new Error(NotFoundErrorCode.DeploymentRequestNotFound);
-            }
-
-            await DeploymentApp.releaseDeploymentRequestPlace(
-              previousHubStatus,
-              trial.platform_identifier,
-              trial.region
-            );
-
-            await sendUpdateDeploymentTelemetryEvent(
-              updatedDeploymentRequest,
-              SYSTEM_USER_UUID
-            );
-          }
+      const family =
+        await DeploymentRequestDomain.loadDeploymentRequestWithChildren(
+          trial,
+          DeploymentRequestHubStatus.Active
         );
 
-        try {
-          const [requester] = await UserDomain.loadUser({
-            id: trial.user_requester_id,
-          });
-          if (requester && trial.platform_identifier) {
-            await sendMail({
-              to: requester.email,
-              template: 'free_trial_expired',
-              params: {
-                firstName: formatName(requester.first_name ?? ''),
-                platformIdentifier: trial.platform_identifier,
-              },
-            });
-          } else if (!requester) {
-            logApp.warn('Requester not found for trial expiration mail', {
-              trialId: trial.id,
-            });
-          }
-        } catch (error) {
-          logApp.error('Unable to send mail for trial expiration', {
-            error,
-            deploymentRequestId: trial.id,
-          });
-        }
+      try {
+        await withTransaction(async () => {
+          for (const request of family) {
+            const updatedRequest =
+              await applyExpirationToDeploymentRequest(request);
 
-        try {
-          if (trial.platform_id) {
-            await auth0Client.deleteAudienceAPI(
-              trial.organization_requester_id,
-              trial.platform_id
-            );
-          } else {
-            logApp.error('Unable to delete audience', {
-              error: 'missing platform_id',
-              deploymentRequestId: trial.id,
-            });
+            await sendDeploymentRequestExpiredNotifications(updatedRequest);
           }
-        } catch (error) {
-          logDeleteAudienceError(error, trial);
-        }
+        });
       } catch (error) {
         logApp.error('Error during trial expiration', {
           error,
           deploymentRequestId: trial.id,
         });
+        continue;
       }
     }
   },
 
-  releaseDeploymentRequestPlace: async (
-    previousHubStatus: DeploymentRequestHubStatus,
-    platformIdentifier: PlatformIdentifier | null,
-    region: DeploymentRequestPlatformRegion
-  ) => {
-    const isRequestCountedInQuotas = [
-      DeploymentRequestHubStatus.Active,
-      DeploymentRequestHubStatus.Pending,
-      DeploymentRequestHubStatus.Provisioning,
-    ].includes(previousHubStatus);
-    if (!isRequestCountedInQuotas) {
-      return;
-    }
-
-    const updatedDeploymentRequest =
-      await DeploymentRequestDomain.setFirstQueuedRequestAsPending(
-        platformIdentifier,
-        region
-      );
-    if (updatedDeploymentRequest) {
-      const user = requestContext.requireUser();
-
-      await sendUpdateDeploymentTelemetryEvent(
-        updatedDeploymentRequest,
-        user.id
-      );
-      return;
-    }
-
-    await DeploymentQuotaDomain.freePlace(platformIdentifier, region);
-  },
-  loadTrialDeployments: async (input: TrialDeploymentsInput) => {
+  loadPlatformTrialStatus: async (organizationId: OrganizationId) => {
     const user = requestContext.requireUser();
-    await securityGuard.assertUserIsInOrganization(user, input.organizationId);
+    await securityGuard.assertUserIsInOrganization(user, organizationId);
 
     const organization = await OrganizationDomain.loadOrganizationBy({
-      id: input.organizationId,
+      id: organizationId,
     });
     if (!organization) {
       throw new Error(ErrorCode.OrganizationNotFound);
     }
     if (organization.personal_space) {
       return {
-        availableTrials: [],
-        deployed: [],
+        deploymentRequestId: null,
         isBlacklisted: false,
+        hub_status: null,
+        end_date: null,
       };
     }
 
-    const deploymentRequests =
-      await DeploymentRequestDomain.loadTrialsForOrganization(
-        user.selected_organization_id,
-        input.platformIdentifiers ?? undefined
+    const bundle =
+      await DeploymentRequestDomain.loadBundleTrialForOrganization(
+        organizationId
       );
 
-    const deployedIdentifiers = new Set(
-      deploymentRequests.map((d) => d.platform_identifier)
-    );
-
-    const requestedIdentifiers =
-      input.platformIdentifiers ?? REGISTRABLE_PLATFORM_IDENTIFIERS;
-    const availableTrials = requestedIdentifiers.filter(
-      (identifier) => !deployedIdentifiers.has(identifier)
-    );
-
     return {
-      availableTrials: availableTrials,
-      deployed: deploymentRequests
-        .filter(
-          (
-            deployment
-          ): deployment is DeploymentRequestModel & {
-            platform_identifier: PlatformIdentifier;
-          } => deployment.platform_identifier !== null
-        )
-        .map((deployment) => {
-          return {
-            serviceInstanceId: deployment.service_instance_id,
-            platformIdentifier: deployment.platform_identifier,
-          };
-        }),
+      deploymentRequestId: bundle?.id ?? null,
       isBlacklisted:
         await CompetitorApp.isOrganizationBlacklisted(organization),
+      hub_status: bundle?.hub_status ?? null,
+      end_date: bundle?.end_date ?? null,
     };
+  },
+
+  loadXtmPlatformBundle: async (): Promise<DeploymentRequest | null> => {
+    const user = requestContext.requireUser();
+    const bundle = await DeploymentRequestDomain.loadFullDeploymentRequest(
+      {
+        type: DeploymentRequestDeploymentType.Bundle,
+        organization_requester_id: user.selected_organization_id,
+        counts_in_orga_quota: true,
+      },
+      { orderBy: { column: 'request_date', order: OrderingMode.Desc } }
+    );
+
+    return bundle ?? null;
+  },
+
+  loadXtmonePlatformIntegrationStatus: async (
+    serviceInstanceId: ServiceInstanceId
+  ): Promise<XtmoneIntegrationStatus | null> => {
+    const user = requestContext.requireUser();
+    const deploymentRequest =
+      await DeploymentRequestDomain.loadDeploymentRequestBy({
+        service_instance_id: serviceInstanceId,
+        organization_requester_id: user.selected_organization_id,
+      });
+    if (!deploymentRequest) {
+      return null;
+    }
+
+    const [configuration] =
+      await RegistrationDomain.loadRegisteredPlatform(serviceInstanceId);
+    const baseUrl =
+      configuration?.platform_url ?? deploymentRequest.url ?? null;
+    if (!baseUrl) {
+      return null;
+    }
+
+    return fetchXtmoneIntegrationStatus(baseUrl);
   },
 };
 
-type ValidatedDeploymentRequestProducts =
-  | {
-      type: DeploymentRequestDeploymentType.Bundle;
-      products: PlatformIdentifier[];
-    }
-  | {
-      type: DeploymentRequestDeploymentType.Trial;
-      platformIdentifier: PlatformIdentifier;
-    };
-
-const validateDeploymentRequestProducts = (
-  input: CreateDeploymentRequestInput
-): ValidatedDeploymentRequestProducts => {
-  const uniqueProducts = [...new Set(input.products)];
-  if (input.type === DeploymentRequestDeploymentType.Bundle) {
-    const includesXtmone = uniqueProducts.includes(PlatformIdentifier.Xtmone);
-    const hasAtLeastOneOtherProduct = uniqueProducts.length >= 2;
-    if (!includesXtmone || !hasAtLeastOneOtherProduct) {
-      throw new Error(BadRequestErrorCode.InvalidProductsForDeploymentType);
-    }
-    return {
-      type: DeploymentRequestDeploymentType.Bundle,
-      products: uniqueProducts,
-    };
-  }
-
-  const [platformIdentifier] = input.products;
-  const hasSingleProduct = input.products.length === 1 && !!platformIdentifier;
-  const isXtmone = platformIdentifier === PlatformIdentifier.Xtmone;
-  if (!hasSingleProduct || isXtmone) {
-    throw new Error(BadRequestErrorCode.InvalidProductsForDeploymentType);
-  }
-  return { type: DeploymentRequestDeploymentType.Trial, platformIdentifier };
-};
-
-const createSingleDeploymentRequest = async ({
+const createBundleChildDeploymentRequest = async ({
   user,
   input,
   platformIdentifier,
-  type,
-  parentId,
+  bundleDeploymentRequest,
 }: {
   user: UserLoadUserBy;
   input: CreateDeploymentRequestInput;
   platformIdentifier: PlatformIdentifier;
-  type: DeploymentRequestDeploymentType;
-  parentId: DeploymentRequestId | null;
+  bundleDeploymentRequest: DeploymentRequestModel;
 }): Promise<DeploymentRequestModel> => {
   const serviceDefinition =
     await ServiceDefinitionDomain.loadServiceDefinitionByPlatformIdentifier(
@@ -720,59 +505,107 @@ const createSingleDeploymentRequest = async ({
     throw new Error(ErrorCode.ServiceDefinitionNotFound);
   }
 
-  return DeploymentQuotaDomain.withLockedQuotaTransaction(
-    {
-      platformIdentifier,
-      region: input.region,
-    },
-    async () => {
-      const { isPlaceAvailable } = await DeploymentQuotaDomain.reservePlace(
-        platformIdentifier,
-        input.region
-      );
-      const hubStatus = isPlaceAvailable
-        ? DeploymentRequestHubStatus.Pending
-        : DeploymentRequestHubStatus.Queued;
-      const maxOrdering = await DeploymentRequestDomain.getMaxOrdering({
-        hub_status: hubStatus,
-        platform_identifier: platformIdentifier,
-      });
-      const ordering = (maxOrdering ?? 0) + 1;
+  const serviceInstanceId = await RegistrationDomain.registerNewPlatform({
+    serviceDefinitionId: serviceDefinition.id,
+    organizationId: user.selected_organization_id,
+    platformIdentifier,
+    serviceInstanceCreationStatus: ServiceInstanceCreationStatus.Pending,
+  });
 
-      const serviceInstanceId = await RegistrationDomain.registerNewPlatform({
-        serviceDefinitionId: serviceDefinition.id,
-        organizationId: user.selected_organization_id,
-        platformIdentifier,
-        serviceInstanceCreationStatus: ServiceInstanceCreationStatus.Pending,
-      });
-
-      return DeploymentRequestDomain.insertDeploymentRequest({
-        id: uuidv4() as DeploymentRequestId,
-        user_requester_id: user.id,
-        organization_requester_id: user.selected_organization_id,
-        service_instance_id: serviceInstanceId,
-        hub_status: hubStatus,
-        target_state:
-          hubStatus === DeploymentRequestHubStatus.Queued
-            ? DeploymentRequestPlatformState.Unprovisioned
-            : DeploymentRequestPlatformState.Active,
-        actual_state: DeploymentRequestPlatformState.Unprovisioned,
-        ordering,
-        type,
-        platform_identifier: platformIdentifier,
-        region: input.region,
-        job_title: input.job_title,
-        use_case: input.use_case,
-        activity_sector: input.activity_sector,
-        platform_token: uuidv4(),
-        source: input.source,
-        parent_id: parentId,
-      });
-    }
-  );
+  return DeploymentRequestDomain.insertDeploymentRequest({
+    id: uuidv4() as DeploymentRequestId,
+    user_requester_id: user.id,
+    organization_requester_id: user.selected_organization_id,
+    service_instance_id: serviceInstanceId,
+    hub_status: bundleDeploymentRequest.hub_status,
+    target_state: bundleDeploymentRequest.target_state,
+    actual_state: DeploymentRequestPlatformState.Unprovisioned,
+    ordering: bundleDeploymentRequest.ordering,
+    type: DeploymentRequestDeploymentType.Trial,
+    platform_identifier: platformIdentifier,
+    region: input.region,
+    job_title: input.job_title,
+    use_case:
+      input.use_cases_by_product?.find(
+        (entry) => entry.platform_identifier === platformIdentifier
+      )?.use_case ?? null,
+    activity_sector: input.activity_sector,
+    platform_token: uuidv4(),
+    source: input.source,
+    parent_id: bundleDeploymentRequest.id,
+  });
 };
 
-const sendDeploymentRequestCreatedNotifications = async ({
+type TrialMailContext = Omit<FreeTrialBundleModel, 'firstName'>;
+
+const buildTrialMailContext = async (
+  deploymentRequest: DeploymentRequestModel
+): Promise<TrialMailContext | null> => {
+  if (deploymentRequest.type !== DeploymentRequestDeploymentType.Bundle) {
+    return null;
+  }
+
+  const [, ...children] =
+    await DeploymentRequestDomain.loadDeploymentRequestWithChildren(
+      deploymentRequest
+    );
+  const products = sortProductsForMail(
+    children.flatMap((child) => child.platform_identifier ?? [])
+  );
+
+  return {
+    productNames: formatProductNames(products),
+    products,
+  };
+};
+
+const sendStatusPlatformEmail = async (
+  deploymentRequest: DeploymentRequestModel,
+  hubStatus: DeploymentRequestHubStatus
+): Promise<void> => {
+  if (hubStatus === DeploymentRequestHubStatus.Provisioning) {
+    await sendProvisioningPlatformEmail(deploymentRequest);
+  }
+  if (hubStatus === DeploymentRequestHubStatus.Active) {
+    await sendActivePlatformEmail(deploymentRequest);
+  }
+};
+
+const sendBundleRequestedMail = async ({
+  user,
+  bundleDeploymentRequest,
+  products,
+}: {
+  user: UserLoadUserBy;
+  bundleDeploymentRequest: DeploymentRequestModel;
+  products: PlatformIdentifier[];
+}): Promise<void> => {
+  try {
+    const sortedProducts = sortProductsForMail(products);
+
+    await sendMail({
+      to: user.email,
+      template: 'free_trial_bundle_requested',
+      params: {
+        firstName: formatName(user.first_name ?? ''),
+        productNames: formatProductNames(sortedProducts),
+        products: sortedProducts,
+      },
+    });
+  } catch (error) {
+    logApp.error('Unable to send mail', {
+      error,
+      deploymentRequestId: bundleDeploymentRequest.id,
+    });
+  }
+};
+
+const getInstanceRequestedEmailRecipient = (): string =>
+  portalConfig.environment === 'production'
+    ? XTM_HUB_SUPPORT_EMAIL
+    : XTM_HUB_DEV_TEAM_EMAIL;
+
+const sendBundleChildCreatedTelemetry = async ({
   user,
   chosenOrganization,
   input,
@@ -809,36 +642,27 @@ const sendDeploymentRequestCreatedNotifications = async ({
       error,
     });
   }
+};
 
-  try {
-    const mailTemplate =
-      deploymentRequest.hub_status === DeploymentRequestHubStatus.Pending
-        ? 'free_trial_requested'
-        : 'free_trial_queued';
-
-    await sendMail({
-      to: user.email,
-      template: mailTemplate,
-      params: {
-        firstName: formatName(user.first_name ?? ''),
-        platformIdentifier,
-      },
-    });
-  } catch (error) {
-    logApp.error('Unable to send mail', {
-      error,
-      deploymentRequestId: deploymentRequest.id,
-    });
-  }
-
-  const instanceRequestedEmail =
-    portalConfig.environment === 'production'
-      ? XTM_HUB_SUPPORT_EMAIL
-      : XTM_HUB_DEV_TEAM_EMAIL;
+const sendBundleAdminRequestedMail = async ({
+  user,
+  chosenOrganization,
+  input,
+  bundleDeploymentRequest,
+  products,
+  useCasesByProduct,
+}: {
+  user: UserLoadUserBy;
+  chosenOrganization: Organization;
+  input: CreateDeploymentRequestInput;
+  bundleDeploymentRequest: DeploymentRequestModel;
+  products: PlatformIdentifier[];
+  useCasesByProduct: Partial<Record<PlatformIdentifier, string>>;
+}): Promise<void> => {
   try {
     await sendMail({
-      to: instanceRequestedEmail,
-      template: 'admin_saas_instance_requested',
+      to: getInstanceRequestedEmailRecipient(),
+      template: 'admin_saas_bundle_requested',
       params: {
         organizationName: chosenOrganization.name,
         userName:
@@ -848,15 +672,16 @@ const sendDeploymentRequestCreatedNotifications = async ({
         userEmail: user.email,
         region: input.region,
         activitySector: input.activity_sector ?? undefined,
-        useCase: input.use_case ?? undefined,
-        platformIdentifier,
-        deploymentType: ucfirst(deploymentRequest.type),
+        openCTIUseCase: useCasesByProduct[PlatformIdentifier.Opencti],
+        openAEVUseCase: useCasesByProduct[PlatformIdentifier.Openaev],
+        products: formatProductNames(sortProductsForMail(products)),
+        deploymentType: ucfirst(bundleDeploymentRequest.type),
       },
     });
   } catch (error) {
-    logApp.error('Unable to send mail to admins', {
+    logApp.error('Unable to send bundle mail to admins', {
       error,
-      deploymentRequestId: deploymentRequest.id,
+      deploymentRequestId: bundleDeploymentRequest.id,
     });
   }
 };
@@ -890,102 +715,139 @@ const createBundleDeploymentRequest = async ({
     }
   }
 
-  return withTransaction(async () => {
-    const bundleServiceInstance =
-      await ServiceInstanceDomain.insertServiceInstance({
-        id: uuidv4() as ServiceInstanceId,
-        name: XTM_PLATFORM_BUNDLE_SERVICE_INSTANCE_NAME,
-        description: '',
-        public: false,
-        creation_status: ServiceInstanceCreationStatus.Pending,
-        tags: [
-          ServiceInstanceTag.Trial,
-          ...products.map(
-            (platformIdentifier) =>
-              serviceInstanceTagMappedByPlatformIdentifier[platformIdentifier]
-          ),
-        ],
-        service_definition_id: bundleServiceDefinition.id,
-      });
-
-    await SubscriptionDomain.createSubscription({
-      id: uuidv4() as SubscriptionId,
-      organization_id: user.selected_organization_id,
-      service_instance_id: bundleServiceInstance.id,
-      start_date: new Date(),
-      end_date: null,
-    });
-
-    const maxOrdering = await DeploymentRequestDomain.getMaxOrdering({
-      hub_status: DeploymentRequestHubStatus.Pending,
-      platform_identifier: null,
-    });
-
-    const bundleDeploymentRequest =
-      await DeploymentRequestDomain.insertDeploymentRequest({
-        id: uuidv4() as DeploymentRequestId,
-        user_requester_id: user.id,
-        organization_requester_id: user.selected_organization_id,
-        service_instance_id: bundleServiceInstance.id,
-        hub_status: DeploymentRequestHubStatus.Pending,
-        target_state: DeploymentRequestPlatformState.Active,
-        actual_state: DeploymentRequestPlatformState.Unprovisioned,
-        ordering: (maxOrdering ?? 0) + 1,
-        type: DeploymentRequestDeploymentType.Bundle,
-        platform_identifier: null,
-        region: input.region,
-        job_title: input.job_title,
-        use_case: input.use_case,
-        activity_sector: input.activity_sector,
-        platform_token: uuidv4(),
-        source: input.source,
-        parent_id: null,
-      });
-
-    try {
-      const createDeploymentEvent = TelemetryHelper.buildCreateDeploymentEvent(
-        chosenOrganization,
-        user.id,
-        undefined,
-        input.source,
-        {
-          region: bundleDeploymentRequest.region,
-          status: bundleDeploymentRequest.hub_status,
-          activity_sector: bundleDeploymentRequest.activity_sector,
-          job_title: bundleDeploymentRequest.job_title,
-          use_case: bundleDeploymentRequest.use_case,
-          email: user.email,
-          deployment_id: bundleDeploymentRequest.id,
-          deployment_type: bundleDeploymentRequest.type,
-        }
+  return DeploymentQuotaDomain.withLockedQuotaTransaction(
+    [bundleQuotaKey(input.region)],
+    async () => {
+      const { isPlaceAvailable } = await DeploymentQuotaApp.takeQuotaForRequest(
+        { region: input.region }
       );
-      await TelemetryApp.sendTelemetryEvent(createDeploymentEvent);
-    } catch (error) {
-      logApp.error('Unable to send telemetry event', {
-        error,
-      });
-    }
+      const bundleHubStatus = isPlaceAvailable
+        ? DeploymentRequestHubStatus.Pending
+        : DeploymentRequestHubStatus.Queued;
 
-    for (const platformIdentifier of products) {
-      const childDeploymentRequest = await createSingleDeploymentRequest({
+      const bundleServiceInstance =
+        await ServiceInstanceDomain.insertServiceInstance({
+          id: uuidv4() as ServiceInstanceId,
+          name: XTM_PLATFORM_BUNDLE_SERVICE_INSTANCE_NAME,
+          description: '',
+          public: false,
+          creation_status: ServiceInstanceCreationStatus.Pending,
+          tags: [
+            ServiceInstanceTag.Trial,
+            ...products.map(
+              (platformIdentifier) =>
+                serviceInstanceTagMappedByPlatformIdentifier[platformIdentifier]
+            ),
+          ],
+          service_definition_id: bundleServiceDefinition.id,
+        });
+
+      await SubscriptionDomain.createSubscription({
+        id: uuidv4() as SubscriptionId,
+        organization_id: user.selected_organization_id,
+        service_instance_id: bundleServiceInstance.id,
+        start_date: new Date(),
+        end_date: null,
+      });
+
+      const maxOrdering = await DeploymentRequestDomain.getMaxOrderingInQueue(
+        bundleQuotaKey(input.region),
+        bundleHubStatus
+      );
+
+      const bundleDeploymentRequest =
+        await DeploymentRequestDomain.insertDeploymentRequest({
+          id: uuidv4() as DeploymentRequestId,
+          user_requester_id: user.id,
+          organization_requester_id: user.selected_organization_id,
+          service_instance_id: bundleServiceInstance.id,
+          hub_status: bundleHubStatus,
+          target_state:
+            bundleHubStatus === DeploymentRequestHubStatus.Queued
+              ? DeploymentRequestPlatformState.Unprovisioned
+              : DeploymentRequestPlatformState.Active,
+          actual_state: DeploymentRequestPlatformState.Unprovisioned,
+          ordering: (maxOrdering ?? 0) + 1,
+          type: DeploymentRequestDeploymentType.Bundle,
+          platform_identifier: null,
+          region: input.region,
+          job_title: input.job_title,
+          use_case: null,
+          activity_sector: input.activity_sector,
+          platform_token: uuidv4(),
+          source: input.source,
+          parent_id: null,
+        });
+
+      try {
+        const createDeploymentEvent =
+          TelemetryHelper.buildCreateDeploymentEvent(
+            chosenOrganization,
+            user.id,
+            undefined,
+            input.source,
+            {
+              region: bundleDeploymentRequest.region,
+              status: bundleDeploymentRequest.hub_status,
+              activity_sector: bundleDeploymentRequest.activity_sector,
+              job_title: bundleDeploymentRequest.job_title,
+              use_case: bundleDeploymentRequest.use_case,
+              email: user.email,
+              deployment_id: bundleDeploymentRequest.id,
+              deployment_type: bundleDeploymentRequest.type,
+            }
+          );
+        await TelemetryApp.sendTelemetryEvent(createDeploymentEvent);
+      } catch (error) {
+        logApp.error('Unable to send telemetry event', {
+          error,
+        });
+      }
+
+      const useCasesByProduct: Partial<Record<PlatformIdentifier, string>> = {};
+
+      for (const platformIdentifier of products) {
+        const childDeploymentRequest = await createBundleChildDeploymentRequest(
+          {
+            user,
+            input,
+            platformIdentifier,
+            bundleDeploymentRequest,
+          }
+        );
+
+        if (childDeploymentRequest.use_case) {
+          useCasesByProduct[platformIdentifier] =
+            childDeploymentRequest.use_case;
+        }
+
+        await sendBundleChildCreatedTelemetry({
+          user,
+          chosenOrganization,
+          input,
+          platformIdentifier,
+          deploymentRequest: childDeploymentRequest,
+        });
+      }
+
+      await sendBundleRequestedMail({
         user,
-        input,
-        platformIdentifier,
-        type: DeploymentRequestDeploymentType.Trial,
-        parentId: bundleDeploymentRequest.id,
+        bundleDeploymentRequest,
+        products,
       });
 
-      await sendDeploymentRequestCreatedNotifications({
+      await sendBundleAdminRequestedMail({
         user,
         chosenOrganization,
         input,
-        platformIdentifier,
-        deploymentRequest: childDeploymentRequest,
+        bundleDeploymentRequest,
+        products,
+        useCasesByProduct,
       });
-    }
 
-    return bundleDeploymentRequest;
-  });
+      return bundleDeploymentRequest;
+    }
+  );
 };
 
 const loadDeploymentRequestForUpdate = async (
@@ -1004,25 +866,114 @@ const loadDeploymentRequestForUpdate = async (
   return deploymentRequest;
 };
 
-const logDeleteAudienceError = (
-  error: unknown,
-  deploymentRequest: Pick<DeploymentRequestModel, 'id' | 'platform_identifier'>
-) => {
-  const isExpectedOpenaevAudienceMiss =
-    getErrorNumberProperty(error, 'statusCode') === 404 &&
-    deploymentRequest.platform_identifier === PlatformIdentifier.Openaev;
+const sendDeploymentRequestCancelledNotifications = async (
+  deploymentRequest: DeploymentRequestModel,
+  userId: UserId
+): Promise<void> => {
+  await DeploymentCancellationApp.sendUpdateDeploymentTelemetryEvent(
+    deploymentRequest,
+    userId
+  );
 
-  if (isExpectedOpenaevAudienceMiss) {
-    logApp.warn('No Auth0 audience to delete for OpenAEV trial', {
+  try {
+    const [requester] = await UserDomain.loadUser({
+      id: deploymentRequest.user_requester_id,
+    });
+    const mailContext = await buildTrialMailContext(deploymentRequest);
+
+    if (requester && mailContext) {
+      const firstName = formatName(requester.first_name ?? '');
+
+      await sendMail({
+        to: requester.email,
+        template: 'free_trial_bundle_cancelled',
+        params: {
+          firstName,
+          productNames: mailContext.productNames,
+          products: mailContext.products,
+        },
+      });
+    } else if (!requester) {
+      logApp.warn('Requester not found for trial cancellation mail', {
+        deploymentRequestId: deploymentRequest.id,
+      });
+    }
+  } catch (error) {
+    logApp.error('Unable to send mail for trial cancellation', {
+      error,
       deploymentRequestId: deploymentRequest.id,
     });
-    return;
   }
+};
 
-  logApp.error('Unable to delete audience', {
-    error,
-    deploymentRequestId: deploymentRequest.id,
-  });
+const applyExpirationToDeploymentRequest = async (
+  deploymentRequest: DeploymentRequestModel
+): Promise<DeploymentRequestModel> => {
+  const previousHubStatus = deploymentRequest.hub_status;
+
+  return DeploymentQuotaDomain.withLockedQuotaTransaction(
+    quotaKeysOfRequest(deploymentRequest),
+    async () => {
+      const updatedDeploymentRequest =
+        await DeploymentRequestDomain.updateDeploymentRequestById(
+          deploymentRequest.id,
+          {
+            hub_status: DeploymentRequestHubStatus.Expired,
+            target_state: DeploymentRequestPlatformState.Removed,
+          }
+        );
+
+      if (!updatedDeploymentRequest) {
+        throw new Error(NotFoundErrorCode.DeploymentRequestNotFound);
+      }
+
+      await DeploymentCancellationApp.releaseDeploymentRequestPlace(
+        previousHubStatus,
+        deploymentRequest
+      );
+
+      return updatedDeploymentRequest;
+    }
+  );
+};
+
+const sendDeploymentRequestExpiredNotifications = async (
+  deploymentRequest: DeploymentRequestModel
+): Promise<void> => {
+  await DeploymentCancellationApp.sendUpdateDeploymentTelemetryEvent(
+    deploymentRequest,
+    SYSTEM_USER_UUID
+  );
+
+  try {
+    const [requester] = await UserDomain.loadUser({
+      id: deploymentRequest.user_requester_id,
+    });
+    const mailContext = await buildTrialMailContext(deploymentRequest);
+
+    if (requester && mailContext) {
+      const firstName = formatName(requester.first_name ?? '');
+
+      await sendMail({
+        to: requester.email,
+        template: 'free_trial_bundle_expired',
+        params: {
+          firstName,
+          productNames: mailContext.productNames,
+          products: mailContext.products,
+        },
+      });
+    } else if (!requester) {
+      logApp.warn('Requester not found for trial expiration mail', {
+        trialId: deploymentRequest.id,
+      });
+    }
+  } catch (error) {
+    logApp.error('Unable to send mail for trial expiration', {
+      error,
+      deploymentRequestId: deploymentRequest.id,
+    });
+  }
 };
 
 const checkStatusAndDataValidity = async (
@@ -1033,11 +984,12 @@ const checkStatusAndDataValidity = async (
     input.actual_state &&
     !DeploymentHelper.isPlatformStateTransitionValid(
       deploymentRequest.actual_state,
-      input.actual_state
+      input.actual_state,
+      deploymentRequest.target_state
     )
   ) {
     logApp.error(
-      `Invalid deployment request status update from ${deploymentRequest.actual_state} to ${input.actual_state}`
+      `Invalid deployment request status update from ${deploymentRequest.actual_state} to ${input.actual_state} with target state ${deploymentRequest.target_state}`
     );
     throw new Error(
       BadRequestErrorCode.DeploymentRequestStatusUpdateNotAllowed
@@ -1126,7 +1078,7 @@ const recomputeBundleDates = async (bundleId: DeploymentRequestId) => {
     throw new Error(NotFoundErrorCode.DeploymentRequestNotFound);
   }
 
-  await sendUpdateDeploymentTelemetryEvent(
+  await DeploymentCancellationApp.sendUpdateDeploymentTelemetryEvent(
     updatedBundle,
     updatedBundle.user_requester_id,
     bundle
@@ -1145,20 +1097,56 @@ const applyDeploymentRequestUpdateInQuotaTransaction = async ({
   newStatus: DeploymentRequestHubStatus;
 }) => {
   await DeploymentQuotaDomain.withLockedQuotaTransaction(
-    {
-      platformIdentifier: deploymentRequest.platform_identifier,
-      region: deploymentRequest.region,
-    },
+    quotaKeysOfRequest(deploymentRequest),
     async () => {
       if (deploymentRequest.type === DeploymentRequestDeploymentType.Bundle) {
-        await DeploymentRequestDomain.updateDeploymentRequestById(
+        const updatedDeploymentRequest =
+          await DeploymentRequestDomain.updateDeploymentRequestByIdIfTargetState(
+            deploymentRequestId,
+            deploymentRequest.target_state,
+            {
+              platform_id: input.platform_id,
+              failure_reason: input.failure_reason,
+              actual_state: input.actual_state,
+              hub_status: newStatus,
+            }
+          );
+
+        if (!updatedDeploymentRequest) {
+          logApp.warn(
+            'Skipped stale deployment request update: target_state changed concurrently',
+            {
+              deploymentRequestId,
+              target_state: deploymentRequest.target_state,
+            }
+          );
+        }
+
+        return;
+      }
+
+      const updateData: DeploymentRequestMutator = {
+        start_date: input.start_date,
+        end_date: input.end_date,
+        platform_id: input.platform_id,
+        failure_reason: input.failure_reason,
+        actual_state: input.actual_state,
+        ordering: input.ordering ?? undefined,
+        hub_status: newStatus,
+        url: input.url,
+      };
+
+      const updatedDeploymentRequest =
+        await DeploymentRequestDomain.updateDeploymentRequestByIdIfTargetState(
           deploymentRequestId,
-          {
-            platform_id: input.platform_id,
-            failure_reason: input.failure_reason,
-            actual_state: input.actual_state,
-            hub_status: newStatus,
-          }
+          deploymentRequest.target_state,
+          updateData
+        );
+
+      if (!updatedDeploymentRequest) {
+        logApp.warn(
+          'Skipped stale deployment request update: target_state changed concurrently',
+          { deploymentRequestId }
         );
         return;
       }
@@ -1174,29 +1162,12 @@ const applyDeploymentRequestUpdateInQuotaTransaction = async ({
         );
       }
 
-      const updateData: DeploymentRequestMutator = {
-        start_date: input.start_date,
-        end_date: input.end_date,
-        platform_id: input.platform_id,
-        failure_reason: input.failure_reason,
-        actual_state: input.actual_state,
-        ordering: input.ordering ?? undefined,
-        hub_status: newStatus,
-        url: input.url,
-      };
-
-      await DeploymentRequestDomain.updateDeploymentRequestById(
-        deploymentRequestId,
-        updateData
-      );
       await syncPlatformRegistrationStatus(
         deploymentRequest,
         input.actual_state
       );
 
-      const isXtmone =
-        deploymentRequest.platform_identifier === PlatformIdentifier.Xtmone;
-      if (newStatus === DeploymentRequestHubStatus.Active && !isXtmone) {
+      if (newStatus === DeploymentRequestHubStatus.Active) {
         await DeploymentRequestDomain.initialiseServiceGroup(
           deploymentRequestId,
           deploymentRequest.platform_identifier
@@ -1210,7 +1181,9 @@ const sendProvisioningPlatformEmail = async (
   deploymentRequest: DeploymentRequestModel
 ) => {
   try {
-    if (!deploymentRequest.platform_identifier) {
+    const mailContext = await buildTrialMailContext(deploymentRequest);
+
+    if (!mailContext) {
       return;
     }
 
@@ -1218,12 +1191,15 @@ const sendProvisioningPlatformEmail = async (
       id: deploymentRequest.user_requester_id,
     });
     if (user) {
+      const firstName = formatName(user.first_name ?? '');
+
       await sendMail({
         to: user.email,
-        template: 'free_trial_provisioning',
+        template: 'free_trial_bundle_provisioning',
         params: {
-          firstName: formatName(user.first_name ?? ''),
-          platformIdentifier: deploymentRequest.platform_identifier,
+          firstName,
+          productNames: mailContext.productNames,
+          products: mailContext.products,
         },
       });
     } else {
@@ -1240,34 +1216,16 @@ const sendProvisioningPlatformEmail = async (
 };
 
 const sendActivePlatformEmail = async (
-  deploymentRequest: FullyQualifiedDeploymentRequest
+  deploymentRequest: DeploymentRequestModel
 ) => {
   try {
-    if (!deploymentRequest.platform_identifier) {
+    const mailContext = await buildTrialMailContext(deploymentRequest);
+
+    if (!mailContext) {
       return;
     }
 
-    if (!deploymentRequest.platform_id) {
-      logApp.error('Unable to send mail after deployment request is active', {
-        error: 'platform_id not set for active platform',
-        deploymentRequestId: deploymentRequest.id,
-      });
-      return;
-    }
-
-    const platformConfiguration =
-      await PlatformConfigurationDomain.loadConfigurationByPlatform(
-        deploymentRequest.platform_id
-      );
-
-    if (!platformConfiguration) {
-      logApp.error('Unable to send mail after deployment request is active', {
-        error: NotFoundErrorCode.PlatformConfigurationNotFound,
-        deploymentRequestId: deploymentRequest.id,
-        platformId: deploymentRequest.platform_id,
-      });
-      return;
-    }
+    const platformUrl = buildXtmPlatformTrialLink();
 
     const [user] = await UserDomain.loadUser({
       id: deploymentRequest.user_requester_id,
@@ -1281,17 +1239,16 @@ const sendActivePlatformEmail = async (
       return;
     }
 
+    const firstName = formatName(user.first_name ?? '');
+
     await sendMail({
       to: user.email,
-      template: 'free_trial_registered',
+      template: 'free_trial_bundle_active',
       params: {
-        firstName: formatName(user.first_name ?? ''),
-        platformUrl: platformConfiguration?.platform_url,
-        platformIdentifier: deploymentRequest.platform_identifier,
-        globalServiceInstanceId: toGlobalId(
-          'ServiceInstance',
-          deploymentRequest.service_instance_id
-        ),
+        firstName,
+        platformUrl,
+        productNames: mailContext.productNames,
+        products: mailContext.products,
       },
     });
   } catch (error) {
@@ -1299,56 +1256,5 @@ const sendActivePlatformEmail = async (
       error,
       deploymentRequestId: deploymentRequest.id,
     });
-  }
-};
-
-const sendUpdateDeploymentTelemetryEvent = async (
-  deploymentRequest: DeploymentRequestModel,
-  userId: UserId,
-  previousDeploymentRequest?: DeploymentRequestModel
-) => {
-  if (
-    previousDeploymentRequest &&
-    !DeploymentHelper.hasDeploymentTelemetryDataChanged(
-      previousDeploymentRequest,
-      deploymentRequest
-    )
-  ) {
-    return;
-  }
-
-  try {
-    const organization = await OrganizationDomain.loadOrganizationBy({
-      id: deploymentRequest.organization_requester_id,
-    });
-    if (!organization) {
-      throw new Error(ErrorCode.OrganizationNotFound);
-    }
-    const updateDeploymentEvent = TelemetryHelper.buildUpdateDeploymentEvent(
-      organization,
-      userId,
-      {
-        status: deploymentRequest.hub_status,
-        start_date: deploymentRequest.start_date,
-        end_date: deploymentRequest.end_date,
-        deployment_id: deploymentRequest.id,
-        deployment_type: deploymentRequest.type,
-        parent_id: deploymentRequest.parent_id ?? undefined,
-        platform_id: deploymentRequest.platform_id,
-        cancellation_reason:
-          deploymentRequest.hub_status === DeploymentRequestHubStatus.Cancelled
-            ? deploymentRequest.cancellation_reason
-            : undefined,
-      }
-    );
-
-    await TelemetryApp.sendTelemetryEvent(updateDeploymentEvent);
-  } catch (error) {
-    logApp.error(
-      `Unable to send telemetry event when updating deployment request with status ${deploymentRequest.hub_status}`,
-      {
-        error,
-      }
-    );
   }
 };

@@ -108,8 +108,6 @@ spec:
           value: "9200"
         - name: ELASTIC_PROTOCOL
           value: "https"
-        - name: ELASTIC__TLS__REJECT_UNAUTHORIZED
-          value: "false"
         - name: ELASTIC_USER
           value: "elastic"
         - name: ELASTIC_PASSWORD
@@ -120,7 +118,7 @@ spec:
               optional: false
         {{ if .Values.xtmhub.api.elasticsearchCAFromSecret.enabled }}
         - name: ELASTIC__TLS__CA_PATH
-          value: "/etc/ssl/certs/elasticsearch-certs/tls.crt"
+          value: "/etc/ssl/certs/elasticsearch-certs/ca.crt"
         {{ end }}
         {{ end }}
         {{- with .Values.xtmhub.api.env }}
@@ -143,6 +141,6 @@ spec:
             optional: false
             secretName: {{ .Values.xtmhub.api.elasticsearchCAFromSecret.CASecretName }}
             items:
-              - key: tls.crt
-                path: tls.crt
+              - key: {{ .Values.xtmhub.api.elasticsearchCAFromSecret.CASecretKey }}
+                path: ca.crt
     {{- end }}

@@ -1,6 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import { logApp } from '../../../utils/app-logger.util';
-import { resolveSafeRedirect } from './auth-redirect.util';
+import { ForbiddenErrorCode } from '../../../utils/error/error.code';
+import {
+  buildSignInErrorRedirect,
+  buildSignInRestartRedirect,
+  resolveSafeRedirect,
+} from './auth-redirect.util';
 
 vi.spyOn(logApp, 'warn').mockImplementation(() => {});
 vi.spyOn(logApp, 'error').mockImplementation(() => {});
@@ -8,12 +13,12 @@ vi.spyOn(logApp, 'error').mockImplementation(() => {});
 describe('resolveSafeRedirect', () => {
   describe('accepted values', () => {
     it.each`
-      path                         | expected
-      ${'/app'}                    | ${'/app'}
-      ${'/app/service/vault'}      | ${'/app/service/vault'}
-      ${'/app/manage?tab=members'} | ${'/app/manage?tab=members'}
-      ${'/'}                       | ${'/'}
-      ${'/%5cevil.test'}           | ${'/%5cevil.test'}
+      path                                   | expected
+      ${'/app'}                              | ${'/app'}
+      ${'/app/service/opencti_integrations'} | ${'/app/service/opencti_integrations'}
+      ${'/app/manage?tab=members'}           | ${'/app/manage?tab=members'}
+      ${'/'}                                 | ${'/'}
+      ${'/%5cevil.test'}                     | ${'/%5cevil.test'}
     `('should keep same-site path "$path"', ({ path, expected }) => {
       expect(resolveSafeRedirect(btoa(path))).toBe(expected);
     });
@@ -49,4 +54,52 @@ describe('resolveSafeRedirect', () => {
       expect(resolveSafeRedirect(redirect)).toBeUndefined();
     });
   });
+});
+
+describe('buildSignInErrorRedirect', () => {
+  it.each([
+    [
+      'an unverified email',
+      new Error(ForbiddenErrorCode.EmailNotVerified),
+      '/sign-up?error=email-not-verified',
+    ],
+    ['any other error', new Error('boom'), '/sign-up?error=login-failed'],
+    ['no error', undefined, '/sign-up?error=login-failed'],
+  ])(
+    'should send %s to the sign-up page with its reason',
+    (_description, error, expected) => {
+      // When
+      const redirect = buildSignInErrorRedirect(error, undefined);
+
+      // Then
+      expect(redirect).toBe(expected);
+    }
+  );
+
+  it('should keep the referer as a base64 redirect for the next attempt', () => {
+    // Given
+    const referer = '/app';
+
+    // When
+    const redirect = buildSignInErrorRedirect(new Error('boom'), referer);
+
+    // Then
+    expect(redirect).toBe('/sign-up?error=login-failed&redirect=L2FwcA%3D%3D');
+  });
+});
+
+describe('buildSignInRestartRedirect', () => {
+  it.each([
+    ['without a referer', undefined, '/auth/oidc'],
+    ['with the referer', '/app', '/auth/oidc?redirect=L2FwcA%3D%3D'],
+  ])(
+    'should start the sign-in with the provider again %s',
+    (_description, referer, expected) => {
+      // When
+      const redirect = buildSignInRestartRedirect('oidc', referer);
+
+      // Then
+      expect(redirect).toBe(expected);
+    }
+  );
 });

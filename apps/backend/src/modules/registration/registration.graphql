@@ -6,6 +6,7 @@ enum PlatformContract {
 
 type RegisteredPlatform implements Node {
   id: ID!
+  service_instance_id: ServiceInstanceId!
   url: String!
   title: String!
   contract: PlatformContract!
@@ -17,8 +18,11 @@ type RegisteredPlatform implements Node {
   illustration_document_id: DocumentId
   deployment_request: DeploymentRequest
   last_connectivity_check: Date
+  status: PlatformConfigurationStatus
+  commercial_model: CommercialModel
   subscription: SubscriptionModel
   myGroups: [ServiceGroup!]
+  organization: Organization
 }
 
 input PlatformInput {
@@ -50,6 +54,7 @@ input CanUnregisterPlatformInput {
 
 type RegistrationResponse {
   token: String!
+  organizationName: String
 }
 
 enum PlatformRegistrationStatus {
@@ -78,6 +83,7 @@ type CanUnregisterResponse {
   isAllowed: Boolean
   isInOrganization: Boolean
   organizationId: OrganizationId
+  organizationName: String
 }
 
 input UnregisterPlatformInput {
@@ -97,6 +103,7 @@ input RefreshPlatformRegistrationConnectivityStatusInput {
   token: String!
   platformVersion: String!
   platformIdentifier: PlatformIdentifier
+  platformContract: PlatformContract
 }
 
 input RefreshPlatformRegistrationConnectivityStatusSingleTenantInput {
@@ -107,6 +114,7 @@ input RefreshPlatformRegistrationConnectivityStatusSingleTenantInput {
   tenantId: String!
   tenantName: String!
   platformIdentifier: PlatformIdentifier!
+  platformContract: PlatformContract
 }
 
 input TenantDetails {
@@ -120,16 +128,21 @@ input RefreshPlatformRegistrationConnectivityStatusAllTenantsInput {
   platformId: String!
   platformVersion: String!
   platformIdentifier: PlatformIdentifier!
+  platformContract: PlatformContract
   tenants: [TenantDetails!]!
 }
 
 type RefreshPlatformRegistrationConnectivityStatusResponse {
   status: PlatformRegistrationConnectivityStatus!
+  commercialModel: CommercialModel
+  organizationName: String
 }
 
 type TenantStatus {
   tenantId: String!
   status: PlatformRegistrationConnectivityStatus!
+  commercialModel: CommercialModel
+  organizationName: String
 }
 
 type RefreshPlatformRegistrationConnectivityStatusAllTenantsResponse {
@@ -151,9 +164,86 @@ input RegisteredPlatformInput {
   service_instance_id: ServiceInstanceId!
 }
 
+input RegisteredPlatformByPlatformIdInput {
+  identifier: PlatformIdentifier!
+  platformId: String!
+  tenantId: String
+}
+
 input AutoRegisterPlatformInput {
   platform: PlatformInput!
   existing_users_count: Int
+}
+
+"""
+How a registration authenticates to the Hub. More kinds are expected, so a client must accept a value it does not know.
+"""
+enum RegisteredPlatformCredentialKind {
+  token
+  none
+}
+
+"""
+The current credential of a registration. It says which credential exists, never its value.
+"""
+type RegisteredPlatformCredential {
+  kind: RegisteredPlatformCredentialKind!
+}
+
+type AdminRegisteredPlatformOrganization {
+  id: OrganizationId!
+  name: String!
+}
+
+type AdminRegisteredPlatformRegisterer {
+  id: UserId!
+  email: String!
+  first_name: String
+  last_name: String
+}
+
+type AdminRegisteredPlatform {
+  service_instance_id: ServiceInstanceId!
+  platform_id: String!
+  title: String!
+  url: String!
+  identifier: PlatformIdentifier!
+  version: String
+  contract: PlatformContract!
+  commercial_model: CommercialModel!
+  tenant_id: String
+  tenant_name: String
+  status: PlatformConfigurationStatus!
+  last_connectivity_check: Date
+  "The organization owning the registration: the one of its newest subscription."
+  organization: AdminRegisteredPlatformOrganization
+  registerer: AdminRegisteredPlatformRegisterer
+  credential: RegisteredPlatformCredential!
+  "A trial: its contract is trial, or a trial deployment request is linked to it. An admin cannot unregister it."
+  is_trial: Boolean!
+}
+
+type AdminRegisteredPlatformEdge {
+  cursor: String!
+  node: AdminRegisteredPlatform!
+}
+
+type AdminRegisteredPlatformConnection {
+  totalCount: Int!
+  edges: [AdminRegisteredPlatformEdge!]!
+  pageInfo: PageInfo!
+}
+
+enum AdminRegisteredPlatformOrdering {
+  title
+  last_connectivity_check
+  organization_name
+}
+
+input AdminRegisteredPlatformsFilter {
+  identifier: PlatformIdentifier
+  status: PlatformConfigurationStatus
+  organizationId: OrganizationId
 }
 
 type Query {
@@ -164,17 +254,32 @@ type Query {
     input: CanUnregisterPlatformInput!
   ): CanUnregisterResponse! @auth
   registeredPlatform(input: RegisteredPlatformInput!): RegisteredPlatform @auth
+  registeredPlatformByPlatformId(
+    input: RegisteredPlatformByPlatformIdInput!
+  ): RegisteredPlatform @auth
   registeredPlatforms(input: RegisteredPlatformsInput!): [RegisteredPlatform!]!
     @auth
   platformAssociatedOrganization(
     platformId: String!
     tenantId: String
   ): Organization @auth
+  "Every platform registration, whatever its organization. searchTerm matches the title, URL, ids, tenant, organization and registerer."
+  adminRegisteredPlatforms(
+    "Page size, at most 100: a larger value is clamped to 100."
+    first: Int!
+    after: ID
+    orderBy: AdminRegisteredPlatformOrdering
+    orderMode: OrderingMode
+    searchTerm: String
+    filter: AdminRegisteredPlatformsFilter
+  ): AdminRegisteredPlatformConnection!
 }
 
 type Mutation {
   registerPlatform(input: RegisterPlatformInput!): RegistrationResponse! @auth
   unregisterPlatform(input: UnregisterPlatformInput!): Success! @auth
+  "Unregisters a platform without being a member of its organization. Does nothing on an inactive registration."
+  adminUnregisterPlatform(serviceInstanceId: ServiceInstanceId!): Success!
   refreshUserPlatformToken: RefreshUserPlatformTokenResponse! @auth
   # Warning ! Used by OpenCTI
   refreshPlatformRegistrationConnectivityStatus(

@@ -1,0 +1,66 @@
+mutation AddRolePortal($input: AddRolePortalInput!) {
+  addRolePortal(input: $input) {
+    id
+    name
+    capabilities {
+      id
+      name
+    }
+  }
+}
+
+mutation UpdateRolePortal($name: String!, $input: UpdateRolePortalInput!) {
+  updateRolePortal(name: $name, input: $input) {
+    id
+    name
+    capabilities {
+      id
+      name
+    }
+  }
+}
+
+mutation DeleteRolePortal($name: String!) {
+  deleteRolePortal(name: $name) {
+    id
+    name
+  }
+}
+
+mutation AddSSOGroupRolePortal($input: AddSSOGroupRolePortalInput!) {
+  addSSOGroupRolePortal(input: $input) {
+    ssoGroup
+    rolePortal {
+      id
+      name
+    }
+  }
+}
+
+mutation UpdateSSOGroupRolePortal(
+  $ssoGroup: String!
+  $rolePortal: String!
+  $input: UpdateSSOGroupRolePortalInput!
+) {
+  updateSSOGroupRolePortal(
+    ssoGroup: $ssoGroup
+    rolePortal: $rolePortal
+    input: $input
+  ) {
+    ssoGroup
+    rolePortal {
+      id
+      name
+    }
+  }
+}
+
+mutation DeleteSSOGroupRolePortal($input: DeleteSSOGroupRolePortalInput!) {
+  deleteSSOGroupRolePortal(input: $input) {
+    ssoGroup
+    rolePortal {
+      id
+      name
+    }
+  }
+}

@@ -1,9 +1,5 @@
-import { serverFetchGraphQL } from '@/relay/server-portal-api-fetch';
-import ServiceByIdQuery, {
-  serviceByIdQuery,
-} from '@generated/serviceByIdQuery.graphql';
-import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
-import { getTranslations } from 'next-intl/server';
+import { fetchServiceInstanceById } from '@/components/service/service-instance.server';
+import { getTranslate } from '@/hooks/get-translate';
 import PageLoader from './page-loader';
 
 interface ServiceCustomViewPageProps {
@@ -14,23 +10,17 @@ const Page = async ({ params }: ServiceCustomViewPageProps) => {
   const { serviceInstanceId, documentId } = await params;
   const decodedServiceInstanceId = decodeURIComponent(serviceInstanceId);
   const decodedDocumentId = decodeURIComponent(documentId);
-  const t = await getTranslations();
-  const response = await serverFetchGraphQL<serviceByIdQuery>(
-    ServiceByIdQuery,
-    {
-      service_instance_id: decodedServiceInstanceId,
-    }
+  const t = await getTranslate();
+  const serviceInstance = await fetchServiceInstanceById(
+    decodedServiceInstanceId
   );
 
   return (
     <>
-      {decodedDocumentId && response ? (
+      {decodedDocumentId && serviceInstance ? (
         <PageLoader
           documentId={decodedDocumentId}
-          serviceInstance={
-            response.data
-              .serviceInstanceByIdAndGrantAccess as unknown as serviceInstance_fragment$data
-          }
+          serviceInstance={serviceInstance}
         />
       ) : (
         <h1>{t('Utils.DocumentNotFound')}</h1>

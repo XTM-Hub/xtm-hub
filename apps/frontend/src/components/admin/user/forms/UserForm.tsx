@@ -1,21 +1,14 @@
 import { CapabilityDescription } from '@/components/admin/user/CapabilityDescription';
 import { userFormSchema } from '@/components/admin/user/forms/user-form.schema';
 import { CapabilityMultiSelect } from '@/components/ui/capability/MultiSelect';
+import { Form, FormField } from '@/components/ui/form';
+import { SheetFooter } from '@/components/ui/sheet';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
+import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { isEmpty } from '@/lib/utils';
-import {
-  Button,
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  Input,
-  SheetFooter,
-} from '@filigran/ui';
+import { Button, Input } from '@filigran/design-system';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useTranslations } from 'next-intl';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -26,7 +19,7 @@ interface UserFormProps {
 export const UserForm = ({ handleSubmit, validationSchema }: UserFormProps) => {
   const { handleCloseSheet, setIsDirty } = useDialogContext();
 
-  const t = useTranslations();
+  const t = useTranslate();
 
   const form = useForm<z.infer<typeof validationSchema>>({
     resolver: zodResolver(validationSchema),
@@ -48,51 +41,45 @@ export const UserForm = ({ handleSubmit, validationSchema }: UserFormProps) => {
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="w-full space-y-xl">
+        className="w-full space-y-6">
         <FormField
           control={form.control}
           name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('UserForm.Email')}</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder={t('UserForm.Email')}
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          render={({ field, fieldState }) => (
+            <Input
+              label={t('UserForm.Email')}
+              placeholder={t('UserForm.Email')}
+              error={fieldState.error?.message}
+              {...field}
+            />
           )}
         />
         <CapabilityDescription />
         <FormField
           control={form.control}
           name="capabilities"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('UserForm.OrganizationCapabilities')}</FormLabel>
-              <FormControl>
-                <CapabilityMultiSelect
-                  value={field.value}
-                  onChange={field.onChange}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          render={({ field, fieldState }) => (
+            <CapabilityMultiSelect
+              label={t('UserForm.OrganizationCapabilities')}
+              value={field.value}
+              onChange={field.onChange}
+              error={fieldState.error?.message}
+            />
           )}
         />
 
         <SheetFooter className="pt-2">
           <Button
-            variant="secondary"
+            priority="secondary"
             type="button"
+            {...analyticsId('organization_form_cancel')}
             onClick={(e) => handleCloseSheet(e)}>
             {t('Utils.Cancel')}
           </Button>
           <Button
             disabled={!form.formState.isDirty}
-            type="submit">
+            type="submit"
+            {...analyticsId('organization_member_submit')}>
             {t('Utils.Validate')}
           </Button>
         </SheetFooter>

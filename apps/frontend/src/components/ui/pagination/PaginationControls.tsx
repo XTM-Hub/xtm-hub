@@ -23,7 +23,7 @@ export const PaginationControls = ({
   };
 
   return (
-    <div className="flex-0 shrink-0 box-border flex h-9 items-center rounded border border-elevation-border-strong-layer-2">
+    <div className="flex-0 shrink-0 box-border flex h-9 items-center rounded border border-[var(--border-elevation-default-layer-2)]">
       <PaginationArrowButtons
         totalCount={totalCount}
         pageIndex={pageIndex}

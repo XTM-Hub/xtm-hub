@@ -1,8 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { TestHelper } from '../../../../../tests/helper/test.helper';
-import { SeoServiceInstanceLanguage } from '../../../../__generated__/resolvers-types';
-import { SEOServiceInstanceLanguage } from '../../../../model/kanel/public/SEOServiceInstance';
+import { Locale } from '../../../../__generated__/resolvers-types';
 import { ServiceInstanceId } from '../../../../model/kanel/public/ServiceInstance';
 import { SeoServiceInstanceDomain } from './seo-service-instance.domain';
 
@@ -39,19 +38,19 @@ describe('seo-service-instance.domain', () => {
     // Given
     await TestHelper.seoServiceInstance.create({
       service_instance_id: serviceInstanceId,
-      language: 'en' as SEOServiceInstanceLanguage,
+      language: Locale.En,
       meta_title: 'title en',
       meta_description: 'description en',
     });
     await TestHelper.seoServiceInstance.create({
       service_instance_id: serviceInstanceId,
-      language: 'fr' as SEOServiceInstanceLanguage,
+      language: Locale.Fr,
       meta_title: 'title fr',
       meta_description: 'description fr',
     });
     await TestHelper.seoServiceInstance.create({
       service_instance_id: otherServiceInstanceId,
-      language: 'ja' as SEOServiceInstanceLanguage,
+      language: Locale.Ja,
       meta_title: 'title ja',
       meta_description: 'description ja',
     });
@@ -81,19 +80,19 @@ describe('seo-service-instance.domain', () => {
     // Given
     await TestHelper.seoServiceInstance.create({
       service_instance_id: serviceInstanceId,
-      language: 'fr' as SEOServiceInstanceLanguage,
+      language: Locale.Fr,
       meta_title: 'title fr',
       meta_description: 'description fr',
     });
     await TestHelper.seoServiceInstance.create({
       service_instance_id: serviceInstanceId,
-      language: 'en' as SEOServiceInstanceLanguage,
+      language: Locale.En,
       meta_title: 'title en',
       meta_description: 'description en',
     });
     await TestHelper.seoServiceInstance.create({
       service_instance_id: otherServiceInstanceId,
-      language: 'fr' as SEOServiceInstanceLanguage,
+      language: Locale.Fr,
       meta_title: 'title other fr',
       meta_description: 'description other fr',
     });
@@ -101,7 +100,7 @@ describe('seo-service-instance.domain', () => {
     // When
     const result = await SeoServiceInstanceDomain.loadSeoServiceInstancesBy({
       service_instance_id: serviceInstanceId,
-      language: 'fr' as SEOServiceInstanceLanguage,
+      language: Locale.Fr,
     });
 
     // Then
@@ -114,11 +113,41 @@ describe('seo-service-instance.domain', () => {
     });
   });
 
+  it('should not load seoServiceInstances of a non-public serviceInstance without the MODIFY_SERVICE_METADATA capability', async () => {
+    const privateServiceInstanceId = uuidv4() as ServiceInstanceId;
+    await TestHelper.serviceInstance.create({
+      id: privateServiceInstanceId,
+      name: `seo-service-instance-${privateServiceInstanceId}`,
+      public: false,
+    });
+    await TestHelper.seoServiceInstance.create({
+      service_instance_id: privateServiceInstanceId,
+      language: Locale.En,
+      meta_title: 'title en',
+      meta_description: 'description en',
+    });
+
+    const result = await SeoServiceInstanceDomain.loadSeoServiceInstancesBy({
+      service_instance_id: privateServiceInstanceId,
+    });
+
+    const savedRows = await TestHelper.seoServiceInstance.loadAll({
+      service_instance_id: privateServiceInstanceId,
+    });
+    expect(savedRows).toHaveLength(1);
+    expect(result).toHaveLength(0);
+
+    await TestHelper.seoServiceInstance.delete({
+      service_instance_id: privateServiceInstanceId,
+    });
+    await TestHelper.serviceInstance.delete({ id: privateServiceInstanceId });
+  });
+
   it('should update seoServiceInstance when editSeoServiceInstanceBy is called and the row already exists', async () => {
     // Given
     await TestHelper.seoServiceInstance.create({
       service_instance_id: serviceInstanceId,
-      language: 'fr' as SEOServiceInstanceLanguage,
+      language: Locale.Fr,
       meta_title: 'old title',
       meta_description: 'old description',
     });
@@ -126,7 +155,7 @@ describe('seo-service-instance.domain', () => {
     // When
     const result = await SeoServiceInstanceDomain.upsertSeoServiceInstance(
       serviceInstanceId,
-      SeoServiceInstanceLanguage.Fr,
+      Locale.Fr,
       {
         meta_title: 'new title',
         meta_description: 'new description',
@@ -134,7 +163,7 @@ describe('seo-service-instance.domain', () => {
     );
     const savedRows = await TestHelper.seoServiceInstance.loadAll({
       service_instance_id: serviceInstanceId,
-      language: 'fr' as SEOServiceInstanceLanguage,
+      language: Locale.Fr,
     });
 
     // Then
@@ -157,7 +186,7 @@ describe('seo-service-instance.domain', () => {
     // When
     const result = await SeoServiceInstanceDomain.upsertSeoServiceInstance(
       serviceInstanceId,
-      SeoServiceInstanceLanguage.En,
+      Locale.En,
       {
         meta_title: 'created title',
         meta_description: 'created description',
@@ -165,7 +194,7 @@ describe('seo-service-instance.domain', () => {
     );
     const savedRows = await TestHelper.seoServiceInstance.loadAll({
       service_instance_id: serviceInstanceId,
-      language: 'en' as SEOServiceInstanceLanguage,
+      language: Locale.En,
     });
 
     // Then

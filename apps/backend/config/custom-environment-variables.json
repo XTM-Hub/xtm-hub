@@ -39,9 +39,15 @@
     "port": "ELASTIC_PORT",
     "username": "ELASTIC_USER",
     "password": "ELASTIC_PASSWORD",
+    "index_prefix": "ELASTIC_INDEX_PREFIX",
+    "engine_client": "ELASTIC_ENGINE_CLIENT",
+    "request_timeout": "ELASTIC_REQUEST_TIMEOUT",
     "tls": {
       "ca_path": "ELASTIC__TLS__CA_PATH",
-      "reject_unauthorized": "ELASTIC__TLS__REJECT_UNAUTHORIZED"
+      "reject_unauthorized": {
+        "__name": "ELASTIC__TLS__REJECT_UNAUTHORIZED",
+        "__format": "boolean"
+      }
     }
   },
   "base_url_front": "BASE_URL_FRONT",
@@ -50,6 +56,15 @@
   "telemetry_tags": "TELEMETRY_TAGS",
   "hubspot_use_queue_processing": "HUBSPOT_USE_QUEUE_PROCESSING",
   "hubspot_webhook_url": "HUBSPOT_WEBHOOK_URL",
+  "teams_notification_webhook_url": "TEAMS_NOTIFICATION_WEBHOOK_URL",
+  "teams_notification_webhook_token": "TEAMS_NOTIFICATION_WEBHOOK_TOKEN",
+  "blog_api": {
+    "base_url": "BLOG_API_BASE_URL",
+    "timeout_ms": {
+      "__name": "BLOG_API_TIMEOUT_MS",
+      "__format": "json"
+    }
+  },
   "system_token_hash": "SYSTEM_TOKEN_HASH",
   "system_token_salt": "SYSTEM_TOKEN_SALT",
   "session": {
@@ -59,6 +74,7 @@
   "session_store": {
     "type": "SESSION_STORE_TYPE"
   },
+  "trust_proxy": "TRUST_PROXY",
   "news_feed": {
     "cleanup_interval_value": "NEWS_FEED_CLEANUP_INTERVAL_VALUE",
     "cleanup_interval_unit": "NEWS_FEED_CLEANUP_INTERVAL_UNIT"

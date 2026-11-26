@@ -1,4 +1,4 @@
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import {
   Sheet,
   SheetContent,
@@ -6,8 +6,9 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from '@filigran/ui';
-import { useTranslations } from 'next-intl';
+} from '@/components/ui/sheet';
+import { useTranslate } from '@/hooks/use-translate';
+import { type AnalyticsContextAttributes } from '@/lib/analytics/analytics.context';
 import { createContext, ReactNode, useContext, useState } from 'react';
 
 interface UserFormSheetProps {
@@ -15,14 +16,17 @@ interface UserFormSheetProps {
   setOpen: (open: boolean) => void;
   trigger?: ReactNode;
   title: string;
+  titleBadge?: ReactNode;
   description?: string;
   children: ReactNode;
   onOpenAutoFocus?: (event: Event) => void;
+  analyticsContext?: AnalyticsContextAttributes;
 }
 
 interface DialogContextProps {
   handleCloseSheet: (e: React.MouseEvent<HTMLButtonElement>) => void;
   setIsDirty: (isDirty: boolean) => void;
+  setUploadsDirty: (uploadsDirty: boolean) => void;
   setOpenSheet: (open: boolean) => void;
 }
 const DialogContext = createContext<DialogContextProps | undefined>(undefined);
@@ -40,19 +44,23 @@ export const SheetWithPreventingDialog = ({
   setOpen,
   trigger,
   title,
+  titleBadge,
   description = '',
   children,
   onOpenAutoFocus,
+  analyticsContext,
 }: UserFormSheetProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const [openDialog, setOpenDialog] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
+  // Raised by the file fields: an upload is not in the form state, so reverting a field cannot undo it
+  const [uploadsDirty, setUploadsDirty] = useState(false);
 
   const alertDialogSheetClose = (
-    e: Event | React.MouseEvent<HTMLButtonElement>
+    e?: Event | React.MouseEvent<HTMLButtonElement>
   ) => {
-    if (isDirty) {
-      e.preventDefault();
+    if (isDirty || uploadsDirty) {
+      e?.preventDefault();
       setOpenDialog(true);
     } else {
       setOpen(false);
@@ -64,34 +72,45 @@ export const SheetWithPreventingDialog = ({
       <Sheet
         key={'right'}
         open={open}
-        onOpenChange={setOpen}>
+        onOpenChange={(nextOpen) =>
+          nextOpen ? setOpen(true) : alertDialogSheetClose()
+        }>
         {trigger && <SheetTrigger asChild>{trigger}</SheetTrigger>}
         <SheetContent
+          {...analyticsContext}
           side={'right'}
+          closeLabel={t('Utils.Close')}
           onPointerDownOutside={(e) => alertDialogSheetClose(e)}
+          onEscapeKeyDown={(e) => alertDialogSheetClose(e)}
           onOpenAutoFocus={onOpenAutoFocus}>
           <SheetHeader>
-            <SheetTitle>{title}</SheetTitle>
+            <div className="flex items-center gap-3">
+              <SheetTitle>{title}</SheetTitle>
+              {titleBadge}
+            </div>
             <SheetDescription>{description}</SheetDescription>
           </SheetHeader>
           <DialogContext.Provider
             value={{
               handleCloseSheet: alertDialogSheetClose,
               setIsDirty,
+              setUploadsDirty,
               setOpenSheet: setOpen,
             }}>
             {children}
           </DialogContext.Provider>
         </SheetContent>
       </Sheet>
-      <AlertDialogComponent
-        AlertTitle={t('DialogActions.PreventSheetTitle')}
-        actionButtonText={t('MenuActions.Continue')}
-        isOpen={openDialog}
+      <ConfirmDialog
+        confirmAnalyticsId="common_unsaved_changes_confirm"
+        analyticsContext={analyticsContext}
+        title={t('DialogActions.PreventSheetTitle')}
+        confirmLabel={t('MenuActions.Continue')}
+        open={openDialog}
         onOpenChange={setOpenDialog}
-        onClickContinue={() => setOpen(false)}>
+        onConfirm={() => setOpen(false)}>
         {t('DialogActions.PreventSheetSentence')}
-      </AlertDialogComponent>
+      </ConfirmDialog>
     </>
   );
 };

@@ -42,7 +42,7 @@ export const ForbiddenAccess = (
   data?: Record<string, unknown>,
   logLevel: ErrorLogLevel = 'error'
 ): CustomApolloError => {
-  return errorUtil(
+  const error = errorUtil(
     ErrorType.ForbiddenAccess,
     message || 'You are not allowed to do this.',
     {
@@ -53,6 +53,8 @@ export const ForbiddenAccess = (
     undefined,
     logLevel
   );
+  error.extensions = { code: ErrorType.ForbiddenAccess };
+  return error;
 };
 
 export const UnauthenticatedAccess = (
@@ -147,7 +149,7 @@ export const NotFoundError: ErrorBuilder = (
   information?: ErrorInformation,
   data?: Record<string, unknown>
 ): CustomApolloError => {
-  return errorUtil(
+  const error = errorUtil(
     ErrorType.NotFound,
     message || 'Resource not found',
     {
@@ -157,4 +159,6 @@ export const NotFoundError: ErrorBuilder = (
     },
     information
   );
+  error.extensions = { code: ErrorType.NotFound };
+  return error;
 };

@@ -1,36 +1,52 @@
 import { RegistrationContext } from '@/components/registration/Context';
-import { Button } from '@filigran/ui/servers';
-import { useTranslations } from 'next-intl';
+import { useTranslate } from '@/hooks/use-translate';
+import {
+  analyticsId,
+  type AnalyticsElementId,
+} from '@/lib/analytics/analytics.ids';
+import { Button } from '@filigran/design-system';
 import React, { useContext } from 'react';
 
-interface RegistrationLayoutProps {
+type RegistrationLayoutProps = {
   children: React.ReactNode;
-  cancel?: () => void;
-  confirm?: () => void;
-}
+} & (
+  | { cancel: () => void; cancelAnalyticsId: AnalyticsElementId }
+  | { cancel?: undefined; cancelAnalyticsId?: undefined }
+) &
+  (
+    | { confirm: () => void; confirmAnalyticsId: AnalyticsElementId }
+    | { confirm?: undefined; confirmAnalyticsId?: undefined }
+  );
 
 export const RegistrationLayout = ({
   children,
   cancel,
+  cancelAnalyticsId,
   confirm,
+  confirmAnalyticsId,
 }: RegistrationLayoutProps) => {
   const { displayedIdentifier } = useContext(RegistrationContext);
-  const t = useTranslations();
+  const t = useTranslate();
   return (
-    <div className="h-full flex flex-col justify-between gap-xl">
-      <div className="flex flex-col gap-m">{children}</div>
-      <div className="flex justify-end gap-s">
-        {Boolean(cancel) && (
+    <div className="h-full flex flex-col justify-between gap-6">
+      <div className="flex flex-col gap-3">{children}</div>
+      <div className="flex justify-end gap-2">
+        {cancel && (
           <Button
-            variant="secondary"
+            {...analyticsId(cancelAnalyticsId)}
+            priority="secondary"
             onClick={cancel}>
             {t(`Register.Back`, {
               platformIdentifier: displayedIdentifier,
             })}
           </Button>
         )}
-        {Boolean(confirm) && (
-          <Button onClick={confirm}>{t('Utils.Confirm')}</Button>
+        {confirm && (
+          <Button
+            {...analyticsId(confirmAnalyticsId)}
+            onClick={confirm}>
+            {t('Utils.Confirm')}
+          </Button>
         )}
       </div>
     </div>

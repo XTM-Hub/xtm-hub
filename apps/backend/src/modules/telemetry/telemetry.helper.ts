@@ -1,10 +1,13 @@
 import {
   DeploymentRequestSource,
+  HasRepliedSatisfaction,
   IntegrationType,
+  NewsFeedItemType,
   Organization,
   PlatformContract,
   PlatformIdentifier,
   ServiceDefinitionIdentifier,
+  ServiceGroupName,
 } from '../../__generated__/resolvers-types';
 import Document from '../../model/kanel/public/Document';
 import { UserId } from '../../model/kanel/public/User';
@@ -16,6 +19,7 @@ import { ServiceInstanceDomain } from '../service/instance/service-instance.doma
 import {
   TelemetryEventService,
   TelemetryEventServiceType,
+  TelemetryNewsFeedItemType,
   TelemetryOrganizationType,
   TelemetrySource,
   TelemetryTargetProduct,
@@ -26,12 +30,17 @@ import {
   CreateEvent,
   CreateOrganizationEvent,
   DownloadEvent,
+  ExportEvent,
   LoginEvent,
+  NewsFeedRedirectEvent,
   OneClickDeployEvent,
   RegisterPlatformEvent,
+  ReplySatisfactionEvent,
   ShareEvent,
   SubscribeEvent,
   TelemetryEventType,
+  TrialAccessGrantedEvent,
+  TrialAccessRemovedEvent,
   UnregisterPlatformEvent,
   UpdateDeploymentEvent,
   UpdateOrganizationEvent,
@@ -90,6 +99,15 @@ const ServiceIdentifierToEventService = new Map<
     ServiceDefinitionIdentifier.OpenctiCustomViews,
     TelemetryEventService.OPENCTI_CUSTOM_VIEWS_LIBRARY,
   ],
+]);
+
+// One entry per news feed item type that can be clicked through the external redirect
+export const NewsFeedItemTypeToTelemetryNewsFeedItemType = new Map<
+  NewsFeedItemType,
+  TelemetryNewsFeedItemType
+>([
+  [NewsFeedItemType.BlogPost, TelemetryNewsFeedItemType.BLOG_POST],
+  [NewsFeedItemType.GithubRelease, TelemetryNewsFeedItemType.GITHUB_RELEASE],
 ]);
 
 export const TelemetryTargetProductMappedByPlatformIdentifier = new Map<
@@ -185,6 +203,23 @@ export const TelemetryHelper = {
     };
   },
 
+  buildExportEvent: (
+    organization: Organization | undefined,
+    user_id: UserId | undefined,
+    service: ServiceDefinitionIdentifier,
+    export_format: string = 'csv',
+    timestamp?: Date
+  ): ExportEvent => {
+    const baseEvent = buildBaseEvent(organization, user_id, timestamp);
+
+    return {
+      event_type: TelemetryEventType.EXPORT,
+      ...baseEvent,
+      service: getOrThrow(ServiceIdentifierToEventService, service),
+      export_format,
+    };
+  },
+
   buildShareEvent: async (
     organization: Organization | undefined,
     user_id: UserId | undefined,
@@ -239,7 +274,7 @@ export const TelemetryHelper = {
       service_type: await buildServiceTypeEvent(document.id),
       resource_id: document.id,
       resource_title: document.name ?? '',
-      status: document.active ? 'published' : 'draft',
+      status: document.status,
     };
   },
 
@@ -334,6 +369,48 @@ export const TelemetryHelper = {
     };
   },
 
+  // The user and the organization are only set when the click comes from a logged in user
+  buildNewsFeedRedirectEvent: (
+    organization: Organization | undefined,
+    user_id: UserId | undefined,
+    data: {
+      news_feed_item_id?: string;
+      news_feed_item_type?: NewsFeedItemType;
+      destination_host?: string;
+      platform_id?: string;
+      service?: ServiceDefinitionIdentifier;
+      resource_id?: string;
+      platform_identifier?: PlatformIdentifier;
+      utm_content?: string;
+    },
+    timestamp?: Date
+  ): NewsFeedRedirectEvent => {
+    const baseEvent = buildBaseEvent(organization, user_id, timestamp);
+    const { service, platform_identifier, news_feed_item_type, ...fields } =
+      data;
+
+    return {
+      event_type: TelemetryEventType.NEWS_FEED_REDIRECT,
+      ...baseEvent,
+      ...fields,
+      ...(news_feed_item_type !== undefined && {
+        news_feed_item_type: getOrThrow(
+          NewsFeedItemTypeToTelemetryNewsFeedItemType,
+          news_feed_item_type
+        ),
+      }),
+      ...(service !== undefined && {
+        service: getOrThrow(ServiceIdentifierToEventService, service),
+      }),
+      ...(platform_identifier !== undefined && {
+        target_product: getOrThrow(
+          TelemetryTargetProductMappedByPlatformIdentifier,
+          platform_identifier
+        ),
+      }),
+    };
+  },
+
   buildUpdateOrganizationEvent: (
     organization: Organization,
     user_id: UserId,
@@ -359,6 +436,27 @@ export const TelemetryHelper = {
       event_type: TelemetryEventType.CREATE_ORGANIZATION,
       ...baseEvent,
       domains: organization.domains ?? [],
+    };
+  },
+  buildSatisfactionEvent: async (
+    answer: HasRepliedSatisfaction,
+    deployment_id: string,
+    justification?: string | null
+  ): Promise<ReplySatisfactionEvent> => {
+    const user = requestContext.requireUser();
+    const selectedOrga = await OrganizationDomain.loadOrganizationBy({
+      id: user.selected_organization_id,
+    });
+
+    const baseEvent = buildBaseEvent(selectedOrga, user.id);
+
+    return {
+      event_type: TelemetryEventType.REPLY_SATISFACTION,
+      ...baseEvent,
+      email: user.email,
+      answer,
+      justification,
+      deployment_id,
     };
   },
 
@@ -408,6 +506,43 @@ export const TelemetryHelper = {
       ...baseEvent,
       ...additional_data,
       event_type: TelemetryEventType.UPDATE_DEPLOYMENT,
+    };
+  },
+
+  buildTrialAccessGrantedEvent: (
+    organization: Organization | undefined,
+    actor_user_id: UserId,
+    data: {
+      deployment_id: string;
+      role: ServiceGroupName;
+      email: string;
+    },
+    timestamp?: Date
+  ): TrialAccessGrantedEvent => {
+    const baseEvent = buildBaseEvent(organization, actor_user_id, timestamp);
+
+    return {
+      ...baseEvent,
+      ...data,
+      event_type: TelemetryEventType.TRIAL_ACCESS_GRANTED,
+    };
+  },
+
+  buildTrialAccessRemovedEvent: (
+    organization: Organization | undefined,
+    actor_user_id: UserId,
+    data: {
+      deployment_id: string;
+      email: string;
+    },
+    timestamp?: Date
+  ): TrialAccessRemovedEvent => {
+    const baseEvent = buildBaseEvent(organization, actor_user_id, timestamp);
+
+    return {
+      ...baseEvent,
+      ...data,
+      event_type: TelemetryEventType.TRIAL_ACCESS_REMOVED,
     };
   },
 };

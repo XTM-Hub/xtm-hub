@@ -1,30 +1,26 @@
 import NewsFeedList from '@/components/admin/news-feed/NewsFeedList';
+import { ServiceSlug } from '@/utils/shareable-resources/shareable-resources.types';
 import testRender from '@/utils/test/test-render';
-import type { NewsFeedItemType } from '@generated/newsFeedItem_fragment.graphql';
+import {
+  NewsFeedItemMetadataKey,
+  NewsFeedItemRowFragment,
+  NewsFeedItemType,
+} from '@graphql/generated';
 import { act, screen, waitFor, within } from '@testing-library/react';
 import { useRouter } from 'next/navigation';
 import { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-type NewsFeedItem = {
-  id: string;
-  title: string;
-  type: NewsFeedItemType;
-  creation_date: string;
-  tags: string[];
-  is_deleted: boolean;
-  metadata: { key: string; value: string }[];
-};
-
 const mocks = vi.hoisted(() => ({
-  refetch: vi.fn(),
-  deleteMutation: vi.fn(),
+  invalidateQueries: vi.fn(),
+  deleteMutate: vi.fn(),
+  listQuery: vi.fn(),
   push: vi.fn(),
-  newsFeedItems: [] as NewsFeedItem[],
+  newsFeedItems: [] as NewsFeedItemRowFragment[],
 }));
 
 vi.mock('@/utils/date', () => ({
-  formatDate: (date: string) => `formatted:${date}`,
+  useDateFormatter: () => (date: string) => `formatted:${date}`,
 }));
 
 vi.mock('@/utils/services', async (importOriginal) => ({
@@ -32,20 +28,32 @@ vi.mock('@/utils/services', async (importOriginal) => ({
   localizedCardName: (instance: { name: string }) => instance.name,
 }));
 
-vi.mock('react-relay', async (importOriginal) => ({
-  ...(await importOriginal()),
-  useLazyLoadQuery: () => ({}),
-  useRefetchableFragment: () => [
-    {
-      newsFeedItems: {
-        totalCount: mocks.newsFeedItems.length,
-        edges: mocks.newsFeedItems.map((item) => ({ node: item })),
+vi.mock('@graphql/generated', async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  useNewsFeedListQuery: (...args: unknown[]) => {
+    mocks.listQuery(...args);
+    return {
+      data: {
+        newsFeedItems: {
+          totalCount: mocks.newsFeedItems.length,
+          edges: mocks.newsFeedItems.map((item) => ({ node: item })),
+        },
       },
-    },
-    mocks.refetch,
-  ],
-  useMutation: () => [mocks.deleteMutation, false],
-  readInlineData: (_fragment: unknown, node: unknown) => node,
+    };
+  },
+  useNewsFeedDeleteItemMutation: () => ({
+    mutate: mocks.deleteMutate,
+    isPending: false,
+  }),
+}));
+
+vi.mock('@graphql/news-feed/news-feed.keys', () => ({
+  newsFeedKeys: { all: () => ['NewsFeedList'] },
+}));
+
+vi.mock('@tanstack/react-query', async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  useQueryClient: () => ({ invalidateQueries: mocks.invalidateQueries }),
 }));
 
 vi.mock('@/components/ui/IconActions', () => ({
@@ -53,33 +61,41 @@ vi.mock('@/components/ui/IconActions', () => ({
   IconActionsItem: ({
     children,
     onClick,
+    disabled,
   }: {
     children: ReactNode;
     onClick?: () => void;
-  }) => <button onClick={onClick}>{children}</button>,
+    disabled?: boolean;
+  }) => (
+    <button
+      onClick={onClick}
+      disabled={disabled}>
+      {children}
+    </button>
+  ),
 }));
 
-vi.mock('@/components/ui/AlertDialog', () => ({
-  AlertDialogComponent: ({
-    isOpen,
+vi.mock('@/components/ui/ConfirmDialog', () => ({
+  ConfirmDialog: ({
+    open,
     onOpenChange,
-    AlertTitle,
-    actionButtonText,
-    onClickContinue,
+    title,
+    confirmLabel,
+    onConfirm,
     children,
   }: {
-    isOpen: boolean;
+    open: boolean;
     onOpenChange: (open: boolean) => void;
-    AlertTitle: string;
-    actionButtonText: string;
-    onClickContinue: () => void;
+    title: string;
+    confirmLabel: string;
+    onConfirm: () => void;
     children: ReactNode;
   }) =>
-    isOpen ? (
+    open ? (
       <div role="alertdialog">
-        <h2>{AlertTitle}</h2>
+        <h2>{title}</h2>
         <div>{children}</div>
-        <button onClick={onClickContinue}>{actionButtonText}</button>
+        <button onClick={onConfirm}>{confirmLabel}</button>
         <button onClick={() => onOpenChange(false)}>Cancel</button>
       </div>
     ) : null,
@@ -110,16 +126,18 @@ describe('NewsFeedList', () => {
       {
         id: 'item-1',
         title: 'Active news',
-        type: 'RESOURCE_PLAYBOOK',
+        type: NewsFeedItemType.ResourcePlaybook,
         creation_date: '2025-01-20T08:00:00.000Z',
         tags: ['tag-1', 'tag-2'],
         is_deleted: false,
-        metadata: [{ key: 'url_path', value: 'news/active-news' }],
+        metadata: [
+          { key: NewsFeedItemMetadataKey.UrlPath, value: 'news/active-news' },
+        ],
       },
       {
         id: 'item-2',
         title: 'Deleted news',
-        type: 'RESOURCE_CUSTOM_DASHBOARD',
+        type: NewsFeedItemType.ResourceCustomDashboard,
         creation_date: '2025-01-21T08:00:00.000Z',
         tags: ['tag-3'],
         is_deleted: true,
@@ -155,6 +173,66 @@ describe('NewsFeedList', () => {
     ).toHaveLength(1);
   });
 
+  it('renders the blogpost label instead of a library label for a blog post row', () => {
+    mocks.newsFeedItems = [
+      {
+        id: 'item-3',
+        title: 'Blog post news',
+        type: NewsFeedItemType.BlogPost,
+        creation_date: '2025-01-22T08:00:00.000Z',
+        tags: ['tag-4'],
+        is_deleted: false,
+        metadata: [],
+      },
+    ];
+
+    testRender(<NewsFeedList />);
+
+    const row = screen.getByText('Blog post news').closest('tr')!;
+    expect(
+      within(row).getByText('formatted:2025-01-22T08:00:00.000Z')
+    ).toBeInTheDocument();
+    expect(within(row).getByText('tag-4')).toBeInTheDocument();
+    expect(
+      within(row).getByText('NewsFeedAdminPage.Blogpost')
+    ).toBeInTheDocument();
+    expect(within(row).queryByText('—')).not.toBeInTheDocument();
+    expect(row).not.toHaveTextContent(
+      new RegExp(Object.values(ServiceSlug).join('|'))
+    );
+  });
+
+  it('renders the library label of a resource item', () => {
+    testRender(<NewsFeedList />);
+
+    const row = screen.getByText('Active news').closest('tr')!;
+    expect(
+      within(row).getByText(ServiceSlug.OPEN_CTI_PLAYBOOKS)
+    ).toBeInTheDocument();
+  });
+
+  it('renders the library label of a scenario item', () => {
+    mocks.newsFeedItems = [
+      {
+        id: 'item-4',
+        title: 'Scenario news',
+        type: NewsFeedItemType.ResourceScenario,
+        creation_date: '2025-01-23T08:00:00.000Z',
+        tags: [],
+        is_deleted: false,
+        metadata: [],
+      },
+    ];
+
+    testRender(<NewsFeedList />);
+
+    const row = screen.getByText('Scenario news').closest('tr')!;
+    expect(
+      within(row).getByText(ServiceSlug.OPEN_AEV_SCENARIOS)
+    ).toBeInTheDocument();
+    expect(within(row).queryByText('—')).not.toBeInTheDocument();
+  });
+
   it('navigates to the item url_path when a row is clicked', async () => {
     const { user } = testRender(<NewsFeedList />);
 
@@ -166,7 +244,7 @@ describe('NewsFeedList', () => {
     expect(mocks.push).not.toHaveBeenCalled();
   });
 
-  it('opens delete dialog and confirms deletion with success toast and refetch', async () => {
+  it('opens delete dialog and confirms deletion with success toast and list invalidation', async () => {
     const { user } = testRender(<NewsFeedList />);
 
     await user.click(
@@ -184,27 +262,23 @@ describe('NewsFeedList', () => {
       })
     );
 
-    expect(mocks.deleteMutation).toHaveBeenCalledOnce();
+    expect(mocks.deleteMutate).toHaveBeenCalledOnce();
 
-    const mutationConfig = mocks.deleteMutation.mock.calls[0]?.[0] as {
-      variables: { id: string };
-      onCompleted: () => void;
-    };
+    const [variables, callbacks] = mocks.deleteMutate.mock.calls[0] as [
+      { id: string },
+      { onSuccess: () => Promise<void> },
+    ];
 
-    expect(mutationConfig.variables).toEqual({ id: 'item-1' });
+    expect(variables).toEqual({ id: 'item-1' });
 
     await act(async () => {
-      mutationConfig.onCompleted();
+      await callbacks.onSuccess();
     });
 
     await waitFor(() => {
-      expect(mocks.refetch).toHaveBeenCalledWith(
-        {
-          count: 25,
-          cursor: btoa('0'),
-        },
-        { fetchPolicy: 'store-and-network' }
-      );
+      expect(mocks.invalidateQueries).toHaveBeenCalledWith({
+        queryKey: ['NewsFeedList'],
+      });
       expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
     });
   });
@@ -223,12 +297,12 @@ describe('NewsFeedList', () => {
       })
     );
 
-    const mutationConfig = mocks.deleteMutation.mock.calls[0]?.[0] as {
+    const callbacks = mocks.deleteMutate.mock.calls[0]?.[1] as {
       onError: () => void;
     };
 
     await act(async () => {
-      mutationConfig.onError();
+      callbacks.onError();
     });
 
     await waitFor(() => {
@@ -236,11 +310,11 @@ describe('NewsFeedList', () => {
     });
   });
 
-  it('refetches with expected cursor and count on pagination change', async () => {
+  it('queries with expected cursor and count on pagination change', async () => {
     mocks.newsFeedItems = Array.from({ length: 30 }, (_unused, index) => ({
       id: `item-${index + 1}`,
       title: `News ${index + 1}`,
-      type: 'RESOURCE_PLAYBOOK',
+      type: NewsFeedItemType.ResourcePlaybook,
       creation_date: '2025-01-20T08:00:00.000Z',
       tags: ['tag'],
       is_deleted: false,
@@ -250,16 +324,14 @@ describe('NewsFeedList', () => {
     const { user } = testRender(<NewsFeedList />);
 
     await user.click(
-      screen.getByRole('button', { name: 'Datatable.GoNextPage' })
+      screen.getByRole('button', { name: 'DesignSystem.DataTable.NextPage' })
     );
 
     await waitFor(() => {
-      expect(mocks.refetch).toHaveBeenCalledWith(
-        {
-          count: 25,
-          cursor: btoa('25'),
-        },
-        { fetchPolicy: 'store-and-network' }
+      expect(mocks.listQuery).toHaveBeenLastCalledWith(
+        expect.anything(),
+        { count: 25, cursor: btoa('25') },
+        expect.anything()
       );
     });
   });

@@ -5,6 +5,7 @@ import {
   DeploymentRequestFilter,
   DeploymentRequestFilterKey,
   DocumentMetadataKeyCode,
+  FeatureFlag,
   Filter,
   FilterKey,
   LogicalFilterInput,
@@ -18,6 +19,7 @@ import { databaseContext } from './src/context/database.context';
 import { DocumentHelper } from './src/modules/document/document.helper';
 import { INTEGRATION_METADATA_KEYS } from './src/modules/shareable-resource/opencti/integration/integration.model';
 import { logApp } from './src/utils/app-logger.util';
+import { isFeatureEnabled } from './src/utils/feature-flag.util';
 import { extractId } from './src/utils/utils';
 import { compareVersions, isValidVersion } from './src/utils/versioning';
 
@@ -81,6 +83,7 @@ type BaseDatabaseType =
   | 'Document_Children'
   | 'Document_Metadata'
   | 'PlatformConfiguration'
+  | 'PlatformAssertionJti'
   | 'DeploymentRequest'
   | 'DeploymentRequestQuota'
   | 'ServiceGroup'
@@ -94,8 +97,17 @@ type BaseDatabaseType =
   | 'ManifestRebuildQueue'
   | 'Manifest'
   | 'Manifest_Document'
+  | 'ProductVersion'
   | 'PlatformMetadata'
-  | 'OneClickDeployment';
+  | 'OneClickDeployment'
+  | 'VotingRound'
+  | 'VotableFeature'
+  | 'VotableFeature_UseCase'
+  | 'FeatureVote'
+  | 'ContentTranslation'
+  | 'ContentTranslationDraft'
+  | 'ApiToken'
+  | 'SaasManagerInstance';
 
 export type DatabaseType =
   | BaseDatabaseType
@@ -121,6 +133,7 @@ pkg.QueryBuilder.extend('tap', function (fn) {
 });
 const config: Knex.Config = {
   ...baseConfig,
+  pool: { min: 2, max: 10 },
   migrations: {
     extension: 'js',
     tableName: 'migrations',
@@ -183,17 +196,35 @@ export function db<T extends object>(
   return queryContext;
 }
 
+// The cursor of a node is its 1-based position in the whole list, so the cursor of a page's last node is the offset
+// of the next page.
+export const encodeOffsetCursor = (position: number): string =>
+  btoa(String(position));
+
+// Anything unreadable starts from the first page.
+export const decodeOffsetCursor = (cursor?: string | null): number => {
+  if (!cursor) {
+    return 0;
+  }
+  try {
+    const offset = Number(atob(cursor));
+    return Number.isSafeInteger(offset) && offset > 0 ? offset : 0;
+  } catch {
+    return 0;
+  }
+};
+
 export const dbConnections = <T>(
   nodes: T[],
   offset: string | undefined,
   limit: number | undefined,
   totalCount: number
 ) => {
-  const currentOffset = offset ? Number(atob(offset)) : 0;
+  const currentOffset = decodeOffsetCursor(offset);
   const edges: { cursor: string; node: T }[] = nodes.map((n, index) => {
     const nextIndex = index + 1;
     return {
-      cursor: btoa(String(currentOffset + nextIndex)),
+      cursor: encodeOffsetCursor(currentOffset + nextIndex),
       node: n,
     };
   });
@@ -211,23 +242,38 @@ const searchAttributes = [
   'file_name',
   'description',
   'short_description',
+  'problem_to_solve',
+  'proposed_solution',
+  'expected_value',
   'email',
   'first_name',
   'last_name',
   'country',
   'title',
+  'customer_name',
+  'customer_techname',
+  'hostname',
 ];
 
-// Cache column names per table so applySearch never calls columnInfo() twice
-// for the same table during the lifetime of the process.
-const columnInfoCache = new Map<DatabaseType, string[]>();
+const columnInfoCache = new Map<DatabaseType, Promise<string[]>>();
 
-const getCachedColumnInfo = async (type: DatabaseType): Promise<string[]> => {
+const fetchColumnInfo = (type: DatabaseType): Promise<string[]> =>
+  database(type)
+    .columnInfo()
+    .then((columnInfo) => Object.keys(columnInfo));
+
+export const getCachedColumnInfo = (
+  type: DatabaseType,
+  fetchColumns: (type: DatabaseType) => Promise<string[]> = fetchColumnInfo
+): Promise<string[]> => {
   const cached = columnInfoCache.get(type);
   if (cached) return cached;
-  const columns = Object.keys(await database(type).columnInfo());
-  columnInfoCache.set(type, columns);
-  return columns;
+
+  const pending = fetchColumns(type);
+  pending.catch(() => columnInfoCache.delete(type));
+
+  columnInfoCache.set(type, pending);
+  return pending;
 };
 
 type JoinFn = (qb: Knex.QueryBuilder, type: DatabaseType) => void;
@@ -245,28 +291,27 @@ type FilterHandler = {
 
 const createLabelFilter = (): FilterHandler => ({
   key: FilterKey.Label,
-  addJoin: (qb, type) => {
-    qb.leftJoin('Object_UseCase as ouc', 'ouc.object_id', '=', `${type}.id`);
-  },
-  addWhere: (qb, _type, values) => {
+  addWhere: (qb, type, values) => {
     if (!values.length) return;
-    qb.whereIn('ouc.use_case_id', values.map(extractId));
+    qb.whereExists(function () {
+      this.select(dbRaw('1'))
+        .from('Object_UseCase as ouc')
+        .whereRaw('?? = ??', ['ouc.object_id', `${type}.id`])
+        .whereIn('ouc.use_case_id', values.map(extractId));
+    });
   },
 });
 
 const createSolutionCategoryFilter = (): FilterHandler => ({
   key: FilterKey.SolutionCategory,
-  addJoin: (qb, type) => {
-    qb.leftJoin(
-      'Object_SolutionCategory as osc',
-      'osc.object_id',
-      '=',
-      `${type}.id`
-    );
-  },
-  addWhere: (qb, _type, values) => {
+  addWhere: (qb, type, values) => {
     if (!values.length) return;
-    qb.whereIn('osc.solution_category_id', values.map(extractId));
+    qb.whereExists(function () {
+      this.select(dbRaw('1'))
+        .from('Object_SolutionCategory as osc')
+        .whereRaw('?? = ??', ['osc.object_id', `${type}.id`])
+        .whereIn('osc.solution_category_id', values.map(extractId));
+    });
   },
 });
 
@@ -333,13 +378,24 @@ const createProductVersionFilter = (): FilterHandler => ({
       return;
     }
 
-    // Exclude documents whose product_version metadata exists and is strictly greater than the target.
-    // Documents with no product_version row (IS NULL case) pass through automatically.
+    // Exclude documents whose compatibility version metadata is strictly greater
+    // than the target. Legacy connectors (ingest-manifest pipeline) store this
+    // under `product_version`; connectors ingested through the newer
+    // manifest-fragment/decoupling pipeline store it under
+    // `minimum_deployable_version` instead (see ingest-manifest.domain.ts and
+    // manifest-fragment.domain.ts). Documents with no matching row (IS NULL
+    // case) pass through automatically.
+    const compatibilityVersionKey = isFeatureEnabled(
+      FeatureFlag.DecouplingConnectors
+    )
+      ? DocumentMetadataKeyCode.MinimumDeployableVersion
+      : FilterKey.ProductVersion;
+
     qb.whereNotExists(function () {
       this.select(dbRaw('1'))
         .from('Document_Metadata')
         .whereRaw('"Document_Metadata"."document_id" = "Document"."id"')
-        .andWhere('Document_Metadata.key', '=', FilterKey.ProductVersion)
+        .andWhere('Document_Metadata.key', '=', compatibilityVersionKey)
         .whereNotNull('Document_Metadata.value')
         .andWhereRaw(
           `string_to_array(replace("Document_Metadata"."value", '-lts', ''), '.')::int[] > string_to_array(?, '.')::int[]`,
@@ -354,6 +410,16 @@ const createPlatformIdentifierFilterHandler = (): FilterHandler => ({
   addWhere: (qb, _type, values) => {
     if (!values.length) return;
     qb.whereIn('platform_identifier', values);
+  },
+});
+
+const NULL_FILTER_VALUE = 'null';
+
+const createParentIdFilterHandler = (): FilterHandler => ({
+  key: DeploymentRequestFilterKey.ParentId,
+  addWhere: (qb, _type, values) => {
+    if (!values.includes(NULL_FILTER_VALUE)) return;
+    qb.whereNull('DeploymentRequest.parent_id');
   },
 });
 
@@ -419,6 +485,7 @@ const filterHandlers: Record<string, FilterHandler> = {
   [FilterKey.ProductVersion]: createProductVersionFilter(),
   [DeploymentRequestFilterKey.PlatformIdentifier]:
     createPlatformIdentifierFilterHandler(),
+  [DeploymentRequestFilterKey.ParentId]: createParentIdFilterHandler(),
 };
 
 const getFilterHandler = (key: string): FilterHandler => {
@@ -509,6 +576,18 @@ export const applySearch = async <T extends object>(
             .whereRaw('"Object_UseCase"."object_id" = "Document"."id"')
             .andWhereILike('UseCase.name', `%${searchTerm}%`);
         });
+        qb.orWhereExists(function () {
+          this.select(dbRaw('1'))
+            .from('Object_SolutionCategory')
+            .join(
+              'SolutionCategory',
+              'SolutionCategory.id',
+              '=',
+              'Object_SolutionCategory.solution_category_id'
+            )
+            .whereRaw('"Object_SolutionCategory"."object_id" = "Document"."id"')
+            .andWhereILike('SolutionCategory.name', `%${searchTerm}%`);
+        });
       }
       qb.orWhereILike(`${type}.${first}`, `%${normalizedSearchTerm}%`);
       others.forEach((i) =>
@@ -584,7 +663,7 @@ const applyLogicalFilterWhere = (
   }
 };
 
-const applyLogicalFilter = (
+export const applyLogicalFilter = (
   type: DatabaseType,
   qb: Knex.QueryBuilder,
   logicalFilter?: LogicalFilterInput
@@ -609,7 +688,7 @@ export const paginate = async <T extends object, U>(
     logicalFilters,
     searchTerm,
   } = pagination;
-  const currentOffset = after ? Number(atob(after)) : 0;
+  const currentOffset = decodeOffsetCursor(after);
   queryContext.queryContext({
     ...queryContext.queryContext(),
     ...pagination,

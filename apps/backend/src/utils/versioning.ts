@@ -41,9 +41,12 @@ export const compareVersions = (a: string, b: string) => {
   return aIsLts ? 1 : -1;
 };
 
+const normalizeLtsVersion = (version: string): string =>
+  version.replace(/-lts(\d+)$/, '-lts.$1');
+
 const compareLtsVersions = (a: string, b: string) => {
-  const splittedA = a.split('.');
-  const splittedB = b.split('.');
+  const splittedA = normalizeLtsVersion(a).split('.');
+  const splittedB = normalizeLtsVersion(b).split('.');
   const aMajorVersion = +(splittedA[0] ?? 0);
   const bMajorVersion = +(splittedB[0] ?? 0);
 

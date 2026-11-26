@@ -1,18 +1,16 @@
-import { TableTuneIcon } from '@filigran/icon';
+import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuPortal,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-  DropdownMenuTrigger,
-} from '@filigran/ui';
-import { Button } from '@filigran/ui/servers';
-import { useTranslations } from 'next-intl';
-import { useMemo } from 'react';
+  IconButton,
+  Menu,
+  MenuContent,
+  MenuItem,
+  MenuSub,
+  MenuSubContent,
+  MenuSubTrigger,
+  MenuTrigger,
+} from '@filigran/design-system';
+import { TableTuneIcon } from '@filigran/icon';
 
 interface PaginationManageDropdownProps {
   pageSize: number;
@@ -23,44 +21,39 @@ export const PaginationManageDropdown = ({
   onSetPageSize,
   pageSize,
 }: PaginationManageDropdownProps) => {
-  const t = useTranslations();
-  const dropdownItems = useMemo(() => {
-    return [50, 100, 200, 300, 500].map((size) => (
-      <DropdownMenuRadioItem
-        value={String(size)}
-        key={size}>
-        {size}
-      </DropdownMenuRadioItem>
-    ));
-  }, []);
+  const t = useTranslate();
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="tertiary"
-          size="icon"
+    <Menu>
+      <MenuTrigger asChild>
+        <IconButton
+          {...analyticsId('list_settings_open')}
+          priority="tertiary"
           className="h-9 w-9 rounded-none"
-          aria-label={t('GenericActions.Paginate.Manage')}>
-          <TableTuneIcon className="h-[1.125rem] w-[1.125rem]" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuSub>
-          <DropdownMenuSubTrigger>
+          aria-label={t('GenericActions.Paginate.Manage')}
+          icon={<TableTuneIcon className="h-[1.125rem] w-[1.125rem]" />}
+        />
+      </MenuTrigger>
+      <MenuContent
+        align="end"
+        className="layer-1">
+        <MenuSub>
+          <MenuSubTrigger {...analyticsId('list_page_sizes_open')}>
             {t('GenericActions.Paginate.RowsPerPage')}
-          </DropdownMenuSubTrigger>
-          <DropdownMenuPortal>
-            <DropdownMenuSubContent>
-              <DropdownMenuRadioGroup
-                value={String(pageSize)}
-                onValueChange={(pageSize) => onSetPageSize(Number(pageSize))}>
-                {dropdownItems}
-              </DropdownMenuRadioGroup>
-            </DropdownMenuSubContent>
-          </DropdownMenuPortal>
-        </DropdownMenuSub>
-      </DropdownMenuContent>
-    </DropdownMenu>
+          </MenuSubTrigger>
+          <MenuSubContent className="layer-1">
+            {[50, 100, 200, 300, 500].map((size) => (
+              <MenuItem
+                {...analyticsId('list_page_size_select')}
+                key={size}
+                selected={size === pageSize}
+                onSelect={() => onSetPageSize(size)}>
+                {size}
+              </MenuItem>
+            ))}
+          </MenuSubContent>
+        </MenuSub>
+      </MenuContent>
+    </Menu>
   );
 };

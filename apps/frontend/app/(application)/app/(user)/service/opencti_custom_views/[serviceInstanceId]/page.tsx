@@ -1,11 +1,7 @@
+import { fetchServiceInstanceById } from '@/components/service/service-instance.server';
 import { BreadcrumbNav } from '@/components/ui/BreadcrumbNav';
-import { serverFetchGraphQL } from '@/relay/server-portal-api-fetch';
+import { getTranslate } from '@/hooks/get-translate';
 import { APP_PATH } from '@/utils/path/constant';
-import ServiceByIdQuery, {
-  serviceByIdQuery,
-} from '@generated/serviceByIdQuery.graphql';
-import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
-import { getTranslations } from 'next-intl/server';
 import PageLoader from './page-loader';
 
 interface ServiceCustomViewsPageProps {
@@ -15,12 +11,9 @@ interface ServiceCustomViewsPageProps {
 const Page = async ({ params }: ServiceCustomViewsPageProps) => {
   const { serviceInstanceId } = await params;
   const decodedServiceInstanceId = decodeURIComponent(serviceInstanceId);
-  const t = await getTranslations();
-  const response = await serverFetchGraphQL<serviceByIdQuery>(
-    ServiceByIdQuery,
-    {
-      service_instance_id: decodedServiceInstanceId,
-    }
+  const t = await getTranslate();
+  const serviceInstance = await fetchServiceInstanceById(
+    decodedServiceInstanceId
   );
 
   const breadcrumbs = [
@@ -29,26 +22,17 @@ const Page = async ({ params }: ServiceCustomViewsPageProps) => {
       href: `/${APP_PATH}`,
     },
     {
-      label:
-        (
-          response?.data
-            .serviceInstanceByIdAndGrantAccess as unknown as serviceInstance_fragment$data
-        )?.name ?? '',
+      label: serviceInstance?.name ?? '',
       original: true,
     },
   ];
 
   return (
     <>
-      {response ? (
+      {serviceInstance ? (
         <>
           <BreadcrumbNav value={breadcrumbs} />
-          <PageLoader
-            serviceInstance={
-              response.data
-                .serviceInstanceByIdAndGrantAccess as unknown as serviceInstance_fragment$data
-            }
-          />
+          <PageLoader serviceInstance={serviceInstance} />
         </>
       ) : (
         <h1>{t('Utils.ServiceNotFound')}</h1>

@@ -8,14 +8,15 @@ import { PlatformIdentifier } from '../__generated__/resolvers-types';
 import { MAIL_QUEUES, type MailJobData } from '../thirdparty/pgboss/mail.jobs';
 import { PgBossProducer } from '../thirdparty/pgboss/producer';
 import { logApp } from '../utils/app-logger.util';
-import {
-  MailTemplates,
-  PlatformIdentifierToString,
-  templateSubjects,
-} from './mail-template/mail';
+import { PlatformIdentifierToString } from '../utils/platform';
+import { MailTemplates, templateSubjects } from './mail-template/mail';
 
 Handlebars.registerHelper('eq', function (a, b) {
   return a === b;
+});
+
+Handlebars.registerHelper('includes', function (list, value) {
+  return Array.isArray(list) && list.includes(value);
 });
 
 const smtpOptions = config.get<TransportOptions>('smtp_options');
@@ -56,6 +57,32 @@ export const buildServiceLink = ({
   return `${config.get('base_url_front')}/app/service/${serviceDefinitionIdentifier}/${toGlobalId('ServiceInstance', serviceInstanceId)}`;
 };
 
+export const buildXtmPlatformTrialLink = () => {
+  return `${config.get('base_url_front')}/app/service/xtm-platform-trial`;
+};
+
+export const buildPendingUserActionLink = ({
+  action,
+  organizationId,
+  userId,
+}: {
+  action: 'approve' | 'deny';
+  organizationId: string;
+  userId: string;
+}) => {
+  const url = new URL(
+    '/redirect/handle-pending-user',
+    config.get<string>('base_url_front')
+  );
+  url.searchParams.set('action', action);
+  url.searchParams.set(
+    'organization_id',
+    toGlobalId('Organization', organizationId)
+  );
+  url.searchParams.set('user_id', toGlobalId('User', userId));
+  return url.toString();
+};
+
 export async function renderEmail<T extends keyof MailTemplates>(
   templateName: T,
   params: MailTemplates[T]
@@ -87,6 +114,13 @@ export async function renderEmail<T extends keyof MailTemplates>(
                 PlatformIdentifierToString[
                   params.platformIdentifier as PlatformIdentifier
                 ],
+            }
+          : {}),
+        ...('products' in params && Array.isArray(params.products)
+          ? {
+              products: (params.products as PlatformIdentifier[]).map(
+                (product) => PlatformIdentifierToString[product]
+              ),
             }
           : {}),
       }

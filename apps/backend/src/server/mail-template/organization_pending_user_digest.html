@@ -1,26 +1,116 @@
 {{#> layout}}
 <p style="margin: 0; line-height: 24px">
-  Dear {{adminName}},<br />
+  Dear {{#if adminName}}{{adminName}}{{else}}{{adminEmail}}{{/if}},<br />
   <br />
-  We would like to inform you that there have been {{userCount}}
-  {{requestLabel}} from users seeking to join your {{organizationName}}
-  organization:
+  You have received
+  <strong>{{userCount}} new user access {{requestLabel}}</strong> for your
+  organization.
 </p>
-<ul>
+{{#if users.length}}
+<p style="margin: 24px 0 0">
+  You can review and process each request directly from this email.
+</p>
+<table
+  width="100%"
+  cellpadding="0"
+  cellspacing="0"
+  border="0"
+  style="width: 100%; margin-top: 16px; border-collapse: collapse">
+  <tr>
+    <th
+      scope="col"
+      style="
+        padding: 8px 8px 8px 0;
+        border-bottom: 2px solid #cbd5e1;
+        text-align: left;
+        font-size: 12px;
+        font-weight: normal;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #64748b;
+      ">
+      User
+    </th>
+    <th
+      scope="col"
+      style="
+        padding: 8px 0;
+        border-bottom: 2px solid #cbd5e1;
+        text-align: right;
+        font-size: 12px;
+        font-weight: normal;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #64748b;
+      ">
+      Action
+    </th>
+  </tr>
   {{#each users}}
-  <li>{{this.firstName}} {{this.lastName}} ({{this.email}})</li>
+  <tr>
+    <td
+      style="
+        padding: 12px 8px 12px 0;
+        border-bottom: 1px solid #cbd5e1;
+        font-size: 14px;
+        line-height: 20px;
+        vertical-align: middle;
+      ">
+      <strong>{{this.firstName}} {{this.lastName}}</strong><br />
+      {{this.email}}
+    </td>
+    <td
+      style="
+        padding: 12px 0;
+        border-bottom: 1px solid #cbd5e1;
+        text-align: right;
+        white-space: nowrap;
+        vertical-align: middle;
+      ">
+      <a
+        href="{{this.approveLink}}"
+        style="
+          color: #f4f4f6;
+          background-color: #001bdb;
+          display: inline-block;
+          border-radius: 4px;
+          padding: 8px 16px;
+          font-size: 14px;
+          line-height: 1;
+          font-weight: 600;
+          text-decoration: none;
+        ">
+        Approve
+      </a>
+      <a
+        href="{{this.denyLink}}"
+        style="
+          color: #001bdb;
+          background-color: #ffffff;
+          display: inline-block;
+          border: 1px solid #001bdb;
+          border-radius: 4px;
+          margin-left: 8px;
+          padding: 7px 15px;
+          font-size: 14px;
+          line-height: 1;
+          font-weight: 600;
+          text-decoration: none;
+        ">
+        Deny
+      </a>
+    </td>
+  </tr>
   {{/each}}
-</ul>
-<p>
-  <br />
-  <br />
-  These requests are currently pending your review. Please log in to your
-  account to review and approve or decline the requests as appropriate.
-  <br /><br />
-  Thank you for your understanding.
+</table>
+{{/if}}
+<p style="margin: 24px 0 0">
+  Alternatively, you can
+  <a href="{{ base_url_front }}/app/manage/user?pendingUsers">sign in here</a>
+  to manage all pending requests.
 </p>
 <p style="margin: 0; padding-top: 16px">
-  Best regards, <br />
+  Thank you,<br />
   <strong>The Filigran Team</strong>
 </p>
 <div

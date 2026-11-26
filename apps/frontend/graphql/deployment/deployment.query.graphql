@@ -1,0 +1,129 @@
+fragment TrialsProduct on DeploymentRequest {
+  id
+  platform_identifier
+  hub_status
+  platform_id
+  platform_url
+  url
+}
+
+fragment TrialsRow on DeploymentRequest {
+  id
+  service_instance_id
+  ordering
+  hub_status
+  requester_email
+  organization_name
+  region
+  request_date
+  start_date
+  end_date
+  cancellation_date
+  cancellation_user_email
+  cancellation_reason
+  children {
+    ...TrialsProduct
+  }
+}
+
+fragment TrialsQuota on DeploymentAvailability {
+  id
+  region
+  availableCount
+  capacity
+}
+
+query TrialsList(
+  $count: Int!
+  $cursor: ID
+  $orderBy: DeploymentRequestOrdering!
+  $orderMode: OrderingMode!
+  $filters: [DeploymentRequestFilter!]
+  $searchTerm: String
+  $searchRegions: [DeploymentRequestPlatformRegion!]
+) {
+  deploymentRequestsList(
+    first: $count
+    after: $cursor
+    orderBy: $orderBy
+    orderMode: $orderMode
+    filters: $filters
+    searchTerm: $searchTerm
+    searchRegions: $searchRegions
+  ) {
+    totalCount
+    edges {
+      node {
+        ...TrialsRow
+      }
+    }
+  }
+}
+
+query TrialsQuotas {
+  deploymentRequestsAvailable {
+    ...TrialsQuota
+  }
+}
+
+fragment XtmPlatformBundleProduct on DeploymentRequest {
+  platform_identifier
+  service_instance_id
+  url
+  service_instance {
+    name
+  }
+  registered_platform {
+    status
+    last_connectivity_check
+    url
+    myGroups {
+      id
+      name
+    }
+  }
+}
+
+fragment XtmPlatformBundleDetails on DeploymentRequest {
+  id
+  service_instance_id
+  organization_name
+  start_date
+  end_date
+  hub_status
+  requester_email
+  request_date
+  cancellation_date
+  children {
+    ...XtmPlatformBundleProduct
+  }
+}
+
+query XtmPlatformBundle {
+  xtmPlatformBundle {
+    ...XtmPlatformBundleDetails
+  }
+}
+
+fragment XtmoneIntegrationStatusEntry on XtmoneIntegrationStatusEntry {
+  status
+  connected
+  last_checked_at
+}
+
+fragment XtmoneIntegrationStatus on XtmoneIntegrationStatus {
+  opencti {
+    ...XtmoneIntegrationStatusEntry
+  }
+  openaev {
+    ...XtmoneIntegrationStatusEntry
+  }
+  linked
+  last_checked_at
+}
+
+query XtmonePlatformIntegrationStatus($serviceInstanceId: ServiceInstanceId!) {
+  xtmonePlatformIntegrationStatus(serviceInstanceId: $serviceInstanceId) {
+    ...XtmoneIntegrationStatus
+  }
+}

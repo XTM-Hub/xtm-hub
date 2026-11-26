@@ -43,6 +43,14 @@ export const TestPlatformConfigurationHelper = {
       expect(platformConfiguration).toBeDefined();
       return platformConfiguration!;
     },
+    update: async (
+      field: PlatformConfigurationMutator,
+      data: PlatformConfigurationMutator
+    ) => {
+      await db<PlatformConfigurationModel>('PlatformConfiguration')
+        .where(field)
+        .update(data);
+    },
     delete: async (field: PlatformConfigurationMutator) => {
       await db<PlatformConfigurationModel>('PlatformConfiguration')
         .where(field)

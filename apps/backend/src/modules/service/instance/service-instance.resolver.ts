@@ -62,13 +62,14 @@ const resolvers: Resolvers = {
     serviceInstanceLinksByTags: async (_, { tags }) => {
       return ServiceInstanceApp.loadLinkServiceInstancesByTags(tags);
     },
-    serviceInstanceByIdAndGrantAccess: async (_, { service_instance_id }) => {
-      return ServiceInstanceApp.loadServiceInstanceAndGrantAccess(
-        service_instance_id
-      );
-    },
     serviceInstanceById: async (_, { service_instance_id }) => {
-      return ServiceInstanceApp.loadServiceInstance(service_instance_id);
+      try {
+        return await ServiceInstanceApp.loadServiceInstance(
+          service_instance_id
+        );
+      } catch (error) {
+        throw mapToGraphQLError(error);
+      }
     },
     seoServiceInstances: async () => {
       return ServiceInstanceApp.loadSeoServiceInstances();
@@ -97,13 +98,12 @@ const resolvers: Resolvers = {
         throw mapToGraphQLError(error);
       }
     },
-    updatePlatformServiceMetadata: async (_, { input, document }, context) => {
+    updatePlatformServiceMetadata: async (_, { input }, context) => {
       try {
         return await ServiceInstanceApp.updatePlatformServiceMetadata(
           context.user,
           input.serviceInstanceId,
-          input,
-          document
+          input
         );
       } catch (error) {
         throw mapToGraphQLError(

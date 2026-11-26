@@ -12,6 +12,31 @@ const restrictedGlobalTestMocks = new Set([
   '@/hooks/use-is-feature-enabled',
 ]);
 
+const filigranUiImportPattern = {
+  group: ['@filigran/ui', '@filigran/ui/*'],
+  message: 'Import from `@filigran/design-system` or `@/components/ui/`.',
+};
+
+const deepRelativeImportRestriction = {
+  selector: 'ImportDeclaration[source.value=/^(\\.\\.\\/){2,}/]',
+  message: "Avoid deep relative imports. Use '@/...'.",
+};
+
+const clickableComponentNamePattern =
+  '/^(?:button|Button|IconButton|MenuItem|MenuSubTrigger|TabsTrigger|NavbarItem|NavbarSubmenuItem|ButtonGroupItem|IconActionsItem|Link|SheetTrigger|Switch|AccordionTrigger|SelectTrigger|ComboboxTrigger|MenuTrigger|PopoverTrigger|DialogTrigger|DialogClose)$/';
+
+const untaggedClickableRestriction = {
+  selector: [
+    'JSXOpeningElement',
+    `:matches([name.name=${clickableComponentNamePattern}], [name.name='a']:has(> JSXAttribute[name.name='href']), [name.name=/^[a-z]/]:has(> JSXAttribute[name.name='onClick']), :has(> JSXAttribute[name.name='role']:matches([value.value=/^(?:button|link|menuitem|tab)$/], [value.expression.value=/^(?:button|link|menuitem|tab)$/])))`,
+    ':not(:has(> JSXAttribute[name.name=/^(?:analyticsId|\\w+AnalyticsId|asChild)$/]))',
+    ":not(:has(> JSXAttribute[name.name='disabled']:matches(:not([value]), [value.expression.value=true])))",
+    ":not(:has(> JSXSpreadAttribute:matches([argument.callee.name='analyticsId'], [argument.left.callee.name='analyticsId'], [argument.right.callee.name='analyticsId'], [argument.consequent.callee.name='analyticsId'], [argument.alternate.callee.name='analyticsId'])))",
+  ].join(''),
+  message:
+    "Spread analyticsId() from '@/lib/analytics/analytics.ids' on this clickable element, or pass it an analyticsId prop.",
+};
+
 const getStringLiteralValue = (node) => {
   if (node?.type === 'Literal' && typeof node.value === 'string') {
     return node.value;
@@ -258,8 +283,60 @@ const containsFixedTailwindColorClass = (classNameSourceCodeValue) =>
     );
   });
 
+// The legacy filigran-ui theme generated these utilities; without it they render nothing, silently.
+const legacySpacingClassPattern =
+  /^-?(?:(?:p[xytrblse]?|m[xytrblse]?|gap(?:-[xy])?|space-[xy]|inset(?:-[xy])?|top|right|bottom|left|start|end|translate-[xy]|scroll-[mp][xytrblse]?|indent)-(?:xxs|xs|s|m|l|xl|xxl)|(?:w|h|size|min-[wh]|max-[wh]|basis)-(?:xxs|s|m|l|xxl))$/u;
+const legacyTypographyClassPattern =
+  /^(?:txt-[a-z0-9-]+|heading-(?:2xl|xl|lg|md|sm|xs)|header-jumbo|(?:text-)?content-body-[a-z-]+|text-header-heading-[a-z0-9]+|font-(?:title|body)|tracking-default)$/u;
+const legacyColourClassPattern =
+  /^(?:bg|text|border(?:-[xytrblse])?|ring(?:-offset)?|outline|fill|stroke|from|via|to|divide|shadow|decoration|accent|caret)-(?:border|border-(?:strong|medium-strong|medium|medium-light|light|focus)|input|ring|background|foreground|primary|primary-foreground|secondary|secondary-foreground|destructive|destructive-foreground|muted|muted-foreground|popover|popover-foreground|card|card-foreground|hover|text|text-[a-z-]+|page-background|box-background|menu-active|light|(?:gray|darkblue|blue|turquoise|green|red|orange|yellow|purple|grayblue|black|white)(?:-[0-9]+)?|ai(?:-[a-z]+)?|ee(?:-[a-z-]+)?|severity(?:-[a-z]+)?|alert-[a-z]+-[a-z]+|ds-[a-z0-9-]+|entity-[a-z]+|elevation-(?:background|surface|border|bg)[a-z0-9-]*|filigran-brand-primary-transparency|filigran-ia-(?:main|secondary-transparency)|feedback-[a-z]+-secondary-transparency|entities-[a-z-]+-transparency|input-bg-[a-z]+|gradient-(?:background|layer-0-white|layer-0-layer-1|legacy-focus))(?:\/[0-9]+)?$/u;
+
+const findLegacyThemeClass = (value) =>
+  value.split(/\s+/u).find((token) => {
+    const baseClass = token
+      .slice(token.lastIndexOf(':') + 1)
+      .replace(/^!/u, '');
+    return (
+      legacySpacingClassPattern.test(baseClass) ||
+      legacyTypographyClassPattern.test(baseClass) ||
+      legacyColourClassPattern.test(baseClass)
+    );
+  });
+
 const localThemeRulesPlugin = {
   rules: {
+    'no-legacy-theme-class': {
+      meta: {
+        type: 'problem',
+        docs: {
+          description:
+            'Disallow the utility classes only the removed legacy filigran-ui theme generated.',
+        },
+        schema: [],
+      },
+      create(context) {
+        const report = (node, value) => {
+          const legacyClass = findLegacyThemeClass(value);
+          if (legacyClass) {
+            context.report({
+              node,
+              message: `\`${legacyClass}\` comes from the removed legacy theme and renders nothing. Use the @filigran/design-system token or Tailwind's numeric class.`,
+            });
+          }
+        };
+
+        return {
+          Literal(node) {
+            if (typeof node.value === 'string') {
+              report(node, node.value);
+            }
+          },
+          TemplateElement(node) {
+            report(node, node.value.cooked ?? node.value.raw);
+          },
+        };
+      },
+    },
     'no-fixed-tailwind-color': {
       meta: {
         type: 'problem',
@@ -356,9 +433,42 @@ const eslintConfig = [
       ],
       'no-restricted-syntax': [
         'error',
+        deepRelativeImportRestriction,
+        untaggedClickableRestriction,
+      ],
+      'no-restricted-imports': [
+        'error',
         {
-          selector: 'ImportDeclaration[source.value=/^(\\.\\.\\/){2,}/]',
-          message: "Avoid deep relative imports. Use '@/...'.",
+          paths: [
+            {
+              name: 'next-intl',
+              importNames: ['useTranslations'],
+              message:
+                "Use useTranslate from '@/hooks/use-translate' in client code, or getTranslate from '@/hooks/get-translate' in async Server Components, so texts stay editable in context.",
+            },
+          ],
+          patterns: [filigranUiImportPattern],
+        },
+      ],
+    },
+  },
+  {
+    // The editing UI must never mark its own labels as editable.
+    files: [
+      'src/hooks/use-translate.ts',
+      'src/components/content-translation/ContentEditDialog.tsx',
+      'src/components/content-translation/DraftsConfirmDialog.tsx',
+      'src/components/content-translation/EditionModeBanner.tsx',
+      'src/components/content-translation/ExitEditModeDialog.tsx',
+      'src/components/menu/EditTranslationsButton.tsx',
+      // Tests override the shared next-intl mock.
+      '**/*.test.{ts,tsx}',
+    ],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [filigranUiImportPattern],
         },
       ],
     },
@@ -422,11 +532,22 @@ const eslintConfig = [
     },
   },
   {
+    files: ['**/*.{ts,tsx}'],
+    ignores: ['**/__generated__/**'],
+    plugins: {
+      'xtm-hub-theme-rules': localThemeRulesPlugin,
+    },
+    rules: {
+      'xtm-hub-theme-rules/no-legacy-theme-class': 'error',
+    },
+  },
+  {
     files: ['**/*.test.{ts,tsx}'],
     plugins: {
       'xtm-hub-test-rules': localTestRulesPlugin,
     },
     rules: {
+      'no-restricted-syntax': ['error', deepRelativeImportRestriction],
       'xtm-hub-test-rules/no-remock-shared-globals': 'error',
     },
   },

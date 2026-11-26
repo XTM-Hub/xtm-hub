@@ -1,0 +1,6 @@
+mutation FeatureVote($feature_id: VotableFeatureId!) {
+  voteForFeature(feature_id: $feature_id) {
+    id
+    has_my_vote
+  }
+}

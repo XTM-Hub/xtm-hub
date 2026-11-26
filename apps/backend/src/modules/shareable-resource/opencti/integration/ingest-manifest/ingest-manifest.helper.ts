@@ -3,7 +3,6 @@ import { Readable } from 'stream';
 import z from 'zod';
 import {
   DocumentSourceType,
-  IntegrationSubType,
   IntegrationType,
   LicenseType,
 } from '../../../../../__generated__/resolvers-types';
@@ -39,7 +38,6 @@ const ContractSchema = z.object({
   use_cases: z.array(z.string()), // At least one use case
   verified: z.boolean(),
   container_image: z.string().min(1),
-  container_type: z.nativeEnum(IntegrationSubType),
   source_code: z.string().url(),
   subscription_link: z.string().url().or(z.literal('')).nullish(),
   manager_supported: z.boolean(),
@@ -166,7 +164,6 @@ export const IngestManifestHelper = {
           container_image: validContract.container_image,
           product_version: manifestData.version,
           verified: validContract.verified,
-          integration_subtype: validContract.container_type,
           integration_type: IntegrationType.Connector,
           source_code: validContract.source_code,
           subscription_link: validContract.subscription_link,

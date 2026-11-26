@@ -1,74 +1,52 @@
-import {
-  organizationFetch,
-  organizationItemFragment,
-  organizationQuery,
-  organizationsFragment,
-} from '@/components/organization/organization.graphql';
-import { organizationItem_fragment$key } from '@generated/organizationItem_fragment.graphql';
-import {
-  organizationList_organizations$data,
-  organizationList_organizations$key,
-} from '@generated/organizationList_organizations.graphql';
-import { organizationQuery as organizationQueryGraphql } from '@generated/organizationQuery.graphql';
+import { portalGraphqlClient } from '@/lib/graphql-client';
 import {
   OrderingMode,
-  organizationSelectQuery,
-} from '@generated/organizationSelectQuery.graphql';
-import { subscription_fragment$data } from '@generated/subscription_fragment.graphql';
-import { OrganizationOrdering } from '@graphql/generated';
+  type OrganizationItemFragment,
+  OrganizationOrdering,
+  useOrganizationsListQuery,
+} from '@graphql/generated';
+import { keepPreviousData } from '@tanstack/react-query';
 import { useMemo } from 'react';
-import {
-  useFragment,
-  useLazyLoadQuery,
-  useRefetchableFragment,
-} from 'react-relay';
 
-interface OrganizationParamsQuery {
-  count: number;
-  orderBy: OrganizationOrdering;
-  orderMode: OrderingMode;
+interface UseOrganizationsParams {
   searchTerm?: string;
+  count?: number;
+  cursor?: string;
+  orderBy?: OrganizationOrdering;
+  orderMode?: OrderingMode;
 }
 
-export const getOrganization = (organizationId: string) => {
-  const organizationData = useLazyLoadQuery<organizationQueryGraphql>(
-    organizationQuery,
-    { id: organizationId }
-  );
-
-  return useFragment<organizationItem_fragment$key>(
-    organizationItemFragment,
-    organizationData.organization
-  );
-};
-
-export const getOrganizations = ({
+export const useOrganizations = ({
   searchTerm = '',
   count = 50,
+  cursor,
   orderBy = OrganizationOrdering.Name,
-  orderMode = 'asc',
-}: Partial<OrganizationParamsQuery> = {}) => {
-  const organizationData = useLazyLoadQuery<organizationSelectQuery>(
-    organizationFetch,
-    {
-      searchTerm,
-      count,
-      orderBy,
-      orderMode,
-    }
+  orderMode = OrderingMode.Asc,
+}: UseOrganizationsParams = {}) => {
+  // Keeps the previous result while other variables load: isPlaceholderData flags it as stale.
+  const { data, isLoading, isError, isPlaceholderData } =
+    useOrganizationsListQuery(
+      portalGraphqlClient,
+      { searchTerm, count, cursor: cursor ?? null, orderBy, orderMode },
+      { placeholderData: keepPreviousData }
+    );
+
+  const organizations = useMemo<OrganizationItemFragment[]>(
+    () => (data?.organizations.edges ?? []).map(({ node }) => node),
+    [data]
   );
-  const [data, refetch] = useRefetchableFragment<
-    organizationSelectQuery,
-    organizationList_organizations$key
-  >(organizationsFragment, organizationData);
-  return { organizationsData: data, refetch };
+
+  return {
+    organizations,
+    totalCount: data?.organizations.totalCount ?? 0,
+    isLoading,
+    isError,
+    isPlaceholderData,
+  };
 };
 
-interface AvailableOrganization {
-  readonly domains: ReadonlyArray<string> | null | undefined;
-  readonly id: string;
-  readonly name: string;
-  readonly personal_space: boolean;
+interface SubscribedOrganizationRef {
+  readonly organization?: { readonly id: string } | null;
 }
 
 /**
@@ -77,10 +55,10 @@ interface AvailableOrganization {
  * is excluded from filtering so it remains selectable.
  */
 export const useUnsubscribedOrganizations = (
-  organizationsData: organizationList_organizations$data,
-  subscriptions: subscription_fragment$data[],
-  subscriptionToEdit?: subscription_fragment$data
-): AvailableOrganization[] => {
+  organizations: OrganizationItemFragment[],
+  subscriptions: ReadonlyArray<SubscribedOrganizationRef>,
+  subscriptionToEdit?: SubscribedOrganizationRef
+): OrganizationItemFragment[] => {
   return useMemo(() => {
     const subscribedOrganizationIds = new Set(
       subscriptions
@@ -92,8 +70,6 @@ export const useUnsubscribedOrganizations = (
       subscribedOrganizationIds.delete(subscriptionToEdit.organization.id);
     }
 
-    return organizationsData.organizations.edges
-      .map(({ node }) => node)
-      .filter(({ id }) => !subscribedOrganizationIds.has(id));
-  }, [organizationsData, subscriptions, subscriptionToEdit]);
+    return organizations.filter(({ id }) => !subscribedOrganizationIds.has(id));
+  }, [organizations, subscriptions, subscriptionToEdit]);
 };

@@ -13,6 +13,9 @@ metadata:
     nginx.ingress.kubernetes.io/proxy-send-timeout: "1800"
     nginx.ingress.kubernetes.io/proxy-stream-timeout: "1800"
     nginx.ingress.kubernetes.io/send_timeout: "1800"
+    {{- if and (eq .Values.ingressClass "nginx") (not (hasKey .Values.kibana.ingress.annotations "nginx.ingress.kubernetes.io/whitelist-source-range")) }}
+    nginx.ingress.kubernetes.io/whitelist-source-range: {{ .Values.kibana.ingress.whitelistSourceRange }}
+    {{- end }}
     {{- with .Values.kibana.ingress.annotations }}
     {{- toYaml . | nindent 4 }}
     {{- end }}

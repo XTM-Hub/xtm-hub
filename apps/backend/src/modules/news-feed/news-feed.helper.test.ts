@@ -1,6 +1,42 @@
-import { describe, expect, it } from 'vitest';
-import { PlatformIdentifier } from '../../__generated__/resolvers-types';
-import { doesPlatformSupportNewsFeed } from './news-feed.helper';
+import config from 'config';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import {
+  IntegrationType,
+  NewsFeedItemType,
+  NewsFeedUtmContent,
+  PlatformIdentifier,
+  ServiceDefinitionIdentifier,
+} from '../../__generated__/resolvers-types';
+import Document from '../../model/kanel/public/Document';
+import { RequiredPlatformVersions } from '../../utils/required-platform-version';
+import {
+  doesPlatformSupportBlogpostNewsFeed,
+  doesPlatformSupportGithubReleaseNewsFeed,
+  doesPlatformSupportNewsFeed,
+  NewsFeedHelper,
+} from './news-feed.helper';
+import {
+  NEWS_FEED_REDIRECT_PATH_PREFIX,
+  NEWS_FEED_UTM_CONTENT_FALLBACK,
+  newsFeedUtmContentMapping,
+} from './news-feed.model';
+
+vi.mock('config', async (importOriginal) => {
+  const mod = await importOriginal<{ default: typeof config }>();
+  return {
+    default: {
+      get: vi.fn(mod.default.get.bind(mod.default)),
+      has: mod.default.has.bind(mod.default),
+    },
+  };
+});
+
+const mockConfigGet = vi.mocked(config.get);
+
+const NEWS_FEED_ITEM_ID = '4f1c0d52-8b6e-4c43-9f0e-6d2a1b7c3e55';
+const BLOGPOST_REQUIRED_VERSION = '7.260901.0';
+const GITHUB_RELEASE_REQUIRED_VERSION = '7.261201.0';
+const GITHUB_RELEASE_LTS_REQUIRED_VERSION = '7.260309.0-lts.8';
 
 describe('news-feed.helper', () => {
   describe('doesPlatformSupportNewsFeed', () => {
@@ -35,10 +71,529 @@ describe('news-feed.helper', () => {
       ).toBe(false);
     });
 
-    it('returns true when no minimum is configured for the identifier', () => {
+    it('returns false when news feed is disabled (null required version) for the identifier', () => {
       expect(
-        doesPlatformSupportNewsFeed(PlatformIdentifier.Openaev, '1.0.0')
+        doesPlatformSupportNewsFeed(PlatformIdentifier.Xtmone, '99.0.0')
+      ).toBe(false);
+    });
+  });
+
+  describe('doesPlatformSupportBlogpostNewsFeed', () => {
+    const originalBlogpostSupport =
+      RequiredPlatformVersions.NewsFeedBlogpostSupport;
+
+    const replaceRequiredVersion = (requiredVersion: string | null) => {
+      RequiredPlatformVersions.NewsFeedBlogpostSupport = {
+        [PlatformIdentifier.Opencti]: requiredVersion,
+        [PlatformIdentifier.Openaev]: null,
+        [PlatformIdentifier.Xtmone]: null,
+      };
+    };
+
+    afterEach(() => {
+      RequiredPlatformVersions.NewsFeedBlogpostSupport =
+        originalBlogpostSupport;
+    });
+
+    it('is enabled from OpenCTI 7.261106.0 and the OpenAEV placeholder 3.261118.0, and disabled for XTM One in the shipped configuration', () => {
+      // Given the shipped configuration
+      expect(RequiredPlatformVersions.NewsFeedBlogpostSupport).toEqual({
+        [PlatformIdentifier.Opencti]: '7.261106.0',
+        [PlatformIdentifier.Openaev]: '3.261118.0',
+        [PlatformIdentifier.Xtmone]: null,
+      });
+
+      // Then OpenCTI follows the release version
+      expect(
+        doesPlatformSupportBlogpostNewsFeed(
+          PlatformIdentifier.Opencti,
+          '7.261106.0'
+        )
       ).toBe(true);
+      expect(
+        doesPlatformSupportBlogpostNewsFeed(
+          PlatformIdentifier.Opencti,
+          '7.261105.0'
+        )
+      ).toBe(false);
+      // And OpenAEV follows its placeholder version
+      expect(
+        doesPlatformSupportBlogpostNewsFeed(
+          PlatformIdentifier.Openaev,
+          '3.261118.0'
+        )
+      ).toBe(true);
+      expect(
+        doesPlatformSupportBlogpostNewsFeed(
+          PlatformIdentifier.Openaev,
+          '3.261117.0'
+        )
+      ).toBe(false);
+      // And XTM One never gets blogposts, whatever its version
+      expect(
+        doesPlatformSupportBlogpostNewsFeed(PlatformIdentifier.Xtmone, '99.0.0')
+      ).toBe(false);
+    });
+
+    it.each`
+      description              | requiredVersion              | version                      | expected
+      ${'null required'}       | ${null}                      | ${'8.0.0'}                   | ${false}
+      ${'below'}               | ${BLOGPOST_REQUIRED_VERSION} | ${'7.260831.0'}              | ${false}
+      ${'equal'}               | ${BLOGPOST_REQUIRED_VERSION} | ${BLOGPOST_REQUIRED_VERSION} | ${true}
+      ${'above'}               | ${BLOGPOST_REQUIRED_VERSION} | ${'7.260902.0'}              | ${true}
+      ${'above (next major)'}  | ${BLOGPOST_REQUIRED_VERSION} | ${'8.0.0'}                   | ${true}
+      ${'invalid'}             | ${BLOGPOST_REQUIRED_VERSION} | ${'not-a-version'}           | ${false}
+      ${'missing (null)'}      | ${BLOGPOST_REQUIRED_VERSION} | ${null}                      | ${false}
+      ${'missing (undefined)'} | ${BLOGPOST_REQUIRED_VERSION} | ${undefined}                 | ${false}
+    `(
+      'returns $expected for OpenCTI when the version is $description',
+      ({ requiredVersion, version, expected }) => {
+        replaceRequiredVersion(requiredVersion);
+
+        expect(
+          doesPlatformSupportBlogpostNewsFeed(
+            PlatformIdentifier.Opencti,
+            version
+          )
+        ).toBe(expected);
+      }
+    );
+
+    it('returns false for a platform without a required version even when the version is valid', () => {
+      replaceRequiredVersion(BLOGPOST_REQUIRED_VERSION);
+
+      expect(
+        doesPlatformSupportBlogpostNewsFeed(
+          PlatformIdentifier.Openaev,
+          '99.0.0'
+        )
+      ).toBe(false);
+    });
+  });
+
+  describe('doesPlatformSupportGithubReleaseNewsFeed', () => {
+    const originalGithubReleaseSupport =
+      RequiredPlatformVersions.NewsFeedGithubReleaseSupport;
+    const originalGithubReleaseLtsSupport =
+      RequiredPlatformVersions.NewsFeedGithubReleaseLtsSupport;
+
+    const replaceRequiredVersions = ({
+      nonLts,
+      lts,
+    }: {
+      nonLts: string | null;
+      lts: string | null;
+    }) => {
+      RequiredPlatformVersions.NewsFeedGithubReleaseSupport = {
+        [PlatformIdentifier.Opencti]: nonLts,
+        [PlatformIdentifier.Openaev]: null,
+        [PlatformIdentifier.Xtmone]: null,
+      };
+      RequiredPlatformVersions.NewsFeedGithubReleaseLtsSupport = {
+        [PlatformIdentifier.Opencti]: lts,
+        [PlatformIdentifier.Openaev]: null,
+        [PlatformIdentifier.Xtmone]: null,
+      };
+    };
+
+    afterEach(() => {
+      RequiredPlatformVersions.NewsFeedGithubReleaseSupport =
+        originalGithubReleaseSupport;
+      RequiredPlatformVersions.NewsFeedGithubReleaseLtsSupport =
+        originalGithubReleaseLtsSupport;
+    });
+
+    it.each([
+      ['a non-LTS', '99.0.0'],
+      ['an LTS', '99.0.0-lts.1'],
+    ])(
+      'should return false for %s OpenCTI version when the shipped configuration is used',
+      (_description, version) => {
+        // Given the shipped configuration, left untouched
+
+        // When
+        const result = doesPlatformSupportGithubReleaseNewsFeed(
+          PlatformIdentifier.Opencti,
+          version
+        );
+
+        // Then
+        expect(result).toBe(false);
+      }
+    );
+
+    it.each([
+      [
+        'a non-LTS version below the non-LTS gate',
+        GITHUB_RELEASE_REQUIRED_VERSION,
+        GITHUB_RELEASE_LTS_REQUIRED_VERSION,
+        '7.261130.0',
+        false,
+      ],
+      [
+        'a non-LTS version equal to the non-LTS gate',
+        GITHUB_RELEASE_REQUIRED_VERSION,
+        GITHUB_RELEASE_LTS_REQUIRED_VERSION,
+        GITHUB_RELEASE_REQUIRED_VERSION,
+        true,
+      ],
+      [
+        'an LTS version below the LTS gate',
+        GITHUB_RELEASE_REQUIRED_VERSION,
+        GITHUB_RELEASE_LTS_REQUIRED_VERSION,
+        '7.260309.0-lts.7',
+        false,
+      ],
+      [
+        'an LTS version equal to the LTS gate',
+        GITHUB_RELEASE_REQUIRED_VERSION,
+        GITHUB_RELEASE_LTS_REQUIRED_VERSION,
+        GITHUB_RELEASE_LTS_REQUIRED_VERSION,
+        true,
+      ],
+      [
+        'an inline LTS suffix below the LTS gate',
+        GITHUB_RELEASE_REQUIRED_VERSION,
+        GITHUB_RELEASE_LTS_REQUIRED_VERSION,
+        '7.260309.0-lts1',
+        false,
+      ],
+      [
+        'an inline LTS suffix equal to the LTS gate',
+        GITHUB_RELEASE_REQUIRED_VERSION,
+        GITHUB_RELEASE_LTS_REQUIRED_VERSION,
+        '7.260309.0-lts8',
+        true,
+      ],
+      // compareVersions ranks every LTS above every non-LTS: compared with the non-LTS gate, it would pass
+      [
+        'an LTS version while only the non-LTS gate is set',
+        GITHUB_RELEASE_REQUIRED_VERSION,
+        null,
+        '7.270101.0-lts.1',
+        false,
+      ],
+      [
+        'a non-LTS version while only the LTS gate is set',
+        null,
+        GITHUB_RELEASE_LTS_REQUIRED_VERSION,
+        '99.0.0',
+        false,
+      ],
+      [
+        'an LTS version at the LTS gate while the non-LTS gate is null',
+        null,
+        GITHUB_RELEASE_LTS_REQUIRED_VERSION,
+        GITHUB_RELEASE_LTS_REQUIRED_VERSION,
+        true,
+      ],
+      [
+        'a non-LTS version at the non-LTS gate while the LTS gate is null',
+        GITHUB_RELEASE_REQUIRED_VERSION,
+        null,
+        GITHUB_RELEASE_REQUIRED_VERSION,
+        true,
+      ],
+      [
+        'an invalid version',
+        GITHUB_RELEASE_REQUIRED_VERSION,
+        GITHUB_RELEASE_LTS_REQUIRED_VERSION,
+        'not-a-version',
+        false,
+      ],
+      [
+        'a null version',
+        GITHUB_RELEASE_REQUIRED_VERSION,
+        GITHUB_RELEASE_LTS_REQUIRED_VERSION,
+        null,
+        false,
+      ],
+    ])(
+      'should return the expected support for OpenCTI when the platform has %s',
+      (_description, nonLts, lts, version, expected) => {
+        // Given
+        replaceRequiredVersions({ nonLts, lts });
+
+        // When
+        const result = doesPlatformSupportGithubReleaseNewsFeed(
+          PlatformIdentifier.Opencti,
+          version
+        );
+
+        // Then
+        expect(result).toBe(expected);
+      }
+    );
+
+    it('should return false for a platform whose gates are null when the OpenCTI gates are set', () => {
+      // Given
+      replaceRequiredVersions({
+        nonLts: GITHUB_RELEASE_REQUIRED_VERSION,
+        lts: GITHUB_RELEASE_LTS_REQUIRED_VERSION,
+      });
+
+      // When
+      const result = doesPlatformSupportGithubReleaseNewsFeed(
+        PlatformIdentifier.Openaev,
+        '99.0.0'
+      );
+
+      // Then
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('getBlogpostLimit', () => {
+    afterEach(() => {
+      mockConfigGet.mockReset();
+    });
+
+    it('returns the default limit of 6', () => {
+      expect(NewsFeedHelper.getBlogpostLimit()).toBe(6);
+    });
+
+    it('returns the configured limit', () => {
+      mockConfigGet.mockImplementation((key: string) =>
+        key === 'news_feed.blogpost_limit' ? 3 : undefined
+      );
+
+      expect(NewsFeedHelper.getBlogpostLimit()).toBe(3);
+    });
+
+    it.each`
+      description         | value
+      ${'a string'}       | ${'6'}
+      ${'zero'}           | ${0}
+      ${'negative'}       | ${-1}
+      ${'not an integer'} | ${2.5}
+      ${'not finite'}     | ${Infinity}
+      ${'missing'}        | ${undefined}
+    `('throws when the configured limit is $description', ({ value }) => {
+      mockConfigGet.mockImplementation((key: string) =>
+        key === 'news_feed.blogpost_limit' ? value : undefined
+      );
+
+      expect(() => NewsFeedHelper.getBlogpostLimit()).toThrow(
+        /Invalid config "news_feed.blogpost_limit"/
+      );
+    });
+  });
+
+  describe('getNewsFeedConfiguration', () => {
+    it.each`
+      identifier                                             | expected | description
+      ${ServiceDefinitionIdentifier.OpenctiCustomDashboards} | ${true}  | ${'configured service definition'}
+      ${ServiceDefinitionIdentifier.OpenctiPlaybooks}        | ${true}  | ${'playbooks service definition'}
+      ${ServiceDefinitionIdentifier.OpenctiIntegrations}     | ${true}  | ${'integrations service definition'}
+      ${ServiceDefinitionIdentifier.OpenctiRegistration}     | ${false} | ${'registration identifier'}
+      ${ServiceDefinitionIdentifier.OpenaevScenarios}        | ${true}  | ${'openaev scenarios service definition'}
+    `(
+      'should return a configuration $expected for $description ($identifier)',
+      ({
+        identifier,
+        expected,
+      }: {
+        identifier: ServiceDefinitionIdentifier;
+        expected: boolean;
+      }) => {
+        const document = { id: 'doc-id' } as Document;
+        const configuration = NewsFeedHelper.getNewsFeedConfiguration(
+          identifier,
+          document
+        );
+        expect(configuration !== undefined).toBe(expected);
+      }
+    );
+
+    it('should return undefined for an integration document that is a connector', () => {
+      const document = {
+        id: 'doc-id',
+        integration_type: IntegrationType.Connector,
+      } as Document & { integration_type: IntegrationType };
+
+      const configuration = NewsFeedHelper.getNewsFeedConfiguration(
+        ServiceDefinitionIdentifier.OpenctiIntegrations,
+        document
+      );
+
+      expect(configuration).toBeUndefined();
+    });
+
+    it('should return a configuration for an integration document that is not a connector', () => {
+      const document = {
+        id: 'doc-id',
+        integration_type: IntegrationType.CsvFeed,
+      } as Document & { integration_type: IntegrationType };
+
+      const configuration = NewsFeedHelper.getNewsFeedConfiguration(
+        ServiceDefinitionIdentifier.OpenctiIntegrations,
+        document
+      );
+
+      expect(configuration).toEqual({
+        newsFeedType: NewsFeedItemType.ResourceIntegration,
+        platformIdentifier: PlatformIdentifier.Opencti,
+      });
+    });
+  });
+
+  describe('addUtmToUrlPath', () => {
+    const NEWS_FEED_UTM =
+      'utm_source=opencti&utm_medium=newsfeed&utm_campaign=hub_resources';
+
+    it.each`
+      type                                        | expectedContent
+      ${NewsFeedItemType.ResourceCustomDashboard} | ${'custom_dashboard'}
+      ${NewsFeedItemType.ResourceCustomView}      | ${'custom_view'}
+      ${NewsFeedItemType.ResourceIntegration}     | ${'integration'}
+      ${NewsFeedItemType.ResourcePlaybook}        | ${'playbook'}
+      ${NewsFeedItemType.ResourceScenario}        | ${'scenario'}
+      ${'UNKNOWN_TYPE'}                           | ${'other'}
+    `(
+      'should set utm_content=$expectedContent for type $type',
+      ({
+        type,
+        expectedContent,
+      }: {
+        type: NewsFeedItemType;
+        expectedContent: string;
+      }) => {
+        const result = NewsFeedHelper.addUtmToUrlPath({
+          urlPath: 'redirect/opencti_custom_dashboards',
+          type,
+          platformIdentifier: PlatformIdentifier.Opencti,
+        });
+
+        expect(result).toBe(
+          `redirect/opencti_custom_dashboards?${NEWS_FEED_UTM}&utm_content=${expectedContent}`
+        );
+      }
+    );
+
+    it.each`
+      urlPath                                                       | expected                                                                                               | description
+      ${'redirect/opencti_playbooks?document_id=RG9jdW1lbnQ6MQ=='}  | ${`redirect/opencti_playbooks?document_id=RG9jdW1lbnQ6MQ%3D%3D&${NEWS_FEED_UTM}&utm_content=playbook`} | ${'keeps existing query parameters'}
+      ${'/redirect/opencti_playbooks?document_id=abc#details'}      | ${`/redirect/opencti_playbooks?document_id=abc&${NEWS_FEED_UTM}&utm_content=playbook#details`}         | ${'keeps the leading slash and the fragment'}
+      ${'redirect/opencti_playbooks?utm_source=other&utm_medium=x'} | ${`redirect/opencti_playbooks?${NEWS_FEED_UTM}&utm_content=playbook`}                                  | ${'overwrites existing utm values without duplicating them'}
+    `(
+      'should tag the url path: $description',
+      ({ urlPath, expected }: { urlPath: string; expected: string }) => {
+        const result = NewsFeedHelper.addUtmToUrlPath({
+          urlPath,
+          type: NewsFeedItemType.ResourcePlaybook,
+          platformIdentifier: PlatformIdentifier.Opencti,
+        });
+
+        expect(result).toBe(expected);
+      }
+    );
+
+    it.each`
+      type                                        | expectedCampaign
+      ${NewsFeedItemType.ResourceCustomDashboard} | ${'hub_resources'}
+      ${NewsFeedItemType.ResourcePlaybook}        | ${'hub_resources'}
+      ${NewsFeedItemType.BlogPost}                | ${'blog_posts'}
+      ${'UNKNOWN_TYPE'}                           | ${'hub_resources'}
+    `(
+      'should set utm_campaign=$expectedCampaign for type $type',
+      ({
+        type,
+        expectedCampaign,
+      }: {
+        type: NewsFeedItemType;
+        expectedCampaign: string;
+      }) => {
+        const result = NewsFeedHelper.addUtmToUrlPath({
+          urlPath: 'redirect/opencti_custom_dashboards',
+          type,
+          platformIdentifier: PlatformIdentifier.Opencti,
+        });
+
+        expect(
+          new URLSearchParams(result.split('?')[1]).get('utm_campaign')
+        ).toBe(expectedCampaign);
+      }
+    );
+
+    it('should be idempotent', () => {
+      const params = {
+        type: NewsFeedItemType.ResourceIntegration,
+        platformIdentifier: PlatformIdentifier.Opencti,
+      };
+      const once = NewsFeedHelper.addUtmToUrlPath({
+        urlPath: 'redirect/opencti_integrations?document_id=abc',
+        ...params,
+      });
+
+      const twice = NewsFeedHelper.addUtmToUrlPath({
+        urlPath: once,
+        ...params,
+      });
+
+      expect(twice).toBe(once);
+    });
+
+    it('should use the platform identifier as utm_source', () => {
+      const result = NewsFeedHelper.addUtmToUrlPath({
+        urlPath: 'redirect/openaev_scenarios',
+        type: NewsFeedItemType.ResourceCustomDashboard,
+        platformIdentifier: PlatformIdentifier.Openaev,
+      });
+
+      expect(new URLSearchParams(result.split('?')[1]).get('utm_source')).toBe(
+        'openaev'
+      );
+    });
+  });
+  describe('buildRedirectUrlPath', () => {
+    it('should return the relative redirect path of the news feed item', () => {
+      // When
+      const result = NewsFeedHelper.buildRedirectUrlPath(NEWS_FEED_ITEM_ID);
+
+      // Then
+      expect(result).toBe(`redirect/news-feed/${NEWS_FEED_ITEM_ID}`);
+      expect(result.startsWith('/')).toBe(false);
+      expect(result.startsWith(NEWS_FEED_REDIRECT_PATH_PREFIX)).toBe(true);
+    });
+
+    it('should encode the item id', () => {
+      // When
+      const result = NewsFeedHelper.buildRedirectUrlPath('a/b?c#d');
+
+      // Then
+      expect(result).toBe('redirect/news-feed/a%2Fb%3Fc%23d');
+    });
+
+    it('should work with addUtmToUrlPath', () => {
+      // Given
+      const urlPath = NewsFeedHelper.buildRedirectUrlPath(NEWS_FEED_ITEM_ID);
+
+      // When
+      const result = NewsFeedHelper.addUtmToUrlPath({
+        urlPath,
+        type: NewsFeedItemType.BlogPost,
+        platformIdentifier: PlatformIdentifier.Opencti,
+      });
+
+      // Then
+      expect(result).toBe(
+        `redirect/news-feed/${NEWS_FEED_ITEM_ID}?utm_source=opencti&utm_medium=newsfeed&utm_campaign=blog_posts&utm_content=blog_posts`
+      );
+    });
+  });
+
+  describe('newsFeedUtmContent', () => {
+    it('should list every utm_content value that the Hub gives to news feed links', () => {
+      // Given
+      const givenValues = [
+        ...Object.values(newsFeedUtmContentMapping),
+        NEWS_FEED_UTM_CONTENT_FALLBACK,
+      ];
+
+      // Then
+      expect(Object.values(NewsFeedUtmContent).sort()).toEqual(
+        [...new Set(givenValues)].sort()
+      );
     });
   });
 });

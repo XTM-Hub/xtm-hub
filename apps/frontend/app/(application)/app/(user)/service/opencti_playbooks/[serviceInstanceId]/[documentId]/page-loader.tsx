@@ -1,31 +1,27 @@
 'use client';
 
 import Loader from '@/components/Loader';
-import { DocumentsItemQuery } from '@/components/service/document/document.graphql';
+import DocumentDetailLoader from '@/components/service/document/DocumentDetailLoader';
 import OpenctiPlaybookSlug from '@/components/service/opencti-playbooks/[slug]/OpenctiPlaybookSlug';
-import useMountingLoader from '@/hooks/use-mounting-loader';
-import { documentQuery } from '@generated/documentQuery.graphql';
-import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
-import { useQueryLoader } from 'react-relay';
+import { ServiceInstanceItemFragment } from '@graphql/generated';
 
 interface PreloaderProps {
   documentId: string;
-  serviceInstance: serviceInstance_fragment$data;
+  serviceInstance: ServiceInstanceItemFragment;
 }
 
 const PageLoader = ({ documentId, serviceInstance }: PreloaderProps) => {
-  const [queryRef, loadQuery] =
-    useQueryLoader<documentQuery>(DocumentsItemQuery);
-  useMountingLoader(loadQuery, {
-    documentId,
-    serviceInstanceId: serviceInstance?.id,
-  });
-
-  return queryRef && serviceInstance ? (
-    <OpenctiPlaybookSlug
-      serviceInstance={serviceInstance}
-      queryRef={queryRef}
-    />
+  return serviceInstance ? (
+    <DocumentDetailLoader
+      documentId={documentId}
+      serviceInstanceId={serviceInstance.id}>
+      {(documentData) => (
+        <OpenctiPlaybookSlug
+          serviceInstance={serviceInstance}
+          documentData={documentData}
+        />
+      )}
+    </DocumentDetailLoader>
   ) : (
     <Loader />
   );

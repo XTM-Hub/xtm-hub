@@ -1,30 +1,36 @@
 'use client';
-import { Carousel, CarouselItem, DialogContent } from '@filigran/ui/clients';
 import { useState } from 'react';
 
+import { Carousel, CarouselItem } from '@/components/ui/carousel';
+import { useTranslate } from '@/hooks/use-translate';
+import {
+  analyticsResource,
+  type AnalyticsResourceData,
+} from '@/lib/analytics/analytics.context';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { cn } from '@/lib/utils';
-import { PublicDocumentData } from '@/utils/shareable-resources/shareable-resources.types';
-import { Dialog } from '@filigran/ui';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { seoServiceInstanceFragment$data } from '@generated/seoServiceInstanceFragment.graphql';
-import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
+import { Dialog, DialogContent } from '@filigran/design-system';
+import {
+  SeoServiceInstanceItemFragment,
+  ServiceInstanceItemFragment,
+} from '@graphql/generated';
 import Image from 'next/image';
 
 // Component interface
 interface ShareableResourceCarouselProps {
-  images?:
-    | documentItem_fragment$data['children_documents']
-    | PublicDocumentData['children_documents'];
-  serviceInstance:
-    seoServiceInstanceFragment$data | serviceInstance_fragment$data;
+  images?: ReadonlyArray<{ readonly id: string } | null> | null;
+  serviceInstance: SeoServiceInstanceItemFragment | ServiceInstanceItemFragment;
+  resource: AnalyticsResourceData;
   className?: string;
 }
 
 const ShareableResourceCarousel = ({
   images,
   serviceInstance,
+  resource,
   className,
 }: ShareableResourceCarouselProps) => {
+  const t = useTranslate();
   const [open, setOpen] = useState<boolean>(false);
   const [pictureIndex, setPictureIndex] = useState<number>(0);
   const fileNames = (images ?? []).map((image) => image?.id);
@@ -35,9 +41,19 @@ const ShareableResourceCarousel = ({
   return (
     <>
       {fileNames.length > 0 && (
-        <Carousel className={cn('h-[35vh]', className)}>
+        <Carousel
+          className={cn('h-[35vh]', className)}
+          previousAnalyticsId="resource_previous_screenshot_open"
+          nextAnalyticsId="resource_next_screenshot_open"
+          slideAnalyticsId="resource_screenshot_select"
+          previousLabel={t('DesignSystem.Carousel.Previous')}
+          nextLabel={t('DesignSystem.Carousel.Next')}
+          slideLabel={(slide) =>
+            t('DesignSystem.Carousel.GoToSlide', { slide })
+          }>
           {fileNames.map((name, index) => (
             <CarouselItem
+              {...analyticsId('resource_screenshot_open')}
               key={name}
               className="cursor-pointer"
               onClick={() => handleCarouselImageClick(true, index)}>
@@ -53,11 +69,22 @@ const ShareableResourceCarousel = ({
           <Dialog
             open={open}
             onOpenChange={setOpen}>
-            <DialogContent className="max-h-[calc(100dvh)] h-screen w-screen max-w-[calc(100dvw)] ">
+            <DialogContent
+              {...analyticsResource(resource)}
+              size="lg">
               <Carousel
+                className="h-[80vh]"
                 opts={{
                   startIndex: pictureIndex,
-                }}>
+                }}
+                previousAnalyticsId="resource_previous_screenshot_open"
+                nextAnalyticsId="resource_next_screenshot_open"
+                slideAnalyticsId="resource_screenshot_select"
+                previousLabel={t('DesignSystem.Carousel.Previous')}
+                nextLabel={t('DesignSystem.Carousel.Next')}
+                slideLabel={(slide) =>
+                  t('DesignSystem.Carousel.GoToSlide', { slide })
+                }>
                 {fileNames.map((name) => (
                   <CarouselItem key={name}>
                     <Image

@@ -1,11 +1,12 @@
 import { TrialsTabQuotasPlatformUpdateForm } from '@/components/trials/tab/quotas/TrialsTabQuotasPlatformUpdateForm';
+import { trialsRegionKey } from '@/components/trials/trials.const';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
-import { trialsDeploymentAvailabilityFragment$data } from '@generated/trialsDeploymentAvailabilityFragment.graphql';
-import { useTranslations } from 'next-intl';
+import { useTranslate } from '@/hooks/use-translate';
+import { TrialsQuotaFragment } from '@graphql/generated';
 import { ReactNode, useState } from 'react';
 
 interface TrialsTabQuotasPlatformUpdateProps {
-  quota: trialsDeploymentAvailabilityFragment$data;
+  quota: TrialsQuotaFragment;
   trigger?: ReactNode;
   onCloseSheet?: () => void;
   defaultStateOpen?: boolean;
@@ -17,7 +18,7 @@ export const TrialsTabQuotasPlatformUpdate = ({
   defaultStateOpen,
   quota,
 }: TrialsTabQuotasPlatformUpdateProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const [openSheet, setOpenSheet] = useState(defaultStateOpen ?? false);
   const handleOpenSheet = (open: boolean) => {
     setOpenSheet((prevState) => {
@@ -29,16 +30,12 @@ export const TrialsTabQuotasPlatformUpdate = ({
     });
   };
 
-  const translatedRegion = t(`Region.${quota.region.toUpperCase()}`);
-  const translatedPlatform = t(
-    `PlatformIdentifier.${quota.platform_identifier}`
-  );
+  const translatedRegion = t(trialsRegionKey(quota.region));
 
   return (
     <SheetWithPreventingDialog
-      title={t('TrialsDashboard.UpdateQuotasForm.Title', {
+      title={t('TrialsDashboard.UpdateQuotasForm.BundleTitle', {
         region: translatedRegion,
-        platform: translatedPlatform,
       })}
       open={openSheet}
       setOpen={handleOpenSheet}

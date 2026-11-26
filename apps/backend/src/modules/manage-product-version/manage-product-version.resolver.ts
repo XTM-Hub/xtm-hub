@@ -1,20 +1,42 @@
-import { ManifestType, Resolvers } from '../../__generated__/resolvers-types';
-import { ManifestApp } from '../shareable-resource/manifest/manifest.app';
+import {
+  MutationResolvers,
+  PortalCapability,
+  QueryResolvers,
+  Resolvers,
+} from '../../__generated__/resolvers-types';
+import { Guarded, Public } from '../../security/guarded/guarded.decorator';
+import { systemCallerGuard } from '../../security/guarded/guards/caller.guard';
+import { mapToGraphQLError } from '../../utils/error/error.mapping';
+import { ManageProductVersionApp } from './manage-product-version.app';
 
-const resolvers: Resolvers = {
-  Mutation: {
-    newProductVersion: async (_, { product, version }) => {
-      await ManifestApp.requestManifestGeneration({
+class ManageProductVersionQueries {
+  @Public()
+  static readonly registeredProductVersions: NonNullable<
+    QueryResolvers['registeredProductVersions']
+  > = (_, { product, search }) =>
+    ManageProductVersionApp.loadRegisteredProductVersions(product, search);
+}
+
+class ManageProductVersionMutations {
+  @Guarded(systemCallerGuard([PortalCapability.GenerateManifest]))
+  static readonly newProductVersion: NonNullable<
+    MutationResolvers['newProductVersion']
+  > = async (_, { product, version }) => {
+    try {
+      await ManageProductVersionApp.handleNewProductVersion({
         product,
         version,
-        type: ManifestType.Connector,
       });
+      return { success: true };
+    } catch (error) {
+      throw mapToGraphQLError(error);
+    }
+  };
+}
 
-      return {
-        success: true,
-      };
-    },
-  },
+const resolvers: Resolvers = {
+  Query: { ...ManageProductVersionQueries },
+  Mutation: { ...ManageProductVersionMutations },
 };
 
 export default resolvers;

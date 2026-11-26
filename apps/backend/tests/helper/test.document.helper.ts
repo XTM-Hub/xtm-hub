@@ -3,6 +3,7 @@ import { db } from '../../knexfile';
 import {
   DocumentMetadataKeyCode,
   DocumentMetadata as DocumentMetadataResolverType,
+  DocumentStatus,
   IntegrationType,
 } from '../../src/__generated__/resolvers-types';
 
@@ -20,9 +21,10 @@ import DocumentMetadata, {
 import { ServiceInstanceId } from '../../src/model/kanel/public/ServiceInstance';
 import { UserId } from '../../src/model/kanel/public/User';
 import { DocumentApp } from '../../src/modules/document/document.app';
+import { Document as DocumentWithUseCases } from '../../src/modules/document/document.helper';
 import { Upload } from '../../src/modules/document/document.uploads.helper';
 import { INTEGRATION_SERVICE_INSTANCE_ID } from '../../src/modules/shareable-resource/opencti/integration/integration.model';
-import { TEST_ORGANIZATIONS } from '../tests.const';
+import { TEST_META_DESCRIPTIONS, TEST_ORGANIZATIONS } from '../tests.const';
 
 const mockFileUpload: FileUpload = {
   filename: 'test-image.png',
@@ -38,12 +40,41 @@ const mockUpload = {
 
 export const TestDocumentHelper = {
   document: {
+    build: (
+      overrides: Partial<DocumentWithUseCases> = {}
+    ): DocumentWithUseCases => ({
+      id: 'doc-1' as DocumentId,
+      uploader_id: null,
+      service_instance_id: null,
+      description: null,
+      file_name: null,
+      minio_name: null,
+      status: DocumentStatus.Published,
+      created_at: new Date('2024-01-01T00:00:00Z'),
+      remover_id: null,
+      mime_type: null,
+      name: null,
+      updated_at: null,
+      updater_id: null,
+      short_description: null,
+      meta_description: null,
+      slug: null,
+      uploader_organization_id: null,
+      type: 'test-type',
+      source_type: null,
+      is_decommissioned: false,
+      version: null,
+      tags: [],
+      use_cases: [],
+      ...overrides,
+    }),
     createWholeDocument: async ({
       name = 'myCsvFeed',
       description = 'description',
       short_description = 'short_description',
+      meta_description = TEST_META_DESCRIPTIONS.DEFAULT,
       slug = 'slug',
-      active = true,
+      status = DocumentStatus.Published,
       uploader_id = TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
       metadata = [
         {
@@ -58,20 +89,22 @@ export const TestDocumentHelper = {
       name?: string;
       description?: string;
       short_description?: string;
+      meta_description?: string;
       slug?: string;
-      active?: boolean;
+      status?: DocumentStatus;
       uploader_id?: UserId;
       metadata?: DocumentMetadataResolverType[];
       serviceInstanceId?: ServiceInstanceId;
       sourceDocument?: Upload;
     }): Promise<Document> => {
-      const document = await DocumentApp.createDocument({
+      return TestDocumentHelper.document.createInStatus({
         input: {
           name,
           description,
           short_description,
+          meta_description,
           slug,
-          active,
+          status,
           uploader_id,
           use_cases: [],
           solution_categories: [],
@@ -80,10 +113,25 @@ export const TestDocumentHelper = {
         serviceInstanceId,
         sourceDocument,
       });
+    },
+    // DocumentApp.createDocument refuses Published: such a document is created
+    // as a draft, then published directly in the database.
+    createInStatus: async (
+      args: Parameters<typeof DocumentApp.createDocument>[0]
+    ): Promise<Document> => {
+      if (args.input.status !== DocumentStatus.Published) {
+        return DocumentApp.createDocument(args);
+      }
 
-      expect(document).toBeDefined();
-
-      return document!;
+      const document = await DocumentApp.createDocument({
+        ...args,
+        input: { ...args.input, status: DocumentStatus.Draft },
+      });
+      await TestDocumentHelper.document.update(
+        { id: document.id },
+        { status: DocumentStatus.Published }
+      );
+      return { ...document, status: DocumentStatus.Published };
     },
     create: async (data?: DocumentMutator): Promise<Document> => {
       const [document] = await db<Document>('Document')

@@ -3,6 +3,7 @@ import { TestHelper } from '../../../../tests/helper/test.helper';
 import {
   DocumentMetadataKeyCode,
   DocumentSourceType,
+  DocumentStatus,
   LicenseType,
   ManifestType,
   PortalCapability,
@@ -96,6 +97,7 @@ describe('manifestFragmentDomain', () => {
       integration_type: integrationType,
       license_type: LicenseType.Commercial,
       contact: 'https://github.com/some-contributor',
+      solution_categories: [SEEDED_SOLUTION_CATEGORY_NAME],
       additional_properties: {
         max_confidence_level: 50,
       },
@@ -121,6 +123,20 @@ describe('manifestFragmentDomain', () => {
   };
 
   describe('ingestManifestFragment', () => {
+    it('should create the connector as published when it ingests a connector fragment', async () => {
+      // Given
+      const slug = 'misp-published';
+      const fragment = buildManifestFragment(ManifestType.Connector, { slug });
+
+      // When
+      await ManifestFragmentDomain.ingestManifestFragment(fragment);
+
+      // Then
+      const createdDocument = await TestHelper.document.load({ slug });
+      _createdDocumentIds.push(createdDocument!.id);
+      expect(createdDocument?.status).toBe(DocumentStatus.Published);
+    });
+
     it('accepts a fragment when integration_type is connector', async () => {
       // Given
       const slug = 'misp-integration';
@@ -226,6 +242,30 @@ describe('manifestFragmentDomain', () => {
       expect(metadataByKey.get(DocumentMetadataKeyCode.Contact)).toBeNull();
     });
 
+    it('accepts a fragment with a null subscription_link', async () => {
+      // Given a fragment ingested without a subscription link
+      const slug = 'misp-without-subscription-link';
+      const fragment = buildManifestFragment(ManifestType.Connector, { slug });
+      fragment.subscription_link = null;
+
+      // When
+      await ManifestFragmentDomain.ingestManifestFragment(fragment);
+
+      // Then
+      const createdDocument = await TestHelper.document.load({ slug });
+      _createdDocumentIds.push(createdDocument!.id);
+
+      const metadataRows = await TestHelper.documentMetadata.loadAll({
+        document_id: createdDocument!.id,
+      });
+      const metadataByKey = new Map(
+        metadataRows.map((metadata) => [metadata.key as string, metadata.value])
+      );
+      expect(
+        metadataByKey.get(DocumentMetadataKeyCode.SubscriptionLink)
+      ).toBeNull();
+    });
+
     it('links the fragment solution categories to the created connector', async () => {
       // Given the seeded category, scoped to opencti
       const slug = 'misp-with-categories';
@@ -328,8 +368,35 @@ describe('manifestFragmentDomain', () => {
       expect(createdDocument).toBeUndefined();
     });
 
-    it('throws when a connector exists for the same manifest id with the same version', async () => {
+    it.each`
+      solutionCategories | description      | slug
+      ${[]}              | ${'empty array'} | ${'misp-empty-solution-categories'}
+      ${null}            | ${'null'}        | ${'misp-null-solution-categories'}
+    `(
+      'throws when solution_categories is $description',
+      async ({ solutionCategories, slug }) => {
+        // Given
+        const fragment = buildManifestFragment(ManifestType.Connector, {
+          slug,
+        });
+        fragment.solution_categories = solutionCategories;
+
+        // When
+        const call = ManifestFragmentDomain.ingestManifestFragment(fragment);
+
+        // Then
+        await expect(call).rejects.toThrow(
+          BadRequestErrorCode.SolutionCategoriesRequired
+        );
+
+        const createdDocument = await TestHelper.document.load({ slug });
+        expect(createdDocument).toBeUndefined();
+      }
+    );
+
+    it('rejects when connector id already exists under a different slug', async () => {
       // Given
+      const connectorId = 'shared-connector-id';
       const existingDocument = await TestHelper.document.create({
         slug: 'misp-existing-same',
         type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
@@ -343,7 +410,7 @@ describe('manifestFragmentDomain', () => {
       await TestHelper.documentMetadata.create({
         document_id: existingDocument.id,
         key: DocumentMetadataKeyCode.ManifestFragmentId as DocumentMetadataKey,
-        value: 'abc123',
+        value: connectorId,
       });
       await TestHelper.documentMetadata.create({
         document_id: existingDocument.id,
@@ -354,6 +421,7 @@ describe('manifestFragmentDomain', () => {
       const slug = 'misp-new-same-version';
       const fragment = buildManifestFragment(ManifestType.Connector, {
         slug,
+        id: connectorId,
       });
 
       // When
@@ -361,17 +429,60 @@ describe('manifestFragmentDomain', () => {
 
       // Then
       await expect(call).rejects.toThrow(
-        BadRequestErrorCode.ConnectorVersionAlreadyExists
+        BadRequestErrorCode.ConnectorIdAlreadyExists
       );
 
       const newDocument = await TestHelper.document.load({ slug });
       expect(newDocument).toBeUndefined();
     });
 
-    it('removes latest-lts from existing connector and creates a new latest-lts connector for same manifest id', async () => {
+    it('accepts same version when connector exists under a different slug and connector id differs', async () => {
       // Given
       const existingDocument = await TestHelper.document.create({
-        slug: 'misp-existing-lts',
+        slug: 'misp-existing-same-id-different',
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        service_instance_id: INTEGRATION_SERVICE_INSTANCE_ID,
+        source_type: DocumentSourceType.External,
+        version: '7.260309.0-lts.5',
+        tags: ['decoupling', 'latest-lts'],
+      });
+      _createdDocumentIds.push(existingDocument.id);
+
+      await TestHelper.documentMetadata.create({
+        document_id: existingDocument.id,
+        key: DocumentMetadataKeyCode.ManifestFragmentId as DocumentMetadataKey,
+        value: 'existing-connector-id',
+      });
+      await TestHelper.documentMetadata.create({
+        document_id: existingDocument.id,
+        key: DocumentMetadataKeyCode.VersionPadded as DocumentMetadataKey,
+        value: '007.260309.000.LTS.005',
+      });
+
+      const slug = 'misp-new-same-version-different-id';
+      const fragment = buildManifestFragment(ManifestType.Connector, {
+        slug,
+        id: 'new-connector-id',
+      });
+
+      // When
+      const call = ManifestFragmentDomain.ingestManifestFragment(fragment);
+
+      // Then
+      await expect(call).resolves.toBeUndefined();
+
+      const newDocument = await TestHelper.document.load({ slug });
+      expect(newDocument).toMatchObject({
+        slug,
+        version: fragment.version,
+      });
+      _createdDocumentIds.push(newDocument!.id);
+    });
+
+    it('removes latest-lts from existing connector and creates a new latest-lts connector for same slug', async () => {
+      // Given
+      const existingDocument = await TestHelper.document.create({
+        slug: 'misp-lts-family',
         type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
         service_instance_id: INTEGRATION_SERVICE_INSTANCE_ID,
         source_type: DocumentSourceType.External,
@@ -406,9 +517,9 @@ describe('manifestFragmentDomain', () => {
         value: 'https://filigran.io/demo',
       });
 
-      const newSlug = 'misp-new-lts';
+      const connectorFamilySlug = 'misp-lts-family';
       const fragment = buildManifestFragment(ManifestType.Connector, {
-        slug: newSlug,
+        slug: connectorFamilySlug,
       });
 
       // When
@@ -422,7 +533,10 @@ describe('manifestFragmentDomain', () => {
       expect(updatedExisting!.tags).toContain('decoupling');
       expect(updatedExisting!.tags).not.toContain('latest-lts');
 
-      const newDocument = await TestHelper.document.load({ slug: newSlug });
+      const newDocument = await TestHelper.document.load({
+        slug: connectorFamilySlug,
+        version: fragment.version,
+      });
       expect(newDocument).toBeDefined();
       _createdDocumentIds.push(newDocument!.id);
       expect(newDocument!.tags).toContain('decoupling');
@@ -445,10 +559,10 @@ describe('manifestFragmentDomain', () => {
       );
     });
 
-    it('removes latest from existing connector and creates a new latest connector for same manifest id', async () => {
+    it('removes latest from existing connector and creates a new latest connector for same slug', async () => {
       // Given
       const existingDocument = await TestHelper.document.create({
-        slug: 'misp-existing-non-lts',
+        slug: 'misp-non-lts-family',
         type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
         service_instance_id: INTEGRATION_SERVICE_INSTANCE_ID,
         source_type: DocumentSourceType.External,
@@ -468,9 +582,9 @@ describe('manifestFragmentDomain', () => {
         value: '007.260308.000',
       });
 
-      const newSlug = 'misp-new-non-lts';
+      const connectorFamilySlug = 'misp-non-lts-family';
       const fragment = buildManifestFragment(ManifestType.Connector, {
-        slug: newSlug,
+        slug: connectorFamilySlug,
         version: '7.260309.0',
       });
 
@@ -485,7 +599,10 @@ describe('manifestFragmentDomain', () => {
       expect(updatedExisting!.tags).toContain('decoupling');
       expect(updatedExisting!.tags).not.toContain('latest');
 
-      const newDocument = await TestHelper.document.load({ slug: newSlug });
+      const newDocument = await TestHelper.document.load({
+        slug: connectorFamilySlug,
+        version: fragment.version,
+      });
       expect(newDocument).toBeDefined();
       _createdDocumentIds.push(newDocument!.id);
       expect(newDocument!.tags).toContain('decoupling');
@@ -493,11 +610,56 @@ describe('manifestFragmentDomain', () => {
       expect(newDocument!.tags).not.toContain('latest-lts');
     });
 
+    it('promotes latest tag to the newer version when the same slug is ingested twice', async () => {
+      // Given
+      const slug = 'misp-same-slug-newer-version';
+      const firstFragment = buildManifestFragment(ManifestType.Connector, {
+        slug,
+        version: '7.260308.0',
+      });
+      const secondFragment = buildManifestFragment(ManifestType.Connector, {
+        slug,
+        version: '7.260309.0',
+      });
+
+      // When
+      await ManifestFragmentDomain.ingestManifestFragment(firstFragment);
+      await ManifestFragmentDomain.ingestManifestFragment(secondFragment);
+
+      // Then
+      const connectors = await TestHelper.document.loadAll({
+        slug,
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        service_instance_id: INTEGRATION_SERVICE_INSTANCE_ID,
+      });
+      expect(connectors).toHaveLength(2);
+      _createdDocumentIds.push(...connectors.map((connector) => connector.id));
+
+      const oldDocument = connectors.find(
+        (connector) => connector.version === firstFragment.version
+      );
+      const newDocument = connectors.find(
+        (connector) => connector.version === secondFragment.version
+      );
+
+      expect(oldDocument).toMatchObject({
+        slug,
+        version: firstFragment.version,
+      });
+      expect(newDocument).toMatchObject({
+        slug,
+        version: secondFragment.version,
+      });
+      expect(newDocument!.tags).toContain('latest');
+      expect(oldDocument!.tags).not.toContain('latest');
+    });
+
     it('keeps current latest when incoming version is lower', async () => {
       // Given
 
+      const connectorFamilySlug = 'misp-keep-latest-family';
       const existingDocument = await TestHelper.document.create({
-        slug: 'misp-existing-keep-latest',
+        slug: connectorFamilySlug,
         type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
         service_instance_id: INTEGRATION_SERVICE_INSTANCE_ID,
         source_type: DocumentSourceType.External,
@@ -517,9 +679,8 @@ describe('manifestFragmentDomain', () => {
         value: '007.260309.000',
       });
 
-      const newSlug = 'misp-new-lower';
       const fragment = buildManifestFragment(ManifestType.Connector, {
-        slug: newSlug,
+        slug: connectorFamilySlug,
         version: '7.260308.0',
       });
 
@@ -533,7 +694,10 @@ describe('manifestFragmentDomain', () => {
       expect(updatedExisting).toBeDefined();
       expect(updatedExisting!.tags).toContain('latest');
 
-      const newDocument = await TestHelper.document.load({ slug: newSlug });
+      const newDocument = await TestHelper.document.load({
+        slug: connectorFamilySlug,
+        version: fragment.version,
+      });
       expect(newDocument).toBeDefined();
       _createdDocumentIds.push(newDocument!.id);
       expect(newDocument!.tags).toContain('decoupling');
@@ -577,14 +741,15 @@ describe('manifestFragmentDomain', () => {
     });
 
     it('promotes exactly one connector as latest when two new versions are ingested concurrently for the same connector family', async () => {
-      // Given: existing connector tagged latest, so the lock has a row to serialize on
-      const manifestId = 'concurrent-promote-id';
+      // Given: an existing latest connector in one family
+      const connectorFamilySlug = 'misp-concurrent-family';
+      const manifestId = 'concurrent-family-id';
       const existingDocument = await TestHelper.document.create({
-        slug: 'misp-concurrent-existing',
+        slug: connectorFamilySlug,
         type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
         service_instance_id: INTEGRATION_SERVICE_INSTANCE_ID,
         source_type: DocumentSourceType.External,
-        version: '7.260305.0',
+        version: '7.260307.0',
         tags: ['decoupling', 'latest'],
       });
       _createdDocumentIds.push(existingDocument.id);
@@ -597,52 +762,71 @@ describe('manifestFragmentDomain', () => {
       await TestHelper.documentMetadata.create({
         document_id: existingDocument.id,
         key: DocumentMetadataKeyCode.VersionPadded as DocumentMetadataKey,
-        value: '007.260305.000',
+        value: '007.260307.000',
       });
 
-      const slugLower = 'misp-concurrent-lower';
-      const slugHigher = 'misp-concurrent-higher';
-      const fragmentLower = buildManifestFragment(ManifestType.Connector, {
-        slug: slugLower,
-        id: manifestId,
-        version: '7.260308.0',
-      });
-      const fragmentHigher = buildManifestFragment(ManifestType.Connector, {
-        slug: slugHigher,
-        id: manifestId,
-        version: '7.260309.0',
-      });
+      const lowerVersionFragment = buildManifestFragment(
+        ManifestType.Connector,
+        {
+          slug: connectorFamilySlug,
+          id: manifestId,
+          version: '7.260308.0',
+        }
+      );
+      const higherVersionFragment = buildManifestFragment(
+        ManifestType.Connector,
+        {
+          slug: connectorFamilySlug,
+          id: manifestId,
+          version: '7.260309.0',
+        }
+      );
 
-      // When
+      // When: two newer versions are ingested concurrently for the same family
       await Promise.all([
-        ManifestFragmentDomain.ingestManifestFragment(fragmentLower),
-        ManifestFragmentDomain.ingestManifestFragment(fragmentHigher),
+        ManifestFragmentDomain.ingestManifestFragment(lowerVersionFragment),
+        ManifestFragmentDomain.ingestManifestFragment(higherVersionFragment),
       ]);
 
-      // Then: only one connector carries "latest", and it's the highest version
-      const documentLower = await TestHelper.document.load({
-        slug: slugLower,
-      });
-      const documentHigher = await TestHelper.document.load({
-        slug: slugHigher,
-      });
-      expect(documentLower).toBeDefined();
-      expect(documentHigher).toBeDefined();
-      _createdDocumentIds.push(documentLower!.id, documentHigher!.id);
-
-      const updatedExisting = await TestHelper.document.load({
-        id: existingDocument.id,
+      // Then: only the highest version remains latest across the family
+      const connectors = await TestHelper.document.loadAll({
+        slug: connectorFamilySlug,
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        service_instance_id: INTEGRATION_SERVICE_INSTANCE_ID,
       });
 
-      const latestCount = [
-        updatedExisting,
-        documentLower,
-        documentHigher,
-      ].filter((doc) => doc!.tags?.includes('latest')).length;
-      expect(latestCount).toBe(1);
-      expect(documentHigher!.tags).toContain('latest');
-      expect(documentLower!.tags).not.toContain('latest');
-      expect(updatedExisting!.tags).not.toContain('latest');
+      expect(connectors).toHaveLength(3);
+      _createdDocumentIds.push(
+        ...connectors
+          .map((connector) => connector.id)
+          .filter((id) => id !== existingDocument.id)
+      );
+
+      const latestConnectors = connectors.filter((connector) =>
+        connector.tags.includes('latest')
+      );
+      expect(latestConnectors).toHaveLength(1);
+      expect(latestConnectors[0]).toMatchObject({
+        slug: connectorFamilySlug,
+        version: higherVersionFragment.version,
+      });
+
+      const lowerVersionDocument = connectors.find(
+        (connector) => connector.version === lowerVersionFragment.version
+      );
+      const previousLatestDocument = connectors.find(
+        (connector) => connector.id === existingDocument.id
+      );
+      expect(lowerVersionDocument).toMatchObject({
+        slug: connectorFamilySlug,
+        version: lowerVersionFragment.version,
+      });
+      expect(lowerVersionDocument!.tags).not.toContain('latest');
+      expect(previousLatestDocument).toMatchObject({
+        slug: connectorFamilySlug,
+        version: '7.260307.0',
+      });
+      expect(previousLatestDocument!.tags).not.toContain('latest');
     });
   });
 });

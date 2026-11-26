@@ -1,29 +1,26 @@
-import { cn } from '@/lib/utils';
+import { AutoForm } from '@/components/ui/auto-form';
+import { FormControl, FormItem, FormMessage } from '@/components/ui/form';
+import { RegisteredPlatformsListItem } from '@/hooks/use-registered-platforms';
+import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { isEeCapableContract } from '@/utils/platform';
 import { SHAREABLE_RESOURCE_TYPE_NAME_MAPPING } from '@/utils/shareable-resources/shareable-resources.types';
 import { doesVersionSatisfy } from '@/utils/versioning';
 import {
-  AutoForm,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  Input,
-} from '@filigran/ui';
-import {
+  Button,
+  Radio,
+  RadioGroup,
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@filigran/ui/clients';
-import { Button } from '@filigran/ui/servers';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { useRegisteredPlatformsFragment$data } from '@generated/useRegisteredPlatformsFragment.graphql';
-import { useTranslations } from 'next-intl';
+} from '@filigran/design-system';
+import { DocumentItemFragment } from '@graphql/generated';
 import { z } from 'zod';
 
 interface ChoosePlatformFormProps {
-  documentData: documentItem_fragment$data;
-  platforms: useRegisteredPlatformsFragment$data[];
+  documentData: DocumentItemFragment;
+  platforms: RegisteredPlatformsListItem[];
   translatedPlatformIdentifier: string;
   oneClickDeploy: (platformUrl: string) => void;
   setIsOpen: (isOpen: boolean) => void;
@@ -44,11 +41,15 @@ const ChoosePlatformForm = ({
   requiredProductVersion,
   requiresEe,
 }: ChoosePlatformFormProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
+  const deployQuestion = t(
+    'Service.ShareableResources.Deploy.DeployQuestionTag',
+    { platformType: translatedPlatformIdentifier }
+  );
 
   return (
-    <div className="flex flex-col h-full justify-between gap-m">
-      <div className="space-y-m">
+    <div className="flex flex-col h-full justify-between gap-3">
+      <div className="space-y-3">
         <h1>
           {t('Service.ShareableResources.Deploy.DeployResourceDescription', {
             resourceName: documentData.name ?? '',
@@ -58,92 +59,86 @@ const ChoosePlatformForm = ({
               ],
           })}
         </h1>
-        <p>
-          {t('Service.ShareableResources.Deploy.DeployQuestionTag', {
-            platformType: translatedPlatformIdentifier,
-          })}
-        </p>
+        <p>{deployQuestion}</p>
       </div>
       <AutoForm
         formSchema={selectPlatformFormSchema}
         onSubmit={({ platformUrl }) => {
+          setIsOpen(false);
           oneClickDeploy(platformUrl);
         }}
         fieldConfig={{
           platformUrl: {
             fieldType: ({ field }) => (
               <FormItem>
-                <>
-                  {platforms.map((platform) => {
-                    const isPlatformCompatible = doesVersionSatisfy({
-                      givenVersion: platform.version ?? '0.0.0',
-                      requiredVersion: requiredProductVersion ?? '0.0.0',
-                    });
+                <FormControl>
+                  <RadioGroup
+                    aria-label={deployQuestion}
+                    value={field.value ?? ''}
+                    onValueChange={field.onChange}>
+                    {platforms.map((platform) => {
+                      const isPlatformCompatible = doesVersionSatisfy({
+                        givenVersion: platform.version ?? '0.0.0',
+                        requiredVersion: requiredProductVersion ?? '0.0.0',
+                      });
 
-                    const isEeBlocked =
-                      requiresEe && !isEeCapableContract(platform.contract);
-                    const isDisabled = !isPlatformCompatible || isEeBlocked;
+                      const isEeBlocked =
+                        requiresEe && !isEeCapableContract(platform.contract);
+                      const isDisabled = !isPlatformCompatible || isEeBlocked;
 
-                    const input = (
-                      <div className="flex items-center gap-2">
-                        <Input
+                      const radio = (
+                        <Radio
+                          key={platform.id}
                           id={platform.id}
-                          type="radio"
-                          disabled={isDisabled}
-                          onChange={() => field.onChange(platform.url)}
-                          checked={field.value === platform.url}
                           value={platform.url}
-                          className="h-4 w-4 accent-primary"
+                          disabled={isDisabled}
+                          label={platform.title}
                         />
-                        <FormLabel
-                          htmlFor={platform.id}
-                          className={cn(
-                            isDisabled && 'text-content-body-base'
-                          )}>
-                          {platform.title}
-                        </FormLabel>
-                      </div>
-                    );
+                      );
 
-                    if (!isDisabled) {
-                      return <div key={platform.id}>{input}</div>;
-                    }
+                      if (!isDisabled) {
+                        return radio;
+                      }
 
-                    return (
-                      <TooltipProvider key={platform.id}>
-                        <Tooltip>
-                          <TooltipTrigger
-                            className="flex"
-                            onClick={(e) => e.preventDefault()}>
-                            {input}
-                          </TooltipTrigger>
-                          <TooltipContent className="max-w-xl">
-                            <p>
-                              {isEeBlocked
-                                ? t(
-                                    'Service.ShareableResources.Deploy.EE.PlatformRequiresEE',
-                                    { platformTitle: platform.title }
-                                  )
-                                : t(
-                                    'Service.ShareableResources.Deploy.DeployIncompatibleVersion',
-                                    { platformTitle: platform.title }
-                                  )}
-                            </p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    );
-                  })}
-                </>
-                <FormMessage className="mt-2 text-sm text-destructive" />
+                      return (
+                        <TooltipProvider key={platform.id}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span
+                                className="flex"
+                                tabIndex={0}>
+                                {radio}
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>
+                                {isEeBlocked
+                                  ? t(
+                                      'Service.ShareableResources.Deploy.EE.PlatformRequiresEE',
+                                      { platformTitle: platform.title }
+                                    )
+                                  : t(
+                                      'Service.ShareableResources.Deploy.DeployIncompatibleVersion',
+                                      { platformTitle: platform.title }
+                                    )}
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      );
+                    })}
+                  </RadioGroup>
+                </FormControl>
+                <FormMessage className="mt-2" />
               </FormItem>
             ),
           },
         }}>
-        <div className="flex justify-end gap-s">
+        <div className="flex justify-end gap-2">
           <Button
+            {...analyticsId('resource_deploy_cancel')}
             type="button"
-            variant="secondary"
+            priority="secondary"
             onClick={() => {
               setIsOpen(false);
             }}>
@@ -151,9 +146,8 @@ const ChoosePlatformForm = ({
           </Button>
 
           <Button
-            onClick={() => {
-              setIsOpen(false);
-            }}>
+            {...analyticsId('resource_deploy_confirm')}
+            type="submit">
             {t('Utils.Continue')}
           </Button>
         </div>

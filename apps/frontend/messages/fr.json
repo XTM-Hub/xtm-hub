@@ -1,9 +1,13 @@
 {
-  "AdminBanner": "Vous êtes actuellement en mode administrateur",
+  "UserDisplay": {
+    "DeletedUser": "Utilisateur supprimé"
+  },
+  "AdminBanner": "Vous êtes actuellement en mode administrateur.",
   "App": {
     "Collapse": "Réduire",
-    "CollapseSidebar": "Réduire la sidebar",
+    "CollapseSidebar": "Réduire la barre latérale",
     "MadeBy": "Réalisé par",
+    "MadeByBrand": "Réalisé par {brand}",
     "Title": "XTM Hub"
   },
   "Badge": {
@@ -11,15 +15,61 @@
     "Enabled": "Activé",
     "Published": "Publié"
   },
+  "DocumentStatus": {
+    "Draft": "Brouillon",
+    "InValidation": "En validation",
+    "Published": "Publié"
+  },
   "CapabilityDescription": {
     "Capabilities": {
-      "ADMINISTRATE_ORGANIZATION": "Possibilités de toutes les capacités au sein d'une organisation",
+      "ADMINISTRATE_ORGANIZATION": "Possibilité d'effectuer toutes les actions au sein d'une organisation",
       "MANAGE_ACCESS": "Possibilité d'inviter d'autres utilisateurs dans cette organisation",
-      "MANAGE_PLATFORM_REGISTRATION": "Possibilité de connecter et de déconnecter les produits",
+      "MANAGE_PLATFORM_REGISTRATION": "Possibilité de connecter et de déconnecter des produits, ainsi que de lancer, d'annuler et gérer les essais. Pour les clients SaaS, possibilité de consulter les indicateurs de performance du produit.",
       "MANAGE_SUBSCRIPTION": "Possibilité de gérer et d'abonner l'organisation à des services"
     },
-    "Description": "Vous pouvez ajouter des fonctionnalités spécifiques aux utilisateurs de Filigran",
+    "Description": "Vous pouvez ajouter des capacités spécifiques aux utilisateurs de Filigran",
     "Title": "Capacités disponibles"
+  },
+  "CSMBoard": {
+    "Customer": "Client",
+    "Organization": "Organisation",
+    "Administrators": "Administrateurs",
+    "Products": "Produits",
+    "ProductVersion": "Version : {version}",
+    "AllProducts": "Tous les produits",
+    "Plan": "Offre",
+    "Health": "Santé",
+    "Healthy": "Sain",
+    "HealthSla": "SLA {percent}",
+    "HealthDatabase": "Base de données {percent}",
+    "HealthFileStorage": "Stockage de fichiers {percent}",
+    "Database": "Base de données",
+    "FileStorage": "Stockage de fichiers",
+    "Availability": "Disponibilité",
+    "Version": "Version",
+    "ContractEnd": "Fin du contrat",
+    "EndsIn": "dans {days} j",
+    "ContractEnded": "Terminé",
+    "Link": "Métriques SaaS",
+    "AskCustomer": "Demandez à votre client de connecter son produit",
+    "ViewMetrics": "Voir les métriques",
+    "SearchPlatform": "Rechercher une plateforme",
+    "ClearSearch": "Effacer la recherche",
+    "Tour": {
+      "Table": "Ce tableau liste toutes les plateformes SaaS du SaaS Manager, avec les données qu'il remonte.",
+      "Search": "Recherchez une plateforme par nom de client.",
+      "ProductFilter": "N'affichez que les plateformes d'un produit.",
+      "HubColumns": "Ces colonnes se remplissent dès que le client connecte son produit à XTM Hub. Cliquez sur « {viewMetrics} » pour accéder à plus de métriques sur la plateforme.",
+      "HoverDetails": "Survolez une cellule de ces colonnes pour plus de détails : e-mails des administrateurs, version du produit et date exacte de fin de contrat.",
+      "MetricsLink": "Disponible dès que le client connecte son produit à XTM Hub. Le lien ouvre la page de détails du produit, à laquelle le client a aussi accès.",
+      "Database": "Stockage Elasticsearch utilisé, en pourcentage de ce que l'offre autorise.",
+      "FileStorage": "Stockage S3 utilisé, en pourcentage de ce que l'offre autorise.",
+      "Availability": "Disponibilité SLA de la plateforme. Les contrats fixent l'objectif à 99,98 %.",
+      "Health": "Repérez en un coup d'œil les plateformes en difficulté, et le problème en cause : SLA, base de données ou stockage de fichiers.",
+      "ColumnMenu": "Survolez l'en-tête d'une colonne pour ouvrir son menu et masquer les colonnes inutiles. Cliquez sur certains en-têtes pour trier le tableau selon cette colonne.",
+      "ShowHiddenColumn": "Pour réafficher une colonne masquée, ouvrez le menu du tableau et sélectionnez-la dans « {columns} ».",
+      "FullDocumentation": "Tous les détails sur la gestion des métriques dans XTM Hub sont sur <link>cette page Notion</link>."
+    }
   },
   "CountryComboBox": {
     "Placeholder": "Choisir un pays"
@@ -57,22 +107,57 @@
     }
   },
   "Contracts": {
-    "CE": "Édition Communauté",
-    "EE": "Édition Entreprise",
+    "CE": "Community Edition",
+    "EE": "Enterprise Edition",
     "TRIAL": "Essai gratuit"
   },
-  "Datatable": {
-    "Asc": "Asc",
-    "Columns": "Colonnes",
-    "Desc": "Desc",
-    "GoFirstPage": "Aller à la première page",
-    "GoLastPage": "Aller à la dernière page",
-    "GoNextPage": "Aller à la page suivante",
-    "GoPreviousPage": "Aller à la page précédente",
-    "Hide": "Cacher",
-    "ManageColumnsVisibility": "Gérer la visibilité des colonnes",
-    "ResetTable": "Réinitialiser",
-    "RowsPerPage": "Lignes par page"
+  "PlatformStatuses": {
+    "active": "Active",
+    "inactive": "Inactive"
+  },
+  "CommercialModels": {
+    "SAAS": "SaaS",
+    "OTHER": "Autre"
+  },
+  "XtmPlatformTrial": {
+    "BundleInfo": {
+      "OrganizationName": "Organisation",
+      "StartedOn": "Démarré le",
+      "License": "Licence",
+      "Remaining": "Restant",
+      "DaysRemaining": "{days, plural, =1 {# jour} other {# jours}}",
+      "TrialRequester": "Demandeur de l'essai",
+      "Title": "Détails de l'essai XTM Platform :"
+    },
+    "Products": {
+      "ConnectionStatus": "Statut de connexion",
+      "LastConnection": "Dernière vérification de connexion",
+      "Role": "Rôle",
+      "NoRole": "Aucun.",
+      "NoRoleHint": "Veuillez contacter le demandeur de l'essai.",
+      "StatusActive": "Connecté",
+      "StatusNotConnected": "Non connecté",
+      "AccessProduct": "Accéder à {productName}",
+      "StatusUnavailable": "Indisponible",
+      "ProductName": "Nom du produit",
+      "Connection": "Connexion {productName}",
+      "EditName": "Modifier le nom",
+      "ConnectionLost": "Connexion perdue.",
+      "ReconnectHint": "Vous devez reconnecter votre produit."
+    },
+    "CancelTrial": "Annuler l'essai",
+    "CancelDialog": {
+      "Title": "Annuler l'essai",
+      "Description": "Êtes-vous sûr de vouloir annuler cet essai ?",
+      "Warning": "Une fois annulé, vous ne pourrez pas demander un nouvel essai"
+    },
+    "Title": "Bienvenue dans votre essai XTM Platform",
+    "Subtitle": "Tout ce dont vous avez besoin pour votre essai se trouve ici : les détails de votre essai et le temps restant, un accès direct à vos produits, et une ligne directe avec l'équipe Filigran dès que vous avez besoin d'aide ou avez des questions.",
+    "Guide": {
+      "Title": "Guide de l'essai XTM Platform",
+      "Content": "Découvrez ce que nous construisons, ce qui arrive ensuite et où se dirige la XTM Platform. Transparence totale. Aucune surprise.",
+      "SeeMore": "Voir plus"
+    }
   },
   "DeploymentRequestUseCase": {
     "threat_profiling_cti": "Profilage des menaces (CTI)",
@@ -80,8 +165,8 @@
     "threat_profiling_leo": "Profilage des menaces (Forces de l'ordre)",
     "threat_profiling_faml": "Profilage des menaces (Fraude & LCB)",
     "threat_hunting": "Chasse aux menaces",
-    "strategic_reporting": "Reporting stratégique (Pour les dirigeants)",
-    "technical_reporting": "Reporting stratégique (Pour les analystes)",
+    "strategic_reporting": "Reporting stratégique (pour les dirigeants)",
+    "technical_reporting": "Reporting technique (pour les analystes)",
     "incident_response": "Coordination de la réponse aux incidents",
     "security_stack": "Intégration de la pile de sécurité",
     "detection_engineering": "Ingénierie de détection",
@@ -91,18 +176,18 @@
     "centralizing_knowledge": "Centralisation des connaissances",
     "sharing_knowledge": "Partage des connaissances",
     "hosting_threat_community": "Hébergement d'une communauté de partage des menaces",
-    "oaev_attack_simulation": "Exécuter la simulation de brèche et d'attaque (BAS)",
-    "oaev_penetration_testing": "Effectuer des tests de pénétration",
-    "oaev_atomic_testing": "Exécution de tests atomiques individuels",
-    "oaev_platform_validation": "Valider que mes plates-formes de sécurité fonctionnent comme prévu",
+    "oaev_attack_simulation": "Exécuter des simulations d'intrusion et d'attaque (BAS)",
+    "oaev_penetration_testing": "Effectuer des tests d'intrusion",
+    "oaev_atomic_testing": "Exécuter des tests atomiques individuels",
+    "oaev_platform_validation": "Valider que mes plateformes de sécurité fonctionnent comme prévu",
     "oaev_tabletop_exercise": "Effectuer des exercices contextuels sur table pour la simulation de crise",
-    "oaev_purple_team": "Activation de l'équipe Purple : Améliorer les défenses en fonction des attaques",
+    "oaev_purple_team": "Purple Teaming : améliorer les défenses en fonction des attaques",
     "oaev_opencti_coverage": "Activer la couverture de sécurité OpenCTI",
     "oaev_ctem_framework": "Opérationnaliser un cadre CTEM"
   },
   "DeploymentRequestActivitySector": {
     "computer_network_security": "Sécurité des ordinateurs et des réseaux",
-    "computer_games": "Jeux informatiques",
+    "computer_games": "Jeux vidéo",
     "computer_software": "Logiciels informatiques",
     "defense_space": "Défense et espace",
     "entertainment": "Divertissement",
@@ -110,8 +195,8 @@
     "government_administration": "Administration publique",
     "government_relations": "Relations avec les pouvoirs publics",
     "higher_education": "Enseignement supérieur",
-    "hospital_health_care": "Hôpital & Soins de santé",
-    "hospitality": "Hospitalité",
+    "hospital_health_care": "Hôpitaux et santé",
+    "hospitality": "Hôtellerie et restauration",
     "information_technology": "Technologies et services de l'information",
     "insurance": "Assurance",
     "legal_services": "Services juridiques",
@@ -121,40 +206,56 @@
     "military": "Militaire",
     "non_profit": "Gestion des organisations à but non lucratif",
     "oil_energy": "Pétrole et énergie",
-    "pharmaceuticals": "Pharmaceutique",
+    "pharmaceuticals": "Industrie pharmaceutique",
     "photography": "Photographie",
     "retail": "Commerce de détail",
     "security_investigations": "Sécurité et enquêtes",
     "semiconductors": "Semi-conducteurs",
     "telecommunications": "Télécommunications",
-    "transportation": "Transport/camionnage/chemin de fer",
+    "transportation": "Transport routier et ferroviaire",
     "utilities": "Services publics",
     "wireless": "Sans fil"
   },
   "DeleteUseCaseDialog": {
-    "TextDeleteUseCase": "Voulez-vous vraiment supprimer cette étiquette {name} ? ?"
+    "TextDeleteUseCase": "Voulez-vous vraiment supprimer le cas d'usage {name} ?"
   },
   "DialogActions": {
     "ContinueTitle": "Voulez-vous continuer ?",
     "PreventSheetSentence": "Vous avez commencé à remplir le formulaire. Le fait de le fermer maintenant annulera toute progression non enregistrée. Voulez-vous continuer ?",
-    "PreventSheetTitle": "Progrès non sauvegardé"
+    "PreventSheetTitle": "Modifications non enregistrées"
   },
   "DisableUserDialog": {
-    "TextDisableThisUser": "Êtes-vous sûr de vouloir désactiver cet utilisateur {email} ? ?"
+    "TextDisableThisUser": "Êtes-vous sûr de vouloir désactiver l'utilisateur {email} ?"
+  },
+  "EpicForm": {
+    "Error": {
+      "Title": "Le titre est obligatoire",
+      "ShortDescription": "La description courte est obligatoire",
+      "ShortDescriptionMax": "La description courte ne doit pas dépasser 215 caractères",
+      "DescriptionMax": "La description ne doit pas dépasser 500 caractères",
+      "ProblemToSolve": "Le problème à résoudre est obligatoire",
+      "ProblemToSolveMax": "Le problème à résoudre ne doit pas dépasser 500 caractères",
+      "ProposedSolution": "La solution proposée est obligatoire",
+      "ProposedSolutionMax": "La solution proposée ne doit pas dépasser 500 caractères",
+      "ExpectedValue": "La valeur attendue est obligatoire",
+      "ExpectedValueMax": "La valeur attendue ne doit pas dépasser 500 caractères",
+      "Product": "Au moins un produit est obligatoire",
+      "SlackLink": "Doit être un lien Slack filigran-community"
+    }
   },
   "Epic": {
-    "XTMRoadmap": "Roadmap Platform XTM",
+    "XTMRoadmap": "Roadmap XTM Platform",
     "AllProducts": "Tous les produits",
-    "ShowFinished": "Afficher les épics terminés",
+    "ShowFinished": "Afficher les epics terminés",
     "FilterByProduct": "Filtrer par produit",
     "Timeline": {
       "draft": "Brouillons",
-      "now": "Maintenant",
-      "next": "Après",
-      "under_consideration": "En considération",
+      "now": "En cours",
+      "next": "À venir",
+      "under_consideration": "À l'étude",
       "finished": "Terminé au cours des 3 derniers mois",
       "Details": {
-        "draft": "Cas d'utilisation en mode brouillon, non visible sans la capacité UPLOAD",
+        "draft": "Cas d'utilisation en mode brouillon, non visibles sans la capacité UPLOAD",
         "finished": "Cas d'utilisation disponibles",
         "now": "Cas d'utilisation en cours de développement",
         "next": "Cas d'utilisation prévus pour les prochaines versions",
@@ -165,24 +266,63 @@
       "Epic": "Epic",
       "Title": "Titre",
       "ShortDesc": "Description courte",
-      "Description": "Description",
-      "EditionType": "type d'édition",
+      "Description": "Description complète",
+      "ProblemToSolve": "Problème à résoudre",
+      "ProposedSolution": "Solution proposée",
+      "ExpectedValue": "Valeur attendue",
+      "EditionType": "Type d'édition",
       "FiligranProduct": "Produit",
       "FiligranProductPlaceholder": "OpenCTI",
+      "SlackLink": "Lien Slack",
+      "SlackLinkPlaceholder": "Choisissez un canal ou collez un lien Slack",
       "Timeline": "Ligne de temps",
-      "IsActive": "Cet EPIC est-il publié ? (Par défaut votre EPIC est en mode brouillon)",
+      "IsActive": "Cet epic est-il publié ? (Par défaut, votre epic est en mode brouillon)",
       "Integration": "Est une intégration",
-      "IsLimited": "Limité à {maxChars} caractères",
-      "AutomaticallyAdded": "Ajouté automatiquement (non modifiable)"
+      "AutomaticallyAdded": "Ajouté automatiquement (non modifiable)",
+      "CharacterCount": "{count} / {maxChars}",
+      "Placeholder": {
+        "Title": "ex. : les utilisateurs voient tous leurs essais actifs au même endroit",
+        "ShortDesc": "Une phrase affichée sur la carte de la roadmap",
+        "Description": "Détaillez l'epic : contexte, périmètre, contraintes",
+        "ProblemToSolve": "Les difficultés rencontrées par l'utilisateur",
+        "ProposedSolution": "Comment nous comptons le résoudre",
+        "ExpectedValue": "Ce que nous y gagnons une fois livré"
+      },
+      "DetailsSection": "Détails de l'epic",
+      "PublishNow": "Publier maintenant",
+      "PublishNowHint": "(sinon enregistré en brouillon)",
+      "EditionTypeInfo": "Partial EE : fonctionne en Community Edition mais certaines options nécessitent l'Enterprise Edition",
+      "TimelineOption": {
+        "now": "En cours",
+        "next": "À venir",
+        "under_consideration": "À l'étude",
+        "finished": "Terminé"
+      }
     },
     "EpicActions": {
-      "CreateEpic": "Créer un nouvel épic",
-      "UpdateEpic": "Mettre à jour un épic",
-      "DeleteEpic": "Supprimer l'épic {epicName}",
-      "SureDeleteEpic": "Êtes-vous sûr de vouloir supprimer l'épic {epicName} ?",
-      "EpicDeleted": "L'épic a été supprimé"
+      "CreateEpic": "Créer un nouvel epic",
+      "UpdateEpic": "Mettre à jour un epic",
+      "DeleteEpic": "Supprimer l'epic {epicName}",
+      "SureDeleteEpic": "Êtes-vous sûr de vouloir supprimer l'epic {epicName} ?",
+      "EpicDeleted": "L'epic a été supprimé",
+      "CreateEpicButton": "Créer l'epic",
+      "UpdateEpicButton": "Mettre à jour l'epic"
     },
-    "JoinCommunity": "Restez dans la boucle avec la communauté Filigran"
+    "JoinCommunity": "Restez informé avec la communauté Filigran"
+  },
+  "FeatureVoting": {
+    "Title": "Votez pour les prochaines fonctionnalités",
+    "MetaDescription": "Votez pour les fonctionnalités que vous souhaitez voir arriver dans OpenCTI, OpenAEV, XTM One et XTM Hub.",
+    "Description": "Aidez-nous à façonner le futur des produits Filigran : votez pour la fonctionnalité que vous souhaitez voir en priorité. Vous disposez d'un vote par produit, modifiable à tout moment.",
+    "OneVotePerProduct": "Vous disposez d'un vote pour ce produit. Voter pour une autre fonctionnalité déplace votre vote.",
+    "Vote": "Voter",
+    "Voted": "Votre vote",
+    "VoteRecordedTitle": "Vote enregistré",
+    "VoteRecordedDescription": "Merci ! Votre vote a bien été pris en compte.",
+    "NoOpenRound": "Aucun vote n'est ouvert pour le moment. Revenez bientôt !",
+    "CalloutTitle": "Participez à la roadmap",
+    "CalloutSubtitle": "Un vote est ouvert en ce moment : dites-nous ce que vous voulez voir arriver.",
+    "CalloutButton": "Votez pour votre prochaine fonctionnalité"
   },
   "Error": {
     "AnErrorOccured": "Une erreur est survenue",
@@ -199,70 +339,110 @@
       "CAN_UNREGISTER_PLATFORM_UNKNOWN_ERROR": "Une erreur inconnue s'est produite lors de la déconnexion du produit",
       "CANT_ADD_DISABLED_USER": "Vous ne pouvez pas ajouter un utilisateur qui est désactivé sur la plateforme",
       "CANT_ADD_USER_TO_PERSONAL_SPACE": "Vous ne pouvez pas ajouter un utilisateur à votre espace personnel",
+      "CANT_CANCEL_BUNDLE_PRODUCT": "Un produit d'un XTM Platform Trial ne peut pas être annulé seul",
+      "CANT_DELETE_BLOGPOST_NEWS_FEED_ITEM": "Vous ne pouvez pas supprimer un article de blog : il est géré par la synchronisation",
+      "CANT_DELETE_BUILTIN_USER": "Cet utilisateur intégré ne peut pas être supprimé",
+      "CANT_DELETE_YOURSELF": "Vous ne pouvez pas supprimer votre propre compte",
       "CANT_REMOVE_LAST_ADMINISTRATOR": "Vous ne pouvez pas supprimer le dernier administrateur d'une organisation",
+      "CANT_REMOVE_USER_FROM_PERSONAL_SPACE": "Vous ne pouvez pas retirer un utilisateur d'un espace personnel",
       "CANT_REMOVE_YOURSELF_FROM_ORGA_ERROR": "Vous ne pouvez pas vous retirer vous-même de l'organisation",
       "CANT_REQUEST_FREE_TRIAL": "Vous ne pouvez pas demander d'essai gratuit",
       "CANT_REQUEST_FREE_TRIAL_IN_PERSONAL_SPACE": "Vous ne pouvez pas demander d'essai gratuit dans votre espace personnel",
       "CANT_SUBSCRIBE_YOURSELF": "Vous ne pouvez pas vous donner l'accès vous-même",
+      "CAPABILITY_PORTAL_NOT_FOUND": "Capacité inconnue",
+      "SSO_GROUP_ROLE_PORTAL_NOT_FOUND": "Association de groupe SSO introuvable",
+      "SSO_GROUP_ROLE_PORTAL_ALREADY_EXISTS": "Ce groupe SSO est déjà associé à ce rôle",
+      "ROLE_PORTAL_NOT_FOUND": "Rôle introuvable",
+      "ROLE_PORTAL_ALREADY_EXISTS": "Ce rôle existe déjà",
+      "ROLE_PORTAL_PROTECTED": "Ce rôle est utilisé par la plateforme : il ne peut être ni renommé ni supprimé, et ADMIN doit garder BYPASS",
+      "SET_USER_PASSWORD_NOT_ALLOWED": "Vous n'êtes pas autorisé à définir le mot de passe d'un utilisateur sur cette plateforme",
       "COMPETITOR_DOMAIN_ALREADY_EXISTS": "Il existe déjà un concurrent avec le même domaine",
+      "DEPLOYMENT_FEEDBACK_ALREADY_EXISTS": "Des retours d'expérience sur le déploiement existent déjà",
       "COMPETITOR_NOT_FOUND": "Concurrent non trouvé",
+      "CONNECTOR_ID_ALREADY_EXISTS": "Un connecteur avec cet identifiant existe déjà",
       "CONNECTOR_VERSION_ALREADY_EXISTS": "Un connecteur avec cette version existe déjà",
       "CONTACT_TOO_LONG": "Le contact est trop long",
-      "CREATE_DEPLOYMENT_REQUEST_ERROR": "Error lors de la creation de la requête de deploiement",
+      "CREATE_DEPLOYMENT_REQUEST_ERROR": "Erreur lors de la création de la demande de déploiement",
       "DELETE_DOCUMENT_ERROR": "Erreur lors de la suppression du document",
-      "DELETE_EPIC_ERROR": "Une erreur s'est produite lors de la suppression de l'épic.",
+      "DELETE_EPIC_ERROR": "Une erreur s'est produite lors de la suppression de l'epic.",
+      "DELETE_ORGANIZATION_BLOCKED_BY_CONNECTED_PRODUCT": "Cette organisation ne peut pas être supprimée car elle possède un produit connecté.",
       "DELETE_ORGANIZATION_ERROR": "Erreur lors de la suppression de l'organisation",
+      "DELETE_ORGANIZATION_PENDING_USERS": "Cette organisation compte encore des utilisateurs en attente de validation. Acceptez-les ou refusez-les avant de la supprimer.",
+      "DELETE_ORGANIZATION_REQUIRES_SINGLE_USER": "Cette organisation compte encore plusieurs membres. Retirez-les avant de la supprimer.",
       "DELETE_SUBSCRIPTION_ERROR": "Erreur lors de la suppression de la souscription",
+      "DELETE_USER_BLOCKED_BY_CANCELLATION_RECORD": "Cet utilisateur ne peut pas être supprimé car il a annulé une demande de déploiement encore liée à son compte.",
+      "DELETE_USER_BLOCKED_BY_DEPLOYMENT_REQUEST": "Cet utilisateur ne peut pas être supprimé car des demandes de déploiement sont liées à son compte.",
+      "DELETE_USER_BLOCKED_BY_LAST_ORGANIZATION_MEMBER": "Cet utilisateur ne peut pas être supprimé car il est le dernier membre d'une organisation.",
+      "DELETE_USER_BLOCKED_BY_LINKED_DATA": "Cet utilisateur ne peut pas être supprimé car d'autres données sont encore liées à son compte.",
+      "DELETE_USER_BLOCKED_BY_PENDING_USERS": "Cet utilisateur ne peut pas être supprimé tant qu'une de ses organisations compte des utilisateurs en attente de validation.",
+      "DELETE_USER_BLOCKED_BY_PLATFORM_REGISTRATION": "Cet utilisateur ne peut pas être supprimé car il a enregistré un produit.",
+      "DELETE_USER_BLOCKED_BY_TRANSFER_REQUEST": "Cet utilisateur ne peut pas être supprimé tant qu'une demande de transfert d'espace personnel est en attente.",
+      "DELETE_USER_ERROR": "Erreur lors de la suppression de l'utilisateur",
       "DEPLOYMENT_REQUEST_HUB_STATUS_NOT_QUEUED": "Vous ne pouvez réorganiser que les demandes de déploiement en file d'attente.",
       "DEPLOYMENT_REQUEST_NOT_FOUND": "Une erreur inconnue s'est produite",
       "DEPLOYMENT_REQUEST_QUOTA_NOT_FOUND": "Le quota de la demande de déploiement n'a pas été trouvé.",
       "DEPLOYMENT_REQUEST_STATUS_UPDATE_NOT_ALLOWED": "Une erreur inconnue s'est produite",
       "DEPLOYMENT_REQUEST_UNKNOWN_ERROR": "Une erreur inconnue s'est produite",
+      "DEPLOYMENT_FEEDBACK_UNKNOWN_ERROR": "Une erreur inconnue s'est produite lors de l'envoi du commentaire.",
       "DOCUMENT_CREATE_ERROR": "Une erreur s'est produite lors de la création de la ressource.",
       "DOCUMENT_FILE_MISSING": "Fichier du document manquant",
       "DOCUMENT_MISSING_METADATA": "Il manque des métadonnées au document.",
       "DOCUMENT_NOT_FOUND": "La ressource n'a pas été trouvée.",
-      "DOCUMENT_UNIQUE_SLUG_ERROR": "Le nom de la ressource est déjà utilisé.",
+      "DOCUMENT_UNIQUE_SLUG_ERROR": "Le slug de la ressource est déjà utilisé.",
       "DOCUMENT_UPDATE_ERROR": "Une erreur s'est produite lors de la mise à jour de la ressource.",
-      "EDIT_CAPABILITIES_CANT_REMOVE_LAST_MANAGE_ACCESS": "Vous ne pouvez pas retirer le dernier utilisateur avec la capacité MANAGE_ACCESS",
+      "EDIT_CAPABILITIES_CANT_REMOVE_LAST_MANAGE_ACCESS": "Vous êtes le dernier utilisateur de votre organisation disposant de la capacité « gérer les accès » : vous ne pouvez pas la retirer.",
       "EDIT_CAPABILITIES_ERROR": "Erreur lors de la modification des capacités",
       "EDIT_ME_USER_ERROR": "Erreur lors de la modification de votre profil",
       "EDIT_ORGANIZATION_ERROR": "Erreur lors de la modification de l'organisation",
       "EDIT_USER_ERROR": "Erreur lors de la modification de l'utilisateur",
-      "EDIT_USER_SESSION_ERROR": "Une erreur inconnue s'est produite",
       "EMAIL_OUTSIDE_ORGANIZATION_ERROR": "Vous ne pouvez pas ajouter un utilisateur dont le domaine de l'email est en dehors de votre organisation",
-      "EPIC_CREATE_ERROR": "Une erreur s'est produite lors de l'ajout de l'épic.",
-      "EPIC_UPDATE_ERROR": "Une erreur s'est produite lors de la mise à jour de l'épic.",
-      "FREE_TRIAL_ALREADY_EXISTS": "Une instance de test existe déjà pour votre organisation",
+      "EPIC_CREATE_ERROR": "Une erreur s'est produite lors de la création de l'epic.",
+      "EPIC_UPDATE_ERROR": "Une erreur s'est produite lors de la mise à jour de l'epic.",
+      "FORBIDDEN_ACCESS": "Vous n'êtes pas autorisé à effectuer cette action",
+      "FREE_TRIAL_ALREADY_EXISTS": "Un essai gratuit existe déjà pour votre organisation",
       "GRANT_CAPABILITIES_ON_ORGANIZATION_FIRST": "Vous devez d'abord accorder des capacités à l'organisation",
       "HUBSPOT_ERROR": "Une erreur s'est produite lors de la prise de contact",
-      "INCREMENT_SHARE_NUMBER": "Une erreur s'est produite lors de l'incrémentation du numéro de part",
+      "INCREMENT_SHARE_NUMBER": "Une erreur s'est produite lors de l'incrémentation du nombre de partages",
       "INTEGRATION_TYPE_NOT_MANAGEABLE": "Ce type d'intégration n'est pas gérable.",
       "INTEGRATION_TYPE_NOT_RECOGNIZED": "Ce type d'intégration n'est pas reconnu",
       "INVALID_ACTION_SIZE": "Une erreur inconnue s'est produite",
+      "INVALID_CONTENT_TRANSLATION_KEY": "Clé de contenu invalide",
+      "INVALID_DOCUMENT_CREATION_STATUS": "Une ressource ne peut être créée qu'en brouillon ou en validation",
+      "INVALID_DOCUMENT_STATUS_TRANSITION": "Ce changement de statut n'est pas autorisé pour cette ressource",
       "INVALID_EMAIL": "L'email doit être dans un format valide.",
       "INVALID_IMAGE_URL": "L'URL de l'image n'est pas valide",
       "INVALID_MANIFEST_VERSION_FORMAT": "Le format de version du manifest n'est pas valide",
       "INVALID_PLATFORM_CONFIGURATION": "La configuration de la plateforme n'est pas valide",
       "INVALID_PLATFORM_ID": "Une erreur inconnue s'est produite",
-      "INVALID_PLATFORM_IDENTIFIER": "L'identificateur de la platform n'est pas valide",
+      "INVALID_PLATFORM_IDENTIFIER": "L'identifiant de la plateforme n'est pas valide",
       "INVALID_PLATFORM_VERSION": "Version de plateforme non valide",
-      "INVALID_PRODUCTS_FOR_DEPLOYMENT_TYPE": "Les produits sélectionnés ne sont pas valides pour ce type de déploiement",
+      "INVALID_SSO_GROUP_ROLE_PORTAL": "Groupe SSO ou rôle invalide",
+      "INVALID_ROLE_PORTAL": "Rôle invalide",
       "IS_PLATFORM_REGISTERED_UNKNOWN_ERROR": "Une erreur inconnue s'est produite lors de la connexion avec le produit",
+      "LOAD_CAPABILITIES_ERROR": "Une erreur s'est produite lors du chargement des capacités",
+      "LIST_FACET_ERROR": "Une erreur inconnue s'est produite lors de l'affichage des facettes.",
+      "META_DESCRIPTION_INVALID_DASH": "La méta-description doit utiliser des tirets simples (-), pas de tirets longs (— ou –)",
+      "META_DESCRIPTION_MATCHES_TITLE": "La méta-description générée ne doit pas commencer par le nom de la ressource",
+      "META_DESCRIPTION_REQUIRED": "La méta-description est obligatoire",
+      "META_DESCRIPTION_TOO_SHORT": "La méta-description générée, produit et type compris, doit contenir au moins 120 caractères",
+      "META_DESCRIPTION_TOO_LONG": "La méta-description générée, produit et type compris, ne doit pas dépasser 160 caractères",
       "MISSING_AUTO_REGISTER_PLATFORM_ARGUMENT": "Argument de connexion automatique du produit manquant",
       "MISSING_CAPABILITY_ON_ORGANIZATION": "Permissions manquantes",
       "MISSING_CAPABILITY_ON_SERVICE": "Permissions manquantes",
-      "MISSING_METADATA_MAPPING": "Cartographie des métadonnées manquante",
+      "MISSING_METADATA_MAPPING": "Correspondance des métadonnées manquante",
       "MISSING_START_OR_END_DATE": "Une erreur inconnue s'est produite",
+      "INVALID_USE_CASES_FOR_PRODUCTS": "Les cas d'usage ne correspondent pas aux produits de l'essai",
       "MIXED_LTS_MANIFEST_FRAGMENTS": "Un lot ne peut pas mélanger des fragments LTS et non-LTS",
       "NEWS_FEED_ITEM_MISSING_TITLE": "Le titre de l'article du fil d'actualité est manquant",
       "NEWS_FEED_ITEM_NOT_FOUND": "L'article du fil d'actualité n'a pas été trouvé",
       "NO_ASYNC_CONTEXT_AVAILABLE": "Une erreur inconnue s'est produite",
       "NOT_ALLOWED_BY_DEPLOYMENT_STATUS": "Une erreur inconnue s'est produite",
+      "NOT_FOUND": "La ressource demandée est introuvable",
       "ORGANIZATION_NOT_FOUND": "Organisation introuvable",
       "ORGANIZATION_SAME_DOMAIN_EXISTS": "Une organisation ayant le même domaine existe déjà",
       "ORGANIZATION_SAME_NAME_EXISTS": "Une organisation portant le même nom existe déjà",
       "ORGANIZATIONS_DOES_NOT_MATCH_SELECTED_ORGANIZATION": "Vous n'êtes pas autorisé à faire ceci",
+      "PENDING_USER_NOT_FOUND": "Cet utilisateur n'a pas de demande en attente pour rejoindre l'organisation",
       "PLATFORM_CONFIGURATION_NOT_FOUND": "La configuration de la plateforme n'a pas été trouvée",
       "PLATFORM_NOT_REGISTERED": "Le produit n'est pas connecté",
       "PLATFORM_TYPE_NOT_SUPPORTED": "Le type de plateforme n'est pas pris en charge",
@@ -273,33 +453,58 @@
       "REMOVE_USER_FROM_PENDING_ORGA_ERROR": "Une erreur s'est produite lors de la suppression d'un utilisateur d'une organisation en attente",
       "SEO_SERVICE_INSTANCE_NOT_FOUND": "Les métadonnées de l'instance du service SEO sont introuvables.",
       "SERVICE_DEFINITION_NOT_FOUND": "La définition du service n'a pas été trouvée",
+      "SERVICE_GROUP_NOT_FOUND": "Le groupe de service n'a pas été trouvé",
       "SERVICE_GROUPS_LINKED_TO_MULTIPLE_SERVICE_INSTANCES": "Vous n'êtes pas autorisé à faire ceci",
       "SERVICE_INSTANCE_NOT_FOUND": "L'instance du service n'a pas été trouvée",
+      "SERVICE_INSTANCE_NOT_PUBLIC": "Vous n'avez pas accès à ce service",
       "SERVICE_NOT_FOUND": "Le service n'a pas été trouvé",
       "SERVICE_NOT_MANAGEABLE": "Ce service n'est pas gérable.",
       "SERVICE_SUBSCRIPTION_ERROR": "Erreur lors de l'ajout d'une souscription au service",
       "SHORT_DESCRIPTION_TOO_LONG": "La description courte est trop longue",
+      "SOLUTION_CATEGORIES_REQUIRED": "Au moins une catégorie de solution est requise",
       "SOLUTION_CATEGORY_NOT_FOUND": "Catégorie de solution non trouvée",
       "SUBSCRIPTION_NOT_FOUND": "L'abonnement n'a pas été trouvé",
       "TENANT_ID_MANDATORY": "L'identifiant du locataire est obligatoire",
-      "TRANSFER_ME_ERROR": "Une erreur s'est produite lors de la requête de transfert de personal space.",
+      "TENANT_ID_NOT_SUPPORTED": "Cette plateforme ne prend pas en charge les locataires",
+      "TOO_MANY_EMAILS": "Vous pouvez inviter au maximum 50 emails à la fois",
+      "TOO_MANY_REQUESTS": "Trop de requêtes. Veuillez réessayer plus tard.",
+      "TRANSFER_ME_ERROR": "Une erreur s'est produite lors de la demande de transfert de l'espace personnel.",
+      "TRIAL_PLATFORM_CANNOT_BE_UNREGISTERED": "Une plateforme d'essai ne peut pas être désinscrite",
+      "UNAUTHENTICATED": "Vous devez être connecté pour effectuer cette action",
       "UNKNOWN_ERROR": "Une erreur inconnue s'est produite",
       "UNREGISTER_PLATFORM_UNKNOWN_ERROR": "Une erreur inconnue s'est produite lors de la désinscription de la plateforme",
       "UPDATE_PLATFORM_SERVICE_METADATA_ERROR": "Erreur lors de la mise à jour des métadonnées du service de la plateforme",
-      "UPLOAD_USER_PICTURE_ERROR": "Une erreur s'est produite lors du téléchargement de votre photo de profil",
+      "UPLOAD_USER_PICTURE_ERROR": "Une erreur s'est produite lors de l'import de votre photo de profil",
       "USE_CASE_NOT_FOUND": "Cas d'utilisation introuvable",
       "USER_DISABLED": "L'utilisateur est désactivé",
       "USER_IS_NOT_IN_ORGANIZATION": "Permissions manquantes",
       "USER_NOT_FOUND": "L'utilisateur n'a pas été trouvé",
-      "YOU_CAN_NOT_LOGIN": "Vous ne pouvez pas vous connecter"
+      "XTM_ONE_ROLE_REQUIRED": "Un rôle XTM One est requis",
+      "VOTABLE_FEATURE_NOT_FOUND": "Cette fonctionnalité n'est plus ouverte au vote",
+      "VOTE_FOR_FEATURE_ERROR": "Une erreur est survenue lors de l'enregistrement de votre vote",
+      "YOU_CAN_NOT_LOGIN": "Vous ne pouvez pas vous connecter",
+      "VOTING_ROUND_NOT_OPEN": "Ce round de vote n'est pas ouvert",
+      "VOTING_ROUND_CLOSED": "Ce round de vote est clôturé",
+      "VOTING_ROUND_NOT_FOUND": "Round de vote introuvable",
+      "DELETE_VOTING_ROUND_BLOCKED_BY_VOTES": "Ce round a déjà recueilli des votes et ne peut pas être supprimé",
+      "DELETE_VOTABLE_FEATURE_BLOCKED_BY_VOTES": "Cette fonctionnalité a déjà des votes, désactivez-la plutôt",
+      "VOTING_ROUND_MUTATION_ERROR": "Une erreur est survenue lors de l'enregistrement du round",
+      "OPEN_VOTING_ROUND_WITHOUT_ACTIVE_FEATURE": "Ce round n'a aucune fonctionnalité active et ne peut pas être ouvert",
+      "VOTABLE_FEATURE_PRODUCT_LOCKED": "Cette fonctionnalité a déjà des votes, son produit ne peut plus être modifié",
+      "VOTABLE_FEATURE_PRODUCT_NOT_VOTABLE": "Ce produit n'est pas ouvert au vote",
+      "COPY_FEATURES_FROM_ANOTHER_ROADMAP": "Les fonctionnalités ne peuvent être copiées que depuis un round de la même roadmap",
+      "VOTABLE_FEATURE_MUTATION_ERROR": "Une erreur est survenue lors de l'enregistrement de la fonctionnalité",
+      "INVALID_API_TOKEN": "Le nom ou la date d’expiration du jeton n’est pas valide",
+      "NOT_ALLOWED_WITH_API_TOKEN": "Cette action n’est pas autorisée avec un jeton d’API",
+      "READ_ONLY_API_TOKEN": "Ce jeton d’API ne peut que lire"
     },
-    "SomethingWentWrong": "Quelque chose s'est mal passé",
+    "SomethingWentWrong": "Une erreur est survenue",
     "YouAreNotAuthorized": "Vous n'êtes pas autorisé à accéder à cette page."
   },
   "GenericActions": {
     "FilterUseCases": "Cas d'utilisation...",
     "FilterUseCasesLabel": "Cas d'utilisation",
-    "Search": "Recherche...",
+    "Search": "Rechercher...",
     "Paginate": {
       "PreviousPage": "Page précédente",
       "NextPage": "Page suivante",
@@ -309,7 +514,7 @@
     "FilterEntityTypes": "Type d'entité...",
     "FilterEntityTypesLabel": "Type d'entité"
   },
-  "GoToProd": "Allez sur la production",
+  "GoToProd": "Aller sur la production",
   "Header": {
     "BrandName": "Filigran",
     "CloseMenu": "Fermer le menu",
@@ -319,7 +524,9 @@
       "GoToPlatform": "Accéder à {title}",
       "Details": "Détails",
       "Documentation": "Documentation",
-      "ConnectPlatform": "Connecter {platformName}"
+      "ConnectProduct": "Connecter un produit",
+      "Trial": "Essai",
+      "EE": "EE"
     }
   },
   "HomePage": {
@@ -338,12 +545,7 @@
     "RegisteredPlatformsCard": {
       "RegisteredOn": "le",
       "Contract": "Contrat",
-      "Remaining": "restant",
-      "DaysRemaining": "{days, plural, =1 {# jour} other {# jours}}"
-    },
-    "TryOtherPlatform": {
-      "Title": "Étendez et adaptez votre plateforme XTM",
-      "Cta": "Essayez {productName}"
+      "DaysRemaining": "Il reste <badge>{days, plural, =1 {# jour} other {# jours}}</badge>"
     }
   },
   "PublicHomePage": {
@@ -351,29 +553,29 @@
       "Label": "Bienvenue sur XTM Hub",
       "LabelWithName": "Bienvenue {name}",
       "ConnectedProducts": "{count, plural, one {Produit connecté} other {Produits connectés}}",
-      "Title": "Développez et faites évoluer votre plateforme XTM",
-      "Description": "Connectez votre OpenCTI ou OpenAEV pour déployer du contenu prêt à l’emploi en un clic, rester informé des actualités sur les produits, bénéficier d’essais gratuits et, tout simplement, tirer le meilleur parti de votre expérience de la plateforme XTM."
+      "Title": "Développez et faites évoluer votre XTM Platform",
+      "Description": "Connectez votre OpenCTI ou OpenAEV pour déployer du contenu prêt à l’emploi en un clic, rester informé des actualités sur les produits, bénéficier d’essais gratuits et, tout simplement, tirer le meilleur parti de votre expérience XTM Platform."
     },
     "XtmRoadmap": {
-      "Title": "XTM Platform Roadmap",
-      "TitleWithProduct": "{product} Roadmap",
-      "Description": "Découvrez ce que nous développons, les prochaines étapes et l’orientation future de la plateforme XTM. Transparence totale. Pas de surprises.",
+      "Title": "Roadmap XTM Platform",
+      "TitleWithProduct": "Roadmap {product}",
+      "Description": "Découvrez ce que nous développons, les prochaines étapes et l’orientation future de la XTM Platform. Transparence totale. Pas de surprises.",
       "SeeMore": "En savoir plus",
-      "ImageAlt": "Illustration de la feuille de route de la plateforme XTM",
-      "Next": "Actuellement",
-      "Now": "Prochainement",
-      "UnderConsideration": "À l’étude"
+      "ImageAlt": "Illustration de la roadmap XTM Platform",
+      "Next": "À venir",
+      "Now": "En cours",
+      "UnderConsideration": "À l'étude"
     }
   },
   "PublicPathError": {
     "NotFound": "404 | Cette page est introuvable"
   },
   "AppFooter": {
-    "AllRightsReserved": "Tous droits réservés",
+    "AllRightsReserved": "Tous droits réservés.",
     "FiligranWebsite": "Site Filigran",
-    "Documentation": "Documentation du Hub XTM",
+    "Documentation": "Documentation XTM Hub",
     "PrivacyPolicy": "Politique de confidentialité",
-    "TermsOfServices": "Conditions d'utilisation",
+    "TermsOfService": "Conditions d'utilisation",
     "Licenses": "Licences"
   },
   "PublicLayout": {
@@ -386,11 +588,11 @@
     "Overview": "Aperçu"
   },
   "InviteUserServiceForm": {
-    "Description": "Capacité additionnelle : par défaut, votre utilisateur invité aura accès au service. Si vous souhaitez lui donner des capacité supplémentaires, sélectionnez la capacité souhaitée.",
+    "Description": "Capacité additionnelle : par défaut, votre utilisateur invité aura accès au service. Si vous souhaitez lui donner des capacités supplémentaires, sélectionnez la ou les capacités souhaitées.",
     "DisabledCapability": "Si vous voulez donner cette capacité à vos utilisateurs sur ce service, vous devez d'abord l'activer au niveau de l'organisation",
     "Email": "Email",
     "GrantCapability": "Donner cette capacité",
-    "Title": "Inviter l'utilisateur au service {serviceName} "
+    "Title": "Inviter l'utilisateur au service {serviceName}"
   },
   "UseCaseActions": {
     "AddUseCase": "Ajouter un cas d'usage",
@@ -406,6 +608,28 @@
     "Color": "Couleur",
     "Name": "Nom",
     "Product": "Produit"
+  },
+  "RoleListPage": {
+    "SsoGroup": "Groupe SSO",
+    "SsoGroups": "Groupes SSO",
+    "Role": "Rôle",
+    "Capabilities": "Capacités",
+    "AddMapping": "Ajouter un groupe SSO",
+    "EditMapping": "Modifier un groupe SSO",
+    "DeleteDialog": {
+      "Title": "Supprimer un groupe SSO",
+      "Text": "Voulez-vous vraiment retirer le groupe SSO ?"
+    },
+    "AddRole": "Ajouter un rôle",
+    "EditRole": "Modifier le rôle",
+    "DeleteRoleDialog": {
+      "Title": "Supprimer le rôle",
+      "Text": "Voulez-vous vraiment supprimer le rôle {rolePortal} ? Ses associations aux groupes SSO et ses attributions aux utilisateurs seront aussi supprimées."
+    },
+    "Error": {
+      "SsoGroup": "Le groupe SSO est requis",
+      "Role": "Le rôle est requis"
+    }
   },
   "SolutionCategory": {
     "Actions": {
@@ -428,7 +652,7 @@
     }
   },
   "LocaleSwitcher": {
-    "Label": "Langage",
+    "Label": "Langue",
     "en": "English",
     "fr": "Français",
     "ja": "日本語"
@@ -437,6 +661,7 @@
     "DontHaveAccount": "Vous n'avez pas de compte Filigran ?",
     "Email": "Email",
     "Login": "Connexion",
+    "Logo": "Logo XTM Hub",
     "Logout": "Déconnexion",
     "Password": "Mot de passe",
     "SignIn": "S'inscrire",
@@ -450,9 +675,33 @@
     "AlreadyHaveAccount": "Vous avez déjà un compte ?",
     "LogIn": "Se connecter",
     "LoginWithLocal": "Se connecter en local",
-    "MadeBy": "Fait par",
+    "MadeBy": "Réalisé par",
     "WelcomeTitle": "Bienvenue sur XTM Hub",
-    "WelcomeSubtitle": "Étendez et dimensionnez votre plateforme XTM"
+    "WelcomeSubtitle": "Développez et faites évoluer votre XTM Platform",
+    "EmailNotVerifiedError": {
+      "Title": "Adresse email non vérifiée",
+      "Description": "Veuillez vérifier votre adresse email à l’aide du lien que nous vous avons envoyé, puis reconnectez-vous."
+    },
+    "ResendVerificationEmail": {
+      "Button": "Renvoyer l’email de vérification",
+      "Sent": "Email envoyé",
+      "Success": {
+        "Title": "Email de vérification envoyé",
+        "Description": "Consultez votre boîte de réception et vos spams."
+      },
+      "TooManyRequests": {
+        "Title": "Trop de demandes",
+        "Description": "Veuillez patienter quelques minutes avant d’en demander un nouveau."
+      },
+      "NoPendingVerification": {
+        "Title": "Impossible de renvoyer l’email de vérification",
+        "Description": "Veuillez vous reconnecter pour en recevoir un nouveau. Si le problème persiste, contactez-nous pour obtenir de l’aide."
+      },
+      "Failed": {
+        "Title": "Impossible d’envoyer l’email de vérification",
+        "Description": "Une erreur est survenue. Veuillez réessayer plus tard."
+      }
+    }
   },
   "MenuActions": {
     "Continue": "Continuer",
@@ -462,16 +711,17 @@
     "Update": "Modifier"
   },
   "Menu": {
-    "XTMPlatform": "Plateforme XTM",
-    "StartFreeTrial": "Commencer l'essai gratuit",
+    "XTMPlatform": "XTM Platform",
+    "XTMPlatformTrial": "Essai XTM Platform",
     "CustomDashboards": "Tableaux de bord personnalisés",
     "CustomViews": "Vues personnalisées",
     "Integrations": "Intégrations",
-    "Playbooks": "Guides pratiques",
+    "Playbooks": "Playbooks",
     "LiveDemo": "Démonstration en direct",
     "Documentation": "Documentation",
     "Scenarios": "Scénarios",
-    "XTMRoadmap": "XTM Platform Roadmap",
+    "XTMRoadmap": "Roadmap XTM Platform",
+    "FeatureVoting": "Vote des fonctionnalités",
     "FiligranAcademy": "Filigran Academy",
     "Blog": "Blog",
     "Slack": "Slack",
@@ -483,29 +733,38 @@
   },
   "MenuLinks": {
     "Home": "Accueil",
-    "UseCase": "Cas d'usage",
-    "SolutionCategory": "Catégorie de solution",
-    "Organization": "Organisation",
-    "Parameter": "Paramètre",
-    "Profile": "Profile",
+    "Profile": "Profil",
     "Security": "Sécurité",
-    "Service": "Service",
-    "Settings": "Réglages",
+    "Settings": "Paramètres",
     "SettingsLabel": "Menu des paramètres",
     "Users": "Utilisateurs",
-    "OpenCTITrial": "Essai OpenCTI",
-    "OpenAEVTrial": "Essai OpenAEV",
-    "Competitor": "Concurrent",
-    "NewsFeed": "Fil d'actualité"
+    "NewsFeed": "Fil d'actualité",
+    "VotingRound": "Vote des fonctionnalités",
+    "Roles": "Rôles",
+    "CSMBoard": "Tableau de bord CSM",
+    "Parameters": "Paramètres",
+    "Organization": "Organisation",
+    "Competitors": "Concurrents",
+    "Trials": "Essais",
+    "UseCases": "Cas d'usage",
+    "SolutionCategories": "Catégories de solutions",
+    "Services": "Services",
+    "SettingsAccess": "Accès",
+    "SettingsCommunity": "Communauté",
+    "SettingsManagement": "Gestion",
+    "ServiceCatalog": "Catalogue de services",
+    "RegisteredPlatforms": "Plateformes enregistrées"
   },
   "NewsFeedAdminPage": {
     "Title": "Titre",
     "Library": "Bibliothèque",
+    "Blogpost": "Article de blog",
     "CreationDate": "Date de création",
     "Tags": "Tags",
     "IsDeleted": "Supprimé",
     "IsDeletedYes": "Supprimé",
     "Delete": "Supprimer",
+    "DeleteBlogpostDisabled": "Les articles de blog sont gérés par la synchronisation et ne peuvent pas être supprimés",
     "DeleteSuccess": "L'élément de fil d'actualité \"{title}\" a été supprimé avec succès",
     "DeleteError": "Une erreur est survenue lors de la suppression de l'élément",
     "DeleteDialog": {
@@ -515,7 +774,7 @@
     }
   },
   "Metadata": {
-    "Title": "XTM Hub | Votre passerelle vers les renseignements sur les cybermenaces et la simulation de violations et d'attaques",
+    "Title": "XTM Hub | Votre passerelle vers le renseignement sur les menaces et la validation de l'exposition",
     "Description": "XTM Hub est un espace centralisé permettant d'accéder à des ressources, d'optimiser l'utilisation des produits Filigran et de renforcer la communauté.",
     "ShortTitle": "XTM Hub | Plateforme de renseignements sur les cybermenaces",
     "ShortDescription": "XTM Hub est votre passerelle vers les solutions de cybersécurité de Filigran.",
@@ -526,7 +785,7 @@
     "DocumentFallbackDescriptionScenario": "Explorez ce scénario d'attaque OpenAEV pour renforcer votre émulation d'adversaire et votre validation de sécurité.",
     "DocumentFallbackDescriptionGeneric": "Explorez cette ressource sur XTM Hub by Filigran pour renforcer votre posture de cybersécurité.",
     "ResourcePreviewAlt": "{name} - Aperçu de la ressource",
-    "SeoMetadata": "SEO Metadata",
+    "SeoMetadata": "Métadonnées SEO",
     "SeoMetaTitle": "Méta-titre",
     "SeoMetaDescription": "Méta-description"
   },
@@ -534,12 +793,12 @@
     "Name": "Nom",
     "Domain": "Domaine",
     "Tier": "Niveau",
-    "Edit": "Éditer",
+    "Edit": "Modifier",
     "Delete": "Supprimer",
     "AddCompetitor": "Ajouter un concurrent",
     "DeleteDialog": {
       "Title": "Supprimer le concurrent",
-      "Text": "Etes-vous sûr de vouloir supprimer le concurrent {name} ?"
+      "Text": "Êtes-vous sûr de vouloir supprimer le concurrent {name} ?"
     }
   },
   "CompetitorForm": {
@@ -552,26 +811,27 @@
     "EditButton": "Mettre à jour le concurrent"
   },
   "MenuUser": {
-    "Profile": "Profile",
-    "ToggleUser": "Ouvrir menu utilisateur"
+    "Profile": "Profil",
+    "ToggleUser": "Ouvrir le menu utilisateur"
   },
   "Notifications": {
     "Title": "Notifications ({count})",
     "UserNotification": {
       "Text": "<nameFormat>{name}</nameFormat> veut rejoindre votre organisation",
-      "Title": "Requête Utilisateur"
+      "Title": "Demande d'utilisateur"
     }
   },
   "OrganizationActions": {
     "ErrorNameAlreadyExists": "L'organisation {name} existe déjà.",
+    "LoadOrganizationsError": "Les organisations n'ont pas pu être chargées.",
     "OrganizationCreated": "L'organisation {name} a été créée",
     "OrganizationDeleted": "L'organisation a été supprimée",
     "OrganizationUpdated": "L'organisation {name} a été modifiée",
-    "SearchOrganizationWithEmail": "Recherche d'une organisation par email..."
+    "SearchOrganizationWithEmail": "Rechercher une organisation par email..."
   },
   "OrganizationForm": {
     "CreateOrganization": "Créer une organisation",
-    "DeleteOrganization": "Supprimer une organisation",
+    "DeleteOrganization": "Supprimer l'organisation",
     "Domains": "Domaines",
     "DomainsPlaceholder": "Ajouter un domaine",
     "EditOrganization": "Modifier l'organisation",
@@ -588,8 +848,8 @@
     "AddOrganization": "Abonnement de l'organisation au service",
     "EndDate": "Date de fin (optionnel)",
     "Organization": "Organisation",
-    "RemoveOrganization": "Supprimer l'organisation",
-    "SelectCapa": "Sélectionner les capabilités",
+    "RemoveOrganization": "Retirer l'organisation",
+    "SelectCapa": "Sélectionner les capacités",
     "SelectCapaDescription": "Sélectionnez les capacités que l'administrateur pourra assigner aux utilisateurs.",
     "SelectOrganization": "Sélectionner",
     "StartDate": "Date de début"
@@ -602,12 +862,11 @@
   },
   "TrialsDashboard": {
     "Columns": {
-      "Email": "Courriel",
+      "Email": "Email",
       "Organization": "Organisation",
       "StartDate": "Date de début",
       "EndDate": "Date de fin",
       "RemainingDays": "Jours restants",
-      "Status": "Statut",
       "Region": "Région",
       "PlatformId": "ID de la plateforme",
       "PlatformUrl": "URL de la plateforme",
@@ -615,60 +874,96 @@
       "RequestDate": "Date de la demande",
       "Priority": "Priorité",
       "CancellationDate": "Date d'annulation",
-      "CancellationOwner": "Propriétaire de l'annulation",
+      "CancellationOwner": "Annulé par",
       "CancellationReason": "Raison de l'annulation",
       "Available": "Disponible",
-      "Taken": "Pris",
-      "Total": "Total"
+      "Taken": "Utilisés",
+      "Total": "Total",
+      "Products": "Produits"
     },
     "TabTitle": {
       "Cancelled": "Annulé",
       "Expired": "Expiré",
-      "Running": "En cours d'exécution",
+      "Running": "En cours",
       "Waiting": "En attente",
       "Quotas": "Quotas"
     },
     "Toast": {
-      "TrialsReordered": "Les demandes ont été réorganisées"
+      "BundleCancelled": "L'essai bundle a bien été annulé.",
+      "BundleReordered": "Le bundle a été repositionné dans la file d'attente."
     },
     "Actions": {
-      "SearchTrials": "Recherche par email ou par organisation",
-      "MoveToTop": "Aller au début",
-      "MoveUp": "Remonter"
+      "SearchTrials": "Rechercher par email, organisation ou région",
+      "SearchTrialsPlaceholder": "Email, organisation ou région",
+      "MoveToTop": "Placer en tête",
+      "MoveUp": "Remonter",
+      "CancelBundle": "Annuler l'essai bundle"
     },
     "UpdateQuotasForm": {
-      "Title": "Mise à jour des quotas pour {platform} dans {region}",
       "QuotasUpdated": "Le quota a été mis à jour avec succès",
       "NewCapacityLabel": "Nouvelle capacité de quota",
       "AlertDialog": {
         "ConfirmTitle": "Mise à jour des quotas pour la région {region}",
         "ConfirmDescription": "Vous avez mis à jour les quotas pour la région {region} de {oldCapacity} à {newCapacity}.",
         "ConfirmSentence": "Êtes-vous sûr de vouloir enregistrer ces modifications ?"
-      }
+      },
+      "BundleTitle": "Modifier le quota bundle pour la région {region}"
     },
     "WarningCancellation": "Toute annulation empêchera l'organisation de demander un nouvel essai",
     "Registered": "Connecté",
-    "NotRegistered": "Déconnecté"
+    "NotRegistered": "Non connecté",
+    "ProductStatus": {
+      "queued": "En file d'attente",
+      "pending": "En attente",
+      "provisioning": "Provisionnement",
+      "active": "Actif",
+      "expired": "Expiré",
+      "cancelled": "Annulé",
+      "failed": "En échec"
+    },
+    "Cancellation": {
+      "Confirmation": "Êtes-vous sûr de vouloir annuler l'essai bundle de {organizationName} ? Tous les produits du bundle seront annulés."
+    }
   },
   "Parameters": {
     "Version": "Version"
   },
   "PendingUserListPage": {
-    "TabTitle": "Requêtes utilisateurs ({usersCount})",
+    "TabTitle": "Demandes d'utilisateurs ({usersCount})",
+    "Reject": "Refuser",
+    "Approve": "Accepter",
+    "ActionSuccessApprove": "La demande utilisateur pour {email} a été acceptée",
+    "ActionSuccessDeny": "La demande utilisateur pour {email} a été refusée",
+    "WarningUserAccept": {
+      "Confirm": "Confirmer",
+      "Description": "<strong>{email}</strong> sera ajouté à votre organisation sans aucune autorisation par défaut. Vous pouvez gérer ses droits d'accès et ses autorisations à tout moment depuis l'onglet <strong>Utilisateurs</strong> du menu de gauche.",
+      "Title": "Ajouter cet utilisateur à votre organisation ?"
+    },
     "WarningUserRejection": {
       "Confirm": "Confirmer",
-      "Description": "Vous êtes sur le point de refuser cet utilisateur dans votre organisation. Cette action ne peut être annulée. Êtes-vous sûr ?",
-      "Title": "Êtes-vous sûr?"
+      "Description": "<strong>{email}</strong> sera refusé(e) par votre organisation. Cette action est irréversible. Êtes-vous sûr(e) ?",
+      "Title": "Refuser cet utilisateur de votre organisation ?"
     },
     "WarningUsersRejection": {
-      "Confirm": "Confirmez",
-      "Description": "Vous êtes sur le point de refuser ces utilisateurs de votre organisation. Cette action ne peut être annulée. Etes-vous sûr ?",
-      "Title": "Etes-vous sûr ?"
+      "Confirm": "Confirmer",
+      "Description": "Les utilisateurs sélectionnés seront refusés par votre organisation. Cette action est irréversible. Êtes-vous sûr ?",
+      "Title": "Refuser ces utilisateurs de votre organisation ?"
     },
     "WarningUsersAccept": {
       "Confirm": "Confirmer",
-      "Description": "Vous êtes sur le point d'accepter ces utilisateurs dans votre organisation. Ces utilisateurs n'auront pas d'autorisations spécifiques par défaut. Si vous souhaitez attribuer ou mettre à jour des permissions, visitez l'onglet Utilisateurs. Êtes-vous sûr ?",
-      "Title": "Êtes-vous sûr ?"
+      "Description": "Les utilisateurs sélectionnés seront ajoutés à votre organisation sans aucune autorisation par défaut. Vous pouvez gérer leur accès et leurs autorisations à tout moment depuis l’onglet <strong>Utilisateurs</strong> dans le menu de gauche.",
+      "Title": "Ajouter ces utilisateurs à votre organisation ?"
+    },
+    "AlreadyProcessed": {
+      "Title": "Demande déjà traitée",
+      "Description": "Cette demande d'utilisateur a déjà été acceptée ou refusée.",
+      "Confirm": "OK"
+    }
+  },
+  "PendingUserRedirect": {
+    "Unauthorized": {
+      "Title": "Permissions insuffisantes",
+      "Description": "Vous n'avez pas les permissions requises pour gérer les demandes d'utilisateurs de cette organisation."
     }
   },
   "RegistrationDetails": {
@@ -678,21 +973,106 @@
   "PlatformIdentifier": {
     "openaev": "OpenAEV",
     "opencti": "OpenCTI",
-    "xtmhub": "XTM Hub"
+    "xtmhub": "XTM Hub",
+    "xtmone": "XTM One"
+  },
+  "ApiTokens": {
+    "Column": {
+      "Expires": "Expire le",
+      "LastUsed": "Dernière utilisation",
+      "Name": "Nom",
+      "Organization": "Organisation",
+      "Scope": "Portée",
+      "Status": "Statut"
+    },
+    "Create": {
+      "Description": "Le jeton agit en votre nom dans l’organisation choisie, avec la portée choisie.",
+      "Open": "Créer un jeton",
+      "Submit": "Créer le jeton",
+      "Title": "Créer un jeton d’API"
+    },
+    "Created": {
+      "Copied": "Jeton copié",
+      "Copy": "Copier le jeton",
+      "CopyFailed": "Le jeton n’a pas pu être copié : sélectionnez-le et copiez-le à la main.",
+      "Description": "C’est la seule fois où le jeton {name} est affiché. Conservez-le dans un gestionnaire de secrets ; si vous le perdez, révoquez-le et créez-en un nouveau.",
+      "Done": "Terminé",
+      "Helper": "Envoyez-le dans l’en-tête Authorization : Bearer suivi du jeton.",
+      "Title": "Copiez votre jeton d’API maintenant",
+      "Token": "Jeton d’API"
+    },
+    "Description": "Un jeton permet à un script ou à une intégration comme Filigran Copilot d’appeler l’API XTM Hub en votre nom, dans une organisation. Un jeton n’a jamais plus de droits que vous.",
+    "Empty": "Aucun jeton d’API pour l’instant. Créez-en un pour connecter un script ou une intégration.",
+    "Field": {
+      "Expiration": "Expiration",
+      "ExpiresOn": "Expire le {date}",
+      "Name": "Nom",
+      "NameError": "Saisissez un nom de 100 caractères au plus",
+      "NameHelper": "Ce qui utilise ce jeton, pour le reconnaître plus tard.",
+      "NamePlaceholder": "Filigran Copilot",
+      "Organization": "Organisation",
+      "OrganizationError": "Choisissez une organisation",
+      "Scope": "Portée",
+      "ExpirationInfo": "Après cette date, l’API refuse le jeton et vous en créez un nouveau. Exemple : 90 jours pour une intégration. Une durée courte limite les dégâts d’un jeton divulgué.",
+      "InfoLabel": "À propos de {field}",
+      "NameInfo": "Un libellé pour vous seul, l’API ne le lit jamais. Exemple : Filigran Copilot. Il ne peut pas être modifié ensuite : révoquez le jeton et créez-en un nouveau.",
+      "OrganizationHelper": "Le jeton ne peut pas passer dans une autre organisation.",
+      "OrganizationInfo": "Le jeton fonctionne uniquement dans cette organisation, avec vos droits dans celle-ci. Exemple : l’organisation de votre entreprise. Pour une autre organisation, créez un autre jeton.",
+      "ScopeInfo": "Jusqu’où le jeton peut aller, jamais au-delà de vos propres droits. Exemple : Lecture pour un tableau de bord, Lecture et écriture pour une intégration qui crée du contenu."
+    },
+    "Lifetime": "{count, plural, one {# jour} other {# jours}}",
+    "NeverUsed": "Jamais utilisé",
+    "PersonalSpace": "Espace personnel",
+    "Revoke": "Révoquer",
+    "RevokeDialog": {
+      "Text": "Tout script ou intégration qui utilise {name} perd l’accès immédiatement. Cette action est irréversible.",
+      "Title": "Révoquer ce jeton d’API ?"
+    },
+    "RevokeNamed": "Révoquer le jeton {name}",
+    "Revoked": "Jeton {name} révoqué",
+    "Scope": {
+      "admin": "Administration",
+      "read": "Lecture",
+      "read_write": "Lecture et écriture"
+    },
+    "ScopeHelp": {
+      "admin": "Administration : vos droits d’administration de l’organisation et de la plateforme, tels que vous les avez aujourd’hui. À réserver à un outil de confiance.",
+      "read": "Lecture : requêtes uniquement, sans l’administration de l’organisation. Rien ne peut être modifié.",
+      "read_write": "Lecture et écriture : requêtes et modifications, sans l’administration de l’organisation ni de la plateforme."
+    },
+    "Status": {
+      "active": "Actif",
+      "expired": "Expiré",
+      "revoked": "Révoqué"
+    },
+    "Title": "Jetons d’API",
+    "ScopeOption": {
+      "admin": "Vos droits d’administration aussi, tels que vous les avez.",
+      "read": "Requêtes uniquement, sans administration. Rien ne peut être modifié.",
+      "read_write": "Requêtes et modifications, sans administration."
+    },
+    "Toolbar": {
+      "AllOrganizations": "Toutes les organisations",
+      "AllScopes": "Toutes les portées",
+      "AllStatuses": "Tous les statuts",
+      "NoMatch": "Aucun jeton ne correspond à la recherche ou aux filtres.",
+      "Search": "Rechercher par nom ou préfixe",
+      "Total": "{count, plural, one {# jeton} other {# jetons}}"
+    }
   },
   "ProfilePage": {
     "Picture": "Photo de profil",
     "Preferences": {
-      "Title": "Preferences",
+      "Title": "Préférences",
       "Language": "Langue",
-      "Theme": "Theme"
+      "Theme": "Thème"
     },
     "PlatformsEditionDialog": {
       "ConfirmSentence": "Votre prénom et votre nom seront potentiellement mis à jour dans vos produits OpenCTI et OpenAEV."
     },
-    "Title": "Profile",
+    "Title": "Profil",
     "UpdatePicture": "Mettre à jour la photo de profil",
-    "UpdateProfile": "Mise à jour du profil",
+    "UpdateProfile": "Mettre à jour le profil",
     "PersonalSpace": {
       "SuccessTransfer": "Espace personnel transféré avec succès",
       "SuccessRequest": "Demande de transfert d'espace personnel envoyée avec succès",
@@ -701,7 +1081,7 @@
       "EmailPlaceholder": "email.i.want.to.transfer.to@email.com",
       "TransferPersoSpace": "Transférer l'espace personnel",
       "Transfer": "Transférer",
-      "TransferConfirmSentence": "Etes-vous sûr de vouloir transférer l'abonnement de votre espace personnel ? Si le nouvel utilisateur n'a pas confirmé par email, le transfert ne sera pas effectif."
+      "TransferConfirmSentence": "Êtes-vous sûr de vouloir transférer les abonnements de votre espace personnel ? Tant que le nouvel utilisateur n'aura pas confirmé par email, le transfert ne sera pas effectif."
     }
   },
   "Register": {
@@ -713,7 +1093,7 @@
         },
         "Unregistered": {
           "Description": "Votre produit {platformIdentifier} a déjà été connecté dans une autre organisation. Souhaitez-vous reconnecter votre produit ?",
-          "Title": "Le produit a été connecté"
+          "Title": "Le produit était connecté"
         }
       },
       "NotAllowed": {
@@ -724,8 +1104,8 @@
     "ConnectFromHub": {
       "PermissionRequired": "Autorisation requise",
       "ConnectedProductSentence": "Pour déployer une ressource, vous devez disposer d'un produit connecté",
-      "NotAllowedMessage": "Vous ne disposez pas des autorisations nécessaires pour connecter un produit. \nVeuillez contacter votre {count, plural, =1 {administrateur} other {administrateurs}} afin qu'il se charge de connecter le produit en votre nom.",
-      "Administrators": "{count, plural, =1 {Administrator} other {Administrators}}",
+      "NotAllowedMessage": "Vous ne disposez pas des autorisations nécessaires pour connecter un produit. \nVeuillez contacter {count, plural, =1 {l'administrateur de votre produit} other {les administrateurs de votre produit}} afin de connecter le produit en votre nom.",
+      "Administrators": "{count, plural, =1 {Administrateur} other {Administrateurs}}",
       "ReachAdmin": "Contactez votre administrateur",
       "ConnectProduct": "Connectez votre produit",
       "RedirectionMessage": "Vous serez redirigé vers votre produit dans un nouvel onglet afin d'autoriser la connexion avec XTM Hub.",
@@ -741,7 +1121,7 @@
         "NotConnected": "Connexion perdue",
         "NotConnectedDetails": "Vous devez à nouveau connecter votre produit."
       },
-      "Description": "Cliquez ici pour accéder à votre produit privé.",
+      "OrganizationName": "Organisation : {name}",
       "ProductName": "Nom du produit",
       "Product": "Produit",
       "ProductURL": "URL du produit",
@@ -753,7 +1133,89 @@
       "Status": "Statut",
       "PrivatePlatform": "Plateforme privée",
       "LastConnectionCheck": "Dernier contrôle de connexion",
-      "Access": "Accès"
+      "Access": "Accès",
+      "PlatformInformation": "Informations sur la plateforme",
+      "PlatformVersion": "Version de la plateforme"
+    },
+    "Metrics": {
+      "AccessRequest": {
+        "Title": "Demander l'accès aux indicateurs SaaS",
+        "Description": "Les indicateurs SaaS présentent le stockage, la disponibilité et l'abonnement de cette plateforme. Pour les consulter, vous avez besoin de la capacité « Manage platform registration ».",
+        "AdministratorList": "Un administrateur de l'organisation peut vous l'attribuer :",
+        "SeeDocumentation": "Voir la documentation",
+        "EmailSubject": "Accès aux indicateurs SaaS de {platform}",
+        "EmailBody": "Bonjour,\n\nPourriez-vous m'attribuer la capacité « Manage platform registration » afin que je puisse consulter les indicateurs SaaS de {platform} ?\n\nMerci !"
+      },
+      "Title": "Utilisation et santé",
+      "StorageTitle": "Utilisation de l'espace de stockage",
+      "Unavailable": "Ces indicateurs ne sont actuellement pas disponibles",
+      "Period": {
+        "Label": "Période des indicateurs",
+        "last_30_days": "30 jours",
+        "last_90_days": "90 jours",
+        "last_180_days": "180 jours",
+        "ComingSoon": "À venir"
+      },
+      "Database": {
+        "Title": "Base de données",
+        "Subtitle": "Connaissances, relations, historique et journaux"
+      },
+      "FileStorage": {
+        "Title": "Stockage de fichiers",
+        "Subtitle": "Fichiers importés, rapports et pièces jointes"
+      },
+      "SLA": {
+        "Title": "Disponibilité (SLA)",
+        "Subtitle": "Calculée par mois calendaire, comme dans votre contrat",
+        "MonthRange": "{start} – {end}",
+        "MonthToDate": "{month} (en cours)",
+        "OnTarget": "{availability} · Dans l'objectif",
+        "BelowTarget": "{availability} · Sous l'objectif",
+        "NoData": "Aucune donnée",
+        "NotTrackedYet": "Aucune donnée · Ces indicateurs n'avaient pas encore été mesurés",
+        "Summary": {
+          "Title": "SLA mensuel · objectif {target}",
+          "CurrentMonth": "{month} · mois en cours",
+          "TargetAndMeasuredDays": "Objectif {target} · {measured} jours mesurés sur {total}"
+        },
+        "Legend": {
+          "Met": "Dans l'objectif",
+          "Missed": "Sous l'objectif",
+          "Unknown": "Reste du mois"
+        }
+      },
+      "Metadata": {
+        "Hostname": "Nom d'hôte",
+        "CopyHostname": "Copier le nom d'hôte",
+        "SubscribedPlan": "Offre souscrite",
+        "Contract": "Contrat",
+        "RegionalArea": "Zone régionale",
+        "DaysLeft": "{days, plural, =1 {# jour restant} other {# jours restants}}",
+        "Unavailable": "Les informations sont actuellement indisponibles."
+      },
+      "Capacity": {
+        "Within": "Capacité suffisante",
+        "Approaching": "Capacité bientôt atteinte",
+        "Over": "Capacité dépassée"
+      },
+      "ByteSize": {
+        "Byte": "{value} o",
+        "Kibibyte": "{value} Kio",
+        "Mebibyte": "{value} Mio",
+        "Gibibyte": "{value} Gio",
+        "Tebibyte": "{value} Tio",
+        "Pebibyte": "{value} Pio"
+      },
+      "MaxCapacity": "Capacité maximale",
+      "UsedOfLimit": "<highlight>{used}</highlight> <secondary>sur {limit}</secondary>",
+      "GuidedTourAvailability": "Visite guidée disponible uniquement pour les CSM",
+      "Tour": {
+        "Source": "Ces métriques viennent du SaaS Manager. XTM Hub les affiche telles quelles, sans les retraiter.",
+        "Database": "Ce graphique montre l'utilisation de {database} par la plateforme, comparée à ce que l'offre du client autorise. Ce n'est pas le tableau de bord Grafana : Grafana compare l'utilisation brute à la taille de disque allouée à la plateforme, une marge de sécurité qui l'empêche de planter, et ne peut donc jamais dépasser 100 %. Ici, l'utilisation est comparée à ce que le client paie, et peut dépasser 100 %.",
+        "FileStorage": "Ce graphique montre l'utilisation du stockage de fichiers S3 par la plateforme, comparée à ce que l'offre du client autorise. Comme pour la base de données, ce n'est pas le tableau de bord Grafana : Grafana compare l'utilisation brute à la taille de disque allouée à la plateforme, une marge de sécurité qui l'empêche de planter, et ne peut donc jamais dépasser 100 %. Ici, l'utilisation est comparée à ce que le client paie, et peut dépasser 100 %.",
+        "ChartAxes": "Sur chaque graphique, l'axe horizontal montre le temps et l'axe vertical l'espace utilisé, en GiB. Changez la période affichée en cliquant sur 30, 90 ou 180 jours en haut.",
+        "Sla": "Ce graphique montre la disponibilité SLA de la plateforme, jour par jour. Les barres vertes sont au niveau ou au-dessus du taux contractuel ({target}), les orange en dessous. Les barres grises n'ont pas de données, ou pas encore."
+      }
     },
     "Error": {
       "Capability": {
@@ -763,7 +1225,7 @@
       }
     },
     "Failed": {
-      "Description": "Une erreur s'est produite lors de l'enregistrement sur la plateforme",
+      "Description": "Une erreur s'est produite lors de l'enregistrement de la plateforme",
       "Title": "L'enregistrement a échoué"
     },
     "OpenCTI": {
@@ -797,7 +1259,7 @@
       },
       "OrganizationForm": {
         "Description": "Dans quel espace souhaitez-vous connecter votre produit OpenCTI ?",
-        "Title": "Vous êtes sur le point de connecter votre plateforme OpenCTI dans XTM Hub"
+        "Title": "Vous êtes sur le point de connecter votre plateforme OpenCTI à XTM Hub"
       },
       "SameOrganization": {
         "Registered": {
@@ -827,7 +1289,7 @@
       "PersonalWorkspace": "Espace de travail personnel",
       "PlatformNameLabel": "Nom affiché dans XTM Hub",
       "Recommended": "Recommandé",
-      "Title": "Vous êtes sur le point de connecter votre produit {platformIdentifier} dans XTM Hub"
+      "Title": "Vous êtes sur le point de connecter votre produit {platformIdentifier} à XTM Hub"
     },
     "SameOrganization": {
       "Registered": {
@@ -836,7 +1298,7 @@
       },
       "Unregistered": {
         "Description": "Votre produit {platformIdentifier} a déjà été connecté. Souhaitez-vous reconnecter votre produit ?",
-        "Title": "Le produit a été connecté"
+        "Title": "Le produit était connecté"
       }
     },
     "Succeeded": {
@@ -852,7 +1314,7 @@
   "RemoveUserOrgDialog": {
     "TextRemoveThisUser": "Êtes-vous sûr de vouloir retirer cet utilisateur {email} de votre organisation ?"
   },
-  "Reset table": "Remise à zéro de la table",
+  "Reset table": "Réinitialiser le tableau",
   "Rows per page": "Lignes par page",
   "Service": {
     "ServiceDefinitionIdentifier": {
@@ -864,16 +1326,42 @@
       "opencti_integrations": "OpenCTI Integrations",
       "opencti_playbooks": "OpenCTI Playbooks",
       "opencti_registration": "OpenCTI Registration",
-      "vault": "Vault",
-      "xtm_platform_roadmap": "XTM Platform Roadmap"
+      "xtm_platform_bundle": "XTM Platform Trial",
+      "xtm_platform_roadmap": "XTM Platform Roadmap",
+      "xtmone_registration": "XTM One Registration"
     },
     "Capabilities": {
       "AccessServiceDescription": "Vous avez uniquement accès à un service",
-      "AccessServiceName": "Access service",
+      "AccessServiceName": "Accès au service",
       "CapabilitiesTitle": "Capacités",
       "ManageAccessDescription": "Vous pouvez accéder au service et inviter des utilisateurs à ce service",
-      "ManageAccessName": "Manage access",
+      "ManageAccessName": "Gérer les accès",
       "SelectCapabilities": "Sélectionner les capacités"
+    },
+    "CsvExport": {
+      "TriggerButton": "Exporter en CSV",
+      "DialogTitle": "Exporter les intégrations en CSV",
+      "DialogDescription": "Choisissez les champs et les filtres à inclure dans le fichier CSV exporté.",
+      "ColumnsLabel": "Champs à exporter",
+      "ColumnsPlaceholder": "Sélectionner les champs à inclure",
+      "FiltersLabel": "Filtres",
+      "ExportButton": "Exporter",
+      "SuccessToast": "L'export CSV a démarré.",
+      "ErrorToast": "Impossible d'exporter la liste des intégrations. Veuillez réessayer.",
+      "Columns": {
+        "IntegrationType": "Type d'intégration",
+        "UseCase": "Cas d'usage",
+        "DeploymentType": "Type de déploiement",
+        "VerificationStatus": "Statut",
+        "SolutionCategory": "Catégorie de solution",
+        "LicenseType": "Type de licence",
+        "ShortDescription": "Description courte",
+        "LongDescription": "Description longue",
+        "FeedUrl": "URL du flux",
+        "OpenctiDocumentation": "Documentation OpenCTI",
+        "VendorUrl": "URL du fournisseur",
+        "DemoLink": "Lien de démonstration"
+      }
     },
     "Cards": {
       "filigran-academy": {
@@ -934,65 +1422,73 @@
       },
       "xtm-platform-roadmap": {
         "Name": "Roadmap XTM Platform",
-        "Description": "Explorez et suivez la roadmap de la Filigran XTM Platform."
+        "Description": "Explorez et suivez la roadmap XTM Platform de Filigran."
+      },
+      "xtmone-documentation": {
+        "Name": "Documentation XTM One",
+        "Description": "Documentation technique et guides utilisateur pour vous aider à comprendre le fonctionnement de la plateforme"
       }
     },
     "LibraryHero": {
       "Eyebrow": "Les ressources de Filigran",
-      "DefaultDescription": "Connectez votre produit OpenCTI ou OpenAEV pour déployer du contenu préconstruit en un clic, rester à jour avec les actualités produit, démarrer des essais gratuits et tirer simplement le meilleur de votre expérience sur la plateforme XTM."
+      "DefaultDescription": "Connectez votre produit OpenCTI ou OpenAEV pour déployer du contenu préconstruit en un clic, rester à jour avec les actualités produit, démarrer des essais gratuits et tirer simplement le meilleur de votre expérience XTM Platform."
     },
     "Connectors": {
       "DataImport": "Importation de données",
-      "Description": "Explorer une gamme de connecteurs OpenCTI partagés par l'équipe Filigran",
+      "Description": "Explorez une gamme de connecteurs OpenCTI partagés par l'équipe Filigran",
       "ImproveIntegrationPrefix": "Si vous souhaitez améliorer cette intégration, veuillez consulter",
       "GithubRepositoryLink": "le lien du dépôt github ici",
-      "IntegrationDocumentationAndCode": "Integration documentation and code",
+      "IntegrationDocumentationAndCode": "Documentation et code de l'intégration",
       "LastVerifiedDate": "Dernière vérification",
       "Name": "Connecteurs OpenCTI",
       "Search": "Rechercher un connecteur par nom...",
-      "VendorContact": "Contact vendeur",
-      "VisitVendor": "Visitez la page web du vendeur pour en savoir plus et rester en contact",
-      "Incompatible": "{platformToBeUpdated} {count, plural, =1 {doit} other {doivent}} être mises à jour pour déployer ce connecteur.",
+      "VendorContact": "Contact du fournisseur",
+      "VisitVendor": "Consultez la page du fournisseur pour en savoir plus et le contacter",
+      "CompatibleWith": "Cette version du connecteur est compatible avec {compatiblePlatforms}.",
+      "PartiallyCompatible": "Cette version du connecteur est compatible avec {compatiblePlatforms}, mais {incompatiblePlatforms} {count, plural, =1 {doit être mis à jour} other {doivent être mis à jour}}.",
+      "Incompatible": "{platformToBeUpdated} {count, plural, =1 {doit} other {doivent}} être mis à jour pour déployer ce connecteur.",
       "UnavailableDeployments": "Ce connecteur n'est pas disponible pour le déploiement automatique."
     },
     "CreationStatus": "Statut de la création",
+    "FilterByService": "Filtrer par service",
     "Form": {
+      "AddImage": "Ajouter une image",
       "Author": "Auteur",
       "CapabilityAccessLabel": "Accès {name} : {description}",
       "ContainerImageLabel": "Image du conteneur",
       "CurrentLogo": "Logo actuel",
       "DatasheetUrlLabel": "Lien vers la fiche technique (url)",
       "BlogpostUrlLabel": "Lien vers l'article de blog (url)",
+      "DeleteImage": "Supprimer l'image",
       "DeleteSentence": "Après avoir cliqué sur ce bouton, cliquez sur VALIDER pour supprimer définitivement cette image.",
       "DemoUrlLabel": "Lien vers la démo (url)",
       "DescriptionLabel": "Description",
       "DescriptionPlaceholder": "Il s'agit d'un paragraphe décrivant le {documentType}.",
-      "DescriptionUpdateJSONFile": "Vous êtes sur le point de télécharger un nouveau fichier json. Le fichier json précédent sera supprimé. Voulez-vous continuer ?",
-      "DropDocuments": "Déposer les documents ici",
+      "DescriptionUpdateJSONFile": "Vous êtes sur le point d'importer un nouveau fichier JSON. Le fichier JSON précédent sera supprimé. Voulez-vous continuer ?",
       "ExistingJSONFile": "Fichier JSON existant : {file_name}",
       "GithubUrlLabel": "URL Github",
       "Illustration": "Illustration",
       "LogoDisclaimer": "Le logo Filigran est utilisé par défaut",
-      "ImagesDisclaimer": "Vos images seront ajoutées et affichées sous forme de carrousel sur la page de détails de la ressource téléchargée",
+      "ImagesDisclaimer": "Vos images seront ajoutées et affichées sous forme de carrousel sur la page de détails de la ressource importée",
       "ImageLabel": "Images",
       "LogoLabel": "Logo",
       "ManagerSupportedLabel": "Gestionnaire pris en charge",
-      "ManageAccessCapabilityLabel": "Accès de gestion : l'utilisateur peut inviter d'autres utilisateurs de son organisation à ce service",
+      "ManageAccessCapabilityLabel": "Gérer les accès : l'utilisateur peut inviter d'autres utilisateurs de son organisation à ce service",
+      "MetaDescriptionCurrentLength": "{error} (actuellement {length} caractères)",
+      "MetaDescriptionLabel": "Méta-description",
+      "MetaDescriptionPlaceholder": "Pour le SEO : la phrase entière doit compter entre 120 et 160 caractères, avec des tirets simples (-) uniquement, sans tirets longs (— ou –).",
       "MinimumDeployableVersionLabel": "Version minimale pour déployer sur {platform}",
       "MinimumDeployableVersionPlaceholder": "1.0.0",
       "NameLabel": "Nom",
       "NamePlaceholder": "nom {documentType}",
-      "NoImage": "Pas d'image sélectionnée",
       "PlaybookSupportedLabel": "Playbook pris en charge",
       "ProductVersionLabel": "Version de compatibilité de {platform}",
       "ProductVersionPlaceholder": "1.0.0",
-      "PublishedPlaceholder": "Le {documentType} est-il publié ?",
       "LicenseTypeLabel": "Type de licence",
       "Restore": "Restaurer",
       "SelectImage": "Sélectionner une ou plusieurs image(s)",
-      "SelectIntegrationSubType": "Sous-type",
       "SelectJSONFile": "Sélectionner le fichier JSON",
-      "ShortDescriptionLabel": "Courte description",
+      "ShortDescriptionLabel": "Description courte",
       "ShortDescriptionPlaceholder": "Il s'agit de quelques phrases d'accroche pour décrire le document.",
       "SlugLabel": "Slug",
       "SlugPlaceholder": "slug",
@@ -1000,35 +1496,30 @@
       "SolutionCategoriesLabel": "Catégories de solutions",
       "SolutionCategoriesPlaceholder": "Ajouter des catégories de solutions",
       "SubscriptionLinkLabel": "Lien d'abonnement (url)",
-      "UpdateJSONFile": "Mise à jour du fichier JSON",
-      "UploadImage": "Télécharger une ou plusieurs nouvelle(s) image(s)",
-      "UploadLogo": "Télécharger un nouveau logo",
+      "UpdateJSONFile": "Mettre à jour le fichier JSON",
+      "UploadLogo": "Importer un nouveau logo",
       "UrlPlaceholder": "http://www.example.com",
       "UseCasesLabel": "Cas d'utilisation",
       "UseCasesPlaceholder": "Ajouter des cas d'utilisation",
       "VendorUrlLabel": "URL du fournisseur",
       "VerifiedLabel": "Vérifié",
       "EntityTypesLabel": "Types d'entités",
-      "EntityTypesPlaceholder": "Ajouter des types d'entités"
+      "EntityTypesPlaceholder": "Ajouter des types d'entités",
+      "SaveAsDraft": "Enregistrer comme brouillon",
+      "RequestValidation": "Demander la validation",
+      "Save": "Enregistrer",
+      "Publish": "Publier"
     },
     "OpenctiIntegrations": {
       "Actions": {
-        "Share": "Partager l'intégration Feed"
+        "Share": "Partager l'intégration"
       },
       "AddService": "Ajouter une nouvelle intégration",
       "IntegrationType": "Type d'intégration",
       "Filter": {
-        "IntegrationSubType": {
-          "Label": "Sous-type",
-          "Placeholder": "Sous-type..."
-        },
         "Type": {
           "Label": "Type d'intégration",
           "Placeholder": "Type d'intégration..."
-        },
-        "ProductVersion": {
-          "Label": "Produits connectés",
-          "Placeholder": "Produits connectés..."
         },
         "ManagerSupported": {
           "Label": "Type de déploiement",
@@ -1042,15 +1533,21 @@
           "Free": "Gratuite",
           "Commercial": "Commerciale"
         },
+        "ProductVersion": {
+          "Label": "Version de compatibilité OpenCTI",
+          "Placeholder": "Version OpenCTI...",
+          "RegisteredTooltip": "{count, plural, one {Produit connecté} other {Produits connectés}} : {names}"
+        },
         "SolutionCategory": {
           "Label": "Catégorie de solution",
           "Placeholder": "Catégorie de solution..."
         },
         "Verified": {
-          "Label": "Statut de vérification",
-          "Placeholder": "Statut de vérification...",
-          "Verified": "Vérifié",
-          "Unverified": "Non vérifié"
+          "Label": "Statut",
+          "Description": "Filtre applicable aux connecteurs uniquement",
+          "Placeholder": "Statut...",
+          "Verified": "Pris en charge par Filigran",
+          "Unverified": "Pris en charge par la communauté"
         }
       },
       "Type": {
@@ -1059,48 +1556,42 @@
         "rss_feed": "Flux RSS",
         "taxii_feed": "Flux TAXII",
         "stream": "Flux OpenCTI",
-        "third_party_integration": "Intégrations tierces (bientôt disponible)"
+        "third_party_integration": "Intégrations tierces"
       }
     },
     "CsvFeed": {
       "Actions": {
         "Added": "{name} a été ajouté",
         "Deleted": "{name} a été supprimé",
-        "Share": "Partager le CSV Feed",
+        "Share": "Partager le flux CSV",
         "Updated": "{name} a été modifié"
       },
-      "Active": "Publié",
-      "AddService": "Ajouter un CSV Feed",
-      "DeleteService": "Supprimer le CSV Feed {name}",
-      "NonActive": "Brouillon",
-      "SureDeleteService": "Etes-vous sûr de vouloir supprimer le CSV Feed {name} ?",
-      "UpdateService": "Editer le CSV Feed {name}"
+      "AddService": "Ajouter un flux CSV",
+      "DeleteService": "Supprimer le flux CSV {name}",
+      "SureDeleteService": "Êtes-vous sûr de vouloir supprimer le flux CSV {name} ?",
+      "UpdateService": "Modifier le flux CSV {name}"
     },
     "RssFeed": {
       "Actions": {
         "Added": "{name} a été ajouté",
         "Deleted": "{name} a été supprimé",
-        "Share": "Partager le RSS Feed",
+        "Share": "Partager le flux RSS",
         "Updated": "{name} a été modifié"
       },
-      "Active": "Publié",
-      "AddService": "Ajouter un RSS Feed",
-      "DeleteService": "Supprimer le RSS Feed {name}",
-      "NonActive": "Brouillon",
-      "SureDeleteService": "Etes-vous sûr de vouloir supprimer le RSS Feed {name} ?",
-      "UpdateService": "Editer le RSS Feed {name}"
+      "AddService": "Ajouter un flux RSS",
+      "DeleteService": "Supprimer le flux RSS {name}",
+      "SureDeleteService": "Êtes-vous sûr de vouloir supprimer le flux RSS {name} ?",
+      "UpdateService": "Modifier le flux RSS {name}"
     },
     "TaxiiFeed": {
       "Actions": {
         "Added": "Le flux TAXII {name} a été ajouté avec succès",
-        "Deleted": "Le flux TAXII {name} a été supprimée avec succès",
+        "Deleted": "Le flux TAXII {name} a été supprimé avec succès",
         "Share": "Partager le flux TAXII",
-        "Updated": "Le flux TAXII {name} a été modifiée avec succès"
+        "Updated": "Le flux TAXII {name} a été modifié avec succès"
       },
-      "Active": "Publier",
       "AddService": "Ajouter un nouveau flux TAXII",
       "DeleteService": "Supprimer le flux TAXII {name}",
-      "NonActive": "Projet",
       "SureDeleteService": "Êtes-vous sûr de vouloir supprimer le flux TAXII {name} ?",
       "UpdateService": "Mettre à jour le flux TAXII {name}"
     },
@@ -1111,10 +1602,8 @@
         "Share": "Partager le connecteur",
         "Updated": "Le connecteur {name} a été modifié avec succès"
       },
-      "Active": "Publier",
       "AddService": "Ajouter un nouveau connecteur",
       "DeleteService": "Supprimer le connecteur {name}",
-      "NonActive": "Projet",
       "SureDeleteService": "Êtes-vous sûr de vouloir supprimer le connecteur {name} ?",
       "UpdateService": "Mettre à jour le connecteur {name}"
     },
@@ -1125,26 +1614,22 @@
         "Share": "Partager le stream",
         "Updated": "Le stream {name} a été modifié avec succès"
       },
-      "Active": "Publié",
       "AddService": "Ajouter un nouveau stream",
       "DeleteService": "Supprimer le stream {name}",
-      "NonActive": "Projet",
-      "SureDeleteService": "Êtes-vous sûr de vouloir supprimer le flux {name} ?",
+      "SureDeleteService": "Êtes-vous sûr de vouloir supprimer le stream {name} ?",
       "UpdateService": "Mettre à jour le stream {name}"
     },
     "ThirdPartyIntegration": {
       "Actions": {
-        "Added": "L'intégration de tiers {name} a été ajoutée avec succès",
-        "Deleted": "L'intégration de tiers {name} a été supprimée avec succès",
-        "Share": "Partager l'intégration de tiers",
-        "Updated": "L'intégration de tiers {name} a été modifiée avec succès"
+        "Added": "L'intégration tierce {name} a été ajoutée avec succès",
+        "Deleted": "L'intégration tierce {name} a été supprimée avec succès",
+        "Share": "Partager l'intégration tierce",
+        "Updated": "L'intégration tierce {name} a été modifiée avec succès"
       },
-      "Active": "Publier",
-      "AddService": "Ajouter une nouvelle intégration de tiers",
-      "DeleteService": "Supprimer l'intégration de tiers {name}",
-      "NonActive": "Projet",
-      "SureDeleteService": "Êtes-vous sûr de vouloir supprimer l'intégration de tiers {name} ?",
-      "UpdateService": "Mettre à jour l'intégration des tiers {name}"
+      "AddService": "Ajouter une nouvelle intégration tierce",
+      "DeleteService": "Supprimer l'intégration tierce {name}",
+      "SureDeleteService": "Êtes-vous sûr de vouloir supprimer l'intégration tierce {name} ?",
+      "UpdateService": "Mettre à jour l'intégration tierce {name}"
     },
     "OpenctiCustomDashboards": {
       "Actions": {
@@ -1153,10 +1638,8 @@
         "Share": "Partager le tableau de bord personnalisé",
         "Updated": "Le tableau de bord personnalisé {name} a été modifié avec succès"
       },
-      "Active": "Publier",
       "AddService": "Ajouter un nouveau tableau de bord",
       "DeleteService": "Supprimer le tableau de bord personnalisé {name}",
-      "NonActive": "Projet",
       "SureDeleteService": "Êtes-vous sûr de vouloir supprimer le tableau de bord {name} ?",
       "UpdateService": "Mettre à jour le tableau de bord"
     },
@@ -1171,14 +1654,12 @@
         "OpenAEVScenarioFile": "Fichier de scénario",
         "ExistingOpenAEVScenarioFile": "Fichier de scénario existant : {file_name}",
         "UpdateZIPFile": "Mettre à jour le fichier ZIP",
-        "DescriptionUpdateZIPFile": "Vous êtes sur le point de télécharger un nouveau fichier zip. Le fichier json précédent sera supprimé. Voulez-vous continuer ?"
+        "DescriptionUpdateZIPFile": "Vous êtes sur le point d'importer un nouveau fichier ZIP. Le fichier précédent sera supprimé. Voulez-vous continuer ?"
       },
       "AddService": "Ajouter un nouveau scénario",
       "UpdateService": "Mettre à jour le scénario {name}",
       "DeleteService": "Supprimer le scénario {name}",
-      "SureDeleteService": "Êtes-vous sûr de vouloir supprimer le scénario {name}?",
-      "NonActive": "Brouillon",
-      "Active": "Publié"
+      "SureDeleteService": "Êtes-vous sûr de vouloir supprimer le scénario {name} ?"
     },
     "OpenCTIPlaybook": {
       "Actions": {
@@ -1190,14 +1671,28 @@
       "AddService": "Ajouter un nouveau playbook",
       "UpdateService": "Mettre à jour le playbook {name}",
       "DeleteService": "Supprimer le playbook {name}",
-      "SureDeleteService": "Êtes-vous sûr de vouloir supprimer le playbook {name}?",
-      "NonActive": "Brouillon",
-      "Active": "Publié"
+      "SureDeleteService": "Êtes-vous sûr de vouloir supprimer le playbook {name} ?"
     },
     "Description": "Description",
     "GoTo": "Aller au service",
     "GoToAdminLabel": "Administrer",
     "List": {
+      "LoadError": "Les documents n'ont pas pu être chargés.",
+      "Retry": "Réessayer",
+      "ViewTab": "Sélectionner l'affichage par onglets",
+      "ViewList": "Sélectionner l'affichage sous forme de liste",
+      "ClearAllFilters": "Tout effacer",
+      "Filters": "Filtres",
+      "FilterInformation": "À propos de ce filtre",
+      "Tab": {
+        "Name": "Nom",
+        "Description": "Description",
+        "UseCase": "Cas d'utilisation",
+        "Action": "Action",
+        "Feature": "Fonctionnalité",
+        "Type": "Type",
+        "Compatibility": "Compatibilité avec votre produit"
+      },
       "Filter": {
         "Add": "Ajouter un filtre",
         "NoOptions": "Pas d'options",
@@ -1208,23 +1703,23 @@
           "license_type": "Type de licence",
           "product_version": "Produits connectés",
           "manager_supported": "Type de déploiement",
-          "verified": "Statut de vérification",
+          "verified": "Statut",
           "entity_type": "Type d'entité"
         }
       }
     },
     "Management": {
       "AvailableCapabilities": "Capacités disponibles",
-      "AreYouSureRemoveAccess": "Êtes-vous sûr de vouloir retirer les accès pour l'utilisateur {firstname} {lastname} pour ce service ?",
-      "AreYouSureRemoveUsersAccess": "Êtes-vous sûr de vouloir retirer les accès pour {count} utilisateurs pour ce service ?",
-      "AreYouSureRemoveOrganizationAccess": "Êtes-vous sûr de vouloir retirer les accès pour l'organisation {organizationName} pour ce service ?",
-      "AreYouSureRemoveOrganizationsAccess": "Êtes-vous sûr de vouloir retirer les accès pour {count} organizations pour ce service ?",
+      "AreYouSureRemoveAccess": "Êtes-vous sûr de vouloir retirer l'accès de l'utilisateur {firstname} {lastname} à ce service ?",
+      "AreYouSureRemoveUsersAccess": "Êtes-vous sûr de vouloir retirer l'accès de {count} utilisateurs à ce service ?",
+      "AreYouSureRemoveOrganizationAccess": "Êtes-vous sûr de vouloir retirer l'accès de l'organisation {organizationName} à ce service ?",
+      "AreYouSureRemoveOrganizationsAccess": "Êtes-vous sûr de vouloir retirer l'accès de {count} organisations à ce service ?",
       "Description": "Organisations qui ont rejoint le service",
       "Email": "Email",
       "FirstName": "Prénom",
       "InviteUser": {
         "InviteUser": "Ajouter un utilisateur au service",
-        "InviteUserSubtitle": "Capacité additionnelle : par défaut, votre utilisateur invité aura accès au service. Si vous souhaitez lui donner des capacité supplémentaires, sélectionnez la capacité souhaitée dans l'encadré.",
+        "InviteUserSubtitle": "Capacité additionnelle : par défaut, votre utilisateur invité aura uniquement accès au service. Si vous souhaitez lui donner des capacités supplémentaires, sélectionnez la ou les capacités souhaitées dans la liste déroulante.",
         "Organization": "Organisation",
         "TitleInviteUser": "Inviter un utilisateur"
       },
@@ -1235,7 +1730,7 @@
       "NoAvailableCapabilities": "Aucune capacité disponible",
       "AddSubscriptionCapabilities": {
         "Button": "Ajouter des capacités",
-        "Title": "Ajouter des capacités aux souscriptions",
+        "Title": "Ajouter des capacités aux abonnements",
         "Description": "Sélectionnez les capacités à ajouter aux {count} abonnement(s) sélectionné(s)."
       },
       "AddUserServiceCapabilities": {
@@ -1245,7 +1740,7 @@
       },
       "RemoveAccess": "Retirer les accès",
       "RemoveRights": "Supprimer les droits",
-      "ShowPersonalSpaces": "Montrer les espaces personnels seulement",
+      "ShowPersonalSpaces": "Afficher uniquement les espaces personnels",
       "SearchOrganization": "Rechercher une organisation"
     },
     "Name": "Nom",
@@ -1259,11 +1754,7 @@
       "NoSubscribedServices": "Aucun service souscrit trouvé pour cette organisation."
     },
     "Organizations": "Organisations",
-    "RegisteredPlatforms": {
-      "PlatformDetails": "Détails du produit",
-      "GoToMyPlatform": "Accéder à mon produit"
-    },
-    "SearchServices": "Service de recherche...",
+    "SearchServices": "Rechercher un service...",
     "ServiceName": "Nom du service",
     "ShareableResources": {
       "Copied": "URL copiée ! Vous pouvez maintenant la coller et la partager.",
@@ -1275,7 +1766,7 @@
         "DeployPlatform": "Déployer dans {platformName}",
         "DeployQuestionTag": "Sur quelle plateforme {platformType} voulez-vous le déployer ?",
         "DeployResourceDescription": "Vous êtes sur le point de déployer le {resourceType} {resourceName}.",
-        "DeployIncompatibleVersion": "La ressource ne peut pas être déployée sur votre plateforme OpenCTI \"{platformTitle}\" ; car la version de la plateforme n'est plus compatible avec cette ressource. Vous devrez mettre à jour la plateforme ou utiliser une version de ressource compatible avant de continuer.",
+        "DeployIncompatibleVersion": "La ressource ne peut pas être déployée sur votre plateforme OpenCTI \"{platformTitle}\" car la version de la plateforme n'est plus compatible avec cette ressource. Vous devrez mettre à jour la plateforme ou utiliser une version de ressource compatible avant de continuer.",
         "EE": {
           "Tag": "EE",
           "HoverTitle": "Disponible dans l'Enterprise Edition",
@@ -1306,12 +1797,11 @@
         "Overview": "Vue d'ensemble",
         "MinimumDeployableVersion": "Version minimale pour être déployé sur {platform}",
         "ProductVersion": "Version de compatibilité de {platform}",
-        "Shares": "Actions",
+        "Shares": "Partages",
         "ContributorContact": "Contact du contributeur",
         "IntegrationType": "Type",
-        "IntegrationSolutionCategory": "Catégorie de solutions",
+        "IntegrationSolutionCategory": "Catégorie de solution",
         "IntegrationLicenseType": "Type de licence",
-        "IntegrationSubType": "Sous-type",
         "GithubURL": "URL Github",
         "VendorURL": "URL du fournisseur",
         "FeedURL": "URL du flux",
@@ -1319,25 +1809,17 @@
         "BlogpostURL": "URL de l'article de blog",
         "DemoURL": "URL de la démo",
         "EntityType": "Type d'entité",
-        "SupportedByFiligran": "Supporté par Filigran",
-        "SupportedByCommunity": "Supporté par la communauté"
+        "SupportedByFiligran": "Pris en charge par Filigran",
+        "SupportedByCommunity": "Pris en charge par la communauté"
       },
       "Download": "Télécharger",
       "FromVersion": "Depuis la version",
       "Share": "Partager"
     },
-    "SubscribeOrganization": "Souscrire une organisation",
+    "SubscribeOrganization": "Abonner une organisation",
     "SubscribeService": "Souscrire au service {serviceName}",
     "SubscribeSuccessful": "Vous avez souscrit au service. Vous pouvez maintenant le retrouver dans les services souscrits !",
     "Trials": {
-      "ExploreBold": "Essai gratuit !",
-      "ExplorePlatform": "Explorez {platformName} pendant 30 jours",
-      "ExploreProducts": "Explorez OpenCTI ou OpenAEV pendant 30 jours",
-      "Active": "Votre essai gratuit d'OpenCTI est actif",
-      "Provisioning": "Votre essai gratuit d'OpenCTI est en cours de provisionnement.",
-      "Requested": "Votre essai gratuit d'OpenCTI a été demandé.",
-      "Expired": "Votre essai gratuit d'OpenCTI a expiré.",
-      "Cancelled": "Votre essai gratuit d'OpenCTI a été annulé.",
       "CancellationReason": {
         "value": "Les renseignements manquent d'informations exploitables pour nos besoins spécifiques",
         "compatibility": "Incompatible avec notre pile de sécurité existante",
@@ -1345,186 +1827,343 @@
         "legal-security": "L'équipe de sécurité interne ou l'équipe juridique a exigé une résiliation immédiate",
         "expertise": "Nous n'avons pas les analystes/expertises internes pour utiliser l'outil efficacement"
       },
-      "DaysRemaining": "{days, plural, =1 {# Jour restant} other {# Jours restants}}",
-      "Header": {
-        "ActiveTrial": "Essai actif",
-        "ActiveTrialCount": "{count} essai actif{count, plural, one {} other {s}}",
-        "DaysRemaining": "jours restant",
-        "OpenInNewTab": "Ouvrir {title} dans un nouvel onglet"
-      },
       "LearnMore": {
-        "Link": "En savoir plus",
-        "openaev": {
-          "WhatCanYouDo": {
-            "Title": "Que pouvez-vous faire avec votre essai OpenAEV ?",
-            "FirstParagraph": "Bénéficiez de 30 jours pour explorer toutes les fonctionnalités d'OpenAEV afin de simuler des attaques, d'évaluer vos défenses et d'améliorer votre posture de sécurité. Cela inclut toutes les fonctionnalités d'OpenAEV Enterprise Edition, y compris l'utilisation de vos agents EDR existants, la génération automatisée de scénarios et les conseils de remédiation alimentés par l'IA.",
-            "SecondParagraph": "Que vous souhaitiez simuler des séquences d'attaques, effectuer des exercices réalistes sur table, valider votre posture de sécurité ou rendre compte de votre cyber-résilience à vos dirigeants, vous pouvez tester toutes les fonctionnalités d'OpenAEV en fonction de vos besoins spécifiques.",
-            "Link": "Découvrez toutes les fonctionnalités d'OpenAEV Enterprise Edition"
-          },
-          "Blocks": {
-            "First": {
-              "Title": "Établir des priorités",
-              "Description": "Créez des simulations d'attaques offensives pour identifier les vulnérabilités et les chemins d'attaque exploitables, en tirant parti des renseignements sur les menaces d'OpenCTI et de la cartographie ATT&CK de MITRE pour hiérarchiser en fonction de vos PIR."
-            },
-            "Second": {
-              "Title": "Test",
-              "Description": "Validez vos défenses en continu en effectuant des tests atomiques spécifiques, vos propres séquences d'attaque ou en important des scénarios préétablis. Lancez des exercices réalistes pour tester les réponses de vos équipes en utilisant l'EDR d'OpenAEV ou intégrez des collecteurs prédéfinis provenant des fournisseurs les plus courants."
-            },
-            "Third": {
-              "Title": "Fixer",
-              "Description": "Identifiez précisément les points à améliorer dans votre posture de sécurité grâce à des analyses détaillées, des recommandations de correction basées sur l’IA et les retours de votre équipe — puis bouclez le processus avec la création de scénarios assistée par l’IA."
-            }
-          }
+        "Link": "En savoir plus"
+      },
+      "XTMPlatform": {
+        "Title": "Votre plateforme eXtended Threat Management (XTM)",
+        "xtmone": {
+          "Intro": "XTM One est le socle d'IA agentique de la plateforme XTM open-source de Filigran, qui unifie la threat intelligence, la validation continue de l'exposition et la réduction des cyber-risques afin que votre organisation puisse anticiper et gérer les menaces de bout en bout.",
+          "Tagline": "Simplifiez votre chemin vers la gestion agentique des menaces",
+          "Description": "XTM One orchestre l'IA assistive et agentique sur l'ensemble de la plateforme XTM pour piloter votre programme CTEM, du signal de menace à l'action validée, à la vitesse de la machine."
         },
         "opencti": {
-          "WhatCanYouDo": {
-            "Title": "Que pouvez-vous faire avec votre essai OpenCTI ?",
-            "FirstParagraph": "Bénéficiez de 30 jours pour explorer toutes les fonctionnalités d'OpenCTI et enrichir vos informations sur les menaces. Cela inclut toutes les fonctionnalités d'OpenCTI Enterprise Edition telles que les playbooks automatisés, la possibilité de définir des exigences prioritaires en matière de renseignement (PIR), FINTEL, ainsi que l'importation de fichiers assistée par l'IA, la génération de rapports et la fonctionnalité de recherche NLP.",
-            "SecondParagraph": "Découvrez comment OpenCTI peut répondre à vos besoins spécifiques - qu'il s'agisse de la chasse aux menaces, de la réponse aux incidents ou de la gestion des cas - et s'intégrer à vos sources de données préférées pour que les renseignements sur les menaces puissent être exploités dans l'ensemble de votre système de sécurité.",
-            "Link": "Découvrez toutes les fonctionnalités d'OpenCTI Enterprise Edition"
+          "Intro": "OpenCTI fait partie de la solution open-source de threat intelligence, de simulation avancée d'adversaires et de gestion stratégique des cyber-risques de Filigran, conçue pour aider votre organisation à anticiper et gérer les menaces de bout en bout.",
+          "Tagline": "Collecter, corréler et exploiter",
+          "Description": "Un produit de threat intelligence open-source construit par des praticiens pour des praticiens — pour briser les silos de données et rendre la threat intelligence réellement actionnable."
+        },
+        "openaev": {
+          "Intro": "OpenAEV fait partie de la solution open-source de threat intelligence, de simulation avancée d'adversaires et de gestion stratégique des cyber-risques de Filigran, conçue pour aider votre organisation à anticiper et gérer les menaces de bout en bout.",
+          "Tagline": "Prioriser, tester et corriger ce qui compte",
+          "Description": "Défendez-vous proactivement contre les menaces avec l'Adversarial Exposure Validation (AEV), en simulant des scénarios d'attaque réels pour optimiser vos défenses."
+        },
+        "IllustrationAlt": "Illustration de l'écosystème {platformName}"
+      },
+      "XtmPlatform": {
+        "NoTrial": {
+          "Text": "Démarrez votre essai gratuit de 30 jours et découvrez l'expérience complète de la XTM Platform !"
+        },
+        "Active": {
+          "Text": "Découvrez l'expérience complète de la XTM Platform pendant votre essai !"
+        },
+        "Ending": {
+          "Text": "Continuez à découvrir l'expérience complète de la XTM Platform avant la fin de votre essai."
+        },
+        "DaysLeft": "{days, plural, =1 {# jour restant} other {# jours restants}}",
+        "Feedback": {
+          "Question": "Votre expérience de l'essai XTM Platform se passe-t-elle bien jusqu'à présent ?",
+          "Yes": "Oui, pour l'instant, tout va bien !",
+          "No": "Pas vraiment...",
+          "Submit": "Soumettre",
+          "Justification": "Nous sommes désolés de l'apprendre. Pourriez-vous nous en indiquer la raison ?"
+        },
+        "Page": {
+          "Breadcrumb": "XTM Platform Trial",
+          "Overline": "Essai gratuit XTM Platform",
+          "Title": "Démarrez votre essai gratuit de 30 jours",
+          "ExpiredTitle": "Vous avez terminé votre essai XTM Platform",
+          "PitchTitle": "Découvrez l'expérience XTM Platform complète",
+          "PitchDescription": "Profitez de 30 jours pour explorer les éditions entreprise en SaaS d'OpenCTI et OpenAEV, ainsi que les capacités d'orchestration agentique de XTM One. Unifiez votre threat intelligence et validez vos défenses grâce à une gestion continue et agentique de l'exposition et à la réduction du risque cyber.",
+          "Products": {
+            "opencti": {
+              "Tagline": "Unifiez et priorisez vos signaux de menace",
+              "Description": "Décloisonnez vos données et rendez la threat intelligence opérationnelle avec OpenCTI, une plateforme agentique conçue par des praticiens pour des praticiens, avec playbooks automatisés, PIR, FINTEL, ainsi qu'import, reporting et recherche assistés par IA. Gouvernance et souveraineté de niveau entreprise incluses."
+            },
+            "openaev": {
+              "Tagline": "Validez vos défenses",
+              "Description": "Simulez de véritables attaques contre vos défenses existantes, agents EDR inclus, avec génération automatisée de scénarios et recommandations de remédiation assistées par IA, pour identifier ce qui est réellement exploitable. Des exercices sur table à la validation complète de votre posture et aux rapports de résilience destinés à la direction."
+            },
+            "xtmone": {
+              "Tagline": "Votre cockpit agentique de gestion des menaces",
+              "Description": "XTM One est la couche d'IA agentique qui orchestre l'IA assistive et agentique entre OpenCTI et OpenAEV, vous faisant passer du signal de menace à l'action validée à la vitesse de la machine, avec l'humain dans la boucle, pour boucler le cycle CTEM."
+            }
           },
-          "Blocks": {
-            "First": {
-              "Title": "Ingestion",
-              "Description": "Consolidez et enrichissez les renseignements sur les menaces à partir de n'importe quel flux - commercial, open-source, interne - dans une plateforme centralisée, en tirant parti de plus de 300 intégrations et en vous appuyant sur le cadre STIX 2.1. Utilisez l'importation assistée par l'IA des rapports CTI pour économiser d'innombrables heures d'analyse."
+          "Limitations": {
+            "Title": "Limites de l'essai",
+            "Intro": "L'essai gratuit XTM Platform comprend toutes les fonctionnalités SaaS de l'Enterprise Edition, mais avec une puissance de calcul et un stockage limités :",
+            "OpenCTI": "Pour OpenCTI : jusqu'à 40 Go de stockage de données de renseignement et 3 Go de stockage de fichiers.",
+            "OpenAEV": "Pour OpenAEV : 16 Go",
+            "Ingestion": "L'ingestion de flux volumineux et premium contenant de riches jeux de données peut rapidement saturer votre stockage pendant cet essai.",
+            "NoSLA": "Notez que cet essai n'inclut aucun SLA. En cas de panne du fournisseur cloud, le délai de rétablissement n'est pas garanti. Nous vous recommandons de ne pas stocker de données critiques ou irremplaçables dans votre environnement d'essai."
+          },
+          "Form": {
+            "UseCaseFor": "Cas d'usage {product}",
+            "Submit": "Demander l'essai XTM Platform"
+          },
+          "NotLoggedIn": {
+            "Title": "Vous devez être connecté pour pouvoir demander un essai.",
+            "Description": "Créez un compte Filigran ou connectez-vous à un compte existant."
+          },
+          "NotAdmin": {
+            "Title": "Vous avez besoin de la capacité « Manage platform registration » pour démarrer un essai.",
+            "Description": "Demandez à un administrateur de votre organisation de vous l'attribuer.",
+            "AdminListTitle": "{count, plural, =1 {Membre disposant de cette capacité} other {Membres disposant de cette capacité}}"
+          },
+          "PersonalSpace": {
+            "Title": "Les essais ne sont pas disponibles dans un espace personnel"
+          },
+          "Status": {
+            "RequestedOn": "Demandé le",
+            "StartedOn": "Démarré le",
+            "CancelledOn": "Annulé le",
+            "FinishedOn": "Terminé le",
+            "CancelTrialRequest": "Annuler la demande d'essai",
+            "request-in-progress": {
+              "Title": "Merci ! Nous avons bien reçu votre demande.",
+              "Description": "Notre équipe vous contactera très prochainement."
             },
-            "Second": {
-              "Title": "Traitement",
-              "Description": "Accédez à de puissantes visualisations de tableaux de bord, à des hypergraphes de connaissances et à des playbooks pour pivoter entre les acteurs de la menace à l'aide de calendriers et de mappages ATT&CK. Adaptez vos tableaux de bord à vos besoins en matière de gestion des menaces ou des incidents, et faites de l'IA votre compagnon à chaque étape."
+            "cancelled": {
+              "Title": "Malheureusement, votre essai a été annulé.",
+              "Description": "Vous n'êtes plus éligible pour demander une nouvelle période d'essai. \nSi vous souhaitez utiliser une licence Enterprise Edition, merci de contacter notre équipe commerciale."
             },
-            "Third": {
-              "Title": "Sortie",
-              "Description": "Faites circuler les renseignements sur les menaces dans l'ensemble de votre système de sécurité. Partagez et diffusez les renseignements entre les équipes et les outils avec un accès basé sur les rôles pour une action rapide. Utilisez OpenAEV, entièrement intégré à OpenCTI, pour valider et améliorer votre posture de sécurité."
+            "expired": {
+              "Title": "Merci d'avoir essayé la XTM Platform, nous espérons que cette expérience vous a plu.",
+              "Description": "Votre période d'essai est terminée. Si vous souhaitez continuer à utiliser une licence Enterprise Edition, merci de contacter notre équipe commerciale."
+            },
+            "failed": {
+              "Title": "Votre demande d'essai n'a pas pu aboutir",
+              "Description": "Une erreur est survenue lors du provisionnement de votre essai. Merci de contacter notre équipe commerciale pour obtenir de l'aide."
+            },
+            "Stepper": {
+              "Pending": "En attente",
+              "Provisioning": "Provisionnement",
+              "Active": "Actif"
             }
           }
         }
-      },
-      "StartTrial": "Commencez votre essai gratuit",
-      "StartTrialWithName": "Commencez votre essai gratuit de {platformName}",
-      "OpenAEVPlatformBreadcrumb": "Plateforme d'essai OpenAEV",
-      "OpenCTIPlatformBreadcrumb": "Plateforme d'essai OpenCTI",
-      "PageHeader": {
-        "Welcome": "Bienvenue chez Filigran",
-        "Title": "Démarrons votre essai gratuit de {platformName} !"
-      },
-      "Storage": {
-        "Title": "Note importante sur le stockage de votre environnement d'essai",
-        "SaaSFeaturesLink": "fonctionnalités Enterprise Edition SaaS",
-        "NoSLA": "<strong>L'environnement d'essai gratuit n'inclut pas de SLA.</strong> En cas de panne du fournisseur cloud, le temps de restauration n'est pas garanti. Nous recommandons de ne pas stocker de données critiques ou irremplaçables dans votre environnement d'essai.",
-        "OpenCTIDescription": "L'essai gratuit OpenCTI fournit aux utilisateurs une instance SaaS « small » incluant l'ensemble des <link>fonctionnalités Enterprise Edition SaaS</link>, mais avec <strong>une puissance de calcul et un stockage réduits (jusqu'à 40 Go de stockage de données de threat intelligence et 3 Go de stockage de fichiers).</strong> L'ingestion de gros flux premium avec des jeux de données riches peut rapidement saturer votre stockage.",
-        "OpenAEVDescription": "L'essai gratuit OpenAEV fournit aux utilisateurs une instance « small » incluant l'ensemble des <link>fonctionnalités Enterprise Edition SaaS</link>, mais avec une puissance de calcul réduite et un stockage limité à <strong>16 Go</strong>."
-      },
-      "XTMPlatform": {
-        "Title": "Votre produit eXtended Threat Management (XTM)",
-        "Description": "{platformName} fait partie de la solution open-source de threat intelligence, de simulation avancée d'adversaires et de gestion stratégique des cyber-risques de Filigran, conçue pour aider votre organisation à anticiper et gérer les menaces de bout en bout.",
-        "OpenCTITagline": "Collecter, corréler et exploiter",
-        "OpenCTIDescription": "Un produit de threat intelligence open-source construit par des praticiens pour des praticiens — pour briser les silos de données et rendre la threat intelligence réellement actionnable.",
-        "OpenAEVTagline": "Prioriser, tester et corriger ce qui compte",
-        "OpenAEVDescription": "Défendez-vous proactivement contre les menaces avec l'Adversarial Exposure Validation (AEV), en simulant des scénarios d'attaque réels pour optimiser vos défenses.",
-        "LogoAlt": "Logo {name}",
-        "IllustrationAlt": "Illustration du service d'essai gratuit"
       },
       "QuickStart": {
         "Title": "Guide de démarrage rapide",
         "Subtitle": "Tirez le meilleur de votre produit {platformName} !",
         "Description": "Explorez des guides pas-à-pas, des cours d'experts et les retours de la communauté pour résoudre des cas d'usage concrets et devenir un champion Filigran !"
       },
-      "GoToMyTrial": "Accéder à ma version d'évaluation",
       "InfoPersonalSpace": "Vous ne pouvez pas commencer un essai dans votre espace personnel - veuillez passer à l'espace de votre organisation",
-      "ReachOutToSales": "Contactez nous",
+      "ReachOutToSales": "Contacter l'équipe commerciale",
+      "ReachOutToSalesMessageLabel": "Message",
       "ReachOutToSalesMessagePlaceholder": "Votre message",
       "NeedSupport": "Besoin d'aide",
       "ReachOutToSalesSuccessTitle": "Merci !",
       "ReachOutToSalesSuccessMessage": "Merci de nous avoir contactés, nous vous répondrons dans les plus brefs délais.",
-      "ReachOutToSalesDefaultMessage": "Tapez votre message pour demander de l'aide",
       "Cancellation": {
         "Toast": {
-          "NoNewTrialPossible": "Merci, votre essai gratuit d'OpenCTI a été annulé avec succès. Veuillez noter qu'il n'est pas possible de demander de nouveaux essais OpenCTI.",
-          "NewTrialPossible": "Merci, votre essai gratuit d'OpenCTI a été annulé avec succès.",
-          "Admin": "L'essai gratuit d'OpenCTI a été annulé avec succès."
+          "NoNewTrialPossible": "Merci, votre essai gratuit d'OpenCTI a été annulé avec succès. Veuillez noter qu'il n'est pas possible de demander de nouveaux essais OpenCTI."
         },
         "ConfirmationForm": {
-          "Title": "Annuler votre essai gratuit d'OpenCTI",
-          "NoNewTrialPossible": "Veuillez noter que de nouveaux essais openCTI ne peuvent pas être demandés après cette action.",
           "CancellationReason": "Raison de l'annulation",
           "CancellationReasonPlaceholder": "Sélectionnez une raison",
           "CancellationReasonOther": "Autre",
-          "CancellationReasonOtherPlaceholder": "Ecrivez votre raison ici"
+          "CancellationReasonOtherPlaceholder": "Écrivez votre raison ici",
+          "CancellationReasonRequired": "Veuillez sélectionner une raison d'annulation"
         },
         "Confirmation": {
-          "Title": "Annulation de l'essai",
-          "Admin": "Etes-vous sûr de vouloir annuler la version d'évaluation gratuite d'OpenCTI à partir de {organizationName} ? ?"
+          "Title": "Annulation de l'essai"
         }
       },
       "Form": {
         "Region": "Région",
-        "RegionPlaceholder": "Veuillez sélectionner votre région préférée pour l'hébergement",
-        "AssociatedEmail": "Email associé",
-        "JobTitle": "Titre du poste",
-        "JobTitlePlaceholder": "Veuillez sélectionner votre titre de poste",
+        "RegionPlaceholder": "Sélectionnez la région de votre choix pour l'hébergement",
+        "AssociatedEmail": "Email associé :",
+        "JobTitle": "Fonction",
+        "JobTitlePlaceholder": "Sélectionnez votre fonction",
         "ActivitySector": "Secteur d'activité",
-        "ActivitySectorPlaceholder": "Veuillez sélectionner votre secteur d'activité",
-        "UseCase": "Cas d'utilisation",
-        "UseCasePlaceholder": "Veuillez sélectionner votre cas d'utilisation",
-        "MSSA": "MSSA",
-        "MSSAAgreement": "*Je reconnais avoir lu, compris et accepté les conditions du procès de",
-        "FormRequested": "Vous avez demandé un essai gratuit. Vous recevrez un e-mail dès que la plateforme sera prête !"
-      },
-      "Display": {
-        "New": "Nouveau",
-        "Requested": "Demandée",
-        "opencti": {
-          "Title": "Essai gratuit d'OpenCTI pendant 30 jours",
-          "FreeTrialDescription": "Découvrez toutes les fonctionnalités d'OpenCTI Enterprise Edition pour commencer à rendre opérationnelle votre veille sur les menaces de bout en bout !"
+        "ActivitySectorPlaceholder": "Sélectionnez votre secteur d'activité",
+        "UseCasePlaceholder": "Sélectionnez votre cas d'utilisation",
+        "Error": {
+          "AcceptTerms": "Veuillez accepter les conditions d'essai pour continuer",
+          "UseCase": "Veuillez sélectionner un cas d'utilisation",
+          "Region": "Veuillez sélectionner une région",
+          "JobTitle": "Veuillez sélectionner votre poste",
+          "ActivitySector": "Veuillez sélectionner votre secteur d'activité"
         },
-        "openaev": {
-          "Title": "Essai gratuit d'OpenAEV pendant 30 jours",
-          "FreeTrialDescription": "Explorez OpenAEV pour simuler des scénarios d'attaque réels, évaluer votre posture de sécurité et améliorer votre cyber-résilience - au niveau technique et humain."
-        }
-      },
-      "CapacityWarning": {
-        "Title": "Aucune plateforme disponible",
-        "Content": "Aucune plateforme n'est disponible dans cette région pour le moment. Souhaitez-vous être averti lorsque nous en aurons une de disponible ?",
-        "Continue": "Me prévenir"
+        "TermsAgreement": "Je reconnais avoir lu, compris et accepté les conditions d'essai du <mssa>MSSA</mssa> et les <aiterms>conditions d'utilisation de l'IA</aiterms>",
+        "FormRequested": "Vous avez demandé un essai gratuit. Vous recevrez un e-mail dès que la plateforme sera prête !"
       },
       "ManageUsers": {
         "Title": "Gérer les utilisateurs",
-        "Email": "Courriel"
+        "Email": "Email"
       }
     },
-    "Vault": {
-      "DeleteDocument": "Effacer le document",
-      "DropFile": "Lâchez le document ici",
-      "File": "Document à transmettre",
-      "FileExtension": "Le document doit avoir une extension",
-      "FileForm": {
-        "AddFile": "Ajouter un document",
-        "AlreadyExists": "Ce document existe déjà. L'ancien sera écrasé.",
-        "DeleteDialog": "Êtes-vous sûr de vouloir supprimer ce document ?",
-        "DescriptionLabel": "Description",
-        "DescriptionPlaceholder": "Ceci est une courte description du document.",
-        "DropDocuments": "Lâchez les documents ici",
-        "EditFile": "Editer le document",
-        "File": "Document",
-        "FileAlreadyExists": "Ce document existe déjà",
-        "FileExistsDialog": "Ce document existe déjà. Ce document écrasera l'ancien document. Êtes-vous sûr de vouloir continuer ?",
-        "NoDocument": "Pas de document sélectionné",
-        "SelectDocument": "Sélectionnez un document",
-        "ShortNameLabel": "Nom court",
-        "ShortNamePlaceholder": "Filigrane de la tarification",
-        "UploadNewFile": "Ajout d'un nouveau document dans le Vault"
+    "TrialGuide": {
+      "Breadcrumb": {
+        "TrialPlatform": "Essai XTM Platform",
+        "TrialGuide": "Guide de l'essai XTM Platform"
       },
-      "FileTab": {
-        "Description": "Description",
-        "FileName": "Nom de document",
-        "NumberDownload": "Téléchargements",
-        "Search": "Chercher par nom de document...",
-        "UploadDate": "Date d'ajout"
+      "Eyebrow": "Guide de l'essai XTM Platform",
+      "Title": "Ressources clés",
+      "Description": "Ce petit guide a pour but de vous orienter vers des ressources utiles qui vous permettront de tirer le meilleur parti de votre essai XTM Platform",
+      "SeeMore": "En savoir plus",
+      "ReadMore": "En savoir plus",
+      "ChecklistTitle": "Liste de contrôle des actions suggérées",
+      "ChecklistIntro": "Vous ne savez pas par où commencer ? Voici quelques actions suggérées qui pourraient vous aider à découvrir la plateforme.",
+      "Opencti": {
+        "ResourceCards": {
+          "Documentation": {
+            "Title": "Documentation OpenCTI",
+            "Description": "Documentation technique et guides d’utilisation pour vous aider à comprendre le fonctionnement de la plateforme"
+          },
+          "Academy": {
+            "Title": "Academy : OpenCTI 101-301",
+            "Description": "Formations pratiques pour vous lancer avec OpenCTI"
+          },
+          "Community": {
+            "Title": "Communauté OpenCTI",
+            "Description": "Le meilleur endroit pour poser toutes vos questions à la communauté OpenCTI"
+          },
+          "ReleaseNotes": {
+            "Title": "Notes de mise à jour",
+            "Description": "Liste des dernières mises à jour"
+          }
+        },
+        "ChecklistItems": {
+          "ActivateFeeds": {
+            "Title": "Activez 1 à 2 flux supplémentaires",
+            "Description": "Accédez à <strong>Intégrations</strong> dans le menu de gauche. Plusieurs connecteurs ont déjà été déployés. Cliquez sur l’onglet <strong>Disponible</strong>. Vous constaterez qu’il existe encore de nombreux autres connecteurs pouvant être déployés en un clic. Dans le menu de gauche, faites défiler jusqu’en bas et sélectionnez <strong>Gratuit</strong> dans le type de licence. Déployez-en quelques-uns qui ne sont pas encore activés. Cliquez sur <strong>Parcourir plus</strong> pour voir toutes les intégrations de la bibliothèque OpenCTI (y compris celles sans option de déploiement en un clic)."
+          },
+          "ConfigurePir": {
+            "Title": "Configurer les exigences de renseignement prioritaires (PIR)",
+            "Description": "Accédez à <strong>PIR → Créer un PIR</strong>. Définissez un nom pour le PIR, une période de réexamen, ainsi que les critères/filtres d’entités qui vous intéressent (par exemple, « Malware ciblant le secteur de l’énergie » avec un niveau de confiance ≥ 60). OpenCTI surveillera désormais en permanence l’activité de la plateforme et signalera automatiquement toute entité correspondante comme « d’intérêt », en affichant pour chacune d’elles un fil d’actualité en temps réel, un score de pertinence ainsi que des rapports et graphiques associés."
+          },
+          "FollowGraph": {
+            "Title": "Ouvrir un rapport et explorer le graphe interactif",
+            "Description": "Accédez à <strong>Analyses → Rapports</strong>. Cliquez sur un rapport puis accédez à l’onglet <strong>Connaissance</strong>. Dans la barre d’outils à droite, assurez-vous que la <strong>Vue graphe</strong> est sélectionnée. Zoomez. Cliquez maintenant sur les objets du graphe. Les détails de l’objet s’afficheront dans la colonne de droite. Pour voir les relations d’un objet en particulier, déplacez-le sur le côté. Cliquez sur <strong>Vue Chronologique</strong> pour voir comment les données ont évolué dans le temps. Pour la correspondance MITRE ATT&CK, cliquez sur <strong>Vue matrice de tactiques</strong>."
+          },
+          "CreateCase": {
+            "Title": "Créer un case à partir d’un indicateur détecté",
+            "Description": "Accédez à <strong>Cases → Réponses aux incidents → Créer une réponse à incident</strong>, créez un case à l’aide d’un modèle intégré, puis joignez l’indicateur ou le rapport sur lequel vous avez travaillé précédemment. À partir de là, attribuez une priorité et un niveau de gravité, désignez un responsable et ajoutez des tâches associées pour suivre les étapes de correction. Remarquez que le case reste lié aux entités sous-jacentes ; ainsi, toute nouvelle information corrélée apparaîtra automatiquement dans son contexte."
+          },
+          "CreateFintelReport": {
+            "Title": "Créer un rapport FINTEL",
+            "Description": "Accédez à <strong>Analyses → Rapports → Créer un rapport</strong>. Rédigez un rapport « Finished Intelligence » (FINTEL) résumant votre analyse de l’acteur malveillant, du logiciel malveillant ou de la campagne que vous avez étudiés, en intégrant les entités, les indicateurs et les relations que vous avez déjà importés. Joignez des éléments d’observation à l’appui et liez les ensembles d’intrusions ou les TTP associés directement à partir du graphe."
+          },
+          "BuildDashboardWidget": {
+            "Title": "Créer un widget de tableau de bord personnalisé",
+            "Description": "Sous <strong>Tableaux de bord → Tableaux de bord personnalisés</strong>, cliquez sur <strong>Créer un tableau de bord</strong> et ajoutez un widget (par exemple, « Indicateurs par type » ou « Rapports dans le temps »). Vous pouvez également sélectionner un tableau de bord prédéfini en cliquant sur <strong>Importer depuis le Hub</strong>."
+          },
+          "ConnectSecurityStack": {
+            "Title": "Connectez-vous à votre pile de sécurité",
+            "Description": "Accédez à <strong>Intégrations</strong>. Cliquez sur <strong>Parcourir plus</strong>. Sélectionnez certains des outils que vous utilisez déjà (SIEM, EDR, pare-feu, TIP ou SOAR) pour les connecter à OpenCTI. Une fois la connexion établie, surveillez le tableau de bord du connecteur pour vérifier que les données circulent, puis assurez-vous que les nouveaux indicateurs transmis apparaissent dans votre outil en aval."
+          },
+          "CreateNoCodePlaybook": {
+            "Title": "Créer un playbook sans code",
+            "Description": "Accédez à <strong>Données → Traitement</strong>. Cliquez sur <strong>Créer un playbook</strong>. Utilisez le générateur visuel par glisser-déposer pour enchaîner des déclencheurs, des filtres et des actions, telles que l’enrichissement automatique de nouveaux indicateurs, la promotion de rapports hautement fiables vers un case, ou l’envoi direct des observables correspondantes vers un connecteur. Vous pouvez également sélectionner un playbook prédéfini en cliquant sur <strong>Importer depuis le Hub</strong>."
+          },
+          "CheckSecurityCoverage": {
+            "Title": "Vérifiez votre couverture de sécurité avec OpenAEV",
+            "Description": "Associez votre instance OpenAEV sous <strong>Paramètres → Intégrations</strong>, puis dans OpenAEV, accédez à <strong>Scénarios → Créer</strong> et créez un scénario à partir des techniques ATT&CK de l’acteur malveillant que vous avez étudié dans OpenCTI. Ajoutez chaque TTP en tant que stimuli, en attribuant des ressources cibles, puis cliquez sur <strong>Lancer</strong> pour exécuter la simulation de manière contrôlée."
+          },
+          "EnableAgent": {
+            "Title": "Activer un agent dans XTM One",
+            "Description": "Ouvrez <strong>XTM One → Agents</strong> et activez l’un des agents préconfigurés (par exemple, le <strong>CTEM Assistant</strong>) pour orchestrer un workflow entre OpenCTI et OpenAEV — par exemple, enrichir automatiquement une nouvelle menace, la résumer et générer un scénario de validation, le tout en langage clair et sans intervention manuelle."
+          }
+        }
       },
-      "ManageVault": "Gérer le service",
-      "UpdateDocument": "Mise à jour du document",
-      "Vault": "Partenaire Vault",
-      "VaultTitle": "Administration du Vault"
+      "Openaev": {
+        "ResourceCards": {
+          "Documentation": {
+            "Title": "Documentation OpenAEV",
+            "Description": "Documentation technique et guides d’utilisation pour vous aider à comprendre le fonctionnement de la plateforme"
+          },
+          "Academy": {
+            "Title": "Academy : OpenAEV 101",
+            "Description": "Cours pratiques et gratuits pour vous aider à démarrer avec OpenAEV"
+          },
+          "Community": {
+            "Title": "Communauté OpenAEV",
+            "Description": "Le meilleur endroit pour poser toutes vos questions à la communauté OpenAEV"
+          },
+          "ReleaseNotes": {
+            "Title": "Notes de mise à jour",
+            "Description": "Liste des dernières mises à jour"
+          }
+        },
+        "ChecklistItems": {
+          "InstallStarterPack": {
+            "Title": "Installer le pack de démarrage OpenAEV",
+            "Description": "Vous avez besoin de contenu pour vous lancer ? OpenAEV est fourni avec un pack de démarrage contenant du contenu prêt à l'emploi qui vous permettra d'exécuter votre première simulation dès l'installation. Ce pack comprend notamment des scénarios prédéfinis, des tableaux de bord, des injecteurs, des collecteurs et des points de terminaison sans agent. Le pack de démarrage est disponible sur le XTM Hub. Importez-le depuis <strong>Paramètres > XTM Hub</strong> après avoir enregistré votre plateforme."
+          },
+          "RunAtomicTest": {
+            "Title": "Lancer un test atomique",
+            "Description": "Rendez-vous dans l’Arsenal, choisissez une technique et sélectionnez un point de terminaison sur lequel l’exécuter. Installez d’abord l’agent OpenAEV, ou utilisez le mode sans agent s’il est pris en charge. Lancez le test et vérifiez le point de terminaison ou attendez le rapport pour voir ce qui a été exécuté et ce qui a été détecté."
+          },
+          "LaunchTimeBasedScenario": {
+            "Title": "Lancer un scénario chronologique en s’appuyant sur l’assistant IA de scénarios",
+            "Description": "Créez un scénario et ajoutez-y des stimuli dans l’ordre dans lequel vous souhaitez qu’ils se déclenchent, selon un calendrier défini avec une heure de début et, si nécessaire, une fréquence de répétition. Exploitez l’IA pour automatiser la création de stimuli en fonction des cibles et des techniques MITRE ATT&CK que vous avez sélectionnées."
+          },
+          "RunAttackChainingScenario": {
+            "Title": "Exécuter un scénario de chaîne d’attaques",
+            "Description": "Construisez un scénario reliant plusieurs techniques pour former un parcours d’attaque réaliste (accès initial, mouvement latéral, exfiltration). Exécutez-le soit sous la direction d’un opérateur, en déclenchant manuellement chaque étape vous-même, soit de manière autonome, la plateforme exécutant automatiquement toute la chaîne une fois lancée. Essayez les deux méthodes pour apprécier la différence entre contrôle et rapidité."
+          },
+          "DriveTabletopExercise": {
+            "Title": "Animer un exercice sur table avec un exercice de phishing",
+            "Description": "Créez un scénario d’exercice sur table avec des stimuli basés sur la communication ou la prise de décision plutôt que sur des aspects techniques (par exemple, « avertir le service juridique »), désignez les participants et menez l’exercice sous forme de session animée en direct, en enregistrant la manière dont l’équipe réagit. Profitez-en pour inclure des stimuli de phishing, que vous pouvez générer directement avec l’IA."
+          },
+          "EvaluateSecurityPosture": {
+            "Title": "Évaluer votre posture de sécurité",
+            "Description": "Commencez par l’écran d’accueil Exposure Commander Center (qui regroupe vos indicateurs clés en un coup d’œil), puis explorez des domaines de sécurité et des tableaux de bord spécifiques. Prenez le temps d’examiner les résultats des stimuli, les objectifs et les constatations."
+          },
+          "GenerateDetectionRemediationRules": {
+            "Title": "Générer automatiquement des règles de détection et de remédiation",
+            "Description": "Générez des règles de détection à partir d’un stimuli technique exécuté grâce à la remédiation assistée par IA. Elles sont directement accessibles depuis l’onglet remédiation des résultats d’un stimuli."
+          },
+          "ConnectOpenctiSecurityCoverage": {
+            "Title": "Se connecter à OpenCTI pour enrichir la couverture de sécurité",
+            "Description": "OpenAEV peut être déclenché via un produit de la suite XTM pour exécuter un scénario basé sur un profil de menace souhaité, et les résultats de l’exécution du scénario — comme le taux de détection ou le taux de prévention — sont renvoyés au produit déclencheur pour ingestion."
+          },
+          "EnableAgentXtmOne": {
+            "Title": "Activer un agent dans XTM One",
+            "Description": "Ouvrez <strong>XTM One → Agents</strong> et activez l’un des agents préconfigurés (par exemple, OpenAEV Assistant) pour orchestrer un workflow entre OpenCTI et OpenAEV, comme enrichir automatiquement une nouvelle menace, la résumer et générer un scénario de validation, le tout en langage naturel et sans intervention manuelle."
+          },
+          "GenerateReportStakeholders": {
+            "Title": "Générer automatiquement un rapport à partager avec les parties prenantes",
+            "Description": "Consultez les scénarios et leurs résultats de simulation dans un rapport unique, générez-le au format PDF ou HTML en un clic pour le partager rapidement avec les parties prenantes concernées et suivre son évolution dans le temps."
+          }
+        }
+      },
+      "Xtmone": {
+        "ResourceCards": {
+          "Documentation": {
+            "Title": "Documentation XTM One",
+            "Description": "Documentation technique et guides d’utilisation pour vous aider à comprendre le fonctionnement de la plateforme"
+          },
+          "Community": {
+            "Title": "Communauté XTM One",
+            "Description": "Le meilleur endroit pour poser toutes vos questions à la communauté Filigran"
+          }
+        },
+        "ChecklistItems": {
+          "ActivateCtemAssistant": {
+            "Title": "Activer l’assistant CTEM",
+            "Description": "Accédez à XTM One → Agents et activez l’assistant CTEM, votre principal point d’entrée dans la plateforme. Il se connecte directement à OpenCTI et à OpenAEV, orchestrant les agents des deux plateformes pour faire passer le traitement des renseignements sur les menaces directement à la création et à l’exécution de scénarios dans OpenAEV — le tout à partir d’une seule conversation."
+          },
+          "AskQuestionPlainEnglish": {
+            "Title": "Posez une question en langage courant",
+            "Description": "Ouvrez l’interface de chat de XTM One et posez une question du type « Quelles sont les cinq principales menaces pesant sur le secteur financier au Royaume-Uni ? ». XTM One extraira les entités pertinentes d’OpenCTI (une fois que vous aurez ajouté des flux) et renverra une réponse synthétisée accompagnée de liens vers les données sous-jacentes — sans avoir besoin d’utiliser un langage de requête ni de passer d’un tableau de bord à l’autre."
+          },
+          "BuildThreatHuntingPackage": {
+            "Title": "Créez un pack de chasse aux menaces en quelques minutes",
+            "Description": "Recherchez « Threat Hunting » pour accéder au OpenCTI Threat Hunt Creator. Demandez-lui de transformer un ensemble d’indicateurs hautement fiables en un pack de chasse. Il recherche les indicateurs à forte valeur ajoutée, les convertit en règles de détection natives pour vos plateformes et regroupe le tout dans OpenCTI - ce qui réduit considérablement le temps de préparation de la chasse aux menaces.",
+            "ExamplePrompt": "Exemple de requête : Créer un pack de chasse pour les IoC du ransomware Lockbit, convertis en règles Sigma, en priorisant les indicateurs les plus récents"
+          },
+          "IntegrateTools": {
+            "Title": "Intégrez des outils pour une détection et une réponse aux menaces plus rapides",
+            "Description": "Allez dans <strong>Tools & Integrations</strong> pour connecter les outils que vos agents peuvent utiliser en votre nom. La marketplace d’intégrations de XTM One propose des centaines d’intégrations prêtes à l’emploi, incluant des outils de sécurité comme les SIEM, EDR/XDR, flux de menaces, gestion des vulnérabilités, ainsi que des outils métiers et de collaboration comme Notion, Metabase, Concord, MS Teams et Slack. Faites circuler les renseignements de manière fluide et centralisez-les pour agir."
+          }
+        }
+      }
+    },
+    "FileForm": {
+      "NoDocument": "Pas de document sélectionné",
+      "SelectDocument": "Sélectionnez un document"
     },
     "OpenctiCustomViews": {
       "Actions": {
@@ -1536,19 +2175,111 @@
       "AddService": "Ajouter une nouvelle vue personnalisée",
       "UpdateService": "Mettre à jour la vue personnalisée {name}",
       "DeleteService": "Supprimer la vue personnalisée {name}",
-      "SureDeleteService": "Êtes-vous sûr de vouloir supprimer la vue personnalisée {name}?",
-      "NonActive": "Brouillon",
-      "Active": "Publié"
+      "SureDeleteService": "Êtes-vous sûr de vouloir supprimer la vue personnalisée {name} ?"
+    },
+    "Bundle": {
+      "ManageTrial": {
+        "Breadcrumb": {
+          "BundleName": "Essai XTM Platform",
+          "ManageUsers": "Gérer les utilisateurs"
+        },
+        "Title": "Gérez votre équipe sur l'essai XTM Platform",
+        "Eyebrow": "Essai gratuit XTM Platform",
+        "Description": "Gérez facilement votre équipe et collaborez tout au long de votre essai XTM Platform. Invitez des membres, attribuez des rôles et des permissions, et assurez à chacun le bon niveau d'accès à la plateforme.",
+        "BackButton": "Retour à l'essai XTM Platform",
+        "BackToDashboardButton": "Retour",
+        "GroupAction": "Action groupée",
+        "GroupActionDisabledTooltip": "Vous devez sélectionner des utilisateurs dans la liste pour appliquer une action groupée",
+        "BulkDeleteTooltip": "Vous pouvez supprimer les utilisateurs sélectionnés",
+        "AddTrialUser": "Ajouter un utilisateur d'essai",
+        "BulkDeleteDialog": {
+          "Title": "Retirer les utilisateurs de l'essai",
+          "Text": "Voulez-vous vraiment retirer {emails} de cet essai ? Ils perdront l'accès à tous les produits.",
+          "MoreEmails": "+{count} de plus"
+        },
+        "Table": {
+          "Email": "Email",
+          "NoUsers": "Aucun utilisateur trouvé.",
+          "RoleUpdated": "{role} de {email} a été mis à jour",
+          "DeleteDialog": {
+            "Title": "Retirer l'utilisateur de l'essai",
+            "Text": "Voulez-vous vraiment retirer {email} de cet essai ? Il/elle perdra l'accès à tous les produits."
+          }
+        },
+        "AddUserDialog": {
+          "Title": "Ajouter un utilisateur d'essai",
+          "EmailPlaceholder": "Ajouter un email",
+          "ExpiredUsersReinvited": "Les utilisateurs expirés seront réinvités et recevront un nouvel email d'invitation.",
+          "InviteEmail": "Inviter {email}",
+          "NoPermissionToInvite": "Vous n'avez pas la permission d'ajouter des utilisateurs en dehors de cette liste. Si nécessaire, contactez votre administrateur",
+          "Status": {
+            "Expired": "Expiré",
+            "Invited": "Invité"
+          }
+        },
+        "EditUsersDialog": {
+          "Title": "Modifier les utilisateurs",
+          "Users": "Gérer les utilisateurs d'essai",
+          "UsersPlaceholder": "Sélectionner des utilisateurs",
+          "MixedRoles": "Des utilisateurs avec des rôles différents sont sélectionnés"
+        },
+        "Roles": {
+          "DefaultSuffix": "(par défaut)",
+          "NoAccess": "Pas d'accès",
+          "opencti": {
+            "Title": "{count, plural, one {Rôle OpenCTI} other {Rôles OpenCTI}}",
+            "Admin": {
+              "Label": "Admin",
+              "Description": "Le rôle d'administrateur donne un accès complet aux paramètres, à la configuration et à la gestion du produit. Les administrateurs peuvent gérer les utilisateurs, les rôles et les paramètres système, en plus d'avoir une visibilité et un contrôle complets sur les données."
+            },
+            "Analyst": {
+              "Label": "Analyst",
+              "Description": "Un rôle offrant un accès complet à toutes les connaissances du produit. Les analystes peuvent créer, modifier et gérer des entités, des relations et des investigations, mais n'ont pas accès aux paramètres, à l'administration ou aux options de configuration du produit."
+            },
+            "Reader": {
+              "Label": "Reader",
+              "Description": "Un rôle en lecture seule permettant de consulter toutes les données du produit sans possibilité d'y apporter de modifications. Idéal pour les utilisateurs qui n'ont besoin que de consulter des informations."
+            }
+          },
+          "openaev": {
+            "Title": "{count, plural, one {Rôle OpenAEV} other {Rôles OpenAEV}}",
+            "Admin": {
+              "Label": "Admin",
+              "Description": "Le rôle d'administrateur donne un accès complet aux paramètres, à la configuration et à la gestion du produit. Les administrateurs peuvent gérer les utilisateurs, les rôles et les paramètres système, en plus d'avoir une visibilité et un contrôle complets sur les éléments."
+            },
+            "Manager": {
+              "Label": "Manager",
+              "Description": "Un rôle offrant toutes les capacités nécessaires pour gérer et exécuter tout type de scénario. Le manager peut modifier n'importe quel élément du produit, mais n'a pas accès aux paramètres, à l'administration ou aux options de configuration du produit."
+            },
+            "Observer": {
+              "Label": "Observer",
+              "Description": "Un rôle en lecture seule permettant de consulter tous les éléments du produit sans possibilité d'y apporter de modifications. Idéal pour les utilisateurs qui n'ont besoin que de consulter des informations."
+            }
+          },
+          "xtmone": {
+            "Title": "{count, plural, one {Rôle XTM One} other {Rôles XTM One}}",
+            "Admin": {
+              "Label": "Admin",
+              "Description": "Le rôle d'administrateur donne un accès complet aux paramètres, à la configuration et à la gestion de la plateforme. Les administrateurs peuvent gérer les utilisateurs, les groupes, les intégrations et les paramètres système, en plus d'avoir une visibilité et un contrôle complets sur tous les éléments, y compris les ressources gérées par l'entreprise et partagées au sein de l'organisation. Ils peuvent usurper l'identité des utilisateurs à des fins de dépannage."
+            },
+            "User": {
+              "Label": "User",
+              "Description": "Un rôle offrant toutes les capacités nécessaires pour créer, configurer et exécuter ses propres agents, flux et bases de connaissances. Les utilisateurs peuvent modifier tout élément qu'ils possèdent ou qui a été partagé avec eux, mais n'ont pas accès aux paramètres, à l'administration ou aux options de configuration de la plateforme."
+            }
+          }
+        }
+      }
     }
   },
   "ServiceActions": {
+    "DocumentUpdated": "{file_name} a été modifié",
     "OrganizationAdded": "L'organisation {name} a souscrit au service {serviceName}",
     "OrganizationDeleted": "L'organisation {name} a été supprimée",
-    "UserCapabilitiesModified": "les capacités de {email}'s ont été modifiées",
+    "UserCapabilitiesModified": "Les capacités de {email} ont été modifiées",
     "UserServiceAdded": "{email} a été invité au service {serviceName}"
   },
   "ServiceForm": {
-    "EditService": "Editer les illustrations d'un service",
+    "EditService": "Modifier les images du service",
     "Illustration": "Illustration du service",
     "Logo": "Logo du service",
     "PictureUpdated": "Illustrations mises à jour pour le service : {serviceName}",
@@ -1557,11 +2288,8 @@
   "ServiceName": {
     "custom_dashboards": "Tableau de bord personnalisé"
   },
-  "SelectUsers": {
-    "ClearAllSelections": "Effacer toutes les sélections"
-  },
-  "Sort Asc": "Tri Asc",
-  "Sort Desc": "Sort Desc",
+  "Sort Asc": "Tri croissant",
+  "Sort Desc": "Tri décroissant",
   "SortControls": {
     "SortBy": "Trier par"
   },
@@ -1573,13 +2301,13 @@
   "TestEnvBanner": "Vous êtes sur l'environnement {environnement}",
   "ThemeToggle": {
     "Automatic": "Automatique",
-    "Dark": "Foncé",
+    "Dark": "Sombre",
     "Light": "Clair",
-    "SetTheme": "Appliquer le thème"
+    "SetTheme": "Choisir le thème"
   },
   "UnexpectedErrorDialog": {
     "Description": "Veuillez essayer de vous connecter à nouveau. Si le problème persiste, contactez-nous pour obtenir de l'aide.",
-    "Title": "Un événement inattendu s'est produit."
+    "Title": "Une erreur inattendue s'est produite."
   },
   "Unregister": {
     "Unregister": "Déconnecter",
@@ -1647,22 +2375,25 @@
     "AddUser": "Ajouter un utilisateur",
     "AllOrganizations": "Toutes les organisations",
     "CreateUser": "Créer un nouvel utilisateur",
+    "DeleteUser": "Supprimer l'utilisateur",
+    "DeletionBlocked": "Suppression impossible",
     "DetailsUser": "Détails de l'utilisateur",
     "Disable": "Désactiver",
     "Enable": "Activer",
     "Organization": "Organisation",
     "RemoveUser": "Retirer l'utilisateur",
-    "SearchUser": "Rechercher l'utilisateur...",
+    "SearchUser": "Rechercher un utilisateur...",
+    "SureDeleteUser": "Êtes-vous sûr de vouloir supprimer {email} ? Cette action est irréversible.",
     "UpdateUser": "Mettre à jour l'utilisateur - {email}",
     "UserCreated": "L'utilisateur {email} a été créé",
     "UserDeleted": "L'utilisateur {email} a été supprimé",
-    "UserRemoved": "L'utilisateur {email} a été supprimé",
+    "UserRemoved": "L'utilisateur {email} a été retiré",
     "UserUpdated": "L'utilisateur {email} a été modifié"
   },
   "UserForm": {
     "AddOrganization": "Ajouter une organisation",
     "Country": "Pays",
-    "Email": "Courriel",
+    "Email": "Email",
     "Error": {
       "FirstName": "Le prénom est requis",
       "LastName": "Le nom de famille est requis"
@@ -1674,21 +2405,29 @@
     "OrganizationsCapabilitiesPlaceholder": "Capacités supplémentaires",
     "OrganizationsPlaceholder": "Sélectionner une organisation",
     "Password": "Mot de passe",
+    "PasswordHelper": "Laissez vide pour conserver le mot de passe actuel",
     "Picture": "Photo",
     "ResetPassword": {
-      "Action": "Réinitialiser",
+      "Action": "Réinitialiser le mot de passe",
       "Sentence": "Nous vous enverrons un e-mail pour réinitialiser votre mot de passe.",
       "Success": "L'email de réinitialisation du mot de passe a été envoyé avec succès."
     }
   },
   "UserListPage": {
+    "Action": "Action",
     "Country": "Pays",
     "Email": "Email",
     "FirstName": "Prénom",
+    "InvitationDate": "Date d'invitation",
+    "InvitationExpired": "Expirée",
+    "InvitationPending": "En attente",
+    "InvitationStatus": "Statut d'invitation",
     "LastLogin": "Dernière connexion",
     "LastName": "Nom de famille",
     "NoUsers": "Aucun utilisateur trouvé",
     "Organizations": "Organisations",
+    "ResendInvite": "Renvoyer l'invitation",
+    "ResendInviteSuccess": "Invitation renvoyée",
     "Roles": "Rôles",
     "Status": "Statut",
     "TabTitle": "Utilisateurs",
@@ -1697,7 +2436,7 @@
       "Email": "Email",
       "Password": "Mot de passe",
       "SelectOrganization": "Sélectionner une organisation",
-      "SelectRoles": "Sélectionner rôles"
+      "SelectRoles": "Sélectionner des rôles"
     },
     "Capability": "Capacité"
   },
@@ -1711,24 +2450,24 @@
     "Create": "Créer",
     "Delete": "Supprimer",
     "Deleted": "a été supprimé",
-    "Details": "Details",
+    "Details": "Détails",
     "DocumentNotFound": "Document introuvable",
     "Download": "Télécharger",
     "Edit": "Modifier",
     "Error": "Erreur",
     "FailedToCopy": "Échec de la copie",
     "Form": {
-      "ResetFile": "Supprimer l'actuel document sélectionné."
+      "ResetFile": "Retirer le document sélectionné."
     },
-    "Inserted": "a été inséré",
+    "Inserted": "a été ajouté",
     "Loading": "Chargement...",
     "Modified": "a été modifié",
-    "NotFound": "Non trouvé",
+    "NotFound": "Introuvable",
     "OpenMenu": "Ouvrir le menu",
-    "Reset": "Effacer",
+    "Reset": "Réinitialiser",
     "ServiceNotFound": "Service introuvable",
     "Success": "Succès",
-    "Update": "Editer",
+    "Update": "Modifier",
     "Updating": "Mise à jour...",
     "Validate": "Valider",
     "ValidateForm": "Valider le formulaire",
@@ -1738,12 +2477,68 @@
     "And": "et",
     "Or": "ou"
   },
+  "DesignSystem": {
+    "Breadcrumbs": {
+      "Label": "Fil d'Ariane"
+    },
+    "Carousel": {
+      "GoToSlide": "Aller à la diapositive {slide}",
+      "Next": "Diapositive suivante",
+      "Previous": "Diapositive précédente"
+    },
+    "Combobox": {
+      "SelectedValues": "Valeurs sélectionnées",
+      "ToggleOptions": "Afficher ou masquer les options"
+    },
+    "DataTable": {
+      "ClearSelection": "Effacer la sélection",
+      "ColumnOptions": "Options de colonne",
+      "Columns": "Colonnes",
+      "HideColumn": "Cacher",
+      "ManageColumns": "Gérer la visibilité des colonnes",
+      "NextPage": "Aller à la page suivante",
+      "PreviousPage": "Aller à la page précédente",
+      "ResetTable": "Réinitialiser",
+      "RowsPerPage": "Lignes par page",
+      "SelectAll": "Tout sélectionner",
+      "SelectedCount": "{count} sélectionné(s)",
+      "SelectRow": "Sélectionner la ligne",
+      "SortAscending": "Asc",
+      "SortDescending": "Desc"
+    },
+    "DatePicker": {
+      "Calendar": "Calendrier",
+      "FieldCalendar": "{label} (calendrier)",
+      "Clear": "Effacer la date",
+      "Confirm": "Valider",
+      "Hours": "Heures",
+      "Minutes": "Minutes",
+      "Month": "Mois",
+      "NextMonth": "Mois suivant",
+      "OpenCalendar": "Ouvrir le calendrier",
+      "Period": "Période",
+      "PreviousMonth": "Mois précédent",
+      "Seconds": "Secondes",
+      "Year": "Année"
+    },
+    "FileSelect": {
+      "Clear": "Supprimer tous les fichiers",
+      "FileRejected": "{fileName} n'a pas été ajouté ({reason, select, accept {format non pris en charge} other {taille maximale dépassée}}).",
+      "FilesRejected": "{count} fichiers n'ont pas été ajoutés (format non pris en charge ou taille maximale dépassée).",
+      "Loading": "Chargement",
+      "Placeholder": "Aucun fichier sélectionné.",
+      "RemoveFile": "Supprimer {fileName}",
+      "Trigger": "Sélectionnez votre fichier"
+    },
+    "SearchField": {
+      "Clear": "Effacer la recherche"
+    }
+  },
   "Platform": {
     "Update": "Mettre à jour",
     "UpdateMetadata": "Mettre à jour les métadonnées de la plateforme",
     "Name": "Nom de la plateforme",
     "NamePlaceholder": "Entrez le nom de la plateforme",
-    "IllustrationImage": "Image d'illustration",
     "Updated": "{platformName} a été mis à jour avec succès"
   },
   "Region": {
@@ -1752,16 +2547,10 @@
     "EU_WEST": "Europe Ouest",
     "US_EAST": "États-Unis Est"
   },
-  "VaultActions": {
-    "DocumentAdded": "{file_name} a été ajouté",
-    "DocumentDeleted": "{file_name} a été supprimé",
-    "DocumentUpdated": "{file_name} a été modifié",
-    "UpdateDocument": "Modifier le document"
-  },
   "DeploymentRequestJobTitle": {
     "ceo": "PDG",
     "ciso_cso_cio": "RSSI/DSI/Directeur de la sécurité",
-    "c_level": "Niveau C (direction)",
+    "c_level": "Direction générale (C-level)",
     "general_manager_vp": "Directeur général/Vice-président",
     "director_head_cybersecurity": "Directeur/Responsable cybersécurité",
     "cybersecurity_team_lead": "Chef d'équipe cybersécurité",
@@ -1778,5 +2567,162 @@
     "vulnerability_analyst": "Analyste en vulnérabilités",
     "consultant": "Consultant",
     "other": "Autre"
+  },
+  "VotingRound": {
+    "Actions": {
+      "Add": "Créer un round de vote",
+      "Edit": "Modifier le round",
+      "Open": "Ouvrir aux votes",
+      "Close": "Clôturer les votes"
+    },
+    "Form": {
+      "Name": "Nom",
+      "Description": "Description",
+      "DescriptionPlaceholder": "Affichée aux utilisateurs sur la page publique de vote",
+      "CopyFeaturesFrom": "Copier les fonctionnalités de",
+      "CopyFeaturesNone": "Partir d'un round vide",
+      "Error": {
+        "Name": "Le nom est obligatoire",
+        "ServiceInstance": "La roadmap est obligatoire"
+      },
+      "ServiceInstance": "Roadmap",
+      "ServiceInstancePlaceholder": "Sélectionnez une roadmap",
+      "Theme": "Style de bannière"
+    },
+    "ListPage": {
+      "Name": "Nom",
+      "Status": "Statut",
+      "FeatureCount": "Fonctionnalités",
+      "ServiceInstance": "Roadmap"
+    },
+    "Status": {
+      "draft": "Brouillon",
+      "open": "Ouvert",
+      "closed": "Clôturé"
+    },
+    "Dialog": {
+      "DeleteRound": "Voulez-vous vraiment supprimer {name} ? Ce n'est possible que s'il n'a aucun vote.",
+      "OpenRound": "Ouvrir {name} aux votes ? Le round actuellement ouvert sera clôturé et ses résultats conservés.",
+      "CloseRound": "Clôturer les votes de {name} ? Les utilisateurs ne pourront plus voter et les résultats sont conservés.",
+      "DeleteFeature": "Voulez-vous vraiment supprimer {title} ?"
+    },
+    "Feature": {
+      "SectionTitle": "Fonctionnalités",
+      "Title": "Titre",
+      "Product": "Produit",
+      "ShortDescription": "Description courte",
+      "Description": "Description",
+      "Illustration": "Illustration",
+      "Position": "Position",
+      "Active": "Active",
+      "ActiveYes": "Oui",
+      "ActiveNo": "Non",
+      "Actions": {
+        "Add": "Ajouter une fonctionnalité",
+        "Edit": "Modifier la fonctionnalité"
+      },
+      "Error": {
+        "Title": "Le titre est obligatoire",
+        "ShortDescription": "La description courte est obligatoire",
+        "ShortDescriptionMax": "La description courte ne doit pas dépasser 215 caractères",
+        "Description": "La description est obligatoire",
+        "Position": "La position doit être un nombre positif"
+      },
+      "RemoveIllustration": "Retirer l'illustration",
+      "DescriptionPlaceholder": "Description complète affichée quand un utilisateur ouvre la fonctionnalité. Markdown pris en charge."
+    },
+    "Results": {
+      "Title": "Résultats",
+      "TotalVoters": "{count, plural, =1 {# votant} other {# votants}}",
+      "Empty": "Aucun vote pour ce round.",
+      "InactiveFeature": "Désactivée"
+    },
+    "Theme": {
+      "default": "Par défaut",
+      "thread": "Thread"
+    }
+  },
+  "TimeSeriesBarChart": {
+    "Peak": "Pic"
+  },
+  "EditableText": {
+    "DialogTitle": "Modifier le contenu",
+    "KeyLabel": "Clé : {contentKey}",
+    "ValueLabel": "Valeur {locale}",
+    "OriginalValue": "Original : {value}",
+    "SaveDraft": "Enregistrer le brouillon",
+    "EditionBannerLabel": "Vous êtes en mode édition — cliquez sur un texte encadré pour le modifier.",
+    "EditionBannerHiddenAreasLabel": "Vous êtes en mode édition — affichez les zones modifiables pour modifier un texte.",
+    "ShowEditableAreas": "Afficher les zones modifiables",
+    "EditionBannerExit": "Retour au site en direct",
+    "MenuButton": "Modifier les traductions",
+    "MenuButtonExit": "Quitter le mode édition",
+    "DraftHint": "Enregistré en brouillon : les visiteurs ne le verront qu’une fois publié depuis le bandeau du mode édition.",
+    "PendingChanges": "{count, plural, one {# modification non publiée} other {# modifications non publiées}}",
+    "Publish": "Publier",
+    "Discard": "Abandonner",
+    "PublishConfirmTitle": "{count, plural, one {Publier # modification ?} other {Publier # modifications ?}}",
+    "PublishConfirmDescription": "Tous les visiteurs verront les textes publiés.",
+    "DiscardConfirmTitle": "{count, plural, one {Abandonner # modification ?} other {Abandonner # modifications ?}}",
+    "DiscardConfirmDescription": "Les brouillons seront supprimés pour tous les éditeurs. Cette action est irréversible.",
+    "ExitDialogTitle": "Modifications non publiées",
+    "ExitDialogDescription": "{count, plural, one {# modification n’est pas encore publiée.} other {# modifications ne sont pas encore publiées.}} Les visiteurs voient les textes actuels tant que vous ne publiez pas.",
+    "KeepDraftsAndExit": "Garder les brouillons et quitter",
+    "DiscardAndExit": "Abandonner et quitter",
+    "PublishAndExit": "Publier et quitter"
+  },
+  "EditableTextDemo": {
+    "Title": "Bienvenue sur XTM Hub",
+    "Subtitle": "Le point d'entrée unifié de l'écosystème Filigran.",
+    "Instructions": "Utilisez « Modifier les traductions » dans la barre latérale pour activer le mode édition (réservé aux utilisateurs avec la capacité BYPASS), puis cliquez sur le titre ou le sous-titre encadré ci-dessous. L’enregistrement crée un brouillon à publier depuis le bandeau du mode édition."
+  },
+  "AdminRegisteredPlatforms": {
+    "Search": "Rechercher par titre, URL, organisation, e-mail ou ID",
+    "ClearSearch": "Effacer la recherche",
+    "Columns": {
+      "Platform": "Plateforme",
+      "Product": "Produit",
+      "Organization": "Organisation",
+      "Tenant": "Tenant",
+      "Contract": "Contrat",
+      "Status": "Statut",
+      "LastConnectivityCheck": "Dernière vérification de connectivité",
+      "Registerer": "Enregistrée par",
+      "Credential": "Identifiant de connexion",
+      "Identifiers": "Identifiants"
+    },
+    "Identifiers": {
+      "ServiceInstance": "Instance de service",
+      "Platform": "Plateforme",
+      "Tenant": "Tenant"
+    },
+    "Credential": {
+      "Kind": {
+        "token": "Jeton",
+        "none": "Aucun"
+      },
+      "TokenStored": "Jeton enregistré",
+      "NoTokenStored": "Aucun jeton enregistré"
+    },
+    "Filters": {
+      "Product": "Produit",
+      "AllProducts": "Tous les produits",
+      "Status": "Statut",
+      "AllStatuses": "Tous les statuts"
+    },
+    "Unregister": "Désinscrire",
+    "UnregisterSuccess": "La plateforme « {title} » a été désinscrite",
+    "UnregisterDialog": {
+      "Title": "Désinscrire la plateforme « {title} » ?",
+      "Text": "La plateforme {product} « {title} » sera déconnectée de l'organisation {organization} sur XTM Hub. Les administrateurs de l'organisation seront prévenus par e-mail. Pour la reconnecter, la plateforme devra refaire le processus de connexion. La plateforme ne pourra plus utiliser ses identifiants avec XTM Hub, sauf pour apprendre qu'elle est désinscrite.",
+      "TextWithoutOrganization": "La plateforme {product} « {title} » sera déconnectée de XTM Hub. Elle n'appartient à aucune organisation : personne ne sera prévenu par e-mail. Pour la reconnecter, la plateforme devra refaire le processus de connexion. La plateforme ne pourra plus utiliser ses identifiants avec XTM Hub, sauf pour apprendre qu'elle est désinscrite."
+    }
+  },
+  "Tour": {
+    "GuidedTour": "Visite guidée",
+    "Close": "Fermer la visite",
+    "PreviousStep": "Aller à l'étape précédente",
+    "NextStep": "Aller à l'étape suivante",
+    "GoToStep": "Aller à l'étape {step}"
   }
 }

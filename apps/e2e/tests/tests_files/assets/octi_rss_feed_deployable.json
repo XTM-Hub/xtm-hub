@@ -1,0 +1,13 @@
+{
+  "openCTI_version": "7.260309.0",
+  "type": "rssFeeds",
+  "configuration": {
+    "name": "E2E deployed RSS feed",
+    "description": "",
+    "scheduling_period": "PT1H",
+    "uri": "https://example.com/rss",
+    "current_state_date": null,
+    "report_types": [],
+    "object_marking_refs": []
+  }
+}

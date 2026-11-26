@@ -1,7 +1,11 @@
 import config from 'config';
 import { describe, expect, it, vi } from 'vitest';
 import { FeatureFlag } from '../__generated__/resolvers-types';
-import { isFeatureEnabled, resolveFeatureFlags } from './feature-flag.util';
+import {
+  isFeatureEnabled,
+  PAUSED_FEATURE_FLAGS,
+  resolveFeatureFlags,
+} from './feature-flag.util';
 
 vi.mock('config', async (importOriginal) => {
   const mod = await importOriginal<{ default: typeof config }>();
@@ -14,18 +18,45 @@ vi.mock('config', async (importOriginal) => {
 });
 
 describe('resolveFeatureFlags', () => {
-  const allFlags = Object.values(FeatureFlag);
+  const allUnpausedFlags = Object.values(FeatureFlag).filter(
+    (flag) => !PAUSED_FEATURE_FLAGS.has(flag)
+  );
 
   describe('wildcard handling', () => {
-    it('should return all flags when "*" is present', () => {
+    it('should return all flags but the paused ones when "*" is present', () => {
       const result = resolveFeatureFlags(['*']);
-      expect(result).toEqual(allFlags);
+      expect(result).toEqual(allUnpausedFlags);
     });
 
-    it('should return all flags when "*" is mixed with other values', () => {
+    it('should return all flags but the paused ones when "*" is mixed with other values', () => {
       const result = resolveFeatureFlags(['*', 'DUMMY', 'INVALID']);
-      expect(result).toEqual(allFlags);
+      expect(result).toEqual(allUnpausedFlags);
     });
+  });
+
+  describe('paused flags', () => {
+    it.each`
+      enabledFeatures                       | expected               | description
+      ${['DECOUPLING_CONNECTORS']}          | ${[]}                  | ${'paused flag listed alone'}
+      ${['DECOUPLING_CONNECTORS', 'DUMMY']} | ${[FeatureFlag.Dummy]} | ${'paused flag listed with an active one'}
+      ${['*', 'DECOUPLING_CONNECTORS']}     | ${allUnpausedFlags}    | ${'paused flag listed with the wildcard'}
+    `(
+      'should never return DECOUPLING_CONNECTORS when the config has $description',
+      ({
+        enabledFeatures,
+        expected,
+      }: {
+        enabledFeatures: string[];
+        expected: FeatureFlag[];
+      }) => {
+        // When
+        const result = resolveFeatureFlags(enabledFeatures);
+
+        // Then
+        expect(result).toEqual(expected);
+        expect(result).not.toContain(FeatureFlag.DecouplingConnectors);
+      }
+    );
   });
 
   describe('flag validation', () => {
@@ -94,6 +125,35 @@ describe('isFeatureEnabled', () => {
     ({ enabledFeatures, expected }) => {
       vi.mocked(config.get).mockReturnValue(enabledFeatures);
       expect(isFeatureEnabled(FeatureFlag.Dummy)).toBe(expected);
+    }
+  );
+});
+
+describe('isFeatureEnabled for a paused flag', () => {
+  it.each([
+    {
+      enabledFeatures: ['*'],
+      description: 'wildcard is present',
+    },
+    {
+      enabledFeatures: ['DECOUPLING_CONNECTORS'],
+      description: 'flag is explicitly listed',
+    },
+    {
+      enabledFeatures: ['*', 'DECOUPLING_CONNECTORS'],
+      description: 'wildcard is mixed with flag',
+    },
+  ])(
+    'should return false for DECOUPLING_CONNECTORS when $description',
+    ({ enabledFeatures }) => {
+      // Given
+      vi.mocked(config.get).mockReturnValue(enabledFeatures);
+
+      // When
+      const result = isFeatureEnabled(FeatureFlag.DecouplingConnectors);
+
+      // Then
+      expect(result).toBe(false);
     }
   );
 });

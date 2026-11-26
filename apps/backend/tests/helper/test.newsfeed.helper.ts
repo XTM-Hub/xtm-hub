@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { db } from '../../knexfile';
 import {
+  NewsFeedItemMetadataKey,
   NewsFeedItemType,
   PlatformIdentifier,
 } from '../../src/__generated__/resolvers-types';
@@ -33,6 +34,16 @@ export const TestNewsfeedHelper = {
         .returning('*');
       return item!;
     },
+    createMetadata: async (data: {
+      news_feed_item_id: NewsFeedItemId;
+      key: NewsFeedItemMetadataKey;
+      value: string | null;
+    }): Promise<NewsFeedItemMetadata> => {
+      const [metadata] = await db('NewsFeedItemMetadata')
+        .insert(data)
+        .returning<NewsFeedItemMetadata[]>('*');
+      return metadata!;
+    },
     loadItems: async (
       field: NewsFeedItemMutator = {}
     ): Promise<NewsFeedItem[]> => {
@@ -50,12 +61,26 @@ export const TestNewsfeedHelper = {
         .where(field)
         .first();
     },
+    loadMetadata: async (field: {
+      news_feed_item_id?: NewsFeedItemId;
+      key?: NewsFeedItemMetadataKey;
+      value?: string | null;
+    }): Promise<NewsFeedItemMetadata[]> => {
+      return db<NewsFeedItemMetadata[]>('NewsFeedItemMetadata')
+        .where(field)
+        .select('*');
+    },
     loadProvisioned: async (
       field: ProvisionedNewsFeedItemMutator
     ): Promise<ProvisionedNewsFeedItem[]> => {
       return db<ProvisionedNewsFeedItem[]>('ProvisionedNewsFeedItem')
         .where(field)
         .select('*');
+    },
+    deleteProvisioned: async (field: ProvisionedNewsFeedItemMutator = {}) => {
+      await db<ProvisionedNewsFeedItem>('ProvisionedNewsFeedItem')
+        .where(field)
+        .del();
     },
     deleteItem: async (field: NewsFeedItemMutator = {}) => {
       await db<NewsFeedItem>('NewsFeedItem').where(field).del();

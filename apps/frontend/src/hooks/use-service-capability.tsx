@@ -1,21 +1,77 @@
 import { useAdminByPass } from '@/hooks/use-portal-capability';
-import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
-import { ServiceRestriction } from '@graphql/generated';
+import { portalGraphqlClient } from '@/lib/graphql-client';
+import {
+  ServiceInstanceItemFragment,
+  ServiceRestriction,
+  useServiceUserCapabilitiesQuery,
+} from '@graphql/generated';
 import { useMemo } from 'react';
 
-const useServiceCapability = (
+const ServiceUserCapabilitiesStaleTime = 10 * 60 * 1000; // Cache: 10mns
+
+export type UseServiceCapabilityWithSubscriptionId = {
+  hasCapability: boolean;
+  subscriptionId: string | null;
+};
+
+const useServiceCapabilityData = (
   capability: ServiceRestriction,
-  serviceInstance?: serviceInstance_fragment$data
-) => {
+  serviceInstance?: ServiceInstanceItemFragment
+): UseServiceCapabilityWithSubscriptionId => {
   const canBypass = useAdminByPass();
-  return useMemo(() => {
+  const { data } = useServiceUserCapabilitiesQuery(
+    portalGraphqlClient,
+    {
+      service_instance_id: serviceInstance?.id ?? '',
+    },
+    {
+      enabled: !!serviceInstance?.id,
+      staleTime: ServiceUserCapabilitiesStaleTime,
+    }
+  );
+  const userServiceCapabilities =
+    data?.userServiceCapabilities?.userServiceCapabilities;
+  const subscriptionId = data?.userServiceCapabilities?.subscription_id;
+
+  const hasCapability = useMemo(() => {
+    const fetchedServiceCapabilities = userServiceCapabilities?.flatMap(
+      (userServiceCapability) => [
+        userServiceCapability?.generic_service_capability?.name,
+        userServiceCapability?.subscription_capability?.service_capability
+          ?.name,
+      ]
+    );
+    const userCapabilities =
+      fetchedServiceCapabilities ?? serviceInstance?.capabilities;
+
     return (
       canBypass ||
-      !!serviceInstance?.capabilities?.some(
-        (capa) => capa?.toUpperCase() === capability
-      )
+      !!userCapabilities?.some((capa) => capa?.toUpperCase() === capability)
     );
-  }, [canBypass, serviceInstance, capability]);
+  }, [canBypass, serviceInstance, capability, userServiceCapabilities]);
+
+  return {
+    hasCapability,
+    subscriptionId,
+  };
 };
+
+function useServiceCapability(
+  capability: ServiceRestriction,
+  serviceInstance?: ServiceInstanceItemFragment
+): boolean {
+  const { hasCapability } = useServiceCapabilityData(
+    capability,
+    serviceInstance
+  );
+  return hasCapability;
+}
+
+export function useServiceCapabilityWithSubscriptionId(
+  capability: ServiceRestriction,
+  serviceInstance?: ServiceInstanceItemFragment
+): UseServiceCapabilityWithSubscriptionId {
+  return useServiceCapabilityData(capability, serviceInstance);
+}
 
 export default useServiceCapability;

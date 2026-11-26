@@ -1,13 +1,13 @@
+import { RegisteredPlatformsListItem } from '@/hooks/use-registered-platforms';
+import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { SHAREABLE_RESOURCE_TYPE_NAME_MAPPING } from '@/utils/shareable-resources/shareable-resources.types';
-import { AlertDialogTitle } from '@filigran/ui';
-import { Button } from '@filigran/ui/servers';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { useRegisteredPlatformsFragment$data } from '@generated/useRegisteredPlatformsFragment.graphql';
-import { useTranslations } from 'next-intl';
+import { Button, DialogTitle } from '@filigran/design-system';
+import { DocumentItemFragment } from '@graphql/generated';
 
 interface OnePlatformDisplayProps {
-  documentData: documentItem_fragment$data;
-  platforms: useRegisteredPlatformsFragment$data[];
+  documentData: DocumentItemFragment;
+  platforms: RegisteredPlatformsListItem[];
   setIsOpen: (isOpen: boolean) => void;
   oneClickDeploy: (url: string) => void;
 }
@@ -18,12 +18,12 @@ const OnePlatformDisplay = ({
   setIsOpen,
   oneClickDeploy,
 }: OnePlatformDisplayProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   return (
     <>
-      <div className="space-y-m">
-        <AlertDialogTitle>
+      <div className="space-y-3">
+        <DialogTitle>
           {t('Service.ShareableResources.Deploy.DeployResourceDescription', {
             resourceName: documentData.name ?? '',
             resourceType:
@@ -31,16 +31,17 @@ const OnePlatformDisplay = ({
                 documentData.type as keyof typeof SHAREABLE_RESOURCE_TYPE_NAME_MAPPING
               ],
           })}
-        </AlertDialogTitle>
+        </DialogTitle>
         <p>
           {t('Service.ShareableResources.Deploy.DeployDescriptionOnePlatform', {
             platformName: platforms[0]?.title ?? 'OpenCTI',
           })}
         </p>
       </div>
-      <div className="flex justify-end gap-s">
+      <div className="flex justify-end gap-2">
         <Button
-          variant="secondary"
+          {...analyticsId('resource_deploy_cancel')}
+          priority="secondary"
           type="button"
           onClick={() => {
             setIsOpen(false);
@@ -49,6 +50,7 @@ const OnePlatformDisplay = ({
         </Button>
 
         <Button
+          {...analyticsId('resource_deploy_confirm')}
           onClick={() => {
             setIsOpen(false);
             oneClickDeploy(platforms[0]?.url ?? '');

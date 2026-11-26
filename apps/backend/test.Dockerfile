@@ -1,4 +1,4 @@
-FROM node:24.18.1-alpine3.24 AS base
+FROM node:24.22.3-alpine3.24 AS base
 
 # Install dependencies only when needed
 FROM base AS deps
@@ -18,6 +18,8 @@ RUN corepack enable && \
 FROM base AS builder
 WORKDIR /app
 COPY apps/backend/. ./apps/backend/
+# The metrics tests check the GraphQL operations the frontend sends
+COPY apps/frontend/graphql/. ./apps/frontend/graphql/
 COPY .yarnrc.yml package.json yarn.lock ./
 RUN corepack enable
 

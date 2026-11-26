@@ -33,8 +33,6 @@ export async function serverGraphqlFetch<
     );
   }
 
-  const activeCacheConfig = resolveActiveCacheConfig(options.cache, options);
-
   const response = await fetch(apiUri, {
     method: 'POST',
     headers: {
@@ -42,8 +40,7 @@ export async function serverGraphqlFetch<
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ query: document, variables }),
-    ...options,
-    cache: activeCacheConfig,
+    ...resolveActiveCacheConfig(options),
   });
 
   const json = (await response.json()) as {

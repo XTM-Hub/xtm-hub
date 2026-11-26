@@ -1,22 +1,24 @@
-import { useServiceListLocalStorageKeyContext } from '@/components/service/components/ServiceListLocalStorageKeyContext';
+import { ServiceListFacetCounts } from '@/components/service/components/header/filter/service-list-facet-counts';
 import { ServiceListFilterKey } from '@/components/service/components/header/ServiceListHeader';
+import { useServiceListStorageKeyContext } from '@/components/service/components/ServiceListStorageKeyContext';
 import { LogicalMultiSelectFormField } from '@/components/ui/shareable-resource/logical-multi-select/LogicalMultiSelectFormField';
-import { useServiceListFilters } from '@/hooks/use-service-list-filters';
-import { useServiceListLocalStorage } from '@/hooks/use-service-list-local-storage';
+import { useServiceListStorage } from '@/hooks/use-service-list-storage';
+import { useTranslate } from '@/hooks/use-translate';
 import { ENTITY_TYPES } from '@/utils/shareable-resources/entity-type';
-import { useTranslations } from 'next-intl';
+import { type ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 
-export const ServiceListFilterEntityType = () => {
-  const t = useTranslations();
-  const { localStorageKey } = useServiceListLocalStorageKeyContext();
-  const { entityTypes, setEntityTypes, removeEntityTypes } =
-    useServiceListLocalStorage(localStorageKey);
+interface ServiceListFilterEntityTypeProps {
+  type: ShareableResourceType;
+  facetCounts?: ServiceListFacetCounts['entityType'];
+}
 
-  const { removeFilter } = useServiceListFilters();
-  const removeEntityTypeFilter = () => {
-    removeEntityTypes();
-    removeFilter(ServiceListFilterKey.EntityType);
-  };
+export const ServiceListFilterEntityType = ({
+  type,
+  facetCounts,
+}: ServiceListFilterEntityTypeProps) => {
+  const t = useTranslate();
+  const { storageKey } = useServiceListStorageKeyContext();
+  const { entityTypes, setEntityTypes } = useServiceListStorage(storageKey);
 
   const entityTypeOptions = ENTITY_TYPES.map(({ name, id }) => ({
     label: name,
@@ -26,12 +28,15 @@ export const ServiceListFilterEntityType = () => {
   return (
     <LogicalMultiSelectFormField
       options={entityTypeOptions}
-      initialValue={entityTypes}
-      placeholder={t('GenericActions.FilterEntityTypes')}
+      value={entityTypes}
       noResultString={t('Utils.NotFound')}
       onValueChange={setEntityTypes}
-      onRemove={removeEntityTypeFilter}
+      analyticsFilter={{
+        filterKey: ServiceListFilterKey.EntityType,
+        resourceType: type,
+      }}
       optionLabel={t('GenericActions.FilterEntityTypesLabel')}
+      facetCounts={facetCounts}
     />
   );
 };

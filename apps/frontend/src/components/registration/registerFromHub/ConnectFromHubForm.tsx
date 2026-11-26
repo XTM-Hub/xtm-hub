@@ -1,7 +1,9 @@
 'use client';
 
-import { AutoForm, Button } from '@filigran/ui';
-import { useTranslations } from 'next-intl';
+import { AutoForm } from '@/components/ui/auto-form';
+import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
+import { Button } from '@filigran/design-system';
 import { z } from 'zod';
 
 export enum CONNECTABLE_PRODUCTS {
@@ -18,7 +20,7 @@ interface ConnectFromHubFormProps {
 }
 
 const ConnectFromHubForm = ({ onSubmit }: ConnectFromHubFormProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   return (
     <AutoForm
@@ -39,7 +41,11 @@ const ConnectFromHubForm = ({ onSubmit }: ConnectFromHubFormProps) => {
         },
       }}>
       <div className="flex justify-end">
-        <Button type="submit">{t('Utils.Continue')}</Button>
+        <Button
+          {...analyticsId('platform_connection_confirm')}
+          type="submit">
+          {t('Utils.Continue')}
+        </Button>
       </div>
     </AutoForm>
   );

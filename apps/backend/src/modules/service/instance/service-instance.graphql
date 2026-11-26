@@ -98,7 +98,6 @@ type Mutation {
     @auth(orgaCapa: [ADMINISTRATE_ORGANIZATION, MANAGE_SUBSCRIPTION])
   updatePlatformServiceMetadata(
     input: UpdatePlatformServiceMetadataInput!
-    document: Upload
   ): RegisteredPlatform
     @auth(orgaCapa: [ADMINISTRATE_ORGANIZATION, MANAGE_PLATFORM_REGISTRATION])
 }
@@ -111,15 +110,13 @@ type Query {
     orderMode: OrderingMode!
     searchTerm: String
     filters: [ServiceInstanceFilter!]
+    includeInaccessible: Boolean
   ): ServiceConnection! @auth
   serviceInstanceLinksByTags(
     tags: [ServiceInstanceTag!]!
   ): [SeoServiceInstance!]!
   serviceInstanceById(service_instance_id: ServiceInstanceId!): ServiceInstance
     @auth
-  serviceInstanceByIdAndGrantAccess(
-    service_instance_id: ServiceInstanceId!
-  ): ServiceInstance @auth
   seoServiceInstances: [SeoServiceInstance!]!
   seoServiceInstance(slug: String!): SeoServiceInstance!
 }

@@ -1,3 +1,4 @@
+import { XTM_PLATFORM_TRIAL_PATH } from '@/utils/path/constant';
 import {
   DocumentImageType,
   PlatformContract,
@@ -9,7 +10,6 @@ import {
   buildDistinctPlatformIdentifiersFromServiceDefinition,
   findLogoUrl,
   mapRegisteredPlatformsToHomepageCards,
-  resolveHomepageCrossSellProduct,
   resolveRemainingTrialDays,
 } from './Homepage.utils';
 
@@ -21,7 +21,7 @@ describe('buildDistinctPlatformIdentifiersFromServiceDefinition', () => {
     ${[{ identifier: ServiceDefinitionIdentifier.OpenaevRegistration }]}                                                                  | ${[PlatformIdentifier.Openaev]}                             | ${'returns [openaev] for a single OPENAEV identifier'}
     ${[{ identifier: ServiceDefinitionIdentifier.OpenctiRegistration }, { identifier: ServiceDefinitionIdentifier.OpenctiRegistration }]} | ${[PlatformIdentifier.Opencti]}                             | ${'deduplicates identifiers resolving to the same platform'}
     ${[{ identifier: ServiceDefinitionIdentifier.OpenctiRegistration }, { identifier: ServiceDefinitionIdentifier.OpenaevRegistration }]} | ${[PlatformIdentifier.Opencti, PlatformIdentifier.Openaev]} | ${'returns both platforms when identifiers span two different platforms'}
-    ${[{ identifier: ServiceDefinitionIdentifier.Vault }]}                                                                                | ${[]}                                                       | ${'returns an empty array for an unmapped identifier'}
+    ${[{ identifier: ServiceDefinitionIdentifier.OpenctiIntegrations }]}                                                                  | ${[]}                                                       | ${'returns an empty array for an unmapped identifier'}
   `(
     '$description',
     ({
@@ -101,6 +101,7 @@ describe('mapRegisteredPlatformsToHomepageCards', () => {
         identifier: ServiceDefinitionIdentifier.OpenaevRegistration,
         title: 'OpenAEV Trial Platform',
         contract: PlatformContract.Trial,
+        deployment_request: { parent_id: 'bundle-1' },
         subscription: {
           start_date: '2025-12-15T00:00:00.000Z',
           end_date: '2026-01-03T00:00:00.000Z',
@@ -126,7 +127,7 @@ describe('mapRegisteredPlatformsToHomepageCards', () => {
         registrationDate: '2025-12-15T00:00:00.000Z',
         contract: PlatformContract.Trial,
         remainingTrialDays: 2,
-        href: '/app/service/openaev_registration/instance-2',
+        href: XTM_PLATFORM_TRIAL_PATH,
       },
     ]);
   });
@@ -134,14 +135,14 @@ describe('mapRegisteredPlatformsToHomepageCards', () => {
   it('excludes entries whose identifier does not resolve to a platform', () => {
     const cards = mapRegisteredPlatformsToHomepageCards([
       {
-        id: 'rp-vault',
-        identifier: ServiceDefinitionIdentifier.Vault,
-        title: 'Vault',
+        id: 'rp-integrations',
+        identifier: ServiceDefinitionIdentifier.OpenctiIntegrations,
+        title: 'Integrations',
         contract: PlatformContract.Ce,
         subscription: {
           start_date: '2025-12-01T00:00:00.000Z',
           end_date: null,
-          service_instance_id: 'instance-vault',
+          service_instance_id: 'instance-integrations',
         },
       },
     ] as Parameters<typeof mapRegisteredPlatformsToHomepageCards>[0]);
@@ -240,7 +241,7 @@ describe('findLogoUrl', () => {
         id: 'res-1',
         name: 'Resource',
         type: 'opencti_custom_dashboard',
-        active: true,
+        status: 'published',
         slug: 'resource-slug',
         short_description: null,
         service_instance_id,
@@ -252,64 +253,4 @@ describe('findLogoUrl', () => {
       );
     }
   );
-});
-
-describe('resolveHomepageCrossSellProduct', () => {
-  it.each([
-    {
-      trialDeploymentsEligibility: undefined,
-      expected: undefined,
-      description: 'returns undefined when no eligibility data is available',
-    },
-    {
-      trialDeploymentsEligibility: {
-        availableTrials: [],
-        isBlacklisted: false,
-      },
-      expected: undefined,
-      description: 'returns undefined when no trial is available',
-    },
-    {
-      trialDeploymentsEligibility: {
-        availableTrials: [PlatformIdentifier.Opencti],
-        isBlacklisted: false,
-      },
-      expected: PlatformIdentifier.Opencti,
-      description: 'returns OpenCTI when only OpenCTI trial is available',
-    },
-    {
-      trialDeploymentsEligibility: {
-        availableTrials: [PlatformIdentifier.Openaev],
-        isBlacklisted: false,
-      },
-      expected: PlatformIdentifier.Openaev,
-      description: 'returns OpenAEV when only OpenAEV trial is available',
-    },
-    {
-      trialDeploymentsEligibility: {
-        availableTrials: [
-          PlatformIdentifier.Opencti,
-          PlatformIdentifier.Openaev,
-        ],
-        isBlacklisted: false,
-      },
-      expected: PlatformIdentifier.Opencti,
-      description: 'returns OpenCTI first when both trials are available',
-    },
-    {
-      trialDeploymentsEligibility: {
-        availableTrials: [
-          PlatformIdentifier.Opencti,
-          PlatformIdentifier.Openaev,
-        ],
-        isBlacklisted: true,
-      },
-      expected: undefined,
-      description: 'returns undefined when organization is blacklisted',
-    },
-  ])('$description', ({ trialDeploymentsEligibility, expected }) => {
-    expect(resolveHomepageCrossSellProduct(trialDeploymentsEligibility)).toBe(
-      expected
-    );
-  });
 });

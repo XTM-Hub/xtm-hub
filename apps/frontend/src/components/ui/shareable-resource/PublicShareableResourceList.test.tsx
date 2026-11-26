@@ -1,7 +1,10 @@
+import { ServiceListDisplayMode } from '@/components/service/components/header/ServiceListHeader';
 import testRender from '@/utils/test/test-render';
-import { publicDocumentListItemFragment$data } from '@generated/publicDocumentListItemFragment.graphql';
-import { seoServiceInstanceFragment$data } from '@generated/seoServiceInstanceFragment.graphql';
-import { IntegrationType } from '@graphql/generated';
+import {
+  IntegrationType,
+  PublicDocumentListItemFragment,
+  SeoServiceInstanceItemFragment,
+} from '@graphql/generated';
 import { screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { PublicShareableResourceList } from './PublicShareableResourceList';
@@ -21,15 +24,16 @@ describe('PublicShareableResourceList', () => {
     testRender(
       <PublicShareableResourceList
         documents={[]}
-        serviceInstance={serviceInstance as seoServiceInstanceFragment$data}
+        serviceInstance={serviceInstance as SeoServiceInstanceItemFragment}
         baseUrl="https://xtm.local"
+        displayMode={ServiceListDisplayMode.Tab}
       />
     );
 
     expect(screen.getByText('Utils.DocumentNotFound')).toBeInTheDocument();
   });
 
-  it('groups integrations by integration_type and renders document names with correct links', () => {
+  it('should render every resource in a single list with its public link when they have different types', () => {
     const documents = [
       {
         id: 'doc-1',
@@ -49,19 +53,16 @@ describe('PublicShareableResourceList', () => {
 
     testRender(
       <PublicShareableResourceList
-        documents={documents as publicDocumentListItemFragment$data[]}
-        serviceInstance={serviceInstance as seoServiceInstanceFragment$data}
+        documents={documents as PublicDocumentListItemFragment[]}
+        serviceInstance={serviceInstance as SeoServiceInstanceItemFragment}
         baseUrl="https://xtm.local"
+        displayMode={ServiceListDisplayMode.Tab}
       />
     );
 
-    expect(
-      screen.getByText(
-        `Service.OpenctiIntegrations.Type.${IntegrationType.Connector}`
-      )
-    ).toBeInTheDocument();
-    expect(screen.getByText('My Connector')).toBeInTheDocument();
-    expect(screen.getByText('My Dashboard')).toBeInTheDocument();
+    expect(screen.getByText('My Connector').closest('ul')).toBe(
+      screen.getByText('My Dashboard').closest('ul')
+    );
 
     const links = screen.getAllByRole('link');
     const connectorLink = links.find((l) =>

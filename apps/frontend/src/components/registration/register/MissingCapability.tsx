@@ -1,12 +1,13 @@
+import Loader from '@/components/Loader';
 import { RegistrationContext } from '@/components/registration/Context';
 import { RegistrationLayout } from '@/components/registration/Layout';
-import UserWithCapabilitiesInOrganizationQueryGraphql, {
-  userWithCapabilitiesInOrganizationQuery,
-} from '@generated/userWithCapabilitiesInOrganizationQuery.graphql';
-import { OrganizationCapability } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
+import { useTranslate } from '@/hooks/use-translate';
+import { portalGraphqlClient } from '@/lib/graphql-client';
+import {
+  OrganizationCapability,
+  useUsersWithCapabilitiesInOrganizationQuery,
+} from '@graphql/generated';
 import { useContext } from 'react';
-import { useLazyLoadQuery } from 'react-relay';
 
 interface RegisterStateMissingCapabilityProps {
   cancel: () => void;
@@ -18,26 +19,36 @@ export const RegisterStateMissingCapability = ({
   cancel,
 }: RegisterStateMissingCapabilityProps) => {
   const { capability, displayedIdentifier } = useContext(RegistrationContext);
-  const t = useTranslations();
+  const t = useTranslate();
   const capabilities = [OrganizationCapability.AdministrateOrganization];
   if (capability) {
     capabilities.push(capability);
   }
 
-  const { usersWithCapabilitiesInOrganization } =
-    useLazyLoadQuery<userWithCapabilitiesInOrganizationQuery>(
-      UserWithCapabilitiesInOrganizationQueryGraphql,
-      {
-        input: {
-          organizationId,
-          capabilities,
-        },
-      }
-    );
+  const { data } = useUsersWithCapabilitiesInOrganizationQuery(
+    portalGraphqlClient,
+    {
+      input: {
+        organizationId,
+        capabilities,
+      },
+    },
+    {
+      // Like Relay, a failed load reaches the error page; a failed background
+      // refetch of a list already loaded keeps it shown.
+      throwOnError: (_error, query) => query.state.data === undefined,
+    }
+  );
+
+  if (!data) {
+    return <Loader />;
+  }
 
   return (
-    <RegistrationLayout cancel={cancel}>
-      <h1>
+    <RegistrationLayout
+      cancel={cancel}
+      cancelAnalyticsId="platform_registration_cancel">
+      <h1 className="title-sm">
         {t(`Register.Error.Capability.Title`, {
           capability: capability?.replaceAll('_', ' ') ?? '',
         })}
@@ -48,8 +59,8 @@ export const RegisterStateMissingCapability = ({
         })}
       </p>
       <p>{t(`Register.Error.Capability.AdminListTitle`)}</p>
-      <ul className="list-disc ml-l">
-        {usersWithCapabilitiesInOrganization.map((administrator) => (
+      <ul className="list-disc ml-4">
+        {data.usersWithCapabilitiesInOrganization.map((administrator) => (
           <li key={administrator.id}>
             {administrator.first_name} {administrator.last_name} -{' '}
             {administrator.email}

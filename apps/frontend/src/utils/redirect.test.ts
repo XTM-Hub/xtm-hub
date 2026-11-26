@@ -1,10 +1,13 @@
-import { logFrontendError } from '@/components/error-frontend-log.graphql';
-import { getClientEnvironment } from '@/relay/environment/registry';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { logFrontendError } from '@/lib/frontend-error-log';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   buildLoginRedirect,
+  buildOidcRedirect,
+  buildPrivateCounterpartTarget,
   decodeSafeRedirect,
+  encodeRedirectValue,
   isSafeRedirect,
+  redirectToLogin,
 } from './redirect';
 
 describe('isSafeRedirect', () => {
@@ -25,6 +28,44 @@ describe('isSafeRedirect', () => {
     ['', false],
   ])('isSafeRedirect(%s) === %s', (url, expected) => {
     expect(isSafeRedirect(url)).toBe(expected);
+  });
+});
+
+describe('encodeRedirectValue', () => {
+  it('percent-encodes characters found in base64 relay global IDs', () => {
+    // A relay global ID such as `toGlobalId('ServiceInstance', uuid)` is itself
+    // base64 and may contain `+`, `/` and `=`.
+    const relayGlobalId = 'U2VydmljZUluc3RhbmNlOnh4eHg/+/+PT0=';
+    expect(encodeRedirectValue(relayGlobalId)).toBe(
+      encodeURIComponent(relayGlobalId)
+    );
+    expect(encodeRedirectValue(relayGlobalId)).not.toContain('+');
+    expect(encodeRedirectValue(relayGlobalId)).not.toContain('/');
+    expect(encodeRedirectValue(relayGlobalId)).not.toContain('=');
+  });
+
+  it('round-trips a value containing + through a query string unchanged', () => {
+    const value = 'abc+def/ghi==';
+    const query = `service_instance_id=${encodeRedirectValue(value)}`;
+    expect(new URLSearchParams(query).get('service_instance_id')).toBe(value);
+  });
+});
+
+describe('buildPrivateCounterpartTarget', () => {
+  it('should point to /redirect/private-counterpart with the public path percent-encoded', () => {
+    // Given
+    const pathname = '/en/cybersecurity-solutions/lib/c++ &co';
+
+    // When
+    const result = buildPrivateCounterpartTarget(pathname);
+
+    // Then
+    expect(result).toBe(
+      '/redirect/private-counterpart?path=%2Fen%2Fcybersecurity-solutions%2Flib%2Fc%2B%2B%20%26co'
+    );
+    expect(new URLSearchParams(result.split('?')[1]).get('path')).toBe(
+      pathname
+    );
   });
 });
 
@@ -94,12 +135,84 @@ describe('buildLoginRedirect', () => {
   });
 });
 
-describe('decodeSafeRedirect', () => {
-  beforeEach(() => {
-    vi.mocked(getClientEnvironment).mockReturnValue(null);
-  });
+describe('redirectToLogin', () => {
+  const CURRENT_PATHNAME = '/app/current-page';
 
   afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('should send the visitor to the login page with a way back when they are on an app page', () => {
+    // Given
+    const location = {
+      href: '',
+      pathname: CURRENT_PATHNAME,
+      search: '',
+      hash: '',
+    };
+    vi.stubGlobal('location', location);
+
+    // When
+    redirectToLogin();
+
+    // Then
+    expect(location.href).toBe(buildLoginRedirect(CURRENT_PATHNAME));
+  });
+
+  it('should keep the query string and the hash in the way back when the page depends on them', () => {
+    // Given
+    const location = {
+      href: '',
+      pathname: '/app/profile/transfer-personal-space',
+      search: '?id=transfer-request-id',
+      hash: '#details',
+    };
+    vi.stubGlobal('location', location);
+
+    // When
+    redirectToLogin();
+
+    // Then
+    expect(location.href).toBe(
+      buildLoginRedirect(
+        '/app/profile/transfer-personal-space?id=transfer-request-id#details'
+      )
+    );
+  });
+});
+
+describe('buildOidcRedirect', () => {
+  it.each([[null], [undefined], ['']])('returns /auth/oidc for %s', (value) => {
+    expect(buildOidcRedirect(value)).toBe('/auth/oidc');
+  });
+
+  it('encodes the pathname as encodeURIComponent(btoa(pathname))', () => {
+    const path = '/app/service/xtm_platform_roadmap/abc-123/feature-voting';
+    const expected = `/auth/oidc?redirect=${encodeURIComponent(btoa(path))}`;
+    expect(buildOidcRedirect(path)).toBe(expected);
+  });
+
+  it('encodes + in base64 as %2B', () => {
+    const path = '/~~';
+    const result = buildOidcRedirect(path);
+    // Sanity check: this path's base64 genuinely contains a + so the guard is exercised
+    expect(btoa(path)).toContain('+');
+    // qs decodes a raw + as a space, so the + must be percent-encoded as %2B
+    expect(result.split('?redirect=')[1]).toContain('%2B');
+    expect(result.split('?redirect=')[1]).not.toContain('+');
+  });
+
+  it('round-trips through URLSearchParams and decodeSafeRedirect', () => {
+    const path = '/cybersecurity-solutions/xtm-platform-roadmap/feature-voting';
+    const url = buildOidcRedirect(path);
+    const b64 = new URLSearchParams(url.split('?')[1]).get('redirect');
+    expect(decodeSafeRedirect(b64)).toBe(path);
+  });
+});
+
+describe('decodeSafeRedirect', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
     vi.clearAllMocks();
   });
 
@@ -139,37 +252,25 @@ describe('decodeSafeRedirect', () => {
   });
 
   it('calls logFrontendError when base64 decodes to a backslash bypass path', () => {
-    const mockEnv = {} as never;
-    vi.mocked(getClientEnvironment).mockReturnValue(mockEnv);
-
     decodeSafeRedirect(btoa('/\\evil.com'));
 
     expect(logFrontendError).toHaveBeenCalledWith(
-      mockEnv,
       'Unsafe redirect param detected: /\\evil.com'
     );
   });
 
   it('calls logFrontendError when base64 decodes to an unsafe path', () => {
-    const mockEnv = {} as never;
-    vi.mocked(getClientEnvironment).mockReturnValue(mockEnv);
-
     decodeSafeRedirect(btoa('https://evil.com'));
 
     expect(logFrontendError).toHaveBeenCalledWith(
-      mockEnv,
       'Unsafe redirect param detected: https://evil.com'
     );
   });
 
   it('calls logFrontendError when base64 decodes to a protocol-relative unsafe path', () => {
-    const mockEnv = {} as never;
-    vi.mocked(getClientEnvironment).mockReturnValue(mockEnv);
-
     decodeSafeRedirect(btoa('//evil.com'));
 
     expect(logFrontendError).toHaveBeenCalledWith(
-      mockEnv,
       'Unsafe redirect param detected: //evil.com'
     );
   });
@@ -179,20 +280,16 @@ describe('decodeSafeRedirect', () => {
     expect(decodeSafeRedirect('!!!not-base64!!!')).toBeNull();
   });
 
-  it('calls logFrontendError when base64 is malformed and environment is available', () => {
-    const mockEnv = {} as never;
-    vi.mocked(getClientEnvironment).mockReturnValue(mockEnv);
-
+  it('calls logFrontendError when base64 is malformed in the browser', () => {
     decodeSafeRedirect('!!!not-base64!!!');
 
     expect(logFrontendError).toHaveBeenCalledWith(
-      mockEnv,
       'Malformed base64 redirect param'
     );
   });
 
-  it('does not call logFrontendError when environment is null', () => {
-    vi.mocked(getClientEnvironment).mockReturnValue(null);
+  it('does not call logFrontendError when decoding on the server', () => {
+    vi.stubGlobal('window', undefined);
 
     decodeSafeRedirect('!!!not-base64!!!');
 
@@ -200,9 +297,6 @@ describe('decodeSafeRedirect', () => {
   });
 
   it('does not call logFrontendError for valid safe input', () => {
-    const mockEnv = {} as never;
-    vi.mocked(getClientEnvironment).mockReturnValue(mockEnv);
-
     decodeSafeRedirect(btoa('/app/manage/user'));
 
     expect(logFrontendError).not.toHaveBeenCalled();

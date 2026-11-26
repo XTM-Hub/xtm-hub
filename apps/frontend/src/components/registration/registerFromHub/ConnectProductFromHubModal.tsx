@@ -7,12 +7,12 @@ import ConnectFromHubForm, {
 } from '@/components/registration/registerFromHub/ConnectFromHubForm';
 import { DialogInformative } from '@/components/ui/Dialog';
 import useGranted from '@/hooks/use-granted';
+import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import {
   OrganizationCapability,
-  useConnectProductOrganizationAdminsQuery,
+  useUsersWithCapabilitiesInOrganizationQuery,
 } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 import { z } from 'zod';
 
 import { useRouter } from 'next/navigation';
@@ -44,14 +44,14 @@ const ConnectProductFromHubModal = ({
   onOpenChange,
   origin,
 }: ConnectProductProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const { me } = useContext(PortalContext);
   const router = useRouter();
   const organizationId = me?.selected_organization_id ?? '';
   const canManageOrganization =
     useGranted(OrganizationCapability.AdministrateOrganization) ||
     useGranted(OrganizationCapability.ManagePlatformRegistration);
-  const { data } = useConnectProductOrganizationAdminsQuery(
+  const { data } = useUsersWithCapabilitiesInOrganizationQuery(
     portalGraphqlClient,
     {
       input: {
@@ -120,11 +120,13 @@ const ConnectProductFromHubModal = ({
 
   return (
     <DialogInformative
+      analyticsId="platform_admin_contact"
       isOpen={isOpen}
       onClose={handleClose}
       onButtonClick={canManageOrganization ? undefined : handleReachAdmin}
       variant={'default'}
       buttonText={'Register.ConnectFromHub.ReachAdmin'}
+      isButtonDisabled={!mainRecipientEmail}
       title={canManageOrganization ? allowedMessageTitle : deniedMessage}
       description={
         canManageOrganization
@@ -134,7 +136,7 @@ const ConnectProductFromHubModal = ({
       showFooter={!canManageOrganization}>
       {canManageOrganization ? (
         <>
-          <div className="text-content-body-compact whitespace-pre-line">
+          <div className="text-content-compact whitespace-pre-line">
             {t('Register.ConnectFromHub.MinimumVersionRequired', {
               openctiVersion: '7.260728.0',
               openaevVersion: '3.260729.0',

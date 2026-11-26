@@ -1,9 +1,12 @@
 import type { JobWithMetadata, PgBoss, WorkOptions } from 'pg-boss';
+import { requestContext } from '../../context/request.context';
+import { SYSTEM_USER_CONTEXT } from '../../portal.const';
 import { logApp } from '../../utils/app-logger.util';
 import { HUBSPOT_QUEUES } from './hubspot.jobs';
 import { MAIL_QUEUES } from './mail.jobs';
 import { MANIFEST_QUEUES } from './manifest.jobs';
 import { PgBossMetrics } from './pgboss.metrics';
+import { TEAMS_NOTIFICATION_QUEUES } from './teams-notification.jobs';
 import { TELEMETRY_QUEUES } from './telemetry.jobs';
 
 /**
@@ -15,9 +18,16 @@ const DEAD_LETTER_QUEUES = [
   TELEMETRY_QUEUES.DEAD_LETTER,
   MAIL_QUEUES.DEAD_LETTER,
   MANIFEST_QUEUES.DEAD_LETTER,
+  TEAMS_NOTIFICATION_QUEUES.DEAD_LETTER,
 ] as const;
 
 function handleDeadLetterJobs(jobs: JobWithMetadata<unknown>[]): Promise<void> {
+  return requestContext.run({ ...SYSTEM_USER_CONTEXT }, () =>
+    logDeadLetterJobs(jobs)
+  );
+}
+
+function logDeadLetterJobs(jobs: JobWithMetadata<unknown>[]): Promise<void> {
   for (const job of jobs) {
     logApp.error('[PgBoss DLQ] Job dead-lettered', {
       dlqQueue: job.name,

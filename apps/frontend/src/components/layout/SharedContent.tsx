@@ -11,7 +11,7 @@ interface SharedContentProps {
 export const SharedContent = ({
   children,
   className,
-  mainClassName = 'h-full w-full overflow-y-auto',
+  mainClassName = 'h-full w-full overflow-y-auto [scrollbar-gutter:stable]',
 }: SharedContentProps) => (
   <div className="flex-1 min-h-0">
     <main className={mainClassName}>

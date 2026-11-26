@@ -1,8 +1,11 @@
 import UseCaseForm from '@/components/admin/use-case/UseCaseForm';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
+import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { prependToQueryCache } from '@/utils/query-cache';
-import { Button, toast } from '@filigran/ui';
+import { Button } from '@filigran/design-system';
 import {
   UseCaseAddMutation,
   UseCasesListQuery,
@@ -10,11 +13,10 @@ import {
 } from '@graphql/generated';
 import { useCaseListKeys } from '@graphql/use-case/use-case-list.keys';
 import { useQueryClient } from '@tanstack/react-query';
-import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 const AddUseCase = () => {
-  const t = useTranslations();
+  const t = useTranslate();
   const [openSheet, setOpenSheet] = useState(false);
   const queryClient = useQueryClient();
   const { mutate: createUseCase } = useUseCaseAddMutation(portalGraphqlClient, {
@@ -27,15 +29,16 @@ const AddUseCase = () => {
           prependToQueryCache('useCases', { node: newUseCase })
         );
       }
-      toast({
+      showSnackbar({
+        severity: 'success',
         title: t('Utils.Success'),
       });
     },
     onError: (error: unknown) => {
       const errorMessage =
         error instanceof Error ? error.message : 'UnknownError';
-      toast({
-        variant: 'destructive',
+      showSnackbar({
+        severity: 'error',
         title: t('Utils.Error'),
         description: <>{t(`Error.Server.${errorMessage}`)}</>,
       });
@@ -47,7 +50,11 @@ const AddUseCase = () => {
       title={t('UseCaseActions.AddUseCase')}
       setOpen={setOpenSheet}
       open={openSheet}
-      trigger={<Button>{t('UseCaseActions.AddUseCase')}</Button>}>
+      trigger={
+        <Button {...analyticsId('admin_use_case_create')}>
+          {t('UseCaseActions.AddUseCase')}
+        </Button>
+      }>
       <UseCaseForm
         onClose={() => setOpenSheet(false)}
         handleSubmit={(input) => createUseCase({ input })}

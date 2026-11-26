@@ -1,33 +1,38 @@
 'use client';
 
 import { ConnectedProductsDropdown } from '@/components/connected-products/ConnectedProductsDropdown';
-import { LogoutMutation } from '@/components/logout.graphql';
 import { PortalContext } from '@/components/me/AppPortalContext';
 import PrivateNavigation from '@/components/menu/navigation/private/PrivateNavigation';
 import HeaderOrganizationSwitcher from '@/components/menu/organization-switcher/HeaderOrganizationSwitcher';
 import { NotificationButton } from '@/components/notification/NotificationButton';
 import { DisplayLogo } from '@/components/ui/DisplayLogo';
 import { IconActions, IconActionsItem } from '@/components/ui/IconActions';
-import { cn } from '@/lib/utils';
-import { APP_PATH } from '@/utils/path/constant';
-
-import { MenuIcon } from '@filigran/icon';
+import { Avatar } from '@/components/ui/avatar';
+import { Separator } from '@/components/ui/separator';
 import {
-  Avatar,
-  Separator,
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from '@filigran/ui/clients';
-import { useTranslations } from 'next-intl';
+} from '@/components/ui/sheet';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
+import { portalGraphqlClient } from '@/lib/graphql-client';
+import { cn } from '@/lib/utils';
+import { clearFiltersStorage } from '@/utils/filters-storage.utils';
+import { getAvatarPictureSource } from '@/utils/format/user-picture';
+import { APP_PATH } from '@/utils/path/constant';
+
+import { useTranslate } from '@/hooks/use-translate';
+import { MenuIcon } from '@filigran/icon';
 import Link from 'next/link';
 
-import { OrganizationCapability } from '@graphql/generated';
-import { usePathname, useRouter } from 'next/navigation';
+import { OrganizationCapability, useLogoutMutation } from '@graphql/generated';
+import { usePathname } from 'next/navigation';
 import { useCallback, useContext, useEffect, useState } from 'react';
-import { useMutation } from 'react-relay';
+
+// Displayed size of the user avatar in px: keep it in step with the size-6 of its wrapper.
+const HEADER_AVATAR_SIZE = 24;
 
 // Component interface
 interface HeaderComponentProps {
@@ -38,9 +43,13 @@ const HeaderComponent = ({ displayLogo }: HeaderComponentProps) => {
   const { me, hasOrganizationCapability } = useContext(PortalContext);
   const [open, setOpen] = useState(false);
   const currentPath = usePathname();
-  const router = useRouter();
-  const t = useTranslations();
-  const [commitLogoutMutation] = useMutation(LogoutMutation);
+  const t = useTranslate();
+  const { mutate: logout } = useLogoutMutation(portalGraphqlClient, {
+    onSuccess() {
+      clearFiltersStorage();
+      window.location.href = '/';
+    },
+  });
 
   // Legitimate effect: close the menu on route change.
   // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -52,62 +61,59 @@ const HeaderComponent = ({ displayLogo }: HeaderComponentProps) => {
     ) ||
       hasOrganizationCapability(OrganizationCapability.ManageAccess));
 
-  const handleLogout = useCallback(() => {
-    commitLogoutMutation({
-      variables: {},
-      updater: (store) => {
-        store.invalidateStore();
-      },
-      onCompleted() {
-        router.push('/');
-        router.refresh();
-      },
-    });
-  }, [commitLogoutMutation, router]);
+  const handleLogout = useCallback(() => logout({}), [logout]);
 
   const headerContent = (
     <>
-      <div className="mobile:hidden flex items-center gap-s">
+      <div className="mobile:hidden flex items-center gap-2">
         <DisplayLogo
           className={cn(
-            'text-primary mr-2 h-full py-l',
+            'text-icon-highlight mr-2 h-full py-4',
             displayLogo ? '' : 'hidden'
           )}
         />
         <HeaderOrganizationSwitcher />
       </div>
 
-      <DisplayLogo className="text-primary mr-2 h-full py-l sm:hidden" />
+      <DisplayLogo className="text-icon-highlight mr-2 h-full py-4 sm:hidden" />
 
-      <div className="flex items-center gap-s">
-        <div className="mobile:hidden flex items-center gap-s">
+      <div className="flex items-center gap-2">
+        <div className="mobile:hidden flex items-center gap-2">
           <ConnectedProductsDropdown />
         </div>
         {canManageUser && <NotificationButton />}
         <div className="mobile:hidden flex items-center">
           <IconActions
-            className="rounded-full"
+            analyticsId="nav_user_menu_open"
+            aria-label={t('MenuUser.ToggleUser')}
             icon={
-              <>
-                <div className="my-auto [&_img]:object-cover size-6 text-primary [&_span]:bg-transparent">
-                  <Avatar src={me?.picture || undefined} />
-                </div>
-                <span className="sr-only">{t('MenuUser.ToggleUser')}</span>
-              </>
+              <div className="my-auto size-6">
+                <Avatar
+                  {...getAvatarPictureSource(me?.picture, HEADER_AVATAR_SIZE)}
+                  size={HEADER_AVATAR_SIZE}
+                  loading="eager"
+                />
+              </div>
             }>
             <IconActionsItem asChild>
-              <Link href={`/${APP_PATH}/profile`}>{t('MenuUser.Profile')}</Link>
+              <Link
+                {...analyticsId('account_profile_open')}
+                href={`/${APP_PATH}/profile`}>
+                {t('MenuUser.Profile')}
+              </Link>
             </IconActionsItem>
-            <IconActionsItem onClick={handleLogout}>
+            <IconActionsItem
+              {...analyticsId('account_session_close')}
+              onClick={handleLogout}>
               {t('LoginPage.Logout')}
             </IconActionsItem>
           </IconActions>
         </div>
-        <div className="flex gap-xs items-center sm:hidden">
+        <div className="flex gap-1 items-center sm:hidden">
           <Sheet
             open={open}
             onOpenChange={setOpen}>
-            <SheetTrigger>
+            <SheetTrigger {...analyticsId('nav_mobile_menu_open')}>
               <span className="sr-only">
                 {open ? t('Header.CloseMenu') : t('Header.OpenMenu')}
               </span>
@@ -119,10 +125,11 @@ const HeaderComponent = ({ displayLogo }: HeaderComponentProps) => {
             </SheetTrigger>
             <SheetContent
               side="left"
-              className="bg-gradient-layer-0-white">
-              <SheetHeader className="flex flex-row justify-between pl-l bg-gradient-layer-0-white">
-                <div className="flex items-center gap-s">
-                  <DisplayLogo className="text-primary h-8" />
+              closeLabel={t('Header.CloseMenu')}
+              className="bg-gradient-default">
+              <SheetHeader className="flex flex-row justify-between pl-4 bg-gradient-default">
+                <div className="flex items-center gap-2">
+                  <DisplayLogo className="text-icon-highlight h-8" />
                   <SheetTitle className="sr-only">
                     {t('Header.BrandName')}
                   </SheetTitle>
@@ -131,19 +138,22 @@ const HeaderComponent = ({ displayLogo }: HeaderComponentProps) => {
               <div className="flex flex-col h-full">
                 <div>
                   <PrivateNavigation open={true} />
-                  <Separator className="my-s" />
-                  <div className="flex flex-col gap-m pl-5">
+                  <Separator className="my-2" />
+                  <div className="flex flex-col gap-3 pl-5">
                     <HeaderOrganizationSwitcher fitContainer />
                   </div>
                 </div>
-                <div className="mt-auto pt-l pb-xl flex flex-col text-center">
-                  <Link href={`/${APP_PATH}/profile`}>
-                    <div className="w-full p-2 hover:bg-hover rounded">
+                <div className="mt-auto pt-4 pb-6 flex flex-col text-center">
+                  <Link
+                    {...analyticsId('account_profile_open')}
+                    href={`/${APP_PATH}/profile`}>
+                    <div className="w-full p-2 hover:bg-elevation-hover rounded">
                       {t('MenuUser.Profile')}
                     </div>
                   </Link>
                   <div
-                    className="p-2 hover:bg-hover rounded cursor-pointer"
+                    {...analyticsId('account_session_close')}
+                    className="p-2 hover:bg-elevation-hover rounded cursor-pointer"
                     onClick={handleLogout}>
                     {t('LoginPage.Logout')}
                   </div>

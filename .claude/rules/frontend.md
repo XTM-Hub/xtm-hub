@@ -1,0 +1,214 @@
+---
+paths:
+  - "apps/frontend/**"
+---
+
+# Frontend Instructions (`apps/frontend`)
+
+Next.js 16 (App Router + Turbopack) + React 19 + TailwindCSS 4 + `@filigran/design-system`. Dev port **3002** (Docker production
+serves on 3000 internally).
+
+Two data layers coexist mid-migration: **`@tanstack/react-query` is mandatory for all new data-fetching work**
+(see [Data fetching](#data-fetching)); **Relay** only remains on existing pages, and the long-term goal is to
+remove it entirely — migrate a Relay component to react-query whenever you're already touching it and it's
+safe to do so.
+
+## Commands
+
+Run from `apps/frontend` (or `yarn workspace @xtm-hub/frontend <script>`).
+
+| Command | What it does |
+| --- | --- |
+| `yarn relay` | `relay-compiler` — **required after a schema change or a Relay `graphql` template edit** |
+| `yarn codegen` | `graphql-codegen --config codegen.ts` — **required after a schema change or a `graphql/**/*.graphql` operation edit**; rewrites the tracked `graphql/generated.ts` and `graphql/mocks.ts` |
+| `yarn next typegen` | Generates `next-env.d.ts` and route types — **required before `check-ts`** |
+| `yarn check-ts` | `tsc --noEmit` |
+| `yarn lint` | `eslint .` |
+| `yarn format` / `yarn format:check` | Prettier |
+| `yarn test` | Vitest + jsdom |
+| `yarn test:ci` | `lint` + tests with coverage — the full gate |
+| `yarn build` | `relay-compiler && next build` |
+| `yarn i18n:check` | Locale parity against `messages/en.json` |
+| `yarn generate:component` | Scaffolds a component |
+
+`yarn dev` runs `relay-compiler` once at start, `codegen:watch` and `next dev` concurrently: the codegen output stays
+fresh while you work, the Relay artifacts do not. Run `yarn relay` yourself after touching any `graphql` tagged
+template, and `yarn codegen` outside `dev` — stale artifacts surface as confusing type errors in `__generated__/` or
+`graphql/generated.ts`. Both read `schema.graphql`, which the backend rewrites on API start, so restart the API first
+after a schema change (see [`graphql.md`](graphql.md)).
+
+**`next-env.d.ts` is gitignored and generated.** It is what declares `@public/*.svg` and the route types, so on a
+fresh checkout `yarn check-ts` reports around twenty bogus `Cannot find module '@public/….svg'` errors. Run
+`yarn next typegen` first — do not "fix" those errors by adding declarations.
+
+## Layout
+
+```
+app/                                Next.js App Router
+  (application)/app/(admin)/admin/  Admin panel
+  (application)/app/(user)/         Service pages, org management, profile
+  (public)/                         Public marketing routes
+  (embed)/                          Embeddable widgets
+src/components/                     Components by domain; `ui/` holds shared primitives
+src/hooks/                          useGranted, useDecodedParams, ...
+src/relay/                          Client + server environments, SSR provider (existing pages)
+src/lib/graphql-client.ts           portalGraphqlClient — graphql-request client for react-query
+src/i18n/                           next-intl config, locale, request scope
+src/lib/  src/utils/                Helpers, server actions, middleware helpers, query-cache
+graphql/                            *.query.graphql / *.mutation.graphql + generated.ts, mocks.ts (react-query, new work)
+__generated__/                      Relay output — generated, never edit
+messages/                           One JSON file per locale (`en` is the source — see `yarn i18n:check`)
+proxy.ts                            Next.js 16 proxy convention (was middleware.ts); i18n + auth/document/GraphQL proxying
+schema.graphql                      Written by the backend on API start, read by Relay and graphql-codegen
+```
+
+## Path aliases
+
+- `@/*` → `./src/*`
+- `@generated/*` → `./__generated__/*` (Relay artifacts)
+- `@graphql/*` → `./graphql/*` (react-query operations and codegen output)
+
+Use them instead of deep relative paths.
+
+## UI components
+
+`@filigran/design-system` is Filigran's design system and the library for all UI. How to use it, and how to rebuild
+what it lacks, is in [`design-system.md`](design-system.md).
+
+- Icons: the design system's `<Icon name>` in new code; `@filigran/icon` remains in existing code until it migrates
+- Styling: TailwindCSS 4, themed by `@filigran/design-system/tokens/theme.css`, imported in `styles/globals.css`
+- Forms: `react-hook-form` + `zod` (v4)
+- Markdown: `@uiw/react-md-editor`
+
+### Tightening an AutoForm schema
+
+`AutoForm` takes one `zod` schema and validates it in full on submit, and the same component serves both the create
+and the edit path — the convention is `values: { field: entity?.field ?? <default> }` (`EpicForm`, `CompetitorForm`,
+`OpenctiPlaybookForm`, `TaxiiFeedForm`). **Adding a constraint to a field (`.min(1)`, `.max()`, `.regex()`) therefore
+applies retroactively to every stored record loaded into that form.** A row that does not satisfy the new rule can no
+longer be saved at all — not even to change an unrelated field — and the user gets a blocking error on a field they
+never touched.
+
+Before tightening a field, check what the already-stored rows hold and backfill them in the same change, or apply the
+constraint to creation only. A `zod` rule is also not a constraint on the data: the resolver and the column accept
+anything the browser didn't filter, so validate server-side too when it matters.
+
+## Rights and visibility
+
+Hiding a button, a route or a row is a convenience, never the protection: the backend guards every operation and
+filters the rows it returns, see [`access-control.md`](access-control.md). Do not filter a list in the client to remove
+what the user may not see (a draft, a document in validation): if the API returns it, the user already has it. When a
+UI gate and the backend disagree, the backend is right: fix the backend if it is too open, and show the
+`Error.Server.<code>` message if it refuses.
+
+**An action the user may not perform stays visible, disabled, with a tooltip saying why.** Do not hide the control, and
+do not disable it silently: the user must learn that the action exists and what is missing. Wrap the disabled control in
+`DisabledActionTooltip` (`src/components/ui/DisabledActionTooltip.tsx`), which carries the tooltip because a disabled
+control gets no hover or focus (see `PublicResourceActions.tsx`). It renders the `reason` as given and does not
+translate: pass the translated message (`reason={t('…')}`, as `PublicResourceActions.tsx` does), never the raw key, and
+add the underlying key to every locale file. The message names what is missing in plain words (the capability or role,
+or the state that blocks the action), not a generic "not allowed". Hide a control only when the user can never reach it, such as an entry that belongs to another
+product or to an area they cannot open at all. The disabled state is only a hint: the backend still refuses the call.
+
+## Data fetching
+
+The backend is reached through `proxy.ts` (Next.js 16's convention file, renamed from `middleware.ts`), which
+delegates GraphQL/auth/document routes to `src/utils/middleware/graphql-request.util.ts` and rewrites them to
+`SERVER_HTTP_API` (default `http://localhost:4002`).
+
+**For new work, use `@tanstack/react-query`**, not Relay. See
+[`graphql.md`](graphql.md#tanstackreact-query-conventions-new-frontend-work) for the
+operation-file convention, the codegen command, and the client/cache-invalidation wiring.
+
+**Never introduce new Relay usage, even for a small addition to an existing Relay page** — add it as a
+react-query call instead. The long-term goal is to remove Relay from this codebase entirely, so every
+new query or mutation should be react-query by default.
+
+When a task touches a component that still uses Relay for an unrelated reason, migrate that component's
+data fetching to react-query as part of the change, unless the migration is clearly out of scope for the
+task or too risky to fit safely (complex pagination/streaming, a large blast radius) — if you skip the
+migration for that reason, say so explicitly rather than silently leaving Relay in place. After removing
+a component's last Relay usage, confirm nothing else still imports its generated artifacts before
+deleting them.
+
+Existing Relay pages: see
+[`graphql.md`](graphql.md#relay-conventions-existing-pages-only) for the file convention
+and regeneration command.
+
+Server-side fetches:
+
+- Public operations use `serverGraphqlFetch` (`src/lib/server-graphql-fetch.ts`). It sends no cookie and honours the
+  Next.js data cache (`cache`, `next.revalidate`), so the cached response is shared by every visitor.
+- Operations that are not public (behind `@auth` or `@Guarded`) use `getAuthenticatedGraphqlClient()` (`src/lib/graphql-client.ts`). It forwards the
+  visitor's cookies and bypasses the data cache, so a response that belongs to one user is never cached.
+- Wrap the call in `redirectToSignupOnUnauthenticated` (`src/lib/server-unauthenticated-redirect.ts`) to send an
+  anonymous visitor to the signup page instead of throwing.
+- When a server component fetches a query that a client component also reads through a react-query hook, prefetch
+  and hydrate it, never pass it as props: see [`graphql.md`](graphql.md#server-rendering).
+- Existing Relay pages still go through `src/relay/server-portal-api-fetch.ts`, which forwards cookies and redirects on
+  its own.
+
+## Logging
+
+`console.log` is not acceptable in new application code (ESLint enforces `no-console` repo-wide). ESLint lets
+`warn`/`error` through, but that is no permission: as `AGENTS.md` says, they stay in scripts and launch code outside
+the running app. The one existing exception is intentional dev-only GraphQL operation tracing — `src/lib/graphql-client.ts`,
+`src/lib/server-graphql-fetch.ts`, and `src/relay/environment/fetch-fn.ts` each log the operation name and variables
+behind an `isDevelopment()` guard with an explicit `// eslint-disable-next-line no-console`. Do not remove these
+without being asked, and do not add a new one outside that same guarded, narrowly-scoped pattern.
+
+## Routing & Links
+
+**Disable prefetch on side-effecting links.** Next.js `<Link>` prefetches its `href` in the background as
+soon as it enters the viewport (or on hover). Any `href` that resolves to a route with real side effects —
+for example paths under `/auth/*`, `/document/*`, `/user/picture`, or an App Router `route.ts` handler that
+authenticates, mutates data, or triggers a redirect with business logic (like
+`app/redirect/[identifier]/route.ts`) — must use `<Link href="..." prefetch={false}>`. Plain `<a href="...">`
+tags are unaffected and don't need this. When adding or reviewing any `<Link>`, check whether its target is
+a passive page/RSC route or a side-effecting endpoint before deciding on `prefetch`.
+
+## Internationalisation
+
+All user-facing strings go through `next-intl`. Add the key to every locale file under `messages/` (`en.json` is the
+source of truth) — never hardcode copy in a component. `yarn i18n:check` verifies parity.
+
+## Analytics (GA4)
+
+The code lives in `src/lib/analytics/`; GA only loads on `hub.filigran.io`, after cookie consent.
+
+- **Every clickable element declares an ID** from the typed registry `src/lib/analytics/analytics.registry.ts`:
+  spread `analyticsId('<key>')` (from `@/lib/analytics/analytics.ids`) on a DOM or design-system element, or pass an
+  `analyticsId` / `*AnalyticsId` prop to an app component. Never a raw `data-analytics-id` string. `yarn lint` fails
+  on an untagged clickable element (`no-restricted-syntax` in `eslint.config.mjs`), except an `asChild` trigger (its
+  child carries the ID) and a static `disabled` one. An `eslint-disable-next-line no-restricted-syntax -- <reason>` is
+  only for an element that is not a user action (drag handle, tooltip trigger, form field sent by its tagged submit
+  button, container whose children carry the IDs).
+  Lint cannot see an element built from a config object (navigation links): type its `analyticsId` field as required.
+  A select or combobox shared between forms and standalone use (`SelectField`, `AppCombobox`, `RoleSelect`) takes
+  `AnalyticsFieldProps`: `analyticsId` when it acts on its own, `formField` inside a form.
+  A component rebuilt under `src/components/ui/` ([`design-system.md`](design-system.md)) takes a registry-typed
+  `analyticsId` prop: the one app dependency it may have, removed if the component goes upstream.
+- **Naming**: `<domain>_<object>_<verb>` in snake_case, domain and verb from the closed lists in `analytics.ids.ts`.
+  The object is left out when it is the domain itself (`resource_download`); a `_signup` suffix marks the variant
+  shown to signed-out visitors that leads to sign-up. A select trigger only opens its choices, so its key ends in
+  `_open` (`list_page_sizes_open`); the options are not tracked. The action label is imperative, sentence case,
+  unique, and never starts with "Click". The registry validator test checks the key format, both closed lists, unique
+  labels and the "Click" ban; the rest is on review.
+- **Never rename or remove an existing ID, nor change its action label, unless explicitly asked**: GA dashboards and
+  history are keyed on them. A new element gets a new key.
+- **Click context** comes from the nearest annotated container (`analyticsResource`, `analyticsSection`,
+  `analyticsEpic`, `analyticsFeature`, `analyticsProduct`, `analyticsLinkType` in `analytics.context.ts`). A dialog
+  or menu opened without an `aria-controls` trigger carries the annotation on its own content.
+- **Outcome events** (`generate_lead`, `sign_up`, `feature_vote`…) go through `trackEvent` from the success
+  callback of the request, never from the click; `ui_click` only measures button usage. The one exception is
+  `select_item`, sent by the click engine with the `resource_open` key: keep that key on resource cards.
+
+## Tests
+
+See [`testing.md`](testing.md) for structure, mocking policy and the frontend-specific
+tooling (`testRender`, `next-intl` mocking, `@tanstack/react-query` vs Relay mocking, pure-utility extraction).
+
+## Environment variables
+
+`SERVER_HTTP_API` (default `http://localhost:4002`), `E2E_BASE_URL` (default `http://localhost:3002`),
+`NEXT_PUBLIC_APP_VERSION`.

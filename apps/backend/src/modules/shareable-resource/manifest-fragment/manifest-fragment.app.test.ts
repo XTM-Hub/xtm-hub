@@ -1,6 +1,8 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { TestHelper } from '../../../../tests/helper/test.helper';
+import { TEST_META_DESCRIPTIONS } from '../../../../tests/tests.const';
 import {
+  DocumentMetadataKeyCode,
   ManifestType,
   PlatformIdentifier,
   PortalCapability,
@@ -11,9 +13,13 @@ import { requestContext } from '../../../context/request.context';
 import type { DocumentId } from '../../../model/kanel/public/Document';
 import { SYSTEM_USER_CONTEXT } from '../../../portal.const';
 import { minioInit } from '../../../server/initialize';
+import * as FeatureFlagUtil from '../../../utils/feature-flag.util';
+import { DocumentApp } from '../../document/document.app';
 import { ManifestRebuildQueueStatus } from '../manifest/manifest.consts';
 import { ManifestHelper } from '../manifest/manifest.helper';
+import { INTEGRATION_SERVICE_INSTANCE_ID } from '../opencti/integration/integration.model';
 import { ManifestFragmentApp } from './manifest-fragment.app';
+import { TAG_LATEST } from './manifest-fragment.helper';
 
 describe('manifestFragmentApp', () => {
   beforeAll(async () => {
@@ -30,6 +36,10 @@ describe('manifestFragmentApp', () => {
       },
     ],
   };
+
+  beforeEach(() => {
+    vi.spyOn(FeatureFlagUtil, 'isFeatureEnabled').mockReturnValue(true);
+  });
 
   afterEach(async () => {
     if (createdDocumentIds.length > 0) {
@@ -79,6 +89,7 @@ describe('manifestFragmentApp', () => {
     integration_type: ManifestType.Connector,
     additional_properties: {},
     config_schema: {},
+    solution_categories: ['Threat Intelligence'],
   });
 
   const buildArgs = (
@@ -103,6 +114,38 @@ describe('manifestFragmentApp', () => {
         slug: 'misp-unauthorized',
       });
       expect(createdDocument).toBeUndefined();
+    });
+  });
+
+  describe('while decoupled connectors are disabled', () => {
+    beforeEach(() => {
+      requestContext.set({ user: manifestIngestionUser });
+      vi.spyOn(FeatureFlagUtil, 'isFeatureEnabled').mockReturnValue(false);
+      vi.spyOn(ManifestHelper, 'scheduleDebouncedRebuild').mockResolvedValue(
+        undefined
+      );
+    });
+
+    it('should store nothing and schedule no rebuild', async () => {
+      // Given
+      await TestHelper.manifest.create({
+        product: PlatformIdentifier.Opencti,
+        version: '7.260507.0',
+        version_padded: '007.260507.000',
+      });
+      const args = buildArgs({ slug: 'misp-disabled' });
+
+      // When
+      await ManifestFragmentApp.ingestManifestFragments(args);
+
+      // Then
+      const createdDocument = await TestHelper.document.load({
+        slug: 'misp-disabled',
+      });
+      expect(createdDocument).toBeUndefined();
+      const queuedRows = await TestHelper.manifestRebuildQueue.loadAll({});
+      expect(queuedRows).toHaveLength(0);
+      expect(ManifestHelper.scheduleDebouncedRebuild).not.toHaveBeenCalled();
     });
   });
 
@@ -294,6 +337,132 @@ describe('manifestFragmentApp', () => {
         slug: 'misp-mixed-lts',
       });
       expect(createdDocument).toBeUndefined();
+    });
+  });
+
+  describe('meta description carry-forward', () => {
+    // What the connector form sends on an update: the connector metadata it edits.
+    const connectorFormMetadata = (fragment: ManifestFragmentInput) => [
+      { key: DocumentMetadataKeyCode.IntegrationType, value: 'connector' },
+      { key: DocumentMetadataKeyCode.ProductVersion, value: fragment.version },
+      {
+        key: DocumentMetadataKeyCode.ContainerImage,
+        value: fragment.image_name,
+      },
+      {
+        key: DocumentMetadataKeyCode.Verified,
+        value: String(fragment.verified),
+      },
+      { key: DocumentMetadataKeyCode.SourceCode, value: fragment.source_code },
+      {
+        key: DocumentMetadataKeyCode.ManagerSupported,
+        value: String(fragment.manager_supported),
+      },
+      { key: DocumentMetadataKeyCode.PlaybookSupported, value: 'false' },
+    ];
+
+    beforeEach(() => {
+      requestContext.set({ user: manifestIngestionUser });
+      vi.spyOn(ManifestHelper, 'scheduleDebouncedRebuild').mockResolvedValue(
+        undefined
+      );
+    });
+
+    it('creates a brand-new connector family without meta description', async () => {
+      // Given
+      const slug = 'misp-meta-description-new-family';
+
+      // When
+      await ManifestFragmentApp.ingestManifestFragments(buildArgs({ slug }));
+
+      // Then
+      const createdDocument = await TestHelper.document.load({ slug });
+      createdDocumentIds.push(createdDocument!.id);
+      expect(createdDocument).toMatchObject({
+        slug,
+        meta_description: null,
+      });
+    });
+
+    it('keeps the meta description an admin entered when a newer version becomes the latest', async () => {
+      // Given a connector whose meta description an admin entered in the connector form
+      const slug = 'misp-meta-description-carried';
+      const firstFragment = buildManifestFragment({
+        slug,
+        version: '7.260308.0',
+      });
+      await ManifestFragmentApp.ingestManifestFragments({
+        manifestFragments: [firstFragment],
+      });
+      const firstDocument = await TestHelper.document.load({
+        slug,
+        version: firstFragment.version,
+      });
+      createdDocumentIds.push(firstDocument!.id);
+      await DocumentApp.updateDocument({
+        parentDocumentId: firstDocument!.id,
+        serviceInstanceId: INTEGRATION_SERVICE_INSTANCE_ID,
+        metadata: connectorFormMetadata(firstFragment),
+        input: { meta_description: TEST_META_DESCRIPTIONS.DEFAULT },
+        existingImageIds: [],
+      });
+
+      // When a newer version is published
+      const newerFragment = buildManifestFragment({
+        slug,
+        version: '7.260309.0',
+      });
+      await ManifestFragmentApp.ingestManifestFragments({
+        manifestFragments: [newerFragment],
+      });
+
+      // Then the new latest version carries the same meta description
+      const newerDocument = await TestHelper.document.load({
+        slug,
+        version: newerFragment.version,
+      });
+      createdDocumentIds.push(newerDocument!.id);
+      expect(newerDocument).toMatchObject({
+        slug,
+        version: newerFragment.version,
+        tags: expect.arrayContaining([TAG_LATEST]),
+        meta_description: TEST_META_DESCRIPTIONS.DEFAULT,
+      });
+      const previousDocument = await TestHelper.document.load({
+        id: firstDocument!.id,
+      });
+      expect(previousDocument).toMatchObject({
+        tags: expect.not.arrayContaining([TAG_LATEST]),
+        meta_description: TEST_META_DESCRIPTIONS.DEFAULT,
+      });
+    });
+  });
+
+  describe('use case linking', () => {
+    beforeEach(() => {
+      requestContext.set({ user: manifestIngestionUser });
+    });
+
+    it('should not create an unknown use case referenced by the manifest fragment', async () => {
+      const args = buildArgs({ slug: 'misp-unknown-usecase' });
+      args.manifestFragments[0]!.use_cases = ['Nonexistent UseCase XYZ'];
+
+      await ManifestFragmentApp.ingestManifestFragments(args);
+
+      const createdDocument = await TestHelper.document.load({
+        slug: 'misp-unknown-usecase',
+      });
+      createdDocumentIds.push(createdDocument!.id);
+
+      const useCase = await TestHelper.useCase.load({
+        name: 'Nonexistent UseCase XYZ',
+      });
+      expect(useCase).toBeUndefined();
+
+      const links = await TestHelper.objectUseCase.load({
+        object_id: createdDocument!.id,
+      });
+      expect(links).toHaveLength(0);
     });
   });
 });

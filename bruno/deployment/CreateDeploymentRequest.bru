@@ -36,12 +36,13 @@ body:graphql {
 body:graphql:vars {
   {
     "input": {
-      "products": ["opencti"],
       "region": "eu_west",
-      "type": "trial",
       "job_title": "ciso_cso_cio",
       "activity_sector": "computer_network_security",
-      "use_case": "threat_hunting",
+      "use_cases_by_product": [
+        { "platform_identifier": "opencti", "use_case": "threat_hunting" },
+        { "platform_identifier": "openaev", "use_case": "oaev_purple_team" }
+      ],
       "source": "xtmhub"
     }
   }
@@ -55,18 +56,9 @@ settings {
 docs {
   Ensure cookie is defined in environment
 
-  input.products: list of PlatformIdentifier (opencti, openaev, xtmone)
-    - type "trial": exactly one product, must not be xtmone
-    - type "bundle": must include xtmone plus at least one other product
-  input.region: DeploymentRequestPlatformRegion (eu_west, us_east, apac_au, apac_sg)
-  input.type: DeploymentRequestDeploymentType (trial, bundle)
-  input.source: DeploymentRequestSource (xtmhub, opencti_demo, openaev_demo)
+  Creates an XTM Platform bundle trial: one bundle deployment request plus one child trial for each of XTM One, OpenCTI and OpenAEV.
 
-  Example bundle request:
-  "input": {
-    "products": ["xtmone", "opencti", "openaev"],
-    "region": "eu_west",
-    "type": "bundle",
-    "source": "xtmhub"
-  }
+  input.use_cases_by_product: exactly one use case for opencti and one for openaev (none for xtmone)
+  input.region: DeploymentRequestPlatformRegion (eu_west, us_east, apac_au, apac_sg)
+  input.source: DeploymentRequestSource (xtmhub, opencti_demo, openaev_demo)
 }

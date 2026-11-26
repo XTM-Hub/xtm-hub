@@ -2,6 +2,7 @@ import type { UseCasesListQuery } from '@graphql/generated';
 import { mockUseCase } from '@graphql/mocks';
 import { describe, expect, it } from 'vitest';
 import {
+  appendToQueryCache,
   prependToQueryCache,
   removeFromQueryCache,
   updateInQueryCache,
@@ -55,6 +56,70 @@ describe('query-cache utils', () => {
         }
       )(previous as UseCasesListQuery | undefined);
 
+      expect(next).toBe(previous);
+    });
+  });
+
+  describe('appendToQueryCache', () => {
+    it('should append a new edge and increment totalCount when the connection exists', () => {
+      // Given
+      const previous = createUseCasesQuery(['1', '2']);
+      const append = appendToQueryCache<UseCasesListQuery, 'useCases'>(
+        'useCases',
+        {
+          __typename: 'UseCaseEdge',
+          node: mockUseCase({ id: '3', name: 'name-3', color: '#333' }),
+        }
+      );
+
+      // When
+      const next = append(previous);
+
+      // Then
+      expect(next?.useCases?.totalCount).toBe(3);
+      expect(next?.useCases?.edges.map((edge) => edge.node.id)).toEqual([
+        '1',
+        '2',
+        '3',
+      ]);
+    });
+
+    it('should not mutate the previous query when appending an edge', () => {
+      // Given
+      const previous = createUseCasesQuery(['1']);
+      const append = appendToQueryCache<UseCasesListQuery, 'useCases'>(
+        'useCases',
+        {
+          __typename: 'UseCaseEdge',
+          node: mockUseCase({ id: '2', name: 'name-2', color: '#222' }),
+        }
+      );
+
+      // When
+      append(previous);
+
+      // Then
+      expect(previous.useCases?.edges).toHaveLength(1);
+      expect(previous.useCases?.totalCount).toBe(1);
+    });
+
+    it.each([
+      ['undefined previous query', undefined],
+      ['null connection in previous', { __typename: 'Query', useCases: null }],
+    ])('should keep value unchanged when given %s', (_, previous) => {
+      // Given
+      const append = appendToQueryCache<UseCasesListQuery, 'useCases'>(
+        'useCases',
+        {
+          __typename: 'UseCaseEdge',
+          node: mockUseCase({ id: '3', name: 'name-3', color: '#333' }),
+        }
+      );
+
+      // When
+      const next = append(previous as UseCasesListQuery | undefined);
+
+      // Then
       expect(next).toBe(previous);
     });
   });

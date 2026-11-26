@@ -12,7 +12,6 @@ const buildServiceInstance = (
   logoBackgroundImageUrl: null,
   illustrationDocumentUrl: null,
   url: '/internal/platform',
-  ordering: 1,
   ...overrides,
 });
 

@@ -1,5 +1,10 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import { TEST_ORGANIZATIONS } from '../../../../../../tests/tests.const';
+import { TestHelper } from '../../../../../../tests/helper/test.helper';
+import {
+  TEST_ORGANIZATIONS,
+  TEST_USE_CASES,
+} from '../../../../../../tests/tests.const';
+import { DocumentStatus } from '../../../../../__generated__/resolvers-types';
 import { requestContext } from '../../../../../context/request.context';
 import {
   SYSTEM_USER_CONTEXT,
@@ -53,7 +58,7 @@ describe('upsertConnectors', () => {
         result.forEach((doc) => {
           expect(doc.type).toBe('opencti_integration');
           expect(doc.source_type).toBe('external');
-          expect(doc.active).toBe(true);
+          expect(doc.status).toBe(DocumentStatus.Published);
         });
       });
 
@@ -118,8 +123,8 @@ describe('upsertConnectors', () => {
         const useCaseNames = useCases.map((useCase) => useCase.name);
 
         expect(useCaseNames).toHaveLength(2);
-        expect(useCaseNames).toContain('automation');
-        expect(useCaseNames).toContain('integration');
+        expect(useCaseNames).toContain(TEST_USE_CASES.AUTOMATION.NAME);
+        expect(useCaseNames).toContain(TEST_USE_CASES.INTEGRATION.NAME);
       });
       it('should have related logo', async () => {
         const images = await DocumentChildrenDomain.loadImagesByDocumentId(
@@ -152,7 +157,7 @@ describe('upsertConnectors', () => {
         const useCaseNames = useCases.map((useCase) => useCase.name);
 
         expect(useCaseNames).toHaveLength(1);
-        expect(useCaseNames).toContain('monitoring');
+        expect(useCaseNames).toContain(TEST_USE_CASES.MONITORING.NAME);
       });
     });
   });
@@ -177,7 +182,10 @@ describe('upsertConnectors', () => {
         description: `${manifest.description} - Updated`,
         short_description: `${manifest.short_description} - Updated`,
         product_version: '1.2.2-test',
-        use_cases: ['updated useCase 1', 'updated useCase 2'],
+        use_cases: [
+          TEST_USE_CASES.DETECTION.NAME,
+          TEST_USE_CASES.RESPONSE.NAME,
+        ],
       })) as ManifestInformation[];
 
       // Second call - update
@@ -240,8 +248,8 @@ describe('upsertConnectors', () => {
         const useCaseNames = useCases.map((useCase) => useCase.name);
 
         expect(useCaseNames).toHaveLength(2);
-        expect(useCaseNames).toContain('updated useCase 1');
-        expect(useCaseNames).toContain('updated useCase 2');
+        expect(useCaseNames).toContain(TEST_USE_CASES.DETECTION.NAME);
+        expect(useCaseNames).toContain(TEST_USE_CASES.RESPONSE.NAME);
       }
     });
 
@@ -264,6 +272,30 @@ describe('upsertConnectors', () => {
       expect(result).toBeDefined();
       expect(Array.isArray(result)).toBe(true);
       expect(result).toHaveLength(0);
+    });
+  });
+
+  describe('use case linking', () => {
+    it('should not create an unknown use case referenced by the manifest', async () => {
+      const baseManifest = sampleExtractedManifest[0] as ManifestInformation;
+      const manifest: ManifestInformation = {
+        ...baseManifest,
+        slug: 'unknown-use-case-slug',
+        name: 'Unknown Use Case Connector',
+        use_cases: ['Nonexistent UseCase XYZ'],
+      };
+
+      const [doc] = await IngestManifestDomain.upsertConnectors([manifest]);
+
+      const useCase = await TestHelper.useCase.load({
+        name: 'Nonexistent UseCase XYZ',
+      });
+      expect(useCase).toBeUndefined();
+
+      const links = await TestHelper.objectUseCase.load({
+        object_id: doc!.id,
+      });
+      expect(links).toHaveLength(0);
     });
   });
 

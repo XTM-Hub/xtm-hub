@@ -1,6 +1,5 @@
 import { ServiceFormDescriptionField } from '@/components/service/form/DescriptionField';
 import { ServiceFormEntityTypesField } from '@/components/service/form/EntityTypesField';
-import { ServiceFormIntegrationSubtypeField } from '@/components/service/form/IntegrationSubtypeField';
 import { ServiceFormLogoField } from '@/components/service/form/LogoField';
 import {
   ServiceFormMultipleImagesField,
@@ -10,16 +9,16 @@ import { ServiceFormSolutionCategoryField } from '@/components/service/form/Solu
 import { ServiceFormUploaderIdField } from '@/components/service/form/UploaderIdField';
 import { ServiceFormUploaderOrganizationIdField } from '@/components/service/form/UploaderOrganizationIdField';
 import { ServiceFormUseCasesField } from '@/components/service/form/UseCasesField';
+import { FormItem } from '@/components/ui/form';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
+import { useTranslate } from '@/hooks/use-translate';
 import { filterDocumentImages } from '@/utils/documents';
-import { FormItem } from '@filigran/ui';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import {
+  DocumentItemFragment,
   DocumentMetadataKeyCode,
   FiligranProduct,
   IntegrationType,
 } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { ControllerRenderProps, FieldValues } from 'react-hook-form';
 
@@ -66,11 +65,10 @@ type AvailableFields =
   | 'solution_categories'
   | 'license_type'
   | 'entity_types'
-  | 'integration_subtype'
   | 'images'
   | 'integration_type'
-  | 'active'
   | 'short_description'
+  | 'meta_description'
   | 'slug'
   | 'name'
   | 'vendor_url'
@@ -90,7 +88,7 @@ type AvailableFields =
 interface Props {
   documentType: DocumentType;
   platform: Platform;
-  document?: documentItem_fragment$data;
+  document?: DocumentItemFragment;
   disabledFields?: AvailableFields[];
 }
 
@@ -110,9 +108,9 @@ export const useServiceFormFields = ({
   );
 
   const [imagesToDelete, setImagesToDelete] = useState<string[]>([]);
-  const { setIsDirty } = useDialogContext();
+  const { setUploadsDirty } = useDialogContext();
   const integrationType = integrationTypeMappedByDocumentType[documentType];
-  const t = useTranslations();
+  const t = useTranslate();
 
   return useMemo(
     () => ({
@@ -198,26 +196,6 @@ export const useServiceFormFields = ({
           />
         ),
       },
-      ...(integrationType
-        ? {
-            integration_subtype: {
-              fieldType: ({
-                field,
-              }: {
-                field: ControllerRenderProps<FieldValues, string>;
-              }) => (
-                <ServiceFormIntegrationSubtypeField
-                  field={field}
-                  integrationType={integrationType}
-                  document={document}
-                  disabled={disabledFields.includes(
-                    DocumentMetadataKeyCode.IntegrationSubtype
-                  )}
-                />
-              ),
-            },
-          }
-        : {}),
       imagesField: {
         fieldType: ({
           field,
@@ -231,7 +209,7 @@ export const useServiceFormFields = ({
             setImages={setImages}
             imagesToDelete={imagesToDelete}
             setImagesToDelete={setImagesToDelete}
-            setIsDirty={setIsDirty}
+            setUploadsDirty={setUploadsDirty}
           />
         ),
       },
@@ -248,18 +226,11 @@ export const useServiceFormFields = ({
         ),
       },
       integration_type: { fieldType: () => <FormItem hidden={true} /> },
+      status: { fieldType: () => null },
       license_type: {
         label: t('Service.Form.LicenseTypeLabel'),
         inputProps: {
           disabled: disabledFields.includes('license_type'),
-        },
-      },
-      active: {
-        label: t('Service.Form.PublishedPlaceholder', {
-          documentType,
-        }),
-        inputProps: {
-          disabled: disabledFields.includes('active'),
         },
       },
       short_description: {
@@ -269,13 +240,20 @@ export const useServiceFormFields = ({
           disabled: disabledFields.includes('short_description'),
         },
       },
+      meta_description: {
+        label: t('Service.Form.MetaDescriptionLabel'),
+        fieldType: 'textarea' as const,
+        inputProps: {
+          placeholder: t('Service.Form.MetaDescriptionPlaceholder'),
+          disabled: disabledFields.includes('meta_description'),
+        },
+      },
       slug: {
         label: t('Service.Form.SlugLabel'),
         inputProps: {
           placeholder: t('Service.Form.SlugPlaceholder'),
           readOnly: !isCreation,
-          disabled: disabledFields.includes('slug'),
-          className: !isCreation ? 'opacity-50 cursor-not-allowed' : '',
+          disabled: !isCreation || disabledFields.includes('slug'),
         },
       },
       name: {
@@ -398,7 +376,7 @@ export const useServiceFormFields = ({
       setImages,
       imagesToDelete,
       setImagesToDelete,
-      setIsDirty,
+      setUploadsDirty,
       disabledFields,
     ]
   );

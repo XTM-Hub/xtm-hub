@@ -8,7 +8,10 @@ import { ServiceManageSheet } from '@/components/service/components/ServiceManag
 import { useDocumentContext } from '@/components/service/document/use-document-context';
 import { IconActions, IconActionsItem } from '@/components/ui/IconActions';
 import ShareableResourceCard from '@/components/ui/shareable-resource/ShareableResourceCard';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import useServiceCapability from '@/hooks/use-service-capability';
+import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import revalidatePathActions from '@/utils/actions/revalidate-path.actions';
 import {
   APP_PATH,
@@ -19,28 +22,27 @@ import {
   ShareableResourceType,
 } from '@/utils/shareable-resources/shareable-resources.types';
 import { MoreVertIcon } from '@filigran/icon';
-import { toast } from '@filigran/ui';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { IntegrationType, ServiceRestriction } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
+import {
+  DocumentItemFragment,
+  IntegrationType,
+  ServiceRestriction,
+} from '@graphql/generated';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 interface ServiceCardProps {
-  document: documentItem_fragment$data;
+  document: DocumentItemFragment;
   detailUrl: string;
   shareLinkUrl: string;
   requiredProductVersion?: string;
-  connectionId?: string;
 }
 
 const ServiceCard = ({
   document,
   detailUrl,
   shareLinkUrl,
-  connectionId,
 }: ServiceCardProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const router = useRouter();
 
   const [openSheet, setOpenSheet] = useState(false);
@@ -49,7 +51,6 @@ const ServiceCard = ({
     useServiceContext();
   const context = useDocumentContext({
     serviceInstance,
-    connectionId,
     type: document.type as ShareableResourceType,
   });
 
@@ -82,7 +83,8 @@ const ServiceCard = ({
         `/${APP_PATH}/service/${serviceInstance.service_definition!.identifier}/${serviceInstance.id}`
       );
     });
-    toast({
+    showSnackbar({
+      severity: 'success',
       title: t('Utils.Success'),
       description: t(`${translationKey}.Actions.Deleted`, {
         name: document?.name ?? '',
@@ -98,35 +100,37 @@ const ServiceCard = ({
       serviceInstance={serviceInstance}
       extraContent={
         <>
-          <IconActions
-            className="z-[2]"
-            icon={
-              <>
-                <MoreVertIcon className="h-4 w-4 text-primary" />
-                <span className="sr-only">{t('Utils.OpenMenu')}</span>
-              </>
-            }>
-            {userCanUpdate && (
-              <IconActionsItem onClick={() => onClickOnUpdate()}>
-                {t('MenuActions.Update')}
-              </IconActionsItem>
-            )}
-            {userCanDelete && (
-              <ServiceDelete
-                type={'menuitem'}
-                userCanDelete={userCanDelete}
-                onDelete={() =>
-                  context.handleDeleteSheet(document, onDeleteCompleted)
-                }
-                serviceName={serviceInstance.name}
-                integrationType={
-                  (document && isIntegrationItem(document)
-                    ? document.integration_type
-                    : document.type) as CardTypeEnum
-                }
-              />
-            )}
-          </IconActions>
+          {(userCanDelete || userCanUpdate) && (
+            <IconActions
+              analyticsId="resource_actions_open"
+              size="sm"
+              className="z-[2]"
+              aria-label={t('Utils.OpenMenu')}
+              icon={<MoreVertIcon className="h-4 w-4 text-icon-highlight" />}>
+              {userCanUpdate && (
+                <IconActionsItem
+                  {...analyticsId('resource_edit')}
+                  onClick={() => onClickOnUpdate()}>
+                  {t('MenuActions.Update')}
+                </IconActionsItem>
+              )}
+              {userCanDelete && (
+                <ServiceDelete
+                  type={'menuitem'}
+                  userCanDelete={userCanDelete}
+                  onDelete={() =>
+                    context.handleDeleteSheet(document, onDeleteCompleted)
+                  }
+                  serviceName={serviceInstance.name}
+                  integrationType={
+                    (document && isIntegrationItem(document)
+                      ? document.integration_type
+                      : document.type) as CardTypeEnum
+                  }
+                />
+              )}
+            </IconActions>
+          )}
           {userCanUpdate && (
             <ServiceManageSheet
               document={document}

@@ -1,0 +1,39 @@
+fragment VotableFeaturePublic on VotableFeature {
+  id
+  title
+  short_description
+  description
+  product
+  use_cases {
+    id
+    name
+    color
+  }
+  illustration_document_id
+  position
+  has_my_vote
+}
+
+query CurrentVotingRound($service_instance_id: ServiceInstanceId!) {
+  me {
+    id
+  }
+  currentVotingRound(service_instance_id: $service_instance_id) {
+    id
+    service_instance_id
+    name
+    description
+    features {
+      ...VotableFeaturePublic
+    }
+  }
+}
+
+query CurrentVotingRoundCallout($service_instance_id: ServiceInstanceId!) {
+  currentVotingRound(service_instance_id: $service_instance_id) {
+    id
+    name
+    description
+    theme
+  }
+}

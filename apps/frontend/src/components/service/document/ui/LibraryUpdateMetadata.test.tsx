@@ -1,15 +1,12 @@
 import testRender from '@/utils/test/test-render';
-import {
-  PortalCapability,
-  SeoServiceInstanceLanguage,
-} from '@graphql/generated';
+import { Locale, PortalCapability } from '@graphql/generated';
 import { screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { LibraryUpdateMetadata } from './LibraryUpdateMetadata';
 
 const commitMutationAsync = vi.fn();
 let seoServiceInstanceMetadata: Array<{
-  language: SeoServiceInstanceLanguage;
+  language: Locale;
   meta_title: string;
   meta_description: string;
 }> = [];
@@ -62,17 +59,17 @@ describe('LibraryUpdateMetadata', () => {
   it('loads metadata with service instance id and maps values by locale with defaults', async () => {
     seoServiceInstanceMetadata = [
       {
-        language: SeoServiceInstanceLanguage.En,
+        language: Locale.En,
         meta_title: 'Title EN',
         meta_description: 'Description EN',
       },
       {
-        language: SeoServiceInstanceLanguage.Fr,
+        language: Locale.Fr,
         meta_title: 'Title FR',
         meta_description: 'Description FR',
       },
       {
-        language: 'unknown' as SeoServiceInstanceLanguage,
+        language: 'unknown' as Locale,
         meta_title: 'Ignored title',
         meta_description: 'Ignored description',
       },
@@ -120,28 +117,28 @@ describe('LibraryUpdateMetadata', () => {
     expect(commitMutationAsync).toHaveBeenCalledTimes(3);
     const callsByLanguage = new Map(
       commitMutationAsync.mock.calls.map(([variables]) => [
-        (variables as { language: SeoServiceInstanceLanguage }).language,
+        (variables as { language: Locale }).language,
         variables,
       ])
     );
-    expect(callsByLanguage.get(SeoServiceInstanceLanguage.En)).toEqual(
+    expect(callsByLanguage.get(Locale.En)).toEqual(
       expect.objectContaining({
         service_instance_id: 'service-instance-1',
-        language: SeoServiceInstanceLanguage.En,
+        language: Locale.En,
         input: { meta_title: 'SEO EN', meta_description: '' },
       })
     );
-    expect(callsByLanguage.get(SeoServiceInstanceLanguage.Fr)).toEqual(
+    expect(callsByLanguage.get(Locale.Fr)).toEqual(
       expect.objectContaining({
         service_instance_id: 'service-instance-1',
-        language: SeoServiceInstanceLanguage.Fr,
+        language: Locale.Fr,
         input: { meta_title: '', meta_description: 'SEO FR' },
       })
     );
-    expect(callsByLanguage.get(SeoServiceInstanceLanguage.Ja)).toEqual(
+    expect(callsByLanguage.get(Locale.Ja)).toEqual(
       expect.objectContaining({
         service_instance_id: 'service-instance-1',
-        language: SeoServiceInstanceLanguage.Ja,
+        language: Locale.Ja,
         input: { meta_title: '', meta_description: '' },
       })
     );

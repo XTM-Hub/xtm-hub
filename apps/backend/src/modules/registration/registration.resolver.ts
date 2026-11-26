@@ -1,10 +1,14 @@
 import { fromGlobalId } from 'graphql-relay/node/node.js';
 import {
   AutoRegisterPlatformInput,
+  MutationResolvers,
+  QueryResolvers,
   Resolvers,
 } from '../../__generated__/resolvers-types';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { PortalContext } from '../../model/portal-context';
+import { Guarded } from '../../security/guarded/guarded.decorator';
+import { bypassOnlyGuard } from '../../security/guarded/guards/portal.guard';
 import { getErrorMessage } from '../../utils/error/error-guard.util';
 import {
   BadRequestErrorCode,
@@ -14,11 +18,41 @@ import {
 import { mapToGraphQLError } from '../../utils/error/error.mapping';
 import { BadRequestError } from '../../utils/error/error.util';
 import { DeploymentRequestDomain } from '../deployment/deployment.domain';
-import { ServiceGroupDomain } from '../deployment/group/service-group.domain';
+import { ServiceGroupApp } from '../deployment/group/service-group.app';
 import { extractPlatformToken } from '../security-management/token/platform-token.util';
 import { ServiceInstanceDomain } from '../service/instance/service-instance.domain';
 import { RegistrationApp } from './registration.app';
 import { RegistrationConnectivityApp } from './registration.connectivity.app';
+
+class RegistrationAdminQueries {
+  @Guarded(bypassOnlyGuard())
+  static readonly adminRegisteredPlatforms: NonNullable<
+    QueryResolvers['adminRegisteredPlatforms']
+  > = async (_, args) => {
+    try {
+      return await RegistrationApp.loadAdminRegisteredPlatforms(args);
+    } catch (error) {
+      throw mapToGraphQLError(error, UnknownErrorCode.UnknownError);
+    }
+  };
+}
+
+class RegistrationAdminMutations {
+  @Guarded(bypassOnlyGuard())
+  static readonly adminUnregisterPlatform: NonNullable<
+    MutationResolvers['adminUnregisterPlatform']
+  > = async (_, { serviceInstanceId }) => {
+    try {
+      await RegistrationApp.adminUnregisterPlatform(serviceInstanceId);
+      return { success: true };
+    } catch (error) {
+      throw mapToGraphQLError(
+        error,
+        UnknownErrorCode.UnregisterPlatformUnknownError
+      );
+    }
+  };
+}
 
 const resolvers: Resolvers = {
   RegisteredPlatform: {
@@ -28,7 +62,7 @@ const resolvers: Resolvers = {
         id as ServiceInstanceId
       ),
     myGroups: ({ id }, _, context) =>
-      ServiceGroupDomain.loadServiceGroupsByServiceInstanceAndUser(
+      ServiceGroupApp.loadGroupsByServiceInstanceAndUser(
         id as ServiceInstanceId,
         context.user.id
       ),
@@ -36,8 +70,13 @@ const resolvers: Resolvers = {
       DeploymentRequestDomain.loadFullDeploymentRequest({
         service_instance_id: id as ServiceInstanceId,
       }),
+    organization: ({ id }, _, context) =>
+      context.dataLoaders.registration.ownerOrganizationByServiceInstanceLoader.load(
+        id as ServiceInstanceId
+      ),
   },
   Query: {
+    ...RegistrationAdminQueries,
     isPlatformRegistered: async (_, { input }) => {
       try {
         return await RegistrationApp.isPlatformRegistered(input);
@@ -72,6 +111,8 @@ const resolvers: Resolvers = {
     },
     registeredPlatform: async (_, { input }) =>
       RegistrationApp.loadRegisteredPlatform(input.service_instance_id),
+    registeredPlatformByPlatformId: async (_, { input }) =>
+      RegistrationApp.loadRegisteredPlatformByPlatformId(input),
     registeredPlatforms: async (_, { input }) =>
       RegistrationApp.loadRegisteredPlatforms(input),
     /**
@@ -92,6 +133,7 @@ const resolvers: Resolvers = {
     },
   },
   Mutation: {
+    ...RegistrationAdminMutations,
     registerPlatform: async (_, { input }) => {
       try {
         const { id: decodedId, type: decodedType } = fromGlobalId(
@@ -112,8 +154,7 @@ const resolvers: Resolvers = {
           // type may not be an OrganizationId, but can be a IsPlatformRegisteredOrganization
           organizationId,
         };
-        const token = await RegistrationApp.registerPlatform(payload);
-        return { token };
+        return await RegistrationApp.registerPlatform(payload);
       } catch (error) {
         throw mapToGraphQLError(
           error,

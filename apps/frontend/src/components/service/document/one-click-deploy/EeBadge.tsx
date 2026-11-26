@@ -1,11 +1,12 @@
+import { useTranslate } from '@/hooks/use-translate';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { cn } from '@/lib/utils';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@filigran/ui';
-import { useTranslations } from 'next-intl';
+} from '@filigran/design-system';
 
 const EE_GRADIENT =
   'bg-[linear-gradient(90deg,#0FBCFF_-3.68%,#00F1BD_106.62%)]';
@@ -15,12 +16,12 @@ interface EeBadgeProps {
 }
 
 const EeBadgeVisual = ({ interactive }: { interactive: boolean }) => {
-  const t = useTranslations();
+  const t = useTranslate();
   return (
     <span
       className={cn(
         'flex h-4 w-4 items-center justify-center rounded-xs',
-        'bg-slate-950',
+        'bg-[var(--grayblue-1000)]',
         interactive && 'group-hover:bg-transparent',
         'text-[8px] font-bold leading-none'
       )}>
@@ -32,7 +33,7 @@ const EeBadgeVisual = ({ interactive }: { interactive: boolean }) => {
 };
 
 const EeBadge = ({ onClick }: EeBadgeProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   if (!onClick) {
     return (
@@ -48,8 +49,7 @@ const EeBadge = ({ onClick }: EeBadgeProps) => {
         <TooltipContent
           align="end"
           alignOffset={-9}
-          sideOffset={9}
-          className={cn(EE_GRADIENT)}>
+          sideOffset={9}>
           <div className="flex flex-col">
             <span className="font-medium">
               {t('Service.ShareableResources.Deploy.EE.HoverTitle')}
@@ -62,6 +62,7 @@ const EeBadge = ({ onClick }: EeBadgeProps) => {
         <TooltipTrigger asChild>
           <button
             type="button"
+            {...analyticsId('ee_panel_open')}
             onClick={onClick}
             className={cn('group cursor-pointer rounded-xs p-px', EE_GRADIENT)}>
             <EeBadgeVisual interactive={true} />

@@ -13,7 +13,7 @@ export interface ManifestContract {
   subscription_link: string | null;
   source_code: string | null;
   manager_supported: boolean;
-  support_version: string | null;
+  min_version: string | null;
   license_type: LicenseType | null;
   contact: string | null;
   solution_categories: string[];

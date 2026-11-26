@@ -17,7 +17,6 @@ import {
 import {
   contextRegistererUserSecondOrga,
   contextSimpleUserSecondOrga,
-  requestContextRegistererUserSecondOrga,
   requestContextSimpleUserSecondOrga,
   TEST_ORGANIZATIONS,
 } from '../../../../tests/tests.const';
@@ -29,7 +28,6 @@ import {
 } from '../../../__generated__/resolvers-types';
 import { requestContext } from '../../../context/request.context';
 import { DocumentId } from '../../../model/kanel/public/Document';
-import { OrganizationId } from '../../../model/kanel/public/Organization';
 import PlatformConfiguration from '../../../model/kanel/public/PlatformConfiguration';
 import ServiceDefinition, {
   ServiceDefinitionId,
@@ -37,248 +35,84 @@ import ServiceDefinition, {
 import ServiceInstance, {
   ServiceInstanceId,
 } from '../../../model/kanel/public/ServiceInstance';
-import { SubscriptionId } from '../../../model/kanel/public/Subscription';
 import * as pub from '../../../pub';
 import * as securityGuardModule from '../../../security/guard';
 import { ErrorCode } from '../../../utils/error/error.code';
 import { DocumentHelper } from '../../document/document.helper';
-import { GenericServiceCapabilityIds } from '../../security-management/service-capability/generic-service-capability.const';
-import { SubscriptionDomain } from '../../subscription/subscription.domain';
-import { UserServiceDomain } from '../../user-service/user-service.domain';
 import { ServiceInstanceApp } from './service-instance.app';
 import { ServiceInstanceDomain } from './service-instance.domain';
 
 describe('service Instance app', () => {
-  describe('loadServiceInstance', () => {
-    let loadSubscriptionBySpy: MockInstance;
-    let doesUserServiceExistSpy: MockInstance;
-    let loadServiceInstanceBySpy: MockInstance;
-    let grantServiceAccessSpy: MockInstance;
-
-    const mockServiceInstanceId = uuidv4() as ServiceInstanceId;
-    const mockSubscriptionId = uuidv4() as SubscriptionId;
-    const mockUserId = contextSimpleUserSecondOrga.user.id;
-
-    const mockSubscription = {
-      id: mockSubscriptionId,
-      service_instance_id: mockServiceInstanceId,
-      organization_id: uuidv4(),
-      joining: 'INVITE_ONLY',
-      start_date: new Date(),
-      end_date: null,
-    };
-
-    const mockServiceInstance = {
-      id: mockServiceInstanceId,
-      name: 'Service instance 1',
-      description: 'description 1',
-      service_definition_id: uuidv4(),
-      created_at: new Date(),
-      updated_at: new Date(),
-    };
+  describe('loadServiceInstance visibility', () => {
+    let serviceInstance: ServiceInstance;
 
     beforeEach(() => {
-      loadSubscriptionBySpy = vi.spyOn(
-        SubscriptionDomain,
-        'loadSubscriptionBy'
-      );
-      doesUserServiceExistSpy = vi.spyOn(
-        UserServiceDomain,
-        'doesUserServiceExist'
-      );
-      loadServiceInstanceBySpy = vi.spyOn(
-        ServiceInstanceDomain,
-        'loadServiceInstanceBy'
-      );
-      grantServiceAccessSpy = vi.spyOn(
-        ServiceInstanceDomain,
-        'grantServiceAccess'
-      );
+      requestContext.set(requestContextSimpleUserSecondOrga);
     });
 
-    it('should load service instance when user already has access', async () => {
-      // Given
-      requestContext.set(requestContextSimpleUserSecondOrga);
-      loadSubscriptionBySpy.mockResolvedValueOnce(mockSubscription);
-      doesUserServiceExistSpy.mockResolvedValueOnce(true);
-      loadServiceInstanceBySpy.mockResolvedValueOnce(mockServiceInstance);
-
-      // When
-      await ServiceInstanceApp.loadServiceInstanceAndGrantAccess(
-        mockServiceInstanceId
-      );
-
-      // Then
-      expect(loadSubscriptionBySpy).toHaveBeenCalledWith({
-        service_instance_id: mockServiceInstanceId,
-        organization_id:
-          contextSimpleUserSecondOrga.user.selected_organization_id,
+    afterEach(async () => {
+      await TestHelper.subscription.delete({
+        service_instance_id: serviceInstance.id,
       });
-      expect(doesUserServiceExistSpy).toHaveBeenCalledWith(
-        mockUserId,
-        mockSubscriptionId
-      );
-      expect(loadServiceInstanceBySpy).toHaveBeenCalledWith({
-        id: mockServiceInstanceId,
-      });
-      expect(grantServiceAccessSpy).not.toHaveBeenCalled();
+      await TestHelper.serviceInstance.delete({ id: serviceInstance.id });
     });
 
-    it('should auto-join user when user has no access', async () => {
-      // Given
-      requestContext.set(requestContextSimpleUserSecondOrga);
-      loadSubscriptionBySpy.mockResolvedValue(mockSubscription);
-      doesUserServiceExistSpy.mockResolvedValue(false);
-      loadServiceInstanceBySpy.mockResolvedValue(mockServiceInstance);
-      grantServiceAccessSpy.mockResolvedValue(undefined);
-
-      // When
-      await ServiceInstanceApp.loadServiceInstanceAndGrantAccess(
-        mockServiceInstanceId
-      );
-
-      // Then
-      expect(grantServiceAccessSpy).toHaveBeenCalledWith(
-        GenericServiceCapabilityIds.AccessId,
-        mockUserId,
-        mockSubscriptionId
-      );
-    });
-
-    it('should use subscription from user organization, not from another organization', async () => {
-      // Given
-      requestContext.set(requestContextSimpleUserSecondOrga);
-      const userOrganizationId =
-        contextSimpleUserSecondOrga.user.selected_organization_id;
-      const otherOrganizationId = uuidv4() as OrganizationId;
-
-      const userOrgSubscriptionId = uuidv4() as SubscriptionId;
-      const otherOrgSubscriptionId = uuidv4() as SubscriptionId;
-
-      const userOrgSubscription = {
-        id: userOrgSubscriptionId,
-        service_instance_id: mockServiceInstanceId,
-        organization_id: userOrganizationId,
-        start_date: new Date(),
-        end_date: null,
-      };
-
-      const otherOrgSubscription = {
-        id: otherOrgSubscriptionId,
-        service_instance_id: mockServiceInstanceId,
-        organization_id: otherOrganizationId,
-        start_date: new Date(),
-        end_date: null,
-      };
-
-      loadSubscriptionBySpy.mockImplementation((filter) => {
-        if (filter.organization_id === userOrganizationId) {
-          return Promise.resolve(userOrgSubscription);
-        } else if (filter.organization_id === otherOrganizationId) {
-          return Promise.resolve(otherOrgSubscription);
-        }
-        return Promise.resolve(otherOrgSubscription);
+    it('should return a public service instance', async () => {
+      serviceInstance = await TestHelper.serviceInstance.create({
+        public: true,
       });
 
-      doesUserServiceExistSpy.mockResolvedValue(false);
-      loadServiceInstanceBySpy.mockResolvedValue(mockServiceInstance);
-      grantServiceAccessSpy.mockResolvedValue(undefined);
-
-      // When
-      await ServiceInstanceApp.loadServiceInstanceAndGrantAccess(
-        mockServiceInstanceId
+      const result = await ServiceInstanceApp.loadServiceInstance(
+        serviceInstance.id
       );
 
-      // Then
-      expect(loadSubscriptionBySpy).toHaveBeenCalledWith({
-        service_instance_id: mockServiceInstanceId,
-        organization_id: userOrganizationId,
+      expect(result.id).toEqual(serviceInstance.id);
+    });
+
+    it('should return a non public service instance when the organization is subscribed', async () => {
+      serviceInstance = await TestHelper.serviceInstance.create({
+        public: false,
+      });
+      await TestHelper.subscription.create({
+        service_instance_id: serviceInstance.id,
+        organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
       });
 
-      expect(grantServiceAccessSpy).toHaveBeenCalledWith(
-        GenericServiceCapabilityIds.AccessId,
-        mockUserId,
-        userOrgSubscriptionId
+      const result = await ServiceInstanceApp.loadServiceInstance(
+        serviceInstance.id
       );
-      expect(loadServiceInstanceBySpy).toHaveBeenCalledBefore(
-        loadSubscriptionBySpy
-      );
+
+      expect(result.id).toEqual(serviceInstance.id);
     });
 
-    it('should not grant access again when the user service already exists', async () => {
-      // Given
-      requestContext.set(requestContextSimpleUserSecondOrga);
-      loadSubscriptionBySpy.mockResolvedValue(mockSubscription);
-      doesUserServiceExistSpy.mockResolvedValue(true);
-      loadServiceInstanceBySpy.mockResolvedValue(mockServiceInstance);
+    it('should reject a non public service instance without subscription', async () => {
+      serviceInstance = await TestHelper.serviceInstance.create({
+        public: false,
+      });
 
-      // When
-      await ServiceInstanceApp.loadServiceInstanceAndGrantAccess(
-        mockServiceInstanceId
-      );
-
-      // Then
-      expect(grantServiceAccessSpy).not.toHaveBeenCalled();
-    });
-
-    it('should propagate errors from loadSubscriptionBy', async () => {
-      // Given
-      requestContext.set(requestContextRegistererUserSecondOrga);
-      loadServiceInstanceBySpy.mockResolvedValueOnce(mockServiceInstance);
-      const error = new Error('Error');
-      loadSubscriptionBySpy.mockRejectedValue(error);
-
-      // When
       await expect(
-        ServiceInstanceApp.loadServiceInstanceAndGrantAccess(
-          mockServiceInstanceId
-        )
-      ).rejects.toThrow('Error');
-
-      // Then
-      expect(doesUserServiceExistSpy).not.toHaveBeenCalled();
-      expect(grantServiceAccessSpy).not.toHaveBeenCalled();
+        ServiceInstanceApp.loadServiceInstance(serviceInstance.id)
+      ).rejects.toThrow(ErrorCode.ServiceInstanceNotPublic);
     });
 
-    it('should propagate errors from grantServiceAccess', async () => {
-      // Given
-      requestContext.set(requestContextSimpleUserSecondOrga);
-      loadServiceInstanceBySpy.mockResolvedValueOnce(mockServiceInstance);
-      const error = new Error('Other error');
-      loadSubscriptionBySpy.mockResolvedValue(mockSubscription);
-      doesUserServiceExistSpy.mockResolvedValue(false);
-      grantServiceAccessSpy.mockRejectedValue(error);
+    it('should throw not found for an unknown service instance', async () => {
+      serviceInstance = await TestHelper.serviceInstance.create({
+        public: true,
+      });
 
-      // When
       await expect(
-        ServiceInstanceApp.loadServiceInstanceAndGrantAccess(
-          mockServiceInstanceId
-        )
-      ).rejects.toThrow('Other error');
+        ServiceInstanceApp.loadServiceInstance(uuidv4() as ServiceInstanceId)
+      ).rejects.toThrow(ErrorCode.ServiceInstanceNotFound);
     });
   });
 
   describe('updatePlatformServiceMetadata', () => {
     let dispatchSpy: MockInstance;
-    let uploadNewFileSpy: MockInstance;
-
-    const mockFileUpload: FileUpload = {
-      filename: 'illustration.png',
-      mimetype: 'image/png',
-      encoding: '7bit',
-      createReadStream: vi.fn(),
-    };
-
-    const mockUpload = {
-      file: mockFileUpload,
-      promise: Promise.resolve(mockFileUpload),
-    };
     let serviceDefinition: ServiceDefinition;
     let serviceInstance: ServiceInstance;
 
     beforeEach(async () => {
       dispatchSpy = vi.spyOn(pub, 'dispatch').mockResolvedValue(undefined);
-      uploadNewFileSpy = vi.spyOn(DocumentHelper, 'uploadNewFile');
       vi.spyOn(
         securityGuardModule.securityGuard,
         'assertUserCanModifyPlatformService'
@@ -316,13 +150,13 @@ describe('service Instance app', () => {
       const result = await ServiceInstanceApp.updatePlatformServiceMetadata(
         contextRegistererUserSecondOrga.user,
         serviceInstance.id,
-        input,
-        null
+        input
       );
 
       // Then
       expect(result).toMatchObject({
         id: serviceInstance.id,
+        service_instance_id: serviceInstance.id,
         title: 'Updated Platform Name',
         url: 'https://test.com',
       });
@@ -337,35 +171,6 @@ describe('service Instance app', () => {
       );
     });
 
-    it('should upload illustration and include global document ID in response', async () => {
-      // Given
-      const illustrationId = uuidv4();
-      uploadNewFileSpy.mockResolvedValue({
-        id: illustrationId,
-        name: 'illustration.png',
-        mime_type: 'image/png',
-      });
-      const input: UpdatePlatformServiceMetadataInput = {
-        serviceInstanceId: serviceInstance.id,
-        name: 'Updated Platform Name',
-      };
-
-      // When
-      const result = await ServiceInstanceApp.updatePlatformServiceMetadata(
-        contextRegistererUserSecondOrga.user,
-        serviceInstance.id,
-        input,
-        mockUpload
-      );
-
-      // Then
-      expect(uploadNewFileSpy).toHaveBeenCalledWith(
-        mockUpload,
-        serviceInstance.id
-      );
-      expect(result.illustration_document_id).toBe(illustrationId);
-    });
-
     it('should not update service instance or config when no fields to update', async () => {
       // Given
       const input: UpdatePlatformServiceMetadataInput = {
@@ -376,8 +181,7 @@ describe('service Instance app', () => {
       await ServiceInstanceApp.updatePlatformServiceMetadata(
         contextRegistererUserSecondOrga.user,
         serviceInstance.id,
-        input,
-        null
+        input
       );
 
       // Then
@@ -399,8 +203,7 @@ describe('service Instance app', () => {
       const result = await ServiceInstanceApp.updatePlatformServiceMetadata(
         contextRegistererUserSecondOrga.user,
         serviceInstance.id,
-        input,
-        null
+        input
       );
 
       // Then
@@ -419,8 +222,7 @@ describe('service Instance app', () => {
           {
             serviceInstanceId: nonExistentId,
             name: 'Name',
-          },
-          null
+          }
         )
       ).rejects.toThrow(ErrorCode.ServiceInstanceNotFound);
     });
@@ -449,8 +251,7 @@ describe('service Instance app', () => {
           {
             serviceInstanceId: mockId,
             name: 'Name',
-          },
-          null
+          }
         )
       ).rejects.toThrow(ErrorCode.ServiceDefinitionNotFound);
     });
@@ -483,32 +284,9 @@ describe('service Instance app', () => {
           {
             serviceInstanceId: mockId,
             name: 'Name',
-          },
-          null
+          }
         )
       ).rejects.toThrow(ErrorCode.MissingCapabilityOnOrganization);
-    });
-
-    it('should throw when upload fails and not update service instance', async () => {
-      // Given
-      uploadNewFileSpy.mockRejectedValue(new Error('Upload failed'));
-      const input: UpdatePlatformServiceMetadataInput = {
-        serviceInstanceId: serviceInstance.id,
-        name: 'Updated Name',
-      };
-
-      // When
-      await expect(
-        ServiceInstanceApp.updatePlatformServiceMetadata(
-          contextRegistererUserSecondOrga.user,
-          serviceInstance.id,
-          input,
-          mockUpload
-        )
-      ).rejects.toThrow('Upload failed');
-
-      // Then
-      expect(dispatchSpy).not.toHaveBeenCalled();
     });
 
     it('should throw PLATFORM_CONFIGURATION_NOT_FOUND when config is missing after update', async () => {
@@ -569,8 +347,7 @@ describe('service Instance app', () => {
           {
             serviceInstanceId: mockId,
             name: 'Updated',
-          },
-          null
+          }
         )
       ).rejects.toThrow(ErrorCode.PlatformConfigurationNotFound);
     });

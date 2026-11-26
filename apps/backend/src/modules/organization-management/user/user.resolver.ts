@@ -1,23 +1,35 @@
 import {
+  OrganizationCapability,
   Resolvers,
   User,
   UserPendingSubscription,
   UserSubscription,
 } from '../../../__generated__/resolvers-types';
+import { OrganizationId } from '../../../model/kanel/public/Organization';
 import { UserId } from '../../../model/kanel/public/User';
 import { dispatch, listen } from '../../../pub';
-import { hubspotReachOutSalesHook } from '../../../thirdparty/hubspot/hubspot';
 import { logApp } from '../../../utils/app-logger.util';
 import { getErrorMessage } from '../../../utils/error/error-guard.util';
 
+import { requestContext } from '../../../context/request.context';
 import { UserTransferRequestId } from '../../../model/kanel/public/UserTransferRequest';
 import { PortalContext } from '../../../model/portal-context';
+import { securityGuard } from '../../../security/guard';
 import { ErrorCode, UnknownErrorCode } from '../../../utils/error/error.code';
 import { mapToGraphQLError } from '../../../utils/error/error.mapping';
-import { ForbiddenAccess } from '../../../utils/error/error.util';
+import {
+  ForbiddenAccess,
+  UnauthenticatedAccess,
+} from '../../../utils/error/error.util';
 import { createRelayIdScalar } from '../../../utils/scalar.util';
 import { extractId } from '../../../utils/utils';
+import { AuthHelper } from '../../security-management/capability/auth.helper';
+import {
+  extractPlatformId,
+  extractPlatformToken,
+} from '../../security-management/token/platform-token.util';
 import { UserAdminApp } from './user-admin/user.admin.app';
+import { UserContactApp } from './user-contact/user-contact.app';
 import { UserDomain } from './user-domain/user.domain';
 import { UserOrganizationApp } from './user-organization/user-organization.app';
 import { UserOrganizationPendingDomain } from './user-pending/user-organization-pending.domain';
@@ -25,9 +37,19 @@ import { userProfileApp } from './user-profile/user.profile.app';
 import { UserAuthApp } from './user.auth.app';
 import { UserHelper } from './user.helper';
 
+const assertCanListenOrganizationUsers = (organizationId: string) =>
+  securityGuard.assertUserIsAllowedOnOrganization(
+    requestContext.requireUser(),
+    {
+      organizationId: extractId<OrganizationId>(organizationId),
+      requiredCapability: OrganizationCapability.ManageAccess,
+    }
+  );
+
 const resolvers: Resolvers = {
   UserId: createRelayIdScalar<UserId>('User'),
   User: {
+    // For the caller of a request authenticated by an API token, the readers keep only what the token reaches
     organizations: ({ id }, _) => UserDomain.getOrganizations(id),
     capabilities: ({ id }, _) => UserDomain.getCapabilities(id),
     roles_portal: ({ id }, _) => UserDomain.getRolesPortal(id),
@@ -41,12 +63,11 @@ const resolvers: Resolvers = {
       return UserHelper.mapUserToGraphqlUser(context.user);
     },
 
-    usersWithCapabilitiesInOrganization: async (_, { input }) => {
-      return UserDomain.loadUsersByCapabilitiesInOrganization(
-        input.organizationId,
-        input.capabilities
-      );
-    },
+    usersWithCapabilitiesInOrganization: async (_, { input }) =>
+      UserOrganizationApp.loadOrganizationMemberContactsByCapabilities({
+        organizationId: input.organizationId,
+        capabilities: input.capabilities,
+      }),
     users: async (
       _,
       { first, after, orderMode, orderBy, searchTerm, filters }
@@ -79,8 +100,6 @@ const resolvers: Resolvers = {
     addUser: async (_, { input }) => {
       try {
         const user = await UserOrganizationApp.addUserToOrganization(input);
-
-        await dispatch('User', 'add', user);
 
         return UserHelper.mapUserToGraphqlUser(user);
       } catch (error) {
@@ -120,6 +139,14 @@ const resolvers: Resolvers = {
         });
       } catch (error) {
         throw mapToGraphQLError(error, UnknownErrorCode.EditUserError);
+      }
+    },
+    deleteUser: async (_, { id }) => {
+      try {
+        const deletedUser = await UserAdminApp.deleteUser(id as UserId);
+        return UserHelper.mapUserToGraphqlUser(deletedUser);
+      } catch (error) {
+        throw mapToGraphQLError(error, UnknownErrorCode.DeleteUserError);
       }
     },
 
@@ -242,6 +269,28 @@ const resolvers: Resolvers = {
         );
       }
     },
+    acceptPendingUserInOrganization: async (
+      _,
+      { user_id, organization_id }
+    ) => {
+      try {
+        const user = await UserOrganizationApp.acceptPendingUserInOrganization({
+          userId: user_id,
+          organizationId: organization_id,
+        });
+
+        if (!user) {
+          return null;
+        }
+
+        return UserHelper.mapUserToGraphqlUser(user);
+      } catch (error) {
+        throw mapToGraphQLError(
+          error,
+          UnknownErrorCode.AcceptUserInPendingOrgaError
+        );
+      }
+    },
     removePendingUserFromOrganization: async (
       _,
       { user_id, organization_id }
@@ -293,19 +342,32 @@ const resolvers: Resolvers = {
     },
     contactUs: async (
       _,
-      { message, platformIdentifier, platformId },
+      { message, platformIdentifier, platformId, deploymentRequestType },
       portalContext
     ) => {
       try {
-        const platformToken = portalContext.req.header(
-          'XTM-Hub-Platform-Token'
-        );
+        const platformToken = extractPlatformToken(portalContext.req);
 
-        await hubspotReachOutSalesHook({
+        if (portalContext.user) {
+          await UserContactApp.contactSales({
+            message: message ?? undefined,
+            platformToken: platformToken ?? undefined,
+            platformId: platformId ?? undefined,
+            platformIdentifier: platformIdentifier ?? undefined,
+            deploymentRequestType: deploymentRequestType ?? undefined,
+          });
+          return { success: true };
+        }
+
+        // Without a Hub session, only a platform calling with its own id and token can send a message.
+        const headerPlatformId = extractPlatformId(portalContext.req);
+        if (!platformToken || !headerPlatformId) {
+          throw new Error(ErrorCode.InvalidPlatformToken);
+        }
+        await UserContactApp.contactSalesFromPlatform({
           message: message ?? undefined,
+          platformId: headerPlatformId,
           platformToken,
-          platformId: platformId ?? undefined,
-          platformIdentifier: platformIdentifier ?? undefined,
         });
         return { success: true };
       } catch (error) {
@@ -315,10 +377,11 @@ const resolvers: Resolvers = {
   },
   Subscription: {
     User: {
-      subscribe: (_, args, context, info) =>
-        listen(context, ['User'], info, (payload: unknown) => {
+      subscribe: async (_, args, context, info) => {
+        await assertCanListenOrganizationUsers(args.organizationId);
+        return listen(context, ['User'], info, (payload: unknown) => {
           const typedPayload = payload as UserSubscription;
-          if (!args.organizationId || typedPayload.merge) {
+          if (typedPayload.merge) {
             return true;
           }
           const user =
@@ -328,20 +391,40 @@ const resolvers: Resolvers = {
               ?.map((org) => org.id)
               ?.includes(extractId(args.organizationId)) ?? false
           );
-        }),
+        });
+      },
+    },
+    AdminUser: {
+      subscribe: (_, __, context, info) => {
+        if (!AuthHelper.userHasBypassCapability(requestContext.requireUser())) {
+          throw new Error(ErrorCode.MissingCapabilityOnOrganization);
+        }
+        return listen(context, ['User'], info);
+      },
+      resolve: (payload: { User: UserSubscription }) => payload.User,
     },
     MeUser: {
-      subscribe: (_, __, context, info) => listen(context, ['MeUser'], info),
+      subscribe: (_, __, context, info) => {
+        // @auth only wraps resolve, which runs after the SSE filter
+        if (!context.user) {
+          throw UnauthenticatedAccess(
+            'Not authorized: You are not authenticated'
+          );
+        }
+        return listen(context, ['MeUser'], info);
+      },
     },
     UserPending: {
-      subscribe: (_, args, context, info) =>
-        listen(context, ['UserPending'], info, (payload: unknown) => {
+      subscribe: async (_, args, context, info) => {
+        await assertCanListenOrganizationUsers(args.organizationId);
+        return listen(context, ['UserPending'], info, (payload: unknown) => {
           const typedPayload = payload as UserPendingSubscription;
           const organizationId = typedPayload.delete
             ? typedPayload.delete.pending_organization_id
             : typedPayload.invalidate?.id;
           return organizationId === extractId(args.organizationId);
-        }),
+        });
+      },
     },
   },
 };

@@ -1,0 +1,351 @@
+import AnalyticsClickCapture from '@/components/analytics/AnalyticsClickCapture';
+import { AppCombobox } from '@/components/ui/AppCombobox';
+import { readTrackedEvents, startAnalytics } from '@/utils/test/analytics';
+import testRender from '@/utils/test/test-render';
+import { screen } from '@testing-library/react';
+import { describe, expect, expectTypeOf, it, vi } from 'vitest';
+
+const LABEL = 'Country';
+const PLACEHOLDER = 'Pick a country';
+const ERROR_MESSAGE = 'Country is required';
+const INPUT_CLASS_NAME = 'content-compact';
+const ELEMENT_ID = 'resource_product_versions_open';
+const PAGE_TYPE = 'Library';
+
+interface CountryOption {
+  id: string;
+  name: string;
+}
+
+const FRANCE: CountryOption = { id: 'fr', name: 'France' };
+const JAPAN: CountryOption = { id: 'jp', name: 'Japan' };
+const OPTIONS = [FRANCE, JAPAN];
+
+const getOptionLabel = (option: CountryOption) => option.name;
+const isOptionEqualToValue = (a: CountryOption, b: CountryOption) =>
+  a.id === b.id;
+
+describe('AppCombobox', () => {
+  it('should hand the picked option, typed as a single value, when an option is picked', async () => {
+    // Given
+    const onValueChange = vi.fn();
+    const { user } = testRender(
+      <AppCombobox
+        formField
+        label={LABEL}
+        options={OPTIONS}
+        value={null}
+        onValueChange={(value) => {
+          expectTypeOf(value).toEqualTypeOf<CountryOption | null>();
+          onValueChange(value);
+        }}
+        getOptionLabel={getOptionLabel}
+        isOptionEqualToValue={isOptionEqualToValue}
+      />
+    );
+
+    // When
+    await user.click(screen.getByRole('combobox', { name: LABEL }));
+    await user.click(screen.getByRole('option', { name: JAPAN.name }));
+
+    // Then
+    expect(onValueChange).toHaveBeenCalledWith(JAPAN);
+  });
+
+  it('should hand every selected option, typed as a list, when an option is added', async () => {
+    // Given
+    const onValueChange = vi.fn();
+    const { user } = testRender(
+      <AppCombobox
+        formField
+        multiple
+        label={LABEL}
+        options={OPTIONS}
+        value={[FRANCE]}
+        onValueChange={(value) => {
+          expectTypeOf(value).toEqualTypeOf<CountryOption[]>();
+          onValueChange(value);
+        }}
+        getOptionLabel={getOptionLabel}
+        isOptionEqualToValue={isOptionEqualToValue}
+      />
+    );
+
+    // When
+    await user.click(screen.getByRole('combobox', { name: LABEL }));
+    await user.click(screen.getByRole('option', { name: JAPAN.name }));
+
+    // Then
+    expect(onValueChange).toHaveBeenCalledWith([FRANCE, JAPAN]);
+  });
+
+  it('should show the selected options as chips when the field is multiple', () => {
+    // Given / When
+    testRender(
+      <AppCombobox
+        formField
+        multiple
+        label={LABEL}
+        options={OPTIONS}
+        value={[FRANCE, JAPAN]}
+        onValueChange={vi.fn()}
+        getOptionLabel={getOptionLabel}
+      />
+    );
+
+    // Then
+    expect(
+      screen.getAllByRole('listitem').map((chip) => chip.textContent)
+    ).toEqual([FRANCE.name, JAPAN.name]);
+  });
+
+  it('should name the chips list and the clear and toggle controls with their translation', () => {
+    // Given / When
+    testRender(
+      <AppCombobox
+        formField
+        multiple
+        label={LABEL}
+        options={OPTIONS}
+        value={[FRANCE]}
+        onValueChange={vi.fn()}
+        getOptionLabel={getOptionLabel}
+        isOptionEqualToValue={isOptionEqualToValue}
+      />
+    );
+
+    // Then
+    expect(
+      screen.getByRole('list', { name: 'DesignSystem.Combobox.SelectedValues' })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Utils.Clear' })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', {
+        name: 'DesignSystem.Combobox.ToggleOptions',
+      })
+    ).toBeInTheDocument();
+  });
+
+  it('should show the translated loading message while the options load', async () => {
+    // Given
+    const { user } = testRender(
+      <AppCombobox
+        formField
+        label={LABEL}
+        options={[]}
+        loading
+        value={null}
+        onValueChange={vi.fn()}
+        getOptionLabel={getOptionLabel}
+      />
+    );
+
+    // When
+    await user.click(screen.getByRole('combobox', { name: LABEL }));
+
+    // Then
+    expect(await screen.findByText('Utils.Loading')).toBeInTheDocument();
+  });
+
+  it('should show the not found message when no option matches the typed text', async () => {
+    // Given
+    const { user } = testRender(
+      <AppCombobox
+        formField
+        label={LABEL}
+        options={OPTIONS}
+        value={null}
+        onValueChange={vi.fn()}
+        getOptionLabel={getOptionLabel}
+      />
+    );
+
+    // When
+    await user.type(screen.getByRole('combobox', { name: LABEL }), 'Zzz');
+
+    // Then
+    expect(await screen.findByText('Utils.NotFound')).toBeInTheDocument();
+  });
+
+  it('should name the field and its list with the label and mark it required when asked', async () => {
+    // Given
+    const { user } = testRender(
+      <AppCombobox
+        formField
+        label={LABEL}
+        required
+        placeholder={PLACEHOLDER}
+        options={OPTIONS}
+        value={null}
+        onValueChange={vi.fn()}
+        getOptionLabel={getOptionLabel}
+      />
+    );
+    const field = screen.getByRole('combobox', { name: LABEL });
+
+    // When
+    await user.click(field);
+
+    // Then
+    expect(field).toHaveAttribute('placeholder', PLACEHOLDER);
+    expect(screen.getByText(LABEL)).toHaveTextContent(`${LABEL}*`);
+    expect(screen.getByRole('listbox', { name: LABEL })).toBeInTheDocument();
+  });
+
+  it('should name the field with the label without showing it when the label position is none', () => {
+    // Given / When
+    testRender(
+      <AppCombobox
+        formField
+        label={LABEL}
+        labelPosition="none"
+        options={OPTIONS}
+        value={null}
+        onValueChange={vi.fn()}
+        getOptionLabel={getOptionLabel}
+      />
+    );
+
+    // Then
+    expect(screen.getByRole('combobox', { name: LABEL })).toBeInTheDocument();
+    expect(screen.queryByText(LABEL)).not.toBeInTheDocument();
+  });
+
+  it('should hand null when the field is cleared', async () => {
+    // Given
+    const onValueChange = vi.fn();
+    const { user } = testRender(
+      <AppCombobox
+        formField
+        label={LABEL}
+        options={OPTIONS}
+        value={FRANCE}
+        onValueChange={onValueChange}
+        getOptionLabel={getOptionLabel}
+        isOptionEqualToValue={isOptionEqualToValue}
+      />
+    );
+
+    // When
+    await user.click(screen.getByRole('button', { name: 'Utils.Clear' }));
+
+    // Then
+    expect(onValueChange).toHaveBeenCalledWith(null, expect.anything());
+  });
+
+  it('should describe the field with the error message and mark it invalid when an error is given', () => {
+    // Given / When
+    testRender(
+      <AppCombobox
+        formField
+        label={LABEL}
+        error={ERROR_MESSAGE}
+        options={OPTIONS}
+        value={null}
+        onValueChange={vi.fn()}
+        getOptionLabel={getOptionLabel}
+      />
+    );
+
+    // Then
+    const field = screen.getByRole('combobox', { name: LABEL });
+    expect(field).toHaveAccessibleDescription(ERROR_MESSAGE);
+    expect(field).toBeInvalid();
+  });
+
+  it('should show no helper text and keep the field valid when no error is given', () => {
+    // Given / When
+    testRender(
+      <AppCombobox
+        formField
+        label={LABEL}
+        options={OPTIONS}
+        value={null}
+        onValueChange={vi.fn()}
+        getOptionLabel={getOptionLabel}
+      />
+    );
+
+    // Then
+    const field = screen.getByRole('combobox', { name: LABEL });
+    expect(field).not.toHaveAttribute('aria-describedby');
+    expect(field).toBeValid();
+  });
+
+  it('should style the input with the given class when inputClassName is set', () => {
+    // Given / When
+    testRender(
+      <AppCombobox
+        formField
+        label={LABEL}
+        options={OPTIONS}
+        value={null}
+        onValueChange={vi.fn()}
+        getOptionLabel={getOptionLabel}
+        inputClassName={INPUT_CLASS_NAME}
+      />
+    );
+
+    // Then
+    expect(screen.getByRole('combobox', { name: LABEL })).toHaveClass(
+      INPUT_CLASS_NAME
+    );
+  });
+
+  it('should send a ui_click with the field ID when the input of a standalone field is clicked', async () => {
+    // Given
+    startAnalytics();
+    const { user } = testRender(
+      <>
+        <AnalyticsClickCapture pageType={PAGE_TYPE} />
+        <AppCombobox
+          analyticsId={ELEMENT_ID}
+          label={LABEL}
+          options={OPTIONS}
+          value={null}
+          onValueChange={vi.fn()}
+          getOptionLabel={getOptionLabel}
+        />
+      </>
+    );
+
+    // When
+    await user.click(screen.getByRole('combobox', { name: LABEL }));
+
+    // Then
+    expect(readTrackedEvents('ui_click')).toEqual([
+      expect.objectContaining({ element_id: ELEMENT_ID }),
+    ]);
+  });
+
+  it.each<[string | undefined, string, string]>([
+    [undefined, 'layer-1', 'layer-0'],
+    ['layer-0', 'layer-0', 'layer-1'],
+  ])(
+    'should open the list in the layer given by contentClassName %s, layer 1 by default',
+    async (contentClassName, expectedLayer, replacedLayer) => {
+      // Given
+      const { user } = testRender(
+        <AppCombobox
+          formField
+          label={LABEL}
+          options={OPTIONS}
+          value={null}
+          onValueChange={vi.fn()}
+          getOptionLabel={getOptionLabel}
+          contentClassName={contentClassName}
+        />
+      );
+
+      // When
+      await user.click(screen.getByRole('combobox', { name: LABEL }));
+
+      // Then
+      const list = screen.getByRole('listbox', { name: LABEL });
+      expect(list.closest(`.${expectedLayer}`)).not.toBeNull();
+      expect(list.closest(`.${replacedLayer}`)).toBeNull();
+    }
+  );
+});

@@ -2,27 +2,28 @@
 
 import GuardCapacityComponent from '@/components/AdminGuard';
 import { useServiceContext } from '@/components/service/components/ServiceContext';
+import { AutoForm } from '@/components/ui/auto-form';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
+import { useTranslate } from '@/hooks/use-translate';
 import { Locale, locales } from '@/i18n/config';
+import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import { EditIcon } from '@filigran/icon';
 import {
-  AutoForm,
   Button,
   Dialog,
+  DialogBody,
   DialogContent,
   DialogFooter,
-  DialogHeader,
   DialogTitle,
-} from '@filigran/ui';
-import { toast } from '@filigran/ui/clients';
+} from '@filigran/design-system';
+import { EditIcon } from '@filigran/icon';
 import {
+  Locale as GraphqlLocale,
   PortalCapability,
-  SeoServiceInstanceLanguage,
   useEditSeoServiceInstanceMetadataMutation,
   useServiceInstanceSeoMetadataByIdQuery,
 } from '@graphql/generated';
 import { useQueryClient } from '@tanstack/react-query';
-import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { z } from 'zod';
 
@@ -30,17 +31,15 @@ const SEO_METADATA_MAX_LENGTH = 155;
 const optionalSeoField = z.string().max(SEO_METADATA_MAX_LENGTH).optional();
 
 type SeoLocaleConfig = {
-  language: SeoServiceInstanceLanguage;
+  language: GraphqlLocale;
   titleField: string;
   descriptionField: string;
   label: string;
 };
 
-const SEO_LANGUAGES = Object.values(SeoServiceInstanceLanguage);
+const SEO_LANGUAGES = Object.values(GraphqlLocale);
 
-const getSeoLanguageFromLocale = (
-  locale: Locale
-): SeoServiceInstanceLanguage => {
+const getSeoLanguageFromLocale = (locale: Locale): GraphqlLocale => {
   const language = SEO_LANGUAGES.find((value) => value === locale);
   if (!language) {
     throw new Error(`Unsupported SEO locale: ${locale}`);
@@ -90,7 +89,7 @@ type LibraryUpdateFieldConfig = Record<
 >;
 
 export const LibraryUpdateMetadata = () => {
-  const t = useTranslations();
+  const t = useTranslate();
   const { serviceInstance } = useServiceContext();
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
@@ -161,14 +160,15 @@ export const LibraryUpdateMetadata = () => {
         queryKey:
           useServiceInstanceSeoMetadataByIdQuery.getKey(seoMetadataVariables),
       });
-      toast({
+      showSnackbar({
+        severity: 'success',
         title: t('Utils.Success'),
       });
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'UNKNOWN_ERROR';
-      toast({
-        variant: 'destructive',
+      showSnackbar({
+        severity: 'error',
         title: t('Utils.Error'),
         description: t(`Error.Server.${errorMessage}`),
       });
@@ -180,34 +180,40 @@ export const LibraryUpdateMetadata = () => {
       portalCapabilityRestriction={[PortalCapability.ModifyServiceMetadata]}>
       <>
         <Button
-          variant="tertiary"
+          {...analyticsId('resource_library_metadata_edit')}
+          priority="tertiary"
+          startIcon={<EditIcon className="h-4 w-4" />}
           onClick={() => setIsOpen(true)}>
-          <EditIcon className="h-4 w-4 mr-s " />
           {t('Utils.Edit')}
         </Button>
         <Dialog
           open={isOpen}
           onOpenChange={setIsOpen}>
-          <DialogContent className="max-w-3xl">
-            <DialogHeader className="mb-s">
-              <DialogTitle>{t('Metadata.SeoMetadata')}</DialogTitle>
-            </DialogHeader>
-            <AutoForm
-              className="space-y-m"
-              formSchema={libraryUpdateSchema}
-              values={existingSeoMetadataByLocale}
-              fieldConfig={libraryUpdateFieldConfig}
-              onSubmit={handleSubmit}>
-              <DialogFooter className="pt-s">
-                <Button
-                  variant="secondary"
-                  type="button"
-                  onClick={() => setIsOpen(false)}>
-                  {t('Utils.Cancel')}
-                </Button>
-                <Button type="submit">{t('Utils.Validate')}</Button>
-              </DialogFooter>
-            </AutoForm>
+          <DialogContent size="lg">
+            <DialogTitle>{t('Metadata.SeoMetadata')}</DialogTitle>
+            <DialogBody>
+              <AutoForm
+                className="space-y-3"
+                formSchema={libraryUpdateSchema}
+                values={existingSeoMetadataByLocale}
+                fieldConfig={libraryUpdateFieldConfig}
+                onSubmit={handleSubmit}>
+                <DialogFooter>
+                  <Button
+                    {...analyticsId('resource_library_metadata_cancel')}
+                    priority="secondary"
+                    type="button"
+                    onClick={() => setIsOpen(false)}>
+                    {t('Utils.Cancel')}
+                  </Button>
+                  <Button
+                    {...analyticsId('resource_library_metadata_submit')}
+                    type="submit">
+                    {t('Utils.Validate')}
+                  </Button>
+                </DialogFooter>
+              </AutoForm>
+            </DialogBody>
           </DialogContent>
         </Dialog>
       </>
