@@ -46,3 +46,13 @@ it in `kgateway` mode: unset it first.
 The gateway adds no `Cache-Control` header: the front sets its own. nginx added `Cache-Control: public`
 and a one month expiry to the static assets of successful responses only, which the gateway cannot
 restrict to a status.
+
+## Request buffering and gateway capacity
+
+The gateway policies buffer request bodies in memory, with limits of 256Mi per request for the Hub,
+Minio and pgAdmin, and 512Mi per request for Kibana. These are per-request limits, not a total memory
+budget: concurrent uploads multiply the memory required in the shared gateway pool.
+
+Before sending traffic to kgateway, size and load-test the pool for concurrent uploads across all
+hosted applications, leaving headroom for Envoy and other traffic. Monitor memory during cutover;
+exhausting the pool can disrupt other applications sharing it.
