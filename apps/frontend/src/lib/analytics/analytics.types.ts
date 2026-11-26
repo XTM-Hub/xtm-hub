@@ -32,6 +32,11 @@ export type AnalyticsPageType =
   | 'Platform details'
   | 'Admin'
   | 'Profile'
+  | 'Sign up'
+  | 'Log in'
+  | 'Organization users'
+  | 'Service access'
+  | 'Demo'
   | 'Other';
 
 export interface AnalyticsPage {

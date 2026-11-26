@@ -11,6 +11,7 @@ import { describe, expect, it } from 'vitest';
 
 const SERVICE_INSTANCE_ID = '3f2a1b4c-5d6e-4f70-8a9b-0c1d2e3f4a5b';
 const DOCUMENT_ID = '9c81d7e6-1a2b-4c3d-9e8f-7a6b5c4d3e2f';
+const SUBSCRIPTION_ID = '5b7e2c1d-8f3a-4b6c-9d0e-1f2a3b4c5d6e';
 const RELAY_DOCUMENT_ID = btoa(`Document:${DOCUMENT_ID}`);
 const ORIGIN = 'https://hub.filigran.io';
 const PUBLIC_RESOURCE_PATH =
@@ -105,6 +106,20 @@ describe('resolveAnalyticsPage', () => {
     ],
     ['/app/admin/csm-board', {}, 'CSM board', '/app/admin/csm-board'],
     ['/app/profile', {}, 'Profile', '/app/profile'],
+    ['/sign-up', {}, 'Sign up', '/sign-up'],
+    ['/login', {}, 'Log in', '/login'],
+    ['/app/manage/user', {}, 'Organization users', '/app/manage/user'],
+    [
+      `/app/manage/service/${SERVICE_INSTANCE_ID}/subscription/${SUBSCRIPTION_ID}`,
+      {
+        serviceInstanceId: SERVICE_INSTANCE_ID,
+        subscriptionId: SUBSCRIPTION_ID,
+      },
+      'Service access',
+      '/app/manage/service/[serviceInstanceId]/subscription/[subscriptionId]',
+    ],
+    ['/en/editable-text', { locale: 'en' }, 'Demo', '/[locale]/editable-text'],
+    ['/app/editable-text-demo', {}, 'Demo', '/app/editable-text-demo'],
     [`/app/unknown/${DOCUMENT_ID}`, {}, 'Other', '/app/unknown/[id]'],
     [`/app/unknown/${RELAY_DOCUMENT_ID}`, {}, 'Other', '/app/unknown/[id]'],
   ])(
@@ -263,15 +278,7 @@ const ROUTE_TEMPLATES = readdirSync(APP_DIRECTORY, {
         .join('/')}`
   )
   .sort();
-const OTHER_PAGE_ROUTES = [
-  '/[locale]/cybersecurity-solutions',
-  '/[locale]/editable-text',
-  '/app/editable-text-demo',
-  '/app/manage/service/[serviceInstanceId]/subscription/[subscriptionId]',
-  '/app/manage/user',
-  '/login',
-  '/sign-up',
-];
+const OTHER_PAGE_ROUTES = ['/[locale]/cybersecurity-solutions'];
 const TYPED_PAGE_ROUTES = ROUTE_TEMPLATES.filter(
   (template) => !OTHER_PAGE_ROUTES.includes(template)
 );
