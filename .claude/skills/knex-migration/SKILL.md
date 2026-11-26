@@ -45,6 +45,19 @@ an `alterTable` will do.
   just the one you're changing — Knex/Postgres will silently drop any
   unspecified property (e.g. an existing `defaultTo`) instead of preserving it.
 
+## Single-Row Lookups
+- When you understand that a query can only ever match one row (a `.first()` on
+  an identifier, a credential, a natural key), propose a unique constraint on the
+  columns it matches, in the migration that adds them when they are new: it
+  enforces the assumption instead of hoping the data respects it, and its index
+  serves the lookup. Do not skip it because the precedent you mirror did.
+- Two NULLs never collide in a unique index by default: when one of those columns
+  is nullable, add `NULLS NOT DISTINCT`, as
+  `20260522072050_add_unique_service_capability_pair.js` does.
+- If existing rows may already collide, merge or remove them in the same migration
+  first, as `20261124100000_add_unique_subscription_organization_service_instance.js`
+  does.
+
 ## Backfilling Existing Rows
 - **Derive into a new column, never overwrite the source one.** Mirror
   `20260707072920_add_manifest_version_padded.js`: it fills `version_padded` and

@@ -14,6 +14,9 @@ Postgres runs `READ COMMITTED` by default, so a "read, decide, write" sequence c
 commit; `withTransaction` alone does not prevent that. Usual signals: "do this once", "must be unique", "at least one
 remains", a limit, a quota, a counter.
 
+A query that should only ever find one row is a uniqueness invariant too, though it writes nothing: if two rows match,
+`.first()` picks one arbitrarily. Propose a unique constraint on what it matches (see the `knex-migration` skill).
+
 ## 1. The user decides, you inform
 
 You can read from the code who can trigger the path, how many paths touch the data, whether a guard exists and whether
