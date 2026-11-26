@@ -53,7 +53,7 @@ export default interface DeploymentRequest {
 
   counts_in_orga_quota: boolean;
 
-  cancellation_user_id: string | null;
+  cancellation_user_id: UserId | null;
 
   cancellation_date: Date | null;
 
@@ -64,6 +64,8 @@ export default interface DeploymentRequest {
   parent_id: DeploymentRequestId | null;
 
   url: string | null;
+
+  platform_token_consumed_at: Date | null;
 }
 
 /** Represents the initializer for the table public.DeploymentRequest */
@@ -113,7 +115,7 @@ export interface DeploymentRequestInitializer {
   /** Default value: true */
   counts_in_orga_quota?: boolean;
 
-  cancellation_user_id?: string | null;
+  cancellation_user_id?: UserId | null;
 
   cancellation_date?: Date | null;
 
@@ -124,6 +126,8 @@ export interface DeploymentRequestInitializer {
   parent_id?: DeploymentRequestId | null;
 
   url?: string | null;
+
+  platform_token_consumed_at?: Date | null;
 }
 
 /** Represents the mutator for the table public.DeploymentRequest */
@@ -170,7 +174,7 @@ export interface DeploymentRequestMutator {
 
   counts_in_orga_quota?: boolean;
 
-  cancellation_user_id?: string | null;
+  cancellation_user_id?: UserId | null;
 
   cancellation_date?: Date | null;
 
@@ -181,4 +185,6 @@ export interface DeploymentRequestMutator {
   parent_id?: DeploymentRequestId | null;
 
   url?: string | null;
+
+  platform_token_consumed_at?: Date | null;
 }
