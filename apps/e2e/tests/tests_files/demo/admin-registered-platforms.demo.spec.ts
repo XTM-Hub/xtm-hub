@@ -32,7 +32,7 @@ const REGISTRATION_QUERY =
   'FROM PlatformConfiguration JOIN Subscription JOIN Organization\n' +
   `WHERE platform_id = '${PLATFORM.id}'`;
 
-test('admin unregister, then connected again by its own organization, never taken by another one', async ({
+test('admin unregister, then connected by another organization, never taken while it is active', async ({
   page,
 }) => {
   const loginPage = new LoginPage(page);
@@ -48,7 +48,7 @@ test('admin unregister, then connected again by its own organization, never take
   await loginPage.navigateTo();
   await announceInitialData(
     page,
-    'Disconnecting a platform from the admin side, and connecting it again',
+    'Disconnecting a platform from the admin side, so that another organization connects it',
     [
       `${SECOND_ORGA.NAME}: owns the platform, its registerer connects it`,
       `${OTHER_ORGANIZATION}: another organization, its user may manage platform registrations`,
@@ -142,29 +142,12 @@ test('admin unregister, then connected again by its own organization, never take
 
   await announceStep(
     page,
-    `4. A user of ${OTHER_ORGANIZATION} tries to connect the unregistered platform`
+    `4. A user of ${OTHER_ORGANIZATION} connects the platform the admin unregistered`
   );
   await clearStepBanner(page);
   await loginPage.switchUser(OTHER_ORGA_MEMBER.EMAIL);
   await registerPage.navigateTo('register-opencti', PLATFORM);
   await registerPage.selectOrganization(OTHER_ORGANIZATION);
-  await registerPage.connect();
-  await expect(
-    page.getByRole('heading', { name: 'Registration failed' })
-  ).toBeVisible();
-  await announceCheckpoint(
-    page,
-    `Refused: an unregistered platform still belongs to ${SECOND_ORGA.NAME}`
-  );
-
-  await announceStep(
-    page,
-    `5. A ${SECOND_ORGA.NAME} member connects the platform again`
-  );
-  await clearStepBanner(page);
-  await loginPage.switchUser(SECOND_ORGA.REGISTERER_EMAIL);
-  await registerPage.navigateTo('register-opencti', PLATFORM);
-  await registerPage.selectOrganization(SECOND_ORGA.NAME);
   await registerPage.connect();
   await expect(
     page.getByRole('heading', {
@@ -173,21 +156,27 @@ test('admin unregister, then connected again by its own organization, never take
   ).toBeVisible();
   await announceDbQueryBeforeAfter(
     page,
-    `Connected again: active in ${SECOND_ORGA.NAME} with a new token`,
+    `Connected: active in ${OTHER_ORGANIZATION} with a new token`,
     REGISTRATION_QUERY,
     unregistered,
     await registrationState(first.token)
   );
 
-  await announceStep(page, '6. The admin sees it active again');
+  await announceStep(
+    page,
+    `5. The admin sees it active in ${OTHER_ORGANIZATION}`
+  );
   await clearStepBanner(page);
   await loginPage.switchUser(ADMIN_USER.EMAIL);
   await adminPage.navigateTo();
   await adminPage.search(PLATFORM.title);
   await expect(adminPage.getStatus(PLATFORM.title, 'Active')).toBeVisible();
+  await expect(adminPage.getRow(PLATFORM.title)).toContainText(
+    OTHER_ORGANIZATION
+  );
   await announceCheckpoint(
     page,
-    'Active again, and it can be unregistered again',
+    `Active in ${OTHER_ORGANIZATION}, and it can be unregistered again`,
     6000
   );
 });

@@ -96,23 +96,6 @@ test.describe('Admin unregister of a registered platform', () => {
       });
     });
 
-    await test.step('a user of another organization still cannot take it', async () => {
-      await loginPage.switchUser(OTHER_ORGA_MEMBER.EMAIL);
-      await registerPage.navigateTo('register-opencti', PLATFORM);
-      await registerPage.selectOrganization(
-        OTHER_ORGA_MEMBER.ORGANIZATION_NAME
-      );
-      await registerPage.connect();
-      await expect(
-        page.getByRole('heading', { name: 'Registration failed' })
-      ).toBeVisible();
-      expect(await getPlatformRegistration(PLATFORM.id)).toMatchObject({
-        status: 'inactive',
-        organizationName: SECOND_ORGA.NAME,
-        token: connected.token,
-      });
-    });
-
     await test.step('a member of its organization connects it again, with a new token', async () => {
       await loginPage.switchUser(SECOND_ORGA.REGISTERER_EMAIL);
       await registerPage.navigateTo('register-opencti', PLATFORM);
@@ -138,6 +121,56 @@ test.describe('Admin unregister of a registered platform', () => {
       await adminPage.search(PLATFORM.title);
       await expect(adminPage.getStatus(PLATFORM.title, 'Active')).toBeVisible();
       await expect(adminPage.getUnregisterButton(PLATFORM.title)).toBeVisible();
+    });
+  });
+
+  test('a user of another organization connects a platform an admin unregistered', async ({
+    page,
+  }) => {
+    const connected = await getPlatformRegistration(PLATFORM.id);
+
+    await test.step('the platform admin unregisters it', async () => {
+      await loginPage.switchUser(ADMIN_USER.EMAIL);
+      await adminPage.navigateTo();
+      await adminPage.search(PLATFORM.title);
+      await adminPage.unregister(PLATFORM.title);
+      await expect(
+        adminPage.getStatus(PLATFORM.title, 'Inactive')
+      ).toBeVisible();
+    });
+
+    await test.step('a user of another organization connects it, with a new token', async () => {
+      await loginPage.switchUser(OTHER_ORGA_MEMBER.EMAIL);
+      await registerPage.navigateTo('register-opencti', PLATFORM);
+      await registerPage.selectOrganization(
+        OTHER_ORGA_MEMBER.ORGANIZATION_NAME
+      );
+      await registerPage.connect();
+      await expect(
+        page.getByRole('heading', {
+          name: 'OpenCTI product connected successfully',
+        })
+      ).toBeVisible();
+
+      const takenOver = await getPlatformRegistration(PLATFORM.id);
+      expect(takenOver).toMatchObject({
+        status: 'active',
+        organizationName: OTHER_ORGA_MEMBER.ORGANIZATION_NAME,
+      });
+      expect(takenOver.token).not.toBe(connected.token);
+    });
+
+    await test.step('the admin sees it active in the new organization', async () => {
+      await loginPage.switchUser(ADMIN_USER.EMAIL);
+      await adminPage.navigateTo();
+      await adminPage.search(PLATFORM.title);
+      await expect(adminPage.getStatus(PLATFORM.title, 'Active')).toBeVisible();
+      await expect(adminPage.getRow(PLATFORM.title)).toContainText(
+        OTHER_ORGA_MEMBER.ORGANIZATION_NAME
+      );
+      await expect(adminPage.getRow(PLATFORM.title)).not.toContainText(
+        SECOND_ORGA.NAME
+      );
     });
   });
 });
