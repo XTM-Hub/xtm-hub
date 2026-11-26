@@ -26,8 +26,7 @@ describe('user service app', () => {
         requestContextAdminSecondOrga.user,
         filigranSubscription.ID,
         [TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.EMAIL],
-        [],
-        filigranSubscription.SERVICE_INSTANCE_ID
+        []
       );
 
       // Then
@@ -57,8 +56,7 @@ describe('user service app', () => {
         requestContextAdminSecondOrga.user,
         secondOrganizationSubscriptionId,
         [TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.SIMPLE.EMAIL],
-        [],
-        serviceInstanceId
+        []
       );
 
       // Then

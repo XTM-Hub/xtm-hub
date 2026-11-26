@@ -51,6 +51,9 @@ export const TestPlatformCallerHelper = {
         organization_id: organizationId,
       });
       const { platform_id: platformId, token } = platformConfiguration;
+      if (token === null) {
+        throw new Error('A platform caller authenticates with a token');
+      }
 
       return {
         organizationId,

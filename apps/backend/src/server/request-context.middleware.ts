@@ -18,6 +18,8 @@ export const buildRequestContext = (req: Request): RequestContext => {
     // what the token reaches
     ...(authentication && {
       apiToken: {
+        id: authentication.token.id,
+        scope: authentication.token.scope,
         userId: authentication.user.id,
         organizationId: authentication.token.organization_id,
         organizationCapabilities: [

@@ -1825,12 +1825,14 @@ export enum NewsFeedItemMetadataKey {
   DocumentId = 'document_id',
   ImageAlt = 'image_alt',
   ImageUrl = 'image_url',
+  ProductVersion = 'product_version',
   ReadMinutes = 'read_minutes',
   UrlPath = 'url_path'
 }
 
 export enum NewsFeedItemType {
   BlogPost = 'BLOG_POST',
+  GithubRelease = 'GITHUB_RELEASE',
   ResourceCustomDashboard = 'RESOURCE_CUSTOM_DASHBOARD',
   ResourceCustomView = 'RESOURCE_CUSTOM_VIEW',
   ResourceIntegration = 'RESOURCE_INTEGRATION',
@@ -1991,12 +1993,35 @@ export type OrganizationInput = {
   name: Scalars['String']['input'];
 };
 
+/** A member of an organization, whatever their status: invited, expired, waiting for validation or disabled. */
+export type OrganizationMember = {
+  __typename?: 'OrganizationMember';
+  capabilities: Array<OrganizationCapability>;
+  email: Scalars['String']['output'];
+  first_name: Maybe<Scalars['String']['output']>;
+  id: Scalars['UserId']['output'];
+  last_name: Maybe<Scalars['String']['output']>;
+};
+
+export type OrganizationMemberConnection = {
+  __typename?: 'OrganizationMemberConnection';
+  edges: Array<OrganizationMemberEdge>;
+  pageInfo: PageInfo;
+  totalCount: Scalars['Int']['output'];
+};
+
 export type OrganizationMemberContact = {
   __typename?: 'OrganizationMemberContact';
   email: Scalars['String']['output'];
   first_name: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
   last_name: Maybe<Scalars['String']['output']>;
+};
+
+export type OrganizationMemberEdge = {
+  __typename?: 'OrganizationMemberEdge';
+  cursor: Scalars['String']['output'];
+  node: OrganizationMember;
 };
 
 export enum OrganizationOrdering {
@@ -2187,6 +2212,11 @@ export type Query = {
   organization: Maybe<Organization>;
   /** The API tokens of the selected organization, for its administrators */
   organizationApiTokens: Array<ApiToken>;
+  /**
+   * The members of an organization, administrators first, then by email.
+   * NOT_FOUND to a malformed id or a non-member without BYPASS or READ_ORGANIZATION_MEMBERS, else ORGANIZATION_NOT_FOUND.
+   */
+  organizationMembers: OrganizationMemberConnection;
   organizations: OrganizationConnection;
   pendingUsers: UserConnection;
   platformAssociatedOrganization: Maybe<Organization>;
@@ -2369,6 +2399,14 @@ export type QueryOpenCtiPlatformRegistrationStatusArgs = {
 
 export type QueryOrganizationArgs = {
   id: Scalars['ID']['input'];
+};
+
+
+export type QueryOrganizationMembersArgs = {
+  after: InputMaybe<Scalars['ID']['input']>;
+  first: Scalars['Int']['input'];
+  organizationId: Scalars['OrganizationId']['input'];
+  searchTerm: InputMaybe<Scalars['String']['input']>;
 };
 
 

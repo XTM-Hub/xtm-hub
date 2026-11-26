@@ -50,6 +50,10 @@ export const blogpostProductMapping: Record<
   [FiligranProduct.Openaev]: PlatformIdentifier.Openaev,
 };
 
+export const githubReleasePlatformIdentifiers: PlatformIdentifier[] = [
+  PlatformIdentifier.Opencti,
+];
+
 // Metadata keys that only serve the Hub (document lookup, external destination of a redirect): they are never
 // returned to the consumers of the news feed, which only read url_path.
 export const NEWS_FEED_INTERNAL_METADATA_KEYS: NewsFeedItemMetadataKey[] = [

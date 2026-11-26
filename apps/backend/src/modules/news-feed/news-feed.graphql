@@ -7,6 +7,7 @@ enum NewsFeedItemType {
   RESOURCE_INTEGRATION
   RESOURCE_SCENARIO
   BLOG_POST
+  GITHUB_RELEASE
 }
 
 # The utm_medium that the Hub gives to every news feed link. The frontend reads it to recognize a news feed redirect
@@ -34,6 +35,7 @@ enum NewsFeedItemMetadataKey {
   image_alt
   author_names
   read_minutes
+  product_version
 }
 
 type NewsFeedItemMetadata {

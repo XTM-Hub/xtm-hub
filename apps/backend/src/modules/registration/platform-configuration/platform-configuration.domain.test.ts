@@ -13,7 +13,10 @@ import {
 } from '../../../__generated__/resolvers-types';
 import { ServiceInstanceId } from '../../../model/kanel/public/ServiceInstance';
 import { UserId } from '../../../model/kanel/public/User';
-import { PlatformConfigurationDomain } from './platform-configuration.domain';
+import {
+  PlatformConfigurationDomain,
+  PlatformPublicKey,
+} from './platform-configuration.domain';
 
 const NON_UUID_CREDENTIALS = [
   {
@@ -37,6 +40,18 @@ const NON_UUID_CREDENTIALS = [
     },
   },
 ];
+
+const KEY_ID = 'enrolled-key-id';
+const OTHER_KEY_ID = 'other-key-id';
+
+const makePublicKey = (kid: string): PlatformPublicKey => ({
+  kty: 'OKP',
+  crv: 'Ed25519',
+  x: '11qYAYKxCrfVS_7TyWQHOg7hcvPapiMlrwIaaPcHURo',
+  kid,
+  alg: 'EdDSA',
+  use: 'sig',
+});
 
 describe('platformConfigurationDomain', () => {
   describe('isPlatformConfigurationValid', () => {
@@ -666,5 +681,249 @@ describe('platformConfigurationDomain', () => {
         await expect(call).resolves.toBeUndefined();
       }
     );
+  });
+
+  describe('loadConfigurationByPlatformAndKeyId', () => {
+    const platformId = uuidv4();
+    const tenantId = uuidv4();
+
+    beforeEach(async () => {
+      await TestHelper.platformConfiguration.delete({});
+      await TestHelper.platformConfiguration.create({
+        service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
+        platform_id: platformId,
+        tenant_id: null,
+        token: null,
+        public_key: makePublicKey(KEY_ID),
+        public_key_id: KEY_ID,
+        key_enrolled_at: new Date(),
+      });
+      await TestHelper.platformConfiguration.create({
+        service_instance_id: SERVICES.INSTANCES.OPENAEV_SCENARIOS.ID,
+        platform_id: platformId,
+        tenant_id: tenantId,
+        token: null,
+        public_key: makePublicKey(KEY_ID),
+        public_key_id: KEY_ID,
+        key_enrolled_at: new Date(),
+      });
+    });
+
+    afterEach(async () => {
+      await TestHelper.platformConfiguration.delete({});
+    });
+
+    it.each([
+      {
+        name: 'the instance',
+        tenant_id: null,
+        serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
+      },
+      {
+        name: 'the tenant',
+        tenant_id: tenantId,
+        serviceInstanceId: SERVICES.INSTANCES.OPENAEV_SCENARIOS.ID,
+      },
+    ])(
+      'should load the registration of $name enrolled with the key id',
+      async ({ tenant_id, serviceInstanceId }) => {
+        // When
+        const configuration =
+          await PlatformConfigurationDomain.loadConfigurationByPlatformAndKeyId(
+            { platform_id: platformId, tenant_id, public_key_id: KEY_ID }
+          );
+
+        // Then
+        expect(configuration?.service_instance_id).toBe(serviceInstanceId);
+      }
+    );
+
+    it('should not load a tenant registration when the lookup has no tenant', async () => {
+      // Given
+      await TestHelper.platformConfiguration.delete({
+        service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
+      });
+
+      // When
+      const configuration =
+        await PlatformConfigurationDomain.loadConfigurationByPlatformAndKeyId({
+          platform_id: platformId,
+          tenant_id: null,
+          public_key_id: KEY_ID,
+        });
+
+      // Then
+      expect(configuration).toBeUndefined();
+    });
+
+    it.each([
+      {
+        name: 'another key id',
+        lookup: { platform_id: platformId, public_key_id: OTHER_KEY_ID },
+      },
+      {
+        name: 'another platform',
+        lookup: { platform_id: uuidv4(), public_key_id: KEY_ID },
+      },
+      {
+        name: 'another tenant',
+        lookup: {
+          platform_id: platformId,
+          tenant_id: uuidv4(),
+          public_key_id: KEY_ID,
+        },
+      },
+      {
+        name: 'a platform id "x"',
+        lookup: { platform_id: 'x', public_key_id: KEY_ID },
+      },
+      {
+        name: 'a tenant id "not-a-uuid"',
+        lookup: {
+          platform_id: platformId,
+          tenant_id: 'not-a-uuid',
+          public_key_id: KEY_ID,
+        },
+      },
+    ])('should return undefined when given $name', async ({ lookup }) => {
+      // When
+      const configuration =
+        await PlatformConfigurationDomain.loadConfigurationByPlatformAndKeyId({
+          tenant_id: null,
+          ...lookup,
+        });
+
+      // Then
+      expect(configuration).toBeUndefined();
+    });
+  });
+
+  describe('enrollKey', () => {
+    const platformId = uuidv4();
+    const tenantId = uuidv4();
+    const token = uuidv4();
+
+    beforeEach(async () => {
+      await TestHelper.platformConfiguration.delete({});
+      await TestHelper.platformConfiguration.create({
+        service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
+        platform_id: platformId,
+        tenant_id: tenantId,
+        token,
+      });
+    });
+
+    afterEach(async () => {
+      await TestHelper.platformConfiguration.delete({});
+    });
+
+    it('should store the key and revoke the token when the credentials match', async () => {
+      // When
+      await PlatformConfigurationDomain.enrollKey({
+        platform_id: platformId,
+        tenant_id: tenantId,
+        token,
+        publicKey: makePublicKey(KEY_ID),
+      });
+
+      // Then
+      const configuration = await TestHelper.platformConfiguration.load({
+        service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
+      });
+      expect(configuration).toMatchObject({
+        token: null,
+        public_key: makePublicKey(KEY_ID),
+        public_key_id: KEY_ID,
+        key_enrolled_at: expect.any(Date),
+      });
+    });
+
+    it('should no longer authenticate the revoked token when the key is enrolled', async () => {
+      // Given
+      await PlatformConfigurationDomain.enrollKey({
+        platform_id: platformId,
+        tenant_id: tenantId,
+        token,
+        publicKey: makePublicKey(KEY_ID),
+      });
+
+      // When
+      const configuration =
+        await PlatformConfigurationDomain.loadConfigurationByPlatformAndToken({
+          platform_id: platformId,
+          tenant_id: tenantId,
+          token,
+        });
+
+      // Then
+      expect(configuration).toBeUndefined();
+    });
+
+    it.each([
+      {
+        name: 'another token',
+        credentials: {
+          platform_id: platformId,
+          tenant_id: tenantId,
+          token: uuidv4(),
+        },
+      },
+      {
+        name: 'another platform',
+        credentials: { platform_id: uuidv4(), tenant_id: tenantId, token },
+      },
+      {
+        name: 'another tenant',
+        credentials: { platform_id: platformId, tenant_id: uuidv4(), token },
+      },
+      {
+        name: 'no tenant for a tenant registration',
+        credentials: { platform_id: platformId, tenant_id: null, token },
+      },
+      {
+        name: 'a token "not-a-uuid"',
+        credentials: {
+          platform_id: platformId,
+          tenant_id: tenantId,
+          token: 'not-a-uuid',
+        },
+      },
+    ])('should enroll nothing when given $name', async ({ credentials }) => {
+      // When
+      const enrolled = await PlatformConfigurationDomain.enrollKey({
+        ...credentials,
+        publicKey: makePublicKey(KEY_ID),
+      });
+
+      // Then
+      expect(enrolled).toBeUndefined();
+    });
+
+    it('should keep the first key when two keys are enrolled at once with the same token', async () => {
+      // When
+      const results = await Promise.all([
+        PlatformConfigurationDomain.enrollKey({
+          platform_id: platformId,
+          tenant_id: tenantId,
+          token,
+          publicKey: makePublicKey(KEY_ID),
+        }),
+        PlatformConfigurationDomain.enrollKey({
+          platform_id: platformId,
+          tenant_id: tenantId,
+          token,
+          publicKey: makePublicKey(OTHER_KEY_ID),
+        }),
+      ]);
+
+      // Then
+      const winners = results.filter((enrolled) => enrolled !== undefined);
+      const configuration = await TestHelper.platformConfiguration.load({
+        service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
+      });
+      expect(winners.map(({ public_key_id }) => public_key_id)).toEqual([
+        configuration?.public_key_id,
+      ]);
+    });
   });
 });
