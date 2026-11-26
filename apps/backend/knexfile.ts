@@ -83,6 +83,7 @@ type BaseDatabaseType =
   | 'Document_Children'
   | 'Document_Metadata'
   | 'PlatformConfiguration'
+  | 'PlatformAssertionJti'
   | 'DeploymentRequest'
   | 'DeploymentRequestQuota'
   | 'ServiceGroup'

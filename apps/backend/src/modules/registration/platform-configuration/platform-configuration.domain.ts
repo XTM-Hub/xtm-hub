@@ -1,3 +1,4 @@
+import { Knex } from 'knex';
 import z from 'zod';
 import { db, dbRaw } from '../../../../knexfile';
 import {
@@ -69,6 +70,26 @@ const resolvePlatformFromJoinedRow = (
   };
 };
 
+// The public JWK a product enrolls (TDR-34): the Hub never stores a private key.
+export type PlatformPublicKey = {
+  kty: 'OKP';
+  crv: 'Ed25519';
+  x: string;
+  kid: string;
+  alg: 'EdDSA';
+  use: 'sig';
+};
+
+const arePlatformAndTenantUuids = ({
+  platform_id,
+  tenant_id,
+}: {
+  platform_id: string;
+  tenant_id?: string | null;
+}): boolean =>
+  isUuid(platform_id) &&
+  (tenant_id === undefined || tenant_id === null || isUuid(tenant_id));
+
 const areCredentialsUuids = ({
   platform_id,
   token,
@@ -76,11 +97,19 @@ const areCredentialsUuids = ({
 }: {
   platform_id: string;
   token: string;
-  tenant_id?: string;
+  tenant_id?: string | null;
 }): boolean =>
-  isUuid(platform_id) &&
-  isUuid(token) &&
-  (tenant_id === undefined || isUuid(tenant_id));
+  arePlatformAndTenantUuids({ platform_id, tenant_id }) && isUuid(token);
+
+// A null tenant is the registration of the whole instance, never "any tenant": an OpenAEV instance shares one key
+// across all its tenant registrations.
+const whereTenant = (
+  qb: Knex.QueryBuilder,
+  tenantId: string | null
+): Knex.QueryBuilder =>
+  tenantId === null
+    ? qb.whereNull('tenant_id')
+    : qb.where('tenant_id', '=', tenantId);
 
 const buildJoinedConfigurationQuery = () =>
   db<PlatformConfiguration>('PlatformConfiguration')
@@ -171,6 +200,59 @@ export const PlatformConfigurationDomain = {
     }
 
     return qb.first();
+  },
+
+  loadConfigurationByPlatformAndKeyId: async ({
+    platform_id,
+    tenant_id,
+    public_key_id,
+  }: {
+    platform_id: string;
+    tenant_id: string | null;
+    public_key_id: string;
+  }): Promise<PlatformConfiguration | undefined> => {
+    if (!arePlatformAndTenantUuids({ platform_id, tenant_id })) {
+      return undefined;
+    }
+
+    const qb = db<PlatformConfiguration>('PlatformConfiguration')
+      .where('platform_id', '=', platform_id)
+      .where('public_key_id', '=', public_key_id);
+
+    return whereTenant(qb, tenant_id).first();
+  },
+
+  // Stores the key and revokes the token in one statement: of two concurrent enrollments with the same token, only
+  // the first matches, so a second key can never replace the first one here.
+  enrollKey: async ({
+    platform_id,
+    tenant_id,
+    token,
+    publicKey,
+  }: {
+    platform_id: string;
+    tenant_id: string | null;
+    token: string;
+    publicKey: PlatformPublicKey;
+  }): Promise<PlatformConfiguration | undefined> => {
+    if (!areCredentialsUuids({ platform_id, token, tenant_id })) {
+      return undefined;
+    }
+
+    const qb = db<PlatformConfiguration>('PlatformConfiguration')
+      .where('platform_id', '=', platform_id)
+      .where('token', '=', token);
+
+    const [enrolled] = await whereTenant(qb, tenant_id)
+      .update({
+        public_key: JSON.stringify(publicKey),
+        public_key_id: publicKey.kid,
+        key_enrolled_at: new Date(),
+        token: null,
+      })
+      .returning('*');
+
+    return enrolled;
   },
 
   loadConfigurationByPlatform: async (

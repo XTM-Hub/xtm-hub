@@ -32,6 +32,16 @@ const resolvers: Resolvers = {
     // The caller's organizations, read like User.organizations: an API token lists its own only
     userOrganizations: async (_, __, context) =>
       UserDomain.getOrganizations(context.user.id),
+    organizationMembers: async (_, { organizationId, ...args }) => {
+      try {
+        return await OrganizationApp.loadOrganizationMembers(
+          organizationId,
+          args
+        );
+      } catch (error) {
+        throw mapToGraphQLError(error);
+      }
+    },
   },
   Mutation: {
     addOrganization: async (_, { input }) => {

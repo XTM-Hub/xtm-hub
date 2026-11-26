@@ -1,5 +1,4 @@
 import { withTransaction } from '../../context/database.context';
-import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import {
   SubscriptionId,
   SubscriptionMutator,
@@ -8,8 +7,7 @@ import User from '../../model/kanel/public/User';
 import UserService, {
   UserServiceId,
 } from '../../model/kanel/public/UserService';
-import { ErrorCode, ForbiddenErrorCode } from '../../utils/error/error.code';
-import { AuthHelper } from '../security-management/capability/auth.helper';
+import { ErrorCode } from '../../utils/error/error.code';
 import { UserServiceCapabilityHelper } from '../security-management/user-service-capability/user-service-capability.helper';
 import { SubscriptionDomain } from '../subscription/subscription.domain';
 import { UserServiceDomain } from './user-service.domain';
@@ -19,8 +17,7 @@ export const UserServiceApp = {
     user: User,
     subscriptionId: SubscriptionId,
     emails: string[],
-    capabilities: string[],
-    serviceInstanceId: ServiceInstanceId
+    capabilities: string[]
   ): Promise<UserService[]> => {
     if (emails.some((email) => email === user.email)) {
       throw new Error(ErrorCode.CantSubscribeYourself);
@@ -35,10 +32,6 @@ export const UserServiceApp = {
       throw new Error(ErrorCode.SubscriptionNotFound);
     }
 
-    if (subscription.service_instance_id !== serviceInstanceId) {
-      throw new Error(ForbiddenErrorCode.ServiceNotManageable);
-    }
-
     return UserServiceDomain.addServiceToUsers(
       subscription,
       emails,
@@ -46,35 +39,19 @@ export const UserServiceApp = {
     );
   },
 
-  deleteUserServices: async (
-    userServiceIds: UserServiceId[],
-    serviceInstanceId: ServiceInstanceId
-  ) => {
-    const [firstUserServiceId] = userServiceIds;
-    if (!firstUserServiceId) {
+  deleteUserServices: async (userServiceIds: UserServiceId[]) => {
+    if (userServiceIds.length === 0) {
       return [];
-    }
-    const userServiceIsInService =
-      await AuthHelper.checkUserServiceIsInServiceInstance(
-        firstUserServiceId,
-        serviceInstanceId
-      );
-    if (!userServiceIsInService) {
-      throw new Error(ForbiddenErrorCode.ServiceNotManageable);
     }
     return UserServiceDomain.deleteUserServices(userServiceIds);
   },
   editUserService: async (
     userServiceId: UserServiceId,
-    capabilities: string[],
-    serviceInstanceId: ServiceInstanceId
+    capabilities: string[]
   ): Promise<UserService> => {
     const userService =
       await UserServiceDomain.loadUserServiceById(userServiceId);
 
-    if (userService.subscription.service_instance_id !== serviceInstanceId) {
-      throw new Error(ForbiddenErrorCode.ServiceNotManageable);
-    }
     await withTransaction(async () => {
       await UserServiceDomain.deleteUserCapabilityById(userService.id);
       await UserServiceCapabilityHelper.insertCapabilities(capabilities, [

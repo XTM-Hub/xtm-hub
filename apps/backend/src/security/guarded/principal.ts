@@ -1,4 +1,9 @@
-import { PortalCapability } from '../../__generated__/resolvers-types';
+import {
+  ApiTokenScope,
+  PortalCapability,
+} from '../../__generated__/resolvers-types';
+import { requestContext } from '../../context/request.context';
+import { ApiTokenId } from '../../model/kanel/public/ApiToken';
 import { OrganizationId } from '../../model/kanel/public/Organization';
 import { UserId } from '../../model/kanel/public/User';
 import { UserLoadUserBy } from '../../model/user';
@@ -42,6 +47,8 @@ export type Principal =
       portalCapabilities: Set<PortalCapability>;
       selectedOrganizationId: OrganizationId;
       memberships: NonNullable<UserLoadUserBy['organization_capabilities']>;
+      // Set when an API token authenticated the request
+      apiToken?: { id: ApiTokenId; scope: ApiTokenScope };
     }
   | {
       kind: 'system';
@@ -152,6 +159,9 @@ export const buildPrincipal = async (
     user.capabilities = await UserDomain.getCapabilities(user.id);
   }
 
+  // Set by the request middleware for a request a Bearer token authenticated, whose `context.user` is narrowed to it
+  const apiToken = requestContext.get()?.apiToken;
+
   return {
     kind: 'user',
     actorId: user.id,
@@ -162,5 +172,6 @@ export const buildPrincipal = async (
     ),
     selectedOrganizationId: user.selected_organization_id,
     memberships: user.organization_capabilities ?? [],
+    ...(apiToken && { apiToken: { id: apiToken.id, scope: apiToken.scope } }),
   };
 };

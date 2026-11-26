@@ -83,10 +83,13 @@ import { TestAuth0Helper } from './test.auth0.helper';
 import { TestContentTranslationHelper } from './test.content-translation.helper';
 import { TestDeploymentHelper } from './test.deployment.helper';
 import { TestDocumentHelper } from './test.document.helper';
+import { TestGuardFixturesHelper } from './test.guard-fixtures.helper';
 import { TestNewsfeedHelper } from './test.newsfeed.helper';
+import { TestPlatformAssertionHelper } from './test.platform-assertion.helper';
 import { TestPlatformCallerHelper } from './test.platform-caller.helper';
 import { TestServiceHelper } from './test.service.helper';
 import { TestSessionHelper } from './test.session.helper';
+import { TestUserServiceSceneHelper } from './test.user-service-scene.helper';
 import { TestUserHelper } from './test.user.helper';
 
 export { seedDocuments } from './perf/test.document.perf.helper';
@@ -105,7 +108,9 @@ export const TestHelper = {
   ...TestServiceHelper,
   ...TestPlatformConfigurationHelper,
   ...TestPlatformCallerHelper,
+  ...TestPlatformAssertionHelper,
   ...TestUserHelper,
+  ...TestUserServiceSceneHelper,
   ...TestAuth0Helper,
   ...TestDeploymentHelper,
   ...TestNewsfeedHelper,
@@ -113,6 +118,7 @@ export const TestHelper = {
   ...TestSessionHelper,
   ...TestAccessMatrixHelper,
   ...TestApiTokenHelper,
+  ...TestGuardFixturesHelper,
   subscription: {
     create: async (data?: Partial<Subscription>): Promise<Subscription> => {
       const [subscription] = await db<Subscription>('Subscription')
