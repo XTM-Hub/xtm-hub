@@ -16,10 +16,10 @@ import {
   PlatformContract,
   PlatformIdentifier,
   RegisteredPlatform,
+  SaasPlatformConnection,
   SaasPlatformData,
   SaasPlatformMetricsPeriod,
   SaasPlatformOrdering,
-  SaasPlatformPage,
   SaasPlatformResolvers,
   SaasProduct,
 } from '../../__generated__/resolvers-types';
@@ -27,9 +27,9 @@ import { requestContext } from '../../context/request.context';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { PortalContext } from '../../model/portal-context';
 import createSchema from '../../server/graphql-schema';
-import { SaasManagerClient } from '../../thirdparty/saasmanager/client';
 import { PlatformConfigurationDomain } from '../registration/platform-configuration/platform-configuration.domain';
 import { RegistrationDomain } from '../registration/registration.domain';
+import { SaasManagerInstanceDomain } from '../saas-manager-instance/saas-manager-instance.domain';
 import { ServiceInstanceDomain } from '../service/instance/service-instance.domain';
 import { ProductInformationApp } from './product-information.app';
 import productInformationResolver from './product-information.resolver';
@@ -114,7 +114,7 @@ describe('query.registeredSaasPlatformData', () => {
     let serviceInstanceId: ServiceInstanceId;
 
     beforeEach(async () => {
-      // The days asked to the SaaS Manager depend on the current date.
+      // The metrics window read depends on the current date.
       vi.useFakeTimers({ toFake: ['Date'] });
       vi.setSystemTime('2026-10-27T09:00:00.000Z');
       requestContext.set(requestContextRegistererUserSecondOrga);
@@ -148,11 +148,11 @@ describe('query.registeredSaasPlatformData', () => {
     });
 
     const spySaasManager = () =>
-      vi.spyOn(SaasManagerClient, 'callInstanceApi').mockResolvedValue({
-        ok: true,
-        status: 200,
-        json: async () => metadata,
-      } as Response);
+      vi.spyOn(SaasManagerInstanceDomain, 'loadInstance').mockResolvedValue({
+        data: metadata,
+        metrics: null,
+        generated_at: new Date(),
+      });
 
     it('should return the data of a platform of the user organization', async () => {
       // Given
@@ -174,13 +174,10 @@ describe('query.registeredSaasPlatformData', () => {
 
       // Then
       expect(result).toMatchObject({ metadata });
-      expect(callSpy).toHaveBeenCalledExactlyOnceWith({
-        platform_id: platformId,
-        include_metrics: 95,
-      });
+      expect(callSpy).toHaveBeenCalledExactlyOnceWith(platformId);
     });
 
-    it('should return null without asking the SaaS Manager when the platform belongs to another organization', async () => {
+    it('should return null without reading the pushed platform when the platform belongs to another organization', async () => {
       // Given
       const callSpy = spySaasManager();
       requestContext.set(requestContextSimpleUserFiligran2);
@@ -278,8 +275,8 @@ describe('query.registeredSaasPlatformData', () => {
 
 describe('query.saasManagerPlatforms', () => {
   const args = {
-    page: 2,
-    pageSize: 25,
+    first: 25,
+    after: btoa('25'),
     orderBy: SaasPlatformOrdering.CustomerName,
     orderMode: OrderingMode.Asc,
     searchTerm: 'filigran',
@@ -287,14 +284,18 @@ describe('query.saasManagerPlatforms', () => {
 
   it('should pass the pagination args to productInformationApp and return its page', async () => {
     // Given
-    const expectedPage: SaasPlatformPage = {
+    const expectedPage: SaasPlatformConnection = {
       totalCount: 26,
-      platforms: [
+      pageInfo: { hasNextPage: true, hasPreviousPage: false },
+      edges: [
         {
-          id: uuidv4(),
-          status: 'active',
-          product: SaasProduct.Octi,
-          metadata: { hostname: 'my-platform.example.com' },
+          cursor: btoa('26'),
+          node: {
+            id: uuidv4(),
+            status: 'active',
+            product: SaasProduct.Octi,
+            metadata: { hostname: 'my-platform.example.com' },
+          },
         },
       ],
     };
@@ -314,26 +315,6 @@ describe('query.saasManagerPlatforms', () => {
     // Then
     expect(loadSpy).toHaveBeenCalledExactlyOnceWith(args);
     expect(result).toEqual(expectedPage);
-  });
-
-  it('should return null when productInformationApp cannot load the platforms', async () => {
-    // Given
-    vi.spyOn(
-      ProductInformationApp,
-      'loadSaasManagerPlatforms'
-    ).mockResolvedValue(null);
-
-    // When
-    const result = await productInformationResolver.Query!
-      .saasManagerPlatforms!(
-      {},
-      args,
-      contextSimpleUserFiligran2,
-      GRAPHQL_RESOLVE_INFO
-    );
-
-    // Then
-    expect(result).toBeNull();
   });
 });
 

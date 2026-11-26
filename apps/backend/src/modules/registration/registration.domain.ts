@@ -35,7 +35,11 @@ import { OrganizationDomain } from '../organization-management/organization/orga
 import { AuthHelper } from '../security-management/capability/auth.helper';
 import { ServiceInstanceDomain } from '../service/instance/service-instance.domain';
 import { SubscriptionDomain } from '../subscription/subscription.domain';
-import { PlatformConfigurationDomain } from './platform-configuration/platform-configuration.domain';
+import {
+  PlatformConfigurationDomain,
+  selectResolvedCommercialModel,
+  whereSaasCommercialModel,
+} from './platform-configuration/platform-configuration.domain';
 import { serviceDefinitionIdentifierMappedByPlatformIdentifier } from './registration.mapping';
 
 export type PlatformConfigurationInput = {
@@ -234,12 +238,13 @@ const selectAdminRegisteredPlatformColumns = (query: Knex.QueryBuilder) =>
 
 const LTS_VERSION_PATTERN = '%-lts%';
 
-const RegisteredPlatformsSelectColumns = [
+const registeredPlatformsSelectColumns = () => [
   'ServiceDefinition.identifier as identifier',
   'ServiceInstance.id as id',
   'ServiceInstance.illustration_document_id as illustration_document_id',
   'PlatformConfiguration.*',
-] as const;
+  selectResolvedCommercialModel(),
+];
 
 export const RegistrationDomain = {
   registerNewPlatform: async ({
@@ -405,11 +410,7 @@ export const RegistrationDomain = {
         '=',
         PlatformConfigurationStatus.Active
       )
-      .where(
-        'PlatformConfiguration.commercial_model',
-        '=',
-        CommercialModel.Saas
-      )
+      .modify(whereSaasCommercialModel)
       .orderBy('PlatformConfiguration.last_connectivity_check', 'desc', 'last');
   },
 
@@ -525,7 +526,7 @@ export const RegistrationDomain = {
           );
         }
       })
-      .select(RegisteredPlatformsSelectColumns);
+      .select(registeredPlatformsSelectColumns());
   },
 
   loadRegisteredPlatforms: async (
@@ -646,7 +647,7 @@ const getRegisteredPlatformsDataQuery = ({
       '=',
       'ServiceInstance.id'
     )
-    .select(RegisteredPlatformsSelectColumns);
+    .select(registeredPlatformsSelectColumns());
   if (!skipOrganizationFilter) {
     query.where('Subscription.organization_id', '=', userSelectedOrganization);
   }

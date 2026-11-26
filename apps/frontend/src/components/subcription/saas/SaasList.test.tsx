@@ -117,7 +117,7 @@ const mockSaasPlatforms = (nodes: SaasPlatformRowFragment[]) =>
     data: {
       saasManagerPlatforms: {
         totalCount: nodes.length,
-        platforms: nodes,
+        edges: nodes.map((node) => ({ node })),
       },
     },
     isLoading: false,
@@ -189,16 +189,11 @@ describe('SaasList', () => {
     }
   );
 
-  it.each([
-    ['the query fails', { data: undefined, isError: true }],
-    [
-      'the SaaS Manager cannot be reached',
-      { data: { saasManagerPlatforms: null }, isError: false },
-    ],
-  ])('should display an error message when %s', (_, queryResult) => {
+  it('should display an error message when the query fails', () => {
     // Given
     mocks.useSaasManagerPlatformsListQuery.mockReturnValue({
-      ...queryResult,
+      data: undefined,
+      isError: true,
       isLoading: false,
     });
 
@@ -226,8 +221,8 @@ describe('SaasList', () => {
 
     // Then the stored settings are used as query variables
     expect(lastQueryVariables()).toEqual({
-      page: 1,
-      pageSize: 100,
+      first: 100,
+      after: btoa('0'),
       orderBy: SaasPlatformOrdering.Plan,
       orderMode: OrderingMode.Desc,
       searchTerm: null,
@@ -235,13 +230,13 @@ describe('SaasList', () => {
     });
   });
 
-  it('should fetch the next page of the SaaS Manager when the user goes to the next page', async () => {
+  it('should fetch the next page when the user goes to the next page', async () => {
     // Given a list of more saas platforms than a page holds
     mocks.useSaasManagerPlatformsListQuery.mockReturnValue({
       data: {
         saasManagerPlatforms: {
           totalCount: 120,
-          platforms: [buildSaasPlatform()],
+          edges: [{ node: buildSaasPlatform() }],
         },
       },
       isLoading: false,
@@ -253,8 +248,11 @@ describe('SaasList', () => {
       screen.getByRole('button', { name: 'DesignSystem.DataTable.NextPage' })
     );
 
-    // Then the second page of the SaaS Manager is asked for
-    expect(lastQueryVariables()).toMatchObject({ page: 2, pageSize: 50 });
+    // Then the second page is asked for
+    expect(lastQueryVariables()).toMatchObject({
+      first: 50,
+      after: btoa('50'),
+    });
   });
 
   it('should display the customer, the full product name and the plan of each saas platform', () => {
@@ -653,7 +651,7 @@ describe('SaasList', () => {
     // Then every product the SaaS Manager can filter on is offered by its full name
     expect(
       screen.getAllByRole('option').map((option) => option.textContent)
-    ).toEqual(['CSMBoard.AllProducts', 'OpenCTI', 'OpenAEV', 'XTM One']);
+    ).toEqual(['CSMBoard.AllProducts', 'OpenCTI', 'OpenAEV']);
   });
 
   it('should fetch the saas platforms of every product again when the user picks all products', async () => {

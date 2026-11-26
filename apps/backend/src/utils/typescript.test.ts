@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { applyUpdate, isRecord, mapWithConcurrency } from './typescript';
+import {
+  applyUpdate,
+  isRecord,
+  mapWithConcurrency,
+  readNonEmptyString,
+} from './typescript';
 
 describe('isRecord', () => {
   it.each`
@@ -19,6 +24,22 @@ describe('isRecord', () => {
     ${'a number'}  | ${1}
   `('should return false for $case', ({ input }) => {
     expect(isRecord(input)).toBe(false);
+  });
+});
+
+describe('readNonEmptyString', () => {
+  it('should return the string of the key', () => {
+    expect(readNonEmptyString({ key: 'value' }, 'key')).toBe('value');
+  });
+
+  it.each`
+    case                 | record
+    ${'missing'}         | ${{}}
+    ${'an empty string'} | ${{ key: '' }}
+    ${'a number'}        | ${{ key: 1 }}
+    ${'null'}            | ${{ key: null }}
+  `('should return null when the key is $case', ({ record }) => {
+    expect(readNonEmptyString(record, 'key')).toBeNull();
   });
 });
 

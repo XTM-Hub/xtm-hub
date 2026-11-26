@@ -1265,6 +1265,7 @@ export type Mutation = {
   logout: Scalars['ID']['output'];
   newProductVersion: Success;
   publishContentTranslationDrafts: Array<ContentTranslationEntry>;
+  purgeSaasManagerInstances: SaasManagerSyncResult;
   refreshPlatformRegistrationConnectivityStatus: RefreshPlatformRegistrationConnectivityStatusResponse;
   refreshPlatformRegistrationConnectivityStatusAllTenants: RefreshPlatformRegistrationConnectivityStatusAllTenantsResponse;
   refreshPlatformRegistrationConnectivityStatusSingleTenant: RefreshPlatformRegistrationConnectivityStatusResponse;
@@ -1297,6 +1298,7 @@ export type Mutation = {
   updateVotableFeature: VotableFeature;
   updateVotingRound: VotingRound;
   uploadUserPicture: User;
+  upsertSaasManagerInstances: SaasManagerSyncResult;
   voteForFeature: Array<VotableFeature>;
 };
 
@@ -1624,6 +1626,11 @@ export type MutationNewProductVersionArgs = {
 };
 
 
+export type MutationPurgeSaasManagerInstancesArgs = {
+  before: Scalars['Date']['input'];
+};
+
+
 export type MutationRefreshPlatformRegistrationConnectivityStatusArgs = {
   input: RefreshPlatformRegistrationConnectivityStatusInput;
 };
@@ -1781,6 +1788,12 @@ export type MutationUpdateVotingRoundArgs = {
 
 export type MutationUploadUserPictureArgs = {
   document: Scalars['Upload']['input'];
+};
+
+
+export type MutationUpsertSaasManagerInstancesArgs = {
+  generatedAt: Scalars['Date']['input'];
+  instances: Array<SaasManagerInstanceInput>;
 };
 
 
@@ -2142,6 +2155,7 @@ export enum PortalCapability {
   ManageConnectorsIngestions = 'MANAGE_CONNECTORS_INGESTIONS',
   ManageDeployment = 'MANAGE_DEPLOYMENT',
   ManageManifestIngestions = 'MANAGE_MANIFEST_INGESTIONS',
+  ManageSaasManagerInstances = 'MANAGE_SAAS_MANAGER_INSTANCES',
   ModifyCompetitors = 'MODIFY_COMPETITORS',
   ModifyServiceMetadata = 'MODIFY_SERVICE_METADATA',
   ModifyTrials = 'MODIFY_TRIALS',
@@ -2236,7 +2250,7 @@ export type Query = {
   registeredProductVersions: Array<RegisteredProductVersion>;
   registeredSaasPlatformData: Maybe<SaasPlatformData>;
   rolePortals: Array<RolePortal>;
-  saasManagerPlatforms: Maybe<SaasPlatformPage>;
+  saasManagerPlatforms: SaasPlatformConnection;
   seoServiceInstance: SeoServiceInstance;
   seoServiceInstanceMetadata: Array<SeoServiceInstanceMetadata>;
   seoServiceInstances: Array<SeoServiceInstance>;
@@ -2495,10 +2509,10 @@ export type QueryRegisteredSaasPlatformDataArgs = {
 
 
 export type QuerySaasManagerPlatformsArgs = {
+  after: InputMaybe<Scalars['ID']['input']>;
+  first: Scalars['Int']['input'];
   orderBy: SaasPlatformOrdering;
   orderMode: OrderingMode;
-  page: Scalars['Int']['input'];
-  pageSize: Scalars['Int']['input'];
   product: InputMaybe<SaasProduct>;
   searchTerm: InputMaybe<Scalars['String']['input']>;
 };
@@ -2805,6 +2819,28 @@ export type SsoGroupRolePortal = {
   ssoGroup: Scalars['String']['output'];
 };
 
+export type SaasManagerInstanceIndexInput = {
+  customer_name: Scalars['String']['input'];
+  customer_techname: InputMaybe<Scalars['String']['input']>;
+  /** @deprecated Ignored, the list orders on data.plan */
+  plan_code: InputMaybe<Scalars['String']['input']>;
+  status_family: InputMaybe<Scalars['String']['input']>;
+  upgrade_group: InputMaybe<Scalars['String']['input']>;
+};
+
+export type SaasManagerInstanceInput = {
+  data: Scalars['JSON']['input'];
+  index: SaasManagerInstanceIndexInput;
+  metrics: InputMaybe<Scalars['JSON']['input']>;
+};
+
+export type SaasManagerSyncResult = {
+  __typename?: 'SaasManagerSyncResult';
+  applied: Scalars['Int']['output'];
+  removed: Scalars['Int']['output'];
+  skipped: Scalars['Int']['output'];
+};
+
 export type SaasPlatform = {
   __typename?: 'SaasPlatform';
   commercial_model: Maybe<Scalars['String']['output']>;
@@ -2818,6 +2854,13 @@ export type SaasPlatform = {
   sla_cmtd: Maybe<Scalars['Float']['output']>;
   status: Maybe<Scalars['String']['output']>;
   storage: Maybe<SaasPlatformStorage>;
+};
+
+export type SaasPlatformConnection = {
+  __typename?: 'SaasPlatformConnection';
+  edges: Array<SaasPlatformEdge>;
+  pageInfo: PageInfo;
+  totalCount: Scalars['Int']['output'];
 };
 
 export enum SaasPlatformContractStatus {
@@ -2838,6 +2881,12 @@ export type SaasPlatformData = {
   metrics: Maybe<SaasPlatformMetrics>;
   sla: Maybe<SaasPlatformSla>;
   storage: Maybe<SaasPlatformStorage>;
+};
+
+export type SaasPlatformEdge = {
+  __typename?: 'SaasPlatformEdge';
+  cursor: Scalars['String']['output'];
+  node: SaasPlatform;
 };
 
 export enum SaasPlatformHealthIssue {
@@ -2889,17 +2938,11 @@ export type SaasPlatformMonthlySla = {
 };
 
 export enum SaasPlatformOrdering {
-  CustomerName = 'customer__name',
+  CustomerName = 'customer_name',
   EndDate = 'end_date',
   Plan = 'plan',
   Product = 'product'
 }
-
-export type SaasPlatformPage = {
-  __typename?: 'SaasPlatformPage';
-  platforms: Array<SaasPlatform>;
-  totalCount: Scalars['Int']['output'];
-};
 
 export enum SaasPlatformResolution {
   Day = 'day',
@@ -4538,8 +4581,8 @@ export type SsoGroupRolePortalsQuery = { __typename?: 'Query', ssoGroupRolePorta
 export type SaasPlatformRowFragment = { __typename?: 'SaasPlatform', id: string, product: SaasProduct | null, customer: string | null, sla_cmtd: number | null, health_issues: Array<SaasPlatformHealthIssue> | null, contract_status: SaasPlatformContractStatus | null, metadata: { __typename?: 'SaasPlatformMetadata', plan: string | null, end_date: any | null }, storage: { __typename?: 'SaasPlatformStorage', es_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null } | null, s3_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null } | null, postgres_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null } | null } | null, registered_platform: { __typename?: 'RegisteredPlatform', id: string, service_instance_id: any, identifier: ServiceDefinitionIdentifier, version: string | null, organization: { __typename?: 'Organization', id: string, name: string, administrator_emails: Array<string> | null } | null } | null };
 
 export type SaasManagerPlatformsListQueryVariables = Exact<{
-  page: Scalars['Int']['input'];
-  pageSize: Scalars['Int']['input'];
+  first: Scalars['Int']['input'];
+  after: InputMaybe<Scalars['ID']['input']>;
   orderBy: SaasPlatformOrdering;
   orderMode: OrderingMode;
   searchTerm: InputMaybe<Scalars['String']['input']>;
@@ -4547,7 +4590,7 @@ export type SaasManagerPlatformsListQueryVariables = Exact<{
 }>;
 
 
-export type SaasManagerPlatformsListQuery = { __typename?: 'Query', saasManagerPlatforms: { __typename?: 'SaasPlatformPage', totalCount: number, platforms: Array<{ __typename?: 'SaasPlatform', id: string, product: SaasProduct | null, customer: string | null, sla_cmtd: number | null, health_issues: Array<SaasPlatformHealthIssue> | null, contract_status: SaasPlatformContractStatus | null, metadata: { __typename?: 'SaasPlatformMetadata', plan: string | null, end_date: any | null }, storage: { __typename?: 'SaasPlatformStorage', es_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null } | null, s3_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null } | null, postgres_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null } | null } | null, registered_platform: { __typename?: 'RegisteredPlatform', id: string, service_instance_id: any, identifier: ServiceDefinitionIdentifier, version: string | null, organization: { __typename?: 'Organization', id: string, name: string, administrator_emails: Array<string> | null } | null } | null }> } | null };
+export type SaasManagerPlatformsListQuery = { __typename?: 'Query', saasManagerPlatforms: { __typename?: 'SaasPlatformConnection', totalCount: number, edges: Array<{ __typename?: 'SaasPlatformEdge', node: { __typename?: 'SaasPlatform', id: string, product: SaasProduct | null, customer: string | null, sla_cmtd: number | null, health_issues: Array<SaasPlatformHealthIssue> | null, contract_status: SaasPlatformContractStatus | null, metadata: { __typename?: 'SaasPlatformMetadata', plan: string | null, end_date: any | null }, storage: { __typename?: 'SaasPlatformStorage', es_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null } | null, s3_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null } | null, postgres_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null } | null } | null, registered_platform: { __typename?: 'RegisteredPlatform', id: string, service_instance_id: any, identifier: ServiceDefinitionIdentifier, version: string | null, organization: { __typename?: 'Organization', id: string, name: string, administrator_emails: Array<string> | null } | null } | null } }> } };
 
 export type AddUsersToBundleGroupsMutationVariables = Exact<{
   serviceInstanceId: Scalars['ServiceInstanceId']['input'];
@@ -9702,18 +9745,20 @@ useInfiniteSsoGroupRolePortalsQuery.getRootKey = () => ['SSOGroupRolePortals.inf
 useSsoGroupRolePortalsQuery.fetcher = (client: GraphQLClient, variables?: SsoGroupRolePortalsQueryVariables, headers?: RequestInit['headers']) => fetcher<SsoGroupRolePortalsQuery, SsoGroupRolePortalsQueryVariables>(client, SsoGroupRolePortalsDocument, variables, headers);
 
 export const SaasManagerPlatformsListDocument = `
-    query SaasManagerPlatformsList($page: Int!, $pageSize: Int!, $orderBy: SaasPlatformOrdering!, $orderMode: OrderingMode!, $searchTerm: String, $product: SaasProduct) {
+    query SaasManagerPlatformsList($first: Int!, $after: ID, $orderBy: SaasPlatformOrdering!, $orderMode: OrderingMode!, $searchTerm: String, $product: SaasProduct) {
   saasManagerPlatforms(
-    page: $page
-    pageSize: $pageSize
+    first: $first
+    after: $after
     orderBy: $orderBy
     orderMode: $orderMode
     searchTerm: $searchTerm
     product: $product
   ) {
     totalCount
-    platforms {
-      ...SaasPlatformRow
+    edges {
+      node {
+        ...SaasPlatformRow
+      }
     }
   }
 }

@@ -1,0 +1,1087 @@
+{
+  "detail": {
+    "019a0000-0000-7000-8000-00000000dead": {
+      "body": null,
+      "status": 404
+    },
+    "019a0000-0000-7000-8000-00000000dead?include_metrics=187": {
+      "body": null,
+      "status": 404
+    },
+    "019a0000-0000-7000-8000-00000000dead?include_metrics=32": {
+      "body": null,
+      "status": 404
+    },
+    "019a0000-0000-7000-8000-00000000dead?include_metrics=95": {
+      "body": null,
+      "status": 404
+    },
+    "01a2123d-6c9a-7a20-a0bd-31e4bed83f7c": {
+      "body": {
+        "commercial_model": "DEV",
+        "customer": "cust11",
+        "end_date": "2027-01-01",
+        "hostname": "host-13.example.com",
+        "id": "01a2123d-6c9a-7a20-a0bd-31e4bed83f7c",
+        "metrics": null,
+        "plan": "test-plan-shared",
+        "product": "OCTI",
+        "region": "TEST-REGION-10-PRODUCTION",
+        "sla_cmtd": null,
+        "start_date": "2026-01-01",
+        "status": "DEPLOYED",
+        "storage": {
+          "es_used_size": {
+            "limit": null,
+            "percent": null,
+            "time": "2026-11-25T10:25:02+01:00",
+            "used": 101.0
+          },
+          "postgres_used_size": null,
+          "s3_used_size": null
+        }
+      },
+      "status": 200
+    },
+    "01a2123d-6c9a-7a20-a0bd-31e4bed83f7c?include_metrics=187": {
+      "body": {
+        "commercial_model": "DEV",
+        "customer": "cust11",
+        "end_date": "2027-01-01",
+        "hostname": "host-13.example.com",
+        "id": "01a2123d-6c9a-7a20-a0bd-31e4bed83f7c",
+        "metrics": {
+          "end": "2026-11-25T10:25:02+00:00",
+          "instance": "01a2123d-6c9a-7a20-a0bd-31e4bed83f7c",
+          "resolution": "day",
+          "series": [
+            {
+              "metric_type": "es_used_size",
+              "points": [
+                {
+                  "t": "2026-10-16T00:00:00+00:00",
+                  "v": 1060.0
+                },
+                {
+                  "t": "2026-11-24T00:00:00+00:00",
+                  "v": 130.0
+                },
+                {
+                  "t": "2026-11-25T00:00:00+00:00",
+                  "v": 101.0
+                }
+              ]
+            }
+          ],
+          "start": "2026-05-22T00:00:00+00:00"
+        },
+        "plan": "test-plan-shared",
+        "product": "OCTI",
+        "region": "TEST-REGION-10-PRODUCTION",
+        "sla_cmtd": null,
+        "start_date": "2026-01-01",
+        "status": "DEPLOYED",
+        "storage": {
+          "es_used_size": {
+            "limit": null,
+            "percent": null,
+            "time": "2026-11-25T10:25:02+01:00",
+            "used": 101.0
+          },
+          "postgres_used_size": null,
+          "s3_used_size": null
+        }
+      },
+      "status": 200
+    },
+    "01a2123d-6c9a-7a20-a0bd-31e4bed83f7c?include_metrics=32": {
+      "body": {
+        "commercial_model": "DEV",
+        "customer": "cust11",
+        "end_date": "2027-01-01",
+        "hostname": "host-13.example.com",
+        "id": "01a2123d-6c9a-7a20-a0bd-31e4bed83f7c",
+        "metrics": {
+          "end": "2026-11-25T10:25:02+00:00",
+          "instance": "01a2123d-6c9a-7a20-a0bd-31e4bed83f7c",
+          "resolution": "day",
+          "series": [
+            {
+              "metric_type": "es_used_size",
+              "points": [
+                {
+                  "t": "2026-11-24T00:00:00+00:00",
+                  "v": 130.0
+                },
+                {
+                  "t": "2026-11-25T00:00:00+00:00",
+                  "v": 101.0
+                }
+              ]
+            }
+          ],
+          "start": "2026-10-24T00:00:00+00:00"
+        },
+        "plan": "test-plan-shared",
+        "product": "OCTI",
+        "region": "TEST-REGION-10-PRODUCTION",
+        "sla_cmtd": null,
+        "start_date": "2026-01-01",
+        "status": "DEPLOYED",
+        "storage": {
+          "es_used_size": {
+            "limit": null,
+            "percent": null,
+            "time": "2026-11-25T10:25:02+01:00",
+            "used": 101.0
+          },
+          "postgres_used_size": null,
+          "s3_used_size": null
+        }
+      },
+      "status": 200
+    },
+    "01a2123d-6c9a-7a20-a0bd-31e4bed83f7c?include_metrics=95": {
+      "body": {
+        "commercial_model": "DEV",
+        "customer": "cust11",
+        "end_date": "2027-01-01",
+        "hostname": "host-13.example.com",
+        "id": "01a2123d-6c9a-7a20-a0bd-31e4bed83f7c",
+        "metrics": {
+          "end": "2026-11-25T10:25:02+00:00",
+          "instance": "01a2123d-6c9a-7a20-a0bd-31e4bed83f7c",
+          "resolution": "day",
+          "series": [
+            {
+              "metric_type": "es_used_size",
+              "points": [
+                {
+                  "t": "2026-10-16T00:00:00+00:00",
+                  "v": 1060.0
+                },
+                {
+                  "t": "2026-11-24T00:00:00+00:00",
+                  "v": 130.0
+                },
+                {
+                  "t": "2026-11-25T00:00:00+00:00",
+                  "v": 101.0
+                }
+              ]
+            }
+          ],
+          "start": "2026-08-22T00:00:00+00:00"
+        },
+        "plan": "test-plan-shared",
+        "product": "OCTI",
+        "region": "TEST-REGION-10-PRODUCTION",
+        "sla_cmtd": null,
+        "start_date": "2026-01-01",
+        "status": "DEPLOYED",
+        "storage": {
+          "es_used_size": {
+            "limit": null,
+            "percent": null,
+            "time": "2026-11-25T10:25:02+01:00",
+            "used": 101.0
+          },
+          "postgres_used_size": null,
+          "s3_used_size": null
+        }
+      },
+      "status": 200
+    },
+    "01a2123d-6ca4-7f77-9820-a2931985e123": {
+      "body": {
+        "commercial_model": "DEV",
+        "customer": "cust20",
+        "end_date": "2027-01-01",
+        "hostname": "host-22.example.com",
+        "id": "01a2123d-6ca4-7f77-9820-a2931985e123",
+        "metrics": null,
+        "plan": "test-plan-19",
+        "product": "OCTI",
+        "region": "TEST-REGION-18-PRODUCTION",
+        "sla_cmtd": null,
+        "start_date": "2026-01-01",
+        "status": "REMOVED",
+        "storage": {
+          "es_used_size": null,
+          "postgres_used_size": null,
+          "s3_used_size": null
+        }
+      },
+      "status": 200
+    },
+    "01a2123d-6ca4-7f77-9820-a2931985e123?include_metrics=187": {
+      "body": {
+        "commercial_model": "DEV",
+        "customer": "cust20",
+        "end_date": "2027-01-01",
+        "hostname": "host-22.example.com",
+        "id": "01a2123d-6ca4-7f77-9820-a2931985e123",
+        "metrics": {
+          "end": "2026-11-25T10:25:02+00:00",
+          "instance": "01a2123d-6ca4-7f77-9820-a2931985e123",
+          "resolution": "day",
+          "series": [],
+          "start": "2026-05-22T00:00:00+00:00"
+        },
+        "plan": "test-plan-19",
+        "product": "OCTI",
+        "region": "TEST-REGION-18-PRODUCTION",
+        "sla_cmtd": null,
+        "start_date": "2026-01-01",
+        "status": "REMOVED",
+        "storage": {
+          "es_used_size": null,
+          "postgres_used_size": null,
+          "s3_used_size": null
+        }
+      },
+      "status": 200
+    },
+    "01a2123d-6ca4-7f77-9820-a2931985e123?include_metrics=32": {
+      "body": {
+        "commercial_model": "DEV",
+        "customer": "cust20",
+        "end_date": "2027-01-01",
+        "hostname": "host-22.example.com",
+        "id": "01a2123d-6ca4-7f77-9820-a2931985e123",
+        "metrics": {
+          "end": "2026-11-25T10:25:02+00:00",
+          "instance": "01a2123d-6ca4-7f77-9820-a2931985e123",
+          "resolution": "day",
+          "series": [],
+          "start": "2026-10-24T00:00:00+00:00"
+        },
+        "plan": "test-plan-19",
+        "product": "OCTI",
+        "region": "TEST-REGION-18-PRODUCTION",
+        "sla_cmtd": null,
+        "start_date": "2026-01-01",
+        "status": "REMOVED",
+        "storage": {
+          "es_used_size": null,
+          "postgres_used_size": null,
+          "s3_used_size": null
+        }
+      },
+      "status": 200
+    },
+    "01a2123d-6ca4-7f77-9820-a2931985e123?include_metrics=95": {
+      "body": {
+        "commercial_model": "DEV",
+        "customer": "cust20",
+        "end_date": "2027-01-01",
+        "hostname": "host-22.example.com",
+        "id": "01a2123d-6ca4-7f77-9820-a2931985e123",
+        "metrics": {
+          "end": "2026-11-25T10:25:02+00:00",
+          "instance": "01a2123d-6ca4-7f77-9820-a2931985e123",
+          "resolution": "day",
+          "series": [],
+          "start": "2026-08-22T00:00:00+00:00"
+        },
+        "plan": "test-plan-19",
+        "product": "OCTI",
+        "region": "TEST-REGION-18-PRODUCTION",
+        "sla_cmtd": null,
+        "start_date": "2026-01-01",
+        "status": "REMOVED",
+        "storage": {
+          "es_used_size": null,
+          "postgres_used_size": null,
+          "s3_used_size": null
+        }
+      },
+      "status": 200
+    }
+  },
+  "generated_at": "2026-11-25T10:25:02+00:00",
+  "instances": [
+    {
+      "data": {
+        "commercial_model": "DEV",
+        "customer": "cust11",
+        "end_date": "2027-01-01",
+        "hostname": "host-13.example.com",
+        "id": "01a2123d-6c9a-7a20-a0bd-31e4bed83f7c",
+        "plan": "test-plan-shared",
+        "product": "OCTI",
+        "region": "TEST-REGION-10-PRODUCTION",
+        "sla_cmtd": null,
+        "start_date": "2026-01-01",
+        "status": "DEPLOYED",
+        "storage": {
+          "es_used_size": {
+            "limit": null,
+            "percent": null,
+            "time": "2026-11-25T10:25:02+01:00",
+            "used": 101.0
+          },
+          "postgres_used_size": null,
+          "s3_used_size": null
+        }
+      },
+      "index": {
+        "customer_name": "acme",
+        "customer_techname": "cust11",
+        "plan_code": "test-plan-shared",
+        "status_family": "__in_service_family__",
+        "upgrade_group": "01a2123d-6c99-7043-83c9-3453c04aa6a4"
+      },
+      "metrics": {
+        "187": {
+          "end": "2026-11-25T10:25:02+00:00",
+          "instance": "01a2123d-6c9a-7a20-a0bd-31e4bed83f7c",
+          "resolution": "day",
+          "series": [
+            {
+              "metric_type": "es_used_size",
+              "points": [
+                {
+                  "t": "2026-10-16T00:00:00+00:00",
+                  "v": 1060.0
+                },
+                {
+                  "t": "2026-11-24T00:00:00+00:00",
+                  "v": 130.0
+                },
+                {
+                  "t": "2026-11-25T00:00:00+00:00",
+                  "v": 101.0
+                }
+              ]
+            }
+          ],
+          "start": "2026-05-22T00:00:00+00:00"
+        },
+        "32": {
+          "end": "2026-11-25T10:25:02+00:00",
+          "instance": "01a2123d-6c9a-7a20-a0bd-31e4bed83f7c",
+          "resolution": "day",
+          "series": [
+            {
+              "metric_type": "es_used_size",
+              "points": [
+                {
+                  "t": "2026-11-24T00:00:00+00:00",
+                  "v": 130.0
+                },
+                {
+                  "t": "2026-11-25T00:00:00+00:00",
+                  "v": 101.0
+                }
+              ]
+            }
+          ],
+          "start": "2026-10-24T00:00:00+00:00"
+        },
+        "7": {
+          "end": "2026-11-25T10:25:02+00:00",
+          "instance": "01a2123d-6c9a-7a20-a0bd-31e4bed83f7c",
+          "resolution": "hour",
+          "series": [
+            {
+              "metric_type": "es_used_size",
+              "points": [
+                {
+                  "t": "2026-11-24T04:00:00+00:00",
+                  "v": 130.0
+                },
+                {
+                  "t": "2026-11-25T09:00:00+00:00",
+                  "v": 101.0
+                }
+              ]
+            }
+          ],
+          "start": "2026-11-18T10:00:00+00:00"
+        },
+        "95": {
+          "end": "2026-11-25T10:25:02+00:00",
+          "instance": "01a2123d-6c9a-7a20-a0bd-31e4bed83f7c",
+          "resolution": "day",
+          "series": [
+            {
+              "metric_type": "es_used_size",
+              "points": [
+                {
+                  "t": "2026-10-16T00:00:00+00:00",
+                  "v": 1060.0
+                },
+                {
+                  "t": "2026-11-24T00:00:00+00:00",
+                  "v": 130.0
+                },
+                {
+                  "t": "2026-11-25T00:00:00+00:00",
+                  "v": 101.0
+                }
+              ]
+            }
+          ],
+          "start": "2026-08-22T00:00:00+00:00"
+        }
+      }
+    },
+    {
+      "data": {
+        "commercial_model": "DEV",
+        "customer": "cust15",
+        "end_date": "2026-06-30",
+        "hostname": "host-17.example.com",
+        "id": "01a2123d-6ca0-7c34-be61-d6ab6568878f",
+        "plan": "test-plan-shared",
+        "product": "OAEV",
+        "region": "TEST-REGION-14-PRODUCTION",
+        "sla_cmtd": null,
+        "start_date": "2025-12-02",
+        "status": "DEPLOYED",
+        "storage": {
+          "es_used_size": null,
+          "postgres_used_size": null,
+          "s3_used_size": null
+        }
+      },
+      "index": {
+        "customer_name": "Beta Corp",
+        "customer_techname": "cust15",
+        "plan_code": "test-plan-shared",
+        "status_family": "__in_service_family__",
+        "upgrade_group": "01a2123d-6c9f-7b13-9ce3-743ac440c88c"
+      },
+      "metrics": {
+        "187": {
+          "end": "2026-11-25T10:25:02+00:00",
+          "instance": "01a2123d-6ca0-7c34-be61-d6ab6568878f",
+          "resolution": "day",
+          "series": [],
+          "start": "2026-05-22T00:00:00+00:00"
+        },
+        "32": {
+          "end": "2026-11-25T10:25:02+00:00",
+          "instance": "01a2123d-6ca0-7c34-be61-d6ab6568878f",
+          "resolution": "day",
+          "series": [],
+          "start": "2026-10-24T00:00:00+00:00"
+        },
+        "7": {
+          "end": "2026-11-25T10:25:02+00:00",
+          "instance": "01a2123d-6ca0-7c34-be61-d6ab6568878f",
+          "resolution": "hour",
+          "series": [],
+          "start": "2026-11-18T10:00:00+00:00"
+        },
+        "95": {
+          "end": "2026-11-25T10:25:02+00:00",
+          "instance": "01a2123d-6ca0-7c34-be61-d6ab6568878f",
+          "resolution": "day",
+          "series": [],
+          "start": "2026-08-22T00:00:00+00:00"
+        }
+      }
+    },
+    {
+      "data": {
+        "commercial_model": "DEV",
+        "customer": "cust20",
+        "end_date": "2027-01-01",
+        "hostname": "host-22.example.com",
+        "id": "01a2123d-6ca4-7f77-9820-a2931985e123",
+        "plan": "test-plan-19",
+        "product": "OCTI",
+        "region": "TEST-REGION-18-PRODUCTION",
+        "sla_cmtd": null,
+        "start_date": "2026-01-01",
+        "status": "REMOVED",
+        "storage": {
+          "es_used_size": null,
+          "postgres_used_size": null,
+          "s3_used_size": null
+        }
+      },
+      "index": {
+        "customer_name": "Gamma",
+        "customer_techname": "cust20",
+        "plan_code": "test-plan-19",
+        "status_family": "__removed_family__",
+        "upgrade_group": "01a2123d-6ca3-78c4-ac3a-870a825e59fc"
+      },
+      "metrics": {
+        "187": {
+          "end": "2026-11-25T10:25:02+00:00",
+          "instance": "01a2123d-6ca4-7f77-9820-a2931985e123",
+          "resolution": "day",
+          "series": [],
+          "start": "2026-05-22T00:00:00+00:00"
+        },
+        "32": {
+          "end": "2026-11-25T10:25:02+00:00",
+          "instance": "01a2123d-6ca4-7f77-9820-a2931985e123",
+          "resolution": "day",
+          "series": [],
+          "start": "2026-10-24T00:00:00+00:00"
+        },
+        "7": {
+          "end": "2026-11-25T10:25:02+00:00",
+          "instance": "01a2123d-6ca4-7f77-9820-a2931985e123",
+          "resolution": "hour",
+          "series": [],
+          "start": "2026-11-18T10:00:00+00:00"
+        },
+        "95": {
+          "end": "2026-11-25T10:25:02+00:00",
+          "instance": "01a2123d-6ca4-7f77-9820-a2931985e123",
+          "resolution": "day",
+          "series": [],
+          "start": "2026-08-22T00:00:00+00:00"
+        }
+      }
+    }
+  ],
+  "list": {
+    "page=1&page_size=1&ordering=customer__name": {
+      "body": {
+        "count": 2,
+        "next": "http://testserver/api/hub/instance/?ordering=customer__name&page=2&page_size=1",
+        "previous": null,
+        "results": [
+          {
+            "commercial_model": "DEV",
+            "customer": "cust15",
+            "end_date": "2026-06-30",
+            "hostname": "host-17.example.com",
+            "id": "01a2123d-6ca0-7c34-be61-d6ab6568878f",
+            "plan": "test-plan-shared",
+            "product": "OAEV",
+            "region": "TEST-REGION-14-PRODUCTION",
+            "sla_cmtd": null,
+            "start_date": "2025-12-02",
+            "status": "DEPLOYED",
+            "storage": {
+              "es_used_size": null,
+              "postgres_used_size": null,
+              "s3_used_size": null
+            }
+          }
+        ]
+      },
+      "status": 200
+    },
+    "page=1&page_size=50&ordering=-customer__name": {
+      "body": {
+        "count": 2,
+        "next": null,
+        "previous": null,
+        "results": [
+          {
+            "commercial_model": "DEV",
+            "customer": "cust11",
+            "end_date": "2027-01-01",
+            "hostname": "host-13.example.com",
+            "id": "01a2123d-6c9a-7a20-a0bd-31e4bed83f7c",
+            "plan": "test-plan-shared",
+            "product": "OCTI",
+            "region": "TEST-REGION-10-PRODUCTION",
+            "sla_cmtd": null,
+            "start_date": "2026-01-01",
+            "status": "DEPLOYED",
+            "storage": {
+              "es_used_size": {
+                "limit": null,
+                "percent": null,
+                "time": "2026-11-25T10:25:02+01:00",
+                "used": 101.0
+              },
+              "postgres_used_size": null,
+              "s3_used_size": null
+            }
+          },
+          {
+            "commercial_model": "DEV",
+            "customer": "cust15",
+            "end_date": "2026-06-30",
+            "hostname": "host-17.example.com",
+            "id": "01a2123d-6ca0-7c34-be61-d6ab6568878f",
+            "plan": "test-plan-shared",
+            "product": "OAEV",
+            "region": "TEST-REGION-14-PRODUCTION",
+            "sla_cmtd": null,
+            "start_date": "2025-12-02",
+            "status": "DEPLOYED",
+            "storage": {
+              "es_used_size": null,
+              "postgres_used_size": null,
+              "s3_used_size": null
+            }
+          }
+        ]
+      },
+      "status": 200
+    },
+    "page=1&page_size=50&ordering=-end_date": {
+      "body": {
+        "count": 2,
+        "next": null,
+        "previous": null,
+        "results": [
+          {
+            "commercial_model": "DEV",
+            "customer": "cust11",
+            "end_date": "2027-01-01",
+            "hostname": "host-13.example.com",
+            "id": "01a2123d-6c9a-7a20-a0bd-31e4bed83f7c",
+            "plan": "test-plan-shared",
+            "product": "OCTI",
+            "region": "TEST-REGION-10-PRODUCTION",
+            "sla_cmtd": null,
+            "start_date": "2026-01-01",
+            "status": "DEPLOYED",
+            "storage": {
+              "es_used_size": {
+                "limit": null,
+                "percent": null,
+                "time": "2026-11-25T10:25:02+01:00",
+                "used": 101.0
+              },
+              "postgres_used_size": null,
+              "s3_used_size": null
+            }
+          },
+          {
+            "commercial_model": "DEV",
+            "customer": "cust15",
+            "end_date": "2026-06-30",
+            "hostname": "host-17.example.com",
+            "id": "01a2123d-6ca0-7c34-be61-d6ab6568878f",
+            "plan": "test-plan-shared",
+            "product": "OAEV",
+            "region": "TEST-REGION-14-PRODUCTION",
+            "sla_cmtd": null,
+            "start_date": "2025-12-02",
+            "status": "DEPLOYED",
+            "storage": {
+              "es_used_size": null,
+              "postgres_used_size": null,
+              "s3_used_size": null
+            }
+          }
+        ]
+      },
+      "status": 200
+    },
+    "page=1&page_size=50&ordering=-end_date&search=zzz-nothing": {
+      "body": {
+        "count": 0,
+        "next": null,
+        "previous": null,
+        "results": []
+      },
+      "status": 200
+    },
+    "page=1&page_size=50&ordering=-plan": {
+      "body": {
+        "count": 2,
+        "next": null,
+        "previous": null,
+        "results": [
+          {
+            "commercial_model": "DEV",
+            "customer": "cust11",
+            "end_date": "2027-01-01",
+            "hostname": "host-13.example.com",
+            "id": "01a2123d-6c9a-7a20-a0bd-31e4bed83f7c",
+            "plan": "test-plan-shared",
+            "product": "OCTI",
+            "region": "TEST-REGION-10-PRODUCTION",
+            "sla_cmtd": null,
+            "start_date": "2026-01-01",
+            "status": "DEPLOYED",
+            "storage": {
+              "es_used_size": {
+                "limit": null,
+                "percent": null,
+                "time": "2026-11-25T10:25:02+01:00",
+                "used": 101.0
+              },
+              "postgres_used_size": null,
+              "s3_used_size": null
+            }
+          },
+          {
+            "commercial_model": "DEV",
+            "customer": "cust15",
+            "end_date": "2026-06-30",
+            "hostname": "host-17.example.com",
+            "id": "01a2123d-6ca0-7c34-be61-d6ab6568878f",
+            "plan": "test-plan-shared",
+            "product": "OAEV",
+            "region": "TEST-REGION-14-PRODUCTION",
+            "sla_cmtd": null,
+            "start_date": "2025-12-02",
+            "status": "DEPLOYED",
+            "storage": {
+              "es_used_size": null,
+              "postgres_used_size": null,
+              "s3_used_size": null
+            }
+          }
+        ]
+      },
+      "status": 200
+    },
+    "page=1&page_size=50&ordering=customer__name": {
+      "body": {
+        "count": 2,
+        "next": null,
+        "previous": null,
+        "results": [
+          {
+            "commercial_model": "DEV",
+            "customer": "cust15",
+            "end_date": "2026-06-30",
+            "hostname": "host-17.example.com",
+            "id": "01a2123d-6ca0-7c34-be61-d6ab6568878f",
+            "plan": "test-plan-shared",
+            "product": "OAEV",
+            "region": "TEST-REGION-14-PRODUCTION",
+            "sla_cmtd": null,
+            "start_date": "2025-12-02",
+            "status": "DEPLOYED",
+            "storage": {
+              "es_used_size": null,
+              "postgres_used_size": null,
+              "s3_used_size": null
+            }
+          },
+          {
+            "commercial_model": "DEV",
+            "customer": "cust11",
+            "end_date": "2027-01-01",
+            "hostname": "host-13.example.com",
+            "id": "01a2123d-6c9a-7a20-a0bd-31e4bed83f7c",
+            "plan": "test-plan-shared",
+            "product": "OCTI",
+            "region": "TEST-REGION-10-PRODUCTION",
+            "sla_cmtd": null,
+            "start_date": "2026-01-01",
+            "status": "DEPLOYED",
+            "storage": {
+              "es_used_size": {
+                "limit": null,
+                "percent": null,
+                "time": "2026-11-25T10:25:02+01:00",
+                "used": 101.0
+              },
+              "postgres_used_size": null,
+              "s3_used_size": null
+            }
+          }
+        ]
+      },
+      "status": 200
+    },
+    "page=1&page_size=50&ordering=customer__name&product=OAEV": {
+      "body": {
+        "count": 1,
+        "next": null,
+        "previous": null,
+        "results": [
+          {
+            "commercial_model": "DEV",
+            "customer": "cust15",
+            "end_date": "2026-06-30",
+            "hostname": "host-17.example.com",
+            "id": "01a2123d-6ca0-7c34-be61-d6ab6568878f",
+            "plan": "test-plan-shared",
+            "product": "OAEV",
+            "region": "TEST-REGION-14-PRODUCTION",
+            "sla_cmtd": null,
+            "start_date": "2025-12-02",
+            "status": "DEPLOYED",
+            "storage": {
+              "es_used_size": null,
+              "postgres_used_size": null,
+              "s3_used_size": null
+            }
+          }
+        ]
+      },
+      "status": 200
+    },
+    "page=1&page_size=50&ordering=customer__name&search=beta": {
+      "body": {
+        "count": 1,
+        "next": null,
+        "previous": null,
+        "results": [
+          {
+            "commercial_model": "DEV",
+            "customer": "cust15",
+            "end_date": "2026-06-30",
+            "hostname": "host-17.example.com",
+            "id": "01a2123d-6ca0-7c34-be61-d6ab6568878f",
+            "plan": "test-plan-shared",
+            "product": "OAEV",
+            "region": "TEST-REGION-14-PRODUCTION",
+            "sla_cmtd": null,
+            "start_date": "2025-12-02",
+            "status": "DEPLOYED",
+            "storage": {
+              "es_used_size": null,
+              "postgres_used_size": null,
+              "s3_used_size": null
+            }
+          }
+        ]
+      },
+      "status": 200
+    },
+    "page=1&page_size=50&ordering=customer__name&search=host-": {
+      "body": {
+        "count": 2,
+        "next": null,
+        "previous": null,
+        "results": [
+          {
+            "commercial_model": "DEV",
+            "customer": "cust15",
+            "end_date": "2026-06-30",
+            "hostname": "host-17.example.com",
+            "id": "01a2123d-6ca0-7c34-be61-d6ab6568878f",
+            "plan": "test-plan-shared",
+            "product": "OAEV",
+            "region": "TEST-REGION-14-PRODUCTION",
+            "sla_cmtd": null,
+            "start_date": "2025-12-02",
+            "status": "DEPLOYED",
+            "storage": {
+              "es_used_size": null,
+              "postgres_used_size": null,
+              "s3_used_size": null
+            }
+          },
+          {
+            "commercial_model": "DEV",
+            "customer": "cust11",
+            "end_date": "2027-01-01",
+            "hostname": "host-13.example.com",
+            "id": "01a2123d-6c9a-7a20-a0bd-31e4bed83f7c",
+            "plan": "test-plan-shared",
+            "product": "OCTI",
+            "region": "TEST-REGION-10-PRODUCTION",
+            "sla_cmtd": null,
+            "start_date": "2026-01-01",
+            "status": "DEPLOYED",
+            "storage": {
+              "es_used_size": {
+                "limit": null,
+                "percent": null,
+                "time": "2026-11-25T10:25:02+01:00",
+                "used": 101.0
+              },
+              "postgres_used_size": null,
+              "s3_used_size": null
+            }
+          }
+        ]
+      },
+      "status": 200
+    },
+    "page=1&page_size=50&ordering=end_date": {
+      "body": {
+        "count": 2,
+        "next": null,
+        "previous": null,
+        "results": [
+          {
+            "commercial_model": "DEV",
+            "customer": "cust15",
+            "end_date": "2026-06-30",
+            "hostname": "host-17.example.com",
+            "id": "01a2123d-6ca0-7c34-be61-d6ab6568878f",
+            "plan": "test-plan-shared",
+            "product": "OAEV",
+            "region": "TEST-REGION-14-PRODUCTION",
+            "sla_cmtd": null,
+            "start_date": "2025-12-02",
+            "status": "DEPLOYED",
+            "storage": {
+              "es_used_size": null,
+              "postgres_used_size": null,
+              "s3_used_size": null
+            }
+          },
+          {
+            "commercial_model": "DEV",
+            "customer": "cust11",
+            "end_date": "2027-01-01",
+            "hostname": "host-13.example.com",
+            "id": "01a2123d-6c9a-7a20-a0bd-31e4bed83f7c",
+            "plan": "test-plan-shared",
+            "product": "OCTI",
+            "region": "TEST-REGION-10-PRODUCTION",
+            "sla_cmtd": null,
+            "start_date": "2026-01-01",
+            "status": "DEPLOYED",
+            "storage": {
+              "es_used_size": {
+                "limit": null,
+                "percent": null,
+                "time": "2026-11-25T10:25:02+01:00",
+                "used": 101.0
+              },
+              "postgres_used_size": null,
+              "s3_used_size": null
+            }
+          }
+        ]
+      },
+      "status": 200
+    },
+    "page=1&page_size=50&ordering=product": {
+      "body": {
+        "count": 2,
+        "next": null,
+        "previous": null,
+        "results": [
+          {
+            "commercial_model": "DEV",
+            "customer": "cust15",
+            "end_date": "2026-06-30",
+            "hostname": "host-17.example.com",
+            "id": "01a2123d-6ca0-7c34-be61-d6ab6568878f",
+            "plan": "test-plan-shared",
+            "product": "OAEV",
+            "region": "TEST-REGION-14-PRODUCTION",
+            "sla_cmtd": null,
+            "start_date": "2025-12-02",
+            "status": "DEPLOYED",
+            "storage": {
+              "es_used_size": null,
+              "postgres_used_size": null,
+              "s3_used_size": null
+            }
+          },
+          {
+            "commercial_model": "DEV",
+            "customer": "cust11",
+            "end_date": "2027-01-01",
+            "hostname": "host-13.example.com",
+            "id": "01a2123d-6c9a-7a20-a0bd-31e4bed83f7c",
+            "plan": "test-plan-shared",
+            "product": "OCTI",
+            "region": "TEST-REGION-10-PRODUCTION",
+            "sla_cmtd": null,
+            "start_date": "2026-01-01",
+            "status": "DEPLOYED",
+            "storage": {
+              "es_used_size": {
+                "limit": null,
+                "percent": null,
+                "time": "2026-11-25T10:25:02+01:00",
+                "used": 101.0
+              },
+              "postgres_used_size": null,
+              "s3_used_size": null
+            }
+          }
+        ]
+      },
+      "status": 200
+    },
+    "page=1&page_size=500&ordering=end_date": {
+      "body": {
+        "count": 2,
+        "next": null,
+        "previous": null,
+        "results": [
+          {
+            "commercial_model": "DEV",
+            "customer": "cust15",
+            "end_date": "2026-06-30",
+            "hostname": "host-17.example.com",
+            "id": "01a2123d-6ca0-7c34-be61-d6ab6568878f",
+            "plan": "test-plan-shared",
+            "product": "OAEV",
+            "region": "TEST-REGION-14-PRODUCTION",
+            "sla_cmtd": null,
+            "start_date": "2025-12-02",
+            "status": "DEPLOYED",
+            "storage": {
+              "es_used_size": null,
+              "postgres_used_size": null,
+              "s3_used_size": null
+            }
+          },
+          {
+            "commercial_model": "DEV",
+            "customer": "cust11",
+            "end_date": "2027-01-01",
+            "hostname": "host-13.example.com",
+            "id": "01a2123d-6c9a-7a20-a0bd-31e4bed83f7c",
+            "plan": "test-plan-shared",
+            "product": "OCTI",
+            "region": "TEST-REGION-10-PRODUCTION",
+            "sla_cmtd": null,
+            "start_date": "2026-01-01",
+            "status": "DEPLOYED",
+            "storage": {
+              "es_used_size": {
+                "limit": null,
+                "percent": null,
+                "time": "2026-11-25T10:25:02+01:00",
+                "used": 101.0
+              },
+              "postgres_used_size": null,
+              "s3_used_size": null
+            }
+          }
+        ]
+      },
+      "status": 200
+    },
+    "page=2&page_size=1&ordering=customer__name": {
+      "body": {
+        "count": 2,
+        "next": null,
+        "previous": "http://testserver/api/hub/instance/?ordering=customer__name&page_size=1",
+        "results": [
+          {
+            "commercial_model": "DEV",
+            "customer": "cust11",
+            "end_date": "2027-01-01",
+            "hostname": "host-13.example.com",
+            "id": "01a2123d-6c9a-7a20-a0bd-31e4bed83f7c",
+            "plan": "test-plan-shared",
+            "product": "OCTI",
+            "region": "TEST-REGION-10-PRODUCTION",
+            "sla_cmtd": null,
+            "start_date": "2026-01-01",
+            "status": "DEPLOYED",
+            "storage": {
+              "es_used_size": {
+                "limit": null,
+                "percent": null,
+                "time": "2026-11-25T10:25:02+01:00",
+                "used": 101.0
+              },
+              "postgres_used_size": null,
+              "s3_used_size": null
+            }
+          }
+        ]
+      },
+      "status": 200
+    },
+    "page=3&page_size=2&ordering=customer__name": {
+      "body": {
+        "detail": "Invalid page."
+      },
+      "status": 404
+    }
+  }
+}

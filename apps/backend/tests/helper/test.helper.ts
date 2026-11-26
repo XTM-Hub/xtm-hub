@@ -87,6 +87,7 @@ import { TestGuardFixturesHelper } from './test.guard-fixtures.helper';
 import { TestNewsfeedHelper } from './test.newsfeed.helper';
 import { TestPlatformAssertionHelper } from './test.platform-assertion.helper';
 import { TestPlatformCallerHelper } from './test.platform-caller.helper';
+import { TestSaasManagerInstanceHelper } from './test.saas-manager-instance.helper';
 import { TestServiceHelper } from './test.service.helper';
 import { TestSessionHelper } from './test.session.helper';
 import { TestUserServiceSceneHelper } from './test.user-service-scene.helper';
@@ -119,6 +120,7 @@ export const TestHelper = {
   ...TestAccessMatrixHelper,
   ...TestApiTokenHelper,
   ...TestGuardFixturesHelper,
+  ...TestSaasManagerInstanceHelper,
   subscription: {
     create: async (data?: Partial<Subscription>): Promise<Subscription> => {
       const [subscription] = await db<Subscription>('Subscription')

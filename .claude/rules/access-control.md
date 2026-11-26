@@ -25,7 +25,7 @@ mechanisms coexist while modules migrate:
 
 | Mechanism | Where | Used by |
 | --- | --- | --- |
-| `@Public()` / `@Guarded(guard)` on the resolver | `src/security/guarded/` | Migrated modules (`solution-category`, `telemetry`, `manage-product-version`, `subscription`, `news-feed`, `user-service`, `user-service-capability`, `api-token`) |
+| `@Public()` / `@Guarded(guard)` on the resolver | `src/security/guarded/` | Migrated modules (`solution-category`, `telemetry`, `manage-product-version`, `subscription`, `news-feed`, `user-service`, `user-service-capability`, `api-token`, `saas-manager-instance`) |
 | `@auth`, `@service_capa`, `@system_token`, `@platform_token` in the `.graphql` file | `src/security/directive-graphql/` | Every other module. A field with no directive is public there |
 
 **An operation has a directive or a decorator, never both.** Migrating an operation removes its directive in the same
@@ -152,7 +152,7 @@ same `NOT_FOUND` as for a row that does not exist.
 ## Machine callers
 
 `systemCallerGuard(scopes)` is for an operation only a machine calls, with the `x-xtm-hub-token` header, such as
-`newProductVersion`.
+`newProductVersion` or `upsertSaasManagerInstances`.
 
 - Only an operation guarded by `systemCallerGuard` reads the header, and it is judged on the token alone, never on the
   session: a valid token is a system caller, a missing, empty or invalid one is anonymous. The other guards and

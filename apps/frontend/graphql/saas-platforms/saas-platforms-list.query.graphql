@@ -34,24 +34,26 @@ fragment SaasPlatformRow on SaasPlatform {
 }
 
 query SaasManagerPlatformsList(
-  $page: Int!
-  $pageSize: Int!
+  $first: Int!
+  $after: ID
   $orderBy: SaasPlatformOrdering!
   $orderMode: OrderingMode!
   $searchTerm: String
   $product: SaasProduct
 ) {
   saasManagerPlatforms(
-    page: $page
-    pageSize: $pageSize
+    first: $first
+    after: $after
     orderBy: $orderBy
     orderMode: $orderMode
     searchTerm: $searchTerm
     product: $product
   ) {
     totalCount
-    platforms {
-      ...SaasPlatformRow
+    edges {
+      node {
+        ...SaasPlatformRow
+      }
     }
   }
 }

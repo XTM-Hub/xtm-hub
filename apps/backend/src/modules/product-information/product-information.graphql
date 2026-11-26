@@ -121,23 +121,26 @@ enum SaasPlatformContractStatus {
   ended
 }
 
-# A page of the platforms, as the SaaS Manager pages them.
-type SaasPlatformPage {
-  totalCount: Int!
-  # The platforms the SaaS Manager cannot tell apart, without an id, are left out.
-  platforms: [SaasPlatform!]!
+type SaasPlatformEdge {
+  cursor: String!
+  node: SaasPlatform!
 }
 
-# The fields the SaaS Manager can order the platforms by, named as it expects them: it silently ignores any other.
-# The customer is a relation, ordered by its name.
+type SaasPlatformConnection {
+  totalCount: Int!
+  edges: [SaasPlatformEdge!]!
+  pageInfo: PageInfo!
+}
+
+# The plan is ordered by size (XS, S, M, L, XL), the plans not named as a size after them.
 enum SaasPlatformOrdering {
-  customer__name
+  customer_name
   product
   plan
   end_date
 }
 
-# The products the SaaS Manager can filter the platforms on, named by its codes.
+# The products the platforms can be filtered on, named by the codes of the SaaS Manager.
 enum SaasProduct {
   OCTI
   OAEV
@@ -157,15 +160,13 @@ type Query {
       portalCapa: [BYPASS, READ_SAAS_METRICS]
       orgaCapa: [ADMINISTRATE_ORGANIZATION, MANAGE_PLATFORM_REGISTRATION]
     )
-  # The platforms the SaaS Manager knows, paged, searched, filtered and ordered by it; null when it cannot be reached.
+  # The platforms in service the SaaS Manager pushed.
   saasManagerPlatforms(
-    # From 1.
-    page: Int!
-    # At most 500.
-    pageSize: Int!
+    first: Int!
+    after: ID
     orderBy: SaasPlatformOrdering!
     orderMode: OrderingMode!
     searchTerm: String
     product: SaasProduct
-  ): SaasPlatformPage @auth(portalCapa: [BYPASS, READ_SAAS_METRICS])
+  ): SaasPlatformConnection! @auth(portalCapa: [BYPASS, READ_SAAS_METRICS])
 }
