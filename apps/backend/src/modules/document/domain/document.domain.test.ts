@@ -2892,6 +2892,15 @@ describe('document domain', () => {
         )
       );
       expect(result).toHaveLength(10);
+      const totals = (status: DocumentStatus) => [
+        ...new Set(
+          result
+            .filter(({ document }) => document.status === status)
+            .map(({ statusTotal }) => statusTotal)
+        ),
+      ];
+      expect(totals(DocumentStatus.Draft)).toEqual([7]);
+      expect(totals(DocumentStatus.InValidation)).toEqual([6]);
     });
 
     it('should ignore published documents and group the documents by library with its definition', async () => {
@@ -2900,7 +2909,8 @@ describe('document domain', () => {
       const dashboards = SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID;
       await createDocuments(integrations, DocumentStatus.Draft, 2);
       await createDocuments(integrations, DocumentStatus.Published, 1);
-      await createDocuments(dashboards, DocumentStatus.InValidation, 2);
+      await createDocuments(dashboards, DocumentStatus.InValidation, 3);
+      await createDocuments(dashboards, DocumentStatus.Draft, 1);
       const [integrationsDefinition, dashboardsDefinition] = await Promise.all([
         ServiceDefinitionDomain.loadServiceDefinitionByServiceInstance(
           integrations
@@ -2915,7 +2925,7 @@ describe('document domain', () => {
         await DocumentDomain.loadNotPublishedForReminder(LIMIT_PER_STATUS);
 
       // Then
-      expect(result).toHaveLength(4);
+      expect(result).toHaveLength(6);
       expect(result.map(({ document }) => document.status)).not.toContain(
         DocumentStatus.Published
       );
@@ -2938,6 +2948,7 @@ describe('document domain', () => {
               name: integrationsDefinition!.name,
               identifier: integrationsDefinition!.identifier,
             },
+            statusTotal: 2,
           }),
           expect.objectContaining({
             document: expect.objectContaining({
@@ -2949,6 +2960,19 @@ describe('document domain', () => {
               name: dashboardsDefinition!.name,
               identifier: dashboardsDefinition!.identifier,
             },
+            statusTotal: 3,
+          }),
+          expect.objectContaining({
+            document: expect.objectContaining({
+              service_instance_id: dashboards,
+              status: DocumentStatus.Draft,
+            }),
+            serviceDefinition: {
+              id: dashboardsDefinition!.id,
+              name: dashboardsDefinition!.name,
+              identifier: dashboardsDefinition!.identifier,
+            },
+            statusTotal: 1,
           }),
         ])
       );
@@ -3005,6 +3029,7 @@ describe('document domain', () => {
 
       // Then
       expect(result.map(({ document }) => document.id)).toEqual([parent.id]);
+      expect(result[0]?.statusTotal).toBe(1);
     });
 
     it('should return nothing when every document is published', async () => {

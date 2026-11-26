@@ -863,11 +863,16 @@ describe('documentHelper', () => {
           },
           { document: inValidation, integrationType: null, authorEmail: null },
         ],
+        totalByStatus: {
+          [DocumentStatus.Draft]: 12,
+          [DocumentStatus.InValidation]: 3,
+        },
       });
 
       // Then
       expect(payload).toEqual({
         library: SERVICE_DEFINITION.name,
+        total_by_status: { draft: 12, in_validation: 3 },
         resources: [
           {
             name: 'Draft feed',
@@ -906,25 +911,28 @@ describe('documentHelper', () => {
       const feed = TestHelper.document.build({
         id: 'feed' as DocumentId,
         type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        status: DocumentStatus.Draft,
         uploader_id: AUTHOR_ID,
       });
       const dashboard = TestHelper.document.build({
         id: 'dashboard' as DocumentId,
         type: OPENCTI_CUSTOM_DASHBOARD_DOCUMENT_TYPE,
+        status: DocumentStatus.InValidation,
         uploader_id: null,
       });
       const otherFeed = TestHelper.document.build({
         id: 'other-feed' as DocumentId,
         type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        status: DocumentStatus.Draft,
         uploader_id: AUTHOR_ID,
       });
 
       // When
       const libraries = DocumentHelper.groupNotPublishedByLibrary({
         notPublished: [
-          { document: feed, serviceDefinition: LIBRARY_A },
-          { document: dashboard, serviceDefinition: LIBRARY_B },
-          { document: otherFeed, serviceDefinition: LIBRARY_A },
+          { document: feed, serviceDefinition: LIBRARY_A, statusTotal: 7 },
+          { document: dashboard, serviceDefinition: LIBRARY_B, statusTotal: 3 },
+          { document: otherFeed, serviceDefinition: LIBRARY_A, statusTotal: 7 },
         ],
         authors: [{ id: AUTHOR_ID, email: 'author@filigran.io' }],
         integrationTypes: [
@@ -949,14 +957,55 @@ describe('documentHelper', () => {
               authorEmail: 'author@filigran.io',
             },
           ],
+          totalByStatus: {
+            [DocumentStatus.Draft]: 7,
+            [DocumentStatus.InValidation]: 0,
+          },
         },
         {
           serviceDefinition: LIBRARY_B,
           resources: [
             { document: dashboard, integrationType: null, authorEmail: null },
           ],
+          totalByStatus: {
+            [DocumentStatus.Draft]: 0,
+            [DocumentStatus.InValidation]: 3,
+          },
         },
       ]);
+    });
+
+    it('should keep the total of each status when a library has drafts and resources in validation', () => {
+      // Given a draft and a resource in validation of the same library, with their own totals
+      const draft = TestHelper.document.build({
+        id: 'draft' as DocumentId,
+        status: DocumentStatus.Draft,
+      });
+      const inValidation = TestHelper.document.build({
+        id: 'in-validation' as DocumentId,
+        status: DocumentStatus.InValidation,
+      });
+
+      // When
+      const libraries = DocumentHelper.groupNotPublishedByLibrary({
+        notPublished: [
+          { document: draft, serviceDefinition: LIBRARY_A, statusTotal: 7 },
+          {
+            document: inValidation,
+            serviceDefinition: LIBRARY_A,
+            statusTotal: 3,
+          },
+        ],
+        authors: [],
+        integrationTypes: [],
+      });
+
+      // Then
+      expect(libraries).toHaveLength(1);
+      expect(libraries[0]?.totalByStatus).toEqual({
+        [DocumentStatus.Draft]: 7,
+        [DocumentStatus.InValidation]: 3,
+      });
     });
 
     it('should leave the author email empty when the author is unknown', () => {
@@ -965,7 +1014,9 @@ describe('documentHelper', () => {
 
       // When
       const libraries = DocumentHelper.groupNotPublishedByLibrary({
-        notPublished: [{ document, serviceDefinition: LIBRARY_A }],
+        notPublished: [
+          { document, serviceDefinition: LIBRARY_A, statusTotal: 1 },
+        ],
         authors: [],
         integrationTypes: [],
       });

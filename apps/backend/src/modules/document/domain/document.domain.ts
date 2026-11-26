@@ -63,6 +63,7 @@ import {
 export interface NotPublishedResource {
   document: DocumentModel;
   serviceDefinition: Pick<ServiceDefinition, 'id' | 'name' | 'identifier'>;
+  statusTotal: number;
 }
 
 type NotPublishedRow = DocumentModel & {
@@ -71,7 +72,10 @@ type NotPublishedRow = DocumentModel & {
   service_definition_identifier: ServiceDefinition['identifier'];
 };
 
-type RankedNotPublishedRow = NotPublishedRow & { position: string };
+type RankedNotPublishedRow = NotPublishedRow & {
+  position: string;
+  status_total: string;
+};
 
 type UseCaseValue = UseCaseId | string;
 type SolutionCategoryValue = SolutionCategoryId | string;
@@ -829,6 +833,11 @@ export const DocumentDomain = {
           `row_number() over (partition by "ServiceDefinition"."id", "Document"."status" order by "Document"."created_at" asc, "Document"."id") as position`
         )
       )
+      .select(
+        dbRaw(
+          `count(*) over (partition by "ServiceDefinition"."id", "Document"."status") as status_total`
+        )
+      )
       .as('ranked');
 
     const rows: RankedNotPublishedRow[] = await db<RankedNotPublishedRow>(
@@ -850,6 +859,7 @@ export const DocumentDomain = {
         service_definition_name,
         service_definition_identifier,
         position: _position,
+        status_total,
         ...document
       }) => ({
         document,
@@ -858,6 +868,7 @@ export const DocumentDomain = {
           name: service_definition_name,
           identifier: service_definition_identifier,
         },
+        statusTotal: Number(status_total),
       })
     );
   },
